@@ -35,69 +35,65 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  A factory for property-specific criterion and projection instances.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   A factory for property-specific criterion and projection instances.
+  /// </summary>
   TProperty = class(TInterfacedObject, IProperty)
   private
-    FPropertyName: string;
-    FEntityClass: TClass;
+    fPropertyName: string;
+    fEntityClass: TClass;
   protected
     constructor Create; virtual;
   protected
-    function Eq(const AValue: TValue): ICriterion; virtual;
-    function NotEq(const AValue: TValue): ICriterion; virtual;
-    function GEq(const AValue: TValue): ICriterion; virtual;
-    function Gt(const AValue: TValue): ICriterion; virtual;
+    function Eq(const value: TValue): ICriterion; virtual;
+    function NotEq(const value: TValue): ICriterion; virtual;
+    function GEq(const value: TValue): ICriterion; virtual;
+    function Gt(const value: TValue): ICriterion; virtual;
     function IsNull: ICriterion; virtual;
     function IsNotNull: ICriterion; virtual;
-    function Like(const AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion; virtual;
-    function NotLike(const AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion; virtual;
-    function LEq(const AValue: TValue): ICriterion; virtual;
-    function Lt(const AValue: TValue): ICriterion; virtual;
-    function &In<T>(const AValues: TArray<T>): ICriterion;
-    function NotIn<T>(const AValues: TArray<T>): ICriterion;
-    function &InStr(const AValues: TArray<string>): ICriterion; virtual;
-    function NotInStr(const AValues: TArray<string>): ICriterion; virtual;
-    function &InInt(const AValues: TArray<Integer>): ICriterion; virtual;
-    function NotInInt(const AValues: TArray<Integer>): ICriterion; virtual;
-    function Between(const ALow, AHigh: TValue): ICriterion; virtual;
-    function Asc: IOrder; virtual;
-    function Desc: IOrder; virtual;
+    function Like(const value: string; matchMode: TMatchMode = mmExact): ICriterion; virtual;
+    function NotLike(const value: string; matchMode: TMatchMode = mmExact): ICriterion; virtual;
+    function LEq(const value: TValue): ICriterion; virtual;
+    function Lt(const value: TValue): ICriterion; virtual;
+    function &In<T>(const value: TArray<T>): ICriterion;
+    function NotIn<T>(const value: TArray<T>): ICriterion;
+    function InStr(const value: TArray<string>): ICriterion; virtual;
+    function NotInStr(const value: TArray<string>): ICriterion; virtual;
+    function InInt(const value: TArray<Integer>): ICriterion; virtual;
+    function NotInInt(const value: TArray<Integer>): ICriterion; virtual;
+    function Between(const low, high: TValue): ICriterion; virtual;
+    function Asc: IOrderBy; virtual;
+    function Desc: IOrderBy; virtual;
 
-    function EqProperty(AOther: IProperty): ICriterion; overload; virtual;
-    function EqProperty(const AOtherPropertyName: string): ICriterion; overload; virtual;
-    function NeProperty(AOther: IProperty): ICriterion; overload; virtual;
-    function NeProperty(const AOtherPropertyName: string): ICriterion; overload; virtual;
-    function GeProperty(AOther: IProperty): ICriterion; overload; virtual;
-    function GeProperty(const AOtherPropertyName: string): ICriterion; overload; virtual;
-    function GtProperty(AOther: IProperty): ICriterion; overload; virtual;
-    function GtProperty(const AOtherPropertyName: string): ICriterion; overload; virtual;
-    function LeProperty(AOther: IProperty): ICriterion; overload; virtual;
-    function LeProperty(const AOtherPropertyName: string): ICriterion; overload; virtual;
-    function LtProperty(AOther: IProperty): ICriterion; overload; virtual;
-    function LtProperty(const AOtherPropertyName: string): ICriterion; overload; virtual;
+    function EqProperty(const other: IProperty): ICriterion; overload; virtual;
+    function EqProperty(const otherPropertyName: string): ICriterion; overload; virtual;
+    function NeProperty(const other: IProperty): ICriterion; overload; virtual;
+    function NeProperty(const otherPropertyName: string): ICriterion; overload; virtual;
+    function GeProperty(const other: IProperty): ICriterion; overload; virtual;
+    function GeProperty(const otherPropertyName: string): ICriterion; overload; virtual;
+    function GtProperty(const other: IProperty): ICriterion; overload; virtual;
+    function GtProperty(const otherPropertyName: string): ICriterion; overload; virtual;
+    function LeProperty(const other: IProperty): ICriterion; overload; virtual;
+    function LeProperty(const otherPropertyName: string): ICriterion; overload; virtual;
+    function LtProperty(const other: IProperty): ICriterion; overload; virtual;
+    function LtProperty(const otherPropertyName: string): ICriterion; overload; virtual;
 
     function GetEntityClass: TClass; virtual;
     function GetPropertyName: string; virtual;
-    procedure SetEntityClass(AClass: TClass); virtual;
-    procedure SetPropertyName(const Value: string); virtual;
+    procedure SetEntityClass(value: TClass); virtual;
+    procedure SetPropertyName(const value: string); virtual;
   public
-    class function ForName(const APropertyName: string): TProperty;
+    class function ForName(const propertyName: string): TProperty;
 
     property PropertyName: string read GetPropertyName write SetPropertyName;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  A factory for property-specific criterion and projection instances.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   A factory for property-specific criterion and projection instances.
+  /// </summary>
   TProperty<T: class> = class(TProperty)
   public
-    class function ForName(const APropertyName: string): TProperty;
+    class function ForName(const propertyName: string): TProperty;
   end;
 
 implementation
@@ -105,245 +101,269 @@ implementation
 uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Criteria.Criterion.PropertyExpression,
-  Spring.Persistence.Criteria.Order;
+  Spring.Persistence.Criteria.OrderBy;
 
-{ TProperty }
+
+{$REGION 'TProperty'}
 
 constructor TProperty.Create;
 begin
   inherited Create;
 end;
 
-function TProperty.Asc: IOrder;
+function TProperty.Asc: IOrderBy;
 begin
-  Result := TOrder.Asc(FPropertyName);
+  Result := TOrderBy.Asc(fPropertyName);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.Between(const ALow, AHigh: TValue): ICriterion;
+function TProperty.Between(const low, high: TValue): ICriterion;
 begin
-  Result := TRestrictions.Between(PropertyName, ALow, AHigh);
+  Result := TRestrictions.Between(PropertyName, low, high);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.Desc: IOrder;
+function TProperty.Desc: IOrderBy;
 begin
-  Result := TOrder.Desc(FPropertyName);
+  Result := TOrderBy.Desc(fPropertyName);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.Eq(const AValue: TValue): ICriterion;
+function TProperty.Eq(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.Eq(FPropertyName, AValue);
+  Result := TRestrictions.Eq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.EqProperty(const AOtherPropertyName: string): ICriterion;
+function TProperty.EqProperty(const otherPropertyName: string): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woEqual
-    , TSQLTable.CreateFromClass(FEntityClass), nil);
+  Result := TPropertyExpression.Create(PropertyName, otherPropertyName, woEqual
+    , TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.EqProperty(AOther: IProperty): ICriterion;
+function TProperty.EqProperty(const other: IProperty): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woEqual
-    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
+  Result := TPropertyExpression.Create(
+    PropertyName, other.GetPropertyName, woEqual,
+    TSQLTable.CreateFromClass(fEntityClass),
+    TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
 end;
 
-class function TProperty.ForName(const APropertyName: string): TProperty;
+class function TProperty.ForName(const propertyName: string): TProperty;
 begin
   Result := TProperty.Create;
-  Result.FPropertyName := APropertyName;
+  Result.fPropertyName := propertyName;
 end;
 
-function TProperty.GeProperty(const AOtherPropertyName: string): ICriterion;
+function TProperty.GeProperty(const otherPropertyName: string): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woMoreOrEqual
-    , TSQLTable.CreateFromClass(FEntityClass), nil);
+  Result := TPropertyExpression.Create(
+    PropertyName, otherPropertyName, woMoreOrEqual,
+    TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.GeProperty(AOther: IProperty): ICriterion;
+function TProperty.GeProperty(const other: IProperty): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woMoreOrEqual
-    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
+  Result := TPropertyExpression.Create(
+    PropertyName, other.GetPropertyName, woMoreOrEqual,
+    TSQLTable.CreateFromClass(fEntityClass),
+    TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.GEq(const AValue: TValue): ICriterion;
+function TProperty.GEq(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.GEq(FPropertyName, AValue);
+  Result := TRestrictions.GEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
 function TProperty.GetEntityClass: TClass;
 begin
-  Result := FEntityClass;
+  Result := fEntityClass;
 end;
 
 function TProperty.GetPropertyName: string;
 begin
-  Result := FPropertyName;
+  Result := fPropertyName;
 end;
 
-function TProperty.Gt(const AValue: TValue): ICriterion;
+function TProperty.Gt(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.Gt(FPropertyName, AValue);
+  Result := TRestrictions.Gt(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.GtProperty(AOther: IProperty): ICriterion;
+function TProperty.GtProperty(const other: IProperty): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woMore
-    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
+  Result := TPropertyExpression.Create(
+    PropertyName, other.GetPropertyName, woMore,
+    TSQLTable.CreateFromClass(fEntityClass),
+    TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.GtProperty(const AOtherPropertyName: string): ICriterion;
+function TProperty.GtProperty(const otherPropertyName: string): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woMore
-    , TSQLTable.CreateFromClass(FEntityClass), nil);
+  Result := TPropertyExpression.Create(
+    PropertyName, otherPropertyName, woMore,
+    TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.&In<T>(const AValues: TArray<T>): ICriterion;
+function TProperty.&In<T>(const value: TArray<T>): ICriterion;
 begin
-  Result := TRestrictions.&In<T>(FPropertyName, AValues);
+  Result := TRestrictions.&In<T>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.InInt(const AValues: TArray<Integer>): ICriterion;
+function TProperty.InInt(const value: TArray<Integer>): ICriterion;
 begin
-  Result := &In<Integer>(AValues);
+  Result := &In<Integer>(value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.InStr(const AValues: TArray<string>): ICriterion;
+function TProperty.InStr(const value: TArray<string>): ICriterion;
 begin
-  Result := &In<string>(AValues);
+  Result := &In<string>(value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
 function TProperty.IsNotNull: ICriterion;
 begin
-  Result := TRestrictions.IsNotNull(FPropertyName);
+  Result := TRestrictions.IsNotNull(fPropertyName);
   Result.SetEntityClass(GetEntityClass);
 end;
 
 function TProperty.IsNull: ICriterion;
 begin
-  Result := TRestrictions.IsNull(FPropertyName);
+  Result := TRestrictions.IsNull(fPropertyName);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.LeProperty(AOther: IProperty): ICriterion;
+function TProperty.LeProperty(const other: IProperty): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woLessOrEqual
-    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
+  Result := TPropertyExpression.Create(
+    PropertyName, other.GetPropertyName, woLessOrEqual,
+    TSQLTable.CreateFromClass(fEntityClass),
+    TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.LeProperty(const AOtherPropertyName: string): ICriterion;
+function TProperty.LeProperty(const otherPropertyName: string): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woLessOrEqual
-    , TSQLTable.CreateFromClass(FEntityClass), nil);
+  Result := TPropertyExpression.Create(
+    PropertyName, otherPropertyName, woLessOrEqual,
+    TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.LEq(const AValue: TValue): ICriterion;
+function TProperty.LEq(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.LEq(FPropertyName, AValue);
+  Result := TRestrictions.LEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.Like(const AValue: string; AMatchMode: TMatchMode): ICriterion;
+function TProperty.Like(const value: string; matchMode: TMatchMode): ICriterion;
 begin
-  Result := TRestrictions.Like(FPropertyName, AValue, AMatchMode);
+  Result := TRestrictions.Like(fPropertyName, value, matchMode);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.Lt(const AValue: TValue): ICriterion;
+function TProperty.Lt(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.Lt(FPropertyName, AValue);
+  Result := TRestrictions.Lt(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.LtProperty(const AOtherPropertyName: string): ICriterion;
+function TProperty.LtProperty(const otherPropertyName: string): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woLess
-    , TSQLTable.CreateFromClass(FEntityClass), nil);
+  Result := TPropertyExpression.Create(
+    PropertyName, otherPropertyName, woLess,
+    TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.LtProperty(AOther: IProperty): ICriterion;
+function TProperty.LtProperty(const other: IProperty): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woLess
-    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
+  Result := TPropertyExpression.Create(
+    PropertyName, other.GetPropertyName, woLess,
+    TSQLTable.CreateFromClass(fEntityClass),
+    TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NeProperty(AOther: IProperty): ICriterion;
+function TProperty.NeProperty(const other: IProperty): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woNotEqual
-    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
+  Result := TPropertyExpression.Create(
+    PropertyName, other.GetPropertyName, woNotEqual,
+    TSQLTable.CreateFromClass(fEntityClass),
+    TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NeProperty(const AOtherPropertyName: string): ICriterion;
+function TProperty.NeProperty(const otherPropertyName: string): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woNotEqual
-    , TSQLTable.CreateFromClass(FEntityClass), nil);
+  Result := TPropertyExpression.Create(
+    PropertyName, otherPropertyName, woNotEqual,
+    TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NotEq(const AValue: TValue): ICriterion;
+function TProperty.NotEq(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.NotEq(FPropertyName, AValue);
+  Result := TRestrictions.NotEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NotIn<T>(const AValues: TArray<T>): ICriterion;
+function TProperty.NotIn<T>(const value: TArray<T>): ICriterion;
 begin
-  Result := TRestrictions.NotIn<T>(FPropertyName, AValues);
+  Result := TRestrictions.NotIn<T>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NotInInt(const AValues: TArray<Integer>): ICriterion;
+function TProperty.NotInInt(const value: TArray<Integer>): ICriterion;
 begin
-  Result := NotIn<Integer>(AValues);
+  Result := NotIn<Integer>(value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NotInStr(const AValues: TArray<string>): ICriterion;
+function TProperty.NotInStr(const value: TArray<string>): ICriterion;
 begin
-  Result := NotIn<string>(AValues);
+  Result := NotIn<string>(value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NotLike(const AValue: string; AMatchMode: TMatchMode): ICriterion;
+function TProperty.NotLike(const value: string; matchMode: TMatchMode): ICriterion;
 begin
-  Result := TRestrictions.NotLike(FPropertyName, AValue, AMatchMode);
+  Result := TRestrictions.NotLike(fPropertyName, value, matchMode);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-procedure TProperty.SetEntityClass(AClass: TClass);
+procedure TProperty.SetEntityClass(value: TClass);
 begin
-  FEntityClass := AClass;
+  fEntityClass := value;
 end;
 
 procedure TProperty.SetPropertyName(const Value: string);
 begin
-  FPropertyName := Value;
+  fPropertyName := Value;
 end;
 
-{ TGenericProperty<T> }
+{$ENDREGION}
 
-class function TProperty<T>.ForName(const APropertyName: string): TProperty;
+
+{$REGION 'TGenericProperty<T>'}
+
+class function TProperty<T>.ForName(const propertyName: string): TProperty;
 begin
-  Result := TProperty.ForName(APropertyName);
-  Result.FEntityClass := T;
+  Result := TProperty.ForName(propertyName);
+  Result.fEntityClass := T;
 end;
+
+{$ENDREGION}
+
 
 end.

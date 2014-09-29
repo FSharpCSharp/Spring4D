@@ -33,25 +33,41 @@ uses
   Spring.Persistence.Core.Interfaces;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent adapter of any enumerable collection. Can be used if there is
-  ///	  a need to load results into different collection types.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent adapter of any enumerable collection. Can be used if there is
+  ///   a need to load results into different collection types.
+  /// </summary>
   TRttiCollectionAdapter<T: class, constructor> = class(TInterfacedObject, ICollectionAdapter<T>)
   private
-    FCollection: TValue;
-    FAddMethod: TRttiMethod;
-    FClearMethod: TRttiMethod;
-    FCountProp: TRttiProperty;
-    FCountMethod: TRttiMethod;
-  protected
-    procedure GetMethodsFromRtti; virtual;
-  public
-    constructor Create(const ACollection: TValue); virtual;
+    fCollection: TValue;
+    fAddMethod: TRttiMethod;
+    fClearMethod: TRttiMethod;
+    fCountProperty: TRttiProperty;
+    fCountMethod: TRttiMethod;
+    procedure GetMethodsFromRtti;
 
-    procedure Add(AEntity: T);
+    type
+      TEnumerator = class(TInterfacedObject, ICollectionEnumerator<T>)
+      private
+        fCollection: TValue;
+        fGetEnumeratorMethod: TRttiMethod;
+        fEnumerator: TValue;
+        fMoveNextMethod: TRttiMethod;
+        fGetCurrentMethod: TRttiMethod;
+        fCurrentProperty: TRttiProperty;
+        function GetCurrent: T;
+        procedure GetMethodsFromRtti;
+      public
+        constructor Create(const collection: TValue); virtual;
+        destructor Destroy; override;
+
+        function MoveNext: Boolean;
+        property Current: T read GetCurrent;
+      end;
+  public
+    constructor Create(const collection: TValue);
+
+    procedure Add(const entity: T);
     procedure Clear;
     function Count: Integer;
     function GetEnumerator: ICollectionEnumerator<T>;
@@ -62,55 +78,103 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.Collections.Enumerator,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Reflection;
 
-{ TCollectionAdapter<T> }
 
-constructor TRttiCollectionAdapter<T>.Create(const ACollection: TValue);
+{$REGION 'TCollectionAdapter<T>'}
+
+constructor TRttiCollectionAdapter<T>.Create(const collection: TValue);
 begin
   inherited Create;
-  FCollection := ACollection;
+  fCollection := collection;
   GetMethodsFromRtti;
 end;
 
-procedure TRttiCollectionAdapter<T>.Add(AEntity: T);
+procedure TRttiCollectionAdapter<T>.Add(const entity: T);
 begin
-  FAddMethod.Invoke(FCollection, [AEntity]);
+  fAddMethod.Invoke(fCollection, [entity]);
 end;
 
 procedure TRttiCollectionAdapter<T>.Clear;
 begin
-  FClearMethod.Invoke(FCollection, []);
+  fClearMethod.Invoke(fCollection, []);
 end;
 
 function TRttiCollectionAdapter<T>.Count: Integer;
 begin
-  if Assigned(FCountMethod) then
-    Result := FCountMethod.Invoke(FCollection, []).AsInteger
-  else if Assigned(FCountProp) then
-    Result := FCountProp.GetValue(TRttiExplorer.GetRawPointer(FCollection)).AsInteger
+  if Assigned(fCountMethod) then
+    Result := fCountMethod.Invoke(fCollection, []).AsInteger
+  else if Assigned(fCountProperty) then
+    Result := fCountProperty.GetValue(TRttiExplorer.GetRawPointer(fCollection)).AsInteger
   else
-    raise EORMContainerDoesNotHaveCountMethod.CreateFmt('Count method not found for container type "%S"', [FCollection.ToString]);
+    raise EORMContainerDoesNotHaveCountMethod.CreateFmt('Count method not found for container type "%S"', [fCollection.ToString]);
 end;
 
 function TRttiCollectionAdapter<T>.GetEnumerator: ICollectionEnumerator<T>;
 begin
-  Result := TCollectionEnumerator<T>.Create(FCollection);
+  Result := TEnumerator.Create(fCollection);
 end;
 
 procedure TRttiCollectionAdapter<T>.GetMethodsFromRtti;
 begin
-  TRttiExplorer.TryGetMethod(FCollection.TypeInfo, 'Add', FAddMethod, 1);
-  TRttiExplorer.TryGetMethod(FCollection.TypeInfo, 'Clear', FClearMethod, 0);
-  TRttiExplorer.TryGetMethod(FCollection.TypeInfo, 'GetCount', FCountMethod, 0);
-  FCountProp := TRttiContext.Create.GetType(FCollection.TypeInfo).GetProperty('Count');
+  TRttiExplorer.TryGetMethod(fCollection.TypeInfo, 'Add', fAddMethod, 1);
+  TRttiExplorer.TryGetMethod(fCollection.TypeInfo, 'Clear', fClearMethod, 0);
+  TRttiExplorer.TryGetMethod(fCollection.TypeInfo, 'GetCount', fCountMethod, 0);
+  fCountProperty := TRttiContext.Create.GetType(fCollection.TypeInfo).GetProperty('Count');
 end;
 
 function TRttiCollectionAdapter<T>.IsAddSupported: Boolean;
 begin
-  Result := Assigned(FAddMethod) and Assigned(FClearMethod);
+  Result := Assigned(fAddMethod) and Assigned(fClearMethod);
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRttiCollectionAdapter<T>.TEnumerator'}
+
+constructor TRttiCollectionAdapter<T>.TEnumerator.Create(const collection: TValue);
+begin
+  inherited Create;
+  fCollection := collection;
+  GetMethodsFromRtti;
+end;
+
+destructor TRttiCollectionAdapter<T>.TEnumerator.Destroy;
+begin
+  if fEnumerator.IsObject then
+    fEnumerator.AsObject.Free;
+  inherited Destroy;
+end;
+
+function TRttiCollectionAdapter<T>.TEnumerator.GetCurrent: T;
+begin
+  if Assigned(fCurrentProperty) then
+    Result := fCurrentProperty.GetValue(TRttiExplorer.GetRawPointer(fEnumerator)).AsType<T>
+  else if Assigned(fGetCurrentMethod) then
+    Result := fGetCurrentMethod.Invoke(fEnumerator, []).AsType<T>;
+end;
+
+procedure TRttiCollectionAdapter<T>.TEnumerator.GetMethodsFromRtti;
+begin
+  if TRttiExplorer.TryGetMethod(fCollection.TypeInfo, 'GetEnumerator', fGetEnumeratorMethod, 0) then
+  begin
+    fEnumerator := fGetEnumeratorMethod.Invoke(fCollection, []);
+    TRttiExplorer.TryGetMethod(fEnumerator.TypeInfo, 'MoveNext', fMoveNextMethod, 0);
+    TRttiExplorer.TryGetMethod(fEnumerator.TypeInfo, 'GetCurrent', fGetCurrentMethod, 0);
+    fCurrentProperty := TType.GetType(fEnumerator.TypeInfo).GetProperty('Current');
+  end;
+end;
+
+function TRttiCollectionAdapter<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := Assigned(fMoveNextMethod)
+    and fMoveNextMethod.Invoke(fEnumerator, []).AsBoolean;
+end;
+
+{$ENDREGION}
+
 
 end.

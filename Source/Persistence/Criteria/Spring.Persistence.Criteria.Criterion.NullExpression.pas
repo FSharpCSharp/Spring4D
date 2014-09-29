@@ -40,51 +40,55 @@ uses
 type
   TNullExpression = class(TAbstractCriterion)
   private
-    FPropertyName: string;
-    FOperator: TWhereOperator;
-  public
-    constructor Create(const APropertyName: string; const AOperator: TWhereOperator); virtual;
-  public
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand;
-      AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    fPropertyName: string;
+    fOperator: TWhereOperator;
+  protected
     function GetWhereOperator: TWhereOperator; override;
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TDMLCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; override;
+  public
+    constructor Create(const propertyName: string; whereOperator: TWhereOperator); virtual;
   end;
 
 implementation
 
-{ TNullExpression }
 
-constructor TNullExpression.Create(const APropertyName: string; const AOperator: TWhereOperator);
+{$REGION 'TNullExpression'}
+
+constructor TNullExpression.Create(const propertyName: string;
+  whereOperator: TWhereOperator);
 begin
   inherited Create;
-  FPropertyName := APropertyName;
-  FOperator := AOperator;
+  fPropertyName := propertyName;
+  fOperator := whereOperator;
 end;
 
 function TNullExpression.GetWhereOperator: TWhereOperator;
 begin
-  Result := FOperator;
+  Result := fOperator;
 end;
 
-function TNullExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TNullExpression.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 var
-  LWhere: TSQLWhereField;
+  whereField: TSQLWhereField;
 begin
-  Assert(ACommand is TWhereCommand);
+  Assert(command is TWhereCommand);
   inherited;
-  LWhere := TSQLWhereField.Create(FPropertyName, GetCriterionTable(ACommand) );
-  LWhere.MatchMode := GetMatchMode;
-  LWhere.WhereOperator := GetWhereOperator;
-  Result := LWhere.ToSQLString(Generator.GetEscapeFieldnameChar);
+  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command) );
+  whereField.MatchMode := GetMatchMode;
+  whereField.WhereOperator := GetWhereOperator;
+  Result := whereField.ToSQLString(Generator.GetEscapeFieldnameChar);
 
-  if AAddToCommand then
-  begin
-    TWhereCommand(ACommand).WhereFields.Add(LWhere);
-  end
+  if addToCommand then
+    TWhereCommand(command).WhereFields.Add(whereField)
   else
-  begin
-    LWhere.Free;
-  end;
+    whereField.Free;
 end;
+
+{$ENDREGION}
+
 
 end.

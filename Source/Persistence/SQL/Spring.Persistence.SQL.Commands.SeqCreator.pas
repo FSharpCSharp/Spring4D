@@ -33,15 +33,13 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Responsible for building and executing statements which create
-  ///	  sequences in the database.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Responsible for building and executing statements which create
+  ///   sequences in the database.
+  /// </summary>
   TSequenceCreateExecutor = class(TAbstractCommandExecutor)
   private
-    FSequence: TCreateSequenceCommand;
+    fSequence: TCreateSequenceCommand;
   protected
     function SequenceExists: Boolean; virtual;
     function GetCommand: TDMLCommand; override;
@@ -49,11 +47,9 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    procedure Build(AClass: TClass); override;
-
-    procedure Execute(AEntity: TObject); override;
-
-    procedure CreateSequence(AEntity: TClass);
+    procedure Build(entityClass: TClass); override;
+    procedure Execute(const entity: TObject); override;
+    procedure CreateSequence(entityClass: TClass);
   end;
 
 implementation
@@ -63,42 +59,43 @@ uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces;
 
-{ TSequenceCreateCommand }
 
-procedure TSequenceCreateExecutor.Build(AClass: TClass);
-begin
-  EntityClass := AClass;
-  FSequence.Sequence := TEntityCache.Get(AClass).Sequence;
-  SQL := '';
-  if Assigned(FSequence.Sequence) then
-  begin
-    FSequence.SequenceExists := SequenceExists;
-    SQL := Generator.GenerateCreateSequence(FSequence);
-  end;
-end;
+{$REGION 'TSequenceCreateCommand'}
 
 constructor TSequenceCreateExecutor.Create;
 begin
   inherited Create;
-  FSequence := TCreateSequenceCommand.Create(nil);
-end;
-
-procedure TSequenceCreateExecutor.CreateSequence(AEntity: TClass);
-begin
-  Execute(nil);
+  fSequence := TCreateSequenceCommand.Create(nil);
 end;
 
 destructor TSequenceCreateExecutor.Destroy;
 begin
-  FSequence.Free;
+  fSequence.Free;
   inherited Destroy;
 end;
 
-procedure TSequenceCreateExecutor.Execute(AEntity: TObject);
+procedure TSequenceCreateExecutor.Build(entityClass: TClass);
+begin
+  inherited EntityClass := entityClass;
+  fSequence.Sequence := TEntityCache.Get(entityClass).Sequence;
+  SQL := '';
+  if Assigned(fSequence.Sequence) then
+  begin
+    fSequence.SequenceExists := SequenceExists;
+    SQL := Generator.GenerateCreateSequence(fSequence);
+  end;
+end;
+
+procedure TSequenceCreateExecutor.CreateSequence(entityClass: TClass);
+begin
+  Execute(nil);
+end;
+
+procedure TSequenceCreateExecutor.Execute(const entity: TObject);
 var
   LStmt: IDBStatement;
 begin
-  if (SQL = '') then
+  if SQL = '' then
     Exit;
 
   LStmt := Connection.CreateStatement;
@@ -118,18 +115,19 @@ var
   LResults: IDBResultset;
 begin
   Result := False;
-  LSqlSequenceCount := Generator.GetSQLSequenceCount(FSequence.Sequence.SequenceName);
-  if (LSqlSequenceCount <> '') then
-  begin
-    try
-      LStmt := Connection.CreateStatement;
-      LStmt.SetSQLCommand(LSqlSequenceCount);
-      LResults := LStmt.ExecuteQuery;
-      Result := not LResults.IsEmpty;
-    except
-      Result := False;
-    end;
+  LSqlSequenceCount := Generator.GetSQLSequenceCount(fSequence.Sequence.SequenceName);
+  if LSqlSequenceCount <> '' then
+  try
+    LStmt := Connection.CreateStatement;
+    LStmt.SetSQLCommand(LSqlSequenceCount);
+    LResults := LStmt.ExecuteQuery;
+    Result := not LResults.IsEmpty;
+  except
+    Result := False;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

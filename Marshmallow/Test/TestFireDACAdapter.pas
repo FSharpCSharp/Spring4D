@@ -29,7 +29,7 @@ type
     FSession: TSession;
     FDACConnection: TFDConnection;
   protected
-    procedure CreateTables();
+    procedure CreateTables;
   public
     procedure SetUp; override;
     procedure TearDown; override;

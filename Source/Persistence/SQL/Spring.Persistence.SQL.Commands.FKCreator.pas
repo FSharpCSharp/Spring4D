@@ -33,28 +33,24 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Responsible for building and executing statements to create foreign
-  ///	  keys.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Responsible for building and executing statements to create foreign
+  ///   keys.
+  /// </summary>
   TForeignKeyCreateExecutor = class(TAbstractCommandExecutor)
   private
-    FCommand: TCreateFKCommand;
-    FTable: TSQLTable;
-    FSQLs: IList<string>;
+    fCommand: TCreateFKCommand;
+    fTable: TSQLTable;
+    fSQLs: IList<string>;
   protected
     function GetCommand: TDMLCommand; override;
   public
     constructor Create; override;
     destructor Destroy; override;
 
-    procedure Build(AClass: TClass); override;
-
-    procedure Execute(AEntity: TObject); override;
-
-    procedure CreateForeignKeys(AEntity: TClass);
+    procedure Build(entityClass: TClass); override;
+    procedure Execute(const entity: TObject); override;
+    procedure CreateForeignKeys(const entity: TClass);
   end;
 
 implementation
@@ -65,54 +61,51 @@ uses
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes;
 
-{ TForeignKeyCreateCommand }
 
-procedure TForeignKeyCreateExecutor.Build(AClass: TClass);
-begin
-  inherited Build(AClass);
-  if not EntityData.IsTableEntity then
-    raise ETableNotSpecified.Create('Table not specified for class: ' + AClass.ClassName);
-
-  FTable.SetFromAttribute(EntityData.EntityTable);
-  FCommand.SetCommandFieldsFromColumns(EntityData.Columns);
-  FCommand.TableExists := TableExists(FTable.Name);
-  if FCommand.TableExists then
-  begin
-    //get current columns from db table
-    FillDbTableColumns(FTable.Name, FCommand.DbColumns);
-  end;
-  FSQLs := Generator.GenerateCreateFK(FCommand);
-end;
+{$REGION 'TForeignKeyCreateCommand'}
 
 constructor TForeignKeyCreateExecutor.Create;
 begin
   inherited Create;
-  FTable := TSQLTable.Create;
-  FCommand := TCreateFKCommand.Create(FTable);
-  FSQLs := nil;
-end;
-
-procedure TForeignKeyCreateExecutor.CreateForeignKeys(AEntity: TClass);
-begin
-  Execute(nil);
+  fTable := TSQLTable.Create;
+  fCommand := TCreateFKCommand.Create(fTable);
 end;
 
 destructor TForeignKeyCreateExecutor.Destroy;
 begin
-  FTable.Free;
-  FCommand.Free;
+  fCommand.Free;
+  fTable.Free;
   inherited Destroy;
 end;
 
-procedure TForeignKeyCreateExecutor.Execute(AEntity: TObject);
+procedure TForeignKeyCreateExecutor.Build(entityClass: TClass);
+begin
+  inherited Build(entityClass);
+  if not EntityData.IsTableEntity then
+    raise ETableNotSpecified.Create('Table not specified for class: ' + entityClass.ClassName);
+
+  fTable.SetFromAttribute(EntityData.EntityTable);
+  fCommand.SetCommandFieldsFromColumns(EntityData.Columns);
+  fCommand.TableExists := TableExists(fTable.Name);
+  if fCommand.TableExists then
+    FillDbTableColumns(fTable.Name, fCommand.DbColumns);
+  fSQLs := Generator.GenerateCreateFK(fCommand);
+end;
+
+procedure TForeignKeyCreateExecutor.CreateForeignKeys(const entity: TClass);
+begin
+  Execute(nil);
+end;
+
+procedure TForeignKeyCreateExecutor.Execute(const entity: TObject);
 var
   LStmt: IDBStatement;
   LSql: string;
 begin
-  for LSql in FSQLs do
+  for LSql in fSQLs do
   begin
     SQL := LSql;
-    if (SQL = '') then
+    if SQL = '' then
       Exit;
 
     LStmt := Connection.CreateStatement;
@@ -123,7 +116,10 @@ end;
 
 function TForeignKeyCreateExecutor.GetCommand: TDMLCommand;
 begin
-  Result := FCommand;
+  Result := fCommand;
 end;
+
+{$ENDREGION}
+
 
 end.

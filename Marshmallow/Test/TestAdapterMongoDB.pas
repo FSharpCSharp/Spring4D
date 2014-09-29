@@ -1007,7 +1007,7 @@ begin
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
   Key := TProperty<TMongoEntity>.ForName('KEY');
 
-  LKeys := LCriteria.AddOrder(Key.Desc).ToList();
+  LKeys := LCriteria.OrderBy(Key.Desc).ToList();
   CheckEquals(2, LKeys.Count);
   CheckEquals(1000, LKeys.First.Key);
   CheckEquals(999, LKeys.Last.Key);

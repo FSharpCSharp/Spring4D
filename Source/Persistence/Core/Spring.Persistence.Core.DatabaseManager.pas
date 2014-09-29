@@ -32,37 +32,47 @@ uses
   SysUtils,
   Spring.Collections,
   Spring.Persistence.Core.AbstractManager,
-  Spring.Persistence.Core.Interfaces;
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.SQL.Commands.Abstract,
+  Spring.Persistence.SQL.Commands.FKCreator,
+  Spring.Persistence.SQL.Commands.SeqCreator,
+  Spring.Persistence.SQL.Commands.TableCreator;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Responsible for building database structure from annotated entities.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Responsible for building database structure from annotated entities.
+  /// </summary>
   TDatabaseManager = class(TAbstractManager)
   private
-    FEntities: IList<TClass>;
+    fEntities: IList<TClass>;
   protected
-    procedure BuildTables(AEntities: IList<TClass>); virtual;
-    procedure BuildForeignKeys(AEntities: IList<TClass>); virtual;
-    procedure BuildSequences(AEntities: IList<TClass>); virtual;
+    procedure BuildExecutor(const executor: TAbstractCommandExecutor;
+      entityClass: TClass; const connection: IDBConnection);
+    function GetFKCreateExecutor(entityClass: TClass;
+      const connection: IDBConnection): TForeignKeyCreateExecutor;
+    function GetSequenceCreateExecutor(entityClass: TClass;
+      const connection: IDBConnection): TSequenceCreateExecutor;
+    function GetTableCreateExecutor(entityClass: TClass;
+      const connection: IDBConnection): TTableCreateExecutor;
+    procedure BuildTables(const entities: IList<TClass>); virtual;
+    procedure BuildForeignKeys(const entities: IList<TClass>); virtual;
+    procedure BuildSequences(const entities: IList<TClass>); virtual;
   public
-    constructor Create(const AConnection: IDBConnection); override;
+    constructor Create(const connection: IDBConnection); override;
 
     procedure BuildDatabase;
 
-    procedure RegisterEntity(AEntityClass: TClass);
+    procedure RegisterEntity(entityClass: TClass);
     procedure ClearEntities;
 
-    function EntityExists(AEntityClass: TClass): Boolean;
+    function EntityExists(entityClass: TClass): Boolean;
   end;
 
   EODBCException = class(Exception);
 
   TBaseODBC = class(TInterfacedObject, IODBC)
   private
-    FHandle: THandle;
+    fHandle: THandle;
     SQLAllocEnv: function(var phenv: Pointer): SmallInt; stdcall;
     SQLAllocConnect: function(henv: Pointer; var phdbc: Pointer): Smallint; stdcall;
     SQLDataSourcesW: function(henv: Pointer; direction:word; szDSN: PWideChar; cbDSN: Word; var pbDSN: Word;
@@ -82,11 +92,7 @@ uses
   Windows,
   {$ENDIF}
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.SQL.Commands.Abstract,
-  Spring.Persistence.SQL.Commands.FKCreator,
-  Spring.Persistence.SQL.Commands.SeqCreator,
-  Spring.Persistence.SQL.Commands.TableCreator;
+  Spring.Persistence.Mapping.RttiExplorer;
 
 const
   DLL_ODBC_32 = 'ODBC32.DLL';
@@ -97,63 +103,46 @@ const
   SQL_FETCH_NEXT = 1;
   SQL_FETCH_FIRST = 2;
 
-procedure BuildExecutor(AExecutor: TAbstractCommandExecutor; AClass: TClass; AConnection: IDBConnection);
-begin
-  AExecutor.EntityClass := AClass;
-  AExecutor.Connection := AConnection;
-  AExecutor.Build(AClass);
-end;
 
-function GetTableCreateExecutor(AClass: TClass; AConnection: IDBConnection): TTableCreateExecutor;
-begin
-  Result := TTableCreateExecutor.Create;
-  BuildExecutor(Result, AClass, AConnection);
-end;
+{$REGION 'TDatabaseManager'}
 
-function GetFKCreateExecutor(AClass: TClass; AConnection: IDBConnection): TForeignKeyCreateExecutor;
+constructor TDatabaseManager.Create(const connection: IDBConnection);
 begin
-  Result := TForeignKeyCreateExecutor.Create;
-  BuildExecutor(Result, AClass, AConnection);
-end;
-
-function GetSequenceCreateExecutor(AClass: TClass; AConnection: IDBConnection): TSequenceCreateExecutor;
-begin
-  Result := TSequenceCreateExecutor.Create;
-  BuildExecutor(Result, AClass, AConnection);
-end;
-
-{ TDatabaseManager }
-
-constructor TDatabaseManager.Create(const AConnection: IDBConnection);
-begin
-  inherited Create(AConnection);
-  FEntities := TRttiExplorer.GetEntities;
+  inherited Create(connection);
+  fEntities := TRttiExplorer.GetEntities;
 end;
 
 procedure TDatabaseManager.BuildDatabase;
 var
   LTran: IDBTransaction;
 begin
-  if (FEntities.Count < 1) then
+  if fEntities.IsEmpty then
     Exit;
 
   LTran := Connection.BeginTransaction;
 
-  BuildTables(FEntities);
-
-  BuildForeignKeys(FEntities);
-
-  BuildSequences(FEntities);
+  BuildTables(fEntities);
+  BuildForeignKeys(fEntities);
+  BuildSequences(fEntities);
 
   LTran.Commit;
 end;
 
-procedure TDatabaseManager.BuildForeignKeys(AEntities: IList<TClass>);
+procedure TDatabaseManager.BuildExecutor(
+  const executor: TAbstractCommandExecutor; entityClass: TClass;
+  const connection: IDBConnection);
+begin
+  executor.EntityClass := entityClass;
+  executor.Connection := connection;
+  executor.Build(entityClass);
+end;
+
+procedure TDatabaseManager.BuildForeignKeys(const entities: IList<TClass>);
 var
   LFkCreator: TForeignKeyCreateExecutor;
   LEntityClass: TClass;
 begin
-  for LEntityClass in AEntities do
+  for LEntityClass in entities do
   begin
     LFkCreator := GetFKCreateExecutor(LEntityClass, Connection);
     try
@@ -164,12 +153,12 @@ begin
   end;
 end;
 
-procedure TDatabaseManager.BuildSequences(AEntities: IList<TClass>);
+procedure TDatabaseManager.BuildSequences(const entities: IList<TClass>);
 var
   LSequenceCreator: TSequenceCreateExecutor;
   LEntityClass: TClass;
 begin
-  for LEntityClass in AEntities do
+  for LEntityClass in entities do
   begin
     LSequenceCreator := GetSequenceCreateExecutor(LEntityClass, Connection);
     try
@@ -180,12 +169,12 @@ begin
   end;
 end;
 
-procedure TDatabaseManager.BuildTables(AEntities: IList<TClass>);
+procedure TDatabaseManager.BuildTables(const entities: IList<TClass>);
 var
   LTableCreator: TTableCreateExecutor;
   LEntityClass: TClass;
 begin
-  for LEntityClass in AEntities do
+  for LEntityClass in entities do
   begin
     LTableCreator := GetTableCreateExecutor(LEntityClass, Connection);
     try
@@ -198,14 +187,14 @@ end;
 
 procedure TDatabaseManager.ClearEntities;
 begin
-  FEntities.Clear;
+  fEntities.Clear;
 end;
 
-function TDatabaseManager.EntityExists(AEntityClass: TClass): Boolean;
+function TDatabaseManager.EntityExists(entityClass: TClass): Boolean;
 var
   LTableCreator: TTableCreateExecutor;
 begin
-  LTableCreator := GetTableCreateExecutor(AEntityClass, Connection);
+  LTableCreator := GetTableCreateExecutor(entityClass, Connection);
   try
     Result := LTableCreator.TableExists(LTableCreator.Table.Name);
   finally
@@ -213,27 +202,51 @@ begin
   end;
 end;
 
-procedure TDatabaseManager.RegisterEntity(AEntityClass: TClass);
+function TDatabaseManager.GetTableCreateExecutor(entityClass: TClass;
+  const connection: IDBConnection): TTableCreateExecutor;
 begin
-  FEntities.Add(AEntityClass);
+  Result := TTableCreateExecutor.Create;
+  BuildExecutor(Result, entityClass, connection);
 end;
 
-{ TBaseODBC }
+function TDatabaseManager.GetFKCreateExecutor(entityClass: TClass;
+  const connection: IDBConnection): TForeignKeyCreateExecutor;
+begin
+  Result := TForeignKeyCreateExecutor.Create;
+  BuildExecutor(Result, entityClass, connection);
+end;
+
+function TDatabaseManager.GetSequenceCreateExecutor(entityClass: TClass;
+  const connection: IDBConnection): TSequenceCreateExecutor;
+begin
+  Result := TSequenceCreateExecutor.Create;
+  BuildExecutor(Result, entityClass, connection);
+end;
+
+procedure TDatabaseManager.RegisterEntity(entityClass: TClass);
+begin
+  fEntities.Add(entityClass);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBaseODBC'}
 
 constructor TBaseODBC.Create;
 begin
   inherited Create;
-  FHandle := 0;
+  fHandle := 0;
   SQLAllocEnv := nil;
   SQLAllocConnect := nil;
   SQLDataSourcesW := nil;
   {$IFDEF MSWINDOWS}
-  FHandle := LoadLibrary(PChar(DLL_ODBC_32));
-  if FHandle <> 0 then
+  fHandle := LoadLibrary(PChar(DLL_ODBC_32));
+  if fHandle <> 0 then
   begin
-    SQLAllocEnv := GetProcAddress(FHandle, 'SQLAllocEnv');
-    SQLAllocConnect := GetProcAddress(FHandle, 'SQLAllocConnect');
-    SQLDataSourcesW := GetProcAddress(FHandle, 'SQLDataSourcesW');
+    SQLAllocEnv := GetProcAddress(fHandle, 'SQLAllocEnv');
+    SQLAllocConnect := GetProcAddress(fHandle, 'SQLAllocConnect');
+    SQLDataSourcesW := GetProcAddress(fHandle, 'SQLDataSourcesW');
   end;
   {$ENDIF}
 end;
@@ -241,8 +254,8 @@ end;
 destructor TBaseODBC.Destroy;
 begin
   {$IFDEF MSWINDOWS}
-  if FHandle <> 0 then
-    FreeLibrary(FHandle);
+  if fHandle <> 0 then
+    FreeLibrary(fHandle);
   {$ENDIF}
   inherited Destroy;
 end;
@@ -291,5 +304,7 @@ begin
   end;
 end;
 
-end.
+{$ENDREGION}
 
+
+end.

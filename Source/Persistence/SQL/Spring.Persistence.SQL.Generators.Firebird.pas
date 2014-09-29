@@ -36,21 +36,19 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <b>Firebird/Interbase</b> SQL generator.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <b>Firebird/Interbase</b> SQL generator.
+  /// </summary>
   TFirebirdSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage: TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
-    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
-    function GetSQLSequenceCount(const ASequenceName: string): string; override;
-    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
-    function GetSQLTableExists(const ATablename: string): string; override;
+    function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
+    function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
+    function GeneratePagedQuery(const sql: string; limit, offset: Integer): string; override;
+    function GetSQLSequenceCount(const sequenceName: string): string; override;
+    function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
+    function GetSQLTableExists(const tableName: string): string; override;
   end;
 
 implementation
@@ -60,41 +58,45 @@ uses
   SysUtils,
   Spring.Persistence.SQL.Register;
 
-{ TFirebirdSQLGenerator }
 
-function TFirebirdSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
+{$REGION 'TFirebirdSQLGenerator'}
+
+function TFirebirdSQLGenerator.GenerateCreateSequence(
+  const command: TCreateSequenceCommand): string;
 var
   LSequence: SequenceAttribute;
 begin
-  LSequence := ASequence.Sequence;
+  LSequence := command.Sequence;
   Result := '';
-  if ASequence.SequenceExists then
+  if command.SequenceExists then
     Result := Format('DROP SEQUENCE %0:S; ', [LSequence.SequenceName]);
 
   Result := Result + Format('CREATE SEQUENCE %0:S;', [LSequence.SequenceName]);
 end;
 
-function TFirebirdSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+function TFirebirdSQLGenerator.GenerateGetLastInsertId(
+  const identityColumn: ColumnAttribute): string;
 begin
   Result := '';
 end;
 
-function TFirebirdSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+function TFirebirdSQLGenerator.GenerateGetNextSequenceValue(
+  const sequence: SequenceAttribute): string;
 begin
-  Assert(Assigned(ASequence));
-  Result := Format('SELECT NEXT VALUE FOR %0:S FROM RDB$DATABASE;', [ASequence.SequenceName]);
+  Assert(Assigned(sequence));
+  Result := Format('SELECT NEXT VALUE FOR %0:S FROM RDB$DATABASE;', [sequence.SequenceName]);
 end;
 
-function TFirebirdSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
-  AOffset: Integer): string;
+function TFirebirdSQLGenerator.GeneratePagedQuery(const sql: string;
+  limit, offset: Integer): string;
 var
   LSQL: string;
 begin
-  LSQL := ASql;
+  LSQL := sql;
   if EndsStr(';', LSQL) then
     SetLength(LSQL, Length(LSQL)-1);
 
-  Result := LSQL + Format(' ROWS %1:D TO %0:D;', [AOffset + ALimit, AOffset]);
+  Result := LSQL + Format(' ROWS %1:D TO %0:D;', [offset + limit, offset]);
 end;
 
 function TFirebirdSQLGenerator.GetQueryLanguage: TQueryLanguage;
@@ -102,28 +104,32 @@ begin
   Result := qlFirebird;
 end;
 
-function TFirebirdSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+function TFirebirdSQLGenerator.GetSQLDataTypeName(
+  const field: TSQLCreateField): string;
 begin
-  Result := inherited GetSQLDataTypeName(AField);
+  Result := inherited GetSQLDataTypeName(field);
   if StartsText(Result, 'NCHAR') then
     Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET UNICODE_FSS'
   else if StartsText(Result, 'NVARCHAR') then
     Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET UNICODE_FSS';
 end;
 
-function TFirebirdSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;
+function TFirebirdSQLGenerator.GetSQLSequenceCount(const sequenceName: string): string;
 begin
   Result := Format('SELECT COUNT(*) '+
-		'FROM RDB$GENERATORS '+
-		'WHERE (RDB$SYSTEM_FLAG=0) AND (RDB$GENERATOR_NAME = %0:S); ', [QuotedStr(ASequenceName)]);
+    'FROM RDB$GENERATORS '+
+    'WHERE (RDB$SYSTEM_FLAG=0) AND (RDB$GENERATOR_NAME = %0:S); ', [QuotedStr(sequenceName)]);
 end;
 
-function TFirebirdSQLGenerator.GetSQLTableExists(const ATablename: string): string;
+function TFirebirdSQLGenerator.GetSQLTableExists(const tableName: string): string;
 begin
   Result := '';
  { Result := Format('SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = %0:S '
     , [QuotedStr(ATablename)]);}
 end;
+
+{$ENDREGION}
+
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TFirebirdSQLGenerator.Create);

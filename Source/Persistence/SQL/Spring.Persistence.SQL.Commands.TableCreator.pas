@@ -41,22 +41,20 @@ type
   {$ENDREGION}
   TTableCreateExecutor = class(TAbstractCommandExecutor)
   private
-    FCommand: TCreateTableCommand;
-    FTable: TSQLTable;
-    FSQLs: IList<string>;
+    fCommand: TCreateTableCommand;
+    fTable: TSQLTable;
+    fSQLs: IList<string>;
   protected
     function GetCommand: TDMLCommand; override;
   public
     constructor Create; override;
     destructor Destroy; override;
 
-    procedure Build(AClass: TClass); override;
+    procedure Build(entityClass: TClass); override;
+    procedure Execute(const entity: TObject); override;
+    procedure CreateTables(entityClass: TClass);
 
-    procedure Execute(AEntity: TObject); override;
-
-    procedure CreateTables(AEntity: TClass);
-
-    property Table: TSQLTable read FTable;
+    property Table: TSQLTable read fTable;
   end;
 
 implementation
@@ -67,60 +65,57 @@ uses
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes;
 
-{ TTableCreateCommand }
 
-procedure TTableCreateExecutor.Build(AClass: TClass);
-var
-  LAtrTable: TableAttribute;
-  LEntityData: TEntityData;
-begin
-  EntityClass := AClass;
-  LEntityData := TEntityCache.Get(AClass);
-  LAtrTable := LEntityData.EntityTable;
-  if not Assigned(LAtrTable) then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
-
-  FTable.SetFromAttribute(LAtrTable);
-  FCommand.SetCommandFieldsFromColumns(LEntityData.Columns);
-  FCommand.TableExists := TableExists(FTable.Name);
-  if FCommand.TableExists then
-  begin
-    //get current columns from db table
-    FillDbTableColumns(FTable.Name, FCommand.DbColumns);
-  end;
-
-  FSQLs := Generator.GenerateCreateTable(FCommand);
-end;
+{$REGION 'TTableCreateCommand'}
 
 constructor TTableCreateExecutor.Create;
 begin
   inherited Create;
-  FTable := TSQLTable.Create;
-  FCommand := TCreateTableCommand.Create(FTable);
-  FSQLs := nil;
-end;
-
-procedure TTableCreateExecutor.CreateTables(AEntity: TClass);
-begin
-  Execute(nil);
+  fTable := TSQLTable.Create;
+  fCommand := TCreateTableCommand.Create(fTable);
 end;
 
 destructor TTableCreateExecutor.Destroy;
 begin
-  FTable.Free;
-  FCommand.Free;
+  fCommand.Free;
+  fTable.Free;
   inherited Destroy;
 end;
 
-procedure TTableCreateExecutor.Execute(AEntity: TObject);
+procedure TTableCreateExecutor.Build(entityClass: TClass);
+var
+  LAtrTable: TableAttribute;
+  LEntityData: TEntityData;
+begin
+  inherited EntityClass := entityClass;
+  LEntityData := TEntityCache.Get(entityClass);
+  LAtrTable := LEntityData.EntityTable;
+  if not Assigned(LAtrTable) then
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%s"', [entityClass.ClassName]);
+
+  fTable.SetFromAttribute(LAtrTable);
+  fCommand.SetCommandFieldsFromColumns(LEntityData.Columns);
+  fCommand.TableExists := TableExists(fTable.Name);
+  if fCommand.TableExists then
+    FillDbTableColumns(fTable.Name, fCommand.DbColumns);
+
+  fSQLs := Generator.GenerateCreateTable(fCommand);
+end;
+
+procedure TTableCreateExecutor.CreateTables(entityClass: TClass);
+begin
+  Execute(nil);
+end;
+
+procedure TTableCreateExecutor.Execute(const entity: TObject);
 var
   LStmt: IDBStatement;
   LSql: string;
 begin
-  for LSql in FSQLs do
+  for LSql in fSQLs do
   begin
     SQL := LSql;
-    if (SQL = '') then
+    if SQL = '' then
       Continue;
 
     LStmt := Connection.CreateStatement;
@@ -131,7 +126,10 @@ end;
 
 function TTableCreateExecutor.GetCommand: TDMLCommand;
 begin
-  Result := FCommand;
+  Result := fCommand;
 end;
+
+{$ENDREGION}
+
 
 end.

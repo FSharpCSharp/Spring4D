@@ -36,18 +36,16 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <b>PostgreSQL</b> SQL generator.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <b>PostgreSQL</b> SQL generator.
+  /// </summary>
   TPostgreSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage: TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
-    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
+    function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
+    function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
   end;
 
 implementation
@@ -57,29 +55,31 @@ uses
   SysUtils,
   Spring.Persistence.SQL.Register;
 
-{ TPostgreSQLGenerator }
 
-function TPostgreSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
+{$REGION 'TPostgreSQLGenerator'}
+
+function TPostgreSQLGenerator.GenerateCreateSequence(
+  const command: TCreateSequenceCommand): string;
 var
-  LSequence: SequenceAttribute;
+  sequence: SequenceAttribute;
 begin
-  LSequence := ASequence.Sequence;
-  Result := '';
+  sequence := command.Sequence;
 
-  Result := Format('DROP SEQUENCE IF EXISTS %0:S; ', [LSequence.SequenceName]);
-
+  Result := Format('DROP SEQUENCE IF EXISTS %0:S; ', [sequence.SequenceName]);
   Result := Result + Format('CREATE SEQUENCE %0:S INCREMENT %1:D MINVALUE %2:D;',
-    [LSequence.SequenceName, LSequence.Increment, LSequence.InitialValue]);
+    [sequence.SequenceName, sequence.Increment, sequence.InitialValue]);
 end;
 
-function TPostgreSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+function TPostgreSQLGenerator.GenerateGetLastInsertId(
+  const identityColumn: ColumnAttribute): string;
 begin
   Result := '';
 end;
 
-function TPostgreSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+function TPostgreSQLGenerator.GenerateGetNextSequenceValue(
+  const sequence: SequenceAttribute): string;
 begin
-  Result := Format('SELECT nextval(%0:S);', [QuotedStr(ASequence.SequenceName)]);
+  Result := Format('SELECT nextval(%0:S);', [QuotedStr(sequence.SequenceName)]);
 end;
 
 function TPostgreSQLGenerator.GetQueryLanguage: TQueryLanguage;
@@ -87,9 +87,10 @@ begin
   Result := qlPostgreSQL;
 end;
 
-function TPostgreSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+function TPostgreSQLGenerator.GetSQLDataTypeName(
+  const field: TSQLCreateField): string;
 begin
-  Result := inherited GetSQLDataTypeName(AField);
+  Result := inherited GetSQLDataTypeName(field);
   if Result = 'FLOAT' then
     Result := 'DOUBLE PRECISION'
   else if StartsText('NCHAR', Result) then
@@ -101,6 +102,9 @@ begin
   else if Result = 'BIT' then
     Result := 'BOOLEAN';
 end;
+
+{$ENDREGION}
+
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TPostgreSQLGenerator.Create);

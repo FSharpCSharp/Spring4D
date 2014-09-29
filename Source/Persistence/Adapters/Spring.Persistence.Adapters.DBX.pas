@@ -29,58 +29,58 @@ unit Spring.Persistence.Adapters.DBX;
 interface
 
 uses
-  SqlExpr, DB, Spring.Collections, Spring.Persistence.Core.Interfaces
-  , Spring.Persistence.Core.Base, Spring.Persistence.SQL.Params, SysUtils
-  , Spring.Persistence.SQL.Generators.Ansi, DBXCommon, Spring.Persistence.Adapters.FieldCache
-  ;
+  DB,
+  DBXCommon,
+  SqlExpr,
+  SysUtils,
+  Spring.Collections,
+  Spring.Persistence.Adapters.FieldCache,
+  Spring.Persistence.Core.Base,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.SQL.Generators.Ansi,
+  Spring.Persistence.SQL.Params;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents DBX resultset.
-  ///	</summary>
-  {$ENDREGION}
+  EDBXStatementAdapterException = Exception;
+
+  /// <summary>
+  ///   Represents DBX resultset.
+  /// </summary>
   TDBXResultSetAdapter = class(TDriverResultSetAdapter<TSQLQuery>)
   private
-    FFieldCache: IFieldCache;
+    fFieldCache: IFieldCache;
   public
-    constructor Create(const ADataset: TSQLQuery); override;
+    constructor Create(const dataSet: TSQLQuery); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const AFieldName: string): Boolean; override;
-    function GetFieldValue(AIndex: Integer): Variant; overload; override;
-    function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function FieldNameExists(const fieldName: string): Boolean; override;
+    function GetFieldValue(index: Integer): Variant; overload; override;
+    function GetFieldValue(const fieldname: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
-    function GetFieldName(AIndex: Integer): string; override;
+    function GetFieldName(index: Integer): string; override;
   end;
 
-  EDBXStatementAdapterException = Exception;
-
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents DBX statement.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents DBX statement.
+  /// </summary>
   TDBXStatementAdapter = class(TDriverStatementAdapter<TSQLQuery>)
   public
-    constructor Create(const AStatement: TSQLQuery); override;
+    constructor Create(const statement: TSQLQuery); override;
     destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: IList<TDBParam>); overload; override;
+    procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParams(const params: IList<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
+    function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents DBX connection.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents DBX connection.
+  /// </summary>
   TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>)
   public
-    constructor Create(const AConnection: TSQLConnection); override;
+    constructor Create(const connection: TSQLConnection); override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -90,11 +90,9 @@ type
     function GetDriverName: string; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents DBX transaction.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents DBX transaction.
+  /// </summary>
   TDBXTransactionAdapter = class(TDriverTransactionAdapter<TDBXTransaction>)
   protected
     function InTransaction: Boolean; override;
@@ -106,25 +104,23 @@ type
 implementation
 
 uses
-  Spring.Persistence.SQL.Register
-  ,StrUtils
-  ,Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.Consts
-  ;
+  StrUtils,
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Consts,
+  Spring.Persistence.SQL.Register;
 
 type
   EDBXAdapterException = class(Exception);
 
-
 { TDBXResultSetAdapter }
 
-constructor TDBXResultSetAdapter.Create(const ADataset: TSQLQuery);
+constructor TDBXResultSetAdapter.Create(const dataSet: TSQLQuery);
 begin
-  inherited Create(ADataset);
+  inherited Create(dataSet);
   Dataset.DisableControls;
  // Dataset.CursorLocation := clUseServer;
  // Dataset.CursorType := ctOpenForwardOnly;
-  FFieldCache := TFieldCache.Create(ADataset);
+  FFieldCache := TFieldCache.Create(dataSet);
 end;
 
 destructor TDBXResultSetAdapter.Destroy;
@@ -133,9 +129,9 @@ begin
   inherited Destroy;
 end;
 
-function TDBXResultSetAdapter.FieldNameExists(const AFieldName: string): Boolean;
+function TDBXResultSetAdapter.FieldNameExists(const fieldName: string): Boolean;
 begin
-  Result := FFieldCache.FieldNameExists(AFieldName);
+  Result := FFieldCache.FieldNameExists(fieldName);
 end;
 
 function TDBXResultSetAdapter.GetFieldCount: Integer;
@@ -143,19 +139,19 @@ begin
   Result := Dataset.FieldCount;
 end;
 
-function TDBXResultSetAdapter.GetFieldName(AIndex: Integer): string;
+function TDBXResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[AIndex].FieldName;
+  Result := Dataset.Fields[index].FieldName;
 end;
 
-function TDBXResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
+function TDBXResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[AIndex].Value;
+  Result := Dataset.Fields[index].Value;
 end;
 
-function TDBXResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
+function TDBXResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
 begin
-  Result := FFieldCache.GetFieldValue(AFieldname);
+  Result := FFieldCache.GetFieldValue(fieldname);
 end;
 
 function TDBXResultSetAdapter.IsEmpty: Boolean;
@@ -171,9 +167,9 @@ end;
 
 { TDBXStatementAdapter }
 
-constructor TDBXStatementAdapter.Create(const AStatement: TSQLQuery);
+constructor TDBXStatementAdapter.Create(const statement: TSQLQuery);
 begin
-  inherited Create(AStatement);
+  inherited Create(statement);
 end;
 
 destructor TDBXStatementAdapter.Destroy;
@@ -188,7 +184,7 @@ begin
   Result := Statement.ExecSQL;
 end;
 
-function TDBXStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
+function TDBXStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
   LStmt: TSQLQuery;
 begin
@@ -210,36 +206,34 @@ begin
   end;
 end;
 
-procedure TDBXStatementAdapter.SetParams(Params: IList<TDBParam>);
+procedure TDBXStatementAdapter.SetParams(const params: IList<TDBParam>);
 var
   LParam: TDBParam;
   sParamName: string;
 begin
   inherited;
-  for LParam in Params do
+  for LParam in params do
   begin
     sParamName := LParam.Name;
     {TODO -oLinas -cGeneral : dont know if DBX has the same param issue as ADO}
     //strip leading : in param name because DBX does not like them
-    if (LParam.Name <> '') and (StartsStr(':', LParam.Name)) then
-    begin
+    if (LParam.Name <> '') and StartsStr(':', LParam.Name) then
       sParamName := Copy(LParam.Name, 2, Length(LParam.Name));
-    end;
     Statement.Params.ParamValues[sParamName] := LParam.Value;
   end;
 end;
 
-procedure TDBXStatementAdapter.SetSQLCommand(const ACommandText: string);
+procedure TDBXStatementAdapter.SetSQLCommand(const commandText: string);
 begin
   inherited;
-  Statement.SQL.Text := ACommandText;
+  Statement.SQL.Text := commandText;
 end;
 
 { TDBXConnectionAdapter }
 
 function TDBXConnectionAdapter.BeginTransaction: IDBTransaction;
 var
-  LTran: TDBXTransaction;
+  LTransaction: TDBXTransaction;
 begin
   if Connection = nil then
     Exit(nil);
@@ -248,22 +242,20 @@ begin
  // LTran := nil;
  // if not Connection.InTransaction then
  // begin
-  LTran := Connection.BeginTransaction;
+  LTransaction := Connection.BeginTransaction;
 //  end;
-  Result := TDBXTransactionAdapter.Create(LTran);
+  Result := TDBXTransactionAdapter.Create(LTransaction);
 end;
 
 procedure TDBXConnectionAdapter.Connect;
 begin
   if Connection <> nil then
-  begin
     Connection.Connected := True;
-  end;
 end;
 
-constructor TDBXConnectionAdapter.Create(const AConnection: TSQLConnection);
+constructor TDBXConnectionAdapter.Create(const connection: TSQLConnection);
 begin
-  inherited Create(AConnection);
+  inherited Create(connection);
   Connection.LoginPrompt := False;
 end;
 
@@ -306,25 +298,24 @@ end;
 
 procedure TDBXTransactionAdapter.Commit;
 begin
-  if (FTransaction = nil) then
+  if fTransaction = nil then
     Exit;
 
-  Transaction.Connection.CommitFreeAndNil(FTransaction);
+  Transaction.Connection.CommitFreeAndNil(fTransaction);
 end;
 
 function TDBXTransactionAdapter.InTransaction: Boolean;
 begin
-  Result := Assigned(FTransaction);
+  Result := Assigned(fTransaction);
 end;
 
 procedure TDBXTransactionAdapter.Rollback;
 begin
-  if Assigned(FTransaction) then
-    Transaction.Connection.RollbackFreeAndNil(FTransaction);
+  if Assigned(fTransaction) then
+    Transaction.Connection.RollbackFreeAndNil(fTransaction);
 end;
 
 initialization
   TConnectionFactory.RegisterConnection<TDBXConnectionAdapter>(dtDBX);
-
 
 end.

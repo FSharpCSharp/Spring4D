@@ -24,53 +24,56 @@
 
 unit Spring.Persistence.SQL.Commands.Abstract;
 
+{$I Spring.inc}
+
 interface
 
 uses
   Spring.Collections,
+  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Params,
-  Spring.Persistence.SQL.Types,
-  Spring.Persistence.Core.EntityCache
-  ;
+  Spring.Persistence.SQL.Types;
 
 type
   TAbstractCommandExecutor = class
   private
-    FConnection: IDBConnection;
-    FGenerator: ISQLGenerator;
-    FClass: TClass;
-    FSQL: string;
-    FEntityData: TEntityData;
-    FParams: IList<TDBParam>;
-    procedure SetConnection(const Value: IDBConnection);
+    fConnection: IDBConnection;
+    fGenerator: ISQLGenerator;
+    fEntityClass: TClass;
+    fSQL: string;
+    fEntityData: TEntityData;
+    fParams: IList<TDBParam>;
+    procedure SetConnection(const value: IDBConnection);
   protected
-    function DoCreateParam(AColumn: ColumnAttribute; AValue: Variant): TDBParam; virtual;
-    function CanUpdateParamFieldType(const AValue: Variant): Boolean; virtual;
-    function CreateParam(AEntity: TObject; AColumn: ColumnAttribute): TDBParam; overload; virtual;
-    function CreateParam(AEntity: TObject; AForeignColumn: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
+    function DoCreateParam(const attribute: ColumnAttribute;
+      const value: Variant): TDBParam; virtual;
+    function CanUpdateParamFieldType(const value: Variant): Boolean; virtual;
+    function CreateParam(const entity: TObject;
+      const attribute: ColumnAttribute): TDBParam; overload; virtual;
+    function CreateParam(const entity: TObject;
+      const attribute: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
     function GetCommand: TDMLCommand; virtual; abstract;
   public
     constructor Create; virtual;
-    destructor Destroy; override;
 
-    function TableExists(const ATablename: string): Boolean; virtual;
-    procedure FillDbTableColumns(const ATablename: string; AColumns: IList<string>); virtual;
+    function TableExists(const tableName: string): Boolean; virtual;
+    procedure FillDbTableColumns(const tableName: string; const columns: IList<string>); virtual;
 
-    procedure Execute(AEntity: TObject); virtual; abstract;
-    procedure Build(AClass: TClass); virtual;
-    procedure BuildParams(AEntity: TObject); virtual;
+    procedure Execute(const entity: TObject); virtual; abstract;
+    procedure Build(entityClass: TClass); virtual;
+    procedure BuildParams(const entity: TObject); virtual;
 
     property Command: TDMLCommand read GetCommand;
-    property Connection: IDBConnection read FConnection write SetConnection;
-    property EntityData: TEntityData read FEntityData write FEntityData;
-    property Generator: ISQLGenerator read FGenerator;
-    property EntityClass: TClass read FClass write FClass;
-    property SQLParameters: IList<TDBParam> read FParams;
-    property SQL: string read FSQL write FSQL;
+    property Connection: IDBConnection read fConnection write SetConnection;
+    property EntityData: TEntityData read fEntityData write fEntityData;
+    property Generator: ISQLGenerator read fGenerator;
+    property EntityClass: TClass read fEntityClass write fEntityClass;
+    property SQLParameters: IList<TDBParam> read fParams;
+    property SQL: string read fSQL write fSQL;
   end;
 
 implementation
@@ -84,43 +87,43 @@ uses
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Register;
 
-{ TAbstractCommandExecutor }
 
-procedure TAbstractCommandExecutor.Build(AClass: TClass);
-begin
-  FEntityData := TEntityCache.Get(AClass);
-  EntityClass := AClass;
-end;
-
-procedure TAbstractCommandExecutor.BuildParams(AEntity: TObject);
-begin
-  FParams.Clear;
-  if Assigned(Command) then
-    Command.Entity := AEntity;
-end;
-
-function TAbstractCommandExecutor.CanUpdateParamFieldType(const AValue: Variant): Boolean;
-begin
-  Result := (VarIsNull(AValue) or VarIsEmpty(AValue)) and (Connection.GetQueryLanguage = qlOracle);
-end;
+{$REGION 'TAbstractCommandExecutor'}
 
 constructor TAbstractCommandExecutor.Create;
 begin
   inherited Create;
-  FGenerator := nil; //TSQLGeneratorRegister.GetCurrentGenerator;
-  FParams := TCollections.CreateObjectList<TDBParam>;
+  fParams := TCollections.CreateObjectList<TDBParam>;
 end;
 
-function TAbstractCommandExecutor.CreateParam(AEntity: TObject;
-  AForeignColumn: ForeignJoinColumnAttribute): TDBParam;
+procedure TAbstractCommandExecutor.Build(entityClass: TClass);
+begin
+  fEntityData := TEntityCache.Get(entityClass);
+  fEntityClass := entityClass;
+end;
+
+procedure TAbstractCommandExecutor.BuildParams(const entity: TObject);
+begin
+  fParams.Clear;
+  if Assigned(Command) then
+    Command.Entity := entity;
+end;
+
+function TAbstractCommandExecutor.CanUpdateParamFieldType(const value: Variant): Boolean;
+begin
+  Result := (VarIsNull(value) or VarIsEmpty(value)) and (Connection.GetQueryLanguage = qlOracle);
+end;
+
+function TAbstractCommandExecutor.CreateParam(const entity: TObject;
+  const attribute: ForeignJoinColumnAttribute): TDBParam;
 var
   LVal, LRes: TValue;
   bFree: Boolean;
 begin
   bFree := False;
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(AForeignColumn.Name);
-  LVal := TRttiExplorer.GetMemberValue(AEntity, AForeignColumn.ReferencedColumnName);
+  Result.Name := Command.GetExistingParameterName(attribute.Name);
+  LVal := TRttiExplorer.GetMemberValue(entity, attribute.ReferencedColumnName);
   //convert/serialize objects to stream
   if LVal.IsObject then
   begin
@@ -134,7 +137,7 @@ begin
   if CanUpdateParamFieldType(Result.Value) then
   begin
     Result.SetParamTypeFromTypeInfo
-      ( TRttiExplorer.GetMemberTypeInfo(AEntity.ClassType, AForeignColumn.ReferencedColumnName)
+      ( TRttiExplorer.GetMemberTypeInfo(entity.ClassType, attribute.ReferencedColumnName)
       );
   end;
 
@@ -144,78 +147,64 @@ begin
   end;
 end;
 
-function TAbstractCommandExecutor.CreateParam(AEntity: TObject; AColumn: ColumnAttribute): TDBParam;
+function TAbstractCommandExecutor.CreateParam(const entity: TObject;
+  const attribute: ColumnAttribute): TDBParam;
 var
   LVal, LRes: TValue;
   bFree: Boolean;
 begin
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(AColumn.Name);
-  LVal := TRttiExplorer.GetMemberValueDeep(AEntity, AColumn.ClassMemberName);
+  Result.Name := Command.GetExistingParameterName(attribute.Name);
+  LVal := TRttiExplorer.GetMemberValueDeep(entity, attribute.ClassMemberName);
   //convert/serialize objects to stream. If value is nullable or lazy get it's real value
-  if LVal.IsObject then
-  begin
-    if LVal.TryConvert(TypeInfo(TStream), LRes, bFree) then
-    begin
-      LVal := LRes.AsObject;
-    end;
-  end;
+  if LVal.IsObject and LVal.TryConvert(TypeInfo(TStream), LRes, bFree) then
+    LVal := LRes.AsObject;
 
   Result.Value := TUtils.AsVariant(LVal);
   if CanUpdateParamFieldType(Result.Value) then
-  begin
-    Result.SetParamTypeFromTypeInfo(TRttiExplorer.GetMemberTypeInfo(AColumn.BaseEntityClass, AColumn.ClassMemberName));
-  end;
+    Result.SetParamTypeFromTypeInfo(TRttiExplorer.GetMemberTypeInfo(
+      attribute.BaseEntityClass, attribute.ClassMemberName));
 
   if bFree then
-  begin
     FreeValueObject(LVal);
-  end;
 end;
 
-destructor TAbstractCommandExecutor.Destroy;
-begin
-  FConnection := nil;
-  FGenerator := nil;
-  inherited Destroy;
-end;
-
-function TAbstractCommandExecutor.DoCreateParam(AColumn: ColumnAttribute; AValue: Variant): TDBParam;
+function TAbstractCommandExecutor.DoCreateParam(
+  const attribute: ColumnAttribute; const value: Variant): TDBParam;
 begin
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(AColumn.Name);
-  Result.Value := AValue;
+  Result.Name := Command.GetExistingParameterName(attribute.Name);
+  Result.Value := value;
 end;
 
-procedure TAbstractCommandExecutor.FillDbTableColumns(const ATablename: string; AColumns: IList<string>);
+procedure TAbstractCommandExecutor.FillDbTableColumns(const tableName: string;
+  const columns: IList<string>);
 var
   LSqlTableCount: string;
   LStmt: IDBStatement;
   LResults: IDBResultset;
   i: Integer;
 begin
-  LSqlTableCount := Generator.GetTableColumns(ATablename);
+  LSqlTableCount := Generator.GetTableColumns(tableName);
   if (LSqlTableCount <> '') then
   begin
     LStmt := Connection.CreateStatement;
     LStmt.SetSQLCommand(LSqlTableCount);
     LResults := LStmt.ExecuteQuery;
-    AColumns.Clear;
+    columns.Clear;
     for i := 0 to LResults.GetFieldCount - 1 do
-    begin
-      AColumns.Add(LResults.GetFieldName(i));
-    end;
+      columns.Add(LResults.GetFieldName(i));
   end;
 end;
 
-procedure TAbstractCommandExecutor.SetConnection(const Value: IDBConnection);
+procedure TAbstractCommandExecutor.SetConnection(const value: IDBConnection);
 begin
-  FConnection := Value;
-  if Assigned(FConnection) then
-    FGenerator := TSQLGeneratorRegister.GetGenerator(FConnection.GetQueryLanguage);
+  fConnection := value;
+  if Assigned(fConnection) then
+    fGenerator := TSQLGeneratorRegister.GetGenerator(fConnection.GetQueryLanguage);
 end;
 
-function TAbstractCommandExecutor.TableExists(const ATablename: string): Boolean;
+function TAbstractCommandExecutor.TableExists(const tableName: string): Boolean;
 var
   LSqlTableCount, LSqlTableExists: string;
   LStmt: IDBStatement;
@@ -223,9 +212,9 @@ var
 begin
   Result := False;
   LSqlTableCount := '';
-  LSqlTableExists := Generator.GetSQLTableExists(ATablename);
-  if (LSqlTableExists = '') then
-    LSqlTableCount := Generator.GetSQLTableCount(ATablename);
+  LSqlTableExists := Generator.GetSQLTableExists(tableName);
+  if LSqlTableExists = '' then
+    LSqlTableCount := Generator.GetSQLTableCount(tableName);
   if (LSqlTableCount <> '') or (LSqlTableExists <> '') then
   begin
     LStmt := Connection.CreateStatement;
@@ -251,6 +240,9 @@ begin
     end;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.
 

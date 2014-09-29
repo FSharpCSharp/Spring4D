@@ -505,7 +505,7 @@ var
 begin
   LCompanies := TCollections.CreateList<TCompany>(True);
   FManager.Fetch<TCompany>('SELECT * FROM VIKARINA.IMONES;', [], LCompanies);
-  CheckTrue(LCompanies.Count > 0);
+  CheckTrue(LCompanies.Any);
   LCompany := LCompanies.First;
   CheckEquals(1, LCompany.ID);
 end;
@@ -522,7 +522,7 @@ begin
   sw := TStopwatch.StartNew;
   FManager.Fetch<TWorker>('SELECT * FROM VIKARINA.DARSDLA WHERE IMONE = :0 ORDER BY 1;', [1], LWorkers);
   sw.Stop;
-  CheckTrue(LWorkers.Count > 0);
+  CheckTrue(LWorkers.Any);
   LWorker := LWorkers.First;
 
   LWorker2 := LWorkers.Where(function(const value: TWorker): Boolean begin Result := value.EndDate.HasValue; end).First;

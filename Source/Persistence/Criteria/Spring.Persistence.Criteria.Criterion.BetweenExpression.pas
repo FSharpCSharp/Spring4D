@@ -41,74 +41,82 @@ uses
 type
   TBetweenExpression = class(TAbstractCriterion)
   private
-    FPropertyName: string;
-    FLowValue: TValue;
-    FOperator: TWhereOperator;
-    FHighValue: TValue;
-  public
-    constructor Create(const APropertyName: string; const ALowValue, AHighValue: TValue; const AOperator: TWhereOperator); virtual;
-  public
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    fPropertyName: string;
+    fLowValue: TValue;
+    fOperator: TWhereOperator;
+    fHighValue: TValue;
+  protected
     function GetWhereOperator: TWhereOperator; override;
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TDMLCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; override;
+  public
+    constructor Create(const propertyName: string;
+      const lowValue, highValue: TValue; whereOperator: TWhereOperator); virtual;
 
-    property PropertyName: string read FPropertyName;
-    property LowValue: TValue read FLowValue;
-    property HighValue: TValue read FHighValue write FHighValue;
+    property PropertyName: string read fPropertyName;
+    property LowValue: TValue read fLowValue;
+    property HighValue: TValue read fHighValue write fHighValue;
   end;
 
 implementation
 
-{ TBetweenExpression }
 
-constructor TBetweenExpression.Create(const APropertyName: string; const ALowValue,
-  AHighValue: TValue; const AOperator: TWhereOperator);
+{$REGION 'TBetweenExpression'}
+
+constructor TBetweenExpression.Create(const propertyName: string;
+  const lowValue, highValue: TValue; whereOperator: TWhereOperator);
 begin
   inherited Create;
-  FPropertyName := APropertyName;
-  FLowValue := ALowValue;
-  FHighValue := AHighValue;
-  FOperator := AOperator;
+  fPropertyName := propertyName;
+  fLowValue := lowValue;
+  fHighValue := highValue;
+  fOperator := whereOperator;
 end;
 
 function TBetweenExpression.GetWhereOperator: TWhereOperator;
 begin
-  Result := FOperator;
+  Result := fOperator;
 end;
 
-function TBetweenExpression.ToSqlString(AParams: IList<TDBParam>;
-  ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TBetweenExpression.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 var
-  LParam: TDBParam;
-  LWhere: TSQLWhereField;
-  LParamName, LParamName2: string;
+  param: TDBParam;
+  whereField: TSQLWhereField;
+  paramName, paramName2: string;
 begin
-  Assert(ACommand is TWhereCommand);
+  Assert(command is TWhereCommand);
   inherited;
-  LParamName := ACommand.GetAndIncParameterName(FPropertyName);
-  LParamName2 := ACommand.GetAndIncParameterName(FPropertyName);
-  LWhere := TSQLWhereField.Create(FPropertyName, GetCriterionTable(ACommand) );
-  LWhere.MatchMode := GetMatchMode;
-  LWhere.WhereOperator := GetWhereOperator;
-  LWhere.ParamName := LParamName;
-  LWhere.ParamName2 := LParamName2;
+  paramName := command.GetAndIncParameterName(fPropertyName);
+  paramName2 := command.GetAndIncParameterName(fPropertyName);
+  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command) );
+  whereField.MatchMode := GetMatchMode;
+  whereField.WhereOperator := GetWhereOperator;
+  whereField.ParamName := paramName;
+  whereField.ParamName2 := paramName2;
 
-  Result := LWhere.ToSQLString(AGenerator.GetEscapeFieldnameChar); {TODO -oLinas -cGeneral : fix escape fields}
+  Result := whereField.ToSQLString(generator.GetEscapeFieldnameChar); {TODO -oLinas -cGeneral : fix escape fields}
 
-  if AAddToCommand then
-    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  if addToCommand then
+    TWhereCommand(command).WhereFields.Add(whereField)
   else
-    LWhere.Free;
+    whereField.Free;
 
   //1st parameter Low
-  LParam := TDBParam.Create;
-  LParam.SetFromTValue(FLowValue);
-  LParam.Name := LParamName;
-  AParams.Add(LParam);
+  param := TDBParam.Create;
+  param.SetFromTValue(fLowValue);
+  param.Name := paramName;
+  params.Add(param);
   //2nd parameter High
-  LParam := TDBParam.Create;
-  LParam.SetFromTValue(FHighValue);
-  LParam.Name := LParamName2;
-  AParams.Add(LParam);
+  param := TDBParam.Create;
+  param.SetFromTValue(fHighValue);
+  param.Name := paramName2;
+  params.Add(param);
 end;
+
+{$ENDREGION}
+
 
 end.

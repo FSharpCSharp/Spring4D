@@ -38,37 +38,35 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <c>select</c> executor. Responsible for building and
-  ///	  executing <c>select</c> statements.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>select</c> executor. Responsible for building and
+  ///   executing <c>select</c> statements.
+  /// </summary>
   TSelectExecutor = class(TAbstractCommandExecutor)
   private
-    FTable: TSQLTable;
-    FCommand: TSelectCommand;
-    FColumns: IList<ColumnAttribute>;
-    FID: TValue;
-    FLazyColumn: ColumnAttribute;
-    FSelectEntityClassType: TClass;
+    fTable: TSQLTable;
+    fCommand: TSelectCommand;
+    fColumns: IList<ColumnAttribute>;
+    fID: TValue;
+    fLazyColumn: ColumnAttribute;
+    fSelectEntityClass: TClass;
   protected
     function GetCommand: TDMLCommand; override;
   public
     constructor Create; override;
     destructor Destroy; override;
 
-    procedure Execute(AEntity: TObject); override;
-    procedure DoExecute(AEntity: TObject); virtual;
-    procedure Build(AClass: TClass); override;
-    procedure BuildParams(AEntity: TObject); override;
+    procedure Execute(const entity: TObject); override;
+    procedure DoExecute(const entity: TObject); virtual;
+    procedure Build(entityClass: TClass); override;
+    procedure BuildParams(const entity: TObject); override;
 
-    function Select(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
-    function SelectAll(AEntityClassType: TClass): IDBResultset;
+    function Select(const entity: TObject; selectEntityClass: TClass): IDBResultset;
+    function SelectAll(selectEntityClass: TClass): IDBResultset;
 
-    property Command: TSelectCommand read FCommand;
-    property ID: TValue read FID write FID;
-    property LazyColumn: ColumnAttribute read FLazyColumn write FLazyColumn;
+    property Command: TSelectCommand read fCommand;
+    property ID: TValue read fID write fID;
+    property LazyColumn: ColumnAttribute read fLazyColumn write fLazyColumn;
   end;
 
 implementation
@@ -80,132 +78,131 @@ uses
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Params;
 
-{ TSelectCommand }
 
-procedure TSelectExecutor.Build(AClass: TClass);
-begin
-  inherited Build(AClass);
-  if not EntityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
-
-  FTable.SetFromAttribute(EntityData.EntityTable);
-  FColumns.Clear;
-  FColumns.AddRange(EntityData.Columns);
-
-  FCommand.PrimaryKeyColumn := EntityData.PrimaryKeyColumn;
-  FCommand.SetCommandFieldsFromColumns(FColumns);
-  FCommand.SetAssociations(EntityClass);
-end;
-
-procedure TSelectExecutor.BuildParams(AEntity: TObject);
-var
-  LParam: TDBParam;
-begin
-  inherited BuildParams(AEntity);
-
-  if Assigned(FCommand.ForeignColumn) then
-  begin
-    LParam := CreateParam(AEntity, FCommand.ForeignColumn);
-    SQLParameters.Add(LParam);
-  end
-  else if Assigned(FCommand.PrimaryKeyColumn) then
-  begin
-    if AEntity = nil then
-      LParam := DoCreateParam(FCommand.PrimaryKeyColumn, TUtils.AsVariant(FID))
-    else
-      LParam := CreateParam(AEntity, FCommand.PrimaryKeyColumn);
-    SQLParameters.Add(LParam);
-  end;
-end;
+{$REGION 'TSelectCommand'}
 
 constructor TSelectExecutor.Create;
 begin
   inherited Create;
-  FTable := TSQLTable.Create;
-  FColumns := TCollections.CreateList<ColumnAttribute>;
-  FCommand := TSelectCommand.Create(FTable);
-  FLazyColumn := nil;
+  fColumns := TCollections.CreateList<ColumnAttribute>;
+  fTable := TSQLTable.Create;
+  fCommand := TSelectCommand.Create(fTable);
 end;
 
 destructor TSelectExecutor.Destroy;
 begin
-  FTable.Free;
-  FCommand.Free;
+  fCommand.Free;
+  fTable.Free;
   inherited Destroy;
 end;
 
-procedure TSelectExecutor.DoExecute(AEntity: TObject);
+procedure TSelectExecutor.Build(entityClass: TClass);
+begin
+  inherited Build(entityClass);
+  if not EntityData.IsTableEntity then
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
+
+  fTable.SetFromAttribute(EntityData.EntityTable);
+  fColumns.Clear;
+  fColumns.AddRange(EntityData.Columns);
+
+  fCommand.PrimaryKeyColumn := EntityData.PrimaryKeyColumn;
+  fCommand.SetCommandFieldsFromColumns(fColumns);
+  fCommand.SetAssociations(entityClass);
+end;
+
+procedure TSelectExecutor.BuildParams(const entity: TObject);
+var
+  LParam: TDBParam;
+begin
+  inherited BuildParams(entity);
+
+  if Assigned(fCommand.ForeignColumn) then
+  begin
+    LParam := CreateParam(entity, fCommand.ForeignColumn);
+    SQLParameters.Add(LParam);
+  end
+  else if Assigned(fCommand.PrimaryKeyColumn) then
+  begin
+    if entity = nil then
+      LParam := DoCreateParam(fCommand.PrimaryKeyColumn, TUtils.AsVariant(fID))
+    else
+      LParam := CreateParam(entity, fCommand.PrimaryKeyColumn);
+    SQLParameters.Add(LParam);
+  end;
+end;
+
+procedure TSelectExecutor.DoExecute(const entity: TObject);
 var
   LSelects: IList<TSQLSelectField>;
 begin
   //add where fields if needed
-  FCommand.WhereFields.Clear;
+  fCommand.WhereFields.Clear;
   {DONE -oLinas -cGeneral : Must know for what column to set where condition field and value. Setting always for primary key is not good for foreign key tables}
    //AEntity - base table class type
    //EntityClass - can be foreign table class type
-  if EntityClass = FSelectEntityClassType then
-  begin
-    FCommand.SetFromPrimaryColumn;  //select from the same as base table
-  end
+  if EntityClass = fSelectEntityClass then
+    fCommand.SetFromPrimaryColumn  //select from the same as base table
   else
-  begin
-    //get foreign column name and compare it to the base table primary key column name
-    FCommand.SetFromForeignColumn(FSelectEntityClassType, EntityClass);
-  end;
+    fCommand.SetFromForeignColumn(fSelectEntityClass, EntityClass);
 
-  if Assigned(FLazyColumn) then
+  if Assigned(fLazyColumn) then
   begin
     LSelects := TCollections.CreateList<TSQLSelectField>;
-    LSelects.AddRange(FCommand.SelectFields);
-    (FCommand.SelectFields as ICollectionOwnership).OwnsObjects := False;
-    FCommand.SelectFields.Clear;
-    FCommand.SelectFields.Add(TSQLSelectField.Create(FLazyColumn.Name, FTable));
-    SQL := Generator.GenerateSelect(FCommand);
-    (FCommand.SelectFields as ICollectionOwnership).OwnsObjects := True;
-    FCommand.SelectFields.Clear;
-    FCommand.SelectFields.AddRange(LSelects);
+    LSelects.AddRange(fCommand.SelectFields);
+    (fCommand.SelectFields as ICollectionOwnership).OwnsObjects := False;
+    fCommand.SelectFields.Clear;
+    fCommand.SelectFields.Add(TSQLSelectField.Create(fLazyColumn.Name, fTable));
+    SQL := Generator.GenerateSelect(fCommand);
+    (fCommand.SelectFields as ICollectionOwnership).OwnsObjects := True;
+    fCommand.SelectFields.Clear;
+    fCommand.SelectFields.AddRange(LSelects);
   end
   else
-    SQL := Generator.GenerateSelect(FCommand);
+    SQL := Generator.GenerateSelect(fCommand);
 end;
 
-procedure TSelectExecutor.Execute(AEntity: TObject);
+procedure TSelectExecutor.Execute(const entity: TObject);
 begin
-  //do nothing
+  // do nothing
 end;
 
 function TSelectExecutor.GetCommand: TDMLCommand;
 begin
-  Result := FCommand;
+  Result := fCommand;
 end;
 
-function TSelectExecutor.Select(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
+function TSelectExecutor.Select(const entity: TObject;
+  selectEntityClass: TClass): IDBResultset;
 var
   LStmt: IDBStatement;
 begin
-  FSelectEntityClassType := AEntityClassType;
-  DoExecute(AEntity);
+  fSelectEntityClass := selectEntityClass;
+  DoExecute(entity);
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
 
-  BuildParams(AEntity);
-  if SQLParameters.Count > 0 then
+  BuildParams(entity);
+  if SQLParameters.Any then
     LStmt.SetParams(SQLParameters);
 
   Result := LStmt.ExecuteQuery;
 end;
 
-function TSelectExecutor.SelectAll(AEntityClassType: TClass): IDBResultset;
+function TSelectExecutor.SelectAll(selectEntityClass: TClass): IDBResultSet;
 var
   LStmt: IDBStatement;
 begin
-  FSelectEntityClassType := AEntityClassType;
-  FCommand.WhereFields.Clear;
-  SQL := Generator.GenerateSelect(FCommand);
+  fSelectEntityClass := selectEntityClass;
+  fCommand.WhereFields.Clear;
+  SQL := Generator.GenerateSelect(fCommand);
 
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
   Result := LStmt.ExecuteQuery;
 end;
+
+{$ENDREGION}
+
 
 end.

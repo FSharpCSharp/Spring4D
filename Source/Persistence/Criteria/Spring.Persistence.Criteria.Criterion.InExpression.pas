@@ -41,13 +41,15 @@ uses
 type
   TInExpression<T> = class(TSimpleExpression)
   private
-    FValues: TArray<T>;
-  protected
+    fValues: TArray<T>;
     function ValuesToSeparatedString: string;
+  protected
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TDMLCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; override;
   public
-    constructor Create(const APropertyName: string; const AValues: TArray<T>; AOperator: TWhereOperator); reintroduce; overload;
-
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    constructor Create(const propertyName: string; const values: TArray<T>;
+      whereOperator: TWhereOperator); reintroduce; overload;
   end;
 
 implementation
@@ -56,60 +58,68 @@ uses
   SysUtils,
   TypInfo;
 
-{ TInExpression<T> }
 
-constructor TInExpression<T>.Create(const APropertyName: string; const AValues: TArray<T>;
-  AOperator: TWhereOperator);
+{$REGION 'TInExpression<T>'}
+
+constructor TInExpression<T>.Create(const propertyName: string;
+  const values: TArray<T>; whereOperator: TWhereOperator);
 begin
-  inherited Create(APropertyName, TValue.Empty, AOperator);
-  FValues := AValues;
+  inherited Create(propertyName, TValue.Empty, whereOperator);
+  fValues := values;
 end;
 
-function TInExpression<T>.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TInExpression<T>.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 var
-  LWhere: TSQLWhereField;
+  whereField: TSQLWhereField;
 begin
-  Assert(ACommand is TWhereCommand);
+  Assert(command is TWhereCommand);
 
   Result := Format('%S %S (%S)',
     [PropertyName, WhereOpNames[GetWhereOperator], ValuesToSeparatedString]);
 
-  LWhere := TSQLWhereField.Create(Result, GetCriterionTable(ACommand));
-  LWhere.MatchMode := GetMatchMode;
-  LWhere.WhereOperator := GetWhereOperator;
+  whereField := TSQLWhereField.Create(Result, GetCriterionTable(command));
+  whereField.MatchMode := GetMatchMode;
+  whereField.WhereOperator := GetWhereOperator;
 
-  if AAddToCommand then
-    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  if addToCommand then
+    TWhereCommand(command).WhereFields.Add(whereField)
   else
-    LWhere.Free;
+    whereField.Free;
 end;
 
 function TInExpression<T>.ValuesToSeparatedString: string;
 var
-  LCurrent: T;
-  i: Integer;
-  LValue: TValue;
-  LStringValue: string;
+  isFirst: Boolean;
+  item: T;
+  value: TValue;
+  s: string;
 begin
   Result := 'NULL';
-  i := 0;
-  for LCurrent in FValues do
+  isFirst := True;
+  for item in fValues do
   begin
-    if i = 0 then
-      Result := ''
+    if isFirst then
+    begin
+      Result := '';
+      isFirst := False;
+    end
     else
       Result := Result + ',';
 
-    LValue := TValue.From<T>(LCurrent);
-    case LValue.Kind of
+    value := TValue.From<T>(item);
+    case value.Kind of
       tkChar, tkWChar, tkLString, tkWString, tkUString, tkString:
-        LStringValue := QuotedStr(LValue.AsString)
-      else
-        LStringValue := LValue.ToString;
+        s := QuotedStr(value.AsString)
+    else
+      s := value.ToString;
     end;
-    Result := Result + LStringValue;
-    Inc(i);
+    Result := Result + s;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

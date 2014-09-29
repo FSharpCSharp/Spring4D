@@ -29,13 +29,17 @@ unit Spring.Persistence.Adapters.Oracle;
 interface
 
 uses
-  Spring.Persistence.Adapters.ADO, SysUtils, Spring.Persistence.Core.Interfaces
-  , Spring.Persistence.SQL.Params;
+  SysUtils,
+  Spring.Persistence.Adapters.ADO,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.SQL.Params;
 
 type
+  EOracleStatementAdapterException = Exception;
+
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Represents Oracle resultset.
+  ///	  Represents Oracle resultset.
   ///	</summary>
   {$ENDREGION}
   TOracleResultsetAdapter = class(TADOResultSetAdapter);
@@ -47,10 +51,9 @@ type
   {$ENDREGION}
   TOracleStatementAdapter = class(TADOStatementAdapter)
   public
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
-    procedure SetParam(ADBParam: TDBParam); override;
+    function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
+    procedure SetParam(const param: TDBParam); override;
   end;
-
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -75,26 +78,22 @@ type
     procedure Rollback; override;
   end;
 
-  EOracleStatementAdapterException = Exception;
-
 implementation
 
-
 uses
-  Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.Consts
-  ,StrUtils
-  ,Variants
   {$IFDEF MSWINDOWS}
-  ,ADODB
+  ADODB,
   {$ENDIF}
-  ;
+  StrUtils,
+  Variants,
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Consts;
 
 { TOracleConnectionAdapter }
 
 function TOracleConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
-  if (Connection = nil) then
+  if Connection = nil then
     Exit(nil);
 
   Connection.Connected := True;
@@ -130,39 +129,36 @@ end;
 
 { TOracleStatementAdapter }
 
-function TOracleStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
+function TOracleStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 begin
-  Result := inherited ExecuteQuery(AServerSideCursor);
+  Result := inherited ExecuteQuery(serverSideCursor);
 end;
 
-
-procedure TOracleStatementAdapter.SetParam(ADBParam: TDBParam);
+procedure TOracleStatementAdapter.SetParam(const param: TDBParam);
 var
-  sParamName: string;
+  paramName: string;
 begin
-  sParamName := ADBParam.Name;
+  paramName := param.Name;
   //strip leading : in param name because ADO does not like them
-  if (ADBParam.Name <> '') and (StartsStr(':', ADBParam.Name)) then
-  begin
-    sParamName := Copy(ADBParam.Name, 2, Length(ADBParam.Name));
-  end;
+  if (param.Name <> '') and StartsStr(':', param.Name) then
+    paramName := Copy(param.Name, 2, Length(param.Name));
 
-  if VarIsEmpty(ADBParam.Value) or VarIsNull(ADBParam.Value) then
+  if VarIsEmpty(param.Value) or VarIsNull(param.Value) then
   begin
     //if we set param value to Null, we must provide correct field type to Oracle, otherwise it will raise an error
-    Statement.Parameters.ParamByName(sParamName).Value := Null;
-    ADBParam.SetParamTypeFromTypeInfo(ADBParam.TypeInfo);
-    Statement.Parameters.ParamByName(sParamName).DataType := ADBParam.ParamType;
+    Statement.Parameters.ParamByName(paramName).Value := Null;
+    param.SetParamTypeFromTypeInfo(param.TypeInfo);
+    Statement.Parameters.ParamByName(paramName).DataType := param.ParamType;
   end
   else
-    Statement.Parameters.ParamValues[sParamName] := ADBParam.Value;
+    Statement.Parameters.ParamValues[paramName] := param.Value;
 end;
 
 { TOracleTransactionAdapter }
 
 procedure TOracleTransactionAdapter.Commit;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.Execute('COMMIT');
@@ -170,7 +166,7 @@ end;
 
 procedure TOracleTransactionAdapter.Rollback;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.Execute(SQL_ROLLBACK_SAVEPOINT + TransactionName);

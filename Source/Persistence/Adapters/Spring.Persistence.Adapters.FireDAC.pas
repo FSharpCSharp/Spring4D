@@ -29,11 +29,7 @@ unit Spring.Persistence.Adapters.FireDAC;
 interface
 
 uses
-  Spring.Persistence.Core.Base,
-  Spring.Persistence.Core.Interfaces,
   DB,
-  SysUtils,
-
   FireDAC.Comp.Client,
   FireDAC.Comp.DataSet,
   FireDAC.DApt,
@@ -49,44 +45,45 @@ uses
   FireDAC.Stan.Param,
   FireDAC.Stan.Pool,
   FireDAC.UI.Intf,
-
-  Spring.Persistence.Adapters.FieldCache,
-  Spring.Persistence.Mapping.Attributes,
+  SysUtils,
   Spring.Collections,
+  Spring.Persistence.Adapters.FieldCache,
+  Spring.Persistence.Core.Base,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Params;
 
 type
   TFireDACResultSetAdapter = class(TDriverResultSetAdapter<TFDQuery>)
   private
-    FFieldCache: IFieldCache;
+    fFieldCache: IFieldCache;
   public
-    constructor Create(const ADataset: TFDQuery); override;
+    constructor Create(const dataSet: TFDQuery); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const AFieldName: string): Boolean; override;
-    function GetFieldValue(AIndex: Integer): Variant; overload; override;
-    function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function FieldNameExists(const fieldName: string): Boolean; override;
+    function GetFieldValue(index: Integer): Variant; overload; override;
+    function GetFieldValue(const fieldName: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
-    function GetFieldName(AIndex: Integer): string; override;
+    function GetFieldName(index: Integer): string; override;
   end;
 
   TFireDACStatementAdapter = class(TDriverStatementAdapter<TFDQuery>)
   public
-    constructor Create(const AStatement: TFDQuery); override;
     destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParam(ADBParam: TDBParam); virtual;
-    procedure SetParams(Params: IList<TDBParam>); overload; override;
+    procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParam(const param: TDBParam); virtual;
+    procedure SetParams(const params: IList<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
+    function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
   TFireDACConnectionAdapter = class(TDriverConnectionAdapter<TFDConnection>)
   public
-    constructor Create(const AConnection: TFDConnection); override;
+    constructor Create(const connection: TFDConnection); override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -107,24 +104,23 @@ type
 implementation
 
 uses
-  Spring.Persistence.SQL.Register
-  ,StrUtils
-  ,Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.Consts
-  ,Variants
-  ;
+  StrUtils,
+  Variants,
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Consts,
+  Spring.Persistence.SQL.Register;
 
 type
   EFireDACAdapterException = class(Exception);
 
 
-{ TFireDACResultSetAdapter }
+{$REGION 'TFireDACResultSetAdapter'}
 
-constructor TFireDACResultSetAdapter.Create(const ADataset: TFDQuery);
+constructor TFireDACResultSetAdapter.Create(const dataSet: TFDQuery);
 begin
-  inherited Create(ADataset);
-  ADataset.DisableControls;
-  FFieldCache := TFieldCache.Create(ADataset);
+  inherited Create(dataSet);
+  dataSet.DisableControls;
+  fFieldCache := TFieldCache.Create(dataSet);
 end;
 
 destructor TFireDACResultSetAdapter.Destroy;
@@ -134,9 +130,9 @@ begin
 end;
 
 function TFireDACResultSetAdapter.FieldNameExists(
-  const AFieldName: string): Boolean;
+  const fieldName: string): Boolean;
 begin
-  Result := FFieldCache.FieldNameExists(AFieldName);
+  Result := fFieldCache.FieldNameExists(fieldName);
 end;
 
 function TFireDACResultSetAdapter.GetFieldCount: Integer;
@@ -144,20 +140,20 @@ begin
   Result := Dataset.FieldCount;
 end;
 
-function TFireDACResultSetAdapter.GetFieldName(AIndex: Integer): string;
+function TFireDACResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[AIndex].FieldName;
+  Result := Dataset.Fields[index].FieldName;
 end;
 
-function TFireDACResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
+function TFireDACResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[AIndex].Value;
+  Result := Dataset.Fields[index].Value;
 end;
 
 function TFireDACResultSetAdapter.GetFieldValue(
-  const AFieldname: string): Variant;
+  const fieldName: string): Variant;
 begin
-  Result := FFieldCache.GetFieldValue(AFieldname);
+  Result := fFieldCache.GetFieldValue(fieldName);
 end;
 
 function TFireDACResultSetAdapter.IsEmpty: Boolean;
@@ -171,12 +167,10 @@ begin
   Result := not Dataset.Eof;
 end;
 
-{ TFireDACStatementAdapter }
+{$ENDREGION}
 
-constructor TFireDACStatementAdapter.Create(const AStatement: TFDQuery);
-begin
-  inherited Create(AStatement);
-end;
+
+{$REGION 'TFireDACStatementAdapter'}
 
 destructor TFireDACStatementAdapter.Destroy;
 begin
@@ -192,63 +186,67 @@ begin
 end;
 
 function TFireDACStatementAdapter.ExecuteQuery(
-  AServerSideCursor: Boolean): IDBResultSet;
+  serverSideCursor: Boolean): IDBResultSet;
 var
-  LStmt: TFDQuery;
+  query: TFDQuery;
 begin
   inherited;
-  LStmt := TFDQuery.Create(nil);
-  LStmt.Connection := Statement.Connection;
-  LStmt.SQL.Text := Statement.SQL.Text;
-  LStmt.Params.AssignValues(Statement.Params);
-  LStmt.DisableControls;
-  if AServerSideCursor then
-    LStmt.FetchOptions.CursorKind := ckForwardOnly;
+  query := TFDQuery.Create(nil);
+  query.Connection := Statement.Connection;
+  query.SQL.Text := Statement.SQL.Text;
+  query.Params.AssignValues(Statement.Params);
+  query.DisableControls;
+  if serverSideCursor then
+    query.FetchOptions.CursorKind := ckForwardOnly;
   try
-    LStmt.Open;
-    Result := TFireDACResultSetAdapter.Create(LStmt);
+    query.Open;
+    Result := TFireDACResultSetAdapter.Create(query);
   except
     on E:Exception do
     begin
       //make sure that resultset is always created to avoid memory leak
-      Result := TFireDACResultSetAdapter.Create(LStmt);
+      Result := TFireDACResultSetAdapter.Create(query);
       raise EFireDACAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
     end;
   end;
 end;
 
-
-procedure TFireDACStatementAdapter.SetParam(ADBParam: TDBParam);
+procedure TFireDACStatementAdapter.SetParam(const param: TDBParam);
 var
-  sParamName: string;
+  paramName: string;
 begin
-  sParamName := ADBParam.Name;
+  paramName := param.Name;
   //strip leading : in param name because FireDAC does not like them
-  if (ADBParam.Name <> '') and (StartsStr(':', ADBParam.Name)) then
-  begin
-    sParamName := Copy(ADBParam.Name, 2, Length(ADBParam.Name));
-  end;
-  Statement.Params.ParamValues[sParamName] := ADBParam.Value;
+  if (param.Name <> '') and StartsStr(':', param.Name) then
+    paramName := Copy(param.Name, 2, Length(param.Name));
+  Statement.Params.ParamValues[paramName] := param.Value;
 end;
 
-procedure TFireDACStatementAdapter.SetParams(Params: IList<TDBParam>);
+procedure TFireDACStatementAdapter.SetParams(const params: IList<TDBParam>);
 var
-  LParam: TDBParam;
+  param: TDBParam;
 begin
   inherited;
-  for LParam in Params do
-  begin
-    SetParam(LParam);
-  end;
+  for param in params do
+    SetParam(param);
 end;
 
-procedure TFireDACStatementAdapter.SetSQLCommand(const ACommandText: string);
+procedure TFireDACStatementAdapter.SetSQLCommand(const commandText: string);
 begin
   inherited;
-  Statement.SQL.Text := ACommandText;
+  Statement.SQL.Text := commandText;
 end;
 
-{ TFireDACConnectionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TFireDACConnectionAdapter'}
+
+constructor TFireDACConnectionAdapter.Create(const connection: TFDConnection);
+begin
+  inherited Create(connection);
+  Connection.LoginPrompt := False;
+end;
 
 function TFireDACConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
@@ -258,46 +256,36 @@ begin
   Connection.Connected := True;
 
   if not Connection.InTransaction then
-  begin
     Connection.StartTransaction;
-  end;
 
   Result := TFireDACTransactionAdapter.Create(Connection.Transaction as TFDTransaction);
 end;
 
 procedure TFireDACConnectionAdapter.Connect;
 begin
-  if Connection <> nil then
-  begin
+  if Assigned(Connection) then
     Connection.Connected := True;
-  end;
-end;
-
-constructor TFireDACConnectionAdapter.Create(const AConnection: TFDConnection);
-begin
-  inherited Create(AConnection);
-  Connection.LoginPrompt := False;
 end;
 
 function TFireDACConnectionAdapter.CreateStatement: IDBStatement;
 var
-  LStatement: TFDQuery;
-  LAdapter: TFireDACStatementAdapter;
+  statement: TFDQuery;
+  adapter: TFireDACStatementAdapter;
 begin
   if Connection = nil then
     Exit(nil);
 
-  LStatement := TFDQuery.Create(nil);
-  LStatement.Connection := Connection;
+  statement := TFDQuery.Create(nil);
+  statement.Connection := Connection;
 
-  LAdapter := TFireDACStatementAdapter.Create(LStatement);
-  LAdapter.ExecutionListeners := ExecutionListeners;
-  Result := LAdapter;
+  adapter := TFireDACStatementAdapter.Create(statement);
+  adapter.ExecutionListeners := ExecutionListeners;
+  Result := adapter;
 end;
 
 procedure TFireDACConnectionAdapter.Disconnect;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Connection.Connected := False;
 end;
 
@@ -308,20 +296,18 @@ end;
 
 function TFireDACConnectionAdapter.IsConnected: Boolean;
 begin
-  if Connection <> nil then
-    Result := Connection.Connected
-  else
-    Result := False;
+  Result := Assigned(Connection) and Connection.Connected;
 end;
 
-{ TFireDACTransactionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TFireDACTransactionAdapter'}
 
 procedure TFireDACTransactionAdapter.Commit;
 begin
-  if (Transaction = nil) then
-    Exit;
-
-  Transaction.Commit;
+  if Assigned(Transaction) then
+    Transaction.Commit;
 end;
 
 function TFireDACTransactionAdapter.InTransaction: Boolean;
@@ -331,11 +317,12 @@ end;
 
 procedure TFireDACTransactionAdapter.Rollback;
 begin
-  if (Transaction = nil) then
-    Exit;
-
-  Transaction.Rollback;
+  if Assigned(Transaction) then
+    Transaction.Rollback;
 end;
+
+{$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TFireDACConnectionAdapter>(dtFireDAC);

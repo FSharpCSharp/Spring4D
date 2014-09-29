@@ -32,31 +32,31 @@ type
     procedure TearDown; override;
   published
     procedure Add_Eq;
-    procedure AddOrder();
-    procedure List_Eq_IsNull();
-    procedure List_Like();
-    procedure List_Ge_Gt();
-    procedure List_LEq_Lt();
-    procedure List_In_NotIn();
-    procedure List_Property_Eq();
-    procedure Page_GEq_OrderDesc();
-    procedure Page_SubEntities();
-    procedure List_Or_And();
-    procedure List_Or_Or();
-    procedure List_And_And();
-    procedure List_Not_Eq();
-    procedure List_NeProperty();
-    procedure List_Between();
-    procedure Add_SubEntity_Criterion();
-    procedure Disjunction();
-    procedure Conjunction();
+    procedure AddOrder;
+    procedure List_Eq_IsNull;
+    procedure List_Like;
+    procedure List_Ge_Gt;
+    procedure List_LEq_Lt;
+    procedure List_In_NotIn;
+    procedure List_Property_Eq;
+    procedure Page_GEq_OrderDesc;
+    procedure Page_SubEntities;
+    procedure List_Or_And;
+    procedure List_Or_Or;
+    procedure List_And_And;
+    procedure List_Not_Eq;
+    procedure List_NeProperty;
+    procedure List_Between;
+    procedure Add_SubEntity_Criterion;
+    procedure Disjunction;
+    procedure Conjunction;
   end;
 
 implementation
 
 uses
   Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Criteria.Order
+  ,Spring.Persistence.Criteria.OrderBy
   ,Spring.Persistence.Criteria.Properties
   ,TestSession
   ,Spring.Persistence.SQL.Types
@@ -121,20 +121,20 @@ begin
     InsertCustomerOrder(LCustId, i + 10, -1, i + 100);
   end;
 
-  LOrders := LCriteria.Add( Age.Eq(1) ).ToList();
+  LOrders := LCriteria.Add(Age.Eq(1)).ToList;
   CheckEquals(1, LOrders.Count);
   CheckEquals(1, LOrders.First.Customer.Age);
 
   LCriteria.Clear;
 
-  LOrders := LCriteria.Add( Age.GEq(1) ).ToList();
+  LOrders := LCriteria.Add(Age.GEq(1)).ToList;
   CheckEquals(10, LOrders.Count);
   CheckEquals(1, LOrders.First.Customer.Age);
 
   LCriteria.Clear;
-  LOrders := LCriteria.Add( Age.InInt(TArray<Integer>.Create(1,2,3)) )
-    .AddOrder( Age.Desc )
-    .ToList();
+  LOrders := LCriteria.Add(Age.InInt(TArray<Integer>.Create(1,2,3)))
+    .OrderBy(Age.Desc)
+    .ToList;
   CheckEquals(3, LOrders.Count);
   CheckEquals(3, LOrders.First.Customer.Age);
 end;
@@ -151,10 +151,10 @@ begin
 
   LCustomers := FCriteria.Add(
     TRestrictions
-      .Conjunction()
+      .Conjunction
         .Add(Age.Eq(42))
         .Add(Name.Eq('Foo')))
-    .AddOrder(Age.Desc)
+    .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
@@ -173,11 +173,11 @@ begin
 
   LCustomers := FCriteria.Add(
     TRestrictions
-      .Disjunction()
+      .Disjunction
         .Add(Age.Eq(42))
         .Add(Name.Eq('Foo'))
         .Add(Age.Eq(50)))
-    .AddOrder(Age.Desc)
+    .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
@@ -191,8 +191,8 @@ begin
   InsertCustomer(42, 'foo');
   InsertCustomer(110, 'foo');
   FCriteria.Add(TRestrictions.Eq(CUSTNAME, 'foo'))
-    .AddOrder(TOrder.Desc(CUSTAGE));
-  LCustomers := FCriteria.ToList();
+    .OrderBy(TOrderBy.Desc(CUSTAGE));
+  LCustomers := FCriteria.ToList;
   CheckEquals(110, LCustomers[0].Age);
   CheckEquals(42, LCustomers[1].Age);
 end;
@@ -209,7 +209,7 @@ begin
 
   LCustomers := FCriteria.Add(TRestrictions.And(Age.Eq(42), Name.Eq('Foo')))
     .Add(Age.GEq(10))
-    .AddOrder(Age.Desc)
+    .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
@@ -265,7 +265,7 @@ begin
   FCriteria.Clear;
   Age := TProperty.ForName(CUSTAGE);
   ID := TProperty.ForName(CUSTID);
-  LCustomers := FCriteria.Add(Age.NeProperty(ID)).Add(Age.NeProperty(TProperty.ForName(CUSTNAME)))
+  LCustomers := FCriteria.Add(Age.NeProperty(ID)).Add(Age.NeProperty(CUSTNAME))
     .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
@@ -407,7 +407,7 @@ begin
 
   LCustomers := FCriteria.Add(TRestrictions.Not(Age.Eq(42)))
     .Add(Age.GEq(10))
-    .AddOrder(Age.Desc)
+    .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
@@ -424,7 +424,7 @@ begin
 
   LCustomers := FCriteria.Add(TRestrictions.Or(Age.Eq(42), age.Eq(50)))
     .Add(Age.GEq(10))
-    .AddOrder(Age.Desc)
+    .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
@@ -442,7 +442,7 @@ begin
   //WHERE ((A.CUSTAGE =:CUSTAGE1 OR A.CUSTAGE = :CUSTAGE2) OR A.CUSTAGE >=:CUSTAGE3)
   //ORDER BY A.CUSTAGE DESC
   LCustomers := FCriteria.Add(TRestrictions.Or(TRestrictions.Or(Age.Eq(42), Age.Eq(50)), Age.GEq(10)))
-    .AddOrder(Age.Desc)
+    .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
@@ -459,7 +459,7 @@ begin
   InsertCustomer(50, 'Bar');
 
   LCustomers := FCriteria.Add(Age.Eq(42))
-    .AddOrder(Age.Desc)
+    .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
@@ -479,7 +479,7 @@ begin
   end;
 
   LPage := FCriteria.Add(Age.GEq(5))
-    .AddOrder(Age.Desc).Page(0, 3);
+    .OrderBy(Age.Desc).Page(0, 3);
 
   CheckEquals(6, LPage.GetTotalItems);
   CheckEquals(2, LPage.GetTotalPages);
@@ -505,7 +505,7 @@ begin
   CheckEquals(10, FSession.FindAll<TCustomer_Orders>.Count);
 
   LPage := FCriteria.Add(Age.GEq(5))
-    .AddOrder(Age.Desc).Page(0, 3);
+    .OrderBy(Age.Desc).Page(0, 3);
 
   CheckEquals(6, LPage.GetTotalItems);
   CheckEquals(2, LPage.GetTotalPages);

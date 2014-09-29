@@ -37,25 +37,23 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents base <b>NoSQL</b> database statements generator.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents base <b>NoSQL</b> database statements generator.
+  /// </summary>
   TNoSQLGenerator = class(TAbstractSQLGenerator)
   public
     function GetQueryLanguage: TQueryLanguage; override;
 
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>; override;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>; override;
-    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
+    function GenerateCreateTable(const command: TCreateTableCommand): IList<string>; override;
+    function GenerateCreateFK(const command: TCreateFKCommand): IList<string>; override;
+    function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
+    function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
 
-    function GetSQLSequenceCount(const ASequenceName: string): string; override;
-    function GetTableColumns(const ATableName: string): string; override;
-    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
-    function GetSQLTableExists(const ATablename: string): string; override;
+    function GetSQLSequenceCount(const sequenceName: string): string; override;
+    function GetTableColumns(const tableName: string): string; override;
+    function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
+    function GetSQLTableExists(const tableName: string): string; override;
     function GetEscapeFieldnameChar: Char; override;
   end;
 
@@ -63,27 +61,32 @@ implementation
 
 { TNoSQLGenerator }
 
-function TNoSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>;
+function TNoSQLGenerator.GenerateCreateFK(
+  const command: TCreateFKCommand): IList<string>;
 begin
   Result := TCollections.CreateList<string>;
 end;
 
-function TNoSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
+function TNoSQLGenerator.GenerateCreateSequence(
+  const command: TCreateSequenceCommand): string;
 begin
   Result := '';
 end;
 
-function TNoSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>;
+function TNoSQLGenerator.GenerateCreateTable(
+  const command: TCreateTableCommand): IList<string>;
 begin
   Result := TCollections.CreateList<string>;
 end;
 
-function TNoSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+function TNoSQLGenerator.GenerateGetLastInsertId(
+  const identityColumn: ColumnAttribute): string;
 begin
   Result := ' ';
 end;
 
-function TNoSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+function TNoSQLGenerator.GenerateGetNextSequenceValue(
+  const sequence: SequenceAttribute): string;
 begin
   Result := '';
 end;
@@ -98,22 +101,22 @@ begin
   Result := qlNoSQL;
 end;
 
-function TNoSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+function TNoSQLGenerator.GetSQLDataTypeName(const field: TSQLCreateField): string;
 begin
   Result := '';
 end;
 
-function TNoSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;
+function TNoSQLGenerator.GetSQLSequenceCount(const sequenceName: string): string;
 begin
   Result := '';
 end;
 
-function TNoSQLGenerator.GetSQLTableExists(const ATablename: string): string;
+function TNoSQLGenerator.GetSQLTableExists(const tableName: string): string;
 begin
   Result := '';
 end;
 
-function TNoSQLGenerator.GetTableColumns(const ATableName: string): string;
+function TNoSQLGenerator.GetTableColumns(const tableName: string): string;
 begin
   Result := '';
 end;

@@ -141,11 +141,11 @@ type
 
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Specifies properties for databases which uses sequences instead of
+  ///	  Specifies properties for databases which uses sequences instead of
   ///	  identities.
   ///	</summary>
   ///	<remarks>
-  ///	  If ASeqSQL is defned then framework will execute this SQL statement
+  ///	  If ASeqSQL is defined then framework will execute this SQL statement
   ///	  when performing an insert. Returned value will be written into the 
   ///	  entity's primary key column.
   ///	</remarks>

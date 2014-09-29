@@ -39,47 +39,44 @@ uses
 type
   TJunction = class(TInterfacedObject, ICriterion)
   private
-    FCriterions: IList<ICriterion>;
-    FEntityClass: TClass;
+    fCriterions: IList<ICriterion>;
+    fEntityClass: TClass;
+    function GetEntityClass: TClass;
+    procedure SetEntityClass(value: TClass);
   protected
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; virtual;
-    procedure SetEntityClass(const Value: TClass); virtual;
-    function GetEntityClass: TClass; virtual;
     function GetMatchMode: TMatchMode; virtual;
     function GetWhereOperator: TWhereOperator; virtual; abstract;
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TDMLCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; virtual;
   public
     constructor Create; virtual;
-    destructor Destroy; override;
 
-    function Add(ACriterion: ICriterion): TJunction;
+    function Add(const criterion: ICriterion): TJunction;
 
-    property Criterions: IList<ICriterion> read FCriterions;
+    property Criterions: IList<ICriterion> read fCriterions;
   end;
 
 implementation
 
-{ TJunction }
+
+{$REGION 'TJunction'}
 
 constructor TJunction.Create;
 begin
   inherited Create;
-  FCriterions := TCollections.CreateList<ICriterion>;
+  fCriterions := TCollections.CreateList<ICriterion>;
 end;
 
-destructor TJunction.Destroy;
+function TJunction.Add(const criterion: ICriterion): TJunction;
 begin
-  inherited Destroy;
-end;
-
-function TJunction.Add(ACriterion: ICriterion): TJunction;
-begin
-  FCriterions.Add(ACriterion);
+  fCriterions.Add(criterion);
   Result := Self;
 end;
 
 function TJunction.GetEntityClass: TClass;
 begin
-  Result := FEntityClass;
+  Result := fEntityClass;
 end;
 
 function TJunction.GetMatchMode: TMatchMode;
@@ -87,41 +84,44 @@ begin
   Result := mmExact;
 end;
 
-procedure TJunction.SetEntityClass(const Value: TClass);
+procedure TJunction.SetEntityClass(value: TClass);
 begin
-  FEntityClass := Value;
+  fEntityClass := value;
 end;
 
-function TJunction.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand;
-  AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TJunction.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 var
-  LCriterion: ICriterion;
   i: Integer;
-  LSql: string;
-  LWhere: TSQLWhereField;
+  criterion: ICriterion;
+  sql: string;
+  whereField: TSQLWhereField;
 begin
+  Assert(command is TWhereCommand);
+
   Result := '';
-
-  Assert(ACommand is TWhereCommand);
-
-  for i := 0 to FCriterions.Count - 1 do
+  for i := 0 to fCriterions.Count - 1 do
   begin
     if i <> 0 then
       Result := Result + ' ' + WhereOpNames[GetWhereOperator] + ' ';
 
-    LCriterion := FCriterions[i];
-    LSql := LCriterion.ToSqlString(AParams, ACommand, AGenerator, False);
+    criterion := fCriterions[i];
+    sql := criterion.ToSqlString(params, command, generator, False);
 
-    Result := Result + LSql;
+    Result := Result + sql;
   end;
 
-  if AAddToCommand then
+  if addToCommand then
   begin
-    LWhere := TSQLWhereField.Create(Result, '');
-    LWhere.MatchMode := GetMatchMode;
-    LWhere.WhereOperator := woJunction;
-    TWhereCommand(ACommand).WhereFields.Add(LWhere);
+    whereField := TSQLWhereField.Create(Result, '');
+    whereField.MatchMode := GetMatchMode;
+    whereField.WhereOperator := woJunction;
+    TWhereCommand(command).WhereFields.Add(whereField);
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

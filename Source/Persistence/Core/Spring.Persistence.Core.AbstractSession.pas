@@ -30,6 +30,7 @@ interface
 
 uses
   Rtti,
+  TypInfo,
   Spring.Collections,
   Spring.Persistence.Core.AbstractManager,
   Spring.Persistence.Core.EntityCache,
@@ -39,99 +40,107 @@ uses
   Spring.Persistence.SQL.Commands.Insert,
   Spring.Persistence.SQL.Commands.Select,
   Spring.Persistence.SQL.Commands.Update,
-  Spring.Persistence.SQL.Params,
-  TypInfo;
+  Spring.Persistence.SQL.Params;
 
 type
   TAbstractSession = class(TAbstractManager)
   protected
-    procedure SetEntityColumns(AEntity: TObject; AColumns: TColumnDataList; AResultset: IDBResultset); overload; virtual;
-    procedure SetEntityColumns(AEntity: TObject; AColumns: IList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
-    procedure SetLazyColumns(AEntity: TObject; AEntityData: TEntityData);
-    procedure SetAssociations(AEntity: TObject; AResultset: IDBResultset; AEntityData: TEntityData); virtual;
+    procedure SetEntityColumns(const entity: TObject;
+      const columns: TColumnDataList; const resultSet: IDBResultSet); overload; virtual;
+    procedure SetEntityColumns(const entity: TObject;
+      const columns: IList<ManyValuedAssociation>; const resultSet: IDBResultSet); overload; virtual;
+    procedure SetLazyColumns(const entity: TObject; const entityData: TEntityData);
+    procedure SetAssociations(const entity: TObject;
+      const resultSet: IDBResultSet; const entityData: TEntityData); virtual;
 
-    procedure DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject); virtual;
-    procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TColumnDataList; AEntityData: TEntityData); virtual;
-    procedure DoFetch<T: class, constructor>(AResultset: IDBResultset; const ACollection: TValue);
+    procedure DoSetEntity(var entityToCreate: TObject;
+      const resultSet: IDBResultSet; const realEntity: TObject); virtual;
+    procedure DoSetEntityValues(const entityToCreate: TObject;
+      const resultSet: IDBResultSet; const columns: TColumnDataList;
+      const entityData: TEntityData); virtual;
+    procedure DoFetch<T: class, constructor>(const resultSet: IDBResultSet;
+      const collection: TValue);
 
-    function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
-    function GetOne(AResultset: IDBResultset; AClass: TClass): TObject; overload;
-    function GetObjectList<T: class, constructor>(AResultset: IDBResultset): T;
+    function GetOne<T: class, constructor>(const resultSet: IDBResultSet;
+      const entity: TObject): T; overload;
+    function GetOne(const resultSet: IDBResultSet; classType: TClass): TObject; overload;
+    function GetObjectList<T: class, constructor>(const resultSet: IDBResultSet): T;
 
-    procedure SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset); overload;
-    procedure SetInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo); overload;
-    procedure SetSimpleInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo);
-    procedure SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
+    procedure SetInterfaceList<T>(var value: T; const resultSet: IDBResultSet); overload;
+    procedure SetInterfaceList(var value: IInterface;
+      const resultSet: IDBResultSet; classInfo: PTypeInfo); overload;
+    procedure SetSimpleInterfaceList(var value: IInterface;
+      const resultSet: IDBResultSet; classInfo: PTypeInfo);
+    procedure SetOne<T>(var value: T; const resultSet: IDBResultSet;
+      const entity: TObject);
 
-    function DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
+    function DoGetLazy<T>(const id: TValue; const entity: TObject;
+      const column: ColumnAttribute; out isEnumerable: Boolean): IDBResultSet;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves multiple models from the <c>resultset</c>.
-    ///	</summary>
-    {$ENDREGION}
-    function GetListFromResultset<T: class, constructor>(AResultset: IDBResultset): IList<T>;
-    function GetList<T: class, constructor>(const AQuery: string; const AParams: IList<TDBParam>): IList<T>; overload;
+    /// <summary>
+    ///   Retrieves multiple models from the <c>resultset</c>.
+    /// </summary>
+    function GetListFromResultset<T: class, constructor>(
+      const resultSet: IDBResultSet): IList<T>;
+    function GetList<T: class, constructor>(const query: string;
+      const params: IList<TDBParam>): IList<T>; overload;
 
-    procedure AttachEntity(AEntity: TObject); virtual; abstract;
-    procedure DetachEntity(AEntity: TObject); virtual; abstract;
+    procedure AttachEntity(const entity: TObject); virtual; abstract;
+    procedure DetachEntity(const entity: TObject); virtual; abstract;
 
-    procedure DoInsert(AEntity: TObject; AExecutor: TObject); virtual;
-    procedure DoUpdate(AEntity: TObject; AExecutor: TObject); virtual;
-    procedure DoDelete(AEntity: TObject; AExecutor: TObject); virtual;
+    procedure DoInsert(const entity, executor: TObject); virtual;
+    procedure DoUpdate(const entity, executor: TObject); virtual;
+    procedure DoDelete(const entity, executor: TObject); virtual;
 
-    function GetInsertCommandExecutor(AClass: TClass): TInsertExecutor; virtual;
-    function GetUpdateCommandExecutor(AClass: TClass): TUpdateExecutor; virtual;
-    function GetSelectCommandExecutor(AClass: TClass): TSelectExecutor; virtual;
-    function GetDeleteCommandExecutor(AClass: TClass): TDeleteExecutor; virtual;
+    function GetInsertCommandExecutor(entityClass: TClass): TInsertExecutor; virtual;
+    function GetUpdateCommandExecutor(entityClass: TClass): TUpdateExecutor; virtual;
+    function GetSelectCommandExecutor(entityClass: TClass): TSelectExecutor; virtual;
+    function GetDeleteCommandExecutor(entityClass: TClass): TDeleteExecutor; virtual;
   public
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Gets the <c>Resultset</c> from SQL statement.
-    ///	</summary>
-    {$ENDREGION}
-    function GetResultset(const ASql: string; const AParams: array of const): IDBResultset; overload;
+    /// <summary>
+    ///   Gets the <c>Resultset</c> from SQL statement.
+    /// </summary>
+    function GetResultset(const sqlStatement: string;
+      const params: array of const): IDBResultSet; overload;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Gets the <c>Resultset</c> from SQL statement.
-    ///	</summary>
-    {$ENDREGION}
-    function GetResultset(const ASql: string; AParams: IList<TDBParam>): IDBResultset; overload;
+    /// <summary>
+    ///   Gets the <c>Resultset</c> from SQL statement.
+    /// </summary>
+    function GetResultset(const sqlStatement: string;
+      const params: IList<TDBParam>): IDBResultSet; overload;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves multiple models from the sql statement into the Collection (
-    ///	  <c>TObjectList&lt;T&gt;</c> or Spring <c>ICollection&lt;T&gt;</c>).
-    ///	</summary>
-    {$ENDREGION}
-    procedure Fetch<T: class, constructor>(const ASql: string;
-      const AParams: array of const; ACollection: ICollection<T>); overload;
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves multiple models from the <c>Resultset</c> into the
-    ///	  Collection (<c>TObjectList&lt;T&gt;</c> or Spring
-    ///	  <c>ICollection&lt;T&gt;).</c>
-    ///	</summary>
-    {$ENDREGION}
-    procedure Fetch<T: class, constructor>(AResultset: IDBResultset; ACollection: ICollection<T>); overload;
+    /// <summary>
+    ///   Retrieves multiple models from the sql statement into the Collection
+    ///   ( <c>TObjectList&lt;T&gt;</c> or Spring <c>ICollection&lt;T&gt;</c>).
+    /// </summary>
+    procedure Fetch<T: class, constructor>(const sqlStatement: string;
+      const params: array of const; const collection: ICollection<T>); overload;
+    /// <summary>
+    ///   Retrieves multiple models from the <c>Resultset</c> into the
+    ///   Collection (<c>TObjectList&lt;T&gt;</c> or Spring <c>
+    ///   ICollection&lt;T&gt;).</c>
+    /// </summary>
+    procedure Fetch<T: class, constructor>(const resultSet: IDBResultSet;
+      const collection: ICollection<T>); overload;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves multiple models from the <c>Resultset</c> into the any
-    ///	  Collection. Collection must contain <c>Add</c> method with single
-    ///	  parameter.
-    ///	</summary>
-    {$ENDREGION}
-    procedure Fetch<T: class, constructor>(AResultset: IDBResultset; const ACollection: TValue); overload;
+    /// <summary>
+    ///   Retrieves multiple models from the <c>Resultset</c> into the any
+    ///   Collection. Collection must contain <c>Add</c> method with single
+    ///   parameter.
+    /// </summary>
+    procedure Fetch<T: class, constructor>(const resultSet: IDBResultSet;
+      const collection: TValue); overload;
 
-    function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
-    procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
+    function GetLazyValueClass<T: class, constructor>(const id: TValue;
+      const entity: TObject; const column: ColumnAttribute): T;
+    procedure SetLazyValue<T>(var value: T; const id: TValue;
+      const entity: TObject; const column: ColumnAttribute);
   end;
 
 implementation
 
 uses
+  Spring,
   Spring.Persistence.Core.CollectionAdapterResolver,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.Exceptions,
@@ -140,206 +149,207 @@ uses
   Spring.Persistence.Core.Utils,
   Spring.Persistence.Mapping.RttiExplorer;
 
-{ TAbstractSession }
 
-procedure TAbstractSession.DoDelete(AEntity, AExecutor: TObject);
+{$REGION 'TAbstractSession'}
+
+procedure TAbstractSession.DoDelete(const entity, executor: TObject);
 var
   LDeleter: TDeleteExecutor;
 begin
-  LDeleter := AExecutor as TDeleteExecutor;
-  LDeleter.Execute(AEntity);
-  DetachEntity(AEntity);
+  LDeleter := executor as TDeleteExecutor;
+  LDeleter.Execute(entity);
+  DetachEntity(entity);
 end;
 
-procedure TAbstractSession.DoFetch<T>(AResultset: IDBResultset;
-  const ACollection: TValue);
+procedure TAbstractSession.DoFetch<T>(const resultset: IDBResultSet;
+  const collection: TValue);
 var
   LCurrent: T;
   LCollectionAdapter: ICollectionAdapter<T>;
 begin
-  LCollectionAdapter := TCollectionAdapterResolver.Resolve<T>(ACollection);
+  LCollectionAdapter := TCollectionAdapterResolver.Resolve<T>(collection);
   if not LCollectionAdapter.IsAddSupported then
     raise EORMContainerDoesNotHaveAddMethod.Create('Container does not have "Add" method.');
 
-  while not AResultset.IsEmpty do
+  while not resultSet.IsEmpty do
   begin
-    LCurrent := GetOne<T>(AResultset, nil);
+    LCurrent := GetOne<T>(resultSet, nil);
     LCollectionAdapter.Add(LCurrent);
-    AResultset.Next;
+    resultSet.Next;
   end;
 end;
 
-function TAbstractSession.DoGetLazy<T>(const AID: TValue; AEntity: TObject;
-  AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
+function TAbstractSession.DoGetLazy<T>(const id: TValue; const entity: TObject;
+  const column: ColumnAttribute; out isEnumerable: Boolean): IDBResultSet;
 var
   LSelecter: TSelectExecutor;
   LBaseEntityClass, LEntityClass: TClass;
   LEnumMethod: TRttiMethod;
 begin
-  LBaseEntityClass := AEntity.ClassType;
+  LBaseEntityClass := entity.ClassType;
   if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-  begin
-    //we are fetching from the same table - AEntity
+    // we are fetching from the same table - AEntity
     LEntityClass := LBaseEntityClass;
-  end;
 
   LSelecter := GetSelectCommandExecutor(LEntityClass);
   try
-
-    LSelecter.ID := AID;
-    LSelecter.LazyColumn := AColumn;
-    AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
-    Result := LSelecter.Select(AEntity, LBaseEntityClass);
+    LSelecter.ID := id;
+    LSelecter.LazyColumn := column;
+    isEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
+    Result := LSelecter.Select(entity, LBaseEntityClass);
   finally
     LSelecter.Free;
   end;
 end;
 
-procedure TAbstractSession.DoInsert(AEntity, AExecutor: TObject);
+procedure TAbstractSession.DoInsert(const entity, executor: TObject);
 var
   LInserter: TInsertExecutor;
 begin
-  LInserter := AExecutor as TInsertExecutor;
-  LInserter.Execute(AEntity);
-  SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
-  AttachEntity(AEntity);
+  LInserter := executor as TInsertExecutor;
+  LInserter.Execute(entity);
+  SetLazyColumns(entity, TEntityCache.Get(entity.ClassType));
+  AttachEntity(entity);
 end;
 
-procedure TAbstractSession.DoSetEntity(var AEntityToCreate: TObject;
-  AResultset: IDBResultset; ARealEntity: TObject);
+procedure TAbstractSession.DoSetEntity(var entityToCreate: TObject;
+  const resultSet: IDBResultSet; const realEntity: TObject);
 var
   LEntityData: TEntityData;
   LResult, LValue: TValue;
   LVal: Variant;
 begin
-  LEntityData := TEntityCache.Get(AEntityToCreate.ClassType);
+  LEntityData := TEntityCache.Get(entityToCreate.ClassType);
   {TODO -oLinas -cGeneral : if AEntity class type is not our real Entity type, simply just set value}
-  if not LEntityData.IsTableEntity and Assigned(ARealEntity) then
+  if not LEntityData.IsTableEntity and Assigned(realEntity) then
   begin
-    if not AResultset.IsEmpty then
+    if not resultSet.IsEmpty then
     begin
-      LVal := AResultset.GetFieldValue(0);
+      LVal := resultSet.GetFieldValue(0);
       LValue := TUtils.FromVariant(LVal);
 
       if TUtils.TryConvert(LValue, Self,
-        TRttiExplorer.GetRttiType(AEntityToCreate.ClassType), ARealEntity, LResult) then
+        TRttiExplorer.GetRttiType(entityToCreate.ClassType), realEntity, LResult) then
       begin
-        if AEntityToCreate <> nil then
-          AEntityToCreate.Free;
-        AEntityToCreate := LResult.AsObject;
+        if entityToCreate <> nil then
+          entityToCreate.Free;
+        entityToCreate := LResult.AsObject;
         FreeValueObject(LValue);
       end;
     end;
   end
   else
   begin
-    DoSetEntityValues(AEntityToCreate, AResultset, LEntityData.ColumnsData, LEntityData);
+    DoSetEntityValues(entityToCreate, resultSet, LEntityData.ColumnsData, LEntityData);
   end;
 end;
 
-procedure TAbstractSession.DoSetEntityValues(var AEntityToCreate: TObject;
-  AResultset: IDBResultset; AColumns: TColumnDataList;
-  AEntityData: TEntityData);
+procedure TAbstractSession.DoSetEntityValues(const entityToCreate: TObject;
+  const resultSet: IDBResultSet; const columns: TColumnDataList;
+  const entityData: TEntityData);
 var
   LEntityData: TEntityData;
 begin
-  SetEntityColumns(AEntityToCreate, AColumns, AResultset);
+  SetEntityColumns(entityToCreate, columns, resultSet);
   //we need to set internal values for the lazy type field
-  LEntityData := AEntityData;
-  if (AEntityToCreate.ClassType <> AEntityData.EntityClass) then
-    LEntityData := TEntityCache.Get(AEntityToCreate.ClassType);
+  LEntityData := entityData;
+  if entityToCreate.ClassType <> entityData.EntityClass then
+    LEntityData := TEntityCache.Get(entityToCreate.ClassType);
 
-  SetLazyColumns(AEntityToCreate, LEntityData);
+  SetLazyColumns(entityToCreate, LEntityData);
 
-  SetAssociations(AEntityToCreate, AResultset, LEntityData);
+  SetAssociations(entityToCreate, resultSet, LEntityData);
 
-  AttachEntity(AEntityToCreate);
+  AttachEntity(entityToCreate);
 end;
 
-procedure TAbstractSession.DoUpdate(AEntity, AExecutor: TObject);
+procedure TAbstractSession.DoUpdate(const entity, executor: TObject);
 var
   LUpdater: TUpdateExecutor;
 begin
-  LUpdater := AExecutor as TUpdateExecutor;
-  LUpdater.Execute(AEntity);
-  SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
-  AttachEntity(AEntity);
+  LUpdater := executor as TUpdateExecutor;
+  LUpdater.Execute(entity);
+  SetLazyColumns(entity, TEntityCache.Get(entity.ClassType));
+  AttachEntity(entity);
 end;
 
-procedure TAbstractSession.Fetch<T>(const ASql: string;
-  const AParams: array of const; ACollection: ICollection<T>);
+procedure TAbstractSession.Fetch<T>(const sqlStatement: string;
+  const params: array of const; const collection: ICollection<T>);
 var
-  LResults: IDBResultset;
+  LResults: IDBResultSet;
 begin
-  LResults := GetResultset(ASql, AParams);
-  Fetch<T>(LResults, ACollection);
+  LResults := GetResultset(sqlStatement, params);
+  Fetch<T>(LResults, collection);
 end;
 
-procedure TAbstractSession.Fetch<T>(AResultset: IDBResultset;
-  ACollection: ICollection<T>);
+procedure TAbstractSession.Fetch<T>(const resultSet: IDBResultSet;
+  const collection: ICollection<T>);
 var
   LCollection: TValue;
 begin
-  LCollection := TValue.From(ACollection);
-  DoFetch<T>(AResultset, LCollection);
+  LCollection := TValue.From(collection);
+  DoFetch<T>(resultSet, LCollection);
 end;
 
-procedure TAbstractSession.Fetch<T>(AResultset: IDBResultset;
-  const ACollection: TValue);
+procedure TAbstractSession.Fetch<T>(const resultSet: IDBResultSet;
+  const collection: TValue);
 begin
-  DoFetch<T>(AResultset, ACollection);
+  DoFetch<T>(resultSet, collection);
 end;
 
-function TAbstractSession.GetDeleteCommandExecutor(AClass: TClass): TDeleteExecutor;
+function TAbstractSession.GetDeleteCommandExecutor(
+  entityClass: TClass): TDeleteExecutor;
 begin
   Result := TDeleteExecutor.Create;
   Result.Connection := Connection;
-  Result.EntityClass := AClass;
-  Result.Build(AClass);
+  Result.EntityClass := entityClass;
+  Result.Build(entityClass);
 end;
 
-function TAbstractSession.GetInsertCommandExecutor(AClass: TClass): TInsertExecutor;
+function TAbstractSession.GetInsertCommandExecutor(
+  entityClass: TClass): TInsertExecutor;
 begin
   Result := TInsertExecutor.Create;
   Result.Connection := Connection;
-  Result.EntityClass := AClass;
-  Result.Build(AClass);
+  Result.EntityClass := entityClass;
+  Result.Build(entityClass);
 end;
 
-function TAbstractSession.GetLazyValueClass<T>(const AID: TValue;
-  AEntity: TObject; AColumn: ColumnAttribute): T;
+function TAbstractSession.GetLazyValueClass<T>(const id: TValue;
+  const entity: TObject; const column: ColumnAttribute): T;
 var
   IsEnumerable: Boolean;
-  LResults: IDBResultset;
+  LResults: IDBResultSet;
 begin
-  if not Assigned(AEntity) or AID.IsEmpty then
+  if not Assigned(entity) or id.IsEmpty then
     Exit(System.Default(T));
 
-  LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
+  LResults := DoGetLazy<T>(id, entity, column, IsEnumerable);
 
   if IsEnumerable then
     Result := GetObjectList<T>(LResults)
   else
-    Result := GetOne<T>(LResults, AEntity);
+    Result := GetOne<T>(LResults, entity);
 end;
 
-function TAbstractSession.GetList<T>(const AQuery: string;
-  const AParams: IList<TDBParam>): IList<T>;
+function TAbstractSession.GetList<T>(const query: string;
+  const params: IList<TDBParam>): IList<T>;
 var
-  LResults: IDBResultset;
+  LResults: IDBResultSet;
 begin
   Result := TCollections.CreateObjectList<T>(True);
-  LResults := GetResultset(AQuery, AParams);
+  LResults := GetResultset(query, params);
   Fetch<T>(LResults, Result);
 end;
 
-function TAbstractSession.GetListFromResultset<T>(AResultset: IDBResultset): IList<T>;
+function TAbstractSession.GetListFromResultset<T>(
+  const resultSet: IDBResultSet): IList<T>;
 begin
   Result := TCollections.CreateObjectList<T>(True);
-  Fetch<T>(AResultset, Result);
+  Fetch<T>(resultSet, Result);
 end;
 
-function TAbstractSession.GetObjectList<T>(AResultset: IDBResultset): T;
+function TAbstractSession.GetObjectList<T>(const resultSet: IDBResultSet): T;
 var
   LCurrent: TObject;
   LEntityClass: TClass;
@@ -356,7 +366,7 @@ begin
     raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
 
   LAddParameters := LAddMethod.GetParameters;
-  if (Length(LAddParameters) <> 1) then
+  if Length(LAddParameters) <> 1 then
     raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
 
   if Result.TryGetProperty(METHODNAME_CONTAINER_OWNSOBJECTS, LProp) then
@@ -364,92 +374,89 @@ begin
 
   case LAddParameters[0].ParamType.TypeKind of
     tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
-    else
-      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
+  else
+    raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
   end;
 
-  while not AResultset.IsEmpty do
+  while not resultSet.IsEmpty do
   begin
-    LCurrent := GetOne(AResultset, LEntityClass);
-
+    LCurrent := GetOne(resultSet, LEntityClass);
     LAddMethod.Invoke(Result, [LCurrent]);
-
-    AResultset.Next;
+    resultSet.Next;
   end;
 end;
 
-function TAbstractSession.GetOne(AResultset: IDBResultset;
-  AClass: TClass): TObject;
+function TAbstractSession.GetOne(const resultSet: IDBResultSet;
+  classType: TClass): TObject;
 begin
-  Result := TRttiExplorer.CreateType(AClass);
-  DoSetEntity(Result, AResultset, nil);
+  Result := TRttiExplorer.CreateType(classType);
+  DoSetEntity(Result, resultSet, nil);
 end;
 
-function TAbstractSession.GetOne<T>(AResultset: IDBResultset;
-  AEntity: TObject): T;
+function TAbstractSession.GetOne<T>(const resultSet: IDBResultSet;
+  const entity: TObject): T;
 begin
   Result := T.Create;
-  DoSetEntity(TObject(Result), AResultset, AEntity);
+  DoSetEntity(TObject(Result), resultSet, entity);
 end;
 
-function TAbstractSession.GetResultset(const ASql: string;
-  const AParams: array of const): IDBResultset;
+function TAbstractSession.GetResultset(const sqlStatement: string;
+  const params: array of const): IDBResultSet;
 var
   LParams: IList<TDBParam>;
 begin
   LParams := TCollections.CreateObjectList<TDBParam>;
-  if (Length(AParams) > 0) then
-  begin
-    ConvertParams(AParams, LParams);
-  end;
-  Result := GetResultset(ASql, LParams);
+  if Length(params) > 0 then
+    ConvertParams(params, LParams);
+  Result := GetResultset(sqlStatement, LParams);
 end;
 
-function TAbstractSession.GetResultset(const ASql: string;
-  AParams: IList<TDBParam>): IDBResultset;
+function TAbstractSession.GetResultset(const sqlStatement: string;
+  const params: IList<TDBParam>): IDBResultSet;
 var
   LStmt: IDBStatement;
 begin
-  Assert(Assigned(AParams), 'Parameters must be assigned');
+  Assert(Assigned(params), 'Parameters must be assigned');
   LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(ASql);
+  LStmt.SetSQLCommand(sqlStatement);
 
-  if not AParams.IsEmpty then
-    LStmt.SetParams(AParams);
+  if not params.IsEmpty then
+    LStmt.SetParams(params);
   Result := LStmt.ExecuteQuery;
 end;
 
-function TAbstractSession.GetSelectCommandExecutor(AClass: TClass): TSelectExecutor;
+function TAbstractSession.GetSelectCommandExecutor(
+  entityClass: TClass): TSelectExecutor;
 begin
   Result := TSelectExecutor.Create;
   Result.Connection := Connection;
-  Result.EntityClass := AClass;
-  Result.Build(AClass);
-  Result.LazyColumn := nil;
+  Result.EntityClass := entityClass;
+  Result.Build(entityClass);
 end;
 
-function TAbstractSession.GetUpdateCommandExecutor(AClass: TClass): TUpdateExecutor;
+function TAbstractSession.GetUpdateCommandExecutor(
+  entityClass: TClass): TUpdateExecutor;
 begin
   Result := TUpdateExecutor.Create;
   Result.Connection := Connection;
-  Result.EntityClass := AClass;
-  Result.Build(AClass);
+  Result.EntityClass := entityClass;
+  Result.Build(entityClass);
 end;
 
-procedure TAbstractSession.SetAssociations(AEntity: TObject;
-  AResultset: IDBResultset; AEntityData: TEntityData);
+procedure TAbstractSession.SetAssociations(const entity: TObject;
+  const resultSet: IDBResultSet; const entityData: TEntityData);
 var
   LCol: TORMAttribute;
   LManyToOne: TManyToOneRelation;
 begin
-  if AEntityData.HasManyToOneRelations then
+  if entityData.HasManyToOneRelations then
   begin
     LManyToOne := TManyToOneRelation.Create;
     try
-      for LCol in AEntityData.ManyToOneColumns do
+      for LCol in entityData.ManyToOneColumns do
       begin
-        LManyToOne.SetAssociation(LCol, AEntity, AResultset);
-        DoSetEntityValues(LManyToOne.NewEntity, AResultset, LManyToOne.NewColumns, AEntityData);
+        LManyToOne.SetAssociation(LCol, entity, resultSet);
+        DoSetEntityValues(LManyToOne.NewEntity, resultSet, LManyToOne.NewColumns, entityData);
       end;
     finally
       LManyToOne.Free;
@@ -457,8 +464,8 @@ begin
   end;
 end;
 
-procedure TAbstractSession.SetEntityColumns(AEntity: TObject;
-  AColumns: TColumnDataList; AResultset: IDBResultset);
+procedure TAbstractSession.SetEntityColumns(const entity: TObject;
+  const columns: TColumnDataList; const resultSet: IDBResultSet);
 var
   LCol: TColumnData;
   LVal: Variant;
@@ -466,61 +473,57 @@ var
   LTypeInfo: PTypeInfo;
   i: Integer;
 begin
-  if AColumns.TryGetPrimaryKeyColumn(LCol) then
+  if columns.TryGetPrimaryKeyColumn(LCol) then
   begin
     try
-      LVal := AResultset.GetFieldValue(LCol.Name);
+      LVal := resultSet.GetFieldValue(LCol.Name);
     except
       raise EORMColumnNotFound.CreateFmt(EXCEPTION_PRIMARYKEY_NOTFOUND, [LCol.Name]);
     end;
     LPrimaryKey := TUtils.FromVariant(LVal);
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LPrimaryKey);
+    TRttiExplorer.SetMemberValue(Self, entity, LCol.ClassMemberName, LPrimaryKey);
   end;
 
-  for i := 0 to AColumns.Count - 1 do
+  for i := 0 to columns.Count - 1 do
   begin
-    LCol := AColumns[i];
+    LCol := columns[i];
     if LCol.IsPrimaryKey then
-    begin
       Continue;
-    end;
 
-    LTypeInfo := LCol.ColTypeInfo; //  GetTypeInfo(AEntity.ClassInfo);
-    if (LTypeInfo <> nil) and (TUtils.IsLazyType(LTypeInfo)) then
-    begin
-      LValue := LPrimaryKey; //assign primary key value to lazy type, later convert procedure will assign it to lazy type's private field
-    end
+    LTypeInfo := LCol.ColTypeInfo; // GetTypeInfo(AEntity.ClassInfo);
+    if Assigned(LTypeInfo) and TUtils.IsLazyType(LTypeInfo) then
+      LValue := LPrimaryKey // assign primary key value to lazy type, later convert procedure will assign it to lazy type's private field
     else
     begin
       try
-        LVal := AResultset.GetFieldValue(LCol.Name);
+        LVal := resultSet.GetFieldValue(LCol.Name);
       except
         raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [LCol.Name]);
       end;
-      LValue := TUtils.ColumnFromVariant(LVal, LCol, Self, AEntity);
+      LValue := TUtils.ColumnFromVariant(LVal, LCol, Self, entity);
     end;
 
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
+    TRttiExplorer.SetMemberValue(Self, entity, LCol.ClassMemberName, LValue);
   end;
 end;
 
-procedure TAbstractSession.SetEntityColumns(AEntity: TObject;
-  AColumns: IList<ManyValuedAssociation>; AResultset: IDBResultset);
+procedure TAbstractSession.SetEntityColumns(const entity: TObject;
+  const columns: IList<ManyValuedAssociation>; const resultSet: IDBResultSet);
 var
   LCol: ManyValuedAssociation;
   LVal: Variant;
   LValue: TValue;
 begin
-  for LCol in AColumns do
+  for LCol in columns do
   begin
-    LVal := AResultset.GetFieldValue(LCol.MappedBy);
+    LVal := resultSet.GetFieldValue(LCol.MappedBy);
     LValue := TUtils.FromVariant(LVal);
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
+    TRttiExplorer.SetMemberValue(Self, entity, LCol.ClassMemberName, LValue);
   end;
 end;
 
-procedure TAbstractSession.SetInterfaceList(var AValue: IInterface;
-  AResultset: IDBResultset; AClassInfo: PTypeInfo);
+procedure TAbstractSession.SetInterfaceList(var value: IInterface;
+  const resultSet: IDBResultSet; classInfo: PTypeInfo);
 var
   LCurrent: TObject;
   LEntityClass: TClass;
@@ -528,15 +531,14 @@ var
   LAddParameters: TArray<TRttiParameter>;
   LValue: TValue;
 begin
-  if not (AClassInfo.Kind = tkInterface) then
+  if not (classInfo.Kind = tkInterface) then
     raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
 
-  if not TRttiExplorer.TryGetEntityClass(AClassInfo, LEntityClass) then
+  if not TRttiExplorer.TryGetEntityClass(classInfo, LEntityClass) then
     raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
 
-  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, AClassInfo, LAddMethod) then
+  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, classInfo, LAddMethod) then
     raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
-
 
   LAddParameters := LAddMethod.GetParameters;
   if (Length(LAddParameters) <> 1) then
@@ -544,24 +546,22 @@ begin
 
   case LAddParameters[0].ParamType.TypeKind of
     tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
-    else
-      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
+  else
+    raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
   end;
 
-  LValue := TValue.From(AValue);
+  LValue := TValue.From(value);
 
-  while not AResultset.IsEmpty do
+  while not resultSet.IsEmpty do
   begin
-    LCurrent := GetOne(AResultset, LEntityClass);
-
+    LCurrent := GetOne(resultSet, LEntityClass);
     LAddMethod.Invoke(LValue, [LCurrent]);
-
-    AResultset.Next;
+    resultSet.Next;
   end;
 end;
 
-procedure TAbstractSession.SetInterfaceList<T>(var AValue: T;
-  AResultset: IDBResultset);
+procedure TAbstractSession.SetInterfaceList<T>(var value: T;
+  const resultSet: IDBResultSet);
 var
   LCurrent: TObject;
   LEntityClass: TClass;
@@ -578,72 +578,68 @@ begin
   if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, TypeInfo(T), LAddMethod) then
     raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
 
-
   LAddParameters := LAddMethod.GetParameters;
   if (Length(LAddParameters) <> 1) then
     raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
 
   case LAddParameters[0].ParamType.TypeKind of
     tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
-    else
-      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
+  else
+    raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
   end;
 
-  LValue := TValue.From<T>(AValue);
+  LValue := TValue.From<T>(value);
 
-  while not AResultset.IsEmpty do
+  while not resultSet.IsEmpty do
   begin
-    LCurrent := GetOne(AResultset, LEntityClass);
-
+    LCurrent := GetOne(resultSet, LEntityClass);
     LAddMethod.Invoke(LValue, [LCurrent]);
-
-    AResultset.Next;
+    resultSet.Next;
   end;
 end;
 
-procedure TAbstractSession.SetLazyColumns(AEntity: TObject;
-  AEntityData: TEntityData);
+procedure TAbstractSession.SetLazyColumns(const entity: TObject;
+  const entityData: TEntityData);
 var
   LCol: ManyValuedAssociation;
   LValue: TValue;
   LColumns: IList<OneToManyAttribute>;
 begin
-  if not AEntityData.HasOneToManyRelations then
+  if not entityData.HasOneToManyRelations then
     Exit;
-  LColumns := AEntityData.OneToManyColumns;
+  LColumns := entityData.OneToManyColumns;
   for LCol in LColumns do
   begin
-    LValue := TRttiExplorer.GetMemberValue(AEntity, LCol.MappedBy); //get foreign key value
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
+    LValue := TRttiExplorer.GetMemberValue(entity, LCol.MappedBy); //get foreign key value
+    TRttiExplorer.SetMemberValue(Self, entity, LCol.ClassMemberName, LValue);
   end;
 end;
 
-procedure TAbstractSession.SetLazyValue<T>(var AValue: T; const AID: TValue;
-  AEntity: TObject; AColumn: ColumnAttribute);
+procedure TAbstractSession.SetLazyValue<T>(var value: T; const id: TValue;
+  const entity: TObject; const column: ColumnAttribute);
 var
   IsEnumerable: Boolean;
-  LResults: IDBResultset;
+  LResults: IDBResultSet;
 begin
-  if not Assigned(AEntity) or AID.IsEmpty then
+  if not Assigned(entity) or id.IsEmpty then
     Exit;
 
   case PTypeInfo(TypeInfo(T)).Kind of
     tkClass, tkClassRef, tkPointer, tkRecord, tkUnknown:
-    begin
-      raise EORMUnsupportedType.CreateFmt(EXCEPTION_UNSUPPORTED_LAZY_TYPE, [string(PTypeInfo(TypeInfo(T)).Name)]);
-    end;
+      raise EORMUnsupportedType.CreateFmt(EXCEPTION_UNSUPPORTED_LAZY_TYPE, [
+        PTypeInfo(TypeInfo(T)).TypeName]);
   end;
 
-  LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
+  LResults := DoGetLazy<T>(id, entity, column, IsEnumerable);
 
   if IsEnumerable then
-    SetInterfaceList<T>(AValue, LResults)
+    SetInterfaceList<T>(value, LResults)
   else
-    SetOne<T>(AValue, LResults, AEntity);
+    SetOne<T>(value, LResults, entity);
 end;
 
-procedure TAbstractSession.SetOne<T>(var AValue: T; AResultset: IDBResultset;
-  AEntity: TObject);
+procedure TAbstractSession.SetOne<T>(var value: T;
+  const resultSet: IDBResultSet; const entity: TObject);
 var
   LValue, LConverted: TValue;
   LType: TRttiType;
@@ -652,37 +648,37 @@ var
 begin
   LType := TRttiExplorer.GetEntityRttiType(TypeInfo(T));
 
-  if TRttiExplorer.TryGetColumnByMemberName(AEntity.ClassType, LType.Name, LColumn) then
+  if TRttiExplorer.TryGetColumnByMemberName(entity.ClassType, LType.Name, LColumn)
+    and not resultSet.IsEmpty then
   begin
-    if not AResultset.IsEmpty then
-    begin
-      LVal := AResultset.GetFieldValue(LColumn.Name);
-      LValue := TUtils.FromVariant(LVal);
-      TRttiExplorer.SetMemberValue(Self, AEntity, LColumn, LValue);
-    end;
+    LVal := resultSet.GetFieldValue(LColumn.Name);
+    LValue := TUtils.FromVariant(LVal);
+    TRttiExplorer.SetMemberValue(Self, entity, LColumn, LValue);
   end;
 end;
 
-procedure TAbstractSession.SetSimpleInterfaceList(var AValue: IInterface;
-  AResultset: IDBResultset; AClassInfo: PTypeInfo);
+procedure TAbstractSession.SetSimpleInterfaceList(var value: IInterface;
+  const resultSet: IDBResultSet; classInfo: PTypeInfo);
 var
   LAddMethod: TRttiMethod;
   LValue, LCurrent: TValue;
   LIndex: Integer;
 begin
-  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, AClassInfo, LAddMethod) then
+  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, classInfo, LAddMethod) then
     raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
 
-  LValue := TValue.From(AValue);
+  LValue := TValue.From(value);
   LIndex := 0;
-  while not AResultset.IsEmpty do
+  while not resultSet.IsEmpty do
   begin
-    LCurrent := TUtils.FromVariant( AResultset.GetFieldValue(LIndex) );
+    LCurrent := TUtils.FromVariant( resultSet.GetFieldValue(LIndex) );
     LAddMethod.Invoke(LValue, [LCurrent]);
-    AResultset.Next;
+    resultSet.Next;
     Inc(LIndex);
   end;
 end;
 
-end.
+{$ENDREGION}
 
+
+end.

@@ -41,20 +41,18 @@ type
 
   TFieldCache = class(TInterfacedObject, IFieldCache)
   private
-    fValues: IDictionary<string,TField>;
     fDataSet: TDataSet;
+    fValues: IDictionary<string,TField>;
+    procedure Build;
   protected
-    procedure Build; virtual;
-    function FieldNameExists(const fieldName: string): Boolean; virtual;
-    function GetFieldValue(const fieldName: string): Variant; virtual;
+    function FieldNameExists(const fieldName: string): Boolean;
+    function GetFieldValue(const fieldName: string): Variant;
   public
-    constructor Create(const dataSet: TDataset); virtual;
+    constructor Create(const dataSet: TDataset);
   end;
 
 implementation
 
-uses
-  Spring;
 
 {$REGION 'TFieldCache'}
 

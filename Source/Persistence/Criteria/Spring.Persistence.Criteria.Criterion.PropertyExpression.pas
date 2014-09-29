@@ -41,20 +41,21 @@ uses
 type
   TPropertyExpression = class(TAbstractCriterion)
   private
-    FOperator: TWhereOperator;
-    FPropertyName: string;
-    FOtherPropertyName: string;
-    FTable: TSQLTable;
-    FOtherTable: TSQLTable;
-  public
-    constructor Create(const APropertyName, AOtherPropertyName: string;
-      AOperator: TWhereOperator; ATable: TSQLTable = nil;
-      AOtherTable: TSQLTable = nil); virtual;
-    destructor Destroy; override;
-  public
+    fOperator: TWhereOperator;
+    fPropertyName: string;
+    fOtherPropertyName: string;
+    fTable: TSQLTable;
+    fOtherTable: TSQLTable;
+  protected
     function GetWhereOperator: TWhereOperator; override;
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand;
-      AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TDMLCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; override;
+  public
+    constructor Create(const propertyName, otherPropertyName: string;
+      whereOperator: TWhereOperator; const table: TSQLTable = nil;
+      const otherTable: TSQLTable = nil); virtual;
+    destructor Destroy; override;
   end;
 
 implementation
@@ -62,59 +63,64 @@ implementation
 uses
   SysUtils;
 
-{ TPropertyExpression }
+{$REGION 'TPropertyExpression'}
 
-constructor TPropertyExpression.Create(const APropertyName, AOtherPropertyName: string; AOperator: TWhereOperator; ATable, AOtherTable: TSQLTable);
+constructor TPropertyExpression.Create(
+  const propertyName, otherPropertyName: string;
+  whereOperator: TWhereOperator; const table, otherTable: TSQLTable);
 begin
   inherited Create;
-  FPropertyName := APropertyName;
-  FOtherPropertyName := AOtherPropertyName;
-  FOperator := AOperator;
-  FTable := ATable;
-  FOtherTable := AOtherTable;
+  fPropertyName := propertyName;
+  fOtherPropertyName := otherPropertyName;
+  fOperator := whereOperator;
+  fTable := table;
+  fOtherTable := otherTable;
 end;
 
 destructor TPropertyExpression.Destroy;
 begin
-  if Assigned(FTable) then
-    FTable.Free;
-  if Assigned(FOtherTable) then
-    FOtherTable.Free;
+  fTable.Free;
+  fOtherTable.Free;
   inherited Destroy;
 end;
 
 function TPropertyExpression.GetWhereOperator: TWhereOperator;
 begin
-  Result := FOperator;
+  Result := fOperator;
 end;
 
-function TPropertyExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TPropertyExpression.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 var
-  LWhere: TSQLWherePropertyField;
-  LTable, LOtherTable: TSQLTable;
+  whereField: TSQLWherePropertyField;
+  table, otherTable: TSQLTable;
 begin
-  Assert(ACommand is TWhereCommand);
+  Assert(command is TWhereCommand);
   inherited;
-  LTable := FTable;
-  LOtherTable := FOtherTable;
+  table := fTable;
+  otherTable := fOtherTable;
 
-  LTable := GetCriterionTable(ACommand, LTable);
-  LOtherTable := GetCriterionTable(ACommand, LOtherTable);
+  table := GetCriterionTable(command, table);
+  otherTable := GetCriterionTable(command, otherTable);
 
-  if not Assigned(LTable) then
-    LTable := ACommand.Table;
+  if not Assigned(table) then
+    table := command.Table;
 
-  if not Assigned(LOtherTable) then
-    LOtherTable := ACommand.Table;
+  if not Assigned(otherTable) then
+    otherTable := command.Table;
 
-  LWhere := TSQLWherePropertyField.Create(AnsiUpperCase(FPropertyName), UpperCase(FOtherPropertyName)
-    , LTable, LOtherTable);
-  LWhere.MatchMode := GetMatchMode;
-  LWhere.WhereOperator := GetWhereOperator;
-  if AAddToCommand then
-    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  whereField := TSQLWherePropertyField.Create(AnsiUpperCase(fPropertyName),
+    AnsiUpperCase(fOtherPropertyName), table, otherTable);
+  whereField.MatchMode := GetMatchMode;
+  whereField.WhereOperator := GetWhereOperator;
+  if addToCommand then
+    TWhereCommand(command).WhereFields.Add(whereField)
   else
-    LWhere.Free;
+    whereField.Free;
 end;
+
+{$ENDREGION}
+
 
 end.

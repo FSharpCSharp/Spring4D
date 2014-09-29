@@ -29,10 +29,10 @@ unit Spring.Persistence.Core.ConnectionFactory;
 interface
 
 uses
-  {$IFNDEF DELPHIXE6_UP}
-  DBXJSON,
-  {$ELSE}
+  {$IFDEF DELPHIXE6_UP}
   JSON,
+  {$ELSE}
+  DBXJSON,
   {$ENDIF}
   Rtti,
   SysUtils,
@@ -44,14 +44,12 @@ type
   EORMConstructorNotFound = Exception;
   EORMConnectionFactoryException = Exception;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Static class which acts as factory for <c>IDBConnection</c>s.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Static class which acts as factory for <c>IDBConnection</c>s.
+  /// </summary>
   TConnectionFactory = class sealed
   private
-    class var FRegistered: IDictionary<TDBDriverType,TClass>;
+    class var fRegistered: IDictionary<TDBDriverType,TClass>;
 
     class function GetJsonPair(const AJsonObject: TJSONObject; const AIndex: Integer): TJSONPair;
     class function GetJsonObjectCount(const AJsonObject: TJSONObject): Integer;
@@ -82,7 +80,8 @@ uses
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Mapping.RttiExplorer;
 
-{ TConnectionFactory }
+
+{$REGION 'TConnectionFactory'}
 
 class function TConnectionFactory.ConcreteCreate(AClass: TClass): TObject;
 var
@@ -97,7 +96,7 @@ begin
   LConstructors := TCollections.CreateList<TRttiMethod>;
   TRttiExplorer.GetDeclaredConstructors(AClass, LConstructors);
 
-  if LConstructors.Count < 1 then
+  if LConstructors.IsEmpty then
     raise EORMConstructorNotFound.CreateFmt('Constructor for class %S not found', [AClass.ClassName]);
 
   LMethod := TRttiExplorer.GetMethodWithLessParameters(LConstructors);
@@ -136,12 +135,12 @@ end;
 
 class constructor TConnectionFactory.Create;
 begin
-  FRegistered := TCollections.CreateDictionary<TDBDriverType,TClass>(100);
+  fRegistered := TCollections.CreateDictionary<TDBDriverType,TClass>(100);
 end;
 
 class destructor TConnectionFactory.Destroy;
 begin
-  FRegistered := nil;
+  fRegistered := nil;
 end;
 
 class function TConnectionFactory.GetInstance(AKey: TDBDriverType; const AJsonString: string): IDBConnection;
@@ -151,7 +150,7 @@ var
   LType: TRttiType;
   sQualifiedName: string;
 begin
-  //resolve connection from file
+  // resolve connection from file
   LConcreteConnection := nil;
   LJsonObj := TJSONObject.ParseJSONValue(AJsonString) as TJSONObject;
   if Assigned(LJsonObj) then
@@ -159,7 +158,7 @@ begin
     try
       sQualifiedName := GetJsonPair(LJsonObj, 0).JsonString.Value;
       LType := GetConnectionType(sQualifiedName);
-      //try to create instance
+      // try to create instance
       LConcreteConnection := ConcreteCreate(LType.AsInstance.MetaclassType);
       SetConnectionProperties(LConcreteConnection, GetJsonPair(LJsonObj, 0).JsonValue as TJSONObject);
       SetConnectionConnected(sQualifiedName, LConcreteConnection);
@@ -189,20 +188,20 @@ end;
 class function TConnectionFactory.GetJsonObjectCount(
   const AJsonObject: TJSONObject): Integer;
 begin
-  {$IF CompilerVersion >=27 }
+  {$IFDEF DELPHIXE6_UP}
   Result := AJsonObject.Count;
   {$ELSE}
   Result := AJsonObject.Size;
-  {$IFEND}
+  {$ENDIF}
 end;
 
 class function TConnectionFactory.GetJsonPair(const AJsonObject: TJSONObject; const AIndex: Integer): TJSONPair;
 begin
-  {$IF CompilerVersion >=27 }
+  {$IFDEF DELPHIXE6_UP}
   Result := AJsonObject.Pairs[0];
   {$ELSE}
   Result := AJsonObject.Get(0);
-  {$IFEND}
+  {$ENDIF}
 end;
 
 class function TConnectionFactory.GetInstance(AKey: TDBDriverType;
@@ -213,7 +212,7 @@ begin
   if not IsRegistered(AKey) then
     raise EORMConnectionNotRegistered.Create('Connection not registered');
 
-  LClass := FRegistered[AKey];
+  LClass := fRegistered[AKey];
 
   Result := ConcreteCreate(LClass, AConcreteConnection);
   if not Assigned(Result) then
@@ -222,7 +221,7 @@ end;
 
 class function TConnectionFactory.IsRegistered(AKey: TDBDriverType): Boolean;
 begin
-  Result := FRegistered.ContainsKey(AKey);
+  Result := fRegistered.ContainsKey(AKey);
 end;
 
 class function TConnectionFactory.GetConnectionType(const AQualifiedName: string): TRttiType;
@@ -240,7 +239,7 @@ var
   i: Integer;
   LConverted: TValue;
 begin
-  //set properties from json config
+  // set properties from json config
   for i := 0 to GetJsonObjectCount(AJsonObj) - 1 do
   begin
     LPair := GetJsonPair(AJsonObj, i);
@@ -255,7 +254,7 @@ class procedure TConnectionFactory.SetConnectionConnected(const AQualifiedName: 
 var
   LProp: TRttiProperty;
 begin
-  //set connected property to true
+  // set connected property to true
   LProp := TRttiContext.Create.FindType(AQualifiedName).GetProperty('Connected');
   if Assigned(LProp) then
   begin
@@ -271,8 +270,10 @@ begin
   if IsRegistered(AKey) then
     raise EORMConnectionAlreadyRegistered.Create('Connection already registered');
 
-  FRegistered.Add(AKey, LClass);
+  fRegistered.Add(AKey, LClass);
 end;
+
+{$ENDREGION}
 
 
 end.

@@ -33,72 +33,70 @@ uses
   Spring.Persistence.Core.Interfaces;
 
 type
-  TEmbeddedEntity = class(TInterfacedObject, IDBResultset)
+  TEmbeddedEntity = class(TInterfacedObject, IDBResultSet)
   protected
     function IsObject: Boolean; virtual; abstract;
     function IsArray: Boolean; virtual; abstract;
 
     function IsEmpty: Boolean; virtual; abstract;
     function Next: Boolean;
-    function FieldNameExists(const AFieldName: string): Boolean; virtual; abstract;
-    function GetFieldValue(AIndex: Integer): Variant; overload; virtual; abstract;
-    function GetFieldValue(const AFieldname: string): Variant; overload; virtual; abstract;
+    function FieldNameExists(const fieldName: string): Boolean; virtual; abstract;
+    function GetFieldValue(index: Integer): Variant; overload; virtual; abstract;
+    function GetFieldValue(const fieldName: string): Variant; overload; virtual; abstract;
     function GetFieldCount: Integer; virtual; abstract;
-    function GetFieldName(AIndex: Integer): string; virtual; abstract;
+    function GetFieldName(index: Integer): string; virtual; abstract;
   public
     constructor Create; virtual;
-    destructor Destroy; override;
 
-    function GetValue(const AFieldName: string): Variant; virtual; abstract;
-    procedure AddValue(const AFieldname: string; const AValue: Variant); virtual; abstract;
+    function GetValue(const fieldName: string): Variant; virtual; abstract;
+    procedure AddValue(const fieldName: string; const value: Variant); virtual; abstract;
   end;
 
   TFieldKey = string;
 
   TEmbeddedObjectEntity = class(TEmbeddedEntity)
   private
-    FValues: IDictionary<string, Variant>;
-    FIndexedValues: IList<string>;
-    FCurrent: Integer;
+    fValues: IDictionary<string, Variant>;
+    fIndexedValues: IList<string>;
+    fCurrent: Integer;
   protected
-    function GetKey(AFieldname: string): TFieldKey; virtual;
+    function GetKey(const fieldName: string): TFieldKey; virtual;
 
     function IsEmpty: Boolean; override;
-    function FieldNameExists(const AFieldName: string): Boolean; override;
-    function GetFieldValue(AIndex: Integer): Variant; overload; override;
-    function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function FieldNameExists(const fieldName: string): Boolean; override;
+    function GetFieldValue(index: Integer): Variant; overload; override;
+    function GetFieldValue(const fieldName: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
-    function GetFieldName(AIndex: Integer): string; override;
+    function GetFieldName(index: Integer): string; override;
   public
     constructor Create; override;
-    destructor Destroy; override;
 
     function IsArray: Boolean; override;
     function IsObject: Boolean; override;
 
-    function GetValue(const AFieldName: string): Variant; override;
-    procedure AddValue(const AFieldname: string; const AValue: Variant); override;
+    function GetValue(const fieldName: string): Variant; override;
+    procedure AddValue(const fieldName: string; const value: Variant); override;
   end;
 
   TEmbeddedArrayEntity = class(TEmbeddedEntity)
   private
-    FValues: IList<Variant>;
-    FCurrent: Integer;
+    fValues: IList<Variant>;
+    fCurrent: Integer;
   protected
     function IsEmpty: Boolean; override;
-    function FieldNameExists(const AFieldName: string): Boolean; override;
-    function GetFieldValue(AIndex: Integer): Variant; overload; override;
-    function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function FieldNameExists(const fieldName: string): Boolean; override;
+    function GetFieldValue(index: Integer): Variant; overload; override;
+    function GetFieldValue(const fieldname: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
-    function GetFieldName(AIndex: Integer): string; override;
+    function GetFieldName(index: Integer): string; override;
   public
     constructor Create; override;
 
     function IsArray: Boolean; override;
     function IsObject: Boolean; override;
 
-    function GetValue(const AFieldName: string): Variant; override;
-    procedure AddValue(const AFieldname: string; const AValue: Variant); override;
+    function GetValue(const fieldName: string): Variant; override;
+    procedure AddValue(const fieldName: string; const value: Variant); override;
   end;
 
 implementation
@@ -108,16 +106,12 @@ uses
   Variants,
   Spring.Persistence.Core.Utils;
 
-{ TEmbeddedEntity }
+
+{$REGION 'TEmbeddedEntity'}
 
 constructor TEmbeddedEntity.Create;
 begin
   inherited Create;
-end;
-
-destructor TEmbeddedEntity.Destroy;
-begin
-  inherited Destroy;
 end;
 
 function TEmbeddedEntity.Next: Boolean;
@@ -125,55 +119,60 @@ begin
   Result := True;
 end;
 
-{ TEmbeddedObjectEntity }
+{$ENDREGION}
+
+
+{$REGION 'TEmbeddedObjectEntity'}
 
 constructor TEmbeddedObjectEntity.Create;
 begin
   inherited Create;
-  FValues := TCollections.CreateDictionary<string, Variant>;
-  FIndexedValues := TCollections.CreateList<string>;
-  FCurrent := -1;
+  fValues := TCollections.CreateDictionary<string, Variant>;
+  fIndexedValues := TCollections.CreateList<string>;
+  fCurrent := -1;
 end;
 
-destructor TEmbeddedObjectEntity.Destroy;
+procedure TEmbeddedObjectEntity.AddValue(const fieldName: string;
+  const value: Variant);
 begin
-  inherited Destroy;
+  fValues.AddOrSetValue(GetKey(fieldName), value);
+  fIndexedValues.Add(GetKey(fieldName));
 end;
 
 function TEmbeddedObjectEntity.FieldNameExists(
-  const AFieldName: string): Boolean;
+  const fieldName: string): Boolean;
 begin
-  Result := FValues.ContainsKey(GetKey(AFieldName));
+  Result := fValues.ContainsKey(GetKey(fieldName));
 end;
 
 function TEmbeddedObjectEntity.GetFieldCount: Integer;
 begin
-  Result := FIndexedValues.Count;
+  Result := fIndexedValues.Count;
 end;
 
-function TEmbeddedObjectEntity.GetFieldName(AIndex: Integer): string;
+function TEmbeddedObjectEntity.GetFieldName(index: Integer): string;
 begin
-  Result := FIndexedValues[AIndex];
+  Result := fIndexedValues[index];
 end;
 
-function TEmbeddedObjectEntity.GetFieldValue(AIndex: Integer): Variant;
+function TEmbeddedObjectEntity.GetFieldValue(index: Integer): Variant;
 begin
-  Result := GetValue(GetFieldName(AIndex));
+  Result := GetValue(GetFieldName(index));
 end;
 
-function TEmbeddedObjectEntity.GetFieldValue(const AFieldname: string): Variant;
+function TEmbeddedObjectEntity.GetFieldValue(const fieldName: string): Variant;
 begin
-  Result := GetValue(AFieldname);
+  Result := GetValue(fieldName);
 end;
 
-function TEmbeddedObjectEntity.GetKey(AFieldname: string): TFieldKey;
+function TEmbeddedObjectEntity.GetKey(const fieldName: string): TFieldKey;
 begin
-  Result := UpperCase(AFieldname);
+  Result := AnsiUpperCase(fieldName);
 end;
 
-function TEmbeddedObjectEntity.GetValue(const AFieldName: string): Variant;
+function TEmbeddedObjectEntity.GetValue(const fieldName: string): Variant;
 begin
-  Result := FValues[GetKey(AFieldName)];
+  Result := fValues[GetKey(fieldName)];
 end;
 
 function TEmbeddedObjectEntity.IsArray: Boolean;
@@ -183,8 +182,8 @@ end;
 
 function TEmbeddedObjectEntity.IsEmpty: Boolean;
 begin
-  Result := FCurrent >= FIndexedValues.Count;
-  FCurrent := FIndexedValues.Count;
+  Result := fCurrent >= fIndexedValues.Count;
+  fCurrent := fIndexedValues.Count;
 end;
 
 function TEmbeddedObjectEntity.IsObject: Boolean;
@@ -192,30 +191,26 @@ begin
   Result := True;
 end;
 
-procedure TEmbeddedObjectEntity.AddValue(const AFieldname: string;
-  const AValue: Variant);
-begin
-  FValues.AddOrSetValue(GetKey(AFieldname), AValue);
-  FIndexedValues.Add(GetKey(AFieldname));
-end;
+{$ENDREGION}
 
-{ TEmbeddedArrayEntity }
 
-procedure TEmbeddedArrayEntity.AddValue(const AFieldname: string;
-  const AValue: Variant);
-begin
-  FValues.Add(AValue);
-end;
+{$REGION 'TEmbeddedArrayEntity'}
 
 constructor TEmbeddedArrayEntity.Create;
 begin
   inherited;
-  FValues := TCollections.CreateList<Variant>;
-  FCurrent := -1;
+  fValues := TCollections.CreateList<Variant>;
+  fCurrent := -1;
+end;
+
+procedure TEmbeddedArrayEntity.AddValue(const fieldName: string;
+  const value: Variant);
+begin
+  fValues.Add(value);
 end;
 
 function TEmbeddedArrayEntity.FieldNameExists(
-  const AFieldName: string): Boolean;
+  const fieldName: string): Boolean;
 begin
   Result := False;
 end;
@@ -225,30 +220,30 @@ begin
   Result := 0;
 end;
 
-function TEmbeddedArrayEntity.GetFieldName(AIndex: Integer): string;
+function TEmbeddedArrayEntity.GetFieldName(index: Integer): string;
 begin
   Result := '';
 end;
 
-function TEmbeddedArrayEntity.GetFieldValue(AIndex: Integer): Variant;
+function TEmbeddedArrayEntity.GetFieldValue(index: Integer): Variant;
 begin
-  Result := FValues[AIndex];
+  Result := fValues[index];
 end;
 
-function TEmbeddedArrayEntity.GetFieldValue(const AFieldname: string): Variant;
+function TEmbeddedArrayEntity.GetFieldValue(const fieldname: string): Variant;
 begin
-  Result := GetValue(AFieldname);
+  Result := GetValue(fieldname);
 end;
 
-function TEmbeddedArrayEntity.GetValue(const AFieldName: string): Variant;
+function TEmbeddedArrayEntity.GetValue(const fieldName: string): Variant;
 var
-  LResultset: IDBResultset;
+  LResultset: IDBResultSet;
 begin
-  Result := FValues[FCurrent];
+  Result := fValues[fCurrent];
   if VarType(Result) = varUnknown then
   begin
     LResultset := TUtils.GetResultsetFromVariant(Result);
-    Result := LResultset.GetFieldValue(AFieldName);
+    Result := LResultset.GetFieldValue(fieldName);
   end;
 end;
 
@@ -259,13 +254,16 @@ end;
 
 function TEmbeddedArrayEntity.IsEmpty: Boolean;
 begin
-  Inc(FCurrent);
-  Result := FCurrent >= FValues.Count;
+  Inc(fCurrent);
+  Result := fCurrent >= fValues.Count;
 end;
 
 function TEmbeddedArrayEntity.IsObject: Boolean;
 begin
   Result := False;
 end;
+
+{$ENDREGION}
+
 
 end.

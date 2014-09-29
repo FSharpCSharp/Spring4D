@@ -30,7 +30,9 @@ interface
 
 {$IFDEF MSWINDOWS}
 uses
-  Spring.Persistence.Adapters.ADO, SysUtils, Spring.Persistence.Core.Interfaces;
+  SysUtils,
+  Spring.Persistence.Adapters.ADO,
+  Spring.Persistence.Core.Interfaces;
 
 {
   Must use OLEDB povider because ODBC providers are buggy with SQL SERVER
@@ -43,7 +45,7 @@ uses
 type
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Represents Miscrosoft SQL Server resultset.
+  ///	  Represents Miscrosoft SQL Server resultset.
   ///	</summary>
   {$ENDREGION}
   TMSSQLResultsetAdapter = class(TADOResultSetAdapter);
@@ -86,15 +88,14 @@ implementation
 {$IFDEF MSWINDOWS}
 
 uses
-  Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.Consts
-  ;
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Consts;
 
 { TMSSQLConnectionAdapter }
 
 function TMSSQLConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
-  if (Connection = nil) then
+  if Connection = nil then
     Exit(nil);
 
   Connection.Connected := True;
@@ -116,7 +117,7 @@ end;
 
 procedure TMSSQLTransactionAdapter.Commit;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.Execute(SQL_COMMIT_TRAN + TransactionName);
@@ -124,7 +125,7 @@ end;
 
 procedure TMSSQLTransactionAdapter.Rollback;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.Execute(SQL_ROLLBACK_TRAN + TransactionName);

@@ -52,7 +52,7 @@ uses
   ,Generics.Collections
   ;
 
-function CreateTestTable(): TSQLTable;
+function CreateTestTable: TSQLTable;
 begin
   Result := TSQLTable.Create;
   Result.Schema := 'TEST';
@@ -61,7 +61,7 @@ begin
 //  Result.Alias := 'C';
 end;
 
-function CreateTestJoinTable(): TSQLTable;
+function CreateTestJoinTable: TSQLTable;
 begin
   Result := TSQLTable.Create;
   Result.Schema := 'TEST';
@@ -70,7 +70,7 @@ begin
  // Result.Alias := 'P';
 end;
 
-function CreateTestCOUNTRYTable(): TSQLTable;
+function CreateTestCOUNTRYTable: TSQLTable;
 begin
   Result := TSQLTable.Create;
   Result.Schema := 'TEST';
@@ -93,7 +93,7 @@ end;
 
 procedure TestTAnsiSQLGenerator.SetUp;
 begin
-  FAnsiSQLGenerator := TAnsiSQLGenerator.Create();
+  FAnsiSQLGenerator := TAnsiSQLGenerator.Create;
 end;
 
 procedure TestTAnsiSQLGenerator.TearDown;
@@ -158,7 +158,7 @@ var
 begin
   LTable := CreateTestTable;
   LTable.Alias := 'A';
-  LJoinTable := CreateTestJoinTable();
+  LJoinTable := CreateTestJoinTable;
   LJoinTable.Alias := 'B';
   LCountriesTable := CreateTestCOUNTRYTable;
   LCountriesTable.Alias := 'C';
@@ -200,13 +200,13 @@ begin
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
     CheckEqualsSQL(SQL_SELECT_TEST_JOIN_2, sSql);
 
-    LCommand.OrderByFields.Add(TSQLOrderField.Create('AGE', LTable));
-    LCommand.OrderByFields[0].OrderType := otDescending;
+    LCommand.OrderByFields.Add(TSQLOrderByField.Create('AGE', LTable));
+    LCommand.OrderByFields[0].SortingDirection := stDescending;
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
     CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER, sSql);
 
-    LCommand.OrderByFields.Add(TSQLOrderField.Create('COUNTRYNAME', LCountriesTable));
+    LCommand.OrderByFields.Add(TSQLOrderByField.Create('COUNTRYNAME', LCountriesTable));
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
     CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER_MULTIPLE, sSql);
 
@@ -343,7 +343,7 @@ begin
     LCommand.SetCommandFieldsFromColumns(LCols);
 
     ReturnValue := FAnsiSQLGenerator.GenerateCreateTable(LCommand);
-    CheckTrue(ReturnValue.Count > 0);
+    CheckTrue(ReturnValue.Any);
   finally
     LTable.Free;
     LCommand.Free;
@@ -368,7 +368,7 @@ begin
     );
 
     LSQL := FAnsiSQLGenerator.GenerateCreateFK(LCommand);
-    CheckTrue(LSQL.Count > 0);
+    CheckTrue(LSQL.Any);
   finally
     LTable.Free;
     LCommand.Free;

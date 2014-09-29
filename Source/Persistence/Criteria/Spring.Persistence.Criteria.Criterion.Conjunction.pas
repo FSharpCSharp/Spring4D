@@ -40,11 +40,15 @@ type
 
 implementation
 
-{ TConjunction }
+
+{$REGION 'TConjunction'}
 
 function TConjunction.GetWhereOperator: TWhereOperator;
 begin
   Result := woAnd;
 end;
+
+{$ENDREGION}
+
 
 end.

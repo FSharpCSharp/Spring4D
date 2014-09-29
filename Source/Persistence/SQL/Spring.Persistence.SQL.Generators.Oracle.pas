@@ -36,25 +36,23 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <b>Oracle</b> SQL generator.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <b>Oracle</b> SQL generator.
+  /// </summary>
   TOracleSQLGenerator = class(TAnsiSQLGenerator)
   protected
     function GetSplitStatementSymbol: string; override;
   public
-    function DoGenerateBackupTable(const ATableName: string): TArray<string>; override;
-    function GenerateGetQueryCount(const ASql: string): string; override;
+    function DoGenerateBackupTable(const tableName: string): TArray<string>; override;
+    function GenerateGetQueryCount(const sql: string): string; override;
     function GetQueryLanguage: TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
-    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
-    function GetSQLSequenceCount(const ASequenceName: string): string; override;
-    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
-    function GetSQLTableExists(const ATablename: string): string; override;
+    function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
+    function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
+    function GeneratePagedQuery(const sql: string; limit, offset: Integer): string; override;
+    function GetSQLSequenceCount(const sequenceName: string): string; override;
+    function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
+    function GetSQLTableExists(const tableName: string): string; override;
   end;
 
 implementation
@@ -64,24 +62,26 @@ uses
   SysUtils,
   Spring.Persistence.SQL.Register;
 
-{ TOracleSQLGenerator }
 
-function TOracleSQLGenerator.DoGenerateBackupTable(const ATableName: string): TArray<string>;
+{$REGION 'TOracleSQLGenerator'}
+
+function TOracleSQLGenerator.DoGenerateBackupTable(const tableName: string): TArray<string>;
 begin
   SetLength(Result, 2);
   Result[0] := Format('CREATE TABLE %0:S AS SELECT * FROM %1:S',
-        [GetTempTableName, ATableName]);
+        [GetTempTableName, tableName]);
   //drop table
-  Result[1] := Format('DROP TABLE %0:S ', [ATableName]);
+  Result[1] := Format('DROP TABLE %0:S ', [tableName]);
 end;
 
-function TOracleSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
+function TOracleSQLGenerator.GenerateCreateSequence(
+  const command: TCreateSequenceCommand): string;
 var
   LSequence: SequenceAttribute;
 begin
-  LSequence := ASequence.Sequence;
+  LSequence := command.Sequence;
   Result := 'BEGIN ';
-  if ASequence.SequenceExists then
+  if command.SequenceExists then
     Result := Result + 'EXECUTE IMMEDIATE ' + QuotedStr(Format('DROP SEQUENCE "%0:S" ', [LSequence.SequenceName])) + ';';
 
   Result := Result + ' EXECUTE IMMEDIATE ' + QuotedStr(Format('CREATE SEQUENCE "%0:S" MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE',
@@ -90,25 +90,27 @@ begin
   Result := Result + ' END;';
 end;
 
-function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+function TOracleSQLGenerator.GenerateGetLastInsertId(
+  const identityColumn: ColumnAttribute): string;
 begin
   Result := '';
 end;
 
-function TOracleSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+function TOracleSQLGenerator.GenerateGetNextSequenceValue(
+  const sequence: SequenceAttribute): string;
 begin
-  Assert(Assigned(ASequence));
-  Result := Format('select %0:S.nextval from dual', [ASequence.SequenceName]);
+  Assert(Assigned(sequence));
+  Result := Format('select %0:S.nextval from dual', [sequence.SequenceName]);
 end;
 
-function TOracleSQLGenerator.GenerateGetQueryCount(const ASql: string): string;
+function TOracleSQLGenerator.GenerateGetQueryCount(const sql: string): string;
 var
   LBuilder: TStringBuilder;
   LSQL: string;
 begin
   LBuilder := TStringBuilder.Create;
   try
-    LSQL := ASql;
+    LSQL := sql;
     if EndsStr(';', LSQL) then
       SetLength(LSQL, Length(LSQL)-1);
 
@@ -125,13 +127,14 @@ begin
   end;
 end;
 
-function TOracleSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
+function TOracleSQLGenerator.GeneratePagedQuery(const sql: string;
+  limit, offset: Integer): string;
 var
   LBuilder: TStringBuilder;
   LSQL: string;
 begin
   LBuilder := TStringBuilder.Create;
-  LSQL := ASql;
+  LSQL := sql;
   try
     if EndsStr(';', LSQL) then
       SetLength(LSQL, Length(LSQL)-1);
@@ -140,9 +143,9 @@ begin
       .AppendLine.Append(' SELECT AROWNUM.*, ROWNUM r___  FROM (  ')
       .Append(LSQL)
       .Append(') AROWNUM ')
-      .AppendFormat('WHERE ROWNUM < (%0:D+%1:D) )', [AOffset+1, ALimit])
+      .AppendFormat('WHERE ROWNUM < (%0:D+%1:D) )', [offset+1, limit])
       .AppendLine
-      .AppendFormat(' WHERE r___ >=%0:D', [AOffset+1]);
+      .AppendFormat(' WHERE r___ >=%0:D', [offset+1]);
 
     Result := LBuilder.ToString;
   finally
@@ -160,9 +163,10 @@ begin
   Result := '';
 end;
 
-function TOracleSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+function TOracleSQLGenerator.GetSQLDataTypeName(
+  const field: TSQLCreateField): string;
 begin
-  Result := inherited GetSQLDataTypeName(AField);
+  Result := inherited GetSQLDataTypeName(field);
   if StartsText('NUMERIC', Result) then
     Result := 'NUMBER' + Copy(Result, 8, Length(Result))
   else if StartsText('NVARCHAR', Result) then
@@ -175,17 +179,17 @@ begin
     Result := 'BINARY_DOUBLE';
 end;
 
-function TOracleSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;
+function TOracleSQLGenerator.GetSQLSequenceCount(const sequenceName: string): string;
 begin
   Result := Format('SELECT COUNT(*) FROM USER_SEQUENCES WHERE SEQUENCE_NAME = %0:S ',
-    [QuotedStr(ASequenceName)]);
+    [QuotedStr(sequenceName)]);
 end;
 
-function TOracleSQLGenerator.GetSQLTableExists(const ATablename: string): string;
+function TOracleSQLGenerator.GetSQLTableExists(const tableName: string): string;
 var
   LSchema, LTable: string;
 begin
-  ParseFullTablename(ATablename, LTable, LSchema);
+  ParseFullTablename(tableName, LTable, LSchema);
   if (LSchema <> '') then
     Result := Format('SELECT COUNT(*) FROM ALL_OBJECTS WHERE OBJECT_TYPE = (''TABLE'') AND UPPER(OBJECT_NAME) = %0:S AND UPPER(OWNER) = %1:S'
     , [QuotedStr(UpperCase(LTable)), QuotedStr(UpperCase(LSchema))])
@@ -193,6 +197,9 @@ begin
     Result := Format('SELECT COUNT(*) FROM ALL_OBJECTS WHERE OBJECT_TYPE = (''TABLE'') AND UPPER(OBJECT_NAME) = %0:S'
     , [QuotedStr(UpperCase(LTable))]);
 end;
+
+{$ENDREGION}
+
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TOracleSQLGenerator.Create);

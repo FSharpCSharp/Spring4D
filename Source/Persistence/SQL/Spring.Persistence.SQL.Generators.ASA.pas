@@ -35,17 +35,15 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <b>Sybase ASA</b> SQL generator.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <b>Sybase ASA</b> SQL generator.
+  /// </summary>
   TASASQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage: TQueryLanguage; override;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
-    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
-    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
+    function GeneratePagedQuery(const sql: string; limit, offset: Integer): string; override;
+    function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
   end;
 
 implementation
@@ -55,21 +53,23 @@ uses
   SysUtils,
   Spring.Persistence.SQL.Register;
 
-{ TASASQLGenerator }
 
-function TASASQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+{$REGION 'TASASQLGenerator'}
+
+function TASASQLGenerator.GenerateGetLastInsertId(
+  const identityColumn: ColumnAttribute): string;
 begin
   Result := 'SELECT @@IDENTITY;';
 end;
 
-function TASASQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
-  AOffset: Integer): string;
+function TASASQLGenerator.GeneratePagedQuery(const sql: string;
+  limit, offset: Integer): string;
 var
   LBuilder: TStringBuilder;
   LSQL: string;
 begin
   LBuilder := TStringBuilder.Create;
-  LSQL := ASql;
+  LSQL := sql;
   try
     if EndsStr(';', LSQL) then
       SetLength(LSQL, Length(LSQL)-1);
@@ -83,7 +83,7 @@ begin
       .AppendLine
       .Append('  ) AS ORM_TOTAL_2')
       .AppendLine
-      .AppendFormat(' WHERE (ORM_ROW_NUM>=%0:D) AND (ORM_ROW_NUM < %0:D+%1:D);', [AOffset, ALimit]);
+      .AppendFormat(' WHERE (ORM_ROW_NUM>=%0:D) AND (ORM_ROW_NUM < %0:D+%1:D);', [offset, limit]);
 
     Result := LBuilder.ToString;
   finally
@@ -97,14 +97,17 @@ begin
 end;
 
 
-function TASASQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+function TASASQLGenerator.GetSQLDataTypeName(const field: TSQLCreateField): string;
 begin
-  Result := inherited GetSQLDataTypeName(AField);
+  Result := inherited GetSQLDataTypeName(field);
   if Result = 'BLOB' then
     Result := 'IMAGE'
   else if Result = 'TIMESTAMP' then
     Result := 'DATETIME';
 end;
+
+{$ENDREGION}
+
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TASASQLGenerator.Create);

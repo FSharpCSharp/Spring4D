@@ -34,11 +34,9 @@ uses
 type
   TDMLCommandType = (ctSelect, ctInsert, ctUpdate, ctDelete, ctUpdateVersion);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents abstract DML command.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents abstract DML command.
+  /// </summary>
   TDMLCommand = class abstract
   private
     FTable: TSQLTable;
@@ -67,17 +65,15 @@ type
     property WhereFields: IList<TSQLWhereField> read FWhereFields;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <c>select</c> command.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>select</c> command.
+  /// </summary>
   TSelectCommand = class(TWhereCommand)
   private
     FSelectFields: IList<TSQLSelectField>;
     FJoins: IList<TSQLJoin>;
     FGroupByFields: IList<TSQLGroupByField>;
-    FOrderByFields: IList<TSQLOrderField>;
+    FOrderByFields: IList<TSQLOrderByField>;
     FPrimaryKeyColumn: ColumnAttribute;
     FForeignColumn: ForeignJoinColumnAttribute;
     FTables: IList<TSQLTable>;
@@ -98,18 +94,16 @@ type
     property SelectFields: IList<TSQLSelectField> read FSelectFields;
     property Joins: IList<TSQLJoin> read FJoins;
     property GroupByFields: IList<TSQLGroupByField> read FGroupByFields;
-    property OrderByFields: IList<TSQLOrderField> read FOrderByFields;
+    property OrderByFields: IList<TSQLOrderByField> read FOrderByFields;
 
     property ForeignColumn: ForeignJoinColumnAttribute read FForeignColumn write FForeignColumn;
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
     property Tables: IList<TSQLTable> read FTables;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <c>insert</c> command.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>insert</c> command.
+  /// </summary>
   TInsertCommand = class(TDMLCommand)
   private
     FInsertFields: IList<TSQLField>;
@@ -124,11 +118,9 @@ type
     property Sequence: SequenceAttribute read FSequence write FSequence;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <c>update</c> command.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>update</c> command.
+  /// </summary>
   TUpdateCommand = class(TWhereCommand)
   private
     FUpdateFields: IList<TSQLField>;
@@ -142,11 +134,9 @@ type
     property UpdateFields: IList<TSQLField> read FUpdateFields;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <c>delete</c> command.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>delete</c> command.
+  /// </summary>
   TDeleteCommand = class(TWhereCommand)
   private
     FPrimaryKeyColumnName: string;
@@ -159,11 +149,9 @@ type
     property PrimaryKeyColumnName: string read FPrimaryKeyColumnName write SetPrimaryKeyColumnName;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <c>create table</c> command.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>create table</c> command.
+  /// </summary>
   TCreateTableCommand = class(TDMLCommand)
   private
     FColumns: IList<TSQLCreateField>;
@@ -180,11 +168,9 @@ type
     property Columns: IList<TSQLCreateField> read FColumns;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <c>create foreign key</c> command.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>create foreign key</c> command.
+  /// </summary>
   TCreateFKCommand = class(TCreateTableCommand)
   private
     FForeigns: IList<TSQLForeignKeyField>;
@@ -197,11 +183,9 @@ type
     property ForeignKeys: IList<TSQLForeignKeyField> read FForeigns;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <c>create sequence</c> command.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>create sequence</c> command.
+  /// </summary>
   TCreateSequenceCommand = class
   private
     FSequence: SequenceAttribute;
@@ -230,7 +214,7 @@ begin
   FSelectFields := TCollections.CreateObjectList<TSQLSelectField>;
   FJoins := TCollections.CreateObjectList<TSQLJoin>;
   FGroupByFields := TCollections.CreateObjectList<TSQLGroupByField>;
-  FOrderByFields := TCollections.CreateObjectList<TSQLOrderField>;
+  FOrderByFields := TCollections.CreateObjectList<TSQLOrderByField>;
   FTables := TCollections.CreateObjectList<TSQLTable>(True);
   FForeignColumn := nil;
 end;

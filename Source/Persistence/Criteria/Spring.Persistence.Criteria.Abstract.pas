@@ -36,32 +36,31 @@ uses
   Spring.Persistence.SQL.Params;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Base implementation of <c>ICriteria&lt;T&gt;</c> interface.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Base implementation of <see cref="Spring.Persistence.Core.Interfaces|ICriteria&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
   TAbstractCriteria<T: class, constructor> = class(TInterfacedObject, ICriteria<T>)
   private
-    FEntityClass: TClass;
-    FCriterions: IList<ICriterion>;
-    FOrders: IList<IOrder>;
+    fEntityClass: TClass;
+    fCriterions: IList<ICriterion>;
+    fOrderBy: IList<IOrderBy>;
     FSession: TSession;
   protected
-    constructor Create(ASession: TSession); virtual;
+    constructor Create(const session: TSession); virtual;
 
-    function GenerateSqlStatement(AParams: IList<TDBParam>): string;
-    function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
+    function GenerateSqlStatement(const params: IList<TDBParam>): string;
+    function Page(page, itemsPerPage: Integer): IDBPage<T>; virtual;
   public
-    function Add(ACriterion: ICriterion): ICriteria<T>; virtual;
-    function AddOrder(AOrder: IOrder): ICriteria<T>; virtual;
+    function Add(const criterion: ICriterion): ICriteria<T>; virtual;
+    function OrderBy(const orderBy: IOrderBy): ICriteria<T>; virtual;
 
     procedure Clear; virtual;
     function Count: Integer; virtual;
     function ToList: IList<T>;
 
-    property Criterions: IList<ICriterion> read FCriterions;
-    property EntityClass: TClass read FEntityClass;
+    property Criterions: IList<ICriterion> read fCriterions;
+    property EntityClass: TClass read fEntityClass;
     property Session: TSession read FSession;
   end;
 
@@ -74,61 +73,57 @@ uses
   Spring.Persistence.SQL.Register,
   Spring.Persistence.SQL.Types;
 
-{ TAbstractCriteria }
 
-constructor TAbstractCriteria<T>.Create(ASession: TSession);
+{$REGION 'TAbstractCriteria'}
+
+constructor TAbstractCriteria<T>.Create(const session: TSession);
 begin
   inherited Create;
-  FEntityClass := T;
-  FSession := ASession;
-  FCriterions := TCollections.CreateList<ICriterion>;
-  FOrders := TCollections.CreateList<IOrder>;
+  fEntityClass := T;
+  FSession := session;
+  fCriterions := TCollections.CreateList<ICriterion>;
+  fOrderBy := TCollections.CreateList<IOrderBy>;
 end;
 
-function TAbstractCriteria<T>.Add(ACriterion: ICriterion): ICriteria<T>;
+function TAbstractCriteria<T>.Add(const criterion: ICriterion): ICriteria<T>;
 begin
-  if ACriterion.GetEntityClass = nil then
-    ACriterion.SetEntityClass(FEntityClass);
-  FCriterions.Add(ACriterion);
-  Result := Self;
-end;
-
-function TAbstractCriteria<T>.AddOrder(AOrder: IOrder): ICriteria<T>;
-begin
-  FOrders.Add(AOrder);
+  if criterion.GetEntityClass = nil then
+    criterion.SetEntityClass(fEntityClass);
+  fCriterions.Add(criterion);
   Result := Self;
 end;
 
 procedure TAbstractCriteria<T>.Clear;
 begin
-  FCriterions.Clear;
-  FOrders.Clear;
+  fCriterions.Clear;
+  fOrderBy.Clear;
 end;
 
 function TAbstractCriteria<T>.Count: Integer;
 begin
-  Result := FCriterions.Count;
+  Result := fCriterions.Count;
 end;
 
-function TAbstractCriteria<T>.GenerateSqlStatement(AParams: IList<TDBParam>): string;
+function TAbstractCriteria<T>.GenerateSqlStatement(const params: IList<TDBParam>): string;
 var
   LCriterion: ICriterion;
   LWhereField: TSQLWhereField;
-  LOrderField: TSQLOrderField;
-  LOrder: IOrder;
+  LOrderField: TSQLOrderByField;
+  LOrderBy: IOrderBy;
   LCommand: TSelectCommand;
   LGenerator: ISQLGenerator;
 begin
-  LCommand := TSelectCommand.Create(FEntityClass);
+  LCommand := TSelectCommand.Create(fEntityClass);
   LGenerator := TSQLGeneratorRegister.GetGenerator(FSession.Connection.GetQueryLanguage);
   try
     for LCriterion in Criterions do
-      LCriterion.ToSqlString(AParams, LCommand, LGenerator, True);
+      LCriterion.ToSqlString(params, LCommand, LGenerator, True);
 
-    for LOrder in FOrders do
+    for LOrderBy in fOrderBy do
     begin
-      LOrderField := TSQLOrderField.Create(LOrder.GetPropertyName, LCommand.FindTable(LOrder.GetEntityClass));
-      LOrderField.OrderType := LOrder.GetOrderType;
+      LOrderField := TSQLOrderByField.Create(LOrderBy.GetPropertyName,
+        LCommand.FindTable(LOrderBy.GetEntityClass));
+      LOrderField.SortingDirection := LOrderBy.GetSortingDirection;
       LCommand.OrderByFields.Add(LOrderField);
     end;
 
@@ -136,6 +131,22 @@ begin
   finally
     LCommand.Free;
   end;
+end;
+
+function TAbstractCriteria<T>.OrderBy(const orderBy: IOrderBy): ICriteria<T>;
+begin
+  fOrderBy.Add(orderBy);
+  Result := Self;
+end;
+
+function TAbstractCriteria<T>.Page(page, itemsPerPage: Integer): IDBPage<T>;
+var
+  LSql: string;
+  LParams: IList<TDBParam>;
+begin
+  LParams := TCollections.CreateObjectList<TDBParam>;
+  LSql := GenerateSqlStatement(LParams);
+  Result := FSession.Page<T>(page, itemsPerPage, LSql, LParams);
 end;
 
 function TAbstractCriteria<T>.ToList: IList<T>;
@@ -148,16 +159,4 @@ begin
   Result := Session.GetList<T>(LSql, LParams);
 end;
 
-function TAbstractCriteria<T>.Page(APage, AItemsPerPage: Integer): IDBPage<T>;
-var
-  LSql: string;
-  LParams: IList<TDBParam>;
-begin
-  LParams := TCollections.CreateObjectList<TDBParam>;
-  LSql := GenerateSqlStatement(LParams);
-  Result := FSession.Page<T>(APage, AItemsPerPage, LSql, LParams);
-end;
-
 end.
-
-

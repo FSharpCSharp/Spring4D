@@ -41,11 +41,14 @@ uses
 type
   TLikeExpression = class(TSimpleExpression)
   private
-    FMatchMode: TMatchMode;
+    fMatchMode: TMatchMode;
+  protected
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TDMLCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; override;
   public
-    constructor Create(const APropertyName: string; const AValue: TValue; AOperator: TWhereOperator; const AMatchMode: TMatchMode); reintroduce; overload;
-
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    constructor Create(const propertyName: string; const value: TValue;
+      whereOperator: TWhereOperator; matchMode: TMatchMode); reintroduce; overload;
   end;
 
 implementation
@@ -53,31 +56,38 @@ implementation
 uses
   SysUtils;
 
-{ TLikeExpression }
 
-constructor TLikeExpression.Create(const APropertyName: string; const AValue: TValue; AOperator: TWhereOperator; const AMatchMode: TMatchMode);
+{$REGION 'TLikeExpression'}
+
+constructor TLikeExpression.Create(const propertyName: string;
+  const value: TValue; whereOperator: TWhereOperator; matchMode: TMatchMode);
 begin
-  inherited Create(APropertyName, AValue, AOperator);
-  FMatchMode := AMatchMode;
+  inherited Create(propertyName, value, whereOperator);
+  fMatchMode := matchMode;
 end;
 
-function TLikeExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TLikeExpression.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 var
-  LWhere: TSQLWhereField;
+  whereField: TSQLWhereField;
 begin
-  Assert(ACommand is TWhereCommand);
+  Assert(command is TWhereCommand);
 
   Result := Format('%s %s %s', [PropertyName, WhereOpNames[GetWhereOperator],
-    GetMatchModeString(FMatchMode, Value.AsString)]);
+    GetMatchModeString(fMatchMode, Value.AsString)]);
 
-  LWhere := TSQLWhereField.Create(Result, GetCriterionTable(ACommand) );
-  LWhere.MatchMode := GetMatchMode;
-  LWhere.WhereOperator := GetWhereOperator;
+  whereField := TSQLWhereField.Create(Result, GetCriterionTable(command) );
+  whereField.MatchMode := GetMatchMode;
+  whereField.WhereOperator := GetWhereOperator;
 
-  if AAddToCommand then
-    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  if addToCommand then
+    TWhereCommand(command).WhereFields.Add(whereField)
   else
-    LWhere.Free;
+    whereField.Free;
 end;
+
+{$ENDREGION}
+
 
 end.

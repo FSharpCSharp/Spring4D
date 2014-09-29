@@ -36,18 +36,16 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents <b>MySQL</b> SQL generator.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <b>MySQL</b> SQL generator.
+  /// </summary>
   TMySQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage: TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
-    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
+    function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
+    function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
     function GetEscapeFieldnameChar: Char; override;
   end;
 
@@ -57,19 +55,23 @@ uses
   StrUtils,
   Spring.Persistence.SQL.Register;
 
-{ TMySQLGenerator }
 
-function TMySQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
+{$REGION 'TMySQLGenerator'}
+
+function TMySQLGenerator.GenerateCreateSequence(
+  const command: TCreateSequenceCommand): string;
 begin
   Result := '';
 end;
 
-function TMySQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+function TMySQLGenerator.GenerateGetLastInsertId(
+  const identityColumn: ColumnAttribute): string;
 begin
   Result := 'SELECT LAST_INSERT_ID;';
 end;
 
-function TMySQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+function TMySQLGenerator.GenerateGetNextSequenceValue(
+  const sequence: SequenceAttribute): string;
 begin
   Result := '';
 end;
@@ -86,9 +88,9 @@ begin
   Result := qlMySQL;
 end;
 
-function TMySQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+function TMySQLGenerator.GetSQLDataTypeName(const field: TSQLCreateField): string;
 begin
-  Result := inherited GetSQLDataTypeName(AField);
+  Result := inherited GetSQLDataTypeName(field);
   if StartsText('NUMERIC', Result) then
     Result := 'DECIMAL' + Copy(Result, 8, Length(Result))
   else if StartsText('NCHAR', Result) then
@@ -96,6 +98,9 @@ begin
   else if StartsText('NVARCHAR', Result) then
     Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET ucs2';
 end;
+
+{$ENDREGION}
+
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TMySQLGenerator.Create);

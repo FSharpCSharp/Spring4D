@@ -34,9 +34,9 @@ uses
 type
   EBaseORMException = class(Exception)
   protected
-    function EntityToString(AEntity: TObject): string; virtual;
+    function EntityToString(const entity: TObject): string; virtual;
   public
-    constructor Create(AEntity: TObject); reintroduce; overload;
+    constructor Create(const entity: TObject); reintroduce; overload;
   end;
 
   EEntityAlreadyPersisted = class(EBaseORMException);
@@ -98,35 +98,39 @@ uses
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.Mapping.RttiExplorer;
 
-{ EBaseORMException }
 
-constructor EBaseORMException.Create(AEntity: TObject);
+{$REGION 'EBaseORMException'}
+
+constructor EBaseORMException.Create(const entity: TObject);
 begin
-  inherited Create(EntityToString(AEntity));
+  inherited Create(EntityToString(entity));
 end;
 
-function EBaseORMException.EntityToString(AEntity: TObject): string;
+function EBaseORMException.EntityToString(const entity: TObject): string;
 var
-  LBuilder: TStringBuilder;
-  LColumns: IList<ColumnAttribute>;
-  LColumn: ColumnAttribute;
-  LValue: TValue;
+  builder: TStringBuilder;
+  columns: IList<ColumnAttribute>;
+  column: ColumnAttribute;
+  value: TValue;
 begin
-  if not Assigned(AEntity) then
+  if not Assigned(entity) then
     Exit('null');
-  LBuilder := TStringBuilder.Create;
+  builder := TStringBuilder.Create;
   try
-    LBuilder.AppendFormat('ClassName: %S', [AEntity.ClassName]).AppendLine;
-    LColumns := TRttiExplorer.GetColumns(AEntity.ClassType);
-    for LColumn in LColumns do
+    builder.AppendFormat('ClassName: %s', [entity.ClassName]).AppendLine;
+    columns := TRttiExplorer.GetColumns(entity.ClassType);
+    for column in columns do
     begin
-      LValue := TRttiExplorer.GetMemberValue(AEntity, LColumn.ClassMemberName);
-      LBuilder.AppendFormat('[%S] : %S', [LColumn.Name, LValue.ToString]).AppendLine;
+      value := TRttiExplorer.GetMemberValue(entity, column.ClassMemberName);
+      builder.AppendFormat('[%s] : %s', [column.Name, value.ToString]).AppendLine;
     end;
-    Result := LBuilder.ToString;
+    Result := builder.ToString;
   finally
-    LBuilder.Free;
+    builder.Free;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

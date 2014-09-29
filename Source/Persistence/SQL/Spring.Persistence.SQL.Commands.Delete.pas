@@ -36,37 +36,35 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Responsible for building and executing <c>delete</c> statements. 
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Responsible for building and executing <c>delete</c> statements. 
+  /// </summary>
   TDeleteExecutor = class(TAbstractCommandExecutor)
   private
-    FTable: TSQLTable;
-    FCommand: TDeleteCommand;
+    fTable: TSQLTable;
+    fCommand: TDeleteCommand;
   protected
     function GetCommand: TDMLCommand; override;
-    function GetPrimaryKeyValue(AEntity: TObject): TValue; virtual;
+    function GetPrimaryKeyValue(const entity: TObject): TValue; virtual;
   public
     constructor Create; override;
     destructor Destroy; override;
 
-    procedure Build(AClass: TClass); override;
-    procedure BuildParams(AEntity: TObject); override;
+    procedure Build(entityClass: TClass); override;
+    procedure BuildParams(const entity: TObject); override;
 
-    procedure Execute(AEntity: TObject); override;
+    procedure Execute(const entity: TObject); override;
   end;
 
   TDeleteByValueExecutor = class(TDeleteExecutor)
   private
-    FPrimaryKeyValue: TValue;
+    fPrimaryKeyValue: TValue;
   protected
-    function GetPrimaryKeyValue(AEntity: TObject): TValue; override;
+    function GetPrimaryKeyValue(const entity: TObject): TValue; override;
   public
-    procedure Execute(AEntity: TObject); override;
+    procedure Execute(const entity: TObject); override;
 
-    property PrimaryKeyValue: TValue read FPrimaryKeyValue write FPrimaryKeyValue;
+    property PrimaryKeyValue: TValue read fPrimaryKeyValue write fPrimaryKeyValue;
   end;
 
 implementation
@@ -74,51 +72,58 @@ implementation
 uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer
-  ;
+  Spring.Persistence.Mapping.RttiExplorer;
 
-{ TDeleteCommand }
 
-procedure TDeleteExecutor.Build(AClass: TClass);
-begin
-  inherited Build(AClass);
-  if not EntityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
-
-  FTable.SetFromAttribute(EntityData.EntityTable);
-  FCommand.PrimaryKeyColumnName := EntityData.PrimaryKeyColumn.Name;
-  SQL := Generator.GenerateDelete(FCommand);
-end;
-
-procedure TDeleteExecutor.BuildParams(AEntity: TObject);
-var
-  LParam: TDBParam;
-begin
-  Assert(EntityData.PrimaryKeyColumn <> nil);
-  inherited BuildParams(AEntity);
-
-  LParam := TDBParam.Create(
-    Command.GetExistingParameterName(EntityData.PrimaryKeyColumn.Name),
-    TUtils.AsVariant(GetPrimaryKeyValue(AEntity)));
-  SQLParameters.Add(LParam);
-end;
+{$REGION 'TDeleteCommand'}
 
 constructor TDeleteExecutor.Create;
 begin
   inherited Create;
-  FTable := TSQLTable.Create;
-  FCommand := TDeleteCommand.Create(FTable);
+  fTable := TSQLTable.Create;
+  fCommand := TDeleteCommand.Create(fTable);
 end;
 
-procedure TDeleteExecutor.Execute(AEntity: TObject);
+destructor TDeleteExecutor.Destroy;
+begin
+  fCommand.Free;
+  fTable.Free;
+  inherited Destroy;
+end;
+
+procedure TDeleteExecutor.Build(entityClass: TClass);
+begin
+  inherited Build(entityClass);
+  if not EntityData.IsTableEntity then
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
+
+  fTable.SetFromAttribute(EntityData.EntityTable);
+  fCommand.PrimaryKeyColumnName := EntityData.PrimaryKeyColumn.Name;
+  SQL := Generator.GenerateDelete(fCommand);
+end;
+
+procedure TDeleteExecutor.BuildParams(const entity: TObject);
+var
+  LParam: TDBParam;
+begin
+  Assert(EntityData.PrimaryKeyColumn <> nil);
+  inherited BuildParams(entity);
+
+  LParam := TDBParam.Create(
+    Command.GetExistingParameterName(EntityData.PrimaryKeyColumn.Name),
+    TUtils.AsVariant(GetPrimaryKeyValue(entity)));
+  SQLParameters.Add(LParam);
+end;
+
+procedure TDeleteExecutor.Execute(const entity: TObject);
 var
   LStmt: IDBStatement;
 begin
-  Assert(Assigned(AEntity));
+  Assert(Assigned(entity));
 
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
-  BuildParams(AEntity);
+  BuildParams(entity);
   try
     LStmt.SetParams(SQLParameters);
     LStmt.Execute;
@@ -129,30 +134,26 @@ end;
 
 function TDeleteExecutor.GetCommand: TDMLCommand;
 begin
-  Result := FCommand;
+  Result := fCommand;
 end;
 
-function TDeleteExecutor.GetPrimaryKeyValue(AEntity: TObject): TValue;
+function TDeleteExecutor.GetPrimaryKeyValue(const entity: TObject): TValue;
 begin
-  Result := TRttiExplorer.GetPrimaryKeyValue(AEntity);
+  Result := TRttiExplorer.GetPrimaryKeyValue(entity);
 end;
 
-destructor TDeleteExecutor.Destroy;
-begin
-  FTable.Free;
-  FCommand.Free;
-  inherited Destroy;
-end;
+{$ENDREGION}
 
-{ TDeleteByValueExecutor }
 
-procedure TDeleteByValueExecutor.Execute(AEntity: TObject);
+{$REGION 'TDeleteByValueExecutor'}
+
+procedure TDeleteByValueExecutor.Execute(const entity: TObject);
 var
   LStmt: IDBStatement;
 begin
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
-  BuildParams(AEntity);
+  BuildParams(entity);
   try
     LStmt.SetParams(SQLParameters);
     LStmt.Execute;
@@ -161,9 +162,12 @@ begin
   end;
 end;
 
-function TDeleteByValueExecutor.GetPrimaryKeyValue(AEntity: TObject): TValue;
+function TDeleteByValueExecutor.GetPrimaryKeyValue(const entity: TObject): TValue;
 begin
-  Result := FPrimaryKeyValue;
+  Result := fPrimaryKeyValue;
 end;
+
+{$ENDREGION}
+
 
 end.

@@ -35,52 +35,48 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Responsible for building and executing paged statements.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Responsible for building and executing paged statements.
+  /// </summary>
   TPageExecutor = class(TAbstractCommandExecutor)
   private
-    FPage: Integer;
-    FItemsPerPage: Integer;
-    FTotalItems: Int64;
+    fPage: Integer;
+    fItemsPerPage: Integer;
+    fTotalItems: Int64;
     function GetLimit: Integer;
     function GetOffset: Integer;
   protected
     function GetCommand: TDMLCommand; override;
   public
-    procedure Build(AClass: TClass); override;
-    function BuildSQL(const ASql: string): string;
-    procedure Execute(AEntity: TObject); override;
+    procedure Build(entityClass: TClass); override;
+    function BuildSQL(const sql: string): string;
+    procedure Execute(const entity: TObject); override;
 
-    property Page: Integer read FPage write FPage;
-    property ItemsPerPage: Integer read FItemsPerPage write FItemsPerPage;
-    property TotalItems: Int64 read FTotalItems write FTotalItems;
+    property Page: Integer read fPage write fPage;
+    property ItemsPerPage: Integer read fItemsPerPage write fItemsPerPage;
+    property TotalItems: Int64 read fTotalItems write fTotalItems;
     property Limit: Integer read GetLimit;
     property Offset: Integer read GetOffset;
   end;
 
 implementation
 
-uses
-  Math;
 
-{ TPageExecutor }
+{$REGION 'TPageExecutor'}
 
-function TPageExecutor.BuildSQL(const ASql: string): string;
+function TPageExecutor.BuildSQL(const sql: string): string;
 begin
-  Result := Generator.GeneratePagedQuery(ASql, Limit, Offset);
+  Result := Generator.GeneratePagedQuery(sql, Limit, Offset);
 end;
 
-procedure TPageExecutor.Build(AClass: TClass);
+procedure TPageExecutor.Build(entityClass: TClass);
 begin
-  //do nothing
+  // do nothing
 end;
 
-procedure TPageExecutor.Execute(AEntity: TObject);
+procedure TPageExecutor.Execute(const entity: TObject);
 begin
-  //do nothing
+  // do nothing
 end;
 
 function TPageExecutor.GetCommand: TDMLCommand;
@@ -100,5 +96,8 @@ begin
   else
     Result := (Page * ItemsPerPage) - ItemsPerPage;
 end;
+
+{$ENDREGION}
+
 
 end.

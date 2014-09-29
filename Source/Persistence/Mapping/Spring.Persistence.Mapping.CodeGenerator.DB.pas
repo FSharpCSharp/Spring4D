@@ -348,8 +348,8 @@ begin
       while not LDataset.Eof do
       begin
         FPrimaryKeys.Add(
-          GetPrimKeyFindKey(LTablenameField.AsString, LSchemaField.AsString, LColumnNameField.AsString)
-          , True);
+          GetPrimKeyFindKey(LTablenameField.AsString, LSchemaField.AsString,
+            LColumnNameField.AsString), True);
         LDataset.Next;
       end;
     end;
@@ -369,10 +369,8 @@ begin
   FEntities.Clear;
 
   if not FConnected then
-  begin
     if not Connect then
       Exit;
-  end;
 
   LTables := TStringList.Create;
   LDataset := TADODataSet.Create(nil);
@@ -386,17 +384,15 @@ begin
       if LDataset.Active then
         LDataset.Close;
 
-      LDataset.CommandText := Format('SELECT * FROM %0:S WHERE 1=2'
-        , [LTableName]);
+      LDataset.CommandText := Format('SELECT * FROM %0:S WHERE 1=2', [LTableName]);
       try
         LDataset.Open;
 
-        if (LDataset.Fields.Count > 0) then
+        if LDataset.Fields.Count > 0 then
         begin
           LEntityModel := CreateEntityDataFromFields(LDataset.Fields, LTableName);
           FEntities.Add(LEntityModel);
         end;
-
       except
         on E:Exception do
         begin
@@ -404,7 +400,6 @@ begin
         end;
       end;
     end;
-
   finally
     LTables.Free;
     LDataset.Free;

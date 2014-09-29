@@ -29,17 +29,17 @@ unit Spring.Persistence.SQL.Types;
 interface
 
 uses
-  Spring.Collections, Spring.Persistence.Mapping.Attributes, TypInfo;
+  Spring.Collections,
+  Spring.Persistence.Mapping.Attributes,
+  TypInfo;
 
 const
   CRLF = #13#10;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Database table.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Database table.
+  /// </summary>
   TSQLTable = class
   private
     FName: string;
@@ -65,11 +65,9 @@ type
     property Schema: string read FSchema write FSchema;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents field of the database table.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents field of the database table.
+  /// </summary>
   ISQLField = interface
     ['{2316102E-61A3-4454-A7B2-18090C384882}']
     function GetFieldname: string;
@@ -82,11 +80,9 @@ type
     property Table: TSQLTable read GetTable;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents field of the database table.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents field of the database table.
+  /// </summary>
   TSQLField = class(TInterfacedObject, ISQLField)
   private
     FTable: TSQLTable;
@@ -109,22 +105,18 @@ type
     property Table: TSQLTable read GetTable write FTable;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents field of the database table which is used in <c>Select</c>
-  ///	  statements.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents field of the database table which is used in <c>select</c>
+  ///   statements.
+  /// </summary>
   TSQLSelectField = class(TSQLField)
 
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents field of the database table which is used in
-  ///	  <c>Create Table</c> statements.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents field of the database table which is used in <c>create table</c>
+  ///    statements.
+  /// </summary>
   TSQLCreateField = class(TSQLField)
   private
     FIsPrimaryKey: Boolean;
@@ -150,11 +142,9 @@ type
     property Properties: TColumnProperties read FProperties;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents foreign key field of the database table.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents foreign key field of the database table.
+  /// </summary>
   TSQLForeignKeyField = class(TSQLField)
   private
     FReferencedColumnName: string;
@@ -197,12 +187,10 @@ const
   StartEndOperators = [woOr, woOrEnd, woAnd, woAndEnd, woNot, woNotEnd];
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents field of the database table which is used in <c>where</c>
-  ///	  clause.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents field of the database table which is used in <c>where</c>
+  ///   clause.
+  /// </summary>
   TSQLWhereField = class(TSQLField)
   private
     FWhereOperator: TWhereOperator;
@@ -225,12 +213,10 @@ type
     property ParamName2: string read FParamName2 write FParamName2;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents field of the database table which is used in <c>where</c>
-  ///	  clause.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents field of the database table which is used in <c>where</c>
+  ///   clause.
+  /// </summary>
   TSQLWherePropertyField = class(TSQLWhereField)
   private
     FOtherTable: TSQLTable;
@@ -245,42 +231,35 @@ type
     property OtherTable: TSQLTable read FOtherTable write FOtherTable;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents field of the database table which is used in <c>Group By</c>
-  ///	  clause.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents field of the database table which is used in <c>group by</c>
+  ///   clause.
+  /// </summary>
   TSQLGroupByField = class(TSQLField)
-
   end;
 
-  TOrderType = (otAscending, otDescending);
+  TSortingDirection = (stAscending, stDescending);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents field of the database table which is used in <c>Order By</c>
-  ///	  clause.
-  ///	</summary>
-  {$ENDREGION}
-  TSQLOrderField = class(TSQLField)
+  /// <summary>
+  ///   Represents field of the database table which is used in <c>order by</c>
+  ///   clause.
+  /// </summary>
+  TSQLOrderByField = class(TSQLField)
   private
-    FOrderType: TOrderType;
+    fSortingDirection: TSortingDirection;
   public
     constructor Create(const AFieldname: string; ATable: TSQLTable); override;
 
     function GetFullOrderByFieldname(const AEscapeChar: Char): string;
 
-    property OrderType: TOrderType read FOrderType write FOrderType;
+    property SortingDirection: TSortingDirection read fSortingDirection write fSortingDirection;
   end;
 
   TSQLJoinType = (jtInner, jtLeft);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents join segment.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>join</c> segment.
+  /// </summary>
   TSQLJoinSegment = class
   private
     FPKField: ISQLField;
@@ -293,11 +272,9 @@ type
   end;
 
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents join of database tables.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents <c>join</c> of database tables.
+  /// </summary>
   TSQLJoin = class
   private
     FJoinType: TSQLJoinType;
@@ -312,11 +289,9 @@ type
     property Segments: IList<TSQLJoinSegment> read FSegments write FSegments;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Static class which is used to generate table aliases.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Static class which is used to generate table aliases.
+  /// </summary>
   TSQLAliasGenerator = class
   private
     class var FAliases: IDictionary<string,string>;
@@ -335,11 +310,10 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.Exceptions
-  ,Spring.Persistence.Core.EntityCache
-  ,SysUtils
-  ,StrUtils
-  ;
+  SysUtils,
+  StrUtils,
+  Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Core.Exceptions;
 
 function GetMatchModeString(AMatchMode: TMatchMode; const APattern: string): string;
 const
@@ -377,7 +351,7 @@ begin
 
   LEntityData := TEntityCache.Get(AEntityClass);
   if not LEntityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Entity ("%S") is not a table', [AEntityClass.ClassName]);
+    raise ETableNotSpecified.CreateFmt('Entity ("%s") is not a table', [AEntityClass.ClassName]);
 
   Result := TSQLTable.Create;
   Result.SetFromAttribute(LEntityData.EntityTable);
@@ -448,7 +422,7 @@ end;
 
 function TSQLField.GetAlias: string;
 begin
-  Result := FAlias;  
+  Result := FAlias;
 end;
 
 function TSQLField.GetEscapedFieldname(const AEscapeChar: Char): string;
@@ -565,19 +539,19 @@ end;
 
 { TSQLOrderField }
 
-constructor TSQLOrderField.Create(const AFieldname: string; ATable: TSQLTable);
+constructor TSQLOrderByField.Create(const AFieldname: string; ATable: TSQLTable);
 begin
   inherited Create(AFieldname, ATable);
-  FOrderType := otAscending;
+  fSortingDirection := stAscending;
 end;
 
-function TSQLOrderField.GetFullOrderByFieldname(const AEscapeChar: Char): string;
+function TSQLOrderByField.GetFullOrderByFieldname(const AEscapeChar: Char): string;
 begin
   Result := GetFullFieldname(AEscapeChar);
 
-  case FOrderType of
-    otAscending:  Result := Result + ' ASC' ;
-    otDescending: Result := Result + ' DESC';
+  case fSortingDirection of
+    stAscending:  Result := Result + ' ASC' ;
+    stDescending: Result := Result + ' DESC';
   end;
 end;
 
@@ -605,13 +579,13 @@ begin
   case WhereOperator of
     woIsNull, woIsNotNull: Result := GetFullFieldname(AEscapeChar) + ' ' + WhereOpNames[WhereOperator];
     woLike, woNotLike, woIn, woNotIn: Result := GetFullFieldname(AEscapeChar);
-    woOr, woAnd: Result := Format('(%S %S %S)', [FLeftSQL, WhereOpNames[WhereOperator], FRightSQL]);
-    woNot: Result := Format('%S (%S)', [WhereOpNames[WhereOperator], FLeftSQL]);
+    woOr, woAnd: Result := Format('(%s %s %s)', [FLeftSQL, WhereOpNames[WhereOperator], FRightSQL]);
+    woNot: Result := Format('%s (%s)', [WhereOpNames[WhereOperator], FLeftSQL]);
     woOrEnd, woAndEnd, woNotEnd: Result := '';
-    woJunction: Result := Format('(%S)', [FLeftSQL]);
-    woBetween: Result := Format('(%S %S %S AND %S)', [GetFullFieldname(AEscapeChar), WhereOpNames[WhereOperator], FParamName, FParamName2]);
-    else
-      Result := GetFullFieldname(AEscapeChar) + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';
+    woJunction: Result := Format('(%s)', [FLeftSQL]);
+    woBetween: Result := Format('(%s %s %s AND %s)', [GetFullFieldname(AEscapeChar), WhereOpNames[WhereOperator], FParamName, FParamName2]);
+  else
+    Result := GetFullFieldname(AEscapeChar) + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';
   end;
 end;
 
@@ -679,7 +653,7 @@ end;
 
 function TSQLForeignKeyField.GetForeignKeyName: string;
 begin
-  Result := Format('FK_%0:S_%1:S', [Table.GetNameWithoutSchema, Fieldname]);
+  Result := Format('FK_%0:s_%1:s', [Table.GetNameWithoutSchema, Fieldname]);
 end;
 
 { TSQLWherePropertyField }
@@ -704,7 +678,7 @@ end;
 
 function TSQLWherePropertyField.ToSQLString(const AEscapeChar: Char): string;
 begin
-  Result := Format('%S %S %S', [GetFullLeftFieldname, WhereOpNames[WhereOperator], GetFullRightFieldname]);
+  Result := Format('%s %s %s', [GetFullLeftFieldname, WhereOpNames[WhereOperator], GetFullRightFieldname]);
 end;
 
 end.

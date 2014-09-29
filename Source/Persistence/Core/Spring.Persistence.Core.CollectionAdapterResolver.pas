@@ -36,7 +36,8 @@ uses
 type
   TCollectionAdapterResolver = class
   public
-    class function Resolve<T: class, constructor>(const ACollection: TValue): ICollectionAdapter<T>;
+    class function Resolve<T: class, constructor>(
+      const collection: TValue): ICollectionAdapter<T>;
   end;
 
 implementation
@@ -48,18 +49,22 @@ uses
   Spring.Persistence.Core.RttiCollectionAdapter,
   Spring.Persistence.Core.SpringCollectionAdapter;
 
-{ TCollectionAdapterResolver }
+
+{$REGION 'TCollectionAdapterResolver'}
 
 class function TCollectionAdapterResolver.Resolve<T>(
-  const ACollection: TValue): ICollectionAdapter<T>;
+  const collection: TValue): ICollectionAdapter<T>;
 begin
-  if ACollection.IsEmpty then
+  if collection.IsEmpty then
     raise EORMContainerItemTypeNotSupported.Create('Collection type is empty');
 
-  if (ACollection.Kind = tkInterface) and Supports(ACollection.AsInterface, ICollection<TObject>) then
-    Result := TSpringCollectionAdapter<T>.Create(ACollection)
+  if (collection.Kind = tkInterface) and Supports(collection.AsInterface, ICollection<TObject>) then
+    Result := TSpringCollectionAdapter<T>.Create(collection)
   else
-    Result := TRttiCollectionAdapter<T>.Create(ACollection);
+    Result := TRttiCollectionAdapter<T>.Create(collection);
 end;
+
+{$ENDREGION}
+
 
 end.

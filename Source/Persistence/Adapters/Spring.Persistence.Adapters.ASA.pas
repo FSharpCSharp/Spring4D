@@ -29,12 +29,14 @@ unit Spring.Persistence.Adapters.ASA;
 interface
 
 uses
-  Spring.Persistence.Adapters.ADO, SysUtils, Spring.Persistence.Core.Interfaces;
+  SysUtils,
+  Spring.Persistence.Adapters.ADO,
+  Spring.Persistence.Core.Interfaces;
 
 type
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Represent Sybase ASA resultset.
+  ///	  Represents Sybase ASA resultset.
   ///	</summary>
   {$ENDREGION}
   TASAResultsetAdapter = class(TADOResultSetAdapter);
@@ -73,15 +75,14 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.Consts
-  ;
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Consts;
 
 { TASAConnectionAdapter }
 
 function TASAConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
-  if (Connection = nil) then
+  if Connection = nil then
     Exit(nil);
 
   Connection.Connected := True;
@@ -103,7 +104,7 @@ end;
 
 procedure TASATransactionAdapter.Commit;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.Execute(SQL_COMMIT_TRAN + TransactionName);
@@ -111,7 +112,7 @@ end;
 
 procedure TASATransactionAdapter.Rollback;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.Execute(SQL_ROLLBACK_TRAN + TransactionName);
@@ -119,4 +120,5 @@ end;
 
 initialization
   TConnectionFactory.RegisterConnection<TASAConnectionAdapter>(dtASA);
+
 end.

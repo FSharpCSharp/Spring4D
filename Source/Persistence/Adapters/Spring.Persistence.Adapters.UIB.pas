@@ -29,14 +29,22 @@ unit Spring.Persistence.Adapters.UIB;
 interface
 
 uses
-  DB, Generics.Collections, Spring.Persistence.Core.Interfaces, Spring.Persistence.Core.Base
-  , Spring.Persistence.SQL.Params, SysUtils, Spring.Persistence.SQL.Generator.Ansi
-  , UIB, uibdataset, uiblib, Spring.Persistence.Adapters.FieldCache;
+  DB,
+  Generics.Collections,
+  SysUtils,
+  uib,
+  uibdataset,
+  uiblib,
+  Spring.Persistence.Adapters.FieldCache,
+  Spring.Persistence.Core.Base,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.SQL.Generators.Ansi,
+  Spring.Persistence.SQL.Params;
 
 type
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Represents Unified Interbase resultset.
+  ///	  Represents Unified Interbase resultset.
   ///	</summary>
   {$ENDREGION}
   TUIBResultSetAdapter = class(TDriverResultSetAdapter<TUIBDataSet>)
@@ -44,16 +52,16 @@ type
     FFieldCache: IFieldCache;
     FIsNewTransaction: Boolean;
   public
-    constructor Create(const ADataset: TUIBDataSet); override;
+    constructor Create(const dataSet: TUIBDataSet); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const AFieldName: string): Boolean; override;
-    function GetFieldValue(AIndex: Integer): Variant; overload; override;
-    function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function FieldNameExists(const fieldName: string): Boolean; override;
+    function GetFieldValue(index: Integer): Variant; overload; override;
+    function GetFieldValue(const fieldname: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
-    function GetFieldName(AIndex: Integer): string; override;
+    function GetFieldName(index: Integer): string; override;
 
     property IsNewTransaction: Boolean read FIsNewTransaction write FIsNewTransaction;
   end;
@@ -67,14 +75,13 @@ type
   {$ENDREGION}
   TUIBStatementAdapter = class(TDriverStatementAdapter<TUIBStatement>)
   protected
-    procedure AssignParams(AFrom: TSQLParams; ATo: TSQLParams); virtual;
+    procedure AssignParams(const source, target: TSQLParams); virtual;
   public
-    constructor Create(const AStatement: TUIBStatement); override;
     destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TObjectList<TDBParam>); overload;
+    procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParams(const params: TObjectList<TDBParam>); overload;
     function Execute: NativeUInt; override;
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
+    function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
   {$REGION 'Documentation'}
@@ -84,7 +91,6 @@ type
   {$ENDREGION}
   TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>)
   public
-    constructor Create(const AConnection: TUIBDataBase); override;
     destructor Destroy; override;
 
     procedure Connect; override;
@@ -93,7 +99,6 @@ type
     function CreateStatement: IDBStatement; override;
     function BeginTransaction: IDBTransaction; override;
     function GetDriverName: string; override;
-
   end;
 
   {$REGION 'Documentation'}
@@ -105,7 +110,7 @@ type
   protected
     function InTransaction: Boolean; override;
   public
-    constructor Create(const ATransaction: TUIBTransaction); override;
+    constructor Create(const transaction: TUIBTransaction); override;
     destructor Destroy; override;
 
     procedure Commit; override;
@@ -115,23 +120,21 @@ type
 implementation
 
 uses
-  Spring.Persistence.SQL.Register
-  ,StrUtils
-  ,Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.Consts
-  ;
-
+  StrUtils,
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Consts,
+  Spring.Persistence.SQL.Register;
 
 type
   EUIBAdapterException = class(Exception);
 
 { TUIBResultSetAdapter }
 
-constructor TUIBResultSetAdapter.Create(const ADataset: TUIBDataSet);
+constructor TUIBResultSetAdapter.Create(const dataSet: TUIBDataSet);
 begin
-  inherited Create(ADataset);
+  inherited Create(dataSet);
   Dataset.OnClose := etmStayIn;
-  FFieldCache := TFieldCache.Create(ADataset);
+  FFieldCache := TFieldCache.Create(dataSet);
 end;
 
 destructor TUIBResultSetAdapter.Destroy;
@@ -142,9 +145,9 @@ begin
   inherited;
 end;
 
-function TUIBResultSetAdapter.FieldNameExists(const AFieldName: string): Boolean;
+function TUIBResultSetAdapter.FieldNameExists(const fieldName: string): Boolean;
 begin
-  Result := FFieldCache.FieldNameExists(AFieldName);
+  Result := FFieldCache.FieldNameExists(fieldName);
 end;
 
 function TUIBResultSetAdapter.GetFieldCount: Integer;
@@ -152,19 +155,19 @@ begin
   Result := Dataset.FieldCount;
 end;
 
-function TUIBResultSetAdapter.GetFieldName(AIndex: Integer): string;
+function TUIBResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[AIndex].FieldName;
+  Result := Dataset.Fields[index].FieldName;
 end;
 
-function TUIBResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
+function TUIBResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[AIndex].Value;
+  Result := Dataset.Fields[index].Value;
 end;
 
-function TUIBResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
+function TUIBResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
 begin
-  Result := FFieldCache.GetFieldValue(AFieldname);
+  Result := FFieldCache.GetFieldValue(fieldname);
 end;
 
 function TUIBResultSetAdapter.IsEmpty: Boolean;
@@ -180,26 +183,19 @@ end;
 
 { TUIBStatementAdapter }
 
-procedure TUIBStatementAdapter.AssignParams(AFrom, ATo: TSQLParams);
-var
-  i: Integer;
-begin
-//  ATo.Parse(Statement.SQL.Text);
-  for i := 0 to AFrom.ParamCount - 1 do
-  begin
-    ATo.AsVariant[i] := AFrom.AsVariant[i];
-  end;
-end;
-
-constructor TUIBStatementAdapter.Create(const AStatement: TUIBStatement);
-begin
-  inherited Create(AStatement);
-end;
-
 destructor TUIBStatementAdapter.Destroy;
 begin
   Statement.Free;
   inherited Destroy;
+end;
+
+procedure TUIBStatementAdapter.AssignParams(const source, target: TSQLParams);
+var
+  i: Integer;
+begin
+//  ATo.Parse(Statement.SQL.Text);
+  for i := 0 to source.ParamCount - 1 do
+    target.AsVariant[i] := source.AsVariant[i];
 end;
 
 function TUIBStatementAdapter.Execute: NativeUInt;
@@ -211,7 +207,7 @@ begin
   Statement.Close(etmStayIn);
 end;
 
-function TUIBStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
+function TUIBStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
   LDataset: TUIBDataSet;
   LTran: TUIBTransaction;
@@ -251,14 +247,14 @@ begin
   end;
 end;
 
-procedure TUIBStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
+procedure TUIBStatementAdapter.SetParams(const params: TObjectList<TDBParam>);
 var
   LParam: TDBParam;
   sParamName: string;
 begin
-  inherited SetParams([Params.ToArray]);
+  inherited SetParams([params.ToArray]);
 
-  for LParam in Params do
+  for LParam in params do
   begin
     sParamName := LParam.Name;
     //strip leading : in param name because UIB does not like them
@@ -270,10 +266,10 @@ begin
   end;
 end;
 
-procedure TUIBStatementAdapter.SetSQLCommand(const ACommandText: string);
+procedure TUIBStatementAdapter.SetSQLCommand(const commandText: string);
 begin
   inherited;
-  Statement.SQL.Text := ACommandText;
+  Statement.SQL.Text := commandText;
 end;
 
 { TUIBConnectionAdapter }
@@ -303,14 +299,12 @@ end;
 procedure TUIBConnectionAdapter.Connect;
 begin
   if Connection <> nil then
-  begin
     Connection.Connected := True;
-  end;
 end;
 
-constructor TUIBConnectionAdapter.Create(const AConnection: TUIBDataBase);
+constructor TUIBConnectionAdapter.Create(const connection: TUIBDataBase);
 begin
-  inherited Create(AConnection);
+  inherited Create(connection);
 end;
 
 function TUIBConnectionAdapter.CreateStatement: IDBStatement;
@@ -345,9 +339,7 @@ var
   i: Integer;
 begin
   for i := 0 to Connection.TransactionsCount - 1 do
-  begin
     Connection.Transactions[i].Free;
-  end;
   inherited Destroy;
 end;
 
@@ -374,37 +366,37 @@ end;
 
 procedure TUIBTransactionAdapter.Commit;
 begin
-  if (FTransaction = nil) then
+  if fTransaction = nil then
     Exit;
 
   FTransaction.Commit;
 end;
 
-constructor TUIBTransactionAdapter.Create(const ATransaction: TUIBTransaction);
+constructor TUIBTransactionAdapter.Create(const transaction: TUIBTransaction);
 begin
-  inherited Create(ATransaction);
-  FTransaction.DefaultAction := etmRollback;
+  inherited Create(transaction);
+  fTransaction.DefaultAction := etmRollback;
   if not InTransaction then
-    FTransaction.StartTransaction;
+    fTransaction.StartTransaction;
 end;
 
 destructor TUIBTransactionAdapter.Destroy;
 begin
+  fTransaction.Free;
   inherited Destroy;
-  FTransaction.Free;
 end;
 
 function TUIBTransactionAdapter.InTransaction: Boolean;
 begin
-  Result := FTransaction.InTransaction;
+  Result := fTransaction.InTransaction;
 end;
 
 procedure TUIBTransactionAdapter.Rollback;
 begin
-  if (FTransaction = nil) then
+  if fTransaction = nil then
     Exit;
 
-  FTransaction.RollBack;
+  fTransaction.RollBack;
 end;
 
 initialization

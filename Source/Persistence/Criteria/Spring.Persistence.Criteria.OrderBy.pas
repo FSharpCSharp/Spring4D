@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Criteria.Order;
+unit Spring.Persistence.Criteria.OrderBy;
 
 {$I Spring.inc}
 
@@ -33,71 +33,70 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Implementation of IOrder interface.
-  ///	</summary>
-  {$ENDREGION}
-  TOrder = class(TInterfacedObject, IOrder)
+  /// <summary>
+  ///   Implementation of <see cref="Spring.Persistence.Core.Interfaces|IOrderBy" />
+  ///    interface.
+  /// </summary>
+  TOrderBy = class(TInterfacedObject, IOrderBy)
   private
-    FOrderType: TOrderType;
-    FPropertyName: string;
-    FEntityClass: TClass;
+    fEntityClass: TClass;
+    fPropertyName: string;
+    fSortingDirection: TSortingDirection;
+    function GetEntityClass: TClass;
+    function GetPropertyName: string;
+    function GetSortingDirection: TSortingDirection;
+    procedure SetEntityClass(value: TClass);
   protected
-    constructor Create(const APropertyName: string; AOrderType: TOrderType); virtual;
-
-    function GetPropertyName: string; virtual;
-    function GetOrderType: TOrderType; virtual;
-
-    function GetEntityClass: TClass; virtual;
-    procedure SetEntityClass(AClass: TClass); virtual;
+    constructor Create(const propertyName: string; sortingDirection: TSortingDirection);
   public
-    class function Asc(const APropertyName: string): IOrder;
-    class function Desc(const APropertyName: string): IOrder;
+    class function Asc(const propertyName: string): IOrderBy;
+    class function Desc(const propertyName: string): IOrderBy;
   end;
 
 implementation
 
-{ TOrder }
 
-class function TOrder.Asc(const APropertyName: string): IOrder;
-begin
-  Result := TOrder.Create(APropertyName, otAscending);
-end;
+{$REGION 'TOrderBy'}
 
-constructor TOrder.Create(const APropertyName: string; AOrderType: TOrderType);
+constructor TOrderBy.Create(const propertyName: string;
+  sortingDirection: TSortingDirection);
 begin
   inherited Create;
-  FPropertyName := APropertyName;
-  FOrderType := AOrderType;
-  FEntityClass := nil;
+  fPropertyName := propertyName;
+  fSortingDirection := sortingDirection;
 end;
 
-class function TOrder.Desc(const APropertyName: string): IOrder;
+class function TOrderBy.Asc(const propertyName: string): IOrderBy;
 begin
-  Result := TOrder.Create(APropertyName, otDescending);
+  Result := TOrderBy.Create(propertyName, stAscending);
 end;
 
-function TOrder.GetEntityClass: TClass;
+class function TOrderBy.Desc(const propertyName: string): IOrderBy;
 begin
-  Result := FEntityClass;
+  Result := TOrderBy.Create(propertyName, stDescending);
 end;
 
-function TOrder.GetOrderType: TOrderType;
+function TOrderBy.GetEntityClass: TClass;
 begin
-  Result := FOrderType;
+  Result := fEntityClass;
 end;
 
-function TOrder.GetPropertyName: string;
+function TOrderBy.GetPropertyName: string;
 begin
-  Result := FPropertyName;
+  Result := fPropertyName;
 end;
 
-procedure TOrder.SetEntityClass(AClass: TClass);
+function TOrderBy.GetSortingDirection: TSortingDirection;
 begin
-  FEntityClass := AClass;
+  Result := fSortingDirection;
 end;
+
+procedure TOrderBy.SetEntityClass(value: TClass);
+begin
+  fEntityClass := value;
+end;
+
+{$ENDREGION}
+
 
 end.
-
-

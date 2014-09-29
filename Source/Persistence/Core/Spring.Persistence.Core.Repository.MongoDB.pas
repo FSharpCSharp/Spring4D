@@ -1,54 +1,77 @@
+{***************************************************************************}
+{                                                                           }
+{           Spring Framework for Delphi                                     }
+{                                                                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
+{                                                                           }
+{           http://www.spring4d.org                                         }
+{                                                                           }
+{***************************************************************************}
+{                                                                           }
+{  Licensed under the Apache License, Version 2.0 (the "License");          }
+{  you may not use this file except in compliance with the License.         }
+{  You may obtain a copy of the License at                                  }
+{                                                                           }
+{      http://www.apache.org/licenses/LICENSE-2.0                           }
+{                                                                           }
+{  Unless required by applicable law or agreed to in writing, software      }
+{  distributed under the License is distributed on an "AS IS" BASIS,        }
+{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{  See the License for the specific language governing permissions and      }
+{  limitations under the License.                                           }
+{                                                                           }
+{***************************************************************************}
+
 unit Spring.Persistence.Core.Repository.MongoDB;
 
-{$I sv.inc}
+{$I Spring.inc}
 
 interface
 
 uses
-  Spring.Persistence.Core.Repository.Simple
-  ,Spring.Persistence.Core.Session
-  ,Spring.Persistence.Core.Session.MongoDB
-  ,Spring.Collections
-  ;
+  Spring.Collections,
+  Spring.Persistence.Core.Repository.Simple,
+  Spring.Persistence.Core.Session,
+  Spring.Persistence.Core.Session.MongoDB;
 
 type
-  TMongoDBRepository<T:class, constructor; TID> = class(TSimpleRepository<T,TID>)
+  TMongoDBRepository<T: class, constructor; TID> = class(TSimpleRepository<T,TID>)
   private
-    FSession: TMongoDBSession;
+    fSession: TMongoDBSession;
   public
-    procedure Insert(AEntities: ICollection<T>); overload; override;
-    function Query(const AQuery: string;
-      const AParams: array of const): IList<T>; override;
+    procedure Insert(const entities: ICollection<T>); overload; override;
+    function Query(const query: string;
+      const params: array of const): IList<T>; override;
   public
-    constructor Create(ASession: TSession); override;
+    constructor Create(const session: TSession); override;
   end;
 
 implementation
 
 uses
-  SysUtils
-  ;
+  SysUtils;
 
-{ TMongoDBRepository<T, TID> }
 
-constructor TMongoDBRepository<T, TID>.Create(ASession: TSession);
+{$REGION 'TMongoDBRepository<T, TID>'}
+
+constructor TMongoDBRepository<T, TID>.Create(const session: TSession);
 begin
-  inherited Create(ASession);
-  FSession := ASession as TMongoDBSession;
+  inherited Create(session);
+  fSession := session as TMongoDBSession;
 end;
 
-procedure TMongoDBRepository<T, TID>.Insert(AEntities: ICollection<T>);
+procedure TMongoDBRepository<T, TID>.Insert(const entities: ICollection<T>);
 begin
-  FSession.BulkInsert<T>(AEntities);
+  fSession.BulkInsert<T>(entities);
 end;
 
-function TMongoDBRepository<T, TID>.Query(const AQuery: string;
-  const AParams: array of const): IList<T>;
+function TMongoDBRepository<T, TID>.Query(const query: string;
+  const params: array of const): IList<T>;
 var
   LQuery: string;
 begin
-  LQuery := Format('S[%S]%S', [Namespace, AQuery]);
-  Result := inherited Query(LQuery, AParams);
+  LQuery := Format('S[%S]%S', [Namespace, query]);
+  Result := inherited Query(LQuery, params);
 end;
 
 end.

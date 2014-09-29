@@ -42,53 +42,47 @@ uses
   Spring.Persistence.Mapping.Attributes;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent ADO resultset.
-  ///	</summary>
-  {$ENDREGION}
+  EADOStatementAdapterException = Exception;
+
+  /// <summary>
+  ///   Represent ADO resultset.
+  /// </summary>
   TADOResultSetAdapter = class(TDriverResultSetAdapter<TADODataSet>)
   private
-    FFieldCache: IFieldCache;
+    fFieldCache: IFieldCache;
   public
     constructor Create(const ADataset: TADODataSet); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const AFieldName: string): Boolean; override;
-    function GetFieldValue(AIndex: Integer): Variant; overload; override;
-    function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function FieldNameExists(const fieldName: string): Boolean; override;
+    function GetFieldValue(index: Integer): Variant; overload; override;
+    function GetFieldValue(const fieldName: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
-    function GetFieldName(AIndex: Integer): string; override;
+    function GetFieldName(index: Integer): string; override;
   end;
 
-  EADOStatementAdapterException = Exception;
-
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent ADO statement.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent ADO statement.
+  /// </summary>
   TADOStatementAdapter = class(TDriverStatementAdapter<TADOQuery>)
   public
-    constructor Create(const AStatement: TADOQuery); override;
+    constructor Create(const statement: TADOQuery); override;
     destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParam(ADBParam: TDBParam); virtual;
-    procedure SetParams(Params: IList<TDBParam>); overload; override;
+    procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParam(const param: TDBParam); virtual;
+    procedure SetParams(const params: IList<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
+    function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent ADO connection.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent ADO connection.
+  /// </summary>
   TADOConnectionAdapter = class(TDriverConnectionAdapter<TADOConnection>)
   public
-    constructor Create(const AConnection: TADOConnection); override;
+    constructor Create(const connection: TADOConnection); override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -98,11 +92,9 @@ type
     function GetDriverName: string; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent ADO transaction.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent ADO transaction.
+  /// </summary>
   TADOTransactionAdapter = class(TDriverTransactionAdapter<TADOConnection>)
   protected
     function InTransaction: Boolean; override;
@@ -111,14 +103,12 @@ type
     procedure Rollback; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent <b>ADO</b> SQL generator.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent <b>ADO</b> SQL generator.
+  /// </summary>
   TADOSQLGenerator = class(TAnsiSQLGenerator)
   public
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
   end;
 {$ENDIF}
 
@@ -135,7 +125,8 @@ uses
 type
   EADOAdapterException = class(Exception);
 
-{ TADOResultSetAdapter }
+
+{$REGION 'TADOResultSetAdapter'}
 
 constructor TADOResultSetAdapter.Create(const ADataset: TADODataSet);
 begin
@@ -143,7 +134,7 @@ begin
   Dataset.DisableControls;
 //  Dataset.CursorLocation := clUseServer;
 //  Dataset.CursorType := ctOpenForwardOnly;
-  FFieldCache := TFieldCache.Create(ADataset);
+  fFieldCache := TFieldCache.Create(ADataset);
 end;
 
 destructor TADOResultSetAdapter.Destroy;
@@ -152,9 +143,9 @@ begin
   inherited Destroy;
 end;
 
-function TADOResultSetAdapter.FieldNameExists(const AFieldName: string): Boolean;
+function TADOResultSetAdapter.FieldNameExists(const fieldName: string): Boolean;
 begin
-  Result := FFieldCache.FieldNameExists(AFieldName);
+  Result := fFieldCache.FieldNameExists(fieldName);
 end;
 
 function TADOResultSetAdapter.GetFieldCount: Integer;
@@ -162,19 +153,19 @@ begin
   Result := Dataset.FieldCount;
 end;
 
-function TADOResultSetAdapter.GetFieldName(AIndex: Integer): string;
+function TADOResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[AIndex].FieldName;
+  Result := Dataset.Fields[index].FieldName;
 end;
 
-function TADOResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
+function TADOResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[AIndex].Value;
+  Result := Dataset.Fields[index].Value;
 end;
 
-function TADOResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
+function TADOResultSetAdapter.GetFieldValue(const fieldName: string): Variant;
 begin
-  Result := FFieldCache.GetFieldValue(AFieldname);
+  Result := fFieldCache.GetFieldValue(fieldName);
 end;
 
 function TADOResultSetAdapter.IsEmpty: Boolean;
@@ -188,11 +179,14 @@ begin
   Result := not Dataset.Eof;
 end;
 
-{ TADOStatementAdapter }
+{$ENDREGION}
 
-constructor TADOStatementAdapter.Create(const AStatement: TADOQuery);
+
+{$REGION 'TADOStatementAdapter'}
+
+constructor TADOStatementAdapter.Create(const statement: TADOQuery);
 begin
-  inherited Create(AStatement);
+  inherited Create(statement);
 end;
 
 destructor TADOStatementAdapter.Destroy;
@@ -207,7 +201,7 @@ begin
   Result := Statement.ExecSQL;
 end;
 
-function TADOStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
+function TADOStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
   LStmt: TADODataSet;
 begin
@@ -234,33 +228,36 @@ begin
   end;
 end;
 
-procedure TADOStatementAdapter.SetParam(ADBParam: TDBParam);
+procedure TADOStatementAdapter.SetParam(const param: TDBParam);
 var
   sParamName: string;
 begin
-  sParamName := ADBParam.Name;
+  sParamName := param.Name;
   //strip leading : in param name because ADO does not like them
-  if (ADBParam.Name <> '') and StartsStr(':', ADBParam.Name) then
-    sParamName := Copy(ADBParam.Name, 2, Length(ADBParam.Name));
-  Statement.Parameters.ParamValues[sParamName] := ADBParam.Value;
+  if (param.Name <> '') and StartsStr(':', param.Name) then
+    sParamName := Copy(param.Name, 2, Length(param.Name));
+  Statement.Parameters.ParamValues[sParamName] := param.Value;
 end;
 
-procedure TADOStatementAdapter.SetParams(Params: IList<TDBParam>);
+procedure TADOStatementAdapter.SetParams(const params: IList<TDBParam>);
 var
   LParam: TDBParam;
 begin
   inherited;
-  for LParam in Params do
+  for LParam in params do
     SetParam(LParam);
 end;
 
-procedure TADOStatementAdapter.SetSQLCommand(const ACommandText: string);
+procedure TADOStatementAdapter.SetSQLCommand(const commandText: string);
 begin
   inherited;
-  Statement.SQL.Text := ACommandText;
+  Statement.SQL.Text := commandText;
 end;
 
-{ TADOConnectionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TADOConnectionAdapter'}
 
 function TADOConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
@@ -281,9 +278,9 @@ begin
     Connection.Connected := True;
 end;
 
-constructor TADOConnectionAdapter.Create(const AConnection: TADOConnection);
+constructor TADOConnectionAdapter.Create(const connection: TADOConnection);
 begin
-  inherited Create(AConnection);
+  inherited Create(connection);
   Connection.LoginPrompt := False;
 end;
 
@@ -322,7 +319,10 @@ begin
     Result := False;
 end;
 
-{ TADOTransactionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TADOTransactionAdapter'}
 
 procedure TADOTransactionAdapter.Commit;
 begin
@@ -345,12 +345,19 @@ begin
   Transaction.RollbackTrans;
 end;
 
-{ TADOSQLGenerator }
+{$ENDREGION}
 
-function TADOSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+
+{$REGION 'TADOSQLGenerator'}
+
+function TADOSQLGenerator.GenerateGetLastInsertId(
+  const identityColumn: ColumnAttribute): string;
 begin
   Result := '';
 end;
+
+{$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TADOConnectionAdapter>(dtADO);

@@ -34,7 +34,7 @@ uses
 type
   TAbstractEntitySerializer = class(TInterfacedObject)
   protected
-    function Deserialize<T>(const AResultset: IDBResultset): T;
+    function Deserialize<T>(const resultSet: IDBResultSet): T;
   end;
 
 implementation
@@ -42,11 +42,15 @@ implementation
 uses
   Spring.Persistence.Core.Exceptions;
 
-{ TAbstractEntitySerializer }
 
-function TAbstractEntitySerializer.Deserialize<T>(const AResultset: IDBResultset): T;
+{$REGION 'TAbstractEntitySerializer'}
+
+function TAbstractEntitySerializer.Deserialize<T>(const resultSet: IDBResultSet): T;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
+
+{$ENDREGION}
+
 
 end.

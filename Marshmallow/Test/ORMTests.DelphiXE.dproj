@@ -64,7 +64,6 @@
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.CollectionAdapterResolver.pas"/>
-			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Collections.Enumerator.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Consts.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DatabaseManager.pas"/>
@@ -101,7 +100,7 @@
 			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.NullExpression.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.PropertyExpression.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.SimpleExpression.pas"/>
-			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Order.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.OrderBy.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Properties.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Restrictions.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.Attributes.pas"/>
@@ -121,7 +120,6 @@
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Abstract.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.BulkInsert.MongoDB.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Delete.pas"/>
-			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Factory.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.FKCreator.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Insert.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Page.pas"/>

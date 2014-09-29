@@ -29,47 +29,44 @@ unit Spring.Persistence.Adapters.Zeos;
 interface
 
 uses
-  Generics.Collections
-  , Spring.Persistence.Core.Base
-  , ZAbstractDataset
-  , ZDataset
-  , Data.DB
-  , System.SysUtils
-  , Spring.Persistence.Core.Interfaces
-  , Spring.Persistence.SQL.Params
-  , ZAbstractConnection
-  , Spring.Persistence.Adapters.FieldCache
-  ;
+  DB,
+  Generics.Collections,
+  SysUtils,
+  ZAbstractConnection,
+  ZAbstractDataset,
+  ZDataset,
+  Spring.Persistence.Adapters.FieldCache,
+  Spring.Persistence.Core.Base,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.SQL.Params;
 
 type
+  EZeosStatementAdapterException = Exception;
 
   TZeosResultSetAdapter = class(TDriverResultSetAdapter<TZAbstractDataset>)
   private
-    FFieldCache: IFieldCache;
+    fFieldCache: IFieldCache;
   public
-    constructor Create(const ADataset: TZAbstractDataset); override;
+    constructor Create(const dataSet: TZAbstractDataset); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const AFieldName: string): Boolean; override;
-    function GetFieldValue(AIndex: Integer): Variant; overload; override;
-    function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function FieldNameExists(const fieldName: string): Boolean; override;
+    function GetFieldValue(index: Integer): Variant; overload; override;
+    function GetFieldValue(const fieldname: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
-    function GetFieldName(AIndex: Integer): string; override;
+    function GetFieldName(index: Integer): string; override;
   end;
-
-  EZeosStatementAdapterException = Exception;
 
   TZeosStatementAdapter = class(TDriverStatementAdapter<TZQuery>)
   public
-    constructor Create(const AStatement: TZQuery); override;
     destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParam(ADBParam: TDBParam); virtual;
-    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
+    procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParam(const param: TDBParam); virtual;
+    procedure SetParams(const params: TObjectList<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
+    function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
   TZeosConnectionAdapter = class(TDriverConnectionAdapter<TZAbstractConnection>)
@@ -95,22 +92,21 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.Consts
-  , Spring.Persistence.Core.ConnectionFactory
-  , System.StrUtils;
+  StrUtils,
+  Spring.Persistence.Core.ConnectionFactory
+  Spring.Persistence.Core.Consts;
 
 type
-
-EZeosAdapterException = class(Exception);
+  EZeosAdapterException = class(Exception);
 
 
 { TZeosResultSetAdapter }
 
-constructor TZeosResultSetAdapter.Create(const ADataset: TZAbstractDataset);
+constructor TZeosResultSetAdapter.Create(const dataSet: TZAbstractDataset);
 begin
-  inherited Create(ADataset);
+  inherited Create(dataSet);
   Dataset.DisableControls;
-  FFieldCache := TFieldCache.Create(ADataset);
+  fFieldCache := TFieldCache.Create(dataSet);
 end;
 
 destructor TZeosResultSetAdapter.Destroy;
@@ -120,9 +116,9 @@ begin
 end;
 
 function TZeosResultSetAdapter.FieldNameExists(
-  const AFieldName: string): Boolean;
+  const fieldName: string): Boolean;
 begin
-  Result := FFieldCache.FieldNameExists(AFieldName);
+  Result := fFieldCache.FieldNameExists(fieldName);
 end;
 
 function TZeosResultSetAdapter.GetFieldCount: Integer;
@@ -130,19 +126,19 @@ begin
   Result := Dataset.FieldCount;
 end;
 
-function TZeosResultSetAdapter.GetFieldName(AIndex: Integer): string;
+function TZeosResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[AIndex].FieldName;
+  Result := Dataset.Fields[index].FieldName;
 end;
 
-function TZeosResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
+function TZeosResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[AIndex].Value;
+  Result := Dataset.Fields[index].Value;
 end;
 
-function TZeosResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
+function TZeosResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
 begin
-  Result := FFieldCache.GetFieldValue(AFieldname);
+  Result := fFieldCache.GetFieldValue(fieldname);
 end;
 
 function TZeosResultSetAdapter.IsEmpty: Boolean;
@@ -158,11 +154,6 @@ end;
 
 { TZeosStatementAdapter }
 
-constructor TZeosStatementAdapter.Create(const AStatement: TZQuery);
-begin
-  inherited Create(AStatement);
-end;
-
 destructor TZeosStatementAdapter.Destroy;
 begin
   Statement.Free;
@@ -177,7 +168,7 @@ begin
 end;
 
 function TZeosStatementAdapter.ExecuteQuery(
-  AServerSideCursor: Boolean): IDBResultSet;
+  serverSideCursor: Boolean): IDBResultSet;
 var
   LStmt: TZQuery;
 begin
@@ -199,33 +190,29 @@ begin
   end;
 end;
 
-procedure TZeosStatementAdapter.SetParam(ADBParam: TDBParam);
+procedure TZeosStatementAdapter.SetParam(const param: TDBParam);
 var
-  sParamName: string;
+  paramName: string;
 begin
-  sParamName := ADBParam.Name;
-  if (ADBParam.Name <> '') and (StartsStr(':', ADBParam.Name)) then
-  begin
-    sParamName := Copy(ADBParam.Name, 2, Length(ADBParam.Name));
-  end;
-  Statement.Params.ParamValues[sParamName] := ADBParam.Value;
+  paramName := param.Name;
+  if (param.Name <> '') and StartsStr(':', param.Name) then
+    paramName := Copy(param.Name, 2, Length(param.Name));
+  Statement.Params.ParamValues[paramName] := param.Value;
 end;
 
-procedure TZeosStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
+procedure TZeosStatementAdapter.SetParams(const params: TObjectList<TDBParam>);
 var
-  LParam: TDBParam;
+  param: TDBParam;
 begin
   inherited;
-  for LParam in Params do
-  begin
-    SetParam(LParam);
-  end;
+  for param in params do
+    SetParam(param);
 end;
 
-procedure TZeosStatementAdapter.SetSQLCommand(const ACommandText: string);
+procedure TZeosStatementAdapter.SetSQLCommand(const commandText: string);
 begin
   inherited;
-  Statement.SQL.Text := ACommandText;
+  Statement.SQL.Text := commandText;
 end;
 
 { TZeosConnectionAdapter }
@@ -248,9 +235,7 @@ end;
 procedure TZeosConnectionAdapter.Connect;
 begin
   if Connection <> nil then
-  begin
     Connection.Connected := True;
-  end;
 end;
 
 constructor TZeosConnectionAdapter.Create(
@@ -299,7 +284,7 @@ end;
 
 procedure TZeosTransactionAdapter.Commit;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.Commit;
@@ -312,12 +297,11 @@ end;
 
 procedure TZeosTransactionAdapter.Rollback;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.Rollback;
 end;
-
 
 initialization
   TConnectionFactory.RegisterConnection<TZeosConnectionAdapter>(dtZeos);

@@ -32,11 +32,9 @@ uses
   Spring.Persistence.Core.Interfaces;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Base manager.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Base manager.
+  /// </summary>
   TAbstractManager = class(TInterfacedObject)
   private
     FConnection: IDBConnection;
@@ -47,12 +45,16 @@ type
 
 implementation
 
-{ TAbstractManager }
+
+{$REGION 'TAbstractManager'}
 
 constructor TAbstractManager.Create(const AConnection: IDBConnection);
 begin
   inherited Create;
   FConnection := AConnection;
 end;
+
+{$ENDREGION}
+
 
 end.

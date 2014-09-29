@@ -251,7 +251,7 @@ begin
   try
     FEntityMap.Add(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
-    FEntityMap.Clear(True);
+    FEntityMap.Clear;
     CheckFalse(FEntityMap.IsMapped(LCustomer));
   finally
     LCustomer.Free;

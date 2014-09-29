@@ -41,61 +41,70 @@ uses
 type
   TSimpleExpression = class(TAbstractCriterion)
   private
-    FPropertyName: string;
-    FValue: TValue;
-    FOperator: TWhereOperator;
-  public
-    constructor Create(const APropertyName: string; const AValue: TValue; const AOperator: TWhereOperator); virtual;
-  public
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    fPropertyName: string;
+    fValue: TValue;
+    fOperator: TWhereOperator;
+  protected
     function GetWhereOperator: TWhereOperator; override;
+    function ToSqlString(const params: IList<TDBParam>; const command: TDMLCommand;
+      const generator: ISQLGenerator; addToCommand: Boolean): string; override;
+  public
+    constructor Create(const propertyName: string; const value: TValue;
+      whereOperator: TWhereOperator); virtual;
 
-    property PropertyName: string read FPropertyName;
-    property Value: TValue read FValue;
+    property PropertyName: string read fPropertyName;
+    property Value: TValue read fValue;
   end;
 
 implementation
 
-{ TSimpleExpression }
 
-constructor TSimpleExpression.Create(const APropertyName: string; const AValue: TValue; const AOperator: TWhereOperator);
+{$REGION 'TSimpleExpression'}
+
+constructor TSimpleExpression.Create(const propertyName: string;
+  const value: TValue; whereOperator: TWhereOperator);
 begin
   inherited Create;
-  FPropertyName := APropertyName;
-  FValue := AValue;
-  FOperator := AOperator;
+  fPropertyName := propertyName;
+  fValue := value;
+  fOperator := whereOperator;
 end;
 
 function TSimpleExpression.GetWhereOperator: TWhereOperator;
 begin
-  Result := FOperator;
+  Result := fOperator;
 end;
 
-function TSimpleExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TSimpleExpression.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 var
-  LParam: TDBParam;
-  LWhere: TSQLWhereField;
-  LParamName: string;
+  paramName: string;
+  whereField: TSQLWhereField;
+  param: TDBParam;
 begin
-  Assert(ACommand is TWhereCommand);
+  Assert(command is TWhereCommand);
   inherited;
-  LParamName := ACommand.GetAndIncParameterName(FPropertyName);
+  paramName := command.GetAndIncParameterName(fPropertyName);
 
-  LWhere := TSQLWhereField.Create(FPropertyName, GetCriterionTable(ACommand) {ACommand.Table});
-  LWhere.MatchMode := GetMatchMode;
-  LWhere.WhereOperator := GetWhereOperator;
-  LWhere.ParamName := LParamName;
+  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command) {ACommand.Table});
+  whereField.MatchMode := GetMatchMode;
+  whereField.WhereOperator := GetWhereOperator;
+  whereField.ParamName := paramName;
 
-  Result := LWhere.ToSQLString(Generator.GetEscapeFieldnameChar); {TODO -oLinas -cGeneral : fix escape fields}
-  LParam := TDBParam.Create;
-  LParam.SetFromTValue(FValue);
-  LParam.Name := LParamName;
-  AParams.Add(LParam);
+  Result := whereField.ToSQLString(Generator.GetEscapeFieldnameChar); {TODO -oLinas -cGeneral : fix escape fields}
+  param := TDBParam.Create;
+  param.SetFromTValue(fValue);
+  param.Name := paramName;
+  params.Add(param);
 
-  if AAddToCommand then
-    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  if addToCommand then
+    TWhereCommand(command).WhereFields.Add(whereField)
   else
-    LWhere.Free;
+    whereField.Free;
 end;
+
+{$ENDREGION}
+
 
 end.

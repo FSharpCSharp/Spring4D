@@ -36,11 +36,22 @@ uses
 type
   TSpringCollectionAdapter<T: class, constructor> = class(TInterfacedObject, ICollectionAdapter<T>)
   private
-    FCollection: ICollection<T>;
-  public
-    constructor Create(const ACollection: TValue); virtual;
+    fCollection: ICollection<T>;
 
-    procedure Add(AEntity: T);
+    type
+      TEnumerator = class(TInterfacedObject, ICollectionEnumerator<T>)
+      private
+        fEnumerator: IEnumerator<T>;
+        function GetCurrent: T;
+      public
+        constructor Create(const enumerator: IEnumerator<T>);
+        function MoveNext: Boolean;
+        property Current: T read GetCurrent;
+      end;
+  public
+    constructor Create(const collection: TValue);
+
+    procedure Add(const entity: T);
     procedure Clear;
     function Count: Integer;
     function GetEnumerator: ICollectionEnumerator<T>;
@@ -48,45 +59,35 @@ type
     function IsAddSupported: Boolean;
   end;
 
-  TSpringCollectionEnumerator<T: class, constructor> = class(TInterfacedObject, ICollectionEnumerator<T>)
-  private
-    FEnumerator: IEnumerator<T>;
-  protected
-    constructor Create(const ACollection: ICollection<T>); virtual;
-  public
-    function GetCurrent: T;
-    function MoveNext: Boolean;
-    property Current: T read GetCurrent;
-  end;
-
 implementation
 
-{ TSpringCollectionAdapter<T> }
 
-procedure TSpringCollectionAdapter<T>.Add(AEntity: T);
+{$REGION 'TSpringCollectionAdapter<T>'}
+
+constructor TSpringCollectionAdapter<T>.Create(const collection: TValue);
 begin
-  FCollection.Add(AEntity);
+  inherited Create;
+  fCollection := collection.AsInterface as ICollection<T>;
+end;
+
+procedure TSpringCollectionAdapter<T>.Add(const entity: T);
+begin
+  fCollection.Add(entity);
 end;
 
 procedure TSpringCollectionAdapter<T>.Clear;
 begin
-  FCollection.Clear;
+  fCollection.Clear;
 end;
 
 function TSpringCollectionAdapter<T>.Count: Integer;
 begin
-  Result := FCollection.Count;
-end;
-
-constructor TSpringCollectionAdapter<T>.Create(const ACollection: TValue);
-begin
-  inherited Create;
-  FCollection := ACollection.AsInterface as ICollection<T>;
+  Result := fCollection.Count;
 end;
 
 function TSpringCollectionAdapter<T>.GetEnumerator: ICollectionEnumerator<T>;
 begin
-  Result := TSpringCollectionEnumerator<T>.Create(FCollection);
+  Result := TEnumerator.Create(fCollection.GetEnumerator);
 end;
 
 function TSpringCollectionAdapter<T>.IsAddSupported: Boolean;
@@ -94,23 +95,29 @@ begin
   Result := True;
 end;
 
-{ TSpringCollectionEnumerator<T> }
+{$ENDREGION}
 
-constructor TSpringCollectionEnumerator<T>.Create(
-  const ACollection: ICollection<T>);
+
+{$REGION 'TSpringCollectionAdapter<T>.TEnumerator'}
+
+constructor TSpringCollectionAdapter<T>.TEnumerator.Create(
+  const enumerator: IEnumerator<T>);
 begin
   inherited Create;
-  FEnumerator := ACollection.GetEnumerator;
+  fEnumerator := enumerator;
 end;
 
-function TSpringCollectionEnumerator<T>.GetCurrent: T;
+function TSpringCollectionAdapter<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := FEnumerator.Current;
+  Result := fEnumerator.Current;
 end;
 
-function TSpringCollectionEnumerator<T>.MoveNext: Boolean;
+function TSpringCollectionAdapter<T>.TEnumerator.MoveNext: Boolean;
 begin
-  Result := FEnumerator.MoveNext;
+  Result := fEnumerator.MoveNext;
 end;
+
+{$ENDREGION}
+
 
 end.

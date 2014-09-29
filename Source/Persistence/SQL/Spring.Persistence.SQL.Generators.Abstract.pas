@@ -42,26 +42,28 @@ type
   TAbstractSQLGenerator = class(TInterfacedObject, ISQLGenerator)
   protected
     function GetQueryLanguage: TQueryLanguage; virtual; abstract;
-    function GenerateSelect(ASelectCommand: TSelectCommand): string; virtual; abstract;
-    function GenerateInsert(AInsertCommand: TInsertCommand): string; virtual; abstract;
-    function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; virtual; abstract;
-    function GenerateDelete(ADeleteCommand: TDeleteCommand): string; virtual; abstract;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>; virtual; abstract;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>; virtual; abstract;
-    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; virtual; abstract;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; virtual; abstract;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; virtual; abstract;
-    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; virtual; abstract;
-    function GenerateGetQueryCount(const ASql: string): string; virtual; abstract;
-    function GetSQLDataTypeName(AField: TSQLCreateField): string; virtual; abstract;
-    function GetSQLTableCount(const ATablename: string): string; virtual; abstract;
-    function GetSQLSequenceCount(const ASequenceName: string): string; virtual; abstract;
-    function GetTableColumns(const ATableName: string): string; virtual; abstract;
-    function GetSQLTableExists(const ATablename: string): string; virtual; abstract;
+    function GenerateSelect(const command: TSelectCommand): string; virtual; abstract;
+    function GenerateInsert(const command: TInsertCommand): string; virtual; abstract;
+    function GenerateUpdate(const command: TUpdateCommand): string; virtual; abstract;
+    function GenerateDelete(const command: TDeleteCommand): string; virtual; abstract;
+    function GenerateCreateTable(const command: TCreateTableCommand): IList<string>; virtual; abstract;
+    function GenerateCreateFK(const command: TCreateFKCommand): IList<string>; virtual; abstract;
+    function GenerateCreateSequence(const command: TCreateSequenceCommand): string; virtual; abstract;
+    function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; virtual; abstract;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; virtual; abstract;
+    function GeneratePagedQuery(const sql: string; limit, offset: Integer): string; virtual; abstract;
+    function GenerateGetQueryCount(const sql: string): string; virtual; abstract;
+    function GetSQLDataTypeName(const field: TSQLCreateField): string; virtual; abstract;
+    function GetSQLTableCount(const tableName: string): string; virtual; abstract;
+    function GetSQLSequenceCount(const sequenceName: string): string; virtual; abstract;
+    function GetTableColumns(const tableName: string): string; virtual; abstract;
+    function GetSQLTableExists(const tablename: string): string; virtual; abstract;
     function GetEscapeFieldnameChar: Char; virtual; abstract;
     function GenerateUniqueId: Variant; virtual;
-    function GetUpdateVersionFieldQuery(AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute; AVersionValue,APKValue: Variant): Variant; virtual; abstract;
-    function FindEnd(const AWhereFields: IList<TSQLWhereField>; AStartIndex: Integer; AStartToken, AEndToken: TWhereOperator): Integer; virtual;
+    function GetUpdateVersionFieldQuery(const command: TUpdateCommand;
+      const versionColumn: VersionAttribute; const version, primaryKey: Variant): Variant; virtual; abstract;
+    function FindEnd(const whereFields: IList<TSQLWhereField>;
+      startIndex: Integer; startToken, endToken: TWhereOperator): Integer; virtual;
   end;
 
 implementation
@@ -69,39 +71,40 @@ implementation
 uses
   Variants;
 
-{ TAbstractSQLGenerator }
+
+{$REGION 'TAbstractSQLGenerator'}
 
 function TAbstractSQLGenerator.FindEnd(
-  const AWhereFields: IList<TSQLWhereField>; AStartIndex: Integer; AStartToken,
-  AEndToken: TWhereOperator): Integer;
+  const whereFields: IList<TSQLWhereField>; startIndex: Integer; startToken,
+  endToken: TWhereOperator): Integer;
 var
-    LCount: Integer;
+  LCount: Integer;
+begin
+  LCount := 0;
+  for Result := startIndex to whereFields.Count - 1 do
   begin
-    LCount := 0;
-    for Result := AStartIndex to AWhereFields.Count - 1 do
+    if whereFields[Result].WhereOperator = startToken then
     begin
-      if (AWhereFields[Result].WhereOperator = AStartToken) then
-      begin
-        Inc(LCount);
-        Continue;
-      end;
-
-      if (AWhereFields[Result].WhereOperator = AEndToken) then
-      begin
-        Dec(LCount);
-
-        if LCount = 0 then
-        begin
-          Exit;
-        end;
-      end;
+      Inc(LCount);
+      Continue;
     end;
-    Result := AStartIndex;
+
+    if whereFields[Result].WhereOperator = endToken then
+    begin
+      Dec(LCount);
+      if LCount = 0 then
+        Exit;
+    end;
+  end;
+  Result := startIndex;
 end;
 
 function TAbstractSQLGenerator.GenerateUniqueId: Variant;
 begin
   Result := Null;
 end;
+
+{$ENDREGION}
+
 
 end.

@@ -37,18 +37,18 @@ uses
 type
   TListSession<T: class, constructor> = class(TInterfacedObject, IListSession<T>)
   private
-    FOwner: TObject;
-    FList: IList<T>;
-    FPrimaryKeys: IDictionary<TValue, Boolean>;
+    fSession: TSession;
+    fList: IList<T>;
+    fPrimaryKeys: ISet<TValue>;
   protected
-    procedure DoOnListChanged(Sender: TObject; const Item: T; Action: TCollectionChangedAction);
+    procedure DoOnListChanged(Sender: TObject; const item: T; action: TCollectionChangedAction);
 
     procedure CommitListSession; virtual;
     procedure RollbackListSession; virtual;
 
     procedure DeleteEntities;
   public
-    constructor Create(AOwner: TObject; AList: IList<T>); virtual;
+    constructor Create(const session: TSession; const list: IList<T>); virtual;
     destructor Destroy; override;
   end;
 
@@ -60,73 +60,64 @@ uses
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Commands.Delete;
 
-{ TListSession }
 
-procedure TListSession<T>.CommitListSession;
-var
-  LSession: TSession;
-begin
-  LSession := FOwner as TSession;
-  //delete first
-  DeleteEntities;
+{$REGION 'TListSession'}
 
-  LSession.SaveList<T>(FList);
-end;
-
-constructor TListSession<T>.Create(AOwner: TObject; AList: IList<T>);
+constructor TListSession<T>.Create(const session: TSession; const list: IList<T>);
 begin
   inherited Create;
-  FPrimaryKeys := TCollections.CreateDictionary<TValue, Boolean>;
-  FOwner := AOwner;
-  FList := AList;
-  FList.OnChanged.Add(DoOnListChanged);
-end;
-
-procedure TListSession<T>.DeleteEntities;
-var
-  LDeleter: TDeleteByValueExecutor;
-  LKey: TPair<TValue, Boolean>;
-begin
-  LDeleter := TDeleteByValueExecutor.Create;
-  LDeleter.Connection := (FOwner as TSession).Connection;
-  LDeleter.EntityClass := T;
-  LDeleter.Build(T);
-  try
-    for LKey in FPrimaryKeys do
-    begin
-      LDeleter.PrimaryKeyValue := LKey.Key;
-      LDeleter.Execute(nil);
-    end;
-  finally
-    LDeleter.Free;
-  end;
+  fPrimaryKeys := TCollections.CreateSet<TValue>;
+  fSession := session;
+  fList := list;
+  fList.OnChanged.Add(DoOnListChanged);
 end;
 
 destructor TListSession<T>.Destroy;
 begin
-  FList.OnChanged.Remove(DoOnListChanged);
+  fList.OnChanged.Remove(DoOnListChanged);
   inherited Destroy;
 end;
 
+procedure TListSession<T>.CommitListSession;
+begin
+  //delete first
+  DeleteEntities;
+  fSession.SaveList<T>(fList);
+end;
+
+procedure TListSession<T>.DeleteEntities;
+var
+  deleter: TDeleteByValueExecutor;
+  primaryKey: TValue;
+begin
+  deleter := TDeleteByValueExecutor.Create;
+  deleter.Connection := fSession.Connection;
+  deleter.EntityClass := T;
+  deleter.Build(T);
+  try
+    for primaryKey in fPrimaryKeys do
+    begin
+      deleter.PrimaryKeyValue := primaryKey;
+      deleter.Execute(nil);
+    end;
+  finally
+    deleter.Free;
+  end;
+end;
 
 procedure TListSession<T>.DoOnListChanged(Sender: TObject; const Item: T; Action: TCollectionChangedAction);
 var
-  LSession: TSession;
-  LValue: TValue;
+  value: TValue;
 begin
   case Action of
     caAdded: ;
     caRemoved:
     begin
-      LSession := FOwner as TSession;
-      if not LSession.IsNew(Item) then
+      if not fSession.IsNew(Item) then
       begin
-        LValue := TRttiExplorer.GetPrimaryKeyValue(Item);
-        if not FPrimaryKeys.ContainsKey(LValue) then
-        begin
-          FPrimaryKeys.Add(LValue, True);
-          LSession.OldStateEntities.Remove(Item);
-        end;
+        value := TRttiExplorer.GetPrimaryKeyValue(Item);
+        if fPrimaryKeys.Add(value) then
+          fSession.OldStateEntities.Remove(Item);
       end;
     end;
     caReplaced: ;
@@ -137,7 +128,10 @@ end;
 
 procedure TListSession<T>.RollbackListSession;
 begin
-  FPrimaryKeys.Clear;
+  fPrimaryKeys.Clear;
 end;
+
+{$ENDREGION}
+
 
 end.

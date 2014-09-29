@@ -36,48 +36,38 @@ uses
 type
   TSimpleRepository<T: class, constructor; TID> = class(TInterfacedObject, IPagedRepository<T, TID>)
   private
-    FSession: TSession;
-    FNamespace: string;
+    fSession: TSession;
+    fNamespace: string;
   protected
     function GetNamespaceFromType: string; virtual;
 
-    function Execute(const AQuery: string; const AParams: array of const): NativeUInt; virtual;
-
-    function Query(const AQuery: string;
-      const AParams: array of const): IList<T>; virtual;
+    function Execute(const query: string; const params: array of const): NativeUInt; virtual;
+    function Query(const query: string; const params: array of const): IList<T>; virtual;
 
     function Count: Int64; virtual;
 
-    function FindOne(const AID: TID): T; virtual;
-
+    function FindOne(const id: TID): T; virtual;
     function FindAll: IList<T>; virtual;
 
-    function Save(AEntity: T): T; overload; virtual;
+    function Save(const entity: T): T; overload; virtual;
+    function Save(const entities: ICollection<T>): ICollection<T>; overload; virtual;
+    procedure SaveCascade(const entity: T); virtual;
 
-    procedure SaveCascade(AEntity: T); virtual;
+    procedure Insert(const entity: T); overload; virtual;
+    procedure Insert(const entities: ICollection<T>); overload; virtual;
 
-    function Save(AEntities: ICollection<T>): ICollection<T>; overload; virtual;
-
-    procedure Insert(AEntity: T); overload; virtual;
-
-    procedure Insert(AEntities: ICollection<T>); overload; virtual;
-
-    procedure Delete(AEntity: T); overload; virtual;
-
-    procedure Delete(AEntities: ICollection<T>); overload; virtual;
-
+    procedure Delete(const entity: T); overload; virtual;
+    procedure Delete(const entities: ICollection<T>); overload; virtual;
     procedure DeleteAll;
 
-    function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
+    function Page(page, itemsPerPage: Integer): IDBPage<T>; virtual;
 
-    function Exists(const AId: TID): Boolean; virtual;
-
+    function Exists(const id: TID): Boolean; virtual;
   public
-    constructor Create(ASession: TSession); virtual;
+    constructor Create(const session: TSession); virtual;
 
-    property Namespace: string read FNamespace;
+    property Namespace: string read fNamespace;
   end;
-
 
 implementation
 
@@ -86,32 +76,33 @@ uses
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Mapping.Attributes;
 
-{ TSimpleRepository<T, TID> }
+
+{$REGION 'TSimpleRepository<T, TID>'}
+
+constructor TSimpleRepository<T, TID>.Create(const session: TSession);
+begin
+  inherited Create;
+  fSession := session;
+  fNamespace := GetNamespaceFromType;
+end;
 
 function TSimpleRepository<T, TID>.Count: Int64;
 begin
-  Result := FSession.Page<T>(1, 1).GetTotalItems;
+  Result := fSession.Page<T>(1, 1).GetTotalItems;
 end;
 
-constructor TSimpleRepository<T, TID>.Create(ASession: TSession);
+procedure TSimpleRepository<T, TID>.Delete(const entity: T);
 begin
-  inherited Create;
-  FSession := ASession;
-  FNamespace := GetNamespaceFromType;
+  fSession.Delete(entity);
 end;
 
-procedure TSimpleRepository<T, TID>.Delete(AEntity: T);
-begin
-  FSession.Delete(AEntity);
-end;
-
-procedure TSimpleRepository<T, TID>.Delete(AEntities: ICollection<T>);
+procedure TSimpleRepository<T, TID>.Delete(const entities: ICollection<T>);
 var
-  LTransaction: IDBTransaction;
+  transaction: IDBTransaction;
 begin
-  LTransaction := FSession.BeginTransaction;
-  FSession.DeleteList<T>(AEntities);
-  LTransaction.Commit;
+  transaction := fSession.BeginTransaction;
+  fSession.DeleteList<T>(entities);
+  transaction.Commit;
 end;
 
 procedure TSimpleRepository<T, TID>.DeleteAll;
@@ -119,90 +110,93 @@ begin
   Delete(FindAll);
 end;
 
-function TSimpleRepository<T, TID>.Execute(const AQuery: string; const AParams: array of const): NativeUInt;
+function TSimpleRepository<T, TID>.Execute(const query: string; const params: array of const): NativeUInt;
 begin
-  Result := FSession.Execute(AQuery, AParams);
+  Result := fSession.Execute(query, params);
 end;
 
-function TSimpleRepository<T, TID>.Exists(const AId: TID): Boolean;
+function TSimpleRepository<T, TID>.Exists(const id: TID): Boolean;
 var
-  LEntity: T;
+  entity: T;
 begin
-  LEntity := FindOne(AId);
+  entity := FindOne(id);
   try
-    Result := Assigned(LEntity);
+    Result := Assigned(entity);
   finally
-    LEntity.Free;
+    entity.Free;
   end;
 end;
 
 function TSimpleRepository<T, TID>.FindAll: IList<T>;
 begin
-  Result := FSession.FindAll<T>;
+  Result := fSession.FindAll<T>;
 end;
 
-function TSimpleRepository<T, TID>.FindOne(const AID: TID): T;
+function TSimpleRepository<T, TID>.FindOne(const id: TID): T;
 begin
-  Result := FSession.FindOne<T>(TValue.From<TID>(AID));
+  Result := fSession.FindOne<T>(TValue.From<TID>(id));
 end;
 
 function TSimpleRepository<T, TID>.GetNamespaceFromType: string;
 var
-  LTable: TableAttribute;
+  table: TableAttribute;
 begin
+  table := TEntityCache.Get(T).EntityTable;
+  if Assigned(table) then
+    Exit(table.GetNamespace);
   Result := '';
-  LTable := TEntityCache.Get(T).EntityTable;
-  if Assigned(LTable) then
-    Result := LTable.GetNamespace;
 end;
 
-function TSimpleRepository<T, TID>.Query(const AQuery: string; const AParams: array of const): IList<T>;
+function TSimpleRepository<T, TID>.Query(const query: string; const params: array of const): IList<T>;
 begin
-  Result := FSession.GetList<T>(AQuery, AParams);
+  Result := fSession.GetList<T>(query, params);
 end;
 
-procedure TSimpleRepository<T, TID>.Insert(AEntity: T);
+procedure TSimpleRepository<T, TID>.Insert(const entity: T);
 begin
-  FSession.Insert(AEntity);
+  fSession.Insert(entity);
 end;
 
-procedure TSimpleRepository<T, TID>.Insert(AEntities: ICollection<T>);
+procedure TSimpleRepository<T, TID>.Insert(const entities: ICollection<T>);
 var
-  LTransaction: IDBTransaction;
+  transaction: IDBTransaction;
 begin
-  LTransaction := FSession.BeginTransaction;
-  FSession.InsertList<T>(AEntities);
-  LTransaction.Commit;
+  transaction := fSession.BeginTransaction;
+  fSession.InsertList<T>(entities);
+  transaction.Commit;
 end;
 
-function TSimpleRepository<T, TID>.Page(APage, AItemsPerPage: Integer): IDBPage<T>;
+function TSimpleRepository<T, TID>.Page(page, itemsPerPage: Integer): IDBPage<T>;
 begin
-  Result := FSession.Page<T>(APage, AItemsPerPage);
+  Result := fSession.Page<T>(page, itemsPerPage);
 end;
 
-function TSimpleRepository<T, TID>.Save(AEntity: T): T;
+function TSimpleRepository<T, TID>.Save(const entity: T): T;
 begin
-  FSession.Save(AEntity);
-  Result := AEntity;
+  fSession.Save(entity);
+  Result := entity;
 end;
 
-procedure TSimpleRepository<T, TID>.SaveCascade(AEntity: T);
+procedure TSimpleRepository<T, TID>.SaveCascade(const entity: T);
 var
-  LTransaction: IDBTransaction;
+  transaction: IDBTransaction;
 begin
-  LTransaction := FSession.BeginTransaction;
-  FSession.SaveAll(AEntity);
-  LTransaction.Commit;
+  transaction := fSession.BeginTransaction;
+  fSession.SaveAll(entity);
+  transaction.Commit;
 end;
 
-function TSimpleRepository<T, TID>.Save(AEntities: ICollection<T>): ICollection<T>;
+function TSimpleRepository<T, TID>.Save(const entities: ICollection<T>): ICollection<T>;
 var
-  LTransaction: IDBTransaction;
+  transaction: IDBTransaction;
 begin
-  LTransaction := FSession.BeginTransaction;
-  FSession.SaveList<T>(AEntities);
-  Result := AEntities;
-  LTransaction.Commit;
+  transaction := fSession.BeginTransaction;
+  fSession.SaveList<T>(entities);
+  Result := entities;
+  transaction.Commit;
 end;
+
+{$ENDREGION}
+
 
 end.

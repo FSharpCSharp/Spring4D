@@ -36,46 +36,43 @@ uses
   Spring.Persistence.SQL.Params;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Base <c>IDBResultset</c> adapter which descendents must override.
-  ///	</summary>
-  {$ENDREGION}
-  TDriverResultSetAdapter<T> = class(TInterfacedObject, IDBResultset)
+  /// <summary>
+  ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBResultSet" />
+  ///   adapter which descendents must override.
+  /// </summary>
+  TDriverResultSetAdapter<T> = class(TInterfacedObject, IDBResultSet)
   private
-    FDataset: T;
+    fDataSet: T;
   protected
     function IsEmpty: Boolean; virtual; abstract;
     function Next: Boolean; virtual; abstract;
-    function FieldNameExists(const AFieldName: string): Boolean; virtual; abstract;
-    function GetFieldValue(AIndex: Integer): Variant; overload; virtual; abstract;
-    function GetFieldValue(const AFieldname: string): Variant; overload; virtual; abstract;
+    function FieldNameExists(const fieldName: string): Boolean; virtual; abstract;
+    function GetFieldValue(index: Integer): Variant; overload; virtual; abstract;
+    function GetFieldValue(const fieldname: string): Variant; overload; virtual; abstract;
     function GetFieldCount: Integer; virtual; abstract;
-    function GetFieldName(AIndex: Integer): string; virtual; abstract;
+    function GetFieldName(index: Integer): string; virtual; abstract;
   public
-    constructor Create(const ADataset: T); virtual;
-    destructor Destroy; override;
+    constructor Create(const dataSet: T); virtual;
 
-    property Dataset: T read FDataset;
+    property Dataset: T read fDataSet;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Base <c>IDBConnection</c> adapter which descendents must override.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBConnection" />
+  ///   adapter which descendents must override.
+  /// </summary>
   TDriverConnectionAdapter<T> = class(TInterfacedObject, IDBConnection)
   private
-    FConnection: T;
-    FExecutionListeners: IList<TExecutionListenerProc>;
-    FQueryLanguage: TQueryLanguage;
-    FAutoFreeConnection: Boolean;
-    FTranID: Integer;
+    fConnection: T;
+    fListeners: IList<TExecutionListenerProc>;
+    fQueryLanguage: TQueryLanguage;
+    fAutoFreeConnection: Boolean;
+    fTransationId: Integer;
 
-    procedure SetQueryLanguage(AQueryLanguage: TQueryLanguage);
+    procedure SetQueryLanguage(queryLanguage: TQueryLanguage);
     function GetExecutionListeners: IList<TExecutionListenerProc>;
     function GetAutoFreeConnection: Boolean;
-    procedure SetAutoFreeConnection(const Value: Boolean);
+    procedure SetAutoFreeConnection(value: Boolean);
   protected
     procedure Connect; virtual; abstract;
     procedure Disconnect; virtual; abstract;
@@ -85,114 +82,108 @@ type
     function GetDriverName: string; virtual; abstract;
     function GetTransactionName: string; virtual;
     function GenerateNewID: Integer; virtual;
-    procedure AddExecutionListener(const AListenerProc: TExecutionListenerProc);
+    procedure AddExecutionListener(const listenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners;
 
     function GetQueryLanguage: TQueryLanguage; virtual;
-    function TryResolveQueryLanguage(out AQueryLanguage: TQueryLanguage): Boolean; virtual;
+    function TryResolveQueryLanguage(out queryLanguage: TQueryLanguage): Boolean; virtual;
   public
-    constructor Create(const AConnection: T); virtual;
+    constructor Create(const connection: T); virtual;
     destructor Destroy; override;
 
     property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;
-    property Connection: T read FConnection;
+    property Connection: T read fConnection;
     property ExecutionListeners: IList<TExecutionListenerProc> read GetExecutionListeners;
     property QueryLanguage: TQueryLanguage read GetQueryLanguage write SetQueryLanguage;
-    property TranId: Integer read FTranID;
+    property TransactionId: Integer read fTransationId;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Base <c>IDBStatement</c> adapter which descendents must override.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBStatement" />
+  ///   adapter which descendents must override.
+  /// </summary>
   TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
   private
-    FStmt: T;
-    FExecutionListeners: IList<TExecutionListenerProc>;
-    FParams: IList<TDBParam>;
-    FSQL: string;
-    FQuery: Variant;
-    FQueryMetadata: TQueryMetadata;
+    fStatement: T;
+    fListeners: IList<TExecutionListenerProc>;
+    fParams: IList<TDBParam>;
+    fSql: string;
+    fQuery: Variant;
+    fQueryMetadata: TQueryMetadata;
   protected
     procedure NotifyListeners; virtual;
   public
-    constructor Create(const AStatement: T); virtual;
-    destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string); virtual;
-    procedure SetQuery(const AMetadata: TQueryMetadata; AQuery: Variant); virtual;
-    procedure SetParams(Params: IList<TDBParam>); overload; virtual;
-    procedure SetParams(const AParams: array of const); overload;
+    constructor Create(const statement: T); virtual;
+    procedure SetSQLCommand(const commandText: string); virtual;
+    procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); virtual;
+    procedure SetParams(const params: IList<TDBParam>); overload; virtual;
+    procedure SetParams(const params: array of const); overload;
     function Execute: NativeUInt; virtual;
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; virtual;
+    function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; virtual;
 
     function NativeQueryPresent: Boolean; virtual;
 
-    property ExecutionListeners: IList<TExecutionListenerProc> read FExecutionListeners write FExecutionListeners;
-    property Statement: T read FStmt;
-    property Query: Variant read FQuery write FQuery;
-    property QueryMetadata: TQueryMetadata read FQueryMetadata write FQueryMetadata;
+    property ExecutionListeners: IList<TExecutionListenerProc> read fListeners write fListeners;
+    property Statement: T read fStatement;
+    property Query: Variant read fQuery write fQuery;
+    property QueryMetadata: TQueryMetadata read fQueryMetadata write fQueryMetadata;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Base <c>IDBTransaction</c> adapter which descendents must override.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBTransaction" />
+  ///   adapter which descendents must override.
+  /// </summary>
   TDriverTransactionAdapter<T> = class(TInterfacedObject, IDBTransaction)
   private
-    FTransaction: T;
-    FTransactionName: string;
+    fTransaction: T;
+    fTransactionName: string;
     function GetTransactionName: string;
-    procedure SetTransactionName(const Value: string);
+    procedure SetTransactionName(const value: string);
   protected
     procedure Commit; virtual; abstract;
     procedure Rollback; virtual; abstract;
     function InTransaction: Boolean; virtual; abstract;
   public
-    constructor Create(const ATransaction: T); virtual;
+    constructor Create(const transaction: T); virtual;
     destructor Destroy; override;
 
-    property Transaction: T read FTransaction;
+    property Transaction: T read fTransaction;
     property TransactionName: string read GetTransactionName write SetTransactionName;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Responsible for building paged queries.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Responsible for building paged queries.
+  /// </summary>
   TPager = class
   private
-    FConnection: IDBConnection;
-    FCurrentPage: Integer;
-    FPageSize: Integer;
-    FTotalItems: Int64;
-    FGenerator: ISQLGenerator;
+    fConnection: IDBConnection;
+    fCurrentPage: Integer;
+    fPageSize: Integer;
+    fTotalItems: Int64;
+    fGenerator: ISQLGenerator;
     function GetLimit: Integer;
     function GetOffset: Integer;
   public
-    constructor Create(AConnection: IDBConnection); virtual;
+    constructor Create(connection: IDBConnection); virtual;
 
-    function BuildSQL(const ASql: string): string;
+    function BuildSQL(const sql: string): string;
 
-    property Connection: IDBConnection read FConnection;
-    property Page: Integer read FCurrentPage write FCurrentPage;
-    property ItemsPerPage: Integer read FPageSize write FPageSize;
-    property TotalItems: Int64 read FTotalItems write FTotalItems;
+    property Connection: IDBConnection read fConnection;
+    property Page: Integer read fCurrentPage write fCurrentPage;
+    property ItemsPerPage: Integer read fPageSize write fPageSize;
+    property TotalItems: Int64 read fTotalItems write fTotalItems;
     property Limit: Integer read GetLimit;
     property Offset: Integer read GetOffset;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Base <c>IDBPage&lt;T&gt;</c> adapter which descendents must override.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBPage&lt;T&gt;" />
+  ///   adapter which descendents must override.
+  /// </summary>
   TDriverPageAdapter<T: class> = class(TInterfacedObject, IDBPage<T>)
   private
-    FItems: IList<T>;
-    FPager: TPager;
+    fItems: IList<T>;
+    fPager: TPager;
   protected
     function GetCurrentPage: Integer;
     function GetItemsPerPage: Integer;
@@ -202,7 +193,7 @@ type
 
     property Items: IList<T> read GetItems;
   public
-    constructor Create(const APager: TPager); virtual;
+    constructor Create(const pager: TPager); virtual;
     destructor Destroy; override;
   end;
 
@@ -217,25 +208,24 @@ uses
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Register;
 
-{ TDriverResultSetAdapter<T> }
 
-constructor TDriverResultSetAdapter<T>.Create(const ADataset: T);
+{$REGION 'TDriverResultSetAdapter<T>'}
+
+constructor TDriverResultSetAdapter<T>.Create(const dataSet: T);
 begin
   inherited Create;
-  FDataset := ADataset;
+  fDataSet := dataSet;
 end;
 
-destructor TDriverResultSetAdapter<T>.Destroy;
-begin
-  inherited Destroy;
-end;
+{$ENDREGION}
 
-{ TDriverConnectionAdapter<T> }
+
+{$REGION 'TDriverConnectionAdapter<T>'}
 
 procedure TDriverConnectionAdapter<T>.AddExecutionListener(
-  const AListenerProc: TExecutionListenerProc);
+  const listenerProc: TExecutionListenerProc);
 begin
-  FExecutionListeners.Add(AListenerProc);
+  fListeners.Add(listenerProc);
 end;
 
 function TDriverConnectionAdapter<T>.BeginTransaction: IDBTransaction;
@@ -245,113 +235,107 @@ end;
 
 procedure TDriverConnectionAdapter<T>.ClearExecutionListeners;
 begin
-  FExecutionListeners.Clear;
+  fListeners.Clear;
 end;
 
-constructor TDriverConnectionAdapter<T>.Create(const AConnection: T);
+constructor TDriverConnectionAdapter<T>.Create(const connection: T);
 begin
   inherited Create;
-  FConnection := AConnection;
-  FExecutionListeners := TCollections.CreateList<TExecutionListenerProc>;
-  FQueryLanguage := qlAnsiSQL;
-  FTranID := 0;
-  FAutoFreeConnection := False;
-  TryResolveQueryLanguage(FQueryLanguage);
+  fConnection := connection;
+  fListeners := TCollections.CreateList<TExecutionListenerProc>;
+  fQueryLanguage := qlAnsiSQL;
+  fTransationId := 0;
+  fAutoFreeConnection := False;
+  TryResolveQueryLanguage(fQueryLanguage);
 end;
 
 destructor TDriverConnectionAdapter<T>.Destroy;
 begin
   if AutoFreeConnection then
-    TRttiExplorer.DestroyClass<T>(FConnection);
+    TRttiExplorer.DestroyClass<T>(fConnection);
   inherited Destroy;
 end;
 
 function TDriverConnectionAdapter<T>.GenerateNewID: Integer;
 begin
-  TInterlocked.Increment(FTranID);
-  Result := FTranID;
+  TInterlocked.Increment(fTransationId);
+  Result := fTransationId;
 end;
 
 function TDriverConnectionAdapter<T>.GetAutoFreeConnection: Boolean;
 begin
-  Result := FAutoFreeConnection;
+  Result := fAutoFreeConnection;
 end;
 
 function TDriverConnectionAdapter<T>.GetExecutionListeners: IList<TExecutionListenerProc>;
 begin
-  Result := FExecutionListeners;
+  Result := fListeners;
 end;
 
 function TDriverConnectionAdapter<T>.GetQueryLanguage: TQueryLanguage;
 begin
-  Result := FQueryLanguage;
+  Result := fQueryLanguage;
 end;
 
 function TDriverConnectionAdapter<T>.GetTransactionName: string;
 begin
-  Result := 'T' + IntToStr(FTranID);
+  Result := 'T' + IntToStr(fTransationId);
 end;
 
-procedure TDriverConnectionAdapter<T>.SetAutoFreeConnection(const Value: Boolean);
+procedure TDriverConnectionAdapter<T>.SetAutoFreeConnection(value: Boolean);
 begin
-  FAutoFreeConnection := Value;
+  fAutoFreeConnection := value;
 end;
 
-procedure TDriverConnectionAdapter<T>.SetQueryLanguage(AQueryLanguage: TQueryLanguage);
+procedure TDriverConnectionAdapter<T>.SetQueryLanguage(queryLanguage: TQueryLanguage);
 begin
-  if FQueryLanguage <> AQueryLanguage then
-  begin
-    FQueryLanguage := AQueryLanguage;
-  end;
+  if fQueryLanguage <> queryLanguage then
+    fQueryLanguage := queryLanguage;
 end;
 
 function TDriverConnectionAdapter<T>.TryResolveQueryLanguage(
-  out AQueryLanguage: TQueryLanguage): Boolean;
+  out queryLanguage: TQueryLanguage): Boolean;
 var
-  sDriverName: string;
+  driverName: string;
 begin
   Result := True;
-  sDriverName := GetDriverName;
+  driverName := GetDriverName;
 
-  if ContainsText(sDriverName, DRIVER_MSSQL) then
-    AQueryLanguage := qlMSSQL
-  else if ContainsText(sDriverName, DRIVER_SQLITE) then
-    AQueryLanguage := qlSQLite
-  else if ContainsText(sDriverName, DRIVER_ORACLE) then
-    AQueryLanguage := qlOracle
-  else if ContainsText(sDriverName, DRIVER_SYBASE_ASA) then
-    AQueryLanguage := qlASA
-  else if ContainsText(sDriverName, DRIVER_MYSQL) then
-    AQueryLanguage := qlMySQL
-  else if ContainsText(sDriverName, DRIVER_UIB) then
-    AQueryLanguage := qlFirebird
-  else if ContainsText(sDriverName, DRIVER_FIREBIRD) then
-    AQueryLanguage := qlFirebird
-  else if ContainsText(sDriverName, DRIVER_POSTGRESQL) then
-    AQueryLanguage := qlPostgreSQL
-  else if ContainsText(sDriverName, DRIVER_MONGODB) then
-    AQueryLanguage := qlMongoDB
+  if ContainsText(driverName, DRIVER_MSSQL) then
+    queryLanguage := qlMSSQL
+  else if ContainsText(driverName, DRIVER_SQLITE) then
+    queryLanguage := qlSQLite
+  else if ContainsText(driverName, DRIVER_ORACLE) then
+    queryLanguage := qlOracle
+  else if ContainsText(driverName, DRIVER_SYBASE_ASA) then
+    queryLanguage := qlASA
+  else if ContainsText(driverName, DRIVER_MYSQL) then
+    queryLanguage := qlMySQL
+  else if ContainsText(driverName, DRIVER_UIB) then
+    queryLanguage := qlFirebird
+  else if ContainsText(driverName, DRIVER_FIREBIRD) then
+    queryLanguage := qlFirebird
+  else if ContainsText(driverName, DRIVER_POSTGRESQL) then
+    queryLanguage := qlPostgreSQL
+  else if ContainsText(driverName, DRIVER_MONGODB) then
+    queryLanguage := qlMongoDB
   else
   begin
     Result := False;
-    AQueryLanguage := qlAnsiSQL;
+    queryLanguage := qlAnsiSQL;
   end;
 end;
 
-{ TDriverStatementAdapter<T> }
+{$ENDREGION}
 
-constructor TDriverStatementAdapter<T>.Create(const AStatement: T);
+
+{$REGION 'TDriverStatementAdapter<T>'}
+
+constructor TDriverStatementAdapter<T>.Create(const statement: T);
 begin
   inherited Create;
-  FStmt := AStatement;
-  FParams := nil;
-  FExecutionListeners := nil;
-  FQuery := Null;
-end;
-
-destructor TDriverStatementAdapter<T>.Destroy;
-begin
-  inherited Destroy;
+  fStatement := statement;
+  fQuery := Null;
 end;
 
 function TDriverStatementAdapter<T>.Execute: NativeUInt;
@@ -359,101 +343,100 @@ begin
   NotifyListeners;
 end;
 
-function TDriverStatementAdapter<T>.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
+function TDriverStatementAdapter<T>.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 begin
   NotifyListeners;
 end;
 
 function TDriverStatementAdapter<T>.NativeQueryPresent: Boolean;
 begin
-  Result := not VarIsNull(FQuery);
+  Result := not VarIsNull(fQuery);
 end;
 
 procedure TDriverStatementAdapter<T>.NotifyListeners;
 var
-  LListener: TExecutionListenerProc;
-  LParams: IList<TDBParam>;
+  listener: TExecutionListenerProc;
+  params: IList<TDBParam>;
 begin
-  if Assigned(FExecutionListeners) and (FSQL <> '') then
+  if Assigned(fListeners) and (fSql <> '') then
   begin
-    LParams := FParams;
-    if not Assigned(LParams) then
-    begin
-      LParams := TCollections.CreateObjectList<TDBParam>(True);
-    end;
+    params := fParams;
+    if not Assigned(params) then
+      params := TCollections.CreateObjectList<TDBParam>(True);
 
-    for LListener in FExecutionListeners do
-    begin
-      LListener(FSQL, LParams);
-    end;
+    for listener in fListeners do
+      listener(fSql, params);
   end;
 end;
 
-procedure TDriverStatementAdapter<T>.SetParams(Params: IList<TDBParam>);
+procedure TDriverStatementAdapter<T>.SetParams(const params: IList<TDBParam>);
 begin
-  FParams := Params;
+  fParams := params;
 end;
 
-procedure TDriverStatementAdapter<T>.SetParams(const AParams: array of const);
+procedure TDriverStatementAdapter<T>.SetParams(const params: array of const);
 var
-  LParams: IList<TDBParam>;
+  paramList: IList<TDBParam>;
 begin
-  if Length(AParams) > 0 then
+  if Length(params) > 0 then
   begin
-    LParams := TCollections.CreateObjectList<TDBParam>;
-    ConvertParams(AParams, LParams);
-    SetParams(LParams);
+    paramList := TCollections.CreateObjectList<TDBParam>;
+    ConvertParams(params, paramList);
+    SetParams(paramList);
   end;
 end;
 
-procedure TDriverStatementAdapter<T>.SetQuery(const AMetadata: TQueryMetadata;
-  AQuery: Variant);
+procedure TDriverStatementAdapter<T>.SetQuery(const metadata: TQueryMetadata;
+  const query: Variant);
 begin
-  FQuery := AQuery;
-  FQueryMetadata := AMetadata;
-  case VarType(AQuery) of
-    varUString, varString: FSQL := AQuery;
+  fQuery := query;
+  fQueryMetadata := metadata;
+  case VarType(query) of
+    varUString, varString: fSql := query;
   end;
 end;
 
-procedure TDriverStatementAdapter<T>.SetSQLCommand(const ACommandText: string);
+procedure TDriverStatementAdapter<T>.SetSQLCommand(const commandText: string);
 begin
-  FSQL := ACommandText;
+  fSql := commandText;
 end;
 
-{ TDriverPageAdapter<T> }
+{$ENDREGION}
 
-constructor TDriverPageAdapter<T>.Create(const APager: TPager);
+
+{$REGION 'TDriverPageAdapter<T>'}
+
+constructor TDriverPageAdapter<T>.Create(const pager: TPager);
 begin
   inherited Create;
-  FPager := APager;
-  FItems := TCollections.CreateObjectList<T>(True);
+  fPager := pager;
+  fItems := TCollections.CreateObjectList<T>(True);
 end;
 
 destructor TDriverPageAdapter<T>.Destroy;
 begin
-  FPager.Free;
+  fPager.Free;
   inherited Destroy;
 end;
 
 function TDriverPageAdapter<T>.GetCurrentPage: Integer;
 begin
-  Result := FPager.Page;
+  Result := fPager.Page;
 end;
 
 function TDriverPageAdapter<T>.GetItems: IList<T>;
 begin
-  Result := FItems;
+  Result := fItems;
 end;
 
 function TDriverPageAdapter<T>.GetItemsPerPage: Integer;
 begin
-  Result := FPager.ItemsPerPage;
+  Result := fPager.ItemsPerPage;
 end;
 
 function TDriverPageAdapter<T>.GetTotalItems: Int64;
 begin
-  Result := FPager.TotalItems;
+  Result := fPager.TotalItems;
 end;
 
 function TDriverPageAdapter<T>.GetTotalPages: Integer;
@@ -463,18 +446,49 @@ begin
     Inc(Result);
 end;
 
-{ TPager }
+{$ENDREGION}
 
-function TPager.BuildSQL(const ASql: string): string;
-begin
-  Result := FGenerator.GeneratePagedQuery(ASql, Limit, Offset);
-end;
 
-constructor TPager.Create(AConnection: IDBConnection);
+{$REGION 'TDriverTransactionAdapter<T>'}
+
+constructor TDriverTransactionAdapter<T>.Create(const transaction: T);
 begin
   inherited Create;
-  FConnection := AConnection;
-  FGenerator := TSQLGeneratorRegister.GetGenerator(AConnection.GetQueryLanguage);
+  fTransaction := transaction;
+end;
+
+destructor TDriverTransactionAdapter<T>.Destroy;
+begin
+  if InTransaction then
+    Rollback;
+  inherited Destroy;
+end;
+
+function TDriverTransactionAdapter<T>.GetTransactionName: string;
+begin
+  Result := fTransactionName;
+end;
+
+procedure TDriverTransactionAdapter<T>.SetTransactionName(const value: string);
+begin
+  fTransactionName := value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPager'}
+
+function TPager.BuildSQL(const sql: string): string;
+begin
+  Result := fGenerator.GeneratePagedQuery(sql, Limit, Offset);
+end;
+
+constructor TPager.Create(connection: IDBConnection);
+begin
+  inherited Create;
+  fConnection := connection;
+  fGenerator := TSQLGeneratorRegister.GetGenerator(connection.GetQueryLanguage);
 end;
 
 function TPager.GetLimit: Integer;
@@ -490,29 +504,7 @@ begin
     Result := (Page * ItemsPerPage) - ItemsPerPage;
 end;
 
-{ TDriverTransactionAdapter<T> }
+{$ENDREGION}
 
-constructor TDriverTransactionAdapter<T>.Create(const ATransaction: T);
-begin
-  inherited Create;
-  FTransaction := ATransaction;
-end;
-
-destructor TDriverTransactionAdapter<T>.Destroy;
-begin
-  if InTransaction then
-    Rollback;
-  inherited Destroy;
-end;
-
-function TDriverTransactionAdapter<T>.GetTransactionName: string;
-begin
-  Result := FTransactionName;
-end;
-
-procedure TDriverTransactionAdapter<T>.SetTransactionName(const Value: string);
-begin
-  FTransactionName := Value;
-end;
 
 end.

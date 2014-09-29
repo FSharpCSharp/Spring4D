@@ -1,4 +1,4 @@
-{***************************************************************************}
+﻿{***************************************************************************}
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
@@ -38,7 +38,7 @@ uses
 type
   ICommandExecutionListener = interface
     ['{590E86C8-0B05-4BFE-9B26-3A9A4D0510BF}']
-    procedure ExecutingCommand(const ACmd: string; AList: IList);
+    procedure ExecutingCommand(const command: string; const list: IList);
   end;
 
   TQueryLanguage = (qlAnsiSQL = 0, qlSQLite, qlMSSQL, qlASA, qlOracle, qlFirebird, qlPostgreSQL, qlMySQL, qlNoSQL, qlMongoDB);
@@ -46,24 +46,25 @@ type
   ISQLGenerator = interface
     ['{8F46D275-50E4-4DE8-9E56-7D6599935E32}']
     function GetQueryLanguage: TQueryLanguage;
-    function GenerateSelect(ASelectCommand: TSelectCommand): string;
-    function GenerateInsert(AInsertCommand: TInsertCommand): string;
-    function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
-    function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>;
-    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
-    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
-    function GenerateGetQueryCount(const ASql: string): string;
+    function GenerateSelect(const command: TSelectCommand): string;
+    function GenerateInsert(const command: TInsertCommand): string;
+    function GenerateUpdate(const command: TUpdateCommand): string;
+    function GenerateDelete(const command: TDeleteCommand): string;
+    function GenerateCreateTable(const command: TCreateTableCommand): IList<string>;
+    function GenerateCreateFK(const command: TCreateFKCommand): IList<string>;
+    function GenerateCreateSequence(const command: TCreateSequenceCommand): string;
+    function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string;
+    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string;
+    function GeneratePagedQuery(const sql: string; limit, offset: Integer): string;
+    function GenerateGetQueryCount(const sql: string): string;
     function GenerateUniqueId: Variant;
-    function GetSQLTableCount(const ATablename: string): string;
-    function GetSQLSequenceCount(const ASequenceName: string): string;
-    function GetTableColumns(const ATableName: string): string;
-    function GetSQLTableExists(const ATablename: string): string;
+    function GetSQLTableCount(const tablename: string): string;
+    function GetSQLSequenceCount(const sequenceName: string): string;
+    function GetTableColumns(const tableName: string): string;
+    function GetSQLTableExists(const tableName: string): string;
     function GetEscapeFieldnameChar: Char;
-    function GetUpdateVersionFieldQuery(AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute; AVersionValue, APKValue: Variant): Variant;
+    function GetUpdateVersionFieldQuery(const command: TUpdateCommand;
+      const versionColumn: VersionAttribute; const version, primaryKey: Variant): Variant;
   end;
 
 implementation

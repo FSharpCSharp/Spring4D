@@ -40,11 +40,15 @@ type
 
 implementation
 
-{ TDisjunction }
+
+{$REGION 'TDisjunction'}
 
 function TDisjunction.GetWhereOperator: TWhereOperator;
 begin
   Result := woOr;
 end;
+
+{$ENDREGION}
+
 
 end.

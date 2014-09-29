@@ -29,7 +29,6 @@ unit Spring.Persistence.Core.EntityMap;
 interface
 
 uses
-  Rtti,
   Spring.Collections;
 
 type
@@ -37,30 +36,28 @@ type
 
   TEntityMap = class
   private
-    FMap: IDictionary<TEntityMapKey,TObject>;
+    fMap: IDictionary<TEntityMapKey,TObject>;
   protected
-    function GetObjectKey(AObject: TObject): TEntityMapKey; virtual;
+    function GetObjectKey(const instance: TObject): TEntityMapKey;
   public
-    constructor Create(AOwnsValues: Boolean); virtual;
+    constructor Create(ownsValues: Boolean);
 
-    function IsMapped(AObject: TObject): Boolean;
+    function IsMapped(const instance: TObject): Boolean;
     function IsIDMapped: Boolean;
-    procedure Add(AObject: TObject);
-    procedure AddOrReplace(AObject: TObject);
+    procedure Add(const instance: TObject);
+    procedure AddOrReplace(const instance: TObject);
 
-    function Get(AObject: TObject): TObject;
-    procedure Remove(AObject: TObject);
-    procedure Replace(AObject: TObject);
-    procedure Clear(AAll: Boolean);
-    function HasIdValue(AObject: TObject): Boolean;
-
+    function Get(const instance: TObject): TObject;
+    procedure Remove(const instance: TObject);
+    procedure Replace(const instance: TObject);
+    procedure Clear;
+    function HasIdValue(const instance: TObject): Boolean;
   end;
 
 implementation
 
 uses
-  Generics.Defaults,
-  Variants,
+  Spring,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.Core.EntityCache,
@@ -68,70 +65,71 @@ uses
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Utils;
 
-{ TEntityMap }
 
-constructor TEntityMap.Create(AOwnsValues: Boolean);
+{$REGION 'TEntityMap'}
+
+constructor TEntityMap.Create(ownsValues: Boolean);
 var
   LOwnerships: TDictionaryOwnerships;
 begin
   inherited Create;
 
-  if AOwnsValues then
+  if ownsValues then
     LOwnerships := [doOwnsValues]
   else
     LOwnerships := [];
 
-  FMap := TCollections.CreateDictionary<TEntityMapKey,TObject>(LOwnerships);
+  fMap := TCollections.CreateDictionary<TEntityMapKey,TObject>(LOwnerships);
 end;
 
-procedure TEntityMap.Add(AObject: TObject);
+procedure TEntityMap.Add(const instance: TObject);
 var
   LKey: TEntityMapKey;
 begin
-  Assert(Assigned(AObject), 'Entity not assigned');
+  Assert(Assigned(instance), 'Entity not assigned');
 
-  LKey := GetObjectKey(AObject);
-  FMap.Add(LKey, AObject);
+  LKey := GetObjectKey(instance);
+  fMap.Add(LKey, instance);
 end;
 
-procedure TEntityMap.AddOrReplace(AObject: TObject);
+procedure TEntityMap.AddOrReplace(const instance: TObject);
 var
   LKey: TEntityMapKey;
 begin
-  Assert(Assigned(AObject), 'Entity not assigned');
+  Assert(Assigned(instance), 'Entity not assigned');
 
-  LKey := GetObjectKey(AObject);
-  FMap.AddOrSetValue(LKey, AObject);
+  LKey := GetObjectKey(instance);
+  fMap.AddOrSetValue(LKey, instance);
 end;
 
-procedure TEntityMap.Clear(AAll: Boolean);
+procedure TEntityMap.Clear;
 begin
-  FMap.Clear;
+  fMap.Clear;
 end;
 
-function TEntityMap.Get(AObject: TObject): TObject;
+function TEntityMap.Get(const instance: TObject): TObject;
 var
   LKey: TEntityMapKey;
 begin
-  LKey := GetObjectKey(AObject);
-  Result := FMap[LKey];
+  LKey := GetObjectKey(instance);
+  Result := fMap[LKey];
 end;
 
-function TEntityMap.GetObjectKey(AObject: TObject): TEntityMapKey;
+function TEntityMap.GetObjectKey(const instance: TObject): TEntityMapKey;
 var
   LPrimaryKeyCol: ColumnAttribute;
   LId: TValue;
 begin
-  LPrimaryKeyCol := TEntityCache.Get(AObject.ClassType).PrimaryKeyColumn;
+  LPrimaryKeyCol := TEntityCache.Get(instance.ClassType).PrimaryKeyColumn;
   if Assigned(LPrimaryKeyCol) then
-    LId := TRttiExplorer.GetMemberValue(AObject, LPrimaryKeyCol.ClassMemberName)
+    LId := TRttiExplorer.GetMemberValue(instance, LPrimaryKeyCol.ClassMemberName)
   else
     LId := TValue.Empty;
 
-  Result := AObject.ClassName + '_' + LId.ToString;
+  Result := instance.ClassName + '_' + LId.ToString;
 end;
 
-function TEntityMap.HasIdValue(AObject: TObject): Boolean;
+function TEntityMap.HasIdValue(const instance: TObject): Boolean;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
@@ -141,25 +139,28 @@ begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
-function TEntityMap.IsMapped(AObject: TObject): Boolean;
+function TEntityMap.IsMapped(const instance: TObject): Boolean;
 var
   LKey: TEntityMapKey;
 begin
-  LKey := GetObjectKey(AObject);
-  Result := FMap.ContainsKey(LKey);
+  LKey := GetObjectKey(instance);
+  Result := fMap.ContainsKey(LKey);
 end;
 
-procedure TEntityMap.Remove(AObject: TObject);
+procedure TEntityMap.Remove(const instance: TObject);
 var
   LKey: TEntityMapKey;
 begin
-  LKey := GetObjectKey(AObject);
-  FMap.Remove(LKey);
+  LKey := GetObjectKey(instance);
+  fMap.Remove(LKey);
 end;
 
-procedure TEntityMap.Replace(AObject: TObject);
+procedure TEntityMap.Replace(const instance: TObject);
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
+
+{$ENDREGION}
+
 
 end.

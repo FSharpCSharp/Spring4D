@@ -39,58 +39,45 @@ uses
 type
   TAbstractCriterion = class(TInterfacedObject, ICriterion)
   private
-    FEntityClass: TClass;
-    FGenerator: ISQLGenerator;
-    procedure SetEntityClass(const Value: TClass);
+    fEntityClass: TClass;
+    procedure SetEntityClass(value: TClass);
     function GetEntityClass: TClass;
   protected
-    function GetCriterionTable(ACommand: TDMLCommand): TSQLTable; overload; virtual;
-    function GetCriterionTable(ACommand: TDMLCommand; ATable: TSQLTable): TSQLTable; overload; virtual;
-  public
-    destructor Destroy; override;
-
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; virtual;
+    function GetCriterionTable(const command: TDMLCommand): TSQLTable; overload; virtual;
+    function GetCriterionTable(const command: TDMLCommand;
+      const table: TSQLTable): TSQLTable; overload; virtual;
     function GetMatchMode: TMatchMode; virtual;
     function GetWhereOperator: TWhereOperator; virtual;
-
-    property EntityClass: TClass read GetEntityClass write SetEntityClass;
-    property Generator: ISQLGenerator read FGenerator;
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TDMLCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; virtual;
   end;
 
 implementation
 
-uses
-  Spring.Persistence.Core.EntityCache;
 
-{ TAbstractCriterion }
+{$REGION 'TAbstractCriterion'}
 
-destructor TAbstractCriterion.Destroy;
+function TAbstractCriterion.GetCriterionTable(const command: TDMLCommand): TSQLTable;
 begin
-  FGenerator := nil;
-  inherited Destroy;
+  if command is TSelectCommand then
+    Result := TSelectCommand(command).FindTable(fEntityClass)
+  else
+    Result := command.Table;
 end;
 
-function TAbstractCriterion.GetCriterionTable(ACommand: TDMLCommand): TSQLTable;
+function TAbstractCriterion.GetCriterionTable(const command: TDMLCommand;
+  const table: TSQLTable): TSQLTable;
 begin
-  Result := ACommand.Table;
-  if (ACommand is TSelectCommand) then
-  begin
-    Result := TSelectCommand(ACommand).FindTable(EntityClass);
-  end;
-end;
-
-function TAbstractCriterion.GetCriterionTable(ACommand: TDMLCommand; ATable: TSQLTable): TSQLTable;
-begin
-  Result := ATable;
-  if (ACommand is TSelectCommand) then
-  begin
-    Result := TSelectCommand(ACommand).FindCorrespondingTable(ATable);
-  end;
+  if command is TSelectCommand then
+    Result := TSelectCommand(command).FindCorrespondingTable(table)
+  else
+    Result := table;
 end;
 
 function TAbstractCriterion.GetEntityClass: TClass;
 begin
-  Result := FEntityClass;
+  Result := fEntityClass;
 end;
 
 function TAbstractCriterion.GetMatchMode: TMatchMode;
@@ -103,15 +90,16 @@ begin
   Result := woEqual;
 end;
 
-procedure TAbstractCriterion.SetEntityClass(const Value: TClass);
+procedure TAbstractCriterion.SetEntityClass(value: TClass);
 begin
-  FEntityClass := Value;
+  fEntityClass := value;
 end;
 
-function TAbstractCriterion.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand;
-  AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TAbstractCriterion.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 begin
-  FGenerator := AGenerator;
+  // do nothing
 end;
 
 end.

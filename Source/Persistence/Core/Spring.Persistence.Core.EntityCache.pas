@@ -35,113 +35,93 @@ uses
   Spring.Persistence.Mapping.Attributes;
 
 type
-  TColumnDataList = class;
-
-  TColumnDataListEnumerator = class
-  private
-    FList: TColumnDataList;
-    FIndex: Integer;
-  protected
-    function DoGetCurrent: TColumnData; virtual;
-    function DoMoveNext: Boolean; virtual;
-  public
-    constructor Create(AList: TColumnDataList); virtual;
-
-    property Current: TColumnData read DoGetCurrent;
-    function MoveNext: Boolean;
-  end;
-
   TColumnDataList = class
   private
-    FList: IList<TColumnData>;
-    FPrimaryKeyColumn: TColumnData;
-    FPrimaryKeyExists: Boolean;
-    function GetItem(Index: Integer): TColumnData;
-    procedure SetItem(Index: Integer; const Value: TColumnData);
+    fList: IList<TColumnData>;
+    fPrimaryKeyColumn: TColumnData;
+    fPrimaryKeyExists: Boolean;
+    function GetCount: Integer;
+    function GetItem(index: Integer): TColumnData;
+    procedure SetItem(index: Integer; const value: TColumnData);
   protected
     procedure SetPrimaryKeyColumn(const Value: TColumnData); virtual;
   public
     constructor Create; virtual;
-    destructor Destroy; override;
 
-    function GetEnumerator: TColumnDataListEnumerator;
+    function GetEnumerator: IEnumerator<TColumnData>;
 
-    function Add(const AColumnData: TColumnData): Integer;
+    function Add(const columnData: TColumnData): Integer;
     function IsEmpty: Boolean;
-    function Count: Integer;
-    procedure Delete(AIndex: Integer);
+    procedure Delete(index: Integer);
 
-    function TryGetPrimaryKeyColumn(out APrimaryKeyColumn: TColumnData): Boolean;
+    function TryGetPrimaryKeyColumn(out primaryKeyColumn: TColumnData): Boolean;
 
+    property Count: Integer read GetCount;
     property Items[Index: Integer]: TColumnData read GetItem write SetItem; default;
-    property PrimaryKeyColumn: TColumnData read FPrimaryKeyColumn write SetPrimaryKeyColumn;
-    property List: IList<TColumnData> read FList;
+    property PrimaryKeyColumn: TColumnData read fPrimaryKeyColumn write SetPrimaryKeyColumn;
+    property List: IList<TColumnData> read fList;
   end;
 
   TEntityData = class(TPersistent)
   private
-    FColumns: IList<ColumnAttribute>;
-    FColumnMembernameIndex: IDictionary<string, ColumnAttribute>;
-    FColumnsData: TColumnDataList;
-    FForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
-    FPrimaryKeyColumn: ColumnAttribute;
-    FTable: TableAttribute;
-    FOneToManyColumns: IList<OneToManyAttribute>;
-    FManyToOneColumns: IList<ManyToOneAttribute>;
-    FSequence: SequenceAttribute;
-    FHasInstanceField: Boolean;
-    FEntityClass: TClass;
-    FVersionColumn: VersionAttribute;
+    fColumns: IList<ColumnAttribute>;
+    fColumnMemberNameIndex: IDictionary<string, ColumnAttribute>;
+    fColumnsData: TColumnDataList;
+    fForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
+    fPrimaryKeyColumn: ColumnAttribute;
+    fTable: TableAttribute;
+    fOneToManyColumns: IList<OneToManyAttribute>;
+    fManyToOneColumns: IList<ManyToOneAttribute>;
+    fSequence: SequenceAttribute;
+    fHasInstanceField: Boolean;
+    fEntityClass: TClass;
+    fVersionColumn: VersionAttribute;
   protected
     procedure AssignTo(Dest: TPersistent); override;
-    procedure SetEntityData(AClass: TClass); virtual;
     procedure SetColumnsData; virtual;
+    procedure SetEntityData(entityClass: TClass); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
 
     function IsTableEntity: Boolean;
-    function ColumnByMemberName(const AMemberName: string): ColumnAttribute;
-    function ColumnByName(const AColumnName: string): ColumnAttribute;
+    function ColumnByMemberName(const memberName: string): ColumnAttribute;
+    function ColumnByName(const columnName: string): ColumnAttribute;
     function HasInstanceField: Boolean;
     function HasSequence: Boolean;
     function HasManyToOneRelations: Boolean;
     function HasOneToManyRelations: Boolean;
     function HasVersionColumn: Boolean;
 
-    property Columns: IList<ColumnAttribute> read FColumns;
-    property ColumnsData: TColumnDataList read FColumnsData write FColumnsData;
-    property ForeignColumns: IList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
-    property OneToManyColumns: IList<OneToManyAttribute> read FOneToManyColumns;
-    property ManyToOneColumns: IList<ManyToOneAttribute> read FManyToOneColumns;
-    property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn;
-    property Sequence: SequenceAttribute read FSequence write FSequence;
-
-    property VersionColumn: VersionAttribute read FVersionColumn;
-    property EntityClass: TClass read FEntityClass;
-    property EntityTable: TableAttribute read FTable;
+    property Columns: IList<ColumnAttribute> read fColumns;
+    property ColumnsData: TColumnDataList read fColumnsData write fColumnsData;
+    property ForeignColumns: IList<ForeignJoinColumnAttribute> read fForeignKeyColumns;
+    property OneToManyColumns: IList<OneToManyAttribute> read fOneToManyColumns;
+    property ManyToOneColumns: IList<ManyToOneAttribute> read fManyToOneColumns;
+    property PrimaryKeyColumn: ColumnAttribute read fPrimaryKeyColumn;
+    property Sequence: SequenceAttribute read fSequence write fSequence;
+    property VersionColumn: VersionAttribute read fVersionColumn;
+    property EntityClass: TClass read fEntityClass;
+    property EntityTable: TableAttribute read fTable;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Class which holds cached data of annotated entities.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Class which holds cached data of annotated entities.
+  /// </summary>
   TEntityCache = class
   private
-    class var FEntities: IDictionary<TClass,TEntityData>;
+    class var fEntities: IDictionary<TClass,TEntityData>;
   public
     class constructor Create;
 
-    class function Get(AClass: TClass): TEntityData;
-    class function TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
-    class function GetColumns(AClass: TClass): IList<ColumnAttribute>;
-    class function GetColumnsData(AClass: TClass): TColumnDataList;
-    class function CreateColumnsData(AClass: TClass): TColumnDataList;
+    class function Get(entityClass: TClass): TEntityData;
+    class function TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
+    class function GetColumns(entityClass: TClass): IList<ColumnAttribute>;
+    class function GetColumnsData(entityClass: TClass): TColumnDataList;
+    class function CreateColumnsData(entityClass: TClass): TColumnDataList;
 
-    class property Entities: IDictionary<TClass, TEntityData> read FEntities;
+    class property Entities: IDictionary<TClass, TEntityData> read fEntities;
   end;
-
 
 implementation
 
@@ -151,7 +131,67 @@ uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Mapping.RttiExplorer;
 
-{ TEntityData }
+
+{$REGION 'TColumnDataList'}
+
+constructor TColumnDataList.Create;
+begin
+  inherited Create;
+  fList := TCollections.CreateList<TColumnData>;
+end;
+
+function TColumnDataList.Add(const columnData: TColumnData): Integer;
+begin
+  Result := fList.Add(columnData);
+end;
+
+procedure TColumnDataList.Delete(index: Integer);
+begin
+  fList.Delete(index);
+end;
+
+function TColumnDataList.GetCount: Integer;
+begin
+  Result := fList.Count;
+end;
+
+function TColumnDataList.GetEnumerator: IEnumerator<TColumnData>;
+begin
+  Result := fList.GetEnumerator;
+end;
+
+function TColumnDataList.GetItem(index: Integer): TColumnData;
+begin
+  Result := fList[index];
+end;
+
+function TColumnDataList.IsEmpty: Boolean;
+begin
+  Result := fList.IsEmpty;
+end;
+
+procedure TColumnDataList.SetItem(index: Integer; const value: TColumnData);
+begin
+  fList[index] := value;
+end;
+
+procedure TColumnDataList.SetPrimaryKeyColumn(const Value: TColumnData);
+begin
+  fPrimaryKeyColumn := Value;
+  fPrimaryKeyExists := True;
+end;
+
+function TColumnDataList.TryGetPrimaryKeyColumn(out primaryKeyColumn: TColumnData): Boolean;
+begin
+  Result := fPrimaryKeyExists;
+  if Result then
+    primaryKeyColumn := fPrimaryKeyColumn;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEntityData'}
 
 procedure TEntityData.AssignTo(Dest: TPersistent);
 var
@@ -162,102 +202,97 @@ begin
   begin
     LDest := TEntityData(Dest);
 
-    LDest.FTable := FTable;
-    LDest.FColumns.Clear;
-    LDest.FColumns.AddRange(Columns);
-    LDest.FColumnMembernameIndex.Clear;
-    for LPair in FColumnMembernameIndex do
-    begin
-      LDest.FColumnMembernameIndex.Add(LPair.Key, LPair.Value);
-    end;
+    LDest.fTable := fTable;
+    LDest.fColumns.Clear;
+    LDest.fColumns.AddRange(Columns);
+    LDest.fColumnMemberNameIndex.Clear;
+    for LPair in fColumnMemberNameIndex do
+      LDest.fColumnMemberNameIndex.Add(LPair.Key, LPair.Value);
 
-    LDest.FColumnsData.FList.Clear;
-    LDest.FColumnsData.FList.AddRange(FColumnsData.FList);
+    LDest.fColumnsData.fList.Clear;
+    LDest.fColumnsData.fList.AddRange(fColumnsData.fList);
 
-    LDest.FForeignKeyColumns.Clear;
-    LDest.FForeignKeyColumns.AddRange(FForeignKeyColumns);
+    LDest.fForeignKeyColumns.Clear;
+    LDest.fForeignKeyColumns.AddRange(fForeignKeyColumns);
 
-    LDest.FPrimaryKeyColumn := FPrimaryKeyColumn;
+    LDest.fPrimaryKeyColumn := fPrimaryKeyColumn;
 
-    LDest.FOneToManyColumns.Clear;
-    LDest.FOneToManyColumns.AddRange(FOneToManyColumns);
+    LDest.fOneToManyColumns.Clear;
+    LDest.fOneToManyColumns.AddRange(fOneToManyColumns);
 
-    LDest.FManyToOneColumns.Clear;
-    LDest.FManyToOneColumns.AddRange(ManyToOneColumns);
+    LDest.fManyToOneColumns.Clear;
+    LDest.fManyToOneColumns.AddRange(ManyToOneColumns);
 
-    LDest.FSequence := FSequence;
+    LDest.fSequence := fSequence;
 
-    LDest.FHasInstanceField := FHasInstanceField;
+    LDest.fHasInstanceField := fHasInstanceField;
   end;
 end;
 
-function TEntityData.ColumnByMemberName(const AMemberName: string): ColumnAttribute;
+function TEntityData.ColumnByMemberName(const memberName: string): ColumnAttribute;
 begin
-  if not FColumnMembernameIndex.TryGetValue(AMemberName, Result) then
+  if not fColumnMemberNameIndex.TryGetValue(memberName, Result) then
     Result := nil;
 end;
 
-function TEntityData.ColumnByName(const AColumnName: string): ColumnAttribute;
+function TEntityData.ColumnByName(const columnName: string): ColumnAttribute;
 begin
-  for Result in FColumns do
-  begin
-    if SameText(Result.Name, AColumnName) then
+  for Result in fColumns do
+    if SameText(Result.Name, columnName) then
       Exit;
-  end;
-  Result := nil;  
+  Result := nil;
 end;
 
 constructor TEntityData.Create;
 begin
   inherited Create;
-  FColumns := TCollections.CreateList<ColumnAttribute>;
-  FColumnsData := TColumnDataList.Create;
-  FPrimaryKeyColumn := nil;
-  FTable := nil;
-  FSequence := nil;
-  FVersionColumn := nil;
-  FForeignKeyColumns := TCollections.CreateList<ForeignJoinColumnAttribute>;
-  FOneToManyColumns := TCollections.CreateList<OneToManyAttribute>;
-  FManyToOneColumns := TCollections.CreateList<ManyToOneAttribute>;
-  FColumnMembernameIndex := TCollections.CreateDictionary<string, ColumnAttribute>(
+  fColumns := TCollections.CreateList<ColumnAttribute>;
+  fColumnsData := TColumnDataList.Create;
+  fPrimaryKeyColumn := nil;
+  fTable := nil;
+  fSequence := nil;
+  fVersionColumn := nil;
+  fForeignKeyColumns := TCollections.CreateList<ForeignJoinColumnAttribute>;
+  fOneToManyColumns := TCollections.CreateList<OneToManyAttribute>;
+  fManyToOneColumns := TCollections.CreateList<ManyToOneAttribute>;
+  fColumnMemberNameIndex := TCollections.CreateDictionary<string, ColumnAttribute>(
     TStringComparer.OrdinalIgnoreCase);
 end;
 
 destructor TEntityData.Destroy;
 begin
-  FColumnsData.Free;
+  fColumnsData.Free;
   inherited Destroy;
 end;
 
-
 function TEntityData.HasInstanceField: Boolean;
 begin
-  Result := FHasInstanceField;
+  Result := fHasInstanceField;
 end;
 
 function TEntityData.HasManyToOneRelations: Boolean;
 begin
-  Result := FManyToOneColumns.Count > 0;
+  Result := fManyToOneColumns.Count > 0;
 end;
 
 function TEntityData.HasOneToManyRelations: Boolean;
 begin
-  Result := not FOneToManyColumns.IsEmpty;
+  Result := not fOneToManyColumns.IsEmpty;
 end;
 
 function TEntityData.HasSequence: Boolean;
 begin
-  Result := Assigned(FSequence);
+  Result := Assigned(fSequence);
 end;
 
 function TEntityData.HasVersionColumn: Boolean;
 begin
-  Result := Assigned(FVersionColumn);
+  Result := Assigned(fVersionColumn);
 end;
 
 function TEntityData.IsTableEntity: Boolean;
 begin
-  Result := Assigned(FTable);
+  Result := Assigned(fTable);
 end;
 
 procedure TEntityData.SetColumnsData;
@@ -265,10 +300,10 @@ var
   LColData: TColumnData;
   LCol: ColumnAttribute;
 begin
-  if FColumnsData.Count > 0 then
+  if fColumnsData.Count > 0 then
     Exit;
 
-  for LCol in FColumns do
+  for LCol in fColumns do
   begin
     LColData.Properties := LCol.Properties;
     LColData.Name := LCol.Name;
@@ -276,172 +311,83 @@ begin
     LColData.ClassMemberName := LCol.ClassMemberName;
 
     if LCol.IsPrimaryKey then
-    begin
-      FColumnsData.PrimaryKeyColumn := LColData;
-    end;
+      fColumnsData.PrimaryKeyColumn := LColData;
 
     if LCol.IsVersionColumn then
-    begin
-      FVersionColumn := LCol as VersionAttribute;
-    end;
+      fVersionColumn := LCol as VersionAttribute;
 
-    FColumnsData.Add(LColData);
-    FColumnMembernameIndex.Add(LCol.ClassMemberName, LCol);
+    fColumnsData.Add(LColData);
+    fColumnMemberNameIndex.Add(LCol.ClassMemberName, LCol);
   end;
 end;
 
-procedure TEntityData.SetEntityData(AClass: TClass);
+procedure TEntityData.SetEntityData(entityClass: TClass);
 begin
-  FEntityClass := AClass;
-  TRttiExplorer.GetColumns(AClass, FColumns);
+  fEntityClass := entityClass;
+  TRttiExplorer.GetColumns(entityClass, fColumns);
   SetColumnsData;
-  FPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(AClass);
-  if Assigned(FPrimaryKeyColumn) then
-    FPrimaryKeyColumn.IsIdentity := TRttiExplorer.GetColumnIsIdentity(AClass, FPrimaryKeyColumn);
-  FTable := TRttiExplorer.GetTable(AClass);
-  TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(AClass, FForeignKeyColumns);
-  TRttiExplorer.GetClassMembers<OneToManyAttribute>(AClass, FOneToManyColumns);
-  TRttiExplorer.GetClassMembers<ManyToOneAttribute>(AClass, FManyToOneColumns);
-  FSequence := TRttiExplorer.GetSequence(AClass);
-  FHasInstanceField := TRttiExplorer.HasInstanceField(AClass);
+  fPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(entityClass);
+  if Assigned(fPrimaryKeyColumn) then
+    fPrimaryKeyColumn.IsIdentity := TRttiExplorer.GetColumnIsIdentity(entityClass, fPrimaryKeyColumn);
+  fTable := TRttiExplorer.GetTable(entityClass);
+  TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(entityClass, fForeignKeyColumns);
+  TRttiExplorer.GetClassMembers<OneToManyAttribute>(entityClass, fOneToManyColumns);
+  TRttiExplorer.GetClassMembers<ManyToOneAttribute>(entityClass, fManyToOneColumns);
+  fSequence := TRttiExplorer.GetSequence(entityClass);
+  fHasInstanceField := TRttiExplorer.HasInstanceField(entityClass);
 end;
 
-{ TEntityCache }
+{$ENDREGION}
+
+
+{$REGION 'TEntityCache'}
 
 class constructor TEntityCache.Create;
 begin
-  FEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
+  fEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
 end;
 
-class function TEntityCache.CreateColumnsData(AClass: TClass): TColumnDataList;
+class function TEntityCache.CreateColumnsData(entityClass: TClass): TColumnDataList;
 var
   LEntityData: TEntityData;
 begin
   Result := TColumnDataList.Create;
-  LEntityData := Get(AClass);
+  LEntityData := Get(entityClass);
   LEntityData.SetColumnsData;
   Result.List.AddRange(LEntityData.ColumnsData.List);
   Result.PrimaryKeyColumn := LEntityData.ColumnsData.PrimaryKeyColumn;
 end;
 
-
-class function TEntityCache.Get(AClass: TClass): TEntityData;
+class function TEntityCache.Get(entityClass: TClass): TEntityData;
 begin
-  if not TryGet(AClass, Result) then
+  if not TryGet(entityClass, Result) then
   begin
     Result := TEntityData.Create;
-    Result.SetEntityData(AClass);
-    FEntities.Add(AClass, Result);
+    Result.SetEntityData(entityClass);
+    fEntities.Add(entityClass, Result);
   end;
 end;
 
-class function TEntityCache.GetColumns(AClass: TClass): IList<ColumnAttribute>;
+class function TEntityCache.GetColumns(entityClass: TClass): IList<ColumnAttribute>;
 begin
-  Result := Get(AClass).Columns;
+  Result := Get(entityClass).Columns;
 end;
 
-class function TEntityCache.GetColumnsData(AClass: TClass): TColumnDataList;
+class function TEntityCache.GetColumnsData(entityClass: TClass): TColumnDataList;
 var
   LEntityData: TEntityData;
 begin
-  LEntityData := Get(AClass);
+  LEntityData := Get(entityClass);
   LEntityData.SetColumnsData;
   Result := LEntityData.ColumnsData;
 end;
 
-class function TEntityCache.TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
+class function TEntityCache.TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
 begin
-  Result := FEntities.TryGetValue(AClass, AEntityData);
+  Result := fEntities.TryGetValue(entityClass, entityData);
 end;
 
-{ TColumnDataList }
+{$ENDREGION}
 
-function TColumnDataList.Add(const AColumnData: TColumnData): Integer;
-begin
-  FList.Add(AColumnData);
-  Result := FList.Count - 1;
-end;
-
-function TColumnDataList.Count: Integer;
-begin
-  Result := FList.Count;
-end;
-
-constructor TColumnDataList.Create;
-begin
-  inherited Create;
-  FPrimaryKeyExists := False;
-  FList := Tcollections.CreateList<TColumnData>;
-end;
-
-procedure TColumnDataList.Delete(AIndex: Integer);
-begin
-  FList.Delete(AIndex);
-end;
-
-destructor TColumnDataList.Destroy;
-begin
-  inherited Destroy;
-end;
-
-function TColumnDataList.GetEnumerator: TColumnDataListEnumerator;
-begin
-  Result := TColumnDataListEnumerator.Create(Self);
-end;
-
-function TColumnDataList.GetItem(Index: Integer): TColumnData;
-begin
-  Result := FList[Index];
-end;
-
-function TColumnDataList.IsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-procedure TColumnDataList.SetItem(Index: Integer; const Value: TColumnData);
-begin
-  FList[Index] := Value;
-end;
-
-procedure TColumnDataList.SetPrimaryKeyColumn(const Value: TColumnData);
-begin
-  FPrimaryKeyColumn := Value;
-  FPrimaryKeyExists := True;
-end;
-
-function TColumnDataList.TryGetPrimaryKeyColumn(out APrimaryKeyColumn: TColumnData): Boolean;
-begin
-  Result := FPrimaryKeyExists;
-  if Result then
-    APrimaryKeyColumn := FPrimaryKeyColumn;
-end;
-
-{ TColumnDataListEnumerator }
-
-constructor TColumnDataListEnumerator.Create(AList: TColumnDataList);
-begin
-  inherited Create;
-  FList := AList;
-  FIndex := -1;
-end;
-
-function TColumnDataListEnumerator.DoGetCurrent: TColumnData;
-begin
-  Result := FList.List[FIndex];
-end;
-
-function TColumnDataListEnumerator.DoMoveNext: Boolean;
-begin
-  if FIndex >= FList.Count then
-    Exit(False);
-  Inc(FIndex);
-  Result := FIndex < FList.Count;
-end;
-
-function TColumnDataListEnumerator.MoveNext: Boolean;
-begin
-  Result := DoMoveNext;
-end;
 
 end.

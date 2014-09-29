@@ -41,61 +41,70 @@ uses
 type
   TLogicalExpression = class(TAbstractCriterion)
   private
-    FOperator: TWhereOperator;
-    FLeft: ICriterion;
-    FRight: ICriterion;
-  public
-    constructor Create(ALeft, ARight: ICriterion; const AOperator: TWhereOperator); virtual;
-  public
+    fOperator: TWhereOperator;
+    fLeft: ICriterion;
+    fRight: ICriterion;
+  protected
     function GetWhereOperator: TWhereOperator; override;
-    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TDMLCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; override;
+  public
+    constructor Create(const left, right: ICriterion; whereOperator: TWhereOperator); virtual;
   end;
 
 implementation
 
-{ TLogicalExpression }
 
-constructor TLogicalExpression.Create(ALeft, ARight: ICriterion; const AOperator: TWhereOperator);
+{$REGION 'TLogicalExpression'}
+
+constructor TLogicalExpression.Create(const left, right: ICriterion;
+  whereOperator: TWhereOperator);
 begin
   inherited Create;
-  FLeft := ALeft;
-  FRight := ARight;
-  FOperator := AOperator;
+  fLeft := left;
+  fRight := right;
+  fOperator := whereOperator;
 end;
 
 function TLogicalExpression.GetWhereOperator: TWhereOperator;
 begin
-  Result := FOperator;
+  Result := fOperator;
 end;
 
-function TLogicalExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TLogicalExpression.ToSqlString(const params: IList<TDBParam>;
+  const command: TDMLCommand; const generator: ISQLGenerator;
+  addToCommand: Boolean): string;
 var
-  LWhere, LEndOp: TSQLWhereField;
+  whereField, endOp: TSQLWhereField;
 begin
-  Assert(ACommand is TWhereCommand);
+  Assert(command is TWhereCommand);
   inherited;
-  LWhere := TSQLWhereField.Create('', '');
-  LWhere.MatchMode := GetMatchMode;
-  LWhere.WhereOperator := GetWhereOperator;
-  if AAddToCommand then
-    TWhereCommand(ACommand).WhereFields.Add(LWhere);
-  LWhere.LeftSQL := FLeft.ToSqlString(AParams, ACommand, AGenerator, AAddToCommand);
-  if Assigned(FRight) then
-    LWhere.RightSQL := FRight.ToSqlString(AParams, ACommand, AGenerator, AAddToCommand);
+  whereField := TSQLWhereField.Create('', '');
+  whereField.MatchMode := GetMatchMode;
+  whereField.WhereOperator := GetWhereOperator;
+  if addToCommand then
+    TWhereCommand(command).WhereFields.Add(whereField);
+  whereField.LeftSQL := fLeft.ToSqlString(params, command, generator, addToCommand);
+  if Assigned(fRight) then
+    whereField.RightSQL := fRight.ToSqlString(params, command, generator, addToCommand);
 
-  LEndOp := TSQLWhereField.Create('', '');
-  LEndOp.MatchMode := GetMatchMode;
-  LEndOp.WhereOperator := GetEndOperator(FOperator);
-  if AAddToCommand then
-    TWhereCommand(ACommand).WhereFields.Add(LEndOp);
+  endOp := TSQLWhereField.Create('', '');
+  endOp.MatchMode := GetMatchMode;
+  endOp.WhereOperator := GetEndOperator(fOperator);
+  if addToCommand then
+    TWhereCommand(command).WhereFields.Add(endOp);
 
-  Result := LWhere.ToSQLString(AGenerator.GetEscapeFieldnameChar);
+  Result := whereField.ToSQLString(generator.GetEscapeFieldnameChar);
 
-  if not AAddToCommand then
+  if not addToCommand then
   begin
-    LWhere.Free;
-    LEndOp.Free;
+    whereField.Free;
+    endOp.Free;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

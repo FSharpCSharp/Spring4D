@@ -48,11 +48,11 @@ type
   {$ENDREGION}
   TUpdateExecutor = class(TAbstractCommandExecutor)
   private
-    FTable: TSQLTable;
-    FCommand: TUpdateCommand;
-    FColumns: IList<ColumnAttribute>;
-    FEntityMap: TEntityMap;
-    FEntityCache: TEntityData;
+    fTable: TSQLTable;
+    fCommand: TUpdateCommand;
+    fColumns: IList<ColumnAttribute>;
+    fEntityMap: TEntityMap;
+    fEntityCache: TEntityData;
   protected
     function GetCommand: TDMLCommand; override;
     function TryIncrementVersionFor(AEntity: TObject): Boolean; virtual;
@@ -60,12 +60,12 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    procedure Build(AClass: TClass); override;
-    procedure BuildParams(AEntity: TObject); override;
+    procedure Build(entityClass: TClass); override;
+    procedure BuildParams(const entity: TObject); override;
 
-    procedure Execute(AEntity: TObject); override;
+    procedure Execute(const entity: TObject); override;
 
-    property EntityMap: TEntityMap read FEntityMap write FEntityMap;
+    property EntityMap: TEntityMap read fEntityMap write fEntityMap;
   end;
 
 implementation
@@ -78,48 +78,64 @@ uses
   Spring.Persistence.Core.Utils,
   Spring.Persistence.Mapping.RttiExplorer;
 
-{ TUpdateCommand }
 
-procedure TUpdateExecutor.Execute(AEntity: TObject);
+{$REGION 'TUpdateCommand'}
+
+constructor TUpdateExecutor.Create;
+begin
+  inherited Create;
+  fTable := TSQLTable.Create;
+  fColumns := TCollections.CreateList<ColumnAttribute>;
+  fCommand := TUpdateCommand.Create(fTable);
+end;
+
+destructor TUpdateExecutor.Destroy;
+begin
+  fTable.Free;
+  fCommand.Free;
+  inherited Destroy;
+end;
+
+procedure TUpdateExecutor.Execute(const entity: TObject);
 var
   LStmt: IDBStatement;
   LDirtyObject: TObject;
   LSql: string;
 begin
-  Assert(Assigned(AEntity));
+  Assert(Assigned(entity));
 
-  if FEntityCache.HasVersionColumn and not TryIncrementVersionFor(AEntity) then
-    raise EORMOptimisticLockException.Create(AEntity);
+  if fEntityCache.HasVersionColumn and not TryIncrementVersionFor(entity) then
+    raise EORMOptimisticLockException.Create(entity);
 
   LStmt := Connection.CreateStatement;
   LSql := SQL;
 
-  FColumns.Clear;
-  if FEntityMap.IsMapped(AEntity) then
+  fColumns.Clear;
+  if fEntityMap.IsMapped(entity) then
   begin
-    LDirtyObject := FEntityMap.Get(AEntity);
-    TRttiExplorer.GetChangedMembers(AEntity, LDirtyObject, FColumns);
-    if (FColumns.Count = 1) and (FColumns.First.IsVersionColumn) then
+    LDirtyObject := fEntityMap.Get(entity);
+    TRttiExplorer.GetChangedMembers(entity, LDirtyObject, fColumns);
+    if (fColumns.Count = 1) and (fColumns.First.IsVersionColumn) then
       Exit;
-    FCommand.SetCommandFieldsFromColumns(FColumns);
-    LSql := Generator.GenerateUpdate(FCommand);
+    fCommand.SetCommandFieldsFromColumns(fColumns);
+    LSql := Generator.GenerateUpdate(fCommand);
   end
   else
   begin
-    FColumns.AddRange(FEntityCache.Columns);
+    fColumns.AddRange(fEntityCache.Columns);
   end;
 
-  FCommand.Entity := AEntity;
+  fCommand.Entity := entity;
   //NoSQL db generators can't prebuild query without entity object, so they return empty string.
   if (LSql = '') then
-    LSql := Generator.GenerateUpdate(FCommand);
+    LSql := Generator.GenerateUpdate(fCommand);
 
   if (LSql = '') then
     Exit;
 
   LStmt.SetSQLCommand(LSql);
 
-  BuildParams(AEntity);
+  BuildParams(entity);
   try
     LStmt.SetParams(SQLParameters);
     LStmt.Execute;
@@ -130,7 +146,7 @@ end;
 
 function TUpdateExecutor.GetCommand: TDMLCommand;
 begin
-  Result := FCommand;
+  Result := fCommand;
 end;
 
 function TUpdateExecutor.TryIncrementVersionFor(AEntity: TObject): Boolean;
@@ -141,81 +157,69 @@ var
   LQueryMetadata: TQueryMetadata;
 begin
   LStatement := Connection.CreateStatement;
-  LVersionValue := TRttiExplorer.GetMemberValue(AEntity, FEntityCache.VersionColumn.ClassMemberName);
-  LPKValue := TRttiExplorer.GetMemberValue(AEntity, FEntityCache.PrimaryKeyColumn.ClassMemberName);
-  LQuery := Generator.GetUpdateVersionFieldQuery(FCommand, FEntityCache.VersionColumn
+  LVersionValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.VersionColumn.ClassMemberName);
+  LPKValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.PrimaryKeyColumn.ClassMemberName);
+  LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, fEntityCache.VersionColumn
     , TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
   LQueryMetadata.QueryType := ctUpdateVersion;
   case VarType(LQuery) of
     varUString, varString, varStrArg, varOleStr: LStatement.SetSQLCommand(LQuery)
     else
     begin
-      LQueryMetadata.TableName := FCommand.Table.Name;
+      LQueryMetadata.TableName := fCommand.Table.Name;
       LStatement.SetQuery(LQueryMetadata, LQuery);
     end;
   end;
   Result := (LStatement.Execute > 0);
   if Result then
-    TRttiExplorer.SetMemberValueSimple(AEntity, FEntityCache.VersionColumn.ClassMemberName, LVersionValue.AsInteger + 1);
+    TRttiExplorer.SetMemberValueSimple(AEntity, fEntityCache.VersionColumn.ClassMemberName, LVersionValue.AsInteger + 1);
 end;
 
-procedure TUpdateExecutor.Build(AClass: TClass);
+procedure TUpdateExecutor.Build(entityClass: TClass);
 var
   LAtrTable: TableAttribute;
 begin
-  EntityClass := AClass;
-  FEntityCache := TEntityCache.Get(EntityClass);
-  LAtrTable := FEntityCache.EntityTable;
+  inherited EntityClass := entityClass;
+  fEntityCache := TEntityCache.Get(entityClass);
+  LAtrTable := fEntityCache.EntityTable;
 
   if not Assigned(LAtrTable) then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
-  FTable.SetFromAttribute(LAtrTable);
-  FColumns.Clear;
-  FColumns.AddRange(FEntityCache.Columns);
+  fTable.SetFromAttribute(LAtrTable);
+  fColumns.Clear;
+  fColumns.AddRange(fEntityCache.Columns);
 
-  FCommand.PrimaryKeyColumn := FEntityCache.PrimaryKeyColumn;
+  fCommand.PrimaryKeyColumn := fEntityCache.PrimaryKeyColumn;
    //add fields to tsqltable
-  FCommand.SetCommandFieldsFromColumns(FColumns);
-  SQL := Generator.GenerateUpdate(FCommand);
+  fCommand.SetCommandFieldsFromColumns(fColumns);
+  SQL := Generator.GenerateUpdate(fCommand);
 end;
 
-procedure TUpdateExecutor.BuildParams(AEntity: TObject);
+procedure TUpdateExecutor.BuildParams(const entity: TObject);
 var
   LParam: TDBParam;
   LColumn: ColumnAttribute;
 begin
-  inherited BuildParams(AEntity);
+  inherited BuildParams(entity);
 
-  for LColumn in FColumns do
+  for LColumn in fColumns do
   begin
     if LColumn.CanUpdate then
     begin
-      LParam := CreateParam(AEntity, LColumn);
+      LParam := CreateParam(entity, LColumn);
       SQLParameters.Add(LParam);
     end;
   end;
 
-  if Assigned(FCommand.PrimaryKeyColumn) then
+  if Assigned(fCommand.PrimaryKeyColumn) then
   begin
-    LParam := CreateParam(AEntity, FCommand.PrimaryKeyColumn);
+    LParam := CreateParam(entity, fCommand.PrimaryKeyColumn);
     SQLParameters.Add(LParam);
   end;
 end;
 
-constructor TUpdateExecutor.Create;
-begin
-  inherited Create;
-  FTable := TSQLTable.Create;
-  FColumns := TCollections.CreateList<ColumnAttribute>;
-  FCommand := TUpdateCommand.Create(FTable);
-end;
+{$ENDREGION}
 
-destructor TUpdateExecutor.Destroy;
-begin
-  FTable.Free;
-  FCommand.Free;
-  inherited Destroy;
-end;
 
 end.

@@ -29,49 +29,45 @@ unit Spring.Persistence.Adapters.SQLite;
 interface
 
 uses
-  Spring.Collections, Spring.Persistence.Core.Interfaces, SQLiteTable3
-  , Spring.Persistence.Core.Base, Spring.Persistence.SQL.Params, SysUtils
-  , Spring.Persistence.Mapping.Attributes;
+  SQLiteTable3,
+  SysUtils,
+  Spring.Collections,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.Base,
+  Spring.Persistence.Mapping.Attributes,
+  Spring.Persistence.SQL.Params;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents SQLite3 resultset.
-  ///	</summary>
-  {$ENDREGION}
+  ESQLiteStatementAdapterException = Exception;
+
+  /// <summary>
+  ///   Represents SQLite3 resultset.
+  /// </summary>
   TSQLiteResultSetAdapter = class(TDriverResultSetAdapter<ISQLiteTable>)
   public
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const AFieldName: string): Boolean; override;
-    function GetFieldValue(AIndex: Integer): Variant; overload; override;
-    function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function FieldNameExists(const fieldName: string): Boolean; override;
+    function GetFieldValue(index: Integer): Variant; overload; override;
+    function GetFieldValue(const fieldName: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
-    function GetFieldName(AIndex: Integer): string; override;
+    function GetFieldName(index: Integer): string; override;
   end;
 
-  ESQLiteStatementAdapterException = Exception;
-
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents SQLite3 statement.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents SQLite3 statement.
+  /// </summary>
   TSQLiteStatementAdapter = class(TDriverStatementAdapter<ISQLitePreparedStatement>)
   public
-    constructor Create(const AStatement: ISQLitePreparedStatement); override;
-    destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: IList<TDBParam>); overload; override;
+    procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParams(const params: IList<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
+    function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents SQLite3 connection.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents SQLite3 connection.
+  /// </summary>
   TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>)
   public
     procedure Connect; override;
@@ -82,11 +78,9 @@ type
     function GetDriverName: string; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents SQLite3 transaction.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents SQLite3 transaction.
+  /// </summary>
   TSQLiteTransactionAdapter = class(TDriverTransactionAdapter<TSQLiteDatabase>)
   protected
     function InTransaction: Boolean; override;
@@ -98,20 +92,19 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.Consts
-  ;
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Consts;
 
 { TSQLiteResultSetAdapter }
 
-function TSQLiteResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
+function TSQLiteResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[AIndex].Value;
+  Result := Dataset.Fields[index].Value;
 end;
 
-function TSQLiteResultSetAdapter.FieldNameExists(const AFieldName: string): Boolean;
+function TSQLiteResultSetAdapter.FieldNameExists(const fieldName: string): Boolean;
 begin
-  Result := (Dataset.FindField(AFieldName) <> nil);
+  Result := (Dataset.FindField(fieldName) <> nil);
 end;
 
 function TSQLiteResultSetAdapter.GetFieldCount: Integer;
@@ -119,14 +112,14 @@ begin
   Result := Dataset.FieldCount;
 end;
 
-function TSQLiteResultSetAdapter.GetFieldName(AIndex: Integer): string;
+function TSQLiteResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[AIndex].Name;
+  Result := Dataset.Fields[index].Name;
 end;
 
-function TSQLiteResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
+function TSQLiteResultSetAdapter.GetFieldValue(const fieldName: string): Variant;
 begin
-  Result := Dataset.FieldByName[AFieldname].Value;
+  Result := Dataset.FieldByName[fieldName].Value;
 end;
 
 function TSQLiteResultSetAdapter.IsEmpty: Boolean;
@@ -141,28 +134,18 @@ end;
 
 { TSQLiteStatementAdapter }
 
-constructor TSQLiteStatementAdapter.Create(const AStatement: ISQLitePreparedStatement);
-begin
-  inherited Create(AStatement);
-end;
-
-destructor TSQLiteStatementAdapter.Destroy;
-begin
-  inherited Destroy;
-end;
-
 function TSQLiteStatementAdapter.Execute: NativeUInt;
 var
-  LAffected: Integer;
+  affectedRows: Integer;
 begin
   inherited;
-  if Statement.ExecSQL(LAffected) then
-    Result := LAffected
+  if Statement.ExecSQL(affectedRows) then
+    Result := affectedRows
   else
     Result := 0;
 end;
 
-function TSQLiteStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
+function TSQLiteStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
   LDataset: ISQLiteTable;
 begin
@@ -185,25 +168,25 @@ begin
   Result := nil;
 end;
 
-procedure TSQLiteStatementAdapter.SetParams(Params: IList<TDBParam>);
+procedure TSQLiteStatementAdapter.SetParams(const params: IList<TDBParam>);
 var
-  P: TDBParam;
+  param: TDBParam;
 begin
   inherited;
-  for P in Params do
+  for param in params do
   begin
    { LParam := GetParamByName(FSQLiteStmt, P.Name);
     if not Assigned(LParam) then
       raise ESQLiteStatementAdapterException.CreateFmt('Cannot find parameter named %S', [P.Name]);}
 
-    Statement.SetParamVariant(P.Name, P.Value);
+    Statement.SetParamVariant(param.Name, param.Value);
   end;
 end;
 
-procedure TSQLiteStatementAdapter.SetSQLCommand(const ACommandText: string);
+procedure TSQLiteStatementAdapter.SetSQLCommand(const commandText: string);
 begin
   inherited;
-  Statement.PrepareStatement(ACommandText);
+  Statement.PrepareStatement(commandText);
 end;
 
 { TSQLiteConnectionAdapter }
@@ -266,7 +249,7 @@ end;
 
 procedure TSQLiteTransactionAdapter.Commit;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.ExecSQL('RELEASE SAVEPOINT ' + TransactionName);
@@ -279,7 +262,7 @@ end;
 
 procedure TSQLiteTransactionAdapter.Rollback;
 begin
-  if (Transaction = nil) then
+  if Transaction = nil then
     Exit;
 
   Transaction.ExecSQL('ROLLBACK TRANSACTION TO SAVEPOINT ' + TransactionName);
@@ -289,4 +272,3 @@ initialization
   TConnectionFactory.RegisterConnection<TSQLiteConnectionAdapter>(dtSQLite);
 
 end.
-
