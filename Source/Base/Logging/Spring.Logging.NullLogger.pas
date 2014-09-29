@@ -29,19 +29,18 @@ unit Spring.Logging.NullLogger;
 interface
 
 uses
-  SysUtils,
   Rtti,
+  SysUtils,
   Spring.Logging;
 
 type
-  {$REGION 'TNullLogger'}
   /// <summary>
   ///   Logger that does nothing and does it in fastes way possible.
   /// </summary>
   TNullLogger = class(TInterfacedObject, ILogger)
   private
     class var fGlobalInstance: ILogger;
-    class function GetGlobalInstance: ILogger; static;
+    class constructor Create;
   public
     function GetEnabled: Boolean;
     function GetLevels: TLogLevels;
@@ -139,14 +138,18 @@ type
     function Track(level: TLogLevel; const classType: TClass;
       const methodName: string): IInterface; overload;
 
-    class property GlobalInstance: ILogger read GetGlobalInstance;
+    class property GlobalInstance: ILogger read fGlobalInstance;
   end;
-  {$ENDREGION}
 
 implementation
 
 
 {$REGION 'TNullLogger'}
+
+class constructor TNullLogger.Create;
+begin
+  fGlobalInstance := TNullLogger.Create;
+end;
 
 procedure TNullLogger.Log(const entry: TLogEntry);
 begin
@@ -232,13 +235,6 @@ end;
 function TNullLogger.GetEntryTypes: TLogEntryTypes;
 begin
   Result := [];
-end;
-
-class function TNullLogger.GetGlobalInstance: ILogger;
-begin
-  if not Assigned(fGlobalInstance) then
-    fGlobalInstance := TNullLogger.Create;
-  Result := fGlobalInstance;
 end;
 
 function TNullLogger.GetLevels: TLogLevels;

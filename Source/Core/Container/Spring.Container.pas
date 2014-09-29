@@ -468,10 +468,10 @@ end;
 
 procedure TContainer.SetLogger(const logger: ILogger);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(logger, 'logger');
-{$ENDIF}
-  fLogger := logger;
+  if Assigned(logger) then
+    fLogger := logger
+  else
+    fLogger := TNullLogger.GlobalInstance;
 end;
 
 {$ENDREGION}
