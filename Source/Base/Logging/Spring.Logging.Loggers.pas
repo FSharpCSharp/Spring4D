@@ -146,18 +146,20 @@ type
     procedure Trace(const fmt : string; const args : array of const;
       const e: Exception); overload;
 
-    procedure Entering(const classType: TClass;
+    procedure Enter(const methodName: string); overload;
+    procedure Enter(const classType: TClass;
       const methodName: string); overload;
-    procedure Entering(const instance: TObject;
+    procedure Enter(const instance: TObject;
       const methodName: string); overload;
-    procedure Entering(level: TLogLevel; const classType: TClass;
+    procedure Enter(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
 
-    procedure Leaving(const classType: TClass;
+    procedure Leave(const methodName: string); overload;
+    procedure Leave(const classType: TClass;
       const methodName: string); overload;
-    procedure Leaving(const instance: TObject;
+    procedure Leave(const instance: TObject;
       const methodName: string); overload;
-    procedure Leaving(level: TLogLevel; const classType: TClass;
+    procedure Leave(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
 
     function Track(const classType: TClass;
@@ -236,26 +238,31 @@ begin
     DoLog(TLogEntry.Create(TLogLevel.Error, Format(fmt, args)));
 end;
 
-procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
+procedure TLoggerBase.Enter(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
   if IsEnabled(level, [TLogEntryType.Entering]) then
     DoLog(TLogEntry.Create(level, TLogEntryType.Entering, methodName, classType));
 end;
 
-procedure TLoggerBase.Entering(const classType: TClass;
-  const methodName: string);
+procedure TLoggerBase.Enter(const methodName: string);
 begin
-  Entering(fDefaultLevel, classType, methodName);
+  Enter(fDefaultLevel, nil, methodName);
 end;
 
-procedure TLoggerBase.Entering(const instance: TObject;
+procedure TLoggerBase.Enter(const classType: TClass;
+  const methodName: string);
+begin
+  Enter(fDefaultLevel, classType, methodName);
+end;
+
+procedure TLoggerBase.Enter(const instance: TObject;
   const methodName: string);
 begin
   if Assigned(instance) then
-    Entering(instance.ClassType, methodName)
+    Enter(instance.ClassType, methodName)
   else
-    Entering(TClass(nil), methodName)
+    Enter(TClass(nil), methodName)
 end;
 
 procedure TLoggerBase.Error(const fmt: string; const args: array of const;
@@ -391,26 +398,31 @@ begin
   Result := IsEnabled(TLogLevel.Warn, LOG_ALL_ENTRY_TYPES);
 end;
 
-procedure TLoggerBase.Leaving(level: TLogLevel; const classType: TClass;
+procedure TLoggerBase.Leave(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
   if IsEnabled(level, [TLogEntryType.Leaving]) then
     DoLog(TLogEntry.Create(level, TLogEntryType.Leaving, methodName, classType));
 end;
 
-procedure TLoggerBase.Leaving(const instance: TObject;
+procedure TLoggerBase.Leave(const methodName: string);
+begin
+  Leave(fDefaultLevel, nil, methodName);
+end;
+
+procedure TLoggerBase.Leave(const instance: TObject;
   const methodName: string);
 begin
   if Assigned(instance) then
-    Leaving(instance.ClassType, methodName)
+    Leave(instance.ClassType, methodName)
   else
-    Leaving(TClass(nil), methodName)
+    Leave(TClass(nil), methodName)
 end;
 
-procedure TLoggerBase.Leaving(const classType: TClass;
+procedure TLoggerBase.Leave(const classType: TClass;
   const methodName: string);
 begin
-  Leaving(fDefaultLevel, classType, methodName);
+  Leave(fDefaultLevel, classType, methodName);
 end;
 
 procedure TLoggerBase.Log(const entry: TLogEntry);
@@ -629,12 +641,12 @@ begin
   fLevel := level;
   fClassType := classType;
   fMethodName := methodName;
-  fLogger.Entering(fLevel, fClassType, fMethodName);
+  fLogger.Enter(fLevel, fClassType, fMethodName);
 end;
 
 destructor TLoggerBase.TLogTracking.Destroy;
 begin
-  fLogger.Leaving(fLevel, fClassType, fMethodName);
+  fLogger.Leave(fLevel, fClassType, fMethodName);
   inherited;
 end;
 

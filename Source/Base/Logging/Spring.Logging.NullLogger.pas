@@ -117,18 +117,20 @@ type
     procedure Trace(const fmt: string; const args: array of const;
       const e: Exception); overload;
 
-    procedure Entering(const classType: TClass;
+    procedure Enter(const methodName: string); overload;
+    procedure Enter(const classType: TClass;
       const methodName: string); overload;
-    procedure Entering(const instance: TObject;
+    procedure Enter(const instance: TObject;
       const methodName: string); overload;
-    procedure Entering(level: TLogLevel; const classType: TClass;
+    procedure Enter(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
 
-    procedure Leaving(const classType: TClass;
+    procedure Leave(const methodName: string); overload;
+    procedure Leave(const classType: TClass;
       const methodName: string); overload;
-    procedure Leaving(const instance: TObject;
+    procedure Leave(const instance: TObject;
       const methodName: string); overload;
-    procedure Leaving(level: TLogLevel; const classType: TClass;
+    procedure Leave(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
 
     function Track(const classType: TClass;
@@ -190,17 +192,21 @@ procedure TNullLogger.Error(const fmt: string; const args: array of const);
 begin
 end;
 
-procedure TNullLogger.Entering(level: TLogLevel; const classType: TClass;
+procedure TNullLogger.Enter(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
 end;
 
-procedure TNullLogger.Entering(const classType: TClass;
+procedure TNullLogger.Enter(const methodName: string);
+begin
+end;
+
+procedure TNullLogger.Enter(const classType: TClass;
   const methodName: string);
 begin
 end;
 
-procedure TNullLogger.Entering(const instance: TObject;
+procedure TNullLogger.Enter(const instance: TObject;
   const methodName: string);
 begin
 end;
@@ -307,8 +313,12 @@ procedure TNullLogger.Info(const fmt: string; const args: array of const);
 begin
 end;
 
-procedure TNullLogger.Leaving(level: TLogLevel; const classType: TClass;
+procedure TNullLogger.Leave(level: TLogLevel; const classType: TClass;
   const methodName: string);
+begin
+end;
+
+procedure TNullLogger.Leave(const methodName: string);
 begin
 end;
 
@@ -329,12 +339,12 @@ procedure TNullLogger.Log(const fmt: string; const args: array of const;
 begin
 end;
 
-procedure TNullLogger.Leaving(const instance: TObject;
+procedure TNullLogger.Leave(const instance: TObject;
   const methodName: string);
 begin
 end;
 
-procedure TNullLogger.Leaving(const classType: TClass;
+procedure TNullLogger.Leave(const classType: TClass;
   const methodName: string);
 begin
 end;

@@ -463,50 +463,54 @@ begin
   Controller.Reset;
 
   Logger.Enabled := False;
-  fLogger.Entering(TLogLevel.Info, nil, '');
+  fLogger.Enter(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warn];
-  fLogger.Entering(TLogLevel.Info, nil, '');
+  fLogger.Enter(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  fLogger.Entering(TLogLevel.Warn, nil, '');
+  fLogger.Enter(TLogLevel.Warn, nil, '');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
 
   Controller.Reset;
 
   Logger.Enabled := False;
-  fLogger.Entering(TLogLevel.Info, nil, '');
+  fLogger.Enter(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warn];
-  fLogger.Entering(TLogLevel.Info, nil, '');
+  fLogger.Enter(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  fLogger.Entering(TLogLevel.Warn, nil, '');
+  fLogger.Enter(TLogLevel.Warn, nil, '');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
 
   Logger.DefaultLevel := TLogLevel.Info;
-  fLogger.Entering(TClass(nil), '');
+  fLogger.Enter(TClass(nil), '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.DefaultLevel := TLogLevel.Warn;
-  fLogger.Entering(TClass(nil), '');
+  fLogger.Enter(TClass(nil), '');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
 
-  fLogger.Entering(TObject(nil), '');
+  fLogger.Enter(TObject(nil), '');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
 
-  fLogger.Entering(Self, '');
+  fLogger.Enter(Self, '');
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+
+  fLogger.Enter('');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
 end;
@@ -709,35 +713,39 @@ begin
   Controller.Reset;
 
   Logger.Enabled := False;
-  fLogger.Leaving(TLogLevel.Info, nil, '');
+  fLogger.Leave(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warn];
-  fLogger.Leaving(TLogLevel.Info, nil, '');
+  fLogger.Leave(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  fLogger.Leaving(TLogLevel.Warn, nil, '');
+  fLogger.Leave(TLogLevel.Warn, nil, '');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
 
   Logger.DefaultLevel := TLogLevel.Info;
-  fLogger.Leaving(TClass(nil), '');
+  fLogger.Leave(TClass(nil), '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.DefaultLevel := TLogLevel.Warn;
-  fLogger.Leaving(TClass(nil), '');
+  fLogger.Leave(TClass(nil), '');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
 
-  fLogger.Leaving(TObject(nil), '');
+  fLogger.Leave(TObject(nil), '');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
 
-  fLogger.Leaving(Self, '');
+  fLogger.Leave(Self, '');
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
+
+  fLogger.Leave('');
   CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
 end;

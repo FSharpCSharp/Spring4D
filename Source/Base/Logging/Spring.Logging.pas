@@ -286,18 +286,20 @@ type
     procedure Trace(const fmt: string; const args: array of const;
       const e: Exception); overload;
 
-    procedure Entering(const classType: TClass;
+    procedure Enter(const methodName: string); overload;
+    procedure Enter(const classType: TClass;
       const methodName: string); overload;
-    procedure Entering(const instance: TObject;
+    procedure Enter(const instance: TObject;
       const methodName: string); overload;
-    procedure Entering(level: TLogLevel; const classType: TClass;
+    procedure Enter(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
 
-    procedure Leaving(const classType: TClass;
+    procedure Leave(const methodName: string); overload;
+    procedure Leave(const classType: TClass;
       const methodName: string); overload;
-    procedure Leaving(const instance: TObject;
+    procedure Leave(const instance: TObject;
       const methodName: string); overload;
-    procedure Leaving(level: TLogLevel; const classType: TClass;
+    procedure Leave(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
 
     function Track(const classType: TClass;
@@ -339,7 +341,7 @@ type
   {$REGION 'ILoggerController'}
   ILoggerController = interface(ILogAppender)
     ['{6556A795-6F1B-4392-92FC-8E3391E3CB07}']
-    procedure AddAppender(const appedner: ILogAppender);
+    procedure AddAppender(const appender: ILogAppender);
   end;
   {$ENDREGION}
 
