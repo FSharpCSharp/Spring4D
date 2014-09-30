@@ -45,7 +45,9 @@ implementation
 uses
   SysUtils,
   TypInfo,
-  SiAuto;
+  SiAuto,
+  SmartInspect,
+  Spring;
 
 
 {$REGION 'TCodeSiteAppender'}
@@ -88,7 +90,21 @@ begin
 
     TLogEntryType.Value:
       case entry.Data.Kind of
+        tkInteger: SiMain.LogValue(entry.Msg, entry.Data.AsInteger);
+        tkEnumeration:
+          if entry.Data.TypeInfo = TypeInfo(Boolean) then
+            SiMain.LogValue(entry.Msg, entry.Data.AsBoolean)
+          else
+            SiMain.SendCustomLogEntry(
+              Format('%s = %s', [entry.Msg, entry.Data.ToString]),
+              ltVariableValue, viTitle);
+        tkFloat: SiMain.LogValue(entry.Msg, entry.Data.AsExtended);
+        tkSet: SiMain.SendCustomLogEntry(
+          Format('%s = %s', [entry.Msg, entry.Data.ToString]),
+          ltVariableValue, viTitle);
         tkClass: SiMain.LogObject(entry.Msg, entry.Data.AsObject);
+        tkInt64: SiMain.LogValue(entry.Msg, entry.Data.AsInt64);
+        tkPointer: SiMain.LogPointer(entry.Msg, entry.Data.AsType<Pointer>);
       else
         SiMain.LogValue(entry.Msg, entry.Data.ToString);
       end;

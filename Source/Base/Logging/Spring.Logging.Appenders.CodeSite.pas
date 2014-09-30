@@ -43,7 +43,8 @@ implementation
 uses
   SysUtils,
   TypInfo,
-  CodeSiteLogging;
+  CodeSiteLogging,
+  Spring;
 
 
 {$REGION 'TCodeSiteAppender'}
