@@ -55,7 +55,9 @@ type
     /// </summary>
     function IsLoggable(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean;
   public
-    constructor Create;
+    constructor Create; overload;
+    constructor Create(const appenders: array of ILogAppender); overload;
+    constructor Create(const appenders: TArray<ILogAppender>); overload;
 
     procedure AddAppender(const appender: ILogAppender);
     procedure AddSerializer(const serializer: ITypeSerializer);
@@ -76,9 +78,20 @@ uses
 constructor TLoggerController.Create;
 begin
   inherited Create;
-
   fAppenders := TCollections.CreateInterfaceList<ILogAppender>;
   fSerializers := TCollections.CreateInterfaceList<ITypeSerializer>;
+end;
+
+constructor TLoggerController.Create(const appenders: array of ILogAppender);
+begin
+  Create;
+  fAppenders.AddRange(appenders);
+end;
+
+constructor TLoggerController.Create(const appenders: TArray<ILogAppender>);
+begin
+  Create;
+  fAppenders.AddRange(appenders);
 end;
 
 procedure TLoggerController.AddAppender(const appender: ILogAppender);

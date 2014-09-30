@@ -274,6 +274,13 @@ end;
 
 {$REGION 'TConfigurationReader'}
 
+constructor TConfigurationReader.Create(const container: TContainer;
+  const ini: TCustomIniFile);
+begin
+  fContainer := container;
+  fIni := ini;
+end;
+
 function TConfigurationReader.AsValue(const valueType: TRttiType;
   const value: string): TValue;
 begin
@@ -293,13 +300,6 @@ begin
     else raise EPropertyConvertError.CreateResFmt(@SInvalidPropertyType,
       [valueType.Name]);
   end;
-end;
-
-constructor TConfigurationReader.Create(const container: TContainer;
-  const ini: TCustomIniFile);
-begin
-  fContainer := container;
-  fIni := ini;
 end;
 
 function TConfigurationReader.GetType(const className: string;
@@ -341,6 +341,7 @@ begin
   result := ReadSection(SControllers, TType.GetType(TLoggerController),
     procedure (const reg: TRegistration; const name: string)
     begin
+      reg.InjectConstructor;
       reg.Implements(TypeInfo(ILogAppender), SPrefix + name + SAppenderSuffix);
       reg.Implements(TypeInfo(ILoggerController), SPrefix + name + SControllerSuffix);
     end,
@@ -365,12 +366,11 @@ begin
   if not result then
   begin
     reg := fContainer.RegisterType<TLoggerController>;
+    reg.InjectConstructor;
     reg.Implements<ILoggerController>.AsDefault;
-    if fAppenders <> nil then
-    begin
+    if Assigned(fAppenders) then
       for s in fAppenders do
         reg.InjectMethod(SAddAppenderProc, [SPrefix + s + SAppenderSuffix])
-    end;
   end;
 end;
 
@@ -502,12 +502,12 @@ begin
 end;
 {$ENDREGION}
 
+
 procedure DummyRegister(const classes: array of TClass);
 begin
   //Does nothing but the classes are already referenced which forces RTTI
   //generation (linker doesn't strip them)
 end;
-
 
 initialization
   DummyRegister([TTextLogAppender]);

@@ -155,14 +155,14 @@ end;
 
 procedure TTestLogInsideContainer.TestChainedControllers;
 begin
-  fContainer.RegisterType<TLogger>.AsSingleton.AsDefault;
+  fContainer.RegisterType<ILogger, TLogger>.AsSingleton.AsDefault;
   fContainer.RegisterType<TLogger>.AsSingleton
-    .Implements<ILogger>('l2').InjectField('fController', 'c2.ctl');
+    .Implements<ILogger>('l2').InjectConstructor(['c2.ctl']);
+  fContainer.RegisterType<ILoggerController, TLoggerController>.AsSingleton;
+  // acts as appender and controller together
   fContainer.RegisterType<TLoggerController>.AsSingleton
-    .InjectMethod('AddAppender', ['c2']);
-  //Acts as appender and controller together
-  fContainer.RegisterType<TLoggerController>.AsSingleton
-    .Implements<ILogAppender>('c2').Implements<ILoggerController>('c2.ctl');
+    .Implements<ILogAppender>('c2').Implements<ILoggerController>('c2.ctl')
+    .InjectConstructor;
 
   fContainer.Build;
 
@@ -176,8 +176,8 @@ procedure TTestLogInsideContainer.TestLog;
 var
   stream: TStringStream;
 begin
-  fContainer.RegisterType<TLogger>.AsSingleton;
-  fContainer.RegisterType<TLoggerController>.AsSingleton;
+  fContainer.RegisterType<ILogger, TLogger>.AsSingleton;
+  fContainer.RegisterType<ILoggerController, TLoggerController>.AsSingleton;
 
   fContainer.Build;
   stream := TStringStream.Create;
@@ -197,12 +197,12 @@ begin
   inherited;
   fContainer.Kernel.Resolver.AddSubResolver(
     TLoggerResolver.Create(fContainer.Kernel));
-  fContainer.RegisterType<TLoggerController>.AsSingleton;
+  fContainer.RegisterType<ILoggerController, TLoggerController>.AsSingleton;
   fContainer.RegisterType<TLoggingConfiguration>
     .Implements<TLoggingConfiguration>.AsSingleton;
 
   //And register some loggers that we may use
-  fContainer.RegisterType<TLoggerDefault>.AsSingleton.AsDefault;
+  fContainer.RegisterType<ILogger, TLoggerDefault>.AsSingleton.AsDefault;
   fContainer.RegisterType<TLogger1>.AsSingleton.Implements<ILogger>('logging.logger1');
   fContainer.RegisterType<TLogger2>.AsSingleton.Implements<ILogger>('logging.logger2');
 end;
@@ -763,13 +763,14 @@ var
   f: TRttiField;
   appenders: IList<ILogAppender>;
 begin
-  //Check that current configuration implementation will work with the container
+  // check that current configuration implementation will work with the container
   fContainer.RegisterType<TAppenderMock>.AsDefault.AsSingleton;
   fContainer.RegisterType<TAppenderMock>.Implements<ILogAppender>('appender1')
     .AsSingleton;
   fContainer.RegisterType<TAppenderMock>.Implements<ILogAppender>('appender2')
     .AsSingleton;
   fContainer.RegisterType<TLoggerController>.AsSingleton.Implements<ILoggerController>
+    .InjectConstructor
     .InjectMethod('AddAppender', ['appender2'])
     .InjectMethod('AddAppender', ['appender1'])
     .InjectMethod('AddAppender'); //Creates circular dependency, not if it is registered with implements
