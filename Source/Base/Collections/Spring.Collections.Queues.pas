@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Queues;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Queues;
 
 interface
 

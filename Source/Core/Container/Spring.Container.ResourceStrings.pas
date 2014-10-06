@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.ResourceStrings;
-
 {$I Spring.inc}
+
+unit Spring.Container.ResourceStrings;
 
 interface
 

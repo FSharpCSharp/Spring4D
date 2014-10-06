@@ -22,11 +22,11 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Collections.Sets;
 
 interface
-
-{$I Spring.inc}
 
 uses
   Generics.Collections,

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Reflection.ValueConverters;
-
 {$I Spring.inc}
+
+unit Spring.Reflection.ValueConverters;
 
 interface
 

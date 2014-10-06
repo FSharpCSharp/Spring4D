@@ -22,13 +22,13 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  Declares the fundamental interfaces for the
 ///	  <see href="http://spring4d.org">Spring4D</see> Framework.
 ///	</summary>
 unit Spring;
-
-{$I Spring.inc}
 
 interface
 

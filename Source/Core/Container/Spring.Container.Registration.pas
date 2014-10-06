@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Registration;
-
 {$I Spring.inc}
+
+unit Spring.Container.Registration;
 
 interface
 

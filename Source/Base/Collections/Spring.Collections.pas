@@ -22,13 +22,13 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  The Spring.Collections namespaces introduce the Collections Framework in
 ///	  spring4d.
 ///	</summary>
 unit Spring.Collections;
-
-{$I Spring.inc}
 
 interface
 

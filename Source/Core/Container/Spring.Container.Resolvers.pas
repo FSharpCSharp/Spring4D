@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Resolvers;
-
 {$I Spring.inc}
+
+unit Spring.Container.Resolvers;
 
 interface
 

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.ComponentActivator;
-
 {$I Spring.inc}
+
+unit Spring.Container.ComponentActivator;
 
 interface
 

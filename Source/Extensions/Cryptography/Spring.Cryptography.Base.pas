@@ -22,11 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Cryptography.Base;
 
 interface
 
-{$I Spring.inc}
 {$R-}
 
 uses

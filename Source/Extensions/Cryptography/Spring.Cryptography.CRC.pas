@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Cryptography.CRC;
-
 {$I Spring.inc}
+
+unit Spring.Cryptography.CRC;
 
 interface
 

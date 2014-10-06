@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.LifetimeManager;
-
 {$I Spring.inc}
+
+unit Spring.Container.LifetimeManager;
 
 interface
 

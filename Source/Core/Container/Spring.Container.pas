@@ -22,10 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oOwner -cGeneral : Thread Safety}
-unit Spring.Container;
-
 {$I Spring.inc}
+
+unit Spring.Container;
 
 interface
 

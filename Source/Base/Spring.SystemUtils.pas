@@ -22,12 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  Provides the internal utilities for Spring4D.
 ///	</summary>
 unit Spring.SystemUtils;
-
-{$I 'Spring.inc'}
 
 interface
 
