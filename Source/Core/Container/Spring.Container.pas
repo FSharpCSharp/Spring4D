@@ -22,10 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oOwner -cGeneral : Thread Safety}
-unit Spring.Container;
-
 {$I Spring.inc}
+
+unit Spring.Container;
 
 interface
 
@@ -33,6 +32,7 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
+  Spring.Container.Common,
   Spring.Container.Core,
   Spring.Container.Registration,
   Spring.Services;
@@ -41,7 +41,7 @@ type
   ///	<summary>
   ///	  Represents a Dependency Injection Container.
   ///	</summary>
-  TContainer = class(TInterfaceBase, IKernel, IKernelInternal)
+  TContainer = class(TInterfaceBase, IKernel, IKernelInternal, IContainer)
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
@@ -78,11 +78,11 @@ type
       const name: string = ''): TRegistration<TServiceType>; overload;
 
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
-    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
+    function RegisterType(componentType: PTypeInfo): IRegistration; overload;
     function RegisterType<TServiceType, TComponentType>(
       const name: string = ''): TRegistration<TComponentType>; overload;
     function RegisterType(serviceType, componentType: PTypeInfo;
-      const name: string = ''): TRegistration; overload;
+      const name: string = ''): IRegistration; overload;
 
     procedure Build;
 
@@ -163,7 +163,6 @@ uses
   TypInfo,
   Spring.Container.Builder,
   Spring.Container.CreationContext,
-  Spring.Container.Common,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,
@@ -313,13 +312,13 @@ begin
   Result := Result.Implements<TServiceType>(name);
 end;
 
-function TContainer.RegisterType(componentType: PTypeInfo): TRegistration;
+function TContainer.RegisterType(componentType: PTypeInfo): IRegistration;
 begin
   Result := fRegistrationManager.RegisterType(componentType);
 end;
 
 function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
-  const name: string): TRegistration;
+  const name: string): IRegistration;
 begin
   Result := fRegistrationManager.RegisterType(componentType);
   Result := Result.Implements(serviceType, name);
@@ -373,7 +372,8 @@ begin
   componentModel := fRegistry.FindDefault(serviceType);
   context := TCreationContext.Create(componentModel, arguments);
   targetType := TType.GetType(serviceType);
-  Result := fResolver.Resolve(context, TDependencyModel.Create(targetType, nil), nil);
+  Result := fResolver.Resolve(
+    context, componentModel, TDependencyModel.Create(targetType, nil), nil);
 end;
 
 function TContainer.Resolve(const name: string): TValue;
@@ -395,7 +395,8 @@ begin
   context := TCreationContext.Create(componentModel, arguments);
   serviceType := componentModel.GetServiceType(name);
   targetType := TType.GetType(serviceType);
-  Result := fResolver.Resolve(context, TDependencyModel.Create(targetType, nil), name);
+  Result := fResolver.Resolve(
+    context, componentModel, TDependencyModel.Create(targetType, nil), name);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
@@ -427,7 +428,8 @@ begin
   begin
     context := TCreationContext.Create(models[i], []);
     serviceName := models[i].GetServiceName(serviceType);
-    Result[i] := fResolver.Resolve(context, TDependencyModel.Create(targetType, nil), serviceName);
+    Result[i] := fResolver.Resolve(
+      context, models[i], TDependencyModel.Create(targetType, nil), serviceName);
   end;
 end;
 

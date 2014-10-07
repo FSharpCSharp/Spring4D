@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Extensions;
-
 {$I Spring.inc}
+
+unit Spring.Container.Extensions;
 
 interface
 

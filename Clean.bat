@@ -12,8 +12,10 @@ del /f /q /s *.bpl
 del /f /q /s *.cbk
 del /f /q /s *.dcp
 del /f /q /s *.dsk
+del /f /q /s *.o
 del /f /q /s *.rsm
 del /f /q /s *.skincfg
+del /f /q /s Logs\*.*
 del /f /q /s Samples\*.exe
 del /f /q /s Tests\Bin\*.*
 del /f /q /s Tests\Lib\*.*

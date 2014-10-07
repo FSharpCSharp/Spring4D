@@ -22,13 +22,13 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  Declares the fundamental interfaces for the
 ///	  <see href="http://spring4d.org">Spring4D</see> Framework.
 ///	</summary>
 unit Spring;
-
-{$I Spring.inc}
 
 interface
 
@@ -88,6 +88,14 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Interfaces'}
+  IComparable = interface(IInvokable)
+    ['{7F0E25C8-50D7-4CF0-AB74-1913EBD3EE42}']
+    function CompareTo(const obj: TObject): Integer;
+  end;
+  {$ENDREGION}
+
+
   {$REGION 'Procedure types'}
 
   ///	<summary>
@@ -133,6 +141,14 @@ type
   ///	<seealso cref="TAction&lt;T&gt;" />
   ///	<seealso cref="TActionProc&lt;T&gt;" />
   TActionMethod<T> = procedure(const obj: T) of object;
+
+  /// <summary>
+  ///   Represents a anonymous method that has the same signature as
+  ///   TNotifyEvent.
+  /// </summary>
+  {$M+}
+  TNotifyProc = reference to procedure(Sender: TObject);
+  {$M-}
 
   {$ENDREGION}
 
@@ -732,7 +748,9 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetIsEmpty: Boolean;
+    function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
+    procedure SetOnChanged(const value: TNotifyEvent);
   {$ENDREGION}
 
     procedure Add(const handler: TMethod);
@@ -744,6 +762,7 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property IsEmpty: Boolean read GetIsEmpty;
     property Invoke: TMethod read GetInvoke;
+    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
   end;
 
   ///	<summary>
@@ -818,7 +837,9 @@ type
     function GetEnabled: Boolean;
     function GetInvoke: T;
     function GetIsEmpty: Boolean;
+    function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
+    procedure SetOnChanged(const value: TNotifyEvent);
     procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
@@ -832,6 +853,7 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
     property IsEmpty: Boolean read GetIsEmpty;
+    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
     class operator Implicit(var value: Event<T>): IEvent<T>;
@@ -845,8 +867,37 @@ type
 
   {$REGION 'Property change notification'}
 
+  IEventArgs = interface
+    ['{162CDCDF-F8FC-4E5A-9CE8-55EABAE42EC3}']
+  end;
+
+  IPropertyChangedEventArgs = interface(IEventArgs)
+    ['{DC7B4497-FA42-46D1-BE50-C764C4808197}']
+    function GetPropertyName: string;
+    property PropertyName: string read GetPropertyName;
+  end;
+
+  TEventArgs = class(TInterfacedObject, IEventArgs)
+  strict protected
+    constructor Create;
+  end;
+
+  TPropertyChangedEventArgs = class(TEventArgs, IPropertyChangedEventArgs)
+  private
+    fPropertyName: string;
+    function GetPropertyName: string;
+  public
+    constructor Create(const propertyName: string);
+    property PropertyName: string read GetPropertyName;
+  end;
+
+  {$M+}
+  TEventHandler<T: IEventArgs> = reference to procedure(Sender: TObject;
+    const EventArgs: T);
+  {$M-}
+
   TPropertyChangedEvent = procedure(Sender: TObject;
-    const PropertyName: string) of object;
+    const EventArgs: IPropertyChangedEventArgs) of object;
 
   IPropertyChangedEvent = IEvent<TPropertyChangedEvent>;
 
@@ -854,6 +905,25 @@ type
     ['{A517EC98-C651-466B-8290-F7EE96877E03}']
     function GetOnPropertyChanged: IPropertyChangedEvent;
     property OnPropertyChanged: IPropertyChangedEvent read GetOnPropertyChanged;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Notification handler'}
+
+  TNotificationEvent = procedure(Component: TComponent;
+    Operation: TOperation) of object;
+
+  TNotificationHandler = class(TComponent)
+  private
+    fOnNotification: TNotificationEvent;
+  protected
+    procedure Notification(Component: TComponent;
+      Operation: TOperation); override;
+  public
+    property OnNotification: TNotificationEvent
+      read fOnNotification write fOnNotification;
   end;
 
   {$ENDREGION}
@@ -906,6 +976,12 @@ type
 
 {$IFDEF DELPHI2010}
   TInterlocked = class sealed
+    class function Increment(var Target: Integer): Integer; overload; static; inline;
+    class function Increment(var Target: Int64): Int64; overload; static; inline;
+    class function Decrement(var Target: Integer): Integer; overload; static; inline;
+    class function Decrement(var Target: Int64): Int64; overload; static; inline;
+    class function Add(var Target: Integer; Increment: Integer): Integer; overload; static;
+    class function Add(var Target: Int64; Increment: Int64): Int64; overload; static;
     class function CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer; overload; static;
     class function CompareExchange(var Target: TObject; Value: TObject; Comparand: TObject): TObject; overload; static; inline;
     class function CompareExchange<T: class>(var Target: T; Value: T; Comparand: T): T; overload; static; inline;
@@ -913,6 +989,78 @@ type
 {$ELSE}
   TInterlocked = SyncObjs.TInterlocked;
 {$ENDIF}
+
+  {$ENDREGION}
+
+
+  {$REGION 'TInterfacedCriticalSection'}
+
+  ICriticalSection = interface(IInvokable)
+    ['{16C21E9C-6450-4EA4-A3D3-1D59277C9BA6}']
+    procedure Enter;
+    procedure Leave;
+    function ScopedLock: IInterface;
+  end;
+
+  TInterfacedCriticalSection = class(TCriticalSection, IInterface, ICriticalSection)
+  private type
+    TScopedLock = class(TInterfacedObject)
+    private
+      fCriticalSection: ICriticalSection;
+    public
+      constructor Create(const criticalSection: ICriticalSection);
+      destructor Destroy; override;
+    end;
+  protected
+    fRefCount: Integer;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+    function ScopedLock: IInterface;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Lock'}
+
+  /// <summary>
+  ///   Provides an easy to use wrapper around TCriticalSection. It
+  ///   automatically initializes the TCriticalSection instance when required
+  ///   and destroys it when the Lock goes out of scope.
+  /// </summary>
+  Lock = record
+  private
+    fCriticalSection: ICriticalSection;
+    procedure EnsureInitialized;
+  public
+    /// <summary>
+    ///   Calls Enter on the underlying TCriticalSection. The first call also
+    ///   initializes the TCriticalSection instance.
+    /// </summary>
+    procedure Enter;
+
+    /// <summary>
+    ///   Calls Leave on the underlying TCriticalSection. If no call to Enter
+    ///   has been made before it will raise an exception.
+    /// </summary>
+    /// <exception cref="EInvalidOperationException">
+    ///   When Enter was not called before
+    /// </exception>
+    procedure Leave;
+
+    /// <summary>
+    ///   Calls Enter on the underlying TCriticalSection and returns an
+    ///   interface reference that will call Leave once it goes out of scope.
+    /// </summary>
+    /// <remarks>
+    ///   Use this to avoid the classic try/finally block but keep in mind that
+    ///   the scope will be the entire method this is used in unless you keep
+    ///   hold of the returned interface and explicitly set it to nil causing
+    ///   its destruction.
+    /// </remarks>
+    function ScopedLock: IInterface;
+  end;
 
   {$ENDREGION}
 
@@ -956,6 +1104,8 @@ function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
 ///   passed as pointer.
 /// </remarks>
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
+
+function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 {$ENDREGION}
 
 
@@ -1023,10 +1173,6 @@ type
   PPPTypeInfo = ^PPTypeInfo;
 var
   leftData, rightData: PTypeData;
-  intfTable: PInterfaceTable;
-  i: Integer;
-  typeInfo: PPPTypeInfo;
-  classType: TClass;
 begin
   Guard.CheckNotNull(leftType, 'leftType');
   Guard.CheckNotNull(rightType, 'rightType');
@@ -1042,25 +1188,6 @@ begin
   begin
     Result := (ifHasGuid in leftData.IntfFlags) and
       Supports(rightData.ClassType, leftData.Guid);
-    if not Result then
-    begin
-      classType := rightData.ClassType;
-      repeat
-        intfTable := classType.GetInterfaceTable;
-        if Assigned(intfTable) then
-        begin
-          typeInfo := @intfTable.Entries[intfTable.EntryCount];
-          for i := 0 to intfTable.EntryCount - 1 do
-          begin
-            if typeInfo^^ = leftType then
-              Exit(True);
-            Inc(typeInfo);
-          end;
-        end;
-        classType := classType.ClassParent;
-      until classType = TObject;
-      Result := False;
-    end;
   end
   else if (rightType.Kind = tkInterface) and (leftType.Kind = tkInterface) then
   begin
@@ -1151,6 +1278,11 @@ begin
         Result := -1;
       end;
   end;
+end;
+
+function GetTypeKind(typeInfo: PTypeInfo): TTypeKind;
+begin
+  Result := typeInfo.Kind;
 end;
 {$ENDREGION}
 
@@ -2078,6 +2210,12 @@ begin
   Result := not Assigned(fInstance) or fInstance.IsEmpty;
 end;
 
+function Event<T>.GetOnChanged: TNotifyEvent;
+begin
+  EnsureInitialized;
+  Result := fInstance.OnChanged;
+end;
+
 procedure Event<T>.Remove(const handler: T);
 begin
   if Assigned(fInstance) then
@@ -2094,6 +2232,12 @@ procedure Event<T>.SetEnabled(const value: Boolean);
 begin
   EnsureInitialized;
   fInstance.Enabled := value;
+end;
+
+procedure Event<T>.SetOnChanged(const value: TNotifyEvent);
+begin
+  EnsureInitialized;
+  fInstance.OnChanged := value;
 end;
 
 class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;
@@ -2139,6 +2283,44 @@ end;
 {$REGION 'TInterlocked'}
 
 {$IFDEF DELPHI2010}
+class function TInterlocked.Add(var Target: Integer; Increment: Integer): Integer;
+asm
+  MOV  ECX,EDX
+  XCHG EAX,EDX
+  LOCK XADD [EDX],EAX
+  ADD  EAX,ECX
+end;
+
+class function TInterlocked.Add(var Target: Int64; Increment: Int64): Int64;
+asm
+  PUSH  EBX
+  PUSH  ESI
+  MOV   ESI,Target
+  MOV   EAX,DWORD PTR [ESI]
+  MOV   EDX,DWORD PTR [ESI+4]
+@@1:
+  MOV   EBX,EAX
+  MOV   ECX,EDX
+  ADD   EBX,LOW Increment
+  ADC   ECX,HIGH Increment
+  LOCK  CMPXCHG8B [ESI]
+  JNZ   @@1
+  ADD   EAX,LOW Increment
+  ADC   EDX,HIGH Increment
+  POP   ESI
+  POP   EBX
+end;
+
+class function TInterlocked.Decrement(var Target: Int64): Int64;
+begin
+  Result := Add(Target, -1);
+end;
+
+class function TInterlocked.Decrement(var Target: Integer): Integer;
+begin
+  Result := Add(Target, -1);
+end;
+
 class function TInterlocked.CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer;
 asm
   XCHG EAX,EDX
@@ -2155,7 +2337,149 @@ class function TInterlocked.CompareExchange<T>(var Target: T; Value, Comparand: 
 begin
   TObject(Pointer(@Result)^) := CompareExchange(TObject(Pointer(@Target)^), TObject(Pointer(@Value)^), TObject(Pointer(@Comparand)^));
 end;
+
+class function TInterlocked.Increment(var Target: Integer): Integer;
+begin
+  Result := Add(Target, 1);
+end;
+
+class function TInterlocked.Increment(var Target: Int64): Int64;
+begin
+  Result := Add(Target, 1);
+end;
 {$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TEventArgs'}
+
+constructor TEventArgs.Create;
+begin
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPropertyChangedEventArgs'}
+
+constructor TPropertyChangedEventArgs.Create(const propertyName: string);
+begin
+  inherited Create;
+  fPropertyName := propertyName;
+end;
+
+function TPropertyChangedEventArgs.GetPropertyName: string;
+begin
+  Result := fPropertyName;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNotificationHandler'}
+
+procedure TNotificationHandler.Notification(Component: TComponent;
+  Operation: TOperation);
+begin
+  inherited;
+  if Assigned(fOnNotification) then
+    fOnNotification(Component, Operation);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterfacedCriticalSection'}
+
+function TInterfacedCriticalSection.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TInterfacedCriticalSection._AddRef: Integer;
+begin
+{$IFNDEF AUTOREFCOUNT}
+  Result := TInterlocked.Increment(fRefCount);
+{$ELSE}
+  Result := __ObjAddRef;
+{$ENDIF}
+end;
+
+function TInterfacedCriticalSection._Release: Integer;
+begin
+{$IFNDEF AUTOREFCOUNT}
+  Result := TInterlocked.Decrement(fRefCount);
+  if Result = 0 then
+    Destroy;
+{$ELSE}
+  Result := __ObjRelease;
+{$ENDIF}
+end;
+
+function TInterfacedCriticalSection.ScopedLock: IInterface;
+begin
+  Result := TScopedLock.Create(Self);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterfacedCriticalSection.TScopedLock'}
+
+constructor TInterfacedCriticalSection.TScopedLock.Create(
+  const criticalSection: ICriticalSection);
+begin
+  inherited Create;
+  fCriticalSection := criticalSection;
+  fCriticalSection.Enter;
+end;
+
+destructor TInterfacedCriticalSection.TScopedLock.Destroy;
+begin
+  fCriticalSection.Leave;
+  inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Lock'}
+
+procedure Lock.EnsureInitialized;
+var
+  criticalSection: ICriticalSection;
+begin
+  if not Assigned(fCriticalSection) then
+  begin
+    criticalSection := TInterfacedCriticalSection.Create;
+    if TInterlocked.CompareExchange(Pointer(fCriticalSection),
+      Pointer(criticalSection), nil) = nil then
+      Pointer(criticalSection) := nil;
+  end;
+end;
+
+procedure Lock.Enter;
+begin
+  EnsureInitialized;
+  fCriticalSection.Enter;
+end;
+
+procedure Lock.Leave;
+begin
+  if not Assigned(fCriticalSection) then
+    raise EInvalidOperationException.CreateRes(@SCriticalSectionNotInitialized);
+  fCriticalSection.Leave;
+end;
+
+function Lock.ScopedLock: IInterface;
+begin
+  EnsureInitialized;
+  Result := fCriticalSection.ScopedLock;
+end;
 
 {$ENDREGION}
 

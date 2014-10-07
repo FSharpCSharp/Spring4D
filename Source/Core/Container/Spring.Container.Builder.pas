@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Builder;
-
 {$I Spring.inc}
+
+unit Spring.Container.Builder;
 
 interface
 
@@ -431,7 +431,7 @@ begin
   for injection in model.ConstructorInjections.Where(fHasNoTargetCondition) do
   begin
     filter := TMethodFilters.IsConstructor
-      and TInjectionFilters.IsInjectableMethod(kernel, injection.Arguments);
+      and TInjectionFilters.IsInjectableMethod(kernel, Model, injection.Arguments);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
     if not Assigned(method) then
       raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
@@ -451,7 +451,7 @@ begin
   begin
     filter := TMethodFilters.IsInstanceMethod
       and TMethodFilters.IsNamed(injection.TargetName)
-      and TInjectionFilters.IsInjectableMethod(kernel, injection.Arguments);
+      and TInjectionFilters.IsInjectableMethod(kernel, Model, injection.Arguments);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
     if not Assigned(method) then
       raise EBuilderException.CreateResFmt(@SUnresovableInjection, [

@@ -57,6 +57,7 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <DllSuffix>.DelphiXE6</DllSuffix>
         <SanitizedProjectName>Spring_Base</SanitizedProjectName>
         <DCC_Define>SPRING_NO_WARNING;$(DCC_Define)</DCC_Define>
         <GenPackage>true</GenPackage>
@@ -69,7 +70,7 @@
         <DCC_DcuOutput>..\..\Library\DelphiXE6\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_K>false</DCC_K>
         <RuntimeOnlyPackage>true</RuntimeOnlyPackage>
-        <DCC_UnitSearchPath>..\..\Source\Base;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_N>false</DCC_N>
         <DCC_E>false</DCC_E>
         <GenDll>true</GenDll>

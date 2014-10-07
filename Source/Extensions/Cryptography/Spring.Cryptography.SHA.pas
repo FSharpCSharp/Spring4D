@@ -22,9 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Cryptography.SHA;
 
-{$I Spring.inc}
 {$R-,Q-}
 
 interface

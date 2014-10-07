@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Pool;
-
 {$I Spring.inc}
+
+unit Spring.Container.Pool;
 
 interface
 

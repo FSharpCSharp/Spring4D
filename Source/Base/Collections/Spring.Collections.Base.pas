@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Base;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Base;
 
 interface
 
@@ -139,7 +139,8 @@ type
     function Concat(const second: IEnumerable<T>): IEnumerable<T>;
 
     function Contains(const value: T): Boolean; overload; virtual;
-    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+    function Contains(const value: T; const comparer: TEqualityComparison<T>): Boolean; overload;
 
     function ElementAt(index: Integer): T;
     function ElementAtOrDefault(index: Integer): T; overload;
@@ -167,11 +168,14 @@ type
 
     function Max: T; overload;
     function Max(const comparer: IComparer<T>): T; overload;
+    function Max(const comparer: TComparison<T>): T; overload;
     function Min: T; overload;
     function Min(const comparer: IComparer<T>): T; overload;
+    function Min(const comparer: TComparison<T>): T; overload;
 
     function Ordered: IEnumerable<T>; overload;
     function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
+    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload;
 
     function Reversed: IEnumerable<T>; virtual;
 
@@ -211,13 +215,14 @@ type
     function GetIsReadOnly: Boolean; virtual;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
+    procedure AddInternal(const item: T); virtual; abstract;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
-    constructor Create(const collection: array of T); overload;
-    constructor Create(const collection: IEnumerable<T>); overload;
+    constructor Create(const collection: array of T); overload; virtual;
+    constructor Create(const collection: IEnumerable<T>); overload; virtual;
 
-    procedure Add(const item: T); virtual; abstract;
+    procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
 
@@ -232,6 +237,7 @@ type
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
+    procedure MoveTo(const collection: ICollection<T>); virtual;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -276,10 +282,8 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    procedure DoKeyChanged(Sender: TObject; const Item: TKey;
-      Action: TCollectionChangedAction); virtual;
-    procedure DoValueChanged(Sender: TObject; const Item: T;
-      Action: TCollectionChangedAction); virtual;
+    procedure KeyChanged(const Item: TKey; Action: TCollectionChangedAction); virtual;
+    procedure ValueChanged(const Item: T; Action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
 
@@ -313,13 +317,16 @@ type
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
+    function GetCapacity: Integer; virtual; abstract;
     function GetItem(index: Integer): T; virtual; abstract;
     procedure SetCount(count: Integer); virtual;
+    procedure SetCapacity(value: Integer); virtual; abstract;
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
   {$ENDREGION}
   {$REGION 'Implements IInterface'}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
+    procedure AddInternal(const item: T); override;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
     function TryGetLast(out value: T): Boolean; override;
@@ -327,7 +334,7 @@ type
   public
     destructor Destroy; override;
 
-    procedure Add(const item: T); override;
+    function Add(const item: T): Integer; reintroduce; virtual;
     function Remove(const item: T): Boolean; override;
     procedure Clear; override;
 
@@ -345,7 +352,7 @@ type
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
 
     procedure Delete(index: Integer); virtual; abstract;
-    procedure DeleteRange(startIndex, count: Integer); virtual; abstract;
+    procedure DeleteRange(index, count: Integer); virtual;
 
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
@@ -366,7 +373,9 @@ type
     procedure Sort(const comparison: TComparison<T>); overload;
 
     function ToArray: TArray<T>; override;
+    procedure TrimExcess;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount write SetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
   end;
@@ -464,7 +473,10 @@ end;
 constructor TEnumerableBase<T>.Create;
 begin
   inherited Create;
-  fComparer := TComparer<T>.Default;
+  if GetTypeKind(TypeInfo(T)) = tkClass then
+    fComparer := TInstanceComparer<T>.Default
+  else
+    fComparer := TComparer<T>.Default;
 end;
 
 constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);
@@ -536,7 +548,7 @@ begin
 end;
 
 function TEnumerableBase<T>.Contains(const value: T;
-  comparer: IEqualityComparer<T>): Boolean;
+  const comparer: IEqualityComparer<T>): Boolean;
 var
   item: T;
 begin
@@ -549,6 +561,12 @@ begin
     if comparer.Equals(value, item) then
       Exit(True);
   Result := False;
+end;
+
+function TEnumerableBase<T>.Contains(const value: T;
+  const comparer: TEqualityComparison<T>): Boolean;
+begin
+  Result := Contains(value, TEqualityComparer<T>.Construct(comparer, nil));
 end;
 
 function TEnumerableBase<T>.ElementAt(index: Integer): T;
@@ -816,6 +834,11 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
+function TEnumerableBase<T>.Max(const comparer: TComparison<T>): T;
+begin
+  Result := Max(TComparer<T>.Construct(comparer));
+end;
+
 function TEnumerableBase<T>.Min: T;
 begin
   Result := Min(Comparer);
@@ -848,6 +871,11 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
+function TEnumerableBase<T>.Min(const comparer: TComparison<T>): T;
+begin
+  Result := Min(TComparer<T>.Construct(comparer));
+end;
+
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
 begin
   Result := TOrderedIterator<T>.Create(Self, Comparer);
@@ -861,6 +889,12 @@ begin
 {$ENDIF}
 
   Result := TOrderedIterator<T>.Create(Self, comparer);
+end;
+
+function TEnumerableBase<T>.Ordered(
+  const comparer: TComparison<T>): IEnumerable<T>;
+begin
+  Result := Ordered(TComparer<T>.Construct(comparer));
 end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
@@ -1188,6 +1222,11 @@ begin
   AddRange(collection);
 end;
 
+procedure TCollectionBase<T>.Add(const item: T);
+begin
+  AddInternal(item);
+end;
+
 procedure TCollectionBase<T>.AddRange(const collection: array of T);
 var
   item: T;
@@ -1256,6 +1295,21 @@ end;
 function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
   Result := fOnChanged;
+end;
+
+procedure TCollectionBase<T>.MoveTo(const collection: ICollection<T>);
+var
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  for item in ToArray do
+  begin
+    Extract(item);
+    collection.Add(item);
+  end;
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
@@ -1337,18 +1391,6 @@ begin
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-procedure TMapBase<TKey, T>.DoKeyChanged(Sender: TObject; const Item: TKey;
-  Action: TCollectionChangedAction);
-begin
-  fOnKeyChanged.Invoke(Sender, Item, Action)
-end;
-
-procedure TMapBase<TKey, T>.DoValueChanged(Sender: TObject;
-  const Item: T; Action: TCollectionChangedAction);
-begin
-  fOnValueChanged.Invoke(Sender, Item, Action)
-end;
-
 function TMapBase<TKey, T>.GetKeyType: PTypeInfo;
 begin
   Result := TypeInfo(TKey);
@@ -1369,6 +1411,20 @@ begin
   Result := TypeInfo(T);
 end;
 
+procedure TMapBase<TKey, T>.KeyChanged(const Item: TKey;
+  Action: TCollectionChangedAction);
+begin
+  if Assigned(fOnKeyChanged) then
+    fOnKeyChanged.Invoke(Self, Item, Action)
+end;
+
+procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
+  Action: TCollectionChangedAction);
+begin
+  if Assigned(fOnValueChanged) then
+    fOnValueChanged.Invoke(Self, Item, Action)
+end;
+
 {$ENDREGION}
 
 
@@ -1380,9 +1436,15 @@ begin
   inherited Destroy;
 end;
 
-procedure TListBase<T>.Add(const item: T);
+function TListBase<T>.Add(const item: T): Integer;
 begin
-  Insert(Count, item);
+  Result := Count;
+  Insert(Result, item);
+end;
+
+procedure TListBase<T>.AddInternal(const item: T);
+begin
+  Add(item);
 end;
 
 function TListBase<T>.AsList: IList;
@@ -1399,6 +1461,19 @@ procedure TListBase<T>.Clear;
 begin
   if Count > 0 then
     DeleteRange(0, Count);
+end;
+
+procedure TListBase<T>.DeleteRange(index, count: Integer);
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+  for i := 1 to count do
+    Delete(index);
 end;
 
 function TListBase<T>.First: T;
@@ -1603,6 +1678,11 @@ begin
   SetLength(Result, Count);
   for i := 0 to Length(Result) - 1 do
     Result[i] := Items[i];
+end;
+
+procedure TListBase<T>.TrimExcess;
+begin
+  Capacity := Count;
 end;
 
 function TListBase<T>.TryGetElementAt(out value: T; index: Integer): Boolean;

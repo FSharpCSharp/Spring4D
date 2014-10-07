@@ -27,7 +27,7 @@
 			<DCC_Description>Spring4D Core package</DCC_Description>
 			<DllSuffix>.DelphiXE</DllSuffix>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-			<DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<GenPackage>true</GenPackage>
 			<GenDll>true</GenDll>
@@ -71,11 +71,11 @@
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.MethodIntercept.pas"/>
-			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.VirtualInterface.pas"/>
 			<BuildConfiguration Include="Release">

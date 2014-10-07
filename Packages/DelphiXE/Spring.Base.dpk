@@ -27,9 +27,13 @@ package Spring.Base;
 {$RUNONLY}
 {$IMPLICITBUILD OFF}
 
+{$I Spring.inc}
+
 requires
-  rtl,
-  vcl;
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
+  vcl,
+{$ENDIF}
+  rtl;
 
 contains
   Spring in '..\..\Source\Base\Spring.pas',

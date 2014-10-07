@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.ComponentActivator;
-
 {$I Spring.inc}
+
+unit Spring.Container.ComponentActivator;
 
 interface
 
@@ -132,7 +132,7 @@ begin
   for injection in injections do
   begin
     arguments := Kernel.Resolver.Resolve(
-      context, injection.Dependencies, injection.Arguments);
+      context, Model, injection.Dependencies, injection.Arguments);
     injection.Inject(instance, arguments);
   end;
 end;
@@ -152,7 +152,7 @@ begin
   if injection = nil then
     raise EActivatorException.CreateResFmt(@SUnsatisfiedConstructor, [Model.ComponentTypeName]);
   arguments := Kernel.Resolver.Resolve(
-    context, injection.Dependencies, injection.Arguments);
+    context, Model, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(
     Model.ComponentType.AsInstance, injection.Target.AsMethod, arguments);
   ExecuteInjections(Result, context);
@@ -188,7 +188,7 @@ var
 begin
   Result := context.TryHandle(candidate, injection)
     and Kernel.Resolver.CanResolve(
-    context, injection.Dependencies, injection.Arguments);
+    context, Model, injection.Dependencies, injection.Arguments);
   if Result then
     winner := injection;
 end;

@@ -22,13 +22,16 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Container.Common;
 
 interface
 
 uses
   SysUtils,
-  Spring;
+  TypInfo,
+  Rtti;
 
 
 {$SCOPEDENUMS ON}
@@ -338,6 +341,60 @@ type
     property RefCount: Integer read GetRefCount;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'Common Container Interfaces'}
+  TActivatorDelegate = reference to function: TValue;
+
+  IRegistration = interface
+    ['{94A80249-3C3D-4769-832A-274B1833DA70}']
+    function Implements(serviceType: PTypeInfo): IRegistration; overload;
+    function Implements(serviceType: PTypeInfo; const name: string): IRegistration; overload;
+
+    function DelegateTo(const delegate: TActivatorDelegate): IRegistration; overload;
+
+    {$REGION 'Typed Injections'}
+
+    function InjectConstructor(const parameterTypes: array of PTypeInfo): IRegistration; overload;
+    function InjectProperty(const propertyName: string): IRegistration; overload;
+    function InjectMethod(const methodName: string): IRegistration; overload;
+    function InjectMethod(const methodName: string; const parameterTypes: array of PTypeInfo): IRegistration; overload;
+    function InjectField(const fieldName: string): IRegistration; overload;
+
+    {$ENDREGION}
+
+    {$REGION 'Named/Valued Injections'}
+
+    function InjectConstructor(const arguments: array of TValue): IRegistration; overload;
+    function InjectProperty(const propertyName: string; const value: TValue): IRegistration; overload;
+    function InjectMethod(const methodName: string; const arguments: array of TValue): IRegistration; overload;
+    function InjectField(const fieldName: string; const value: TValue): IRegistration; overload;
+
+    {$ENDREGION}
+
+    function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
+    function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
+    function AsTransient: IRegistration;
+    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
+
+    function AsDefault: IRegistration; overload;
+    function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
+
+{$IFDEF DELPHIXE_UP}
+    function AsFactory: IRegistration; overload;
+    function AsFactory(const name: string): IRegistration; overload;
+{$ENDIF}
+  end;
+
+  IContainer = interface
+    ['{B7F38CF7-872F-4B8E-9593-67ABFD351EF2}']
+    function RegisterType(componentType: PTypeInfo): IRegistration; overload;
+    function RegisterType(serviceType, componentType: PTypeInfo;
+      const name: string = ''): IRegistration; overload;
+
+    procedure Build;
+  end;
   {$ENDREGION}
 
 

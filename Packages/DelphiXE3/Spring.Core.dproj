@@ -73,7 +73,7 @@
         <DllSuffix>.DelphiXE3</DllSuffix>
         <DCC_Description>Spring4D Core package</DCC_Description>
         <DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-        <DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Cryptography;..\..\Source\Base\Reflection;..\..\Source\Base\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
@@ -146,11 +146,11 @@
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+        <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.MethodIntercept.pas"/>
-        <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.VirtualInterface.pas"/>
         <BuildConfiguration Include="Release">

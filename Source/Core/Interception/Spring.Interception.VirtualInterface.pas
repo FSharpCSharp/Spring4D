@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Interception.VirtualInterface;
-
 {$I Spring.inc}
+
+unit Spring.Interception.VirtualInterface;
 
 interface
 

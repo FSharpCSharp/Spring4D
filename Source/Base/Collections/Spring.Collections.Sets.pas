@@ -22,11 +22,11 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Collections.Sets;
 
 interface
-
-{$I Spring.inc}
 
 uses
   Generics.Collections,
@@ -44,8 +44,8 @@ type
       TGenericDictionary = Generics.Collections.TDictionary<T, Integer>;
   private
     fDictionary: TGenericDictionary;
-  public
-    procedure Add(const item: T); override;
+  protected
+    procedure AddInternal(const item: T); override;
   end;
 
   ///	<summary>
@@ -259,7 +259,7 @@ uses
 
 {$REGION 'THashSetBase<T>'}
 
-procedure THashSetBase<T>.Add(const item: T);
+procedure THashSetBase<T>.AddInternal(const item: T);
 begin
   fDictionary.AddOrSetValue(item, 0);
 end;

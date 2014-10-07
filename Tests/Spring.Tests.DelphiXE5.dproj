@@ -74,7 +74,7 @@
     <PropertyGroup Condition="'$(Base)'!=''">
         <DCC_Define>SPRING_ENABLE_GUARD;SPRING_NO_WARNING;TESTS;$(DCC_Define)</DCC_Define>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Interception;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;.\Source\dUnit;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\Source;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Interception;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;.\Source\dUnit;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
@@ -177,8 +177,9 @@
         <DCCReference Include="Source\Base\Spring.Tests.Collections.Extensions.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.DesignPatterns.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Helpers.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Reflection.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
-        <DCCReference Include="Source\Base\Spring.Tests.SysUtils.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.SystemUtils.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>

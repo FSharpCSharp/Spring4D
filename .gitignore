@@ -23,5 +23,6 @@ __history/
 # Spring4D files:
 *.bak
 *.mes
+Logs/
 Samples/**/*.exe
 Tests/Bin/

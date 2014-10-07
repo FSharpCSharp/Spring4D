@@ -22,13 +22,13 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  The Spring.Collections namespaces introduce the Collections Framework in
 ///	  spring4d.
 ///	</summary>
 unit Spring.Collections;
-
-{$I Spring.inc}
 
 interface
 
@@ -345,7 +345,9 @@ type
     ///	  <b>True</b> if the source sequence contains an element that has the
     ///	  specified value; otherwise, <b>False</b>.
     ///	</returns>
-    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; overload;
+    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean; overload;
+
+    function Contains(const value: T; const comparer: TEqualityComparison<T>): Boolean; overload;
 
     ///	<summary>
     ///	  Returns the element at a specified index in a sequence.
@@ -581,6 +583,7 @@ type
     ///	  The maximum value in the sequence.
     ///	</returns>
     function Max(const comparer: IComparer<T>): T; overload;
+    function Max(const comparer: TComparison<T>): T; overload;
 
     ///	<summary>
     ///	  Returns the minimum value in a sequence.
@@ -601,6 +604,7 @@ type
     ///	  The minimum value in the sequence.
     ///	</returns>
     function Min(const comparer: IComparer<T>): T; overload;
+    function Min(const comparer: TComparison<T>): T; overload;
 
     ///	<summary>
     ///	  Sorts the elements of a sequence in ascending order using the default
@@ -613,6 +617,7 @@ type
     ///	  specified <see cref="IComparer&lt;T&gt;" />.
     ///	</summary>
     function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
+    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload;
 
     ///	<summary>
     ///	  Inverts the order of the elements in a sequence.
@@ -827,6 +832,8 @@ type
     ///	</param>
     procedure CopyTo(var values: TArray<T>; index: Integer);
 
+    procedure MoveTo(const collection: ICollection<T>);
+
     ///	<summary>
     ///	  Removes the first occurrence of a specific element from the
     ///	  ICollection&lt;T&gt;.
@@ -875,9 +882,13 @@ type
   IList = interface(ICollection)
     ['{43FF6143-3B87-4298-B48C-2ABB9353BF68}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetItem(index: Integer): TValue;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const item: TValue);
   {$ENDREGION}
+
+    function Add(const item: TValue): Integer;
 
     procedure Insert(index: Integer; const item: TValue);
     procedure InsertRange(index: Integer; const collection: array of TValue); overload;
@@ -903,7 +914,9 @@ type
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
     function AsReadOnlyList: IReadOnlyList;
+    procedure TrimExcess;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
   end;
 
@@ -947,11 +960,15 @@ type
   IList<T> = interface(ICollection<T>)
     ['{B6B4E1E1-0D29-40E1-854C-A93DEA8D1AA5}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetCount: Integer;
     function GetItem(index: Integer): T;
+    procedure SetCapacity(value: Integer);
     procedure SetCount(value: Integer);
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
+
+    function Add(const item: T): Integer;
 
     ///	<summary>
     ///	  Inserts an item to the IList&lt;T&gt; at the specified index.
@@ -1011,7 +1028,9 @@ type
 
     function AsList: IList;
     function AsReadOnlyList: IReadOnlyList<T>;
+    procedure TrimExcess;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount write SetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
   end;
@@ -1557,6 +1576,8 @@ type
   {$REGION 'Property Accessors'}
     function GetKeys: IReadOnlyCollection<TKey>;
     function GetKeyType: PTypeInfo;
+    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
+    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
     function GetValues: IReadOnlyCollection<TValue>;
     function GetValueType: PTypeInfo;
   {$ENDREGION}
@@ -1632,6 +1653,8 @@ type
     property Values: IReadOnlyCollection<TValue> read GetValues;
 
     property KeyType: PTypeInfo read GetKeyType;
+    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
+    property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
     property ValueType: PTypeInfo read GetValueType;
   end;
 
@@ -1648,8 +1671,6 @@ type
     ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
   {$REGION 'Property Accessors'}
     function GetItem(const key: TKey): TValue;
-    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
-    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
 
@@ -1698,9 +1719,6 @@ type
     ///	  The element with the specified key.
     ///	</value>
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
-
-    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
-    property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
   end;
 
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
@@ -2148,16 +2166,20 @@ type
   public
     class function CreateList<T>: IList<T>; overload; static;
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateList<T>(const comparer: TComparison<T>): IList<T>; overload; static;
     class function CreateList<T>(const values: array of T): IList<T>; overload; static;
     class function CreateList<T>(const values: IEnumerable<T>): IList<T>; overload; static;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static;
     class function CreateList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean): IList<T>; overload; static;
+    class function CreateList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean): IList<T>; overload; static;
     class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(const values: array of T; ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(const values: IEnumerable<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateInterfaceList<T: IInterface>: IList<T>; overload; static;
     class function CreateInterfaceList<T: IInterface>(const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const comparer: TComparison<T>): IList<T>; overload; static;
     class function CreateInterfaceList<T: IInterface>(const values: array of T): IList<T>; overload; static;
     class function CreateInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static;
 
@@ -2233,11 +2255,18 @@ type
     class function OrdinalIgnoreCase: TStringComparer;
   end;
 
+  TInstanceComparer<T> = class
+  public
+    class function Default: IComparer<T>;
+  end;
+
   TCollectionHelper = class helper for TCollection
   public
     function AsList: IList<TCollectionItem>; overload;
     function AsList<T: TCollectionItem>: IList<T>; overload;
   end;
+
+function GetInstanceComparer: Pointer;
 
 implementation
 
@@ -2253,6 +2282,54 @@ uses
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
   Spring.ResourceStrings;
+
+
+{$REGION 'Instance comparer'}
+function NopAddref(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function NopRelease(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+begin
+  Result := E_NOINTERFACE;
+end;
+
+function Compare_Instance(Inst: Pointer; const Left, Right: TObject): Integer;
+var
+  comparable: IComparable;
+begin
+  if Supports(Left, IComparable, comparable) then
+    Result := comparable.CompareTo(Right)
+  else
+    if NativeUInt(Left) < NativeUInt(Right) then
+      Result := -1
+    else if NativeUInt(Left) > NativeUInt(Right) then
+      Result := 1
+    else
+      Result := 0;
+end;
+
+const
+  InstanceComparer_VTable: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_Instance
+  );
+  InstanceComparer: Pointer = @InstanceComparer_VTable;
+
+function GetInstanceComparer: Pointer;
+begin
+  Result := @InstanceComparer;
+end;
+{$ENDREGION}
 
 
 {$REGION 'TArray'}
@@ -2324,6 +2401,12 @@ begin
   Result := TList<T>.Create(comparer);
 end;
 
+class function TCollections.CreateList<T>(
+  const comparer: TComparison<T>): IList<T>;
+begin
+  Result := TList<T>.Create(TComparer<T>.Construct(comparer));
+end;
+
 class function TCollections.CreateList<T>(const values: array of T): IList<T>;
 begin
   Result := TList<T>.Create(values);
@@ -2345,6 +2428,13 @@ begin
   Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
 end;
 
+class function TCollections.CreateList<T>(const comparer: TComparison<T>;
+  ownsObjects: Boolean): IList<T>;
+begin
+  Result := TObjectList<T>.Create(
+    TComparer<T>.Construct(comparer), ownsObjects) as IList<T>;
+end;
+
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
 begin
   Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
@@ -2354,6 +2444,13 @@ class function TCollections.CreateObjectList<T>(const comparer: IComparer<T>;
   ownsObjects: Boolean): IList<T>;
 begin
   Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
+end;
+
+class function TCollections.CreateObjectList<T>(const comparer: TComparison<T>;
+  ownsObjects: Boolean): IList<T>;
+begin
+  Result := TObjectList<T>.Create(
+    TComparer<T>.Construct(comparer), ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(const values: array of T;
@@ -2393,6 +2490,13 @@ begin
 end;
 
 class function TCollections.CreateInterfaceList<T>(
+  const comparer: TComparison<T>): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create(
+    TComparer<T>.Construct(comparer)) as IList<T>;
+end;
+
+class function TCollections.CreateInterfaceList<T>(
   const values: array of T): IList<T>;
 begin
   Result := TInterfaceList<T>.Create as IList<T>;
@@ -2414,10 +2518,12 @@ end;
 class function TCollections.CreateDictionary<TKey, TValue>(
   capacity: Integer): IDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(capacity, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(
+    capacity, TEqualityComparer<TKey>.Default);
 end;
 
-class function TCollections.CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
+class function TCollections.CreateDictionary<TKey, TValue>(
+  const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
 begin
   Result := TCollections.CreateDictionary<TKey, TValue>(0, comparer);
 end;
@@ -2438,14 +2544,16 @@ end;
 class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(ownerships, 0, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(
+    ownerships, 0, TEqualityComparer<TKey>.Default);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships;
   capacity: Integer): IDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(ownerships, capacity, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(
+    ownerships, capacity, TEqualityComparer<TKey>.Default);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
@@ -2664,6 +2772,16 @@ end;
 class function TStringComparer.OrdinalIgnoreCase: TStringComparer;
 begin
   Result := fOrdinalIgnoreCase;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInstanceComparer<T>'}
+
+class function TInstanceComparer<T>.Default: IComparer<T>;
+begin
+  Result := IComparer<T>(GetInstanceComparer);
 end;
 
 {$ENDREGION}

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.CreationContext;
-
 {$I Spring.inc}
+
+unit Spring.Container.CreationContext;
 
 interface
 
@@ -47,9 +47,11 @@ type
       const arguments: array of TValue);
 
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): TValue;
 
     procedure EnterResolution(const model: TComponentModel);
     procedure LeaveResolution(const model: TComponentModel);
@@ -96,7 +98,8 @@ begin
 end;
 
 function TCreationContext.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): Boolean;
 var
   i: Integer;
 begin
@@ -170,11 +173,13 @@ end;
 
 procedure TCreationContext.LeaveResolution(const model: TComponentModel);
 begin
-  Assert(fResolutionStack.Pop = model);
+  if fResolutionStack.Pop <> model then
+    raise EResolveException.CreateRes(@SResolutionStackUnbalanced);
 end;
 
 function TCreationContext.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): TValue;
 var
   i: Integer;
 begin

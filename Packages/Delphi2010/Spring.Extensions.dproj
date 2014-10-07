@@ -29,7 +29,7 @@
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_Platform>x86</DCC_Platform>
-			<DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<GenPackage>true</GenPackage>
 			<DCC_S>false</DCC_S>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
