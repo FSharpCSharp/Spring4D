@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Interception.InterfaceProxy;
-
 {$I Spring.inc}
+
+unit Spring.Interception.InterfaceProxy;
 
 interface
 

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Patches.QC98671;
-
 {$I Spring.inc}
+
+unit Spring.Patches.QC98671;
 
 interface
 

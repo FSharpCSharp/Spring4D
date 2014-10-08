@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Interception.AbstractInvocation;
-
 {$I Spring.inc}
+
+unit Spring.Interception.AbstractInvocation;
 
 interface
 

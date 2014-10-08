@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Interception.MethodIntercept;
-
 {$I Spring.inc}
+
+unit Spring.Interception.MethodIntercept;
 
 interface
 
