@@ -30,6 +30,9 @@
 			<Projects Include="9-DecoratorInjection\DecoratorInjection.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="10-InterceptorInjection\InterceptorInjection.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -119,14 +122,23 @@
 		<Target Name="DecoratorInjection:Make">
 			<MSBuild Targets="Make" Projects="9-DecoratorInjection\DecoratorInjection.dproj"/>
 		</Target>
+		<Target Name="InterceptorInjection">
+			<MSBuild Projects="10-InterceptorInjection\InterceptorInjection.dproj"/>
+		</Target>
+		<Target Name="InterceptorInjection:Clean">
+			<MSBuild Targets="Clean" Projects="10-InterceptorInjection\InterceptorInjection.dproj"/>
+		</Target>
+		<Target Name="InterceptorInjection:Make">
+			<MSBuild Targets="Make" Projects="10-InterceptorInjection\InterceptorInjection.dproj"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="StartingOut;MovingToInterfaces;ConstructorInjection;UseMocks;IsolateInterfaces;UseContainer;CustomConstructor;FieldInjection;DecoratorInjection"/>
+			<CallTarget Targets="StartingOut;MovingToInterfaces;ConstructorInjection;UseMocks;IsolateInterfaces;UseContainer;CustomConstructor;FieldInjection;DecoratorInjection;InterceptorInjection"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="StartingOut:Clean;MovingToInterfaces:Clean;ConstructorInjection:Clean;UseMocks:Clean;IsolateInterfaces:Clean;UseContainer:Clean;CustomConstructor:Clean;FieldInjection:Clean;DecoratorInjection:Clean"/>
+			<CallTarget Targets="StartingOut:Clean;MovingToInterfaces:Clean;ConstructorInjection:Clean;UseMocks:Clean;IsolateInterfaces:Clean;UseContainer:Clean;CustomConstructor:Clean;FieldInjection:Clean;DecoratorInjection:Clean;InterceptorInjection:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="StartingOut:Make;MovingToInterfaces:Make;ConstructorInjection:Make;UseMocks:Make;IsolateInterfaces:Make;UseContainer:Make;CustomConstructor:Make;FieldInjection:Make;DecoratorInjection:Make"/>
+			<CallTarget Targets="StartingOut:Make;MovingToInterfaces:Make;ConstructorInjection:Make;UseMocks:Make;IsolateInterfaces:Make;UseContainer:Make;CustomConstructor:Make;FieldInjection:Make;DecoratorInjection:Make;InterceptorInjection:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>
