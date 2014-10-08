@@ -56,6 +56,9 @@ type
 
 implementation
 
+uses     
+  SysUtils;
+
 
 {$REGION 'TProxyFactory'}
 
@@ -84,11 +87,16 @@ function TProxyFactory.CreateInstance(const context: ICreationContext;
   const constructorArguments: array of TValue): TValue;
 var
   interceptors: TArray<IInterceptor>;
+  intf: IInterface;
 begin
   interceptors := ObtainInterceptors(model);
   if Assigned(interceptors) then
-    Result := fGenerator.CreateInterfaceProxyWithTarget(
-      instance.TypeInfo, instance.AsInterface, interceptors)
+  begin
+    Supports(fGenerator.CreateInterfaceProxyWithTarget(
+      instance.TypeInfo, instance.AsInterface, interceptors),
+      instance.TypeData.Guid, intf);
+    TValue.Make(@intf, instance.TypeInfo, Result);
+  end
   else
     Result := instance;
 end;

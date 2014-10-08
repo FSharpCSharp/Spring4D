@@ -87,7 +87,9 @@ type
 implementation
 
 uses
-  Spring.Helpers;
+  Spring.Helpers,
+  Spring.Reflection,
+  Spring.ResourceStrings;
 
 
 {$REGION 'TInterfaceProxy'}
@@ -97,6 +99,10 @@ constructor TInterfaceProxy.Create(proxyType: PTypeInfo;
   const options: TProxyGenerationOptions; const target: IInterface;
   const interceptors: array of IInterceptor);
 begin
+  if TType.GetType(proxyType).Methods.IsEmpty then
+    raise EInvalidOperationException.CreateResFmt(
+      @STypeParameterContainsNoRtti, [proxyType.Name]);
+
   inherited Create(proxyType, HandleInvoke);
   fInterceptors := TCollections.CreateInterfaceList<IInterceptor>(interceptors);
   fInterceptorSelector := options.Selector;

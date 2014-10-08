@@ -188,6 +188,8 @@ type
       where: TWhere = TWhere.Last): TRegistration<T>; overload;
     function InterceptedBy(const name: string;
       where: TWhere = TWhere.Last): TRegistration<T>; overload;
+    function InterceptedBy<TInterceptorType>(
+      where: TWhere = TWhere.Last): TRegistration<T>; overload;
 {$ENDIF}
   end;
 
@@ -887,6 +889,14 @@ begin
   fRegistration.InterceptedBy(name, where);
   Result := Self;
 end;
+
+function TRegistration<T>.InterceptedBy<TInterceptorType>(
+  where: TWhere = TWhere.Last): TRegistration<T>;
+begin
+  fRegistration.InterceptedBy(TypeInfo(TInterceptorType), where);
+  Result := Self;
+end;
+
 {$ENDIF}
 
 {$ENDREGION}
