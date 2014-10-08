@@ -65,7 +65,8 @@ type
     function CanResolveFromSubResolvers(const context: ICreationContext;
       const model: TComponentModel; const dependency: TDependencyModel;
       const argument: TValue): Boolean;
-    function InternalResolveValue(typeInfo: PTypeInfo;
+    function InternalResolveValue(const context: ICreationContext;
+      const model: TComponentModel; const dependency: TDependencyModel;
       const instance: TValue): TValue;
   public
     constructor Create(const kernel: IKernel);
@@ -181,30 +182,33 @@ begin
 end;
 
 function TDependencyResolver.InternalResolveValue(
-  typeInfo: PTypeInfo; const instance: TValue): TValue;
+  const context: ICreationContext; const model: TComponentModel;
+  const dependency: TDependencyModel; const instance: TValue): TValue;
 var
   intf: Pointer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(typeInfo, 'typeInfo');
+  Guard.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(dependency, 'dependency');
   Guard.CheckNotNull(not instance.IsEmpty, 'instance');
 {$ENDIF}
 
-  if typeInfo.Kind = tkInterface then
+  if dependency.TypeInfo.Kind = tkInterface then
   begin
     if instance.IsObject then
-      instance.AsObject.GetInterface(GetTypeData(typeInfo).Guid, intf)
+      instance.AsObject.GetInterface(GetTypeData(dependency.TypeInfo).Guid, intf)
     else
     begin
-      if TType.IsDelegate(typeInfo) then
+      if TType.IsDelegate(dependency.TypeInfo) then
       begin
         intf := nil;
         IInterface(intf) := instance.AsInterface;
       end
       else
-        instance.AsInterface.QueryInterface(GetTypeData(typeInfo).Guid, intf);
+        instance.AsInterface.QueryInterface(GetTypeData(dependency.TypeInfo).Guid, intf);
     end;
-    TValue.MakeWithoutCopy(@intf, typeInfo, Result);
+    TValue.MakeWithoutCopy(@intf, dependency.TypeInfo, Result);
+    Result := Kernel.ProxyFactory.CreateInstance(context, Result, model, []);
   end
   else
     Result := instance;
@@ -274,7 +278,7 @@ begin
   finally
     context.LeaveResolution(componentModel);
   end;
-  Result := InternalResolveValue(dependency.TypeInfo, instance);
+  Result := InternalResolveValue(context, componentModel, dependency, instance);
 end;
 
 function TDependencyResolver.CanResolve(const context: ICreationContext;

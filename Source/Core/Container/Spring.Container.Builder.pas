@@ -108,6 +108,11 @@ type
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
+  TInterceptorInspector = class(TInspectorBase)
+  protected
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
+  end;
+
 implementation
 
 uses
@@ -482,6 +487,9 @@ begin
     for attribute in attributes do
       kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.Name);
 
+    if model.Services.IsEmpty then
+      kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
+
     services := model.ComponentType.GetInterfaces;
     if Assigned(services) then
       for service in services do
@@ -494,10 +502,37 @@ begin
     if TType.IsDelegate(model.ComponentTypeInfo)
       and not model.HasService(model.ComponentTypeInfo) then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
-
-    if model.Services.IsEmpty then
-      kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterceptorInspector' }
+
+procedure TInterceptorInspector.DoProcessModel(const kernel: IKernel;
+  const model: TComponentModel);
+{$IFDEF DELPHIXE_UP}
+var
+  attributes: TArray<InterceptorAttribute>;
+  attribute: InterceptorAttribute;
+  interceptorRef: TInterceptorReference;
+begin
+  attributes := model.ComponentType.GetCustomAttributes<InterceptorAttribute>;
+  for attribute in attributes do
+  begin
+    interceptorRef := TInterceptorReference.Create(
+      attribute.InterceptorType, attribute.Name);
+    if not model.Interceptors.Contains(interceptorRef,
+      function(const left, right: TInterceptorReference): Boolean
+      begin
+        Result := (left.Key = right.Key) and (left.Value = right.Value);
+      end) then
+      model.Interceptors.Add(interceptorRef);
+  end;
+{$ELSE}
+begin
+{$ENDIF}
 end;
 
 {$ENDREGION}

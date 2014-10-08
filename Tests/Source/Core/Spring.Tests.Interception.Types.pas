@@ -241,6 +241,23 @@ type
     procedure Intercept(const invocation: IInvocation);
   end;
 
+  TExceptionAspect = class(TInterfacedObject, IInterceptor)
+  private
+    fEatAll: Boolean;
+  public
+    procedure Intercept(const invocation: IInvocation);
+  end;
+
+  IService = interface(IInvokable)
+    ['{DA141445-02E8-4171-8B29-8F5583594772}']
+    procedure DoSomething;
+  end;
+
+  TService = class(TInterfacedObject, IService)
+  public
+    procedure DoSomething;
+  end;
+
 implementation
 
 uses
@@ -657,6 +674,31 @@ begin
   if not primaryStorage.IsUp then
     ChangeToSecondaryStorage(invocation);
   invocation.Proceed;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TExceptionAspect'}
+
+procedure TExceptionAspect.Intercept(const invocation: IInvocation);
+begin
+  try
+    invocation.Proceed;
+  except
+    if not fEatAll then
+      raise;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TService'}
+
+procedure TService.DoSomething;
+begin
+  raise EInvalidOperationException.Create('Some exception raised in DoSomething');
 end;
 
 {$ENDREGION}

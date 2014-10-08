@@ -126,6 +126,11 @@ type
     False
   );
 
+  TBaseAttribute = class(TCustomAttribute)
+  private
+    constructor Create;
+  end;
+
   ///	<summary>
   ///	  Represents an abstract lifetime attribute class base.
   ///	</summary>
@@ -261,7 +266,7 @@ type
   ///	  </code>
   ///	</example>
   ///	<seealso cref="InjectAttribute" />
-  ImplementsAttribute = class(TCustomAttribute)
+  ImplementsAttribute = class(TBaseAttribute)
   private
     fServiceType: PTypeInfo;
     fName: string;
@@ -269,6 +274,17 @@ type
     constructor Create(serviceType: PTypeInfo); overload;
     constructor Create(serviceType: PTypeInfo; const name: string); overload;
     property ServiceType: PTypeInfo read fServiceType;
+    property Name: string read fName;
+  end;
+
+  InterceptorAttribute = class(TBaseAttribute)
+  private
+    fInterceptorType: PTypeInfo;
+    fName: string;
+  public
+    constructor Create(interceptorType: PTypeInfo); overload;
+    constructor Create(const name: string); overload;
+    property InterceptorType: PTypeInfo read fInterceptorType;
     property Name: string read fName;
   end;
 
@@ -347,6 +363,8 @@ type
   {$REGION 'Common Container Interfaces'}
   TActivatorDelegate = reference to function: TValue;
 
+  TWhere = (First, Last);
+
   IRegistration = interface
     ['{94A80249-3C3D-4769-832A-274B1833DA70}']
     function Implements(serviceType: PTypeInfo): IRegistration; overload;
@@ -384,6 +402,11 @@ type
 {$IFDEF DELPHIXE_UP}
     function AsFactory: IRegistration; overload;
     function AsFactory(const name: string): IRegistration; overload;
+
+    function InterceptedBy(interceptorType: PTypeInfo;
+      where: TWhere = TWhere.Last): IRegistration; overload;
+    function InterceptedBy(const name: string;
+      where: TWhere = TWhere.Last): IRegistration; overload;
 {$ENDIF}
   end;
 
@@ -402,6 +425,12 @@ implementation
 
 
 {$REGION 'Attributes'}
+
+{ TBaseAttribute }
+
+constructor TBaseAttribute.Create;
+begin
+end;
 
 { LifetimeAttributeBase }
 
@@ -513,6 +542,20 @@ constructor ImplementsAttribute.Create(serviceType: PTypeInfo;
 begin
   inherited Create;
   fServiceType := serviceType;
+  fName := name;
+end;
+
+{ InterceptorAttribute }
+
+constructor InterceptorAttribute.Create(interceptorType: PTypeInfo);
+begin
+  inherited Create;
+  fInterceptorType := interceptorType;
+end;
+
+constructor InterceptorAttribute.Create(const name: string);
+begin
+  inherited Create;
   fName := name;
 end;
 

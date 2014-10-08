@@ -34,7 +34,9 @@ uses
   SysUtils,
   TestFramework,
   Spring,
+  Spring.Container.Common,
   Spring.Interception,
+  Spring.Tests.Container,
   Spring.Tests.Interception.Types;
 
 type
@@ -88,6 +90,19 @@ type
     procedure Save_should_use_primaryStorage_when_it_is_up;
     procedure Save_should_use_secondaryStorage_when_primaryStorage_is_down;
     procedure Save_should_go_back_to_primaryStorage_when_is_goes_from_down_to_up;
+  end;
+
+  [Interceptor(TypeInfo(TExceptionAspect))]
+  [Interceptor(TypeInfo(IInterceptor))]
+  [Interceptor('except')]
+  TServiceWithAttributes = class(TService);
+
+  TTestInterception = class(TContainerTestCase)
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestByAttributes;
+    procedure TestByRegistration;
   end;
 
 implementation
@@ -586,6 +601,44 @@ begin
   CheckTrue(primary.Contains(msg1));
   CheckTrue(primary.Contains(msg3));
   CheckTrue(secondary.Contains(msg2));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestInterception'}
+
+procedure TTestInterception.SetUp;
+begin
+  inherited;
+  fContainer.RegisterType<TExceptionAspect>
+    .Implements<TExceptionAspect>
+    .Implements<IInterceptor>('except')
+    .InjectField('fEatAll', True);
+end;
+
+procedure TTestInterception.TestByAttributes;
+var
+  service: IService;
+begin
+  fContainer.RegisterType<TServiceWithAttributes>;
+  fContainer.Build;
+
+  service := fContainer.Resolve<IService>;
+  service.DoSomething;
+  FCheckCalled := True;
+end;
+
+procedure TTestInterception.TestByRegistration;
+var
+  service: IService;
+begin
+  fContainer.RegisterType<TService>.InterceptedBy('except');
+  fContainer.Build;
+
+  service := fContainer.Resolve<IService>;
+  service.DoSomething;
+  FCheckCalled := True;
 end;
 
 {$ENDREGION}

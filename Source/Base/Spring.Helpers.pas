@@ -1582,7 +1582,7 @@ begin
 {$ELSE}
       obj := TObject(Self.FData.FAsObject);
 {$ENDIF}
-      Exit(obj.GetInterface(typeData.Guid, Intf));
+      Exit(Supports(obj, typeData.Guid, Intf));
     end;
     Result := False;
     typeData := Self.TypeData;

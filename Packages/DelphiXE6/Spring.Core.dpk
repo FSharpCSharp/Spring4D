@@ -49,6 +49,7 @@ contains
   Spring.Container.Injection in '..\..\Source\Core\Container\Spring.Container.Injection.pas',
   Spring.Container.LifetimeManager in '..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas',
   Spring.Container.Pool in '..\..\Source\Core\Container\Spring.Container.Pool.pas',
+  Spring.Container.ProxyFactory in '..\..\Source\Core\Container\Spring.Container.ProxyFactory.pas',
   Spring.Container.Registration in '..\..\Source\Core\Container\Spring.Container.Registration.pas',
   Spring.Container.Resolvers in '..\..\Source\Core\Container\Spring.Container.Resolvers.pas',
   Spring.Container.ResourceStrings in '..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas',

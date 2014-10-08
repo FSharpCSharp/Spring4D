@@ -106,6 +106,7 @@
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
+        <DCCReference Include="..\..\Source\Core\Container\Spring.Container.ProxyFactory.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>

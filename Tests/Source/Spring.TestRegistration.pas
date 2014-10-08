@@ -202,7 +202,8 @@ begin
   RegisterTests('Spring.Interception', [
     TFreezableTest.Suite,
     TProxyTest.Suite,
-    TStorageTests.Suite
+    TStorageTests.Suite,
+    TTestInterception.Suite
   ]);
 {$ENDIF}
 

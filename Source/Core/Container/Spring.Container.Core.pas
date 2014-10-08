@@ -29,6 +29,7 @@ unit Spring.Container.Core;
 interface
 
 uses
+  Generics.Collections,
   Rtti,
   SysUtils,
   Spring,
@@ -50,6 +51,7 @@ type
   IComponentActivator = interface;
   IContainerExtension = interface;
   ICreationContext = interface;
+  IProxyFactory = interface;
 
   TActivatorDelegate<T> = reference to function: T;
 
@@ -80,6 +82,7 @@ type
     function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
+    function GetProxyFactory: IProxyFactory;
   {$ENDREGION}
     procedure AddExtension(const extension: IContainerExtension);
 
@@ -87,6 +90,7 @@ type
     property Injector: IDependencyInjector read GetInjector;
     property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
+    property ProxyFactory: IProxyFactory read GetProxyFactory;
   end;
 
   IKernelInternal = interface
@@ -268,6 +272,15 @@ type
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
+  IProxyFactory = interface
+    ['{4813914F-810D-451D-8AED-205C3F82C068}']
+    function CreateInstance(const context: ICreationContext;
+      const instance: TValue; const model: TComponentModel;
+      const constructorArguments: array of TValue): TValue;
+  end;
+
+  TInterceptorReference = TPair<PTypeInfo, string>;
+
   ///	<summary>
   ///	  TComponentModel
   ///	</summary>
@@ -286,6 +299,7 @@ type
     fMethodInjections: IInjectionList;
     fPropertyInjections: IInjectionList;
     fFieldInjections: IInjectionList;
+    fInterceptors: IList<TInterceptorReference>;
     function GetComponentTypeInfo: PTypeInfo;
     function GetComponentTypeName: string;
     procedure SetRefCounting(const value: TRefCounting);
@@ -313,6 +327,8 @@ type
     property MethodInjections: IInjectionList read fMethodInjections;
     property PropertyInjections: IInjectionList read fPropertyInjections;
     property FieldInjections: IInjectionList read fFieldInjections;
+
+    property Interceptors: IList<TInterceptorReference> read fInterceptors;
   end;
 
   TValueHolder = class(TInterfacedObject, TFunc<TValue>)
@@ -367,7 +383,6 @@ type
 implementation
 
 uses
-  Generics.Collections,
   TypInfo,
   Spring.Container.ResourceStrings,
   Spring.Helpers;
@@ -406,6 +421,7 @@ begin
   fMethodInjections := TCollections.CreateInterfaceList<IInjection>;
   fPropertyInjections := TCollections.CreateInterfaceList<IInjection>;
   fFieldInjections := TCollections.CreateInterfaceList<IInjection>;
+  fInterceptors := TCollections.CreateList<TInterceptorReference>;
 end;
 
 function TComponentModel.GetComponentTypeInfo: PTypeInfo;

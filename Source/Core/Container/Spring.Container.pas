@@ -48,6 +48,7 @@ type
     fInjector: IDependencyInjector;
     fRegistrationManager: TRegistrationManager;
     fResolver: IDependencyResolver;
+    fProxyFactory: IProxyFactory;
     fExtensions: IList<IContainerExtension>;
     class var GlobalInstance: TContainer;
     function GetKernel: IKernel;
@@ -61,6 +62,7 @@ type
     function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
+    function GetProxyFactory: IProxyFactory;
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
     property Builder: IComponentBuilder read GetBuilder;
@@ -165,6 +167,9 @@ uses
   Spring.Container.CreationContext,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
+{$IFDEF DELPHIXE_UP}
+  Spring.Container.ProxyFactory,
+{$ENDIF}
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
@@ -175,6 +180,38 @@ function GlobalContainer: TContainer;
 begin
   Result := TContainer.GlobalInstance;
 end;
+
+
+{$REGION 'TProxyFactory'}
+
+{$IFNDEF DELPHIXE_UP}
+type
+  /// <summary>
+  ///   Dummy class for Delphi2010
+  /// </summary>
+  TProxyFactory = class(TInterfacedObject, IProxyFactory)
+  public
+    constructor Create(const kernel: IKernel);
+
+    function CreateInstance(const context: ICreationContext;
+      const instance: TValue; const model: TComponentModel;
+      const constructorArguments: array of TValue): TValue;
+  end;
+
+constructor TProxyFactory.Create(const kernel: IKernel);
+begin
+  inherited Create;
+end;
+
+function TProxyFactory.CreateInstance(const context: ICreationContext;
+  const instance: TValue; const model: TComponentModel;
+  const constructorArguments: array of TValue): TValue;
+begin
+  Result := instance;
+end;
+{$ENDIF}
+
+{$ENDREGION}
 
 
 {$REGION 'TContainer'}
@@ -197,6 +234,7 @@ begin
   fInjector := TDependencyInjector.Create;
   fRegistrationManager := TRegistrationManager.Create(Self);
   fResolver := TDependencyResolver.Create(Self);
+  fProxyFactory := TProxyFactory.Create(Self);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
   InitializeInspectors;
 
@@ -216,6 +254,7 @@ begin
   // CleanupInstance (which on android produces a lots of AVs probably due
   // to calling virtual __ObjRelease on almost destroyed object)
   fExtensions := nil;
+  fProxyFactory := nil;
   fResolver := nil;
   fInjector := nil;
   fBuilder := nil;
@@ -257,7 +296,8 @@ begin
     TConstructorInspector.Create,
     TPropertyInspector.Create,
     TMethodInspector.Create,
-    TFieldInspector.Create
+    TFieldInspector.Create,
+    TInterceptorInspector.Create
   );
   for inspector in inspectors do
     fBuilder.AddInspector(inspector);
@@ -281,6 +321,11 @@ end;
 function TContainer.GetKernel: IKernel;
 begin
   Result := Self;
+end;
+
+function TContainer.GetProxyFactory: IProxyFactory;
+begin
+  Result := fProxyFactory;
 end;
 
 function TContainer.GetResolver: IDependencyResolver;
