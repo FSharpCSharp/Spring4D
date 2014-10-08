@@ -155,11 +155,13 @@ type
 
   IClientRule = interface(IInvokable)
     ['{ED28AB18-DE4C-4B11-90EA-768A4DCC38C5}']
+    procedure Apply;
   end;
 
   TApplyDiscountRule = class(TInterfacedObject, ISupportsInvalidation, IClientRule)
   public
     procedure Invalidate;
+    procedure Apply;
   end;
 
   IAnsweringEngine = interface(IInvokable)
@@ -515,6 +517,10 @@ end;
 
 
 {$REGION 'TApplyDiscountRule'}
+
+procedure TApplyDiscountRule.Apply;
+begin
+end;
 
 procedure TApplyDiscountRule.Invalidate;
 begin
