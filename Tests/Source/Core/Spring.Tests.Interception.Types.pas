@@ -34,6 +34,7 @@ uses
   SysUtils,
   Spring,
   Spring.Collections,
+  Spring.Container.Common,
   Spring.Container.Core,
   Spring.Interception,
   Spring.Services.Logging;
@@ -260,6 +261,11 @@ type
   public
     procedure DoSomething;
   end;
+
+  [Interceptor(TypeInfo(TExceptionAspect))]
+  [Interceptor(TypeInfo(IInterceptor))]
+  [Interceptor('except')]
+  TServiceWithAttributes = class(TService);
 
   TMyInterceptorSelector = class(TInterfacedObject, IModelInterceptorsSelector)
   public

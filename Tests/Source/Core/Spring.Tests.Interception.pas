@@ -34,7 +34,6 @@ uses
   SysUtils,
   TestFramework,
   Spring,
-  Spring.Container.Common,
   Spring.Interception,
   Spring.Tests.Container,
   Spring.Tests.Interception.Types;
@@ -91,11 +90,6 @@ type
     procedure Save_should_use_secondaryStorage_when_primaryStorage_is_down;
     procedure Save_should_go_back_to_primaryStorage_when_is_goes_from_down_to_up;
   end;
-
-  [Interceptor(TypeInfo(TExceptionAspect))]
-  [Interceptor(TypeInfo(IInterceptor))]
-  [Interceptor('except')]
-  TServiceWithAttributes = class(TService);
 
   TTestInterception = class(TContainerTestCase)
   protected
