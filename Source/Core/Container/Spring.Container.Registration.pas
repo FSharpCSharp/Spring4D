@@ -698,14 +698,14 @@ end;
 function TRegistration.InterceptedBy(interceptorType: PTypeInfo;
   where: TWhere): IRegistration;
 begin
-  InterceptedBy(TInterceptorReference.Create(interceptorType, ''), where);
+  InterceptedBy(TInterceptorReference.Create(interceptorType), where);
   Result := Self;
 end;
 
 function TRegistration.InterceptedBy(const name: string;
   where: TWhere): IRegistration;
 begin
-  InterceptedBy(TInterceptorReference.Create(nil, name), where);
+  InterceptedBy(TInterceptorReference.Create(name), where);
   Result := Self;
 end;
 {$ENDIF}

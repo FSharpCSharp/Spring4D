@@ -521,12 +521,14 @@ begin
   attributes := model.ComponentType.GetCustomAttributes<InterceptorAttribute>;
   for attribute in attributes do
   begin
-    interceptorRef := TInterceptorReference.Create(
-      attribute.InterceptorType, attribute.Name);
+    if Assigned(attribute.InterceptorType) then
+      interceptorRef := TInterceptorReference.Create(attribute.InterceptorType)
+    else
+      interceptorRef := TInterceptorReference.Create(attribute.Name);
     if not model.Interceptors.Contains(interceptorRef,
       function(const left, right: TInterceptorReference): Boolean
       begin
-        Result := (left.Key = right.Key) and (left.Value = right.Value);
+        Result := (left.TypeInfo = right.TypeInfo) and (left.Name = right.Name);
       end) then
       model.Interceptors.Add(interceptorRef);
   end;

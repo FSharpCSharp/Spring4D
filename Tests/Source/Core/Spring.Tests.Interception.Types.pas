@@ -34,6 +34,7 @@ uses
   SysUtils,
   Spring,
   Spring.Collections,
+  Spring.Container.Core,
   Spring.Interception,
   Spring.Services.Logging;
 
@@ -256,6 +257,13 @@ type
   TService = class(TInterfacedObject, IService)
   public
     procedure DoSomething;
+  end;
+
+  TMyInterceptorSelector = class(TInterfacedObject, IModelInterceptorsSelector)
+  public
+    function HasInterceptors(const model: TComponentModel): Boolean;
+    function SelectInterceptors(const model: TComponentModel;
+      const interceptors: array of TInterceptorReference): TArray<TInterceptorReference>;
   end;
 
 implementation
@@ -699,6 +707,24 @@ end;
 procedure TService.DoSomething;
 begin
   raise EInvalidOperationException.Create('Some exception raised in DoSomething');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMyInterceptorSelector'}
+
+function TMyInterceptorSelector.HasInterceptors(
+  const model: TComponentModel): Boolean;
+begin
+  Result := model.ComponentTypeInfo.Name = 'TService';
+end;
+
+function TMyInterceptorSelector.SelectInterceptors(const model: TComponentModel;
+  const interceptors: array of TInterceptorReference): TArray<TInterceptorReference>;
+begin
+  Result := TArray<TInterceptorReference>.Create(
+    TInterceptorReference.ForType<TExceptionAspect>);
 end;
 
 {$ENDREGION}

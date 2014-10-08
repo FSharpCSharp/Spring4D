@@ -30,6 +30,7 @@ interface
 
 uses
   Spring,
+  Spring.Collections,
   Spring.Container.Core,
   Spring.Interception;
 
@@ -38,9 +39,15 @@ type
   private
     fKernel: IKernel;
     fGenerator: TProxyGenerator;
+    fSelectors: IList<IModelInterceptorsSelector>;
+  protected
+    function GetInterceptorsFor(const model: TComponentModel): TArray<TInterceptorReference>;
+    function ObtainInterceptors(const model: TComponentModel): TArray<IInterceptor>;
   public
     constructor Create(const kernel: IKernel);
     destructor Destroy; override;
+
+    procedure AddInterceptorSelector(const selector: IModelInterceptorsSelector);
 
     function CreateInstance(const context: ICreationContext;
       const instance: TValue; const model: TComponentModel;
@@ -57,6 +64,7 @@ begin
   inherited Create;
   fKernel := kernel;
   fGenerator := TProxyGenerator.Create;
+  fSelectors := TCollections.CreateList<IModelInterceptorsSelector>;
 end;
 
 destructor TProxyFactory.Destroy;
@@ -65,32 +73,56 @@ begin
   inherited;
 end;
 
+procedure TProxyFactory.AddInterceptorSelector(
+  const selector: IModelInterceptorsSelector);
+begin
+  fSelectors.Add(selector);
+end;
+
 function TProxyFactory.CreateInstance(const context: ICreationContext;
   const instance: TValue; const model: TComponentModel;
   const constructorArguments: array of TValue): TValue;
 var
   interceptors: TArray<IInterceptor>;
-  i: Integer;
-  interceptorRef: TInterceptorReference;
-  interceptor: TValue;
 begin
-  if model.Interceptors.Any then
-  begin
-    SetLength(interceptors, model.Interceptors.Count);
-    for i := Low(interceptors) to High(interceptors) do
-    begin
-      interceptorRef := model.Interceptors[i];
-      if Assigned(interceptorRef.Key) then
-        interceptor := (fKernel as IKernelInternal).Resolve(interceptorRef.Key)
-      else
-        interceptor := (fKernel as IKernelInternal).Resolve(interceptorRef.Value);
-      interceptors[i] := interceptor.AsInterface as IInterceptor;
-    end;
-    Result := fGenerator.CreateInterfaceProxyWithTarget(instance.TypeInfo,
-      instance.AsInterface, interceptors);
-  end
+  interceptors := ObtainInterceptors(model);
+  if Assigned(interceptors) then
+    Result := fGenerator.CreateInterfaceProxyWithTarget(
+      instance.TypeInfo, instance.AsInterface, interceptors)
   else
     Result := instance;
+end;
+
+function TProxyFactory.GetInterceptorsFor(
+  const model: TComponentModel): TArray<TInterceptorReference>;
+var
+  interceptors: TArray<TInterceptorReference>;
+  selector: IModelInterceptorsSelector;
+begin
+  interceptors := model.Interceptors.ToArray;
+  for selector in fSelectors do
+    if selector.HasInterceptors(model) then
+      interceptors := selector.SelectInterceptors(model, interceptors);
+  Result := interceptors;
+end;
+
+function TProxyFactory.ObtainInterceptors(
+  const model: TComponentModel): TArray<IInterceptor>;
+var
+  interceptorRef: TInterceptorReference;
+  interceptors: IList<IInterceptor>;
+  interceptor: TValue;
+begin
+  interceptors := TCollections.CreateList<IInterceptor>;
+  for interceptorRef in GetInterceptorsFor(model) do
+  begin
+    if Assigned(interceptorRef.TypeInfo) then
+      interceptor := (fKernel as IKernelInternal).Resolve(interceptorRef.TypeInfo)
+    else
+      interceptor := (fKernel as IKernelInternal).Resolve(interceptorRef.Name);
+    interceptors.Add(interceptor.AsInterface as IInterceptor);
+  end;
+  Result := interceptors.ToArray;
 end;
 
 {$ENDREGION}

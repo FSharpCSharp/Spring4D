@@ -102,13 +102,16 @@ type
     procedure SetUp; override;
   published
     procedure TestByAttributes;
-    procedure TestByRegistration;
+    procedure TestByRegistrationOfClass;
+    procedure TestByRegistrationOfInterface;
+    procedure TestByRegistrationWithSelector;
   end;
 
 implementation
 
 uses
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Container.Core;
 
 
 {$REGION 'TFreezableTest'}
@@ -629,11 +632,41 @@ begin
   FCheckCalled := True;
 end;
 
-procedure TTestInterception.TestByRegistration;
+procedure TTestInterception.TestByRegistrationOfClass;
 var
   service: IService;
 begin
   fContainer.RegisterType<TService>.InterceptedBy('except');
+  fContainer.Build;
+
+  service := fContainer.Resolve<IService>;
+  service.DoSomething;
+  FCheckCalled := True;
+end;
+
+procedure TTestInterception.TestByRegistrationOfInterface;
+var
+  service: IService;
+begin
+  fContainer.RegisterType<IService>.DelegateTo(
+    function: IService
+    begin
+      Result := TService.Create;
+    end).InterceptedBy('except');
+  fContainer.Build;
+
+  service := fContainer.Resolve<IService>;
+  service.DoSomething;
+  FCheckCalled := True;
+end;
+
+procedure TTestInterception.TestByRegistrationWithSelector;
+var
+  service: IService;
+begin
+  fContainer.Kernel.ProxyFactory.AddInterceptorSelector(
+    TMyInterceptorSelector.Create as IModelInterceptorsSelector);
+  fContainer.RegisterType<TService>;
   fContainer.Build;
 
   service := fContainer.Resolve<IService>;

@@ -272,14 +272,35 @@ type
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
+  TInterceptorReference = record
+  private
+    fTypeInfo: PTypeInfo;
+    fName: string;
+  public
+    constructor Create(typeInfo: PTypeInfo); overload;
+    constructor Create(const name: string); overload;
+
+    class function ForType<T>: TInterceptorReference; static;
+
+    property TypeInfo: PTypeInfo read fTypeInfo;
+    property Name: string read fName;
+  end;
+
+  IModelInterceptorsSelector = interface
+    ['{118AE0DF-C257-4395-83AF-65F86AB12A2D}']
+    function HasInterceptors(const model: TComponentModel): Boolean;
+    function SelectInterceptors(const model: TComponentModel;
+      const interceptors: array of TInterceptorReference): TArray<TInterceptorReference>;
+  end;
+
   IProxyFactory = interface
     ['{4813914F-810D-451D-8AED-205C3F82C068}']
+    procedure AddInterceptorSelector(const selector: IModelInterceptorsSelector);
+
     function CreateInstance(const context: ICreationContext;
       const instance: TValue; const model: TComponentModel;
       const constructorArguments: array of TValue): TValue;
   end;
-
-  TInterceptorReference = TPair<PTypeInfo, string>;
 
   ///	<summary>
   ///	  TComponentModel
@@ -408,6 +429,28 @@ begin
 end;
 
 {$ENDREGION'}
+
+
+{$REGION 'TInterceptorReference'}
+
+constructor TInterceptorReference.Create(typeInfo: PTypeInfo);
+begin
+  fTypeInfo := typeInfo;
+  fName := '';
+end;
+
+constructor TInterceptorReference.Create(const name: string);
+begin
+  fTypeInfo := nil;
+  fName := name;
+end;
+
+class function TInterceptorReference.ForType<T>: TInterceptorReference;
+begin
+  Result := TInterceptorReference.Create(System.TypeInfo(T));
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TComponentModel'}
