@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 /// <summary>
 ///   Provides many easy to use class helpers &amp; record helpers that extend
 ///   some common classes in the RTL.
@@ -50,7 +52,6 @@
 /// </example>
 unit Spring.Helpers;
 
-{$I Spring.inc}
 {$IFDEF DELPHIXE4_UP}
   {$ZEROBASEDSTRINGS OFF}
 {$ENDIF}

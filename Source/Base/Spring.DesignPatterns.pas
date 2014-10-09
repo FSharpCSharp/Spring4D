@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  This namespace contains the following classical design patterns:
 ///	  <list type="bullet">
@@ -41,8 +43,6 @@
 ///	</summary>
 ///	<preliminary />
 unit Spring.DesignPatterns;
-
-{$I Spring.inc}
 
 interface
 

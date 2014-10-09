@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Adapters;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Adapters;
 
 interface
 
@@ -72,6 +72,8 @@ type
     function GetItem(index: Integer): TValue;
     procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const item: TValue);
+
+    function Add(const item: TValue): Integer;
 
     procedure Insert(index: Integer; const item: TValue);
     procedure InsertRange(index: Integer; const collection: array of TValue); overload;
@@ -325,6 +327,11 @@ constructor TListAdapter<T>.Create(const source: IList<T>);
 begin
   inherited Create(source);
   fSource := source;
+end;
+
+function TListAdapter<T>.Add(const item: TValue): Integer;
+begin
+  Result := fSource.Add(item.AsType<T>);
 end;
 
 function TListAdapter<T>.AsReadOnlyList: IReadOnlyList;

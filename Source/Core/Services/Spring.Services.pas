@@ -22,12 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  Defines the common interfaces for a service locator.
 ///	</summary>
 unit Spring.Services;
-
-{$I Spring.inc}
 
 interface
 

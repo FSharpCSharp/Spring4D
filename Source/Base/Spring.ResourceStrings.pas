@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.ResourceStrings;
 
 interface
@@ -57,6 +59,8 @@ resourcestring
   SInsufficientMemoryException    = 'Insufficient memory.';
 
   SUnexpectedArgumentLength = 'Unexpected parameter length.';
+
+  SCriticalSectionNotInitialized = 'Critical section was not initialized';
 
   SServiceLocatorNotInitialized = 'The global ServiceLocator has not been initialized.';
 

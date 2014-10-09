@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.CreationContext;
-
 {$I Spring.inc}
+
+unit Spring.Container.CreationContext;
 
 interface
 
@@ -173,7 +173,8 @@ end;
 
 procedure TCreationContext.LeaveResolution(const model: TComponentModel);
 begin
-  Assert(fResolutionStack.Pop = model);
+  if fResolutionStack.Pop <> model then
+    raise EResolveException.CreateRes(@SResolutionStackUnbalanced);
 end;
 
 function TCreationContext.Resolve(const context: ICreationContext;

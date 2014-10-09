@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Cryptography.Utils;
-
 {$I Spring.inc}
+
+unit Spring.Cryptography.Utils;
 
 interface
 

@@ -41,16 +41,51 @@ type
     procedure TestIsDelegateTypeWithNil;
     procedure TestIsDelegateTypeWithIInterface;
     procedure TestIsDelegateTypeWithTObject;
+
+    procedure TestIsAssignableClassAndInterfaceNotImplemented;
+    procedure TestIsAssignableClassAndInterfaceImplemented;
+  end;
+
+  ITestInterface1 = interface
+    ['{4A7F972F-3EED-44E2-983D-C052A2A1CCFA}']
+  end;
+
+  ITestInterface2 = interface
+    ['{E14D2471-EBCC-4A9E-AE0D-5F88AED4AD39}']
+  end;
+
+  ITestInterface3 = interface
+    ['{13473FD9-6092-4D66-933B-4CA96CF7A004}']
+  end;
+
+  ITestInterface4 = interface
+    ['{59953D36-963C-4655-9B38-5C5B553662D5}']
+  end;
+
+  TTestObject = class(TInterfacedObject, ITestInterface1, ITestInterface2, ITestInterface3)
+
   end;
 
 implementation
 
 uses
   SysUtils,
+  TypInfo,
+  Spring,
   Spring.Reflection;
 
 
 {$REGION 'TTestType'}
+
+procedure TTestType.TestIsAssignableClassAndInterfaceNotImplemented;
+begin
+  CheckFalse(TType.IsAssignable(TypeInfo(TTestObject), TypeInfo(ITestInterface4)));
+end;
+
+procedure TTestType.TestIsAssignableClassAndInterfaceImplemented;
+begin
+  CheckTrue(TType.IsAssignable(TypeInfo(TTestObject), TypeInfo(ITestInterface3)));
+end;
 
 procedure TTestType.TestIsDelegateTypeWithIInterface;
 begin

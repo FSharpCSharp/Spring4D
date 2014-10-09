@@ -69,6 +69,7 @@ uses
   IniFiles,
   RTLConsts,
   Spring.Reflection,
+  Spring.Container.Common,
   Spring.Container.Registration,
   Spring.Logging,
   Spring.Logging.Extensions,
@@ -79,11 +80,11 @@ uses
   Spring.Logging.Container;
 
 type
-  TRegisterProc = reference to procedure (const reg: TRegistration;
+  TRegisterProc = reference to procedure (const reg: IRegistration;
     const name: string);
-  TPropertyFunc = reference to function (const reg: TRegistration;
+  TPropertyFunc = reference to function (const reg: IRegistration;
     const serviceName, name, value: string; var ctx: Boolean): Boolean;
-  TPropertiesReadProc = reference to procedure (const reg: TRegistration;
+  TPropertiesReadProc = reference to procedure (const reg: IRegistration;
     const ctx: Boolean);
 
 
@@ -322,7 +323,7 @@ end;
 procedure TConfigurationReader.ReadAppenders;
 begin
   ReadSection(SAppenders, nil,
-    procedure (const reg: TRegistration; const name: string)
+    procedure (const reg: IRegistration; const name: string)
     begin
       if fAppenders = nil then
         fAppenders := TCollections.CreateList<string>;
@@ -339,14 +340,14 @@ var
   s: string;
 begin
   result := ReadSection(SControllers, TType.GetType(TLoggerController),
-    procedure (const reg: TRegistration; const name: string)
+    procedure (const reg: IRegistration; const name: string)
     begin
       reg.InjectConstructor;
       reg.Implements(TypeInfo(ILogAppender), SPrefix + name + SAppenderSuffix);
       reg.Implements(TypeInfo(ILoggerController), SPrefix + name + SControllerSuffix);
     end,
 
-    function (const reg: TRegistration; const serviceName, name, value: string;
+    function (const reg: IRegistration; const serviceName, name, value: string;
       var ctx: Boolean): Boolean
     begin
       if SameText(SAppender, name) then
@@ -380,12 +381,12 @@ var
   result: Boolean;
 begin
   result := ReadSection(SLoggers, TType.GetType(TLogger),
-    procedure (const reg: TRegistration; const name: string)
+    procedure (const reg: IRegistration; const name: string)
     begin
       reg.Implements(TypeInfo(ILogger), SPrefix + name);
     end,
 
-    function (const reg: TRegistration; const serviceName, name, value: string;
+    function (const reg: IRegistration; const serviceName, name, value: string;
       var ctx: Boolean): Boolean
     begin
       if SameText(SController, name) then
@@ -404,7 +405,7 @@ begin
         Result := False;
     end,
 
-    procedure (const reg: TRegistration; const ctx: Boolean)
+    procedure (const reg: IRegistration; const ctx: Boolean)
     begin
       //If controller was not seen inject the default one
       if not ctx then
@@ -431,7 +432,7 @@ var
   value: string;
   classType: TRttiType;
   prop: TRttiProperty;
-  reg: TRegistration;
+  reg: IRegistration;
   i: Integer;
   ctx: Boolean;
 begin

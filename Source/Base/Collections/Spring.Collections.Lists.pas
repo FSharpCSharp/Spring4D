@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Lists;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Lists;
 
 interface
 
@@ -91,19 +91,22 @@ type
     function GetItem(index: Integer): T; override;
     function GetItems: TArray<T>;
     procedure SetCapacity(value: Integer); override;
+    procedure SetCount(value: Integer); override;
     procedure SetItem(index: Integer; const value: T); override;
   {$ENDREGION}
 
     function EnsureCapacity(value: Integer): Integer;
   public
     constructor Create; override;
+    constructor Create(const collection: array of T); override;
+    constructor Create(const collection: IEnumerable<T>); override;
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
 
     procedure Clear; override;
 
-    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; override;
+    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean; override;
     function IndexOf(const item: T; index, count: Integer): Integer; override;
 
     procedure Insert(index: Integer; const item: T); override;
@@ -166,7 +169,7 @@ type
   protected
     procedure SetItem(index: Integer; const value: T); override;
   public
-    procedure Add(const item: T); override;
+    function Add(const item: T): Integer; override;
     procedure Insert(index: Integer; const item: T); override;
 
     function Contains(const value: T): Boolean; override;
@@ -265,6 +268,38 @@ begin
   else
 {$ENDIF}
     fArrayManager := TMoveArrayManager<T>.Create;
+end;
+
+constructor TList<T>.Create(const collection: array of T);
+var
+  i: Integer;
+begin
+  Create;
+  fCount := Length(collection);
+  if fCount > 0 then
+  begin
+    SetLength(fItems, fCount);
+    for i := Low(collection) to High(collection) do
+      fItems[i] := collection[i];
+  end;
+end;
+
+constructor TList<T>.Create(const collection: IEnumerable<T>);
+var
+  c: ICollection<T>;
+begin
+  if Supports(collection, ICollection<T>, c) then
+  begin
+    Create;
+    fCount := c.Count;
+    if fCount > 0 then
+    begin
+      SetLength(fItems, fCount);
+      c.CopyTo(fItems, 0);
+    end;
+  end
+  else
+    inherited;
 end;
 
 destructor TList<T>.Destroy;
@@ -519,6 +554,19 @@ begin
   SetLength(fItems, value);
 end;
 
+procedure TList<T>.SetCount(value: Integer);
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange(count >= 0, 'count');
+{$ENDIF}
+
+  if value > Capacity then
+    SetCapacity(value);
+  if value < fCount then
+    DeleteRange(value, fCount - value);
+  fCount := value;
+end;
+
 procedure TList<T>.Delete(index: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -543,7 +591,7 @@ begin
 end;
 
 function TList<T>.Contains(const value: T;
-  comparer: IEqualityComparer<T>): Boolean;
+  const comparer: IEqualityComparer<T>): Boolean;
 var
   index: Integer;
 begin
@@ -554,12 +602,18 @@ begin
 end;
 
 procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
+var
+  i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(Length(values), index, fCount);
 {$ENDIF}
 
-  fArrayManager.Move(fItems, TArrayOfT(values), 0, index, fCount);
+  for i := 0 to fCount - 1 do
+  begin
+    values[index] := fItems[i];
+    Inc(index);
+  end;
 end;
 
 function TList<T>.ToArray: TArray<T>;
@@ -703,12 +757,10 @@ end;
 
 {$REGION 'TSortedList<T>'}
 
-procedure TSortedList<T>.Add(const item: T);
-var
-  index: Integer;
+function TSortedList<T>.Add(const item: T): Integer;
 begin
-  TArray.BinarySearch<T>(fItems, item, index, Comparer, 0, Count);
-  inherited Insert(index, item);
+  TArray.BinarySearch<T>(fItems, item, Result, Comparer, 0, Count);
+  inherited Insert(Result, item);
 end;
 
 function TSortedList<T>.Contains(const value: T): Boolean;
@@ -996,4 +1048,3 @@ end;
 
 
 end.
-

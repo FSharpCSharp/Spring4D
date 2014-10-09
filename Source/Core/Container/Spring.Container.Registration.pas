@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Registration;
-
 {$I Spring.inc}
+
+unit Spring.Container.Registration;
 
 interface
 
@@ -82,62 +82,60 @@ type
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
 
-  ///	<summary>
-  ///	  Internal helper class for non-generic fluent style registration of a
-  ///	  component.
-  ///	</summary>
-  TRegistration = record
+  /// <summary>
+  ///   Internal helper for non-generic fluent style registration of a type.
+  /// </summary>
+  TRegistration = class sealed(TInterfacedObject, IRegistration)
   private
     fKernel: IKernel;
     fModel: TComponentModel;
     constructor Create(const kernel: IKernel; componentType: PTypeInfo);
   public
-    function Implements(serviceType: PTypeInfo): TRegistration; overload;
-    function Implements(serviceType: PTypeInfo; const name: string): TRegistration; overload;
+    function Implements(serviceType: PTypeInfo): IRegistration; overload;
+    function Implements(serviceType: PTypeInfo; const name: string): IRegistration; overload;
 
-    function DelegateTo(const delegate: TActivatorDelegate): TRegistration; overload;
+    function DelegateTo(const delegate: TActivatorDelegate): IRegistration; overload;
 
     {$REGION 'Typed Injections'}
 
-    function InjectConstructor: TRegistration; overload;
-    function InjectConstructor(const parameterTypes: array of PTypeInfo): TRegistration; overload;
-    function InjectProperty(const propertyName: string): TRegistration; overload;
-    function InjectMethod(const methodName: string): TRegistration; overload;
-    function InjectMethod(const methodName: string; const parameterTypes: array of PTypeInfo): TRegistration; overload;
-    function InjectField(const fieldName: string): TRegistration; overload;
+    function InjectConstructor: IRegistration; overload;
+    function InjectConstructor(const parameterTypes: array of PTypeInfo): IRegistration; overload;
+    function InjectProperty(const propertyName: string): IRegistration; overload;
+    function InjectMethod(const methodName: string): IRegistration; overload;
+    function InjectMethod(const methodName: string; const parameterTypes: array of PTypeInfo): IRegistration; overload;
+    function InjectField(const fieldName: string): IRegistration; overload;
 
     {$ENDREGION}
 
     {$REGION 'Named/Valued Injections'}
 
-    function InjectConstructor(const arguments: array of TValue): TRegistration; overload;
-    function InjectProperty(const propertyName: string; const value: TValue): TRegistration; overload;
-    function InjectMethod(const methodName: string; const arguments: array of TValue): TRegistration; overload;
-    function InjectField(const fieldName: string; const value: TValue): TRegistration; overload;
+    function InjectConstructor(const arguments: array of TValue): IRegistration; overload;
+    function InjectProperty(const propertyName: string; const value: TValue): IRegistration; overload;
+    function InjectMethod(const methodName: string; const arguments: array of TValue): IRegistration; overload;
+    function InjectField(const fieldName: string; const value: TValue): IRegistration; overload;
 
     {$ENDREGION}
 
-    function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration;
-    function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration;
-    function AsTransient: TRegistration;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
+    function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
+    function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
+    function AsTransient: IRegistration;
+    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
 
-    function AsDefault: TRegistration; overload;
-    function AsDefault(serviceType: PTypeInfo): TRegistration; overload;
+    function AsDefault: IRegistration; overload;
+    function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
 {$IFDEF DELPHIXE_UP}
-    function AsFactory: TRegistration; overload;
-    function AsFactory(const name: string): TRegistration; overload;
+    function AsFactory: IRegistration; overload;
+    function AsFactory(const name: string): IRegistration; overload;
 {$ENDIF}
   end;
 
-  ///	<summary>
-  ///	  Internal helper class for generic fluent style registration of a
-  ///	  component.
-  ///	</summary>
+  /// <summary>
+  ///   Internal helper for generic fluent style registration of a type.
+  /// </summary>
   TRegistration<T> = record
   private
-    fRegistration: TRegistration;
+    fRegistration: IRegistration;
     constructor Create(const kernel: IKernel);
   public
     function Implements(serviceType: PTypeInfo): TRegistration<T>; overload;
@@ -182,22 +180,23 @@ type
 {$ENDIF}
   end;
 
-  ///	<summary>
-  ///	  Provides both generic and non-generic fluent-style registration
-  ///	  methods.
-  ///	</summary>
-  ///	<remarks>
-  ///	  Why both TRegistration and TRegistration(T) are defined as record and
-  ///	  their constructors are private, is to provide generic and non-generic
-  ///	  fluent-style registration with only necessary methods.
-  ///	</remarks>
+  /// <summary>
+  ///   Provides both generic and non-generic fluent-style registration
+  ///   methods.
+  /// </summary>
+  /// <remarks>
+  ///   TRegistration(T) is defined as record and the constructors of
+  ///   TRegistration and TRegistration(T) are private because they serve as
+  ///   helpers to provide generic and non-generic fluent-style registration
+  ///   with only necessary methods.
+  /// </remarks>
   TRegistrationManager = class
   private
     fKernel: IKernel;
   public
     constructor Create(const kernel: IKernel);
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
-    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
+    function RegisterType(componentType: PTypeInfo): IRegistration; overload;
   end;
 
 
@@ -539,113 +538,113 @@ begin
   fModel := fKernel.Registry.RegisterComponent(componentType);
 end;
 
-function TRegistration.Implements(serviceType: PTypeInfo): TRegistration;
+function TRegistration.Implements(serviceType: PTypeInfo): IRegistration;
 begin
   fKernel.Registry.RegisterService(fModel, serviceType);
   Result := Self;
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo;
-  const name: string): TRegistration;
+  const name: string): IRegistration;
 begin
   fKernel.Registry.RegisterService(fModel, serviceType, name);
   Result := Self;
 end;
 
-function TRegistration.DelegateTo(const delegate: TActivatorDelegate): TRegistration;
+function TRegistration.DelegateTo(const delegate: TActivatorDelegate): IRegistration;
 begin
   fModel.ActivatorDelegate := delegate;
   Result := Self;
 end;
 
-function TRegistration.InjectConstructor: TRegistration;
+function TRegistration.InjectConstructor: IRegistration;
 begin
   fKernel.Injector.InjectConstructor(fModel);
   Result := Self;
 end;
 
 function TRegistration.InjectConstructor(
-  const parameterTypes: array of PTypeInfo): TRegistration;
+  const parameterTypes: array of PTypeInfo): IRegistration;
 begin
   fKernel.Injector.InjectConstructor(fModel, parameterTypes);
   Result := Self;
 end;
 
 function TRegistration.InjectProperty(
-  const propertyName: string): TRegistration;
+  const propertyName: string): IRegistration;
 begin
   fKernel.Injector.InjectProperty(fModel, propertyName);
   Result := Self;
 end;
 
 function TRegistration.InjectMethod(const methodName: string;
-  const parameterTypes: array of PTypeInfo): TRegistration;
+  const parameterTypes: array of PTypeInfo): IRegistration;
 begin
   fKernel.Injector.InjectMethod(fModel, methodName, parameterTypes);
   Result := Self;
 end;
 
-function TRegistration.InjectMethod(const methodName: string): TRegistration;
+function TRegistration.InjectMethod(const methodName: string): IRegistration;
 begin
   fKernel.Injector.InjectMethod(fModel, methodName);
   Result := Self;
 end;
 
-function TRegistration.InjectField(const fieldName: string): TRegistration;
+function TRegistration.InjectField(const fieldName: string): IRegistration;
 begin
   fKernel.Injector.InjectField(fModel, fieldName);
   Result := Self;
 end;
 
 function TRegistration.InjectConstructor(
-  const arguments: array of TValue): TRegistration;
+  const arguments: array of TValue): IRegistration;
 begin
   fKernel.Injector.InjectConstructor(fModel, arguments);
   Result := Self;
 end;
 
 function TRegistration.InjectProperty(const propertyName: string;
-  const value: TValue): TRegistration;
+  const value: TValue): IRegistration;
 begin
   fKernel.Injector.InjectProperty(fModel, propertyName, value);
   Result := Self;
 end;
 
 function TRegistration.InjectMethod(const methodName: string;
-  const arguments: array of TValue): TRegistration;
+  const arguments: array of TValue): IRegistration;
 begin
   fKernel.Injector.InjectMethod(fModel, methodName, arguments);
   Result := Self;
 end;
 
 function TRegistration.InjectField(const fieldName: string;
-  const value: TValue): TRegistration;
+  const value: TValue): IRegistration;
 begin
   fKernel.Injector.InjectField(fModel, fieldName, value);
   Result := Self;
 end;
 
-function TRegistration.AsSingleton(refCounting: TRefCounting): TRegistration;
+function TRegistration.AsSingleton(refCounting: TRefCounting): IRegistration;
 begin
   fModel.LifetimeType := TLifetimeType.Singleton;
   fModel.RefCounting := refCounting;
   Result := Self;
 end;
 
-function TRegistration.AsSingletonPerThread(refCounting: TRefCounting): TRegistration;
+function TRegistration.AsSingletonPerThread(refCounting: TRefCounting): IRegistration;
 begin
   fModel.LifetimeType := TLifetimeType.SingletonPerThread;
   fModel.RefCounting := refCounting;
   Result := Self;
 end;
 
-function TRegistration.AsTransient: TRegistration;
+function TRegistration.AsTransient: IRegistration;
 begin
   fModel.LifetimeType := TLifetimeType.Transient;
   Result := Self;
 end;
 
-function TRegistration.AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration;
+function TRegistration.AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration;
 begin
   fModel.LifetimeType := TLifetimeType.Pooled;
   fModel.MinPoolsize := minPoolSize;
@@ -653,7 +652,7 @@ begin
   Result := Self;
 end;
 
-function TRegistration.AsDefault: TRegistration;
+function TRegistration.AsDefault: IRegistration;
 var
   serviceType: PTypeInfo;
 begin
@@ -662,20 +661,20 @@ begin
   Result := Self;
 end;
 
-function TRegistration.AsDefault(serviceType: PTypeInfo): TRegistration;
+function TRegistration.AsDefault(serviceType: PTypeInfo): IRegistration;
 begin
   fKernel.Registry.RegisterDefault(fModel, serviceType);
   Result := Self;
 end;
 
 {$IFDEF DELPHIXE_UP}
-function TRegistration.AsFactory: TRegistration;
+function TRegistration.AsFactory: IRegistration;
 begin
   fKernel.Registry.RegisterFactory(fModel);
   Result := Self;
 end;
 
-function TRegistration.AsFactory(const name: string): TRegistration;
+function TRegistration.AsFactory(const name: string): IRegistration;
 begin
   fKernel.Registry.RegisterFactory(fModel, name);
   Result := Self;
@@ -865,7 +864,7 @@ begin
 end;
 
 function TRegistrationManager.RegisterType(
-  componentType: PTypeInfo): TRegistration;
+  componentType: PTypeInfo): IRegistration;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(componentType, 'componentType');

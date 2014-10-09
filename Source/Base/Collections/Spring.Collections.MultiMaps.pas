@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.MultiMaps;
-
 {$I Spring.inc}
+
+unit Spring.Collections.MultiMaps;
 
 interface
 
@@ -32,7 +32,8 @@ uses
   Generics.Collections,
   Generics.Defaults,
   Spring.Collections,
-  Spring.Collections.Base;
+  Spring.Collections.Base,
+  Spring.Collections.Dictionaries;
 
 type
   TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>, IMultiMap<TKey, TValue>)
@@ -75,12 +76,13 @@ type
 
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>; override;
-        function Contains(const value: TValue; comparer: IEqualityComparer<TValue>): Boolean; override;
+        function Contains(const value: TValue;
+          const comparer: IEqualityComparer<TValue>): Boolean; override;
         function ToArray: TArray<TValue>; override;
       {$ENDREGION}
       end;
   private
-    fDictionary: IDictionary<TKey, ICollection<TValue>>;
+    fDictionary: TDictionary<TKey, ICollection<TValue>>;
     fCount: Integer;
     fEmpty: ICollection<TValue>;
     fValues: TValueCollection;
@@ -91,8 +93,9 @@ type
     function GetKeys: IReadOnlyCollection<TKey>; override;
     function GetValues: IReadOnlyCollection<TValue>; override;
   {$ENDREGION}
+    procedure AddInternal(const item: TGenericPair); overload; override;
     function CreateCollection: ICollection<TValue>; virtual; abstract;
-    function CreateDictionary: IDictionary<TKey, ICollection<TValue>>; virtual; abstract;
+    function CreateDictionary: TDictionary<TKey, ICollection<TValue>>; virtual; abstract;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -100,11 +103,10 @@ type
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TGenericPair>; override;
     function Contains(const value: TGenericPair;
-      comparer: IEqualityComparer<TGenericPair>): Boolean; override;
+      const comparer: IEqualityComparer<TGenericPair>): Boolean; override;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
-    procedure Add(const item: TGenericPair); overload; override;
     procedure Clear; override;
     function Remove(const item: TGenericPair): Boolean; overload; override;
     function Extract(const item: TGenericPair): TGenericPair; override;
@@ -135,7 +137,7 @@ type
       Action: TCollectionChangedAction);
   protected
     function CreateCollection: ICollection<TValue>; override;
-    function CreateDictionary: IDictionary<TKey, ICollection<TValue>>; override;
+    function CreateDictionary: TDictionary<TKey, ICollection<TValue>>; override;
   end;
 
   TObjectMultiMap<TKey, TValue> = class(TMultiMap<TKey, TValue>)
@@ -156,7 +158,6 @@ uses
   SysUtils,
   TypInfo,
   Spring,
-  Spring.Collections.Dictionaries,
   Spring.Collections.Lists,
   Spring.ResourceStrings;
 
@@ -174,6 +175,7 @@ end;
 destructor TMultiMapBase<TKey, TValue>.Destroy;
 begin
   fValues.Free;
+  fDictionary.Free;
   inherited;
 end;
 
@@ -191,7 +193,7 @@ begin
   Inc(fCount);
 end;
 
-procedure TMultiMapBase<TKey, TValue>.Add(const item: TGenericPair);
+procedure TMultiMapBase<TKey, TValue>.AddInternal(const item: TGenericPair);
 begin
   Add(item.Key, item.Value);
 end;
@@ -203,7 +205,7 @@ begin
 end;
 
 function TMultiMapBase<TKey, TValue>.Contains(const value: TGenericPair;
-  comparer: IEqualityComparer<TGenericPair>): Boolean;
+  const comparer: IEqualityComparer<TGenericPair>): Boolean;
 var
   list: ICollection<TValue>;
 begin
@@ -403,7 +405,7 @@ begin
 end;
 
 function TMultiMapBase<TKey, TValue>.TValueCollection.Contains(const value: TValue;
-  comparer: IEqualityComparer<TValue>): Boolean;
+  const comparer: IEqualityComparer<TValue>): Boolean;
 begin
   Result := fOwner.ContainsValue(value);
 end;
@@ -446,9 +448,9 @@ begin
   Result := list;
 end;
 
-function TMultiMap<TKey, TValue>.CreateDictionary: IDictionary<TKey, ICollection<TValue>>;
+function TMultiMap<TKey, TValue>.CreateDictionary: TDictionary<TKey, ICollection<TValue>>;
 begin
-  Result := TDictionary<TKey, ICollection<TValue>>.Create;
+  Result := TContainedDictionary<TKey, ICollection<TValue>>.Create(Self);
   Result.OnKeyChanged.Add(DoKeyChanged);
 end;
 

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Dictionaries;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Dictionaries;
 
 interface
 
@@ -65,7 +65,8 @@ type
 
       {$REGION 'Implements IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>; override;
-        function Contains(const value: TKey; comparer: IEqualityComparer<TKey>): Boolean; override;
+        function Contains(const value: TKey;
+          const comparer: IEqualityComparer<TKey>): Boolean; override;
         function ToArray: TArray<TKey>; override;
       {$ENDREGION}
       end;
@@ -83,7 +84,8 @@ type
 
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>; override;
-        function Contains(const value: TValue; comparer: IEqualityComparer<TValue>): Boolean; override;
+        function Contains(const value: TValue;
+          const comparer: IEqualityComparer<TValue>): Boolean; override;
         function ToArray: TArray<TValue>; override;
       {$ENDREGION}
       end;
@@ -105,6 +107,7 @@ type
     function GetValues: IReadOnlyCollection<TValue>; override;
     procedure SetItem(const key: TKey; const value: TValue); virtual;
   {$ENDREGION}
+    procedure AddInternal(const item: TGenericPair); override;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
@@ -117,12 +120,11 @@ type
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TGenericPair>; override;
     function Contains(const value: TGenericPair;
-      comparer: IEqualityComparer<TGenericPair>): Boolean; override;
+      const comparer: IEqualityComparer<TGenericPair>): Boolean; override;
     function ToArray: TArray<TGenericPair>; override;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
-    procedure Add(const item: TGenericPair); overload; override;
     procedure Clear; override;
     function Remove(const item: TGenericPair): Boolean; overload; override;
     function Extract(const item: TGenericPair): TGenericPair; override;
@@ -145,6 +147,20 @@ type
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
   {$ENDREGION}
+  end;
+
+  TContainedDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
+  private
+    fController: Pointer;
+    function GetController: IInterface;
+  protected
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
+  {$ENDREGION}
+  public
+    constructor Create(const controller: IInterface);
+    property Controller: IInterface read GetController;
   end;
 
 implementation
@@ -238,7 +254,7 @@ begin
   Result := TEnumeratorAdapter<TGenericPair>.Create(dictionary);
 end;
 
-procedure TDictionary<TKey, TValue>.Add(const item: TGenericPair);
+procedure TDictionary<TKey, TValue>.AddInternal(const item: TGenericPair);
 begin
   fDictionary.Add(item.Key, item.Value);
 end;
@@ -249,7 +265,7 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.Contains(const value: TGenericPair;
-  comparer: IEqualityComparer<TGenericPair>): Boolean;
+  const comparer: IEqualityComparer<TGenericPair>): Boolean;
 var
   item: TValue;
 begin
@@ -422,7 +438,7 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.TKeyCollection.Contains(const value: TKey;
-  comparer: IEqualityComparer<TKey>): Boolean;
+  const comparer: IEqualityComparer<TKey>): Boolean;
 begin
   Result := fDictionary.ContainsKey(value);
 end;
@@ -464,7 +480,7 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.TValueCollection.Contains(const value: TValue;
-  comparer: IEqualityComparer<TValue>): Boolean;
+  const comparer: IEqualityComparer<TValue>): Boolean;
 begin
   Result := fDictionary.ContainsValue(value);
 end;
@@ -491,6 +507,33 @@ end;
 function TDictionary<TKey, TValue>.TValueCollection.GetCount: Integer;
 begin
   Result := fDictionary.Count;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TContainedDictionary<TKey, TValue>'}
+
+constructor TContainedDictionary<TKey, TValue>.Create(
+  const controller: IInterface);
+begin
+  inherited Create;
+  fController := Pointer(controller);
+end;
+
+function TContainedDictionary<TKey, TValue>.GetController: IInterface;
+begin
+  Result := IInterface(fController);
+end;
+
+function TContainedDictionary<TKey, TValue>._AddRef: Integer;
+begin
+  Result := IInterface(FController)._AddRef;
+end;
+
+function TContainedDictionary<TKey, TValue>._Release: Integer;
+begin
+  Result := IInterface(FController)._Release;
 end;
 
 {$ENDREGION}

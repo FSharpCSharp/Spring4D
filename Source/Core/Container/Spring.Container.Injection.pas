@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Injection;
-
 {$I Spring.inc}
+
+unit Spring.Container.Injection;
 
 interface
 

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.ResourceStrings;
-
 {$I Spring.inc}
+
+unit Spring.Container.ResourceStrings;
 
 interface
 
@@ -37,6 +37,7 @@ resourcestring
   SServiceNotFound = 'Service not found: %s';
   SCircularDependencyDetected = 'Circular dependency detected on type: %s';
   SCannotResolveType = 'Cannot resolve type: %s';
+  SResolutionStackUnbalanced = 'Resolution stack is unbalanced';
   SNoDefaultFound = 'No default found for type: %s';
   SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor of type: %s';
   SAmbiguousConstructor = 'Ambiguous constructor on class: %s';
