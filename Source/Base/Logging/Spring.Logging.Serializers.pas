@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Logging.Serializers;
-
 {$I Spring.inc}
+
+unit Spring.Logging.Serializers;
 
 interface
 

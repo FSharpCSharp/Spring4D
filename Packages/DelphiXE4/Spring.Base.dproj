@@ -125,6 +125,7 @@
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Controller.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Extensions.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Loggers.pas"/>
+        <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.NullLogger.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Serializers.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>

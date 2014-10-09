@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Logging.NullLogger;
-
 {$I Spring.inc}
+
+unit Spring.Logging.NullLogger;
 
 interface
 

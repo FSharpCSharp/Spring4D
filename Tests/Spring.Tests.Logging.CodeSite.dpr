@@ -69,7 +69,7 @@ end;
 
 begin
   log := InitLog;
-  log.Entering(TLogLevel.Info, nil, 'Spring.Tests.Logging.CodeSite');
+  log.Enter(TLogLevel.Info, nil, 'Spring.Tests.Logging.CodeSite');
   log.Fatal('Fatal message');
   log.Error('Error message');
   log.Info('Info message');
@@ -79,5 +79,5 @@ begin
   TestTrack;
   TestException;
   TestValues;
-  log.Leaving(TLogLevel.Info, nil, 'Spring.Tests.Logging.CodeSite');
+  log.Leave(TLogLevel.Info, nil, 'Spring.Tests.Logging.CodeSite');
 end.

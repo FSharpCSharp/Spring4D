@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Logging.Appenders;
-
 {$I Spring.inc}
+
+unit Spring.Logging.Appenders;
 
 interface
 

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Logging.Controller;
-
 {$I Spring.inc}
+
+unit Spring.Logging.Controller;
 
 interface
 
@@ -56,8 +56,8 @@ type
     function IsLoggable(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean;
   public
     constructor Create; overload;
-    constructor Create(const appenders: array of ILogAppender); overload;
     constructor Create(const appenders: TArray<ILogAppender>); overload;
+    constructor Create(const appenders: array of ILogAppender); overload;
 
     procedure AddAppender(const appender: ILogAppender);
     procedure AddSerializer(const serializer: ITypeSerializer);
@@ -82,13 +82,13 @@ begin
   fSerializers := TCollections.CreateInterfaceList<ITypeSerializer>;
 end;
 
-constructor TLoggerController.Create(const appenders: array of ILogAppender);
+constructor TLoggerController.Create(const appenders: TArray<ILogAppender>);
 begin
   Create;
   fAppenders.AddRange(appenders);
 end;
 
-constructor TLoggerController.Create(const appenders: TArray<ILogAppender>);
+constructor TLoggerController.Create(const appenders: array of ILogAppender);
 begin
   Create;
   fAppenders.AddRange(appenders);

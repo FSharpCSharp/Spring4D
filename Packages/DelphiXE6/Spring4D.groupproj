@@ -15,9 +15,6 @@
         <Projects Include="..\..\Tests\Spring.Tests.DelphiXE6.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\..\Tests\Spring.Tests.Logging.CodeSite.XE6.dproj">
-            <Dependencies/>
-        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -62,23 +59,14 @@
     <Target Name="Spring_Tests_DelphiXE6:Make">
         <MSBuild Projects="..\..\Tests\Spring.Tests.DelphiXE6.dproj" Targets="Make"/>
     </Target>
-    <Target Name="Spring_Tests_Logging_CodeSite_XE6">
-        <MSBuild Projects="..\..\Tests\Spring.Tests.Logging.CodeSite.XE6.dproj"/>
-    </Target>
-    <Target Name="Spring_Tests_Logging_CodeSite_XE6:Clean">
-        <MSBuild Projects="..\..\Tests\Spring.Tests.Logging.CodeSite.XE6.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="Spring_Tests_Logging_CodeSite_XE6:Make">
-        <MSBuild Projects="..\..\Tests\Spring.Tests.Logging.CodeSite.XE6.dproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests_DelphiXE6;Spring_Tests_Logging_CodeSite_XE6"/>
+        <CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests_DelphiXE6"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests_DelphiXE6:Clean;Spring_Tests_Logging_CodeSite_XE6:Clean"/>
+        <CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests_DelphiXE6:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests_DelphiXE6:Make;Spring_Tests_Logging_CodeSite_XE6:Make"/>
+        <CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests_DelphiXE6:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

@@ -59,6 +59,7 @@ contains
   Spring.Logging.Controller in '..\..\Source\Base\Logging\Spring.Logging.Controller.pas',
   Spring.Logging.Extensions in '..\..\Source\Base\Logging\Spring.Logging.Extensions.pas',
   Spring.Logging.Loggers in '..\..\Source\Base\Logging\Spring.Logging.Loggers.pas',
+  Spring.Logging.NullLogger in '..\..\Source\Base\Logging\Spring.Logging.NullLogger.pas',
   Spring.Logging.ResourceStrings in '..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas',
   Spring.Logging.Serializers in '..\..\Source\Base\Logging\Spring.Logging.Serializers.pas',
   Spring.Reflection in '..\..\Source\Base\Reflection\Spring.Reflection.pas',

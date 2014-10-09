@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Logging.Loggers;
-
 {$I Spring.inc}
+
+unit Spring.Logging.Loggers;
 
 interface
 
