@@ -57,6 +57,7 @@ contains
   Spring.Reflection.Activator in '..\..\Source\Base\Reflection\Spring.Reflection.Activator.pas',
   Spring.Reflection.ValueConverters in '..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas',
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
-  Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas';
+  Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas',
+  Spring.Times in '..\..\Source\Base\Spring.Times.pas';
 
 end.

@@ -43,7 +43,8 @@ uses
   TimeSpan,
   Types,
   TypInfo,
-  Variants;
+  Variants,
+  Spring.Times;
 
 type
 
@@ -82,6 +83,8 @@ type
 {$IFNDEF DELPHIXE_UP}
   TThreadID = LongWord;
 {$ENDIF}
+
+  Times = Spring.Times.Times;
 
   {$ENDREGION}
 
@@ -255,6 +258,42 @@ type
 {$ENDIF}
     class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
     class procedure CheckRange(length, index, count: Integer; indexBase: Integer = 0); overload; static; inline;
+
+    /// <summary>
+    ///   Checks an argument to ensure it is in the specified range including
+    ///   the bounds.
+    /// </summary>
+    /// <param name="value">
+    ///   The argument value to check.
+    /// </param>
+    /// <param name="min">
+    ///   The minimum allowed value for the argument.
+    /// </param>
+    /// <param name="max">
+    ///   The maximum allowed value for the argument.
+    /// </param>
+    /// <exception cref="EArgumentOutOfRangeException">
+    ///   The value is not within the specified range.
+    /// </exception>
+    class procedure CheckRangeInclusive(value, min, max: Integer); overload; static; inline;
+
+    /// <summary>
+    ///   Checks an argument to ensure it is in the specified range excluding
+    ///   the bounds.
+    /// </summary>
+    /// <param name="value">
+    ///   The argument value to check.
+    /// </param>
+    /// <param name="min">
+    ///   The minimum allowed value for the argument.
+    /// </param>
+    /// <param name="max">
+    ///   The maximum allowed value for the argument. <br />
+    /// </param>
+    /// <exception cref="EArgumentOutOfRangeException">
+    ///   The value is not within the specified range.
+    /// </exception>
+    class procedure CheckRangeExclusive(value, min, max: Integer); overload; static; inline;
 
     class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
     class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
@@ -1439,6 +1478,23 @@ class procedure Guard.CheckRange(const s: string; index, count: Integer);
 begin
   Guard.CheckRange(Length(s), index, count, 1);
 end;
+
+class procedure Guard.CheckRangeInclusive(value, min, max: Integer);
+const
+  ValueArgName = 'value';
+begin
+  if (value < min) or (value > max) then
+    Guard.RaiseArgumentOutOfRangeException(ValueArgName);
+end;
+
+class procedure Guard.CheckRangeExclusive(value, min, max: Integer);
+const
+  ValueArgName = 'value';
+begin
+  if (value <= min) or (value >= max) then
+    Guard.RaiseArgumentOutOfRangeException(ValueArgName);
+end;
+
 
 {$IFNDEF NEXTGEN}
 class procedure Guard.CheckRange(const s: WideString; index: Integer);
