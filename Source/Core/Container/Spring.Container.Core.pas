@@ -34,6 +34,7 @@ uses
   SysUtils,
   Spring,
   Spring.Collections,
+  Spring.Logging,
   Spring.Container.Common,
   Spring.DesignPatterns;
 
@@ -83,6 +84,8 @@ type
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
     function GetProxyFactory: IProxyFactory;
+    function GetLogger: ILogger;
+    procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
     procedure AddExtension(const extension: IContainerExtension);
 
@@ -91,6 +94,7 @@ type
     property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
     property ProxyFactory: IProxyFactory read GetProxyFactory;
+    property Logger: ILogger read GetLogger write SetLogger;
   end;
 
   IKernelInternal = interface

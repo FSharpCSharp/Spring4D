@@ -35,6 +35,7 @@ uses
   Spring.Container.Common,
   Spring.Container.Core,
   Spring.Container.Registration,
+  Spring.Logging,
   Spring.Services;
 
 type
@@ -50,6 +51,7 @@ type
     fResolver: IDependencyResolver;
     fProxyFactory: IProxyFactory;
     fExtensions: IList<IContainerExtension>;
+    fLogger: ILogger;
     class var GlobalInstance: TContainer;
     function GetKernel: IKernel;
     type
@@ -63,6 +65,8 @@ type
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
     function GetProxyFactory: IProxyFactory;
+    function GetLogger: ILogger;
+    procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
     property Builder: IComponentBuilder read GetBuilder;
@@ -113,6 +117,7 @@ type
 {$ENDIF}
 
     property Kernel: IKernel read GetKernel;
+    property Logger: ILogger read GetLogger write SetLogger;
   end;
 
   ///	<summary>
@@ -173,6 +178,7 @@ uses
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
+  Spring.Logging.NullLogger,
   Spring.Reflection;
 
 
@@ -193,6 +199,9 @@ type
   public
     constructor Create(const kernel: IKernel);
 
+    procedure AddInterceptorSelector( 
+      const selector: IModelInterceptorsSelector);
+
     function CreateInstance(const context: ICreationContext;
       const instance: TValue; const model: TComponentModel;
       const constructorArguments: array of TValue): TValue;
@@ -201,6 +210,11 @@ type
 constructor TProxyFactory.Create(const kernel: IKernel);
 begin
   inherited Create;
+end;
+
+procedure TProxyFactory.AddInterceptorSelector(
+  const selector: IModelInterceptorsSelector);
+begin
 end;
 
 function TProxyFactory.CreateInstance(const context: ICreationContext;
@@ -229,6 +243,7 @@ end;
 constructor TContainer.Create;
 begin
   inherited Create;
+  fLogger := TNullLogger.GlobalInstance;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self);
   fInjector := TDependencyInjector.Create;
@@ -321,6 +336,11 @@ end;
 function TContainer.GetKernel: IKernel;
 begin
   Result := Self;
+end;
+
+function TContainer.GetLogger: ILogger;
+begin
+  Result := fLogger;
 end;
 
 function TContainer.GetProxyFactory: IProxyFactory;
@@ -497,6 +517,14 @@ begin
   {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
 {$ENDIF}
+
+procedure TContainer.SetLogger(const logger: ILogger);
+begin
+  if Assigned(logger) then
+    fLogger := logger
+  else
+    fLogger := TNullLogger.GlobalInstance;
+end;
 
 {$ENDREGION}
 

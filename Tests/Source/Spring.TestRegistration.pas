@@ -43,8 +43,11 @@ uses
   Spring.Tests.Helpers,
   Spring.Tests.Reflection,
   Spring.Tests.Reflection.ValueConverters,
+  Spring.Tests.Logging,
+  Spring.Tests.Logging.Serializers,
   Spring.Tests.Container,
   Spring.Tests.Container.LifetimeManager,
+  Spring.Tests.Container.Logging,
 {$IFDEF DELPHIXE_UP}
   Spring.Tests.Interception,
 {$ENDIF}
@@ -163,6 +166,20 @@ begin
     TTestEnum.Suite
   ]);
 
+  RegisterTests('Spring.Base.Logging', [
+    TTestLoggerController.Suite,
+    TTestLogger.Suite,
+    TTestLogAppenderBase.Suite,
+    TTestStreamLogAppender.Suite
+  ]);
+
+  RegisterTests('Spring.Base.Logging.Serializers', [
+    TTestSimpleTypeSerializer.Suite,
+    TTestReflectionTypeSerializer.Suite,
+    TTestInterfaceSerializer.Suite,
+    TTestArrayOfValueSerializer.Suite
+  ]);
+
 //  RegisterTests('Spring.Base.Reflection.ValueExpression', [
 //    TTestValueExpression.Suite
 //  ]);
@@ -196,6 +213,13 @@ begin
     TTestLazyDependenciesDetectRecursion.Suite,
     TTestDecoratorExtension.Suite,
     TTestManyDependencies.Suite
+  ]);
+
+  RegisterTests('Spring.Core.Logging', [
+    TTestLogInsideContainer.Suite,
+    TTestLogSubResolverAndConfiguration.Suite,
+    TTestLoggingConfiguration.Suite,
+    TTestLoggingConfigurationBuilder.Suite
   ]);
 
 {$IFDEF DELPHIXE_UP}

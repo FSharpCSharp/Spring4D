@@ -141,6 +141,21 @@ resourcestring
   {$ENDREGION}
 
 
+  {$REGION 'Spring.Times'}
+
+  SNoMatchAny = 'any times, but was %2:d times';
+  SNoMatchAtLeast = 'at least %0:d times, but was %2:d times';
+  SNoMatchAtLeastOnce = 'at least once, but was never';
+  SNoMatchAtMost = 'at most %1:d times, but was %2:d times';
+  SNoMatchAtMostOnce = 'at most once, but was %2:d times';
+  SNoMatchBetween = 'between %0:d and %1:d times, but was %2:d times';
+  SNoMatchExactly = 'exactly %0:d times, but was %2:d times';
+  SNoMatchNever = 'never, but was %2:d times';
+  SNoMatchOnce = 'once, but was %2:d times';
+
+  {$ENDREGION}
+
+
   {$REGION 'Spring.Cryptography'}
 
   SIllegalBlockSize = 'Illegal block size: %d.';

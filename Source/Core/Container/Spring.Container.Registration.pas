@@ -101,6 +101,7 @@ type
 
     {$REGION 'Typed Injections'}
 
+    function InjectConstructor: IRegistration; overload;
     function InjectConstructor(const parameterTypes: array of PTypeInfo): IRegistration; overload;
     function InjectProperty(const propertyName: string): IRegistration; overload;
     function InjectMethod(const methodName: string): IRegistration; overload;
@@ -154,6 +155,7 @@ type
 
   {$REGION 'Typed Injections'}
 
+    function InjectConstructor: TRegistration<T>; overload;
     function InjectConstructor(const parameterTypes: array of PTypeInfo): TRegistration<T>; overload;
     function InjectProperty(const propertyName: string): TRegistration<T>; overload;
     function InjectMethod(const methodName: string): TRegistration<T>; overload;
@@ -570,6 +572,12 @@ begin
   Result := Self;
 end;
 
+function TRegistration.InjectConstructor: IRegistration;
+begin
+  fKernel.Injector.InjectConstructor(fModel);
+  Result := Self;
+end;
+
 function TRegistration.InjectConstructor(
   const parameterTypes: array of PTypeInfo): IRegistration;
 begin
@@ -754,6 +762,12 @@ begin
     begin
       Result := TValue.From<T>(delegate());
     end);
+  Result := Self;
+end;
+
+function TRegistration<T>.InjectConstructor: TRegistration<T>;
+begin
+  fRegistration.InjectConstructor;
   Result := Self;
 end;
 
