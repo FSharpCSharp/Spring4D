@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Commands.BulkInsert.MongoDB;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Commands.BulkInsert.MongoDB;
 
 interface
 

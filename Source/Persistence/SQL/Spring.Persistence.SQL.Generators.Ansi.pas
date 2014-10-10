@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.Ansi;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.Ansi;
 
 interface
 

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.MSSQL;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.MSSQL;
 
 interface
 

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.EntitySerializer;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.EntitySerializer;
 
 interface
 

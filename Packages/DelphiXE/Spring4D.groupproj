@@ -9,6 +9,9 @@
 			<Projects Include="Spring.Core.dproj">
 				<Dependencies>Spring.Base.dproj</Dependencies>
 			</Projects>
+			<Projects Include="Spring.Persistence.dproj">
+				<Dependencies/>
+			</Projects>
 			<Projects Include="Spring.Extensions.dproj">
 				<Dependencies/>
 			</Projects>
@@ -27,46 +30,55 @@
 			<MSBuild Projects="Spring.Base.dproj"/>
 		</Target>
 		<Target Name="Spring_Base:Clean">
-			<MSBuild Projects="Spring.Base.dproj" Targets="Clean"/>
+			<MSBuild Targets="Clean" Projects="Spring.Base.dproj"/>
 		</Target>
 		<Target Name="Spring_Base:Make">
-			<MSBuild Projects="Spring.Base.dproj" Targets="Make"/>
+			<MSBuild Targets="Make" Projects="Spring.Base.dproj"/>
 		</Target>
 		<Target Name="Spring_Core" DependsOnTargets="Spring.Base">
 			<MSBuild Projects="Spring.Core.dproj"/>
 		</Target>
 		<Target Name="Spring_Core:Clean" DependsOnTargets="Spring.Base:Clean">
-			<MSBuild Projects="Spring.Core.dproj" Targets="Clean"/>
+			<MSBuild Targets="Clean" Projects="Spring.Core.dproj"/>
 		</Target>
 		<Target Name="Spring_Core:Make" DependsOnTargets="Spring.Base:Make">
-			<MSBuild Projects="Spring.Core.dproj" Targets="Make"/>
+			<MSBuild Targets="Make" Projects="Spring.Core.dproj"/>
+		</Target>
+		<Target Name="Spring_Persistence">
+			<MSBuild Projects="Spring.Persistence.dproj"/>
+		</Target>
+		<Target Name="Spring_Persistence:Clean">
+			<MSBuild Targets="Clean" Projects="Spring.Persistence.dproj"/>
+		</Target>
+		<Target Name="Spring_Persistence:Make">
+			<MSBuild Targets="Make" Projects="Spring.Persistence.dproj"/>
 		</Target>
 		<Target Name="Spring_Extensions">
 			<MSBuild Projects="Spring.Extensions.dproj"/>
 		</Target>
 		<Target Name="Spring_Extensions:Clean">
-			<MSBuild Projects="Spring.Extensions.dproj" Targets="Clean"/>
+			<MSBuild Targets="Clean" Projects="Spring.Extensions.dproj"/>
 		</Target>
 		<Target Name="Spring_Extensions:Make">
-			<MSBuild Projects="Spring.Extensions.dproj" Targets="Make"/>
+			<MSBuild Targets="Make" Projects="Spring.Extensions.dproj"/>
 		</Target>
 		<Target Name="Spring_Tests_DelphiXE">
 			<MSBuild Projects="..\..\Tests\Spring.Tests.DelphiXE.dproj"/>
 		</Target>
 		<Target Name="Spring_Tests_DelphiXE:Clean">
-			<MSBuild Projects="..\..\Tests\Spring.Tests.DelphiXE.dproj" Targets="Clean"/>
+			<MSBuild Targets="Clean" Projects="..\..\Tests\Spring.Tests.DelphiXE.dproj"/>
 		</Target>
 		<Target Name="Spring_Tests_DelphiXE:Make">
-			<MSBuild Projects="..\..\Tests\Spring.Tests.DelphiXE.dproj" Targets="Make"/>
+			<MSBuild Targets="Make" Projects="..\..\Tests\Spring.Tests.DelphiXE.dproj"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests_DelphiXE"/>
+			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Persistence;Spring_Extensions;Spring_Tests_DelphiXE"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests_DelphiXE:Clean"/>
+			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Persistence:Clean;Spring_Extensions:Clean;Spring_Tests_DelphiXE:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests_DelphiXE:Make"/>
+			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Persistence:Make;Spring_Extensions:Make;Spring_Tests_DelphiXE:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 		<ItemGroup Condition="'$(BuildGroup)'=='Release'">
@@ -86,6 +98,12 @@
 				<ProjectGuid>{E251DCB9-1C49-4573-A299-509A6B9B5D68}</ProjectGuid>
 				<Configurations>Debug</Configurations>
 				<Platforms>Win32</Platforms>
+				<Enabled>False</Enabled>
+			</BuildGroupProject>
+			<BuildGroupProject Include="Spring.Persistence.dproj">
+				<ProjectGuid>{EF4943C0-6445-4C2A-9321-93EC9C8C0BC7}</ProjectGuid>
+				<Configurations>Debug</Configurations>
+				<Platforms/>
 				<Enabled>False</Enabled>
 			</BuildGroupProject>
 			<BuildGroupProject Include="Spring.Extensions.dproj">

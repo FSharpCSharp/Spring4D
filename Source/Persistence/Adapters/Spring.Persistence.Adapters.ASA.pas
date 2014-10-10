@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.ASA;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.ASA;
 
 interface
 

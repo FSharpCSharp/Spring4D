@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Criteria;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Criteria;
 
 interface
 

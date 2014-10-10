@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.Zeos;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.Zeos;
 
 interface
 

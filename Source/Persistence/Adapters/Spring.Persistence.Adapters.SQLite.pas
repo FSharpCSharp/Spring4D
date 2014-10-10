@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.SQLite;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.SQLite;
 
 interface
 

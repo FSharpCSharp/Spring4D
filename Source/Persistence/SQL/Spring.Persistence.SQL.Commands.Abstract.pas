@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Commands.Abstract;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Commands.Abstract;
 
 interface
 

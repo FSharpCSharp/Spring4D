@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.ListSession;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.ListSession;
 
 interface
 

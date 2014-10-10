@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Criteria.Criterion.Disjunction;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Criteria.Criterion.Disjunction;
 
 interface
 

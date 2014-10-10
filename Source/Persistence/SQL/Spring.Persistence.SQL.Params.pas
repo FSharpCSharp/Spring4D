@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Params;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Params;
 
 interface
 

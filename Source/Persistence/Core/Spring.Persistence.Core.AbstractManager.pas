@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.AbstractManager;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.AbstractManager;
 
 interface
 

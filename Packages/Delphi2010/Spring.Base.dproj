@@ -30,7 +30,7 @@
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_Platform>x86</DCC_Platform>
-			<DCC_UnitSearchPath>..\..\Source\Base;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<GenDll>true</GenDll>
 			<GenPackage>true</GenPackage>
 		</PropertyGroup>
@@ -66,20 +66,30 @@
 			<DCCReference Include="..\..\Source\Base\Spring.Events.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.Base.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Controller.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Extensions.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Loggers.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.NullLogger.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Serializers.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Activator.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.SystemUtils.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.Times.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
-			<BuildConfiguration Include="Debug">
-				<Key>Cfg_2</Key>
-				<CfgParent>Base</CfgParent>
-			</BuildConfiguration>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
 			</BuildConfiguration>
 		</ItemGroup>

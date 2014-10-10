@@ -22,9 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Cryptography.DES;
 
-{$I Spring.inc}
 {$R-}
 
 interface

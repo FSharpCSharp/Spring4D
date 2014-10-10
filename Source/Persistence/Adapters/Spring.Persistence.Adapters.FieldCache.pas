@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.FieldCache;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.FieldCache;
 
 interface
 

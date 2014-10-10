@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.PostgreSQL;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.PostgreSQL;
 
 interface
 

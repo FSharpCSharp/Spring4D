@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.MySQL;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.MySQL;
 
 interface
 

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.MongoDB;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.MongoDB;
 
 interface
 

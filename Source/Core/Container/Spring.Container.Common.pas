@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Common;
-
 {$I Spring.inc}
+
+unit Spring.Container.Common;
 
 interface
 
@@ -356,6 +356,7 @@ type
 
     {$REGION 'Typed Injections'}
 
+    function InjectConstructor: IRegistration; overload;
     function InjectConstructor(const parameterTypes: array of PTypeInfo): IRegistration; overload;
     function InjectProperty(const propertyName: string): IRegistration; overload;
     function InjectMethod(const methodName: string): IRegistration; overload;

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.Consts;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.Consts;
 
 interface
 

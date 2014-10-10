@@ -1,4 +1,4 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{25F0D1D4-23C7-4350-A17F-67AE14842F76}</ProjectGuid>
         <MainSource>Spring.Extensions.dpk</MainSource>
@@ -64,7 +64,7 @@
         <DCC_DcuOutput>..\..\Library\DelphiXE6\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_K>false</DCC_K>
         <RuntimeOnlyPackage>true</RuntimeOnlyPackage>
-        <DCC_UnitSearchPath>..\..\Source\Base;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_N>false</DCC_N>
         <DCC_E>false</DCC_E>
         <GenDll>true</GenDll>

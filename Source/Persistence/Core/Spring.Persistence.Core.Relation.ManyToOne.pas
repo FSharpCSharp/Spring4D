@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.Relation.ManyToOne;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.Relation.ManyToOne;
 
 interface
 

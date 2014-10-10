@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.DBX;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.DBX;
 
 interface
 

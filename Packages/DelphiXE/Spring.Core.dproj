@@ -27,7 +27,7 @@
 			<DCC_Description>Spring4D Core package</DCC_Description>
 			<DllSuffix>.DelphiXE</DllSuffix>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-			<DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<GenPackage>true</GenPackage>
 			<GenDll>true</GenDll>
@@ -55,7 +55,6 @@
 			<DCCReference Include="rtl.dcp"/>
 			<DCCReference Include="Spring.Base.dcp"/>
 			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
-			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ActivatorExtension.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
@@ -71,6 +70,9 @@
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.Builder.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Container.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

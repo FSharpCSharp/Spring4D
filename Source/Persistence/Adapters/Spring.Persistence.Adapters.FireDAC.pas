@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.FireDAC;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.FireDAC;
 
 interface
 

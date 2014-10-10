@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.ASA;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.ASA;
 
 interface
 

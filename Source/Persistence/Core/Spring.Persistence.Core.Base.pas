@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.Base;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.Base;
 
 interface
 

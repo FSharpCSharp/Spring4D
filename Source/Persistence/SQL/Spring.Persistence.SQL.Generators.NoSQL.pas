@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.NoSQL;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.NoSQL;
 
 interface
 

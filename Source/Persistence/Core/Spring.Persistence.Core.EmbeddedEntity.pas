@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.EmbeddedEntity;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.EmbeddedEntity;
 
 interface
 

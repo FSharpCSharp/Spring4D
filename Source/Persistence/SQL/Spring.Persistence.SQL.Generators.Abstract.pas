@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.Abstract;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.Abstract;
 
 interface
 

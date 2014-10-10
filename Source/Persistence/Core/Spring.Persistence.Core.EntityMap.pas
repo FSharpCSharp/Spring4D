@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.EntityMap;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.EntityMap;
 
 interface
 

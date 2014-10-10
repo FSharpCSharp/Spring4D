@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.DatabaseManager;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.DatabaseManager;
 
 interface
 

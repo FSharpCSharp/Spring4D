@@ -22,10 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oOwner -cGeneral : Thread Safety}
-unit Spring.Container;
-
 {$I Spring.inc}
+
+unit Spring.Container;
 
 interface
 
@@ -34,8 +33,10 @@ uses
   Spring,
   Spring.Collections,
   Spring.Container.Common,
+
   Spring.Container.Core,
   Spring.Container.Registration,
+  Spring.Logging,
   Spring.Services;
 
 type
@@ -50,6 +51,7 @@ type
     fRegistrationManager: TRegistrationManager;
     fResolver: IDependencyResolver;
     fExtensions: IList<IContainerExtension>;
+    fLogger: ILogger;
     class var GlobalInstance: TContainer;
     function GetKernel: IKernel;
     type
@@ -62,6 +64,8 @@ type
     function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
+    function GetLogger: ILogger;
+    procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
     property Builder: IComponentBuilder read GetBuilder;
@@ -112,6 +116,7 @@ type
 {$ENDIF}
 
     property Kernel: IKernel read GetKernel;
+    property Logger: ILogger read GetLogger write SetLogger;
   end;
 
   ///	<summary>
@@ -169,6 +174,7 @@ uses
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
+  Spring.Logging.NullLogger,
   Spring.Reflection;
 
 
@@ -193,6 +199,7 @@ end;
 constructor TContainer.Create;
 begin
   inherited Create;
+  fLogger := TNullLogger.GlobalInstance;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self);
   fInjector := TDependencyInjector.Create;
@@ -282,6 +289,11 @@ end;
 function TContainer.GetKernel: IKernel;
 begin
   Result := Self;
+end;
+
+function TContainer.GetLogger: ILogger;
+begin
+  Result := fLogger;
 end;
 
 function TContainer.GetResolver: IDependencyResolver;
@@ -453,6 +465,14 @@ begin
   {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
 {$ENDIF}
+
+procedure TContainer.SetLogger(const logger: ILogger);
+begin
+  if Assigned(logger) then
+    fLogger := logger
+  else
+    fLogger := TNullLogger.GlobalInstance;
+end;
 
 {$ENDREGION}
 

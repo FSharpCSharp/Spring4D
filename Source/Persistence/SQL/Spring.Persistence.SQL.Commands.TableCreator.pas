@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Persistence.SQL.Commands.TableCreator;
 
 interface

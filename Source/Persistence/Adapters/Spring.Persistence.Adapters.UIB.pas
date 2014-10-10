@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.UIB;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.UIB;
 
 interface
 

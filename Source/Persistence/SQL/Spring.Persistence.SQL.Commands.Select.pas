@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Commands.Select;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Commands.Select;
 
 interface
 

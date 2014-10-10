@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.Session.MongoDB;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.Session.MongoDB;
 
 interface
 

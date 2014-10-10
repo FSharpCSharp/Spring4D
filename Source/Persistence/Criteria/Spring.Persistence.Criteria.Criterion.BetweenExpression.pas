@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Criteria.Criterion.BetweenExpression;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Criteria.Criterion.BetweenExpression;
 
 interface
 

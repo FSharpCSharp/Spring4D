@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Cryptography.MD5;
-
 {$I Spring.inc}
+
+unit Spring.Cryptography.MD5;
 
 interface
 

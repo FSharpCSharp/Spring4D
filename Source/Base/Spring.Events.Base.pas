@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Events.Base;
-
 {$I Spring.inc}
+
+unit Spring.Events.Base;
 
 interface
 

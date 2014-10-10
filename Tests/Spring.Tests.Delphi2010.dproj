@@ -22,7 +22,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_ExeOutput>Bin\Delphi2010\$(Config)</DCC_ExeOutput>
 			<DCC_Define>SPRING_ENABLE_GUARD;$(DCC_Define)</DCC_Define>
-			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\Source;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Logging;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Logging;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_DependencyCheckOutputName>Bin\Delphi2010\%Config%\Spring.Tests.exe</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
@@ -64,10 +64,14 @@
 			<DCCReference Include="Source\Base\Spring.Tests.Reflection.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.SystemUtils.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.Logging.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.Logging.Serializers.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.Logging.Types.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.Container.Logging.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
 			<DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
 			<DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>

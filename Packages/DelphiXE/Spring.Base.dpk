@@ -53,11 +53,21 @@ contains
   Spring.Events in '..\..\Source\Base\Spring.Events.pas',
   Spring.Events.Base in '..\..\Source\Base\Spring.Events.Base.pas',
   Spring.Helpers in '..\..\Source\Base\Spring.Helpers.pas',
+  Spring.Logging in '..\..\Source\Base\Logging\Spring.Logging.pas',
+  Spring.Logging.Appenders in '..\..\Source\Base\Logging\Spring.Logging.Appenders.pas',
+  Spring.Logging.Appenders.Base in '..\..\Source\Base\Logging\Spring.Logging.Appenders.Base.pas',
+  Spring.Logging.Controller in '..\..\Source\Base\Logging\Spring.Logging.Controller.pas',
+  Spring.Logging.Extensions in '..\..\Source\Base\Logging\Spring.Logging.Extensions.pas',
+  Spring.Logging.Loggers in '..\..\Source\Base\Logging\Spring.Logging.Loggers.pas',
+  Spring.Logging.NullLogger in '..\..\Source\Base\Logging\Spring.Logging.NullLogger.pas',
+  Spring.Logging.ResourceStrings in '..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas',
+  Spring.Logging.Serializers in '..\..\Source\Base\Logging\Spring.Logging.Serializers.pas',
   Spring.Reflection in '..\..\Source\Base\Reflection\Spring.Reflection.pas',
   Spring.Reflection.Activator in '..\..\Source\Base\Reflection\Spring.Reflection.Activator.pas',
   Spring.Reflection.Compatibility in '..\..\Source\Base\Reflection\Spring.Reflection.Compatibility.pas',
   Spring.Reflection.ValueConverters in '..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas',
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
-  Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas';
+  Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas',
+  Spring.Times in '..\..\Source\Base\Spring.Times.pas';
 
 end.

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.Firebird;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.Firebird;
 
 interface
 

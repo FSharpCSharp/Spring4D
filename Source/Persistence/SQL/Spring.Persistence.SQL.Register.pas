@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Register;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Register;
 
 interface
 

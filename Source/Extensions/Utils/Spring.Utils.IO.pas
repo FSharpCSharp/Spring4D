@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Utils.IO;
-
 {$I Spring.inc}
+
+unit Spring.Utils.IO;
 
 interface
 

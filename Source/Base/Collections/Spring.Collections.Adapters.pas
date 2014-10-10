@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Adapters;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Adapters;
 
 interface
 

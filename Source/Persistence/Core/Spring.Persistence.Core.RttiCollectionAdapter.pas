@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.RttiCollectionAdapter;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.RttiCollectionAdapter;
 
 interface
 

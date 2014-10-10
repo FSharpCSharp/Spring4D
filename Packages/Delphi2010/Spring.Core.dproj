@@ -24,7 +24,7 @@
 			<DllSuffix>.Delphi2010</DllSuffix>
 			<DCC_DcuOutput>..\..\Library\Delphi2010\$(Config)</DCC_DcuOutput>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-			<DCC_UnitSearchPath>..\..\Source\Base;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DesignOnlyPackage>false</DesignOnlyPackage>
 			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Core.Delphi2010.bpl</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
@@ -50,7 +50,6 @@
 			<DCCReference Include="rtl.dcp"/>
 			<DCCReference Include="Spring.Base.dcp"/>
 			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
-			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ActivatorExtension.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
@@ -66,6 +65,9 @@
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.Builder.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Container.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Criteria.Criterion.Junction;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Criteria.Criterion.Junction;
 
 interface
 

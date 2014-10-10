@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.SQLite3;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.SQLite3;
 
 interface
 

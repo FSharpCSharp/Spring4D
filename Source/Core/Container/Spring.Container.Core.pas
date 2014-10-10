@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Core;
-
 {$I Spring.inc}
+
+unit Spring.Container.Core;
 
 interface
 
@@ -33,6 +33,7 @@ uses
   SysUtils,
   Spring,
   Spring.Collections,
+  Spring.Logging,
   Spring.Container.Common,
   Spring.DesignPatterns;
 
@@ -80,6 +81,8 @@ type
     function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
+    function GetLogger: ILogger;
+    procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
     procedure AddExtension(const extension: IContainerExtension);
 
@@ -87,6 +90,7 @@ type
     property Injector: IDependencyInjector read GetInjector;
     property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
+    property Logger: ILogger read GetLogger write SetLogger;
   end;
 
   IKernelInternal = interface

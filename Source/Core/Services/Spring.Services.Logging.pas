@@ -22,12 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  Defines an independent logging service.
 ///	</summary>
 unit Spring.Services.Logging;
-
-{$I Spring.inc}
 
 interface
 

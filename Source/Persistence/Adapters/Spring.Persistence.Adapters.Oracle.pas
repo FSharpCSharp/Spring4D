@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.Oracle;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.Oracle;
 
 interface
 

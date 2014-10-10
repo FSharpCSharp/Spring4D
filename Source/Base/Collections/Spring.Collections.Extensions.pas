@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Extensions;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Extensions;
 
 interface
 

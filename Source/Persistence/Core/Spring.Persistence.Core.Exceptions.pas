@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.Exceptions;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.Exceptions;
 
 interface
 

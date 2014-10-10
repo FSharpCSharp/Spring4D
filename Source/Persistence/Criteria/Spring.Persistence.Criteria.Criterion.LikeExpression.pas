@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Criteria.Criterion.LikeExpression;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Criteria.Criterion.LikeExpression;
 
 interface
 

@@ -22,13 +22,13 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 ///	<summary>
 ///	  This namespace provides many well-encapsulated utility classes and
 ///	  routines about the environment and system.
 ///	</summary>
 unit Spring.Utils;
-
-{$I Spring.inc}
 
 interface
 

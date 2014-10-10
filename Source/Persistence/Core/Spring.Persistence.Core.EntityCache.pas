@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Core.EntityCache;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Core.EntityCache;
 
 interface
 

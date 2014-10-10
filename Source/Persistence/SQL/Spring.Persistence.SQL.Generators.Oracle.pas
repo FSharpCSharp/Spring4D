@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.SQL.Generators.Oracle;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.SQL.Generators.Oracle;
 
 interface
 

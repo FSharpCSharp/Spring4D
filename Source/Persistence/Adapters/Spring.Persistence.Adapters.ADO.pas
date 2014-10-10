@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.ADO;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.ADO;
 
 interface
 

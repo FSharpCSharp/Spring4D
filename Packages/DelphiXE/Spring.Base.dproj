@@ -27,7 +27,7 @@
 			<DCC_Description>Spring4D Base package</DCC_Description>
 			<DllSuffix>.DelphiXE</DllSuffix>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-			<DCC_UnitSearchPath>..\..\Source\Base;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<GenPackage>true</GenPackage>
 			<GenDll>true</GenDll>
@@ -69,12 +69,22 @@
 			<DCCReference Include="..\..\Source\Base\Spring.Events.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.Base.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Controller.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Extensions.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Loggers.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.NullLogger.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Serializers.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Activator.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Compatibility.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.SystemUtils.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.Times.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Dictionaries;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Dictionaries;
 
 interface
 

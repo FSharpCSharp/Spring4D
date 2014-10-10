@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Persistence.Adapters.MSSQL;
-
 {$I Spring.inc}
+
+unit Spring.Persistence.Adapters.MSSQL;
 
 interface
 
