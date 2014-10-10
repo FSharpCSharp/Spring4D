@@ -43,8 +43,7 @@ uses
   TimeSpan,
   Types,
   TypInfo,
-  Variants,
-  Spring.Times;
+  Variants;
 
 type
 
@@ -83,8 +82,6 @@ type
 {$IFNDEF DELPHIXE_UP}
   TThreadID = LongWord;
 {$ENDIF}
-
-  Times = Spring.Times.Times;
 
   {$ENDREGION}
 
