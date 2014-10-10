@@ -41,7 +41,7 @@ type
   private
     fModel: TComponentModel;
   public
-    constructor Create(model: TComponentModel);
+    constructor Create(const model: TComponentModel);
     function CreateInstance: TValue; overload;
     function CreateInstance(const context: ICreationContext): TValue; overload;
     property Model: TComponentModel read fModel;
@@ -110,7 +110,8 @@ implementation
 uses
   Spring.Container.Common;
 
-{ TLifetimeManagerTestCase }
+
+{$REGION 'TLifetimeManagerTestCase'}
 
 procedure TLifetimeManagerTestCase.SetUp;
 begin
@@ -129,7 +130,10 @@ begin
   inherited;
 end;
 
-{ TTestSingletonLifetimeManager }
+{$ENDREGION}
+
+
+{$REGION 'TTestSingletonLifetimeManager'}
 
 procedure TTestSingletonLifetimeManager.SetUp;
 begin
@@ -160,7 +164,10 @@ begin
   end;
 end;
 
-{ TTestTransientLifetimeManager }
+{$ENDREGION}
+
+
+{$REGION 'TTestTransientLifetimeManager'}
 
 procedure TTestTransientLifetimeManager.SetUp;
 begin
@@ -191,10 +198,12 @@ begin
   end;
 end;
 
-{ TMockComponentActivator }
+{$ENDREGION}
 
-constructor TMockActivator.Create(
-  model: TComponentModel);
+
+{$REGION 'TMockComponentActivator'}
+
+constructor TMockActivator.Create(const model: TComponentModel);
 begin
   inherited Create;
   fModel := model;
@@ -211,7 +220,10 @@ begin
   Result := CreateInstance;
 end;
 
-{ TMockComponent }
+{$ENDREGION}
+
+
+{$REGION 'TMockComponent'}
 
 function TMockComponent._AddRef: Integer;
 begin
@@ -228,8 +240,9 @@ begin
   Dec(fRefCount);
 {$IFNDEF AUTOREFCOUNT}
   Result := fRefCount;
-  if Result = 0 then begin
-    fFreed := true;
+  if Result = 0 then
+  begin
+    fFreed := True;
     Destroy;
   end;
 {$ELSE}
@@ -237,7 +250,10 @@ begin
 {$ENDIF}
 end;
 
-{ TTestRefCounting }
+{$ENDREGION}
+
+
+{$REGION 'TTestRefCounting'}
 
 procedure TTestRefCounting.SetUp;
 begin
@@ -267,7 +283,7 @@ var
 begin
   fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
 {$IFNDEF AUTOREFCOUNT}
-  TMockComponent.fFreed := false;
+  TMockComponent.fFreed := False;
 {$ENDIF}
   val := fLifetimeManager.Resolve(nil);
   obj := val.AsObject;
@@ -292,5 +308,8 @@ begin
   obj := nil;
 {$ENDIF}
 end;
+
+{$ENDREGION}
+
 
 end.
