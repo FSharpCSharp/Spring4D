@@ -389,10 +389,13 @@ end;
 procedure TDriverStatementAdapter<T>.SetQuery(const metadata: TQueryMetadata;
   const query: Variant);
 begin
-  fQuery := query;
-  fQueryMetadata := metadata;
-  case VarType(query) of
-    varUString, varString: fSql := query;
+  case TQueryMetadata.GetQueryType(query) of
+    qtQueryText: SetSQLCommand(query);
+    qtQueryEntity:
+    begin
+      fQuery := query;
+      fQueryMetadata := metadata;
+    end;
   end;
 end;
 

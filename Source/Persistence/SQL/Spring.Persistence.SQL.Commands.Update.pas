@@ -56,6 +56,7 @@ type
   protected
     function GetCommand: TDMLCommand; override;
     function TryIncrementVersionFor(AEntity: TObject): Boolean; virtual;
+    function HasChangedVersionColumnOnly: Boolean;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -115,38 +116,38 @@ begin
   begin
     LDirtyObject := fEntityMap.Get(entity);
     TRttiExplorer.GetChangedMembers(entity, LDirtyObject, fColumns);
-    if (fColumns.Count = 1) and (fColumns.First.IsVersionColumn) then
+    if HasChangedVersionColumnOnly then
       Exit;
     fCommand.SetCommandFieldsFromColumns(fColumns);
     LSql := Generator.GenerateUpdate(fCommand);
   end
   else
-  begin
     fColumns.AddRange(fEntityCache.Columns);
-  end;
 
+  if fCommand.UpdateFields.IsEmpty then
+    Exit;
   fCommand.Entity := entity;
   //NoSQL db generators can't prebuild query without entity object, so they return empty string.
   if (LSql = '') then
     LSql := Generator.GenerateUpdate(fCommand);
 
   if (LSql = '') then
-    Exit;
+    raise EORMCannotGenerateQueryStatement.Create(entity);
 
-  LStmt.SetSQLCommand(LSql);
-
+  LStmt.SetSQLCommand(LSql);    
   BuildParams(entity);
-  try
-    LStmt.SetParams(SQLParameters);
-    LStmt.Execute;
-  finally
-    LStmt := nil;
-  end;
+  LStmt.SetParams(SQLParameters);
+  LStmt.Execute;
 end;
 
 function TUpdateExecutor.GetCommand: TDMLCommand;
 begin
   Result := fCommand;
+end;
+
+function TUpdateExecutor.HasChangedVersionColumnOnly: Boolean;
+begin
+  Result := (fColumns.Count = 1) and (fColumns.First.IsVersionColumn);
 end;
 
 function TUpdateExecutor.TryIncrementVersionFor(AEntity: TObject): Boolean;
@@ -161,15 +162,10 @@ begin
   LPKValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.PrimaryKeyColumn.ClassMemberName);
   LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, fEntityCache.VersionColumn
     , TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
-  LQueryMetadata.QueryType := ctUpdateVersion;
-  case VarType(LQuery) of
-    varUString, varString, varStrArg, varOleStr: LStatement.SetSQLCommand(LQuery)
-    else
-    begin
-      LQueryMetadata.TableName := fCommand.Table.Name;
-      LStatement.SetQuery(LQueryMetadata, LQuery);
-    end;
-  end;
+  LQueryMetadata.QueryOperation := ctUpdateVersion;  
+  LQueryMetadata.TableName := fCommand.Table.Name;
+  LStatement.SetQuery(LQueryMetadata, LQuery);
+
   Result := (LStatement.Execute > 0);
   if Result then
     TRttiExplorer.SetMemberValueSimple(AEntity, fEntityCache.VersionColumn.ClassMemberName, LVersionValue.AsInteger + 1);

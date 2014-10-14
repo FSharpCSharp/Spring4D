@@ -90,6 +90,8 @@ type
 
   EORMOptimisticLockException = class(EBaseORMException);
 
+  EORMCannotGenerateQueryStatement = class(EBaseORMException);
+
 implementation
 
 uses

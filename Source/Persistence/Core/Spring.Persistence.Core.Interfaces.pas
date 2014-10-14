@@ -34,7 +34,8 @@ uses
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Params,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Types,
+  Variants;
 
 type
   TDBDriverType = (dtSQLite = 0, {$IFDEF MSWINDOWS}dtADO, dtMSSQL, dtASA, dtOracle,{$ENDIF} dtDBX, dtUIB, dtZeos, dtMongo, dtFireDAC);
@@ -218,9 +219,14 @@ type
     function GetFieldName(index: Integer): string;
   end;
 
+  TQueryType = (qtQueryText, qtQueryEntity);
+
   TQueryMetadata = record
-    QueryType: TDMLCommandType;
+  public
+    QueryOperation: TDMLCommandType;
     TableName: string;
+  public
+    class function GetQueryType(const query: Variant): TQueryType; inline; static;
   end;
 
   /// <summary>
@@ -422,5 +428,16 @@ type
   end;
 
 implementation
+
+{ TQueryMetadata }
+
+class function TQueryMetadata.GetQueryType(const query: Variant): TQueryType;
+begin
+  case VarType(query) of
+    varUString, varString, varStrArg, varOleStr: Result := qtQueryText
+    else
+      Result := qtQueryEntity;  
+  end;
+end;
 
 end.

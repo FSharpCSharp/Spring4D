@@ -27,7 +27,7 @@ implementation
 
 uses
   Rtti
-  ,uModels
+  ,TestEntities
   ,Diagnostics
   ,SysUtils
   ,Spring
@@ -66,7 +66,7 @@ begin
     LFrom := 1;
     bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LCustomer, LResult);
     CheckTrue(bOK);
-    CheckEquals('Lazy<Spring.Collections.IList<uModels.TCustomer_Orders>>', string(LResult.TypeInfo.Name));
+    CheckEquals('Lazy<Spring.Collections.IList<TestEntities.TCustomer_Orders>>', string(LResult.TypeInfo.Name));
   finally
     LCustomer.Free;
   end;

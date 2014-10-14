@@ -16,7 +16,7 @@ interface
 uses
   TestFramework, Spring.Collections, Spring.Persistence.Criteria, Generics.Collections
   , Spring.Persistence.Core.Interfaces, Spring.Persistence.Criteria.Criterion.Abstract
-  , Spring.Persistence.Criteria.Abstract, uModels, Spring.Persistence.Criteria.Restrictions
+  , Spring.Persistence.Criteria.Abstract, TestEntities, Spring.Persistence.Criteria.Restrictions
   ,Spring.Persistence.Core.Session
   ;
 

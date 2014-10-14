@@ -24,7 +24,7 @@ implementation
 uses
   TestSession
   ,Spring.Persistence.Core.ConnectionFactory
-  ,uModels
+  ,TestEntities
   ,TestConsts
   ;
 

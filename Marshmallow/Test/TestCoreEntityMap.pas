@@ -12,7 +12,8 @@ unit TestCoreEntityMap;
 interface
 
 uses
-  TestFramework, Generics.Collections, Rtti, Spring.Persistence.Core.EntityMap, uModels;
+  TestFramework, Generics.Collections, Rtti, Spring.Persistence.Core.EntityMap
+  , TestEntities;
 
 type
   // Test methods for class TEntityMap

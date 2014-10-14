@@ -46,7 +46,7 @@ implementation
 uses
   SysUtils,
   StrUtils
-  ,uModels
+  ,TestEntities
   ,Spring.Persistence.Mapping.RttiExplorer
   ,Spring.Persistence.Mapping.Attributes
   ,Generics.Collections

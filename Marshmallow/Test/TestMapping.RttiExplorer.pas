@@ -7,7 +7,7 @@ interface
 uses
   TestFramework, Spring.Persistence.Mapping.Attributes, Generics.Collections
   , Spring.Persistence.Mapping.RttiExplorer,
-  Rtti, uModels;
+  Rtti, TestEntities;
 
 type
   // Test methods for class TRttiExplorer

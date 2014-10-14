@@ -328,7 +328,7 @@ begin
 
   if NativeQueryPresent then
   begin
-    case QueryMetadata.QueryType of
+    case QueryMetadata.QueryOperation of
       ctUpdateVersion:
       begin
         LIntf := Query;

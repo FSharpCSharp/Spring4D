@@ -4,7 +4,7 @@ interface
 
 uses
   TestFramework, Rtti, Spring.Persistence.Core.RttiCollectionAdapter
-  , Spring.Persistence.Core.SpringCollectionAdapter, uModels;
+  , Spring.Persistence.Core.SpringCollectionAdapter, TestEntities;
 
 type
   // Test methods for class ICollectionAdapter

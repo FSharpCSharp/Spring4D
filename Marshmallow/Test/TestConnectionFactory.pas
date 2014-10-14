@@ -33,7 +33,7 @@ implementation
 uses
   SQLiteTable3
   ,Spring.Persistence.Adapters.SQLite
-  ,uModels
+  ,TestEntities
   ;
 
 procedure TestTConnectionFactory.SetUp;

@@ -17,7 +17,7 @@ uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
   Variants, Graphics, Messages, StdCtrls, Spring.Persistence.Core.Session, Spring.Persistence.Core.DetachedSession
   , Spring.Persistence.Core.Interfaces
-  ,uModels, Rtti, SQLiteTable3;
+  ,TestEntities, Rtti, SQLiteTable3;
 
 type
   TMockSession = class(TSession)

@@ -3,7 +3,7 @@ unit TestCollectionsAdapterResolver;
 interface
 
 uses
-  TestFramework, Rtti, Spring.Persistence.Core.RttiCollectionAdapter, uModels
+  TestFramework, Rtti, Spring.Persistence.Core.RttiCollectionAdapter, TestEntities
   , Spring.Persistence.Core.CollectionAdapterResolver, Spring.Persistence.Core.Interfaces;
 
 type

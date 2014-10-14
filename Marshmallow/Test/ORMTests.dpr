@@ -8,25 +8,25 @@ program ORMTests;
 {$I Spring.inc}
 uses
   Forms,
-{$IFNDEF DELPHIXE2_UP}
+  {$IFNDEF DELPHIXE2_UP}
   RttiPatch,
-{$ENDIF}
+  {$ENDIF }
   SysUtils,
   TestFramework,
   GUITestRunner,
   TextTestRunner,
-{$IFDEF DELPHIXE5_UP}
+  {$IFDEF DELPHIXE5_UP}
   FireDAC.VCLUI.Wait,
-{$ENDIF}
+  {$ENDIF }
   CodeGeneratorTest in 'CodeGeneratorTest.pas',
   EntityModelDataLoaderTests in 'EntityModelDataLoaderTests.pas',
   Spring.Persistence.Adapters.ADO in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ADO.pas',
   Spring.Persistence.Adapters.ASA in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ASA.pas',
   Spring.Persistence.Adapters.DBX in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.DBX.pas',
   Spring.Persistence.Adapters.FieldCache in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.FieldCache.pas',
-{$IFDEF DELPHIXE5_UP}
+  {$IFDEF DELPHIXE5_UP}
   Spring.Persistence.Adapters.FireDAC in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.FireDAC.pas',
-{$ENDIF}
+  {$ENDIF }
   Spring.Persistence.Adapters.MongoDB in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MongoDB.pas',
   Spring.Persistence.Adapters.MSSQL in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas',
   Spring.Persistence.Adapters.Oracle in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas',
@@ -119,7 +119,7 @@ uses
   TestAdapterMongoDB in 'TestAdapterMongoDB.pas',
   TestAdaptersASA in 'TestAdaptersASA.pas',
   TestAdaptersOracle in 'TestAdaptersOracle.pas',
-  TestADOAdapter in 'TestADOAdapter.pas',
+  TestSQLServerSQLGenerator in 'TestSQLServerSQLGenerator.pas',
   TestAnsiSQLGenerator in 'TestAnsiSQLGenerator.pas',
   TestCollectionsAdapterResolver in 'TestCollectionsAdapterResolver.pas',
   TestCommands in 'TestCommands.pas',
@@ -130,17 +130,16 @@ uses
   TestCoreEntityMap in 'TestCoreEntityMap.pas',
   TestCoreUtils in 'TestCoreUtils.pas',
   TestDatabaseManager in 'TestDatabaseManager.pas',
-{$IFDEF DELPHIXE5_UP}
+  {$IFDEF DELPHIXE5_UP}
   TestFireDACAdapter in 'TestFireDACAdapter.pas',
-{$ENDIF}
+  {$ENDIF }
   TestMapping.RttiExplorer in 'TestMapping.RttiExplorer.pas',
   TestObjectDataset in 'TestObjectDataset.pas',
   TestPersistence in 'TestPersistence.pas',
   TestSession in 'TestSession.pas',
   TestSimpleRepository in 'TestSimpleRepository.pas',
   TestSQLiteAdapter in 'TestSQLiteAdapter.pas',
-  uModels in 'uModels.pas',
-  VARTOTMASTModel in 'VARTOTMASTModel.pas',
+  TestEntities in 'TestEntities.pas',
   ViewTestObjectDataset in 'ViewTestObjectDataset.pas' {frmObjectDatasetTest};
 
 begin

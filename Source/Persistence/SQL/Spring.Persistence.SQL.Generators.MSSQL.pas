@@ -86,7 +86,7 @@ begin
       .AppendLine
       .Append('  ) AS ORM_TOTAL_2')
       .AppendLine
-      .AppendFormat(' WHERE (ORM_ROW_NUM > %0:d) AND (ORM_ROW_NUM <= %0:d + %1:d);', [offset, limit]);
+      .AppendFormat(' WHERE (ORM_ROW_NUM >= %0:d) AND (ORM_ROW_NUM < %0:d + %1:d);', [offset, limit]);
 
     Result := LBuilder.ToString;
   finally

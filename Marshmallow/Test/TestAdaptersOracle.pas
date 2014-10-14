@@ -4,7 +4,7 @@ interface
 
 uses
   TestFramework, Spring.Persistence.Adapters.Oracle, SysUtils, Spring.Persistence.Adapters.ADO
-  , ADODB, Spring.Persistence.Core.Interfaces, uModels
+  , ADODB, Spring.Persistence.Core.Interfaces, TestEntities
   ,Generics.Collections, Spring.Persistence.Core.Session, Spring.Persistence.SQL.Generators.Oracle;
 
 type

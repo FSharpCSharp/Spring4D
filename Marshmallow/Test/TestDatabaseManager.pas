@@ -35,7 +35,7 @@ implementation
 
 uses
   Spring.Persistence.Core.ConnectionFactory
-  ,uModels
+  ,TestEntities
   ,SQLiteTable3
   ;
 

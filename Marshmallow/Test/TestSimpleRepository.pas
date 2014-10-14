@@ -7,7 +7,7 @@ interface
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
   Variants, Graphics, Messages, StdCtrls, Spring.Persistence.Core.Session, Spring.Persistence.Core.Interfaces
-  ,uModels, Rtti, SQLiteTable3, Spring.Persistence.Mapping.Attributes, Spring.Persistence.Core.Repository.Proxy;
+  ,TestEntities, Rtti, SQLiteTable3, Spring.Persistence.Mapping.Attributes, Spring.Persistence.Core.Repository.Proxy;
 
 type
   ICustomerRepository = interface(IPagedRepository<TCustomer, Integer>)

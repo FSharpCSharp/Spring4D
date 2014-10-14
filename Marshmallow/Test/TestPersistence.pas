@@ -3,7 +3,7 @@ unit TestPersistence;
 interface
 
 uses
-  TestFramework, Spring.Persistence.Core.Interfaces, Spring.Persistence.Core.Types, uModels;
+  TestFramework, Spring.Persistence.Core.Interfaces, Spring.Persistence.Core.Types, TestEntities;
 
 type
   PersistenceTests = class(TTestCase)
