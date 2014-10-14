@@ -40,13 +40,13 @@ const
 		'  SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS ORM_ROW_NUM FROM ('+#13#10+
 		'    SELECT * FROM TESTDB.COMPANIES WHERE COMPANY = 1) AS ORM_TOTAL_1'+#13#10+
 		'  ) AS ORM_TOTAL_2'+#13#10+
-		' WHERE (ORM_ROW_NUM >= 1) AND (ORM_ROW_NUM < 1 + 10);';
+		' WHERE (ORM_ROW_NUM > 0) AND (ORM_ROW_NUM <= 0 + 10);';
 
 procedure TestMSSQLSQLGenerator.TestGeneratePagedQuery;
 var
   LSQL: string;
 begin
-  LSQL := FSQLGenerator.GeneratePagedQuery(SQL_PAGED_TEST, 10, 1);
+  LSQL := FSQLGenerator.GeneratePagedQuery(SQL_PAGED_TEST, 10, 0);
   CheckEqualsString(Trim(SQL_EXPECTED_PAGED), Trim(LSQL));
 end;
 

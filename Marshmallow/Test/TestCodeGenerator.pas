@@ -1,4 +1,4 @@
-unit CodeGeneratorTest;
+unit TestCodeGenerator;
 
 interface
 
@@ -32,7 +32,7 @@ begin
   LEntityData := TEntityModelData.Create;
   try
     LEntityData.TableName := 'Customers';
-    LEntityData.SchemaName := 'Vikarina';
+    LEntityData.SchemaName := 'Test';
 
     LColumn := TColumnData.Create;
     LColumn.ColumnName := 'CustName';

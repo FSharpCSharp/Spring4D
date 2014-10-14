@@ -60,8 +60,7 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="CodeGeneratorTest.pas"/>
-        <DCCReference Include="EntityModelDataLoaderTests.pas"/>
+        <DCCReference Include="TestCodeGenerator.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ADO.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ASA.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.DBX.pas"/>

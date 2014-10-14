@@ -18,8 +18,7 @@ uses
   {$IFDEF DELPHIXE5_UP}
   FireDAC.VCLUI.Wait,
   {$ENDIF }
-  CodeGeneratorTest in 'CodeGeneratorTest.pas',
-  EntityModelDataLoaderTests in 'EntityModelDataLoaderTests.pas',
+  TestCodeGenerator in 'TestCodeGenerator.pas',
   Spring.Persistence.Adapters.ADO in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ADO.pas',
   Spring.Persistence.Adapters.ASA in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ASA.pas',
   Spring.Persistence.Adapters.DBX in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.DBX.pas',
