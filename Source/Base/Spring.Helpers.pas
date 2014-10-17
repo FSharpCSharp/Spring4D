@@ -558,22 +558,31 @@ type
   private
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
   public
+    function AsPointer: Pointer;
 {$IFDEF DELPHI2010}
     function AsString: string;
 {$ENDIF}
     function AsType<T>: T;
     function Cast(typeInfo: PTypeInfo): TValue;
+    function Equals(const value: TValue): Boolean;
+    function IsInstance: Boolean;
+    function IsInterface: Boolean;
+    function IsNumeric: Boolean;
+    function IsPointer: Boolean;
     function IsString: Boolean;
+    function IsVariant: Boolean;
 {$IFDEF DELPHI2010}
     function IsType<T>: Boolean; overload;
     function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
 {$ENDIF}
+    function ToObject: TObject;
   end;
 
 implementation
 
 uses
   Generics.Defaults,
+  Math,
   RTLConsts,
   StrUtils,
   SysConst,
@@ -1428,7 +1437,11 @@ begin
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
   for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TClass;
@@ -1442,7 +1455,11 @@ begin
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
   for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TValue;
@@ -1456,7 +1473,11 @@ begin
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
   for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
 end;
 
 {$ENDREGION}
@@ -1519,6 +1540,14 @@ begin
 end;
 {$ENDIF}
 
+function TValueHelper.AsPointer: Pointer;
+begin
+  if Kind in [tkClass, tkInterface] then
+    Result := ToObject
+  else
+    Result := PPointer(GetReferenceToRawData)^;
+end;
+
 function TValueHelper.AsType<T>: T;
 begin
 {$IFDEF DELPHI2010}
@@ -1540,11 +1569,472 @@ begin
     raise EInvalidCast.CreateRes(@SInvalidCast);
 end;
 
+function EqualsFail(const left, right: TValue): Boolean;
+begin
+  Result := False;
+end;
+
+function EqualsInt2Int(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInteger = left.AsInteger;
+end;
+
+function EqualsInt2Float(const left, right: TValue): Boolean;
+begin
+  if right.IsType<Single> then
+    Result := Math.SameValue(left.AsInteger, right.AsType<Single>)
+  else if right.IsType<Double> then
+    Result := Math.SameValue(left.AsInteger, right.AsType<Double>)
+  else
+    Result := Math.SameValue(left.AsInteger, right.AsExtended);
+end;
+
+function EqualsInt2Int64(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInteger = left.AsInt64;
+end;
+
+function EqualsFloat2Int(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsInteger);
+    ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsInteger);
+  else
+    Result := Math.SameValue(left.AsExtended, right.AsInteger);
+  end;
+end;
+
+function EqualsFloat2Float(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle:
+      case right.TypeData.FloatType of
+        ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsType<Single>);
+        ftDouble: Result := Math.SameValue(left.AsType<Single>, right.AsType<Double>);
+      else
+        Result := Math.SameValue(left.AsType<Single>, right.AsExtended);
+      end;
+    ftDouble:
+      case right.TypeData.FloatType of
+        ftSingle: Result := Math.SameValue(left.AsType<Double>, right.AsType<Single>);
+        ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsType<Double>);
+      else
+        Result := Math.SameValue(left.AsType<Double>, right.AsExtended);
+      end;
+  else
+    case right.TypeData.FloatType of
+      ftSingle: Result := Math.SameValue(left.AsExtended, right.AsType<Single>);
+      ftDouble: Result := Math.SameValue(left.AsExtended, right.AsType<Double>);
+    else
+      Result := Math.SameValue(left.AsExtended, right.AsExtended);
+    end;
+  end;
+end;
+
+function EqualsFloat2Int64(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsInt64);
+    ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsInt64);
+  else
+    Result := Math.SameValue(left.AsExtended, right.AsInt64);
+  end;
+end;
+
+function EqualsInt642Int(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInt64 = left.AsInteger;
+end;
+
+function EqualsInt64ToFloat(const left, right: TValue): Boolean;
+begin
+  if right.IsType<Single> then
+    Result := Math.SameValue(left.AsInt64, right.AsType<Single>)
+  else if right.IsType<Double> then
+    Result := Math.SameValue(left.AsInt64, right.AsType<Double>)
+  else
+    Result := Math.SameValue(left.AsInt64, right.AsExtended);
+end;
+
+function EqualsInt642Int64(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInt64 = left.AsInt64;
+end;
+
+function EqualsStr2Str(const left, right: TValue): Boolean;
+begin
+  Result := left.AsString = right.AsString;
+end;
+
+function EqualsClass2Class(const left, right: TValue): Boolean;
+begin
+  Result := left.AsObject = right.AsObject;
+end;
+
+function EqualsIntf2Intf(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInterface = right.AsInterface;
+end;
+
+function EqualsClassRef2ClassRef(const left, right: TValue): Boolean;
+begin
+  Result := left.AsClass = right.AsClass;
+end;
+
+function EqualsPtr2Ptr(const left, right: TValue): Boolean;
+begin
+  Result := left.AsPointer = right.AsPointer;
+end;
+
+function EqualsVar2Var(const left, right: TValue): Boolean;
+begin
+  Result := left.AsVariant = right.AsVariant;
+end;
+
+function EqualsRec2Rec(const left, right: TValue): Boolean;
+var
+  comparer: TRttiMethod;
+begin
+  if TType.GetType(left.TypeInfo).Methods.TryGetSingle(comparer,
+    TMethodFilters.IsNamed('&op_Equality') and
+    TMethodFilters.HasParameterTypes([left.TypeInfo, right.TypeInfo])) then
+    Result := comparer.Invoke(nil, [left, right]).AsBoolean
+  else
+    Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize);
+end;
+
+{$REGION 'Comparisons'}
+type
+  TEqualsFunc = function(const left, right: TValue): Boolean;
+const
+  Comparisons: array[TTypeKind,TTypeKind] of TEqualsFunc = (
+    // tkUnknown
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsPtr2Ptr, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInteger
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsInt2Int, EqualsFail, EqualsFail, EqualsInt2Float,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsInt2Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkEnumeration
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsInt2Int, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkFloat
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFloat2Int, EqualsFail, EqualsFail, EqualsFloat2Float,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFloat2Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkSet
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail, // TODO: tkSet
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkClass
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsClass2Class, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkMethod
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail, // TODO: tkMethod
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkWChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkLString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkWString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkVariant
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsVar2Var, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkRecord
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsRec2Rec,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInterface
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsIntf2Intf, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInt64
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsInt642Int, EqualsFail, EqualsFail, EqualsInt64ToFloat,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsInt642Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkDynArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsPtr2Ptr, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkUString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkClassRef
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsClassRef2ClassRef,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkPointer
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsPtr2Ptr, EqualsFail
+    ),
+    // tkProcedure
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    )
+  );
+{$ENDREGION}
+
+function TValueHelper.Equals(const value: TValue): Boolean;
+begin
+  Result := Assigned(TypeInfo) and Assigned(value.TypeInfo)
+    and Comparisons[Kind,value.Kind](Self, value);
+end;
+
+function TValueHelper.IsInstance: Boolean;
+begin
+  Result := Kind in [tkClass, tkInterface];
+end;
+
+function TValueHelper.IsInterface: Boolean;
+begin
+  Result := Kind = tkInterface;
+end;
+
+function TValueHelper.IsNumeric: Boolean;
+const
+  NumericKinds = [tkInteger, tkChar, tkEnumeration, tkFloat, tkWChar, tkInt64];
+begin
+  Result := IsEmpty or (Kind in NumericKinds);
+end;
+
+function TValueHelper.IsPointer: Boolean;
+begin
+  Result := Kind = tkPointer;
+end;
+
 function TValueHelper.IsString: Boolean;
 const
   StringKinds = [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
 begin
   Result := IsEmpty or (Kind in StringKinds);
+end;
+
+function TValueHelper.IsVariant: Boolean;
+begin
+  Result := TypeInfo = System.TypeInfo(Variant);
 end;
 
 {$IFDEF DELPHI2010}
@@ -1560,6 +2050,14 @@ begin
   Result := IsType(System.TypeInfo(T));
 end;
 {$ENDIF}
+
+function TValueHelper.ToObject: TObject;
+begin
+  if IsInterface then
+    Result := AsInterface as TObject
+  else
+    Result := AsObject;
+end;
 
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
 var
