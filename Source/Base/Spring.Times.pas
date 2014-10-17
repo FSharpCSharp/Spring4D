@@ -56,6 +56,8 @@ type
 
     class operator Equal(const left, right: Times): Boolean;
     class operator NotEqual(const left, right: Times): Boolean;
+
+    class operator Implicit(value: Integer): Times;
   end;
 
 implementation
@@ -94,6 +96,11 @@ end;
 class operator Times.NotEqual(const left, right: Times): Boolean;
 begin
   Result := not left.Equals(right);
+end;
+
+class operator Times.Implicit(value: Integer): Times;
+begin
+  Result := Times.Exactly(value);
 end;
 
 class function Times.Any: Times;
