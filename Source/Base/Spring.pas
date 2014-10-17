@@ -104,7 +104,7 @@ type
   ///	<summary>
   ///	  Represents a logical predicate.
   ///	</summary>
-  ///	<param name="value">
+  ///	<param name="arg">
   ///	  the value needs to be determined.
   ///	</param>
   ///	<returns>
@@ -119,7 +119,7 @@ type
   ///	  </note>
   ///	</remarks>
   ///	<seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
-  TPredicate<T> = reference to function(const value: T): Boolean;
+  TPredicate<T> = reference to function(const arg: T): Boolean;
 
   ///	<summary>
   ///	  Represents an anonymous method that has a single parameter and does not
@@ -127,7 +127,7 @@ type
   ///	</summary>
   ///	<seealso cref="TActionProc&lt;T&gt;" />
   ///	<seealso cref="TActionMethod&lt;T&gt;" />
-  TAction<T> = reference to procedure(const obj: T);
+  TAction<T> = reference to procedure(const arg: T);
 
   ///	<summary>
   ///	  Represents a procedure that has a single parameter and does not return
@@ -135,7 +135,7 @@ type
   ///	</summary>
   ///	<seealso cref="TAction&lt;T&gt;" />
   ///	<seealso cref="TActionMethod&lt;T&gt;" />
-  TActionProc<T> = procedure(const obj: T);
+  TActionProc<T> = procedure(const arg: T);
 
   ///	<summary>
   ///	  Represents a instance method that has a single parameter and does not
@@ -143,7 +143,7 @@ type
   ///	</summary>
   ///	<seealso cref="TAction&lt;T&gt;" />
   ///	<seealso cref="TActionProc&lt;T&gt;" />
-  TActionMethod<T> = procedure(const obj: T) of object;
+  TActionMethod<T> = procedure(const arg: T) of object;
 
   /// <summary>
   ///   Represents a anonymous method that has the same signature as
@@ -1002,10 +1002,23 @@ type
   {$REGION 'TTypeInfoHelper}
 
   TTypeInfoHelper = record helper for TTypeInfo
-  private
-    function GetTypeName: string; inline;
   public
-    property TypeName: string read GetTypeName;
+{$IFNDEF DELPHIXE3_UP}
+    function TypeData: PTypeData; inline;
+{$ENDIF}
+    function TypeName: string; inline;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TTypeDataHelper}
+
+  TTypeDataHelper = record helper for TTypeData
+  public
+{$IFNDEF DELPHIXE3_UP}
+    function DynArrElType: PPTypeInfo; inline;
+{$ENDIF}
   end;
 
   {$ENDREGION}
@@ -1145,6 +1158,8 @@ function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
 
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
+
+function SkipShortString(P: PByte): Pointer; inline;
 {$ENDREGION}
 
 
@@ -1322,6 +1337,11 @@ end;
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind;
 begin
   Result := typeInfo.Kind;
+end;
+
+function SkipShortString(P: PByte): Pointer;
+begin
+  Result := P + P^ + 1;
 end;
 {$ENDREGION}
 
@@ -2324,7 +2344,14 @@ end;
 
 {$REGION 'TTypeInfoHelper'}
 
-function TTypeInfoHelper.GetTypeName: string;
+{$IFNDEF DELPHIXE3_UP}
+function TTypeInfoHelper.TypeData: PTypeData;
+begin
+  Result := GetTypeData(@Self);
+end;
+{$ENDIF}
+
+function TTypeInfoHelper.TypeName: string;
 begin
 {$IFNDEF NEXTGEN}
   Result := UTF8ToString(Name);
@@ -2332,6 +2359,18 @@ begin
   Result := NameFld.ToString;
 {$ENDIF}
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTypeDataHelper'}
+
+{$IFNDEF DELPHIXE3_UP}
+function TTypeDataHelper.DynArrElType: PPTypeInfo;
+begin
+  Result := PPointer(SkipShortString(@DynUnitName))^;
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
