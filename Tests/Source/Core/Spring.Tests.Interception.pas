@@ -101,11 +101,18 @@ type
     procedure TestByRegistrationWithSelector;
   end;
 
+  TTestMocks = class(TContainerTestCase)
+  published
+    procedure TestAutoMockingContainer;
+  end;
+
 implementation
 
 uses
   Spring.Collections,
-  Spring.Container.Core;
+  Spring.Container.AutoMockExtension,
+  Spring.Container.Core,
+  Spring.Mocking;
 
 
 {$REGION 'TFreezableTest'}
@@ -666,6 +673,28 @@ begin
   service := fContainer.Resolve<IService>;
   service.DoSomething;
   FCheckCalled := True;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestMocks'}
+
+procedure TTestMocks.TestAutoMockingContainer;
+var
+  sut: TBasketController;
+begin
+  fContainer.AddExtension<TAutoMockExtension>;
+  fContainer.RegisterType<TBasketController>;
+  fContainer.Build;
+
+  sut := fContainer.Resolve<TBasketController>;
+  try
+    sut.Post(nil);
+    fContainer.Resolve<IMock<ICommandChannel>>.Received(1).Send(nil);
+  finally
+    sut.Free;
+  end;
 end;
 
 {$ENDREGION}

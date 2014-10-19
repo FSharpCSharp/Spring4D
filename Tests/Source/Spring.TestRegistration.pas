@@ -227,7 +227,8 @@ begin
     TFreezableTest.Suite,
     TProxyTest.Suite,
     TStorageTests.Suite,
-    TTestInterception.Suite
+    TTestInterception.Suite,
+    TTestMocks.Suite
   ]);
 {$ENDIF}
 
