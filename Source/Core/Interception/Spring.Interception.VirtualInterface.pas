@@ -76,6 +76,7 @@ implementation
 
 uses
 {$IFDEF DELPHIXE}
+  Spring.Patches.QC93646,
   Spring.Patches.QC98671,
 {$ENDIF}
   RTLConsts;
