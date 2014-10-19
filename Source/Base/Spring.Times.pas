@@ -100,7 +100,11 @@ end;
 
 class operator Times.Implicit(value: Integer): Times;
 begin
-  Result := Times.Exactly(value);
+  Guard.CheckRangeInclusive(value, 0, MaxInt);
+  if value = 0 then
+    Result := Times.Never
+  else
+    Result := Times.Exactly(value);
 end;
 
 class function Times.Any: Times;
