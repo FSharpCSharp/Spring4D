@@ -111,6 +111,7 @@ type
 implementation
 
 uses
+  Classes,
   TypInfo,
   Spring.Container.Common,
   Spring.Container.ComponentActivator,
@@ -482,7 +483,12 @@ begin
     for attribute in attributes do
       kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.Name);
 
-    services := model.ComponentType.GetInterfaces;
+    services := model.ComponentType.GetInterfaces.Where(
+      function(const interfaceType: TRttiInterfaceType): Boolean
+      begin
+        Result := (interfaceType.Handle <> TypeInfo(IInterface))
+          and (interfaceType.Handle <> TypeInfo(IInterfaceComponentReference));
+      end);
     if Assigned(services) then
       for service in services do
         if Assigned(service.BaseType) and not model.HasService(service.Handle) then
