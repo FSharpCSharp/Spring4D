@@ -53,6 +53,7 @@ contains
   Spring.Events in '..\..\Source\Base\Spring.Events.pas',
   Spring.Events.Base in '..\..\Source\Base\Spring.Events.Base.pas',
   Spring.Helpers in '..\..\Source\Base\Spring.Helpers.pas',
+  Spring.Patches.QC93646 in '..\..\Source\Base\Spring.Patches.QC93646.pas',
   Spring.Patches.QC98671 in '..\..\Source\Base\Spring.Patches.QC98671.pas',
   Spring.Logging in '..\..\Source\Base\Logging\Spring.Logging.pas',
   Spring.Logging.Appenders in '..\..\Source\Base\Logging\Spring.Logging.Appenders.pas',
