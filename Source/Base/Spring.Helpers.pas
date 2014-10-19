@@ -431,6 +431,9 @@ type
     /// </param>
     function IsAssignableFrom(const rttiType: TRttiType): Boolean;
 
+    function IsType<T>: Boolean; overload;
+    function IsType(typeInfo: PTypeInfo): Boolean; overload; inline;
+
     ///	<summary>
     ///	  Gets an enumerable collection which contains all constructor methods
     ///	  of the type, including inherited.
@@ -1027,6 +1030,16 @@ end;
 function TRttiTypeHelper.IsAssignableFrom(const rttiType: TRttiType): Boolean;
 begin
   Result := Spring.IsAssignableFrom(Self.Handle, rttiType.Handle);
+end;
+
+function TRttiTypeHelper.IsType(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := Handle = typeInfo;
+end;
+
+function TRttiTypeHelper.IsType<T>: Boolean;
+begin
+  Result := Handle = TypeInfo(T);
 end;
 
 function TRttiTypeHelper.InternalGetFields(
