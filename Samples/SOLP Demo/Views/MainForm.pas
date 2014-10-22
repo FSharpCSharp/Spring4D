@@ -1,4 +1,4 @@
-unit CustomersView;
+unit MainForm;
 
 interface
 

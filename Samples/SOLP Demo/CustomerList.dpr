@@ -12,12 +12,10 @@ uses
 {$R *.res}
 
 begin
+  RegisterTypes;
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  RegisterTypes;
   GlobalContainer.Resolve<TCustomersView>;
-//  Application.CreateForm(TCustomersView, CustomersView);
-//  CustomersView.DataContext := TCustomersViewModel.Create(TCustomerRepository.Create(nil));
   Application.Run;
   ReportMemoryLeaksOnShutdown := True;
 end.

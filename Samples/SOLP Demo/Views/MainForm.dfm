@@ -19,6 +19,7 @@ object CustomersView: TCustomersView
     Width = 554
     Height = 248
     Align = alClient
+    Colors.UnfocusedColor = clMedGray
     Header.AutoSizeIndex = 0
     Header.Font.Charset = DEFAULT_CHARSET
     Header.Font.Color = clWindowText

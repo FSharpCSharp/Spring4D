@@ -10,6 +10,7 @@ uses
 type
   TCustomerRepository = class(TSimpleRepository<TCustomer,string>)
   public
+    constructor Create;
     function FindOne(const id: string): TCustomer; override;
     function FindAll: IList<TCustomer>; override;
   end;
@@ -17,6 +18,11 @@ type
 implementation
 
 { TCustomerRepository }
+
+constructor TCustomerRepository.Create;
+begin
+  inherited Create(nil);
+end;
 
 function TCustomerRepository.FindAll: IList<TCustomer>;
 begin

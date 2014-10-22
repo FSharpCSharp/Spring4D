@@ -14,9 +14,9 @@ type
   private
     fCustomers: IObjectList;
     fCustomerId: string;
-    fCustomerRepository: IPagedRepository<TCustomer,string>;
+    fCustomerRepository: Lazy<IPagedRepository<TCustomer,string>>;
   public
-    constructor Create(const customerRespository: IPagedRepository<TCustomer,string>);
+    constructor Create(const customerRespository: Lazy<IPagedRepository<TCustomer,string>>);
 
     procedure LoadCustomers(Sender: TObject);
     property Customers: IObjectList read fCustomers;
@@ -28,7 +28,7 @@ implementation
 { TCustomersViewModel }
 
 constructor TCustomersViewModel.Create(
-  const customerRespository: IPagedRepository<TCustomer, string>);
+  const customerRespository: Lazy<IPagedRepository<TCustomer, string>>);
 begin
   inherited Create;
   fCustomerRepository := customerRespository;
@@ -38,11 +38,11 @@ procedure TCustomersViewModel.LoadCustomers(Sender: TObject);
 begin
   // load customers
   if fCustomerId = '' then
-    fCustomers := fCustomerRepository.FindAll as IObjectList
+    fCustomers := fCustomerRepository.Value.FindAll as IObjectList
   else
   begin
     fCustomers := TCollections.CreateList<TCustomer>(True) as IObjectList;
-    fCustomers.Add(fCustomerRepository.FindOne(fCustomerId));
+    fCustomers.Add(fCustomerRepository.Value.FindOne(fCustomerId));
   end;
 
   NotifyOfPropertyChange('Customers');
