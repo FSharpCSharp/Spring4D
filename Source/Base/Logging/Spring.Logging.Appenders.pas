@@ -307,8 +307,6 @@ const
   LEVEL: array[TLogLevel] of android_LogPriority = (
     ANDROID_LOG_UNKNOWN,
     ANDROID_LOG_VERBOSE,
-    ANDROID_LOG_DEBUG,  //CallStack
-    ANDROID_LOG_DEBUG,  //SerializedData
     ANDROID_LOG_DEBUG,  //Debug
     ANDROID_LOG_DEBUG,  //Text
     ANDROID_LOG_INFO,
