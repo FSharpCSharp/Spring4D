@@ -95,7 +95,7 @@
         <SanitizedProjectName>Spring_Tests_Mobile</SanitizedProjectName>
         <DCC_Define>SPRING_NO_WARNING;FMX;$(DCC_Define)</DCC_Define>
         <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDevelopmentRegion=en;CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleInfoDictionaryVersion=6.0;CFBundleVersion=1.0.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;LSRequiresIPhoneOS=true;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);UIDeviceFamily=iPhone &amp; iPad;CFBundleResourceSpecification=ResourceRules.plist</VerInfo_Keys>
-        <DCC_UnitSearchPath>..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Base\Reflection;..\..\..\Source\Core\Container;..\..\..\Source\Core\Services;..\..\..\Source\Extensions\Utils;..\..\..\Source\Extensions\Cryptography;..\..\..\Source\Base\Logging;..\..\..\Source\Core\Logging;..\..\Source\dUnit;..\..\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Base\Reflection;..\..\..\Source\Core\Container;..\..\..\Source\Core\Services;..\..\..\Source\Extensions\Utils;..\..\..\Source\Extensions\Cryptography;..\..\..\Source\Base\Logging;..\..\..\Source\Core\Logging;..\..\Source\dUnit;..\..\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <DCC_DcuOutput>..\..\Lib\DelphiXE6\$(Platform)\$(Config)</DCC_DcuOutput>
