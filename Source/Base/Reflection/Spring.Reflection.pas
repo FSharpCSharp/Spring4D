@@ -279,6 +279,10 @@ type
     class function IsClass : TSpecification<TRttiType>;
     class function IsInterface : TSpecification<TRttiType>;
   end;
+  TParameterFilters = class(TFiltersNamed<TRttiParameter>)
+  public
+    class function HasFlags(flags: TParamFlags): TSpecification<TRttiParameter>;
+  end;
 
   {$ENDREGION}
 
@@ -438,7 +442,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TIsClassFilter>'}
+  {$REGION 'TIsClassFilter'}
 
   TIsClassFilter = class(TSpecificationBase<TRttiType>)
   protected
@@ -448,11 +452,25 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TIsInterfaceFilter>'}
+  {$REGION 'TIsInterfaceFilter'}
 
   TIsInterfaceFilter = class(TSpecificationBase<TRttiType>)
   protected
     function IsSatisfiedBy(const member: TRttiType): Boolean; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'THasFlagsFilter'}
+
+  THasFlagsFilter = class(TSpecificationBase<TRttiParameter>)
+  private
+    fFlags: TParamFlags;
+  protected
+    function IsSatisfiedBy(const parameter: TRttiParameter): Boolean; override;
+  public
+    constructor Create(flags: TParamFlags);
   end;
 
   {$ENDREGION}
@@ -850,6 +868,17 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TParameterFilters'}
+
+class function TParameterFilters.HasFlags(
+  flags: TParamFlags): TSpecification<TRttiParameter>;
+begin
+  Result := THasFlagsFilter.Create(flags);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'Filters'}
 
 { THasAttributeFilter<T> }
@@ -1043,6 +1072,20 @@ end;
 function TIsInterfaceFilter.IsSatisfiedBy(const member: TRttiType): Boolean;
 begin
   Result := member is TRttiInterfaceType;
+end;
+
+{ THasFlagsFilter }
+
+constructor THasFlagsFilter.Create(flags: TParamFlags);
+begin
+  inherited Create;
+  fFlags := flags;
+end;
+
+function THasFlagsFilter.IsSatisfiedBy(
+  const parameter: TRttiParameter): Boolean;
+begin
+  Result := parameter.Flags * fFlags = fFlags;
 end;
 
 {$ENDREGION}

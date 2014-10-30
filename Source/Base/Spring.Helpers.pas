@@ -519,10 +519,13 @@ type
   TRttiMethodHelper = class helper for TRttiMethod
   private
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+    function InternalGetParameters: IEnumerable<TRttiParameter>;
   public
     function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+
+    property Parameters: IEnumerable<TRttiParameter> read InternalGetParameters;
   end;
 
   TRttiPropertyHelper = class helper for TRttiProperty
@@ -1355,6 +1358,11 @@ begin
     and (typeInfo.Kind = tkInterface)
     and IsAssignableFrom(typeInfo, value.TypeInfo) then
     PValueData(@value).FTypeInfo := typeInfo;
+end;
+
+function TRttiMethodHelper.InternalGetParameters: IEnumerable<TRttiParameter>;
+begin
+  Result := TCollections.Query<TRttiParameter>(GetParameters);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TObject;
