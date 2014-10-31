@@ -29,6 +29,7 @@ unit Spring.Container.Core;
 interface
 
 uses
+  Classes,
   Rtti,
   SysUtils,
   Spring,
@@ -321,8 +322,23 @@ type
 
   TValueHolder = class(TInterfacedObject, TFunc<TValue>)
   private
-    fValue: TValue;
+    // DON'T CHANGE ORDER!!!
     fLifetimeWatcher: IInterface;
+    fValue: TValue;
+    type
+      PValue = ^TValue;
+      TComponentHolder = class(TComponent, IInterface)
+      private
+        fRefCount: Integer;
+        fValue: PValue;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
+      protected
+        procedure Notification(Component: TComponent; Operation: TOperation); override;
+      public
+        constructor Create(value: PValue); reintroduce;
+        destructor Destroy; override;
+      end;
   public
     constructor Create(const value: TValue; refCounting: TRefCounting); overload;
     constructor Create(const value: TValue; const lifetimeWatcher: IInterface); overload;
@@ -372,6 +388,7 @@ implementation
 
 uses
   Generics.Collections,
+  SyncObjs,
   TypInfo,
   Spring.Container.ResourceStrings,
   Spring.Helpers;
@@ -458,6 +475,8 @@ end;
 constructor TValueHolder.Create(const value: TValue; refCounting: TRefCounting);
 var
   lifetimeWatcher: IInterface;
+  component: TComponent;
+  componentHolder: TComponentHolder;
 begin
   Guard.CheckNotNull(not value.IsEmpty, 'value');
 
@@ -468,7 +487,14 @@ begin
     if value.Kind = tkInterface then
       lifetimeWatcher := value.AsInterface
     else
-      lifetimeWatcher := nil;
+      if value.TryAsType<TComponent>(component) then
+      begin
+        componentHolder := TComponentHolder.Create(@fValue);
+        componentHolder.FreeNotification(component);
+        lifetimeWatcher := componentHolder;
+      end
+      else
+        lifetimeWatcher := nil;
   Create(value, lifetimeWatcher);
 end;
 
@@ -485,15 +511,53 @@ begin
 {$IFNDEF AUTOREFCOUNT}
   if not Assigned(fLifetimeWatcher) and fValue.IsObject then
     fValue.AsObject.Free;
-{$ELSE}
-  fValue := nil;
 {$ENDIF}
+  // explicitly set to nil to keep correct order
+  fLifetimeWatcher := nil;
+  fValue := nil;
   inherited Destroy;
 end;
 
 function TValueHolder.Invoke: TValue;
 begin
   Result := fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TValueHolder.TComponentHolder'}
+
+constructor TValueHolder.TComponentHolder.Create(value: PValue);
+begin
+  inherited Create(nil);
+  fValue := value;
+end;
+
+destructor TValueHolder.TComponentHolder.Destroy;
+begin
+  fValue^.AsObject.Free;
+  inherited;
+end;
+
+function TValueHolder.TComponentHolder._AddRef: Integer;
+begin
+  Result := TInterlocked.Increment(fRefCount);
+end;
+
+function TValueHolder.TComponentHolder._Release: Integer;
+begin
+  Result := TInterlocked.Decrement(fRefCount);
+  if Result = 0 then
+    Destroy;
+end;
+
+procedure TValueHolder.TComponentHolder.Notification(Component: TComponent;
+  Operation: TOperation);
+begin
+  inherited;
+  if Operation = opRemove then
+    fValue^ := nil;
 end;
 
 {$ENDREGION}
