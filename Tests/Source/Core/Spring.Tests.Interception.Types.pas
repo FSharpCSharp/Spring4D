@@ -32,6 +32,7 @@ interface
 uses
   Rtti,
   SysUtils,
+  TypInfo,
   Spring,
   Spring.Collections,
   Spring.Container.Common,
@@ -753,7 +754,7 @@ end;
 function TMyInterceptorSelector.HasInterceptors(
   const model: TComponentModel): Boolean;
 begin
-  Result := model.ComponentTypeInfo.Name = 'TService';
+  Result := model.ComponentTypeInfo.TypeName = 'TService';
 end;
 
 function TMyInterceptorSelector.SelectInterceptors(const model: TComponentModel;

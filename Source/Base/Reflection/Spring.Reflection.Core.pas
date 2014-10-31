@@ -53,18 +53,26 @@ type
   PVirtualMethodTable = ^Pointer;
 {$POINTERMATH OFF}
 
-  TEquals = function (Self: TObject; Obj: TObject): Boolean;
-  TGetHashCode = function (Self: TObject): Integer;
-  TToString = function (Self: TObject): string;
-  TSafeCallException = function (Self: TObject; ExceptObject: TObject;
+{$IFDEF AUTOREFCOUNT}
+  // after looking at several functions in System.pas (like _AfterConstruction,
+  // etc.) we realized that Self (or Instance) is passed as const, this has
+  // some implication on NextGen regarding reference counting (most visible
+  // during FreeInstance)
+  TObjAddRef = function (const Self: TObject): Integer;
+  TObjRelease = function (const Self: TObject): Integer;
+{$ENDIF}
+  TEquals = function (const Self: TObject; Obj: TObject): Boolean;
+  TGetHashCode = function (const Self: TObject): Integer;
+  TToString = function (const Self: TObject): string;
+  TSafeCallException = function (const Self: TObject; ExceptObject: TObject;
     ExceptAddr: Pointer): HResult;
-  TAfterConstruction = procedure (Self: TObject);
-  TBeforeDestruction = procedure (Self: TObject);
-  TDispatch = procedure (Self: TObject; var Message);
-  TDefaultHandler = procedure (Self: TObject; var Message);
+  TAfterConstruction = procedure (const Self: TObject);
+  TBeforeDestruction = procedure (const Self: TObject);
+  TDispatch = procedure (const Self: TObject; var Message);
+  TDefaultHandler = procedure (const Self: TObject; var Message);
   TNewInstance = function (Self: TClass): TObject;
-  TFreeInstance = procedure (Self: TObject);
-  TDestroy = procedure (Self: TObject; OuterMost: ShortInt);
+  TFreeInstance = procedure (const Self: TObject);
+  TDestroy = procedure (const Self: TObject; OuterMost: ShortInt);
 
   PClass = ^TClass;
   PClassData = ^TClassData;
@@ -85,6 +93,10 @@ type
     InstanceSize: Integer;
     Parent: PClass;
 
+{$IFDEF AUTOREFCOUNT}
+    __ObjAddRef: TObjAddRef;
+    __ObjRelease: TObjRelease;
+{$ENDIF}
     Equals: TEquals;
     GetHashCode: TGetHashCode;
     ToString: TToString;

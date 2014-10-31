@@ -57,14 +57,14 @@ type
           const interceptors: IEnumerable<IInterceptor>);
       end;
 
-    class var fProxies: IDictionary<TObject, TClassProxy>;
+    class var fProxies: IDictionary<Pointer, TClassProxy>;
   private
     fIntercepts: IList<TMethodIntercept>;
     fInterceptors: IList<IInterceptor>;
     fInterceptorSelector: IInterceptorSelector;
     fAdditionalInterfaces: TArray<IInterface>;
-    class procedure GetProxyTargetAccessor(Self: TObject; var Result: IProxyTargetAccessor); static;
-    class procedure ProxyFreeInstance(Self: TObject); static;
+    class function GetProxyTargetAccessor(const Self: TObject) : IProxyTargetAccessor; static;
+    class procedure ProxyFreeInstance(const Self: TObject); static;
   protected
     function CollectInterceptableMethods(
       const hook: IProxyGenerationHook): IEnumerable<TRttiMethod>;
@@ -118,7 +118,7 @@ end;
 
 class constructor TClassProxy.Create;
 begin
-  fProxies := TCollections.CreateDictionary<TObject, TClassProxy>([doOwnsValues]);
+  fProxies := TCollections.CreateDictionary<Pointer, TClassProxy>([doOwnsValues]);
 end;
 
 function TClassProxy.CreateInstance: TObject;
@@ -271,18 +271,21 @@ begin
   end;
 end;
 
-class procedure TClassProxy.GetProxyTargetAccessor(Self: TObject;
-  var Result: IProxyTargetAccessor);
+class function TClassProxy.GetProxyTargetAccessor(const Self: TObject): IProxyTargetAccessor;
 begin
   Result := TProxyTargetAccessor.Create(
     Self, fProxies[Self].fInterceptors);
 end;
 
-class procedure TClassProxy.ProxyFreeInstance(Self: TObject);
+class procedure TClassProxy.ProxyFreeInstance(const Self: TObject);
+var
+  classParent: TClass;
 begin
-  GetClassData(Self.ClassParent).FreeInstance(Self); // inherited
-  PPointer(Self)^ := Self.ClassParent;
-  fProxies.Remove(Self);
+  // use separate veriable here not only to cache the result but calling
+  // Self.ClassParent after calling inherited would produce an AV on NextGen
+  classParent := Self.ClassParent;
+  GetClassData(classParent).FreeInstance(Self); // inherited
+  fProxies.Remove(classParent);
 end;
 
 {$ENDREGION}

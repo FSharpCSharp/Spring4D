@@ -2132,7 +2132,7 @@ begin
   Result := Assigned(fTarget);
 end;
 
-procedure WeakRefFreeInstance(Self: TObject);
+procedure WeakRefFreeInstance(const Self: TObject);
 var
   freeInstance: TFreeInstance;
 begin
