@@ -63,7 +63,11 @@ type
     fInterceptors: IList<IInterceptor>;
     fInterceptorSelector: IInterceptorSelector;
     fAdditionalInterfaces: TArray<IInterface>;
-    class function GetProxyTargetAccessor(const Self: TObject) : IProxyTargetAccessor; static;
+{$IFDEF CPUX64}
+    class procedure GetProxyTargetAccessor(const Self: TObject; var Result: IProxyTargetAccessor); static;
+{$ELSE}
+    class function GetProxyTargetAccessor(const Self: TObject): IProxyTargetAccessor; static;
+{$ENDIF}
     class procedure ProxyFreeInstance(const Self: TObject); static;
   protected
     function CollectInterceptableMethods(
@@ -271,7 +275,12 @@ begin
   end;
 end;
 
-class function TClassProxy.GetProxyTargetAccessor(const Self: TObject): IProxyTargetAccessor;
+{$IFDEF CPUX64}
+class procedure TClassProxy.GetProxyTargetAccessor(const Self: TObject;
+  var Result: IProxyTargetAccessor);
+{$ELSE}
+class function TClassProxy.GetProxyTargetAccessor(const Self: TObject): IProxyTargetAccessor; static;
+{$ENDIF}
 begin
   Result := TProxyTargetAccessor.Create(
     Self, fProxies[Self].fInterceptors);
