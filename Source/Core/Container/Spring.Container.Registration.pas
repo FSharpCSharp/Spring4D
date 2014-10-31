@@ -336,10 +336,16 @@ var
   method: TRttiMethod;
 begin
   methods := model.ComponentType.GetMethods;
-  if not (TType.IsDelegate(model.ComponentTypeInfo) and (Length(methods) = 1)
-    and Assigned(methods[0].ReturnType)) then
+
+  if Length(methods) = 0 then
     raise ERegistrationException.CreateResFmt(@SUnsupportedFactoryType, [
       model.ComponentTypeName]);
+
+  for method in methods do
+    if not Assigned(method.ReturnType)
+      or method.Parameters.Any(TParameterFilters.HasFlags([pfOut])) then
+      raise ERegistrationException.CreateResFmt(@SUnsupportedFactoryMethod, [
+        model.ComponentTypeName, method.ToString]);
 
   maxVirtualIndex := 2;
   for method in methods do
@@ -353,9 +359,10 @@ begin
       intf: IInterface;
     begin
       factory := TVirtualInterface.Create(model.ComponentTypeInfo, invokeEvent);
-      if maxVirtualIndex > 3 then
-        TVirtualInterfaceHack(factory).VTable[3] :=
-          TVirtualInterfaceHack(factory).VTable[maxVirtualIndex];
+      if TType.IsDelegate(model.ComponentTypeInfo) then
+        if maxVirtualIndex > 3 then
+          TVirtualInterfaceHack(factory).VTable[3] :=
+            TVirtualInterfaceHack(factory).VTable[maxVirtualIndex];
       factory.QueryInterface(GetTypeData(model.ComponentTypeInfo).Guid, intf);
       TValue.Make(@intf, model.ComponentTypeInfo, Result);
     end;
@@ -367,14 +374,9 @@ var
 begin
   invokeEvent :=
     procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
-    var
-      arguments: TArray<TValue>;
-      i: Integer;
     begin
-      SetLength(arguments, High(args));
-      for i := 1 to High(args) do
-        arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
-      result := (fKernel as IKernelInternal).Resolve(method.ReturnType.Handle, arguments);
+      result := (fKernel as IKernelInternal).Resolve(
+        method.ReturnType.Handle, Copy(args, 1, High(args)));
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -387,14 +389,9 @@ var
 begin
   invokeEvent :=
     procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
-    var
-      arguments: TArray<TValue>;
-      i: Integer;
     begin
-      SetLength(arguments, High(args));
-      for i := 1 to High(args) do
-        arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
-      result := (fKernel as IKernelInternal).Resolve(name, arguments);
+      result := (fKernel as IKernelInternal).Resolve(
+        name, Copy(args, 1, High(args)));
     end;
 
   InternalRegisterFactory(model, invokeEvent);

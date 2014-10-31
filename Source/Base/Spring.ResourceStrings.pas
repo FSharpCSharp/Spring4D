@@ -143,7 +143,7 @@ resourcestring
 
   {$REGION 'Spring.Times'}
 
-  SNoMatchAny = 'any times, but was %2:d times';
+  SNoMatchAny = 'anytime, but was %2:d times';
   SNoMatchAtLeast = 'at least %0:d times, but was %2:d times';
   SNoMatchAtLeastOnce = 'at least once, but was never';
   SNoMatchAtMost = 'at most %1:d times, but was %2:d times';

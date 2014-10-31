@@ -33,13 +33,16 @@ uses
   SysUtils,
   TypInfo,
   Spring,
-  Spring.Interception;
+  Spring.Interception,
+  Spring.Times;
 
 {$SCOPEDENUMS ON}
 
 type
   TMockState = (Act, Arrange, Assert);
   TMockBehavior = (Dynamic, Strict);
+
+  Times = Spring.Times.Times;
 
   TValue = Rtti.TValue;
 

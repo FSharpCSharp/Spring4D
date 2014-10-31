@@ -299,7 +299,7 @@ begin
       else
         if fInterceptor.Behavior = TMockBehavior.Strict then
           raise EMockException.Create('call count exceeded: ' +
-            Times.AtMost(Length(tempValues)).GetExceptionMessage(callInfo.CallCount));
+            Times.AtMost(Length(tempValues)).ToString(callInfo.CallCount));
     end);
   Result := Self;
 end;

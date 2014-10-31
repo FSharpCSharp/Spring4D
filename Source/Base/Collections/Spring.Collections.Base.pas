@@ -71,6 +71,10 @@ type
   TEnumerableBase = class abstract(TInterfacedObject, IInterface,
     IElementType, ICountable, IEnumerable)
   private
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+    const objDestroyingFlag = Integer($80000000);
+    function GetRefCount: Integer; inline;
+{$ENDIF}{$ENDIF}
     function GetEnumeratorNonGeneric: IEnumerator; virtual; abstract;
     function IEnumerable.GetEnumerator = GetEnumeratorNonGeneric;
   protected
@@ -86,6 +90,10 @@ type
     function _Release: Integer; virtual; stdcall;
   {$ENDREGION}
   public
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+    procedure BeforeDestruction; override;
+{$ENDIF}{$ENDIF}
+
     function AsObject: TObject;
 
     function GetEnumerator: IEnumerator;
@@ -93,6 +101,9 @@ type
     property Count: Integer read GetCount;
     property ElementType: PTypeInfo read GetElementType;
     property IsEmpty: Boolean read GetIsEmpty;
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+    property RefCount: Integer read GetRefCount;
+{$ENDIF}{$ENDIF}
   end;
 
   ///	<summary>
@@ -427,6 +438,14 @@ begin
   Result := Self;
 end;
 
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+procedure TEnumerableBase.BeforeDestruction;
+begin
+  inherited;
+  FRefCount := objDestroyingFlag;
+end;
+{$ENDIF}{$ENDIF}
+
 function TEnumerableBase.GetCount: Integer;
 var
   enumerator: IEnumerator;
@@ -449,6 +468,13 @@ begin
   enumerator := GetEnumerator;
   Result := not enumerator.MoveNext;
 end;
+
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+function TEnumerableBase.GetRefCount: Integer;
+begin
+  Result := FRefCount and not objDestroyingFlag;
+end;
+{$ENDIF}{$ENDIF}
 
 function TEnumerableBase.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin

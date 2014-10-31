@@ -169,7 +169,7 @@ begin
         callCount := 0;
       if not fCurrentTimes.Verify(callCount) then
         raise EMockException.Create('call count not correct: ' +
-          fCurrentTimes.GetExceptionMessage(callCount));
+          fCurrentTimes.ToString(callCount));
     end;
   end;
 end;

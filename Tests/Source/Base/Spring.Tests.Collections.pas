@@ -104,6 +104,7 @@ type
     procedure TestIssue67;
     procedure TestCopyTo;
     procedure TestArrayAccess;
+    procedure TestIssue53;
 
     procedure GetCapacity;
     procedure SetCapacity;
@@ -688,6 +689,26 @@ procedure TTestIntegerList.TestExtract_ItemNotInList;
 begin
   SimpleFillList;
   CheckEquals(0, SUT.Extract(4));
+end;
+
+type
+  TIntegerList = class(TList<Integer>)
+  public
+    procedure Clear; override;
+  end;
+
+procedure TIntegerList.Clear;
+var
+  i: Integer;
+begin
+  for i in Self do
+    if i = 0 then;
+  inherited;
+end;
+
+procedure TTestIntegerList.TestIssue53;
+begin
+  SUT := TIntegerList.Create;
 end;
 
 procedure TTestIntegerList.TestIssue67;

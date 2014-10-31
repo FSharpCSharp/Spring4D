@@ -43,8 +43,7 @@ uses
   TimeSpan,
   Types,
   TypInfo,
-  Variants,
-  Spring.Times;
+  Variants;
 
 type
 
@@ -86,16 +85,74 @@ type
   TThreadID = LongWord;
 {$ENDIF}
 
-  Times = Spring.Times.Times;
-
   {$ENDREGION}
 
 
   {$REGION 'Interfaces'}
+
+  /// <summary>
+  ///   Supports cloning, which creates a new instance of a class with the same
+  ///   value as an existing instance.
+  /// </summary>
+  IClonable = interface(IInvokable)
+    ['{B6BC3795-624B-434F-BB19-6E8F55149D0A}']
+    /// <summary>
+    ///   Creates a new object that is a copy of the current instance.
+    /// </summary>
+    /// <returns>
+    ///   A new object that is a copy of this instance.
+    /// </returns>
+    function Clone: TObject;
+  end;
+
+  /// <summary>
+  ///   Defines a generalized type-specific comparison method that a class
+  ///   implements to order or sort its instances.
+  /// </summary>
   IComparable = interface(IInvokable)
     ['{7F0E25C8-50D7-4CF0-AB74-1913EBD3EE42}']
+    /// <summary>
+    ///   Compares the current instance with another object of the same type
+    ///   and returns an integer that indicates whether the current instance
+    ///   precedes, follows, or occurs in the same position in the sort order
+    ///   as the other object.
+    /// </summary>
+    /// <param name="obj">
+    ///   An object to compare with this instance.
+    /// </param>
+    /// <returns>
+    ///   <para>
+    ///     A value that indicates the relative order of the objects being
+    ///     compared. The return value has these meanings:
+    ///   </para>
+    ///   <list type="table">
+    ///     <listheader>
+    ///       <term>Value</term>
+    ///       <description>Meaning</description>
+    ///     </listheader>
+    ///     <item>
+    ///       <term>Less than zero</term>
+    ///       <description>This instance precedes <i>obj</i> in the sort
+    ///         order.</description>
+    ///     </item>
+    ///     <item>
+    ///       <term>Zero</term>
+    ///       <description>This instance occurs in the same position in
+    ///         the sort order as <i>obj</i>.</description>
+    ///     </item>
+    ///     <item>
+    ///       <term>Greater than zero</term>
+    ///       <description>This instance follows <i>obj</i> in the sort
+    ///         order.</description>
+    ///     </item>
+    ///   </list>
+    /// </returns>
+    /// <exception cref="Spring|EArgumentException">
+    ///   <i>obj</i> is not the same type as this instance.
+    /// </exception>
     function CompareTo(const obj: TObject): Integer;
   end;
+
   {$ENDREGION}
 
 

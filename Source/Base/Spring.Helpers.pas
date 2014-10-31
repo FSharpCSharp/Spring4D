@@ -525,6 +525,7 @@ type
     function GetIsGetter: Boolean;
     function GetIsSetter: Boolean;
     function GetReturnTypeHandle: PTypeInfo;
+    function InternalGetParameters: IEnumerable<TRttiParameter>;
   public
     function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
@@ -532,6 +533,7 @@ type
 
     property IsGetter: Boolean read GetIsGetter;
     property IsSetter: Boolean read GetIsSetter;
+    property Parameters: IEnumerable<TRttiParameter> read InternalGetParameters;
     property ReturnTypeHandle: PTypeInfo read GetReturnTypeHandle;
   end;
 
@@ -1437,6 +1439,11 @@ begin
     Result := returnType.Handle
   else
     Result := nil;
+end;
+
+function TRttiMethodHelper.InternalGetParameters: IEnumerable<TRttiParameter>;
+begin
+  Result := TCollections.Query<TRttiParameter>(GetParameters);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TObject;
