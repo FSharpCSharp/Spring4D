@@ -63,11 +63,7 @@ type
     fInterceptors: IList<IInterceptor>;
     fInterceptorSelector: IInterceptorSelector;
     fAdditionalInterfaces: TArray<IInterface>;
-{$IFDEF CPUX64}
-    class procedure GetProxyTargetAccessor(const Self: TObject; var Result: IProxyTargetAccessor); static;
-{$ELSE}
-    class function GetProxyTargetAccessor(const Self: TObject): IProxyTargetAccessor; static;
-{$ENDIF}
+    function GetProxyTargetAccessor: IProxyTargetAccessor;
     class procedure ProxyFreeInstance(const Self: TObject); static;
   protected
     function CollectInterceptableMethods(
@@ -228,7 +224,7 @@ begin
   table.Entries[0].IID := IProxyTargetAccessor;
   table.Entries[0].VTable := nil;
   table.Entries[0].IOffset := 0;
-  table.Entries[0].ImplGetter := NativeUInt(@GetProxyTargetAccessor);
+  table.Entries[0].ImplGetter := NativeUInt(@TClassProxy.GetProxyTargetAccessor);
 
   SetLength(fAdditionalInterfaces, entryCount);
 
@@ -275,15 +271,12 @@ begin
   end;
 end;
 
-{$IFDEF CPUX64}
-class procedure TClassProxy.GetProxyTargetAccessor(const Self: TObject;
-  var Result: IProxyTargetAccessor);
-{$ELSE}
-class function TClassProxy.GetProxyTargetAccessor(const Self: TObject): IProxyTargetAccessor; static;
-{$ENDIF}
+function TClassProxy.GetProxyTargetAccessor: IProxyTargetAccessor;
 begin
-  Result := TProxyTargetAccessor.Create(
-    Self, fProxies[Self].fInterceptors);
+  // Do not access any instance members here!!!
+  // Self is not a TClassProxy but this method needs to be compatible with
+  // function: IInterface of object as declared in System.InvokeImplGetter
+  Result := TProxyTargetAccessor.Create(Self, fProxies[Self].fInterceptors);
 end;
 
 class procedure TClassProxy.ProxyFreeInstance(const Self: TObject);
