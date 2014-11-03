@@ -177,7 +177,7 @@ procedure TMainForm.DoCommitChanges;
 var
   LTran: IDBTransaction;
 begin
-  LTran := FSession.Connection.BeginTransaction;
+  LTran := FSession.BeginTransaction;
   FSession.SaveList<TProduct>(FProducts);
   LTran.Commit;
 end;

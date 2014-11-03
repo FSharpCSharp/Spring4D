@@ -88,6 +88,7 @@ type
     function ColumnByMemberName(const memberName: string): ColumnAttribute;
     function ColumnByName(const columnName: string): ColumnAttribute;
     function HasInstanceField: Boolean;
+    function HasPrimaryKey: Boolean;
     function HasSequence: Boolean;
     function HasManyToOneRelations: Boolean;
     function HasOneToManyRelations: Boolean;
@@ -278,6 +279,11 @@ end;
 function TEntityData.HasOneToManyRelations: Boolean;
 begin
   Result := not fOneToManyColumns.IsEmpty;
+end;
+
+function TEntityData.HasPrimaryKey: Boolean;
+begin
+  Result := Assigned(fPrimaryKeyColumn);
 end;
 
 function TEntityData.HasSequence: Boolean;

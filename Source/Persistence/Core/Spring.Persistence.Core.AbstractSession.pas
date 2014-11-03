@@ -188,8 +188,10 @@ var
   LBaseEntityClass, LEntityToLoadClass: TClass;
 begin
   LBaseEntityClass := entity.ClassType;
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityToLoadClass) then
-    LEntityToLoadClass := LBaseEntityClass; // we are fetching from the same table - AEntity
+  LEntityToLoadClass := TRttiExplorer.GetLastGenericArgumentType(TypeInfo(T)).AsInstance.MetaclassType;
+
+  if not TRttiExplorer.IsValidEntity(LEntityToLoadClass) then
+    LEntityToLoadClass := LBaseEntityClass;
 
   if LEntityToLoadClass = LBaseEntityClass then
     LBaseEntityClass := nil;
@@ -353,8 +355,7 @@ var
 begin
   Result := T.Create;
 
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-    LEntityClass := T;
+  LEntityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
 
   if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, TypeInfo(T), LAddMethod) then
     raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
@@ -551,8 +552,7 @@ begin
   if not (classInfo.Kind = tkInterface) then
     raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
 
-  if not TRttiExplorer.TryGetEntityClass(classInfo, LEntityClass) then
-    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
+  LEntityClass := TRttiExplorer.GetEntityClass(classInfo);
 
   if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, classInfo, LAddMethod) then
     raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
@@ -589,8 +589,7 @@ begin
   if not (PTypeInfo(TypeInfo(T)).Kind = tkInterface) then
     raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
 
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
+  LEntityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
 
   if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, TypeInfo(T), LAddMethod) then
     raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);

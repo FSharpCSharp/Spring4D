@@ -429,12 +429,7 @@ var
   LSelecter: TSelectExecutor;
   LResults: IDBResultSet;
 begin
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-  begin
-    //we are fetching from the same table - AEntity
-    LEntityClass := T;
-  end;
-
+  LEntityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
   LSelecter := GetSelectCommandExecutor(LEntityClass);
   try
     LResults := LSelecter.SelectAll(LEntityClass);
@@ -451,9 +446,7 @@ var
   LResults: IDBResultSet;
 begin
   Result := System.Default(T);
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-    raise EORMUnsupportedType.CreateFmt('Entity (%s) is not supported.', [PTypeInfo(TypeInfo(T)).Name]);
-
+  LEntityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
   LSelecter := GetSelectByIdCommandExecutor(LEntityClass, id);
   try
     LResults := LSelecter.Select;

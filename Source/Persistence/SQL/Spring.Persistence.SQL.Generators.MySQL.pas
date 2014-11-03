@@ -67,7 +67,7 @@ end;
 function TMySQLGenerator.GenerateGetLastInsertId(
   const identityColumn: ColumnAttribute): string;
 begin
-  Result := 'SELECT LAST_INSERT_ID;';
+  Result := 'SELECT LAST_INSERT_ID();';
 end;
 
 function TMySQLGenerator.GenerateGetNextSequenceValue(

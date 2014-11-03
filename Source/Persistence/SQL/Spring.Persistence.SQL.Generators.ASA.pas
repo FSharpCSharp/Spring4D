@@ -76,14 +76,14 @@ begin
 
     LBuilder.Append('SELECT * FROM (')
       .AppendLine
-      .Append('  SELECT *, ROW_NUMBER OVER (ORDER BY (NULL)) AS ORM_ROW_NUM FROM (')
+      .Append('  SELECT *, ROW_NUMBER() OVER (ORDER BY (NULL)) AS ORM_ROW_NUM FROM (')
       .AppendLine.Append('    ')
       .Append(LSQL)
       .Append(') AS ORM_TOTAL_1')
       .AppendLine
       .Append('  ) AS ORM_TOTAL_2')
       .AppendLine
-      .AppendFormat(' WHERE (ORM_ROW_NUM>=%0:D) AND (ORM_ROW_NUM < %0:D+%1:D);', [offset, limit]);
+      .AppendFormat(' WHERE (ORM_ROW_NUM>%0:D) AND (ORM_ROW_NUM <= %0:D+%1:D);', [offset, limit]);
 
     Result := LBuilder.ToString;
   finally

@@ -61,7 +61,9 @@ type
     procedure GetLazyValueClass();
     procedure GetLazyValue();
     procedure FindOne();
-    procedure When_FindOne_UnannotatedEntity_throwException;
+    procedure When_UnannotatedEntity_FindOne_ThrowException;
+    procedure When_WithoutTableAttribute_FindOne_ThrowException;
+    procedure When_WithoutPrimaryKey_FindOne_ThrowException;
     procedure FindAll();
     procedure Enums();
     procedure Streams();
@@ -115,6 +117,7 @@ uses
   ,Spring.Persistence.Core.ConnectionFactory
   ,Spring.Persistence.SQL.Register
   ,Spring.Persistence.SQL.Params
+  ,Spring.Persistence.Mapping.Attributes
   ,SvDesignPatterns
   ,SvRttiUtils
   ,Spring
@@ -1546,11 +1549,56 @@ type
     property Name: string read FName write FName;
   end;
 
-procedure TestTSession.When_FindOne_UnannotatedEntity_throwException;
+procedure TestTSession.When_UnannotatedEntity_FindOne_ThrowException;
 begin
   try
     FSession.FindOne<TUnanotatedEntity>(1);
     Fail('Should not succeed if entity is not annotated');
+  except
+    on E:Exception do
+    begin
+      CheckIs(E, EORMUnsupportedType);
+    end;
+  end;
+end;
+
+type
+  [Entity]
+  TWithoutTable = class
+  private
+    FName: string;
+  public
+    [Column]
+    property Name: string read FName write FName;
+  end;
+
+  [Table('Test')]
+  TWithoutPrimaryKey = class
+  private
+    FName: string;
+  public
+    [Column]
+    property Name: string read FName write FName;
+  end;
+
+procedure TestTSession.When_WithoutPrimaryKey_FindOne_ThrowException;
+begin
+  try
+    FSession.FindOne<TWithoutPrimaryKey>(1);
+    Fail('Should not succeed if entitys primary key column is not annotated');
+  except
+    on E:Exception do
+    begin
+      CheckIs(E, EORMUnsupportedType);
+    end;
+  end;
+end;
+
+procedure TestTSession.When_WithoutTableAttribute_FindOne_ThrowException;
+begin
+  try
+    FSession.FindOne<TWithoutTable>(1);
+    Fail('Should not succeed if entity is not annotated with table');
   except
     on E:Exception do
     begin

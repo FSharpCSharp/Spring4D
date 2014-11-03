@@ -87,6 +87,7 @@ type
     class procedure GetDeclaredConstructors(AClass: TClass; AList: IList<TRttiMethod>);
     class function GetMethodWithLessParameters(AList: IList<TRttiMethod>): TRttiMethod;
     class function GetEntities: IList<TClass>;
+    class function GetEntityClass(classInfo: PTypeInfo): TClass;
     class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
     class function GetEntityRttiType<T>: TRttiType; overload;
     class function HasInstanceField(AClass: TClass): Boolean;
@@ -113,11 +114,10 @@ type
     class function GetUniqueConstraints(AClass: TClass): IList<UniqueConstraint>;
     class function HasSequence(AClass: TClass): Boolean;
     class function HasColumns(AClass: TClass): Boolean;
+    class function IsValidEntity(AClass: TClass): Boolean;
     class function TryGetColumnAsForeignKey(AColumn: ColumnAttribute; out AForeignKeyCol: ForeignJoinColumnAttribute): Boolean;
     class function TryGetBasicMethod(const AMethodName: string; ATypeInfo: PTypeInfo; out AMethod: TRttiMethod): Boolean;
     class function TryGetColumnByMemberName(AClass: TClass; const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
-    class function TryGetEntityClass(ATypeInfo: PTypeInfo; out AClass: TClass): Boolean; overload;
-    class function TryGetEntityClass<T>(out AClass: TClass): Boolean; overload;
     class function TryGetPrimaryKeyValue(AColumns: IList<ColumnAttribute>; AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
     class function TryGetMethod(ATypeInfo: PTypeInfo; const AMethodName: string; out AAddMethod: TRttiMethod; AParamCount: Integer = 1): Boolean;
     class procedure CopyFieldValues(AEntityFrom, AEntityTo: TObject);
@@ -829,24 +829,6 @@ begin
   Result := Assigned(AColumn);
 end;
 
-class function TRttiExplorer.TryGetEntityClass(ATypeInfo: PTypeInfo; out AClass: TClass): Boolean;
-var
-  LRttiType: TRttiType;
-begin
-  Result := False;
-  LRttiType := GetEntityRttiType(ATypeInfo);
-  if Assigned(LRttiType) then
-  begin
-    AClass := LRttiType.AsInstance.MetaclassType;
-    Result := True;
-  end;
-end;
-
-class function TRttiExplorer.TryGetEntityClass<T>(out AClass: TClass): Boolean;
-begin
-  Result := TryGetEntityClass(TypeInfo(T), AClass);
-end;
-
 class function TRttiExplorer.TryGetPrimaryKeyValue(AColumns: IList<ColumnAttribute>;
   AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
 var
@@ -888,14 +870,27 @@ begin
   end;
 end;
 
+class function TRttiExplorer.GetEntityClass(classInfo: PTypeInfo): TClass;
+var
+  LRttiType: TRttiType;
+begin
+  LRttiType := GetEntityRttiType(classInfo);
+  if not Assigned(LRttiType) then
+    raise EORMUnsupportedType.CreateFmt('Unsupported type %s', [classInfo.Name]);
+
+  Result := LRttiType.AsInstance.MetaclassType;
+end;
+
 class function TRttiExplorer.GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType;
 var
   LRttiType: TRttiType;
   LCurrType: TRttiType;
+  LEntityData: TEntityData;
 begin
   LRttiType := FRttiCache.GetType(ATypeInfo);
   if LRttiType = nil then
-    Exit(nil);
+    raise EORMUnsupportedType.CreateFmt('Cannot get type information from %s', [ATypeInfo.Name]);
+
   for LCurrType in LRttiType.GetGenericArguments do
   begin
     if LCurrType.IsInstance then
@@ -905,12 +900,17 @@ begin
     end;
   end;
 
-  if LRttiType.IsInstance then
-  begin
-    if (TEntityCache.Get(LRttiType.AsInstance.MetaclassType).EntityTable <> nil) then
-      Exit(LRttiType);
-  end;
-  Result := nil;
+  if not LRttiType.IsInstance then
+    raise EORMUnsupportedType.CreateFmt('%s is not an instance type.', [ATypeInfo.Name]);
+
+  LEntityData := TEntityCache.Get(LRttiType.AsInstance.MetaclassType);
+  if not LEntityData.IsTableEntity then
+    raise EORMUnsupportedType.CreateFmt('Type %s lacks [Table] attribute', [ATypeInfo.Name]);
+
+  if not LEntityData.HasPrimaryKey then
+    raise EORMUnsupportedType.CreateFmt('Type %s lacks primary key [Column]', [ATypeInfo.Name]);
+
+  Result := LRttiType;
 end;
 
 class function TRttiExplorer.GetEntityRttiType<T>: TRttiType;
@@ -937,7 +937,7 @@ class function TRttiExplorer.GetLastGenericArgumentType(ATypeInfo: PTypeInfo): T
 var
   LArgs: TArray<TRttiType>;
 begin
-  Result := TRttiContext.Create.GetType(ATypeInfo);
+  Result := FRttiCache.GetType(ATypeInfo);
   LArgs := Result.GetGenericArguments;
   if Length(LArgs) > 0 then
   begin
@@ -1277,6 +1277,24 @@ begin
   end;
 end;
 
+class function TRttiExplorer.IsValidEntity(AClass: TClass): Boolean;
+var
+  LEntityData: TEntityData;
+begin
+  LEntityData := TEntityCache.Get(AClass);
+
+  if not Assigned(LEntityData) then
+    Exit(False);
+
+  if not LEntityData.IsTableEntity then
+    Exit(False);
+
+  if not LEntityData.HasPrimaryKey then
+    Exit(False);
+
+  Result := True;
+end;
+
 class procedure TRttiExplorer.SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberColumn: ColumnAttribute;
   const AValue: TValue);
 begin
@@ -1414,7 +1432,7 @@ end;
 function TRttiCache.GetType(ATypeInfo: PTypeInfo): TRttiType;
 begin
   if not FTypes.TryGetValue(ATypeInfo, Result) then
-    Result := nil;
+    Result := FCtx.GetType(ATypeInfo);
 end;
 
 procedure TRttiCache.RebuildCache;
