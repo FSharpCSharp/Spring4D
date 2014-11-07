@@ -1279,7 +1279,8 @@ end;
 
 procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  fOnChanged.Invoke(Self, item, action);
+  if fOnChanged.IsInvokable then
+    fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
@@ -1444,14 +1445,14 @@ end;
 procedure TMapBase<TKey, T>.KeyChanged(const Item: TKey;
   Action: TCollectionChangedAction);
 begin
-  if Assigned(fOnKeyChanged) then
-    fOnKeyChanged.Invoke(Self, Item, Action)
+  if Assigned(fOnKeyChanged) and fOnKeyChanged.IsInvokable then
+      fOnKeyChanged.Invoke(Self, Item, Action)
 end;
 
 procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
   Action: TCollectionChangedAction);
 begin
-  if Assigned(fOnValueChanged) then
+  if Assigned(fOnValueChanged) and fOnValueChanged.IsInvokable then
     fOnValueChanged.Invoke(Self, Item, Action)
 end;
 

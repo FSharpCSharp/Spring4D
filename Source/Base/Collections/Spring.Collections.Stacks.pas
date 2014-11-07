@@ -162,7 +162,8 @@ end;
 
 procedure TStack<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  fOnChanged.Invoke(Self, item, action);
+  if fOnChanged.IsInvokable then
+    fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TStack<T>.Push(const item: T);

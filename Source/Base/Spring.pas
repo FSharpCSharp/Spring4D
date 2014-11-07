@@ -765,6 +765,7 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetIsEmpty: Boolean;
+    function GetIsInvokable: Boolean;
     function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
@@ -775,9 +776,17 @@ type
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
     procedure ForEach(const action: TAction<TMethod>);
+
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property IsEmpty: Boolean read GetIsEmpty;
+
+    /// <summary>
+    ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
+    ///   Enabled</see> and contains any event handler. Otherwise returns <b>
+    ///   False</b>.
+    /// </summary>
+    property IsInvokable: Boolean read GetIsInvokable;
     property Invoke: TMethod read GetInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
   end;
