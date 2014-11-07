@@ -98,7 +98,7 @@ type
     function EnsureCapacity(value: Integer): Integer;
   public
     constructor Create; override;
-    constructor Create(const collection: array of T); override;
+    constructor Create(const values: array of T); override;
     constructor Create(const collection: IEnumerable<T>); override;
     destructor Destroy; override;
 
@@ -270,17 +270,17 @@ begin
     fArrayManager := TMoveArrayManager<T>.Create;
 end;
 
-constructor TList<T>.Create(const collection: array of T);
+constructor TList<T>.Create(const values: array of T);
 var
   i: Integer;
 begin
   Create;
-  fCount := Length(collection);
+  fCount := Length(values);
   if fCount > 0 then
   begin
     SetLength(fItems, fCount);
-    for i := Low(collection) to High(collection) do
-      fItems[i] := collection[i];
+    for i := Low(values) to High(values) do
+      fItems[i] := values[i];
   end;
 end;
 

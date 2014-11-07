@@ -230,21 +230,21 @@ type
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
-    constructor Create(const collection: array of T); overload; virtual;
+    constructor Create(const values: array of T); overload; virtual;
     constructor Create(const collection: IEnumerable<T>); overload; virtual;
 
     procedure Add(const item: T);
-    procedure AddRange(const collection: array of T); overload; virtual;
+    procedure AddRange(const values: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
 
     procedure Clear; virtual; abstract;
 
     function Remove(const item: T): Boolean; virtual; abstract;
-    procedure RemoveRange(const collection: array of T); overload; virtual;
+    procedure RemoveRange(const values: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
 
     function Extract(const item: T): T; virtual; abstract;
-    procedure ExtractRange(const collection: array of T); overload; virtual;
+    procedure ExtractRange(const values: array of T); overload; virtual;
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
@@ -359,7 +359,7 @@ type
     function SingleOrDefault(const defaultValue: T): T; overload; override;
 
     procedure Insert(index: Integer; const item: T); virtual; abstract;
-    procedure InsertRange(index: Integer; const collection: array of T); overload; virtual;
+    procedure InsertRange(index: Integer; const values: array of T); overload; virtual;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
 
     procedure Delete(index: Integer); virtual; abstract;
@@ -1236,10 +1236,10 @@ begin
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-constructor TCollectionBase<T>.Create(const collection: array of T);
+constructor TCollectionBase<T>.Create(const values: array of T);
 begin
   Create;
-  AddRange(collection);
+  AddRange(values);
 end;
 
 constructor TCollectionBase<T>.Create(const collection: IEnumerable<T>);
@@ -1253,11 +1253,11 @@ begin
   AddInternal(item);
 end;
 
-procedure TCollectionBase<T>.AddRange(const collection: array of T);
+procedure TCollectionBase<T>.AddRange(const values: array of T);
 var
   item: T;
 begin
-  for item in collection do
+  for item in values do
     Add(item);
 end;
 
@@ -1293,11 +1293,11 @@ begin
   end;
 end;
 
-procedure TCollectionBase<T>.ExtractRange(const collection: array of T);
+procedure TCollectionBase<T>.ExtractRange(const values: array of T);
 var
   item: T;
 begin
-  for item in collection do
+  for item in values do
     Extract(item);
 end;
 
@@ -1338,11 +1338,11 @@ begin
   end;
 end;
 
-procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
+procedure TCollectionBase<T>.RemoveRange(const values: array of T);
 var
   item: T;
 begin
-  for item in collection do
+  for item in values do
     Remove(item);
 end;
 
@@ -1550,7 +1550,7 @@ begin
   Result := -1;
 end;
 
-procedure TListBase<T>.InsertRange(index: Integer; const collection: array of T);
+procedure TListBase<T>.InsertRange(index: Integer; const values: array of T);
 var
   item: T;
 begin
@@ -1558,7 +1558,7 @@ begin
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
   begin
     Insert(index, item);
     Inc(index);
