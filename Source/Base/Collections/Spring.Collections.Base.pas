@@ -122,8 +122,9 @@ type
     class function GetEqualityComparer: IEqualityComparer<T>; static;
   {$ENDREGION}
 {$IFDEF WEAKREF}
-    function HasWeakRef: Boolean;
+    function HasWeakRef: Boolean; inline;
 {$ENDIF}
+    function IsManaged: Boolean; inline;
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload; virtual;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
@@ -400,6 +401,7 @@ type
 implementation
 
 uses
+  Rtti,
   TypInfo,
   Spring.Collections.Adapters,
   Spring.Collections.Events,
@@ -760,10 +762,23 @@ begin
   Result := fEqualityComparer;
 end;
 
+function TEnumerableBase<T>.IsManaged: Boolean;
+begin
+{$IFDEF DELPHIXE7_UP}
+  Result := IsManagedType(T);
+{$ELSE}
+  Result := Rtti.IsManaged(TypeInfo(T));
+{$ENDIF}
+end;
+
 {$IFDEF WEAKREF}
 function TEnumerableBase<T>.HasWeakRef: Boolean;
 begin
+{$IFDEF DELPHIXE7_UP}
+  Result := System.HasWeakRef(T);
+{$ELSE}
   Result := System.TypInfo.HasWeakRef(TypeInfo(T));
+{$ENDIF}
 end;
 {$ENDIF}
 

@@ -441,14 +441,13 @@ begin
     fArrayManager.Move(fItems, index, index + Length(values), fCount - index);
     fArrayManager.Finalize(fItems, index, Length(values));
   end;
-{$IFDEF WEAKREF}
-  if HasWeakRef then
-    for i := Low(values) to High(values) do
-      fItems[index + i] := values[i]
+
+  if not IsManaged{$IFDEF WEAKREF} and not HasWeakRef{$ENDIF} then
+    System.Move(values[0], fItems[index], Length(values) * SizeOf(T))
   else
-{$ENDIF}
-    System.Move(values[0], fItems[index], Length(values) * SizeOf(T));
-//    fArrayManager.Move(values, fItems, 0, index, Length(values));
+    for i := Low(values) to High(values) do
+      fItems[index + i] := values[i];
+
   Inc(fCount, Length(values));
   IncreaseVersion;
 
@@ -464,11 +463,11 @@ var
 begin
   if collection.AsObject is TList<T> then
   begin
-    list := TList<T>(collection.AsObject);
-
 {$IFDEF SPRING_ENABLE_GUARD}
     Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
 {$ENDIF}
+
+    list := TList<T>(collection.AsObject);
 
     EnsureCapacity(fCount + Length(list.fItems));
     if index <> fCount then
@@ -476,7 +475,13 @@ begin
       fArrayManager.Move(fItems, index, index + Length(list.fItems), fCount - index);
       fArrayManager.Finalize(fItems, index, Length(list.fItems));
     end;
-    fArrayManager.Move(list.fItems, fItems, 0, index, list.fCount);
+
+    if not IsManaged{$IFDEF WEAKREF} and not HasWeakRef{$ENDIF} then
+      System.Move(list.fItems[0], fItems[index], list.fCount * SizeOf(T))
+    else
+      for i := Low(list.fItems) to list.fCount - 1 do
+        fItems[index + i] := list.fItems[i];
+
     Inc(fCount, list.fCount);
     IncreaseVersion;
 
