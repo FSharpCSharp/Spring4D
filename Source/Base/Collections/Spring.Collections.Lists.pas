@@ -345,8 +345,8 @@ var
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
   comparer := EqualityComparer;
@@ -759,7 +759,7 @@ end;
 
 function TSortedList<T>.Add(const item: T): Integer;
 begin
-  TArray.BinarySearch<T>(fItems, item, Result, Comparer, 0, Count);
+  TArray.BinarySearch<T>(fItems, item, Result, Comparer, 0, fCount);
   inherited Insert(Result, item);
 end;
 
@@ -767,7 +767,7 @@ function TSortedList<T>.Contains(const value: T): Boolean;
 var
   index: Integer;
 begin
-  Result := TArray.BinarySearch<T>(fItems, value, index, Comparer, 0, Count);
+  Result := TArray.BinarySearch<T>(fItems, value, index, Comparer, 0, fCount);
 end;
 
 procedure TSortedList<T>.Exchange(index1, index2: Integer);
@@ -778,8 +778,8 @@ end;
 function TSortedList<T>.IndexOf(const item: T; index, count: Integer): Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
   TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count);
