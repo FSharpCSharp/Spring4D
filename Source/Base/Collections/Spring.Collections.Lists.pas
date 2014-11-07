@@ -110,6 +110,8 @@ type
     function IndexOf(const item: T; index, count: Integer): Integer; override;
 
     procedure Insert(index: Integer; const item: T); override;
+    procedure InsertRange(index: Integer; const values: array of T); override;
+    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); override;
 
     procedure Delete(index: Integer); override;
     procedure DeleteRange(index, count: Integer); override;
@@ -389,6 +391,66 @@ begin
   IncreaseVersion;
 
   Changed(item, caAdded);
+end;
+
+procedure TList<T>.InsertRange(index: Integer; const values: array of T);
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+{$ENDIF}
+
+  EnsureCapacity(fCount + Length(values));
+  if index <> fCount then
+  begin
+    fArrayManager.Move(fItems, index, index + Length(values), fCount - index);
+    fArrayManager.Finalize(fItems, index, Length(values));
+  end;
+{$IFDEF WEAKREF}
+  if HasWeakRef then
+    for i := Low(values) to High(values) do
+      fItems[index + i] := values[i]
+  else
+{$ENDIF}
+    System.Move(values[0], fItems[index], Length(values) * SizeOf(T));
+//    fArrayManager.Move(values, fItems, 0, index, Length(values));
+  Inc(fCount, Length(values));
+  IncreaseVersion;
+
+  for i := Low(values) to High(values) do
+    Changed(values[i], caAdded);
+end;
+
+procedure TList<T>.InsertRange(index: Integer;
+  const collection: IEnumerable<T>);
+var
+  list: TList<T>;
+  i: Integer;
+begin
+  if collection.AsObject is TList<T> then
+  begin
+    list := TList<T>(collection.AsObject);
+
+{$IFDEF SPRING_ENABLE_GUARD}
+    Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+{$ENDIF}
+
+    EnsureCapacity(fCount + Length(list.fItems));
+    if index <> fCount then
+    begin
+      fArrayManager.Move(fItems, index, index + Length(list.fItems), fCount - index);
+      fArrayManager.Finalize(fItems, index, Length(list.fItems));
+    end;
+    fArrayManager.Move(list.fItems, fItems, 0, index, list.fCount);
+    Inc(fCount, list.fCount);
+    IncreaseVersion;
+
+    for i := 0 to list.fCount - 1 do
+      Changed(list.fItems[i], caAdded);
+  end
+  else
+    inherited InsertRange(index, collection);
 end;
 
 procedure TList<T>.DeleteInternal(index: Integer;

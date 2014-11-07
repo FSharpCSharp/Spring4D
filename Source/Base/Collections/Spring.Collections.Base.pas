@@ -346,7 +346,11 @@ type
     destructor Destroy; override;
 
     function Add(const item: T): Integer; reintroduce; virtual;
+    procedure AddRange(const values: array of T); override;
+    procedure AddRange(const collection: IEnumerable<T>); override;
+
     function Remove(const item: T): Boolean; override;
+
     procedure Clear; override;
 
     function First: T; overload; override;
@@ -1471,6 +1475,16 @@ end;
 procedure TListBase<T>.AddInternal(const item: T);
 begin
   Add(item);
+end;
+
+procedure TListBase<T>.AddRange(const values: array of T);
+begin
+  InsertRange(Count, values);
+end;
+
+procedure TListBase<T>.AddRange(const collection: IEnumerable<T>);
+begin
+  InsertRange(Count, collection);
 end;
 
 function TListBase<T>.AsList: IList;
