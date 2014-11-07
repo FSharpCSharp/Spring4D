@@ -95,7 +95,8 @@ type
     procedure SetItem(index: Integer; const value: T); override;
   {$ENDREGION}
 
-    function EnsureCapacity(value: Integer): Integer;
+    procedure EnsureCapacity(capacity: Integer); inline;
+    procedure Grow(capacity: Integer);
   public
     constructor Create; override;
     constructor Create(const values: array of T); override;
@@ -334,6 +335,22 @@ begin
   Result := fItems;
 end;
 
+procedure TList<T>.Grow(capacity: Integer);
+var
+  newCapacity: Integer;
+begin
+  newCapacity := Length(fItems);
+  if newCapacity = 0 then
+    newCapacity := capacity
+  else
+    repeat
+      newCapacity := newCapacity * 2;
+      if newCapacity < 0 then
+        OutOfMemoryError;
+    until newCapacity >= capacity;
+  SetCapacity(newCapacity);
+end;
+
 {$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
 procedure TList<T>.IncreaseVersion;
 begin
@@ -541,24 +558,12 @@ begin
   Capacity := 0;
 end;
 
-function TList<T>.EnsureCapacity(value: Integer): Integer;
-var
-  newCapacity: Integer;
+procedure TList<T>.EnsureCapacity(capacity: Integer);
 begin
-  newCapacity := Length(fItems);
-  if newCapacity >= value then
-    Exit(newCapacity);
-
-  if newCapacity = 0 then
-    newCapacity := value
-  else
-    repeat
-      newCapacity := newCapacity * 2;
-      if newCapacity < 0 then
-        OutOfMemoryError;
-    until newCapacity >= value;
-  Capacity := newCapacity;
-  Result := newCapacity;
+  if capacity > Length(fItems) then
+    Grow(capacity)
+  else if capacity < 0 then
+    OutOfMemoryError;
 end;
 
 procedure TList<T>.Exchange(index1, index2: Integer);
