@@ -995,6 +995,24 @@ type
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
 
+    /// <summary>
+    ///   Creates a new list that contains a range of the elements in the
+    ///   original list.
+    /// </summary>
+    /// <param name="index">
+    ///   The zero-based index at which the range starts.
+    /// </param>
+    /// <param name="count">
+    ///   The number of elements in the range.
+    /// </param>
+    /// <remarks>
+    ///   If the list contains reference types the elements in the returned
+    ///   list point to the same instance as the elements in the original list.
+    ///   Also if the original list is a <see cref="Spring.Collections.Lists|TObjectList&lt;T&gt;" />
+    ///    it still owns the objects.
+    /// </remarks>
+    function GetRange(index, count: Integer): IList<T>;
+
     procedure Exchange(index1, index2: Integer);
     procedure Move(currentIndex, newIndex: Integer);
 

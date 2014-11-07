@@ -369,6 +369,8 @@ type
     procedure Delete(index: Integer); virtual; abstract;
     procedure DeleteRange(index, count: Integer); virtual;
 
+    function GetRange(index, count: Integer): IList<T>; virtual;
+
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload; virtual;
@@ -402,6 +404,7 @@ uses
   Spring.Collections.Adapters,
   Spring.Collections.Events,
   Spring.Collections.Extensions,
+  Spring.Collections.Lists,
   Spring.ResourceStrings;
 
 
@@ -1536,6 +1539,21 @@ end;
 function TListBase<T>.GetCount: Integer;
 begin
   Result := inherited;
+end;
+
+function TListBase<T>.GetRange(index, count: Integer): IList<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+  Result := TList<T>.Create;
+  Result.Count := count;
+  for i := index to index + count do
+    Result[i] := Items[i];
 end;
 
 function TListBase<T>.IndexOf(const item: T): Integer;

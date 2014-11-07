@@ -119,6 +119,8 @@ type
 
     function Extract(const item: T): T; override;
 
+    function GetRange(index, count: Integer): IList<T>; override;
+
     procedure Exchange(index1, index2: Integer); override;
     procedure Move(currentIndex, newIndex: Integer); override;
 
@@ -333,6 +335,21 @@ end;
 function TList<T>.GetItems: TArray<T>;
 begin
   Result := fItems;
+end;
+
+function TList<T>.GetRange(index, count: Integer): IList<T>;
+var
+  list: TList<T>;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
+{$ENDIF}
+
+  list := TList<T>.Create;
+  list.fCount := count;
+  list.fItems := Copy(fItems, index, count);
+  Result := list;
 end;
 
 procedure TList<T>.Grow(capacity: Integer);
