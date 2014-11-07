@@ -549,8 +549,8 @@ end;
 
 procedure TList<T>.SetCapacity(value: Integer);
 begin
-  if value < Count then
-    DeleteRange(Count - value + 1, Count - value);
+  if value < fCount then
+    DeleteRange(value, fCount - value);
   SetLength(fItems, value);
 end;
 
