@@ -580,7 +580,7 @@ end;
 
 function TSvLazyObject<T>.DoGetValue: T;
 begin
-  Result := FVarData.Manager.GetLazyValueClass<T>(FVarData.ID, FVarData.Entity, GetColumn);
+  Result := FVarData.Manager.GetLazyValueAsObject<T>(FVarData.ID, FVarData.Entity, GetColumn);
 end;
 
 end.

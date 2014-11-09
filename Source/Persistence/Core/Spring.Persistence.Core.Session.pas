@@ -186,6 +186,9 @@ type
     function GetList<T: class, constructor>(const sql: string;
       const params: array of const): IList<T>; overload;
 
+    function GetList<T: class, constructor>(const sql: string;
+      const params: IList<TDBParam>): IList<T>; overload;
+
     /// <summary>
     ///   Retrieves single model from the database based on its primary key
     ///   value. If record not found, nil is returned.
@@ -285,12 +288,18 @@ type
     /// </summary>
     procedure SaveList<T: class, constructor>(const entities: ICollection<T>);
 
+    function GetLazyValueAsObject<T:class, constructor>(const id: TValue;
+      const entity: TObject; const column: ColumnAttribute): T;
+    procedure SetLazyValue<T>(var value: T; const id: TValue;
+      const entity: TObject; const column: ColumnAttribute);
+
     property OldStateEntities: TEntityMap read fOldStateEntities;
   end;
 
 implementation
 
 uses
+  TypInfo,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.Exceptions,
@@ -419,8 +428,31 @@ end;
 
 function TSession.GetList<T>(const sql: string; const params: array of const): IList<T>;
 begin
-  Result := TCollections.CreateList<T>(True);
-  Fetch<T>(sql, params, Result);
+  Result := TCollections.CreateObjectList<T>(True);
+  FetchFromQueryText(sql, params, Result as IObjectList, T);
+end;
+
+function TSession.GetLazyValueAsObject<T>(const id: TValue;
+  const entity: TObject; const column: ColumnAttribute): T;
+var
+  LResults: IDBResultSet;
+begin
+  if not Assigned(entity) or id.IsEmpty then
+    Exit(System.Default(T));
+
+  LResults := DoGetLazy(id, entity, column, TypeInfo(T));
+
+  if TUtils.IsEnumerable(TypeInfo(T)) then
+    Result := GetObjectList<T>(LResults)
+  else
+    Result := T(MapEntityFromResultsetRow(LResults, T, entity));  {TODO -oOwner -cGeneral : get one with arg entity is needed only for lazy loading}
+end;
+
+function TSession.GetList<T>(const sql: string;
+  const params: IList<TDBParam>): IList<T>;
+begin
+  Result := TCollections.CreateObjectList<T>(True);
+  FetchFromQueryText(sql, params, Result as IObjectList, T);
 end;
 
 function TSession.FindAll<T>: IList<T>;
@@ -433,7 +465,8 @@ begin
   LSelecter := GetSelectCommandExecutor(LEntityClass);
   try
     LResults := LSelecter.SelectAll(LEntityClass);
-    Result := GetListFromResultset<T>(LResults);
+    Result := TCollections.CreateObjectList<T>(True);
+    MapFromResultsetToCollection(LResults, Result as IObjectList, T);
   finally
     LSelecter.Free;
   end;
@@ -452,7 +485,8 @@ begin
     LResults := LSelecter.Select;
     if not LResults.IsEmpty then
     begin
-      Result := GetOne<T>(LResults, nil);
+      Result := T.Create;
+      DoMapEntity(TObject(Result), LResults, nil);
     end;
   finally
     LSelecter.Free;
@@ -568,7 +602,7 @@ begin
   LSQL := LPager.BuildSQL(sql);
 
   LResultset := GetResultset(LSQL, params);
-  Fetch<T>(LResultset, Result.Items);
+  MapFromResultsetToCollection(LResultset, Result.Items as IObjectList, T);
 end;
 
 function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;
@@ -581,8 +615,7 @@ begin
   Result := TDriverPageAdapter<T>.Create(LPager);
   LPager.TotalItems := GetQueryCount(sql, params);
   LSQL := LPager.BuildSQL(sql);
-
-  Fetch<T>(LSQL, params, Result.Items);
+  FetchFromQueryText(LSQL, params, Result.Items as IObjectList, T);
 end;
 
 procedure TSession.ReleaseCurrentTransaction;
@@ -640,6 +673,28 @@ begin
     UpdateList<T>(LUpdates);
 end;
 
+procedure TSession.SetLazyValue<T>(var value: T; const id: TValue;
+  const entity: TObject; const column: ColumnAttribute);
+var
+  LResults: IDBResultSet;
+begin
+  if not Assigned(entity) or id.IsEmpty then
+    Exit;
+
+  case PTypeInfo(TypeInfo(T)).Kind of
+    tkClass, tkClassRef, tkPointer, tkRecord, tkUnknown:
+      raise EORMUnsupportedType.CreateFmt(EXCEPTION_UNSUPPORTED_LAZY_TYPE, [
+        PTypeInfo(TypeInfo(T)).TypeName]);
+  end;
+
+  LResults := DoGetLazy(id, entity, column, TypeInfo(T));
+
+  if TUtils.IsEnumerable(TypeInfo(T)) then
+    SetInterfaceList<T>(value, LResults)
+  else
+    SetOne<T>(value, LResults, entity);
+end;
+
 function TSession.Single<T>(const sql: string; const params: array of const): T;
 begin
   Result := First<T>(sql, params);
@@ -657,7 +712,7 @@ begin
   LResults := GetResultset(sql, params);
   Result := not LResults.IsEmpty;
   if Result then
-    value := GetOne<T>(LResults, nil);
+    value := T(MapEntityFromResultsetRow(LResults, T));
 end;
 
 procedure TSession.Update(const entity: TObject);

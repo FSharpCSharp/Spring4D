@@ -227,7 +227,7 @@ begin
       else
       begin
         LNewEntity := TRttiExplorer.CreateType(AColumn.ColTypeInfo);
-        LSession.DoSetEntity(LNewEntity, LEmbeddedEntityResultset, nil);
+        LSession.DoMapEntity(LNewEntity, LEmbeddedEntityResultset, nil);
         Result := TValue.From(LNewEntity, LNewEntity.ClassType);
       end;
     end

@@ -348,9 +348,16 @@ end;
 
 {$REGION 'TEntityCache'}
 
+function GetEntities: IDictionary<TClass,TEntityData>;
+begin
+  if not Assigned(TEntityCache.fEntities) then
+    TEntityCache.fEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
+  Result := TEntityCache.fEntities;
+end;
+
 class constructor TEntityCache.Create;
 begin
-  fEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
+  fEntities := GetEntities;
 end;
 
 class function TEntityCache.CreateColumnsData(entityClass: TClass): TColumnDataList;
@@ -370,7 +377,7 @@ begin
   begin
     Result := TEntityData.Create;
     Result.SetEntityData(entityClass);
-    fEntities.Add(entityClass, Result);
+    GetEntities.Add(entityClass, Result);
   end;
 end;
 
@@ -390,7 +397,7 @@ end;
 
 class function TEntityCache.TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
 begin
-  Result := fEntities.TryGetValue(entityClass, entityData);
+  Result := GetEntities.TryGetValue(entityClass, entityData);
 end;
 
 {$ENDREGION}

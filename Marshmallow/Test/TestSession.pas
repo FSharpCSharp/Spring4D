@@ -445,20 +445,20 @@ begin
   LCollection := TCollections.CreateList<TCustomer>(True);
 
 
-  FManager.Fetch<TCustomer>(sSql, [], LCollection);
+  FManager.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
   CheckEquals(0, LCollection.Count);
 
   LCollection.Clear;
 
   InsertCustomer();
-  FManager.Fetch<TCustomer>(sSql, [], LCollection);
+  FManager.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
   CheckEquals(1, LCollection.Count);
   CheckEquals(25, LCollection[0].Age);
 
   LCollection.Clear;
 
   InsertCustomer(15);
-  FManager.Fetch<TCustomer>(sSql, [], LCollection);
+  FManager.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
   CheckEquals(2, LCollection.Count);
   CheckEquals(15, LCollection[1].Age);
 end;
@@ -469,7 +469,7 @@ var
 begin
   InsertCustomer();
   LCollection := TCollections.CreateObjectList<TCustomer>;
-  FManager.Fetch<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, [], LCollection);
+  FManager.FetchFromQueryText('SELECT * FROM ' + TBL_PEOPLE, [], LCollection as IObjectList, TCustomer);
   CheckEquals(1, LCollection.Count);
 end;
 
@@ -664,7 +664,7 @@ begin
 
     CheckEquals(2, LCustomer.Orders.Count);
 
-    LOrder := FManager.GetLazyValueClass<TCustomer_Orders>(LCustomer.ID, LCustomer, nil);
+    LOrder := FManager.GetLazyValueAsObject<TCustomer_Orders>(LCustomer.ID, LCustomer, nil);
     try
       CheckTrue(Assigned(LOrder));
       CheckEquals(LOrder.Customer_ID, LCustomer.ID);
@@ -672,7 +672,7 @@ begin
       LOrder.Free;
     end;
 
-    LList := FManager.GetLazyValueClass<TObjectList<TCustomer_Orders>>(LCustomer.ID, LCustomer, nil);
+    LList := FManager.GetLazyValueAsObject<TObjectList<TCustomer_Orders>>(LCustomer.ID, LCustomer, nil);
     try
       CheckEquals(2, LList.Count);
       CheckEquals(LCustomer.ID, LList.First.Customer_ID);

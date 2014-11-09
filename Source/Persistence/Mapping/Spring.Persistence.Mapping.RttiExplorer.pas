@@ -32,6 +32,7 @@ uses
   Rtti,
   TypInfo,
   Spring.Collections,
+  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes;
 
@@ -144,7 +145,6 @@ implementation
 uses
   Spring.Persistence.Core.Exceptions
   ,Spring.Persistence.Core.Reflection
-  ,Spring.Persistence.Core.EntityCache
   ,Spring.Persistence.Core.Utils
   ,Spring.Persistence.Core.CollectionAdapterResolver
   ,SysUtils
@@ -1455,6 +1455,7 @@ begin
 
       if TRttiExplorer.HasColumns(LClass) then
       begin
+        TEntityCache.Get(LClass); //makes sure entities are also in cache on app startup
         LFields := TCollections.CreateList<TRttiField>;
         for LField in LType.GetFields do
         begin

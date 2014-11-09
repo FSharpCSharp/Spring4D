@@ -156,6 +156,7 @@ var
 begin
   LParams := TCollections.CreateObjectList<TDBParam>(True);
   LSql := GenerateSqlStatement(LParams);
+  Result := TCollections.CreateObjectList<T>(True);
   Result := Session.GetList<T>(LSql, LParams);
 end;
 
