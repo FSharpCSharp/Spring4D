@@ -69,11 +69,11 @@ type
     class destructor Destroy;
   public
     class function Clone(AEntity: TObject): TObject;
-    class function CreateNewClass<T>: T;
-    class function CreateNewInterface(AInterfaceTypeInfo: PTypeInfo; AClassTypeInfo: PTypeInfo): IInvokable; overload;
-    class function CreateNewInterface<TInterfaceType, TClassType>: TInterfaceType; overload;
-    class function CreateType(AClass: TClass): TObject; overload;
-    class function CreateType(ATypeInfo: PTypeInfo): TObject; overload;
+//    class function CreateNewClass<T>: T;
+//    class function CreateNewInterface(AInterfaceTypeInfo, AClassTypeInfo: PTypeInfo): IInvokable; overload;
+//    class function CreateNewInterface<TInterfaceType, TClassType>: TInterfaceType; overload;
+//    class function CreateType(AClass: TClass): TObject; overload;
+//    class function CreateType(ATypeInfo: PTypeInfo): TObject; overload;
     class function CreateExternalType(AClass: TClass; const Args: array of TValue): TObject;
     class function EntityChanged(AEntity1, AEntity2: TObject): Boolean;
     class function GetAttributeOfClass(ARttiObject: TRttiObject; AClass: TClass): TCustomAttribute;
@@ -115,14 +115,14 @@ type
     class function GetUniqueConstraints(AClass: TClass): IList<UniqueConstraint>;
     class function HasSequence(AClass: TClass): Boolean;
     class function HasColumns(AClass: TClass): Boolean;
-    class function IsValidEntity(AClass: TClass): Boolean;
+//    class function IsValidEntity(AClass: TClass): Boolean;
     class function TryGetColumnAsForeignKey(AColumn: ColumnAttribute; out AForeignKeyCol: ForeignJoinColumnAttribute): Boolean;
     class function TryGetBasicMethod(const AMethodName: string; ATypeInfo: PTypeInfo; out AMethod: TRttiMethod): Boolean;
-    class function TryGetColumnByMemberName(AClass: TClass; const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
+//    class function TryGetColumnByMemberName(AClass: TClass; const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
     class function TryGetPrimaryKeyValue(AColumns: IList<ColumnAttribute>; AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
     class function TryGetMethod(ATypeInfo: PTypeInfo; const AMethodName: string; out AAddMethod: TRttiMethod; AParamCount: Integer = 1): Boolean;
     class procedure CopyFieldValues(AEntityFrom, AEntityTo: TObject);
-    class procedure DestroyClass<T>(var AObject: T);
+//    class procedure DestroyClass<T>(var AObject: T);
     class procedure GetChangedMembers(AOriginalObj, ADirtyObj: TObject; AList: IList<ColumnAttribute>); overload;
     class procedure GetClassMembers<T: TORMAttribute>(AClass: TClass; AList: IList<T>); overload;
     class procedure GetColumns(AClass: TClass; AColumns: IList<ColumnAttribute>); overload;
@@ -143,249 +143,35 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.Exceptions
-  ,Spring.Persistence.Core.Reflection
-  ,Spring.Persistence.Core.Utils
-  ,Spring.Persistence.Core.CollectionAdapterResolver
-  ,SysUtils
-  ,Math
-  ,Classes
-  ,StrUtils
-  ;
+  Classes,
+  Math,
+  StrUtils,
+  SysUtils,
+  Spring.Persistence.Core.CollectionAdapterResolver,
+  Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.Core.Reflection,
+  Spring.Persistence.Core.Utils,
+  Spring.Reflection.Activator;
 
 
-(*
-  Copyright (c) 2011, Stefan Glienke
-  All rights reserved.
+{$REGION 'TRttiExplorer'}
 
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are met:
-
-  - Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
-  - Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-  - Neither the name of this library nor the names of its contributors may be
-    used to endorse or promote products derived from this software without
-    specific prior written permission.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  POSSIBILITY OF SUCH DAMAGE.
-*)  
-
-function ValueIsEqual(const Left, Right: TValue): Boolean;
-begin  
-  if Left.IsNumeric and Right.IsNumeric then
-  begin
-    if Left.IsOrdinal then
-    begin
-      if Right.IsOrdinal then
-      begin
-        Result := Left.AsOrdinal = Right.AsOrdinal;
-      end else
-      if Right.IsSingle then
-      begin
-        Result := Math.SameValue(Left.AsOrdinal, Right.AsSingle);
-      end else
-      if Right.IsDouble then
-      begin
-        Result := Math.SameValue(Left.AsOrdinal, Right.AsDouble);
-      end
-      else
-      begin
-        Result := Math.SameValue(Left.AsOrdinal, Right.AsExtended);
-      end;
-    end else
-    if Left.IsSingle then
-    begin
-      if Right.IsOrdinal then
-      begin
-        Result := Math.SameValue(Left.AsSingle, Right.AsOrdinal);
-      end else
-      if Right.IsSingle then
-      begin
-        Result := Math.SameValue(Left.AsSingle, Right.AsSingle);
-      end else
-      if Right.IsDouble then
-      begin
-        Result := Math.SameValue(Left.AsSingle, Right.AsDouble);
-      end
-      else
-      begin
-        Result := Math.SameValue(Left.AsSingle, Right.AsExtended);
-      end;
-    end else
-    if Left.IsDouble then
-    begin
-      if Right.IsOrdinal then
-      begin
-        Result := Math.SameValue(Left.AsDouble, Right.AsOrdinal);
-      end else
-      if Right.IsSingle then
-      begin
-        Result := Math.SameValue(Left.AsDouble, Right.AsSingle);
-      end else
-      if Right.IsDouble then
-      begin
-        Result := Math.SameValue(Left.AsDouble, Right.AsDouble);
-      end
-      else
-      begin
-        Result := Math.SameValue(Left.AsDouble, Right.AsExtended);
-      end;
-    end
-    else
-    begin
-      if Right.IsOrdinal then
-      begin
-        Result := Math.SameValue(Left.AsExtended, Right.AsOrdinal);
-      end else
-      if Right.IsSingle then
-      begin
-        Result := Math.SameValue(Left.AsExtended, Right.AsSingle);
-      end else
-      if Right.IsDouble then
-      begin
-        Result := Math.SameValue(Left.AsExtended, Right.AsDouble);
-      end
-      else
-      begin
-        Result := Math.SameValue(Left.AsExtended, Right.AsExtended);
-      end;
-    end;
-  end else
-  if Left.IsString and Right.IsString then
-  begin
-    Result := Left.AsString = Right.AsString;
-  end else
-  if Left.IsClass and Right.IsClass then
-  begin
-    Result := Left.AsClass = Right.AsClass;
-  end else
-  if Left.IsObject and Right.IsObject then
-  begin
-    Result := Left.AsObject = Right.AsObject;
-  end else
-  if Left.IsVariant and Right.IsVariant then
-  begin
-    Result := Left.AsVariant = Right.AsVariant;
-  end else
-  if Left.IsPointer and Right.IsPointer then
-  begin
-    Result := Left.AsPointer = Right.AsPointer;
-  end else
-  if Left.TypeInfo = Right.TypeInfo then
-  begin
-    Result := Left.AsPointer = Right.AsPointer;
-  end else
-  begin
-    Result := False;
-  end;
-end;
-
-procedure CopyRecord(Dest, Source, TypeInfo: Pointer);
-asm
-  jmp System.@CopyRecord
-end;
-
-function GetInlineSize(TypeInfo: PTypeInfo): Integer;
+class constructor TRttiExplorer.Create;
 begin
-  if TypeInfo = nil then
-    Exit(0);
-
-  case TypeInfo^.Kind of
-    tkInteger, tkEnumeration, tkChar, tkWChar, tkSet:
-      case GetTypeData(TypeInfo)^.OrdType of
-        otSByte, otUByte: Exit(1);
-        otSWord, otUWord: Exit(2);
-        otSLong, otULong: Exit(4);
-      else
-        Exit(0);
-      end;
-    tkFloat:
-      case GetTypeData(TypeInfo)^.FloatType of
-        ftSingle: Exit(4);
-        ftDouble: Exit(8);
-        ftExtended: Exit(SizeOf(Extended));
-        ftComp: Exit(8);
-        ftCurr: Exit(8);
-      else
-        Exit(0);
-      end;
-    tkClass, tkClassRef: Exit(SizeOf(Pointer));
-    tkMethod: Exit(SizeOf(TMethod));
-    tkInt64: Exit(8);
-    tkDynArray, tkUString, tkLString, tkWString, tkInterface: Exit(-SizeOf(Pointer));
-    tkString: Exit(-GetTypeData(TypeInfo)^.MaxLength + 1);
-    tkPointer: Exit(SizeOf(Pointer));
-    tkRecord: Exit(-GetTypeData(TypeInfo)^.RecSize);
-    tkArray: Exit(-GetTypeData(TypeInfo)^.ArrayData.Size);
-    tkVariant: Exit(-SizeOf(Variant));
-  else
-    Exit(0);
-  end;
+  FRttiCache := TRttiCache.Create;
+  FRttiCache.RebuildCache;
 end;
 
-procedure CopyObject(Source: TObject; var Dest: TObject);
-var
-  ClassPtr: TClass;
-  InitTable: PTypeInfo;
-  TypeData: PTypeData;
-  SourcePtr, DestPtr: Pointer;
-  Size: Integer;
-  ManagedField: PManagedField;
+class destructor TRttiExplorer.Destroy;
 begin
-  ClassPtr := Source.ClassType;
-  if TEntityCache.Get(ClassPtr).HasInstanceField then
-    TRttiExplorer.CopyFieldValues(Source, Dest)
-  else
-  begin
-    SourcePtr := Source;
-    DestPtr := TObject(Dest);
-    Size := 0;
-    InitTable := PPointer(PByte(ClassPtr) + vmtInitTable)^;
-    if InitTable <> nil then
-    begin
-      // Copy ref-counted values
-      CopyArray(DestPtr, SourcePtr, ClassPtr, 1);
-      // Determine remaining memory size to be copied
-      TypeData := GetTypeData(InitTable);
-      ManagedField := Pointer(PByte(TypeData) + SizeOf(Integer) * 2);
-      Inc(ManagedField, TypeData.ManagedFldCount - 1);
-      Size := ManagedField.FldOffset + Abs(GetInlineSize(ManagedField.TypeRef^));
-
-      if Size < Source.InstanceSize then
-      begin
-        SourcePtr := PByte(SourcePtr) + Size;
-        DestPtr := PByte(DestPtr) + Size;
-      end;
-    end;
-    Move(SourcePtr^, DestPtr^, Source.InstanceSize - Size - hfFieldSize); // do not copy the hidden MonitorField
-  end;
+  FRttiCache.Free;
 end;
-
-
-{ TRttiExplorer }
 
 class function TRttiExplorer.Clone(AEntity: TObject): TObject;
 begin
   Assert(Assigned(AEntity));
   Result := AEntity.ClassType.Create;
- // {$IF not defined(CPU386)}
   CopyFieldValues(AEntity, Result);
- // {$ELSE}
- // CopyObject(AEntity, Result);
- // {$IFEND}
 end;
 
 class procedure TRttiExplorer.CopyFieldValues(AEntityFrom, AEntityTo: TObject);
@@ -409,8 +195,7 @@ begin
     LField := LFields[i];
     if LField.FieldType.IsInstance then
     begin
-      LValueTo := TRttiExplorer.CreateType(LField.FieldType.AsInstance.MetaclassType);
-      //LValueTo := LField.FieldType.AsInstance.MetaclassType.Create;
+      LValueTo := TActivator.CreateInstance(LField.FieldType.AsInstance);
       LValueFrom := LField.GetValue(AEntityFrom).AsObject;
       if LValueTo.AsObject is TPersistent then
       begin
@@ -424,12 +209,6 @@ begin
   
     LField.SetValue(AEntityTo, LValueTo);
   end;
-end;
-
-class constructor TRttiExplorer.Create;
-begin
-  FRttiCache := TRttiCache.Create;
-  FRttiCache.RebuildCache;
 end;
 
 class function TRttiExplorer.CreateExternalType(AClass: TClass;
@@ -450,86 +229,81 @@ begin
   end;
 end;
 
-class function TRttiExplorer.CreateNewClass<T>: T;
-var
-  rType: TRttiType;
-  AMethCreate: TRttiMethod;
-  instanceType: TRttiInstanceType;
-begin
-  rType := FRttiCache.GetType(TypeInfo(T));// TRttiContext.Create.GetType(TypeInfo(T));
-  if rType.IsInstance then
-  begin
-    for AMethCreate in rType.GetMethods do
-    begin
-      if (AMethCreate.IsConstructor) and (Length(AMethCreate.GetParameters) = 0) then
-      begin
-        instanceType := rType.AsInstance;
-        Result := AMethCreate.Invoke(instanceType.MetaclassType, []).AsType<T>;
-        Break;
-      end;
-    end;
-  end;
-end;
+//class function TRttiExplorer.CreateNewClass<T>: T;
+//var
+//  rType: TRttiType;
+//  AMethCreate: TRttiMethod;
+//  instanceType: TRttiInstanceType;
+//begin
+//  rType := FRttiCache.GetType(TypeInfo(T));// TRttiContext.Create.GetType(TypeInfo(T));
+//  if rType.IsInstance then
+//  begin
+//    for AMethCreate in rType.GetMethods do
+//    begin
+//      if (AMethCreate.IsConstructor) and (Length(AMethCreate.GetParameters) = 0) then
+//      begin
+//        instanceType := rType.AsInstance;
+//        Result := AMethCreate.Invoke(instanceType.MetaclassType, []).AsType<T>;
+//        Break;
+//      end;
+//    end;
+//  end;
+//end;
 
-class function TRttiExplorer.CreateNewInterface(AInterfaceTypeInfo, AClassTypeInfo: PTypeInfo): IInvokable;
-var
-  rType: TRttiType;
-begin
-  rType := FRttiCache.GetType(AInterfaceTypeInfo);
-  if rType.IsInterface then
-  begin
-    Supports(CreateType(AClassTypeInfo), rType.AsInterface.GUID, Result);
-  end;
-end;
+//class function TRttiExplorer.CreateNewInterface(AInterfaceTypeInfo, AClassTypeInfo: PTypeInfo): IInvokable;
+//var
+//  rType: TRttiType;
+//begin
+//  rType := FRttiCache.GetType(AInterfaceTypeInfo);
+//  if rType.IsInterface then
+//  begin
+//    Supports(TActivator.CreateInstance(AClassTypeInfo).AsObject, rType.AsInterface.GUID, Result);
+//  end;
+//end;
+//
+//class function TRttiExplorer.CreateNewInterface<TInterfaceType, TClassType>: TInterfaceType;
+//var
+//  rType: TRttiType;
+//begin
+//  rType := FRttiCache.GetType(TypeInfo(TInterfaceType));
+//  if rType.IsInterface then
+//  begin
+//    Supports(TActivator.CreateInstance(TypeInfo(TClassType)), rType.AsInterface.GUID, Result);
+//  end;
+//end;
 
-class function TRttiExplorer.CreateNewInterface<TInterfaceType, TClassType>: TInterfaceType;
-var
-  rType: TRttiType;
-begin
-  rType := FRttiCache.GetType(TypeInfo(TInterfaceType));
-  if rType.IsInterface then
-  begin
-    Supports(CreateType(TypeInfo(TClassType)), rType.AsInterface.GUID, Result);
-  end;
-end;
+//class function TRttiExplorer.CreateType(ATypeInfo: PTypeInfo): TObject;
+//var
+//  rType: TRttiType;
+//  AMethCreate: TRttiMethod;
+//  instanceType: TRttiInstanceType;
+//begin
+//  rType := FRttiCache.GetType(ATypeInfo);
+//  if rType.IsInstance then
+//  begin
+//    for AMethCreate in rType.GetMethods do
+//    begin
+//      if (AMethCreate.IsConstructor) and (Length(AMethCreate.GetParameters) = 0) then
+//      begin
+//        instanceType := rType.AsInstance;
+//        Result := AMethCreate.Invoke(instanceType.MetaclassType, []).AsObject;
+//        Exit;
+//      end;
+//    end;
+//  end;
+//  Result := nil;
+//end;
+//
+//class function TRttiExplorer.CreateType(AClass: TClass): TObject;
+//begin
+//  Result := CreateType(AClass.ClassInfo);
+//end;
 
-class function TRttiExplorer.CreateType(ATypeInfo: PTypeInfo): TObject;
-var
-  rType: TRttiType;
-  AMethCreate: TRttiMethod;
-  instanceType: TRttiInstanceType;
-begin
-  rType := FRttiCache.GetType(ATypeInfo);
-  if rType.IsInstance then
-  begin
-    for AMethCreate in rType.GetMethods do
-    begin
-      if (AMethCreate.IsConstructor) and (Length(AMethCreate.GetParameters) = 0) then
-      begin
-        instanceType := rType.AsInstance;
-        Result := AMethCreate.Invoke(instanceType.MetaclassType, []).AsObject;
-        Exit;
-      end;
-    end;
-  end;
-  Result := nil;
-end;
-
-class function TRttiExplorer.CreateType(AClass: TClass): TObject;
-begin
-  Result := CreateType(AClass.ClassInfo);
-end;
-
-class destructor TRttiExplorer.Destroy;
-begin
-  FRttiCache.Free;
-end;
-
-class procedure TRttiExplorer.DestroyClass<T>(var AObject: T);
-begin
-  if PTypeInfo(TypeInfo(T)).Kind = tkClass then
-    PObject(@AObject)^.Free;
-end;
+//class procedure TRttiExplorer.DestroyClass<T>(var AObject: T);
+//begin
+//  if PTypeInfo(TypeInfo(T)).Kind = tkClass then
+//    PObject(@AObject)^.Free;
+//end;
 
 class function TRttiExplorer.EntityChanged(AEntity1, AEntity2: TObject): Boolean;
 var
@@ -822,12 +596,12 @@ begin
     AForeignKeyCol := LCustomAttribute as ForeignJoinColumnAttribute;
 end;
 
-class function TRttiExplorer.TryGetColumnByMemberName(AClass: TClass;
-  const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
-begin
-  AColumn := TEntityCache.Get(AClass).ColumnByMemberName(AClassMemberName);
-  Result := Assigned(AColumn);
-end;
+//class function TRttiExplorer.TryGetColumnByMemberName(AClass: TClass;
+//  const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
+//begin
+//  AColumn := TEntityCache.Get(AClass).ColumnByMemberName(AClassMemberName);
+//  Result := Assigned(AColumn);
+//end;
 
 class function TRttiExplorer.TryGetPrimaryKeyValue(AColumns: IList<ColumnAttribute>;
   AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
@@ -1277,23 +1051,23 @@ begin
   end;
 end;
 
-class function TRttiExplorer.IsValidEntity(AClass: TClass): Boolean;
-var
-  LEntityData: TEntityData;
-begin
-  LEntityData := TEntityCache.Get(AClass);
-
-  if not Assigned(LEntityData) then
-    Exit(False);
-
-  if not LEntityData.IsTableEntity then
-    Exit(False);
-
-  if not LEntityData.HasPrimaryKey then
-    Exit(False);
-
-  Result := True;
-end;
+//class function TRttiExplorer.IsValidEntity(AClass: TClass): Boolean;
+//var
+//  LEntityData: TEntityData;
+//begin
+//  LEntityData := TEntityCache.Get(AClass);
+//
+//  if not Assigned(LEntityData) then
+//    Exit(False);
+//
+//  if not LEntityData.IsTableEntity then
+//    Exit(False);
+//
+//  if not LEntityData.HasPrimaryKey then
+//    Exit(False);
+//
+//  Result := True;
+//end;
 
 class procedure TRttiExplorer.SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberColumn: ColumnAttribute;
   const AValue: TValue);
@@ -1334,19 +1108,17 @@ class procedure TRttiExplorer.SetValue(AInstance: Pointer; ANamedObject: TRttiNa
 
   procedure SetInternalValue;
   begin
-    if ANamedObject.isField then
+    if ANamedObject.IsField then
       ANamedObject.AsField.SetValue(AInstance, AValue)
     else
-    begin
       ANamedObject.AsProperty.SetValue(AInstance, AValue);
-    end;
   end;
 
 begin
   if ANamedObject is TRttiInstanceProperty then
   begin
     case AValue.Kind of
-      tkInteger : SetOrdProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsInteger);
+      tkInteger: SetOrdProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsInteger);
       tkFloat: SetFloatProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsExtended);
       tkString, tkLString: SetAnsiStrProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsType<AnsiString>);
       tkClass: SetObjectProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsObject) ;
@@ -1355,19 +1127,18 @@ begin
       tkInt64: SetInt64Prop(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsInt64);
       tkDynArray: SetDynArrayProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.GetReferenceToRawData);
       tkUString, tkWString: SetStrProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsString)
-      else
-      begin
-        SetInternalValue;
-      end;
+    else
+      SetInternalValue;
     end;
   end
   else
-  begin
     SetInternalValue;
-  end;
 end;
 
-{ TRttiCache }
+{$ENDREGION}
+
+
+{$REGION 'TRttiCache'}
 
 constructor TRttiCache.Create;
 begin
@@ -1470,5 +1241,8 @@ begin
     end;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

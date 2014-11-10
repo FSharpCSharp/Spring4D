@@ -3,15 +3,14 @@ unit Spring.Persistence.ObjectDataset;
 interface
 
 uses
-  Spring.Persistence.ObjectDataset.Abstract
-  ,Spring.Persistence.ObjectDataset.Algorithms.Sort
-  ,Spring.Persistence.ObjectDataset.ExprParser
-  ,Classes
-  ,Spring.Collections
-  ,Rtti
-  ,DB
-  ,TypInfo
-  ;
+  Classes,
+  DB,
+  Rtti,
+  TypInfo,
+  Spring.Collections,
+  Spring.Persistence.ObjectDataset.Abstract,
+  Spring.Persistence.ObjectDataset.Algorithms.Sort,
+  Spring.Persistence.ObjectDataset.ExprParser;
 
 type
   TObjectDataset = class(TAbstractObjectDataset)
@@ -57,8 +56,8 @@ type
     function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
     function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
-    function ParserGetFunctionValue(Sender: TObject; const FuncName: string; const Args: Variant
-      ; var ResVal: Variant): Boolean; virtual;
+    function ParserGetFunctionValue(Sender: TObject; const FuncName: string;
+      const Args: Variant; var ResVal: Variant): Boolean; virtual;
     procedure DoFilterRecord(AIndex: Integer); virtual;
     procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
     procedure InternalSetSort(const AValue: string; AIndex: Integer = 0); virtual;
@@ -184,17 +183,16 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.Utils
-  ,Spring.Persistence.Mapping.RttiExplorer
-  ,Spring.Persistence.Mapping.Attributes
-  ,SysUtils
-  ,StrUtils
-  ,Variants
-  ,Spring.Persistence.Core.Reflection
-  ,Spring.SystemUtils
-  ,DateUtils
-  ,Spring.Persistence.ObjectDataset.ExprParser.Functions
-  ;
+  StrUtils,
+  SysUtils,
+  Variants,
+  Spring.Persistence.Core.Reflection,
+  Spring.Persistence.Core.Utils,
+  Spring.Persistence.Mapping.Attributes,
+  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Persistence.ObjectDataset.ExprParser.Functions,
+  Spring.Reflection.Activator,
+  Spring.SystemUtils;
 
 type
   EObjectDatasetException = class(Exception);
@@ -417,7 +415,7 @@ var
   LNeedsSort: Boolean;
 begin
   if State = dsInsert then
-    LItem := TRttiExplorer.CreateType(FItemTypeInfo)
+    LItem := TActivator.CreateInstance(FItemTypeInfo)
   else
     LItem := IndexList.GetModel(Index);
 

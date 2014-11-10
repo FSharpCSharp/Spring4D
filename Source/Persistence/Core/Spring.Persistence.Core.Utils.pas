@@ -89,7 +89,8 @@ uses
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Session,
   Spring.Persistence.Core.Types,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Reflection.Activator;
 
 type
   THackedSession = class(TSession);
@@ -226,7 +227,7 @@ begin
       end
       else
       begin
-        LNewEntity := TRttiExplorer.CreateType(AColumn.ColTypeInfo);
+        LNewEntity := TActivator.CreateInstance(AColumn.ColTypeInfo).AsObject;
         LSession.DoMapEntity(LNewEntity, LEmbeddedEntityResultset, nil);
         Result := TValue.From(LNewEntity, LNewEntity.ClassType);
       end;

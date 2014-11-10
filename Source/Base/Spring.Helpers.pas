@@ -467,6 +467,9 @@ type
     ///	<seealso cref="Propoerties" />
     property Fields: IEnumerable<TRttiField> read GetFields;
 
+    function TryGetField(const name: string; out field: TRttiField): Boolean;
+    function TryGetProperty(const name: string; out prop: TRttiProperty): Boolean;
+
     property AsClass: TRttiInstanceType read GetAsClass;
     property AsInterface: TRttiInterfaceType read GetAsInterface;
     property AsDynamicArray: TRttiDynamicArrayType read GetAsDynamicArray;
@@ -1251,6 +1254,20 @@ end;
 function TRttiTypeHelper.GetIsString: Boolean;
 begin
   Result := TypeKind in [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
+end;
+
+function TRttiTypeHelper.TryGetField(const name: string;
+  out field: TRttiField): Boolean;
+begin
+  field := GetField(name);
+  Result := Assigned(field);
+end;
+
+function TRttiTypeHelper.TryGetProperty(const name: string;
+  out prop: TRttiProperty): Boolean;
+begin
+  prop := GetProperty(name);
+  Result := Assigned(prop);
 end;
 
 {$ENDREGION}

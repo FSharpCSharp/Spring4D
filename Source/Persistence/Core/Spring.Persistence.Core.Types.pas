@@ -212,7 +212,8 @@ uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Reflection,
+  Spring.Reflection.Activator;
 
 { TEnum<T> }
 
@@ -289,9 +290,7 @@ begin
   begin
     LObj := LValue.AsObject;
     if not Assigned(LObj) then
-    begin
-      FValue := TRttiExplorer.CreateNewClass<T>;
-    end;
+      FValue := TActivator.CreateInstance(TypeInfo(T)).AsType<T>;
   end;
 end;
 
@@ -304,10 +303,7 @@ end;
 destructor TSvLazy<T>.Destroy;
 begin
   if FOwnsObjects and FValueCreated then
-  begin
-    //free value
-    TRttiExplorer.DestroyClass<T>(FValue);
-  end;
+    TFinalizer.FinalizeInstance<T>(FValue);
   inherited Destroy;
 end;
 
@@ -514,7 +510,7 @@ begin
     if FLazy.ValueCreated then
     begin
       oldValue := FLazy.Value;
-      TRttiExplorer.DestroyClass<T>(oldValue);
+      TFinalizer.FinalizeInstance<T>(oldValue);
     end;
 
     FLazy.SetValue(AValue);

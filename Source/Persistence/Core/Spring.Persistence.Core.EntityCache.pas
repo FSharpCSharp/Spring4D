@@ -117,9 +117,14 @@ type
 
     class function Get(entityClass: TClass): TEntityData;
     class function TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
+
+    class function CreateColumnsData(entityClass: TClass): TColumnDataList;
     class function GetColumns(entityClass: TClass): IList<ColumnAttribute>;
     class function GetColumnsData(entityClass: TClass): TColumnDataList;
-    class function CreateColumnsData(entityClass: TClass): TColumnDataList;
+    class function TryGetColumnByMemberName(entityClass: TClass;
+      const memberName: string; out column: ColumnAttribute): Boolean;
+
+    class function IsValidEntity(entityClass: TClass): Boolean;
 
     class property Entities: IDictionary<TClass, TEntityData> read fEntities;
   end;
@@ -395,9 +400,27 @@ begin
   Result := LEntityData.ColumnsData;
 end;
 
+class function TEntityCache.IsValidEntity(entityClass: TClass): Boolean;
+var
+  LEntityData: TEntityData;
+begin
+  LEntityData := TEntityCache.Get(entityClass);
+
+  Result := Assigned(LEntityData)
+    and LEntityData.IsTableEntity
+    and LEntityData.HasPrimaryKey;
+end;
+
 class function TEntityCache.TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
 begin
   Result := GetEntities.TryGetValue(entityClass, entityData);
+end;
+
+class function TEntityCache.TryGetColumnByMemberName(entityClass: TClass;
+  const memberName: string; out column: ColumnAttribute): Boolean;
+begin
+  column := TEntityCache.Get(entityClass).ColumnByMemberName(memberName);
+  Result := Assigned(column);
 end;
 
 {$ENDREGION}

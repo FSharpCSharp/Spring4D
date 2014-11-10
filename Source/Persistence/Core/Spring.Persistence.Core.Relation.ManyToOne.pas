@@ -37,119 +37,124 @@ uses
 type
   TManyToOneRelation = class(TAbstractRelation)
   private
-    FNewColumns: TColumnDataList;
-    FNewEntityClass: TClass;
-    FMappedByCol: ColumnAttribute;
-    FNewTableName: string;
-    FEntityData: TEntityData;
+    fEntityData: TEntityData;
+    fMappedByColumn: ColumnAttribute;
+    fNewColumns: TColumnDataList;
+    fNewEntityClass: TClass;
+    fNewTableName: string;
   protected
-    function DoBuildColumnName(AColumn: TColumnData): string; virtual;
-    procedure ResolveColumns(AResultset: IDBResultset); virtual;
+    function DoBuildColumnName(const column: TColumnData): string; virtual;
+    procedure ResolveColumns(const resultSet: IDBResultSet); virtual;
   public
     NewEntity: TObject;
 
     constructor Create; virtual;
     destructor Destroy; override;
 
-    class function BuildColumnName(const ATableName, AMappedByColName, AColumnName: string): string;
-    class function GetMappedByColumn(AFromColumn: ManyToOneAttribute; AClass: TClass): ColumnAttribute;
+    class function BuildColumnName(
+      const tableName, mappedByColumnName, columnName: string): string;
+    class function GetMappedByColumn(const fromColumn: ManyToOneAttribute;
+      entityClass: TClass): ColumnAttribute;
 
     procedure SetAssociation(const attribute: TORMAttribute;
-      const entity: TObject; const resultSet: IDBResultset); override;
+      const entity: TObject; const resultSet: IDBResultSet); override;
 
-    property EntityData: TEntityData read FEntityData;
-    property NewEntityClass: TClass read FNewEntityClass;
-    property NewColumns: TColumnDataList read FNewColumns;
+    property EntityData: TEntityData read fEntityData;
+    property NewColumns: TColumnDataList read fNewColumns;
+    property NewEntityClass: TClass read fNewEntityClass;
   end;
 
 implementation
 
 uses
   SysUtils,
+  Spring.Helpers,
   Spring.Reflection,
-  Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Reflection.Activator,
+  Spring.Persistence.Core.Exceptions;
 
-{ TManyToOneRelation }
 
-class function TManyToOneRelation.BuildColumnName(const ATableName, AMappedByColName,
-  AColumnName: string): string;
-begin
-  Result := Format('%0:S_%1:S_%2:S', [
-                                      ATableName                  //table name
-                                     ,AMappedByColName              //mapped by column name
-                                     ,AColumnName                   //column name
-                                      ]);
-end;
+{$REGION 'TManyToOneRelation'}
 
 constructor TManyToOneRelation.Create;
 begin
   inherited Create;
-  FNewColumns := nil;
+  fNewColumns := nil;
 end;
 
 destructor TManyToOneRelation.Destroy;
 begin
-  if Assigned(FNewColumns) then
-    FNewColumns.Free;
+  if Assigned(fNewColumns) then
+    fNewColumns.Free;
   inherited Destroy;
 end;
 
-function TManyToOneRelation.DoBuildColumnName(AColumn: TColumnData): string;
+class function TManyToOneRelation.BuildColumnName(const tableName, mappedByColumnName,
+  columnName: string): string;
 begin
-  Result := BuildColumnName(FNewTableName, FMappedByCol.Name, AColumn.Name);
+  Result := Format('%0:S_%1:S_%2:S', [tableName, mappedByColumnName, columnName]);
 end;
 
-class function TManyToOneRelation.GetMappedByColumn(AFromColumn: ManyToOneAttribute; AClass: TClass): ColumnAttribute;
+function TManyToOneRelation.DoBuildColumnName(const column: TColumnData): string;
+begin
+  Result := BuildColumnName(fNewTableName, fMappedByColumn.Name, column.Name);
+end;
+
+class function TManyToOneRelation.GetMappedByColumn(
+  const fromColumn: ManyToOneAttribute; entityClass: TClass): ColumnAttribute;
 begin
   Result := nil;
-  if not TRttiExplorer.TryGetColumnByMemberName(AClass, AFromColumn.MappedBy, Result) then
-    raise EORMManyToOneMappedByColumnNotFound.CreateFmt('Mapped by column ("%S") not found in the base class "%S".'
-      , [AFromColumn.MappedBy, AClass.ClassName]);
+  if not TEntityCache.TryGetColumnByMemberName(entityClass, fromColumn.MappedBy, Result) then
+    raise EORMManyToOneMappedByColumnNotFound.CreateFmt(
+      'Mapped by column ("%S") not found in the base class "%S".',
+      [fromColumn.MappedBy, entityClass.ClassName]);
 end;
 
-procedure TManyToOneRelation.ResolveColumns(AResultset: IDBResultset);
+procedure TManyToOneRelation.ResolveColumns(const resultSet: IDBResultSet);
 var
-  LCol: TColumnData;
-  LColName: string;
   i: Integer;
+  columnData: TColumnData;
+  columnName: string;
 begin
-  for i := FNewColumns.Count - 1 downto 0 do
+  for i := fNewColumns.Count - 1 downto 0 do
   begin
-    LCol := FNewColumns[i];
-    LColName := DoBuildColumnName(LCol);
-    if not AResultset.FieldNameExists(LColName) then
+    columnData := fNewColumns[i];
+    columnName := DoBuildColumnName(columnData);
+    if not resultSet.FieldNameExists(columnName) then
     begin
-      FNewColumns.Delete(i);
+      fNewColumns.Delete(i);
       Continue;
     end;
-    LCol.Name := LColName;
-    FNewColumns[i] := LCol;
-    if LCol.IsPrimaryKey then
-      FNewColumns.PrimaryKeyColumn := LCol;
+    columnData.Name := columnName;
+    fNewColumns[i] := columnData;
+    if columnData.IsPrimaryKey then
+      fNewColumns.PrimaryKeyColumn := columnData;
   end;
 end;
 
 procedure TManyToOneRelation.SetAssociation(const attribute: TORMAttribute;
-  const entity: TObject; const resultSet: IDBResultset);
+  const entity: TObject; const resultSet: IDBResultSet);
 var
-  LCol: ManyToOneAttribute;
+  column: ManyToOneAttribute;
 begin
-  LCol := attribute as ManyToOneAttribute;
+  column := attribute as ManyToOneAttribute;
   //check if entity has associations attributes
-  FNewEntityClass := TType.GetType(LCol.GetColumnTypeInfo).AsInstance.MetaclassType;
-  FEntityData := TEntityCache.Get(FNewEntityClass);
-  FNewTableName := FEntityData.EntityTable.TableName;
-  NewEntity := TRttiExplorer.CreateType(FNewEntityClass);
-  if Assigned(FNewColumns) then
-    FNewColumns.Free;
-  FNewColumns := TEntityCache.CreateColumnsData(FNewEntityClass);
+  fNewEntityClass := TType.GetType(column.GetColumnTypeInfo).AsInstance.MetaclassType;
+  fEntityData := TEntityCache.Get(fNewEntityClass);
+  fNewTableName := fEntityData.EntityTable.TableName;
+  NewEntity := TActivator.CreateInstance(fNewEntityClass);
+  if Assigned(fNewColumns) then
+    fNewColumns.Free;
+  fNewColumns := TEntityCache.CreateColumnsData(fNewEntityClass);
   //get column name from MappedBy field or property
-  FMappedByCol := GetMappedByColumn(LCol, entity.ClassType);
+  fMappedByColumn := GetMappedByColumn(column, entity.ClassType);
   //resolve columns which we need to set
   ResolveColumns(resultSet);
   //assign newly created column to base entity property
-  TRttiExplorer.SetMemberValueSimple(entity, LCol.ClassMemberName, NewEntity);
+  TType.SetMemberValue(entity, column.ClassMemberName, NewEntity);
 end;
+
+{$ENDREGION}
+
 
 end.

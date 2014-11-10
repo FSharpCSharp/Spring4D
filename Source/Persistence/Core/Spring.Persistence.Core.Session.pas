@@ -429,7 +429,7 @@ end;
 function TSession.GetList<T>(const sql: string; const params: array of const): IList<T>;
 begin
   Result := TCollections.CreateObjectList<T>(True);
-  FetchFromQueryText(sql, params, Result as IObjectList, T);
+  FetchFromQueryText(sql, params, Result as IObjectList, TClass(T));
 end;
 
 function TSession.GetLazyValueAsObject<T>(const id: TValue;
@@ -445,14 +445,14 @@ begin
   if TUtils.IsEnumerable(TypeInfo(T)) then
     Result := GetObjectList<T>(LResults)
   else
-    Result := T(MapEntityFromResultsetRow(LResults, T, entity));  {TODO -oOwner -cGeneral : get one with arg entity is needed only for lazy loading}
+    Result := T(MapEntityFromResultsetRow(LResults, TClass(T), entity));  {TODO -oOwner -cGeneral : get one with arg entity is needed only for lazy loading}
 end;
 
 function TSession.GetList<T>(const sql: string;
   const params: IList<TDBParam>): IList<T>;
 begin
   Result := TCollections.CreateObjectList<T>(True);
-  FetchFromQueryText(sql, params, Result as IObjectList, T);
+  FetchFromQueryText(sql, params, Result as IObjectList, TClass(T));
 end;
 
 function TSession.FindAll<T>: IList<T>;
@@ -615,7 +615,7 @@ begin
   Result := TDriverPageAdapter<T>.Create(LPager);
   LPager.TotalItems := GetQueryCount(sql, params);
   LSQL := LPager.BuildSQL(sql);
-  FetchFromQueryText(LSQL, params, Result.Items as IObjectList, T);
+  FetchFromQueryText(LSQL, params, Result.Items as IObjectList, TClass(T));
 end;
 
 procedure TSession.ReleaseCurrentTransaction;
@@ -712,7 +712,7 @@ begin
   LResults := GetResultset(sql, params);
   Result := not LResults.IsEmpty;
   if Result then
-    value := T(MapEntityFromResultsetRow(LResults, T));
+    value := T(MapEntityFromResultsetRow(LResults, TClass(T)));
 end;
 
 procedure TSession.Update(const entity: TObject);

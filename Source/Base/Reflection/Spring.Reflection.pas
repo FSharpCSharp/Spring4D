@@ -95,6 +95,7 @@ type
     class function GetFullName(typeInfo: PTypeInfo): string; overload;
     class function GetFullName<T>: string; overload;
     class function FindType(const qualifiedName: string): TRttiType;
+    class function TryGetType(typeInfo: PTypeInfo; out rttiType: TRttiType): Boolean;
 
     ///	<summary>
     ///	  Returns true if the typeFrom is assignable to the typeTo.
@@ -105,7 +106,7 @@ type
     ///	  Returns <c>True</c> if the typeInfo is a delegate type.
     ///	</summary>
     class function IsDelegate(typeInfo: PTypeInfo): Boolean; overload;
-    class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
+    class function TryGetInterfaceType(const guid: TGUID; out intfType: TRttiInterfaceType): Boolean;
 
     ///	<summary>
     ///	  Returns the <see cref="TLazyKind" /> of the typeInfo.
@@ -121,6 +122,13 @@ type
     ///	  Returns <c>True</c> if the type is a lazy type.
     ///	</summary>
     class function IsLazy(typeInfo: PTypeInfo): Boolean;
+
+    class procedure SetFieldValue(const instance: TObject;
+      const fieldName: string; const value: TValue);
+    class procedure SetPropertyValue(const instance: TObject;
+      const propertyName: string; const value: TValue);
+    class procedure SetMemberValue(const instance: TObject;
+      const name: string; const value: TValue);
 
     class property Context: TRttiContext read fContext;
   end;
@@ -485,7 +493,8 @@ type
 
   TFinalizer = record
   public
-    class procedure FinalizeInstance<T>(var instance: T); static;
+    class procedure FinalizeInstance(var instance: TValue); overload; static;
+    class procedure FinalizeInstance<T>(var instance: T); overload; static;
   end;
 
 implementation
@@ -624,8 +633,70 @@ begin
   Result := GetLazyKind(typeInfo) <> lkNone;
 end;
 
+class procedure TType.SetFieldValue(const instance: TObject;
+  const fieldName: string; const value: TValue);
+var
+  rttiType: TRttiType;
+  field: TRttiField;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(instance, 'instance');
+{$ENDIF}
+
+  if TryGetType(instance.ClassInfo, rttiType) then
+  begin
+    field := rttiType.GetField(fieldName);
+    if Assigned(field) then
+      field.SetValue(instance, value);
+  end;
+end;
+
+class procedure TType.SetMemberValue(const instance: TObject;
+  const name: string; const value: TValue);
+var
+  rttiType: TRttiType;
+  field: TRttiField;
+  prop: TRttiProperty;
+begin
+  // TODO: TValue conversion ?
+  if TType.TryGetType(instance.ClassInfo, rttiType) then
+  begin
+    field := rttiType.GetField(name);
+    if Assigned(field) then
+      field.SetValue(instance, value)
+    else
+    begin
+      prop := rttiType.GetProperty(name);
+      if Assigned(prop) then
+        prop.SetValue(instance, value);
+    end;
+  end;
+//    if rttiType.TryGetField(name, field) then
+//      field.SetValue(instance, value)
+//    else if rttiType.TryGetProperty(name, prop) then
+//      prop.SetValue(instance, value);
+end;
+
+class procedure TType.SetPropertyValue(const instance: TObject;
+  const propertyName: string; const value: TValue);
+var
+  rttiType: TRttiType;
+  prop: TRttiProperty;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(instance, 'instance');
+{$ENDIF}
+
+  if TryGetType(instance.ClassInfo, rttiType) then
+  begin
+    prop := rttiType.GetProperty(propertyName);
+    if Assigned(prop) then
+      prop.SetValue(instance, value);
+  end;
+end;
+
 class function TType.TryGetInterfaceType(const guid: TGUID;
-  out aType: TRttiInterfaceType): Boolean;
+  out intfType: TRttiInterfaceType): Boolean;
 var
   item: TRttiType;
 begin
@@ -650,13 +721,22 @@ begin
       fSection.Leave;
     end;
   end;
-  Result := fInterfaceTypes.TryGetValue(guid, aType);
+  Result := fInterfaceTypes.TryGetValue(guid, intfType);
+end;
+
+class function TType.TryGetType(typeInfo: PTypeInfo;
+  out rttiType: TRttiType): Boolean;
+begin
+  rttiType := fContext.GetType(typeInfo);
+  Result := Assigned(rttiType);
 end;
 
 {$ENDREGION}
 
 
 {$REGION 'Internal Class Helpers'}
+
+{ _InternalRttiMemberHelper }
 
 function _InternalRttiMemberHelper.AsProperty: TRttiProperty;
 begin
@@ -1169,14 +1249,24 @@ end;
 
 {$REGION 'TFinalizer'}
 
+class procedure TFinalizer.FinalizeInstance(var instance: TValue);
+begin
+  if instance.IsObject then
+{$IFNDEF AUTOREFCOUNT}
+    instance.AsObject.Free
+{$ELSE}
+    instance.AsObject.DisposeOf
+{$ENDIF}
+end;
+
 class procedure TFinalizer.FinalizeInstance<T>(var instance: T);
 begin
-{$IFNDEF AUTOREFCOUNT}
   if GetTypeKind(TypeInfo(T)) = tkClass then
+{$IFNDEF AUTOREFCOUNT}
     PObject(@instance)^.Free
-  else
+{$ELSE}
+    PObject(@instance)^.DisposeOf
 {$ENDIF}
-   instance := Default(T);
 end;
 
 {$ENDREGION}

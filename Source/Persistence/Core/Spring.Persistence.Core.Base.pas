@@ -204,9 +204,10 @@ uses
   SyncObjs,
   SysUtils,
   Variants,
+  Spring,
   Spring.Persistence.Core.Consts,
-  Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.SQL.Register;
+  Spring.Persistence.SQL.Register,
+  Spring.Reflection;
 
 
 {$REGION 'TDriverResultSetAdapter<T>'}
@@ -252,7 +253,7 @@ end;
 destructor TDriverConnectionAdapter<T>.Destroy;
 begin
   if AutoFreeConnection then
-    TRttiExplorer.DestroyClass<T>(fConnection);
+    TFinalizer.FinalizeInstance<T>(fConnection);
   inherited Destroy;
 end;
 

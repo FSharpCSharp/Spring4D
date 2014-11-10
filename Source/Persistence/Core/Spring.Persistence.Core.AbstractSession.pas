@@ -113,13 +113,15 @@ implementation
 
 uses
   Spring,
+  Spring.Helpers,
   Spring.Persistence.Core.CollectionAdapterResolver,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Relation.ManyToOne,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Reflection,
+  Spring.Reflection.Activator;
 
 
 {$REGION 'TAbstractSession'}
@@ -149,12 +151,18 @@ end;
 function TAbstractSession.DoGetLazy(const id: TValue; const entity: TObject;
   const column: ColumnAttribute; classInfo: Pointer): IDBResultSet;
 var
+  LType: TRttiType;
+  LTypes: TArray<TRttiType>;
   LBaseEntityClass, LEntityToLoadClass: TClass;
 begin
   LBaseEntityClass := entity.ClassType;
-  LEntityToLoadClass := TRttiExplorer.GetLastGenericArgumentType(classInfo).AsInstance.MetaclassType;
+  LType := TType.GetType(classInfo);
+  LTypes := LType.GetGenericArguments;
+  if Length(LTypes) > 0 then
+    LType := LTypes[High(LTypes)];
+  LEntityToLoadClass := LType.AsInstance.MetaclassType;
 
-  if not TRttiExplorer.IsValidEntity(LEntityToLoadClass) then
+  if not TEntityCache.IsValidEntity(LEntityToLoadClass) then
     LEntityToLoadClass := LBaseEntityClass;
 
   if LEntityToLoadClass = LBaseEntityClass then
@@ -190,12 +198,12 @@ begin
       LValue := TUtils.FromVariant(LVal);
 
       if TUtils.TryConvert(LValue, Self,
-        TRttiExplorer.GetRttiType(entityToMap.ClassType), realEntity, LResult) then
+        TType.GetType(entityToMap.ClassType), realEntity, LResult) then
       begin
         if entityToMap <> nil then
           entityToMap.Free;
         entityToMap := LResult.AsObject;
-        FreeValueObject(LValue);
+        TFinalizer.FinalizeInstance(LValue);
       end;
     end;
   end
@@ -290,8 +298,7 @@ begin
   if Length(LAddParameters) <> 1 then
     raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
 
-  if Result.TryGetProperty(METHODNAME_CONTAINER_OWNSOBJECTS, LProp) then
-    LProp.SetValue(TObject(Result), True);
+  TType.SetPropertyValue(Result, METHODNAME_CONTAINER_OWNSOBJECTS, True);
 
   case LAddParameters[0].ParamType.TypeKind of
     tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
@@ -310,14 +317,14 @@ end;
 function TAbstractSession.MapEntityFromResultsetRow(const resultSet: IDBResultSet;
   classType: TClass; realEntity: TObject): TObject;
 begin
-  Result := TRttiExplorer.CreateType(classType);
+  Result := TActivator.CreateInstance(classType);
   DoMapEntity(Result, resultSet, realEntity);
 end;
 
 function TAbstractSession.MapEntityFromResultsetRow(const resultSet: IDBResultSet;
   classType: TClass): TObject;
 begin
-  Result := TRttiExplorer.CreateType(classType);
+  Result := TActivator.CreateInstance(classType);
   DoMapEntity(Result, resultSet, nil);
 end;
 
@@ -550,7 +557,7 @@ var
 begin
   LType := TRttiExplorer.GetEntityRttiType(TypeInfo(T));
 
-  if TRttiExplorer.TryGetColumnByMemberName(entity.ClassType, LType.Name, LColumn)
+  if TEntityCache.TryGetColumnByMemberName(entity.ClassType, LType.Name, LColumn)
     and not resultSet.IsEmpty then
   begin
     LVal := resultSet.GetFieldValue(LColumn.Name);
