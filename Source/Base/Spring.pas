@@ -557,6 +557,31 @@ type
   {$REGION 'Lazy Initialization'}
 
   ///	<summary>
+  ///	  Specifies the kind of a lazy type.
+  ///	</summary>
+  TLazyKind = (
+    ///	<summary>
+    ///	  Not a lazy type.
+    ///	</summary>
+    lkNone,
+
+    ///	<summary>
+    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    ///	</summary>
+    lkFunc,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
+    ///	</summary>
+    lkRecord,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
+    ///	</summary>
+    lkInterface
+  );
+
+  ///	<summary>
   ///	  Provides support for lazy initialization.
   ///	</summary>
   ILazy = interface
@@ -1093,6 +1118,10 @@ type
 
   {$REGION 'Routines'}
 
+{$IFNDEF DELPHIXE_UP}
+function SplitString(const s: string; delimiter: Char): TStringDynArray;
+{$ENDIF}
+
 {$IFNDEF DELPHIXE2_UP}
 function ReturnAddress: Pointer;
 {$ENDIF}
@@ -1143,6 +1172,26 @@ uses
 
 
 {$REGION 'Routines'}
+
+{$IFNDEF DELPHIXE_UP}
+function SplitString(const s: string; delimiter: Char): TStringDynArray;
+var
+  list: TStrings;
+  i: Integer;
+begin
+  list := TStringList.Create;
+  try
+    list.StrictDelimiter := True;
+    list.Delimiter := delimiter;
+    list.DelimitedText := s;
+    SetLength(Result, list.Count);
+    for i := 0 to list.Count - 1 do
+      Result[i] := list[i];
+  finally
+    list.Free;
+  end;
+end;
+{$ENDIF}
 
 {$IFNDEF DELPHIXE2_UP}
 function ReturnAddress: Pointer;

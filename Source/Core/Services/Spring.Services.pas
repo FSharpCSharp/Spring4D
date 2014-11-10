@@ -169,7 +169,6 @@ implementation
 
 uses
   SysUtils,
-  Spring.Helpers,
   Spring.ResourceStrings;
 
 function ServiceLocator: TServiceLocator;

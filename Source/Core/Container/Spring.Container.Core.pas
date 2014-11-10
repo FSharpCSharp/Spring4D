@@ -391,7 +391,7 @@ uses
   SyncObjs,
   TypInfo,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TDependencyModel'}

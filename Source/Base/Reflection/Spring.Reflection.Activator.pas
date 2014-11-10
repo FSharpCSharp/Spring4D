@@ -56,7 +56,6 @@ type
 implementation
 
 uses
-  Spring.Helpers,
   Spring.Reflection;
 
 

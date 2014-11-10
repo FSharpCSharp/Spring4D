@@ -81,7 +81,7 @@ uses
   SysUtils,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
+  Spring.Reflection,
   Spring.Reflection.Activator;
 
 

@@ -209,7 +209,6 @@ uses
   Spring.Collections.Lists,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
   Spring.Reflection;
 
 

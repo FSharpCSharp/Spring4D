@@ -101,7 +101,7 @@ uses
   TypInfo,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TLifetimeManagerBase'}

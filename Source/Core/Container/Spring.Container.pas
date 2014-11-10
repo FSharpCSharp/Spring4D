@@ -172,7 +172,6 @@ uses
   Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
   Spring.Logging.NullLogger,
   Spring.Reflection;
 
