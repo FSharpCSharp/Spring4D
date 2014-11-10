@@ -86,6 +86,8 @@ type
 
   Times = Spring.Times.Times;
 
+  PObject = ^TObject;
+
   {$ENDREGION}
 
 

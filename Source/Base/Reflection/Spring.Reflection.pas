@@ -483,6 +483,11 @@ type
   {$ENDREGION}
 
 
+  TFinalizer = record
+  public
+    class procedure FinalizeInstance<T>(var instance: T); static;
+  end;
+
 implementation
 
 uses
@@ -1157,6 +1162,21 @@ begin
       Exit(True);
     end;
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFinalizer'}
+
+class procedure TFinalizer.FinalizeInstance<T>(var instance: T);
+begin
+{$IFNDEF AUTOREFCOUNT}
+  if GetTypeKind(TypeInfo(T)) = tkClass then
+    PObject(@instance)^.Free
+  else
+{$ENDIF}
+   instance := Default(T);
 end;
 
 {$ENDREGION}
