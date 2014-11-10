@@ -340,6 +340,9 @@ end;
 function TList<T>.GetRange(index, count: Integer): IList<T>;
 var
   list: TList<T>;
+{$IFNDEF DELPHIXE2_UP}
+  i: Integer;
+{$ENDIF}
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
@@ -348,7 +351,16 @@ begin
 
   list := TList<T>.Create;
   list.fCount := count;
+{$IFDEF DELPHIXE2_UP}
   list.fItems := Copy(fItems, index, count);
+{$ELSE}
+  SetLength(list.fItems, count);
+  for i := 0 to fCount - 1 do
+  begin
+    list.fItems[i] := fItems[index];
+    Inc(index);
+  end;
+{$ENDIF}
   Result := list;
 end;
 
