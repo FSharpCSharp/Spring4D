@@ -48,6 +48,9 @@ type
       const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
     class function CreateInstance(const typeInfo: PTypeInfo): TValue; overload; static;
     class function CreateInstance(const typeName: string): TValue; overload; static;
+
+    class function CreateInstance(classType: TClass): TObject; overload; static;
+    class function CreateInstance<T: class>: T; overload; static;
   end;
 
   {$ENDREGION}
@@ -112,6 +115,20 @@ begin
     Result := TActivator.CreateInstance(TRttiInstanceType(rttiType))
   else
     Result := nil;
+end;
+
+class function TActivator.CreateInstance(classType: TClass): TObject;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'typeInfo');
+{$ENDIF}
+
+  Result := CreateInstance(classType.ClassInfo).AsObject;
+end;
+
+class function TActivator.CreateInstance<T>: T;
+begin
+  Result := CreateInstance(TypeInfo(T)).AsType<T>;
 end;
 
 {$ENDREGION}
