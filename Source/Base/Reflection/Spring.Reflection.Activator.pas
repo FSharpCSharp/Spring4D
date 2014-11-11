@@ -46,6 +46,8 @@ type
     class function CreateInstance(const classType: TRttiInstanceType): TValue; overload; static;
     class function CreateInstance(const classType: TRttiInstanceType;
       const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
+    class function CreateInstance(const classType: TRttiInstanceType;
+      const arguments: array of TValue): TValue; overload; static;
     class function CreateInstance(const typeInfo: PTypeInfo): TValue; overload; static;
     class function CreateInstance(const typeName: string): TValue; overload; static;
   end;
@@ -74,6 +76,25 @@ begin
     if method.IsConstructor and (Length(method.GetParameters) = 0) then
       Exit(method.Invoke(classType.MetaclassType, []));
   Result := nil;
+end;
+
+class function TActivator.CreateInstance(const classType: TRttiInstanceType;
+  const arguments: array of TValue): TValue;
+var
+  parameterTypes: TArray<PTypeInfo>;
+  i: Integer;
+  constructorMethod: TRttiMethod;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'classType');
+{$ENDIF}
+
+  SetLength(parameterTypes, Length(arguments));
+  for i := Low(arguments) to High(arguments) do
+    parameterTypes[i] := arguments[i].TypeInfo;
+  constructorMethod := classType.Methods.Single(TMethodFilters.IsConstructor
+    and TMethodFilters.HasParameterTypes(parameterTypes));
+  Result := CreateInstance(classType, constructorMethod, arguments);
 end;
 
 class function TActivator.CreateInstance(const classType: TRttiInstanceType;
