@@ -1790,7 +1790,8 @@ begin
   Result := Length(parameters) = Length(fTypes);
   if Result then
     for i := Low(parameters) to High(parameters) do
-      if parameters[i].ParamType.Handle <> fTypes[i] then  // IsAssignableFrom
+      if not IsAssignableFrom(parameters[i].ParamType.Handle, fTypes[i]) then
+//      if parameters[i].ParamType.Handle <> fTypes[i] then
         Exit(False);
 end;
 
