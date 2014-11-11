@@ -37,10 +37,10 @@ type
   /// </summary>
   TAbstractManager = class(TInterfacedObject)
   private
-    FConnection: IDBConnection;
+    fConnection: IDBConnection;
   public
-    constructor Create(const AConnection: IDBConnection); virtual;
-    property Connection: IDBConnection read FConnection;
+    constructor Create(const connection: IDBConnection); virtual;
+    property Connection: IDBConnection read fConnection;
   end;
 
 implementation
@@ -48,10 +48,10 @@ implementation
 
 {$REGION 'TAbstractManager'}
 
-constructor TAbstractManager.Create(const AConnection: IDBConnection);
+constructor TAbstractManager.Create(const connection: IDBConnection);
 begin
   inherited Create;
-  FConnection := AConnection;
+  fConnection := connection;
 end;
 
 {$ENDREGION}

@@ -164,7 +164,8 @@ type
     function GetLimit: Integer;
     function GetOffset: Integer;
   public
-    constructor Create(connection: IDBConnection); virtual;
+    constructor Create(const connection: IDBConnection); overload; virtual;
+    constructor Create(const connection: IDBConnection; page, itemsPerPage: Integer); overload;
 
     function BuildSQL(const sql: string): string;
 
@@ -483,16 +484,24 @@ end;
 
 {$REGION 'TPager'}
 
-function TPager.BuildSQL(const sql: string): string;
-begin
-  Result := fGenerator.GeneratePagedQuery(sql, Limit, Offset);
-end;
-
-constructor TPager.Create(connection: IDBConnection);
+constructor TPager.Create(const connection: IDBConnection);
 begin
   inherited Create;
   fConnection := connection;
   fGenerator := TSQLGeneratorRegister.GetGenerator(connection.GetQueryLanguage);
+end;
+
+constructor TPager.Create(const connection: IDBConnection; page,
+  itemsPerPage: Integer);
+begin
+  Create(connection);
+  fCurrentPage := page;
+  fPageSize := itemsPerPage;
+end;
+
+function TPager.BuildSQL(const sql: string): string;
+begin
+  Result := fGenerator.GeneratePagedQuery(sql, Limit, Offset);
 end;
 
 function TPager.GetLimit: Integer;

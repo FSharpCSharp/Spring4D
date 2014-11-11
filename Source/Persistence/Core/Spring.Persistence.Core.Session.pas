@@ -61,7 +61,6 @@ type
     fOldStateEntities: TEntityMap;
     fStartedTransaction: IDBTransaction;
   protected
-    function GetPager(page, itemsPerPage: Integer): TObject;
     function GetQueryCountSql(const sql: string): string;
     function GetQueryCount(const sql: string; const params: array of const): Int64; overload;
     function GetQueryCount(const sql: string; const params: IList<TDBParam>): Int64; overload;
@@ -310,13 +309,13 @@ uses
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Commands.Delete,
   Spring.Persistence.SQL.Commands.Insert,
-  Spring.Persistence.SQL.Commands.Page,
   Spring.Persistence.SQL.Commands.Select,
   Spring.Persistence.SQL.Commands.Update,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Register;
 
-{ TSession }
+
+{$REGION 'TSession'}
 
 constructor TSession.Create(const connection: IDBConnection);
 begin
@@ -367,62 +366,59 @@ end;
 
 procedure TSession.Delete(const entity: TObject);
 var
-  LDeleter: TDeleteExecutor;
+  deleter: TDeleteExecutor;
 begin
-  LDeleter := GetDeleteCommandExecutor(entity.ClassType);
+  deleter := GetDeleteCommandExecutor(entity.ClassType);
   try
-    DoDelete(entity, LDeleter);
+    DoDelete(entity, deleter);
   finally
-    LDeleter.Free;
+    deleter.Free;
   end;
 end;
 
 procedure TSession.DeleteList<T>(const entities: ICollection<T>);
 var
-  LEntity: T;
-  LDeleter: TDeleteExecutor;
+  deleter: TDeleteExecutor;
+  entity: T;
 begin
-  LDeleter := GetDeleteCommandExecutor(T);
+  deleter := GetDeleteCommandExecutor(T);
   try
-    for LEntity in entities do
-    begin
-      DoDelete(LEntity, LDeleter);
-    end;
+    for entity in entities do
+      DoDelete(entity, deleter);
   finally
-    LDeleter.Free;
+    deleter.Free;
   end;
 end;
 
 function TSession.Execute(const sql: string; const params: array of const): NativeUInt;
 var
-  LStatement: IDBStatement;
+  statement: IDBStatement;
 begin
-  LStatement := Connection.CreateStatement;
-  LStatement.SetSQLCommand(sql);
+  statement := Connection.CreateStatement;
+  statement.SetSQLCommand(sql);
   if Length(params) > 0 then
-    LStatement.SetParams(params);
-
-  Result := LStatement.Execute;
+    statement.SetParams(params);
+  Result := statement.Execute;
 end;
 
 function TSession.ExecuteScalar<T>(const sql: string; const params: array of const): T;
 var
-  LResults: IDBResultSet;
-  LVal: Variant;
-  LValue, LConvertedValue: TValue;
-  LMustFree: Boolean;
+  results: IDBResultSet;
+  fieldValue: Variant;
+  value, convertedValue: TValue;
+  mustFree: Boolean;
 begin
   Result := System.Default(T);
-  LResults := GetResultset(sql, params);
-  if not LResults.IsEmpty then
+  results := GetResultSet(sql, params);
+  if not results.IsEmpty then
   begin
-    LVal := LResults.GetFieldValue(0);
+    fieldValue := results.GetFieldValue(0);
 
-    LValue := TUtils.FromVariant(LVal);
-    if not LValue.TryConvert(TypeInfo(T), LConvertedValue, LMustFree) then
-      raise EORMCannotConvertValue.CreateFmt(EXCEPTION_CANNOT_CONVERT_TYPE
-        , [LValue.TypeInfo.Name, PTypeInfo(TypeInfo(T)).Name]);
-    Result := LConvertedValue.AsType<T>;
+    value := TUtils.FromVariant(fieldValue);
+    if not value.TryConvert(TypeInfo(T), convertedValue, mustFree) then
+      raise EORMCannotConvertValue.CreateFmt(EXCEPTION_CANNOT_CONVERT_TYPE,
+        [value.TypeInfo.Name, PTypeInfo(TypeInfo(T)).Name]);
+    Result := convertedValue.AsType<T>;
   end;
 end;
 
@@ -435,17 +431,17 @@ end;
 function TSession.GetLazyValueAsObject<T>(const id: TValue;
   const entity: TObject; const column: ColumnAttribute): T;
 var
-  LResults: IDBResultSet;
+  results: IDBResultSet;
 begin
   if not Assigned(entity) or id.IsEmpty then
     Exit(System.Default(T));
 
-  LResults := DoGetLazy(id, entity, column, TypeInfo(T));
+  results := DoGetLazy(id, entity, column, TypeInfo(T));
 
   if TUtils.IsEnumerable(TypeInfo(T)) then
-    Result := GetObjectList<T>(LResults)
+    Result := GetObjectList<T>(results)
   else
-    Result := T(MapEntityFromResultsetRow(LResults, TClass(T), entity));  {TODO -oOwner -cGeneral : get one with arg entity is needed only for lazy loading}
+    Result := T(MapEntityFromResultsetRow(results, TClass(T), entity));  {TODO -oOwner -cGeneral : get one with arg entity is needed only for lazy loading}
 end;
 
 function TSession.GetList<T>(const sql: string;
@@ -457,39 +453,39 @@ end;
 
 function TSession.FindAll<T>: IList<T>;
 var
-  LEntityClass: TClass;
-  LSelecter: TSelectExecutor;
-  LResults: IDBResultSet;
+  entityClass: TClass;
+  selecter: TSelectExecutor;
+  results: IDBResultSet;
 begin
-  LEntityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
-  LSelecter := GetSelectCommandExecutor(LEntityClass);
+  entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
+  selecter := GetSelectCommandExecutor(entityClass);
   try
-    LResults := LSelecter.SelectAll(LEntityClass);
+    results := selecter.SelectAll(entityClass);
     Result := TCollections.CreateObjectList<T>(True);
-    MapFromResultsetToCollection(LResults, Result as IObjectList, T);
+    MapFromResultsetToCollection(results, Result as IObjectList, T);
   finally
-    LSelecter.Free;
+    selecter.Free;
   end;
 end;
 
 function TSession.FindOne<T>(const id: TValue): T;
 var
-  LSelecter: TSelectExecutor;
-  LEntityClass: TClass;
-  LResults: IDBResultSet;
+  entityClass: TClass;
+  selecter: TSelectExecutor;
+  results: IDBResultSet;
 begin
   Result := System.Default(T);
-  LEntityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
-  LSelecter := GetSelectByIdCommandExecutor(LEntityClass, id);
+  entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
+  selecter := GetSelectByIdCommandExecutor(entityClass, id);
   try
-    LResults := LSelecter.Select;
-    if not LResults.IsEmpty then
+    results := selecter.Select;
+    if not results.IsEmpty then
     begin
       Result := T.Create;
-      DoMapEntity(TObject(Result), LResults, nil);
+      DoMapEntity(TObject(Result), results, nil);
     end;
   finally
-    LSelecter.Free;
+    selecter.Free;
   end;
 end;
 
@@ -505,77 +501,63 @@ begin
     Result := System.Default(T);
 end;
 
-function TSession.GetPager(page, itemsPerPage: Integer): TObject;
-var
-  LPager: TPager;
-begin
-  Result := TPager.Create(Connection);
-  LPager := TPager(Result);
-  LPager.Page := page;
-  LPager.ItemsPerPage := itemsPerPage;
-end;
-
 function TSession.GetQueryCount(const sql: string; const params: array of const): Int64;
 var
-  LSQL: string;
-  LResults: IDBResultSet;
+  sqlStatement: string;
+  results: IDBResultSet;
 begin
-  Result := 0;
-  LSQL := GetQueryCountSql(sql);
-  LResults := GetResultset(LSQL, params);
-  if not LResults.IsEmpty then
-  begin
-    Result := LResults.GetFieldValue(0);
-  end;
+  sqlStatement := GetQueryCountSql(sql);
+  results := GetResultSet(sqlStatement, params);
+  if results.IsEmpty then
+    Result := 0
+  else
+    Result := results.GetFieldValue(0);
 end;
 
 function TSession.GetQueryCount(const sql: string; const params: IList<TDBParam>): Int64;
 var
-  LSQL: string;
-  LResults: IDBResultSet;
+  sqlStatement: string;
+  results: IDBResultSet;
 begin
-  Result := 0;
-  LSQL := GetQueryCountSql(sql);
-  LResults := GetResultset(LSQL, params);
-  if not LResults.IsEmpty then
-  begin
-    Result := LResults.GetFieldValue(0);
-  end;
+  sqlStatement := GetQueryCountSql(sql);
+  results := GetResultSet(sqlStatement, params);
+  if results.IsEmpty then
+    Result := 0
+  else
+    Result := results.GetFieldValue(0);
 end;
 
 function TSession.GetQueryCountSql(const sql: string): string;
 var
-  LGenerator: ISQLGenerator;
+  generator: ISQLGenerator;
 begin
-  LGenerator := TSQLGeneratorRegister.GetGenerator(Connection.GetQueryLanguage);
-  Result := LGenerator.GenerateGetQueryCount(sql);
+  generator := TSQLGeneratorRegister.GetGenerator(Connection.GetQueryLanguage);
+  Result := generator.GenerateGetQueryCount(sql);
 end;
 
 procedure TSession.Insert(const entity: TObject);
 var
-  LInserter: TInsertExecutor;
+  inserter: TInsertExecutor;
 begin
-  LInserter := GetInsertCommandExecutor(entity.ClassType);
+  inserter := GetInsertCommandExecutor(entity.ClassType);
   try
-    DoInsert(entity, LInserter);
+    DoInsert(entity, inserter);
   finally
-    LInserter.Free;
+    inserter.Free;
   end;
 end;
 
 procedure TSession.InsertList<T>(const entities: ICollection<T>);
 var
-  LEntity: T;
-  LInserter: TInsertExecutor;
+  inserter: TInsertExecutor;
+  entity: T;
 begin
-  LInserter := GetInsertCommandExecutor(T);
+  inserter := GetInsertCommandExecutor(T);
   try
-    for LEntity in entities do
-    begin
-      DoInsert(LEntity, LInserter);
-    end;
+    for entity in entities do
+      DoInsert(entity, inserter);
   finally
-    LInserter.Free;
+    inserter.Free;
   end;
 end;
 
@@ -592,30 +574,29 @@ end;
 function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;
   const params: IList<TDBParam>): IDBPage<T>;
 var
-  LPager: TPager;
-  LSQL: string;
-  LResultset: IDBResultSet;
+  pager: TPager;
+  sqlStatement: string;
 begin
-  LPager := GetPager(page, itemsPerPage) as TPager;
-  Result := TDriverPageAdapter<T>.Create(LPager);
-  LPager.TotalItems := GetQueryCount(sql, params);
-  LSQL := LPager.BuildSQL(sql);
+  pager := TPager.Create(Connection, page, itemsPerPage);
+  Result := TDriverPageAdapter<T>.Create(pager);
+  pager.TotalItems := GetQueryCount(sql, params);
+  sqlStatement := pager.BuildSQL(sql);
 
-  LResultset := GetResultset(LSQL, params);
-  MapFromResultsetToCollection(LResultset, Result.Items as IObjectList, T);
+  FetchFromQueryText(sqlStatement, params, Result.Items as IObjectList, TClass(T));
 end;
 
 function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;
   const params: array of const): IDBPage<T>;
 var
-  LPager: TPager;
-  LSQL: string;
+  pager: TPager;
+  sqlStatement: string;
 begin
-  LPager := GetPager(page, itemsPerPage) as TPager;
-  Result := TDriverPageAdapter<T>.Create(LPager);
-  LPager.TotalItems := GetQueryCount(sql, params);
-  LSQL := LPager.BuildSQL(sql);
-  FetchFromQueryText(LSQL, params, Result.Items as IObjectList, TClass(T));
+  pager := TPager.Create(Connection, page, itemsPerPage) as TPager;
+  Result := TDriverPageAdapter<T>.Create(pager);
+  pager.TotalItems := GetQueryCount(sql, params);
+  sqlStatement := pager.BuildSQL(sql);
+
+  FetchFromQueryText(sqlStatement, params, Result.Items as IObjectList, TClass(T));
 end;
 
 procedure TSession.ReleaseCurrentTransaction;
@@ -642,41 +623,37 @@ end;
 
 procedure TSession.SaveAll(const entity: TObject);
 var
-  LRelations: IList<TObject>;
-  i: Integer;
+  relations: IList<TObject>;
+  relation: TObject;
 begin
-  LRelations := TRttiExplorer.GetRelationsOf(entity);
-  for i := 0 to LRelations.Count - 1 do
-  begin
-    SaveAll(LRelations[i]);
-  end;
+  relations := TRttiExplorer.GetRelationsOf(entity);
+  for relation in relations do
+    SaveAll(relation);
   Save(entity);
 end;
 
 procedure TSession.SaveList<T>(const entities: ICollection<T>);
 var
-  LEntity: T;
-  LInserts, LUpdates: IList<T>;
+  inserts, updates: IList<T>;
+  entity: T;
 begin
-  LInserts := TCollections.CreateList<T>;
-  LUpdates := TCollections.CreateList<T>;
-  for LEntity in entities do
-  begin
-    if IsNew(LEntity) then
-      LInserts.Add(LEntity)
+  inserts := TCollections.CreateList<T>;
+  updates := TCollections.CreateList<T>;
+  for entity in entities do
+    if IsNew(entity) then
+      inserts.Add(entity)
     else
-      LUpdates.Add(LEntity);
-  end;
-  if not LInserts.IsEmpty then
-    InsertList<T>(LInserts);
-  if not LUpdates.IsEmpty then
-    UpdateList<T>(LUpdates);
+      updates.Add(entity);
+  if not inserts.IsEmpty then
+    InsertList<T>(inserts);
+  if not updates.IsEmpty then
+    UpdateList<T>(updates);
 end;
 
 procedure TSession.SetLazyValue<T>(var value: T; const id: TValue;
   const entity: TObject; const column: ColumnAttribute);
 var
-  LResults: IDBResultSet;
+  results: IDBResultSet;
 begin
   if not Assigned(entity) or id.IsEmpty then
     Exit;
@@ -687,12 +664,12 @@ begin
         PTypeInfo(TypeInfo(T)).TypeName]);
   end;
 
-  LResults := DoGetLazy(id, entity, column, TypeInfo(T));
+  results := DoGetLazy(id, entity, column, TypeInfo(T));
 
   if TUtils.IsEnumerable(TypeInfo(T)) then
-    SetInterfaceList<T>(value, LResults)
+    SetInterfaceList<T>(value, results)
   else
-    SetOne<T>(value, LResults, entity);
+    SetOne<T>(value, results, entity);
 end;
 
 function TSession.Single<T>(const sql: string; const params: array of const): T;
@@ -707,42 +684,43 @@ end;
 
 function TSession.TryFirst<T>(const sql: string; const params: array of const; out value: T): Boolean;
 var
-  LResults: IDBResultSet;
+  results: IDBResultSet;
 begin
-  LResults := GetResultset(sql, params);
-  Result := not LResults.IsEmpty;
+  results := GetResultSet(sql, params);
+  Result := not results.IsEmpty;
   if Result then
-    value := T(MapEntityFromResultsetRow(LResults, TClass(T)));
+    value := T(MapEntityFromResultsetRow(results, TClass(T)));
 end;
 
 procedure TSession.Update(const entity: TObject);
 var
-  LUpdater: TUpdateExecutor;
+  updater: TUpdateExecutor;
 begin
-  LUpdater := GetUpdateCommandExecutor(entity.ClassType);
+  updater := GetUpdateCommandExecutor(entity.ClassType);
   try
-    LUpdater.EntityMap := fOldStateEntities;
-    DoUpdate(entity, LUpdater);
+    updater.EntityMap := fOldStateEntities;
+    DoUpdate(entity, updater);
   finally
-    LUpdater.Free;
+    updater.Free;
   end;
 end;
 
 procedure TSession.UpdateList<T>(const entities: ICollection<T>);
 var
-  LEntity: T;
-  LUpdater: TUpdateExecutor;
+  updater: TUpdateExecutor;
+  entity: T;
 begin
-  LUpdater := GetUpdateCommandExecutor(T);
+  updater := GetUpdateCommandExecutor(T);
   try
-    LUpdater.EntityMap := fOldStateEntities;
-    for LEntity in entities do
-    begin
-      DoUpdate(LEntity, LUpdater);
-    end;
+    updater.EntityMap := fOldStateEntities;
+    for entity in entities do
+      DoUpdate(entity, updater);
   finally
-    LUpdater.Free;
+    updater.Free;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

@@ -160,8 +160,8 @@ begin
   LStatement := Connection.CreateStatement;
   LVersionValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.VersionColumn.ClassMemberName);
   LPKValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.PrimaryKeyColumn.ClassMemberName);
-  LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, fEntityCache.VersionColumn
-    , TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
+  LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, fEntityCache.VersionColumn,
+    TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
   LQueryMetadata.QueryOperation := ctUpdateVersion;  
   LQueryMetadata.TableName := fCommand.Table.Name;
   LStatement.SetQuery(LQueryMetadata, LQuery);
