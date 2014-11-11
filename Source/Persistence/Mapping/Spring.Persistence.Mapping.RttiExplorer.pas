@@ -68,7 +68,7 @@ type
     class constructor Create;
     class destructor Destroy;
   public
-    class function Clone(AEntity: TObject): TObject;
+    class function Clone(entity: TObject): TObject;
 //    class function CreateNewClass<T>: T;
 //    class function CreateNewInterface(AInterfaceTypeInfo, AClassTypeInfo: PTypeInfo): IInvokable; overload;
 //    class function CreateNewInterface<TInterfaceType, TClassType>: TInterfaceType; overload;
@@ -121,7 +121,7 @@ type
 //    class function TryGetColumnByMemberName(AClass: TClass; const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
     class function TryGetPrimaryKeyValue(AColumns: IList<ColumnAttribute>; AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
     class function TryGetMethod(ATypeInfo: PTypeInfo; const AMethodName: string; out AAddMethod: TRttiMethod; AParamCount: Integer = 1): Boolean;
-    class procedure CopyFieldValues(AEntityFrom, AEntityTo: TObject);
+    class procedure CopyFieldValues(const source, target: TObject);
 //    class procedure DestroyClass<T>(var AObject: T);
     class procedure GetChangedMembers(AOriginalObj, ADirtyObj: TObject; AList: IList<ColumnAttribute>); overload;
     class procedure GetClassMembers<T: TORMAttribute>(AClass: TClass; AList: IList<T>); overload;
@@ -151,6 +151,7 @@ uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Utils,
+  Spring.Reflection, Spring.Helpers,
   Spring.Reflection.Activator;
 
 
@@ -167,47 +168,42 @@ begin
   FRttiCache.Free;
 end;
 
-class function TRttiExplorer.Clone(AEntity: TObject): TObject;
+class function TRttiExplorer.Clone(entity: TObject): TObject;
 begin
-  Assert(Assigned(AEntity));
-  Result := AEntity.ClassType.Create;
-  CopyFieldValues(AEntity, Result);
+  Assert(Assigned(entity));
+  Result := TActivator.CreateInstance(entity.ClassType);
+  CopyFieldValues(entity, Result);
 end;
 
-class procedure TRttiExplorer.CopyFieldValues(AEntityFrom, AEntityTo: TObject);
+class procedure TRttiExplorer.CopyFieldValues(const source, target: TObject);
 var
-  i: Integer;
-  LField: TRttiField;
-  LFields: IList<TRttiField>;
- // LType: TRttiType;
-  LValueTo: TValue;
-  LValueFrom: TObject;
+  field: TRttiField;
+  value: TValue;
+  sourceObject, targetObject: TObject;
 begin
-  if (AEntityFrom = nil) then
-    Exit;
-  Assert(AEntityFrom.ClassType = AEntityTo.ClassType);
-  Assert(Assigned(AEntityFrom) and Assigned(AEntityTo));
-  
- // LType := FRttiCache.GetType(AEntityFrom.ClassInfo);
-  LFields := FRttiCache.GetFieldsOfType(AEntityFrom.ClassInfo);
-  for i := 0 to LFields.Count - 1 do
+  Assert(Assigned(source) and Assigned(target));
+  Assert(source.ClassType = target.ClassType);
+
+  for field in TType.GetType(source.ClassInfo).GetFields do
   begin
-    LField := LFields[i];
-    if LField.FieldType.IsInstance then
+    if field.FieldType.IsInstance then
     begin
-      LValueTo := TActivator.CreateInstance(LField.FieldType.AsInstance);
-      LValueFrom := LField.GetValue(AEntityFrom).AsObject;
-      if LValueTo.AsObject is TPersistent then
-      begin
-        TPersistent(LValueTo.AsObject).Assign(LValueFrom as TPersistent);
-      end
+      sourceObject := field.GetValue(source).AsObject;
+      if not Assigned(sourceObject) then
+        Continue;
+      targetObject := field.GetValue(target).AsObject;
+      if not Assigned(targetObject) then
+        targetObject := TActivator.CreateInstance(sourceObject.ClassType);
+      if targetObject is TPersistent then
+        TPersistent(targetObject).Assign(sourceObject as TPersistent)
       else
-        CopyFieldValues(LValueFrom, LValueTo.AsObject);
+        CopyFieldValues(sourceObject, targetObject);
+      value := targetObject;
     end
     else
-      LValueTo := LField.GetValue(AEntityFrom);
+      value := field.GetValue(source);
   
-    LField.SetValue(AEntityTo, LValueTo);
+    field.SetValue(target, value);
   end;
 end;
 
@@ -804,7 +800,7 @@ begin
   LType := FRttiCache.GetType(AEntity.ClassType);
   for LField in LType.GetFields do
   begin
-    if (LField.HasAttributeOfType<ManyValuedAssociation>) then
+    if LField.HasCustomAttribute<ManyValuedAssociation> then
     begin
       LEntities := GetSubEntityFromMemberDeep(AEntity, LField);
       if LEntities.Any then
@@ -814,7 +810,7 @@ begin
 
   for LProperty in LType.GetProperties do
   begin
-    if (LProperty.HasAttributeOfType<ManyValuedAssociation>) then
+    if LProperty.HasCustomAttribute<ManyValuedAssociation> then
     begin
       LEntities := GetSubEntityFromMemberDeep(AEntity, LProperty);
       if LEntities.Any then

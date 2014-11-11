@@ -64,6 +64,7 @@ type
     FStream: LazyObject<TMemoryStream>;
  //   [Column('AVATARLAZY', [], 50, 0, 0, 'Customers avatar')]
     FAvatarNullable: Lazy<Nullable<TPicture>>;
+    FStrings: TStrings;
   public
     FName: string;
     FAge: Integer;
@@ -90,7 +91,7 @@ type
     procedure SetProducts(const Value: TSvObjectList<TProduct>);
     procedure SetOrdersIntf(const Value: IList<TCustomer_Orders>);
   public
-    constructor Create();
+    constructor Create;
     destructor Destroy; override;
   public
     [SvTransient]
@@ -269,11 +270,12 @@ begin
   inherited Create;
   FId := -1;
   FOrdersIntf := TCollections.CreateObjectList<TCustomer_Orders>(True);
+  FStrings := TStringList.Create;
 end;
 
 destructor TCustomer.Destroy;
 begin
-
+  FStrings.Free;
   inherited Destroy;
 end;
 
