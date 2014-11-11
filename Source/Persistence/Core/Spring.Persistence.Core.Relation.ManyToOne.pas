@@ -97,7 +97,7 @@ end;
 
 function TManyToOneRelation.DoBuildColumnName(const column: TColumnData): string;
 begin
-  Result := BuildColumnName(fNewTableName, fMappedByColumn.Name, column.Name);
+  Result := BuildColumnName(fNewTableName, fMappedByColumn.ColumnName, column.ColumnName);
 end;
 
 class function TManyToOneRelation.GetMappedByColumn(
@@ -125,7 +125,7 @@ begin
       fNewColumns.Delete(i);
       Continue;
     end;
-    columnData.Name := columnName;
+    columnData.ColumnName := columnName;
     fNewColumns[i] := columnData;
     if columnData.IsPrimaryKey then
       fNewColumns.PrimaryKeyColumn := columnData;
@@ -139,7 +139,7 @@ var
 begin
   column := attribute as ManyToOneAttribute;
   //check if entity has associations attributes
-  fNewEntityClass := TType.GetType(column.GetColumnTypeInfo).AsInstance.MetaclassType;
+  fNewEntityClass := TType.GetType(column.MemberType).AsInstance.MetaclassType;
   fEntityData := TEntityCache.Get(fNewEntityClass);
   fNewTableName := fEntityData.EntityTable.TableName;
   NewEntity := TActivator.CreateInstance(fNewEntityClass);
@@ -151,7 +151,7 @@ begin
   //resolve columns which we need to set
   ResolveColumns(resultSet);
   //assign newly created column to base entity property
-  TType.SetMemberValue(entity, column.ClassMemberName, NewEntity);
+  TType.SetMemberValue(entity, column.MemberName, NewEntity);
 end;
 
 {$ENDREGION}

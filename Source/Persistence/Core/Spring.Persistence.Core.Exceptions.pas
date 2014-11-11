@@ -123,8 +123,8 @@ begin
     columns := TRttiExplorer.GetColumns(entity.ClassType);
     for column in columns do
     begin
-      value := TRttiExplorer.GetMemberValue(entity, column.ClassMemberName);
-      builder.AppendFormat('[%s] : %s', [column.Name, value.ToString]).AppendLine;
+      value := TRttiExplorer.GetMemberValue(entity, column.MemberName);
+      builder.AppendFormat('[%s] : %s', [column.ColumnName, value.ToString]).AppendLine;
     end;
     Result := builder.ToString;
   finally

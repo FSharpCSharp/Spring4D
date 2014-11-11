@@ -610,10 +610,8 @@ begin
   if FIsIdentity then
     FIsPrimaryKey := FIsIdentity
   else
-  begin
-    FIsPrimaryKey := (cpPrimaryKey in AColumnAttr.Properties);
-  end;
-  FTypeKindInfo := AColumnAttr.GetColumnTypeInfo;
+    FIsPrimaryKey := cpPrimaryKey in AColumnAttr.Properties;
+  FTypeKindInfo := AColumnAttr.MemberType;
 end;
 
 { TSQLForeignKeyField }

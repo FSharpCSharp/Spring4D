@@ -154,8 +154,8 @@ var
   bFree: Boolean;
 begin
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(attribute.Name);
-  LVal := TRttiExplorer.GetMemberValueDeep(entity, attribute.ClassMemberName);
+  Result.Name := Command.GetExistingParameterName(attribute.ColumnName);
+  LVal := TRttiExplorer.GetMemberValueDeep(entity, attribute.MemberName);
   //convert/serialize objects to stream. If value is nullable or lazy get it's real value
   if LVal.IsObject and LVal.TryConvert(TypeInfo(TStream), LRes, bFree) then
     LVal := LRes.AsObject;
@@ -163,7 +163,7 @@ begin
   Result.Value := TUtils.AsVariant(LVal);
   if CanUpdateParamFieldType(Result.Value) then
     Result.SetParamTypeFromTypeInfo(TRttiExplorer.GetMemberTypeInfo(
-      attribute.BaseEntityClass, attribute.ClassMemberName));
+      attribute.BaseEntityClass, attribute.MemberName));
 
   if bFree then
     FreeValueObject(LVal);

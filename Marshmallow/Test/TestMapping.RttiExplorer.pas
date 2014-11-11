@@ -73,7 +73,7 @@ begin
   LColumn := TRttiExplorer.GetPrimaryKeyColumn(FCustomer.ClassType);
   CheckTrue(Assigned(LColumn));
 
-  CheckEqualsString('CUSTID', LColumn.Name);
+  CheckEqualsString('CUSTID', LColumn.ColumnName);
   CheckEqualsString('CUSTID',TRttiExplorer.GetPrimaryKeyColumnName(FCustomer.ClassType));
   CheckEqualsString('FId',TRttiExplorer.GetPrimaryKeyColumnMemberName(FCustomer.ClassType));
 end;
@@ -127,7 +127,7 @@ begin
 
   ReturnValue := TRttiExplorer.GetUniqueConstraints(AClass);
   CheckEquals(1, ReturnValue.Count);
-  CheckEqualsString('FId', ReturnValue.First.ClassMemberName);
+  CheckEqualsString('FId', ReturnValue.First.MemberName);
 end;
 
 procedure TestTRttiExplorer.TestGetAssociations;

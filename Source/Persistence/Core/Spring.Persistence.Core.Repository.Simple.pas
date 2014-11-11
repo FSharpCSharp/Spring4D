@@ -143,7 +143,7 @@ var
 begin
   table := TEntityCache.Get(T).EntityTable;
   if Assigned(table) then
-    Exit(table.GetNamespace);
+    Exit(table.Namespace);
   Result := '';
 end;
 

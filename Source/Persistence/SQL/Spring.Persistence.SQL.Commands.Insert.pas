@@ -119,13 +119,13 @@ begin
 
   if EntityData.HasSequence then
   begin
-    if EntityData.Sequence.SeqSQL <> '' then
-      fGetSequenceValueSQL := EntityData.Sequence.SeqSQL
+    if EntityData.Sequence.SequenceSQL <> '' then
+      fGetSequenceValueSQL := EntityData.Sequence.SequenceSQL
     else
       fGetSequenceValueSQL := Generator.GenerateGetNextSequenceValue(EntityData.Sequence);
 
     if fGetSequenceValueSQL <> '' then
-      fCommand.InsertFields.Add(TSQLField.Create(EntityData.PrimaryKeyColumn.Name, fTable));
+      fCommand.InsertFields.Add(TSQLField.Create(EntityData.PrimaryKeyColumn.ColumnName, fTable));
   end;
 
   SQL := Generator.GenerateInsert(fCommand);
@@ -180,7 +180,7 @@ begin
   if EntityData.HasVersionColumn then
   begin
     // set version column value to 0
-    TRttiExplorer.SetMemberValueSimple(entity, EntityData.VersionColumn.ClassMemberName, 0);
+    TRttiExplorer.SetMemberValueSimple(entity, EntityData.VersionColumn.MemberName, 0);
   end;
 
   LStmt := Connection.CreateStatement;
@@ -203,7 +203,7 @@ begin
   if CanGetSequenceValue then
   begin
     // add sequence param value
-    SQLParameters.Add(DoCreateParam(EntityData.PrimaryKeyColumn.Name, LSequenceValue));
+    SQLParameters.Add(DoCreateParam(EntityData.PrimaryKeyColumn.ColumnName, LSequenceValue));
   end;
 
   if CanClientAutogenerateValue then

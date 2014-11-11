@@ -266,7 +266,7 @@ function TMongoDBGenerator.GetUpdateVersionFieldQuery(
   const command: TUpdateCommand; const versionColumn: VersionAttribute;
   const version, primaryKey: Variant): Variant;
 begin
-  Result := BSON([command.PrimaryKeyColumn.Name, primaryKey, versionColumn.Name, version]);
+  Result := BSON([command.PrimaryKeyColumn.ColumnName, primaryKey, versionColumn.ColumnName, version]);
 end;
 
 function TMongoDBGenerator.ResolveFieldAndExpression(const AFieldname: string;

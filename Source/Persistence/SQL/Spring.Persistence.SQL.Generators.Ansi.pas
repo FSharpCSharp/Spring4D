@@ -524,9 +524,7 @@ var
 begin
   Result := '';
   for LField in joinFields do
-  begin
     Result := Result + CRLF + ' ' + GetJoinAsString(LField);
-  end;
 end;
 
 function TAnsiSQLGenerator.GetOrderAsString(
@@ -614,10 +612,8 @@ begin
     tkUnknown: ;
     tkInteger, tkInt64, tkEnumeration, tkSet:
     begin
-      if (field.Precision > 0) then
-      begin
-        Result := Format('NUMERIC(%0:D, %1:D)', [field.Precision, field.Scale]);
-      end
+      if field.Precision > 0 then
+        Result := Format('NUMERIC(%0:D, %1:D)', [field.Precision, field.Scale])
       else
       begin
         Result := 'INTEGER';
@@ -636,14 +632,10 @@ begin
       else if (System.TypeInfo(TTime) = LDelphiTypeInfo) then
         Result := 'TIME'
       else
-      begin
         if field.Precision > 0 then
-        begin
-          Result := Format('NUMERIC(%0:D, %1:D)', [field.Precision, field.Scale]);
-        end
+          Result := Format('NUMERIC(%0:D, %1:D)', [field.Precision, field.Scale])
         else
           Result := 'FLOAT';
-      end;
     end;
     tkString, tkLString: Result := Format('VARCHAR(%D)', [field.Length]);
     tkClass, tkArray, tkDynArray, tkVariant: Result := 'BLOB';
@@ -701,9 +693,9 @@ function TAnsiSQLGenerator.GetUpdateVersionFieldQuery(
 var
   LSQL: string;
 begin
-  LSQL := Format('UPDATE %0:S SET %1:S = coalesce(%1:S,0) + 1 WHERE (%2:S = %3:S) AND (coalesce(%1:S,0) = %4:S)'
-    , [command.Table.Name, versionColumn.Name,
-      command.PrimaryKeyColumn.Name, VarToStr(primaryKey), VarToStr(version)]);
+  LSQL := Format('UPDATE %0:S SET %1:S = coalesce(%1:S,0) + 1 WHERE (%2:S = %3:S) AND (coalesce(%1:S,0) = %4:S)',
+    [command.Table.Name, versionColumn.ColumnName,
+    command.PrimaryKeyColumn.ColumnName, VarToStr(primaryKey), VarToStr(version)]);
   Result := LSQL;
 end;
 

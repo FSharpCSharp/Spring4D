@@ -33,26 +33,58 @@ uses
   TypInfo;
 
 type
-  TFetchType = (ftEager, ftLazy);
+  TFetchKind = (
+    fkEager,
+    fkLazy
+  );
 
-  TCascadeType = (ctCascadeAll, ctCascadeMerge, ctCascadeRefresh, ctCascadeRemove);
+  TCascadeKind = (
+    ckCascadeAll,
+    ckCascadeMerge,
+    ckCascadeRefresh,
+    ckCascadeRemove
+  );
+  TCascadeKinds = set of TCascadeKind;
 
-  TForeignStrategy = (fsOnDeleteSetNull, fsOnDeleteSetDefault, fsOnDeleteCascade, fsOnDeleteNoAction
-                      ,fsOnUpdateSetNull, fsOnUpdateSetDefault, fsOnUpdateCascade, fsOnUpdateNoAction);
-
+  TForeignStrategy = (
+    fsOnDeleteSetNull,
+    fsOnDeleteSetDefault,
+    fsOnDeleteCascade,
+    fsOnDeleteNoAction,
+    fsOnUpdateSetNull,
+    fsOnUpdateSetDefault,
+    fsOnUpdateCascade,
+    fsOnUpdateNoAction
+  );
   TForeignStrategies = set of TForeignStrategy;
 
-  TCascadeTypes = set of TCascadeType;
-
-  TColumnProperty = (cpRequired, cpUnique, cpDontInsert, cpDontUpdate, cpPrimaryKey, cpNotNull, cpHidden);
-
+  TColumnProperty = (
+    cpRequired,
+    cpUnique,
+    cpDontInsert,
+    cpDontUpdate,
+    cpPrimaryKey,
+    cpNotNull,
+    cpHidden
+  );
   TColumnProperties = set of TColumnProperty;
 
-  TDiscriminatorType = (dtString, dtInteger);
+  TDiscriminatorType = (
+    dtString,
+    dtInteger
+  );
 
-  TInheritenceStrategy = (isJoined, isSingleTable, isTablePerClass);
+  TInheritenceStrategy = (
+    isJoined,
+    isSingleTable,
+    isTablePerClass
+  );
 
-  TMemberType = (mtField, mtProperty, mtClass);
+  TMemberKind = (
+    mkField,
+    mkProperty,
+    mkClass
+  );
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -61,29 +93,26 @@ type
   {$ENDREGION}
   QueryAttribute = class(TCustomAttribute)
   private
-    FQueryText: string;
+    fQueryText: string;
   public
-    constructor Create(const AQueryText: string); virtual;
+    constructor Create(const queryText: string);
 
-    property QueryText: string read FQueryText;
+    property QueryText: string read fQueryText;
   end;
 
   TORMAttribute = class(TCustomAttribute)
   private
-    FMemberType: TMemberType;
-    FClassMemberName: string;
-    FTypeInfo: PTypeInfo;
+    fMemberKind: TMemberKind;
+    fMemberName: string;
+    fEntityType: PTypeInfo;
     function GetBaseEntityClass: TClass;
+    function GetMemberType: PTypeInfo;
   public
-    function AsRttiObject(ATypeInfo: PTypeInfo): TRttiNamedObject; overload;
-    function AsRttiObject: TRttiNamedObject; overload;
-    function GetTypeInfo(AEntityTypeInfo: PTypeInfo): PTypeInfo;
-    function GetColumnTypeInfo: PTypeInfo;
-
     property BaseEntityClass: TClass read GetBaseEntityClass;
-    property EntityTypeInfo: PTypeInfo read FTypeInfo write FTypeInfo;
-    property ClassMemberName: string read FClassMemberName write FClassMemberName;
-    property MemberType: TMemberType read FMemberType write FMemberType;
+    property EntityType: PTypeInfo read fEntityType write fEntityType;
+    property MemberKind: TMemberKind read fMemberKind write fMemberKind;
+    property MemberName: string read fMemberName write fMemberName;
+    property MemberType: PTypeInfo read GetMemberType;
   end;
 
   {$REGION 'Documentation'}
@@ -107,17 +136,17 @@ type
   {$ENDREGION}
   TableAttribute = class(TORMAttribute)
   private
-    FTable: string;
-    FSchema: string;
+    fTableName: string;
+    fSchema: string;
     function GetTableName: string;
+    function GetNamespace: string;
   public
     constructor Create; overload;
-    constructor Create(const ATablename: string; const ASchema: string = ''); overload;
-
-    function GetNamespace: string;
+    constructor Create(const tableName: string; const schema: string = ''); overload;
 
     property TableName: string read GetTableName;
-    property Schema: string read FSchema;
+    property Schema: string read fSchema;
+    property Namespace: string read GetNamespace;
   end;
 
   {$REGION 'Documentation'}
@@ -133,10 +162,7 @@ type
   ///	  included in the generated DDL for a primary or secondary table.
   ///	</summary>
   {$ENDREGION}
-  UniqueConstraint = class(TORMAttribute)
-  public
-    constructor Create; virtual;
-  end;
+  UniqueConstraint = class(TORMAttribute);
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -151,38 +177,38 @@ type
   {$ENDREGION}
   SequenceAttribute = class(TORMAttribute)
   private
-    FSeqName: string;
-    FInitValue: NativeInt;
-    FIncrement: Integer;
-    FSeqSQL: string;
+    fSequenceName: string;
+    fInitialValue: NativeInt;
+    fIncrement: Integer;
+    fSequenceSQL: string;
   public
-    constructor Create(const ASeqName: string; AInitValue: NativeInt; AIncrement: Integer);  overload;
-    constructor Create(const ASeqSQL: string); overload;
+    constructor Create(const sequenceName: string; initialValue: NativeInt; increment: Integer);  overload;
+    constructor Create(const sequenceSQL: string); overload;
 
-    property SequenceName: string read FSeqName;
-    property InitialValue: NativeInt read FInitValue;
-    property Increment: Integer read FIncrement;
-    property SeqSQL: string read FSeqSQL;
+    property SequenceName: string read fSequenceName;
+    property InitialValue: NativeInt read fInitialValue;
+    property Increment: Integer read fIncrement;
+    property SequenceSQL: string read fSequenceSQL;
   end;
 
   Association = class(TORMAttribute)
   private
-    FRequired: Boolean;
-    FCascade: TCascadeTypes;
+    fRequired: Boolean;
+    fCascade: TCascadeKinds;
   public
-    constructor Create(ARequired: Boolean; ACascade: TCascadeTypes);
+    constructor Create(required: Boolean; cascade: TCascadeKinds);
 
-    property Required: Boolean read FRequired;
-    property Cascade: TCascadeTypes read FCascade;
+    property Required: Boolean read fRequired;
+    property Cascade: TCascadeKinds read fCascade;
   end;
 
   ManyValuedAssociation = class(Association)
   private
-    FMappedBy: string;
+    fMappedBy: string;
   public
-    constructor Create(ARequired: Boolean; ACascade: TCascadeTypes; const AMappedBy: string); overload;
+    constructor Create(required: Boolean; cascade: TCascadeKinds; const mappedBy: string); overload;
 
-    property MappedBy: string read FMappedBy;
+    property MappedBy: string read fMappedBy;
   end;
 
   {$REGION 'Documentation'}
@@ -190,8 +216,7 @@ type
   ///	  Defines a many-valued association with one-to-many multiplicity.
   ///	</summary>
   {$ENDREGION}
-  OneToManyAttribute = class(ManyValuedAssociation)
-  end;
+  OneToManyAttribute = class(ManyValuedAssociation);
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -199,8 +224,7 @@ type
   ///	  class that has many-to-one multiplicity.
   ///	</summary>
   {$ENDREGION}
-  ManyToOneAttribute = class(ManyValuedAssociation)
-  end;
+  ManyToOneAttribute = class(ManyValuedAssociation);
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -209,27 +233,25 @@ type
   {$ENDREGION}
   JoinColumn = class(TORMAttribute)
   private
-    FName: string;
-   // FProperties: TColumnProperties;
-    FReferencedColName: string;
-    FReferencedTableName: string;
+    fName: string;
+    fReferencedColumnName: string;
+    fReferencedTableName: string;
   public
-    constructor Create(const AName: string; const AReferencedTableName, AReferencedColumnName: string);
+    constructor Create(const name, referencedTableName, referencedColumnName: string);
 
-    property Name: string read FName;
-   // property Properties: TColumnProperties read FProperties;
-    property ReferencedColumnName: string read FReferencedColName;
-    property ReferencedTableName: string read FReferencedTableName;
+    property Name: string read fName;
+    property ReferencedColumnName: string read fReferencedColumnName;
+    property ReferencedTableName: string read fReferencedTableName;
   end;
 
   ForeignJoinColumnAttribute = class(JoinColumn)
   private
-    FForeignStrategies: TForeignStrategies;
+    fForeignStrategies: TForeignStrategies;
   public
-    constructor Create(const AName: string; const AReferencedTableName, AReferencedColumnName: string;
-      AForeignStrategies: TForeignStrategies); overload;
+    constructor Create(const name, referencedTableName, referencedColumnName: string;
+      foreignStrategies: TForeignStrategies); overload;
 
-    property ForeignStrategies: TForeignStrategies read FForeignStrategies write FForeignStrategies;
+    property ForeignStrategies: TForeignStrategies read fForeignStrategies write fForeignStrategies;
   end;
 
   {$REGION 'Documentation'}
@@ -239,44 +261,44 @@ type
   {$ENDREGION}
   ColumnAttribute = class(TORMAttribute)
   private
-    FName: string;
-    FProperties: TColumnProperties;
-    FLength: Integer;
-    FPrecision: Integer;
-    FScale: Integer;
-    FDescription: string;
-    FIsIdentity: Boolean;
+    fColumnName: string;
+    fProperties: TColumnProperties;
+    fLength: Integer;
+    fPrecision: Integer;
+    fScale: Integer;
+    fDescription: string;
+    fIsIdentity: Boolean;
+    function GetName: string;
   protected
-    function GetName: string; virtual;
+    function GetIsDiscriminator: Boolean; virtual;
     function GetIsPrimaryKey: Boolean; virtual;
     function GetIsVersionColumn: Boolean; virtual;
   public
     constructor Create; overload;
-    constructor Create(AProperties: TColumnProperties); overload;
-    constructor Create(AProperties: TColumnProperties; ALength: Integer; APrecision: Integer;
-      AScale: Integer; const ADescription: string = ''); overload;
-    constructor Create(const AName: string; AProperties: TColumnProperties = []); overload;
-    constructor Create(const AName: string; AProperties: TColumnProperties; ALength: Integer; APrecision: Integer;
-      AScale: Integer; const ADescription: string = ''); overload;
-    constructor Create(const AName: string; AProperties: TColumnProperties; APrecision: Integer;
-      AScale: Integer; const ADescription: string = ''); overload;
-    constructor Create(const AName: string; AProperties: TColumnProperties; ALength: Integer;
-      const ADescription: string = ''); overload;
+    constructor Create(properties: TColumnProperties); overload;
+    constructor Create(properties: TColumnProperties;
+      length, precision, scale: Integer; const description: string = ''); overload;
+    constructor Create(const columnName: string; properties: TColumnProperties = []); overload;
+    constructor Create(const columnName: string; properties: TColumnProperties;
+      length, precision, scale: Integer; const description: string = ''); overload;
+    constructor Create(const columnName: string; properties: TColumnProperties;
+      length: Integer; const description: string = ''); overload;
+    constructor Create(const columnName: string; properties: TColumnProperties;
+      precision, scale: Integer; const description: string = ''); overload;
 
     function CanInsert: Boolean; virtual;
     function CanUpdate: Boolean; virtual;
 
-    function IsDiscriminator: Boolean; virtual;
-
-    property IsIdentity: Boolean read FIsIdentity write FIsIdentity;
+    property IsDiscriminator: Boolean read GetIsDiscriminator;
+    property IsIdentity: Boolean read fIsIdentity write fIsIdentity;
     property IsPrimaryKey: Boolean read GetIsPrimaryKey;
     property IsVersionColumn: Boolean read GetIsVersionColumn;
-    property Name: string read GetName;
-    property Properties: TColumnProperties read FProperties;
-    property Length: Integer read FLength;
-    property Precision: Integer read FPrecision;
-    property Scale: Integer read FScale;
-    property Description: string read FDescription;
+    property ColumnName: string read GetName;
+    property Properties: TColumnProperties read fProperties;
+    property Length: Integer read fLength;
+    property Precision: Integer read fPrecision;
+    property Scale: Integer read fScale;
+    property Description: string read fDescription;
   end;
 
   {$REGION 'Documentation'}
@@ -293,10 +315,10 @@ type
 
   TColumnData = record
   public
+    MemberName: string;
+    TypeInfo: PTypeInfo;
+    ColumnName: string;
     Properties: TColumnProperties;
-    Name: string;
-    ColTypeInfo: PTypeInfo;
-    ClassMemberName: string;
   public
     function IsPrimaryKey: Boolean;
   end;
@@ -309,11 +331,11 @@ type
   {$ENDREGION}
   DiscriminatorValue = class(TORMAttribute)
   private
-    FValue: TValue;
+    fValue: TValue;
   public
-    constructor Create(const AValue: TValue);
+    constructor Create(const value: TValue);
 
-    property Value: TValue read FValue;
+    property Value: TValue read fValue;
   end;
 
   {$REGION 'Documentation'}
@@ -324,17 +346,17 @@ type
   {$ENDREGION}
   DiscriminatorColumn = class(ColumnAttribute)
   private
-    FName: string;
-    FDiscrType: TDiscriminatorType;
-    FLength: Integer;
+    fName: string;
+    fDiscriminatorType: TDiscriminatorType;
+    fLength: Integer;
+  protected
+    function GetIsDiscriminator: Boolean; override;
   public
-    constructor Create(const AName: string; ADiscrType: TDiscriminatorType; ALength: Integer);
+    constructor Create(const name: string; discriminatorType: TDiscriminatorType; length: Integer);
 
-    function IsDiscriminator: Boolean; override;
-
-    property Name: string read FName;
-    property DiscrType: TDiscriminatorType read FDiscrType;
-    property Length: Integer read FLength;
+    property Name: string read fName;
+    property DiscriminatorType: TDiscriminatorType read fDiscriminatorType;
+    property Length: Integer read fLength;
   end;
 
   {$REGION 'Documentation'}
@@ -345,11 +367,11 @@ type
   {$ENDREGION}
   Inheritence = class(TORMAttribute)
   private
-    FStrategy: TInheritenceStrategy;
+    fStrategy: TInheritenceStrategy;
   public
-    constructor Create(AStrategy: TInheritenceStrategy);
+    constructor Create(strategy: TInheritenceStrategy);
 
-    property Strategy: TInheritenceStrategy read FStrategy;
+    property Strategy: TInheritenceStrategy read fStrategy;
   end;
 
   {TODO -oLinas -cGeneral : OrderBy attribute. see: http://docs.oracle.com/javaee/5/api/javax/persistence/OrderBy.html}
@@ -357,20 +379,24 @@ type
 
 implementation
 
+uses
+  Spring.Helpers,
+  Spring.Reflection;
+
 { TableAttribute }
 
 constructor TableAttribute.Create;
 begin
   inherited Create;
-  FTable := '';
-  FSchema := '';
+  fTableName := '';
+  fSchema := '';
 end;
 
-constructor TableAttribute.Create(const ATablename: string; const ASchema: string);
+constructor TableAttribute.Create(const tableName: string; const schema: string);
 begin
   Create;
-  FTable := ATablename;
-  FSchema := ASchema;
+  fTableName := tableName;
+  fSchema := schema;
 end;
 
 function TableAttribute.GetNamespace: string;
@@ -378,125 +404,141 @@ begin
   Result := '';
   if Schema <> '' then
     Result := Schema + '.';
-
   Result := Result + TableName;
 end;
 
 function TableAttribute.GetTableName: string;
 begin
-  Result := FTable;
-  if (Result = '') then
+  Result := fTableName;
+  if Result = '' then
   begin
-    Result := ClassMemberName;
+    Result := MemberName;
     if (Result[1] = 'T') and (Length(Result) > 1) then
-    begin
       Result := Copy(Result, 2, Length(Result));
-    end;
   end;
-end;
-
-{ UniqueConstraint }
-
-constructor UniqueConstraint.Create;
-begin
-  inherited Create;
 end;
 
 { Sequence }
 
-constructor SequenceAttribute.Create(const ASeqName: string; AInitValue: NativeInt; AIncrement: Integer);
+constructor SequenceAttribute.Create(const sequenceName: string; initialValue: NativeInt; increment: Integer);
 begin
   inherited Create;
-  FSeqName := ASeqName;
-  FInitValue := AInitValue;
-  FIncrement := AIncrement;
-  FSeqSQL := '';
+  fSequenceName := sequenceName;
+  fInitialValue := initialValue;
+  fIncrement := increment;
+  fSequenceSQL := '';
 end;
 
-constructor SequenceAttribute.Create(const ASeqSQL: string);
+constructor SequenceAttribute.Create(const sequenceSQL: string);
 begin
   inherited Create;
-  FSeqSQL := ASeqSQL;
+  fSequenceSQL := sequenceSQL;
 end;
-
 
 { Association }
 
-constructor Association.Create(ARequired: Boolean; ACascade: TCascadeTypes);
+constructor Association.Create(required: Boolean; cascade: TCascadeKinds);
 begin
   inherited Create;
-  FRequired := ARequired;
-  FCascade := ACascade;
+  fRequired := required;
+  fCascade := cascade;
 end;
 
 { ManyValuedAssociation }
 
-constructor ManyValuedAssociation.Create(ARequired: Boolean; ACascade: TCascadeTypes;
-  const AMappedBy: string);
+constructor ManyValuedAssociation.Create(required: Boolean; cascade: TCascadeKinds;
+  const mappedBy: string);
 begin
-  Create(ARequired, ACascade);
-  FMappedBy := AMappedBy;
+  Create(required, cascade);
+  fMappedBy := mappedBy;
 end;
 
 { JoinColumn }
 
-constructor JoinColumn.Create(const AName: string; const AReferencedTableName, AReferencedColumnName: string);
+constructor JoinColumn.Create(
+  const name, referencedTableName, referencedColumnName: string);
 begin
   inherited Create;
-  FName := AName;
-  //FProperties := AProperties;
-  FReferencedColName := AReferencedColumnName;
-  FReferencedTableName := AReferencedTableName;
+  fName := name;
+  fReferencedColumnName := referencedColumnName;
+  fReferencedTableName := referencedTableName;
 end;
 
 { Column }
 
+constructor ColumnAttribute.Create;
+begin
+  inherited Create;
+  fLength := 50;
+  fPrecision := 10;
+  fScale := 2;
+end;
+
+constructor ColumnAttribute.Create(properties: TColumnProperties);
+begin
+  Create;
+  fProperties := properties;
+end;
+
+constructor ColumnAttribute.Create(properties: TColumnProperties;
+  length, precision, scale: Integer; const description: string);
+begin
+  Create(properties);
+  fLength := length;
+  fPrecision := precision;
+  fScale := scale;
+  fDescription := description;
+end;
+
+constructor ColumnAttribute.Create(const columnName: string;
+  properties: TColumnProperties);
+begin
+  Create(properties);
+  fColumnName := columnName;
+end;
+
+constructor ColumnAttribute.Create(const columnName: string;
+  properties: TColumnProperties; length, precision, scale: Integer;
+  const description: string);
+begin
+  Create(columnName, properties);
+  fLength := length;
+  fPrecision := precision;
+  fScale := scale;
+  fDescription := description;
+end;
+
+constructor ColumnAttribute.Create(const columnName: string;
+  properties: TColumnProperties; length: Integer; const description: string);
+begin
+  Create(columnName, properties, length, 0, 0, description);
+end;
+
+constructor ColumnAttribute.Create(const columnName: string;
+  properties: TColumnProperties; precision, scale: Integer;
+  const description: string);
+begin
+  Create(columnName, properties, 0, precision, scale, description);
+end;
+
 function ColumnAttribute.CanInsert: Boolean;
 begin
-  Result := (not (cpDontInsert in Properties)) and (not IsIdentity);
+  Result := not (cpDontInsert in Properties) and not IsIdentity;
 end;
 
 function ColumnAttribute.CanUpdate: Boolean;
 begin
-  Result := (not (cpDontUpdate in Properties)) and (not IsPrimaryKey);
+  Result := not (cpDontUpdate in Properties) and not IsPrimaryKey;
 end;
 
-constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties; ALength, APrecision, AScale: Integer;
-  const ADescription: string);
+function ColumnAttribute.GetIsDiscriminator: Boolean;
 begin
-  Create(AName, AProperties);
-  FLength := ALength;
-  FPrecision := APrecision;
-  FScale := AScale;
-  FDescription := ADescription;
-end;
-
-constructor ColumnAttribute.Create(AProperties: TColumnProperties; ALength, APrecision, AScale: Integer;
-  const ADescription: string);
-begin
-  Create;
-  FProperties := AProperties;
-  FLength := ALength;
-  FPrecision := APrecision;
-  FScale := AScale;
-  FDescription := ADescription;
-end;
-
-constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties; APrecision,
-  AScale: Integer; const ADescription: string);
-begin
-  Create(AName, AProperties, 0, APrecision, AScale, ADescription);
-end;
-
-constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties;
-  ALength: Integer; const ADescription: string);
-begin
-  Create(AName, AProperties, ALength, 0, 0, ADescription);
+  Result := False;
 end;
 
 function ColumnAttribute.GetIsPrimaryKey: Boolean;
 begin
-  Result := (cpPrimaryKey in Properties);
+  Result := cpPrimaryKey in Properties;
 end;
 
 function ColumnAttribute.GetIsVersionColumn: Boolean;
@@ -506,121 +548,72 @@ end;
 
 function ColumnAttribute.GetName: string;
 begin
-  Result := FName;
+  Result := fColumnName;
   if Result = '' then
-    Result := ClassMemberName;
-end;
-
-constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties);
-begin
-  Create;
-  FName := AName;
-  FProperties := AProperties;
-end;
-
-constructor ColumnAttribute.Create;
-begin
-  inherited Create;
-  FName := '';
-  FLength := 50;
-  FPrecision := 10;
-  FScale := 2;
-  FDescription := '';
-end;
-
-constructor ColumnAttribute.Create(AProperties: TColumnProperties);
-begin
-  Create;
-  FProperties := AProperties;
-end;
-
-function ColumnAttribute.IsDiscriminator: Boolean;
-begin
-  Result := False;
+    Result := MemberName;
 end;
 
 { DiscriminatorValue }
 
-constructor DiscriminatorValue.Create(const AValue: TValue);
+constructor DiscriminatorValue.Create(const value: TValue);
 begin
   inherited Create;
-  FValue := AValue;
+  fValue := value;
 end;
 
 { DiscriminatorColumn }
 
-constructor DiscriminatorColumn.Create(const AName: string; ADiscrType: TDiscriminatorType; ALength: Integer);
+constructor DiscriminatorColumn.Create(const name: string; discriminatorType: TDiscriminatorType; length: Integer);
 begin
-  inherited Create(AName, [], ALength, 0, 0, '');
-  FName := AName;
-  FDiscrType := ADiscrType;
-  FLength := ALength;
+  inherited Create(name, [], length, 0, 0, '');
+  fName := name;
+  fDiscriminatorType := discriminatorType;
+  fLength := length;
 end;
 
-function DiscriminatorColumn.IsDiscriminator: Boolean;
+function DiscriminatorColumn.GetIsDiscriminator: Boolean;
 begin
   Result := True;
 end;
 
 { Inheritence }
 
-constructor Inheritence.Create(AStrategy: TInheritenceStrategy);
+constructor Inheritence.Create(strategy: TInheritenceStrategy);
 begin
   inherited Create;
-  FStrategy := AStrategy;
+  fStrategy := strategy;
 end;
 
 { TORMAttribute }
 
-function TORMAttribute.AsRttiObject(ATypeInfo: PTypeInfo): TRttiNamedObject;
-var
-  LType: TRttiType;
-begin
-  LType := TRttiContext.Create.GetType(ATypeInfo);
-  Result := LType.GetField(ClassMemberName);
-  if not Assigned(Result) then
-    Result := LType.GetProperty(ClassMemberName);
-end;
-
-function TORMAttribute.AsRttiObject: TRttiNamedObject;
-begin
-  Result := AsRttiObject(FTypeInfo);
-end;
-
 function TORMAttribute.GetBaseEntityClass: TClass;
 begin
-  Result := TRttiContext.Create.GetType(EntityTypeInfo).AsInstance.MetaclassType;
+  Result := TType.GetType(fEntityType).AsInstance.MetaclassType;
 end;
 
-function TORMAttribute.GetColumnTypeInfo: PTypeInfo;
-begin
-  Result := GetTypeInfo(FTypeInfo);
-end;
-
-function TORMAttribute.GetTypeInfo(AEntityTypeInfo: PTypeInfo): PTypeInfo;
+function TORMAttribute.GetMemberType: PTypeInfo;
 var
-  LRttiObj: TRttiNamedObject;
+  rttiType: TRttiType;
+  field: TRttiField;
+  prop: TRttiProperty;
 begin
   Result := nil;
 
-  LRttiObj := AsRttiObject(AEntityTypeInfo);
-  if LRttiObj is TRttiField then
-  begin
-    Result := TRttiField(LRttiObj).FieldType.Handle;
-  end
-  else if LRttiObj is TRttiProperty then
-  begin
-    Result := TRttiProperty(LRttiObj).PropertyType.Handle;
-  end;
+  rttiType := TType.GetType(fEntityType);
+  if rttiType.TryGetField(fMemberName, field) then
+    Result := field.FieldType.Handle
+  else if rttiType.TryGetProperty(fMemberName, prop) then
+    Result := prop.PropertyType.Handle;
 end;
 
 { ForeignJoinColumnAttribute }
 
-constructor ForeignJoinColumnAttribute.Create(const AName, AReferencedTableName, AReferencedColumnName: string;
-  AForeignStrategies: TForeignStrategies);
+constructor ForeignJoinColumnAttribute.Create(
+  const name, referencedTableName, referencedColumnName: string;
+  foreignStrategies: TForeignStrategies);
 begin
-  inherited Create(AName, AReferencedTableName, AReferencedColumnName);
-  FForeignStrategies := AForeignStrategies;
+  inherited Create(name, referencedTableName, referencedColumnName);
+  fForeignStrategies := foreignStrategies;
 end;
 
 { TColumnData }
@@ -644,10 +637,10 @@ end;
 
 { QueryAttribute }
 
-constructor QueryAttribute.Create(const AQueryText: string);
+constructor QueryAttribute.Create(const queryText: string);
 begin
   inherited Create;
-  FQueryText := AQueryText;
+  fQueryText := queryText;
 end;
 
 end.

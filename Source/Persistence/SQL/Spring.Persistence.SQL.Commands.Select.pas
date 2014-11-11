@@ -125,7 +125,7 @@ begin
   inherited BuildParams(entity);
   Assert(not Assigned(entity), 'Entity should not be assigned here');
 
-  LColumnName := fCommand.PrimaryKeyColumn.Name;
+  LColumnName := fCommand.PrimaryKeyColumn.ColumnName;
   if Assigned(fForeignEntityClass) then
     LColumnName := fCommand.ForeignColumn.Name;
 

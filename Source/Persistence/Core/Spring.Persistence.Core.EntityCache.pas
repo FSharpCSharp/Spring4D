@@ -244,7 +244,7 @@ end;
 function TEntityData.ColumnByName(const columnName: string): ColumnAttribute;
 begin
   for Result in fColumns do
-    if SameText(Result.Name, columnName) then
+    if SameText(Result.ColumnName, columnName) then
       Exit;
   Result := nil;
 end;
@@ -317,9 +317,9 @@ begin
   for LCol in fColumns do
   begin
     LColData.Properties := LCol.Properties;
-    LColData.Name := LCol.Name;
-    LColData.ColTypeInfo := LCol.GetColumnTypeInfo;
-    LColData.ClassMemberName := LCol.ClassMemberName;
+    LColData.ColumnName := LCol.ColumnName;
+    LColData.TypeInfo := LCol.MemberType;
+    LColData.MemberName := LCol.MemberName;
 
     if LCol.IsPrimaryKey then
       fColumnsData.PrimaryKeyColumn := LColData;
@@ -328,7 +328,7 @@ begin
       fVersionColumn := LCol as VersionAttribute;
 
     fColumnsData.Add(LColData);
-    fColumnMemberNameIndex.Add(LCol.ClassMemberName, LCol);
+    fColumnMemberNameIndex.Add(LCol.MemberName, LCol);
   end;
 end;
 

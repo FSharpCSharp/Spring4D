@@ -100,7 +100,7 @@ begin
     raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
   fTable.SetFromAttribute(EntityData.EntityTable);
-  fCommand.PrimaryKeyColumnName := EntityData.PrimaryKeyColumn.Name;
+  fCommand.PrimaryKeyColumnName := EntityData.PrimaryKeyColumn.ColumnName;
   SQL := Generator.GenerateDelete(fCommand);
 end;
 
@@ -112,7 +112,7 @@ begin
   inherited BuildParams(entity);
 
   LParam := TDBParam.Create(
-    Command.GetExistingParameterName(EntityData.PrimaryKeyColumn.Name),
+    Command.GetExistingParameterName(EntityData.PrimaryKeyColumn.ColumnName),
     TUtils.AsVariant(GetPrimaryKeyValue(entity)));
   SQLParameters.Add(LParam);
 end;

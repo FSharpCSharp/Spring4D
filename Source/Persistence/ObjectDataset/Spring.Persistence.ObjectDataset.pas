@@ -809,8 +809,8 @@ begin
     begin
       if LAttrib is ColumnAttribute then
       begin
-        if (ColumnAttribute(LAttrib).Name <> '') then
-          LPropPrettyName := ColumnAttribute(LAttrib).Name;
+        if (ColumnAttribute(LAttrib).ColumnName <> '') then
+          LPropPrettyName := ColumnAttribute(LAttrib).ColumnName;
 
         if (ColumnAttribute(LAttrib).Length <> 0) then
           LLength := ColumnAttribute(LAttrib).Length;

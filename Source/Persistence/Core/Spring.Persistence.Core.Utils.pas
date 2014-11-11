@@ -215,19 +215,19 @@ begin
     begin
       LEmbeddedEntityResultset := GetResultsetFromVariant(AValue);
       LSession := THackedSession(ASession);
-      if IsEnumerable(AColumn.ColTypeInfo, LEnumMethod) then
+      if IsEnumerable(AColumn.TypeInfo, LEnumMethod) then
       begin
-        LList := TRttiExplorer.GetMemberValueDeep(AEntity, AColumn.ClassMemberName);
+        LList := TRttiExplorer.GetMemberValueDeep(AEntity, AColumn.MemberName);
         LIntf := LList.AsInterface;
-        if TRttiExplorer.GetLastGenericArgumentType(AColumn.ColTypeInfo).IsInstance then
-          LSession.SetInterfaceList(LIntf, LEmbeddedEntityResultset, AColumn.ColTypeInfo)
+        if TRttiExplorer.GetLastGenericArgumentType(AColumn.TypeInfo).IsInstance then
+          LSession.SetInterfaceList(LIntf, LEmbeddedEntityResultset, AColumn.TypeInfo)
         else
-          LSession.SetSimpleInterfaceList(LIntf, LEmbeddedEntityResultset, AColumn.ColTypeInfo);
+          LSession.SetSimpleInterfaceList(LIntf, LEmbeddedEntityResultset, AColumn.TypeInfo);
         Result := TValue.From(LIntf);
       end
       else
       begin
-        LNewEntity := TActivator.CreateInstance(AColumn.ColTypeInfo).AsObject;
+        LNewEntity := TActivator.CreateInstance(AColumn.TypeInfo).AsObject;
         LSession.DoMapEntity(LNewEntity, LEmbeddedEntityResultset, nil);
         Result := TValue.From(LNewEntity, LNewEntity.ClassType);
       end;

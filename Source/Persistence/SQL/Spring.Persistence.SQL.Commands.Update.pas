@@ -158,8 +158,8 @@ var
   LQueryMetadata: TQueryMetadata;
 begin
   LStatement := Connection.CreateStatement;
-  LVersionValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.VersionColumn.ClassMemberName);
-  LPKValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.PrimaryKeyColumn.ClassMemberName);
+  LVersionValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.VersionColumn.MemberName);
+  LPKValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.PrimaryKeyColumn.MemberName);
   LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, fEntityCache.VersionColumn,
     TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
   LQueryMetadata.QueryOperation := ctUpdateVersion;  
@@ -168,7 +168,7 @@ begin
 
   Result := (LStatement.Execute > 0);
   if Result then
-    TRttiExplorer.SetMemberValueSimple(AEntity, fEntityCache.VersionColumn.ClassMemberName, LVersionValue.AsInteger + 1);
+    TRttiExplorer.SetMemberValueSimple(AEntity, fEntityCache.VersionColumn.MemberName, LVersionValue.AsInteger + 1);
 end;
 
 procedure TUpdateExecutor.Build(entityClass: TClass);

@@ -291,24 +291,24 @@ begin
   for LManyOneCol in LEntityData.ManyToOneColumns do
   begin
     LTable := TSQLTable.Create;
-    LTable.SetFromAttribute(TRttiExplorer.GetTable(LManyOneCol.GetColumnTypeInfo));
+    LTable.SetFromAttribute(TRttiExplorer.GetTable(LManyOneCol.MemberType));
     FTables.Add(LTable);
     LTable.Alias := LTable.Alias + IntToStr(i);
 
     LMappedByCol := TManyToOneRelation.GetMappedByColumn(LManyOneCol, AEntityClass);
-    LMappedByColname := LMappedByCol.Name;
-    LMappedTableClass := TRttiExplorer.GetClassFromClassInfo(LManyOneCol.GetColumnTypeInfo);
+    LMappedByColname := LMappedByCol.ColumnName;
+    LMappedTableClass := TRttiExplorer.GetClassFromClassInfo(LManyOneCol.MemberType);
     for LCol in TEntityCache.Get(LMappedTableClass).Columns do
     begin
-      LBuiltFieldname := TManyToOneRelation.BuildColumnName(LTable.GetNameWithoutSchema, LMappedByColname, LCol.Name);
-      LSelectField := TSQLSelectField.Create(LCol.Name + ' ' + LBuiltFieldname, LTable);
+      LBuiltFieldname := TManyToOneRelation.BuildColumnName(LTable.GetNameWithoutSchema, LMappedByColname, LCol.ColumnName);
+      LSelectField := TSQLSelectField.Create(LCol.ColumnName + ' ' + LBuiltFieldname, LTable);
       FSelectFields.Add(LSelectField);
     end;
     //add join
     LJoin := TSQLJoin.Create(jtLeft);
 
     LJoin.Segments.Add(TSQLJoinSegment.Create(
-      TSQLField.Create(TEntityCache.Get(LMappedTableClass).PrimaryKeyColumn.Name, LTable)
+      TSQLField.Create(TEntityCache.Get(LMappedTableClass).PrimaryKeyColumn.ColumnName, LTable)
       ,TSQLField.Create(LMappedByColname, Table)
     ));
 
@@ -343,8 +343,8 @@ begin
   FForeignColumn := nil;
   if Assigned(FPrimaryKeyColumn) then
   begin
-    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.Name, FTable);
-    LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.Name);
+    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.ColumnName, FTable);
+    LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.ColumnName);
     WhereFields.Add(LWhereField);
   end;
 end;
@@ -363,7 +363,7 @@ begin
 
   for LColumn in AColumns do
   begin
-    LSelectField := TSQLSelectField.Create(LColumn.Name, FTable);
+    LSelectField := TSQLSelectField.Create(LColumn.ColumnName, FTable);
     FSelectFields.Add(LSelectField);
   end;
 end;
@@ -395,7 +395,7 @@ begin
   begin
     if (LColumn.CanInsert) then  //fixes #22
     begin
-      LField := TSQLField.Create(LColumn.Name, FTable);
+      LField := TSQLField.Create(LColumn.ColumnName, FTable);
       FInsertFields.Add(LField);
     end;
   end;
@@ -425,7 +425,7 @@ begin
   begin
     if (LColumn.CanUpdate) then
     begin
-      LField := TSQLField.Create(LColumn.Name, FTable);
+      LField := TSQLField.Create(LColumn.ColumnName, FTable);
       FUpdateFields.Add(LField);
     end;
   end;
@@ -433,8 +433,8 @@ begin
   //add primary key column
   if Assigned(FPrimaryKeyColumn) then
   begin
-    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.Name, FTable);
-    LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.Name);
+    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.ColumnName, FTable);
+    LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.ColumnName);
     WhereFields.Add(LWhereField);
   end;
 end;
@@ -541,7 +541,7 @@ begin
 
   for LCol in AColumns do
   begin
-    LField := TSQLCreateField.Create(LCol.Name, FTable);
+    LField := TSQLCreateField.Create(LCol.ColumnName, FTable);
     LField.SetFromAttribute(LCol);
     FColumns.Add(LField);
   end;

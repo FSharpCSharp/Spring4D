@@ -72,10 +72,10 @@ type
     FEmail: string;
     FMiddleName: Nullable<string>;
 
-    [OneToMany(False, [ctCascadeAll], 'FID')]
+    [OneToMany(False, [ckCascadeAll], 'FID')]
     FOrders: LazyObject<TObjectList<TCustomer_Orders>>;
 
-    [OneToMany(False, [ctCascadeAll], 'FID')]
+    [OneToMany(False, [ckCascadeAll], 'FID')]
     FOrdersIntf: Lazy<IList<TCustomer_Orders>>;
     FCustomerType: TCustomerType;
 
@@ -157,7 +157,7 @@ type
     property Customer_ID: Integer read FCustomer_ID write FCustomer_ID;
     [Column('Customer_Payment_Method_Id', [], 0, 0, 0, '')]
     property Customer_Payment_Method_Id: Nullable<Integer> read FCustomer_Payment_Method_Id write FCustomer_Payment_Method_Id;
-    [ManyToOne(False, [ctCascadeAll], 'Customer_ID')]
+    [ManyToOne(False, [ckCascadeAll], 'Customer_ID')]
     property Customer: TCustomer read FCustomer write FCustomer;
   end;
 

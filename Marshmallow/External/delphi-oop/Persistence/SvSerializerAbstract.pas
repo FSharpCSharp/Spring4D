@@ -775,7 +775,7 @@ begin
     if SameText(APropertyName, LPropName) then
     begin
       Exit;
-    end;
+  end;
   end;
   Result := nil;
 end;
@@ -789,13 +789,13 @@ begin
   begin
     if LAttrib is ColumnAttribute then
     begin
-      Exit(ColumnAttribute(LAttrib).Name);
+      Exit(ColumnAttribute(LAttrib).ColumnName);
     end
     else if LAttrib is SvSerializeAttribute then
     begin
       if (SvSerializeAttribute(LAttrib).Name <> '') then
         Exit(SvSerializeAttribute(LAttrib).Name);
-    end;
+end;
   end;
 end;
 
@@ -808,7 +808,7 @@ begin
   else
   begin
     raise ESvSerializeException.Create('Cannot get object unique name. Object cannot be nil');
-  end;
+end;
 end;
 
 function TSvAbstractSerializer<T>.GetPropertyName(AProp: TRttiProperty): string;
@@ -820,14 +820,14 @@ begin
   begin
     if LAttrib is ColumnAttribute then
     begin
-      Exit(ColumnAttribute(LAttrib).Name);
+      Exit(ColumnAttribute(LAttrib).ColumnName);
     end
     else if LAttrib is SvSerializeAttribute then
     begin
       if (SvSerializeAttribute(LAttrib).Name <> '') then
         Exit(SvSerializeAttribute(LAttrib).Name)
-    end;
   end;
+end;
 end;
 
 function TSvAbstractSerializer<T>.GetRawPointer(const AValue: TValue): Pointer;

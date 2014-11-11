@@ -122,7 +122,7 @@ var
 begin
   LPrimaryKeyCol := TEntityCache.Get(instance.ClassType).PrimaryKeyColumn;
   if Assigned(LPrimaryKeyCol) then
-    LId := TRttiExplorer.GetMemberValue(instance, LPrimaryKeyCol.ClassMemberName)
+    LId := TRttiExplorer.GetMemberValue(instance, LPrimaryKeyCol.MemberName)
   else
     LId := TValue.Empty;
 

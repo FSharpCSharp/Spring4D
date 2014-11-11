@@ -416,12 +416,12 @@ begin
   if columns.TryGetPrimaryKeyColumn(columnData) then
   begin
     try
-      fieldValue := resultSet.GetFieldValue(columnData.Name);
+      fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
     except
-      raise EORMColumnNotFound.CreateFmt(EXCEPTION_PRIMARYKEY_NOTFOUND, [columnData.Name]);
+      raise EORMColumnNotFound.CreateFmt(EXCEPTION_PRIMARYKEY_NOTFOUND, [columnData.ColumnName]);
     end;
     primaryKeyValue := TUtils.FromVariant(fieldValue);
-    TRttiExplorer.SetMemberValue(Self, entity, columnData.ClassMemberName, primaryKeyValue);
+    TRttiExplorer.SetMemberValue(Self, entity, columnData.MemberName, primaryKeyValue);
   end;
 
   for i := 0 to columns.Count - 1 do
@@ -430,20 +430,20 @@ begin
     if columnData.IsPrimaryKey then
       Continue;
 
-    columnTypeInfo := columnData.ColTypeInfo;
+    columnTypeInfo := columnData.TypeInfo;
     if Assigned(columnTypeInfo) and TUtils.IsLazyType(columnTypeInfo) then
       value := primaryKeyValue // assign primary key value to lazy type, later convert procedure will assign it to lazy type's private field
     else
     begin
       try
-        fieldValue := resultSet.GetFieldValue(columnData.Name);
+        fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
       except
-        raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [columnData.Name]);
+        raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [columnData.ColumnName]);
       end;
       value := TUtils.ColumnFromVariant(fieldValue, columnData, Self, entity);
     end;
 
-    TRttiExplorer.SetMemberValue(Self, entity, columnData.ClassMemberName, value);
+    TRttiExplorer.SetMemberValue(Self, entity, columnData.MemberName, value);
   end;
 end;
 
@@ -458,7 +458,7 @@ begin
   begin
     fieldValue := resultSet.GetFieldValue(column.MappedBy);
     value := TUtils.FromVariant(fieldValue);
-    TRttiExplorer.SetMemberValue(Self, entity, column.ClassMemberName, value);
+    TRttiExplorer.SetMemberValue(Self, entity, column.MemberName, value);
   end;
 end;
 
@@ -522,7 +522,7 @@ begin
   for column in columns do
   begin
     value := TRttiExplorer.GetMemberValue(entity, column.MappedBy); //get foreign key value
-    TRttiExplorer.SetMemberValue(Self, entity, column.ClassMemberName, value);
+    TRttiExplorer.SetMemberValue(Self, entity, column.MemberName, value);
   end;
 end;
 
@@ -538,7 +538,7 @@ begin
   if TEntityCache.TryGetColumnByMemberName(entity.ClassType, entityType.Name, column)
     and not resultSet.IsEmpty then
   begin
-    fieldValue := resultSet.GetFieldValue(column.Name);
+    fieldValue := resultSet.GetFieldValue(column.ColumnName);
     value := TUtils.FromVariant(fieldValue).AsType<T>;
 //    TRttiExplorer.SetMemberValue(Self, entity, LColumn, LValue);
   end;
