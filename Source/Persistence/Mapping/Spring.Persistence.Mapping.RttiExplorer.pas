@@ -699,7 +699,7 @@ var
 begin
   for LForeignCol in TEntityCache.Get(AClass).ForeignColumns do
   begin
-    if SameText(ABaseTablePrimaryKeyColumn.ClassMemberName, LForeignCol.ReferencedColumnName) then
+    if SameText(ABaseTablePrimaryKeyColumn.Name, LForeignCol.ReferencedColumnName) then
     begin
       Exit(LForeignCol);
     end;
