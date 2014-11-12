@@ -656,9 +656,17 @@ type
     function SkipWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
 
     /// <summary>
-    ///   Returns a specified number of contiguous elements from the start of a
-    ///   sequence.
+    ///   Computes the sum of the sequence.
     /// </summary>
+    function Sum: T; overload;
+//    function Sum(const selector: TFunc<T, Integer>): Integer; overload;
+//    function Sum(const selector: TFunc<T, Int64>): Int64; overload;
+//    function Sum(const selector: TFunc<T, Double>): Double; overload;
+
+    ///	<summary>
+    ///	  Returns a specified number of contiguous elements from the start of a
+    ///	  sequence.
+    ///	</summary>
     function Take(count: Integer): IEnumerable<T>;
 
     /// <summary>
