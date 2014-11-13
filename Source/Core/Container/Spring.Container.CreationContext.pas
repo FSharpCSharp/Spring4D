@@ -67,7 +67,7 @@ uses
   SysUtils,
   Spring.Container.Injection,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TCreationContext'}

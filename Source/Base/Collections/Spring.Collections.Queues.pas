@@ -55,7 +55,7 @@ type
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; overload; override;
-    constructor Create(const collection: array of T); overload;
+    constructor Create(const values: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(queue: TGenericQueue; ownership: TOwnershipType); overload;
     destructor Destroy; override;
@@ -96,12 +96,12 @@ begin
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-constructor TQueue<T>.Create(const collection: array of T);
+constructor TQueue<T>.Create(const values: array of T);
 var
   item: T;
 begin
   Create;
-  for item in collection do
+  for item in values do
     Enqueue(item);
 end;
 
@@ -211,7 +211,8 @@ end;
 
 procedure TQueue<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  fOnChanged.Invoke(Self, item, action);
+  if fOnChanged.IsInvokable then
+    fOnChanged.Invoke(Self, item, action);
 end;
 
 {$ENDREGION}

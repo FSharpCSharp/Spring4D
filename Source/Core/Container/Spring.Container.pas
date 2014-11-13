@@ -33,7 +33,6 @@ uses
   Spring,
   Spring.Collections,
   Spring.Container.Common,
-
   Spring.Container.Core,
   Spring.Container.Registration,
   Spring.Logging,
@@ -173,7 +172,6 @@ uses
   Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
   Spring.Logging.NullLogger,
   Spring.Reflection;
 

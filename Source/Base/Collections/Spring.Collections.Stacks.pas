@@ -55,7 +55,7 @@ type
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; overload; override;
-    constructor Create(const collection: array of T); overload;
+    constructor Create(const values: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(stack: TGenericStack; ownership: TOwnershipType); overload;
     destructor Destroy; override;
@@ -96,12 +96,12 @@ begin
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-constructor TStack<T>.Create(const collection: array of T);
+constructor TStack<T>.Create(const values: array of T);
 var
   item: T;
 begin
   Create;
-  for item in collection do
+  for item in values do
     Push(item);
 end;
 
@@ -162,7 +162,8 @@ end;
 
 procedure TStack<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  fOnChanged.Invoke(Self, item, action);
+  if fOnChanged.IsInvokable then
+    fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TStack<T>.Push(const item: T);

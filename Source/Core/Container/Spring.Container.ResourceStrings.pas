@@ -32,7 +32,8 @@ resourcestring
   SMissingGuid = 'Type is missing a guid: %s';
   SMissingInterface = 'Type does not support IInterface: %s';
   SIncompatibleTypes = 'Component type "%s" incompatible with service type "%s".';
-  SUnsupportedFactoryType = 'Type cannot be registered as factory: %s';
+  SUnsupportedFactoryType = 'Type does not contain RTTI: %s';
+  SUnsupportedFactoryMethod = 'Type contains incompatible method: %s, %s';
   SDuplicateServiceName = 'Duplicate service name found: %s';
   SServiceNotFound = 'Service not found: %s';
   SCircularDependencyDetected = 'Circular dependency detected on type: %s';

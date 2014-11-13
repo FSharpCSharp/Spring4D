@@ -101,7 +101,7 @@ uses
   TypInfo,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TLifetimeManagerBase'}
@@ -143,9 +143,7 @@ begin
         and (IInterface(localIntf).QueryInterface(IID, intf) = S_OK));
     end;
     tkInterface:
-    begin
       Result := instance.AsInterface.QueryInterface(IID, intf) = S_OK;
-    end;
   else
     Result := False;
   end
@@ -156,9 +154,7 @@ var
   intf: Pointer;
 begin
   if TryGetInterfaceWithoutCopy(instance, IInitializable, intf) then
-  begin
     IInitializable(intf).Initialize;
-  end;
 end;
 
 procedure TLifetimeManagerBase.DoBeforeDestruction(const instance: TValue);
@@ -166,9 +162,7 @@ var
   intf: Pointer;
 begin
   if TryGetInterfaceWithoutCopy(instance, IDisposable, intf) then
-  begin
     IDisposable(intf).Dispose;
-  end;
 end;
 
 function TLifetimeManagerBase.GetActivator: IComponentActivator;
@@ -202,10 +196,14 @@ begin
 end;
 
 procedure TSingletonLifetimeManager.Release(const instance: TValue);
+var
+  value: TValue;
 begin
   if Assigned(fInstance) then
   begin
-    DoBeforeDestruction(fInstance);
+    value := fInstance;
+    if not value.IsEmpty then
+      DoBeforeDestruction(value);
     fInstance := nil;
   end;
 end;

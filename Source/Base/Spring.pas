@@ -43,8 +43,7 @@ uses
   TimeSpan,
   Types,
   TypInfo,
-  Variants,
-  Spring.Times;
+  Variants;
 
 type
 
@@ -84,16 +83,73 @@ type
   TThreadID = LongWord;
 {$ENDIF}
 
-  Times = Spring.Times.Times;
-
   PObject = ^TObject;
 
   {$ENDREGION}
 
 
   {$REGION 'Interfaces'}
+
+  /// <summary>
+  ///   Supports cloning, which creates a new instance of a class with the same
+  ///   value as an existing instance.
+  /// </summary>
+  IClonable = interface(IInvokable)
+    ['{B6BC3795-624B-434F-BB19-6E8F55149D0A}']
+    /// <summary>
+    ///   Creates a new object that is a copy of the current instance.
+    /// </summary>
+    /// <returns>
+    ///   A new object that is a copy of this instance.
+    /// </returns>
+    function Clone: TObject;
+  end;
+
+  /// <summary>
+  ///   Defines a generalized type-specific comparison method that a class
+  ///   implements to order or sort its instances.
+  /// </summary>
   IComparable = interface(IInvokable)
     ['{7F0E25C8-50D7-4CF0-AB74-1913EBD3EE42}']
+    /// <summary>
+    ///   Compares the current instance with another object of the same type
+    ///   and returns an integer that indicates whether the current instance
+    ///   precedes, follows, or occurs in the same position in the sort order
+    ///   as the other object.
+    /// </summary>
+    /// <param name="obj">
+    ///   An object to compare with this instance.
+    /// </param>
+    /// <returns>
+    ///   <para>
+    ///     A value that indicates the relative order of the objects being
+    ///     compared. The return value has these meanings:
+    ///   </para>
+    ///   <list type="table">
+    ///     <listheader>
+    ///       <term>Value</term>
+    ///       <description>Meaning</description>
+    ///     </listheader>
+    ///     <item>
+    ///       <term>Less than zero</term>
+    ///       <description>This instance precedes <i>obj</i> in the sort
+    ///         order.</description>
+    ///     </item>
+    ///     <item>
+    ///       <term>Zero</term>
+    ///       <description>This instance occurs in the same position in
+    ///         the sort order as <i>obj</i>.</description>
+    ///     </item>
+    ///     <item>
+    ///       <term>Greater than zero</term>
+    ///       <description>This instance follows <i>obj</i> in the sort
+    ///         order.</description>
+    ///     </item>
+    ///   </list>
+    /// </returns>
+    /// <exception cref="Spring|EArgumentException">
+    ///   <i>obj</i> is not the same type as this instance.
+    /// </exception>
     function CompareTo(const obj: TObject): Integer;
   end;
   {$ENDREGION}
@@ -502,6 +558,31 @@ type
   {$REGION 'Lazy Initialization'}
 
   ///	<summary>
+  ///	  Specifies the kind of a lazy type.
+  ///	</summary>
+  TLazyKind = (
+    ///	<summary>
+    ///	  Not a lazy type.
+    ///	</summary>
+    lkNone,
+
+    ///	<summary>
+    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    ///	</summary>
+    lkFunc,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
+    ///	</summary>
+    lkRecord,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
+    ///	</summary>
+    lkInterface
+  );
+
+  ///	<summary>
   ///	  Provides support for lazy initialization.
   ///	</summary>
   ILazy = interface
@@ -710,6 +791,7 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetIsEmpty: Boolean;
+    function GetIsInvokable: Boolean;
     function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
@@ -723,6 +805,13 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property IsEmpty: Boolean read GetIsEmpty;
+
+    /// <summary>
+    ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
+    ///   Enabled</see> and contains any event handler. Otherwise returns <b>
+    ///   False</b>.
+    /// </summary>
+    property IsInvokable: Boolean read GetIsInvokable;
     property Invoke: TMethod read GetInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
   end;
@@ -1029,6 +1118,10 @@ type
 
   {$REGION 'Routines'}
 
+{$IFNDEF DELPHIXE_UP}
+function SplitString(const s: string; delimiter: Char): TStringDynArray;
+{$ENDIF}
+
 {$IFNDEF DELPHIXE2_UP}
 function ReturnAddress: Pointer;
 {$ENDIF}
@@ -1079,6 +1172,26 @@ uses
 
 
 {$REGION 'Routines'}
+
+{$IFNDEF DELPHIXE_UP}
+function SplitString(const s: string; delimiter: Char): TStringDynArray;
+var
+  list: TStrings;
+  i: Integer;
+begin
+  list := TStringList.Create;
+  try
+    list.StrictDelimiter := True;
+    list.Delimiter := delimiter;
+    list.DelimitedText := s;
+    SetLength(Result, list.Count);
+    for i := 0 to list.Count - 1 do
+      Result[i] := list[i];
+  finally
+    list.Free;
+  end;
+end;
+{$ENDIF}
 
 {$IFNDEF DELPHIXE2_UP}
 function ReturnAddress: Pointer;

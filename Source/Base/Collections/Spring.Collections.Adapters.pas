@@ -43,15 +43,15 @@ type
     function GetOnChanged: IEvent;
 
     procedure Add(const item: TValue);
-    procedure AddRange(const collection: array of TValue); overload;
+    procedure AddRange(const values: array of TValue); overload;
     procedure AddRange(const collection: IEnumerable); overload;
 
     function Remove(const item: TValue): Boolean;
-    procedure RemoveRange(const collection: array of TValue); overload;
+    procedure RemoveRange(const values: array of TValue); overload;
     procedure RemoveRange(const collection: IEnumerable); overload;
 
     function Extract(const item: TValue): TValue; overload;
-    procedure ExtractRange(const collection: array of TValue); overload;
+    procedure ExtractRange(const values: array of TValue); overload;
     procedure ExtractRange(const collection: IEnumerable); overload;
 
     procedure Clear;
@@ -76,7 +76,7 @@ type
     function Add(const item: TValue): Integer;
 
     procedure Insert(index: Integer; const item: TValue);
-    procedure InsertRange(index: Integer; const collection: array of TValue); overload;
+    procedure InsertRange(index: Integer; const values: array of TValue); overload;
     procedure InsertRange(index: Integer; const collection: IEnumerable); overload;
 
     procedure Delete(index: Integer);
@@ -217,11 +217,11 @@ begin
   fSource.Add(item.AsType<T>);
 end;
 
-procedure TCollectionAdapter<T>.AddRange(const collection: array of TValue);
+procedure TCollectionAdapter<T>.AddRange(const values: array of TValue);
 var
   item: TValue;
 begin
-  for item in collection do
+  for item in values do
     fSource.Add(item.AsType<T>);
 end;
 
@@ -243,11 +243,11 @@ begin
   Result := TValue.From<T>(fSource.Extract(item.AsType<T>));
 end;
 
-procedure TCollectionAdapter<T>.ExtractRange(const collection: array of TValue);
+procedure TCollectionAdapter<T>.ExtractRange(const values: array of TValue);
 var
   item: TValue;
 begin
-  for item in collection do
+  for item in values do
     fSource.Extract(item.AsType<T>);
 end;
 
@@ -301,11 +301,11 @@ begin
   Result := fSource.Remove(item.AsType<T>);
 end;
 
-procedure TCollectionAdapter<T>.RemoveRange(const collection: array of TValue);
+procedure TCollectionAdapter<T>.RemoveRange(const values: array of TValue);
 var
   item: TValue;
 begin
-  for item in collection do
+  for item in values do
     fSource.Remove(item.AsType<T>);
 end;
 
@@ -386,7 +386,7 @@ begin
 end;
 
 procedure TListAdapter<T>.InsertRange(index: Integer;
-  const collection: array of TValue);
+  const values: array of TValue);
 var
   item: TValue;
 begin
@@ -394,7 +394,7 @@ begin
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
   begin
     fSource.Insert(index, item.AsType<T>);
     Inc(index);

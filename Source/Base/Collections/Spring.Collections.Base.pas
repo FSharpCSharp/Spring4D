@@ -71,6 +71,10 @@ type
   TEnumerableBase = class abstract(TInterfacedObject, IInterface,
     IElementType, ICountable, IEnumerable)
   private
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+    const objDestroyingFlag = Integer($80000000);
+    function GetRefCount: Integer; inline;
+{$ENDIF}{$ENDIF}
     function GetEnumeratorNonGeneric: IEnumerator; virtual; abstract;
     function IEnumerable.GetEnumerator = GetEnumeratorNonGeneric;
   protected
@@ -86,6 +90,10 @@ type
     function _Release: Integer; virtual; stdcall;
   {$ENDREGION}
   public
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+    procedure BeforeDestruction; override;
+{$ENDIF}{$ENDIF}
+
     function AsObject: TObject;
 
     function GetEnumerator: IEnumerator;
@@ -93,6 +101,9 @@ type
     property Count: Integer read GetCount;
     property ElementType: PTypeInfo read GetElementType;
     property IsEmpty: Boolean read GetIsEmpty;
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+    property RefCount: Integer read GetRefCount;
+{$ENDIF}{$ENDIF}
   end;
 
   ///	<summary>
@@ -111,8 +122,9 @@ type
     class function GetEqualityComparer: IEqualityComparer<T>; static;
   {$ENDREGION}
 {$IFDEF WEAKREF}
-    function HasWeakRef: Boolean;
+    function HasWeakRef: Boolean; inline;
 {$ENDIF}
+    function IsManaged: Boolean; inline;
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload; virtual;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
@@ -219,21 +231,21 @@ type
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
-    constructor Create(const collection: array of T); overload; virtual;
+    constructor Create(const values: array of T); overload; virtual;
     constructor Create(const collection: IEnumerable<T>); overload; virtual;
 
     procedure Add(const item: T);
-    procedure AddRange(const collection: array of T); overload; virtual;
+    procedure AddRange(const values: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
 
     procedure Clear; virtual; abstract;
 
     function Remove(const item: T): Boolean; virtual; abstract;
-    procedure RemoveRange(const collection: array of T); overload; virtual;
+    procedure RemoveRange(const values: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
 
     function Extract(const item: T): T; virtual; abstract;
-    procedure ExtractRange(const collection: array of T); overload; virtual;
+    procedure ExtractRange(const values: array of T); overload; virtual;
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
@@ -335,7 +347,11 @@ type
     destructor Destroy; override;
 
     function Add(const item: T): Integer; reintroduce; virtual;
+    procedure AddRange(const values: array of T); override;
+    procedure AddRange(const collection: IEnumerable<T>); override;
+
     function Remove(const item: T): Boolean; override;
+
     procedure Clear; override;
 
     function First: T; overload; override;
@@ -348,11 +364,13 @@ type
     function SingleOrDefault(const defaultValue: T): T; overload; override;
 
     procedure Insert(index: Integer; const item: T); virtual; abstract;
-    procedure InsertRange(index: Integer; const collection: array of T); overload; virtual;
+    procedure InsertRange(index: Integer; const values: array of T); overload; virtual;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
 
     procedure Delete(index: Integer); virtual; abstract;
     procedure DeleteRange(index, count: Integer); virtual;
+
+    function GetRange(index, count: Integer): IList<T>; virtual;
 
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
@@ -383,10 +401,12 @@ type
 implementation
 
 uses
+  Rtti,
   TypInfo,
   Spring.Collections.Adapters,
   Spring.Collections.Events,
   Spring.Collections.Extensions,
+  Spring.Collections.Lists,
   Spring.ResourceStrings;
 
 
@@ -427,6 +447,14 @@ begin
   Result := Self;
 end;
 
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+procedure TEnumerableBase.BeforeDestruction;
+begin
+  inherited;
+  FRefCount := objDestroyingFlag;
+end;
+{$ENDIF}{$ENDIF}
+
 function TEnumerableBase.GetCount: Integer;
 var
   enumerator: IEnumerator;
@@ -449,6 +477,13 @@ begin
   enumerator := GetEnumerator;
   Result := not enumerator.MoveNext;
 end;
+
+{$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
+function TEnumerableBase.GetRefCount: Integer;
+begin
+  Result := FRefCount and not objDestroyingFlag;
+end;
+{$ENDIF}{$ENDIF}
 
 function TEnumerableBase.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
@@ -727,10 +762,23 @@ begin
   Result := fEqualityComparer;
 end;
 
+function TEnumerableBase<T>.IsManaged: Boolean;
+begin
+{$IFDEF DELPHIXE7_UP}
+  Result := IsManagedType(T);
+{$ELSE}
+  Result := Rtti.IsManaged(TypeInfo(T));
+{$ENDIF}
+end;
+
 {$IFDEF WEAKREF}
 function TEnumerableBase<T>.HasWeakRef: Boolean;
 begin
+{$IFDEF DELPHIXE7_UP}
+  Result := System.HasWeakRef(T);
+{$ELSE}
   Result := System.TypInfo.HasWeakRef(TypeInfo(T));
+{$ENDIF}
 end;
 {$ENDIF}
 
@@ -1210,10 +1258,10 @@ begin
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-constructor TCollectionBase<T>.Create(const collection: array of T);
+constructor TCollectionBase<T>.Create(const values: array of T);
 begin
   Create;
-  AddRange(collection);
+  AddRange(values);
 end;
 
 constructor TCollectionBase<T>.Create(const collection: IEnumerable<T>);
@@ -1227,11 +1275,11 @@ begin
   AddInternal(item);
 end;
 
-procedure TCollectionBase<T>.AddRange(const collection: array of T);
+procedure TCollectionBase<T>.AddRange(const values: array of T);
 var
   item: T;
 begin
-  for item in collection do
+  for item in values do
     Add(item);
 end;
 
@@ -1249,7 +1297,8 @@ end;
 
 procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  fOnChanged.Invoke(Self, item, action);
+  if fOnChanged.IsInvokable then
+    fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
@@ -1267,11 +1316,11 @@ begin
   end;
 end;
 
-procedure TCollectionBase<T>.ExtractRange(const collection: array of T);
+procedure TCollectionBase<T>.ExtractRange(const values: array of T);
 var
   item: T;
 begin
-  for item in collection do
+  for item in values do
     Extract(item);
 end;
 
@@ -1312,11 +1361,11 @@ begin
   end;
 end;
 
-procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
+procedure TCollectionBase<T>.RemoveRange(const values: array of T);
 var
   item: T;
 begin
-  for item in collection do
+  for item in values do
     Remove(item);
 end;
 
@@ -1414,14 +1463,14 @@ end;
 procedure TMapBase<TKey, T>.KeyChanged(const Item: TKey;
   Action: TCollectionChangedAction);
 begin
-  if Assigned(fOnKeyChanged) then
-    fOnKeyChanged.Invoke(Self, Item, Action)
+  if Assigned(fOnKeyChanged) and fOnKeyChanged.IsInvokable then
+      fOnKeyChanged.Invoke(Self, Item, Action)
 end;
 
 procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
   Action: TCollectionChangedAction);
 begin
-  if Assigned(fOnValueChanged) then
+  if Assigned(fOnValueChanged) and fOnValueChanged.IsInvokable then
     fOnValueChanged.Invoke(Self, Item, Action)
 end;
 
@@ -1445,6 +1494,16 @@ end;
 procedure TListBase<T>.AddInternal(const item: T);
 begin
   Add(item);
+end;
+
+procedure TListBase<T>.AddRange(const values: array of T);
+begin
+  InsertRange(Count, values);
+end;
+
+procedure TListBase<T>.AddRange(const collection: IEnumerable<T>);
+begin
+  InsertRange(Count, collection);
 end;
 
 function TListBase<T>.AsList: IList;
@@ -1497,6 +1556,21 @@ begin
   Result := inherited;
 end;
 
+function TListBase<T>.GetRange(index, count: Integer): IList<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+  Result := TList<T>.Create;
+  Result.Count := count;
+  for i := index to index + count do
+    Result[i] := Items[i];
+end;
+
 function TListBase<T>.IndexOf(const item: T): Integer;
 begin
   Result := IndexOf(item, 0, Count);
@@ -1524,7 +1598,7 @@ begin
   Result := -1;
 end;
 
-procedure TListBase<T>.InsertRange(index: Integer; const collection: array of T);
+procedure TListBase<T>.InsertRange(index: Integer; const values: array of T);
 var
   item: T;
 begin
@@ -1532,7 +1606,7 @@ begin
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
   begin
     Insert(index, item);
     Inc(index);

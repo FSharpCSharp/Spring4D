@@ -41,7 +41,7 @@ type
       min, max: Integer; const messageFormat: string);
   public
     function Equals(const value: Times): Boolean;
-    function GetExceptionMessage(count: Integer): string;
+    function ToString(count: Integer): string;
     function Verify(count: Integer): Boolean;
 
     class function Any: Times; static;
@@ -79,11 +79,6 @@ end;
 function Times.Equals(const value: Times): Boolean;
 begin
   Result := (Self.fMin = value.fMin) and (Self.fMax = value.fMax);
-end;
-
-function Times.GetExceptionMessage(count: Integer): string;
-begin
-  Result := Format(fMessageFormat, [fMin, fMax, count]);
 end;
 
 class operator Times.Equal(const left, right: Times): Boolean;
@@ -180,6 +175,11 @@ begin
     begin
       Result := n = 1;
     end, 1, 1, SNoMatchOnce);
+end;
+
+function Times.ToString(count: Integer): string;
+begin
+  Result := Format(fMessageFormat, [fMin, fMax, count]);
 end;
 
 function Times.Verify(count: Integer): Boolean;
