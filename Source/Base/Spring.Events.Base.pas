@@ -52,6 +52,7 @@ type
     function GetHandlers: TArray<TMethod>;
     function GetInvoke: TMethod;
     function GetIsEmpty: Boolean;
+    function GetIsInvokable: Boolean;
     function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
@@ -177,7 +178,12 @@ end;
 
 function TEventBase.GetIsEmpty: Boolean;
 begin
-  Result := Count = 0;
+  Result := fHandlers.Count = 0;
+end;
+
+function TEventBase.GetIsInvokable: Boolean;
+begin
+  Result := fEnabled and (fHandlers.Count <> 0);
 end;
 
 function TEventBase.GetOnChanged: TNotifyEvent;

@@ -109,6 +109,10 @@ type
     procedure GetCapacity;
     procedure SetCapacity;
 
+    procedure TestGetRange_AllItems;
+    procedure TestGetRange_FirstItems;
+    procedure TestGetRange_LastItems;
+
     procedure TestExtract_ItemNotInList;
 
     procedure TestEnumeratorMoveNext_VersionMismatch;
@@ -689,6 +693,40 @@ procedure TTestIntegerList.TestExtract_ItemNotInList;
 begin
   SimpleFillList;
   CheckEquals(0, SUT.Extract(4));
+end;
+
+procedure TTestIntegerList.TestGetRange_AllItems;
+var
+  values: IList<Integer>;
+begin
+  SimpleFillList;
+  values := SUT.GetRange(0, 3);
+  CheckEquals(3, values.Count);
+  CheckEquals(SUT[0], values[0]);
+  CheckEquals(SUT[1], values[1]);
+  CheckEquals(SUT[2], values[2]);
+end;
+
+procedure TTestIntegerList.TestGetRange_FirstItems;
+var
+  values: IList<Integer>;
+begin
+  SimpleFillList;
+  values := SUT.GetRange(0, 2);
+  CheckEquals(2, values.Count);
+  CheckEquals(SUT[0], values[0]);
+  CheckEquals(SUT[1], values[1]);
+end;
+
+procedure TTestIntegerList.TestGetRange_LastItems;
+var
+  values: IList<Integer>;
+begin
+  SimpleFillList;
+  values := SUT.GetRange(1, 2);
+  CheckEquals(2, values.Count);
+  CheckEquals(SUT[1], values[0]);
+  CheckEquals(SUT[2], values[1]);
 end;
 
 type

@@ -33,8 +33,7 @@ uses
   Rtti,
   Generics.Collections,
   Spring,
-  Spring.Reflection,
-  Spring.Helpers;
+  Spring.Reflection;
 
 type
 

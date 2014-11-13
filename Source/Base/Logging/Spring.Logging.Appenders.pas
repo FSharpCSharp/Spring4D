@@ -151,7 +151,7 @@ type
   {$IFDEF ANDROID}
     TDefaultLogAppender = TAndroidLogAppender;
   {$ELSE !ANDROID}
-    TDefaultLogAppender = TFMXLogAppender
+    TDefaultLogAppender = TFMXLogAppender;
   {$ENDIF ANDROID}
  {$ELSE !FMX}
     TDefaultLogAppender = TTextLogAppender;

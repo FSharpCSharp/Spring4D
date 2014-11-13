@@ -427,7 +427,7 @@ uses
   SyncObjs,
   TypInfo,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TDependencyModel'}
@@ -595,7 +595,11 @@ end;
 
 destructor TValueHolder.TComponentHolder.Destroy;
 begin
+{$IFNDEF AUTOREFCOUNT}
   fValue^.AsObject.Free;
+{$ELSE}
+  fValue^.AsObject.DisposeOf;
+{$ENDIF}
   inherited;
 end;
 

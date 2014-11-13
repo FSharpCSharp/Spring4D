@@ -68,7 +68,6 @@ uses
   Rtti,
   TypInfo,
   Spring.Container.Resolvers,
-  Spring.Helpers,
   Spring.Reflection;
 
 

@@ -33,8 +33,7 @@ uses
   SyncObjs,
   Spring,
   Spring.Collections,
-  Spring.Container.Core,
-  Spring.Reflection;
+  Spring.Container.Core;
 
 type
   TSubDependencyResolverBase = class abstract(TInterfacedObject, ISubDependencyResolver)
@@ -135,7 +134,7 @@ uses
   Spring.Collections.Lists,
   Spring.Container.CreationContext,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TSubDependencyResolverBase'}

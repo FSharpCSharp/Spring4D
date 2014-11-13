@@ -69,8 +69,8 @@ implementation
 
 uses
   TypInfo,
-  Spring.Helpers,
   Spring.Mocking.Core,
+  Spring.Reflection,
   Spring.Times;
 
 function ArgsEqual(const left, right: TArray<TValue>): Boolean;

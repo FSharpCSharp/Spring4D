@@ -123,7 +123,6 @@ uses
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
   Spring.Reflection;
 
 

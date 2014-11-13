@@ -43,14 +43,21 @@ type
 
   TActivator = record
   public
-    class function CreateInstance(const classType: TClass): TValue; overload; static;
-    class function CreateInstance(const classType: TClass;
-      const arguments: array of TValue): TValue; overload; static;
     class function CreateInstance(const classType: TRttiInstanceType): TValue; overload; static;
+    class function CreateInstance(const classType: TRttiInstanceType;
+      const arguments: array of TValue): TValue; overload; static;
     class function CreateInstance(const classType: TRttiInstanceType;
       const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
     class function CreateInstance(const typeInfo: PTypeInfo): TValue; overload; static;
     class function CreateInstance(const typeName: string): TValue; overload; static;
+
+    class function CreateInstance(classType: TClass): TObject; overload; static;
+    class function CreateInstance(classType: TClass;
+      const arguments: array of TValue): TObject; overload; static;
+
+    class function CreateInstance<T: class>: T; overload; static;
+    class function CreateInstance<T: class>(
+      const arguments: array of TValue): T; overload; static;
   end;
 
   {$ENDREGION}
@@ -59,56 +66,38 @@ type
 implementation
 
 uses
-  TypInfo,
-  Spring.Helpers,
   Spring.Reflection;
 
 
 {$REGION 'TActivator'}
 
-class function TActivator.CreateInstance(const classType: TClass): TValue;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(classType, 'classType');
-{$ENDIF}
-
-  Result := CreateInstance(TType.GetType(classType).AsInstance);
-end;
-
-class function TActivator.CreateInstance(const classType: TClass;
-  const arguments: array of TValue): TValue;
-var
-  paramTypes: TArray<PTypeInfo>;
-  i: Integer;
-  method: TRttiMethod;
-  rttiType: TRttiInstanceType;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(classType, 'classType');
-{$ENDIF}
-
-  SetLength(paramTypes, Length(arguments));
-  for i := Low(arguments) to High(arguments) do
-    paramTypes[i] := arguments[i].TypeInfo;
-  rttiType := TType.GetType(classType).AsInstance;
-  method := rttiType.Methods.Where(TMethodFilters.IsConstructor
-    and TMethodFilters.HasParameterTypes(paramTypes)).FirstOrDefault;
-  Result := CreateInstance(rttiType, method, arguments);
-end;
-
 class function TActivator.CreateInstance(
   const classType: TRttiInstanceType): TValue;
-var
-  method: TRttiMethod;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(classType, 'classType');
 {$ENDIF}
 
-  for method in classType.GetMethods do
-    if method.IsConstructor and (Length(method.GetParameters) = 0) then
-      Exit(method.Invoke(classType.MetaclassType, []));
-  Result := nil;
+  Result := CreateInstance(classType, []);
+end;
+
+class function TActivator.CreateInstance(const classType: TRttiInstanceType;
+  const arguments: array of TValue): TValue;
+var
+  parameterTypes: TArray<PTypeInfo>;
+  i: Integer;
+  constructorMethod: TRttiMethod;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'classType');
+{$ENDIF}
+
+  SetLength(parameterTypes, Length(arguments));
+  for i := Low(arguments) to High(arguments) do
+    parameterTypes[i] := arguments[i].TypeInfo;
+  constructorMethod := classType.Methods.First(TMethodFilters.IsConstructor
+    and TMethodFilters.HasParameterTypes(parameterTypes));
+  Result := CreateInstance(classType, constructorMethod, arguments);
 end;
 
 class function TActivator.CreateInstance(const classType: TRttiInstanceType;
@@ -131,10 +120,7 @@ begin
 {$ENDIF}
 
   rttiType := TType.GetType(typeInfo);
-  if rttiType is TRttiInstanceType then
-    Result := TActivator.CreateInstance(TRttiInstanceType(rttiType))
-  else
-    Result := nil;
+  Result := TActivator.CreateInstance(rttiType as TRttiInstanceType)
 end;
 
 class function TActivator.CreateInstance(const typeName: string): TValue;
@@ -142,10 +128,43 @@ var
   rttiType: TRttiType;
 begin
   rttiType := TType.FindType(typeName);
-  if rttiType is TRttiInstanceType then
-    Result := TActivator.CreateInstance(TRttiInstanceType(rttiType))
-  else
-    Result := nil;
+  Result := TActivator.CreateInstance(rttiType as TRttiInstanceType)
+end;
+
+class function TActivator.CreateInstance(classType: TClass): TObject;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'typeInfo');
+{$ENDIF}
+
+  Result := CreateInstance(classType.ClassInfo).AsObject;
+end;
+
+class function TActivator.CreateInstance(classType: TClass;
+  const arguments: array of TValue): TObject;
+var
+  instanceType: TRttiInstanceType;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'typeInfo');
+{$ENDIF}
+
+  instanceType := TType.GetType(classType.ClassInfo) as TRttiInstanceType;
+  Result := CreateInstance(instanceType, arguments).AsObject;
+end;
+
+class function TActivator.CreateInstance<T>: T;
+begin
+  Result := CreateInstance(TypeInfo(T)).AsType<T>;
+end;
+
+class function TActivator.CreateInstance<T>(
+  const arguments: array of TValue): T;
+var
+  instanceType: TRttiInstanceType;
+begin
+  instanceType := TType.GetType(TypeInfo(T)) as TRttiInstanceType;
+  Result := CreateInstance(instanceType, arguments).AsType<T>;
 end;
 
 {$ENDREGION}

@@ -124,7 +124,6 @@ implementation
 uses
   TypInfo,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
   Spring.Reflection,
   Spring.ResourceStrings;
 

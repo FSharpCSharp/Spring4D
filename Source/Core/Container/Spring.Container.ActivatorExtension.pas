@@ -61,8 +61,7 @@ uses
   Spring.Collections,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Reflection,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TActivatorContainerExtension'}
