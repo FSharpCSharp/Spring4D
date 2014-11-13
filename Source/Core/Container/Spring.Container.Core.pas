@@ -536,7 +536,11 @@ end;
 
 destructor TValueHolder.TComponentHolder.Destroy;
 begin
+{$IFNDEF AUTOREFCOUNT}
   fValue^.AsObject.Free;
+{$ELSE}
+  fValue^.AsObject.DisposeOf;
+{$ENDIF}
   inherited;
 end;
 
