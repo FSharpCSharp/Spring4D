@@ -31,6 +31,7 @@ interface
 uses
   Classes,
   Generics.Defaults,
+  Spring,
   Spring.Collections,
   Spring.Persistence.Mapping.Attributes;
 
@@ -116,6 +117,7 @@ type
   TEntityCache = class
   private
     class var fEntities: IDictionary<TClass,TEntityData>;
+    class var fCriticalSection: ICriticalSection;
   public
     class constructor Create;
 
@@ -383,16 +385,10 @@ end;
 
 {$REGION 'TEntityCache'}
 
-function GetEntities: IDictionary<TClass,TEntityData>;
-begin
-  if not Assigned(TEntityCache.fEntities) then
-    TEntityCache.fEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
-  Result := TEntityCache.fEntities;
-end;
-
 class constructor TEntityCache.Create;
 begin
-  fEntities := GetEntities;
+  fCriticalSection := TInterfacedCriticalSection.Create;
+  fEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
 end;
 
 class function TEntityCache.CreateColumnsData(entityClass: TClass): TColumnDataList;
@@ -412,7 +408,12 @@ begin
   begin
     Result := TEntityData.Create;
     Result.SetEntityData(entityClass);
-    GetEntities.Add(entityClass, Result);
+    fCriticalSection.Enter;
+    try
+      fEntities.AddOrSetValue(entityClass, Result);
+    finally
+      fCriticalSection.Leave;
+    end;
   end;
 end;
 
@@ -443,7 +444,7 @@ end;
 
 class function TEntityCache.TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
 begin
-  Result := GetEntities.TryGetValue(entityClass, entityData);
+  Result := fEntities.TryGetValue(entityClass, entityData);
 end;
 
 class function TEntityCache.TryGetColumnByMemberName(entityClass: TClass;

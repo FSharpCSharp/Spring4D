@@ -59,7 +59,6 @@ type
   TSession = class(TAbstractSession)
   private
     fOldStateEntities: TEntityMap;
-    fStartedTransaction: IDBTransaction;
   protected
     function GetQueryCountSql(const sql: string): string;
     function GetQueryCount(const sql: string; const params: array of const): Int64; overload;
@@ -90,39 +89,6 @@ type
     ///   Can optionally return newly started transaction interface.
     /// </remarks>
     function BeginTransaction: IDBTransaction;
-
-    /// <summary>
-    ///   Commits currently active transaction.
-    /// </summary>
-    /// <remarks>
-    ///   <para>
-    ///     In order for this to work, transaction at first must be started
-    ///     by calling BeginTransaction and ReleaseCurrentTransaction must
-    ///     not be called after this.
-    ///   </para>
-    ///   <para>
-    ///     After CommitTransaction call there is no need to
-    ///     ReleaseCurrentTransaction because it is done automatically. 
-    ///   </para>
-    /// </remarks>
-    procedure CommitTransaction;
-
-    /// <summary>
-    ///   Rollbacks currently active transaction.
-    /// </summary>
-    /// <remarks>
-    ///   <para>
-    ///     After the rollback is performed, all the changes are not
-    ///     reflected in session entity classes. They need to be reloaded
-    ///     manually if this is required.
-    ///   </para>
-    ///   <para>
-    ///     After RollbackTransaction call there is no need to
-    ///     ReleaseCurrentTransaction because it is done automatically.
-    ///   </para>
-    /// </remarks>
-    procedure RollbackTransaction;
-    procedure ReleaseCurrentTransaction;
 
     /// <summary>
     ///   Create a new ICriteria&lt;T&gt; instance, for the given entity class,
@@ -337,16 +303,6 @@ end;
 function TSession.BeginTransaction: IDBTransaction;
 begin
   Result := Connection.BeginTransaction;
-  fStartedTransaction := Result;
-end;
-
-procedure TSession.CommitTransaction;
-begin
-  if not Assigned(fStartedTransaction) then
-    raise EORMTransactionNotStarted.Create(EXCEPTION_CANNOT_COMMIT);
-
-  fStartedTransaction.Commit;
-  ReleaseCurrentTransaction;
 end;
 
 function TSession.CreateCriteria<T>: ICriteria<T>;
@@ -577,20 +533,6 @@ begin
   sqlStatement := pager.BuildSQL(sql);
 
   FetchFromQueryText(sqlStatement, params, Result.Items as IObjectList, TClass(T));
-end;
-
-procedure TSession.ReleaseCurrentTransaction;
-begin
-  fStartedTransaction := nil;
-end;
-
-procedure TSession.RollbackTransaction;
-begin
-  if not Assigned(fStartedTransaction) then
-    raise EORMTransactionNotStarted.Create(EXCEPTION_CANNOT_ROLLBACK);
-
-  fStartedTransaction.Rollback;
-  ReleaseCurrentTransaction;
 end;
 
 procedure TSession.Save(const entity: TObject);

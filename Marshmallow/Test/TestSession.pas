@@ -1284,6 +1284,7 @@ var
   LDatabase: TSQLiteDatabase;
   LSession: TSession;
   LConn: IDBConnection;
+  LTran: IDBTransaction;
   sFile: string;
 begin
   LCustomer := TCustomer.Create;
@@ -1298,16 +1299,16 @@ begin
     LCustomer.Name := 'Transactions';
     LCustomer.Age := 1;
 
-    LSession.BeginTransaction;
+    LTran := LSession.BeginTransaction;
     LSession.Save(LCustomer);
 
     CheckEquals(0, GetTableRecordCount(TBL_PEOPLE, LDatabase));
-    LSession.CommitTransaction;
+    LTran.Commit;
     CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
 
-    LSession.BeginTransaction;
+    LTran := LSession.BeginTransaction;
     LSession.Delete(LCustomer);
-    LSession.RollbackTransaction;
+    LTran.Rollback;
     CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
   finally
     LCustomer.Free;

@@ -1222,7 +1222,6 @@ begin
 
       if TRttiExplorer.HasColumns(LClass) then
       begin
-        TEntityCache.Get(LClass); //makes sure entities are also in cache on app startup
         LFields := TCollections.CreateList<TRttiField>;
         for LField in LType.GetFields do
         begin

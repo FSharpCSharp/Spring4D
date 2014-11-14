@@ -31,6 +31,7 @@ interface
 uses
   Rtti,
   Generics.Collections,
+  Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Mapping.Attributes
@@ -43,6 +44,7 @@ type
   TEntityMap = class
   private
     fEntityValues: TDictionary<TEntityMapKey, TEntityMapValue>;
+    fCriticalSection: ICriticalSection;
   protected
     function GetEntityKey(const instance: TObject): TEntityMapKey; overload;
     function GetEntityKey(const instance: TObject; const id: String): TEntityMapKey; overload;
@@ -66,7 +68,6 @@ type
 implementation
 
 uses
-  Spring,
   Spring.Reflection,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.Core.Exceptions,
@@ -79,6 +80,7 @@ uses
 constructor TEntityMap.Create;
 begin
   inherited Create;
+  fCriticalSection := TInterfacedCriticalSection.Create;
   fEntityValues := TDictionary<TEntityMapKey,TEntityMapValue>.Create;
 end;
 
@@ -192,9 +194,14 @@ begin
     values[i].Value := columnValue;
   end;
   key := GetEntityKey(instance, id);
-  pair := fEntityValues.ExtractPair(key);
-  FinalizeItem(pair);
-  fEntityValues.Add(key, values);
+  fCriticalSection.Enter;
+  try
+    pair := fEntityValues.ExtractPair(key);
+    fEntityValues.Add(key, values);
+  finally
+    fCriticalSection.Leave;
+    FinalizeItem(pair);
+  end;
 end;
 
 procedure TEntityMap.Remove(const instance: TObject);
@@ -205,8 +212,13 @@ var
 begin
   entityDetails := TEntityCache.Get(instance.ClassType);
   id := entityDetails.GetPrimaryKeyValueAsString(instance);
-  pair := fEntityValues.ExtractPair(GetEntityKey(instance, id));
-  FinalizeItem(pair);
+  fCriticalSection.Enter;
+  try
+    pair := fEntityValues.ExtractPair(GetEntityKey(instance, id));
+  finally
+    fCriticalSection.Leave;
+    FinalizeItem(pair);
+  end;
 end;
 
 {$ENDREGION}
