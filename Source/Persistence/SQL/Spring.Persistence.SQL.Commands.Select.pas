@@ -110,7 +110,7 @@ begin
   if ShouldFetchFromOneColumn then
     fColumns.Add(fSelectColumn)
   else
-    fColumns.AddRange(EntityData.Columns);
+    fColumns.AddRange(EntityData.SelectColumns);
 
   fCommand.PrimaryKeyColumn := EntityData.PrimaryKeyColumn;
   fCommand.SetCommandFieldsFromColumns(fColumns);

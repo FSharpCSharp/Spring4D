@@ -319,6 +319,7 @@ type
     TypeInfo: PTypeInfo;
     ColumnName: string;
     Properties: TColumnProperties;
+    IsLazy: Boolean;
   public
     function IsPrimaryKey: Boolean;
   end;

@@ -137,7 +137,7 @@ var
 begin
   AClass := FCustomer.ClassType;
   ReturnValue := TRttiExplorer.GetAssociations(AClass);
-  CheckEquals(2, ReturnValue.Count);
+  CheckEquals(1, ReturnValue.Count);
 end;
 
 procedure TestTRttiExplorer.TestGetColumns;
@@ -335,45 +335,45 @@ end;
 
 procedure TestTRttiExplorer.TestClone;
 var
-  ReturnValue: TCustomer;
-  AEntity: TCustomer;
-  LStream: TMemoryStream;
-  LOrder: TCustomer_Orders;
+  clonedCustomer: TCustomer;
+  customer: TCustomer;
+  stream: TMemoryStream;
+  order: TCustomer_Orders;
 begin
-  AEntity := TCustomer.Create;
-  LStream := TMemoryStream.Create;
+  customer := TCustomer.Create;
+  stream := TMemoryStream.Create;
   try
-    AEntity.Name := 'Clone';
-    AEntity.Age := 4589;
-    AEntity.LastEdited := EncodeDate(2011,1,1);
-    AEntity.Height := 1.1234;
-    AEntity.CustomerType := ctBusinessClass;
-    AEntity.MiddleName := 'Bob';
-    AEntity.CustStream := LStream;
+    customer.Name := 'Clone';
+    customer.Age := 4589;
+    customer.LastEdited := EncodeDate(2011,1,1);
+    customer.Height := 1.1234;
+    customer.CustomerType := ctBusinessClass;
+    customer.MiddleName := 'Bob';
+    customer.StreamLazy := stream;
 
-    LOrder := TCustomer_Orders.Create;
-    LOrder.Customer_Payment_Method_Id := 15;
-    AEntity.OrdersIntf.Add(LOrder);
+    order := TCustomer_Orders.Create;
+    order.Customer_Payment_Method_Id := 15;
+    customer.OrdersIntf := TCollections.CreateObjectList<TCustomer_Orders>;
+    customer.OrdersIntf.Add(order);
 
-    ReturnValue := TRttiExplorer.Clone(AEntity) as TCustomer;
+    clonedCustomer := TRttiExplorer.Clone(customer) as TCustomer;
     try
-      CheckFalse(TRttiExplorer.EntityChanged(AEntity, ReturnValue));
-      CheckEqualsString('Clone', ReturnValue.Name);
-      CheckEquals(AEntity.Age, ReturnValue.Age);
-      CheckTrue(SameDate(AEntity.LastEdited, ReturnValue.LastEdited));
-      CheckEquals(AEntity.Height, ReturnValue.Height);
-      CheckEquals(Ord(AEntity.CustomerType), Ord(ReturnValue.CustomerType));
-      CheckEquals(AEntity.MiddleName.Value, ReturnValue.MiddleName.Value);
-      CheckTrue(Assigned(ReturnValue.CustStream));
-      CheckEquals(1, ReturnValue.OrdersIntf.Count);
-      CheckEquals(15, ReturnValue.OrdersIntf[0].Customer_Payment_Method_Id.Value);
-
+      CheckFalse(TRttiExplorer.EntityChanged(customer, clonedCustomer));
+      CheckEqualsString('Clone', clonedCustomer.Name);
+      CheckEquals(customer.Age, clonedCustomer.Age);
+      CheckTrue(SameDate(customer.LastEdited, clonedCustomer.LastEdited));
+      CheckEquals(customer.Height, clonedCustomer.Height);
+      CheckEquals(Ord(customer.CustomerType), Ord(clonedCustomer.CustomerType));
+      CheckEquals(customer.MiddleName.Value, clonedCustomer.MiddleName.Value);
+      CheckTrue(Assigned(clonedCustomer.CustStream));
+      CheckEquals(1, clonedCustomer.OrdersIntf.Count);
+      CheckEquals(15, clonedCustomer.OrdersIntf[0].Customer_Payment_Method_Id.Value);
     finally
-      ReturnValue.Free;
+      clonedCustomer.Free;
     end;
   finally
-    AEntity.Free;
-    LStream.Free;
+    customer.Free;
+    stream.Free;
   end;
 end;
 

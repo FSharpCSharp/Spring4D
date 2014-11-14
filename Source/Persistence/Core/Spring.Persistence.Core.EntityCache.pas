@@ -65,6 +65,7 @@ type
   TEntityData = class(TPersistent)
   private
     fColumns: IList<ColumnAttribute>;
+    fSelectColumns: IList<ColumnAttribute>;
     fColumnMemberNameIndex: IDictionary<string, ColumnAttribute>;
     fColumnsData: TColumnDataList;
     fForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
@@ -94,7 +95,10 @@ type
     function HasOneToManyRelations: Boolean;
     function HasVersionColumn: Boolean;
 
+   function GetPrimaryKeyValueAsString(const instance: TObject): String;
+
     property Columns: IList<ColumnAttribute> read fColumns;
+    property SelectColumns: IList<ColumnAttribute> read fSelectColumns;
     property ColumnsData: TColumnDataList read fColumnsData write fColumnsData;
     property ForeignColumns: IList<ForeignJoinColumnAttribute> read fForeignKeyColumns;
     property OneToManyColumns: IList<OneToManyAttribute> read fOneToManyColumns;
@@ -134,6 +138,8 @@ implementation
 uses
   Generics.Collections,
   SysUtils,
+  Rtti,
+  Spring.Reflection,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Mapping.RttiExplorer;
 
@@ -211,6 +217,10 @@ begin
     LDest.fTable := fTable;
     LDest.fColumns.Clear;
     LDest.fColumns.AddRange(Columns);
+
+    LDest.fSelectColumns.Clear;
+    LDest.fSelectColumns.AddRange(SelectColumns);
+
     LDest.fColumnMemberNameIndex.Clear;
     for LPair in fColumnMemberNameIndex do
       LDest.fColumnMemberNameIndex.Add(LPair.Key, LPair.Value);
@@ -230,6 +240,8 @@ begin
     LDest.fManyToOneColumns.AddRange(ManyToOneColumns);
 
     LDest.fSequence := fSequence;
+
+    LDest.fVersionColumn := fVersionColumn;
 
     LDest.fHasInstanceField := fHasInstanceField;
   end;
@@ -253,6 +265,7 @@ constructor TEntityData.Create;
 begin
   inherited Create;
   fColumns := TCollections.CreateList<ColumnAttribute>;
+  fSelectColumns := TCollections.CreateList<ColumnAttribute>;
   fColumnsData := TColumnDataList.Create;
   fPrimaryKeyColumn := nil;
   fTable := nil;
@@ -269,6 +282,19 @@ destructor TEntityData.Destroy;
 begin
   fColumnsData.Free;
   inherited Destroy;
+end;
+
+function TEntityData.GetPrimaryKeyValueAsString(
+  const instance: TObject): String;
+var
+  LValue: TValue;
+begin
+  Result := '';
+  if Assigned(PrimaryKeyColumn) then
+  begin
+    LValue := TRttiExplorer.GetMemberValue(instance, PrimaryKeyColumn.MemberName);
+    Result := LValue.ToString;
+  end;
 end;
 
 function TEntityData.HasInstanceField: Boolean;
@@ -326,6 +352,10 @@ begin
 
     if LCol.IsVersionColumn then
       fVersionColumn := LCol as VersionAttribute;
+
+    LColData.IsLazy := TType.IsLazy(LColData.TypeInfo);
+    if not LColData.IsLazy then
+      fSelectColumns.Add(LCol);
 
     fColumnsData.Add(LColData);
     fColumnMemberNameIndex.Add(LCol.MemberName, LCol);

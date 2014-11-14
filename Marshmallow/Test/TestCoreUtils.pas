@@ -16,10 +16,8 @@ type
     procedure TearDown; override;
   published
     procedure TryConvert_Nullable();
-    procedure TryConvert_Lazy();
     {$IFDEF PERFORMANCE_TESTS}
     procedure TryConvert_Nullable_Speed();
-    procedure TryConvert_Lazy_Speed();
     {$ENDIF}
   end;
 
@@ -46,68 +44,6 @@ procedure TTestCoreUtils.TearDown;
 begin
   inherited;
 end;
-
-procedure TTestCoreUtils.TryConvert_Lazy;
-var
-  LCustomer: TCustomer;
-  LRttiMember: TRttiMember;
-  LFrom, LResult: TValue;
-  bOK: Boolean;
-  LOrders: IList<TCustomer_Orders>;
-  LOrder: TCustomer_Orders;
-begin
-  LCustomer := TCustomer.Create;
-  LOrders := TCollections.CreateObjectList<TCustomer_Orders>(True);
-  try
-    LOrder := TCustomer_Orders.Create;
-    LOrder.Order_Status_Code := 5;
-    LOrders.Add(LOrder);
-    LRttiMember := TRttiContext.Create.GetType(LCustomer.ClassType).GetField('FOrdersIntf');
-    LFrom := 1;
-    bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LCustomer, LResult);
-    CheckTrue(bOK);
-    CheckEquals('Lazy<Spring.Collections.IList<TestEntities.TCustomer_Orders>>', string(LResult.TypeInfo.Name));
-  finally
-    LCustomer.Free;
-  end;
-end;
-
-{$IFDEF PERFORMANCE_TESTS}
-procedure TTestCoreUtils.TryConvert_Lazy_Speed;
-var
-  LCustomer: TCustomer;
-  LRttiMember: TRttiMember;
-  LResult: TValue;
-  bOK: Boolean;
-  LOrders: IList<TCustomer_Orders>;
-  LOrder: TCustomer_Orders;
-  i, LCount: Integer;
-  sw: TStopwatch;
-begin
-  LCount := 100000;
-  LCustomer := TCustomer.Create;
-  LOrders := TCollections.CreateObjectList<TCustomer_Orders>(True);
-  try
-    LOrder := TCustomer_Orders.Create;
-    LOrder.Order_Status_Code := 5;
-    LOrders.Add(LOrder);
-    LRttiMember := TRttiContext.Create.GetType(LCustomer.ClassType).GetField('FOrdersIntf');
-    bOK := False;
-    sw := TStopwatch.StartNew;
-    for i := 1 to LCount do
-    begin
-      bOK := TUtils.TryConvert(i, nil, LRttiMember, LCustomer, LResult);
-    end;
-    sw.Stop;
-    CheckTrue(bOK);
-    CheckEquals('Lazy<Spring.Collections.IList<uModels.TCustomer_Orders>>', string(LResult.TypeInfo.Name));
-
-    Status(Format('Converted %D lazy values in %D ms', [LCount, sw.ElapsedMilliseconds]));
-  finally
-    LCustomer.Free;
-  end;
-end;
-{$ENDIF}
 
 procedure TTestCoreUtils.TryConvert_Nullable;
 var

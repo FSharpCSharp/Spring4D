@@ -287,11 +287,6 @@ type
     /// </summary>
     procedure SaveList<T: class, constructor>(const entities: ICollection<T>);
 
-    function GetLazyValueAsObject<T:class, constructor>(const id: TValue;
-      const entity: TObject; const column: ColumnAttribute): T;
-    procedure SetLazyValue<T>(var value: T; const id: TValue;
-      const entity: TObject; const column: ColumnAttribute);
-
     property OldStateEntities: TEntityMap read fOldStateEntities;
   end;
 
@@ -320,7 +315,7 @@ uses
 constructor TSession.Create(const connection: IDBConnection);
 begin
   inherited Create(connection);
-  fOldStateEntities := TEntityMap.Create(True);
+  fOldStateEntities := TEntityMap.Create;
 end;
 
 destructor TSession.Destroy;
@@ -331,7 +326,7 @@ end;
 
 procedure TSession.AttachEntity(const entity: TObject);
 begin
-  fOldStateEntities.AddOrReplace(TRttiExplorer.Clone(entity));
+  fOldStateEntities.AddOrReplace(entity);
 end;
 
 function TSession.BeginListSession<T>(const list: IList<T>): IListSession<T>;
@@ -428,21 +423,6 @@ begin
   FetchFromQueryText(sql, params, Result as IObjectList, TClass(T));
 end;
 
-function TSession.GetLazyValueAsObject<T>(const id: TValue;
-  const entity: TObject; const column: ColumnAttribute): T;
-var
-  results: IDBResultSet;
-begin
-  if not Assigned(entity) or id.IsEmpty then
-    Exit(System.Default(T));
-
-  results := DoGetLazy(id, entity, column, TypeInfo(T));
-
-  if TUtils.IsEnumerable(TypeInfo(T)) then
-    Result := GetObjectList<T>(results)
-  else
-    Result := T(MapEntityFromResultsetRow(results, TClass(T), entity));  {TODO -oOwner -cGeneral : get one with arg entity is needed only for lazy loading}
-end;
 
 function TSession.GetList<T>(const sql: string;
   const params: IList<TDBParam>): IList<T>;
@@ -650,28 +630,6 @@ begin
     UpdateList<T>(updates);
 end;
 
-procedure TSession.SetLazyValue<T>(var value: T; const id: TValue;
-  const entity: TObject; const column: ColumnAttribute);
-var
-  results: IDBResultSet;
-begin
-  if not Assigned(entity) or id.IsEmpty then
-    Exit;
-
-  case PTypeInfo(TypeInfo(T)).Kind of
-    tkClass, tkClassRef, tkPointer, tkRecord, tkUnknown:
-      raise EORMUnsupportedType.CreateFmt(EXCEPTION_UNSUPPORTED_LAZY_TYPE, [
-        PTypeInfo(TypeInfo(T)).TypeName]);
-  end;
-
-  results := DoGetLazy(id, entity, column, TypeInfo(T));
-
-  if TUtils.IsEnumerable(TypeInfo(T)) then
-    SetInterfaceList<T>(value, results)
-  else
-    SetOne<T>(value, results, entity);
-end;
-
 function TSession.Single<T>(const sql: string; const params: array of const): T;
 begin
   Result := First<T>(sql, params);
@@ -689,7 +647,7 @@ begin
   results := GetResultSet(sql, params);
   Result := not results.IsEmpty;
   if Result then
-    value := T(MapEntityFromResultsetRow(results, TClass(T)));
+    value := T(MapEntityFromResultsetRow(results, TypeInfo(T)));
 end;
 
 procedure TSession.Update(const entity: TObject);

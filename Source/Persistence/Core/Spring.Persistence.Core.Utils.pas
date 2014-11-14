@@ -63,6 +63,7 @@ type
     class function IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
     class function IsEnumerable(ATypeInfo: PTypeInfo; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
     class function IsEnumerable(ATypeInfo: PTypeInfo): Boolean; overload;
+    class function IsEnumerable(value: TValue; out objectList: IObjectList): Boolean; overload;
     class function IsNullableType(ATypeInfo: PTypeInfo): Boolean;
     class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
     class function IsPageType(ATypeInfo: PTypeInfo): Boolean;
@@ -70,10 +71,7 @@ type
     class function SameObject(ALeft, ARight: TObject): Boolean;
     class function SameStream(ALeft, ARight: TStream): Boolean;
 
-    class procedure SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TObject; const AID: TValue; AEntity: TObject; var AResult: TValue);
     class procedure SetNullableValue(ARttiMember: TRttiNamedObject; const AFrom: TValue; var AResult: TValue);
-
-    class function InitLazyRecord(const AFrom: TValue; ATo: PTypeInfo; ARttiMember: TRttiNamedObject; AEntity: TObject): TValue;
   end;
 
 implementation
@@ -90,7 +88,10 @@ uses
   Spring.Persistence.Core.Session,
   Spring.Persistence.Core.Types,
   Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Reflection.Activator;
+  Spring.Reflection.Activator,
+  Spring.Reflection,
+  Spring
+  ;
 
 type
   THackedSession = class(TSession);
@@ -241,27 +242,20 @@ end;
 
 class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
 var
-  LRttiType: TRttiType;
-  LValueField: TRttiField;
-  LInterfaceMethod: TRttiMethod;
+  lazyType: TRttiType;
+  lazyField: TRttiField;
+  lazy: ILazy;
 begin
   Result := False;
   if ALazy.Kind = tkRecord then
   begin
-    LRttiType := ALazy.GetType;
-    LValueField := LRttiType.GetField('FLazy');
-    AValue := LValueField.GetValue(ALazy.GetReferenceToRawData);
-    Result := (AValue.AsInterface <> nil);
+    lazyType := ALazy.GetType;
+    lazyField := lazyType.GetField('FLazy');
+    lazy := lazyField.GetValue(ALazy.GetReferenceToRawData).AsInterface as ILazy;
+    Result := (lazy <> nil) and (lazy.IsValueCreated);
     if Result then
     begin
-      LRttiType := AValue.GetType;
-      LInterfaceMethod := LRttiType.AsInterface.GetMethod('ValueCreated');
-      Result := LInterfaceMethod.Invoke(AValue, []).AsBoolean;
-      if Result then
-      begin
-        LInterfaceMethod := LRttiType.AsInterface.GetMethod('GetValue');
-        AValue := LInterfaceMethod.Invoke(AValue, []);
-      end;
+      AValue := lazy.Value;
     end;
   end;
 end;
@@ -314,12 +308,6 @@ begin
   Result := IsEnumerable(AObject.ClassInfo, AEnumeratorMethod);
 end;
 
-class function TUtils.InitLazyRecord(const AFrom: TValue; ATo: PTypeInfo;
-  ARttiMember: TRttiNamedObject; AEntity: TObject): TValue;
-begin
-  {TODO -oLinas -cGeneral : finish lazy record initialization}
-end;
-
 class function TUtils.IsEnumerable(ATypeInfo: PTypeInfo;
   out AEnumeratorMethod: TRttiMethod): Boolean;
 var
@@ -334,6 +322,13 @@ var
   LEnumeratorMethod: TRttiMethod;
 begin
   Result := IsEnumerable(ATypeInfo, LEnumeratorMethod);
+end;
+
+class function TUtils.IsEnumerable(value: TValue; out objectList: IObjectList): Boolean;
+begin
+  Result := value.IsInterface;
+  if Result then
+    Result := Supports(value.AsInterface, IObjectList, objectList);
 end;
 
 class function TUtils.IsLazyType(ATypeInfo: PTypeInfo): Boolean;
@@ -426,32 +421,6 @@ begin
   end;
 
   Result := True;
-end;
-
-class procedure TUtils.SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TObject; const AID: TValue; AEntity: TObject; var AResult: TValue);
-var
-  LRecord: TRttiRecordType;
-  LVarDataField: TRttiField;
-  LVarDataRecord: TLazyVarData;
-  LFields: TArray<TRttiField>;
-  LRef: Pointer;
-begin
-  AResult := TRttiExplorer.GetMemberValue(AEntity, ARttiMember);
-  LRef := AResult.GetReferenceToRawData;
-  LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
-  //get fields
-  LFields := LRecord.GetFields;
-  LVarDataField := LFields[1];
-
-  //assign values
-  LVarDataRecord.ID := AID;
-  LVarDataRecord.Manager := TSession(AManager);
-  LVarDataRecord.Entity := AEntity;
-  LVarDataRecord.Column := nil;
-  LVarDataRecord.RttiMemberName := ARttiMember.Name;
-  //set field value
-  TValue.From<TLazyVarData>(LVarDataRecord).ExtractRawData(PByte(LRef) + LVarDataField.Offset);
-//  LVarDataField.SetValue(LRef, TValue.From<TLazyVarData>(LVarDataRecord) );
 end;
 
 class procedure TUtils.SetNullableValue(ARttiMember: TRttiNamedObject; const AFrom: TValue; var AResult: TValue);
@@ -612,22 +581,15 @@ begin
         end
         else if IsLazyType(LTypeInfo) then
         begin
-          {TODO -oLinas -cGeneral : set lazy variables}
           //AFrom value must be ID of lazy type
           if AFrom.IsEmpty then
             raise EORMColumnCannotBeNull.Create('Column for lazy type cannot be null');
-
-          SetLazyValue(ARttiMember, AManager, AFrom, AEntity, AResult);
           Exit(True);
         end;
 
       end;
     end;
     Result := AFrom.TryConvert(LTypeInfo, AResult, bFree);
-    {if bFree then
-    begin
-      FreeValueObject(AResult);
-    end;   }
   end
   else
   begin

@@ -12,15 +12,16 @@ unit TestCoreEntityMap;
 interface
 
 uses
-  TestFramework, Generics.Collections, Rtti, Spring.Persistence.Core.EntityMap
+  TestFramework, Spring.Collections, Rtti, Spring.Persistence.Core.EntityMap
   , TestEntities;
 
 type
-  // Test methods for class TEntityMap
+  TMockEntityMap = class(TEntityMap);
+
   {$HINTS OFF}
   TestTEntityMap = class(TTestCase)
   private
-    FEntityMap: TEntityMap;
+    FEntityMap: TMockEntityMap;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -31,10 +32,11 @@ type
     {$IFDEF PERFORMANCE_TESTS}
     procedure TestAddOrReplace_Clone_Speed();
     {$ENDIF}
-    procedure TestGet;
     procedure TestRemove;
     procedure TestClear;
     procedure TestHash();
+    procedure When_Changed_One_Property_GetChangedMembers_Returns_It;
+    procedure When_Replaced_Entity_No_MemoryLeaks;
   end;
 
 implementation
@@ -43,7 +45,9 @@ uses
   SysUtils
   ,Spring.Persistence.Mapping.Attributes
   ,Spring.Persistence.Mapping.RttiExplorer
+  ,Spring.Persistence.Core.EntityCache
   ,Diagnostics
+  ,Generics.Collections
   ;
 
 type
@@ -79,13 +83,12 @@ end;
 
 procedure TestTEntityMap.SetUp;
 begin
-  FEntityMap := TEntityMap.Create(False);
+  FEntityMap := TMockEntityMap.Create;
 end;
 
 procedure TestTEntityMap.TearDown;
 begin
   FEntityMap.Free;
-  FEntityMap := nil;
 end;
 
 procedure TestTEntityMap.TestIsMapped;
@@ -102,7 +105,7 @@ begin
     ReturnValue := FEntityMap.IsMapped(AObject);
     CheckFalse(ReturnValue);
 
-    FEntityMap.Add(LClone);
+    FEntityMap.AddOrReplace(LClone);
     ReturnValue := FEntityMap.IsMapped(AObject);
     CheckTrue(ReturnValue);
 
@@ -127,7 +130,7 @@ begin
   LCustomer := CreateCustomer;
   try
     CheckFalse(FEntityMap.IsMapped(LCustomer));
-    FEntityMap.Add(LCustomer);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
   finally
     LCustomer.Free;
@@ -141,7 +144,7 @@ begin
   LCustomer := CreateCustomer;
   try
     CheckFalse(FEntityMap.IsMapped(LCustomer));
-    FEntityMap.Add(LCustomer);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
     FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
@@ -156,55 +159,61 @@ var
   iCount: Integer;
   sw: TStopwatch;
   i: Integer;
-  LCustomers: TObjectList<TCustomer>;
+  LCustomers: IList<TCustomer>;
+  LSpringDict: IDictionary<string,TValue>;
+  LObjectDict: IDictionary<string,TObject>;
+  LNativeDict: TDictionary<string,TValue>;
+  LValue: TValue;
 begin
-  FEntityMap.Free;
-  FEntityMap := TEntityMap.Create(True);
   iCount := 50000;
-  LCustomers := TObjectList<TCustomer>.Create(True);
-  try
-    for i := 1 to iCount do
-    begin
-      LCustomers.Add(CreateCustomer);
-    end;
-
-    sw := TStopwatch.StartNew;
-    for i := 0 to iCount - 1 do
-    begin
-      FEntityMap.AddOrReplace(TRttiExplorer.Clone(LCustomers[i]));
-    end;
-    sw.Stop;
-
-    Status(Format('%D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
-
-  finally
-    LCustomers.Free;
+  LCustomers := TCollections.CreateObjectList<TCustomer>(True);
+  for i := 1 to iCount do
+  begin
+    LCustomers.Add(CreateCustomer);
   end;
+
+  sw := TStopwatch.StartNew;
+  for i := 0 to iCount - 1 do
+  begin
+    FEntityMap.AddOrReplace(LCustomers[i]);
+  end;
+  sw.Stop;
+
+  Status(Format('%D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
+
+  //previous implementation
+  LObjectDict := TCollections.CreateDictionary<string, TObject>([doOwnsValues]);
+  sw := TStopwatch.StartNew;
+  for i := 0 to iCount - 1 do
+  begin
+    LObjectDict.AddOrSetValue('some random key', TRttiExplorer.Clone(LCustomers[i]));
+  end;
+  sw.Stop;
+
+  Status(Format('Previous implementation: %D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
+
+  iCount := iCount * 10;
+  sw := TStopwatch.StartNew;
+  LSpringDict := TCollections.CreateDictionary<string, TValue>;
+  for i := 0 to iCount - 1 do
+  begin
+    LValue := i;
+    LSpringDict.AddOrSetValue('some random key', LValue);
+  end;
+  sw.Stop;
+  Status(Format('Spring dictionary %D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
+  sw := TStopwatch.StartNew;
+  LNativeDict := TDictionary<string,TValue>.Create;
+  for i := 0 to iCount - 1 do
+  begin
+    LValue := i;
+    LNativeDict.AddOrSetValue('some random key', LValue);
+  end;
+  sw.Stop;
+  Status(Format('Native dictionary %D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
+  LNativeDict.Free;
 end;
 {$ENDIF}
-
-procedure TestTEntityMap.TestGet;
-var
-  LCustomer, LGotCustomer: TCustomer;
-begin
-  LCustomer := CreateCustomer;
-  try
-    LGotCustomer := nil;
-    try
-      LGotCustomer := FEntityMap.Get(LCustomer) as TCustomer;
-    except
-      on E:Exception do
-      begin
-        CheckTrue(LGotCustomer = nil);
-      end;
-    end;
-    FEntityMap.Add(LCustomer);
-    LGotCustomer := FEntityMap.Get(LCustomer) as TCustomer;
-    CheckTrue(LGotCustomer <> nil);
-  finally
-    LCustomer.Free;
-  end;
-end;
 
 procedure TestTEntityMap.TestHash;
 var
@@ -220,7 +229,7 @@ begin
     CheckFalse(FEntityMap.IsMapped(LTest1));
     CheckFalse(FEntityMap.IsMapped(LTest2));
     //220 offset
-    FEntityMap.Add(LTest1);
+    FEntityMap.AddOrReplace(LTest1);
     CheckFalse(FEntityMap.IsMapped(LTest2));
 
   finally
@@ -235,7 +244,7 @@ var
 begin
   LCustomer := CreateCustomer;
   try
-    FEntityMap.Add(LCustomer);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
     FEntityMap.Remove(LCustomer);
     CheckFalse(FEntityMap.IsMapped(LCustomer));
@@ -244,13 +253,39 @@ begin
   end;
 end;
 
+procedure TestTEntityMap.When_Changed_One_Property_GetChangedMembers_Returns_It;
+var
+  LCustomer: TCustomer;
+  LChangedColumns: IList<ColumnAttribute>;
+begin
+  LCustomer := CreateCustomer;
+  FEntityMap.AddOrReplace(LCustomer);
+  LCustomer.Name := 'Changed';
+  LChangedColumns := FEntityMap.GetChangedMembers(LCustomer, TEntityCache.Get(LCustomer.ClassType));
+  CheckEquals(1, LChangedColumns.Count);
+  CheckEquals('Name', LChangedColumns.First.MemberName);
+  LCustomer.Free;
+end;
+
+procedure TestTEntityMap.When_Replaced_Entity_No_MemoryLeaks;
+var
+  company: TCompany;
+begin
+  company := TCompany.Create;
+  FEntityMap.AddOrReplace(company);
+  company.Logo.LoadFromFile(PictureFilename);
+  FEntityMap.AddOrReplace(company);
+  company.Free;
+  SetFailsOnMemoryLeak(True);
+end;
+
 procedure TestTEntityMap.TestClear;
 var
   LCustomer: TCustomer;
 begin
   LCustomer := CreateCustomer;
   try
-    FEntityMap.Add(LCustomer);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
     FEntityMap.Clear;
     CheckFalse(FEntityMap.IsMapped(LCustomer));

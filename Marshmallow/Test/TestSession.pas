@@ -58,7 +58,6 @@ type
     procedure ExecuteScalar();
     procedure Execute();
     procedure Nullable();
-    procedure GetLazyValueClass();
     procedure GetLazyValue();
     procedure FindOne();
     procedure When_UnannotatedEntity_FindOne_ThrowException;
@@ -77,6 +76,7 @@ type
     procedure FetchCollection();
     procedure Versioning();
     procedure ListSession_Begin_Commit();
+    procedure When_SpringLazy_Is_OneToMany;
   end;
 
   TestTDetachedSession = class(TTestCase)
@@ -607,11 +607,9 @@ begin
     InsertCustomerOrder(LCustomer.ID, 20, 15, 150.59);
 
     CheckEquals(2, LCustomer.Orders.Count);
-
-    LList := TCollections.CreateObjectList<TCustomer_Orders>(True);
-
-    FManager.SetLazyValue<IList<TCustomer_Orders>>(LList, LCustomer.ID, LCustomer, nil);
-
+    LCustomer.Free;
+    LCustomer := FManager.FindOne<TCustomer>(LCustomer.ID);
+    LList := LCustomer.Orders;
     CheckEquals(2, LList.Count);
     CheckEquals(LCustomer.ID, LList.First.Customer_ID);
     CheckEquals(10, LList.First.Customer_Payment_Method_Id);
@@ -619,71 +617,13 @@ begin
     CheckEquals(LCustomer.ID, LList.Last.Customer_ID);
     CheckEquals(20, LList.Last.Customer_Payment_Method_Id);
     CheckEquals(15, LList.Last.Order_Status_Code);
-
   finally
     LCustomer.Free;
   end;
-
-  LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
-  try
-    CheckEquals(2, LCustomer.OrdersIntf.Count);
-    CheckEquals(LCustomer.ID, LCustomer.OrdersIntf.First.Customer_ID);
-    CheckEquals(10, LCustomer.OrdersIntf.First.Customer_Payment_Method_Id);
-    CheckEquals(5, LCustomer.OrdersIntf.First.Order_Status_Code);
-    CheckEquals(LCustomer.ID, LCustomer.OrdersIntf.Last.Customer_ID);
-    CheckEquals(20, LCustomer.OrdersIntf.Last.Customer_Payment_Method_Id);
-    CheckEquals(15, LCustomer.OrdersIntf.Last.Order_Status_Code);
-  finally
-    LCustomer.Free;
-  end;
-
   ClearTable(TBL_ORDERS);
   LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
   try
     CheckEquals(0, LCustomer.OrdersIntf.Count);
-  finally
-    LCustomer.Free;
-  end;
-end;
-
-procedure TestTSession.GetLazyValueClass;
-var
-  LCustomer: TCustomer;
-  LOrder: TCustomer_Orders;
-  LList: TObjectList<TCustomer_Orders>;
-begin
-  LCustomer := TCustomer.Create;
-  try
-    LCustomer.Name := 'Test';
-    LCustomer.Age := 10;
-
-    FManager.Save(LCustomer);
-
-    InsertCustomerOrder(LCustomer.ID, 10, 5, 100.59);
-    InsertCustomerOrder(LCustomer.ID, 20, 15, 150.59);
-
-    CheckEquals(2, LCustomer.Orders.Count);
-
-    LOrder := FManager.GetLazyValueAsObject<TCustomer_Orders>(LCustomer.ID, LCustomer, nil);
-    try
-      CheckTrue(Assigned(LOrder));
-      CheckEquals(LOrder.Customer_ID, LCustomer.ID);
-    finally
-      LOrder.Free;
-    end;
-
-    LList := FManager.GetLazyValueAsObject<TObjectList<TCustomer_Orders>>(LCustomer.ID, LCustomer, nil);
-    try
-      CheckEquals(2, LList.Count);
-      CheckEquals(LCustomer.ID, LList.First.Customer_ID);
-      CheckEquals(10, LList.First.Customer_Payment_Method_Id);
-      CheckEquals(5, LList.First.Order_Status_Code);
-      CheckEquals(LCustomer.ID, LList.Last.Customer_ID);
-      CheckEquals(20, LList.Last.Customer_Payment_Method_Id);
-      CheckEquals(15, LList.Last.Order_Status_Code);
-    finally
-      LList.Free;
-    end;
   finally
     LCustomer.Free;
   end;
@@ -699,8 +639,8 @@ var
   iCount: Integer;
   i: Integer;
   LVal, LVal2: Variant;
-  LProduct: TProduct;
   LCustomers: IList<TCustomer>;
+  LProducts: IList<TProduct>;
 begin
   iCount := 50000;
 
@@ -715,7 +655,6 @@ begin
   TestDB.Commit;
 
   InsertProducts(iCount);
-
 
   sw := TStopwatch.StartNew;
   for i := 1 to iCount do
@@ -747,43 +686,21 @@ begin
     [iCount, sw.ElapsedMilliseconds]));
   //get customers
   LResultset := FManager.GetResultset('SELECT * FROM ' + TBL_PEOPLE, []);
-  i := 0;
   sw := TStopwatch.StartNew;
-  while not LResultset.IsEmpty do
-  begin
-    LEntity := FManager.GetOne<TCustomer>(LResultset, nil);
-    try
-      Inc(i);
-      LResultset.Next;
-    finally
-      LEntity.Free;
-    end;
-  end;
-
+  LCustomers := FManager.FindAll<TCustomer>;
   sw.Stop;
-  CheckEquals(iCount, i);
+  CheckEquals(iCount, LCustomers.Count);
 
-  Status(Format('GetOne complex TCustomer %D objects in %D ms.',
+  Status(Format('FindAll complex TCustomer %D objects in %D ms.',
     [iCount, sw.ElapsedMilliseconds]));
 
   //get products
-  LResultset := FManager.GetResultset('SELECT * FROM ' + TBL_PRODUCTS, []);
-  i := 0;
   sw := TStopwatch.StartNew;
-  while not LResultset.IsEmpty do
-  begin
-    LProduct := FManager.GetOne<TProduct>(LResultset, nil);
-    try
-      Inc(i);
-      LResultset.Next;
-    finally
-      LProduct.Free;
-    end;
-  end;
+  LProducts := FManager.FindAll<TProduct>;
   sw.Stop;
-  CheckEquals(iCount, i);
+  CheckEquals(iCount, LProducts.Count);
 
-  Status(Format('GetOne simple TProduct %D objects in %D ms.',
+  Status(Format('FindAll simple TProduct %D objects in %D ms.',
     [iCount, sw.ElapsedMilliseconds]));
 
   //get customers non object
@@ -915,13 +832,16 @@ var
   LCustomer: TCustomer;
   LTable: ISQLiteTable;
   LID, LCount: Int64;
+  LPicture: TPicture;
 begin
   LCustomer := TCustomer.Create;
+  LPicture := TPicture.Create;
   try
+    LPicture.LoadFromFile(PictureFilename);
     LCustomer.Name := 'Insert test';
     LCustomer.Age := 10;
     LCustomer.Height := 1.1;
-    LCustomer.Avatar.LoadFromFile(PictureFilename);
+    LCustomer.Avatar:= LPicture;
 
     FManager.Insert(LCustomer);
 
@@ -934,6 +854,7 @@ begin
     CheckFalse(LTable.FieldByName[CUSTAVATAR].IsNull);
   finally
     LCustomer.Free;
+    //LPicture.Free;
   end;
 
   LCustomer := TCustomer.Create;
@@ -1155,13 +1076,16 @@ var
   LCustomer: TCustomer;
   LTable: ISQLiteTable;
   LID, LCount: Int64;
+  LPicture: TPicture;
 begin
   LCustomer := TCustomer.Create;
+  LPicture := TPicture.Create;
   try
+    LPicture.LoadFromFile(PictureFilename);
     LCustomer.Name := 'Insert test';
     LCustomer.Age := 10;
     LCustomer.Height := 1.1;
-    LCustomer.Avatar.LoadFromFile(PictureFilename);
+    LCustomer.Avatar := LPicture;
 
     FManager.Save(LCustomer);
 
@@ -1320,13 +1244,13 @@ procedure TestTSession.Streams;
 var
   LCustomer: TCustomer;
   LResults: ISQLiteTable;
-  LStream: TMemoryStream;
+  LStream, LCustStream: TMemoryStream;
 begin
   LCustomer := TCustomer.Create;
+  LCustStream := TMemoryStream.Create;
   try
-    CheckTrue(LCustomer.CustStream.Size <= 0);
-
-    LCustomer.CustStream.LoadFromFile(PictureFilename);
+    LCustStream.LoadFromFile(PictureFilename);
+    LCustomer.StreamLazy := LCustStream;
 
     FManager.Save(LCustomer);
 
@@ -1342,6 +1266,7 @@ begin
     end;
   finally
     LCustomer.Free;
+    LCustStream.Free;
   end;
 end;
 
@@ -1549,10 +1474,44 @@ type
     property Name: string read FName write FName;
   end;
 
+  TSpringLazyCustomer = class(TCustomer)
+  private
+    [OneToMany(False, [ckCascadeAll], 'FID')]
+    FSpringLazyOrders: Spring.Lazy<IList<TCustomer_Orders>>;
+    function GetOrders: IList<TCustomer_Orders>;
+  public
+    property SpringLazyOrders: IList<TCustomer_Orders> read GetOrders;
+  end;
+
+  { TSpringLazyCustomer }
+
+  function TSpringLazyCustomer.GetOrders: IList<TCustomer_Orders>;
+  begin
+    Result := FSpringLazyOrders.Value;
+  end;
+
+procedure TestTSession.When_SpringLazy_Is_OneToMany;
+var
+  customer: TSpringLazyCustomer;
+  id: Integer;
+begin
+  id := InsertCustomer();
+  InsertCustomerOrder(id, 1, 1, 100);
+  InsertCustomerOrder(id, 2, 10, 200);
+  InsertCustomerOrder(id, 3, 10, 300);
+
+  customer := FManager.FindOne<TSpringLazyCustomer>(id);
+  CheckEquals(3, customer.SpringLazyOrders.Count);
+  CheckEquals(1, customer.SpringLazyOrders[0].Customer_Payment_Method_Id);
+  CheckEquals(2, customer.SpringLazyOrders[1].Customer_Payment_Method_Id);
+  CheckEquals(3, customer.SpringLazyOrders[2].Customer_Payment_Method_Id);
+  customer.Free;
+end;
+
 procedure TestTSession.When_UnannotatedEntity_FindOne_ThrowException;
 begin
   try
-    FSession.FindOne<TUnanotatedEntity>(1);
+    FManager.FindOne<TUnanotatedEntity>(1);
     Fail('Should not succeed if entity is not annotated');
   except
     on E:Exception do
@@ -1584,7 +1543,7 @@ type
 procedure TestTSession.When_WithoutPrimaryKey_FindOne_ThrowException;
 begin
   try
-    FSession.FindOne<TWithoutPrimaryKey>(1);
+    FManager.FindOne<TWithoutPrimaryKey>(1);
     Fail('Should not succeed if entitys primary key column is not annotated');
   except
     on E:Exception do
@@ -1597,7 +1556,7 @@ end;
 procedure TestTSession.When_WithoutTableAttribute_FindOne_ThrowException;
 begin
   try
-    FSession.FindOne<TWithoutTable>(1);
+    FManager.FindOne<TWithoutTable>(1);
     Fail('Should not succeed if entity is not annotated with table');
   except
     on E:Exception do
@@ -1685,6 +1644,8 @@ begin
   CheckEquals('Bar', FSession.FindAll<TCustomer>.First.Name);
   CheckEquals(1, FSession.FindAll<TCustomer>.Count);
 end;
+
+
 
 initialization
   // Register any test cases with the test runner

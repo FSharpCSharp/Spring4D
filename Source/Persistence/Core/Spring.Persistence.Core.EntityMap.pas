@@ -29,135 +29,184 @@ unit Spring.Persistence.Core.EntityMap;
 interface
 
 uses
-  Spring.Collections;
+  Rtti,
+  Generics.Collections,
+  Spring.Collections,
+  Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Mapping.Attributes
+  ;
 
 type
   TEntityMapKey = string;
+  TEntityMapValue = TArray<TPair<string, TValue>>;
 
   TEntityMap = class
   private
-    fMap: IDictionary<TEntityMapKey,TObject>;
+    fEntityValues: TDictionary<TEntityMapKey, TEntityMapValue>;
   protected
-    function GetObjectKey(const instance: TObject): TEntityMapKey;
+    function GetEntityKey(const instance: TObject): TEntityMapKey; overload;
+    function GetEntityKey(const instance: TObject; const id: String): TEntityMapKey; overload;
+    function GetEntityValues(const instance: TObject; const id: String): TEntityMapValue;
+
+    procedure PutEntity(const instance: TObject; const id: String; entityDetails: TEntityData);
+
+    procedure FinalizeItem(const item: TPair<TEntityMapKey, TEntityMapValue>);
   public
-    constructor Create(ownsValues: Boolean);
+    constructor Create;
+    destructor Destroy; override;
 
-    function IsMapped(const instance: TObject): Boolean;
-    function IsIDMapped: Boolean;
-    procedure Add(const instance: TObject);
+    function IsMapped(const instance: TObject): Boolean;  
     procedure AddOrReplace(const instance: TObject);
-
-    function Get(const instance: TObject): TObject;
     procedure Remove(const instance: TObject);
-    procedure Replace(const instance: TObject);
-    procedure Clear;
-    function HasIdValue(const instance: TObject): Boolean;
+    
+    function GetChangedMembers(const instance: TObject; const entityDetails: TEntityData): IList<ColumnAttribute>;      
+    procedure Clear;   
   end;
 
 implementation
 
 uses
   Spring,
-  Spring.Persistence.Mapping.Attributes,
+  Spring.Reflection,
   Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Reflection,
-  Spring.Persistence.Core.Utils;
+  Spring.Persistence.Core.Reflection  
+  ;
 
 
 {$REGION 'TEntityMap'}
 
-constructor TEntityMap.Create(ownsValues: Boolean);
-var
-  LOwnerships: TDictionaryOwnerships;
+constructor TEntityMap.Create;
 begin
   inherited Create;
-
-  if ownsValues then
-    LOwnerships := [doOwnsValues]
-  else
-    LOwnerships := [];
-
-  fMap := TCollections.CreateDictionary<TEntityMapKey,TObject>(LOwnerships);
+  fEntityValues := TDictionary<TEntityMapKey,TEntityMapValue>.Create;
 end;
 
-procedure TEntityMap.Add(const instance: TObject);
-var
-  LKey: TEntityMapKey;
+destructor TEntityMap.Destroy;
 begin
-  Assert(Assigned(instance), 'Entity not assigned');
+  Clear;
+  fEntityValues.Free;
+  inherited Destroy;
+end;
 
-  LKey := GetObjectKey(instance);
-  fMap.Add(LKey, instance);
+procedure TEntityMap.FinalizeItem(
+  const item: TPair<TEntityMapKey, TEntityMapValue>);
+var
+  pair: TPair<string, TValue>;
+  value: TValue;
+begin
+  for pair in Item.Value do
+  begin
+    value := pair.Value;
+    TFinalizer.FinalizeInstance(value);
+  end;
 end;
 
 procedure TEntityMap.AddOrReplace(const instance: TObject);
 var
-  LKey: TEntityMapKey;
+  id: String;
+  entityDetails: TEntityData;
 begin
   Assert(Assigned(instance), 'Entity not assigned');
-
-  LKey := GetObjectKey(instance);
-  fMap.AddOrSetValue(LKey, instance);
+  entityDetails := TEntityCache.Get(instance.ClassType);
+  id := entityDetails.GetPrimaryKeyValueAsString(instance);
+  PutEntity(instance, id, entityDetails);
 end;
 
 procedure TEntityMap.Clear;
-begin
-  fMap.Clear;
-end;
-
-function TEntityMap.Get(const instance: TObject): TObject;
 var
-  LKey: TEntityMapKey;
+  pair: TPair<TEntityMapKey,TEntityMapValue>;
 begin
-  LKey := GetObjectKey(instance);
-  Result := fMap[LKey];
+  for pair in fEntityValues do
+  begin
+    FinalizeItem(pair);
+  end;
+  fEntityValues.Clear;
 end;
 
-function TEntityMap.GetObjectKey(const instance: TObject): TEntityMapKey;
+function TEntityMap.GetChangedMembers(const instance: TObject; const entityDetails: TEntityData): IList<ColumnAttribute>;
 var
-  LPrimaryKeyCol: ColumnAttribute;
-  LId: TValue;
+  currentValue, dirtyValue: TValue;
+  id: String;
+  values: TEntityMapValue;
+  i: Integer;
 begin
-  LPrimaryKeyCol := TEntityCache.Get(instance.ClassType).PrimaryKeyColumn;
-  if Assigned(LPrimaryKeyCol) then
-    LId := TRttiExplorer.GetMemberValue(instance, LPrimaryKeyCol.MemberName)
-  else
-    LId := TValue.Empty;
+  Result := TCollections.CreateList<ColumnAttribute>;  
+  id := entityDetails.GetPrimaryKeyValueAsString(instance);
+  values := GetEntityValues(instance, id);
 
-  Result := instance.ClassName + '_' + LId.ToString;
+  for i := 0 to entityDetails.Columns.Count - 1 do
+  begin
+    currentValue := TRttiExplorer.GetMemberValue(instance, values[i].Key);
+    dirtyValue := values[i].Value;
+    if not Spring.Persistence.Core.Reflection.SameValue(currentValue, dirtyValue) then
+      Result.Add(entityDetails.Columns[i]);
+  end;
 end;
 
-function TEntityMap.HasIdValue(const instance: TObject): Boolean;
+function TEntityMap.GetEntityValues(const instance: TObject; const id: String): TEntityMapValue;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  if not fEntityValues.TryGetValue(GetEntityKey(instance, id), Result) then
+    SetLength(Result, 0);
 end;
 
-function TEntityMap.IsIDMapped: Boolean;
+function TEntityMap.GetEntityKey(const instance: TObject): TEntityMapKey;
+var
+  id: String;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  id := TEntityCache.Get(instance.ClassType).GetPrimaryKeyValueAsString(instance);
+  Result := GetEntityKey(instance, id);
+end;
+
+function TEntityMap.GetEntityKey(const instance: TObject; const id: String): TEntityMapKey;
+begin
+  Result := instance.ClassName + '$' + id;
 end;
 
 function TEntityMap.IsMapped(const instance: TObject): Boolean;
-var
-  LKey: TEntityMapKey;
 begin
-  LKey := GetObjectKey(instance);
-  Result := fMap.ContainsKey(LKey);
+  Result := fEntityValues.ContainsKey(GetEntityKey(instance));
+end;
+
+procedure TEntityMap.PutEntity(const instance: TObject; const id: String; entityDetails: TEntityData);
+var
+  col: ColumnAttribute;
+  columnValue: TValue;
+  values: TEntityMapValue;
+  i: Integer;
+  pair: TPair<TEntityMapKey,TEntityMapValue>;
+  key: string;
+begin
+  if (id = '') then
+    Exit;
+
+  //commented out implementation is cleaner, but slower as well
+  SetLength(values, entityDetails.Columns.Count);
+  for i:=0 to entityDetails.Columns.Count-1 do
+  begin
+    col := entityDetails.Columns[i];
+    columnValue := TRttiExplorer.GetMemberValue(instance, col.MemberName);
+    if (columnValue.IsObject) and (columnValue.AsObject <> nil) then
+      columnValue := TRttiExplorer.Clone(columnValue.AsObject);
+    values[i].Key := col.MemberName;
+    values[i].Value := columnValue;
+  end;
+  key := GetEntityKey(instance, id);
+  pair := fEntityValues.ExtractPair(key);
+  FinalizeItem(pair);
+  fEntityValues.Add(key, values);
 end;
 
 procedure TEntityMap.Remove(const instance: TObject);
 var
-  LKey: TEntityMapKey;
+  id: String;
+  entityDetails: TEntityData;
+  pair: TPair<TEntityMapKey,TEntityMapValue>;
 begin
-  LKey := GetObjectKey(instance);
-  fMap.Remove(LKey);
-end;
-
-procedure TEntityMap.Replace(const instance: TObject);
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  entityDetails := TEntityCache.Get(instance.ClassType);
+  id := entityDetails.GetPrimaryKeyValueAsString(instance);
+  pair := fEntityValues.ExtractPair(GetEntityKey(instance, id));
+  FinalizeItem(pair);
 end;
 
 {$ENDREGION}

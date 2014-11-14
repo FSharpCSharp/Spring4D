@@ -100,7 +100,6 @@ end;
 procedure TUpdateExecutor.Execute(const entity: TObject);
 var
   LStmt: IDBStatement;
-  LDirtyObject: TObject;
   LSql: string;
 begin
   Assert(Assigned(entity));
@@ -114,8 +113,7 @@ begin
   fColumns.Clear;
   if fEntityMap.IsMapped(entity) then
   begin
-    LDirtyObject := fEntityMap.Get(entity);
-    TRttiExplorer.GetChangedMembers(entity, LDirtyObject, fColumns);
+    fColumns := fEntityMap.GetChangedMembers(entity, fEntityCache);
     if HasChangedVersionColumnOnly then
       Exit;
     fCommand.SetCommandFieldsFromColumns(fColumns);

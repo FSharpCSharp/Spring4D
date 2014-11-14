@@ -62,6 +62,7 @@ type
   EORMColumnCannotBeNull = class(EBaseORMException);
 
   EORMColumnNotFound = class(EBaseORMException);
+  EORMPrimaryKeyColumnNotFound = class(EBaseORMException);
 
   EORMContainerDoesNotHaveAddMethod = class(Exception);
 
