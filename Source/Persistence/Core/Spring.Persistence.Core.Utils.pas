@@ -82,6 +82,7 @@ uses
   pngimage,
   StrUtils,
   Variants,
+  Spring.Reflection,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Reflection,
@@ -89,7 +90,6 @@ uses
   Spring.Persistence.Core.Types,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Reflection.Activator,
-  Spring.Reflection,
   Spring
   ;
 
@@ -249,7 +249,7 @@ begin
   Result := False;
   if ALazy.Kind = tkRecord then
   begin
-    lazyType := ALazy.GetType;
+    lazyType := TType.GetType(ALazy);
     lazyField := lazyType.GetField('FLazy');
     lazy := lazyField.GetValue(ALazy.GetReferenceToRawData).AsInterface as ILazy;
     Result := (lazy <> nil) and (lazy.IsValueCreated);
@@ -271,7 +271,7 @@ begin
   Result := False;
   if ANullable.Kind = tkRecord then
   begin
-    LRttiType := ANullable.GetType;
+    LRttiType := TType.GetType(ANullable);
     LFields := LRttiType.GetFields;
     //get FHasValue field
     LValueField := LFields[1]; // LRttiType.GetField('FHasValue');

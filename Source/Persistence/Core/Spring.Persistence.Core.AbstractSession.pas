@@ -31,6 +31,7 @@ interface
 uses
   Rtti,
   TypInfo,
+  Spring,
   Spring.Collections,
   Spring.Persistence.Core.AbstractManager,
   Spring.Persistence.Core.EntityCache,
@@ -122,7 +123,6 @@ implementation
 
 uses
   SysUtils,
-  Spring,
   Spring.Helpers,
   Spring.Persistence.Core.CollectionAdapterResolver,
   Spring.Persistence.Core.Consts,
