@@ -2195,7 +2195,7 @@ type
   /// <summary>
   ///   Provides static methods to create an instance of various interfaced
   ///   generic collections such as <see cref="IList&lt;T&gt;" /> or <see cref="IDictionary&lt;TKey, TValue&gt;" />
-  ///    .
+  ///   .
   /// </summary>
   TCollections = class
   public
@@ -2739,7 +2739,7 @@ end;
 
 class function TEnumerable.Empty<T>: IEnumerable<T>;
 begin
-  Result := TEmptyEnumerable<T>.Create;
+  Result := TEmptyEnumerable<T>.Instance;
 end;
 
 class function TEnumerable.Max<T>(const source: IEnumerable<T>;

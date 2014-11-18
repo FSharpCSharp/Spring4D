@@ -1629,6 +1629,12 @@ type
     class function IndexOf<T>(const values: array of T; const item: T;
       index, count: Integer): Integer; overload; static;
 
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that starts at
+    ///   the specified index and contains the specified number of elements
+    ///   using the specified equality comparer.
+    /// </summary>
     class function IndexOf<T>(const values: array of T; const item: T;
       index, count: Integer;
       const comparer: IEqualityComparer<T>): Integer; overload; static;
