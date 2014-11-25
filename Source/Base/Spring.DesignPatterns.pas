@@ -184,6 +184,7 @@ type
     function IsSatisfiedBy(const item: T): Boolean;
 
     class operator Implicit(const specification: ISpecification<T>): TSpecification<T>;
+    class operator Implicit(const specification: TPredicate<T>): TSpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;
     class operator Explicit(const specification: ISpecification<T>): TSpecification<T>;
@@ -503,6 +504,12 @@ class operator TSpecification<T>.Implicit(
   const specification: TSpecification<T>): TPredicate<T>;
 begin
   ISpecification<T>(Result) := specification.fSpecification;
+end;
+
+class operator TSpecification<T>.Implicit(
+  const specification: TPredicate<T>): TSpecification<T>;
+begin
+  TPredicate<T>(Result.fSpecification) := specification;
 end;
 
 class operator TSpecification<T>.Explicit(
