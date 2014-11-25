@@ -70,15 +70,24 @@ type
     function GetEnumerator: IEnumerator<T>; override; final;
   end;
 
-  TArrayIterator<T> = class(TIterator<T>)
+  TArrayIterator<T> = class(TIterator<T>, IReadOnlyList<T>)
   private
     fValues: TArray<T>;
     fIndex: Integer;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
   public
     constructor Create(const values: array of T); overload;
     constructor Create(const values: TArray<T>); overload;
     function Clone: TIterator<T>; override;
     function MoveNext: Boolean; override;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
   end;
 
   ///	<summary>
@@ -843,6 +852,53 @@ constructor TArrayIterator<T>.Create(const values: TArray<T>);
 begin
   inherited Create;
   fValues := values;
+end;
+
+function TArrayIterator<T>.GetCount: Integer;
+begin
+  Result := Length(fValues);
+end;
+
+function TArrayIterator<T>.GetItem(index: Integer): T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+{$ENDIF}
+
+  Result := fValues[index];
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, Count);
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, Count - index);
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T; index,
+  count: Integer): Integer;
+{$IFDEF DELPHI2010}
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(fValues)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
+{$ENDIF}
+
+  comparer := EqualityComparer;
+  for i := index to index + count - 1 do
+    if comparer.Equals(fValues[i], item) then
+      Exit(i);
+  Result := -1;
+{$ELSE}
+begin
+  Result := TArray.IndexOf<T>(fValues, item, index, count, EqualityComparer);
+{$ENDIF}
 end;
 
 function TArrayIterator<T>.Clone: TIterator<T>;
