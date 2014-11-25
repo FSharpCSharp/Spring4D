@@ -251,6 +251,7 @@ type
     function GetEnumerator: IEnumerator<T>; override;
 
     function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
   end;
 
@@ -409,6 +410,7 @@ end;
 {$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 function TList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+{$IFDEF DELPHI2010}
 var
   comparer: IEqualityComparer<T>;
   i: Integer;
@@ -423,6 +425,10 @@ begin
     if comparer.Equals(fItems[i], item) then
       Exit(i);
   Result := -1;
+{$ELSE}
+begin
+  Result := TArray.IndexOf<T>(fItems, item, index, count, EqualityComparer);
+{$ENDIF}
 end;
 
 procedure TList<T>.SetItem(index: Integer; const value: T);
@@ -1194,7 +1200,13 @@ end;
 
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T): Integer;
 begin
-  Result := IndexOf(item, 0, fCount)
+  Result := IndexOf(item, 0, Count)
+end;
+
+function TAnonymousReadOnlyList<T>.IndexOf(const item: T;
+  index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, Count - index);
 end;
 
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T; index,

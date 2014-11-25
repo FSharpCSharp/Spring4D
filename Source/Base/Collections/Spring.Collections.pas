@@ -876,6 +876,10 @@ type
     function GetItem(index: Integer): TValue;
   {$ENDREGION}
 
+    function IndexOf(const item: TValue): Integer; overload;
+    function IndexOf(const item: TValue; index: Integer): Integer; overload;
+    function IndexOf(const item: TValue; index, count: Integer): Integer; overload;
+
     property Item[index: Integer]: TValue read GetItem; default;
   end;
 
@@ -939,7 +943,9 @@ type
     ///	<returns>
     ///	  The index of <i>item</i> if found in the list; otherwise, -1.
     ///	</returns>
-    function IndexOf(const item: T): Integer;
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
 
     ///	<summary>
     ///	  Gets the element at the specified index in the read-only list.
@@ -2173,6 +2179,10 @@ type
     /// </summary>
     class function IndexOf<T>(const values: array of T; const item: T;
       index, count: Integer): Integer; overload; static;
+
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index, count: Integer;
+      const comparer: IEqualityComparer<T>): Integer; overload; static;
   end;
 
   ///	<summary>
@@ -2388,8 +2398,13 @@ end;
 
 class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
   count: Integer): Integer;
+begin
+  Result := IndexOf<T>(values, item, index, count, TEqualityComparer<T>.Default);
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
+  count: Integer; const comparer: IEqualityComparer<T>): Integer;
 var
-  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -2397,7 +2412,6 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
 {$ENDIF}
 
-  comparer := TEqualityComparer<T>.Default;
   for i := index to index + count - 1 do
     if comparer.Equals(values[i], item) then
       Exit(i);
