@@ -244,8 +244,9 @@ type
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
-    constructor Create(const count: TFunc<Integer>; const items: TFunc<Integer, T>;
-      const iterator: IEnumerable<T> = nil);
+    constructor Create(const count: TFunc<Integer>;
+      const items: TFunc<Integer, T>;
+      const iterator: IEnumerable<T>{$IFDEF DELPHIXE3_UP} = nil{$ENDIF});
 
     function GetEnumerator: IEnumerator<T>; override;
 
