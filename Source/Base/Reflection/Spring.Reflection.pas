@@ -1851,7 +1851,12 @@ end;
 
 function TMethodKindFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
+{$IFDEF DELPHI2010}
+  // explicit cast to prevent the compiler from choking
+  Result := TRttiMember(member).IsMethod and (TRttiMember(member).AsMethod.MethodKind in fFlags);
+{$ELSE}
   Result := member.IsMethod and (member.AsMethod.MethodKind in fFlags);
+{$ENDIF}
 end;
 
 { TInvokableFilter<T> }
