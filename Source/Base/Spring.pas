@@ -1147,7 +1147,9 @@ function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHI
 ///	  Determines whether an instance of <c>leftType</c> can be assigned from an
 ///	  instance of <c>rightType</c>.
 ///	</summary>
-function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
+function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean; overload;
+
+function IsAssignableFrom(const leftTypes, rightTypes: TArray<PTypeInfo>): Boolean; overload;
 
 /// <summary>
 ///   Returns the size that is needed in order to pass an argument of the given
@@ -1270,6 +1272,17 @@ begin
   end
   else
     Result := False;
+end;
+
+function IsAssignableFrom(const leftTypes, rightTypes: TArray<PTypeInfo>): Boolean;
+var
+  i: Integer;
+begin
+  Result := Length(leftTypes) = Length(rightTypes);
+  if Result then
+    for i := Low(leftTypes) to High(leftTypes) do
+      if not IsAssignableFrom(leftTypes[i], rightTypes[i]) then
+        Exit(False);
 end;
 
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
