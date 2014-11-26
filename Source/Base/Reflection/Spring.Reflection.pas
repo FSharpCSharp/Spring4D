@@ -264,6 +264,7 @@ type
     function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerable<TRttiProperty>;
     function InternalGetFields(enumerateBaseType: Boolean = True): IEnumerable<TRttiField>;
+    function GetBaseTypes: IReadOnlyList<TRttiType>;
     function GetConstructors: IEnumerable<TRttiMethod>;
     function GetMethods: IEnumerable<TRttiMethod>;
     function GetProperties: IEnumerable<TRttiProperty>;
@@ -308,6 +309,8 @@ type
     ///   The type to compare with the current type.
     /// </param>
     function IsAssignableFrom(const rttiType: TRttiType): Boolean;
+
+    property BaseTypes: IReadOnlyList<TRttiType> read GetBaseTypes;
 
     ///	<summary>
     ///	  Gets an enumerable collection which contains all constructor methods
@@ -1240,6 +1243,33 @@ begin
   Result := Self as TRttiInterfaceType;
 end;
 
+function TRttiTypeHelper.GetBaseTypes: IReadOnlyList<TRttiType>;
+var
+  count: Integer;
+  t: TRttiType;
+  baseTypes: TArray<TRttiType>;
+begin
+  count := 0;
+  t := Self;
+  while Assigned(t) do
+  begin
+    Inc(count);
+    t := t.BaseType;
+  end;
+
+  SetLength(baseTypes, count);
+  count := 0;
+  t := Self;
+  while Assigned(t) do
+  begin
+    baseTypes[count] := t;
+    Inc(count);
+    t := t.BaseType;
+  end;
+
+  Result := TArrayIterator<TRttiType>.Create(baseTypes);
+end;
+
 function TRttiTypeHelper.GetInterfaces: IEnumerable<TRttiInterfaceType>;
 var
   list: IDictionary<TGUID, TRttiInterfaceType>;
@@ -1791,7 +1821,6 @@ begin
   if Result then
     for i := Low(parameters) to High(parameters) do
       if not IsAssignableFrom(parameters[i].ParamType.Handle, fTypes[i]) then
-//      if parameters[i].ParamType.Handle <> fTypes[i] then
         Exit(False);
 end;
 
@@ -1846,7 +1875,7 @@ end;
 constructor TMethodKindFilter<T>.Create(const flags: TMethodKinds);
 begin
   inherited Create;
-  fFlags:=flags;
+  fFlags := flags;
 end;
 
 function TMethodKindFilter<T>.IsSatisfiedBy(const member: T): Boolean;
