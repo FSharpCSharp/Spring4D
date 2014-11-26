@@ -253,6 +253,16 @@ type
     /// </summary>
     procedure SaveList<T: class, constructor>(const entities: ICollection<T>);
 
+    /// <summary>
+    /// Registers IRowMapper<T> interface to use when mapping given class into result object
+    /// </summary>
+    procedure RegisterRowMapper<T: class, constructor>(const rowMapper: IRowMapper<T>);
+
+    /// <summary>
+    /// Unregisters IRowMapper<T> interface
+    /// </summary>
+    procedure UnregisterRowMapper<T: class, constructor>;
+
     property OldStateEntities: TEntityMap read fOldStateEntities;
   end;
 
@@ -417,8 +427,7 @@ begin
     results := selecter.Select;
     if not results.IsEmpty then
     begin
-      Result := T.Create;
-      DoMapEntity(TObject(Result), results, nil);
+      Result := T(MapEntityFromResultSetRow(results, TypeInfo(T)));
     end;
   finally
     selecter.Free;
@@ -521,6 +530,11 @@ begin
   FetchFromQueryText(sqlStatement, params, Result.Items as IObjectList, TClass(T));
 end;
 
+procedure TSession.RegisterRowMapper<T>(const rowMapper: IRowMapper<T>);
+begin
+  RegisterNonGenericRowMapper(TypeInfo(T), rowMapper as IRowMapper<TObject>);
+end;
+
 function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;
   const params: array of const): IDBPage<T>;
 var
@@ -590,6 +604,11 @@ begin
   Result := not results.IsEmpty;
   if Result then
     value := T(MapEntityFromResultsetRow(results, TypeInfo(T)));
+end;
+
+procedure TSession.UnregisterRowMapper<T>;
+begin
+  UnregisterNonGenericRowMapper(TypeInfo(T));
 end;
 
 procedure TSession.Update(const entity: TObject);

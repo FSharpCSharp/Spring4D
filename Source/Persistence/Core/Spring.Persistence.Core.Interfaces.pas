@@ -282,6 +282,19 @@ type
   end;
 
   /// <summary>
+  ///   Represents interface for mapping rows of a ResultSet on a per-row basis.
+  ///   Implementations of this interface perform the actual work of mapping each row to a result object.
+  /// </summary>
+  IRowMapper<T: class, constructor> = interface(IInvokable)
+    ['{557EE245-3542-40EC-86B5-16B1A3EA902A}']
+    /// <summary>
+    /// Implementations must implement this method to map each row of data in the ResultSet.
+    /// Params. resultSet: the ResultSet to map (pre-initialized for the current row)
+    /// </summary>
+    function MapRow(const resultSet: IDBResultSet): T;
+  end;
+
+  /// <summary>
   ///   Represents list session which can be used to sync changes in the list
   ///   with the database table. E.g. entities from the database can be fetched
   ///   by using a <see cref="Spring.Persistence.Core.Session|TSession" /> .

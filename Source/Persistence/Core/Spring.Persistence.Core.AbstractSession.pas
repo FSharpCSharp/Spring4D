@@ -47,6 +47,8 @@ uses
 
 type
   TAbstractSession = class(TAbstractManager)
+  private
+    fRowMappers: IDictionary<PTypeInfo,IRowMapper<TObject>>;
   protected
     procedure SetEntityFromColumns(const entity: TObject;
       const columns: TColumnDataList; const resultSet: IDBResultSet); overload; virtual;
@@ -69,9 +71,10 @@ type
     procedure FetchFromQueryText(const sqlStatement: string; const params: IList<TDBParam>; const collection: IObjectList; classType: TClass); overload;
 
     procedure MapFromResultSetToCollection(const resultSet: IDBResultSet; const collection: IObjectList; classType: TClass);
-
-    function MapEntityFromResultSetRow(const resultSet: IDBResultSet; classInfo: PTypeInfo): TObject; overload;
-    function MapEntityFromResultSetRow(const resultSet: IDBResultSet; classInfo: PTypeInfo; realEntity: TObject): TObject; overload;
+    /// <summary>
+    /// Maps resultset row into the entity
+    /// </summary>
+    function MapEntityFromResultSetRow(const resultSet: IDBResultSet; classInfo: PTypeInfo; realEntity: TObject = nil): TObject;
 
     function GetObjectList<T: class, constructor>(const resultSet: IDBResultSet): T;
 
@@ -117,6 +120,11 @@ type
     function GetSelectCommandExecutor(entityClass: TClass): TSelectExecutor; virtual;
     function GetSelectByIdCommandExecutor(entityClass: TClass; const id: TValue; const selectColumn: ColumnAttribute = nil): TSelectExecutor; virtual;
     function GetDeleteCommandExecutor(entityClass: TClass): TDeleteExecutor; virtual;
+
+    procedure RegisterNonGenericRowMapper(typeInfo: PTypeInfo; const rowMapper: IRowMapper<TObject>);
+    procedure UnregisterNonGenericRowMapper(typeInfo: PTypeInfo);
+  public
+    constructor Create(const connection: IDBConnection); override;
   end;
 
 implementation
@@ -134,6 +142,12 @@ uses
 
 
 {$REGION 'TAbstractSession'}
+
+constructor TAbstractSession.Create(const connection: IDBConnection);
+begin
+  inherited Create(connection);
+  fRowMappers := TCollections.CreateDictionary<PTypeInfo,IRowMapper<TObject>>;
+end;
 
 procedure TAbstractSession.DoDelete(const entity, executor: TObject);
 var
@@ -318,6 +332,12 @@ begin
   Result := MapEntityFromResultsetRow(results, classInfo, entity);
 end;
 
+procedure TAbstractSession.RegisterNonGenericRowMapper(typeInfo: PTypeInfo;
+  const rowMapper: IRowMapper<TObject>);
+begin
+  fRowMappers.Add(typeInfo, rowMapper);
+end;
+
 function TAbstractSession.ResolveLazyClass(const id: TValue;
   const entity: TObject; lazyKind: TLazyKind; classType: TRttiType;
   columnMemberName: string): TValue;
@@ -417,16 +437,16 @@ end;
 
 function TAbstractSession.MapEntityFromResultSetRow(const resultSet: IDBResultSet;
   classInfo: PTypeInfo; realEntity: TObject): TObject;
+var
+  rowMapper: IRowMapper<TObject>;
 begin
-  Result := TActivator.CreateInstance(classInfo).AsObject;
-  DoMapEntity(Result, resultSet, realEntity);
-end;
-
-function TAbstractSession.MapEntityFromResultSetRow(const resultSet: IDBResultSet;
-  classInfo: PTypeInfo): TObject;
-begin
-  Result := TActivator.CreateInstance(classInfo).AsObject;
-  DoMapEntity(Result, resultSet, nil);
+  if fRowMappers.TryGetValue(classInfo, rowMapper) then
+    Result := rowMapper.MapRow(resultSet)
+  else
+  begin
+    Result := TActivator.CreateInstance(classInfo).AsObject;
+    DoMapEntity(Result, resultSet, realEntity);
+  end;
 end;
 
 function TAbstractSession.GetResultSet(const sqlStatement: string;
@@ -685,6 +705,11 @@ begin
     resultSet.Next;
     Inc(index);
   end;
+end;
+
+procedure TAbstractSession.UnregisterNonGenericRowMapper(typeInfo: PTypeInfo);
+begin
+  fRowMappers.Remove(typeInfo);
 end;
 
 {$ENDREGION}

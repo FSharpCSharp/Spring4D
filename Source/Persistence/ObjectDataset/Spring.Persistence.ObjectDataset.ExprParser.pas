@@ -82,7 +82,7 @@ var
 implementation
 
 uses
-  Variants, Masks, StrUtils, Math, CLasses;
+  Variants, Masks, StrUtils, Math, Classes;
 
   (*
 {$IFDEF COMPILER12_UP}

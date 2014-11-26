@@ -77,6 +77,9 @@ type
     procedure Versioning();
     procedure ListSession_Begin_Commit();
     procedure When_SpringLazy_Is_OneToMany;
+    procedure When_Registered_RowMapper_And_FindOne_Make_Sure_Its_Used_On_TheSameType;
+    procedure When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
+    procedure When_Registered_RowMapper_And_GetList_Make_Sure_Its_Used_On_TheSameType;
   end;
 
   TestTDetachedSession = class(TTestCase)
@@ -114,6 +117,7 @@ implementation
 
 uses
   Spring.Persistence.Adapters.SQLite
+  ,Spring.Collections.Extensions
   ,Spring.Persistence.Core.ConnectionFactory
   ,Spring.Persistence.SQL.Register
   ,Spring.Persistence.SQL.Params
@@ -443,7 +447,6 @@ var
 begin
   sSql := 'SELECT * FROM ' + TBL_PEOPLE;
   LCollection := TCollections.CreateList<TCustomer>(True);
-
 
   FManager.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
   CheckEquals(0, LCollection.Count);
@@ -1491,6 +1494,61 @@ type
     Result := FSpringLazyOrders.Value;
   end;
 
+type
+  TCustomerRowMapper = class(TInterfacedObject, IRowMapper<TCustomer>)
+  protected
+    function MapRow(const resultSet: IDBResultSet): TCustomer;
+  end;
+
+  { TCustomerRowMapper }
+
+  function TCustomerRowMapper.MapRow(const resultSet: IDBResultSet): TCustomer;
+  begin
+    Result := TCustomer.Create;
+    Result.Name := resultSet.GetFieldValue('CUSTNAME');
+  end;
+
+
+procedure TestTSession.When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
+var
+  customer: TCustomer;
+  customers: IList<TCustomer>;
+begin
+  FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
+  InsertCustomer(20, 'Demo');
+  customers := FManager.FindAll<TCustomer>;
+  customer := customers.First;
+  CheckEquals('Demo', customer.Name, 'Make sure name is mapped');
+  CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
+end;
+
+procedure TestTSession.When_Registered_RowMapper_And_FindOne_Make_Sure_Its_Used_On_TheSameType;
+var
+  customer: TCustomer;
+  id: TValue;
+begin
+  FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
+  id := TValue.FromVariant(InsertCustomer(20, 'Demo'));
+
+  customer := FManager.FindOne<TCustomer>(id);
+  CheckEquals('Demo', customer.Name, 'Make sure name is mapped');
+  CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
+  customer.Free;
+end;
+
+procedure TestTSession.When_Registered_RowMapper_And_GetList_Make_Sure_Its_Used_On_TheSameType;
+var
+  customer: TCustomer;
+  customers: IList<TCustomer>;
+begin
+  FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
+  InsertCustomer(20, 'Demo');
+  customers := FManager.GetList<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
+  customer := customers.First;
+  CheckEquals('Demo', customer.Name, 'Make sure name is mapped');
+  CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
+end;
+
 procedure TestTSession.When_SpringLazy_Is_OneToMany;
 var
   customer: TSpringLazyCustomer;
@@ -1648,6 +1706,7 @@ end;
 
 
 
+
 initialization
   // Register any test cases with the test runner
   RegisterTest(TestTSession.Suite);
@@ -1661,4 +1720,5 @@ finalization
   TestDB.Free;
 
 end.
+
 

@@ -60,8 +60,6 @@ type
     function GetIndex: Integer;
     procedure SetIndex(const Value: Integer);
   protected
-    function GetColumnAttributeClass: TAttributeClass; virtual;
-
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Are filter set and filter text entered?
@@ -238,6 +236,8 @@ type
     property OnFilterRecord;
   end;
 
+  function CompareValue(const Left, Right: TValue): Integer;
+
 resourcestring
   SUnsupportedFieldType = 'Unsupported field type (%s) in field %s.';
   SIndexOutOfRange = 'Index out of range';
@@ -258,10 +258,10 @@ uses
   ActiveX,
   Windows,
 {$ENDIF}
-  Spring.Persistence.Mapping.Attributes,
+  Spring.Reflection,
+  Spring.SystemUtils,
   Spring.Persistence.ObjectDataset.Blobs,
-  Spring.Persistence.ObjectDataset.ActiveX,
-  Spring.Persistence.Core.Reflection;
+  Spring.Persistence.ObjectDataset.ActiveX;
 
 type
   EAbstractObjectDatasetException = class(Exception);
@@ -354,6 +354,89 @@ begin
   end;
 end;
 
+function CompareValue(const Left, Right: TValue): Integer;
+var
+  LLeft, LRight: TValue;
+  LeftNull, RightNull: Boolean;
+  LRel: TVariantRelationship;
+begin
+  if Left.IsEmpty or Right.IsEmpty then
+  begin
+    Result := 0;
+    LeftNull := Left.IsEmpty;
+    RightNull := Right.IsEmpty;
+    if LeftNull then
+    begin
+      if RightNull then
+        Result := 0
+      else
+        Result := 1;
+    end
+    else if RightNull then
+    begin
+      if LeftNull then
+        Result := 0
+      else
+        Result := -1;
+    end;
+  end
+  else
+  if Left.IsOrdinal and Right.IsOrdinal then
+  begin
+    Result := Math.CompareValue(Left.AsOrdinal, Right.AsOrdinal);
+  end else
+  if Left.IsType<Double> and Right.IsType<Double> then
+  begin
+    Result := Math.CompareValue(Left.AsExtended, Right.AsExtended);
+  end else
+  if Left.IsString and Right.IsString then
+  begin
+    Result := SysUtils.AnsiCompareStr(Left.AsString, Right.AsString);
+  end
+  else if Left.IsObject and Right.IsObject then
+  begin
+    Result := NativeInt(Left.AsObject) - NativeInt(Right.AsObject);
+  end
+  else if (Left.TypeInfo = TypeInfo(Variant)) and (Right.TypeInfo = TypeInfo(Variant)) then
+  begin
+    Result := 0;
+    LRel := VarCompareValue(Left.AsVariant, Right.AsVariant);
+    case LRel of
+      vrEqual: Result := 0;
+      vrLessThan: Result := -1;
+      vrGreaterThan: Result := 1;
+      vrNotEqual: Result := -1;
+    end;
+  end
+  else if IsNullableType(Left.TypeInfo) and IsNullableType(Right.TypeInfo) then
+  begin
+    LeftNull := not TryGetUnderlyingValue(Left, LLeft);
+    RightNull := not TryGetUnderlyingValue(Right, LRight);
+    if LeftNull then
+    begin
+      if RightNull then
+        Result := 0
+      else
+        Result := 1;
+    end
+    else if RightNull then
+    begin
+      if LeftNull then
+        Result := 0
+      else
+        Result := -1;
+    end
+    else
+    begin
+      Result := CompareValue(LLeft, LRight);
+    end;
+  end else
+  begin
+    Result := 0;
+  end;
+end;
+
+
 { TCustomObjectDataset }
 
 function TAbstractObjectDataset.AllocRecordBuffer: TRecordBuffer;
@@ -430,7 +513,7 @@ end;
 
 function TAbstractObjectDataset.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
 begin
-  Result := TSvBlobStream.Create(Field as TBlobField, Mode);
+  Result := TODBlobStream.Create(Field as TBlobField, Mode);
 end;
 
 {$IFDEF DELPHIXE2_UP}
@@ -562,11 +645,6 @@ end;
 function TAbstractObjectDataset.GetCanModify: Boolean;
 begin
   Result := not FReadOnly;
-end;
-
-function TAbstractObjectDataset.GetColumnAttributeClass: TAttributeClass;
-begin
-  Result := ColumnAttribute;
 end;
 
 function TAbstractObjectDataset.GetFieldClass(FieldDef: TFieldDef): TFieldClass;
@@ -1302,6 +1380,7 @@ begin
   end;
 end;
 {$ELSE}
+
 procedure TAbstractObjectDataset.VariantToBuffer(Field: TField; Data: Variant; Buffer: Pointer;
   NativeFormat: Boolean);
 

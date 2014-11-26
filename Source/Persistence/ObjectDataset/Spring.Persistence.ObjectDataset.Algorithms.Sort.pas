@@ -3,10 +3,11 @@ unit Spring.Persistence.ObjectDataset.Algorithms.Sort;
 interface
 
 uses
-  Spring.Collections
-  ,Spring.Persistence.ObjectDataset.IndexList
-  ,Rtti
-  ,DB
+  Spring.Collections,
+  Spring.Reflection,
+  Spring.Persistence.ObjectDataset.IndexList,
+  Rtti,
+  DB
   ;
 
 const

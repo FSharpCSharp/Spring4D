@@ -8,7 +8,7 @@ uses
   Spring.Persistence.ObjectDataset.Abstract;
 
 type
-  TSvBlobStream = class(TMemoryStream)
+  TODBlobStream = class(TMemoryStream)
   private
     FField: TBlobField;
     FDataSet: TAbstractObjectDataset;
@@ -33,9 +33,9 @@ uses
   DBConsts,
   Variants;
 
-{ TSvBlobStream }
+{ TODBlobStream }
 
-constructor TSvBlobStream.Create(Field: TBlobField; Mode: TBlobStreamMode);
+constructor TODBlobStream.Create(Field: TBlobField; Mode: TBlobStreamMode);
 begin
   inherited Create;
   FField := Field;
@@ -58,7 +58,7 @@ begin
     ReadBlobData;
 end;
 
-destructor TSvBlobStream.Destroy;
+destructor TODBlobStream.Destroy;
 begin
   if FModified then
   begin
@@ -69,7 +69,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TSvBlobStream.ReadBlobData;
+procedure TODBlobStream.ReadBlobData;
 begin
   {$IF CompilerVersion >= 24}
   FFieldData := FField.AsVariant;
@@ -95,7 +95,7 @@ begin
   end;
 end;
 
-function TSvBlobStream.Realloc(var NewCapacity: Integer): Pointer;
+function TODBlobStream.Realloc(var NewCapacity: Integer): Pointer;
  procedure VarAlloc(var V: Variant; Field: TFieldType);
   var
     W: WideString;
@@ -149,13 +149,13 @@ begin
   end;
 end;
 
-procedure TSvBlobStream.Truncate;
+procedure TODBlobStream.Truncate;
 begin
   Clear;
   FModified := True;
 end;
 
-function TSvBlobStream.Write(const Buffer; Count: Integer): Longint;
+function TODBlobStream.Write(const Buffer; Count: Integer): Longint;
 begin
   Result := inherited Write(Buffer, Count);
   FModified := True;

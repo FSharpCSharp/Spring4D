@@ -738,6 +738,7 @@ procedure TestTObjectDataset.SetUp;
 begin
   inherited;
   FDataset := TMockObjectDataset.Create(nil);
+  FDataset.ColumnAttributeClassInfo := ColumnAttribute.ClassInfo;
 end;
 
 procedure TestTObjectDataset.SimpleSort;

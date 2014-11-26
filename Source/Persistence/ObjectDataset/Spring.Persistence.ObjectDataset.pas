@@ -5,8 +5,8 @@ interface
 uses
   Classes,
   DB,
-  Rtti,
   TypInfo,
+  Rtti,
   Spring.Collections,
   Spring.Persistence.ObjectDataset.Abstract,
   Spring.Persistence.ObjectDataset.Algorithms.Sort,
@@ -30,6 +30,7 @@ type
     FOnAfterSort: TNotifyEvent;
     FOnBeforeFilter: TNotifyEvent;
     FOnBeforeSort: TNotifyEvent;
+    FColumnAttributeTypeInfo: PTypeInfo;
 
     function GetSort: string;
     procedure SetSort(const Value: string);
@@ -73,6 +74,8 @@ type
     function GetChangedSortText(const ASortText: string): string;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
     function FieldInSortIndex(AField: TField): Boolean;
+    function ValueToVariant(const value: TValue): Variant;
+    function StreamToVariant(AStream: TStream): OleVariant;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -135,6 +138,19 @@ type
     property Sort: string read GetSort write SetSort;
 
     property DataList: IObjectList read FDataList;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Type info of the column attribute. If entity's properties are annotated with this attribute,
+    ///   then dataset will use these properties as fields.
+    ///   If ColumnAttributeClassInfo is null, all the entity's published properties will be used as dataset fields.
+    ///	</summary>
+    ///	<example>
+    ///	  <code>
+    ///	MyDataset.ColumnAttributeClassInfo := ColumnAttribute.ClassInfo</code>
+    ///	</example>
+    {$ENDREGION}
+    property ColumnAttributeClassInfo: PTypeInfo read FColumnAttributeTypeInfo write FColumnAttributeTypeInfo;
   published
     {$REGION 'Documentation'}
     ///	<summary>
@@ -186,13 +202,14 @@ uses
   StrUtils,
   SysUtils,
   Variants,
-  Spring.Persistence.Core.Reflection,
-  Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.ObjectDataset.ExprParser.Functions,
+  Types,
+  Math,
+  Spring.Reflection,
   Spring.Reflection.Activator,
-  Spring.SystemUtils;
+  Spring.Reflection.ValueConverters,
+  Spring.SystemUtils,
+  Spring.Persistence.ObjectDataset.ExprParser.Functions
+  ;
 
 type
   EObjectDatasetException = class(Exception);
@@ -201,63 +218,6 @@ type
   TWideCharSet = set of Char;
   {$WARNINGS ON}
 
-function SplitString(const AText: string; const ADelimiters: TWideCharSet;
-  const ARemoveEmptyEntries: Boolean): TArray<string>;
-var
-  LResCount, I, LLag,
-    LPrevIndex, LCurrPiece: NativeInt;
-  LPiece: string;
-begin
-  { Initialize, set all to zero }
-  SetLength(Result , 0);
-
-  { Do nothing for empty strings }
-  if System.Length(AText) = 0 then
-    Exit;
-
-  { Determine the length of the resulting array }
-  LResCount := 0;
-
-  for I := 1 to System.Length(AText) do
-    if CharInSet(AText[I], ADelimiters) then
-      Inc(LResCount);
-
-  { Set the length of the output split array }
-  SetLength(Result, LResCount + 1);
-
-  { Split the string and fill the resulting array }
-  LPrevIndex := 1;
-  LCurrPiece := 0;
-  LLag := 0;
-
-  for I := 1 to System.Length(AText) do
-    if CharInSet(AText[I], ADelimiters) then
-    begin
-      LPiece := System.Copy(AText, LPrevIndex, (I - LPrevIndex));
-
-      if ARemoveEmptyEntries and (System.Length(LPiece) = 0) then
-        Inc(LLag)
-      else
-        Result[LCurrPiece - LLag] := LPiece;
-
-      { Adjust prev index and current piece }
-      LPrevIndex := I + 1;
-      Inc(LCurrPiece);
-    end;
-
-  { Copy the remaining piece of the string }
-  LPiece := Copy(AText, LPrevIndex, System.Length(AText) - LPrevIndex + 1);
-
-  { Doom! }
-  if ARemoveEmptyEntries and (System.Length(LPiece) = 0) then
-    Inc(LLag)
-  else
-    Result[LCurrPiece - LLag] := LPiece;
-
-  { Re-adjust the array for the missing pieces }
-  if LLag > 0 then
-    System.SetLength(Result, LResCount - LLag + 1);
-end;
 
 { TObjectDataset }
 
@@ -290,10 +250,10 @@ begin
   for i := 0 to AIndexFieldList.Count - 1 do
   begin
     LFieldInfo := AIndexFieldList[i];
-    LValue1 := LFieldInfo.RttiProperty.GetValue(TRttiExplorer.GetRawPointer(Item1));
-    LValue2 := LFieldInfo.RttiProperty.GetValue(TRttiExplorer.GetRawPointer(Item2));
+    LValue1 := LFieldInfo.RttiProperty.GetValue(Item1);
+    LValue2 := LFieldInfo.RttiProperty.GetValue(Item2);
 
-    Result := CompareValue(LValue1, LValue2);
+    Result := Spring.Persistence.ObjectDataset.Abstract.CompareValue(LValue1, LValue2);
     if LFieldInfo.Descending then
       Result := -Result;
 
@@ -304,7 +264,8 @@ end;
 
 function TObjectDataset.ConvertPropertyValueToVariant(const AValue: TValue): Variant;
 begin
-  Result := TUtils.AsVariant(AValue);
+  {TODO -oOwner -cGeneral : could use some routine from Spring in future}
+  Result := ValueToVariant(AValue);
 end;
 
 constructor TObjectDataset.Create(AOwner: TComponent);
@@ -321,7 +282,7 @@ end;
 function TObjectDataset.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
 var
   LText, LItem: string;
-  LSplittedFields: TArray<string>;
+  LSplittedFields: TStringDynArray;
   LIndexFieldItem: TIndexFieldInfo;
   iPos: Integer;
 begin
@@ -434,15 +395,16 @@ begin
     LFieldValue := LField.Value;
     if VarIsNull(LFieldValue) then
     begin
-      LProp.SetValue(TRttiExplorer.GetRawPointer(LItem), TValue.Empty);
+      LProp.SetValue(LItem, TValue.Empty);
     end
     else
     begin
-      LValueFromVariant := TUtils.FromVariant(LFieldValue);
+    //  LValueFromVariant := TUtils.FromVariant(LFieldValue);
+      LValueFromVariant := TValue.FromVariant(LFieldValue);
 
-      if TUtils.TryConvert(LValueFromVariant, nil, LProp, LItem.AsObject, LConvertedValue) then
-     // if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue, TValue.Empty) then
-        LProp.SetValue(TRttiExplorer.GetRawPointer(LItem), LConvertedValue);
+   //   if TUtils.TryConvert(LValueFromVariant, nil, LProp, LItem.AsObject, LConvertedValue) then
+      if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue) then
+        LProp.SetValue(LItem, LConvertedValue);
     end;
   end;
 
@@ -511,14 +473,12 @@ end;
 
 function TObjectDataset.GetFilteredDataList<T>: IList<T>;
 var
-  LList: IList;
   i: Integer;
 begin
-  Result := TCollections.CreateObjectList<T>(False);
-  LList := Result.AsList;
+  Result := TCollections.CreateList<T>;
   for i := 0 to IndexList.Count - 1 do
   begin
-    LList.Add(IndexList.GetModel(i));
+    Result.Add(IndexList.GetModel(i).AsType<T>);
   end;
 end;
 
@@ -546,12 +506,22 @@ begin
     if not (LProp.Visibility in [mvPublic, mvPublished]) then
       Continue;
 
-    for LAttrib in LProp.GetAttributes do
+    if Assigned(FColumnAttributeTypeInfo) then
     begin
-      if (LAttrib is GetColumnAttributeClass) or (LAttrib is ColumnAttribute) then
+      for LAttrib in LProp.GetAttributes do
+      begin
+        if (LAttrib.ClassInfo = FColumnAttributeTypeInfo) then
+        begin
+          FProperties.Add(LProp);
+          Break;
+        end;
+      end;
+    end
+    else
+    begin
+      if (LProp.Visibility = mvPublished) then
       begin
         FProperties.Add(LProp);
-        Break;
       end;
     end;
   end;
@@ -565,7 +535,7 @@ begin
     InitRttiPropertiesFromItemType(AItem.TypeInfo);
 
   LProperty := FProperties[AField.FieldNo - 1];
-  Result := ConvertPropertyValueToVariant(LProperty.GetValue(TRttiExplorer.GetRawPointer(AItem)));
+  Result := ConvertPropertyValueToVariant(LProperty.GetValue(AItem));
 end;
 
 procedure TObjectDataset.InternalInitFieldDefs;
@@ -672,7 +642,7 @@ procedure TObjectDataset.LoadFieldDefsFromItemType;
 var
   i: Integer;
   LProp: TRttiProperty;
-  LAttrib: TCustomAttribute;
+ // LAttrib: TCustomAttribute;
   LPropPrettyName: string;
   LFieldType: TFieldType;
   LFieldDef: TObjectDatasetFieldDef;
@@ -804,8 +774,8 @@ begin
     LRequired := False;
     LDontUpdate := False;
     LHidden := False;
-
-    for LAttrib in LProp.GetAttributes do
+    {TODO -oOwner -cGeneral : what to do with values from ColumnAttribute?}
+    {for LAttrib in LProp.GetAttributes do
     begin
       if LAttrib is ColumnAttribute then
       begin
@@ -832,7 +802,7 @@ begin
 
         Break;
       end;
-    end;
+    end;}
 
     LFieldType := ftWideString;
 
@@ -867,6 +837,19 @@ begin
   end;
 end;
 
+function TObjectDataset.StreamToVariant(AStream: TStream): OleVariant;
+var
+  DataPtr: Pointer;
+begin
+  Result := VarArrayCreate([0, AStream.Size], varByte);
+  DataPtr := VarArrayLock(Result);
+  try
+    AStream.ReadBuffer(DataPtr^, AStream.Size);
+  finally
+    VarArrayUnlock(Result);
+  end;
+end;
+
 function TObjectDataset.ParserGetFunctionValue(Sender: TObject; const FuncName: string;
   const Args: Variant; var ResVal: Variant): Boolean;
 var
@@ -884,9 +867,8 @@ function TObjectDataset.ParserGetVariableValue(Sender: TObject; const VarName: s
 var
   LField: TField;
 begin
-  Result := False;
-
-  if not FilterCache.TryGetValue(VarName, Value) then
+  Result := FilterCache.TryGetValue(VarName, Value);
+  if not Result then
   begin
     LField := FindField(Varname);
     if Assigned(LField) then
@@ -895,10 +877,6 @@ begin
       FilterCache.Add(VarName, Value);
       Result := True;
     end;
-  end
-  else
-  begin
-    Result := True;
   end;
 end;
 
@@ -1057,6 +1035,69 @@ begin
   First;
 
   DoOnAfterFilter;
+end;
+
+function TObjectDataset.ValueToVariant(const value: TValue): Variant;
+var
+  LStream: TStream;
+  LValue: TValue;
+  LPersist: IStreamPersist;
+begin
+  Result := Null;
+  case value.Kind of
+    tkEnumeration:
+    begin
+      if value.TypeInfo = TypeInfo(Boolean) then
+        Result := value.AsBoolean
+      else
+        Result := value.AsOrdinal;
+    end;
+    tkFloat:
+    begin
+      if (value.TypeInfo = TypeInfo(TDateTime)) then
+        Result := value.AsType<TDateTime>
+      else if (value.TypeInfo = TypeInfo(TDate)) then
+        Result := value.AsType<TDate>
+      else
+        Result := value.AsExtended;
+    end;
+    tkRecord:
+    begin
+      if IsNullableType(value.TypeInfo) then
+      begin
+        if TryGetUnderlyingValue(value, LValue) then
+          Result := ValueToVariant(LValue);
+      end;
+    end;
+    tkClass:
+    begin
+      if (value.AsObject <> nil) then
+      begin
+        if (value.AsObject is TStream) then
+        begin
+          LStream := TStream(value.AsObject);
+          LStream.Position := 0;
+          Result := StreamToVariant(LStream);
+        end
+        else if Supports(value.AsObject, IStreamPersist, LPersist) then
+        begin
+          LStream := TMemoryStream.Create;
+          try
+            LPersist.SaveToStream(LStream);
+            LStream.Position := 0;
+            Result := StreamToVariant(LStream);
+          finally
+            LStream.Free;
+          end;
+        end;
+      end;
+    end;
+    tkInterface: Result := value.AsInterface;
+    else
+    begin
+      Result := value.AsVariant;
+    end;
+  end;
 end;
 
 end.
