@@ -1017,6 +1017,9 @@ type
   private
     function GetTypeName: string; inline;
   public
+{$IFNDEF DELPHIXE3_UP}
+    function TypeData: PTypeData; inline;
+{$ENDIF}
     property TypeName: string read GetTypeName;
   end;
 
@@ -2134,6 +2137,13 @@ begin
   Result := NameFld.ToString;
 {$ENDIF}
 end;
+
+{$IFNDEF DELPHIXE3_UP}
+function TTypeInfoHelper.TypeData: PTypeData;
+begin
+  Result := GetTypeData(@Self);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
