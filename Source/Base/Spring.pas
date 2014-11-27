@@ -1149,7 +1149,7 @@ function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHI
 ///	</summary>
 function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean; overload;
 
-function IsAssignableFrom(const leftTypes, rightTypes: TArray<PTypeInfo>): Boolean; overload;
+function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Boolean; overload;
 
 /// <summary>
 ///   Returns the size that is needed in order to pass an argument of the given
@@ -1274,7 +1274,7 @@ begin
     Result := False;
 end;
 
-function IsAssignableFrom(const leftTypes, rightTypes: TArray<PTypeInfo>): Boolean;
+function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Boolean;
 var
   i: Integer;
 begin
