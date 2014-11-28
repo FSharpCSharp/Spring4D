@@ -284,6 +284,20 @@ type
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
+  TContainedIterator<T> = class(TIterator<T>)
+  private
+    fController: Pointer;
+    function GetController: IInterface;
+  protected
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
+  {$ENDREGION}
+  public
+    constructor Create(const controller: IInterface);
+    property Controller: IInterface read GetController;
+  end;
+
   TContainedCollectionBase<T> = class(TCollectionBase<T>)
   private
     fController: Pointer;
@@ -301,6 +315,7 @@ type
   TContainedReadOnlyCollection<T> = class(TEnumerableBase<T>, IReadOnlyCollection<T>)
   private
     fController: Pointer;
+    function GetController: IInterface;
   protected
   {$REGION 'Implements IInterface'}
     function _AddRef: Integer; override;
@@ -308,6 +323,7 @@ type
   {$ENDREGION}
   public
     constructor Create(const controller: IInterface);
+    property Controller: IInterface read GetController;
   end;
 
   TMapBase<TKey, T> = class(TCollectionBase<TPair<TKey, T>>, IMap<TKey, T>)
@@ -1468,6 +1484,32 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TContainedIterator<T>'}
+
+constructor TContainedIterator<T>.Create(const controller: IInterface);
+begin
+  inherited Create;
+  fController := Pointer(controller);
+end;
+
+function TContainedIterator<T>.GetController: IInterface;
+begin
+  Result := IInterface(fController);
+end;
+
+function TContainedIterator<T>._AddRef: Integer;
+begin
+  Result := IInterface(fController)._AddRef;
+end;
+
+function TContainedIterator<T>._Release: Integer;
+begin
+  Result := IInterface(fController)._Release;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TContainedCollectionBase<T>'}
 
 constructor TContainedCollectionBase<T>.Create(const controller: IInterface);
@@ -1483,12 +1525,12 @@ end;
 
 function TContainedCollectionBase<T>._AddRef: Integer;
 begin
-  Result := IInterface(FController)._AddRef;
+  Result := IInterface(fController)._AddRef;
 end;
 
 function TContainedCollectionBase<T>._Release: Integer;
 begin
-  Result := IInterface(FController)._Release;
+  Result := IInterface(fController)._Release;
 end;
 
 {$ENDREGION}
@@ -1500,6 +1542,11 @@ constructor TContainedReadOnlyCollection<T>.Create(const controller: IInterface)
 begin
   inherited Create;
   fController := Pointer(controller);
+end;
+
+function TContainedReadOnlyCollection<T>.GetController: IInterface;
+begin
+  Result := IInterface(fController);
 end;
 
 function TContainedReadOnlyCollection<T>._AddRef: Integer;
