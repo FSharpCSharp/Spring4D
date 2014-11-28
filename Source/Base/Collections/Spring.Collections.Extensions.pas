@@ -88,6 +88,8 @@ type
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function ToArray: TArray<T>; override;
   end;
 
   ///	<summary>
@@ -928,6 +930,11 @@ begin
   end;
 end;
 
+function TArrayIterator<T>.ToArray: TArray<T>;
+begin
+  Result := fValues;
+end;
+
 {$ENDREGION}
 
 
@@ -1478,16 +1485,16 @@ begin
   if fState = STATE_ENUMERATOR then
   begin
     fBuffer := fSource.ToArray;
-    fIndex := High(fBuffer);
+    fIndex := Length(fBuffer);
     fState := STATE_RUNNING;
   end;
 
   if fState = STATE_RUNNING then
   begin
-    if (fIndex >= 0) and (fIndex <= Length(fBuffer)) then
+    if fIndex > 0 then
     begin
-      fCurrent := fBuffer[fIndex];
       Dec(fIndex);
+      fCurrent := fBuffer[fIndex];
       Exit(True);
     end;
     fState := STATE_FINISHED;
