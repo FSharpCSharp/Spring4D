@@ -211,6 +211,35 @@ type
     function ToArray: TArray<T>; virtual;
   end;
 
+  TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
+  protected
+    function GetCurrentNonGeneric: TValue; virtual; abstract;
+    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
+  public
+    function MoveNext: Boolean; virtual;
+    procedure Reset; virtual;
+  end;
+
+  TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
+  private
+    fInitialThreadId: Cardinal;
+  protected
+    fState: Integer;
+    fCurrent: T;
+    const
+      STATE_INITIAL    = -2; // initial state, before GetEnumerator
+      STATE_FINISHED   = -1; // end of enumerator
+      STATE_ENUMERATOR = 0;  // before calling MoveNext
+      STATE_RUNNING    = 1;  // enumeration is running
+  protected
+    function Clone: TIterator<T>; virtual; abstract;
+    function GetCurrent: T;
+    function GetCurrentNonGeneric: TValue; override; final;
+  public
+    constructor Create; override;
+    function GetEnumerator: IEnumerator<T>; override; final;
+  end;
+
   ///	<summary>
   ///	  Provides an abstract implementation for the
   ///	  <see cref="Spring.Collections|ICollection&lt;T&gt;" /> interface.
@@ -401,6 +430,7 @@ type
 implementation
 
 uses
+  Classes,
   Rtti,
   TypInfo,
   Spring.Collections.Adapters,
@@ -1245,6 +1275,60 @@ begin
 {$ENDIF}
 
   Result := TWhereIterator<T>.Create(Self, predicate);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIteratorBase<T>' }
+
+function TIteratorBase<T>.MoveNext: Boolean;
+begin
+  Result := False;
+end;
+
+procedure TIteratorBase<T>.Reset;
+begin
+  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIterator<T>'}
+
+constructor TIterator<T>.Create;
+begin
+  inherited Create;
+  fState := STATE_INITIAL;
+  fInitialThreadId := TThread.CurrentThread.ThreadID;
+end;
+
+function TIterator<T>.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+function TIterator<T>.GetCurrentNonGeneric: TValue;
+begin
+  Result := TValue.From<T>(GetCurrent);
+end;
+
+function TIterator<T>.GetEnumerator: IEnumerator<T>;
+var
+  iterator: TIterator<T>;
+begin
+  if (fInitialThreadId = TThread.CurrentThread.ThreadID) and (fState = STATE_INITIAL) then
+  begin
+    fState := STATE_ENUMERATOR;
+    Result := Self;
+  end
+  else
+  begin
+    iterator := Clone;
+    iterator.fState := STATE_ENUMERATOR;
+    Result := iterator;
+  end;
 end;
 
 {$ENDREGION}

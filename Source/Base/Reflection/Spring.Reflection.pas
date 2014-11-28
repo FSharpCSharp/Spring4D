@@ -35,7 +35,7 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.Collections.Extensions,
+  Spring.Collections.Base,
   Spring.DesignPatterns;
 
 type
@@ -733,6 +733,7 @@ uses
   RTLConsts,
   StrUtils,
   SysConst,
+  Spring.Collections.Extensions,
   Spring.ResourceStrings;
 
 type

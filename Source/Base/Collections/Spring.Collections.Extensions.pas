@@ -41,35 +41,6 @@ uses
 type
   TEmptyEnumerable<T> = class(TEnumerableBase<T>);
 
-  TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
-  protected
-    function GetCurrentNonGeneric: TValue; virtual; abstract;
-    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
-  public
-    function MoveNext: Boolean; virtual;
-    procedure Reset; virtual;
-  end;
-
-  TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
-  private
-    fInitialThreadId: Cardinal;
-  protected
-    fState: Integer;
-    fCurrent: T;
-    const
-      STATE_INITIAL    = -2; // initial state, before GetEnumerator
-      STATE_FINISHED   = -1; // end of enumerator
-      STATE_ENUMERATOR = 0;  // before calling MoveNext
-      STATE_RUNNING    = 1;  // enumeration is running
-  protected
-    function Clone: TIterator<T>; virtual; abstract;
-    function GetCurrent: T;
-    function GetCurrentNonGeneric: TValue; override; final;
-  public
-    constructor Create; override;
-    function GetEnumerator: IEnumerator<T>; override; final;
-  end;
-
   TArrayIterator<T> = class(TIterator<T>, IReadOnlyList<T>)
   private
     fValues: TArray<T>;
@@ -779,63 +750,8 @@ type
 implementation
 
 uses
-  Classes,
   Spring.Collections.Sets,
   Spring.ResourceStrings;
-
-
-{$REGION 'TIteratorBase<T>' }
-
-function TIteratorBase<T>.MoveNext: Boolean;
-begin
-  Result := False;
-end;
-
-procedure TIteratorBase<T>.Reset;
-begin
-  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TIterator<T>'}
-
-constructor TIterator<T>.Create;
-begin
-  inherited Create;
-  fState := STATE_INITIAL;
-  fInitialThreadId := TThread.CurrentThread.ThreadID;
-end;
-
-function TIterator<T>.GetCurrent: T;
-begin
-  Result := fCurrent;
-end;
-
-function TIterator<T>.GetCurrentNonGeneric: TValue;
-begin
-  Result := TValue.From<T>(GetCurrent);
-end;
-
-function TIterator<T>.GetEnumerator: IEnumerator<T>;
-var
-  iterator: TIterator<T>;
-begin
-  if (fInitialThreadId = TThread.CurrentThread.ThreadID) and (fState = STATE_INITIAL) then
-  begin
-    fState := STATE_ENUMERATOR;
-    Result := Self;
-  end
-  else
-  begin
-    iterator := Clone;
-    iterator.fState := STATE_ENUMERATOR;
-    Result := iterator;
-  end;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TArrayIterator<T>'}
@@ -2856,7 +2772,6 @@ begin
   fComparer := comparer;
   if not Assigned(fComparer) then
     fComparer := fSource.Comparer;
-  fIndex := -1;
 end;
 
 function TOrderedIterator<T>.Clone: TIterator<T>;
@@ -2870,6 +2785,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+    fIndex := -1;
     fValues := fSource.ToArray;
     TArray.Sort<T>(fValues, fComparer);
     fState := STATE_RUNNING;
