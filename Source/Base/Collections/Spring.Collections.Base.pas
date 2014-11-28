@@ -185,9 +185,9 @@ type
     function Min(const comparer: IComparer<T>): T; overload;
     function Min(const comparer: TComparison<T>): T; overload;
 
-    function Ordered: IEnumerable<T>; overload;
-    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
-    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload;
+    function Ordered: IEnumerable<T>; overload; virtual;
+    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload; virtual;
+    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload; virtual;
 
     function Reversed: IEnumerable<T>; virtual;
 
@@ -988,6 +988,10 @@ end;
 function TEnumerableBase<T>.Ordered(
   const comparer: TComparison<T>): IEnumerable<T>;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+{$ENDIF}
+
   Result := Ordered(TComparer<T>.Construct(comparer));
 end;
 

@@ -89,6 +89,31 @@ type
         function ToArray: TArray<TValue>; override;
       {$ENDREGION}
       end;
+
+      TOrderedEnumerable = class(TContainedIterator<TGenericPair>)
+      private
+        fDictionary: TGenericDictionary;
+        fComparer: IComparer<TKey>;
+        fSortedKeys: TArray<TKey>;
+        fIndex: Integer;
+      protected
+      {$REGION 'Property Accessors'}
+        function GetCount: Integer; override;
+      {$ENDREGION}
+      public
+        constructor Create(const controller: IInterface;
+          const dictionary: TGenericDictionary;
+          const comparer: IComparer<TKey>);
+        function Clone: TIterator<TGenericPair>; override;
+        function MoveNext: Boolean; override;
+      end;
+
+{$IFDEF DELPHI2010}
+      TKeyCollectionHelper = class(TGenericDictionary.TKeyCollection)
+      public
+        function ToArray: TArray<TKey>;
+      end;
+{$ENDIF}
   private
     fDictionary: TGenericDictionary;
     fOwnership: TOwnershipType;
@@ -121,6 +146,7 @@ type
     function GetEnumerator: IEnumerator<TGenericPair>; override;
     function Contains(const value: TGenericPair;
       const comparer: IEqualityComparer<TGenericPair>): Boolean; override;
+    function Ordered: IEnumerable<TGenericPair>; override;
     function ToArray: TArray<TGenericPair>; override;
   {$ENDREGION}
 
@@ -419,6 +445,11 @@ begin
   Result := fDictionary[key];
 end;
 
+function TDictionary<TKey, TValue>.Ordered: IEnumerable<TGenericPair>;
+begin
+  Result := TOrderedEnumerable.Create(Self, fDictionary, TComparer<TKey>.Default());
+end;
+
 procedure TDictionary<TKey, TValue>.SetItem(const key: TKey;
   const value: TValue);
 begin
@@ -535,6 +566,81 @@ function TContainedDictionary<TKey, TValue>._Release: Integer;
 begin
   Result := IInterface(FController)._Release;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDictionary<TKey, TValue>.TOrderedEnumerable'}
+
+constructor TDictionary<TKey, TValue>.TOrderedEnumerable.Create(
+  const controller: IInterface; const dictionary: TGenericDictionary;
+  const comparer: IComparer<TKey>);
+begin
+  inherited Create(controller);
+  fDictionary := dictionary;
+  fComparer := comparer;
+end;
+
+function TDictionary<TKey, TValue>.TOrderedEnumerable.Clone: TIterator<TGenericPair>;
+begin
+  Result := TOrderedEnumerable.Create(Controller, fDictionary, fComparer);
+end;
+
+function TDictionary<TKey, TValue>.TOrderedEnumerable.GetCount: Integer;
+begin
+  Result := fDictionary.Count;
+end;
+
+function TDictionary<TKey, TValue>.TOrderedEnumerable.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fIndex := -1;
+{$IFDEF DELPHI2010}
+    fSortedKeys := TKeyCollectionHelper(fDictionary.Keys).ToArray;
+{$ELSE}
+    fSortedKeys := fDictionary.Keys.ToArray;
+{$ENDIF}
+    TArray.Sort<TKey>(fSortedKeys, fComparer);
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    if fIndex < High(fSortedKeys) then
+    begin
+      Inc(fIndex);
+      fCurrent.Key := fSortedKeys[fIndex];
+      fCurrent.Value := fDictionary[fSortedKeys[fIndex]];
+      Exit(True);
+    end;
+    fState := STATE_FINISHED;
+    fSortedKeys := nil;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDictionary<TKey, TValue>.TKeyCollectionHelper'}
+
+{$IFDEF DELPHI2010}
+function TDictionary<TKey, TValue>.TKeyCollectionHelper.ToArray: TArray<TKey>;
+var
+  item: TKey;
+  i: Integer;
+begin
+  SetLength(Result, Count);
+  i := 0;
+  for item in Self do
+  begin
+    Result[i] := item;
+    Inc(i);
+  end;
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
