@@ -76,15 +76,10 @@ type
     /// </summary>
     function MapEntityFromResultSetRow(const resultSet: IDBResultSet; classInfo: PTypeInfo; realEntity: TObject = nil): TObject;
 
-    function GetObjectList<T: class, constructor>(const resultSet: IDBResultSet): T;
-
-    procedure SetInterfaceList<T>(var value: T; const resultSet: IDBResultSet); overload;
     procedure SetInterfaceList(var value: IInterface;
-      const resultSet: IDBResultSet; classInfo: PTypeInfo); overload;
+      const resultSet: IDBResultSet; classInfo: PTypeInfo);
     procedure SetSimpleInterfaceList(var value: IInterface;
       const resultSet: IDBResultSet; classInfo: PTypeInfo);
-    procedure SetOne<T>(var value: T; const resultSet: IDBResultSet;
-      const entity: TObject);
 
     function DoGetLazy(const id: TValue; const entity: TObject;
       const column: ColumnAttribute; classInfo: Pointer): IDBResultSet;
@@ -93,8 +88,9 @@ type
     function GetLazyValueAsObject(const id: TValue; const entity: TObject; const column: ColumnAttribute; classInfo: PTypeInfo): TObject;
 
     function ResolveLazyValue(const id: TValue; const entity: TObject; columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
-    function ResolveLazyInterface(const id: TValue; const entity: TObject; lazyKind: TLazyKind; interfaceType: TRttiType; columnMemberName: string): TValue;
-    function ResolveLazyClass(const id: TValue; const entity: TObject; lazyKind: TLazyKind; classType: TRttiType; columnMemberName: string): TValue;
+    function ResolveLazyInterface(const id: TValue; const entity: TObject; lazyKind: TLazyKind; interfaceType: TRttiType; column: ColumnAttribute): TValue;
+    function ResolveLazyClass(const id: TValue; const entity: TObject; lazyKind: TLazyKind; classType: TRttiType; column: ColumnAttribute): TValue;
+    function ResolveLazyRecord(const id: TValue; const entity: TObject; lazyKind: TLazyKind; recordType: TRttiType; column: ColumnAttribute): TValue;
 
     function GetResultSetById(entityClass: TClass; const id: TValue; foreignEntityClass: TClass = nil; const selectColumn: ColumnAttribute = nil): IDBResultSet;
     /// <summary>
@@ -132,6 +128,7 @@ implementation
 uses
   SysUtils,
   Spring.Helpers,
+  Spring.SystemUtils,
   Spring.Persistence.Core.CollectionAdapterResolver,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.Exceptions,
@@ -212,7 +209,7 @@ var
   value, result: TValue;
 begin
   entityData := TEntityCache.Get(entityToMap.ClassType);
-  {TODO -oLinas -cGeneral : if entityToCreate class type is not our annotated ORM Entity type (it can be e.g. TPicture, TStream, etc.), simply just set value}
+  {TODO -oLinas -cGeneral : if entityToMap class type is not our annotated ORM Entity type (it can be e.g. TPicture, TStream, etc.), simply just set value}
   if not entityData.IsTableEntity and Assigned(realEntity) then
   begin
     if not resultSet.IsEmpty then
@@ -335,12 +332,14 @@ end;
 procedure TAbstractSession.RegisterNonGenericRowMapper(typeInfo: PTypeInfo;
   const rowMapper: IRowMapper<TObject>);
 begin
+  if fRowMappers.ContainsKey(typeInfo) then
+    raise EORMRowMapperAlreadyRegistered.CreateFmt('Row Mapper already registered for type: %s', [typeInfo.Name]);
   fRowMappers.Add(typeInfo, rowMapper);
 end;
 
 function TAbstractSession.ResolveLazyClass(const id: TValue;
   const entity: TObject; lazyKind: TLazyKind; classType: TRttiType;
-  columnMemberName: string): TValue;
+  column: ColumnAttribute): TValue;
 var
   LId: TValue;
   LEntity: TObject;
@@ -351,7 +350,7 @@ begin
   LId := id;
   LEntity := entity;
   LClassType := classType;
-  LColumn := TEntityCache.Get(entity.ClassType).ColumnByMemberName(columnMemberName);
+  LColumn := column;
   factory :=
     function: TObject
     begin
@@ -362,11 +361,10 @@ begin
     lkRecord: Result := TValue.From<Spring.Lazy<TObject>>(Spring.Lazy<TObject>.Create(factory));
     lkInterface: Result := TValue.From<ILazy<TObject>>(TLazy<TObject>.Create(factory));
   end;
-  {TODO -Linas : resolve lazy class }
 end;
 
 function TAbstractSession.ResolveLazyInterface(const id: TValue;
-  const entity: TObject; lazyKind: TLazyKind; interfaceType: TRttiType; columnMemberName: string): TValue;
+  const entity: TObject; lazyKind: TLazyKind; interfaceType: TRttiType; column: ColumnAttribute): TValue;
 var
   LId: TValue;
   LEntity: TObject;
@@ -377,7 +375,7 @@ begin
   LId := id;
   LEntity := entity;
   LInterfaceType := interfaceType;
-  LColumn := TEntityCache.Get(entity.ClassType).ColumnByMemberName(columnMemberName);
+  LColumn := column;
   factory :=
     function: IInterface
     begin
@@ -390,49 +388,58 @@ begin
   end;
 end;
 
+function TAbstractSession.ResolveLazyRecord(const id: TValue;
+  const entity: TObject; lazyKind: TLazyKind; recordType: TRttiType;
+  column: ColumnAttribute): TValue;
+var
+  underlyingTypeInfo: PTypeInfo;
+  LId: TValue;
+  LEntity: TObject;
+  factory: TFunc<Nullable<TObject>>;
+  LColumn: ColumnAttribute;
+begin
+  if not TryGetUnderlyingTypeInfo(recordType.Handle, underlyingTypeInfo) then
+    raise EORMUnsupportedType.CreateFmt('Unsupported lazy type: %s. Expected Lazy<Nullable<T: TObject>>', [recordType.ToString]);
+
+  LId := id;
+  LEntity := entity;
+  LColumn := column;
+  case underlyingTypeInfo.Kind of
+    tkClass: factory :=
+      function: Nullable<TObject>
+      begin
+        Result.Create(GetLazyValueAsObject(LId, LEntity, LColumn, underlyingTypeInfo));
+      end;
+    else
+      raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [underlyingTypeInfo.Name]);
+  end;
+
+  case lazyKind of
+    lkFunc: Result := TValue.From<TFunc<Nullable<TObject>>>(factory);
+    lkRecord: Result := TValue.From<Spring.Lazy<Nullable<TObject>>>(Spring.Lazy<Nullable<TObject>>.Create(factory));
+    lkInterface: Result := TValue.From<ILazy<Nullable<TObject>>>(TLazy<Nullable<TObject>>.Create(factory));
+  end;
+end;
+
 function TAbstractSession.ResolveLazyValue(const id: TValue; const entity: TObject; columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
 var
   lazyKind: TLazyKind;
   targetType: TRttiType;
+  column: ColumnAttribute;
 begin
   lazyKind := TType.GetLazyKind(lazyTypeInfo);
   targetType := TType.GetType(lazyTypeInfo).GetGenericArguments[0];
   Result := TValue.Empty;
+  column := TEntityCache.Get(entity.ClassType).ColumnByMemberName(columnMemberName);
   case targetType.TypeKind of
-    tkClass: Result := ResolveLazyClass(id, entity, lazyKind, targetType, columnMemberName);
-    tkInterface: Result := ResolveLazyInterface(id, entity, lazyKind, targetType, columnMemberName);
-    tkRecord: {TODO -Linas : resolve records, e.g. Nullable<T>};
+    tkClass: Result := ResolveLazyClass(id, entity, lazyKind, targetType, column);
+    tkInterface: Result := ResolveLazyInterface(id, entity, lazyKind, targetType, column);
+    tkRecord: Result := ResolveLazyRecord(id, entity, lazyKind, targetType, column);
   else
-    raise EORMUnsupportedType.CreateFmt('Unsupported target type', [targetType.Name]);
+    raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [targetType.Name]);
   end;
   if not Result.IsEmpty then
     TValueData(Result).FTypeInfo := lazyTypeInfo;
-end;
-
-function TAbstractSession.GetObjectList<T>(const resultSet: IDBResultSet): T;
-var
-  entityClass: TClass;
-  addMethod: TRttiMethod;
-  params: TArray<TRttiParameter>;
-  entity: TObject;
-begin
-  Result := T.Create;
-
-  entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
-
-  if not TType.GetType(TypeInfo(T)).Methods.TryGetSingle(addMethod,
-    TMethodFilters.IsNamed(METHODNAME_CONTAINER_ADD)
-    and TMethodFilters.HasParameterTypes([entityClass.ClassInfo])) then
-    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
-
-  TType.SetPropertyValue(Result, METHODNAME_CONTAINER_OWNSOBJECTS, True);
-
-  while not resultSet.IsEmpty do
-  begin
-    entity := MapEntityFromResultSetRow(resultSet, entityClass.ClassInfo);
-    addMethod.Invoke(Result, [entity]);
-    resultSet.Next;
-  end;
 end;
 
 function TAbstractSession.MapEntityFromResultSetRow(const resultSet: IDBResultSet;
@@ -625,26 +632,6 @@ begin
   end;
 end;
 
-procedure TAbstractSession.SetInterfaceList<T>(var value: T;
-  const resultSet: IDBResultSet);
-var
-  entityClass: TClass;
-  collection: IObjectList;
-  entity: TObject;
-begin
-  if PTypeInfo(TypeInfo(T)).Kind <> tkInterface then
-    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
-
-  entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
-  collection := TValue.From<T>(value).AsInterface as IObjectList;
-  while not resultSet.IsEmpty do
-  begin
-    entity := MapEntityFromResultSetRow(resultSet, entityClass.ClassInfo);
-    collection.Add(entity);
-    resultSet.Next;
-  end;
-end;
-
 procedure TAbstractSession.SetLazyColumns(const entity: TObject;
   const entityData: TEntityData);
 var
@@ -662,24 +649,6 @@ begin
     TRttiExplorer.SetMemberValueSimple(entity, column.MemberName, value);
 //    value := TRttiExplorer.GetMemberValue(entity, column.MappedBy); //get foreign key value
 //    TRttiExplorer.SetMemberValue(Self, entity, column.MemberName, value);
-  end;
-end;
-
-procedure TAbstractSession.SetOne<T>(var value: T;
-  const resultSet: IDBResultSet; const entity: TObject);
-var
-  entityType: TRttiType;
-  column: ColumnAttribute;
-  fieldValue: Variant;
-begin
-  entityType := TRttiExplorer.GetEntityRttiType(TypeInfo(T));
-
-  if TEntityCache.TryGetColumnByMemberName(entity.ClassType, entityType.Name, column)
-    and not resultSet.IsEmpty then
-  begin
-    fieldValue := resultSet.GetFieldValue(column.ColumnName);
-    value := TUtils.FromVariant(fieldValue).AsType<T>;
-//    TRttiExplorer.SetMemberValue(Self, entity, LColumn, LValue);
   end;
 end;
 

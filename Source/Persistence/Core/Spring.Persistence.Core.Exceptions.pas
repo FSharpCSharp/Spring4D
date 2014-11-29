@@ -77,6 +77,7 @@ type
   EORMUnsupportedType = class(Exception);
 
   EORMConnectionAlreadyRegistered = class(Exception);
+  EORMRowMapperAlreadyRegistered = class(Exception);
   EORMConnectionNotRegistered = class(Exception);
 
   EORMManyToOneMappedByColumnNotFound = class(Exception);

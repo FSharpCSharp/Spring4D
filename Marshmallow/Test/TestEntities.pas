@@ -59,12 +59,13 @@ type
 
     FProducts: Lazy<IList<TProduct>>;
 
-    [Column('AVATAR', [], 50, 0, 0, 'Customers avatar')]
-    FAvatar: Lazy<TPicture>;
+    //[Column('AVATAR', [], 50, 0, 0, 'Customers avatar')]
+   // FAvatar: Lazy<TPicture>;
 
     [Column('CUSTSTREAM', [], 50, 0, 0, 'Customers stream')]
     FStream: Lazy<TMemoryStream>;
 
+    [Column('AVATAR', [], 50, 0, 0, 'Customers avatar')]
     FAvatarNullable: Lazy<Nullable<TPicture>>;
     FStrings: TStrings;
     procedure SetAvatarLazy(const Value: Nullable<TPicture>);
@@ -233,7 +234,7 @@ type
     [Version] FVersion: Integer;
   public
     [SvTransient]
-    property ID: Integer read FId;
+    property ID: Integer read FId write FId;
     [Column('PRODNAME', [], 50, 0, 0, 'Product name')]
     property Name: string read FName write FName;
     [Column('PRODPRICE', [], 0, 12, 2, 'Product price')]
@@ -276,14 +277,15 @@ end;
 destructor TCustomer.Destroy;
 begin
   FStrings.Free;
-  if FAvatar.IsValueCreated then
-    FAvatar.Value.Free;
+  if FAvatarNullable.IsValueCreated then
+    if FAvatarNullable.Value.HasValue then
+      FAvatarNullable.Value.Value.Free;
   inherited Destroy;
 end;
 
 function TCustomer.GetAvatar: TPicture;
 begin
-  Result := FAvatar.Value;
+  Result := FAvatarNullable.Value.Value;
 end;
 
 function TCustomer.GetAvatarLazy: Nullable<TPicture>;
@@ -313,10 +315,10 @@ end;
 
 procedure TCustomer.SetAvatar(const Value: TPicture);
 begin
-  if FAvatar.IsAssigned then
-    FAvatar.Value.Assign(Value)
+  if FAvatarNullable.IsAssigned then
+    FAvatarNullable.Value.Value.Assign(Value)
   else
-    FAvatar := Value;
+    FAvatarNullable.CreateFrom(Value);
 end;
 
 procedure TCustomer.SetAvatarLazy(const Value: Nullable<TPicture>);

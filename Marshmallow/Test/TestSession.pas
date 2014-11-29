@@ -16,7 +16,7 @@ interface
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
   Variants, Graphics, Messages, StdCtrls, Spring.Persistence.Core.Session, Spring.Persistence.Core.DetachedSession
-  , Spring.Persistence.Core.Interfaces
+  , Spring.Persistence.Core.Interfaces, Spring.TestUtils
   ,TestEntities, Rtti, SQLiteTable3;
 
 type
@@ -37,7 +37,6 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
 
-    procedure GetLazyNullable();
     class procedure InsertProducts(iCount: Integer);
 
     property Session: TMockSession read FSession write FSession;
@@ -59,6 +58,7 @@ type
     procedure Execute();
     procedure Nullable();
     procedure GetLazyValue();
+    procedure GetLazyNullable();
     procedure FindOne();
     procedure When_UnannotatedEntity_FindOne_ThrowException;
     procedure When_WithoutTableAttribute_FindOne_ThrowException;
@@ -80,6 +80,7 @@ type
     procedure When_Registered_RowMapper_And_FindOne_Make_Sure_Its_Used_On_TheSameType;
     procedure When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
     procedure When_Registered_RowMapper_And_GetList_Make_Sure_Its_Used_On_TheSameType;
+    procedure When_Trying_To_Register_RowMapper_Again_For_The_Same_Type_Throw_Exception;
   end;
 
   TestTDetachedSession = class(TTestCase)
@@ -93,7 +94,8 @@ type
     procedure SaveAlwaysInsertsEntity();
     procedure Update();
     {$IFDEF PERFORMANCE_TESTS}
-    procedure Performance();
+    procedure Performance;
+    procedure Performance_RowMapper;
     {$ENDIF}
   end;
 
@@ -573,18 +575,15 @@ var
 begin
   fsPic := TFileStream.Create(PictureFilename, fmOpenRead or fmShareDenyNone);
   try
-    LCustomer := FManager.SingleOrDefault<TCustomer>('select * from ' + TBL_PEOPLE, []);
-    try
-      CheckFalse(LCustomer.AvatarLazy.HasValue);
-    finally
-      LCustomer.Free;
-    end;
-
+    LCustomer := FManager.SingleOrDefault<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
+    CheckFalse(Assigned(LCustomer));
     InsertCustomerAvatar(25, 'Nullable Lazy', 2.36, 'Middle', fsPic);
 
-    LCustomer := FManager.SingleOrDefault<TCustomer>('select * from ' + TBL_PEOPLE, []);
+    LCustomer := FManager.SingleOrDefault<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
     try
-      CheckTrue(LCustomer.AvatarLazy.HasValue);
+      CheckTrue(LCustomer.AvatarLazy.HasValue, 'Lazy should have value');
+      CheckTrue(LCustomer.AvatarLazy.Value.Height > 0, 'Height should be more than 0');
+      CheckTrue(LCustomer.AvatarLazy.Value.Width > 0, 'Width should be more than 0');
     finally
       LCustomer.Free;
     end;
@@ -730,6 +729,7 @@ var
   LCustomer: TCustomer;
   i, LCount: Integer;
   LStopwatch: TStopwatch;
+  LTran: IDBTransaction;
 begin
   LCount := 10000;
   FConnection.ClearExecutionListeners;
@@ -741,9 +741,9 @@ begin
     LCustomers.Add(LCustomer);
   end;
   LStopwatch := TStopwatch.StartNew;
-  FManager.BeginTransaction;
+  LTran := FManager.BeginTransaction;
   FManager.SaveList<TCustomer>(LCustomers);
-  FManager.CommitTransaction;
+  LTran.Commit;
   LStopwatch.Stop;
   CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
   Status(Format('Save List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
@@ -757,9 +757,9 @@ begin
     LCustomers.Add(LCustomer);
   end;
   LStopwatch := TStopwatch.StartNew;
-  FManager.BeginTransaction;
+  LTran := FManager.BeginTransaction;
   FManager.InsertList<TCustomer>(LCustomers);
-  FManager.CommitTransaction;
+  LTran.Commit;
   LStopwatch.Stop;
   CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
   Status(Format('Insert List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
@@ -769,17 +769,17 @@ begin
     LCustomer.Age :=  LCount + 1;
   end;
   LStopwatch := TStopwatch.StartNew;
-  FManager.BeginTransaction;
+  LTran := FManager.BeginTransaction;
   FManager.UpdateList<TCustomer>(LCustomers);
-  FManager.CommitTransaction;
+  LTran.Commit;
   LStopwatch.Stop;
   CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
   Status(Format('Update List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
 
   LStopwatch := TStopwatch.StartNew;
-  FManager.BeginTransaction;
+  LTran := FManager.BeginTransaction;
   FManager.DeleteList<TCustomer>(LCustomers);
-  FManager.CommitTransaction;
+  LTran.Commit;
   LStopwatch.Stop;
   CheckEquals(0, GetTableRecordCount(TBL_PEOPLE));
   Status(Format('Delete List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
@@ -846,18 +846,19 @@ begin
     LCustomer.Height := 1.1;
     LCustomer.Avatar:= LPicture;
 
+    CheckTrue(Assigned(LCustomer.Avatar), 'Picture assigned successfully');
+
     FManager.Insert(LCustomer);
 
     LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE);
-    CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString);
-    CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger);
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString, 'String column should be inserted');
+    CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger, 'Integer column should be inserted');
     LID := LTable.FieldByName[CUSTID].AsInteger;
-    CheckEquals(LID, LCustomer.ID);
-    CheckTrue(LTable.FieldByName[CUST_MIDDLENAME].IsNull);
-    CheckFalse(LTable.FieldByName[CUSTAVATAR].IsNull);
+    CheckEquals(LID, LCustomer.ID, 'Primary keys should be equal');
+    CheckTrue(LTable.FieldByName[CUST_MIDDLENAME].IsNull, 'Nullable should not be inserted');
+    CheckFalse(LTable.FieldByName[CUSTAVATAR].IsNull, 'Lazy object should be inserted');
   finally
     LCustomer.Free;
-    //LPicture.Free;
   end;
 
   LCustomer := TCustomer.Create;
@@ -873,7 +874,7 @@ begin
     CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger);
     LID := LTable.FieldByName[CUSTID].AsInteger;
     CheckEquals(LID, LCustomer.ID);
-    CheckEqualsString(LCustomer.MiddleName, LTable.FieldByName[CUST_MIDDLENAME].AsString);
+    CheckEqualsString(LCustomer.MiddleName, LTable.FieldByName[CUST_MIDDLENAME].AsString, 'Nullable should be inserted');
 
     LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
     CheckEquals(2, LCount);
@@ -1220,6 +1221,16 @@ begin
   end;
 end;
 
+function PrettyPrintVariant(const value: Variant): string;
+begin
+  Result := VarToStrDef(value, '');
+  if (Result = '') then
+  begin
+    if VarIsArray(value) then
+      Result := 'array size: ' + IntToStr(VarArrayHighBound(value, VarArrayDimCount(value)));
+  end;
+end;
+
 procedure TestTSession.SetUp;
 begin
   FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
@@ -1232,7 +1243,11 @@ begin
       Status(ACommand);
       for i := 0 to AParams.Count - 1 do
       begin
-        Status(Format('%2:D Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL'), i]));
+        Status(Format('%2:d %0:s = %1:s. Type: %3:s',
+          [AParams[i].Name,
+          PrettyPrintVariant(AParams[i].Value),
+          i,
+          VarTypeAsText(VarType(AParams[i].Value))]));
       end;
       Status('-----');
     end);
@@ -1567,6 +1582,15 @@ begin
   customer.Free;
 end;
 
+procedure TestTSession.When_Trying_To_Register_RowMapper_Again_For_The_Same_Type_Throw_Exception;
+begin
+  FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
+  CheckException(
+    EORMRowMapperAlreadyRegistered,
+    procedure begin FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create); end
+    , 'Registering multiple RowMappers for the same type is not allowed');
+end;
+
 procedure TestTSession.When_UnannotatedEntity_FindOne_ThrowException;
 begin
   try
@@ -1657,6 +1681,41 @@ begin
   Status(Format('Loaded %d simple products in %d ms', [LCount, LStopWatch.ElapsedMilliseconds]));
   CheckEquals(LCount, LProducts.Count);
 end;
+
+
+type
+  TProductRowMapper = class(TInterfacedObject, IRowMapper<TProduct>)
+  protected
+    function MapRow(const resultSet: IDBResultSet): TProduct;
+  end;
+
+  { TProductRowMapper }
+
+  function TProductRowMapper.MapRow(const resultSet: IDBResultSet): TProduct;
+  begin
+    Result := TProduct.Create;
+    Result.ID := resultSet.GetFieldValue('PRODID');
+    Result.Name := resultSet.GetFieldValue('PRODNAME');
+    Result.Price := resultSet.GetFieldValue('PRODPRICE');
+  end;
+
+procedure TestTDetachedSession.Performance_RowMapper;
+var
+  LCount: Integer;
+  LStopWatch: TStopwatch;
+  LProducts: IList<TProduct>;
+begin
+  LCount := 50000;
+  TestTSession.InsertProducts(LCount);
+  FSession.RegisterRowMapper<TProduct>(TProductRowMapper.Create);
+
+  LStopWatch := TStopwatch.StartNew;
+  LProducts := FSession.FindAll<TProduct>;
+  LStopWatch.Stop;
+  Status(Format('Loaded %d simple products using RowMapper in %d ms', [LCount, LStopWatch.ElapsedMilliseconds]));
+  CheckEquals(LCount, LProducts.Count);
+end;
+
 {$ENDIF}
 
 procedure TestTDetachedSession.SaveAlwaysInsertsEntity;

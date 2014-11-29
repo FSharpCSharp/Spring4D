@@ -104,6 +104,7 @@ var
   LValue: TValue;
   LPersist: IStreamPersist;
 begin
+  Result := Null;
   case AValue.Kind of
     tkEnumeration:
     begin
@@ -123,7 +124,6 @@ begin
     end;
     tkRecord:
     begin
-      Result := Null;
       if IsNullableType(AValue.TypeInfo) then
       begin
         if TryGetNullableTypeValue(AValue, LValue) then
@@ -132,15 +132,25 @@ begin
     end;
     tkClass:
     begin
-      Result := Null;
       if (AValue.AsObject <> nil) then
       begin
         if (AValue.AsObject is TStream) then
         begin
-          LStream := AValue.AsObject as TStream;
+          LStream := TStream(AValue.AsObject);
           LStream.Position := 0;
           Result := LoadFromStreamToVariant(LStream);
         end
+        else if (AValue.AsObject is TPicture) then
+        begin
+          LStream := TMemoryStream.Create;
+          try
+            TPicture(AValue.AsObject).Graphic.SaveToStream(LStream);
+            LStream.Position := 0;
+            Result := LoadFromStreamToVariant(LStream);
+          finally
+            LStream.Free;
+          end;
+        end   //somehow this started to fail recently. needed to add additional condition for TPicture
         else if Supports(AValue.AsObject, IStreamPersist, LPersist) then
         begin
           LStream := TMemoryStream.Create;
