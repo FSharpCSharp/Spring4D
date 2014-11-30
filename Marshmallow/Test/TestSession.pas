@@ -81,6 +81,7 @@ type
     procedure When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
     procedure When_Registered_RowMapper_And_GetList_Make_Sure_Its_Used_On_TheSameType;
     procedure When_Trying_To_Register_RowMapper_Again_For_The_Same_Type_Throw_Exception;
+    procedure Can_Use_RowMapper_With_Unannotated_Entity;
   end;
 
   TestTDetachedSession = class(TTestCase)
@@ -265,6 +266,48 @@ begin
   end
   else
     Result := GetDBValue('SELECT COUNT(*) FROM ' + ATablename);
+end;
+
+type
+  TUnannotatedProduct = class
+  private
+    FID: Integer;
+    FName: string;
+    FPrice: Double;
+  public
+    property ID: Integer read FID write FID;
+    property Name: string read FName write FName;
+    property Price: Double read FPrice write FPrice;
+  end;
+
+  TUnannotatedProductRowMapper = class(TInterfacedObject, IRowMapper<TUnannotatedProduct>)
+  protected
+    function MapRow(const resultSet: IDBResultSet): TUnannotatedProduct;
+  end;
+
+  { TUnnanotatedProductRowMapper }
+
+  function TUnannotatedProductRowMapper.MapRow(const resultSet: IDBResultSet): TUnannotatedProduct;
+  begin
+    Result := TUnannotatedProduct.Create;
+    Result.ID := resultSet.GetFieldValue('PRODID');
+    Result.Name := resultSet.GetFieldValue('PRODNAME');
+    Result.Price := resultSet.GetFieldValue('PRODPRICE');
+  end;
+
+procedure TestTSession.Can_Use_RowMapper_With_Unannotated_Entity;
+var
+  id: Integer;
+  product: TUnannotatedProduct;
+begin
+  FManager.RegisterRowMapper<TUnannotatedProduct>(TUnannotatedProductRowMapper.Create);
+  id := InsertProduct('Bread', 0.99);
+
+  product := FManager.Single<TUnannotatedProduct>('select * from '+ TBL_PRODUCTS +' where PRODID = :0', [id]);
+  CheckEquals(id, product.ID, 'Primary key should be equal');
+  CheckEquals('Bread', product.Name, 'Name should be equal');
+  CheckEquals(0.99, product.Price, 0.01, 'Price should be equal');
+  product.Free;
 end;
 
 procedure TestTSession.Delete;

@@ -288,9 +288,15 @@ type
   IRowMapper<T: class, constructor> = interface(IInvokable)
     ['{557EE245-3542-40EC-86B5-16B1A3EA902A}']
     /// <summary>
-    /// Implementations must implement this method to map each row of data in the ResultSet.
-    /// Params. resultSet: the ResultSet to map (pre-initialized for the current row)
+    ///   Implementations must implement this method to map each row of data in
+    ///   the ResultSet.
     /// </summary>
+    /// <param name="resultSet">
+    ///   The ResultSet to map (pre-initialized for the current row)
+    /// </param>
+    /// <returns>
+    ///   New mapped entity
+    /// </returns>
     function MapRow(const resultSet: IDBResultSet): T;
   end;
 

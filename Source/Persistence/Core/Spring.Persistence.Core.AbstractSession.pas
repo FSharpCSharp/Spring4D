@@ -58,11 +58,11 @@ type
     procedure SetAssociations(const entity: TObject;
       const resultSet: IDBResultSet; const entityData: TEntityData); virtual;
 
-    procedure DoMapEntity(var entityToMap: TObject;
-      const resultSet: IDBResultSet; const realEntity: TObject); virtual;
+    function DoMapEntity(const resultSet: IDBResultSet; classInfo: PTypeInfo): TObject;
     procedure DoMapEntityFromColumns(const entityToMap: TObject;
       const resultSet: IDBResultSet; const columns: TColumnDataList;
       const entityData: TEntityData); virtual;
+    function DoMapObject(const resultSet: IDBResultSet; const baseEntity: TObject; classInfo: PTypeInfo): TObject;
     /// <summary>
     ///   Retrieves multiple models from the <c>Resultset</c> into Spring <c>
     ///   ICollection&lt;T&gt;).</c>
@@ -74,7 +74,7 @@ type
     /// <summary>
     /// Maps resultset row into the entity
     /// </summary>
-    function MapEntityFromResultSetRow(const resultSet: IDBResultSet; classInfo: PTypeInfo; realEntity: TObject = nil): TObject;
+    function MapEntityFromResultSetRow(const resultSet: IDBResultSet; classInfo: PTypeInfo): TObject;
 
     procedure SetInterfaceList(var value: IInterface;
       const resultSet: IDBResultSet; classInfo: PTypeInfo);
@@ -201,34 +201,13 @@ begin
   AttachEntity(entity);
 end;
 
-procedure TAbstractSession.DoMapEntity(var entityToMap: TObject;
-  const resultSet: IDBResultSet; const realEntity: TObject);
+function TAbstractSession.DoMapEntity(const resultSet: IDBResultSet; classInfo: PTypeInfo): TObject;
 var
   entityData: TEntityData;
-  fieldValue: Variant;
-  value, result: TValue;
 begin
-  entityData := TEntityCache.Get(entityToMap.ClassType);
-  {TODO -oLinas -cGeneral : if entityToMap class type is not our annotated ORM Entity type (it can be e.g. TPicture, TStream, etc.), simply just set value}
-  if not entityData.IsTableEntity and Assigned(realEntity) then
-  begin
-    if not resultSet.IsEmpty then
-    begin
-      fieldValue := resultSet.GetFieldValue(0);
-      value := TUtils.FromVariant(fieldValue);
-
-      if TUtils.TryConvert(value, Self,
-        TType.GetType(entityToMap.ClassType), realEntity, result) then
-      begin
-        if entityToMap <> nil then
-          entityToMap.Free;
-        entityToMap := result.AsObject;
-        TFinalizer.FinalizeInstance(value);
-      end;
-    end;
-  end
-  else
-    DoMapEntityFromColumns(entityToMap, resultSet, entityData.ColumnsData, entityData);
+  Result := TActivator.CreateInstance(classInfo).AsObject;
+  entityData := TEntityCache.Get(Result.ClassType);
+  DoMapEntityFromColumns(Result, resultSet, entityData.ColumnsData, entityData);
 end;
 
 procedure TAbstractSession.DoMapEntityFromColumns(const entityToMap: TObject;
@@ -248,6 +227,25 @@ begin
   SetAssociations(entityToMap, resultSet, data);
 
   AttachEntity(entityToMap);
+end;
+
+function TAbstractSession.DoMapObject(const resultSet: IDBResultSet; const baseEntity: TObject; classInfo: PTypeInfo): TObject;
+var
+  fieldValue: Variant;
+  value, convertedValue: TValue;
+begin
+  Result := nil;
+  if not resultSet.IsEmpty then
+  begin
+    fieldValue := resultSet.GetFieldValue(0);
+    value := TUtils.FromVariant(fieldValue);
+
+    if TUtils.TryConvert(value, Self, TType.GetType(classInfo), baseEntity, convertedValue) then
+    begin
+      Result := convertedValue.AsObject;
+      TFinalizer.FinalizeInstance(value);
+    end;
+  end;
 end;
 
 procedure TAbstractSession.DoUpdate(const entity, executor: TObject);
@@ -326,7 +324,7 @@ begin
     Exit(nil);
 
   results := DoGetLazy(id, entity, column, classInfo);
-  Result := MapEntityFromResultsetRow(results, classInfo, entity);
+  Result := DoMapObject(results, entity, classInfo);
 end;
 
 procedure TAbstractSession.RegisterNonGenericRowMapper(typeInfo: PTypeInfo;
@@ -443,17 +441,14 @@ begin
 end;
 
 function TAbstractSession.MapEntityFromResultSetRow(const resultSet: IDBResultSet;
-  classInfo: PTypeInfo; realEntity: TObject): TObject;
+  classInfo: PTypeInfo): TObject;
 var
   rowMapper: IRowMapper<TObject>;
 begin
   if fRowMappers.TryGetValue(classInfo, rowMapper) then
     Result := rowMapper.MapRow(resultSet)
   else
-  begin
-    Result := TActivator.CreateInstance(classInfo).AsObject;
-    DoMapEntity(Result, resultSet, realEntity);
-  end;
+    Result := DoMapEntity(resultSet, classInfo);
 end;
 
 function TAbstractSession.GetResultSet(const sqlStatement: string;

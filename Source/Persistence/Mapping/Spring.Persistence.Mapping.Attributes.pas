@@ -471,8 +471,8 @@ constructor ColumnAttribute.Create;
 begin
   inherited Create;
   fLength := 50;
-  fPrecision := 10;
-  fScale := 2;
+  fPrecision := 0;
+  fScale := 0;
 end;
 
 constructor ColumnAttribute.Create(properties: TColumnProperties);

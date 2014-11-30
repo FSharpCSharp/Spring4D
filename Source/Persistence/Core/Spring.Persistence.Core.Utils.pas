@@ -238,8 +238,7 @@ begin
       end
       else
       begin
-        LNewEntity := TActivator.CreateInstance(AColumn.TypeInfo).AsObject;
-        LSession.DoMapEntity(LNewEntity, LEmbeddedEntityResultset, nil);
+        LNewEntity := LSession.DoMapEntity(LEmbeddedEntityResultset, AColumn.TypeInfo);
         Result := TValue.From(LNewEntity, LNewEntity.ClassType);
       end;
     end
