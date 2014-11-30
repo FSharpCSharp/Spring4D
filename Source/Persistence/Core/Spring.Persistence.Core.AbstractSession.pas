@@ -62,7 +62,7 @@ type
     procedure DoMapEntityFromColumns(const entityToMap: TObject;
       const resultSet: IDBResultSet; const columns: TColumnDataList;
       const entityData: TEntityData); virtual;
-    function DoMapObject(const resultSet: IDBResultSet; const baseEntity: TObject; classInfo: PTypeInfo): TObject;
+    function DoMapObjectInEntity(const resultSet: IDBResultSet; const baseEntity: TObject; objectClassInfo: PTypeInfo): TObject;
     /// <summary>
     ///   Retrieves multiple models from the <c>Resultset</c> into Spring <c>
     ///   ICollection&lt;T&gt;).</c>
@@ -229,7 +229,7 @@ begin
   AttachEntity(entityToMap);
 end;
 
-function TAbstractSession.DoMapObject(const resultSet: IDBResultSet; const baseEntity: TObject; classInfo: PTypeInfo): TObject;
+function TAbstractSession.DoMapObjectInEntity(const resultSet: IDBResultSet; const baseEntity: TObject; objectClassInfo: PTypeInfo): TObject;
 var
   fieldValue: Variant;
   value, convertedValue: TValue;
@@ -239,12 +239,12 @@ begin
   begin
     fieldValue := resultSet.GetFieldValue(0);
     value := TUtils.FromVariant(fieldValue);
-
-    if TUtils.TryConvert(value, Self, TType.GetType(classInfo), baseEntity, convertedValue) then
-    begin
-      Result := convertedValue.AsObject;
+    try
+      if TUtils.TryConvert(value, Self, TType.GetType(objectClassInfo), baseEntity, convertedValue) then
+        Result := convertedValue.AsObject;         
+    finally
       TFinalizer.FinalizeInstance(value);
-    end;
+    end;     
   end;
 end;
 
@@ -305,13 +305,11 @@ begin
     Exit;
 
   results := DoGetLazy(id, entity, column, interfaceType);
-  if TUtils.IsEnumerable(interfaceType) then
-  begin
-    Result := TCollections.CreateObjectList<TObject>(True);
-    SetInterfaceList(Result, results, interfaceType);
-  end
-  else
+  if not TUtils.IsEnumerable(interfaceType) then
     raise EORMUnsupportedType.CreateFmt('Unsupported ORM lazy type: %s', [interfaceType.Name]);
+
+  Result := TCollections.CreateObjectList<TObject>(True);
+  SetInterfaceList(Result, results, interfaceType);    
 end;
 
 function TAbstractSession.GetLazyValueAsObject(const id: TValue;
@@ -324,7 +322,7 @@ begin
     Exit(nil);
 
   results := DoGetLazy(id, entity, column, classInfo);
-  Result := DoMapObject(results, entity, classInfo);
+  Result := DoMapObjectInEntity(results, entity, classInfo);
 end;
 
 procedure TAbstractSession.RegisterNonGenericRowMapper(typeInfo: PTypeInfo;
