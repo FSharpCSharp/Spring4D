@@ -52,7 +52,6 @@ type
     fCommand: TUpdateCommand;
     fColumns: IList<ColumnAttribute>;
     fEntityMap: TEntityMap;
-    fEntityCache: TEntityData;
   protected
     function GetCommand: TDMLCommand; override;
     function TryIncrementVersionFor(AEntity: TObject): Boolean; virtual;
@@ -104,7 +103,7 @@ var
 begin
   Assert(Assigned(entity));
 
-  if fEntityCache.HasVersionColumn and not TryIncrementVersionFor(entity) then
+  if EntityData.HasVersionColumn and not TryIncrementVersionFor(entity) then
     raise EORMOptimisticLockException.Create(entity);
 
   LStmt := Connection.CreateStatement;
@@ -113,14 +112,14 @@ begin
   fColumns.Clear;
   if fEntityMap.IsMapped(entity) then
   begin
-    fColumns := fEntityMap.GetChangedMembers(entity, fEntityCache);
+    fColumns := fEntityMap.GetChangedMembers(entity, EntityData);
     if HasChangedVersionColumnOnly then
       Exit;
     fCommand.SetCommandFieldsFromColumns(fColumns);
     LSql := Generator.GenerateUpdate(fCommand);
   end
   else
-    fColumns.AddRange(fEntityCache.Columns);
+    fColumns.AddRange(EntityData.Columns);
 
   if fCommand.UpdateFields.IsEmpty then
     Exit;
@@ -156,9 +155,9 @@ var
   LQueryMetadata: TQueryMetadata;
 begin
   LStatement := Connection.CreateStatement;
-  LVersionValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.VersionColumn.MemberName);
-  LPKValue := TRttiExplorer.GetMemberValue(AEntity, fEntityCache.PrimaryKeyColumn.MemberName);
-  LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, fEntityCache.VersionColumn,
+  LVersionValue := TRttiExplorer.GetMemberValue(AEntity, EntityData.VersionColumn.MemberName);
+  LPKValue := TRttiExplorer.GetMemberValue(AEntity, EntityData.PrimaryKeyColumn.MemberName);
+  LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, EntityData.VersionColumn,
     TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
   LQueryMetadata.QueryOperation := ctUpdateVersion;  
   LQueryMetadata.TableName := fCommand.Table.Name;
@@ -166,25 +165,24 @@ begin
 
   Result := (LStatement.Execute > 0);
   if Result then
-    TRttiExplorer.SetMemberValueSimple(AEntity, fEntityCache.VersionColumn.MemberName, LVersionValue.AsInteger + 1);
+    TRttiExplorer.SetMemberValueSimple(AEntity, EntityData.VersionColumn.MemberName, LVersionValue.AsInteger + 1);
 end;
 
 procedure TUpdateExecutor.Build(entityClass: TClass);
 var
   LAtrTable: TableAttribute;
 begin
-  inherited EntityClass := entityClass;
-  fEntityCache := TEntityCache.Get(entityClass);
-  LAtrTable := fEntityCache.EntityTable;
+  inherited Build(entityClass);
+  LAtrTable := EntityData.EntityTable;
 
   if not Assigned(LAtrTable) then
     raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
   fTable.SetFromAttribute(LAtrTable);
   fColumns.Clear;
-  fColumns.AddRange(fEntityCache.Columns);
+  fColumns.AddRange(EntityData.Columns);
 
-  fCommand.PrimaryKeyColumn := fEntityCache.PrimaryKeyColumn;
+  fCommand.PrimaryKeyColumn := EntityData.PrimaryKeyColumn;
    //add fields to tsqltable
   fCommand.SetCommandFieldsFromColumns(fColumns);
   SQL := Generator.GenerateUpdate(fCommand);

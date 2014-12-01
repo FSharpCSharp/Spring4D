@@ -139,7 +139,9 @@ uses
   TestSimpleRepository in 'TestSimpleRepository.pas',
   TestSQLiteAdapter in 'TestSQLiteAdapter.pas',
   TestEntities in 'TestEntities.pas',
-  ViewTestObjectDataset in 'ViewTestObjectDataset.pas' {frmObjectDatasetTest};
+  ViewTestObjectDataset in 'ViewTestObjectDataset.pas' {frmObjectDatasetTest},
+  Spring.Persistence.Core.EntityWrapper in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityWrapper.pas',
+  TestEntityWrapper in 'TestEntityWrapper.pas';
 
 begin
   Application.Initialize;

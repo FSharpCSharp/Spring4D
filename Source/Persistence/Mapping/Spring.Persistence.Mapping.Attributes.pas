@@ -105,6 +105,7 @@ type
     fMemberKind: TMemberKind;
     fMemberName: string;
     fEntityType: PTypeInfo;
+    fRttiMember: TRttiMember;
     function GetBaseEntityClass: TClass;
     function GetMemberType: PTypeInfo;
   public
@@ -113,6 +114,7 @@ type
     property MemberKind: TMemberKind read fMemberKind write fMemberKind;
     property MemberName: string read fMemberName write fMemberName;
     property MemberType: PTypeInfo read GetMemberType;
+    property RttiMember: TRttiMember read FRttiMember write FRttiMember;
   end;
 
   {$REGION 'Documentation'}
@@ -320,6 +322,7 @@ type
     ColumnName: string;
     Properties: TColumnProperties;
     IsLazy: Boolean;
+    ColumnAttr: ColumnAttribute;
   public
     function IsPrimaryKey: Boolean;
   end;

@@ -180,6 +180,8 @@
         <DCCReference Include="ViewTestObjectDataset.pas">
             <Form>frmObjectDatasetTest</Form>
         </DCCReference>
+        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityWrapper.pas"/>
+        <DCCReference Include="TestEntityWrapper.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

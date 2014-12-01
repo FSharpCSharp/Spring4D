@@ -348,6 +348,7 @@ begin
     LColData.ColumnName := LCol.ColumnName;
     LColData.TypeInfo := LCol.MemberType;
     LColData.MemberName := LCol.MemberName;
+    LColData.ColumnAttr := LCol;
 
     if LCol.IsPrimaryKey then
       fColumnsData.PrimaryKeyColumn := LColData;
@@ -367,15 +368,15 @@ end;
 procedure TEntityData.SetEntityData(entityClass: TClass);
 begin
   fEntityClass := entityClass;
-  TRttiExplorer.GetColumns(entityClass, fColumns);
+  fColumns := TRttiExplorer.GetColumns(entityClass);
   SetColumnsData;
   fPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(entityClass);
   if Assigned(fPrimaryKeyColumn) then
     fPrimaryKeyColumn.IsIdentity := TRttiExplorer.GetColumnIsIdentity(entityClass, fPrimaryKeyColumn);
   fTable := TRttiExplorer.GetTable(entityClass);
-  TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(entityClass, fForeignKeyColumns);
-  TRttiExplorer.GetClassMembers<OneToManyAttribute>(entityClass, fOneToManyColumns);
-  TRttiExplorer.GetClassMembers<ManyToOneAttribute>(entityClass, fManyToOneColumns);
+  fForeignKeyColumns := TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(entityClass);
+  fOneToManyColumns := TRttiExplorer.GetClassMembers<OneToManyAttribute>(entityClass);
+  fManyToOneColumns := TRttiExplorer.GetClassMembers<ManyToOneAttribute>(entityClass);
   fSequence := TRttiExplorer.GetSequence(entityClass);
   fHasInstanceField := TRttiExplorer.HasInstanceField(entityClass);
 end;

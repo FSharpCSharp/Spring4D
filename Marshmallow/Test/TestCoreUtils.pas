@@ -60,7 +60,7 @@ begin
   try
     LRttiMember := TRttiContext.Create.GetType(LEntity.ClassType).GetProperty('MiddleName');
     LFrom := 'Bob';
-    bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LEntity, LResult);
+    bOK := TUtils.TryConvert(LFrom, LRttiMember, LEntity, LResult);
     CheckTrue(bOK);
     CheckEquals('Nullable<System.string>', string(LResult.TypeInfo.Name));
     CheckTrue(LResult.TryAsType<Nullable<string>>(LSpringValue));
@@ -76,7 +76,7 @@ begin
   try
     LRttiMember := TRttiContext.Create.GetType(LOrder.ClassType).GetProperty('Total_Order_Price');
     LFrom := 256.12;
-    bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LOrder, LResult);
+    bOK := TUtils.TryConvert(LFrom, LRttiMember, LOrder, LResult);
     CheckTrue(bOK);
     CheckEquals('Nullable<System.Double>', string(LResult.TypeInfo.Name));
     CheckTrue(LResult.TryAsType<Nullable<Double>>(LValue));
@@ -111,7 +111,7 @@ begin
     sw := TStopwatch.StartNew;
     for i := 1 to LCount do
     begin
-      bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LEntity, LResult);
+      bOK := TUtils.TryConvert(LFrom, LRttiMember, LEntity, LResult);
     end;
 
     sw.Stop;
@@ -124,7 +124,7 @@ begin
     sw := TStopwatch.StartNew;
     for i := 1 to LCount do
     begin
-      bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LEntity, LResult);
+      bOK := TUtils.TryConvert(LFrom, LRttiMember, LEntity, LResult);
     end;
     sw.Stop;
     CheckTrue(bOK);
@@ -139,7 +139,7 @@ begin
     LRttiMember := TRttiContext.Create.GetType(TCustomer_Orders).GetProperty('Total_Order_Price');
     for i := 1 to LCount do
     begin
-      bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LOrder, LResult);
+      bOK := TUtils.TryConvert(LFrom, LRttiMember, LOrder, LResult);
     end;
     sw.Stop;
     CheckTrue(bOK);

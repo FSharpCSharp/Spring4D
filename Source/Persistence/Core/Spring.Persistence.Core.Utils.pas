@@ -47,11 +47,9 @@ type
 
     class function AsVariant(const AValue: TValue): Variant;
     class function FromVariant(const AValue: Variant): TValue;
-    class function ColumnFromVariant(const AValue: Variant; const AColumn: TColumnData; ASession: TObject; AEntity: TObject): TValue;
-
     class function GetResultsetFromVariant(const AValue: Variant): IDBResultset;
 
-    class function TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
+    class function TryConvert(const AFrom: TValue; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
 
     class function TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
     class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
@@ -86,15 +84,11 @@ uses
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Reflection,
-  Spring.Persistence.Core.Session,
   Spring.Persistence.Core.Types,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Reflection.Activator,
   Spring
   ;
-
-type
-  THackedSession = class(TSession);
 
 { TUtils }
 
@@ -209,44 +203,6 @@ var
 begin
   LIntf := AValue;
   Result := LIntf as IDBResultset;
-end;
-
-class function TUtils.ColumnFromVariant(const AValue: Variant;
-  const AColumn: TColumnData; ASession: TObject; AEntity: TObject): TValue;
-var
-  LEmbeddedEntityResultset: IDBResultset;
-  LIntf: IInterface;
-  LNewEntity: TObject;
-  LSession: THackedSession;
-  LEnumMethod: TRttiMethod;
-  LList: TValue;
-begin
-  case VarType(AValue) of
-    varUnknown:
-    begin
-      LEmbeddedEntityResultset := GetResultsetFromVariant(AValue);
-      LSession := THackedSession(ASession);
-      if IsEnumerable(AColumn.TypeInfo, LEnumMethod) then
-      begin
-        LList := TRttiExplorer.GetMemberValueDeep(AEntity, AColumn.MemberName);
-        LIntf := LList.AsInterface;
-        if TRttiExplorer.GetLastGenericArgumentType(AColumn.TypeInfo).IsInstance then
-          LSession.SetInterfaceList(LIntf, LEmbeddedEntityResultset, AColumn.TypeInfo)
-        else
-          LSession.SetSimpleInterfaceList(LIntf, LEmbeddedEntityResultset, AColumn.TypeInfo);
-        Result := TValue.From(LIntf);
-      end
-      else
-      begin
-        LNewEntity := LSession.DoMapEntity(LEmbeddedEntityResultset, AColumn.TypeInfo);
-        Result := TValue.From(LNewEntity, LNewEntity.ClassType);
-      end;
-    end
-    else
-    begin
-      Result := FromVariant(AValue);
-    end;
-  end;
 end;
 
 class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
@@ -571,7 +527,7 @@ begin
     APictureValue := LPic;
 end;
 
-class function TUtils.TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
+class function TUtils.TryConvert(const AFrom: TValue; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
 var
   LTypeInfo: PTypeInfo;
   bFree: Boolean;

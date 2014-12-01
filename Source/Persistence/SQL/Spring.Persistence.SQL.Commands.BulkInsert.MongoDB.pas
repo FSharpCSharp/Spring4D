@@ -68,7 +68,7 @@ begin
     begin
       if CanClientAutogenerateValue then
       begin
-        TRttiExplorer.SetMemberValue(nil, LEntity, GetPrimaryKeyColumn, TValue.FromVariant(Generator.GenerateUniqueId));
+        TRttiExplorer.SetMemberValue(LEntity, GetPrimaryKeyColumn, TValue.FromVariant(Generator.GenerateUniqueId));
       end;
 
       GetInsertCommand.Entity := LEntity;

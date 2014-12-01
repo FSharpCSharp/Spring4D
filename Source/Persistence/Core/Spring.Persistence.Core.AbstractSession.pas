@@ -50,18 +50,18 @@ type
   private
     fRowMappers: IDictionary<PTypeInfo,IRowMapper<TObject>>;
   protected
-    procedure SetEntityFromColumns(const entity: TObject;
-      const columns: TColumnDataList; const resultSet: IDBResultSet); overload; virtual;
+    function ColumnFromVariant(const value: Variant; const column: TColumnData; const entity: TObject): TValue;
+
+    procedure SetEntityFromColumns(const entity: IEntityWrapper; const resultSet: IDBResultSet); overload; virtual;
     procedure SetEntityFromColumns(const entity: TObject;
       const columns: IList<ManyValuedAssociation>; const resultSet: IDBResultSet); overload; virtual;
-    procedure SetLazyColumns(const entity: TObject; const entityData: TEntityData);
-    procedure SetAssociations(const entity: TObject;
-      const resultSet: IDBResultSet; const entityData: TEntityData); virtual;
+    procedure SetLazyColumns(const entity: IEntityWrapper);
+    procedure SetAssociations(const entity: IEntityWrapper;
+      const resultSet: IDBResultSet); virtual;
 
     function DoMapEntity(const resultSet: IDBResultSet; classInfo: PTypeInfo): TObject;
-    procedure DoMapEntityFromColumns(const entityToMap: TObject;
-      const resultSet: IDBResultSet; const columns: TColumnDataList;
-      const entityData: TEntityData); virtual;
+    procedure DoMapEntityFromColumns(const entityToMap: IEntityWrapper;
+      const resultSet: IDBResultSet); virtual;
     function DoMapObjectInEntity(const resultSet: IDBResultSet; const baseEntity: TObject; objectClassInfo: PTypeInfo): TObject;
     /// <summary>
     ///   Retrieves multiple models from the <c>Resultset</c> into Spring <c>
@@ -76,9 +76,9 @@ type
     /// </summary>
     function MapEntityFromResultSetRow(const resultSet: IDBResultSet; classInfo: PTypeInfo): TObject;
 
-    procedure SetInterfaceList(var value: IInterface;
+    procedure SetInterfaceListOfObjects(const value: IObjectList;
       const resultSet: IDBResultSet; classInfo: PTypeInfo);
-    procedure SetSimpleInterfaceList(var value: IInterface;
+    procedure SetInterfaceListOfPrimitives(const value: IInterface;
       const resultSet: IDBResultSet; classInfo: PTypeInfo);
 
     function DoGetLazy(const id: TValue; const entity: TObject;
@@ -87,7 +87,7 @@ type
     function GetLazyValueAsInterface(const id: TValue; const entity: TObject; const column: ColumnAttribute; interfaceType: PTypeInfo): IInterface;
     function GetLazyValueAsObject(const id: TValue; const entity: TObject; const column: ColumnAttribute; classInfo: PTypeInfo): TObject;
 
-    function ResolveLazyValue(const id: TValue; const entity: TObject; columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
+    function ResolveLazyValue(const entity: IEntityWrapper; columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
     function ResolveLazyInterface(const id: TValue; const entity: TObject; lazyKind: TLazyKind; interfaceType: TRttiType; column: ColumnAttribute): TValue;
     function ResolveLazyClass(const id: TValue; const entity: TObject; lazyKind: TLazyKind; classType: TRttiType; column: ColumnAttribute): TValue;
     function ResolveLazyRecord(const id: TValue; const entity: TObject; lazyKind: TLazyKind; recordType: TRttiType; column: ColumnAttribute): TValue;
@@ -127,10 +127,11 @@ implementation
 
 uses
   SysUtils,
+  Variants,
   Spring.Helpers,
   Spring.SystemUtils,
-  Spring.Persistence.Core.CollectionAdapterResolver,
   Spring.Persistence.Core.Consts,
+  Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Relation.ManyToOne,
   Spring.Persistence.Core.Utils,
@@ -139,6 +140,40 @@ uses
 
 
 {$REGION 'TAbstractSession'}
+
+function TAbstractSession.ColumnFromVariant(const value: Variant;
+  const column: TColumnData; const entity: TObject): TValue;
+var
+  LEmbeddedEntityResultset: IDBResultset;
+  LList, LConvertedValue: TValue;
+begin
+  case VarType(value) of
+    varUnknown:
+    begin
+      LEmbeddedEntityResultset := TUtils.GetResultsetFromVariant(value);
+      if TUtils.IsEnumerable(column.TypeInfo) then
+      begin
+        LList := TRttiExplorer.GetMemberValueDeep(entity, column.MemberName);
+        if TRttiExplorer.GetLastGenericArgumentType(column.TypeInfo).IsInstance then
+          SetInterfaceListOfObjects(LList.AsInterface as IObjectList, LEmbeddedEntityResultset, column.TypeInfo)
+        else
+          SetInterfaceListOfPrimitives(LList.AsInterface, LEmbeddedEntityResultset, column.TypeInfo);
+        Result := LList;
+      end
+      else
+      begin
+        Result := DoMapEntity(LEmbeddedEntityResultset, column.TypeInfo);
+      end;
+    end
+    else
+    begin
+      Result := TUtils.FromVariant(value);
+      if not Result.IsEmpty then
+        if TUtils.TryConvert(Result, column.ColumnAttr.RttiMember, entity, LConvertedValue) then
+          Result := LConvertedValue;
+    end;
+  end;
+end;
 
 constructor TAbstractSession.Create(const connection: IDBConnection);
 begin
@@ -194,39 +229,40 @@ end;
 procedure TAbstractSession.DoInsert(const entity, executor: TObject);
 var
   inserter: TInsertExecutor;
+  entityWrapper: IEntityWrapper;
 begin
+  entityWrapper := TEntityWrapper.Create(entity);
   inserter := executor as TInsertExecutor;
   inserter.Execute(entity);
-  SetLazyColumns(entity, TEntityCache.Get(entity.ClassType));
+  SetLazyColumns(entityWrapper);
   AttachEntity(entity);
 end;
 
 function TAbstractSession.DoMapEntity(const resultSet: IDBResultSet; classInfo: PTypeInfo): TObject;
 var
-  entityData: TEntityData;
+  entityWrapper: IEntityWrapper;
 begin
   Result := TActivator.CreateInstance(classInfo).AsObject;
-  entityData := TEntityCache.Get(Result.ClassType);
-  DoMapEntityFromColumns(Result, resultSet, entityData.ColumnsData, entityData);
+  entityWrapper := TEntityWrapper.Create(Result);
+  DoMapEntityFromColumns(entityWrapper, resultSet);
 end;
 
-procedure TAbstractSession.DoMapEntityFromColumns(const entityToMap: TObject;
-  const resultSet: IDBResultSet; const columns: TColumnDataList;
-  const entityData: TEntityData);
-var
-  data: TEntityData;
+procedure TAbstractSession.DoMapEntityFromColumns(const entityToMap: IEntityWrapper;
+  const resultSet: IDBResultSet);
+//var
+//  data: TEntityData;
 begin
-  SetEntityFromColumns(entityToMap, columns, resultSet);
+  SetEntityFromColumns(entityToMap, resultSet);
   //we need to set internal values for the lazy type field
-  data := entityData;
-  if entityToMap.ClassType <> entityData.EntityClass then
-    data := TEntityCache.Get(entityToMap.ClassType);
+  //data := entityData;
+  //if entityToMap.ClassType <> entityData.EntityClass then
+  //  data := TEntityCache.Get(entityToMap.ClassType);
 
-  SetLazyColumns(entityToMap, data);
+  SetLazyColumns(entityToMap{, data});
 
-  SetAssociations(entityToMap, resultSet, data);
+  SetAssociations(entityToMap, resultSet);
 
-  AttachEntity(entityToMap);
+  AttachEntity(entityToMap.GetEntity);
 end;
 
 function TAbstractSession.DoMapObjectInEntity(const resultSet: IDBResultSet; const baseEntity: TObject; objectClassInfo: PTypeInfo): TObject;
@@ -240,7 +276,7 @@ begin
     fieldValue := resultSet.GetFieldValue(0);
     value := TUtils.FromVariant(fieldValue);
     try
-      if TUtils.TryConvert(value, Self, TType.GetType(objectClassInfo), baseEntity, convertedValue) then
+      if TUtils.TryConvert(value, TType.GetType(objectClassInfo), baseEntity, convertedValue) then
         Result := convertedValue.AsObject;         
     finally
       TFinalizer.FinalizeInstance(value);
@@ -251,10 +287,12 @@ end;
 procedure TAbstractSession.DoUpdate(const entity, executor: TObject);
 var
   updater: TUpdateExecutor;
+  entityWrapper: IEntityWrapper;
 begin
+  entityWrapper := TEntityWrapper.Create(entity);
   updater := executor as TUpdateExecutor;
   updater.Execute(entity);
-  SetLazyColumns(entity, TEntityCache.Get(entity.ClassType));
+  SetLazyColumns(entityWrapper);
   AttachEntity(entity);
 end;
 
@@ -309,7 +347,7 @@ begin
     raise EORMUnsupportedType.CreateFmt('Unsupported ORM lazy type: %s', [interfaceType.Name]);
 
   Result := TCollections.CreateObjectList<TObject>(True);
-  SetInterfaceList(Result, results, interfaceType);    
+  SetInterfaceListOfObjects(Result as IObjectList, results, interfaceType);
 end;
 
 function TAbstractSession.GetLazyValueAsObject(const id: TValue;
@@ -417,20 +455,22 @@ begin
   end;
 end;
 
-function TAbstractSession.ResolveLazyValue(const id: TValue; const entity: TObject; columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
+function TAbstractSession.ResolveLazyValue(const entity: IEntityWrapper; columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
 var
   lazyKind: TLazyKind;
   targetType: TRttiType;
   column: ColumnAttribute;
+  id: TValue;
 begin
   lazyKind := TType.GetLazyKind(lazyTypeInfo);
   targetType := TType.GetType(lazyTypeInfo).GetGenericArguments[0];
   Result := TValue.Empty;
-  column := TEntityCache.Get(entity.ClassType).ColumnByMemberName(columnMemberName);
+  column := entity.GetColumnAttribute(columnMemberName);
+  id := entity.GetPrimaryKeyValue;
   case targetType.TypeKind of
-    tkClass: Result := ResolveLazyClass(id, entity, lazyKind, targetType, column);
-    tkInterface: Result := ResolveLazyInterface(id, entity, lazyKind, targetType, column);
-    tkRecord: Result := ResolveLazyRecord(id, entity, lazyKind, targetType, column);
+    tkClass: Result := ResolveLazyClass(id, entity.GetEntity, lazyKind, targetType, column);
+    tkInterface: Result := ResolveLazyInterface(id, entity.GetEntity, lazyKind, targetType, column);
+    tkRecord: Result := ResolveLazyRecord(id, entity.GetEntity, lazyKind, targetType, column);
   else
     raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [targetType.Name]);
   end;
@@ -516,20 +556,22 @@ begin
   Result.Build(entityClass);
 end;
 
-procedure TAbstractSession.SetAssociations(const entity: TObject;
-  const resultSet: IDBResultSet; const entityData: TEntityData);
+procedure TAbstractSession.SetAssociations(const entity: IEntityWrapper;
+  const resultSet: IDBResultSet);
 var
   manyToOne: TManyToOneRelation;
   column: TORMAttribute;
+  entityWrapper: IEntityWrapper;
 begin
-  if entityData.HasManyToOneRelations then
+  if entity.HasManyToOneRelations then
   begin
     manyToOne := TManyToOneRelation.Create;
     try
-      for column in entityData.ManyToOneColumns do
+      for column in entity.GetManyToOneColumns do
       begin
-        manyToOne.SetAssociation(column, entity, resultSet);
-        DoMapEntityFromColumns(manyToOne.NewEntity, resultSet, manyToOne.NewColumns, entityData);
+        manyToOne.SetAssociation(column, entity.GetEntity, resultSet);
+        entityWrapper := TEntityWrapper.Create(manyToOne.NewEntity, manyToOne.NewColumns);
+        DoMapEntityFromColumns(entityWrapper, resultSet);
       end;
     finally
       manyToOne.Free;
@@ -537,8 +579,7 @@ begin
   end;
 end;
 
-procedure TAbstractSession.SetEntityFromColumns(const entity: TObject;
-  const columns: TColumnDataList; const resultSet: IDBResultSet);
+procedure TAbstractSession.SetEntityFromColumns(const entity: IEntityWrapper; const resultSet: IDBResultSet);
 var
   columnData: TColumnData;
   fieldValue: Variant;
@@ -546,39 +587,34 @@ var
   i: Integer;
   columnTypeInfo: PTypeInfo;
 begin
-  if columns.TryGetPrimaryKeyColumn(columnData) then
+  primaryKeyValue := entity.GetPrimaryKeyValue(resultSet);
+  entity.SetPrimaryKeyValue(primaryKeyValue);
+  //TODO: better to iterate through list of ColumnAttributes
+  for i := 0 to entity.GetColumnsToMap.Count - 1 do
   begin
-    try
-      fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
-    except
-      raise EORMColumnNotFound.CreateFmt(EXCEPTION_PRIMARYKEY_NOTFOUND, [columnData.ColumnName]);
-    end;
-    primaryKeyValue := TUtils.FromVariant(fieldValue);
-    TRttiExplorer.SetMemberValue(Self, entity, columnData.MemberName, primaryKeyValue);
-  end;
-
-  for i := 0 to columns.Count - 1 do
-  begin
-    columnData := columns[i];
+    columnData := entity.GetColumnsToMap[i];
     if columnData.IsPrimaryKey then
       Continue;
 
     columnTypeInfo := columnData.TypeInfo;
     if Assigned(columnTypeInfo) and TUtils.IsLazyType(columnTypeInfo) then
     begin
-      //value := primaryKeyValue // assign primary key value to lazy type, later convert procedure will assign it to lazy type's private field
-      value := ResolveLazyValue(primaryKeyValue, entity, columnData.MemberName, columnTypeInfo);
-      TRttiExplorer.SetMemberValueSimple(entity, columnData.MemberName, value);
+      value := ResolveLazyValue(entity, columnData.MemberName, columnTypeInfo);
+      entity.SetColumnValue(columnData.ColumnAttr, value);
+      //TRttiExplorer.SetMemberValueSimple(entity, columnData.MemberName, value);
     end
     else
     begin
+    //  value := entity.GetColumnValue(resultSet, columnData.ColumnName);
+    //  entity.SetColumnValue(columnData.MemberName, value);
       try
         fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
       except
         raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [columnData.ColumnName]);
       end;
-      value := TUtils.ColumnFromVariant(fieldValue, columnData, Self, entity);
-      TRttiExplorer.SetMemberValue(Self, entity, columnData.MemberName, value);
+      value := ColumnFromVariant(fieldValue, columnData, entity.GetEntity);
+      entity.SetColumnValue(columnData.ColumnAttr, value);
+      //TRttiExplorer.SetMemberValue(entity.GetEntity, columnData.MemberName, value);
     end;
   end;
 end;
@@ -594,58 +630,45 @@ begin
   begin
     fieldValue := resultSet.GetFieldValue(column.MappedBy);
     value := TUtils.FromVariant(fieldValue);
-    TRttiExplorer.SetMemberValue(Self, entity, column.MemberName, value);
+    TRttiExplorer.SetMemberValue(entity, column.MemberName, value);
   end;
 end;
 
-procedure TAbstractSession.SetInterfaceList(var value: IInterface;
+procedure TAbstractSession.SetInterfaceListOfObjects(const value: IObjectList;
   const resultSet: IDBResultSet; classInfo: PTypeInfo);
 var
   entityClass: TClass;
-  addMethod: TRttiMethod;
   entity: TObject;
-  list: TValue;
 begin
-  if classInfo.Kind <> tkInterface then
-    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
-
   entityClass := TRttiExplorer.GetEntityClass(classInfo);
-
-  if not TType.GetType(classInfo).Methods.TryGetFirst(addMethod,
-    TMethodFilters.IsNamed(METHODNAME_CONTAINER_ADD)
-    and TMethodFilters.HasParameterTypes([entityClass.ClassInfo])) then
-    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
-
-  list := TValue.From(value);
   while not resultSet.IsEmpty do
   begin
     entity := MapEntityFromResultSetRow(resultSet, entityClass.ClassInfo);
-    addMethod.Invoke(list, [entity]);
+    value.Add(entity);
     resultSet.Next;
   end;
 end;
 
-procedure TAbstractSession.SetLazyColumns(const entity: TObject;
-  const entityData: TEntityData);
+procedure TAbstractSession.SetLazyColumns(const entity: IEntityWrapper);
 var
-  columns: IList<OneToManyAttribute>;
   column: ManyValuedAssociation;
-  value, foreignKeyValue: TValue;
+  value{, foreignKeyValue}: TValue;
 begin
-  if not entityData.HasOneToManyRelations then
+  if not entity.HasOneToManyRelations then
     Exit;
-  columns := entityData.OneToManyColumns;
-  for column in columns do
+  for column in entity.GetOneToManyColumns do
   begin
-    foreignKeyValue := TRttiExplorer.GetMemberValue(entity, column.MappedBy);
-    value := ResolveLazyValue(foreignKeyValue, entity, column.MemberName, column.MemberType);
-    TRttiExplorer.SetMemberValueSimple(entity, column.MemberName, value);
+   // foreignKeyValue := entity.GetColumnValue(column.MappedBy);
+   // value := ResolveLazyValue(foreignKeyValue, entity, column.MemberName, column.MemberType);
+    value := ResolveLazyValue(entity, column.MemberName, column.MemberType);
+    entity.SetColumnValue(column, value);
+//    TRttiExplorer.SetMemberValueSimple(entity, column.MemberName, value);
 //    value := TRttiExplorer.GetMemberValue(entity, column.MappedBy); //get foreign key value
 //    TRttiExplorer.SetMemberValue(Self, entity, column.MemberName, value);
   end;
 end;
 
-procedure TAbstractSession.SetSimpleInterfaceList(var value: IInterface;
+procedure TAbstractSession.SetInterfaceListOfPrimitives(const value: IInterface;
   const resultSet: IDBResultSet; classInfo: PTypeInfo);
 var
   addMethod: TRttiMethod;

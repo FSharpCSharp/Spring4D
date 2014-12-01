@@ -35,6 +35,8 @@ uses
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types,
+  Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Mapping.Attributes,
   Variants;
 
 type
@@ -444,6 +446,28 @@ type
     function GetEnumerator: ICollectionEnumerator<T>;
 
     function IsAddSupported: Boolean;
+  end;
+
+  IEntityWrapper = interface(IInvokable)
+    ['{E6B12BC9-AA98-4F00-851B-8DDC0AADD36A}']
+    function GetEntity: TObject;
+    function GetColumnAttribute(const memberName: String): ColumnAttribute;
+    function GetColumnsToMap: TColumnDataList;
+    function GetColumnValue(const memberName: string): TValue; overload;
+    function GetColumnValue(const column: TORMAttribute): TValue; overload;
+    function GetColumnValue(const resultSet: IDBResultSet; const columnName: string): TValue; overload;
+    function GetPrimaryKeyValue: TValue; overload;
+    function GetPrimaryKeyValue(const resultSet: IDBResultSet): TValue; overload;
+    function GetOneToManyColumns: IList<OneToManyAttribute>;
+    function GetManyToOneColumns: IList<ManyToOneAttribute>;
+
+    procedure SetColumnValue(const columnMemberName: string; const value: TValue); overload;
+    procedure SetColumnValue(const column: TORMAttribute; const value: TValue); overload;
+    procedure SetPrimaryKeyValue(const value: TValue);
+    procedure SetMemberValue(const memberName: string; const value: TValue);
+
+    function HasOneToManyRelations: Boolean;
+    function HasManyToOneRelations: Boolean;
   end;
 
 implementation

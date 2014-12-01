@@ -43,6 +43,8 @@ implementation
 uses
   Spring.Persistence.Adapters.MongoDB,
   Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Core.EntityWrapper,
+  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Commands.BulkInsert.MongoDB;
 
 
@@ -52,6 +54,7 @@ procedure TMongoDBSession.BulkInsert<T>(ACollection: ICollection<T>);
 var
   inserter: TMongoDBBulkInsertExecutor;
   entity: T;
+  entityWrapper: IEntityWrapper;
 begin
   inserter := TMongoDBBulkInsertExecutor.Create;
   try
@@ -60,7 +63,8 @@ begin
     inserter.Build(T);
     for entity in ACollection do
     begin
-      SetLazyColumns(entity, TEntityCache.Get(T));
+      entityWrapper := TEntityWrapper.Create(entity);
+      SetLazyColumns(entityWrapper);
       AttachEntity(entity);
     end;
     inserter.BulkExecute<T>(ACollection);
