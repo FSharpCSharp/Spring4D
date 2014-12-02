@@ -35,7 +35,7 @@ uses
 type
   TMongoDBBulkInsertExecutor = class(TInsertExecutor)
   public
-    procedure BulkExecute<T: class, constructor>(const entities: ICollection<T>);
+    procedure BulkExecute<T: class, constructor>(const entities: IEnumerable<T>);
   end;
 
 implementation
@@ -49,7 +49,7 @@ uses
 
 {$REGION 'TMongoDBBulkInsertExecutor'}
 
-procedure TMongoDBBulkInsertExecutor.BulkExecute<T>(const entities: ICollection<T>);
+procedure TMongoDBBulkInsertExecutor.BulkExecute<T>(const entities: IEnumerable<T>);
 var
   LEntity: T;
   LQuery: string;

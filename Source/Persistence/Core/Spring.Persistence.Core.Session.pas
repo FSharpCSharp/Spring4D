@@ -173,7 +173,7 @@ type
     /// <summary>
     ///   Inserts models to the database.
     /// </summary>
-    procedure InsertList<T: class, constructor>(const entities: ICollection<T>);
+    procedure InsertList<T: class, constructor>(const entities: IEnumerable<T>);
 
     /// <summary>
     ///   Checks if given entity is newly created (does not exist in the
@@ -189,7 +189,7 @@ type
     /// <summary>
     ///   Updates multiple models in a database.
     /// </summary>
-    procedure UpdateList<T: class, constructor>(const entities: ICollection<T>);
+    procedure UpdateList<T: class, constructor>(const entities: IEnumerable<T>);
 
     /// <summary>
     ///   Removes model from the database.
@@ -199,7 +199,7 @@ type
     /// <summary>
     ///   Removes models from the database.
     /// </summary>
-    procedure DeleteList<T: class, constructor>(const entities: ICollection<T>);
+    procedure DeleteList<T: class, constructor>(const entities: IEnumerable<T>);
 
     /// <summary>
     ///   Fetches data in pages. Pages are 1-indexed.
@@ -251,7 +251,7 @@ type
     ///   Saves entities to the database. It will do update or the insert based
     ///   on the entity state.
     /// </summary>
-    procedure SaveList<T: class, constructor>(const entities: ICollection<T>);
+    procedure SaveList<T: class, constructor>(const entities: IEnumerable<T>);
 
     /// <summary>
     /// Registers IRowMapper<T> interface to use when mapping given class into result object
@@ -337,7 +337,7 @@ begin
   end;
 end;
 
-procedure TSession.DeleteList<T>(const entities: ICollection<T>);
+procedure TSession.DeleteList<T>(const entities: IEnumerable<T>);
 var
   deleter: TDeleteExecutor;
   entity: T;
@@ -492,7 +492,7 @@ begin
   end;
 end;
 
-procedure TSession.InsertList<T>(const entities: ICollection<T>);
+procedure TSession.InsertList<T>(const entities: IEnumerable<T>);
 var
   inserter: TInsertExecutor;
   entity: T;
@@ -526,7 +526,6 @@ begin
   Result := TDriverPageAdapter<T>.Create(pager);
   pager.TotalItems := GetQueryCount(sql, params);
   sqlStatement := pager.BuildSQL(sql);
-
   FetchFromQueryText(sqlStatement, params, Result.Items as IObjectList, TClass(T));
 end;
 
@@ -545,7 +544,6 @@ begin
   Result := TDriverPageAdapter<T>.Create(pager);
   pager.TotalItems := GetQueryCount(sql, params);
   sqlStatement := pager.BuildSQL(sql);
-
   FetchFromQueryText(sqlStatement, params, Result.Items as IObjectList, TClass(T));
 end;
 
@@ -568,7 +566,7 @@ begin
   Save(entity);
 end;
 
-procedure TSession.SaveList<T>(const entities: ICollection<T>);
+procedure TSession.SaveList<T>(const entities: IEnumerable<T>);
 var
   inserts, updates: IList<T>;
   entity: T;
@@ -624,7 +622,7 @@ begin
   end;
 end;
 
-procedure TSession.UpdateList<T>(const entities: ICollection<T>);
+procedure TSession.UpdateList<T>(const entities: IEnumerable<T>);
 var
   updater: TUpdateExecutor;
   entity: T;

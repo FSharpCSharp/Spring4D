@@ -49,14 +49,13 @@ type
     fParams: IList<TDBParam>;
     procedure SetConnection(const value: IDBConnection);
   protected
-    function DoCreateParam(const paramField: TSQLParamField;
-      const value: Variant): TDBParam; virtual;
     function CanUpdateParamFieldType(const value: Variant): Boolean; virtual;
 
+    function CreateParam(const paramField: TSQLParamField;
+      const value: Variant): TDBParam; overload; virtual;
     function CreateParam(const entity: TObject;
       const paramField: TSQLParamField): TDBParam; overload; virtual;
-    function CreateParam(const entity: TObject;
-      const attribute: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
+
     function GetCommand: TDMLCommand; virtual; abstract;
   public
     constructor Create; virtual;
@@ -115,39 +114,6 @@ begin
 end;
 
 function TAbstractCommandExecutor.CreateParam(const entity: TObject;
-  const attribute: ForeignJoinColumnAttribute): TDBParam;
-var
-  LVal, LRes: TValue;
-  bFree: Boolean;
-begin
-  bFree := False;
-  Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(attribute.Name);
-  LVal := TRttiExplorer.GetMemberValue(entity, attribute.ReferencedColumnName);
-  //convert/serialize objects to stream
-  if LVal.IsObject then
-  begin
-    if LVal.TryConvert(TypeInfo(TStream), LRes, bFree) then
-    begin
-      LVal := LRes.AsObject;
-    end;
-  end;
-  Result.Value := TUtils.AsVariant(LVal);
-
-  if CanUpdateParamFieldType(Result.Value) then
-  begin
-    Result.SetParamTypeFromTypeInfo
-      ( TRttiExplorer.GetMemberTypeInfo(entity.ClassType, attribute.ReferencedColumnName)
-      );
-  end;
-
-  if bFree then
-  begin
-    FreeValueObject(LVal);
-  end;
-end;
-
-function TAbstractCommandExecutor.CreateParam(const entity: TObject;
   const paramField: TSQLParamField): TDBParam;
 var
   LVal, LRes: TValue;
@@ -169,7 +135,7 @@ begin
     FreeValueObject(LVal);
 end;
 
-function TAbstractCommandExecutor.DoCreateParam(
+function TAbstractCommandExecutor.CreateParam(
   const paramField: TSQLParamField; const value: Variant): TDBParam;
 begin
   Result := TDBParam.Create;

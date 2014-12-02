@@ -284,20 +284,20 @@ begin
     begin
       fRepository.Insert(Args[1].AsType<T>);
     end);
-  RegisterMethod(Format('procedure Insert(const entities: ICollection<%s>)', [fQualifiedTypeName]),
+  RegisterMethod(Format('procedure Insert(const entities: IEnumerable<%s>)', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
-      fRepository.Insert(Args[1].AsInterface as ICollection<T>);
+      fRepository.Insert(Args[1].AsInterface as IEnumerable<T>);
     end);
   RegisterMethod(Format('function Save(const entity: %0:S): %0:S', [fTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       Result := fRepository.Save(Args[1].AsType<T>);
     end);
-  RegisterMethod(Format('function Save(const entities: ICollection<%0:S>): ICollection<%0:S>', [fQualifiedTypeName]),
+  RegisterMethod(Format('function Save(const entities: IEnumerable<%0:S>): IEnumerable<%0:S>', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
-      Result := TValue.From<ICollection<T>>(fRepository.Save(Args[1].AsInterface as ICollection<T>));
+      Result := TValue.From<IEnumerable<T>>(fRepository.Save(Args[1].AsInterface as IEnumerable<T>));
     end);
   RegisterMethod(Format('procedure SaveCascade(const entity: %s)', [fTypeName]),
     function(const Args: TArray<TValue>): TValue
@@ -309,10 +309,10 @@ begin
     begin
       fRepository.Delete(Args[1].AsType<T>);
     end);
-  RegisterMethod(Format('procedure Delete(const entities: ICollection<%s>)', [fQualifiedTypeName]),
+  RegisterMethod(Format('procedure Delete(const entities: IEnumerable<%s>)', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
-      fRepository.Delete(Args[1].AsInterface as ICollection<T>);
+      fRepository.Delete(Args[1].AsInterface as IEnumerable<T>);
     end);
   RegisterMethod('procedure DeleteAll',
     function(const Args: TArray<TValue>): TValue

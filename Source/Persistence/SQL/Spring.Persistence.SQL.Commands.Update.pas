@@ -125,10 +125,6 @@ begin
 
   fCommand.Entity := entity;
   LSql := Generator.GenerateUpdate(fCommand);
-  //NoSQL db generators can't prebuild query without entity object, so they return empty string.
- // if (LSql = '') then
-  //  LSql := Generator.GenerateUpdate(fCommand);
-
   if (LSql = '') then
     raise EORMCannotGenerateQueryStatement.Create(entity);
 

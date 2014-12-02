@@ -359,7 +359,7 @@ type
     /// <summary>
     ///   Inserts models to the database.
     /// </summary>
-    procedure Insert(const entities: ICollection<T>); overload;
+    procedure Insert(const entities: IEnumerable<T>); overload;
 
     /// <summary>
     ///   Saves the entity to the database. It will do update or the insert
@@ -371,7 +371,7 @@ type
     ///   Saves entities to the database. It will do update or the insert based
     ///   on the entity state.
     /// </summary>
-    function Save(const entities: ICollection<T>): ICollection<T>; overload;
+    function Save(const entities: IEnumerable<T>): IEnumerable<T>; overload;
 
     /// <summary>
     ///   Saves the entity and all entities it contains to the database. It
@@ -399,7 +399,7 @@ type
     /// <summary>
     ///   Removes entities from the database.
     /// </summary>
-    procedure Delete(const entities: ICollection<T>); overload;
+    procedure Delete(const entities: IEnumerable<T>); overload;
 
     /// <summary>
     ///   Deletes all entities managed by the repository.

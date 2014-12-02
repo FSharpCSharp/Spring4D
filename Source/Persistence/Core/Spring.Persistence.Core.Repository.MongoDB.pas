@@ -39,7 +39,7 @@ type
   private
     fSession: TMongoDBSession;
   public
-    procedure Insert(const entities: ICollection<T>); overload; override;
+    procedure Insert(const entities: IEnumerable<T>); overload; override;
     function Query(const query: string;
       const params: array of const): IList<T>; override;
   public
@@ -60,7 +60,7 @@ begin
   fSession := session as TMongoDBSession;
 end;
 
-procedure TMongoDBRepository<T, TID>.Insert(const entities: ICollection<T>);
+procedure TMongoDBRepository<T, TID>.Insert(const entities: IEnumerable<T>);
 begin
   fSession.BulkInsert<T>(entities);
 end;

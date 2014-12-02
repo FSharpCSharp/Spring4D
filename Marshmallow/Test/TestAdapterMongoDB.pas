@@ -1338,7 +1338,7 @@ end;
 procedure TestMongoProxyRepository.DefaultMethod_SaveList;
 var
   LKeys: IList<TMongoEntity>;
-  LSavedKeys: ICollection<TMongoEntity>;
+  LSavedKeys: IEnumerable<TMongoEntity>;
   LModel: TMongoEntity;
 begin
   LKeys := TCollections.CreateObjectList<TMongoEntity>();

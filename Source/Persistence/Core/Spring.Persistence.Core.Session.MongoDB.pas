@@ -35,7 +35,7 @@ uses
 type
   TMongoDBSession = class(TSession)
   public
-    procedure BulkInsert<T: class, constructor>(ACollection: ICollection<T>);
+    procedure BulkInsert<T: class, constructor>(ACollection: IEnumerable<T>);
   end;
 
 implementation
@@ -50,7 +50,7 @@ uses
 
 {$REGION 'TMongoDBSession'}
 
-procedure TMongoDBSession.BulkInsert<T>(ACollection: ICollection<T>);
+procedure TMongoDBSession.BulkInsert<T>(ACollection: IEnumerable<T>);
 var
   inserter: TMongoDBBulkInsertExecutor;
   entity: T;

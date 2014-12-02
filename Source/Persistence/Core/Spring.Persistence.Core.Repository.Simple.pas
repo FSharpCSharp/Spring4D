@@ -50,14 +50,14 @@ type
     function FindAll: IList<T>; virtual;
 
     function Save(const entity: T): T; overload; virtual;
-    function Save(const entities: ICollection<T>): ICollection<T>; overload; virtual;
+    function Save(const entities: IEnumerable<T>): IEnumerable<T>; overload; virtual;
     procedure SaveCascade(const entity: T); virtual;
 
     procedure Insert(const entity: T); overload; virtual;
-    procedure Insert(const entities: ICollection<T>); overload; virtual;
+    procedure Insert(const entities: IEnumerable<T>); overload; virtual;
 
     procedure Delete(const entity: T); overload; virtual;
-    procedure Delete(const entities: ICollection<T>); overload; virtual;
+    procedure Delete(const entities: IEnumerable<T>); overload; virtual;
     procedure DeleteAll;
 
     function Page(page, itemsPerPage: Integer): IDBPage<T>; virtual;
@@ -96,7 +96,7 @@ begin
   fSession.Delete(entity);
 end;
 
-procedure TSimpleRepository<T, TID>.Delete(const entities: ICollection<T>);
+procedure TSimpleRepository<T, TID>.Delete(const entities: IEnumerable<T>);
 var
   transaction: IDBTransaction;
 begin
@@ -157,7 +157,7 @@ begin
   fSession.Insert(entity);
 end;
 
-procedure TSimpleRepository<T, TID>.Insert(const entities: ICollection<T>);
+procedure TSimpleRepository<T, TID>.Insert(const entities: IEnumerable<T>);
 var
   transaction: IDBTransaction;
 begin
@@ -186,7 +186,7 @@ begin
   transaction.Commit;
 end;
 
-function TSimpleRepository<T, TID>.Save(const entities: ICollection<T>): ICollection<T>;
+function TSimpleRepository<T, TID>.Save(const entities: IEnumerable<T>): IEnumerable<T>;
 var
   transaction: IDBTransaction;
 begin

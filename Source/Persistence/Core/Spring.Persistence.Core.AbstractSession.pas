@@ -251,11 +251,8 @@ procedure TAbstractSession.DoMapEntityFromColumns(const entityToMap: IEntityWrap
   const resultSet: IDBResultSet);
 begin
   SetEntityFromColumns(entityToMap, resultSet);
-
   SetLazyColumns(entityToMap);
-
   SetAssociations(entityToMap, resultSet);
-
   AttachEntity(entityToMap.GetEntity);
 end;
 
@@ -577,12 +574,11 @@ procedure TAbstractSession.SetEntityFromColumns(const entity: IEntityWrapper; co
 var
   columnData: TColumnData;
   fieldValue: Variant;
-  primaryKeyValue, value: TValue;
+  value: TValue;
   i: Integer;
   columnTypeInfo: PTypeInfo;
 begin
-  primaryKeyValue := entity.GetPrimaryKeyValueFrom(resultSet);
-  entity.SetPrimaryKeyValue(primaryKeyValue);
+  entity.SetPrimaryKeyValue(entity.GetPrimaryKeyValueFrom(resultSet));
   for i := 0 to entity.GetColumnsToMap.Count - 1 do
   begin
     columnData := entity.GetColumnsToMap[i];
@@ -590,15 +586,13 @@ begin
       Continue;
 
     columnTypeInfo := columnData.TypeInfo;
-    if Assigned(columnTypeInfo) and TUtils.IsLazyType(columnTypeInfo) then
+    if TType.IsLazy(columnTypeInfo) then
     begin
       value := ResolveLazyValue(entity, columnData.MemberName, columnTypeInfo);
       entity.SetColumnValue(columnData.ColumnAttr, value);
     end
     else
     begin
-    //  value := entity.GetColumnValueFrom(resultSet, columnData.ColumnName);
-    //  entity.SetColumnValue(columnData.MemberName, value);
       try
         fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
       except

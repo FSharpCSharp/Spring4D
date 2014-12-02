@@ -131,7 +131,7 @@ begin
 
   for LWhereField in fCommand.WhereFields do
   begin
-    LParam := DoCreateParam(LWhereField, TUtils.AsVariant(fID));
+    LParam := CreateParam(LWhereField, TUtils.AsVariant(fID));
     SQLParameters.Add(LParam);
   end;
 end;

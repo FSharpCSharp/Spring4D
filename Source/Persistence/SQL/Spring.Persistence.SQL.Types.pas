@@ -112,7 +112,7 @@ type
     FParamName: string;
   public
     constructor Create(const AFieldname: string; ATable: TSQLTable;
-       AColumn: ColumnAttribute; const AParamName: string); virtual;
+       AColumn: ColumnAttribute; const AParamName: string); reintroduce; virtual;
 
     property ParamName: string read FParamName write FParamName;
   end;

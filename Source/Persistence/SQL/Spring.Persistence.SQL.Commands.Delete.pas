@@ -114,7 +114,7 @@ begin
 
   for LWhereField in fCommand.WhereFields do
   begin
-    LParam := DoCreateParam(LWhereField, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
+    LParam := CreateParam(LWhereField, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
     SQLParameters.Add(LParam);
   end;
 end;
