@@ -51,7 +51,7 @@ type
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
-    procedure Execute(const entity: TObject); override;
+    procedure Execute(const entity: TObject);
     procedure CreateForeignKeys(const entity: TClass);
   end;
 

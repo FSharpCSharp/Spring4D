@@ -108,7 +108,7 @@ type
   /// </summary>
   TInsertCommand = class(TDMLCommand)
   private
-    FInsertFields: IList<TSQLField>;
+    FInsertFields: IList<TSQLInsertField>;
     FSequence: SequenceAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
@@ -116,7 +116,7 @@ type
 
     procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
 
-    property InsertFields: IList<TSQLField> read FInsertFields;
+    property InsertFields: IList<TSQLInsertField> read FInsertFields;
     property Sequence: SequenceAttribute read FSequence write FSequence;
   end;
 
@@ -125,7 +125,7 @@ type
   /// </summary>
   TUpdateCommand = class(TWhereCommand)
   private
-    FUpdateFields: IList<TSQLField>;
+    FUpdateFields: IList<TSQLUpdateField>;
     FPrimaryKeyColumn: ColumnAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
@@ -133,7 +133,7 @@ type
     procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
 
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
-    property UpdateFields: IList<TSQLField> read FUpdateFields;
+    property UpdateFields: IList<TSQLUpdateField> read FUpdateFields;
   end;
 
   /// <summary>
@@ -331,8 +331,8 @@ begin
   if not Assigned(FForeignColumn) then
     Exit;
 
-  LWhereField := TSQLWhereField.Create(FForeignColumn.Name, FTable);
-  LWhereField.ParamName := GetAndIncParameterName(FForeignColumn.Name);
+  LWhereField := TSQLWhereField.Create(FForeignColumn.Name, FTable, nil,
+    GetAndIncParameterName(FForeignColumn.Name));
   WhereFields.Add(LWhereField);
 end;
 
@@ -343,8 +343,8 @@ begin
   FForeignColumn := nil;
   if Assigned(FPrimaryKeyColumn) then
   begin
-    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.ColumnName, FTable);
-    LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.ColumnName);
+    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.ColumnName, FTable,
+      FPrimaryKeyColumn, GetAndIncParameterName(FPrimaryKeyColumn.ColumnName));
     WhereFields.Add(LWhereField);
   end;
 end;
@@ -373,7 +373,7 @@ end;
 constructor TInsertCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
-  FInsertFields := TCollections.CreateObjectList<TSQLField>;
+  FInsertFields := TCollections.CreateObjectList<TSQLInsertField>;
   FSequence := nil;
 end;
 
@@ -384,7 +384,7 @@ end;
 
 procedure TInsertCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
 var
-  LField: TSQLField;
+  LField: TSQLInsertField;
   LColumn: ColumnAttribute;
 begin
   Assert(Assigned(AColumns), 'AColumns not assigned');
@@ -395,7 +395,8 @@ begin
   begin
     if (LColumn.CanInsert) then  //fixes #22
     begin
-      LField := TSQLField.Create(LColumn.ColumnName, FTable);
+      LField := TSQLInsertField.Create(LColumn.ColumnName, FTable, LColumn,
+        GetAndIncParameterName(LColumn.ColumnName));
       FInsertFields.Add(LField);
     end;
   end;
@@ -406,13 +407,13 @@ end;
 constructor TUpdateCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
-  FUpdateFields := TCollections.CreateObjectList<TSQLField>;
+  FUpdateFields := TCollections.CreateObjectList<TSQLUpdateField>;
   FPrimaryKeyColumn := nil;
 end;
 
 procedure TUpdateCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
 var
-  LField: TSQLField;
+  LField: TSQLUpdateField;
   LWhereField: TSQLWhereField;
   LColumn: ColumnAttribute;
 begin
@@ -425,7 +426,8 @@ begin
   begin
     if (LColumn.CanUpdate) then
     begin
-      LField := TSQLField.Create(LColumn.ColumnName, FTable);
+      LField := TSQLUpdateField.Create(LColumn.ColumnName, FTable, LColumn,
+        GetAndIncParameterName(LColumn.ColumnName));
       FUpdateFields.Add(LField);
     end;
   end;
@@ -435,6 +437,7 @@ begin
   begin
     LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.ColumnName, FTable);
     LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.ColumnName);
+    LWhereField.Column := FPrimaryKeyColumn;
     WhereFields.Add(LWhereField);
   end;
 end;

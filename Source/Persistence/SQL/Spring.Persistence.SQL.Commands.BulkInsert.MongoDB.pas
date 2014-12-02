@@ -68,12 +68,12 @@ begin
     begin
       if CanClientAutogenerateValue then
       begin
-        TRttiExplorer.SetMemberValue(LEntity, GetPrimaryKeyColumn, TValue.FromVariant(Generator.GenerateUniqueId));
+        TRttiExplorer.SetMemberValue(LEntity, EntityData.PrimaryKeyColumn, TValue.FromVariant(Generator.GenerateUniqueId));
       end;
 
-      GetInsertCommand.Entity := LEntity;
+      InsertCommand.Entity := LEntity;
       Command.Entity := LEntity;
-      LQuery := Generator.GenerateInsert(GetInsertCommand);
+      LQuery := Generator.GenerateInsert(InsertCommand);
       LStatement.SetSQLCommand(LQuery);
       if (LCollection = '') then
         LCollection := LStatement.GetFullCollectionName;

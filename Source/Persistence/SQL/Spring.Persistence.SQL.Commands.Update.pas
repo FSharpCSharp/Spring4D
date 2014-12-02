@@ -63,7 +63,7 @@ type
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
 
-    procedure Execute(const entity: TObject); override;
+    procedure Execute(const entity: TObject);
 
     property EntityMap: TEntityMap read fEntityMap write fEntityMap;
   end;
@@ -116,22 +116,23 @@ begin
     if HasChangedVersionColumnOnly then
       Exit;
     fCommand.SetCommandFieldsFromColumns(fColumns);
-    LSql := Generator.GenerateUpdate(fCommand);
   end
   else
     fColumns.AddRange(EntityData.Columns);
 
   if fCommand.UpdateFields.IsEmpty then
     Exit;
+
   fCommand.Entity := entity;
+  LSql := Generator.GenerateUpdate(fCommand);
   //NoSQL db generators can't prebuild query without entity object, so they return empty string.
-  if (LSql = '') then
-    LSql := Generator.GenerateUpdate(fCommand);
+ // if (LSql = '') then
+  //  LSql := Generator.GenerateUpdate(fCommand);
 
   if (LSql = '') then
     raise EORMCannotGenerateQueryStatement.Create(entity);
 
-  LStmt.SetSQLCommand(LSql);    
+  LStmt.SetSQLCommand(LSql);
   BuildParams(entity);
   LStmt.SetParams(SQLParameters);
   LStmt.Execute;
@@ -191,22 +192,20 @@ end;
 procedure TUpdateExecutor.BuildParams(const entity: TObject);
 var
   LParam: TDBParam;
-  LColumn: ColumnAttribute;
+  LUpdateField: TSQLUpdateField;
+  LWhereField: TSQLWhereField;
 begin
   inherited BuildParams(entity);
 
-  for LColumn in fColumns do
+  for LUpdateField in fCommand.UpdateFields do
   begin
-    if LColumn.CanUpdate then
-    begin
-      LParam := CreateParam(entity, LColumn);
-      SQLParameters.Add(LParam);
-    end;
+    LParam := CreateParam(entity, LUpdateField);
+    SQLParameters.Add(LParam);
   end;
 
-  if Assigned(fCommand.PrimaryKeyColumn) then
+  for LWhereField in fCommand.WhereFields do
   begin
-    LParam := CreateParam(entity, fCommand.PrimaryKeyColumn);
+    LParam := CreateParam(entity, LWhereField);
     SQLParameters.Add(LParam);
   end;
 end;

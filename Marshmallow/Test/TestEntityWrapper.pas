@@ -130,8 +130,8 @@ end;
 
 procedure TTestEntityWrapper.When_ResultSet_HasColumns_GetColumnValue_Returns_CorrectValue;
 begin
-  CheckEquals('Foo', fSut.GetColumnValue(GetCustomerResultSet(1, 'Foo', 10), CUSTNAME).AsString, 'Name should be Foo');
-  CheckEquals(10, fSut.GetColumnValue(GetCustomerResultSet(1, 'Foo', 10), CUSTAGE).AsInteger, 'Age should be 10');
+  CheckEquals('Foo', fSut.GetColumnValueFrom(GetCustomerResultSet(1, 'Foo', 10), CUSTNAME).AsString, 'Name should be Foo');
+  CheckEquals(10, fSut.GetColumnValueFrom(GetCustomerResultSet(1, 'Foo', 10), CUSTAGE).AsInteger, 'Age should be 10');
 end;
 
 procedure TTestEntityWrapper.When_ResultSet_HasNoColumns_GetColumnValue_ThrowsException;
@@ -139,7 +139,7 @@ begin
   CheckException(EORMColumnNotFound,
     procedure
     begin
-      fSut.GetColumnValue(GetEmptyResultSet, CUSTNAME);
+      fSut.GetColumnValueFrom(GetEmptyResultSet, CUSTNAME);
     end);
 end;
 
@@ -148,13 +148,13 @@ begin
   CheckException(EORMPrimaryKeyColumnNotFound,
     procedure
     begin
-      fSut.GetPrimaryKeyValue(GetCustomerResultSet(Null, 'Foo', 10));
+      fSut.GetPrimaryKeyValueFrom(GetCustomerResultSet(Null, 'Foo', 10));
     end);
 end;
 
 procedure TTestEntityWrapper.When_ResultSet_Has_PrimaryKey_GetPrimaryKey;
 begin
-  CheckEquals(1, fSut.GetPrimaryKeyValue(GetCustomerResultSet(1, 'Foo', 10)).AsInteger);
+  CheckEquals(1, fSut.GetPrimaryKeyValueFrom(GetCustomerResultSet(1, 'Foo', 10)).AsInteger);
 end;
 
 { TMockResultSet }

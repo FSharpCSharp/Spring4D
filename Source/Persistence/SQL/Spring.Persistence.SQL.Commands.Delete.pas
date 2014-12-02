@@ -55,7 +55,7 @@ type
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
 
-    procedure Execute(const entity: TObject); override;
+    procedure Execute(const entity: TObject);
   end;
 
   TDeleteByValueExecutor = class(TDeleteExecutor)
@@ -64,7 +64,7 @@ type
   protected
     function GetPrimaryKeyValue(const entity: TObject): TValue; override;
   public
-    procedure Execute(const entity: TObject); override;
+    procedure Execute(const entity: TObject);
 
     property PrimaryKeyValue: TValue read fPrimaryKeyValue write fPrimaryKeyValue;
   end;
@@ -107,14 +107,16 @@ end;
 procedure TDeleteExecutor.BuildParams(const entity: TObject);
 var
   LParam: TDBParam;
+  LWhereField: TSQLWhereField;
 begin
   Assert(EntityData.PrimaryKeyColumn <> nil);
   inherited BuildParams(entity);
 
-  LParam := TDBParam.Create(
-    Command.GetExistingParameterName(EntityData.PrimaryKeyColumn.ColumnName),
-    TUtils.AsVariant(GetPrimaryKeyValue(entity)));
-  SQLParameters.Add(LParam);
+  for LWhereField in fCommand.WhereFields do
+  begin
+    LParam := DoCreateParam(LWhereField, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
+    SQLParameters.Add(LParam);
+  end;
 end;
 
 procedure TDeleteExecutor.Execute(const entity: TObject);

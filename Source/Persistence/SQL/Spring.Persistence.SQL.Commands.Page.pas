@@ -52,7 +52,7 @@ type
   public
     procedure Build(entityClass: TClass); override;
     function BuildSQL(const sql: string): string;
-    procedure Execute(const entity: TObject); override;
+    procedure Execute(const entity: TObject);
 
     property Page: Integer read fPage write fPage;
     property ItemsPerPage: Integer read fItemsPerPage write fItemsPerPage;

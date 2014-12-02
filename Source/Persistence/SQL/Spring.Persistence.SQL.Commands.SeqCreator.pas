@@ -50,7 +50,7 @@ type
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
-    procedure Execute(const entity: TObject); override;
+    procedure Execute(const entity: TObject);
     procedure CreateSequence(entityClass: TClass);
   end;
 

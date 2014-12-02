@@ -233,7 +233,7 @@ var
 begin
   entityWrapper := TEntityWrapper.Create(entity);
   inserter := executor as TInsertExecutor;
-  inserter.Execute(entity);
+  inserter.Execute(entityWrapper);
   SetLazyColumns(entityWrapper);
   AttachEntity(entity);
 end;
@@ -249,16 +249,10 @@ end;
 
 procedure TAbstractSession.DoMapEntityFromColumns(const entityToMap: IEntityWrapper;
   const resultSet: IDBResultSet);
-//var
-//  data: TEntityData;
 begin
   SetEntityFromColumns(entityToMap, resultSet);
-  //we need to set internal values for the lazy type field
-  //data := entityData;
-  //if entityToMap.ClassType <> entityData.EntityClass then
-  //  data := TEntityCache.Get(entityToMap.ClassType);
 
-  SetLazyColumns(entityToMap{, data});
+  SetLazyColumns(entityToMap);
 
   SetAssociations(entityToMap, resultSet);
 
@@ -287,12 +281,12 @@ end;
 procedure TAbstractSession.DoUpdate(const entity, executor: TObject);
 var
   updater: TUpdateExecutor;
-  entityWrapper: IEntityWrapper;
+  //entityWrapper: IEntityWrapper;
 begin
-  entityWrapper := TEntityWrapper.Create(entity);
+  //entityWrapper := TEntityWrapper.Create(entity);
   updater := executor as TUpdateExecutor;
   updater.Execute(entity);
-  SetLazyColumns(entityWrapper);
+  //SetLazyColumns(entityWrapper);  //TODO: test lazy columns after insert or update
   AttachEntity(entity);
 end;
 
@@ -587,9 +581,8 @@ var
   i: Integer;
   columnTypeInfo: PTypeInfo;
 begin
-  primaryKeyValue := entity.GetPrimaryKeyValue(resultSet);
+  primaryKeyValue := entity.GetPrimaryKeyValueFrom(resultSet);
   entity.SetPrimaryKeyValue(primaryKeyValue);
-  //TODO: better to iterate through list of ColumnAttributes
   for i := 0 to entity.GetColumnsToMap.Count - 1 do
   begin
     columnData := entity.GetColumnsToMap[i];
@@ -601,11 +594,10 @@ begin
     begin
       value := ResolveLazyValue(entity, columnData.MemberName, columnTypeInfo);
       entity.SetColumnValue(columnData.ColumnAttr, value);
-      //TRttiExplorer.SetMemberValueSimple(entity, columnData.MemberName, value);
     end
     else
     begin
-    //  value := entity.GetColumnValue(resultSet, columnData.ColumnName);
+    //  value := entity.GetColumnValueFrom(resultSet, columnData.ColumnName);
     //  entity.SetColumnValue(columnData.MemberName, value);
       try
         fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
@@ -614,7 +606,6 @@ begin
       end;
       value := ColumnFromVariant(fieldValue, columnData, entity.GetEntity);
       entity.SetColumnValue(columnData.ColumnAttr, value);
-      //TRttiExplorer.SetMemberValue(entity.GetEntity, columnData.MemberName, value);
     end;
   end;
 end;
@@ -652,19 +643,14 @@ end;
 procedure TAbstractSession.SetLazyColumns(const entity: IEntityWrapper);
 var
   column: ManyValuedAssociation;
-  value{, foreignKeyValue}: TValue;
+  value: TValue;
 begin
   if not entity.HasOneToManyRelations then
     Exit;
   for column in entity.GetOneToManyColumns do
   begin
-   // foreignKeyValue := entity.GetColumnValue(column.MappedBy);
-   // value := ResolveLazyValue(foreignKeyValue, entity, column.MemberName, column.MemberType);
     value := ResolveLazyValue(entity, column.MemberName, column.MemberType);
     entity.SetColumnValue(column, value);
-//    TRttiExplorer.SetMemberValueSimple(entity, column.MemberName, value);
-//    value := TRttiExplorer.GetMemberValue(entity, column.MappedBy); //get foreign key value
-//    TRttiExplorer.SetMemberValue(Self, entity, column.MemberName, value);
   end;
 end;
 

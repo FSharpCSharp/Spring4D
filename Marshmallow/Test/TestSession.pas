@@ -114,6 +114,7 @@ function InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Dou
 function InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double): Variant;
 procedure ClearTable(const ATableName: string);
 function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil): Int64;
+function GetValueFromDB(const table, columnName, where: string): Variant;
 
 
 implementation
@@ -245,6 +246,11 @@ end;
 function GetDBValue(const ASql: string): Variant;
 begin
   Result := TestDB.GetUniTableIntf(ASql).Fields[0].Value;
+end;
+
+function GetValueFromDB(const table, columnName, where: string): Variant;
+begin
+  Result := TestDB.GetUniTableIntf(Format('select %s from %s where %s', [columnName, table, where])).Fields[0].Value;
 end;
 
 
@@ -844,6 +850,8 @@ begin
     LForeignCustomer.EMail := 'john@gmail.com';
 
     FManager.Save(LForeignCustomer);
+
+    CheckEquals('John', GetValueFromDB(TBL_PEOPLE, CUSTNAME, CUSTID + '=' + IntToStr(LForeignCustomer.ID)), 'Name is not saved');
 
     LCustomer := FManager.FindOne<TCustomer>(LForeignCustomer.ID);
 

@@ -240,7 +240,7 @@ const
   SQL_INSERT_TEST_WITHOUT_SCHEMA = 'INSERT INTO CUSTOMERS ('+ #13#10 +
     '  "NAME","AGE","HEIGHT")'+ #13#10 +
     '  VALUES ('+ #13#10 +
-    ':NAME2,:AGE2,:HEIGHT2);';
+    ':NAME1,:AGE1,:HEIGHT1);';
 
 procedure TestTAnsiSQLGenerator.TestGenerateInsert;
 var
@@ -251,9 +251,9 @@ begin
   LTable := CreateTestTable;
   LCommand := TInsertCommand.Create(LTable);
   try
-    LCommand.InsertFields.Add(TSQLField.Create('NAME', LTable));
-    LCommand.InsertFields.Add(TSQLField.Create('AGE', LTable));
-    LCommand.InsertFields.Add(TSQLField.Create('HEIGHT', LTable));
+    LCommand.InsertFields.Add(TSQLInsertField.Create('NAME', LTable, nil, ':NAME1'));
+    LCommand.InsertFields.Add(TSQLInsertField.Create('AGE', LTable, nil, ':AGE1'));
+    LCommand.InsertFields.Add(TSQLInsertField.Create('HEIGHT', LTable, nil, ':HEIGHT1'));
 
     ReturnValue := FAnsiSQLGenerator.GenerateInsert(LCommand);
     CheckEqualsString(SQL_INSERT_TEST, ReturnValue);
@@ -293,10 +293,10 @@ begin
   LTable := CreateTestTable;
   LCommand := TUpdateCommand.Create(LTable);
   try
-    LCommand.UpdateFields.Add(TSQLField.Create('NAME', LTable));
-    LCommand.UpdateFields.Add(TSQLField.Create('AGE', LTable));
-    LCommand.UpdateFields.Add(TSQLField.Create('HEIGHT', LTable));
-    LCommand.WhereFields.Add(TSQLWhereField.Create('ID', LTable));
+    LCommand.UpdateFields.Add(TSQLUpdateField.Create('NAME', LTable, nil,':NAME1'));
+    LCommand.UpdateFields.Add(TSQLUpdateField.Create('AGE', LTable, nil, ':AGE1'));
+    LCommand.UpdateFields.Add(TSQLUpdateField.Create('HEIGHT', LTable, nil, ':HEIGHT1'));
+    LCommand.WhereFields.Add(TSQLWhereField.Create('ID', LTable, nil, ':ID1'));
 
     ReturnValue := FAnsiSQLGenerator.GenerateUpdate(LCommand);
     CheckEqualsString(SQL_UPDATE_TEST, ReturnValue);
@@ -319,7 +319,7 @@ begin
   LTable := CreateTestTable;
   LCommand := TDeleteCommand.Create(LTable);
   try
-    LCommand.WhereFields.Add(TSQLWhereField.Create('ID', LTable));
+    LCommand.WhereFields.Add(TSQLWhereField.Create('ID', LTable, nil, ':ID1'));
 
     ReturnValue := FAnsiSQLGenerator.GenerateDelete(LCommand);
     CheckEqualsString(SQL_DELETE_TEST, ReturnValue);

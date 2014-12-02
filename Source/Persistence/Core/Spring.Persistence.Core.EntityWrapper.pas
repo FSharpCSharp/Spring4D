@@ -23,22 +23,19 @@ type
     constructor Create(const entity: TObject; const columnsToMap: TColumnDataList = nil); virtual;
     destructor Destroy; override;
 
-    property Entity: TObject read GetEntity;
-
-    function GetPrimaryKeyValue: TValue; overload;
-    function GetPrimaryKeyValue(const resultSet: IDBResultSet): TValue; overload;
-    procedure SetPrimaryKeyValue(const value: TValue);
+    function GetPrimaryKeyValue: TValue;
+    function GetPrimaryKeyValueFrom(const resultSet: IDBResultSet): TValue;
 
     function GetColumnAttribute(const memberName: String): ColumnAttribute;
     function GetColumnsToMap: TColumnDataList;
     function GetColumnValue(const memberName: string): TValue; overload;
     function GetColumnValue(const column: TORMAttribute): TValue; overload;
-    function GetColumnValue(const resultSet: IDBResultSet; const columnName: string): TValue; overload;
+    function GetColumnValueFrom(const resultSet: IDBResultSet; const columnName: string): TValue;
 
     procedure SetColumnValue(const columnMemberName: string; const value: TValue); overload;
     procedure SetColumnValue(const column: TORMAttribute; const value: TValue); overload;
-
     procedure SetMemberValue(const memberName: string; const value: TValue);
+    procedure SetPrimaryKeyValue(const value: TValue);
 
     function HasOneToManyRelations: Boolean;
     function HasManyToOneRelations: Boolean;
@@ -96,7 +93,7 @@ begin
   Result := fEntityClassData.ColumnByMemberName(memberName).RttiMember.GetValue(fEntity);
 end;
 
-function TEntityWrapper.GetColumnValue(const resultSet: IDBResultSet; const columnName: string): TValue;
+function TEntityWrapper.GetColumnValueFrom(const resultSet: IDBResultSet; const columnName: string): TValue;
 var
   fieldValue: Variant;
 begin
@@ -128,7 +125,7 @@ begin
   Result := fEntityClassData.PrimaryKeyColumn.RttiMember.GetValue(fEntity);
 end;
 
-function TEntityWrapper.GetPrimaryKeyValue(const resultSet: IDBResultSet): TValue;
+function TEntityWrapper.GetPrimaryKeyValueFrom(const resultSet: IDBResultSet): TValue;
 var
   value: Variant;
   columnData: TColumnData;

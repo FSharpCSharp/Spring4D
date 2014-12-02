@@ -58,7 +58,6 @@ type
     constructor Create(const id: TValue; selectColumn: ColumnAttribute); reintroduce; overload;
     destructor Destroy; override;
 
-    procedure Execute(const entity: TObject); override;
     procedure DoExecute; virtual;
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
@@ -121,6 +120,7 @@ procedure TSelectExecutor.BuildParams(const entity: TObject);
 var
   LParam: TDBParam;
   LColumnName: string;
+  LWhereField: TSQLWhereField;
 begin
   inherited BuildParams(entity);
   Assert(not Assigned(entity), 'Entity should not be assigned here');
@@ -129,8 +129,11 @@ begin
   if Assigned(fForeignEntityClass) then
     LColumnName := fCommand.ForeignColumn.Name;
 
-  LParam := DoCreateParam(LColumnName, TUtils.AsVariant(fID));
-  SQLParameters.Add(LParam);
+  for LWhereField in fCommand.WhereFields do
+  begin
+    LParam := DoCreateParam(LWhereField, TUtils.AsVariant(fID));
+    SQLParameters.Add(LParam);
+  end;
 end;
 
 constructor TSelectExecutor.Create(const id: TValue;
@@ -151,11 +154,6 @@ begin
     fCommand.SetFromPrimaryColumn;
 
   SQL := Generator.GenerateSelect(fCommand);
-end;
-
-procedure TSelectExecutor.Execute(const entity: TObject);
-begin
-  // do nothing - possible LSP violation, needs refactoring
 end;
 
 function TSelectExecutor.GetCommand: TDMLCommand;

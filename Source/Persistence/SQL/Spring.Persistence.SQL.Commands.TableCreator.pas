@@ -53,7 +53,7 @@ type
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
-    procedure Execute(const entity: TObject); override;
+    procedure Execute(const entity: TObject);
     procedure CreateTables(entityClass: TClass);
 
     property Table: TSQLTable read fTable;

@@ -49,11 +49,12 @@ type
     fParams: IList<TDBParam>;
     procedure SetConnection(const value: IDBConnection);
   protected
-    function DoCreateParam(const columnName: string;
+    function DoCreateParam(const paramField: TSQLParamField;
       const value: Variant): TDBParam; virtual;
     function CanUpdateParamFieldType(const value: Variant): Boolean; virtual;
+
     function CreateParam(const entity: TObject;
-      const attribute: ColumnAttribute): TDBParam; overload; virtual;
+      const paramField: TSQLParamField): TDBParam; overload; virtual;
     function CreateParam(const entity: TObject;
       const attribute: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
     function GetCommand: TDMLCommand; virtual; abstract;
@@ -63,7 +64,6 @@ type
     function TableExists(const tableName: string): Boolean; virtual;
     procedure FillDbTableColumns(const tableName: string; const columns: IList<string>); virtual;
 
-    procedure Execute(const entity: TObject); virtual; abstract;
     procedure Build(entityClass: TClass); virtual;
     procedure BuildParams(const entity: TObject); virtual;
 
@@ -148,14 +148,14 @@ begin
 end;
 
 function TAbstractCommandExecutor.CreateParam(const entity: TObject;
-  const attribute: ColumnAttribute): TDBParam;
+  const paramField: TSQLParamField): TDBParam;
 var
   LVal, LRes: TValue;
   bFree: Boolean;
 begin
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(attribute.ColumnName);
-  LVal := TRttiExplorer.GetMemberValueDeep(entity, attribute.MemberName);
+  Result.Name := paramField.ParamName;
+  LVal := TRttiExplorer.GetMemberValueDeep(entity, paramField.Column.MemberName);
   //convert/serialize objects to stream. If value is nullable or lazy get it's real value
   if LVal.IsObject and LVal.TryConvert(TypeInfo(TStream), LRes, bFree) then
     LVal := LRes.AsObject;
@@ -163,17 +163,17 @@ begin
   Result.Value := TUtils.AsVariant(LVal);
   if CanUpdateParamFieldType(Result.Value) then
     Result.SetParamTypeFromTypeInfo(TRttiExplorer.GetMemberTypeInfo(
-      attribute.BaseEntityClass, attribute.MemberName));
+      paramField.Column.BaseEntityClass, paramField.Column.MemberName));
 
   if bFree then
     FreeValueObject(LVal);
 end;
 
 function TAbstractCommandExecutor.DoCreateParam(
-  const columnName: string; const value: Variant): TDBParam;
+  const paramField: TSQLParamField; const value: Variant): TDBParam;
 begin
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(columnName);
+  Result.Name := paramField.ParamName;
   Result.Value := value;
 end;
 

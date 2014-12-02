@@ -252,7 +252,7 @@ begin
 
       {TODO -oLinas -cGeneral : implement where operators}
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.GetEscapedFieldname(GetEscapeFieldnameChar), command.GetAndIncParameterName(LWhereField.Fieldname)]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.GetEscapedFieldname(GetEscapeFieldnameChar), LWhereField.ParamName]));
 
       Inc(ix);
     end;
@@ -321,7 +321,7 @@ begin
     end;
 
     sFields := sFields + command.InsertFields[i].GetEscapedFieldname(GetEscapeFieldnameChar);
-    sParams := sParams + command.GetAndIncParameterName(command.InsertFields[i].Fieldname);//  ':' + AInsertCommand.InsertFields[i].Fieldname;
+    sParams := sParams + command.InsertFields[i].ParamName;
   end;
 
   Result := Result + command.Table.Name + ' (' + CRLF + '  ' + sFields + ')' + CRLF +
@@ -368,7 +368,7 @@ end;
 function TAnsiSQLGenerator.GenerateUpdate(const command: TUpdateCommand): string;
 var
   LSqlBuilder: TStringBuilder;
-  LField: TSQLField;
+  LField: TSQLUpdateField;
   LWhereField: TSQLWhereField;
   ix: Integer;
 begin
@@ -390,7 +390,7 @@ begin
       if ix > 0 then
         LSqlBuilder.Append(',');
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LField.GetEscapedFieldname(GetEscapeFieldnameChar), command.GetAndIncParameterName(LField.Fieldname)]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LField.GetEscapedFieldname(GetEscapeFieldnameChar), LField.ParamName]));
       Inc(ix);
     end;
 
@@ -403,7 +403,7 @@ begin
       else
         LSqlBuilder.Append(' AND ');
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.GetEscapedFieldname(GetEscapeFieldnameChar), command.GetAndIncParameterName(LWhereField.Fieldname)]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.GetEscapedFieldname(GetEscapeFieldnameChar), LWhereField.ParamName]));
 
       Inc(ix);
     end;

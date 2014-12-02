@@ -88,6 +88,7 @@ type
     FTable: TSQLTable;
     FFieldname: string;
     FAlias: string;
+    FColumn: ColumnAttribute;
     function GetFieldname: string;
     function GetTable: TSQLTable;
     function GetAlias: string;
@@ -101,8 +102,19 @@ type
     function GetEscapedFieldname(const AEscapeChar: Char): string; virtual;
 
     property Alias: string read GetAlias write SetAlias;
+    property Column: ColumnAttribute read FColumn write FColumn;
     property Fieldname: string read GetFieldname write FFieldname;
     property Table: TSQLTable read GetTable write FTable;
+  end;
+
+  TSQLParamField = class(TSQLField)
+  private
+    FParamName: string;
+  public
+    constructor Create(const AFieldname: string; ATable: TSQLTable;
+       AColumn: ColumnAttribute; const AParamName: string); virtual;
+
+    property ParamName: string read FParamName write FParamName;
   end;
 
   /// <summary>
@@ -112,6 +124,11 @@ type
   TSQLSelectField = class(TSQLField)
 
   end;
+
+  TSQLInsertField = class(TSQLParamField);
+
+  TSQLUpdateField = class(TSQLParamField);
+
 
   /// <summary>
   ///   Represents field of the database table which is used in <c>create table</c>
@@ -191,16 +208,15 @@ type
   ///   Represents field of the database table which is used in <c>where</c>
   ///   clause.
   /// </summary>
-  TSQLWhereField = class(TSQLField)
+  TSQLWhereField = class(TSQLParamField)
   private
     FWhereOperator: TWhereOperator;
     FMatchMode: TMatchMode;
     FLeftSQL: string;
     FRightSQL: string;
-    FParamName: string;
     FParamName2: string;
   public
-    constructor Create(const AFieldname: string; ATable: TSQLTable); overload; override;
+    constructor Create(const AFieldname: string; ATable: TSQLTable); reintroduce; overload;
     constructor Create(const ALeftSQL, ARightSQL: string); reintroduce; overload;
 
     function ToSQLString(const AEscapeChar: Char): string; virtual;
@@ -209,7 +225,6 @@ type
     property WhereOperator: TWhereOperator read FWhereOperator write FWhereOperator;
     property LeftSQL: string read FLeftSQL write FLeftSQL;
     property RightSQL: string read FRightSQL write FRightSQL;
-    property ParamName: string read FParamName write FParamName;
     property ParamName2: string read FParamName2 write FParamName2;
   end;
 
@@ -559,15 +574,14 @@ end;
 
 constructor TSQLWhereField.Create(const AFieldname: string; ATable: TSQLTable);
 begin
-  inherited Create(AFieldname, ATable);
+  inherited Create(AFieldname, ATable, nil, ':' + AFieldname);
   FWhereOperator := woEqual;
   FMatchMode := mmExact;
-  FParamName := ':' + AFieldname;
 end;
 
 constructor TSQLWhereField.Create(const ALeftSQL, ARightSQL: string);
 begin
-  inherited Create('', nil);
+  Create('', nil);
   FWhereOperator := woOr;
   FMatchMode := mmExact;
   FLeftSQL := ALeftSQL;
@@ -583,9 +597,9 @@ begin
     woNot: Result := Format('%s (%s)', [WhereOpNames[WhereOperator], FLeftSQL]);
     woOrEnd, woAndEnd, woNotEnd: Result := '';
     woJunction: Result := Format('(%s)', [FLeftSQL]);
-    woBetween: Result := Format('(%s %s %s AND %s)', [GetFullFieldname(AEscapeChar), WhereOpNames[WhereOperator], FParamName, FParamName2]);
+    woBetween: Result := Format('(%s %s %s AND %s)', [GetFullFieldname(AEscapeChar), WhereOpNames[WhereOperator], ParamName, ParamName2]);
   else
-    Result := GetFullFieldname(AEscapeChar) + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';
+    Result := GetFullFieldname(AEscapeChar) + ' ' + WhereOpNames[WhereOperator] + ' ' + ParamName + ' ';
   end;
 end;
 
@@ -677,6 +691,16 @@ end;
 function TSQLWherePropertyField.ToSQLString(const AEscapeChar: Char): string;
 begin
   Result := Format('%s %s %s', [GetFullLeftFieldname, WhereOpNames[WhereOperator], GetFullRightFieldname]);
+end;
+
+{ TSQLParamField }
+
+constructor TSQLParamField.Create(const AFieldname: string; ATable: TSQLTable;
+  AColumn: ColumnAttribute; const AParamName: string);
+begin
+  inherited Create(AFieldname, ATable);
+  Column := AColumn;
+  ParamName := AParamName;
 end;
 
 end.

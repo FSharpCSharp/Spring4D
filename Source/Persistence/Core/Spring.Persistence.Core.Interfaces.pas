@@ -455,9 +455,9 @@ type
     function GetColumnsToMap: TColumnDataList;
     function GetColumnValue(const memberName: string): TValue; overload;
     function GetColumnValue(const column: TORMAttribute): TValue; overload;
-    function GetColumnValue(const resultSet: IDBResultSet; const columnName: string): TValue; overload;
-    function GetPrimaryKeyValue: TValue; overload;
-    function GetPrimaryKeyValue(const resultSet: IDBResultSet): TValue; overload;
+    function GetColumnValueFrom(const resultSet: IDBResultSet; const columnName: string): TValue;
+    function GetPrimaryKeyValue: TValue;
+    function GetPrimaryKeyValueFrom(const resultSet: IDBResultSet): TValue;
     function GetOneToManyColumns: IList<OneToManyAttribute>;
     function GetManyToOneColumns: IList<ManyToOneAttribute>;
 
