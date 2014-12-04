@@ -218,7 +218,7 @@ type
   ///	  Defines a many-valued association with one-to-many multiplicity.
   ///	</summary>
   {$ENDREGION}
-  OneToManyAttribute = class(ManyValuedAssociation);
+  OneToManyAttribute = class(Association);
 
   {$REGION 'Documentation'}
   ///	<summary>

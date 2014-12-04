@@ -934,32 +934,35 @@ begin
   end;
 end;
 
+function IsAdult(const customer: TCustomer): Boolean;
+begin
+  Result := customer.Age >= 18;
+end;
+
 procedure TestTSession.InsertFromCollection;
 var
-  LCollection: IList<TCustomer>;
+  customers: IList<TCustomer>;
   LCustomer: TCustomer;
   i: Integer;
   LTran: IDBTransaction;
-  LCount: Integer;
 begin
-  LCollection := TCollections.CreateList<TCustomer>(True);
+  customers := TCollections.CreateList<TCustomer>(True);
   for i := 1 to 100 do
   begin
     LCustomer := TCustomer.Create;
     LCustomer.Name := IntToStr(i);
     LCustomer.Age := i;
     LCustomer.LastEdited := EncodeDate(2009, 1, 12);
-    LCollection.Add(LCustomer);
+    customers.Add(LCustomer);
   end;
-
-  CheckEquals(100, LCollection.Count);
-
-  //wrap in the transaction
-  LTran := FManager.Connection.BeginTransaction;
-  FManager.InsertList<TCustomer>(LCollection);
+  LTran := FManager.BeginTransaction;
+  FManager.InsertList<TCustomer>(customers);
   LTran.Commit;
-  LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
-  CheckEquals(LCollection.Count, LCount);
+  CheckEquals(100, GetTableRecordCount(TBL_PEOPLE), 'Should be 100 records inserted');
+  LTran := FManager.BeginTransaction;
+  FManager.DeleteList<TCustomer>(customers.Where(IsAdult));
+  LTran.Commit;
+  CheckEquals(17, GetTableRecordCount(TBL_PEOPLE));
 end;
 
 procedure TestTSession.ListSession_Begin_Commit;
@@ -1062,8 +1065,8 @@ begin
     LOrder := FManager.FindOne<TCustomer_Orders>(LID);
     CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
     CheckTrue(Assigned(LOrder.Customer), 'Cannot get customer (inside order) from DB');
-    CheckEqualsString(LCustomer.Name, LOrder.Customer.Name);
-    CheckEquals(LCustomer.Age, LOrder.Customer.Age);
+    CheckEquals('ManyToOne', LOrder.Customer.Name);
+    CheckEquals(15, LOrder.Customer.Age);
     FreeAndNil(LOrder);
 
     ClearTable(TBL_PEOPLE);  //cascade also deletes records from related table
@@ -1546,7 +1549,7 @@ type
 
   TSpringLazyCustomer = class(TCustomer)
   private
-    [OneToMany(False, [ckCascadeAll], 'FID')]
+    [OneToMany(False, [ckCascadeAll])]
     FSpringLazyOrders: Spring.Lazy<IList<TCustomer_Orders>>;
     function GetOrders: IList<TCustomer_Orders>;
   public

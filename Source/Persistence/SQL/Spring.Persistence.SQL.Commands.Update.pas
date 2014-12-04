@@ -75,6 +75,7 @@ uses
   Spring,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Reflection,
+  Spring.Reflection,
   Spring.Persistence.Core.Utils,
   Spring.Persistence.Mapping.RttiExplorer;
 
@@ -107,7 +108,6 @@ begin
     raise EORMOptimisticLockException.Create(entity);
 
   LStmt := Connection.CreateStatement;
-  LSql := SQL;
 
   fColumns.Clear;
   if fEntityMap.IsMapped(entity) then
@@ -115,10 +115,11 @@ begin
     fColumns := fEntityMap.GetChangedMembers(entity, EntityData);
     if HasChangedVersionColumnOnly then
       Exit;
-    fCommand.SetCommandFieldsFromColumns(fColumns);
   end
   else
     fColumns.AddRange(EntityData.Columns);
+
+  fCommand.SetCommandFieldsFromColumns(fColumns);
 
   if fCommand.UpdateFields.IsEmpty then
     Exit;
@@ -152,37 +153,28 @@ var
   LQueryMetadata: TQueryMetadata;
 begin
   LStatement := Connection.CreateStatement;
-  LVersionValue := TRttiExplorer.GetMemberValue(AEntity, EntityData.VersionColumn.MemberName);
-  LPKValue := TRttiExplorer.GetMemberValue(AEntity, EntityData.PrimaryKeyColumn.MemberName);
+  LVersionValue := EntityData.VersionColumn.RttiMember.GetValue(AEntity);
+  LPKValue := EntityData.PrimaryKeyColumn.RttiMember.GetValue(AEntity);
   LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, EntityData.VersionColumn,
     TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
-  LQueryMetadata.QueryOperation := ctUpdateVersion;  
+  LQueryMetadata.QueryOperation := ctUpdateVersion;
   LQueryMetadata.TableName := fCommand.Table.Name;
   LStatement.SetQuery(LQueryMetadata, LQuery);
 
   Result := (LStatement.Execute > 0);
   if Result then
-    TRttiExplorer.SetMemberValueSimple(AEntity, EntityData.VersionColumn.MemberName, LVersionValue.AsInteger + 1);
+    EntityData.VersionColumn.RttiMember.SetValue(AEntity, LVersionValue.AsInteger + 1);
 end;
 
 procedure TUpdateExecutor.Build(entityClass: TClass);
-var
-  LAtrTable: TableAttribute;
 begin
   inherited Build(entityClass);
-  LAtrTable := EntityData.EntityTable;
 
-  if not Assigned(LAtrTable) then
+  if not EntityData.IsTableEntity then
     raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
-  fTable.SetFromAttribute(LAtrTable);
-  fColumns.Clear;
-  fColumns.AddRange(EntityData.Columns);
-
+  fTable.SetFromAttribute(EntityData.EntityTable);
   fCommand.PrimaryKeyColumn := EntityData.PrimaryKeyColumn;
-   //add fields to tsqltable
-  fCommand.SetCommandFieldsFromColumns(fColumns);
-  SQL := Generator.GenerateUpdate(fCommand);
 end;
 
 procedure TUpdateExecutor.BuildParams(const entity: TObject);

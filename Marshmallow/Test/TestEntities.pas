@@ -77,7 +77,7 @@ type
     FEmail: string;
     FMiddleName: Nullable<string>;
 
-    [OneToMany(False, [ckCascadeAll], 'FID')]
+    [OneToMany(False, [ckCascadeAll])]
     FOrders: Lazy<IList<TCustomer_Orders>>;
 
     FCustomerType: TCustomerType;

@@ -487,14 +487,10 @@ var
   LUpFieldname: string;
 begin
   LUpFieldname := UpperCase(AFieldname);
-  if not FParameterNames.TryGetValue(LUpFieldname, LIndex) then
-  begin
-    LIndex := 1;
-  end
-  else
-  begin
+  LIndex := 1;
+  if FParameterNames.TryGetValue(LUpFieldname, LIndex) then
     Inc(LIndex);
-  end;
+
   FParameterNames.AddOrSetValue(LUpFieldname, LIndex);
   Result := Format(':%S%D', [LUpFieldname, LIndex]);
 end;

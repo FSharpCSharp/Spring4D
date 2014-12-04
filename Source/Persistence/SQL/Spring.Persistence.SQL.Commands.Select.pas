@@ -58,7 +58,6 @@ type
     constructor Create(const id: TValue; selectColumn: ColumnAttribute); reintroduce; overload;
     destructor Destroy; override;
 
-    procedure DoExecute; virtual;
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
 
@@ -119,15 +118,10 @@ end;
 procedure TSelectExecutor.BuildParams(const entity: TObject);
 var
   LParam: TDBParam;
-  LColumnName: string;
   LWhereField: TSQLWhereField;
 begin
   inherited BuildParams(entity);
   Assert(not Assigned(entity), 'Entity should not be assigned here');
-
-  LColumnName := fCommand.PrimaryKeyColumn.ColumnName;
-  if Assigned(fForeignEntityClass) then
-    LColumnName := fCommand.ForeignColumn.Name;
 
   for LWhereField in fCommand.WhereFields do
   begin
@@ -144,18 +138,6 @@ begin
   fSelectColumn := selectColumn;
 end;
 
-procedure TSelectExecutor.DoExecute;
-begin
-  fCommand.WhereFields.Clear;
-
-  if Assigned(fForeignEntityClass) then
-    fCommand.SetFromForeignColumn(EntityClass, fForeignEntityClass)
-  else
-    fCommand.SetFromPrimaryColumn;
-
-  SQL := Generator.GenerateSelect(fCommand);
-end;
-
 function TSelectExecutor.GetCommand: TDMLCommand;
 begin
   Result := fCommand;
@@ -165,7 +147,14 @@ function TSelectExecutor.Select: IDBResultset;
 var
   LStmt: IDBStatement;
 begin
-  DoExecute;
+  fCommand.WhereFields.Clear;
+
+  if Assigned(fForeignEntityClass) then
+    fCommand.SetFromForeignColumn(EntityClass, fForeignEntityClass)
+  else
+    fCommand.SetFromPrimaryColumn;
+
+  SQL := Generator.GenerateSelect(fCommand);
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
 

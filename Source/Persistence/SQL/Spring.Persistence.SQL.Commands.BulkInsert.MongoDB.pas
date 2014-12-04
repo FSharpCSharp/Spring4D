@@ -43,8 +43,8 @@ implementation
 uses
   Rtti,
   MongoBson,
-  Spring.Persistence.Adapters.MongoDB,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Reflection,
+  Spring.Persistence.Adapters.MongoDB;
 
 
 {$REGION 'TMongoDBBulkInsertExecutor'}
@@ -68,7 +68,7 @@ begin
     begin
       if CanClientAutogenerateValue then
       begin
-        TRttiExplorer.SetMemberValue(LEntity, EntityData.PrimaryKeyColumn, TValue.FromVariant(Generator.GenerateUniqueId));
+        EntityData.PrimaryKeyColumn.RttiMember.SetValue(LEntity, TValue.FromVariant(Generator.GenerateUniqueId));
       end;
 
       InsertCommand.Entity := LEntity;

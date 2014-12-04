@@ -29,12 +29,8 @@ unit Spring.Persistence.SQL.Commands.Page;
 interface
 
 uses
-  Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
-  Spring.Persistence.SQL.Commands.Abstract,
-  Spring.Persistence.SQL.Params,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Commands.Abstract;
 
 type
   /// <summary>
@@ -50,9 +46,7 @@ type
   protected
     function GetCommand: TDMLCommand; override;
   public
-    procedure Build(entityClass: TClass); override;
     function BuildSQL(const sql: string): string;
-    procedure Execute(const entity: TObject);
 
     property Page: Integer read fPage write fPage;
     property ItemsPerPage: Integer read fItemsPerPage write fItemsPerPage;
@@ -69,16 +63,6 @@ implementation
 function TPageExecutor.BuildSQL(const sql: string): string;
 begin
   Result := Generator.GeneratePagedQuery(sql, Limit, Offset);
-end;
-
-procedure TPageExecutor.Build(entityClass: TClass);
-begin
-  // do nothing
-end;
-
-procedure TPageExecutor.Execute(const entity: TObject);
-begin
-  // do nothing
 end;
 
 function TPageExecutor.GetCommand: TDMLCommand;

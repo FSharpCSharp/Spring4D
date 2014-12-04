@@ -31,7 +31,6 @@ interface
 uses
   Rtti,
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Commands.Abstract,
   Spring.Persistence.SQL.Params,
@@ -72,9 +71,9 @@ type
 implementation
 
 uses
+  Spring.Reflection,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Core.Utils;
 
 
 {$REGION 'TDeleteCommand'}
@@ -128,12 +127,8 @@ begin
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
   BuildParams(entity);
-  try
-    LStmt.SetParams(SQLParameters);
-    LStmt.Execute;
-  finally
-    LStmt := nil;
-  end;
+  LStmt.SetParams(SQLParameters);
+  LStmt.Execute;
 end;
 
 function TDeleteExecutor.GetCommand: TDMLCommand;
@@ -143,7 +138,7 @@ end;
 
 function TDeleteExecutor.GetPrimaryKeyValue(const entity: TObject): TValue;
 begin
-  Result := TRttiExplorer.GetPrimaryKeyValue(entity);
+  Result := EntityData.PrimaryKeyColumn.RttiMember.GetValue(entity);
 end;
 
 {$ENDREGION}

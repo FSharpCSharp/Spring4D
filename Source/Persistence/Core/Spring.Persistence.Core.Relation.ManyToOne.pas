@@ -151,7 +151,7 @@ begin
   //resolve columns which we need to set
   ResolveColumns(resultSet);
   //assign newly created column to base entity property
-  TType.SetMemberValue(entity, column.MemberName, NewEntity);
+  column.RttiMember.SetValue(entity, NewEntity);
 end;
 
 {$ENDREGION}

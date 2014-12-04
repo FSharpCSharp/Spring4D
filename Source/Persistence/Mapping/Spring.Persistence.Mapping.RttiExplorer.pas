@@ -795,7 +795,7 @@ begin
   LType := FRttiCache.GetType(AEntity.ClassType);
   for LField in LType.GetFields do
   begin
-    if LField.HasCustomAttribute<ManyValuedAssociation> then
+    if LField.HasCustomAttribute<Association> then
     begin
       LEntities := GetSubEntityFromMemberDeep(AEntity, LField);
       if LEntities.Any then
@@ -805,7 +805,7 @@ begin
 
   for LProperty in LType.GetProperties do
   begin
-    if LProperty.HasCustomAttribute<ManyValuedAssociation> then
+    if LProperty.HasCustomAttribute<Association> then
     begin
       LEntities := GetSubEntityFromMemberDeep(AEntity, LProperty);
       if LEntities.Any then

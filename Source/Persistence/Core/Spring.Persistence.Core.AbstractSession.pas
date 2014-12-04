@@ -52,9 +52,7 @@ type
   protected
     function ColumnFromVariant(const value: Variant; const column: TColumnData; const entity: TObject): TValue;
 
-    procedure SetEntityFromColumns(const entity: IEntityWrapper; const resultSet: IDBResultSet); overload; virtual;
-    procedure SetEntityFromColumns(const entity: TObject;
-      const columns: IList<ManyValuedAssociation>; const resultSet: IDBResultSet); overload; virtual;
+    procedure SetEntityFromColumns(const entity: IEntityWrapper; const resultSet: IDBResultSet); virtual;
     procedure SetLazyColumns(const entity: IEntityWrapper);
     procedure SetAssociations(const entity: IEntityWrapper;
       const resultSet: IDBResultSet); virtual;
@@ -604,21 +602,6 @@ begin
   end;
 end;
 
-procedure TAbstractSession.SetEntityFromColumns(const entity: TObject;
-  const columns: IList<ManyValuedAssociation>; const resultSet: IDBResultSet);
-var
-  column: ManyValuedAssociation;
-  fieldValue: Variant;
-  value: TValue;
-begin
-  for column in columns do
-  begin
-    fieldValue := resultSet.GetFieldValue(column.MappedBy);
-    value := TUtils.FromVariant(fieldValue);
-    TRttiExplorer.SetMemberValue(entity, column.MemberName, value);
-  end;
-end;
-
 procedure TAbstractSession.SetInterfaceListOfObjects(const value: IObjectList;
   const resultSet: IDBResultSet; classInfo: PTypeInfo);
 var
@@ -636,7 +619,7 @@ end;
 
 procedure TAbstractSession.SetLazyColumns(const entity: IEntityWrapper);
 var
-  column: ManyValuedAssociation;
+  column: OneToManyAttribute;
   value: TValue;
 begin
   if not entity.HasOneToManyRelations then
