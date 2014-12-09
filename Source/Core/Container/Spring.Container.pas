@@ -83,6 +83,8 @@ type
 
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterType(componentType: PTypeInfo): IRegistration; overload;
+    function RegisterType<TServiceType>(
+      const name: string): TRegistration<TServiceType>; overload;
     function RegisterType<TServiceType, TComponentType>(
       const name: string = ''): TRegistration<TComponentType>; overload;
     function RegisterType(serviceType, componentType: PTypeInfo;
@@ -314,6 +316,13 @@ end;
 function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;
 begin
   Result := fRegistrationManager.RegisterType<TComponentType>;
+end;
+
+function TContainer.RegisterType<TServiceType>(
+  const name: string): TRegistration<TServiceType>;
+begin
+  Result := fRegistrationManager.RegisterType<TServiceType>;
+  Result := Result.Implements<TServiceType>(name);
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
