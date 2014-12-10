@@ -746,8 +746,12 @@ end;
 
 function TList<T>.ToArray: TArray<T>;
 begin
+{$IFDEF DELPHIXE2_UP}
+  Result := Copy(fItems, fCount);
+{$ELSE}
   Result := fItems;
   SetLength(Result, fCount);
+{$ENDIF}
 end;
 
 {$ENDREGION}

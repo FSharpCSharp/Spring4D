@@ -848,7 +848,12 @@ end;
 
 function TArrayIterator<T>.ToArray: TArray<T>;
 begin
+{$IFDEF DELPHIXE2_UP}
   Result := Copy(fValues);
+{$ELSE}
+  Result := fValues;
+  SetLength(Result, Length(Result));
+{$ENDIF}
 end;
 
 {$ENDREGION}
