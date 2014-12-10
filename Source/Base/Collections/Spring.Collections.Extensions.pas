@@ -848,7 +848,7 @@ end;
 
 function TArrayIterator<T>.ToArray: TArray<T>;
 begin
-  Result := fValues;
+  Result := Copy(fValues);
 end;
 
 {$ENDREGION}
