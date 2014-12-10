@@ -1741,7 +1741,7 @@ end;
 
 function EqualsInt2Int(const left, right: TValue): Boolean;
 begin
-  Result := left.AsInteger = left.AsInteger;
+  Result := left.AsInteger = right.AsInteger;
 end;
 
 function EqualsInt2Float(const left, right: TValue): Boolean;
