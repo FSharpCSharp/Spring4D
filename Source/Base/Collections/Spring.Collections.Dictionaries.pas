@@ -153,7 +153,7 @@ type
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
     procedure Clear; override;
     function Remove(const item: TGenericPair): Boolean; overload; override;
-    function Extract(const item: TGenericPair): TGenericPair; override;
+    function Extract(const item: TGenericPair): TGenericPair; overload; override;
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
@@ -169,6 +169,7 @@ type
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
     procedure AddOrSetValue(const key: TKey; const value: TValue);
+    function Extract(const key: TKey): TValue; reintroduce; overload;
     function ExtractPair(const key: TKey): TGenericPair;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
@@ -394,6 +395,11 @@ function TDictionary<TKey, TValue>.ContainsValue(
   const value: TValue): Boolean;
 begin
   Result := fDictionary.ContainsValue(value);
+end;
+
+function TDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
+begin
+  Result := ExtractPair(key).Value;
 end;
 
 function TDictionary<TKey, TValue>.ExtractPair(

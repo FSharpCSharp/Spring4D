@@ -1727,6 +1727,30 @@ type
     /// </param>
     procedure AddOrSetValue(const key: TKey; const value: TValue);
 
+    /// <summary>
+    ///   Removes the value for a specified key without triggering lifetime
+    ///   management for objects.
+    /// </summary>
+    /// <param name="key">
+    ///   The key whose value to remove.
+    /// </param>
+    /// <returns>
+    ///   The removed value for the specified key if it existed;
+    ///   Default(TValue) otherwise.
+    /// </returns>
+    function Extract(const key: TKey): TValue; overload;
+
+    /// <summary>
+    ///   Removes the value for a specified key without triggering lifetime
+    ///   management for objects.
+    /// </summary>
+    /// <param name="key">
+    ///   The key whose value to remove.
+    /// </param>
+    /// <returns>
+    ///   The removed pair for the specified key if it existed;
+    ///   Default(TPair&lt;TKey,TValue&gt;) otherwise.
+    /// </returns>
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
 
     ///	<summary>
