@@ -1543,6 +1543,12 @@ type
     function GetValueType: PTypeInfo;
   {$ENDREGION}
 
+    /// <summary>
+    ///   Determines whether the read-only dictionary contains the specified
+    ///   key/value pair.
+    /// </summary>
+    function ContainsPair(const key: TKey; const value: TValue): Boolean;
+
     ///	<summary>
     ///	  Determines whether the read-only dictionary contains an element that
     ///	  has the specified key.
