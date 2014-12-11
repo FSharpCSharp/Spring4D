@@ -1051,6 +1051,14 @@ type
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     function AsList: IList;
+
+    /// <summary>
+    ///   Returns the list as read-only list.
+    /// </summary>
+    /// <remarks>
+    ///   This method will not perform a copy but will return the same instance
+    ///   as IReadOnlyList&lt;T&gt;.
+    /// </remarks>
     function AsReadOnlyList: IReadOnlyList<T>;
     procedure TrimExcess;
 
@@ -1634,7 +1642,7 @@ type
 
     function Remove(const key: TKey; const value: TValue): Boolean; overload;
 
-    ///	<summary>
+    /// <summary>
     ///   Determines whether the IMap&lt;TKey,TValue&gt; contains the specified
     ///   key/value pair.
     /// </summary>
@@ -1771,6 +1779,13 @@ type
     ///	</returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
+    /// <summary>
+    ///   Returns the dictionary as read-only dictionary.
+    /// </summary>
+    /// <remarks>
+    ///   This method will not perform a copy but will return the same instance
+    ///   as IReadOnlyDictionary&lt;TKey, TValue&gt;.
+    /// </remarks>
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     ///	<summary>
