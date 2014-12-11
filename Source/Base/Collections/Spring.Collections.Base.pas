@@ -339,6 +339,7 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
+    procedure AddInternal(const item: TPair<TKey, T>); override; final;
     procedure KeyChanged(const Item: TKey; Action: TCollectionChangedAction); virtual;
     procedure ValueChanged(const Item: T; Action: TCollectionChangedAction); virtual;
   public
@@ -1574,6 +1575,11 @@ begin
   inherited;
   fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+procedure TMapBase<TKey, T>.AddInternal(const item: TPair<TKey, T>);
+begin
+  Add(item.Key, item.Value);
 end;
 
 function TMapBase<TKey, T>.GetKeyType: PTypeInfo;

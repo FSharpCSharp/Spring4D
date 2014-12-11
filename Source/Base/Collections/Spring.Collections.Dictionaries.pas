@@ -132,7 +132,6 @@ type
     function GetValues: IReadOnlyCollection<TValue>; override;
     procedure SetItem(const key: TKey; const value: TValue); virtual;
   {$ENDREGION}
-    procedure AddInternal(const item: TGenericPair); override;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
@@ -212,7 +211,6 @@ type
     procedure SetKey(const value: TValue; const key: TKey);
     procedure SetValue(const key: TKey; const value: TValue);
   {$ENDREGION}
-    procedure AddInternal(const item: TGenericPair); override;
   public
     constructor Create; overload; override;
 
@@ -345,11 +343,6 @@ var
 begin
   dictionary := TEnumerable<TGenericPair>(fDictionary);
   Result := TEnumeratorAdapter<TGenericPair>.Create(dictionary);
-end;
-
-procedure TDictionary<TKey, TValue>.AddInternal(const item: TGenericPair);
-begin
-  Add(item.Key, item.Value);
 end;
 
 procedure TDictionary<TKey, TValue>.Clear;
@@ -730,7 +723,7 @@ end;
 
 constructor TBidiDictionary<TKey, TValue>.Create;
 begin
-  inherited;
+  inherited Create;
   fKeysByValue := TDictionary<TValue, TKey>.Create;
   fValuesByKey := TDictionary<TKey, TValue>.Create;
 end;
@@ -744,11 +737,6 @@ begin
     raise EInvalidOperationException.Create('value');
   fValuesByKey.Add(key, value);
   fKeysByValue.Add(value, key);
-end;
-
-procedure TBidiDictionary<TKey, TValue>.AddInternal(const item: TGenericPair);
-begin
-  Add(item.Key, item.Value);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
