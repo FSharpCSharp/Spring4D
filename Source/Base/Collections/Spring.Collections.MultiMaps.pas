@@ -116,6 +116,7 @@ type
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
     function Remove(const key: TKey; const value: TValue): Boolean; reintroduce; overload;
+    function ContainsPair(const key: TKey; const value: TValue): Boolean; override;
     function ContainsKey(const key: TKey): Boolean; override;
     function ContainsValue(const value: TValue): Boolean; override;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
@@ -218,6 +219,14 @@ end;
 function TMultiMapBase<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
 begin
   Result := fDictionary.ContainsKey(key);
+end;
+
+function TMultiMapBase<TKey, TValue>.ContainsPair(const key: TKey;
+  const value: TValue): Boolean;
+var
+  values: IReadOnlyCollection<TValue>;
+begin
+  Result := TryGetValues(key, values) and values.Contains(value);
 end;
 
 function TMultiMapBase<TKey, TValue>.ContainsValue(const value: TValue): Boolean;

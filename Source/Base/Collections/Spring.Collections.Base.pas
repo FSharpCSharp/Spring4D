@@ -349,6 +349,7 @@ type
     function Remove(const key: TKey): Boolean; reintroduce; overload; virtual; abstract;
     function Remove(const key: TKey; const value: T): Boolean; reintroduce; overload; virtual; abstract;
 
+    function ContainsPair(const key: TKey; const value: T): Boolean; virtual; abstract;
     function ContainsKey(const key: TKey): Boolean; virtual; abstract;
     function ContainsValue(const value: T): Boolean; virtual; abstract;
 

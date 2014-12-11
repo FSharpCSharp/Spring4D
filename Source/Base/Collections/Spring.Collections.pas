@@ -1635,6 +1635,22 @@ type
     function Remove(const key: TKey; const value: TValue): Boolean; overload;
 
     ///	<summary>
+    ///   Determines whether the IMap&lt;TKey,TValue&gt; contains the specified
+    ///   key/value pair.
+    /// </summary>
+    /// <param name="key">
+    ///   The key of the pair to locate in the IMap&lt;TKey, TValue&gt;.
+    /// </param>
+    /// <param name="value">
+    ///   The value of the pair to locate in the IMap&lt;TKey, TValue&gt;.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the IMap&lt;TKey, TValue&gt; contains a pair with the
+    ///   specified key and value; otherwise <b>False</b>.
+    /// </returns>
+    function ContainsPair(const key: TKey; const value: TValue): Boolean;
+
+    ///	<summary>
     ///	  Determines whether the IMap&lt;TKey, TValue&gt; contains an
     ///	  element with the specified key.
     ///	</summary>

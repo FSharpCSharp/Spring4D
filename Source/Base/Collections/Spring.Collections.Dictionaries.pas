@@ -160,6 +160,7 @@ type
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
     function Remove(const key: TKey; const value: TValue): Boolean; reintroduce; overload;
+    function ContainsPair(const key: TKey; const value: TValue): Boolean; override;
     function ContainsKey(const key: TKey): Boolean; override;
     function ContainsValue(const value: TValue): Boolean; override;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
@@ -378,6 +379,15 @@ end;
 function TDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
 begin
   Result := fDictionary.ContainsKey(key);
+end;
+
+function TDictionary<TKey, TValue>.ContainsPair(const key: TKey;
+  const value: TValue): Boolean;
+var
+  item: TValue;
+begin
+  Result := fDictionary.TryGetValue(key, item)
+    and TEqualityComparer<TValue>.Default.Equals(item, value);
 end;
 
 function TDictionary<TKey, TValue>.ContainsValue(
