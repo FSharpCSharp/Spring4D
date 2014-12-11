@@ -1646,6 +1646,20 @@ type
     ///	</returns>
     function Remove(const key: TKey): Boolean; overload;
 
+    /// <summary>
+    ///   Removes the specified key/value pair from the IMap&lt;TKey,
+    ///   TValue&gt;.
+    /// </summary>
+    /// <param name="key">
+    ///   The key of the pair to remove.
+    /// </param>
+    /// <param name="value">
+    ///   The value of the pair to remove,
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the pair was successfully removed; otherwise, <b>False</b>
+    ///   .
+    /// </returns>
     function Remove(const key: TKey; const value: TValue): Boolean; overload;
 
     /// <summary>
@@ -1749,8 +1763,8 @@ type
     ///   The key whose value to remove.
     /// </param>
     /// <returns>
-    ///   The removed value for the specified key if it existed;
-    ///   Default(TValue) otherwise.
+    ///   The removed value for the specified key if it existed; <b>default</b>
+    ///   otherwise.
     /// </returns>
     function Extract(const key: TKey): TValue; overload;
 
@@ -1762,8 +1776,8 @@ type
     ///   The key whose value to remove.
     /// </param>
     /// <returns>
-    ///   The removed pair for the specified key if it existed;
-    ///   Default(TPair&lt;TKey,TValue&gt;) otherwise.
+    ///   The removed pair for the specified key if it existed; <b>default</b>
+    ///   otherwise.
     /// </returns>
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
 
@@ -1804,6 +1818,59 @@ type
     ///	  The element with the specified key.
     ///	</value>
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
+  end;
+
+  IBidiDictionary<TKey, TValue> = interface(IDictionary<TKey, TValue>)//IMap<TKey, TValue>)
+    ['{DA8F1C48-B4F4-4487-ADAD-AF15596DD53C}']
+  {$REGION 'Property Accessors'}
+    function GetKey(const value: TValue): TKey;
+    function GetValue(const key: TKey): TValue;
+    procedure SetKey(const value: TValue; const key: TKey);
+    procedure SetValue(const key: TKey; const value: TValue);
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Remove the key that is currently mapped to the specified value
+    ///   without triggering lifetime management for objects.
+    /// </summary>
+    function ExtractKey(const value: TValue): TKey;
+
+    /// <summary>
+    ///   Remove the value that is currently mapped to the specified key
+    ///   without triggering lifetime management for objects.
+    /// </summary>
+    function ExtractValue(const key: TKey): TValue;
+
+    /// <summary>
+    ///   Remove the key/value pair that is currently mapped to the specified
+    ///   key.
+    /// </summary>
+    function RemoveKey(const key: TKey): Boolean;
+
+    /// <summary>
+    ///   Remove the key/value pair that is currently mapped to the specified
+    ///   value.
+    /// </summary>
+    function RemoveValue(const value: TValue): Boolean;
+
+    /// <summary>
+    ///   Gets the key associated with the specified key.
+    /// </summary>
+    /// <returns>
+    ///   <b>True</b> if the key was found; otherwise, <b>False</b>.
+    /// </returns>
+    function TryGetKey(const value: TValue; out key: TKey): Boolean;
+
+    /// <summary>
+    ///   Gets the value associated with the specified key.
+    /// </summary>
+    /// <returns>
+    ///   <b>True</b> if the value was found; otherwise, <b>False.</b>
+    /// </returns>
+    function TryGetValue(const key: TKey; out value: TValue): Boolean;
+
+    property Key[const value: TValue]: TKey read GetKey write SetKey;
+    property Value[const key: TKey]: TValue read GetValue write SetValue; default;
   end;
 
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
@@ -2284,6 +2351,8 @@ type
     class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
     class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
 
+    class function CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>; overload; static;
+
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
     class function CreateStack<T>(const values: array of T): IStack<T>; overload; static;
@@ -2668,6 +2737,11 @@ class function TCollections.CreateMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
   Result := TObjectMultiMap<TKey, TValue>.Create(ownerships);
+end;
+
+class function TCollections.CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>;
+begin
+  Result := TBidiDictionary<TKey, TValue>.Create;
 end;
 
 class function TCollections.CreateStack<T>: IStack<T>;
