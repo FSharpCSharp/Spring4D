@@ -80,11 +80,20 @@ type
     procedure AddExtension(const extension: IContainerExtension); overload;
     procedure AddExtension<T: IContainerExtension, constructor>; overload;
 
+{$IFDEF DELPHIXE_UP}
+    function RegisterFactory<TFactoryType: IInterface>(
+      const name: string = ''): TRegistration<TFactoryType>; overload;
+    function RegisterFactory<TFactoryType: IInterface>(const name: string;
+      const serviceName: string): TRegistration<TFactoryType>; overload;
+{$ENDIF}
+
     function RegisterInstance<TServiceType>(const instance: TServiceType;
       const name: string = ''): TRegistration<TServiceType>; overload;
 
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterType(componentType: PTypeInfo): IRegistration; overload;
+    function RegisterType<TServiceType>(
+      const name: string): TRegistration<TServiceType>; overload;
     function RegisterType<TServiceType, TComponentType>(
       const name: string = ''): TRegistration<TComponentType>; overload;
     function RegisterType(serviceType, componentType: PTypeInfo;
@@ -352,6 +361,22 @@ begin
   Result := fResolver;
 end;
 
+{$IFDEF DELPHIXE_UP}
+function TContainer.RegisterFactory<TFactoryType>(
+  const name: string): TRegistration<TFactoryType>;
+begin
+  Result := RegisterType<TFactoryType>(name);
+  Result := Result.AsFactory;
+end;
+
+function TContainer.RegisterFactory<TFactoryType>(const name,
+  serviceName: string): TRegistration<TFactoryType>;
+begin
+  Result := RegisterType<TFactoryType>(name);
+  Result := Result.AsFactory(serviceName);
+end;
+{$ENDIF}
+
 function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
   const name: string): TRegistration<TServiceType>;
 begin
@@ -367,6 +392,13 @@ end;
 function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;
 begin
   Result := fRegistrationManager.RegisterType<TComponentType>;
+end;
+
+function TContainer.RegisterType<TServiceType>(
+  const name: string): TRegistration<TServiceType>;
+begin
+  Result := fRegistrationManager.RegisterType<TServiceType>;
+  Result := Result.Implements<TServiceType>(name);
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(

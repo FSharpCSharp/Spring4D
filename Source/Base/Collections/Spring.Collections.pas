@@ -876,6 +876,10 @@ type
     function GetItem(index: Integer): TValue;
   {$ENDREGION}
 
+    function IndexOf(const item: TValue): Integer; overload;
+    function IndexOf(const item: TValue; index: Integer): Integer; overload;
+    function IndexOf(const item: TValue; index, count: Integer): Integer; overload;
+
     property Item[index: Integer]: TValue read GetItem; default;
   end;
 
@@ -939,7 +943,9 @@ type
     ///	<returns>
     ///	  The index of <i>item</i> if found in the list; otherwise, -1.
     ///	</returns>
-    function IndexOf(const item: T): Integer;
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
 
     ///	<summary>
     ///	  Gets the element at the specified index in the read-only list.
@@ -1045,6 +1051,14 @@ type
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     function AsList: IList;
+
+    /// <summary>
+    ///   Returns the list as read-only list.
+    /// </summary>
+    /// <remarks>
+    ///   This method will not perform a copy but will return the same instance
+    ///   as IReadOnlyList&lt;T&gt;.
+    /// </remarks>
     function AsReadOnlyList: IReadOnlyList<T>;
     procedure TrimExcess;
 
@@ -1529,6 +1543,12 @@ type
     function GetValueType: PTypeInfo;
   {$ENDREGION}
 
+    /// <summary>
+    ///   Determines whether the read-only dictionary contains the specified
+    ///   key/value pair.
+    /// </summary>
+    function ContainsPair(const key: TKey; const value: TValue): Boolean;
+
     ///	<summary>
     ///	  Determines whether the read-only dictionary contains an element that
     ///	  has the specified key.
@@ -1626,7 +1646,39 @@ type
     ///	</returns>
     function Remove(const key: TKey): Boolean; overload;
 
-    function Remove(const key: TKey; const value: TValue): Boolean; overload;
+    /// <summary>
+    ///   Removes the specified key/value pair from the IMap&lt;TKey,
+    ///   TValue&gt;.
+    /// </summary>
+    /// <param name="key">
+    ///   The key of the pair to remove.
+    /// </param>
+    /// <param name="value">
+    ///   The value of the pair to remove,
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the pair was successfully removed; otherwise, <b>False</b>
+    ///   .
+    /// </returns>
+    function RemovePair(const key: TKey; const value: TValue): Boolean; overload;
+
+    function ExtractPair(const key: TKey; const value: TValue): TPair<TKey, TValue>;
+
+    /// <summary>
+    ///   Determines whether the IMap&lt;TKey,TValue&gt; contains the specified
+    ///   key/value pair.
+    /// </summary>
+    /// <param name="key">
+    ///   The key of the pair to locate in the IMap&lt;TKey, TValue&gt;.
+    /// </param>
+    /// <param name="value">
+    ///   The value of the pair to locate in the IMap&lt;TKey, TValue&gt;.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the IMap&lt;TKey, TValue&gt; contains a pair with the
+    ///   specified key and value; otherwise <b>False</b>.
+    /// </returns>
+    function ContainsPair(const key: TKey; const value: TValue): Boolean;
 
     ///	<summary>
     ///	  Determines whether the IMap&lt;TKey, TValue&gt; contains an
@@ -1705,7 +1757,31 @@ type
     /// </param>
     procedure AddOrSetValue(const key: TKey; const value: TValue);
 
-    function ExtractPair(const key: TKey): TPair<TKey, TValue>;
+    /// <summary>
+    ///   Removes the value for a specified key without triggering lifetime
+    ///   management for objects.
+    /// </summary>
+    /// <param name="key">
+    ///   The key whose value to remove.
+    /// </param>
+    /// <returns>
+    ///   The removed value for the specified key if it existed; <b>default</b>
+    ///   otherwise.
+    /// </returns>
+    function Extract(const key: TKey): TValue; overload;
+
+    /// <summary>
+    ///   Removes the value for a specified key without triggering lifetime
+    ///   management for objects.
+    /// </summary>
+    /// <param name="key">
+    ///   The key whose value to remove.
+    /// </param>
+    /// <returns>
+    ///   The removed pair for the specified key if it existed; <b>default</b>
+    ///   otherwise.
+    /// </returns>
+    function ExtractPair(const key: TKey): TPair<TKey, TValue>; overload;
 
     ///	<summary>
     ///	  Gets the value associated with the specified key.
@@ -1725,6 +1801,13 @@ type
     ///	</returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
+    /// <summary>
+    ///   Returns the dictionary as read-only dictionary.
+    /// </summary>
+    /// <remarks>
+    ///   This method will not perform a copy but will return the same instance
+    ///   as IReadOnlyDictionary&lt;TKey, TValue&gt;.
+    /// </remarks>
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     ///	<summary>
@@ -1739,13 +1822,66 @@ type
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
   end;
 
+  IBidiDictionary<TKey, TValue> = interface(IDictionary<TKey, TValue>)//IMap<TKey, TValue>)
+    ['{DA8F1C48-B4F4-4487-ADAD-AF15596DD53C}']
+  {$REGION 'Property Accessors'}
+    function GetKey(const value: TValue): TKey;
+    function GetValue(const key: TKey): TValue;
+    procedure SetKey(const value: TValue; const key: TKey);
+    procedure SetValue(const key: TKey; const value: TValue);
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Remove the key that is currently mapped to the specified value
+    ///   without triggering lifetime management for objects.
+    /// </summary>
+    function ExtractKey(const value: TValue): TKey;
+
+    /// <summary>
+    ///   Remove the value that is currently mapped to the specified key
+    ///   without triggering lifetime management for objects.
+    /// </summary>
+    function ExtractValue(const key: TKey): TValue;
+
+    /// <summary>
+    ///   Remove the key/value pair that is currently mapped to the specified
+    ///   key.
+    /// </summary>
+    function RemoveKey(const key: TKey): Boolean;
+
+    /// <summary>
+    ///   Remove the key/value pair that is currently mapped to the specified
+    ///   value.
+    /// </summary>
+    function RemoveValue(const value: TValue): Boolean;
+
+    /// <summary>
+    ///   Gets the key associated with the specified key.
+    /// </summary>
+    /// <returns>
+    ///   <b>True</b> if the key was found; otherwise, <b>False</b>.
+    /// </returns>
+    function TryGetKey(const value: TValue; out key: TKey): Boolean;
+
+    /// <summary>
+    ///   Gets the value associated with the specified key.
+    /// </summary>
+    /// <returns>
+    ///   <b>True</b> if the value was found; otherwise, <b>False.</b>
+    /// </returns>
+    function TryGetValue(const key: TKey; out value: TValue): Boolean;
+
+    property Key[const value: TValue]: TKey read GetKey write SetKey;
+    property Value[const key: TKey]: TValue read GetValue write SetValue; default;
+  end;
+
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
     ['{8598095E-92A7-4FCC-9F78-8EE7653B8B49}']
   {$REGION 'Property Accessors'}
     function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
 
-    function ExtractValues(const key: TKey): IReadOnlyCollection<TKey>;
+    function ExtractValues(const key: TKey): IReadOnlyCollection<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
@@ -2173,6 +2309,10 @@ type
     /// </summary>
     class function IndexOf<T>(const values: array of T; const item: T;
       index, count: Integer): Integer; overload; static;
+
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index, count: Integer;
+      const comparer: IEqualityComparer<T>): Integer; overload; static;
   end;
 
   ///	<summary>
@@ -2212,6 +2352,8 @@ type
 
     class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
     class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
+
+    class function CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>; overload; static;
 
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
@@ -2388,8 +2530,13 @@ end;
 
 class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
   count: Integer): Integer;
+begin
+  Result := IndexOf<T>(values, item, index, count, TEqualityComparer<T>.Default);
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
+  count: Integer; const comparer: IEqualityComparer<T>): Integer;
 var
-  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -2397,7 +2544,6 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
 {$ENDIF}
 
-  comparer := TEqualityComparer<T>.Default;
   for i := index to index + count - 1 do
     if comparer.Equals(values[i], item) then
       Exit(i);
@@ -2593,6 +2739,11 @@ class function TCollections.CreateMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
   Result := TObjectMultiMap<TKey, TValue>.Create(ownerships);
+end;
+
+class function TCollections.CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>;
+begin
+  Result := TBidiDictionary<TKey, TValue>.Create;
 end;
 
 class function TCollections.CreateStack<T>: IStack<T>;

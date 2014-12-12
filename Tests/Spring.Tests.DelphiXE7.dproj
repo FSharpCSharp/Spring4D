@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{83F94C88-615C-458E-9455-6593952E7EA0}</ProjectGuid>
-        <ProjectVersion>16.0</ProjectVersion>
+        <ProjectVersion>16.1</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <MainSource>Spring.Tests.dpr</MainSource>
         <Base>True</Base>
@@ -178,12 +178,16 @@
         <DCCReference Include="Source\Base\Spring.Tests.Reflection.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.SystemUtils.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Logging.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Logging.Serializers.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Logging.Types.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Interception.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Interception.Types.pas"/>
+        <DCCReference Include="Source\Core\Spring.Tests.Container.Logging.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>

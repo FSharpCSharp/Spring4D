@@ -185,9 +185,9 @@ type
     function Min(const comparer: IComparer<T>): T; overload;
     function Min(const comparer: TComparison<T>): T; overload;
 
-    function Ordered: IEnumerable<T>; overload;
-    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
-    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload;
+    function Ordered: IEnumerable<T>; overload; virtual;
+    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload; virtual;
+    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload; virtual;
 
     function Reversed: IEnumerable<T>; virtual;
 
@@ -209,6 +209,35 @@ type
     function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
 
     function ToArray: TArray<T>; virtual;
+  end;
+
+  TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
+  protected
+    function GetCurrentNonGeneric: TValue; virtual; abstract;
+    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
+  public
+    function MoveNext: Boolean; virtual;
+    procedure Reset; virtual;
+  end;
+
+  TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
+  private
+    fInitialThreadId: Cardinal;
+  protected
+    fState: Integer;
+    fCurrent: T;
+    const
+      STATE_INITIAL    = -2; // initial state, before GetEnumerator
+      STATE_FINISHED   = -1; // end of enumerator
+      STATE_ENUMERATOR = 0;  // before calling MoveNext
+      STATE_RUNNING    = 1;  // enumeration is running
+  protected
+    function Clone: TIterator<T>; virtual; abstract;
+    function GetCurrent: T;
+    function GetCurrentNonGeneric: TValue; override; final;
+  public
+    constructor Create; override;
+    function GetEnumerator: IEnumerator<T>; override; final;
   end;
 
   ///	<summary>
@@ -255,6 +284,20 @@ type
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
+  TContainedIterator<T> = class(TIterator<T>)
+  private
+    fController: Pointer;
+    function GetController: IInterface;
+  protected
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
+  {$ENDREGION}
+  public
+    constructor Create(const controller: IInterface);
+    property Controller: IInterface read GetController;
+  end;
+
   TContainedCollectionBase<T> = class(TCollectionBase<T>)
   private
     fController: Pointer;
@@ -272,6 +315,7 @@ type
   TContainedReadOnlyCollection<T> = class(TEnumerableBase<T>, IReadOnlyCollection<T>)
   private
     fController: Pointer;
+    function GetController: IInterface;
   protected
   {$REGION 'Implements IInterface'}
     function _AddRef: Integer; override;
@@ -279,9 +323,13 @@ type
   {$ENDREGION}
   public
     constructor Create(const controller: IInterface);
+    property Controller: IInterface read GetController;
   end;
 
   TMapBase<TKey, T> = class(TCollectionBase<TPair<TKey, T>>, IMap<TKey, T>)
+  private
+    type
+      TGenericPair = Generics.Collections.TPair<TKey, T>;
   private
     fOnKeyChanged: ICollectionChangedEvent<TKey>;
     fOnValueChanged: ICollectionChangedEvent<T>;
@@ -294,6 +342,7 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
+    procedure AddInternal(const item: TGenericPair); override; final;
     procedure KeyChanged(const Item: TKey; Action: TCollectionChangedAction); virtual;
     procedure ValueChanged(const Item: T; Action: TCollectionChangedAction); virtual;
   public
@@ -301,9 +350,15 @@ type
 
     procedure Add(const key: TKey; const value: T); reintroduce; overload; virtual; abstract;
 
+    function Remove(const item: TGenericPair): Boolean; overload; override; final;
     function Remove(const key: TKey): Boolean; reintroduce; overload; virtual; abstract;
-    function Remove(const key: TKey; const value: T): Boolean; reintroduce; overload; virtual; abstract;
+    function RemovePair(const key: TKey; const value: T): Boolean; virtual; abstract;
 
+    function Extract(const item: TGenericPair): TGenericPair; override; final;
+    function ExtractPair(const key: TKey; const value: T): TGenericPair; virtual; abstract;
+
+    function Contains(const item: TGenericPair): Boolean; override; final;
+    function ContainsPair(const key: TKey; const value: T): Boolean; virtual; abstract;
     function ContainsKey(const key: TKey): Boolean; virtual; abstract;
     function ContainsValue(const value: T): Boolean; virtual; abstract;
 
@@ -401,6 +456,7 @@ type
 implementation
 
 uses
+  Classes,
   Rtti,
   TypInfo,
   Spring.Collections.Adapters,
@@ -942,6 +998,10 @@ end;
 function TEnumerableBase<T>.Ordered(
   const comparer: TComparison<T>): IEnumerable<T>;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+{$ENDIF}
+
   Result := Ordered(TComparer<T>.Construct(comparer));
 end;
 
@@ -1250,6 +1310,60 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TIteratorBase<T>' }
+
+function TIteratorBase<T>.MoveNext: Boolean;
+begin
+  Result := False;
+end;
+
+procedure TIteratorBase<T>.Reset;
+begin
+  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIterator<T>'}
+
+constructor TIterator<T>.Create;
+begin
+  inherited Create;
+  fState := STATE_INITIAL;
+  fInitialThreadId := TThread.CurrentThread.ThreadID;
+end;
+
+function TIterator<T>.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+function TIterator<T>.GetCurrentNonGeneric: TValue;
+begin
+  Result := TValue.From<T>(GetCurrent);
+end;
+
+function TIterator<T>.GetEnumerator: IEnumerator<T>;
+var
+  iterator: TIterator<T>;
+begin
+  if (fInitialThreadId = TThread.CurrentThread.ThreadID) and (fState = STATE_INITIAL) then
+  begin
+    fState := STATE_ENUMERATOR;
+    Result := Self;
+  end
+  else
+  begin
+    iterator := Clone;
+    iterator.fState := STATE_ENUMERATOR;
+    Result := iterator;
+  end;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TCollectionBase<T>'}
 
 constructor TCollectionBase<T>.Create;
@@ -1384,6 +1498,32 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TContainedIterator<T>'}
+
+constructor TContainedIterator<T>.Create(const controller: IInterface);
+begin
+  inherited Create;
+  fController := Pointer(controller);
+end;
+
+function TContainedIterator<T>.GetController: IInterface;
+begin
+  Result := IInterface(fController);
+end;
+
+function TContainedIterator<T>._AddRef: Integer;
+begin
+  Result := IInterface(fController)._AddRef;
+end;
+
+function TContainedIterator<T>._Release: Integer;
+begin
+  Result := IInterface(fController)._Release;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TContainedCollectionBase<T>'}
 
 constructor TContainedCollectionBase<T>.Create(const controller: IInterface);
@@ -1399,12 +1539,12 @@ end;
 
 function TContainedCollectionBase<T>._AddRef: Integer;
 begin
-  Result := IInterface(FController)._AddRef;
+  Result := IInterface(fController)._AddRef;
 end;
 
 function TContainedCollectionBase<T>._Release: Integer;
 begin
-  Result := IInterface(FController)._Release;
+  Result := IInterface(fController)._Release;
 end;
 
 {$ENDREGION}
@@ -1416,6 +1556,11 @@ constructor TContainedReadOnlyCollection<T>.Create(const controller: IInterface)
 begin
   inherited Create;
   fController := Pointer(controller);
+end;
+
+function TContainedReadOnlyCollection<T>.GetController: IInterface;
+begin
+  Result := IInterface(fController);
 end;
 
 function TContainedReadOnlyCollection<T>._AddRef: Integer;
@@ -1438,6 +1583,21 @@ begin
   inherited;
   fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+procedure TMapBase<TKey, T>.AddInternal(const item: TGenericPair);
+begin
+  Add(item.Key, item.Value);
+end;
+
+function TMapBase<TKey, T>.Contains(const item: TGenericPair): Boolean;
+begin
+  Result := ContainsPair(item.Key, item.Value);
+end;
+
+function TMapBase<TKey, T>.Extract(const item: TGenericPair): TGenericPair;
+begin
+  Result := ExtractPair(item.Key, item.Value);
 end;
 
 function TMapBase<TKey, T>.GetKeyType: PTypeInfo;
@@ -1465,6 +1625,11 @@ procedure TMapBase<TKey, T>.KeyChanged(const Item: TKey;
 begin
   if Assigned(fOnKeyChanged) and fOnKeyChanged.IsInvokable then
       fOnKeyChanged.Invoke(Self, Item, Action)
+end;
+
+function TMapBase<TKey, T>.Remove(const item: TGenericPair): Boolean;
+begin
+  Result := RemovePair(item.Key, item.Value);
 end;
 
 procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
