@@ -121,8 +121,10 @@ type
     fValues: TValueCollection;
     fOnKeyNotify: TCollectionNotifyEvent<TKey>;
     fOnValueNotify: TCollectionNotifyEvent<TValue>;
-    procedure DoKeyNotify(Sender: TObject; const Item: TKey; Action: TCollectionNotification);
-    procedure DoValueNotify(Sender: TObject; const Item: TValue; Action: TCollectionNotification);
+    procedure DoKeyNotify(Sender: TObject; const Item: TKey;
+      Action: TCollectionNotification);
+    procedure DoValueNotify(Sender: TObject; const Item: TValue;
+      Action: TCollectionNotification);
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
   protected
   {$REGION 'Property Accessors'}
@@ -136,8 +138,10 @@ type
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
     constructor Create(const comparer: IEqualityComparer<TKey>); overload;
-    constructor Create(capacity: Integer; const comparer: IEqualityComparer<TKey>); overload;
-    constructor Create(dictionary: TGenericDictionary; ownership: TOwnershipType); overload;
+    constructor Create(capacity: Integer;
+      const comparer: IEqualityComparer<TKey>); overload;
+    constructor Create(dictionary: TGenericDictionary;
+      ownership: TOwnershipType); overload;
 
     destructor Destroy; override;
 
@@ -191,15 +195,15 @@ type
   end;
 
   TBidiDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
-    IReadOnlyDictionary<TKey, TValue>,
-    IDictionary<TKey, TValue>,
+    IReadOnlyDictionary<TKey, TValue>, IDictionary<TKey, TValue>,
     IBidiDictionary<TKey, TValue>)
+  private
+    type
+      TGenericPair = Generics.Collections.TPair<TKey, TValue>;
   private
     fValuesByKey: IDictionary<TKey, TValue>;
     fKeysByValue: IDictionary<TValue, TKey>;
   protected
-    type
-      TGenericPair = Generics.Collections.TPair<TKey, TValue>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
     function GetItem(const key: TKey): TValue; inline;

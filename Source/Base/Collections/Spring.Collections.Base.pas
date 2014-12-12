@@ -328,6 +328,9 @@ type
 
   TMapBase<TKey, T> = class(TCollectionBase<TPair<TKey, T>>, IMap<TKey, T>)
   private
+    type
+      TGenericPair = Generics.Collections.TPair<TKey, T>;
+  private
     fOnKeyChanged: ICollectionChangedEvent<TKey>;
     fOnValueChanged: ICollectionChangedEvent<T>;
     function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
@@ -339,7 +342,7 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    procedure AddInternal(const item: TPair<TKey, T>); override; final;
+    procedure AddInternal(const item: TGenericPair); override; final;
     procedure KeyChanged(const Item: TKey; Action: TCollectionChangedAction); virtual;
     procedure ValueChanged(const Item: T; Action: TCollectionChangedAction); virtual;
   public
@@ -1577,7 +1580,7 @@ begin
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-procedure TMapBase<TKey, T>.AddInternal(const item: TPair<TKey, T>);
+procedure TMapBase<TKey, T>.AddInternal(const item: TGenericPair);
 begin
   Add(item.Key, item.Value);
 end;

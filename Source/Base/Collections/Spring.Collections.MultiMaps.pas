@@ -41,13 +41,13 @@ type
     type
       TGenericPair = Generics.Collections.TPair<TKey, TValue>;
 
-      TEnumerator = class(TEnumeratorBase<TPair<TKey, TValue>>)
+      TEnumerator = class(TEnumeratorBase<TGenericPair>)
       private
         fSource: TMultiMapBase<TKey, TValue>;
         fDictionaryEnumerator: IEnumerator<TPair<TKey, ICollection<TValue>>>;
         fCollectionEnumerator: IEnumerator<TValue>;
       protected
-        function GetCurrent: TPair<TKey, TValue>; override;
+        function GetCurrent: TGenericPair; override;
       public
         constructor Create(const source: TMultiMapBase<TKey, TValue>);
         function MoveNext: Boolean; override;
@@ -56,7 +56,7 @@ type
       TValueEnumerator = class(TEnumeratorBase<TValue>)
       private
         fSource: TMultiMapBase<TKey, TValue>;
-        fSourceEnumerator: IEnumerator<TPair<TKey, TValue>>;
+        fSourceEnumerator: IEnumerator<TGenericPair>;
       protected
         function GetCurrent: TValue; override;
       public
