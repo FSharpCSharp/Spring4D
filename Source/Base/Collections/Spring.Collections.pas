@@ -1660,7 +1660,9 @@ type
     ///   <b>True</b> if the pair was successfully removed; otherwise, <b>False</b>
     ///   .
     /// </returns>
-    function Remove(const key: TKey; const value: TValue): Boolean; overload;
+    function RemovePair(const key: TKey; const value: TValue): Boolean; overload;
+
+    function ExtractPair(const key: TKey; const value: TValue): TPair<TKey, TValue>;
 
     /// <summary>
     ///   Determines whether the IMap&lt;TKey,TValue&gt; contains the specified
@@ -1779,7 +1781,7 @@ type
     ///   The removed pair for the specified key if it existed; <b>default</b>
     ///   otherwise.
     /// </returns>
-    function ExtractPair(const key: TKey): TPair<TKey, TValue>;
+    function ExtractPair(const key: TKey): TPair<TKey, TValue>; overload;
 
     ///	<summary>
     ///	  Gets the value associated with the specified key.
