@@ -1119,6 +1119,53 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Smart pointer'}
+
+  ISmartPointer<T> = reference to function: T;
+
+  SmartPointer<T> = record
+  private
+    type
+      TSmartPointer = class(TInterfacedObject)
+      private
+        fValue: Pointer;
+      public
+        constructor Create(const value);
+        destructor Destroy; override;
+      end;
+  strict private
+    fValue: T;
+    fFinalizer: IInterface;
+  public
+    class operator Implicit(const value: T): SmartPointer<T>;
+    class operator Implicit(const value: SmartPointer<T>): T;
+    property Value: T read fValue;
+  end;
+
+  TSmartPointer<T> = class(TInterfacedObject, ISmartPointer<T>)
+  private
+    fValue: T;
+    function Invoke: T; inline;
+  public
+    constructor Create; overload;
+    constructor Create(const value: T); overload;
+    destructor Destroy; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TFinalizer'}
+
+  TFinalizer = record
+  public
+    class procedure FinalizeInstance(var instance: TValue); overload; static;
+    class procedure FinalizeInstance<T>(const instance: T); overload; static; inline;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
@@ -1166,12 +1213,15 @@ function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Bool
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
 
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
+
+procedure FinalizeValue(const value; typeKind: TTypeKind); inline;
 {$ENDREGION}
 
 
 implementation
 
 uses
+  Spring.Reflection.Activator,
   Spring.Events,
   Spring.ResourceStrings;
 
@@ -1369,6 +1419,14 @@ end;
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind;
 begin
   Result := typeInfo.Kind;
+end;
+
+procedure FinalizeValue(const value; typeKind: TTypeKind);
+begin
+  case typeKind of
+    tkClass: {$IFNDEF AUTOREFCOUNT}TObject(value).Free;{$ELSE}TObject(value).DisposeOf;{$ENDIF}
+    tkPointer: FreeMem(Pointer(value));
+  end;
 end;
 {$ENDREGION}
 
@@ -2347,6 +2405,89 @@ function Lock.ScopedLock: IInterface;
 begin
   EnsureInitialized;
   Result := fCriticalSection.ScopedLock;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'SmartPointer<T>'}
+
+class operator SmartPointer<T>.Implicit(const value: T): SmartPointer<T>;
+begin
+  Result.fValue := value;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    {$IFNDEF AUTOREFCOUNT}tkClass,{$ENDIF}
+    tkPointer: Result.fFinalizer := TSmartPointer.Create(Result.fValue);
+  end;
+end;
+
+class operator SmartPointer<T>.Implicit(const value: SmartPointer<T>): T;
+begin
+  Result := value.fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'SmartPointer<T>.TSmartPointer'}
+
+constructor SmartPointer<T>.TSmartPointer.Create(const value);
+begin
+  fValue := Pointer(value);
+end;
+
+destructor SmartPointer<T>.TSmartPointer.Destroy;
+begin
+  FinalizeValue(fValue, {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF});
+  inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSmartPointer<T>'}
+
+constructor TSmartPointer<T>.Create;
+begin
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkClass: PObject(@fValue)^ := TActivator.CreateInstance(TypeInfo(T));
+    tkPointer: PPointer(@fValue)^ := AllocMem(GetTypeSize(GetTypeData(TypeInfo(T)).RefType^));
+  end;
+end;
+
+constructor TSmartPointer<T>.Create(const value: T);
+begin
+  fValue := value;
+end;
+
+destructor TSmartPointer<T>.Destroy;
+begin
+  FinalizeValue(fValue, {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF});
+  inherited;
+end;
+
+function TSmartPointer<T>.Invoke: T;
+begin
+  Result := fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFinalizer'}
+
+class procedure TFinalizer.FinalizeInstance(var instance: TValue);
+var
+  p: Pointer;
+begin
+  p := instance.GetReferenceToRawData;
+  if Assigned(p) then
+    FinalizeValue(p^, instance.Kind);
+end;
+
+class procedure TFinalizer.FinalizeInstance<T>(const instance: T);
+begin
+  FinalizeValue(instance, {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF});
 end;
 
 {$ENDREGION}
