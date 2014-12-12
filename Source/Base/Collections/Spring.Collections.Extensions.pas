@@ -41,44 +41,26 @@ uses
 type
   TEmptyEnumerable<T> = class(TEnumerableBase<T>);
 
-  TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
-  protected
-    function GetCurrentNonGeneric: TValue; virtual; abstract;
-    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
-  public
-    function MoveNext: Boolean; virtual;
-    procedure Reset; virtual;
-  end;
-
-  TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
-  private
-    fInitialThreadId: Cardinal;
-  protected
-    fState: Integer;
-    fCurrent: T;
-    const
-      STATE_INITIAL    = -2; // initial state, before GetEnumerator
-      STATE_FINISHED   = -1; // end of enumerator
-      STATE_ENUMERATOR = 0;  // before calling MoveNext
-      STATE_RUNNING    = 1;  // enumeration is running
-  protected
-    function Clone: TIterator<T>; virtual; abstract;
-    function GetCurrent: T;
-    function GetCurrentNonGeneric: TValue; override; final;
-  public
-    constructor Create; override;
-    function GetEnumerator: IEnumerator<T>; override; final;
-  end;
-
-  TArrayIterator<T> = class(TIterator<T>)
+  TArrayIterator<T> = class(TIterator<T>, IReadOnlyList<T>)
   private
     fValues: TArray<T>;
     fIndex: Integer;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
   public
     constructor Create(const values: array of T); overload;
     constructor Create(const values: TArray<T>); overload;
     function Clone: TIterator<T>; override;
     function MoveNext: Boolean; override;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function ToArray: TArray<T>; override;
   end;
 
   ///	<summary>
@@ -752,66 +734,24 @@ type
     function MoveNext: Boolean; override;
   end;
 
+  TAnonymousIterator<T> = class(TIterator<T>)
+  private
+    fCount: TFunc<Integer>;
+    fItems: TFunc<Integer, T>;
+    fIndex: Integer;
+  protected
+    function GetCount: Integer; override;
+  public
+    constructor Create(const count: TFunc<Integer>; const items: TFunc<Integer, T>);
+    function Clone: TIterator<T>; override;
+    function MoveNext: Boolean; override;
+  end;
+
 implementation
 
 uses
-  Classes,
   Spring.Collections.Sets,
   Spring.ResourceStrings;
-
-
-{$REGION 'TIteratorBase<T>' }
-
-function TIteratorBase<T>.MoveNext: Boolean;
-begin
-  Result := False;
-end;
-
-procedure TIteratorBase<T>.Reset;
-begin
-  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TIterator<T>'}
-
-constructor TIterator<T>.Create;
-begin
-  inherited Create;
-  fState := STATE_INITIAL;
-  fInitialThreadId := TThread.CurrentThread.ThreadID;
-end;
-
-function TIterator<T>.GetCurrent: T;
-begin
-  Result := fCurrent;
-end;
-
-function TIterator<T>.GetCurrentNonGeneric: TValue;
-begin
-  Result := TValue.From<T>(GetCurrent);
-end;
-
-function TIterator<T>.GetEnumerator: IEnumerator<T>;
-var
-  iterator: TIterator<T>;
-begin
-  if (fInitialThreadId = TThread.CurrentThread.ThreadID) and (fState = STATE_INITIAL) then
-  begin
-    fState := STATE_ENUMERATOR;
-    Result := Self;
-  end
-  else
-  begin
-    iterator := Clone;
-    iterator.fState := STATE_ENUMERATOR;
-    Result := iterator;
-  end;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TArrayIterator<T>'}
@@ -830,6 +770,53 @@ constructor TArrayIterator<T>.Create(const values: TArray<T>);
 begin
   inherited Create;
   fValues := values;
+end;
+
+function TArrayIterator<T>.GetCount: Integer;
+begin
+  Result := Length(fValues);
+end;
+
+function TArrayIterator<T>.GetItem(index: Integer): T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+{$ENDIF}
+
+  Result := fValues[index];
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, Count);
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, Count - index);
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T; index,
+  count: Integer): Integer;
+{$IFDEF DELPHI2010}
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(fValues)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
+{$ENDIF}
+
+  comparer := EqualityComparer;
+  for i := index to index + count - 1 do
+    if comparer.Equals(fValues[i], item) then
+      Exit(i);
+  Result := -1;
+{$ELSE}
+begin
+  Result := TArray.IndexOf<T>(fValues, item, index, count, EqualityComparer);
+{$ENDIF}
 end;
 
 function TArrayIterator<T>.Clone: TIterator<T>;
@@ -857,6 +844,12 @@ begin
     end;
     fState := STATE_FINISHED;
   end;
+end;
+
+function TArrayIterator<T>.ToArray: TArray<T>;
+begin
+  Result := fValues;
+  SetLength(Result, Length(Result));
 end;
 
 {$ENDREGION}
@@ -1409,16 +1402,16 @@ begin
   if fState = STATE_ENUMERATOR then
   begin
     fBuffer := fSource.ToArray;
-    fIndex := High(fBuffer);
+    fIndex := Length(fBuffer);
     fState := STATE_RUNNING;
   end;
 
   if fState = STATE_RUNNING then
   begin
-    if (fIndex >= 0) and (fIndex <= Length(fBuffer)) then
+    if fIndex > 0 then
     begin
-      fCurrent := fBuffer[fIndex];
       Dec(fIndex);
+      fCurrent := fBuffer[fIndex];
       Exit(True);
     end;
     fState := STATE_FINISHED;
@@ -2780,7 +2773,6 @@ begin
   fComparer := comparer;
   if not Assigned(fComparer) then
     fComparer := fSource.Comparer;
-  fIndex := -1;
 end;
 
 function TOrderedIterator<T>.Clone: TIterator<T>;
@@ -2794,6 +2786,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+    fIndex := -1;
     fValues := fSource.ToArray;
     TArray.Sort<T>(fValues, fComparer);
     fState := STATE_RUNNING;
@@ -3135,6 +3128,51 @@ begin
       fCurrent := fElement;
       Result := True;
     end;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAnonymousIterator<T>'}
+
+constructor TAnonymousIterator<T>.Create(const count: TFunc<Integer>;
+  const items: TFunc<Integer, T>);
+begin
+  inherited Create;
+  fCount := count;
+  fItems := items;
+end;
+
+function TAnonymousIterator<T>.Clone: TIterator<T>;
+begin
+  Result := TAnonymousIterator<T>.Create(fCount, fItems);
+end;
+
+function TAnonymousIterator<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TAnonymousIterator<T>.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fIndex := -1;
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    if fIndex < fCount then
+    begin
+      Inc(fIndex);
+      fCurrent := fItems(fIndex);
+      Exit(True);
+    end;
+    fState := STATE_FINISHED;
   end;
 end;
 

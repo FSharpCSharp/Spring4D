@@ -114,6 +114,7 @@ end;
 destructor TEventBase.Destroy;
 begin
   fNotificationHandler.Free;
+  fNotificationHandler := nil;
   fHandlers.Free;
   fLock.Free;
   inherited;

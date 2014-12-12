@@ -89,6 +89,31 @@ type
         function ToArray: TArray<TValue>; override;
       {$ENDREGION}
       end;
+
+      TOrderedEnumerable = class(TContainedIterator<TGenericPair>)
+      private
+        fDictionary: TGenericDictionary;
+        fComparer: IComparer<TKey>;
+        fSortedKeys: TArray<TKey>;
+        fIndex: Integer;
+      protected
+      {$REGION 'Property Accessors'}
+        function GetCount: Integer; override;
+      {$ENDREGION}
+      public
+        constructor Create(const controller: IInterface;
+          const dictionary: TGenericDictionary;
+          const comparer: IComparer<TKey>);
+        function Clone: TIterator<TGenericPair>; override;
+        function MoveNext: Boolean; override;
+      end;
+
+{$IFDEF DELPHI2010}
+      TKeyCollectionHelper = class(TGenericDictionary.TKeyCollection)
+      public
+        function ToArray: TArray<TKey>;
+      end;
+{$ENDIF}
   private
     fDictionary: TGenericDictionary;
     fOwnership: TOwnershipType;
@@ -96,8 +121,10 @@ type
     fValues: TValueCollection;
     fOnKeyNotify: TCollectionNotifyEvent<TKey>;
     fOnValueNotify: TCollectionNotifyEvent<TValue>;
-    procedure DoKeyNotify(Sender: TObject; const Item: TKey; Action: TCollectionNotification);
-    procedure DoValueNotify(Sender: TObject; const Item: TValue; Action: TCollectionNotification);
+    procedure DoKeyNotify(Sender: TObject; const Item: TKey;
+      Action: TCollectionNotification);
+    procedure DoValueNotify(Sender: TObject; const Item: TValue;
+      Action: TCollectionNotification);
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
   protected
   {$REGION 'Property Accessors'}
@@ -107,13 +134,14 @@ type
     function GetValues: IReadOnlyCollection<TValue>; override;
     procedure SetItem(const key: TKey; const value: TValue); virtual;
   {$ENDREGION}
-    procedure AddInternal(const item: TGenericPair); override;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
     constructor Create(const comparer: IEqualityComparer<TKey>); overload;
-    constructor Create(capacity: Integer; const comparer: IEqualityComparer<TKey>); overload;
-    constructor Create(dictionary: TGenericDictionary; ownership: TOwnershipType); overload;
+    constructor Create(capacity: Integer;
+      const comparer: IEqualityComparer<TKey>); overload;
+    constructor Create(dictionary: TGenericDictionary;
+      ownership: TOwnershipType); overload;
 
     destructor Destroy; override;
 
@@ -121,19 +149,20 @@ type
     function GetEnumerator: IEnumerator<TGenericPair>; override;
     function Contains(const value: TGenericPair;
       const comparer: IEqualityComparer<TGenericPair>): Boolean; override;
+    function Ordered: IEnumerable<TGenericPair>; override;
     function ToArray: TArray<TGenericPair>; override;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
     procedure Clear; override;
-    function Remove(const item: TGenericPair): Boolean; overload; override;
-    function Extract(const item: TGenericPair): TGenericPair; override;
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
-    function Remove(const key: TKey; const value: TValue): Boolean; reintroduce; overload;
+    function RemovePair(const key: TKey; const value: TValue): Boolean; override;
+    function ExtractPair(const key: TKey; const value: TValue): TGenericPair; overload; override;
+    function ContainsPair(const key: TKey; const value: TValue): Boolean; override;
     function ContainsKey(const key: TKey): Boolean; override;
     function ContainsValue(const value: TValue): Boolean; override;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
@@ -142,7 +171,8 @@ type
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
     procedure AddOrSetValue(const key: TKey; const value: TValue);
-    function ExtractPair(const key: TKey): TGenericPair;
+    function Extract(const key: TKey): TValue; reintroduce; overload;
+    function ExtractPair(const key: TKey): TGenericPair; reintroduce; overload;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
@@ -161,6 +191,69 @@ type
   public
     constructor Create(const controller: IInterface);
     property Controller: IInterface read GetController;
+  end;
+
+  TBidiDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
+    IReadOnlyDictionary<TKey, TValue>, IDictionary<TKey, TValue>,
+    IBidiDictionary<TKey, TValue>)
+  private
+    type
+      TGenericPair = Generics.Collections.TPair<TKey, TValue>;
+  private
+    fValuesByKey: IDictionary<TKey, TValue>;
+    fKeysByValue: IDictionary<TValue, TKey>;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+    function GetItem(const key: TKey): TValue; inline;
+    function GetKey(const value: TValue): TKey;
+    function GetKeys: IReadOnlyCollection<TKey>; override;
+    function GetValue(const key: TKey): TValue;
+    function GetValues: IReadOnlyCollection<TValue>; override;
+    procedure SetItem(const key: TKey; const value: TValue); inline;
+    procedure SetKey(const value: TValue; const key: TKey);
+    procedure SetValue(const key: TKey; const value: TValue);
+  {$ENDREGION}
+  public
+    constructor Create; overload; override;
+
+  {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
+//    function Contains(const value: TGenericPair;
+//      const comparer: IEqualityComparer<TGenericPair>): Boolean; override;
+    function GetEnumerator: IEnumerator<TGenericPair>; override;
+  {$ENDREGION}
+
+  {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
+    procedure Clear; override;
+  {$ENDREGION}
+
+  {$REGION 'Implements IMap<TKey, TValue>'}
+    procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
+    function Remove(const key: TKey): Boolean; reintroduce; overload;
+    function RemovePair(const key: TKey; const value: TValue): Boolean; override;
+    function ExtractPair(const key: TKey; const value: TValue): TGenericPair; overload; override;
+    function ContainsPair(const key: TKey; const value: TValue): Boolean; override;
+    function ContainsKey(const key: TKey): Boolean; override;
+    function ContainsValue(const value: TValue): Boolean; override;
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+    property Values: IReadOnlyCollection<TValue> read GetValues;
+  {$ENDREGION}
+
+  {$REGION 'Implements IDictionary<TKey, TValue>'}
+    procedure AddOrSetValue(const key: TKey; const value: TValue);
+    function Extract(const key: TKey): TValue; reintroduce; overload; inline;
+    function ExtractPair(const key: TKey): TGenericPair; reintroduce; overload;
+    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+  {$ENDREGION}
+
+  {$REGION 'Implements IBidiDictionary<TKey, TValue>'}
+    function ExtractKey(const value: TValue): TKey;
+    function ExtractValue(const key: TKey): TValue;
+    function RemoveKey(const key: TKey): Boolean;
+    function RemoveValue(const value: TValue): Boolean;
+    function TryGetKey(const value: TValue; out key: TKey): Boolean;
+    function TryGetValue(const key: TKey; out value: TValue): Boolean;
+  {$ENDREGION}
   end;
 
 implementation
@@ -254,11 +347,6 @@ begin
   Result := TEnumeratorAdapter<TGenericPair>.Create(dictionary);
 end;
 
-procedure TDictionary<TKey, TValue>.AddInternal(const item: TGenericPair);
-begin
-  fDictionary.Add(item.Key, item.Value);
-end;
-
 procedure TDictionary<TKey, TValue>.Clear;
 begin
   fDictionary.Clear;
@@ -274,30 +362,26 @@ begin
     Result := comparer.Equals(TGenericPair.Create(value.Key, item), value);
 end;
 
-function TDictionary<TKey, TValue>.Remove(const item: TGenericPair): Boolean;
-begin
-  Result := Remove(item.Key, item.Value);
-end;
-
-function TDictionary<TKey, TValue>.Extract(
-  const item: TGenericPair): TGenericPair;
+function TDictionary<TKey, TValue>.ExtractPair(const key: TKey;
+  const value: TValue): TGenericPair;
 var
-  value: TValue;
   found: Boolean;
+  foundValue: TValue;
   comparer: IEqualityComparer<TValue>;
 begin
-  found := fDictionary.TryGetValue(item.Key, value);
+  found := fDictionary.TryGetValue(key, foundValue);
   if found then
   begin
     comparer := TEqualityComparer<TValue>.Default;
-    found := comparer.Equals(value, item.Value);
+    found := comparer.Equals(foundValue, value);
     if found then
 {$IFDEF DELPHIXE2_UP}
-      Result := fDictionary.ExtractPair(item.Key);
+      Result := fDictionary.ExtractPair(key);
 {$ELSE}
     begin
-      Result := item;
-      fDictionary.ExtractPair(item.Key);
+      Result.Key := key;
+      Result.Value := value;
+      fDictionary.ExtractPair(key);
     end;
 {$ENDIF}
   end;
@@ -354,10 +438,24 @@ begin
   Result := fDictionary.ContainsKey(key);
 end;
 
+function TDictionary<TKey, TValue>.ContainsPair(const key: TKey;
+  const value: TValue): Boolean;
+var
+  item: TValue;
+begin
+  Result := fDictionary.TryGetValue(key, item)
+    and TEqualityComparer<TValue>.Default.Equals(item, value);
+end;
+
 function TDictionary<TKey, TValue>.ContainsValue(
   const value: TValue): Boolean;
 begin
   Result := fDictionary.ContainsValue(value);
+end;
+
+function TDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
+begin
+  Result := ExtractPair(key).Value;
 end;
 
 function TDictionary<TKey, TValue>.ExtractPair(
@@ -389,7 +487,7 @@ begin
     fDictionary.Remove(key);
 end;
 
-function TDictionary<TKey, TValue>.Remove(const key: TKey;
+function TDictionary<TKey, TValue>.RemovePair(const key: TKey;
   const value: TValue): Boolean;
 var
   comparer: IEqualityComparer<TValue>;
@@ -417,6 +515,11 @@ end;
 function TDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
 begin
   Result := fDictionary[key];
+end;
+
+function TDictionary<TKey, TValue>.Ordered: IEnumerable<TGenericPair>;
+begin
+  Result := TOrderedEnumerable.Create(Self, fDictionary, TComparer<TKey>.Default());
 end;
 
 procedure TDictionary<TKey, TValue>.SetItem(const key: TKey;
@@ -534,6 +637,312 @@ end;
 function TContainedDictionary<TKey, TValue>._Release: Integer;
 begin
   Result := IInterface(FController)._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDictionary<TKey, TValue>.TOrderedEnumerable'}
+
+constructor TDictionary<TKey, TValue>.TOrderedEnumerable.Create(
+  const controller: IInterface; const dictionary: TGenericDictionary;
+  const comparer: IComparer<TKey>);
+begin
+  inherited Create(controller);
+  fDictionary := dictionary;
+  fComparer := comparer;
+end;
+
+function TDictionary<TKey, TValue>.TOrderedEnumerable.Clone: TIterator<TGenericPair>;
+begin
+  Result := TOrderedEnumerable.Create(Controller, fDictionary, fComparer);
+end;
+
+function TDictionary<TKey, TValue>.TOrderedEnumerable.GetCount: Integer;
+begin
+  Result := fDictionary.Count;
+end;
+
+function TDictionary<TKey, TValue>.TOrderedEnumerable.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fIndex := -1;
+{$IFDEF DELPHI2010}
+    fSortedKeys := TKeyCollectionHelper(fDictionary.Keys).ToArray;
+{$ELSE}
+    fSortedKeys := fDictionary.Keys.ToArray;
+{$ENDIF}
+    TArray.Sort<TKey>(fSortedKeys, fComparer);
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    if fIndex < High(fSortedKeys) then
+    begin
+      Inc(fIndex);
+      fCurrent.Key := fSortedKeys[fIndex];
+      fCurrent.Value := fDictionary[fSortedKeys[fIndex]];
+      Exit(True);
+    end;
+    fState := STATE_FINISHED;
+    fSortedKeys := nil;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDictionary<TKey, TValue>.TKeyCollectionHelper'}
+
+{$IFDEF DELPHI2010}
+function TDictionary<TKey, TValue>.TKeyCollectionHelper.ToArray: TArray<TKey>;
+var
+  item: TKey;
+  i: Integer;
+begin
+  SetLength(Result, Count);
+  i := 0;
+  for item in Self do
+  begin
+    Result[i] := item;
+    Inc(i);
+  end;
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TBidiDictionary<TKey, TValue>'}
+
+constructor TBidiDictionary<TKey, TValue>.Create;
+begin
+  inherited Create;
+  fKeysByValue := TDictionary<TValue, TKey>.Create;
+  fValuesByKey := TDictionary<TKey, TValue>.Create;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.Add(const key: TKey;
+  const value: TValue);
+begin
+  if fValuesByKey.ContainsKey(key) then
+    raise EInvalidOperationException.Create('key');
+  if fKeysByValue.ContainsKey(value) then
+    raise EInvalidOperationException.Create('value');
+  fValuesByKey.Add(key, value);
+  fKeysByValue.Add(value, key);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
+  const value: TValue);
+var
+  oldValue: TValue;
+begin
+  RemoveValue(value);
+  if fValuesByKey.TryGetValue(key, oldValue) then
+    fKeysByValue.Remove(oldValue);
+  fKeysByValue.Add(value, key);
+  fValuesByKey[key] := value;
+end;
+
+function TBidiDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+begin
+  Result := Self;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.Clear;
+begin
+  fValuesByKey.Clear;
+  fKeysByValue.Clear;
+end;
+
+function TBidiDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
+begin
+  Result := fValuesByKey.ContainsKey(key);
+end;
+
+function TBidiDictionary<TKey, TValue>.ContainsPair(const key: TKey;
+  const value: TValue): Boolean;
+var
+  item: TValue;
+begin
+  Result := fValuesByKey.TryGetValue(key, item)
+    and TEqualityComparer<TValue>.Default.Equals(value, item);
+end;
+
+function TBidiDictionary<TKey, TValue>.ContainsValue(
+  const value: TValue): Boolean;
+begin
+  Result := fKeysByValue.ContainsKey(value);
+end;
+
+function TBidiDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
+begin
+  Result := ExtractValue(key);
+end;
+
+function TBidiDictionary<TKey, TValue>.ExtractKey(const value: TValue): TKey;
+begin
+  if fKeysByValue.TryGetValue(value, Result) then
+  begin
+    fKeysByValue.Extract(value);
+    fValuesByKey.Extract(Result);
+  end
+  else
+    Result := Default(TKey);
+end;
+
+function TBidiDictionary<TKey, TValue>.ExtractPair(
+  const key: TKey): TGenericPair;
+begin
+  raise ENotImplementedException.Create('ExtractPair');
+end;
+
+function TBidiDictionary<TKey, TValue>.ExtractPair(const key: TKey;
+  const value: TValue): TGenericPair;
+begin
+  Result := fValuesByKey.ExtractPair(key, value);
+  fKeysByValue.ExtractPair(value, key);
+end;
+
+function TBidiDictionary<TKey, TValue>.ExtractValue(const key: TKey): TValue;
+begin
+  if fValuesByKey.TryGetValue(key, Result) then
+  begin
+    fKeysByValue.Extract(Result);
+    fValuesByKey.Extract(key);
+  end
+  else
+    Result := Default(TValue);
+end;
+
+function TBidiDictionary<TKey, TValue>.GetCount: Integer;
+begin
+  Result := fValuesByKey.Count;
+end;
+
+function TBidiDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TGenericPair>;
+begin
+  Result := fValuesByKey.GetEnumerator();
+end;
+
+function TBidiDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
+begin
+  Result := GetValue(key);
+end;
+
+function TBidiDictionary<TKey, TValue>.GetKey(const value: TValue): TKey;
+begin
+  Result := fKeysByValue[value];
+end;
+
+function TBidiDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
+begin
+  Result := fValuesByKey.Keys;
+end;
+
+function TBidiDictionary<TKey, TValue>.GetValue(const key: TKey): TValue;
+begin
+  Result := fValuesByKey[key];
+end;
+
+function TBidiDictionary<TKey, TValue>.GetValues: IReadOnlyCollection<TValue>;
+begin
+  Result := fKeysByValue.Keys;
+end;
+
+function TBidiDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
+begin
+  Result := RemoveKey(key);
+end;
+
+function TBidiDictionary<TKey, TValue>.RemovePair(const key: TKey;
+  const value: TValue): Boolean;
+var
+  item: TValue;
+begin
+  if fValuesByKey.TryGetValue(key, item)
+    and TEqualityComparer<TValue>.Default.Equals(value, item) then
+  begin
+    fValuesByKey.Remove(key);
+    fKeysByValue.Remove(value);
+  end;
+end;
+
+function TBidiDictionary<TKey, TValue>.RemoveKey(const key: TKey): Boolean;
+var
+  value: TValue;
+begin
+  Result := fValuesByKey.TryGetValue(key, value);
+  if Result then
+  begin
+    fValuesByKey.Remove(key);
+    fKeysByValue.Remove(value);
+
+    // notify
+  end;
+end;
+
+function TBidiDictionary<TKey, TValue>.RemoveValue(const value: TValue): Boolean;
+var
+  key: TKey;
+begin
+  Result := fKeysByValue.TryGetValue(value, key);
+  if Result then
+  begin
+    fValuesByKey.Remove(key);
+    fKeysByValue.Remove(value);
+
+    // notify
+  end;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.SetItem(const key: TKey;
+  const value: TValue);
+begin
+  SetValue(key, value);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.SetKey(const value: TValue;
+  const key: TKey);
+var
+  oldKey: TKey;
+begin
+  if fValuesByKey.ContainsKey(key) then
+    raise EInvalidOperationException.Create('key');
+  if fKeysByValue.TryGetValue(value, oldKey) then
+    fValuesByKey.Remove(oldKey);
+  fValuesByKey.Add(key, value);
+  fKeysByValue[value] := key;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.SetValue(const key: TKey;
+  const value: TValue);
+var
+  oldValue: TValue;
+begin
+  if fKeysByValue.ContainsKey(value) then
+    raise EInvalidOperationException.Create('value');
+  if fValuesByKey.TryGetValue(key, oldValue) then
+    fKeysByValue.Remove(oldValue);
+  fKeysByValue.Add(value, key);
+  fValuesByKey[key] := value;
+end;
+
+function TBidiDictionary<TKey, TValue>.TryGetKey(const value: TValue;
+  out key: TKey): Boolean;
+begin
+  Result := fKeysByValue.TryGetValue(value, key);
+end;
+
+function TBidiDictionary<TKey, TValue>.TryGetValue(const key: TKey;
+  out value: TValue): Boolean;
+begin
+  Result := fValuesByKey.TryGetValue(key, value);
 end;
 
 {$ENDREGION}

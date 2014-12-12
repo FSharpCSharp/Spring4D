@@ -240,7 +240,7 @@ function TAbstractSession.DoMapEntity(const resultSet: IDBResultSet; classInfo: 
 var
   entityWrapper: IEntityWrapper;
 begin
-  Result := TActivator.CreateInstance(classInfo).AsObject;
+  Result := TActivator.CreateInstance(classInfo);
   entityWrapper := TEntityWrapper.Create(Result);
   DoMapEntityFromColumns(entityWrapper, resultSet);
 end;

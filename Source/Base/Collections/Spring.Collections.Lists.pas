@@ -32,6 +32,7 @@ uses
   Classes,
   Generics.Collections,
   Generics.Defaults,
+  SysUtils,
   Spring,
   Spring.Collections,
   Spring.Collections.Base;
@@ -233,10 +234,31 @@ type
     procedure Move(currentIndex, newIndex: Integer); override;
   end;
 
+  TAnonymousReadOnlyList<T> = class(TEnumerableBase<T>, IReadOnlyList<T>)
+  private
+    fCount: TFunc<Integer>;
+    fItems: TFunc<Integer, T>;
+    fIterator: IEnumerable<T>;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
+  public
+    constructor Create(const count: TFunc<Integer>;
+      const items: TFunc<Integer, T>;
+      const iterator: IEnumerable<T>{$IFDEF DELPHIXE3_UP} = nil{$ENDIF});
+
+    function GetEnumerator: IEnumerator<T>; override;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+  end;
+
 implementation
 
 uses
-  SysUtils,
+  Spring.Collections.Extensions,
   Spring.ResourceStrings;
 
 
@@ -388,6 +410,7 @@ end;
 {$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 function TList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+{$IFDEF DELPHI2010}
 var
   comparer: IEqualityComparer<T>;
   i: Integer;
@@ -402,6 +425,10 @@ begin
     if comparer.Equals(fItems[i], item) then
       Exit(i);
   Result := -1;
+{$ELSE}
+begin
+  Result := TArray.IndexOf<T>(fItems, item, index, count, EqualityComparer);
+{$ENDIF}
 end;
 
 procedure TList<T>.SetItem(index: Integer; const value: T);
@@ -1143,6 +1170,56 @@ begin
 
   fIndex := 0;
   fCurrent := Default(T);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAnonymousReadOnlyList<T>'}
+
+constructor TAnonymousReadOnlyList<T>.Create(const count: TFunc<Integer>;
+  const items: TFunc<Integer, T>; const iterator: IEnumerable<T>);
+begin
+  inherited Create;
+  fCount := count;
+  fItems := items;
+  fIterator := iterator;
+  if not Assigned(fIterator) then
+    fIterator := TAnonymousIterator<T>.Create(fCount, fItems);
+end;
+
+function TAnonymousReadOnlyList<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := fIterator.GetEnumerator;
+end;
+
+function TAnonymousReadOnlyList<T>.GetItem(index: Integer): T;
+begin
+  Result := fItems(index);
+end;
+
+function TAnonymousReadOnlyList<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, Count)
+end;
+
+function TAnonymousReadOnlyList<T>.IndexOf(const item: T;
+  index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, Count - index);
+end;
+
+function TAnonymousReadOnlyList<T>.IndexOf(const item: T; index,
+  count: Integer): Integer;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := EqualityComparer;
+  for i := index to index + count - 1 do
+    if comparer.Equals(fItems(i), item) then
+      Exit(i);
+  Result := -1;
 end;
 
 {$ENDREGION}

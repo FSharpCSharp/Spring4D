@@ -47,6 +47,7 @@ contains
   Spring.Persistence.Core.EntityCache in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityCache.pas',
   Spring.Persistence.Core.EntityMap in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityMap.pas',
   Spring.Persistence.Core.EntitySerializer in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntitySerializer.pas',
+  Spring.Persistence.Core.EntityWrapper in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityWrapper.pas',
   Spring.Persistence.Core.Exceptions in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Exceptions.pas',
   Spring.Persistence.Core.Interfaces in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Interfaces.pas',
   Spring.Persistence.Core.ListSession in '..\..\Source\Persistence\Core\Spring.Persistence.Core.ListSession.pas',

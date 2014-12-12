@@ -41,13 +41,13 @@ type
     type
       TGenericPair = Generics.Collections.TPair<TKey, TValue>;
 
-      TEnumerator = class(TEnumeratorBase<TPair<TKey, TValue>>)
+      TEnumerator = class(TEnumeratorBase<TGenericPair>)
       private
         fSource: TMultiMapBase<TKey, TValue>;
         fDictionaryEnumerator: IEnumerator<TPair<TKey, ICollection<TValue>>>;
         fCollectionEnumerator: IEnumerator<TValue>;
       protected
-        function GetCurrent: TPair<TKey, TValue>; override;
+        function GetCurrent: TGenericPair; override;
       public
         constructor Create(const source: TMultiMapBase<TKey, TValue>);
         function MoveNext: Boolean; override;
@@ -56,7 +56,7 @@ type
       TValueEnumerator = class(TEnumeratorBase<TValue>)
       private
         fSource: TMultiMapBase<TKey, TValue>;
-        fSourceEnumerator: IEnumerator<TPair<TKey, TValue>>;
+        fSourceEnumerator: IEnumerator<TGenericPair>;
       protected
         function GetCurrent: TValue; override;
       public
@@ -93,7 +93,6 @@ type
     function GetKeys: IReadOnlyCollection<TKey>; override;
     function GetValues: IReadOnlyCollection<TValue>; override;
   {$ENDREGION}
-    procedure AddInternal(const item: TGenericPair); overload; override;
     function CreateCollection: ICollection<TValue>; virtual; abstract;
     function CreateDictionary: TDictionary<TKey, ICollection<TValue>>; virtual; abstract;
   public
@@ -108,22 +107,22 @@ type
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
     procedure Clear; override;
-    function Remove(const item: TGenericPair): Boolean; overload; override;
-    function Extract(const item: TGenericPair): TGenericPair; override;
   {$ENDREGION}
 
-  {$REGION 'Implements IMap<TPair<TKey, TValue>>'}
+  {$REGION 'Implements IMap<TKey, TValue>'}
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
-    function Remove(const key: TKey; const value: TValue): Boolean; reintroduce; overload;
+    function RemovePair(const key: TKey; const value: TValue): Boolean; override;
+    function ExtractPair(const key: TKey; const value: TValue): TGenericPair; override;
+    function ContainsPair(const key: TKey; const value: TValue): Boolean; override;
     function ContainsKey(const key: TKey): Boolean; override;
     function ContainsValue(const value: TValue): Boolean; override;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
     property Values: IReadOnlyCollection<TValue> read GetValues;
   {$ENDREGION}
 
-  {$REGION 'Implements IMultiMap<TPair<TKey, TValue>>'}
-    function ExtractValues(const key: TKey): IReadOnlyCollection<TKey>;
+  {$REGION 'Implements IMultiMap<TKey, TValue>'}
+    function ExtractValues(const key: TKey): IReadOnlyCollection<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   {$ENDREGION}
@@ -193,11 +192,6 @@ begin
   Inc(fCount);
 end;
 
-procedure TMultiMapBase<TKey, TValue>.AddInternal(const item: TGenericPair);
-begin
-  Add(item.Key, item.Value);
-end;
-
 procedure TMultiMapBase<TKey, TValue>.Clear;
 begin
   fDictionary.Clear;
@@ -220,6 +214,14 @@ begin
   Result := fDictionary.ContainsKey(key);
 end;
 
+function TMultiMapBase<TKey, TValue>.ContainsPair(const key: TKey;
+  const value: TValue): Boolean;
+var
+  values: IReadOnlyCollection<TValue>;
+begin
+  Result := TryGetValues(key, values) and values.Contains(value);
+end;
+
 function TMultiMapBase<TKey, TValue>.ContainsValue(const value: TValue): Boolean;
 var
   list: ICollection<TValue>;
@@ -230,22 +232,22 @@ begin
   Result := False;
 end;
 
-function TMultiMapBase<TKey, TValue>.Extract(
-  const item: TGenericPair): TGenericPair;
+function TMultiMapBase<TKey, TValue>.ExtractPair(const key: TKey;
+  const value: TValue): TGenericPair;
 var
   list: ICollection<TValue>;
 begin
-  if fDictionary.TryGetValue(item.Key, list) then
+  if fDictionary.TryGetValue(key, list) then
   begin
-    Result.Key := item.Key;
-    Result.Value := list.Extract(item.Value);
+    Result.Key := key;
+    Result.Value := list.Extract(value);
   end
   else
     Result := Default(TGenericPair);
 end;
 
 function TMultiMapBase<TKey, TValue>.ExtractValues(
-  const key: TKey): IReadOnlyCollection<TKey>;
+  const key: TKey): IReadOnlyCollection<TValue>;
 var
   list: ICollection<TValue>;
 begin
@@ -254,7 +256,7 @@ begin
 
   Dec(fCount, list.Count);
   fDictionary.Remove(key);
-  Result := list as IReadOnlyCollection<TKey>;
+  Result := list as IReadOnlyCollection<TValue>;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetCount: Integer;
@@ -287,7 +289,7 @@ begin
   Result := fValues;
 end;
 
-function TMultiMapBase<TKey, TValue>.Remove(const key: TKey;
+function TMultiMapBase<TKey, TValue>.RemovePair(const key: TKey;
   const value: TValue): Boolean;
 var
   list: ICollection<TValue>;
@@ -299,11 +301,6 @@ begin
     if list.IsEmpty then
       fDictionary.Remove(key)
   end;
-end;
-
-function TMultiMapBase<TKey, TValue>.Remove(const item: TGenericPair): Boolean;
-begin
-  Result := Remove(item.Key, item.Value);
 end;
 
 function TMultiMapBase<TKey, TValue>.Remove(const key: TKey): Boolean;
@@ -340,7 +337,7 @@ begin
   fSource := source;
 end;
 
-function TMultiMapBase<TKey, TValue>.TEnumerator.GetCurrent: TPair<TKey, TValue>;
+function TMultiMapBase<TKey, TValue>.TEnumerator.GetCurrent: TGenericPair;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(fDictionaryEnumerator, 'dictionaryEnumerator');

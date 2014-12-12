@@ -125,6 +125,8 @@ resourcestring
 
   {$REGION 'Spring.Reflection'}
 
+  SMissingConstructor = 'Constructor on type %s not found.';
+
   // Value Converters
   SCouldNotConvertValue = 'Could not convert value: %s to %s.';
   SEmptySourceTypeKind = 'Empty source TypeKind argument set.';
