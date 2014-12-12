@@ -2474,14 +2474,7 @@ end;
 
 {$REGION 'TTypeInfoHelper'}
 
-{$IFNDEF DELPHIXE3_UP}
-function TTypeInfoHelper.TypeData: PTypeData;
-begin
-  Result := GetTypeData(@Self);
-end;
-{$ENDIF}
-
-function TTypeInfoHelper.TypeName: string;
+function TTypeInfoHelper.GetTypeName: string;
 begin
 {$IFNDEF NEXTGEN}
   Result := UTF8ToString(Name);
