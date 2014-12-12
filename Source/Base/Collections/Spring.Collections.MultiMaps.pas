@@ -111,7 +111,7 @@ type
     function Extract(const item: TGenericPair): TGenericPair; override;
   {$ENDREGION}
 
-  {$REGION 'Implements IMap<TPair<TKey, TValue>>'}
+  {$REGION 'Implements IMap<TKey, TValue>'}
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
     function Remove(const key: TKey; const value: TValue): Boolean; reintroduce; overload;
@@ -122,8 +122,8 @@ type
     property Values: IReadOnlyCollection<TValue> read GetValues;
   {$ENDREGION}
 
-  {$REGION 'Implements IMultiMap<TPair<TKey, TValue>>'}
-    function ExtractValues(const key: TKey): IReadOnlyCollection<TKey>;
+  {$REGION 'Implements IMultiMap<TKey, TValue>'}
+    function ExtractValues(const key: TKey): IReadOnlyCollection<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   {$ENDREGION}
@@ -248,7 +248,7 @@ begin
 end;
 
 function TMultiMapBase<TKey, TValue>.ExtractValues(
-  const key: TKey): IReadOnlyCollection<TKey>;
+  const key: TKey): IReadOnlyCollection<TValue>;
 var
   list: ICollection<TValue>;
 begin
@@ -257,7 +257,7 @@ begin
 
   Dec(fCount, list.Count);
   fDictionary.Remove(key);
-  Result := list as IReadOnlyCollection<TKey>;
+  Result := list as IReadOnlyCollection<TValue>;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetCount: Integer;
