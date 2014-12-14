@@ -31,7 +31,8 @@ program Spring.Tests;
 uses
   Spring.TestBootstrap in 'Source\Spring.TestBootstrap.pas',
   TestFramework,
-  FinalBuilder.XMLTestRunner in 'Source\FinalBuilder.XMLTestRunner.pas',
+  VSoft.DUnit.XMLTestRunner in 'Source\VSoft.DUnit.XMLTestRunner.pas',
+  VSoft.MSXML6 in 'Source\VSoft.MSXML6.pas',
   Spring.TestRegistration in 'Source\Spring.TestRegistration.pas',
   Spring.TestRunner in 'Source\Spring.TestRunner.pas',
   Spring.TestUtils in 'Source\Spring.TestUtils.pas',
