@@ -37,7 +37,7 @@ uses
   SysUtils,
   Spring.TestUtils,
   {$IFDEF XMLOUTPUT}
-  FinalBuilder.XMLTestRunner,
+  VSoft.DUnit.XMLTestRunner,
   TestFramework,
   {$ENDIF}
   TextTestRunner;
@@ -61,7 +61,7 @@ begin
     OutputFile := ParamStr(1);
   WriteLn('Writing output to ' + OutputFile);
   WriteLn(Format('Running %d of %d test cases', [RegisteredTests.CountEnabledTestCases, RegisteredTests.CountTestCases]));
-  ProcessTestResult(FinalBuilder.XMLTestRunner.RunRegisteredTests(OutputFile));
+  ProcessTestResult(VSoft.DUnit.XMLTestRunner.RunRegisteredTests(OutputFile));
   {$ELSE}
   TextTestRunner.RunRegisteredTests(){$IFNDEF AUTOREFCOUNT}.Free(){$ENDIF};
   {$ENDIF}
