@@ -49,7 +49,6 @@ procedure TTestCoreUtils.TryConvert_Nullable;
 var
   LFrom, LResult: TValue;
   bOK: Boolean;
-  LRttiMember: TRttiMember;
   LEntity: TCustomer;
   LValue: Nullable<Double>;
   LSpringValue: Nullable<string>;
@@ -58,9 +57,8 @@ begin
   //Spring Nullable
   LEntity := TCustomer.Create;
   try
-    LRttiMember := TRttiContext.Create.GetType(LEntity.ClassType).GetProperty('MiddleName');
     LFrom := 'Bob';
-    bOK := TUtils.TryConvert(LFrom, LRttiMember, LEntity, LResult);
+    bOK := TUtils.TryConvert(LFrom, TypeInfo(Nullable<string>), LEntity, LResult);
     CheckTrue(bOK);
     CheckEquals('Nullable<System.string>', string(LResult.TypeInfo.Name));
     CheckTrue(LResult.TryAsType<Nullable<string>>(LSpringValue));
@@ -74,9 +72,8 @@ begin
   //Marshmallow Nullable
   LOrder := TCustomer_Orders.Create;
   try
-    LRttiMember := TRttiContext.Create.GetType(LOrder.ClassType).GetProperty('Total_Order_Price');
     LFrom := 256.12;
-    bOK := TUtils.TryConvert(LFrom, LRttiMember, LOrder, LResult);
+    bOK := TUtils.TryConvert(LFrom, TypeInfo(Nullable<Double>), LOrder, LResult);
     CheckTrue(bOK);
     CheckEquals('Nullable<System.Double>', string(LResult.TypeInfo.Name));
     CheckTrue(LResult.TryAsType<Nullable<Double>>(LValue));
@@ -95,7 +92,6 @@ procedure TTestCoreUtils.TryConvert_Nullable_Speed;
 var
   LFrom, LResult: TValue;
   bOK: Boolean;
-  LRttiMember: TRttiMember;
   LEntity: TCustomer;
   LOrder: TCustomer_Orders;
   LCount, i: Integer;
@@ -104,14 +100,13 @@ begin
   LEntity := TCustomer.Create;
   bOK := False;
   try
-    LRttiMember := TRttiContext.Create.GetType(LEntity.ClassType).GetProperty('MiddleName');
     LFrom := 'Bob';
     LCount := 100000;
 
     sw := TStopwatch.StartNew;
     for i := 1 to LCount do
     begin
-      bOK := TUtils.TryConvert(LFrom, LRttiMember, LEntity, LResult);
+      bOK := TUtils.TryConvert(LFrom, TypeInfo(Nullable<string>), LEntity, LResult);
     end;
 
     sw.Stop;
@@ -120,11 +115,10 @@ begin
 
     Status(Format('Set %D Spring Nullable<string> values in %D ms', [LCount, sw.ElapsedMilliseconds]));
 
-    LRttiMember := TRttiContext.Create.GetType(LEntity.ClassType).GetProperty('EMail');
     sw := TStopwatch.StartNew;
     for i := 1 to LCount do
     begin
-      bOK := TUtils.TryConvert(LFrom, LRttiMember, LEntity, LResult);
+      bOK := TUtils.TryConvert(LFrom, TypeInfo(Nullable<string>), LEntity, LResult);
     end;
     sw.Stop;
     CheckTrue(bOK);
@@ -136,10 +130,9 @@ begin
   LOrder := TCustomer_Orders.Create;
   try
     sw := TStopwatch.StartNew;
-    LRttiMember := TRttiContext.Create.GetType(TCustomer_Orders).GetProperty('Total_Order_Price');
     for i := 1 to LCount do
     begin
-      bOK := TUtils.TryConvert(LFrom, LRttiMember, LOrder, LResult);
+      bOK := TUtils.TryConvert(LFrom, TypeInfo(Nullable<Double>), LOrder, LResult);
     end;
     sw.Stop;
     CheckTrue(bOK);

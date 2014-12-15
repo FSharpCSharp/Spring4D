@@ -128,8 +128,7 @@ begin
 
   Result.Value := TUtils.AsVariant(LVal);
   if CanUpdateParamFieldType(Result.Value) then
-    Result.SetParamTypeFromTypeInfo(TRttiExplorer.GetMemberTypeInfo(
-      paramField.Column.BaseEntityClass, paramField.Column.MemberName));
+    Result.SetParamTypeFromTypeInfo(paramField.Column.MemberType);
 
   if bFree then
     FreeValueObject(LVal);

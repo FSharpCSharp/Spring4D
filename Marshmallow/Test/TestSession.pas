@@ -82,6 +82,7 @@ type
     procedure When_Registered_RowMapper_And_GetList_Make_Sure_Its_Used_On_TheSameType;
     procedure When_Trying_To_Register_RowMapper_Again_For_The_Same_Type_Throw_Exception;
     procedure Can_Use_RowMapper_With_Unannotated_Entity;
+    procedure Memoizer_Cache_Constructors;
   end;
 
   TestTDetachedSession = class(TTestCase)
@@ -135,6 +136,7 @@ uses
   ,TestConsts
   ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.Core.Exceptions
+  ,Spring.Reflection.Activator
   ,Diagnostics
   ;
 
@@ -272,6 +274,30 @@ begin
   end
   else
     Result := GetDBValue('SELECT COUNT(*) FROM ' + ATablename);
+end;
+
+type
+  TMemoize = class
+  public
+    class function Memoize<T,R>(const func: TFunc<T, R>): TFunc<T,R>; overload;
+  end;
+
+
+{ TMemoize }
+
+class function TMemoize.Memoize<T, R>(const func: TFunc<T, R>): TFunc<T, R>;
+var
+  cache: IDictionary<T,R>;
+begin
+  cache := TCollections.CreateDictionary<T,R>;
+  Result := function(arg: T): R
+    begin
+      if not cache.TryGetValue(arg, Result) then
+      begin
+        Result := func(arg);
+        cache.AddOrSetValue(arg, Result);
+      end;
+    end;
 end;
 
 type
@@ -1077,6 +1103,29 @@ begin
   end;
 end;
 
+procedure TestTSession.Memoizer_Cache_Constructors;
+var
+  cachedFunc: TFunc<PTypeInfo,TObject>;
+  instance: TObject;
+  sw: TStopwatch;
+begin
+  cachedFunc := TMemoize.Memoize<PTypeInfo, TObject>(function(arg: PTypeInfo): TObject
+    begin
+      Result := TActivator.CreateInstance(arg);
+    end);
+  sw := TStopwatch.StartNew;
+  instance := cachedFunc(TCustomer.ClassInfo);
+  sw.Stop;
+  CheckNotNull(instance);
+  Status(Format('First call in %d ticks', [sw.ElapsedTicks]));
+  sw := TStopwatch.StartNew;
+  instance := cachedFunc(TCustomer.ClassInfo);
+  sw.Stop;
+  CheckNotNull(instance);
+  Status(Format('Second call in %d ticks', [sw.ElapsedTicks]));
+  instance.Free;
+end;
+
 procedure TestTSession.Nullable;
 var
   LCustomer: TCustomer;
@@ -1556,7 +1605,9 @@ type
     property SpringLazyOrders: IList<TCustomer_Orders> read GetOrders;
   end;
 
-  { TSpringLazyCustomer }
+
+
+{ TSpringLazyCustomer }
 
   function TSpringLazyCustomer.GetOrders: IList<TCustomer_Orders>;
   begin

@@ -29,7 +29,9 @@ unit Spring.Persistence.Core.DetachedSession;
 interface
 
 uses
-  Spring.Persistence.Core.Session;
+  Spring.Persistence.Core.Session,
+  Spring.Persistence.Core.Interfaces
+  ;
 
 type
   /// <summary>
@@ -42,7 +44,7 @@ type
   /// </summary>
   TDetachedSession = class(TSession)
   protected
-    procedure AttachEntity(const entity: TObject); override;
+    procedure AttachEntity(const entity: IEntityWrapper); override;
     procedure DetachEntity(const entity: TObject); override;
   end;
 
@@ -51,7 +53,7 @@ implementation
 
 {$REGION 'TDetachedSession'}
 
-procedure TDetachedSession.AttachEntity(const entity: TObject);
+procedure TDetachedSession.AttachEntity(const entity: IEntityWrapper);
 begin
   // do nothing
 end;

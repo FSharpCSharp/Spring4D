@@ -57,7 +57,7 @@ implementation
 uses
   Generics.Collections,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.SQL.Commands.Delete;
 
 
@@ -108,6 +108,7 @@ end;
 procedure TListSession<T>.DoOnListChanged(Sender: TObject; const Item: T; Action: TCollectionChangedAction);
 var
   value: TValue;
+  entityDetails: TEntityData;
 begin
   case Action of
     caAdded: ;
@@ -115,7 +116,11 @@ begin
     begin
       if not fSession.IsNew(Item) then
       begin
-        value := TRttiExplorer.GetPrimaryKeyValue(Item);
+        entityDetails := TEntityCache.Get(T);
+        if not entityDetails.HasPrimaryKey then
+          raise EORMPrimaryKeyColumnNotFound.CreateFmt('Primary key column not found for entity: %s',
+            [entityDetails.EntityClass.ClassName]);
+        value := entityDetails.PrimaryKeyColumn.GetValue(Item);
         if fPrimaryKeys.Add(value) then
           fSession.OldStateEntities.Remove(Item);
       end;

@@ -102,7 +102,7 @@ type
     function GetResultSet(const sqlStatement: string;
       const params: IList<TDBParam>): IDBResultSet; overload;
 
-    procedure AttachEntity(const entity: TObject); virtual; abstract;
+    procedure AttachEntity(const entity: IEntityWrapper); virtual; abstract;
     procedure DetachEntity(const entity: TObject); virtual; abstract;
 
     procedure DoInsert(const entity, executor: TObject); virtual;
@@ -167,7 +167,7 @@ begin
     begin
       Result := TUtils.FromVariant(value);
       if not Result.IsEmpty then
-        if TUtils.TryConvert(Result, column.ColumnAttr.RttiMember, entity, LConvertedValue) then
+        if TUtils.TryConvert(Result, column.TypeInfo, entity, LConvertedValue) then
           Result := LConvertedValue;
     end;
   end;
@@ -233,7 +233,7 @@ begin
   inserter := executor as TInsertExecutor;
   inserter.Execute(entityWrapper);
   SetLazyColumns(entityWrapper);
-  AttachEntity(entity);
+  AttachEntity(entityWrapper);
 end;
 
 function TAbstractSession.DoMapEntity(const resultSet: IDBResultSet; classInfo: PTypeInfo): TObject;
@@ -251,10 +251,11 @@ begin
   SetEntityFromColumns(entityToMap, resultSet);
   SetLazyColumns(entityToMap);
   SetAssociations(entityToMap, resultSet);
-  AttachEntity(entityToMap.GetEntity);
+  AttachEntity(entityToMap);
 end;
 
-function TAbstractSession.DoMapObjectInEntity(const resultSet: IDBResultSet; const baseEntity: TObject; objectClassInfo: PTypeInfo): TObject;
+function TAbstractSession.DoMapObjectInEntity(const resultSet: IDBResultSet;
+  const baseEntity: TObject; objectClassInfo: PTypeInfo): TObject;
 var
   fieldValue: Variant;
   value, convertedValue: TValue;
@@ -265,7 +266,7 @@ begin
     fieldValue := resultSet.GetFieldValue(0);
     value := TUtils.FromVariant(fieldValue);
     try
-      if TUtils.TryConvert(value, TType.GetType(objectClassInfo), baseEntity, convertedValue) then
+      if TUtils.TryConvert(value, objectClassInfo, baseEntity, convertedValue) then
         Result := convertedValue.AsObject;         
     finally
       TFinalizer.FinalizeInstance(value);
@@ -276,13 +277,13 @@ end;
 procedure TAbstractSession.DoUpdate(const entity, executor: TObject);
 var
   updater: TUpdateExecutor;
-  //entityWrapper: IEntityWrapper;
+  entityWrapper: IEntityWrapper;
 begin
-  //entityWrapper := TEntityWrapper.Create(entity);
+  entityWrapper := TEntityWrapper.Create(entity);
   updater := executor as TUpdateExecutor;
   updater.Execute(entity);
   //SetLazyColumns(entityWrapper);  //TODO: test lazy columns after insert or update
-  AttachEntity(entity);
+  AttachEntity(entityWrapper);
 end;
 
 procedure TAbstractSession.FetchFromQueryText(const sqlStatement: string;
@@ -574,19 +575,17 @@ var
   fieldValue: Variant;
   value: TValue;
   i: Integer;
-  columnTypeInfo: PTypeInfo;
 begin
   entity.SetPrimaryKeyValue(entity.GetPrimaryKeyValueFrom(resultSet));
-  for i := 0 to entity.GetColumnsToMap.Count - 1 do
+  for i:= 0 to entity.GetColumnsToMap.Count - 1 do
   begin
     columnData := entity.GetColumnsToMap[i];
     if columnData.IsPrimaryKey then
       Continue;
 
-    columnTypeInfo := columnData.TypeInfo;
-    if TType.IsLazy(columnTypeInfo) then
+    if TType.IsLazy(columnData.TypeInfo) then
     begin
-      value := ResolveLazyValue(entity, columnData.MemberName, columnTypeInfo);
+      value := ResolveLazyValue(entity, columnData.MemberName, columnData.TypeInfo);
       entity.SetColumnValue(columnData.ColumnAttr, value);
     end
     else

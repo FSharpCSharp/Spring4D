@@ -65,7 +65,7 @@ begin
     begin
       entityWrapper := TEntityWrapper.Create(entity);
       SetLazyColumns(entityWrapper);
-      AttachEntity(entity);
+      AttachEntity(entityWrapper);
     end;
     inserter.BulkExecute<T>(ACollection);
   finally

@@ -49,11 +49,10 @@ type
     class function FromVariant(const AValue: Variant): TValue;
     class function GetResultsetFromVariant(const AValue: Variant): IDBResultset;
 
-    class function TryConvert(const AFrom: TValue; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
+    class function TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean;
 
     class function TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
     class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
-    class function TryGetPrimaryKeyColumn(AColumns: IList<TColumnData>; out AColumn: TColumnData): Boolean;
     class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean;
     class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
     class function TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean;
@@ -69,7 +68,7 @@ type
     class function SameObject(ALeft, ARight: TObject): Boolean;
     class function SameStream(ALeft, ARight: TStream): Boolean;
 
-    class procedure SetNullableValue(ARttiMember: TRttiNamedObject; const AFrom: TValue; var AResult: TValue);
+    class procedure SetNullableValue(targetTypeInfo: PTypeInfo; const AFrom: TValue; var AResult: TValue);
   end;
 
 implementation
@@ -252,22 +251,6 @@ begin
   end;
 end;
 
-class function TUtils.TryGetPrimaryKeyColumn(AColumns: IList<TColumnData>;
-  out AColumn: TColumnData): Boolean;
-var
-  LCol: TColumnData;
-begin
-  for LCol in AColumns do
-  begin
-    if (cpPrimaryKey in LCol.Properties) then
-    begin
-      AColumn := LCol;
-      Exit(True);
-    end;
-  end;
-  Result := False;
-end;
-
 class function TUtils.IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean;
 begin
   Result := IsEnumerable(AObject.ClassInfo, AEnumeratorMethod);
@@ -388,7 +371,7 @@ begin
   Result := True;
 end;
 
-class procedure TUtils.SetNullableValue(ARttiMember: TRttiNamedObject; const AFrom: TValue; var AResult: TValue);
+class procedure TUtils.SetNullableValue(targetTypeInfo: PTypeInfo; const AFrom: TValue; var AResult: TValue);
 var
   LRecord: TRttiRecordType;
   LFields: TArray<TRttiField>;
@@ -398,7 +381,7 @@ var
   bFree: Boolean;
 begin
   bFree := False;
-  LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
+  LRecord := TType.GetType(targetTypeInfo).AsRecord;
   if Assigned(LRecord) then
   begin
     LFields := LRecord.GetFields;
@@ -527,24 +510,22 @@ begin
     APictureValue := LPic;
 end;
 
-class function TUtils.TryConvert(const AFrom: TValue; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
+class function TUtils.TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean;
 var
-  LTypeInfo: PTypeInfo;
   bFree: Boolean;
 begin
   bFree := False;
-  LTypeInfo := ARttiMember.GetTypeInfo;
-  if (AFrom.TypeInfo <> LTypeInfo) then
+  if (AFrom.TypeInfo <> targetTypeInfo) then
   begin
-    case LTypeInfo.Kind of
+    case targetTypeInfo.Kind of
       tkRecord:
       begin
-        if IsNullableType(LTypeInfo) then
+        if IsNullableType(targetTypeInfo) then
         begin
-          SetNullableValue(ARttiMember, AFrom, AResult);
+          SetNullableValue(targetTypeInfo, AFrom, AResult);
           Exit(True);
         end
-        else if IsLazyType(LTypeInfo) then
+        else if IsLazyType(targetTypeInfo) then
         begin
           //AFrom value must be ID of lazy type
           if AFrom.IsEmpty then
@@ -554,7 +535,7 @@ begin
 
       end;
     end;
-    Result := AFrom.TryConvert(LTypeInfo, AResult, bFree);
+    Result := AFrom.TryConvert(targetTypeInfo, AResult, bFree);
   end
   else
   begin

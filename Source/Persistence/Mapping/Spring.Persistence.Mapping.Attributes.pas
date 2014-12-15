@@ -290,6 +290,7 @@ type
 
     function CanInsert: Boolean; virtual;
     function CanUpdate: Boolean; virtual;
+    function GetValue(const instance: TObject): TValue;
 
     property IsDiscriminator: Boolean read GetIsDiscriminator;
     property IsIdentity: Boolean read fIsIdentity write fIsIdentity;
@@ -555,6 +556,11 @@ begin
   Result := fColumnName;
   if Result = '' then
     Result := MemberName;
+end;
+
+function ColumnAttribute.GetValue(const instance: TObject): TValue;
+begin
+  Result := fRttiMember.GetValue(instance);
 end;
 
 { DiscriminatorValue }

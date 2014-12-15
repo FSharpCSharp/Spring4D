@@ -122,6 +122,8 @@ end;
 
 function TEntityWrapper.GetPrimaryKeyValue: TValue;
 begin
+  if not fEntityClassData.HasPrimaryKey then
+    Exit(TValue.Empty);
   Result := fEntityClassData.PrimaryKeyColumn.RttiMember.GetValue(fEntity);
 end;
 

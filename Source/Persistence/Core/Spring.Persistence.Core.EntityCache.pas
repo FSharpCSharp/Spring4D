@@ -294,7 +294,7 @@ begin
   Result := '';
   if Assigned(PrimaryKeyColumn) then
   begin
-    LValue := TRttiExplorer.GetMemberValue(instance, PrimaryKeyColumn.MemberName);
+    LValue := PrimaryKeyColumn.RttiMember.GetValue(instance);
     Result := LValue.ToString;
   end;
 end;

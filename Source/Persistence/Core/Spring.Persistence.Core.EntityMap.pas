@@ -34,6 +34,7 @@ uses
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes
   ;
 
@@ -50,7 +51,7 @@ type
     function GetEntityKey(const instance: TObject; const id: String): TEntityMapKey; overload;
     function GetEntityValues(const instance: TObject; const id: String): TEntityMapValue;
 
-    procedure PutEntity(const instance: TObject; const id: String; entityDetails: TEntityData);
+    procedure PutEntity(const entity: IEntityWrapper);
 
     procedure FinalizeItem(const item: TPair<TEntityMapKey, TEntityMapValue>);
   public
@@ -58,7 +59,7 @@ type
     destructor Destroy; override;
 
     function IsMapped(const instance: TObject): Boolean;  
-    procedure AddOrReplace(const instance: TObject);
+    procedure AddOrReplace(const instance: IEntityWrapper);
     procedure Remove(const instance: TObject);
     
     function GetChangedMembers(const instance: TObject; const entityDetails: TEntityData): IList<ColumnAttribute>;      
@@ -104,15 +105,10 @@ begin
   end;
 end;
 
-procedure TEntityMap.AddOrReplace(const instance: TObject);
-var
-  id: String;
-  entityDetails: TEntityData;
+procedure TEntityMap.AddOrReplace(const instance: IEntityWrapper);
 begin
   Assert(Assigned(instance), 'Entity not assigned');
-  entityDetails := TEntityCache.Get(instance.ClassType);
-  id := entityDetails.GetPrimaryKeyValueAsString(instance);
-  PutEntity(instance, id, entityDetails);
+  PutEntity(instance);
 end;
 
 procedure TEntityMap.Clear;
@@ -132,6 +128,7 @@ var
   id: String;
   values: TEntityMapValue;
   i: Integer;
+  col: ColumnAttribute;
 begin
   Result := TCollections.CreateList<ColumnAttribute>;  
   id := entityDetails.GetPrimaryKeyValueAsString(instance);
@@ -139,10 +136,11 @@ begin
 
   for i := 0 to entityDetails.Columns.Count - 1 do
   begin
-    currentValue := TRttiExplorer.GetMemberValue(instance, values[i].Key);
+    col := entityDetails.Columns[i];
+    currentValue := col.GetValue(instance);
     dirtyValue := values[i].Value;
     if not Spring.Persistence.Core.Reflection.SameValue(currentValue, dirtyValue) then
-      Result.Add(entityDetails.Columns[i]);
+      Result.Add(col);
   end;
 end;
 
@@ -170,30 +168,35 @@ begin
   Result := fEntityValues.ContainsKey(GetEntityKey(instance));
 end;
 
-procedure TEntityMap.PutEntity(const instance: TObject; const id: String; entityDetails: TEntityData);
+procedure TEntityMap.PutEntity(const entity: IEntityWrapper);
 var
-  col: ColumnAttribute;
+  col: TColumnData;
   columnValue: TValue;
   values: TEntityMapValue;
   i: Integer;
   pair: TPair<TEntityMapKey,TEntityMapValue>;
   key: string;
+  id: string;
 begin
+  columnValue := entity.GetPrimaryKeyValue;
+  if columnValue.IsEmpty then
+    Exit;
+  id := columnValue.ToString;
   if (id = '') then
     Exit;
 
   //commented out implementation is cleaner, but slower as well
-  SetLength(values, entityDetails.Columns.Count);
-  for i:=0 to entityDetails.Columns.Count-1 do
+  SetLength(values, entity.GetColumnsToMap.Count);
+  for i:=0 to entity.GetColumnsToMap.Count - 1 do
   begin
-    col := entityDetails.Columns[i];
-    columnValue := TRttiExplorer.GetMemberValue(instance, col.MemberName);
+    col := entity.GetColumnsToMap[i];
+    columnValue := entity.GetColumnValue(col.ColumnAttr);
     if (columnValue.IsObject) and (columnValue.AsObject <> nil) then
       columnValue := TRttiExplorer.Clone(columnValue.AsObject);
     values[i].Key := col.MemberName;
     values[i].Value := columnValue;
   end;
-  key := GetEntityKey(instance, id);
+  key := GetEntityKey(entity.GetEntity, id);
   fCriticalSection.Enter;
   try
     pair := fEntityValues.ExtractPair(key);

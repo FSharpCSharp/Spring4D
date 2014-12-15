@@ -64,7 +64,7 @@ type
     function GetQueryCount(const sql: string; const params: array of const): Int64; overload;
     function GetQueryCount(const sql: string; const params: IList<TDBParam>): Int64; overload;
 
-    procedure AttachEntity(const entity: TObject); override;
+    procedure AttachEntity(const entity: IEntityWrapper); override;
     procedure DetachEntity(const entity: TObject); override;
   public
     constructor Create(const connection: IDBConnection); override;
@@ -300,7 +300,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TSession.AttachEntity(const entity: TObject);
+procedure TSession.AttachEntity(const entity: IEntityWrapper);
 begin
   fOldStateEntities.AddOrReplace(entity);
 end;
