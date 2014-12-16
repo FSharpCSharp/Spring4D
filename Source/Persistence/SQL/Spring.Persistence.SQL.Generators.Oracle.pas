@@ -67,11 +67,7 @@ uses
 
 function TOracleSQLGenerator.DoGenerateBackupTable(const tableName: string): TArray<string>;
 begin
-  SetLength(Result, 2);
-  Result[0] := Format('CREATE TABLE %0:S AS SELECT * FROM %1:S',
-        [GetTempTableName, tableName]);
-  //drop table
-  Result[1] := Format('DROP TABLE %0:S ', [tableName]);
+  Result := DoGenerateBackupTableUsingCreate(tableName);
 end;
 
 function TOracleSQLGenerator.GenerateCreateSequence(

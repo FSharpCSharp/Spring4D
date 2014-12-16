@@ -30,6 +30,7 @@ interface
 
 uses
   Spring.Persistence.Mapping.Attributes,
+  Spring.Collections,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Interfaces,
@@ -40,6 +41,10 @@ type
   ///   Represents <b>Firebird/Interbase</b> SQL generator.
   /// </summary>
   TFirebirdSQLGenerator = class(TAnsiSQLGenerator)
+  protected
+    function DoGenerateBackupTable(const tableName: string): TArray<string>; override;
+    function DoGenerateRestoreTable(const tableName: string;
+      const createColumns: IList<TSQLCreateField>; const dbColumns: IList<string>): TArray<string>; override;
   public
     function GetQueryLanguage: TQueryLanguage; override;
     function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
@@ -54,12 +59,26 @@ type
 implementation
 
 uses
-  StrUtils,
   SysUtils,
+  StrUtils,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.SQL.Register;
 
 
 {$REGION 'TFirebirdSQLGenerator'}
+
+function TFirebirdSQLGenerator.DoGenerateBackupTable(
+  const tableName: string): TArray<string>;
+begin
+  raise EORMUnsupportedOperation.CreateFmt('Firebird does not support copying table %s.', [tableName]);
+end;
+
+function TFirebirdSQLGenerator.DoGenerateRestoreTable(const tableName: string;
+  const createColumns: IList<TSQLCreateField>;
+  const dbColumns: IList<string>): TArray<string>;
+begin
+  raise EORMUnsupportedOperation.CreateFmt('Firebird does not support copying table %s', [tableName]);
+end;
 
 function TFirebirdSQLGenerator.GenerateCreateSequence(
   const command: TCreateSequenceCommand): string;
@@ -123,9 +142,9 @@ end;
 
 function TFirebirdSQLGenerator.GetSQLTableExists(const tableName: string): string;
 begin
-  Result := '';
- { Result := Format('SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = %0:S '
-    , [QuotedStr(ATablename)]);}
+  Result := Format('select count(*) from rdb$relations where rdb$relation_name = %0:S '+
+    ' and rdb$view_blr is null and (rdb$system_flag is null or rdb$system_flag = 0)'
+    , [QuotedStr(tableName)]);
 end;
 
 {$ENDREGION}

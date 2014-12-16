@@ -45,6 +45,8 @@ type
   /// </summary>
   TAnsiSQLGenerator = class(TAbstractSQLGenerator)
   protected
+    function DoGenerateBackupTableUsingCreate(const tableName: string): TArray<string>;
+  protected
     function DoGenerateBackupTable(const tableName: string): TArray<string>; virtual;
     function DoGenerateRestoreTable(const tableName: string;
       const createColumns: IList<TSQLCreateField>; const dbColumns: IList<string>): TArray<string>; virtual;
@@ -115,6 +117,16 @@ begin
   //select old data to temporary table
   SetLength(Result, 2);
   Result[0] := Format('SELECT * INTO %0:S FROM %1:S',
+        [GetTempTableName, tableName]);
+  //drop table
+  Result[1] := Format('DROP TABLE %0:S ', [tableName]);
+end;
+
+function TAnsiSQLGenerator.DoGenerateBackupTableUsingCreate(
+  const tableName: string): TArray<string>;
+begin
+  SetLength(Result, 2);
+  Result[0] := Format('CREATE TABLE %0:S AS SELECT * FROM %1:S',
         [GetTempTableName, tableName]);
   //drop table
   Result[1] := Format('DROP TABLE %0:S ', [tableName]);

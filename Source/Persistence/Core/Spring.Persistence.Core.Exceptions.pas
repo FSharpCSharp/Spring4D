@@ -76,6 +76,8 @@ type
 
   EORMUnsupportedType = class(Exception);
 
+  EORMUnsupportedOperation = class(Exception);
+
   EORMConnectionAlreadyRegistered = class(Exception);
   EORMRowMapperAlreadyRegistered = class(Exception);
   EORMConnectionNotRegistered = class(Exception);

@@ -40,6 +40,8 @@ type
   ///   Represents <b>MySQL</b> SQL generator.
   /// </summary>
   TMySQLGenerator = class(TAnsiSQLGenerator)
+  protected
+    function DoGenerateBackupTable(const tableName: string): TArray<string>; override;
   public
     function GetQueryLanguage: TQueryLanguage; override;
     function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
@@ -57,6 +59,12 @@ uses
 
 
 {$REGION 'TMySQLGenerator'}
+
+function TMySQLGenerator.DoGenerateBackupTable(
+  const tableName: string): TArray<string>;
+begin
+  Result := DoGenerateBackupTableUsingCreate(tableName);
+end;
 
 function TMySQLGenerator.GenerateCreateSequence(
   const command: TCreateSequenceCommand): string;
