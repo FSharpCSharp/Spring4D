@@ -42,7 +42,6 @@ type
     procedure TestEmpty;
     procedure TestEquals;
     procedure TestToString;
-    procedure TestToQuotedString;
   end;
 
   TTestRttiTypeHelper = class(TTestCase)
@@ -107,16 +106,6 @@ const
 begin
   guid := TGuid.Create(GuidString);
   CheckEquals(GuidString, guid.ToString);
-end;
-
-procedure TTestGuidHelper.TestToQuotedString;
-var
-  guid: TGUID;
-const
-  GuidString = '{93585BA2-B43B-4C55-AAAB-6DE6EB4C0E57}';
-begin
-  guid := TGuid.Create(GuidString);
-  CheckEquals(QuotedStr(GuidString), guid.ToQuotedString);
 end;
 
 {$WARNINGS ON}
