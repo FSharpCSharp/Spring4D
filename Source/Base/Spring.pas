@@ -86,6 +86,27 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TValueHelper'}
+
+  TValueHelper = record helper for TValue
+  private
+    function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
+  public
+{$IFDEF DELPHI2010}
+    function AsString: string;
+{$ENDIF}
+    function AsType<T>: T;
+    function Cast(typeInfo: PTypeInfo): TValue;
+    function IsString: Boolean;
+{$IFDEF DELPHI2010}
+    function IsType<T>: Boolean; overload;
+    function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
+{$ENDIF}
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Interfaces'}
 
   /// <summary>
@@ -1221,6 +1242,7 @@ procedure FinalizeValue(const value; typeKind: TTypeKind); inline;
 implementation
 
 uses
+  SysConst,
   Spring.Reflection.Activator,
   Spring.Events,
   Spring.ResourceStrings;
@@ -1428,6 +1450,99 @@ begin
     tkPointer: FreeMem(Pointer(value));
   end;
 end;
+{$ENDREGION}
+
+
+{$REGION 'TValueHelper'}
+
+{$IFDEF DELPHI2010}
+function TValueHelper.AsString: string;
+begin
+  Result := AsType<string>;
+end;
+{$ENDIF}
+
+function TValueHelper.AsType<T>: T;
+begin
+{$IFDEF DELPHI2010}
+  if IsEmpty then
+    Exit(Default(T));
+{$ENDIF}
+  if not TryAsInterface(System.TypeInfo(T), Result) then
+  if not TryAsType<T>(Result) then
+    raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+function TValueHelper.Cast(typeInfo: PTypeInfo): TValue;
+var
+  intf: IInterface;
+begin
+  if TryAsInterface(typeInfo, intf) then
+    TValue.Make(@intf, typeInfo, Result)
+  else if not TryCast(typeInfo, Result) then
+    raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+function TValueHelper.IsString: Boolean;
+const
+  StringKinds = [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
+begin
+  Result := IsEmpty or (Kind in StringKinds);
+end;
+
+{$IFDEF DELPHI2010}
+function TValueHelper.IsType(ATypeInfo: PTypeInfo): Boolean;
+var
+  unused: TValue;
+begin
+  Result := IsEmpty or TryCast(ATypeInfo, unused);
+end;
+
+function TValueHelper.IsType<T>: Boolean;
+begin
+  Result := IsType(System.TypeInfo(T));
+end;
+{$ENDIF}
+
+function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
+var
+  typeData: PTypeData;
+  obj: TObject;
+begin
+  if not (Kind in [tkClass, tkInterface]) then
+    Exit(False);
+  if typeInfo.Kind <> tkInterface then
+    Exit(False);
+  if Self.TypeInfo = typeInfo then
+    Result := True
+  else
+  begin
+    typeData := GetTypeData(typeInfo);
+    if Kind = tkClass then
+    begin
+{$IFDEF AUTOREFCOUNT}
+      Self.FData.FValueData.ExtractRawData(@obj);
+{$ELSE}
+      obj := TObject(Self.FData.FAsObject);
+{$ENDIF}
+      Exit(obj.GetInterface(typeData.Guid, Intf));
+    end;
+    Result := False;
+    typeData := Self.TypeData;
+    while Assigned(typeData) and Assigned(typeData.IntfParent) do
+    begin
+      if typeData.IntfParent^ = typeInfo then
+      begin
+        Result := True;
+        Break;
+      end;
+      typeData := GetTypeData(typeData.IntfParent^);
+    end;
+  end;
+  if Result then
+    IInterface(Intf) := AsInterface;
+end;
+
 {$ENDREGION}
 
 
