@@ -63,7 +63,10 @@ begin
     TTestMulticastEvent.Suite,
     TTestMulticastEventStackSize.Suite,
 {$ENDIF}
-    TTestSpringEventsMethods.Suite
+    TTestSpringEventsMethods.Suite,
+    TTestTuplesDouble.Suite,
+    TTestTuplesTriple.Suite,
+    TTestTuplesQuadruple.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections', [

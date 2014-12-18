@@ -1188,6 +1188,84 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Tuples'}
+
+  Tuple<T1, T2> = record
+  private
+    fValue1: T1;
+    fValue2: T2;
+  public
+    constructor Create(const value1: T1; const value2: T2);
+    function Equals(const value: Tuple<T1, T2>): Boolean;
+    procedure Unpack(out value1: T1; out value2: T2); overload;
+    class operator Equal(const left, right: Tuple<T1, T2>): Boolean;
+    class operator NotEqual(const left, right: Tuple<T1, T2>): Boolean;
+    class operator Implicit(const value: Tuple<T1, T2>): TArray<TValue>;
+    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2>;
+    class operator Implicit(const value: array of const): Tuple<T1, T2>;
+    property Value1: T1 read fValue1;
+    property Value2: T2 read fValue2;
+  end;
+
+  Tuple<T1, T2, T3> = record
+  private
+    fValue1: T1;
+    fValue2: T2;
+    fValue3: T3;
+  public
+    constructor Create(const value1: T1; const value2: T2; const value3: T3);
+    function Equals(const value: Tuple<T1, T2, T3>): Boolean;
+    procedure Unpack(out value1: T1; out value2: T2); overload;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3); overload;
+    class operator Equal(const left, right: Tuple<T1, T2, T3>): Boolean;
+    class operator NotEqual(const left, right: Tuple<T1, T2, T3>): Boolean;
+    class operator Implicit(const value: Tuple<T1, T2, T3>): TArray<TValue>;
+    class operator Implicit(const value: Tuple<T1, T2, T3>): Tuple<T1, T2>;
+    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2, T3>;
+    class operator Implicit(const value: array of const): Tuple<T1, T2, T3>;
+    property Value1: T1 read fValue1;
+    property Value2: T2 read fValue2;
+    property Value3: T3 read fValue3;
+  end;
+
+  Tuple<T1, T2, T3, T4> = record
+  private
+    fValue1: T1;
+    fValue2: T2;
+    fValue3: T3;
+    fValue4: T4;
+  public
+    constructor Create(const value1: T1; const value2: T2; const value3: T3; const value4: T4);
+    function Equals(const value: Tuple<T1, T2, T3, T4>): Boolean;
+    procedure Unpack(out value1: T1; out value2: T2); overload;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3); overload;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3; out value4: T4); overload;
+    class operator Equal(const left, right: Tuple<T1, T2, T3, T4>): Boolean;
+    class operator NotEqual(const left, right: Tuple<T1, T2, T3, T4>): Boolean;
+    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): TArray<TValue>;
+    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2>;
+    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2, T3>;
+    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2, T3, T4>;
+    class operator Implicit(const value: array of const): Tuple<T1, T2, T3, T4>;
+    property Value1: T1 read fValue1;
+    property Value2: T2 read fValue2;
+    property Value3: T3 read fValue3;
+    property Value4: T4 read fValue4;
+  end;
+
+  Tuple = class
+  public
+    class function Pack<T1, T2>(const value1: T1;
+      const value2: T2): Tuple<T1, T2>; overload; static;
+    class function Pack<T1, T2, T3>(const value1: T1; const value2: T2;
+      const value3: T3): Tuple<T1, T2, T3>; overload; static;
+    class function Pack<T1, T2, T3, T4>(const value1: T1; const value2: T2;
+      const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
@@ -2638,6 +2716,285 @@ end;
 class procedure TFinalizer.FinalizeInstance<T>(const instance: T);
 begin
   FinalizeValue(instance, {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF});
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Tuple<T1, T2>'}
+
+constructor Tuple<T1, T2>.Create(const value1: T1; const value2: T2);
+begin
+  fValue1 := value1;
+  fValue2 := value2;
+end;
+
+function Tuple<T1, T2>.Equals(const value: Tuple<T1, T2>): Boolean;
+var
+  comparer1: IEqualityComparer<T1>;
+  comparer2: IEqualityComparer<T2>;
+begin
+  comparer1 := TEqualityComparer<T1>.Default;
+  comparer2 := TEqualityComparer<T2>.Default;
+  Result := comparer1.Equals(fValue1, value.Value1)
+    and comparer2.Equals(fValue2, value.Value2);
+end;
+
+class operator Tuple<T1, T2>.Equal(const left, right: Tuple<T1, T2>): Boolean;
+begin
+  Result := left.Equals(right);
+end;
+
+class operator Tuple<T1, T2>.Implicit(
+  const value: Tuple<T1, T2>): TArray<TValue>;
+begin
+  SetLength(Result, 2);
+  Result[0] := TValue.From<T1>(value.Value1);
+  Result[1] := TValue.From<T2>(value.Value2);
+end;
+
+class operator Tuple<T1, T2>.Implicit(
+  const value: TArray<TValue>): Tuple<T1, T2>;
+begin
+  Result.fValue1 := value[0].AsType<T1>;
+  Result.fValue2 := value[1].AsType<T2>;
+end;
+
+class operator Tuple<T1, T2>.Implicit(
+  const value: array of const): Tuple<T1, T2>;
+begin
+  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
+  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
+end;
+
+class operator Tuple<T1, T2>.NotEqual(const left,
+  right: Tuple<T1, T2>): Boolean;
+begin
+  Result := not left.Equals(right);
+end;
+
+procedure Tuple<T1, T2>.Unpack(out value1: T1; out value2: T2);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Tuple<T1, T2, T3>'}
+
+constructor Tuple<T1, T2, T3>.Create(const value1: T1; const value2: T2;
+  const value3: T3);
+begin
+  fValue1 := value1;
+  fValue2 := value2;
+  fValue3 := value3;
+end;
+
+function Tuple<T1, T2, T3>.Equals(const value: Tuple<T1, T2, T3>): Boolean;
+var
+  comparer1: IEqualityComparer<T1>;
+  comparer2: IEqualityComparer<T2>;
+  comparer3: IEqualityComparer<T3>;
+begin
+  comparer1 := TEqualityComparer<T1>.Default;
+  comparer2 := TEqualityComparer<T2>.Default;
+  comparer3 := TEqualityComparer<T3>.Default;
+  Result := comparer1.Equals(fValue1, value.Value1)
+    and comparer2.Equals(fValue2, value.Value2)
+    and comparer3.Equals(fValue3, value.Value3);
+end;
+
+class operator Tuple<T1, T2, T3>.Equal(const left,
+  right: Tuple<T1, T2, T3>): Boolean;
+begin
+  Result := left.Equals(right);
+end;
+
+class operator Tuple<T1, T2, T3>.Implicit(
+  const value: Tuple<T1, T2, T3>): TArray<TValue>;
+begin
+  SetLength(Result, 3);
+  Result[0] := TValue.From<T1>(value.Value1);
+  Result[1] := TValue.From<T2>(value.Value2);
+  Result[2] := TValue.From<T3>(value.Value3);
+end;
+
+class operator Tuple<T1, T2, T3>.Implicit(
+  const value: Tuple<T1, T2, T3>): Tuple<T1, T2>;
+begin
+  Result.fValue1 := value.Value1;
+  Result.fValue2 := value.Value2;
+end;
+
+class operator Tuple<T1, T2, T3>.Implicit(
+  const value: TArray<TValue>): Tuple<T1, T2, T3>;
+begin
+  Result.fValue1 := value[0].AsType<T1>;
+  Result.fValue2 := value[1].AsType<T2>;
+  Result.fValue3 := value[2].AsType<T3>;
+end;
+
+class operator Tuple<T1, T2, T3>.Implicit(
+  const value: array of const): Tuple<T1, T2, T3>;
+begin
+  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
+  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
+  Result.fValue3 := TValue.FromVarRec(value[2]).AsType<T3>;
+end;
+
+class operator Tuple<T1, T2, T3>.NotEqual(const left,
+  right: Tuple<T1, T2, T3>): Boolean;
+begin
+  Result := not left.Equals(right);
+end;
+
+procedure Tuple<T1, T2, T3>.Unpack(out value1: T1; out value2: T2);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+end;
+
+procedure Tuple<T1, T2, T3>.Unpack(out value1: T1; out value2: T2;
+  out value3: T3);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+  value3 := fValue3;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Tuple<T1, T2, T3, T4>'}
+
+constructor Tuple<T1, T2, T3, T4>.Create(const value1: T1; const value2: T2;
+  const value3: T3; const value4: T4);
+begin
+  fValue1 := value1;
+  fValue2 := value2;
+  fValue3 := value3;
+  fValue4 := value4;
+end;
+
+function Tuple<T1, T2, T3, T4>.Equals(
+  const value: Tuple<T1, T2, T3, T4>): Boolean;
+var
+  comparer1: IEqualityComparer<T1>;
+  comparer2: IEqualityComparer<T2>;
+  comparer3: IEqualityComparer<T3>;
+  comparer4: IEqualityComparer<T4>;
+begin
+  comparer1 := TEqualityComparer<T1>.Default;
+  comparer2 := TEqualityComparer<T2>.Default;
+  comparer3 := TEqualityComparer<T3>.Default;
+  comparer4 := TEqualityComparer<T4>.Default;
+  Result := comparer1.Equals(fValue1, value.Value1)
+    and comparer2.Equals(fValue2, value.Value2)
+    and comparer3.Equals(fValue3, value.Value3)
+    and comparer4.Equals(fValue4, value.Value4);
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Equal(const left,
+  right: Tuple<T1, T2, T3, T4>): Boolean;
+begin
+  Result := left.Equals(right);
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: Tuple<T1, T2, T3, T4>): TArray<TValue>;
+begin
+  SetLength(Result, 4);
+  Result[0] := TValue.From<T1>(value.Value1);
+  Result[1] := TValue.From<T2>(value.Value2);
+  Result[2] := TValue.From<T3>(value.Value3);
+  Result[3] := TValue.From<T4>(value.Value4);
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2>;
+begin
+  Result.fValue1 := value.Value1;
+  Result.fValue2 := value.Value2;
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2, T3>;
+begin
+  Result.fValue1 := value.Value1;
+  Result.fValue2 := value.Value2;
+  Result.fValue3 := value.Value3;
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: TArray<TValue>): Tuple<T1, T2, T3, T4>;
+begin
+  Result.fValue1 := value[0].AsType<T1>;
+  Result.fValue2 := value[1].AsType<T2>;
+  Result.fValue3 := value[2].AsType<T3>;
+  Result.fValue4 := value[3].AsType<T4>;
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: array of const): Tuple<T1, T2, T3, T4>;
+begin
+  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
+  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
+  Result.fValue3 := TValue.FromVarRec(value[2]).AsType<T3>;
+  Result.fValue4 := TValue.FromVarRec(value[3]).AsType<T4>;
+end;
+
+class operator Tuple<T1, T2, T3, T4>.NotEqual(const left,
+  right: Tuple<T1, T2, T3, T4>): Boolean;
+begin
+  Result := not left.Equals(right);
+end;
+
+procedure Tuple<T1, T2, T3, T4>.Unpack(out value1: T1; out value2: T2);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+end;
+
+procedure Tuple<T1, T2, T3, T4>.Unpack(out value1: T1; out value2: T2;
+  out value3: T3);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+  value3 := fValue3;
+end;
+
+procedure Tuple<T1, T2, T3, T4>.Unpack(out value1: T1; out value2: T2;
+  out value3: T3; out value4: T4);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+  value3 := fValue3;
+  value4 := fValue4;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Tuple'}
+
+class function Tuple.Pack<T1, T2>(const value1: T1;
+  const value2: T2): Tuple<T1, T2>;
+begin
+  Result := Tuple<T1, T2>.Create(value1, value2);
+end;
+
+class function Tuple.Pack<T1, T2, T3>(const value1: T1; const value2: T2;
+  const value3: T3): Tuple<T1, T2, T3>;
+begin
+  Result := Tuple<T1, T2, T3>.Create(value1, value2, value3);
+end;
+
+class function Tuple.Pack<T1, T2, T3, T4>(const value1: T1; const value2: T2;
+  const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>;
+begin
+  Result := Tuple<T1, T2, T3, T4>.Create(value1, value2, value3, value4);
 end;
 
 {$ENDREGION}

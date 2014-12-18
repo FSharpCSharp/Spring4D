@@ -245,6 +245,72 @@ type
     procedure Test_GetTypeSize_WordBool;
   end;
 
+  TTestTuplesDouble = class(TTestCase)
+  private
+    fSUT: Tuple<Integer, string>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure Test_Create;
+    procedure Test_Pack;
+    procedure Test_Equals_ReturnsTrue_WhenEqual;
+    procedure Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+    procedure Test_Implicit_ToValueArray;
+    procedure Test_Implicit_FromValueArray;
+{$IFDEF DELPHIXE5_UP} // TODO: check if also lower versions work
+    procedure Test_Implicit_FromOpenArray;
+{$ENDIF}
+    procedure Test_Unpack;
+  end;
+
+  TTestTuplesTriple = class(TTestCase)
+  private
+    fSUT: Tuple<Integer, string, Boolean>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure Test_Create;
+    procedure Test_Pack;
+    procedure Test_Equals_ReturnsTrue_WhenEqual;
+    procedure Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenThirdValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+    procedure Test_Implicit_ToValueArray;
+    procedure Test_Implicit_FromValueArray;
+{$IFDEF DELPHIXE5_UP} // TODO: check if also lower versions work
+    procedure Test_Implicit_FromOpenArray;
+{$ENDIF}
+    procedure Test_Unpack;
+    procedure Test_Unpack_TwoValues;
+  end;
+
+  TTestTuplesQuadruple = class(TTestCase)
+  private
+    fSUT: Tuple<Integer, string, Boolean, Char>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure Test_Create;
+    procedure Test_Pack;
+    procedure Test_Equals_ReturnsTrue_WhenEqual;
+    procedure Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenThirdValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenFourthValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+    procedure Test_Implicit_ToValueArray;
+    procedure Test_Implicit_FromValueArray;
+{$IFDEF DELPHIXE5_UP} // TODO: check if also lower versions work
+    procedure Test_Implicit_FromOpenArray;
+{$ENDIF}
+    procedure Test_Unpack;
+    procedure Test_Unpack_TwoValues;
+    procedure Test_Unpack_ThreeValues;
+  end;
+
 implementation
 
 uses
@@ -1327,6 +1393,413 @@ end;
 procedure TTestSpringEventsMethods.Test_GetTypeSize_WordBool;
 begin
   MatchType(TypeInfo(WordBool), tkEnumeration, SizeOf(WordBool)); // not tkInteger !!
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTuples'}
+
+procedure TTestTuplesDouble.SetUp;
+begin
+  fSUT := Tuple<Integer, string>.Create(42, 'foo');
+end;
+
+procedure TTestTuplesDouble.Test_Create;
+begin
+  CheckEquals(42, fSUT.Value1);
+  CheckEquals('foo', fSUT.Value2);
+end;
+
+procedure TTestTuplesDouble.Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple<Integer, string>.Create(43, 'bar');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesDouble.Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple<Integer, string>.Create(43, 'foo');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesDouble.Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple<Integer, string>.Create(42, 'bar');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesDouble.Test_Equals_ReturnsTrue_WhenEqual;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple<Integer, string>.Create(42, 'foo');
+  CheckTrue(fSUT.Equals(tup));
+  CheckTrue(fSUT = tup);
+end;
+
+{$IFDEF DELPHIXE5_UP}
+procedure TTestTuplesDouble.Test_Implicit_FromOpenArray;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := [42, 'foo'];
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+end;
+{$ENDIF}
+
+procedure TTestTuplesDouble.Test_Implicit_FromValueArray;
+var
+  arr: TArray<TValue>;
+  tup: Tuple<Integer, string>;
+begin
+  SetLength(arr, 2);
+  arr[0] := TValue.From<Integer>(42);
+  arr[1] := TValue.From<string>('foo');
+  tup := arr;
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+end;
+
+procedure TTestTuplesDouble.Test_Implicit_ToValueArray;
+var
+  arr: TArray<TValue>;
+begin
+  arr := fSUT;
+  CheckEquals(2, Length(arr));
+  Check(arr[0].TypeInfo = TypeInfo(Integer));
+  Check(arr[1].TypeInfo = TypeInfo(string));
+  CheckEquals(42, arr[0].AsInteger);
+  CheckEquals('foo', arr[1].AsString);
+end;
+
+procedure TTestTuplesDouble.Test_Pack;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple.Pack(Integer(42), 'foo');
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+end;
+
+procedure TTestTuplesDouble.Test_Unpack;
+var
+  val1: Integer;
+  val2: string;
+begin
+  fSUT.Unpack(val1, val2);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTuplesTriple'}
+
+procedure TTestTuplesTriple.SetUp;
+begin
+  fSUT := Tuple<Integer, string, Boolean>.Create(42, 'foo', True);
+end;
+
+procedure TTestTuplesTriple.Test_Create;
+begin
+  CheckEquals(42, fSUT.Value1);
+  CheckEquals('foo', fSUT.Value2);
+  CheckEquals(True, fSUT.Value3);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(43, 'bar', False);
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(43, 'foo', True);
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(42, 'bar', True);
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsFalse_WhenThirdValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(42, 'foo', False);
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsTrue_WhenEqual;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(42, 'foo', True);
+  CheckTrue(fSUT.Equals(tup));
+  CheckTrue(fSUT = tup);
+end;
+
+{$IFDEF DELPHIXE5_UP}
+procedure TTestTuplesTriple.Test_Implicit_FromOpenArray;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := [42, 'foo', True];
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+end;
+{$ENDIF}
+
+procedure TTestTuplesTriple.Test_Implicit_FromValueArray;
+var
+  arr: TArray<TValue>;
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  SetLength(arr, 3);
+  arr[0] := TValue.From<Integer>(42);
+  arr[1] := TValue.From<string>('foo');
+  arr[2] := TValue.From<Boolean>(True);
+  tup := arr;
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+end;
+
+procedure TTestTuplesTriple.Test_Implicit_ToValueArray;
+var
+  arr: TArray<TValue>;
+begin
+  arr := fSUT;
+  CheckEquals(3, Length(arr));
+  Check(arr[0].TypeInfo = TypeInfo(Integer));
+  Check(arr[1].TypeInfo = TypeInfo(string));
+  Check(arr[2].TypeInfo = TypeInfo(Boolean));
+  CheckEquals(42, arr[0].AsInteger);
+  CheckEquals('foo', arr[1].AsString);
+  CheckEquals(True, arr[2].AsBoolean);
+end;
+
+procedure TTestTuplesTriple.Test_Pack;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple.Pack(Integer(42), 'foo', True);
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+end;
+
+procedure TTestTuplesTriple.Test_Unpack;
+var
+  val1: Integer;
+  val2: string;
+  val3: Boolean;
+begin
+  fSUT.Unpack(val1, val2, val3);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+  CheckEquals(True, val3);
+end;
+
+procedure TTestTuplesTriple.Test_Unpack_TwoValues;
+var
+  val1: Integer;
+  val2: string;
+begin
+  fSUT.Unpack(val1, val2);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTuplesQuadruple'}
+
+procedure TTestTuplesQuadruple.SetUp;
+begin
+  fSUT := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', True, 'X');
+end;
+
+procedure TTestTuplesQuadruple.Test_Create;
+begin
+  CheckEquals(42, fSUT.Value1);
+  CheckEquals('foo', fSUT.Value2);
+  CheckEquals(True, fSUT.Value3);
+  CheckEquals('X', fSUT.Value4);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(43, 'bar', False, 'Y');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(43, 'foo', True, 'X');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenFourthValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', False, 'X');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(42, 'bar', True, 'X');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenThirdValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', False, 'X');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsTrue_WhenEqual;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', True, 'X');
+  CheckTrue(fSUT.Equals(tup));
+  CheckTrue(fSUT = tup);
+end;
+
+{$IFDEF DELPHIXE5_UP}
+procedure TTestTuplesQuadruple.Test_Implicit_FromOpenArray;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := [42, 'foo', True, 'X'];
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+  CheckEquals('X', tup.Value4);
+end;
+{$ENDIF}
+
+procedure TTestTuplesQuadruple.Test_Implicit_FromValueArray;
+var
+  arr: TArray<TValue>;
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  SetLength(arr, 4);
+  arr[0] := TValue.From<Integer>(42);
+  arr[1] := TValue.From<string>('foo');
+  arr[2] := TValue.From<Boolean>(True);
+  arr[3] := TValue.From<Char>('X');
+  tup := arr;
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+  CheckEquals('X', tup.Value4);
+end;
+
+procedure TTestTuplesQuadruple.Test_Implicit_ToValueArray;
+var
+  arr: TArray<TValue>;
+begin
+  arr := fSUT;
+  CheckEquals(4, Length(arr));
+  Check(arr[0].TypeInfo = TypeInfo(Integer));
+  Check(arr[1].TypeInfo = TypeInfo(string));
+  Check(arr[2].TypeInfo = TypeInfo(Boolean));
+  Check(arr[3].TypeInfo = TypeInfo(Char));
+  CheckEquals(42, arr[0].AsInteger);
+  CheckEquals('foo', arr[1].AsString);
+  CheckEquals(True, arr[2].AsBoolean);
+  CheckEquals('X', arr[3].AsType<Char>);
+end;
+
+procedure TTestTuplesQuadruple.Test_Pack;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple.Pack(Integer(42), 'foo', True, 'X');
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+  CheckEquals('X', tup.Value4);
+end;
+
+procedure TTestTuplesQuadruple.Test_Unpack;
+var
+  val1: Integer;
+  val2: string;
+  val3: Boolean;
+  val4: Char;
+begin
+  fSUT.Unpack(val1, val2, val3, val4);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+  CheckEquals(True, val3);
+  CheckEquals('X', val4);
+end;
+
+procedure TTestTuplesQuadruple.Test_Unpack_ThreeValues;
+var
+  val1: Integer;
+  val2: string;
+  val3: Boolean;
+begin
+  fSUT.Unpack(val1, val2, val3);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+  CheckEquals(True, val3);
+end;
+
+procedure TTestTuplesQuadruple.Test_Unpack_TwoValues;
+var
+  val1: Integer;
+  val2: string;
+begin
+  fSUT.Unpack(val1, val2);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
 end;
 
 {$ENDREGION}
