@@ -747,6 +747,7 @@ end;
 procedure TTestIntegerList.TestIssue53;
 begin
   SUT := TIntegerList.Create;
+  FCheckCalled := True;
 end;
 
 procedure TTestIntegerList.TestIssue67;
