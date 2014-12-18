@@ -92,6 +92,7 @@ type
   private
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
   public
+    class function FromVarRec(const value: TVarRec): TValue; static;
 {$IFDEF DELPHI2010}
     function AsString: string;
 {$ENDIF}
@@ -1481,6 +1482,40 @@ begin
     TValue.Make(@intf, typeInfo, Result)
   else if not TryCast(typeInfo, Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+class function TValueHelper.FromVarRec(const value: TVarRec): TValue;
+begin
+  case value.VType of
+    vtInteger: Result := value.VInteger;
+    vtBoolean: Result := value.VBoolean;
+{$IF Declared(AnsiChar)}
+    vtChar: Result := string(value.VChar);
+{$IFEND}
+    vtExtended: Result := value.VExtended^;
+{$IF Declared(ShortString)}
+    vtString: Result := string(value.VString^);
+{$IFEND}
+    vtPointer: Result := value.VPointer;
+{$IF Declared(PAnsiChar)}
+    vtPChar: Result := string(value.VPChar);
+{$IFEND}
+    vtObject: Result := TObject(value.VObject);
+    vtClass: Result := value.VClass;
+    vtWideChar: Result := value.VWideChar;
+    vtPWideChar: Result := string(value.VPWideChar);
+{$IF Declared(AnsiString)}
+    vtAnsiString: Result := string(value.VAnsiString);
+{$IFEND}
+    vtCurrency: Result := value.VCurrency^;
+    vtVariant: Result := TValue.FromVariant(value.VVariant^);
+    vtInterface: Result := TValue.From<IInterface>(IInterface(value.VInterface));
+{$IF Declared(WideString)}
+    vtWideString: Result := string(value.VWideString);
+{$IFEND}
+    vtInt64: Result := value.VInt64^;
+    vtUnicodeString: Result := string(value.VUnicodeString);
+  end;
 end;
 
 function TValueHelper.IsString: Boolean;
