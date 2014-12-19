@@ -80,6 +80,7 @@ implementation
 
 uses
   Spring,
+  Spring.Reflection,
   Spring.ResourceStrings;
 
 
