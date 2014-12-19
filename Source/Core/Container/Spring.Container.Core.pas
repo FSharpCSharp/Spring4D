@@ -198,6 +198,7 @@ type
 
     procedure Initialize(const target: TRttiMember);
     procedure InitializeArguments(const arguments: array of TValue);
+    procedure InitializeDependencies(const parameterTypes: array of PTypeInfo);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
 
     property DependencyCount: Integer read GetDependencyCount;

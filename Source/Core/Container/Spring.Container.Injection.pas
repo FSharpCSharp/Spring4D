@@ -53,7 +53,8 @@ type
     procedure Validate(const target: TRttiMember); virtual;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); virtual; abstract;
     procedure InitializeArguments(const arguments: array of TValue);
-    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); virtual; abstract;
+    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); overload; virtual; abstract;
+    procedure InitializeDependencies(const parameterTypes: array of PTypeInfo); overload;
   public
     constructor Create(const targetName: string = '');
     procedure Initialize(const target: TRttiMember);
@@ -160,6 +161,16 @@ end;
 procedure TInjectionBase.InitializeArguments(const arguments: array of TValue);
 begin
   fArguments := TArray.Copy<TValue>(arguments);
+end;
+
+procedure TInjectionBase.InitializeDependencies(
+  const parameterTypes: array of PTypeInfo);
+var
+  i: Integer;
+begin
+  for i := Low(parameterTypes) to High(parameterTypes) do
+    fDependencies[i] := TDependencyModel.Create(
+      TType.GetType(parameterTypes[i]), fDependencies[i].Target);
 end;
 
 function TInjectionBase.GetArguments: TArray<TValue>;
@@ -307,7 +318,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInjector'}
+{$REGION 'TDependencyInjector'}
 
 function TDependencyInjector.InjectConstructor(const model: TComponentModel;
   const parameterTypes: array of PTypeInfo): IInjection;
@@ -323,6 +334,7 @@ begin
       @SUnsatisfiedConstructorParameters, [model.ComponentTypeName]);
   Result := TConstructorInjection.Create;
   Result.Initialize(method);
+  Result.InitializeDependencies(parameterTypes);
   model.ConstructorInjections.Add(Result);
 end;
 
@@ -362,6 +374,7 @@ begin
   if not injectionExists then
     Result := TMethodInjection.Create(methodName);
   Result.Initialize(method);
+  Result.InitializeDependencies(parameterTypes);
   if not injectionExists then
     model.MethodInjections.Add(Result);
 end;
