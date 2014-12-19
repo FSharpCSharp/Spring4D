@@ -266,8 +266,7 @@ type
     fServiceType: PTypeInfo;
     fName: string;
   public
-    constructor Create(serviceType: PTypeInfo); overload;
-    constructor Create(serviceType: PTypeInfo; const name: string); overload;
+    constructor Create(serviceType: PTypeInfo; const name: string = '');
     property ServiceType: PTypeInfo read fServiceType;
     property Name: string read fName;
   end;
@@ -503,11 +502,6 @@ begin
 end;
 
 { ImplementsAttribute }
-
-constructor ImplementsAttribute.Create(serviceType: PTypeInfo);
-begin
-  Create(serviceType, '');
-end;
 
 constructor ImplementsAttribute.Create(serviceType: PTypeInfo;
   const name: string);
