@@ -386,24 +386,34 @@ type
 
   // IChicken <== TChicken --> IEgg <== TEgg --> IChicken
 
+  IEgg = interface;
+
   IChicken = interface
     ['{88C4F5E9-85B4-43D4-9265-0A9FAD099055}']
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
+    property Egg: IEgg read GetEgg write SetEgg;
   end;
 
   IEgg = interface
     ['{9BFC513F-635C-42CD-B29D-9E66D47882A6}']
+    function Chicken: IChicken;
   end;
 
   TChicken = class(TInterfacedObject, IChicken)
   private
     fEgg: IEgg;
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
   public
     constructor Create(const egg: IEgg);
+    property Egg: IEgg read GetEgg write SetEgg;
   end;
 
   TEgg = class(TInterfacedObject, IEgg)
   private
     fChicken: IChicken;
+    function Chicken: IChicken;
   public
     constructor Create(const chicken: IChicken);
   end;
@@ -411,6 +421,8 @@ type
   TCircularDependencyChicken = class(TInterfacedObject, IChicken)
   private
     fChicken: IChicken;
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
   public
     constructor Create(const chicken: IChicken);
   end;
@@ -707,11 +719,30 @@ begin
   fChicken := chicken;
 end;
 
+function TCircularDependencyChicken.GetEgg: IEgg;
+begin
+  Result := nil;
+end;
+
+procedure TCircularDependencyChicken.SetEgg(const egg: IEgg);
+begin
+end;
+
 { TChicken }
 
 constructor TChicken.Create(const egg: IEgg);
 begin
   inherited Create;
+  fEgg := egg;
+end;
+
+function TChicken.GetEgg: IEgg;
+begin
+  Result := fEgg;
+end;
+
+procedure TChicken.SetEgg(const egg: IEgg);
+begin
   fEgg := egg;
 end;
 
@@ -721,6 +752,11 @@ constructor TEgg.Create(const chicken: IChicken);
 begin
   inherited Create;
   fChicken := chicken;
+end;
+
+function TEgg.Chicken: IChicken;
+begin
+  Result := fChicken
 end;
 
 { TNameAgeComponent }

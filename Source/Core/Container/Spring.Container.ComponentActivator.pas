@@ -100,6 +100,9 @@ end;
 procedure TComponentActivatorBase.ExecuteInjections(var instance: TValue;
   context: ICreationContext);
 begin
+  if Model.LifetimeType in [TLifetimeType.Singleton, TLifetimeType.PerResolve,
+    TLifetimeType.SingletonPerThread] then
+    context.AddPerResolve(Model, instance);
   try
     ExecuteInjections(instance, Model.FieldInjections, context);
     ExecuteInjections(instance, Model.PropertyInjections, context);

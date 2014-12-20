@@ -191,6 +191,7 @@ procedure TLifetimeInspector.DoProcessModel(const kernel: IKernel;
       nil,
       TSingletonLifetimeManager,
       TTransientLifetimeManager,
+      TTransientLifetimeManager,
       TSingletonPerThreadLifetimeManager,
       TPooledLifetimeManager,
       nil

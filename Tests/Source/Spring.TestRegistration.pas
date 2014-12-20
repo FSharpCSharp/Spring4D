@@ -199,6 +199,7 @@ begin
     TTestNamedInjectionsByAttribute.Suite,
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite,
+    TTestPerResolve.Suite,
     TTestImplementsAttribute.Suite,
     TTestRegisterInterfaces.Suite,
     TTestSingletonLifetimeManager.Suite,

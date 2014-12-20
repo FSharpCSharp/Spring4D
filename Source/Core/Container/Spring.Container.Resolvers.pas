@@ -267,7 +267,7 @@ begin
 
   componentModel := Kernel.Registry.FindOne(dependency.TypeInfo, argument);
 
-  context.EnterResolution(componentModel);
+  if context.EnterResolution(componentModel, instance) then
   try
     instance := componentModel.LifetimeManager.Resolve(context);
   finally
@@ -434,7 +434,7 @@ begin
   dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
   componentModel := Kernel.Registry.FindOne(targetType.Handle, argument);
 
-  context.EnterResolution(componentModel);
+  if context.EnterResolution(componentModel, Result) then
   try
     case targetType.TypeKind of
       tkClass: Result := InternalResolveClass(

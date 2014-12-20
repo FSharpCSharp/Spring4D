@@ -121,6 +121,8 @@ type
     function AsTransient: IRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
 
+    function PerResolve: IRegistration;
+
     function AsDefault: IRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
@@ -169,6 +171,8 @@ type
     function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration<T>;
     function AsTransient: TRegistration<T>;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>; {$IFDEF CPUARM}experimental;{$ENDIF}
+
+    function PerResolve: TRegistration<T>;
 
     function AsDefault: TRegistration<T>; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration<T>; overload;
@@ -677,6 +681,12 @@ begin
 end;
 {$ENDIF}
 
+function TRegistration.PerResolve: IRegistration;
+begin
+  fModel.LifetimeType := TLifetimeType.PerResolve;
+  Result := Self;
+end;
+
 {$ENDREGION}
 
 
@@ -847,6 +857,12 @@ begin
   Result := Self;
 end;
 {$ENDIF}
+
+function TRegistration<T>.PerResolve: TRegistration<T>;
+begin
+  fRegistration.PerResolve;
+  Result := Self;
+end;
 
 {$ENDREGION}
 

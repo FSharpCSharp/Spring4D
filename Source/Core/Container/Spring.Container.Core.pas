@@ -253,10 +253,12 @@ type
   /// </summary>
   ICreationContext = interface(ISubDependencyResolver)
     ['{0E788A94-AD9B-4951-85C1-40F877BB8A24}']
-    procedure EnterResolution(const model: TComponentModel);
+    function EnterResolution(const model: TComponentModel;
+      out instance: TValue): Boolean;
     procedure LeaveResolution(const model: TComponentModel);
 
     procedure AddArgument(const argument: TValue);
+    procedure AddPerResolve(const model: TComponentModel; const instance: TValue);
     function TryHandle(const injection: IInjection;
       out handled: IInjection): Boolean;
   end;

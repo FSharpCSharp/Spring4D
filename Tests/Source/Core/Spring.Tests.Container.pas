@@ -207,6 +207,11 @@ type
     procedure TestResolveEgg;
   end;
 
+  TTestPerResolve = class(TContainerTestCase)
+  published
+    procedure TestResolveCircularDependency;
+  end;
+
   TTestImplementsAttribute = class(TContainerTestCase)
   published
     procedure TestImplements;
@@ -1134,6 +1139,26 @@ var
 begin
   ExpectedException := ECircularDependencyException;
   egg := fContainer.Resolve<IEgg>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestPerResolve'}
+
+procedure TTestPerResolve.TestResolveCircularDependency;
+var
+  chicken: IChicken;
+begin
+  fContainer.RegisterType<IChicken, TChicken>
+    .InjectConstructor
+    .PerResolve
+    .InjectProperty('Egg');
+  fContainer.RegisterType<IEgg, TEgg>;
+  fContainer.Build;
+  chicken := fContainer.Resolve<IChicken>;
+  CheckSame(chicken, chicken.Egg.Chicken);
+  chicken.Egg := nil;
 end;
 
 {$ENDREGION}

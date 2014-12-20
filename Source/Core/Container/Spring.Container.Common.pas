@@ -91,6 +91,11 @@ type
     Transient,
 
     ///	<summary>
+    ///	  Once per resolve operation.
+    ///	</summary>
+    PerResolve,
+
+    ///	<summary>
     ///	  Every thread has a single instance.
     ///	</summary>
     SingletonPerThread,
@@ -377,6 +382,8 @@ type
     function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
     function AsTransient: IRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
+
+    function PerResolve: IRegistration;
 
     function AsDefault: IRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
