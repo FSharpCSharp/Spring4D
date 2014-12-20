@@ -46,9 +46,9 @@ resourcestring
   SUnsatisfiedResolutionArgumentCount = 'Unsatisfied resolution argument count.';
   SUnresovableInjection = 'Unresovable injection on type: %s';
   SUnsatisfiedConstructor = 'Unsatisfied constructor on type: %s';
-  SMethodNotFound = 'Method not found: %s';
-  SPropertyNotFound = 'Method not found: %s';
-  SFieldNotFound = 'Field not found: %s';
+  SMethodNotFound = 'Method not found: %s.%s';
+  SPropertyNotFound = 'Property not found: %s.%s';
+  SFieldNotFound = 'Field not found: %s.%s';
   SInjectionTargetNeeded = 'Injection target needed.';
   SUnsatisfiedTarget = 'Unsatisfied target: %s';
   STypeNotFound = 'Type not found: %s';
