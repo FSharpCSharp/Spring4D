@@ -311,6 +311,13 @@ type
     procedure Test_Unpack_ThreeValues;
   end;
 
+  TTestSmartPointer = class(TTestCase)
+  published
+    procedure Test_Instance_Gets_Created;
+    procedure Test_Instance_Gets_Destroyed_When_Created;
+    procedure Test_Instance_Gets_Destroyed_When_Injected;
+  end;
+
 implementation
 
 uses
@@ -1800,6 +1807,74 @@ begin
   fSUT.Unpack(val1, val2);
   CheckEquals(42, val1);
   CheckEquals('foo', val2);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSmartPointer'}
+
+type
+  TTestClass = class
+  public
+    CreateCalled: Boolean;
+    OnDestroy: TProc;
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+constructor TTestClass.Create;
+begin
+  CreateCalled := True;
+end;
+
+destructor TTestClass.Destroy;
+begin
+  if Assigned(OnDestroy) then
+    OnDestroy;
+  inherited;
+end;
+
+procedure TTestSmartPointer.Test_Instance_Gets_Created;
+var
+  p: ISmartPointer<TTestClass>;
+begin
+  p := TSmartPointer<TTestClass>.Create();
+  CheckTrue(p.CreateCalled);
+end;
+
+procedure TTestSmartPointer.Test_Instance_Gets_Destroyed_When_Created;
+var
+  p: ISmartPointer<TTestClass>;
+  destroyCalled: Boolean;
+begin
+  p := TSmartPointer<TTestClass>.Create();
+  p.OnDestroy :=
+    procedure
+    begin
+      destroyCalled := True;
+    end;
+  destroyCalled := False;
+  p := nil;
+  CheckTrue(destroyCalled);
+end;
+
+procedure TTestSmartPointer.Test_Instance_Gets_Destroyed_When_Injected;
+var
+  t: TTestClass;
+  p: ISmartPointer<TTestClass>;
+  destroyCalled: Boolean;
+begin
+  t := TTestClass.Create;
+  t.OnDestroy :=
+    procedure
+    begin
+      destroyCalled := True;
+    end;
+  p := TSmartPointer<TTestClass>.Create(t);
+  destroyCalled := False;
+  p := nil;
+  CheckTrue(destroyCalled);
 end;
 
 {$ENDREGION}
