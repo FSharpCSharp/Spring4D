@@ -81,8 +81,7 @@ uses
   SysUtils,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Reflection,
-  Spring.Reflection.Activator;
+  Spring.Reflection;
 
 
 {$REGION 'TComponentActivatorBase'}

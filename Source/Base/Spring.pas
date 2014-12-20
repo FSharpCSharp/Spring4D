@@ -108,6 +108,20 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TRttiMethodHelper'}
+
+  TRttiMethodHelper = class helper for TRttiMethod
+  private
+    procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+  public
+    function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
+    function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
+    function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Interfaces'}
 
   /// <summary>
@@ -1177,6 +1191,47 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TActivator'}
+
+  IObjectActivator = interface
+    ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
+    function CreateInstance: TValue;
+  end;
+
+  TActivator = record
+  private
+    type TConstructor = function(InstanceOrVMT: Pointer; Alloc: ShortInt): TObject;
+    class var Context: TRttiContext;
+    class var ConstructorCache: TDictionary<TClass,TConstructor>;
+    class function FindConstructor(const classType: TRttiInstanceType;
+      const arguments: array of TValue): TRttiMethod; static;
+  public
+    class constructor Create;
+    class destructor Destroy;
+
+    class procedure ClearCache; static;
+
+    class function CreateInstance(const classType: TRttiInstanceType): TValue; overload; static;
+    class function CreateInstance(const classType: TRttiInstanceType;
+      const arguments: array of TValue): TValue; overload; static;
+    class function CreateInstance(const classType: TRttiInstanceType;
+      const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
+
+    class function CreateInstance(typeInfo: PTypeInfo): TObject; overload; static;
+    class function CreateInstance(const typeName: string): TObject; overload; static;
+
+    class function CreateInstance(classType: TClass): TObject; overload; static; inline;
+    class function CreateInstance(classType: TClass;
+      const arguments: array of TValue): TObject; overload; static;
+
+    class function CreateInstance<T: class>: T; overload; static; inline;
+    class function CreateInstance<T: class>(
+      const arguments: array of TValue): T; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TFinalizer'}
 
   TFinalizer = record
@@ -1321,10 +1376,13 @@ procedure FinalizeValue(const value; typeKind: TTypeKind); inline;
 implementation
 
 uses
+  RTLConsts,
   SysConst,
-  Spring.Reflection.Activator,
   Spring.Events,
   Spring.ResourceStrings;
+
+type
+  PValueData = ^TValueData;
 
 
 {$REGION 'Routines'}
@@ -1654,6 +1712,62 @@ begin
   end;
   if Result then
     IInterface(Intf) := AsInterface;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRttiMethodHelper'}
+
+procedure TRttiMethodHelper.DispatchValue(const value: TValue;
+  typeInfo: PTypeInfo);
+begin
+  if (value.TypeInfo <> typeInfo) and (value.Kind = tkInterface)
+    and (typeInfo.Kind = tkInterface)
+    and IsAssignableFrom(typeInfo, value.TypeInfo) then
+    PValueData(@value).FTypeInfo := typeInfo;
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TObject;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TClass;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TValue;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
 end;
 
 {$ENDREGION}
@@ -2697,6 +2811,138 @@ end;
 function TSmartPointer<T>.Invoke: T;
 begin
   Result := fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TActivator'}
+
+class constructor TActivator.Create;
+begin
+  Context := TRttiContext.Create;
+  ConstructorCache := TDictionary<TClass,TConstructor>.Create;
+end;
+
+class destructor TActivator.Destroy;
+begin
+  ConstructorCache.Free;
+  Context.Free;
+end;
+
+class procedure TActivator.ClearCache;
+begin
+  ConstructorCache.Clear;
+  Context.Free;
+  Context := TRttiContext.Create;
+end;
+
+class function TActivator.CreateInstance(
+  const classType: TRttiInstanceType): TValue;
+begin
+  Result := CreateInstance(classType, []);
+end;
+
+class function TActivator.CreateInstance(const classType: TRttiInstanceType;
+  const arguments: array of TValue): TValue;
+var
+  method: TRttiMethod;
+begin
+  method := FindConstructor(classType, arguments);
+  if Assigned(method) then
+    Result := CreateInstance(classType, method, arguments)
+  else
+    raise ENotSupportedException.CreateResFmt(
+      @SMissingConstructor, [classType.ClassName]);
+end;
+
+class function TActivator.CreateInstance(const classType: TRttiInstanceType;
+  const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue;
+begin
+  Result := constructorMethod.Invoke(classType.MetaclassType, arguments);
+end;
+
+class function TActivator.CreateInstance(typeInfo: PTypeInfo): TObject;
+var
+  classType: TClass;
+  ctor: TConstructor;
+  rttiType: TRttiType;
+begin
+  classType := typeInfo.TypeData.ClassType;
+  if ConstructorCache.TryGetValue(classType, ctor) then
+    Result := ctor(classType, 1)
+  else
+  begin
+    rttiType := Context.GetType(typeInfo);
+    Result := CreateInstance(TRttiInstanceType(rttiType), []).AsObject;
+  end;
+end;
+
+class function TActivator.CreateInstance(const typeName: string): TObject;
+var
+  rttiType: TRttiType;
+begin
+  rttiType := Context.FindType(typeName);
+  Result := CreateInstance(TRttiInstanceType(rttiType), []).AsObject;
+end;
+
+class function TActivator.CreateInstance(classType: TClass): TObject;
+begin
+  Result := CreateInstance(classType.ClassInfo);
+end;
+
+class function TActivator.CreateInstance(classType: TClass;
+  const arguments: array of TValue): TObject;
+var
+  rttiType: TRttiType;
+begin
+  rttiType := Context.GetType(classType);
+  Result := CreateInstance(TRttiInstanceType(rttiType), arguments).AsObject;
+end;
+
+class function TActivator.CreateInstance<T>: T;
+begin
+  Result := T(CreateInstance(TypeInfo(T)));
+end;
+
+class function TActivator.CreateInstance<T>(
+  const arguments: array of TValue): T;
+begin
+  Result := T(CreateInstance(TClass(T), arguments));
+end;
+
+class function TActivator.FindConstructor(const classType: TRttiInstanceType;
+  const arguments: array of TValue): TRttiMethod;
+
+  function Assignable(const params: TArray<TRttiParameter>;
+    const args: array of TValue): Boolean;
+  var
+    i: Integer;
+    v: TValue;
+  begin
+    Result := Length(params) = Length(args);
+    if Result then
+      for i := Low(args) to High(args) do
+        if not args[i].TryCast(params[i].paramType.Handle, v) then
+          Exit(False);
+  end;
+
+var
+  method: TRttiMethod;
+begin
+  for method in classType.GetMethods do
+  begin
+    if method.MethodKind <> mkConstructor then
+      Continue;
+
+    if Assignable(method.GetParameters, arguments) then
+    begin
+      if Length(arguments) = 0 then
+        ConstructorCache.AddOrSetValue(classType.MetaclassType, method.CodeAddress);
+      Exit(method);
+    end;
+  end;
+  Result := nil;
 end;
 
 {$ENDREGION}
