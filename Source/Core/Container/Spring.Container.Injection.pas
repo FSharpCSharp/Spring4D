@@ -420,8 +420,15 @@ end;
 
 function TDependencyInjector.InjectConstructor(
   const model: TComponentModel): IInjection;
+var
+  predicate: TPredicate<TRttiMethod>;
+  method: TRttiMethod;
 begin
+  predicate := TMethodFilters.IsConstructor
+    and TMethodFilters.HasParameterTypes([]);
+  method := model.ComponentType.Methods.FirstOrDefault(predicate);
   Result := TConstructorInjection.Create;
+  Result.Initialize(method);
   model.ConstructorInjections.Add(Result);
 end;
 
