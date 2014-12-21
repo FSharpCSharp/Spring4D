@@ -1818,7 +1818,7 @@ type
   TTestClass = class
   public
     CreateCalled: Boolean;
-    OnDestroy: TProc;
+    DestroyCalled: PBoolean;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -1830,8 +1830,8 @@ end;
 
 destructor TTestClass.Destroy;
 begin
-  if Assigned(OnDestroy) then
-    OnDestroy;
+  if Assigned(DestroyCalled) then
+    DestroyCalled^ := True;
   inherited;
 end;
 
@@ -1849,11 +1849,7 @@ var
   destroyCalled: Boolean;
 begin
   p := TSmartPointer<TTestClass>.Create();
-  p.OnDestroy :=
-    procedure
-    begin
-      destroyCalled := True;
-    end;
+  p.DestroyCalled := @destroyCalled;
   destroyCalled := False;
   p := nil;
   CheckTrue(destroyCalled);
@@ -1866,11 +1862,7 @@ var
   destroyCalled: Boolean;
 begin
   t := TTestClass.Create;
-  t.OnDestroy :=
-    procedure
-    begin
-      destroyCalled := True;
-    end;
+  t.DestroyCalled := @destroyCalled;
   p := TSmartPointer<TTestClass>.Create(t);
   destroyCalled := False;
   p := nil;
