@@ -35,6 +35,8 @@ uses
   Spring;
 
 type
+  PMethod = ^TMethod;
+
   ///	<summary>
   ///	  Base class for multicast event implementation
   ///	</summary>
@@ -83,6 +85,9 @@ type
   end;
 
 implementation
+
+uses
+  TypInfo;
 
 function IsValid(AObject: TObject): Boolean;
 {$IFDEF DELPHI2010}

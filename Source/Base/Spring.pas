@@ -1370,6 +1370,9 @@ function GetTypeSize(typeInfo: PTypeInfo): Integer;
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 
 procedure FinalizeValue(const value; typeKind: TTypeKind); inline;
+
+function MethodReferenceToMethodPointer(const methodRef): TMethod;
+function MethodPointerToMethodReference(const method: TMethod): IInterface;
 {$ENDREGION}
 
 
@@ -1587,6 +1590,23 @@ begin
     tkPointer: FreeMem(Pointer(value));
   end;
 end;
+
+function MethodReferenceToMethodPointer(const methodRef): TMethod;
+type
+  TVtable = array[0..3] of Pointer;
+  PVtable = ^TVtable;
+  PPVtable = ^PVtable;
+begin
+  // 3 is offset of Invoke, after QI, AddRef, Release
+  Result.Code := PPVtable(methodRef)^^[3];
+  Result.Data := Pointer(methodRef);
+end;
+
+function MethodPointerToMethodReference(const method: TMethod): IInterface;
+begin
+  Result := IInterface(method.Data);
+end;
+
 {$ENDREGION}
 
 
