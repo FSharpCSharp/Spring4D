@@ -136,6 +136,22 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TNotifyEventImpl<T>'}
+
+  TNotifyEventImpl<T> = class(TEventBase, INotifyEvent<T>)
+  private
+    function GetInvoke: TNotifyEvent<T>;
+    procedure Add(handler: TNotifyEvent<T>);
+    procedure Remove(handler: TNotifyEvent<T>);
+    procedure ForEach(const action: TAction<TNotifyEvent<T>>);
+
+    procedure InternalInvoke(sender: TObject; const item: T);
+  public
+    constructor Create;
+  end;
+
+  {$ENDREGION}
+
 implementation
 
 uses
@@ -638,6 +654,50 @@ begin
     PMethod(@Result)^ := fInvoke;
 end;
 {$ENDIF SUPPORTS_GENERIC_EVENTS}
+
+{$ENDREGION}
+
+
+{$REGION 'TNotifyEventImpl<T>'}
+
+constructor TNotifyEventImpl<T>.Create;
+begin
+  inherited;
+  fInvoke.Code := @TNotifyEventImpl<T>.InternalInvoke;
+  fInvoke.Data := Self;
+end;
+
+procedure TNotifyEventImpl<T>.Add(handler: TNotifyEvent<T>);
+begin
+  inherited Add(TMethod(handler));
+end;
+
+procedure TNotifyEventImpl<T>.ForEach(const action: TAction<TNotifyEvent<T>>);
+var
+  handler: TMethod;
+begin
+  for handler in Handlers do
+    action(TNotifyEvent<T>(handler));
+end;
+
+function TNotifyEventImpl<T>.GetInvoke: TNotifyEvent<T>;
+begin
+  Result := TNotifyEvent<T>(inherited Invoke);
+end;
+
+procedure TNotifyEventImpl<T>.InternalInvoke(sender: TObject; const item: T);
+var
+  handler: TMethod;
+begin
+  if Enabled then
+    for handler in Handlers do
+      TNotifyEvent<T>(handler)(sender, item);
+end;
+
+procedure TNotifyEventImpl<T>.Remove(handler: TNotifyEvent<T>);
+begin
+  inherited Remove(TMethod(handler));
+end;
 
 {$ENDREGION}
 

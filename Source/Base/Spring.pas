@@ -244,6 +244,8 @@ type
   TNotifyProc = reference to procedure(Sender: TObject);
   {$M-}
 
+  TNotifyEvent<T> = procedure(Sender: TObject; const item: T) of object;
+
   {$ENDREGION}
 
 
@@ -948,6 +950,9 @@ type
     class operator Implicit(const value: T): Event<T>;
   end;
 {$ENDIF}
+
+  INotifyEvent<T> = interface(IEvent<TNotifyEvent<T>>)
+  end;
 
   {$ENDREGION}
 
