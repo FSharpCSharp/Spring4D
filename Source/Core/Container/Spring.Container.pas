@@ -51,6 +51,11 @@ type
     fResolver: IDependencyResolver;
     fExtensions: IList<IContainerExtension>;
     fLogger: ILogger;
+    fChangedModels: ISet<TComponentModel>;
+    procedure CheckBuildRequired;
+    procedure HandleBuild(Sender: TObject; const model: TComponentModel);
+    procedure HandleRegistryChanged(Sender: TObject;
+      const model: TComponentModel; action: TCollectionChangedAction);
     class var GlobalInstance: TContainer;
     function GetKernel: IKernel;
     type
@@ -203,12 +208,21 @@ begin
   GlobalInstance.Free;
 end;
 
+procedure TContainer.CheckBuildRequired;
+begin
+  if fChangedModels.Any then
+    raise EContainerException.CreateRes(@SContainerRequiresBuild);
+end;
+
 constructor TContainer.Create;
 begin
   inherited Create;
+  fChangedModels := TCollections.CreateSet<TComponentModel>;
   fLogger := TNullLogger.GlobalInstance;
   fRegistry := TComponentRegistry.Create(Self);
+  fRegistry.OnChanged.Add(HandleRegistryChanged);
   fBuilder := TComponentBuilder.Create(Self);
+  fBuilder.OnBuild.Add(HandleBuild);
   fInjector := TDependencyInjector.Create;
   fRegistrationManager := TRegistrationManager.Create(Self);
   fResolver := TDependencyResolver.Create(Self);
@@ -257,6 +271,7 @@ end;
 procedure TContainer.Build;
 begin
   fBuilder.BuildAll;
+  fChangedModels.Clear;
 end;
 
 procedure TContainer.InitializeInspectors;
@@ -306,6 +321,17 @@ end;
 function TContainer.GetResolver: IDependencyResolver;
 begin
   Result := fResolver;
+end;
+
+procedure TContainer.HandleBuild(Sender: TObject; const model: TComponentModel);
+begin
+  fChangedModels.Remove(model);
+end;
+
+procedure TContainer.HandleRegistryChanged(Sender: TObject;
+  const model: TComponentModel; action: TCollectionChangedAction);
+begin
+  fChangedModels.Add(model);
 end;
 
 {$IFDEF DELPHIXE_UP}
@@ -412,6 +438,7 @@ var
   context: ICreationContext;
   targetType: TRttiType;
 begin
+  CheckBuildRequired;
   componentModel := fRegistry.FindDefault(serviceType);
   context := TCreationContext.Create(componentModel, arguments);
   targetType := TType.GetType(serviceType);
@@ -432,6 +459,7 @@ var
   serviceType: PTypeInfo;
   targetType: TRttiType;
 begin
+  CheckBuildRequired;
   componentModel := fRegistry.FindOne(name);
   if not Assigned(componentModel) then
     raise EResolveException.CreateResFmt(@SServiceNotFound, [name]);
@@ -461,6 +489,7 @@ var
   context: ICreationContext;
   serviceName: string;
 begin
+  CheckBuildRequired;
   targetType := TType.GetType(serviceType);
   // TODO: remove dependency on lazy type
   if TType.IsLazy(serviceType) then

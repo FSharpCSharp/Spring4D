@@ -121,6 +121,10 @@ type
   /// </summary>
   IComponentRegistry = interface
     ['{CBCA1D0F-1244-4AB4-AB07-091053932166}']
+  {$REGION 'Property Accessors'}
+    function GetOnChanged: ICollectionChangedEvent<TComponentModel>;
+  {$ENDREGION}
+
     function RegisterComponent(componentType: PTypeInfo): TComponentModel;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
@@ -142,6 +146,8 @@ type
     function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
+
+    property OnChanged: ICollectionChangedEvent<TComponentModel> read GetOnChanged;
   end;
 
   /// <summary>
@@ -149,6 +155,10 @@ type
   /// </summary>
   IComponentBuilder = interface
     ['{8309EBC7-9699-47CF-B177-4BC9B787EBE0}']
+  {$REGION 'Property Accessors'}
+    function GetOnBuild: INotifyEvent<TComponentModel>;
+  {$ENDREGION}
+
     // Inspectors (Policies)
     procedure AddInspector(const inspector: IBuilderInspector);
     procedure RemoveInspector(const inspector: IBuilderInspector);
@@ -156,6 +166,8 @@ type
     // Build
     procedure Build(const model: TComponentModel);
     procedure BuildAll;
+
+    property OnBuild: INotifyEvent<TComponentModel> read GetOnBuild;
   end;
 
   /// <summary>

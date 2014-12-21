@@ -50,6 +50,8 @@ type
     fUnnamedRegistrations: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceTypeMappings: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
+    fOnChanged: ICollectionChangedEvent<TComponentModel>;
+    function GetOnChanged: ICollectionChangedEvent<TComponentModel>;
   protected
     procedure CheckIsNonGuidInterface(const serviceType: TRttiType);
 {$IFDEF DELPHIXE_UP}
@@ -209,6 +211,7 @@ implementation
 uses
   SysUtils,
   TypInfo,
+  Spring.Collections.Events,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
   Spring.Container.Resolvers,
@@ -226,11 +229,17 @@ begin
 
   inherited Create;
   fKernel := kernel;
+  fOnChanged := TCollectionChangedEventImpl<TComponentModel>.Create;
   fModels := TCollections.CreateObjectList<TComponentModel>(True);
+  fModels.OnChanged.Add(fOnChanged.Invoke);
   fDefaultRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
+  fDefaultRegistrations.OnValueChanged.Add(fOnChanged.Invoke);
   fUnnamedRegistrations := TCollections.CreateMultiMap<PTypeInfo, TComponentModel>;
+  fUnnamedRegistrations.OnValueChanged.Add(fOnChanged.Invoke);
   fServiceTypeMappings := TCollections.CreateMultiMap<PTypeInfo, TComponentModel>;
+  fServiceTypeMappings.OnValueChanged.Add(fOnChanged.Invoke);
   fServiceNameMappings := TCollections.CreateDictionary<string, TComponentModel>;
+  fServiceNameMappings.OnValueChanged.Add(fOnChanged.Invoke);
 end;
 
 procedure TComponentRegistry.CheckIsNonGuidInterface(const serviceType: TRttiType);
@@ -449,6 +458,11 @@ begin
   else
     raise EResolveException.CreateResFmt(@SCannotResolveType, [
       serviceType.TypeName]);
+end;
+
+function TComponentRegistry.GetOnChanged: ICollectionChangedEvent<TComponentModel>;
+begin
+  Result := fOnChanged;
 end;
 
 function TComponentRegistry.FindDefault(

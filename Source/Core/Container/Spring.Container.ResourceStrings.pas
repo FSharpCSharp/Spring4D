@@ -29,6 +29,7 @@ unit Spring.Container.ResourceStrings;
 interface
 
 resourcestring
+  SContainerRequiresBuild = 'Container has changed registration information - Build required';
   SMissingGuid = 'Type is missing a guid: %s';
   SMissingInterface = 'Type does not support IInterface: %s';
   SIncompatibleTypes = 'Component type "%s" incompatible with service type "%s".';

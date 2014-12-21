@@ -39,6 +39,8 @@ type
   private
     fKernel: IKernel;
     fInspectors: IList<IBuilderInspector>;
+    fOnBuild: INotifyEvent<TComponentModel>;
+    function GetOnBuild: INotifyEvent<TComponentModel>;
   public
     constructor Create(const kernel: IKernel);
 
@@ -47,6 +49,8 @@ type
     procedure ClearInspectors;
     procedure Build(const model: TComponentModel);
     procedure BuildAll;
+
+    property OnBuild: INotifyEvent<TComponentModel> read GetOnBuild;
   end;
 
   TInspectorBase = class abstract(TInterfacedObject, IBuilderInspector)
@@ -118,6 +122,7 @@ uses
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.ResourceStrings,
+  Spring.Events,
   Spring.Reflection;
 
 
@@ -129,6 +134,12 @@ begin
   inherited Create;
   fKernel := kernel;
   fInspectors := TCollections.CreateInterfaceList<IBuilderInspector>;
+  fOnBuild := TNotifyEventImpl<TComponentModel>.Create;
+end;
+
+function TComponentBuilder.GetOnBuild: INotifyEvent<TComponentModel>;
+begin
+  Result := fOnBuild;
 end;
 
 procedure TComponentBuilder.AddInspector(const inspector: IBuilderInspector);
@@ -154,6 +165,7 @@ var
 begin
   for inspector in fInspectors do
     inspector.ProcessModel(fKernel, model);
+  fOnBuild.Invoke(Self, model);
 end;
 
 procedure TComponentBuilder.BuildAll;
