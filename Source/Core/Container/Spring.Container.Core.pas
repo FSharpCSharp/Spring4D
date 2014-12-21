@@ -59,12 +59,14 @@ type
   private
     fTargetType: TRttiType;
     fTarget: TRttiNamedObject;
+    function GetParentType: TRttiType;
     function GetTargetTypeInfo: PTypeInfo;
     function GetTargetTypeName: string;
   public
     constructor Create(const targetType: TRttiType;
       const target: TRttiNamedObject);
 
+    property ParentType: TRttiType read GetParentType;
     property TargetType: TRttiType read fTargetType;
     property Target: TRttiNamedObject read fTarget;
     property Name: string read GetTargetTypeName;
@@ -238,11 +240,9 @@ type
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): Boolean;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): TValue;
+      const dependency: TDependencyModel; const argument: TValue): TValue;
   end;
 
   /// <summary>
@@ -266,10 +266,10 @@ type
   IDependencyResolver = interface(ISubDependencyResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): Boolean; overload;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
@@ -404,6 +404,14 @@ constructor TDependencyModel.Create(const targetType: TRttiType;
 begin
   fTargetType := targetType;
   fTarget := target;
+end;
+
+function TDependencyModel.GetParentType: TRttiType;
+begin
+  if fTarget is TRttiParameter then
+    Result := fTarget.Parent.Parent as TRttiType
+  else
+    Result := fTarget.Parent as TRttiType;
 end;
 
 function TDependencyModel.GetTargetTypeInfo: PTypeInfo;
@@ -592,7 +600,7 @@ begin
   SetLength(dependencies, Length(params));
   for i := Low(dependencies) to High(dependencies) do
     dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
-  Result := fKernel.Resolver.CanResolve(nil, fModel, dependencies, fArguments);
+  Result := fKernel.Resolver.CanResolve(nil, dependencies, fArguments);
 end;
 
 {$ENDREGION}
