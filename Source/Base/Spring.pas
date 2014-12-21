@@ -1389,9 +1389,6 @@ uses
   Spring.Events,
   Spring.ResourceStrings;
 
-type
-  PValueData = ^TValueData;
-
 
 {$REGION 'Routines'}
 
@@ -1746,6 +1743,8 @@ end;
 
 procedure TRttiMethodHelper.DispatchValue(const value: TValue;
   typeInfo: PTypeInfo);
+type
+  PValueData = ^TValueData;
 begin
   if (value.TypeInfo <> typeInfo) and (value.Kind = tkInterface)
     and (typeInfo.Kind = tkInterface)

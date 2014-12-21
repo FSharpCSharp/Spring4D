@@ -64,11 +64,11 @@ type
     class constructor Create;
     class destructor Destroy;
   {$REGION 'Implements IKernel'}
-    function GetBuilder: IComponentBuilder;
-    function GetInjector: IDependencyInjector;
-    function GetRegistry: IComponentRegistry;
-    function GetResolver: IDependencyResolver;
-    function GetLogger: ILogger;
+    function GetBuilder: IComponentBuilder; inline;
+    function GetInjector: IDependencyInjector; inline;
+    function GetRegistry: IComponentRegistry; inline;
+    function GetResolver: IDependencyResolver; inline;
+    function GetLogger: ILogger; inline;
     procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
     procedure InitializeInspectors; virtual;

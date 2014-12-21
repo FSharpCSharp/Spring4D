@@ -66,6 +66,7 @@ implementation
 
 uses
   SysUtils,
+  TypInfo,
   Spring.Container.Injection,
   Spring.Container.ResourceStrings,
   Spring.Reflection;

@@ -59,9 +59,9 @@ type
   private
     fTargetType: TRttiType;
     fTarget: TRttiNamedObject;
-    function GetParentType: TRttiType;
-    function GetTargetTypeInfo: PTypeInfo;
-    function GetTargetTypeName: string;
+    function GetParentType: TRttiType; inline;
+    function GetTargetTypeInfo: PTypeInfo; inline;
+    function GetTargetTypeName: string; inline;
   public
     constructor Create(const targetType: TRttiType;
       const target: TRttiNamedObject);
