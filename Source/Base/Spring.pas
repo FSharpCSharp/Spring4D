@@ -1326,6 +1326,49 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TDynArray<T>'}
+
+  TDynArray<T> = record
+  private
+    type
+      TEnumerator = record
+      private
+        fItems: Pointer;
+        fIndex: Integer;
+        function GetCurrent: T;
+      public
+        function MoveNext: Boolean; inline;
+        property Current: T read GetCurrent;
+      end;
+  private
+    fItems: TArray<T>; // DO NOT ADD ANY OTHER MEMBERS !!!
+    function GetCount: Integer; inline;
+    function GetItem(index: Integer): T; inline;
+    procedure SetItem(index: Integer; const value: T); inline;
+  public
+    class operator Implicit(const value: TArray<T>): TDynArray<T>; inline;
+    class operator Implicit(const value: TDynArray<T>): TArray<T>; inline;
+    class operator Add(const left, right: TDynArray<T>): TDynArray<T>; inline;
+    class operator Add(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
+
+    procedure Clear; inline;
+
+    function Add(const item: T): Integer; overload; inline;
+    procedure Add(const items: array of T); overload;
+    procedure Add(const items: TArray<T>); overload; inline;
+    procedure Insert(index: Integer; const item: T); overload; inline;
+    procedure Insert(index: Integer; const items: array of T); overload;
+    procedure Insert(index: Integer; const items: TArray<T>); overload; inline;
+    procedure Delete(index: Integer); inline;
+
+    function GetEnumerator: TEnumerator; inline;
+    property Count: Integer read GetCount;
+    property Items[index: Integer]: T read GetItem write SetItem; default;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
@@ -3265,6 +3308,235 @@ class function Tuple.Pack<T1, T2, T3, T4>(const value1: T1; const value2: T2;
   const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>;
 begin
   Result := Tuple<T1, T2, T3, T4>.Create(value1, value2, value3, value4);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDynArray<T>'}
+
+function TDynArray<T>.Add(const item: T): Integer;
+begin
+  Result := Length(fItems);
+  SetLength(fItems, Result + 1);
+  fItems[Result] := item;
+end;
+
+class operator TDynArray<T>.Add(const left, right: TDynArray<T>): TDynArray<T>;
+begin
+  Result := left;
+  Result.Add(right.fItems);
+end;
+
+class operator TDynArray<T>.Add(const left: TDynArray<T>;
+  const right: T): TDynArray<T>;
+begin
+  Result := left;
+  Result.Add(right);
+end;
+
+procedure TDynArray<T>.Add(const items: array of T);
+var
+  count, i: Integer;
+begin
+  count := Length(fItems);
+  SetLength(fItems, count + Length(items));
+  for i := Low(items) to High(items) do
+  begin
+    fItems[count] := items[i];
+    Inc(count);
+  end;
+end;
+
+procedure TDynArray<T>.Add(const items: TArray<T>);
+{$IFNDEF DELPHIXE7_UP}
+var
+  count, i: Integer;
+{$ENDIF}
+begin
+{$IFNDEF DELPHIXE7_UP}
+  count := Length(fItems);
+  SetLength(fItems, count + Length(items));
+  for i := 0 to Length(items) - 1 do
+  begin
+    fItems[count] := items[i];
+    Inc(count);
+  end;
+{$ELSE}
+  System.Insert(items, fItems, Length(fItems));
+{$ENDIF}
+end;
+
+procedure TDynArray<T>.Clear;
+begin
+  fItems := nil;
+end;
+
+procedure TDynArray<T>.Delete(index: Integer);
+{$IFNDEF DELPHIXE7_UP}
+var
+  count: Integer;
+  i: Integer;
+{$ENDIF}
+begin
+{$IFNDEF DELPHIXE7_UP}
+  count := Length(fitems) - 1;
+  fItems[index] := Default(T);
+  if index <> count then
+{$IFDEF WEAKREF}
+    if {$IFDEF DelphiXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := index to count - 1 do
+        fItems[i] := fItems[i + 1];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index + 1], fItems[index], (count - index) * SizeOf(T));
+      System.FillChar(fItems[count], SizeOf(T), 0);
+    end;
+  SetLength(fItems, count);
+{$ELSE}
+  System.Delete(fItems, index, 1);
+{$ENDIF}
+end;
+
+function TDynArray<T>.GetCount: Integer;
+begin
+  Result := Length(fItems);
+end;
+
+function TDynArray<T>.GetEnumerator: TEnumerator;
+begin
+  Result.fItems := fItems;
+  Result.fIndex := -1;
+end;
+
+function TDynArray<T>.GetItem(index: Integer): T;
+begin
+  Result := fItems[index];
+end;
+
+class operator TDynArray<T>.Implicit(const value: TArray<T>): TDynArray<T>;
+begin
+  Result.fItems := value;
+end;
+
+class operator TDynArray<T>.Implicit(const value: TDynArray<T>): TArray<T>;
+begin
+  Result := value.fItems;
+end;
+
+procedure TDynArray<T>.Insert(index: Integer; const item: T);
+{$IFNDEF DELPHIXE7_UP}
+var
+  count: Integer;
+  i: Integer;
+{$ENDIF}
+begin
+{$IFNDEF DELPHIXE7_UP}
+  count := Length(fItems);
+  SetLength(fItems, count + 1);
+  if index <> count then
+{$IFDEF WEAKREF}
+    if {$IFDEF DelphiXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := count - 1 downto index do
+        fItems[i + 1] := fItems[i];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index], fItems[index + 1], (count - index) * SizeOf(T));
+      System.FillChar(fItems[index], SizeOf(T), 0);
+    end;
+  fItems[index] := item;
+{$ELSE}
+  System.Insert(item, fItems, index);
+{$ENDIF}
+end;
+
+procedure TDynArray<T>.Insert(index: Integer; const items: array of T);
+var
+  count, len: Integer;
+  i: Integer;
+begin
+  count := Length(fItems);
+  len := Length(items);
+  SetLength(fItems, count + len);
+  if index <> count then
+{$IFDEF WEAKREF}
+    if {$IFDEF DelphiXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := count - 1 downto index do
+        fItems[i + len] := fItems[i];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index], fItems[index + len], (count - index) * SizeOf(T));
+      System.FillChar(fItems[index], len * SizeOf(T), 0);
+    end;
+  for i := Low(items) to High(items) do
+  begin
+    fItems[index] := items[i];
+    Inc(index);
+  end;
+end;
+
+procedure TDynArray<T>.Insert(index: Integer; const items: TArray<T>);
+{$IFNDEF DELPHIXE7_UP}
+var
+  count, len: Integer;
+  i: Integer;
+{$ENDIF}
+begin
+{$IFNDEF DELPHIXE7_UP}
+  count := Length(fItems);
+  len := Length(items);
+  SetLength(fItems, count + len);
+  if index <> count then
+{$IFDEF WEAKREF}
+    if {$IFDEF DelphiXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := count - 1 downto index do
+        fItems[i + len] := fItems[i];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index], fItems[index + len], (count - index) * SizeOf(T));
+      System.FillChar(fItems[index], len * SizeOf(T), 0);
+    end;
+  for i := 0 to len - 1 do
+  begin
+    fItems[index] := items[i];
+    Inc(index);
+  end;
+{$ELSE}
+  System.Insert(items, fItems, index);
+{$ENDIF}
+end;
+
+procedure TDynArray<T>.SetItem(index: Integer; const value: T);
+begin
+  fItems[index] := value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDynArray<T>.TEnumerator' }
+
+function TDynArray<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := TArray<T>(fItems)[fIndex];
+end;
+
+function TDynArray<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Inc(fIndex);
+  Result := fIndex < Length(TArray<T>(fItems));
 end;
 
 {$ENDREGION}
