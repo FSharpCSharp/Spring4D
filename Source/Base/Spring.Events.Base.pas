@@ -84,6 +84,14 @@ type
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
   end;
 
+  TEventBase<T> = class(TEventBase, IEvent<T>)
+  private
+    function GetInvoke: T;
+    procedure Add(handler: T);
+    procedure Remove(handler: T);
+    procedure ForEach(const action: TAction<T>);
+  end;
+
 implementation
 
 uses
@@ -266,6 +274,46 @@ end;
 procedure TEventBase.SetOnChanged(const value: TNotifyEvent);
 begin
   fOnChanged := value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEventBase<T>'}
+
+procedure TEventBase<T>.Add(handler: T);
+begin
+  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
+    inherited Add(MethodReferenceToMethodPointer(handler))
+  else
+    inherited Add(PMethod(@handler)^);
+end;
+
+procedure TEventBase<T>.ForEach(const action: TAction<T>);
+var
+  handler: TMethod;
+begin
+  for handler in Handlers do
+    if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
+      TAction<IInterface>(action)(MethodPointerToMethodReference(handler))
+    else
+      TAction<TMethod>(action)(handler);
+end;
+
+function TEventBase<T>.GetInvoke: T;
+begin
+  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
+    IInterface(PPointer(@Result)^) := MethodPointerToMethodReference(inherited Invoke)
+  else
+    PMethod(@Result)^ := inherited Invoke;
+end;
+
+procedure TEventBase<T>.Remove(handler: T);
+begin
+  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
+    inherited Remove(MethodReferenceToMethodPointer(handler))
+  else
+    inherited Remove(PMethod(@handler)^);
 end;
 
 {$ENDREGION}
