@@ -45,12 +45,12 @@ type
   TComponentRegistry = class(TInterfacedObject, IComponentRegistry)
   private
     fKernel: IKernel;
-    fOnChanged: ICollectionChangedEvent<TComponentModel>;
     fModels: IList<TComponentModel>;
     fDefaultRegistrations: IDictionary<PTypeInfo, TComponentModel>;
     fUnnamedRegistrations: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceTypeMappings: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
+    fOnChanged: ICollectionChangedEvent<TComponentModel>;
     function GetOnChanged: ICollectionChangedEvent<TComponentModel>;
   protected
     procedure CheckIsNonGuidInterface(const serviceType: TRttiType);
