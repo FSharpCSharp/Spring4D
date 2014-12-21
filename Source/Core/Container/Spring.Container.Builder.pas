@@ -38,8 +38,8 @@ type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
   private
     fKernel: IKernel;
-    fInspectors: IList<IBuilderInspector>;
     fOnBuild: INotifyEvent<TComponentModel>;
+    fInspectors: IList<IBuilderInspector>;
     function GetOnBuild: INotifyEvent<TComponentModel>;
   public
     constructor Create(const kernel: IKernel);

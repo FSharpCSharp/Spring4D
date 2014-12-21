@@ -32,6 +32,7 @@ uses
   TestFramework,
   Spring,
   Spring.Collections,
+  Spring.Container,
   Spring.Container.Common,
   Spring.Container.Core,
   Spring.Tests.Container.Interfaces;
@@ -525,7 +526,43 @@ type
   {$ENDREGION}
 
 
+  ISomeService = interface
+    ['{3DD10F1E-C064-47DB-B78E-F7EB9B643FB3}']
+  end;
+
+  TSomeService = class(TInterfacedObject, ISomeService);
+
+  ICommonInterface = interface
+    ['{0B64ADC9-A375-4614-96EA-2BF38E34FCD9}']
+  end;
+
+  ISomeFactory = interface
+    ['{8E32B7D2-49BC-4F85-9C2D-79295D9A0901}']
+    function CreateObject(const name: string): ICommonInterface;
+  end;
+
+  TSomeFactory = class(TInterfacedObject, ISomeFactory)
+  private
+    fContainer: TContainer;
+  public
+    constructor Create(const container: TContainer);
+    function CreateObject(const name: string): ICommonInterface;
+  end;
+
+  TTypeA = class(TInterfacedObject, ICommonInterface)
+  public
+    constructor Create(const someService: ISomeService);
+  end;
+
+  TTypeB = class(TInterfacedObject, ICommonInterface)
+  public
+    constructor Create(const someService: ISomeService);
+  end;
+
 implementation
+
+uses
+  StrUtils;
 
 { TNameService }
 
@@ -991,6 +1028,38 @@ begin
   inherited Create;;
   SetLength(fCollectionItems, 1);
   fCollectionItems[0] := collectionItem;
+end;
+
+{ TSomeFactory }
+
+constructor TSomeFactory.Create(const container: TContainer);
+begin
+  inherited Create;
+  fContainer := container;
+end;
+
+function TSomeFactory.CreateObject(const name: string): ICommonInterface;
+const
+  args: array[0..1] of string = ('A', 'B');
+begin
+  case IndexStr(name, args) of
+    0: Result := fContainer.Resolve<TTypeA>;
+    1: Result := fContainer.Resolve<TTypeB>;
+  else
+    raise ENotSupportedException.Create('');
+  end;
+end;
+
+{ TTypeA }
+
+constructor TTypeA.Create(const someService: ISomeService);
+begin
+end;
+
+{ TTypeB }
+
+constructor TTypeB.Create(const someService: ISomeService);
+begin
 end;
 
 end.

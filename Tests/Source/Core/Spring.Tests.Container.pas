@@ -98,6 +98,8 @@ type
     procedure TestIssue50;
 
     procedure TestResolveFuncWithTwoTypes;
+    procedure TestResolveUnknownClass;
+    procedure TestResolveUnknownClasses;
   end;
 
   // Same Service, Different Implementations
@@ -769,6 +771,33 @@ begin
     begin
       fContainer.Resolve<TFunc<IAgeService, INameService>>;
     end);
+end;
+
+procedure TTestSimpleContainer.TestResolveUnknownClass;
+var
+  component: TBootstrapComponent;
+begin
+  fContainer.RegisterType<TNameService>;
+  fContainer.Build;
+
+  component := nil;
+  try
+    component := fContainer.Resolve<TBootstrapComponent>;
+    CheckEquals('Name', component.NameService.Name);
+  finally
+    component.Free;
+  end;
+end;
+
+procedure TTestSimpleContainer.TestResolveUnknownClasses;
+var
+  factory: ISomeFactory;
+begin
+  fContainer.RegisterType<ISomeService, TSomeService>;
+  fContainer.RegisterType<ISomeFactory, TSomeFactory>;
+  fContainer.Build;
+
+  factory := fContainer.Resolve<ISomeFactory>;
 end;
 
 procedure TTestSimpleContainer.TestInitializable;
