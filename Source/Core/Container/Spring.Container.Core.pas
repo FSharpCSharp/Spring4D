@@ -101,8 +101,8 @@ type
     function Resolve(serviceType: PTypeInfo): TValue; overload;
     function Resolve(serviceType: PTypeInfo;
       const arguments: array of TValue): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string;
+    function Resolve(const serviceName: string): TValue; overload;
+    function Resolve(const serviceName: string;
       const arguments: array of TValue): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
@@ -127,21 +127,23 @@ type
 
     function RegisterComponent(componentType: PTypeInfo): TComponentModel;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
-    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo;
+      const serviceName: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
 {$IFDEF DELPHIXE_UP}
     procedure RegisterFactory(const model: TComponentModel); overload;
-    procedure RegisterFactory(const model: TComponentModel; const name: string); overload;
+    procedure RegisterFactory(const model: TComponentModel;
+      const resolvedServiceName: string); overload;
 {$ENDIF}
     procedure UnregisterAll;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasService(const serviceName: string): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
     function HasDefault(serviceType: PTypeInfo): Boolean;
 
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
-    function FindOne(const name: string): TComponentModel; overload;
+    function FindOne(const serviceName: string): TComponentModel; overload;
     function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
     function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
@@ -314,7 +316,7 @@ type
 
     function HasService(serviceType: PTypeInfo): Boolean;
     function GetServiceName(serviceType: PTypeInfo): string;
-    function GetServiceType(const name: string): PTypeInfo;
+    function GetServiceType(const serviceName: string): PTypeInfo;
 
     property ComponentType: TRttiType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
@@ -472,9 +474,9 @@ begin
     end).Key;
 end;
 
-function TComponentModel.GetServiceType(const name: string): PTypeInfo;
+function TComponentModel.GetServiceType(const serviceName: string): PTypeInfo;
 begin
-  Result := fServices[name];
+  Result := fServices[serviceName];
 end;
 
 function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;

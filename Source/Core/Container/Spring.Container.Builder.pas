@@ -493,7 +493,7 @@ begin
   begin
     attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
     for attribute in attributes do
-      kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.Name);
+      kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.ServiceName);
 
     services := model.ComponentType.GetInterfaces.Where(
       function(const interfaceType: TRttiInterfaceType): Boolean
