@@ -3,10 +3,12 @@ unit uOrderValidator;
 interface
 
 uses
+  Spring.Container.Common,
   uOrder,
   uOrderInterfaces;
 
 type
+  [Interceptor('logging')]
   TOrderValidator = class(TInterfacedObject, IOrderValidator)
   public
     function ValidateOrder(aOrder: TOrder): Boolean;

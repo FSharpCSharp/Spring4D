@@ -11,6 +11,7 @@ procedure RegisterTypes(const container: TContainer);
 implementation
 
 uses
+  Spring.Interception,
   uInterceptors,
   uOrderEntry,
   uOrderProcessor,
@@ -18,13 +19,13 @@ uses
 
 procedure RegisterTypes(const container: TContainer);
 begin
-  container.RegisterType<TLoggingAspect>;
-  container.RegisterType<TTransactionAspect>;
-  container.RegisterType<TOrderEntry>
-    .InterceptedBy<TLoggingAspect>
-    .InterceptedBy<TTransactionAspect>(TWhere.First);
-  container.RegisterType<TOrderValidator>
-    .InterceptedBy<TLoggingAspect>;
+  container.RegisterType<IInterceptor, TLoggingAspect>('logging');
+  container.RegisterType<TTransactionAspect, TTransactionAspect>('transaction');
+  container.RegisterType<TOrderEntry>;
+//    .InterceptedBy<TLoggingAspect>
+//    .InterceptedBy<TTransactionAspect>(TWhere.First);
+  container.RegisterType<TOrderValidator>;
+//    .InterceptedBy<TLoggingAspect>;
   container.RegisterType<TOrderProcessor>;
 
   container.Build;
