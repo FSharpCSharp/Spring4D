@@ -8,7 +8,7 @@
 			<AppType>Console</AppType>
 			<FrameworkType>None</FrameworkType>
 			<ProjectVersion>13.4</ProjectVersion>
-			<Platform Condition="'$(Platform)'==''">OSX32</Platform>
+			<Platform Condition="'$(Platform)'==''">Win64</Platform>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -36,6 +36,12 @@
 		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
 			<Cfg_2>true</Cfg_2>
 			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
+			<Cfg_2_Win64>true</Cfg_2_Win64>
+			<CfgParent>Cfg_2</CfgParent>
+			<Cfg_2>true</Cfg_2>
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_2)'=='true') or '$(Cfg_2_OSX32)'!=''">
@@ -84,6 +90,10 @@
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_Optimize>false</DCC_Optimize>
 		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+			<DCC_DebugDCUs>true</DCC_DebugDCUs>
+			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2_OSX32)'!=''">
 			<Debugger_Launcher>/usr/X11/bin/xterm -e &quot;%debuggee%&quot;</Debugger_Launcher>
 			<VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleVersion=1.0.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName)</VerInfo_Keys>
@@ -94,7 +104,8 @@
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="Source\Spring.TestBootstrap.pas"/>
-			<DCCReference Include="Source\FinalBuilder.XMLTestRunner.pas"/>
+			<DCCReference Include="Source\VSoft.DUnit.XMLTestRunner.pas"/>
+			<DCCReference Include="Source\VSoft.MSXML6.pas"/>
 			<DCCReference Include="Source\Spring.TestRegistration.pas"/>
 			<DCCReference Include="Source\Spring.TestRunner.pas"/>
 			<DCCReference Include="Source\Spring.TestUtils.pas"/>
@@ -103,12 +114,17 @@
 			<DCCReference Include="Source\Base\Spring.Tests.Collections.Extensions.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.DesignPatterns.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Helpers.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.Reflection.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
-			<DCCReference Include="Source\Base\Spring.Tests.SysUtils.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.SystemUtils.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.Logging.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.Logging.Serializers.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.Logging.Types.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.Container.Logging.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
 			<DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
 			<DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>
@@ -160,6 +176,8 @@
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\9.0\Bpl\boComponentLibraryDesignTimePackage.bpl">(untitled)</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\9.0\Bpl\boComponentLibraryRunTimePackage.bpl">(untitled)</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\bcboffice2k160.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\bcbofficexp160.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k160.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>

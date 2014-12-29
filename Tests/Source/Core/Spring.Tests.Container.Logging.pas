@@ -110,6 +110,7 @@ type
 
     procedure TestSimpleConfiguration;
     procedure TestComplexConfiguration;
+    procedure Test_LoadFromStrings_Ensures_Container_Resolve_CanBeFreedWithoutErrors;
   end;
   {$ENDREGION}
 
@@ -786,6 +787,26 @@ begin
   CheckSame(fContainer.Resolve<ILogAppender>('appender2'), appenders[0]);
   CheckSame(fContainer.Resolve<ILogAppender>('appender1'), appenders[1]);
   CheckSame(fContainer.Resolve<ILogAppender>, appenders[2]);
+end;
+
+procedure TTestLoggingConfiguration.Test_LoadFromStrings_Ensures_Container_Resolve_CanBeFreedWithoutErrors;
+var
+  lStrings: TStrings;
+  i: ILogAppender;
+  lContainer: TContainer;
+begin
+  lContainer := TContainer.Create();
+  lStrings := TStringList.Create();
+  lStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock');
+  TLoggingConfiguration.LoadFromStrings(lContainer, lStrings);
+  lStrings.Free();
+
+  lContainer.Build;
+  i := lContainer.Resolve<ILogAppender>;
+
+  lContainer.Free();
 end;
 
 {$ENDREGION}
