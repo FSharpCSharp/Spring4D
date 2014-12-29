@@ -581,7 +581,11 @@ begin
   finally
 {$IFNDEF AUTOREFCOUNT}
     fContainer.Release(obj1);
-    fContainer.Release(obj2);
+    try
+      // might raise an exception because ClassType is nil with FastMM4 full debug
+      fContainer.Release(obj2);
+    except
+    end;
 {$ELSE}
     obj1 := nil;
     obj2 := nil;
