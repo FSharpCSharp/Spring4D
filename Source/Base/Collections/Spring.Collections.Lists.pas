@@ -377,7 +377,7 @@ begin
   list.fItems := Copy(fItems, index, count);
 {$ELSE}
   SetLength(list.fItems, count);
-  for i := 0 to fCount - 1 do
+  for i := 0 to count - 1 do
   begin
     list.fItems[i] := fItems[index];
     Inc(index);
