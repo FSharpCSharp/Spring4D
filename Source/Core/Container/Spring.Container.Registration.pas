@@ -272,6 +272,7 @@ begin
     fServiceNameMappings.Clear;
     fServiceTypeMappings.Clear;
     fDefaultRegistrations.Clear;
+    fUnnamedRegistrations.Clear;
     fModels.Clear;
   finally
     fOnChanged.Enabled := True;
