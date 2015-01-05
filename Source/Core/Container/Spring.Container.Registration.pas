@@ -142,6 +142,9 @@ type
   TRegistration<T> = record
   private
     fRegistration: IRegistration;
+    // prevent some bug with wrong reference counting in
+    // records containing only one field of an interface type
+    {$IFDEF DELPHI2010}{$HINTS OFF}fDummy: Pointer;{$ENDIF}
     constructor Create(const kernel: IKernel);
   public
     function Implements(serviceType: PTypeInfo): TRegistration<T>; overload;
