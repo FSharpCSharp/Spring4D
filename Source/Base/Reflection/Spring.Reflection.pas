@@ -23,6 +23,9 @@
 {***************************************************************************}
 
 {$I Spring.inc}
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 unit Spring.Reflection;
 

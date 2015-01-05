@@ -1205,7 +1205,7 @@ type
 
   TActivator = record
   private
-    type TConstructor = function(InstanceOrVMT: Pointer; Alloc: ShortInt): TObject;
+    type TConstructor = function(InstanceOrVMT: Pointer; Alloc: ShortInt): Pointer;
     class var Context: TRttiContext;
     class var ConstructorCache: TDictionary<TClass,TConstructor>;
     class function FindConstructor(const classType: TRttiInstanceType;
