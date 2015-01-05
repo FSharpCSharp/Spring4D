@@ -25,6 +25,9 @@
 unit Spring.Tests.Logging;
 
 {$I Spring.Tests.inc}
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 interface
 
@@ -32,6 +35,7 @@ uses
   Classes,
   Rtti,
   StrUtils,
+  SysConst,
   SysUtils,
   TypInfo,
   TestFramework,
@@ -1071,14 +1075,10 @@ end;
 {$REGION 'TTestStreamLogAppender'}
 
 procedure TTestLogAppenderBase.TestFormatMsg;
-{$IF sizeof(Pointer) = 4}
-const ZEROS = '00000000';
-{$ELSEIF sizeof(Pointer) = 8}
-const ZEROS = '0000000000000000';
-{$IFEND}
 var
-  result: string;
+  result, s: string;
   e: Exception;
+  len: Integer;
 begin
   result := TLogAppenderBase.FormatMsg(TLogEntry.Create(TLogLevel.Unknown,
     'message'));
@@ -1086,16 +1086,12 @@ begin
 
   e := Exception.Create('exception');
   try
+    SetLength(s, 1024);
+    len := ExceptionErrorMessage(e, nil, @s[1], Length(s));
+    SetLength(s, len);
     result := TLogAppenderBase.FormatMsg(TLogEntry.Create(TLogLevel.Unknown,
       'message', e));
-    CheckEquals('message: Exception Exception in module ' +
-{$IFDEF ANDROID}
-      '<unknown>'
-{$ELSE}
-      ExtractFileName(ParamStr(0))
-{$ENDIF}
-       + ' at ' + ZEROS + '.' + sLineBreak +
-      'exception.' + sLineBreak, result);
+    CheckEquals('message: ' + s, result);
   finally
     e.Free;
   end;
@@ -1170,19 +1166,24 @@ begin
 end;
 
 procedure TTestStreamLogAppender.TestException;
+var
+  s: string;
+  len: Integer;
 begin
   try
-    Abort;
+    raise EAbort.CreateRes(@SOperationAborted) at nil;
   except
     on e: EAbort do
     begin
       fLogger.Error('', e);
-      CheckEquals('[ERROR] Exception EAbort in module',
-        Copy(fStream.DataString, 15, 34));
+      SetLength(s, 1024);
+      len := ExceptionErrorMessage(e, nil, @s[1], Length(s));
+      SetLength(s, len);
+      CheckEquals('[ERROR] ' + s, Copy(fStream.DataString, 15, MaxInt));
       fStream.Clear;
       fLogger.Error('With message', e);
-      CheckEquals('[ERROR] With message: Exception EAbort in module',
-        Copy(fStream.DataString, 15, 48));
+      CheckEquals('[ERROR] With message: ' + s,
+        Copy(fStream.DataString, 15, MaxInt));
     end;
   end;
 end;
