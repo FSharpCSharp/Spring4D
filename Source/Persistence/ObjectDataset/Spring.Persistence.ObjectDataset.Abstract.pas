@@ -280,10 +280,6 @@ uses
   SysUtils,
   Variants,
   WideStrUtils,
-{$IFDEF MSWINDOWS}
-  ActiveX,
-  Windows,
-{$ENDIF}
   Spring.Reflection,
   Spring.SystemUtils,
   Spring.Persistence.ObjectDataset.Blobs,
@@ -1035,7 +1031,11 @@ end;
 function TAbstractObjectDataset.Lookup(const KeyFields: string; const KeyValues: Variant;
   const ResultFields: string): Variant;
 begin
-  Result := inherited Lookup(KeyFields, KeyValues, ResultFields);
+  Result := Null;
+  if DataSetLocateThrough(Self, KeyFields, KeyValues, []) then
+  begin
+    Result := FieldValues[ResultFields];
+  end;
 end;
 
 procedure TAbstractObjectDataset.RebuildFieldCache;
@@ -1318,14 +1318,8 @@ begin
     ftGuid, ftFixedChar, ftString:
       begin
         PAnsiChar(Buffer)[Field.Size] := #0;
-        {$IFDEF MSWINDOWS}
-        WideCharToMultiByte(0, 0, tagVariant(Data).bStrVal, SysStringLen(tagVariant(Data).bStrVal)+1,
-          @Buffer[0], Field.Size, nil, nil);
-        {$ELSE}
-        TempBuff := TEncoding.Default.GetBytes(String(tagVariant(Data).bStrVal)));
+        TempBuff := TEncoding.Default.GetBytes(string(tagVariant(Data).bStrVal));
         Move(TempBuff[0], Buffer[0], Length(TempBuff));
-        {$ENDIF}
-
       end;
     ftFixedWideChar, ftWideString:
       begin
