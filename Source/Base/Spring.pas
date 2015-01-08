@@ -498,7 +498,7 @@ type
     fValue: T;
     fHasValue: string;
     function GetValue: T;
-    function GetHasValue: Boolean;
+    function GetHasValue: Boolean; inline;
 
     /// <summary>
     ///   Internal use. Marks the current instance as null.
@@ -2294,7 +2294,7 @@ end;
 function Nullable<T>.GetValueOrDefault: T;
 begin
   if HasValue then
-    Result := Value
+    Result := fValue
   else
     Result := Default(T);
 end;
@@ -2302,7 +2302,7 @@ end;
 function Nullable<T>.GetValueOrDefault(const defaultValue: T): T;
 begin
   if HasValue then
-    Result := Value
+    Result := fValue
   else
     Result := defaultValue;
 end;
@@ -2310,7 +2310,7 @@ end;
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
   if HasValue and other.HasValue then
-    Result := TEqualityComparer<T>.Default.Equals(Value, other.Value)
+    Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
   else
     Result := HasValue = other.HasValue;
 end;
@@ -2331,7 +2331,7 @@ var
 begin
   if value.HasValue then
   begin
-    v := TValue.From<T>(value.Value);
+    v := TValue.From<T>(value.fValue);
     if v.IsType<Boolean> then
       Result := v.AsBoolean
     else
