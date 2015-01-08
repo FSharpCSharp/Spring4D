@@ -313,9 +313,15 @@ type
 
   TTestSmartPointer = class(TTestCase)
   published
-    procedure Test_Instance_Gets_Created;
-    procedure Test_Instance_Gets_Destroyed_When_Created;
-    procedure Test_Instance_Gets_Destroyed_When_Injected;
+    procedure TestInterfaceType_Instance_Gets_Created;
+    procedure TestInterfaceType_Instance_Gets_Destroyed_When_Created;
+    procedure TestInterfaceType_Instance_Gets_Destroyed_When_Injected;
+
+    procedure TestRecordType_Implicit_FromInstance_Works;
+    procedure TestRecordType_Implicit_ToInstance_Works;
+    procedure TestRecordType_Instance_Gets_Destroyed;
+
+    procedure TestRecordType_Manage_Typed_Pointer;
   end;
 
 implementation
@@ -1835,7 +1841,7 @@ begin
   inherited;
 end;
 
-procedure TTestSmartPointer.Test_Instance_Gets_Created;
+procedure TTestSmartPointer.TestInterfaceType_Instance_Gets_Created;
 var
   p: ISmartPointer<TTestClass>;
 begin
@@ -1843,7 +1849,7 @@ begin
   CheckTrue(p.CreateCalled);
 end;
 
-procedure TTestSmartPointer.Test_Instance_Gets_Destroyed_When_Created;
+procedure TTestSmartPointer.TestInterfaceType_Instance_Gets_Destroyed_When_Created;
 var
   p: ISmartPointer<TTestClass>;
   destroyCalled: Boolean;
@@ -1855,7 +1861,7 @@ begin
   CheckTrue(destroyCalled);
 end;
 
-procedure TTestSmartPointer.Test_Instance_Gets_Destroyed_When_Injected;
+procedure TTestSmartPointer.TestInterfaceType_Instance_Gets_Destroyed_When_Injected;
 var
   t: TTestClass;
   p: ISmartPointer<TTestClass>;
@@ -1867,6 +1873,60 @@ begin
   destroyCalled := False;
   p := nil;
   CheckTrue(destroyCalled);
+end;
+
+procedure TTestSmartPointer.TestRecordType_Implicit_FromInstance_Works;
+var
+  p: SmartPointer<TTestClass>;
+  t: TTestClass;
+begin
+  t := TTestClass.Create;
+  p := t;
+  CheckSame(t, p.Value);
+end;
+
+procedure TTestSmartPointer.TestRecordType_Implicit_ToInstance_Works;
+var
+  p: SmartPointer<TTestClass>;
+  t, t2: TTestClass;
+begin
+  t := TTestClass.Create;
+  p := t;
+  t2 := p;
+  CheckSame(t, t2);
+end;
+
+procedure TTestSmartPointer.TestRecordType_Instance_Gets_Destroyed;
+var
+  p: SmartPointer<TTestClass>;
+  t: TTestClass;
+  destroyCalled: Boolean;
+begin
+  t := TTestClass.Create;
+  t.DestroyCalled := @destroyCalled;
+  p := t;
+  destroyCalled := False;
+  p := Default(SmartPointer<TTestClass>);
+  CheckTrue(destroyCalled);
+end;
+
+type
+  PMyRecord = ^TMyRecord;
+  TMyRecord = record
+    x, y: Integer;
+    s: string;
+  end;
+
+procedure TTestSmartPointer.TestRecordType_Manage_Typed_Pointer;
+var
+  p: ISmartPointer<PMyRecord>;
+begin
+  p := TSmartPointer<PMyRecord>.Create();
+  p.x := 11;
+  p.y := 22;
+  p.s := 'Hello World';
+  p := nil;
+  FCheckCalled := True;
 end;
 
 {$ENDREGION}

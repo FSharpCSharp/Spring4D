@@ -1421,7 +1421,7 @@ function GetTypeSize(typeInfo: PTypeInfo): Integer;
 
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 
-procedure FinalizeValue(const value; typeKind: TTypeKind); inline;
+procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethod;
 function MethodPointerToMethodReference(const method: TMethod): IInterface;
@@ -1632,11 +1632,19 @@ begin
   Result := typeInfo.Kind;
 end;
 
-procedure FinalizeValue(const value; typeKind: TTypeKind);
+procedure FinalizeValue(const value; typeInfo: PTypeInfo);
+var
+  recTypeInfo: PTypeInfo;
 begin
-  case typeKind of
+  case typeInfo.Kind of
     tkClass: {$IFNDEF AUTOREFCOUNT}TObject(value).Free;{$ELSE}TObject(value).DisposeOf;{$ENDIF}
-    tkPointer: FreeMem(Pointer(value));
+    tkPointer:
+    begin
+      recTypeInfo := GetTypeData(typeInfo).RefType^;
+      FinalizeArray(Pointer(value), recTypeInfo, 1);
+      FillChar(Pointer(value)^, GetTypeData(recTypeInfo).RecSize, 0);
+      FreeMem(Pointer(value));
+    end;
   end;
 end;
 
@@ -2851,7 +2859,7 @@ end;
 
 destructor SmartPointer<T>.TSmartPointer.Destroy;
 begin
-  FinalizeValue(fValue, {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF});
+  FinalizeValue(fValue, TypeInfo(T));
   inherited;
 end;
 
@@ -2875,7 +2883,7 @@ end;
 
 destructor TSmartPointer<T>.Destroy;
 begin
-  FinalizeValue(fValue, {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF});
+  FinalizeValue(fValue, TypeInfo(T));
   inherited;
 end;
 
@@ -3027,12 +3035,12 @@ var
 begin
   p := instance.GetReferenceToRawData;
   if Assigned(p) then
-    FinalizeValue(p^, instance.Kind);
+    FinalizeValue(p^, instance.TypeInfo);
 end;
 
 class procedure TFinalizer.FinalizeInstance<T>(const instance: T);
 begin
-  FinalizeValue(instance, {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF});
+  FinalizeValue(instance, TypeInfo(T));
 end;
 
 {$ENDREGION}
