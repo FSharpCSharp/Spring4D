@@ -59,7 +59,6 @@ type
     FAnotherString: string;
     FSetterInjectionString: string;
     FSpecialType: TSpecialType;
-    [Inject]
     FFieldInjectionString: string;
     function GetSomeString: string;
     procedure SetSomeString(aValue: string);
