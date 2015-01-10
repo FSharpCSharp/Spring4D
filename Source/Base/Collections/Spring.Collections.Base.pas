@@ -179,9 +179,15 @@ type
     function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     function Max: T; overload;
+{$IFDEF DELPHIXE_UP}
+    function Max(const selector: TFunc<T, Integer>): Integer; overload;
+{$ENDIF}
     function Max(const comparer: IComparer<T>): T; overload;
     function Max(const comparer: TComparison<T>): T; overload;
     function Min: T; overload;
+{$IFDEF DELPHIXE_UP}
+    function Min(const selector: TFunc<T, Integer>): Integer; overload;
+{$ENDIF}
     function Min(const comparer: IComparer<T>): T; overload;
     function Min(const comparer: TComparison<T>): T; overload;
 
@@ -911,6 +917,13 @@ begin
   Result := Max(Comparer);
 end;
 
+{$IFDEF DELPHIXE_UP}
+function TEnumerableBase<T>.Max(const selector: TFunc<T, Integer>): Integer;
+begin
+  Result := TEnumerable.Max<T>(Self, selector);
+end;
+{$ENDIF}
+
 function TEnumerableBase<T>.Max(const comparer: IComparer<T>): T;
 var
   flag: Boolean;
@@ -947,6 +960,13 @@ function TEnumerableBase<T>.Min: T;
 begin
   Result := Min(Comparer);
 end;
+
+{$IFDEF DELPHIXE_UP}
+function TEnumerableBase<T>.Min(const selector: TFunc<T, Integer>): Integer;
+begin
+  Result := TEnumerable.Min<T>(Self, selector);
+end;
+{$ENDIF}
 
 function TEnumerableBase<T>.Min(const comparer: IComparer<T>): T;
 var

@@ -572,6 +572,10 @@ type
     ///	</returns>
     function Max: T; overload;
 
+{$IFDEF DELPHIXE_UP}
+    function Max(const selector: TFunc<T, Integer>): Integer; overload;
+{$ENDIF}
+
     ///	<summary>
     ///	  Returns the maximum value in a sequence by using the specified
     ///	  <see cref="IComparer&lt;T&gt;" />.
@@ -592,6 +596,10 @@ type
     ///	  The minimum value in the sequence.
     ///	</returns>
     function Min: T; overload;
+
+{$IFDEF DELPHIXE_UP}
+    function Min(const selector: TFunc<T, Integer>): Integer; overload;
+{$ENDIF}
 
     ///	<summary>
     ///	  Returns the minimum value in a sequence by using the specified
@@ -2387,6 +2395,11 @@ type
     ///	</returns>
     class function Empty<T>: IEnumerable<T>; static;
 
+    class function Min<T>(const source: IEnumerable<T>;
+      const selector: TFunc<T, Integer>): Integer; overload; static;
+    class function Max<T>(const source: IEnumerable<T>;
+      const selector: TFunc<T, Integer>): Integer; overload; static;
+
     class function Query<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
     class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
 
@@ -2826,6 +2839,18 @@ end;
 class function TEnumerable.Empty<T>: IEnumerable<T>;
 begin
   Result := TEmptyEnumerable<T>.Create;
+end;
+
+class function TEnumerable.Max<T>(const source: IEnumerable<T>;
+  const selector: TFunc<T, Integer>): Integer;
+begin
+  Result := Select<T, Integer>(source, selector).Max;
+end;
+
+class function TEnumerable.Min<T>(const source: IEnumerable<T>;
+  const selector: TFunc<T, Integer>): Integer;
+begin
+  Result := Select<T, Integer>(source, selector).Min;
 end;
 
 class function TEnumerable.Query<T>(const source: TArray<T>): IEnumerable<T>;
