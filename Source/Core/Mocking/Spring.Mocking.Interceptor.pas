@@ -36,8 +36,28 @@ uses
   Spring.Interception,
   Spring.Mocking;
 
+{$SCOPEDENUMS ON}
+
 type
+  TMethodCall = class
+  private
+    fAction: TMockAction;
+    fArguments: Nullable<TArray<TValue>>;
+    fCallCount: Integer;
+  public
+    constructor Create(const action: TMockAction;
+      const arguments: Nullable<TArray<TValue>>);
+
+    function Invoke(const invocation: IInvocation): TValue;
+
+    property Arguments: Nullable<TArray<TValue>> read fArguments;
+    property CallCount: Integer read fCallCount;
+  end;
+
   TMockInterceptor = class(TInterfacedObject, IInterface, IInterceptor)
+  private
+    type
+      TMockState = (Arrange, Act, Assert);
   private
     fBehavior: TMockBehavior;
     fCurrentAction: TMockAction;
@@ -90,6 +110,7 @@ constructor TMockInterceptor.Create(behavior: TMockBehavior);
 begin
   inherited Create;
   fBehavior := behavior;
+  fState := TMockState.Act;
   fExpectedCalls := TCollections.CreateMultiMap<TRttiMethod,TMethodCall>([doOwnsValues]);
   fReceivedCalls := TCollections.CreateMultiMap<TRttiMethod,TArray<TValue>>();
 end;
@@ -116,6 +137,14 @@ var
   args: Nullable<TArray<TValue>>;
 begin
   case fState of
+    TMockState.Arrange:
+    begin
+      if fArgsMatching then
+        args := invocation.Arguments;
+      methodCall := TMethodCall.Create(fCurrentAction, args);
+      fExpectedCalls.Add(invocation.Method, methodCall);
+      fState := TMockState.Act;
+    end;
     TMockState.Act:
     begin
       if fExpectedCalls.TryGetValues(invocation.Method, methodCalls) then
@@ -146,14 +175,6 @@ begin
       if Assigned(methodCall) then
         invocation.Result := methodCall.Invoke(invocation);
       fReceivedCalls.Add(invocation.Method, invocation.Arguments);
-    end;
-    TMockState.Arrange:
-    begin
-      if fArgsMatching then
-        args := invocation.Arguments;
-      methodCall := TMethodCall.Create(fCurrentAction, args);
-      fExpectedCalls.Add(invocation.Method, methodCall);
-      fState := TMockState.Act;
     end;
     TMockState.Assert:
     begin
@@ -206,6 +227,27 @@ end;
 procedure TMockInterceptor.WhenForAnyArgs;
 begin
   fArgsMatching := False;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMethodCall'}
+
+constructor TMethodCall.Create(const action: TMockAction;
+  const arguments: Nullable<TArray<TValue>>);
+begin
+  inherited Create;
+  fAction := action;
+  fArguments := arguments;
+end;
+
+function TMethodCall.Invoke(const invocation: IInvocation): TValue;
+begin
+  Inc(fCallCount);
+  Result := fAction(TCallInfo.Create(invocation, fCallCount));
+  if invocation.Method.MethodKind = mkFunction then
+    Result := Result.Cast(invocation.Method.ReturnType.Handle);
 end;
 
 {$ENDREGION}

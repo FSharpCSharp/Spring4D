@@ -132,24 +132,6 @@ type
     property Instance: T read GetInstance;
   end;
 
-  Mock<T> = record
-  private
-    fMock: IMock<T>;
-    function GetInstance: T;
-  public
-    class operator Implicit(const value: IMock): Mock<T>;
-    class operator Implicit(const value: Mock<T>): IMock;
-
-    function Setup: ISetup<T>;
-
-    function Received: T; overload;
-    function Received(const times: Times): T; overload;
-    function ReceivedWithAnyArgs: T; overload;
-    function ReceivedWithAnyArgs(const times: Times): T; overload;
-
-    property Instance: T read GetInstance;
-  end;
-
 implementation
 
 uses
@@ -515,52 +497,6 @@ function TMock<T>.WhenForAnyArgs: T;
 begin
   fInterceptor.WhenForAnyArgs;
   Result := Instance;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'Mock<T>'}
-
-class operator Mock<T>.Implicit(const value: IMock): Mock<T>;
-begin
-  Assert(value.TypeInfo = System.TypeInfo(T));
-  Result.fMock := value as IMock<T>;
-end;
-
-class operator Mock<T>.Implicit(const value: Mock<T>): IMock;
-begin
-  Result := value.fMock as IMock;
-end;
-
-function Mock<T>.GetInstance: T;
-begin
-  Result := fMock.Instance;
-end;
-
-function Mock<T>.Setup: ISetup<T>;
-begin
-  Result := fMock.Setup;
-end;
-
-function Mock<T>.Received: T;
-begin
-  Result := fMock.Received;
-end;
-
-function Mock<T>.Received(const times: Times): T;
-begin
-  Result := fMock.Received(times);
-end;
-
-function Mock<T>.ReceivedWithAnyArgs: T;
-begin
-  Result := fMock.ReceivedWithAnyArgs;
-end;
-
-function Mock<T>.ReceivedWithAnyArgs(const times: Times): T;
-begin
-  Result := fMock.ReceivedWithAnyArgs(times);
 end;
 
 {$ENDREGION}

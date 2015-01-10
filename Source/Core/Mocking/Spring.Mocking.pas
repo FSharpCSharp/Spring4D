@@ -39,7 +39,6 @@ uses
 {$SCOPEDENUMS ON}
 
 type
-  TMockState = (Act, Arrange, Assert);
   TMockBehavior = (Dynamic, Strict);
 
   Times = Spring.Times.Times;
@@ -146,26 +145,32 @@ type
 
   EMockException = class(Exception);
 
-  TMethodCall = class
+  Mock<T> = record
   private
-    fAction: TMockAction;
-    fArguments: Nullable<TArray<TValue>>;
-    fCallCount: Integer;
+    fMock: IMock<T>;
+    function GetInstance: T;
   public
-    constructor Create(const action: TMockAction;
-      const arguments: Nullable<TArray<TValue>>);
+    class function Create(
+      behavior: TMockBehavior = TMockBehavior.Dynamic): Mock<T>; static;
 
-    function Invoke(const invocation: IInvocation): TValue;
+    class operator Implicit(const value: IMock): Mock<T>;
+    class operator Implicit(const value: Mock<T>): IMock;
+    class operator Implicit(const value: Mock<T>): IMock<T>;
+    class operator Implicit(const value: Mock<T>): T;
 
-    property Arguments: Nullable<TArray<TValue>> read fArguments;
-    property CallCount: Integer read fCallCount;
+    function Setup: ISetup<T>;
+
+    function Received: T; overload;
+    function Received(const times: Times): T; overload;
+    function ReceivedWithAnyArgs: T; overload;
+    function ReceivedWithAnyArgs(const times: Times): T; overload;
+
+    property Instance: T read GetInstance;
   end;
 
-  TMocks = record
+  Mock = record
   public
-    class function Create<T>(
-      behavior: TMockBehavior = TMockBehavior.Dynamic): IMock<T>; static;
-    class function From<T: IInterface>(const value: T): IMock<T>; static;
+    class function From<T: IInterface>(const value: T): Mock<T>; static;
   end;
 
 implementation
@@ -202,41 +207,77 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMethodCall'}
+{$REGION 'Mock<T>'}
 
-constructor TMethodCall.Create(const action: TMockAction;
-  const arguments: Nullable<TArray<TValue>>);
+class function Mock<T>.Create(behavior: TMockBehavior): Mock<T>;
 begin
-  inherited Create;
-  fAction := action;
-  fArguments := arguments;
+  Result := TMock<T>.Create(behavior);
 end;
 
-function TMethodCall.Invoke(const invocation: IInvocation): TValue;
+class operator Mock<T>.Implicit(const value: IMock): Mock<T>;
 begin
-  Inc(fCallCount);
-  Result := fAction(TCallInfo.Create(invocation, fCallCount));
-  if invocation.Method.MethodKind = mkFunction then
-    Result := Result.Cast(invocation.Method.ReturnType.Handle);
+  Assert(value.TypeInfo = System.TypeInfo(T));
+  Result.fMock := value as IMock<T>;
+end;
+
+class operator Mock<T>.Implicit(const value: Mock<T>): IMock;
+begin
+  Result := value.fMock as IMock;
+end;
+
+class operator Mock<T>.Implicit(const value: Mock<T>): IMock<T>;
+begin
+  Result := value.fMock;
+end;
+
+class operator Mock<T>.Implicit(const value: Mock<T>): T;
+begin
+  Result := value.fMock.Instance;
+end;
+
+function Mock<T>.GetInstance: T;
+begin
+  Result := fMock.Instance;
+end;
+
+function Mock<T>.Setup: ISetup<T>;
+begin
+  Result := fMock.Setup;
+end;
+
+function Mock<T>.Received: T;
+begin
+  Result := fMock.Received;
+end;
+
+function Mock<T>.Received(const times: Times): T;
+begin
+  Result := fMock.Received(times);
+end;
+
+function Mock<T>.ReceivedWithAnyArgs: T;
+begin
+  Result := fMock.ReceivedWithAnyArgs;
+end;
+
+function Mock<T>.ReceivedWithAnyArgs(const times: Times): T;
+begin
+  Result := fMock.ReceivedWithAnyArgs(times);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TMocks'}
+{$REGION 'Mock'}
 
-class function TMocks.Create<T>(behavior: TMockBehavior): IMock<T>;
-begin
-  Result := TMock<T>.Create(behavior);
-end;
-
-class function TMocks.From<T>(const value: T): IMock<T>;
+class function Mock.From<T>(const value: T): Mock<T>;
 var
   accessor: IProxyTargetAccessor;
   proxy: TValue;
   mock: TMock;
 begin
-  Assert(Supports(value, IProxyTargetAccessor, accessor));
+  if not Supports(PInterface(@value)^, IProxyTargetAccessor, accessor) then
+    raise EMockException.Create('value is not a mock');
   TValue.Make(@value, System.TypeInfo(T), proxy);
   mock := TMock<T>.NewInstance as TMock;
   mock.Create(TypeInfo(T), accessor.GetInterceptors.First(
@@ -244,7 +285,7 @@ begin
     begin
       Result := (interceptor as TObject) is TMockInterceptor
     end) as TMockInterceptor, proxy);
-  Result := mock as IMock<T>;
+  Result.fMock := mock as IMock<T>;
 end;
 
 {$ENDREGION}
