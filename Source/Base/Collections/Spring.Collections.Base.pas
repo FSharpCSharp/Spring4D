@@ -81,7 +81,6 @@ type
   {$REGION 'Property Accessors'}
     function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
-    function GetIsEmpty: Boolean; virtual;
   {$ENDREGION}
   protected
   {$REGION 'Implements IInterface'}
@@ -96,11 +95,11 @@ type
 
     function AsObject: TObject;
 
+    function Any: Boolean;
     function GetEnumerator: IEnumerator;
 
     property Count: Integer read GetCount;
     property ElementType: PTypeInfo read GetElementType;
-    property IsEmpty: Boolean read GetIsEmpty;
 {$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
     property RefCount: Integer read GetRefCount;
 {$ENDIF}{$ENDIF}
@@ -145,7 +144,6 @@ type
     function GetEnumerator: IEnumerator<T>; virtual;
 
     function All(const predicate: TPredicate<T>): Boolean;
-    function Any: Boolean; overload;
     function Any(const predicate: TPredicate<T>): Boolean; overload;
 
     function Concat(const second: IEnumerable<T>): IEnumerable<T>;
@@ -504,6 +502,14 @@ end;
 
 {$REGION 'TEnumerableBase'}
 
+function TEnumerableBase.Any: Boolean;
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := GetEnumerator;
+  Result := enumerator.MoveNext;
+end;
+
 function TEnumerableBase.AsObject: TObject;
 begin
   Result := Self;
@@ -530,14 +536,6 @@ end;
 function TEnumerableBase.GetEnumerator: IEnumerator;
 begin
   Result := GetEnumeratorNonGeneric;
-end;
-
-function TEnumerableBase.GetIsEmpty: Boolean;
-var
-  enumerator: IEnumerator;
-begin
-  enumerator := GetEnumerator;
-  Result := not enumerator.MoveNext;
 end;
 
 {$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
@@ -605,14 +603,6 @@ begin
   for item in Self do
     if not predicate(item) then
       Exit(False);
-end;
-
-function TEnumerableBase<T>.Any: Boolean;
-var
-  enumerator: IEnumerator;
-begin
-  enumerator := GetEnumerator;
-  Result := enumerator.MoveNext;
 end;
 
 function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;

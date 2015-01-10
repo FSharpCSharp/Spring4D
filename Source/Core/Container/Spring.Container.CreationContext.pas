@@ -142,7 +142,7 @@ begin
       else
         Exit(False); // argument and parameter types did not match
   end
-  else if not fArguments.IsEmpty then
+  else if fArguments.Any then
     Exit(False);
   for value in fNamedArguments do // check all named arguments
   begin

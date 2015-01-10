@@ -196,7 +196,6 @@ type
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetElementType: PTypeInfo;
-    function GetIsEmpty: Boolean;
   {$ENDREGION}
 
     ///	<summary>
@@ -232,14 +231,6 @@ type
     ///	</value>
     property ElementType: PTypeInfo read GetElementType;
 
-    ///	<summary>
-    ///	  Determines whether a sequence contains no elements.
-    ///	</summary>
-    ///	<value>
-    ///	  <b>True</b> if the source sequence contains no elements; otherwise,
-    ///	  <b>False</b>.
-    ///	</value>
-    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   ///	<summary>
@@ -2232,11 +2223,10 @@ type
     ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
-    function GetIsEmpty: Boolean;
   {$ENDREGION}
 
+    function Any: Boolean;
     property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   ///	<summary>

@@ -299,7 +299,7 @@ var
   arguments: TArray<TValue>;
   i: Integer;
 begin
-  if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
+  if model.ConstructorInjections.Any then Exit;  // TEMP
   predicate := TMethodFilters.IsConstructor
     and not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
@@ -486,7 +486,7 @@ var
   services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
-  if not model.Services.IsEmpty then Exit;
+  if model.Services.Any then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
     kernel.Registry.RegisterService(model, model.ComponentTypeInfo)
   else
@@ -513,7 +513,7 @@ begin
       and not model.HasService(model.ComponentTypeInfo) then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
 
-    if model.Services.IsEmpty then
+    if not model.Services.Any then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
   end;
 end;

@@ -453,7 +453,7 @@ end;
 procedure TTestEmptyHashSet.TestEmpty;
 begin
   CheckEquals(0, fSet.Count);
-  CheckTrue(fSet.IsEmpty);
+  CheckFalse(fSet.Any);
 end;
 
 procedure TTestEmptyHashSet.TestExceptWith;
@@ -1661,7 +1661,7 @@ end;
 procedure TTestListOfIntegerAsIEnumerable.TestEnumerableIsEmpty;
 begin
   CheckEquals(0, SUT.Count);
-  CheckTrue(SUT.IsEmpty);
+  CheckFalse(SUT.Any);
 end;
 
 procedure TTestListOfIntegerAsIEnumerable.TestEnumerableLast;
@@ -2203,7 +2203,7 @@ end;
 procedure TTestListAdapter.TestListClear;
 begin
   SUT.Clear;
-  CheckTrue(InternalList.IsEmpty)
+  CheckFalse(InternalList.Any)
 end;
 
 procedure TTestListAdapter.TestListDelete;
