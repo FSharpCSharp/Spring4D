@@ -1277,7 +1277,7 @@ end;
 procedure TTestStackOfIntegerChangedEvent.TestEmpty;
 begin
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 
   SUT.Push(0);
 
@@ -1303,7 +1303,7 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 end;
 
 procedure TTestStackOfIntegerChangedEvent.TestTwoHandlers;
@@ -1329,9 +1329,9 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(1, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.IsEmpty);
+  CheckTrue(SUT.OnChanged.Any);
   SUT.OnChanged.Remove(HandlerB);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 end;
 
 procedure TTestStackOfIntegerChangedEvent.TestNonGenericChangedEvent;
@@ -1341,7 +1341,7 @@ var
 begin
   event := SUT.OnChanged;
 
-  CheckTrue(event.IsEmpty);
+  CheckFalse(event.Any);
   CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
@@ -1553,7 +1553,7 @@ end;
 procedure TTestQueueOfIntegerChangedEvent.TestEmpty;
 begin
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 
   SUT.Enqueue(0);
 
@@ -1579,7 +1579,7 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestTwoHandlers;
@@ -1605,9 +1605,9 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(1, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.IsEmpty);
+  CheckTrue(SUT.OnChanged.Any);
   SUT.OnChanged.Remove(HandlerB);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestNonGenericChangedEvent;
@@ -1617,7 +1617,7 @@ var
 begin
   event := SUT.OnChanged;
 
-  CheckTrue(event.IsEmpty);
+  CheckFalse(event.Any);
   CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;

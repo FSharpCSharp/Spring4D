@@ -2219,19 +2219,6 @@ type
   ///	<summary>
   ///	  Internal interface. Reserved for future use.
   ///	</summary>
-  ICountable = interface
-    ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
-  {$REGION 'Property Accessors'}
-    function GetCount: Integer;
-  {$ENDREGION}
-
-    function Any: Boolean;
-    property Count: Integer read GetCount;
-  end;
-
-  ///	<summary>
-  ///	  Internal interface. Reserved for future use.
-  ///	</summary>
   IElementType = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
   {$REGION 'Property Accessors'}

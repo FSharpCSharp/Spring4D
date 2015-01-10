@@ -24,10 +24,10 @@
 
 {$I Spring.inc}
 
-///	<summary>
+/// <summary>
 ///	  Declares the fundamental interfaces for the
 ///	  <see href="http://spring4d.org">Spring4D</see> Framework.
-///	</summary>
+/// </summary>
 unit Spring;
 
 interface
@@ -49,34 +49,34 @@ type
 
   {$REGION 'Type redefinitions'}
 
-  ///	<summary>
-  ///	  Represents a dynamic array of Byte.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a dynamic array of Byte.
+  /// </summary>
   TBytes = SysUtils.TBytes;
 
-  ///	<summary>
-  ///	  Represents a dynamic array of string.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a dynamic array of string.
+  /// </summary>
   TStringDynArray = Types.TStringDynArray;
 
-  ///	<summary>
-  ///	  Represents a time interval.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a time interval.
+  /// </summary>
   TTimeSpan = TimeSpan.TTimeSpan;
 
-  ///	<summary>
-  ///	  Provides a set of methods and properties to accurately measure elapsed
-  ///	  time.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a set of methods and properties to accurately measure elapsed
+  ///   time.
+  /// </summary>
   TStopwatch = Diagnostics.TStopwatch;
 
   PTypeInfo = TypInfo.PTypeInfo;
 
   TValue = Rtti.TValue;
 
-  ///	<summary>
-  ///	  Represents the class type of <see cref="System|TCustomAttribute" />.
-  ///	</summary>
+  /// <summary>
+  ///   Represents the class type of <see cref="System|TCustomAttribute" />.
+  /// </summary>
   TAttributeClass = class of TCustomAttribute;
 
 {$IFNDEF DELPHIXE_UP}
@@ -187,53 +187,66 @@ type
     function CompareTo(const obj: TObject): Integer;
   end;
 
+  /// <summary>
+  ///   Base interface for anything that has a countable quantity.
+  /// </summary>
+  ICountable = interface
+    ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+  {$ENDREGION}
+
+    function Any: Boolean;
+    property Count: Integer read GetCount;
+  end;
+
   {$ENDREGION}
 
 
   {$REGION 'Procedure types'}
 
-  ///	<summary>
-  ///	  Represents a logical predicate.
-  ///	</summary>
-  ///	<param name="value">
-  ///	  the value needs to be determined.
-  ///	</param>
-  ///	<returns>
+  /// <summary>
+  ///   Represents a logical predicate.
+  /// </summary>
+  /// <param name="value">
+  ///   the value needs to be determined.
+  /// </param>
+  /// <returns>
   ///	  Returns <c>True</c> if the value was accepted, otherwise, returns
   ///	  <c>False</c>.
-  ///	</returns>
-  ///	<remarks>
-  ///	  <note type="tip">
+  /// </returns>
+  /// <remarks>
+  ///   <note type="tip">
   ///	    This type redefined the
   ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
   ///	    type with a const parameter.
-  ///	  </note>
-  ///	</remarks>
-  ///	<seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
+  ///   </note>
+  /// </remarks>
+  /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
   TPredicate<T> = reference to function(const value: T): Boolean;
 
-  ///	<summary>
-  ///	  Represents an anonymous method that has a single parameter and does not
-  ///	  return a value.
-  ///	</summary>
-  ///	<seealso cref="TActionProc&lt;T&gt;" />
-  ///	<seealso cref="TActionMethod&lt;T&gt;" />
+  /// <summary>
+  ///   Represents an anonymous method that has a single parameter and does not
+  ///   return a value.
+  /// </summary>
+  /// <seealso cref="TActionProc&lt;T&gt;" />
+  /// <seealso cref="TActionMethod&lt;T&gt;" />
   TAction<T> = reference to procedure(const obj: T);
 
-  ///	<summary>
-  ///	  Represents a procedure that has a single parameter and does not return
-  ///	  a value.
-  ///	</summary>
-  ///	<seealso cref="TAction&lt;T&gt;" />
-  ///	<seealso cref="TActionMethod&lt;T&gt;" />
+  /// <summary>
+  ///   Represents a procedure that has a single parameter and does not return
+  ///   a value.
+  /// </summary>
+  /// <seealso cref="TAction&lt;T&gt;" />
+  /// <seealso cref="TActionMethod&lt;T&gt;" />
   TActionProc<T> = procedure(const obj: T);
 
-  ///	<summary>
-  ///	  Represents a instance method that has a single parameter and does not
-  ///	  return a value.
-  ///	</summary>
-  ///	<seealso cref="TAction&lt;T&gt;" />
-  ///	<seealso cref="TActionProc&lt;T&gt;" />
+  /// <summary>
+  ///   Represents a instance method that has a single parameter and does not
+  ///   return a value.
+  /// </summary>
+  /// <seealso cref="TAction&lt;T&gt;" />
+  /// <seealso cref="TActionProc&lt;T&gt;" />
   TActionMethod<T> = procedure(const obj: T) of object;
 
   /// <summary>
@@ -291,10 +304,10 @@ type
 
   {$REGION 'TInterfaceBase'}
 
-  ///	<summary>
-  ///	  Provides a non-reference-counted <see cref="System|IInterface" /> 
-  ///	  implementation.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a non-reference-counted <see cref="System|IInterface" />
+  ///   implementation.
+  /// </summary>
   TInterfaceBase = class abstract(TObject, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
@@ -307,14 +320,14 @@ type
 
   {$REGION 'Guard'}
 
-  ///	<summary>
-  ///	  Provides static methods to check arguments and raise argument
-  ///	  exceptions.
-  ///	</summary>
-  ///	<remarks>
-  ///	  It's recommended that all arguments of public types and members should
-  ///	  be checked.
-  ///	</remarks>
+  /// <summary>
+  ///   Provides static methods to check arguments and raise argument
+  ///   exceptions.
+  /// </summary>
+  /// <remarks>
+  ///   It's recommended that all arguments of public types and members should
+  ///   be checked.
+  /// </remarks>
   Guard = record
   public
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
@@ -334,9 +347,9 @@ type
 
     class procedure CheckIndex(length, index: Integer; indexBase: Integer = 0); static; inline;
 
-    ///	<exception cref="Spring|EArgumentOutOfRangeException">
-    ///	  Raised if the <paramref name="index" /> is out of range.
-    ///	</exception>
+    /// <exception cref="Spring|EArgumentOutOfRangeException">
+    ///   Raised if the <paramref name="index" /> is out of range.
+    /// </exception>
     class procedure CheckRange(const buffer: array of Byte; index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Byte; index, count: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; index: Integer); overload; static;
@@ -395,32 +408,32 @@ type
 
     class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; static;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EArgumentException" /> exception.
-    ///	</summary>
-    ///	<param name="msg">
-    ///	  The general error message.
-    ///	</param>
+    /// <summary>
+    ///   Raises an <see cref="EArgumentException" /> exception.
+    /// </summary>
+    /// <param name="msg">
+    ///   The general error message.
+    /// </param>
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EFormatException" /> exception.
-    ///	</summary>
+    /// <summary>
+    ///   Raises an <see cref="EFormatException" /> exception.
+    /// </summary>
     class procedure RaiseArgumentFormatException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EArgumentNullException" /> exception.
-    ///	</summary>
+    /// <summary>
+    ///   Raises an <see cref="EArgumentNullException" /> exception.
+    /// </summary>
     class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EArgumentOutOfRangeException" /> exception.
-    ///	</summary>
+    /// <summary>
+    ///   Raises an <see cref="EArgumentOutOfRangeException" /> exception.
+    /// </summary>
     class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EInvalidEnumArgumentException" /> exception.
-    ///	</summary>
+    /// <summary>
+    ///   Raises an <see cref="EInvalidEnumArgumentException" /> exception.
+    /// </summary>
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
 
@@ -431,14 +444,14 @@ type
 
   {$REGION 'Nullable Types'}
 
-  ///	<summary>
-  ///	  A nullable type can represent the normal range of values for its
-  ///	  underlying value type, plus an additional <c>Null</c> value.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" /> 
-  ///	  generic type.
-  ///	</typeparam>
+  /// <summary>
+  ///   A nullable type can represent the normal range of values for its
+  ///   underlying value type, plus an additional <c>Null</c> value.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The underlying value type of the <see cref="Nullable&lt;T&gt;" />
+  ///   generic type.
+  /// </typeparam>
   Nullable<T> = record
   private
     fValue: T;
@@ -446,80 +459,80 @@ type
     function GetValue: T;
     function GetHasValue: Boolean;
 
-    ///	<summary>
-    ///	  Internal use. Marks the current instance as null.
-    ///	</summary>
-    ///	<remarks>
-    ///	  The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
-    ///	  method must be private.
-    ///	</remarks>
+    /// <summary>
+    ///   Internal use. Marks the current instance as null.
+    /// </summary>
+    /// <remarks>
+    ///   The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
+    ///   method must be private.
+    /// </remarks>
     procedure Clear;
 
-    ///	<summary>
-    ///	  Determines whether a variant value is null or empty.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether a variant value is null or empty.
+    /// </summary>
     class function VarIsNullOrEmpty(const value: Variant): Boolean; static;
   public
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" /> 
-    ///	  structure to the specified value.
-    ///	</summary>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />
+    ///   structure to the specified value.
+    /// </summary>
     constructor Create(const value: T); overload;
 
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" /> 
-    ///	  structure to the specified value.
-    ///	</summary>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />
+    ///   structure to the specified value.
+    /// </summary>
     constructor Create(const value: Variant); overload;
 
-    ///	<summary>
-    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" /> 
-    ///	  object, or the object's default value.
-    ///	</summary>
+    /// <summary>
+    ///   Retrieves the value of the current <see cref="Nullable&lt;T&gt;" />
+    ///   object, or the object's default value.
+    /// </summary>
     function GetValueOrDefault: T; overload;
 
-    ///	<summary>
-    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" /> 
-    ///	  object, or the specified default value.
-    ///	</summary>
-    ///	<param name="defaultValue">
+    /// <summary>
+    ///   Retrieves the value of the current <see cref="Nullable&lt;T&gt;" />
+    ///   object, or the specified default value.
+    /// </summary>
+    /// <param name="defaultValue">
     ///	  A value to return if the <see cref="HasValue" /> property is
     ///	  <c>False</c>.
-    ///	</param>
-    ///	<returns>
+    /// </param>
+    /// <returns>
     ///	  The value of the <see cref="Value" /> property if the
     ///	  <see cref="HasValue" /> property is true; otherwise, the
     ///	  <paramref name="defaultValue" /> parameter.
-    ///	</returns>
-    ///	<remarks>
-    ///	  The <see cref="GetValueOrDefault" /> method returns a value even if
+    /// </returns>
+    /// <remarks>
+    ///   The <see cref="GetValueOrDefault" /> method returns a value even if
     ///	  the <see cref="HasValue" /> property is false (unlike the
     ///	  <see cref="Value" /> property, which throws an exception).
-    ///	</remarks>
+    /// </remarks>
     function GetValueOrDefault(const defaultValue: T): T; overload;
 
-    ///	<summary>
-    ///	  Determines whether two nullable value are equal.
-    ///	</summary>
-    ///	<remarks>
+    /// <summary>
+    ///   Determines whether two nullable value are equal.
+    /// </summary>
+    /// <remarks>
     ///	  <p> If both two nullable values are null, return true; </p>
     ///	  <p> If either one is null, return false; </p>
     ///	  <p> else compares their values as usual. </p>
-    ///	</remarks>
+    /// </remarks>
     function Equals(const other: Nullable<T>): Boolean;
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets a value indicating whether the current
     ///	  <see cref="Nullable&lt;T&gt;" /> structure has a value.
-    ///	</summary>
+    /// </summary>
     property HasValue: Boolean read GetHasValue;
 
-    ///	<summary>
-    ///	  Gets the value of the current <see cref="Nullable&lt;T&gt;" /> value.
-    ///	</summary>
-    ///	<exception cref="Spring|EInvalidOperationException">
-    ///	  Raised if the value is null.
-    ///	</exception>
+    /// <summary>
+    ///   Gets the value of the current <see cref="Nullable&lt;T&gt;" /> value.
+    /// </summary>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   Raised if the value is null.
+    /// </exception>
     property Value: T read GetValue;
 
     { Operator Overloads }
@@ -534,59 +547,59 @@ type
   end;
 
 
-  ///	<summary>
-  ///	  Represents a nullable unicode string.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable unicode string.
+  /// </summary>
   TNullableString = Nullable<string>;
 {$IFNDEF NEXTGEN}
-  ///	<summary>
-  ///	  Represents a nullable ansi string.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable ansi string.
+  /// </summary>
   TNullableAnsiString = Nullable<AnsiString>;
 
-  ///	<summary>
-  ///	  Represents a nullable wide string.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable wide string.
+  /// </summary>
   TNullableWideString = Nullable<WideString>;
 {$ENDIF}
-  ///	<summary>
-  ///	  Represents a nullable integer.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable integer.
+  /// </summary>
   TNullableInteger = Nullable<Integer>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>Int64</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>Int64</c>.
+  /// </summary>
   TNullableInt64 = Nullable<Int64>;
 
-  ///	<summary>
-  ///	  Represents a nullable native integer.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable native integer.
+  /// </summary>
   TNullableNativeInt = Nullable<NativeInt>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>TDateTime</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>TDateTime</c>.
+  /// </summary>
   TNullableDateTime = Nullable<TDateTime>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>Currency</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>Currency</c>.
+  /// </summary>
   TNullableCurrency = Nullable<Currency>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>Double</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>Double</c>.
+  /// </summary>
   TNullableDouble = Nullable<Double>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>Boolean</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>Boolean</c>.
+  /// </summary>
   TNullableBoolean = Nullable<Boolean>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>TGuid</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>TGuid</c>.
+  /// </summary>
   TNullableGuid = Nullable<TGUID>;
 
   {$ENDREGION}
@@ -594,34 +607,34 @@ type
 
   {$REGION 'Lazy Initialization'}
 
-  ///	<summary>
-  ///	  Specifies the kind of a lazy type.
-  ///	</summary>
+  /// <summary>
+  ///   Specifies the kind of a lazy type.
+  /// </summary>
   TLazyKind = (
-    ///	<summary>
-    ///	  Not a lazy type.
-    ///	</summary>
+    /// <summary>
+    ///   Not a lazy type.
+    /// </summary>
     lkNone,
 
-    ///	<summary>
-    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
-    ///	</summary>
+    /// <summary>
+    ///   Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    /// </summary>
     lkFunc,
 
-    ///	<summary>
-    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
-    ///	</summary>
+    /// <summary>
+    ///   Type is <see cref="Spring|Lazy&lt;T&gt;" />.
+    /// </summary>
     lkRecord,
 
-    ///	<summary>
-    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
-    ///	</summary>
+    /// <summary>
+    ///   Type is <see cref="Spring|ILazy&lt;T&gt;" />.
+    /// </summary>
     lkInterface
   );
 
-  ///	<summary>
-  ///	  Provides support for lazy initialization.
-  ///	</summary>
+  /// <summary>
+  ///   Provides support for lazy initialization.
+  /// </summary>
   ILazy = interface
     ['{40223BA9-0C66-49E7-AA33-BDAEF9F506D6}']
   {$REGION 'Property Accessors'}
@@ -629,43 +642,43 @@ type
     function GetValue: TValue;
   {$ENDREGION}
 
-    ///	<summary>
-    ///	  Gets a value that indicates whether a value has been created for this
-    ///	  <see cref="ILazy" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// <summary>
+    ///   Gets a value that indicates whether a value has been created for this
+    ///   <see cref="ILazy" /> instance.
+    /// </summary>
+    /// <value>
     ///	  <b>True</b> if a value has been created for this
     ///	  <see cref="ILazy" /> instance; otherwise, <b>False</b>.
-    ///	</value>
+    /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets the lazily initialized value of the current
     ///	  <see cref="ILazy" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// </summary>
+    /// <value>
     ///	  The lazily initialized value of the current
     ///	  <see cref="ILazy" /> instance.
-    ///	</value>
+    /// </value>
     property Value: TValue read GetValue;
   end;
 
-  ///	<summary>
-  ///	  Provides support for lazy initialization.
-  ///	</summary>
+  /// <summary>
+  ///   Provides support for lazy initialization.
+  /// </summary>
   ILazy<T> = interface(ILazy)
   {$REGION 'Property Accessors'}
     function GetValue: T;
   {$ENDREGION}
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets the lazily initialized value of the current
     ///	  <see cref="ILazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// </summary>
+    /// <value>
     ///	  The lazily initialized value of the current
     ///	  <see cref="ILazy&lt;T&gt;" /> instance.
-    ///	</value>
+    /// </value>
     property Value: T read GetValue;
   end;
 
@@ -682,23 +695,23 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    ///	<summary>
-    ///	  Gets a value that indicates whether a value has been created for this
-    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// <summary>
+    ///   Gets a value that indicates whether a value has been created for this
+    ///   <see cref="TLazy&lt;T&gt;" /> instance.
+    /// </summary>
+    /// <value>
     ///	  <b>True</b> if a value has been created for this
     ///	  <see cref="TLazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
-    ///	</value>
+    /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
   end;
 
-  ///	<summary>
-  ///	  Provides support for lazy initialization.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The type of object that is being lazily initialized.
-  ///	</typeparam>
+  /// <summary>
+  ///   Provides support for lazy initialization.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The type of object that is being lazily initialized.
+  /// </typeparam>
   TLazy<T> = class(TLazy, ILazy<T>, TFunc<T>)
   private
     fValueFactory: TFunc<T>;
@@ -710,46 +723,46 @@ type
     function TFunc<T>.Invoke = GetValue;
   {$ENDREGION}
   public
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="TLazy&lt;T&gt;" />
-    ///	  class. When lazy initialization occurs, the specified initialization
-    ///	  function is used.
-    ///	</summary>
-    ///	<param name="valueFactory">
-    ///	  The delegate that is invoked to produce the lazily initialized value
-    ///	  when it is needed.
-    ///	</param>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>valueFactory</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="TLazy&lt;T&gt;" />
+    ///   class. When lazy initialization occurs, the specified initialization
+    ///   function is used.
+    /// </summary>
+    /// <param name="valueFactory">
+    ///   The delegate that is invoked to produce the lazily initialized value
+    ///   when it is needed.
+    /// </param>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>valueFactory</i> is <b>nil</b>.
+    /// </exception>
     constructor Create(const valueFactory: TFunc<T>);
 
-    ///	<summary>
-    ///	  Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
-    ///	  specified value.
-    ///	</summary>
-    ///	<param name="value">
-    ///	  The initialized value.
-    ///	</param>
+    /// <summary>
+    ///   Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
+    ///   specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The initialized value.
+    /// </param>
     constructor CreateFrom(const value: T);
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets the lazily initialized value of the current
     ///	  <see cref="TLazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// </summary>
+    /// <value>
     ///	  The lazily initialized value of the current
     ///	  <see cref="TLazy&lt;T&gt;" /> instance.
-    ///	</value>
+    /// </value>
     property Value: T read GetValue;
   end;
 
-  ///	<summary>
-  ///	  Provides support for lazy initialization.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The type of object that is being lazily initialized.
-  ///	</typeparam>
+  /// <summary>
+  ///   Provides support for lazy initialization.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The type of object that is being lazily initialized.
+  /// </typeparam>
   Lazy<T> = record
   private
     fLazy: ILazy<T>;
@@ -757,27 +770,27 @@ type
     function GetIsValueCreated: Boolean;
     function GetValue: T;
   public
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
-    ///	  record. When lazy initialization occurs, the specified initialization
-    ///	  function is used.
-    ///	</summary>
-    ///	<param name="valueFactory">
-    ///	  The delegate that is invoked to produce the lazily initialized value
-    ///	  when it is needed.
-    ///	</param>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>valueFactory</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
+    ///   record. When lazy initialization occurs, the specified initialization
+    ///   function is used.
+    /// </summary>
+    /// <param name="valueFactory">
+    ///   The delegate that is invoked to produce the lazily initialized value
+    ///   when it is needed.
+    /// </param>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>valueFactory</i> is <b>nil</b>.
+    /// </exception>
     constructor Create(const valueFactory: TFunc<T>);
 
-    ///	<summary>
-    ///	  Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
-    ///	  specified value.
-    ///	</summary>
-    ///	<param name="value">
-    ///	  The initialized value.
-    ///	</param>
+    /// <summary>
+    ///   Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
+    ///   specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The initialized value.
+    /// </param>
     constructor CreateFrom(const value: T);
 
     class operator Implicit(const value: Lazy<T>): ILazy<T>;
@@ -787,24 +800,24 @@ type
 
     property IsAssigned: Boolean read GetIsAssigned;
 
-    ///	<summary>
-    ///	  Gets a value that indicates whether a value has been created for this
-    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// <summary>
+    ///   Gets a value that indicates whether a value has been created for this
+    ///   <see cref="Lazy&lt;T&gt;" /> instance.
+    /// </summary>
+    /// <value>
     ///	  <b>True</b> if a value has been created for this
     ///	  <see cref="Lazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
-    ///	</value>
+    /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets the lazily initialized value of the current
     ///	  <see cref="Lazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// </summary>
+    /// <value>
     ///	  The lazily initialized value of the current
     ///	  <see cref="Lazy&lt;T&gt;" /> instance.
-    ///	</value>
+    /// </value>
     ///	<exception cref="Spring|EInvalidOperationException">
     ///	</exception>
     property Value: T read GetValue;
@@ -821,13 +834,11 @@ type
 
   {$REGION 'Multicast Event'}
 
-  IEvent = interface
+  IEvent = interface(ICountable)
     ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
   {$REGION 'Property Accessors'}
     function GetInvoke: TMethod;
-    function GetCount: Integer;
     function GetEnabled: Boolean;
-    function GetIsEmpty: Boolean;
     function GetIsInvokable: Boolean;
     function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
@@ -840,9 +851,11 @@ type
     procedure Clear;
     procedure ForEach(const action: TAction<TMethod>);
 
-    property Count: Integer read GetCount;
+    /// <summary>
+    ///   Gets the value indicates whether the multicast event is enabled, or
+    ///   sets the value to enable or disable the event.
+    /// </summary>
     property Enabled: Boolean read GetEnabled write SetEnabled;
-    property IsEmpty: Boolean read GetIsEmpty;
 
     /// <summary>
     ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
@@ -854,68 +867,48 @@ type
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
   end;
 
-  ///	<summary>
-  ///	  Represents a multicast event.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The event handler type must be an instance procedural type such as
-  ///	  TNotifyEvent.
-  ///	</typeparam>
+  /// <summary>
+  ///   Represents a multicast event.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The event handler type must be an instance procedural type such as
+  ///   TNotifyEvent.
+  /// </typeparam>
   IEvent<T> = interface(IEvent)
   {$REGION 'Property Accessors'}
     function GetInvoke: T;
-    function GetCount: Integer;
-    function GetEnabled: Boolean;
-    function GetIsEmpty: Boolean;
-    procedure SetEnabled(const value: Boolean);
   {$ENDREGION}
 
-    ///	<summary>
-    ///	  Adds an event handler to the list.
-    ///	</summary>
+    /// <summary>
+    ///   Adds an event handler to the list.
+    /// </summary>
     procedure Add(handler: T);
 
-    ///	<summary>
-    ///	  Removes an event handler if it was added to the event.
-    ///	</summary>
+    /// <summary>
+    ///   Removes an event handler if it was added to the event.
+    /// </summary>
     procedure Remove(handler: T);
 
-    ///	<summary>
-    ///	  Removes all event handlers which were registered by an instance.
-    ///	</summary>
+    /// <summary>
+    ///   Removes all event handlers which were registered by an instance.
+    /// </summary>
     procedure RemoveAll(instance: Pointer);
 
-    ///	<summary>
-    ///	  Clears all event handlers.
-    ///	</summary>
+    /// <summary>
+    ///   Clears all event handlers.
+    /// </summary>
     procedure Clear;
 
-    ///	<summary>
-    ///	  Iterates all event handlers and perform the specified action on each
-    ///	  one.
-    ///	</summary>
+    /// <summary>
+    ///   Iterates all event handlers and perform the specified action on each
+    ///   one.
+    /// </summary>
     procedure ForEach(const action: TAction<T>);
 
-    ///	<summary>
-    ///	  Invokes all event handlers.
-    ///	</summary>
+    /// <summary>
+    ///   Invokes all event handlers.
+    /// </summary>
     property Invoke: T read GetInvoke;
-
-    ///	<summary>
-    ///	  Gets the number of all event handlers.
-    ///	</summary>
-    property Count: Integer read GetCount;
-
-    ///	<summary>
-    ///	  Gets the value indicates whether the multicast event is enabled, or
-    ///	  sets the value to enable or disable the event.
-    ///	</summary>
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-
-    ///	<summary>
-    ///	  Gets a value indicates whether there is not any event handler.
-    ///	</summary>
-    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
 {$IFDEF SUPPORTS_GENERIC_EVENTS}
@@ -925,13 +918,14 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetInvoke: T;
-    function GetIsEmpty: Boolean;
     function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
     procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
+
+    function Any: Boolean;
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
@@ -941,7 +935,6 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
-    property IsEmpty: Boolean read GetIsEmpty;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
@@ -1385,25 +1378,25 @@ function ReturnAddress: Pointer;
 
 procedure PlatformNotImplemented;
 
-///	<summary>
+/// <summary>
 ///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
 ///	  <paramref name="value" /> is nil.
-///	</summary>
+/// </summary>
 procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
-///	<summary>
+/// <summary>
 ///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
 ///	  <paramref name="value" /> is nil.
-///	</summary>
+/// </summary>
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
 function GetQualifiedClassName(AInstance: TObject): string; overload; inline;
 function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHIXE2_UP}inline;{$ENDIF}
 
-///	<summary>
-///	  Determines whether an instance of <c>leftType</c> can be assigned from an
-///	  instance of <c>rightType</c>.
-///	</summary>
+/// <summary>
+///   Determines whether an instance of <c>leftType</c> can be assigned from an
+///   instance of <c>rightType</c>.
+/// </summary>
 function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean; overload;
 
 function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Boolean; overload;
@@ -2514,6 +2507,11 @@ begin
   fInstance.Add(handler);
 end;
 
+function Event<T>.Any: Boolean;
+begin
+  Result := Assigned(fInstance) and fInstance.Any;
+end;
+
 procedure Event<T>.Clear;
 begin
   if Assigned(fInstance) then
@@ -2543,11 +2541,6 @@ function Event<T>.GetInvoke: T;
 begin
   EnsureInitialized;
   Result := fInstance.Invoke;
-end;
-
-function Event<T>.GetIsEmpty: Boolean;
-begin
-  Result := not Assigned(fInstance) or fInstance.IsEmpty;
 end;
 
 function Event<T>.GetOnChanged: TNotifyEvent;
