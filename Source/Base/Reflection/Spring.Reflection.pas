@@ -1472,7 +1472,7 @@ end;
 
 function TRttiMethodHelper.InternalGetParameters: IEnumerable<TRttiParameter>;
 begin
-  Result := TCollections.Query<TRttiParameter>(GetParameters);
+  Result := TEnumerable.Query<TRttiParameter>(GetParameters);
 end;
 
 {$ENDREGION}

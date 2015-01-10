@@ -510,7 +510,7 @@ begin
       Result := models;
   end
   else
-    Result := TCollections.Empty<TComponentModel>;
+    Result := TEnumerable.Empty<TComponentModel>;
 end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;

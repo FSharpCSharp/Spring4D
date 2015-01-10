@@ -2369,7 +2369,10 @@ type
     class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
     class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
+  end;
 
+  TEnumerable = class
+  public
     ///	<summary>
     ///	  Returns an empty <see cref="IEnumerable&lt;T&gt;" /> that has the
     ///	  specified type argument.
@@ -2815,34 +2818,39 @@ begin
   Result := THashSet<T>.Create(values);
 end;
 
-class function TCollections.Empty<T>: IEnumerable<T>;
+{$ENDREGION}
+
+
+{$REGION 'TEnumerable'}
+
+class function TEnumerable.Empty<T>: IEnumerable<T>;
 begin
   Result := TEmptyEnumerable<T>.Create;
 end;
 
-class function TCollections.Query<T>(const source: TArray<T>): IEnumerable<T>;
+class function TEnumerable.Query<T>(const source: TArray<T>): IEnumerable<T>;
 begin
   Result := TArrayIterator<T>.Create(source);
 end;
 
-class function TCollections.Query<T>(
+class function TEnumerable.Query<T>(
   const source: TEnumerable<T>): IEnumerable<T>;
 begin
   Result := TEnumerableAdapter<T>.Create(source);
 end;
 
-class function TCollections.Range(start, count: Integer): IEnumerable<Integer>;
+class function TEnumerable.Range(start, count: Integer): IEnumerable<Integer>;
 begin
   Result := TRangeIterator<Integer>.Create(start, count);
 end;
 
-class function TCollections.Repeated<T>(const element: T;
+class function TEnumerable.Repeated<T>(const element: T;
   count: Integer): IEnumerable<T>;
 begin
   Result := TRepeatIterator<T>.Create(element, count);
 end;
 
-class function TCollections.Select<T, TResult>(const source: IEnumerable<T>;
+class function TEnumerable.Select<T, TResult>(const source: IEnumerable<T>;
   const selector: TFunc<T, TResult>): IEnumerable<TResult>;
 begin
   Result := TSelectIterator<T, TResult>.Create(source, selector);
