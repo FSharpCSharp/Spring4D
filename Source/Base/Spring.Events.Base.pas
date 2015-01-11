@@ -35,7 +35,7 @@ uses
   Spring;
 
 type
-  PMethod = ^TMethod;
+  PMethodPointer = ^TMethodPointer;
 
   ///	<summary>
   ///	  Base class for multicast event implementation
@@ -43,28 +43,30 @@ type
   TEventBase = class(TInterfacedObject, IEvent)
   private
     fEnabled: Boolean;
-    fHandlers: TList<TMethod>;
+    fHandlers: TList<TMethodPointer>;
     fLock: TCriticalSection;
-    fOnChanged: TNotifyEvent;
+    fOnChanged: TEventsChangedEvent;
     fNotificationHandler: TNotificationHandler;
 
-    {$REGION 'Property Accessors'}
+  {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetEnabled: Boolean;
-    function GetHandlers: TArray<TMethod>;
-    function GetInvoke: TMethod;
+    function GetHandlers: TArray<TMethodPointer>;
+    function GetInvoke: TMethodPointer;
     function GetIsInvokable: Boolean;
-    function GetOnChanged: TNotifyEvent;
+    function GetOnChanged: TEventsChangedEvent;
     procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(const value: TNotifyEvent);
-    {$ENDREGION}
+    procedure SetOnChanged(const value: TEventsChangedEvent);
+  {$ENDREGION}
   protected
-    fInvoke: TMethod;
+    fInvoke: TMethodPointer;
+    procedure EventsChanged(const item: TMethodPointer;
+      action: TEventsChangedAction); virtual;
     procedure HandleNotification(Component: TComponent;
       Operation: TOperation);
-    procedure Notify(Sender: TObject; const Item: TMethod;
+    procedure Notify(Sender: TObject; const Item: TMethodPointer;
       Action: TCollectionNotification); virtual;
-    property Handlers: TArray<TMethod> read GetHandlers;
+    property Handlers: TArray<TMethodPointer> read GetHandlers;
   public
     constructor Create;
     destructor Destroy; override;
@@ -72,22 +74,23 @@ type
     function Any: Boolean;
 
     {$REGION 'IEvent Methods'}
-    procedure Add(const handler: TMethod);
-    procedure Remove(const handler: TMethod);
+    procedure Add(const handler: TMethodPointer);
+    procedure Remove(const handler: TMethodPointer);
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
-    procedure ForEach(const action: TAction<TMethod>);
+    procedure ForEach(const action: TAction<TMethodPointer>);
     {$ENDREGION}
 
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
-    property Invoke: TMethod read GetInvoke;
-    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+    property Invoke: TMethodPointer read GetInvoke;
+    property OnChanged: TEventsChangedEvent read GetOnChanged write SetOnChanged;
   end;
 
   TEventBase<T> = class(TEventBase, IEvent<T>)
-  private
+  {$REGION 'Property Accessors'}
     function GetInvoke: T;
+  {$ENDREGION}
     procedure Add(handler: T);
     procedure Remove(handler: T);
     procedure ForEach(const action: TAction<T>);
@@ -120,7 +123,7 @@ constructor TEventBase.Create;
 begin
   inherited Create;
   fEnabled := True;
-  fHandlers := TList<TMethod>.Create;
+  fHandlers := TList<TMethodPointer>.Create;
   fHandlers.OnNotify := Notify;
   fLock := TCriticalSection.Create;
 end;
@@ -134,7 +137,14 @@ begin
   inherited;
 end;
 
-procedure TEventBase.Add(const handler: TMethod);
+procedure TEventBase.EventsChanged(const item: TMethodPointer;
+  action: TEventsChangedAction);
+begin
+  if Assigned(fOnChanged) then
+    fOnChanged(Self, item, action);
+end;
+
+procedure TEventBase.Add(const handler: TMethodPointer);
 begin
   fLock.Enter;
   try
@@ -159,9 +169,9 @@ begin
   end;
 end;
 
-procedure TEventBase.ForEach(const action: TAction<TMethod>);
+procedure TEventBase.ForEach(const action: TAction<TMethodPointer>);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
   for handler in Handlers do
     action(handler);
@@ -177,7 +187,7 @@ begin
   Result := fEnabled;
 end;
 
-function TEventBase.GetHandlers: TArray<TMethod>;
+function TEventBase.GetHandlers: TArray<TMethodPointer>;
 var
   i: Integer;
 begin
@@ -191,7 +201,7 @@ begin
   end;
 end;
 
-function TEventBase.GetInvoke: TMethod;
+function TEventBase.GetInvoke: TMethodPointer;
 begin
   Result := fInvoke;
 end;
@@ -201,7 +211,7 @@ begin
   Result := fEnabled and (fHandlers.Count <> 0);
 end;
 
-function TEventBase.GetOnChanged: TNotifyEvent;
+function TEventBase.GetOnChanged: TEventsChangedEvent;
 begin
   Result := fOnChanged;
 end;
@@ -213,37 +223,39 @@ begin
     RemoveAll(Component);
 end;
 
-procedure TEventBase.Notify(Sender: TObject; const Item: TMethod;
+procedure TEventBase.Notify(Sender: TObject; const Item: TMethodPointer;
   Action: TCollectionNotification);
+var
+  data: Pointer;
 begin
+  data := TMethod(Item).Data;
   case Action of
     cnAdded:
     begin
-      if IsValid(Item.Data) and (TObject(Item.Data) is TComponent) then
+      if IsValid(data) and (TObject(data) is TComponent) then
       begin
         if fNotificationHandler = nil then
         begin
           fNotificationHandler := TNotificationHandler.Create(nil);
           fNotificationHandler.OnNotification := HandleNotification;
         end;
-        fNotificationHandler.FreeNotification(TComponent(Item.Data));
+        fNotificationHandler.FreeNotification(TComponent(data));
       end;
     end;
     cnRemoved:
     begin
-      if IsValid(Item.Data) and (TObject(Item.Data) is TComponent) then
+      if IsValid(data) and (TObject(data) is TComponent) then
       begin
         if fNotificationHandler <> nil then
-          fNotificationHandler.RemoveFreeNotification(TComponent(Item.Data));
+          fNotificationHandler.RemoveFreeNotification(TComponent(data));
       end;
     end;
   end;
 
-  if Assigned(fOnChanged) then
-    fOnChanged(Self);
+  EventsChanged(Item, TEventsChangedAction(Action));
 end;
 
-procedure TEventBase.Remove(const handler: TMethod);
+procedure TEventBase.Remove(const handler: TMethodPointer);
 begin
   fLock.Enter;
   try
@@ -260,7 +272,7 @@ begin
   fLock.Enter;
   try
     for i := fHandlers.Count - 1 downto 0 do
-      if fHandlers[i].Data = instance then
+      if TMethod(fHandlers[i]).Data = instance then
         fHandlers.Delete(i);
   finally
     fLock.Leave;
@@ -272,7 +284,7 @@ begin
   fEnabled := value;
 end;
 
-procedure TEventBase.SetOnChanged(const value: TNotifyEvent);
+procedure TEventBase.SetOnChanged(const value: TEventsChangedEvent);
 begin
   fOnChanged := value;
 end;
@@ -287,18 +299,18 @@ begin
   if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
     inherited Add(MethodReferenceToMethodPointer(handler))
   else
-    inherited Add(PMethod(@handler)^);
+    inherited Add(PMethodPointer(@handler)^);
 end;
 
 procedure TEventBase<T>.ForEach(const action: TAction<T>);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
   for handler in Handlers do
     if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
       TAction<IInterface>(action)(MethodPointerToMethodReference(handler))
     else
-      TAction<TMethod>(action)(handler);
+      TAction<TMethodPointer>(action)(handler);
 end;
 
 function TEventBase<T>.GetInvoke: T;
@@ -306,7 +318,7 @@ begin
   if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
     IInterface(PPointer(@Result)^) := MethodPointerToMethodReference(inherited Invoke)
   else
-    PMethod(@Result)^ := inherited Invoke;
+    PMethodPointer(@Result)^ := inherited Invoke;
 end;
 
 procedure TEventBase<T>.Remove(handler: T);
@@ -314,7 +326,7 @@ begin
   if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
     inherited Remove(MethodReferenceToMethodPointer(handler))
   else
-    inherited Remove(PMethod(@handler)^);
+    inherited Remove(PMethodPointer(@handler)^);
 end;
 
 {$ENDREGION}

@@ -1347,7 +1347,7 @@ begin
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  event.Add(method);
+  event.Add(TMethodPointer(method));
 
   CheckEquals(1, event.Count);
   CheckEquals(1, SUT.OnChanged.Count);
@@ -1623,7 +1623,7 @@ begin
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  event.Add(method);
+  event.Add(TMethodPointer(method));
 
   CheckEquals(1, event.Count);
   CheckEquals(1, SUT.OnChanged.Count);
@@ -2287,7 +2287,7 @@ var
   m: TMethod;
 begin
   TCollectionChangedEvent<Integer>(m) := ListChanged;
-  SUT.OnChanged.Add(m);
+  SUT.OnChanged.Add(TMethodPointer(m));
   SUT.Clear;
 end;
 

@@ -103,7 +103,9 @@ type
     procedure InternalInvoke(Params: Pointer; StackSize: Integer);
     procedure Invoke;
   protected
-    procedure Notify(Sender: TObject; const Item: TMethod;
+    procedure EventsChanged(const item: TMethodPointer;
+      action: TEventsChangedAction); override;
+    procedure Notify(Sender: TObject; const Item: TMethodPointer;
       Action: TCollectionNotification); override;
   public
     constructor Create(typeInfo: PTypeInfo);
@@ -564,8 +566,7 @@ begin
   else
     raise EInvalidOperationException.CreateResFmt(@STypeParameterShouldBeMethod, [typeInfo.Name]);
 
-  fInvoke.Data := fInvocations;
-  fInvoke.Code := @TMethodInvocations.InvokeEventHandlerStub;
+  fInvoke := fInvocations.InvokeEventHandlerStub;
 end;
 
 destructor TEvent.Destroy;
@@ -574,35 +575,47 @@ begin
   inherited Destroy;
 end;
 
+procedure TEvent.EventsChanged(const item: TMethodPointer;
+  action: TEventsChangedAction);
+begin
+  case fTypeInfo.Kind of
+    tkMethod: inherited;
+    tkInterface:
+      if Assigned(OnChanged) then
+        TEventsChangedEvent<IInterface>(OnChanged)(Self,
+          MethodPointerToMethodReference(item), action);
+  end;
+end;
+
 procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
   if Enabled then
     for handler in Handlers do
-      InvokeMethod(handler, Params, StackSize);
+      InvokeMethod(TMethod(handler), Params, StackSize);
 end;
 
 procedure TEvent.Invoke;
 asm
 {$IFDEF CPUX64}
-  push [rcx].fInvoke.Code
-  mov rcx,[rcx].fInvoke.Data
+  push [rcx].fInvoke.TMethod.Code
+  mov rcx,[rcx].fInvoke.TMethod.Data
 {$ELSE}
-  push [eax].fInvoke.Code
-  mov eax,[eax].fInvoke.Data
+  push [eax].fInvoke.TMethod.Code
+  mov eax,[eax].fInvoke.TMethod.Data
 {$ENDIF}
 end;
 
-procedure TEvent.Notify(Sender: TObject; const Item: TMethod;
+procedure TEvent.Notify(Sender: TObject; const Item: TMethodPointer;
   Action: TCollectionNotification);
 begin
   inherited;
   if fTypeInfo.Kind = tkInterface then
   begin
     case Action of
-      cnAdded: IInterface(Item.Data)._AddRef;
-      cnRemoved: IInterface(Item.Data)._Release;
+      cnAdded: IInterface(TMethod(Item).Data)._AddRef;
+      cnRemoved: IInterface(TMethod(Item).Data)._Release;
     end;
   end;
 end;
@@ -621,13 +634,13 @@ end;
 
 procedure TEvent<T>.ForEach(const action: TAction<T>);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
   for handler in Handlers do
     if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
       TAction<IInterface>(action)(MethodPointerToMethodReference(handler))
     else
-      TAction<TMethod>(action)(handler);
+      TAction<TMethodPointer>(action)(handler);
 end;
 
 procedure TEvent<T>.Add(handler: T);
@@ -635,7 +648,7 @@ begin
   if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
     inherited Add(MethodReferenceToMethodPointer(handler))
   else
-    inherited Add(PMethod(@handler)^);
+    inherited Add(PMethodPointer(@handler)^);
 end;
 
 procedure TEvent<T>.Remove(handler: T);
@@ -643,7 +656,7 @@ begin
   if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
     inherited Remove(MethodReferenceToMethodPointer(handler))
   else
-    inherited Remove(PMethod(@handler)^);
+    inherited Remove(PMethodPointer(@handler)^);
 end;
 
 function TEvent<T>.GetInvoke: T;
@@ -651,7 +664,7 @@ begin
   if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
     TProc(PPointer(@Result)^) := Self
   else
-    PMethod(@Result)^ := fInvoke;
+    PMethodPointer(@Result)^ := fInvoke;
 end;
 {$ENDIF SUPPORTS_GENERIC_EVENTS}
 
@@ -663,18 +676,17 @@ end;
 constructor TNotifyEventImpl<T>.Create;
 begin
   inherited;
-  fInvoke.Code := @TNotifyEventImpl<T>.InternalInvoke;
-  fInvoke.Data := Self;
+  TNotifyEvent<T>(fInvoke) := InternalInvoke;
 end;
 
 procedure TNotifyEventImpl<T>.Add(handler: TNotifyEvent<T>);
 begin
-  inherited Add(TMethod(handler));
+  inherited Add(TMethodPointer(handler));
 end;
 
 procedure TNotifyEventImpl<T>.ForEach(const action: TAction<TNotifyEvent<T>>);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
   for handler in Handlers do
     action(TNotifyEvent<T>(handler));
@@ -687,7 +699,7 @@ end;
 
 procedure TNotifyEventImpl<T>.InternalInvoke(sender: TObject; const item: T);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
   if Enabled then
     for handler in Handlers do
@@ -696,7 +708,7 @@ end;
 
 procedure TNotifyEventImpl<T>.Remove(handler: TNotifyEvent<T>);
 begin
-  inherited Remove(TMethod(handler));
+  inherited Remove(TMethodPointer(handler));
 end;
 
 {$ENDREGION}

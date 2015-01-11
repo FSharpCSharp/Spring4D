@@ -86,6 +86,47 @@ type
   {$ENDREGION}
 
 
+  ///	<summary>
+  ///	  Describes the action that caused a CollectionChanged event.
+  ///	</summary>
+  TCollectionChangedAction = (
+    ///	<summary>
+    ///	  An item was added to the collection.
+    ///	</summary>
+    caAdded,
+
+    ///	<summary>
+    ///	  An item was removed from the collection.
+    ///	</summary>
+    caRemoved,
+
+    ///	<summary>
+    ///	  An item was removed from the collection without considering ownership.
+    ///	</summary>
+    caExtracted,
+
+    ///	<summary>
+    ///	  An item was replaced in the collection.
+    ///	</summary>
+    caReplaced,
+
+    ///	<summary>
+    ///	  An item was moved within the collection.
+    ///	</summary>
+    caMoved,
+
+    ///	<summary>
+    ///	  The content of the collection changed dramatically.
+    ///	</summary>
+    caReseted,
+
+    ///	<summary>
+    ///	  An item in the collection was changed.
+    ///	</summary>
+    caChanged
+  );
+
+
   {$REGION 'TValueHelper'}
 
   TValueHelper = record helper for TValue
@@ -834,22 +875,30 @@ type
 
   {$REGION 'Multicast Event'}
 
+  TEventsChangedAction = caAdded..caRemoved;
+  TMethodPointer = procedure of object;
+  TEventsChangedEvent<T> = procedure(Sender: TObject; const Item: T;
+    Action: TEventsChangedAction) of object;
+  TEventsChangedEvent = procedure(Sender: TObject; const Item: TMethodPointer;
+    Action: TEventsChangedAction) of object;
+
+
   IEvent = interface(ICountable)
     ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
   {$REGION 'Property Accessors'}
-    function GetInvoke: TMethod;
+    function GetInvoke: TMethodPointer;
     function GetEnabled: Boolean;
     function GetIsInvokable: Boolean;
-    function GetOnChanged: TNotifyEvent;
+    function GetOnChanged: TEventsChangedEvent;
     procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(const value: TNotifyEvent);
+    procedure SetOnChanged(const value: TEventsChangedEvent);
   {$ENDREGION}
 
-    procedure Add(const handler: TMethod);
-    procedure Remove(const handler: TMethod);
+    procedure Add(const handler: TMethodPointer);
+    procedure Remove(const handler: TMethodPointer);
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
-    procedure ForEach(const action: TAction<TMethod>);
+    procedure ForEach(const action: TAction<TMethodPointer>);
 
     /// <summary>
     ///   Gets the value indicates whether the multicast event is enabled, or
@@ -863,8 +912,8 @@ type
     ///   False</b>.
     /// </summary>
     property IsInvokable: Boolean read GetIsInvokable;
-    property Invoke: TMethod read GetInvoke;
-    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+    property Invoke: TMethodPointer read GetInvoke;
+    property OnChanged: TEventsChangedEvent read GetOnChanged write SetOnChanged;
   end;
 
   /// <summary>
@@ -877,6 +926,8 @@ type
   IEvent<T> = interface(IEvent)
   {$REGION 'Property Accessors'}
     function GetInvoke: T;
+//    function GetOnChanged: TEventsChangedEvent<T>;
+//    procedure SetOnChanged(const value: TEventsChangedEvent<T>);
   {$ENDREGION}
 
     /// <summary>
@@ -918,9 +969,9 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetInvoke: T;
-    function GetOnChanged: TNotifyEvent;
+    function GetOnChanged: TEventsChangedEvent<T>;
     procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(const value: TNotifyEvent);
+    procedure SetOnChanged(value: TEventsChangedEvent<T>);
     procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
@@ -935,7 +986,7 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
-    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+    property OnChanged: TEventsChangedEvent<T> read GetOnChanged write SetOnChanged;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
     class operator Implicit(var value: Event<T>): IEvent<T>;
@@ -1416,8 +1467,8 @@ function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 
 procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
 
-function MethodReferenceToMethodPointer(const methodRef): TMethod;
-function MethodPointerToMethodReference(const method: TMethod): IInterface;
+function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
+function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
 {$ENDREGION}
 
 
@@ -1641,20 +1692,20 @@ begin
   end;
 end;
 
-function MethodReferenceToMethodPointer(const methodRef): TMethod;
+function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 type
   TVtable = array[0..3] of Pointer;
   PVtable = ^TVtable;
   PPVtable = ^PVtable;
 begin
   // 3 is offset of Invoke, after QI, AddRef, Release
-  Result.Code := PPVtable(methodRef)^^[3];
-  Result.Data := Pointer(methodRef);
+  TMethod(Result).Code := PPVtable(methodRef)^^[3];
+  TMethod(Result).Data := Pointer(methodRef);
 end;
 
-function MethodPointerToMethodReference(const method: TMethod): IInterface;
+function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
 begin
-  Result := IInterface(method.Data);
+  Result := IInterface(TMethod(method).Data);
 end;
 
 {$ENDREGION}
@@ -2543,10 +2594,10 @@ begin
   Result := fInstance.Invoke;
 end;
 
-function Event<T>.GetOnChanged: TNotifyEvent;
+function Event<T>.GetOnChanged: TEventsChangedEvent<T>;
 begin
   EnsureInitialized;
-  Result := fInstance.OnChanged;
+  Result := TEventsChangedEvent<T>(fInstance.OnChanged);
 end;
 
 procedure Event<T>.Remove(const handler: T);
@@ -2567,10 +2618,10 @@ begin
   fInstance.Enabled := value;
 end;
 
-procedure Event<T>.SetOnChanged(const value: TNotifyEvent);
+procedure Event<T>.SetOnChanged(value: TEventsChangedEvent<T>);
 begin
   EnsureInitialized;
-  fInstance.OnChanged := value;
+  fInstance.OnChanged := TEventsChangedEvent(value);
 end;
 
 class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;

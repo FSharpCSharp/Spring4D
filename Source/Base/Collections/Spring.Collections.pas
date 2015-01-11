@@ -77,45 +77,7 @@ type
   ILookup<TKey, TElement> = interface;
   {$ENDREGION}
 
-  ///	<summary>
-  ///	  Describes the action that caused a CollectionChanged event.
-  ///	</summary>
-  TCollectionChangedAction = (
-    ///	<summary>
-    ///	  An item was added to the collection.
-    ///	</summary>
-    caAdded,
-
-    ///	<summary>
-    ///	  An item was removed from the collection.
-    ///	</summary>
-    caRemoved,
-
-    ///	<summary>
-    ///	  An item was removed from the collection without considering ownership.
-    ///	</summary>
-    caExtracted,
-
-    ///	<summary>
-    ///	  An item was replaced in the collection.
-    ///	</summary>
-    caReplaced,
-
-    ///	<summary>
-    ///	  An item was moved within the collection.
-    ///	</summary>
-    caMoved,
-
-    ///	<summary>
-    ///	  The content of the collection changed dramatically.
-    ///	</summary>
-    caReseted,
-
-    ///	<summary>
-    ///	  An item in the collection was changed.
-    ///	</summary>
-    caChanged
-  );
+  TCollectionChangedAction = Spring.TCollectionChangedAction;
 
   TCollectionChangedEvent<T> = procedure(Sender: TObject; const Item: T;
     Action: TCollectionChangedAction) of object;

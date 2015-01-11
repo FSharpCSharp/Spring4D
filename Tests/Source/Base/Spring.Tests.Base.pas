@@ -114,6 +114,11 @@ type
     procedure HandlerSingle(const value: Single);
     procedure HandlerDouble(const value: Double);
     procedure HandlerExtended(const value: Extended);
+
+    procedure HandleChanged(Sender: TObject; const handler: TEventInt64;
+      action: TEventsChangedAction);
+    procedure HandleChanged2(Sender: TObject;
+      const handler: TProc<Integer, string>; action: TEventsChangedAction);
   published
     procedure TestEmpty;
     procedure TestInvoke;
@@ -123,6 +128,8 @@ type
     procedure TestIssue58;
     procedure TestDelegate;
     procedure TestIssue60;
+    procedure TestNotify;
+    procedure TestNotifyDelegate;
   end;
 
   TTestMulticastEventStackSize = class(TTestCase)
@@ -569,6 +576,50 @@ begin
   eventExtended.Invoke(42); Inc(expected);
 
   CheckEquals(expected, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestNotify;
+var
+  event: Event<TEventInt64>;
+begin
+  event.OnChanged := HandleChanged;
+  event.Add(HandlerInt64);
+  CheckTrue(fAInvoked);
+  event.Remove(HandlerInt64);
+  CheckTrue(fBInvoked);
+  CheckEquals(2, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestNotifyDelegate;
+var
+  event2: Event<TProc<Integer, string>>;
+begin
+  event2.OnChanged := HandleChanged2;
+  event2.Add(fProc);
+  CheckTrue(fAInvoked);
+  event2.Remove(fProc);
+  CheckTrue(fBInvoked);
+  CheckEquals(2, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.HandleChanged(Sender: TObject;
+  const handler: TEventInt64; action: TEventsChangedAction);
+begin
+  handler(42);
+  case action of
+    caAdded: fAInvoked := True;
+    caRemoved: fBInvoked := True;
+  end
+end;
+
+procedure TTestMulticastEvent.HandleChanged2(Sender: TObject;
+  const handler: TProc<Integer, string>; action: TEventsChangedAction);
+begin
+  handler(1, CText);
+  case action of
+    caAdded: fAInvoked := True;
+    caRemoved: fBInvoked := True;
+  end
 end;
 
 procedure TTestMulticastEvent.TestOneHandler;
