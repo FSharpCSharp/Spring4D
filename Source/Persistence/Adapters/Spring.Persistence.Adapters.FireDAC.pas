@@ -199,7 +199,7 @@ begin
   if serverSideCursor then
     query.FetchOptions.CursorKind := ckForwardOnly;
   try
-    query.Open;
+    query.OpenOrExecute;
     Result := TFireDACResultSetAdapter.Create(query);
   except
     on E:Exception do
