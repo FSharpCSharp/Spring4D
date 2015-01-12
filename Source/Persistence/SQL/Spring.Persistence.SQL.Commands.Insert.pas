@@ -174,7 +174,6 @@ var
   queryText: string;
   value: TValue;
 begin
-  BuildParams(entityWrapper.GetEntity);
   if EntityData.HasVersionColumn then
     entityWrapper.SetColumnValue(EntityData.VersionColumn, 0);
 
@@ -182,6 +181,7 @@ begin
   if not value.IsEmpty then
     entityWrapper.SetPrimaryKeyValue(value);
 
+  BuildParams(entityWrapper.GetEntity);
   queryText := GetInsertQueryText;
   statement := Connection.CreateStatement;
   statement.SetSQLCommand(queryText);

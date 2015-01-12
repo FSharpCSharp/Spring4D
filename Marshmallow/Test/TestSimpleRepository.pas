@@ -36,7 +36,7 @@ type
     property Repository: IPagedRepository<TCustomer, Integer> read FRepository write FRepository;
   published
     procedure FindOne();
-    procedure Count();
+    procedure Count;
   end;
 
   TCustomRepositoryTests = class(TSimpleRepositoryTests)
@@ -44,7 +44,6 @@ type
     FCustomerRepository: ICustomerRepository;
   public
     procedure SetUp; override;
-    procedure TearDown; override;
   published
     procedure FindByName();
     procedure FindByName_Paged();
@@ -153,13 +152,8 @@ end;
 procedure TCustomRepositoryTests.SetUp;
 begin
   inherited;
-  FCustomerRepository := TProxyRepository<TCustomer, Integer>.Create(FSession, TypeInfo(ICustomerRepository)) as ICustomerRepository;
-end;
-
-procedure TCustomRepositoryTests.TearDown;
-begin
-  inherited;
-
+  FCustomerRepository := TProxyRepository<TCustomer, Integer>.Create(
+    FSession, TypeInfo(ICustomerRepository)) as ICustomerRepository;
 end;
 
 initialization
