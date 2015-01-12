@@ -104,8 +104,6 @@ end;
 
 
 procedure TInsertExecutor.Build(entityClass: TClass);
-var
-  insertField: TSQLInsertField;
 begin
   inherited Build(entityClass);
   if not EntityData.IsTableEntity then
@@ -122,9 +120,16 @@ begin
     fGetSequenceValueSQL := ResolveGetSequenceSQL;
     if fGetSequenceValueSQL <> '' then
     begin
-      insertField := TSQLInsertField.Create(EntityData.PrimaryKeyColumn.ColumnName,
-        fTable, EntityData.PrimaryKeyColumn, fCommand.GetAndIncParameterName(EntityData.PrimaryKeyColumn.ColumnName));
-      fCommand.InsertFields.Add(insertField);
+      if not fCommand.InsertFields.Any(function(const value: TSQLInsertField): Boolean
+        begin
+          Result := value.Column = EntityData.PrimaryKeyColumn;
+        end)
+      then
+        fCommand.InsertFields.Add(
+          TSQLInsertField.Create(
+            EntityData.PrimaryKeyColumn.ColumnName,
+            fTable, EntityData.PrimaryKeyColumn,
+            fCommand.GetAndIncParameterName(EntityData.PrimaryKeyColumn.ColumnName)));
     end;
   end;
 
