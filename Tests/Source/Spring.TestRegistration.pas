@@ -34,6 +34,7 @@ implementation
 
 uses
   TestFramework,
+  TestExtensions,
   Spring.TestUtils,
   Spring.Tests.Base,
   Spring.Tests.Collections,
