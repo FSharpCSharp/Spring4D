@@ -74,7 +74,7 @@ var
 begin
   // example one
   commandChannel := Mock<ICommandChannel>.Create(TMockBehavior.Strict);
-  commandChannel.Setup.Returns(
+  commandChannel.Setup.Executes(
     function(const i: TCallInfo): TValue
     begin
       ShowMessage(i.Method.ToString);

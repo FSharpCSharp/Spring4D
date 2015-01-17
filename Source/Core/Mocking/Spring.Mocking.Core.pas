@@ -66,8 +66,7 @@ type
 
   {$REGION 'Implements ISetup'}
     function Executes: IWhen; overload;
-    function Executes(const action: TProc): IWhen; overload;
-    function Executes(const action: TAction<TCallInfo>): IWhen; overload;
+    function Executes(const action: TMockAction): IWhen; overload;
 
     function Raises(const exceptionClass: ExceptClass;
       const msg: string = ''): IWhen; overload;
@@ -76,10 +75,6 @@ type
 
     function Returns(const value: TValue): IWhen; overload;
     function Returns(const values: array of TValue): IWhen; overload;
-    function Returns(const action: TFunc<TValue>): IWhen; overload;
-    function Returns(const actions: array of TFunc<TValue>): IWhen; overload;
-    function Returns(const action: TMockAction): IWhen; overload;
-    function Returns(const actions: array of TMockAction): IWhen; overload;
   {$ENDREGION}
 
   {$REGION 'Implements IWhen'}
@@ -108,8 +103,7 @@ type
 
   {$REGION 'Implements ISetup<T>'}
     function Executes: IWhen<T>; overload;
-    function Executes(const action: TProc): IWhen<T>; overload;
-    function Executes(const action: TAction<TCallInfo>): IWhen<T>; overload;
+    function Executes(const action: TMockAction): IWhen<T>; overload;
 
     function Raises(const exceptionClass: ExceptClass;
       const msg: string = ''): IWhen<T>; overload;
@@ -118,10 +112,6 @@ type
 
     function Returns(const value: TValue): IWhen<T>; overload;
     function Returns(const values: array of TValue): IWhen<T>; overload;
-    function Returns(const action: TFunc<TValue>): IWhen<T>; overload;
-    function Returns(const actions: array of TFunc<TValue>): IWhen<T>; overload;
-    function Returns(const action: TMockAction): IWhen<T>; overload;
-    function Returns(const actions: array of TMockAction): IWhen<T>; overload;
   {$ENDREGION}
 
   {$REGION 'Implements IWhen<T>'}
@@ -214,23 +204,9 @@ begin
   Result := Self;
 end;
 
-function TMock.Executes(const action: TProc): IWhen;
+function TMock.Executes(const action: TMockAction): IWhen;
 begin
-  fInterceptor.Returns(
-    function(const callInfo: TCallInfo): TValue
-    begin
-      action();
-    end);
-  Result := Self;
-end;
-
-function TMock.Executes(const action: TAction<TCallInfo>): IWhen;
-begin
-  fInterceptor.Returns(
-    function(const callInfo: TCallInfo): TValue
-    begin
-      action(callInfo);
-    end);
+  fInterceptor.Returns(action);
   Result := Self;
 end;
 
@@ -290,38 +266,6 @@ begin
   Result := Self;
 end;
 
-function TMock.Returns(const action: TFunc<TValue>): IWhen;
-begin
-  fInterceptor.Returns(
-    function(const callInfo: TCallInfo): TValue
-    begin
-      Result := action;
-    end);
-  Result := Self;
-end;
-
-function TMock.Returns(const actions: array of TFunc<TValue>): IWhen;
-var
-  tempActions: TArray<TFunc<TValue>>;
-begin
-  tempActions := TArray.Copy<TFunc<TValue>>(actions);
-  fInterceptor.Returns(
-    function(const callInfo: TCallInfo): TValue
-    var
-      action: TFunc<TValue>;
-    begin
-      for action in tempActions do
-        Result := action;
-    end);
-  Result := Self;
-end;
-
-function TMock.Returns(const action: TMockAction): IWhen;
-begin
-  fInterceptor.Returns(action);
-  Result := Self;
-end;
-
 procedure TMock.Received;
 begin
   fInterceptor.Received(Times.AtLeastOnce);
@@ -340,22 +284,6 @@ end;
 procedure TMock.ReceivedWithAnyArgs(const times: Times);
 begin
   fInterceptor.ReceivedForAnyArgs(times);
-end;
-
-function TMock.Returns(const actions: array of TMockAction): IWhen;
-var
-  tempActions: TArray<TMockAction>;
-begin
-  tempActions := TArray.Copy<TMockAction>(actions);
-  fInterceptor.Returns(
-    function(const callInfo: TCallInfo): TValue
-    var
-      action: TMockAction;
-    begin
-      for action in tempActions do
-        Result := action(callInfo);
-    end);
-  Result := Self;
 end;
 
 function TMock.Setup: ISetup;
@@ -395,13 +323,7 @@ begin
   Result := Self;
 end;
 
-function TMock<T>.Executes(const action: TProc): IWhen<T>;
-begin
-  inherited Executes(action);
-  Result := Self;
-end;
-
-function TMock<T>.Executes(const action: TAction<TCallInfo>): IWhen<T>;
+function TMock<T>.Executes(const action: TMockAction): IWhen<T>;
 begin
   inherited Executes(action);
   Result := Self;
@@ -454,30 +376,6 @@ end;
 function TMock<T>.Returns(const values: array of TValue): IWhen<T>;
 begin
   inherited Returns(values);
-  Result := Self;
-end;
-
-function TMock<T>.Returns(const action: TFunc<TValue>): IWhen<T>;
-begin
-  inherited Returns(action);
-  Result := Self;
-end;
-
-function TMock<T>.Returns(const actions: array of TFunc<TValue>): IWhen<T>;
-begin
-  inherited Returns(actions);
-  Result := Self;
-end;
-
-function TMock<T>.Returns(const action: TMockAction): IWhen<T>;
-begin
-  inherited Returns(action);
-  Result := Self;
-end;
-
-function TMock<T>.Returns(const actions: array of TMockAction): IWhen<T>;
-begin
-  inherited Returns(actions);
   Result := Self;
 end;
 

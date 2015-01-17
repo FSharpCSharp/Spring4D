@@ -70,8 +70,7 @@ type
   ISetup = interface(IInvokable)
     ['{0BC12D48-41FF-46D0-93B3-773EE19D75ED}']
     function Executes: IWhen; overload;
-    function Executes(const action: TProc): IWhen; overload;
-    function Executes(const action: TAction<TCallInfo>): IWhen; overload;
+    function Executes(const action: TMockAction): IWhen; overload;
 
     function Raises(const exceptionClass: ExceptClass;
       const msg: string = ''): IWhen; overload;
@@ -80,10 +79,6 @@ type
 
     function Returns(const value: TValue): IWhen; overload;
     function Returns(const values: array of TValue): IWhen; overload;
-    function Returns(const action: TFunc<TValue>): IWhen; overload;
-    function Returns(const actions: array of TFunc<TValue>): IWhen; overload;
-    function Returns(const action: TMockAction): IWhen; overload;
-    function Returns(const actions: array of TMockAction): IWhen; overload;
   end;
 
   IMock = interface(IInvokable)
@@ -111,8 +106,7 @@ type
   ISetup<T> = interface(IInvokable)
     ['{CD661866-EB29-400C-ABC8-19FC8D59FFAD}']
     function Executes: IWhen<T>; overload;
-    function Executes(const action: TProc): IWhen<T>; overload;
-    function Executes(const action: TAction<TCallInfo>): IWhen<T>; overload;
+    function Executes(const action: TMockAction): IWhen<T>; overload;
 
     function Raises(const exceptionClass: ExceptClass;
       const msg: string = ''): IWhen<T>; overload;
@@ -121,10 +115,6 @@ type
 
     function Returns(const value: TValue): IWhen<T>; overload;
     function Returns(const values: array of TValue): IWhen<T>; overload;
-    function Returns(const action: TFunc<TValue>): IWhen<T>; overload;
-    function Returns(const actions: array of TFunc<TValue>): IWhen<T>; overload;
-    function Returns(const action: TMockAction): IWhen<T>; overload;
-    function Returns(const actions: array of TMockAction): IWhen<T>; overload;
   end;
 
   IMock<T> = interface(IInvokable)
