@@ -140,7 +140,7 @@ begin
       fBuildEngine.SelectedTasks.Add(task);
     end;
   end;
-  btnBuild.Enabled := not fBuildEngine.SelectedTasks.IsEmpty;
+  btnBuild.Enabled := fBuildEngine.SelectedTasks.Any;
 end;
 
 procedure TfrmMain.mniUncheckAllClick(Sender: TObject);

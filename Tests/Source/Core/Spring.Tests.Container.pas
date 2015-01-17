@@ -98,6 +98,8 @@ type
     procedure TestIssue50;
 
     procedure TestResolveFuncWithTwoTypes;
+    procedure TestResolveUnknownClass;
+    procedure TestResolveUnknownClasses;
   end;
 
   // Same Service, Different Implementations
@@ -205,6 +207,11 @@ type
   published
     procedure TestResolveChicken;
     procedure TestResolveEgg;
+  end;
+
+  TTestPerResolve = class(TContainerTestCase)
+  published
+    procedure TestResolveCircularDependency;
   end;
 
   TTestImplementsAttribute = class(TContainerTestCase)
@@ -574,7 +581,11 @@ begin
   finally
 {$IFNDEF AUTOREFCOUNT}
     fContainer.Release(obj1);
-    fContainer.Release(obj2);
+    try
+      // might raise an exception because ClassType is nil with FastMM4 full debug
+      fContainer.Release(obj2);
+    except
+    end;
 {$ELSE}
     obj1 := nil;
     obj2 := nil;
@@ -764,6 +775,33 @@ begin
     begin
       fContainer.Resolve<TFunc<IAgeService, INameService>>;
     end);
+end;
+
+procedure TTestSimpleContainer.TestResolveUnknownClass;
+var
+  component: TBootstrapComponent;
+begin
+  fContainer.RegisterType<TNameService>;
+  fContainer.Build;
+
+  component := nil;
+  try
+    component := fContainer.Resolve<TBootstrapComponent>;
+    CheckEquals('Name', component.NameService.Name);
+  finally
+    component.Free;
+  end;
+end;
+
+procedure TTestSimpleContainer.TestResolveUnknownClasses;
+var
+  factory: ISomeFactory;
+begin
+  fContainer.RegisterType<ISomeService, TSomeService>;
+  fContainer.RegisterType<ISomeFactory, TSomeFactory>;
+  fContainer.Build;
+
+  factory := fContainer.Resolve<ISomeFactory>;
 end;
 
 procedure TTestSimpleContainer.TestInitializable;
@@ -1134,6 +1172,26 @@ var
 begin
   ExpectedException := ECircularDependencyException;
   egg := fContainer.Resolve<IEgg>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestPerResolve'}
+
+procedure TTestPerResolve.TestResolveCircularDependency;
+var
+  chicken: IChicken;
+begin
+  fContainer.RegisterType<IChicken, TChicken>
+    .InjectConstructor
+    .PerResolve
+    .InjectProperty('Egg');
+  fContainer.RegisterType<IEgg, TEgg>;
+  fContainer.Build;
+  chicken := fContainer.Resolve<IChicken>;
+  CheckSame(chicken, chicken.Egg.Chicken);
+  chicken.Egg := nil;
 end;
 
 {$ENDREGION}

@@ -34,6 +34,7 @@ implementation
 
 uses
   TestFramework,
+  TestExtensions,
   Spring.TestUtils,
   Spring.Tests.Base,
   Spring.Tests.Collections,
@@ -66,7 +67,11 @@ begin
     TTestMulticastEvent.Suite,
     TTestMulticastEventStackSize.Suite,
 {$ENDIF}
-    TTestSpringEventsMethods.Suite
+    TTestSpringEventsMethods.Suite,
+    TTestTuplesDouble.Suite,
+    TTestTuplesTriple.Suite,
+    TTestTuplesQuadruple.Suite,
+    TTestSmartPointer.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections', [
@@ -199,6 +204,7 @@ begin
     TTestNamedInjectionsByAttribute.Suite,
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite,
+    TTestPerResolve.Suite,
     TTestImplementsAttribute.Suite,
     TTestRegisterInterfaces.Suite,
     TTestSingletonLifetimeManager.Suite,

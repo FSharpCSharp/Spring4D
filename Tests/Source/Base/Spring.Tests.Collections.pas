@@ -453,7 +453,7 @@ end;
 procedure TTestEmptyHashSet.TestEmpty;
 begin
   CheckEquals(0, fSet.Count);
-  CheckTrue(fSet.IsEmpty);
+  CheckFalse(fSet.Any);
 end;
 
 procedure TTestEmptyHashSet.TestExceptWith;
@@ -747,6 +747,7 @@ end;
 procedure TTestIntegerList.TestIssue53;
 begin
   SUT := TIntegerList.Create;
+  FCheckCalled := True;
 end;
 
 procedure TTestIntegerList.TestIssue67;
@@ -1150,7 +1151,7 @@ const
 begin
   SUT := TStack<Integer>.Create(values);
   CheckTrue(SUT.EqualsTo(values));
-  SUT := TStack<Integer>.Create(TCollections.Range(0, 10));
+  SUT := TStack<Integer>.Create(TEnumerable.Range(0, 10));
   CheckTrue(SUT.EqualsTo(values));
 end;
 
@@ -1276,7 +1277,7 @@ end;
 procedure TTestStackOfIntegerChangedEvent.TestEmpty;
 begin
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 
   SUT.Push(0);
 
@@ -1302,7 +1303,7 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 end;
 
 procedure TTestStackOfIntegerChangedEvent.TestTwoHandlers;
@@ -1328,9 +1329,9 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(1, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.IsEmpty);
+  CheckTrue(SUT.OnChanged.Any);
   SUT.OnChanged.Remove(HandlerB);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 end;
 
 procedure TTestStackOfIntegerChangedEvent.TestNonGenericChangedEvent;
@@ -1340,13 +1341,13 @@ var
 begin
   event := SUT.OnChanged;
 
-  CheckTrue(event.IsEmpty);
+  CheckFalse(event.Any);
   CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  event.Add(method);
+  event.Add(TMethodPointer(method));
 
   CheckEquals(1, event.Count);
   CheckEquals(1, SUT.OnChanged.Count);
@@ -1431,7 +1432,7 @@ const
 begin
   SUT := TQueue<Integer>.Create(values);
   CheckTrue(SUT.EqualsTo(values));
-  SUT := TQueue<Integer>.Create(TCollections.Range(0, 10));
+  SUT := TQueue<Integer>.Create(TEnumerable.Range(0, 10));
   CheckTrue(SUT.EqualsTo(values));
 end;
 
@@ -1552,7 +1553,7 @@ end;
 procedure TTestQueueOfIntegerChangedEvent.TestEmpty;
 begin
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 
   SUT.Enqueue(0);
 
@@ -1578,7 +1579,7 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestTwoHandlers;
@@ -1604,9 +1605,9 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(1, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.IsEmpty);
+  CheckTrue(SUT.OnChanged.Any);
   SUT.OnChanged.Remove(HandlerB);
-  CheckTrue(SUT.OnChanged.IsEmpty);
+  CheckFalse(SUT.OnChanged.Any);
 end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestNonGenericChangedEvent;
@@ -1616,13 +1617,13 @@ var
 begin
   event := SUT.OnChanged;
 
-  CheckTrue(event.IsEmpty);
+  CheckFalse(event.Any);
   CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  event.Add(method);
+  event.Add(TMethodPointer(method));
 
   CheckEquals(1, event.Count);
   CheckEquals(1, SUT.OnChanged.Count);
@@ -1660,7 +1661,7 @@ end;
 procedure TTestListOfIntegerAsIEnumerable.TestEnumerableIsEmpty;
 begin
   CheckEquals(0, SUT.Count);
-  CheckTrue(SUT.IsEmpty);
+  CheckFalse(SUT.Any);
 end;
 
 procedure TTestListOfIntegerAsIEnumerable.TestEnumerableLast;
@@ -2143,7 +2144,7 @@ end;
 
 procedure TTestEnumerable.SetUp;
 begin
-  SUT := TCollections.Range(0, MaxItems);
+  SUT := TEnumerable.Range(0, MaxItems);
 end;
 
 procedure TTestEnumerable.TestToArray;
@@ -2185,7 +2186,7 @@ end;
 
 procedure TTestListAdapter.TestListAddRangeIEnumerable;
 begin
-  SUT.AddRange(TCollections.Range(4, 2));
+  SUT.AddRange(TEnumerable.Range(4, 2));
   CheckTrue(InternalList.EqualsTo([1, 2, 3, 4, 5]));
 end;
 
@@ -2202,7 +2203,7 @@ end;
 procedure TTestListAdapter.TestListClear;
 begin
   SUT.Clear;
-  CheckTrue(InternalList.IsEmpty)
+  CheckFalse(InternalList.Any)
 end;
 
 procedure TTestListAdapter.TestListDelete;
@@ -2243,7 +2244,7 @@ end;
 
 procedure TTestListAdapter.TestListExtractRangeIEnumerable;
 begin
-  SUT.ExtractRange(TCollections.Range(1, 2));
+  SUT.ExtractRange(TEnumerable.Range(1, 2));
   CheckTrue(InternalList.EqualsTo([3]));
 end;
 
@@ -2286,7 +2287,7 @@ var
   m: TMethod;
 begin
   TCollectionChangedEvent<Integer>(m) := ListChanged;
-  SUT.OnChanged.Add(m);
+  SUT.OnChanged.Add(TMethodPointer(m));
   SUT.Clear;
 end;
 
@@ -2312,7 +2313,7 @@ end;
 
 procedure TTestListAdapter.TestListInsertRangeIEnumerable;
 begin
-  SUT.InsertRange(0, TCollections.Range(3, 2));
+  SUT.InsertRange(0, TEnumerable.Range(3, 2));
   CheckTrue(InternalList.EqualsTo([3, 4, 1, 2, 3]));
 end;
 
@@ -2358,7 +2359,7 @@ end;
 
 procedure TTestListAdapter.TestListRemoveRangeIEnumerable;
 begin
-  SUT.RemoveRange(TCollections.Range(1, 2));
+  SUT.RemoveRange(TEnumerable.Range(1, 2));
   CheckTrue(InternalList.EqualsTo([3]));
 end;
 

@@ -34,7 +34,6 @@ uses
   Rtti,
   TestFramework,
   Generics.Defaults,
-  Spring.Collections,
   Spring.Logging,
   Spring.Logging.Extensions,
   Spring.Logging.Controller,
@@ -120,6 +119,9 @@ type
 
 
 implementation
+
+uses
+  Spring;
 
 {$REGION 'TSerializerTestCase'}
 

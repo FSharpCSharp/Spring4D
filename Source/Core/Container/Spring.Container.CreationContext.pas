@@ -40,6 +40,7 @@ type
     fResolutionStack: IStack<TComponentModel>;
     fModel: TComponentModel;
     fArguments: IList<TValue>;
+    fPerResolveInstances: IDictionary<TComponentModel, TValue>;
     fNamedArguments: IList<TNamedValue>;
     fTypedArguments: IList<TTypedValue>;
   public
@@ -47,16 +48,16 @@ type
       const arguments: array of TValue);
 
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): Boolean;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): TValue;
+      const dependency: TDependencyModel; const argument: TValue): TValue;
 
-    procedure EnterResolution(const model: TComponentModel);
+    function EnterResolution(const model: TComponentModel;
+      out instance: TValue): Boolean;
     procedure LeaveResolution(const model: TComponentModel);
 
     procedure AddArgument(const argument: TValue);
+    procedure AddPerResolve(const model: TComponentModel; const instance: TValue);
     function TryHandle(const injection: IInjection;
       out handled: IInjection): Boolean;
   end;
@@ -65,6 +66,7 @@ implementation
 
 uses
   SysUtils,
+  TypInfo,
   Spring.Container.Injection,
   Spring.Container.ResourceStrings,
   Spring.Reflection;
@@ -85,6 +87,7 @@ begin
   fTypedArguments := TCollections.CreateList<TTypedValue>;
   for i := Low(arguments) to High(arguments) do
     AddArgument(arguments[i]);
+  fPerResolveInstances := TCollections.CreateDictionary<TComponentModel, TValue>;
 end;
 
 procedure TCreationContext.AddArgument(const argument: TValue);
@@ -97,9 +100,14 @@ begin
     fArguments.Add(argument);
 end;
 
+procedure TCreationContext.AddPerResolve(const model: TComponentModel;
+  const instance: TValue);
+begin
+  fPerResolveInstances.Add(model, instance);
+end;
+
 function TCreationContext.CanResolve(const context: ICreationContext;
-  const model: TComponentModel; const dependency: TDependencyModel;
-  const argument: TValue): Boolean;
+  const dependency: TDependencyModel; const argument: TValue): Boolean;
 var
   i: Integer;
 begin
@@ -134,7 +142,7 @@ begin
       else
         Exit(False); // argument and parameter types did not match
   end
-  else if not fArguments.IsEmpty then
+  else if fArguments.Any then
     Exit(False);
   for value in fNamedArguments do // check all named arguments
   begin
@@ -161,14 +169,18 @@ begin
     handled.Dependencies[i] := injection.Dependencies[i];
 end;
 
-procedure TCreationContext.EnterResolution(const model: TComponentModel);
+function TCreationContext.EnterResolution(const model: TComponentModel;
+  out instance: TValue): Boolean;
 begin
   if not Assigned(fModel) then // set the model if we don't know it yet
     fModel := model;
+  if fPerResolveInstances.TryGetValue(model, instance) then
+    Exit(False);
   if fResolutionStack.Contains(model) then
     raise ECircularDependencyException.CreateResFmt(
       @SCircularDependencyDetected, [model.ComponentTypeName]);
   fResolutionStack.Push(model);
+  Result := True;
 end;
 
 procedure TCreationContext.LeaveResolution(const model: TComponentModel);
@@ -178,8 +190,7 @@ begin
 end;
 
 function TCreationContext.Resolve(const context: ICreationContext;
-  const model: TComponentModel; const dependency: TDependencyModel;
-  const argument: TValue): TValue;
+  const dependency: TDependencyModel; const argument: TValue): TValue;
 var
   i: Integer;
 begin

@@ -561,8 +561,8 @@ begin
   msg := 'message';
   storage.Save(msg);
 
-  CheckTrue(fSecondaryStorage.Items.IsEmpty);
-  CheckFalse(fPrimaryStorage.Items.IsEmpty);
+  CheckFalse(fSecondaryStorage.Items.Any);
+  CheckTrue(fPrimaryStorage.Items.Any);
   CheckEquals(msg, fPrimaryStorage.Items.First);
 end;
 
@@ -576,8 +576,8 @@ begin
   msg := 'message';
   storage.Save(msg);
 
-  CheckTrue(fPrimaryStorage.Items.IsEmpty);
-  CheckFalse(fSecondaryStorage.Items.IsEmpty);
+  CheckFalse(fPrimaryStorage.Items.Any);
+  CheckTrue(fSecondaryStorage.Items.Any);
   CheckEquals(msg, fSecondaryStorage.Items.First);
 end;
 

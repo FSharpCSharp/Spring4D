@@ -81,8 +81,7 @@ uses
   SysUtils,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Reflection,
-  Spring.Reflection.Activator;
+  Spring.Reflection;
 
 
 {$REGION 'TComponentActivatorBase'}
@@ -100,6 +99,9 @@ end;
 procedure TComponentActivatorBase.ExecuteInjections(var instance: TValue;
   context: ICreationContext);
 begin
+  if Model.LifetimeType in [TLifetimeType.Singleton, TLifetimeType.PerResolve,
+    TLifetimeType.SingletonPerThread] then
+    context.AddPerResolve(Model, instance);
   try
     ExecuteInjections(instance, Model.FieldInjections, context);
     ExecuteInjections(instance, Model.PropertyInjections, context);
@@ -132,7 +134,7 @@ begin
   for injection in injections do
   begin
     arguments := Kernel.Resolver.Resolve(
-      context, Model, injection.Dependencies, injection.Arguments);
+      context, injection.Dependencies, injection.Arguments);
     injection.Inject(instance, arguments);
   end;
 end;
@@ -152,7 +154,7 @@ begin
   if injection = nil then
     raise EActivatorException.CreateResFmt(@SUnsatisfiedConstructor, [Model.ComponentTypeName]);
   arguments := Kernel.Resolver.Resolve(
-    context, Model, injection.Dependencies, injection.Arguments);
+    context, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(
     Model.ComponentType.AsInstance, injection.Target.AsMethod, arguments);
   ExecuteInjections(Result, context);
@@ -188,7 +190,7 @@ var
 begin
   Result := context.TryHandle(candidate, injection)
     and Kernel.Resolver.CanResolve(
-    context, Model, injection.Dependencies, injection.Arguments);
+    context, injection.Dependencies, injection.Arguments);
   if Result then
     winner := injection;
 end;

@@ -206,10 +206,10 @@ begin
     if not fInitialized then
       Initialize(context);
 
-    if fAvailableList.IsEmpty then
+    if not fAvailableList.Any then
       CollectInactiveInstances;
 
-    if not fAvailableList.IsEmpty then
+    if fAvailableList.Any then
       Result := GetAvailableObject
     else
       Result := AddNewInstance(context);

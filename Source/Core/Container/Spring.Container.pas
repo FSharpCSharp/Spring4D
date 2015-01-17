@@ -52,6 +52,11 @@ type
     fProxyFactory: IProxyFactory;
     fExtensions: IList<IContainerExtension>;
     fLogger: ILogger;
+    fChangedModels: ISet<TComponentModel>;
+    procedure CheckBuildRequired;
+    procedure HandleBuild(Sender: TObject; const model: TComponentModel);
+    procedure HandleRegistryChanged(Sender: TObject;
+      const model: TComponentModel; action: TCollectionChangedAction);
     class var GlobalInstance: TContainer;
     function GetKernel: IKernel;
     type
@@ -60,12 +65,12 @@ type
     class constructor Create;
     class destructor Destroy;
   {$REGION 'Implements IKernel'}
-    function GetBuilder: IComponentBuilder;
-    function GetInjector: IDependencyInjector;
-    function GetRegistry: IComponentRegistry;
-    function GetResolver: IDependencyResolver;
-    function GetProxyFactory: IProxyFactory;
-    function GetLogger: ILogger;
+    function GetBuilder: IComponentBuilder; inline;
+    function GetInjector: IDependencyInjector; inline;
+    function GetRegistry: IComponentRegistry; inline;
+    function GetResolver: IDependencyResolver; inline;
+    function GetLogger: ILogger; inline;
+    function GetProxyFactory: IProxyFactory; inline;
     procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
@@ -82,35 +87,35 @@ type
 
 {$IFDEF DELPHIXE_UP}
     function RegisterFactory<TFactoryType: IInterface>(
-      const name: string = ''): TRegistration<TFactoryType>; overload;
-    function RegisterFactory<TFactoryType: IInterface>(const name: string;
-      const serviceName: string): TRegistration<TFactoryType>; overload;
+      const serviceName: string = ''): TRegistration<TFactoryType>; overload;
+    function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
+      const resolvedServiceName: string): TRegistration<TFactoryType>; overload;
 {$ENDIF}
 
     function RegisterInstance<TServiceType>(const instance: TServiceType;
-      const name: string = ''): TRegistration<TServiceType>; overload;
+      const serviceName: string = ''): TRegistration<TServiceType>; overload;
 
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterType(componentType: PTypeInfo): IRegistration; overload;
     function RegisterType<TServiceType>(
-      const name: string): TRegistration<TServiceType>; overload;
+      const serviceName: string): TRegistration<TServiceType>; overload;
     function RegisterType<TServiceType, TComponentType>(
-      const name: string = ''): TRegistration<TComponentType>; overload;
+      const serviceName: string = ''): TRegistration<TComponentType>; overload;
     function RegisterType(serviceType, componentType: PTypeInfo;
-      const name: string = ''): IRegistration; overload;
+      const serviceName: string = ''): IRegistration; overload;
 
     procedure Build;
 
     function Resolve<T>: T; overload;
     function Resolve<T>(const arguments: array of TValue): T; overload;
-    function Resolve<T>(const name: string): T; overload;
-    function Resolve<T>(const name: string;
+    function Resolve<T>(const serviceName: string): T; overload;
+    function Resolve<T>(const serviceName: string;
       const arguments: array of TValue): T; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
     function Resolve(serviceType: PTypeInfo;
       const arguments: array of TValue): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string;
+    function Resolve(const serviceName: string): TValue; overload;
+    function Resolve(const serviceName: string;
       const arguments: array of TValue): TValue; overload;
 
     function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
@@ -143,14 +148,14 @@ type
     constructor Create(const container: TContainer);
 
     function GetService(serviceType: PTypeInfo): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const serviceName: string): TValue; overload;
     function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const name: string; const args: array of TValue): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const serviceName: string; const args: array of TValue): TValue; overload;
 
     function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
   end;
 
 
@@ -248,12 +253,21 @@ begin
   GlobalInstance.Free;
 end;
 
+procedure TContainer.CheckBuildRequired;
+begin
+  if fChangedModels.Any then
+    raise EContainerException.CreateRes(@SContainerRequiresBuild);
+end;
+
 constructor TContainer.Create;
 begin
   inherited Create;
+  fChangedModels := TCollections.CreateSet<TComponentModel>;
   fLogger := TNullLogger.GlobalInstance;
   fRegistry := TComponentRegistry.Create(Self);
+  fRegistry.OnChanged.Add(HandleRegistryChanged);
   fBuilder := TComponentBuilder.Create(Self);
+  fBuilder.OnBuild.Add(HandleBuild);
   fInjector := TDependencyInjector.Create;
   fRegistrationManager := TRegistrationManager.Create(Self);
   fResolver := TDependencyResolver.Create(Self);
@@ -268,6 +282,7 @@ end;
 
 destructor TContainer.Destroy;
 begin
+  fChangedModels.Clear;
   fRegistrationManager.Free;
   fBuilder.ClearInspectors;
   fRegistry.UnregisterAll;
@@ -304,6 +319,7 @@ end;
 procedure TContainer.Build;
 begin
   fBuilder.BuildAll;
+  fChangedModels.Clear;
 end;
 
 procedure TContainer.InitializeInspectors;
@@ -361,24 +377,35 @@ begin
   Result := fResolver;
 end;
 
+procedure TContainer.HandleBuild(Sender: TObject; const model: TComponentModel);
+begin
+  fChangedModels.Remove(model);
+end;
+
+procedure TContainer.HandleRegistryChanged(Sender: TObject;
+  const model: TComponentModel; action: TCollectionChangedAction);
+begin
+  fChangedModels.Add(model);
+end;
+
 {$IFDEF DELPHIXE_UP}
 function TContainer.RegisterFactory<TFactoryType>(
-  const name: string): TRegistration<TFactoryType>;
+  const serviceName: string): TRegistration<TFactoryType>;
 begin
-  Result := RegisterType<TFactoryType>(name);
+  Result := RegisterType<TFactoryType>(serviceName);
   Result := Result.AsFactory;
 end;
 
-function TContainer.RegisterFactory<TFactoryType>(const name,
-  serviceName: string): TRegistration<TFactoryType>;
+function TContainer.RegisterFactory<TFactoryType>(const serviceName,
+  resolvedServiceName: string): TRegistration<TFactoryType>;
 begin
-  Result := RegisterType<TFactoryType>(name);
-  Result := Result.AsFactory(serviceName);
+  Result := RegisterType<TFactoryType>(serviceName);
+  Result := Result.AsFactory(resolvedServiceName);
 end;
 {$ENDIF}
 
 function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
-  const name: string): TRegistration<TServiceType>;
+  const serviceName: string): TRegistration<TServiceType>;
 begin
   Result := fRegistrationManager.RegisterType<TServiceType>;
   Result := Result.DelegateTo(
@@ -386,7 +413,7 @@ begin
     begin
       Result := instance;
     end);
-  Result := Result.Implements<TServiceType>(name);
+  Result := Result.Implements<TServiceType>(serviceName);
 end;
 
 function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;
@@ -395,17 +422,17 @@ begin
 end;
 
 function TContainer.RegisterType<TServiceType>(
-  const name: string): TRegistration<TServiceType>;
+  const serviceName: string): TRegistration<TServiceType>;
 begin
   Result := fRegistrationManager.RegisterType<TServiceType>;
-  Result := Result.Implements<TServiceType>(name);
+  Result := Result.Implements<TServiceType>(serviceName);
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
-  const name: string): TRegistration<TComponentType>;
+  const serviceName: string): TRegistration<TComponentType>;
 begin
   Result := fRegistrationManager.RegisterType<TComponentType>;
-  Result := Result.Implements<TServiceType>(name);
+  Result := Result.Implements<TServiceType>(serviceName);
 end;
 
 function TContainer.RegisterType(componentType: PTypeInfo): IRegistration;
@@ -414,10 +441,10 @@ begin
 end;
 
 function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
-  const name: string): IRegistration;
+  const serviceName: string): IRegistration;
 begin
   Result := fRegistrationManager.RegisterType(componentType);
-  Result := Result.Implements(serviceType, name);
+  Result := Result.Implements(serviceType, serviceName);
 end;
 
 function TContainer.Resolve<T>: T;
@@ -436,20 +463,20 @@ begin
   Result := value.AsType<T>;
 end;
 
-function TContainer.Resolve<T>(const name: string): T;
+function TContainer.Resolve<T>(const serviceName: string): T;
 var
   value: TValue;
 begin
-  value := Resolve(name, []);
+  value := Resolve(serviceName, []);
   Result := value.AsType<T>;
 end;
 
-function TContainer.Resolve<T>(const name: string;
+function TContainer.Resolve<T>(const serviceName: string;
   const arguments: array of TValue): T;
 var
   value: TValue;
 begin
-  value := Resolve(name, arguments);
+  value := Resolve(serviceName, arguments);
   Result := value.AsType<T>;
 end;
 
@@ -465,19 +492,20 @@ var
   context: ICreationContext;
   targetType: TRttiType;
 begin
+  CheckBuildRequired;
   componentModel := fRegistry.FindDefault(serviceType);
   context := TCreationContext.Create(componentModel, arguments);
   targetType := TType.GetType(serviceType);
   Result := fResolver.Resolve(
-    context, componentModel, TDependencyModel.Create(targetType, nil), nil);
+    context, TDependencyModel.Create(targetType, nil), nil);
 end;
 
-function TContainer.Resolve(const name: string): TValue;
+function TContainer.Resolve(const serviceName: string): TValue;
 begin
-  Result := Resolve(name, []);
+  Result := Resolve(serviceName, []);
 end;
 
-function TContainer.Resolve(const name: string;
+function TContainer.Resolve(const serviceName: string;
   const arguments: array of TValue): TValue;
 var
   componentModel: TComponentModel;
@@ -485,14 +513,15 @@ var
   serviceType: PTypeInfo;
   targetType: TRttiType;
 begin
-  componentModel := fRegistry.FindOne(name);
+  CheckBuildRequired;
+  componentModel := fRegistry.FindOne(serviceName);
   if not Assigned(componentModel) then
-    raise EResolveException.CreateResFmt(@SServiceNotFound, [name]);
+    raise EResolveException.CreateResFmt(@SServiceNotFound, [serviceName]);
   context := TCreationContext.Create(componentModel, arguments);
-  serviceType := componentModel.GetServiceType(name);
+  serviceType := componentModel.GetServiceType(serviceName);
   targetType := TType.GetType(serviceType);
   Result := fResolver.Resolve(
-    context, componentModel, TDependencyModel.Create(targetType, nil), name);
+    context, TDependencyModel.Create(targetType, nil), serviceName);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
@@ -514,6 +543,7 @@ var
   context: ICreationContext;
   serviceName: string;
 begin
+  CheckBuildRequired;
   targetType := TType.GetType(serviceType);
   // TODO: remove dependency on lazy type
   if TType.IsLazy(serviceType) then
@@ -525,7 +555,7 @@ begin
     context := TCreationContext.Create(models[i], []);
     serviceName := models[i].GetServiceName(serviceType);
     Result[i] := fResolver.Resolve(
-      context, models[i], TDependencyModel.Create(targetType, nil), serviceName);
+      context, TDependencyModel.Create(targetType, nil), serviceName);
   end;
 end;
 
@@ -583,9 +613,9 @@ begin
   Result := fContainer.Resolve(serviceType);
 end;
 
-function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo; const name: string): TValue;
+function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo; const serviceName: string): TValue;
 begin
-  Result := fContainer.Resolve({serviceType, }name);
+  Result := fContainer.Resolve({serviceType, }serviceName);
 end;
 
 function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
@@ -595,9 +625,9 @@ begin
 end;
 
 function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
-  const name: string; const args: array of TValue): TValue;
+  const serviceName: string; const args: array of TValue): TValue;
 begin
-  Result := fContainer.Resolve({serviceType, }name, args);
+  Result := fContainer.Resolve({serviceType, }serviceName, args);
 end;
 
 function TServiceLocatorAdapter.GetAllServices(serviceType: PTypeInfo): TArray<TValue>;
@@ -610,9 +640,9 @@ begin
   Result := fContainer.Registry.HasService(serviceType);
 end;
 
-function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo; const name: string): Boolean;
+function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo; const serviceName: string): Boolean;
 begin
-  Result := fContainer.Registry.HasService(serviceType, name);
+  Result := fContainer.Registry.HasService(serviceType, serviceName);
 end;
 
 {$ENDREGION}

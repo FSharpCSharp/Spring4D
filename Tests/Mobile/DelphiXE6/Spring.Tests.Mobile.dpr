@@ -31,7 +31,6 @@ program Spring.Tests.Mobile;
 uses
   Spring.TestBootstrap in '..\..\Source\Spring.TestBootstrap.pas',
   TestFramework,
-  FinalBuilder.XMLTestRunner in '..\..\Source\FinalBuilder.XMLTestRunner.pas',
   FMXTestRunner in '..\..\Source\dUnit\FMXTestRunner.pas' {FMXTestRunner},
   Spring.TestRegistration in '..\..\Source\Spring.TestRegistration.pas',
   Spring.TestRunner in '..\..\Source\Spring.TestRunner.pas',

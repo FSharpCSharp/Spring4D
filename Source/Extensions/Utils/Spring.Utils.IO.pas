@@ -1429,7 +1429,7 @@ begin
   if IsFile then
     Result := Size = 0
   else
-    Result := GetEntries.IsEmpty;
+    Result := not GetEntries.Any;
 end;
 
 function TFileSystemEntry.GetHasAttribute(attribute: Integer): Boolean;

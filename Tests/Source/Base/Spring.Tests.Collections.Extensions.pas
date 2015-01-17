@@ -1127,35 +1127,35 @@ begin
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TCollections.Range(MaxInt, 2);
+      TEnumerable.Range(MaxInt, 2);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TCollections.Range(2, MaxInt);
+      TEnumerable.Range(2, MaxInt);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TCollections.Range(MaxInt div 2, (MaxInt div 2) + 3);
+      TEnumerable.Range(MaxInt div 2, (MaxInt div 2) + 3);
     end);
 end;
 
 procedure TTestRange.EmptyRange;
 begin
-  CheckTrue(TCollections.Range(100, 0).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(100, 0).EqualsTo([]));
 end;
 
 procedure TTestRange.EmptyRangeStartingAtMinInt32;
 begin
-  CheckTrue(TCollections.Range(MinInt, 0).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(MinInt, 0).EqualsTo([]));
 end;
 
 procedure TTestRange.LargeButValidCount;
 begin
-  TCollections.Range(MaxInt, 1);
-  TCollections.Range(1, MaxInt);
-  TCollections.Range(MaxInt div 2, (MaxInt div 2) + 2);
+  TEnumerable.Range(MaxInt, 1);
+  TEnumerable.Range(1, MaxInt);
+  TEnumerable.Range(MaxInt div 2, (MaxInt div 2) + 2);
   FCheckCalled := True;
 end;
 
@@ -1164,23 +1164,23 @@ begin
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TCollections.Range(10, -1);
+      TEnumerable.Range(10, -1);
     end);
 end;
 
 procedure TTestRange.NegativeRange;
 begin
-  CheckTrue(TCollections.Range(-2, 5).EqualsTo([-2, -1, 0, 1, 2]));
+  CheckTrue(TEnumerable.Range(-2, 5).EqualsTo([-2, -1, 0, 1, 2]));
 end;
 
 procedure TTestRange.SingleValueOfMaxInt32;
 begin
-  CheckTrue(TCollections.Range(MaxInt, 1).EqualsTo([MaxInt]));
+  CheckTrue(TEnumerable.Range(MaxInt, 1).EqualsTo([MaxInt]));
 end;
 
 procedure TTestRange.ValidRange;
 begin
-  CheckTrue(TCollections.Range(5, 3).EqualsTo([5, 6, 7]));
+  CheckTrue(TEnumerable.Range(5, 3).EqualsTo([5, 6, 7]));
 end;
 
 { TTestConcat }
@@ -4202,17 +4202,17 @@ end;
 
 procedure TTestTake.CountEqualToSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(5).EqualsTo([0, 1, 2, 3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(5).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
 procedure TTestTake.CountGreaterThanSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(100).EqualsTo([0, 1, 2, 3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(100).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
 procedure TTestTake.CountShorterThanSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(3).EqualsTo([0, 1, 2]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(3).EqualsTo([0, 1, 2]));
 end;
 
 procedure TTestTake.ExecutionIsDeferred;
@@ -4226,7 +4226,7 @@ end;
 
 procedure TTestTake.NegativeCount;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(-5).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(-5).EqualsTo([]));
 end;
 
 (*
@@ -4259,24 +4259,24 @@ end;
 
 procedure TTestTake.ZeroCount;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(0).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(0).EqualsTo([]));
 end;
 
 { TTestSkip }
 
 procedure TTestSkip.CountEqualToSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(5).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(5).EqualsTo([]));
 end;
 
 procedure TTestSkip.CountGreaterThanSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(100).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(100).EqualsTo([]));
 end;
 
 procedure TTestSkip.CountShorterThanSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(3).EqualsTo([3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(3).EqualsTo([3, 4]));
 end;
 
 procedure TTestSkip.ExecutionIsDeferred;
@@ -4290,7 +4290,7 @@ end;
 
 procedure TTestSkip.NegativeCount;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(-5).EqualsTo([0, 1, 2, 3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(-5).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
 (*
@@ -4309,7 +4309,7 @@ end;
 
 procedure TTestSkip.ZeroCount;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(0).EqualsTo([0, 1, 2, 3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(0).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
 { TTestTakeWhile }
@@ -5081,7 +5081,7 @@ procedure TTestReverse.ReversedRange;
 var
   query: IEnumerable<Integer>;
 begin
-  query := TCollections.Range(5, 5).Reversed;
+  query := TEnumerable.Range(5, 5).Reversed;
   CheckTrue(query.EqualsTo([9, 8, 7, 6, 5]));
 end;
 

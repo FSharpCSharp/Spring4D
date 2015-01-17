@@ -81,7 +81,6 @@ type
   {$REGION 'Property Accessors'}
     function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
-    function GetIsEmpty: Boolean; virtual;
   {$ENDREGION}
   protected
   {$REGION 'Implements IInterface'}
@@ -96,11 +95,11 @@ type
 
     function AsObject: TObject;
 
+    function Any: Boolean;
     function GetEnumerator: IEnumerator;
 
     property Count: Integer read GetCount;
     property ElementType: PTypeInfo read GetElementType;
-    property IsEmpty: Boolean read GetIsEmpty;
 {$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
     property RefCount: Integer read GetRefCount;
 {$ENDIF}{$ENDIF}
@@ -145,7 +144,6 @@ type
     function GetEnumerator: IEnumerator<T>; virtual;
 
     function All(const predicate: TPredicate<T>): Boolean;
-    function Any: Boolean; overload;
     function Any(const predicate: TPredicate<T>): Boolean; overload;
 
     function Concat(const second: IEnumerable<T>): IEnumerable<T>;
@@ -179,9 +177,15 @@ type
     function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     function Max: T; overload;
+{$IFDEF DELPHIXE_UP}
+    function Max(const selector: TFunc<T, Integer>): Integer; overload;
+{$ENDIF}
     function Max(const comparer: IComparer<T>): T; overload;
     function Max(const comparer: TComparison<T>): T; overload;
     function Min: T; overload;
+{$IFDEF DELPHIXE_UP}
+    function Min(const selector: TFunc<T, Integer>): Integer; overload;
+{$ENDIF}
     function Min(const comparer: IComparer<T>): T; overload;
     function Min(const comparer: TComparison<T>): T; overload;
 
@@ -498,6 +502,14 @@ end;
 
 {$REGION 'TEnumerableBase'}
 
+function TEnumerableBase.Any: Boolean;
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := GetEnumerator;
+  Result := enumerator.MoveNext;
+end;
+
 function TEnumerableBase.AsObject: TObject;
 begin
   Result := Self;
@@ -524,14 +536,6 @@ end;
 function TEnumerableBase.GetEnumerator: IEnumerator;
 begin
   Result := GetEnumeratorNonGeneric;
-end;
-
-function TEnumerableBase.GetIsEmpty: Boolean;
-var
-  enumerator: IEnumerator;
-begin
-  enumerator := GetEnumerator;
-  Result := not enumerator.MoveNext;
 end;
 
 {$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
@@ -599,14 +603,6 @@ begin
   for item in Self do
     if not predicate(item) then
       Exit(False);
-end;
-
-function TEnumerableBase<T>.Any: Boolean;
-var
-  enumerator: IEnumerator;
-begin
-  enumerator := GetEnumerator;
-  Result := enumerator.MoveNext;
 end;
 
 function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;
@@ -911,6 +907,13 @@ begin
   Result := Max(Comparer);
 end;
 
+{$IFDEF DELPHIXE_UP}
+function TEnumerableBase<T>.Max(const selector: TFunc<T, Integer>): Integer;
+begin
+  Result := TEnumerable.Max<T>(Self, selector);
+end;
+{$ENDIF}
+
 function TEnumerableBase<T>.Max(const comparer: IComparer<T>): T;
 var
   flag: Boolean;
@@ -947,6 +950,13 @@ function TEnumerableBase<T>.Min: T;
 begin
   Result := Min(Comparer);
 end;
+
+{$IFDEF DELPHIXE_UP}
+function TEnumerableBase<T>.Min(const selector: TFunc<T, Integer>): Integer;
+begin
+  Result := TEnumerable.Min<T>(Self, selector);
+end;
+{$ENDIF}
 
 function TEnumerableBase<T>.Min(const comparer: IComparer<T>): T;
 var

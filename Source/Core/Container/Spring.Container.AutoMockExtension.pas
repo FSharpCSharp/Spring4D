@@ -48,11 +48,9 @@ type
     constructor Create(const kernel: IKernel);
 
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): Boolean;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): TValue;
+      const dependency: TDependencyModel; const argument: TValue): TValue;
   end;
 
 implementation
@@ -87,8 +85,7 @@ begin
 end;
 
 function TAutoMockResolver.CanResolve(const context: ICreationContext;
-  const model: TComponentModel; const dependency: TDependencyModel;
-  const argument: TValue): Boolean;
+  const dependency: TDependencyModel; const argument: TValue): Boolean;
 var
   mockedType: TRttiType;
 begin
@@ -133,8 +130,7 @@ begin
 end;
 
 function TAutoMockResolver.Resolve(const context: ICreationContext;
-  const model: TComponentModel; const dependency: TDependencyModel;
-  const argument: TValue): TValue;
+  const dependency: TDependencyModel; const argument: TValue): TValue;
 var
   mockDirectly: Boolean;
   mockType: TRttiType;

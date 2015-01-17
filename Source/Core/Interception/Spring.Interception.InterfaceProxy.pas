@@ -99,7 +99,7 @@ constructor TInterfaceProxy.Create(proxyType: PTypeInfo;
   const options: TProxyGenerationOptions; const target: IInterface;
   const interceptors: array of IInterceptor);
 begin
-  if TType.GetType(proxyType).Methods.IsEmpty then
+  if not TType.GetType(proxyType).Methods.Any then
     raise EInvalidOperationException.CreateResFmt(
       @STypeParameterContainsNoRtti, [proxyType.Name]);
 

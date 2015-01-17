@@ -66,10 +66,10 @@ type
     procedure EnsureConfiguration; inline;
   public
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
+      const dependency: TDependencyModel;
       const argument: TValue): Boolean; override;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
+      const dependency: TDependencyModel;
       const argument: TValue): TValue; override;
   end;
   {$ENDREGION}
@@ -117,19 +117,18 @@ end;
 {$REGION 'TLoggerResolver'}
 
 function TLoggerResolver.CanResolve(const context: ICreationContext;
-  const model: TComponentModel; const dependency: TDependencyModel;
-  const argument: TValue): Boolean;
+  const dependency: TDependencyModel; const argument: TValue): Boolean;
 var
   componentType: TRttiType;
 begin
   Result := (dependency.TypeInfo = System.TypeInfo(ILogger))
     and (dependency.TypeInfo <> argument.TypeInfo)
-    and (argument.IsEmpty) // this is true for injections and even false for named injections
-    and Assigned(dependency.Target) and Assigned(dependency.target.parent);
+    and argument.IsEmpty // this is true for injections and even false for named injections
+    and Assigned(dependency.Target) and Assigned(dependency.Target.Parent);
   if Result then
   begin
     EnsureConfiguration;
-    componentType := model.ComponentType;
+    componentType := dependency.ParentType;
     Result := fConfiguration.HasLogger(componentType.Handle);
 
     if not Result and componentType.IsInstance then
@@ -156,15 +155,14 @@ begin
 end;
 
 function TLoggerResolver.Resolve(const context: ICreationContext;
-  const model: TComponentModel; const dependency: TDependencyModel;
-  const argument: TValue): TValue;
+  const dependency: TDependencyModel; const argument: TValue): TValue;
 var
   handle: PTypeInfo;
   componentType: TRttiType;
 begin
   Assert(Assigned(fConfiguration));
 
-  componentType := model.ComponentType;
+  componentType := dependency.ParentType;
   if fConfiguration.HasLogger(componentType.Handle) then
     handle := componentType.Handle
   else

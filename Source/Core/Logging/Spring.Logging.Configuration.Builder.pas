@@ -60,6 +60,7 @@ type
     TAppenderBuilder = record
     private
       fBuilder: IBuilder;
+      {$IFDEF DELPHI2010}{$HINTS OFF}fDummy: Pointer;{$ENDIF}
     public
       function EndAppender: TLoggingConfigurationBuilder;
 
@@ -75,6 +76,7 @@ type
     TControllerBuilder = record
     private
       fBuilder: IBuilder;
+      {$IFDEF DELPHI2010}{$HINTS OFF}fDummy: Pointer;{$ENDIF}
     public
       function EndController: TLoggingConfigurationBuilder;
 
@@ -93,6 +95,7 @@ type
     TLoggerBuilder = record
     private
       fBuilder: IBuilder;
+      {$IFDEF DELPHI2010}{$HINTS OFF}fDummy: Pointer;{$ENDIF}
     public
       function EndLogger: TLoggingConfigurationBuilder;
 
@@ -108,6 +111,7 @@ type
     {$ENDREGION}
   private
     fBuilder: IBuilder;
+    {$IFDEF DELPHI2010}{$HINTS OFF}fDummy: Pointer;{$ENDIF}
   public
     class function Create: TLoggingConfigurationBuilder; static;
 

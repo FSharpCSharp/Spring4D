@@ -61,12 +61,14 @@ type
   private
     fTargetType: TRttiType;
     fTarget: TRttiNamedObject;
-    function GetTargetTypeInfo: PTypeInfo;
-    function GetTargetTypeName: string;
+    function GetParentType: TRttiType; inline;
+    function GetTargetTypeInfo: PTypeInfo; inline;
+    function GetTargetTypeName: string; inline;
   public
     constructor Create(const targetType: TRttiType;
       const target: TRttiNamedObject);
 
+    property ParentType: TRttiType read GetParentType;
     property TargetType: TRttiType read fTargetType;
     property Target: TRttiNamedObject read fTarget;
     property Name: string read GetTargetTypeName;
@@ -103,8 +105,8 @@ type
     function Resolve(serviceType: PTypeInfo): TValue; overload;
     function Resolve(serviceType: PTypeInfo;
       const arguments: array of TValue): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string;
+    function Resolve(const serviceName: string): TValue; overload;
+    function Resolve(const serviceName: string;
       const arguments: array of TValue): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
@@ -123,27 +125,35 @@ type
   /// </summary>
   IComponentRegistry = interface
     ['{CBCA1D0F-1244-4AB4-AB07-091053932166}']
+  {$REGION 'Property Accessors'}
+    function GetOnChanged: ICollectionChangedEvent<TComponentModel>;
+  {$ENDREGION}
+
     function RegisterComponent(componentType: PTypeInfo): TComponentModel;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
-    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo;
+      const serviceName: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
 {$IFDEF DELPHIXE_UP}
     procedure RegisterFactory(const model: TComponentModel); overload;
-    procedure RegisterFactory(const model: TComponentModel; const name: string); overload;
+    procedure RegisterFactory(const model: TComponentModel;
+      const resolvedServiceName: string); overload;
 {$ENDIF}
     procedure UnregisterAll;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasService(const serviceName: string): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
     function HasDefault(serviceType: PTypeInfo): Boolean;
 
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
-    function FindOne(const name: string): TComponentModel; overload;
+    function FindOne(const serviceName: string): TComponentModel; overload;
     function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
     function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
+
+    property OnChanged: ICollectionChangedEvent<TComponentModel> read GetOnChanged;
   end;
 
   /// <summary>
@@ -151,6 +161,10 @@ type
   /// </summary>
   IComponentBuilder = interface
     ['{8309EBC7-9699-47CF-B177-4BC9B787EBE0}']
+  {$REGION 'Property Accessors'}
+    function GetOnBuild: INotifyEvent<TComponentModel>;
+  {$ENDREGION}
+
     // Inspectors (Policies)
     procedure AddInspector(const inspector: IBuilderInspector);
     procedure RemoveInspector(const inspector: IBuilderInspector);
@@ -158,6 +172,8 @@ type
     // Build
     procedure Build(const model: TComponentModel);
     procedure BuildAll;
+
+    property OnBuild: INotifyEvent<TComponentModel> read GetOnBuild;
   end;
 
   /// <summary>
@@ -202,6 +218,7 @@ type
 
     procedure Initialize(const target: TRttiMember);
     procedure InitializeArguments(const arguments: array of TValue);
+    procedure InitializeDependencies(const parameterTypes: array of PTypeInfo);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
 
     property DependencyCount: Integer read GetDependencyCount;
@@ -241,11 +258,9 @@ type
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): Boolean;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): TValue;
+      const dependency: TDependencyModel; const argument: TValue): TValue;
   end;
 
   /// <summary>
@@ -256,10 +271,12 @@ type
   /// </summary>
   ICreationContext = interface(ISubDependencyResolver)
     ['{0E788A94-AD9B-4951-85C1-40F877BB8A24}']
-    procedure EnterResolution(const model: TComponentModel);
+    function EnterResolution(const model: TComponentModel;
+      out instance: TValue): Boolean;
     procedure LeaveResolution(const model: TComponentModel);
 
     procedure AddArgument(const argument: TValue);
+    procedure AddPerResolve(const model: TComponentModel; const instance: TValue);
     function TryHandle(const injection: IInjection;
       out handled: IInjection): Boolean;
   end;
@@ -267,10 +284,10 @@ type
   IDependencyResolver = interface(ISubDependencyResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): Boolean; overload;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
@@ -334,7 +351,7 @@ type
 
     function HasService(serviceType: PTypeInfo): Boolean;
     function GetServiceName(serviceType: PTypeInfo): string;
-    function GetServiceType(const name: string): PTypeInfo;
+    function GetServiceType(const serviceName: string): PTypeInfo;
 
     property ComponentType: TRttiType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
@@ -439,6 +456,14 @@ begin
   fTarget := target;
 end;
 
+function TDependencyModel.GetParentType: TRttiType;
+begin
+  if fTarget is TRttiParameter then
+    Result := fTarget.Parent.Parent as TRttiType
+  else
+    Result := fTarget.Parent as TRttiType;
+end;
+
 function TDependencyModel.GetTargetTypeInfo: PTypeInfo;
 begin
   Result := fTargetType.Handle;
@@ -508,9 +533,9 @@ begin
     end).Key;
 end;
 
-function TComponentModel.GetServiceType(const name: string): PTypeInfo;
+function TComponentModel.GetServiceType(const serviceName: string): PTypeInfo;
 begin
-  Result := fServices[name];
+  Result := fServices[serviceName];
 end;
 
 function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;
@@ -648,7 +673,7 @@ begin
   SetLength(dependencies, Length(params));
   for i := Low(dependencies) to High(dependencies) do
     dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
-  Result := fKernel.Resolver.CanResolve(nil, fModel, dependencies, fArguments);
+  Result := fKernel.Resolver.CanResolve(nil, dependencies, fArguments);
 end;
 
 {$ENDREGION}

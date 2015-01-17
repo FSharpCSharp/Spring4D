@@ -77,45 +77,7 @@ type
   ILookup<TKey, TElement> = interface;
   {$ENDREGION}
 
-  ///	<summary>
-  ///	  Describes the action that caused a CollectionChanged event.
-  ///	</summary>
-  TCollectionChangedAction = (
-    ///	<summary>
-    ///	  An item was added to the collection.
-    ///	</summary>
-    caAdded,
-
-    ///	<summary>
-    ///	  An item was removed from the collection.
-    ///	</summary>
-    caRemoved,
-
-    ///	<summary>
-    ///	  An item was removed from the collection without considering ownership.
-    ///	</summary>
-    caExtracted,
-
-    ///	<summary>
-    ///	  An item was replaced in the collection.
-    ///	</summary>
-    caReplaced,
-
-    ///	<summary>
-    ///	  An item was moved within the collection.
-    ///	</summary>
-    caMoved,
-
-    ///	<summary>
-    ///	  The content of the collection changed dramatically.
-    ///	</summary>
-    caReseted,
-
-    ///	<summary>
-    ///	  An item in the collection was changed.
-    ///	</summary>
-    caChanged
-  );
+  TCollectionChangedAction = Spring.TCollectionChangedAction;
 
   TCollectionChangedEvent<T> = procedure(Sender: TObject; const Item: T;
     Action: TCollectionChangedAction) of object;
@@ -196,7 +158,6 @@ type
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetElementType: PTypeInfo;
-    function GetIsEmpty: Boolean;
   {$ENDREGION}
 
     ///	<summary>
@@ -232,14 +193,6 @@ type
     ///	</value>
     property ElementType: PTypeInfo read GetElementType;
 
-    ///	<summary>
-    ///	  Determines whether a sequence contains no elements.
-    ///	</summary>
-    ///	<value>
-    ///	  <b>True</b> if the source sequence contains no elements; otherwise,
-    ///	  <b>False</b>.
-    ///	</value>
-    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   ///	<summary>
@@ -572,6 +525,10 @@ type
     ///	</returns>
     function Max: T; overload;
 
+{$IFDEF DELPHIXE_UP}
+    function Max(const selector: TFunc<T, Integer>): Integer; overload;
+{$ENDIF}
+
     ///	<summary>
     ///	  Returns the maximum value in a sequence by using the specified
     ///	  <see cref="IComparer&lt;T&gt;" />.
@@ -592,6 +549,10 @@ type
     ///	  The minimum value in the sequence.
     ///	</returns>
     function Min: T; overload;
+
+{$IFDEF DELPHIXE_UP}
+    function Min(const selector: TFunc<T, Integer>): Integer; overload;
+{$ENDIF}
 
     ///	<summary>
     ///	  Returns the minimum value in a sequence by using the specified
@@ -2220,20 +2181,6 @@ type
   ///	<summary>
   ///	  Internal interface. Reserved for future use.
   ///	</summary>
-  ICountable = interface
-    ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
-  {$REGION 'Property Accessors'}
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-  {$ENDREGION}
-
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
-  end;
-
-  ///	<summary>
-  ///	  Internal interface. Reserved for future use.
-  ///	</summary>
   IElementType = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
   {$REGION 'Property Accessors'}
@@ -2274,46 +2221,6 @@ type
   );
 
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
-
-  TArray = class(Generics.Collections.TArray)
-  public
-    /// <summary>
-    ///   Determines whether the specified item exists as an element in an
-    ///   array.
-    /// </summary>
-    class function Contains<T>(const values: array of T; const item: T): Boolean; static;
-
-    /// <summary>
-    ///   Copies an open array to a dynamic array.
-    /// </summary>
-    class function Copy<T>(const values: array of T): TArray<T>; static;
-
-    /// <summary>
-    ///   Searches for the specified object and returns the index of the first
-    ///   occurrence within the entire array.
-    /// </summary>
-    class function IndexOf<T>(const values: array of T; const item: T): Integer; overload; static;
-
-    /// <summary>
-    ///   Searches for the specified object and returns the index of the first
-    ///   occurrence within the range of elements in the array that extends
-    ///   from the specified index to the last element.
-    /// </summary>
-    class function IndexOf<T>(const values: array of T; const item: T;
-      index: Integer): Integer; overload; static;
-
-    /// <summary>
-    ///   Searches for the specified object and returns the index of the first
-    ///   occurrence within the range of elements in the array that starts at
-    ///   the specified index and contains the specified number of elements.
-    /// </summary>
-    class function IndexOf<T>(const values: array of T; const item: T;
-      index, count: Integer): Integer; overload; static;
-
-    class function IndexOf<T>(const values: array of T; const item: T;
-      index, count: Integer;
-      const comparer: IEqualityComparer<T>): Integer; overload; static;
-  end;
 
   ///	<summary>
   ///	  Provides static methods to create an instance of various interfaced
@@ -2369,7 +2276,10 @@ type
     class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
     class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
+  end;
 
+  TEnumerable = class
+  public
     ///	<summary>
     ///	  Returns an empty <see cref="IEnumerable&lt;T&gt;" /> that has the
     ///	  specified type argument.
@@ -2383,6 +2293,11 @@ type
     ///	  <i>T</i>.
     ///	</returns>
     class function Empty<T>: IEnumerable<T>; static;
+
+    class function Min<T>(const source: IEnumerable<T>;
+      const selector: TFunc<T, Integer>): Integer; overload; static;
+    class function Max<T>(const source: IEnumerable<T>;
+      const selector: TFunc<T, Integer>): Integer; overload; static;
 
     class function Query<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
     class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
@@ -2489,67 +2404,6 @@ function GetInstanceComparer: Pointer;
 begin
   Result := @InstanceComparer;
 end;
-{$ENDREGION}
-
-
-{$REGION 'TArray'}
-
-class function TArray.Contains<T>(const values: array of T;
-  const item: T): Boolean;
-var
-  comparer: IEqualityComparer<T>;
-  i: Integer;
-begin
-  comparer := TEqualityComparer<T>.Default;
-  for i := Low(Values) to High(Values) do
-    if comparer.Equals(values[i], item) then
-      Exit(True);
-  Result := False;
-end;
-
-class function TArray.Copy<T>(const values: array of T): TArray<T>;
-var
-  i: Integer;
-begin
-  SetLength(Result, Length(values));
-  for i := Low(values) to High(values) do
-    Result[i] := values[i];
-end;
-
-class function TArray.IndexOf<T>(const values: array of T;
-  const item: T): Integer;
-begin
-  Result := IndexOf<T>(values, item, 0, Length(values));
-end;
-
-class function TArray.IndexOf<T>(const values: array of T; const item: T;
-  index: Integer): Integer;
-begin
-  Result := IndexOf<T>(values, item, index, Length(values) - index);
-end;
-
-class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
-  count: Integer): Integer;
-begin
-  Result := IndexOf<T>(values, item, index, count, TEqualityComparer<T>.Default);
-end;
-
-class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
-  count: Integer; const comparer: IEqualityComparer<T>): Integer;
-var
-  i: Integer;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
-{$ENDIF}
-
-  for i := index to index + count - 1 do
-    if comparer.Equals(values[i], item) then
-      Exit(i);
-  Result := -1;
-end;
-
 {$ENDREGION}
 
 
@@ -2815,34 +2669,51 @@ begin
   Result := THashSet<T>.Create(values);
 end;
 
-class function TCollections.Empty<T>: IEnumerable<T>;
+{$ENDREGION}
+
+
+{$REGION 'TEnumerable'}
+
+class function TEnumerable.Empty<T>: IEnumerable<T>;
 begin
   Result := TEmptyEnumerable<T>.Create;
 end;
 
-class function TCollections.Query<T>(const source: TArray<T>): IEnumerable<T>;
+class function TEnumerable.Max<T>(const source: IEnumerable<T>;
+  const selector: TFunc<T, Integer>): Integer;
+begin
+  Result := Select<T, Integer>(source, selector).Max;
+end;
+
+class function TEnumerable.Min<T>(const source: IEnumerable<T>;
+  const selector: TFunc<T, Integer>): Integer;
+begin
+  Result := Select<T, Integer>(source, selector).Min;
+end;
+
+class function TEnumerable.Query<T>(const source: TArray<T>): IEnumerable<T>;
 begin
   Result := TArrayIterator<T>.Create(source);
 end;
 
-class function TCollections.Query<T>(
+class function TEnumerable.Query<T>(
   const source: TEnumerable<T>): IEnumerable<T>;
 begin
   Result := TEnumerableAdapter<T>.Create(source);
 end;
 
-class function TCollections.Range(start, count: Integer): IEnumerable<Integer>;
+class function TEnumerable.Range(start, count: Integer): IEnumerable<Integer>;
 begin
   Result := TRangeIterator<Integer>.Create(start, count);
 end;
 
-class function TCollections.Repeated<T>(const element: T;
+class function TEnumerable.Repeated<T>(const element: T;
   count: Integer): IEnumerable<T>;
 begin
   Result := TRepeatIterator<T>.Create(element, count);
 end;
 
-class function TCollections.Select<T, TResult>(const source: IEnumerable<T>;
+class function TEnumerable.Select<T, TResult>(const source: IEnumerable<T>;
   const selector: TFunc<T, TResult>): IEnumerable<TResult>;
 begin
   Result := TSelectIterator<T, TResult>.Create(source, selector);

@@ -88,6 +88,93 @@ type
   {$ENDREGION}
 
 
+  ///	<summary>
+  ///	  Describes the action that caused a CollectionChanged event.
+  ///	</summary>
+  TCollectionChangedAction = (
+    ///	<summary>
+    ///	  An item was added to the collection.
+    ///	</summary>
+    caAdded,
+
+    ///	<summary>
+    ///	  An item was removed from the collection.
+    ///	</summary>
+    caRemoved,
+
+    ///	<summary>
+    ///	  An item was removed from the collection without considering ownership.
+    ///	</summary>
+    caExtracted,
+
+    ///	<summary>
+    ///	  An item was replaced in the collection.
+    ///	</summary>
+    caReplaced,
+
+    ///	<summary>
+    ///	  An item was moved within the collection.
+    ///	</summary>
+    caMoved,
+
+    ///	<summary>
+    ///	  The content of the collection changed dramatically.
+    ///	</summary>
+    caReseted,
+
+    ///	<summary>
+    ///	  An item in the collection was changed.
+    ///	</summary>
+    caChanged
+  );
+
+
+  {$REGION 'TValueHelper'}
+
+  TValueHelper = record helper for TValue
+  private
+    function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
+  public
+    class function FromVarRec(const value: TVarRec): TValue; static;
+    function AsPointer: Pointer;
+{$IFDEF DELPHI2010}
+    function AsString: string;
+{$ENDIF}
+    function AsType<T>: T;
+    function Cast(typeInfo: PTypeInfo): TValue;
+    function Equals(const value: TValue): Boolean;
+    function IsInstance: Boolean;
+    function IsInterface: Boolean;
+    function IsNumeric: Boolean;
+    function IsPointer: Boolean;
+    function IsString: Boolean;
+    function IsVariant: Boolean;
+{$IFDEF DELPHI2010}
+    function IsType<T>: Boolean; overload;
+    function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
+{$ENDIF}
+    function ToObject: TObject;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TRttiMethodHelper'}
+
+  TRttiMethodHelper = class helper for TRttiMethod
+  private
+    procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+    function GetReturnTypeHandle: PTypeInfo;
+  public
+    function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
+    function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
+    function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+    property ReturnTypeHandle: PTypeInfo read GetReturnTypeHandle;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Interfaces'}
 
   /// <summary>
@@ -153,6 +240,19 @@ type
     function CompareTo(const obj: TObject): Integer;
   end;
 
+  /// <summary>
+  ///   Base interface for anything that has a countable quantity.
+  /// </summary>
+  ICountable = interface
+    ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+  {$ENDREGION}
+
+    function Any: Boolean;
+    property Count: Integer read GetCount;
+  end;
+
   {$ENDREGION}
 
 
@@ -209,6 +309,8 @@ type
   {$M+}
   TNotifyProc = reference to procedure(Sender: TObject);
   {$M-}
+
+  TNotifyEvent<T> = procedure(Sender: TObject; const item: T) of object;
 
   {$ENDREGION}
 
@@ -408,7 +510,7 @@ type
     fValue: T;
     fHasValue: string;
     function GetValue: T;
-    function GetHasValue: Boolean;
+    function GetHasValue: Boolean; inline;
 
     ///	<summary>
     ///	  Internal use. Marks the current instance as null.
@@ -862,28 +964,36 @@ type
 
   {$REGION 'Multicast Event'}
 
-  IEvent = interface
+  TEventsChangedAction = caAdded..caRemoved;
+  TMethodPointer = procedure of object;
+  TEventsChangedEvent<T> = procedure(Sender: TObject; const Item: T;
+    Action: TEventsChangedAction) of object;
+  TEventsChangedEvent = procedure(Sender: TObject; const Item: TMethodPointer;
+    Action: TEventsChangedAction) of object;
+
+
+  IEvent = interface(ICountable)
     ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
   {$REGION 'Property Accessors'}
-    function GetInvoke: TMethod;
-    function GetCount: Integer;
+    function GetInvoke: TMethodPointer;
     function GetEnabled: Boolean;
-    function GetIsEmpty: Boolean;
     function GetIsInvokable: Boolean;
-    function GetOnChanged: TNotifyEvent;
+    function GetOnChanged: TEventsChangedEvent;
     procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(const value: TNotifyEvent);
+    procedure SetOnChanged(const value: TEventsChangedEvent);
   {$ENDREGION}
 
-    procedure Add(const handler: TMethod);
-    procedure Remove(const handler: TMethod);
+    procedure Add(const handler: TMethodPointer);
+    procedure Remove(const handler: TMethodPointer);
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
-    procedure ForEach(const action: TAction<TMethod>);
+    procedure ForEach(const action: TAction<TMethodPointer>);
 
-    property Count: Integer read GetCount;
+    /// <summary>
+    ///   Gets the value indicates whether the multicast event is enabled, or
+    ///   sets the value to enable or disable the event.
+    /// </summary>
     property Enabled: Boolean read GetEnabled write SetEnabled;
-    property IsEmpty: Boolean read GetIsEmpty;
 
     /// <summary>
     ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
@@ -891,8 +1001,8 @@ type
     ///   False</b>.
     /// </summary>
     property IsInvokable: Boolean read GetIsInvokable;
-    property Invoke: TMethod read GetInvoke;
-    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+    property Invoke: TMethodPointer read GetInvoke;
+    property OnChanged: TEventsChangedEvent read GetOnChanged write SetOnChanged;
   end;
 
   ///	<summary>
@@ -905,10 +1015,8 @@ type
   IEvent<T> = interface(IEvent)
   {$REGION 'Property Accessors'}
     function GetInvoke: T;
-    function GetCount: Integer;
-    function GetEnabled: Boolean;
-    function GetIsEmpty: Boolean;
-    procedure SetEnabled(const value: Boolean);
+//    function GetOnChanged: TEventsChangedEvent<T>;
+//    procedure SetOnChanged(const value: TEventsChangedEvent<T>);
   {$ENDREGION}
 
     ///	<summary>
@@ -941,22 +1049,6 @@ type
     ///	  Invokes all event handlers.
     ///	</summary>
     property Invoke: T read GetInvoke;
-
-    ///	<summary>
-    ///	  Gets the number of all event handlers.
-    ///	</summary>
-    property Count: Integer read GetCount;
-
-    ///	<summary>
-    ///	  Gets the value indicates whether the multicast event is enabled, or
-    ///	  sets the value to enable or disable the event.
-    ///	</summary>
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-
-    ///	<summary>
-    ///	  Gets a value indicates whether there is not any event handler.
-    ///	</summary>
-    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
 {$IFDEF SUPPORTS_GENERIC_EVENTS}
@@ -966,13 +1058,14 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetInvoke: T;
-    function GetIsEmpty: Boolean;
-    function GetOnChanged: TNotifyEvent;
+    function GetOnChanged: TEventsChangedEvent<T>;
     procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(const value: TNotifyEvent);
+    procedure SetOnChanged(value: TEventsChangedEvent<T>);
     procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
+
+    function Any: Boolean;
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
@@ -982,8 +1075,7 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
-    property IsEmpty: Boolean read GetIsEmpty;
-    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+    property OnChanged: TEventsChangedEvent<T> read GetOnChanged write SetOnChanged;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
     class operator Implicit(var value: Event<T>): IEvent<T>;
@@ -991,6 +1083,9 @@ type
     class operator Implicit(const value: T): Event<T>;
   end;
 {$ENDIF}
+
+  INotifyEvent<T> = interface(IEvent<TNotifyEvent<T>>)
+  end;
 
   {$ENDREGION}
 
@@ -1210,6 +1305,264 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Smart pointer'}
+
+  ISmartPointer<T> = reference to function: T;
+
+  SmartPointer<T> = record
+  private
+    type
+      TSmartPointer = class(TInterfacedObject)
+      private
+        fValue: Pointer;
+      public
+        constructor Create(const value);
+        destructor Destroy; override;
+      end;
+  strict private
+    fValue: T;
+    fFinalizer: IInterface;
+  public
+    class operator Implicit(const value: T): SmartPointer<T>;
+    class operator Implicit(const value: SmartPointer<T>): T;
+    property Value: T read fValue;
+  end;
+
+  TSmartPointer<T> = class(TInterfacedObject, ISmartPointer<T>)
+  private
+    fValue: T;
+    function Invoke: T; inline;
+  public
+    constructor Create; overload;
+    constructor Create(const value: T); overload;
+    destructor Destroy; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TActivator'}
+
+  IObjectActivator = interface
+    ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
+    function CreateInstance: TValue;
+  end;
+
+  TActivator = record
+  private
+    type TConstructor = function(InstanceOrVMT: Pointer; Alloc: ShortInt): Pointer;
+    class var Context: TRttiContext;
+    class var ConstructorCache: TDictionary<TClass,TConstructor>;
+    class function FindConstructor(const classType: TRttiInstanceType;
+      const arguments: array of TValue): TRttiMethod; static;
+  public
+    class constructor Create;
+    class destructor Destroy;
+
+    class procedure ClearCache; static;
+
+    class function CreateInstance(const classType: TRttiInstanceType): TValue; overload; static;
+    class function CreateInstance(const classType: TRttiInstanceType;
+      const arguments: array of TValue): TValue; overload; static;
+    class function CreateInstance(const classType: TRttiInstanceType;
+      const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
+
+    class function CreateInstance(typeInfo: PTypeInfo): TObject; overload; static;
+    class function CreateInstance(const typeName: string): TObject; overload; static;
+
+    class function CreateInstance(classType: TClass): TObject; overload; static; inline;
+    class function CreateInstance(classType: TClass;
+      const arguments: array of TValue): TObject; overload; static;
+
+    class function CreateInstance<T: class>: T; overload; static; inline;
+    class function CreateInstance<T: class>(
+      const arguments: array of TValue): T; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TFinalizer'}
+
+  TFinalizer = record
+  public
+    class procedure FinalizeInstance(var instance: TValue); overload; static;
+    class procedure FinalizeInstance<T>(const instance: T); overload; static; inline;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Tuples'}
+
+  Tuple<T1, T2> = record
+  private
+    fValue1: T1;
+    fValue2: T2;
+  public
+    constructor Create(const value1: T1; const value2: T2);
+    function Equals(const value: Tuple<T1, T2>): Boolean;
+    procedure Unpack(out value1: T1; out value2: T2); overload;
+    class operator Equal(const left, right: Tuple<T1, T2>): Boolean;
+    class operator NotEqual(const left, right: Tuple<T1, T2>): Boolean;
+    class operator Implicit(const value: Tuple<T1, T2>): TArray<TValue>;
+    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2>;
+    class operator Implicit(const value: array of const): Tuple<T1, T2>;
+    property Value1: T1 read fValue1;
+    property Value2: T2 read fValue2;
+  end;
+
+  Tuple<T1, T2, T3> = record
+  private
+    fValue1: T1;
+    fValue2: T2;
+    fValue3: T3;
+  public
+    constructor Create(const value1: T1; const value2: T2; const value3: T3);
+    function Equals(const value: Tuple<T1, T2, T3>): Boolean;
+    procedure Unpack(out value1: T1; out value2: T2); overload;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3); overload;
+    class operator Equal(const left, right: Tuple<T1, T2, T3>): Boolean;
+    class operator NotEqual(const left, right: Tuple<T1, T2, T3>): Boolean;
+    class operator Implicit(const value: Tuple<T1, T2, T3>): TArray<TValue>;
+    class operator Implicit(const value: Tuple<T1, T2, T3>): Tuple<T1, T2>;
+    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2, T3>;
+    class operator Implicit(const value: array of const): Tuple<T1, T2, T3>;
+    property Value1: T1 read fValue1;
+    property Value2: T2 read fValue2;
+    property Value3: T3 read fValue3;
+  end;
+
+  Tuple<T1, T2, T3, T4> = record
+  private
+    fValue1: T1;
+    fValue2: T2;
+    fValue3: T3;
+    fValue4: T4;
+  public
+    constructor Create(const value1: T1; const value2: T2; const value3: T3; const value4: T4);
+    function Equals(const value: Tuple<T1, T2, T3, T4>): Boolean;
+    procedure Unpack(out value1: T1; out value2: T2); overload;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3); overload;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3; out value4: T4); overload;
+    class operator Equal(const left, right: Tuple<T1, T2, T3, T4>): Boolean;
+    class operator NotEqual(const left, right: Tuple<T1, T2, T3, T4>): Boolean;
+    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): TArray<TValue>;
+    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2>;
+    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2, T3>;
+    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2, T3, T4>;
+    class operator Implicit(const value: array of const): Tuple<T1, T2, T3, T4>;
+    property Value1: T1 read fValue1;
+    property Value2: T2 read fValue2;
+    property Value3: T3 read fValue3;
+    property Value4: T4 read fValue4;
+  end;
+
+  Tuple = class
+  public
+    class function Pack<T1, T2>(const value1: T1;
+      const value2: T2): Tuple<T1, T2>; overload; static;
+    class function Pack<T1, T2, T3>(const value1: T1; const value2: T2;
+      const value3: T3): Tuple<T1, T2, T3>; overload; static;
+    class function Pack<T1, T2, T3, T4>(const value1: T1; const value2: T2;
+      const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TArray'}
+
+  TArray = class(Generics.Collections.TArray)
+  public
+    /// <summary>
+    ///   Determines whether the specified item exists as an element in an
+    ///   array.
+    /// </summary>
+    class function Contains<T>(const values: array of T; const item: T): Boolean; static;
+
+    /// <summary>
+    ///   Copies an open array to a dynamic array.
+    /// </summary>
+    class function Copy<T>(const values: array of T): TArray<T>; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the entire array.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T): Integer; overload; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that extends
+    ///   from the specified index to the last element.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index: Integer): Integer; overload; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that starts at
+    ///   the specified index and contains the specified number of elements.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index, count: Integer): Integer; overload; static;
+
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index, count: Integer;
+      const comparer: IEqualityComparer<T>): Integer; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TDynArray<T>'}
+
+  TDynArray<T> = record
+  private
+    type
+      TEnumerator = record
+      private
+        fItems: TArray<T>;
+        fIndex: Integer;
+        function GetCurrent: T;
+      public
+        function MoveNext: Boolean; inline;
+        property Current: T read GetCurrent;
+      end;
+  private
+    fItems: TArray<T>; // DO NOT ADD ANY OTHER MEMBERS !!!
+    function GetCount: Integer; inline;
+    function GetItem(index: Integer): T; inline;
+    procedure SetItem(index: Integer; const value: T); inline;
+    procedure InternalInsert(index: Integer; const items: array of T); overload;
+  public
+    class operator Implicit(const value: TArray<T>): TDynArray<T>; inline;
+    class operator Implicit(const value: TDynArray<T>): TArray<T>; inline;
+    class operator Add(const left, right: TDynArray<T>): TDynArray<T>; inline;
+    class operator Add(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
+
+    procedure Clear; inline;
+
+    function Add(const item: T): Integer; overload; inline;
+    procedure Add(const items: array of T); overload;
+    procedure Add(const items: TArray<T>); overload; inline;
+    procedure Insert(index: Integer; const item: T); overload; inline;
+    procedure Insert(index: Integer; const items: array of T); overload;
+    procedure Insert(index: Integer; const items: TArray<T>); overload; inline;
+    procedure Delete(index: Integer); inline;
+
+    function Contains(const item: T): Boolean; inline;
+    function IndexOf(const item: T): Integer;
+
+    function GetEnumerator: TEnumerator; inline;
+    property Count: Integer read GetCount;
+    property Items[index: Integer]: T read GetItem write SetItem; default;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
@@ -1258,6 +1611,11 @@ function GetTypeSize(typeInfo: PTypeInfo): Integer;
 
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 
+procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
+
+function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
+function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
+
 function SkipShortString(P: PByte): Pointer; inline;
 {$ENDREGION}
 
@@ -1265,6 +1623,9 @@ function SkipShortString(P: PByte): Pointer; inline;
 implementation
 
 uses
+  Math,
+  RTLConsts,
+  SysConst,
   Spring.Events,
   Spring.Reflection.Core,
   Spring.ResourceStrings;
@@ -1469,10 +1830,735 @@ begin
   Result := typeInfo.Kind;
 end;
 
+procedure FinalizeValue(const value; typeInfo: PTypeInfo);
+var
+  recTypeInfo: PTypeInfo;
+begin
+  case typeInfo.Kind of
+    tkClass: {$IFNDEF AUTOREFCOUNT}TObject(value).Free;{$ELSE}TObject(value).DisposeOf;{$ENDIF}
+    tkPointer:
+    begin
+      recTypeInfo := GetTypeData(typeInfo).RefType^;
+      FinalizeArray(Pointer(value), recTypeInfo, 1);
+      FillChar(Pointer(value)^, GetTypeData(recTypeInfo).RecSize, 0);
+      FreeMem(Pointer(value));
+    end;
+  end;
+end;
+
+function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
+type
+  TVtable = array[0..3] of Pointer;
+  PVtable = ^TVtable;
+  PPVtable = ^PVtable;
+begin
+  // 3 is offset of Invoke, after QI, AddRef, Release
+  TMethod(Result).Code := PPVtable(methodRef)^^[3];
+  TMethod(Result).Data := Pointer(methodRef);
+end;
+
+function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
+begin
+  Result := IInterface(TMethod(method).Data);
+end;
+
 function SkipShortString(P: PByte): Pointer;
 begin
   Result := P + P^ + 1;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TValueHelper'}
+
+function TValueHelper.AsPointer: Pointer;
+begin
+  if Kind in [tkClass, tkInterface] then
+    Result := ToObject
+  else
+    Result := PPointer(GetReferenceToRawData)^;
+end;
+
+{$IFDEF DELPHI2010}
+function TValueHelper.AsString: string;
+begin
+  Result := AsType<string>;
+end;
+{$ENDIF}
+
+function TValueHelper.AsType<T>: T;
+begin
+{$IFDEF DELPHI2010}
+  if IsEmpty then
+    Exit(Default(T));
+{$ENDIF}
+  if not TryAsInterface(System.TypeInfo(T), Result) then
+  if not TryAsType<T>(Result) then
+    raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+function TValueHelper.Cast(typeInfo: PTypeInfo): TValue;
+var
+  intf: IInterface;
+begin
+  if TryAsInterface(typeInfo, intf) then
+    TValue.Make(@intf, typeInfo, Result)
+  else if not TryCast(typeInfo, Result) then
+    raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+function EqualsFail(const left, right: TValue): Boolean;
+begin
+  Result := False;
+end;
+
+function EqualsInt2Int(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInteger = right.AsInteger;
+end;
+
+function EqualsInt2Float(const left, right: TValue): Boolean;
+begin
+  if right.IsType<Single> then
+    Result := Math.SameValue(left.AsInteger, right.AsType<Single>)
+  else if right.IsType<Double> then
+    Result := Math.SameValue(left.AsInteger, right.AsType<Double>)
+  else
+    Result := Math.SameValue(left.AsInteger, right.AsExtended);
+end;
+
+function EqualsInt2Int64(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInteger = left.AsInt64;
+end;
+
+function EqualsFloat2Int(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsInteger);
+    ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsInteger);
+  else
+    Result := Math.SameValue(left.AsExtended, right.AsInteger);
+  end;
+end;
+
+function EqualsFloat2Float(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle:
+      case right.TypeData.FloatType of
+        ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsType<Single>);
+        ftDouble: Result := Math.SameValue(left.AsType<Single>, right.AsType<Double>);
+      else
+        Result := Math.SameValue(left.AsType<Single>, right.AsExtended);
+      end;
+    ftDouble:
+      case right.TypeData.FloatType of
+        ftSingle: Result := Math.SameValue(left.AsType<Double>, right.AsType<Single>);
+        ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsType<Double>);
+      else
+        Result := Math.SameValue(left.AsType<Double>, right.AsExtended);
+      end;
+  else
+    case right.TypeData.FloatType of
+      ftSingle: Result := Math.SameValue(left.AsExtended, right.AsType<Single>);
+      ftDouble: Result := Math.SameValue(left.AsExtended, right.AsType<Double>);
+    else
+      Result := Math.SameValue(left.AsExtended, right.AsExtended);
+    end;
+  end;
+end;
+
+function EqualsFloat2Int64(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsInt64);
+    ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsInt64);
+  else
+    Result := Math.SameValue(left.AsExtended, right.AsInt64);
+  end;
+end;
+
+function EqualsInt642Int(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInt64 = left.AsInteger;
+end;
+
+function EqualsInt64ToFloat(const left, right: TValue): Boolean;
+begin
+  if right.IsType<Single> then
+    Result := Math.SameValue(left.AsInt64, right.AsType<Single>)
+  else if right.IsType<Double> then
+    Result := Math.SameValue(left.AsInt64, right.AsType<Double>)
+  else
+    Result := Math.SameValue(left.AsInt64, right.AsExtended);
+end;
+
+function EqualsInt642Int64(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInt64 = left.AsInt64;
+end;
+
+function EqualsStr2Str(const left, right: TValue): Boolean;
+begin
+  Result := left.AsString = right.AsString;
+end;
+
+function EqualsClass2Class(const left, right: TValue): Boolean;
+begin
+  Result := left.AsObject = right.AsObject;
+end;
+
+function EqualsIntf2Intf(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInterface = right.AsInterface;
+end;
+
+function EqualsClassRef2ClassRef(const left, right: TValue): Boolean;
+begin
+  Result := left.AsClass = right.AsClass;
+end;
+
+function EqualsPtr2Ptr(const left, right: TValue): Boolean;
+begin
+  Result := left.AsPointer = right.AsPointer;
+end;
+
+function EqualsVar2Var(const left, right: TValue): Boolean;
+begin
+  Result := left.AsVariant = right.AsVariant;
+end;
+
+function EqualsRec2Rec(const left, right: TValue): Boolean;
+var
+  context: TRttiContext;
+  method: TRttiMethod;
+  parameters: TArray<TRttiParameter>;
+begin
+  for method in context.GetType(left.TypeInfo).GetMethods do
+    if (method.Name = '&op_Equality') then
+    begin
+      parameters := method.GetParameters;
+      if (Length(parameters) = 2)
+        and (parameters[0].ParamType.Handle = left.TypeInfo)
+        and (parameters[1].ParamType.Handle = right.TypeInfo) then
+        Exit(method.Invoke(nil, [left, right]).AsBoolean);
+    end;
+
+  Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize);
+end;
+
+{$REGION 'Comparisons'}
+type
+  TEqualsFunc = function(const left, right: TValue): Boolean;
+const
+  Comparisons: array[TTypeKind,TTypeKind] of TEqualsFunc = (
+    // tkUnknown
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsPtr2Ptr, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInteger
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsInt2Int, EqualsFail, EqualsFail, EqualsInt2Float,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsInt2Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkEnumeration
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsInt2Int, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkFloat
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFloat2Int, EqualsFail, EqualsFail, EqualsFloat2Float,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFloat2Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkSet
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail, // TODO: tkSet
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkClass
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsClass2Class, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkMethod
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail, // TODO: tkMethod
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkWChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkLString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkWString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkVariant
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsVar2Var, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkRecord
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsRec2Rec,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInterface
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsIntf2Intf, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInt64
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsInt642Int, EqualsFail, EqualsFail, EqualsInt64ToFloat,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsInt642Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkDynArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsPtr2Ptr, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkUString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkClassRef
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsClassRef2ClassRef,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkPointer
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsPtr2Ptr, EqualsFail
+    ),
+    // tkProcedure
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    )
+  );
+{$ENDREGION}
+
+function TValueHelper.Equals(const value: TValue): Boolean;
+begin
+  Result := Assigned(TypeInfo) and Assigned(value.TypeInfo)
+    and Comparisons[Kind,value.Kind](Self, value);
+end;
+
+class function TValueHelper.FromVarRec(const value: TVarRec): TValue;
+begin
+  case value.VType of
+    vtInteger: Result := value.VInteger;
+    vtBoolean: Result := value.VBoolean;
+{$IF Declared(AnsiChar)}
+    vtChar: Result := string(value.VChar);
+{$IFEND}
+    vtExtended: Result := value.VExtended^;
+{$IF Declared(ShortString)}
+    vtString: Result := string(value.VString^);
+{$IFEND}
+    vtPointer: Result := value.VPointer;
+{$IF Declared(PAnsiChar)}
+    vtPChar: Result := string(value.VPChar);
+{$IFEND}
+    vtObject: Result := TObject(value.VObject);
+    vtClass: Result := value.VClass;
+    vtWideChar: Result := value.VWideChar;
+    vtPWideChar: Result := string(value.VPWideChar);
+{$IF Declared(AnsiString)}
+    vtAnsiString: Result := string(value.VAnsiString);
+{$IFEND}
+    vtCurrency: Result := value.VCurrency^;
+    vtVariant: Result := TValue.FromVariant(value.VVariant^);
+    vtInterface: Result := TValue.From<IInterface>(IInterface(value.VInterface));
+{$IF Declared(WideString)}
+    vtWideString: Result := string(value.VWideString);
+{$IFEND}
+    vtInt64: Result := value.VInt64^;
+    vtUnicodeString: Result := string(value.VUnicodeString);
+  end;
+end;
+
+function TValueHelper.IsInstance: Boolean;
+begin
+  Result := Kind in [tkClass, tkInterface];
+end;
+
+function TValueHelper.IsInterface: Boolean;
+begin
+  Result := Kind = tkInterface;
+end;
+
+function TValueHelper.IsNumeric: Boolean;
+const
+  NumericKinds = [tkInteger, tkChar, tkEnumeration, tkFloat, tkWChar, tkInt64];
+begin
+  Result := IsEmpty or (Kind in NumericKinds);
+end;
+
+function TValueHelper.IsPointer: Boolean;
+begin
+  Result := Kind = tkPointer;
+end;
+
+function TValueHelper.IsString: Boolean;
+const
+  StringKinds = [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
+begin
+  Result := IsEmpty or (Kind in StringKinds);
+end;
+
+{$IFDEF DELPHI2010}
+function TValueHelper.IsType(ATypeInfo: PTypeInfo): Boolean;
+var
+  unused: TValue;
+begin
+  Result := IsEmpty or TryCast(ATypeInfo, unused);
+end;
+
+function TValueHelper.IsType<T>: Boolean;
+begin
+  Result := IsType(System.TypeInfo(T));
+end;
+{$ENDIF}
+
+function TValueHelper.IsVariant: Boolean;
+begin
+  Result := TypeInfo = System.TypeInfo(Variant);
+end;
+
+function TValueHelper.ToObject: TObject;
+begin
+  if IsInterface then
+    Result := AsInterface as TObject
+  else
+    Result := AsObject;
+end;
+
+function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
+var
+  typeData: PTypeData;
+  obj: TObject;
+begin
+  if not (Kind in [tkClass, tkInterface]) then
+    Exit(False);
+  if typeInfo.Kind <> tkInterface then
+    Exit(False);
+  if Self.TypeInfo = typeInfo then
+    Result := True
+  else
+  begin
+    typeData := GetTypeData(typeInfo);
+    if Kind = tkClass then
+    begin
+{$IFDEF AUTOREFCOUNT}
+      Self.FData.FValueData.ExtractRawData(@obj);
+{$ELSE}
+      obj := TObject(Self.FData.FAsObject);
+{$ENDIF}
+      Exit(obj.GetInterface(typeData.Guid, Intf));
+    end;
+    Result := False;
+    typeData := Self.TypeData;
+    while Assigned(typeData) and Assigned(typeData.IntfParent) do
+    begin
+      if typeData.IntfParent^ = typeInfo then
+      begin
+        Result := True;
+        Break;
+      end;
+      typeData := GetTypeData(typeData.IntfParent^);
+    end;
+  end;
+  if Result then
+    IInterface(Intf) := AsInterface;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRttiMethodHelper'}
+
+procedure TRttiMethodHelper.DispatchValue(const value: TValue;
+  typeInfo: PTypeInfo);
+type
+  PValueData = ^TValueData;
+begin
+  if (value.TypeInfo <> typeInfo) and (value.Kind = tkInterface)
+    and (typeInfo.Kind = tkInterface)
+    and IsAssignableFrom(typeInfo, value.TypeInfo) then
+    PValueData(@value).FTypeInfo := typeInfo;
+end;
+
+function TRttiMethodHelper.GetReturnTypeHandle: PTypeInfo;
+var
+  returnType: TRttiType;
+begin
+  returnType := Self.ReturnType;
+  if Assigned(returnType) then
+    Result := returnType.Handle
+  else
+    Result := nil;
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TObject;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TClass;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TValue;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
+end;
+
 {$ENDREGION}
 
 
@@ -1874,7 +2960,7 @@ end;
 function Nullable<T>.GetValueOrDefault: T;
 begin
   if HasValue then
-    Result := Value
+    Result := fValue
   else
     Result := Default(T);
 end;
@@ -1882,7 +2968,7 @@ end;
 function Nullable<T>.GetValueOrDefault(const defaultValue: T): T;
 begin
   if HasValue then
-    Result := Value
+    Result := fValue
   else
     Result := defaultValue;
 end;
@@ -1890,7 +2976,7 @@ end;
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
   if HasValue and other.HasValue then
-    Result := TEqualityComparer<T>.Default.Equals(Value, other.Value)
+    Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
   else
     Result := HasValue = other.HasValue;
 end;
@@ -1911,7 +2997,7 @@ var
 begin
   if value.HasValue then
   begin
-    v := TValue.From<T>(value.Value);
+    v := TValue.From<T>(value.fValue);
     if v.IsType<Boolean> then
       Result := v.AsBoolean
     else
@@ -2380,6 +3466,11 @@ begin
   fInstance.Add(handler);
 end;
 
+function Event<T>.Any: Boolean;
+begin
+  Result := Assigned(fInstance) and fInstance.Any;
+end;
+
 procedure Event<T>.Clear;
 begin
   if Assigned(fInstance) then
@@ -2411,15 +3502,10 @@ begin
   Result := fInstance.Invoke;
 end;
 
-function Event<T>.GetIsEmpty: Boolean;
-begin
-  Result := not Assigned(fInstance) or fInstance.IsEmpty;
-end;
-
-function Event<T>.GetOnChanged: TNotifyEvent;
+function Event<T>.GetOnChanged: TEventsChangedEvent<T>;
 begin
   EnsureInitialized;
-  Result := fInstance.OnChanged;
+  Result := TEventsChangedEvent<T>(fInstance.OnChanged);
 end;
 
 procedure Event<T>.Remove(const handler: T);
@@ -2440,10 +3526,10 @@ begin
   fInstance.Enabled := value;
 end;
 
-procedure Event<T>.SetOnChanged(const value: TNotifyEvent);
+procedure Event<T>.SetOnChanged(value: TEventsChangedEvent<T>);
 begin
   EnsureInitialized;
-  fInstance.OnChanged := value;
+  fInstance.OnChanged := TEventsChangedEvent(value);
 end;
 
 class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;
@@ -2704,6 +3790,773 @@ function Lock.ScopedLock: IInterface;
 begin
   EnsureInitialized;
   Result := fCriticalSection.ScopedLock;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'SmartPointer<T>'}
+
+class operator SmartPointer<T>.Implicit(const value: T): SmartPointer<T>;
+begin
+  Result.fValue := value;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    {$IFNDEF AUTOREFCOUNT}tkClass,{$ENDIF}
+    tkPointer: Result.fFinalizer := TSmartPointer.Create(Result.fValue);
+  end;
+end;
+
+class operator SmartPointer<T>.Implicit(const value: SmartPointer<T>): T;
+begin
+  Result := value.fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'SmartPointer<T>.TSmartPointer'}
+
+constructor SmartPointer<T>.TSmartPointer.Create(const value);
+begin
+  fValue := Pointer(value);
+end;
+
+destructor SmartPointer<T>.TSmartPointer.Destroy;
+begin
+  FinalizeValue(fValue, TypeInfo(T));
+  inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSmartPointer<T>'}
+
+constructor TSmartPointer<T>.Create;
+begin
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkClass: PObject(@fValue)^ := TActivator.CreateInstance(TypeInfo(T));
+    tkPointer: PPointer(@fValue)^ := AllocMem(GetTypeSize(GetTypeData(TypeInfo(T)).RefType^));
+  end;
+end;
+
+constructor TSmartPointer<T>.Create(const value: T);
+begin
+  fValue := value;
+end;
+
+destructor TSmartPointer<T>.Destroy;
+begin
+  FinalizeValue(fValue, TypeInfo(T));
+  inherited;
+end;
+
+function TSmartPointer<T>.Invoke: T;
+begin
+  Result := fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TActivator'}
+
+class constructor TActivator.Create;
+begin
+  Context := TRttiContext.Create;
+  ConstructorCache := TDictionary<TClass,TConstructor>.Create;
+end;
+
+class destructor TActivator.Destroy;
+begin
+  ConstructorCache.Free;
+  Context.Free;
+end;
+
+class procedure TActivator.ClearCache;
+begin
+  ConstructorCache.Clear;
+  Context.Free;
+  Context := TRttiContext.Create;
+end;
+
+class function TActivator.CreateInstance(
+  const classType: TRttiInstanceType): TValue;
+begin
+  Result := CreateInstance(classType, []);
+end;
+
+class function TActivator.CreateInstance(const classType: TRttiInstanceType;
+  const arguments: array of TValue): TValue;
+var
+  method: TRttiMethod;
+begin
+  method := FindConstructor(classType, arguments);
+  if Assigned(method) then
+    Result := CreateInstance(classType, method, arguments)
+  else
+    raise ENotSupportedException.CreateResFmt(
+      @SMissingConstructor, [classType.ClassName]);
+end;
+
+class function TActivator.CreateInstance(const classType: TRttiInstanceType;
+  const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue;
+begin
+  Result := constructorMethod.Invoke(classType.MetaclassType, arguments);
+end;
+
+class function TActivator.CreateInstance(typeInfo: PTypeInfo): TObject;
+var
+  classType: TClass;
+  ctor: TConstructor;
+  rttiType: TRttiType;
+begin
+  classType := typeInfo.TypeData.ClassType;
+  if ConstructorCache.TryGetValue(classType, ctor) then
+    Result := ctor(classType, 1)
+  else
+  begin
+    rttiType := Context.GetType(typeInfo);
+    Result := CreateInstance(TRttiInstanceType(rttiType), []).AsObject;
+  end;
+end;
+
+class function TActivator.CreateInstance(const typeName: string): TObject;
+var
+  rttiType: TRttiType;
+begin
+  rttiType := Context.FindType(typeName);
+  Result := CreateInstance(TRttiInstanceType(rttiType), []).AsObject;
+end;
+
+class function TActivator.CreateInstance(classType: TClass): TObject;
+begin
+  Result := CreateInstance(classType.ClassInfo);
+end;
+
+class function TActivator.CreateInstance(classType: TClass;
+  const arguments: array of TValue): TObject;
+var
+  rttiType: TRttiType;
+begin
+  rttiType := Context.GetType(classType);
+  Result := CreateInstance(TRttiInstanceType(rttiType), arguments).AsObject;
+end;
+
+class function TActivator.CreateInstance<T>: T;
+begin
+  Result := T(CreateInstance(TypeInfo(T)));
+end;
+
+class function TActivator.CreateInstance<T>(
+  const arguments: array of TValue): T;
+begin
+  Result := T(CreateInstance(TClass(T), arguments));
+end;
+
+class function TActivator.FindConstructor(const classType: TRttiInstanceType;
+  const arguments: array of TValue): TRttiMethod;
+
+  function Assignable(const params: TArray<TRttiParameter>;
+    const args: array of TValue): Boolean;
+  var
+    i: Integer;
+    v: TValue;
+  begin
+    Result := Length(params) = Length(args);
+    if Result then
+      for i := Low(args) to High(args) do
+        if not args[i].TryCast(params[i].paramType.Handle, v) then
+          Exit(False);
+  end;
+
+var
+  method: TRttiMethod;
+begin
+  for method in classType.GetMethods do
+  begin
+    if method.MethodKind <> mkConstructor then
+      Continue;
+
+    if Assignable(method.GetParameters, arguments) then
+    begin
+      if Length(arguments) = 0 then
+        ConstructorCache.AddOrSetValue(classType.MetaclassType, method.CodeAddress);
+      Exit(method);
+    end;
+  end;
+  Result := nil;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFinalizer'}
+
+class procedure TFinalizer.FinalizeInstance(var instance: TValue);
+var
+  p: Pointer;
+begin
+  p := instance.GetReferenceToRawData;
+  if Assigned(p) then
+    FinalizeValue(p^, instance.TypeInfo);
+end;
+
+class procedure TFinalizer.FinalizeInstance<T>(const instance: T);
+begin
+  FinalizeValue(instance, TypeInfo(T));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Tuple<T1, T2>'}
+
+constructor Tuple<T1, T2>.Create(const value1: T1; const value2: T2);
+begin
+  fValue1 := value1;
+  fValue2 := value2;
+end;
+
+function Tuple<T1, T2>.Equals(const value: Tuple<T1, T2>): Boolean;
+var
+  comparer1: IEqualityComparer<T1>;
+  comparer2: IEqualityComparer<T2>;
+begin
+  comparer1 := TEqualityComparer<T1>.Default;
+  comparer2 := TEqualityComparer<T2>.Default;
+  Result := comparer1.Equals(fValue1, value.Value1)
+    and comparer2.Equals(fValue2, value.Value2);
+end;
+
+class operator Tuple<T1, T2>.Equal(const left, right: Tuple<T1, T2>): Boolean;
+begin
+  Result := left.Equals(right);
+end;
+
+class operator Tuple<T1, T2>.Implicit(
+  const value: Tuple<T1, T2>): TArray<TValue>;
+begin
+  SetLength(Result, 2);
+  Result[0] := TValue.From<T1>(value.Value1);
+  Result[1] := TValue.From<T2>(value.Value2);
+end;
+
+class operator Tuple<T1, T2>.Implicit(
+  const value: TArray<TValue>): Tuple<T1, T2>;
+begin
+  Result.fValue1 := value[0].AsType<T1>;
+  Result.fValue2 := value[1].AsType<T2>;
+end;
+
+class operator Tuple<T1, T2>.Implicit(
+  const value: array of const): Tuple<T1, T2>;
+begin
+  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
+  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
+end;
+
+class operator Tuple<T1, T2>.NotEqual(const left,
+  right: Tuple<T1, T2>): Boolean;
+begin
+  Result := not left.Equals(right);
+end;
+
+procedure Tuple<T1, T2>.Unpack(out value1: T1; out value2: T2);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Tuple<T1, T2, T3>'}
+
+constructor Tuple<T1, T2, T3>.Create(const value1: T1; const value2: T2;
+  const value3: T3);
+begin
+  fValue1 := value1;
+  fValue2 := value2;
+  fValue3 := value3;
+end;
+
+function Tuple<T1, T2, T3>.Equals(const value: Tuple<T1, T2, T3>): Boolean;
+var
+  comparer1: IEqualityComparer<T1>;
+  comparer2: IEqualityComparer<T2>;
+  comparer3: IEqualityComparer<T3>;
+begin
+  comparer1 := TEqualityComparer<T1>.Default;
+  comparer2 := TEqualityComparer<T2>.Default;
+  comparer3 := TEqualityComparer<T3>.Default;
+  Result := comparer1.Equals(fValue1, value.Value1)
+    and comparer2.Equals(fValue2, value.Value2)
+    and comparer3.Equals(fValue3, value.Value3);
+end;
+
+class operator Tuple<T1, T2, T3>.Equal(const left,
+  right: Tuple<T1, T2, T3>): Boolean;
+begin
+  Result := left.Equals(right);
+end;
+
+class operator Tuple<T1, T2, T3>.Implicit(
+  const value: Tuple<T1, T2, T3>): TArray<TValue>;
+begin
+  SetLength(Result, 3);
+  Result[0] := TValue.From<T1>(value.Value1);
+  Result[1] := TValue.From<T2>(value.Value2);
+  Result[2] := TValue.From<T3>(value.Value3);
+end;
+
+class operator Tuple<T1, T2, T3>.Implicit(
+  const value: Tuple<T1, T2, T3>): Tuple<T1, T2>;
+begin
+  Result.fValue1 := value.Value1;
+  Result.fValue2 := value.Value2;
+end;
+
+class operator Tuple<T1, T2, T3>.Implicit(
+  const value: TArray<TValue>): Tuple<T1, T2, T3>;
+begin
+  Result.fValue1 := value[0].AsType<T1>;
+  Result.fValue2 := value[1].AsType<T2>;
+  Result.fValue3 := value[2].AsType<T3>;
+end;
+
+class operator Tuple<T1, T2, T3>.Implicit(
+  const value: array of const): Tuple<T1, T2, T3>;
+begin
+  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
+  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
+  Result.fValue3 := TValue.FromVarRec(value[2]).AsType<T3>;
+end;
+
+class operator Tuple<T1, T2, T3>.NotEqual(const left,
+  right: Tuple<T1, T2, T3>): Boolean;
+begin
+  Result := not left.Equals(right);
+end;
+
+procedure Tuple<T1, T2, T3>.Unpack(out value1: T1; out value2: T2);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+end;
+
+procedure Tuple<T1, T2, T3>.Unpack(out value1: T1; out value2: T2;
+  out value3: T3);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+  value3 := fValue3;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Tuple<T1, T2, T3, T4>'}
+
+constructor Tuple<T1, T2, T3, T4>.Create(const value1: T1; const value2: T2;
+  const value3: T3; const value4: T4);
+begin
+  fValue1 := value1;
+  fValue2 := value2;
+  fValue3 := value3;
+  fValue4 := value4;
+end;
+
+function Tuple<T1, T2, T3, T4>.Equals(
+  const value: Tuple<T1, T2, T3, T4>): Boolean;
+var
+  comparer1: IEqualityComparer<T1>;
+  comparer2: IEqualityComparer<T2>;
+  comparer3: IEqualityComparer<T3>;
+  comparer4: IEqualityComparer<T4>;
+begin
+  comparer1 := TEqualityComparer<T1>.Default;
+  comparer2 := TEqualityComparer<T2>.Default;
+  comparer3 := TEqualityComparer<T3>.Default;
+  comparer4 := TEqualityComparer<T4>.Default;
+  Result := comparer1.Equals(fValue1, value.Value1)
+    and comparer2.Equals(fValue2, value.Value2)
+    and comparer3.Equals(fValue3, value.Value3)
+    and comparer4.Equals(fValue4, value.Value4);
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Equal(const left,
+  right: Tuple<T1, T2, T3, T4>): Boolean;
+begin
+  Result := left.Equals(right);
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: Tuple<T1, T2, T3, T4>): TArray<TValue>;
+begin
+  SetLength(Result, 4);
+  Result[0] := TValue.From<T1>(value.Value1);
+  Result[1] := TValue.From<T2>(value.Value2);
+  Result[2] := TValue.From<T3>(value.Value3);
+  Result[3] := TValue.From<T4>(value.Value4);
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2>;
+begin
+  Result.fValue1 := value.Value1;
+  Result.fValue2 := value.Value2;
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2, T3>;
+begin
+  Result.fValue1 := value.Value1;
+  Result.fValue2 := value.Value2;
+  Result.fValue3 := value.Value3;
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: TArray<TValue>): Tuple<T1, T2, T3, T4>;
+begin
+  Result.fValue1 := value[0].AsType<T1>;
+  Result.fValue2 := value[1].AsType<T2>;
+  Result.fValue3 := value[2].AsType<T3>;
+  Result.fValue4 := value[3].AsType<T4>;
+end;
+
+class operator Tuple<T1, T2, T3, T4>.Implicit(
+  const value: array of const): Tuple<T1, T2, T3, T4>;
+begin
+  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
+  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
+  Result.fValue3 := TValue.FromVarRec(value[2]).AsType<T3>;
+  Result.fValue4 := TValue.FromVarRec(value[3]).AsType<T4>;
+end;
+
+class operator Tuple<T1, T2, T3, T4>.NotEqual(const left,
+  right: Tuple<T1, T2, T3, T4>): Boolean;
+begin
+  Result := not left.Equals(right);
+end;
+
+procedure Tuple<T1, T2, T3, T4>.Unpack(out value1: T1; out value2: T2);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+end;
+
+procedure Tuple<T1, T2, T3, T4>.Unpack(out value1: T1; out value2: T2;
+  out value3: T3);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+  value3 := fValue3;
+end;
+
+procedure Tuple<T1, T2, T3, T4>.Unpack(out value1: T1; out value2: T2;
+  out value3: T3; out value4: T4);
+begin
+  value1 := fValue1;
+  value2 := fValue2;
+  value3 := fValue3;
+  value4 := fValue4;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Tuple'}
+
+class function Tuple.Pack<T1, T2>(const value1: T1;
+  const value2: T2): Tuple<T1, T2>;
+begin
+  Result := Tuple<T1, T2>.Create(value1, value2);
+end;
+
+class function Tuple.Pack<T1, T2, T3>(const value1: T1; const value2: T2;
+  const value3: T3): Tuple<T1, T2, T3>;
+begin
+  Result := Tuple<T1, T2, T3>.Create(value1, value2, value3);
+end;
+
+class function Tuple.Pack<T1, T2, T3, T4>(const value1: T1; const value2: T2;
+  const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>;
+begin
+  Result := Tuple<T1, T2, T3, T4>.Create(value1, value2, value3, value4);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArray'}
+
+class function TArray.Contains<T>(const values: array of T;
+  const item: T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for i := Low(Values) to High(Values) do
+    if comparer.Equals(values[i], item) then
+      Exit(True);
+  Result := False;
+end;
+
+class function TArray.Copy<T>(const values: array of T): TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := Low(values) to High(values) do
+    Result[i] := values[i];
+end;
+
+class function TArray.IndexOf<T>(const values: array of T;
+  const item: T): Integer;
+begin
+  Result := IndexOf<T>(values, item, 0, Length(values));
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T;
+  index: Integer): Integer;
+begin
+  Result := IndexOf<T>(values, item, index, Length(values) - index);
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
+  count: Integer): Integer;
+begin
+  Result := IndexOf<T>(values, item, index, count, TEqualityComparer<T>.Default);
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
+  count: Integer; const comparer: IEqualityComparer<T>): Integer;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
+{$ENDIF}
+
+  for i := index to index + count - 1 do
+    if comparer.Equals(values[i], item) then
+      Exit(i);
+  Result := -1;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDynArray<T>'}
+
+class operator TDynArray<T>.Add(const left, right: TDynArray<T>): TDynArray<T>;
+begin
+  Result := left;
+  Result.Add(right.fItems);
+end;
+
+class operator TDynArray<T>.Add(const left: TDynArray<T>;
+  const right: T): TDynArray<T>;
+begin
+  Result := left;
+  Result.Add(right);
+end;
+
+function TDynArray<T>.Add(const item: T): Integer;
+begin
+  Result := Length(fItems);
+  SetLength(fItems, Result + 1);
+  fItems[Result] := item;
+end;
+
+procedure TDynArray<T>.Add(const items: array of T);
+begin
+  InternalInsert(Length(fItems), items);
+end;
+
+procedure TDynArray<T>.Add(const items: TArray<T>);
+begin
+{$IFNDEF DELPHIXE7_UP}
+  InternalInsert(Length(fItems), items);
+{$ELSE}
+  System.Insert(items, fItems, Length(fItems));
+{$ENDIF}
+end;
+
+procedure TDynArray<T>.Clear;
+begin
+  fItems := nil;
+end;
+
+function TDynArray<T>.Contains(const item: T): Boolean;
+begin
+  Result := IndexOf(item) > -1;
+end;
+
+procedure TDynArray<T>.Delete(index: Integer);
+{$IFNDEF DELPHIXE7_UP}
+var
+  count: Integer;
+  i: Integer;
+{$ENDIF}
+begin
+{$IFNDEF DELPHIXE7_UP}
+  count := Length(fitems) - 1;
+  fItems[index] := Default(T);
+  if index <> count then
+{$IFDEF WEAKREF}
+    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := index to count - 1 do
+        fItems[i] := fItems[i + 1];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index + 1], fItems[index], (count - index) * SizeOf(T));
+      System.FillChar(fItems[count], SizeOf(T), 0);
+    end;
+  SetLength(fItems, count);
+{$ELSE}
+  System.Delete(fItems, index, 1);
+{$ENDIF}
+end;
+
+function TDynArray<T>.GetCount: Integer;
+begin
+  Result := Length(fItems);
+end;
+
+function TDynArray<T>.GetEnumerator: TEnumerator;
+begin
+  Result.fItems := fItems;
+  Result.fIndex := -1;
+end;
+
+function TDynArray<T>.GetItem(index: Integer): T;
+begin
+  Result := fItems[index];
+end;
+
+class operator TDynArray<T>.Implicit(const value: TArray<T>): TDynArray<T>;
+begin
+  Result.fItems := value;
+end;
+
+class operator TDynArray<T>.Implicit(const value: TDynArray<T>): TArray<T>;
+begin
+  Result := value.fItems;
+end;
+
+function TDynArray<T>.IndexOf(const item: T): Integer;
+var
+  comparer: IEqualityComparer<T>;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for Result := 0 to High(fItems) do
+    if comparer.Equals(fItems[Result], item) then
+      Exit;
+  Result := -1;
+end;
+
+procedure TDynArray<T>.Insert(index: Integer; const item: T);
+{$IFNDEF DELPHIXE7_UP}
+var
+  count: Integer;
+  i: Integer;
+{$ENDIF}
+begin
+{$IFNDEF DELPHIXE7_UP}
+  count := Length(fItems);
+  SetLength(fItems, count + 1);
+  if index <> count then
+{$IFDEF WEAKREF}
+    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := count - 1 downto index do
+        fItems[i + 1] := fItems[i];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index], fItems[index + 1], (count - index) * SizeOf(T));
+      System.FillChar(fItems[index], SizeOf(T), 0);
+    end;
+  fItems[index] := item;
+{$ELSE}
+  System.Insert(item, fItems, index);
+{$ENDIF}
+end;
+
+procedure TDynArray<T>.Insert(index: Integer; const items: array of T);
+begin
+  InternalInsert(index, items);
+end;
+
+procedure TDynArray<T>.Insert(index: Integer; const items: TArray<T>);
+begin
+{$IFNDEF DELPHIXE7_UP}
+  InternalInsert(index, items);
+{$ELSE}
+  System.Insert(items, fItems, index);
+{$ENDIF}
+end;
+
+procedure TDynArray<T>.InternalInsert(index: Integer; const items: array of T);
+var
+  count, len, i: Integer;
+begin
+  count := Length(fItems);
+  len := Length(items);
+  SetLength(fItems, count + len);
+  if index <> count then
+{$IFDEF WEAKREF}
+    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := count - 1 downto index do
+        fItems[i + len] := fItems[i];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index], fItems[index + len], (count - index) * SizeOf(T));
+      if {$IFDEF DELPHIXE7_UP}System.IsManagedType(T){$ELSE}Rtti.IsManaged(TypeInfo(T)){$ENDIF} then
+        System.FillChar(fItems[index], len * SizeOf(T), 0);
+    end;
+  if {$IFDEF DELPHIXE7_UP}System.IsManagedType(T){$ELSE}Rtti.IsManaged(TypeInfo(T)){$ENDIF} then
+  begin
+    for i := Low(items) to High(items) do
+    begin
+      fItems[index] := items[i];
+      Inc(index);
+    end;
+  end
+  else
+    System.Move(items[0], fItems[index], len * SizeOf(T));
+end;
+
+procedure TDynArray<T>.SetItem(index: Integer; const value: T);
+begin
+  fItems[index] := value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDynArray<T>.TEnumerator' }
+
+function TDynArray<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fItems[fIndex];
+end;
+
+function TDynArray<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Inc(fIndex);
+  Result := fIndex < Length(fItems);
 end;
 
 {$ENDREGION}

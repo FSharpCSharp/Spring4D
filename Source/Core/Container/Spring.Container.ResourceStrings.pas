@@ -29,6 +29,7 @@ unit Spring.Container.ResourceStrings;
 interface
 
 resourcestring
+  SContainerRequiresBuild = 'Container has changed registration information - Build required';
   SMissingGuid = 'Type is missing a guid: %s';
   SMissingInterface = 'Type does not support IInterface: %s';
   SIncompatibleTypes = 'Component type "%s" incompatible with service type "%s".';
@@ -46,9 +47,9 @@ resourcestring
   SUnsatisfiedResolutionArgumentCount = 'Unsatisfied resolution argument count.';
   SUnresovableInjection = 'Unresovable injection on type: %s';
   SUnsatisfiedConstructor = 'Unsatisfied constructor on type: %s';
-  SMethodNotFound = 'Method not found: %s';
-  SPropertyNotFound = 'Method not found: %s';
-  SFieldNotFound = 'Field not found: %s';
+  SMethodNotFound = 'Method not found: %s.%s';
+  SPropertyNotFound = 'Property not found: %s.%s';
+  SFieldNotFound = 'Field not found: %s.%s';
   SInjectionTargetNeeded = 'Injection target needed.';
   SUnsatisfiedTarget = 'Unsatisfied target: %s';
   STypeNotFound = 'Type not found: %s';
