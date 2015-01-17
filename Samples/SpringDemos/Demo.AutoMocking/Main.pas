@@ -10,9 +10,11 @@ type
   TMainForm = class(TForm)
     btnContainer: TButton;
     btnMock: TButton;
+    btnMockRegistration: TButton;
     procedure btnContainerClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnMockClick(Sender: TObject);
+    procedure btnMockRegistrationClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -85,7 +87,7 @@ begin
 //  commandChannel.Setup.Raises(Exception, 'test failed').When.Send2(Self);
   commandChannel.Setup.Returns([42, 43, 44]).When.Send2(Self);
 
-//  Assert(mock.Instance.Send(nil) = 42);
+  Assert(commandChannel.Instance.Send(nil) = 42); // message will show
   Assert(commandChannel.Instance.Send2(Self) = 42);
   Assert(commandChannel.Instance.Send2(Self) = 43);
   Assert(commandChannel.Instance.Send2(Self) = 44);
@@ -108,6 +110,27 @@ begin
   Assert(factory.Create(',').Parse('an expression').EqualsTo([1, 2, 3]));
 
   Mock.From(parser).ReceivedWithAnyArgs(1).Parse('');
+end;
+
+procedure TMainForm.btnMockRegistrationClick(Sender: TObject);
+var
+  container: TContainer;
+  sut: TBasketController;
+begin
+  container := TContainer.Create;
+  try
+    container.RegisterType<ICommandChannel>.DelegateTo(
+      function: ICommandChannel
+      begin
+        Result := Mock<ICommandChannel>.Create;
+      end);
+    container.RegisterType<TBasketController>.AsSingleton;
+    container.Build;
+    sut := container.Resolve<TBasketController>;
+    sut.Post(nil);
+  finally
+    container.Free;
+  end;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);

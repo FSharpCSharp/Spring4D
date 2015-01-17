@@ -32,4 +32,13 @@ object MainForm: TMainForm
     TabOrder = 1
     OnClick = btnMockClick
   end
+  object btnMockRegistration: TButton
+    Left = 24
+    Top = 120
+    Width = 137
+    Height = 25
+    Caption = 'mock registration'
+    TabOrder = 2
+    OnClick = btnMockRegistrationClick
+  end
 end
