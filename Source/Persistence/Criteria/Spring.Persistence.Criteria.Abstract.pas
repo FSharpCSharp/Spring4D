@@ -53,6 +53,7 @@ type
     function Page(page, itemsPerPage: Integer): IDBPage<T>; virtual;
   public
     function Add(const criterion: ICriterion): ICriteria<T>; virtual;
+    function Where(const criterion: ICriterion): ICriteria<T>; virtual;
     function OrderBy(const orderBy: IOrderBy): ICriteria<T>; virtual;
 
     procedure Clear; virtual;
@@ -158,6 +159,11 @@ begin
   LSql := GenerateSqlStatement(LParams);
   Result := TCollections.CreateObjectList<T>(True);
   Result := Session.GetList<T>(LSql, LParams);
+end;
+
+function TAbstractCriteria<T>.Where(const criterion: ICriterion): ICriteria<T>;
+begin
+  Result := Add(criterion);
 end;
 
 end.

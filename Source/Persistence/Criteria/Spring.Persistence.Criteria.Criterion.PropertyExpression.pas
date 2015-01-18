@@ -114,6 +114,7 @@ begin
     AnsiUpperCase(fOtherPropertyName), table, otherTable);
   whereField.MatchMode := GetMatchMode;
   whereField.WhereOperator := GetWhereOperator;
+  Result := whereField.ToSQLString(generator.GetEscapeFieldnameChar);
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(whereField)
   else

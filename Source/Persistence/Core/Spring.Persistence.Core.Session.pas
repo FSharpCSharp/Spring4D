@@ -97,6 +97,16 @@ type
     function CreateCriteria<T: class, constructor>: ICriteria<T>;
 
     /// <summary>
+    ///   Create a new ICriteria&lt;T&gt; instance, for the given entity class
+    ///   using expression to filter elements
+    /// </summary>
+    /// <example>
+    ///   <code lang="Delphi">Age := GetProp(CUSTAGE);
+    /// session.FindWhere&lt;TCustomer&gt;(Age = 10).ToList;</code>
+    /// </example>
+    function FindWhere<T:class, constructor>(const expression: ICriterion): ICriteria<T>;
+
+    /// <summary>
     ///   Executes sql statement which does not return resultset.
     /// </summary>
     function Execute(const sql: string; const params: array of const): NativeUInt;
@@ -432,6 +442,11 @@ begin
   finally
     selecter.Free;
   end;
+end;
+
+function TSession.FindWhere<T>(const expression: ICriterion): ICriteria<T>;
+begin
+  Result := CreateCriteria<T>.Where(expression);
 end;
 
 function TSession.First<T>(const sql: string; const params: array of const): T;

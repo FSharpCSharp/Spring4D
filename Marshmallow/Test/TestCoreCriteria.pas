@@ -50,6 +50,7 @@ type
     procedure Add_SubEntity_Criterion;
     procedure Disjunction;
     procedure Conjunction;
+    procedure OperatorOverloading_Eq;
   end;
 
 implementation
@@ -463,6 +464,28 @@ begin
     .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
+end;
+
+procedure TestTCriteria.OperatorOverloading_Eq;
+var
+  LCustomers: IList<TCustomer>;
+  Age, Name: Prop;
+begin
+  Age := GetProp(CUSTAGE);
+  Name := GetProp(CUSTNAME);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+  LCustomers := FCriteria.Where((Age = 42) and (Age <> 50) and (Age = Age) and (Age in [42]))
+    .OrderBy(Age.Desc)
+    .ToList;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+
+  FCriteria.Clear;
+  LCustomers := FCriteria.Where((Age in [42..50]) or (Name in ['Foo', 'Bar']) and (Age.IsNotNull))
+    .OrderBy(Age.Desc)
+    .ToList;
+  CheckEquals(2, LCustomers.Count);
 end;
 
 procedure TestTCriteria.Page_GEq_OrderDesc;

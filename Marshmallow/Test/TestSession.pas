@@ -60,6 +60,7 @@ type
     procedure GetLazyValue();
     procedure GetLazyNullable();
     procedure FindOne();
+    procedure FindWhere;
     procedure When_UnannotatedEntity_FindOne_ThrowException;
     procedure When_WithoutTableAttribute_FindOne_ThrowException;
     procedure When_WithoutPrimaryKey_FindOne_ThrowException;
@@ -588,6 +589,15 @@ begin
   finally
     LCustomer.Free;
   end;
+end;
+
+procedure TestTSession.FindWhere;
+var
+  Age: Prop;
+begin
+  InsertCustomer(10);
+  Age := GetProp(CUSTAGE);
+  CheckEquals(10, FManager.FindWhere<TCustomer>(Age = 10).ToList.First.Age);
 end;
 
 procedure TestTSession.First;

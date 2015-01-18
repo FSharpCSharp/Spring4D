@@ -114,7 +114,15 @@ type
   ///   cats := session.CreateCriteria&lt;TCat&gt;
   ///     .Add(TRestrictions.Like('name', 'Iz%'))
   ///     .Add(TRestrictions.Gt('weight', MIN_WEIGHT))
-  ///     .OrderBy(TOrder.Asc('age')).List;</code>
+  ///     .OrderBy(TOrder.Asc('age')).ToList;</code>
+  ///   <code lang="Delphi">var
+  ///   cats: IList&lt;TCat&gt;;
+  ///   Weight, Age: Prop;
+  /// begin
+  ///   Weight := GetProp('Weight');
+  ///   Age := GetProp('Age');
+  ///   cats := session.FindWhere&lt;TCat&gt;    (Weight &gt; MIN_WEIGHT)
+  /// .OrderBy(Age.Desc).ToList;</code>
   /// </example>
   ICriteria<T: class, constructor> = interface(IInvokable)
     ['{09428AF2-3A36-44DB-B0E7-8B7D7620ED1C}']
@@ -123,6 +131,10 @@ type
     ///   Add a restriction to constrain the results to be retrieved.
     /// </summary>
     function Add(const criterion: ICriterion): ICriteria<T>;
+    /// <summary>
+    ///   Add a restriction to constrain the results to be retrieved.
+    /// </summary>
+    function Where(const criterion: ICriterion): ICriteria<T>;
 
     /// <summary>
     ///   Add an ordering to the result set.
