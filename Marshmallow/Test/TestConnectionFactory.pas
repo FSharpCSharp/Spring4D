@@ -22,6 +22,8 @@ type
   public
     procedure SetUp; override;
     procedure TearDown; override;
+
+    procedure When_ADOConn_And_Json_GetInstance;
   published
     procedure TestGetInstance;
     procedure TestGetInstance1;
@@ -89,6 +91,18 @@ begin
   CheckTrue(Assigned(ReturnValue));
   CheckEqualsString('SQLite3', ReturnValue.GetDriverName);
   CheckTrue(ReturnValue.IsConnected);
+end;
+
+procedure TestTConnectionFactory.When_ADOConn_And_Json_GetInstance;
+const
+  JSON: string = '{'+
+    '"Data.Win.ADODB.TADOConnection": {'+
+    '    "LoginPrompt": "False", '+
+    '    "ConnectionString": ""'+
+    '}'+
+'}';
+begin
+  CheckNotNull(TConnectionFactory.GetInstance(dtADO, JSON));
 end;
 
 initialization

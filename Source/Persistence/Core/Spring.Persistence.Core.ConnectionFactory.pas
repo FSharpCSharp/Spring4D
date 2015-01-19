@@ -77,7 +77,7 @@ type
     class function IsRegistered(key: TDBDriverType): Boolean;
   end;
 
-implementation
+ implementation
 
 uses
   Classes,
@@ -102,7 +102,7 @@ end;
 
 class function TConnectionFactory.CreateConnection(connectionClass: TClass): TObject;
 begin
-  Result := TActivator.CreateInstance(connectionClass);
+  Result := TActivator.CreateInstance(connectionClass, [nil]);
 
   if not Assigned(Result) then
     raise EORMConnectionFactoryException.Create('Could not create connection');
@@ -194,9 +194,9 @@ class function TConnectionFactory.GetJsonPair(const jsonObject: TJSONObject;
   index: Integer): TJSONPair;
 begin
   {$IFDEF DELPHIXE6_UP}
-  Result := jsonObject.Pairs[0];
+  Result := jsonObject.Pairs[index];
   {$ELSE}
-  Result := jsonObject.Get(0);
+  Result := jsonObject.Get(index);
   {$ENDIF}
 end;
 
@@ -232,18 +232,25 @@ class procedure TConnectionFactory.SetConnectionProperties(
 var
   i: Integer;
   jsonPair: TJSONPair;
-//  value, converted: TValue;
-//  freeAfter: Boolean;
+  value: TValue;
+  propType: TRttiType;
 begin
-  // set properties from json config
   for i := 0 to GetJsonObjectCount(jsonObject) - 1 do
   begin
     jsonPair := GetJsonPair(jsonObject, i);
-//    value := jsonPair.JsonValue.Value;
-//    if value.TryConvert(TRttiExplorer.GetMemberTypeInfo(externalConnection.ClassType, jsonPair.JsonString.Value), converted, freeAfter) then
-//      value := converted;
-//    TRttiExplorer.SetMemberValueSimple(externalConnection, jsonPair.JsonString.Value, value);
-    TType.SetMemberValue(externalConnection, jsonPair.JsonString.Value, jsonPair.JsonValue.Value);
+    propType := TType.GetType(externalConnection).GetProperty(jsonPair.JsonString.Value).PropertyType;
+    value := jsonPair.JsonValue.Value;
+    //do only simplest conversions
+    case propType.TypeKind of
+      tkString, tkWString, tkUString, tkLString: value := jsonPair.JsonValue.Value;
+      tkEnumeration: begin
+                       if (propType.Handle = TypeInfo(Boolean)) then
+                         value := StrToBool(jsonPair.JsonValue.Value);
+                     end;
+      tkInteger: value := StrToInt(jsonPair.JsonValue.Value);
+      tkInt64: value := StrToInt64(jsonPair.JsonValue.Value);
+    end;
+    TType.SetMemberValue(externalConnection, jsonPair.JsonString.Value, value);
   end;
 end;
 
