@@ -802,6 +802,7 @@ begin
   fContainer.Build;
 
   factory := fContainer.Resolve<ISomeFactory>;
+  FCheckCalled := True;
 end;
 
 procedure TTestSimpleContainer.TestInitializable;
