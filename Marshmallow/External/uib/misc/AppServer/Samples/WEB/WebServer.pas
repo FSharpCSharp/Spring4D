@@ -137,7 +137,7 @@ begin
 end;
 
 { THTTPServer }
-
+
 constructor THTTPConnexion.CreateStub(AOwner: TSocketServer; Socket: longint;
   AAddress: TSockAddr);
 begin
