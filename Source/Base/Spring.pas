@@ -86,6 +86,8 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TCollectionChangedAction'}
+
   ///	<summary>
   ///	  Describes the action that caused a CollectionChanged event.
   ///	</summary>
@@ -125,6 +127,8 @@ type
     ///	</summary>
     caChanged
   );
+
+  {$ENDREGION}
 
 
   {$REGION 'TValueHelper'}
@@ -512,7 +516,7 @@ type
     /// <summary>
     ///   Determines whether a variant value is null or empty.
     /// </summary>
-    class function VarIsNullOrEmpty(const value: Variant): Boolean; static;
+    class function VarIsNullOrEmpty(const value: Variant): Boolean; static; inline;
   public
     /// <summary>
     ///   Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />
@@ -537,18 +541,18 @@ type
     ///   object, or the specified default value.
     /// </summary>
     /// <param name="defaultValue">
-    ///	  A value to return if the <see cref="HasValue" /> property is
-    ///	  <c>False</c>.
+    ///   A value to return if the <see cref="HasValue" /> property is <c>False</c>
+    ///    .
     /// </param>
     /// <returns>
-    ///	  The value of the <see cref="Value" /> property if the
-    ///	  <see cref="HasValue" /> property is true; otherwise, the
-    ///	  <paramref name="defaultValue" /> parameter.
+    ///   The value of the <see cref="Value" /> property if the <see cref="HasValue" />
+    ///    property is true; otherwise, the <paramref name="defaultValue" />
+    ///   parameter.
     /// </returns>
     /// <remarks>
     ///   The <see cref="GetValueOrDefault" /> method returns a value even if
-    ///	  the <see cref="HasValue" /> property is false (unlike the
-    ///	  <see cref="Value" /> property, which throws an exception).
+    ///   the <see cref="HasValue" /> property is false (unlike the <see cref="Value" />
+    ///    property, which throws an exception).
     /// </remarks>
     function GetValueOrDefault(const defaultValue: T): T; overload;
 
@@ -556,15 +560,21 @@ type
     ///   Determines whether two nullable value are equal.
     /// </summary>
     /// <remarks>
-    ///	  <p> If both two nullable values are null, return true; </p>
-    ///	  <p> If either one is null, return false; </p>
-    ///	  <p> else compares their values as usual. </p>
+    ///   <para>
+    ///     If both two nullable values are null, return true;
+    ///   </para>
+    ///   <para>
+    ///     If either one is null, return false;
+    ///   </para>
+    ///   <para>
+    ///     else compares their values as usual.
+    ///   </para>
     /// </remarks>
     function Equals(const other: Nullable<T>): Boolean;
 
     /// <summary>
-    ///	  Gets a value indicating whether the current
-    ///	  <see cref="Nullable&lt;T&gt;" /> structure has a value.
+    ///   Gets a value indicating whether the current <see cref="Nullable&lt;T&gt;" />
+    ///    structure has a value.
     /// </summary>
     property HasValue: Boolean read GetHasValue;
 
@@ -576,15 +586,14 @@ type
     /// </exception>
     property Value: T read GetValue;
 
-    { Operator Overloads }
     class operator Implicit(const value: Nullable<T>): T;
     class operator Implicit(const value: T): Nullable<T>;
     class operator Implicit(const value: Nullable<T>): Variant;
     class operator Implicit(const value: Variant): Nullable<T>;
     class operator Implicit(value: Pointer): Nullable<T>;
     class operator Explicit(const value: Nullable<T>): T;
-    class operator Equal(const a, b: Nullable<T>) : Boolean;
-    class operator NotEqual(const a, b: Nullable<T>) : Boolean;
+    class operator Equal(const left, right: Nullable<T>): Boolean;
+    class operator NotEqual(const left, right: Nullable<T>): Boolean;
   end;
 
 
@@ -2281,7 +2290,7 @@ end;
 
 function Nullable<T>.GetHasValue: Boolean;
 begin
-  Result := Length(fHasValue) > 0;
+  Result := fHasValue <> '';
 end;
 
 function Nullable<T>.GetValue: T;
@@ -2310,7 +2319,30 @@ end;
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
   if HasValue and other.HasValue then
+  begin
+    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+      tkInteger: Result := PInteger(@fValue)^ = PInteger(@other.fValue)^;
+      tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
+      tkFloat:
+      begin
+        case GetTypeData(TypeInfo(T)).FloatType of
+          ftSingle: Result := PSingle(@fValue)^ = PSingle(@other.fValue)^;
+          ftDouble: Result := PDouble(@fValue)^ = PDouble(@other.fValue)^;
+          ftExtended: Result := PExtended(@fValue)^ = PExtended(@other.fValue)^;
+          ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
+          ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
+        end;
+      end;
+      tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
+      tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
+      tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
+      tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
+      tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
+      tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
+    else
     Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
+    end;
+  end
   else
     Result := HasValue = other.HasValue;
 end;
@@ -2367,14 +2399,14 @@ begin
   Result := value.Value;
 end;
 
-class operator Nullable<T>.Equal(const a, b: Nullable<T>): Boolean;
+class operator Nullable<T>.Equal(const left, right: Nullable<T>): Boolean;
 begin
-  Result := a.Equals(b);
+  Result := left.Equals(right);
 end;
 
-class operator Nullable<T>.NotEqual(const a, b: Nullable<T>): Boolean;
+class operator Nullable<T>.NotEqual(const left, right: Nullable<T>): Boolean;
 begin
-  Result := not a.Equals(b);
+  Result := not left.Equals(right);
 end;
 
 {$ENDREGION}
