@@ -42,11 +42,15 @@ uses
   {$ENDIF}
   TextTestRunner;
 {$ELSE}
+  {$IFDEF TESTINSIGHT}
+  TestInsight.DUnit;
+  {$ELSE}
   {$IFNDEF FMX}
   Forms,
   GUITestRunner;
   {$ELSE}
   FMXTestRunner;
+  {$ENDIF}
   {$ENDIF}
 {$ENDIF CONSOLE_TESTRUNNER}
 
@@ -74,11 +78,15 @@ begin
   end;
   {$ENDIF}
 {$ELSE}
+  {$IFDEF TESTINSIGHT}
+  TestInsight.DUnit.RunRegisteredTests;
+  {$ELSE}
   {$IFNDEF FMX}
   Application.Initialize();
   TGUITestRunner.RunRegisteredTests();
   {$ELSE}
   TFMXTestRunner.RunRegisteredTests();
+  {$ENDIF}
   {$ENDIF}
   ReportMemoryLeaksOnShutdown := True;
 {$ENDIF}
