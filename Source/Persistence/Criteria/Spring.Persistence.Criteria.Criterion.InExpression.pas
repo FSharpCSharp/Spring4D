@@ -39,17 +39,23 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  TInExpression<T> = class(TSimpleExpression)
+  TInExpression = class(TSimpleExpression)
   private
-    fValues: TArray<T>;
+    fValues: TArray<TValue>;
     function ValuesToSeparatedString: string;
   protected
     function ToSqlString(const params: IList<TDBParam>;
       const command: TDMLCommand; const generator: ISQLGenerator;
       addToCommand: Boolean): string; override;
   public
+    constructor Create(const propertyName: string; const values: TArray<TValue>;
+      whereOperator: TWhereOperator); reintroduce;
+  end;
+
+  TInExpression<T> = class(TInExpression)
+  public
     constructor Create(const propertyName: string; const values: TArray<T>;
-      whereOperator: TWhereOperator); reintroduce; overload;
+      whereOperator: TWhereOperator); reintroduce;
   end;
 
 implementation
@@ -59,16 +65,16 @@ uses
   TypInfo;
 
 
-{$REGION 'TInExpression<T>'}
+{$REGION 'TInExpression'}
 
-constructor TInExpression<T>.Create(const propertyName: string;
-  const values: TArray<T>; whereOperator: TWhereOperator);
+constructor TInExpression.Create(const propertyName: string;
+  const values: TArray<TValue>; whereOperator: TWhereOperator);
 begin
   inherited Create(propertyName, TValue.Empty, whereOperator);
   fValues := values;
 end;
 
-function TInExpression<T>.ToSqlString(const params: IList<TDBParam>;
+function TInExpression.ToSqlString(const params: IList<TDBParam>;
   const command: TDMLCommand; const generator: ISQLGenerator;
   addToCommand: Boolean): string;
 var
@@ -76,7 +82,7 @@ var
 begin
   Assert(command is TWhereCommand);
 
-  Result := Format('%S %S (%S)',
+  Result := Format('%s %s (%s)',
     [PropertyName, WhereOpNames[GetWhereOperator], ValuesToSeparatedString]);
 
   whereField := TSQLWhereField.Create(Result, GetCriterionTable(command));
@@ -89,26 +95,22 @@ begin
     whereField.Free;
 end;
 
-function TInExpression<T>.ValuesToSeparatedString: string;
+function TInExpression.ValuesToSeparatedString: string;
 var
-  isFirst: Boolean;
-  item: T;
+  i: Integer;
   value: TValue;
   s: string;
 begin
-  Result := 'NULL';
-  isFirst := True;
-  for item in fValues do
+  if fValues = nil then
+    Exit('NULL');
+
+  Result := '';
+  for i := Low(fValues) to High(fValues) do
   begin
-    if isFirst then
-    begin
-      Result := '';
-      isFirst := False;
-    end
-    else
+    if i > 0 then
       Result := Result + ',';
 
-    value := TValue.From<T>(item);
+    value := fValues[i];
     case value.Kind of
       tkChar, tkWChar, tkLString, tkWString, tkUString, tkString:
         s := QuotedStr(value.AsString)
@@ -117,6 +119,22 @@ begin
     end;
     Result := Result + s;
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInExpression<T>'}
+
+constructor TInExpression<T>.Create(const propertyName: string;
+  const values: TArray<T>; whereOperator: TWhereOperator);
+var
+  i: Integer;
+begin
+  inherited Create(propertyName, nil, whereOperator);
+  SetLength(fValues, Length(values));
+  for i := Low(values) to High(values) do
+    fValues[i] := TValue.From<T>(values[i]);
 end;
 
 {$ENDREGION}

@@ -45,7 +45,7 @@ type
     fEntityClass: TClass;
     fCriterions: IList<ICriterion>;
     fOrderBy: IList<IOrderBy>;
-    FSession: TSession;
+    fSession: TSession;
   protected
     constructor Create(const session: TSession); virtual;
 
@@ -62,7 +62,7 @@ type
 
     property Criterions: IList<ICriterion> read fCriterions;
     property EntityClass: TClass read fEntityClass;
-    property Session: TSession read FSession;
+    property Session: TSession read fSession;
   end;
 
 implementation
@@ -81,7 +81,7 @@ constructor TAbstractCriteria<T>.Create(const session: TSession);
 begin
   inherited Create;
   fEntityClass := T;
-  FSession := session;
+  fSession := session;
   fCriterions := TCollections.CreateList<ICriterion>;
   fOrderBy := TCollections.CreateList<IOrderBy>;
 end;
@@ -115,7 +115,7 @@ var
   LGenerator: ISQLGenerator;
 begin
   LCommand := TSelectCommand.Create(fEntityClass);
-  LGenerator := TSQLGeneratorRegister.GetGenerator(FSession.Connection.GetQueryLanguage);
+  LGenerator := TSQLGeneratorRegister.GetGenerator(fSession.Connection.GetQueryLanguage);
   try
     for LCriterion in Criterions do
       LCriterion.ToSqlString(params, LCommand, LGenerator, True);
@@ -147,7 +147,7 @@ var
 begin
   LParams := TCollections.CreateObjectList<TDBParam>;
   LSql := GenerateSqlStatement(LParams);
-  Result := FSession.Page<T>(page, itemsPerPage, LSql, LParams);
+  Result := fSession.Page<T>(page, itemsPerPage, LSql, LParams);
 end;
 
 function TAbstractCriteria<T>.ToList: IList<T>;

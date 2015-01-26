@@ -34,29 +34,25 @@ uses
   Spring.Persistence.Criteria.Abstract;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Implementation of <c>ICriteria&lt;T&gt;</c> interface.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Implementation of ICriteria&lt;T&gt; interface.
+  /// </summary>
   TCriteria<T: class, constructor> = class(TAbstractCriteria<T>)
   public
-    constructor Create(ASession: TSession); reintroduce;
-    destructor Destroy; override;
+    constructor Create(const session: TSession); reintroduce;
   end;
 
 implementation
 
-{ TCriteria }
 
-constructor TCriteria<T>.Create(ASession: TSession);
+{$REGION 'TCriteria'}
+
+constructor TCriteria<T>.Create(const session: TSession);
 begin
-  inherited Create(ASession);
+  inherited Create(session);
 end;
 
-destructor TCriteria<T>.Destroy;
-begin
-  inherited Destroy;
-end;
+{$ENDREGION}
+
 
 end.

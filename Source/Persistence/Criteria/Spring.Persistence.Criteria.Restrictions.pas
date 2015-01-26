@@ -122,14 +122,28 @@ type
     ///	  Apply an <b>"in"</b> constraint to the named property.
     ///	</summary>
     {$ENDREGION}
-    class function &In<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion;
+    class function &In(const APropertyName: string; const AValues: TArray<TValue>): ICriterion; overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply an <b>"in"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
+    class function &In<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Apply an <b>"not in"</b> constraint to the named property.
     ///	</summary>
     {$ENDREGION}
-    class function NotIn<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion;
+    class function NotIn(const APropertyName: string; const AValues: TArray<TValue>): ICriterion; overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply an <b>"not in"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
+    class function NotIn<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -296,6 +310,12 @@ begin
   Result := TPropertyExpression.Create(APropertyName, AOtherPropertyName, woMore);
 end;
 
+class function TRestrictions.&In(const APropertyName: string;
+  const AValues: TArray<TValue>): ICriterion;
+begin
+  Result := TInExpression.Create(APropertyName, AValues, woIn);
+end;
+
 class function TRestrictions.&In<T>(const APropertyName: string;
   const AValues: TArray<T>): ICriterion;
 begin
@@ -340,6 +360,12 @@ end;
 class function TRestrictions.NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
 begin
   Result := TSimpleExpression.Create(APropertyName, AValue, woNotEqual);
+end;
+
+class function TRestrictions.NotIn(const APropertyName: string;
+  const AValues: TArray<TValue>): ICriterion;
+begin
+  Result := TInExpression.Create(APropertyName, AValues, woNotIn);
 end;
 
 class function TRestrictions.NotIn<T>(const APropertyName: string;
