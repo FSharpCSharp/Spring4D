@@ -331,6 +331,18 @@ type
     procedure TestRecordType_Manage_Typed_Pointer;
   end;
 
+  TTestDynArray = class(TTestCase)
+  published
+    procedure ClassOperatorAdd_InputNotModified;
+
+    procedure ClassOperatorSubtract_InputNotModified;
+
+    procedure ClassOperatorIn_ItemInArray_True;
+    procedure ClassOperatorIn_ItemNotInArray_False;
+    procedure ClassOperatorIn_ArrayInArray_True;
+    procedure ClassOperatorIn_ArrayNotInArray_False;
+  end;
+
 implementation
 
 uses
@@ -1978,6 +1990,66 @@ begin
   p.s := 'Hello World';
   p := nil;
   FCheckCalled := True;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDynArray'}
+
+procedure TTestDynArray.ClassOperatorAdd_InputNotModified;
+var
+  arr, arr2: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2 := arr + 6;
+  CheckEquals(5, arr.Count);
+  CheckEquals(6, arr2.Count);
+end;
+
+procedure TTestDynArray.ClassOperatorIn_ArrayInArray_True;
+var
+  arr, arr2: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2.Add([1, 2, 3]);
+  CheckTrue(arr2 in arr);
+end;
+
+
+procedure TTestDynArray.ClassOperatorIn_ArrayNotInArray_False;
+var
+  arr, arr2: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2.Add([1, 2, 3, 6]);
+  CheckFalse(arr2 in arr);
+end;
+
+procedure TTestDynArray.ClassOperatorIn_ItemInArray_True;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckTrue(3 in arr);
+end;
+
+procedure TTestDynArray.ClassOperatorIn_ItemNotInArray_False;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckFalse(6 in arr);
+end;
+
+procedure TTestDynArray.ClassOperatorSubtract_InputNotModified;
+var
+  arr, arr2: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2 := arr - 3;
+  CheckEquals(5, arr.Count);
+  CheckEquals(4, arr2.Count);
 end;
 
 {$ENDREGION}

@@ -1404,6 +1404,10 @@ type
     class operator Implicit(const value: TDynArray<T>): TArray<T>; inline;
     class operator Add(const left, right: TDynArray<T>): TDynArray<T>; inline;
     class operator Add(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
+    class operator Subtract(const left, right: TDynArray<T>): TDynArray<T>; inline;
+    class operator Subtract(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
+    class operator In(const left: T; const right: TDynArray<T>): Boolean;
+    class operator In(const left, right: TDynArray<T>): Boolean;
 
     procedure Clear; inline;
 
@@ -1414,9 +1418,15 @@ type
     procedure Insert(index: Integer; const items: array of T); overload;
     procedure Insert(index: Integer; const items: TArray<T>); overload; inline;
     procedure Delete(index: Integer); inline;
+    procedure Remove(const item: T); overload; inline;
+    procedure Remove(const items: array of T); overload;
+    procedure Remove(const items: TArray<T>); overload; inline;
 
     function Contains(const item: T): Boolean; inline;
     function IndexOf(const item: T): Integer;
+
+    procedure Sort;
+    procedure Reverse;
 
     function GetEnumerator: TEnumerator; inline;
     property Count: Integer read GetCount;
@@ -3502,6 +3512,22 @@ begin
   Result := value.fItems;
 end;
 
+class operator TDynArray<T>.In(const left: T;
+  const right: TDynArray<T>): Boolean;
+begin
+  Result := right.Contains(left);
+end;
+
+class operator TDynArray<T>.In(const left, right: TDynArray<T>): Boolean;
+var
+  item: T;
+begin
+  for item in left.fItems do
+    if not right.Contains(item) then
+      Exit(False);
+  Result := True;
+end;
+
 function TDynArray<T>.IndexOf(const item: T): Integer;
 var
   comparer: IEqualityComparer<T>;
@@ -3589,9 +3615,80 @@ begin
     System.Move(items[0], fItems[index], len * SizeOf(T));
 end;
 
+procedure TDynArray<T>.Remove(const item: T);
+var
+  index: Integer;
+begin
+  index := IndexOf(item);
+  if index > -1 then
+    Delete(index);
+end;
+
+procedure TDynArray<T>.Remove(const items: array of T);
+var
+  item: T;
+  index: Integer;
+begin
+  for item in items do
+  begin
+    index := IndexOf(item);
+    if index > -1 then
+      Delete(index);
+  end;
+end;
+
+procedure TDynArray<T>.Remove(const items: TArray<T>);
+var
+  item: T;
+  index: Integer;
+begin
+  for item in items do
+  begin
+    index := IndexOf(item);
+    if index > -1 then
+      Delete(index);
+  end;
+end;
+
+procedure TDynArray<T>.Reverse;
+var
+  tmp: T;
+  b, e: Integer;
+begin
+  b := 0;
+  e := Count - 1;
+  while b < e do
+  begin
+    tmp := fItems[b];
+    fItems[b] := fItems[e];
+    fItems[e] := tmp;
+    Inc(b);
+    Dec(e);
+  end;
+end;
+
 procedure TDynArray<T>.SetItem(index: Integer; const value: T);
 begin
   fItems[index] := value;
+end;
+
+procedure TDynArray<T>.Sort;
+begin
+  TArray.Sort<T>(fItems);
+end;
+
+class operator TDynArray<T>.Subtract(const left,
+  right: TDynArray<T>): TDynArray<T>;
+begin
+  Result := left;
+  Result.Remove(right.fItems);
+end;
+
+class operator TDynArray<T>.Subtract(const left: TDynArray<T>;
+  const right: T): TDynArray<T>;
+begin
+  Result := left;
+  Result.Remove(right);
 end;
 
 {$ENDREGION}
