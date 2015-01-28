@@ -809,10 +809,12 @@ type
     ///	  ICollection&lt;T&gt;.
     ///	</returns>
     function Remove(const item: T): Boolean;
+    procedure RemoveAll(const predicate: TPredicate<T>);
     procedure RemoveRange(const values: array of T); overload;
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
 
     function Extract(const item: T): T;
+    procedure ExtractAll(const predicate: TPredicate<T>);
     procedure ExtractRange(const values: array of T); overload;
     procedure ExtractRange(const collection: IEnumerable<T>); overload;
 

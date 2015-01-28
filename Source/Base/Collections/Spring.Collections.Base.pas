@@ -273,10 +273,12 @@ type
     procedure Clear; virtual; abstract;
 
     function Remove(const item: T): Boolean; virtual; abstract;
+    procedure RemoveAll(const predicate: TPredicate<T>); virtual;
     procedure RemoveRange(const values: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
 
     function Extract(const item: T): T; virtual; abstract;
+    procedure ExtractAll(const predicate: TPredicate<T>); virtual;
     procedure ExtractRange(const values: array of T); overload; virtual;
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
@@ -1439,6 +1441,11 @@ begin
   end;
 end;
 
+procedure TCollectionBase<T>.ExtractAll(const predicate: TPredicate<T>);
+begin
+  ExtractRange(Where(predicate).ToArray);
+end;
+
 procedure TCollectionBase<T>.ExtractRange(const values: array of T);
 var
   item: T;
@@ -1490,6 +1497,11 @@ var
 begin
   for item in values do
     Remove(item);
+end;
+
+procedure TCollectionBase<T>.RemoveAll(const predicate: TPredicate<T>);
+begin
+  RemoveRange(Where(predicate).ToArray);
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
