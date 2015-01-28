@@ -1399,6 +1399,9 @@ type
     function GetItem(index: Integer): T; inline;
     procedure SetItem(index: Integer; const value: T); inline;
     procedure InternalInsert(index: Integer; const items: array of T); overload;
+    function InternalIndexOf(const item: T): Integer;
+    function InternalIndexOfInt(const item: Integer): Integer;
+    function InternalIndexOfStr(const item: string): Integer;
   public
     class operator Implicit(const value: TArray<T>): TDynArray<T>; inline;
     class operator Implicit(const value: TDynArray<T>): TArray<T>; inline;
@@ -1423,7 +1426,7 @@ type
     procedure Remove(const items: TArray<T>); overload; inline;
 
     function Contains(const item: T): Boolean; inline;
-    function IndexOf(const item: T): Integer;
+    function IndexOf(const item: T): Integer; inline;
 
     procedure Sort;
     procedure Reverse;
@@ -3531,14 +3534,13 @@ begin
 end;
 
 function TDynArray<T>.IndexOf(const item: T): Integer;
-var
-  comparer: IEqualityComparer<T>;
 begin
-  comparer := TEqualityComparer<T>.Default;
-  for Result := 0 to High(fItems) do
-    if comparer.Equals(fItems[Result], item) then
-      Exit;
-  Result := -1;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkInteger: Result := InternalIndexOfInt(PInteger(@item)^);
+    tkUString: Result := InternalIndexOfStr(PUnicodeString(@item)^);
+  else
+    Result := InternalIndexOf(item);
+  end;
 end;
 
 procedure TDynArray<T>.Insert(index: Integer; const item: T);
@@ -3582,6 +3584,33 @@ begin
 {$ELSE}
   System.Insert(items, fItems, index);
 {$ENDIF}
+end;
+
+function TDynArray<T>.InternalIndexOf(const item: T): Integer;
+var
+  comparer: IEqualityComparer<T>;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for Result := 0 to High(fItems) do
+    if comparer.Equals(fItems[Result], item) then
+      Exit;
+  Result := -1;
+end;
+
+function TDynArray<T>.InternalIndexOfInt(const item: Integer): Integer;
+begin
+  for Result := 0 to High(fItems) do
+    if PInteger(@fItems[Result])^ = item then
+      Exit;
+  Result := -1;
+end;
+
+function TDynArray<T>.InternalIndexOfStr(const item: string): Integer;
+begin
+  for Result := 0 to High(fItems) do
+    if PUnicodeString(@fItems[Result])^ = item then
+      Exit;
+  Result := -1;
 end;
 
 procedure TDynArray<T>.InternalInsert(index: Integer; const items: array of T);

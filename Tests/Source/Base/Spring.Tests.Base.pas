@@ -341,6 +341,8 @@ type
     procedure ClassOperatorIn_ItemNotInArray_False;
     procedure ClassOperatorIn_ArrayInArray_True;
     procedure ClassOperatorIn_ArrayNotInArray_False;
+
+    procedure IndexOf_ItemInArray;
   end;
 
 implementation
@@ -2050,6 +2052,14 @@ begin
   arr2 := arr - 3;
   CheckEquals(5, arr.Count);
   CheckEquals(4, arr2.Count);
+end;
+
+procedure TTestDynArray.IndexOf_ItemInArray;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckEquals(2, arr.IndexOf(3));
 end;
 
 {$ENDREGION}
