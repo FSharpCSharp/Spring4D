@@ -2332,7 +2332,12 @@ begin
   begin
     case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
       tkInteger: Result := PInteger(@fValue)^ = PInteger(@other.fValue)^;
+{$IFNDEF NEXTGEN}
       tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
+      tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
+      tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
+      tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
+{$ENDIF}
       tkFloat:
       begin
         case GetTypeData(TypeInfo(T)).FloatType of
@@ -2343,10 +2348,7 @@ begin
           ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
         end;
       end;
-      tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
       tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
-      tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
-      tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
       tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
       tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
     else
@@ -3469,7 +3471,7 @@ begin
   fItems[index] := Default(T);
   if index <> count then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := index to count - 1 do
         fItems[i] := fItems[i + 1];
@@ -3551,7 +3553,7 @@ begin
   SetLength(fItems, count + 1);
   if index <> count then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := count - 1 downto index do
         fItems[i + 1] := fItems[i];
@@ -3591,7 +3593,7 @@ begin
   SetLength(fItems, count + len);
   if index <> count then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := count - 1 downto index do
         fItems[i + len] := fItems[i];
