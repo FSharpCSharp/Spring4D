@@ -40,6 +40,10 @@ uses
 type
 
 {$IFNDEF DELPHIXE3_UP}
+  {$DEFINE SPRING_ARRAYMANAGERS}
+{$ENDIF}
+
+{$IFDEF SPRING_ARRAYMANAGERS}
   TArrayManager<T> = class abstract
     procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
     procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
@@ -264,7 +268,7 @@ uses
 
 {$REGION 'TMoveArrayManager<T>'}
 
-{$IFNDEF DELPHIXE3_UP}
+{$IFDEF SPRING_ARRAYMANAGERS}
 procedure TMoveArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
 begin
   System.FillChar(AArray[Index], Count * SizeOf(T), 0);
@@ -551,7 +555,7 @@ end;
 
 procedure TList<T>.DeleteRange(index, count: Integer);
 var
-  oldItems: array of T;
+  oldItems: TArray<T>;
   tailCount,
   i: Integer;
 begin

@@ -253,9 +253,8 @@ type
   ///	  <c>False</c> by default.
   ///	</remarks>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, IReadOnlyCollection<T>)
-  private
-    fOnChanged: ICollectionChangedEvent<T>;
   protected
+    fOnChanged: ICollectionChangedEvent<T>;
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean; virtual;
     function GetOnChanged: ICollectionChangedEvent<T>;
