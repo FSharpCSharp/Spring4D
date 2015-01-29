@@ -1379,6 +1379,51 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TArray'}
+
+  TArray = class(Generics.Collections.TArray)
+  public
+    /// <summary>
+    ///   Determines whether the specified item exists as an element in an
+    ///   array.
+    /// </summary>
+    class function Contains<T>(const values: array of T; const item: T): Boolean; static;
+
+    /// <summary>
+    ///   Copies an open array to a dynamic array.
+    /// </summary>
+    class function Copy<T>(const values: array of T): TArray<T>; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the entire array.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T): Integer; overload; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that extends
+    ///   from the specified index to the last element.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index: Integer): Integer; overload; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that starts at
+    ///   the specified index and contains the specified number of elements.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index, count: Integer): Integer; overload; static;
+
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index, count: Integer;
+      const comparer: IEqualityComparer<T>): Integer; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TDynArray<T>'}
 
   TDynArray<T> = record
@@ -3411,6 +3456,67 @@ class function Tuple.Pack<T1, T2, T3, T4>(const value1: T1; const value2: T2;
   const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>;
 begin
   Result := Tuple<T1, T2, T3, T4>.Create(value1, value2, value3, value4);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArray'}
+
+class function TArray.Contains<T>(const values: array of T;
+  const item: T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for i := Low(Values) to High(Values) do
+    if comparer.Equals(values[i], item) then
+      Exit(True);
+  Result := False;
+end;
+
+class function TArray.Copy<T>(const values: array of T): TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := Low(values) to High(values) do
+    Result[i] := values[i];
+end;
+
+class function TArray.IndexOf<T>(const values: array of T;
+  const item: T): Integer;
+begin
+  Result := IndexOf<T>(values, item, 0, Length(values));
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T;
+  index: Integer): Integer;
+begin
+  Result := IndexOf<T>(values, item, index, Length(values) - index);
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
+  count: Integer): Integer;
+begin
+  Result := IndexOf<T>(values, item, index, count, TEqualityComparer<T>.Default);
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
+  count: Integer; const comparer: IEqualityComparer<T>): Integer;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
+{$ENDIF}
+
+  for i := index to index + count - 1 do
+    if comparer.Equals(values[i], item) then
+      Exit(i);
+  Result := -1;
 end;
 
 {$ENDREGION}
