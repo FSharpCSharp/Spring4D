@@ -1429,7 +1429,11 @@ type
   TDynArray<T> = record
   private
     type
+{$IFDEF DELPHI2010}
+      TEnumerator = class
+{$ELSE}
       TEnumerator = record
+{$ENDIF}
       private
         fItems: TArray<T>;
         fIndex: Integer;
@@ -3604,6 +3608,9 @@ end;
 
 function TDynArray<T>.GetEnumerator: TEnumerator;
 begin
+{$IFDEF DELPHI2010}
+  Result := TEnumerator.Create;
+{$ENDIF}
   Result.fItems := fItems;
   Result.fIndex := -1;
 end;
