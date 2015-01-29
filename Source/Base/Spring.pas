@@ -1446,6 +1446,7 @@ type
     fItems: TArray<T>; // DO NOT ADD ANY OTHER MEMBERS !!!
     function GetCount: Integer; inline;
     function GetItem(index: Integer): T; inline;
+    procedure SetCount(value: Integer); inline;
     procedure SetItem(index: Integer; const value: T); inline;
     procedure InternalInsert(index: Integer; const items: array of T); overload;
     function InternalEquals(const items: array of T): Boolean; overload;
@@ -1496,6 +1497,7 @@ type
     function GetEnumerator: TEnumerator; inline;
     property Count: Integer read GetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
+    property Length: Integer read GetCount write SetCount;
   end;
 
   {$ENDREGION}
@@ -3578,22 +3580,22 @@ end;
 
 function TDynArray<T>.Add(const item: T): Integer;
 begin
-  Result := Length(fItems);
+  Result := System.Length(fItems);
   SetLength(fItems, Result + 1);
   fItems[Result] := item;
 end;
 
 procedure TDynArray<T>.Add(const items: array of T);
 begin
-  InternalInsert(Length(fItems), items);
+  InternalInsert(System.Length(fItems), items);
 end;
 
 procedure TDynArray<T>.Add(const items: TArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
-  InternalInsert(Length(fItems), items);
+  InternalInsert(System.Length(fItems), items);
 {$ELSE}
-  System.Insert(items, fItems, Length(fItems));
+  System.Insert(items, fItems, System.Length(fItems));
 {$ENDIF}
 end;
 
@@ -3752,7 +3754,7 @@ end;
 
 function TDynArray<T>.GetCount: Integer;
 begin
-  Result := Length(fItems);
+  Result := System.Length(fItems);
 end;
 
 function TDynArray<T>.GetEnumerator: TEnumerator;
@@ -3814,7 +3816,7 @@ var
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  count := Length(fItems);
+  count := System.Length(fItems);
   SetLength(fItems, count + 1);
   if index <> count then
 {$IFDEF WEAKREF}
@@ -3892,8 +3894,8 @@ procedure TDynArray<T>.InternalInsert(index: Integer; const items: array of T);
 var
   count, len, i: Integer;
 begin
-  count := Length(fItems);
-  len := Length(items);
+  count := System.Length(fItems);
+  len := System.Length(items);
   SetLength(fItems, count + len);
   if index <> count then
 {$IFDEF WEAKREF}
@@ -3978,6 +3980,11 @@ begin
   end;
 end;
 
+procedure TDynArray<T>.SetCount(value: Integer);
+begin
+  SetLength(fItems, value);
+end;
+
 procedure TDynArray<T>.SetItem(index: Integer; const value: T);
 begin
   fItems[index] := value;
@@ -4015,7 +4022,7 @@ end;
 function TDynArray<T>.TEnumerator.MoveNext: Boolean;
 begin
   Inc(fIndex);
-  Result := fIndex < Length(fItems);
+  Result := fIndex < System.Length(fItems);
 end;
 
 {$ENDREGION}
