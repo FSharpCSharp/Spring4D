@@ -1458,8 +1458,9 @@ type
     class operator Add(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
     class operator Subtract(const left, right: TDynArray<T>): TDynArray<T>; inline;
     class operator Subtract(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
-    class operator In(const left: T; const right: TDynArray<T>): Boolean;
-    class operator In(const left, right: TDynArray<T>): Boolean;
+    class operator In(const left: T; const right: TDynArray<T>): Boolean; inline;
+    class operator In(const left, right: TDynArray<T>): Boolean; inline;
+    class operator In(const left: TArray<T>; const right: TDynArray<T>): Boolean; inline;
 
     procedure Clear; inline;
 
@@ -1474,7 +1475,9 @@ type
     procedure Remove(const items: array of T); overload;
     procedure Remove(const items: TArray<T>); overload; inline;
 
-    function Contains(const item: T): Boolean; inline;
+    function Contains(const item: T): Boolean; overload; inline;
+    function Contains(const items: array of T): Boolean; overload;
+    function Contains(const items: TArray<T>): Boolean; overload;
     function IndexOf(const item: T): Integer; inline;
 
     procedure Sort;
@@ -3572,6 +3575,26 @@ begin
   Result := IndexOf(item) > -1;
 end;
 
+function TDynArray<T>.Contains(const items: array of T): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to High(items) do
+    if IndexOf(items[i]) = -1 then
+      Exit(False);
+  Result := True;
+end;
+
+function TDynArray<T>.Contains(const items: TArray<T>): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to System.Length(items) - 1 do
+    if IndexOf(items[i]) = -1 then
+      Exit(False);
+  Result := True;
+end;
+
 procedure TDynArray<T>.Delete(index: Integer);
 {$IFNDEF DELPHIXE7_UP}
 var
@@ -3637,13 +3660,14 @@ begin
 end;
 
 class operator TDynArray<T>.In(const left, right: TDynArray<T>): Boolean;
-var
-  item: T;
 begin
-  for item in left.fItems do
-    if not right.Contains(item) then
-      Exit(False);
-  Result := True;
+  Result := right.Contains(left.fItems);
+end;
+
+class operator TDynArray<T>.In(const left: TArray<T>;
+  const right: TDynArray<T>): Boolean;
+begin
+  Result := right.Contains(left);
 end;
 
 function TDynArray<T>.IndexOf(const item: T): Integer;
