@@ -1455,7 +1455,10 @@ type
     class operator Implicit(const value: TArray<T>): TDynArray<T>; inline;
     class operator Implicit(const value: TDynArray<T>): TArray<T>; inline;
     class operator Add(const left, right: TDynArray<T>): TDynArray<T>; inline;
+    class operator Add(const left: TDynArray<T>; const right: TArray<T>): TDynArray<T>; inline;
+    class operator Add(const left: TArray<T>; const right: TDynArray<T>): TDynArray<T>; inline;
     class operator Add(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
+    class operator Add(const left: T; const right: TDynArray<T>): TDynArray<T>; inline;
     class operator Subtract(const left, right: TDynArray<T>): TDynArray<T>; inline;
     class operator Subtract(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
     class operator In(const left: T; const right: TDynArray<T>): Boolean; inline;
@@ -1467,10 +1470,12 @@ type
     function Add(const item: T): Integer; overload; inline;
     procedure Add(const items: array of T); overload;
     procedure Add(const items: TArray<T>); overload; inline;
+    procedure Add(const items: TDynArray<T>); overload; inline;
     procedure Insert(index: Integer; const item: T); overload; inline;
     procedure Insert(index: Integer; const items: array of T); overload;
     procedure Insert(index: Integer; const items: TArray<T>); overload; inline;
-    procedure Delete(index: Integer); inline;
+    procedure Delete(index: Integer); overload; inline;
+    procedure Delete(index: Integer; count: Integer); overload; inline;
     procedure Remove(const item: T); overload; inline;
     procedure Remove(const items: array of T); overload;
     procedure Remove(const items: TArray<T>); overload; inline;
@@ -3538,9 +3543,31 @@ begin
 end;
 
 class operator TDynArray<T>.Add(const left: TDynArray<T>;
+  const right: TArray<T>): TDynArray<T>;
+begin
+  Result := left;
+  Result.Add(right);
+end;
+
+class operator TDynArray<T>.Add(const left: TArray<T>;
+  const right: TDynArray<T>): TDynArray<T>;
+begin
+  Result := left;
+  Result.Add(right.fItems);
+end;
+
+class operator TDynArray<T>.Add(const left: TDynArray<T>;
   const right: T): TDynArray<T>;
 begin
   Result := left;
+  Result.Add(right);
+end;
+
+class operator TDynArray<T>.Add(const left: T;
+  const right: TDynArray<T>): TDynArray<T>;
+begin
+  SetLength(Result.fItems, 1);
+  Result.fItems[0] := left;
   Result.Add(right);
 end;
 
@@ -3562,6 +3589,15 @@ begin
   InternalInsert(Length(fItems), items);
 {$ELSE}
   System.Insert(items, fItems, Length(fItems));
+{$ENDIF}
+end;
+
+procedure TDynArray<T>.Add(const items: TDynArray<T>);
+begin
+{$IFNDEF DELPHIXE7_UP}
+  InternalInsert(System.Length(items.fItems), items.fItems);
+{$ELSE}
+  System.Insert(items.fItems, fItems, System.Length(items.fItems));
 {$ENDIF}
 end;
 
@@ -3598,29 +3634,65 @@ end;
 procedure TDynArray<T>.Delete(index: Integer);
 {$IFNDEF DELPHIXE7_UP}
 var
-  count: Integer;
-  i: Integer;
+  n, i: Integer;
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  count := Length(fitems) - 1;
+  n := System.Length(fItems);
+  if (index < 0) or (index >= n) then
+    Exit;
+  Dec(n);
   fItems[index] := Default(T);
-  if index <> count then
+  if index <> n then
 {$IFDEF WEAKREF}
     if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
-      for i := index to count - 1 do
+      for i := index to n - 1 do
         fItems[i] := fItems[i + 1];
     end
     else
 {$ENDIF}
     begin
-      System.Move(fItems[index + 1], fItems[index], (count - index) * SizeOf(T));
-      System.FillChar(fItems[count], SizeOf(T), 0);
+      System.Move(fItems[index + 1], fItems[index], (n - index) * SizeOf(T));
+      System.FillChar(fItems[n], SizeOf(T), 0);
     end;
-  SetLength(fItems, count);
+  SetLength(fItems, n);
 {$ELSE}
   System.Delete(fItems, index, 1);
+{$ENDIF}
+end;
+
+procedure TDynArray<T>.Delete(index, count: Integer);
+{$IFNDEF DELPHIXE7_UP}
+var
+  n, i: Integer;
+{$ENDIF}
+begin
+{$IFNDEF DELPHIXE7_UP}
+  n := System.Length(fItems);
+  if (index < 0) or (index >= n) then
+    Exit;
+  if count > n - index then
+    count := n - index;
+  Dec(n, count);
+  for i := index to index + count - 1 do
+    fItems[i] := Default(T);
+  if index <> n then
+{$IFDEF WEAKREF}
+    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := index to n - count do
+        fItems[i] := fItems[i + count];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index + count], fItems[index], (n - index) * SizeOf(T));
+      System.FillChar(fItems[n], count * SizeOf(T), 0);
+    end;
+  SetLength(fItems, n);
+{$ELSE}
+  System.Delete(fItems, index, count);
 {$ENDIF}
 end;
 
