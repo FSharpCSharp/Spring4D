@@ -1448,6 +1448,7 @@ type
     function GetItem(index: Integer): T; inline;
     procedure SetItem(index: Integer; const value: T); inline;
     procedure InternalInsert(index: Integer; const items: array of T); overload;
+    function InternalEquals(const items: array of T): Boolean; overload;
     function InternalIndexOf(const item: T): Integer;
     function InternalIndexOfInt(const item: Integer): Integer;
     function InternalIndexOfStr(const item: string): Integer;
@@ -1464,6 +1465,8 @@ type
     class operator In(const left: T; const right: TDynArray<T>): Boolean; inline;
     class operator In(const left, right: TDynArray<T>): Boolean; inline;
     class operator In(const left: TArray<T>; const right: TDynArray<T>): Boolean; inline;
+    class operator Equal(const left, right: TDynArray<T>): Boolean; inline;
+    class operator NotEqual(const left, right: TDynArray<T>): Boolean; inline;
 
     procedure Clear; inline;
 
@@ -1484,6 +1487,8 @@ type
     function Contains(const items: array of T): Boolean; overload;
     function Contains(const items: TArray<T>): Boolean; overload;
     function IndexOf(const item: T): Integer; inline;
+    function Equals(const items: array of T): Boolean; overload;
+    function Equals(const items: TArray<T>): Boolean; overload; inline;
 
     procedure Sort;
     procedure Reverse;
@@ -3696,6 +3701,55 @@ begin
 {$ENDIF}
 end;
 
+class operator TDynArray<T>.Equal(const left, right: TDynArray<T>): Boolean;
+begin
+  Result := left.Equals(right.fItems);
+end;
+
+function TDynArray<T>.Equals(const items: array of T): Boolean;
+var
+  n, i: Integer;
+begin
+  n := System.Length(fItems);
+  if n <> System.Length(items) then
+    Exit(False);
+  Result := True;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkInteger:
+      for i := 0 to n - 1 do
+        if PInteger(@fItems[i])^ <> PInteger(@items[i])^ then
+          Exit(False);
+    tkUString:
+      for i := 0 to n - 1 do
+        if PUnicodeString(@fItems[i])^ <> PUnicodeString(@items[i])^ then
+          Exit(False);
+  else
+    Result := InternalEquals(items);
+  end;
+end;
+
+function TDynArray<T>.Equals(const items: TArray<T>): Boolean;
+var
+  n, i: Integer;
+begin
+  n := System.Length(fItems);
+  if n <> System.Length(items) then
+    Exit(False);
+  Result := True;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkInteger:
+      for i := 0 to n - 1 do
+        if PInteger(@fItems[i])^ <> PInteger(@items[i])^ then
+          Exit(False);
+    tkUString:
+      for i := 0 to n - 1 do
+        if PUnicodeString(@fItems[i])^ <> PUnicodeString(@items[i])^ then
+          Exit(False);
+  else
+    Result := InternalEquals(items);
+  end;
+end;
+
 function TDynArray<T>.GetCount: Integer;
 begin
   Result := Length(fItems);
@@ -3795,6 +3849,18 @@ begin
 {$ENDIF}
 end;
 
+function TDynArray<T>.InternalEquals(const items: array of T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for i := 0 to System.Length(fItems) - 1 do
+    if not comparer.Equals(fItems[i], items[i]) then
+      Exit(False);
+  Result := True;
+end;
+
 function TDynArray<T>.InternalIndexOf(const item: T): Integer;
 var
   comparer: IEqualityComparer<T>;
@@ -3853,6 +3919,11 @@ begin
   end
   else
     System.Move(items[0], fItems[index], len * SizeOf(T));
+end;
+
+class operator TDynArray<T>.NotEqual(const left, right: TDynArray<T>): Boolean;
+begin
+  Result := not left.Equals(right.fItems);
 end;
 
 procedure TDynArray<T>.Remove(const item: T);
