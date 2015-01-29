@@ -343,6 +343,15 @@ type
     procedure ClassOperatorIn_ArrayNotInArray_False;
 
     procedure IndexOf_ItemInArray;
+    procedure Delete_Start;
+    procedure Delete_Mid;
+    procedure Delete_End;
+    procedure Delete_IndexLessThanZero_NothingHappens;
+    procedure Delete_IndexEqualsCount_NothingHappens;
+
+    procedure DeleteRange_Mid;
+    procedure DeleteRange_IndexLessThanZero_NothingHappens;
+    procedure DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
   end;
 
 implementation
@@ -2052,6 +2061,110 @@ begin
   arr2 := arr - 3;
   CheckEquals(5, arr.Count);
   CheckEquals(4, arr2.Count);
+end;
+
+procedure TTestDynArray.DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2, 4);
+  CheckEquals(2, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+end;
+
+procedure TTestDynArray.DeleteRange_IndexLessThanZero_NothingHappens;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(-1, 2);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynArray.DeleteRange_Mid;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2, 2);
+  CheckEquals(3, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(5, arr[2]);
+end;
+
+procedure TTestDynArray.Delete_End;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(4);
+  CheckEquals(4, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+end;
+
+procedure TTestDynArray.Delete_IndexEqualsCount_NothingHappens;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(5);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynArray.Delete_IndexLessThanZero_NothingHappens;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(-1);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynArray.Delete_Mid;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2);
+  CheckEquals(4, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(4, arr[2]);
+  CheckEquals(5, arr[3]);
+end;
+
+procedure TTestDynArray.Delete_Start;
+var
+  arr: TDynArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(0);
+  CheckEquals(4, arr.Count);
+  CheckEquals(2, arr[0]);
+  CheckEquals(3, arr[1]);
+  CheckEquals(4, arr[2]);
+  CheckEquals(5, arr[3]);
 end;
 
 procedure TTestDynArray.IndexOf_ItemInArray;
