@@ -1469,6 +1469,7 @@ type
     class operator Equal(const left, right: TDynArray<T>): Boolean; inline;
     class operator NotEqual(const left, right: TDynArray<T>): Boolean; inline;
 
+    procedure Assign(const items: array of T);
     procedure Clear; inline;
 
     function Add(const item: T): Integer; overload; inline;
@@ -3606,6 +3607,11 @@ begin
 {$ELSE}
   System.Insert(items.fItems, fItems, System.Length(items.fItems));
 {$ENDIF}
+end;
+
+procedure TDynArray<T>.Assign(const items: array of T);
+begin
+  fItems := TArray.Copy<T>(items);
 end;
 
 procedure TDynArray<T>.Clear;
