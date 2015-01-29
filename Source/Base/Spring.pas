@@ -1492,6 +1492,11 @@ type
     function Equals(const items: array of T): Boolean; overload;
     function Equals(const items: TArray<T>): Boolean; overload; inline;
 
+    function Slice(index: Integer): TDynArray<T>; overload; inline;
+    function Slice(index: Integer; count: Integer): TDynArray<T>; overload; inline;
+    function Splice(index: Integer; count: Integer): TDynArray<T>; overload; inline;
+    function Splice(index: Integer; count: Integer; const items: array of T): TDynArray<T>; overload;
+
     procedure Sort;
     procedure Reverse;
 
@@ -3996,9 +4001,39 @@ begin
   fItems[index] := value;
 end;
 
+function TDynArray<T>.Slice(index: Integer): TDynArray<T>;
+begin
+  Result.fItems := Copy(fItems, index);
+end;
+
+function TDynArray<T>.Slice(index, count: Integer): TDynArray<T>;
+begin
+  Result.fItems := Copy(fItems, index, count);
+end;
+
 procedure TDynArray<T>.Sort;
 begin
   TArray.Sort<T>(fItems);
+end;
+
+function TDynArray<T>.Splice(index, count: Integer): TDynArray<T>;
+begin
+  Result := Splice(index, count, []);
+end;
+
+function TDynArray<T>.Splice(index, count: Integer;
+  const items: array of T): TDynArray<T>;
+var
+  n, i: Integer;
+begin
+  n := System.Length(fItems);
+  if (index < 0) or (index >= n) then
+    Exit;
+  if count > n - index then
+    count := n - index;
+  Result.fItems := Copy(fItems, index, count);
+  Delete(index, count);
+  Insert(index, items);
 end;
 
 class operator TDynArray<T>.Subtract(const left,
