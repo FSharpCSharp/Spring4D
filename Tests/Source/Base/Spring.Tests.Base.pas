@@ -331,7 +331,7 @@ type
     procedure TestRecordType_Manage_Typed_Pointer;
   end;
 
-  TTestDynArray = class(TTestCase)
+  TTestDynamicArray = class(TTestCase)
   published
     procedure ClassOperatorAdd_InputNotModified;
 
@@ -2006,11 +2006,11 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestDynArray'}
+{$REGION 'TTestDynamicArray'}
 
-procedure TTestDynArray.ClassOperatorAdd_InputNotModified;
+procedure TTestDynamicArray.ClassOperatorAdd_InputNotModified;
 var
-  arr, arr2: TDynArray<Integer>;
+  arr, arr2: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2 := arr + 6;
@@ -2018,9 +2018,9 @@ begin
   CheckEquals(6, arr2.Count);
 end;
 
-procedure TTestDynArray.ClassOperatorIn_ArrayInArray_True;
+procedure TTestDynamicArray.ClassOperatorIn_ArrayInArray_True;
 var
-  arr, arr2: TDynArray<Integer>;
+  arr, arr2: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2.Add([1, 2, 3]);
@@ -2028,34 +2028,34 @@ begin
 end;
 
 
-procedure TTestDynArray.ClassOperatorIn_ArrayNotInArray_False;
+procedure TTestDynamicArray.ClassOperatorIn_ArrayNotInArray_False;
 var
-  arr, arr2: TDynArray<Integer>;
+  arr, arr2: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2.Add([1, 2, 3, 6]);
   CheckFalse(arr2 in arr);
 end;
 
-procedure TTestDynArray.ClassOperatorIn_ItemInArray_True;
+procedure TTestDynamicArray.ClassOperatorIn_ItemInArray_True;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   CheckTrue(3 in arr);
 end;
 
-procedure TTestDynArray.ClassOperatorIn_ItemNotInArray_False;
+procedure TTestDynamicArray.ClassOperatorIn_ItemNotInArray_False;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   CheckFalse(6 in arr);
 end;
 
-procedure TTestDynArray.ClassOperatorSubtract_InputNotModified;
+procedure TTestDynamicArray.ClassOperatorSubtract_InputNotModified;
 var
-  arr, arr2: TDynArray<Integer>;
+  arr, arr2: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2 := arr - 3;
@@ -2063,9 +2063,9 @@ begin
   CheckEquals(4, arr2.Count);
 end;
 
-procedure TTestDynArray.DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
+procedure TTestDynamicArray.DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(2, 4);
@@ -2074,9 +2074,9 @@ begin
   CheckEquals(2, arr[1]);
 end;
 
-procedure TTestDynArray.DeleteRange_IndexLessThanZero_NothingHappens;
+procedure TTestDynamicArray.DeleteRange_IndexLessThanZero_NothingHappens;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(-1, 2);
@@ -2088,9 +2088,9 @@ begin
   CheckEquals(5, arr[4]);
 end;
 
-procedure TTestDynArray.DeleteRange_Mid;
+procedure TTestDynamicArray.DeleteRange_Mid;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(2, 2);
@@ -2100,9 +2100,9 @@ begin
   CheckEquals(5, arr[2]);
 end;
 
-procedure TTestDynArray.Delete_End;
+procedure TTestDynamicArray.Delete_End;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(4);
@@ -2113,9 +2113,9 @@ begin
   CheckEquals(4, arr[3]);
 end;
 
-procedure TTestDynArray.Delete_IndexEqualsCount_NothingHappens;
+procedure TTestDynamicArray.Delete_IndexEqualsCount_NothingHappens;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(5);
@@ -2127,9 +2127,9 @@ begin
   CheckEquals(5, arr[4]);
 end;
 
-procedure TTestDynArray.Delete_IndexLessThanZero_NothingHappens;
+procedure TTestDynamicArray.Delete_IndexLessThanZero_NothingHappens;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(-1);
@@ -2141,9 +2141,9 @@ begin
   CheckEquals(5, arr[4]);
 end;
 
-procedure TTestDynArray.Delete_Mid;
+procedure TTestDynamicArray.Delete_Mid;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(2);
@@ -2154,9 +2154,9 @@ begin
   CheckEquals(5, arr[3]);
 end;
 
-procedure TTestDynArray.Delete_Start;
+procedure TTestDynamicArray.Delete_Start;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(0);
@@ -2167,9 +2167,9 @@ begin
   CheckEquals(5, arr[3]);
 end;
 
-procedure TTestDynArray.IndexOf_ItemInArray;
+procedure TTestDynamicArray.IndexOf_ItemInArray;
 var
-  arr: TDynArray<Integer>;
+  arr: DynamicArray<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   CheckEquals(2, arr.IndexOf(3));

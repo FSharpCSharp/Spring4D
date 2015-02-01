@@ -1424,9 +1424,9 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TDynArray<T>'}
+  {$REGION 'DynamicArray<T>'}
 
-  TDynArray<T> = record
+  DynamicArray<T> = record
   private
     type
 {$IFDEF DELPHI2010}
@@ -1454,20 +1454,20 @@ type
     function InternalIndexOfInt(const item: Integer): Integer;
     function InternalIndexOfStr(const item: string): Integer;
   public
-    class operator Implicit(const value: TArray<T>): TDynArray<T>; inline;
-    class operator Implicit(const value: TDynArray<T>): TArray<T>; inline;
-    class operator Add(const left, right: TDynArray<T>): TDynArray<T>; inline;
-    class operator Add(const left: TDynArray<T>; const right: TArray<T>): TDynArray<T>; inline;
-    class operator Add(const left: TArray<T>; const right: TDynArray<T>): TDynArray<T>; inline;
-    class operator Add(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
-    class operator Add(const left: T; const right: TDynArray<T>): TDynArray<T>; inline;
-    class operator Subtract(const left, right: TDynArray<T>): TDynArray<T>; inline;
-    class operator Subtract(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
-    class operator In(const left: T; const right: TDynArray<T>): Boolean; inline;
-    class operator In(const left, right: TDynArray<T>): Boolean; inline;
-    class operator In(const left: TArray<T>; const right: TDynArray<T>): Boolean; inline;
-    class operator Equal(const left, right: TDynArray<T>): Boolean; inline;
-    class operator NotEqual(const left, right: TDynArray<T>): Boolean; inline;
+    class operator Implicit(const value: TArray<T>): DynamicArray<T>; inline;
+    class operator Implicit(const value: DynamicArray<T>): TArray<T>; inline;
+    class operator Add(const left, right: DynamicArray<T>): DynamicArray<T>; inline;
+    class operator Add(const left: DynamicArray<T>; const right: TArray<T>): DynamicArray<T>; inline;
+    class operator Add(const left: TArray<T>; const right: DynamicArray<T>): DynamicArray<T>; inline;
+    class operator Add(const left: DynamicArray<T>; const right: T): DynamicArray<T>; inline;
+    class operator Add(const left: T; const right: DynamicArray<T>): DynamicArray<T>; inline;
+    class operator Subtract(const left, right: DynamicArray<T>): DynamicArray<T>; inline;
+    class operator Subtract(const left: DynamicArray<T>; const right: T): DynamicArray<T>; inline;
+    class operator In(const left: T; const right: DynamicArray<T>): Boolean; inline;
+    class operator In(const left, right: DynamicArray<T>): Boolean; inline;
+    class operator In(const left: TArray<T>; const right: DynamicArray<T>): Boolean; inline;
+    class operator Equal(const left, right: DynamicArray<T>): Boolean; inline;
+    class operator NotEqual(const left, right: DynamicArray<T>): Boolean; inline;
 
     procedure Assign(const items: array of T);
     procedure Clear; inline;
@@ -1475,7 +1475,7 @@ type
     function Add(const item: T): Integer; overload; inline;
     procedure Add(const items: array of T); overload;
     procedure Add(const items: TArray<T>); overload; inline;
-    procedure Add(const items: TDynArray<T>); overload; inline;
+    procedure Add(const items: DynamicArray<T>); overload; inline;
     procedure Insert(index: Integer; const item: T); overload; inline;
     procedure Insert(index: Integer; const items: array of T); overload;
     procedure Insert(index: Integer; const items: TArray<T>); overload; inline;
@@ -1492,10 +1492,10 @@ type
     function Equals(const items: array of T): Boolean; overload;
     function Equals(const items: TArray<T>): Boolean; overload; inline;
 
-    function Slice(index: Integer): TDynArray<T>; overload; inline;
-    function Slice(index: Integer; count: Integer): TDynArray<T>; overload; inline;
-    function Splice(index: Integer; count: Integer): TDynArray<T>; overload; inline;
-    function Splice(index: Integer; count: Integer; const items: array of T): TDynArray<T>; overload;
+    function Slice(index: Integer): DynamicArray<T>; overload; inline;
+    function Slice(index: Integer; count: Integer): DynamicArray<T>; overload; inline;
+    function Splice(index: Integer; count: Integer): DynamicArray<T>; overload; inline;
+    function Splice(index: Integer; count: Integer; const items: array of T): DynamicArray<T>; overload;
 
     procedure Sort;
     procedure Reverse;
@@ -3547,56 +3547,56 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDynArray<T>'}
+{$REGION 'DynamicArray<T>'}
 
-class operator TDynArray<T>.Add(const left, right: TDynArray<T>): TDynArray<T>;
+class operator DynamicArray<T>.Add(const left, right: DynamicArray<T>): DynamicArray<T>;
 begin
   Result := left;
   Result.Add(right.fItems);
 end;
 
-class operator TDynArray<T>.Add(const left: TDynArray<T>;
-  const right: TArray<T>): TDynArray<T>;
+class operator DynamicArray<T>.Add(const left: DynamicArray<T>;
+  const right: TArray<T>): DynamicArray<T>;
 begin
   Result := left;
   Result.Add(right);
 end;
 
-class operator TDynArray<T>.Add(const left: TArray<T>;
-  const right: TDynArray<T>): TDynArray<T>;
+class operator DynamicArray<T>.Add(const left: TArray<T>;
+  const right: DynamicArray<T>): DynamicArray<T>;
 begin
   Result := left;
   Result.Add(right.fItems);
 end;
 
-class operator TDynArray<T>.Add(const left: TDynArray<T>;
-  const right: T): TDynArray<T>;
+class operator DynamicArray<T>.Add(const left: DynamicArray<T>;
+  const right: T): DynamicArray<T>;
 begin
   Result := left;
   Result.Add(right);
 end;
 
-class operator TDynArray<T>.Add(const left: T;
-  const right: TDynArray<T>): TDynArray<T>;
+class operator DynamicArray<T>.Add(const left: T;
+  const right: DynamicArray<T>): DynamicArray<T>;
 begin
   SetLength(Result.fItems, 1);
   Result.fItems[0] := left;
   Result.Add(right);
 end;
 
-function TDynArray<T>.Add(const item: T): Integer;
+function DynamicArray<T>.Add(const item: T): Integer;
 begin
   Result := System.Length(fItems);
   SetLength(fItems, Result + 1);
   fItems[Result] := item;
 end;
 
-procedure TDynArray<T>.Add(const items: array of T);
+procedure DynamicArray<T>.Add(const items: array of T);
 begin
   InternalInsert(System.Length(fItems), items);
 end;
 
-procedure TDynArray<T>.Add(const items: TArray<T>);
+procedure DynamicArray<T>.Add(const items: TArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
   InternalInsert(System.Length(fItems), items);
@@ -3605,7 +3605,7 @@ begin
 {$ENDIF}
 end;
 
-procedure TDynArray<T>.Add(const items: TDynArray<T>);
+procedure DynamicArray<T>.Add(const items: DynamicArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
   InternalInsert(System.Length(items.fItems), items.fItems);
@@ -3614,22 +3614,22 @@ begin
 {$ENDIF}
 end;
 
-procedure TDynArray<T>.Assign(const items: array of T);
+procedure DynamicArray<T>.Assign(const items: array of T);
 begin
   fItems := TArray.Copy<T>(items);
 end;
 
-procedure TDynArray<T>.Clear;
+procedure DynamicArray<T>.Clear;
 begin
   fItems := nil;
 end;
 
-function TDynArray<T>.Contains(const item: T): Boolean;
+function DynamicArray<T>.Contains(const item: T): Boolean;
 begin
   Result := IndexOf(item) > -1;
 end;
 
-function TDynArray<T>.Contains(const items: array of T): Boolean;
+function DynamicArray<T>.Contains(const items: array of T): Boolean;
 var
   i: Integer;
 begin
@@ -3639,7 +3639,7 @@ begin
   Result := True;
 end;
 
-function TDynArray<T>.Contains(const items: TArray<T>): Boolean;
+function DynamicArray<T>.Contains(const items: TArray<T>): Boolean;
 var
   i: Integer;
 begin
@@ -3649,7 +3649,7 @@ begin
   Result := True;
 end;
 
-procedure TDynArray<T>.Delete(index: Integer);
+procedure DynamicArray<T>.Delete(index: Integer);
 {$IFNDEF DELPHIXE7_UP}
 var
   n, i: Integer;
@@ -3680,7 +3680,7 @@ begin
 {$ENDIF}
 end;
 
-procedure TDynArray<T>.Delete(index, count: Integer);
+procedure DynamicArray<T>.Delete(index, count: Integer);
 {$IFNDEF DELPHIXE7_UP}
 var
   n, i: Integer;
@@ -3714,12 +3714,12 @@ begin
 {$ENDIF}
 end;
 
-class operator TDynArray<T>.Equal(const left, right: TDynArray<T>): Boolean;
+class operator DynamicArray<T>.Equal(const left, right: DynamicArray<T>): Boolean;
 begin
   Result := left.Equals(right.fItems);
 end;
 
-function TDynArray<T>.Equals(const items: array of T): Boolean;
+function DynamicArray<T>.Equals(const items: array of T): Boolean;
 var
   n, i: Integer;
 begin
@@ -3741,7 +3741,7 @@ begin
   end;
 end;
 
-function TDynArray<T>.Equals(const items: TArray<T>): Boolean;
+function DynamicArray<T>.Equals(const items: TArray<T>): Boolean;
 var
   n, i: Integer;
 begin
@@ -3763,12 +3763,12 @@ begin
   end;
 end;
 
-function TDynArray<T>.GetCount: Integer;
+function DynamicArray<T>.GetCount: Integer;
 begin
   Result := System.Length(fItems);
 end;
 
-function TDynArray<T>.GetEnumerator: TEnumerator;
+function DynamicArray<T>.GetEnumerator: TEnumerator;
 begin
 {$IFDEF DELPHI2010}
   Result := TEnumerator.Create;
@@ -3777,39 +3777,39 @@ begin
   Result.fIndex := -1;
 end;
 
-function TDynArray<T>.GetItem(index: Integer): T;
+function DynamicArray<T>.GetItem(index: Integer): T;
 begin
   Result := fItems[index];
 end;
 
-class operator TDynArray<T>.Implicit(const value: TArray<T>): TDynArray<T>;
+class operator DynamicArray<T>.Implicit(const value: TArray<T>): DynamicArray<T>;
 begin
   Result.fItems := value;
 end;
 
-class operator TDynArray<T>.Implicit(const value: TDynArray<T>): TArray<T>;
+class operator DynamicArray<T>.Implicit(const value: DynamicArray<T>): TArray<T>;
 begin
   Result := value.fItems;
 end;
 
-class operator TDynArray<T>.In(const left: T;
-  const right: TDynArray<T>): Boolean;
+class operator DynamicArray<T>.In(const left: T;
+  const right: DynamicArray<T>): Boolean;
 begin
   Result := right.Contains(left);
 end;
 
-class operator TDynArray<T>.In(const left, right: TDynArray<T>): Boolean;
+class operator DynamicArray<T>.In(const left, right: DynamicArray<T>): Boolean;
 begin
   Result := right.Contains(left.fItems);
 end;
 
-class operator TDynArray<T>.In(const left: TArray<T>;
-  const right: TDynArray<T>): Boolean;
+class operator DynamicArray<T>.In(const left: TArray<T>;
+  const right: DynamicArray<T>): Boolean;
 begin
   Result := right.Contains(left);
 end;
 
-function TDynArray<T>.IndexOf(const item: T): Integer;
+function DynamicArray<T>.IndexOf(const item: T): Integer;
 begin
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
     tkInteger: Result := InternalIndexOfInt(PInteger(@item)^);
@@ -3819,7 +3819,7 @@ begin
   end;
 end;
 
-procedure TDynArray<T>.Insert(index: Integer; const item: T);
+procedure DynamicArray<T>.Insert(index: Integer; const item: T);
 {$IFNDEF DELPHIXE7_UP}
 var
   count: Integer;
@@ -3848,12 +3848,12 @@ begin
 {$ENDIF}
 end;
 
-procedure TDynArray<T>.Insert(index: Integer; const items: array of T);
+procedure DynamicArray<T>.Insert(index: Integer; const items: array of T);
 begin
   InternalInsert(index, items);
 end;
 
-procedure TDynArray<T>.Insert(index: Integer; const items: TArray<T>);
+procedure DynamicArray<T>.Insert(index: Integer; const items: TArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
   InternalInsert(index, items);
@@ -3862,7 +3862,7 @@ begin
 {$ENDIF}
 end;
 
-function TDynArray<T>.InternalEquals(const items: array of T): Boolean;
+function DynamicArray<T>.InternalEquals(const items: array of T): Boolean;
 var
   comparer: IEqualityComparer<T>;
   i: Integer;
@@ -3874,7 +3874,7 @@ begin
   Result := True;
 end;
 
-function TDynArray<T>.InternalIndexOf(const item: T): Integer;
+function DynamicArray<T>.InternalIndexOf(const item: T): Integer;
 var
   comparer: IEqualityComparer<T>;
 begin
@@ -3885,7 +3885,7 @@ begin
   Result := -1;
 end;
 
-function TDynArray<T>.InternalIndexOfInt(const item: Integer): Integer;
+function DynamicArray<T>.InternalIndexOfInt(const item: Integer): Integer;
 begin
   for Result := 0 to High(fItems) do
     if PInteger(@fItems[Result])^ = item then
@@ -3893,7 +3893,7 @@ begin
   Result := -1;
 end;
 
-function TDynArray<T>.InternalIndexOfStr(const item: string): Integer;
+function DynamicArray<T>.InternalIndexOfStr(const item: string): Integer;
 begin
   for Result := 0 to High(fItems) do
     if PUnicodeString(@fItems[Result])^ = item then
@@ -3901,7 +3901,7 @@ begin
   Result := -1;
 end;
 
-procedure TDynArray<T>.InternalInsert(index: Integer; const items: array of T);
+procedure DynamicArray<T>.InternalInsert(index: Integer; const items: array of T);
 var
   count, len, i: Integer;
 begin
@@ -3934,12 +3934,12 @@ begin
     System.Move(items[0], fItems[index], len * SizeOf(T));
 end;
 
-class operator TDynArray<T>.NotEqual(const left, right: TDynArray<T>): Boolean;
+class operator DynamicArray<T>.NotEqual(const left, right: DynamicArray<T>): Boolean;
 begin
   Result := not left.Equals(right.fItems);
 end;
 
-procedure TDynArray<T>.Remove(const item: T);
+procedure DynamicArray<T>.Remove(const item: T);
 var
   index: Integer;
 begin
@@ -3948,7 +3948,7 @@ begin
     Delete(index);
 end;
 
-procedure TDynArray<T>.Remove(const items: array of T);
+procedure DynamicArray<T>.Remove(const items: array of T);
 var
   item: T;
   index: Integer;
@@ -3961,7 +3961,7 @@ begin
   end;
 end;
 
-procedure TDynArray<T>.Remove(const items: TArray<T>);
+procedure DynamicArray<T>.Remove(const items: TArray<T>);
 var
   item: T;
   index: Integer;
@@ -3974,7 +3974,7 @@ begin
   end;
 end;
 
-procedure TDynArray<T>.Reverse;
+procedure DynamicArray<T>.Reverse;
 var
   tmp: T;
   b, e: Integer;
@@ -3991,38 +3991,38 @@ begin
   end;
 end;
 
-procedure TDynArray<T>.SetCount(value: Integer);
+procedure DynamicArray<T>.SetCount(value: Integer);
 begin
   SetLength(fItems, value);
 end;
 
-procedure TDynArray<T>.SetItem(index: Integer; const value: T);
+procedure DynamicArray<T>.SetItem(index: Integer; const value: T);
 begin
   fItems[index] := value;
 end;
 
-function TDynArray<T>.Slice(index: Integer): TDynArray<T>;
+function DynamicArray<T>.Slice(index: Integer): DynamicArray<T>;
 begin
   Result.fItems := Copy(fItems, index);
 end;
 
-function TDynArray<T>.Slice(index, count: Integer): TDynArray<T>;
+function DynamicArray<T>.Slice(index, count: Integer): DynamicArray<T>;
 begin
   Result.fItems := Copy(fItems, index, count);
 end;
 
-procedure TDynArray<T>.Sort;
+procedure DynamicArray<T>.Sort;
 begin
   TArray.Sort<T>(fItems);
 end;
 
-function TDynArray<T>.Splice(index, count: Integer): TDynArray<T>;
+function DynamicArray<T>.Splice(index, count: Integer): DynamicArray<T>;
 begin
   Result := Splice(index, count, []);
 end;
 
-function TDynArray<T>.Splice(index, count: Integer;
-  const items: array of T): TDynArray<T>;
+function DynamicArray<T>.Splice(index, count: Integer;
+  const items: array of T): DynamicArray<T>;
 var
   n, i: Integer;
 begin
@@ -4036,15 +4036,15 @@ begin
   Insert(index, items);
 end;
 
-class operator TDynArray<T>.Subtract(const left,
-  right: TDynArray<T>): TDynArray<T>;
+class operator DynamicArray<T>.Subtract(const left,
+  right: DynamicArray<T>): DynamicArray<T>;
 begin
   Result := left;
   Result.Remove(right.fItems);
 end;
 
-class operator TDynArray<T>.Subtract(const left: TDynArray<T>;
-  const right: T): TDynArray<T>;
+class operator DynamicArray<T>.Subtract(const left: DynamicArray<T>;
+  const right: T): DynamicArray<T>;
 begin
   Result := left;
   Result.Remove(right);
@@ -4053,14 +4053,14 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDynArray<T>.TEnumerator' }
+{$REGION 'DynamicArray<T>.TEnumerator' }
 
-function TDynArray<T>.TEnumerator.GetCurrent: T;
+function DynamicArray<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fItems[fIndex];
 end;
 
-function TDynArray<T>.TEnumerator.MoveNext: Boolean;
+function DynamicArray<T>.TEnumerator.MoveNext: Boolean;
 begin
   Inc(fIndex);
   Result := fIndex < System.Length(fItems);
