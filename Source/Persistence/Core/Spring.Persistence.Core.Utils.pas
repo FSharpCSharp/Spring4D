@@ -172,6 +172,8 @@ var
   bStream: TMemoryStream;
   ptr: Pointer;
   iDim: Integer;
+  convertedValue : Variant;
+  typeName : string;
 begin
   if VarIsArray(AValue) then
   begin
@@ -188,11 +190,22 @@ begin
   end
   else
   begin
-    case VarType(AValue) of
-      273 {FMTBcdVariantType.VarType}: Result := Double(AValue); //Oracle sometimes returns this vartype for some columns
-      else
-        Result := TValue.FromVariant(AValue);
-    end;
+    typeName := VarTypeAsText(VarType(AValue));
+    if SameText(typeName, 'SQLTimeStampVariantType') or
+       SameText(typeName, 'SQLTimeStampOffsetVariantType') then
+      convertedValue := Double(AValue)
+    else if SameText(typeName, 'FMTBcdVariantType') then
+    begin
+      {$IFDEF DELPHIXE6_UP}
+      convertedValue := Int64(AValue);
+      {$ELSE}
+      convertedValue := StrToInt64(VarToStr(AValue));
+      {$ENDIF}
+    end
+    else
+      convertedValue := AValue;
+
+    Result := TValue.FromVariant(convertedValue);
   end;
 end;
 
