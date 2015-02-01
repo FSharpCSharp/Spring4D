@@ -48,7 +48,7 @@ type
     fCriticalSection: ICriticalSection;
   protected
     function GetEntityKey(const instance: TObject): TEntityMapKey; overload;
-    function GetEntityKey(const instance: TObject; const id: String): TEntityMapKey; overload;
+    function GetEntityKey(const className: string; const id: String): TEntityMapKey; overload;
     function GetEntityValues(const instance: TObject; const id: String): TEntityMapValue;
 
     procedure PutEntity(const entity: IEntityWrapper);
@@ -57,6 +57,8 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+
+    function GetMemberValue(const className: string;  const id: string; const memberName: string): TValue;
 
     function IsMapped(const instance: TObject): Boolean;  
     procedure AddOrReplace(const instance: IEntityWrapper);
@@ -146,8 +148,22 @@ end;
 
 function TEntityMap.GetEntityValues(const instance: TObject; const id: String): TEntityMapValue;
 begin
-  if not fEntityValues.TryGetValue(GetEntityKey(instance, id), Result) then
+  if not fEntityValues.TryGetValue(GetEntityKey(instance.ClassName, id), Result) then
     SetLength(Result, 0);
+end;
+
+function TEntityMap.GetMemberValue(const className: string;  const id: string;
+  const memberName: string): TValue;
+var
+  entityMapValue: TEntityMapValue;
+  pair: TPair<string,TValue>;
+begin
+  if fEntityValues.TryGetValue(GetEntityKey(className, id), entityMapValue) then
+    for pair in entityMapValue do
+      if pair.Key = memberName then
+        Exit(pair.Value);
+
+  Result := TValue.Empty;
 end;
 
 function TEntityMap.GetEntityKey(const instance: TObject): TEntityMapKey;
@@ -155,12 +171,12 @@ var
   id: String;
 begin
   id := TEntityCache.Get(instance.ClassType).GetPrimaryKeyValueAsString(instance);
-  Result := GetEntityKey(instance, id);
+  Result := GetEntityKey(instance.ClassName, id);
 end;
 
-function TEntityMap.GetEntityKey(const instance: TObject; const id: String): TEntityMapKey;
+function TEntityMap.GetEntityKey(const className: string; const id: String): TEntityMapKey;
 begin
-  Result := instance.ClassName + '$' + id;
+  Result := className + '$' + id;
 end;
 
 function TEntityMap.IsMapped(const instance: TObject): Boolean;
@@ -196,7 +212,7 @@ begin
     values[i].Key := col.MemberName;
     values[i].Value := columnValue;
   end;
-  key := GetEntityKey(entity.GetEntity, id);
+  key := GetEntityKey(entity.GetEntity.ClassName, id);
   fCriticalSection.Enter;
   try
     pair := fEntityValues.ExtractPair(key);
@@ -217,7 +233,7 @@ begin
   id := entityDetails.GetPrimaryKeyValueAsString(instance);
   fCriticalSection.Enter;
   try
-    pair := fEntityValues.ExtractPair(GetEntityKey(instance, id));
+    pair := fEntityValues.ExtractPair(GetEntityKey(instance.ClassName, id));
   finally
     fCriticalSection.Leave;
     FinalizeItem(pair);

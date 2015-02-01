@@ -36,7 +36,6 @@ implementation
 uses
   Spring.Persistence.Core.ConnectionFactory
   ,Spring.Persistence.Core.DatabaseManager
-  ,SvDesignPatterns
   ,Spring.Collections
   ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.SQL.Params

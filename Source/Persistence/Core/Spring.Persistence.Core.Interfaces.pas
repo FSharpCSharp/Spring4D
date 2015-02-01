@@ -472,6 +472,9 @@ type
     function GetPrimaryKeyValueFrom(const resultSet: IDBResultSet): TValue;
     function GetOneToManyColumns: IList<OneToManyAttribute>;
     function GetManyToOneColumns: IList<ManyToOneAttribute>;
+    function GetForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
+
+    function GetTableName: string;
 
     procedure SetColumnValue(const columnMemberName: string; const value: TValue); overload;
     procedure SetColumnValue(const column: TORMAttribute; const value: TValue); overload;

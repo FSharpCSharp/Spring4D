@@ -57,8 +57,6 @@ uses
   ,Spring.Persistence.Core.ConnectionFactory
   ,Spring.Persistence.SQL.Register
   ,Spring.Persistence.SQL.Params
-  ,SvDesignPatterns
-  ,SvRttiUtils
   ,Spring.Collections
   ,Spring.Persistence.Core.Reflection
   ,TestConsts

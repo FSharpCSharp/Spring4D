@@ -50,7 +50,8 @@ type
     procedure Update_NotMapped();
     procedure Delete();
     procedure Save();
-    procedure SaveAll_OneToMany();
+    procedure When_SaveAll_UpdateOneToMany();
+    procedure When_SaveAll_InsertOneToMany();
     procedure SaveAll_ManyToOne();
     procedure ExecutionListeners();
     procedure Page();
@@ -128,8 +129,6 @@ uses
   ,Spring.Persistence.SQL.Register
   ,Spring.Persistence.SQL.Params
   ,Spring.Persistence.Mapping.Attributes
-  ,SvDesignPatterns
-  ,SvRttiUtils
   ,Spring
   ,Spring.Collections
   ,Generics.Collections
@@ -1284,7 +1283,30 @@ begin
   end;
 end;
 
-procedure TestTSession.SaveAll_OneToMany;
+procedure TestTSession.When_SaveAll_InsertOneToMany;
+var
+  customer: TCustomer;
+  order: TCustomer_Orders;
+begin
+  customer := TCustomer.Create;
+  customer.Name := 'Foo';
+  customer.OrdersIntf := TCollections.CreateObjectList<TCustomer_Orders>();
+
+  order := TCustomer_Orders.Create;
+  order.Order_Status_Code := 123;
+  order.Total_Order_Price := 100;
+  customer.Orders.Add(order);
+
+  FManager.SaveAll(customer);
+
+  CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
+  CheckEquals(1, GetTableRecordCount(TBL_ORDERS));
+  CheckEquals(customer.ID, order.Customer_ID, 'CustomerIDs should be equal in both primary and foreign key entities');
+
+  customer.Free;
+end;
+
+procedure TestTSession.When_SaveAll_UpdateOneToMany;
 var
   LCustomer: TCustomer;
   LNewCustomers: IList<TCustomer>;
@@ -1547,7 +1569,7 @@ begin
   LCustomer := TCustomer.Create;
   LDBCustomer := nil;
   try
-    TSvRtti.SetValue('FId', LCustomer, LId);
+    LCustomer.GetField('FId').SetValue(LCustomer, LId);
     LCustomer.Age := 25;
     LCustomer.Name := 'Bar';
     LCustomer.Height := 1.1;

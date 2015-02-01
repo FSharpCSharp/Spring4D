@@ -282,6 +282,7 @@ uses
   TypInfo,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Consts,
+  Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.ListSession,
   Spring.Persistence.Core.Reflection,
@@ -574,11 +575,24 @@ procedure TSession.SaveAll(const entity: TObject);
 var
   relations: IList<TObject>;
   relation: TObject;
+  entityWrapper, foreignEntityWrapper: IEntityWrapper;
 begin
-  relations := TRttiExplorer.GetRelationsOf(entity);
+  relations := TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute);
   for relation in relations do
-    SaveAll(relation);
+  begin
+    Save(relation);
+  end;
+
   Save(entity);
+
+  relations := TRttiExplorer.GetRelationsOf(entity, OneToManyAttribute);
+  for relation in relations do
+  begin
+    entityWrapper := TEntityWrapper.Create(entity);
+    foreignEntityWrapper := TEntityWrapper.Create(relation);
+    UpdateForeignKeysFor(foreignEntityWrapper, entityWrapper);
+    SaveAll(relation);
+  end;
 end;
 
 procedure TSession.SaveList<T>(const entities: IEnumerable<T>);
@@ -628,9 +642,8 @@ procedure TSession.Update(const entity: TObject);
 var
   updater: TUpdateExecutor;
 begin
-  updater := GetUpdateCommandExecutor(entity.ClassType);
+  updater := GetUpdateCommandExecutor(entity.ClassType, fOldStateEntities);
   try
-    updater.EntityMap := fOldStateEntities;
     DoUpdate(entity, updater);
   finally
     updater.Free;
@@ -642,9 +655,8 @@ var
   updater: TUpdateExecutor;
   entity: T;
 begin
-  updater := GetUpdateCommandExecutor(T);
+  updater := GetUpdateCommandExecutor(T, fOldStateEntities);
   try
-    updater.EntityMap := fOldStateEntities;
     for entity in entities do
       DoUpdate(entity, updater);
   finally

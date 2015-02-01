@@ -32,6 +32,7 @@ uses
   Rtti,
   TypInfo,
   SysUtils,
+  Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Interfaces,
@@ -97,7 +98,7 @@ type
     class function GetPrimaryKeyColumn(AClass: TClass): ColumnAttribute;
     class function GetQueryTextFromMethod(AMethod: TRttiMethod): string;
     class function GetRawPointer(const AInstance: TValue): Pointer;
-    class function GetRelationsOf(AEntity: TObject): IList<TObject>;
+    class function GetRelationsOf(AEntity: TObject; relationAttributeClass: TAttributeClass): IList<TObject>;
     class function GetSequence(AClass: TClass): SequenceAttribute;
     class function GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): IList<TObject>;
     class function GetTable(AClass: TClass): TableAttribute; overload;
@@ -496,7 +497,7 @@ begin
     Result := AInstance.GetReferenceToRawData;
 end;
 
-class function TRttiExplorer.GetRelationsOf(AEntity: TObject): IList<TObject>;
+class function TRttiExplorer.GetRelationsOf(AEntity: TObject; relationAttributeClass: TAttributeClass): IList<TObject>;
 var
   LType: TRttiType;
   LField: TRttiField;
@@ -508,7 +509,7 @@ begin
   LType := FRttiCache.GetType(AEntity.ClassType);
   for LField in LType.GetFields do
   begin
-    if LField.HasCustomAttribute<Association> then
+    if LField.HasCustomAttribute(relationAttributeClass) then
     begin
       LEntities := GetSubEntityFromMemberDeep(AEntity, LField);
       if LEntities.Any then
@@ -518,7 +519,7 @@ begin
 
   for LProperty in LType.GetProperties do
   begin
-    if LProperty.HasCustomAttribute<Association> then
+    if LProperty.HasCustomAttribute(relationAttributeClass) then
     begin
       LEntities := GetSubEntityFromMemberDeep(AEntity, LProperty);
       if LEntities.Any then

@@ -36,6 +36,7 @@ uses
   Spring.Persistence.Core.AbstractManager,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands.Delete,
   Spring.Persistence.SQL.Commands.Insert,
@@ -110,13 +111,15 @@ type
     procedure DoDelete(const entity, executor: TObject); virtual;
 
     function GetInsertCommandExecutor(entityClass: TClass): TInsertExecutor; virtual;
-    function GetUpdateCommandExecutor(entityClass: TClass): TUpdateExecutor; virtual;
+    function GetUpdateCommandExecutor(entityClass: TClass; entityMap: TEntityMap): TUpdateExecutor; virtual;
     function GetSelectCommandExecutor(entityClass: TClass): TSelectExecutor; virtual;
     function GetSelectByIdCommandExecutor(entityClass: TClass; const id: TValue; const selectColumn: ColumnAttribute = nil): TSelectExecutor; virtual;
     function GetDeleteCommandExecutor(entityClass: TClass): TDeleteExecutor; virtual;
 
     procedure RegisterNonGenericRowMapper(typeInfo: PTypeInfo; const rowMapper: IRowMapper<TObject>);
     procedure UnregisterNonGenericRowMapper(typeInfo: PTypeInfo);
+
+    procedure UpdateForeignKeysFor(const foreignKeyEntity: IEntityWrapper; const primaryKeyEntity: IEntityWrapper);
   public
     constructor Create(const connection: IDBConnection); override;
   end;
@@ -455,6 +458,7 @@ begin
   lazyKind := TType.GetLazyKind(lazyTypeInfo);
   targetType := TType.GetType(lazyTypeInfo).GetGenericArguments[0];
   Result := TValue.Empty;
+
   column := entity.GetColumnAttribute(columnMemberName);
   id := entity.GetPrimaryKeyValue;
   case targetType.TypeKind of
@@ -538,11 +542,12 @@ begin
 end;
 
 function TAbstractSession.GetUpdateCommandExecutor(
-  entityClass: TClass): TUpdateExecutor;
+  entityClass: TClass; entityMap: TEntityMap): TUpdateExecutor;
 begin
   Result := TUpdateExecutor.Create;
   Result.Connection := Connection;
   Result.EntityClass := entityClass;
+  Result.EntityMap := entityMap;
   Result.Build(entityClass);
 end;
 
@@ -625,8 +630,12 @@ begin
     Exit;
   for column in entity.GetOneToManyColumns do
   begin
-    value := ResolveLazyValue(entity, column.MemberName, column.MemberType);
-    entity.SetColumnValue(column, value);
+    if not TUtils.IsLazyValueCreated(entity.GetColumnValue(column)) then
+    begin
+      value := ResolveLazyValue(entity, column.MemberName, column.MemberType);
+      if not value.IsEmpty then
+        entity.SetColumnValue(column, value);
+    end;
   end;
 end;
 
@@ -657,6 +666,24 @@ end;
 procedure TAbstractSession.UnregisterNonGenericRowMapper(typeInfo: PTypeInfo);
 begin
   fRowMappers.Remove(typeInfo);
+end;
+
+procedure TAbstractSession.UpdateForeignKeysFor(const foreignKeyEntity: IEntityWrapper;
+  const primaryKeyEntity: IEntityWrapper);
+var
+  forColAttribute: ForeignJoinColumnAttribute;
+  primaryKeyValue: TValue;
+  primaryKeyTableName: string;
+begin
+  primaryKeyValue := primaryKeyEntity.GetPrimaryKeyValue;
+  if primaryKeyValue.IsEmpty then
+    Exit;
+  primaryKeyTableName := primaryKeyEntity.GetTableName;
+  for forColAttribute in foreignKeyEntity.GetForeignKeyColumns do
+  begin
+    if SameText(forColAttribute.ReferencedTableName, primaryKeyTableName) then
+      forColAttribute.RttiMember.SetValue(foreignKeyEntity.GetEntity, primaryKeyValue);
+  end;
 end;
 
 {$ENDREGION}

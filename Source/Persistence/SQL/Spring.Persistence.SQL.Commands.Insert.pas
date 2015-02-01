@@ -80,6 +80,7 @@ implementation
 uses
   SysUtils,
   Variants,
+  Spring.Reflection,
   Spring.Persistence.Core.Exceptions;
 
 

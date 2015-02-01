@@ -41,6 +41,9 @@ type
     function HasManyToOneRelations: Boolean;
     function GetOneToManyColumns: IList<OneToManyAttribute>;
     function GetManyToOneColumns: IList<ManyToOneAttribute>;
+    function GetForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
+
+    function GetTableName: string;
   end;
 
 implementation
@@ -110,6 +113,11 @@ begin
   Result := fEntity;
 end;
 
+function TEntityWrapper.GetForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
+begin
+  Result := fEntityClassData.ForeignColumns;
+end;
+
 function TEntityWrapper.GetManyToOneColumns: IList<ManyToOneAttribute>;
 begin
   Result := fEntityClassData.ManyToOneColumns;
@@ -149,6 +157,11 @@ begin
       [columnData.ColumnName]);
   end;
   Result := TUtils.FromVariant(value);
+end;
+
+function TEntityWrapper.GetTableName: string;
+begin
+  Result := fEntityClassData.EntityTable.TableName;
 end;
 
 function TEntityWrapper.HasManyToOneRelations: Boolean;
