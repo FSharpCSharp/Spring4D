@@ -113,8 +113,6 @@ uses
   Spring.Persistence.SQL.Params in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Params.pas',
   Spring.Persistence.SQL.Register in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Register.pas',
   Spring.Persistence.SQL.Types in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Types.pas',
- // SQLite3 in '..\External\SQLite3\Source\SQLite3.pas',
- // SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas',
   TestAdapterMongoDB in 'TestAdapterMongoDB.pas',
   TestAdaptersASA in 'TestAdaptersASA.pas',
   TestAdaptersOracle in 'TestAdaptersOracle.pas',
