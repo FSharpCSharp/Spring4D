@@ -505,7 +505,7 @@ var
   LEntities: IList<TObject>;
 begin
   Result := TCollections.CreateList<TObject>;
-  //look for OneToMany or ManyToOne attributes
+
   LType := FRttiCache.GetType(AEntity.ClassType);
   for LField in LType.GetFields do
   begin

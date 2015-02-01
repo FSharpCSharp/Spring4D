@@ -682,7 +682,7 @@ begin
   for forColAttribute in foreignKeyEntity.GetForeignKeyColumns do
   begin
     if SameText(forColAttribute.ReferencedTableName, primaryKeyTableName) then
-      forColAttribute.RttiMember.SetValue(foreignKeyEntity.GetEntity, primaryKeyValue);
+      foreignKeyEntity.SetColumnValue(forColAttribute, primaryKeyValue);
   end;
 end;
 
