@@ -1914,8 +1914,26 @@ begin
 end;
 
 function EqualsInt2Int(const left, right: TValue): Boolean;
+var
+  leftValue, rightValue: Int64;
 begin
-  Result := left.AsInteger = right.AsInteger;
+  case GetTypeData(left.TypeInfo).OrdType of
+    otSByte: leftValue := TValueData(left).FAsSByte;
+    otSWord: leftValue := TValueData(left).FAsSWord;
+    otSLong: leftValue := TValueData(left).FAsSLong;
+  else
+    leftValue := TValueData(left).FAsULong;
+  end;
+
+  case GetTypeData(right.TypeInfo).OrdType of
+    otSByte: rightValue := TValueData(right).FAsSByte;
+    otSWord: rightValue := TValueData(right).FAsSWord;
+    otSLong: rightValue := TValueData(right).FAsSLong;
+  else
+    rightValue := TValueData(right).FAsULong;
+  end;
+
+  Result := leftValue = rightValue;
 end;
 
 function EqualsInt2Float(const left, right: TValue): Boolean;
@@ -2137,7 +2155,7 @@ const
       // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
-      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail, // TODO: tkSet
+      EqualsFail, EqualsInt2Int, EqualsFail, EqualsFail, EqualsFail,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef

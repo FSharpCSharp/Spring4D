@@ -71,7 +71,8 @@ begin
     TTestTuplesDouble.Suite,
     TTestTuplesTriple.Suite,
     TTestTuplesQuadruple.Suite,
-    TTestSmartPointer.Suite
+    TTestSmartPointer.Suite,
+    TTestValueHelper.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections', [
