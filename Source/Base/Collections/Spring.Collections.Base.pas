@@ -584,7 +584,7 @@ end;
 
 constructor TEnumerableBase<T>.Create(const comparer: TComparison<T>);
 begin
-  Create(TComparer<T>.Construct(comparer));
+  Create(IComparer<T>(PPointer(@comparer)^));
 end;
 
 class destructor TEnumerableBase<T>.Destroy;
@@ -944,7 +944,7 @@ end;
 
 function TEnumerableBase<T>.Max(const comparer: TComparison<T>): T;
 begin
-  Result := Max(TComparer<T>.Construct(comparer));
+  Result := Max(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.Min: T;
@@ -988,7 +988,7 @@ end;
 
 function TEnumerableBase<T>.Min(const comparer: TComparison<T>): T;
 begin
-  Result := Min(TComparer<T>.Construct(comparer));
+  Result := Min(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
@@ -1013,7 +1013,7 @@ begin
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  Result := Ordered(TComparer<T>.Construct(comparer));
+  Result := Ordered(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
@@ -1924,11 +1924,8 @@ begin
 end;
 
 procedure TListBase<T>.Sort(const comparison: TComparison<T>);
-var
-  comparer: IComparer<T>;
 begin
-  comparer := TComparer<T>.Construct(comparison);
-  Sort(comparer);
+  Sort(IComparer<T>(PPointer(@comparison)^));
 end;
 
 function TListBase<T>.ToArray: TArray<T>;
