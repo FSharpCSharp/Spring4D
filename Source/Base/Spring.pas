@@ -1497,7 +1497,9 @@ type
     function Splice(index: Integer; count: Integer): DynamicArray<T>; overload; inline;
     function Splice(index: Integer; count: Integer; const items: array of T): DynamicArray<T>; overload;
 
-    procedure Sort;
+    procedure Sort; overload; inline;
+    procedure Sort(const comparer: IComparer<T>); overload; inline;
+    procedure Sort(const comparer: TComparison<T>); overload; inline;
     procedure Reverse;
 
     function GetEnumerator: TEnumerator; inline;
@@ -4014,6 +4016,16 @@ end;
 procedure DynamicArray<T>.Sort;
 begin
   TArray.Sort<T>(fItems);
+end;
+
+procedure DynamicArray<T>.Sort(const comparer: IComparer<T>);
+begin
+  TArray.Sort<T>(fItems, comparer);
+end;
+
+procedure DynamicArray<T>.Sort(const comparer: TComparison<T>);
+begin
+  TArray.Sort<T>(fItems, IComparer<T>(PPointer(@comparer)^));
 end;
 
 function DynamicArray<T>.Splice(index, count: Integer): DynamicArray<T>;
