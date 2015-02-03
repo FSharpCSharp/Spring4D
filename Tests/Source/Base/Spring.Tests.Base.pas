@@ -843,9 +843,9 @@ var
 begin
   sut1 := [x..z];
   sut2 := [a..b];
-  Guard.CheckSet(sut1, 'sut1');
+  Guard.CheckSet<TTestSet1>(sut1, 'sut1');
   Guard.CheckSet<TTestSet1>([], 'sut1');
-  Guard.CheckSet(sut2, 'sut2');
+  Guard.CheckSet<TTestSet2>(sut2, 'sut2');
   Guard.CheckSet<TTestSet2>([], 'sut2');
   Pass;
 end;
