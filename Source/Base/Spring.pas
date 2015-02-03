@@ -390,6 +390,9 @@ type
     class procedure CheckEnum<T{:enum}>(const argumentValue: T; const argumentName: string); overload; static; inline;
     class procedure CheckEnum<T{:enum}>(argumentValue: Integer; const argumentName: string); overload; static; inline;
 
+    class procedure CheckSet<T{:set}>(const argumentValue: T; const argumentName: string); overload; static; inline;
+    class procedure CheckSet<T{:set}>(argumentValue: Cardinal; const argumentName: string); overload; static; inline;
+
     class procedure CheckIndex(length, index: Integer; indexBase: Integer = 0); static; inline;
 
     /// <exception cref="Spring|EArgumentOutOfRangeException">
@@ -2233,6 +2236,48 @@ const
 begin
   if (value < min) or (value > max) then
     Guard.RaiseArgumentOutOfRangeException(ValueArgName);
+end;
+
+class procedure Guard.CheckSet<T>(const argumentValue: T;
+  const argumentName: string);
+var
+  value: Integer;
+begin
+  value := 0;
+  Move(argumentValue, value, SizeOf(T));
+  Guard.CheckSet<T>(value, argumentName);
+end;
+
+class procedure Guard.CheckSet<T>(argumentValue: Cardinal;
+  const argumentName: string);
+var
+  typeInfo: PTypeInfo;
+  data: PTypeData;
+  minValue, maxValue: Cardinal;
+begin
+  typeInfo := System.TypeInfo(T);
+  Guard.CheckTypeKind(typeInfo, [tkSet], 'T');
+
+  data := GetTypeData(typeInfo);
+  Guard.CheckNotNull(data, 'data');
+
+  if Assigned(data.CompType) then
+  begin
+    data := GetTypeData(data.CompType^);
+    maxValue := (1 shl (data.MaxValue - data.MinValue + 1)) - 1;
+  end
+  else
+    case data^.OrdType of
+      otSByte, otUByte: maxValue := High(Byte);
+      otSWord, otUWord: maxValue := High(Word);
+      otSLong, otULong: Exit;
+    else
+      maxValue := 0;
+    end;
+
+  if argumentValue > maxValue then
+    raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidSetArgument, [
+      argumentName, typeInfo.TypeName, argumentValue]);
 end;
 
 class procedure Guard.CheckRangeExclusive(value, min, max: Integer);

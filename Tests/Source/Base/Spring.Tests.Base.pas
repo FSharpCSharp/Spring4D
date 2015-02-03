@@ -68,6 +68,7 @@ type
     procedure TestIsNullReference;
     procedure TestCheckRange;
     procedure TestNotNull;
+    procedure TestCheckSet;
   end;
 
   TTestLazy = class(TTestCase)
@@ -826,6 +827,27 @@ begin
     begin
       Guard.CheckRange(len, 5, 5, idx);
     end);
+end;
+
+type
+  TTestEnum1 = (x = 1, y, z);
+  TTestSet1 = set of TTestEnum1;
+
+  TTestEnum2 = (a, b, c);
+  TTestSet2 = set of TTestEnum2;
+
+procedure TTestGuard.TestCheckSet;
+var
+  sut1: TTestSet1;
+  sut2: TTestSet2;
+begin
+  sut1 := [x..z];
+  sut2 := [a..b];
+  Guard.CheckSet(sut1, 'sut1');
+  Guard.CheckSet<TTestSet1>([], 'sut1');
+  Guard.CheckSet(sut2, 'sut2');
+  Guard.CheckSet<TTestSet2>([], 'sut2');
+  Pass;
 end;
 
 procedure TTestGuard.TestIsNullReference;
