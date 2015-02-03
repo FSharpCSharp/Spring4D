@@ -1424,24 +1424,24 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'DynamicArray<T>'}
+  {$REGION 'Dynamic array'}
+
+{$IFDEF DELPHI2010}
+  TArrayEnumerator<T> = class
+{$ELSE}
+  TArrayEnumerator<T> = record
+{$ENDIF}
+  private
+    fItems: TArray<T>;
+    fIndex: Integer;
+    function GetCurrent: T; inline;
+  public
+    constructor Create(const items: TArray<T>);
+    function MoveNext: Boolean; inline;
+    property Current: T read GetCurrent;
+  end;
 
   DynamicArray<T> = record
-  private
-    type
-{$IFDEF DELPHI2010}
-      TEnumerator = class
-{$ELSE}
-      TEnumerator = record
-{$ENDIF}
-      private
-        fItems: TArray<T>;
-        fIndex: Integer;
-        function GetCurrent: T;
-      public
-        function MoveNext: Boolean; inline;
-        property Current: T read GetCurrent;
-      end;
   private
     fItems: TArray<T>; // DO NOT ADD ANY OTHER MEMBERS !!!
     function GetCount: Integer; inline;
@@ -1502,7 +1502,7 @@ type
     procedure Sort(const comparer: TComparison<T>); overload; inline;
     procedure Reverse;
 
-    function GetEnumerator: TEnumerator; inline;
+    function GetEnumerator: TArrayEnumerator<T>; inline;
     property Count: Integer read GetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property Length: Integer read GetCount write SetCount;
@@ -3770,13 +3770,14 @@ begin
   Result := System.Length(fItems);
 end;
 
-function DynamicArray<T>.GetEnumerator: TEnumerator;
+function DynamicArray<T>.GetEnumerator: TArrayEnumerator<T>;
 begin
 {$IFDEF DELPHI2010}
-  Result := TEnumerator.Create;
-{$ENDIF}
+  Result := TArrayEnumerator<T>.Create(fItems);
+{$ELSE}
   Result.fItems := fItems;
   Result.fIndex := -1;
+{$ENDIF}
 end;
 
 function DynamicArray<T>.GetItem(index: Integer): T;
@@ -4065,14 +4066,20 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'DynamicArray<T>.TEnumerator' }
+{$REGION 'TArrayEnumerator<T>' }
 
-function DynamicArray<T>.TEnumerator.GetCurrent: T;
+constructor TArrayEnumerator<T>.Create(const items: TArray<T>);
+begin
+  fItems := items;
+  fIndex := -1;
+end;
+
+function TArrayEnumerator<T>.GetCurrent: T;
 begin
   Result := fItems[fIndex];
 end;
 
-function DynamicArray<T>.TEnumerator.MoveNext: Boolean;
+function TArrayEnumerator<T>.MoveNext: Boolean;
 begin
   Inc(fIndex);
   Result := fIndex < System.Length(fItems);
