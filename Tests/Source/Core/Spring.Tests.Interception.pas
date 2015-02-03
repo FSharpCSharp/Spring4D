@@ -112,7 +112,8 @@ uses
   Spring.Collections,
   Spring.Container.AutoMockExtension,
   Spring.Container.Core,
-  Spring.Mocking;
+  Spring.Mocking,
+  Spring.TestUtils;
 
 
 {$REGION 'TFreezableTest'}
@@ -155,6 +156,7 @@ begin
   finally
     pet.Free;
   end;
+  Pass;
 end;
 
 procedure TFreezableTest.Frozen_object_should_throw_ObjectFrozenException_when_trying_to_set_a_property;
@@ -317,6 +319,7 @@ begin
   finally
     pet.Free;
   end;
+  Pass;
 end;
 
 procedure TFreezableTest.Freezable_should_throw_when_trying_to_freeze_classes_with_nonVirtual_setters;
@@ -695,6 +698,7 @@ begin
   finally
     sut.Free;
   end;
+  Pass;
 end;
 
 {$ENDREGION}
