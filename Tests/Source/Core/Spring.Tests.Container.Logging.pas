@@ -34,6 +34,7 @@ uses
   Rtti,
   StrUtils,
   SysUtils,
+  TestFramework,
   TypInfo,
   Spring,
   Spring.Collections,
@@ -135,6 +136,9 @@ type
 
 implementation
 
+uses
+  Spring.TestUtils;
+
 
 {$REGION 'Internal test helpers'}
 
@@ -170,7 +174,7 @@ begin
   fContainer.Resolve<Ilogger>;
   fContainer.Resolve<Ilogger>('l2');
 
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestLogInsideContainer.TestLog;
@@ -326,7 +330,7 @@ procedure TTestLoggingConfiguration.TestLeak;
 begin
   //If done incorrectly this test will create a leak
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestLoggingConfiguration.TestMultipleConfiguration;
@@ -807,7 +811,7 @@ begin
   i := container.Resolve<ILogAppender>;
 
   container.Free;
-  FCheckCalled := True;
+  Pass;
 end;
 
 {$ENDREGION}

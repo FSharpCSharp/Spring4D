@@ -749,7 +749,7 @@ end;
 procedure TTestIntegerList.TestIssue53;
 begin
   SUT := TIntegerList.Create;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestIntegerList.TestIssue67;
@@ -1182,7 +1182,7 @@ begin
     SUT := nil;
     stack.Free;
   end;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestStackOfInteger.TestStackInitializesEmpty;
@@ -1463,7 +1463,7 @@ begin
     SUT := nil;
     queue.Free;
   end;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestQueueOfInteger.TestQueueDequeue;

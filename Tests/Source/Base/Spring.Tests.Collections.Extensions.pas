@@ -39,7 +39,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
-  Spring.Collections.Lists;
+  Spring.Collections.Lists,
+  Spring.TestUtils;
 
 type
   TThrowingEnumerable = class sealed(TEnumerableBase<Integer>)
@@ -52,10 +53,9 @@ type
     function GetEnumerator: IEnumerator<T>; override;
   end;
 
-  TTestCaseHelper = class helper for TTestCase
+  TTestCaseHelper = class helper(TAbstractTestHelper) for TTestCase
   protected
-    procedure CheckException(AExceptionClass: ExceptionClass; const AMethod: TProc; const msg: string = ''); overload;
-    procedure CheckExceptionDeferred(deferredFunction: TFunc<IEnumerable<Integer>, IEnumerable<Integer>>); overload;
+    procedure CheckExceptionDeferred(const deferredFunction: TFunc<IEnumerable<Integer>, IEnumerable<Integer>>);
   end;
 
   TTestWhere = class(TTestCase)
@@ -721,29 +721,8 @@ end;
 
 { TTestCaseHelper }
 
-procedure TTestCaseHelper.CheckException(AExceptionClass: ExceptionClass;
-  const AMethod: TProc; const msg: string);
-begin
-  FCheckCalled := True;
-  try
-    AMethod();
-  except
-    on e: Exception do
-    begin
-      if not Assigned(AExceptionClass) then
-        raise
-      else if not e.ClassType.InheritsFrom(AExceptionClass) then
-        FailNotEquals(AExceptionClass.ClassName, e.ClassName, msg, ReturnAddress)
-      else
-        AExceptionClass := nil;
-    end;
-  end;
-  if Assigned(AExceptionClass) then
-    FailNotEquals(AExceptionClass.ClassName, '', msg, ReturnAddress);
-end;
-
 procedure TTestCaseHelper.CheckExceptionDeferred(
-  deferredFunction: TFunc<IEnumerable<Integer>, IEnumerable<Integer>>);
+  const deferredFunction: TFunc<IEnumerable<Integer>, IEnumerable<Integer>>);
 var
   source: TThrowingEnumerable;
   result: IEnumerable<Integer>;
@@ -1156,7 +1135,7 @@ begin
   TEnumerable.Range(MaxInt, 1);
   TEnumerable.Range(1, MaxInt);
   TEnumerable.Range(MaxInt div 2, (MaxInt div 2) + 2);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestRange.NegativeCount;
@@ -3392,7 +3371,7 @@ begin
   second := TThrowingEnumerable.Create;
   query := TIntersectIterator<Integer>.Create(first, second);
   iterator := query.GetEnumerator;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestIntersect.SecondSequenceReadFullyOnFirstResultIteration;
@@ -3550,7 +3529,7 @@ begin
   second := TThrowingEnumerable.Create;
   query := TExceptIterator<Integer>.Create(first, second);
   iterator := query.GetEnumerator;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestExcept.SecondSequenceReadFullyOnFirstResultIteration;
@@ -3796,7 +3775,7 @@ begin
     begin
       Result := x + y;
     end);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestJoin.InnerSequenceIsBuffered;
@@ -3946,7 +3925,7 @@ begin
     begin
       Result := x;
     end);
-  FCheckCalled := True;
+  Pass;
 end;
 
 function Join(const separator: string; const values: IEnumerable): string;
@@ -4171,7 +4150,7 @@ begin
     begin
       Result := x + y.Count;
     end);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestGroupJoin.SimpleGroupJoin;
@@ -4657,7 +4636,7 @@ begin
     begin
       Result := x;
     end);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestOrderBy.KeySelectorIsCalledExactlyOncePerElement;
@@ -4862,7 +4841,7 @@ begin
       Result := x;
     end,
     nil, True);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestOrderByDescending.NilComparerIsDefault;

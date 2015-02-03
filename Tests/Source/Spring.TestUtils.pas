@@ -37,7 +37,8 @@ uses
 type
   TAbstractTestHelper = class helper for TAbstractTest
   public
-    procedure CheckException(expected: ExceptionClass; method: TProc; const msg: string = '');
+    procedure CheckException(expected: ExceptionClass; const method: TProc; const msg: string = '');
+    procedure Pass; inline;
   end;
 
 procedure ProcessTestResult(const ATestResult: TTestResult);
@@ -60,8 +61,8 @@ end;
 
 {$REGION 'TAbstractTestHelper'}
 
-procedure TAbstractTestHelper.CheckException(
-  expected: ExceptionClass; method: TProc; const msg: string);
+procedure TAbstractTestHelper.CheckException(expected: ExceptionClass;
+  const method: TProc; const msg: string);
 begin
   FCheckCalled := True;
   try
@@ -79,6 +80,11 @@ begin
   end;
   if Assigned(expected) then
     FailNotEquals(expected.ClassName, 'nothing', msg, ReturnAddress);
+end;
+
+procedure TAbstractTestHelper.Pass;
+begin
+  FCheckCalled := True;
 end;
 
 {$ENDREGION}

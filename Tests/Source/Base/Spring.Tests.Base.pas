@@ -2000,7 +2000,7 @@ begin
   p.y := 22;
   p.s := 'Hello World';
   p := nil;
-  FCheckCalled := True;
+  Pass;
 end;
 
 {$ENDREGION}
