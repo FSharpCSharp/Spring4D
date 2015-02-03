@@ -34,8 +34,7 @@ interface
 
 uses
   Spring.Persistence.Mapping.Attributes, Generics.Collections
-  , Graphics, Spring.Collections, Classes, Spring
-  , SvSerializer;
+  , Graphics, Spring.Collections, Classes, Spring;
 
 
 const
@@ -95,7 +94,6 @@ type
     constructor Create;
     destructor Destroy; override;
   public
-    [SvTransient]
     property ID: Integer read FId;
     [Column('CUSTNAME', [], 50, 0, 0, 'Customers name')]
     property Name: string read FName write FName;
@@ -113,13 +111,11 @@ type
     [Column('CUSTTYPE', [cpHidden], 0, 0, 0, 'Customers type')]
     property CustomerType: TCustomerType read FCustomerType write FCustomerType;
     property Products: IList<TProduct> read GetProducts write SetProducts;
-    [SvTransient]
     property Avatar: TPicture read GetAvatar write SetAvatar;
     property AvatarLazy: Nullable<TPicture> read GetAvatarLazy write SetAvatarLazy;
     property Orders: IList<TCustomer_Orders> read GetOrders;
     property OrdersIntf: IList<TCustomer_Orders> read GetOrdersIntf write SetOrdersIntf;
     property StreamLazy: Lazy<TMemoryStream> read FStream write FStream;
-    [SvTransient]
     property CustStream: TMemoryStream read GetCustStream write SetCustStream;
   end;
 
@@ -233,7 +229,6 @@ type
     FPrice: Double;
     [Version] FVersion: Integer;
   public
-    [SvTransient]
     property ID: Integer read FId write FId;
     [Column('PRODNAME', [], 50, 0, 0, 'Product name')]
     property Name: string read FName write FName;

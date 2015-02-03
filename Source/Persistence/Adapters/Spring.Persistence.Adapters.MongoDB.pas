@@ -241,20 +241,16 @@ end;
 function TMongoResultSetAdapter.GetFieldCount: Integer;
 var
   LIter: TBsonIterator;
-  i: Integer;
 begin
+  Result := 0;
   if Assigned(fDoc) then
   begin
     LIter := fDoc.iterator;
-    i := 0;
     while LIter.next do
     begin
-      Inc(i);
+      Inc(Result);
     end;
-    Result := i;
-  end
-  else
-    Result := 0;
+  end;
 end;
 
 function TMongoResultSetAdapter.GetFieldName(index: Integer): string;
@@ -490,35 +486,32 @@ end;
 
 procedure TMongoStatementAdapter.SetParams(const params: IList<TDBParam>);
 var
-  LParam: TDBParam;
-  LValue: string;
-  LParamIndex: Integer;
+  param: TDBParam;
+  value: string;
 begin
   inherited;
   if (fStatementText = '') then
     Exit;
 
-  LParamIndex := 0;
-  for LParam in params do
+  for param in params do
   begin
-    if (VarType(LParam.Value) = varUnknown) then
+    if (VarType(param.Value) = varUnknown) then
       Continue;
-    LValue := VarToStrDef(LParam.Value, '');
-    case VarType(LParam.Value) of
+    value := VarToStrDef(param.Value, 'null');
+    case VarType(param.Value) of
       varString, varUString, varStrArg, varOleStr:
       begin
-        if IsObjectId(LValue) then   //ObjectID("sdsd457845")
+        if IsObjectId(value) then   //ObjectID("sdsd457845")
         begin
-          LValue := ReplaceStr(LValue, '"', '\"');
-          LValue := Format('"%S"', [LValue]);
+          value := ReplaceStr(value, '"', '\"');
+          value := Format('"%S"', [value]);
         end
         else
-          LValue := AnsiQuotedStr(LValue, '"');
+          value := AnsiQuotedStr(value, '"');
       end;
     end;
 
-    fStatementText := StringReplace(fStatementText, TMongoDBGenerator.GetParamName(LParamIndex), LValue, [rfReplaceAll]);
-    Inc(LParamIndex);
+    fStatementText := StringReplace(fStatementText, param.Name, value, [rfReplaceAll]);
   end;
 end;
 

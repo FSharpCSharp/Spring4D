@@ -44,6 +44,7 @@ uses
   Rtti,
   MongoBson,
   Spring.Reflection,
+  Spring.Persistence.SQL.Types,
   Spring.Persistence.Adapters.MongoDB;
 
 
@@ -59,11 +60,20 @@ var
   LCollection: string;
   i: Integer;
 begin
+  if entities.IsEmpty then
+    Exit;
   LConn := (Connection as TMongoConnectionAdapter).Connection;
   LStatement := TMongoStatementAdapter.Create(nil);
   try
     SetLength(LDocs, entities.Count);
     i := 0;
+
+    if CanClientAutogenerateValue then
+      InsertCommand.InsertFields.Add(TSQLInsertField.Create(
+          EntityData.PrimaryKeyColumn.ColumnName,
+          Table, EntityData.PrimaryKeyColumn,
+          InsertCommand.GetAndIncParameterName(EntityData.PrimaryKeyColumn.ColumnName)));
+
     for LEntity in entities do
     begin
       if CanClientAutogenerateValue then

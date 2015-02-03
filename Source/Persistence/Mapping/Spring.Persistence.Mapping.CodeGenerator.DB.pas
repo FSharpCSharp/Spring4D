@@ -34,7 +34,6 @@ uses
   ,ADODB
   ,DB
   ,Classes
-  ,SvSerializer
   ;
 
 type

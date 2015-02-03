@@ -463,6 +463,7 @@ type
   IEntityWrapper = interface(IInvokable)
     ['{E6B12BC9-AA98-4F00-851B-8DDC0AADD36A}']
     function GetEntity: TObject;
+    function GetColumns: IList<ColumnAttribute>;
     function GetColumnAttribute(const memberName: String): ColumnAttribute;
     function GetColumnsToMap: TColumnDataList;
     function GetColumnValue(const memberName: string): TValue; overload;

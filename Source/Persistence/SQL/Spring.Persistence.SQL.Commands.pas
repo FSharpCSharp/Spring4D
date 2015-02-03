@@ -486,7 +486,7 @@ var
   LIndex: Integer;
   LUpFieldname: string;
 begin
-  LUpFieldname := UpperCase(AFieldname);
+  LUpFieldname := UpperCase(Table.GetNameWithoutSchema + '_' + AFieldname);
   LIndex := 1;
   if FParameterNames.TryGetValue(LUpFieldname, LIndex) then
     Inc(LIndex);

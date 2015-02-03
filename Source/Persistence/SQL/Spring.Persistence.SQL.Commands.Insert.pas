@@ -73,6 +73,7 @@ type
     procedure Execute(const entityWrapper: IEntityWrapper);
 
     property InsertCommand: TInsertCommand read fCommand;
+    property Table: TSQLTable read FTable;
   end;
 
 implementation
@@ -253,6 +254,11 @@ begin
   else if CanClientAutogenerateValue then
   begin
     Result := TValue.FromVariant(Generator.GenerateUniqueId);
+    fCommand.InsertFields.Add(
+      TSQLInsertField.Create(
+        EntityData.PrimaryKeyColumn.ColumnName,
+        fTable, EntityData.PrimaryKeyColumn,
+        fCommand.GetAndIncParameterName(EntityData.PrimaryKeyColumn.ColumnName)));
   end;
 end;
 

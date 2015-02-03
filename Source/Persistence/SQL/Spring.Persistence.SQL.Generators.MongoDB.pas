@@ -29,7 +29,8 @@ unit Spring.Persistence.SQL.Generators.MongoDB;
 interface
 
 uses
-  SvSerializer,
+  Rtti,
+  SysUtils,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Generators.Abstract,
@@ -43,8 +44,7 @@ type
   /// </summary>
   TMongoDBGenerator = class(TNoSQLGenerator)
   private
-    class var fSerializerFormat: TSvSerializeFormat;
-
+    class var fsJson: TFormatSettings;
     class constructor Create;
   protected
     function GetExpressionFromWhereField(AField: TSQLWhereField; AFieldIndex: Integer): string; virtual;
@@ -52,6 +52,12 @@ type
     function GetPrefix(ATable: TSQLTable): string; virtual;
     function GetSortingDirection(sortingDirection: TSortingDirection): string; virtual;
     function WrapResult(const AResult: string): string; virtual;
+
+    function DoGetInsertJson(const command: TInsertCommand): string;
+    function DoGetUpdateJson(const command: TUpdateCommand): string;
+    function CreateClassInsertCommandAndTable(const fromValue: TValue): TInsertCommand;
+    function CreateClassUpdateCommandAndTable(const fromValue: TValue): TUpdateCommand;    
+    function ToJsonValue(const value: TValue): string;
   public
     function GetQueryLanguage: TQueryLanguage; override;
     function GenerateUniqueId: Variant; override;
@@ -68,8 +74,6 @@ type
     function GetSQLTableCount(const tableName: string): string; override;
 
     class function GetParamName(index: Integer): string;
-
-    class property SerializerFormat: TSvSerializeFormat read fSerializerFormat write fSerializerFormat;
   end;
 
 implementation
@@ -77,27 +81,223 @@ implementation
 uses
   Spring.Persistence.Core.Exceptions
   ,Spring.Persistence.Core.Utils
-  ,SvSerializerSuperJson
-  ,SysUtils
+  ,Spring.Persistence.Core.EntityCache
+  ,Spring.Persistence.Core.Interfaces
+  ,Spring.Persistence.Core.EntityWrapper
+  ,Spring.Collections
+  ,Spring.Reflection
   ,StrUtils
   ,Math
   ,Spring.Persistence.SQL.Register
   ,mongoID
   ,MongoBson
   ,Variants
+  ,TypInfo
   ;
 
 { TMongoDBGenerator }
 
 class constructor TMongoDBGenerator.Create;
 begin
-  fSerializerFormat := sstSuperJson;
+  fsJson := TFormatSettings.Create;
+  fsJson.DecimalSeparator := '.';
+  fsJson.ShortDateFormat := 'yyyy-mm-dd';
+  fsJson.DateSeparator := '-';
+  fsJson.TimeSeparator := ':';
+  fsJson.LongDateFormat := 'yyyy-mm-dd hh:mm:ss';
+end;
+
+
+
+function TMongoDBGenerator.CreateClassInsertCommandAndTable(
+  const fromValue: TValue): TInsertCommand;
+var
+  fields: IList<ColumnAttribute>;
+  entity: IEntityWrapper;
+  entityObject: TObject;
+  table: TSQLTable;
+begin
+  entityObject := fromValue.AsObject;
+  entity := TEntityWrapper.Create(entityObject);
+  
+  table := TSQLTable.Create;
+  table.Name := entityObject.ClassName;   
+   
+  fields := TCollections.CreateList<ColumnAttribute>;
+  fields.AddRange(entity.GetColumns);
+  
+  Result := TInsertCommand.Create(table);
+  Result.Entity := entityObject;
+  Result.SetCommandFieldsFromColumns(fields);
+end;
+
+function TMongoDBGenerator.CreateClassUpdateCommandAndTable(
+  const fromValue: TValue): TUpdateCommand;
+var
+  fields: IList<ColumnAttribute>;
+  entity: IEntityWrapper;
+  entityObject: TObject;
+  table: TSQLTable;
+begin
+  entityObject := fromValue.AsObject;
+  entity := TEntityWrapper.Create(entityObject);
+  
+  table := TSQLTable.Create;
+  table.Name := entityObject.ClassName;   
+   
+  fields := TCollections.CreateList<ColumnAttribute>;
+  fields.AddRange(entity.GetColumns);
+  
+  Result := TUpdateCommand.Create(table);
+  Result.Entity := entityObject;
+  Result.SetCommandFieldsFromColumns(fields);  
+end;
+
+function TMongoDBGenerator.DoGetInsertJson(
+  const command: TInsertCommand): string;
+var
+  i, j: Integer;
+  insertField: TSQLInsertField;
+  classCommand: TInsertCommand;
+  list: IList;
+  current: TValue;
+
+  function GetJsonValueFromClass(const value: TValue): string;
+  begin
+    Result := 'null';
+    if value.AsObject = nil then
+      Exit;  
+
+    classCommand := CreateClassInsertCommandAndTable(value);
+    try
+      Result := DoGetInsertJson(classCommand);
+    finally
+      classCommand.Table.Free;
+      classCommand.Free;
+    end;  
+  end;
+
+begin
+  Result := '{';
+  for i := 0 to command.InsertFields.Count - 1 do
+  begin
+    if i <> 0 then
+      Result := Result + ',';
+
+    insertField := command.InsertFields[i];
+    case insertField.Column.MemberType.Kind of
+      tkClass:
+      begin
+        Result := Result + QuotedStr(insertField.Fieldname) + ': ';
+        current := insertField.Column.GetValue(command.Entity);
+        Result := Result + GetJsonValueFromClass(current);         
+      end;
+      tkInterface:
+      begin
+        Result := Result + QuotedStr(insertField.Fieldname) + ': [';
+        list := insertField.Column.GetValue(command.Entity).AsInterface as IList;
+        for j := 0 to list.Count - 1 do
+        begin
+          if j <> 0 then
+            Result := Result + ',';
+
+          current := list[j];  
+          if list.ElementType.Kind = tkClass then
+            Result := Result + GetJsonValueFromClass(current)                              
+          else
+            Result := Result + ToJsonValue(current);
+        end;
+        Result := Result + ']';
+      end
+      else
+      begin
+        current := TValue.Empty;
+        if command.Entity <> nil then
+          current := insertField.Column.GetValue(command.Entity);
+          
+        Result := Result + QuotedStr(insertField.Fieldname) + ': ' 
+          + ToJsonValue(current);
+      end;          
+    end;
+  end;
+  Result := Result + '}';
+end;
+
+function TMongoDBGenerator.DoGetUpdateJson(
+  const command: TUpdateCommand): string;
+var
+  i, j: Integer;
+  updateField: TSQLUpdateField;
+  classCommand: TUpdateCommand;
+  list: IList;
+  current: TValue;
+
+  function GetJsonValueFromClass(const value: TValue): string;
+  begin
+    Result := 'null';
+    if value.AsObject = nil then
+      Exit;  
+
+    classCommand := CreateClassUpdateCommandAndTable(value);
+    try
+      Result := DoGetUpdateJson(classCommand);
+    finally
+      classCommand.Table.Free;
+      classCommand.Free;
+    end;  
+  end;
+
+begin
+  Result := '{';
+  for i := 0 to command.UpdateFields.Count - 1 do
+  begin
+    if i <> 0 then
+      Result := Result + ',';
+
+    updateField := command.UpdateFields[i];
+    case updateField.Column.MemberType.Kind of
+      tkClass:
+      begin
+        Result := Result + QuotedStr(updateField.Fieldname) + ': ';
+        current := updateField.Column.GetValue(command.Entity);
+        Result := Result + GetJsonValueFromClass(current);         
+      end;
+      tkInterface:
+      begin
+        Result := Result + QuotedStr(updateField.Fieldname) + ': [';
+        list := updateField.Column.GetValue(command.Entity).AsInterface as IList;
+        for j := 0 to list.Count - 1 do
+        begin
+          if j <> 0 then
+            Result := Result + ',';
+
+          current := list[j];  
+          if list.ElementType.Kind = tkClass then
+            Result := Result + GetJsonValueFromClass(current)                              
+          else
+            Result := Result + ToJsonValue(current);
+        end;
+        Result := Result + ']';
+      end
+      else
+      begin
+        current := TValue.Empty;
+        if command.Entity <> nil then
+          current := updateField.Column.GetValue(command.Entity);
+          
+        Result := Result + QuotedStr(updateField.Fieldname) + ': ' 
+          + ToJsonValue(current);
+      end;          
+    end;
+  end;
+  Result := Result + '}';
+  
 end;
 
 function TMongoDBGenerator.GenerateDelete(
   const command: TDeleteCommand): string;
 begin
-  Result := 'D' + GetPrefix(command.Table) +'{"_id": '+ GetParamName(0) + '}';
+  Result := 'D' + GetPrefix(command.Table) +'{"_id": '+ command.WhereFields.First.ParamName + '}';
 end;
 
 function TMongoDBGenerator.GenerateGetQueryCount(const sql: string): string;
@@ -110,7 +310,7 @@ function TMongoDBGenerator.GenerateInsert(
 begin
   if (command.Entity = nil) then
     Exit('');
-  TSvSerializer.SerializeObject(command.Entity, Result, fSerializerFormat);
+  Result := DoGetInsertJson(command);
   Result := 'I' + GetPrefix(command.Table) + Result;
 end;
 
@@ -145,7 +345,6 @@ begin
     begin
       Dec(LFieldIndex);
     end;
-
     Result := Result + GetExpressionFromWhereField(LField, LFieldIndex);
     Inc(LFieldIndex);
   end;
@@ -181,7 +380,7 @@ function TMongoDBGenerator.GenerateUpdate(
 begin
   if (commmand.Entity = nil) then
     Exit('');
-  TSvSerializer.SerializeObject(commmand.Entity, Result, fSerializerFormat);
+  Result := DoGetUpdateJson(commmand);  
   Result := 'U' + GetPrefix(commmand.Table) + Result;
 end;
 
@@ -198,13 +397,13 @@ var
   LField, LExpression: string;
 begin
   case AField.WhereOperator of
-    woEqual: Result := '{' + AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + GetParamName(AFieldIndex) + '}';
+    woEqual: Result := '{' + AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + AField.ParamName + '}';
     woNotEqual, woMoreOrEqual, woMore, woLess, woLessOrEqual :
-      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], GetParamName(AFieldIndex)]);
+      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], AField.ParamName]);
     woIsNotNull: Result := Format('{%S: { $ne: null }}', [AnsiQuotedStr(AField.Fieldname, '"')]);
     woIsNull: Result := Format('{%S: null}', [AnsiQuotedStr(AField.Fieldname, '"')]);
     woBetween: Result := Format('{$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %2:S} } ] }'
-      , [AnsiQuotedStr(AField.Fieldname, '"'), GetParamName(AFieldIndex), GetParamName(AFieldIndex + 1)]);
+      , [AnsiQuotedStr(AField.Fieldname, '"'), AField.ParamName, AField.ParamName2]);
     woOr, woAnd:
     begin
         Result := Format('{%S: [', [WhereOpNames[AField.WhereOperator]]);
@@ -284,6 +483,45 @@ begin
 
   AExpression := Copy(AFieldname, LPos + 1 + ADelta, Length(AFieldname) - LPos - 1 - ADelta);
   Result := True;
+end;
+
+function IsObjectId(const value: string): Boolean;
+begin
+  Result := StartsText('ObjectID("', value);
+end;
+
+function TMongoDBGenerator.ToJsonValue(const value: TValue): string;
+var
+  variantValue: Variant;
+begin
+  Result := 'null';
+  if value.IsEmpty then
+    Exit;
+
+  variantValue := TUtils.AsVariant(value);    
+  case VarType(variantValue) of
+    varString, varUString, varStrArg, varOleStr:
+    begin
+      Result := VarToStrDef(variantValue, 'null');
+      if IsObjectId(Result) then   //ObjectID("sdsd457845")
+        Result := '"' + ReplaceStr(Result, '"', '\"') + '"'
+      else
+        Result := AnsiQuotedStr(Result, '"');
+    end;
+    varBoolean:
+    begin
+      if Boolean(variantValue) then
+        Result := 'true'
+      else
+        Result := 'false';
+    end;
+    varDouble:
+      Result := FloatToStr(variantValue, fsJson);
+    varDate:
+      Result := DateTimeToStr(variantValue, fsJson);
+    else
+      Result := VarToStrDef(variantValue, 'null');
+  end;    
 end;
 
 function TMongoDBGenerator.WrapResult(const AResult: string): string;

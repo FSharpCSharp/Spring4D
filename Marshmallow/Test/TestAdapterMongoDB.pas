@@ -4,8 +4,7 @@ interface
 
 uses
   TestFramework, Spring.Persistence.Core.Interfaces, bsonDoc, Generics.Collections, MongoDB
-  , Spring.Persistence.Core.Base, SvSerializer,
-  SysUtils, Spring.Persistence.Mapping.Attributes, Spring.Persistence.SQL.Params
+  , Spring.Persistence.Core.Base, SysUtils, Spring.Persistence.Mapping.Attributes, Spring.Persistence.SQL.Params
   , Spring.Persistence.Adapters.MongoDB, mongoId, Spring.Persistence.Core.Session.MongoDB
   , Spring.Persistence.SQL.Interfaces, MongoBson, Spring.Persistence.Core.Repository.MongoDB, Spring.Collections, Rtti
   {$IF CompilerVersion > 21}
@@ -216,10 +215,10 @@ type
     [Query('{"_id": 1}')]
     function CustomQueryReturnObject(): TMongoEntity;
 
-    [Query('{"_id": ?0}')]
+    [Query('{"_id": :0}')]
     function CustomQueryWithArgumentReturnObject(AId: Integer): TMongoEntity;
 
-    [Query('{"Name": ?0}')]
+    [Query('{"Name": :0}')]
     function CustomQueryWithStringArgumentReturnObject(AKey: string): TMongoEntity;
   end;
 
@@ -802,28 +801,35 @@ var
   LKey: TMongoEntity;
 begin
   LKey := TMongoEntity.Create();
-  try
-    LKey.FId := 2;
-    LKey.Key := 100;
 
-    FManager.Save(LKey);
-    LKey.Free;
+  LKey.FId := 2;
+  LKey.Key := 100;
 
-    LKey := FManager.FindOne<TMongoEntity>(2);
-    CheckEquals(100, LKey.Key);
+  FManager.Save(LKey);
 
-    LKey.Key := 999;
-    FManager.Save(LKey);
-    LKey.Free;
+  LKey.FId := 3;
+  LKey.Key := 111;
+  FManager.Save(LKey);
+  LKey.Free;
 
-    LKey := FManager.FindOne<TMongoEntity>(2);
-    CheckEquals(999, LKey.Key);
+  LKey := FManager.FindOne<TMongoEntity>(2);
+  CheckEquals(100, LKey.Key);
 
+  LKey.Key := 999;
+  FManager.Save(LKey);
+  LKey.Free;
 
-    FManager.Delete(LKey);
-  finally
-    LKey.Free;
-  end;
+  LKey := FManager.FindOne<TMongoEntity>(3);
+  CheckEquals(111, LKey.Key);
+  LKey.Free;
+
+  LKey := FManager.FindOne<TMongoEntity>(2);
+  CheckEquals(999, LKey.Key);
+
+  FManager.Delete(LKey);
+
+  LKey.Free;
+
   LKey := FManager.FindOne<TMongoEntity>(2);
   CheckNull(LKey);
 end;
