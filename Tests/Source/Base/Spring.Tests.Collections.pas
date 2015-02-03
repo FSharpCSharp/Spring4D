@@ -118,6 +118,8 @@ type
     procedure TestEnumeratorMoveNext_VersionMismatch;
     procedure TestEnumeratorReset;
     procedure TestEnumeratorReset_VersionMismatch;
+
+    procedure TestRemoveAll;
   end;
 
   TTestEmptyStringIntegerDictionary = class(TTestCase)
@@ -747,7 +749,7 @@ end;
 procedure TTestIntegerList.TestIssue53;
 begin
   SUT := TIntegerList.Create;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestIntegerList.TestIssue67;
@@ -877,6 +879,20 @@ begin
     begin
       list := SUT as IObjectList;
     end);
+end;
+
+procedure TTestIntegerList.TestRemoveAll;
+var
+  i: Integer;
+begin
+  for i := 1 to 9 do
+    SUT.Add(i);
+  SUT.RemoveAll(
+    function(const x: Integer): Boolean
+    begin
+      Result := not Odd(x);
+    end);
+  Check(SUT.EqualsTo([1, 3, 5, 7, 9]));
 end;
 
 procedure TTestIntegerList.TestListIndexOf;
@@ -1166,7 +1182,7 @@ begin
     SUT := nil;
     stack.Free;
   end;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestStackOfInteger.TestStackInitializesEmpty;
@@ -1447,7 +1463,7 @@ begin
     SUT := nil;
     queue.Free;
   end;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestQueueOfInteger.TestQueueDequeue;

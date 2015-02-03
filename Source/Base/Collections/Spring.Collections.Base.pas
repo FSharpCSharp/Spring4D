@@ -253,9 +253,8 @@ type
   ///	  <c>False</c> by default.
   ///	</remarks>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, IReadOnlyCollection<T>)
-  private
-    fOnChanged: ICollectionChangedEvent<T>;
   protected
+    fOnChanged: ICollectionChangedEvent<T>;
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean; virtual;
     function GetOnChanged: ICollectionChangedEvent<T>;
@@ -274,10 +273,12 @@ type
     procedure Clear; virtual; abstract;
 
     function Remove(const item: T): Boolean; virtual; abstract;
+    procedure RemoveAll(const predicate: TPredicate<T>); virtual;
     procedure RemoveRange(const values: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
 
     function Extract(const item: T): T; virtual; abstract;
+    procedure ExtractAll(const predicate: TPredicate<T>); virtual;
     procedure ExtractRange(const values: array of T); overload; virtual;
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
@@ -583,7 +584,7 @@ end;
 
 constructor TEnumerableBase<T>.Create(const comparer: TComparison<T>);
 begin
-  Create(TComparer<T>.Construct(comparer));
+  Create(IComparer<T>(PPointer(@comparer)^));
 end;
 
 class destructor TEnumerableBase<T>.Destroy;
@@ -943,7 +944,7 @@ end;
 
 function TEnumerableBase<T>.Max(const comparer: TComparison<T>): T;
 begin
-  Result := Max(TComparer<T>.Construct(comparer));
+  Result := Max(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.Min: T;
@@ -987,7 +988,7 @@ end;
 
 function TEnumerableBase<T>.Min(const comparer: TComparison<T>): T;
 begin
-  Result := Min(TComparer<T>.Construct(comparer));
+  Result := Min(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
@@ -1012,7 +1013,7 @@ begin
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  Result := Ordered(TComparer<T>.Construct(comparer));
+  Result := Ordered(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
@@ -1440,6 +1441,11 @@ begin
   end;
 end;
 
+procedure TCollectionBase<T>.ExtractAll(const predicate: TPredicate<T>);
+begin
+  ExtractRange(Where(predicate).ToArray);
+end;
+
 procedure TCollectionBase<T>.ExtractRange(const values: array of T);
 var
   item: T;
@@ -1491,6 +1497,11 @@ var
 begin
   for item in values do
     Remove(item);
+end;
+
+procedure TCollectionBase<T>.RemoveAll(const predicate: TPredicate<T>);
+begin
+  RemoveRange(Where(predicate).ToArray);
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
@@ -1913,11 +1924,8 @@ begin
 end;
 
 procedure TListBase<T>.Sort(const comparison: TComparison<T>);
-var
-  comparer: IComparer<T>;
 begin
-  comparer := TComparer<T>.Construct(comparison);
-  Sort(comparer);
+  Sort(IComparer<T>(PPointer(@comparison)^));
 end;
 
 function TListBase<T>.ToArray: TArray<T>;

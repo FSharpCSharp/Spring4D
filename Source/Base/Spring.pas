@@ -24,10 +24,10 @@
 
 {$I Spring.inc}
 
-///	<summary>
+/// <summary>
 ///	  Declares the fundamental interfaces for the
 ///	  <see href="http://spring4d.org">Spring4D</see> Framework.
-///	</summary>
+/// </summary>
 unit Spring;
 
 interface
@@ -49,25 +49,25 @@ type
 
   {$REGION 'Type redefinitions'}
 
-  ///	<summary>
-  ///	  Represents a dynamic array of Byte.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a dynamic array of Byte.
+  /// </summary>
   TBytes = SysUtils.TBytes;
 
-  ///	<summary>
-  ///	  Represents a dynamic array of string.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a dynamic array of string.
+  /// </summary>
   TStringDynArray = Types.TStringDynArray;
 
-  ///	<summary>
-  ///	  Represents a time interval.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a time interval.
+  /// </summary>
   TTimeSpan = TimeSpan.TTimeSpan;
 
-  ///	<summary>
-  ///	  Provides a set of methods and properties to accurately measure elapsed
-  ///	  time.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a set of methods and properties to accurately measure elapsed
+  ///   time.
+  /// </summary>
   TStopwatch = Diagnostics.TStopwatch;
 
   PTypeInfo = TypInfo.PTypeInfo;
@@ -76,9 +76,9 @@ type
 
   TValue = Rtti.TValue;
 
-  ///	<summary>
-  ///	  Represents the class type of <see cref="System|TCustomAttribute" />.
-  ///	</summary>
+  /// <summary>
+  ///   Represents the class type of <see cref="System|TCustomAttribute" />.
+  /// </summary>
   TAttributeClass = class of TCustomAttribute;
 
 {$IFNDEF DELPHIXE_UP}
@@ -87,6 +87,8 @@ type
 
   {$ENDREGION}
 
+
+  {$REGION 'TCollectionChangedAction'}
 
   ///	<summary>
   ///	  Describes the action that caused a CollectionChanged event.
@@ -127,6 +129,8 @@ type
     ///	</summary>
     caChanged
   );
+
+  {$ENDREGION}
 
 
   {$REGION 'TValueHelper'}
@@ -267,9 +271,9 @@ type
   ///	<returns>
   ///	  Returns <c>True</c> if the value was accepted, otherwise, returns
   ///	  <c>False</c>.
-  ///	</returns>
-  ///	<remarks>
-  ///	  <note type="tip">
+  /// </returns>
+  /// <remarks>
+  ///   <note type="tip">
   ///	    This type redefined the
   ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
   ///	    type with a const parameter.
@@ -357,10 +361,10 @@ type
 
   {$REGION 'TInterfaceBase'}
 
-  ///	<summary>
-  ///	  Provides a non-reference-counted <see cref="System|IInterface" /> 
-  ///	  implementation.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a non-reference-counted <see cref="System|IInterface" />
+  ///   implementation.
+  /// </summary>
   TInterfaceBase = class abstract(TObject, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
@@ -373,14 +377,14 @@ type
 
   {$REGION 'Guard'}
 
-  ///	<summary>
-  ///	  Provides static methods to check arguments and raise argument
-  ///	  exceptions.
-  ///	</summary>
-  ///	<remarks>
-  ///	  It's recommended that all arguments of public types and members should
-  ///	  be checked.
-  ///	</remarks>
+  /// <summary>
+  ///   Provides static methods to check arguments and raise argument
+  ///   exceptions.
+  /// </summary>
+  /// <remarks>
+  ///   It's recommended that all arguments of public types and members should
+  ///   be checked.
+  /// </remarks>
   Guard = record
   public
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
@@ -398,11 +402,14 @@ type
     class procedure CheckEnum<T{:enum}>(const argumentValue: T; const argumentName: string); overload; static; inline;
     class procedure CheckEnum<T{:enum}>(argumentValue: Integer; const argumentName: string); overload; static; inline;
 
+    class procedure CheckSet<T{:set}>(const argumentValue: T; const argumentName: string); overload; static; inline;
+    class procedure CheckSet<T{:set}>(argumentValue: Cardinal; const argumentName: string); overload; static; inline;
+
     class procedure CheckIndex(length, index: Integer; indexBase: Integer = 0); static; inline;
 
-    ///	<exception cref="Spring|EArgumentOutOfRangeException">
-    ///	  Raised if the <paramref name="index" /> is out of range.
-    ///	</exception>
+    /// <exception cref="Spring|EArgumentOutOfRangeException">
+    ///   Raised if the <paramref name="index" /> is out of range.
+    /// </exception>
     class procedure CheckRange(const buffer: array of Byte; index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Byte; index, count: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; index: Integer); overload; static;
@@ -461,32 +468,32 @@ type
 
     class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; static;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EArgumentException" /> exception.
-    ///	</summary>
-    ///	<param name="msg">
-    ///	  The general error message.
-    ///	</param>
+    /// <summary>
+    ///   Raises an <see cref="EArgumentException" /> exception.
+    /// </summary>
+    /// <param name="msg">
+    ///   The general error message.
+    /// </param>
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EFormatException" /> exception.
-    ///	</summary>
+    /// <summary>
+    ///   Raises an <see cref="EFormatException" /> exception.
+    /// </summary>
     class procedure RaiseArgumentFormatException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EArgumentNullException" /> exception.
-    ///	</summary>
+    /// <summary>
+    ///   Raises an <see cref="EArgumentNullException" /> exception.
+    /// </summary>
     class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EArgumentOutOfRangeException" /> exception.
-    ///	</summary>
+    /// <summary>
+    ///   Raises an <see cref="EArgumentOutOfRangeException" /> exception.
+    /// </summary>
     class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>
-    ///	  Raises an <see cref="EInvalidEnumArgumentException" /> exception.
-    ///	</summary>
+    /// <summary>
+    ///   Raises an <see cref="EInvalidEnumArgumentException" /> exception.
+    /// </summary>
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
 
@@ -497,14 +504,14 @@ type
 
   {$REGION 'Nullable Types'}
 
-  ///	<summary>
-  ///	  A nullable type can represent the normal range of values for its
-  ///	  underlying value type, plus an additional <c>Null</c> value.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" /> 
-  ///	  generic type.
-  ///	</typeparam>
+  /// <summary>
+  ///   A nullable type can represent the normal range of values for its
+  ///   underlying value type, plus an additional <c>Null</c> value.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The underlying value type of the <see cref="Nullable&lt;T&gt;" />
+  ///   generic type.
+  /// </typeparam>
   Nullable<T> = record
   private
     fValue: T;
@@ -512,147 +519,152 @@ type
     function GetValue: T;
     function GetHasValue: Boolean; inline;
 
-    ///	<summary>
-    ///	  Internal use. Marks the current instance as null.
-    ///	</summary>
-    ///	<remarks>
-    ///	  The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
-    ///	  method must be private.
-    ///	</remarks>
+    /// <summary>
+    ///   Internal use. Marks the current instance as null.
+    /// </summary>
+    /// <remarks>
+    ///   The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
+    ///   method must be private.
+    /// </remarks>
     procedure Clear;
 
-    ///	<summary>
-    ///	  Determines whether a variant value is null or empty.
-    ///	</summary>
-    class function VarIsNullOrEmpty(const value: Variant): Boolean; static;
+    /// <summary>
+    ///   Determines whether a variant value is null or empty.
+    /// </summary>
+    class function VarIsNullOrEmpty(const value: Variant): Boolean; static; inline;
   public
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" /> 
-    ///	  structure to the specified value.
-    ///	</summary>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />
+    ///   structure to the specified value.
+    /// </summary>
     constructor Create(const value: T); overload;
 
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" /> 
-    ///	  structure to the specified value.
-    ///	</summary>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />
+    ///   structure to the specified value.
+    /// </summary>
     constructor Create(const value: Variant); overload;
 
-    ///	<summary>
-    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" /> 
-    ///	  object, or the object's default value.
-    ///	</summary>
+    /// <summary>
+    ///   Retrieves the value of the current <see cref="Nullable&lt;T&gt;" />
+    ///   object, or the object's default value.
+    /// </summary>
     function GetValueOrDefault: T; overload;
 
-    ///	<summary>
-    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" /> 
-    ///	  object, or the specified default value.
-    ///	</summary>
-    ///	<param name="defaultValue">
-    ///	  A value to return if the <see cref="HasValue" /> property is
-    ///	  <c>False</c>.
-    ///	</param>
-    ///	<returns>
-    ///	  The value of the <see cref="Value" /> property if the
-    ///	  <see cref="HasValue" /> property is true; otherwise, the
-    ///	  <paramref name="defaultValue" /> parameter.
-    ///	</returns>
-    ///	<remarks>
-    ///	  The <see cref="GetValueOrDefault" /> method returns a value even if
-    ///	  the <see cref="HasValue" /> property is false (unlike the
-    ///	  <see cref="Value" /> property, which throws an exception).
-    ///	</remarks>
+    /// <summary>
+    ///   Retrieves the value of the current <see cref="Nullable&lt;T&gt;" />
+    ///   object, or the specified default value.
+    /// </summary>
+    /// <param name="defaultValue">
+    ///   A value to return if the <see cref="HasValue" /> property is <c>False</c>
+    ///    .
+    /// </param>
+    /// <returns>
+    ///   The value of the <see cref="Value" /> property if the <see cref="HasValue" />
+    ///    property is true; otherwise, the <paramref name="defaultValue" />
+    ///   parameter.
+    /// </returns>
+    /// <remarks>
+    ///   The <see cref="GetValueOrDefault" /> method returns a value even if
+    ///   the <see cref="HasValue" /> property is false (unlike the <see cref="Value" />
+    ///    property, which throws an exception).
+    /// </remarks>
     function GetValueOrDefault(const defaultValue: T): T; overload;
 
-    ///	<summary>
-    ///	  Determines whether two nullable value are equal.
-    ///	</summary>
-    ///	<remarks>
-    ///	  <p> If both two nullable values are null, return true; </p>
-    ///	  <p> If either one is null, return false; </p>
-    ///	  <p> else compares their values as usual. </p>
-    ///	</remarks>
+    /// <summary>
+    ///   Determines whether two nullable value are equal.
+    /// </summary>
+    /// <remarks>
+    ///   <para>
+    ///     If both two nullable values are null, return true;
+    ///   </para>
+    ///   <para>
+    ///     If either one is null, return false;
+    ///   </para>
+    ///   <para>
+    ///     else compares their values as usual.
+    ///   </para>
+    /// </remarks>
     function Equals(const other: Nullable<T>): Boolean;
 
-    ///	<summary>
-    ///	  Gets a value indicating whether the current
-    ///	  <see cref="Nullable&lt;T&gt;" /> structure has a value.
-    ///	</summary>
+    /// <summary>
+    ///   Gets a value indicating whether the current <see cref="Nullable&lt;T&gt;" />
+    ///    structure has a value.
+    /// </summary>
     property HasValue: Boolean read GetHasValue;
 
-    ///	<summary>
-    ///	  Gets the value of the current <see cref="Nullable&lt;T&gt;" /> value.
-    ///	</summary>
-    ///	<exception cref="Spring|EInvalidOperationException">
-    ///	  Raised if the value is null.
-    ///	</exception>
+    /// <summary>
+    ///   Gets the value of the current <see cref="Nullable&lt;T&gt;" /> value.
+    /// </summary>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   Raised if the value is null.
+    /// </exception>
     property Value: T read GetValue;
 
-    { Operator Overloads }
     class operator Implicit(const value: Nullable<T>): T;
     class operator Implicit(const value: T): Nullable<T>;
     class operator Implicit(const value: Nullable<T>): Variant;
     class operator Implicit(const value: Variant): Nullable<T>;
     class operator Implicit(value: Pointer): Nullable<T>;
     class operator Explicit(const value: Nullable<T>): T;
-    class operator Equal(const a, b: Nullable<T>) : Boolean;
-    class operator NotEqual(const a, b: Nullable<T>) : Boolean;
+    class operator Equal(const left, right: Nullable<T>): Boolean;
+    class operator NotEqual(const left, right: Nullable<T>): Boolean;
   end;
 
 
-  ///	<summary>
-  ///	  Represents a nullable unicode string.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable unicode string.
+  /// </summary>
   TNullableString = Nullable<string>;
 {$IFNDEF NEXTGEN}
-  ///	<summary>
-  ///	  Represents a nullable ansi string.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable ansi string.
+  /// </summary>
   TNullableAnsiString = Nullable<AnsiString>;
 
-  ///	<summary>
-  ///	  Represents a nullable wide string.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable wide string.
+  /// </summary>
   TNullableWideString = Nullable<WideString>;
 {$ENDIF}
-  ///	<summary>
-  ///	  Represents a nullable integer.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable integer.
+  /// </summary>
   TNullableInteger = Nullable<Integer>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>Int64</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>Int64</c>.
+  /// </summary>
   TNullableInt64 = Nullable<Int64>;
 
-  ///	<summary>
-  ///	  Represents a nullable native integer.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable native integer.
+  /// </summary>
   TNullableNativeInt = Nullable<NativeInt>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>TDateTime</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>TDateTime</c>.
+  /// </summary>
   TNullableDateTime = Nullable<TDateTime>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>Currency</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>Currency</c>.
+  /// </summary>
   TNullableCurrency = Nullable<Currency>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>Double</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>Double</c>.
+  /// </summary>
   TNullableDouble = Nullable<Double>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>Boolean</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>Boolean</c>.
+  /// </summary>
   TNullableBoolean = Nullable<Boolean>;
 
-  ///	<summary>
-  ///	  Represents a nullable <c>TGuid</c>.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a nullable <c>TGuid</c>.
+  /// </summary>
   TNullableGuid = Nullable<TGUID>;
 
   {$ENDREGION}
@@ -660,34 +672,34 @@ type
 
   {$REGION 'Lazy Initialization'}
 
-  ///	<summary>
-  ///	  Specifies the kind of a lazy type.
-  ///	</summary>
+  /// <summary>
+  ///   Specifies the kind of a lazy type.
+  /// </summary>
   TLazyKind = (
-    ///	<summary>
-    ///	  Not a lazy type.
-    ///	</summary>
+    /// <summary>
+    ///   Not a lazy type.
+    /// </summary>
     lkNone,
 
-    ///	<summary>
-    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
-    ///	</summary>
+    /// <summary>
+    ///   Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    /// </summary>
     lkFunc,
 
-    ///	<summary>
-    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
-    ///	</summary>
+    /// <summary>
+    ///   Type is <see cref="Spring|Lazy&lt;T&gt;" />.
+    /// </summary>
     lkRecord,
 
-    ///	<summary>
-    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
-    ///	</summary>
+    /// <summary>
+    ///   Type is <see cref="Spring|ILazy&lt;T&gt;" />.
+    /// </summary>
     lkInterface
   );
 
-  ///	<summary>
-  ///	  Provides support for lazy initialization.
-  ///	</summary>
+  /// <summary>
+  ///   Provides support for lazy initialization.
+  /// </summary>
   ILazy = interface
     ['{40223BA9-0C66-49E7-AA33-BDAEF9F506D6}']
   {$REGION 'Property Accessors'}
@@ -695,43 +707,43 @@ type
     function GetValue: TValue;
   {$ENDREGION}
 
-    ///	<summary>
-    ///	  Gets a value that indicates whether a value has been created for this
-    ///	  <see cref="ILazy" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// <summary>
+    ///   Gets a value that indicates whether a value has been created for this
+    ///   <see cref="ILazy" /> instance.
+    /// </summary>
+    /// <value>
     ///	  <b>True</b> if a value has been created for this
     ///	  <see cref="ILazy" /> instance; otherwise, <b>False</b>.
-    ///	</value>
+    /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets the lazily initialized value of the current
     ///	  <see cref="ILazy" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// </summary>
+    /// <value>
     ///	  The lazily initialized value of the current
     ///	  <see cref="ILazy" /> instance.
-    ///	</value>
+    /// </value>
     property Value: TValue read GetValue;
   end;
 
-  ///	<summary>
-  ///	  Provides support for lazy initialization.
-  ///	</summary>
+  /// <summary>
+  ///   Provides support for lazy initialization.
+  /// </summary>
   ILazy<T> = interface(ILazy)
   {$REGION 'Property Accessors'}
     function GetValue: T;
   {$ENDREGION}
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets the lazily initialized value of the current
     ///	  <see cref="ILazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// </summary>
+    /// <value>
     ///	  The lazily initialized value of the current
     ///	  <see cref="ILazy&lt;T&gt;" /> instance.
-    ///	</value>
+    /// </value>
     property Value: T read GetValue;
   end;
 
@@ -748,23 +760,23 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    ///	<summary>
-    ///	  Gets a value that indicates whether a value has been created for this
-    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// <summary>
+    ///   Gets a value that indicates whether a value has been created for this
+    ///   <see cref="TLazy&lt;T&gt;" /> instance.
+    /// </summary>
+    /// <value>
     ///	  <b>True</b> if a value has been created for this
     ///	  <see cref="TLazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
-    ///	</value>
+    /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
   end;
 
-  ///	<summary>
-  ///	  Provides support for lazy initialization.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The type of object that is being lazily initialized.
-  ///	</typeparam>
+  /// <summary>
+  ///   Provides support for lazy initialization.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The type of object that is being lazily initialized.
+  /// </typeparam>
   TLazy<T> = class(TLazy, ILazy<T>, TFunc<T>)
   private
     fValueFactory: TFunc<T>;
@@ -776,46 +788,46 @@ type
     function TFunc<T>.Invoke = GetValue;
   {$ENDREGION}
   public
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="TLazy&lt;T&gt;" />
-    ///	  class. When lazy initialization occurs, the specified initialization
-    ///	  function is used.
-    ///	</summary>
-    ///	<param name="valueFactory">
-    ///	  The delegate that is invoked to produce the lazily initialized value
-    ///	  when it is needed.
-    ///	</param>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>valueFactory</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="TLazy&lt;T&gt;" />
+    ///   class. When lazy initialization occurs, the specified initialization
+    ///   function is used.
+    /// </summary>
+    /// <param name="valueFactory">
+    ///   The delegate that is invoked to produce the lazily initialized value
+    ///   when it is needed.
+    /// </param>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>valueFactory</i> is <b>nil</b>.
+    /// </exception>
     constructor Create(const valueFactory: TFunc<T>);
 
-    ///	<summary>
-    ///	  Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
-    ///	  specified value.
-    ///	</summary>
-    ///	<param name="value">
-    ///	  The initialized value.
-    ///	</param>
+    /// <summary>
+    ///   Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
+    ///   specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The initialized value.
+    /// </param>
     constructor CreateFrom(const value: T);
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets the lazily initialized value of the current
     ///	  <see cref="TLazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// </summary>
+    /// <value>
     ///	  The lazily initialized value of the current
     ///	  <see cref="TLazy&lt;T&gt;" /> instance.
-    ///	</value>
+    /// </value>
     property Value: T read GetValue;
   end;
 
-  ///	<summary>
-  ///	  Provides support for lazy initialization.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The type of object that is being lazily initialized.
-  ///	</typeparam>
+  /// <summary>
+  ///   Provides support for lazy initialization.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The type of object that is being lazily initialized.
+  /// </typeparam>
   Lazy<T> = record
   private
     fLazy: ILazy<T>;
@@ -823,27 +835,27 @@ type
     function GetIsValueCreated: Boolean;
     function GetValue: T;
   public
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
-    ///	  record. When lazy initialization occurs, the specified initialization
-    ///	  function is used.
-    ///	</summary>
-    ///	<param name="valueFactory">
-    ///	  The delegate that is invoked to produce the lazily initialized value
-    ///	  when it is needed.
-    ///	</param>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>valueFactory</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
+    ///   record. When lazy initialization occurs, the specified initialization
+    ///   function is used.
+    /// </summary>
+    /// <param name="valueFactory">
+    ///   The delegate that is invoked to produce the lazily initialized value
+    ///   when it is needed.
+    /// </param>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>valueFactory</i> is <b>nil</b>.
+    /// </exception>
     constructor Create(const valueFactory: TFunc<T>);
 
-    ///	<summary>
-    ///	  Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
-    ///	  specified value.
-    ///	</summary>
-    ///	<param name="value">
-    ///	  The initialized value.
-    ///	</param>
+    /// <summary>
+    ///   Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
+    ///   specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The initialized value.
+    /// </param>
     constructor CreateFrom(const value: T);
 
     class operator Implicit(const value: Lazy<T>): ILazy<T>;
@@ -853,24 +865,24 @@ type
 
     property IsAssigned: Boolean read GetIsAssigned;
 
-    ///	<summary>
-    ///	  Gets a value that indicates whether a value has been created for this
-    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// <summary>
+    ///   Gets a value that indicates whether a value has been created for this
+    ///   <see cref="Lazy&lt;T&gt;" /> instance.
+    /// </summary>
+    /// <value>
     ///	  <b>True</b> if a value has been created for this
     ///	  <see cref="Lazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
-    ///	</value>
+    /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
-    ///	<summary>
+    /// <summary>
     ///	  Gets the lazily initialized value of the current
     ///	  <see cref="Lazy&lt;T&gt;" /> instance.
-    ///	</summary>
-    ///	<value>
+    /// </summary>
+    /// <value>
     ///	  The lazily initialized value of the current
     ///	  <see cref="Lazy&lt;T&gt;" /> instance.
-    ///	</value>
+    /// </value>
     ///	<exception cref="Spring|EInvalidOperationException">
     ///	</exception>
     property Value: T read GetValue;
@@ -1005,13 +1017,13 @@ type
     property OnChanged: TEventsChangedEvent read GetOnChanged write SetOnChanged;
   end;
 
-  ///	<summary>
-  ///	  Represents a multicast event.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The event handler type must be an instance procedural type such as
-  ///	  TNotifyEvent.
-  ///	</typeparam>
+  /// <summary>
+  ///   Represents a multicast event.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The event handler type must be an instance procedural type such as
+  ///   TNotifyEvent.
+  /// </typeparam>
   IEvent<T> = interface(IEvent)
   {$REGION 'Property Accessors'}
     function GetInvoke: T;
@@ -1019,35 +1031,35 @@ type
 //    procedure SetOnChanged(const value: TEventsChangedEvent<T>);
   {$ENDREGION}
 
-    ///	<summary>
-    ///	  Adds an event handler to the list.
-    ///	</summary>
+    /// <summary>
+    ///   Adds an event handler to the list.
+    /// </summary>
     procedure Add(handler: T);
 
-    ///	<summary>
-    ///	  Removes an event handler if it was added to the event.
-    ///	</summary>
+    /// <summary>
+    ///   Removes an event handler if it was added to the event.
+    /// </summary>
     procedure Remove(handler: T);
 
-    ///	<summary>
-    ///	  Removes all event handlers which were registered by an instance.
-    ///	</summary>
+    /// <summary>
+    ///   Removes all event handlers which were registered by an instance.
+    /// </summary>
     procedure RemoveAll(instance: Pointer);
 
-    ///	<summary>
-    ///	  Clears all event handlers.
-    ///	</summary>
+    /// <summary>
+    ///   Clears all event handlers.
+    /// </summary>
     procedure Clear;
 
-    ///	<summary>
-    ///	  Iterates all event handlers and perform the specified action on each
-    ///	  one.
-    ///	</summary>
+    /// <summary>
+    ///   Iterates all event handlers and perform the specified action on each
+    ///   one.
+    /// </summary>
     procedure ForEach(const action: TAction<T>);
 
-    ///	<summary>
-    ///	  Invokes all event handlers.
-    ///	</summary>
+    /// <summary>
+    ///   Invokes all event handlers.
+    /// </summary>
     property Invoke: T read GetInvoke;
   end;
 
@@ -1516,48 +1528,88 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TDynArray<T>'}
+  {$REGION 'Dynamic array'}
 
-  TDynArray<T> = record
+{$IFDEF DELPHI2010}
+  TArrayEnumerator<T> = class
+{$ELSE}
+  TArrayEnumerator<T> = record
+{$ENDIF}
   private
-    type
-      TEnumerator = record
-      private
-        fItems: TArray<T>;
-        fIndex: Integer;
-        function GetCurrent: T;
-      public
-        function MoveNext: Boolean; inline;
-        property Current: T read GetCurrent;
-      end;
+    fItems: TArray<T>;
+    fIndex: Integer;
+    function GetCurrent: T; inline;
+  public
+    constructor Create(const items: TArray<T>);
+    function MoveNext: Boolean; inline;
+    property Current: T read GetCurrent;
+  end;
+
+  DynamicArray<T> = record
   private
     fItems: TArray<T>; // DO NOT ADD ANY OTHER MEMBERS !!!
     function GetCount: Integer; inline;
     function GetItem(index: Integer): T; inline;
+    procedure SetCount(value: Integer); inline;
     procedure SetItem(index: Integer; const value: T); inline;
     procedure InternalInsert(index: Integer; const items: array of T); overload;
+    function InternalEquals(const items: array of T): Boolean; overload;
+    function InternalIndexOf(const item: T): Integer;
+    function InternalIndexOfInt(const item: Integer): Integer;
+    function InternalIndexOfStr(const item: string): Integer;
   public
-    class operator Implicit(const value: TArray<T>): TDynArray<T>; inline;
-    class operator Implicit(const value: TDynArray<T>): TArray<T>; inline;
-    class operator Add(const left, right: TDynArray<T>): TDynArray<T>; inline;
-    class operator Add(const left: TDynArray<T>; const right: T): TDynArray<T>; inline;
+    class operator Implicit(const value: TArray<T>): DynamicArray<T>; inline;
+    class operator Implicit(const value: DynamicArray<T>): TArray<T>; inline;
+    class operator Add(const left, right: DynamicArray<T>): DynamicArray<T>; inline;
+    class operator Add(const left: DynamicArray<T>; const right: TArray<T>): DynamicArray<T>; inline;
+    class operator Add(const left: TArray<T>; const right: DynamicArray<T>): DynamicArray<T>; inline;
+    class operator Add(const left: DynamicArray<T>; const right: T): DynamicArray<T>; inline;
+    class operator Add(const left: T; const right: DynamicArray<T>): DynamicArray<T>; inline;
+    class operator Subtract(const left, right: DynamicArray<T>): DynamicArray<T>; inline;
+    class operator Subtract(const left: DynamicArray<T>; const right: T): DynamicArray<T>; inline;
+    class operator In(const left: T; const right: DynamicArray<T>): Boolean; inline;
+    class operator In(const left, right: DynamicArray<T>): Boolean; inline;
+    class operator In(const left: TArray<T>; const right: DynamicArray<T>): Boolean; inline;
+    class operator Equal(const left, right: DynamicArray<T>): Boolean; inline;
+    class operator NotEqual(const left, right: DynamicArray<T>): Boolean; inline;
 
+    procedure Assign(const items: array of T);
     procedure Clear; inline;
 
     function Add(const item: T): Integer; overload; inline;
     procedure Add(const items: array of T); overload;
     procedure Add(const items: TArray<T>); overload; inline;
+    procedure Add(const items: DynamicArray<T>); overload; inline;
     procedure Insert(index: Integer; const item: T); overload; inline;
     procedure Insert(index: Integer; const items: array of T); overload;
     procedure Insert(index: Integer; const items: TArray<T>); overload; inline;
-    procedure Delete(index: Integer); inline;
+    procedure Delete(index: Integer); overload; inline;
+    procedure Delete(index: Integer; count: Integer); overload; inline;
+    procedure Remove(const item: T); overload; inline;
+    procedure Remove(const items: array of T); overload;
+    procedure Remove(const items: TArray<T>); overload; inline;
 
-    function Contains(const item: T): Boolean; inline;
-    function IndexOf(const item: T): Integer;
+    function Contains(const item: T): Boolean; overload; inline;
+    function Contains(const items: array of T): Boolean; overload;
+    function Contains(const items: TArray<T>): Boolean; overload;
+    function IndexOf(const item: T): Integer; inline;
+    function Equals(const items: array of T): Boolean; overload;
+    function Equals(const items: TArray<T>): Boolean; overload; inline;
 
-    function GetEnumerator: TEnumerator; inline;
+    function Slice(index: Integer): DynamicArray<T>; overload; inline;
+    function Slice(index: Integer; count: Integer): DynamicArray<T>; overload; inline;
+    function Splice(index: Integer; count: Integer): DynamicArray<T>; overload; inline;
+    function Splice(index: Integer; count: Integer; const items: array of T): DynamicArray<T>; overload;
+
+    procedure Sort; overload; inline;
+    procedure Sort(const comparer: IComparer<T>); overload; inline;
+    procedure Sort(const comparer: TComparison<T>); overload; inline;
+    procedure Reverse;
+
+    function GetEnumerator: TArrayEnumerator<T>; inline;
     property Count: Integer read GetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
+    property Length: Integer read GetCount write SetCount;
   end;
 
   {$ENDREGION}
@@ -1575,25 +1627,25 @@ function ReturnAddress: Pointer;
 
 procedure PlatformNotImplemented;
 
-///	<summary>
+/// <summary>
 ///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
 ///	  <paramref name="value" /> is nil.
-///	</summary>
+/// </summary>
 procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
-///	<summary>
+/// <summary>
 ///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
 ///	  <paramref name="value" /> is nil.
-///	</summary>
+/// </summary>
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
 function GetQualifiedClassName(AInstance: TObject): string; overload; inline;
 function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHIXE2_UP}inline;{$ENDIF}
 
-///	<summary>
-///	  Determines whether an instance of <c>leftType</c> can be assigned from an
-///	  instance of <c>rightType</c>.
-///	</summary>
+/// <summary>
+///   Determines whether an instance of <c>leftType</c> can be assigned from an
+///   instance of <c>rightType</c>.
+/// </summary>
 function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean; overload;
 
 function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Boolean; overload;
@@ -2825,6 +2877,48 @@ begin
     Guard.RaiseArgumentOutOfRangeException(ValueArgName);
 end;
 
+class procedure Guard.CheckSet<T>(const argumentValue: T;
+  const argumentName: string);
+var
+  value: Integer;
+begin
+  value := 0;
+  Move(argumentValue, value, SizeOf(T));
+  Guard.CheckSet<T>(value, argumentName);
+end;
+
+class procedure Guard.CheckSet<T>(argumentValue: Cardinal;
+  const argumentName: string);
+var
+  typeInfo: PTypeInfo;
+  data: PTypeData;
+  minValue, maxValue: Cardinal;
+begin
+  typeInfo := System.TypeInfo(T);
+  Guard.CheckTypeKind(typeInfo, [tkSet], 'T');
+
+  data := GetTypeData(typeInfo);
+  Guard.CheckNotNull(data, 'data');
+
+  if Assigned(data.CompType) then
+  begin
+    data := GetTypeData(data.CompType^);
+    maxValue := (1 shl (data.MaxValue - data.MinValue + 1)) - 1;
+  end
+  else
+    case data^.OrdType of
+      otSByte, otUByte: maxValue := High(Byte);
+      otSWord, otUWord: maxValue := High(Word);
+      otSLong, otULong: Exit;
+    else
+      maxValue := 0;
+    end;
+
+  if argumentValue > maxValue then
+    raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidSetArgument, [
+      argumentName, typeInfo.TypeName, argumentValue]);
+end;
+
 class procedure Guard.CheckRangeExclusive(value, min, max: Integer);
 const
   ValueArgName = 'value';
@@ -2965,7 +3059,7 @@ end;
 
 function Nullable<T>.GetHasValue: Boolean;
 begin
-  Result := Length(fHasValue) > 0;
+  Result := fHasValue <> '';
 end;
 
 function Nullable<T>.GetValue: T;
@@ -2994,7 +3088,32 @@ end;
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
   if HasValue and other.HasValue then
-    Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
+  begin
+    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+      tkInteger: Result := PInteger(@fValue)^ = PInteger(@other.fValue)^;
+{$IFNDEF NEXTGEN}
+      tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
+      tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
+      tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
+      tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
+{$ENDIF}
+      tkFloat:
+      begin
+        case GetTypeData(TypeInfo(T)).FloatType of
+          ftSingle: Result := PSingle(@fValue)^ = PSingle(@other.fValue)^;
+          ftDouble: Result := PDouble(@fValue)^ = PDouble(@other.fValue)^;
+          ftExtended: Result := PExtended(@fValue)^ = PExtended(@other.fValue)^;
+          ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
+          ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
+        end;
+      end;
+      tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
+      tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
+      tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
+    else
+      Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
+    end;
+  end
   else
     Result := HasValue = other.HasValue;
 end;
@@ -3051,14 +3170,14 @@ begin
   Result := value.Value;
 end;
 
-class operator Nullable<T>.Equal(const a, b: Nullable<T>): Boolean;
+class operator Nullable<T>.Equal(const left, right: Nullable<T>): Boolean;
 begin
-  Result := a.Equals(b);
+  Result := left.Equals(right);
 end;
 
-class operator Nullable<T>.NotEqual(const a, b: Nullable<T>): Boolean;
+class operator Nullable<T>.NotEqual(const left, right: Nullable<T>): Boolean;
 begin
-  Result := not a.Equals(b);
+  Result := not left.Equals(right);
 end;
 
 {$ENDREGION}
@@ -4368,119 +4487,280 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDynArray<T>'}
+{$REGION 'DynamicArray<T>'}
 
-class operator TDynArray<T>.Add(const left, right: TDynArray<T>): TDynArray<T>;
+class operator DynamicArray<T>.Add(const left, right: DynamicArray<T>): DynamicArray<T>;
 begin
   Result := left;
   Result.Add(right.fItems);
 end;
 
-class operator TDynArray<T>.Add(const left: TDynArray<T>;
-  const right: T): TDynArray<T>;
+class operator DynamicArray<T>.Add(const left: DynamicArray<T>;
+  const right: TArray<T>): DynamicArray<T>;
 begin
   Result := left;
   Result.Add(right);
 end;
 
-function TDynArray<T>.Add(const item: T): Integer;
+class operator DynamicArray<T>.Add(const left: TArray<T>;
+  const right: DynamicArray<T>): DynamicArray<T>;
 begin
-  Result := Length(fItems);
+  Result := left;
+  Result.Add(right.fItems);
+end;
+
+class operator DynamicArray<T>.Add(const left: DynamicArray<T>;
+  const right: T): DynamicArray<T>;
+begin
+  Result := left;
+  Result.Add(right);
+end;
+
+class operator DynamicArray<T>.Add(const left: T;
+  const right: DynamicArray<T>): DynamicArray<T>;
+begin
+  SetLength(Result.fItems, 1);
+  Result.fItems[0] := left;
+  Result.Add(right);
+end;
+
+function DynamicArray<T>.Add(const item: T): Integer;
+begin
+  Result := System.Length(fItems);
   SetLength(fItems, Result + 1);
   fItems[Result] := item;
 end;
 
-procedure TDynArray<T>.Add(const items: array of T);
+procedure DynamicArray<T>.Add(const items: array of T);
 begin
-  InternalInsert(Length(fItems), items);
+  InternalInsert(System.Length(fItems), items);
 end;
 
-procedure TDynArray<T>.Add(const items: TArray<T>);
+procedure DynamicArray<T>.Add(const items: TArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
-  InternalInsert(Length(fItems), items);
+  InternalInsert(System.Length(fItems), items);
 {$ELSE}
-  System.Insert(items, fItems, Length(fItems));
+  System.Insert(items, fItems, System.Length(fItems));
 {$ENDIF}
 end;
 
-procedure TDynArray<T>.Clear;
+procedure DynamicArray<T>.Add(const items: DynamicArray<T>);
+begin
+{$IFNDEF DELPHIXE7_UP}
+  InternalInsert(System.Length(items.fItems), items.fItems);
+{$ELSE}
+  System.Insert(items.fItems, fItems, System.Length(items.fItems));
+{$ENDIF}
+end;
+
+procedure DynamicArray<T>.Assign(const items: array of T);
+begin
+  fItems := TArray.Copy<T>(items);
+end;
+
+procedure DynamicArray<T>.Clear;
 begin
   fItems := nil;
 end;
 
-function TDynArray<T>.Contains(const item: T): Boolean;
+function DynamicArray<T>.Contains(const item: T): Boolean;
 begin
   Result := IndexOf(item) > -1;
 end;
 
-procedure TDynArray<T>.Delete(index: Integer);
+function DynamicArray<T>.Contains(const items: array of T): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to High(items) do
+    if IndexOf(items[i]) = -1 then
+      Exit(False);
+  Result := True;
+end;
+
+function DynamicArray<T>.Contains(const items: TArray<T>): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to System.Length(items) - 1 do
+    if IndexOf(items[i]) = -1 then
+      Exit(False);
+  Result := True;
+end;
+
+procedure DynamicArray<T>.Delete(index: Integer);
 {$IFNDEF DELPHIXE7_UP}
 var
-  count: Integer;
-  i: Integer;
+  n, i: Integer;
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  count := Length(fitems) - 1;
+  n := System.Length(fItems);
+  if (index < 0) or (index >= n) then
+    Exit;
+  Dec(n);
   fItems[index] := Default(T);
-  if index <> count then
+  if index <> n then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
-      for i := index to count - 1 do
+      for i := index to n - 1 do
         fItems[i] := fItems[i + 1];
     end
     else
 {$ENDIF}
     begin
-      System.Move(fItems[index + 1], fItems[index], (count - index) * SizeOf(T));
-      System.FillChar(fItems[count], SizeOf(T), 0);
+      System.Move(fItems[index + 1], fItems[index], (n - index) * SizeOf(T));
+      System.FillChar(fItems[n], SizeOf(T), 0);
     end;
-  SetLength(fItems, count);
+  SetLength(fItems, n);
 {$ELSE}
   System.Delete(fItems, index, 1);
 {$ENDIF}
 end;
 
-function TDynArray<T>.GetCount: Integer;
+procedure DynamicArray<T>.Delete(index, count: Integer);
+{$IFNDEF DELPHIXE7_UP}
+var
+  n, i: Integer;
+{$ENDIF}
 begin
-  Result := Length(fItems);
+{$IFNDEF DELPHIXE7_UP}
+  n := System.Length(fItems);
+  if (index < 0) or (index >= n) then
+    Exit;
+  if count > n - index then
+    count := n - index;
+  Dec(n, count);
+  for i := index to index + count - 1 do
+    fItems[i] := Default(T);
+  if index <> n then
+{$IFDEF WEAKREF}
+    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    begin
+      for i := index to n - count do
+        fItems[i] := fItems[i + count];
+    end
+    else
+{$ENDIF}
+    begin
+      System.Move(fItems[index + count], fItems[index], (n - index) * SizeOf(T));
+      System.FillChar(fItems[n], count * SizeOf(T), 0);
+    end;
+  SetLength(fItems, n);
+{$ELSE}
+  System.Delete(fItems, index, count);
+{$ENDIF}
 end;
 
-function TDynArray<T>.GetEnumerator: TEnumerator;
+class operator DynamicArray<T>.Equal(const left, right: DynamicArray<T>): Boolean;
 begin
+  Result := left.Equals(right.fItems);
+end;
+
+function DynamicArray<T>.Equals(const items: array of T): Boolean;
+var
+  n, i: Integer;
+begin
+  n := System.Length(fItems);
+  if n <> System.Length(items) then
+    Exit(False);
+  Result := True;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkInteger:
+      for i := 0 to n - 1 do
+        if PInteger(@fItems[i])^ <> PInteger(@items[i])^ then
+          Exit(False);
+    tkUString:
+      for i := 0 to n - 1 do
+        if PUnicodeString(@fItems[i])^ <> PUnicodeString(@items[i])^ then
+          Exit(False);
+  else
+    Result := InternalEquals(items);
+  end;
+end;
+
+function DynamicArray<T>.Equals(const items: TArray<T>): Boolean;
+var
+  n, i: Integer;
+begin
+  n := System.Length(fItems);
+  if n <> System.Length(items) then
+    Exit(False);
+  Result := True;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkInteger:
+      for i := 0 to n - 1 do
+        if PInteger(@fItems[i])^ <> PInteger(@items[i])^ then
+          Exit(False);
+    tkUString:
+      for i := 0 to n - 1 do
+        if PUnicodeString(@fItems[i])^ <> PUnicodeString(@items[i])^ then
+          Exit(False);
+  else
+    Result := InternalEquals(items);
+  end;
+end;
+
+function DynamicArray<T>.GetCount: Integer;
+begin
+  Result := System.Length(fItems);
+end;
+
+function DynamicArray<T>.GetEnumerator: TArrayEnumerator<T>;
+begin
+{$IFDEF DELPHI2010}
+  Result := TArrayEnumerator<T>.Create(fItems);
+{$ELSE}
   Result.fItems := fItems;
   Result.fIndex := -1;
+{$ENDIF}
 end;
 
-function TDynArray<T>.GetItem(index: Integer): T;
+function DynamicArray<T>.GetItem(index: Integer): T;
 begin
   Result := fItems[index];
 end;
 
-class operator TDynArray<T>.Implicit(const value: TArray<T>): TDynArray<T>;
+class operator DynamicArray<T>.Implicit(const value: TArray<T>): DynamicArray<T>;
 begin
   Result.fItems := value;
 end;
 
-class operator TDynArray<T>.Implicit(const value: TDynArray<T>): TArray<T>;
+class operator DynamicArray<T>.Implicit(const value: DynamicArray<T>): TArray<T>;
 begin
   Result := value.fItems;
 end;
 
-function TDynArray<T>.IndexOf(const item: T): Integer;
-var
-  comparer: IEqualityComparer<T>;
+class operator DynamicArray<T>.In(const left: T;
+  const right: DynamicArray<T>): Boolean;
 begin
-  comparer := TEqualityComparer<T>.Default;
-  for Result := 0 to High(fItems) do
-    if comparer.Equals(fItems[Result], item) then
-      Exit;
-  Result := -1;
+  Result := right.Contains(left);
 end;
 
-procedure TDynArray<T>.Insert(index: Integer; const item: T);
+class operator DynamicArray<T>.In(const left, right: DynamicArray<T>): Boolean;
+begin
+  Result := right.Contains(left.fItems);
+end;
+
+class operator DynamicArray<T>.In(const left: TArray<T>;
+  const right: DynamicArray<T>): Boolean;
+begin
+  Result := right.Contains(left);
+end;
+
+function DynamicArray<T>.IndexOf(const item: T): Integer;
+begin
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkInteger: Result := InternalIndexOfInt(PInteger(@item)^);
+    tkUString: Result := InternalIndexOfStr(PUnicodeString(@item)^);
+  else
+    Result := InternalIndexOf(item);
+  end;
+end;
+
+procedure DynamicArray<T>.Insert(index: Integer; const item: T);
 {$IFNDEF DELPHIXE7_UP}
 var
   count: Integer;
@@ -4488,11 +4768,11 @@ var
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  count := Length(fItems);
+  count := System.Length(fItems);
   SetLength(fItems, count + 1);
   if index <> count then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := count - 1 downto index do
         fItems[i + 1] := fItems[i];
@@ -4509,12 +4789,12 @@ begin
 {$ENDIF}
 end;
 
-procedure TDynArray<T>.Insert(index: Integer; const items: array of T);
+procedure DynamicArray<T>.Insert(index: Integer; const items: array of T);
 begin
   InternalInsert(index, items);
 end;
 
-procedure TDynArray<T>.Insert(index: Integer; const items: TArray<T>);
+procedure DynamicArray<T>.Insert(index: Integer; const items: TArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
   InternalInsert(index, items);
@@ -4523,16 +4803,55 @@ begin
 {$ENDIF}
 end;
 
-procedure TDynArray<T>.InternalInsert(index: Integer; const items: array of T);
+function DynamicArray<T>.InternalEquals(const items: array of T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for i := 0 to System.Length(fItems) - 1 do
+    if not comparer.Equals(fItems[i], items[i]) then
+      Exit(False);
+  Result := True;
+end;
+
+function DynamicArray<T>.InternalIndexOf(const item: T): Integer;
+var
+  comparer: IEqualityComparer<T>;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for Result := 0 to High(fItems) do
+    if comparer.Equals(fItems[Result], item) then
+      Exit;
+  Result := -1;
+end;
+
+function DynamicArray<T>.InternalIndexOfInt(const item: Integer): Integer;
+begin
+  for Result := 0 to High(fItems) do
+    if PInteger(@fItems[Result])^ = item then
+      Exit;
+  Result := -1;
+end;
+
+function DynamicArray<T>.InternalIndexOfStr(const item: string): Integer;
+begin
+  for Result := 0 to High(fItems) do
+    if PUnicodeString(@fItems[Result])^ = item then
+      Exit;
+  Result := -1;
+end;
+
+procedure DynamicArray<T>.InternalInsert(index: Integer; const items: array of T);
 var
   count, len, i: Integer;
 begin
-  count := Length(fItems);
-  len := Length(items);
+  count := System.Length(fItems);
+  len := System.Length(items);
   SetLength(fItems, count + len);
   if index <> count then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := count - 1 downto index do
         fItems[i + len] := fItems[i];
@@ -4556,25 +4875,152 @@ begin
     System.Move(items[0], fItems[index], len * SizeOf(T));
 end;
 
-procedure TDynArray<T>.SetItem(index: Integer; const value: T);
+class operator DynamicArray<T>.NotEqual(const left, right: DynamicArray<T>): Boolean;
+begin
+  Result := not left.Equals(right.fItems);
+end;
+
+procedure DynamicArray<T>.Remove(const item: T);
+var
+  index: Integer;
+begin
+  index := IndexOf(item);
+  if index > -1 then
+    Delete(index);
+end;
+
+procedure DynamicArray<T>.Remove(const items: array of T);
+var
+  item: T;
+  index: Integer;
+begin
+  for item in items do
+  begin
+    index := IndexOf(item);
+    if index > -1 then
+      Delete(index);
+  end;
+end;
+
+procedure DynamicArray<T>.Remove(const items: TArray<T>);
+var
+  item: T;
+  index: Integer;
+begin
+  for item in items do
+  begin
+    index := IndexOf(item);
+    if index > -1 then
+      Delete(index);
+  end;
+end;
+
+procedure DynamicArray<T>.Reverse;
+var
+  tmp: T;
+  b, e: Integer;
+begin
+  b := 0;
+  e := Count - 1;
+  while b < e do
+  begin
+    tmp := fItems[b];
+    fItems[b] := fItems[e];
+    fItems[e] := tmp;
+    Inc(b);
+    Dec(e);
+  end;
+end;
+
+procedure DynamicArray<T>.SetCount(value: Integer);
+begin
+  SetLength(fItems, value);
+end;
+
+procedure DynamicArray<T>.SetItem(index: Integer; const value: T);
 begin
   fItems[index] := value;
+end;
+
+function DynamicArray<T>.Slice(index: Integer): DynamicArray<T>;
+begin
+  Result.fItems := Copy(fItems, index);
+end;
+
+function DynamicArray<T>.Slice(index, count: Integer): DynamicArray<T>;
+begin
+  Result.fItems := Copy(fItems, index, count);
+end;
+
+procedure DynamicArray<T>.Sort;
+begin
+  TArray.Sort<T>(fItems);
+end;
+
+procedure DynamicArray<T>.Sort(const comparer: IComparer<T>);
+begin
+  TArray.Sort<T>(fItems, comparer);
+end;
+
+procedure DynamicArray<T>.Sort(const comparer: TComparison<T>);
+begin
+  TArray.Sort<T>(fItems, IComparer<T>(PPointer(@comparer)^));
+end;
+
+function DynamicArray<T>.Splice(index, count: Integer): DynamicArray<T>;
+begin
+  Result := Splice(index, count, []);
+end;
+
+function DynamicArray<T>.Splice(index, count: Integer;
+  const items: array of T): DynamicArray<T>;
+var
+  n, i: Integer;
+begin
+  n := System.Length(fItems);
+  if (index < 0) or (index >= n) then
+    Exit;
+  if count > n - index then
+    count := n - index;
+  Result.fItems := Copy(fItems, index, count);
+  Delete(index, count);
+  Insert(index, items);
+end;
+
+class operator DynamicArray<T>.Subtract(const left,
+  right: DynamicArray<T>): DynamicArray<T>;
+begin
+  Result := left;
+  Result.Remove(right.fItems);
+end;
+
+class operator DynamicArray<T>.Subtract(const left: DynamicArray<T>;
+  const right: T): DynamicArray<T>;
+begin
+  Result := left;
+  Result.Remove(right);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TDynArray<T>.TEnumerator' }
+{$REGION 'TArrayEnumerator<T>' }
 
-function TDynArray<T>.TEnumerator.GetCurrent: T;
+constructor TArrayEnumerator<T>.Create(const items: TArray<T>);
+begin
+  fItems := items;
+  fIndex := -1;
+end;
+
+function TArrayEnumerator<T>.GetCurrent: T;
 begin
   Result := fItems[fIndex];
 end;
 
-function TDynArray<T>.TEnumerator.MoveNext: Boolean;
+function TArrayEnumerator<T>.MoveNext: Boolean;
 begin
   Inc(fIndex);
-  Result := fIndex < Length(fItems);
+  Result := fIndex < System.Length(fItems);
 end;
 
 {$ENDREGION}

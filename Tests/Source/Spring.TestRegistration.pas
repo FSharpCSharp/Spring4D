@@ -72,6 +72,7 @@ begin
     TTestTuplesTriple.Suite,
     TTestTuplesQuadruple.Suite,
     TTestSmartPointer.Suite,
+    TTestDynamicArray.Suite,
     TTestValueHelper.Suite
   ]);
 

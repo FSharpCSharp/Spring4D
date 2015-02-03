@@ -123,6 +123,7 @@ implementation
 uses
   Spring;
 
+
 {$REGION 'TSerializerTestCase'}
 
 procedure TSerializerTestCase.TearDown;

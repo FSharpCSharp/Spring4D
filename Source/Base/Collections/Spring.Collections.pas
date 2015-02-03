@@ -809,10 +809,12 @@ type
     ///	  ICollection&lt;T&gt;.
     ///	</returns>
     function Remove(const item: T): Boolean;
+    procedure RemoveAll(const predicate: TPredicate<T>);
     procedure RemoveRange(const values: array of T); overload;
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
 
     function Extract(const item: T): T;
+    procedure ExtractAll(const predicate: TPredicate<T>);
     procedure ExtractRange(const values: array of T); overload;
     procedure ExtractRange(const collection: IEnumerable<T>); overload;
 
@@ -2422,7 +2424,7 @@ end;
 class function TCollections.CreateList<T>(
   const comparer: TComparison<T>): IList<T>;
 begin
-  Result := TList<T>.Create(TComparer<T>.Construct(comparer));
+  Result := TList<T>.Create(IComparer<T>(PPointer(@comparer)^));
 end;
 
 class function TCollections.CreateList<T>(const values: array of T): IList<T>;
@@ -2450,7 +2452,7 @@ class function TCollections.CreateList<T>(const comparer: TComparison<T>;
   ownsObjects: Boolean): IList<T>;
 begin
   Result := TObjectList<T>.Create(
-    TComparer<T>.Construct(comparer), ownsObjects) as IList<T>;
+    IComparer<T>(PPointer(@comparer)^), ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
@@ -2468,7 +2470,7 @@ class function TCollections.CreateObjectList<T>(const comparer: TComparison<T>;
   ownsObjects: Boolean): IList<T>;
 begin
   Result := TObjectList<T>.Create(
-    TComparer<T>.Construct(comparer), ownsObjects) as IList<T>;
+    IComparer<T>(PPointer(@comparer)^), ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(const values: array of T;
@@ -2511,7 +2513,7 @@ class function TCollections.CreateInterfaceList<T>(
   const comparer: TComparison<T>): IList<T>;
 begin
   Result := TInterfaceList<T>.Create(
-    TComparer<T>.Construct(comparer)) as IList<T>;
+    IComparer<T>(PPointer(@comparer)^)) as IList<T>;
 end;
 
 class function TCollections.CreateInterfaceList<T>(

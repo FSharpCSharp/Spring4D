@@ -68,6 +68,7 @@ type
     procedure TestIsNullReference;
     procedure TestCheckRange;
     procedure TestNotNull;
+    procedure TestCheckSet;
   end;
 
   TTestLazy = class(TTestCase)
@@ -329,6 +330,29 @@ type
     procedure TestRecordType_Instance_Gets_Destroyed;
 
     procedure TestRecordType_Manage_Typed_Pointer;
+  end;
+
+  TTestDynamicArray = class(TTestCase)
+  published
+    procedure ClassOperatorAdd_InputNotModified;
+
+    procedure ClassOperatorSubtract_InputNotModified;
+
+    procedure ClassOperatorIn_ItemInArray_True;
+    procedure ClassOperatorIn_ItemNotInArray_False;
+    procedure ClassOperatorIn_ArrayInArray_True;
+    procedure ClassOperatorIn_ArrayNotInArray_False;
+
+    procedure IndexOf_ItemInArray;
+    procedure Delete_Start;
+    procedure Delete_Mid;
+    procedure Delete_End;
+    procedure Delete_IndexLessThanZero_NothingHappens;
+    procedure Delete_IndexEqualsCount_NothingHappens;
+
+    procedure DeleteRange_Mid;
+    procedure DeleteRange_IndexLessThanZero_NothingHappens;
+    procedure DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
   end;
 
   TTestValueHelper = class(TTestCase)
@@ -820,6 +844,27 @@ begin
     begin
       Guard.CheckRange(len, 5, 5, idx);
     end);
+end;
+
+type
+  TTestEnum1 = (x = 1, y, z);
+  TTestSet1 = set of TTestEnum1;
+
+  TTestEnum2 = (a, b, c);
+  TTestSet2 = set of TTestEnum2;
+
+procedure TTestGuard.TestCheckSet;
+var
+  sut1: TTestSet1;
+  sut2: TTestSet2;
+begin
+  sut1 := [x..z];
+  sut2 := [a..b];
+  Guard.CheckSet<TTestSet1>(sut1, 'sut1');
+  Guard.CheckSet<TTestSet1>([], 'sut1');
+  Guard.CheckSet<TTestSet2>(sut2, 'sut2');
+  Guard.CheckSet<TTestSet2>([], 'sut2');
+  Pass;
 end;
 
 procedure TTestGuard.TestIsNullReference;
@@ -1994,7 +2039,179 @@ begin
   p.y := 22;
   p.s := 'Hello World';
   p := nil;
-  FCheckCalled := True;
+  Pass;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDynamicArray'}
+
+procedure TTestDynamicArray.ClassOperatorAdd_InputNotModified;
+var
+  arr, arr2: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2 := arr + 6;
+  CheckEquals(5, arr.Count);
+  CheckEquals(6, arr2.Count);
+end;
+
+procedure TTestDynamicArray.ClassOperatorIn_ArrayInArray_True;
+var
+  arr, arr2: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2.Add([1, 2, 3]);
+  CheckTrue(arr2 in arr);
+end;
+
+
+procedure TTestDynamicArray.ClassOperatorIn_ArrayNotInArray_False;
+var
+  arr, arr2: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2.Add([1, 2, 3, 6]);
+  CheckFalse(arr2 in arr);
+end;
+
+procedure TTestDynamicArray.ClassOperatorIn_ItemInArray_True;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckTrue(3 in arr);
+end;
+
+procedure TTestDynamicArray.ClassOperatorIn_ItemNotInArray_False;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckFalse(6 in arr);
+end;
+
+procedure TTestDynamicArray.ClassOperatorSubtract_InputNotModified;
+var
+  arr, arr2: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2 := arr - 3;
+  CheckEquals(5, arr.Count);
+  CheckEquals(4, arr2.Count);
+end;
+
+procedure TTestDynamicArray.DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2, 4);
+  CheckEquals(2, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+end;
+
+procedure TTestDynamicArray.DeleteRange_IndexLessThanZero_NothingHappens;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(-1, 2);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynamicArray.DeleteRange_Mid;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2, 2);
+  CheckEquals(3, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(5, arr[2]);
+end;
+
+procedure TTestDynamicArray.Delete_End;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(4);
+  CheckEquals(4, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+end;
+
+procedure TTestDynamicArray.Delete_IndexEqualsCount_NothingHappens;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(5);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynamicArray.Delete_IndexLessThanZero_NothingHappens;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(-1);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynamicArray.Delete_Mid;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2);
+  CheckEquals(4, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(4, arr[2]);
+  CheckEquals(5, arr[3]);
+end;
+
+procedure TTestDynamicArray.Delete_Start;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(0);
+  CheckEquals(4, arr.Count);
+  CheckEquals(2, arr[0]);
+  CheckEquals(3, arr[1]);
+  CheckEquals(4, arr[2]);
+  CheckEquals(5, arr[3]);
+end;
+
+procedure TTestDynamicArray.IndexOf_ItemInArray;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckEquals(2, arr.IndexOf(3));
 end;
 
 {$ENDREGION}

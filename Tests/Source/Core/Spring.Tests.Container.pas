@@ -499,7 +499,7 @@ procedure TTestSimpleContainer.TestIssue13;
 begin
   fContainer.RegisterType<TNameService>.Implements<INameService>.AsSingleton;
   fContainer.Build;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestSimpleContainer.TestAbstractClassService;
@@ -802,6 +802,7 @@ begin
   fContainer.Build;
 
   factory := fContainer.Resolve<ISomeFactory>;
+  Pass;
 end;
 
 procedure TTestSimpleContainer.TestInitializable;
@@ -1142,7 +1143,7 @@ var
 begin
   ExpectedException := ECircularDependencyException;
   chicken := fContainer.Resolve<IChicken>;
-  FCheckCalled := True;
+  Pass;
 end;
 
 {$ENDREGION}
@@ -1827,7 +1828,7 @@ begin
   fContainer.RegisterType<ICollectionService, TCollectionServiceD>;
   fContainer.Build;
   service := fContainer.Resolve<ICollectionService>;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestManyDependencies.TestNoRecursion_TwoDifferentModelsWithSameComponentType;

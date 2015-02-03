@@ -2593,19 +2593,19 @@ function TEnumerableSorter<T>.Sort(var elements: TArray<T>;
   count: Integer): TIntegerDynArray;
 var
   index: Integer;
-  comparer: IComparer<Integer>;
+  comparer: TComparison<Integer>;
   return: array of Integer;
 begin
   ComputeKeys(elements, count);
   SetLength(Result, count);
   for index := 0 to count - 1 do
     Result[index] := index;
-  comparer := TComparer<Integer>.Construct(
+  comparer :=
     function(const Left, Right: Integer): Integer
     begin
       Result := CompareKeys(Left, Right);
-    end);
-  TArray.Sort<Integer>(Result, comparer);
+    end;
+  TArray.Sort<Integer>(Result, IComparer<Integer>(PPointer(@comparer)^));
 end;
 
 {$ENDREGION}
