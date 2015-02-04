@@ -197,10 +197,7 @@ end;
 
 function TMock.Executes: IWhen;
 begin
-  fInterceptor.Returns(
-    function(const callInfo: TCallInfo): TValue
-    begin
-    end);
+  fInterceptor.Returns(nil);
   Result := Self;
 end;
 

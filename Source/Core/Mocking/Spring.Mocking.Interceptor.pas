@@ -245,7 +245,8 @@ end;
 function TMethodCall.Invoke(const invocation: IInvocation): TValue;
 begin
   Inc(fCallCount);
-  Result := fAction(TCallInfo.Create(invocation, fCallCount));
+  if Assigned(fAction) then
+    Result := fAction(TCallInfo.Create(invocation, fCallCount));
   if invocation.Method.MethodKind = mkFunction then
     Result := Result.Cast(invocation.Method.ReturnType.Handle);
 end;
