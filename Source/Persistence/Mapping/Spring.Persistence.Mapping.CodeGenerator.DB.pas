@@ -77,7 +77,6 @@ type
     property OutputDir: string read FOutputDir write FOutputDir;
     property UnitPrefix: string read FUnitPrefix write FUnitPrefix;
     property UseNullableTypes: Boolean read FUseNullableTypes write FUseNullableTypes;
-    [SvTransient]
     property Entities: TObjectList<TEntityModelData> read FEntities;
   end;
 

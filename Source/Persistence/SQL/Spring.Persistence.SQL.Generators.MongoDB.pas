@@ -55,6 +55,7 @@ type
 
     function DoGetInsertJson(const command: TInsertCommand): string;
     function DoGetUpdateJson(const command: TUpdateCommand): string;
+    function DoGetFindUpdateJson(const command: TUpdateCommand): string;    
     function CreateClassInsertCommandAndTable(const fromValue: TValue): TInsertCommand;
     function CreateClassUpdateCommandAndTable(const fromValue: TValue): TUpdateCommand;    
     function ToJsonValue(const value: TValue): string;
@@ -153,6 +154,26 @@ begin
   Result.SetCommandFieldsFromColumns(fields);  
 end;
 
+function TMongoDBGenerator.DoGetFindUpdateJson(
+  const command: TUpdateCommand): string;
+var
+  i: Integer;
+  field: TSQLWhereField;
+  value: TValue;
+begin
+  Result := '{';
+  for i := 0 to command.WhereFields.Count - 1 do
+  begin
+    field := command.WhereFields[i];
+    if i <> 0 then
+      Result := Result + ',';
+
+    value := field.Column.GetValue(command.Entity);
+    Result := Result + QuotedStr(field.Fieldname) + ': ' + ToJsonValue(value);    
+  end;  
+  Result := Result + '}';
+end;
+
 function TMongoDBGenerator.DoGetInsertJson(
   const command: TInsertCommand): string;
 var
@@ -248,12 +269,12 @@ var
   end;
 
 begin
-  Result := '{';
+  Result := '{ $set: {';
   for i := 0 to command.UpdateFields.Count - 1 do
   begin
     if i <> 0 then
       Result := Result + ',';
-
+    {TODO -oLinas -cGeneral : use dot notation in future for sub properties}
     updateField := command.UpdateFields[i];
     case updateField.Column.MemberType.Kind of
       tkClass:
@@ -289,9 +310,8 @@ begin
           + ToJsonValue(current);
       end;          
     end;
-  end;
-  Result := Result + '}';
-  
+  end;     
+  Result := Result + '}}';  
 end;
 
 function TMongoDBGenerator.GenerateDelete(
@@ -363,7 +383,7 @@ begin
   end;
   if Length(LStmtType) > 1 then
   begin
-    Insert(IntToStr(Length(LStmtType)-2) + '_', LStmtType, 3); //insert length
+    Insert(IntToStr(Length(LStmtType)-2) + '_', LStmtType, 3); //insert length   SO100_{}
   end;
 
   Result := WrapResult(Result);
@@ -377,11 +397,18 @@ end;
 
 function TMongoDBGenerator.GenerateUpdate(
   const commmand: TUpdateCommand): string;
+var
+  findUpdateJson: string;
 begin
   if (commmand.Entity = nil) then
     Exit('');
-  Result := DoGetUpdateJson(commmand);  
-  Result := 'U' + GetPrefix(commmand.Table) + Result;
+
+  findUpdateJson := DoGetFindUpdateJson(commmand);   
+  Result := Format('U%d_%s%s%s', 
+    [Length(findUpdateJson), 
+    findUpdateJson, 
+    GetPrefix(commmand.Table), 
+    DoGetUpdateJson(commmand)]);
 end;
 
 const

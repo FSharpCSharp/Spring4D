@@ -108,7 +108,7 @@ type
     function GetStatementType(var statementText: string): TMongoStatementType; virtual;
     function GetStatementPageInfo(const statementText: string; out pageInfo: TPageInfo): string; virtual;
     function IsObjectId(const value: string): Boolean; virtual;
-    function GetOrderFromStatementText: string; virtual;
+    function GetJsonPartFromStatementText(const tagName: string): string; virtual;
   public
     constructor Create(const statement: TMongoDBQuery); override;
     destructor Destroy; override;
@@ -159,9 +159,6 @@ uses
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Generators.MongoDB;
-
-const
-  NAME_COLLECTION = 'UnitTests.MongoAdapter';
 
 var
   MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'SO', 'page');
@@ -313,7 +310,7 @@ end;
 
 function TMongoStatementAdapter.Execute: NativeUInt;
 var
-  LDoc, LResultDoc: IBSONDocument;
+  doc, findDoc: IBSONDocument;
   LIntf: IInterface;
   LOk: Boolean;
   LValue: Variant;
@@ -328,10 +325,10 @@ begin
       ctUpdateVersion:
       begin
         LIntf := Query;
-        LDoc := LIntf as IBsonDocument;
-        LResultDoc := Statement.Connection.findAndModify(GetFullCollectionName, LDoc
+        doc := LIntf as IBsonDocument;
+        findDoc := Statement.Connection.findAndModify(GetFullCollectionName, doc
           , bsonEmpty, BSON(['$inc', BSON(['_version', 1])]));
-        LValue := LResultDoc['value'];
+        LValue := findDoc['value'];
         if not (VarIsNull(LValue)) then
           Result := 1;
         Exit;
@@ -339,13 +336,20 @@ begin
     end;
   end;
 
-  LDoc := JsonToBson(fStatementText);
+  if fStatementType <> mstUpdate then
+    doc := JsonToBson(fStatementText);
+
   case fStatementType of
-    mstInsert: LOk := Statement.Connection.insert(GetFullCollectionName, LDoc);
-    mstUpdate: LOk := Statement.Connection.Update(GetFullCollectionName, bsonEmpty, LDoc);
-    mstDelete: LOk := Statement.Connection.remove(GetFullCollectionName, LDoc);
-    mstSelect: LOk := Statement.Connection.findOne(GetFullCollectionName, LDoc) <> nil;
-    mstSelectCount: Exit(Trunc(Statement.Connection.Count(GetFullCollectionName, LDoc)));
+    mstInsert: LOk := Statement.Connection.insert(GetFullCollectionName, doc);
+    mstUpdate:
+    begin
+      findDoc := JsonToBson(GetJsonPartFromStatementText(MONGO_STATEMENT_TYPES[mstUpdate]));
+      doc := JsonToBson(fStatementText);
+      LOk := Statement.Connection.Update(GetFullCollectionName, findDoc, doc);
+    end;
+    mstDelete: LOk := Statement.Connection.remove(GetFullCollectionName, doc);
+    mstSelect: LOk := Statement.Connection.findOne(GetFullCollectionName, doc) <> nil;
+    mstSelectCount: Exit(Trunc(Statement.Connection.Count(GetFullCollectionName, doc)));
   end;
   if LOk then
     Result := 1;
@@ -370,7 +374,7 @@ begin
 
   if fStatementType = mstSelectOrder then
   begin
-    LQuery.sort := JsonToBson(GetOrderFromStatementText);
+    LQuery.sort := JsonToBson(GetJsonPartFromStatementText(MONGO_STATEMENT_TYPES[mstSelectOrder]));
   end;
 
   LResultset := TMongoResultSetAdapter.Create(LQuery);
@@ -404,7 +408,7 @@ begin
   Result := FFullCollectionName;
 end;
 
-function TMongoStatementAdapter.GetOrderFromStatementText: string;
+function TMongoStatementAdapter.GetJsonPartFromStatementText(const tagName: string): string;
 var
   iPos, iLength: Integer;
 begin
@@ -412,7 +416,7 @@ begin
   iPos := PosEx('_', fStatementText);
   if iPos < 0 then
     Exit('{}');
-  iLength := StrToInt(Copy(fStatementText, 3, iPos - 3));
+  iLength := StrToInt(Copy(fStatementText, Length(tagName) + 1, iPos - (Length(tagName) + 1)));
   Result := Copy(fStatementText, iPos + 1, iLength);
   iPos := PosEx(']', fStatementText);
   fStatementText := Copy(fStatementText, iPos + 1, Length(fStatementText));
@@ -453,7 +457,7 @@ begin
   if LIdentifier = 'I' then
     Result := mstInsert
   else if LIdentifier = 'U' then
-    Result := mstUpdate
+    Exit(mstUpdate)
   else if LIdentifier = 'D' then
     Result := mstDelete
   else if (StartsStr('count', statementText)) then
@@ -462,17 +466,9 @@ begin
     Result := mstSelectCount;
   end
   else if (StartsStr('page', statementText)) then
-  begin
-    LIdentifier := 'page';
-    Result := mtPage;
-    Exit;
-  end
+    Exit(mtPage)
   else if StartsStr('SO', statementText) then
-  begin
-    LIdentifier := 'SO';
-    Result := mstSelectOrder;
-    Exit;
-  end
+    Exit(mstSelectOrder)
   else
     Result := mstSelect;
 

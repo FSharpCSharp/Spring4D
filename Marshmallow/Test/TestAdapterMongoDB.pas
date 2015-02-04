@@ -804,34 +804,39 @@ begin
 
   LKey.FId := 2;
   LKey.Key := 100;
+  LKey.Name := 'Foo';
 
   FManager.Save(LKey);
 
   LKey.FId := 3;
   LKey.Key := 111;
+  LKey.Name := 'Bar';
   FManager.Save(LKey);
   LKey.Free;
 
   LKey := FManager.FindOne<TMongoEntity>(2);
-  CheckEquals(100, LKey.Key);
+  CheckEquals(100, LKey.Key, 'Key is 100');
+  CheckEquals('Foo', LKey.Name, 'Name is Foo');
 
   LKey.Key := 999;
   FManager.Save(LKey);
   LKey.Free;
 
   LKey := FManager.FindOne<TMongoEntity>(3);
-  CheckEquals(111, LKey.Key);
+  CheckEquals(111, LKey.Key, 'Key is 111');
+  CheckEquals('Bar', LKey.Name, 'Name is Bar');
   LKey.Free;
 
   LKey := FManager.FindOne<TMongoEntity>(2);
-  CheckEquals(999, LKey.Key);
+  CheckEquals(999, LKey.Key, 'Key is 999');
+  CheckEquals('Foo', LKey.Name, 'Name is still Foo');
 
   FManager.Delete(LKey);
 
   LKey.Free;
 
   LKey := FManager.FindOne<TMongoEntity>(2);
-  CheckNull(LKey);
+  CheckNull(LKey, 'Entity should not exist');
 end;
 
 procedure TestMongoSession.SetUp;
