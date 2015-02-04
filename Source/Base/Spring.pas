@@ -2000,7 +2000,7 @@ end;
 
 function EqualsInt2Int64(const left, right: TValue): Boolean;
 begin
-  Result := left.AsInteger = left.AsInt64;
+  Result := left.AsInteger = right.AsInt64;
 end;
 
 function EqualsFloat2Int(const left, right: TValue): Boolean;
@@ -2052,7 +2052,7 @@ end;
 
 function EqualsInt642Int(const left, right: TValue): Boolean;
 begin
-  Result := left.AsInt64 = left.AsInteger;
+  Result := left.AsInt64 = right.AsInteger;
 end;
 
 function EqualsInt64ToFloat(const left, right: TValue): Boolean;
@@ -2067,7 +2067,7 @@ end;
 
 function EqualsInt642Int64(const left, right: TValue): Boolean;
 begin
-  Result := left.AsInt64 = left.AsInt64;
+  Result := left.AsInt64 = right.AsInt64;
 end;
 
 function EqualsStr2Str(const left, right: TValue): Boolean;
