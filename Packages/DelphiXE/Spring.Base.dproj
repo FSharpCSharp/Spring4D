@@ -69,8 +69,6 @@
 			<DCCReference Include="..\..\Source\Base\Spring.Events.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
-			<DCCReference Include="..\..\Source\Base\Spring.Patches.QC93646.pas"/>
-			<DCCReference Include="..\..\Source\Base\Spring.Patches.QC98671.pas"/>
 			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.pas"/>
 			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.pas"/>
 			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.Base.pas"/>
@@ -80,6 +78,8 @@
 			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.NullLogger.pas"/>
 			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas"/>
 			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Serializers.pas"/>
+			<DCCReference Include="..\..\Source\Base\Patches\Spring.Patches.QC93646.pas"/>
+			<DCCReference Include="..\..\Source\Base\Patches\Spring.Patches.QC98671.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Core.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
