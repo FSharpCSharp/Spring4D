@@ -52,6 +52,7 @@ type
     procedure Save();
     procedure When_SaveAll_UpdateOneToMany();
     procedure When_SaveAll_InsertOneToMany();
+    procedure When_FindAll_GetOneToMany;
     procedure SaveAll_ManyToOne();
     procedure ExecutionListeners();
     procedure Page();
@@ -1281,6 +1282,31 @@ begin
     LNewOrder1.Free;
     LNewOrder2.Free;
   end;
+end;
+
+procedure TestTSession.When_FindAll_GetOneToMany;
+var
+  id: Integer;
+  customers: IList<TCustomer>;
+  order: TCustomer_Orders;
+begin
+  id := InsertCustomer(18, 'Foo');
+  InsertCustomerOrder(id, 1, 5, 0);
+  InsertCustomerOrder(id, 2, 57, 0);
+
+  customers := FManager.FindAll<TCustomer>;
+  CheckEquals(2, customers.First.Orders.Count);
+
+  order := TCustomer_Orders.Create;
+  order.Customer_ID := id;
+  order.Order_Status_Code := 3;
+
+  customers.First.Orders.Add(order);
+
+  FManager.SaveAll(customers.First);
+
+  customers := FManager.FindAll<TCustomer>;
+  CheckEquals(3, customers.First.Orders.Count);
 end;
 
 procedure TestTSession.When_SaveAll_InsertOneToMany;
