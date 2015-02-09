@@ -235,7 +235,6 @@ begin
   entityWrapper := TEntityWrapper.Create(entity);
   inserter := executor as TInsertExecutor;
   inserter.Execute(entityWrapper);
-  SetLazyColumns(entityWrapper);
   AttachEntity(entityWrapper);
 end;
 
@@ -285,7 +284,6 @@ begin
   entityWrapper := TEntityWrapper.Create(entity);
   updater := executor as TUpdateExecutor;
   updater.Execute(entity);
-  //SetLazyColumns(entityWrapper);  //TODO: test lazy columns after insert or update
   AttachEntity(entityWrapper);
 end;
 
@@ -630,12 +628,9 @@ begin
     Exit;
   for column in entity.GetOneToManyColumns do
   begin
-    if not TUtils.IsLazyValueCreated(entity.GetColumnValue(column)) then
-    begin
-      value := ResolveLazyValue(entity, column.MemberName, column.MemberType);
-      if not value.IsEmpty then
-        entity.SetColumnValue(column, value);
-    end;
+    value := ResolveLazyValue(entity, column.MemberName, column.MemberType);
+    if not value.IsEmpty then
+      entity.SetColumnValue(column, value);
   end;
 end;
 

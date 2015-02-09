@@ -267,6 +267,7 @@ begin
   inherited Create;
   FId := -1;
   FStrings := TStringList.Create;
+  FOrders := TCollections.CreateObjectList<TCustomer_Orders>;
 end;
 
 destructor TCustomer.Destroy;

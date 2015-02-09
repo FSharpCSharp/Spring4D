@@ -64,7 +64,6 @@ type
     class function IsNullableType(ATypeInfo: PTypeInfo): Boolean;
     class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
     class function IsPageType(ATypeInfo: PTypeInfo): Boolean;
-    class function IsLazyValueCreated(const ALazy: TValue): Boolean;
 
     class function SameObject(ALeft, ARight: TObject): Boolean;
     class function SameStream(ALeft, ARight: TStream): Boolean;
@@ -291,22 +290,6 @@ begin
   Result := value.IsInterface;
   if Result then
     Result := Supports(value.AsInterface, IObjectList, objectList);
-end;
-
-class function TUtils.IsLazyValueCreated(const ALazy: TValue): Boolean;
-var
-  lazyType: TRttiType;
-  lazyField: TRttiField;
-  lazy: ILazy;
-begin
-  Result := False;
-  if ALazy.Kind = tkRecord then
-  begin
-    lazyType := TType.GetType(ALazy);
-    lazyField := lazyType.GetField('FLazy');
-    lazy := lazyField.GetValue(ALazy.GetReferenceToRawData).AsInterface as ILazy;
-    Result := (lazy <> nil) and (lazy.IsValueCreated);
-  end;
 end;
 
 class function TUtils.IsLazyType(ATypeInfo: PTypeInfo): Boolean;

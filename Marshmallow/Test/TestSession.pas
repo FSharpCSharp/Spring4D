@@ -693,7 +693,7 @@ begin
     InsertCustomerOrder(LCustomer.ID, 10, 5, 100.59);
     InsertCustomerOrder(LCustomer.ID, 20, 15, 150.59);
 
-    CheckEquals(2, LCustomer.Orders.Count);
+    CheckEquals(0, LCustomer.Orders.Count);
     LCustomer.Free;
     LCustomer := FManager.FindOne<TCustomer>(LCustomer.ID);
     LList := LCustomer.Orders;
@@ -1316,7 +1316,7 @@ var
 begin
   customer := TCustomer.Create;
   customer.Name := 'Foo';
-  customer.OrdersIntf := TCollections.CreateObjectList<TCustomer_Orders>();
+  //customer.OrdersIntf := TCollections.CreateObjectList<TCustomer_Orders>();
 
   order := TCustomer_Orders.Create;
   order.Order_Status_Code := 123;
