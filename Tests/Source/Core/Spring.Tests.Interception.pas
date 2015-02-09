@@ -422,84 +422,58 @@ end;
 
 procedure TProxyTest.ClassProxy_should_implement_additional_interfaces;
 var
-  generator: TProxyGenerator;
   proxy: TObject;
 begin
-  generator := TProxyGenerator.Create;
+  proxy := TProxyGenerator.CreateClassProxy(
+    TEnsurePartnerStatusRule,
+    [TypeInfo(ISupportsInvalidation)],
+    [TInvalidationInterceptor.Create]);
   try
-    proxy := generator.CreateClassProxy(
-      TEnsurePartnerStatusRule,
-      [TypeInfo(ISupportsInvalidation)],
-      [TInvalidationInterceptor.Create]);
-    try
-      CheckTrue(Supports(proxy, ISupportsInvalidation));
-    finally
-      proxy.Free;
-    end;
+    CheckTrue(Supports(proxy, ISupportsInvalidation));
   finally
-    generator.Free;
+    proxy.Free;
   end;
 end;
 
 procedure TProxyTest.ClassProxy_for_class_already_implementing_additional_interfaces;
 var
-  generator: TProxyGenerator;
   proxy: TObject;
   intf: ISupportsInvalidation;
 begin
-  generator := TProxyGenerator.Create;
-  try
-    proxy := generator.CreateClassProxy(
-      TApplyDiscountRule,
-      [TypeInfo(ISupportsInvalidation)], []);
-    CheckTrue(Supports(proxy, ISupportsInvalidation, intf));
-    ExpectedException := ENotImplementedException;
-    intf.Invalidate;
-  finally
-//    proxy.Free;
-    generator.Free;
-  end;
+  proxy := TProxyGenerator.CreateClassProxy(
+    TApplyDiscountRule,
+    [TypeInfo(ISupportsInvalidation)], []);
+  CheckTrue(Supports(proxy, ISupportsInvalidation, intf));
+  ExpectedException := ENotImplementedException;
+  intf.Invalidate;
 end;
 
 procedure TProxyTest.InterfaceProxy_should_implement_additional_interfaces;
 var
-  generator: TProxyGenerator;
   proxy: TObject;
   intf: ISupportsInvalidation;
 begin
-  generator := TProxyGenerator.Create;
-  try
-    proxy := generator.CreateInterfaceProxyWithTarget(
-      TypeInfo(IClientRule),
-      [TypeInfo(ISupportsInvalidation)],
-      TApplyDiscountRule.Create, []);
-    CheckTrue(Supports(proxy, ISupportsInvalidation, intf));
-    intf.Invalidate;
-  finally
-//    proxy.Free;
-    generator.Free;
-  end;
+  proxy := TProxyGenerator.CreateInterfaceProxyWithTarget(
+    TypeInfo(IClientRule),
+    [TypeInfo(ISupportsInvalidation)],
+    TApplyDiscountRule.Create, []);
+  CheckTrue(Supports(proxy, ISupportsInvalidation, intf));
+  intf.Invalidate;
 end;
 
 procedure TProxyTest.InterfaceProxy_with_additional_interfaces_handles_refcount;
 var
-  generator: TProxyGenerator;
   proxy: TObject;
   clientRule: IClientRule;
   invalidation: ISupportsInvalidation;
 begin
-  generator := TProxyGenerator.Create;
-  try
-    proxy := generator.CreateInterfaceProxyWithoutTarget(
-      TypeInfo(IClientRule), [TypeInfo(ISupportsInvalidation)], []);
-    CheckTrue(Supports(proxy, IClientRule, clientRule));
-    CheckTrue(Supports(clientRule, ISupportsInvalidation, invalidation));
-    CheckTrue(Supports(invalidation, IClientRule, clientRule));
-    clientrule := nil;
-    invalidation := nil;
-  finally
-    generator.Free;
-  end;
+  proxy := TProxyGenerator.CreateInterfaceProxyWithoutTarget(
+    TypeInfo(IClientRule), [TypeInfo(ISupportsInvalidation)], []);
+  CheckTrue(Supports(proxy, IClientRule, clientRule));
+  CheckTrue(Supports(clientRule, ISupportsInvalidation, invalidation));
+  CheckTrue(Supports(invalidation, IClientRule, clientRule));
+  clientrule := nil;
+  invalidation := nil;
 end;
 
 procedure TProxyTest.UseSomewhereElse(const person: TPerson);
@@ -514,25 +488,19 @@ end;
 
 procedure TProxyTest.Mixin;
 var
-  generator: TProxyGenerator;
   options: TProxyGenerationOptions;
   person: TPerson;
   dictionary: IDictionary<string, TDateTime>;
 begin
-  generator := TProxyGenerator.Create;
+  options := TProxyGenerationOptions.Default;
+  options.AddMixinInstance(TCollections.CreateDictionary<string, TDateTime> as TObject);
+  person := TProxyGenerator.CreateClassProxy(TPerson, options, []) as TPerson;
   try
-    options := TProxyGenerationOptions.Default;
-    options.AddMixinInstance(TCollections.CreateDictionary<string, TDateTime> as TObject);
-    person := generator.CreateClassProxy(TPerson, options, []) as TPerson;
-    try
-      CheckTrue(Supports(person, IDictionary<string, TDateTime>, dictionary));
-      dictionary.Add('Next Leave', IncMonth(Now, 4));
-      UseSomewhereElse(person);
-    finally
-      person.Free;
-    end;
+    CheckTrue(Supports(person, IDictionary<string, TDateTime>, dictionary));
+    dictionary.Add('Next Leave', IncMonth(Now, 4));
+    UseSomewhereElse(person);
   finally
-    generator.Free;
+    person.Free;
   end;
 end;
 

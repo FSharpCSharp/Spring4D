@@ -93,13 +93,8 @@ type
 
   TFreezable = record
   private
-    class var
-      fGenerator: TProxyGenerator;
     class function AsFreezable(const target: TObject): IFreezable; static;
   public
-    class constructor Create;
-    class destructor Destroy;
-
     class function IsFreezable(const obj: TObject): Boolean; static;
     class procedure Freeze(const freezable: TObject); static;
     class function IsFrozen(const obj: TObject): Boolean; static;
@@ -229,10 +224,8 @@ type
   private
     fPrimaryStorage: IStorage;
     fSecondaryStorage: IStorage;
-    fGenerator: TProxyGenerator;
   public
     constructor Create(const primaryStorage: IStorage);
-    destructor Destroy; override;
     function GetStorage: IStorage;
     property SecondaryStorage: IStorage read fSecondaryStorage write fSecondaryStorage;
   end;
@@ -378,16 +371,6 @@ end;
 
 {$REGION 'TFreezable'}
 
-class constructor TFreezable.Create;
-begin
-  fGenerator := TProxyGenerator.Create;
-end;
-
-class destructor TFreezable.Destroy;
-begin
-  fGenerator.Free;
-end;
-
 class function TFreezable.AsFreezable(const target: TObject): IFreezable;
 var
   hack: IProxyTargetAccessor;
@@ -435,7 +418,7 @@ begin
   freezableInterceptor := TFreezableInterceptor.Create;
   options := TProxyGenerationOptions.Create(TFreezableProxyGenerationHook.Create);
   options.Selector := TFreezableInterceptorSelector.Create;
-  proxy := fGenerator.CreateClassProxy(TClass(T), options, [
+  proxy := TProxyGenerator.CreateClassProxy(TClass(T), options, [
     TCallLoggingInterceptor.Create, freezableInterceptor]);
   Result := T(proxy)
 end;
@@ -563,36 +546,23 @@ end;
 {$REGION 'TDelegateWrapper'}
 
 class function TDelegateWrapper.WrapAs<T>(delegate: PInterface): T;
-var
-  generator: TProxyGenerator;
 begin
-  generator := TProxyGenerator.Create;
-  try
-    Result := generator.CreateInterfaceProxyWithoutTarget<T>(
-      TMethodInterceptor.Create(delegate^));
-  finally
-    generator.Free;
-  end;
+  Result := TProxyGenerator.CreateInterfaceProxyWithoutTarget<T>(
+    TMethodInterceptor.Create(delegate^));
 end;
 
 class function TDelegateWrapper.WrapAs<T>(delegates: array of PInterface): T;
 var
-  generator: TProxyGenerator;
   options: TProxyGenerationOptions;
   interceptors: TArray<IInterceptor>;
   i: Integer;
 begin
-  generator := TProxyGenerator.Create;
-  try
-    options.Selector := TDelegateSelector.Create;
-    SetLength(interceptors, Length(delegates));
-    for i := Low(delegates) to High(delegates) do
-      interceptors[i] := TMethodInterceptor.Create(delegates[i]^);
-    Result := generator.CreateInterfaceProxyWithoutTarget<T>(
-      options, interceptors);
-  finally
-    generator.Free;
-  end;
+  options.Selector := TDelegateSelector.Create;
+  SetLength(interceptors, Length(delegates));
+  for i := Low(delegates) to High(delegates) do
+    interceptors[i] := TMethodInterceptor.Create(delegates[i]^);
+  Result := TProxyGenerator.CreateInterfaceProxyWithoutTarget<T>(
+    options, interceptors);
 end;
 
 {$ENDREGION}
@@ -673,14 +643,8 @@ end;
 
 constructor TStorageFactory.Create(const primaryStorage: IStorage);
 begin
+  inherited Create;
   fPrimaryStorage := primaryStorage;
-  fGenerator := TProxyGenerator.Create;
-end;
-
-destructor TStorageFactory.Destroy;
-begin
-  fGenerator.Free;
-  inherited;
 end;
 
 function TStorageFactory.GetStorage: IStorage;
@@ -688,7 +652,7 @@ var
   interceptor: IInterceptor;
 begin
   interceptor := TStorageInterceptor.Create(fSecondaryStorage);
-  Result := fGenerator.CreateInterfaceProxyWithTarget<IStorage>(
+  Result := TProxyGenerator.CreateInterfaceProxyWithTarget<IStorage>(
     fPrimaryStorage, interceptor);
 end;
 

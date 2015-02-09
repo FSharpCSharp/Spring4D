@@ -162,26 +162,20 @@ end;
 function TMock.CreateProxy(typeInfo: PTypeInfo;
   const interceptor: TMockInterceptor): TValue;
 var
-  generator: TProxyGenerator;
   intf: IInterface;
 begin
-  generator := TProxyGenerator.Create;
-  try
-    case typeInfo.Kind of
-      tkClass:
-        Result := generator.CreateClassProxy(
-          typeInfo.TypeData.ClassType, [interceptor]);
-      tkInterface:
-      begin
-        Supports(generator.CreateInterfaceProxyWithoutTarget(
-          typeInfo, [interceptor]), GetTypeData(typeInfo).Guid, intf);
-        TValue.Make(@intf, typeInfo, Result);
-      end;
-    else
-      raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [typeInfo.TypeName]);
+  case typeInfo.Kind of
+    tkClass:
+      Result := TProxyGenerator.CreateClassProxy(
+        typeInfo.TypeData.ClassType, [interceptor]);
+    tkInterface:
+    begin
+      Supports(TProxyGenerator.CreateInterfaceProxyWithoutTarget(
+        typeInfo, [interceptor]), GetTypeData(typeInfo).Guid, intf);
+      TValue.Make(@intf, typeInfo, Result);
     end;
-  finally
-    generator.Free;
+  else
+    raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [typeInfo.TypeName]);
   end;
 end;
 

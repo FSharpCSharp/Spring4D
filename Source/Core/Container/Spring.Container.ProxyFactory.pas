@@ -38,14 +38,12 @@ type
   TProxyFactory = class(TInterfacedObject, IProxyFactory)
   private
     fKernel: IKernel;
-    fGenerator: TProxyGenerator;
     fSelectors: IList<IModelInterceptorsSelector>;
   protected
     function GetInterceptorsFor(const model: TComponentModel): TArray<TInterceptorReference>;
     function ObtainInterceptors(const model: TComponentModel): TArray<IInterceptor>;
   public
     constructor Create(const kernel: IKernel);
-    destructor Destroy; override;
 
     procedure AddInterceptorSelector(const selector: IModelInterceptorsSelector);
 
@@ -66,14 +64,7 @@ constructor TProxyFactory.Create(const kernel: IKernel);
 begin
   inherited Create;
   fKernel := kernel;
-  fGenerator := TProxyGenerator.Create;
   fSelectors := TCollections.CreateList<IModelInterceptorsSelector>;
-end;
-
-destructor TProxyFactory.Destroy;
-begin
-  fGenerator.Free;
-  inherited;
 end;
 
 procedure TProxyFactory.AddInterceptorSelector(
@@ -92,7 +83,7 @@ begin
   interceptors := ObtainInterceptors(model);
   if Assigned(interceptors) then
   begin
-    Supports(fGenerator.CreateInterfaceProxyWithTarget(
+    Supports(TProxyGenerator.CreateInterfaceProxyWithTarget(
       instance.TypeInfo, instance.AsInterface, interceptors),
       instance.TypeData.Guid, intf);
     TValue.Make(@intf, instance.TypeInfo, Result);
