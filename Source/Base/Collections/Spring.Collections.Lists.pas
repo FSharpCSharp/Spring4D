@@ -81,7 +81,6 @@ type
         function MoveNext: Boolean; override;
         procedure Reset; override;
       end;
-      TArrayOfT = array of T; // Delphi 2010 compatibility
   private
     fItems: TArray<T>;
     fCount: Integer;
@@ -267,6 +266,7 @@ type
 implementation
 
 uses
+  TypInfo,
   Spring.Collections.Extensions,
   Spring.ResourceStrings;
 
@@ -303,7 +303,11 @@ begin
     fArrayManager := TManualArrayManager<T>.Create
   else
 {$ENDIF}
-    fArrayManager := TMoveArrayManager<T>.Create;
+    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+      tkClass: TArrayManager<TObject>(fArrayManager) := TMoveArrayManager<TObject>.Create;
+    else
+      fArrayManager := TMoveArrayManager<T>.Create;
+    end;
 end;
 
 constructor TList<T>.Create(const values: array of T);
@@ -351,7 +355,16 @@ end;
 
 function TList<T>.GetEnumerator: IEnumerator<T>;
 begin
+{$IFNDEF DELPHI2010}
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkClass: IEnumerator<TObject>(Result) :=
+      TList<TObject>.TEnumerator.Create(TList<TObject>(Self));
+  else
+    Result := TEnumerator.Create(Self);
+  end;
+{$ELSE}
   Result := TEnumerator.Create(Self);
+{$ENDIF}
 end;
 
 function TList<T>.GetItem(index: Integer): T;

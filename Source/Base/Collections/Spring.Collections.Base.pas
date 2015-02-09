@@ -569,10 +569,11 @@ end;
 constructor TEnumerableBase<T>.Create;
 begin
   inherited Create;
-  if GetTypeKind(TypeInfo(T)) = tkClass then
-    fComparer := TInstanceComparer<T>.Default
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkClass: fComparer := IComparer<T>(GetInstanceComparer)
   else
     fComparer := TComparer<T>.Default;
+  end;
 end;
 
 constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);
@@ -811,7 +812,12 @@ end;
 class function TEnumerableBase<T>.GetEqualityComparer: IEqualityComparer<T>;
 begin
   if not Assigned(fEqualityComparer) then
-    fEqualityComparer := TEqualityComparer<T>.Default;
+    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+      tkClass: IEqualityComparer<TObject>(fEqualityComparer) :=
+        TEqualityComparer<TObject>.Default;
+    else
+      fEqualityComparer := TEqualityComparer<T>.Default;
+    end;
   Result := fEqualityComparer;
 end;
 

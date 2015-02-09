@@ -2334,7 +2334,7 @@ type
 
   TInstanceComparer<T> = class
   public
-    class function Default: IComparer<T>;
+    class function Default: IComparer<T>; inline;
   end;
 
   TCollectionHelper = class helper for TCollection
