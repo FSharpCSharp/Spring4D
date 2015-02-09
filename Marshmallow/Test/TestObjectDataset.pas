@@ -5,7 +5,8 @@ unit TestObjectDataset;
 interface
 
 uses
-  TestFramework, Spring.Persistence.ObjectDataset, Spring.Collections, TestEntities;
+  TestFramework, Spring.Persistence.ObjectDataset, Spring.Collections, TestEntities
+  ;
 
 type
   TMockObjectDataset = class(TObjectDataset)
@@ -17,7 +18,7 @@ type
     FDataset: TMockObjectDataset;
     FRemovedItemAge: Integer;
   protected
-    function CreateCustomersList(ASize: Integer = 10): IList<TCustomer>; virtual;
+    function CreateCustomersList(ASize: Integer = 10; ACreateMock: Boolean = False): IList<TCustomer>; virtual;
     function CreateCustomersOrdersList(ASize: Integer = 10): IList<TCustomer_Orders>; virtual;
     procedure DoListChanged(Sender: TObject; const Item: TCustomer; Action: TCollectionChangedAction); virtual;
   public
@@ -68,6 +69,9 @@ type
     procedure SimpleSort();
     procedure Sort();
     procedure Sort_Regression();
+
+    procedure SimpleDefinedFields();
+    procedure LookUpField();
     {$IFDEF GUI_TESTS}
     procedure TestGUI;
     {$ENDIF}
@@ -86,8 +90,19 @@ uses
   ,Generics.Defaults
   ,Diagnostics
   ,Spring
-  ,Spring.Persistence.Mapping.Attributes
+  , Spring.Persistence.Mapping.Attributes
   ;
+
+type
+  [Entity]
+  TMockCustomer = class(TCustomer)
+  private
+    FMockId: Integer;
+  public
+    [Column]
+    property MockID: Integer read FMockId write FMockId;
+  end;
+
 
 type
   TSpringNullableTest = class
@@ -290,7 +305,7 @@ begin
   //clear nullable type
 end;
 
-function TestTObjectDataset.CreateCustomersList(ASize: Integer): IList<TCustomer>;
+function TestTObjectDataset.CreateCustomersList(ASize: Integer; ACreateMock: Boolean): IList<TCustomer>;
 var
   LCustomer: TCustomer;
   i: Integer;
@@ -298,7 +313,13 @@ begin
   Result := TCollections.CreateObjectList<TCustomer>(True);
   for i := 1 to ASize do
   begin
-    LCustomer := TCustomer.Create;
+    // Mock of the customer class is needed to write down ID fields. Valid values
+    // are needed for some tests (e.g. Lookup).
+    if ACreateMock then begin
+      LCustomer := TMockCustomer.Create;
+      (LCustomer as TMockCustomer).MockID := i;
+    end else
+      LCustomer := TCustomer.Create;
     LCustomer.Name := 'FirstName';
     LCustomer.Age := i;
     LCustomer.EMail := 'aaa@aaa.com';
@@ -655,6 +676,59 @@ begin
   CheckEquals(5, LCustomers[FDataset.Index].Age);
 
   CheckFalse( FDataset.Locate('Age', 50, []) );
+end;
+
+procedure TestTObjectDataset.LookUpField;
+var
+  LCustomers: IList<TCustomer>;
+  LIntField: TIntegerField;
+  LStrField: TStringField;
+  LOrders: IList<TCustomer_Orders>;
+  FOrdersDataSet: TMockObjectDataset;
+begin
+  LCustomers := CreateCustomersList(10, True);
+  LOrders := CreateCustomersOrdersList(10);
+
+  FOrdersDataSet := TMockObjectDataset.Create(nil);
+  try
+    FOrdersDataSet.ColumnAttributeClassInfo := ColumnAttribute.ClassInfo;
+    FOrdersDataSet.SetDataList<TCustomer_Orders>(LOrders);
+
+    LIntField := TIntegerField.Create(FDataSet);
+    LIntField.FieldName := 'MockID';
+    LIntField.DataSet := FDataset;
+
+    LStrField := TStringField.Create(FDataSet);
+    LStrField.FieldName := 'Name';
+    LStrField.FieldKind := fkLookup;
+    LStrField.LookupDataSet := FOrdersDataSet;
+    LStrField.LookupKeyFields := 'Customer_ID';
+    LStrField.LookupResultField := 'Date_Order_Placed';
+    LStrField.KeyFields := 'MockID';
+    LStrField.Lookup := True;
+    LStrField.DataSet := FDataset;
+
+    FDataset.SetDataList<TCustomer>(LCustomers);
+    FDataset.Open;
+    CheckTrue(True);
+  finally
+    FOrdersDataSet.Free;
+  end;
+end;
+
+procedure TestTObjectDataset.SimpleDefinedFields;
+var
+  LCustomers: IList<TCustomer>;
+  LStrField: TStringField;
+begin
+  LCustomers := CreateCustomersList(10);
+  LStrField := TStringField.Create(FDataSet);
+  LStrField.FieldName := 'Name';
+  LStrField.DataSet := FDataset;
+
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  CheckEquals(LCustomers[0].Name, LStrField.AsString);
 end;
 
 procedure TestTObjectDataset.MergeSort_Try;

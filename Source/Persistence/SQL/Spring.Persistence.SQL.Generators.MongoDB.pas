@@ -73,8 +73,6 @@ type
     function GeneratePagedQuery(const sql: string; limit, offset: Integer): string; override;
     function GenerateGetQueryCount(const sql: string): string; override;
     function GetSQLTableCount(const tableName: string): string; override;
-
-    class function GetParamName(index: Integer): string;
   end;
 
 implementation
@@ -466,11 +464,6 @@ begin
     stAscending: Result := '1';
     stDescending: Result := '-1';
   end;
-end;
-
-class function TMongoDBGenerator.GetParamName(index: Integer): string;
-begin
-  Result := '?' + IntToStr(index);
 end;
 
 function TMongoDBGenerator.GetPrefix(ATable: TSQLTable): string;

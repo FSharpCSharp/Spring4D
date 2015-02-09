@@ -33,6 +33,7 @@ uses
   DB,
   TypInfo,
   Rtti,
+  Spring,
   Spring.Collections,
   Spring.Persistence.ObjectDataset.Abstract,
   Spring.Persistence.ObjectDataset.Algorithms.Sort,
@@ -61,6 +62,9 @@ type
     function GetSort: string;
     procedure SetSort(const Value: string);
     function GetFilterCount: Integer;
+    // we cannot use IDictionary, because it changes order of items.
+    // we use list with predicate searching - slower, but working
+    function PropertyFinder(const s: string): Spring.TPredicate<TRttiProperty>;
   protected
     procedure DoAfterOpen; override;
     procedure DoDeleteRecord(Index: Integer); override;
@@ -321,10 +325,12 @@ begin
     LItem := Trim(LText);
     iPos := PosEx(' ', LItem);
     if iPos > 1 then
-      LItem := Copy(LItem, 1, iPos - 1);           
-    
+      LItem := Copy(LItem, 1, iPos - 1);
+
     LIndexFieldItem.Field := FindField(LItem);
-    LIndexFieldItem.RttiProperty := FProperties[LIndexFieldItem.Field.Index];
+    if not FProperties.TryGetFirst(LIndexFieldItem.RttiProperty,
+        PropertyFinder(LIndexFieldItem.Field.FieldName)) then
+      raise EObjectDatasetException.CreateFmt('Field %d used for sorting not found in the dataset.', [LIndexFieldItem.Field.Name]);
     LIndexFieldItem.CaseInsensitive := True;
     Result.Add(LIndexFieldItem);
   end;
@@ -417,20 +423,21 @@ begin
       LNeedsSort := FieldInSortIndex(LField);
     end;
 
-    LProp := FProperties[LField.FieldNo - 1];
-    LFieldValue := LField.Value;
-    if VarIsNull(LFieldValue) then
-    begin
-      LProp.SetValue(LItem, TValue.Empty);
-    end
-    else
-    begin
-    //  LValueFromVariant := TUtils.FromVariant(LFieldValue);
-      LValueFromVariant := TValue.FromVariant(LFieldValue);
+    // Fields not found in dictionary are calculated or lookup fields, do not post them
+    if FProperties.TryGetFirst(LProp, PropertyFinder(LField.FieldName)) then begin
+      LFieldValue := LField.Value;
+      if VarIsNull(LFieldValue) then
+      begin
+        LProp.SetValue(LItem, TValue.Empty);
+      end
+      else
+      begin
+        LValueFromVariant := TValue.FromVariant(LFieldValue);
 
-   //   if TUtils.TryConvert(LValueFromVariant, nil, LProp, LItem.AsObject, LConvertedValue) then
-      if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue) then
-        LProp.SetValue(LItem, LConvertedValue);
+     //   if TUtils.TryConvert(LValueFromVariant, nil, LProp, LItem.AsObject, LConvertedValue) then
+        if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue) then
+          LProp.SetValue(LItem, LConvertedValue);
+      end;
     end;
   end;
 
@@ -560,8 +567,9 @@ begin
   if FProperties.IsEmpty then
     InitRttiPropertiesFromItemType(AItem.TypeInfo);
 
-  LProperty := FProperties[AField.FieldNo - 1];
-  Result := ConvertPropertyValueToVariant(LProperty.GetValue(AItem));
+  // Fields not found in dictionary are calculated or lookup fields, do not post them
+  if FProperties.TryGetFirst(LProperty, PropertyFinder(AField.FieldName)) then
+    Result := ConvertPropertyValueToVariant(LProperty.GetValue(AItem));
 end;
 
 procedure TObjectDataset.InternalInitFieldDefs;
@@ -666,7 +674,6 @@ end;
 
 procedure TObjectDataset.LoadFieldDefsFromItemType;
 var
-  i: Integer;
   LProp: TRttiProperty;
  // LAttrib: TCustomAttribute;
   LPropPrettyName: string;
@@ -789,10 +796,8 @@ begin
 
   if FProperties.IsEmpty then
     raise EObjectDatasetException.Create(SColumnPropertiesNotSpecified);
-
-  for i := 0 to FProperties.Count - 1 do
+  for LProp in FProperties do
   begin
-    LProp := FProperties[i];
     LPropPrettyName := LProp.Name;
     LLength := -2;
     LPrecision := -2;
@@ -906,6 +911,16 @@ begin
   end;
 end;
 
+function TObjectDataset.PropertyFinder(
+  const s: string): Spring.TPredicate<TRttiProperty>;
+begin
+  Result :=
+    function (const prop: TRttiProperty): Boolean
+      begin
+        Result := prop.Name = s;
+      end
+end;
+
 procedure TObjectDataset.RebuildPropertiesCache;
 var
   LType: TRttiType;
@@ -915,7 +930,7 @@ begin
   LType := FCtx.GetType(FItemTypeInfo);
   for i := 0 to Fields.Count - 1 do
   begin
-    FProperties.Add( LType.GetProperty(Fields[i].FieldName) );
+    FProperties.Add(LType.GetProperty(Fields[i].FieldName) );
   end;
 end;
 
