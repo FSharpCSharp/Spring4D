@@ -2301,6 +2301,8 @@ type
     class function Max<T>(const source: IEnumerable<T>;
       const selector: TFunc<T, Integer>): Integer; overload; static;
 
+    class function OfType<T, TResult>(const source: IEnumerable<T>): IEnumerable<TResult>; static;
+
     class function Query<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
     class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
 
@@ -2691,6 +2693,12 @@ class function TEnumerable.Min<T>(const source: IEnumerable<T>;
   const selector: TFunc<T, Integer>): Integer;
 begin
   Result := Select<T, Integer>(source, selector).Min;
+end;
+
+class function TEnumerable.OfType<T, TResult>(
+  const source: IEnumerable<T>): IEnumerable<TResult>;
+begin
+  Result := TOfTypeIterator<T, TResult>.Create(source);
 end;
 
 class function TEnumerable.Query<T>(const source: TArray<T>): IEnumerable<T>;
