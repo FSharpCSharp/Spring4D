@@ -30,6 +30,7 @@ interface
 
 uses
   Classes,
+  Generics.Collections,
   Rtti,
   SysUtils,
   Spring,
@@ -52,6 +53,7 @@ type
   IComponentActivator = interface;
   IContainerExtension = interface;
   ICreationContext = interface;
+  IProxyFactory = interface;
 
   TActivatorDelegate<T> = reference to function: T;
 
@@ -84,6 +86,7 @@ type
     function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
+    function GetProxyFactory: IProxyFactory;
     function GetLogger: ILogger;
     procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
@@ -93,6 +96,7 @@ type
     property Injector: IDependencyInjector read GetInjector;
     property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
+    property ProxyFactory: IProxyFactory read GetProxyFactory;
     property Logger: ILogger read GetLogger write SetLogger;
   end;
 
@@ -290,6 +294,36 @@ type
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
+  TInterceptorReference = record
+  private
+    fTypeInfo: PTypeInfo;
+    fName: string;
+  public
+    constructor Create(typeInfo: PTypeInfo); overload;
+    constructor Create(const name: string); overload;
+
+    class function ForType<T>: TInterceptorReference; static;
+
+    property TypeInfo: PTypeInfo read fTypeInfo;
+    property Name: string read fName;
+  end;
+
+  IModelInterceptorsSelector = interface
+    ['{118AE0DF-C257-4395-83AF-65F86AB12A2D}']
+    function HasInterceptors(const model: TComponentModel): Boolean;
+    function SelectInterceptors(const model: TComponentModel;
+      const interceptors: array of TInterceptorReference): TArray<TInterceptorReference>;
+  end;
+
+  IProxyFactory = interface
+    ['{4813914F-810D-451D-8AED-205C3F82C068}']
+    procedure AddInterceptorSelector(const selector: IModelInterceptorsSelector);
+
+    function CreateInstance(const context: ICreationContext;
+      const instance: TValue; const model: TComponentModel;
+      const constructorArguments: array of TValue): TValue;
+  end;
+
   ///	<summary>
   ///	  TComponentModel
   ///	</summary>
@@ -308,6 +342,7 @@ type
     fMethodInjections: IInjectionList;
     fPropertyInjections: IInjectionList;
     fFieldInjections: IInjectionList;
+    fInterceptors: IList<TInterceptorReference>;
     function GetComponentTypeInfo: PTypeInfo;
     function GetComponentTypeName: string;
     procedure SetRefCounting(const value: TRefCounting);
@@ -335,6 +370,8 @@ type
     property MethodInjections: IInjectionList read fMethodInjections;
     property PropertyInjections: IInjectionList read fPropertyInjections;
     property FieldInjections: IInjectionList read fFieldInjections;
+
+    property Interceptors: IList<TInterceptorReference> read fInterceptors;
   end;
 
   TValueHolder = class(TInterfacedObject, TFunc<TValue>)
@@ -404,7 +441,6 @@ type
 implementation
 
 uses
-  Generics.Collections,
   SyncObjs,
   TypInfo,
   Spring.Container.ResourceStrings,
@@ -441,6 +477,28 @@ end;
 {$ENDREGION'}
 
 
+{$REGION 'TInterceptorReference'}
+
+constructor TInterceptorReference.Create(typeInfo: PTypeInfo);
+begin
+  fTypeInfo := typeInfo;
+  fName := '';
+end;
+
+constructor TInterceptorReference.Create(const name: string);
+begin
+  fTypeInfo := nil;
+  fName := name;
+end;
+
+class function TInterceptorReference.ForType<T>: TInterceptorReference;
+begin
+  Result := TInterceptorReference.Create(System.TypeInfo(T));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TComponentModel'}
 
 constructor TComponentModel.Create(const componentType: TRttiType);
@@ -452,6 +510,7 @@ begin
   fMethodInjections := TCollections.CreateInterfaceList<IInjection>;
   fPropertyInjections := TCollections.CreateInterfaceList<IInjection>;
   fFieldInjections := TCollections.CreateInterfaceList<IInjection>;
+  fInterceptors := TCollections.CreateList<TInterceptorReference>;
 end;
 
 function TComponentModel.GetComponentTypeInfo: PTypeInfo;

@@ -32,8 +32,8 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-{$IFDEF DELPHIXE}
-  Spring.Reflection.Compatibility,
+{$IFDEF DELPHIXE_UP}
+  Spring.Interception.VirtualInterface,
 {$ENDIF}
   Spring.Container.Common,
   Spring.Container.Core;
@@ -94,6 +94,9 @@ type
     fKernel: IKernel;
     fModel: TComponentModel;
     constructor Create(const kernel: IKernel; componentType: PTypeInfo);
+{$IFDEF DELPHIXE_UP}
+    procedure InterceptedBy(const interceptorRef: TInterceptorReference; where: TWhere); overload;
+{$ENDIF}
   public
     function Implements(serviceType: PTypeInfo): IRegistration; overload;
     function Implements(serviceType: PTypeInfo; const serviceName: string): IRegistration; overload;
@@ -133,6 +136,11 @@ type
 {$IFDEF DELPHIXE_UP}
     function AsFactory: IRegistration; overload;
     function AsFactory(const resolvedServiceName: string): IRegistration; overload;
+
+    function InterceptedBy(interceptorType: PTypeInfo;
+      where: TWhere = TWhere.Last): IRegistration; overload;
+    function InterceptedBy(const name: string;
+      where: TWhere = TWhere.Last): IRegistration; overload;
 {$ENDIF}
   end;
 
@@ -188,6 +196,13 @@ type
 {$IFDEF DELPHIXE_UP}
     function AsFactory: TRegistration<T>; overload;
     function AsFactory(const resolvedServiceName: string): TRegistration<T>; overload;
+
+    function InterceptedBy(interceptorType: PTypeInfo;
+      where: TWhere = TWhere.Last): TRegistration<T>; overload;
+    function InterceptedBy(const name: string;
+      where: TWhere = TWhere.Last): TRegistration<T>; overload;
+    function InterceptedBy<TInterceptorType>(
+      where: TWhere = TWhere.Last): TRegistration<T>; overload;
 {$ENDIF}
   end;
 
@@ -704,6 +719,30 @@ begin
   fKernel.Registry.RegisterFactory(fModel, resolvedServiceName);
   Result := Self;
 end;
+
+procedure TRegistration.InterceptedBy(
+  const interceptorRef: TInterceptorReference; where: TWhere);
+begin
+  case where of
+    TWhere.First: fModel.Interceptors.Insert(0, interceptorRef);
+  else
+    fModel.Interceptors.Add(interceptorRef);
+  end;
+end;
+
+function TRegistration.InterceptedBy(interceptorType: PTypeInfo;
+  where: TWhere): IRegistration;
+begin
+  InterceptedBy(TInterceptorReference.Create(interceptorType), where);
+  Result := Self;
+end;
+
+function TRegistration.InterceptedBy(const name: string;
+  where: TWhere): IRegistration;
+begin
+  InterceptedBy(TInterceptorReference.Create(name), where);
+  Result := Self;
+end;
 {$ENDIF}
 
 function TRegistration.PerResolve: IRegistration;
@@ -881,6 +920,28 @@ begin
   fRegistration.AsFactory(resolvedServiceName);
   Result := Self;
 end;
+
+function TRegistration<T>.InterceptedBy(interceptorType: PTypeInfo;
+  where: TWhere): TRegistration<T>;
+begin
+  fRegistration.InterceptedBy(interceptorType, where);
+  Result := Self;
+end;
+
+function TRegistration<T>.InterceptedBy(const name: string;
+  where: TWhere): TRegistration<T>;
+begin
+  fRegistration.InterceptedBy(name, where);
+  Result := Self;
+end;
+
+function TRegistration<T>.InterceptedBy<TInterceptorType>(
+  where: TWhere = TWhere.Last): TRegistration<T>;
+begin
+  fRegistration.InterceptedBy(TypeInfo(TInterceptorType), where);
+  Result := Self;
+end;
+
 {$ENDIF}
 
 function TRegistration<T>.PerResolve: TRegistration<T>;

@@ -48,7 +48,7 @@ type
     fOnChanged: TEventsChangedEvent;
     fNotificationHandler: TNotificationHandler;
 
-  {$REGION 'Property Accessors'}
+    {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetHandlers: TArray<TMethodPointer>;

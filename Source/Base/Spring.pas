@@ -72,6 +72,8 @@ type
 
   PTypeInfo = TypInfo.PTypeInfo;
 
+  PInterface = ^IInterface;
+
   TValue = Rtti.TValue;
 
   /// <summary>
@@ -138,16 +140,24 @@ type
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
   public
     class function FromVarRec(const value: TVarRec): TValue; static;
+    function AsPointer: Pointer;
 {$IFDEF DELPHI2010}
     function AsString: string;
 {$ENDIF}
     function AsType<T>: T;
     function Cast(typeInfo: PTypeInfo): TValue;
+    function Equals(const value: TValue): Boolean;
+    function IsInstance: Boolean;
+    function IsInterface: Boolean;
+    function IsNumeric: Boolean;
+    function IsPointer: Boolean;
     function IsString: Boolean;
+    function IsVariant: Boolean;
 {$IFDEF DELPHI2010}
     function IsType<T>: Boolean; overload;
     function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
 {$ENDIF}
+    function ToObject: TObject;
   end;
 
   {$ENDREGION}
@@ -158,10 +168,12 @@ type
   TRttiMethodHelper = class helper for TRttiMethod
   private
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+    function GetReturnTypeHandle: PTypeInfo;
   public
     function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+    property ReturnTypeHandle: PTypeInfo read GetReturnTypeHandle;
   end;
 
   {$ENDREGION}
@@ -250,13 +262,13 @@ type
 
   {$REGION 'Procedure types'}
 
-  /// <summary>
-  ///   Represents a logical predicate.
-  /// </summary>
-  /// <param name="value">
-  ///   the value needs to be determined.
-  /// </param>
-  /// <returns>
+  ///	<summary>
+  ///	  Represents a logical predicate.
+  ///	</summary>
+  ///	<param name="arg">
+  ///	  the value needs to be determined.
+  ///	</param>
+  ///	<returns>
   ///	  Returns <c>True</c> if the value was accepted, otherwise, returns
   ///	  <c>False</c>.
   /// </returns>
@@ -265,34 +277,34 @@ type
   ///	    This type redefined the
   ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
   ///	    type with a const parameter.
-  ///   </note>
-  /// </remarks>
-  /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
-  TPredicate<T> = reference to function(const value: T): Boolean;
+  ///	  </note>
+  ///	</remarks>
+  ///	<seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
+  TPredicate<T> = reference to function(const arg: T): Boolean;
 
-  /// <summary>
-  ///   Represents an anonymous method that has a single parameter and does not
-  ///   return a value.
-  /// </summary>
-  /// <seealso cref="TActionProc&lt;T&gt;" />
-  /// <seealso cref="TActionMethod&lt;T&gt;" />
-  TAction<T> = reference to procedure(const obj: T);
+  ///	<summary>
+  ///	  Represents an anonymous method that has a single parameter and does not
+  ///	  return a value.
+  ///	</summary>
+  ///	<seealso cref="TActionProc&lt;T&gt;" />
+  ///	<seealso cref="TActionMethod&lt;T&gt;" />
+  TAction<T> = reference to procedure(const arg: T);
 
-  /// <summary>
-  ///   Represents a procedure that has a single parameter and does not return
-  ///   a value.
-  /// </summary>
-  /// <seealso cref="TAction&lt;T&gt;" />
-  /// <seealso cref="TActionMethod&lt;T&gt;" />
-  TActionProc<T> = procedure(const obj: T);
+  ///	<summary>
+  ///	  Represents a procedure that has a single parameter and does not return
+  ///	  a value.
+  ///	</summary>
+  ///	<seealso cref="TAction&lt;T&gt;" />
+  ///	<seealso cref="TActionMethod&lt;T&gt;" />
+  TActionProc<T> = procedure(const arg: T);
 
-  /// <summary>
-  ///   Represents a instance method that has a single parameter and does not
-  ///   return a value.
-  /// </summary>
-  /// <seealso cref="TAction&lt;T&gt;" />
-  /// <seealso cref="TActionProc&lt;T&gt;" />
-  TActionMethod<T> = procedure(const obj: T) of object;
+  ///	<summary>
+  ///	  Represents a instance method that has a single parameter and does not
+  ///	  return a value.
+  ///	</summary>
+  ///	<seealso cref="TAction&lt;T&gt;" />
+  ///	<seealso cref="TActionProc&lt;T&gt;" />
+  TActionMethod<T> = procedure(const arg: T) of object;
 
   /// <summary>
   ///   Represents a anonymous method that has the same signature as
@@ -885,6 +897,83 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Weak Reference'}
+
+  IWeakReference<T> = interface
+  {$REGION 'Property Accessors'}
+    function GetIsAlive: Boolean;
+    function GetTarget: T;
+    procedure SetTarget(const value: T);
+  {$ENDREGION}
+    function TryGetTarget(out target: T): Boolean;
+    property IsAlive: Boolean read GetIsAlive;
+    property Target: T read GetTarget write SetTarget;
+  end;
+
+  TWeakReferences = class
+  private
+    fLock: TCriticalSection;
+    fWeakReferences: TDictionary<Pointer, TList>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure RegisterWeakRef(address: Pointer; instance: Pointer);
+    procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
+  end;
+
+  TWeakReference = class abstract(TInterfacedObject)
+  private
+    fTarget: Pointer;
+  protected
+    function GetIsAlive: Boolean;
+    procedure RegisterWeakRef(address: Pointer; instance: Pointer);
+    procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
+  public
+    class constructor Create;
+    class destructor Destroy;
+
+    property IsAlive: Boolean read GetIsAlive;
+  end;
+
+  TWeakReference<T> = class(TWeakReference, IWeakReference<T>)
+  private
+    function GetTarget: T;
+    procedure SetTarget(const value: T);
+  public
+    constructor Create(const target: T);
+    destructor Destroy; override;
+
+    function TryGetTarget(out target: T): Boolean;
+    property Target: T read GetTarget write SetTarget;
+  end;
+
+  WeakReference<T> = record
+  private
+    fReference: IWeakReference<T>;
+    function GetIsAlive: Boolean; inline;
+    function GetTarget: T; inline;
+    procedure SetTarget(const value: T); inline;
+  public
+    constructor Create(const target: T);
+
+    class operator Implicit(const value: T): WeakReference<T>; overload; inline;
+    class operator Implicit(const value: TWeakReference<T>): WeakReference<T>; overload; inline;
+    class operator Implicit(const value: WeakReference<T>): T; overload; inline;
+    class operator Implicit(const value: IWeakReference<T>): WeakReference<T>; overload; inline;
+    class operator Implicit(const value: WeakReference<T>): IWeakReference<T>; overload; inline;
+
+    class operator Equal(const left: WeakReference<T>; const right: T): Boolean; overload; inline;
+    class operator NotEqual(const left: WeakReference<T>; const right: T): Boolean; overload; inline;
+
+    function TryGetTarget(out target: T): Boolean;
+    property Target: T read GetTarget write SetTarget;
+    property IsAlive: Boolean read GetIsAlive;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Multicast Event'}
 
   TEventsChangedAction = caAdded..caRemoved;
@@ -1118,6 +1207,18 @@ type
     function TypeData: PTypeData; inline;
 {$ENDIF}
     property TypeName: string read GetTypeName;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TTypeDataHelper}
+
+  TTypeDataHelper = record helper for TTypeData
+  public
+{$IFNDEF DELPHIXE3_UP}
+    function DynArrElType: PPTypeInfo; inline;
+{$ENDIF}
   end;
 
   {$ENDREGION}
@@ -1566,16 +1667,24 @@ procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
+
+function SkipShortString(P: PByte): Pointer; inline;
 {$ENDREGION}
 
 
 implementation
 
 uses
+  Math,
   RTLConsts,
   SysConst,
   Spring.Events,
+  Spring.Reflection.Core,
   Spring.ResourceStrings;
+
+var
+  VirtualClasses: TVirtualClasses;
+  WeakReferences: TWeakReferences;
 
 
 {$REGION 'Routines'}
@@ -1805,10 +1914,23 @@ begin
   Result := IInterface(TMethod(method).Data);
 end;
 
+function SkipShortString(P: PByte): Pointer;
+begin
+  Result := P + P^ + 1;
+end;
+
 {$ENDREGION}
 
 
 {$REGION 'TValueHelper'}
+
+function TValueHelper.AsPointer: Pointer;
+begin
+  if Kind in [tkClass, tkInterface] then
+    Result := ToObject
+  else
+    Result := PPointer(GetReferenceToRawData)^;
+end;
 
 {$IFDEF DELPHI2010}
 function TValueHelper.AsString: string;
@@ -1836,6 +1958,465 @@ begin
     TValue.Make(@intf, typeInfo, Result)
   else if not TryCast(typeInfo, Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+function EqualsFail(const left, right: TValue): Boolean;
+begin
+  Result := False;
+end;
+
+function EqualsInt2Int(const left, right: TValue): Boolean;
+var
+  leftValue, rightValue: Int64;
+begin
+  case GetTypeData(left.TypeInfo).OrdType of
+    otSByte: leftValue := TValueData(left).FAsSByte;
+    otSWord: leftValue := TValueData(left).FAsSWord;
+    otSLong: leftValue := TValueData(left).FAsSLong;
+  else
+    leftValue := TValueData(left).FAsULong;
+  end;
+
+  case GetTypeData(right.TypeInfo).OrdType of
+    otSByte: rightValue := TValueData(right).FAsSByte;
+    otSWord: rightValue := TValueData(right).FAsSWord;
+    otSLong: rightValue := TValueData(right).FAsSLong;
+  else
+    rightValue := TValueData(right).FAsULong;
+  end;
+
+  Result := leftValue = rightValue;
+end;
+
+function EqualsInt2Float(const left, right: TValue): Boolean;
+begin
+  if right.IsType<Single> then
+    Result := Math.SameValue(left.AsInteger, right.AsType<Single>)
+  else if right.IsType<Double> then
+    Result := Math.SameValue(left.AsInteger, right.AsType<Double>)
+  else
+    Result := Math.SameValue(left.AsInteger, right.AsExtended);
+end;
+
+function EqualsInt2Int64(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInteger = right.AsInt64;
+end;
+
+function EqualsFloat2Int(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsInteger);
+    ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsInteger);
+  else
+    Result := Math.SameValue(left.AsExtended, right.AsInteger);
+  end;
+end;
+
+function EqualsFloat2Float(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle:
+      case right.TypeData.FloatType of
+        ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsType<Single>);
+        ftDouble: Result := Math.SameValue(left.AsType<Single>, right.AsType<Double>);
+      else
+        Result := Math.SameValue(left.AsType<Single>, right.AsExtended);
+      end;
+    ftDouble:
+      case right.TypeData.FloatType of
+        ftSingle: Result := Math.SameValue(left.AsType<Double>, right.AsType<Single>);
+        ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsType<Double>);
+      else
+        Result := Math.SameValue(left.AsType<Double>, right.AsExtended);
+      end;
+  else
+    case right.TypeData.FloatType of
+      ftSingle: Result := Math.SameValue(left.AsExtended, right.AsType<Single>);
+      ftDouble: Result := Math.SameValue(left.AsExtended, right.AsType<Double>);
+    else
+      Result := Math.SameValue(left.AsExtended, right.AsExtended);
+    end;
+  end;
+end;
+
+function EqualsFloat2Int64(const left, right: TValue): Boolean;
+begin
+  case left.TypeData.FloatType of
+    ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsInt64);
+    ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsInt64);
+  else
+    Result := Math.SameValue(left.AsExtended, right.AsInt64);
+  end;
+end;
+
+function EqualsInt642Int(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInt64 = right.AsInteger;
+end;
+
+function EqualsInt64ToFloat(const left, right: TValue): Boolean;
+begin
+  if right.IsType<Single> then
+    Result := Math.SameValue(left.AsInt64, right.AsType<Single>)
+  else if right.IsType<Double> then
+    Result := Math.SameValue(left.AsInt64, right.AsType<Double>)
+  else
+    Result := Math.SameValue(left.AsInt64, right.AsExtended);
+end;
+
+function EqualsInt642Int64(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInt64 = right.AsInt64;
+end;
+
+function EqualsStr2Str(const left, right: TValue): Boolean;
+begin
+  Result := left.AsString = right.AsString;
+end;
+
+function EqualsClass2Class(const left, right: TValue): Boolean;
+begin
+  Result := left.AsObject = right.AsObject;
+end;
+
+function EqualsIntf2Intf(const left, right: TValue): Boolean;
+begin
+  Result := left.AsInterface = right.AsInterface;
+end;
+
+function EqualsClassRef2ClassRef(const left, right: TValue): Boolean;
+begin
+  Result := left.AsClass = right.AsClass;
+end;
+
+function EqualsPtr2Ptr(const left, right: TValue): Boolean;
+begin
+  Result := left.AsPointer = right.AsPointer;
+end;
+
+function EqualsVar2Var(const left, right: TValue): Boolean;
+begin
+  Result := left.AsVariant = right.AsVariant;
+end;
+
+function EqualsRec2Rec(const left, right: TValue): Boolean;
+var
+  context: TRttiContext;
+  method: TRttiMethod;
+  parameters: TArray<TRttiParameter>;
+begin
+  for method in context.GetType(left.TypeInfo).GetMethods do
+    if (method.Name = '&op_Equality') then
+    begin
+      parameters := method.GetParameters;
+      if (Length(parameters) = 2)
+        and (parameters[0].ParamType.Handle = left.TypeInfo)
+        and (parameters[1].ParamType.Handle = right.TypeInfo) then
+        Exit(method.Invoke(nil, [left, right]).AsBoolean);
+    end;
+
+  Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize);
+end;
+
+{$REGION 'Comparisons'}
+type
+  TEqualsFunc = function(const left, right: TValue): Boolean;
+const
+  Comparisons: array[TTypeKind,TTypeKind] of TEqualsFunc = (
+    // tkUnknown
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsPtr2Ptr, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInteger
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsInt2Int, EqualsFail, EqualsFail, EqualsInt2Float,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsInt2Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkEnumeration
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsInt2Int, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkFloat
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFloat2Int, EqualsFail, EqualsFail, EqualsFloat2Float,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFloat2Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkSet
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsInt2Int, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkClass
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsClass2Class, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkMethod
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail, // TODO: tkMethod
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkWChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkLString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkWString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkVariant
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsVar2Var, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkRecord
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsRec2Rec,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInterface
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsIntf2Intf, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkInt64
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsInt642Int, EqualsFail, EqualsFail, EqualsInt64ToFloat,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsInt642Int64, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkDynArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsPtr2Ptr, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkUString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkClassRef
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsClassRef2ClassRef,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    ),
+    // tkPointer
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsPtr2Ptr, EqualsFail
+    ),
+    // tkProcedure
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkString, tkSet, tkClass, tkMethod, tkWChar,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkLString, tkWString, tkVariant, tkArray, tkRecord,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      // tkPointer, tkProcedure
+      EqualsFail, EqualsFail
+    )
+  );
+{$ENDREGION}
+
+function TValueHelper.Equals(const value: TValue): Boolean;
+begin
+  Result := Assigned(TypeInfo) and Assigned(value.TypeInfo)
+    and Comparisons[Kind,value.Kind](Self, value);
 end;
 
 class function TValueHelper.FromVarRec(const value: TVarRec): TValue;
@@ -1872,6 +2453,28 @@ begin
   end;
 end;
 
+function TValueHelper.IsInstance: Boolean;
+begin
+  Result := Kind in [tkClass, tkInterface];
+end;
+
+function TValueHelper.IsInterface: Boolean;
+begin
+  Result := Kind = tkInterface;
+end;
+
+function TValueHelper.IsNumeric: Boolean;
+const
+  NumericKinds = [tkInteger, tkChar, tkEnumeration, tkFloat, tkWChar, tkInt64];
+begin
+  Result := IsEmpty or (Kind in NumericKinds);
+end;
+
+function TValueHelper.IsPointer: Boolean;
+begin
+  Result := Kind = tkPointer;
+end;
+
 function TValueHelper.IsString: Boolean;
 const
   StringKinds = [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
@@ -1892,6 +2495,19 @@ begin
   Result := IsType(System.TypeInfo(T));
 end;
 {$ENDIF}
+
+function TValueHelper.IsVariant: Boolean;
+begin
+  Result := TypeInfo = System.TypeInfo(Variant);
+end;
+
+function TValueHelper.ToObject: TObject;
+begin
+  if IsInterface then
+    Result := AsInterface as TObject
+  else
+    Result := AsObject;
+end;
 
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
 var
@@ -1948,6 +2564,17 @@ begin
     PValueData(@value).FTypeInfo := typeInfo;
 end;
 
+function TRttiMethodHelper.GetReturnTypeHandle: PTypeInfo;
+var
+  returnType: TRttiType;
+begin
+  returnType := Self.ReturnType;
+  if Assigned(returnType) then
+    Result := returnType.Handle
+  else
+    Result := nil;
+end;
+
 function TRttiMethodHelper.Invoke(Instance: TObject;
   const Args: array of TValue): TValue;
 var
@@ -1959,7 +2586,11 @@ begin
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
   for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TClass;
@@ -1973,7 +2604,11 @@ begin
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
   for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TValue;
@@ -1987,7 +2622,11 @@ begin
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
   for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
+  if MethodKind = mkOperatorOverload then
+    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
+      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
+  else
+    Result := Self.DispatchInvoke(Instance, Args);
 end;
 
 {$ENDREGION}
@@ -2472,7 +3111,7 @@ begin
       tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
       tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
     else
-    Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
+      Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
     end;
   end
   else
@@ -2708,6 +3347,248 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TWeakReferences'}
+
+constructor TWeakReferences.Create;
+begin
+  fLock := TCriticalSection.Create;
+  fWeakReferences := TObjectDictionary<Pointer, TList>.Create([doOwnsValues]);
+end;
+
+destructor TWeakReferences.Destroy;
+begin
+  fWeakReferences.Free;
+  fLock.Free;
+  inherited;
+end;
+
+procedure TWeakReferences.RegisterWeakRef(address, instance: Pointer);
+var
+  addresses: TList;
+begin
+  fLock.Enter;
+  try
+    if not fWeakReferences.TryGetValue(instance, addresses) then
+    begin
+      addresses := TList.Create;
+      fWeakReferences.Add(instance, addresses);
+    end;
+    addresses.Add(address);
+  finally
+    fLock.Leave;
+  end;
+end;
+
+procedure TWeakReferences.UnregisterWeakRef(address, instance: Pointer);
+var
+  addresses: TList;
+begin
+  fLock.Enter;
+  try
+    if fWeakReferences.TryGetValue(instance, addresses) then
+    begin
+      if Assigned(address) then
+      begin
+        PPointer(address)^ := nil;
+        addresses.Remove(address);
+        if addresses.Count = 0 then
+          fWeakReferences.Remove(instance);
+      end
+      else
+      begin
+        for address in addresses do
+          PPointer(address)^ := nil;
+        fWeakReferences.Remove(instance);
+      end;
+    end;
+  finally
+    fLock.Leave;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWeakReference'}
+
+class constructor TWeakReference.Create;
+begin
+  VirtualClasses := TVirtualClasses.Create;
+  WeakReferences := TWeakReferences.Create;
+end;
+
+class destructor TWeakReference.Destroy;
+begin
+  WeakReferences.Free;
+  VirtualClasses.Free;
+end;
+
+function TWeakReference.GetIsAlive: Boolean;
+begin
+  Result := Assigned(fTarget);
+end;
+
+procedure WeakRefFreeInstance(const Self: TObject);
+var
+  freeInstance: TFreeInstance;
+begin
+  freeInstance := GetClassData(Self.ClassParent).FreeInstance;
+  WeakReferences.UnregisterWeakRef(nil, Self);
+
+  freeInstance(Self);
+end;
+
+procedure TWeakReference.RegisterWeakRef(address, instance: Pointer);
+begin
+  VirtualClasses.Proxify(instance);
+  GetClassData(TObject(instance).ClassType).FreeInstance := WeakRefFreeInstance;
+  WeakReferences.RegisterWeakRef(@fTarget, instance);
+end;
+
+procedure TWeakReference.UnregisterWeakRef(address, instance: Pointer);
+begin
+  WeakReferences.UnregisterWeakRef(address, instance);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWeakReference<T>'}
+
+constructor TWeakReference<T>.Create(const target: T);
+var
+  instance: TObject;
+begin
+  inherited Create;
+  SetTarget(target);
+end;
+
+destructor TWeakReference<T>.Destroy;
+begin
+  SetTarget(Default(T));
+  inherited;
+end;
+
+function TWeakReference<T>.GetTarget: T;
+begin
+  if IsAlive then
+    case PTypeInfo(TypeInfo(T)).Kind of
+      tkClass: PObject(@Result)^ := TObject(fTarget);
+      tkInterface: PInterface(@Result)^ := IInterface(fTarget)
+    end
+  else
+    Result := Default(T);
+end;
+
+procedure TWeakReference<T>.SetTarget(const value: T);
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := System.TypeInfo(T);
+  if Assigned(fTarget) then
+    case typeInfo.Kind of
+      tkClass: UnregisterWeakRef(@fTarget, fTarget);
+      tkInterface: UnregisterWeakRef(@fTarget, IInterface(fTarget) as TObject);
+    end;
+  fTarget := PPointer(@value)^;
+  if Assigned(fTarget) then
+    case typeInfo.Kind of
+      tkClass: RegisterWeakRef(@fTarget, fTarget);
+      tkInterface: RegisterWeakRef(@fTarget, IInterface(fTarget) as TObject);
+    end;
+end;
+
+function TWeakReference<T>.TryGetTarget(out target: T): Boolean;
+begin
+  target := GetTarget;
+  Result := IsAlive;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'WeakReference<T>'}
+
+constructor WeakReference<T>.Create(const target: T);
+begin
+  fReference := TWeakReference<T>.Create(target);
+end;
+
+function WeakReference<T>.GetIsAlive: Boolean;
+begin
+  Result := Assigned(fReference) and fReference.IsAlive;
+end;
+
+function WeakReference<T>.GetTarget: T;
+begin
+  if Assigned(fReference) then
+    Result := fReference.Target
+  else
+    Result := Default(T);
+end;
+
+procedure WeakReference<T>.SetTarget(const value: T);
+begin
+  if Assigned(fReference) then
+    fReference.Target := value
+  else
+    fReference := TWeakReference<T>.Create(value);
+end;
+
+function WeakReference<T>.TryGetTarget(out target: T): Boolean;
+begin
+  Result := Assigned(fReference) and fReference.TryGetTarget(target);
+end;
+
+class operator WeakReference<T>.Implicit(const value: T): WeakReference<T>;
+begin
+  Result.Target := value;
+end;
+
+class operator WeakReference<T>.Implicit(
+  const value: TWeakReference<T>): WeakReference<T>;
+begin
+  Result.fReference := value;
+end;
+
+class operator WeakReference<T>.Implicit(const value: WeakReference<T>): T;
+begin
+  Result := value.Target;
+end;
+
+class operator WeakReference<T>.Implicit(
+  const value: IWeakReference<T>): WeakReference<T>;
+begin
+  Result.fReference := value;
+end;
+
+class operator WeakReference<T>.Implicit(
+  const value: WeakReference<T>): IWeakReference<T>;
+begin
+  Result := value.fReference;
+end;
+
+class operator WeakReference<T>.Equal(const left: WeakReference<T>;
+  const right: T): Boolean;
+begin
+  if Assigned(left.fReference) then
+    Result := PPointer(@right)^ = (left.fReference as TWeakReference).fTarget
+  else
+    Result := PPointer(@right)^ = nil;
+end;
+
+class operator WeakReference<T>.NotEqual(const left: WeakReference<T>;
+  const right: T): Boolean;
+begin
+  if Assigned(left.fReference) then
+    Result := PPointer(@right)^ <> (left.fReference as TWeakReference).fTarget
+  else
+    Result := PPointer(@right)^ <> nil;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'Event<T>'}
 
 {$IFDEF SUPPORTS_GENERIC_EVENTS}
@@ -2829,6 +3710,18 @@ end;
 function TTypeInfoHelper.TypeData: PTypeData;
 begin
   Result := GetTypeData(@Self);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TTypeDataHelper'}
+
+{$IFNDEF DELPHIXE3_UP}
+function TTypeDataHelper.DynArrElType: PPTypeInfo;
+begin
+  Result := PPointer(SkipShortString(@DynUnitName))^;
 end;
 {$ENDIF}
 

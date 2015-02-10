@@ -313,6 +313,9 @@ type
     /// </param>
     function IsAssignableFrom(const rttiType: TRttiType): Boolean;
 
+    function IsType<T>: Boolean; overload;
+    function IsType(typeInfo: PTypeInfo): Boolean; overload; inline;
+
     property BaseTypes: IReadOnlyList<TRttiType> read GetBaseTypes;
 
     ///	<summary>
@@ -451,8 +454,12 @@ type
 
   TRttiMethodHelper = class helper(Spring.TRttiMethodHelper) for TRttiMethod
   private
+    function GetIsGetter: Boolean;
+    function GetIsSetter: Boolean;
     function InternalGetParameters: IEnumerable<TRttiParameter>;
   public
+    property IsGetter: Boolean read GetIsGetter;
+    property IsSetter: Boolean read GetIsSetter;
     property Parameters: IEnumerable<TRttiParameter> read InternalGetParameters;
   end;
 
@@ -704,9 +711,20 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Routines'}
+
+function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv;
+  IsConst: Boolean = False): Boolean;
+procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
+  var ArgDest: TValue; CC: TCallConv);
+
+  {$ENDREGION}
+
+
 implementation
 
 uses
+  Math,
   RTLConsts,
   StrUtils,
   SysConst,
@@ -715,6 +733,75 @@ uses
 
 const
   EmptyGuid: TGUID = ();
+
+
+{$REGION 'Routines'}
+
+function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv; IsConst: Boolean = False): Boolean;
+begin
+  if TypeInfo = nil then
+    Exit(False);
+  case TypeInfo^.Kind of
+    tkArray:
+      Result := GetTypeData(TypeInfo)^.ArrayData.Size > SizeOf(Pointer);
+{$IF Defined(CPUX86)}
+    tkRecord:
+      if (CC in [ccCdecl, ccStdCall, ccSafeCall]) and not IsConst then
+        Result := False
+      else
+        Result := GetTypeData(TypeInfo)^.RecSize > SizeOf(Pointer);
+    tkVariant:
+      Result := IsConst or not (CC in [ccCdecl, ccStdCall, ccSafeCall]);
+{$ELSEIF Defined(CPUX64)}
+    tkRecord:
+      Result := not (GetTypeData(TypeInfo)^.RecSize in [1,2,4,8]);
+    tkMethod,
+    tkVariant:
+      Result := True;
+{$ELSEIF Defined(CPUARM)}
+    tkRecord:
+      Result := (CC = ccReg) or (CC = ccPascal);
+    tkMethod,
+    tkVariant:
+      Result := True;
+{$IFEND}
+{$IFNDEF NEXTGEN}
+    tkString:
+      Result := GetTypeData(TypeInfo)^.MaxLength > SizeOf(Pointer);
+{$ENDIF}
+  else
+    Result := False;
+  end;
+end;
+
+procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
+  var ArgDest: TValue; CC: TCallConv);
+begin
+  if Par.ParamType = nil then
+    ArgDest := TValue.From<Pointer>(ArgSrc.GetReferenceToRawData) // untyped var or const
+  else if Par.Flags * [pfVar, pfOut] <> [] then
+  begin
+    if Par.ParamType.Handle <> ArgSrc.TypeInfo then
+      raise EInvalidCast.CreateRes(@SByRefArgMismatch);
+    ArgDest := TValue.From<Pointer>(ArgSrc.GetReferenceToRawData);
+  end
+  else if (pfConst in Par.Flags) and
+    PassByRef(Par.ParamType.Handle, CC, True) then
+  begin
+    if TypeInfo(TValue) = Par.ParamType.Handle then
+      ArgDest := TValue.From(ArgSrc)
+    else
+    begin
+      if Par.ParamType.Handle <> ArgSrc.TypeInfo then
+        raise EInvalidCast.CreateRes(@SByRefArgMismatch);
+      ArgDest := TValue.From(ArgSrc.GetReferenceToRawData);
+    end
+  end
+  else
+    ArgDest := ArgSrc.Cast(Par.ParamType.Handle);
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TType'}
@@ -1081,11 +1168,6 @@ begin
     end, enumerateBaseType);
 end;
 
-function TRttiTypeHelper.IsAssignableFrom(const rttiType: TRttiType): Boolean;
-begin
-  Result := Spring.IsAssignableFrom(Handle, rttiType.Handle);
-end;
-
 function TRttiTypeHelper.InternalGetFields(
   enumerateBaseType: Boolean): IEnumerable<TRttiField>;
 begin
@@ -1327,6 +1409,21 @@ begin
   Result := TypeKind in [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
 end;
 
+function TRttiTypeHelper.IsAssignableFrom(const rttiType: TRttiType): Boolean;
+begin
+  Result := Spring.IsAssignableFrom(Handle, rttiType.Handle);
+end;
+
+function TRttiTypeHelper.IsType(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := Handle = typeInfo;
+end;
+
+function TRttiTypeHelper.IsType<T>: Boolean;
+begin
+  Result := Handle = TypeInfo(T);
+end;
+
 {$ENDREGION}
 
 
@@ -1469,6 +1566,48 @@ end;
 
 
 {$REGION 'TRttiMethodHelper'}
+
+function GetCodeAddress(const classType: TClass; const proc: Pointer): Pointer;
+begin
+  if (Integer(proc) and $FF000000) = $FF000000 then
+    Exit(nil);
+  if (Integer(proc) and $FF000000) = $FE000000 then
+    Result := PPointer(Integer(classType) + SmallInt(proc))^
+  else
+    Result := proc;
+end;
+
+function TRttiMethodHelper.GetIsGetter: Boolean;
+var
+  prop: TRttiProperty;
+  code: Pointer;
+begin
+  for prop in Parent.GetProperties do
+    if prop is TRttiInstanceProperty then
+    begin
+      code := GetCodeAddress(prop.Parent.AsInstance.MetaclassType,
+        TRttiInstanceProperty(prop).PropInfo.GetProc);
+      if code = CodeAddress then
+        Exit(True);
+    end;
+  Result := False;
+end;
+
+function TRttiMethodHelper.GetIsSetter: Boolean;
+var
+  prop: TRttiProperty;
+  code: Pointer;
+begin
+  for prop in Parent.GetProperties do
+    if prop is TRttiInstanceProperty then
+    begin
+      code := GetCodeAddress(prop.Parent.AsInstance.MetaclassType,
+        TRttiInstanceProperty(prop).PropInfo.SetProc);
+      if code = CodeAddress then
+        Exit(True);
+    end;
+  Result := False;
+end;
 
 function TRttiMethodHelper.InternalGetParameters: IEnumerable<TRttiParameter>;
 begin

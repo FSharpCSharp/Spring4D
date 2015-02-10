@@ -24,55 +24,43 @@
 
 {$I Spring.inc}
 
-unit Spring.Reflection.Compatibility;
+unit Spring.Interception.VirtualInterface;
 
 interface
 
 uses
   Generics.Collections,
   Rtti,
-  TypInfo;
+  TypInfo,
+  Spring.Interception.MethodIntercept;
 
 type
-  TMethodInvokeEvent = reference to procedure(Method: TRttiMethod;
+{$IFDEF DELPHIXE2_UP}
+  TVirtualInterfaceInvokeEvent = Rtti.TVirtualInterfaceInvokeEvent;
+{$ELSE}
+  TVirtualInterfaceInvokeEvent = reference to procedure(Method: TRttiMethod;
     const Args: TArray<TValue>; out Result: TValue);
+{$ENDIF}
 
-  TMethodIntercept = class
-  private
-    fImplementation: TMethodImplementation;
-    fMethod: TRttiMethod;
-    function GetCodeAddress: Pointer;
-    function GetVirtualIndex: SmallInt;
-  public
-    constructor Create(const method: TRttiMethod;
-      const callback: TMethodImplementationCallback);
-    destructor Destroy; override;
-    property CodeAddress: Pointer read GetCodeAddress;
-    property Method: TRttiMethod read fMethod;
-    property VirtualIndex: SmallInt read GetVirtualIndex;
-  end;
-
-  TMethodIntercepts = TObjectList<TMethodIntercept>;
-
-  TVirtualInterfaceInvokeEvent = TMethodInvokeEvent;
-
+{$IFDEF DELPHIXE2_UP}
+  TVirtualInterface = Rtti.TVirtualInterface;
+{$ELSE}
   TVirtualInterface = class(TInterfacedObject, IInterface)
   private
-    fVirtualMethodTable: Pointer;
+    fMethodTable: Pointer;
     fInterfaceID: TGUID;
     fContext: TRttiContext;
-    fMethodIntercepts: TMethodIntercepts;
+    fIntercepts: TObjectList<TMethodIntercept>;
     fOnInvoke: TVirtualInterfaceInvokeEvent;
-    function Virtual_AddRef: Integer; stdcall;
-    function Virtual_Release: Integer; stdcall;
-    function VirtualQueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function QueryInterfaceFromIntf(const IID: TGUID; out Obj): HResult;
+    function _AddRefFromIntf: Integer;
+    function _ReleaseFromIntf: Integer;
   protected
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-
     procedure DoInvoke(UserData: Pointer;
       const Args: TArray<TValue>; out Result: TValue);
     procedure ErrorProc;
+    function _AddRef: Integer; virtual; stdcall;
+    function _Release: Integer; virtual; stdcall;
   public
     constructor Create(typeInfo: PTypeInfo); overload;
     constructor Create(typeInfo: PTypeInfo;
@@ -80,46 +68,23 @@ type
     destructor Destroy; override;
 
     function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
-
     property OnInvoke: TVirtualInterfaceInvokeEvent read fOnInvoke write fOnInvoke;
   end;
+{$ENDIF}
 
 implementation
 
 uses
+{$IFDEF DELPHIXE}
+  Spring.Patches.QC93646,
+  Spring.Patches.QC98671,
+{$ENDIF}
   RTLConsts;
-
-
-{$REGION 'TMethodIntercept'}
-
-constructor TMethodIntercept.Create(const method: TRttiMethod;
-  const callback: TMethodImplementationCallback);
-begin
-  fImplementation := method.CreateImplementation(Self, callback);
-  fMethod := method;
-end;
-
-destructor TMethodIntercept.Destroy;
-begin
-  fImplementation.Free;
-  inherited;
-end;
-
-function TMethodIntercept.GetCodeAddress: Pointer;
-begin
-  Result := fImplementation.CodeAddress;
-end;
-
-function TMethodIntercept.GetVirtualIndex: SmallInt;
-begin
-  Result := fMethod.VirtualIndex;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TVirtualInterface'}
 
+{$IFNDEF DELPHIXE2_UP}
 constructor TVirtualInterface.Create(typeInfo: PTypeInfo);
 type
 {$POINTERMATH ON}
@@ -132,7 +97,7 @@ var
   method: TRttiMethod;
   rttiType: TRttiType;
 begin
-  fMethodIntercepts := TObjectList<TMethodIntercept>.Create();
+  fIntercepts := TObjectList<TMethodIntercept>.Create();
   rttiType := fContext.GetType(typeInfo);
   fInterfaceID := TRttiInterfaceType(rttiType).GUID;
 
@@ -143,25 +108,25 @@ begin
   begin
     if maxVirtualIndex < method.VirtualIndex then
       maxVirtualIndex := method.VirtualIndex;
-    fMethodIntercepts.Add(TMethodIntercept.Create(method, DoInvoke));
+    fIntercepts.Add(TMethodIntercept.Create(method, DoInvoke));
   end;
 
-  fVirtualMethodTable := AllocMem(SizeOf(Pointer) * (maxVirtualIndex + 1));
+  fMethodTable := AllocMem(SizeOf(Pointer) * (maxVirtualIndex + 1));
 
-  PVTable(fVirtualMethodTable)[0] := @TVirtualInterface.VirtualQueryInterface;
-  PVTable(fVirtualMethodTable)[1] := @TVirtualInterface.Virtual_AddRef;
-  PVTable(fVirtualMethodTable)[2] := @TVirtualInterface.Virtual_Release;
+  PVTable(fMethodTable)[0] := @TVirtualInterface.QueryInterfaceFromIntf;
+  PVTable(fMethodTable)[1] := @TVirtualInterface._AddRefFromIntf;
+  PVTable(fMethodTable)[2] := @TVirtualInterface._ReleaseFromIntf;
 
-  for i := 0 to fMethodIntercepts.Count - 1 do
-    PVTable(fVirtualMethodTable)[fMethodIntercepts[i].VirtualIndex] := fMethodIntercepts[i].CodeAddress;
+  for i := 0 to fIntercepts.Count - 1 do
+    PVTable(fMethodTable)[fIntercepts[i].VirtualIndex] := fIntercepts[i].CodeAddress;
 
   for i := 3 to maxVirtualIndex do
-    if not Assigned(PVTable(fVirtualMethodTable)[i]) then
-      PVTable(fVirtualMethodTable)[i] := @TVirtualInterface.ErrorProc;
+    if not Assigned(PVTable(fMethodTable)[i]) then
+      PVTable(fMethodTable)[i] := @TVirtualInterface.ErrorProc;
 end;
 
 constructor TVirtualInterface.Create(TypeInfo: PTypeInfo;
-  InvokeEvent: TMethodInvokeEvent);
+  InvokeEvent: TVirtualInterfaceInvokeEvent);
 begin
   Create(TypeInfo);
   fOnInvoke := InvokeEvent;
@@ -169,9 +134,9 @@ end;
 
 destructor TVirtualInterface.Destroy;
 begin
-  if Assigned(fVirtualMethodTable) then
-    FreeMem(fVirtualMethodTable);
-  fMethodIntercepts.Free;
+  if Assigned(fMethodTable) then
+    FreeMem(fMethodTable);
+  fIntercepts.Free;
   inherited;
 end;
 
@@ -192,29 +157,20 @@ begin
   if IID = fInterfaceID then
   begin
     _AddRef();
-    Pointer(Obj) := @fVirtualMethodTable;
+    Pointer(Obj) := @fMethodTable;
     Result := S_OK;
   end
   else
     Result := inherited;
 end;
 
-function TVirtualInterface.VirtualQueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  Result := TVirtualInterface(PByte(Self) -
-    (PByte(@Self.fVirtualMethodTable) - PByte(Self))).QueryInterface(IID, Obj);
-end;
-
-function TVirtualInterface.Virtual_AddRef: Integer;
-begin
-  Result := TVirtualInterface(PByte(Self) -
-    (PByte(@Self.fVirtualMethodTable) - PByte(Self)))._AddRef();
-end;
-
-function TVirtualInterface.Virtual_Release: Integer;
-begin
-  Result := TVirtualInterface(PByte(Self) -
-    (PByte(@Self.fVirtualMethodTable) - PByte(Self)))._Release();
+function TVirtualInterface.QueryInterfaceFromIntf(
+  const IID: TGUID; out Obj): HResult;
+asm
+  add dword ptr [esp+$04],-$0C
+  mov eax,[esp+$04]
+  mov eax,[eax]
+  jmp dword ptr [eax+$08]
 end;
 
 function TVirtualInterface._AddRef: Integer;
@@ -222,10 +178,27 @@ begin
   Result := inherited;
 end;
 
+function TVirtualInterface._AddRefFromIntf: Integer;
+asm
+  add dword ptr [esp+$04],-$0c
+  mov eax,[esp+$04]
+  mov eax,[eax]
+  jmp dword ptr [eax]
+end;
+
 function TVirtualInterface._Release: Integer;
 begin
   Result := inherited;
 end;
+
+function TVirtualInterface._ReleaseFromIntf: Integer;
+asm
+  add dword ptr [esp+$04],-$0C
+  mov eax,[esp+$04]
+  mov eax,[eax]
+  jmp dword ptr [eax+$04]
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

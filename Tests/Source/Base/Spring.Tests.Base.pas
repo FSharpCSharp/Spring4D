@@ -355,6 +355,23 @@ type
     procedure DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
   end;
 
+  TTestValueHelper = class(TTestCase)
+  private
+    type
+      TCollectionChangedActions = set of TCollectionChangedAction;
+  private
+    fSUT, fValue: TValue;
+    procedure DoCheck(expected: Boolean = True);
+  published
+    procedure Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
+    procedure Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
+    procedure Test_Equals_IntToInt_ValuesAreEqual_ReturnsTrue;
+
+    procedure Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
+
+    procedure Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
+  end;
+
 implementation
 
 uses
@@ -2195,6 +2212,54 @@ var
 begin
   arr.Add([1, 2, 3, 4, 5]);
   CheckEquals(2, arr.IndexOf(3));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestValueHelper'}
+
+procedure TTestValueHelper.DoCheck(expected: Boolean);
+begin
+  if expected then
+    CheckTrue(fSUT.Equals(fValue))
+  else
+    CheckFalse(fSUT.Equals(fValue));
+end;
+
+procedure TTestValueHelper.Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
+begin
+  fSUT := TValue.From<Byte>(255);
+  fValue := -128;
+  DoCheck(False);
+end;
+
+procedure TTestValueHelper.Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := TValue.From(caRemoved);
+  fValue := TValue.From(caRemoved);
+  DoCheck;
+end;
+
+procedure TTestValueHelper.Test_Equals_IntToInt_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := Integer(42);
+  fValue := Integer(42);
+  DoCheck;
+end;
+
+procedure TTestValueHelper.Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := TValue.From([caAdded..caChanged]);
+  fValue := TValue.From([caAdded..caChanged]);
+  DoCheck;
+end;
+
+procedure TTestValueHelper.Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := TValue.From<ShortInt>(-128);
+  fValue := -128;
+  DoCheck;
 end;
 
 {$ENDREGION}

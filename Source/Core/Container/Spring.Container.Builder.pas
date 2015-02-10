@@ -112,6 +112,11 @@ type
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
+  TInterceptorInspector = class(TInspectorBase)
+  protected
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
+  end;
+
 implementation
 
 uses
@@ -516,6 +521,38 @@ begin
     if not model.Services.Any then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterceptorInspector' }
+
+procedure TInterceptorInspector.DoProcessModel(const kernel: IKernel;
+  const model: TComponentModel);
+{$IFDEF DELPHIXE_UP}
+var
+  attributes: TArray<InterceptorAttribute>;
+  attribute: InterceptorAttribute;
+  interceptorRef: TInterceptorReference;
+begin
+  attributes := model.ComponentType.GetCustomAttributes<InterceptorAttribute>;
+  for attribute in attributes do
+  begin
+    if Assigned(attribute.InterceptorType) then
+      interceptorRef := TInterceptorReference.Create(attribute.InterceptorType)
+    else
+      interceptorRef := TInterceptorReference.Create(attribute.Name);
+    if not model.Interceptors.Contains(interceptorRef,
+      function(const left, right: TInterceptorReference): Boolean
+      begin
+        Result := (left.TypeInfo = right.TypeInfo) and (left.Name = right.Name);
+      end) then
+      model.Interceptors.Add(interceptorRef);
+  end;
+{$ELSE}
+begin
+{$ENDIF}
 end;
 
 {$ENDREGION}
