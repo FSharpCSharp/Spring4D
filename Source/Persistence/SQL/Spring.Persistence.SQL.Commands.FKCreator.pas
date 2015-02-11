@@ -37,7 +37,7 @@ uses
 
 type
   /// <summary>
-  ///   Responsible for building and executing statements to create foreign
+  ///   Responsible for building and executing statements to create foreign
   ///   keys.
   /// </summary>
   TForeignKeyCreateExecutor = class(TAbstractCommandExecutor)
@@ -59,7 +59,6 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Mapping.Attributes;
 
@@ -101,18 +100,17 @@ end;
 
 procedure TForeignKeyCreateExecutor.Execute(const entity: TObject);
 var
-  LStmt: IDBStatement;
-  LSql: string;
+  sqlStatement: string;
+  statement: IDBStatement;
 begin
-  for LSql in fSQLs do
+  for sqlStatement in fSQLs do
   begin
-    SQL := LSql;
-    if SQL = '' then
+    if sqlStatement = '' then
       Exit;
 
-    LStmt := Connection.CreateStatement;
-    LStmt.SetSQLCommand(SQL);
-    LStmt.Execute;
+    statement := Connection.CreateStatement;
+    statement.SetSQLCommand(sqlStatement);
+    statement.Execute;
   end;
 end;
 

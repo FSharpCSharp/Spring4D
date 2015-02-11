@@ -40,7 +40,7 @@ uses
 type
   /// <summary>
   ///   Represents <c>select</c> executor. Responsible for building and
-  ///   executing <c>select</c> statements.
+  ///   executing <c>select</c> statements.
   /// </summary>
   TSelectExecutor = class(TAbstractCommandExecutor)
   private
@@ -74,10 +74,8 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Params;
 
 
@@ -126,16 +124,16 @@ end;
 
 procedure TSelectExecutor.BuildParams(const entity: TObject);
 var
-  LParam: TDBParam;
-  LWhereField: TSQLWhereField;
+  param: TDBParam;
+  field: TSQLWhereField;
 begin
   inherited BuildParams(entity);
   Assert(not Assigned(entity), 'Entity should not be assigned here');
 
-  for LWhereField in fCommand.WhereFields do
+  for field in fCommand.WhereFields do
   begin
-    LParam := CreateParam(LWhereField, TUtils.AsVariant(fID));
-    SQLParameters.Add(LParam);
+    param := CreateParam(field, TUtils.AsVariant(fID));
+    SQLParameters.Add(param);
   end;
 end;
 
@@ -146,7 +144,7 @@ end;
 
 function TSelectExecutor.Select: IDBResultset;
 var
-  LStmt: IDBStatement;
+  statement: IDBStatement;
 begin
   fCommand.WhereFields.Clear;
 
@@ -156,26 +154,26 @@ begin
     fCommand.SetFromPrimaryColumn;
 
   SQL := Generator.GenerateSelect(fCommand);
-  LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(SQL);
+  statement := Connection.CreateStatement;
+  statement.SetSQLCommand(SQL);
 
   BuildParams(nil);
   if SQLParameters.Any then
-    LStmt.SetParams(SQLParameters);
+    statement.SetParams(SQLParameters);
 
-  Result := LStmt.ExecuteQuery;
+  Result := statement.ExecuteQuery;
 end;
 
 function TSelectExecutor.SelectAll(selectEntityClass: TClass): IDBResultSet;
 var
-  LStmt: IDBStatement;
+  statement: IDBStatement;
 begin
   fCommand.WhereFields.Clear;
   SQL := Generator.GenerateSelect(fCommand);
 
-  LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(SQL);
-  Result := LStmt.ExecuteQuery;
+  statement := Connection.CreateStatement;
+  statement.SetSQLCommand(SQL);
+  Result := statement.ExecuteQuery;
 end;
 
 function TSelectExecutor.ShouldFetchFromOneColumn: Boolean;
@@ -184,5 +182,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

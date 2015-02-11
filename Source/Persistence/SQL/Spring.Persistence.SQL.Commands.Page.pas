@@ -34,7 +34,7 @@ uses
 
 type
   /// <summary>
-  ///   Responsible for building and executing paged statements.
+  ///   Responsible for building and executing paged statements.
   /// </summary>
   TPageExecutor = class(TAbstractCommandExecutor)
   private

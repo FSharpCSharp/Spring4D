@@ -36,10 +36,10 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  ///	<summary>
-  ///	  Responsible for building and executing statements which create tables
-  ///	  in the database.
-  ///	</summary>
+  /// <summary>
+  ///   Responsible for building and executing statements which create tables
+  ///   in the database.
+  /// </summary>
   TTableCreateExecutor = class(TAbstractCommandExecutor)
   private
     fCommand: TCreateTableCommand;
@@ -61,9 +61,7 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.Attributes;
+  Spring.Persistence.Core.Exceptions;
 
 
 {$REGION 'TTableCreateCommand'}
@@ -104,18 +102,17 @@ end;
 
 procedure TTableCreateExecutor.Execute(const entity: TObject);
 var
-  LStmt: IDBStatement;
-  LSql: string;
+  statement: IDBStatement;
+  sqlStatement: string;
 begin
-  for LSql in fSQLs do
+  for sqlStatement in fSQLs do
   begin
-    SQL := LSql;
-    if SQL = '' then
+    if sqlStatement = '' then
       Continue;
 
-    LStmt := Connection.CreateStatement;
-    LStmt.SetSQLCommand(SQL);
-    LStmt.Execute;
+    statement := Connection.CreateStatement;
+    statement.SetSQLCommand(sqlStatement);
+    statement.Execute;
   end;
 end;
 

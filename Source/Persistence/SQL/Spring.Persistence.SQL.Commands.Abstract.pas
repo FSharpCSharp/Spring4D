@@ -51,27 +51,27 @@ type
     function CanUpdateParamFieldType(const value: Variant): Boolean; virtual;
 
     function CreateParam(const paramField: TSQLParamField;
-      const value: Variant): TDBParam; overload; virtual;
+      const value: Variant): TDBParam; overload;
     function CreateParam(const entity: TObject;
-      const paramField: TSQLParamField): TDBParam; overload; virtual;
-
+      const paramField: TSQLParamField): TDBParam; overload;
+    procedure FillDbTableColumns(const tableName: string;
+      const columns: IList<string>);
     function GetCommand: TDMLCommand; virtual; abstract;
 
     property Command: TDMLCommand read GetCommand;
     property Connection: IDBConnection read fConnection;
-    property EntityClass: TClass read fEntityClass;// write fEntityClass;
-    property EntityData: TEntityData read fEntityData;// write fEntityData;
+    property EntityClass: TClass read fEntityClass;
+    property EntityData: TEntityData read fEntityData;
     property Generator: ISQLGenerator read fGenerator;
     property SQL: string read fSQL write fSQL;
     property SQLParameters: IList<TDBParam> read fParams;
   public
     constructor Create(const connection: IDBConnection); virtual;
 
-    function TableExists(const tableName: string): Boolean; virtual;
-    procedure FillDbTableColumns(const tableName: string; const columns: IList<string>); virtual;
-
     procedure Build(entityClass: TClass); virtual;
     procedure BuildParams(const entity: TObject); virtual;
+
+    function TableExists(const tableName: string): Boolean; virtual;
   end;
 
 implementation
@@ -118,22 +118,22 @@ end;
 function TAbstractCommandExecutor.CreateParam(const entity: TObject;
   const paramField: TSQLParamField): TDBParam;
 var
-  LVal, LRes: TValue;
-  bFree: Boolean;
+  memberValue, stream: TValue;
+  freeValue: Boolean;
 begin
   Result := TDBParam.Create;
   Result.Name := paramField.ParamName;
-  LVal := TRttiExplorer.GetMemberValueDeep(entity, paramField.Column.MemberName);
-  //convert/serialize objects to stream. If value is nullable or lazy get it's real value
-  if LVal.IsObject and TryConvert(LVal, TypeInfo(TStream), LRes, bFree) then
-    LVal := LRes.AsObject;
+  memberValue := TRttiExplorer.GetMemberValueDeep(entity, paramField.Column.MemberName);
+  //convert/serialize objects to stream. If value is nullable or lazy get its real value
+  if memberValue.IsObject and TryConvert(memberValue, TypeInfo(TStream), stream, freeValue) then
+    memberValue := stream.AsObject;
 
-  Result.Value := TUtils.AsVariant(LVal);
+  Result.Value := TUtils.AsVariant(memberValue);
   if CanUpdateParamFieldType(Result.Value) then
     Result.SetParamTypeFromTypeInfo(paramField.Column.MemberType);
 
-  if bFree then
-    FreeValueObject(LVal);
+  if freeValue then
+    FreeValueObject(memberValue);
 end;
 
 function TAbstractCommandExecutor.CreateParam(
@@ -147,58 +147,51 @@ end;
 procedure TAbstractCommandExecutor.FillDbTableColumns(const tableName: string;
   const columns: IList<string>);
 var
-  LSqlTableCount: string;
-  LStmt: IDBStatement;
-  LResults: IDBResultset;
+  sqlStatement: string;
+  statement: IDBStatement;
+  results: IDBResultset;
   i: Integer;
 begin
-  LSqlTableCount := Generator.GetTableColumns(tableName);
-  if (LSqlTableCount <> '') then
+  sqlStatement := Generator.GetTableColumns(tableName);
+  if sqlStatement <> '' then
   begin
-    LStmt := Connection.CreateStatement;
-    LStmt.SetSQLCommand(LSqlTableCount);
-    LResults := LStmt.ExecuteQuery;
+    statement := Connection.CreateStatement;
+    statement.SetSQLCommand(sqlStatement);
+    results := statement.ExecuteQuery;
     columns.Clear;
-    for i := 0 to LResults.GetFieldCount - 1 do
-      columns.Add(LResults.GetFieldName(i));
+    for i := 0 to results.GetFieldCount - 1 do
+      columns.Add(results.GetFieldName(i));
   end;
 end;
 
 function TAbstractCommandExecutor.TableExists(const tableName: string): Boolean;
 var
-  LSqlTableCount, LSqlTableExists: string;
-  LStmt: IDBStatement;
-  LResults: IDBResultset;
+  sqlStatement: string;
+  useTableExists: Boolean;
+  statement: IDBStatement;
+  results: IDBResultset;
 begin
-  Result := False;
-  LSqlTableCount := '';
-  LSqlTableExists := Generator.GetSQLTableExists(tableName);
-  if LSqlTableExists = '' then
-    LSqlTableCount := Generator.GetSQLTableCount(tableName);
-  if (LSqlTableCount <> '') or (LSqlTableExists <> '') then
+  sqlStatement := Generator.GetSQLTableExists(tableName);
+  useTableExists := sqlStatement <> '';
+  if not useTableExists then
+    sqlStatement := Generator.GetSQLTableCount(tableName);
+  if sqlStatement <> '' then
   begin
-    LStmt := Connection.CreateStatement;
+    statement := Connection.CreateStatement;
     try
-      try
-        if (LSqlTableExists <> '') then
-          LStmt.SetSQLCommand(LSqlTableExists)
-        else
-          LStmt.SetSQLCommand(LSqlTableCount);
+      statement.SetSQLCommand(sqlStatement);
+      results := statement.ExecuteQuery;
 
-        LResults := LStmt.ExecuteQuery;
-
-        if (LSqlTableExists <> '') then
-          Result := (LResults.GetFieldValue(0) > 0)
-        else
-          Result := not LResults.IsEmpty;
-      except
-        Result := False;
-      end;
-    finally
-      LResults := nil;
-      LStmt := nil;
+      if useTableExists then
+        Result := results.GetFieldValue(0) > 0
+      else
+        Result := not results.IsEmpty;
+    except
+      Result := False;
     end;
-  end;
+  end
+  else
+    Result := False;
 end;
 
 {$ENDREGION}

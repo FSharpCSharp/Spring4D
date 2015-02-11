@@ -38,7 +38,7 @@ uses
 
 type
   /// <summary>
-  ///   Responsible for building and executing <c>delete</c> statements. 
+  ///   Responsible for building and executing <c>delete</c> statements.
   /// </summary>
   TDeleteExecutor = class(TAbstractCommandExecutor)
   private
@@ -71,9 +71,9 @@ type
 implementation
 
 uses
-  Spring.Reflection,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Utils;
+  Spring.Persistence.Core.Utils,
+  Spring.Reflection;
 
 
 {$REGION 'TDeleteCommand'}
@@ -105,30 +105,30 @@ end;
 
 procedure TDeleteExecutor.BuildParams(const entity: TObject);
 var
-  LParam: TDBParam;
-  LWhereField: TSQLWhereField;
+  param: TDBParam;
+  field: TSQLWhereField;
 begin
   Assert(EntityData.PrimaryKeyColumn <> nil);
   inherited BuildParams(entity);
 
-  for LWhereField in fCommand.WhereFields do
+  for field in fCommand.WhereFields do
   begin
-    LParam := CreateParam(LWhereField, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
-    SQLParameters.Add(LParam);
+    param := CreateParam(field, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
+    SQLParameters.Add(param);
   end;
 end;
 
 procedure TDeleteExecutor.Execute(const entity: TObject);
 var
-  LStmt: IDBStatement;
+  statement: IDBStatement;
 begin
   Assert(Assigned(entity));
 
-  LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(SQL);
+  statement := Connection.CreateStatement;
+  statement.SetSQLCommand(SQL);
   BuildParams(entity);
-  LStmt.SetParams(SQLParameters);
-  LStmt.Execute;
+  statement.SetParams(SQLParameters);
+  statement.Execute;
 end;
 
 function TDeleteExecutor.GetCommand: TDMLCommand;
@@ -148,16 +148,16 @@ end;
 
 procedure TDeleteByValueExecutor.Execute(const entity: TObject);
 var
-  LStmt: IDBStatement;
+  statement: IDBStatement;
 begin
-  LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(SQL);
+  statement := Connection.CreateStatement;
+  statement.SetSQLCommand(SQL);
   BuildParams(entity);
   try
-    LStmt.SetParams(SQLParameters);
-    LStmt.Execute;
+    statement.SetParams(SQLParameters);
+    statement.Execute;
   finally
-    LStmt := nil;
+    statement := nil;
   end;
 end;
 

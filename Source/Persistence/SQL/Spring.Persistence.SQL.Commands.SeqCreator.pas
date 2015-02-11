@@ -30,14 +30,12 @@ interface
 
 uses
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
-  Spring.Persistence.SQL.Commands.Abstract,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Commands.Abstract;
 
 type
   /// <summary>
-  ///   Responsible for building and executing statements which create
+  ///   Responsible for building and executing statements which create
   ///   sequences in the database.
   /// </summary>
   TSequenceCreateExecutor = class(TAbstractCommandExecutor)
@@ -58,7 +56,6 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions;
 
 
@@ -96,14 +93,14 @@ end;
 
 procedure TSequenceCreateExecutor.Execute(const entity: TObject);
 var
-  LStmt: IDBStatement;
+  statement: IDBStatement;
 begin
   if SQL = '' then
     Exit;
 
-  LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(SQL);
-  LStmt.Execute;
+  statement := Connection.CreateStatement;
+  statement.SetSQLCommand(SQL);
+  statement.Execute;
 end;
 
 function TSequenceCreateExecutor.GetCommand: TDMLCommand;
@@ -113,18 +110,18 @@ end;
 
 function TSequenceCreateExecutor.SequenceExists: Boolean;
 var
-  LSqlSequenceCount: string;
-  LStmt: IDBStatement;
-  LResults: IDBResultset;
+  sqlStatement: string;
+  statement: IDBStatement;
+  results: IDBResultset;
 begin
   Result := False;
-  LSqlSequenceCount := Generator.GetSQLSequenceCount(fSequence.Sequence.SequenceName);
-  if LSqlSequenceCount <> '' then
+  sqlStatement := Generator.GetSQLSequenceCount(fSequence.Sequence.SequenceName);
+  if sqlStatement <> '' then
   try
-    LStmt := Connection.CreateStatement;
-    LStmt.SetSQLCommand(LSqlSequenceCount);
-    LResults := LStmt.ExecuteQuery;
-    Result := not LResults.IsEmpty;
+    statement := Connection.CreateStatement;
+    statement.SetSQLCommand(sqlStatement);
+    results := statement.ExecuteQuery;
+    Result := not results.IsEmpty;
   except
     Result := False;
   end;

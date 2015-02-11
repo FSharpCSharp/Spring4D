@@ -29,23 +29,18 @@ unit Spring.Persistence.SQL.Commands.Update;
 interface
 
 uses
-  Classes,
   Spring.Collections,
-  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Commands.Abstract,
-  Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Responsible for building and executing <c>update</c> statements.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Responsible for building and executing <c>update</c> statements.
+  /// </summary>
   TUpdateExecutor = class(TAbstractCommandExecutor)
   private
     fTable: TSQLTable;
@@ -54,7 +49,7 @@ type
     fEntityMap: TEntityMap;
   protected
     function GetCommand: TDMLCommand; override;
-    function TryIncrementVersionFor(AEntity: TObject): Boolean; virtual;
+    function TryIncrementVersionFor(const entity: TObject): Boolean; virtual;
     function HasChangedVersionColumnOnly: Boolean;
   public
     constructor Create(const connection: IDBConnection); override;
@@ -62,7 +57,6 @@ type
 
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
-
     procedure Execute(const entity: TObject);
 
     property EntityMap: TEntityMap read fEntityMap write fEntityMap;
@@ -71,13 +65,11 @@ type
 implementation
 
 uses
-  Variants,
   Spring,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Reflection,
-  Spring.Reflection,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.SQL.Params,
+  Spring.Reflection;
 
 
 {$REGION 'TUpdateCommand'}
@@ -99,15 +91,15 @@ end;
 
 procedure TUpdateExecutor.Execute(const entity: TObject);
 var
-  LStmt: IDBStatement;
-  LSql: string;
+  statement: IDBStatement;
+  sqlStatement: string;
 begin
   Assert(Assigned(entity));
 
   if EntityData.HasVersionColumn and not TryIncrementVersionFor(entity) then
     raise EORMOptimisticLockException.Create(entity);
 
-  LStmt := Connection.CreateStatement;
+  statement := Connection.CreateStatement;
 
   fColumns.Clear;
   if fEntityMap.IsMapped(entity) then
@@ -125,14 +117,14 @@ begin
     Exit;
 
   fCommand.Entity := entity;
-  LSql := Generator.GenerateUpdate(fCommand);
-  if (LSql = '') then
+  sqlStatement := Generator.GenerateUpdate(fCommand);
+  if (sqlStatement = '') then
     raise EORMCannotGenerateQueryStatement.Create(entity);
 
-  LStmt.SetSQLCommand(LSql);
+  statement.SetSQLCommand(sqlStatement);
   BuildParams(entity);
-  LStmt.SetParams(SQLParameters);
-  LStmt.Execute;
+  statement.SetParams(SQLParameters);
+  statement.Execute;
 end;
 
 function TUpdateExecutor.GetCommand: TDMLCommand;
@@ -145,25 +137,25 @@ begin
   Result := (fColumns.Count = 1) and (fColumns.First.IsVersionColumn);
 end;
 
-function TUpdateExecutor.TryIncrementVersionFor(AEntity: TObject): Boolean;
+function TUpdateExecutor.TryIncrementVersionFor(const entity: TObject): Boolean;
 var
-  LStatement: IDBStatement;
-  LVersionValue, LPKValue: TValue;
-  LQuery: Variant;
-  LQueryMetadata: TQueryMetadata;
+  statement: IDBStatement;
+  version, primaryKey: TValue;
+  query: Variant;
+  metadata: TQueryMetadata;
 begin
-  LStatement := Connection.CreateStatement;
-  LVersionValue := EntityData.VersionColumn.RttiMember.GetValue(AEntity);
-  LPKValue := EntityData.PrimaryKeyColumn.RttiMember.GetValue(AEntity);
-  LQuery := Generator.GetUpdateVersionFieldQuery(fCommand, EntityData.VersionColumn,
-    TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
-  LQueryMetadata.QueryOperation := ctUpdateVersion;
-  LQueryMetadata.TableName := fCommand.Table.Name;
-  LStatement.SetQuery(LQueryMetadata, LQuery);
+  statement := Connection.CreateStatement;
+  version := EntityData.VersionColumn.RttiMember.GetValue(entity);
+  primaryKey := EntityData.PrimaryKeyColumn.RttiMember.GetValue(entity);
+  query := Generator.GetUpdateVersionFieldQuery(fCommand, EntityData.VersionColumn,
+    TUtils.AsVariant(version), TUtils.AsVariant(primaryKey));
+  metadata.QueryOperation := ctUpdateVersion;
+  metadata.TableName := fCommand.Table.Name;
+  statement.SetQuery(metadata, query);
 
-  Result := (LStatement.Execute > 0);
+  Result := statement.Execute > 0;
   if Result then
-    EntityData.VersionColumn.RttiMember.SetValue(AEntity, LVersionValue.AsInteger + 1);
+    EntityData.VersionColumn.RttiMember.SetValue(entity, version.AsInteger + 1);
 end;
 
 procedure TUpdateExecutor.Build(entityClass: TClass);
@@ -179,22 +171,21 @@ end;
 
 procedure TUpdateExecutor.BuildParams(const entity: TObject);
 var
-  LParam: TDBParam;
-  LUpdateField: TSQLUpdateField;
-  LWhereField: TSQLWhereField;
+  param: TDBParam;
+  field: TSQLParamfield;
 begin
   inherited BuildParams(entity);
 
-  for LUpdateField in fCommand.UpdateFields do
+  for field in fCommand.UpdateFields do
   begin
-    LParam := CreateParam(entity, LUpdateField);
-    SQLParameters.Add(LParam);
+    param := CreateParam(entity, field);
+    SQLParameters.Add(param);
   end;
 
-  for LWhereField in fCommand.WhereFields do
+  for field in fCommand.WhereFields do
   begin
-    LParam := CreateParam(entity, LWhereField);
-    SQLParameters.Add(LParam);
+    param := CreateParam(entity, field);
+    SQLParameters.Add(param);
   end;
 end;
 
