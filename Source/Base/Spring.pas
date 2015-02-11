@@ -158,6 +158,11 @@ type
     function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
 {$ENDIF}
     function ToObject: TObject;
+
+    /// <summary>
+    ///   If the value holds an object it will get destroyed/disposed.
+    /// </summary>
+    procedure Free;
   end;
 
   {$ENDREGION}
@@ -1394,17 +1399,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TFinalizer'}
-
-  TFinalizer = record
-  public
-    class procedure FinalizeInstance(var instance: TValue); overload; static;
-    class procedure FinalizeInstance<T>(const instance: T); overload; static; inline;
-  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'Tuples'}
 
   Tuple<T1, T2> = record
@@ -2417,6 +2411,16 @@ function TValueHelper.Equals(const value: TValue): Boolean;
 begin
   Result := Assigned(TypeInfo) and Assigned(value.TypeInfo)
     and Comparisons[Kind,value.Kind](Self, value);
+end;
+
+procedure TValueHelper.Free;
+begin
+  if IsObject then
+{$IFNDEF AUTOREFCOUNT}
+    AsObject.Free;
+{$ELSE}
+    AsObject.DisposeOf;
+{$ENDIF}
 end;
 
 class function TValueHelper.FromVarRec(const value: TVarRec): TValue;
@@ -4123,25 +4127,6 @@ begin
     end;
   end;
   Result := nil;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFinalizer'}
-
-class procedure TFinalizer.FinalizeInstance(var instance: TValue);
-var
-  p: Pointer;
-begin
-  p := instance.GetReferenceToRawData;
-  if Assigned(p) then
-    FinalizeValue(p^, instance.TypeInfo);
-end;
-
-class procedure TFinalizer.FinalizeInstance<T>(const instance: T);
-begin
-  FinalizeValue(instance, TypeInfo(T));
 end;
 
 {$ENDREGION}
