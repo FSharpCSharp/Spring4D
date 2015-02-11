@@ -78,14 +78,15 @@ end;
 
 procedure TSequenceCreateExecutor.Build(entityClass: TClass);
 begin
-  inherited EntityClass := entityClass;
-  fSequence.Sequence := TEntityCache.Get(entityClass).Sequence;
-  SQL := '';
+  inherited Build(entityClass);
+  fSequence.Sequence := EntityData.Sequence;
   if Assigned(fSequence.Sequence) then
   begin
     fSequence.SequenceExists := SequenceExists;
     SQL := Generator.GenerateCreateSequence(fSequence);
-  end;
+  end
+  else
+    SQL := '';
 end;
 
 procedure TSequenceCreateExecutor.CreateSequence(entityClass: TClass);

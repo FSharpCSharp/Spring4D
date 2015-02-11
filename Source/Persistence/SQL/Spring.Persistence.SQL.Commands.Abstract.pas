@@ -59,6 +59,11 @@ type
 
     property Command: TDMLCommand read GetCommand;
     property Connection: IDBConnection read fConnection;
+    property EntityClass: TClass read fEntityClass;// write fEntityClass;
+    property EntityData: TEntityData read fEntityData;// write fEntityData;
+    property Generator: ISQLGenerator read fGenerator;
+    property SQL: string read fSQL write fSQL;
+    property SQLParameters: IList<TDBParam> read fParams;
   public
     constructor Create(const connection: IDBConnection); virtual;
 
@@ -67,12 +72,6 @@ type
 
     procedure Build(entityClass: TClass); virtual;
     procedure BuildParams(const entity: TObject); virtual;
-
-    property EntityData: TEntityData read fEntityData write fEntityData;
-    property Generator: ISQLGenerator read fGenerator;
-    property EntityClass: TClass read fEntityClass write fEntityClass;
-    property SQLParameters: IList<TDBParam> read fParams;
-    property SQL: string read fSQL write fSQL;
   end;
 
 implementation
@@ -100,8 +99,8 @@ end;
 
 procedure TAbstractCommandExecutor.Build(entityClass: TClass);
 begin
-  fEntityData := TEntityCache.Get(entityClass);
   fEntityClass := entityClass;
+  fEntityData := TEntityCache.Get(entityClass);
 end;
 
 procedure TAbstractCommandExecutor.BuildParams(const entity: TObject);

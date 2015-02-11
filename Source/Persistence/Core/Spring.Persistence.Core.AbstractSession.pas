@@ -306,7 +306,6 @@ function TAbstractSession.GetDeleteCommandExecutor(
   entityClass: TClass): TDeleteExecutor;
 begin
   Result := TDeleteExecutor.Create(Connection);
-  Result.EntityClass := entityClass;
   Result.Build(entityClass);
 end;
 
@@ -314,7 +313,6 @@ function TAbstractSession.GetInsertCommandExecutor(
   entityClass: TClass): TInsertExecutor;
 begin
   Result := TInsertExecutor.Create(Connection);
-  Result.EntityClass := entityClass;
   Result.Build(entityClass);
 end;
 
@@ -523,7 +521,6 @@ function TAbstractSession.GetSelectByIdCommandExecutor(entityClass: TClass;
   const id: TValue; const selectColumn: ColumnAttribute): TSelectExecutor;
 begin
   Result := TSelectExecutor.Create(Connection, id, selectColumn);
-  Result.EntityClass := entityClass;
   Result.Build(entityClass);
 end;
 
@@ -531,7 +528,6 @@ function TAbstractSession.GetSelectCommandExecutor(
   entityClass: TClass): TSelectExecutor;
 begin
   Result := TSelectExecutor.Create(Connection);
-  Result.EntityClass := entityClass;
   Result.Build(entityClass);
 end;
 
@@ -539,7 +535,6 @@ function TAbstractSession.GetUpdateCommandExecutor(
   entityClass: TClass; const entityMap: TEntityMap): TUpdateExecutor;
 begin
   Result := TUpdateExecutor.Create(Connection);
-  Result.EntityClass := entityClass;
   Result.EntityMap := entityMap;
   Result.Build(entityClass);
 end;

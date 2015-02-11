@@ -91,7 +91,6 @@ var
   primaryKey: TValue;
 begin
   deleter := TDeleteByValueExecutor.Create(fSession.Connection);
-  deleter.EntityClass := T;
   deleter.Build(T);
   try
     for primaryKey in fPrimaryKeys do

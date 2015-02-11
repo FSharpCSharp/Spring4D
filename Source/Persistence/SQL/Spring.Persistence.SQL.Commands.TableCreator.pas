@@ -83,18 +83,13 @@ begin
 end;
 
 procedure TTableCreateExecutor.Build(entityClass: TClass);
-var
-  LAtrTable: TableAttribute;
-  LEntityData: TEntityData;
 begin
-  inherited EntityClass := entityClass;
-  LEntityData := TEntityCache.Get(entityClass);
-  LAtrTable := LEntityData.EntityTable;
-  if not Assigned(LAtrTable) then
+  inherited Build(entityClass);
+  if not Assigned(EntityData.EntityTable) then
     raise ETableNotSpecified.CreateFmt('Table not specified for class "%s"', [entityClass.ClassName]);
 
-  fTable.SetFromAttribute(LAtrTable);
-  fCommand.SetCommandFieldsFromColumns(LEntityData.Columns);
+  fTable.SetFromAttribute(EntityData.EntityTable);
+  fCommand.SetCommandFieldsFromColumns(EntityData.Columns);
   fCommand.TableExists := TableExists(fTable.Name);
   if fCommand.TableExists then
     FillDbTableColumns(fTable.Name, fCommand.DbColumns);

@@ -58,7 +58,6 @@ var
 begin
   inserter := TMongoDBBulkInsertExecutor.Create(Connection);
   try
-    inserter.EntityClass := T;
     inserter.Build(T);
     for entity in ACollection do
     begin
