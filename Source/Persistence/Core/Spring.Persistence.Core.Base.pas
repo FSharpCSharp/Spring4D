@@ -204,6 +204,7 @@ uses
   StrUtils,
   SyncObjs,
   SysUtils,
+  TypInfo,
   Variants,
   Spring,
   Spring.Persistence.Core.Consts,
@@ -253,8 +254,9 @@ end;
 
 destructor TDriverConnectionAdapter<T>.Destroy;
 begin
-  if AutoFreeConnection then
-    TFinalizer.FinalizeInstance<T>(fConnection);
+  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkClass then
+    if AutoFreeConnection then
+      PObject(@fConnection).Free;
   inherited Destroy;
 end;
 

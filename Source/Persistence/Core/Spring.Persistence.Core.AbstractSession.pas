@@ -269,7 +269,7 @@ begin
       if TUtils.TryConvert(value, objectClassInfo, baseEntity, convertedValue) then
         Result := convertedValue.AsObject;         
     finally
-      TFinalizer.FinalizeInstance(value);
+      value.Free;
     end;     
   end;
 end;

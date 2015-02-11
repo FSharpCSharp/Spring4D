@@ -35,8 +35,7 @@ uses
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Mapping.Attributes
-  ;
+  Spring.Persistence.Mapping.Attributes;
 
 type
   TEntityMapKey = string;
@@ -73,9 +72,7 @@ implementation
 uses
   Spring.Reflection,
   Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Reflection  
-  ;
+  Spring.Persistence.Core.Exceptions;
 
 
 {$REGION 'TEntityMap'}
@@ -103,7 +100,7 @@ begin
   for pair in Item.Value do
   begin
     value := pair.Value;
-    TFinalizer.FinalizeInstance(value);
+    value.Free;
   end;
 end;
 
@@ -141,7 +138,7 @@ begin
     col := entityDetails.Columns[i];
     currentValue := col.GetValue(instance);
     dirtyValue := values[i].Value;
-    if not Spring.Persistence.Core.Reflection.SameValue(currentValue, dirtyValue) then
+    if not currentValue.Equals(dirtyValue) then
       Result.Add(col);
   end;
 end;
