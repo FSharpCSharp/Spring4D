@@ -1478,58 +1478,6 @@ begin
   end;
 end;
 
-{ TRttiInstanceTypeHelper }
-
-{$IF CompilerVersion < 23}
-function TRttiInstanceTypeHelper.GetDeclaredImplementedInterfaces: TArray<TRttiInterfaceType>;
-var
-  LInterfaceTable: PInterfaceTable;
-  p: PPointer;
-  i: Integer;
-  LTypeInfo: PTypeInfo;
-begin
-  LInterfaceTable := PPointer(PByte(MetaclassType) + vmtIntfTable)^;
-
-  if Assigned(LInterfaceTable) then
-  begin
-    p := @LInterfaceTable.Entries[LInterfaceTable.EntryCount];
-    SetLength(Result, LInterfaceTable.EntryCount);
-
-    for i := 0 to LInterfaceTable.EntryCount - 1 do
-    begin
-      LTypeInfo := PPTypeInfo(p^)^;
-      Result[i] := GetRttiType(LTypeInfo) as TRttiInterfaceType;
-      Inc(p);
-    end;
-  end;
-end;
-
-function TRttiInstanceTypeHelper.GetImplementedInterfaces: TArray<TRttiInterfaceType>;
-var
-  LCount: Integer;
-  LInterfaces: TArray<TArray<TRttiInterfaceType>>;
-  LType: TRttiInstanceType;
-begin
-  LCount := 0;
-  LType := Self;
-  repeat
-    Inc(LCount);
-    LType := LType.BaseType.AsInstance;
-  until not Assigned(LType);
-
-  SetLength(LInterfaces, LCount);
-  LCount := 0;
-  LType := Self;
-  repeat
-    LInterfaces[LCount] := LType.GetDeclaredImplementedInterfaces;
-    Inc(LCount);
-    LType := LType.BaseType.AsInstance;
-  until not Assigned(LType);
-
-  Result := TArrayHelper.Concat<TRttiInterfaceType>(LInterfaces);
-end;
-{$IFEND}
-
 { TRttiTypeHelper }
 
 function TRttiTypeHelper.ExtractGenericArguments: string;
