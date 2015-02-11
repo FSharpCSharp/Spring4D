@@ -28,23 +28,25 @@ unit Spring.Persistence.Core.Repository.Proxy;
 
 interface
 
-{$IFNDEF DelphiXE_UP}
-  {$Message Fatal 'Proxy repository supports XE or higher'}
+{$IFNDEF DELPHIXE_UP}
+  {$MESSAGE FATAL 'Proxy repository only supported on XE or higher'}
 {$ENDIF}
 
 uses
   Rtti,
   TypInfo,
   Spring.Collections,
+{$IFDEF DELPHIXE}
+  Spring.Interception.VirtualInterface,
+{$ENDIF}
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.Session,
-  Spring.Persistence.Core.Repository.Simple,
-  Spring.Interception.VirtualInterface;
+  Spring.Persistence.Core.Repository.Simple;
 
 type
   TMethodReference = reference to function(const Args: TArray<TValue>): TValue;
 
-  TProxyRepository<T: class, constructor; TID> = class(Spring.Interception.VirtualInterface.TVirtualInterface)
+  TProxyRepository<T: class, constructor; TID> = class(TVirtualInterface)
   private
     fRepository: IPagedRepository<T,TID>;
     fSession: TSession;
