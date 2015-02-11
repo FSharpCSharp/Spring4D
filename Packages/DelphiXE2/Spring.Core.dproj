@@ -132,6 +132,7 @@
 			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ActivatorExtension.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.AutoMockExtension.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Common.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ComponentActivator.pas"/>
@@ -142,12 +143,23 @@
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ProxyFactory.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.MethodIntercept.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.VirtualInterface.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.Builder.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Container.pas"/>
+			<DCCReference Include="..\..\Source\Core\Mocking\Spring.Mocking.pas"/>
+			<DCCReference Include="..\..\Source\Core\Mocking\Spring.Mocking.Core.pas"/>
+			<DCCReference Include="..\..\Source\Core\Mocking\Spring.Mocking.Interceptor.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

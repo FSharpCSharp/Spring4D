@@ -148,6 +148,8 @@ type
   ///	  TRandomNumberGenerator
   ///	</summary>
   TRandomNumberGenerator = class(TInterfacedObject, IRandomNumberGenerator)
+  private
+    class constructor Create;
   public
     procedure GetBytes(var data: TBytes);
     procedure GetNonZeroBytes(var data: TBytes);
@@ -163,6 +165,7 @@ uses
   Spring.Utils,
 {$ENDIF}
   Spring.ResourceStrings;
+
 
 {$REGION 'THashAlgorithmBase'}
 
@@ -703,26 +706,25 @@ end;
 
 {$REGION 'TRandomNumberGenerator'}
 
+class constructor TRandomNumberGenerator.Create;
+begin
+  Randomize;
+end;
+
 procedure TRandomNumberGenerator.GetBytes(var data: TBytes);
 var
   i: Integer;
 begin
-  Randomize;
   for i := Low(data) to High(data) do
-  begin
     data[i] := RandomRange(0, $FF + 1);
-  end;
 end;
 
 procedure TRandomNumberGenerator.GetNonZeroBytes(var data: TBytes);
 var
   i: Integer;
 begin
-  Randomize;
   for i := Low(data) to High(data) do
-  begin
     data[i] := RandomRange(1, $FF + 1);
-  end;
 end;
 
 {$ENDREGION}

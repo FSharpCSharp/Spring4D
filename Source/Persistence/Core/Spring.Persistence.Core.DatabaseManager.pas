@@ -116,7 +116,7 @@ procedure TDatabaseManager.BuildDatabase;
 var
   LTran: IDBTransaction;
 begin
-  if fEntities.IsEmpty then
+  if not fEntities.Any then
     Exit;
 
   LTran := Connection.BeginTransaction;

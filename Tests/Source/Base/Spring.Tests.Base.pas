@@ -68,6 +68,7 @@ type
     procedure TestIsNullReference;
     procedure TestCheckRange;
     procedure TestNotNull;
+    procedure TestCheckSet;
   end;
 
   TTestLazy = class(TTestCase)
@@ -114,6 +115,11 @@ type
     procedure HandlerSingle(const value: Single);
     procedure HandlerDouble(const value: Double);
     procedure HandlerExtended(const value: Extended);
+
+    procedure HandleChanged(Sender: TObject; const handler: TEventInt64;
+      action: TEventsChangedAction);
+    procedure HandleChanged2(Sender: TObject;
+      const handler: TProc<Integer, string>; action: TEventsChangedAction);
   published
     procedure TestEmpty;
     procedure TestInvoke;
@@ -123,6 +129,8 @@ type
     procedure TestIssue58;
     procedure TestDelegate;
     procedure TestIssue60;
+    procedure TestNotify;
+    procedure TestNotifyDelegate;
   end;
 
   TTestMulticastEventStackSize = class(TTestCase)
@@ -243,6 +251,125 @@ type
 {$ENDIF}
     procedure Test_GetTypeSize_Word;
     procedure Test_GetTypeSize_WordBool;
+  end;
+
+  TTestTuplesDouble = class(TTestCase)
+  private
+    fSUT: Tuple<Integer, string>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure Test_Create;
+    procedure Test_Pack;
+    procedure Test_Equals_ReturnsTrue_WhenEqual;
+    procedure Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+    procedure Test_Implicit_ToValueArray;
+    procedure Test_Implicit_FromValueArray;
+{$IFDEF DELPHIXE5_UP} // TODO: check if also lower versions work
+    procedure Test_Implicit_FromOpenArray;
+{$ENDIF}
+    procedure Test_Unpack;
+  end;
+
+  TTestTuplesTriple = class(TTestCase)
+  private
+    fSUT: Tuple<Integer, string, Boolean>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure Test_Create;
+    procedure Test_Pack;
+    procedure Test_Equals_ReturnsTrue_WhenEqual;
+    procedure Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenThirdValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+    procedure Test_Implicit_ToValueArray;
+    procedure Test_Implicit_FromValueArray;
+{$IFDEF DELPHIXE5_UP} // TODO: check if also lower versions work
+    procedure Test_Implicit_FromOpenArray;
+{$ENDIF}
+    procedure Test_Unpack;
+    procedure Test_Unpack_TwoValues;
+  end;
+
+  TTestTuplesQuadruple = class(TTestCase)
+  private
+    fSUT: Tuple<Integer, string, Boolean, Char>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure Test_Create;
+    procedure Test_Pack;
+    procedure Test_Equals_ReturnsTrue_WhenEqual;
+    procedure Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenThirdValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenFourthValueDiffers;
+    procedure Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+    procedure Test_Implicit_ToValueArray;
+    procedure Test_Implicit_FromValueArray;
+{$IFDEF DELPHIXE5_UP} // TODO: check if also lower versions work
+    procedure Test_Implicit_FromOpenArray;
+{$ENDIF}
+    procedure Test_Unpack;
+    procedure Test_Unpack_TwoValues;
+    procedure Test_Unpack_ThreeValues;
+  end;
+
+  TTestSmartPointer = class(TTestCase)
+  published
+    procedure TestInterfaceType_Instance_Gets_Created;
+    procedure TestInterfaceType_Instance_Gets_Destroyed_When_Created;
+    procedure TestInterfaceType_Instance_Gets_Destroyed_When_Injected;
+
+    procedure TestRecordType_Implicit_FromInstance_Works;
+    procedure TestRecordType_Implicit_ToInstance_Works;
+    procedure TestRecordType_Instance_Gets_Destroyed;
+
+    procedure TestRecordType_Manage_Typed_Pointer;
+  end;
+
+  TTestDynamicArray = class(TTestCase)
+  published
+    procedure ClassOperatorAdd_InputNotModified;
+
+    procedure ClassOperatorSubtract_InputNotModified;
+
+    procedure ClassOperatorIn_ItemInArray_True;
+    procedure ClassOperatorIn_ItemNotInArray_False;
+    procedure ClassOperatorIn_ArrayInArray_True;
+    procedure ClassOperatorIn_ArrayNotInArray_False;
+
+    procedure IndexOf_ItemInArray;
+    procedure Delete_Start;
+    procedure Delete_Mid;
+    procedure Delete_End;
+    procedure Delete_IndexLessThanZero_NothingHappens;
+    procedure Delete_IndexEqualsCount_NothingHappens;
+
+    procedure DeleteRange_Mid;
+    procedure DeleteRange_IndexLessThanZero_NothingHappens;
+    procedure DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
+  end;
+
+  TTestValueHelper = class(TTestCase)
+  private
+    type
+      TCollectionChangedActions = set of TCollectionChangedAction;
+  private
+    fSUT, fValue: TValue;
+    procedure DoCheck(expected: Boolean = True);
+  published
+    procedure Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
+    procedure Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
+    procedure Test_Equals_IntToInt_ValuesAreEqual_ReturnsTrue;
+
+    procedure Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
+
+    procedure Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
   end;
 
 implementation
@@ -443,7 +570,7 @@ end;
 procedure TTestMulticastEvent.TestEmpty;
 begin
   CheckEquals(0, fEvent.Count);
-  CheckTrue(fEvent.IsEmpty);
+  CheckFalse(fEvent.Any);
 end;
 
 procedure TTestMulticastEvent.TestInvoke;
@@ -492,11 +619,55 @@ begin
   CheckEquals(expected, fHandlerInvokeCount);
 end;
 
+procedure TTestMulticastEvent.TestNotify;
+var
+  event: Event<TEventInt64>;
+begin
+  event.OnChanged := HandleChanged;
+  event.Add(HandlerInt64);
+  CheckTrue(fAInvoked);
+  event.Remove(HandlerInt64);
+  CheckTrue(fBInvoked);
+  CheckEquals(2, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestNotifyDelegate;
+var
+  event2: Event<TProc<Integer, string>>;
+begin
+  event2.OnChanged := HandleChanged2;
+  event2.Add(fProc);
+  CheckTrue(fAInvoked);
+  event2.Remove(fProc);
+  CheckTrue(fBInvoked);
+  CheckEquals(2, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.HandleChanged(Sender: TObject;
+  const handler: TEventInt64; action: TEventsChangedAction);
+begin
+  handler(42);
+  case action of
+    caAdded: fAInvoked := True;
+    caRemoved: fBInvoked := True;
+  end
+end;
+
+procedure TTestMulticastEvent.HandleChanged2(Sender: TObject;
+  const handler: TProc<Integer, string>; action: TEventsChangedAction);
+begin
+  handler(1, CText);
+  case action of
+    caAdded: fAInvoked := True;
+    caRemoved: fBInvoked := True;
+  end
+end;
+
 procedure TTestMulticastEvent.TestOneHandler;
 begin
   fEvent.Add(HandlerA);
   CheckEquals(1, fEvent.Count);
-  CheckFalse(fEvent.IsEmpty);
+  CheckTrue(fEvent.Any);
 
   fEvent.Invoke(Self);
   CheckTrue(fAInvoked);
@@ -513,13 +684,13 @@ var
   e: Event<TNotifyEvent>;
 begin
   CheckTrue(e.Enabled);
-  CheckTrue(e.IsEmpty);
+  CheckFalse(e.Any);
 
   e.Add(HandlerA);
   e.Add(HandlerB);
   e.Invoke(nil);
 
-  CheckFalse(e.IsEmpty);
+  CheckTrue(e.Any);
   CheckEquals(2, e.Count);
 
   CheckTrue(fAInvoked);
@@ -673,6 +844,27 @@ begin
     begin
       Guard.CheckRange(len, 5, 5, idx);
     end);
+end;
+
+type
+  TTestEnum1 = (x = 1, y, z);
+  TTestSet1 = set of TTestEnum1;
+
+  TTestEnum2 = (a, b, c);
+  TTestSet2 = set of TTestEnum2;
+
+procedure TTestGuard.TestCheckSet;
+var
+  sut1: TTestSet1;
+  sut2: TTestSet2;
+begin
+  sut1 := [x..z];
+  sut2 := [a..b];
+  Guard.CheckSet<TTestSet1>(sut1, 'sut1');
+  Guard.CheckSet<TTestSet1>([], 'sut1');
+  Guard.CheckSet<TTestSet2>(sut2, 'sut2');
+  Guard.CheckSet<TTestSet2>([], 'sut2');
+  Pass;
 end;
 
 procedure TTestGuard.TestIsNullReference;
@@ -1327,6 +1519,747 @@ end;
 procedure TTestSpringEventsMethods.Test_GetTypeSize_WordBool;
 begin
   MatchType(TypeInfo(WordBool), tkEnumeration, SizeOf(WordBool)); // not tkInteger !!
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTuples'}
+
+procedure TTestTuplesDouble.SetUp;
+begin
+  fSUT := Tuple<Integer, string>.Create(42, 'foo');
+end;
+
+procedure TTestTuplesDouble.Test_Create;
+begin
+  CheckEquals(42, fSUT.Value1);
+  CheckEquals('foo', fSUT.Value2);
+end;
+
+procedure TTestTuplesDouble.Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple<Integer, string>.Create(43, 'bar');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesDouble.Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple<Integer, string>.Create(43, 'foo');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesDouble.Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple<Integer, string>.Create(42, 'bar');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesDouble.Test_Equals_ReturnsTrue_WhenEqual;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple<Integer, string>.Create(42, 'foo');
+  CheckTrue(fSUT.Equals(tup));
+  CheckTrue(fSUT = tup);
+end;
+
+{$IFDEF DELPHIXE5_UP}
+procedure TTestTuplesDouble.Test_Implicit_FromOpenArray;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := [42, 'foo'];
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+end;
+{$ENDIF}
+
+procedure TTestTuplesDouble.Test_Implicit_FromValueArray;
+var
+  arr: TArray<TValue>;
+  tup: Tuple<Integer, string>;
+begin
+  SetLength(arr, 2);
+  arr[0] := TValue.From<Integer>(42);
+  arr[1] := TValue.From<string>('foo');
+  tup := arr;
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+end;
+
+procedure TTestTuplesDouble.Test_Implicit_ToValueArray;
+var
+  arr: TArray<TValue>;
+begin
+  arr := fSUT;
+  CheckEquals(2, Length(arr));
+  Check(arr[0].TypeInfo = TypeInfo(Integer));
+  Check(arr[1].TypeInfo = TypeInfo(string));
+  CheckEquals(42, arr[0].AsInteger);
+  CheckEquals('foo', arr[1].AsString);
+end;
+
+procedure TTestTuplesDouble.Test_Pack;
+var
+  tup: Tuple<Integer, string>;
+begin
+  tup := Tuple.Pack(Integer(42), 'foo');
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+end;
+
+procedure TTestTuplesDouble.Test_Unpack;
+var
+  val1: Integer;
+  val2: string;
+begin
+  fSUT.Unpack(val1, val2);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTuplesTriple'}
+
+procedure TTestTuplesTriple.SetUp;
+begin
+  fSUT := Tuple<Integer, string, Boolean>.Create(42, 'foo', True);
+end;
+
+procedure TTestTuplesTriple.Test_Create;
+begin
+  CheckEquals(42, fSUT.Value1);
+  CheckEquals('foo', fSUT.Value2);
+  CheckEquals(True, fSUT.Value3);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(43, 'bar', False);
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(43, 'foo', True);
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(42, 'bar', True);
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsFalse_WhenThirdValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(42, 'foo', False);
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesTriple.Test_Equals_ReturnsTrue_WhenEqual;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple<Integer, string, Boolean>.Create(42, 'foo', True);
+  CheckTrue(fSUT.Equals(tup));
+  CheckTrue(fSUT = tup);
+end;
+
+{$IFDEF DELPHIXE5_UP}
+procedure TTestTuplesTriple.Test_Implicit_FromOpenArray;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := [42, 'foo', True];
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+end;
+{$ENDIF}
+
+procedure TTestTuplesTriple.Test_Implicit_FromValueArray;
+var
+  arr: TArray<TValue>;
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  SetLength(arr, 3);
+  arr[0] := TValue.From<Integer>(42);
+  arr[1] := TValue.From<string>('foo');
+  arr[2] := TValue.From<Boolean>(True);
+  tup := arr;
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+end;
+
+procedure TTestTuplesTriple.Test_Implicit_ToValueArray;
+var
+  arr: TArray<TValue>;
+begin
+  arr := fSUT;
+  CheckEquals(3, Length(arr));
+  Check(arr[0].TypeInfo = TypeInfo(Integer));
+  Check(arr[1].TypeInfo = TypeInfo(string));
+  Check(arr[2].TypeInfo = TypeInfo(Boolean));
+  CheckEquals(42, arr[0].AsInteger);
+  CheckEquals('foo', arr[1].AsString);
+  CheckEquals(True, arr[2].AsBoolean);
+end;
+
+procedure TTestTuplesTriple.Test_Pack;
+var
+  tup: Tuple<Integer, string, Boolean>;
+begin
+  tup := Tuple.Pack(Integer(42), 'foo', True);
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+end;
+
+procedure TTestTuplesTriple.Test_Unpack;
+var
+  val1: Integer;
+  val2: string;
+  val3: Boolean;
+begin
+  fSUT.Unpack(val1, val2, val3);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+  CheckEquals(True, val3);
+end;
+
+procedure TTestTuplesTriple.Test_Unpack_TwoValues;
+var
+  val1: Integer;
+  val2: string;
+begin
+  fSUT.Unpack(val1, val2);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTuplesQuadruple'}
+
+procedure TTestTuplesQuadruple.SetUp;
+begin
+  fSUT := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', True, 'X');
+end;
+
+procedure TTestTuplesQuadruple.Test_Create;
+begin
+  CheckEquals(42, fSUT.Value1);
+  CheckEquals('foo', fSUT.Value2);
+  CheckEquals(True, fSUT.Value3);
+  CheckEquals('X', fSUT.Value4);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenAllValuesDiffer;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(43, 'bar', False, 'Y');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenFirstValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(43, 'foo', True, 'X');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenFourthValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', False, 'X');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenSecondValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(42, 'bar', True, 'X');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsFalse_WhenThirdValueDiffers;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', False, 'X');
+  CheckFalse(fSUT.Equals(tup));
+  CheckFalse(fSUT = tup);
+end;
+
+procedure TTestTuplesQuadruple.Test_Equals_ReturnsTrue_WhenEqual;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', True, 'X');
+  CheckTrue(fSUT.Equals(tup));
+  CheckTrue(fSUT = tup);
+end;
+
+{$IFDEF DELPHIXE5_UP}
+procedure TTestTuplesQuadruple.Test_Implicit_FromOpenArray;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := [42, 'foo', True, 'X'];
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+  CheckEquals('X', tup.Value4);
+end;
+{$ENDIF}
+
+procedure TTestTuplesQuadruple.Test_Implicit_FromValueArray;
+var
+  arr: TArray<TValue>;
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  SetLength(arr, 4);
+  arr[0] := TValue.From<Integer>(42);
+  arr[1] := TValue.From<string>('foo');
+  arr[2] := TValue.From<Boolean>(True);
+  arr[3] := TValue.From<Char>('X');
+  tup := arr;
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+  CheckEquals('X', tup.Value4);
+end;
+
+procedure TTestTuplesQuadruple.Test_Implicit_ToValueArray;
+var
+  arr: TArray<TValue>;
+begin
+  arr := fSUT;
+  CheckEquals(4, Length(arr));
+  Check(arr[0].TypeInfo = TypeInfo(Integer));
+  Check(arr[1].TypeInfo = TypeInfo(string));
+  Check(arr[2].TypeInfo = TypeInfo(Boolean));
+  Check(arr[3].TypeInfo = TypeInfo(Char));
+  CheckEquals(42, arr[0].AsInteger);
+  CheckEquals('foo', arr[1].AsString);
+  CheckEquals(True, arr[2].AsBoolean);
+  CheckEquals('X', arr[3].AsType<Char>);
+end;
+
+procedure TTestTuplesQuadruple.Test_Pack;
+var
+  tup: Tuple<Integer, string, Boolean, Char>;
+begin
+  tup := Tuple.Pack(Integer(42), 'foo', True, 'X');
+  CheckEquals(42, tup.Value1);
+  CheckEquals('foo', tup.Value2);
+  CheckEquals(True, tup.Value3);
+  CheckEquals('X', tup.Value4);
+end;
+
+procedure TTestTuplesQuadruple.Test_Unpack;
+var
+  val1: Integer;
+  val2: string;
+  val3: Boolean;
+  val4: Char;
+begin
+  fSUT.Unpack(val1, val2, val3, val4);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+  CheckEquals(True, val3);
+  CheckEquals('X', val4);
+end;
+
+procedure TTestTuplesQuadruple.Test_Unpack_ThreeValues;
+var
+  val1: Integer;
+  val2: string;
+  val3: Boolean;
+begin
+  fSUT.Unpack(val1, val2, val3);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+  CheckEquals(True, val3);
+end;
+
+procedure TTestTuplesQuadruple.Test_Unpack_TwoValues;
+var
+  val1: Integer;
+  val2: string;
+begin
+  fSUT.Unpack(val1, val2);
+  CheckEquals(42, val1);
+  CheckEquals('foo', val2);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSmartPointer'}
+
+type
+  TTestClass = class
+  public
+    CreateCalled: Boolean;
+    DestroyCalled: PBoolean;
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+constructor TTestClass.Create;
+begin
+  CreateCalled := True;
+end;
+
+destructor TTestClass.Destroy;
+begin
+  if Assigned(DestroyCalled) then
+    DestroyCalled^ := True;
+  inherited;
+end;
+
+procedure TTestSmartPointer.TestInterfaceType_Instance_Gets_Created;
+var
+  p: ISmartPointer<TTestClass>;
+begin
+  p := TSmartPointer<TTestClass>.Create();
+  CheckTrue(p.CreateCalled);
+end;
+
+procedure TTestSmartPointer.TestInterfaceType_Instance_Gets_Destroyed_When_Created;
+var
+  p: ISmartPointer<TTestClass>;
+  destroyCalled: Boolean;
+begin
+  p := TSmartPointer<TTestClass>.Create();
+  p.DestroyCalled := @destroyCalled;
+  destroyCalled := False;
+  p := nil;
+  CheckTrue(destroyCalled);
+end;
+
+procedure TTestSmartPointer.TestInterfaceType_Instance_Gets_Destroyed_When_Injected;
+var
+  t: TTestClass;
+  p: ISmartPointer<TTestClass>;
+  destroyCalled: Boolean;
+begin
+  t := TTestClass.Create;
+  t.DestroyCalled := @destroyCalled;
+  p := TSmartPointer<TTestClass>.Create(t);
+  destroyCalled := False;
+  p := nil;
+  CheckTrue(destroyCalled);
+end;
+
+procedure TTestSmartPointer.TestRecordType_Implicit_FromInstance_Works;
+var
+  p: SmartPointer<TTestClass>;
+  t: TTestClass;
+begin
+  t := TTestClass.Create;
+  p := t;
+  CheckSame(t, p.Value);
+end;
+
+procedure TTestSmartPointer.TestRecordType_Implicit_ToInstance_Works;
+var
+  p: SmartPointer<TTestClass>;
+  t, t2: TTestClass;
+begin
+  t := TTestClass.Create;
+  p := t;
+  t2 := p;
+  CheckSame(t, t2);
+end;
+
+procedure TTestSmartPointer.TestRecordType_Instance_Gets_Destroyed;
+var
+  p: SmartPointer<TTestClass>;
+  t: TTestClass;
+  destroyCalled: Boolean;
+begin
+  t := TTestClass.Create;
+  t.DestroyCalled := @destroyCalled;
+  p := t;
+  destroyCalled := False;
+  p := Default(SmartPointer<TTestClass>);
+  CheckTrue(destroyCalled);
+end;
+
+type
+  PMyRecord = ^TMyRecord;
+  TMyRecord = record
+    x, y: Integer;
+    s: string;
+  end;
+
+procedure TTestSmartPointer.TestRecordType_Manage_Typed_Pointer;
+var
+  p: ISmartPointer<PMyRecord>;
+begin
+  p := TSmartPointer<PMyRecord>.Create();
+  p.x := 11;
+  p.y := 22;
+  p.s := 'Hello World';
+  p := nil;
+  Pass;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDynamicArray'}
+
+procedure TTestDynamicArray.ClassOperatorAdd_InputNotModified;
+var
+  arr, arr2: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2 := arr + 6;
+  CheckEquals(5, arr.Count);
+  CheckEquals(6, arr2.Count);
+end;
+
+procedure TTestDynamicArray.ClassOperatorIn_ArrayInArray_True;
+var
+  arr, arr2: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2.Add([1, 2, 3]);
+  CheckTrue(arr2 in arr);
+end;
+
+
+procedure TTestDynamicArray.ClassOperatorIn_ArrayNotInArray_False;
+var
+  arr, arr2: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2.Add([1, 2, 3, 6]);
+  CheckFalse(arr2 in arr);
+end;
+
+procedure TTestDynamicArray.ClassOperatorIn_ItemInArray_True;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckTrue(3 in arr);
+end;
+
+procedure TTestDynamicArray.ClassOperatorIn_ItemNotInArray_False;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckFalse(6 in arr);
+end;
+
+procedure TTestDynamicArray.ClassOperatorSubtract_InputNotModified;
+var
+  arr, arr2: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr2 := arr - 3;
+  CheckEquals(5, arr.Count);
+  CheckEquals(4, arr2.Count);
+end;
+
+procedure TTestDynamicArray.DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2, 4);
+  CheckEquals(2, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+end;
+
+procedure TTestDynamicArray.DeleteRange_IndexLessThanZero_NothingHappens;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(-1, 2);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynamicArray.DeleteRange_Mid;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2, 2);
+  CheckEquals(3, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(5, arr[2]);
+end;
+
+procedure TTestDynamicArray.Delete_End;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(4);
+  CheckEquals(4, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+end;
+
+procedure TTestDynamicArray.Delete_IndexEqualsCount_NothingHappens;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(5);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynamicArray.Delete_IndexLessThanZero_NothingHappens;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(-1);
+  CheckEquals(5, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(3, arr[2]);
+  CheckEquals(4, arr[3]);
+  CheckEquals(5, arr[4]);
+end;
+
+procedure TTestDynamicArray.Delete_Mid;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(2);
+  CheckEquals(4, arr.Count);
+  CheckEquals(1, arr[0]);
+  CheckEquals(2, arr[1]);
+  CheckEquals(4, arr[2]);
+  CheckEquals(5, arr[3]);
+end;
+
+procedure TTestDynamicArray.Delete_Start;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  arr.Delete(0);
+  CheckEquals(4, arr.Count);
+  CheckEquals(2, arr[0]);
+  CheckEquals(3, arr[1]);
+  CheckEquals(4, arr[2]);
+  CheckEquals(5, arr[3]);
+end;
+
+procedure TTestDynamicArray.IndexOf_ItemInArray;
+var
+  arr: DynamicArray<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckEquals(2, arr.IndexOf(3));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestValueHelper'}
+
+procedure TTestValueHelper.DoCheck(expected: Boolean);
+begin
+  if expected then
+    CheckTrue(fSUT.Equals(fValue))
+  else
+    CheckFalse(fSUT.Equals(fValue));
+end;
+
+procedure TTestValueHelper.Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
+begin
+  fSUT := TValue.From<Byte>(255);
+  fValue := -128;
+  DoCheck(False);
+end;
+
+procedure TTestValueHelper.Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := TValue.From(caRemoved);
+  fValue := TValue.From(caRemoved);
+  DoCheck;
+end;
+
+procedure TTestValueHelper.Test_Equals_IntToInt_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := Integer(42);
+  fValue := Integer(42);
+  DoCheck;
+end;
+
+procedure TTestValueHelper.Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := TValue.From([caAdded..caChanged]);
+  fValue := TValue.From([caAdded..caChanged]);
+  DoCheck;
+end;
+
+procedure TTestValueHelper.Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := TValue.From<ShortInt>(-128);
+  fValue := -128;
+  DoCheck;
 end;
 
 {$ENDREGION}

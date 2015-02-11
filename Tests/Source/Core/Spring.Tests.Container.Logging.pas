@@ -34,6 +34,7 @@ uses
   Rtti,
   StrUtils,
   SysUtils,
+  TestFramework,
   TypInfo,
   Spring,
   Spring.Collections,
@@ -110,6 +111,7 @@ type
 
     procedure TestSimpleConfiguration;
     procedure TestComplexConfiguration;
+    procedure Test_LoadFromStrings_Ensures_Container_Resolve_CanBeFreedWithoutErrors;
   end;
   {$ENDREGION}
 
@@ -133,6 +135,9 @@ type
 
 
 implementation
+
+uses
+  Spring.TestUtils;
 
 
 {$REGION 'Internal test helpers'}
@@ -169,7 +174,7 @@ begin
   fContainer.Resolve<Ilogger>;
   fContainer.Resolve<Ilogger>('l2');
 
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestLogInsideContainer.TestLog;
@@ -325,7 +330,7 @@ procedure TTestLoggingConfiguration.TestLeak;
 begin
   //If done incorrectly this test will create a leak
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestLoggingConfiguration.TestMultipleConfiguration;
@@ -786,6 +791,27 @@ begin
   CheckSame(fContainer.Resolve<ILogAppender>('appender2'), appenders[0]);
   CheckSame(fContainer.Resolve<ILogAppender>('appender1'), appenders[1]);
   CheckSame(fContainer.Resolve<ILogAppender>, appenders[2]);
+end;
+
+procedure TTestLoggingConfiguration.Test_LoadFromStrings_Ensures_Container_Resolve_CanBeFreedWithoutErrors;
+var
+  config: TStrings;
+  i: ILogAppender;
+  container: TContainer;
+begin
+  container := TContainer.Create;
+  config := TStringList.Create;
+  config
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock');
+  TLoggingConfiguration.LoadFromStrings(container, config);
+  config.Free();
+
+  container.Build;
+  i := container.Resolve<ILogAppender>;
+
+  container.Free;
+  Pass;
 end;
 
 {$ENDREGION}

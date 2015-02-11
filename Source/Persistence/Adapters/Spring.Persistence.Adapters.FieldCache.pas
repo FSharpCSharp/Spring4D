@@ -60,7 +60,7 @@ procedure TFieldCache.Build;
 var
   field: TField;
 begin
-  if fValues.IsEmpty then
+  if not fValues.Any then
     for field in fDataSet.Fields do
       fValues.Add(field.FieldName, field);
 end;

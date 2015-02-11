@@ -31,7 +31,6 @@ program Spring.Tests.Mobile;
 uses
   Spring.TestBootstrap in '..\..\Source\Spring.TestBootstrap.pas',
   TestFramework,
-  FinalBuilder.XMLTestRunner in '..\..\Source\FinalBuilder.XMLTestRunner.pas',
   FMXTestRunner in '..\..\Source\dUnit\FMXTestRunner.pas' {FMXTestRunner},
   Spring.TestRegistration in '..\..\Source\Spring.TestRegistration.pas',
   Spring.TestRunner in '..\..\Source\Spring.TestRunner.pas',
@@ -52,6 +51,10 @@ uses
   Spring.Tests.Container.LifetimeManager in '..\..\Source\Core\Spring.Tests.Container.LifetimeManager.pas',
   Spring.Tests.Container in '..\..\Source\Core\Spring.Tests.Container.pas',
   Spring.Tests.Container.Logging in '..\..\Source\Core\Spring.Tests.Container.Logging.pas',
+{$IFDEF DELPHIXE_UP}
+  Spring.Tests.Interception in '..\..\Source\Core\Spring.Tests.Interception.pas',
+  Spring.Tests.Interception.Types in '..\..\Source\Core\Spring.Tests.Interception.Types.pas',
+{$ENDIF}
   Spring.Tests.Pool in '..\..\Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in '..\..\Source\Extensions\Spring.Tests.Cryptography.pas',
   Spring.Tests.Utils in '..\..\Source\Extensions\Spring.Tests.Utils.pas',

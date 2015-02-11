@@ -298,7 +298,7 @@ begin
   if Result then
   begin
     Dec(fCount);
-    if list.IsEmpty then
+    if not list.Any then
       fDictionary.Remove(key)
   end;
 end;

@@ -56,20 +56,19 @@ implementation
 constructor TCollectionChangedEventImpl<T>.Create;
 begin
   inherited;
-  fInvoke.Code := @TCollectionChangedEventImpl<T>.InternalInvoke;
-  fInvoke.Data := Self;
+  TCollectionChangedEvent<T>(fInvoke) := InternalInvoke;
 end;
 
 procedure TCollectionChangedEventImpl<T>.Add(
   handler: TCollectionChangedEvent<T>);
 begin
-  inherited Add(TMethod(handler));
+  inherited Add(TMethodPointer(handler));
 end;
 
 procedure TCollectionChangedEventImpl<T>.ForEach(
   const action: TAction<TCollectionChangedEvent<T>>);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
   for handler in Handlers do
     action(TCollectionChangedEvent<T>(handler));
@@ -83,7 +82,7 @@ end;
 procedure TCollectionChangedEventImpl<T>.InternalInvoke(Sender: TObject;
   const Item: T; Action: TCollectionChangedAction);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
   if Enabled then
     for handler in Handlers do
@@ -93,7 +92,7 @@ end;
 procedure TCollectionChangedEventImpl<T>.Remove(
   handler: TCollectionChangedEvent<T>);
 begin
-  inherited Remove(TMethod(handler));
+  inherited Remove(TMethodPointer(handler));
 end;
 
 {$ENDREGION}

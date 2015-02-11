@@ -37,16 +37,20 @@ uses
   SysUtils,
   Spring.TestUtils,
   {$IFDEF XMLOUTPUT}
-  FinalBuilder.XMLTestRunner,
+  VSoft.DUnit.XMLTestRunner,
   TestFramework,
   {$ENDIF}
   TextTestRunner;
 {$ELSE}
+  {$IFDEF TESTINSIGHT}
+  TestInsight.DUnit;
+  {$ELSE}
   {$IFNDEF FMX}
   Forms,
   GUITestRunner;
   {$ELSE}
   FMXTestRunner;
+  {$ENDIF}
   {$ENDIF}
 {$ENDIF CONSOLE_TESTRUNNER}
 
@@ -61,7 +65,7 @@ begin
     OutputFile := ParamStr(1);
   WriteLn('Writing output to ' + OutputFile);
   WriteLn(Format('Running %d of %d test cases', [RegisteredTests.CountEnabledTestCases, RegisteredTests.CountTestCases]));
-  ProcessTestResult(FinalBuilder.XMLTestRunner.RunRegisteredTests(OutputFile));
+  ProcessTestResult(VSoft.DUnit.XMLTestRunner.RunRegisteredTests(OutputFile));
   {$ELSE}
   TextTestRunner.RunRegisteredTests(){$IFNDEF AUTOREFCOUNT}.Free(){$ENDIF};
   {$ENDIF}
@@ -74,11 +78,15 @@ begin
   end;
   {$ENDIF}
 {$ELSE}
+  {$IFDEF TESTINSIGHT}
+  TestInsight.DUnit.RunRegisteredTests;
+  {$ELSE}
   {$IFNDEF FMX}
   Application.Initialize();
   TGUITestRunner.RunRegisteredTests();
   {$ELSE}
   TFMXTestRunner.RunRegisteredTests();
+  {$ENDIF}
   {$ENDIF}
   ReportMemoryLeaksOnShutdown := True;
 {$ENDIF}

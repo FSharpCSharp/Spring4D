@@ -91,6 +91,11 @@ type
     Transient,
 
     ///	<summary>
+    ///	  Once per resolve operation.
+    ///	</summary>
+    PerResolve,
+
+    ///	<summary>
     ///	  Every thread has a single instance.
     ///	</summary>
     SingletonPerThread,
@@ -125,6 +130,11 @@ type
     ///	</summary>
     False
   );
+
+  TBaseAttribute = class(TCustomAttribute)
+  private
+    constructor Create;
+  end;
 
   ///	<summary>
   ///	  Represents an abstract lifetime attribute class base.
@@ -235,7 +245,7 @@ type
     constructor Create(value: Int64); overload;
     constructor Create(value: Boolean); overload;
     constructor Create(serviceType: PTypeInfo); overload;
-    constructor Create(serviceType: PTypeInfo; const name: string); overload;
+    constructor Create(serviceType: PTypeInfo; const serviceName: string); overload;
     property ServiceType: PTypeInfo read fServiceType;
     property Value: TValue read fValue;
   end;
@@ -261,14 +271,24 @@ type
   ///	  </code>
   ///	</example>
   ///	<seealso cref="InjectAttribute" />
-  ImplementsAttribute = class(TCustomAttribute)
+  ImplementsAttribute = class(TBaseAttribute)
   private
     fServiceType: PTypeInfo;
+    fServiceName: string;
+  public
+    constructor Create(serviceType: PTypeInfo; const serviceName: string = '');
+    property ServiceType: PTypeInfo read fServiceType;
+    property ServiceName: string read fServiceName;
+  end;
+
+  InterceptorAttribute = class(TBaseAttribute)
+  private
+    fInterceptorType: PTypeInfo;
     fName: string;
   public
-    constructor Create(serviceType: PTypeInfo); overload;
-    constructor Create(serviceType: PTypeInfo; const name: string); overload;
-    property ServiceType: PTypeInfo read fServiceType;
+    constructor Create(interceptorType: PTypeInfo); overload;
+    constructor Create(const name: string); overload;
+    property InterceptorType: PTypeInfo read fInterceptorType;
     property Name: string read fName;
   end;
 
@@ -347,10 +367,12 @@ type
   {$REGION 'Common Container Interfaces'}
   TActivatorDelegate = reference to function: TValue;
 
+  TWhere = (First, Last);
+
   IRegistration = interface
     ['{94A80249-3C3D-4769-832A-274B1833DA70}']
     function Implements(serviceType: PTypeInfo): IRegistration; overload;
-    function Implements(serviceType: PTypeInfo; const name: string): IRegistration; overload;
+    function Implements(serviceType: PTypeInfo; const serviceName: string): IRegistration; overload;
 
     function DelegateTo(const delegate: TActivatorDelegate): IRegistration; overload;
 
@@ -379,12 +401,19 @@ type
     function AsTransient: IRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
 
+    function PerResolve: IRegistration;
+
     function AsDefault: IRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
 {$IFDEF DELPHIXE_UP}
     function AsFactory: IRegistration; overload;
-    function AsFactory(const name: string): IRegistration; overload;
+    function AsFactory(const resolvedServiceName: string): IRegistration; overload;
+
+    function InterceptedBy(interceptorType: PTypeInfo;
+      where: TWhere = TWhere.Last): IRegistration; overload;
+    function InterceptedBy(const name: string;
+      where: TWhere = TWhere.Last): IRegistration; overload;
 {$ENDIF}
   end;
 
@@ -392,7 +421,7 @@ type
     ['{B7F38CF7-872F-4B8E-9593-67ABFD351EF2}']
     function RegisterType(componentType: PTypeInfo): IRegistration; overload;
     function RegisterType(serviceType, componentType: PTypeInfo;
-      const name: string = ''): IRegistration; overload;
+      const serviceName: string = ''): IRegistration; overload;
 
     procedure Build;
   end;
@@ -403,6 +432,12 @@ implementation
 
 
 {$REGION 'Attributes'}
+
+{ TBaseAttribute }
+
+constructor TBaseAttribute.Create;
+begin
+end;
 
 { LifetimeAttributeBase }
 
@@ -465,11 +500,11 @@ begin
   fServiceType := serviceType;
 end;
 
-constructor InjectAttribute.Create(serviceType: PTypeInfo; const name: string);
+constructor InjectAttribute.Create(serviceType: PTypeInfo; const serviceName: string);
 begin
   inherited Create;
   fServiceType := serviceType;
-  fValue := name;
+  fValue := serviceName;
 end;
 
 constructor InjectAttribute.Create(const value: string);
@@ -504,16 +539,25 @@ end;
 
 { ImplementsAttribute }
 
-constructor ImplementsAttribute.Create(serviceType: PTypeInfo);
-begin
-  Create(serviceType, '');
-end;
-
 constructor ImplementsAttribute.Create(serviceType: PTypeInfo;
-  const name: string);
+  const serviceName: string);
 begin
   inherited Create;
   fServiceType := serviceType;
+  fServiceName := serviceName;
+end;
+
+{ InterceptorAttribute }
+
+constructor InterceptorAttribute.Create(interceptorType: PTypeInfo);
+begin
+  inherited Create;
+  fInterceptorType := interceptorType;
+end;
+
+constructor InterceptorAttribute.Create(const name: string);
+begin
+  inherited Create;
   fName := name;
 end;
 

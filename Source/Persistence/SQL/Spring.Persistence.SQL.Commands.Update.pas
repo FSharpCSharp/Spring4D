@@ -121,7 +121,7 @@ begin
 
   fCommand.SetCommandFieldsFromColumns(fColumns);
 
-  if fCommand.UpdateFields.IsEmpty then
+  if not fCommand.UpdateFields.Any then
     Exit;
 
   fCommand.Entity := entity;

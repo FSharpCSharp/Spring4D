@@ -32,6 +32,7 @@ uses
   TestFramework,
   Spring,
   Spring.Collections,
+  Spring.Container,
   Spring.Container.Common,
   Spring.Container.Core,
   Spring.Tests.Container.Interfaces;
@@ -386,24 +387,34 @@ type
 
   // IChicken <== TChicken --> IEgg <== TEgg --> IChicken
 
+  IEgg = interface;
+
   IChicken = interface
     ['{88C4F5E9-85B4-43D4-9265-0A9FAD099055}']
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
+    property Egg: IEgg read GetEgg write SetEgg;
   end;
 
   IEgg = interface
     ['{9BFC513F-635C-42CD-B29D-9E66D47882A6}']
+    function Chicken: IChicken;
   end;
 
   TChicken = class(TInterfacedObject, IChicken)
   private
     fEgg: IEgg;
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
   public
     constructor Create(const egg: IEgg);
+    property Egg: IEgg read GetEgg write SetEgg;
   end;
 
   TEgg = class(TInterfacedObject, IEgg)
   private
     fChicken: IChicken;
+    function Chicken: IChicken;
   public
     constructor Create(const chicken: IChicken);
   end;
@@ -411,6 +422,8 @@ type
   TCircularDependencyChicken = class(TInterfacedObject, IChicken)
   private
     fChicken: IChicken;
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
   public
     constructor Create(const chicken: IChicken);
   end;
@@ -513,7 +526,43 @@ type
   {$ENDREGION}
 
 
+  ISomeService = interface
+    ['{3DD10F1E-C064-47DB-B78E-F7EB9B643FB3}']
+  end;
+
+  TSomeService = class(TInterfacedObject, ISomeService);
+
+  ICommonInterface = interface
+    ['{0B64ADC9-A375-4614-96EA-2BF38E34FCD9}']
+  end;
+
+  ISomeFactory = interface
+    ['{8E32B7D2-49BC-4F85-9C2D-79295D9A0901}']
+    function CreateObject(const name: string): ICommonInterface;
+  end;
+
+  TSomeFactory = class(TInterfacedObject, ISomeFactory)
+  private
+    fContainer: TContainer;
+  public
+    constructor Create(const container: TContainer);
+    function CreateObject(const name: string): ICommonInterface;
+  end;
+
+  TTypeA = class(TInterfacedObject, ICommonInterface)
+  public
+    constructor Create(const someService: ISomeService);
+  end;
+
+  TTypeB = class(TInterfacedObject, ICommonInterface)
+  public
+    constructor Create(const someService: ISomeService);
+  end;
+
 implementation
+
+uses
+  StrUtils;
 
 { TNameService }
 
@@ -707,11 +756,30 @@ begin
   fChicken := chicken;
 end;
 
+function TCircularDependencyChicken.GetEgg: IEgg;
+begin
+  Result := nil;
+end;
+
+procedure TCircularDependencyChicken.SetEgg(const egg: IEgg);
+begin
+end;
+
 { TChicken }
 
 constructor TChicken.Create(const egg: IEgg);
 begin
   inherited Create;
+  fEgg := egg;
+end;
+
+function TChicken.GetEgg: IEgg;
+begin
+  Result := fEgg;
+end;
+
+procedure TChicken.SetEgg(const egg: IEgg);
+begin
   fEgg := egg;
 end;
 
@@ -721,6 +789,11 @@ constructor TEgg.Create(const chicken: IChicken);
 begin
   inherited Create;
   fChicken := chicken;
+end;
+
+function TEgg.Chicken: IChicken;
+begin
+  Result := fChicken
 end;
 
 { TNameAgeComponent }
@@ -955,6 +1028,38 @@ begin
   inherited Create;;
   SetLength(fCollectionItems, 1);
   fCollectionItems[0] := collectionItem;
+end;
+
+{ TSomeFactory }
+
+constructor TSomeFactory.Create(const container: TContainer);
+begin
+  inherited Create;
+  fContainer := container;
+end;
+
+function TSomeFactory.CreateObject(const name: string): ICommonInterface;
+const
+  args: array[0..1] of string = ('A', 'B');
+begin
+  case IndexStr(name, args) of
+    0: Result := fContainer.Resolve<TTypeA>;
+    1: Result := fContainer.Resolve<TTypeB>;
+  else
+    raise ENotSupportedException.Create('');
+  end;
+end;
+
+{ TTypeA }
+
+constructor TTypeA.Create(const someService: ISomeService);
+begin
+end;
+
+{ TTypeB }
+
+constructor TTypeB.Create(const someService: ISomeService);
+begin
 end;
 
 end.

@@ -82,10 +82,9 @@ type
 uses
   Classes,
   TypInfo,
-  Spring.Helpers,
+  Spring,
   Spring.Persistence.Core.Exceptions,
-  Spring.Reflection,
-  Spring.Reflection.Activator;
+  Spring.Reflection;
 
 
 {$REGION 'TConnectionFactory'}

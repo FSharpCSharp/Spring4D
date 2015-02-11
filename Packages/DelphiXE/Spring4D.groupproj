@@ -10,7 +10,7 @@
 				<Dependencies>Spring.Base.dproj</Dependencies>
 			</Projects>
 			<Projects Include="Spring.Persistence.dproj">
-				<Dependencies/>
+				<Dependencies>Spring.Base.dproj</Dependencies>
 			</Projects>
 			<Projects Include="Spring.Extensions.dproj">
 				<Dependencies/>
@@ -44,13 +44,13 @@
 		<Target Name="Spring_Core:Make" DependsOnTargets="Spring.Base:Make">
 			<MSBuild Targets="Make" Projects="Spring.Core.dproj"/>
 		</Target>
-		<Target Name="Spring_Persistence">
+		<Target Name="Spring_Persistence" DependsOnTargets="Spring.Base">
 			<MSBuild Projects="Spring.Persistence.dproj"/>
 		</Target>
-		<Target Name="Spring_Persistence:Clean">
+		<Target Name="Spring_Persistence:Clean" DependsOnTargets="Spring.Base:Clean">
 			<MSBuild Targets="Clean" Projects="Spring.Persistence.dproj"/>
 		</Target>
-		<Target Name="Spring_Persistence:Make">
+		<Target Name="Spring_Persistence:Make" DependsOnTargets="Spring.Base:Make">
 			<MSBuild Targets="Make" Projects="Spring.Persistence.dproj"/>
 		</Target>
 		<Target Name="Spring_Extensions">

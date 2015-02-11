@@ -23,6 +23,9 @@
 {***************************************************************************}
 
 {$I Spring.inc}
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 unit Spring.Reflection;
 
@@ -322,6 +325,9 @@ type
     /// </param>
     function IsAssignableFrom(const rttiType: TRttiType): Boolean;
 
+    function IsType<T>: Boolean; overload;
+    function IsType(typeInfo: PTypeInfo): Boolean; overload; inline;
+
     function TryGetField(const name: string; out field: TRttiField): Boolean;
     function TryGetProperty(const name: string; out prop: TRttiProperty): Boolean;
 
@@ -461,37 +467,15 @@ type
 
   {$REGION 'TRttiMethodHelper'}
 
-  TRttiMethodHelper = class helper for TRttiMethod
+  TRttiMethodHelper = class helper(Spring.TRttiMethodHelper) for TRttiMethod
   private
-    procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+    function GetIsGetter: Boolean;
+    function GetIsSetter: Boolean;
     function InternalGetParameters: IEnumerable<TRttiParameter>;
   public
-    function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
-    function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
-    function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
-
+    property IsGetter: Boolean read GetIsGetter;
+    property IsSetter: Boolean read GetIsSetter;
     property Parameters: IEnumerable<TRttiParameter> read InternalGetParameters;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TValueHelper'}
-
-  TValueHelper = record helper for TValue
-  private
-    function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
-  public
-{$IFDEF DELPHI2010}
-    function AsString: string;
-{$ENDIF}
-    function AsType<T>: T;
-    function Cast(typeInfo: PTypeInfo): TValue;
-    function IsString: Boolean;
-{$IFDEF DELPHI2010}
-    function IsType<T>: Boolean; overload;
-    function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
-{$ENDIF}
   end;
 
   {$ENDREGION}
@@ -742,13 +726,12 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TFinalizer'}
+  {$REGION 'Routines'}
 
-  TFinalizer = record
-  public
-    class procedure FinalizeInstance(var instance: TValue); overload; static;
-    class procedure FinalizeInstance<T>(var instance: T); overload; static;
-  end;
+function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv;
+  IsConst: Boolean = False): Boolean;
+procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
+  var ArgDest: TValue; CC: TCallConv);
 
   {$ENDREGION}
 
@@ -756,17 +739,84 @@ type
 implementation
 
 uses
+  Math,
   RTLConsts,
   StrUtils,
   SysConst,
   Spring.Collections.Extensions,
   Spring.ResourceStrings;
 
-type
-  PValueData = ^TValueData;
-
 const
   EmptyGuid: TGUID = ();
+
+
+{$REGION 'Routines'}
+
+function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv; IsConst: Boolean = False): Boolean;
+begin
+  if TypeInfo = nil then
+    Exit(False);
+  case TypeInfo^.Kind of
+    tkArray:
+      Result := GetTypeData(TypeInfo)^.ArrayData.Size > SizeOf(Pointer);
+{$IF Defined(CPUX86)}
+    tkRecord:
+      if (CC in [ccCdecl, ccStdCall, ccSafeCall]) and not IsConst then
+        Result := False
+      else
+        Result := GetTypeData(TypeInfo)^.RecSize > SizeOf(Pointer);
+    tkVariant:
+      Result := IsConst or not (CC in [ccCdecl, ccStdCall, ccSafeCall]);
+{$ELSEIF Defined(CPUX64)}
+    tkRecord:
+      Result := not (GetTypeData(TypeInfo)^.RecSize in [1,2,4,8]);
+    tkMethod,
+    tkVariant:
+      Result := True;
+{$ELSEIF Defined(CPUARM)}
+    tkRecord:
+      Result := (CC = ccReg) or (CC = ccPascal);
+    tkMethod,
+    tkVariant:
+      Result := True;
+{$IFEND}
+{$IFNDEF NEXTGEN}
+    tkString:
+      Result := GetTypeData(TypeInfo)^.MaxLength > SizeOf(Pointer);
+{$ENDIF}
+  else
+    Result := False;
+  end;
+end;
+
+procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
+  var ArgDest: TValue; CC: TCallConv);
+begin
+  if Par.ParamType = nil then
+    ArgDest := TValue.From<Pointer>(ArgSrc.GetReferenceToRawData) // untyped var or const
+  else if Par.Flags * [pfVar, pfOut] <> [] then
+  begin
+    if Par.ParamType.Handle <> ArgSrc.TypeInfo then
+      raise EInvalidCast.CreateRes(@SByRefArgMismatch);
+    ArgDest := TValue.From<Pointer>(ArgSrc.GetReferenceToRawData);
+  end
+  else if (pfConst in Par.Flags) and
+    PassByRef(Par.ParamType.Handle, CC, True) then
+  begin
+    if TypeInfo(TValue) = Par.ParamType.Handle then
+      ArgDest := TValue.From(ArgSrc)
+    else
+    begin
+      if Par.ParamType.Handle <> ArgSrc.TypeInfo then
+        raise EInvalidCast.CreateRes(@SByRefArgMismatch);
+      ArgDest := TValue.From(ArgSrc.GetReferenceToRawData);
+    end
+  end
+  else
+    ArgDest := ArgSrc.Cast(Par.ParamType.Handle);
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TType'}
@@ -1202,11 +1252,6 @@ begin
     end, enumerateBaseType);
 end;
 
-function TRttiTypeHelper.IsAssignableFrom(const rttiType: TRttiType): Boolean;
-begin
-  Result := Spring.IsAssignableFrom(Handle, rttiType.Handle);
-end;
-
 function TRttiTypeHelper.InternalGetFields(
   enumerateBaseType: Boolean): IEnumerable<TRttiField>;
 begin
@@ -1448,6 +1493,21 @@ begin
   Result := TypeKind in [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
 end;
 
+function TRttiTypeHelper.IsAssignableFrom(const rttiType: TRttiType): Boolean;
+begin
+  Result := Spring.IsAssignableFrom(Handle, rttiType.Handle);
+end;
+
+function TRttiTypeHelper.IsType(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := Handle = typeInfo;
+end;
+
+function TRttiTypeHelper.IsType<T>: Boolean;
+begin
+  Result := Handle = TypeInfo(T);
+end;
+
 function TRttiTypeHelper.TryGetField(const name: string;
   out field: TRttiField): Boolean;
 begin
@@ -1605,153 +1665,51 @@ end;
 
 {$REGION 'TRttiMethodHelper'}
 
-procedure TRttiMethodHelper.DispatchValue(const value: TValue;
-  typeInfo: PTypeInfo);
+function GetCodeAddress(const classType: TClass; const proc: Pointer): Pointer;
 begin
-  if (value.TypeInfo <> typeInfo) and (value.Kind = tkInterface)
-    and (typeInfo.Kind = tkInterface)
-    and IsAssignableFrom(typeInfo, value.TypeInfo) then
-    PValueData(@value).FTypeInfo := typeInfo;
+  if (Integer(proc) and $FF000000) = $FF000000 then
+    Exit(nil);
+  if (Integer(proc) and $FF000000) = $FE000000 then
+    Result := PPointer(Integer(classType) + SmallInt(proc))^
+  else
+    Result := proc;
+end;
+
+function TRttiMethodHelper.GetIsGetter: Boolean;
+var
+  prop: TRttiProperty;
+  code: Pointer;
+begin
+  for prop in Parent.GetProperties do
+    if prop is TRttiInstanceProperty then
+    begin
+      code := GetCodeAddress(prop.Parent.AsInstance.MetaclassType,
+        TRttiInstanceProperty(prop).PropInfo.GetProc);
+      if code = CodeAddress then
+        Exit(True);
+    end;
+  Result := False;
+end;
+
+function TRttiMethodHelper.GetIsSetter: Boolean;
+var
+  prop: TRttiProperty;
+  code: Pointer;
+begin
+  for prop in Parent.GetProperties do
+    if prop is TRttiInstanceProperty then
+    begin
+      code := GetCodeAddress(prop.Parent.AsInstance.MetaclassType,
+        TRttiInstanceProperty(prop).PropInfo.SetProc);
+      if code = CodeAddress then
+        Exit(True);
+    end;
+  Result := False;
 end;
 
 function TRttiMethodHelper.InternalGetParameters: IEnumerable<TRttiParameter>;
 begin
-  Result := TCollections.Query<TRttiParameter>(GetParameters);
-end;
-
-function TRttiMethodHelper.Invoke(Instance: TObject;
-  const Args: array of TValue): TValue;
-var
-  parameters: TArray<TRttiParameter>;
-  i: Integer;
-begin
-  parameters := GetParameters;
-  if Length(Args) <> Length(parameters) then
-    raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := Low(Args) to High(Args) do
-    DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
-end;
-
-function TRttiMethodHelper.Invoke(Instance: TClass;
-  const Args: array of TValue): TValue;
-var
-  parameters: TArray<TRttiParameter>;
-  i: Integer;
-begin
-  parameters := GetParameters;
-  if Length(Args) <> Length(parameters) then
-    raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := Low(Args) to High(Args) do
-    DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
-end;
-
-function TRttiMethodHelper.Invoke(Instance: TValue;
-  const Args: array of TValue): TValue;
-var
-  parameters: TArray<TRttiParameter>;
-  i: Integer;
-begin
-  parameters := GetParameters;
-  if Length(Args) <> Length(parameters) then
-    raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := Low(Args) to High(Args) do
-    DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  Result := Self.DispatchInvoke(Instance, Args);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TValueHelper'}
-
-{$IFDEF DELPHI2010}
-function TValueHelper.AsString: string;
-begin
-  Result := AsType<string>;
-end;
-{$ENDIF}
-
-function TValueHelper.AsType<T>: T;
-begin
-{$IFDEF DELPHI2010}
-  if IsEmpty then
-    Exit(Default(T));
-{$ENDIF}
-  if not TryAsInterface(System.TypeInfo(T), Result) then
-  if not TryAsType<T>(Result) then
-    raise EInvalidCast.CreateRes(@SInvalidCast);
-end;
-
-function TValueHelper.Cast(typeInfo: PTypeInfo): TValue;
-var
-  intf: IInterface;
-begin
-  if TryAsInterface(typeInfo, intf) then
-    TValue.Make(@intf, typeInfo, Result)
-  else if not TryCast(typeInfo, Result) then
-    raise EInvalidCast.CreateRes(@SInvalidCast);
-end;
-
-function TValueHelper.IsString: Boolean;
-const
-  StringKinds = [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
-begin
-  Result := IsEmpty or (Kind in StringKinds);
-end;
-
-{$IFDEF DELPHI2010}
-function TValueHelper.IsType(ATypeInfo: PTypeInfo): Boolean;
-var
-  unused: TValue;
-begin
-  Result := IsEmpty or TryCast(ATypeInfo, unused);
-end;
-
-function TValueHelper.IsType<T>: Boolean;
-begin
-  Result := IsType(System.TypeInfo(T));
-end;
-{$ENDIF}
-
-function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
-var
-  typeData: PTypeData;
-  obj: TObject;
-begin
-  if not (Kind in [tkClass, tkInterface]) then
-    Exit(False);
-  if typeInfo.Kind <> tkInterface then
-    Exit(False);
-  if Self.TypeInfo = typeInfo then
-    Result := True
-  else
-  begin
-    typeData := GetTypeData(typeInfo);
-    if Kind = tkClass then
-    begin
-{$IFDEF AUTOREFCOUNT}
-      Self.FData.FValueData.ExtractRawData(@obj);
-{$ELSE}
-      obj := TObject(Self.FData.FAsObject);
-{$ENDIF}
-      Exit(obj.GetInterface(typeData.Guid, Intf));
-    end;
-    Result := False;
-    typeData := Self.TypeData;
-    while Assigned(typeData) and Assigned(typeData.IntfParent) do
-    begin
-      if typeData.IntfParent^ = typeInfo then
-      begin
-        Result := True;
-        Break;
-      end;
-      typeData := GetTypeData(typeData.IntfParent^);
-    end;
-  end;
-  if Result then
-    IInterface(Intf) := AsInterface;
+  Result := TEnumerable.Query<TRttiParameter>(GetParameters);
 end;
 
 {$ENDREGION}
@@ -2150,31 +2108,6 @@ end;
 function TReflection.GetTypes: IEnumerable<TRttiType>;
 begin
   Result := TRttiTypeIterator<TRttiType>.Create;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFinalizer'}
-
-class procedure TFinalizer.FinalizeInstance(var instance: TValue);
-begin
-  if instance.IsObject then
-{$IFNDEF AUTOREFCOUNT}
-    instance.AsObject.Free
-{$ELSE}
-    instance.AsObject.DisposeOf
-{$ENDIF}
-end;
-
-class procedure TFinalizer.FinalizeInstance<T>(var instance: T);
-begin
-  if GetTypeKind(TypeInfo(T)) = tkClass then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@instance)^.Free
-{$ELSE}
-    PObject(@instance)^.DisposeOf
-{$ENDIF}
 end;
 
 {$ENDREGION}

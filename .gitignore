@@ -5,6 +5,7 @@
 *.identcache
 *.local
 *.skincfg
+*.stat
 *.tvsconfig
 __history/
 
@@ -23,5 +24,6 @@ __history/
 # Spring4D files:
 *.bak
 *.mes
+Logs/
 Samples/**/*.exe
 Tests/Bin/

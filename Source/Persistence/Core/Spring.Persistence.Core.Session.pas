@@ -607,9 +607,9 @@ begin
       inserts.Add(entity)
     else
       updates.Add(entity);
-  if not inserts.IsEmpty then
+  if inserts.Any then
     InsertList<T>(inserts);
-  if not updates.IsEmpty then
+  if updates.Any then
     UpdateList<T>(updates);
 end;
 

@@ -108,13 +108,12 @@ begin
   targetType := nil;
 
   candidates := Model.ConstructorInjections.Ordered(
-    TComparer<IInjection>.Construct(
     function(const left, right: IInjection): Integer
     begin
       Result := right.Target.Parent.AncestorCount - left.Target.Parent.AncestorCount;
       if Result = 0 then
         Result := right.DependencyCount - left.DependencyCount;
-    end)).TakeWhile(
+    end).TakeWhile(
     function(const injection: IInjection): Boolean
     begin
       if maxCount = -1 then

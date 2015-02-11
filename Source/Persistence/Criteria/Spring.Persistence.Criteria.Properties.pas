@@ -491,7 +491,7 @@ var
   lright: TSetNumbers;
 begin
   lright := Right;
-  rightArray := TCollections.Range(0, 256)
+  rightArray := TEnumerable.Range(0, 256)
     .Where(function(const value: Integer): Boolean
     begin
       Result := value in lright;

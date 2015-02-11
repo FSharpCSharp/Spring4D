@@ -52,7 +52,7 @@ type
     function GetEnumerator: IEnumerator<TColumnData>;
 
     function Add(const columnData: TColumnData): Integer;
-    function IsEmpty: Boolean;
+//    function IsEmpty: Boolean;
     procedure Delete(index: Integer);
 
     function TryGetPrimaryKeyColumn(out primaryKeyColumn: TColumnData): Boolean;
@@ -179,10 +179,10 @@ begin
   Result := fList[index];
 end;
 
-function TColumnDataList.IsEmpty: Boolean;
-begin
-  Result := fList.IsEmpty;
-end;
+//function TColumnDataList.IsEmpty: Boolean;
+//begin
+//  Result := fList.IsEmpty;
+//end;
 
 procedure TColumnDataList.SetItem(index: Integer; const value: TColumnData);
 begin
@@ -311,7 +311,7 @@ end;
 
 function TEntityData.HasOneToManyRelations: Boolean;
 begin
-  Result := not fOneToManyColumns.IsEmpty;
+  Result := fOneToManyColumns.Any;
 end;
 
 function TEntityData.HasPrimaryKey: Boolean;

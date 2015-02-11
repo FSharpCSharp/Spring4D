@@ -373,7 +373,7 @@ type
   end;
 
   ///	<summary>
-  ///	  Generates cryptographically strong random values.
+  ///	  Generates random values.
   ///	</summary>
   IRandomNumberGenerator = interface
     ['{64B180B9-E192-4542-A45D-4E7402ED7BA8}']
@@ -455,6 +455,13 @@ function CreateDES: IDES;
 
 function CreateTripleDES: ITripleDES;
 
+/// <summary>
+///   Creates a default implementation of IRandomNumberGenerator.
+/// </summary>
+/// <remarks>
+///   This implementation uses System.Random - do not use this if you need a
+///   cryptographically secure random number generator
+/// </remarks>
 function CreateRandomNumberGenerator: IRandomNumberGenerator;
 
 function CreateSizeCollection(value: Integer): ISizeCollection; overload;
@@ -1034,5 +1041,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

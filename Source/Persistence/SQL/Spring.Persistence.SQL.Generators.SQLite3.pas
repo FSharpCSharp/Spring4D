@@ -141,7 +141,7 @@ begin
   Assert(Assigned(command));
   Result := TCollections.CreateList<string>;
 
-  if command.ForeignKeys.IsEmpty then
+  if not command.ForeignKeys.Any then
     Exit;
 
   LSqlBuilder := TStringBuilder.Create;

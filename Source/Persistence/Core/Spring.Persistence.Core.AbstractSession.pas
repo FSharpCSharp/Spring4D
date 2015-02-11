@@ -129,15 +129,13 @@ implementation
 uses
   SysUtils,
   Variants,
-  Spring.Helpers,
   Spring.SystemUtils,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Relation.ManyToOne,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Reflection.Activator;
+  Spring.Persistence.Mapping.RttiExplorer;
 
 
 {$REGION 'TAbstractSession'}
@@ -501,7 +499,7 @@ begin
   statement := Connection.CreateStatement;
   statement.SetSQLCommand(sqlStatement);
 
-  if not params.IsEmpty then
+  if params.Any then
     statement.SetParams(params);
   Result := statement.ExecuteQuery;
 end;

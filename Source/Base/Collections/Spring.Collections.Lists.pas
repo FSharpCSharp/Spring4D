@@ -40,6 +40,10 @@ uses
 type
 
 {$IFNDEF DELPHIXE3_UP}
+  {$DEFINE SPRING_ARRAYMANAGERS}
+{$ENDIF}
+
+{$IFDEF SPRING_ARRAYMANAGERS}
   TArrayManager<T> = class abstract
     procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
     procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
@@ -77,13 +81,14 @@ type
         function MoveNext: Boolean; override;
         procedure Reset; override;
       end;
-      TArrayOfT = array of T; // Delphi 2010 compatibility
   private
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
     fArrayManager: TArrayManager<T>;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
+    procedure DeleteAllInternal(const predicate: TPredicate<T>;
+      notification: TCollectionChangedAction);
     procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
@@ -118,7 +123,10 @@ type
     procedure Delete(index: Integer); override;
     procedure DeleteRange(index, count: Integer); override;
 
+    procedure RemoveAll(const predicate: TPredicate<T>); override;
+
     function Extract(const item: T): T; override;
+    procedure ExtractAll(const predicate: TPredicate<T>); override;
 
     function GetRange(index, count: Integer): IList<T>; override;
 
@@ -258,13 +266,14 @@ type
 implementation
 
 uses
+  TypInfo,
   Spring.Collections.Extensions,
   Spring.ResourceStrings;
 
 
 {$REGION 'TMoveArrayManager<T>'}
 
-{$IFNDEF DELPHIXE3_UP}
+{$IFDEF SPRING_ARRAYMANAGERS}
 procedure TMoveArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
 begin
   System.FillChar(AArray[Index], Count * SizeOf(T), 0);
@@ -294,7 +303,11 @@ begin
     fArrayManager := TManualArrayManager<T>.Create
   else
 {$ENDIF}
-    fArrayManager := TMoveArrayManager<T>.Create;
+    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+      tkClass: TArrayManager<TObject>(fArrayManager) := TMoveArrayManager<TObject>.Create;
+    else
+      fArrayManager := TMoveArrayManager<T>.Create;
+    end;
 end;
 
 constructor TList<T>.Create(const values: array of T);
@@ -342,7 +355,16 @@ end;
 
 function TList<T>.GetEnumerator: IEnumerator<T>;
 begin
+{$IFNDEF DELPHI2010}
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkClass: IEnumerator<TObject>(Result) :=
+      TList<TObject>.TEnumerator.Create(TList<TObject>(Self));
+  else
+    Result := TEnumerator.Create(Self);
+  end;
+{$ELSE}
   Result := TEnumerator.Create(Self);
+{$ENDIF}
 end;
 
 function TList<T>.GetItem(index: Integer): T;
@@ -377,7 +399,7 @@ begin
   list.fItems := Copy(fItems, index, count);
 {$ELSE}
   SetLength(list.fItems, count);
-  for i := 0 to fCount - 1 do
+  for i := 0 to count - 1 do
   begin
     list.fItems[i] := fItems[index];
     Inc(index);
@@ -551,7 +573,7 @@ end;
 
 procedure TList<T>.DeleteRange(index, count: Integer);
 var
-  oldItems: array of T;
+  oldItems: TArray<T>;
   tailCount,
   i: Integer;
 begin
@@ -650,6 +672,11 @@ begin
   Result := Length(fItems);
 end;
 
+procedure TList<T>.RemoveAll(const predicate: TPredicate<T>);
+begin
+  DeleteAllInternal(predicate, caRemoved);
+end;
+
 procedure TList<T>.Reverse(index, count: Integer);
 var
   temp: T;
@@ -704,6 +731,31 @@ begin
   DeleteInternal(index, caRemoved);
 end;
 
+procedure TList<T>.DeleteAllInternal(const predicate: TPredicate<T>;
+  notification: TCollectionChangedAction);
+var
+  i, n: Integer;
+  items: TArray<T>;
+  item: T;
+begin
+  n := 0;
+  i := 0;
+  while i < fCount do
+  begin
+    if predicate(fItems[i]) then
+    begin
+      item := fItems[i];
+      Inc(n);
+      fArrayManager.Move(fItems, i + 1, i, fCount - i - 1);
+      fArrayManager.Finalize(fItems, fCount - 1, 1);
+      Dec(fCount);
+      Changed(item, notification);
+    end
+    else
+      Inc(i)
+  end;
+end;
+
 function TList<T>.Extract(const item: T): T;
 var
   index: Integer;
@@ -716,6 +768,11 @@ begin
     Result := fItems[index];
     DeleteInternal(index, caExtracted);
   end;
+end;
+
+procedure TList<T>.ExtractAll(const predicate: TPredicate<T>);
+begin
+  DeleteAllInternal(predicate, caExtracted);
 end;
 
 function TList<T>.Contains(const value: T;

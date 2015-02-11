@@ -123,8 +123,7 @@ uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Utils,
-  Spring.Reflection, Spring.Helpers,
-  Spring.Reflection.Activator;
+  Spring.Reflection;
 
 
 {$REGION 'TRttiExplorer'}

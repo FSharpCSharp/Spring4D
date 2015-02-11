@@ -150,6 +150,7 @@ end;
 procedure TTestSingletonLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
+  value: TValue;
 begin
   obj1 := fLifetimeManager.Resolve(nil).AsObject;
   obj2 := fLifetimeManager.Resolve(nil).AsObject;
@@ -159,8 +160,11 @@ begin
     CheckSame(obj1, obj2);
     CheckSame(fActivator.Model, fModel);
   finally
+    // Obtain the TValue before freeing the object so releasing the instance the
+    // second time won't fail
+    value := obj2;
     fLifetimeManager.Release(obj1);
-    fLifetimeManager.Release(obj2);
+    fLifetimeManager.Release(value);
   end;
 end;
 

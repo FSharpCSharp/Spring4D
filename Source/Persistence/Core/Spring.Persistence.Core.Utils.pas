@@ -79,15 +79,13 @@ uses
   pngimage,
   StrUtils,
   Variants,
+  Spring,
   Spring.Reflection,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Types,
-  Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Reflection.Activator,
-  Spring
-  ;
+  Spring.Persistence.Mapping.RttiExplorer;
 
 { TUtils }
 

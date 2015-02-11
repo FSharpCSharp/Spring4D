@@ -68,9 +68,8 @@ implementation
 
 uses
   SysUtils,
-  Spring.Helpers,
+  Spring,
   Spring.Reflection,
-  Spring.Reflection.Activator,
   Spring.Persistence.Core.Exceptions;
 
 

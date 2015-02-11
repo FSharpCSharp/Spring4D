@@ -386,7 +386,7 @@ var
 begin
   Assert(Assigned(command));
 
-  if command.UpdateFields.IsEmpty then
+  if not command.UpdateFields.Any then
     Exit('');
 
   LSqlBuilder := TStringBuilder.Create;

@@ -38,7 +38,9 @@ type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
   private
     fKernel: IKernel;
+    fOnBuild: INotifyEvent<TComponentModel>;
     fInspectors: IList<IBuilderInspector>;
+    function GetOnBuild: INotifyEvent<TComponentModel>;
   public
     constructor Create(const kernel: IKernel);
 
@@ -47,6 +49,8 @@ type
     procedure ClearInspectors;
     procedure Build(const model: TComponentModel);
     procedure BuildAll;
+
+    property OnBuild: INotifyEvent<TComponentModel> read GetOnBuild;
   end;
 
   TInspectorBase = class abstract(TInterfacedObject, IBuilderInspector)
@@ -108,6 +112,11 @@ type
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
+  TInterceptorInspector = class(TInspectorBase)
+  protected
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
+  end;
+
 implementation
 
 uses
@@ -118,6 +127,7 @@ uses
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.ResourceStrings,
+  Spring.Events,
   Spring.Reflection;
 
 
@@ -129,6 +139,12 @@ begin
   inherited Create;
   fKernel := kernel;
   fInspectors := TCollections.CreateInterfaceList<IBuilderInspector>;
+  fOnBuild := TNotifyEventImpl<TComponentModel>.Create;
+end;
+
+function TComponentBuilder.GetOnBuild: INotifyEvent<TComponentModel>;
+begin
+  Result := fOnBuild;
 end;
 
 procedure TComponentBuilder.AddInspector(const inspector: IBuilderInspector);
@@ -154,6 +170,7 @@ var
 begin
   for inspector in fInspectors do
     inspector.ProcessModel(fKernel, model);
+  fOnBuild.Invoke(Self, model);
 end;
 
 procedure TComponentBuilder.BuildAll;
@@ -190,6 +207,7 @@ procedure TLifetimeInspector.DoProcessModel(const kernel: IKernel;
     LifetimeManagerClasses: array[TLifetimeType] of TLifetimeManagerClass = (
       nil,
       TSingletonLifetimeManager,
+      TTransientLifetimeManager,
       TTransientLifetimeManager,
       TSingletonPerThreadLifetimeManager,
       TPooledLifetimeManager,
@@ -286,7 +304,7 @@ var
   arguments: TArray<TValue>;
   i: Integer;
 begin
-  if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
+  if model.ConstructorInjections.Any then Exit;  // TEMP
   predicate := TMethodFilters.IsConstructor
     and not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
@@ -473,14 +491,14 @@ var
   services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
-  if not model.Services.IsEmpty then Exit;
+  if model.Services.Any then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
     kernel.Registry.RegisterService(model, model.ComponentTypeInfo)
   else
   begin
     attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
     for attribute in attributes do
-      kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.Name);
+      kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.ServiceName);
 
     services := model.ComponentType.GetInterfaces.Where(
       function(const interfaceType: TRttiInterfaceType): Boolean
@@ -500,9 +518,41 @@ begin
       and not model.HasService(model.ComponentTypeInfo) then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
 
-    if model.Services.IsEmpty then
+    if not model.Services.Any then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterceptorInspector' }
+
+procedure TInterceptorInspector.DoProcessModel(const kernel: IKernel;
+  const model: TComponentModel);
+{$IFDEF DELPHIXE_UP}
+var
+  attributes: TArray<InterceptorAttribute>;
+  attribute: InterceptorAttribute;
+  interceptorRef: TInterceptorReference;
+begin
+  attributes := model.ComponentType.GetCustomAttributes<InterceptorAttribute>;
+  for attribute in attributes do
+  begin
+    if Assigned(attribute.InterceptorType) then
+      interceptorRef := TInterceptorReference.Create(attribute.InterceptorType)
+    else
+      interceptorRef := TInterceptorReference.Create(attribute.Name);
+    if not model.Interceptors.Contains(interceptorRef,
+      function(const left, right: TInterceptorReference): Boolean
+      begin
+        Result := (left.TypeInfo = right.TypeInfo) and (left.Name = right.Name);
+      end) then
+      model.Interceptors.Add(interceptorRef);
+  end;
+{$ELSE}
+begin
+{$ENDIF}
 end;
 
 {$ENDREGION}

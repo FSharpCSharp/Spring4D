@@ -25,31 +25,9 @@
 {$I Spring.inc}
 
 /// <summary>
-///   Provides many easy to use class helpers &amp; record helpers that extend
-///   some common classes in the RTL.
+///   Provides many easy to use class and record helpers to extend some common
+///   types in the RTL.
 /// </summary>
-/// <remarks>
-///   <para>
-///     Classes helpers and record helpers have been introduced since Delphi
-///     2007. The initial purpose is to allow developers to extend a class
-///     without change the original structure.
-///   </para>
-///   <note type="note">
-///     A class helper type may not declare instance data, but class fields
-///     are allowed.
-///   </note>
-///   <note type="warning">
-///     Class helpers and record helpers are not intended to be a design tool
-///     in Delphi. It is some kind of "patching" technology.
-///   </note>
-///   <para>
-///     If you want to use these helpers, just uses the <b>Spring.Helpers</b>
-///     namespace in the target unit.
-///   </para>
-/// </remarks>
-/// <example>
-///   See examples in the <see cref="TGuidHelper" />.
-/// </example>
 unit Spring.Helpers;
 
 {$IFDEF DELPHIXE4_UP}
@@ -65,13 +43,13 @@ uses
 
 type
   /// <summary>
-  ///   Represents a record helper for the <c>System.TGuid</c> structure to
-  ///   make it easy to use.
+  ///   Represents a record helper for the System.TGuid structure to make it
+  ///   easy to use.
   /// </summary>
   /// <remarks>
   ///   <note type="tip">
-  ///     You can use the equal ("=") or not equal ("&lt;&gt;") operator
-  ///     loading in latest Delphi XE.
+  ///     You can use the equal ("=") or not equal ("&lt;&gt;") operators in
+  ///     latest Delphi XE.
   ///   </note>
   /// </remarks>
   /// <example>
@@ -81,9 +59,9 @@ type
   /// var
   ///   guid: TGuid;
   /// begin
-  ///   // generates a new guid.
+  ///   // generates a new guid
   ///   guid := TGuid.NewGuid;
-  ///   // this guid must not be empty.
+  ///   // this guid must not be empty
   ///   Assert(not guid.IsEmpty);
   ///   // print the string representation
   ///   Writeln(guid.ToString);
@@ -95,58 +73,59 @@ type
   /// </example>
   TGuidHelper = record helper for TGuid
   private
-    class function GetEmpty: TGuid; static;
     function GetIsEmpty: Boolean;
   public
-    ///	<summary>
-    ///	  Creates a guid structure from the specified guid string.
-    ///	</summary>
-    ///	<param name="guidString">
-    ///	  the guid string.
-    ///	</param>
+    /// <summary>
+    ///   Initializes a new instance of the TGuid record by using the specified
+    ///   array of bytes.
+    /// </summary>
+    class function Create(const bytes: array of Byte): TGuid; overload; static;
+
+    /// <summary>
+    ///   Initializes a new instance of the TGuid record by using the value
+    ///   represented by the specified string.
+    /// </summary>
     class function Create(const guidString: string): TGuid; overload; static;
-    class function Create(const bytes: TBytes): TGuid; overload; static;
-    class function Create(a: Integer; b: SmallInt; c: SmallInt; const d: TBytes): TGuid; overload; static;
-    class function Create(a: Integer; b: SmallInt; c: SmallInt; d, e, f, g, h, i, j, k: Byte): TGuid; overload; static;
-    class function Create(a: Cardinal; b: Word; c: Word; d, e, f, g, h, i, j, k: Byte): TGuid; overload; static;
 
-    ///	<summary>
-    ///	  Generates a new <c>TGuid</c> instance.
-    ///	</summary>
+    /// <summary>
+    ///   Initializes a new instance of the TGuid record by using the specified
+    ///   integers and byte array.
+    /// </summary>
+    class function Create(a: Cardinal; b, c: Word;
+      const d: array of Byte): TGuid; overload; static;
+
+{$IFDEF DELPHI2010}
+    /// <summary>
+    ///   Gets an empty guid.
+    /// </summary>
+    class function Empty: TGuid; static;
+{$ENDIF}
+
+    /// <summary>
+    ///   Generates a new <c>TGuid</c> instance.
+    /// </summary>
     class function NewGuid: TGuid; static;
-
-    function ToBytes: TBytes;
-
-    function ToByteArray: TBytes;
-
-    ///	<summary>
-    ///	  Returns a string representation of the guid.
-    ///	</summary>
-    function ToString: string;
 
     ///	<summary>
     ///	  Determines whether the guid equals to another TGuid structure.
     ///	</summary>
     function Equals(const guid: TGuid): Boolean;
 
-    ///	<summary>
-    ///	  Returns the quoted string representation of the guid.
-    ///	</summary>
-    function ToQuotedString: string;
-
-    ///	<summary>
-    ///	  Gets a value which indicates whether the guid is empty (all zero).
-    ///	</summary>
-    property IsEmpty: Boolean read GetIsEmpty;
+    /// <summary>
+    ///   Returns a 16-element byte array that contains the value of this
+    ///   instance.
+    /// </summary>
+    function ToBytes: TBytes;
 
     /// <summary>
-    ///   Gets the shared empty guid.
+    ///   Returns a string representation of the guid.
     /// </summary>
-    /// <value>
-    ///   The value of the empty guid is <c>
-    ///   {00000000-0000-0000-0000-000000000000}</c>
-    /// </value>
-    class property Empty: TGuid read GetEmpty;
+    function ToString: string;
+
+    /// <summary>
+    ///   Gets a value which indicates whether the guid is empty (all zero).
+    /// </summary>
+    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   ///	<summary>
@@ -327,73 +306,45 @@ type
     procedure ExecuteUpdate(const proc: TProc);
   end;
 
-  // TPointHelper, TSizeHelper, TRectHelper
-
 implementation
 
 uses
   Rtti,
-  SysConst,
   TypInfo,
   Spring.ResourceStrings;
 
 
 {$REGION 'TGuidHelper'}
 
-class function TGuidHelper.Create(const guidString: string): TGuid;
-begin
-  Result := StringToGUID(guidString);
-end;
-
-class function TGuidHelper.Create(const bytes: TBytes): TGuid;
+class function TGuidHelper.Create(const bytes: array of Byte): TGuid;
 begin
   if Length(bytes) <> 16 then
     raise EArgumentException.CreateResFmt(@SInvalidGuidArray, [16]);
   Move(bytes[0], Result, SizeOf(Result));
 end;
 
-class function TGuidHelper.Create(a: Integer; b, c: SmallInt;
-  const d: TBytes): TGuid;
+class function TGuidHelper.Create(const guidString: string): TGuid;
 begin
-  if Length(d) <> 16 then
+  Result := StringToGUID(guidString);
+end;
+
+class function TGuidHelper.Create(a: Cardinal; b, c: Word;
+  const d: array of Byte): TGuid;
+begin
+  if Length(d) <> 8 then
     raise EArgumentException.CreateResFmt(@SInvalidGuidArray, [8]);
-  Result.D1 := LongWord(a);
-  Result.D2 := Word(b);
-  Result.D3 := Word(c);
+  Result.D1 := a;
+  Result.D2 := b;
+  Result.D3 := c;
   Move(d[0], Result.D4, SizeOf(Result.D4));
 end;
 
-class function TGuidHelper.Create(a: Cardinal; b, c: Word; d, e, f, g, h, i, j,
-  k: Byte): TGuid;
+{$IFDEF DELPHI2010}
+class function TGuidHelper.Empty: TGuid;
 begin
-  Result.D1 := LongWord(a);
-  Result.D2 := Word(b);
-  Result.D3 := Word(c);
-  Result.D4[0] := d;
-  Result.D4[1] := e;
-  Result.D4[2] := f;
-  Result.D4[3] := g;
-  Result.D4[4] := h;
-  Result.D4[5] := i;
-  Result.D4[6] := j;
-  Result.D4[7] := k;
+  FillChar(Result, SizeOf(Result), 0)
 end;
-
-class function TGuidHelper.Create(a: Integer; b, c: SmallInt; d, e, f, g, h, i,
-  j, k: Byte): TGuid;
-begin
-  Result.D1 := LongWord(a);
-  Result.D2 := Word(b);
-  Result.D3 := Word(c);
-  Result.D4[0] := d;
-  Result.D4[1] := e;
-  Result.D4[2] := f;
-  Result.D4[3] := g;
-  Result.D4[4] := h;
-  Result.D4[5] := i;
-  Result.D4[6] := j;
-  Result.D4[7] := k;
-end;
+{$ENDIF}
 
 class function TGuidHelper.NewGuid: TGuid;
 begin
@@ -403,25 +354,17 @@ end;
 
 function TGuidHelper.Equals(const guid: TGuid): Boolean;
 begin
-  Result := SysUtils.IsEqualGUID(Self, guid);
+  Result := IsEqualGUID(Self, guid);
 end;
 
 function TGuidHelper.GetIsEmpty: Boolean;
 begin
-  {$WARNINGS OFF}
-  Result := Self.Equals(TGuid.Empty);
-  {$WARNINGS ON}
+  Result := Equals(TGuid.Empty);
 end;
 
 function TGuidHelper.ToString: string;
 begin
-  Result := SysUtils.GUIDToString(Self);
-end;
-
-function TGuidHelper.ToByteArray: TBytes;
-begin
-  SetLength(Result, 16);
-  Move(D1, Result[0], SizeOf(Self));
+  Result := GUIDToString(Self);
 end;
 
 function TGuidHelper.ToBytes: TBytes;
@@ -429,26 +372,6 @@ begin
   SetLength(Result, 16);
   Move(D1, Result[0], SizeOf(Self));
 end;
-
-function TGuidHelper.ToQuotedString: string;
-begin
-  Result := QuotedStr(Self.ToString);
-end;
-
-class function TGuidHelper.GetEmpty: TGuid;
-begin
-  FillChar(Result, Sizeof(Result), 0);
-end;
-
-//class operator TGuidHelper.Equal(const left, right: TGuid) : Boolean;
-//begin
-//  Result := left.Equals(right);
-//end;
-
-//class operator TGuidHelper.NotEqual(const left, right: TGuid) : Boolean;
-//begin
-//  Result := not left.Equals(right);
-//end;
 
 {$ENDREGION}
 
