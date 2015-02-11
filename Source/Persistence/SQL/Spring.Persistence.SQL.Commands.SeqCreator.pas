@@ -29,6 +29,7 @@ unit Spring.Persistence.SQL.Commands.SeqCreator;
 interface
 
 uses
+  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Commands.Abstract,
@@ -46,7 +47,7 @@ type
     function SequenceExists: Boolean; virtual;
     function GetCommand: TDMLCommand; override;
   public
-    constructor Create; override;
+    constructor Create(const connection: IDBConnection); override;
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
@@ -58,15 +59,14 @@ implementation
 
 uses
   Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Interfaces;
+  Spring.Persistence.Core.Exceptions;
 
 
 {$REGION 'TSequenceCreateCommand'}
 
-constructor TSequenceCreateExecutor.Create;
+constructor TSequenceCreateExecutor.Create(const connection: IDBConnection);
 begin
-  inherited Create;
+  inherited Create(connection);
   fSequence := TCreateSequenceCommand.Create(nil);
 end;
 

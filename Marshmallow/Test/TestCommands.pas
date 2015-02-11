@@ -3,10 +3,8 @@ unit TestCommands;
 interface
 
 uses
-  TestFramework, Spring.Persistence.SQL.Commands.TableCreator, Spring.Persistence.SQL.Commands.Abstract
-  , Spring.Persistence.SQL.Commands, Spring.Persistence.SQL.Types
-  ,Spring.Persistence.Core.Interfaces
-  ;
+  TestFramework,
+  Spring.Persistence.SQL.Commands.TableCreator;
 
 type
   TTableCreatorTest = class(TTestCase)
@@ -16,25 +14,27 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TableExists();
+    procedure TableExists;
   end;
 
 implementation
 
 uses
-  TestSession
-  ,Spring.Persistence.Core.ConnectionFactory
-  ,TestEntities
-  ,TestConsts
-  ;
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.ConnectionFactory,
+  TestConsts,
+  TestEntities,
+  TestSession;
 
 { TTableCreatorTest }
 
 procedure TTableCreatorTest.SetUp;
+var
+  connection: IDBConnection;
 begin
   inherited;
-  FCommand := TTableCreateExecutor.Create;
-  FCommand.Connection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
+  connection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
+  FCommand := TTableCreateExecutor.Create(connection);
 end;
 
 procedure TTableCreatorTest.TableExists;

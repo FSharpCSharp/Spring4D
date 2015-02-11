@@ -47,7 +47,7 @@ type
     fEntities: IList<TClass>;
   protected
     procedure BuildExecutor(const executor: TAbstractCommandExecutor;
-      entityClass: TClass; const connection: IDBConnection);
+      entityClass: TClass);
     function GetFKCreateExecutor(entityClass: TClass;
       const connection: IDBConnection): TForeignKeyCreateExecutor;
     function GetSequenceCreateExecutor(entityClass: TClass;
@@ -129,11 +129,9 @@ begin
 end;
 
 procedure TDatabaseManager.BuildExecutor(
-  const executor: TAbstractCommandExecutor; entityClass: TClass;
-  const connection: IDBConnection);
+  const executor: TAbstractCommandExecutor; entityClass: TClass);
 begin
   executor.EntityClass := entityClass;
-  executor.Connection := connection;
   executor.Build(entityClass);
 end;
 
@@ -205,22 +203,22 @@ end;
 function TDatabaseManager.GetTableCreateExecutor(entityClass: TClass;
   const connection: IDBConnection): TTableCreateExecutor;
 begin
-  Result := TTableCreateExecutor.Create;
-  BuildExecutor(Result, entityClass, connection);
+  Result := TTableCreateExecutor.Create(connection);
+  BuildExecutor(Result, entityClass);
 end;
 
 function TDatabaseManager.GetFKCreateExecutor(entityClass: TClass;
   const connection: IDBConnection): TForeignKeyCreateExecutor;
 begin
-  Result := TForeignKeyCreateExecutor.Create;
-  BuildExecutor(Result, entityClass, connection);
+  Result := TForeignKeyCreateExecutor.Create(connection);
+  BuildExecutor(Result, entityClass);
 end;
 
 function TDatabaseManager.GetSequenceCreateExecutor(entityClass: TClass;
   const connection: IDBConnection): TSequenceCreateExecutor;
 begin
-  Result := TSequenceCreateExecutor.Create;
-  BuildExecutor(Result, entityClass, connection);
+  Result := TSequenceCreateExecutor.Create(connection);
+  BuildExecutor(Result, entityClass);
 end;
 
 procedure TDatabaseManager.RegisterEntity(entityClass: TClass);

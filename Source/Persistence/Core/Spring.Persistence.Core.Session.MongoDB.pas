@@ -56,10 +56,9 @@ var
   entity: T;
   entityWrapper: IEntityWrapper;
 begin
-  inserter := TMongoDBBulkInsertExecutor.Create;
+  inserter := TMongoDBBulkInsertExecutor.Create(Connection);
   try
     inserter.EntityClass := T;
-    inserter.Connection := Connection;
     inserter.Build(T);
     for entity in ACollection do
     begin

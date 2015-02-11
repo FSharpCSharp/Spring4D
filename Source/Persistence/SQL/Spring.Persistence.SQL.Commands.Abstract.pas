@@ -47,7 +47,6 @@ type
     fSQL: string;
     fEntityData: TEntityData;
     fParams: IList<TDBParam>;
-    procedure SetConnection(const value: IDBConnection);
   protected
     function CanUpdateParamFieldType(const value: Variant): Boolean; virtual;
 
@@ -57,8 +56,11 @@ type
       const paramField: TSQLParamField): TDBParam; overload; virtual;
 
     function GetCommand: TDMLCommand; virtual; abstract;
+
+    property Command: TDMLCommand read GetCommand;
+    property Connection: IDBConnection read fConnection;
   public
-    constructor Create; virtual;
+    constructor Create(const connection: IDBConnection); virtual;
 
     function TableExists(const tableName: string): Boolean; virtual;
     procedure FillDbTableColumns(const tableName: string; const columns: IList<string>); virtual;
@@ -66,8 +68,6 @@ type
     procedure Build(entityClass: TClass); virtual;
     procedure BuildParams(const entity: TObject); virtual;
 
-    property Command: TDMLCommand read GetCommand;
-    property Connection: IDBConnection read fConnection write SetConnection;
     property EntityData: TEntityData read fEntityData write fEntityData;
     property Generator: ISQLGenerator read fGenerator;
     property EntityClass: TClass read fEntityClass write fEntityClass;
@@ -89,9 +89,12 @@ uses
 
 {$REGION 'TAbstractCommandExecutor'}
 
-constructor TAbstractCommandExecutor.Create;
+constructor TAbstractCommandExecutor.Create(const connection: IDBConnection);
 begin
+  Guard.CheckNotNull(connection, 'connection');
   inherited Create;
+  fConnection := connection;
+  fGenerator := TSQLGeneratorRegister.GetGenerator(fConnection.GetQueryLanguage);
   fParams := TCollections.CreateObjectList<TDBParam>;
 end;
 
@@ -160,13 +163,6 @@ begin
     for i := 0 to LResults.GetFieldCount - 1 do
       columns.Add(LResults.GetFieldName(i));
   end;
-end;
-
-procedure TAbstractCommandExecutor.SetConnection(const value: IDBConnection);
-begin
-  fConnection := value;
-  if Assigned(fConnection) then
-    fGenerator := TSQLGeneratorRegister.GetGenerator(fConnection.GetQueryLanguage);
 end;
 
 function TAbstractCommandExecutor.TableExists(const tableName: string): Boolean;

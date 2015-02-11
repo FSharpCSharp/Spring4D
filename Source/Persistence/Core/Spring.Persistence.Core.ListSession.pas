@@ -90,8 +90,7 @@ var
   deleter: TDeleteByValueExecutor;
   primaryKey: TValue;
 begin
-  deleter := TDeleteByValueExecutor.Create;
-  deleter.Connection := fSession.Connection;
+  deleter := TDeleteByValueExecutor.Create(fSession.Connection);
   deleter.EntityClass := T;
   deleter.Build(T);
   try

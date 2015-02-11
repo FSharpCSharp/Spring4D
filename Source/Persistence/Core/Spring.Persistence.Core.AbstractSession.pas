@@ -34,17 +34,15 @@ uses
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.AbstractManager,
-  Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.EntityMap,
+  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands.Delete,
   Spring.Persistence.SQL.Commands.Insert,
   Spring.Persistence.SQL.Commands.Select,
   Spring.Persistence.SQL.Commands.Update,
   Spring.Persistence.SQL.Params,
-  Spring.Reflection
-  ;
+  Spring.Reflection;
 
 type
   TAbstractSession = class(TAbstractManager)
@@ -111,7 +109,7 @@ type
     procedure DoDelete(const entity, executor: TObject); virtual;
 
     function GetInsertCommandExecutor(entityClass: TClass): TInsertExecutor; virtual;
-    function GetUpdateCommandExecutor(entityClass: TClass; entityMap: TEntityMap): TUpdateExecutor; virtual;
+    function GetUpdateCommandExecutor(entityClass: TClass; const entityMap: TEntityMap): TUpdateExecutor; virtual;
     function GetSelectCommandExecutor(entityClass: TClass): TSelectExecutor; virtual;
     function GetSelectByIdCommandExecutor(entityClass: TClass; const id: TValue; const selectColumn: ColumnAttribute = nil): TSelectExecutor; virtual;
     function GetDeleteCommandExecutor(entityClass: TClass): TDeleteExecutor; virtual;
@@ -131,6 +129,7 @@ uses
   Variants,
   Spring.SystemUtils,
   Spring.Persistence.Core.Consts,
+  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Relation.ManyToOne,
@@ -306,8 +305,7 @@ end;
 function TAbstractSession.GetDeleteCommandExecutor(
   entityClass: TClass): TDeleteExecutor;
 begin
-  Result := TDeleteExecutor.Create;
-  Result.Connection := Connection;
+  Result := TDeleteExecutor.Create(Connection);
   Result.EntityClass := entityClass;
   Result.Build(entityClass);
 end;
@@ -315,8 +313,7 @@ end;
 function TAbstractSession.GetInsertCommandExecutor(
   entityClass: TClass): TInsertExecutor;
 begin
-  Result := TInsertExecutor.Create;
-  Result.Connection := Connection;
+  Result := TInsertExecutor.Create(Connection);
   Result.EntityClass := entityClass;
   Result.Build(entityClass);
 end;
@@ -525,8 +522,7 @@ end;
 function TAbstractSession.GetSelectByIdCommandExecutor(entityClass: TClass;
   const id: TValue; const selectColumn: ColumnAttribute): TSelectExecutor;
 begin
-  Result := TSelectExecutor.Create(id, selectColumn);
-  Result.Connection := Connection;
+  Result := TSelectExecutor.Create(Connection, id, selectColumn);
   Result.EntityClass := entityClass;
   Result.Build(entityClass);
 end;
@@ -534,17 +530,15 @@ end;
 function TAbstractSession.GetSelectCommandExecutor(
   entityClass: TClass): TSelectExecutor;
 begin
-  Result := TSelectExecutor.Create;
-  Result.Connection := Connection;
+  Result := TSelectExecutor.Create(Connection);
   Result.EntityClass := entityClass;
   Result.Build(entityClass);
 end;
 
 function TAbstractSession.GetUpdateCommandExecutor(
-  entityClass: TClass; entityMap: TEntityMap): TUpdateExecutor;
+  entityClass: TClass; const entityMap: TEntityMap): TUpdateExecutor;
 begin
-  Result := TUpdateExecutor.Create;
-  Result.Connection := Connection;
+  Result := TUpdateExecutor.Create(Connection);
   Result.EntityClass := entityClass;
   Result.EntityMap := entityMap;
   Result.Build(entityClass);

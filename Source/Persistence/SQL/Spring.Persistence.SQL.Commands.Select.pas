@@ -54,8 +54,9 @@ type
     function GetCommand: TDMLCommand; override;
     function ShouldFetchFromOneColumn: Boolean;
   public
-    constructor Create; overload; override;
-    constructor Create(const id: TValue; selectColumn: ColumnAttribute); reintroduce; overload;
+    constructor Create(const connection: IDBConnection); overload; override;
+    constructor Create(const connection: IDBConnection;
+      const id: TValue; const selectColumn: ColumnAttribute); reintroduce; overload;
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
@@ -82,12 +83,20 @@ uses
 
 {$REGION 'TSelectCommand'}
 
-constructor TSelectExecutor.Create;
+constructor TSelectExecutor.Create(const connection: IDBConnection);
 begin
-  inherited Create;
+  inherited Create(connection);
   fColumns := TCollections.CreateList<ColumnAttribute>;
   fTable := TSQLTable.Create;
   fCommand := TSelectCommand.Create(fTable);
+end;
+
+constructor TSelectExecutor.Create(const connection: IDBConnection;
+  const id: TValue; const selectColumn: ColumnAttribute);
+begin
+  Create(connection);
+  fID := id;
+  fSelectColumn := selectColumn;
 end;
 
 destructor TSelectExecutor.Destroy;
@@ -128,14 +137,6 @@ begin
     LParam := CreateParam(LWhereField, TUtils.AsVariant(fID));
     SQLParameters.Add(LParam);
   end;
-end;
-
-constructor TSelectExecutor.Create(const id: TValue;
-  selectColumn: ColumnAttribute);
-begin
-  Create;
-  fID := id;
-  fSelectColumn := selectColumn;
 end;
 
 function TSelectExecutor.GetCommand: TDMLCommand;

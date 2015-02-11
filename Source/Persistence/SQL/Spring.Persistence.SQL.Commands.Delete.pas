@@ -48,7 +48,7 @@ type
     function GetCommand: TDMLCommand; override;
     function GetPrimaryKeyValue(const entity: TObject): TValue; virtual;
   public
-    constructor Create; override;
+    constructor Create(const connection: IDBConnection); override;
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
@@ -78,9 +78,9 @@ uses
 
 {$REGION 'TDeleteCommand'}
 
-constructor TDeleteExecutor.Create;
+constructor TDeleteExecutor.Create(const connection: IDBConnection);
 begin
-  inherited Create;
+  inherited Create(connection);
   fTable := TSQLTable.Create;
   fCommand := TDeleteCommand.Create(fTable);
 end;

@@ -30,17 +30,16 @@ interface
 
 uses
   Spring.Collections,
+  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Commands.Abstract,
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  Responsible for building and executing statements which create tables
   ///	  in the database.
   ///	</summary>
-  {$ENDREGION}
   TTableCreateExecutor = class(TAbstractCommandExecutor)
   private
     fCommand: TCreateTableCommand;
@@ -49,7 +48,7 @@ type
   protected
     function GetCommand: TDMLCommand; override;
   public
-    constructor Create; override;
+    constructor Create(const connection: IDBConnection); override;
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
@@ -64,15 +63,14 @@ implementation
 uses
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes;
 
 
 {$REGION 'TTableCreateCommand'}
 
-constructor TTableCreateExecutor.Create;
+constructor TTableCreateExecutor.Create(const connection: IDBConnection);
 begin
-  inherited Create;
+  inherited Create(connection);
   fTable := TSQLTable.Create;
   fCommand := TCreateTableCommand.Create(fTable);
 end;
