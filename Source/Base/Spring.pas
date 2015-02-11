@@ -4136,9 +4136,12 @@ class procedure TFinalizer.FinalizeInstance(var instance: TValue);
 var
   p: Pointer;
 begin
-  p := instance.GetReferenceToRawData;
-  if Assigned(p) then
-    FinalizeValue(p^, instance.TypeInfo);
+  if not instance.IsEmpty then
+  begin
+    p := instance.GetReferenceToRawData;
+    if Assigned(p) then
+      FinalizeValue(p^, instance.TypeInfo);
+  end;
 end;
 
 class procedure TFinalizer.FinalizeInstance<T>(const instance: T);

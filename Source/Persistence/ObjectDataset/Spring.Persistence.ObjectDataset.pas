@@ -235,11 +235,9 @@ uses
   Types,
   Math,
   Spring.Reflection,
-  Spring.Reflection.Activator,
   Spring.Reflection.ValueConverters,
   Spring.SystemUtils,
-  Spring.Persistence.ObjectDataset.ExprParser.Functions
-  ;
+  Spring.Persistence.ObjectDataset.ExprParser.Functions;
 
 type
   EObjectDatasetException = class(Exception);
@@ -564,7 +562,7 @@ function TObjectDataset.InternalGetFieldValue(AField: TField; const AItem: TValu
 var
   LProperty: TRttiProperty;
 begin
-  if FProperties.IsEmpty then
+  if not FProperties.Any then
     InitRttiPropertiesFromItemType(AItem.TypeInfo);
 
   // Fields not found in dictionary are calculated or lookup fields, do not post them
@@ -794,7 +792,7 @@ var
 begin
   InitRttiPropertiesFromItemType(FItemTypeInfo);
 
-  if FProperties.IsEmpty then
+  if not FProperties.Any then
     raise EObjectDatasetException.Create(SColumnPropertiesNotSpecified);
   for LProp in FProperties do
   begin

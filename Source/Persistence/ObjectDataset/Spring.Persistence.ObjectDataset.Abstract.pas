@@ -280,6 +280,7 @@ uses
   SysUtils,
   Variants,
   WideStrUtils,
+  Spring,
   Spring.Reflection,
   Spring.SystemUtils,
   Spring.Persistence.ObjectDataset.Blobs,

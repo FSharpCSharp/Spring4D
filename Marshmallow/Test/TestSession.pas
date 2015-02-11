@@ -137,7 +137,6 @@ uses
   ,TestConsts
   ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.Core.Exceptions
-  ,Spring.Reflection.Activator
   ,Diagnostics
   ;
 

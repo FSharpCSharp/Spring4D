@@ -39,12 +39,12 @@ uses
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.Session,
   Spring.Persistence.Core.Repository.Simple,
-  Spring.Reflection.Compatibility;
+  Spring.Interception.VirtualInterface;
 
 type
   TMethodReference = reference to function(const Args: TArray<TValue>): TValue;
 
-  TProxyRepository<T: class, constructor; TID> = class(Spring.Reflection.Compatibility.TVirtualInterface)
+  TProxyRepository<T: class, constructor; TID> = class(Spring.Interception.VirtualInterface.TVirtualInterface)
   private
     fRepository: IPagedRepository<T,TID>;
     fSession: TSession;

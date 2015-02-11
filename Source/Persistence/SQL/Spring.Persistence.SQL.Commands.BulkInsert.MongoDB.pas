@@ -60,7 +60,7 @@ var
   LCollection: string;
   i: Integer;
 begin
-  if entities.IsEmpty then
+  if not entities.Any then
     Exit;
   LConn := (Connection as TMongoConnectionAdapter).Connection;
   LStatement := TMongoStatementAdapter.Create(nil);
