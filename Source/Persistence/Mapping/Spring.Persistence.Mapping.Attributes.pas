@@ -310,10 +310,15 @@ type
   ///	</summary>
   {$ENDREGION}
   VersionAttribute = class(ColumnAttribute)
+  private
+    fInitialValue: Integer;
   protected
     function GetIsVersionColumn: Boolean; override;
   public
-    constructor Create;
+    constructor Create(initialValue: Integer = 0); overload;
+    constructor Create(const columnName: string; initialValue: Integer = 0); overload;
+
+    property InitialValue: Integer read FInitialValue;
   end;
 
   TColumnData = record
@@ -634,9 +639,16 @@ end;
 
 { VersionAttribute }
 
-constructor VersionAttribute.Create;
+constructor VersionAttribute.Create(initialValue: Integer);
 begin
-  inherited Create('_version');
+  Create('_version', initialValue);
+end;
+
+constructor VersionAttribute.Create(const columnName: string;
+  initialValue: Integer);
+begin
+  fInitialValue := initialValue;
+  inherited Create(columnName);
 end;
 
 function VersionAttribute.GetIsVersionColumn: Boolean;

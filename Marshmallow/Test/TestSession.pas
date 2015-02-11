@@ -1619,15 +1619,15 @@ begin
   FManager.Save(LModel);
 
   LModelLoaded := FManager.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
-  CheckEquals(0, LModelLoaded.Version);
+  CheckEquals(1, LModelLoaded.Version);
   LModelLoaded.Name := 'Updated version No. 1';
 
   LModelOld := FManager.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
-  CheckEquals(0, LModelOld.Version);
+  CheckEquals(1, LModelOld.Version);
   LModelOld.Name := 'Updated version No. 2';
 
   FManager.Save(LModelLoaded);
-  CheckEquals(1, LModelLoaded.Version);
+  CheckEquals(2, LModelLoaded.Version);
 
   try
     FManager.Save(LModelOld);
