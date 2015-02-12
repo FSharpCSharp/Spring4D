@@ -40,7 +40,7 @@ type
   ///   Responsible for building and executing statements to create foreign
   ///   keys.
   /// </summary>
-  TCreateForeignKeyExecutor = class(TAbstractCommandExecutor)
+  TCreateForeignKeyExecutor = class(TAbstractCommandExecutor, IDDLCommand)
   private
     fCommand: TCreateForeignKeyCommand;
     fTable: TSQLTable;
@@ -52,8 +52,7 @@ type
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
-    procedure Execute(const entity: TObject);
-    procedure CreateForeignKeys(const entity: TClass);
+    procedure Execute;
   end;
 
 implementation
@@ -93,12 +92,7 @@ begin
   fSQLs := Generator.GenerateCreateForeignKey(fCommand);
 end;
 
-procedure TCreateForeignKeyExecutor.CreateForeignKeys(const entity: TClass);
-begin
-  Execute(nil);
-end;
-
-procedure TCreateForeignKeyExecutor.Execute(const entity: TObject);
+procedure TCreateForeignKeyExecutor.Execute;
 var
   sqlStatement: string;
   statement: IDBStatement;

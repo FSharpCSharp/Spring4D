@@ -332,7 +332,8 @@ type
     ['{5E05151C-9D03-43A0-83A2-77442593F963}']
     procedure Build(entityClass: TClass);
     procedure BuildParams(const entity: TObject);
-    function TableExists(const tableName: string): Boolean;
+    function TableExists: Boolean; overload;
+    function TableExists(const tableName: string): Boolean; overload;
   end;
 
   IDeleteCommand = interface(IDBCommand)

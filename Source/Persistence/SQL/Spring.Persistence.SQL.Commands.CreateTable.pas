@@ -40,7 +40,7 @@ type
   ///   Responsible for building and executing statements which create tables
   ///   in the database.
   /// </summary>
-  TCreateTableExecutor = class(TAbstractCommandExecutor)
+  TCreateTableExecutor = class(TAbstractCommandExecutor, IDDLCommand)
   private
     fCommand: TCreateTableCommand;
     fTable: TSQLTable;
@@ -52,10 +52,7 @@ type
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
-    procedure Execute(const entity: TObject);
-    procedure CreateTables(entityClass: TClass);
-
-    property Table: TSQLTable read fTable;
+    procedure Execute;
   end;
 
 implementation
@@ -95,12 +92,7 @@ begin
   fSQLs := Generator.GenerateCreateTable(fCommand);
 end;
 
-procedure TCreateTableExecutor.CreateTables(entityClass: TClass);
-begin
-  Execute(nil);
-end;
-
-procedure TCreateTableExecutor.Execute(const entity: TObject);
+procedure TCreateTableExecutor.Execute;
 var
   statement: IDBStatement;
   sqlStatement: string;

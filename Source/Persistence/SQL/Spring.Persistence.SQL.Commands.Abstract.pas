@@ -71,7 +71,8 @@ type
     procedure Build(entityClass: TClass); virtual;
     procedure BuildParams(const entity: TObject); virtual;
 
-    function TableExists(const tableName: string): Boolean; virtual;
+    function TableExists: Boolean; overload; virtual;
+    function TableExists(const tableName: string): Boolean; overload; virtual;
   end;
 
 implementation
@@ -162,6 +163,11 @@ begin
     for i := 0 to results.GetFieldCount - 1 do
       columns.Add(results.GetFieldName(i));
   end;
+end;
+
+function TAbstractCommandExecutor.TableExists: Boolean;
+begin
+  Result := TableExists(EntityData.EntityTable.TableName);
 end;
 
 function TAbstractCommandExecutor.TableExists(const tableName: string): Boolean;

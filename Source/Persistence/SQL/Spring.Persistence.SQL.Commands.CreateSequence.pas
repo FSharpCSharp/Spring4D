@@ -38,7 +38,7 @@ type
   ///   Responsible for building and executing statements which create
   ///   sequences in the database.
   /// </summary>
-  TCreateSequenceExecutor = class(TAbstractCommandExecutor)
+  TCreateSequenceExecutor = class(TAbstractCommandExecutor, IDDLCommand)
   private
     fSequence: TCreateSequenceCommand;
   protected
@@ -49,8 +49,7 @@ type
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
-    procedure Execute(const entity: TObject);
-    procedure CreateSequence(entityClass: TClass);
+    procedure Execute;
   end;
 
 implementation
@@ -86,12 +85,7 @@ begin
     SQL := '';
 end;
 
-procedure TCreateSequenceExecutor.CreateSequence(entityClass: TClass);
-begin
-  Execute(nil);
-end;
-
-procedure TCreateSequenceExecutor.Execute(const entity: TObject);
+procedure TCreateSequenceExecutor.Execute;
 var
   statement: IDBStatement;
 begin
