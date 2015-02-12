@@ -37,6 +37,7 @@ uses
   Spring.Persistence.Core.ConnectionFactory
   ,Spring.Persistence.Core.DatabaseManager
   ,Spring.Collections
+  ,Spring.Persistence.Criteria.Interfaces
   ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.SQL.Params
   ,Variants

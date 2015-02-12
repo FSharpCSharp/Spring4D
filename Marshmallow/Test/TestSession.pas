@@ -138,6 +138,7 @@ uses
   ,Spring.Persistence.Core.Reflection
   ,Spring.Reflection
   ,TestConsts
+  ,Spring.Persistence.Criteria.Interfaces
   ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.Core.Exceptions
   ,Diagnostics

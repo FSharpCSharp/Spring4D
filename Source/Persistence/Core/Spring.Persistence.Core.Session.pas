@@ -35,6 +35,7 @@ uses
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Params;
 

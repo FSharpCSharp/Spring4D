@@ -70,6 +70,7 @@ uses
   Spring.Persistence.Criteria.Criterion.NullExpression in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.NullExpression.pas',
   Spring.Persistence.Criteria.Criterion.PropertyExpression in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.PropertyExpression.pas',
   Spring.Persistence.Criteria.Criterion.SimpleExpression in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.SimpleExpression.pas',
+  Spring.Persistence.Criteria.Interfaces in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Interfaces.pas',
   Spring.Persistence.Criteria.OrderBy in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.OrderBy.pas',
   Spring.Persistence.Criteria.Properties in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Properties.pas',
   Spring.Persistence.Criteria.Restrictions in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Restrictions.pas',

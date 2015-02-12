@@ -6,7 +6,7 @@ interface
 
 uses
   TestFramework, Spring.Collections, Spring.Persistence.Criteria, Generics.Collections
-  , Spring.Persistence.Core.Interfaces, Spring.Persistence.Criteria.Criterion.Abstract
+  , Spring.Persistence.Criteria.Interfaces, Spring.Persistence.Criteria.Criterion.Abstract
   , Spring.Persistence.Criteria.Abstract, TestEntities, Spring.Persistence.Criteria.Restrictions
   ,Spring.Persistence.Core.Session
   ;
@@ -51,6 +51,7 @@ implementation
 
 uses
   Spring.Persistence.Core.ConnectionFactory
+  ,Spring.Persistence.Core.Interfaces
   ,Spring.Persistence.Criteria.OrderBy
   ,Spring.Persistence.Criteria.Properties
   ,TestSession

@@ -33,6 +33,7 @@ uses
   Spring.Collections,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.Session,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Params;
 
 type

@@ -30,7 +30,7 @@ interface
 
 uses
   Spring.Collections,
-  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Params,
@@ -99,7 +99,7 @@ function TAbstractCriterion.ToSqlString(const params: IList<TDBParam>;
   const command: TDMLCommand; const generator: ISQLGenerator;
   addToCommand: Boolean): string;
 begin
-  // do nothing
+  Result := '';
 end;
 
 end.

@@ -29,7 +29,7 @@ unit Spring.Persistence.Criteria.OrderBy;
 interface
 
 uses
-  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Types;
 
 type

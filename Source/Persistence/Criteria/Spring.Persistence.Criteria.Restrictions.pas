@@ -30,9 +30,9 @@ interface
 
 uses
   Spring,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Criteria.Criterion.Conjunction,
   Spring.Persistence.Criteria.Criterion.Disjunction,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Types;
 
 type

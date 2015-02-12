@@ -110,6 +110,7 @@
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.NullExpression.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.PropertyExpression.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.SimpleExpression.pas"/>
+        <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Interfaces.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.OrderBy.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Properties.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Restrictions.pas"/>

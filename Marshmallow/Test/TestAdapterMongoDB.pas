@@ -260,6 +260,7 @@ uses
   ,Messages
   ,Spring.Persistence.Core.ConnectionFactory
   ,Spring.Persistence.Core.Exceptions
+  ,Spring.Persistence.Criteria.Interfaces
   ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.Criteria.Restrictions
   ,Spring.Persistence.Core.Session

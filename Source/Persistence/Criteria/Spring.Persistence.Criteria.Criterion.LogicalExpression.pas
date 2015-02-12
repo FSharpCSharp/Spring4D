@@ -31,8 +31,8 @@ interface
 uses
   Spring,
   Spring.Collections,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Criteria.Criterion.Abstract,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Params,

@@ -30,12 +30,13 @@ interface
 
 uses
   Spring,
-  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Criteria.Restrictions,
   Spring.Persistence.SQL.Types;
 
 type
   TSetNumbers = set of Byte;
+
   /// <summary>
   ///   A factory for property-specific criterion and projection instances.
   /// </summary>
