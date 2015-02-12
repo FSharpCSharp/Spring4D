@@ -546,7 +546,7 @@ begin
   CheckBuildRequired;
   targetType := TType.GetType(serviceType);
   // TODO: remove dependency on lazy type
-  if TType.IsLazy(serviceType) then
+  if TType.IsLazyType(serviceType) then
     serviceType := targetType.GetGenericArguments[0].Handle;
   models := fRegistry.FindAll(serviceType).ToArray;
   SetLength(Result, Length(models));

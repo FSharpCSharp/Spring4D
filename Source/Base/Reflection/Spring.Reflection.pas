@@ -98,7 +98,7 @@ type
     ///	<summary>
     ///	  Returns <c>True</c> if the type is a lazy type.
     ///	</summary>
-    class function IsLazy(typeInfo: PTypeInfo): Boolean;
+    class function IsLazyType(typeInfo: PTypeInfo): Boolean;
 
     class property Context: TRttiContext read fContext;
   end;
@@ -928,7 +928,7 @@ begin
   Result := False;
 end;
 
-class function TType.IsLazy(typeInfo: PTypeInfo): Boolean;
+class function TType.IsLazyType(typeInfo: PTypeInfo): Boolean;
 begin
   Result := GetLazyKind(typeInfo) <> lkNone;
 end;
@@ -1401,7 +1401,7 @@ end;
 
 function TRttiTypeHelper.GetIsLazyType: Boolean;
 begin
-  Result := TType.IsLazy(Handle);
+  Result := TType.IsLazyType(Handle);
 end;
 
 function TRttiTypeHelper.GetIsString: Boolean;
