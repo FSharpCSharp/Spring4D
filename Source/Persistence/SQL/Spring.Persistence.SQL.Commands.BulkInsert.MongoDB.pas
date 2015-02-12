@@ -70,16 +70,13 @@ begin
 
     if CanClientAutogenerateValue then
       InsertCommand.InsertFields.Add(TSQLInsertField.Create(
-          EntityData.PrimaryKeyColumn.ColumnName,
-          Table, EntityData.PrimaryKeyColumn,
-          InsertCommand.GetAndIncParameterName(EntityData.PrimaryKeyColumn.ColumnName)));
+        EntityData.PrimaryKeyColumn.ColumnName, Table, EntityData.PrimaryKeyColumn,
+        InsertCommand.GetAndIncParameterName(EntityData.PrimaryKeyColumn.ColumnName)));
 
     for LEntity in entities do
     begin
       if CanClientAutogenerateValue then
-      begin
         EntityData.PrimaryKeyColumn.RttiMember.SetValue(LEntity, TValue.FromVariant(Generator.GenerateUniqueId));
-      end;
 
       InsertCommand.Entity := LEntity;
       Command.Entity := LEntity;

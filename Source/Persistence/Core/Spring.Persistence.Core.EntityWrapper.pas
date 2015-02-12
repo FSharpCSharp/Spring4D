@@ -4,12 +4,10 @@ interface
 
 uses
   Rtti,
-  Spring,
   Spring.Collections,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Mapping.Attributes
-  ;
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Mapping.Attributes;
 
 type
   TEntityWrapper = class(TInterfacedObject, IEntityWrapper)
@@ -51,12 +49,11 @@ implementation
 
 uses
   SysUtils,
-  Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.EmbeddedEntity,
-  Spring.Persistence.Core.Utils,
   Spring.Persistence.Core.Consts,
-  Spring.Reflection
-  ;
+  Spring.Persistence.Core.EmbeddedEntity,
+  Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.Core.Utils,
+  Spring.Reflection;
 
 { TEntityWrapper }
 

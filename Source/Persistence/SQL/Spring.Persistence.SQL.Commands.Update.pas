@@ -35,13 +35,14 @@ uses
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Commands.Abstract,
+  Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Types;
 
 type
   /// <summary>
   ///   Responsible for building and executing <c>update</c> statements.
   /// </summary>
-  TUpdateExecutor = class(TAbstractCommandExecutor)
+  TUpdateExecutor = class(TAbstractCommandExecutor, IUpdateCommand)
   private
     fTable: TSQLTable;
     fCommand: TUpdateCommand;
@@ -52,14 +53,12 @@ type
     function TryIncrementVersionFor(const entity: TObject): Boolean; virtual;
     function HasChangedVersionColumnOnly: Boolean;
   public
-    constructor Create(const connection: IDBConnection); override;
+    constructor Create(const connection: IDBConnection; const entityMap: TEntityMap); reintroduce;
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
     procedure Execute(const entity: TObject);
-
-    property EntityMap: TEntityMap read fEntityMap write fEntityMap;
   end;
 
 implementation
@@ -74,12 +73,14 @@ uses
 
 {$REGION 'TUpdateCommand'}
 
-constructor TUpdateExecutor.Create(const connection: IDBConnection);
+constructor TUpdateExecutor.Create(const connection: IDBConnection;
+  const entityMap: TEntityMap);
 begin
   inherited Create(connection);
   fTable := TSQLTable.Create;
   fColumns := TCollections.CreateList<ColumnAttribute>;
   fCommand := TUpdateCommand.Create(fTable);
+  fEntityMap := entityMap;
 end;
 
 destructor TUpdateExecutor.Destroy;

@@ -42,7 +42,7 @@ type
   ///   Represents <c>select</c> executor. Responsible for building and
   ///   executing <c>select</c> statements.
   /// </summary>
-  TSelectExecutor = class(TAbstractCommandExecutor)
+  TSelectExecutor = class(TAbstractCommandExecutor, ISelectCommand)
   private
     fTable: TSQLTable;
     fCommand: TSelectCommand;
@@ -55,20 +55,16 @@ type
     function ShouldFetchFromOneColumn: Boolean;
   public
     constructor Create(const connection: IDBConnection); overload; override;
-    constructor Create(const connection: IDBConnection;
-      const id: TValue; const selectColumn: ColumnAttribute); reintroduce; overload;
+    constructor Create(const connection: IDBConnection; const id: TValue;
+      foreignEntityClass: TClass;
+      const selectColumn: ColumnAttribute); reintroduce; overload;
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
 
     function Select: IDBResultset;
-    function SelectAll(selectEntityClass: TClass): IDBResultset;
-
-    property Command: TSelectCommand read fCommand;
-    property ID: TValue read fID write fID;
-    property ForeignEntityClass: TClass read fForeignEntityClass write fForeignEntityClass;
-    property SelectColumn: ColumnAttribute read fSelectColumn write fSelectColumn;
+    function SelectAll(entityClass: TClass): IDBResultset;
   end;
 
 implementation
@@ -90,10 +86,12 @@ begin
 end;
 
 constructor TSelectExecutor.Create(const connection: IDBConnection;
-  const id: TValue; const selectColumn: ColumnAttribute);
+  const id: TValue; foreignEntityClass: TClass;
+  const selectColumn: ColumnAttribute);
 begin
   Create(connection);
   fID := id;
+  fForeignEntityClass := foreignEntityClass;
   fSelectColumn := selectColumn;
 end;
 
@@ -164,7 +162,7 @@ begin
   Result := statement.ExecuteQuery;
 end;
 
-function TSelectExecutor.SelectAll(selectEntityClass: TClass): IDBResultSet;
+function TSelectExecutor.SelectAll(entityClass: TClass): IDBResultSet;
 var
   statement: IDBStatement;
 begin

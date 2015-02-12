@@ -39,7 +39,7 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  TAbstractCommandExecutor = class
+  TAbstractCommandExecutor = class(TInterfacedObject, IDBCommand)
   private
     fConnection: IDBConnection;
     fGenerator: ISQLGenerator;

@@ -290,10 +290,6 @@ uses
   Spring.Persistence.Core.Utils,
   Spring.Persistence.Criteria,
   Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.SQL.Commands.Delete,
-  Spring.Persistence.SQL.Commands.Insert,
-  Spring.Persistence.SQL.Commands.Select,
-  Spring.Persistence.SQL.Commands.Update,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Register;
 
@@ -339,28 +335,20 @@ end;
 
 procedure TSession.Delete(const entity: TObject);
 var
-  deleter: TDeleteExecutor;
+  deleter: IDeleteCommand;
 begin
   deleter := GetDeleteCommandExecutor(entity.ClassType);
-  try
-    DoDelete(entity, deleter);
-  finally
-    deleter.Free;
-  end;
+  DoDelete(entity, deleter);
 end;
 
 procedure TSession.DeleteList<T>(const entities: IEnumerable<T>);
 var
-  deleter: TDeleteExecutor;
+  deleter: IDeleteCommand;
   entity: T;
 begin
   deleter := GetDeleteCommandExecutor(T);
-  try
-    for entity in entities do
-      DoDelete(entity, deleter);
-  finally
-    deleter.Free;
-  end;
+  for entity in entities do
+    DoDelete(entity, deleter);
 end;
 
 function TSession.Execute(const sql: string; const params: array of const): NativeUInt;
@@ -412,38 +400,28 @@ end;
 function TSession.FindAll<T>: IList<T>;
 var
   entityClass: TClass;
-  selecter: TSelectExecutor;
+  selecter: ISelectCommand;
   results: IDBResultSet;
 begin
   entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
   selecter := GetSelectCommandExecutor(entityClass);
-  try
-    results := selecter.SelectAll(entityClass);
-    Result := TCollections.CreateObjectList<T>(True);
-    MapFromResultsetToCollection(results, Result as IObjectList, T);
-  finally
-    selecter.Free;
-  end;
+  results := selecter.SelectAll(entityClass);
+  Result := TCollections.CreateObjectList<T>(True);
+  MapFromResultsetToCollection(results, Result as IObjectList, T);
 end;
 
 function TSession.FindOne<T>(const id: TValue): T;
 var
   entityClass: TClass;
-  selecter: TSelectExecutor;
+  selecter: ISelectCommand;
   results: IDBResultSet;
 begin
   Result := System.Default(T);
   entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
   selecter := GetSelectByIdCommandExecutor(entityClass, id);
-  try
-    results := selecter.Select;
-    if not results.IsEmpty then
-    begin
-      Result := T(MapEntityFromResultSetRow(results, TypeInfo(T)));
-    end;
-  finally
-    selecter.Free;
-  end;
+  results := selecter.Select;
+  if not results.IsEmpty then
+    Result := T(MapEntityFromResultSetRow(results, TypeInfo(T)));
 end;
 
 function TSession.FindWhere<T>(const expression: ICriterion): ICriteria<T>;
@@ -499,28 +477,20 @@ end;
 
 procedure TSession.Insert(const entity: TObject);
 var
-  inserter: TInsertExecutor;
+  inserter: IInsertCommand;
 begin
   inserter := GetInsertCommandExecutor(entity.ClassType);
-  try
-    DoInsert(entity, inserter);
-  finally
-    inserter.Free;
-  end;
+  DoInsert(entity, inserter);
 end;
 
 procedure TSession.InsertList<T>(const entities: IEnumerable<T>);
 var
-  inserter: TInsertExecutor;
+  inserter: IInsertCommand;
   entity: T;
 begin
   inserter := GetInsertCommandExecutor(T);
-  try
-    for entity in entities do
-      DoInsert(entity, inserter);
-  finally
-    inserter.Free;
-  end;
+  for entity in entities do
+    DoInsert(entity, inserter);
 end;
 
 function TSession.IsNew(const entity: TObject): Boolean;
@@ -641,28 +611,20 @@ end;
 
 procedure TSession.Update(const entity: TObject);
 var
-  updater: TUpdateExecutor;
+  updater: IUpdateCommand;
 begin
   updater := GetUpdateCommandExecutor(entity.ClassType, fOldStateEntities);
-  try
-    DoUpdate(entity, updater);
-  finally
-    updater.Free;
-  end;
+  DoUpdate(entity, updater);
 end;
 
 procedure TSession.UpdateList<T>(const entities: IEnumerable<T>);
 var
-  updater: TUpdateExecutor;
+  updater: IUpdateCommand;
   entity: T;
 begin
   updater := GetUpdateCommandExecutor(T, fOldStateEntities);
-  try
-    for entity in entities do
-      DoUpdate(entity, updater);
-  finally
-    updater.Free;
-  end;
+  for entity in entities do
+    DoUpdate(entity, updater);
 end;
 
 {$ENDREGION}

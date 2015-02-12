@@ -37,10 +37,6 @@ uses
   Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.SQL.Commands.Delete,
-  Spring.Persistence.SQL.Commands.Insert,
-  Spring.Persistence.SQL.Commands.Select,
-  Spring.Persistence.SQL.Commands.Update,
   Spring.Persistence.SQL.Params,
   Spring.Reflection;
 
@@ -104,15 +100,17 @@ type
     procedure AttachEntity(const entity: IEntityWrapper); virtual; abstract;
     procedure DetachEntity(const entity: TObject); virtual; abstract;
 
-    procedure DoInsert(const entity, executor: TObject); virtual;
-    procedure DoUpdate(const entity, executor: TObject); virtual;
-    procedure DoDelete(const entity, executor: TObject); virtual;
+    procedure DoInsert(const entity: TObject; const inserter: IInsertCommand); virtual;
+    procedure DoUpdate(const entity: TObject; const updater: IUpdateCommand); virtual;
+    procedure DoDelete(const entity: TObject; const deleter: IDeleteCommand); virtual;
 
-    function GetInsertCommandExecutor(entityClass: TClass): TInsertExecutor; virtual;
-    function GetUpdateCommandExecutor(entityClass: TClass; const entityMap: TEntityMap): TUpdateExecutor; virtual;
-    function GetSelectCommandExecutor(entityClass: TClass): TSelectExecutor; virtual;
-    function GetSelectByIdCommandExecutor(entityClass: TClass; const id: TValue; const selectColumn: ColumnAttribute = nil): TSelectExecutor; virtual;
-    function GetDeleteCommandExecutor(entityClass: TClass): TDeleteExecutor; virtual;
+    function GetInsertCommandExecutor(entityClass: TClass): IInsertCommand; virtual;
+    function GetUpdateCommandExecutor(entityClass: TClass; const entityMap: TEntityMap): IUpdateCommand; virtual;
+    function GetDeleteCommandExecutor(entityClass: TClass): IDeleteCommand; virtual;
+    function GetSelectCommandExecutor(entityClass: TClass): ISelectCommand; virtual;
+    function GetSelectByIdCommandExecutor(entityClass: TClass; const id: TValue;
+      foreignEntityClass: TClass = nil;
+      const selectColumn: ColumnAttribute = nil): ISelectCommand; virtual;
 
     procedure RegisterNonGenericRowMapper(typeInfo: PTypeInfo; const rowMapper: IRowMapper<TObject>);
     procedure UnregisterNonGenericRowMapper(typeInfo: PTypeInfo);
@@ -134,7 +132,11 @@ uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Relation.ManyToOne,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Persistence.SQL.Commands.Delete,
+  Spring.Persistence.SQL.Commands.Insert,
+  Spring.Persistence.SQL.Commands.Select,
+  Spring.Persistence.SQL.Commands.Update;
 
 
 {$REGION 'TAbstractSession'}
@@ -179,11 +181,9 @@ begin
   fRowMappers := TCollections.CreateDictionary<PTypeInfo,IRowMapper<TObject>>;
 end;
 
-procedure TAbstractSession.DoDelete(const entity, executor: TObject);
-var
-  deleter: TDeleteExecutor;
+procedure TAbstractSession.DoDelete(const entity: TObject;
+  const deleter: IDeleteCommand);
 begin
-  deleter := executor as TDeleteExecutor;
   deleter.Execute(entity);
   DetachEntity(entity);
 end;
@@ -224,14 +224,13 @@ begin
   Result := GetResultSetById(entityToLoadClass, id, baseEntityClass, column);
 end;
 
-procedure TAbstractSession.DoInsert(const entity, executor: TObject);
+procedure TAbstractSession.DoInsert(const entity: TObject;
+  const inserter: IInsertCommand);
 var
-  inserter: TInsertExecutor;
   entityWrapper: IEntityWrapper;
 begin
   entityWrapper := TEntityWrapper.Create(entity);
-  inserter := executor as TInsertExecutor;
-  inserter.Execute(entityWrapper);
+  inserter.Execute(entity);
   AttachEntity(entityWrapper);
 end;
 
@@ -273,13 +272,12 @@ begin
   end;
 end;
 
-procedure TAbstractSession.DoUpdate(const entity, executor: TObject);
+procedure TAbstractSession.DoUpdate(const entity: TObject;
+  const updater: IUpdateCommand);
 var
-  updater: TUpdateExecutor;
   entityWrapper: IEntityWrapper;
 begin
   entityWrapper := TEntityWrapper.Create(entity);
-  updater := executor as TUpdateExecutor;
   updater.Execute(entity);
   AttachEntity(entityWrapper);
 end;
@@ -303,14 +301,14 @@ begin
 end;
 
 function TAbstractSession.GetDeleteCommandExecutor(
-  entityClass: TClass): TDeleteExecutor;
+  entityClass: TClass): IDeleteCommand;
 begin
   Result := TDeleteExecutor.Create(Connection);
   Result.Build(entityClass);
 end;
 
 function TAbstractSession.GetInsertCommandExecutor(
-  entityClass: TClass): TInsertExecutor;
+  entityClass: TClass): IInsertCommand;
 begin
   Result := TInsertExecutor.Create(Connection);
   Result.Build(entityClass);
@@ -506,36 +504,32 @@ function TAbstractSession.GetResultSetById(entityClass: TClass;
   const id: TValue; foreignEntityClass: TClass;
   const selectColumn: ColumnAttribute): IDBResultSet;
 var
-  selecter: TSelectExecutor;
+  selecter: ISelectCommand;
 begin
-  selecter := GetSelectByIdCommandExecutor(entityClass, id, selectColumn);
-  try
-    selecter.ForeignEntityClass := foreignEntityClass;
-    Result := selecter.Select;
-  finally
-    selecter.Free;
-  end;
+  selecter := GetSelectByIdCommandExecutor(
+    entityClass, id, foreignEntityClass, selectColumn);
+  Result := selecter.Select;
 end;
 
 function TAbstractSession.GetSelectByIdCommandExecutor(entityClass: TClass;
-  const id: TValue; const selectColumn: ColumnAttribute): TSelectExecutor;
+  const id: TValue; foreignEntityClass: TClass;
+  const selectColumn: ColumnAttribute): ISelectCommand;
 begin
-  Result := TSelectExecutor.Create(Connection, id, selectColumn);
+  Result := TSelectExecutor.Create(Connection, id, foreignEntityClass, selectColumn);
   Result.Build(entityClass);
 end;
 
 function TAbstractSession.GetSelectCommandExecutor(
-  entityClass: TClass): TSelectExecutor;
+  entityClass: TClass): ISelectCommand;
 begin
   Result := TSelectExecutor.Create(Connection);
   Result.Build(entityClass);
 end;
 
 function TAbstractSession.GetUpdateCommandExecutor(
-  entityClass: TClass; const entityMap: TEntityMap): TUpdateExecutor;
+  entityClass: TClass; const entityMap: TEntityMap): IUpdateCommand;
 begin
-  Result := TUpdateExecutor.Create(Connection);
-  Result.EntityMap := entityMap;
+  Result := TUpdateExecutor.Create(Connection, entityMap);
   Result.Build(entityClass);
 end;
 

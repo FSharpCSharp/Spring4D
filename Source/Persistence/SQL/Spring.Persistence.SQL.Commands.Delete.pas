@@ -40,13 +40,13 @@ type
   /// <summary>
   ///   Responsible for building and executing <c>delete</c> statements.
   /// </summary>
-  TDeleteExecutor = class(TAbstractCommandExecutor)
+  TDeleteExecutor = class(TAbstractCommandExecutor, IDeleteCommand)
   private
     fTable: TSQLTable;
     fCommand: TDeleteCommand;
   protected
     function GetCommand: TDMLCommand; override;
-    function GetPrimaryKeyValue(const entity: TObject): TValue; virtual;
+    function GetPrimaryKeyValue(const entity: TObject): TValue;
   public
     constructor Create(const connection: IDBConnection); override;
     destructor Destroy; override;
@@ -55,17 +55,7 @@ type
     procedure BuildParams(const entity: TObject); override;
 
     procedure Execute(const entity: TObject);
-  end;
-
-  TDeleteByValueExecutor = class(TDeleteExecutor)
-  private
-    fPrimaryKeyValue: TValue;
-  protected
-    function GetPrimaryKeyValue(const entity: TObject): TValue; override;
-  public
-    procedure Execute(const entity: TObject);
-
-    property PrimaryKeyValue: TValue read fPrimaryKeyValue write fPrimaryKeyValue;
+    procedure ExecuteById(const id: TValue);
   end;
 
 implementation
@@ -108,25 +98,30 @@ var
   param: TDBParam;
   field: TSQLWhereField;
 begin
-  Assert(EntityData.PrimaryKeyColumn <> nil);
   inherited BuildParams(entity);
 
-  for field in fCommand.WhereFields do
-  begin
-    param := CreateParam(field, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
-    SQLParameters.Add(param);
-  end;
+  field := fCommand.WhereFields.First;
+  param := CreateParam(field, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
+  SQLParameters.Add(param);
 end;
 
 procedure TDeleteExecutor.Execute(const entity: TObject);
+begin
+  ExecuteById(GetPrimaryKeyValue(entity));
+end;
+
+procedure TDeleteExecutor.ExecuteById(const id: TValue);
 var
   statement: IDBStatement;
+  field: TSQLWhereField;
+  param: TDBParam;
 begin
-  Assert(Assigned(entity));
-
   statement := Connection.CreateStatement;
   statement.SetSQLCommand(SQL);
-  BuildParams(entity);
+  SQLParameters.Clear;
+  field := fCommand.WhereFields.First;
+  param := CreateParam(field, TUtils.AsVariant(id));
+  SQLParameters.Add(param);
   statement.SetParams(SQLParameters);
   statement.Execute;
 end;
@@ -138,32 +133,8 @@ end;
 
 function TDeleteExecutor.GetPrimaryKeyValue(const entity: TObject): TValue;
 begin
+  Assert(EntityData.PrimaryKeyColumn <> nil);
   Result := EntityData.PrimaryKeyColumn.RttiMember.GetValue(entity);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TDeleteByValueExecutor'}
-
-procedure TDeleteByValueExecutor.Execute(const entity: TObject);
-var
-  statement: IDBStatement;
-begin
-  statement := Connection.CreateStatement;
-  statement.SetSQLCommand(SQL);
-  BuildParams(entity);
-  try
-    statement.SetParams(SQLParameters);
-    statement.Execute;
-  finally
-    statement := nil;
-  end;
-end;
-
-function TDeleteByValueExecutor.GetPrimaryKeyValue(const entity: TObject): TValue;
-begin
-  Result := fPrimaryKeyValue;
 end;
 
 {$ENDREGION}

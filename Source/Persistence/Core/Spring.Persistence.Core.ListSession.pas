@@ -87,20 +87,13 @@ end;
 
 procedure TListSession<T>.DeleteEntities;
 var
-  deleter: TDeleteByValueExecutor;
+  deleter: IDeleteCommand;
   primaryKey: TValue;
 begin
-  deleter := TDeleteByValueExecutor.Create(fSession.Connection);
+  deleter := TDeleteExecutor.Create(fSession.Connection);
   deleter.Build(T);
-  try
-    for primaryKey in fPrimaryKeys do
-    begin
-      deleter.PrimaryKeyValue := primaryKey;
-      deleter.Execute(nil);
-    end;
-  finally
-    deleter.Free;
-  end;
+  for primaryKey in fPrimaryKeys do
+    deleter.ExecuteById(primaryKey);
 end;
 
 procedure TListSession<T>.DoOnListChanged(Sender: TObject; const Item: T; Action: TCollectionChangedAction);

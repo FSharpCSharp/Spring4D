@@ -328,17 +328,55 @@ type
     function HasManyToOneRelations: Boolean;
   end;
 
+  IDBCommand = interface
+    ['{5E05151C-9D03-43A0-83A2-77442593F963}']
+    procedure Build(entityClass: TClass);
+    procedure BuildParams(const entity: TObject);
+    function TableExists(const tableName: string): Boolean;
+  end;
+
+  IDeleteCommand = interface(IDBCommand)
+    ['{408EC739-B603-4001-AEB8-7909F1C0224A}']
+    procedure Execute(const entity: TObject);
+    procedure ExecuteById(const id: TValue);
+  end;
+
+  IInsertCommand = interface(IDBCommand)
+    ['{1B20A79E-1E0A-4F87-B9CD-D404CFB433AC}']
+    procedure Execute(const entity: TObject);
+  end;
+
+  IUpdateCommand = interface(IDBCommand)
+    ['{3AAC8E1E-463A-4435-A0D3-EC12A9DEC9CB}']
+    procedure Execute(const entity: TObject);
+  end;
+
+  ISelectCommand = interface(IDBCommand)
+    ['{8D6D2229-8626-43C3-AD0A-091E4CB91050}']
+    function Select: IDBResultset;
+    function SelectAll(entityClass: TClass): IDBResultset;
+  end;
+
+  IDDLCommand = interface(IDBCommand)
+    ['{7D2046A5-F008-4F38-BD67-1248F2EC1658}']
+    procedure Execute;
+  end;
+
 implementation
 
-{ TQueryMetadata }
+
+{$REGION 'TQueryMetadata'}
 
 class function TQueryMetadata.GetQueryType(const query: Variant): TQueryType;
 begin
   case VarType(query) of
     varUString, varString, varStrArg, varOleStr: Result := qtQueryText
-    else
-      Result := qtQueryEntity;  
+  else
+    Result := qtQueryEntity;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.
