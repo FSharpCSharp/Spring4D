@@ -99,7 +99,40 @@ type
     ///	<summary>
     ///	  Returns <c>True</c> if the type is a lazy type.
     ///	</summary>
-    class function IsLazy(typeInfo: PTypeInfo): Boolean;
+    class function IsLazyType(typeInfo: PTypeInfo): Boolean;
+
+    ///	<summary>
+    ///	  Returns <c>True</c> if the type is a nullable type.
+    ///	</summary>
+    class function IsNullableType(typeInfo: PTypeInfo): Boolean;
+
+    /// <summary>
+    ///   Try getting the name of the type parameter of a nullable type.
+    /// </summary>
+    class function TryGetNullableTypeName(typeInfo: PTypeInfo;
+      out nullableTypeName: string): Boolean;
+
+    ///	<summary>
+    ///	  Try getting the type info of the type parameter of a nullable type.
+    ///	</summary>
+    class function TryGetNullableTypeInfo(typeInfo: PTypeInfo;
+      out nullableTypeInfo: PTypeInfo): Boolean;
+
+    ///	<summary>
+    ///	  Try getting the value of a nullable type.
+    ///	</summary>
+    ///	<returns>
+    ///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has value.
+    ///	</returns>
+    class function TryGetNullableValue(const value: TValue; out underlyingValue: TValue): Boolean;
+
+    ///	<summary>
+    ///	  Try setting the value of a nullable type.
+    ///	</summary>
+    ///	<returns>
+    ///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c>.
+    ///	</returns>
+    class function TrySetNullableValue(const value: TValue; const underlyingValue: TValue): Boolean;
 
     class procedure SetFieldValue(const instance: TObject;
       const fieldName: string; const value: TValue);
@@ -943,9 +976,17 @@ begin
   Result := False;
 end;
 
-class function TType.IsLazy(typeInfo: PTypeInfo): Boolean;
+class function TType.IsLazyType(typeInfo: PTypeInfo): Boolean;
 begin
   Result := GetLazyKind(typeInfo) <> lkNone;
+end;
+
+class function TType.IsNullableType(typeInfo: PTypeInfo): Boolean;
+const
+  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkRecord)
+    and StartsText(PrefixString, GetTypeName(typeInfo));
 end;
 
 class procedure TType.SetFieldValue(const instance: TObject;
@@ -1037,6 +1078,103 @@ begin
     end;
   end;
   Result := fInterfaceTypes.TryGetValue(guid, intfType);
+end;
+
+class function TType.TryGetNullableTypeInfo(typeInfo: PTypeInfo;
+  out nullableTypeInfo: PTypeInfo): Boolean;
+var
+  rttiType: TRttiType;
+  valueField: TRttiField;
+begin
+  Result := IsNullableType(typeInfo);
+  if Result then
+  begin
+    rttiType := GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    Result := Assigned(valueField);
+    if Result then
+      nullableTypeInfo := valueField.FieldType.Handle
+    else
+      nullableTypeInfo := nil;
+  end;
+end;
+
+class function TType.TryGetNullableTypeName(typeInfo: PTypeInfo;
+  out nullableTypeName: string): Boolean;
+const
+  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
+  PrefixStringLength = Length(PrefixString);
+var
+  typeName: string;
+begin
+  Result := IsNullableType(typeInfo);
+  if Result then
+  begin
+    typeName := GetTypeName(typeInfo);
+    nullableTypeName := Copy(typeName, PrefixStringLength + 1,
+      Length(typeName) - PrefixStringLength - 1);
+  end;
+end;
+
+class function TType.TryGetNullableValue(const value: TValue;
+  out underlyingValue: TValue): Boolean;
+var
+  typeInfo: PTypeInfo;
+  rttiType: TRttiType;
+  hasValueField: TRttiField;
+  instance: Pointer;
+  valueField: TRttiField;
+begin
+  typeInfo := value.TypeInfo;
+  Result := IsNullableType(typeInfo);
+  if Result then
+  begin
+    rttiType := GetType(typeInfo);
+    hasValueField := rttiType.GetField('fHasValue');
+    if Assigned(hasValueField) then
+    begin
+      instance := value.GetReferenceToRawData;
+      Result := hasValueField.GetValue(instance).AsString <> '';
+      if Result then
+      begin
+        valueField := rttiType.GetField('fValue');
+        Result := Assigned(valueField);
+        if Result then
+          underlyingValue := valueField.GetValue(instance);
+      end;
+    end;
+  end;
+end;
+
+class function TType.TrySetNullableValue(const value,
+  underlyingValue: TValue): Boolean;
+var
+  typeInfo: PTypeInfo;
+  rttiType: TRttiType;
+  hasValueField: TRttiField;
+  instance: Pointer;
+  valueField: TRttiField;
+begin
+  typeInfo := value.TypeInfo;
+  Result := IsNullableType(typeInfo);
+  if Result then
+  begin
+    rttiType := GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    if Assigned(valueField) then
+    begin
+      hasValueField := rttiType.GetField('fHasValue');
+      if Assigned(hasValueField) then
+      begin
+        instance := value.GetReferenceToRawData;
+        valueField.SetValue(instance, underlyingValue);
+        if underlyingValue.IsEmpty then
+          hasValueField.SetValue(instance, '')
+        else
+          hasValueField.SetValue(instance, '@');
+      end;
+    end;
+  end;
 end;
 
 class function TType.TryGetType(typeInfo: PTypeInfo;
@@ -1485,7 +1623,7 @@ end;
 
 function TRttiTypeHelper.GetIsLazyType: Boolean;
 begin
-  Result := TType.IsLazy(Handle);
+  Result := TType.IsLazyType(Handle);
 end;
 
 function TRttiTypeHelper.GetIsString: Boolean;

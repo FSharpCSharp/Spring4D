@@ -421,7 +421,7 @@ var
   factory: TFunc<Nullable<TObject>>;
   LColumn: ColumnAttribute;
 begin
-  if not TryGetUnderlyingTypeInfo(recordType.Handle, underlyingTypeInfo) then
+  if not TType.TryGetNullableTypeInfo(recordType.Handle, underlyingTypeInfo) then
     raise EORMUnsupportedType.CreateFmt('Unsupported lazy type: %s. Expected Lazy<Nullable<T: TObject>>', [recordType.ToString]);
 
   LId := id;
@@ -584,7 +584,7 @@ begin
     if columnData.IsPrimaryKey then
       Continue;
 
-    if TType.IsLazy(columnData.TypeInfo) then
+    if TType.IsLazyType(columnData.TypeInfo) then
     begin
       value := ResolveLazyValue(entity, columnData.MemberName, columnData.TypeInfo);
       entity.SetColumnValue(columnData.ColumnAttr, value);

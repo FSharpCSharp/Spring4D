@@ -107,7 +107,8 @@ uses
   Variants,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Reflection;
 
 
 {$REGION 'TAnsiSQLGenerator'}
@@ -656,7 +657,7 @@ begin
     tkWString, tkUString: Result := Format('NVARCHAR(%D)', [field.Length]);
     tkRecord:
     begin
-      if TUtils.IsNullableType(LDelphiTypeInfo) or TUtils.IsLazyType(LDelphiTypeInfo) then
+      if TType.IsNullableType(LDelphiTypeInfo) or TUtils.IsLazyType(LDelphiTypeInfo) then
       begin
         LClonedField := field.Clone;
         try

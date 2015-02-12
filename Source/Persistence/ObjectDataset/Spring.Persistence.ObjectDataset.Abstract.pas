@@ -431,10 +431,10 @@ begin
       vrNotEqual: Result := -1;
     end;
   end
-  else if IsNullableType(Left.TypeInfo) and IsNullableType(Right.TypeInfo) then
+  else if TType.IsNullableType(Left.TypeInfo) and TType.IsNullableType(Right.TypeInfo) then
   begin
-    LeftNull := not TryGetUnderlyingValue(Left, LLeft);
-    RightNull := not TryGetUnderlyingValue(Right, LRight);
+    LeftNull := not TType.TryGetNullableValue(Left, LLeft);
+    RightNull := not TType.TryGetNullableValue(Right, LRight);
     if LeftNull then
     begin
       if RightNull then

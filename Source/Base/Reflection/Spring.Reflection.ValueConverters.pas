@@ -29,11 +29,9 @@ unit Spring.Reflection.ValueConverters;
 interface
 
 uses
-  TypInfo,
-  Rtti,
   Generics.Collections,
-  Spring,
-  Spring.Reflection;
+  Rtti,
+  TypInfo;
 
 type
 
@@ -757,13 +755,15 @@ uses
   Math,
   StrUtils,
   SysUtils,
-  Spring.SystemUtils,
-  Spring.ResourceStrings;
+  Spring,
+  Spring.Reflection,
+  Spring.ResourceStrings,
+  Spring.SystemUtils;
 
 
-function CompareTypeInfo(const left, right: PTypeInfo): Boolean;
+function SameTypeInfo(const left, right: PTypeInfo): Boolean;
 begin
-  Result := (left = right);
+  Result := left = right;
   if Assigned(left) and Assigned(right) then
     Result := Result or ((left.Kind = right.Kind)
       and (left.TypeName = right.TypeName));
@@ -968,16 +968,16 @@ end;
 function TNullableToTypeConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
-  underlyingValue: TValue;
+  innerValue: TValue;
 begin
-  if TryGetUnderlyingValue(value, underlyingValue)
-    and (underlyingValue.TypeInfo.TypeName <> targetTypeInfo.TypeName) then
+  if TType.TryGetNullableValue(value, innerValue)
+    and (innerValue.TypeInfo.TypeName <> targetTypeInfo.TypeName) then
   begin
-    Result := TValueConverter.Default.ConvertTo(underlyingValue,
+    Result := TValueConverter.Default.ConvertTo(innerValue,
       targetTypeInfo, parameter)
   end
   else
-    Result := underlyingValue;
+    Result := innerValue;
 end;
 
 {$ENDREGION}
@@ -988,18 +988,18 @@ end;
 function TTypeToNullableConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
-  underlyingTypeInfo: PTypeInfo;
-  underlyingValue: TValue;
+  innerTypeInfo: PTypeInfo;
+  innerValue: TValue;
 begin
-  if TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo) then
+  if TType.TryGetNullableTypeInfo(targetTypeInfo, innerTypeInfo) then
   begin
-    underlyingValue := value;
-    if underlyingTypeInfo.TypeName <> value.TypeInfo.TypeName then
-      Result := TValueConverter.Default.TryConvertTo(value, underlyingTypeInfo,
-        underlyingValue, parameter);
+    innerValue := value;
+    if innerTypeInfo.TypeName <> value.TypeInfo.TypeName then
+      Result := TValueConverter.Default.TryConvertTo(value, innerTypeInfo,
+        innerValue, parameter);
 
     TValue.Make(nil, targetTypeInfo, Result);
-    TrySetUnderlyingValue(Result, underlyingValue);
+    TType.TrySetNullableValue(Result, innerValue);
   end;
 end;
 
@@ -1427,6 +1427,29 @@ end;
 
 function TInterfaceToInterfaceConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+
+  ///	<summary>
+  ///	  Uses this function to get an interface instance from a TValue.
+  ///	</summary>
+  ///	<remarks>
+  ///	  <note type="warning">
+  ///	    Rtti bugs: QC #82433 if
+  ///	    value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification) then
+  ///	  </note>
+  ///	</remarks>
+  function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
+  var
+    localInterface: IInterface;
+  begin
+    if instance.IsEmpty then Exit(False);
+    if instance.IsObject then
+      Result := instance.AsObject.GetInterface(guid, intf)
+    else if instance.TryAsType<IInterface>(localInterface) then
+      Result := localInterface.QueryInterface(guid, intf) = S_OK
+    else
+      Result := False;
+  end;
+
 var
   intf: IInterface;
 begin
@@ -1628,8 +1651,8 @@ begin
   try
     for typeInfoPair in fTypeInfoToTypeInfoRegistry do
     begin
-      if CompareTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
-        CompareTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
+      if SameTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
+        SameTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
       begin
         fTypeInfoToTypeInfoRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
         Exit(typeInfoPair.Value.Instance);
@@ -1643,7 +1666,7 @@ begin
   try
     for typeInfoPair in fTypeInfoToTypeKindsRegistry do
     begin
-      if CompareTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
+      if SameTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
         (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds) then
       begin
         fTypeInfoToTypeKindsRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
@@ -1659,7 +1682,7 @@ begin
     for typeInfoPair in fTypeKindsToTypeInfoRegistry do
     begin
       if (sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
-        CompareTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
+        SameTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
       begin
         fTypeKindsToTypeInfoRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
         Exit(typeInfoPair.Value.Instance);

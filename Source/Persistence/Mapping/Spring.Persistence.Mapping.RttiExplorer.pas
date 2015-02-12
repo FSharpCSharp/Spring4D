@@ -555,16 +555,14 @@ class function TRttiExplorer.GetMemberValueDeep(const AInitialValue: TValue;
   ARttiType: TRttiType): TValue;
 begin
   Result := AInitialValue;
-  if TUtils.IsNullableType(Result.TypeInfo) then
+  if TType.IsNullableType(Result.TypeInfo) then
   begin
-    if not TUtils.TryGetNullableTypeValue(AInitialValue, Result) then
+    if not TType.TryGetNullableValue(AInitialValue, Result) then
       Result := TValue.Empty;
   end
-  else if TType.IsLazy(Result.TypeInfo) then
-  begin
+  else if TType.IsLazyType(Result.TypeInfo) then
     if not TUtils.TryGetLazyTypeValue(AInitialValue, Result) then
       Result := TValue.Empty;
-  end; 
 end;
 
 class function TRttiExplorer.GetMemberValueDeep(AEntity: TObject;

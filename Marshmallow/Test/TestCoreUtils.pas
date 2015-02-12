@@ -30,6 +30,7 @@ uses
   ,SysUtils
   ,Spring
   ,Spring.Persistence.Core.Types
+  ,Spring.Reflection
   ,Spring.Collections
   ;
 
@@ -54,7 +55,6 @@ var
   LSpringValue: Nullable<string>;
   LOrder: TCustomer_Orders;
 begin
-  //Spring Nullable
   LEntity := TCustomer.Create;
   try
     LFrom := 'Bob';
@@ -64,12 +64,12 @@ begin
     CheckTrue(LResult.TryAsType<Nullable<string>>(LSpringValue));
     CheckTrue(LSpringValue.HasValue);
 
-    CheckTrue(TUtils.TryGetNullableTypeValue(LResult, LFrom));
+    CheckTrue(TType.TryGetNullableValue(LResult, LFrom));
     CheckEquals('Bob', LFrom.AsString);
   finally
     LEntity.Free;
   end;
-  //Marshmallow Nullable
+
   LOrder := TCustomer_Orders.Create;
   try
     LFrom := 256.12;
@@ -80,7 +80,7 @@ begin
     CheckTrue(LValue.HasValue);
     CheckEquals(256.12, LValue.Value, 0.001);
 
-    CheckTrue(TUtils.TryGetNullableTypeValue(LResult, LFrom));
+    CheckTrue(TType.TryGetNullableValue(LResult, LFrom));
     CheckEquals(256.12, LFrom.AsExtended, 0.001);
   finally
     LOrder.Free;

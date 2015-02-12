@@ -356,7 +356,7 @@ begin
     if LCol.IsVersionColumn then
       fVersionColumn := LCol as VersionAttribute;
 
-    LColData.IsLazy := TType.IsLazy(LColData.TypeInfo);
+    LColData.IsLazy := TType.IsLazyType(LColData.TypeInfo);
     if not LColData.IsLazy then
       fSelectColumns.Add(LCol);
 

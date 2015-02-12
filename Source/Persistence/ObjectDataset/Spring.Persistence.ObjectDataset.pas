@@ -770,10 +770,8 @@ var
       end;
       tkRecord:
       begin
-        if TryGetUnderlyingTypeInfo(ATypeInfo, LTypeInfo) then
-        begin
+        if TType.TryGetNullableTypeInfo(ATypeInfo, LTypeInfo) then
           DoGetFieldType(LTypeInfo);
-        end;
       end;
       tkInt64:
       begin
@@ -1102,11 +1100,9 @@ begin
     end;
     tkRecord:
     begin
-      if IsNullableType(value.TypeInfo) then
-      begin
-        if TryGetUnderlyingValue(value, LValue) then
+      if TType.IsNullableType(value.TypeInfo) then
+        if TType.TryGetNullableValue(value, LValue) then
           Result := ValueToVariant(LValue);
-      end;
     end;
     tkClass:
     begin

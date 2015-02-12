@@ -51,7 +51,6 @@ type
 
     class function TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean;
 
-    class function TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
     class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
     class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean;
     class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
@@ -61,7 +60,6 @@ type
     class function IsEnumerable(ATypeInfo: PTypeInfo; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
     class function IsEnumerable(ATypeInfo: PTypeInfo): Boolean; overload;
     class function IsEnumerable(value: TValue; out objectList: IObjectList): Boolean; overload;
-    class function IsNullableType(ATypeInfo: PTypeInfo): Boolean;
     class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
     class function IsPageType(ATypeInfo: PTypeInfo): Boolean;
 
@@ -115,11 +113,9 @@ begin
     end;
     tkRecord:
     begin
-      if IsNullableType(AValue.TypeInfo) then
-      begin
-        if TryGetNullableTypeValue(AValue, LValue) then
+      if TType.IsNullableType(AValue.TypeInfo) then
+        if TType.TryGetNullableValue(AValue, LValue) then
           Result := TUtils.AsVariant(LValue);
-      end;
     end;
     tkClass:
     begin
@@ -235,33 +231,6 @@ begin
   end;
 end;
 
-class function TUtils.TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
-var
-  LRttiType: TRttiType;
-  LValueField: TRttiField;
-  LFields: TArray<TRttiField>;
-  LHasValue: TValue;
-  LRef: Pointer;
-begin
-  Result := False;
-  if ANullable.Kind = tkRecord then
-  begin
-    LRttiType := TType.GetType(ANullable);
-    LFields := LRttiType.GetFields;
-    //get FHasValue field
-    LValueField := LFields[1]; // LRttiType.GetField('FHasValue');
-    LRef := ANullable.GetReferenceToRawData;
-    LHasValue := LValueField.GetValue(LRef);
-    Result := ((LHasValue.TypeInfo = TypeInfo(string)) and ((LHasValue.AsString = '@'))); //Spring Nullable
-
-    if Result then
-    begin
-      LValueField := LFields[0]; // LRttiType.GetField('FValue');
-      AValue := LValueField.GetValue(LRef);
-    end;
-  end;
-end;
-
 class function TUtils.IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean;
 begin
   Result := IsEnumerable(AObject.ClassInfo, AEnumeratorMethod);
@@ -293,11 +262,6 @@ end;
 class function TUtils.IsLazyType(ATypeInfo: PTypeInfo): Boolean;
 begin
   Result := ( PosEx('Lazy', string(ATypeInfo.Name)) = 1 ) and (ATypeInfo.Kind = tkRecord);
-end;
-
-class function TUtils.IsNullableType(ATypeInfo: PTypeInfo): Boolean;
-begin
-  Result := ( PosEx('Nullable', string(ATypeInfo.Name)) = 1 ) and (ATypeInfo.Kind = tkRecord);
 end;
 
 class function TUtils.IsPageType(ATypeInfo: PTypeInfo): Boolean;
@@ -531,7 +495,7 @@ begin
     case targetTypeInfo.Kind of
       tkRecord:
       begin
-        if IsNullableType(targetTypeInfo) then
+        if TType.IsNullableType(targetTypeInfo) then
         begin
           SetNullableValue(targetTypeInfo, AFrom, AResult);
           Exit(True);

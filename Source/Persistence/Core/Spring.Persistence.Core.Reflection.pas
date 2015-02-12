@@ -430,6 +430,7 @@ uses
   StrUtils,
   SysUtils
   ,Graphics
+  ,Spring.Reflection
   ,Spring.Persistence.Core.Utils
   ,Variants
   ;
@@ -933,16 +934,12 @@ var
   LGetLeft, LGetRight: TValue;
   BLeft, BRight: Boolean;
 begin
-  BLeft := TUtils.TryGetNullableTypeValue(ALeft, LGetLeft);
-  BRight := TUtils.TryGetNullableTypeValue(ARight, LGetRight);
+  BLeft := TType.TryGetNullableValue(ALeft, LGetLeft);
+  BRight := TType.TryGetNullableValue(ARight, LGetRight);
   if BLeft and BRight then
-  begin
-    Result := SameValue(LGetLeft, LGetRight);
-  end
+    Result := SameValue(LGetLeft, LGetRight)
   else
-  begin
     Result := (not BLeft) and (not BRight);
-  end;
 end;
 
 function SameLazies(const ALeft, ARight: TValue): Boolean;
@@ -1139,10 +1136,10 @@ begin
       vrNotEqual: Result := -1;
     end;
   end
-  else if TUtils.IsNullableType(Left.TypeInfo) and TUtils.IsNullableType(Right.TypeInfo) then
+  else if TType.IsNullableType(Left.TypeInfo) and TType.IsNullableType(Right.TypeInfo) then
   begin
-    LeftNull := not TUtils.TryGetNullableTypeValue(Left, LLeft);
-    RightNull := not TUtils.TryGetNullableTypeValue(Right, LRight);
+    LeftNull := not TType.TryGetNullableValue(Left, LLeft);
+    RightNull := not TType.TryGetNullableValue(Right, LRight);
     if LeftNull then
     begin
       if RightNull then
@@ -1271,9 +1268,9 @@ begin
   if Left.IsRecord and Right.IsRecord then
   begin
     Result := False;
-    if TUtils.IsNullableType(Left.TypeInfo) then
+    if TType.IsNullableType(Left.TypeInfo) then
       Result := SameNullables(Left, Right)
-    else if TUtils.IsLazyType(Left.TypeInfo) then
+    else if TType.IsLazyType(Left.TypeInfo) then
       Result := SameLazies(Left, Right);
   end else
   if Left.IsInterface and Right.IsInterface then

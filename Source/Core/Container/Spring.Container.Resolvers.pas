@@ -370,7 +370,7 @@ var
   dependencyModel: TDependencyModel;
 begin
   Result := inherited CanResolve(context, dependency, argument)
-    and TType.IsLazy(dependency.TypeInfo);
+    and TType.IsLazyType(dependency.TypeInfo);
   if Result then
   begin
     targetType := dependency.TargetType.GetGenericArguments[0];
@@ -433,7 +433,7 @@ var
   dependencyModel: TDependencyModel;
   componentModel: TComponentModel;
 begin
-  if not TType.IsLazy(dependency.TypeInfo) then
+  if not TType.IsLazyType(dependency.TypeInfo) then
     raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
 
   lazyKind := TType.GetLazyKind(dependency.TypeInfo);
@@ -497,7 +497,7 @@ begin
   dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
 
   // TODO: remove dependency on lazy type
-  if TType.IsLazy(targetType.Handle) then
+  if TType.IsLazyType(targetType.Handle) then
     serviceType := targetType.GetGenericArguments[0].Handle
   else
     serviceType := targetType.Handle;
