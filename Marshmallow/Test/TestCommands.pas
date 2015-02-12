@@ -4,12 +4,12 @@ interface
 
 uses
   TestFramework,
-  Spring.Persistence.SQL.Commands.TableCreator;
+  Spring.Persistence.SQL.Commands.CreateTable;
 
 type
   TTableCreatorTest = class(TTestCase)
   private
-    FCommand: TTableCreateExecutor;
+    FCommand: TCreateTableExecutor;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -34,7 +34,7 @@ var
 begin
   inherited;
   connection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
-  FCommand := TTableCreateExecutor.Create(connection);
+  FCommand := TCreateTableExecutor.Create(connection);
 end;
 
 procedure TTableCreatorTest.TableExists;

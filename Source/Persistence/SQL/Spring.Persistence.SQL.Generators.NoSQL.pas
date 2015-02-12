@@ -45,7 +45,7 @@ type
     function GetQueryLanguage: TQueryLanguage; override;
 
     function GenerateCreateTable(const command: TCreateTableCommand): IList<string>; override;
-    function GenerateCreateFK(const command: TCreateFKCommand): IList<string>; override;
+    function GenerateCreateForeignKey(const command: TCreateForeignKeyCommand): IList<string>; override;
     function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
     function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
@@ -61,8 +61,8 @@ implementation
 
 { TNoSQLGenerator }
 
-function TNoSQLGenerator.GenerateCreateFK(
-  const command: TCreateFKCommand): IList<string>;
+function TNoSQLGenerator.GenerateCreateForeignKey(
+  const command: TCreateForeignKeyCommand): IList<string>;
 begin
   Result := TCollections.CreateList<string>;
 end;

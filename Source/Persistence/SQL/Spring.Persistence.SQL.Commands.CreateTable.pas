@@ -24,25 +24,28 @@
 
 {$I Spring.inc}
 
-unit Spring.Persistence.SQL.Commands.SeqCreator;
+unit Spring.Persistence.SQL.Commands.CreateTable;
 
 interface
 
 uses
+  Spring.Collections,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Commands,
-  Spring.Persistence.SQL.Commands.Abstract;
+  Spring.Persistence.SQL.Commands.Abstract,
+  Spring.Persistence.SQL.Types;
 
 type
   /// <summary>
-  ///   Responsible for building and executing statements which create
-  ///   sequences in the database.
+  ///   Responsible for building and executing statements which create tables
+  ///   in the database.
   /// </summary>
-  TSequenceCreateExecutor = class(TAbstractCommandExecutor)
+  TCreateTableExecutor = class(TAbstractCommandExecutor)
   private
-    fSequence: TCreateSequenceCommand;
+    fCommand: TCreateTableCommand;
+    fTable: TSQLTable;
+    fSQLs: IList<string>;
   protected
-    function SequenceExists: Boolean; virtual;
     function GetCommand: TDMLCommand; override;
   public
     constructor Create(const connection: IDBConnection); override;
@@ -50,7 +53,9 @@ type
 
     procedure Build(entityClass: TClass); override;
     procedure Execute(const entity: TObject);
-    procedure CreateSequence(entityClass: TClass);
+    procedure CreateTables(entityClass: TClass);
+
+    property Table: TSQLTable read fTable;
   end;
 
 implementation
@@ -59,72 +64,61 @@ uses
   Spring.Persistence.Core.Exceptions;
 
 
-{$REGION 'TSequenceCreateCommand'}
+{$REGION 'TTableCreateCommand'}
 
-constructor TSequenceCreateExecutor.Create(const connection: IDBConnection);
+constructor TCreateTableExecutor.Create(const connection: IDBConnection);
 begin
   inherited Create(connection);
-  fSequence := TCreateSequenceCommand.Create(nil);
+  fTable := TSQLTable.Create;
+  fCommand := TCreateTableCommand.Create(fTable);
 end;
 
-destructor TSequenceCreateExecutor.Destroy;
+destructor TCreateTableExecutor.Destroy;
 begin
-  fSequence.Free;
+  fCommand.Free;
+  fTable.Free;
   inherited Destroy;
 end;
 
-procedure TSequenceCreateExecutor.Build(entityClass: TClass);
+procedure TCreateTableExecutor.Build(entityClass: TClass);
 begin
   inherited Build(entityClass);
-  fSequence.Sequence := EntityData.Sequence;
-  if Assigned(fSequence.Sequence) then
-  begin
-    fSequence.SequenceExists := SequenceExists;
-    SQL := Generator.GenerateCreateSequence(fSequence);
-  end
-  else
-    SQL := '';
+  if not Assigned(EntityData.EntityTable) then
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%s"', [entityClass.ClassName]);
+
+  fTable.SetFromAttribute(EntityData.EntityTable);
+  fCommand.SetCommandFieldsFromColumns(EntityData.Columns);
+  fCommand.TableExists := TableExists(fTable.Name);
+  if fCommand.TableExists then
+    FillDbTableColumns(fTable.Name, fCommand.DbColumns);
+
+  fSQLs := Generator.GenerateCreateTable(fCommand);
 end;
 
-procedure TSequenceCreateExecutor.CreateSequence(entityClass: TClass);
+procedure TCreateTableExecutor.CreateTables(entityClass: TClass);
 begin
   Execute(nil);
 end;
 
-procedure TSequenceCreateExecutor.Execute(const entity: TObject);
+procedure TCreateTableExecutor.Execute(const entity: TObject);
 var
   statement: IDBStatement;
-begin
-  if SQL = '' then
-    Exit;
-
-  statement := Connection.CreateStatement;
-  statement.SetSQLCommand(SQL);
-  statement.Execute;
-end;
-
-function TSequenceCreateExecutor.GetCommand: TDMLCommand;
-begin
-  Result := nil;
-end;
-
-function TSequenceCreateExecutor.SequenceExists: Boolean;
-var
   sqlStatement: string;
-  statement: IDBStatement;
-  results: IDBResultset;
 begin
-  Result := False;
-  sqlStatement := Generator.GetSQLSequenceCount(fSequence.Sequence.SequenceName);
-  if sqlStatement <> '' then
-  try
+  for sqlStatement in fSQLs do
+  begin
+    if sqlStatement = '' then
+      Continue;
+
     statement := Connection.CreateStatement;
     statement.SetSQLCommand(sqlStatement);
-    results := statement.ExecuteQuery;
-    Result := not results.IsEmpty;
-  except
-    Result := False;
+    statement.Execute;
   end;
+end;
+
+function TCreateTableExecutor.GetCommand: TDMLCommand;
+begin
+  Result := fCommand;
 end;
 
 {$ENDREGION}

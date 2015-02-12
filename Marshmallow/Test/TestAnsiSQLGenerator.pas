@@ -353,12 +353,12 @@ end;
 procedure TestTAnsiSQLGenerator.TestGenerateCreateFK;
 var
   LSQL: IList<string>;
-  LCommand: TCreateFKCommand;
+  LCommand: TCreateForeignKeyCommand;
   LTable: TSQLTable;
   LCols: IList<ColumnAttribute>;
 begin
   LTable := CreateTestTable;
-  LCommand := TCreateFKCommand.Create(LTable);
+  LCommand := TCreateForeignKeyCommand.Create(LTable);
   try
     LCols := TRttiExplorer.GetColumns(TCustomer);
     LCommand.SetCommandFieldsFromColumns(LCols);
@@ -367,7 +367,7 @@ begin
       )
     );
 
-    LSQL := FAnsiSQLGenerator.GenerateCreateFK(LCommand);
+    LSQL := FAnsiSQLGenerator.GenerateCreateForeignKey(LCommand);
     CheckTrue(LSQL.Any);
   finally
     LTable.Free;

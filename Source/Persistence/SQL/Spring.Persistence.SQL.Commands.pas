@@ -173,7 +173,7 @@ type
   /// <summary>
   ///   Represents <c>create foreign key</c> command.
   /// </summary>
-  TCreateFKCommand = class(TCreateTableCommand)
+  TCreateForeignKeyCommand = class(TCreateTableCommand)
   private
     FForeigns: IList<TSQLForeignKeyField>;
   public
@@ -548,18 +548,18 @@ end;
 
 { TCreateFKCommand }
 
-constructor TCreateFKCommand.Create(ATable: TSQLTable);
+constructor TCreateForeignKeyCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
   FForeigns := TCollections.CreateObjectList<TSQLForeignKeyField>(True);
 end;
 
-destructor TCreateFKCommand.Destroy;
+destructor TCreateForeignKeyCommand.Destroy;
 begin
   inherited Destroy;
 end;
 
-procedure TCreateFKCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
+procedure TCreateForeignKeyCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
 var
   LCol: ColumnAttribute;
   LForeignKeyColumn: ForeignJoinColumnAttribute;

@@ -51,7 +51,7 @@ type
     function GenerateUpdate(const command: TUpdateCommand): string;
     function GenerateDelete(const command: TDeleteCommand): string;
     function GenerateCreateTable(const command: TCreateTableCommand): IList<string>;
-    function GenerateCreateFK(const command: TCreateFKCommand): IList<string>;
+    function GenerateCreateForeignKey(const command: TCreateForeignKeyCommand): IList<string>;
     function GenerateCreateSequence(const command: TCreateSequenceCommand): string;
     function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string;
     function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string;

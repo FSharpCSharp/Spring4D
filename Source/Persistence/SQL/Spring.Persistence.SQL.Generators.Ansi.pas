@@ -75,7 +75,7 @@ type
     function GenerateUpdate(const command: TUpdateCommand): string; override;
     function GenerateDelete(const command: TDeleteCommand): string; override;
     function GenerateCreateTable(const command: TCreateTableCommand):  IList<string>; override;
-    function GenerateCreateFK(const command: TCreateFKCommand): IList<string>; override;
+    function GenerateCreateForeignKey(const command: TCreateForeignKeyCommand): IList<string>; override;
 
     /// <summary>
     ///   First drop sequence and then create it
@@ -184,7 +184,7 @@ begin
   Result[1] := Format('DROP TABLE %0:S', [GetTempTableName]);
 end;
 
-function TAnsiSQLGenerator.GenerateCreateFK(const command: TCreateFKCommand): IList<string>;
+function TAnsiSQLGenerator.GenerateCreateForeignKey(const command: TCreateForeignKeyCommand): IList<string>;
 var
   LSqlBuilder: TStringBuilder;
   i: Integer;

@@ -34,9 +34,9 @@ uses
   Spring.Persistence.Core.AbstractManager,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Commands.Abstract,
-  Spring.Persistence.SQL.Commands.FKCreator,
-  Spring.Persistence.SQL.Commands.SeqCreator,
-  Spring.Persistence.SQL.Commands.TableCreator;
+  Spring.Persistence.SQL.Commands.CreateForeignKey,
+  Spring.Persistence.SQL.Commands.CreateSequence,
+  Spring.Persistence.SQL.Commands.CreateTable;
 
 type
   /// <summary>
@@ -47,11 +47,11 @@ type
     fEntities: IList<TClass>;
   protected
     function GetFKCreateExecutor(entityClass: TClass;
-      const connection: IDBConnection): TForeignKeyCreateExecutor;
+      const connection: IDBConnection): TCreateForeignKeyExecutor;
     function GetSequenceCreateExecutor(entityClass: TClass;
-      const connection: IDBConnection): TSequenceCreateExecutor;
+      const connection: IDBConnection): TCreateSequenceExecutor;
     function GetTableCreateExecutor(entityClass: TClass;
-      const connection: IDBConnection): TTableCreateExecutor;
+      const connection: IDBConnection): TCreateTableExecutor;
     procedure BuildTables(const entities: IList<TClass>); virtual;
     procedure BuildForeignKeys(const entities: IList<TClass>); virtual;
     procedure BuildSequences(const entities: IList<TClass>); virtual;
@@ -128,7 +128,7 @@ end;
 
 procedure TDatabaseManager.BuildForeignKeys(const entities: IList<TClass>);
 var
-  LFkCreator: TForeignKeyCreateExecutor;
+  LFkCreator: TCreateForeignKeyExecutor;
   LEntityClass: TClass;
 begin
   for LEntityClass in entities do
@@ -144,7 +144,7 @@ end;
 
 procedure TDatabaseManager.BuildSequences(const entities: IList<TClass>);
 var
-  LSequenceCreator: TSequenceCreateExecutor;
+  LSequenceCreator: TCreateSequenceExecutor;
   LEntityClass: TClass;
 begin
   for LEntityClass in entities do
@@ -160,7 +160,7 @@ end;
 
 procedure TDatabaseManager.BuildTables(const entities: IList<TClass>);
 var
-  LTableCreator: TTableCreateExecutor;
+  LTableCreator: TCreateTableExecutor;
   LEntityClass: TClass;
 begin
   for LEntityClass in entities do
@@ -181,7 +181,7 @@ end;
 
 function TDatabaseManager.EntityExists(entityClass: TClass): Boolean;
 var
-  LTableCreator: TTableCreateExecutor;
+  LTableCreator: TCreateTableExecutor;
 begin
   LTableCreator := GetTableCreateExecutor(entityClass, Connection);
   try
@@ -192,23 +192,23 @@ begin
 end;
 
 function TDatabaseManager.GetTableCreateExecutor(entityClass: TClass;
-  const connection: IDBConnection): TTableCreateExecutor;
+  const connection: IDBConnection): TCreateTableExecutor;
 begin
-  Result := TTableCreateExecutor.Create(connection);
+  Result := TCreateTableExecutor.Create(connection);
   Result.Build(entityClass);
 end;
 
 function TDatabaseManager.GetFKCreateExecutor(entityClass: TClass;
-  const connection: IDBConnection): TForeignKeyCreateExecutor;
+  const connection: IDBConnection): TCreateForeignKeyExecutor;
 begin
-  Result := TForeignKeyCreateExecutor.Create(connection);
+  Result := TCreateForeignKeyExecutor.Create(connection);
   Result.Build(entityClass);
 end;
 
 function TDatabaseManager.GetSequenceCreateExecutor(entityClass: TClass;
-  const connection: IDBConnection): TSequenceCreateExecutor;
+  const connection: IDBConnection): TCreateSequenceExecutor;
 begin
-  Result := TSequenceCreateExecutor.Create(connection);
+  Result := TCreateSequenceExecutor.Create(connection);
   Result.Build(entityClass);
 end;
 

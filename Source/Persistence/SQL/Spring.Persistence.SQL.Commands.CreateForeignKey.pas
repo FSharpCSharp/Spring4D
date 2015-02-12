@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Persistence.SQL.Commands.FKCreator;
+unit Spring.Persistence.SQL.Commands.CreateForeignKey;
 
 interface
 
@@ -40,9 +40,9 @@ type
   ///   Responsible for building and executing statements to create foreign
   ///   keys.
   /// </summary>
-  TForeignKeyCreateExecutor = class(TAbstractCommandExecutor)
+  TCreateForeignKeyExecutor = class(TAbstractCommandExecutor)
   private
-    fCommand: TCreateFKCommand;
+    fCommand: TCreateForeignKeyCommand;
     fTable: TSQLTable;
     fSQLs: IList<string>;
   protected
@@ -65,21 +65,21 @@ uses
 
 {$REGION 'TForeignKeyCreateCommand'}
 
-constructor TForeignKeyCreateExecutor.Create(const connection: IDBConnection);
+constructor TCreateForeignKeyExecutor.Create(const connection: IDBConnection);
 begin
   inherited Create(connection);
   fTable := TSQLTable.Create;
-  fCommand := TCreateFKCommand.Create(fTable);
+  fCommand := TCreateForeignKeyCommand.Create(fTable);
 end;
 
-destructor TForeignKeyCreateExecutor.Destroy;
+destructor TCreateForeignKeyExecutor.Destroy;
 begin
   fCommand.Free;
   fTable.Free;
   inherited Destroy;
 end;
 
-procedure TForeignKeyCreateExecutor.Build(entityClass: TClass);
+procedure TCreateForeignKeyExecutor.Build(entityClass: TClass);
 begin
   inherited Build(entityClass);
   if not EntityData.IsTableEntity then
@@ -90,15 +90,15 @@ begin
   fCommand.TableExists := TableExists(fTable.Name);
   if fCommand.TableExists then
     FillDbTableColumns(fTable.Name, fCommand.DbColumns);
-  fSQLs := Generator.GenerateCreateFK(fCommand);
+  fSQLs := Generator.GenerateCreateForeignKey(fCommand);
 end;
 
-procedure TForeignKeyCreateExecutor.CreateForeignKeys(const entity: TClass);
+procedure TCreateForeignKeyExecutor.CreateForeignKeys(const entity: TClass);
 begin
   Execute(nil);
 end;
 
-procedure TForeignKeyCreateExecutor.Execute(const entity: TObject);
+procedure TCreateForeignKeyExecutor.Execute(const entity: TObject);
 var
   sqlStatement: string;
   statement: IDBStatement;
@@ -114,7 +114,7 @@ begin
   end;
 end;
 
-function TForeignKeyCreateExecutor.GetCommand: TDMLCommand;
+function TCreateForeignKeyExecutor.GetCommand: TDMLCommand;
 begin
   Result := fCommand;
 end;

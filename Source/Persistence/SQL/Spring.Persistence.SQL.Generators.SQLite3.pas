@@ -51,7 +51,7 @@ type
     function DoGenerateCreateTable(const tableName: string; const columns: IList<TSQLCreateField>): string; override;
   public
     function GetQueryLanguage: TQueryLanguage; override;
-    function GenerateCreateFK(const command: TCreateFKCommand): IList<string>; override;
+    function GenerateCreateForeignKey(const command: TCreateForeignKeyCommand): IList<string>; override;
     function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
     function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
     function GetSQLTableExists(const tableName: string): string; override;
@@ -129,8 +129,8 @@ begin
   Result[1] := Format(' DROP TABLE IF EXISTS %0:S', [TBL_TEMP]);
 end;
 
-function TSQLiteSQLGenerator.GenerateCreateFK(
-  const command: TCreateFKCommand): IList<string>;
+function TSQLiteSQLGenerator.GenerateCreateForeignKey(
+  const command: TCreateForeignKeyCommand): IList<string>;
 var
   LSqlBuilder: TStringBuilder;
   LCreateTableString: string;
