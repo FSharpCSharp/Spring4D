@@ -43,7 +43,7 @@ uses
 type
   TUtils = class sealed
   public
-    class function LoadFromStreamToVariant(AStream: TStream): OleVariant;
+    class function LoadFromStreamToVariant(const stream: TStream): OleVariant;
 
     class function AsVariant(const AValue: TValue): Variant;
     class function FromVariant(const AValue: Variant): TValue;
@@ -60,11 +60,11 @@ type
     class function IsEnumerable(ATypeInfo: PTypeInfo; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
     class function IsEnumerable(ATypeInfo: PTypeInfo): Boolean; overload;
     class function IsEnumerable(value: TValue; out objectList: IObjectList): Boolean; overload;
-    class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
-    class function IsPageType(ATypeInfo: PTypeInfo): Boolean;
+    class function IsPageType(typeInfo: PTypeInfo): Boolean;
 
-    class function SameObject(ALeft, ARight: TObject): Boolean;
-    class function SameStream(ALeft, ARight: TStream): Boolean;
+    class function SameObject(const left, right: TObject): Boolean;
+    class function SamePicture(const left, right: TPicture): Boolean;
+    class function SameStream(const left, right: TStream): Boolean;
 
     class procedure SetNullableValue(targetTypeInfo: PTypeInfo; const AFrom: TValue; var AResult: TValue);
   end;
@@ -259,69 +259,56 @@ begin
     Result := Supports(value.AsInterface, IObjectList, objectList);
 end;
 
-class function TUtils.IsLazyType(ATypeInfo: PTypeInfo): Boolean;
+class function TUtils.IsPageType(typeInfo: PTypeInfo): Boolean;
 begin
-  Result := ( PosEx('Lazy', string(ATypeInfo.Name)) = 1 ) and (ATypeInfo.Kind = tkRecord);
+  Result := (typeInfo.Kind = tkInterface) and (PosEx('IDBPage<', typeInfo.TypeName) = 1);
 end;
 
-class function TUtils.IsPageType(ATypeInfo: PTypeInfo): Boolean;
-begin
-  Result := (ATypeInfo.Kind = tkInterface) and ( PosEx('IDBPage<', string(ATypeInfo.Name)) = 1 );
-end;
-
-class function TUtils.LoadFromStreamToVariant(AStream: TStream): OleVariant;
+class function TUtils.LoadFromStreamToVariant(const stream: TStream): OleVariant;
 var
-  DataPtr: Pointer;
+  lock: Pointer;
 begin
-  Result := VarArrayCreate([0, AStream.Size], varByte);
-  DataPtr := VarArrayLock(Result);
+  Result := VarArrayCreate([0, stream.Size], varByte);
+  lock := VarArrayLock(Result);
   try
-    AStream.ReadBuffer(DataPtr^, AStream.Size);
+    stream.ReadBuffer(lock^, stream.Size);
   finally
     VarArrayUnlock(Result);
   end;
 end;
 
-class function TUtils.SameObject(ALeft, ARight: TObject): Boolean;
-//var
-//  LEnumMethod: TRttiMethod;
+class function TUtils.SameObject(const left, right: TObject): Boolean;
 begin
-  Result := ALeft = ARight;
+  Result := left = right;
   if Result then
     Exit;
 
-  Result := (ALeft <> nil) and (ARight <> nil);
+  Result := Assigned(left) and Assigned(right);
   if not Result then
     Exit;
 
-  //check for supported types
-  Result := (ALeft.ClassType = ARight.ClassType);
-  if Result then
-  begin
-    if (ALeft is TPicture) then
-    begin
-      Result := TPicture(ALeft).Graphic = TPicture(ARight).Graphic;
-      if Result then
-        Exit;
-
-      Result := (TPicture(ALeft).Graphic <> nil) and (TPicture(ARight).Graphic <> nil);
-      if Result then
-      begin
-        Result := TPicture(ALeft).Graphic.Equals(TPicture(ARight).Graphic);
-      end;
-    end
-    else if (ALeft is TStream) then
-    begin
-      Result := SameStream(TStream(ALeft), TStream(ARight));
-    end;
-    {else if (IsEnumerable(ALeft, LEnumMethod)) then
-    begin
-
-    end;}
-  end;
+  if (left is TPicture) and (right is TPicture) then
+    Result := SamePicture(TPicture(left), TPicture(right))
+  else if (left is TStream) and (right is TStream) then
+    Result := SameStream(TStream(left), TStream(right));
 end;
 
-class function TUtils.SameStream(ALeft, ARight: TStream): Boolean;
+class function TUtils.SamePicture(const left, right: TPicture): Boolean;
+begin
+  Result := left = right;
+  if Result then
+    Exit;
+
+  Result := left.Graphic = right.Graphic;
+  if Result then
+    Exit;
+
+  Result := Assigned(left.Graphic) and Assigned(right.Graphic);
+  if Result then
+    Result := left.Graphic.Equals(right.Graphic);
+end;
+
+class function TUtils.SameStream(const left, right: TStream): Boolean;
 const
   Block_Size = 4096;
 var
@@ -331,13 +318,13 @@ var
 begin
   Result := False;
 
-  if ALeft.Size <> ARight.Size then
+  if left.Size <> right.Size then
     Exit;
 
-  while ALeft.Position < ALeft.Size do
+  while left.Position < left.Size do
   begin
-    Buffer_Length := ALeft.Read(Buffer_1, Block_Size);
-    ARight.Read(Buffer_2, Block_Size);
+    Buffer_Length := left.Read(Buffer_1, Block_Size);
+    right.Read(Buffer_2, Block_Size);
 
     if not CompareMem(@Buffer_1, @Buffer_2, Buffer_Length) then
       Exit;
@@ -499,15 +486,14 @@ begin
         begin
           SetNullableValue(targetTypeInfo, AFrom, AResult);
           Exit(True);
-        end
-        else if IsLazyType(targetTypeInfo) then
+        end else
+        if TType.IsLazyType(targetTypeInfo) then
         begin
           //AFrom value must be ID of lazy type
           if AFrom.IsEmpty then
             raise EORMColumnCannotBeNull.Create('Column for lazy type cannot be null');
           Exit(True);
         end;
-
       end;
     end;
     Result := AFrom.TryConvert(targetTypeInfo, AResult, bFree);

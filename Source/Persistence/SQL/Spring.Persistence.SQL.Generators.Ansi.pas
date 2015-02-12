@@ -657,7 +657,7 @@ begin
     tkWString, tkUString: Result := Format('NVARCHAR(%D)', [field.Length]);
     tkRecord:
     begin
-      if TType.IsNullableType(LDelphiTypeInfo) or TUtils.IsLazyType(LDelphiTypeInfo) then
+      if TType.IsNullableType(LDelphiTypeInfo) or TType.IsLazyType(LDelphiTypeInfo) then
       begin
         LClonedField := field.Clone;
         try
