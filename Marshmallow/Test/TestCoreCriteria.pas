@@ -475,17 +475,19 @@ begin
   Name := GetProp(CUSTNAME);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
-  LCustomers := FCriteria.Where((Age = 42) and (Age <> 50) and (Age = Age) and (Age in [42]))
+  LCustomers := FCriteria.Where((Age = 42) and (Age <> 50) and (Age = Age){$IFDEF DELPHIXE2_UP} and (Age in [42]){$ENDIF})
     .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
 
+{$IFDEF DELPHIXE2_UP}
   FCriteria.Clear;
   LCustomers := FCriteria.Where((Age in [42..50]) or (Name in ['Foo', 'Bar']) and (Age.IsNotNull))
     .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(2, LCustomers.Count);
+{$ENDIF}
 end;
 
 procedure TestTCriteria.Page_GEq_OrderDesc;

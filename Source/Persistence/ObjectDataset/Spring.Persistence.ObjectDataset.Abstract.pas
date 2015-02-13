@@ -408,7 +408,8 @@ begin
   begin
     Result := Math.CompareValue(Left.AsOrdinal, Right.AsOrdinal);
   end else
-  if Left.IsType<Double> and Right.IsType<Double> then
+  if Left.IsType<Double> and Right.IsType<Double>
+    and not Left.IsType<string> then // fix for wrong Conversions in XE
   begin
     Result := Math.CompareValue(Left.AsExtended, Right.AsExtended);
   end else
