@@ -1370,6 +1370,7 @@ type
     class var ConstructorCache: TDictionary<TClass,TConstructor>;
     class function FindConstructor(const classType: TRttiInstanceType;
       const arguments: array of TValue): TRttiMethod; static;
+    class procedure RaiseNoConstructorFound(classType: TClass); static;
   public
     class constructor Create;
     class destructor Destroy;
@@ -1382,10 +1383,10 @@ type
     class function CreateInstance(const classType: TRttiInstanceType;
       const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
 
-    class function CreateInstance(typeInfo: PTypeInfo): TObject; overload; static;
+    class function CreateInstance(typeInfo: PTypeInfo): TObject; overload; static; inline;
     class function CreateInstance(const typeName: string): TObject; overload; static;
 
-    class function CreateInstance(classType: TClass): TObject; overload; static; inline;
+    class function CreateInstance(classType: TClass): TObject; overload; static;
     class function CreateInstance(classType: TClass;
       const arguments: array of TValue): TObject; overload; static;
 
@@ -4035,11 +4036,9 @@ var
   method: TRttiMethod;
 begin
   method := FindConstructor(classType, arguments);
-  if Assigned(method) then
-    Result := CreateInstance(classType, method, arguments)
-  else
-    raise ENotSupportedException.CreateResFmt(
-      @SMissingConstructor, [classType.ClassName]);
+  if not Assigned(method) then
+    RaiseNoConstructorFound(classType.MetaclassType);
+  Result := CreateInstance(classType, method, arguments)
 end;
 
 class function TActivator.CreateInstance(const classType: TRttiInstanceType;
@@ -4049,19 +4048,8 @@ begin
 end;
 
 class function TActivator.CreateInstance(typeInfo: PTypeInfo): TObject;
-var
-  classType: TClass;
-  ctor: TConstructor;
-  rttiType: TRttiType;
 begin
-  classType := typeInfo.TypeData.ClassType;
-  if ConstructorCache.TryGetValue(classType, ctor) then
-    Result := ctor(classType, 1)
-  else
-  begin
-    rttiType := Context.GetType(typeInfo);
-    Result := CreateInstance(TRttiInstanceType(rttiType), []).AsObject;
-  end;
+  Result := CreateInstance(GetTypeData(typeInfo).ClassType);
 end;
 
 class function TActivator.CreateInstance(const typeName: string): TObject;
@@ -4073,8 +4061,20 @@ begin
 end;
 
 class function TActivator.CreateInstance(classType: TClass): TObject;
+var
+  ctor: TConstructor;
+  rttiType: TRttiType;
+  method: TRttiMethod;
 begin
-  Result := CreateInstance(classType.ClassInfo);
+  if not ConstructorCache.TryGetValue(classType, ctor) then
+  begin
+    rttiType := Context.GetType(classType);
+    method := FindConstructor(TRttiInstanceType(rttiType), []);
+    if not Assigned(method) then
+      RaiseNoConstructorFound(classType);
+    ctor := method.CodeAddress;
+  end;
+  Result := ctor(classType, 1);
 end;
 
 class function TActivator.CreateInstance(classType: TClass;
@@ -4088,7 +4088,7 @@ end;
 
 class function TActivator.CreateInstance<T>: T;
 begin
-  Result := T(CreateInstance(TypeInfo(T)));
+  Result := T(CreateInstance(TClass(T)));
 end;
 
 class function TActivator.CreateInstance<T>(
@@ -4129,6 +4129,12 @@ begin
     end;
   end;
   Result := nil;
+end;
+
+class procedure TActivator.RaiseNoConstructorFound(classType: TClass);
+begin
+  raise ENotSupportedException.CreateResFmt(
+    @SNoConstructorFound, [classType.ClassName]);
 end;
 
 {$ENDREGION}
