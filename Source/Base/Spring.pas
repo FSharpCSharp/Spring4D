@@ -49,25 +49,12 @@ type
 
   {$REGION 'Type redefinitions'}
 
-  /// <summary>
-  ///   Represents a dynamic array of Byte.
-  /// </summary>
   TBytes = SysUtils.TBytes;
 
-  /// <summary>
-  ///   Represents a dynamic array of string.
-  /// </summary>
   TStringDynArray = Types.TStringDynArray;
 
-  /// <summary>
-  ///   Represents a time interval.
-  /// </summary>
   TTimeSpan = TimeSpan.TTimeSpan;
 
-  /// <summary>
-  ///   Provides a set of methods and properties to accurately measure elapsed
-  ///   time.
-  /// </summary>
   TStopwatch = Diagnostics.TStopwatch;
 
   PTypeInfo = TypInfo.PTypeInfo;
@@ -76,9 +63,6 @@ type
 
   TValue = Rtti.TValue;
 
-  /// <summary>
-  ///   Represents the class type of <see cref="System|TCustomAttribute" />.
-  /// </summary>
   TAttributeClass = class of TCustomAttribute;
 
 {$IFNDEF DELPHIXE_UP}
@@ -90,9 +74,9 @@ type
 
   {$REGION 'TCollectionChangedAction'}
 
-  ///	<summary>
-  ///	  Describes the action that caused a CollectionChanged event.
-  ///	</summary>
+  /// <summary>
+  ///   Describes the action that caused a CollectionChanged event.
+  /// </summary>
   TCollectionChangedAction = (
     ///	<summary>
     ///	  An item was added to the collection.
@@ -137,32 +121,90 @@ type
 
   TValueHelper = record helper for TValue
   private
+    function GetTypeKind: TTypeKind;
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
   public
+    /// <summary>
+    ///   Returns a TValue that holds the value that was passed in a TVarRec.
+    ///   The TypeInfo of the returned TValue depends on the VType of the
+    ///   passed TVarRec.
+    /// </summary>
     class function FromVarRec(const value: TVarRec): TValue; static;
-    function AsPointer: Pointer;
+
 {$IFDEF DELPHI2010}
     function AsString: string;
 {$ENDIF}
+
+    /// <summary>
+    ///   Casts the currently stored value to another type.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support of
+    ///   TValue.AsType&lt;T&gt;.
+    /// </remarks>
     function AsType<T>: T;
+
+    /// <summary>
+    ///   Casts the currently stored value to another type.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support of TValue.Cast.
+    /// </remarks>
     function Cast(typeInfo: PTypeInfo): TValue;
+
+    /// <summary>
+    ///   Checks for equality with another TValue.
+    /// </summary>
     function Equals(const value: TValue): Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is an object or interface reference.
+    /// </summary>
     function IsInstance: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is an interface reference.
+    /// </summary>
     function IsInterface: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is a numeric type.
+    /// </summary>
     function IsNumeric: Boolean;
-    function IsPointer: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is a <c>string</c>.
+    /// </summary>
     function IsString: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is a <c>Variant</c>.
+    /// </summary>
     function IsVariant: Boolean;
+
 {$IFDEF DELPHI2010}
     function IsType<T>: Boolean; overload;
     function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
 {$ENDIF}
+
+    /// <summary>
+    ///   Returns the stored value as TObject.
+    /// </summary>
     function ToObject: TObject;
 
     /// <summary>
-    ///   If the value holds an object it will get destroyed/disposed.
+    ///   If the stored value is an object it will get destroyed/disposed.
     /// </summary>
     procedure Free;
+
+    /// <summary>
+    ///   Specifies the type kind of the stored value.
+    /// </summary>
+    /// <remarks>
+    ///   This fixes the issue with returning <c>tkUnknown</c> when the stored
+    ///   value is an empty reference type.
+    /// </remarks>
+    property Kind: TTypeKind read GetTypeKind;
   end;
 
   {$ENDREGION}
@@ -175,9 +217,35 @@ type
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
     function GetReturnTypeHandle: PTypeInfo;
   public
+
+    /// <summary>
+    ///   Invokes the method.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support in TValue.
+    /// </remarks>
     function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
+
+    /// <summary>
+    ///   Invokes the method.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support in TValue.
+    /// </remarks>
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
+
+    /// <summary>
+    ///   Invokes the method.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support in TValue.
+    /// </remarks>
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+
+    /// <summary>
+    ///   Returns the PTypeInfo of the ReturnType if assigned; otherwise
+    ///   returns nil.
+    /// </summary>
     property ReturnTypeHandle: PTypeInfo read GetReturnTypeHandle;
   end;
 
@@ -1917,14 +1985,6 @@ end;
 
 {$REGION 'TValueHelper'}
 
-function TValueHelper.AsPointer: Pointer;
-begin
-  if Kind in [tkClass, tkInterface] then
-    Result := ToObject
-  else
-    Result := PPointer(GetReferenceToRawData)^;
-end;
-
 {$IFDEF DELPHI2010}
 function TValueHelper.AsString: string;
 begin
@@ -2083,11 +2143,6 @@ begin
   Result := left.AsClass = right.AsClass;
 end;
 
-function EqualsPtr2Ptr(const left, right: TValue): Boolean;
-begin
-  Result := left.AsPointer = right.AsPointer;
-end;
-
 function EqualsVar2Var(const left, right: TValue): Boolean;
 begin
   Result := left.AsVariant = right.AsVariant;
@@ -2124,7 +2179,7 @@ const
     // tkUnknown
     (
       // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-      EqualsPtr2Ptr, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
@@ -2351,7 +2406,7 @@ const
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
-      EqualsFail, EqualsFail, EqualsPtr2Ptr, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkPointer, tkProcedure
       EqualsFail, EqualsFail
     ),
@@ -2392,7 +2447,7 @@ const
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkPointer, tkProcedure
-      EqualsPtr2Ptr, EqualsFail
+      EqualsFail, EqualsFail
     ),
     // tkProcedure
     (
@@ -2460,6 +2515,14 @@ begin
   end;
 end;
 
+function TValueHelper.GetTypeKind: TTypeKind;
+begin
+  if Assigned(TValueData(Self).FTypeInfo) then
+    Result := TValueData(Self).FTypeInfo.Kind
+  else
+    Result := tkUnknown;
+end;
+
 function TValueHelper.IsInstance: Boolean;
 begin
   Result := Kind in [tkClass, tkInterface];
@@ -2475,11 +2538,6 @@ const
   NumericKinds = [tkInteger, tkChar, tkEnumeration, tkFloat, tkWChar, tkInt64];
 begin
   Result := IsEmpty or (Kind in NumericKinds);
-end;
-
-function TValueHelper.IsPointer: Boolean;
-begin
-  Result := Kind = tkPointer;
 end;
 
 function TValueHelper.IsString: Boolean;
@@ -2584,38 +2642,14 @@ end;
 
 function TRttiMethodHelper.Invoke(Instance: TObject;
   const Args: array of TValue): TValue;
-var
-  parameters: TArray<TRttiParameter>;
-  i: Integer;
 begin
-  parameters := GetParameters;
-  if Length(Args) <> Length(parameters) then
-    raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := Low(Args) to High(Args) do
-    DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  if MethodKind = mkOperatorOverload then
-    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
-      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
-  else
-    Result := Self.DispatchInvoke(Instance, Args);
+  Result := Invoke(TValue(Instance), Args);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TClass;
   const Args: array of TValue): TValue;
-var
-  parameters: TArray<TRttiParameter>;
-  i: Integer;
 begin
-  parameters := GetParameters;
-  if Length(Args) <> Length(parameters) then
-    raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := Low(Args) to High(Args) do
-    DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  if MethodKind = mkOperatorOverload then
-    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
-      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
-  else
-    Result := Self.DispatchInvoke(Instance, Args);
+  Result := Invoke(TValue(Instance), Args);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TValue;
