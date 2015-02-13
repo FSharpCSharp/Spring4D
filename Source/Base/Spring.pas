@@ -25,8 +25,8 @@
 {$I Spring.inc}
 
 /// <summary>
-///	  Declares the fundamental interfaces for the
-///	  <see href="http://spring4d.org">Spring4D</see> Framework.
+///   Declares the fundamental types for the <see href="http://www.spring4d.org">
+///   Spring4D</see> Framework.
 /// </summary>
 unit Spring;
 
@@ -1205,13 +1205,11 @@ type
   {$REGION 'TTypeInfoHelper}
 
   TTypeInfoHelper = record helper for TTypeInfo
-  private
-    function GetTypeName: string; inline;
   public
 {$IFNDEF DELPHIXE3_UP}
     function TypeData: PTypeData; inline;
 {$ENDIF}
-    property TypeName: string read GetTypeName;
+    function TypeName: string; inline;
   end;
 
   {$ENDREGION}
@@ -1622,14 +1620,14 @@ function ReturnAddress: Pointer;
 procedure PlatformNotImplemented;
 
 /// <summary>
-///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
-///	  <paramref name="value" /> is nil.
+///   Raises an <see cref="Spring|EArgumentNullException" /> if the <paramref name="value" />
+///    is nil.
 /// </summary>
 procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
 /// <summary>
-///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
-///	  <paramref name="value" /> is nil.
+///   Raises an <see cref="Spring|EArgumentNullException" /> if the <paramref name="value" />
+///    is nil.
 /// </summary>
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
@@ -2100,24 +2098,28 @@ var
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
 begin
-  for method in context.GetType(left.TypeInfo).GetMethods do
-    if (method.Name = '&op_Equality') then
-    begin
-      parameters := method.GetParameters;
-      if (Length(parameters) = 2)
-        and (parameters[0].ParamType.Handle = left.TypeInfo)
-        and (parameters[1].ParamType.Handle = right.TypeInfo) then
-        Exit(method.Invoke(nil, [left, right]).AsBoolean);
-    end;
+  for method in context.GetType(left.TypeInfo).GetMethods('&op_Equality') do
+  begin
+    parameters := method.GetParameters;
+    if (Length(parameters) = 2)
+      and (parameters[0].ParamType.Handle = left.TypeInfo)
+      and (parameters[1].ParamType.Handle = right.TypeInfo) then
+      Exit(method.Invoke(nil, [left, right]).AsBoolean);
+  end;
 
-  Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize);
+  // TODO: handle nullable and probably other Spring base types
+
+  if left.DataSize = right.DataSize then
+    Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize)
+  else
+    Result := False;
 end;
 
-{$REGION 'Comparisons'}
+{$REGION 'Equals functions'}
 type
   TEqualsFunc = function(const left, right: TValue): Boolean;
 const
-  Comparisons: array[TTypeKind,TTypeKind] of TEqualsFunc = (
+  EqualsFunctions: array[TTypeKind,TTypeKind] of TEqualsFunc = (
     // tkUnknown
     (
       // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
@@ -2410,7 +2412,7 @@ const
 function TValueHelper.Equals(const value: TValue): Boolean;
 begin
   Result := Assigned(TypeInfo) and Assigned(value.TypeInfo)
-    and Comparisons[Kind,value.Kind](Self, value);
+    and EqualsFunctions[Kind,value.Kind](Self, value);
 end;
 
 procedure TValueHelper.Free;
@@ -3701,7 +3703,14 @@ end;
 
 {$REGION 'TTypeInfoHelper'}
 
-function TTypeInfoHelper.GetTypeName: string;
+{$IFNDEF DELPHIXE3_UP}
+function TTypeInfoHelper.TypeData: PTypeData;
+begin
+  Result := GetTypeData(@Self);
+end;
+{$ENDIF}
+
+function TTypeInfoHelper.TypeName: string;
 begin
 {$IFNDEF NEXTGEN}
   Result := UTF8ToString(Name);
@@ -3709,13 +3718,6 @@ begin
   Result := NameFld.ToString;
 {$ENDIF}
 end;
-
-{$IFNDEF DELPHIXE3_UP}
-function TTypeInfoHelper.TypeData: PTypeData;
-begin
-  Result := GetTypeData(@Self);
-end;
-{$ENDIF}
 
 {$ENDREGION}
 

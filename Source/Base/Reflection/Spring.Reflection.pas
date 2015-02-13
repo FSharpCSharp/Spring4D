@@ -356,7 +356,7 @@ type
     ///	  of the type, including inherited.
     ///	</summary>
     ///	<seealso cref="Methods" />
-    ///	<seealso cref="Propoerties" />
+    ///	<seealso cref="Properties" />
     ///	<seealso cref="Fields" />
     property Constructors: IEnumerable<TRttiMethod> read GetConstructors;
 
@@ -365,7 +365,7 @@ type
     ///	  contains, including inherited.
     ///	</summary>
     ///	<seealso cref="Constructors" />
-    ///	<seealso cref="Propoerties" />
+    ///	<seealso cref="Properties" />
     ///	<seealso cref="Fields" />
     property Methods: IEnumerable<TRttiMethod> read GetMethods;
 
@@ -384,7 +384,7 @@ type
     ///	</summary>
     ///	<seealso cref="Constructors" />
     ///	<seealso cref="Methods" />
-    ///	<seealso cref="Propoerties" />
+    ///	<seealso cref="Properties" />
     property Fields: IEnumerable<TRttiField> read GetFields;
 
     property AsClass: TRttiInstanceType read GetAsClass;
