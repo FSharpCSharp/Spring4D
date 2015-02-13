@@ -36,185 +36,6 @@ uses
 type
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Extends <see cref="System.TObject">TObject</see> for easier RTTI use.
-  ///	</summary>
-  {$ENDREGION}
-  TObjectHelper = class helper for TObject
-  public
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns a list of all fields of the object.
-    ///	</summary>
-    {$ENDREGION}
-    function GetFields: TArray<TRttiField>;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns the field with the given name; <b>nil</b> if nothing is found.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the field to find
-    ///	</param>
-    {$ENDREGION}
-    function GetField(const AName: string): TRttiField;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns a list of all methods of the object.
-    ///	</summary>
-    {$ENDREGION}
-    function GetMethods: TArray<TRttiMethod>;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns the method at the given code address; <b>nil</b> if nothing
-    ///	  is found.
-    ///	</summary>
-    ///	<param name="ACodeAddress">
-    ///	  Code address of the method to find.
-    ///	</param>
-    {$ENDREGION}
-    function GetMethod(ACodeAddress: Pointer): TRttiMethod; overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns the method with the given name; <b>nil</b> if nothing is
-    ///	  found.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the method to find
-    ///	</param>
-    {$ENDREGION}
-    function GetMethod(const AName: string): TRttiMethod; overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns a list of all properties of the object.
-    ///	</summary>
-    {$ENDREGION}
-    function GetProperties: TArray<TRttiProperty>;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns the property with the given name; <b>nil</b> if nothing is
-    ///	  found.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the property to find
-    ///	</param>
-    {$ENDREGION}
-    function GetProperty(const AName: string): TRttiProperty;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns the type of the object; nil if nothing is found.
-    ///	</summary>
-    {$ENDREGION}
-    function GetType: TRttiType;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns if the object contains a field with the given name.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the field to find
-    ///	</param>
-    {$ENDREGION}
-    function HasField(const AName: string): Boolean;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns if the object contains a method with the given name.
-    ///	</summary>
-    {$ENDREGION}
-    function HasMethod(const AName: string): Boolean;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns if the object contains a property with the given name.
-    ///	</summary>
-    {$ENDREGION}
-    function HasProperty(const AName: string): Boolean;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the method with the given name and returns if this was
-    ///	  successful.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the field to find
-    ///	</param>
-    ///	<param name="AField">
-    ///	  Field that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetField(const AName: string; out AField: TRttiField): Boolean;
-
-    {$REGION 'Documentation'}
-    ///	<param name="AName">
-    ///	  Name of the member to find
-    ///	</param>
-    ///	<param name="AMember">
-    ///	  Member that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetMember(const AName: string; out AMember: TRttiMember): Boolean;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the method with the given code address and returns if this
-    ///	  was successful.
-    ///	</summary>
-    ///	<param name="ACodeAddress">
-    ///	  Code address of the method to find
-    ///	</param>
-    ///	<param name="AMethod">
-    ///	  Method that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetMethod(ACodeAddress: Pointer; out AMethod: TRttiMethod): Boolean; overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the method with the given name and returns if this was
-    ///	  successful.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the method to find
-    ///	</param>
-    ///	<param name="AMethod">
-    ///	  Method that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetMethod(const AName: string; out AMethod: TRttiMethod): Boolean; overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the property with the given name and returns if this was
-    ///	  successful.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the property to find
-    ///	</param>
-    ///	<param name="AProperty">
-    ///	  Property that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetProperty(const AName: string; out AProperty: TRttiProperty): Boolean;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the type of the object and returns if this was successful.
-    ///	</summary>
-    ///	<param name="AType">
-    ///	  Type of the object when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetType(out AType: TRttiType): Boolean;
-  end;
-
-  {$REGION 'Documentation'}
-  ///	<summary>
   ///	  Extends <see cref="Rtti.TRttiType">TRttiType</see> for easier RTTI use.
   ///	</summary>
   {$ENDREGION}
@@ -355,7 +176,6 @@ type
 
     class function ToString(const Value: TValue): string; overload; static;
     class function ToString(const Values: TArray<TValue>): string; overload; static;
-    class function Equals(const Left, Right: TArray<TValue>): Boolean; overload; static;
 
     class function From(ABuffer: Pointer; ATypeInfo: PTypeInfo): TValue; overload; static;
     class function From(AObject: TObject; AClass: TClass): TValue; overload; static;
@@ -383,43 +203,7 @@ type
     property RttiType: TRttiType read GetRttiType;
   end;
 
-  PObject = ^TObject;
-
-function FindType(const AName: string; out AType: TRttiType): Boolean; overload;
-function FindType(const AGuid: TGUID; out AType: TRttiType): Boolean; overload;
-
-{$REGION 'Documentation'}
-///	<summary>
-///	  Returns the RTTI type of the given TClass.
-///	</summary>
-{$ENDREGION}
-function GetRttiType(AClass: TClass): TRttiType; overload;
-
-{$REGION 'Documentation'}
-///	<summary>
-///	  Returns the RTTI type of the given TypeInfo.
-///	</summary>
-{$ENDREGION}
-function GetRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
-function GetRttiTypes: TArray<TRttiType>;
-function IsClassCovariantTo(ThisClass, OtherClass: TClass): Boolean;
-function IsTypeCovariantTo(ThisType, OtherType: PTypeInfo): Boolean;
-function TryGetRttiType(AClass: TClass; out AType: TRttiType): Boolean; overload;
-function TryGetRttiType(ATypeInfo: PTypeInfo; out AType: TRttiType): Boolean; overload;
-
-function CompareValue(const Left, Right: TValue): Integer;
-function SameValue(const Left, Right: TValue): Boolean;
 procedure FreeValueObject(const AValue: TValue);
-
-
-function StripUnitName(const s: string): string;
-
-{$IFDEF VER210}
-function SplitString(const S: string; const Delimiter: Char): TStringDynArray;
-{$ENDIF}
-
-const
-  ObjCastGUID: TGUID = '{CEDF24DE-80A4-447D-8C75-EB871DC121FD}';
 
 implementation
 
@@ -435,15 +219,29 @@ uses
   ,Variants
   ;
 
-type
-  TArrayHelper = class
-  public
-    class function Concat<T>(const Arrays: array of TArray<T>): TArray<T>; static;
-  end;
-
 var
   Context: TRttiContext;
   Enumerations: IDictionary<PTypeInfo, TStrings>;
+
+function IsTypeCovariantTo(ThisType, OtherType: PTypeInfo): Boolean;
+var
+  LType: TRttiType;
+begin
+  LType := Context.GetType(ThisType);
+  Result := Assigned(LType) and LType.IsCovariantTo(OtherType);
+end;
+
+function TryGetRttiType(AClass: TClass; out AType: TRttiType): Boolean; overload;
+begin
+  AType := Context.GetType(AClass);
+  Result := Assigned(AType);
+end;
+
+function TryGetRttiType(ATypeInfo: PTypeInfo; out AType: TRttiType): Boolean; overload;
+begin
+  AType := Context.GetType(ATypeInfo);
+  Result := Assigned(AType);
+end;
 
 {$REGION 'Conversion functions'}
 type
@@ -929,37 +727,7 @@ const
   );
 {$ENDREGION}
 
-function SameNullables(const ALeft, ARight: TValue): Boolean;
-var
-  LGetLeft, LGetRight: TValue;
-  BLeft, BRight: Boolean;
-begin
-  BLeft := TType.TryGetNullableValue(ALeft, LGetLeft);
-  BRight := TType.TryGetNullableValue(ARight, LGetRight);
-  if BLeft and BRight then
-    Result := SameValue(LGetLeft, LGetRight)
-  else
-    Result := (not BLeft) and (not BRight);
-end;
-
-function SameLazies(const ALeft, ARight: TValue): Boolean;
-var
-  LGetLeft, LGetRight: TValue;
-  BLeft, BRight: Boolean;
-begin
-  BLeft := TUtils.TryGetLazyTypeValue(ALeft, LGetLeft);
-  BRight := TUtils.TryGetLazyTypeValue(ARight, LGetRight);
-  if BLeft and BRight then
-  begin
-    Result := SameValue(LGetLeft, LGetRight);
-  end
-  else
-  begin
-    Result := (not BLeft) and (not BRight);
-  end;
-end;
-
-function FindType(const AName: string; out AType: TRttiType): Boolean;
+function FindType(const AName: string; out AType: TRttiType): Boolean; overload
 var
   LType: TRttiType;
 begin
@@ -978,7 +746,7 @@ begin
   Result := Assigned(AType);
 end;
 
-function FindType(const AGuid: TGUID; out AType: TRttiType): Boolean;
+function FindType(const AGuid: TGUID; out AType: TRttiType): Boolean; overload;
 var
   LType: TRttiType;
 begin
@@ -993,37 +761,6 @@ begin
     end;
   end;
   Result := Assigned(AType);
-end;
-
-function GetRttiType(AClass: TClass): TRttiType;
-begin
-  Result := Context.GetType(AClass);
-end;
-
-function GetRttiType(ATypeInfo: PTypeInfo): TRttiType;
-begin
-  Result := Context.GetType(ATypeInfo);
-end;
-
-function GetRttiTypes: TArray<TRttiType>;
-begin
-  Result := Context.GetTypes;
-end;
-
-function IsClassCovariantTo(ThisClass, OtherClass: TClass): Boolean;
-var
-  LType: TRttiType;
-begin
-  LType := Context.GetType(ThisClass);
-  Result := Assigned(LType) and LType.IsCovariantTo(OtherClass.ClassInfo);
-end;
-
-function IsTypeCovariantTo(ThisType, OtherType: PTypeInfo): Boolean;
-var
-  LType: TRttiType;
-begin
-  LType := Context.GetType(ThisType);
-  Result := Assigned(LType) and LType.IsCovariantTo(OtherType);
 end;
 
 function MergeStrings(Values: TStringDynArray; const Delimiter: string): string;
@@ -1041,18 +778,6 @@ begin
       Result := Result + Delimiter + Values[i];
     end;
   end;
-end;
-
-function TryGetRttiType(AClass: TClass; out AType: TRttiType): Boolean; overload;
-begin
-  AType := Context.GetType(AClass);
-  Result := Assigned(AType);
-end;
-
-function TryGetRttiType(ATypeInfo: PTypeInfo; out AType: TRttiType): Boolean; overload;
-begin
-  AType := Context.GetType(ATypeInfo);
-  Result := Assigned(AType);
 end;
 
 function StripUnitName(const s: string): string;
@@ -1164,128 +889,6 @@ begin
   end;
 end;
 
-function SameValue(const Left, Right: TValue): Boolean;
-begin
-  if Left.IsNumeric and Right.IsNumeric then
-  begin
-    if Left.IsOrdinal then
-    begin
-      if Right.IsOrdinal then
-      begin
-        Result := Left.AsOrdinal = Right.AsOrdinal;
-      end else
-      if Right.IsSingle then
-      begin
-        Result := Math.SameValue(Left.AsOrdinal, Right.AsSingle);
-      end else
-      if Right.IsDouble then
-      begin
-        Result := Math.SameValue(Left.AsOrdinal, Right.AsDouble);
-      end
-      else
-      begin
-        Result := Math.SameValue(Left.AsOrdinal, Right.AsExtended);
-      end;
-    end else
-    if Left.IsSingle then
-    begin
-      if Right.IsOrdinal then
-      begin
-        Result := Math.SameValue(Left.AsSingle, Right.AsOrdinal);
-      end else
-      if Right.IsSingle then
-      begin
-        Result := Math.SameValue(Left.AsSingle, Right.AsSingle);
-      end else
-      if Right.IsDouble then
-      begin
-        Result := Math.SameValue(Left.AsSingle, Right.AsDouble);
-      end
-      else
-      begin
-        Result := Math.SameValue(Left.AsSingle, Right.AsExtended);
-      end;
-    end else
-    if Left.IsDouble then
-    begin
-      if Right.IsOrdinal then
-      begin
-        Result := Math.SameValue(Left.AsDouble, Right.AsOrdinal);
-      end else
-      if Right.IsSingle then
-      begin
-        Result := Math.SameValue(Left.AsDouble, Right.AsSingle);
-      end else
-      if Right.IsDouble then
-      begin
-        Result := Math.SameValue(Left.AsDouble, Right.AsDouble);
-      end
-      else
-      begin
-        Result := Math.SameValue(Left.AsDouble, Right.AsExtended);
-      end;
-    end
-    else
-    begin
-      if Right.IsOrdinal then
-      begin
-        Result := Math.SameValue(Left.AsExtended, Right.AsOrdinal);
-      end else
-      if Right.IsSingle then
-      begin
-        Result := Math.SameValue(Left.AsExtended, Right.AsSingle);
-      end else
-      if Right.IsDouble then
-      begin
-        Result := Math.SameValue(Left.AsExtended, Right.AsDouble);
-      end
-      else
-      begin
-        Result := Math.SameValue(Left.AsExtended, Right.AsExtended);
-      end;
-    end;
-  end else
-  if Left.IsString and Right.IsString then
-  begin
-    Result := Left.AsString = Right.AsString;
-  end else
-  if Left.IsClass and Right.IsClass then
-  begin
-    Result := Left.AsClass = Right.AsClass;
-  end else
-  if Left.IsObject and Right.IsObject then
-  begin
-    Result := TUtils.SameObject(Left.AsObject, Right.AsObject); // Left.AsObject = Right.AsObject;
-  end else
-  if Left.IsPointer and Right.IsPointer then
-  begin
-    Result := Left.AsPointer = Right.AsPointer;
-  end else
-  if Left.IsVariant and Right.IsVariant then
-  begin
-    Result := Left.AsVariant = Right.AsVariant;
-  end else
-  if Left.IsRecord and Right.IsRecord then
-  begin
-    Result := False;
-    if TType.IsNullableType(Left.TypeInfo) then
-      Result := SameNullables(Left, Right)
-    else if TType.IsLazyType(Left.TypeInfo) then
-      Result := SameLazies(Left, Right);
-  end else
-  if Left.IsInterface and Right.IsInterface then
-  begin
-    Result := Left.AsInterface = Right.AsInterface;
-  end else
-  if Left.TypeInfo = Right.TypeInfo then
-  begin
-    Result := Left.AsPointer = Right.AsPointer;
-  end else
-  begin
-    Result := False;
-  end;
-end;
-
 procedure FreeValueObject(const AValue: TValue);
 var
   LObj: TObject;
@@ -1295,183 +898,6 @@ begin
     LObj := AValue.AsObject;
     if Assigned(LObj) then
       LObj.Free;
-  end;
-end;
-
-{ TArrayHelper }
-
-class function TArrayHelper.Concat<T>(
-  const Arrays: array of TArray<T>): TArray<T>;
-var
-  i, k, LIndex, LLength: Integer;
-begin
-  LLength := 0;
-  for i := 0 to High(Arrays) do
-    Inc(LLength, Length(Arrays[i]));
-  SetLength(Result, LLength);
-  LIndex := 0;
-  for i := 0 to High(Arrays) do
-  begin
-    for k := 0 to High(Arrays[i]) do
-    begin
-      Result[LIndex] := Arrays[i][k];
-      Inc(LIndex);
-    end;
-  end;
-end;
-
-{ TObjectHelper }
-
-function TObjectHelper.GetField(const AName: string): TRttiField;
-var
-  LType: TRttiType;
-begin
-  Result := nil;
-  if TryGetType(LType) then
-    Result := LType.GetField(AName);
-end;
-
-function TObjectHelper.GetFields: TArray<TRttiField>;
-var
-  LType: TRttiType;
-begin
-  Result := nil;
-  if TryGetType(LType) then
-    Result := LType.GetFields;
-end;
-
-function TObjectHelper.GetMethod(const AName: string): TRttiMethod;
-var
-  LType: TRttiType;
-begin
-  Result := nil;
-  if TryGetType(LType) then
-  try
-    Result := LType.GetMethod(AName);
-  except
-    Result := nil;
-  end;
-end;
-
-function TObjectHelper.GetMethod(ACodeAddress: Pointer): TRttiMethod;
-var
-  LType: TRttiType;
-begin
-  Result := nil;
-  if TryGetType(LType) then
-    Result := LType.GetMethod(ACodeAddress);
-end;
-
-function TObjectHelper.GetMethods: TArray<TRttiMethod>;
-var
-  LType: TRttiType;
-begin
-  Result := nil;
-  if TryGetType(LType) then
-    Result := LType.GetMethods;
-end;
-
-function TObjectHelper.GetProperties: TArray<TRttiProperty>;
-var
-  LType: TRttiType;
-begin
-  Result := nil;
-  if TryGetType(LType) then
-    Result := LType.GetProperties;
-end;
-
-function TObjectHelper.GetProperty(const AName: string): TRttiProperty;
-var
-  LType: TRttiType;
-begin
-  Result := nil;
-  if TryGetType(LType) then
-    Result := LType.GetProperty(AName);
-end;
-
-function TObjectHelper.GetType: TRttiType;
-begin
-  TryGetType(Result);
-end;
-
-function TObjectHelper.HasField(const AName: string): Boolean;
-begin
-  Result := GetField(AName) <> nil;
-end;
-
-function TObjectHelper.HasMethod(const AName: string): Boolean;
-begin
-  Result := GetMethod(AName) <> nil;
-end;
-
-function TObjectHelper.HasProperty(const AName: string): Boolean;
-begin
-  Result := GetProperty(AName) <> nil;
-end;
-
-function TObjectHelper.TryGetField(const AName: string;
-  out AField: TRttiField): Boolean;
-begin
-  AField := GetField(AName);
-  Result := Assigned(AField);
-end;
-
-function TObjectHelper.TryGetMember(const AName: string;
-  out AMember: TRttiMember): Boolean;
-var
-  LProperty: TRttiProperty;
-  LField: TRttiField;
-  LMethod: TRttiMethod;
-begin
-  if TryGetProperty(AName, LProperty) then
-  begin
-    Result := True;
-    AMember := LProperty;
-  end else
-  if TryGetField(AName, LField) then
-  begin
-    Result := True;
-    AMember := LField;
-  end else
-  if TryGetMethod(AName, LMethod) then
-  begin
-    Result := True;
-    AMember := LMethod;
-  end else
-  begin
-    Result := False;
-    AMember := nil
-  end;
-end;
-
-function TObjectHelper.TryGetMethod(ACodeAddress: Pointer;
-  out AMethod: TRttiMethod): Boolean;
-begin
-  AMethod := GetMethod(ACodeAddress);
-  Result := Assigned(AMethod);
-end;
-
-function TObjectHelper.TryGetMethod(const AName: string;
-  out AMethod: TRttiMethod): Boolean;
-begin
-  AMethod := GetMethod(AName);
-  Result := Assigned(AMethod);
-end;
-
-function TObjectHelper.TryGetProperty(const AName: string;
-  out AProperty: TRttiProperty): Boolean;
-begin
-  AProperty := GetProperty(AName);
-  Result := Assigned(AProperty);
-end;
-
-function TObjectHelper.TryGetType(out AType: TRttiType): Boolean;
-begin
-  Result := False;
-  if Assigned(Self) then
-  begin
-    AType := Context.GetType(ClassInfo);
-    Result := Assigned(AType);
   end;
 end;
 
@@ -1864,24 +1290,6 @@ end;
 function TValueHelper.AsWord: Word;
 begin
   Result := AsType<Word>;
-end;
-
-class function TValueHelper.Equals(const Left, Right: TArray<TValue>): Boolean;
-var
-  i: Integer;
-begin
-  Result := Length(Left) = Length(Left);
-  if Result then
-  begin
-    for i := Low(Left) to High(Left) do
-    begin
-      if not SameValue(Left[i], Right[i]) then
-      begin
-        Result := False;
-        Break;
-      end;
-    end
-  end;
 end;
 
 class function TValueHelper.From(ABuffer: Pointer;

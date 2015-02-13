@@ -93,7 +93,7 @@ type
     class function GetMemberValue(AEntity: TObject; const AMemberName: string): TValue; overload;
     class function GetMemberValue(AEntity: TObject; const AMembername: string; out ARttiMember: TRttiNamedObject): TValue; overload;
     class function GetMemberValueDeep(AEntity: TObject; const AMemberName: string): TValue; overload;
-    class function GetMemberValueDeep(const AInitialValue: TValue; ARttiType: TRttiType): TValue; overload;
+    class function GetMemberValueDeep(const AInitialValue: TValue): TValue; overload;
     class function GetMethodSignature(AMethod: TRttiMethod): string;
     class function GetPrimaryKeyColumn(AClass: TClass): ColumnAttribute;
     class function GetQueryTextFromMethod(AMethod: TRttiMethod): string;
@@ -551,8 +551,8 @@ begin
   Result := GetMemberValue(AEntity, ARttiMember);
 end;
 
-class function TRttiExplorer.GetMemberValueDeep(const AInitialValue: TValue;
-  ARttiType: TRttiType): TValue;
+class function TRttiExplorer.GetMemberValueDeep(
+  const AInitialValue: TValue): TValue;
 begin
   Result := AInitialValue;
   if TType.IsNullableType(Result.TypeInfo) then
@@ -575,7 +575,7 @@ begin
   if Result.IsEmpty then
     Exit;
 
-  Result := GetMemberValueDeep(Result, LMember.GetType);
+  Result := GetMemberValueDeep(Result);
 end;
 
 class function TRttiExplorer.GetMethodSignature(AMethod: TRttiMethod): string;
@@ -637,7 +637,7 @@ begin
   if LMemberValue.IsEmpty then
     Exit;
     
-  LDeepValue := GetMemberValueDeep(LMemberValue, ARttiMember.GetType);
+  LDeepValue := GetMemberValueDeep(LMemberValue);
   if LDeepValue.IsEmpty then
     Exit;
   

@@ -29,25 +29,22 @@ unit Spring.Persistence.Core.Utils;
 interface
 
 uses
-  AnsiStrings,
   Classes,
   DB,
   Graphics,
   Rtti,
-  SysUtils,
   TypInfo,
-  Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Mapping.Attributes,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Persistence.Core.Interfaces;
 
 type
   TUtils = class sealed
   public
     class function LoadFromStreamToVariant(const stream: TStream): OleVariant;
 
-    class function AsVariant(const AValue: TValue): Variant;
-    class function FromVariant(const AValue: Variant): TValue;
-    class function GetResultsetFromVariant(const AValue: Variant): IDBResultset;
+    class function AsVariant(const value: TValue): Variant;
+    class function FromVariant(const value: Variant): TValue;
+    class function GetResultsetFromVariant(const value: Variant): IDBResultset;
 
     class function TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean;
 
@@ -72,81 +69,84 @@ type
 implementation
 
 uses
+{$IFDEF DELPHIXE2_UP}
+  AnsiStrings,
+{$ENDIF}
   GIFImg,
   jpeg,
   pngimage,
   StrUtils,
+  SysUtils,
   Variants,
   Spring,
   Spring.Reflection,
-  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Reflection,
-  Spring.Persistence.Core.Types,
   Spring.Persistence.Mapping.RttiExplorer;
 
-{ TUtils }
 
-class function TUtils.AsVariant(const AValue: TValue): Variant;
+{$REGION 'TUtils'}
+
+class function TUtils.AsVariant(const value: TValue): Variant;
 var
-  LStream: TStream;
+  stream: TStream;
   LValue: TValue;
   LPersist: IStreamPersist;
 begin
   Result := Null;
-  case AValue.Kind of
+  case value.Kind of
     tkEnumeration:
     begin
-      if AValue.TypeInfo = TypeInfo(Boolean) then
-        Result := AValue.AsBoolean
+      if value.TypeInfo = TypeInfo(Boolean) then
+        Result := value.AsBoolean
       else
-        Result := AValue.AsOrdinal;
+        Result := value.AsOrdinal;
     end;
     tkFloat:
     begin
-      if (AValue.TypeInfo = TypeInfo(TDateTime)) then
-        Result := AValue.AsType<TDateTime>
-      else if (AValue.TypeInfo = TypeInfo(TDate)) then
-        Result := AValue.AsType<TDate>
+      if (value.TypeInfo = TypeInfo(TDateTime)) then
+        Result := value.AsType<TDateTime>
+      else if (value.TypeInfo = TypeInfo(TDate)) then
+        Result := value.AsType<TDate>
       else
-        Result := AValue.AsExtended;
+        Result := value.AsExtended;
     end;
     tkRecord:
     begin
-      if TType.IsNullableType(AValue.TypeInfo) then
-        if TType.TryGetNullableValue(AValue, LValue) then
+      if TType.IsNullableType(value.TypeInfo) then
+        if TType.TryGetNullableValue(value, LValue) then
           Result := TUtils.AsVariant(LValue);
     end;
     tkClass:
     begin
-      if (AValue.AsObject <> nil) then
+      if (value.AsObject <> nil) then
       begin
-        if (AValue.AsObject is TStream) then
+        if (value.AsObject is TStream) then
         begin
-          LStream := TStream(AValue.AsObject);
-          LStream.Position := 0;
-          Result := LoadFromStreamToVariant(LStream);
+          stream := TStream(value.AsObject);
+          stream.Position := 0;
+          Result := LoadFromStreamToVariant(stream);
         end
-        else if (AValue.AsObject is TPicture) then
+        else if (value.AsObject is TPicture) then
         begin
-          LStream := TMemoryStream.Create;
+          stream := TMemoryStream.Create;
           try
-            TPicture(AValue.AsObject).Graphic.SaveToStream(LStream);
-            LStream.Position := 0;
-            Result := LoadFromStreamToVariant(LStream);
+            TPicture(value.AsObject).Graphic.SaveToStream(stream);
+            stream.Position := 0;
+            Result := LoadFromStreamToVariant(stream);
           finally
-            LStream.Free;
+            stream.Free;
           end;
         end   //somehow this started to fail recently. needed to add additional condition for TPicture
-        else if Supports(AValue.AsObject, IStreamPersist, LPersist) then
+        else if Supports(value.AsObject, IStreamPersist, LPersist) then
         begin
-          LStream := TMemoryStream.Create;
+          stream := TMemoryStream.Create;
           try
-            LPersist.SaveToStream(LStream);
-            LStream.Position := 0;
-            Result := LoadFromStreamToVariant(LStream);
+            LPersist.SaveToStream(stream);
+            stream.Position := 0;
+            Result := LoadFromStreamToVariant(stream);
           finally
-            LStream.Free;
+            stream.Free;
           end;
         end;
       end;
@@ -154,13 +154,13 @@ begin
     tkInterface: ;//
     else
     begin
-      Result := AValue.AsVariant;
+      Result := value.AsVariant;
     end;
   end;
 end;
 
 
-class function TUtils.FromVariant(const AValue: Variant): TValue;
+class function TUtils.FromVariant(const value: Variant): TValue;
 var
   bStream: TMemoryStream;
   ptr: Pointer;
@@ -168,46 +168,46 @@ var
   convertedValue : Variant;
   typeName : string;
 begin
-  if VarIsArray(AValue) then
+  if VarIsArray(value) then
   begin
     //make stream from variant
     bStream := TMemoryStream.Create;
-    iDim := VarArrayDimCount(AValue);
-    ptr := VarArrayLock(AValue);
+    iDim := VarArrayDimCount(value);
+    ptr := VarArrayLock(value);
     try
-      bStream.Write(ptr^, VarArrayHighBound(AValue, iDim) + 1);
+      bStream.Write(ptr^, VarArrayHighBound(value, iDim) + 1);
     finally
-      VarArrayUnlock(AValue);
+      VarArrayUnlock(value);
     end;
     Result := bStream;
   end
   else
   begin
-    typeName := VarTypeAsText(VarType(AValue));
+    typeName := VarTypeAsText(VarType(value));
     if SameText(typeName, 'SQLTimeStampVariantType') or
        SameText(typeName, 'SQLTimeStampOffsetVariantType') then
-      convertedValue := Double(AValue)
+      convertedValue := Double(value)
     else if SameText(typeName, 'FMTBcdVariantType') then
     begin
       {$IFDEF DELPHIXE6_UP}
-      convertedValue := Int64(AValue);
+      convertedValue := Int64(value);
       {$ELSE}
-      convertedValue := StrToInt64(VarToStr(AValue));
+      convertedValue := StrToInt64(VarToStr(value));
       {$ENDIF}
     end
     else
-      convertedValue := AValue;
+      convertedValue := value;
 
     Result := TValue.FromVariant(convertedValue);
   end;
 end;
 
 class function TUtils.GetResultsetFromVariant(
-  const AValue: Variant): IDBResultset;
+  const value: Variant): IDBResultset;
 var
   LIntf: IInterface;
 begin
-  LIntf := AValue;
+  LIntf := value;
   Result := LIntf as IDBResultset;
 end;
 
@@ -538,5 +538,8 @@ begin
     LGraphic.Free;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

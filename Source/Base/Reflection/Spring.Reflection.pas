@@ -124,7 +124,7 @@ type
     ///	<returns>
     ///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has value.
     ///	</returns>
-    class function TryGetNullableValue(const value: TValue; out underlyingValue: TValue): Boolean;
+    class function TryGetNullableValue(const value: TValue; out innerValue: TValue): Boolean;
 
     ///	<summary>
     ///	  Try setting the value of a nullable type.
@@ -132,7 +132,7 @@ type
     ///	<returns>
     ///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c>.
     ///	</returns>
-    class function TrySetNullableValue(const value: TValue; const underlyingValue: TValue): Boolean;
+    class function TrySetNullableValue(const value: TValue; const innerValue: TValue): Boolean;
 
     class procedure SetFieldValue(const instance: TObject;
       const fieldName: string; const value: TValue);
@@ -1117,7 +1117,7 @@ begin
 end;
 
 class function TType.TryGetNullableValue(const value: TValue;
-  out underlyingValue: TValue): Boolean;
+  out innerValue: TValue): Boolean;
 var
   typeInfo: PTypeInfo;
   rttiType: TRttiType;
@@ -1140,14 +1140,14 @@ begin
         valueField := rttiType.GetField('fValue');
         Result := Assigned(valueField);
         if Result then
-          underlyingValue := valueField.GetValue(instance);
+          innerValue := valueField.GetValue(instance);
       end;
     end;
   end;
 end;
 
 class function TType.TrySetNullableValue(const value,
-  underlyingValue: TValue): Boolean;
+  innerValue: TValue): Boolean;
 var
   typeInfo: PTypeInfo;
   rttiType: TRttiType;
@@ -1167,8 +1167,8 @@ begin
       if Assigned(hasValueField) then
       begin
         instance := value.GetReferenceToRawData;
-        valueField.SetValue(instance, underlyingValue);
-        if underlyingValue.IsEmpty then
+        valueField.SetValue(instance, innerValue);
+        if innerValue.IsEmpty then
           hasValueField.SetValue(instance, '')
         else
           hasValueField.SetValue(instance, '@');

@@ -134,6 +134,7 @@ uses
   ,Spring.Collections
   ,Generics.Collections
   ,Spring.Persistence.Core.Reflection
+  ,Spring.Reflection
   ,TestConsts
   ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.Core.Exceptions
@@ -1594,7 +1595,7 @@ begin
   LCustomer := TCustomer.Create;
   LDBCustomer := nil;
   try
-    LCustomer.GetField('FId').SetValue(LCustomer, LId);
+    TType.GetType(LCustomer).GetField('FId').SetValue(LCustomer, LId);
     LCustomer.Age := 25;
     LCustomer.Name := 'Bar';
     LCustomer.Height := 1.1;
