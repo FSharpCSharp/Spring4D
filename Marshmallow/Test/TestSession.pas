@@ -70,6 +70,7 @@ type
     procedure Enums();
     procedure Streams();
     procedure ManyToOne();
+    procedure ManyToMany;
     procedure Transactions();
     procedure Transactions_Nested();
     {$IFDEF PERFORMANCE_TESTS}
@@ -192,6 +193,17 @@ begin
 
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PRODUCTS + ' ([PRODID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '+
     '[PRODNAME] VARCHAR (255), [PRODPRICE] FLOAT, [_version] INTEGER );');
+
+  LConn.ExecSQL('CREATE TABLE IF NOT EXISTS User ([Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '+
+    '[Name] VARCHAR (255));');
+
+  LConn.ExecSQL('CREATE TABLE IF NOT EXISTS Role ([Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '+
+    '[Description] VARCHAR (255));');
+
+  LConn.ExecSQL('CREATE TABLE IF NOT EXISTS UserRole ([Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '+
+    '[UserId] INTEGER NOT NULL CONSTRAINT "FK_UserRole_Users" REFERENCES "User"("Id") ON DELETE CASCADE ON UPDATE CASCADE, '+
+    '[RoleId] INTEGER NOT NULL CONSTRAINT "FK_UserRole_Roles" REFERENCES "Role"("Id") ON DELETE CASCADE ON UPDATE CASCADE, '+
+    '[AssignedDate] DATETIME DEFAULT CURRENT_TIMESTAMP);');    
 
   if not LConn.TableExists(TBL_PEOPLE) then
     raise Exception.Create('Table CUSTOMERS does not exist');
@@ -516,6 +528,40 @@ begin
   finally
     LCustomer.Free;
   end;
+end;
+
+procedure TestTSession.ManyToMany;
+var
+  user: TUser;
+  role: TRole;
+  users: IList<TUser>;
+  roles: IList<TRole>;
+begin
+  user := TUser.Create;
+  user.Name := 'Foo';
+
+  role := TRole.Create;
+  role.Description := 'FooBar';
+  user.AddRole(role);
+
+  FManager.SaveAll(user);
+
+  CheckEquals(1, GetTableRecordCount('User'), 'Should insert 1 user into User table');
+  CheckEquals(1, GetTableRecordCount('Role'), 'Should insert 1 role into Role table');
+  CheckEquals(1, GetTableRecordCount('UserRole'), 'Should insert 1 userrole into UserRole table');
+
+  user.Free;
+  role.Free;
+
+  users := FManager.FindAll<TUser>;
+  CheckEquals(1, users.Count, 'Should find 1 user from User table');
+  CheckEquals('Foo', users.First.Name, 'User name is Foo');
+  CheckEquals('FooBar', users.First.Roles.First.Description, 'User''s role description is FooBar');
+
+  roles := FManager.FindAll<TRole>;
+  CheckEquals(1, roles.Count, 'Should find 1 role from Role table');
+  CheckEquals('FooBar', roles.First.Description, 'Role description is FooBar');
+  CheckEquals('Foo', roles.First.Users.First.Name, 'Role''s user name is Foo');
 end;
 
 procedure TestTSession.Fetch;
@@ -1925,6 +1971,10 @@ begin
   CheckEquals('Bar', FSession.FindAll<TCustomer>.First.Name);
   CheckEquals(1, FSession.FindAll<TCustomer>.Count);
 end;
+
+
+
+
 
 
 

@@ -142,7 +142,7 @@ var
   LEntities: IList<TClass>;
 begin
   LEntities := TRttiExplorer.GetEntities;
-  CheckEquals(3, LEntities.Count);
+  CheckEquals(6, LEntities.Count);
 end;
 
 procedure TestTRttiExplorer.TestGetSequence;

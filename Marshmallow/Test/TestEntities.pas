@@ -255,10 +255,101 @@ type
     property Phone: string read FPhone write FPhone;
   end;
 
+  TUserRole = class;
+  TRole = class;
+
+  [Entity][Table]
+  TUser = class
+  private
+    [Column('Id', [cpRequired, cpPrimaryKey])]
+    fId: Integer;
+
+    [OneToMany(false, [ckCascadeAll])]
+    fUserRoles: Lazy<IList<TUserRole>>;
+    fName: string;
+    function GetUserRoles: IList<TUserRole>;
+    function GetRoles: IList<TRole>;
+  protected
+    property UserRoles: IList<TUserRole> read GetUserRoles;
+  public
+    constructor Create;
+
+    procedure AddRole(role: TRole);
+
+    property Id: Integer read fId;
+    [Column]
+    property Name: string read fName write fName;
+
+    property Roles: IList<TRole> read GetRoles;
+  end;
+
+  [Entity][Table]
+  TRole = class
+  private
+    [Column('Id', [cpRequired, cpPrimaryKey])]
+    fId: Integer;
+
+    [OneToMany(false, [ckCascadeAll])]
+    fUserRoles: Lazy<IList<TUserRole>>;
+
+    fDescription: string;
+
+    function GetUserRoles: IList<TUserRole>;
+    function GetUsers: IList<TUser>;
+  protected
+    property UserRoles: IList<TUserRole> read GetUserRoles;
+  public
+    constructor Create;
+
+    property Id: Integer read fId;
+    [Column]
+    property Description: string read fDescription write fDescription;
+
+    property Users: IList<TUser> read Getusers;
+  end;
+
+  TUserRoleOwnerships = set of (OwnsUser, OwnsRole);
+
+  [Entity][Table]
+  TUserRole = class
+  private
+    [Column('Id', [cpRequired, cpPrimaryKey])]
+    fId: Integer;
+    fUser: TUser;
+    fRole: TRole;
+    fRoleId: Integer;
+    fUserId: Integer;
+    fDateAssigned: TDateTime;
+    fOwnerships: TUserRoleOwnerships;
+  public
+    constructor Create; overload;
+    constructor Create(ownerships: TUserRoleOwnerships); overload;
+    destructor Destroy; override;
+
+
+    property Id: Integer read fId;
+
+    [Column][ForeignJoinColumn('RoleId', 'Role', 'Id', [fsOnDeleteCascade, fsOnUpdateCascade])]
+    property RoleId: Integer read fRoleId write fRoleId;
+    [Column][ForeignJoinColumn('UserId', 'User', 'Id', [fsOnDeleteCascade, fsOnUpdateCascade])]
+    property UserId: Integer read fUserId write fUserId;
+
+    [Column]
+    property AssignedDate: TDateTime read fDateAssigned write fDateAssigned;
+
+    [ManyToOne(False, [ckCascadeAll], 'UserId')]
+    property User: TUser read fUser write fUser;
+    [ManyToOne(False, [ckCascadeAll], 'RoleId')]
+    property Role: TRole read fRole write fRole;
+  end;
+
 var
   PictureFilename, OutputDir: string;
 
 implementation
+
+uses
+  SysUtils;
 
 { TCustomer }
 
@@ -375,6 +466,94 @@ begin
 
   inherited Destroy;
 end;
+
+ { TUser }
+
+function TUser.GetUserRoles: IList<TUserRole>;
+begin
+  Result := fUserRoles.Value;
+end;
+
+
+procedure TUser.AddRole(role: TRole);
+var
+  userRoleForUser, userRoleForRole: TUserRole;
+begin
+  userRoleForUser := TUserRole.Create([]);
+  userRoleForUser.User := Self;
+  userRoleForUser.Role := role;
+  userRoleForUser.AssignedDate := Now;
+
+  userRoleForRole := TUserRole.Create([]);
+  userRoleForRole.User := Self;
+  userRoleForRole.Role := role;
+  userRoleForRole.AssignedDate := userRoleForUser.AssignedDate;
+
+  UserRoles.Add(userRoleForUser);
+  role.UserRoles.Add(userRoleForRole);
+end;
+
+constructor TUser.Create;
+begin
+  fUserRoles := TCollections.CreateObjectList<TUserRole>;
+end;
+
+function TUser.GetRoles: IList<TRole>;
+var
+  userRole: TUserRole;
+begin
+  Result := TCollections.CreateList<TRole>;
+  for userRole in fUserRoles.Value do
+  begin
+    Result.Add(userRole.Role);
+  end;
+end;
+
+{ TRole }
+
+constructor TRole.Create;
+begin
+  fUserRoles := TCollections.CreateObjectList<TUserRole>;
+end;
+
+function TRole.GetUserRoles: IList<TUserRole>;
+begin
+  Result := fUserRoles.Value;
+end;
+
+function TRole.GetUsers: IList<TUser>;
+var
+  userRole: TUserRole;
+begin
+  Result := TCollections.CreateList<TUser>;
+  for userRole in GetUserRoles do
+  begin
+    Result.Add(userRole.User);
+  end;
+end;
+
+{ TUserRole }
+
+constructor TUserRole.Create;
+begin
+  Create([OwnsUser, OwnsRole]);
+end;
+
+constructor TUserRole.Create(ownerships: TUserRoleOwnerships);
+begin
+  inherited Create;
+  fOwnerships := ownerships;
+end;
+
+destructor TUserRole.Destroy;
+begin
+  if OwnsUser in fOwnerships then
+    fUser.Free;
+  if OwnsRole in fOwnerships then
+    fRole.Free;
+  inherited Destroy;
+end;
+
 
 end.
 

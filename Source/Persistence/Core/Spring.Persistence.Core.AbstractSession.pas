@@ -453,6 +453,8 @@ var
 begin
   lazyKind := TType.GetLazyKind(lazyTypeInfo);
   targetType := TType.GetType(lazyTypeInfo).GetGenericArguments[0];
+  if targetType = nil then
+    raise EORMUnsupportedType.CreateFmt('Insufficient rtti information for lazy type: %s', [lazyTypeInfo.Name]);
   Result := TValue.Empty;
 
   column := entity.GetColumnAttribute(columnMemberName);
