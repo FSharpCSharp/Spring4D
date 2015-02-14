@@ -260,6 +260,7 @@ type
   /// </summary>
   IClonable = interface(IInvokable)
     ['{B6BC3795-624B-434F-BB19-6E8F55149D0A}']
+
     /// <summary>
     ///   Creates a new object that is a copy of the current instance.
     /// </summary>
@@ -275,6 +276,7 @@ type
   /// </summary>
   IComparable = interface(IInvokable)
     ['{7F0E25C8-50D7-4CF0-AB74-1913EBD3EE42}']
+
     /// <summary>
     ///   Compares the current instance with another object of the same type
     ///   and returns an integer that indicates whether the current instance
@@ -326,7 +328,14 @@ type
     function GetCount: Integer;
   {$ENDREGION}
 
+    /// <summary>
+    ///   Determines whether a countable contains any elements.
+    /// </summary>
     function Any: Boolean;
+
+    /// <summary>
+    ///   Returns the number of elements in a countable.
+    /// </summary>
     property Count: Integer read GetCount;
   end;
 
@@ -387,6 +396,9 @@ type
   TNotifyProc = reference to procedure(Sender: TObject);
   {$M-}
 
+  /// <summary>
+  ///   An event type like TNotifyEvent that also has a generic item parameter.
+  /// </summary>
   TNotifyEvent<T> = procedure(Sender: TObject; const item: T) of object;
 
   {$ENDREGION}
@@ -394,6 +406,9 @@ type
 
   {$REGION 'TNamedValue'}
 
+  /// <summary>
+  ///   A record type that stores a TValue and a name.
+  /// </summary>
   TNamedValue = record
   private
     fValue: TValue;
@@ -414,6 +429,9 @@ type
 
   {$REGION 'TTypedValue'}
 
+  /// <summary>
+  ///   A record type that stores a TValue and a typeinfo.
+  /// </summary>
   TTypedValue = record
   private
     fValue: TValue;
@@ -459,6 +477,8 @@ type
   ///   be checked.
   /// </remarks>
   Guard = record
+  private
+    class procedure RaiseArgumentException(typeKind: TTypeKind; const argumentName: string); overload; static;
   public
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string = ''); static; inline;
@@ -536,8 +556,12 @@ type
     /// </exception>
     class procedure CheckRangeExclusive(value, min, max: Integer); overload; static; inline;
 
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static; deprecated 'Use overload with TTypeKind';
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static; deprecated 'Use overload with TTypeKind';
+    class procedure CheckTypeKind(typeKind: TTypeKind; expectedTypeKind: TTypeKind; const argumentName: string); overload; static; inline;
+    class procedure CheckTypeKind(typeKind: TTypeKind; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static; inline;
+    class procedure CheckTypeKind<T>(expectedTypeKind: TTypeKind; const argumentName: string); overload; static; inline;
+    class procedure CheckTypeKind<T>(expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static; inline;
 
     class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; static;
 
@@ -684,60 +708,18 @@ type
     class operator NotEqual(const left, right: Nullable<T>): Boolean;
   end;
 
-
-  /// <summary>
-  ///   Represents a nullable unicode string.
-  /// </summary>
   TNullableString = Nullable<string>;
 {$IFNDEF NEXTGEN}
-  /// <summary>
-  ///   Represents a nullable ansi string.
-  /// </summary>
   TNullableAnsiString = Nullable<AnsiString>;
-
-  /// <summary>
-  ///   Represents a nullable wide string.
-  /// </summary>
   TNullableWideString = Nullable<WideString>;
 {$ENDIF}
-  /// <summary>
-  ///   Represents a nullable integer.
-  /// </summary>
   TNullableInteger = Nullable<Integer>;
-
-  /// <summary>
-  ///   Represents a nullable <c>Int64</c>.
-  /// </summary>
   TNullableInt64 = Nullable<Int64>;
-
-  /// <summary>
-  ///   Represents a nullable native integer.
-  /// </summary>
   TNullableNativeInt = Nullable<NativeInt>;
-
-  /// <summary>
-  ///   Represents a nullable <c>TDateTime</c>.
-  /// </summary>
   TNullableDateTime = Nullable<TDateTime>;
-
-  /// <summary>
-  ///   Represents a nullable <c>Currency</c>.
-  /// </summary>
   TNullableCurrency = Nullable<Currency>;
-
-  /// <summary>
-  ///   Represents a nullable <c>Double</c>.
-  /// </summary>
   TNullableDouble = Nullable<Double>;
-
-  /// <summary>
-  ///   Represents a nullable <c>Boolean</c>.
-  /// </summary>
   TNullableBoolean = Nullable<Boolean>;
-
-  /// <summary>
-  ///   Represents a nullable <c>TGuid</c>.
-  /// </summary>
   TNullableGuid = Nullable<TGUID>;
 
   {$ENDREGION}
@@ -749,6 +731,7 @@ type
   ///   Specifies the kind of a lazy type.
   /// </summary>
   TLazyKind = (
+
     /// <summary>
     ///   Not a lazy type.
     /// </summary>
@@ -820,6 +803,9 @@ type
     property Value: T read GetValue;
   end;
 
+  /// <summary>
+  ///   The base class of the lazy initialization type.
+  /// </summary>
   TLazy = class(TInterfacedObject, ILazy)
   private
     fLock: TCriticalSection;
@@ -936,6 +922,10 @@ type
     class operator Implicit(const value: T): Lazy<T>;
     class operator Implicit(const value: TLazy<T>): Lazy<T>;
 
+    /// <summary>
+    ///   Returns true if the value is assigned and contains an ILazy&lt;T&gt;
+    ///   reference; otherwise returns false.
+    /// </summary>
     property IsAssigned: Boolean read GetIsAssigned;
 
     /// <summary>
@@ -961,10 +951,44 @@ type
     property Value: T read GetValue;
   end;
 
+  /// <summary>
+  ///   Provides lazy initialization routines.
+  /// </summary>
+  /// <remarks>
+  ///   The methods are using TInterlocked.CompareExchange to ensure
+  ///   thread-safety when initializing instances.
+  /// </remarks>
   TLazyInitializer = record
   public
+    /// <summary>
+    ///   Initializes a target reference type by using a specified function if
+    ///   it hasn't already been initialized.
+    /// </summary>
+    /// <remarks>
+    ///   In the event that multiple threads access this method concurrently,
+    ///   multiple instances of T may be created, but only one will be stored
+    ///   into target. In such an occurrence, this method will destroy the
+    ///   instances that were not stored.
+    /// </remarks>
     class function EnsureInitialized<T: class, constructor>(var target: T): T; overload; static;
-    class function EnsureInitialized<T>(var target: T; const factoryMethod: TFunc<T>): T; overload; static;
+
+    /// <summary>
+    ///   Initializes a target reference type by using a specified function if
+    ///   it hasn't already been initialized.
+    /// </summary>
+    /// <remarks>
+    ///   <para>
+    ///     This method may only be used on reference types, and <i>
+    ///     valueFactory</i> may not return a nil reference.
+    ///   </para>
+    ///   <para>
+    ///     In the event that multiple threads access this method
+    ///     concurrently, multiple instances of T may be created, but only
+    ///     one will be stored into target. In such an occurrence, this
+    ///     method will destroy the instances that were not stored.
+    ///   </para>
+    /// </remarks>
+    class function EnsureInitialized<T>(var target: T; const valueFactory: TFunc<T>): T; overload; static;
   end;
 
   {$ENDREGION}
@@ -2788,6 +2812,54 @@ begin
     Guard.RaiseArgumentException(msg);
 end;
 
+class procedure Guard.CheckTypeKind(typeKind: TTypeKind;
+  expectedTypeKind: TTypeKind; const argumentName: string);
+begin
+  if typeKind <> expectedTypeKind then
+    RaiseArgumentException(typeKind, argumentName);
+end;
+
+class procedure Guard.CheckTypeKind(typeKind: TTypeKind;
+  expectedTypeKinds: TTypeKinds; const argumentName: string);
+begin
+  if not (typeKind in expectedTypeKinds) then
+    RaiseArgumentException(typeKind, argumentName);
+end;
+
+class procedure Guard.CheckTypeKind<T>(expectedTypeKind: TTypeKind;
+  const argumentName: string);
+{$IFNDEF DELPHIXE7_UP}
+var
+  typeKind: TTypeKind;
+{$ENDIF}
+begin
+{$IFDEF DELPHIXE7_UP}
+  if System.GetTypeKind(T) <> expectedTypeKind then
+    RaiseArgumentException(System.GetTypeKind(T), argumentName);
+{$ELSE}
+  typeKind := GetTypeKind(TypeInfo(T));
+  if typeKind <> expectedTypeKind then
+    RaiseArgumentException(typeKind, argumentName);
+{$ENDIF}
+end;
+
+class procedure Guard.CheckTypeKind<T>(expectedTypeKinds: TTypeKinds;
+  const argumentName: string);
+{$IFNDEF DELPHIXE7_UP}
+var
+  typeKind: TTypeKind;
+{$ENDIF}
+begin
+{$IFDEF DELPHIXE7_UP}
+  if not (System.GetTypeKind(T) in expectedTypeKinds) then
+    RaiseArgumentException(System.GetTypeKind(T), argumentName);
+{$ELSE}
+  typeKind := GetTypeKind(TypeInfo(T));
+  if not (typeKind in expectedTypeKinds) then
+    RaiseArgumentException(typeKind, argumentName);
+{$ENDIF}
+end;
+
 class procedure Guard.CheckFalse(condition: Boolean; const msg: string);
 begin
   if condition then
@@ -2860,9 +2932,9 @@ var
   typeInfo: PTypeInfo;
   data: PTypeData;
 begin
-  typeInfo := System.TypeInfo(T);
-  Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
 
+  typeInfo := System.TypeInfo(T);
   data := GetTypeData(typeInfo);
   Guard.CheckNotNull(data, 'data');
 
@@ -2935,9 +3007,9 @@ var
   data: PTypeData;
   minValue, maxValue: Cardinal;
 begin
-  typeInfo := System.TypeInfo(T);
-  Guard.CheckTypeKind(typeInfo, [tkSet], 'T');
+  Guard.CheckTypeKind<T>(tkSet, 'T');
 
+  typeInfo := System.TypeInfo(T);
   data := GetTypeData(typeInfo);
   Guard.CheckNotNull(data, 'data');
 
@@ -2996,8 +3068,7 @@ class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
-      [typeInfo.TypeName, argumentName]);
+    RaiseArgumentException(typeInfo.Kind, argumentName);
 end;
 
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
@@ -3005,8 +3076,7 @@ class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
-      [typeInfo.TypeName, argumentName]);
+    RaiseArgumentException(typeInfo.Kind, argumentName);
 end;
 
 class function Guard.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
@@ -3041,6 +3111,12 @@ class procedure Guard.RaiseArgumentOutOfRangeException(const argumentName: strin
 begin
   raise EArgumentOutOfRangeException.CreateResFmt(
     @SArgumentOutOfRangeException, [argumentName]) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseArgumentException(typeKind: TTypeKind; const argumentName: string);
+begin
+  raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+    [GetEnumName(TypeInfo(TTypeKind), Ord(typeKind)), argumentName]) at ReturnAddress;
 end;
 
 class procedure Guard.RaiseArgumentFormatException(const argumentName: string);
@@ -3366,20 +3442,24 @@ begin
 end;
 
 class function TLazyInitializer.EnsureInitialized<T>(var target: T;
-  const factoryMethod: TFunc<T>): T;
+  const valueFactory: TFunc<T>): T;
 var
   value: T;
 begin
+  Guard.CheckTypeKind<T>([tkClass, tkInterface], 'T');
+
   if PPointer(@target)^ = nil then
   begin
-    value := factoryMethod;
-    case PTypeInfo(TypeInfo(T)).Kind of
+    value := valueFactory;
+    if PPointer(@value)^ = nil then
+      raise EInvalidOperationException.CreateRes(@SValueFactoryReturnedNil);
+    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
       tkClass:
         if TInterlocked.CompareExchange(PObject(@target)^, PObject(@value)^, TObject(nil)) <> nil then
           PObject(@value)^.Free;
       tkInterface:
         if TInterlocked.CompareExchange(PPointer(@target)^, PPointer(@value)^, nil) = nil then
-          PPointer(@value)^ := nil;
+          value := Default(T);
     end;
   end;
   Result := target;

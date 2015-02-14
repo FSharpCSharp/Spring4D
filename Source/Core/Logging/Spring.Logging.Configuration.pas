@@ -261,8 +261,8 @@ end;
 procedure TLoggingConfiguration.RegisterLogger(typeInfo: PTypeInfo;
   const name: string);
 begin
+  Guard.CheckTypeKind(typeInfo.Kind, [tkClass, tkRecord], 'T');
   Guard.CheckNotNull(name <> '', 'name');
-  Guard.CheckTypeKind(typeInfo, [tkClass, tkRecord], 'T');
   fTypes.Add(typeInfo, name);
 end;
 

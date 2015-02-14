@@ -38,6 +38,7 @@ resourcestring
   SNoDelegateAssigned          = 'No delegate has been assigned.';
   SNotClassType                = '"%s" is not a class type.';
   STypeNotSupported            = 'Type is not supported: %s';
+  SValueFactoryReturnedNil     = 'ValueFactory returned nil.';
 
   SArgumentOutOfRangeException = 'Specified argument was out of the range of valid values: %s';
   SArgumentNullException       = 'Specified argument cannot be nil: %s';
