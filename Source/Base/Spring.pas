@@ -1637,8 +1637,8 @@ type
     function GetItem(index: Integer): T; inline;
     procedure SetCount(value: Integer); inline;
     procedure SetItem(index: Integer; const value: T); inline;
-    procedure InternalInsert(index: Integer; const items: array of T); overload;
-    function InternalEquals(const items: array of T): Boolean; overload;
+    procedure InternalInsert(index: Integer; const items: array of T);
+    function InternalEquals(const items: array of T): Boolean;
     function InternalIndexOf(const item: T): Integer;
     function InternalIndexOfInt(const item: Integer): Integer;
     function InternalIndexOfStr(const item: string): Integer;
