@@ -249,16 +249,23 @@ begin
 end;
 
 function TFireDACConnectionAdapter.BeginTransaction: IDBTransaction;
+var
+  transaction: TFDTransaction;
 begin
   if Connection = nil then
     Exit(nil);
 
   Connection.Connected := True;
+  if (not Connection.InTransaction) or (Connection.TxOptions.EnableNested) then
+  begin
+    transaction := TFDTransaction.Create(Connection);
+    transaction.Connection := Connection;
+    transaction.StartTransaction;
+  end
+  else
+    EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
 
-  if not Connection.InTransaction then
-    Connection.StartTransaction;
-
-  Result := TFireDACTransactionAdapter.Create(Connection.Transaction as TFDTransaction);
+  Result := TFireDACTransactionAdapter.Create(transaction);
 end;
 
 procedure TFireDACConnectionAdapter.Connect;
