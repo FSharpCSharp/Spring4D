@@ -970,12 +970,10 @@ function TNullableToTypeConverter.DoConvertTo(const value: TValue;
 var
   innerValue: TValue;
 begin
-  if TType.TryGetNullableValue(value, innerValue)
-    and (innerValue.TypeInfo.TypeName <> targetTypeInfo.TypeName) then
-  begin
+  if value.TryGetNullableValue(innerValue)
+    and (innerValue.TypeInfo <> targetTypeInfo) then
     Result := TValueConverter.Default.ConvertTo(innerValue,
       targetTypeInfo, parameter)
-  end
   else
     Result := innerValue;
 end;
@@ -991,7 +989,8 @@ var
   innerTypeInfo: PTypeInfo;
   innerValue: TValue;
 begin
-  if TType.TryGetNullableTypeInfo(targetTypeInfo, innerTypeInfo) then
+  innerTypeInfo := GetUnderlyingType(targetTypeInfo);
+  if Assigned(innerTypeInfo) then
   begin
     innerValue := value;
     if innerTypeInfo.TypeName <> value.TypeInfo.TypeName then
@@ -999,7 +998,7 @@ begin
         innerValue, parameter);
 
     TValue.Make(nil, targetTypeInfo, Result);
-    TType.TrySetNullableValue(Result, innerValue);
+    Result.SetNullableValue(innerValue);
   end;
 end;
 
