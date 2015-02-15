@@ -153,6 +153,16 @@ type
     function Cast(typeInfo: PTypeInfo): TValue;
 
     /// <summary>
+    ///   Compares two TValue instances.
+    /// </summary>
+    class function Compare(const left, right: TValue): Integer; static;
+
+    /// <summary>
+    ///   Compares to another TValue.
+    /// </summary>
+    function CompareTo(const value: TValue): Integer;
+
+    /// <summary>
     ///   Checks for equality with another TValue.
     /// </summary>
     function Equals(const value: TValue): Boolean;
@@ -186,6 +196,17 @@ type
     function IsType<T>: Boolean; overload;
     function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
 {$ENDIF}
+
+    ///	<summary>
+    ///	  Sets the stored value of a nullable.
+    ///	</summary>
+    procedure SetNullableValue(const value: TValue);
+
+    /// <summary>
+    ///   Tries to get the stored value of a nullable. Returns false when the
+    ///   nullable is null.
+    /// </summary>
+    function TryGetNullableValue(out value: TValue): Boolean;
 
     /// <summary>
     ///   Returns the stored value as TObject.
@@ -500,9 +521,6 @@ type
 
     class procedure CheckIndex(length, index: Integer; indexBase: Integer = 0); static; inline;
 
-    /// <exception cref="Spring|EArgumentOutOfRangeException">
-    ///   Raised if the <paramref name="index" /> is out of range.
-    /// </exception>
     class procedure CheckRange(const buffer: array of Byte; index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Byte; index, count: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; index: Integer); overload; static;
@@ -1735,6 +1753,16 @@ function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean; overload;
 
 function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Boolean; overload;
 
+///	<summary>
+///	  Returns <c>True</c> if the type is a nullable type.
+///	</summary>
+function IsNullable(typeInfo: PTypeInfo): Boolean;
+
+/// <summary>
+///   Returns the underlying type argument of the specified nullable type.
+/// </summary>
+function GetUnderlyingType(typeInfo: PTypeInfo): PTypeInfo;
+
 /// <summary>
 ///   Returns the size that is needed in order to pass an argument of the given
 ///   type.
@@ -1762,6 +1790,7 @@ implementation
 uses
   Math,
   RTLConsts,
+  StrUtils,
   SysConst,
   Spring.Events,
   Spring.Reflection.Core,
@@ -1882,6 +1911,33 @@ begin
     for i := Low(leftTypes) to High(leftTypes) do
       if not IsAssignableFrom(leftTypes[i], rightTypes[i]) then
         Exit(False);
+end;
+
+function IsNullable(typeInfo: PTypeInfo): Boolean;
+const
+  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkRecord)
+    and StartsText(PrefixString, GetTypeName(typeInfo));
+end;
+
+function GetUnderlyingType(typeInfo: PTypeInfo): PTypeInfo;
+var
+  context: TRttiContext;
+  rttiType: TRttiType;
+  valueField: TRttiField;
+begin
+  if IsNullable(typeInfo) then
+  begin
+    rttiType := context.GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    if Assigned(valueField) then
+      Result := valueField.FieldType.Handle
+    else
+      Result := nil;
+  end
+  else
+    Result := nil;
 end;
 
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
@@ -2035,6 +2091,54 @@ begin
     TValue.Make(@intf, typeInfo, Result)
   else if not TryCast(typeInfo, Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+// TODO: use typekind matrix for comparer functions
+class function TValueHelper.Compare(const left, right: TValue): Integer;
+const
+  EmptyResults: array[Boolean, Boolean] of Integer = ((0, -1), (1, 0));
+var
+  leftIsEmpty, rightIsEmpty: Boolean;
+  leftValue, rightValue: TValue;
+begin
+  leftIsEmpty := left.IsEmpty;
+  rightIsEmpty := right.IsEmpty;
+  if leftIsEmpty or rightIsEmpty then
+    Result := EmptyResults[leftIsEmpty, rightIsEmpty]
+  else if left.IsOrdinal and right.IsOrdinal then
+    Result := Math.CompareValue(left.AsOrdinal, right.AsOrdinal)
+  else if left.IsType<Extended> and right.IsType<Extended> then
+    Result := Math.CompareValue(left.AsExtended, right.AsExtended)
+  else if left.IsString and right.IsString then
+    Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
+  else if left.IsObject and right.IsObject then
+    Result := NativeInt(left.AsObject) - NativeInt(right.AsObject) // TODO: instance comparer
+  else if left.IsVariant and right.IsVariant then
+  begin
+    case VarCompareValue(left.AsVariant, right.AsVariant) of
+      vrEqual: Result := 0;
+      vrLessThan: Result := -1;
+      vrGreaterThan: Result := 1;
+      vrNotEqual: Result := -1;
+    else
+      Result := 0;
+    end;
+  end
+  else if IsNullable(left.TypeInfo) and IsNullable(right.TypeInfo) then
+  begin
+    leftIsEmpty := left.TryGetNullableValue(leftValue);
+    rightIsEmpty := right.TryGetNullableValue(rightValue);
+    if leftIsEmpty or rightIsEmpty then
+      Result := EmptyResults[leftIsEmpty, rightIsEmpty]
+    else
+      Result := Compare(leftValue, rightValue);
+  end else
+    Result := 0;
+end;
+
+function TValueHelper.CompareTo(const value: TValue): Integer;
+begin
+  Result := Compare(Self, value);
 end;
 
 function EqualsFail(const left, right: TValue): Boolean;
@@ -2590,6 +2694,35 @@ begin
   Result := TypeInfo = System.TypeInfo(Variant);
 end;
 
+procedure TValueHelper.SetNullableValue(const value: TValue);
+var
+  typeInfo: PTypeInfo;
+  context: TRttiContext;
+  rttiType: TRttiType;
+  valueField, hasValueField: TRttiField;
+  instance: Pointer;
+begin
+  typeInfo := TValueData(Self).FTypeInfo;
+  if IsNullable(typeInfo) then
+  begin
+    rttiType := context.GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    if Assigned(valueField) then
+    begin
+      hasValueField := rttiType.GetField('fHasValue');
+      if Assigned(hasValueField) then
+      begin
+        instance := GetReferenceToRawData;
+        valueField.SetValue(instance, value);
+        if value.IsEmpty then
+          hasValueField.SetValue(instance, '')
+        else
+          hasValueField.SetValue(instance, '@');
+      end;
+    end;
+  end;
+end;
+
 function TValueHelper.ToObject: TObject;
 begin
   if IsInterface then
@@ -2635,6 +2768,35 @@ begin
   end;
   if Result then
     IInterface(Intf) := AsInterface;
+end;
+
+function TValueHelper.TryGetNullableValue(out value: TValue): Boolean;
+var
+  typeInfo: PTypeInfo;
+  context: TRttiContext;
+  rttiType: TRttiType;
+  hasValueField, valueField: TRttiField;
+  instance: Pointer;
+begin
+  typeInfo := TValueData(Self).FTypeInfo;
+  Result := IsNullable(typeInfo);
+  if Result then
+  begin
+    rttiType := context.GetType(typeInfo);
+    hasValueField := rttiType.GetField('fHasValue');
+    if Assigned(hasValueField) then
+    begin
+      instance := GetReferenceToRawData;
+      Result := hasValueField.GetValue(instance).AsString <> '';
+      if Result then
+      begin
+        valueField := rttiType.GetField('fValue');
+        Result := Assigned(valueField);
+        if Result then
+          value := valueField.GetValue(instance);
+      end;
+    end;
+  end;
 end;
 
 {$ENDREGION}
