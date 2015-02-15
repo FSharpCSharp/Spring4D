@@ -263,7 +263,7 @@ begin
     transaction.StartTransaction;
   end
   else
-    EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
+    raise EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
 
   Result := TFireDACTransactionAdapter.Create(transaction);
 end;
