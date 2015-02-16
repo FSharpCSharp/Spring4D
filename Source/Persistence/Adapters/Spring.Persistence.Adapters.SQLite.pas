@@ -175,10 +175,6 @@ begin
   inherited;
   for param in params do
   begin
-   { LParam := GetParamByName(FSQLiteStmt, P.Name);
-    if not Assigned(LParam) then
-      raise ESQLiteStatementAdapterException.CreateFmt('Cannot find parameter named %S', [P.Name]);}
-
     Statement.SetParamVariant(param.Name, param.Value);
   end;
 end;

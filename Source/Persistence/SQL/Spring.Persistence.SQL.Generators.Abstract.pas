@@ -29,11 +29,13 @@ unit Spring.Persistence.SQL.Generators.Abstract;
 interface
 
 uses
+  Rtti,
   Spring.Collections,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Types,
+  Spring.Persistence.SQL.Params;
 
 const
   TBL_TEMP = 'ORM_TEMP';
@@ -64,15 +66,46 @@ type
       const versionColumn: VersionAttribute; const version, primaryKey: Variant): Variant; virtual; abstract;
     function FindEnd(const whereFields: IList<TSQLWhereField>;
       startIndex: Integer; startToken, endToken: TWhereOperator): Integer; virtual;
+
+    function GetParamClass: TDBParamClass; virtual;
+  public
+    function CreateParam(const paramField: TSQLParamField; const value: TValue): TDBParam; virtual;
   end;
 
 implementation
 
 uses
+  Spring.Persistence.Core.Utils,
+  Spring.Persistence.Core.Reflection,
+  Spring,
+  Classes,
   Variants;
 
 
 {$REGION 'TAbstractSQLGenerator'}
+
+function TAbstractSQLGenerator.CreateParam(const paramField: TSQLParamField;
+  const value: TValue): TDBParam;
+var
+  convertedValue: TValue;
+  freeAfter: Boolean;
+begin
+  Result := GetParamClass.Create;
+  Result.Name := paramField.ParamName;
+  freeAfter := False;
+  convertedValue := value;
+  if (not value.IsEmpty) and (value.IsObject) then
+    TryConvert(value, TypeInfo(TStream), convertedValue, freeAfter);
+
+  Result.Value := TUtils.AsVariant(convertedValue);
+  if VarIsNull(Result.Value) or VarIsEmpty(Result.Value) then
+  begin
+    Result.SetParamTypeFromTypeInfo(paramField.Column.MemberType);
+  end;
+
+  if freeAfter then
+    convertedValue.Free;
+end;
 
 function TAbstractSQLGenerator.FindEnd(
   const whereFields: IList<TSQLWhereField>; startIndex: Integer; startToken,
@@ -102,6 +135,11 @@ end;
 function TAbstractSQLGenerator.GenerateUniqueId: Variant;
 begin
   Result := Null;
+end;
+
+function TAbstractSQLGenerator.GetParamClass: TDBParamClass;
+begin
+  Result := TDBParam;
 end;
 
 {$ENDREGION}

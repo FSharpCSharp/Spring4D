@@ -115,7 +115,11 @@ begin
     begin
       if IsNullable(value.TypeInfo) then
         if value.TryGetNullableValue(LValue) then
-          Result := TUtils.AsVariant(LValue);
+          Exit(AsVariant(LValue));
+
+      if TType.IsLazyType(value.TypeInfo) then
+        if TryGetLazyTypeValue(value, LValue) then
+          Exit(AsVariant(LValue));
     end;
     tkClass:
     begin

@@ -96,13 +96,14 @@ end;
 procedure TDeleteExecutor.BuildParams(const entity: TObject);
 var
   param: TDBParam;
-  field: TSQLWhereField;
+  whereField: TSQLWhereField;
 begin
   inherited BuildParams(entity);
 
-  field := fCommand.WhereFields.First;
+  for whereField in fCommand.WhereFields do
   param := CreateParam(field, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
-  SQLParameters.Add(param);
+    param := Generator.CreateParam(whereField, GetPrimaryKeyValue(entity));
+    SQLParameters.Add(param);
 end;
 
 procedure TDeleteExecutor.Execute(const entity: TObject);

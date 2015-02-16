@@ -3,9 +3,14 @@ unit TestAdaptersOracle;
 interface
 
 uses
-  TestFramework, Spring.Persistence.Adapters.Oracle, SysUtils, Spring.Persistence.Adapters.ADO
-  , ADODB, Spring.Persistence.Core.Interfaces, TestEntities
-  ,Generics.Collections, Spring.Persistence.Core.Session, Spring.Persistence.SQL.Generators.Oracle;
+  Spring.Persistence.Adapters.Oracle,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.Session,
+  Spring.Persistence.SQL.Generators.Oracle,
+  SysUtils,
+  TestEntities,
+  TestFramework
+  ;
 
 type
   TestOracleConnectionAdapter = class(TTestCase)
@@ -31,16 +36,32 @@ type
     procedure Page();
   end;
 
+  TestOracleSQLGenerator = class(TTestCase)
+  private
+    fSut: TOracleSQLGenerator;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure UseTOracleDBParams;
+    procedure CreateParamCreatesTOracleDBParam;
+  end;
+
 implementation
 
 uses
-  Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.DatabaseManager
-  ,Spring.Collections
-  ,Spring.Persistence.Criteria.Interfaces
-  ,Spring.Persistence.Criteria.Properties
-  ,Spring.Persistence.SQL.Params
-  ,Variants
+  ADODB,
+  DB,
+  Rtti,
+  TypInfo,
+  Spring.Collections,
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.DatabaseManager,
+  Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Criteria.Properties,
+  Spring.Persistence.SQL.Params,
+  Spring.Persistence.SQL.Types,
+  Variants
   ;
 
 const
@@ -236,7 +257,46 @@ begin
   inherited;
 end;
 
+{ TestOracleSQLGenerator }
+
+procedure TestOracleSQLGenerator.CreateParamCreatesTOracleDBParam;
+var
+  field: TSQLInsertField;
+  table: TSQLTable;
+  param: TDBParam;
+begin
+  table := TSQLTable.CreateFromClass(TCustomer);
+  field := TSQLInsertField.Create('MiddleName', table,
+    TEntityCache.Get(TCustomer).ColumnByMemberName('MiddleName'),
+    ':MiddleName');
+  param := fSut.CreateParam(field, TValue.Empty);
+  CheckEquals(TOracleDBParam, param.ClassType);
+  CheckEquals(Ord(ftWideString), Ord(param.ParamType),
+    'ParamType should be ftWidestring but was: ' + GetEnumName(System.TypeInfo(TFieldType), Ord(param.ParamType)));
+  table.Free;
+  field.Free;
+  param.Free;
+end;
+
+procedure TestOracleSQLGenerator.SetUp;
+begin
+  inherited;
+  fSut := TOracleSQLGenerator.Create;
+end;
+
+procedure TestOracleSQLGenerator.TearDown;
+begin
+  inherited;
+  fSut.Free;
+end;
+
+procedure TestOracleSQLGenerator.UseTOracleDBParams;
+begin
+  CheckEquals(TOracleDBParam, fSut.GetParamClass);
+end;
+
 initialization
+  RegisterTest(TestOracleSQLGenerator.Suite);
   if FileExists('D:\Oracle\oraociei11.dll') then
   begin
     RegisterTest(TestOracleConnectionAdapter.Suite);

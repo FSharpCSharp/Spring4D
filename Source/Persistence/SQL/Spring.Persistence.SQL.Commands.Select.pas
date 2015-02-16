@@ -123,14 +123,15 @@ end;
 procedure TSelectExecutor.BuildParams(const entity: TObject);
 var
   param: TDBParam;
-  field: TSQLWhereField;
+  whereField: TSQLWhereField;
 begin
   inherited BuildParams(entity);
   Assert(not Assigned(entity), 'Entity should not be assigned here');
 
-  for field in fCommand.WhereFields do
+  for whereField in fCommand.WhereFields do
   begin
-    param := CreateParam(field, TUtils.AsVariant(fID));
+    //LParam := CreateParam(LWhereField, TUtils.AsVariant(fID));
+    param := Generator.CreateParam(whereField, fID);
     SQLParameters.Add(param);
   end;
 end;

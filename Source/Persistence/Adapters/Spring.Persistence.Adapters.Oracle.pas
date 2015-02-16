@@ -52,7 +52,6 @@ type
   TOracleStatementAdapter = class(TADOStatementAdapter)
   public
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
-    procedure SetParam(const param: TDBParam); override;
   end;
 
   {$REGION 'Documentation'}
@@ -132,26 +131,6 @@ end;
 function TOracleStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 begin
   Result := inherited ExecuteQuery(serverSideCursor);
-end;
-
-procedure TOracleStatementAdapter.SetParam(const param: TDBParam);
-var
-  paramName: string;
-begin
-  paramName := param.Name;
-  //strip leading : in param name because ADO does not like them
-  if (param.Name <> '') and StartsStr(':', param.Name) then
-    paramName := Copy(param.Name, 2, Length(param.Name));
-
-  if VarIsEmpty(param.Value) or VarIsNull(param.Value) then
-  begin
-    //if we set param value to Null, we must provide correct field type to Oracle, otherwise it will raise an error
-    Statement.Parameters.ParamByName(paramName).Value := Null;
-    param.SetParamTypeFromTypeInfo(param.TypeInfo);
-    Statement.Parameters.ParamByName(paramName).DataType := param.ParamType;
-  end
-  else
-    Statement.Parameters.ParamValues[paramName] := param.Value;
 end;
 
 { TOracleTransactionAdapter }

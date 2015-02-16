@@ -214,12 +214,14 @@ end;
 procedure TFireDACStatementAdapter.SetParam(const param: TDBParam);
 var
   paramName: string;
+  parameter: TFDParam;
 begin
-  paramName := param.Name;
-  //strip leading : in param name because FireDAC does not like them
-  if (param.Name <> '') and StartsStr(':', param.Name) then
-    paramName := Copy(param.Name, 2, Length(param.Name));
-  Statement.Params.ParamValues[paramName] := param.Value;
+  paramName := param.NormalizeParamName(':', param.Name);
+
+  parameter := Statement.ParamByName(paramName);
+  parameter.Value := param.Value;
+  if parameter.IsNull then
+    parameter.DataType := param.ParamType;
 end;
 
 procedure TFireDACStatementAdapter.SetParams(const params: IList<TDBParam>);

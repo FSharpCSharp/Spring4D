@@ -208,18 +208,18 @@ end;
 
 procedure TDBXStatementAdapter.SetParams(const params: IList<TDBParam>);
 var
-  LParam: TDBParam;
-  sParamName: string;
+  param: TDBParam;
+  paramName: string;
+  parameter: TParam;
 begin
   inherited;
-  for LParam in params do
+  for param in params do
   begin
-    sParamName := LParam.Name;
-    {TODO -oLinas -cGeneral : dont know if DBX has the same param issue as ADO}
-    //strip leading : in param name because DBX does not like them
-    if (LParam.Name <> '') and StartsStr(':', LParam.Name) then
-      sParamName := Copy(LParam.Name, 2, Length(LParam.Name));
-    Statement.Params.ParamValues[sParamName] := LParam.Value;
+    paramName := param.NormalizeParamName(':', param.Name);
+    parameter := Statement.ParamByName(paramName);
+    parameter.Value := param.Value;
+    if parameter.IsNull then
+      parameter.DataType := param.ParamType;
   end;
 end;
 

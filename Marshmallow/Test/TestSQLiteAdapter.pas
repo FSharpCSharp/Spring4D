@@ -264,8 +264,6 @@ begin
   LParam := TDBParam.Create;
   LParam.Name := ':NAME';
   LParam.Value := 'Test';
-  LParam.ParamType := ftString;
-
   Params.Add(LParam);
 
   FSQLiteStatementAdapter.SetParams(Params);

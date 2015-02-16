@@ -35,6 +35,8 @@ uses
   Spring.Collections;
 
 type
+  TDBParamClass = class of TDBParam;
+
   {$REGION 'Documentation'}
   ///	<summary>
   ///	  Represents query parameter.
@@ -42,38 +44,40 @@ type
   {$ENDREGION}
   TDBParam = class
   private
-    FName: string;
-    FParamType: TFieldType;
-    FValue: Variant;
-    FTypeInfo: PTypeInfo;
+    fName: string;
+    fParamType: TFieldType;
+    fValue: Variant;
+    fTypeInfo: PTypeInfo;
   protected
     function GetName: string; virtual;
-    procedure SetName(const Value: string); virtual;
-    procedure SetValue(const Value: Variant); virtual;
+    procedure SetName(const name: string); virtual;
+    procedure SetValue(const value: Variant); virtual;
+    function FromTypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType; virtual;
   public
     constructor Create; overload; virtual;
-    constructor Create(const AName: string; const AValue: Variant); overload; virtual;
+    constructor Create(const name: string; const paramValue: Variant); overload; virtual;
     destructor Destroy; override;
 
-    procedure SetFromTValue(const AValue: TValue);
-    procedure SetParamTypeFromTypeInfo(ATypeInfo: PTypeInfo);
+    procedure SetFromTValue(const fromValue: TValue);
+    procedure SetParamTypeFromTypeInfo(typeInfo: PTypeInfo);
 
+    class function NormalizeParamName(const prefix: string; const paramName: string): string;
 
-    property TypeInfo: PTypeInfo read FTypeInfo;
+    property TypeInfo: PTypeInfo read fTypeInfo;
     property Name: string read GetName write SetName;
-    property ParamType: TFieldType read FParamType write FParamType;
-    property Value: Variant read FValue write SetValue;
+    property ParamType: TFieldType read fParamType;
+    property Value: Variant read fValue write SetValue;
   end;
 
   procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
   procedure ConvertParams(const AFrom: array of const; ATo: IList<TDBParam>);
   function FromTValueTypeToFieldType(const AValue: TValue): TFieldType;
-  function FromTypeInfoToFieldType(ATypeInfo: PTypeInfo): TFieldType;
 
 implementation
 
 uses
   SysUtils,
+  StrUtils,
   Variants,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Utils;
@@ -83,53 +87,53 @@ begin
   case AFrom.VType of
     vtAnsiString:
     begin
-      ATo.ParamType := ftString;
-      ATo.FValue := string(AFrom.VAnsiString);
+      ATo.fParamType := ftString;
+      ATo.fValue := string(AFrom.VAnsiString);
     end;
     vtWideString:
     begin
-      ATo.ParamType := ftWideString;
-      ATo.FValue := string(AFrom.VWideString);
+      ATo.fParamType := ftWideString;
+      ATo.fValue := string(AFrom.VWideString);
     end;
     vtUnicodeString:
     begin
-      ATo.ParamType := ftWideString;
-      ATo.FValue := string(AFrom.VUnicodeString);
+      ATo.fParamType := ftWideString;
+      ATo.fValue := string(AFrom.VUnicodeString);
     end;
     vtString:
     begin
-      ATo.ParamType := ftString;
-      ATo.FValue := string(AFrom.VString);
+      ATo.fParamType := ftString;
+      ATo.fValue := string(AFrom.VString);
     end;
     vtInt64:
     begin
-      ATo.ParamType := ftLargeint;
-      ATo.FValue := Int64(AFrom.VInt64^);
+      ATo.fParamType := ftLargeint;
+      ATo.fValue := Int64(AFrom.VInt64^);
     end;
     vtInteger:
     begin
-      ATo.ParamType := ftInteger;
-      ATo.FValue := AFrom.VInteger;
+      ATo.fParamType := ftInteger;
+      ATo.fValue := AFrom.VInteger;
     end;
     vtExtended:
     begin
-      ATo.ParamType := DB.ftExtended;
-      ATo.FValue := Extended(AFrom.VExtended^);
+      ATo.fParamType := DB.ftExtended;
+      ATo.fValue := Extended(AFrom.VExtended^);
     end;
     vtCurrency:
     begin
-      ATo.ParamType := ftCurrency;
-      ATo.FValue := Currency(AFrom.VCurrency^);
+      ATo.fParamType := ftCurrency;
+      ATo.fValue := Currency(AFrom.VCurrency^);
     end;
     vtBoolean:
     begin
-      ATo.ParamType := ftBoolean;
-      ATo.FValue := AFrom.VBoolean;
+      ATo.fParamType := ftBoolean;
+      ATo.fValue := AFrom.VBoolean;
     end;
     vtVariant:
     begin
-      ATo.ParamType := ftVariant;
-      ATo.FValue := Variant(AFrom.VVariant^);
+      ATo.fParamType := ftVariant;
+      ATo.fValue := Variant(AFrom.VVariant^);
     end
     else
     begin
@@ -160,33 +164,15 @@ begin
   Result := VarTypeToDataType(VarType(LVariant));
 end;
 
-function FromTypeInfoToFieldType(ATypeInfo: PTypeInfo): TFieldType;
-begin
-  case ATypeInfo.Kind of
-    tkUnknown: Result := ftUnknown;
-    tkInteger: Result := ftInteger;
-    tkChar, tkLString, tkString: Result := ftString;
-    tkEnumeration, tkSet: Result := ftInteger;
-    tkFloat: Result := ftFloat;
-    tkClass: Result := ftBlob;
-    tkWChar, tkWString, tkUString: Result := ftWideString;
-    tkVariant: Result := ftVariant;
-    tkArray, tkRecord, tkInterface, tkDynArray: Result := ftBlob;
-    tkInt64: Result := ftLargeint;
-    tkClassRef: Result := ftReference;
-    tkPointer: Result := ftReference;
-    else
-      Result := ftUnknown;
-  end;
-end;
+
 
 { TDBParam }
 
-constructor TDBParam.Create(const AName: string; const AValue: Variant);
+constructor TDBParam.Create(const name: string; const paramValue: Variant);
 begin
   Create;
-  FName := AName;
-  SetValue(AValue);
+  fName := name;
+  SetValue(paramValue);
 end;
 
 constructor TDBParam.Create;
@@ -196,42 +182,87 @@ end;
 
 destructor TDBParam.Destroy;
 begin
-  //
   inherited Destroy;
+end;
+
+function TDBParam.FromTypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType;
+begin
+  case typeInfo.Kind of
+    tkUnknown: Result := ftUnknown;
+    tkInteger: Result := ftInteger;
+    tkInt64: Result := ftLargeint;
+    tkChar, tkLString, tkString: Result := ftString;
+    tkWChar, tkWString, tkUString: Result := ftWideString;
+    tkEnumeration, tkSet:
+    begin
+      if typeInfo = System.TypeInfo(Boolean) then
+        Result := ftBoolean
+      else
+        Result := ftInteger;
+    end;
+    tkFloat:
+    begin
+      if typeInfo = System.TypeInfo(TDateTime) then
+        Result := ftDateTime
+      else if typeInfo = System.TypeInfo(TDate) then
+        Result := ftDate
+      else
+        Result := ftFloat;
+    end;
+    tkClass, tkArray, tkInterface, tkDynArray: Result := ftBlob;
+    tkVariant: Result := ftVariant;
+    tkRecord:
+    begin
+      Result := ftBlob;
+      if IsNullable(typeInfo) then
+        Result := FromTypeInfoToFieldType(GetUnderlyingType(typeInfo));
+    end;
+    tkClassRef, tkPointer: Result := ftReference;
+    else
+      Result := ftUnknown;
+  end;
 end;
 
 function TDBParam.GetName: string;
 begin
-  Result := UpperCase(FName);
+  Result := UpperCase(fName);
   if (Length(Result) > 0) and not (CharInSet(Result[1], [':'])) then
   begin
     Result := ':' + Result;
   end;
 end;
 
-procedure TDBParam.SetFromTValue(const AValue: TValue);
+class function TDBParam.NormalizeParamName(const prefix,
+  paramName: string): string;
+begin
+  Result := paramName;
+  if (paramName <> '') and StartsStr(prefix, paramName) then
+    Result := Copy(paramName, 2, Length(paramName));
+end;
+
+procedure TDBParam.SetFromTValue(const fromValue: TValue);
 var
-  LVariant: Variant;
+  variantValue: Variant;
 begin
-  LVariant := TUtils.AsVariant(AValue);
-  Value := LVariant;
+  variantValue := TUtils.AsVariant(fromValue);
+  Value := variantValue;
 end;
 
-procedure TDBParam.SetName(const Value: string);
+procedure TDBParam.SetName(const name: string);
 begin
-  FName := Value;
+  fName := name;
 end;
 
-procedure TDBParam.SetParamTypeFromTypeInfo(ATypeInfo: PTypeInfo);
+procedure TDBParam.SetParamTypeFromTypeInfo(typeInfo: PTypeInfo);
 begin
-  FTypeInfo := ATypeInfo;
-  FParamType := FromTypeInfoToFieldType(FTypeInfo);
+  fTypeInfo := typeInfo;
+  fParamType := FromTypeInfoToFieldType(fTypeInfo);
 end;
 
-procedure TDBParam.SetValue(const Value: Variant);
+procedure TDBParam.SetValue(const value: Variant);
 begin
-  FParamType := VarTypeToDataType(VarType(Value));
-  FValue := Value;
+  fParamType := VarTypeToDataType(VarType(value));
+  fValue := value;
 end;
 
 end.

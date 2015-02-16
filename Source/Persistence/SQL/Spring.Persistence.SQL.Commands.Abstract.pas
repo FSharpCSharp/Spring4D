@@ -48,14 +48,7 @@ type
     fEntityData: TEntityData;
     fParams: IList<TDBParam>;
   protected
-    function CanUpdateParamFieldType(const value: Variant): Boolean; virtual;
-
-    function CreateParam(const paramField: TSQLParamField;
-      const value: Variant): TDBParam; overload;
-    function CreateParam(const entity: TObject;
-      const paramField: TSQLParamField): TDBParam; overload;
-    procedure FillDbTableColumns(const tableName: string;
-      const columns: IList<string>);
+    procedure FillDbTableColumns(const tableName: string; const columns: IList<string>);
     function GetCommand: TDMLCommand; virtual; abstract;
 
     property Command: TDMLCommand read GetCommand;
@@ -109,40 +102,6 @@ begin
   fParams.Clear;
   if Assigned(Command) then
     Command.Entity := entity;
-end;
-
-function TAbstractCommandExecutor.CanUpdateParamFieldType(const value: Variant): Boolean;
-begin
-  Result := (VarIsNull(value) or VarIsEmpty(value)) and (Connection.GetQueryLanguage = qlOracle);
-end;
-
-function TAbstractCommandExecutor.CreateParam(const entity: TObject;
-  const paramField: TSQLParamField): TDBParam;
-var
-  memberValue, stream: TValue;
-  freeValue: Boolean;
-begin
-  Result := TDBParam.Create;
-  Result.Name := paramField.ParamName;
-  memberValue := TRttiExplorer.GetMemberValueDeep(entity, paramField.Column.MemberName);
-  //convert/serialize objects to stream. If value is nullable or lazy get its real value
-  if memberValue.IsObject and TryConvert(memberValue, TypeInfo(TStream), stream, freeValue) then
-    memberValue := stream.AsObject;
-
-  Result.Value := TUtils.AsVariant(memberValue);
-  if CanUpdateParamFieldType(Result.Value) then
-    Result.SetParamTypeFromTypeInfo(paramField.Column.MemberType);
-
-  if freeValue then
-    FreeValueObject(memberValue);
-end;
-
-function TAbstractCommandExecutor.CreateParam(
-  const paramField: TSQLParamField; const value: Variant): TDBParam;
-begin
-  Result := TDBParam.Create;
-  Result.Name := paramField.ParamName;
-  Result.Value := value;
 end;
 
 procedure TAbstractCommandExecutor.FillDbTableColumns(const tableName: string;

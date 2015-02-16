@@ -91,7 +91,7 @@ begin
   inherited;
   paramName := command.GetAndIncParameterName(fPropertyName);
   paramName2 := command.GetAndIncParameterName(fPropertyName);
-  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command) );
+  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
   whereField.MatchMode := GetMatchMode;
   whereField.WhereOperator := GetWhereOperator;
   whereField.ParamName := paramName;
@@ -105,12 +105,12 @@ begin
     whereField.Free;
 
   //1st parameter Low
-  param := TDBParam.Create;
+  param := generator.GetParamClass.Create; // TDBParam.Create;
   param.SetFromTValue(fLowValue);
   param.Name := paramName;
   params.Add(param);
   //2nd parameter High
-  param := TDBParam.Create;
+  param := generator.GetParamClass.Create;
   param.SetFromTValue(fHighValue);
   param.Name := paramName2;
   params.Add(param);

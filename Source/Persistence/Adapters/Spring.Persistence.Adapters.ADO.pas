@@ -118,6 +118,7 @@ implementation
 uses
   ADOConst,
   StrUtils,
+  Variants,
   Spring.Persistence.SQL.Register,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
@@ -230,13 +231,14 @@ end;
 
 procedure TADOStatementAdapter.SetParam(const param: TDBParam);
 var
-  sParamName: string;
+  paramName: string;
+  parameter: TParameter;
 begin
-  sParamName := param.Name;
-  //strip leading : in param name because ADO does not like them
-  if (param.Name <> '') and StartsStr(':', param.Name) then
-    sParamName := Copy(param.Name, 2, Length(param.Name));
-  Statement.Parameters.ParamValues[sParamName] := param.Value;
+  paramName := param.NormalizeParamName(':', param.Name);
+  parameter := Statement.Parameters.ParamByName(paramName);
+  parameter.Value := param.Value;
+  if VarIsNull(param.Value) or VarIsEmpty(param.Value) then
+    parameter.DataType := param.ParamType;
 end;
 
 procedure TADOStatementAdapter.SetParams(const params: IList<TDBParam>);

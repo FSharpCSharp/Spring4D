@@ -121,6 +121,7 @@ function InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatu
 procedure ClearTable(const ATableName: string);
 function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil): Int64;
 function GetValueFromDB(const table, columnName, where: string): Variant;
+function PrettyPrintVariant(const value: Variant): string;
 
 
 implementation
@@ -142,6 +143,7 @@ uses
   ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.Core.Exceptions
   ,Diagnostics
+  ,TypInfo
   ;
 
 

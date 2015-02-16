@@ -30,10 +30,12 @@ interface
 
 uses
   Classes,
+  Rtti,
   Spring.Collections,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Types,
+  Spring.Persistence.SQL.Params;
 
 type
   ICommandExecutionListener = interface
@@ -65,6 +67,8 @@ type
     function GetEscapeFieldnameChar: Char;
     function GetUpdateVersionFieldQuery(const command: TUpdateCommand;
       const versionColumn: VersionAttribute; const version, primaryKey: Variant): Variant;
+    function GetParamClass: TDBParamClass;
+    function CreateParam(const paramField: TSQLParamField; const value: TValue): TDBParam;
   end;
 
 implementation

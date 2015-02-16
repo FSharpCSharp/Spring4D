@@ -29,11 +29,15 @@ unit Spring.Persistence.SQL.Generators.Oracle;
 interface
 
 uses
+  Rtti,
+  TypInfo,
+  DB,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Interfaces,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Types,
+  Spring.Persistence.SQL.Params;
 
 type
   /// <summary>
@@ -53,6 +57,13 @@ type
     function GetSQLSequenceCount(const sequenceName: string): string; override;
     function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
     function GetSQLTableExists(const tableName: string): string; override;
+
+    function GetParamClass: TDBParamClass; override;
+  end;
+
+  TOracleDBParam = class(TDBParam)
+  protected
+    function FromTypeInfoToFieldType(ATypeInfo: PTypeInfo): TFieldType; override;
   end;
 
 implementation
@@ -60,6 +71,7 @@ implementation
 uses
   StrUtils,
   SysUtils,
+  Variants,
   Spring.Persistence.SQL.Register;
 
 
@@ -149,6 +161,11 @@ begin
   end;
 end;
 
+function TOracleSQLGenerator.GetParamClass: TDBParamClass;
+begin
+  Result := TOracleDBParam;
+end;
+
 function TOracleSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlOracle;
@@ -196,6 +213,18 @@ end;
 
 {$ENDREGION}
 
+
+{ TOracleDBParam }
+
+function TOracleDBParam.FromTypeInfoToFieldType(
+  ATypeInfo: PTypeInfo): TFieldType;
+begin
+  Result := inherited FromTypeInfoToFieldType(ATypeInfo);
+  case ATypeInfo.Kind of
+    tkClass, tkArray, tkDynArray, tkInterface:
+      Result := ftOraBlob;
+  end;
+end;
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TOracleSQLGenerator.Create);

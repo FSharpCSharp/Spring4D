@@ -141,14 +141,14 @@ end;
 procedure TInsertExecutor.BuildParams(const entity: TObject);
 var
   param: TDBParam;
-  field: TSQLInsertField;
+  insertField: TSQLInsertField;
 begin
   inherited BuildParams(entity);
   fCommand.Entity := entity;
 
-  for field in fCommand.InsertFields do
+  for insertField in fCommand.InsertFields do
   begin
-    param := CreateParam(entity, field);
+    param := Generator.CreateParam(insertField, insertField.Column.GetValue(entity));
     SQLParameters.Add(param);
   end;
 end;

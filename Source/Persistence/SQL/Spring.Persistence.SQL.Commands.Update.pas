@@ -173,19 +173,22 @@ end;
 procedure TUpdateExecutor.BuildParams(const entity: TObject);
 var
   param: TDBParam;
-  field: TSQLParamfield;
+  updateField: TSQLUpdateField;
+  whereField: TSQLWhereField;
 begin
   inherited BuildParams(entity);
 
-  for field in fCommand.UpdateFields do
+  for updateField in fCommand.UpdateFields do
   begin
-    param := CreateParam(entity, field);
+   // LParam := CreateParam(entity, updateField);
+    param := Generator.CreateParam(updateField, updateField.Column.GetValue(entity));
     SQLParameters.Add(param);
   end;
 
-  for field in fCommand.WhereFields do
+  for whereField in fCommand.WhereFields do
   begin
-    param := CreateParam(entity, field);
+   // param := CreateParam(entity, whereField);
+    param := Generator.CreateParam(whereField, whereField.Column.GetValue(entity));
     SQLParameters.Add(param);
   end;
 end;
