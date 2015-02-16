@@ -1444,13 +1444,10 @@ begin
     iResult := SQLITE_OK;
 
     case FEncoding of
-      seUTF8: iResult := SQLite3_Open(PAnsiChar(UTF8Encode(FFileName)), Fdb);
+      seUTF8: iResult := sqlite3_open_v2(PAnsiChar(UTF8Encode(FFileName)), Fdb,
+        SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE or SQLITE_OPEN_URI, nil);
       seUTF16: iResult := SQLite3_Open16(PChar(FFileName), Fdb);
     end;
-
-
-
-//    iResult := SQLite3_Open(PAnsiChar(AnsiString(FileName)), Fdb);
 
     if iResult <> SQLITE_OK then
       if Assigned(Fdb) then

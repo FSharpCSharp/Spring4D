@@ -79,6 +79,58 @@ const
   SQLITE_UTF16LE  = 4;
   SQLITE_ANY      = 5;
 
+  SQLITE_OPEN_READONLY = $00000001;
+  /// The database is opened for reading and writing if possible, or reading
+  // only if the file is write protected by the operating system
+  // - In either case the database must already exist, otherwise an error is
+  // returned
+  // - Ok for sqlite3.open_v2()
+  SQLITE_OPEN_READWRITE = $00000002;
+  /// In conjunction with SQLITE_OPEN_READWRITE, optionally create the database
+  // file if it does not exist
+  // - The database is opened for reading and writing if possible, or reading
+  // only if the file is write protected by the operating system
+  // - In either case the database must already exist, otherwise an error is returned
+  SQLITE_OPEN_CREATE = $00000004;
+  /// URI filename interpretation is enabled if the SQLITE_OPEN_URI flag is set
+  // in the fourth argument to sqlite3.open_v2(), or if it has been enabled
+  // globally using the SQLITE_CONFIG_URI option with the sqlite3.config() method
+  // or by the SQLITE_USE_URI compile-time option.
+  // - As of SQLite version 3.7.7, URI filename interpretation is turned off by
+  // default, but future releases of SQLite might enable URI filename
+  // interpretation by default
+  // - Ok for sqlite3.open_v2(), in conjuction with SQLITE_OPEN_READONLY,
+  // SQLITE_OPEN_READWRITE, (SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
+  SQLITE_OPEN_URI = $00000040;  // Ok for sqlite3_open_v2()
+  /// If the SQLITE_OPEN_NOMUTEX flag is set, then the database will remain in
+  // memory
+  // - Ok for sqlite3.open_v2(), in conjuction with SQLITE_OPEN_READONLY,
+  // SQLITE_OPEN_READWRITE, (SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
+  SQLITE_OPEN_MEMORY = $00000080;  // Ok for sqlite3_open_v2()
+  /// If the SQLITE_OPEN_NOMUTEX flag is set, then the database connection opens
+  // in the multi-thread threading mode as long as the single-thread mode has
+  // not been set at compile-time or start-time
+  // - Ok for sqlite3.open_v2(), in conjuction with SQLITE_OPEN_READONLY,
+  // SQLITE_OPEN_READWRITE, (SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
+  SQLITE_OPEN_NOMUTEX = $00008000;  // Ok for sqlite3_open_v2()
+  /// If the SQLITE_OPEN_FULLMUTEX flag is set then the database connection opens
+  // in the serialized threading mode unless single-thread was previously selected
+  // at compile-time or start-time
+  // - Ok for sqlite3.open_v2(), in conjuction with SQLITE_OPEN_READONLY,
+  // SQLITE_OPEN_READWRITE, (SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
+  SQLITE_OPEN_FULLMUTEX = $00010000;  // Ok for sqlite3_open_v2()
+  /// The SQLITE_OPEN_SHAREDCACHE flag causes the database connection to be
+  // eligible to use shared cache mode, regardless of whether or not shared
+  // cache is enabled using sqlite3.enable_shared_cache()
+  // - Ok for sqlite3.open_v2(), in conjuction with SQLITE_OPEN_READONLY,
+  // SQLITE_OPEN_READWRITE, (SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
+  SQLITE_OPEN_SHAREDCACHE = $00020000;  // Ok for sqlite3_open_v2()
+  /// The SQLITE_OPEN_PRIVATECACHE flag causes the database connection to not
+  // participate in shared cache mode even if it is enabled
+  // - Ok for sqlite3.open_v2(), in conjuction with SQLITE_OPEN_READONLY,
+  // SQLITE_OPEN_READWRITE, (SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
+  SQLITE_OPEN_PRIVATECACHE = $00040000;
+
   SQLITE_STATIC    : TSQLite3Destructor = TSQLite3Destructor(0);
   SQLITE_TRANSIENT : TSQLite3Destructor = TSQLite3Destructor(-1);
 
@@ -130,6 +182,7 @@ type
     SQLITE_SAVEPOINT            =32,   { Operation       Savepoint Name  }
     SQLITE_COPY                 = 0);   { No longer used }
 
+
   TxFinal = procedure(sqlite3_context: Psqlite3_context);
   TxFunc = procedure(sqlite3_context: Psqlite3_context; cArg: integer; ArgV: PPsqlite3_value);
   TxStep = procedure(sqlite3_context: Psqlite3_context; cArg: integer; ArgV: PPsqlite3_value);
@@ -153,6 +206,7 @@ type
 var
   sqlite3_open: function(filename: PAnsiChar; var db: TSQLiteDB): integer; cdecl; //'sqlite3_open';
   sqlite3_open16: function(filename: PWideChar; var db: TSQLiteDB): integer; cdecl; //sqlite3_open16
+  sqlite3_open_v2: function(filename: PAnsiChar; var db: TSQLiteDB; flags: integer; zVfs: PAnsiChar): integer; cdecl; //sqlite3_open_v2
   SQLite3_Close: function(db: TSQLiteDB): integer; cdecl; // 'sqlite3_close';
   SQLite3_Exec: function(db: TSQLiteDB; SQLStatement: PAnsiChar; CallbackPtr: TSQLiteExecCallback; UserData: Pointer; var ErrMsg: PAnsiChar): integer; cdecl; // 'sqlite3_exec';
   SQLite3_Version: function(): PAnsiChar; cdecl; // 'sqlite3_libversion';
@@ -599,6 +653,7 @@ begin
     begin
       sqlite3_open := LoadProc('sqlite3_open');
       sqlite3_open16 := LoadProc('sqlite3_open16');
+      sqlite3_open_v2 := LoadProc('sqlite3_open_v2');
       SQLite3_Close := LoadProc('sqlite3_close');
       SQLite3_Exec := LoadProc('sqlite3_exec');
       SQLite3_Version := LoadProc('sqlite3_libversion');
