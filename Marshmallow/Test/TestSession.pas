@@ -26,13 +26,14 @@ type
 
   {$DEFINE USE_SPRING}
   TestTSession = class(TTestCase)
-  private
+  protected
     FConnection: IDBConnection;
     FManager: TMockSession;
     FSession: TMockSession;
   protected
     function GenericCreate<T: class, constructor>: T;
     function SimpleCreate(AClass: TClass): TObject;
+    function CreateConnection: IDBConnection; virtual;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -355,6 +356,11 @@ begin
   product.Free;
 end;
 
+function TestTSession.CreateConnection: IDBConnection;
+begin
+  Result := TConnectionFactory.GetInstance(dtSQLite, TestDB);
+end;
+
 procedure TestTSession.Delete;
 var
   LCustomer: TCustomer;
@@ -664,6 +670,8 @@ begin
   finally
     fsPic.Free;
   end;
+
+  CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
 
   LCustomer := FManager.First<TCustomer>(sSql, []);
   try
@@ -1440,7 +1448,7 @@ end;
 
 procedure TestTSession.SetUp;
 begin
-  FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
+  FConnection := CreateConnection;
   FManager := TMockSession.Create(FConnection);
   FConnection.AddExecutionListener(
     procedure(const ACommand: string; const AParams: IList<TDBParam>)
@@ -1972,22 +1980,15 @@ begin
   CheckEquals(1, FSession.FindAll<TCustomer>.Count);
 end;
 
-
-
-
-
-
-
-
 initialization
   // Register any test cases with the test runner
   RegisterTest(TestTSession.Suite);
   RegisterTest(TestTDetachedSession.Suite);
 
   TestDB := TSQLiteDatabase.Create(':memory:');
+ // TestDB := TSQLiteDatabase.Create('file::memory:?cache=shared');
   TestDB.OnAfterOpen := TSQLiteEvents.DoOnAfterOpen;
   CreateTables();
-
 finalization
   TestDB.Free;
 

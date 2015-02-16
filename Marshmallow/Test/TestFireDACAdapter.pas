@@ -30,11 +30,15 @@ type
     FDACConnection: TFDConnection;
   protected
     procedure CreateTables;
+    function CreateCustomer(const name: string; const age: Integer): TFDCustomer;
   public
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure Save();
+    procedure Save;
+    procedure WhenSavingInTransaction_RollbackIsSuccessful;
+    procedure WhenSavingInTransaction_CommitIsSuccessful;
+
 
   end;
 
@@ -48,6 +52,14 @@ uses
 
 { TestFireDACSession }
 
+function TestFireDACSession.CreateCustomer(const name: string;
+  const age: Integer): TFDCustomer;
+begin
+  Result := TFDCustomer.Create;
+  Result.Name := name;
+  Result.Age := age;
+end;
+
 procedure TestFireDACSession.CreateTables;
 begin
   FDACConnection.ExecSQL('CREATE TABLE IF NOT EXISTS CUSTOMERS ([ID] INTEGER PRIMARY KEY, [AGE] INTEGER NULL,'+
@@ -56,23 +68,23 @@ end;
 
 procedure TestFireDACSession.Save;
 var
-  LCustomer: TFDCustomer;
+  customer: TFDCustomer;
 begin
-  LCustomer := TFDCustomer.Create;
-  LCustomer.Age := 25;
-  LCustomer.Name := 'Foo';
+  customer := CreateCustomer('Foo', 25);
 
-  FSession.Save(LCustomer);
+  FSession.Save(customer);
 
   CheckEquals('Foo', FSession.FindAll<TFDCustomer>.First.Name);
-  LCustomer.Free;
+  customer.Free;
 end;
 
 procedure TestFireDACSession.SetUp;
 begin
-  inherited;
   FDACConnection := TFDConnection.Create(nil);
   FDACConnection.DriverName := 'SQLite';
+ // FDACConnection.Params.Add('Database=file::memory:?cache=shared');
+ // FDACConnection.Params.Add('Database=:memory:');
+//  inherited SetUp;
   FConnection := TConnectionFactory.GetInstance(dtFireDAC, FDACConnection);
   FConnection.SetQueryLanguage(qlSQLite);
   FSession := TSession.Create(FConnection);
@@ -81,9 +93,44 @@ end;
 
 procedure TestFireDACSession.TearDown;
 begin
-  inherited;
+  inherited TearDown;
   FDACConnection.Free;
   FSession.Free;
+end;
+
+procedure TestFireDACSession.WhenSavingInTransaction_CommitIsSuccessful;
+var
+  customer: TFDCustomer;
+  transaction: IDBTransaction;
+begin
+  customer := CreateCustomer('Foo', 25);
+
+  transaction := FSession.BeginTransaction;
+  FSession.Save(customer);
+  customer.Free;
+
+  CheckEquals('Foo', FSession.FindAll<TFDCustomer>.First.Name);
+
+  transaction.Commit;
+  CheckEquals(1, FSession.FindAll<TFDCustomer>.Count);
+  CheckEquals('Foo', FSession.FindAll<TFDCustomer>.First.Name);
+end;
+
+procedure TestFireDACSession.WhenSavingInTransaction_RollbackIsSuccessful;
+var
+  customer: TFDCustomer;
+  transaction: IDBTransaction;
+begin
+  customer := CreateCustomer('Foo', 25);
+
+  transaction := FSession.BeginTransaction;
+  FSession.Save(customer);
+  customer.Free;
+
+  CheckEquals('Foo', FSession.FindAll<TFDCustomer>.First.Name);
+
+  transaction.Rollback;
+  CheckEquals(0, FSession.FindAll<TFDCustomer>.Count);
 end;
 
 initialization
