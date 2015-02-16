@@ -362,7 +362,8 @@ type
       TCollectionChangedActions = set of TCollectionChangedAction;
   private
     fSUT, fValue: TValue;
-    procedure DoCheck(expected: Boolean = True);
+    procedure DoCheckEquals(expected: Boolean = True);
+    procedure DoCheckCompare(expected: Integer = 0);
   published
     procedure Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
     procedure Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
@@ -371,6 +372,8 @@ type
     procedure Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
 
     procedure Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
+
+    procedure Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
   end;
 
 implementation
@@ -2228,7 +2231,12 @@ end;
 
 {$REGION 'TTestValueHelper'}
 
-procedure TTestValueHelper.DoCheck(expected: Boolean);
+procedure TTestValueHelper.DoCheckCompare(expected: Integer);
+begin
+  CheckEquals(expected, fSUT.CompareTo(fValue));
+end;
+
+procedure TTestValueHelper.DoCheckEquals(expected: Boolean);
 begin
   if expected then
     CheckTrue(fSUT.Equals(fValue))
@@ -2236,39 +2244,46 @@ begin
     CheckFalse(fSUT.Equals(fValue));
 end;
 
+procedure TTestValueHelper.Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := Integer(42);
+  fValue := Integer(42);
+  DoCheckCompare;
+end;
+
 procedure TTestValueHelper.Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
 begin
   fSUT := TValue.From<Byte>(255);
   fValue := -128;
-  DoCheck(False);
+  DoCheckEquals(False);
 end;
 
 procedure TTestValueHelper.Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := TValue.From(caRemoved);
   fValue := TValue.From(caRemoved);
-  DoCheck;
+  DoCheckEquals;
 end;
 
 procedure TTestValueHelper.Test_Equals_IntToInt_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := Integer(42);
   fValue := Integer(42);
-  DoCheck;
+  DoCheckEquals;
 end;
 
 procedure TTestValueHelper.Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := TValue.From([caAdded..caChanged]);
   fValue := TValue.From([caAdded..caChanged]);
-  DoCheck;
+  DoCheckEquals;
 end;
 
 procedure TTestValueHelper.Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := TValue.From<ShortInt>(-128);
   fValue := -128;
-  DoCheck;
+  DoCheckEquals;
 end;
 
 {$ENDREGION}
