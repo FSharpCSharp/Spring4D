@@ -387,7 +387,7 @@ begin
     fieldValue := results.GetFieldValue(0);
 
     value := TUtils.FromVariant(fieldValue);
-    if not value.TryConvert(TypeInfo(T), convertedValue, mustFree) then
+    if not TryConvert(value, TypeInfo(T), convertedValue, mustFree) then
       raise EORMCannotConvertValue.CreateFmt(EXCEPTION_CANNOT_CONVERT_TYPE,
         [value.TypeInfo.Name, PTypeInfo(TypeInfo(T)).Name]);
     Result := convertedValue.AsType<T>;

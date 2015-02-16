@@ -25,8 +25,8 @@
 {$I Spring.inc}
 
 /// <summary>
-///	  Declares the fundamental interfaces for the
-///	  <see href="http://spring4d.org">Spring4D</see> Framework.
+///   Declares the fundamental types for the <see href="http://www.spring4d.org">
+///   Spring4D</see> Framework.
 /// </summary>
 unit Spring;
 
@@ -49,25 +49,12 @@ type
 
   {$REGION 'Type redefinitions'}
 
-  /// <summary>
-  ///   Represents a dynamic array of Byte.
-  /// </summary>
   TBytes = SysUtils.TBytes;
 
-  /// <summary>
-  ///   Represents a dynamic array of string.
-  /// </summary>
   TStringDynArray = Types.TStringDynArray;
 
-  /// <summary>
-  ///   Represents a time interval.
-  /// </summary>
   TTimeSpan = TimeSpan.TTimeSpan;
 
-  /// <summary>
-  ///   Provides a set of methods and properties to accurately measure elapsed
-  ///   time.
-  /// </summary>
   TStopwatch = Diagnostics.TStopwatch;
 
   PTypeInfo = TypInfo.PTypeInfo;
@@ -76,9 +63,6 @@ type
 
   TValue = Rtti.TValue;
 
-  /// <summary>
-  ///   Represents the class type of <see cref="System|TCustomAttribute" />.
-  /// </summary>
   TAttributeClass = class of TCustomAttribute;
 
 {$IFNDEF DELPHIXE_UP}
@@ -92,9 +76,9 @@ type
 
   {$REGION 'TCollectionChangedAction'}
 
-  ///	<summary>
-  ///	  Describes the action that caused a CollectionChanged event.
-  ///	</summary>
+  /// <summary>
+  ///   Describes the action that caused a CollectionChanged event.
+  /// </summary>
   TCollectionChangedAction = (
     ///	<summary>
     ///	  An item was added to the collection.
@@ -139,32 +123,116 @@ type
 
   TValueHelper = record helper for TValue
   private
+    function GetTypeKind: TTypeKind;
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
   public
+
+    class function From(buffer: Pointer; typeInfo: PTypeInfo): TValue; overload; static;
+    class function From(instance: TObject; classType: TClass): TValue; overload; static;
+    class function FromFloat(typeInfo: PTypeInfo; value: Extended): TValue; overload; static;
+
+    /// <summary>
+    ///   Returns a TValue that holds the value that was passed in a TVarRec.
+    ///   The TypeInfo of the returned TValue depends on the VType of the
+    ///   passed TVarRec.
+    /// </summary>
     class function FromVarRec(const value: TVarRec): TValue; static;
-    function AsPointer: Pointer;
+
 {$IFDEF DELPHI2010}
     function AsString: string;
 {$ENDIF}
+
+    /// <summary>
+    ///   Casts the currently stored value to another type.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support of
+    ///   TValue.AsType&lt;T&gt;.
+    /// </remarks>
     function AsType<T>: T;
+
+    /// <summary>
+    ///   Casts the currently stored value to another type.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support of TValue.Cast.
+    /// </remarks>
     function Cast(typeInfo: PTypeInfo): TValue;
+
+    /// <summary>
+    ///   Compares two TValue instances.
+    /// </summary>
+    class function Compare(const left, right: TValue): Integer; static;
+
+    /// <summary>
+    ///   Compares to another TValue.
+    /// </summary>
+    function CompareTo(const value: TValue): Integer;
+
+    /// <summary>
+    ///   Checks for equality with another TValue.
+    /// </summary>
     function Equals(const value: TValue): Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is an object or interface reference.
+    /// </summary>
     function IsInstance: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is an interface reference.
+    /// </summary>
     function IsInterface: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is a numeric type.
+    /// </summary>
     function IsNumeric: Boolean;
-    function IsPointer: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is a <c>string</c>.
+    /// </summary>
     function IsString: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is a <c>Variant</c>.
+    /// </summary>
     function IsVariant: Boolean;
+
 {$IFDEF DELPHI2010}
     function IsType<T>: Boolean; overload;
     function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
 {$ENDIF}
+
+    ///	<summary>
+    ///	  Sets the stored value of a nullable.
+    ///	</summary>
+    procedure SetNullableValue(const value: TValue);
+
+    /// <summary>
+    ///   Tries to get the stored value of a nullable. Returns false when the
+    ///   nullable is null.
+    /// </summary>
+    function TryGetNullableValue(out value: TValue): Boolean;
+
+    /// <summary>
+    ///   Returns the stored value as TObject.
+    /// </summary>
     function ToObject: TObject;
 
     /// <summary>
-    ///   If the value holds an object it will get destroyed/disposed.
+    ///   If the stored value is an object it will get destroyed/disposed.
     /// </summary>
     procedure Free;
+
+    /// <summary>
+    ///   Specifies the type kind of the stored value.
+    /// </summary>
+    /// <remarks>
+    ///   This fixes the issue with returning <c>tkUnknown</c> when the stored
+    ///   value is an empty reference type.
+    /// </remarks>
+    property Kind: TTypeKind read GetTypeKind;
   end;
 
   {$ENDREGION}
@@ -177,9 +245,35 @@ type
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
     function GetReturnTypeHandle: PTypeInfo;
   public
+
+    /// <summary>
+    ///   Invokes the method.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support in TValue.
+    /// </remarks>
     function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
+
+    /// <summary>
+    ///   Invokes the method.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support in TValue.
+    /// </remarks>
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
+
+    /// <summary>
+    ///   Invokes the method.
+    /// </summary>
+    /// <remarks>
+    ///   This method fixes the missing interface cast support in TValue.
+    /// </remarks>
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+
+    /// <summary>
+    ///   Returns the PTypeInfo of the ReturnType if assigned; otherwise
+    ///   returns nil.
+    /// </summary>
     property ReturnTypeHandle: PTypeInfo read GetReturnTypeHandle;
   end;
 
@@ -194,6 +288,7 @@ type
   /// </summary>
   IClonable = interface(IInvokable)
     ['{B6BC3795-624B-434F-BB19-6E8F55149D0A}']
+
     /// <summary>
     ///   Creates a new object that is a copy of the current instance.
     /// </summary>
@@ -209,6 +304,7 @@ type
   /// </summary>
   IComparable = interface(IInvokable)
     ['{7F0E25C8-50D7-4CF0-AB74-1913EBD3EE42}']
+
     /// <summary>
     ///   Compares the current instance with another object of the same type
     ///   and returns an integer that indicates whether the current instance
@@ -260,7 +356,14 @@ type
     function GetCount: Integer;
   {$ENDREGION}
 
+    /// <summary>
+    ///   Determines whether a countable contains any elements.
+    /// </summary>
     function Any: Boolean;
+
+    /// <summary>
+    ///   Returns the number of elements in a countable.
+    /// </summary>
     property Count: Integer read GetCount;
   end;
 
@@ -321,6 +424,9 @@ type
   TNotifyProc = reference to procedure(Sender: TObject);
   {$M-}
 
+  /// <summary>
+  ///   An event type like TNotifyEvent that also has a generic item parameter.
+  /// </summary>
   TNotifyEvent<T> = procedure(Sender: TObject; const item: T) of object;
 
   {$ENDREGION}
@@ -328,6 +434,9 @@ type
 
   {$REGION 'TNamedValue'}
 
+  /// <summary>
+  ///   A record type that stores a TValue and a name.
+  /// </summary>
   TNamedValue = record
   private
     fValue: TValue;
@@ -348,6 +457,9 @@ type
 
   {$REGION 'TTypedValue'}
 
+  /// <summary>
+  ///   A record type that stores a TValue and a typeinfo.
+  /// </summary>
   TTypedValue = record
   private
     fValue: TValue;
@@ -393,6 +505,8 @@ type
   ///   be checked.
   /// </remarks>
   Guard = record
+  private
+    class procedure RaiseArgumentException(typeKind: TTypeKind; const argumentName: string); overload; static;
   public
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string = ''); static; inline;
@@ -414,9 +528,6 @@ type
 
     class procedure CheckIndex(length, index: Integer; indexBase: Integer = 0); static; inline;
 
-    /// <exception cref="Spring|EArgumentOutOfRangeException">
-    ///   Raised if the <paramref name="index" /> is out of range.
-    /// </exception>
     class procedure CheckRange(const buffer: array of Byte; index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Byte; index, count: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; index: Integer); overload; static;
@@ -470,8 +581,12 @@ type
     /// </exception>
     class procedure CheckRangeExclusive(value, min, max: Integer); overload; static; inline;
 
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static; deprecated 'Use overload with TTypeKind';
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static; deprecated 'Use overload with TTypeKind';
+    class procedure CheckTypeKind(typeKind: TTypeKind; expectedTypeKind: TTypeKind; const argumentName: string); overload; static; inline;
+    class procedure CheckTypeKind(typeKind: TTypeKind; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static; inline;
+    class procedure CheckTypeKind<T>(expectedTypeKind: TTypeKind; const argumentName: string); overload; static; inline;
+    class procedure CheckTypeKind<T>(expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static; inline;
 
     class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; static;
 
@@ -618,60 +733,18 @@ type
     class operator NotEqual(const left, right: Nullable<T>): Boolean;
   end;
 
-
-  /// <summary>
-  ///   Represents a nullable unicode string.
-  /// </summary>
   TNullableString = Nullable<string>;
 {$IFNDEF NEXTGEN}
-  /// <summary>
-  ///   Represents a nullable ansi string.
-  /// </summary>
   TNullableAnsiString = Nullable<AnsiString>;
-
-  /// <summary>
-  ///   Represents a nullable wide string.
-  /// </summary>
   TNullableWideString = Nullable<WideString>;
 {$ENDIF}
-  /// <summary>
-  ///   Represents a nullable integer.
-  /// </summary>
   TNullableInteger = Nullable<Integer>;
-
-  /// <summary>
-  ///   Represents a nullable <c>Int64</c>.
-  /// </summary>
   TNullableInt64 = Nullable<Int64>;
-
-  /// <summary>
-  ///   Represents a nullable native integer.
-  /// </summary>
   TNullableNativeInt = Nullable<NativeInt>;
-
-  /// <summary>
-  ///   Represents a nullable <c>TDateTime</c>.
-  /// </summary>
   TNullableDateTime = Nullable<TDateTime>;
-
-  /// <summary>
-  ///   Represents a nullable <c>Currency</c>.
-  /// </summary>
   TNullableCurrency = Nullable<Currency>;
-
-  /// <summary>
-  ///   Represents a nullable <c>Double</c>.
-  /// </summary>
   TNullableDouble = Nullable<Double>;
-
-  /// <summary>
-  ///   Represents a nullable <c>Boolean</c>.
-  /// </summary>
   TNullableBoolean = Nullable<Boolean>;
-
-  /// <summary>
-  ///   Represents a nullable <c>TGuid</c>.
-  /// </summary>
   TNullableGuid = Nullable<TGUID>;
 
   {$ENDREGION}
@@ -683,6 +756,7 @@ type
   ///   Specifies the kind of a lazy type.
   /// </summary>
   TLazyKind = (
+
     /// <summary>
     ///   Not a lazy type.
     /// </summary>
@@ -754,6 +828,9 @@ type
     property Value: T read GetValue;
   end;
 
+  /// <summary>
+  ///   The base class of the lazy initialization type.
+  /// </summary>
   TLazy = class(TInterfacedObject, ILazy)
   private
     fLock: TCriticalSection;
@@ -870,6 +947,10 @@ type
     class operator Implicit(const value: T): Lazy<T>;
     class operator Implicit(const value: TLazy<T>): Lazy<T>;
 
+    /// <summary>
+    ///   Returns true if the value is assigned and contains an ILazy&lt;T&gt;
+    ///   reference; otherwise returns false.
+    /// </summary>
     property IsAssigned: Boolean read GetIsAssigned;
 
     /// <summary>
@@ -895,10 +976,44 @@ type
     property Value: T read GetValue;
   end;
 
+  /// <summary>
+  ///   Provides lazy initialization routines.
+  /// </summary>
+  /// <remarks>
+  ///   The methods are using TInterlocked.CompareExchange to ensure
+  ///   thread-safety when initializing instances.
+  /// </remarks>
   TLazyInitializer = record
   public
+    /// <summary>
+    ///   Initializes a target reference type by using a specified function if
+    ///   it hasn't already been initialized.
+    /// </summary>
+    /// <remarks>
+    ///   In the event that multiple threads access this method concurrently,
+    ///   multiple instances of T may be created, but only one will be stored
+    ///   into target. In such an occurrence, this method will destroy the
+    ///   instances that were not stored.
+    /// </remarks>
     class function EnsureInitialized<T: class, constructor>(var target: T): T; overload; static;
-    class function EnsureInitialized<T>(var target: T; const factoryMethod: TFunc<T>): T; overload; static;
+
+    /// <summary>
+    ///   Initializes a target reference type by using a specified function if
+    ///   it hasn't already been initialized.
+    /// </summary>
+    /// <remarks>
+    ///   <para>
+    ///     This method may only be used on reference types, and <i>
+    ///     valueFactory</i> may not return a nil reference.
+    ///   </para>
+    ///   <para>
+    ///     In the event that multiple threads access this method
+    ///     concurrently, multiple instances of T may be created, but only
+    ///     one will be stored into target. In such an occurrence, this
+    ///     method will destroy the instances that were not stored.
+    ///   </para>
+    /// </remarks>
+    class function EnsureInitialized<T>(var target: T; const valueFactory: TFunc<T>): T; overload; static;
   end;
 
   {$ENDREGION}
@@ -1207,13 +1322,11 @@ type
   {$REGION 'TTypeInfoHelper}
 
   TTypeInfoHelper = record helper for TTypeInfo
-  private
-    function GetTypeName: string; inline;
   public
 {$IFNDEF DELPHIXE3_UP}
     function TypeData: PTypeData; inline;
 {$ENDIF}
-    property TypeName: string read GetTypeName;
+    function TypeName: string; inline;
   end;
 
   {$ENDREGION}
@@ -1374,6 +1487,7 @@ type
     class var ConstructorCache: TDictionary<TClass,TConstructor>;
     class function FindConstructor(const classType: TRttiInstanceType;
       const arguments: array of TValue): TRttiMethod; static;
+    class procedure RaiseNoConstructorFound(classType: TClass); static;
   public
     class constructor Create;
     class destructor Destroy;
@@ -1386,10 +1500,10 @@ type
     class function CreateInstance(const classType: TRttiInstanceType;
       const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
 
-    class function CreateInstance(typeInfo: PTypeInfo): TObject; overload; static;
+    class function CreateInstance(typeInfo: PTypeInfo): TObject; overload; static; inline;
     class function CreateInstance(const typeName: string): TObject; overload; static;
 
-    class function CreateInstance(classType: TClass): TObject; overload; static; inline;
+    class function CreateInstance(classType: TClass): TObject; overload; static;
     class function CreateInstance(classType: TClass;
       const arguments: array of TValue): TObject; overload; static;
 
@@ -1548,8 +1662,8 @@ type
     function GetItem(index: Integer): T; inline;
     procedure SetCount(value: Integer); inline;
     procedure SetItem(index: Integer; const value: T); inline;
-    procedure InternalInsert(index: Integer; const items: array of T); overload;
-    function InternalEquals(const items: array of T): Boolean; overload;
+    procedure InternalInsert(index: Integer; const items: array of T);
+    function InternalEquals(const items: array of T): Boolean;
     function InternalIndexOf(const item: T): Integer;
     function InternalIndexOfInt(const item: Integer): Integer;
     function InternalIndexOfStr(const item: string): Integer;
@@ -1624,14 +1738,14 @@ function ReturnAddress: Pointer;
 procedure PlatformNotImplemented;
 
 /// <summary>
-///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
-///	  <paramref name="value" /> is nil.
+///   Raises an <see cref="Spring|EArgumentNullException" /> if the <paramref name="value" />
+///    is nil.
 /// </summary>
 procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
 /// <summary>
-///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
-///	  <paramref name="value" /> is nil.
+///   Raises an <see cref="Spring|EArgumentNullException" /> if the <paramref name="value" />
+///    is nil.
 /// </summary>
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
@@ -1645,6 +1759,16 @@ function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHI
 function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean; overload;
 
 function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Boolean; overload;
+
+///	<summary>
+///	  Returns <c>True</c> if the type is a nullable type.
+///	</summary>
+function IsNullable(typeInfo: PTypeInfo): Boolean;
+
+/// <summary>
+///   Returns the underlying type argument of the specified nullable type.
+/// </summary>
+function GetUnderlyingType(typeInfo: PTypeInfo): PTypeInfo;
 
 /// <summary>
 ///   Returns the size that is needed in order to pass an argument of the given
@@ -1673,6 +1797,7 @@ implementation
 uses
   Math,
   RTLConsts,
+  StrUtils,
   SysConst,
   Spring.Events,
   Spring.Reflection.Core,
@@ -1793,6 +1918,33 @@ begin
     for i := Low(leftTypes) to High(leftTypes) do
       if not IsAssignableFrom(leftTypes[i], rightTypes[i]) then
         Exit(False);
+end;
+
+function IsNullable(typeInfo: PTypeInfo): Boolean;
+const
+  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkRecord)
+    and StartsText(PrefixString, GetTypeName(typeInfo));
+end;
+
+function GetUnderlyingType(typeInfo: PTypeInfo): PTypeInfo;
+var
+  context: TRttiContext;
+  rttiType: TRttiType;
+  valueField: TRttiField;
+begin
+  if IsNullable(typeInfo) then
+  begin
+    rttiType := context.GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    if Assigned(valueField) then
+      Result := valueField.FieldType.Handle
+    else
+      Result := nil;
+  end
+  else
+    Result := nil;
 end;
 
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
@@ -1920,14 +2072,6 @@ end;
 
 {$REGION 'TValueHelper'}
 
-function TValueHelper.AsPointer: Pointer;
-begin
-  if Kind in [tkClass, tkInterface] then
-    Result := ToObject
-  else
-    Result := PPointer(GetReferenceToRawData)^;
-end;
-
 {$IFDEF DELPHI2010}
 function TValueHelper.AsString: string;
 begin
@@ -1954,6 +2098,54 @@ begin
     TValue.Make(@intf, typeInfo, Result)
   else if not TryCast(typeInfo, Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+// TODO: use typekind matrix for comparer functions
+class function TValueHelper.Compare(const left, right: TValue): Integer;
+const
+  EmptyResults: array[Boolean, Boolean] of Integer = ((0, -1), (1, 0));
+var
+  leftIsEmpty, rightIsEmpty: Boolean;
+  leftValue, rightValue: TValue;
+begin
+  leftIsEmpty := left.IsEmpty;
+  rightIsEmpty := right.IsEmpty;
+  if leftIsEmpty or rightIsEmpty then
+    Result := EmptyResults[leftIsEmpty, rightIsEmpty]
+  else if left.IsOrdinal and right.IsOrdinal then
+    Result := Math.CompareValue(left.AsOrdinal, right.AsOrdinal)
+  else if left.IsType<Extended> and right.IsType<Extended> then
+    Result := Math.CompareValue(left.AsExtended, right.AsExtended)
+  else if left.IsString and right.IsString then
+    Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
+  else if left.IsObject and right.IsObject then
+    Result := NativeInt(left.AsObject) - NativeInt(right.AsObject) // TODO: instance comparer
+  else if left.IsVariant and right.IsVariant then
+  begin
+    case VarCompareValue(left.AsVariant, right.AsVariant) of
+      vrEqual: Result := 0;
+      vrLessThan: Result := -1;
+      vrGreaterThan: Result := 1;
+      vrNotEqual: Result := -1;
+    else
+      Result := 0;
+    end;
+  end
+  else if IsNullable(left.TypeInfo) and IsNullable(right.TypeInfo) then
+  begin
+    leftIsEmpty := not left.TryGetNullableValue(leftValue);
+    rightIsEmpty := not right.TryGetNullableValue(rightValue);
+    if leftIsEmpty or rightIsEmpty then
+      Result := EmptyResults[leftIsEmpty, rightIsEmpty]
+    else
+      Result := Compare(leftValue, rightValue);
+  end else
+    Result := 0;
+end;
+
+function TValueHelper.CompareTo(const value: TValue): Integer;
+begin
+  Result := Compare(Self, value);
 end;
 
 function EqualsFail(const left, right: TValue): Boolean;
@@ -2086,11 +2278,6 @@ begin
   Result := left.AsClass = right.AsClass;
 end;
 
-function EqualsPtr2Ptr(const left, right: TValue): Boolean;
-begin
-  Result := left.AsPointer = right.AsPointer;
-end;
-
 function EqualsVar2Var(const left, right: TValue): Boolean;
 begin
   Result := left.AsVariant = right.AsVariant;
@@ -2102,28 +2289,32 @@ var
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
 begin
-  for method in context.GetType(left.TypeInfo).GetMethods do
-    if (method.Name = '&op_Equality') then
-    begin
-      parameters := method.GetParameters;
-      if (Length(parameters) = 2)
-        and (parameters[0].ParamType.Handle = left.TypeInfo)
-        and (parameters[1].ParamType.Handle = right.TypeInfo) then
-        Exit(method.Invoke(nil, [left, right]).AsBoolean);
-    end;
+  for method in context.GetType(left.TypeInfo).GetMethods('&op_Equality') do
+  begin
+    parameters := method.GetParameters;
+    if (Length(parameters) = 2)
+      and (parameters[0].ParamType.Handle = left.TypeInfo)
+      and (parameters[1].ParamType.Handle = right.TypeInfo) then
+      Exit(method.Invoke(nil, [left, right]).AsBoolean);
+  end;
 
-  Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize);
+  // TODO: handle nullable and probably other Spring base types
+
+  if left.DataSize = right.DataSize then
+    Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize)
+  else
+    Result := False;
 end;
 
-{$REGION 'Comparisons'}
+{$REGION 'Equals functions'}
 type
   TEqualsFunc = function(const left, right: TValue): Boolean;
 const
-  Comparisons: array[TTypeKind,TTypeKind] of TEqualsFunc = (
+  EqualsFunctions: array[TTypeKind,TTypeKind] of TEqualsFunc = (
     // tkUnknown
     (
       // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-      EqualsPtr2Ptr, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
@@ -2350,7 +2541,7 @@ const
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
-      EqualsFail, EqualsFail, EqualsPtr2Ptr, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkPointer, tkProcedure
       EqualsFail, EqualsFail
     ),
@@ -2391,7 +2582,7 @@ const
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkPointer, tkProcedure
-      EqualsPtr2Ptr, EqualsFail
+      EqualsFail, EqualsFail
     ),
     // tkProcedure
     (
@@ -2412,7 +2603,7 @@ const
 function TValueHelper.Equals(const value: TValue): Boolean;
 begin
   Result := Assigned(TypeInfo) and Assigned(value.TypeInfo)
-    and Comparisons[Kind,value.Kind](Self, value);
+    and EqualsFunctions[Kind,value.Kind](Self, value);
 end;
 
 procedure TValueHelper.Free;
@@ -2423,6 +2614,28 @@ begin
 {$ELSE}
     AsObject.DisposeOf;
 {$ENDIF}
+end;
+
+class function TValueHelper.From(buffer: Pointer; typeInfo: PTypeInfo): TValue;
+begin
+  TValue.Make(buffer, typeInfo, Result);
+end;
+
+class function TValueHelper.From(instance: TObject; classType: TClass): TValue;
+begin
+  TValue.Make(NativeInt(instance), classType.ClassInfo, Result);
+end;
+
+class function TValueHelper.FromFloat(typeInfo: PTypeInfo;
+  value: Extended): TValue;
+begin
+  case GetTypeData(typeInfo).FloatType of
+    ftSingle: Result := TValue.From<Single>(value);
+    ftDouble: Result := TValue.From<Double>(value);
+    ftExtended: Result := TValue.From<Extended>(value);
+    ftComp: Result := TValue.From<Comp>(value);
+    ftCurr: Result := TValue.From<Currency>(value);
+  end;
 end;
 
 class function TValueHelper.FromVarRec(const value: TVarRec): TValue;
@@ -2459,6 +2672,14 @@ begin
   end;
 end;
 
+function TValueHelper.GetTypeKind: TTypeKind;
+begin
+  if Assigned(TValueData(Self).FTypeInfo) then
+    Result := TValueData(Self).FTypeInfo.Kind
+  else
+    Result := tkUnknown;
+end;
+
 function TValueHelper.IsInstance: Boolean;
 begin
   Result := Kind in [tkClass, tkInterface];
@@ -2474,11 +2695,6 @@ const
   NumericKinds = [tkInteger, tkChar, tkEnumeration, tkFloat, tkWChar, tkInt64];
 begin
   Result := IsEmpty or (Kind in NumericKinds);
-end;
-
-function TValueHelper.IsPointer: Boolean;
-begin
-  Result := Kind = tkPointer;
 end;
 
 function TValueHelper.IsString: Boolean;
@@ -2505,6 +2721,35 @@ end;
 function TValueHelper.IsVariant: Boolean;
 begin
   Result := TypeInfo = System.TypeInfo(Variant);
+end;
+
+procedure TValueHelper.SetNullableValue(const value: TValue);
+var
+  typeInfo: PTypeInfo;
+  context: TRttiContext;
+  rttiType: TRttiType;
+  valueField, hasValueField: TRttiField;
+  instance: Pointer;
+begin
+  typeInfo := TValueData(Self).FTypeInfo;
+  if IsNullable(typeInfo) then
+  begin
+    rttiType := context.GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    if Assigned(valueField) then
+    begin
+      hasValueField := rttiType.GetField('fHasValue');
+      if Assigned(hasValueField) then
+      begin
+        instance := GetReferenceToRawData;
+        valueField.SetValue(instance, value);
+        if value.IsEmpty then
+          hasValueField.SetValue(instance, '')
+        else
+          hasValueField.SetValue(instance, '@');
+      end;
+    end;
+  end;
 end;
 
 function TValueHelper.ToObject: TObject;
@@ -2554,6 +2799,35 @@ begin
     IInterface(Intf) := AsInterface;
 end;
 
+function TValueHelper.TryGetNullableValue(out value: TValue): Boolean;
+var
+  typeInfo: PTypeInfo;
+  context: TRttiContext;
+  rttiType: TRttiType;
+  hasValueField, valueField: TRttiField;
+  instance: Pointer;
+begin
+  typeInfo := TValueData(Self).FTypeInfo;
+  Result := IsNullable(typeInfo);
+  if Result then
+  begin
+    rttiType := context.GetType(typeInfo);
+    hasValueField := rttiType.GetField('fHasValue');
+    if Assigned(hasValueField) then
+    begin
+      instance := GetReferenceToRawData;
+      Result := hasValueField.GetValue(instance).AsString <> '';
+      if Result then
+      begin
+        valueField := rttiType.GetField('fValue');
+        Result := Assigned(valueField);
+        if Result then
+          value := valueField.GetValue(instance);
+      end;
+    end;
+  end;
+end;
+
 {$ENDREGION}
 
 
@@ -2583,38 +2857,14 @@ end;
 
 function TRttiMethodHelper.Invoke(Instance: TObject;
   const Args: array of TValue): TValue;
-var
-  parameters: TArray<TRttiParameter>;
-  i: Integer;
 begin
-  parameters := GetParameters;
-  if Length(Args) <> Length(parameters) then
-    raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := Low(Args) to High(Args) do
-    DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  if MethodKind = mkOperatorOverload then
-    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
-      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
-  else
-    Result := Self.DispatchInvoke(Instance, Args);
+  Result := Invoke(TValue(Instance), Args);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TClass;
   const Args: array of TValue): TValue;
-var
-  parameters: TArray<TRttiParameter>;
-  i: Integer;
 begin
-  parameters := GetParameters;
-  if Length(Args) <> Length(parameters) then
-    raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := Low(Args) to High(Args) do
-    DispatchValue(Args[i], parameters[i].ParamType.Handle);
-  if MethodKind = mkOperatorOverload then
-    Result := Rtti.Invoke(CodeAddress, TArray.Copy<TValue>(Args),
-      CallingConvention, ReturnTypeHandle{$IFDEF DELPHIXE2_UP}, IsStatic{$ENDIF})
-  else
-    Result := Self.DispatchInvoke(Instance, Args);
+  Result := Invoke(TValue(Instance), Args);
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TValue;
@@ -2753,6 +3003,54 @@ begin
     Guard.RaiseArgumentException(msg);
 end;
 
+class procedure Guard.CheckTypeKind(typeKind: TTypeKind;
+  expectedTypeKind: TTypeKind; const argumentName: string);
+begin
+  if typeKind <> expectedTypeKind then
+    RaiseArgumentException(typeKind, argumentName);
+end;
+
+class procedure Guard.CheckTypeKind(typeKind: TTypeKind;
+  expectedTypeKinds: TTypeKinds; const argumentName: string);
+begin
+  if not (typeKind in expectedTypeKinds) then
+    RaiseArgumentException(typeKind, argumentName);
+end;
+
+class procedure Guard.CheckTypeKind<T>(expectedTypeKind: TTypeKind;
+  const argumentName: string);
+{$IFNDEF DELPHIXE7_UP}
+var
+  typeKind: TTypeKind;
+{$ENDIF}
+begin
+{$IFDEF DELPHIXE7_UP}
+  if System.GetTypeKind(T) <> expectedTypeKind then
+    RaiseArgumentException(System.GetTypeKind(T), argumentName);
+{$ELSE}
+  typeKind := GetTypeKind(TypeInfo(T));
+  if typeKind <> expectedTypeKind then
+    RaiseArgumentException(typeKind, argumentName);
+{$ENDIF}
+end;
+
+class procedure Guard.CheckTypeKind<T>(expectedTypeKinds: TTypeKinds;
+  const argumentName: string);
+{$IFNDEF DELPHIXE7_UP}
+var
+  typeKind: TTypeKind;
+{$ENDIF}
+begin
+{$IFDEF DELPHIXE7_UP}
+  if not (System.GetTypeKind(T) in expectedTypeKinds) then
+    RaiseArgumentException(System.GetTypeKind(T), argumentName);
+{$ELSE}
+  typeKind := GetTypeKind(TypeInfo(T));
+  if not (typeKind in expectedTypeKinds) then
+    RaiseArgumentException(typeKind, argumentName);
+{$ENDIF}
+end;
+
 class procedure Guard.CheckFalse(condition: Boolean; const msg: string);
 begin
   if condition then
@@ -2825,9 +3123,9 @@ var
   typeInfo: PTypeInfo;
   data: PTypeData;
 begin
-  typeInfo := System.TypeInfo(T);
-  Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
 
+  typeInfo := System.TypeInfo(T);
   data := GetTypeData(typeInfo);
   Guard.CheckNotNull(data, 'data');
 
@@ -2900,9 +3198,9 @@ var
   data: PTypeData;
   minValue, maxValue: Cardinal;
 begin
-  typeInfo := System.TypeInfo(T);
-  Guard.CheckTypeKind(typeInfo, [tkSet], 'T');
+  Guard.CheckTypeKind<T>(tkSet, 'T');
 
+  typeInfo := System.TypeInfo(T);
   data := GetTypeData(typeInfo);
   Guard.CheckNotNull(data, 'data');
 
@@ -2961,8 +3259,7 @@ class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
-      [typeInfo.TypeName, argumentName]);
+    RaiseArgumentException(typeInfo.Kind, argumentName);
 end;
 
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
@@ -2970,8 +3267,7 @@ class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
-      [typeInfo.TypeName, argumentName]);
+    RaiseArgumentException(typeInfo.Kind, argumentName);
 end;
 
 class function Guard.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
@@ -3006,6 +3302,12 @@ class procedure Guard.RaiseArgumentOutOfRangeException(const argumentName: strin
 begin
   raise EArgumentOutOfRangeException.CreateResFmt(
     @SArgumentOutOfRangeException, [argumentName]) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseArgumentException(typeKind: TTypeKind; const argumentName: string);
+begin
+  raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+    [GetEnumName(TypeInfo(TTypeKind), Ord(typeKind)), argumentName]) at ReturnAddress;
 end;
 
 class procedure Guard.RaiseArgumentFormatException(const argumentName: string);
@@ -3331,20 +3633,24 @@ begin
 end;
 
 class function TLazyInitializer.EnsureInitialized<T>(var target: T;
-  const factoryMethod: TFunc<T>): T;
+  const valueFactory: TFunc<T>): T;
 var
   value: T;
 begin
+  Guard.CheckTypeKind<T>([tkClass, tkInterface], 'T');
+
   if PPointer(@target)^ = nil then
   begin
-    value := factoryMethod;
-    case PTypeInfo(TypeInfo(T)).Kind of
+    value := valueFactory;
+    if PPointer(@value)^ = nil then
+      raise EInvalidOperationException.CreateRes(@SValueFactoryReturnedNil);
+    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
       tkClass:
         if TInterlocked.CompareExchange(PObject(@target)^, PObject(@value)^, TObject(nil)) <> nil then
           PObject(@value)^.Free;
       tkInterface:
         if TInterlocked.CompareExchange(PPointer(@target)^, PPointer(@value)^, nil) = nil then
-          PPointer(@value)^ := nil;
+          value := Default(T);
     end;
   end;
   Result := target;
@@ -3703,7 +4009,14 @@ end;
 
 {$REGION 'TTypeInfoHelper'}
 
-function TTypeInfoHelper.GetTypeName: string;
+{$IFNDEF DELPHIXE3_UP}
+function TTypeInfoHelper.TypeData: PTypeData;
+begin
+  Result := GetTypeData(@Self);
+end;
+{$ENDIF}
+
+function TTypeInfoHelper.TypeName: string;
 begin
 {$IFNDEF NEXTGEN}
   Result := UTF8ToString(Name);
@@ -3711,13 +4024,6 @@ begin
   Result := NameFld.ToString;
 {$ENDIF}
 end;
-
-{$IFNDEF DELPHIXE3_UP}
-function TTypeInfoHelper.TypeData: PTypeData;
-begin
-  Result := GetTypeData(@Self);
-end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -4035,11 +4341,9 @@ var
   method: TRttiMethod;
 begin
   method := FindConstructor(classType, arguments);
-  if Assigned(method) then
-    Result := CreateInstance(classType, method, arguments)
-  else
-    raise ENotSupportedException.CreateResFmt(
-      @SMissingConstructor, [classType.ClassName]);
+  if not Assigned(method) then
+    RaiseNoConstructorFound(classType.MetaclassType);
+  Result := CreateInstance(classType, method, arguments)
 end;
 
 class function TActivator.CreateInstance(const classType: TRttiInstanceType;
@@ -4049,19 +4353,8 @@ begin
 end;
 
 class function TActivator.CreateInstance(typeInfo: PTypeInfo): TObject;
-var
-  classType: TClass;
-  ctor: TConstructor;
-  rttiType: TRttiType;
 begin
-  classType := typeInfo.TypeData.ClassType;
-  if ConstructorCache.TryGetValue(classType, ctor) then
-    Result := ctor(classType, 1)
-  else
-  begin
-    rttiType := Context.GetType(typeInfo);
-    Result := CreateInstance(TRttiInstanceType(rttiType), []).AsObject;
-  end;
+  Result := CreateInstance(GetTypeData(typeInfo).ClassType);
 end;
 
 class function TActivator.CreateInstance(const typeName: string): TObject;
@@ -4073,8 +4366,20 @@ begin
 end;
 
 class function TActivator.CreateInstance(classType: TClass): TObject;
+var
+  ctor: TConstructor;
+  rttiType: TRttiType;
+  method: TRttiMethod;
 begin
-  Result := CreateInstance(classType.ClassInfo);
+  if not ConstructorCache.TryGetValue(classType, ctor) then
+  begin
+    rttiType := Context.GetType(classType);
+    method := FindConstructor(TRttiInstanceType(rttiType), []);
+    if not Assigned(method) then
+      RaiseNoConstructorFound(classType);
+    ctor := method.CodeAddress;
+  end;
+  Result := ctor(classType, 1);
 end;
 
 class function TActivator.CreateInstance(classType: TClass;
@@ -4088,7 +4393,7 @@ end;
 
 class function TActivator.CreateInstance<T>: T;
 begin
-  Result := T(CreateInstance(TypeInfo(T)));
+  Result := T(CreateInstance(TClass(T)));
 end;
 
 class function TActivator.CreateInstance<T>(
@@ -4129,6 +4434,12 @@ begin
     end;
   end;
   Result := nil;
+end;
+
+class procedure TActivator.RaiseNoConstructorFound(classType: TClass);
+begin
+  raise ENotSupportedException.CreateResFmt(
+    @SNoConstructorFound, [classType.ClassName]);
 end;
 
 {$ENDREGION}

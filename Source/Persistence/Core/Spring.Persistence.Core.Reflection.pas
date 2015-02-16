@@ -134,74 +134,9 @@ type
     property MethodCount: Integer read GetMethodCount;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Extends <see cref="Rtti.TValue">TValue</see> for easier RTTI use.
-  ///	</summary>
-  {$ENDREGION}
-  TValueHelper = record helper for TValue
-  private
-    function GetRttiType: TRttiType;
-    class function FromFloat(ATypeInfo: PTypeInfo; AValue: Extended): TValue; static;
-  public
-    function GetType: TRttiType;
-
-    function IsFloat: Boolean;
-    function IsNumeric: Boolean;
-    function IsPointer: Boolean;
-    function IsString: Boolean;
-
-    function IsInstance: Boolean;
-    function IsInterface: Boolean;
-
-    // conversion for almost all standard types
-    function TryConvert(ATypeInfo: PTypeInfo; out AResult: TValue; out AFreeAfter: Boolean): Boolean;
-
-    function AsByte: Byte;
-    function AsCardinal: Cardinal;
-    function AsCurrency: Currency;
-    function AsDate: TDate;
-    function AsDateTime: TDateTime;
-    function AsDouble: Double;
-    function AsFloat: Extended;
-    function AsPointer: Pointer;
-    function AsShortInt: ShortInt;
-    function AsSingle: Single;
-    function AsSmallInt: SmallInt;
-    function AsTime: TTime;
-    function AsUInt64: UInt64;
-    function AsWord: Word;
-
-    function ToObject: TObject;
-
-    class function ToString(const Value: TValue): string; overload; static;
-    class function ToString(const Values: TArray<TValue>): string; overload; static;
-
-    class function From(ABuffer: Pointer; ATypeInfo: PTypeInfo): TValue; overload; static;
-    class function From(AObject: TObject; AClass: TClass): TValue; overload; static;
-    class function FromBoolean(const Value: Boolean): TValue; static;
-    class function FromString(const Value: string): TValue; static;
-
-    function IsBoolean: Boolean;
-    function IsByte: Boolean;
-    function IsCardinal: Boolean;
-    function IsCurrency: Boolean;
-    function IsDate: Boolean;
-    function IsDateTime: Boolean;
-    function IsDouble: Boolean;
-    function IsInteger: Boolean;
-    function IsInt64: Boolean;
-    function IsShortInt: Boolean;
-    function IsSingle: Boolean;
-    function IsSmallInt: Boolean;
-    function IsTime: Boolean;
-    function IsUInt64: Boolean;
-    function IsVariant: Boolean;
-    function IsRecord: Boolean;
-    function IsWord: Boolean;
-
-    property RttiType: TRttiType read GetRttiType;
-  end;
+// TODO: use value converter
+function TryConvert(const Self: TValue; ATypeInfo: PTypeInfo;
+  out AResult: TValue; out AFreeAfter: Boolean): Boolean;
 
 procedure FreeValueObject(const AValue: TValue);
 
@@ -214,6 +149,7 @@ uses
   StrUtils,
   SysUtils
   ,Graphics
+  ,Spring
   ,Spring.Reflection
   ,Spring.Persistence.Core.Utils
   ,Variants
@@ -260,7 +196,7 @@ var
   LFree: Boolean;
 begin
   Result := TryGetRttiType(ATarget, LType) and LType.IsGenericTypeOf('Nullable')
-    and ASource.TryConvert(LType.GetGenericArguments[0].Handle, LValue, LFree);
+    and TryConvert(ASource, LType.GetGenericArguments[0].Handle, LValue, LFree);
   if Result then
   begin
     SetLength(LBuffer, LType.TypeSize);
@@ -301,7 +237,7 @@ begin
     if not Enumerations.TryGetValue(ASource.TypeInfo, LStrings) then
     begin
       LStrings := TStringList.Create;
-      with TRttiEnumerationType(ASource.RttiType) do
+      with TRttiEnumerationType(TType.GetType(ASource.TypeInfo)) do
       begin
         for i := MinValue to MaxValue do
         begin
@@ -387,7 +323,7 @@ begin
   if Result then
   begin
     LValue := TValue.From(ASource.GetReferenceToRawData, LType.GetGenericArguments[0].Handle);
-    Result := LValue.TryConvert(ATarget, AResult, LFree);
+    Result := TryConvert(LValue, ATarget, AResult, LFree);
   end
 end;
 
@@ -439,7 +375,7 @@ begin
     if not Enumerations.TryGetValue(LTypeData.CompType^, LStrings) then
     begin
       LStrings := TStringList.Create;
-      with TRttiEnumerationType(TRttiSetType(ASource.RttiType).ElementType) do
+      with TRttiEnumerationType(TRttiSetType(TType.GetType(ASource.TypeInfo)).ElementType) do
       begin
         for i := MinValue to MaxValue do
         begin
@@ -807,88 +743,6 @@ begin
 end;
 {$ENDIF}
 
-function CompareValue(const Left, Right: TValue): Integer;
-var
-  LLeft, LRight: TValue;
-  LeftNull, RightNull: Boolean;
-  LRel: TVariantRelationship;
-begin
-  if Left.IsEmpty or Right.IsEmpty then
-  begin
-    Result := 0;
-    LeftNull := Left.IsEmpty;
-    RightNull := Right.IsEmpty;
-    if LeftNull then
-    begin
-      if RightNull then
-        Result := 0
-      else
-        Result := 1;
-    end
-    else if RightNull then
-    begin
-      if LeftNull then
-        Result := 0
-      else
-        Result := -1;
-    end;
-  end
-  else
-  if Left.IsOrdinal and Right.IsOrdinal then
-  begin
-    Result := Math.CompareValue(Left.AsOrdinal, Right.AsOrdinal);
-  end else
-  if Left.IsFloat and Right.IsFloat then
-  begin
-    Result := Math.CompareValue(Left.AsFloat, Right.AsFloat);
-  end else
-  if Left.IsString and Right.IsString then
-  begin
-    Result := SysUtils.AnsiCompareStr(Left.AsString, Right.AsString);
-  end
-  else if Left.IsObject and Right.IsObject then
-  begin
-    Result := NativeInt(Left.AsObject) - NativeInt(Right.AsObject);
-  end
-  else if (Left.TypeInfo = TypeInfo(Variant)) and (Right.TypeInfo = TypeInfo(Variant)) then
-  begin
-    Result := 0;
-    LRel := VarCompareValue(Left.AsVariant, Right.AsVariant);
-    case LRel of
-      vrEqual: Result := 0;
-      vrLessThan: Result := -1;
-      vrGreaterThan: Result := 1;
-      vrNotEqual: Result := -1;
-    end;
-  end
-  else if TType.IsNullableType(Left.TypeInfo) and TType.IsNullableType(Right.TypeInfo) then
-  begin
-    LeftNull := not TType.TryGetNullableValue(Left, LLeft);
-    RightNull := not TType.TryGetNullableValue(Right, LRight);
-    if LeftNull then
-    begin
-      if RightNull then
-        Result := 0
-      else
-        Result := 1;
-    end
-    else if RightNull then
-    begin
-      if LeftNull then
-        Result := 0
-      else
-        Result := -1;
-    end
-    else
-    begin
-      Result := CompareValue(LLeft, LRight);
-    end;
-  end else
-  begin
-    Result := 0;
-  end;
-end;
-
 procedure FreeValueObject(const AValue: TValue);
 var
   LObj: TObject;
@@ -1220,321 +1074,7 @@ begin
   Result := Assigned(AMethod);
 end;
 
-{ TValueHelper }
-
-function TValueHelper.AsByte: Byte;
-begin
-  Result := AsType<Byte>;
-end;
-
-function TValueHelper.AsCardinal: Cardinal;
-begin
-  Result := AsType<Cardinal>;
-end;
-
-function TValueHelper.AsCurrency: Currency;
-begin
-  Result := AsType<Currency>;
-end;
-
-function TValueHelper.AsDate: TDate;
-begin
-  Result := AsType<TDate>;
-end;
-
-function TValueHelper.AsDateTime: TDateTime;
-begin
-  Result := AsType<TDateTime>;
-end;
-
-function TValueHelper.AsDouble: Double;
-begin
-  Result := AsType<Double>;
-end;
-
-function TValueHelper.AsFloat: Extended;
-begin
-  Result := AsType<Extended>;
-end;
-
-function TValueHelper.AsPointer: Pointer;
-begin
-  ExtractRawDataNoCopy(@Result);
-end;
-
-function TValueHelper.AsShortInt: ShortInt;
-begin
-  Result := AsType<ShortInt>;
-end;
-
-function TValueHelper.AsSingle: Single;
-begin
-  Result := AsType<Single>;
-end;
-
-function TValueHelper.AsSmallInt: SmallInt;
-begin
-  Result := AsType<SmallInt>;
-end;
-
-function TValueHelper.AsTime: TTime;
-begin
-  Result := AsType<TTime>;
-end;
-
-function TValueHelper.AsUInt64: UInt64;
-begin
-  Result := AsType<UInt64>;
-end;
-
-function TValueHelper.AsWord: Word;
-begin
-  Result := AsType<Word>;
-end;
-
-class function TValueHelper.From(ABuffer: Pointer;
-  ATypeInfo: PTypeInfo): TValue;
-begin
-  TValue.Make(ABuffer, ATypeInfo, Result);
-end;
-
-class function TValueHelper.From(AObject: TObject; AClass: TClass): TValue;
-begin
-  TValue.Make(NativeInt(AObject), AClass.ClassInfo, Result);
-end;
-
-class function TValueHelper.FromBoolean(const Value: Boolean): TValue;
-begin
-  Result := TValue.From<Boolean>(Value);
-end;
-
-class function TValueHelper.FromFloat(ATypeInfo: PTypeInfo;
-  AValue: Extended): TValue;
-begin
-  case GetTypeData(ATypeInfo).FloatType of
-    ftSingle: Result := TValue.From<Single>(AValue);
-    ftDouble: Result := TValue.From<Double>(AValue);
-    ftExtended: Result := TValue.From<Extended>(AValue);
-    ftComp: Result := TValue.From<Comp>(AValue);
-    ftCurr: Result := TValue.From<Currency>(AValue);
-  end;
-end;
-
-class function TValueHelper.FromString(const Value: string): TValue;
-begin
-  Result := TValue.From<string>(Value);
-end;
-
-function TValueHelper.GetRttiType: TRttiType;
-begin
-  Result := Context.GetType(TypeInfo);
-end;
-
-function TValueHelper.GetType: TRttiType;
-begin
-  Result := Context.GetType(TypeInfo);
-end;
-
-function TValueHelper.IsBoolean: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Boolean);
-end;
-
-function TValueHelper.IsByte: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Byte);
-end;
-
-function TValueHelper.IsCardinal: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Cardinal);
-{$IFNDEF CPUX64}
-  Result := Result or (TypeInfo = System.TypeInfo(NativeUInt));
-{$ENDIF}
-end;
-
-function TValueHelper.IsCurrency: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Currency);
-end;
-
-function TValueHelper.IsDate: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(TDate);
-end;
-
-function TValueHelper.IsDateTime: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(TDateTime);
-end;
-
-function TValueHelper.IsDouble: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Double);
-end;
-
-function TValueHelper.IsFloat: Boolean;
-begin
-  Result := Kind = tkFloat;
-end;
-
-function TValueHelper.IsInstance: Boolean;
-begin
-  Result := Kind in [tkClass, tkInterface];
-end;
-
-function TValueHelper.IsInt64: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Int64);
-{$IFDEF CPUX64}
-  Result := Result or (TypeInfo = System.TypeInfo(NativeInt));
-{$ENDIF}
-end;
-
-function TValueHelper.IsInteger: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Integer);
-{$IFNDEF CPUX64}
-  Result := Result or (TypeInfo = System.TypeInfo(NativeInt));
-{$ENDIF}
-end;
-
-function TValueHelper.IsInterface: Boolean;
-begin
-  Result := Assigned(TypeInfo) and (TypeInfo.Kind = tkInterface);
-end;
-
-function TValueHelper.IsNumeric: Boolean;
-begin
-  Result := Kind in [tkInteger, tkChar, tkEnumeration, tkFloat, tkWChar, tkInt64];
-end;
-
-function TValueHelper.IsPointer: Boolean;
-begin
-  Result := Kind = tkPointer;
-end;
-
-function TValueHelper.IsRecord: Boolean;
-begin
-  Result := Kind = tkRecord;
-end;
-
-function TValueHelper.IsShortInt: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(ShortInt);
-end;
-
-function TValueHelper.IsSingle: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Single);
-end;
-
-function TValueHelper.IsSmallInt: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(SmallInt);
-end;
-
-function TValueHelper.IsString: Boolean;
-begin
-  Result := Kind in [tkChar, tkString, tkWChar, tkLString, tkWString, tkUString];
-end;
-
-function TValueHelper.IsTime: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(TTime);
-end;
-
-function TValueHelper.IsUInt64: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(UInt64);
-{$IFDEF CPUX64}
-  Result := Result or (TypeInfo = System.TypeInfo(NativeInt));
-{$ENDIF}
-end;
-
-function TValueHelper.IsVariant: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Variant);
-end;
-
-function TValueHelper.IsWord: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Word);
-end;
-
-function TValueHelper.ToObject: TObject;
-begin
-  if IsInterface then
-    Result := AsInterface as TObject
-  else
-    Result := AsObject;
-end;
-
-class function TValueHelper.ToString(const Values: TArray<TValue>): string;
-var
-  i: Integer;
-begin
-  Result := '';
-  for i := Low(Values) to High(Values) do
-  begin
-    if i > Low(Values) then
-    begin
-      Result := Result + ', ';
-    end;
-    if Values[i].IsString then
-    begin
-      Result := Result + '''' + TValue.ToString(Values[i]) + '''';
-    end
-    else
-    begin
-      Result := Result + TValue.ToString(Values[i]);
-    end;
-  end;
-end;
-
-class function TValueHelper.ToString(const Value: TValue): string;
-var
-  LInterface: IInterface;
-  LObject: TObject;
-begin
-  case Value.Kind of
-    tkFloat:
-    begin
-      if Value.IsDate then
-      begin
-        Result := DateToStr(Value.AsDate);
-      end else
-      if Value.IsDateTime then
-      begin
-        Result := DateTimeToStr(Value.AsDateTime);
-      end else
-      if Value.IsTime then
-      begin
-        Result := TimeToStr(Value.AsTime);
-      end else
-      begin
-        Result := Value.ToString;
-      end;
-    end;
-    tkClass:
-    begin
-      LObject := Value.AsObject;
-      Result := Format('%s($%x)', [StripUnitName(LObject.ClassName),
-        NativeInt(LObject)]);
-    end;
-    tkInterface:
-    begin
-      LInterface := Value.AsInterface;
-      LObject := LInterface as TObject;
-      Result := Format('%s($%x) as %s', [StripUnitName(LObject.ClassName),
-        NativeInt(LInterface), StripUnitName(string(Value.TypeInfo.Name))]);
-    end
-  else
-    Result := Value.ToString;
-  end;
-end;
-
-function TValueHelper.TryConvert(ATypeInfo: PTypeInfo;
+function TryConvert(const Self: TValue; ATypeInfo: PTypeInfo;
   out AResult: TValue; out AFreeAfter: Boolean): Boolean;
 var
   LType: TRttiType;
@@ -1557,18 +1097,18 @@ begin
       Exit(True);
     end;
 
-    Result := Conversions[Kind, ATypeInfo.Kind](Self, ATypeInfo, AResult);
+    Result := Conversions[Self.Kind, ATypeInfo.Kind](Self, ATypeInfo, AResult);
 
     if not Result then
     begin
-      case Kind of
+      case Self.Kind of
         tkClass:
         begin
           case ATypeInfo.Kind of
             tkClass:
             begin
               {TODO -oLinas -cGeneral : refactor into separate method or class}
-              if (IsObject) and (AsObject <> nil) and (AsObject.InheritsFrom(TStream)) then
+              if (Self.IsObject) and (Self.AsObject <> nil) and (Self.AsObject.InheritsFrom(TStream)) then
               begin
                 if (ATypeInfo = System.TypeInfo(TPicture)) then
                 begin
@@ -1580,17 +1120,17 @@ begin
                   end;
                 end;
               end
-              else if TypeInfo = System.TypeInfo(TPicture) then
+              else if Self.TypeInfo = System.TypeInfo(TPicture) then
               begin
                 LStream := nil;
                 //convert from picture to stream to be able to add it as a parameter
-                if (IsObject) and (AsObject <> nil) then
+                if (Self.IsObject) and (Self.AsObject <> nil) then
                 begin
-                  if (TPicture(AsObject).Graphic <> nil) then
+                  if (TPicture(Self.AsObject).Graphic <> nil) then
                   begin
                     LStream := TMemoryStream.Create;
                     AFreeAfter := True;
-                    TPicture(AsObject).Graphic.SaveToStream(LStream);
+                    TPicture(Self.AsObject).Graphic.SaveToStream(LStream);
                     LStream.Position := 0;
                   end;
                 end;
@@ -1599,9 +1139,9 @@ begin
               end
               else
               begin
-                if IsTypeCovariantTo(TypeInfo, ATypeInfo) then
+                if IsTypeCovariantTo(Self.TypeInfo, ATypeInfo) then
                 begin
-                  AResult := TValue.From(GetReferenceToRawData, ATypeInfo);
+                  AResult := TValue.From(Self.GetReferenceToRawData, ATypeInfo);
                   Result := True;
                 end;
               end;
@@ -1614,11 +1154,11 @@ begin
           case ATypeInfo.Kind of
             tkInterface:
             begin
-              if IsTypeCovariantTo(TypeInfo, ATypeInfo) then
+              if IsTypeCovariantTo(Self.TypeInfo, ATypeInfo) then
               begin
-                AResult := TValue.From(GetReferenceToRawData, ATypeInfo);
+                AResult := TValue.From(Self.GetReferenceToRawData, ATypeInfo);
                 Result := True;
-              end else if TryGetRttiType(TypeInfo, LType) and (ATypeInfo.Name = 'IList')
+              end else if TryGetRttiType(Self.TypeInfo, LType) and (ATypeInfo.Name = 'IList')
                 and LType.IsGenericTypeOf('IList') and LType.TryGetMethod('AsList', LMethod) then
               begin
                 LInterface := LMethod.Invoke(Self, []).AsInterface;
@@ -1628,7 +1168,7 @@ begin
             end;
             tkClass:
             begin
-              Result := TValue.From<TObject>(Self.AsInterface as TObject).TryConvert(ATypeInfo, AResult, AFreeAfter);
+              Result := TryConvert(TValue.From<TObject>(Self.AsInterface as TObject), ATypeInfo, AResult, AFreeAfter);
             end;
           end;
         end;
@@ -1661,7 +1201,7 @@ begin
 
     if not Result then
     begin
-      Result := TryCast(ATypeInfo, AResult);
+      Result := Self.TryCast(ATypeInfo, AResult);
     end;
   end;
 end;

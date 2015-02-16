@@ -262,8 +262,6 @@ type
     property OnFilterRecord;
   end;
 
-  function CompareValue(const Left, Right: TValue): Integer;
-
 resourcestring
   SUnsupportedFieldType = 'Unsupported field type (%s) in field %s.';
   SIndexOutOfRange = 'Index out of range';
@@ -377,90 +375,6 @@ begin
   end;
 end;
 
-function CompareValue(const Left, Right: TValue): Integer;
-var
-  LLeft, LRight: TValue;
-  LeftNull, RightNull: Boolean;
-  LRel: TVariantRelationship;
-begin
-  if Left.IsEmpty or Right.IsEmpty then
-  begin
-    Result := 0;
-    LeftNull := Left.IsEmpty;
-    RightNull := Right.IsEmpty;
-    if LeftNull then
-    begin
-      if RightNull then
-        Result := 0
-      else
-        Result := 1;
-    end
-    else if RightNull then
-    begin
-      if LeftNull then
-        Result := 0
-      else
-        Result := -1;
-    end;
-  end
-  else
-  if Left.IsOrdinal and Right.IsOrdinal then
-  begin
-    Result := Math.CompareValue(Left.AsOrdinal, Right.AsOrdinal);
-  end else
-  if Left.IsType<Double> and Right.IsType<Double>
-    and not Left.IsType<string> then // fix for wrong Conversions in XE
-  begin
-    Result := Math.CompareValue(Left.AsExtended, Right.AsExtended);
-  end else
-  if Left.IsString and Right.IsString then
-  begin
-    Result := SysUtils.AnsiCompareStr(Left.AsString, Right.AsString);
-  end
-  else if Left.IsObject and Right.IsObject then
-  begin
-    Result := NativeInt(Left.AsObject) - NativeInt(Right.AsObject);
-  end
-  else if (Left.TypeInfo = TypeInfo(Variant)) and (Right.TypeInfo = TypeInfo(Variant)) then
-  begin
-    Result := 0;
-    LRel := VarCompareValue(Left.AsVariant, Right.AsVariant);
-    case LRel of
-      vrEqual: Result := 0;
-      vrLessThan: Result := -1;
-      vrGreaterThan: Result := 1;
-      vrNotEqual: Result := -1;
-    end;
-  end
-  else if TType.IsNullableType(Left.TypeInfo) and TType.IsNullableType(Right.TypeInfo) then
-  begin
-    LeftNull := not TType.TryGetNullableValue(Left, LLeft);
-    RightNull := not TType.TryGetNullableValue(Right, LRight);
-    if LeftNull then
-    begin
-      if RightNull then
-        Result := 0
-      else
-        Result := 1;
-    end
-    else if RightNull then
-    begin
-      if LeftNull then
-        Result := 0
-      else
-        Result := -1;
-    end
-    else
-    begin
-      Result := CompareValue(LLeft, LRight);
-    end;
-  end else
-  begin
-    Result := 0;
-  end;
-end;
-
-
 { TCustomObjectDataset }
 
 function TAbstractObjectDataset.AllocRecordBuffer: TRecordBuffer;
@@ -503,7 +417,7 @@ begin
   begin
     LValue1 := PObject(Bookmark1)^;
     LValue2 := PObject(Bookmark2)^;
-    Result := CompareValue(LValue1, LValue2);
+    Result := LValue1.CompareTo(LValue2);
    // Result := PInteger(Bookmark1)^ - PInteger(Bookmark2)^;
   end;
 end;

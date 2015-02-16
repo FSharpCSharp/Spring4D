@@ -32,6 +32,7 @@ uses
   Rtti,
   TypInfo,
   SysUtils,
+  Spring.Persistence.Core.Reflection,
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
@@ -121,7 +122,6 @@ uses
   Math,
   StrUtils,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Utils,
   Spring.Reflection;
 
@@ -555,9 +555,9 @@ class function TRttiExplorer.GetMemberValueDeep(
   const AInitialValue: TValue): TValue;
 begin
   Result := AInitialValue;
-  if TType.IsNullableType(Result.TypeInfo) then
+  if IsNullable(Result.TypeInfo) then
   begin
-    if not TType.TryGetNullableValue(AInitialValue, Result) then
+    if not AInitialValue.TryGetNullableValue(Result) then
       Result := TValue.Empty;
   end
   else if TType.IsLazyType(Result.TypeInfo) then

@@ -78,10 +78,10 @@ uses
   StrUtils,
   SysUtils,
   Variants,
+  Spring.Persistence.Core.Reflection,
   Spring,
   Spring.Reflection,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Reflection,
   Spring.Persistence.Mapping.RttiExplorer;
 
 
@@ -113,8 +113,8 @@ begin
     end;
     tkRecord:
     begin
-      if TType.IsNullableType(value.TypeInfo) then
-        if TType.TryGetNullableValue(value, LValue) then
+      if IsNullable(value.TypeInfo) then
+        if value.TryGetNullableValue(LValue) then
           Result := TUtils.AsVariant(LValue);
     end;
     tkClass:
@@ -362,7 +362,7 @@ begin
         //LHasValueField.SetValue(LResultRef, '@')  //Spring Nullable
 
       //get type from Nullable<T> and set value to this type
-      if AFrom.TryConvert(LValueField.FieldType.Handle, LValue, bFree) then
+      if Spring.Persistence.Core.Reflection.TryConvert(AFrom, LValueField.FieldType.Handle, LValue, bFree) then
         LValue.ExtractRawData(PByte(LResultRef) + LValueField.Offset); // faster than LValueField.SetValue(LResultRef, LValue);
 
       if bFree then
@@ -482,7 +482,7 @@ begin
     case targetTypeInfo.Kind of
       tkRecord:
       begin
-        if TType.IsNullableType(targetTypeInfo) then
+        if IsNullable(targetTypeInfo) then
         begin
           SetNullableValue(targetTypeInfo, AFrom, AResult);
           Exit(True);
@@ -496,7 +496,7 @@ begin
         end;
       end;
     end;
-    Result := AFrom.TryConvert(targetTypeInfo, AResult, bFree);
+    Result := Spring.Persistence.Core.Reflection.TryConvert(AFrom, targetTypeInfo, AResult, bFree);
   end
   else
   begin

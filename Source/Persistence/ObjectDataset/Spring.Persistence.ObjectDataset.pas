@@ -281,7 +281,7 @@ begin
     LValue1 := LFieldInfo.RttiProperty.GetValue(Item1);
     LValue2 := LFieldInfo.RttiProperty.GetValue(Item2);
 
-    Result := Spring.Persistence.ObjectDataset.Abstract.CompareValue(LValue1, LValue2);
+    Result := LValue1.CompareTo(LValue2);
     if LFieldInfo.Descending then
       Result := -Result;
 
@@ -770,8 +770,11 @@ var
       end;
       tkRecord:
       begin
-        if TType.TryGetNullableTypeInfo(ATypeInfo, LTypeInfo) then
+        if IsNullable(ATypeInfo) then
+        begin
+          LTypeInfo := GetUnderlyingType(ATypeInfo);
           DoGetFieldType(LTypeInfo);
+        end;
       end;
       tkInt64:
       begin
@@ -1100,8 +1103,8 @@ begin
     end;
     tkRecord:
     begin
-      if TType.IsNullableType(value.TypeInfo) then
-        if TType.TryGetNullableValue(value, LValue) then
+      if IsNullable(value.TypeInfo) then
+        if value.TryGetNullableValue(LValue) then
           Result := ValueToVariant(LValue);
     end;
     tkClass:

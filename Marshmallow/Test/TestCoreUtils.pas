@@ -64,7 +64,7 @@ begin
     CheckTrue(LResult.TryAsType<Nullable<string>>(LSpringValue));
     CheckTrue(LSpringValue.HasValue);
 
-    CheckTrue(TType.TryGetNullableValue(LResult, LFrom));
+    CheckTrue(LResult.TryGetNullableValue(LFrom));
     CheckEquals('Bob', LFrom.AsString);
   finally
     LEntity.Free;
@@ -80,7 +80,7 @@ begin
     CheckTrue(LValue.HasValue);
     CheckEquals(256.12, LValue.Value, 0.001);
 
-    CheckTrue(TType.TryGetNullableValue(LResult, LFrom));
+    CheckTrue(LResult.TryGetNullableValue(LFrom));
     CheckEquals(256.12, LFrom.AsExtended, 0.001);
   finally
     LOrder.Free;

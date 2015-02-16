@@ -80,6 +80,7 @@ type
   published
     procedure TestByValueFactory;
     procedure TestByValue;
+    procedure Test_Initializer_RaisesArgumentException_NotReferenceType;
   end;
 
 {$IFDEF SUPPORTS_GENERIC_EVENTS}
@@ -746,6 +747,14 @@ begin
   CheckEquals(CExpectedBalance, (fBalance as ILazy).Value.AsInteger);
 
   CheckTrue(fBalance.IsValueCreated);
+end;
+
+procedure TTestLazy.Test_Initializer_RaisesArgumentException_NotReferenceType;
+var
+  i: Integer;
+begin
+  ExpectedException := EArgumentException;
+  TLazyInitializer.EnsureInitialized<Integer>(i, function: Integer begin Exit(42) end);
 end;
 
 procedure TTestLazy.TestByValue;

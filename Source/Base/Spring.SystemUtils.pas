@@ -203,8 +203,8 @@ uses
 
 class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
 begin
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
   Result := TypeInfo(T);
-  Guard.CheckTypeKind(Result, tkEnumeration, 'T');
 end;
 
 class function TEnum.GetEnumTypeData<T>: PTypeData;
@@ -223,13 +223,11 @@ end;
 
 class function TEnum.IsValid<T>(const value: Integer): Boolean;
 var
-  typeInfo: PTypeInfo;
   data: PTypeData;
 begin
-  typeInfo := System.TypeInfo(T);
-  Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
 
-  data := GetTypeData(typeInfo);
+  data := GetTypeData(TypeInfo(T));
   Guard.CheckNotNull(data, 'data');
   Result := (value >= data.MinValue) and (value <= data.MaxValue);
 end;

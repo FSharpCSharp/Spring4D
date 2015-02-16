@@ -421,9 +421,10 @@ var
   factory: TFunc<Nullable<TObject>>;
   LColumn: ColumnAttribute;
 begin
-  if not TType.TryGetNullableTypeInfo(recordType.Handle, underlyingTypeInfo) then
+  if not IsNullable(recordType.Handle) then
     raise EORMUnsupportedType.CreateFmt('Unsupported lazy type: %s. Expected Lazy<Nullable<T: TObject>>', [recordType.ToString]);
 
+  underlyingTypeInfo := GetUnderlyingType(recordType.Handle);
   LId := id;
   LEntity := entity;
   LColumn := column;

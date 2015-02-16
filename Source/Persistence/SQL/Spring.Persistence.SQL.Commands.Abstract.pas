@@ -123,7 +123,7 @@ begin
   Result.Name := paramField.ParamName;
   LVal := TRttiExplorer.GetMemberValueDeep(entity, paramField.Column.MemberName);
   //convert/serialize objects to stream. If value is nullable or lazy get it's real value
-  if LVal.IsObject and LVal.TryConvert(TypeInfo(TStream), LRes, bFree) then
+  if LVal.IsObject and TryConvert(LVal, TypeInfo(TStream), LRes, bFree) then
     LVal := LRes.AsObject;
 
   Result.Value := TUtils.AsVariant(LVal);

@@ -105,6 +105,7 @@ uses
   SysUtils,
   TypInfo,
   Variants,
+  Spring,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Utils,
   Spring.Persistence.Mapping.RttiExplorer,
@@ -657,7 +658,7 @@ begin
     tkWString, tkUString: Result := Format('NVARCHAR(%D)', [field.Length]);
     tkRecord:
     begin
-      if TType.IsNullableType(LDelphiTypeInfo) or TType.IsLazyType(LDelphiTypeInfo) then
+      if IsNullable(LDelphiTypeInfo) or TType.IsLazyType(LDelphiTypeInfo) then
       begin
         LClonedField := field.Clone;
         try
