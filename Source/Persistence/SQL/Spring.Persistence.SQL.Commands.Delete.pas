@@ -101,9 +101,10 @@ begin
   inherited BuildParams(entity);
 
   for whereField in fCommand.WhereFields do
-  param := CreateParam(field, TUtils.AsVariant(GetPrimaryKeyValue(entity)));
+  begin
     param := Generator.CreateParam(whereField, GetPrimaryKeyValue(entity));
     SQLParameters.Add(param);
+  end;
 end;
 
 procedure TDeleteExecutor.Execute(const entity: TObject);
@@ -121,7 +122,8 @@ begin
   statement.SetSQLCommand(SQL);
   SQLParameters.Clear;
   field := fCommand.WhereFields.First;
-  param := CreateParam(field, TUtils.AsVariant(id));
+
+  param := Generator.CreateParam(field, id);
   SQLParameters.Add(param);
   statement.SetParams(SQLParameters);
   statement.Execute;

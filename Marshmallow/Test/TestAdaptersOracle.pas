@@ -58,6 +58,7 @@ uses
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.DatabaseManager,
   Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Criteria.Properties,
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types,
