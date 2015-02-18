@@ -90,9 +90,10 @@ begin
   LSequence := command.Sequence;
   Result := 'BEGIN ';
   if command.SequenceExists then
-    Result := Result + 'EXECUTE IMMEDIATE ' + QuotedStr(Format('DROP SEQUENCE "%0:S" ', [LSequence.SequenceName])) + ';';
+    Result := Result + 'EXECUTE IMMEDIATE ' + QuotedStr(Format('DROP SEQUENCE "%0:S;" ', [LSequence.SequenceName]));
 
-  Result := Result + ' EXECUTE IMMEDIATE ' + QuotedStr(Format('CREATE SEQUENCE "%0:S" MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE',
+  Result := Result + ' EXECUTE IMMEDIATE ' + QuotedStr(Format('CREATE SEQUENCE "%0:S" '+
+    ' MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE;',
     [LSequence.SequenceName, LSequence.InitialValue, LSequence.Increment]));
 
   Result := Result + ' END;';
