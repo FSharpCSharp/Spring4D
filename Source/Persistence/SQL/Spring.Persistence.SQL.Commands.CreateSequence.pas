@@ -115,7 +115,7 @@ begin
     statement := Connection.CreateStatement;
     statement.SetSQLCommand(sqlStatement);
     results := statement.ExecuteQuery;
-    Result := not results.IsEmpty;
+    Result := (not results.IsEmpty) and (results.GetFieldValue(0) > 0);
   except
     Result := False;
   end;
