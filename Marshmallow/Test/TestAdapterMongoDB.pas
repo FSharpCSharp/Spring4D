@@ -232,7 +232,8 @@ type
     procedure TearDown; override;
   published
     procedure DefaultMethod_Count();
-    procedure DefaultMethod_Page();
+    procedure DefaultMethod_FindWhere;
+    procedure DefaultMethod_FindWhere_Expression;
     procedure DefaultMethod_FindOne();
     procedure DefaultMethod_FindAll();
     procedure DefaultMethod_Exists();
@@ -276,9 +277,9 @@ const
 
 
 
-procedure InsertObject(AConnection: TMongoDBConnection; const AValue: Variant; AID: Integer = 1; AName: string = '');
+procedure InsertObject(AConnection: TMongoDBConnection; const keyValue: Variant; AID: Integer = 1; AName: string = '');
 begin
-  AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, AValue, '_id', AID, 'Name', AName]));
+  AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, keyValue, '_id', AID, 'Name', AName]));
 end;
 
 procedure RemoveObject(AConnection: TMongoDBConnection; const AValue: Variant);
@@ -1309,10 +1310,19 @@ begin
   CheckTrue(FProxyRepository.Exists(1));
 end;
 
-procedure TestMongoProxyRepository.DefaultMethod_Page;
+procedure TestMongoProxyRepository.DefaultMethod_FindWhere;
 begin
   InsertObject(FConnection, 100, 1);
-  CheckEquals(1, FProxyRepository.Page(1, 10).GetTotalItems);
+  CheckEquals(1, FProxyRepository.FindWhere.Page(1,10).GetTotalItems);
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_FindWhere_Expression;
+var
+  Key: Prop;
+begin
+  InsertObject(FConnection, 100, 1);
+  Key := GetProp('KEY');
+  CheckEquals(1, FProxyRepository.FindWhere(Key = 100).Page(1,10).GetTotalItems);
 end;
 
 procedure TestMongoProxyRepository.DefaultMethod_Query;

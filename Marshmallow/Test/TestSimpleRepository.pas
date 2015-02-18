@@ -6,8 +6,13 @@ interface
 
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
-  Variants, Graphics, Messages, StdCtrls, Spring.Persistence.Core.Session, Spring.Persistence.Core.Interfaces
-  ,TestEntities, Rtti, SQLiteTable3, Spring.Persistence.Mapping.Attributes, Spring.Persistence.Core.Repository.Proxy;
+  Variants, Graphics, Messages, StdCtrls,
+  Spring.Persistence.Core.Session,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Criteria.Interfaces,
+  TestEntities, Rtti, SQLiteTable3,
+  Spring.Persistence.Mapping.Attributes,
+  Spring.Persistence.Core.Repository.Proxy;
 
 type
   ICustomerRepository = interface(IPagedRepository<TCustomer, Integer>)
@@ -47,6 +52,8 @@ type
   published
     procedure FindByName();
     procedure FindByName_Paged();
+    procedure FindWhere_ToList;
+    procedure FindWhere_UsingCriterion_ToList;
   end;
 
 
@@ -145,6 +152,26 @@ begin
   LCustomerPage := FCustomerRepository.FindByNamePaged('Foo', 0, 10);
   CheckEquals(1, LCustomerPage.GetTotalItems);
   CheckEquals('Foo', LCustomerPage.Items.First.Name);
+end;
+
+procedure TCustomRepositoryTests.FindWhere_ToList;
+begin
+  InsertCustomer(10, 'Foo');
+
+  CheckEquals('Foo', FCustomerRepository
+    .FindWhere
+    .ToList
+    .First.Name);
+end;
+
+procedure TCustomRepositoryTests.FindWhere_UsingCriterion_ToList;
+begin
+  InsertCustomer(10, 'Foo');
+
+  CheckEquals('Foo', FCustomerRepository
+    .FindWhere(GetProp(CUSTNAME) = 'Foo')
+    .ToList
+    .First.Name);
 end;
 
 procedure TCustomRepositoryTests.SetUp;

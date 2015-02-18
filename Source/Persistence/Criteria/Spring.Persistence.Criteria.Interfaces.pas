@@ -31,13 +31,29 @@ interface
 uses
   Rtti,
   Spring.Collections,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types;
 
 type
+
+  /// <summary>
+  ///   Represents paged fetches.
+  /// </summary>
+  /// <remarks>
+  ///   Pages are zero indexed.
+  /// </remarks>
+  IDBPage<T: class> = interface(IInvokable)
+    ['{384357E2-A0B1-4EEE-9A22-2C01479D4148}']
+    function GetCurrentPage: Integer;
+    function GetItemsPerPage: Integer;
+    function GetTotalPages: Integer;
+    function GetTotalItems: Int64;
+    function GetItems: IList<T>;
+
+    property Items: IList<T> read GetItems;
+  end;
 
   /// <summary>
   ///   Represents an ordering imposed upon a <see cref="Spring.Persistence.Criteria.Interfaces|ICriteria&lt;T&gt;" />

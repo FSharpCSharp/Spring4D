@@ -36,6 +36,7 @@ uses
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types,
   Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Variants;
 
@@ -43,23 +44,6 @@ type
   TDBDriverType = (dtSQLite = 0, {$IFDEF MSWINDOWS}dtADO, dtMSSQL, dtASA, dtOracle,{$ENDIF} dtDBX, dtUIB, dtZeos, dtMongo, dtFireDAC);
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: IList<TDBParam>);
-
-  /// <summary>
-  ///   Represents paged fetches.
-  /// </summary>
-  /// <remarks>
-  ///   Pages are zero indexed.
-  /// </remarks>
-  IDBPage<T: class> = interface(IInvokable)
-    ['{384357E2-A0B1-4EEE-9A22-2C01479D4148}']
-    function GetCurrentPage: Integer;
-    function GetItemsPerPage: Integer;
-    function GetTotalPages: Integer;
-    function GetTotalItems: Int64;
-    function GetItems: IList<T>;
-
-    property Items: IList<T> read GetItems;
-  end;
 
   /// <summary>
   ///   Represents the result set to fetch data from the database.
@@ -264,9 +248,20 @@ type
   IPagedRepository<T: class, constructor; TID> = interface(ICrudRepository<T, TID>)
     ['{46A40512-604A-4013-B0F0-693D81CAF5DF}']
     /// <summary>
-    ///   Fetches data in pages. Pages are 1-indexed.
+    ///   Retrieves ICriteria
     /// </summary>
-    function Page(page, itemsPerPage: Integer): IDBPage<T>;
+    function FindWhere: ICriteria<T>; overload;
+    /// <summary>
+    ///   Retrieves ICriteria, pre-constructed by given expression.
+    /// </summary>
+    /// <example>
+    ///     <c>var Key: Prop;
+    ///     begin
+    ///     Key := GetProp('KEY');
+    ///     fRepository.FindWhere(Key = 100).Page(1,10).ToList;
+    ///     </c>
+    /// </example>
+    function FindWhere(const expression: ICriterion): ICriteria<T>; overload;
   end;
 
   IEmbeddedEntity = interface(IInvokable)

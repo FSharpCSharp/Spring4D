@@ -31,6 +31,7 @@ interface
 uses
   Spring.Collections,
   Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Core.Session;
 
 type
@@ -48,6 +49,8 @@ type
 
     function FindOne(const id: TID): T; virtual;
     function FindAll: IList<T>; virtual;
+    function FindWhere: ICriteria<T>; overload; virtual;
+    function FindWhere(const expression: ICriterion): ICriteria<T>; overload; virtual;
 
     function Save(const entity: T): T; overload; virtual;
     function Save(const entities: IEnumerable<T>): IEnumerable<T>; overload; virtual;
@@ -135,6 +138,17 @@ end;
 function TSimpleRepository<T, TID>.FindOne(const id: TID): T;
 begin
   Result := fSession.FindOne<T>(TValue.From<TID>(id));
+end;
+
+function TSimpleRepository<T, TID>.FindWhere: ICriteria<T>;
+begin
+  Result := fSession.CreateCriteria<T>;
+end;
+
+function TSimpleRepository<T, TID>.FindWhere(
+  const expression: ICriterion): ICriteria<T>;
+begin
+  Result := fSession.FindWhere<T>(expression);
 end;
 
 function TSimpleRepository<T, TID>.GetNamespaceFromType: string;

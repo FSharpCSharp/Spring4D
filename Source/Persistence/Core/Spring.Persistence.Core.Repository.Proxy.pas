@@ -40,6 +40,7 @@ uses
   Spring.Interception.VirtualInterface,
 {$ENDIF}
   Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Core.Session,
   Spring.Persistence.Core.Repository.Simple;
 
@@ -261,10 +262,15 @@ begin
     begin
       Result := fRepository.Count;
     end);
-  RegisterMethod(Format('function Page(page: Integer; itemsPerPage: Integer): IDBPage<%s>', [fQualifiedTypeName]),
+  RegisterMethod(Format('function FindWhere: ICriteria<%s>', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
-      Result := TValue.From<IDBPage<T>>(fRepository.Page(Args[1].AsInteger, Args[2].AsInteger));
+      Result := TValue.From<ICriteria<T>>(fRepository.FindWhere);
+    end);
+  RegisterMethod(Format('function FindWhere(const expression: ICriterion): ICriteria<%s>', [fQualifiedTypeName]),
+    function(const Args: TArray<TValue>): TValue
+    begin
+      Result := TValue.From<ICriteria<T>>(fRepository.FindWhere(Args[1].AsInterface as ICriterion));
     end);
   RegisterMethod(Format('function FindOne(const id: %s): %s', [fIdTypeName, fTypeName]),
     function(const Args: TArray<TValue>): TValue
