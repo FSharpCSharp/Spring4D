@@ -45,6 +45,7 @@ type
   published
     procedure UseTOracleDBParams;
     procedure CreateParamCreatesTOracleDBParam;
+    procedure WhenDataTypeNVARCHAR_ReplaceToNVARCHAR2;
   end;
 
 implementation
@@ -294,6 +295,23 @@ end;
 procedure TestOracleSQLGenerator.UseTOracleDBParams;
 begin
   CheckEquals(TOracleDBParam, fSut.GetParamClass);
+end;
+
+procedure TestOracleSQLGenerator.WhenDataTypeNVARCHAR_ReplaceToNVARCHAR2;
+var
+  field: TSQLCreateField;
+  table: TSQLTable;
+  actual, expected: string;
+begin
+  table := TSQLTable.CreateFromClass(TCustomer);
+  field := TSQLCreateField.Create('MiddleName', table);
+  field.SetFromAttribute(TEntityCache.Get(TCustomer).ColumnByMemberName('MiddleName'));
+
+  actual := fSut.GetSQLDataTypeName(field);
+  expected := 'NVARCHAR2(50)';
+  CheckEquals(expected, actual);
+  table.Free;
+  field.Free;
 end;
 
 initialization

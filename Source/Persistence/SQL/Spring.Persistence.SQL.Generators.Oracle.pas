@@ -183,9 +183,9 @@ begin
   Result := inherited GetSQLDataTypeName(field);
   if StartsText('NUMERIC', Result) then
     Result := 'NUMBER' + Copy(Result, 8, Length(Result))
-  else if StartsText('NVARCHAR', Result) then
+  else if StartsText('NVARCHAR', Result) and (not StartsText('NVARCHAR2', Result)) then
     Result := 'NVARCHAR2' + Copy(Result, 9, Length(Result))
-  else if StartsText('VARCHAR', Result) then
+  else if StartsText('VARCHAR', Result) and (not StartsText('VARCHAR2', Result)) then
     Result := 'VARCHAR2' + Copy(Result, 8, Length(Result))
   else if Result = 'BIT' then
     Result := 'SMALLINT' // 'PLS_INTEGER'
