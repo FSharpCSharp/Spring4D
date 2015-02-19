@@ -46,6 +46,7 @@ type
     procedure UseTOracleDBParams;
     procedure CreateParamCreatesTOracleDBParam;
     procedure WhenDataTypeNVARCHAR_ReplaceToNVARCHAR2;
+    procedure GenerateCorrectCreateSequence;
   end;
 
 implementation
@@ -63,6 +64,7 @@ uses
   Spring.Persistence.Criteria.Properties,
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types,
+  Spring.Persistence.SQL.Commands,
   Variants
   ;
 
@@ -278,6 +280,21 @@ begin
   table.Free;
   field.Free;
   param.Free;
+end;
+
+procedure TestOracleSQLGenerator.GenerateCorrectCreateSequence;
+var
+  command: TCreateSequenceCommand;
+  actual, expected: string;
+begin
+  //issue #84
+  command := TCreateSequenceCommand.Create(TEntityCache.Get(TUIBCompany).Sequence);
+
+  actual := fSut.GenerateCreateSequence(command);
+  expected := 'BEGIN  EXECUTE IMMEDIATE ''CREATE SEQUENCE "GNR_IMONESID"  '+
+    'MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER NOCYCLE''; END;';
+  CheckEquals(expected, actual);
+  command.Free;
 end;
 
 procedure TestOracleSQLGenerator.SetUp;
