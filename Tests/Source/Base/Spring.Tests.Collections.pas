@@ -90,6 +90,9 @@ type
     procedure TestListCountWithInsert;
     procedure TestListInsertBetween;
     procedure TestListInsertBeginning;
+    procedure TestListInsertRangeArray;
+    procedure TestListInsertRangeIEnumerable;
+    procedure TestListInsertRangeIEnumerableWithExtraCapacity;
     procedure TestListSimpleDelete;
     procedure TestListMultipleDelete;
     procedure TestListSimpleExchange;
@@ -931,6 +934,35 @@ begin
   CheckEquals(1, SUT[2]);
 end;
 
+procedure TTestIntegerList.TestListInsertRangeArray;
+begin
+  SUT.Add(0);
+  SUT.Add(1);
+  SUT.InsertRange(1, [3, 4]);
+  CheckTrue(SUT.EqualsTo([0, 3, 4, 1]));
+end;
+
+procedure TTestIntegerList.TestListInsertRangeIEnumerable;
+begin
+  SUT.Add(0);
+  SUT.Add(1);
+  SUT.InsertRange(1, TEnumerable.Range(3, 2));
+  CheckTrue(SUT.EqualsTo([0, 3, 4, 1]));
+end;
+
+procedure TTestIntegerList.TestListInsertRangeIEnumerableWithExtraCapacity;
+var
+  InsertedList: IList<Integer>;
+begin
+  SUT.Add(0);
+  SUT.Add(1);
+
+  InsertedList := TCollections.CreateList<Integer>([3, 4]);
+  InsertedList.Capacity := 10;
+  SUT.InsertRange(1, InsertedList);
+
+  CheckTrue(SUT.EqualsTo([0, 3, 4, 1]));
+end;
 
 procedure TTestIntegerList.TestListIsInitializedEmpty;
 begin
