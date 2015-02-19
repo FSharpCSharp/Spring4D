@@ -508,11 +508,11 @@ begin
 
     list := TList<T>(collection.AsObject);
 
-    EnsureCapacity(fCount + Length(list.fItems));
+    EnsureCapacity(fCount + list.fCount);
     if index <> fCount then
     begin
-      fArrayManager.Move(fItems, index, index + Length(list.fItems), fCount - index);
-      fArrayManager.Finalize(fItems, index, Length(list.fItems));
+      fArrayManager.Move(fItems, index, index + list.fCount, fCount - index);
+      fArrayManager.Finalize(fItems, index, list.fCount);
     end;
 
     if not IsManaged{$IFDEF WEAKREF} and not HasWeakRef{$ENDIF} then
