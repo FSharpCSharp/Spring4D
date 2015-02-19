@@ -58,6 +58,7 @@ type
     FOnBeforeFilter: TNotifyEvent;
     FOnBeforeSort: TNotifyEvent;
     FColumnAttributeTypeInfo: PTypeInfo;
+    FTrackChanges: Boolean;
 
     function GetSort: string;
     procedure SetSort(const Value: string);
@@ -65,6 +66,9 @@ type
     // we cannot use IDictionary, because it changes order of items.
     // we use list with predicate searching - slower, but working
     function PropertyFinder(const s: string): Spring.TPredicate<TRttiProperty>;
+    procedure RegisterChangeHandler;
+    procedure UnregisterChangeHandler;
+    procedure SetTrackChanges(const Value: Boolean);
   protected
     procedure DoAfterOpen; override;
     procedure DoDeleteRecord(Index: Integer); override;
@@ -83,6 +87,8 @@ type
     procedure DoOnBeforeSort; virtual;
     procedure DoOnAfterSort; virtual;
 
+    procedure DoOnDataListChange(Sender: TObject; const Item: TObject; Action: TCollectionChangedAction);
+
     function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
     function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
@@ -99,6 +105,7 @@ type
     function  IsCursorOpen: Boolean; override;
     procedure InternalInitFieldDefs; override;
     procedure InternalOpen; override;
+    procedure InternalClose; override;
     procedure SetFilterText(const Value: string); override;
 
     function GetChangedSortText(const ASortText: string): string;
@@ -191,6 +198,8 @@ type
     ///	</remarks>
     {$ENDREGION}
     property DefaultStringFieldLength: Integer read FDefaultStringFieldLength write FDefaultStringFieldLength default 250;
+    property TrackChanges: Boolean read FTrackChanges write SetTrackChanges default false;
+
     property Filter;
     property Filtered;
     property FilterOptions;
@@ -394,6 +403,19 @@ begin
     FOnBeforeSort(Self);
 end;
 
+procedure TObjectDataset.DoOnDataListChange(Sender: TObject;
+  const Item: TObject; Action: TCollectionChangedAction);
+begin
+  if IndexList.DataListIsChanging then
+    Exit;
+  DisableControls;
+  try
+    Refresh;
+  finally
+    EnableControls;
+  end;
+end;
+
 procedure TObjectDataset.DoPostRecord(Index: Integer; Append: Boolean);
 var
   LItem: TValue;
@@ -558,6 +580,12 @@ begin
   end;
 end;
 
+procedure TObjectDataset.InternalClose;
+begin
+  inherited;
+  UnregisterChangeHandler;
+end;
+
 function TObjectDataset.InternalGetFieldValue(AField: TField; const AItem: TValue): Variant;
 var
   LProperty: TRttiProperty;
@@ -640,7 +668,7 @@ end;
 
 function TObjectDataset.IsCursorOpen: Boolean;
 begin
-  Result := Assigned(FDataList);
+  Result := (Assigned(FDataList)) and (inherited IsCursorOpen);
 end;
 
 procedure TObjectDataset.LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs);
@@ -975,6 +1003,13 @@ begin
   FilterCache.Clear;
 end;
 
+procedure TObjectDataset.RegisterChangeHandler;
+begin
+  UnregisterChangeHandler;
+  if Assigned(FDataList) and FTrackChanges then
+    FDataList.OnChanged.Add(DoOnDataListChange);
+end;
+
 procedure TObjectDataset.DoFilterRecord(AIndex: Integer);
 begin
   if (IsFilterEntered) and (AIndex > -1) and (AIndex < RecordCount) then
@@ -993,6 +1028,7 @@ begin
   FItemTypeInfo := TypeInfo(T);
   FDataList := ADataList as IObjectList;
   IndexList.DataList := FDataList;
+  RegisterChangeHandler;
 end;
 
 
@@ -1033,6 +1069,21 @@ begin
   UpdateCursorPos;
   InternalSetSort(Value);
   Resync([]);
+end;
+
+procedure TObjectDataset.SetTrackChanges(const Value: Boolean);
+begin
+  if (FTrackChanges <> Value) then
+  begin
+    FTrackChanges := Value;
+    RegisterChangeHandler;
+  end;
+end;
+
+procedure TObjectDataset.UnregisterChangeHandler;
+begin
+  if Assigned(FDataList) then
+    FDataList.OnChanged.Remove(DoOnDataListChange);
 end;
 
 procedure TObjectDataset.UpdateFilter;

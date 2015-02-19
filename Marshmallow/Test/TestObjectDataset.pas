@@ -72,6 +72,8 @@ type
 
     procedure SimpleDefinedFields();
     procedure LookUpField();
+    procedure WhenIsTrackingChanges_DeletedItemFromList_IsSynced;
+    procedure WhenIsNotTrackingChanges_DeletedItemFromList_IsNotSynced;
     {$IFDEF GUI_TESTS}
     procedure TestGUI;
     {$ENDIF}
@@ -1228,6 +1230,34 @@ begin
   end;
 end;
 
+procedure TestTObjectDataset.WhenIsNotTrackingChanges_DeletedItemFromList_IsNotSynced;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(5);
+  FDataset.TrackChanges := False;
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  CheckEquals(5, FDataset.RecordCount);
+  LCustomers.Remove(LCustomers.Last);
+  CheckEquals(5, FDataset.RecordCount);
+end;
+
+procedure TestTObjectDataset.WhenIsTrackingChanges_DeletedItemFromList_IsSynced;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(5);
+  FDataset.TrackChanges := True;
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  CheckEquals(5, FDataset.RecordCount);
+  LCustomers.Remove(LCustomers.Last);
+  CheckEquals(4, FDataset.RecordCount);
+end;
+
 {$IFDEF GUI_TESTS}
 procedure TestTObjectDataset.TestGUI;
 var
@@ -1262,6 +1292,8 @@ begin
     LClonedDataset.Free;
   end;
 end;
+
+
 {$ENDIF}
 
 initialization

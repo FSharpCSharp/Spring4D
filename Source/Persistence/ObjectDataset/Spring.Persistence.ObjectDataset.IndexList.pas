@@ -44,6 +44,7 @@ type
   private
     FDataList: IObjectList;
     FList: TList<TIndexItem>;
+    FChangingDataList: Boolean;
     procedure SetDataList(const Value: IObjectList);
     function GetItem(Index: Integer): TIndexItem;
     procedure SetItem(Index: Integer; const Value: TIndexItem);
@@ -72,6 +73,7 @@ type
 
     procedure Clear;
 
+    property DataListIsChanging: Boolean read FChangingDataList;
     property Count: Integer read GetCount;
     property DataList: IObjectList read FDataList write SetDataList;
   end;
@@ -92,8 +94,13 @@ end;
 
 function TODIndexList.AddModel(const AModel: TValue): Integer;
 begin
-  FDataList.Add(AModel.AsObject);
-  Result := Add(FDataList.Count - 1, AModel);
+  FChangingDataList := True;
+  try
+    FDataList.Add(AModel.AsObject);
+    Result := Add(FDataList.Count - 1, AModel);
+  finally
+    FChangingDataList := False;
+  end;
 end;
 
 procedure TODIndexList.Clear;
@@ -122,9 +129,14 @@ var
   LFixIndex: Integer;
 begin
   LFixIndex := Items[AIndex].DataListIndex;
-  FDataList.Delete(LFixIndex);
-  Delete(AIndex);
-  FixIndexes(LFixIndex);
+  FChangingDataList := True;
+  try
+    FDataList.Delete(LFixIndex);
+    Delete(AIndex);
+    FixIndexes(LFixIndex);
+  finally
+    FChangingDataList := False;
+  end;
 end;
 
 destructor TODIndexList.Destroy;
@@ -191,8 +203,13 @@ end;
 
 procedure TODIndexList.InsertModel(const AModel: TValue; AIndex: Integer);
 begin
-  FDataList.Add(AModel.AsObject);
-  Insert(AIndex, FDataList.Count - 1, AModel);
+  FChangingDataList := True;
+  try
+    FDataList.Add(AModel.AsObject);
+    Insert(AIndex, FDataList.Count - 1, AModel);
+  finally
+    FChangingDataList := False;
+  end;
 end;
 
 procedure TODIndexList.Rebuild;

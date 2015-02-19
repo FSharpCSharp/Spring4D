@@ -157,6 +157,7 @@ type
     procedure InternalLast; override;
     procedure InternalOpen; override;
     procedure InternalPost; override;
+    procedure InternalRefresh; override;
     procedure InternalSetToRecord(Buffer: TRecordBuffer); override;
     function IsCursorOpen: Boolean; override;
     procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag); override;
@@ -796,7 +797,7 @@ begin
         end;
     end;
 
-    if Result = grOK then
+    if (Result = grOK) then
     begin
       PArrayRecInfo(Buffer)^.Index := FCurrent;
       PArrayRecInfo(Buffer)^.BookmarkFlag := bfCurrent;
@@ -909,6 +910,11 @@ begin
     else
       DoPostRecord(PArrayRecInfo(LRecBuf)^.Index, False)
   end;
+end;
+
+procedure TAbstractObjectDataset.InternalRefresh;
+begin
+  FIndexList.Rebuild;
 end;
 
 procedure TAbstractObjectDataset.InternalSetToRecord(Buffer: TRecordBuffer);
