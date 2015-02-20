@@ -153,11 +153,6 @@ type
     function Cast(typeInfo: PTypeInfo): TValue;
 
     /// <summary>
-    ///   Compares two TValue instances.
-    /// </summary>
-    class function Compare(const left, right: TValue): Integer; static;
-
-    /// <summary>
     ///   Compares to another TValue.
     /// </summary>
     function CompareTo(const value: TValue): Integer;
@@ -1776,6 +1771,11 @@ function GetTypeSize(typeInfo: PTypeInfo): Integer;
 
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 
+/// <summary>
+///   Compares two TValue instances.
+/// </summary>
+function CompareValue(const left, right: TValue): Integer; overload;
+
 procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
@@ -1940,6 +1940,49 @@ begin
     Result := nil;
 end;
 
+// TODO: use typekind matrix for comparer functions
+function CompareValue(const left, right: TValue): Integer;
+const
+  EmptyResults: array[Boolean, Boolean] of Integer = ((0, -1), (1, 0));
+var
+  leftIsEmpty, rightIsEmpty: Boolean;
+  leftValue, rightValue: TValue;
+begin
+  leftIsEmpty := left.IsEmpty;
+  rightIsEmpty := right.IsEmpty;
+  if leftIsEmpty or rightIsEmpty then
+    Result := EmptyResults[leftIsEmpty, rightIsEmpty]
+  else if left.IsOrdinal and right.IsOrdinal then
+    Result := Math.CompareValue(left.AsOrdinal, right.AsOrdinal)
+  else if left.IsType<Extended> and right.IsType<Extended> then
+    Result := Math.CompareValue(left.AsExtended, right.AsExtended)
+  else if left.IsString and right.IsString then
+    Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
+  else if left.IsObject and right.IsObject then
+    Result := NativeInt(left.AsObject) - NativeInt(right.AsObject) // TODO: instance comparer
+  else if left.IsVariant and right.IsVariant then
+  begin
+    case VarCompareValue(left.AsVariant, right.AsVariant) of
+      vrEqual: Result := 0;
+      vrLessThan: Result := -1;
+      vrGreaterThan: Result := 1;
+      vrNotEqual: Result := -1;
+    else
+      Result := 0;
+    end;
+  end
+  else if IsNullable(left.TypeInfo) and IsNullable(right.TypeInfo) then
+  begin
+    leftIsEmpty := not left.TryGetNullableValue(leftValue);
+    rightIsEmpty := not right.TryGetNullableValue(rightValue);
+    if leftIsEmpty or rightIsEmpty then
+      Result := EmptyResults[leftIsEmpty, rightIsEmpty]
+    else
+      Result := CompareValue(leftValue, rightValue);
+  end else
+    Result := 0;
+end;
+
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
 var
   typeData: PTypeData;
@@ -2093,52 +2136,9 @@ begin
     raise EInvalidCast.CreateRes(@SInvalidCast);
 end;
 
-// TODO: use typekind matrix for comparer functions
-class function TValueHelper.Compare(const left, right: TValue): Integer;
-const
-  EmptyResults: array[Boolean, Boolean] of Integer = ((0, -1), (1, 0));
-var
-  leftIsEmpty, rightIsEmpty: Boolean;
-  leftValue, rightValue: TValue;
-begin
-  leftIsEmpty := left.IsEmpty;
-  rightIsEmpty := right.IsEmpty;
-  if leftIsEmpty or rightIsEmpty then
-    Result := EmptyResults[leftIsEmpty, rightIsEmpty]
-  else if left.IsOrdinal and right.IsOrdinal then
-    Result := Math.CompareValue(left.AsOrdinal, right.AsOrdinal)
-  else if left.IsType<Extended> and right.IsType<Extended> then
-    Result := Math.CompareValue(left.AsExtended, right.AsExtended)
-  else if left.IsString and right.IsString then
-    Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
-  else if left.IsObject and right.IsObject then
-    Result := NativeInt(left.AsObject) - NativeInt(right.AsObject) // TODO: instance comparer
-  else if left.IsVariant and right.IsVariant then
-  begin
-    case VarCompareValue(left.AsVariant, right.AsVariant) of
-      vrEqual: Result := 0;
-      vrLessThan: Result := -1;
-      vrGreaterThan: Result := 1;
-      vrNotEqual: Result := -1;
-    else
-      Result := 0;
-    end;
-  end
-  else if IsNullable(left.TypeInfo) and IsNullable(right.TypeInfo) then
-  begin
-    leftIsEmpty := not left.TryGetNullableValue(leftValue);
-    rightIsEmpty := not right.TryGetNullableValue(rightValue);
-    if leftIsEmpty or rightIsEmpty then
-      Result := EmptyResults[leftIsEmpty, rightIsEmpty]
-    else
-      Result := Compare(leftValue, rightValue);
-  end else
-    Result := 0;
-end;
-
 function TValueHelper.CompareTo(const value: TValue): Integer;
 begin
-  Result := Compare(Self, value);
+  Result := CompareValue(Self, value);
 end;
 
 function EqualsFail(const left, right: TValue): Boolean;
