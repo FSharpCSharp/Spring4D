@@ -79,15 +79,23 @@ type
     function DoGetLazy(const id: TValue; const entity: TObject;
       const column: ColumnAttribute; classInfo: Pointer): IDBResultSet;
 
-    function GetLazyValueAsInterface(const id: TValue; const entity: TObject; const column: ColumnAttribute; interfaceType: PTypeInfo): IInterface;
-    function GetLazyValueAsObject(const id: TValue; const entity: TObject; const column: ColumnAttribute; classInfo: PTypeInfo): TObject;
+    function GetLazyValueAsInterface(const id: TValue; const entity: TObject;
+      const column: ColumnAttribute; interfaceType: PTypeInfo): IInterface;
+    function GetLazyValueAsObject(const id: TValue; const entity: TObject;
+      const column: ColumnAttribute; classInfo: PTypeInfo): TObject;
 
-    function ResolveLazyValue(const entity: IEntityWrapper; columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
-    function ResolveLazyInterface(const id: TValue; const entity: TObject; lazyKind: TLazyKind; interfaceType: TRttiType; column: ColumnAttribute): TValue;
-    function ResolveLazyClass(const id: TValue; const entity: TObject; lazyKind: TLazyKind; classType: TRttiType; column: ColumnAttribute): TValue;
-    function ResolveLazyRecord(const id: TValue; const entity: TObject; lazyKind: TLazyKind; recordType: TRttiType; column: ColumnAttribute): TValue;
+    function ResolveLazyValue(const entity: IEntityWrapper;
+      const columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
+    function ResolveLazyInterface(const id: TValue; const entity: TObject;
+      lazyKind: TLazyKind; interfaceType: TRttiType; const column: ColumnAttribute): TValue;
+    function ResolveLazyClass(const id: TValue; const entity: TObject; lazyKind: TLazyKind;
+      classType: TRttiType; const column: ColumnAttribute): TValue;
+    function ResolveLazyRecord(const id: TValue; const entity: TObject; lazyKind: TLazyKind;
+      recordType: TRttiType; const column: ColumnAttribute): TValue;
 
-    function GetResultSetById(entityClass: TClass; const id: TValue; foreignEntityClass: TClass = nil; const selectColumn: ColumnAttribute = nil): IDBResultSet;
+    function GetResultSetById(entityClass: TClass; const id: TValue;
+      foreignEntityClass: TClass = nil; const selectColumn: ColumnAttribute = nil): IDBResultSet;
+
     /// <summary>
     ///   Gets the <c>Resultset</c> from SQL statement.
     /// </summary>
@@ -184,33 +192,31 @@ end;
 function TAbstractSession.ColumnFromVariant(const value: Variant;
   const column: TColumnData; const entity: TObject): TValue;
 var
-  LEmbeddedEntityResultset: IDBResultset;
-  LList, LConvertedValue: TValue;
+  results: IDBResultset;
+  list, convertedValue: TValue;
 begin
   case VarType(value) of
     varUnknown:
     begin
-      LEmbeddedEntityResultset := TUtils.GetResultsetFromVariant(value);
+      results := TUtils.GetResultsetFromVariant(value);
       if TUtils.IsEnumerable(column.TypeInfo) then
       begin
-        LList := TRttiExplorer.GetMemberValueDeep(entity, column.MemberName);
+        list := TRttiExplorer.GetMemberValueDeep(entity, column.MemberName);
         if TRttiExplorer.GetLastGenericArgumentType(column.TypeInfo).IsInstance then
-          SetInterfaceListOfObjects(LList.AsInterface as IObjectList, LEmbeddedEntityResultset, column.TypeInfo)
+          SetInterfaceListOfObjects(list.AsInterface as IObjectList, results, column.TypeInfo)
         else
-          SetInterfaceListOfPrimitives(LList.AsInterface, LEmbeddedEntityResultset, column.TypeInfo);
-        Result := LList;
+          SetInterfaceListOfPrimitives(list.AsInterface, results, column.TypeInfo);
+        Result := list;
       end
       else
-      begin
-        Result := DoMapEntity(LEmbeddedEntityResultset, column.TypeInfo);
-      end;
+        Result := DoMapEntity(results, column.TypeInfo);
     end
     else
     begin
       Result := TUtils.FromVariant(value);
       if not Result.IsEmpty then
-        if TUtils.TryConvert(Result, column.TypeInfo, entity, LConvertedValue) then
-          Result := LConvertedValue;
+        if TUtils.TryConvert(Result, column.TypeInfo, entity, convertedValue) then
+          Result := convertedValue;
     end;
   end;
 end;
@@ -389,22 +395,16 @@ end;
 
 function TAbstractSession.ResolveLazyClass(const id: TValue;
   const entity: TObject; lazyKind: TLazyKind; classType: TRttiType;
-  column: ColumnAttribute): TValue;
+  const column: ColumnAttribute): TValue;
 var
-  LId: TValue;
-  LEntity: TObject;
+  capturedId: TValue;
   factory: TFunc<TObject>;
-  LClassType: TRttiType;
-  LColumn: ColumnAttribute;
 begin
-  LId := id;
-  LEntity := entity;
-  LClassType := classType;
-  LColumn := column;
+  capturedId := id;
   factory :=
     function: TObject
     begin
-      Result := GetLazyValueAsObject(LId, LEntity, LColumn, LClassType.Handle);
+      Result := GetLazyValueAsObject(capturedId, entity, column, classType.Handle);
     end;
   case lazyKind of
     lkFunc: Result := TValue.From<TFunc<TObject>>(factory);
@@ -414,22 +414,17 @@ begin
 end;
 
 function TAbstractSession.ResolveLazyInterface(const id: TValue;
-  const entity: TObject; lazyKind: TLazyKind; interfaceType: TRttiType; column: ColumnAttribute): TValue;
+  const entity: TObject; lazyKind: TLazyKind; interfaceType: TRttiType;
+  const column: ColumnAttribute): TValue;
 var
-  LId: TValue;
-  LEntity: TObject;
+  capturedId: TValue;
   factory: TFunc<IInterface>;
-  LInterfaceType: TRttiType;
-  LColumn: ColumnAttribute;
 begin
-  LId := id;
-  LEntity := entity;
-  LInterfaceType := interfaceType;
-  LColumn := column;
+  capturedId := id;
   factory :=
     function: IInterface
     begin
-      Result := GetLazyValueAsInterface(LId, LEntity, LColumn, LInterfaceType.Handle);
+      Result := GetLazyValueAsInterface(capturedId, entity, column, interfaceType.Handle);
     end;
   case lazyKind of
     lkFunc: Result := TValue.From<TFunc<IInterface>>(factory);
@@ -440,26 +435,22 @@ end;
 
 function TAbstractSession.ResolveLazyRecord(const id: TValue;
   const entity: TObject; lazyKind: TLazyKind; recordType: TRttiType;
-  column: ColumnAttribute): TValue;
+  const column: ColumnAttribute): TValue;
 var
   underlyingTypeInfo: PTypeInfo;
-  LId: TValue;
-  LEntity: TObject;
+  capturedId: TValue;
   factory: TFunc<Nullable<TObject>>;
-  LColumn: ColumnAttribute;
 begin
   if not IsNullable(recordType.Handle) then
     raise EORMUnsupportedType.CreateFmt('Unsupported lazy type: %s. Expected Lazy<Nullable<T: TObject>>', [recordType.ToString]);
 
   underlyingTypeInfo := GetUnderlyingType(recordType.Handle);
-  LId := id;
-  LEntity := entity;
-  LColumn := column;
+  capturedId := id;
   case underlyingTypeInfo.Kind of
     tkClass: factory :=
       function: Nullable<TObject>
       begin
-        Result.Create(GetLazyValueAsObject(LId, LEntity, LColumn, underlyingTypeInfo));
+        Result.Create(GetLazyValueAsObject(capturedId, entity, column, underlyingTypeInfo));
       end;
     else
       raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [underlyingTypeInfo.Name]);
@@ -472,7 +463,8 @@ begin
   end;
 end;
 
-function TAbstractSession.ResolveLazyValue(const entity: IEntityWrapper; columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
+function TAbstractSession.ResolveLazyValue(const entity: IEntityWrapper;
+  const columnMemberName: string; lazyTypeInfo: PTypeInfo): TValue;
 var
   lazyKind: TLazyKind;
   targetType: TRttiType;
