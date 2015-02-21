@@ -52,21 +52,11 @@ type
   ///   SessionFactory.
   /// </summary>
   TSession = class(TAbstractSession)
-  private
-    fOldStateEntities: IEntityMap;
   protected
     function GetQueryCountSql(const sql: string): string;
     function GetQueryCount(const sql: string; const params: array of const): Int64; overload;
     function GetQueryCount(const sql: string; const params: IList<TDBParam>): Int64; overload;
-
-    procedure AttachEntity(const entity: IEntityWrapper); override;
-    procedure DetachEntity(const entity: TObject); override;
   public
-    constructor Create(const connection: IDBConnection); overload; override;
-    constructor Create(const connection: IDBConnection;
-      const entityMap: IEntityMap); reintroduce; overload;
-    destructor Destroy; override;
-
     /// <summary>
     ///   Starts a new List Session. ListSession monitors changes in the
     ///   specified list and can commit or rollback these changes to the
@@ -269,8 +259,6 @@ type
     /// Unregisters IRowMapper<T> interface
     /// </summary>
     procedure UnregisterRowMapper<T: class, constructor>;
-
-    property OldStateEntities: IEntityMap read fOldStateEntities;
   end;
 
 implementation
@@ -279,7 +267,6 @@ uses
   TypInfo,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Consts,
-  Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.ListSession,
@@ -294,30 +281,6 @@ uses
 
 {$REGION 'TSession'}
 
-constructor TSession.Create(const connection: IDBConnection);
-begin
-  inherited Create(connection);
-  fOldStateEntities := TEntityMap.Create;
-end;
-
-constructor TSession.Create(const connection: IDBConnection;
-  const entityMap: IEntityMap);
-begin
-  inherited Create(connection);
-  fOldStateEntities := entityMap;
-end;
-
-destructor TSession.Destroy;
-begin
-  fOldStateEntities := nil;
-  inherited Destroy;
-end;
-
-procedure TSession.AttachEntity(const entity: IEntityWrapper);
-begin
-  fOldStateEntities.AddOrReplace(entity);
-end;
-
 function TSession.BeginListSession<T>(const list: IList<T>): IListSession<T>;
 begin
   Result := TListSession<T>.Create(Self, list);
@@ -331,11 +294,6 @@ end;
 function TSession.CreateCriteria<T>: ICriteria<T>;
 begin
   Result := TCriteria<T>.Create(Self);
-end;
-
-procedure TSession.DetachEntity(const entity: TObject);
-begin
-  fOldStateEntities.Remove(entity);
 end;
 
 procedure TSession.Delete(const entity: TObject);
@@ -500,7 +458,7 @@ end;
 
 function TSession.IsNew(const entity: TObject): Boolean;
 begin
-  Result := not fOldStateEntities.IsMapped(entity);
+  Result := not OldStateEntities.IsMapped(entity);
 end;
 
 function TSession.Page<T>(page, itemsPerPage: Integer): IDBPage<T>;
@@ -618,7 +576,7 @@ procedure TSession.Update(const entity: TObject);
 var
   updater: IUpdateCommand;
 begin
-  updater := GetUpdateCommandExecutor(entity.ClassType, fOldStateEntities);
+  updater := GetUpdateCommandExecutor(entity.ClassType);
   DoUpdate(entity, updater);
 end;
 
@@ -627,7 +585,7 @@ var
   updater: IUpdateCommand;
   entity: T;
 begin
-  updater := GetUpdateCommandExecutor(T, fOldStateEntities);
+  updater := GetUpdateCommandExecutor(T);
   for entity in entities do
     DoUpdate(entity, updater);
 end;

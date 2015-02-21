@@ -43,6 +43,7 @@ type
   TAbstractSession = class(TAbstractManager)
   private
     fRowMappers: IDictionary<PTypeInfo,IRowMapper<TObject>>;
+    fOldStateEntities: IEntityMap;
   protected
     function ColumnFromVariant(const value: Variant; const column: TColumnData; const entity: TObject): TValue;
 
@@ -55,6 +56,7 @@ type
     procedure DoMapEntityFromColumns(const entityToMap: IEntityWrapper;
       const resultSet: IDBResultSet); virtual;
     function DoMapObjectInEntity(const resultSet: IDBResultSet; const baseEntity: TObject; objectClassInfo: PTypeInfo): TObject;
+
     /// <summary>
     ///   Retrieves multiple models from the <c>Resultset</c> into Spring <c>
     ///   ICollection&lt;T&gt;).</c>
@@ -63,6 +65,7 @@ type
     procedure FetchFromQueryText(const sqlStatement: string; const params: IList<TDBParam>; const collection: IObjectList; classType: TClass); overload;
 
     procedure MapFromResultSetToCollection(const resultSet: IDBResultSet; const collection: IObjectList; classType: TClass);
+
     /// <summary>
     /// Maps resultset row into the entity
     /// </summary>
@@ -90,21 +93,22 @@ type
     /// </summary>
     function GetResultSet(const sqlStatement: string;
       const params: array of const): IDBResultSet; overload;
+
     /// <summary>
     ///   Gets the <c>Resultset</c> from SQL statement.
     /// </summary>
     function GetResultSet(const sqlStatement: string;
       const params: IList<TDBParam>): IDBResultSet; overload;
 
-    procedure AttachEntity(const entity: IEntityWrapper); virtual; abstract;
-    procedure DetachEntity(const entity: TObject); virtual; abstract;
+    procedure AttachEntity(const entity: IEntityWrapper); virtual;
+    procedure DetachEntity(const entity: TObject);  virtual;
 
     procedure DoInsert(const entity: TObject; const inserter: IInsertCommand); virtual;
     procedure DoUpdate(const entity: TObject; const updater: IUpdateCommand); virtual;
     procedure DoDelete(const entity: TObject; const deleter: IDeleteCommand); virtual;
 
     function GetInsertCommandExecutor(entityClass: TClass): IInsertCommand; virtual;
-    function GetUpdateCommandExecutor(entityClass: TClass; const entityMap: IEntityMap): IUpdateCommand; virtual;
+    function GetUpdateCommandExecutor(entityClass: TClass): IUpdateCommand; virtual;
     function GetDeleteCommandExecutor(entityClass: TClass): IDeleteCommand; virtual;
     function GetSelectCommandExecutor(entityClass: TClass): ISelectCommand; virtual;
     function GetSelectByIdCommandExecutor(entityClass: TClass; const id: TValue;
@@ -116,7 +120,12 @@ type
 
     procedure UpdateForeignKeysFor(const foreignKeyEntity: IEntityWrapper; const primaryKeyEntity: IEntityWrapper);
   public
-    constructor Create(const connection: IDBConnection); override;
+    constructor Create(const connection: IDBConnection); overload; override;
+    constructor Create(const connection: IDBConnection;
+      const entityMap: IEntityMap); reintroduce; overload;
+    destructor Destroy; override;
+
+    property OldStateEntities: IEntityMap read fOldStateEntities;
   end;
 
 implementation
@@ -127,6 +136,7 @@ uses
   Spring.SystemUtils,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Relation.ManyToOne,
@@ -139,6 +149,37 @@ uses
 
 
 {$REGION 'TAbstractSession'}
+
+constructor TAbstractSession.Create(const connection: IDBConnection);
+begin
+  inherited Create(connection);
+  fRowMappers := TCollections.CreateDictionary<PTypeInfo,IRowMapper<TObject>>;
+  if fOldStateEntities = nil then
+    fOldStateEntities := TEntityMap.Create;
+end;
+
+constructor TAbstractSession.Create(const connection: IDBConnection;
+  const entityMap: IEntityMap);
+begin
+  fOldStateEntities := entityMap;
+  Create(connection);
+end;
+
+destructor TAbstractSession.Destroy;
+begin
+  fOldStateEntities := nil;
+  inherited;
+end;
+
+procedure TAbstractSession.AttachEntity(const entity: IEntityWrapper);
+begin
+  fOldStateEntities.AddOrReplace(entity);
+end;
+
+procedure TAbstractSession.DetachEntity(const entity: TObject);
+begin
+  fOldStateEntities.Remove(entity);
+end;
 
 function TAbstractSession.ColumnFromVariant(const value: Variant;
   const column: TColumnData; const entity: TObject): TValue;
@@ -172,12 +213,6 @@ begin
           Result := LConvertedValue;
     end;
   end;
-end;
-
-constructor TAbstractSession.Create(const connection: IDBConnection);
-begin
-  inherited Create(connection);
-  fRowMappers := TCollections.CreateDictionary<PTypeInfo,IRowMapper<TObject>>;
 end;
 
 procedure TAbstractSession.DoDelete(const entity: TObject;
@@ -526,9 +561,9 @@ begin
 end;
 
 function TAbstractSession.GetUpdateCommandExecutor(
-  entityClass: TClass; const entityMap: IEntityMap): IUpdateCommand;
+  entityClass: TClass): IUpdateCommand;
 begin
-  Result := TUpdateExecutor.Create(Connection, entityMap);
+  Result := TUpdateExecutor.Create(Connection, fOldStateEntities);
   Result.Build(entityClass);
 end;
 

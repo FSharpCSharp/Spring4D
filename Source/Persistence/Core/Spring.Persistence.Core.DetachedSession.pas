@@ -29,9 +29,8 @@ unit Spring.Persistence.Core.DetachedSession;
 interface
 
 uses
-  Spring.Persistence.Core.Session,
-  Spring.Persistence.Core.Interfaces
-  ;
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.Session;
 
 type
   /// <summary>
