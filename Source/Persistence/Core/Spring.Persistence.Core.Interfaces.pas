@@ -301,7 +301,7 @@ type
     ['{E6B12BC9-AA98-4F00-851B-8DDC0AADD36A}']
     function GetEntity: TObject;
     function GetColumns: IList<ColumnAttribute>;
-    function GetColumnAttribute(const memberName: String): ColumnAttribute;
+    function GetColumnAttribute(const memberName: string): ColumnAttribute;
     function GetColumnsToMap: TColumnDataList;
     function GetColumnValue(const memberName: string): TValue; overload;
     function GetColumnValue(const column: TORMAttribute): TValue; overload;
@@ -321,6 +321,19 @@ type
 
     function HasOneToManyRelations: Boolean;
     function HasManyToOneRelations: Boolean;
+  end;
+
+  IEntityMap = interface(IInvokable)
+    ['{64F25680-A0F8-4A23-86D2-88A2F5F7D5EC}']
+    procedure AddOrReplace(const instance: IEntityWrapper);
+    procedure Remove(const instance: TObject);
+    procedure Clear;
+
+    function IsMapped(const instance: TObject): Boolean;
+
+    function GetChangedMembers(const instance: TObject;
+      const entityData: TEntityData): IList<ColumnAttribute>;
+    function GetMemberValue(const className, id, memberName: string): TValue;
   end;
 
   IDBCommand = interface

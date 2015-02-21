@@ -34,7 +34,6 @@ uses
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.AbstractManager,
-  Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Params,
@@ -105,7 +104,7 @@ type
     procedure DoDelete(const entity: TObject; const deleter: IDeleteCommand); virtual;
 
     function GetInsertCommandExecutor(entityClass: TClass): IInsertCommand; virtual;
-    function GetUpdateCommandExecutor(entityClass: TClass; const entityMap: TEntityMap): IUpdateCommand; virtual;
+    function GetUpdateCommandExecutor(entityClass: TClass; const entityMap: IEntityMap): IUpdateCommand; virtual;
     function GetDeleteCommandExecutor(entityClass: TClass): IDeleteCommand; virtual;
     function GetSelectCommandExecutor(entityClass: TClass): ISelectCommand; virtual;
     function GetSelectByIdCommandExecutor(entityClass: TClass; const id: TValue;
@@ -527,7 +526,7 @@ begin
 end;
 
 function TAbstractSession.GetUpdateCommandExecutor(
-  entityClass: TClass; const entityMap: TEntityMap): IUpdateCommand;
+  entityClass: TClass; const entityMap: IEntityMap): IUpdateCommand;
 begin
   Result := TUpdateExecutor.Create(Connection, entityMap);
   Result.Build(entityClass);

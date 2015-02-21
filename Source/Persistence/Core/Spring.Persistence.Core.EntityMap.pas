@@ -29,8 +29,8 @@ unit Spring.Persistence.Core.EntityMap;
 interface
 
 uses
-  Rtti,
   Generics.Collections,
+  Rtti,
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
@@ -41,14 +41,14 @@ type
   TEntityMapKey = string;
   TEntityMapValue = TArray<TPair<string, TValue>>;
 
-  TEntityMap = class
+  TEntityMap = class(TInterfacedObject, IEntityMap)
   private
     fEntityValues: TDictionary<TEntityMapKey, TEntityMapValue>;
     fCriticalSection: ICriticalSection;
   protected
     function GetEntityKey(const instance: TObject): TEntityMapKey; overload;
-    function GetEntityKey(const className: string; const id: String): TEntityMapKey; overload;
-    function GetEntityValues(const instance: TObject; const id: String): TEntityMapValue;
+    function GetEntityKey(const className, id: string): TEntityMapKey; overload;
+    function GetEntityValues(const instance: TObject; const id: string): TEntityMapValue;
 
     procedure PutEntity(const entity: IEntityWrapper);
 
@@ -57,14 +57,15 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function GetMemberValue(const className: string;  const id: string; const memberName: string): TValue;
-
-    function IsMapped(const instance: TObject): Boolean;  
     procedure AddOrReplace(const instance: IEntityWrapper);
     procedure Remove(const instance: TObject);
-    
-    function GetChangedMembers(const instance: TObject; const entityDetails: TEntityData): IList<ColumnAttribute>;      
-    procedure Clear;   
+    procedure Clear;
+
+    function IsMapped(const instance: TObject): Boolean;
+
+    function GetChangedMembers(const instance: TObject;
+      const entityData: TEntityData): IList<ColumnAttribute>; virtual;
+    function GetMemberValue(const className, id, memberName: string): TValue;
   end;
 
 implementation
@@ -115,27 +116,25 @@ var
   pair: TPair<TEntityMapKey,TEntityMapValue>;
 begin
   for pair in fEntityValues do
-  begin
     FinalizeItem(pair);
-  end;
   fEntityValues.Clear;
 end;
 
-function TEntityMap.GetChangedMembers(const instance: TObject; const entityDetails: TEntityData): IList<ColumnAttribute>;
+function TEntityMap.GetChangedMembers(const instance: TObject; const entityData: TEntityData): IList<ColumnAttribute>;
 var
   currentValue, dirtyValue: TValue;
-  id: String;
+  id: string;
   values: TEntityMapValue;
   i: Integer;
   col: ColumnAttribute;
 begin
   Result := TCollections.CreateList<ColumnAttribute>;  
-  id := entityDetails.GetPrimaryKeyValueAsString(instance);
+  id := entityData.GetPrimaryKeyValueAsString(instance);
   values := GetEntityValues(instance, id);
 
-  for i := 0 to entityDetails.Columns.Count - 1 do
+  for i := 0 to entityData.Columns.Count - 1 do
   begin
-    col := entityDetails.Columns[i];
+    col := entityData.Columns[i];
     currentValue := col.GetValue(instance);
     dirtyValue := values[i].Value;
     if not currentValue.Equals(dirtyValue) then
@@ -143,14 +142,13 @@ begin
   end;
 end;
 
-function TEntityMap.GetEntityValues(const instance: TObject; const id: String): TEntityMapValue;
+function TEntityMap.GetEntityValues(const instance: TObject; const id: string): TEntityMapValue;
 begin
   if not fEntityValues.TryGetValue(GetEntityKey(instance.ClassName, id), Result) then
     SetLength(Result, 0);
 end;
 
-function TEntityMap.GetMemberValue(const className: string;  const id: string;
-  const memberName: string): TValue;
+function TEntityMap.GetMemberValue(const className, id, memberName: string): TValue;
 var
   entityMapValue: TEntityMapValue;
   pair: TPair<string,TValue>;
@@ -165,13 +163,13 @@ end;
 
 function TEntityMap.GetEntityKey(const instance: TObject): TEntityMapKey;
 var
-  id: String;
+  id: string;
 begin
   id := TEntityCache.Get(instance.ClassType).GetPrimaryKeyValueAsString(instance);
   Result := GetEntityKey(instance.ClassName, id);
 end;
 
-function TEntityMap.GetEntityKey(const className: string; const id: String): TEntityMapKey;
+function TEntityMap.GetEntityKey(const className, id: string): TEntityMapKey;
 begin
   Result := className + '$' + id;
 end;
@@ -195,16 +193,15 @@ begin
   if columnValue.IsEmpty then
     Exit;
   id := columnValue.ToString;
-  if (id = '') then
+  if id = '' then
     Exit;
 
-  //commented out implementation is cleaner, but slower as well
   SetLength(values, entity.GetColumnsToMap.Count);
   for i:=0 to entity.GetColumnsToMap.Count - 1 do
   begin
     col := entity.GetColumnsToMap[i];
     columnValue := entity.GetColumnValue(col.ColumnAttr);
-    if (columnValue.IsObject) and (columnValue.AsObject <> nil) then
+    if columnValue.IsObject and (columnValue.AsObject <> nil) then
       columnValue := TRttiExplorer.Clone(columnValue.AsObject);
     values[i].Key := col.MemberName;
     values[i].Value := columnValue;
@@ -222,12 +219,12 @@ end;
 
 procedure TEntityMap.Remove(const instance: TObject);
 var
-  id: String;
-  entityDetails: TEntityData;
+  id: string;
+  entityData: TEntityData;
   pair: TPair<TEntityMapKey,TEntityMapValue>;
 begin
-  entityDetails := TEntityCache.Get(instance.ClassType);
-  id := entityDetails.GetPrimaryKeyValueAsString(instance);
+  entityData := TEntityCache.Get(instance.ClassType);
+  id := entityData.GetPrimaryKeyValueAsString(instance);
   fCriticalSection.Enter;
   try
     pair := fEntityValues.ExtractPair(GetEntityKey(instance.ClassName, id));

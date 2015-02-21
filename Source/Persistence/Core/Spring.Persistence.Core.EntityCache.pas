@@ -96,7 +96,7 @@ type
     function HasOneToManyRelations: Boolean;
     function HasVersionColumn: Boolean;
 
-   function GetPrimaryKeyValueAsString(const instance: TObject): String;
+   function GetPrimaryKeyValueAsString(const instance: TObject): string;
 
     property Columns: IList<ColumnAttribute> read fColumns;
     property SelectColumns: IList<ColumnAttribute> read fSelectColumns;
@@ -287,7 +287,7 @@ begin
 end;
 
 function TEntityData.GetPrimaryKeyValueAsString(
-  const instance: TObject): String;
+  const instance: TObject): string;
 var
   LValue: TValue;
 begin

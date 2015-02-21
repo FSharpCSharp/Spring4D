@@ -30,7 +30,6 @@ interface
 
 uses
   Spring.Collections,
-  Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
@@ -47,13 +46,14 @@ type
     fTable: TSQLTable;
     fCommand: TUpdateCommand;
     fColumns: IList<ColumnAttribute>;
-    fEntityMap: TEntityMap;
+    fEntityMap: IEntityMap;
   protected
     function GetCommand: TDMLCommand; override;
     function TryIncrementVersionFor(const entity: TObject): Boolean; virtual;
     function HasChangedVersionColumnOnly: Boolean;
   public
-    constructor Create(const connection: IDBConnection; const entityMap: TEntityMap); reintroduce;
+    constructor Create(const connection: IDBConnection;
+      const entityMap: IEntityMap); reintroduce;
     destructor Destroy; override;
 
     procedure Build(entityClass: TClass); override;
@@ -74,7 +74,7 @@ uses
 {$REGION 'TUpdateCommand'}
 
 constructor TUpdateExecutor.Create(const connection: IDBConnection;
-  const entityMap: TEntityMap);
+  const entityMap: IEntityMap);
 begin
   inherited Create(connection);
   fTable := TSQLTable.Create;

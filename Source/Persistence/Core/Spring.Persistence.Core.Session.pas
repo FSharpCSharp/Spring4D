@@ -32,15 +32,9 @@ uses
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.AbstractSession,
-  Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Criteria.Interfaces,
-  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Params;
-
-const
-  IID_GETIMPLEMENTOR: TGUID = '{4C12C697-6FE2-4263-A2D8-85034F0D0E01}';
 
 type
   /// <summary>
@@ -59,7 +53,7 @@ type
   /// </summary>
   TSession = class(TAbstractSession)
   private
-    fOldStateEntities: TEntityMap;
+    fOldStateEntities: IEntityMap;
   protected
     function GetQueryCountSql(const sql: string): string;
     function GetQueryCount(const sql: string; const params: array of const): Int64; overload;
@@ -68,7 +62,9 @@ type
     procedure AttachEntity(const entity: IEntityWrapper); override;
     procedure DetachEntity(const entity: TObject); override;
   public
-    constructor Create(const connection: IDBConnection); override;
+    constructor Create(const connection: IDBConnection); overload; override;
+    constructor Create(const connection: IDBConnection;
+      const entityMap: IEntityMap); reintroduce; overload;
     destructor Destroy; override;
 
     /// <summary>
@@ -274,7 +270,7 @@ type
     /// </summary>
     procedure UnregisterRowMapper<T: class, constructor>;
 
-    property OldStateEntities: TEntityMap read fOldStateEntities;
+    property OldStateEntities: IEntityMap read fOldStateEntities;
   end;
 
 implementation
@@ -283,12 +279,14 @@ uses
   TypInfo,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Consts,
+  Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.ListSession,
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Utils,
   Spring.Persistence.Criteria,
+  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Register;
@@ -302,9 +300,16 @@ begin
   fOldStateEntities := TEntityMap.Create;
 end;
 
+constructor TSession.Create(const connection: IDBConnection;
+  const entityMap: IEntityMap);
+begin
+  inherited Create(connection);
+  fOldStateEntities := entityMap;
+end;
+
 destructor TSession.Destroy;
 begin
-  fOldStateEntities.Free;
+  fOldStateEntities := nil;
   inherited Destroy;
 end;
 

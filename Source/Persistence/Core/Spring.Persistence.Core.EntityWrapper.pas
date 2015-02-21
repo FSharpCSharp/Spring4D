@@ -25,7 +25,7 @@ type
     function GetPrimaryKeyValueFrom(const resultSet: IDBResultSet): TValue;
 
     function GetColumns: IList<ColumnAttribute>;
-    function GetColumnAttribute(const memberName: String): ColumnAttribute;
+    function GetColumnAttribute(const memberName: string): ColumnAttribute;
     function GetColumnsToMap: TColumnDataList;
     function GetColumnValue(const memberName: string): TValue; overload;
     function GetColumnValue(const column: TORMAttribute): TValue; overload;
@@ -71,7 +71,7 @@ begin
 end;
 
 function TEntityWrapper.GetColumnAttribute(
-  const memberName: String): ColumnAttribute;
+  const memberName: string): ColumnAttribute;
 begin
   Result := fEntityClassData.ColumnByMemberName(memberName);
 end;
