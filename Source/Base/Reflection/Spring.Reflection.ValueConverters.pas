@@ -67,7 +67,7 @@ type
     /// </param>
     /// <returns>
     ///   Returns <paramref name="value" /> converted to type pointing by <paramref name="targetTypeInfo" />
-    ///    parameter
+    ///   parameter
     /// </returns>
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
@@ -554,6 +554,66 @@ type
   ///   Provides conversion routine beetwen TDateTime and string
   /// </summary>
   TDateTimeToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TDateToStringConverter'}
+
+  /// <summary>
+  ///   Provides conversion routine between TDate and string
+  /// </summary>
+  TDateToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToDateConverter'}
+
+  /// <summary>
+  ///   Provides conversion routine between string and TDate
+  /// </summary>
+  TStringToDateConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TTimeToStringConverter'}
+
+  /// <summary>
+  ///   Provides conversion routine between TTime and string
+  /// </summary>
+  TTimeToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToTimeConverter'}
+
+  /// <summary>
+  ///   Provides conversion routine between string and TTime
+  /// </summary>
+  TStringToTimeConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
@@ -1331,6 +1391,118 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TDateToStringConverter'}
+
+function TDateToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: TFormatSettings;
+begin
+  if not parameter.IsEmpty and
+    parameter.TryAsType<TFormatSettings>(format) then
+  begin
+    case targetTypeInfo.Kind of
+      tkString, tkUString:
+        Result := TValue.From<string>(DateToStr(value.AsExtended, format));
+{$IFNDEF NEXTGEN}
+      tkLString:
+        Result := TValue.From<AnsiString>(AnsiString(DateToStr(value.AsExtended, format)));
+      tkWString:
+        Result := TValue.From<WideString>(DateToStr(value.AsExtended, format));
+{$ENDIF}
+    end;
+  end
+  else
+    case targetTypeInfo.Kind of
+      tkString, tkUString:
+        Result := TValue.From<string>(DateToStr(value.AsExtended));
+{$IFNDEF NEXTGEN}
+      tkLString:
+        Result := TValue.From<AnsiString>(AnsiString(DateToStr(value.AsExtended)));
+      tkWString:
+        Result := TValue.From<WideString>(DateToStr(value.AsExtended));
+{$ENDIF}
+    end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStringToDateConverter'}
+
+function TStringToDateConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: TFormatSettings;
+begin
+  if not parameter.IsEmpty and
+    parameter.TryAsType<TFormatSettings>(format) then
+  begin
+    Result := TValue.From<TDate>(StrToDate(value.AsString, format));
+  end
+  else
+    Result := TValue.From<TDate>(StrToDate(value.AsString));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTimeToStringConverter'}
+
+function TTimeToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: TFormatSettings;
+begin
+  if not parameter.IsEmpty and
+    parameter.TryAsType<TFormatSettings>(format) then
+  begin
+    case targetTypeInfo.Kind of
+      tkString, tkUString:
+        Result := TValue.From<string>(TimeToStr(value.AsExtended, format));
+{$IFNDEF NEXTGEN}
+      tkLString:
+        Result := TValue.From<AnsiString>(AnsiString(TimeToStr(value.AsExtended, format)));
+      tkWString:
+        Result := TValue.From<WideString>(TimeToStr(value.AsExtended, format));
+{$ENDIF}
+    end;
+  end
+  else
+    case targetTypeInfo.Kind of
+      tkString, tkUString:
+        Result := TValue.From<string>(TimeToStr(value.AsExtended));
+{$IFNDEF NEXTGEN}
+      tkLString:
+        Result := TValue.From<AnsiString>(AnsiString(TimeToStr(value.AsExtended)));
+      tkWString:
+        Result := TValue.From<WideString>(TimeToStr(value.AsExtended));
+{$ENDIF}
+    end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStringToTimeConverter'}
+
+function TStringToTimeConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: TFormatSettings;
+begin
+  if not parameter.IsEmpty and
+    parameter.TryAsType<TFormatSettings>(format) then
+  begin
+    Result := TValue.From<TDateTime>(StrToTime(value.AsString, format));
+  end
+  else
+    Result := TValue.From<TDateTime>(StrToTime(value.AsString));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TObjectToStringConverter'}
 
 function TObjectToStringConverter.DoConvertTo(const value: TValue;
@@ -1518,6 +1690,8 @@ begin
   RegisterConverter(TypeInfo(Currency), [tkString, tkUString, tkLString, tkWString], TCurrencyToStringConverter);
 
   RegisterConverter(TypeInfo(TDateTime), [tkString, tkUString, tkLString, tkWString], TDateTimeToStringConverter);
+  RegisterConverter(TypeInfo(TDate), [tkString, tkUString, tkLString, tkWString], TDateToStringConverter);
+  RegisterConverter(TypeInfo(TTime), [tkString, tkUString, tkLString, tkWString], TTimeToStringConverter);
 
   RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(Boolean), [tkString, tkUString, tkLString, tkWString], TBooleanToStringConverter);
@@ -1597,6 +1771,8 @@ begin
   RegisterConverter(TypeInfo(Nullable<System.TDateTime>), TypeInfo(TDate), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<System.TDateTime>), TypeInfo(TDateTime), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<System.TDateTime>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.TDate>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.TTime>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
   RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString, tkWString], TEnumToStringConverter);
   RegisterConverter([tkEnumeration], [tkInteger, tkInt64], TEnumToIntegerConverter);
@@ -1613,12 +1789,16 @@ begin
 {$ENDIF}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Currency), TStringToCurrencyConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TDateTime), TStringToDateTimeConverter);
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TDate), TStringToDateConverter);
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TTime), TStringToTimeConverter);
 
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Currency>), TTypeToNullableConverter);
 {$IFNDEF SPRING_DISABLE_GRAPHICS}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<TColor>), TTypeToNullableConverter);
 {$ENDIF}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.TDateTime>), TTypeToNullableConverter);
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.TDate>), TTypeToNullableConverter);
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.TTime>), TTypeToNullableConverter);
 
   RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkInteger, tkInt64], TStringToIntegerConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkFloat], TStringToFloatConverter);

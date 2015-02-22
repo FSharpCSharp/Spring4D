@@ -1717,6 +1717,22 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TFormatSettingsHelper'}
+
+{$IFDEF DELPHI2010}
+  TFormatSettingsHelper = record helper for TFormatSettings
+  public
+    /// <summary>
+    ///   Creates a TFormatSettings record with current default values provided
+    ///   by the operating system.
+    /// </summary>
+    class function Create: TFormatSettings; static; inline;
+  end;
+{$ENDIF}
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
@@ -1796,6 +1812,9 @@ uses
   RTLConsts,
   StrUtils,
   SysConst,
+{$IFDEF DELPHI2010}
+  Windows,
+{$ENDIF}
   Spring.Events,
   Spring.Reflection.Core,
   Spring.ResourceStrings;
@@ -5295,6 +5314,18 @@ begin
   Inc(fIndex);
   Result := fIndex < System.Length(fItems);
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFormatSettingsHelper'}
+
+{$IFDEF DELPHI2010}
+class function TFormatSettingsHelper.Create: TFormatSettings;
+begin
+  GetLocaleFormatSettings(LOCALE_SYSTEM_DEFAULT, Result);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

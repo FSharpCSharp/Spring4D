@@ -58,7 +58,11 @@ type
 {$ENDIF}
     procedure TestStringToCurrency;
     procedure TestStringToDateTime;
+    procedure TestStringToDate;
+    procedure TestStringToTime;
     procedure TestStringToDateTimeF;
+    procedure TestStringToDateF;
+    procedure TestStringToTimeF;
 {$IFNDEF NEXTGEN}
     procedure TestStringToWideString;
     procedure TestStringToAnsiString;
@@ -83,6 +87,8 @@ type
 {$ENDIF}
     procedure TestStringToNullableCurrency;
     procedure TestStringToNullableDateTime;
+    procedure TestStringToNullableDate;
+    procedure TestStringToNullableTime;
   end;
 
 {$IFNDEF NEXTGEN}
@@ -104,7 +110,11 @@ type
 {$ENDIF}
     procedure TestWStringToCurrency;
     procedure TestWStringToDateTime;
+    procedure TestWStringToDate;
+    procedure TestWStringToTime;
     procedure TestWStringToDateTimeF;
+    procedure TestWStringToDateF;
+    procedure TestWStringToTimeF;
     procedure TestWStringToString;
     procedure TestWStringToAnsiString;
     procedure TestWStringToNullableString;
@@ -125,6 +135,8 @@ type
 {$ENDIF}
     procedure TestWStringToNullableCurrency;
     procedure TestWStringToNullableDateTime;
+    procedure TestWStringToNullableDate;
+    procedure TestWStringToNullableTime;
   end;
 {$ENDIF}
 
@@ -390,6 +402,44 @@ type
 {$ENDIF}
   end;
 
+  TTestFromDate = class(TTestCase)
+  strict private
+    fConverter: IValueConverter;
+  strict protected
+    procedure SetUp; override;
+  published
+    procedure TestDateToString;
+{$IFNDEF NEXTGEN}
+    procedure TestDateToAnsiString;
+    procedure TestDateToWideString;
+{$ENDIF}
+    procedure TestDateToStringF;
+    procedure TestDateToNullableString;
+{$IFNDEF NEXTGEN}
+    procedure TestDateToNullableAnsiString;
+    procedure TestDateToNullableWideString;
+{$ENDIF}
+  end;
+
+  TTestFromTime = class(TTestCase)
+  strict private
+    fConverter: IValueConverter;
+  strict protected
+    procedure SetUp; override;
+  published
+    procedure TestTimeToString;
+{$IFNDEF NEXTGEN}
+    procedure TestTimeToAnsiString;
+    procedure TestTimeToWideString;
+{$ENDIF}
+    procedure TestTimeToStringF;
+    procedure TestTimeToNullableString;
+{$IFNDEF NEXTGEN}
+    procedure TestTimeToNullableAnsiString;
+    procedure TestTimeToNullableWideString;
+{$ENDIF}
+  end;
+
   TTestFromObject = class(TTestCase)
   strict private
     fConverter: IValueConverter;
@@ -523,9 +573,15 @@ type
     procedure TestNullableWideStringToFloat;
 {$ENDIF}
     procedure TestNullableDateTimeToString;
+    procedure TestNullableDateToString;
+    procedure TestNullableTimeToString;
 {$IFNDEF NEXTGEN}
     procedure TestNullableDateTimeToAnsiString;
+    procedure TestNullableDateToAnsiString;
+    procedure TestNullableTimeToAnsiString;
     procedure TestNullableDateTimeToWideString;
+    procedure TestNullableDateToWideString;
+    procedure TestNullableTimeToWideString;
 {$ENDIF}
 {$IFNDEF SPRING_DISABLE_GRAPHICS}
     procedure TestNullableColorToString;
@@ -1088,6 +1144,91 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TDateTime>>(outNullable));
   CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outNullable.Value));
+end;
+
+
+procedure TTestFromString.TestStringToTime;
+var
+  outValue: TValue;
+  outStamp: TTime;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<string>(TimeToStr(stamp)),
+    TypeInfo(TTime));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TTime>(outStamp));
+  CheckEqualsString(TimeToStr(stamp), TimeToStr(outStamp));
+end;
+
+procedure TTestFromString.TestStringToTimeF;
+var
+  outValue: TValue;
+  outStamp: TTime;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('15:22:35'),
+    TypeInfo(TTime), TValue.From<TFormatSettings>(TFormatSettings.Create));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TTime>(outStamp));
+  CheckEqualsString('15:22:35', FormatDateTime('hh:mmm:ss', outStamp));
+end;
+
+procedure TTestFromString.TestStringToDate;
+var
+  outValue: TValue;
+  outStamp: TDate;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<string>(DateToStr(stamp)),
+    TypeInfo(TDate));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TDate>(outStamp));
+  CheckEqualsString(DateToStr(stamp), DateToStr(outStamp));
+end;
+
+procedure TTestFromString.TestStringToDateF;
+var
+  outValue: TValue;
+  outStamp: TDate;
+  format: TFormatSettings;
+begin
+  format := TFormatSettings.Create;
+  format.ShortDateFormat := 'dd.mm.yyyy';
+  format.DateSeparator := '.';
+  outValue := fConverter.ConvertTo(TValue.From<string>('10.10.2010'),
+    TypeInfo(TDate), TValue.From<TFormatSettings>(format));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TDate>(outStamp));
+  CheckEqualsString('10.10.2010', DateToStr(outStamp, format));
+end;
+
+procedure TTestFromString.TestStringToNullableTime;
+var
+  outValue: TValue;
+  outNullable: Nullable<TTime>;
+  stamp: TTime;
+begin
+  stamp := Time;
+  outValue := fConverter.ConvertTo(TValue.From<string>(TimeToStr(stamp)),
+    TypeInfo(Nullable<TTime>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<TTime>>(outNullable));
+  CheckEqualsString(TimeToStr(stamp), TimeToStr(outNullable.Value));
+end;
+
+procedure TTestFromString.TestStringToNullableDate;
+var
+  outValue: TValue;
+  outNullable: Nullable<TDate>;
+  stamp: TDate;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<string>(DateToStr(stamp)),
+    TypeInfo(Nullable<TDate>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<TDate>>(outNullable));
+  CheckEqualsString(DateToStr(stamp), DateToStr(outNullable.Value));
 end;
 
 {$ENDREGION}
@@ -3701,6 +3842,20 @@ begin
   CheckEquals('Test', outStr);
 end;
 
+procedure TTestFromNullable.TestNullableTimeToString;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TTime>>(Nullable<TTime>.Create(stamp)),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(TimeToStr(stamp), outStr);
+end;
+
 {$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableAnsiStringToShortInt;
 var
@@ -3845,8 +4000,35 @@ begin
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
   CheckEquals(2, outInt);
 end;
-{$ENDIF !NEXTGEN}
 
+procedure TTestFromNullable.TestNullableTimeToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TTime>>(Nullable<TTime>.Create(stamp)),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(AnsiString(TimeToStr(stamp)), outAStr);
+end;
+
+procedure TTestFromNullable.TestNullableTimeToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TTime>>(Nullable<TTime>.Create(stamp)),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(WideString(TimeToStr(stamp)), outWStr);
+end;
+{$ENDIF !NEXTGEN}
 
 procedure TTestFromNullable.TestNullableDateTimeToString;
 var
@@ -3860,6 +4042,20 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEquals(DateTimeToStr(stamp), outStr);
+end;
+
+procedure TTestFromNullable.TestNullableDateToString;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TDate>>(Nullable<TDate>.Create(stamp)),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(DateToStr(stamp), outStr);
 end;
 
 {$IFNDEF NEXTGEN}
@@ -3889,6 +4085,34 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
   CheckEquals(WideString(DateTimeToStr(stamp)), outWStr);
+end;
+
+procedure TTestFromNullable.TestNullableDateToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TDate>>(Nullable<TDate>.Create(stamp)),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(AnsiString(DateToStr(stamp)), outAStr);
+end;
+
+procedure TTestFromNullable.TestNullableDateToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TDate>>(Nullable<TDate>.Create(stamp)),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(WideString(DateToStr(stamp)), outWStr);
 end;
 {$ENDIF}
 
@@ -4336,6 +4560,90 @@ begin
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEquals('Test WideString', outStr);
 end;
+
+procedure TTestFromWideString.TestWStringToDate;
+var
+  outValue: TValue;
+  outStamp: TDate;
+  stamp: TDate;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<WideString>(DateToStr(stamp)),
+    TypeInfo(TDate));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TDate>(outStamp));
+  CheckEqualsString(DateToStr(stamp), DateToStr(outStamp));
+end;
+
+procedure TTestFromWideString.TestWStringToDateF;
+var
+  outValue: TValue;
+  outStamp: TDate;
+  format: TFormatSettings;
+begin
+  format := TFormatSettings.Create;
+  format.ShortDateFormat := 'dd.mm.yyyy';
+  format.DateSeparator := '.';
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('10.10.2010'),
+    TypeInfo(TDate), TValue.From<TFormatSettings>(format));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TDate>(outStamp));
+  CheckEqualsString('10.10.2010', DateToStr(outStamp, format));
+end;
+
+procedure TTestFromWideString.TestWStringToNullableDate;
+var
+  outValue: TValue;
+  outNullable: Nullable<TDate>;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<WideString>(DateToStr(stamp)),
+    TypeInfo(Nullable<TDate>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<TDate>>(outNullable));
+  CheckEqualsString(DateToStr(stamp), DateToStr(outNullable.Value));
+end;
+
+procedure TTestFromWideString.TestWStringToNullableTime;
+var
+  outValue: TValue;
+  outNullable: Nullable<TTime>;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<WideString>(TimeToStr(stamp)),
+    TypeInfo(Nullable<TTime>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<TTime>>(outNullable));
+  CheckEqualsString(TimeToStr(stamp), TimeToStr(outNullable.Value));
+end;
+
+procedure TTestFromWideString.TestWStringToTime;
+var
+  outValue: TValue;
+  outStamp: TTime;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<WideString>(TimeToStr(stamp)),
+    TypeInfo(TTime));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TTime>(outStamp));
+  CheckEqualsString(TimeToStr(stamp), TimeToStr(outStamp));
+end;
+
+procedure TTestFromWideString.TestWStringToTimeF;
+var
+  outValue: TValue;
+  outStamp: TTime;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('15:22:35'),
+    TypeInfo(TTime), TValue.From<TFormatSettings>(TFormatSettings.Create));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TTime>(outStamp));
+  CheckEqualsString('15:22:35', FormatDateTime('hh:mm:ss', outStamp));
+end;
 {$ENDIF}
 
 {$ENDREGION}
@@ -4411,5 +4719,229 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TTestFromDate'}
+
+procedure TTestFromDate.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+{$IFNDEF NEXTGEN}
+procedure TTestFromDate.TestDateToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<TDate>(stamp),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(AnsiString(DateToStr(stamp)), outAStr);
+end;
+
+procedure TTestFromDate.TestDateToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<TDate>(stamp),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEqualsString(DateToStr(stamp), outWStr);
+end;
+
+procedure TTestFromDate.TestDateToNullableAnsiString;
+var
+  outValue: TValue;
+  outNullable: Nullable<AnsiString>;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<TDate>(stamp),
+    TypeInfo(Nullable<AnsiString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
+  CheckEquals(AnsiString(DateToStr(stamp)), outNullable.Value);
+end;
+
+procedure TTestFromDate.TestDateToNullableWideString;
+var
+  outValue: TValue;
+  outNullable: Nullable<WideString>;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<TDate>(stamp),
+    TypeInfo(Nullable<WideString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
+  CheckEqualsString(DateToStr(stamp), outNullable.Value);
+end;
+{$ENDIF}
+
+procedure TTestFromDate.TestDateToNullableString;
+var
+  outValue: TValue;
+  outNullable: Nullable<string>;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<TDate>(stamp),
+    TypeInfo(Nullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
+  CheckEqualsString(DateToStr(stamp), outNullable.Value);
+end;
+
+procedure TTestFromDate.TestDateToString;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TDate;
+begin
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<TDate>(stamp),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(DateToStr(stamp), outStr);
+end;
+
+procedure TTestFromDate.TestDateToStringF;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TDate;
+  format: TFormatSettings;
+begin
+  format := TFormatSettings.Create;
+  format.ShortDateFormat := 'dd-mm-yyyy';
+  stamp := Date;
+  outValue := fConverter.ConvertTo(TValue.From<TDate>(stamp),
+    TypeInfo(string), TValue.From<TFormatSettings>(format));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(DateToStr(stamp, format), outStr);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromTime'}
+
+procedure TTestFromTime.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+{$IFNDEF NEXTGEN}
+procedure TTestFromTime.TestTimeToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TTime>(stamp),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(AnsiString(TimeToStr(stamp)), outAStr);
+end;
+
+procedure TTestFromTime.TestTimeToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TTime>(stamp),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEqualsString(TimeToStr(stamp), outWStr);
+end;
+
+procedure TTestFromTime.TestTimeToNullableAnsiString;
+var
+  outValue: TValue;
+  outNullable: Nullable<AnsiString>;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TTime>(stamp),
+    TypeInfo(Nullable<AnsiString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
+  CheckEquals(AnsiString(TimeToStr(stamp)), outNullable.Value);
+end;
+
+procedure TTestFromTime.TestTimeToNullableWideString;
+var
+  outValue: TValue;
+  outNullable: Nullable<WideString>;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TTime>(stamp),
+    TypeInfo(Nullable<WideString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
+  CheckEqualsString(TimeToStr(stamp), outNullable.Value);
+end;
+{$ENDIF}
+
+procedure TTestFromTime.TestTimeToNullableString;
+var
+  outValue: TValue;
+  outNullable: Nullable<string>;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TTime>(stamp),
+    TypeInfo(Nullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
+  CheckEqualsString(TimeToStr(stamp), outNullable.Value);
+end;
+
+procedure TTestFromTime.TestTimeToString;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TTime>(stamp),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(TimeToStr(stamp), outStr);
+end;
+
+procedure TTestFromTime.TestTimeToStringF;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TTime;
+begin
+  stamp := StrToTime('15:22:35');
+  outValue := fConverter.ConvertTo(TValue.From<TTime>(stamp),
+    TypeInfo(string), TValue.From<TFormatSettings>(TFormatSettings.Create));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(TimeToStr(stamp), outStr);
+end;
+
+{$ENDREGION}
 
 end.
