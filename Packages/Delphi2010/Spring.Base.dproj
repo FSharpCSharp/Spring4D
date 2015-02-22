@@ -22,7 +22,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DllSuffix>.Delphi2010</DllSuffix>
 			<DCC_Description>Spring4D Base package</DCC_Description>
-			<DCC_DcuOutput>..\..\Library\Delphi2010\$(Config)</DCC_DcuOutput>
+			<DCC_DcuOutput>..\..\Library\Delphi2010\Win32\$(Config)</DCC_DcuOutput>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
 			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Base.Delphi2010.bpl</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>

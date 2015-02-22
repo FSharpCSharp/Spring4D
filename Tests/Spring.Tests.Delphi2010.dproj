@@ -20,31 +20,27 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_ExeOutput>Bin\Delphi2010\$(Config)</DCC_ExeOutput>
+			<DCC_ExeOutput>Bin\Delphi2010\Win32\$(Config)</DCC_ExeOutput>
 			<DCC_Define>SPRING_ENABLE_GUARD;$(DCC_Define)</DCC_Define>
 			<DCC_UnitSearchPath>..\Source;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Logging;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Logging;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;.\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DCC_DependencyCheckOutputName>Bin\Delphi2010\%Config%\Spring.Tests.exe</DCC_DependencyCheckOutputName>
+			<DCC_DependencyCheckOutputName>Bin\Delphi2010\Win32\%Config%\Spring.Tests.exe</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_Platform>x86</DCC_Platform>
 			<DCC_K>false</DCC_K>
 			<DCC_N>false</DCC_N>
 			<DCC_S>false</DCC_S>
-			<DCC_DcuOutput>Lib\Delphi2010\$(Config)</DCC_DcuOutput>
+			<DCC_DcuOutput>Lib\Delphi2010\Win32\$(Config)</DCC_DcuOutput>
 			<DCC_E>false</DCC_E>
 			<DCC_F>false</DCC_F>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_DependencyCheckOutputName>Bin\Delphi2010\Release\Spring.Tests.exe</DCC_DependencyCheckOutputName>
-			<DCC_ExeOutput>Bin\Delphi2010\Release</DCC_ExeOutput>
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
 			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_ExeOutput>Bin\Delphi2010\Debug</DCC_ExeOutput>
-			<DCC_DependencyCheckOutputName>Bin\Delphi2010\Debug\Spring.Tests.exe</DCC_DependencyCheckOutputName>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<ItemGroup>
@@ -52,7 +48,6 @@
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="Source\Spring.TestBootstrap.pas"/>
-			<DCCReference Include="Source\FinalBuilder.XMLTestRunner.pas"/>
 			<DCCReference Include="Source\Spring.TestRegistration.pas"/>
 			<DCCReference Include="Source\Spring.TestRunner.pas"/>
 			<DCCReference Include="Source\Spring.TestUtils.pas"/>
