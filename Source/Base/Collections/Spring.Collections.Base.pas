@@ -1773,7 +1773,11 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 
+{$IFDEF DELPHIXE_UP}
+  Result := TCollections.CreateList<T>;
+{$ELSE}
   Result := TList<T>.Create;
+{$ENDIF}
   Result.Count := count;
   for i := index to index + count do
     Result[i] := Items[i];

@@ -167,7 +167,11 @@ constructor TMultiMapBase<TKey, TValue>.Create;
 begin
   inherited Create;
   fDictionary := CreateDictionary;
+{$IFDEF DELPHIXE_UP}
+  fEmpty := TCollections.CreateList<TValue>;
+{$ELSE}
   fEmpty := TList<TValue>.Create;
+{$ENDIF}
   fValues := TValueCollection.Create(Self);
 end;
 
@@ -440,7 +444,11 @@ function TMultiMap<TKey, TValue>.CreateCollection: ICollection<TValue>;
 var
   list: IList<TValue>;
 begin
+{$IFDEF DELPHIXE_UP}
+  list := TCollections.CreateList<TValue>;
+{$ELSE}
   list := TList<TValue>.Create;
+{$ENDIF}
   list.OnChanged.Add(DoValueChanged);
   Result := list;
 end;

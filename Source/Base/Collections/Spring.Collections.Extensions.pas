@@ -2049,7 +2049,11 @@ constructor TLookup<TKey, TElement>.TGrouping.Create(const key: TKey);
 begin
   inherited Create;
   fKey := key;
+{$IFDEF DELPHIXE_UP}
+  fElements := TCollections.CreateList<TElement>;
+{$ELSE}
   fElements := TList<TElement>.Create;
+{$ENDIF}
 end;
 
 procedure TLookup<TKey, TElement>.TGrouping.Add(const item: TElement);

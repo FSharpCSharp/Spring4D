@@ -104,13 +104,9 @@ begin
   inherited Create;
   fActivator := activator;
   if minPoolSize > 0 then
-  begin
     fMinPoolsize := minPoolSize;
-  end;
   if maxPoolSize > 0 then
-  begin
     fMaxPoolsize := maxPoolSize;
-  end;
   fInstances := TCollections.CreateList<TObject>;
   fInstances.OnChanged.Add(InstancesChanged);
   fAvailableList := TCollections.CreateQueue<TObject>;
