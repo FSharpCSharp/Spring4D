@@ -349,7 +349,11 @@ begin
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
+{$IFDEF DELPHIXE_UP}
+  list := TCollections.CreateList<T>;
+{$ELSE}
   list := TList<T>.Create;
+{$ENDIF}
   for item in Self do
     if not other.Contains(item) then
       list.Add(item);

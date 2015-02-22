@@ -244,6 +244,12 @@ type
     function GetEnumerator: IEnumerator<T>; override; final;
   end;
 
+  TSourceIterator<T> = class(TIterator<T>)
+  protected
+    fSource: IEnumerable<T>;
+    function GetElementType: PTypeInfo; override;
+  end;
+
   ///	<summary>
   ///	  Provides an abstract implementation for the
   ///	  <see cref="Spring.Collections|ICollection&lt;T&gt;" /> interface.
@@ -1376,6 +1382,16 @@ begin
     iterator.fState := STATE_ENUMERATOR;
     Result := iterator;
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSourceIterator<T>'}
+
+function TSourceIterator<T>.GetElementType: PTypeInfo;
+begin
+  Result := fSource.ElementType;
 end;
 
 {$ENDREGION}

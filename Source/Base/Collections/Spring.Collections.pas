@@ -2415,77 +2415,200 @@ end;
 
 class function TCollections.CreateList<T>: IList<T>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  if System.GetTypeKind(T) = tkClass then
+    IList<TObject>(Result) := TFoldedObjectList<T>.Create(False)
+  else if System.GetTypeKind(T) = tkInterface then
+    IList<IInterface>(Result) := TFoldedInterfaceList<T>.Create
+  else
+{$ENDIF}
   Result := TList<T>.Create;
 end;
 
 class function TCollections.CreateList<T>(const comparer: IComparer<T>): IList<T>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  if System.GetTypeKind(T) = tkClass then
+    IList<TObject>(Result) := TFoldedObjectList<T>.Create(IComparer<TObject>(comparer), False)
+  else if System.GetTypeKind(T) = tkInterface then
+    IList<IInterface>(Result) := TFoldedInterfaceList<T>.Create(IComparer<IInterface>(comparer))
+  else
+{$ENDIF}
   Result := TList<T>.Create(comparer);
 end;
 
 class function TCollections.CreateList<T>(
   const comparer: TComparison<T>): IList<T>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  if System.GetTypeKind(T) = tkClass then
+    IList<TObject>(Result) := TFoldedObjectList<T>.Create(IComparer<TObject>(PPointer(@comparer)^), False)
+  else if System.GetTypeKind(T) = tkInterface then
+    IList<IInterface>(Result) := TFoldedInterfaceList<T>.Create(IComparer<IInterface>(PPointer(@comparer)^))
+  else
+{$ENDIF}
   Result := TList<T>.Create(IComparer<T>(PPointer(@comparer)^));
 end;
 
 class function TCollections.CreateList<T>(const values: array of T): IList<T>;
 begin
-  Result := TList<T>.Create(values);
+{$IFDEF DELPHIXE7_UP}
+  if System.GetTypeKind(T) = tkClass then
+    IList<TObject>(Result) := TFoldedObjectList<T>.Create(False)
+  else if System.GetTypeKind(T) = tkInterface then
+    IList<IInterface>(Result) := TFoldedInterfaceList<T>.Create
+  else
+{$ENDIF}
+  Result := TList<T>.Create;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateList<T>(const values: IEnumerable<T>): IList<T>;
 begin
-  Result := TList<T>.Create(values);
+{$IFDEF DELPHIXE7_UP}
+  if System.GetTypeKind(T) = tkClass then
+    IList<TObject>(Result) := TFoldedObjectList<T>.Create(False)
+  else if System.GetTypeKind(T) = tkInterface then
+    IList<IInterface>(Result) := TFoldedInterfaceList<T>.Create
+  else
+{$ENDIF}
+  Result := TList<T>.Create;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TFoldedObjectList<T>.Create(ownsObjects);
+{$ELSE}
+  Result := TObjectList<T>.Create(ownsObjects);
+{$ENDIF}
 end;
 
 class function TCollections.CreateList<T>(const comparer: IComparer<T>;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TFoldedObjectList<T>.Create(
+    IComparer<TObject>(comparer), ownsObjects);
+{$ELSE}
+  Result := TObjectList<T>.Create(comparer, ownsObjects);
+{$ENDIF}
 end;
 
 class function TCollections.CreateList<T>(const comparer: TComparison<T>;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(
-    IComparer<T>(PPointer(@comparer)^), ownsObjects) as IList<T>;
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TFoldedObjectList<T>.Create(
+    IComparer<TObject>(PPointer(@comparer)^), ownsObjects);
+{$ELSE}
+  Result := TObjectList<T>.Create(IComparer<T>(PPointer(@comparer)^), ownsObjects);
+{$ENDIF}
 end;
 
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TFoldedObjectList<T>.Create(ownsObjects);
+{$ELSE}
+  Result := TObjectList<T>.Create(ownsObjects);
+{$ENDIF}
 end;
 
 class function TCollections.CreateObjectList<T>(const comparer: IComparer<T>;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TFoldedObjectList<T>.Create(
+    IComparer<TObject>(comparer), ownsObjects);
+{$ELSE}
+  Result := TObjectList<T>.Create(comparer, ownsObjects);
+{$ENDIF}
 end;
 
 class function TCollections.CreateObjectList<T>(const comparer: TComparison<T>;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(
-    IComparer<T>(PPointer(@comparer)^), ownsObjects) as IList<T>;
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TFoldedObjectList<T>.Create(
+    IComparer<TObject>(PPointer(@comparer)^), ownsObjects);
+{$ELSE}
+  Result := TObjectList<T>.Create(IComparer<T>(PPointer(@comparer)^), ownsObjects);
+{$ENDIF}
 end;
 
 class function TCollections.CreateObjectList<T>(const values: array of T;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TFoldedObjectList<T>.Create(ownsObjects);
+{$ELSE}
+  Result := TObjectList<T>.Create(ownsObjects);
+{$ENDIF}
   Result.AddRange(values);
 end;
 
 class function TCollections.CreateObjectList<T>(const values: IEnumerable<T>;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TFoldedObjectList<T>.Create(ownsObjects);
+{$ELSE}
+  Result := TObjectList<T>.Create(ownsObjects);
+{$ENDIF}
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateInterfaceList<T>: IList<T>;
+begin
+{$IFDEF DELPHIXE_UP}
+  Result := TFoldedInterfaceList<T>.Create as IList<T>;
+{$ELSE}
+  Result := TList<T>.Create;
+{$ENDIF}
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const comparer: IComparer<T>): IList<T>;
+begin
+{$IFDEF DELPHIXE_UP}
+  Result := TFoldedInterfaceList<T>.Create(IComparer<IInterface>(comparer)) as IList<T>;
+{$ELSE}
+  Result := TList<T>.Create(comparer);
+{$ENDIF}
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const comparer: TComparison<T>): IList<T>;
+begin
+{$IFDEF DELPHIXE_UP}
+  Result := TFoldedInterfaceList<T>.Create(
+    IComparer<IInterface>(PPointer(@comparer)^)) as IList<T>;
+{$ELSE}
+  Result := TList<T>.Create(IComparer<T>(PPointer(@comparer)^));
+{$ENDIF}
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const values: array of T): IList<T>;
+begin
+{$IFDEF DELPHIXE_UP}
+  Result := TFoldedInterfaceList<T>.Create as IList<T>;
+{$ELSE}
+  Result := TList<T>.Create;
+{$ENDIF}
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const values: IEnumerable<T>): IList<T>;
+begin
+{$IFDEF DELPHIXE_UP}
+  Result := TFoldedInterfaceList<T>.Create as IList<T>;
+{$ELSE}
+  Result := TList<T>.Create;
+{$ENDIF}
   Result.AddRange(values);
 end;
 
@@ -2498,38 +2621,6 @@ begin
 {$ENDIF}
 
   Result := TDictionary<TKey, TValue>.Create(dictionary, ownership);
-end;
-
-class function TCollections.CreateInterfaceList<T>: IList<T>;
-begin
-  Result := TInterfaceList<T>.Create as IList<T>;
-end;
-
-class function TCollections.CreateInterfaceList<T>(
-  const comparer: IComparer<T>): IList<T>;
-begin
-  Result := TInterfaceList<T>.Create(comparer) as IList<T>;
-end;
-
-class function TCollections.CreateInterfaceList<T>(
-  const comparer: TComparison<T>): IList<T>;
-begin
-  Result := TInterfaceList<T>.Create(
-    IComparer<T>(PPointer(@comparer)^)) as IList<T>;
-end;
-
-class function TCollections.CreateInterfaceList<T>(
-  const values: array of T): IList<T>;
-begin
-  Result := TInterfaceList<T>.Create as IList<T>;
-  Result.AddRange(values);
-end;
-
-class function TCollections.CreateInterfaceList<T>(
-  const values: IEnumerable<T>): IList<T>;
-begin
-  Result := TInterfaceList<T>.Create as IList<T>;
-  Result.AddRange(values);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;

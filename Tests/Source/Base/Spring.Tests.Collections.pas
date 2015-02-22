@@ -1991,7 +1991,7 @@ end;
 
 procedure TTestInterfaceList.SetUp;
 begin
-  SUT := TInterfaceList<IInvokable>.Create as IList<IInvokable>;
+  SUT := TCollections.CreateList<IInvokable>;
 end;
 
 type
@@ -2018,8 +2018,8 @@ end;
 
 procedure TTestInterfaceList.TestInterfaceListCreate;
 begin
-  SUT := TInterfaceList<IInvokable>.Create(nil) as IList<IInvokable>;
-  CheckNotNull(SUT.Comparer);
+  SUT := TCollections.CreateList<IInvokable>;
+  CheckNotNull(SUT.Comparer);      
 end;
 
 { TTestCollectionList }

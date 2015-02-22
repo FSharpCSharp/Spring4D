@@ -140,11 +140,7 @@ type
     function ToArray: TArray<T>; override;
   end;
 
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-  TObjectList<T: class> = class(TList<TObject>, ICollectionOwnership, IObjectList)
-{$ELSE}
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
-{$ENDIF}
   private
     fOwnsObjects: Boolean;
   {$REGION 'Property Accessors'}
@@ -152,31 +148,13 @@ type
     procedure SetOwnsObjects(const value: Boolean);
   {$ENDREGION}
   protected
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-    function GetElementType: PTypeInfo; override;
-    procedure Changed(const item: TObject; action: TCollectionChangedAction); override;
-{$ELSE}
     procedure Changed(const item: T; action: TCollectionChangedAction); override;
-{$ENDIF}
   public
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
 
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
-  end;
-
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-  TInterfaceList<T: IInterface> = class(TList<IInterface>, IInterfaceList)
-{$ELSE}
-  TInterfaceList<T: IInterface> = class(TList<T>)
-{$ENDIF}
-  protected
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-    function GetElementType: PTypeInfo; override;
-{$ENDIF}
-  public
-    constructor Create(const comparer: IComparer<T>); overload;
   end;
 
   TSortedList<T> = class(TList<T>)
@@ -262,6 +240,18 @@ type
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
   end;
+
+{$IFDEF DELPHIXE_UP}
+  TFoldedObjectList<T{: class}> = class(TObjectList<TObject>)
+  protected
+    function GetElementType: PTypeInfo; override;
+  end;
+
+  TFoldedInterfaceList<T{: IInterface}> = class(TList<IInterface>)
+  protected
+    function GetElementType: PTypeInfo; override;
+  end;
+{$ENDIF}
 
 implementation
 
@@ -876,20 +866,9 @@ end;
 constructor TObjectList<T>.Create(const comparer: IComparer<T>;
   ownsObjects: Boolean);
 begin
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-  inherited Create(IComparer<TObject>(comparer));
-{$ELSE}
   inherited Create(comparer);
-{$ENDIF}
   fOwnsObjects := ownsObjects;
 end;
-
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-function TObjectList<T>.GetElementType: PTypeInfo;
-begin
-  Result := TypeInfo(T);
-end;
-{$ENDIF}
 
 function TObjectList<T>.GetOwnsObjects: Boolean;
 begin
@@ -901,11 +880,7 @@ begin
   fOwnsObjects := value;
 end;
 
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-procedure TObjectList<T>.Changed(const item: TObject; action: TCollectionChangedAction);
-{$ELSE}
 procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
-{$ENDIF}
 begin
   inherited Changed(item, action);
   if OwnsObjects and (action = caRemoved) then
@@ -915,27 +890,6 @@ begin
     item.DisposeOf;
 {$ENDIF}
 end;
-
-{$ENDREGION}
-
-
-{$REGION 'TInterfaceList<T>'}
-
-constructor TInterfaceList<T>.Create(const comparer: IComparer<T>);
-begin
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-  inherited Create(IComparer<IInterface>(comparer));
-{$ELSE}
-  inherited Create(comparer);
-{$ENDIF}
-end;
-
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-function TInterfaceList<T>.GetElementType: PTypeInfo;
-begin
-  Result := TypeInfo(T);
-end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -1278,6 +1232,30 @@ begin
       Exit(i);
   Result := -1;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedObjectList<T>'}
+
+{$IFDEF DELPHIXE_UP}
+function TFoldedObjectList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedInterfaceList<T>'}
+
+{$IFDEF DELPHIXE_UP}
+function TFoldedInterfaceList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
