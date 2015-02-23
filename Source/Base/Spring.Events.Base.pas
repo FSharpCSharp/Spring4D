@@ -53,6 +53,7 @@ type
     function GetEnabled: Boolean;
     function GetHandlers: TArray<TMethodPointer>;
     function GetInvoke: TMethodPointer;
+    function GetIsEmpty: Boolean;
     function GetIsInvokable: Boolean;
     function GetOnChanged: TEventsChangedEvent;
     procedure SetEnabled(const value: Boolean);
@@ -71,8 +72,6 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Any: Boolean;
-
     {$REGION 'IEvent Methods'}
     procedure Add(const handler: TMethodPointer);
     procedure Remove(const handler: TMethodPointer);
@@ -84,6 +83,7 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: TMethodPointer read GetInvoke;
+    property IsEmpty: Boolean read GetIsEmpty;
     property OnChanged: TEventsChangedEvent read GetOnChanged write SetOnChanged;
   end;
 
@@ -154,11 +154,6 @@ begin
   end;
 end;
 
-function TEventBase.Any: Boolean;
-begin
-  Result := fHandlers.Count <> 0;
-end;
-
 procedure TEventBase.Clear;
 begin
   fLock.Enter;
@@ -204,6 +199,11 @@ end;
 function TEventBase.GetInvoke: TMethodPointer;
 begin
   Result := fInvoke;
+end;
+
+function TEventBase.GetIsEmpty: Boolean;
+begin
+  Result := fHandlers.Count = 0;
 end;
 
 function TEventBase.GetIsInvokable: Boolean;

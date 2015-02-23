@@ -81,6 +81,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
+    function GetIsEmpty: Boolean;
   {$ENDREGION}
   protected
   {$REGION 'Implements IInterface'}
@@ -543,6 +544,14 @@ end;
 function TEnumerableBase.GetEnumerator: IEnumerator;
 begin
   Result := GetEnumeratorNonGeneric;
+end;
+
+function TEnumerableBase.GetIsEmpty: Boolean;
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := GetEnumerator;
+  Result := not enumerator.MoveNext;
 end;
 
 {$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}

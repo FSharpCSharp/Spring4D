@@ -574,7 +574,7 @@ end;
 procedure TTestMulticastEvent.TestEmpty;
 begin
   CheckEquals(0, fEvent.Count);
-  CheckFalse(fEvent.Any);
+  CheckTrue(fEvent.IsEmpty);
 end;
 
 procedure TTestMulticastEvent.TestInvoke;
@@ -671,7 +671,7 @@ procedure TTestMulticastEvent.TestOneHandler;
 begin
   fEvent.Add(HandlerA);
   CheckEquals(1, fEvent.Count);
-  CheckTrue(fEvent.Any);
+  CheckFalse(fEvent.IsEmpty);
 
   fEvent.Invoke(Self);
   CheckTrue(fAInvoked);
@@ -688,13 +688,13 @@ var
   e: Event<TNotifyEvent>;
 begin
   CheckTrue(e.Enabled);
-  CheckFalse(e.Any);
+  CheckTrue(e.IsEmpty);
 
   e.Add(HandlerA);
   e.Add(HandlerB);
   e.Invoke(nil);
 
-  CheckTrue(e.Any);
+  CheckFalse(e.IsEmpty);
   CheckEquals(2, e.Count);
 
   CheckTrue(fAInvoked);

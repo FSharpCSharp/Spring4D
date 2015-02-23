@@ -338,21 +338,22 @@ type
   /// <summary>
   ///   Base interface for anything that has a countable quantity.
   /// </summary>
-  ICountable = interface
+  ICountable = interface(IInvokable)
     ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
+    function GetIsEmpty: Boolean;
   {$ENDREGION}
-
-    /// <summary>
-    ///   Determines whether a countable contains any elements.
-    /// </summary>
-    function Any: Boolean;
 
     /// <summary>
     ///   Returns the number of elements in a countable.
     /// </summary>
     property Count: Integer read GetCount;
+
+    /// <summary>
+    ///   Determines whether a countable contains no elements.
+    /// </summary>
+    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   {$ENDREGION}
@@ -1180,14 +1181,13 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetInvoke: T;
+    function GetIsEmpty: Boolean;
     function GetOnChanged: TEventsChangedEvent<T>;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(value: TEventsChangedEvent<T>);
     procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
-
-    function Any: Boolean;
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
@@ -1197,6 +1197,7 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
+    property IsEmpty: Boolean read GetIsEmpty;
     property OnChanged: TEventsChangedEvent<T> read GetOnChanged write SetOnChanged;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
@@ -3886,11 +3887,6 @@ begin
   fInstance.Add(handler);
 end;
 
-function Event<T>.Any: Boolean;
-begin
-  Result := Assigned(fInstance) and fInstance.Any;
-end;
-
 procedure Event<T>.Clear;
 begin
   if Assigned(fInstance) then
@@ -3920,6 +3916,11 @@ function Event<T>.GetInvoke: T;
 begin
   EnsureInitialized;
   Result := fInstance.Invoke;
+end;
+
+function Event<T>.GetIsEmpty: Boolean;
+begin
+  Result := not Assigned(fInstance) or fInstance.IsEmpty;
 end;
 
 function Event<T>.GetOnChanged: TEventsChangedEvent<T>;
