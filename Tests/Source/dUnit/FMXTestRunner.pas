@@ -266,7 +266,7 @@ begin
     StyleBook := StyleBookIOS7
   else
     StyleBook := StyleBookIOS6;
-{$ENDIF}
+{$IFEND}
 {$IFDEF DESKTOP}
   // There is some layouting differences on desktop
   LHeight := OverflowMenu.Height;

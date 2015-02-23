@@ -80,6 +80,7 @@ type
     function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
   public
     constructor Create(const model: TComponentModel); override;
+    destructor Destroy; override;
     function Resolve(const context: ICreationContext): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
@@ -246,6 +247,13 @@ function TSingletonPerThreadLifetimeManager.CreateHolder(
   const instance: TValue): TFunc<TValue>;
 begin
   Result := TValueHolder.Create(instance, Model.RefCounting);
+end;
+
+destructor TSingletonPerThreadLifetimeManager.Destroy;
+begin
+  // Needs to be freed prior our weakrefs get cleared
+  fInstances := nil;
+  inherited;
 end;
 
 procedure TSingletonPerThreadLifetimeManager.HandleValueChanged(sender: TObject;

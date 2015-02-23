@@ -2030,6 +2030,9 @@ begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
   p := t;
+{$IFDEF AUTOREFCOUNT}
+  t := nil;
+{$ENDIF}
   destroyCalled := False;
   p := Default(SmartPointer<TTestClass>);
   CheckTrue(destroyCalled);

@@ -116,6 +116,8 @@ end;
 
 destructor TSimpleObjectPool.Destroy;
 begin
+  // Needs to be freed prior our weakrefs get cleared
+  fInstances := nil;
   fLock.Free;
   inherited;
 end;
