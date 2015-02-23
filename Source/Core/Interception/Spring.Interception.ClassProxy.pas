@@ -281,8 +281,8 @@ end;
 
 class procedure TClassProxy.ProxyFreeInstance(const Self: TObject);
 begin
-  fProxies.Remove(Self);
   GetClassData(ClassParent).FreeInstance(Self); // inherited
+  fProxies.Remove(Self);
 end;
 
 {$ENDREGION}
