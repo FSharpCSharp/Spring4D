@@ -37,73 +37,73 @@ type
 
   {$REGION 'IValueConverter'}
 
-  ///	<summary>
-  ///	  Base value converter interface
-  ///	</summary>
+  /// <summary>
+  ///   Base value converter interface
+  /// </summary>
   IValueConverter = interface
     ['{048EF3F0-41B5-4019-9BD6-00B88CAA7275}']
 
-    ///	<param name="value">
-    ///	  Rtti.TValue to convert
-    ///	</param>
-    ///	<param name="targetTypeInfo">
-    ///	  Target Rtti.PTypeInfo structure
-    ///	</param>
-    ///	<returns>
-    ///	  Returns <paramref name="value">converted</paramref> to type pointing
-    ///	  by <paramref name="targetTypeInfo" /> parameter
-    ///	</returns>
+    /// <param name="value">
+    ///   Rtti.TValue to convert
+    /// </param>
+    /// <param name="targetTypeInfo">
+    ///   Target Rtti.PTypeInfo structure
+    /// </param>
+    /// <returns>
+    ///   Returns <paramref name="value">converted</paramref> to type pointing
+    ///   by <paramref name="targetTypeInfo" /> parameter
+    /// </returns>
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo): TValue; overload;
 
-    ///	<param name="value">
-    ///	  Rtti.TValue to convert
-    ///	</param>
-    ///	<param name="targetTypeInfo">
-    ///	  Target Rtti.PTypeInfo structure
-    ///	</param>
-    ///	<param name="parameter">
-    ///	  Additional Rtti.TValue formatting parameter, use when possible
-    ///	</param>
-    ///	<returns>
-    ///	  Returns <paramref name="value" /> converted to type pointing by
-    ///	  <paramref name="targetTypeInfo" />parameter
-    ///	</returns>
+    /// <param name="value">
+    ///   Rtti.TValue to convert
+    /// </param>
+    /// <param name="targetTypeInfo">
+    ///   Target Rtti.PTypeInfo structure
+    /// </param>
+    /// <param name="parameter">
+    ///   Additional Rtti.TValue formatting parameter, use when possible
+    /// </param>
+    /// <returns>
+    ///   Returns <paramref name="value" /> converted to type pointing by <paramref name="targetTypeInfo" />
+    ///    parameter
+    /// </returns>
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; overload;
 
-    ///	<param name="value">
-    ///	  Rtti.TValue to convert
-    ///	</param>
-    ///	<param name="targetTypeInfo">
-    ///	  Target Rtti.PTypeInfo structure
-    ///	</param>
-    ///	<param name="targetValue">
-    ///	  Target Rtti.TValue out parameter
-    ///	</param>
-    ///	<returns>
-    ///	  Returns System.Boolean, True if converting with success
-    ///	</returns>
+    /// <param name="value">
+    ///   Rtti.TValue to convert
+    /// </param>
+    /// <param name="targetTypeInfo">
+    ///   Target Rtti.PTypeInfo structure
+    /// </param>
+    /// <param name="targetValue">
+    ///   Target Rtti.TValue out parameter
+    /// </param>
+    /// <returns>
+    ///   Returns System.Boolean, True if converting with success
+    /// </returns>
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       out targetValue: TValue): Boolean; overload;
 
-    ///	<param name="value">
-    ///	  Rtti.TValue to convert
-    ///	</param>
-    ///	<param name="targetTypeInfo">
-    ///	  Target Rtti.PTypeInfo structure
-    ///	</param>
-    ///	<param name="targetValue">
-    ///	  Target Rtti.TValue out parameter
-    ///	</param>
-    ///	<param name="parameter">
-    ///	  Additional Rtti.TValue formatting parameter, use when possible
-    ///	</param>
-    ///	<returns>
-    ///	  Returns System.Boolean, True if converting with success
-    ///	</returns>
+    /// <param name="value">
+    ///   Rtti.TValue to convert
+    /// </param>
+    /// <param name="targetTypeInfo">
+    ///   Target Rtti.PTypeInfo structure
+    /// </param>
+    /// <param name="targetValue">
+    ///   Target Rtti.TValue out parameter
+    /// </param>
+    /// <param name="parameter">
+    ///   Additional Rtti.TValue formatting parameter, use when possible
+    /// </param>
+    /// <returns>
+    ///   Returns System.Boolean, True if converting with success
+    /// </returns>
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       out targetValue: TValue;
@@ -115,10 +115,10 @@ type
 
   {$REGION 'TValueConverter'}
 
-  ///	<summary>
-  ///	  Base abstract class provides DefaultConverter as an entry point to the
-  ///	  user side
-  ///	</summary>
+  /// <summary>
+  ///   Base abstract class provides DefaultConverter as an entry point to the
+  ///   user side
+  /// </summary>
   TValueConverter = class abstract(TInterfacedObject, IValueConverter)
   private
     class var fDefaultConverter: IValueConverter;
@@ -154,47 +154,47 @@ type
 
   {$REGION 'TDefaultValueConverter'}
 
-  ///	<summary>
-  ///	  Provides default converter shared instance, TDefaultValueConverter is
-  ///	  the master in the process of conversion
-  ///	</summary>
-  ///	<remarks>
-  ///	  <para>
-  ///	    There is three steps of doing so
-  ///	  </para>
-  ///	  <list type="number">
-  ///	    <item>
-  ///	      Find/lock "global" registry
-  ///	    </item>
-  ///	    <item>
-  ///	      Use TValue.TryCast
-  ///	    </item>
-  ///	    <item>
-  ///	      Use RTTI exploring and select apropriate converter.
-  ///	    </item>
-  ///	  </list>
-  ///	  <para>
-  ///	    There are four different internall converter types that can be
-  ///	    selected to convert:
-  ///	  </para>
-  ///	  <list type="bullet">
-  ///	    <item>
-  ///	      TNullable&lt;T&gt; and T
-  ///	    </item>
-  ///	    <item>
-  ///	      Enumeration and Integer/string
-  ///	    </item>
-  ///	    <item>
-  ///	      TColor and Integer/string
-  ///	    </item>
-  ///	    <item>
-  ///	      Integer and string
-  ///	    </item>
-  ///	    <item>
-  ///	      Enumeration and Integer/string
-  ///	    </item>
-  ///	  </list>
-  ///	</remarks>
+  /// <summary>
+  ///   Provides default converter shared instance, TDefaultValueConverter is
+  ///   the master in the process of conversion
+  /// </summary>
+  /// <remarks>
+  ///   <para>
+  ///     There is three steps of doing so
+  ///   </para>
+  ///   <list type="number">
+  ///     <item>
+  ///       Find/lock "global" registry
+  ///     </item>
+  ///     <item>
+  ///       Use TValue.TryCast
+  ///     </item>
+  ///     <item>
+  ///       Use RTTI exploring and select apropriate converter.
+  ///     </item>
+  ///   </list>
+  ///   <para>
+  ///     There are four different internall converter types that can be
+  ///     selected to convert:
+  ///   </para>
+  ///   <list type="bullet">
+  ///     <item>
+  ///       TNullable&lt;T&gt; and T
+  ///     </item>
+  ///     <item>
+  ///       Enumeration and Integer/string
+  ///     </item>
+  ///     <item>
+  ///       TColor and Integer/string
+  ///     </item>
+  ///     <item>
+  ///       Integer and string
+  ///     </item>
+  ///     <item>
+  ///       Enumeration and Integer/string
+  ///     </item>
+  ///   </list>
+  /// </remarks>
   TDefaultValueConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -207,10 +207,10 @@ type
 
   {$REGION 'TIntegerToStringConverter'}
 
-  ///	<summary>
-  ///	  Simply provides conversion routine beetwen Integer and
-  ///	  string/UnicodeString
-  ///	</summary>
+  /// <summary>
+  ///   Simply provides conversion routine beetwen Integer and
+  ///   string/UnicodeString
+  /// </summary>
   TIntegerToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -223,9 +223,9 @@ type
 
   {$REGION 'TStringToIntegerConverter'}
 
-  ///	<summary>
-  ///	  Simply provides conversion routine beetwen string and Integer
-  ///	</summary>
+  /// <summary>
+  ///   Simply provides conversion routine beetwen string and Integer
+  /// </summary>
   TStringToIntegerConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -238,9 +238,9 @@ type
 
   {$REGION 'TIntegerToBooleanConverter'}
 
-  ///	<summary>
-  ///	  Simply provides conversion routine beetwen Integer and Boolean
-  ///	</summary>
+  /// <summary>
+  ///   Simply provides conversion routine beetwen Integer and Boolean
+  /// </summary>
   TIntegerToBooleanConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -253,9 +253,9 @@ type
 
   {$REGION 'TBooleanToIntegerConverter'}
 
-  ///	<summary>
-  ///	  Simply provides conversion routine beetwen Boolean and Integer
-  ///	</summary>
+  /// <summary>
+  ///   Simply provides conversion routine beetwen Boolean and Integer
+  /// </summary>
   TBooleanToIntegerConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -268,9 +268,9 @@ type
 
   {$REGION 'TBooleanToStringConverter'}
 
-  ///	<summary>
-  ///	  Simply provides conversion routine beetwen Boolean and string
-  ///	</summary>
+  /// <summary>
+  ///   Simply provides conversion routine beetwen Boolean and string
+  /// </summary>
   TBooleanToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -283,9 +283,9 @@ type
 
   {$REGION 'TStringToBooleanConverter'}
 
-  ///	<summary>
-  ///	  Simply provides conversion routine beetwen string and Boolean
-  ///	</summary>
+  /// <summary>
+  ///   Simply provides conversion routine beetwen string and Boolean
+  /// </summary>
   TStringToBooleanConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -298,13 +298,13 @@ type
 
   {$REGION 'TNullableToTypeConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen Nullable(T) and T
-  ///	</summary>
-  ///	<remarks>
-  ///	  Internally it use another Converter to delegate conversion routine if
-  ///	  necessary
-  ///	</remarks>
+  /// <summary>
+  ///   Provides conversion routine beetwen Nullable(T) and T
+  /// </summary>
+  /// <remarks>
+  ///   Internally it use another Converter to delegate conversion routine if
+  ///   necessary
+  /// </remarks>
   TNullableToTypeConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -317,13 +317,13 @@ type
 
   {$REGION 'TTypeToNullableConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen T and Nullable(T)
-  ///	</summary>
-  ///	<remarks>
-  ///	  Internally it use another Converter to delegate conversion routine if
-  ///	  necessary
-  ///	</remarks>
+  /// <summary>
+  ///   Provides conversion routine beetwen T and Nullable(T)
+  /// </summary>
+  /// <remarks>
+  ///   Internally it use another Converter to delegate conversion routine if
+  ///   necessary
+  /// </remarks>
   TTypeToNullableConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -336,9 +336,9 @@ type
 
   {$REGION 'TEnumToIntegerConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen enumeration and Integer
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen enumeration and Integer
+  /// </summary>
   TEnumToIntegerConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -351,9 +351,9 @@ type
 
   {$REGION 'TIntegerToEnumConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen Integer and enumeration
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen Integer and enumeration
+  /// </summary>
   TIntegerToEnumConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -366,9 +366,9 @@ type
 
   {$REGION 'TEnumToStringConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen enumeration and string
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen enumeration and string
+  /// </summary>
   TEnumToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -381,9 +381,9 @@ type
 
   {$REGION 'TStringToEnumConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen string and enumeration
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen string and enumeration
+  /// </summary>
   TStringToEnumConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -396,9 +396,9 @@ type
 
   {$REGION 'TSetToStringConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen set and string
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen set and string
+  /// </summary>
   TSetToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -411,9 +411,9 @@ type
 
   {$REGION 'TStringToSetConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen string and enumeration
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen string and enumeration
+  /// </summary>
   TStringToSetConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -426,9 +426,9 @@ type
 
   {$REGION 'TFloatToStringConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen float and string
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen float and string
+  /// </summary>
   TFloatToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -441,9 +441,9 @@ type
 
   {$REGION 'TFloatToIntegerConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen float and Integer
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen float and Integer
+  /// </summary>
   TFloatToIntegerConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -456,9 +456,9 @@ type
 
   {$REGION 'TStringToFloatConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen string and float
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen string and float
+  /// </summary>
   TStringToFloatConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -472,9 +472,9 @@ type
   {$REGION 'TColorToStringConverter'}
 
 {$IFNDEF SPRING_DISABLE_GRAPHICS}
-  ///	<summary>
-  ///	  Provides conversion routine beetwen TColor and string
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen TColor and string
+  /// </summary>
   TColorToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -489,9 +489,9 @@ type
   {$REGION 'TStringToColorConverter'}
 
 {$IFNDEF SPRING_DISABLE_GRAPHICS}
-  ///	<summary>
-  ///	  Provides conversion routine beetwen string and TColor
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen string and TColor
+  /// </summary>
   TStringToColorConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -505,9 +505,9 @@ type
 
   {$REGION 'TCurrencyToStringConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen Currency and string
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen Currency and string
+  /// </summary>
   TCurrencyToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -520,9 +520,9 @@ type
 
   {$REGION 'TStringToCurrencyConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen string and Currency
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen string and Currency
+  /// </summary>
   TStringToCurrencyConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -535,9 +535,9 @@ type
 
   {$REGION 'TStringToDateTimeConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen string and TDateTime
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen string and TDateTime
+  /// </summary>
   TStringToDateTimeConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -550,9 +550,9 @@ type
 
   {$REGION 'TDateTimeToStringConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen TDateTime and string
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen TDateTime and string
+  /// </summary>
   TDateTimeToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -565,9 +565,9 @@ type
 
   {$REGION 'TObjectToStringConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen TObject and string
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen TObject and string
+  /// </summary>
   TObjectToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -580,13 +580,13 @@ type
 
   {$REGION 'TObjectToInterfaceConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen TObject and IInterface
-  ///	</summary>
-  ///	<remarks>
-  ///	  acc. to #82433 TValue.TryAsType(T) raised an AV because ConvClass2Intf
-  ///	  is wrong
-  ///	</remarks>
+  /// <summary>
+  ///   Provides conversion routine beetwen TObject and IInterface
+  /// </summary>
+  /// <remarks>
+  ///   acc. to #82433 TValue.TryAsType(T) raised an AV because ConvClass2Intf
+  ///   is wrong
+  /// </remarks>
   TObjectToInterfaceConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -599,9 +599,9 @@ type
 
   {$REGION 'TInterfaceToObjectConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen TObject and IInterface
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen TObject and IInterface
+  /// </summary>
   TInterfaceToObjectConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -614,9 +614,9 @@ type
 
   {$REGION 'TInterfaceToInterfaceConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen Interface and Interface
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen Interface and Interface
+  /// </summary>
   TInterfaceToInterfaceConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -629,9 +629,9 @@ type
 
   {$REGION 'TObjectToClassConverter'}
 
-  ///	<summary>
-  ///	  Provides conversion routine beetwen TObject and TClass
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen TObject and TClass
+  /// </summary>
   TObjectToClassConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -645,13 +645,13 @@ type
   {$REGION 'TStringToWStringConverter'}
 
 {$IFNDEF NEXTGEN}
-  ///	<summary>
-  ///	  Provides conversion routine beetwen UnicodeString and WideString
-  ///	</summary>
-  ///	<remarks>
-  ///	  acc. to #82487 Rtti.ConvStr2Str is wrong (when cast a unicode string to
-  ///	  WideString)
-  ///	</remarks>
+  /// <summary>
+  ///   Provides conversion routine beetwen UnicodeString and WideString
+  /// </summary>
+  /// <remarks>
+  ///   acc. to #82487 Rtti.ConvStr2Str is wrong (when cast a unicode string to
+  ///   WideString)
+  /// </remarks>
   TStringToWStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -666,9 +666,9 @@ type
   {$REGION 'TWStringToStringConverter'}
 
 {$IFNDEF NEXTGEN}
-  ///	<summary>
-  ///	  Provides conversion routine beetwen UnicodeString and WideString
-  ///	</summary>
+  /// <summary>
+  ///   Provides conversion routine beetwen UnicodeString and WideString
+  /// </summary>
   TWStringToStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -682,16 +682,16 @@ type
 
   {$REGION 'TValueConverterFactory'}
 
-  ///	<summary>
-  ///	  Factory class that brings to live converter which are registered within
-  ///	  global converter registry scope
-  ///	</summary>
+  /// <summary>
+  ///   Factory class that brings to live converter which are registered within
+  ///   global converter registry scope
+  /// </summary>
   TValueConverterFactory = class
   strict private
     type
-      ///	<summary>
-      ///	  TypeInfo, TypeKinds registry structure
-      ///	</summary>
+      /// <summary>
+      ///   TypeInfo, TypeKinds registry structure
+      /// </summary>
       TConvertedTypeInfo = record
         SourceTypeInfo: PTypeInfo;
         SourceTypeKinds: TTypeKinds;
@@ -1427,15 +1427,16 @@ end;
 function TInterfaceToInterfaceConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 
-  ///	<summary>
-  ///	  Uses this function to get an interface instance from a TValue.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <note type="warning">
-  ///	    Rtti bugs: QC #82433 if
-  ///	    value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification) then
-  ///	  </note>
-  ///	</remarks>
+  /// <summary>
+  ///   Uses this function to get an interface instance from a TValue.
+  /// </summary>
+  /// <remarks>
+  ///   <note type="warning">
+  ///     Rtti bugs: QC #82433 if
+  ///     value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification)
+  ///     then
+  ///   </note>
+  /// </remarks>
   function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
   var
     localInterface: IInterface;

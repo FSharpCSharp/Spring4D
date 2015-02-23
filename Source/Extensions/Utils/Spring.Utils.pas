@@ -24,10 +24,10 @@
 
 {$I Spring.inc}
 
-///	<summary>
-///	  This namespace provides many well-encapsulated utility classes and
-///	  routines about the environment and system.
-///	</summary>
+/// <summary>
+///   This namespace provides many well-encapsulated utility classes and
+///   routines about the environment and system.
+/// </summary>
 unit Spring.Utils;
 
 interface
@@ -71,11 +71,11 @@ type
 
   {$REGION 'TVersion'}
 
-  ///	<summary>
-  ///	  Represents a version number in the format of
-  ///	  "major.minor[.build[.revision]]", which is different from the delphi
-  ///	  style format "major.minor[.release[.build]]".
-  ///	</summary>
+  /// <summary>
+  ///   Represents a version number in the format of
+  ///   "major.minor[.build[.revision]]", which is different from the delphi
+  ///   style format "major.minor[.release[.build]]".
+  /// </summary>
   TVersion = record
   private
     const fCUndefined: Integer = -1;
@@ -119,33 +119,33 @@ type
 
   {$REGION 'TFileVersionInfo'}
 
-  ///	<summary>
-  ///	  Provides version information for a physical file on disk.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <para>
-  ///	    Use the <see cref="GetVersionInfo(string)">GetVersionInfo</see>method
-  ///	    of this class to get a FileVersionInfo containing information about a
-  ///	    file, then look at the properties for information about the file.
-  ///	    Call <see cref="ToString" /> to get a partial list of properties and
-  ///	    their values for this file.
-  ///	  </para>
-  ///	  <para>
-  ///	    The TFileVersionInfo properties are based on version resource
-  ///	    information built into the file. Version resources are often built
-  ///	    into binary files such as .exe or .dll files; text files do not have
-  ///	    version resource information.
-  ///	  </para>
-  ///	  <para>
-  ///	    Version resources are typically specified in a Win32 resource file,
-  ///	    or in assembly attributes. For example the <see cref="IsDebug" />prope
-  ///	    rty reflects theVS_FF_DEBUG flag value in the file's VS_FIXEDFILEINFO
-  ///	    block, which is built from the VERSIONINFO resource in a Win32
-  ///	    resource file. For more information about specifying version
-  ///	    resources in a Win32 resource file, see "About Resource Files" and
-  ///	    "VERSIONINFO Resource" in the Platform SDK.
-  ///	  </para>
-  ///	</remarks>
+  /// <summary>
+  ///   Provides version information for a physical file on disk.
+  /// </summary>
+  /// <remarks>
+  ///   <para>
+  ///     Use the <see cref="GetVersionInfo(string)">GetVersionInfo</see>
+  ///     method of this class to get a FileVersionInfo containing
+  ///     information about a file, then look at the properties for
+  ///     information about the file. Call <see cref="ToString" /> to get a
+  ///     partial list of properties and their values for this file.
+  ///   </para>
+  ///   <para>
+  ///     The TFileVersionInfo properties are based on version resource
+  ///     information built into the file. Version resources are often built
+  ///     into binary files such as .exe or .dll files; text files do not
+  ///     have version resource information.
+  ///   </para>
+  ///   <para>
+  ///     Version resources are typically specified in a Win32 resource file,
+  ///     or in assembly attributes. For example the <see cref="IsDebug" />
+  ///     prope rty reflects theVS_FF_DEBUG flag value in the file's
+  ///     VS_FIXEDFILEINFO block, which is built from the VERSIONINFO
+  ///     resource in a Win32 resource file. For more information about
+  ///     specifying version resources in a Win32 resource file, see "About
+  ///     Resource Files" and "VERSIONINFO Resource" in the Platform SDK.
+  ///   </para>
+  /// </remarks>
 {$IFDEF MSWINDOWS}
   TFileVersionInfo = record
   private
@@ -197,12 +197,12 @@ type
     constructor Create(const fileName: string);
     procedure LoadVersionResource(const resource: TFileVersionResource);
   public
-    ///	<summary>
-    ///	  Gets the file version info of the specified file.
-    ///	</summary>
-    ///	<exception cref="Spring|EFileNotFoundException">
-    ///	  Raised if the file doesn't exist.
-    ///	</exception>
+    /// <summary>
+    ///   Gets the file version info of the specified file.
+    /// </summary>
+    /// <exception cref="Spring|EFileNotFoundException">
+    ///   Raised if the file doesn't exist.
+    /// </exception>
     class function GetVersionInfo(const fileName: string): TFileVersionInfo; static;
     function ToString: string;
     property Exists: Boolean read fExists;
@@ -282,9 +282,9 @@ type
     etWebEdition
   );
 
-  ///	<summary>
-  ///	  Represents information about the operating system.
-  ///	</summary>
+  /// <summary>
+  ///   Represents information about the operating system.
+  /// </summary>
   TOperatingSystem = class sealed
   strict private
     fPlatformType: TOSPlatformType;
@@ -319,33 +319,30 @@ type
 
   {$REGION 'Special Folder Enumeration'}
 
-  ///	<summary>
-  ///	  Specifies enumerated constants used to retrieve directory paths to
-  ///	  system special folders.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <para>
-  ///	    The system special folders are folders such as
-  ///	    <b>Program
-  ///	          Files</b>, <b>Programs</b>, <b>System</b>, or <b>Startup</b>,
-  ///	    which contain common information. Special folders are set by default
-  ///	    by the system, or explicitly by the user, when installing a version
-  ///	    of Windows.
-  ///	  </para>
-  ///	  <para>
-  ///	    The
-  ///	    <see cref="TEnvironment.GetFolderPath(TSpecialFolder)">GetFolderPath</see>
-  ///	    method returns the locations associated with this enumeration. The
-  ///	    locations of these folders can have different values on different
-  ///	    operating systems, the user can change some of the locations, and the
-  ///	    locations are localized.
-  ///	  </para>
-  ///	  <para>
-  ///	    For more information about special folders, see the
-  ///	    <see href="http://go.microsoft.com/fwlink/?LinkId=116664">CSIDL</see>v
-  ///	    alues topic.
-  ///	  </para>
-  ///	</remarks>
+  /// <summary>
+  ///   Specifies enumerated constants used to retrieve directory paths to
+  ///   system special folders.
+  /// </summary>
+  /// <remarks>
+  ///   <para>
+  ///     The system special folders are folders such as <b>Program Files</b>
+  ///     , <b>Programs</b>, <b>System</b>, or <b>Startup</b>, which contain
+  ///     common information. Special folders are set by default by the
+  ///     system, or explicitly by the user, when installing a version of
+  ///     Windows.
+  ///   </para>
+  ///   <para>
+  ///     The <see cref="TEnvironment.GetFolderPath(TSpecialFolder)">
+  ///     GetFolderPath</see> method returns the locations associated with
+  ///     this enumeration. The locations of these folders can have different
+  ///     values on different operating systems, the user can change some of
+  ///     the locations, and the locations are localized.
+  ///   </para>
+  ///   <para>
+  ///     For more information about special folders, see the <see href="http://go.microsoft.com/fwlink/?LinkId=116664">
+  ///     CSIDL</see>v alues topic.
+  ///   </para>
+  /// </remarks>
 {$IFDEF MSWINDOWS}
   TSpecialFolder = (
     sfDesktop,                // <desktop>
@@ -420,69 +417,69 @@ type
   {$REGION 'TEnvironment'}
 
 {$IFDEF MSWINDOWS}
-  ///	<summary>
-  ///	  Specifies the location where an environment variable is stored or
-  ///	  retrieved in a set or get operation.
-  ///	</summary>
+  /// <summary>
+  ///   Specifies the location where an environment variable is stored or
+  ///   retrieved in a set or get operation.
+  /// </summary>
   TEnvironmentVariableTarget = (
-    ///	<summary>
-    ///	  The environment variable is stored or retrieved from the environment
-    ///	  block associated with the current process.
-    ///	</summary>
+    /// <summary>
+    ///   The environment variable is stored or retrieved from the environment
+    ///   block associated with the current process.
+    /// </summary>
     evtProcess,
 
-    ///	<summary>
-    ///	  The environment variable is stored or retrieved from the
-    ///	  HKEY_CURRENT_USER\Environment key in the Windows operating system
-    ///	  registry.
-    ///	</summary>
+    /// <summary>
+    ///   The environment variable is stored or retrieved from the
+    ///   HKEY_CURRENT_USER\Environment key in the Windows operating system
+    ///   registry.
+    /// </summary>
     evtUser,
 
-    ///	<summary>
-    ///	  The environment variable is stored or retrieved from the
-    ///	  HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session
-    ///	  Manager\Environment key in the Windows operating system registry.
-    ///	</summary>
+    /// <summary>
+    ///   The environment variable is stored or retrieved from the
+    ///   HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session
+    ///   Manager\Environment key in the Windows operating system registry.
+    /// </summary>
     evtMachine
   );
 {$ENDIF MSWINDOWS}
 
 {$IFDEF MSWINDOWS}
-  ///	<summary>
-  ///	  Identifies the processor and bits-per-word of the platform targeted by
-  ///	  an executable.
-  ///	</summary>
+  /// <summary>
+  ///   Identifies the processor and bits-per-word of the platform targeted by
+  ///   an executable.
+  /// </summary>
   TProcessorArchitecture = (
-    ///	<summary>
-    ///	  Unknown processor
-    ///	</summary>
+    /// <summary>
+    ///   Unknown processor
+    /// </summary>
     paUnknown,
 
-    ///	<summary>
-    ///	  Intel x86 and compatible microprocessors.
-    ///	</summary>
+    /// <summary>
+    ///   Intel x86 and compatible microprocessors.
+    /// </summary>
     paX86,
 
-    ///	<summary>
-    ///	  64-bit Intel and compatible microprocessors.
-    ///	</summary>
+    /// <summary>
+    ///   64-bit Intel and compatible microprocessors.
+    /// </summary>
     paIA64,
 
-    ///	<summary>
-    ///	  64-bit AMD microprocessors.
-    ///	</summary>
+    /// <summary>
+    ///   64-bit AMD microprocessors.
+    /// </summary>
     paAmd64
   );
 {$ENDIF MSWINDOWS}
 
-  ///	<summary>
-  ///	  Provides information about, and means to manipulate, the current
-  ///	  environment.
-  ///	</summary>
-  ///	<remarks>
-  ///	  Use the TEnvironment structure to retrieve information such as
-  ///	  command-line arguments, environment variable settings.
-  ///	</remarks>
+  /// <summary>
+  ///   Provides information about, and means to manipulate, the current
+  ///   environment.
+  /// </summary>
+  /// <remarks>
+  ///   Use the TEnvironment structure to retrieve information such as
+  ///   command-line arguments, environment variable settings.
+  /// </remarks>
   TEnvironment = record
   strict private
     class var
@@ -531,93 +528,93 @@ type
 {$ENDIF MSWINDOWS}
     class procedure GetProcessEnvironmentVariables(const list: TStrings); static;
   public
-    ///	<summary>
-    ///	  Returns a string array containing the command-line arguments for the
-    ///	  current process.
-    ///	</summary>
+    /// <summary>
+    ///   Returns a string array containing the command-line arguments for the
+    ///   current process.
+    /// </summary>
     class function GetCommandLineArgs: TStringDynArray; overload; static;
 
     // TODO: Consider using Extract*** insteading of Get*** for the methods with a
     // TString parameter.
 
-    ///	<summary>
-    ///	  Returns a string array containing the command-line arguments for the
-    ///	  current process.
-    ///	</summary>
+    /// <summary>
+    ///   Returns a string array containing the command-line arguments for the
+    ///   current process.
+    /// </summary>
     class procedure GetCommandLineArgs(list: TStrings); overload; static;
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Returns an array of string containing the names of the logical drives
-    ///	  on the current computer.
-    ///	</summary>
+    /// <summary>
+    ///   Returns an array of string containing the names of the logical drives
+    ///   on the current computer.
+    /// </summary>
     class function GetLogicalDrives: TStringDynArray; overload; static;
 
     class procedure GetLogicalDrives(list: TStrings); overload; static;
 {$ENDIF MSWINDOWS}
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Gets the path to the system special folder that is identified by the
-    ///	  specified enumeration.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the path to the system special folder that is identified by the
+    ///   specified enumeration.
+    /// </summary>
     class function GetFolderPath(const folder: TSpecialFolder): string; static;
 {$ENDIF MSWINDOWS}
 
-    ///	<summary>
-    ///	  Retrieves the value of an environment variable from the current
-    ///	  process.
-    ///	</summary>
+    /// <summary>
+    ///   Retrieves the value of an environment variable from the current
+    ///   process.
+    /// </summary>
     class function GetEnvironmentVariable(const variable: string): string; overload; static;
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Retrieves the value of an environment variable from the current
-    ///	  process or from the Windows operating system registry key for the
-    ///	  current user or local machine.
-    ///	</summary>
+    /// <summary>
+    ///   Retrieves the value of an environment variable from the current
+    ///   process or from the Windows operating system registry key for the
+    ///   current user or local machine.
+    /// </summary>
     class function GetEnvironmentVariable(const variable: string;
       target: TEnvironmentVariableTarget): string; overload; static;
 {$ENDIF MSWINDOWS}
 
-    ///	<summary>
-    ///	  Retrieves all environment variable names and their values from the
-    ///	  current process.
-    ///	</summary>
+    /// <summary>
+    ///   Retrieves all environment variable names and their values from the
+    ///   current process.
+    /// </summary>
     class procedure GetEnvironmentVariables(list: TStrings); overload; static;
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Retrieves the value of an environment variable from the current
-    ///	  process or from the Windows operating system registry key for the
-    ///	  current user or local machine.
-    ///	</summary>
+    /// <summary>
+    ///   Retrieves the value of an environment variable from the current
+    ///   process or from the Windows operating system registry key for the
+    ///   current user or local machine.
+    /// </summary>
     class procedure GetEnvironmentVariables(list: TStrings;
       target: TEnvironmentVariableTarget); overload; static;
 {$ENDIF MSWINDOWS}
 
-    ///	<summary>
-    ///	  Creates, modifies, or deletes an environment variable stored in the
-    ///	  current process.
-    ///	</summary>
+    /// <summary>
+    ///   Creates, modifies, or deletes an environment variable stored in the
+    ///   current process.
+    /// </summary>
     class procedure SetEnvironmentVariable(const variable, value: string); overload; static;
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Creates, modifies, or deletes an environment variable stored in the
-    ///	  current process or in the Windows operating system registry key
-    ///	  reserved for the current user or local machine.
-    ///	</summary>
+    /// <summary>
+    ///   Creates, modifies, or deletes an environment variable stored in the
+    ///   current process or in the Windows operating system registry key
+    ///   reserved for the current user or local machine.
+    /// </summary>
     class procedure SetEnvironmentVariable(const variable, value: string;
       target: TEnvironmentVariableTarget); overload; static;
 {$ENDIF MSWINDOWS}
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Replaces the name of each environment variable embedded in the
-    ///	  specified string with the string equivalent of the value of the
-    ///	  variable, then returns the resulting string.
-    ///	</summary>
+    /// <summary>
+    ///   Replaces the name of each environment variable embedded in the
+    ///   specified string with the string equivalent of the value of the
+    ///   variable, then returns the resulting string.
+    /// </summary>
     class function ExpandEnvironmentVariables(const variable: string): string; static; {TODO -o##jwp -cEnhance : Implement this in a cross platform way. }
 {$ENDIF MSWINDOWS}
 
@@ -632,16 +629,16 @@ type
 {$ENDIF MSWINDOWS}
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Gets the command line for this process.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the command line for this process.
+    /// </summary>
     class property CommandLine: string read GetCommandLine;
 {$ENDIF MSWINDOWS}
 
-    ///	<summary>
-    ///	  Gets or sets the fully qualified path of the current working
-    ///	  directory.
-    ///	</summary>
+    /// <summary>
+    ///   Gets or sets the fully qualified path of the current working
+    ///   directory.
+    /// </summary>
     class property CurrentDirectory: string read GetCurrentDirectory write SetCurrentDirectory;
 
 {$IFDEF MSWINDOWS}
@@ -649,29 +646,29 @@ type
 {$ENDIF MSWINDOWS}
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Gets the NetBIOS name of this local computer.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the NetBIOS name of this local computer.
+    /// </summary>
     class property MachineName: string read GetMachineName;
 {$ENDIF MSWINDOWS}
 
-    ///	<summary>
-    ///	  Gets the newline string defined for this environment.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the newline string defined for this environment.
+    /// </summary>
     class property NewLine: string read GetNewLine;
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Gets a <see cref="TOperatingSystem" /> object that contains the
-    ///	  current platform identifier and version number.
-    ///	</summary>
+    /// <summary>
+    ///   Gets a <see cref="TOperatingSystem" /> object that contains the
+    ///   current platform identifier and version number.
+    /// </summary>
     class property OperatingSystem: TOperatingSystem read fOperatingSystem;
 {$ENDIF MSWINDOWS}
 
 {$IFDEF MSWINDOWS}
-    ///	<summary>
-    ///	  Gets the number of processors on the current machine.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the number of processors on the current machine.
+    /// </summary>
     class property ProcessorCount: Integer read GetProcessorCount;
 
     class property ProcessorArchitecture: TProcessorArchitecture read GetProcessorArchitecture;
@@ -680,38 +677,38 @@ type
 
     class property RegisteredOwner: string read GetRegisteredOwner;
 
-    ///	<summary>
-    ///	  Gets the fully qualified path of the system directory.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the fully qualified path of the system directory.
+    /// </summary>
     class property SystemDirectory: string read GetSystemDirectory;
 
-    ///	<summary>
-    ///	  Gets the number of milliseconds elapsed since the system started.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the number of milliseconds elapsed since the system started.
+    /// </summary>
     class property TickCount: Cardinal read GetTickCount;
 
-    ///	<summary>
-    ///	  Gets the network domain name associated with the current user.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the network domain name associated with the current user.
+    /// </summary>
     class property UserDomainName: string read GetUserDomainName;
 
-    ///	<summary>
-    ///	  Gets the user name of the person who is currently logged on to the
-    ///	  Windows operating system.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the user name of the person who is currently logged on to the
+    ///   Windows operating system.
+    /// </summary>
     class property UserName: string read GetUserName;
 
-    ///	<summary>
-    ///	  Gets a value indicating whether the current process is running in
-    ///	  user interactive mode.
-    ///	</summary>
+    /// <summary>
+    ///   Gets a value indicating whether the current process is running in
+    ///   user interactive mode.
+    /// </summary>
     class property UserInteractive: Boolean read GetUserInteractive;
 {$ENDIF MSWINDOWS}
   end;
 
-  ///	<summary>
-  ///	  Represents a type alias of TEnvironment class.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a type alias of TEnvironment class.
+  /// </summary>
   Environment = TEnvironment;
 
   {$ENDREGION}
@@ -719,9 +716,9 @@ type
 
   {$REGION 'TStringMatchers'}
 
-  ///	<summary>
-  ///	  Provides static methods to create various string predicates.
-  ///	</summary>
+  /// <summary>
+  ///   Provides static methods to create various string predicates.
+  /// </summary>
   TStringMatchers = class
   public
     class function ContainsText(const s: string): TPredicate<string>;
@@ -738,26 +735,25 @@ type
 
   {$REGION 'Callback'}
 
-  ///	<summary>
-  ///	  Defines an anonymous function which returns a callback pointer.
-  ///	</summary>
+  /// <summary>
+  ///   Defines an anonymous function which returns a callback pointer.
+  /// </summary>
   TCallbackFunc = TFunc<Pointer>;
 
-  ///	<summary>
-  ///	  Adapts class instance (object) method as standard callback function.
-  ///	</summary>
-  ///	<remarks>
-  ///	  Both the object method and the callback function need to be declared as
-  ///	  stdcall.
-  ///	</remarks>
-  ///	<example>
-  ///	  This sample shows how to call CreateCallback method.
-  ///	  <code>
-  ///	private
-  ///	  fCallback: TCallbackFunc;
-  ///	//...
-  ///	fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);</code>
-  ///	</example>
+  /// <summary>
+  ///   Adapts class instance (object) method as standard callback function.
+  /// </summary>
+  /// <remarks>
+  ///   Both the object method and the callback function need to be declared as
+  ///   stdcall.
+  /// </remarks>
+  /// <example>
+  ///   This sample shows how to call CreateCallback method.
+  ///   <code>private
+  ///   fCallback: TCallbackFunc;
+  /// //...
+  /// fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);</code>
+  /// </example>
   TCallback = class(TInterfacedObject, TCallbackFunc)
   private
     fInstance: Pointer;
@@ -769,10 +765,10 @@ type
 
   {$ENDREGION}
 
-  ///	<summary>
-  ///	  Provides an abstract class base of TThread that implements the
-  ///	  IInterface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides an abstract class base of TThread that implements the
+  ///   IInterface.
+  /// </summary>
   TInterfacedThread = class(TThread, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
@@ -789,84 +785,86 @@ type
 
   {$REGION 'Routines'}
 
-  ///	<summary>
-  ///	  Returns the path of the application.
-  ///	</summary>
+  /// <summary>
+  ///   Returns the path of the application.
+  /// </summary>
   function ApplicationPath: string;
 
 {$IFDEF MSWINDOWS}
-  ///	<summary>
-  ///	  Returns the version number of the application.
-  ///	</summary>
+  /// <summary>
+  ///   Returns the version number of the application.
+  /// </summary>
   function ApplicationVersion: TVersion;
 
-  ///	<summary>
-  ///	  Returns the version information of the application.
-  ///	</summary>
+  /// <summary>
+  ///   Returns the version information of the application.
+  /// </summary>
   function ApplicationVersionString: string;
 {$ENDIF MSWINDOWS}
 
-  ///	<summary>
-  ///	  Returns the last system error message.
-  ///	</summary>
+  /// <summary>
+  ///   Returns the last system error message.
+  /// </summary>
   function GetLastErrorMessage: string;
 
-  ///	<summary>
-  ///	  Creates a standard callback function which was adapted from a instance
-  ///	  method.
-  ///	</summary>
-  ///	<param name="obj">
-  ///	  an instance
-  ///	</param>
-  ///	<param name="methodAddress">
-  ///	  address of an instance method
-  ///	</param>
+  /// <summary>
+  ///   Creates a standard callback function which was adapted from a instance
+  ///   method.
+  /// </summary>
+  /// <param name="obj">
+  ///   an instance
+  /// </param>
+  /// <param name="methodAddress">
+  ///   address of an instance method
+  /// </param>
   function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 
 {$IFDEF MSWINDOWS}
-  ///	<summary>
-  ///	  Converts a Delphi TDatetime value to a Windows TFiletime value.
-  ///	</summary>
+  /// <summary>
+  ///   Converts a Delphi TDatetime value to a Windows TFiletime value.
+  /// </summary>
   function ConvertDateTimeToFileTime(const datetime: TDateTime; const useLocalTimeZone: Boolean): TFileTime; overload;
 
-  ///	<summary>
-  ///	  Converts a Windows TFiletime value to a Delphi TDatetime value.  Not implemented on Mac as the Delphi POSIX version is time_t based, but only contains a date portion.
-  ///	</summary>
+  /// <summary>
+  ///   Converts a Windows TFiletime value to a Delphi TDatetime value. Not
+  ///   implemented on Mac as the Delphi POSIX version is time_t based, but
+  ///   only contains a date portion.
+  /// </summary>
   function ConvertFileTimeToDateTime(const fileTime: TFileTime; const useLocalTimeZone: Boolean): TDateTime; overload;
 {$ENDIF MSWINDOWS}
 
-  ///	<summary>
-  ///	  Executes a method call within the main thread.
-  ///	</summary>
-  ///	<param name="threadProc">
-  ///	  An anonymous method that will be executed.
-  ///	</param>
-  ///	<exception cref="EArgumentNullException">
-  ///	  Raised if <paramref name="threadProc" /> was not assigned.
-  ///	</exception>
+  /// <summary>
+  ///   Executes a method call within the main thread.
+  /// </summary>
+  /// <param name="threadProc">
+  ///   An anonymous method that will be executed.
+  /// </param>
+  /// <exception cref="EArgumentNullException">
+  ///   Raised if <paramref name="threadProc" /> was not assigned.
+  /// </exception>
   procedure Synchronize(threadProc: TThreadProcedure);
 
-  ///	<summary>
-  ///	  Asynchronously executes a method call within the main thread.
-  ///	</summary>
-  ///	<param name="threadProc">
-  ///	  An anonymous method that will be executed.
-  ///	</param>
-  ///	<exception cref="EArgumentNullException">
-  ///	  Raised if threadProc was not assigned.
-  ///	</exception>
+  /// <summary>
+  ///   Asynchronously executes a method call within the main thread.
+  /// </summary>
+  /// <param name="threadProc">
+  ///   An anonymous method that will be executed.
+  /// </param>
+  /// <exception cref="EArgumentNullException">
+  ///   Raised if threadProc was not assigned.
+  /// </exception>
   procedure Queue(threadProc: TThreadProcedure);
 
-  ///	<summary>
-  ///	  Try getting property information of an object.
-  ///	</summary>
-  ///	<returns>
-  ///	  Returns true if the instance has the specified property and the
-  ///	  property has property information.
-  ///	</returns>
-  ///	<exception cref="EArgumentNullException">
-  ///	  if instance is nil.
-  ///	</exception>
+  /// <summary>
+  ///   Try getting property information of an object.
+  /// </summary>
+  /// <returns>
+  ///   Returns true if the instance has the specified property and the
+  ///   property has property information.
+  /// </returns>
+  /// <exception cref="EArgumentNullException">
+  ///   if instance is nil.
+  /// </exception>
   function TryGetPropInfo(instance: TObject; const propertyName: string;
     out propInfo: PPropInfo): Boolean;
 
@@ -874,79 +872,77 @@ type
   // Due to the QC #80304, the following methods (with anonymous methods)
   // must not be inlined.
 
-  ///	<summary>
-  ///	  Obtains a mutual-exclusion lock for the given object, executes a
-  ///	  procedure and then releases the lock.
-  ///	</summary>
-  ///	<param name="obj">
-  ///	  the sync root.
-  ///	</param>
-  ///	<param name="proc">
-  ///	  the procedure that will be invoked.
-  ///	</param>
-  ///	<exception cref="Spring|EArgumentNullException">
-  ///	  Raised if <paramref name="obj" /> is nil or <paramref name="proc" /> is
-  ///	  unassigned.
-  ///	</exception>
+  /// <summary>
+  ///   Obtains a mutual-exclusion lock for the given object, executes a
+  ///   procedure and then releases the lock.
+  /// </summary>
+  /// <param name="obj">
+  ///   the sync root.
+  /// </param>
+  /// <param name="proc">
+  ///   the procedure that will be invoked.
+  /// </param>
+  /// <exception cref="Spring|EArgumentNullException">
+  ///   Raised if <paramref name="obj" /> is nil or <paramref name="proc" /> is
+  ///   unassigned.
+  /// </exception>
   procedure Lock(obj: TObject; const proc: TProc); overload; // inline;
   procedure Lock(const intf: IInterface; const proc: TProc); overload; // inline;
 
-  ///	<summary>
-  ///	  Updates an instance of <see cref="Classes|TStrings" /> by calling its
-  ///	  BeginUpdate and EndUpdate.
-  ///	</summary>
-  ///	<param name="strings">
-  ///	  an instance of TStrings.
-  ///	</param>
-  ///	<exception cref="EArgumentNullException">
-  ///	  Raised if <paramref name="strings" /> is nil or <paramref name="proc" />
-  ///	  is not assigned.
-  ///	</exception>
+  /// <summary>
+  ///   Updates an instance of <see cref="Classes|TStrings" /> by calling its
+  ///   BeginUpdate and EndUpdate.
+  /// </summary>
+  /// <param name="strings">
+  ///   an instance of TStrings.
+  /// </param>
+  /// <exception cref="EArgumentNullException">
+  ///   Raised if <paramref name="strings" /> is nil or <paramref name="proc" />
+  ///    is not assigned.
+  /// </exception>
   procedure UpdateStrings(const strings: TStrings; const proc: TProc); // inline;
 
 {$IFDEF MSWINDOWS}
-  ///	<summary>
-  ///	  Returns True if the Control key is pressed, otherwise false.
-  ///	</summary>
+  /// <summary>
+  ///   Returns True if the Control key is pressed, otherwise false.
+  /// </summary>
   function IsCtrlPressed: Boolean;
 
-  ///	<summary>
-  ///	  Returns True if the Shift key is pressed, otherwise false.
-  ///	</summary>
+  /// <summary>
+  ///   Returns True if the Shift key is pressed, otherwise false.
+  /// </summary>
   function IsShiftPressed: Boolean;
 
-  ///	<summary>
-  ///	  Returns True if the Alt key is pressed, otherwise false.
-  ///	</summary>
+  /// <summary>
+  ///   Returns True if the Alt key is pressed, otherwise false.
+  /// </summary>
   function IsAltPressed: Boolean;
 {$ENDIF MSWINDOWS}
 
   {$REGION 'XML Documentation'}
   {$ENDREGION}
 
-  ///	<summary>
-  ///	  Determines whether a specified file exists. An
-  ///	  <see cref="EFileNotFoundException" /> exception will be raised when not
-  ///	  found.
-  ///	</summary>
-  ///	<param name="fileName">
-  ///	  the file name.
-  ///	</param>
-  ///	<exception cref="EFileNotFoundException">
-  ///	  Raised if the target file does not exist.
-  ///	</exception>
-  ///	<seealso cref="CheckDirectoryExists(string)" />
+  /// <summary>
+  ///   Determines whether a specified file exists. An <see cref="EFileNotFoundException" />
+  ///    exception will be raised when not found.
+  /// </summary>
+  /// <param name="fileName">
+  ///   the file name.
+  /// </param>
+  /// <exception cref="EFileNotFoundException">
+  ///   Raised if the target file does not exist.
+  /// </exception>
+  /// <seealso cref="CheckDirectoryExists(string)" />
   procedure CheckFileExists(const fileName: string);
 
-  ///	<summary>
-  ///	  Determines whether a specified directory exists. An
-  ///	  <see cref="EDirectoryNotFoundException" /> exception will be raised
-  ///	  when not found.
-  ///	</summary>
-  ///	<exception cref="EDirectoryNotFoundException">
-  ///	  Raised if the directory doesn't exist.
-  ///	</exception>
-  ///	<seealso cref="CheckFileExists(string)" />
+  /// <summary>
+  ///   Determines whether a specified directory exists. An <see cref="EDirectoryNotFoundException" />
+  ///    exception will be raised when not found.
+  /// </summary>
+  /// <exception cref="EDirectoryNotFoundException">
+  ///   Raised if the directory doesn't exist.
+  /// </exception>
+  /// <seealso cref="CheckFileExists(string)" />
   procedure CheckDirectoryExists(const directory: string);
 
 
@@ -956,45 +952,45 @@ type
   {$REGION 'Constants'}
 
 const
-  ///	<summary>
-  ///	  Represents bytes of one KB.
-  ///	</summary>
+  /// <summary>
+  ///   Represents bytes of one KB.
+  /// </summary>
   COneKB: Int64 = 1024;            // 1KB = 1024 bytes
 
 
-  ///	<summary>
-  ///	  Represents bytes of one MB.
-  ///	</summary>
+  /// <summary>
+  ///   Represents bytes of one MB.
+  /// </summary>
   COneMB: Int64 = 1048576;         // 1MB = 1024 KB
 
-  ///	<summary>
-  ///	  Represents bytes of one GB.
-  ///	</summary>
+  /// <summary>
+  ///   Represents bytes of one GB.
+  /// </summary>
   COneGB: Int64 = 1073741824;      // 1GB = 1024 MB
 
-  ///	<summary>
-  ///	  Represents bytes of one TB.
-  ///	</summary>
+  /// <summary>
+  ///   Represents bytes of one TB.
+  /// </summary>
   COneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
 
-  ///	<summary>
-  ///	  Represents bytes of one KB.
-  ///	</summary>
+  /// <summary>
+  ///   Represents bytes of one KB.
+  /// </summary>
   OneKB: Int64 = 1024 deprecated 'Use COneKB instead.';
 
-  ///	<summary>
-  ///	  Represents bytes of one MB.
-  ///	</summary>
+  /// <summary>
+  ///   Represents bytes of one MB.
+  /// </summary>
   OneMB: Int64 = 1048576 deprecated 'Use COneMB instead.';
 
-  ///	<summary>
-  ///	  Represents bytes of one GB.
-  ///	</summary>
+  /// <summary>
+  ///   Represents bytes of one GB.
+  /// </summary>
   OneGB: Int64 = 1073741824 deprecated 'Use COneGB instead.';
 
-  ///	<summary>
-  ///	  Represents bytes of one TB.
-  ///	</summary>
+  /// <summary>
+  ///   Represents bytes of one TB.
+  /// </summary>
   OneTB: Int64 = 1099511627776 deprecated 'Use COneTB instead.';
 
 {$IFDEF MSWINDOWS}
@@ -1253,7 +1249,7 @@ begin
 end;
 
 /// <remarks>
-/// The virtual code of ALT is VK_MENU For history reasons.
+///   The virtual code of ALT is VK_MENU For history reasons.
 /// </remarks>
 function IsAltPressed: Boolean;
 begin
@@ -2432,10 +2428,10 @@ type
 {  jmp   MethodAddr          }
 {----------------------------}
 
-/// <author>
-/// savetime
-/// </author>
-/// <seealso>http://savetime.delphibbs.com</seealso>
+/// <author>savetime</author>
+/// <seealso>
+///   http://savetime.delphibbs.com
+/// </seealso>
 constructor TCallback.Create(objectAddress: TObject; methodAddress: Pointer);
 const
   Instruction: TInstruction = (

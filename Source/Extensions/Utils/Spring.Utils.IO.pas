@@ -53,65 +53,64 @@ uses
 
 type
 {$IFDEF MSWINDOWS}
-  ///	<summary>
-  ///	  Drive Type Enumeration
-  ///	</summary>
+  /// <summary>
+  ///   Drive Type Enumeration
+  /// </summary>
   TDriveType = (
-    ///	<summary>
-    ///	  The type of drive is unknown.
-    ///	</summary>
+    /// <summary>
+    ///   The type of drive is unknown.
+    /// </summary>
     dtUnknown,
 
-    ///	<summary>
-    ///	  The drive does not have a root directory.
-    ///	</summary>
+    /// <summary>
+    ///   The drive does not have a root directory.
+    /// </summary>
     dtNoRootDirectory,
 
-    ///	<summary>
-    ///	  The drive is a removable storage device, such as a floppy disk drive or a
-    ///	  USB flash drive.
-    ///	</summary>
+    /// <summary>
+    ///   The drive is a removable storage device, such as a floppy disk drive
+    ///   or a USB flash drive.
+    /// </summary>
     dtRemovable,
 
-    ///	<summary>
-    ///	  The drive is a fixed disk.
-    ///	</summary>
+    /// <summary>
+    ///   The drive is a fixed disk.
+    /// </summary>
     dtFixed,
 
-    ///	<summary>
-    ///	  The drive is a network drive.
-    ///	</summary>
+    /// <summary>
+    ///   The drive is a network drive.
+    /// </summary>
     dtNetwork,
 
-    ///	<summary>
-    ///	  The drive is an optical disc device, such as a CD or DVD-ROM.
-    ///	</summary>
+    /// <summary>
+    ///   The drive is an optical disc device, such as a CD or DVD-ROM.
+    /// </summary>
     dtCDRom,
 
-    ///	<summary>
-    ///	  The drive is a RAM disk.
-    ///	</summary>
+    /// <summary>
+    ///   The drive is a RAM disk.
+    /// </summary>
     dtRam
   );
 
-  ///	<summary>
-  ///	  Provides access to information on a drive.
-  ///	</summary>
-  ///	<remarks>
-  ///	  Use the static <see cref="Spring.Utils.IO|TDriveInfo.GetDrives" />method
-  ///	   to retrieve all drives of the computer.
-  ///	  <note type="caller">
-  ///	    Caller must use the
-  ///	    <see cref="Spring.Utils.IO|TDriveInfo.IsReady">IsReady</see> property
-  ///	    to check whether the drive is ready before accessing other members.
-  ///	    Otherwise, an <see cref="Spring|EIOException" /> exception will be
-  ///	    raised if it is not ready.
-  ///	  </note>
-  ///	</remarks>
-  ///	<threadsafety static="true" instance="false" />
-  ///	<seealso href="http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">
-  ///	  System.IO.DriveInfo (.Net Framework)
-  ///	</seealso>
+  /// <summary>
+  ///   Provides access to information on a drive.
+  /// </summary>
+  /// <remarks>
+  ///   Use the static <see cref="Spring.Utils.IO|TDriveInfo.GetDrives" />
+  ///   method to retrieve all drives of the computer.
+  ///   <note type="caller">
+  ///     Caller must use the <see cref="Spring.Utils.IO|TDriveInfo.IsReady">
+  ///     IsReady</see> property to check whether the drive is ready before
+  ///     accessing other members. Otherwise, an <see cref="Spring|EIOException" />
+  ///      exception will be raised if it is not ready.
+  ///   </note>
+  /// </remarks>
+  /// <threadsafety static="true" instance="false" />
+  /// <seealso href="http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">
+  ///   System.IO.DriveInfo (.Net Framework)
+  /// </seealso>
   TDriveInfo = record
   strict private
     fDriveName: string;
@@ -139,72 +138,72 @@ type
   public
     constructor Create(const driveName: string);
 
-    ///	<summary>
-    ///	  Retrieves the drive names of all logical drives on a computer.
-    ///	</summary>
+    /// <summary>
+    ///   Retrieves the drive names of all logical drives on a computer.
+    /// </summary>
     class function GetDrives: TArray<TDriveInfo>; static;
 
-    ///	<summary>
-    ///	  Checks whether a drive is ready.
-    ///	</summary>
-    ///	<exception cref="EIOException">
-    ///	  Raised if a drive is not ready.
-    ///	</exception>
+    /// <summary>
+    ///   Checks whether a drive is ready.
+    /// </summary>
+    /// <exception cref="EIOException">
+    ///   Raised if a drive is not ready.
+    /// </exception>
     procedure CheckIsReady;
 
-    ///	<summary>
-    ///	  Refreshes the information of a drive.
-    ///	</summary>
+    /// <summary>
+    ///   Refreshes the information of a drive.
+    /// </summary>
     procedure Refresh;
 
-    ///	<summary>
-    ///	  Gets the amount of available free space on a drive.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the amount of available free space on a drive.
+    /// </summary>
     property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
 
-    ///	<summary>
-    ///	  Gets the name of the file system, such as NTFS or FAT32.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the name of the file system, such as NTFS or FAT32.
+    /// </summary>
     property DriveFormat: string read GetDriveFormat;
 
-    ///	<summary>
-    ///	  Gets the drive type.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the drive type.
+    /// </summary>
     property DriveType: TDriveType read GetDriveType;
 
-    ///	<summary>
-    ///	  Gets the drive type.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the drive type.
+    /// </summary>
     property DriveTypeString: string read GetDriveTypeString;
 
-    ///	<summary>
-    ///	  Gets a value indicating whether a drive is ready.
-    ///	</summary>
+    /// <summary>
+    ///   Gets a value indicating whether a drive is ready.
+    /// </summary>
     property IsReady: Boolean read GetIsReady;
 
-    ///	<summary>
-    ///	  Gets the name of a drive.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the name of a drive.
+    /// </summary>
     property Name: string read fDriveName;
 
-    ///	<summary>
-    ///	  Gets the root directory of a drive.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the root directory of a drive.
+    /// </summary>
     property RootDirectory: string read fRootDirectory;
 
-    ///	<summary>
-    ///	  Gets the total amount of free space available on a drive.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the total amount of free space available on a drive.
+    /// </summary>
     property TotalFreeSpace: Int64 read GetTotalFreeSpace;
 
-    ///	<summary>
-    ///	  Gets the total size of storage space on a drive.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the total size of storage space on a drive.
+    /// </summary>
     property TotalSize: Int64 read GetTotalSize;
 
-    ///	<summary>
-    ///	  Gets or sets the volume label of a drive.
-    ///	</summary>
+    /// <summary>
+    ///   Gets or sets the volume label of a drive.
+    /// </summary>
     property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
   end;
 {$ENDIF MSWINDOWS}
@@ -268,9 +267,9 @@ type
 
   PFileSystemEntry = ^TFileSystemEntry;
 
-  ///	<summary>
-  ///	  Represents a file system entry.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a file system entry.
+  /// </summary>
   TFileSystemEntry = record
   private
     type
@@ -309,9 +308,9 @@ type
     constructor Create(const location: string; const data: TWin32FindData); overload;
     constructor Create(const location: string; const searchRec: TSearchRec); overload;
 
-    ///	<summary>
-    ///	  Refreshes the state of the entry.
-    ///	</summary>
+    /// <summary>
+    ///   Refreshes the state of the entry.
+    /// </summary>
     procedure Refresh;
     function GetDirectories: IEnumerable<TFileSystemEntry>; overload;
     function GetDirectories(const searchPattern: string): IEnumerable<TFileSystemEntry>; overload;
@@ -323,35 +322,35 @@ type
     function GetEntries(const searchPattern: string): IEnumerable<TFileSystemEntry>; overload;
     function GetEntries(const searchPattern: string; includeSubfolders: Boolean): IEnumerable<TFileSystemEntry>; overload;
 
-    ///	<summary>
-    ///	  Gets the name of the file or directory.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the name of the file or directory.
+    /// </summary>
     property Name: string read fName;
 
-    ///	<summary>
-    ///	  Gets the location, which is the full name of the parent directory, of
-    ///	  the file or directory.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the location, which is the full name of the parent directory, of
+    ///   the file or directory.
+    /// </summary>
     property Location: string read fLocation;
 
-    ///	<summary>
-    ///	  For files, gets the extension of the file.
-    ///	</summary>
+    /// <summary>
+    ///   For files, gets the extension of the file.
+    /// </summary>
     property Extension: string read GetExtension;
 
-    ///	<summary>
-    ///	  Gets a value indicating whether the file or directory exists.
-    ///	</summary>
+    /// <summary>
+    ///   Gets a value indicating whether the file or directory exists.
+    /// </summary>
     property Exists: Boolean read fExists;
 
-    ///	<summary>
-    ///	  Gets the full path of the file or directory.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the full path of the file or directory.
+    /// </summary>
     property FullName: string read GetFullName;
 
-    ///	<summary>
-    ///	  Gets the size, in bytes, of the file.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the size, in bytes, of the file.
+    /// </summary>
     property Size: TSize read fSize;
     // property SizeOnDisk: TSize read GetSizeOnDisk;
     property CreationTime: TDateTime read GetCreationTime;
@@ -362,30 +361,30 @@ type
     property LastWriteTimeUtc: TDateTime read GetLastWriteTimeUtc;
     property AttributeFlags: Cardinal read fAttributeFlags;
 
-    ///	<summary>
-    ///	  Gets the owner of the entry. Only available in the NTFS file systems.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the owner of the entry. Only available in the NTFS file systems.
+    /// </summary>
     property Owner: string read GetOwner;
 
-    ///	<summary>
-    ///	  Gets the friendly description of the type of the entry.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the friendly description of the type of the entry.
+    /// </summary>
     property TypeString: string read GetTypeString;
 
-    ///	<summary>
-    ///	  Get a value indicating whether the entry is a directory.
-    ///	</summary>
+    /// <summary>
+    ///   Get a value indicating whether the entry is a directory.
+    /// </summary>
     property IsDirectory: Boolean index faDirectory read GetHasAttribute;
 
-    ///	<summary>
-    ///	  Get a value indicating whether the entry is a file.
-    ///	</summary>
+    /// <summary>
+    ///   Get a value indicating whether the entry is a file.
+    /// </summary>
     property IsFile: Boolean read GetIsFile;
 
-    ///	<summary>
-    ///	  For files, Gets a value indicating whether the file is empty. For
-    ///	  directories, indicates whether the directory contains any entry.
-    ///	</summary>
+    /// <summary>
+    ///   For files, Gets a value indicating whether the file is empty. For
+    ///   directories, indicates whether the directory contains any entry.
+    /// </summary>
     property IsEmpty: Boolean read GetIsEmpty;
     property IsReadOnly: Boolean index faReadOnly read GetHasAttribute;
     property IsHidden: Boolean index faHidden read GetHasAttribute;
@@ -398,9 +397,9 @@ type
     property IsTemporary: Boolean index faTemporary read GetHasAttribute;
     property IsOffline: Boolean index FILE_ATTRIBUTE_OFFLINE read GetHasAttribute;
 
-    ///	<summary>
-    ///	  Returns the full name of an entry.
-    ///	</summary>
+    /// <summary>
+    ///   Returns the full name of an entry.
+    /// </summary>
     class operator Implicit(const entry: TFileSystemEntry): string;
   end;
 
@@ -413,35 +412,35 @@ type
 
   {$REGION 'Search Pattern Matcher'}
 
-  ///	<summary>
-  ///	  Defines an interface for a search pattern matcher which can determine
-  ///	  if a file name matches its search pattern.
-  ///	</summary>
+  /// <summary>
+  ///   Defines an interface for a search pattern matcher which can determine
+  ///   if a file name matches its search pattern.
+  /// </summary>
   ISearchPatternMatcher = interface
     ['{7DB533A5-C2A3-4084-AFAE-A9960DC85CD2}']
     function GetSearchPattern: string;
     function GetPatternCount: Integer;
 
-    ///	<summary>
-    ///	  Returns true if the fileName satisfied the search pattern. Otherwise,
-    ///	  returns false.
-    ///	</summary>
+    /// <summary>
+    ///   Returns true if the fileName satisfied the search pattern. Otherwise,
+    ///   returns false.
+    /// </summary>
     function Matches(const fileName: string): Boolean;
 
-    ///	<summary>
-    ///	  Gets the original search pattern string.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the original search pattern string.
+    /// </summary>
     property SearchPattern: string read GetSearchPattern;
 
-    ///	<summary>
-    ///	  Gets the count of the search pattern string.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the count of the search pattern string.
+    /// </summary>
     property PatternCount: Integer read GetPatternCount;
   end;
 
-  ///	<summary>
-  ///	  Determines if a filename matches a search pattern.
-  ///	</summary>
+  /// <summary>
+  ///   Determines if a filename matches a search pattern.
+  /// </summary>
   TSearchPatternMatcher = class(TInterfacedObject, ISearchPatternMatcher)
   private
     type
@@ -460,23 +459,23 @@ type
     function CreatePredicate(const patterns: TStrings): TFileNamePredicate; overload; virtual;
     function CreatePredicate(const searchPattern: string): TFileNamePredicate; overload; virtual;
   public
-    ///	<summary>
-    ///	  Initializes a new instance of the TSearchPatternMatcher class.
-    ///	</summary>
-    ///	<param name="searchPattern">
-    ///	  The search pattern string is used to determine whether a file name is
-    ///	  satisfied. e.g. '*.txt', '*.ex?', '*.txt;*.doc;*.rtf'
-    ///	</param>
+    /// <summary>
+    ///   Initializes a new instance of the TSearchPatternMatcher class.
+    /// </summary>
+    /// <param name="searchPattern">
+    ///   The search pattern string is used to determine whether a file name is
+    ///   satisfied. e.g. '*.txt', '*.ex?', '*.txt;*.doc;*.rtf'
+    /// </param>
     constructor Create(const searchPattern: string);
     destructor Destroy; override;
     function Matches(const fileName: string): Boolean; virtual;
     property SearchPattern: string read GetSearchPattern;
     property PatternCount: Integer read GetPatternCount;
 
-    ///	<summary>
-    ///	  Gets the shared instance of the ISearchPatternMatcher interface that
-    ///	  matches all file system entries.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the shared instance of the ISearchPatternMatcher interface that
+    ///   matches all file system entries.
+    /// </summary>
     class property All: ISearchPatternMatcher read fAll;
   end;
 
@@ -487,9 +486,9 @@ type
   // Spring.TPredicate<TFileSystemEntry>
   TFileSystemEntryPredicate = reference to function (const entry:TFileSystemEntry): Boolean;
 
-  ///	<summary>
-  ///	  Inspects a file enumerator.
-  ///	</summary>
+  /// <summary>
+  ///   Inspects a file enumerator.
+  /// </summary>
   IFileEnumeratorInspector = interface
     ['{DAAE3F64-AB92-4B16-A022-F2C3B64A6216}']
     procedure LocationChanged(const location: string);
@@ -589,9 +588,9 @@ type
     procedure Reset; override;
   end;
 
-  ///	<summary>
-  ///	  Enumerates the file system entries that come from a string list.
-  ///	</summary>
+  /// <summary>
+  ///   Enumerates the file system entries that come from a string list.
+  /// </summary>
   TFileListEnumerable = class(TEnumerableBase<TFileSystemEntry>, IFileEnumerable)
   protected
     fFiles: TStrings;
@@ -616,10 +615,10 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  ///	<summary>
-  ///	  Enumerates the file system entries of dropped files that result from a
-  ///	  successful drag-and-drop operation.
-  ///	</summary>
+  /// <summary>
+  ///   Enumerates the file system entries of dropped files that result from a
+  ///   successful drag-and-drop operation.
+  /// </summary>
   TDroppedFilesEnumerable = class(TEnumerableBase<TFileSystemEntry>, IFileEnumerable)
   protected
     fFiles: TStrings;
@@ -663,9 +662,9 @@ type
     procedure OnLocationChanged(sender: TObject; const location: string);
   end;
 
-  ///	<summary>
-  ///	  Provides an abstract implementation of file searcher.
-  ///	</summary>
+  /// <summary>
+  ///   Provides an abstract implementation of file searcher.
+  /// </summary>
   TFileSearcherBase = class abstract
   private
     fStatus: TFileSearchStatus;
@@ -718,10 +717,10 @@ type
     property OnStatusChanged: TFileSearchEvent read fOnStatusChanged write fOnStatusChanged;
   end;
 
-  ///	<summary>
-  ///	  Searches the directories, files or file sytem entries in several
-  ///	  locations.
-  ///	</summary>
+  /// <summary>
+  ///   Searches the directories, files or file sytem entries in several
+  ///   locations.
+  /// </summary>
   TFileSearcher = class(TFileSearcherBase)
   private
     const
@@ -753,9 +752,9 @@ type
     property IncludeSubfolders: Boolean read fIncludeSubfolders write fIncludeSubfolders;
   end;
 
-  ///	<summary>
-  ///	  Records the statistics information of a file searcher.
-  ///	</summary>
+  /// <summary>
+  ///   Records the statistics information of a file searcher.
+  /// </summary>
   TFileSearchStatistics = class
   private
     fStopwatch: TStopwatch;
@@ -780,14 +779,14 @@ type
     property FolderCount: Integer read fFolderCount write fFolderCount;
   end;
 
-  ///	<summary>
-  ///	  Represents a background file searching thread which walk through all
-  ///	  entries that come from an enumerable collection of file system entries.
-  ///	</summary>
-  ///	<remarks>
-  ///	  All events are not synchronized or queued. It is the caller's
-  ///	  responsibility to synchronize or queue the events.
-  ///	</remarks>
+  /// <summary>
+  ///   Represents a background file searching thread which walk through all
+  ///   entries that come from an enumerable collection of file system entries.
+  /// </summary>
+  /// <remarks>
+  ///   All events are not synchronized or queued. It is the caller's
+  ///   responsibility to synchronize or queue the events.
+  /// </remarks>
   TFileSearchWorker = class(TInterfacedThread, IFileEnumeratorInspector)
   private
     fCollections: IEnumerable<IFileEnumerable>;
@@ -820,36 +819,36 @@ type
   {$ENDREGION}
 
 
-  ///	<summary>
-  ///	  Returns an enumerable collection of directories in a specified path.
-  ///	</summary>
+  /// <summary>
+  ///   Returns an enumerable collection of directories in a specified path.
+  /// </summary>
   function EnumerateDirectories(const path: string): IFileEnumerable; overload;
   function EnumerateDirectories(const path, searchPattern: string): IFileEnumerable; overload;
   function EnumerateDirectories(const path, searchPattern: string; includeSubfolders: Boolean): IFileEnumerable; overload;
 
-  ///	<summary>
-  ///	  Returns an enumerable collection of files in a specified path.
-  ///	</summary>
+  /// <summary>
+  ///   Returns an enumerable collection of files in a specified path.
+  /// </summary>
   function EnumerateFiles(const path: string): IFileEnumerable; overload;
   function EnumerateFiles(const path, searchPattern: string): IFileEnumerable; overload;
   function EnumerateFiles(const path, searchPattern: string; includeSubfolders: Boolean): IFileEnumerable; overload;
 
-  ///	<summary>
-  ///	  Returns an enumerable collection of file system entries in a specified
-  ///	  path.
-  ///	</summary>
+  /// <summary>
+  ///   Returns an enumerable collection of file system entries in a specified
+  ///   path.
+  /// </summary>
   function EnumerateFileSystemEntries(const path: string): IFileEnumerable; overload;
   function EnumerateFileSystemEntries(const path, searchPattern: string): IFileEnumerable; overload;
   function EnumerateFileSystemEntries(const path, searchPattern: string; includeSubfolders: Boolean): IFileEnumerable; overload;
 
-  ///	<summary>
-  ///	  GetDroppedFiles
-  ///	</summary>
+  /// <summary>
+  ///   GetDroppedFiles
+  /// </summary>
   procedure GetDroppedFiles(const dataObject: IDataObject; list: TStrings); overload;
 
-  ///	<summary>
-  ///	  GetDroppedFiles
-  ///	</summary>
+  /// <summary>
+  ///   GetDroppedFiles
+  /// </summary>
   procedure GetDroppedFiles(dropHandle: THandle; list: TStrings); overload;
 {$ENDIF MSWINDOWS}
 

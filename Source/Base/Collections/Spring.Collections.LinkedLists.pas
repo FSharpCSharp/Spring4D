@@ -36,14 +36,12 @@ uses
 
 type
 
-  {$REGION 'Documentation'}
   /// <summary>
   ///   Represents a doubly linked list.
   /// </summary>
   /// <typeparam name="T">
   ///   Specifies the element type of the linked list.
   /// </typeparam>
-  {$ENDREGION}
   TLinkedList<T> = class(TCollectionBase<T>, ILinkedList<T>)
   private
     type

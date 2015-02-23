@@ -24,24 +24,24 @@
 
 {$I Spring.inc}
 
-///	<summary>
-///	  This namespace contains the following classical design patterns:
-///	  <list type="bullet">
-///	    <item>
-///	      <b>Factory Pattern</b>
-///	    </item>
-///	    <item>
-///	      <b><see cref="TSingleton">Singleton Pattern</see></b>
-///	    </item>
-///	    <item>
-///	      <b>Observer Pattern</b>
-///	    </item>
-///	    <item>
-///	      <b><see cref="ISpecification&lt;T&gt;">Specification Pattern</see></b>
-///	    </item>
-///	  </list>
-///	</summary>
-///	<preliminary />
+/// <summary>
+///   This namespace contains the following classical design patterns:
+///   <list type="bullet">
+///     <item>
+///       <b>Factory Pattern</b>
+///     </item>
+///     <item>
+///       <b><see cref="TSingleton">Singleton Pattern</see></b>
+///     </item>
+///     <item>
+///       <b>Observer Pattern</b>
+///     </item>
+///     <item>
+///       <b><see cref="ISpecification&lt;T&gt;">Specification Pattern</see></b>
+///     </item>
+///   </list>
+/// </summary>
+/// <preliminary />
 unit Spring.DesignPatterns;
 
 interface
@@ -58,32 +58,32 @@ type
 
   {$REGION 'Singleton Pattern'}
 
-  ///	<summary>
-  ///	  <para>
-  ///	    Provides a simple implementation of the <b>Singleton Pattern</b>. Use
-  ///	    this portal to get the shared instance of a certain class which must
-  ///	    have a default constructor.
-  ///	  </para>
-  ///	  <para>
-  ///	    It also keeps track of the lifetime of the instances and will free
-  ///	    them in reversed order.
-  ///	  </para>
-  ///	</summary>
-  ///	<remarks>
-  ///	  This class just demonstrates how to apply the classical Singleton
-  ///	  Pattern. It's recommended to use the Spring IoC container which is more
-  ///	  flexible.
-  ///	</remarks>
-  ///	<threadsafety static="true" />
+  /// <summary>
+  ///   <para>
+  ///     Provides a simple implementation of the <b>Singleton Pattern</b>.
+  ///     Use this portal to get the shared instance of a certain class which
+  ///     must have a default constructor.
+  ///   </para>
+  ///   <para>
+  ///     It also keeps track of the lifetime of the instances and will free
+  ///     them in reversed order.
+  ///   </para>
+  /// </summary>
+  /// <remarks>
+  ///   This class just demonstrates how to apply the classical Singleton
+  ///   Pattern. It's recommended to use the Spring IoC container which is more
+  ///   flexible.
+  /// </remarks>
+  /// <threadsafety static="true" />
   TSingleton = record
   strict private
     class var
       fMappings: IDictionary<TClass, TObject>;
 
-      ///	<summary>
-      ///	  Tracks all instances of the singleton objects and free them in
-      ///	  reversed order.
-      ///	</summary>
+      /// <summary>
+      ///   Tracks all instances of the singleton objects and free them in
+      ///   reversed order.
+      /// </summary>
       fInstances: IList<TObject>;
 
       fCriticalSection: TCriticalSection;
@@ -95,12 +95,12 @@ type
 
   public
 
-    ///	<summary>
-    ///	  Gets the shared instance of a class.
-    ///	</summary>
-    ///	<typeparam name="T">
-    ///	  The type of a class which must have a default constructor.
-    ///	</typeparam>
+    /// <summary>
+    ///   Gets the shared instance of a class.
+    /// </summary>
+    /// <typeparam name="T">
+    ///   The type of a class which must have a default constructor.
+    /// </typeparam>
     class function GetInstance<T: class, constructor>: T; static;
   end;
 
@@ -109,9 +109,9 @@ type
 
   {$REGION 'Observer Pattern'}
 
-  ///	<summary>
-  ///	  Represents an observable subject.
-  ///	</summary>
+  /// <summary>
+  ///   Represents an observable subject.
+  /// </summary>
   IObservable<T> = interface
     procedure AddListener(const listener: T);
     procedure RemoveListener(const listener: T);
@@ -166,17 +166,17 @@ type
 //    function IsSatisfiedBy(const obj: TValue): Boolean;
 //  end;
 
-  ///	<summary>
-  ///	  Defines the core methods of a specification interface.
-  ///	</summary>
+  /// <summary>
+  ///   Defines the core methods of a specification interface.
+  /// </summary>
   ISpecification<T> = interface
     function IsSatisfiedBy(const item: T): Boolean;
     // DO NOT ADD ANY METHODS HERE!!!
   end;
 
-  ///	<summary>
-  ///	  Provides the easy-going specification holder with operator overloads.
-  ///	</summary>
+  /// <summary>
+  ///   Provides the easy-going specification holder with operator overloads.
+  /// </summary>
   TSpecification<T> = record
   private
     fSpecification: ISpecification<T>;
@@ -194,9 +194,9 @@ type
     class operator LogicalNot(const value: TSpecification<T>): TSpecification<T>;
   end;
 
-  ///	<summary>
-  ///	  Provides the abstract base class for Specification.
-  ///	</summary>
+  /// <summary>
+  ///   Provides the abstract base class for Specification.
+  /// </summary>
   TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>)
   protected
     function TPredicate<T>.Invoke = IsSatisfiedBy;

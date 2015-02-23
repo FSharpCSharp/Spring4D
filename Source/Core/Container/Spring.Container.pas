@@ -39,9 +39,9 @@ uses
   Spring.Services;
 
 type
-  ///	<summary>
-  ///	  Represents a Dependency Injection Container.
-  ///	</summary>
+  /// <summary>
+  ///   Represents a Dependency Injection Container.
+  /// </summary>
   TContainer = class(TInterfaceBase, IKernel, IKernelInternal, IContainer)
   private
     fRegistry: IComponentRegistry;
@@ -134,10 +134,10 @@ type
     property Logger: ILogger read GetLogger write SetLogger;
   end;
 
-  ///	<summary>
-  ///	  Adapter to get access to a <see cref="TContainer" /> instance over the
-  ///	  <see cref="Spring.Services|IServiceLocator" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Adapter to get access to a <see cref="TContainer" /> instance over the <see cref="Spring.Services|IServiceLocator" />
+  ///    interface.
+  /// </summary>
   TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
   private
     {$IFDEF WEAKREF}[Weak]{$ENDIF}

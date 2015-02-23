@@ -57,13 +57,13 @@ type
   end;
 {$ENDIF}
 
-  ///	<summary>
-  ///	  Represents a strongly typed list of elements that can be accessed by
-  ///	  index. Provides methods to search, sort, and manipulate lists.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The type of elements in the list.
-  ///	</typeparam>
+  /// <summary>
+  ///   Represents a strongly typed list of elements that can be accessed by
+  ///   index. Provides methods to search, sort, and manipulate lists.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The type of elements in the list.
+  /// </typeparam>
   TList<T> = class(TListBase<T>, IArrayAccess<T>)
   private
     type

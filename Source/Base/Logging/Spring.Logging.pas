@@ -97,17 +97,16 @@ type
     /// <summary>
     ///   Should only be called if stack is sent to the appender. The appender
     ///   may treat it in a specific way. No one else should use this entry
-    ///   type.
-    ///   If this entry type is not set, callstack logging will be disabled
-    ///   completely, this may have significant performance impact on some
-    ///   platforms.
+    ///   type. If this entry type is not set, callstack logging will be
+    ///   disabled completely, this may have significant performance impact on
+    ///   some platforms.
     /// </summary>
     CallStack,
     /// <summary>
     ///   Should only be called if serialized data (object, record, etc.) is
-    ///   sent to the appender. The appender may treat it in a specific way.
-    ///   No one else should use this entry type. If this level is not set,
-    ///   data serialization logging will be disabled completely.
+    ///   sent to the appender. The appender may treat it in a specific way. No
+    ///   one else should use this entry type. If this level is not set, data
+    ///   serialization logging will be disabled completely.
     /// </summary>
     SerializedData,
     Entering,
@@ -134,9 +133,9 @@ type
     /// </summary>
     Monospace,
     /// <summary>
-    ///   No escaping should be done on the text of the message by the appenders
-    ///   in cases when they need to do so in order to not break the output
-    ///   format.
+    ///   No escaping should be done on the text of the message by the
+    ///   appenders in cases when they need to do so in order to not break the
+    ///   output format.
     /// </summary>
     NoEscape
   );
@@ -153,9 +152,10 @@ type
     fTimeStamp: TDateTime;
     fException: Exception;
     /// <summary>
-    ///   Leave as default to instruct the appender/viewer to choose the default
-    ///   color based on the level or entry contents or prescribe the color of
-    ///   your choosing (not that some appenders may ignore the color).
+    ///   Leave as default to instruct the appender/viewer to choose the
+    ///   default color based on the level or entry contents or prescribe the
+    ///   color of your choosing (not that some appenders may ignore the
+    ///   color).
     /// </summary>
     fColor: TColor;
     /// <summary>

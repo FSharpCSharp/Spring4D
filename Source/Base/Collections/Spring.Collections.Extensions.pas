@@ -63,10 +63,10 @@ type
     function ToArray: TArray<T>; override;
   end;
 
-  ///	<summary>
-  ///	  The adapter implementation for
-  ///	  <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />.
-  ///	</summary>
+  /// <summary>
+  ///   The adapter implementation for <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />
+  ///    .
+  /// </summary>
   TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
   private
     type
@@ -84,10 +84,10 @@ type
     property Current: T read GetCurrent;
   end;
 
-  ///	<summary>
-  ///	  The adapter implementation for
-  ///	  <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />.
-  ///	</summary>
+  /// <summary>
+  ///   The adapter implementation for <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
+  ///    .
+  /// </summary>
   TEnumerableAdapter<T> = class(TEnumerableBase<T>)
   private
     type

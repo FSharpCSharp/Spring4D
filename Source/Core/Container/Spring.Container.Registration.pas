@@ -39,9 +39,9 @@ uses
   Spring.Container.Core;
 
 type
-  ///	<summary>
-  ///	  TComponentRegistry
-  ///	</summary>
+  /// <summary>
+  ///   TComponentRegistry
+  /// </summary>
   TComponentRegistry = class(TInterfacedObject, IComponentRegistry)
   private
     fKernel: IKernel;

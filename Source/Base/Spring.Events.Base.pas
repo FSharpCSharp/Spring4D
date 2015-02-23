@@ -37,9 +37,9 @@ uses
 type
   PMethodPointer = ^TMethodPointer;
 
-  ///	<summary>
-  ///	  Base class for multicast event implementation
-  ///	</summary>
+  /// <summary>
+  ///   Base class for multicast event implementation
+  /// </summary>
   TEventBase = class(TInterfacedObject, IEvent)
   private
     fEnabled: Boolean;

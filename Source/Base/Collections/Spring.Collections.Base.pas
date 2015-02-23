@@ -36,10 +36,10 @@ uses
   Spring.Collections;
 
 type
-  ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="Spring.Collections|IEnumerator" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides an abstract implementation for the <see cref="Spring.Collections|IEnumerator" />
+  ///    interface.
+  /// </summary>
   TEnumeratorBase = class abstract(TInterfacedObject, IEnumerator)
   private
     function GetCurrentNonGeneric: TValue; virtual; abstract;
@@ -51,10 +51,10 @@ type
     property Current: TValue read GetCurrentNonGeneric;
   end;
 
-  ///	<summary>
-  ///	  Provides a default implementation for the
-  ///	  <see cref="Spring.Collections|IEnumerator&lt;T&gt;" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a default implementation for the <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
   private
     function GetCurrentNonGeneric: TValue; override; final;
@@ -64,10 +64,10 @@ type
     property Current: T read GetCurrent;
   end;
 
-  ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="Spring.Collections|IEnumerable" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides an abstract implementation for the <see cref="Spring.Collections|IEnumerable" />
+  ///    interface.
+  /// </summary>
   TEnumerableBase = class abstract(TInterfacedObject, IInterface,
     IElementType, ICountable, IEnumerable)
   private
@@ -106,10 +106,10 @@ type
 {$ENDIF}{$ENDIF}
   end;
 
-  ///	<summary>
-  ///	  Provides a default implementation for the
-  ///	  <see cref="Spring.Collections|IEnumerable&lt;T&gt;" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a default implementation for the <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
   TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>)
   private
     fComparer: IComparer<T>;
@@ -251,14 +251,14 @@ type
     function GetElementType: PTypeInfo; override;
   end;
 
-  ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="Spring.Collections|ICollection&lt;T&gt;" /> interface.
-  ///	</summary>
-  ///	<remarks>
-  ///	  The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns
-  ///	  <c>False</c> by default.
-  ///	</remarks>
+  /// <summary>
+  ///   Provides an abstract implementation for the <see cref="Spring.Collections|ICollection&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
+  /// <remarks>
+  ///   The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns <c>
+  ///   False</c> by default.
+  /// </remarks>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, IReadOnlyCollection<T>)
   protected
     fOnChanged: ICollectionChangedEvent<T>;
@@ -382,10 +382,10 @@ type
     property ValueType: PTypeInfo read GetValueType;
   end;
 
-  ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="Spring.Collections|IList&lt;T&gt;" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides an abstract implementation for the <see cref="Spring.Collections|IList&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
   TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>, IList)
   private
     function AsList: IList;

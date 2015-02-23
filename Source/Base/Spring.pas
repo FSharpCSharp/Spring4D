@@ -78,39 +78,40 @@ type
   ///   Describes the action that caused a CollectionChanged event.
   /// </summary>
   TCollectionChangedAction = (
-    ///	<summary>
-    ///	  An item was added to the collection.
-    ///	</summary>
+    /// <summary>
+    ///   An item was added to the collection.
+    /// </summary>
     caAdded,
 
-    ///	<summary>
-    ///	  An item was removed from the collection.
-    ///	</summary>
+    /// <summary>
+    ///   An item was removed from the collection.
+    /// </summary>
     caRemoved,
 
-    ///	<summary>
-    ///	  An item was removed from the collection without considering ownership.
-    ///	</summary>
+    /// <summary>
+    ///   An item was removed from the collection without considering
+    ///   ownership.
+    /// </summary>
     caExtracted,
 
-    ///	<summary>
-    ///	  An item was replaced in the collection.
-    ///	</summary>
+    /// <summary>
+    ///   An item was replaced in the collection.
+    /// </summary>
     caReplaced,
 
-    ///	<summary>
-    ///	  An item was moved within the collection.
-    ///	</summary>
+    /// <summary>
+    ///   An item was moved within the collection.
+    /// </summary>
     caMoved,
 
-    ///	<summary>
-    ///	  The content of the collection changed dramatically.
-    ///	</summary>
+    /// <summary>
+    ///   The content of the collection changed dramatically.
+    /// </summary>
     caReseted,
 
-    ///	<summary>
-    ///	  An item in the collection was changed.
-    ///	</summary>
+    /// <summary>
+    ///   An item in the collection was changed.
+    /// </summary>
     caChanged
   );
 
@@ -192,9 +193,9 @@ type
     function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
 {$ENDIF}
 
-    ///	<summary>
-    ///	  Sets the stored value of a nullable.
-    ///	</summary>
+    /// <summary>
+    ///   Sets the stored value of a nullable.
+    /// </summary>
     procedure SetNullableValue(const value: TValue);
 
     /// <summary>
@@ -361,48 +362,47 @@ type
 
   {$REGION 'Procedure types'}
 
-  ///	<summary>
-  ///	  Represents a logical predicate.
-  ///	</summary>
-  ///	<param name="arg">
-  ///	  the value needs to be determined.
-  ///	</param>
-  ///	<returns>
-  ///	  Returns <c>True</c> if the value was accepted, otherwise, returns
-  ///	  <c>False</c>.
+  /// <summary>
+  ///   Represents a logical predicate.
+  /// </summary>
+  /// <param name="arg">
+  ///   the value needs to be determined.
+  /// </param>
+  /// <returns>
+  ///   Returns <c>True</c> if the value was accepted, otherwise, returns <c>
+  ///   False</c>.
   /// </returns>
   /// <remarks>
   ///   <note type="tip">
-  ///	    This type redefined the
-  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
-  ///	    type with a const parameter.
-  ///	  </note>
-  ///	</remarks>
-  ///	<seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
+  ///     This type redefined the <see cref="SysUtils|TPredicate`1">
+  ///     SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.
+  ///   </note>
+  /// </remarks>
+  /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
   TPredicate<T> = reference to function(const arg: T): Boolean;
 
-  ///	<summary>
-  ///	  Represents an anonymous method that has a single parameter and does not
-  ///	  return a value.
-  ///	</summary>
-  ///	<seealso cref="TActionProc&lt;T&gt;" />
-  ///	<seealso cref="TActionMethod&lt;T&gt;" />
+  /// <summary>
+  ///   Represents an anonymous method that has a single parameter and does not
+  ///   return a value.
+  /// </summary>
+  /// <seealso cref="TActionProc&lt;T&gt;" />
+  /// <seealso cref="TActionMethod&lt;T&gt;" />
   TAction<T> = reference to procedure(const arg: T);
 
-  ///	<summary>
-  ///	  Represents a procedure that has a single parameter and does not return
-  ///	  a value.
-  ///	</summary>
-  ///	<seealso cref="TAction&lt;T&gt;" />
-  ///	<seealso cref="TActionMethod&lt;T&gt;" />
+  /// <summary>
+  ///   Represents a procedure that has a single parameter and does not return
+  ///   a value.
+  /// </summary>
+  /// <seealso cref="TAction&lt;T&gt;" />
+  /// <seealso cref="TActionMethod&lt;T&gt;" />
   TActionProc<T> = procedure(const arg: T);
 
-  ///	<summary>
-  ///	  Represents a instance method that has a single parameter and does not
-  ///	  return a value.
-  ///	</summary>
-  ///	<seealso cref="TAction&lt;T&gt;" />
-  ///	<seealso cref="TActionProc&lt;T&gt;" />
+  /// <summary>
+  ///   Represents a instance method that has a single parameter and does not
+  ///   return a value.
+  /// </summary>
+  /// <seealso cref="TAction&lt;T&gt;" />
+  /// <seealso cref="TActionProc&lt;T&gt;" />
   TActionMethod<T> = procedure(const arg: T) of object;
 
   /// <summary>
@@ -782,18 +782,18 @@ type
     ///   <see cref="ILazy" /> instance.
     /// </summary>
     /// <value>
-    ///	  <b>True</b> if a value has been created for this
-    ///	  <see cref="ILazy" /> instance; otherwise, <b>False</b>.
+    ///   <b>True</b> if a value has been created for this <see cref="ILazy" />
+    ///   instance; otherwise, <b>False</b>.
     /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
     /// <summary>
-    ///	  Gets the lazily initialized value of the current
-    ///	  <see cref="ILazy" /> instance.
+    ///   Gets the lazily initialized value of the current <see cref="ILazy" />
+    ///   instance.
     /// </summary>
     /// <value>
-    ///	  The lazily initialized value of the current
-    ///	  <see cref="ILazy" /> instance.
+    ///   The lazily initialized value of the current <see cref="ILazy" />
+    ///   instance.
     /// </value>
     property Value: TValue read GetValue;
   end;
@@ -807,12 +807,12 @@ type
   {$ENDREGION}
 
     /// <summary>
-    ///	  Gets the lazily initialized value of the current
-    ///	  <see cref="ILazy&lt;T&gt;" /> instance.
+    ///   Gets the lazily initialized value of the current <see cref="ILazy&lt;T&gt;" />
+    ///    instance.
     /// </summary>
     /// <value>
-    ///	  The lazily initialized value of the current
-    ///	  <see cref="ILazy&lt;T&gt;" /> instance.
+    ///   The lazily initialized value of the current <see cref="ILazy&lt;T&gt;" />
+    ///    instance.
     /// </value>
     property Value: T read GetValue;
   end;
@@ -838,8 +838,8 @@ type
     ///   <see cref="TLazy&lt;T&gt;" /> instance.
     /// </summary>
     /// <value>
-    ///	  <b>True</b> if a value has been created for this
-    ///	  <see cref="TLazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
+    ///   <b>True</b> if a value has been created for this <see cref="TLazy&lt;T&gt;" />
+    ///    instance; otherwise, <b>False</b>.
     /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
   end;
@@ -885,12 +885,12 @@ type
     constructor CreateFrom(const value: T);
 
     /// <summary>
-    ///	  Gets the lazily initialized value of the current
-    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///   Gets the lazily initialized value of the current <see cref="TLazy&lt;T&gt;" />
+    ///    instance.
     /// </summary>
     /// <value>
-    ///	  The lazily initialized value of the current
-    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///   The lazily initialized value of the current <see cref="TLazy&lt;T&gt;" />
+    ///    instance.
     /// </value>
     property Value: T read GetValue;
   end;
@@ -947,21 +947,20 @@ type
     ///   <see cref="Lazy&lt;T&gt;" /> instance.
     /// </summary>
     /// <value>
-    ///	  <b>True</b> if a value has been created for this
-    ///	  <see cref="Lazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
+    ///   <b>True</b> if a value has been created for this <see cref="Lazy&lt;T&gt;" />
+    ///    instance; otherwise, <b>False</b>.
     /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
     /// <summary>
-    ///	  Gets the lazily initialized value of the current
-    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///   Gets the lazily initialized value of the current <see cref="Lazy&lt;T&gt;" />
+    ///    instance.
     /// </summary>
     /// <value>
-    ///	  The lazily initialized value of the current
-    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///   The lazily initialized value of the current <see cref="Lazy&lt;T&gt;" />
+    ///    instance.
     /// </value>
-    ///	<exception cref="Spring|EInvalidOperationException">
-    ///	</exception>
+    /// <exception cref="Spring|EInvalidOperationException" />
     property Value: T read GetValue;
   end;
 
@@ -1749,9 +1748,9 @@ function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean; overload;
 
 function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Boolean; overload;
 
-///	<summary>
-///	  Returns <c>True</c> if the type is a nullable type.
-///	</summary>
+/// <summary>
+///   Returns <c>True</c> if the type is a nullable type.
+/// </summary>
 function IsNullable(typeInfo: PTypeInfo): Boolean;
 
 /// <summary>

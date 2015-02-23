@@ -50,14 +50,20 @@ type
 
   {$REGION 'TLoggerResolver'}
   /// <summary>
-  ///   Subresolver that will inject proper logger defined by the configuration.
-  ///   In order to use this resolver make sure to register
-  ///   <c>TLoggingConfiguration</c>.
-  ///   <para>Rules:</para>
-  ///   <para>* Base classes are checked as well so registering <c>TObject</c>
-  ///   with some logger will make all objects log to that logger (unles their
-  ///   logger injections are named).</para>
-  ///   <para>* Named injections will be ignored by this resolver.</para>
+  ///   Subresolver that will inject proper logger defined by the
+  ///   configuration. In order to use this resolver make sure to register <c>
+  ///   TLoggingConfiguration</c>.
+  ///   <para>
+  ///     Rules:
+  ///   </para>
+  ///   <para>
+  ///     * Base classes are checked as well so registering <c>TObject</c>
+  ///     with some logger will make all objects log to that logger (unles
+  ///     their logger injections are named).
+  ///   </para>
+  ///   <para>
+  ///     * Named injections will be ignored by this resolver.
+  ///   </para>
   /// </summary>
   TLoggerResolver = class(TSubDependencyResolverBase)
   private
