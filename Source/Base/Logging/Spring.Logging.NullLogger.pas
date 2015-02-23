@@ -375,11 +375,13 @@ end;
 function TNullLogger.Track(const instance: TObject;
   const methodName: string): IInterface;
 begin
+  Result := nil;
 end;
 
 function TNullLogger.Track(const classType: TClass;
   const methodName: string): IInterface;
 begin
+  Result := nil;
 end;
 
 function TNullLogger.Track(level: TLogLevel; const classType: TClass;

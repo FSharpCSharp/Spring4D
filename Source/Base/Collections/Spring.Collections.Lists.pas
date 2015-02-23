@@ -937,7 +937,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
 {$ENDIF}
 
-  inherited;
+  Result := inherited;
 //  TArray.BinarySearch<T>(fItems, item, Result, fComparer, index - count + 1, count);
 end;
 
