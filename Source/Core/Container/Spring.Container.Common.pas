@@ -225,7 +225,7 @@ type
     constructor Create(minPoolSize, maxPoolSize: Integer);
     property MinPoolsize: Integer read fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize;
-  end {$IFDEF CPUARM}experimental{$ENDIF};
+  end;
 
   /// <summary>
   ///   Applies the <c>InjectAttribute</c> to injectable instance members of a
@@ -398,7 +398,7 @@ type
     function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
     function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
     function AsTransient: IRegistration;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
+    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration;
 
     function PerResolve: IRegistration;
 

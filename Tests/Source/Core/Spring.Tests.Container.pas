@@ -673,10 +673,6 @@ var
   service1, service2, service3: INameService;
   count: Integer;
 begin
-{$IFDEF NEXTGEN}
-  {$MESSAGE WARN 'Fix me'}
-  Exit;  //Fails on nextgen, probably object is nil
-{$ENDIF}
   count := 0;
   fContainer.RegisterType<TNameService>
     .Implements<INameService>
@@ -709,10 +705,6 @@ var
   service1, service2, service3: INameService;
   count: Integer;
 begin
-{$IFDEF NEXTGEN}
-  {$MESSAGE WARN 'Fix me'}
-  Exit; //Fails on nextgen, probably object is nil
-{$ENDIF}
   count := 0;
   fContainer.RegisterType<TCustomNameService>
     .Implements<INameService>
@@ -743,26 +735,21 @@ end;
 procedure TTestSimpleContainer.TestRecyclable;
 var
   service1, service2: IAnotherService;
-  instance: TRecyclableComponent;
+  instance: Pointer;
 begin
-{$IFDEF NEXTGEN}
-  {$MESSAGE WARN 'Fix me'}
-  //Fails on nextgen
-  Exit;
-{$ENDIF}
   fContainer.RegisterType<TRecyclableComponent>.AsPooled(2, 2);
   fContainer.Build;
   service1 := fContainer.Resolve<IAnotherService>;
   service2 := fContainer.Resolve<IAnotherService>;
   CheckTrue(service2 is TRecyclableComponent, 'Unknown component');
   instance := TRecyclableComponent(service2); // remember second because the first will be returned again later
-  CheckTrue(instance.IsInitialized, 'IsInitialized');
-  CheckFalse(instance.IsRecycled, 'IsRecycled');
+  CheckTrue(TRecyclableComponent(instance).IsInitialized, 'IsInitialized');
+  CheckFalse(TRecyclableComponent(instance).IsRecycled, 'IsRecycled');
   service1 := nil;
   service2 := nil;
   service1 := fContainer.Resolve<IAnotherService>; // pool has no available and collects all unused
-  CheckFalse(instance.IsInitialized, 'IsInitialized');
-  CheckTrue(instance.IsRecycled, 'IsRecycled');
+  CheckFalse(TRecyclableComponent(instance).IsInitialized, 'IsInitialized');
+  CheckTrue(TRecyclableComponent(instance).IsRecycled, 'IsRecycled');
 end;
 
 procedure TTestSimpleContainer.TestResolveFuncWithTwoTypes;
