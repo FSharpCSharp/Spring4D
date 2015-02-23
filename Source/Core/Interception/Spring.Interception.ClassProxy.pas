@@ -280,14 +280,9 @@ begin
 end;
 
 class procedure TClassProxy.ProxyFreeInstance(const Self: TObject);
-var
-  classParent: TClass;
 begin
-  // use separate veriable here not only to cache the result but calling
-  // Self.ClassParent after calling inherited would produce an AV on NextGen
-  classParent := Self.ClassParent;
-  GetClassData(classParent).FreeInstance(Self); // inherited
-  fProxies.Remove(classParent);
+  fProxies.Remove(Self);
+  GetClassData(ClassParent).FreeInstance(Self); // inherited
 end;
 
 {$ENDREGION}
