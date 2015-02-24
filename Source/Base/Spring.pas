@@ -1094,11 +1094,13 @@ type
     Action: TEventsChangedAction) of object;
 
 
-  IEvent = interface(ICountable)
+  IEvent = interface
     ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
   {$REGION 'Property Accessors'}
+    function GetCount: Integer;
     function GetInvoke: TMethodPointer;
     function GetEnabled: Boolean;
+    function GetIsEmpty: Boolean;
     function GetIsInvokable: Boolean;
     function GetOnChanged: TEventsChangedEvent;
     procedure SetEnabled(const value: Boolean);
@@ -1111,11 +1113,15 @@ type
     procedure Clear;
     procedure ForEach(const action: TAction<TMethodPointer>);
 
+    property Count: Integer read GetCount;
+
     /// <summary>
     ///   Gets the value indicates whether the multicast event is enabled, or
     ///   sets the value to enable or disable the event.
     /// </summary>
     property Enabled: Boolean read GetEnabled write SetEnabled;
+
+    property IsEmpty: Boolean read GetIsEmpty;
 
     /// <summary>
     ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
@@ -1137,8 +1143,6 @@ type
   IEvent<T> = interface(IEvent)
   {$REGION 'Property Accessors'}
     function GetInvoke: T;
-//    function GetOnChanged: TEventsChangedEvent<T>;
-//    procedure SetOnChanged(const value: TEventsChangedEvent<T>);
   {$ENDREGION}
 
     /// <summary>
