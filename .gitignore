@@ -20,6 +20,9 @@ __history/
 # 64bit Delphi files
 *.o
 
+# Added in XE8
+*.stat
+
 # Spring4D files:
 *.bak
 *.mes
