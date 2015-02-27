@@ -32,15 +32,15 @@ uses
   Classes,
   SysUtils;
 
-function Endian(x: LongWord): LongWord;
+function Endian(x: UInt32): UInt32;
 function Endian64(x: Int64): Int64;
-function Rol(x: LongWord; y: Byte): LongWord;
-function Ror(x: LongWord; y: Byte): LongWord;
+function Rol(x: UInt32; y: Byte): UInt32;
+function Ror(x: UInt32; y: Byte): UInt32;
 function Ror64(x: Int64; y: Byte): Int64;
 
 implementation
 
-function Endian(x: LongWord): LongWord;
+function Endian(x: UInt32): UInt32;
 {$IFDEF CPUX86}
 asm
   bswap eax
@@ -64,7 +64,7 @@ begin
   Result := Result + (x and $FF00000000000000) shr 56;
 end;
 
-function Rol(x: LongWord; y: Byte): LongWord;
+function Rol(x: UInt32; y: Byte): UInt32;
 {$IFDEF CPUX86}
 asm
   mov   cl,dl
@@ -76,7 +76,7 @@ begin
 end;
 {$ENDIF}
 
-function Ror(x: LongWord; y: Byte): LongWord;
+function Ror(x: UInt32; y: Byte): UInt32;
 {$IFDEF CPUX86}
 asm
   mov   cl,dl

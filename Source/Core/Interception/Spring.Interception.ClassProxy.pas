@@ -213,8 +213,8 @@ begin
   for i := 0 to options.Mixins.Count - 1 do
     Inc(entryCount, TType.GetType(options.Mixins[i].ClassType).GetInterfaces.Count);
   size := SizeOf(Integer) + SizeOf(TInterfaceEntry) * EntryCount;
-{$IFDEF CPUX64}
-  Inc(size, SizeOf(LongWord));
+{$IFDEF CPU64BITS}
+  Inc(size, SizeOf(Int32));
 {$ENDIF}
   GetMem(table, size);
   table.EntryCount := entryCount;
@@ -240,7 +240,7 @@ begin
     table.Entries[i].IID := GetTypeData(additionalInterfaces[i - 1]).Guid;
     table.Entries[i].VTable := nil;
     table.Entries[i].IOffset := 0;
-{$IFDEF CPUX64}
+{$IFDEF CPU64BITS}
     table.Entries[i].ImplGetter := offset or $FF00000000000000;
 {$ELSE}
     table.Entries[i].ImplGetter := offset or $FF000000;
@@ -259,7 +259,7 @@ begin
       table.Entries[index].IID := intf.GUID;
       table.Entries[index].VTable := nil;
       table.Entries[index].IOffset := 0;
-{$IFDEF CPUX64}
+{$IFDEF CPU64BITS}
       table.Entries[index].ImplGetter := offset or $FF00000000000000;
 {$ELSE}
       table.Entries[index].ImplGetter := offset or $FF000000;

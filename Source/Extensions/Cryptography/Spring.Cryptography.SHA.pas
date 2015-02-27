@@ -41,15 +41,15 @@ type
   PHashContext = ^THashContext;
   THashContext = record
     IntData: Pointer;      {Reserved for internal use}
-    HashType: LongWord;    {Hash type}
-    lParam: LongWord;      {First Param}
-    wParam: LongWord;      {Second Param}
+    HashType: UInt32;      {Hash type}
+    lParam: UInt32;        {First Param}
+    wParam: UInt32;        {Second Param}
   end;
 
   PSHA256Ctx = ^TSHA256Ctx;
   TSHA256Ctx = record
-    state: array[0..7] of LongWord;
-    length, curlen: LongWord;
+    state: array[0..7] of UInt32;
+    length, curlen: UInt32;
     buf: array[0..63] of Byte;
   end;
 
@@ -126,7 +126,7 @@ function SHA256Final(var md: TSHA256Ctx; sz: Word): TBuffer;
 
 procedure SHA256Init(var md: TSHA256Ctx);
 
-procedure SHA256Update(var md: TSHA256Ctx; buf: Pointer; len: LongWord; sz: Word);
+procedure SHA256Update(var md: TSHA256Ctx; buf: Pointer; len: UInt32; sz: Word);
 
 procedure SHA384Init(var md: TSHA512Ctx);
 
@@ -134,7 +134,7 @@ function SHA512Final(var md: TSHA512Ctx; sz: Word): TBuffer;
 
 procedure SHA512Init(var md: TSHA512Ctx);
 
-procedure SHA512Update(var md: TSHA512Ctx; buf: Pointer; len: LongWord);
+procedure SHA512Update(var md: TSHA512Ctx; buf: Pointer; len: UInt32);
 
 implementation
 
@@ -245,7 +245,7 @@ end;
 {$IFDEF SUPPORTS_REGION}{$REGION 'Internal data and functions'}{$ENDIF}
 
 const
-  cnstK256: array[0..63] of LongWord =
+  cnstK256: array[0..63] of UInt32 =
   ( $428a2f98, $71374491, $b5c0fbcf, $e9b5dba5, $3956c25b, $59f111f1, $923f82a4, $ab1c5ed5,
     $d807aa98, $12835b01, $243185be, $550c7dc3, $72be5d74, $80deb1fe, $9bdc06a7, $c19bf174,
     $e49b69c1, $efbe4786, $0fc19dc6, $240ca1cc, $2de92c6f, $4a7484aa, $5cb0a9dc, $76f988da,
@@ -309,7 +309,7 @@ begin
   Result := (ror64(x, 19) xor ror64(x, 61) xor (x shr 6));
 end;
 
-function Ch256(x, y, z: LongWord): LongWord; assembler;
+function Ch256(x, y, z: UInt32): UInt32; assembler;
 {$IFDEF CPUX86}
 asm
   and   edx,eax
@@ -324,7 +324,7 @@ end;
 {$ENDIF}
 
 
-function Maj256(x, y, z: LongWord): LongWord; assembler;
+function Maj256(x, y, z: UInt32): UInt32; assembler;
 {$IFDEF CPUX86}
 asm
   push  ecx
@@ -341,27 +341,27 @@ begin
 end;
 {$ENDIF}
 
-function E0256(x: LongWord): LongWord;
+function E0256(x: UInt32): UInt32;
 begin
   Result := ror(x, 2) xor ror(x, 13) xor ror(x, 22);
 end;
 
-function E1256(x: LongWord): LongWord;
+function E1256(x: UInt32): UInt32;
 begin
   Result := ror(x, 6) xor ror(x, 11) xor ror(x, 25);
 end;
 
-function F0256(x: LongWord): LongWord;
+function F0256(x: UInt32): UInt32;
 begin
   Result := ror(x, 7) xor ror(x, 18) xor (x shr 3);
 end;
 
-function F1256(x: LongWord): LongWord;
+function F1256(x: UInt32): UInt32;
 begin
   Result := ror(x, 17) xor ror(x, 19) xor (x shr 10);
 end;
 
-function ft1(t: Byte; x, y, z: LongWord): LongWord;
+function ft1(t: Byte; x, y, z: UInt32): UInt32;
 begin
   case t of
     0..19: Result := (x and y) or ((not x) and z);
@@ -372,7 +372,7 @@ begin
   end;
 end;
 
-function Kt1(t: Byte): LongWord; assembler;
+function Kt1(t: Byte): UInt32; assembler;
 {$IFDEF CPUX86}
 asm
   cmp   al,19
@@ -421,13 +421,13 @@ end;
 {$POINTERMATH ON}
 procedure sha1_compress(var md: TSHA256Ctx);
 var
-  S: array[0..4] of LongWord;
-  W: array[0..79] of LongWord;
-  i, t: LongWord;
+  S: array[0..4] of UInt32;
+  W: array[0..79] of UInt32;
+  i, t: UInt32;
 begin
   Move(md.state, S, SizeOf(S));
   for i := 0 to 15 do
-    W[i] := Endian(PLongWord(@md.buf)[i]);
+    W[i] := Endian(PUInt32(@md.buf)[i]);
   for i := 16 to 79 do
     W[i] := rol(W[i - 3] xor W[i - 8] xor W[i - 14] xor W[i - 16], 1);
     for i := 0 to 79 do
@@ -445,14 +445,14 @@ end;
 
 procedure sha256_compress(var md: TSHA256Ctx);
 var
-  S: array[0..7] of LongWord;
-  W: array[0..63] of LongWord;
-  t1, t2: LongWord;
-  i: LongWord;
+  S: array[0..7] of UInt32;
+  W: array[0..63] of UInt32;
+  t1, t2: UInt32;
+  i: UInt32;
 begin
   Move(md.state, S, SizeOf(S));
   for i := 0 to 15 do
-    W[i] := Endian(PLongWord(@md.buf)[i]);
+    W[i] := Endian(PUInt32(@md.buf)[i]);
   for i := 16 to 63 do
     W[i] := F1256(W[i - 2]) + W[i - 7] + F0256(W[i - 15]) + W[i - 16];
   for i := 0 to 63 do
@@ -477,11 +477,11 @@ var
   S: array[0..7] of UInt64;
   W: array[0..79] of UInt64;
   t0, t1: UInt64;
-  i: LongWord;
+  i: UInt32;
 begin
   Move(md.state, S, 64);
   for i := 0 to 15 do
-    W[i] := Endian64(PInt64(LongWord(@md.buf) + i * 8)^);
+    W[i] := Endian64(PInt64(UInt32(@md.buf) + i * 8)^);
   for i := 16 to 79 do
     W[i] := Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W [i - 15]) + W[i - 16];
   for i := 0 to 79 do
@@ -523,7 +523,7 @@ end;
 
 function SHA256Final(var md: TSHA256Ctx; sz: Word): TBuffer;
 var
-  i: LongWord;
+  i: UInt32;
 begin
   Inc(md.length, md.curlen shl 3);
   md.buf[md.curlen] := $80;
@@ -561,9 +561,9 @@ begin
     md.state[i] := endian(md.state[i]);
 
   if sz = 256 then
-    Result := TBuffer.Create(@(md.state[0]), SizeOf(LongWord) * 8)
+    Result := TBuffer.Create(@(md.state[0]), SizeOf(UInt32) * 8)
   else
-    Result := TBuffer.Create(@(md.state[0]), SizeOf(LongWord) * 5);
+    Result := TBuffer.Create(@(md.state[0]), SizeOf(UInt32) * 5);
 end;
 
 procedure SHA256Init(var md: TSHA256Ctx);
@@ -579,13 +579,13 @@ begin
   md.state[7] := $5be0cd19;
 end;
 
-procedure SHA256Update(var md: TSHA256Ctx; buf: Pointer; len: LongWord; sz: Word);
+procedure SHA256Update(var md: TSHA256Ctx; buf: Pointer; len: UInt32; sz: Word);
 begin
   while (len > 0) do
   begin
     md.buf[md.curlen] := PByte(buf)^;
     Inc(md.curlen);
-    Inc(PByte(buf)); // buf := Ptr(LongWord(buf) + 1);
+    Inc(PByte(buf)); // buf := Ptr(UInt32(buf) + 1);
     if (md.curlen = 64) then
     begin
       if sz = 256 then
@@ -624,7 +624,7 @@ end;
 
 function SHA512Final(var md: TSHA512Ctx; sz: Word): TBuffer;
 var
-  i: LongWord;
+  i: UInt32;
 begin
   Inc(md.length, md.curlen shl 3);
   md.buf[md.curlen] := $80;
@@ -672,13 +672,13 @@ begin
   md.state[7] := $5be0cd19137e2179;
 end;
 
-procedure SHA512Update(var md: TSHA512Ctx; buf: Pointer; len: LongWord);
+procedure SHA512Update(var md: TSHA512Ctx; buf: Pointer; len: UInt32);
 begin
   while (len > 0) do
   begin
     md.buf[md.curlen] := PByte(buf)^;
     md.curlen := md.curlen + 1;
-    Inc(PByte(buf)); // buf := Ptr(LongWord(buf) + 1);
+    Inc(PByte(buf)); // buf := Ptr(UInt32(buf) + 1);
     if (md.curlen = 128) then
     begin
       sha512_compress(md);
