@@ -729,7 +729,9 @@ type
 implementation
 
 uses
+{$IFNDEF DELPHIXE_UP}
   Spring.Collections.Sets,
+{$ENDIF}
   Spring.ResourceStrings;
 
 
@@ -1428,7 +1430,11 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFDEF DELPHIXE_UP}
+    fSet := TCollections.CreateSet<T>(fComparer);
+{$ELSE}
     fSet := THashSet<T>.Create(fComparer);
+{$ENDIF}
     fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
   end;
@@ -1536,7 +1542,11 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFDEF DELPHIXE_UP}
+    fSet := TCollections.CreateSet<T>(fComparer);
+{$ELSE}
     fSet := THashSet<T>.Create(fComparer);
+{$ENDIF}
     fSet.AddRange(fSecond);
     fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
@@ -1596,7 +1606,11 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFDEF DELPHIXE_UP}
+    fSet := TCollections.CreateSet<T>(fComparer);
+{$ELSE}
     fSet := THashSet<T>.Create(fComparer);
+{$ENDIF}
     fSet.AddRange(fSecond);
     fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
@@ -1656,7 +1670,11 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFDEF DELPHIXE_UP}
+    fSet := TCollections.CreateSet<T>(fComparer);
+{$ELSE}
     fSet := THashSet<T>.Create(fComparer);
+{$ENDIF}
     fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
   end;
