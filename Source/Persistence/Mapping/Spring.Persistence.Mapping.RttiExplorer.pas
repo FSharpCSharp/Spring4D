@@ -88,7 +88,7 @@ type
     class function GetEntities: IList<TClass>;
     class function GetEntityClass(classInfo: PTypeInfo): TClass;
     class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType;
-    class function GetForeignKeyColumn(AClass: TClass; const ABaseTablePrimaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
+    class function GetForeignKeyColumn(AClass: TClass; const ABaseTable : TableAttribute; const ABaseTablePrimaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
     class function GetLastGenericArgumentType(ATypeInfo: PTypeInfo): TRttiType;
     class function GetMemberValue(AEntity: TObject; const AMember: TRttiNamedObject): TValue; overload;
     class function GetMemberValue(AEntity: TObject; const AMemberName: string): TValue; overload;
@@ -428,13 +428,15 @@ begin
 end;
 
 class function TRttiExplorer.GetForeignKeyColumn(AClass: TClass;
+  const ABaseTable : TableAttribute;
   const ABaseTablePrimaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
 var
   LForeignCol: ForeignJoinColumnAttribute;
 begin
   for LForeignCol in TEntityCache.Get(AClass).ForeignColumns do
   begin
-    if SameText(ABaseTablePrimaryKeyColumn.ColumnName, LForeignCol.ReferencedColumnName) then
+    if SameText(ABaseTablePrimaryKeyColumn.ColumnName, LForeignCol.ReferencedColumnName) and
+       SameText(ABaseTable.TableName, LForeignCol.ReferencedTableName) then
     begin
       Exit(LForeignCol);
     end;

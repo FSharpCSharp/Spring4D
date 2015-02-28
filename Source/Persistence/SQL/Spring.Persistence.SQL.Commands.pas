@@ -319,21 +319,24 @@ end;
 
 procedure TSelectCommand.SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
 var
-  LPrimaryKeyColumn: ColumnAttribute;
-  LWhereField: TSQLWhereField;
+  primaryKeyColumn: ColumnAttribute;
+  whereField: TSQLWhereField;
+  foreignEntityData: TEntityData;
 begin
   FForeignColumn := nil;
-  LPrimaryKeyColumn := TEntityCache.Get(AForeignTableClass).PrimaryKeyColumn;
-  if not Assigned(LPrimaryKeyColumn) then
+  foreignEntityData := TEntityCache.Get(AForeignTableClass);
+  primaryKeyColumn := foreignEntityData.PrimaryKeyColumn;
+  if not Assigned(primaryKeyColumn) then
     Exit;
 
-  FForeignColumn := TRttiExplorer.GetForeignKeyColumn(ABaseTableClass, LPrimaryKeyColumn);
+  FForeignColumn := TRttiExplorer.GetForeignKeyColumn(ABaseTableClass,
+    foreignEntityData.EntityTable, primaryKeyColumn);
   if not Assigned(FForeignColumn) then
     Exit;
 
-  LWhereField := TSQLWhereField.Create(FForeignColumn.Name, FTable, nil,
+  whereField := TSQLWhereField.Create(FForeignColumn.Name, FTable, nil,
     GetAndIncParameterName(FForeignColumn.Name));
-  WhereFields.Add(LWhereField);
+  WhereFields.Add(whereField);
 end;
 
 procedure TSelectCommand.SetFromPrimaryColumn;
