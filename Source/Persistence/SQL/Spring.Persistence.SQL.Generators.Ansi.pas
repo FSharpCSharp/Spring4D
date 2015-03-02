@@ -176,7 +176,7 @@ function TAnsiSQLGenerator.DoGenerateRestoreTable(const tableName: string;
 begin
   SetLength(Result, 2);
 
-  Result[0] := Format('INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S' + #13#10,
+  Result[0] := Format('INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S' + sLineBreak,
     [tableName, GetTempTableName, GetCreateFieldsAsString(createColumns),
     GetCopyFieldsAsString(createColumns, dbColumns)]);
 

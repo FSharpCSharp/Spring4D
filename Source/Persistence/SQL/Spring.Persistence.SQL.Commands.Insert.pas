@@ -203,7 +203,7 @@ begin
     Result := Generator.GenerateInsert(fCommand);
 
   if SupportsIdentityColumn then
-    Result := Result + #13#10 + ' ' + fLastInsertIdSQL;
+    Result := Result + sLineBreak + ' ' + fLastInsertIdSQL;
 end;
 
 function TInsertExecutor.ResolveGetSequenceSQL: string;

@@ -62,7 +62,7 @@ resourcestring
   EXCEPTION_UNSUPPORTED_LAZY_TYPE = 'Unsupported type for lazy value: %S.';
   EXCEPTION_UNSUPPORTED_CONTAINER_TYPE = 'List must be Spring interface IList<T>.';
   EXCEPTION_QUERY_NO_RECORDS = 'Query returned 0 records.';
-  EXCEPTION_CANNOT_OPEN_QUERY = 'Cannot open query. Error Message: ' + #13#10 + '%S';
+  EXCEPTION_CANNOT_OPEN_QUERY = 'Cannot open query. Error Message: ' + sLineBreak + '%S';
   EXCEPTION_CANNOT_CONVERT_TYPE = 'Cannot convert from type "%0:S" into type "%1:S"';
 
 implementation

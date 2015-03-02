@@ -34,7 +34,7 @@ uses
   TypInfo;
 
 const
-  CRLF = #13#10;
+  CRLF = sLineBreak;
 
 type
   /// <summary>
