@@ -12,7 +12,13 @@
         <Projects Include="..\..\..\Packages\DelphiXE7\Spring.Extensions.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="..\..\..\Packages\DelphiXE7\Spring.Persistence.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="SpringTestsMobile.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="SpringORMTestsMobile.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -50,6 +56,15 @@
     <Target Name="Spring_Extensions:Make">
         <MSBuild Projects="..\..\..\Packages\DelphiXE7\Spring.Extensions.dproj" Targets="Make"/>
     </Target>
+    <Target Name="Spring_Persistence">
+        <MSBuild Projects="..\..\..\Packages\DelphiXE7\Spring.Persistence.dproj"/>
+    </Target>
+    <Target Name="Spring_Persistence:Clean">
+        <MSBuild Projects="..\..\..\Packages\DelphiXE7\Spring.Persistence.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Persistence:Make">
+        <MSBuild Projects="..\..\..\Packages\DelphiXE7\Spring.Persistence.dproj" Targets="Make"/>
+    </Target>
     <Target Name="SpringTestsMobile">
         <MSBuild Projects="SpringTestsMobile.dproj"/>
     </Target>
@@ -59,14 +74,23 @@
     <Target Name="SpringTestsMobile:Make">
         <MSBuild Projects="SpringTestsMobile.dproj" Targets="Make"/>
     </Target>
+    <Target Name="SpringORMTestsMobile">
+        <MSBuild Projects="SpringORMTestsMobile.dproj"/>
+    </Target>
+    <Target Name="SpringORMTestsMobile:Clean">
+        <MSBuild Projects="SpringORMTestsMobile.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SpringORMTestsMobile:Make">
+        <MSBuild Projects="SpringORMTestsMobile.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;SpringTestsMobile"/>
+        <CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Persistence;SpringTestsMobile;SpringORMTestsMobile"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;SpringTestsMobile:Clean"/>
+        <CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Persistence:Clean;SpringTestsMobile:Clean;SpringORMTestsMobile:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;SpringTestsMobile:Make"/>
+        <CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Persistence:Make;SpringTestsMobile:Make;SpringORMTestsMobile:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
