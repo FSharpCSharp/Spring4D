@@ -85,25 +85,29 @@ uses
 procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
 begin
   case AFrom.VType of
+{$IFNDEF NEXTGEN}
     vtAnsiString:
     begin
       ATo.fParamType := ftString;
       ATo.fValue := string(AFrom.VAnsiString);
     end;
+    vtString:
+    begin
+      ATo.fParamType := ftString;
+      ATo.fValue := string(AFrom.VString);
+    end;
+{$ENDIF}
+{$IF Declared(WideString)}
     vtWideString:
     begin
       ATo.fParamType := ftWideString;
       ATo.fValue := string(AFrom.VWideString);
     end;
+{$IFEND}
     vtUnicodeString:
     begin
       ATo.fParamType := ftWideString;
       ATo.fValue := string(AFrom.VUnicodeString);
-    end;
-    vtString:
-    begin
-      ATo.fParamType := ftString;
-      ATo.fValue := string(AFrom.VString);
     end;
     vtInt64:
     begin

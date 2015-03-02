@@ -297,7 +297,8 @@ begin
     end else
     if TryGetRttiType(ASource.TypeInfo, LSourceType) and LSourceType.IsGenericTypeOf('IList') then
     begin
-      if (ATarget.Name = 'IList') and LSourceType.TryGetMethod('AsList', LMethod) then
+      if (ATarget.NameFld.ToString = 'IList')
+        and LSourceType.TryGetMethod('AsList', LMethod) then
       begin
         LInterface := LMethod.Invoke(ASource, []).AsInterface;
         AResult := TValue.From(@LInterface, ATarget);
@@ -1161,7 +1162,8 @@ begin
               begin
                 AResult := TValue.From(Self.GetReferenceToRawData, ATypeInfo);
                 Result := True;
-              end else if TryGetRttiType(Self.TypeInfo, LType) and (ATypeInfo.Name = 'IList')
+              end else if TryGetRttiType(Self.TypeInfo, LType)
+                and (ATypeInfo.NameFld.ToString = 'IList')
                 and LType.IsGenericTypeOf('IList') and LType.TryGetMethod('AsList', LMethod) then
               begin
                 LInterface := LMethod.Invoke(Self, []).AsInterface;

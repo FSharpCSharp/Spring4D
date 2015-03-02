@@ -137,14 +137,21 @@ procedure FinalizeVarRec(var item: TVarRec);
 begin
   case item.VType of
     vtExtended: Dispose(item.VExtended);
+{$IFNDEF NEXTGEN}
     vtString: Dispose(item.VString);
-    vtPWideChar: FreeMem(item.VPWideChar);
     vtAnsiString: string(item.VAnsiString) := '';
+{$ENDIF}
+    vtPWideChar: FreeMem(item.VPWideChar);
+{$IF Declared(WideString)}
+    vtWideString: WideString(item.VWideString) := '';
+{$IFEND}
+    vtUnicodeString: string(item.VUnicodeString) := '';
     vtCurrency: Dispose(item.VCurrency);
     vtVariant: Dispose(item.VVariant);
     vtInterface: IInterface(item.VInterface) := nil;
-    vtWideString: WideString(item.VWideString) := '';
-    vtUnicodeString: string(item.VUnicodeString) := '';
+{$IFDEF AUTOREFCOUNT}
+    vtObject: TObject(item.VObject) := nil;
+{$ENDIF}
     vtInt64: Dispose(item.VInt64);
   end;
   item.VInteger := 0;

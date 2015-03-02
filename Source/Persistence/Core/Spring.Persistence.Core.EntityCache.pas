@@ -256,10 +256,12 @@ begin
 end;
 
 function TEntityData.ColumnByName(const columnName: string): ColumnAttribute;
+var
+  LAttribute: ColumnAttribute;
 begin
-  for Result in fColumns do
-    if SameText(Result.ColumnName, columnName) then
-      Exit;
+  for LAttribute in fColumns do
+    if SameText(LAttribute.ColumnName, columnName) then
+      Exit(LAttribute);
   Result := nil;
 end;
 

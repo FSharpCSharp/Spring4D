@@ -366,7 +366,7 @@ begin
 
   results := DoGetLazy(id, entity, column, interfaceType);
   if not TUtils.IsEnumerable(interfaceType) then
-    raise EORMUnsupportedType.CreateFmt('Unsupported ORM lazy type: %s', [interfaceType.Name]);
+    raise EORMUnsupportedType.CreateFmt('Unsupported ORM lazy type: %s', [interfaceType.NameFld.ToString]);
 
   Result := TCollections.CreateObjectList<TObject>(True);
   SetInterfaceListOfObjects(Result as IObjectList, results, interfaceType);
@@ -389,7 +389,7 @@ procedure TAbstractSession.RegisterNonGenericRowMapper(typeInfo: PTypeInfo;
   const rowMapper: IRowMapper<TObject>);
 begin
   if fRowMappers.ContainsKey(typeInfo) then
-    raise EORMRowMapperAlreadyRegistered.CreateFmt('Row Mapper already registered for type: %s', [typeInfo.Name]);
+    raise EORMRowMapperAlreadyRegistered.CreateFmt('Row Mapper already registered for type: %s', [typeInfo.NameFld.ToString]);
   fRowMappers.Add(typeInfo, rowMapper);
 end;
 
@@ -442,7 +442,7 @@ var
   factory: TFunc<Nullable<TObject>>;
 begin
   if not IsNullable(recordType.Handle) then
-    raise EORMUnsupportedType.CreateFmt('Unsupported lazy type: %s. Expected Lazy<Nullable<T: TObject>>', [recordType.ToString]);
+    raise EORMUnsupportedType.CreateFmt('Unsupported lazy type: %s. Expected Lazy<Nullable<T: TObject>>', [recordType.Name]);
 
   underlyingTypeInfo := GetUnderlyingType(recordType.Handle);
   capturedId := id;
@@ -453,7 +453,7 @@ begin
         Result.Create(GetLazyValueAsObject(capturedId, entity, column, underlyingTypeInfo));
       end;
     else
-      raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [underlyingTypeInfo.Name]);
+      raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [underlyingTypeInfo.NameFld.ToString]);
   end;
 
   case lazyKind of
@@ -474,7 +474,7 @@ begin
   lazyKind := TType.GetLazyKind(lazyTypeInfo);
   targetType := TType.GetType(lazyTypeInfo).GetGenericArguments[0];
   if targetType = nil then
-    raise EORMUnsupportedType.CreateFmt('Insufficient rtti information for lazy type: %s', [lazyTypeInfo.Name]);
+    raise EORMUnsupportedType.CreateFmt('Insufficient rtti information for lazy type: %s', [lazyTypeInfo.NameFld.ToString]);
   Result := TValue.Empty;
 
   column := entity.GetColumnAttribute(columnMemberName);

@@ -198,12 +198,14 @@ end;
 
 class function TRttiExplorer.GetAttributeOfClass(ARttiObject: TRttiObject;
   AClass: TClass): TCustomAttribute;
+var
+  LAttribute: TCustomAttribute;
 begin
-  for Result in ARttiObject.GetAttributes do
+  for LAttribute in ARttiObject.GetAttributes do
   begin
-    if Result.InheritsFrom(AClass) then
+    if LAttribute.InheritsFrom(AClass) then
     begin
-      Exit;
+      Exit(LAttribute);
     end;
   end;
   Result := nil;
@@ -393,7 +395,7 @@ var
 begin
   LRttiType := GetEntityRttiType(classInfo);
   if not Assigned(LRttiType) then
-    raise EORMUnsupportedType.CreateFmt('Unsupported type %s', [classInfo.Name]);
+    raise EORMUnsupportedType.CreateFmt('Unsupported type %s', [classInfo.NameFld.ToString]);
 
   Result := LRttiType.AsInstance.MetaclassType;
 end;
@@ -406,7 +408,7 @@ var
 begin
   LRttiType := FRttiCache.GetType(ATypeInfo);
   if LRttiType = nil then
-    raise EORMUnsupportedType.CreateFmt('Cannot get type information from %s', [ATypeInfo.Name]);
+    raise EORMUnsupportedType.CreateFmt('Cannot get type information from %s', [ATypeInfo.NameFld.ToString]);
 
   for LCurrType in LRttiType.GetGenericArguments do
   begin
@@ -415,14 +417,14 @@ begin
   end;
 
   if not LRttiType.IsInstance then
-    raise EORMUnsupportedType.CreateFmt('%s is not an instance type.', [ATypeInfo.Name]);
+    raise EORMUnsupportedType.CreateFmt('%s is not an instance type.', [ATypeInfo.NameFld.ToString]);
 
   LEntityData := TEntityCache.Get(LRttiType.AsInstance.MetaclassType);
   if not LEntityData.IsTableEntity then
-    raise EORMUnsupportedType.CreateFmt('Type %s lacks [Table] attribute', [ATypeInfo.Name]);
+    raise EORMUnsupportedType.CreateFmt('Type %s lacks [Table] attribute', [ATypeInfo.NameFld.ToString]);
 
   if not LEntityData.HasPrimaryKey then
-    raise EORMUnsupportedType.CreateFmt('Type %s lacks primary key [Column]', [ATypeInfo.Name]);
+    raise EORMUnsupportedType.CreateFmt('Type %s lacks primary key [Column]', [ATypeInfo.NameFld.ToString]);
 
   Result := LRttiType;
 end;
@@ -793,7 +795,11 @@ begin
 
   for LType in FCtx.GetTypes do
   begin
-    FTypes.Add(LType.Handle, LType);
+    // Honza: For some reason one PTypeInfo can map to multiple types on mobile
+    //        we'll use the later. (Types like IEvent, TAction, TEnumerator etc.
+    //        have the same TypeInfo but are defined per unit multiple times
+    //        in extended RTTI.)
+    FTypes.AddOrSetValue(LType.Handle, LType);
 
     if LType.IsInstance then
     begin
