@@ -72,7 +72,7 @@ implementation
 const
   UNIT_ATTRIBUTES = 'Mapping.Attributes';
   UNIT_TYPES = 'Core.Types';
-  UNIT_GRAPHICS = 'Graphics';
+  UNIT_GRAPHICS = 'Core.Graphics';
 
 { TEntityCodeGenerator }
 

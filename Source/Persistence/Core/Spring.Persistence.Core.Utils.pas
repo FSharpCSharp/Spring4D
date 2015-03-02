@@ -31,10 +31,10 @@ interface
 uses
   Classes,
   DB,
-  Graphics,
   Rtti,
   TypInfo,
   Spring.Collections,
+  Spring.Persistence.Core.Graphics,
   Spring.Persistence.Core.Interfaces;
 
 type
@@ -69,12 +69,16 @@ type
 implementation
 
 uses
-{$IFDEF DELPHIXE2_UP}
+{$IF Defined(DELPHIXE2_UP) AND NOT Defined(NEXTGEN)}
   AnsiStrings,
-{$ENDIF}
+{$IFEND}
+{$IFNDEF FMX}
   GIFImg,
   jpeg,
   pngimage,
+{$ELSE}
+  FMX.Graphics,
+{$ENDIF}
   StrUtils,
   SysUtils,
   Variants,
@@ -377,6 +381,8 @@ begin
   end;
 end;
 
+{$IFNDEF FMX}
+
 const
   MinGraphicSize = 44; //we may test up to & including the 11th longword
 
@@ -434,13 +440,14 @@ begin
   end;
 end;
 
+{$ENDIF}
+
 class function TUtils.TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean;
 var
   LGraphic: TGraphic;
   LGraphicClass: TGraphicClass;
   LStream: TMemoryStream;
 begin
-  Result := False;
   LGraphic := nil;
   LStream := TMemoryStream.Create;
   try
@@ -451,8 +458,12 @@ begin
       AToPicture.Assign(nil);
       Exit(True);
     end;
+{$IFNDEF FMX}
     if not FindGraphicClass(LStream.Memory^, LStream.Size, LGraphicClass) then
-      Exit;
+      Exit(False);
+{$ELSE}
+    LGraphicClass := TBitmap;
+{$ENDIF}
      // raise EInvalidGraphic.Create(SInvalidImage);
     LGraphic := LGraphicClass.Create;
     LStream.Position := 0;
@@ -518,7 +529,6 @@ var
 begin
   Assert(AField is TBlobField);
   Assert(Assigned(AToPicture));
-  Result := False;
   LField := AField as TBlobField;
   LGraphic := nil;
   LStream := TMemoryStream.Create;
@@ -529,9 +539,13 @@ begin
       AToPicture.Assign(nil);
       Exit(True);
     end;
+{$IFNDEF FMX}
     if not FindGraphicClass(LStream.Memory^, LStream.Size, LGraphicClass) then
-      Exit;
+      Exit(False);
       //raise EInvalidGraphic.Create(SInvalidImage);
+{$ELSE}
+    LGraphicClass := TBitmap;
+{$ENDIF}
     LGraphic := LGraphicClass.Create;
     LStream.Position := 0;
     LGraphic.LoadFromStream(LStream);

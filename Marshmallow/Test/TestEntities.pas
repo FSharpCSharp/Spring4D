@@ -34,7 +34,7 @@ interface
 
 uses
   Spring.Persistence.Mapping.Attributes, Generics.Collections
-  , Graphics, Spring.Collections, Classes, Spring;
+  , Spring.Persistence.Core.Graphics, Spring.Collections, Classes, Spring;
 
 
 const

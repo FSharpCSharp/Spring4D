@@ -148,9 +148,12 @@ uses
   Math,
   StrUtils,
   SysUtils
-  ,Graphics
+{$IFDEF FMX}
+  ,FMX.Graphics
+{$ENDIF}
   ,Spring
   ,Spring.Reflection
+  ,Spring.Persistence.Core.Graphics
   ,Spring.Persistence.Core.Utils
   ,Variants
   ;
