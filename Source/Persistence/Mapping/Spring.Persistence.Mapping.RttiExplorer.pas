@@ -143,7 +143,10 @@ class function TRttiExplorer.Clone(entity: TObject): TObject;
 begin
   Assert(Assigned(entity));
   Result := TActivator.CreateInstance(entity.ClassType);
-  CopyFieldValues(entity, Result);
+  if Result is TPersistent then
+    TPersistent(Result).Assign(entity as TPersistent)
+  else
+    CopyFieldValues(entity, Result);
 end;
 
 class procedure TRttiExplorer.CopyFieldValues(const source, target: TObject);
