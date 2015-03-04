@@ -1,4 +1,4 @@
-﻿unit SQLiteTable3;
+unit SQLiteTable3;
 
 {
   Simple classes for using SQLite's exec and get_table.
@@ -66,8 +66,16 @@ interface
   {$MODE Delphi}{$H+}
 {$ENDIF}
 
+{$IFNDEF MSWINDOWS}
+  {$DEFINE USE_SYSTEM_SQLITE}
+{$ENDIF}
+
 uses
+  {$IFNDEF USE_SYSTEM_SQLITE}
   SQLite3,
+  {$ELSE}
+  System.Sqlite,
+  {$ENDIF}
   {$IFDEF DELPHI16_UP}
   {$IFDEF WIN32}
   Winapi.Windows,
@@ -90,6 +98,36 @@ const
   //my types
   dtDate = 15;
   dtDateTime = 16;
+
+{$IFDEF USE_SYSTEM_SQLITE}
+type
+  TSQLiteActionCode = type Integer;
+  TSQLiteDB = Pointer;
+  TSQLiteResult = type PMarshaledAString;
+  TSQLiteStmt = Pointer;
+  TSQLiteBackup = type pointer;
+  PPsqlite3_value = ^Psqlite3_value;
+  //function prototype for define own collate
+  TCollateXCompare = function(UserData: pointer; Buf1Len: integer; Buf1: pointer;
+    Buf2Len: integer; Buf2: pointer): integer; cdecl;
+{$IFDEF NEXTGEN}
+  PAnsiChar = MarshaledAString;
+  PPAnsiChar = ^PAnsiChar;
+  AnsiString = record
+  private
+    FBytes: TBytes;
+  public
+    class operator Implicit(const s: string): AnsiString;
+    class operator Implicit(const s: AnsiString): string;
+    class operator Explicit(const s: AnsiString): PAnsiChar;
+  end;
+
+  {$WARN SYMBOL_DEPRECATED OFF}
+{$ENDIF}
+const
+  SQLITE_STATIC : TBindDestructor = TBindDestructor(System.Sqlite.SQLITE_STATIC);
+  SQLITE_TRANSIENT : TBindDestructor = TBindDestructor(System.Sqlite.SQLITE_TRANSIENT);
+{$ENDIF}
 
 type
   TSQLiteDBEncoding = (seUTF8, seUTF16);
@@ -151,10 +189,10 @@ type
   /// </summary>
   TSQLiteFunctions = class
   private
-    FDB: TSQLiteDatabase;
+    [Unsafe] FDB: TSQLiteDatabase;
     FVals: TList<PSQLiteFuncs>;
   public
-    constructor Create(DB: TSQLiteDatabase); virtual;
+    constructor Create(const DB: TSQLiteDatabase); virtual;
     destructor Destroy; override;
 
     class function GetValueType(ArgValue: Psqlite3_value): Integer;
@@ -169,10 +207,12 @@ type
     class procedure ResultAsString(sqlite3_context: Psqlite3_context; Val: string);
     class procedure ResultAsFloat(sqlite3_context: Psqlite3_context; Val: Double);
 
+{$IFNDEF NEXTGEN}
     procedure AddScalarFunction(const FuncName: AnsiString; ArgCount: Integer;
       AFunc: TSQLiteUserFunc);
     procedure AddAggregateFunction(const FuncName: AnsiString; ArgCount: Integer;
       AStepFunc: TSQLiteUserFunc; AFinalFunc: TSQLiteUserFuncFinal) ;
+{$ENDIF}
     procedure Clear;
   end;
 
@@ -187,7 +227,7 @@ type
     fDB: TSQLiteDB;
     fInTrans: boolean;
     fSync: boolean;
-    fParams: TList;
+    fParams: TObjectList<TSQliteParam>;
     FOnQuery: THookQuery;
     FFormatSett: TFormatSettings;
     FFilename: TFileName;
@@ -232,8 +272,10 @@ type
       /// http://sourceforge.net/projects/wxcode/files/Components/wxSQLite3/ library file (rename it to sqlite3.dll) </param>
     {$ENDREGION}
     constructor Create(); reintroduce; overload;
-    constructor Create(const AFileName: string; DefaultEncoding: TSQLiteDBEncoding = seUTF8;
-      const Password: AnsiString = ''; AOwner: TComponent = nil); reintroduce; overload;
+    constructor Create(const AFileName: string; DefaultEncoding: TSQLiteDBEncoding;
+      const Password: AnsiString; AOwner: TComponent = nil); reintroduce; overload;
+    constructor Create(const AFileName: string;
+      DefaultEncoding: TSQLiteDBEncoding = seUTF8); reintroduce; overload;
     constructor Create(AOwner: TComponent); reintroduce; overload;
     destructor Destroy; override;
     //service methods
@@ -288,8 +330,10 @@ type
     function GetTableValue(const SQL: String): int64;
     function GetTableString(const SQL: String): string;
     procedure GetTableStrings(const SQL: String; const Value: TStrings);
+{$IFNDEF NEXTGEN}
     procedure GetTableColumnMetadata(const TableName, ColumnName: AnsiString; var Datatype, CollSeq: AnsiString;
       var bNotNull, bPrimKey, bAutoinc: Boolean; const DbName: AnsiString = '');
+{$ENDIF}
     function GetPreparedStatement(const SQL: string): TSQLitePreparedStatement; overload;
     {$REGION 'Doc'}
       /// <summary>
@@ -349,7 +393,7 @@ type
     /// <param name="NewPassword">New password: Ansistring</param>
     procedure ChangePassword(const NewPassword: AnsiString);
 
-    procedure Open(const Password: AnsiString = '');
+    procedure Open(const Password: AnsiString{$IFNDEF NEXTGEN} = ''{$ENDIF});
     procedure Close;
     /// <summary>
     /// This routine sets a busy handler that sleeps for a specified amount of time when a table is locked.
@@ -357,8 +401,8 @@ type
     /// </summary>
     /// <param name="Value">Time is miliseconds</param>
     procedure SetTimeout(Value: integer);
-    function Backup(TargetDB: TSQLiteDatabase): integer; Overload;
-    function Backup(TargetDB: TSQLiteDatabase; const targetName: String; const sourceName: String): integer; Overload;
+    function Backup(const TargetDB: TSQLiteDatabase): integer; Overload;
+    function Backup(const TargetDB: TSQLiteDatabase; const targetName: String; const sourceName: String): integer; Overload;
     function Version: string;
     procedure LoadExtension(const AFilename: string);
     procedure AddCustomCollate(const name: string; xCompare: TCollateXCompare);
@@ -419,11 +463,11 @@ type
   /// </summary>
   TSQLiteTable = class
   private
-    fResults: TList;
+    fResults: TList<Pointer>;
     fRowCount: cardinal;
     fColCount: cardinal;
     fCols: TStringList;
-    fColTypes: TList;
+    fColTypes: TList<Pointer>;
     fRow: cardinal;
     function GetFields(I: cardinal): string;
     function GetEOF: boolean;
@@ -435,7 +479,7 @@ type
     function GetCountResult: integer;
     function GetIsLastRow: boolean;
   public
-    constructor Create(DB: TSQLiteDatabase; const SQL: String);
+    constructor Create(const DB: TSQLiteDatabase; const SQL: String);
     destructor Destroy; override;
 
     function FieldAsInteger(I: cardinal): int64;
@@ -528,7 +572,7 @@ type
   TSQLitePreparedStatement = class(TInterfacedObject, ISQLitePreparedStatement)
   private
     FSQL: string;
-    FDB: TSQLiteDatabase;
+    [Unsafe] FDB: TSQLiteDatabase;
     fParams: TObjectList<TSQliteParam>;
     FStmt: TSQLiteStmt;
     FParamsBound: Boolean;
@@ -548,9 +592,9 @@ type
     procedure SetParamNullInternal(const I: Integer = 0; const name: string = '');
     procedure SetParamVariantInternal(const Value: Variant; const I: Integer = 0; const name: string = '');
   public
-    constructor Create(DB: TSQLiteDatabase); overload;
-    constructor Create(DB: TSQLiteDatabase; const SQL: string); overload;
-    constructor Create(DB: TSQLiteDatabase; const SQL: string; const Params: array of TVarRec); overload;
+    constructor Create(const DB: TSQLiteDatabase); overload;
+    constructor Create(const DB: TSQLiteDatabase; const SQL: string); overload;
+    constructor Create(const DB: TSQLiteDatabase; const SQL: string; const Params: array of TVarRec); overload;
     destructor Destroy; override;
 
     procedure ClearParams;
@@ -619,7 +663,7 @@ type
   /// </summary>
   TSQLiteField = class
   private
-    Table: TSQLiteUniTable;
+    [Unsafe] Table: TSQLiteUniTable;
   public
     Index: Integer;
     Name: string;
@@ -653,10 +697,10 @@ type
   TUniTableEnumerator = class
   private
     FMoveToFirst: Boolean;
-    FDataSet: TSQLiteUniTable;
+    [Unsafe] FDataSet: TSQLiteUniTable;
     function GetCurrent: Variant;
   public
-    constructor Create(ATable: TSQLiteUniTable);
+    constructor Create(const ATable: TSQLiteUniTable);
     destructor Destroy; override;
     function MoveNext: Boolean;
     property Current: Variant read GetCurrent;
@@ -713,7 +757,7 @@ type
     fRow: Cardinal;
     fEOF: Boolean;
     fStmt: TSQLiteStmt;
-    fDB: TSQLiteDatabase;
+    [Unsafe] fDB: TSQLiteDatabase;
     fSQL: string;
     function GetFieldsAsString(I: Cardinal): string;
     function GetColumns(I: integer): string;
@@ -729,9 +773,9 @@ type
   protected
     function GetFieldsVal(I: Cardinal): Variant; virtual;
   public
-    constructor Create(DB: TSQLiteDatabase); overload; //use with caution!
-    constructor Create(DB: TSQLiteDatabase; hStmt: TSQLiteStmt); overload;
-    constructor Create(DB: TSQLiteDatabase; const SQL: string); overload;
+    constructor Create(const DB: TSQLiteDatabase); overload; //use with caution!
+    constructor Create(const DB: TSQLiteDatabase; hStmt: TSQLiteStmt); overload;
+    constructor Create(const DB: TSQLiteDatabase; const SQL: string); overload;
     destructor Destroy; override;
     function GetEnumerator: TUniTableEnumerator;
     property CurrentRec: Variant read GetCurrentRec;
@@ -997,6 +1041,115 @@ begin
   end;
 end;
 
+{$IFDEF USE_SYSTEM_SQLITE}
+function Sqlite3_LastInsertRowID(db: TSQLiteDB): int64;
+begin
+  Result := sqlite3_last_insert_rowid(db);
+end;
+
+function SQLite3_TotalChanges(db: TSQLiteDB): integer;
+begin
+  Result := sqlite3_total_changes(db);
+end;
+
+procedure SQLite3_BusyTimeout(db: TSQLiteDB; TimeOut: integer);
+begin
+  sqlite3_busy_timeout(db, TimeOut);
+end;
+
+function SQLite3_Version: PAnsiChar;
+begin
+  Result := sqlite3_libversion;
+end;
+
+function Sqlite3_ColumnText(hStmt: TSqliteStmt; ColNum: integer): PAnsiChar;
+begin
+  Result := sqlite3_column_text(hStmt, ColNum);
+end;
+
+function SQLite3_ColumnCount(hStmt: TSqliteStmt): integer;
+begin
+  Result := sqlite3_column_count(hStmt);
+end;
+
+function Sqlite3_ColumnName16(hStmt: TSqliteStmt; ColNum: integer): PWideChar;
+begin
+  Result := sqlite3_column_name16(hStmt, ColNum);
+end;
+
+function Sqlite3_ColumnDeclType16(hStmt: TSqliteStmt; ColNum: integer): PWideChar;
+begin
+  Result := sqlite3_column_decltype16(hStmt, ColNum);
+end;
+
+function Sqlite3_ColumnType(hStmt: TSqliteStmt; ColNum: integer): integer;
+begin
+  Result := sqlite3_column_type(hStmt, ColNum);
+end;
+
+function Sqlite3_ColumnInt64(hStmt: TSqliteStmt; ColNum: integer): Int64;
+begin
+  Result := sqlite3_column_int64(hStmt, ColNum);
+end;
+
+function Sqlite3_ColumnDouble(hStmt: TSqliteStmt; ColNum: integer): double;
+begin
+  Result := sqlite3_column_double(hStmt, ColNum);
+end;
+
+function Sqlite3_ColumnBytes(hStmt: TSqliteStmt; ColNum: integer): integer;
+begin
+  Result := sqlite3_column_bytes(hStmt, ColNum);
+end;
+
+function Sqlite3_ColumnBlob(hStmt: TSqliteStmt; ColNum: integer): pointer;
+begin
+  Result := sqlite3_column_blob(hStmt, ColNum);
+end;
+
+function Sqlite3_ColumnText16(hStmt: TSqliteStmt; ColNum: integer): PWideChar;
+begin
+  Result := sqlite3_column_text16(hStmt, ColNum);
+end;
+
+function SQLiteErrorStr(SQLiteErrorCode: Integer): String;
+begin
+  case SQLiteErrorCode of
+    SQLITE_OK: Result := 'Successful result';
+    SQLITE_ERROR: Result := 'SQL error or missing database';
+    SQLITE_INTERNAL: Result := 'An internal logic error in SQLite';
+    SQLITE_PERM: Result := 'Access permission denied';
+    SQLITE_ABORT: Result := 'Callback routine requested an abort';
+    SQLITE_BUSY: Result := 'The database file is locked';
+    SQLITE_LOCKED: Result := 'A table in the database is locked';
+    SQLITE_NOMEM: Result := 'A malloc() failed';
+    SQLITE_READONLY: Result := 'Attempt to write a readonly database';
+    SQLITE_INTERRUPT: Result := 'Operation terminated by sqlite3_interrupt()';
+    SQLITE_IOERR: Result := 'Some kind of disk I/O error occurred';
+    SQLITE_CORRUPT: Result := 'The database disk image is malformed';
+    SQLITE_NOTFOUND: Result := '(Internal Only) Table or record not found';
+    SQLITE_FULL: Result := 'Insertion failed because database is full';
+    SQLITE_CANTOPEN: Result := 'Unable to open the database file';
+    SQLITE_PROTOCOL: Result := 'Database lock protocol error';
+    SQLITE_EMPTY: Result := 'Database is empty';
+    SQLITE_SCHEMA: Result := 'The database schema changed';
+    SQLITE_TOOBIG: Result := 'Too much data for one row of a table';
+    SQLITE_CONSTRAINT: Result := 'Abort due to contraint violation';
+    SQLITE_MISMATCH: Result := 'Data type mismatch';
+    SQLITE_MISUSE: Result := 'Library used incorrectly';
+    SQLITE_NOLFS: Result := 'Uses OS features not supported on host';
+    SQLITE_AUTH: Result := 'Authorization denied';
+    SQLITE_FORMAT: Result := 'Auxiliary database format error';
+    SQLITE_RANGE: Result := '2nd parameter to sqlite3_bind out of range';
+    SQLITE_NOTADB: Result := 'File opened that is not a database file';
+    SQLITE_ROW: Result := 'sqlite3_step() has another row ready';
+    SQLITE_DONE: Result := 'sqlite3_step() has finished executing';
+  else
+    Result := 'Unknown SQLite Error Code "' + IntToStr(SQLiteErrorCode) + '"';
+  end;
+end;
+{$ENDIF}
+
 //------------------------------------------------------------------------------
 // TSQLiteDatabase
 //------------------------------------------------------------------------------
@@ -1007,7 +1160,7 @@ begin
   inherited Create(AOwner);
   FOnAuthorize := nil;
   fDB := nil;
-  fParams := TList.Create;
+  fParams := TObjectList<TSQliteParam>.Create;
   FFilename := AFileName;
   FFormatSett := TFormatSettings.Create();
   FFormatSett.ShortDateFormat := 'YYYY-MM-DD';
@@ -1028,6 +1181,12 @@ constructor TSQLiteDatabase.Create(AOwner: TComponent);
 begin
   //inherited Create(AOwner);
   Create('');
+end;
+
+constructor TSQLiteDatabase.Create(const AFileName: string;
+  DefaultEncoding: TSQLiteDBEncoding);
+begin
+  Create(AFileName, DefaultEncoding, '');
 end;
 
 constructor TSQLiteDatabase.Create;
@@ -1349,6 +1508,8 @@ begin
   Result := TSQLiteTable.Create(Self, SQL);
 end;
 
+{$IFNDEF NEXTGEN}
+
 procedure TSQLiteDatabase.GetTableColumnMetadata(const TableName, ColumnName: AnsiString; var Datatype,
   CollSeq: AnsiString; var bNotNull, bPrimKey, bAutoinc: Boolean; const DbName: AnsiString);
 var
@@ -1375,6 +1536,8 @@ begin
   Datatype := ADataType;
   CollSeq := ACollSeq;
 end;
+
+{$ENDIF}
 
 {$HINTS OFF}
 function TSQLiteDatabase.GetUniTable(const SQL: string): TSQLiteUniTable;
@@ -1425,9 +1588,23 @@ end;
 
 procedure TSQLiteDatabase.LoadExtension(const AFilename: string);
 var
+{$IFNDEF USE_SYSTEM_SQLITE}
   zErr: PAnsiChar;
+{$ELSE}
+  zErr: Pointer;
+{$ENDIF}
+  lFileName: PAnsiChar;
+{$IFDEF NEXTGEN}
+  M: TMarshaller;
+{$ENDIF}
 begin
-  if (sqlite3_load_extension(fDB, PAnsiChar(UTF8Encode(AFilename)), '0', zErr) <> SQLITE_OK) then
+  zErr := nil;
+{$IFNDEF NEXTGEN}
+  lFileName := PAnsiChar(UTF8Encode(AFilename));
+{$ELSE}
+  lFileName := M.AsUtf8(AFileName).ToPointer;
+{$ENDIF}
+  if (sqlite3_load_extension(fDB, lFileName, '0', zErr) <> SQLITE_OK) then
   begin
     RaiseError('Cannot load extension: ' + AFilename);
   end;
@@ -1464,6 +1641,8 @@ begin
     if (Password <> '') then
     begin
       //db is encrypted
+
+{$IFNDEF USE_SYSTEM_SQLITE}
       if not Assigned(sqlite3_key) then
         raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
 
@@ -1472,6 +1651,9 @@ begin
       begin
         RaiseError('Cannot encrypt database', '');
       end;
+{$ELSE}
+      raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
+{$ENDIF}
     end;
 
     FConnected := True;
@@ -1560,10 +1742,13 @@ begin
 end;
 
 procedure TSQLiteDatabase.ChangePassword(const NewPassword: AnsiString);
+{$IFNDEF USE_SYSTEM_SQLITE}
 var
   pNewPass: PAnsiChar;
   iLen: Integer;
+{$ENDIF}
 begin
+{$IFNDEF USE_SYSTEM_SQLITE}
   if Assigned(sqlite3_rekey) then
   begin
     if NewPassword = '' then
@@ -1583,6 +1768,7 @@ begin
     end;
   end
   else
+{$ENDIF}
   begin
     raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
   end;
@@ -1678,14 +1864,9 @@ end;
 {$HINTS ON}
 
 procedure TSQLiteDatabase.ParamsClear;
-var
-  n: integer;
 begin
   if Assigned(fParams) then
   begin
-    for n := fParams.Count - 1 downto 0 do
-      TSQliteParam(fParams[n]).Free;
-
     fParams.Clear;
   end;
 end;
@@ -1754,7 +1935,7 @@ begin
 
     if Value then
     begin
-      Open;
+      Open('');
       //set callback events
       SetEvents;
     end;
@@ -1834,7 +2015,7 @@ begin
   try
     for n := 0 to fParams.Count - 1 do
     begin
-      par := TSQliteParam(fParams[n]);
+      par := fParams[n];
       i := sqlite3_bind_parameter_index(Stmt, PAnsiChar(ansistring(par.name)));
       if i > 0 then
       begin
@@ -1871,7 +2052,7 @@ begin
 end;
 
 //returns result of SQLITE3_Backup_Step
-function TSQLiteDatabase.Backup(TargetDB: TSQLiteDatabase; const targetName: String; const sourceName: String): integer;
+function TSQLiteDatabase.Backup(const TargetDB: TSQLiteDatabase; const targetName: String; const sourceName: String): integer;
 var
   pBackup: TSQLiteBackup;
 begin
@@ -1889,7 +2070,7 @@ begin
   end;
 end;
 
-function TSQliteDatabase.Backup(TargetDB: TSQLiteDatabase): integer;
+function TSQliteDatabase.Backup(const TargetDB: TSQLiteDatabase): integer;
 begin
   result := self.Backup(TargetDB,'main','main');
 end;
@@ -1898,7 +2079,7 @@ end;
 // TSQLiteTable
 //------------------------------------------------------------------------------
 
-constructor TSQLiteTable.Create(DB: TSQLiteDatabase; const SQL: String);
+constructor TSQLiteTable.Create(const DB: TSQLiteDatabase; const SQL: String);
 var
   Stmt: TSQLiteStmt;
   NextSQLStatement: PChar;
@@ -1941,7 +2122,7 @@ begin
             begin
             //get data types
               fCols := TStringList.Create;
-              fColTypes := TList.Create;
+              fColTypes := TList<Pointer>.Create;
               fColCount := SQLite3_ColumnCount(stmt);
 
               for i := 0 to Pred(fColCount) do
@@ -1985,7 +2166,7 @@ begin
                         thisColType^ := dtStr; }
                 fColTypes.Add(thiscoltype);
               end;
-              fResults := TList.Create;
+              fResults := TList<Pointer>.Create;
             end;
 
           //get column values
@@ -2023,6 +2204,12 @@ begin
                         iNumBytes := Sqlite3_ColumnBytes(stmt, i);
                         thisblobvalue.writebuffer(ptr^, iNumBytes);
                       end;
+{$IFDEF AUTOREFCOUNT}
+                      // fResults hold pointer only so next assignment to
+                      // thisblobvalue would clear the original value.
+                      if Assigned(thisblobvalue) then
+                        thisblobvalue.__ObjAddRef;
+{$ENDIF}
                       fResults.Add(thisblobvalue);
                     end
                     else
@@ -2067,7 +2254,13 @@ begin
       iColNo := (i mod fColCount);
       case pInteger(self.fColTypes[iColNo])^ of
         dtBlob:
+{$IFNDEF AUTOREFCOUNT}
           TMemoryStream(fResults[i]).Free;
+{$ELSE}
+          // See TSQLiteTable.Create
+          if Assigned(fResults[i]) then
+            TObject(fResults[i]).__ObjRelease;
+{$ENDIF}
         dtStr:
           if fResults[i] <> nil then
           begin
@@ -2339,7 +2532,7 @@ end;
 
 { TSQLiteUniTable }
 
-constructor TSQLiteUniTable.Create(DB: TSQLiteDatabase; const SQL: string);
+constructor TSQLiteUniTable.Create(const DB: TSQLiteDatabase; const SQL: string);
 begin
   Create(DB);
 
@@ -2348,7 +2541,7 @@ begin
   GetDataTypes;
 end;
 
-constructor TSQLiteUniTable.Create(DB: TSQLiteDatabase);
+constructor TSQLiteUniTable.Create(const DB: TSQLiteDatabase);
 begin
   inherited Create;
   self.fDB := db;
@@ -2360,7 +2553,7 @@ begin
   FFields := TObjectList<TSQLiteField>.Create(True);
 end;
 
-constructor TSQLiteUniTable.Create(DB: TSQLiteDatabase; hStmt: TSQLiteStmt);
+constructor TSQLiteUniTable.Create(const DB: TSQLiteDatabase; hStmt: TSQLiteStmt);
 begin
   Create(DB);
   fStmt := hStmt;
@@ -2535,7 +2728,7 @@ begin
       VarArrayUnlock(Result);
       LStream.Free;
     end;
-   end;
+  end;
 end;
 
 function TSQLiteUniTable.FieldAsDouble(I: cardinal): double;
@@ -2711,32 +2904,30 @@ begin
   blobsize := 0;
 end;
 
-
-
 { TSQLitePreparedStatement }
 
-procedure TSQLitePreparedStatement.SetParamDateTime(const I: Integer; const Value: TDateTime);
-begin
+procedure TSQLitePreparedStatement.SetParamDateTime(const I: Integer; const Value: TDateTime);
+begin
   SetParamText(I, DateTimeToStr(Value, FDB.FFormatSett));
 end;
 
 procedure TSQLitePreparedStatement.SetParamDate(const I: Integer; const Value: TDate);
-begin
+begin
   SetParamText(I, DateToStr(Value, FDB.FFormatSett));
 end;
 
 procedure TSQLitePreparedStatement.SetParamBlob(const I: Integer; const Value: TStream);
-begin
+begin
   SetParamBlobInternal(Value, I);
 end;
 
 procedure TSQLitePreparedStatement.SetParamBlob(const name: string; const Value: TStream);
-begin
+begin
   SetParamBlobInternal(Value, 0, name);
 end;
 
 procedure TSQLitePreparedStatement.SetParamBlobInternal(const Value: TStream; const I: Integer; const Name: string);
-var
+var
   par: TSQliteParam;
 begin
   par := TSQliteParam.Create;
@@ -2758,17 +2949,17 @@ begin
 end;
 
 procedure TSQLitePreparedStatement.SetParamDate(const name: string; const Value: TDate);
-begin
+begin
   SetParamText(name, DateToStr(Value, FDB.FFormatSett));
 end;
 
 procedure TSQLitePreparedStatement.SetParamDateTime(const name: string; const Value: TDateTime);
-begin
+begin
   SetParamText(name, DateTimeToStr(Value, FDB.FFormatSett));
 end;
 
 procedure TSQLitePreparedStatement.SetParamFloat(const I: Integer; value: double);
-begin
+begin
   SetParamFloatInternal(value, I);
 end;
 
@@ -2844,17 +3035,19 @@ begin
   for i := Low(Params) to High(Params) do
   begin
     case Params[i].VType of
+{$IFNDEF NEXTGEN}
       vtAnsiString:
       begin
         SetParamText(i + 1, String(Params[i].VAnsiString));
       end;
-      vtWideString:
-      begin
-        SetParamText(i + 1, String(Params[i].VWideString));
-      end;
       vtString:
       begin
         SetParamText(i + 1, String(Params[i].VString));
+      end;
+{$ENDIF}
+      vtWideString:
+      begin
+        SetParamText(i + 1, String(Params[i].VWideString));
       end;
       vtUnicodeString:
       begin
@@ -2890,7 +3083,7 @@ begin
           SetParamNull(i+1)
         else
         begin
-          if (Params[i].VObject is TStream) then
+          if (TObject(Params[i].VObject) is TStream) then
           begin
             SetParamBlob(i+1, TStream(Params[i].VObject));
           end
@@ -3033,7 +3226,7 @@ begin
   fParams.Clear;
 end;
 
-constructor TSQLitePreparedStatement.Create(DB: TSQLiteDatabase; const SQL: string;
+constructor TSQLitePreparedStatement.Create(const DB: TSQLiteDatabase; const SQL: string;
   const Params: array of TVarRec);
 begin
   Create(DB);
@@ -3047,12 +3240,12 @@ begin
   SetParams(Params);
 end;
 
-constructor TSQLitePreparedStatement.Create(DB: TSQLiteDatabase; const SQL: string);
+constructor TSQLitePreparedStatement.Create(const DB: TSQLiteDatabase; const SQL: string);
 begin
   Create(DB, SQL, []);
 end;
 
-constructor TSQLitePreparedStatement.Create(DB: TSQLiteDatabase);
+constructor TSQLitePreparedStatement.Create(const DB: TSQLiteDatabase);
 begin
   inherited Create();
   FDB := DB;
@@ -3120,7 +3313,11 @@ end;
 function TSQLitePreparedStatement.ExecSQL(const SQL: string; const Params: array of TVarRec): Boolean;
 var
   iStepResult: Integer;
-  LErrMsg: PAnsiChar;
+  LErrMsg: {$IFNDEF USE_SYSTEM_SQLITE}PAnsiChar{$ELSE}PPChar{$ENDIF};
+  lSQL: PAnsiChar;
+{$IFDEF NEXTGEN}
+  M: TMarshaller;
+{$ENDIF}
 begin
   Result := False;
   try
@@ -3146,7 +3343,14 @@ begin
     else
     begin
       LErrMsg := nil;
-      iStepResult := SQLite3_Exec(FDB.DB, PAnsiChar(UTF8String(FSQL)), nil, nil, LErrMsg);
+{$IFNDEF NEXTGEN}
+      lSQL := PAnsiChar(UTF8String(FSQL));
+{$ELSE}
+      lSQL := M.AsUtf8(FSQL).ToPointer;
+{$ENDIF}
+      // There is a bug in the RTL that states the parameter is wide char but it
+      // is not!
+      iStepResult := SQLite3_Exec(FDB.DB, Pointer(lSQL), nil, nil, LErrMsg);
       try
         Result := (iStepResult = SQLITE_OK);
         if not Result then
@@ -3551,7 +3755,9 @@ end;
 
 { TSQLiteFunctions }
 
-procedure TSQLiteFunctions.AddAggregateFunction(const FuncName: AnsiString; ArgCount: Integer; 
+{$IFNDEF NEXTGEN}
+
+procedure TSQLiteFunctions.AddAggregateFunction(const FuncName: AnsiString; ArgCount: Integer;
   AStepFunc: TSQLiteUserFunc; AFinalFunc: TSQLiteUserFuncFinal);
 var
   iRes: Integer;
@@ -3572,7 +3778,7 @@ begin
   if iRes <> SQLITE_OK then
   begin
     FDB.RaiseError('Cannot add aggregate function ' + UTF8ToString(FuncName),'');
-  end;  
+  end;
 end;
 
 procedure TSQLiteFunctions.AddScalarFunction(const FuncName: AnsiString; ArgCount: Integer;
@@ -3598,6 +3804,8 @@ begin
   end;
 end;
 
+{$ENDIF}
+
 procedure TSQLiteFunctions.Clear;
 var
   Val: PSQLiteFuncs;
@@ -3606,12 +3814,12 @@ begin
   begin
    // sqlite3_create_function(FDB.fDB, PAnsiChar(Val.FuncName), 0, SQLITE_ANY,
   //    nil, nil, nil, nil);
-    Dispose(Val);  
+    Dispose(Val);
   end;
   FVals.Clear;
 end;
 
-constructor TSQLiteFunctions.Create(DB: TSQLiteDatabase);
+constructor TSQLiteFunctions.Create(const DB: TSQLiteDatabase);
 begin
   inherited Create();
   FDB := DB;
@@ -3674,7 +3882,7 @@ end;
 
 { TSQLiteUniTable.TUniTableEnumerator }
 
-constructor TUniTableEnumerator.Create(ATable: TSQLiteUniTable);
+constructor TUniTableEnumerator.Create(const ATable: TSQLiteUniTable);
 begin
   inherited Create();
   FDataSet := ATable;
@@ -3702,6 +3910,45 @@ begin
   else
     Result := FDataSet.Next;
 end;
+
+{ AnsiString }
+
+{$IF Defined(USE_SYSTEM_SQLITE) AND Defined(NEXTGEN)}
+
+class operator AnsiString.Explicit(const s: AnsiString): PAnsiChar;
+begin
+  if Length(s.FBytes) = 0 then
+    Result := nil
+  else Result := @s.FBytes[0];
+end;
+
+class operator AnsiString.Implicit(const s: string): AnsiString;
+var
+  Enc: TEncoding;
+  Len: Integer;
+begin
+  if s = '' then
+  begin
+    SetLength(Result.FBytes, 0);
+    Exit;
+  end;
+
+  Enc := TEncoding.ANSI;
+  Len := Enc.GetByteCount(s);
+  // Add trailing zero
+  SetLength(Result.FBytes, Len + 1);
+  Enc.GetBytes(s, 0, Length(s), Result.FBytes, 0);
+  Result.FBytes[Len] := 0;
+end;
+
+class operator AnsiString.Implicit(const s: AnsiString): string;
+begin
+  if Length(s.FBytes) = 0 then
+    Result := ''
+  else Result := TEncoding.ANSI.GetString(s.FBytes);
+end;
+
+{$IFEND}
 
 initialization
   TSQLiteDatabase.FColumnTypes := TDictionary<string,Integer>.Create(DEF_COLCOUNT);
