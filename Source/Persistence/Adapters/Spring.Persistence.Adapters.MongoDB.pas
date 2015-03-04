@@ -26,6 +26,10 @@
 
 unit Spring.Persistence.Adapters.MongoDB;
 
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
+
 interface
 
 uses

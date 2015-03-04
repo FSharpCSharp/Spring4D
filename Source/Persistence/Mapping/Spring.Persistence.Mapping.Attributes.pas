@@ -26,6 +26,10 @@
 
 unit Spring.Persistence.Mapping.Attributes;
 
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
+
 interface
 
 uses
