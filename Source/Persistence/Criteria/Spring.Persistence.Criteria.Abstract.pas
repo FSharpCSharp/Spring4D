@@ -46,7 +46,7 @@ type
     fEntityClass: TClass;
     fCriterions: IList<ICriterion>;
     fOrderBy: IList<IOrderBy>;
-    fSession: TSession;
+    [Weak] fSession: TSession;
   protected
     constructor Create(const session: TSession); virtual;
 

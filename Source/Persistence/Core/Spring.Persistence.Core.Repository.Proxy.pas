@@ -50,7 +50,7 @@ type
   TProxyRepository<T: class, constructor; TID> = class(TVirtualInterface)
   private
     fRepository: IPagedRepository<T,TID>;
-    fSession: TSession;
+    [Weak] fSession: TSession;
     fDefaultMethods: IDictionary<string,TMethodReference>;
     fTypeName: string;
     fQualifiedTypeName: string;

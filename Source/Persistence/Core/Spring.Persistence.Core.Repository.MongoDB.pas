@@ -37,7 +37,7 @@ uses
 type
   TMongoDBRepository<T: class, constructor; TID> = class(TSimpleRepository<T,TID>)
   private
-    fSession: TMongoDBSession;
+    [Weak] fSession: TMongoDBSession;
   public
     procedure Insert(const entities: IEnumerable<T>); overload; override;
     function Query(const query: string;
