@@ -73,7 +73,7 @@ type
     property Value: Variant read fValue write SetValue;
   end;
 
-  procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
+  procedure ConvertParam(const AFrom: TVarRec; const ATo: TDBParam);
   procedure ConvertParams(const AFrom: array of const; ATo: IList<TDBParam>);
   function FromTValueTypeToFieldType(const AValue: TValue): TFieldType;
 
@@ -86,7 +86,7 @@ uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Utils;
 
-procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
+procedure ConvertParam(const AFrom: TVarRec; const ATo: TDBParam);
 begin
   case AFrom.VType of
 {$IFNDEF NEXTGEN}
