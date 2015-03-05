@@ -398,13 +398,16 @@ function TAbstractSession.ResolveLazyClass(const id: TValue;
   const column: ColumnAttribute): TValue;
 var
   capturedId: TValue;
+  capturedSelf: Pointer;
   factory: TFunc<TObject>;
 begin
   capturedId := id;
+  capturedSelf := Self; // Capture as unsafe pointer to break cycle
   factory :=
     function: TObject
     begin
-      Result := GetLazyValueAsObject(capturedId, entity, column, classType.Handle);
+      Result := TAbstractSession(capturedSelf).GetLazyValueAsObject(
+        capturedId, entity, column, classType.Handle);
     end;
   case lazyKind of
     lkFunc: Result := TValue.From<TFunc<TObject>>(factory);
@@ -418,13 +421,16 @@ function TAbstractSession.ResolveLazyInterface(const id: TValue;
   const column: ColumnAttribute): TValue;
 var
   capturedId: TValue;
+  capturedSelf: Pointer;
   factory: TFunc<IInterface>;
 begin
   capturedId := id;
+  capturedSelf := Self; // Capture as unsafe pointer to break cycle
   factory :=
     function: IInterface
     begin
-      Result := GetLazyValueAsInterface(capturedId, entity, column, interfaceType.Handle);
+      Result := TAbstractSession(capturedSelf).GetLazyValueAsInterface(
+        capturedId, entity, column, interfaceType.Handle);
     end;
   case lazyKind of
     lkFunc: Result := TValue.From<TFunc<IInterface>>(factory);
@@ -439,6 +445,7 @@ function TAbstractSession.ResolveLazyRecord(const id: TValue;
 var
   underlyingTypeInfo: PTypeInfo;
   capturedId: TValue;
+  capturedSelf: Pointer;
   factory: TFunc<Nullable<TObject>>;
 begin
   if not IsNullable(recordType.Handle) then
@@ -446,11 +453,13 @@ begin
 
   underlyingTypeInfo := GetUnderlyingType(recordType.Handle);
   capturedId := id;
+  capturedSelf := Self; // Capture as unsafe pointer to break cycle
   case underlyingTypeInfo.Kind of
     tkClass: factory :=
       function: Nullable<TObject>
       begin
-        Result.Create(GetLazyValueAsObject(capturedId, entity, column, underlyingTypeInfo));
+        Result.Create(TAbstractSession(capturedSelf).GetLazyValueAsObject(
+          capturedId, entity, column, underlyingTypeInfo));
       end;
     else
       raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [underlyingTypeInfo.NameFld.ToString]);
