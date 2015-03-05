@@ -73,7 +73,6 @@
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractManager.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.CollectionAdapterResolver.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Consts.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DatabaseManager.pas"/>
@@ -91,10 +90,8 @@
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.MongoDB.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Proxy.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Simple.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.RttiCollectionAdapter.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.MongoDB.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.SpringCollectionAdapter.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Types.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Utils.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.pas"/>
@@ -159,11 +156,9 @@
         <DCCReference Include="TestAdaptersOracle.pas"/>
         <DCCReference Include="TestSQLServerSQLGenerator.pas"/>
         <DCCReference Include="TestAnsiSQLGenerator.pas"/>
-        <DCCReference Include="TestCollectionsAdapterResolver.pas"/>
         <DCCReference Include="TestCommands.pas"/>
         <DCCReference Include="TestConnectionFactory.pas"/>
         <DCCReference Include="TestConsts.pas"/>
-        <DCCReference Include="TestCoreCollections.pas"/>
         <DCCReference Include="TestCoreCriteria.pas"/>
         <DCCReference Include="TestCoreEntityMap.pas"/>
         <DCCReference Include="TestCoreUtils.pas"/>
@@ -242,7 +237,7 @@
             <Deployment>
                 <DeployFile LocalName="Debug\Win32\ORMTests.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
-                        <RemoteName>ORMTests.exe</RemoteName>
+                        <RemoteName>ORMTests_DelphiXE7.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

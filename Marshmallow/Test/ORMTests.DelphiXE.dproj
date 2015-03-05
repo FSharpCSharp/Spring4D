@@ -31,7 +31,7 @@
 			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
 			<DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Data.Win;Winapi;$(DCC_Namespace)</DCC_Namespace>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\..\Source;..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;..\..\Tests;..\..\Tests\Source;..\External\delphi-oop\Persistence;..\External\FastMM;..\External\MongoDB;..\External\uib\Source;..\External\SQLite3\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\..\Source;..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Patches;..\..\Source\Base\Reflection;..\..\Source\Core\Interception;..\..\Tests;..\..\Tests\Source;..\External\delphi-oop\Persistence;..\External\FastMM;..\External\MongoDB;..\External\uib\Source;..\External\SQLite3\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_ExeOutput>.\$(Config)\$(Platform)</DCC_ExeOutput>
 			<DCC_DcuOutput>.\$(Config)\$(Platform)\DCU</DCC_DcuOutput>
 			<DCC_F>false</DCC_F>
@@ -67,7 +67,6 @@
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractManager.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>
-			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.CollectionAdapterResolver.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Consts.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DatabaseManager.pas"/>
@@ -85,10 +84,8 @@
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.MongoDB.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Proxy.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Simple.pas"/>
-			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.RttiCollectionAdapter.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.MongoDB.pas"/>
-			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.SpringCollectionAdapter.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Types.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Utils.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.pas"/>
@@ -153,11 +150,9 @@
 			<DCCReference Include="TestAdaptersOracle.pas"/>
 			<DCCReference Include="TestSQLServerSQLGenerator.pas"/>
 			<DCCReference Include="TestAnsiSQLGenerator.pas"/>
-			<DCCReference Include="TestCollectionsAdapterResolver.pas"/>
 			<DCCReference Include="TestCommands.pas"/>
 			<DCCReference Include="TestConnectionFactory.pas"/>
 			<DCCReference Include="TestConsts.pas"/>
-			<DCCReference Include="TestCoreCollections.pas"/>
 			<DCCReference Include="TestCoreCriteria.pas"/>
 			<DCCReference Include="TestCoreEntityMap.pas"/>
 			<DCCReference Include="TestCoreUtils.pas"/>
@@ -229,7 +224,6 @@
 					</Excluded_Packages>
 				</Delphi.Personality>
 				<Platforms>
-					<Platform value="Win64">False</Platform>
 					<Platform value="Win32">True</Platform>
 				</Platforms>
 			</BorlandProject>
