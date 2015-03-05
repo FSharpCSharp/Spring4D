@@ -47,9 +47,10 @@ type
     class var fsJson: TFormatSettings;
     class constructor Create;
   protected
-    function GetExpressionFromWhereField(AField: TSQLWhereField; AFieldIndex: Integer): string; virtual;
-    function ResolveFieldAndExpression(const AFieldname: string; out AField: string; out AExpression: string; const ADelta: Integer = 1): Boolean;
-    function GetPrefix(ATable: TSQLTable): string; virtual;
+    function GetExpressionFromWhereField(const field: TSQLWhereField; fieldIndex: Integer): string; virtual;
+    function ResolveFieldAndExpression(const fieldName: string; out field: string;
+      out expression: string; const delta: Integer = 1): Boolean;
+    function GetPrefix(const table: TSQLTable): string; virtual;
     function GetSortingDirection(sortingDirection: TSortingDirection): string; virtual;
     function WrapResult(const AResult: string): string; virtual;
 
@@ -67,7 +68,7 @@ type
 
     function GenerateSelect(const command: TSelectCommand): string; override;
     function GenerateInsert(const command: TInsertCommand): string; override;
-    function GenerateUpdate(const commmand: TUpdateCommand): string; override;
+    function GenerateUpdate(const command: TUpdateCommand): string; override;
     function GenerateDelete(const command: TDeleteCommand): string; override;
 
     function GeneratePagedQuery(const sql: string; limit, offset: Integer): string; override;
@@ -78,23 +79,23 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.Exceptions
-  ,Spring.Persistence.Core.Utils
-  ,Spring.Persistence.Core.EntityCache
-  ,Spring.Persistence.Core.Interfaces
-  ,Spring.Persistence.Core.EntityWrapper
-  ,Spring.Collections
-  ,Spring.Reflection
-  ,StrUtils
-  ,Math
-  ,Spring.Persistence.SQL.Register
-  ,mongoID
-  ,MongoBson
-  ,Variants
-  ,TypInfo
-  ;
+  Math,
+  StrUtils,
+  TypInfo,
+  Variants,
+  mongoID,
+  MongoBson,
+  Spring.Collections,
+  Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Core.EntityWrapper,
+  Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.Utils,
+  Spring.Persistence.SQL.Register,
+  Spring.Reflection;
 
-{ TMongoDBGenerator }
+
+{$REGION 'TMongoDBGenerator'}
 
 class constructor TMongoDBGenerator.Create;
 begin
@@ -394,65 +395,65 @@ begin
 end;
 
 function TMongoDBGenerator.GenerateUpdate(
-  const commmand: TUpdateCommand): string;
+  const command: TUpdateCommand): string;
 var
   findUpdateJson: string;
 begin
-  if (commmand.Entity = nil) then
+  if (command.Entity = nil) then
     Exit('');
 
-  findUpdateJson := DoGetFindUpdateJson(commmand);   
+  findUpdateJson := DoGetFindUpdateJson(command);
   Result := Format('U%d_%s%s%s', 
     [Length(findUpdateJson), 
     findUpdateJson, 
-    GetPrefix(commmand.Table), 
-    DoGetUpdateJson(commmand)]);
+    GetPrefix(command.Table),
+    DoGetUpdateJson(command)]);
 end;
 
+function TMongoDBGenerator.GetExpressionFromWhereField(
+  const field: TSQLWhereField; fieldIndex: Integer): string;
 const
   WhereOpNames: array[TWhereOperator] of string = (
-    {woEqual =} '=', {woNotEqual =} '$ne', {woMore = }'$gt', {woLess = }'$lt', {woLike = }'$regex', {woNotLike = }'',
-    {woMoreOrEqual = }'$gte', {woLessOrEqual = }'$lte', {woIn = }'$in', {woNotIn = }'$nin', {woIsNull} '', {woIsNotNull} ''
-    ,{woOr}'$or', {woOrEnd}'', {woAnd} '$and', {woAndEnd}'', {woNot}'$not', {woNotEnd}'',{woBetween}'', {woJunction} ''
-    );
-
-function TMongoDBGenerator.GetExpressionFromWhereField(
-  AField: TSQLWhereField; AFieldIndex: Integer): string;
+    {woEqual} '=', {woNotEqual} '$ne', {woMore} '$gt', {woLess} '$lt',
+    {woLike} '$regex', {woNotLike} '', {woMoreOrEqual} '$gte',
+    {woLessOrEqual} '$lte', {woIn} '$in', {woNotIn} '$nin', {woIsNull} '',
+    {woIsNotNull} '', {woOr} '$or', {woOrEnd} '', {woAnd} '$and', {woAndEnd}'',
+    {woNot} '$not', {woNotEnd} '',{woBetween} '', {woJunction} '');
 var
   LField, LExpression: string;
 begin
-  case AField.WhereOperator of
-    woEqual: Result := '{' + AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + AField.ParamName + '}';
+  case field.WhereOperator of
+    woEqual: Result := '{' + AnsiQuotedStr(field.Fieldname, '"') + ' : ' + field.ParamName + '}';
     woNotEqual, woMoreOrEqual, woMore, woLess, woLessOrEqual :
-      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], AField.ParamName]);
-    woIsNotNull: Result := Format('{%S: { $ne: null }}', [AnsiQuotedStr(AField.Fieldname, '"')]);
-    woIsNull: Result := Format('{%S: null}', [AnsiQuotedStr(AField.Fieldname, '"')]);
+      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(field.Fieldname, '"'), WhereOpNames[field.WhereOperator], field.ParamName]);
+    woIsNotNull: Result := Format('{%S: { $ne: null }}', [AnsiQuotedStr(field.Fieldname, '"')]);
+    woIsNull: Result := Format('{%S: null}', [AnsiQuotedStr(field.Fieldname, '"')]);
     woBetween: Result := Format('{$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %2:S} } ] }'
-      , [AnsiQuotedStr(AField.Fieldname, '"'), AField.ParamName, AField.ParamName2]);
+      , [AnsiQuotedStr(field.Fieldname, '"'), field.ParamName, field.ParamName2]);
     woOr, woAnd:
     begin
-        Result := Format('{%S: [', [WhereOpNames[AField.WhereOperator]]);
+        Result := Format('{%S: [', [WhereOpNames[field.WhereOperator]]);
     end;
-    woNot: Result := Format('%S: ', [WhereOpNames[AField.WhereOperator]]);
+    woNot: Result := Format('%S: ', [WhereOpNames[field.WhereOperator]]);
     woNotEnd: Result := '';
     woOrEnd, woAndEnd: Result := ']}';
     woLike:
     begin
-      Result := AField.Fieldname;
-      if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
+      Result := field.Fieldname;
+      if ResolveFieldAndExpression(field.Fieldname, LField, LExpression) then
         Result := Format('{ %S: { $regex: ''.*%S.*'', $options: ''i''}}', [AnsiQuotedStr(LField, '"'), LExpression]);
     end;
     woNotLike:
     begin
-      Result := AField.Fieldname;
-      if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
+      Result := field.Fieldname;
+      if ResolveFieldAndExpression(field.Fieldname, LField, LExpression) then
         Result := Format('{ %S: { $not: "/.*%S.*/i"}}', [AnsiQuotedStr(LField, '"'), LExpression]);
     end;
     woIn, woNotIn:
     begin
-      Result := AField.Fieldname;
-      if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
-        Result := Format('{%S: { %S: [%S] } }', [AnsiQuotedStr(LField, '"'), WhereOpNames[AField.WhereOperator], LExpression]);
+      Result := field.Fieldname;
+      if ResolveFieldAndExpression(field.Fieldname, LField, LExpression) then
+        Result := Format('{%S: { %S: [%S] } }', [AnsiQuotedStr(LField, '"'), WhereOpNames[field.WhereOperator], LExpression]);
     end;
   end;
 end;
@@ -466,9 +467,9 @@ begin
   end;
 end;
 
-function TMongoDBGenerator.GetPrefix(ATable: TSQLTable): string;
+function TMongoDBGenerator.GetPrefix(const table: TSQLTable): string;
 begin
-  Result := '[' + ATable.Name + ']';
+  Result := '[' + table.Name + ']';
 end;
 
 function TMongoDBGenerator.GetQueryLanguage: TQueryLanguage;
@@ -488,20 +489,20 @@ begin
   Result := BSON([command.PrimaryKeyColumn.ColumnName, primaryKey, versionColumn.ColumnName, version]);
 end;
 
-function TMongoDBGenerator.ResolveFieldAndExpression(const AFieldname: string;
-  out AField, AExpression: string; const ADelta: Integer): Boolean;
+function TMongoDBGenerator.ResolveFieldAndExpression(const fieldName: string;
+  out field, expression: string; const delta: Integer): Boolean;
 var
   LPos, LPos2: Integer;
 begin
   //Field NOT IN (1,2,3)
-  LPos := PosEx(' ', AFieldname);
-  AField := Copy(AFieldname, 1, LPos - 1);
-  LPos := PosEx(' ', AFieldname, LPos + 1);
-  LPos2 := PosEx(' ', AFieldname, LPos + 1);
+  LPos := PosEx(' ', fieldName);
+  field := Copy(fieldName, 1, LPos - 1);
+  LPos := PosEx(' ', fieldName, LPos + 1);
+  LPos2 := PosEx(' ', fieldName, LPos + 1);
   if LPos2 > 0 then
     LPos := LPos2;
 
-  AExpression := Copy(AFieldname, LPos + 1 + ADelta, Length(AFieldname) - LPos - 1 - ADelta);
+  expression := Copy(fieldName, LPos + 1 + delta, Length(fieldName) - LPos - 1 - delta);
   Result := True;
 end;
 
@@ -557,6 +558,9 @@ begin
     end;
   end;
 end;
+
+{$ENDREGION}
+
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TMongoDBGenerator.Create);
