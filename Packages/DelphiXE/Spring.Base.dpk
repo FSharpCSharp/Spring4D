@@ -53,6 +53,8 @@ contains
   Spring.Events in '..\..\Source\Base\Spring.Events.pas',
   Spring.Events.Base in '..\..\Source\Base\Spring.Events.Base.pas',
   Spring.Helpers in '..\..\Source\Base\Spring.Helpers.pas',
+  Spring.Interception.MethodIntercept in '..\..\Source\Base\Interception\Spring.Interception.MethodIntercept.pas',
+  Spring.Interception.VirtualInterface in '..\..\Source\Base\Interception\Spring.Interception.VirtualInterface.pas',
   Spring.Logging in '..\..\Source\Base\Logging\Spring.Logging.pas',
   Spring.Logging.Appenders in '..\..\Source\Base\Logging\Spring.Logging.Appenders.pas',
   Spring.Logging.Appenders.Base in '..\..\Source\Base\Logging\Spring.Logging.Appenders.Base.pas',
