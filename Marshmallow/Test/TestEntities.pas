@@ -364,9 +364,11 @@ end;
 destructor TCustomer.Destroy;
 begin
   FStrings.Free;
+{$IFNDEF AUTOREFCOUNT}
   if FAvatarNullable.IsValueCreated then
     if FAvatarNullable.Value.HasValue then
       FAvatarNullable.Value.Value.Free;
+{$ENDIF}
   inherited Destroy;
 end;
 

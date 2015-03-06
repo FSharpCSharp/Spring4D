@@ -14,10 +14,21 @@ unit TestSession;
 interface
 
 uses
-  TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
-  Variants, Graphics, Messages, StdCtrls, Spring.Persistence.Core.Session, Spring.Persistence.Core.DetachedSession
-  , Spring.Persistence.Core.Interfaces, Spring.TestUtils
-  ,TestEntities, Rtti, SQLiteTable3;
+  TestFramework, Classes, SysUtils, Rtti, Variants,
+{$IFDEF POSIX}
+  Posix.Unistd,
+{$ENDIF}
+{$IFDEF FMX}
+  FMX.Graphics,
+{$ENDIF}
+  Spring.TestUtils,
+  Spring.Collections,
+  Spring.Persistence.Core.Graphics,
+  Spring.Persistence.Core.Session,
+  Spring.Persistence.Core.DetachedSession,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.SQL.Params,
+  TestEntities, SQLiteTable3;
 
 type
   TMockSession = class(TSession)
@@ -34,6 +45,9 @@ type
     function GenericCreate<T: class, constructor>: T;
     function SimpleCreate(AClass: TClass): TObject;
     function CreateConnection: IDBConnection; virtual;
+    procedure TestExecutionListener(const ACommand: string;
+      const AParams: IList<TDBParam>);
+    procedure TestQueryListener(Sender: TObject; const SQL: string);
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -119,7 +133,7 @@ var
 function InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil): Variant;
 function InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double): Variant;
 procedure ClearTable(const ATableName: string);
-function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil): Int64;
+function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil; const OnQuery: THookQuery = nil): Int64;
 function GetValueFromDB(const table, columnName, where: string): Variant;
 function PrettyPrintVariant(const value: Variant): string;
 
@@ -131,10 +145,8 @@ uses
   ,Spring.Collections.Extensions
   ,Spring.Persistence.Core.ConnectionFactory
   ,Spring.Persistence.SQL.Register
-  ,Spring.Persistence.SQL.Params
   ,Spring.Persistence.Mapping.Attributes
   ,Spring
-  ,Spring.Collections
   ,Generics.Collections
   ,Spring.Persistence.Core.Reflection
   ,Spring.Reflection
@@ -273,18 +285,25 @@ begin
 end;
 
 
-function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil): Int64;
+function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil; const OnQuery: THookQuery = nil): Int64;
 var
   LConn: TSQLiteDatabase;
   LTable: ISQLiteTable;
+  LField: TSQLiteField;
 begin
   if Assigned(AConnection) then
   begin
     LConn := TSQLiteDatabase.Create(AConnection.Filename);
     try
+      LConn.OnQuery := OnQuery;
       LTable := LConn.GetUniTableIntf('SELECT COUNT(*) FROM ' + ATablename);
-      Result := LTable.Fields[0].Value;
-      LTable := nil;    //force table destroy because otherwise db handle is not closed
+      LField := LTable.Fields[0];
+      Result := LField.Value;
+      // Cleanup all sqlite statements and handles
+{$IFDEF AUTOREFCOUNT}
+      LField := nil;
+{$ENDIF}
+      LTable := nil;
     finally
       LConn.Free;
     end;
@@ -447,6 +466,7 @@ end;
 procedure TestTSession.Execute;
 begin
   FManager.Execute('INSERT INTO CUSTOMERS SELECT * FROM CUSTOMERS;', []);
+  Pass;
 end;
 
 const
@@ -739,6 +759,7 @@ procedure TestTSession.GetLazyValue;
 var
   LCustomer: TCustomer;
   LList: IList<TCustomer_Orders>;
+  LCustomerID: Integer;
 begin
   LCustomer := TCustomer.Create;
   try
@@ -751,8 +772,9 @@ begin
     InsertCustomerOrder(LCustomer.ID, 20, 15, 150.59);
 
     CheckEquals(0, LCustomer.Orders.Count);
+    LCustomerID := LCustomer.ID;
     LCustomer.Free;
-    LCustomer := FManager.FindOne<TCustomer>(LCustomer.ID);
+    LCustomer := FManager.FindOne<TCustomer>(LCustomerID);
     LList := LCustomer.Orders;
     CheckEquals(2, LList.Count);
     CheckEquals(LCustomer.ID, LList.First.Customer_ID);
@@ -1453,22 +1475,7 @@ procedure TestTSession.SetUp;
 begin
   FConnection := CreateConnection;
   FManager := TMockSession.Create(FConnection);
-  FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: IList<TDBParam>)
-    var
-      i: Integer;
-    begin
-      Status(ACommand);
-      for i := 0 to AParams.Count - 1 do
-      begin
-        Status(Format('%2:d %0:s = %1:s. Type: %3:s',
-          [AParams[i].Name,
-          PrettyPrintVariant(AParams[i].Value),
-          i,
-          VarTypeAsText(VarType(AParams[i].Value))]));
-      end;
-      Status('-----');
-    end);
+  FConnection.AddExecutionListener(TestExecutionListener);
 end;
 
 function TestTSession.SimpleCreate(AClass: TClass): TObject;
@@ -1512,6 +1519,30 @@ begin
   ClearTable(TBL_ORDERS);
   ClearTable(TBL_PRODUCTS);
   FManager.Free;
+  FSession := nil;
+  FConnection := nil;
+end;
+
+procedure TestTSession.TestExecutionListener(const ACommand: string;
+  const AParams: IList<TDBParam>);
+var
+  i: Integer;
+begin
+  Status(ACommand);
+  for i := 0 to AParams.Count - 1 do
+  begin
+    Status(Format('%2:d %0:s = %1:s. Type: %3:s',
+      [AParams[i].Name,
+      PrettyPrintVariant(AParams[i].Value),
+      i,
+      VarTypeAsText(VarType(AParams[i].Value))]));
+  end;
+  Status('-----');
+end;
+
+procedure TestTSession.TestQueryListener(Sender: TObject; const SQL: string);
+begin
+  Status('Native: ' + SQL);
 end;
 
 procedure TestTSession.Transactions;
@@ -1524,11 +1555,13 @@ var
   sFile: string;
 begin
   LCustomer := TCustomer.Create;
-  sFile := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'test.db';
+  sFile := OutputDir + 'test.db';
   DeleteFile(sFile);
   LDatabase := TSQLiteDatabase.Create(sFile);
+  LDatabase.OnQuery := TestQueryListener;
  // LDatabase.Open();
   LConn := TConnectionFactory.GetInstance(dtSQLite, LDatabase);
+  LConn.AddExecutionListener(TestExecutionListener);
   LSession := TSession.Create(LConn);
   CreateTables(LDatabase);
   try
@@ -1538,14 +1571,14 @@ begin
     LTran := LSession.BeginTransaction;
     LSession.Save(LCustomer);
 
-    CheckEquals(0, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+    CheckEquals(0, GetTableRecordCount(TBL_PEOPLE, LDatabase, TestQueryListener));
     LTran.Commit;
-    CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+    CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase, TestQueryListener));
 
     LTran := LSession.BeginTransaction;
     LSession.Delete(LCustomer);
     LTran.Rollback;
-    CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+    CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase, TestQueryListener));
   finally
     LCustomer.Free;
     LDatabase.Close;
@@ -1554,7 +1587,7 @@ begin
     LConn := nil;
     if not DeleteFile(sFile) then
     begin
-      Status('Cannot delete file. Error: ' + SysErrorMessage(GetLastError));
+      Fail('Cannot delete file. Error: ' + SysErrorMessage(GetLastError));
     end;
   end;
 end;
@@ -1568,10 +1601,12 @@ var
   LConn: IDBConnection;
   LSession: TSession;
 begin
-  sFile := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'test.db';
+  sFile := OutputDir + 'test.db';
   DeleteFile(sFile);
   LDatabase := TSQLiteDatabase.Create(sFile);
+  LDatabase.OnQuery := TestQueryListener;
   LConn := TConnectionFactory.GetInstance(dtSQLite, LDatabase);
+  LConn.AddExecutionListener(TestExecutionListener);
   LSession := TSession.Create(LConn);
   CreateTables(LDatabase);
 
@@ -1593,6 +1628,8 @@ begin
     LTran1.Commit;
     CheckEquals(2, GetTableRecordCount(TBL_PEOPLE, LDatabase));
   finally
+    LTran1 := nil;
+    LTran2 := nil;
     LCustomer.Free;
     LDbCustomer.Free;
     LDatabase.Close;
@@ -1601,7 +1638,7 @@ begin
     LConn := nil;
     if not DeleteFile(sFile) then
     begin
-      Status('Cannot delete file. Error: ' + SysErrorMessage(GetLastError));
+      Fail('Cannot delete file. Error: ' + SysErrorMessage(GetLastError));
     end;
   end;
 end;

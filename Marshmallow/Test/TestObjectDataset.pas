@@ -5,8 +5,8 @@ unit TestObjectDataset;
 interface
 
 uses
-  TestFramework, Spring.Persistence.ObjectDataset, Spring.Collections, TestEntities
-  ;
+  TestFramework, Spring.Persistence.ObjectDataset, Spring.Collections, TestEntities,
+  Spring.TestUtils;
 
 type
   TMockObjectDataset = class(TObjectDataset)
@@ -84,7 +84,6 @@ implementation
 
 uses
   ViewTestObjectDataset
-  ,Forms
   ,DateUtils
   ,DB
   ,SysUtils
@@ -743,6 +742,7 @@ begin
 
  // FDataset.MergeSort(0, LCustomers.Count - 1, FDataset.CompareRecords, );
 
+  Pass;
 end;
 
 procedure TestTObjectDataset.Open;
@@ -808,6 +808,7 @@ begin
     end
     )
   );
+  Pass;
 end;
 
 procedure TestTObjectDataset.SetUp;

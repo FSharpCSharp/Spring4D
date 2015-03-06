@@ -12,8 +12,8 @@ unit TestCoreEntityMap;
 interface
 
 uses
-  TestFramework, Spring.Collections, Rtti, Spring.Persistence.Core.EntityMap
-  , TestEntities;
+  TestFramework, Spring.TestUtils, Spring.Collections, Rtti,
+  Spring.Persistence.Core.EntityMap, TestEntities;
 
 type
   TMockEntityMap = class(TEntityMap);
@@ -289,11 +289,15 @@ var
   entityWrapper: IEntityWrapper;
 begin
   company := TCompany.Create;
-  entityWrapper := TEntityWrapper.Create(company);
-  FEntityMap.AddOrReplace(entityWrapper);
-  company.Logo.LoadFromFile(PictureFilename);
-  FEntityMap.AddOrReplace(entityWrapper);
-  company.Free;
+  try
+    entityWrapper := TEntityWrapper.Create(company);
+    FEntityMap.AddOrReplace(entityWrapper);
+    company.Logo.LoadFromFile(PictureFilename);
+    FEntityMap.AddOrReplace(entityWrapper);
+  finally
+    company.Free;
+  end;
+  Pass;
   SetFailsOnMemoryLeak(True);
 end;
 

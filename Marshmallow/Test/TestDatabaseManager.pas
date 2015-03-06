@@ -13,7 +13,7 @@ interface
 
 uses
   TestFramework, Spring.Persistence.Core.AbstractManager, SysUtils, Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Core.DatabaseManager;
+  Spring.Persistence.Core.DatabaseManager, Spring.TestUtils;
 
 type
   // Test methods for class TDatabaseManager
@@ -127,6 +127,7 @@ begin
   finally
     LUpdateManager.Free;
   end;
+  Pass;
 end;
 
 initialization

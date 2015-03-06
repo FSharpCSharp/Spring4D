@@ -25,6 +25,7 @@ implementation
 
 uses
   Rtti
+  ,TypInfo
   ,TestEntities
   ,Diagnostics
   ,SysUtils
@@ -60,7 +61,7 @@ begin
     LFrom := 'Bob';
     bOK := TUtils.TryConvert(LFrom, TypeInfo(Nullable<string>), LEntity, LResult);
     CheckTrue(bOK);
-    CheckEquals('Nullable<System.string>', string(LResult.TypeInfo.Name));
+    CheckEquals('Nullable<System.string>', LResult.TypeInfo.NameFld.ToString);
     CheckTrue(LResult.TryAsType<Nullable<string>>(LSpringValue));
     CheckTrue(LSpringValue.HasValue);
 
@@ -75,7 +76,7 @@ begin
     LFrom := 256.12;
     bOK := TUtils.TryConvert(LFrom, TypeInfo(Nullable<Double>), LOrder, LResult);
     CheckTrue(bOK);
-    CheckEquals('Nullable<System.Double>', string(LResult.TypeInfo.Name));
+    CheckEquals('Nullable<System.Double>', LResult.TypeInfo.NameFld.ToString);
     CheckTrue(LResult.TryAsType<Nullable<Double>>(LValue));
     CheckTrue(LValue.HasValue);
     CheckEquals(256.12, LValue.Value, 0.001);

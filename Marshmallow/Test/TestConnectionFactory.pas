@@ -23,7 +23,9 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
 
+{$IFDEF MSWINDOWS}
     procedure When_ADOConn_And_Json_GetInstance;
+{$ENDIF}
   published
     procedure TestGetInstance;
     procedure TestGetInstance1;
@@ -93,6 +95,8 @@ begin
   CheckTrue(ReturnValue.IsConnected);
 end;
 
+{$IFDEF MSWINDOWS}
+
 procedure TestTConnectionFactory.When_ADOConn_And_Json_GetInstance;
 const
   JSON: string = '{'+
@@ -104,6 +108,8 @@ const
 begin
   CheckNotNull(TConnectionFactory.GetInstance(dtADO, JSON));
 end;
+
+{$ENDIF}
 
 initialization
   // Register any test cases with the test runner

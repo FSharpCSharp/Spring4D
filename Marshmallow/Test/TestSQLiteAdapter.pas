@@ -14,7 +14,7 @@ interface
 uses
   TestFramework, Spring.Persistence.Core.Interfaces, Spring.Collections
   , Spring.Persistence.Adapters.SQLite, Spring.Persistence.Core.Base,
-  SysUtils, Spring.Persistence.SQL.Params, SQLiteTable3;
+  SysUtils, Spring.Persistence.SQL.Params, SQLiteTable3, Spring.TestUtils;
 
 type
   // Test methods for class TSQLiteResultSetAdapter
@@ -253,6 +253,7 @@ end;
 procedure TestTSQLiteStatementAdapter.TestSetSQLCommand;
 begin
   FSQLiteStatementAdapter.SetSQLCommand(FCommandText);
+  Pass;
 end;
 
 procedure TestTSQLiteStatementAdapter.TestSetParams;
@@ -267,6 +268,7 @@ begin
   Params.Add(LParam);
 
   FSQLiteStatementAdapter.SetParams(Params);
+  Pass;
 end;
 
 procedure TestTSQLiteStatementAdapter.TestExecute;
