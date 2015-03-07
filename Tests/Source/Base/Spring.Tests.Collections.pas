@@ -152,7 +152,8 @@ type
     procedure TestDictionaryValues;
     procedure TestDictionaryContainsValue;
     procedure TestDictionaryContainsKey;
-    procedure TestMapBaseAdd;
+    procedure TestMapAdd;
+    procedure TestMapRemove;
   end;
 
   TTestEmptyStackofStrings = class(TTestCase)
@@ -1091,10 +1092,16 @@ begin
   CheckTrue(Result.Contains(3), 'TestDictionaryKeys: Values doesn''t contain "three"');
 end;
 
-procedure TTestStringIntegerDictionary.TestMapBaseAdd;
+procedure TTestStringIntegerDictionary.TestMapAdd;
 begin
-  TMapBase<string, Integer>(SUT).Add('ten', 10); //check is correctly overriden (not abstract)
+  (SUT as IMap<string, Integer>).Add('ten', 10); //check if correctly overriden (not abstract)
   CheckEquals(10, SUT['ten']);
+end;
+
+procedure TTestStringIntegerDictionary.TestMapRemove;
+begin
+  (SUT as IMap<string, Integer>).Remove('one');
+  CheckFalse(SUT.ContainsKey('one'), 'TestMapRemove: Values does contain "one"');
 end;
 
 { TTestEmptyStringIntegerDictionary }
