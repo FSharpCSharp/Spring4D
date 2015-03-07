@@ -152,6 +152,8 @@ type
     procedure TestDictionaryValues;
     procedure TestDictionaryContainsValue;
     procedure TestDictionaryContainsKey;
+    procedure TestMapAdd;
+    procedure TestMapRemove;
   end;
 
   TTestEmptyStackofStrings = class(TTestCase)
@@ -432,6 +434,7 @@ implementation
 
 uses
   Generics.Defaults,
+  Spring.Collections.Base,
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
   SysUtils;
@@ -1087,6 +1090,18 @@ begin
   CheckTrue(Result.Contains(1), 'TestDictionaryKeys: Values doesn''t contain "one"');
   CheckTrue(Result.Contains(2), 'TestDictionaryKeys: Values doesn''t contain "two"');
   CheckTrue(Result.Contains(3), 'TestDictionaryKeys: Values doesn''t contain "three"');
+end;
+
+procedure TTestStringIntegerDictionary.TestMapAdd;
+begin
+  (SUT as IMap<string, Integer>).Add('ten', 10); //check if correctly overriden (not abstract)
+  CheckEquals(10, SUT['ten']);
+end;
+
+procedure TTestStringIntegerDictionary.TestMapRemove;
+begin
+  (SUT as IMap<string, Integer>).Remove('one');
+  CheckFalse(SUT.ContainsKey('one'), 'TestMapRemove: Values does contain "one"');
 end;
 
 { TTestEmptyStringIntegerDictionary }
