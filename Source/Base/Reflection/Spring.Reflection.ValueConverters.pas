@@ -1494,10 +1494,10 @@ begin
   if not parameter.IsEmpty and
     parameter.TryAsType<TFormatSettings>(format) then
   begin
-    Result := TValue.From<TDateTime>(StrToTime(value.AsString, format));
+    Result := TValue.From<TTime>(StrToTime(value.AsString, format));
   end
   else
-    Result := TValue.From<TDateTime>(StrToTime(value.AsString));
+    Result := TValue.From<TTime>(StrToTime(value.AsString));
 end;
 
 {$ENDREGION}
