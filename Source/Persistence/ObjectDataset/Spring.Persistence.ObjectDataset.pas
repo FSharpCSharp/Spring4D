@@ -31,7 +31,6 @@ interface
 uses
   Classes,
   DB,
-  TypInfo,
   Rtti,
   Spring,
   Spring.Collections,
@@ -238,11 +237,12 @@ type
 implementation
 
 uses
+  Math,
   StrUtils,
   SysUtils,
-  Variants,
   Types,
-  Math,
+  TypInfo,
+  Variants,
   Spring.Reflection,
   Spring.Reflection.ValueConverters,
   Spring.SystemUtils,

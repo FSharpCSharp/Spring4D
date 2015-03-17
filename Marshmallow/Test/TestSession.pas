@@ -145,6 +145,7 @@ uses
   Diagnostics,
   IOUtils,
   SysUtils,
+  TypInfo,
   Variants,
   TestConsts,
   TestEntities,

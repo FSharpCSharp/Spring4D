@@ -29,10 +29,9 @@ unit Spring.Persistence.ObjectDataset.IndexList;
 interface
 
 uses
-  Generics.Collections
-  ,Rtti
-  ,Spring.Collections
-  ;
+  Generics.Collections,
+  Rtti,
+  Spring.Collections;
 
 type
   TIndexItem = record
@@ -56,7 +55,7 @@ type
 
     property Items[Index: Integer]: TIndexItem read GetItem write SetItem; default;
   public
-    constructor Create; virtual;
+    constructor Create;
     destructor Destroy; override;
 
     procedure Rebuild;
@@ -81,7 +80,7 @@ type
 implementation
 
 
-{ TODIndexList<Integer> }
+{$REGION 'TODIndexList'}
 
 function TODIndexList.Add(ADataListIndex: Integer; const ADataListObject: TValue): Integer;
 var
@@ -151,15 +150,13 @@ var
   LItem: TIndexItem;
 begin
   for i := 0 to Count - 1 do
-  begin
-    if (Items[i].DataListIndex > AStart) then
+    if Items[i].DataListIndex > AStart then
     begin
       LItem.DataListIndex := Items[i].DataListIndex - 1;
       LItem.DataListObject := Items[i].DataListObject;
       Items[i] := LItem;
       //Items[i] := Items[i] - 1;
     end;
-  end;
 end;
 
 function TODIndexList.GetCount: Integer;
@@ -183,12 +180,8 @@ begin
     Exit(-1);
 
   for Result := 0 to Count - 1 do
-  begin
-    if (GetModel(Result).AsObject = AModel.AsObject) then
-    begin
+    if GetModel(Result).AsObject = AModel.AsObject then
       Exit;
-    end;
-  end;
   Result := -1;
 end;
 
@@ -218,12 +211,8 @@ var
 begin
   Clear;
   if Assigned(FDataList) then
-  begin
     for i := 0 to FDataList.Count - 1 do
-    begin
       Add(i, FDataList[i]);
-    end;
-  end;
 end;
 
 procedure TODIndexList.SetDataList(const Value: IObjectList);
@@ -246,5 +235,8 @@ begin
   Items[AIndex] := LItem;
  // FDataList[Items[AIndex]] := AModel;
 end;
+
+{$ENDREGION}
+
 
 end.

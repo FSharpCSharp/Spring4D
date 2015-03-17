@@ -13,8 +13,7 @@ uses
   {$ENDIF }
   SysUtils,
   TestFramework,
-  GUITestRunner,
-  TextTestRunner,
+  Spring.TestRunner in '..\..\Tests\Source\Spring.TestRunner.pas',
   {$IFDEF DELPHIXE5_UP}
   FireDAC.VCLUI.Wait,
   {$ENDIF }
@@ -143,20 +142,6 @@ begin
   OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
   PictureFilename := IncludeTrailingPathDelimiter(ExpandFileName(OutputDir + '..\..')) + 'DelphiOOP.png';
 
-  if IsConsole then
-  begin
-    with TextTestRunner.RunRegisteredTests(rxbHaltOnFailures) do
-    begin
-      //run automatically for CI
-      ReportMemoryLeaksOnShutdown := False;
-      ExitCode := FailureCount + ErrorCount;
-      Free;
-    end;
-  end
-  else
-  begin
-    ReportMemoryLeaksOnShutdown := True;
-    TGUITestRunner.RunRegisteredTests;
-  end;
+  RunRegisteredTests;
 end.
 
