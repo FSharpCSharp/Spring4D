@@ -174,6 +174,11 @@ type
     function IsInterface: Boolean;
 
     /// <summary>
+    ///   Checks whether the stored value is a float type.
+    /// </summary>
+    function IsFloat: Boolean;
+
+    /// <summary>
     ///   Checks whether the stored value is a numeric type.
     /// </summary>
     function IsNumeric: Boolean;
@@ -1979,7 +1984,7 @@ begin
     Result := EmptyResults[leftIsEmpty, rightIsEmpty]
   else if left.IsOrdinal and right.IsOrdinal then
     Result := Math.CompareValue(left.AsOrdinal, right.AsOrdinal)
-  else if left.IsType<Extended> and right.IsType<Extended> then
+  else if left.IsFloat and right.IsFloat then
     Result := Math.CompareValue(left.AsExtended, right.AsExtended)
   else if left.IsString and right.IsString then
     Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
@@ -2674,6 +2679,11 @@ begin
     Result := TValueData(Self).FTypeInfo.Kind
   else
     Result := tkUnknown;
+end;
+
+function TValueHelper.IsFloat: Boolean;
+begin
+  Result := Kind in [tkInteger, tkFloat, tkInt64];
 end;
 
 function TValueHelper.IsInstance: Boolean;

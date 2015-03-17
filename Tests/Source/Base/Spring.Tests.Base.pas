@@ -374,6 +374,8 @@ type
     procedure Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
 
     procedure Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
+
+    procedure Test_Compare_StringToString_ValuesAreEqual_ReturnsTrue;
   end;
 
 implementation
@@ -2251,6 +2253,15 @@ procedure TTestValueHelper.Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := Integer(42);
   fValue := Integer(42);
+  DoCheckCompare;
+end;
+
+procedure TTestValueHelper.Test_Compare_StringToString_ValuesAreEqual_ReturnsTrue;
+begin
+  // bug in XE: TValue.IsType<Extended> (or any fkFloat type) returns true
+  // on a TValue holding a string
+  fSUT := '42';
+  fValue := '42';
   DoCheckCompare;
 end;
 
