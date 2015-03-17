@@ -30,22 +30,15 @@ interface
 
 uses
   Classes,
+  Generics.Collections,
+  Masks,
+  SysUtils,
 {$IFDEF MSWINDOWS}
+  ActiveX,
+  ComObj,
+  ShellAPI,
   Windows,
 {$ENDIF MSWINDOWS}
-  SysUtils,
-  IOUtils,
-{$IFDEF MSWINDOWS}
-{$IFDEF HAS_UNITSCOPE}
-  System.Win.ComObj,
-{$ELSE}
-  ComObj,
-{$ENDIF}
-  ActiveX,
-  ShellAPI,
-{$ENDIF MSWINDOWS}
-  Masks,
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
@@ -57,6 +50,7 @@ type
   ///   Drive Type Enumeration
   /// </summary>
   TDriveType = (
+
     /// <summary>
     ///   The type of drive is unknown.
     /// </summary>
@@ -855,11 +849,12 @@ type
 implementation
 
 uses
-  Spring.ResourceStrings,
+  IOUtils,
 {$IFDEF MSWINDOWS}
   Spring.Utils.WinAPI,
 {$ENDIF MSWINDOWS}
-  Spring.Collections.Extensions;
+  Spring.Collections.Extensions,
+  Spring.ResourceStrings;
 
 {$IFDEF MSWINDOWS}
 const
@@ -1344,9 +1339,7 @@ begin
     Result := TFileEnumerable.Create(FullName, searchPattern, attributes, includeSubfolders);
   end
   else
-  begin
     Result := TEmptyEnumerable<TFileSystemEntry>.Create;
-  end;
 end;
 
 procedure TFileSystemEntry.Refresh;
@@ -1479,22 +1472,18 @@ var
   domainNameLength: Cardinal;
   sidString: PChar;
 begin
-  if not GetFileSecurity(PChar(FullName), OWNER_SECURITY_INFORMATION, nil, 0, size) and
-    (GetLastError <> ERROR_INSUFFICIENT_BUFFER) then
-  begin
+  if not GetFileSecurity(PChar(FullName), OWNER_SECURITY_INFORMATION, nil, 0, size)
+    and (GetLastError <> ERROR_INSUFFICIENT_BUFFER) then
     Exit('');
-  end;
   descriptor := AllocMem(size);
   try
-    if not GetFileSecurity(PChar(FullName), OWNER_SECURITY_INFORMATION, descriptor, size, size) or
-      not GetSecurityDescriptorOwner(descriptor, ownerSid, ownerDefaulted) then
-    begin
+    if not GetFileSecurity(PChar(FullName), OWNER_SECURITY_INFORMATION, descriptor, size, size)
+      or not GetSecurityDescriptorOwner(descriptor, ownerSid, ownerDefaulted) then
       Exit('');
-    end;
     nameLength := 0;
     domainNameLength := 0;
-    if not LookupAccountSid(nil, ownerSid, nil, nameLength, nil, domainNameLength, ownerType) and
-      (GetLastError <> ERROR_INSUFFICIENT_BUFFER) then
+    if not LookupAccountSid(nil, ownerSid, nil, nameLength, nil, domainNameLength, ownerType)
+      and (GetLastError <> ERROR_INSUFFICIENT_BUFFER) then
     begin
       if ConvertSidToStringSid(ownerSid, sidString) then
       begin
@@ -1503,16 +1492,12 @@ begin
         Exit;
       end
       else
-      begin
         Exit('');
-      end;
     end;
     SetLength(name, nameLength - 1);
     SetLength(domainName, domainNameLength - 1);
     if not LookupAccountSID(nil, ownerSid, PChar(name), nameLength, PChar(domainName), domainNameLength, ownerType) then
-    begin
       Exit('');
-    end;
     Result := name;
   finally
     FreeMem(descriptor);
@@ -1563,7 +1548,7 @@ end;
 
 function TSearchPatternMatcher.GetPatternCount: Integer;
 begin
-  if fMasks <> nil then
+  if Assigned(fMasks) then
     Result := fMasks.Count
   else
     Result := 1;
@@ -1588,22 +1573,16 @@ begin
   begin
     fMasks := TCollections.CreateList<TMask>(True);
     for pattern in patterns do
-    begin
       fMasks.Add(TMask.Create(pattern));
-    end;
     Result :=
       function (const fileName: string): Boolean
       var
         pattern: TMask;
       begin
-        Result := False;
         for pattern in fMasks do
-        begin
           if pattern.Matches(fileName) then
-          begin
             Exit(True);
-          end;
-        end;
+        Result := False;
       end;
   end;
 end;
@@ -1671,13 +1650,9 @@ var
 begin
   matcher := TSearchPatternMatcher.Create(searchPattern);
   if matcher.PatternCount = 1 then
-  begin
-    fileName := TPath.Combine(path, searchPattern);
-  end
+    fileName := TPath.Combine(path, searchPattern)
   else
-  begin
     fileName := TPath.Combine(path, '*.*');
-  end;
   Create(path, fileName, matcher, attributes);
 end;
 
@@ -1721,26 +1696,19 @@ end;
 function TFileEnumerator.TSearchContext.MoveNext: Boolean;
 begin
   if not fIsFirstFind then
-  begin
-    Result := Windows.FindNextFile(fSearchHandle, fFindData);
-  end
+    Result := Windows.FindNextFile(fSearchHandle, fFindData)
   else
   begin
     fSearchHandle := Windows.FindFirstFile(PChar(fFileName), fFindData);
     Result := fSearchHandle <> INVALID_HANDLE_VALUE;
     fIsFirstFind := False;
   end;
-  if not Result then
-  begin
-    Exit(False);
-  end;
-  repeat
-    Result := Accept(fFindData);
-    if Result or not Windows.FindNextFile(fSearchHandle, fFindData) then
-    begin
-      Exit;
-    end;
-  until IsTerminated;
+  if Result then
+    repeat
+      Result := Accept(fFindData);
+      if Result or not Windows.FindNextFile(fSearchHandle, fFindData) then
+        Exit;
+    until IsTerminated;
 end;
 
 function TFileEnumerator.TSearchContext.GetIsTerminated: Boolean;
@@ -1763,9 +1731,7 @@ begin
   fIncludeSubfolders := includeSubfolders;
   fMatcher := TSearchPatternMatcher.Create(searchPattern);
   if fIncludeSubfolders then
-  begin
     fStacks := TStack<TSearchContext>.Create;
-  end;
   fCurrentContext := CreateSearchContext(fRootPath);
 end;
 
@@ -1780,9 +1746,7 @@ procedure TFileEnumerator.FreeContexts;
 begin
   fCurrentContext.Close;
   if fStacks = nil then
-  begin
     Exit;
-  end;
   while fStacks.Count > 0 do
   begin
     fCurrentContext := fStacks.Pop;
@@ -1819,7 +1783,7 @@ procedure TFileEnumerator.DoDirectoryFound(var context: TSearchContext;
 var
   location: string;
 begin
-  Assert(fStacks <> nil, 'fStacks should not be nil.');
+  Assert(Assigned(fStacks), 'fStacks should not be nil.');
   fStacks.Push(context);
   location := entry.FullName;
   context := CreateSearchContext(location);
@@ -1845,9 +1809,7 @@ begin
     begin
       fCurrentEntry := TFileSystemEntry.Create(fCurrentContext.Path, fCurrentContext.Current);
       if fCurrentEntry.IsDirectory and fIncludeSubfolders then
-      begin
         DoDirectoryFound(fCurrentContext, fCurrentEntry);
-      end;
       Result := Accept(fCurrentEntry);
     end
     else
@@ -1858,11 +1820,9 @@ begin
         fCurrentContext := fStacks.Pop;
       end
       else
-      begin
         Break;
-      end;
     end;
-  until (Result or IsTerminated);
+  until Result or IsTerminated;
 end;
 
 procedure TFileEnumerator.Reset;
@@ -1952,9 +1912,7 @@ function TFileListEnumerator.MoveNext: Boolean;
 begin
   Result := fIndex < fFiles.Count - 1;
   if Result then
-  begin
     Inc(fIndex);
-  end;
 end;
 
 procedure TFileListEnumerator.Reset;
@@ -1976,9 +1934,7 @@ end;
 procedure TFileSearchWorker.LocationChanged(const location: string);
 begin
   if Assigned(fOnLocationChanged) then
-  begin
     fOnLocationChanged(Self, location);
-  end;
 end;
 
 procedure TFileSearchWorker.Execute;
@@ -1988,25 +1944,22 @@ var
   intf: ISupportFileEnumeratorInspector;
   entry: TFileSystemEntry;
 begin
-  if (fCollections = nil) or Terminated then
-  begin
+  if not Assigned(fCollections) or Terminated then
     Exit;
-  end;
   BeginSearch;
   try
     for collection in fCollections do
     begin
       enumerator := collection.GetEnumerator;
       if Supports(enumerator, ISupportFileEnumeratorInspector, intf) then
-      begin
         intf.Initialize(Self);
-      end;
       while not Terminated and enumerator.MoveNext do
       begin
         entry := enumerator.Current;
         ProcessEntry(entry);
       end;
-      if Terminated then Exit;
+      if Terminated then
+        Exit;
     end;
   finally
     EndSearch;
@@ -2021,9 +1974,7 @@ end;
 procedure TFileSearchWorker.ProcessEntry(const entry: TFileSystemEntry);
 begin
   if Accept(entry) then
-  begin
     RaiseOnProgress(entry);
-  end;
 end;
 
 function TFileSearchWorker.Accept(const entry: TFileSystemEntry): Boolean;
@@ -2034,25 +1985,19 @@ end;
 procedure TFileSearchWorker.RaiseOnProgress(const entry: TFileSystemEntry);
 begin
   if Assigned(fOnProgress) then
-  begin
     fOnProgress(Self, entry);
-  end;
 end;
 
 procedure TFileSearchWorker.BeginSearch;
 begin
   if Assigned(fOnSearchBegin) then
-  begin
     fOnSearchBegin(Self);
-  end;
 end;
 
 procedure TFileSearchWorker.EndSearch;
 begin
   if Assigned(fOnSearchEnd) then
-  begin
     fOnSearchEnd(Self);
-  end;
 end;
 
 {$ENDREGION}
@@ -2147,8 +2092,7 @@ begin
     begin
       Stop;
       RaiseOnSearchEnd;
-    end
-  );
+    end);
 end;
 
 function TFileSearcherBase.DoWorkerFilter(sender: TObject;
@@ -2172,8 +2116,7 @@ begin
     procedure
     begin
       RaiseOnProgress(e);
-    end
-  );
+    end);
 end;
 
 procedure TFileSearcherBase.DoWorkerLocationChanged(sender: TObject;
@@ -2183,8 +2126,7 @@ begin
     procedure
     begin
       RaiseOnLocationChanged(location);
-    end
-  );
+    end);
 end;
 
 function TFileSearcherBase.GetCanStart: Boolean;
@@ -2215,13 +2157,9 @@ begin
   begin
     oldStatus := fStatus;
     if (oldStatus = ssReady) and (newStatus = ssSearching) then
-    begin
-      RaiseOnSearchBegin;
-    end
+      RaiseOnSearchBegin
     else if newStatus = ssStopped then
-    begin
       RaiseOnSearchEnd;
-    end;
     fStatus := newStatus;
     RaiseOnStatusChanged;
   end;
@@ -2230,41 +2168,31 @@ end;
 procedure TFileSearcherBase.RaiseOnSearchBegin;
 begin
   if Assigned(fOnSearchBegin) then
-  begin
     fOnSearchBegin(Self);
-  end;
 end;
 
 procedure TFileSearcherBase.RaiseOnSearchEnd;
 begin
   if Assigned(fOnSearchEnd) then
-  begin
     fOnSearchEnd(Self);
-  end;
 end;
 
 procedure TFileSearcherBase.RaiseOnProgress(const entry: TFileSystemEntry);
 begin
   if Assigned(fOnProgress) then
-  begin
     fOnProgress(Self, entry);
-  end;
 end;
 
 procedure TFileSearcherBase.RaiseOnLocationChanged(const location: string);
 begin
   if Assigned(fOnLocationChanged) then
-  begin
     fOnLocationChanged(Self, location);
-  end;
 end;
 
 procedure TFileSearcherBase.RaiseOnStatusChanged;
 begin
   if Assigned(fOnStatusChanged) then
-  begin
     fOnStatusChanged(Self);
-  end;
 end;
 
 procedure TFileSearcherBase.SetOnFilter(const value: TFileSearchFilterEvent);
@@ -2308,21 +2236,13 @@ var
 begin
   case fSearchScope of
     ssDirectoriesAndFiles:
-    begin
       attributes := faAnyFile;
-    end;
     ssFiles:
-    begin
       attributes := faAnyFile and not faDirectory;
-    end;
     ssDirectories:
-    begin
       attributes := faDirectory;
-    end;
-    else
-    begin
-      attributes := faAnyFile;
-    end;
+  else
+    attributes := faAnyFile;
   end;
   Result := TFileEnumerable.Create(path, searchPattern, attributes, fIncludeSubfolders);
 end;
@@ -2406,13 +2326,9 @@ begin
   Inc(fTotalCount);
   Inc(fTotalSize, entry.Size);
   if entry.IsFile then
-  begin
-    Inc(fFileCount);
-  end
+    Inc(fFileCount)
   else if entry.IsDirectory then
-  begin
     Inc(fFolderCount);
-  end;
 end;
 
 procedure TFileSearchStatistics.Start;
@@ -2459,14 +2375,12 @@ end;
 procedure TFileEnumeratorBase.NotifyLocationChanged(const location: string);
 begin
   if Assigned(fInspector) then
-  begin
     fInspector.LocationChanged(location);
-  end;
 end;
 
 function TFileEnumeratorBase.GetIsTerminated: Boolean;
 begin
-  Result := (fInspector <> nil) and fInspector.IsTerminated;
+  Result := Assigned(fInspector) and fInspector.IsTerminated;
 end;
 
 {$ENDREGION}

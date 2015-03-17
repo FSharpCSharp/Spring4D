@@ -34,31 +34,16 @@ interface
 
 uses
   Classes,
-{$IFDEF MSWINDOWS}
-  Windows,
-  Messages,
-{$ENDIF MSWINDOWS}
-  SysUtils,
-  DateUtils,
   StrUtils,
-  Variants,
+  SysUtils,
   TypInfo,
-  Types,
 {$IFDEF MSWINDOWS}
-  ShlObj,
-  ShellAPI,
-  ActiveX,
-{$IFDEF HAS_UNITSCOPE}
-  System.Win.ComObj,
-  System.Win.Registry,
-{$ELSE}
   ComObj,
+  Messages,
   Registry,
-{$ENDIF}
-{$ENDIF MSWINDOWS}
-  Rtti,
-  Generics.Collections,
-{$IFDEF MSWINDOWS}
+  ShellAPI,
+  ShlObj,
+  Windows,
   Spring.Utils.WinAPI,
 {$ENDIF MSWINDOWS}
   Spring,
@@ -2267,11 +2252,7 @@ end;
 
 class function TEnvironment.GetRegisteredOrganization: string;
 begin
-  {$IFDEF HAS_UNITSCOPE}
-  Result := System.Win.ComObj.GetRegStringValue(
-  {$ELSE}
-  Result :=ComObj.GetRegStringValue(
-  {$ENDIF}
+  Result := GetRegStringValue(
     GetCurrentVersionKey,
     'RegisteredOrganization',  // DO NOT LOCALIZE
     HKEY_LOCAL_MACHINE
@@ -2280,11 +2261,7 @@ end;
 
 class function TEnvironment.GetRegisteredOwner: string;
 begin
-  {$IFDEF HAS_UNITSCOPE}
-  Result := System.Win.ComObj.GetRegStringValue(
-  {$ELSE}
-  Result :=ComObj.GetRegStringValue(
-  {$ENDIF}
+  Result := GetRegStringValue(
     GetCurrentVersionKey,
     'RegisteredOwner',  // DO NOT LOCALIZE
     HKEY_LOCAL_MACHINE

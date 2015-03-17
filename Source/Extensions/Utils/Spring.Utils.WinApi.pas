@@ -33,7 +33,8 @@ interface
 
 {$IFDEF MSWINDOWS}
 uses
-  Windows, WinSvc;
+  Windows,
+  WinSvc;
 
 const
   VER_NT_WORKSTATION       = $0000001;
