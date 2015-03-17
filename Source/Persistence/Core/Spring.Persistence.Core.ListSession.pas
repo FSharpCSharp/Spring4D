@@ -37,7 +37,8 @@ uses
 type
   TListSession<T: class, constructor> = class(TInterfacedObject, IListSession<T>)
   private
-    [Weak] fSession: TSession;
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    fSession: TSession;
     fList: IList<T>;
     fPrimaryKeys: ISet<TValue>;
   protected

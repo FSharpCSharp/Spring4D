@@ -189,7 +189,8 @@ type
   /// </summary>
   TSQLiteFunctions = class
   private
-    [Unsafe] FDB: TSQLiteDatabase;
+    {$IFDEF WEAKREF}[Unsafe]{$ENDIF}
+    FDB: TSQLiteDatabase;
     FVals: TList<PSQLiteFuncs>;
   public
     constructor Create(const DB: TSQLiteDatabase); virtual;
@@ -572,7 +573,8 @@ type
   TSQLitePreparedStatement = class(TInterfacedObject, ISQLitePreparedStatement)
   private
     FSQL: string;
-    [Unsafe] FDB: TSQLiteDatabase;
+    {$IFDEF WEAKREF}[Unsafe]{$ENDIF}
+    FDB: TSQLiteDatabase;
     fParams: TObjectList<TSQliteParam>;
     FStmt: TSQLiteStmt;
     FParamsBound: Boolean;
@@ -663,7 +665,8 @@ type
   /// </summary>
   TSQLiteField = class
   private
-    [Unsafe] Table: TSQLiteUniTable;
+    {$IFDEF WEAKREF}[Unsafe]{$ENDIF}
+    Table: TSQLiteUniTable;
   public
     Index: Integer;
     Name: string;
@@ -697,7 +700,8 @@ type
   TUniTableEnumerator = class
   private
     FMoveToFirst: Boolean;
-    [Unsafe] FDataSet: TSQLiteUniTable;
+    {$IFDEF WEAKREF}[Unsafe]{$ENDIF}
+    FDataSet: TSQLiteUniTable;
     function GetCurrent: Variant;
   public
     constructor Create(const ATable: TSQLiteUniTable);
@@ -757,7 +761,8 @@ type
     fRow: Cardinal;
     fEOF: Boolean;
     fStmt: TSQLiteStmt;
-    [Unsafe] fDB: TSQLiteDatabase;
+    {$IFDEF WEAKREF}[Unsafe]{$ENDIF}
+    fDB: TSQLiteDatabase;
     fSQL: string;
     function GetFieldsAsString(I: Cardinal): string;
     function GetColumns(I: integer): string;

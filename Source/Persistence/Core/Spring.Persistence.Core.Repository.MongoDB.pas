@@ -37,7 +37,8 @@ uses
 type
   TMongoDBRepository<T: class, constructor; TID> = class(TSimpleRepository<T,TID>)
   private
-    [Weak] fSession: TMongoDBSession;
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    fSession: TMongoDBSession;
   public
     procedure Insert(const entities: IEnumerable<T>); overload; override;
     function Query(const query: string;

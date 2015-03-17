@@ -398,7 +398,7 @@ var
 begin
   LRttiType := GetEntityRttiType(classInfo);
   if not Assigned(LRttiType) then
-    raise EORMUnsupportedType.CreateFmt('Unsupported type %s', [classInfo.NameFld.ToString]);
+    raise EORMUnsupportedType.CreateFmt('Unsupported type %s', [classInfo.TypeName]);
 
   Result := LRttiType.AsInstance.MetaclassType;
 end;
@@ -411,7 +411,7 @@ var
 begin
   LRttiType := FRttiCache.GetType(ATypeInfo);
   if LRttiType = nil then
-    raise EORMUnsupportedType.CreateFmt('Cannot get type information from %s', [ATypeInfo.NameFld.ToString]);
+    raise EORMUnsupportedType.CreateFmt('Cannot get type information from %s', [ATypeInfo.TypeName]);
 
   for LCurrType in LRttiType.GetGenericArguments do
   begin
@@ -420,14 +420,14 @@ begin
   end;
 
   if not LRttiType.IsInstance then
-    raise EORMUnsupportedType.CreateFmt('%s is not an instance type.', [ATypeInfo.NameFld.ToString]);
+    raise EORMUnsupportedType.CreateFmt('%s is not an instance type.', [ATypeInfo.TypeName]);
 
   LEntityData := TEntityCache.Get(LRttiType.AsInstance.MetaclassType);
   if not LEntityData.IsTableEntity then
-    raise EORMUnsupportedType.CreateFmt('Type %s lacks [Table] attribute', [ATypeInfo.NameFld.ToString]);
+    raise EORMUnsupportedType.CreateFmt('Type %s lacks [Table] attribute', [ATypeInfo.TypeName]);
 
   if not LEntityData.HasPrimaryKey then
-    raise EORMUnsupportedType.CreateFmt('Type %s lacks primary key [Column]', [ATypeInfo.NameFld.ToString]);
+    raise EORMUnsupportedType.CreateFmt('Type %s lacks primary key [Column]', [ATypeInfo.TypeName]);
 
   Result := LRttiType;
 end;

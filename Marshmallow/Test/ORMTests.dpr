@@ -42,6 +42,7 @@ uses
   Spring.Persistence.Core.EntityMap in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityMap.pas',
   Spring.Persistence.Core.EntitySerializer in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntitySerializer.pas',
   Spring.Persistence.Core.Exceptions in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Exceptions.pas',
+  Spring.Persistence.Core.Graphics in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Graphics.pas',
   Spring.Persistence.Core.Interfaces in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Interfaces.pas',
   Spring.Persistence.Core.ListSession in '..\..\Source\Persistence\Core\Spring.Persistence.Core.ListSession.pas',
   Spring.Persistence.Core.Reflection in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Reflection.pas',

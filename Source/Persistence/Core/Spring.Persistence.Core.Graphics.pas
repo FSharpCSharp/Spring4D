@@ -41,50 +41,47 @@ type
 {$REGION 'Type overlays'}
 
 {$IFNDEF FMX}
-
-  TPicture = Graphics.TPicture
+  TBitmap = Graphics.TBitmap;
+  TPicture = Graphics.TPicture;
+  TGraphic = Graphics.TGraphic;
   TGraphicClass = Graphics.TGraphicClass;
-  TGraphic = Graphics.TGraphics;
-
 {$ELSE}
-
   TBitmap = Fmx.Graphics.TBitmap;
   TPicture = TBitmap;
   TGraphic = TBitmap;
   TGraphicClass = class of TBitmap;
-
 {$ENDIF}
 
 {$ENDREGION}
 
+
 {$REGION 'Helpers'}
 
 {$IFDEF FMX}
-
   TPictureHelper = class helper for TPicture
   private
     function GetGraphic: TBitmap; inline;
   public
     property Graphic: TBitmap read GetGraphic;
   end;
-
 {$ENDIF}
 
 {$ENDREGION}
 
+
 implementation
+
 
 {$REGION 'TPictureHelper'}
 
 {$IFDEF FMX}
-
 function TPictureHelper.GetGraphic: TBitmap;
 begin
   Result := Self;
 end;
-
 {$ENDIF}
 
 {$ENDREGION}
+
 
 end.

@@ -37,7 +37,8 @@ uses
 type
   TSimpleRepository<T: class, constructor; TID> = class(TInterfacedObject, IPagedRepository<T, TID>)
   private
-    [Weak] fSession: TSession;
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    fSession: TSession;
     fNamespace: string;
   protected
     function GetNamespaceFromType: string; virtual;

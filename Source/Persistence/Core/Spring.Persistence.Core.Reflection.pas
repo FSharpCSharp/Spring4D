@@ -147,16 +147,15 @@ uses
   Spring.Collections,
   Math,
   StrUtils,
-  SysUtils
+  SysUtils,
 {$IFDEF FMX}
-  ,FMX.Graphics
+  FMX.Graphics,
 {$ENDIF}
-  ,Spring
-  ,Spring.Reflection
-  ,Spring.Persistence.Core.Graphics
-  ,Spring.Persistence.Core.Utils
-  ,Variants
-  ;
+  Spring,
+  Spring.Reflection,
+  Spring.Persistence.Core.Graphics,
+  Spring.Persistence.Core.Utils,
+  Variants;
 
 var
   Context: TRttiContext;
@@ -297,7 +296,7 @@ begin
     end else
     if TryGetRttiType(ASource.TypeInfo, LSourceType) and LSourceType.IsGenericTypeOf('IList') then
     begin
-      if (ATarget.NameFld.ToString = 'IList')
+      if (ATarget.TypeName = 'IList')
         and LSourceType.TryGetMethod('AsList', LMethod) then
       begin
         LInterface := LMethod.Invoke(ASource, []).AsInterface;
@@ -1163,7 +1162,7 @@ begin
                 AResult := TValue.From(Self.GetReferenceToRawData, ATypeInfo);
                 Result := True;
               end else if TryGetRttiType(Self.TypeInfo, LType)
-                and (ATypeInfo.NameFld.ToString = 'IList')
+                and (ATypeInfo.TypeName = 'IList')
                 and LType.IsGenericTypeOf('IList') and LType.TryGetMethod('AsList', LMethod) then
               begin
                 LInterface := LMethod.Invoke(Self, []).AsInterface;

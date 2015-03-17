@@ -366,7 +366,7 @@ begin
 
   results := DoGetLazy(id, entity, column, interfaceType);
   if not TUtils.IsEnumerable(interfaceType) then
-    raise EORMUnsupportedType.CreateFmt('Unsupported ORM lazy type: %s', [interfaceType.NameFld.ToString]);
+    raise EORMUnsupportedType.CreateFmt('Unsupported ORM lazy type: %s', [interfaceType.TypeName]);
 
   Result := TCollections.CreateObjectList<TObject>(True);
   SetInterfaceListOfObjects(Result as IObjectList, results, interfaceType);
@@ -389,7 +389,7 @@ procedure TAbstractSession.RegisterNonGenericRowMapper(typeInfo: PTypeInfo;
   const rowMapper: IRowMapper<TObject>);
 begin
   if fRowMappers.ContainsKey(typeInfo) then
-    raise EORMRowMapperAlreadyRegistered.CreateFmt('Row Mapper already registered for type: %s', [typeInfo.NameFld.ToString]);
+    raise EORMRowMapperAlreadyRegistered.CreateFmt('Row Mapper already registered for type: %s', [typeInfo.TypeName]);
   fRowMappers.Add(typeInfo, rowMapper);
 end;
 
@@ -462,7 +462,7 @@ begin
           capturedId, entity, column, underlyingTypeInfo));
       end;
     else
-      raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [underlyingTypeInfo.NameFld.ToString]);
+      raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [underlyingTypeInfo.TypeName]);
   end;
 
   case lazyKind of
@@ -483,7 +483,7 @@ begin
   lazyKind := TType.GetLazyKind(lazyTypeInfo);
   targetType := TType.GetType(lazyTypeInfo).GetGenericArguments[0];
   if targetType = nil then
-    raise EORMUnsupportedType.CreateFmt('Insufficient rtti information for lazy type: %s', [lazyTypeInfo.NameFld.ToString]);
+    raise EORMUnsupportedType.CreateFmt('Insufficient rtti information for lazy type: %s', [lazyTypeInfo.TypeName]);
   Result := TValue.Empty;
 
   column := entity.GetColumnAttribute(columnMemberName);

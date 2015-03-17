@@ -74,6 +74,7 @@ uses
 {$IFEND}
 {$IFNDEF FMX}
   GIFImg,
+  Graphics,
   jpeg,
   pngimage,
 {$ELSE}
@@ -82,10 +83,10 @@ uses
   StrUtils,
   SysUtils,
   Variants,
-  Spring.Persistence.Core.Reflection,
   Spring,
   Spring.Reflection,
   Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.Core.Reflection,
   Spring.Persistence.Mapping.RttiExplorer;
 
 

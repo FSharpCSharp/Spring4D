@@ -50,7 +50,8 @@ type
   TProxyRepository<T: class, constructor; TID> = class(TVirtualInterface)
   private
     fRepository: IPagedRepository<T,TID>;
-    [Weak] fSession: TSession;
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    fSession: TSession;
     fDefaultMethods: IDictionary<string,TMethodReference>;
     fTypeName: string;
     fQualifiedTypeName: string;
