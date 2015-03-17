@@ -434,7 +434,6 @@ implementation
 
 uses
   Generics.Defaults,
-  Spring.Collections.Base,
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
   SysUtils;

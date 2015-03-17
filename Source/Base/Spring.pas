@@ -627,8 +627,10 @@ type
   private
     fValue: T;
     fHasValue: string;
-    function GetValue: T;
+    function GetValue: T; inline;
     function GetHasValue: Boolean; inline;
+    class procedure RaiseCannotAssignPointerToNullable; static;
+    class procedure RaiseNullableTypeHasNoValue; static;
 
     /// <summary>
     ///   Internal use. Marks the current instance as null.
@@ -637,7 +639,7 @@ type
     ///   The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
     ///   method must be private.
     /// </remarks>
-    procedure Clear;
+    procedure Clear; inline;
 
     /// <summary>
     ///   Determines whether a variant value is null or empty.
@@ -696,7 +698,7 @@ type
     ///     else compares their values as usual.
     ///   </para>
     /// </remarks>
-    function Equals(const other: Nullable<T>): Boolean;
+    function Equals(const other: Nullable<T>): Boolean; inline;
 
     /// <summary>
     ///   Gets a value indicating whether the current <see cref="Nullable&lt;T&gt;" />
@@ -3367,7 +3369,7 @@ end;
 function Nullable<T>.GetValue: T;
 begin
   if not HasValue then
-    raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
+    RaiseNullableTypeHasNoValue;
   Result := fValue;
 end;
 
@@ -3389,35 +3391,43 @@ end;
 
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
-  if HasValue and other.HasValue then
+  if HasValue then
   begin
-    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
-      tkInteger: Result := PInteger(@fValue)^ = PInteger(@other.fValue)^;
-{$IFNDEF NEXTGEN}
-      tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
-      tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
-      tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
-      tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
-{$ENDIF}
-      tkFloat:
-      begin
-        case GetTypeData(TypeInfo(T)).FloatType of
-          ftSingle: Result := PSingle(@fValue)^ = PSingle(@other.fValue)^;
-          ftDouble: Result := PDouble(@fValue)^ = PDouble(@other.fValue)^;
-          ftExtended: Result := PExtended(@fValue)^ = PExtended(@other.fValue)^;
-          ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
-          ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
+    if other.HasValue then
+      case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+        tkInteger:
+        begin
+          case SizeOf(T) of
+            1: Result := PByte(@fValue)^ = PByte(@other.fValue)^;
+            2: Result := PWord(@fValue)^ = PWord(@other.fValue)^;
+            4: Result := PCardinal(@fValue)^ = PCardinal(@other.fValue)^;
+          end;
         end;
-      end;
-      tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
-      tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
-      tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
-    else
-      Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
-    end;
+{$IFNDEF NEXTGEN}
+        tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
+        tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
+        tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
+        tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
+{$ENDIF}
+        tkFloat:
+        begin
+          case GetTypeData(TypeInfo(T)).FloatType of
+            ftSingle: Result := PSingle(@fValue)^ = PSingle(@other.fValue)^;
+            ftDouble: Result := PDouble(@fValue)^ = PDouble(@other.fValue)^;
+            ftExtended: Result := PExtended(@fValue)^ = PExtended(@other.fValue)^;
+            ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
+            ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
+          end;
+        end;
+        tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
+        tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
+        tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
+      else
+        Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
+      end
   end
   else
-    Result := HasValue = other.HasValue;
+    Result := not other.HasValue;
 end;
 
 class operator Nullable<T>.Implicit(const value: T): Nullable<T>;
@@ -3464,7 +3474,7 @@ begin
   if not Assigned(value) then
     Result.Clear
   else
-    raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
+    RaiseCannotAssignPointerToNullable;
 end;
 
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
@@ -3480,6 +3490,16 @@ end;
 class operator Nullable<T>.NotEqual(const left, right: Nullable<T>): Boolean;
 begin
   Result := not left.Equals(right);
+end;
+
+class procedure Nullable<T>.RaiseCannotAssignPointerToNullable;
+begin
+  raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
+end;
+
+class procedure Nullable<T>.RaiseNullableTypeHasNoValue;
+begin
+  raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
 end;
 
 {$ENDREGION}
