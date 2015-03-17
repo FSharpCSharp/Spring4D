@@ -14,29 +14,30 @@ unit TestSession;
 interface
 
 uses
-  TestFramework, Classes, SysUtils, Rtti, Variants,
+  TestFramework,
+  Classes,
 {$IFDEF POSIX}
   Posix.Unistd,
+{$ENDIF}
+{$IFDEF MSWINDOWS}
+  Windows,
 {$ENDIF}
 {$IFDEF FMX}
   FMX.Graphics,
 {$ENDIF}
+  SQLiteTable3,
   Spring.TestUtils,
   Spring.Collections,
-  Spring.Persistence.Core.Graphics,
-  Spring.Persistence.Core.Session,
   Spring.Persistence.Core.DetachedSession,
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.SQL.Params,
-  TestEntities, SQLiteTable3;
+  Spring.Persistence.Core.Session,
+  Spring.Persistence.SQL.Params;
 
 type
   TMockSession = class(TSession)
-
   end;
 
-  {$DEFINE USE_SPRING}
-  TestTSession = class(TTestCase)
+  TSessionTest = class(TTestCase)
   protected
     FConnection: IDBConnection;
     FManager: TMockSession;
@@ -56,45 +57,45 @@ type
 
     property Session: TMockSession read FSession write FSession;
   published
-    procedure First();
-    procedure Fetch();
-    procedure Inheritance_Simple_Customer();
-    procedure Insert();
-    procedure InsertFromCollection();
-    procedure Update();
-    procedure Update_NotMapped();
-    procedure Delete();
-    procedure Save();
-    procedure When_SaveAll_UpdateOneToMany();
-    procedure When_SaveAll_InsertOneToMany();
+    procedure First;
+    procedure Fetch;
+    procedure Inheritance_Simple_Customer;
+    procedure Insert;
+    procedure InsertFromCollection;
+    procedure Update;
+    procedure Update_NotMapped;
+    procedure Delete;
+    procedure Save;
+    procedure When_SaveAll_UpdateOneToMany;
+    procedure When_SaveAll_InsertOneToMany;
     procedure When_FindAll_GetOneToMany;
-    procedure SaveAll_ManyToOne();
-    procedure ExecutionListeners();
-    procedure Page();
-    procedure ExecuteScalar();
-    procedure Execute();
-    procedure Nullable();
-    procedure GetLazyValue();
-    procedure GetLazyNullable();
-    procedure FindOne();
+    procedure SaveAll_ManyToOne;
+    procedure ExecutionListeners;
+    procedure Page;
+    procedure ExecuteScalar;
+    procedure Execute;
+    procedure Nullable;
+    procedure GetLazyValue;
+    procedure GetLazyNullable;
+    procedure FindOne;
     procedure FindWhere;
     procedure When_UnannotatedEntity_FindOne_ThrowException;
     procedure When_WithoutTableAttribute_FindOne_ThrowException;
     procedure When_WithoutPrimaryKey_FindOne_ThrowException;
-    procedure FindAll();
-    procedure Enums();
-    procedure Streams();
-    procedure ManyToOne();
+    procedure FindAll;
+    procedure Enums;
+    procedure Streams;
+    procedure ManyToOne;
     procedure ManyToMany;
-    procedure Transactions();
-    procedure Transactions_Nested();
+    procedure Transactions;
+    procedure Transactions_Nested;
     {$IFDEF PERFORMANCE_TESTS}
-    procedure GetOne();
-    procedure InsertList();
+    procedure GetOne;
+    procedure InsertList;
     {$ENDIF}
-    procedure FetchCollection();
-    procedure Versioning();
-    procedure ListSession_Begin_Commit();
+    procedure FetchCollection;
+    procedure Versioning;
+    procedure ListSession_Begin_Commit;
     procedure When_SpringLazy_Is_OneToMany;
     procedure When_Registered_RowMapper_And_FindOne_Make_Sure_Its_Used_On_TheSameType;
     procedure When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
@@ -141,29 +142,29 @@ function PrettyPrintVariant(const value: Variant): string;
 implementation
 
 uses
-  Spring.Persistence.Adapters.SQLite
-  ,Spring.Collections.Extensions
-  ,Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.SQL.Register
-  ,Spring.Persistence.Mapping.Attributes
-  ,Spring
-  ,Generics.Collections
-  ,Spring.Persistence.Core.Reflection
-  ,Spring.Reflection
-  ,TestConsts
-  ,Spring.Persistence.Criteria.Interfaces
-  ,Spring.Persistence.Criteria.Properties
-  ,Spring.Persistence.Core.Exceptions
-  ,Diagnostics
-  ,TypInfo
-  ;
-
+  Diagnostics,
+  IOUtils,
+  SysUtils,
+  Variants,
+  TestConsts,
+  TestEntities,
+  Spring,
+  Spring.Persistence.Adapters.SQLite,
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.Core.Graphics,
+  Spring.Persistence.Core.Reflection,
+  Spring.Persistence.Criteria.Interfaces,
+  Spring.Persistence.Criteria.Properties,
+  Spring.Collections.Extensions,
+  Spring.Persistence.Mapping.Attributes,
+  Spring.Persistence.SQL.Register,
+  Spring.Reflection;
 
 const
   SQL_GET_ALL_CUSTOMERS = 'SELECT * FROM ' + TBL_PEOPLE + ';';
 
-
-function GetPictureSize(APicture: TPicture): Int64;
+function GetPictureSize(const APicture: TPicture): Int64;
 var
   LStream: TMemoryStream;
 begin
@@ -181,9 +182,7 @@ begin
   end;
 end;
 
-
-
-procedure CreateTables(AConnection: TSQLiteDatabase = nil);
+procedure CreateTables(const AConnection: TSQLiteDatabase = nil);
 var
   LConn: TSQLiteDatabase;
 begin
@@ -262,7 +261,7 @@ begin
   Result := TestDB.GetLastInsertRowID;
 end;
 
-function InsertProduct(AName: string = 'Product'; APrice: Double = 1.99): Variant;
+function InsertProduct(const AName: string = 'Product'; APrice: Double = 1.99): Variant;
 begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_PRODUCTS + ' (['+PRODNAME+'], ['+PRODPRICE+']) VALUES (?,?);',
     [AName, APrice]);
@@ -318,7 +317,6 @@ type
     class function Memoize<T,R>(const func: TFunc<T, R>): TFunc<T,R>; overload;
   end;
 
-
 { TMemoize }
 
 class function TMemoize.Memoize<T, R>(const func: TFunc<T, R>): TFunc<T, R>;
@@ -363,7 +361,7 @@ type
     Result.Price := resultSet.GetFieldValue('PRODPRICE');
   end;
 
-procedure TestTSession.Can_Use_RowMapper_With_Unannotated_Entity;
+procedure TSessionTest.Can_Use_RowMapper_With_Unannotated_Entity;
 var
   id: Integer;
   product: TUnannotatedProduct;
@@ -378,12 +376,12 @@ begin
   product.Free;
 end;
 
-function TestTSession.CreateConnection: IDBConnection;
+function TSessionTest.CreateConnection: IDBConnection;
 begin
   Result := TConnectionFactory.GetInstance(dtSQLite, TestDB);
 end;
 
-procedure TestTSession.Delete;
+procedure TSessionTest.Delete;
 var
   LCustomer: TCustomer;
   sSql: string;
@@ -424,7 +422,7 @@ end;
 const
   SQL_EXEC_SCALAR = 'SELECT COUNT(*) FROM ' + TBL_PEOPLE + ';';
 
-procedure TestTSession.Enums;
+procedure TSessionTest.Enums;
 var
   LCustomer: TCustomer;
   iLastID: Integer;
@@ -463,7 +461,7 @@ begin
   end;
 end;
 
-procedure TestTSession.Execute;
+procedure TSessionTest.Execute;
 begin
   FManager.Execute('INSERT INTO CUSTOMERS SELECT * FROM CUSTOMERS;', []);
   Pass;
@@ -472,7 +470,7 @@ end;
 const
   SQL_EXEC_SCALAR_DOUBLE = 'SELECT CAST( COUNT(*) AS TEXT) FROM ' + TBL_PEOPLE + ';';
 
-procedure TestTSession.ExecuteScalar;
+procedure TSessionTest.ExecuteScalar;
 var
   LRes: Integer;
   LResDouble: Double;
@@ -486,7 +484,7 @@ begin
   CheckEquals(1, LResDouble, 0.1);
 end;
 
-procedure TestTSession.ExecutionListeners;
+procedure TSessionTest.ExecutionListeners;
 var
   sLog, sLog2, sSql: string;
   iParamCount1, iParamCount2: Integer;
@@ -559,7 +557,7 @@ begin
   end;
 end;
 
-procedure TestTSession.ManyToMany;
+procedure TSessionTest.ManyToMany;
 var
   user: TUser;
   role: TRole;
@@ -593,7 +591,7 @@ begin
   CheckEquals('Foo', roles.First.Users.First.Name, 'Role''s user name is Foo');
 end;
 
-procedure TestTSession.Fetch;
+procedure TSessionTest.Fetch;
 var
   LCollection: IList<TCustomer>;
   sSql: string;
@@ -619,7 +617,7 @@ begin
   CheckEquals(15, LCollection[1].Age);
 end;
 
-procedure TestTSession.FetchCollection;
+procedure TSessionTest.FetchCollection;
 var
   LCollection: IList<TCustomer>;
 begin
@@ -629,7 +627,7 @@ begin
   CheckEquals(1, LCollection.Count);
 end;
 
-procedure TestTSession.FindAll;
+procedure TSessionTest.FindAll;
 var
   LCollection: IList<TCustomer>;
   i: Integer;
@@ -647,7 +645,7 @@ begin
   CheckEquals(10, LCollection.Count);
 end;
 
-procedure TestTSession.FindOne;
+procedure TSessionTest.FindOne;
 var
   LCustomer: TCustomer;
   RowID: Integer;
@@ -666,7 +664,7 @@ begin
   end;
 end;
 
-procedure TestTSession.FindWhere;
+procedure TSessionTest.FindWhere;
 var
   Age: Prop;
 begin
@@ -675,7 +673,7 @@ begin
   CheckEquals(10, FManager.FindWhere<TCustomer>(Age = 10).ToList.First.Age);
 end;
 
-procedure TestTSession.First;
+procedure TSessionTest.First;
 var
   LCustomer: TCustomer;
   sSql: string;
@@ -725,12 +723,12 @@ begin
   end;
 end;
 
-function TestTSession.GenericCreate<T>: T;
+function TSessionTest.GenericCreate<T>: T;
 begin
   Result := T.Create;
 end;
 
-procedure TestTSession.GetLazyNullable;
+procedure TSessionTest.GetLazyNullable;
 var
   LCustomer: TCustomer;
   fsPic: TFileStream;
@@ -755,7 +753,7 @@ begin
   end;
 end;
 
-procedure TestTSession.GetLazyValue;
+procedure TSessionTest.GetLazyValue;
 var
   LCustomer: TCustomer;
   LList: IList<TCustomer_Orders>;
@@ -951,7 +949,7 @@ end;
 
 {$ENDIF}
 
-procedure TestTSession.Inheritance_Simple_Customer;
+procedure TSessionTest.Inheritance_Simple_Customer;
 var
   LCustomer: TCustomer;
   LForeignCustomer: TForeignCustomer;
@@ -996,7 +994,7 @@ begin
   end;
 end;
 
-procedure TestTSession.Insert;
+procedure TSessionTest.Insert;
 var
   LCustomer: TCustomer;
   LTable: ISQLiteTable;
@@ -1054,7 +1052,7 @@ begin
   Result := customer.Age >= 18;
 end;
 
-procedure TestTSession.InsertFromCollection;
+procedure TSessionTest.InsertFromCollection;
 var
   customers: IList<TCustomer>;
   LCustomer: TCustomer;
@@ -1080,7 +1078,7 @@ begin
   CheckEquals(17, GetTableRecordCount(TBL_PEOPLE));
 end;
 
-procedure TestTSession.ListSession_Begin_Commit;
+procedure TSessionTest.ListSession_Begin_Commit;
 var
   LCustomers: IList<TCustomer>;
   LCustomer: TCustomer;
@@ -1123,7 +1121,7 @@ begin
   CheckEquals('Edited Foo', LCustomers[2].Name);
 end;
 
-class procedure TestTSession.InsertProducts(iCount: Integer);
+class procedure TSessionTest.InsertProducts(iCount: Integer);
 var
   Local_i: Integer;
 begin
@@ -1154,7 +1152,7 @@ const
 
  }
 
-procedure TestTSession.ManyToOne;
+procedure TSessionTest.ManyToOne;
 var
   LOrder: TCustomer_Orders;
   LCustomer: TCustomer;
@@ -1192,13 +1190,14 @@ begin
   end;
 end;
 
-procedure TestTSession.Memoizer_Cache_Constructors;
+procedure TSessionTest.Memoizer_Cache_Constructors;
 var
   cachedFunc: TFunc<PTypeInfo,TObject>;
   instance: TObject;
   sw: TStopwatch;
 begin
-  cachedFunc := TMemoize.Memoize<PTypeInfo, TObject>(function(arg: PTypeInfo): TObject
+  cachedFunc := TMemoize.Memoize<PTypeInfo, TObject>(
+    function(arg: PTypeInfo): TObject
     begin
       Result := TActivator.CreateInstance(arg);
     end);
@@ -1215,7 +1214,7 @@ begin
   instance.Free;
 end;
 
-procedure TestTSession.Nullable;
+procedure TSessionTest.Nullable;
 var
   LCustomer: TCustomer;
 begin
@@ -1237,7 +1236,7 @@ begin
   end;
 end;
 
-procedure TestTSession.Page;
+procedure TSessionTest.Page;
 var
   LPage: IDBPage<TCustomer>;
   i: Integer;
@@ -1267,7 +1266,7 @@ begin
   CheckEquals(9, LPage.Items[0].Age);
 end;
 
-procedure TestTSession.Save;
+procedure TSessionTest.Save;
 var
   LCustomer: TCustomer;
   LTable: ISQLiteTable;
@@ -1318,7 +1317,7 @@ begin
   end;
 end;
 
-procedure TestTSession.SaveAll_ManyToOne;
+procedure TSessionTest.SaveAll_ManyToOne;
 var
   LCustomers: IList<TCustomer>;
   LOrder1, LOrder2, LNewOrder1, LNewOrder2: TCustomer_Orders;
@@ -1363,7 +1362,7 @@ begin
   end;
 end;
 
-procedure TestTSession.When_FindAll_GetOneToMany;
+procedure TSessionTest.When_FindAll_GetOneToMany;
 var
   id: Integer;
   customers: IList<TCustomer>;
@@ -1388,7 +1387,7 @@ begin
   CheckEquals(3, customers.First.Orders.Count);
 end;
 
-procedure TestTSession.When_SaveAll_InsertOneToMany;
+procedure TSessionTest.When_SaveAll_InsertOneToMany;
 var
   customer: TCustomer;
   order: TCustomer_Orders;
@@ -1411,7 +1410,7 @@ begin
   customer.Free;
 end;
 
-procedure TestTSession.When_SaveAll_UpdateOneToMany;
+procedure TSessionTest.When_SaveAll_UpdateOneToMany;
 var
   LCustomer: TCustomer;
   LNewCustomers: IList<TCustomer>;
@@ -1471,19 +1470,19 @@ begin
   end;
 end;
 
-procedure TestTSession.SetUp;
+procedure TSessionTest.SetUp;
 begin
   FConnection := CreateConnection;
   FManager := TMockSession.Create(FConnection);
   FConnection.AddExecutionListener(TestExecutionListener);
 end;
 
-function TestTSession.SimpleCreate(AClass: TClass): TObject;
+function TSessionTest.SimpleCreate(AClass: TClass): TObject;
 begin
   Result := AClass.Create;
 end;
 
-procedure TestTSession.Streams;
+procedure TSessionTest.Streams;
 var
   LCustomer: TCustomer;
   LResults: ISQLiteTable;
@@ -1513,7 +1512,7 @@ begin
   end;
 end;
 
-procedure TestTSession.TearDown;
+procedure TSessionTest.TearDown;
 begin
   ClearTable(TBL_PEOPLE);
   ClearTable(TBL_ORDERS);
@@ -1523,7 +1522,7 @@ begin
   FConnection := nil;
 end;
 
-procedure TestTSession.TestExecutionListener(const ACommand: string;
+procedure TSessionTest.TestExecutionListener(const ACommand: string;
   const AParams: IList<TDBParam>);
 var
   i: Integer;
@@ -1540,12 +1539,12 @@ begin
   Status('-----');
 end;
 
-procedure TestTSession.TestQueryListener(Sender: TObject; const SQL: string);
+procedure TSessionTest.TestQueryListener(Sender: TObject; const SQL: string);
 begin
   Status('Native: ' + SQL);
 end;
 
-procedure TestTSession.Transactions;
+procedure TSessionTest.Transactions;
 var
   LCustomer: TCustomer;
   LDatabase: TSQLiteDatabase;
@@ -1586,13 +1585,11 @@ begin
     LSession.Free;
     LConn := nil;
     if not DeleteFile(sFile) then
-    begin
       Fail('Cannot delete file. Error: ' + SysErrorMessage(GetLastError));
-    end;
   end;
 end;
 
-procedure TestTSession.Transactions_Nested;
+procedure TSessionTest.Transactions_Nested;
 var
   LTran1, LTran2: IDBTransaction;
   LCustomer, LDbCustomer: TCustomer;
@@ -1637,13 +1634,11 @@ begin
     LSession.Free;
     LConn := nil;
     if not DeleteFile(sFile) then
-    begin
       Fail('Cannot delete file. Error: ' + SysErrorMessage(GetLastError));
-    end;
   end;
 end;
 
-procedure TestTSession.Update;
+procedure TSessionTest.Update;
 var
   LCustomer: TCustomer;
   sSql: string;
@@ -1679,7 +1674,7 @@ begin
   end;
 end;
 
-procedure TestTSession.Update_NotMapped;
+procedure TSessionTest.Update_NotMapped;
 var
   LId: Integer;
   LCustomer, LDBCustomer: TCustomer;
@@ -1704,7 +1699,7 @@ begin
   end;
 end;
 
-procedure TestTSession.Versioning;
+procedure TSessionTest.Versioning;
 var
   LModel, LModelOld, LModelLoaded: TProduct;
   bOk: Boolean;
@@ -1781,7 +1776,7 @@ type
   end;
 
 
-procedure TestTSession.When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
+procedure TSessionTest.When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
 var
   customer: TCustomer;
   customers: IList<TCustomer>;
@@ -1794,7 +1789,7 @@ begin
   CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
 end;
 
-procedure TestTSession.When_Registered_RowMapper_And_FindOne_Make_Sure_Its_Used_On_TheSameType;
+procedure TSessionTest.When_Registered_RowMapper_And_FindOne_Make_Sure_Its_Used_On_TheSameType;
 var
   customer: TCustomer;
   id: TValue;
@@ -1808,7 +1803,7 @@ begin
   customer.Free;
 end;
 
-procedure TestTSession.When_Registered_RowMapper_And_GetList_Make_Sure_Its_Used_On_TheSameType;
+procedure TSessionTest.When_Registered_RowMapper_And_GetList_Make_Sure_Its_Used_On_TheSameType;
 var
   customer: TCustomer;
   customers: IList<TCustomer>;
@@ -1821,7 +1816,7 @@ begin
   CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
 end;
 
-procedure TestTSession.When_SpringLazy_Is_OneToMany;
+procedure TSessionTest.When_SpringLazy_Is_OneToMany;
 var
   customer: TSpringLazyCustomer;
   id: Integer;
@@ -1839,7 +1834,7 @@ begin
   customer.Free;
 end;
 
-procedure TestTSession.When_Trying_To_Register_RowMapper_Again_For_The_Same_Type_Throw_Exception;
+procedure TSessionTest.When_Trying_To_Register_RowMapper_Again_For_The_Same_Type_Throw_Exception;
 begin
   FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
   CheckException(
@@ -1848,7 +1843,7 @@ begin
     , 'Registering multiple RowMappers for the same type is not allowed');
 end;
 
-procedure TestTSession.When_UnannotatedEntity_FindOne_ThrowException;
+procedure TSessionTest.When_UnannotatedEntity_FindOne_ThrowException;
 begin
   try
     FManager.FindOne<TUnanotatedEntity>(1);
@@ -1880,7 +1875,7 @@ type
     property Name: string read FName write FName;
   end;
 
-procedure TestTSession.When_WithoutPrimaryKey_FindOne_ThrowException;
+procedure TSessionTest.When_WithoutPrimaryKey_FindOne_ThrowException;
 begin
   try
     FManager.FindOne<TWithoutPrimaryKey>(1);
@@ -1893,7 +1888,7 @@ begin
   end;
 end;
 
-procedure TestTSession.When_WithoutTableAttribute_FindOne_ThrowException;
+procedure TSessionTest.When_WithoutTableAttribute_FindOne_ThrowException;
 begin
   try
     FManager.FindOne<TWithoutTable>(1);
@@ -2022,7 +2017,7 @@ end;
 
 initialization
   // Register any test cases with the test runner
-  RegisterTest(TestTSession.Suite);
+  RegisterTest(TSessionTest.Suite);
   RegisterTest(TestTDetachedSession.Suite);
 
   TestDB := TSQLiteDatabase.Create(':memory:');
