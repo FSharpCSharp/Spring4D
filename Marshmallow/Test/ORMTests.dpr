@@ -1,18 +1,13 @@
-// JCL_DEBUG_EXPERT_GENERATEJDBG OFF
-// JCL_DEBUG_EXPERT_INSERTJDBG OFF
-// JCL_DEBUG_EXPERT_DELETEMAPFILE OFF
 program ORMTests;
+
 {$IFDEF CONSOLE_TESTRUNNER}
 {$APPTYPE CONSOLE}
 {$ENDIF}
+
 {$I Spring.inc}
+
 uses
-  Forms,
-  {$IFNDEF DELPHIXE2_UP}
-  RttiPatch,
-  {$ENDIF}
   SysUtils,
-  TestFramework,
   Spring.TestRunner in '..\..\Tests\Source\Spring.TestRunner.pas',
   {$IFDEF DELPHIXE5_UP}
   FireDAC.VCLUI.Wait,
@@ -138,7 +133,6 @@ uses
   TestEntityWrapper in 'TestEntityWrapper.pas';
 
 begin
-  Application.Initialize;
   OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
   PictureFilename := IncludeTrailingPathDelimiter(ExpandFileName(OutputDir + '..\..')) + 'DelphiOOP.png';
 
