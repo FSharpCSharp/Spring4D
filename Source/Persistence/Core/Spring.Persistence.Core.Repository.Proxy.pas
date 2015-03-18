@@ -230,7 +230,7 @@ begin
         try
           LItems := fRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray);
           (LItems as ICollectionOwnership).OwnsObjects := False;
-          Result := LItems.FirstOrDefault;
+          Result := TValue.From<T>(LItems.FirstOrDefault());
         finally
           FinalizeVarRecArray(LConstArray);
         end;
