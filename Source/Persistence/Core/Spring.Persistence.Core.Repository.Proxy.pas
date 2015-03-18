@@ -52,7 +52,7 @@ type
     fRepository: IPagedRepository<T,TID>;
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fSession: TSession;
-    fDefaultMethods: IDictionary<string,TMethodReference>;
+    fDefaultMethods: IDictionary<string, TMethodReference>;
     fTypeName: string;
     fQualifiedTypeName: string;
     fIdTypeName: string;
@@ -60,10 +60,11 @@ type
   protected
     function DoOnInvoke(Method: TRttiMethod; const Args: TArray<TValue>): TValue;
     procedure RegisterDefaultMethods;
-    procedure RegisterMethod(const AMethodSignature: string; AMethodRef: TMethodReference);
+    procedure RegisterMethod(const methodSignature: string; const methodRef: TMethodReference);
   public
-    constructor Create(ASession: TSession; AInterfaceTypeInfo: PTypeInfo;
-      ARepositoryClass: TClass = nil); reintroduce;
+    constructor Create(const session: TSession; typeInfo: PTypeInfo;
+      repositoryClass: TClass = nil); reintroduce;
+    destructor Destroy; override;
   end;
 
 function FromArgsToConstArray(const args: TArray<TValue>): TArray<TVarRec>;
@@ -182,29 +183,36 @@ begin
     Result[i] := args[i];
 end;
 
-{ TProxyRepository<T, TID> }
 
-constructor TProxyRepository<T, TID>.Create(ASession: TSession;
-  AInterfaceTypeInfo: PTypeInfo; ARepositoryClass: TClass);
+{$REGION 'TProxyRepository<T, TID>'}
+
+constructor TProxyRepository<T, TID>.Create(const session: TSession;
+  typeInfo: PTypeInfo; repositoryClass: TClass);
 begin
-  inherited Create(AInterfaceTypeInfo);
-  fSession := ASession;
+  inherited Create(typeInfo);
+  fSession := session;
   fDefaultMethods := TCollections.CreateDictionary<string, TMethodReference>(
     TStringComparer.OrdinalIgnoreCase);
-  if not Assigned(ARepositoryClass) then
-    fRepository := TSimpleRepository<T,TID>.Create(ASession)
+  if not Assigned(repositoryClass) then
+    fRepository := TSimpleRepository<T,TID>.Create(session)
   else
-    fRepository := TRttiExplorer.CreateExternalType(ARepositoryClass, [ASession]) as TSimpleRepository<T,TID>;
-  fTypeName := PTypeInfo(TypeInfo(T)).TypeName;
-  fIdTypeName := PTypeInfo(TypeInfo(TID)).TypeName;
-  fQualifiedTypeName := TType.GetType(TypeInfo(T)).QualifiedName;
-  fQualifiedIdTypeName := TType.GetType(TypeInfo(TID)).QualifiedName;
+    fRepository := TRttiExplorer.CreateExternalType(repositoryClass, [session]) as TSimpleRepository<T,TID>;
+  fTypeName := PTypeInfo(System.TypeInfo(T)).TypeName;
+  fIdTypeName := PTypeInfo(System.TypeInfo(TID)).TypeName;
+  fQualifiedTypeName := TType.GetType(System.TypeInfo(T)).QualifiedName;
+  fQualifiedIdTypeName := TType.GetType(System.TypeInfo(TID)).QualifiedName;
   RegisterDefaultMethods;
   OnInvoke :=
     procedure(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue)
     begin
       Result := DoOnInvoke(Method, Args);
     end;
+end;
+
+destructor TProxyRepository<T, TID>.Destroy;
+begin
+
+  inherited;
 end;
 
 function TProxyRepository<T, TID>.DoOnInvoke(Method: TRttiMethod;
@@ -266,7 +274,8 @@ end;
 
 procedure TProxyRepository<T, TID>.RegisterDefaultMethods;
 begin
-  RegisterMethod('function Count: Int64', function(const Args: TArray<TValue>): TValue
+  RegisterMethod('function Count: Int64',
+    function(const Args: TArray<TValue>): TValue
     begin
       Result := fRepository.Count;
     end);
@@ -362,9 +371,12 @@ begin
 end;
 
 procedure TProxyRepository<T, TID>.RegisterMethod(
-  const AMethodSignature: string; AMethodRef: TMethodReference);
+  const methodSignature: string; const methodRef: TMethodReference);
 begin
-  fDefaultMethods.AddOrSetValue(AMethodSignature, AMethodRef);
+  fDefaultMethods.AddOrSetValue(methodSignature, methodRef);
 end;
+
+{$ENDREGION}
+
 
 end.

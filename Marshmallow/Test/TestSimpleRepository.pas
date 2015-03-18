@@ -49,6 +49,7 @@ type
     FCustomerRepository: ICustomerRepository;
   public
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure FindByName;
     procedure FindByName_Paged;
@@ -179,6 +180,12 @@ begin
   inherited;
   FCustomerRepository := TProxyRepository<TCustomer, Integer>.Create(
     FSession, TypeInfo(ICustomerRepository)) as ICustomerRepository;
+end;
+
+procedure TCustomRepositoryTests.TearDown;
+begin
+  FCustomerRepository := nil;
+  inherited;
 end;
 
 initialization
