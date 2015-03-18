@@ -99,6 +99,7 @@ type
 implementation
 
 uses
+  Generics.Defaults,
   TypInfo;
 
 function IsValid(AObject: TObject): Boolean;
@@ -117,13 +118,69 @@ begin
 end;
 
 
+{$REGION 'Method comparer'}
+
+function NopAddref(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function NopRelease(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+begin
+  Result := E_NOINTERFACE;
+end;
+
+function Compare_Method(Inst: Pointer; const Left, Right: TMethodPointer): Integer;
+type
+  UIntPtr = NativeUInt;
+  TMethod = record
+    Code, Data: UIntPtr;
+  end;
+var
+  LMethod, RMethod: TMethod;
+begin
+  LMethod := TMethod(Left);
+  RMethod := TMethod(Right);
+
+  if (LMethod.Data < RMethod.Data)
+    or ((LMethod.Data = RMethod.Data)
+    and (LMethod.Code < RMethod.Code)) then
+    Result := -1
+  else if (LMethod.Data > RMethod.Data)
+    or ((LMethod.Data = RMethod.Data)
+    and (LMethod.Code > RMethod.Code)) then
+    Result := 1
+  else
+    Result := 0;
+end;
+
+const
+  Comparer_Vtable_Method: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_Method
+  );
+  Comparer_Instance_Method: Pointer = @Comparer_Vtable_Method;
+
+{$ENDREGION}
+
+
 {$REGION 'TEventBase'}
 
 constructor TEventBase.Create;
 begin
   inherited Create;
   fEnabled := True;
-  fHandlers := TList<TMethodPointer>.Create;
+  // some Delphi versions have a broken comparer for tkMethod
+  fHandlers := TList<TMethodPointer>.Create(
+    IComparer<TMethodPointer>(@Comparer_Instance_Method));
   fHandlers.OnNotify := Notify;
   fLock := TCriticalSection.Create;
 end;

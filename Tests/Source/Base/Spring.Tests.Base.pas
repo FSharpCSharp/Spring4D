@@ -132,6 +132,7 @@ type
     procedure TestIssue60;
     procedure TestNotify;
     procedure TestNotifyDelegate;
+    procedure TestRemove;
   end;
 
   TTestMulticastEventStackSize = class(TTestCase)
@@ -727,6 +728,13 @@ begin
 
   fEvent.Remove(HandlerB);
   CheckEquals(0, fEvent.Count);
+end;
+
+procedure TTestMulticastEvent.TestRemove;
+begin
+  fEvent.Add(HandlerA);
+  fEvent.Remove(HandlerB);
+  CheckEquals(1, fEvent.Count);
 end;
 {$ENDIF SUPPORTS_GENERIC_EVENTS}
 
