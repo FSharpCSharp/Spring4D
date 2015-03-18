@@ -39,25 +39,25 @@ type
     ['{E5842280-3750-46C0-8C91-0888EFFB0ED5}']
     procedure Initialize(const context: ICreationContext);
     function GetInstance(const context: ICreationContext): TObject;
-    procedure ReleaseInstance(instance: TObject);
+    procedure ReleaseInstance(const instance: TObject);
   end;
 
   IObjectPool<T> = interface(IObjectPool)
     function GetInstance(const context: ICreationContext): T;
-    procedure ReleaseInstance(instance: T);
+    procedure ReleaseInstance(const instance: T);
   end;
 
   IPoolableObjectFactory = interface(IComponentActivator)
     ['{56F9E805-A115-4E3A-8583-8D0B5462D98A}']
-    function Validate(instance: TObject): Boolean;
-    procedure Activate(instance: TObject);
-    procedure Passivate(instance: TObject);
+    function Validate(const instance: TObject): Boolean;
+    procedure Activate(const instance: TObject);
+    procedure Passivate(const instance: TObject);
   end;
 
   IPoolableObjectFactory<T> = interface(IPoolableObjectFactory)
-    function Validate(instance: T): Boolean;
-    procedure Activate(instance: T);
-    procedure Passivate(instance: T);
+    function Validate(const instance: T): Boolean;
+    procedure Activate(const instance: T);
+    procedure Passivate(const instance: T);
   end;
 
   TSimpleObjectPool = class(TInterfacedObject, IObjectPool)
@@ -66,15 +66,18 @@ type
     fActivator: IComponentActivator;
     fMinPoolsize: Nullable<Integer>;
     fMaxPoolsize: Nullable<Integer>;
-    fAvailableList: IQueue<TObject>;
-    fActiveList: IList<TObject>;
-    fInstances: IList<TObject>;
+    // Use pointers to eliminate ARC on NextGen and just use our own mechanism
+    // for keeping the references alive. (The inactive object collection can
+    // also work the same way on all platforms this way.)
+    fAvailableList: IQueue<Pointer>;
+    fActiveList: IList<Pointer>;
+    fInstances: IList<Pointer>;
     fInitialized: Boolean;
   protected
     function AddNewInstance(const context: ICreationContext): TObject;
     procedure CollectInactiveInstances;
     function GetAvailableObject: TObject;
-    procedure InstancesChanged(Sender: TObject; const item: TObject;
+    procedure InstancesChanged(Sender: TObject; const item: Pointer;
       action: TCollectionChangedAction);
     property MinPoolsize: Nullable<Integer> read fMinPoolsize;
     property MaxPoolsize: Nullable<Integer> read fMaxPoolsize;
@@ -83,7 +86,7 @@ type
     destructor Destroy; override;
     procedure Initialize(const context: ICreationContext); virtual;
     function GetInstance(const context: ICreationContext): TObject; virtual;
-    procedure ReleaseInstance(instance: TObject); virtual;
+    procedure ReleaseInstance(const instance: TObject); virtual;
   end;
 
 implementation
@@ -104,22 +107,20 @@ begin
   inherited Create;
   fActivator := activator;
   if minPoolSize > 0 then
-  begin
     fMinPoolsize := minPoolSize;
-  end;
   if maxPoolSize > 0 then
-  begin
     fMaxPoolsize := maxPoolSize;
-  end;
-  fInstances := TCollections.CreateList<TObject>;
+  fInstances := TCollections.CreateList<Pointer>;
   fInstances.OnChanged.Add(InstancesChanged);
-  fAvailableList := TCollections.CreateQueue<TObject>;
-  fActiveList := TCollections.CreateList<TObject>;
+  fAvailableList := TCollections.CreateQueue<Pointer>;
+  fActiveList := TCollections.CreateList<Pointer>;
   fLock := TCriticalSection.Create;
 end;
 
 destructor TSimpleObjectPool.Destroy;
 begin
+  // Needs to be freed prior our weakrefs get cleared
+  fInstances := nil;
   fLock.Free;
   inherited;
 end;
@@ -132,24 +133,28 @@ begin
   if Result.InheritsFrom(TInterfacedObject) then
     TInterfacedObjectAccess(Result)._AddRef
   else if Supports(Result, IRefCounted, refCounted) then
-    refCounted._AddRef;
+    refCounted._AddRef
+{$IFDEF AUTOREFCOUNT}
+  else Result.__ObjAddRef
+{$ENDIF}
+  ;
   fInstances.Add(Result);
 end;
 
 procedure TSimpleObjectPool.CollectInactiveInstances;
 var
-  instance: TObject;
+  instance: Pointer;
   refCounted: IRefCounted;
 begin
   for instance in fInstances.ToArray do
   begin
-    if instance.InheritsFrom(TInterfacedObject)
+    if TObject(instance).InheritsFrom(TInterfacedObject)
       and (TInterfacedObject(instance).RefCount = 1)
       and fActiveList.Contains(instance) then
     begin
       ReleaseInstance(instance);
     end else
-    if Supports(instance, IRefCounted, refCounted)
+    if Supports(TObject(instance), IRefCounted, refCounted)
       and (refCounted.RefCount = 2)
       and fActiveList.Contains(instance) then
     begin
@@ -175,21 +180,24 @@ begin
 end;
 
 procedure TSimpleObjectPool.InstancesChanged(Sender: TObject;
-  const item: TObject; action: TCollectionChangedAction);
+  const item: Pointer; action: TCollectionChangedAction);
 var
   refCounted: IRefCounted;
 begin
   if action = caRemoved then
   begin
-    if item.InheritsFrom(TInterfacedObject) then
+    if TObject(item).InheritsFrom(TInterfacedObject) then
       TInterfacedObjectAccess(item)._Release
-    else if Supports(item, IRefCounted, refCounted) then
+    else if Supports(TObject(item), IRefCounted, refCounted) then
       refCounted._Release
     else
 {$IFNDEF AUTOREFCOUNT}
-      item.Free;
+      TObject(item).Free;
 {$ELSE}
-      item.DisposeOf;
+    begin
+      if TObject(item).__ObjRelease > 0 then
+        TObject(item).DisposeOf;
+    end;
 {$ENDIF}
   end;
 end;
@@ -220,7 +228,7 @@ begin
   end;
 end;
 
-procedure TSimpleObjectPool.ReleaseInstance(instance: TObject);
+procedure TSimpleObjectPool.ReleaseInstance(const instance: TObject);
 var
   recyclable: IRecyclable;
 begin

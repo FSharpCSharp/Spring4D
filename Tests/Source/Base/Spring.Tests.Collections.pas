@@ -90,6 +90,9 @@ type
     procedure TestListCountWithInsert;
     procedure TestListInsertBetween;
     procedure TestListInsertBeginning;
+    procedure TestListInsertRangeArray;
+    procedure TestListInsertRangeIEnumerable;
+    procedure TestListInsertRangeIEnumerableWithExtraCapacity;
     procedure TestListSimpleDelete;
     procedure TestListMultipleDelete;
     procedure TestListSimpleExchange;
@@ -149,6 +152,8 @@ type
     procedure TestDictionaryValues;
     procedure TestDictionaryContainsValue;
     procedure TestDictionaryContainsKey;
+    procedure TestMapAdd;
+    procedure TestMapRemove;
   end;
 
   TTestEmptyStackofStrings = class(TTestCase)
@@ -931,6 +936,35 @@ begin
   CheckEquals(1, SUT[2]);
 end;
 
+procedure TTestIntegerList.TestListInsertRangeArray;
+begin
+  SUT.Add(0);
+  SUT.Add(1);
+  SUT.InsertRange(1, [3, 4]);
+  CheckTrue(SUT.EqualsTo([0, 3, 4, 1]));
+end;
+
+procedure TTestIntegerList.TestListInsertRangeIEnumerable;
+begin
+  SUT.Add(0);
+  SUT.Add(1);
+  SUT.InsertRange(1, TEnumerable.Range(3, 2));
+  CheckTrue(SUT.EqualsTo([0, 3, 4, 1]));
+end;
+
+procedure TTestIntegerList.TestListInsertRangeIEnumerableWithExtraCapacity;
+var
+  InsertedList: IList<Integer>;
+begin
+  SUT.Add(0);
+  SUT.Add(1);
+
+  InsertedList := TCollections.CreateList<Integer>([3, 4]);
+  InsertedList.Capacity := 10;
+  SUT.InsertRange(1, InsertedList);
+
+  CheckTrue(SUT.EqualsTo([0, 3, 4, 1]));
+end;
 
 procedure TTestIntegerList.TestListIsInitializedEmpty;
 begin
@@ -1055,6 +1089,18 @@ begin
   CheckTrue(Result.Contains(1), 'TestDictionaryKeys: Values doesn''t contain "one"');
   CheckTrue(Result.Contains(2), 'TestDictionaryKeys: Values doesn''t contain "two"');
   CheckTrue(Result.Contains(3), 'TestDictionaryKeys: Values doesn''t contain "three"');
+end;
+
+procedure TTestStringIntegerDictionary.TestMapAdd;
+begin
+  (SUT as IMap<string, Integer>).Add('ten', 10); //check if correctly overriden (not abstract)
+  CheckEquals(10, SUT['ten']);
+end;
+
+procedure TTestStringIntegerDictionary.TestMapRemove;
+begin
+  (SUT as IMap<string, Integer>).Remove('one');
+  CheckFalse(SUT.ContainsKey('one'), 'TestMapRemove: Values does contain "one"');
 end;
 
 { TTestEmptyStringIntegerDictionary }
@@ -1293,7 +1339,7 @@ end;
 procedure TTestStackOfIntegerChangedEvent.TestEmpty;
 begin
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.Any);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 
   SUT.Push(0);
 
@@ -1319,7 +1365,7 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.Any);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
 procedure TTestStackOfIntegerChangedEvent.TestTwoHandlers;
@@ -1345,9 +1391,9 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(1, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.Any);
+  CheckFalse(SUT.OnChanged.IsEmpty);
   SUT.OnChanged.Remove(HandlerB);
-  CheckFalse(SUT.OnChanged.Any);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
 procedure TTestStackOfIntegerChangedEvent.TestNonGenericChangedEvent;
@@ -1357,7 +1403,7 @@ var
 begin
   event := SUT.OnChanged;
 
-  CheckFalse(event.Any);
+  CheckTrue(event.IsEmpty);
   CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
@@ -1569,7 +1615,7 @@ end;
 procedure TTestQueueOfIntegerChangedEvent.TestEmpty;
 begin
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.Any);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 
   SUT.Enqueue(0);
 
@@ -1595,7 +1641,7 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(0, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.Any);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestTwoHandlers;
@@ -1621,9 +1667,9 @@ begin
 
   SUT.OnChanged.Remove(HandlerA);
   CheckEquals(1, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.Any);
+  CheckFalse(SUT.OnChanged.IsEmpty);
   SUT.OnChanged.Remove(HandlerB);
-  CheckFalse(SUT.OnChanged.Any);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestNonGenericChangedEvent;
@@ -1633,7 +1679,7 @@ var
 begin
   event := SUT.OnChanged;
 
-  CheckFalse(event.Any);
+  CheckTrue(event.IsEmpty);
   CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
@@ -1959,7 +2005,7 @@ end;
 
 procedure TTestInterfaceList.SetUp;
 begin
-  SUT := TInterfaceList<IInvokable>.Create as IList<IInvokable>;
+  SUT := TCollections.CreateList<IInvokable>;
 end;
 
 type
@@ -1986,8 +2032,8 @@ end;
 
 procedure TTestInterfaceList.TestInterfaceListCreate;
 begin
-  SUT := TInterfaceList<IInvokable>.Create(nil) as IList<IInvokable>;
-  CheckNotNull(SUT.Comparer);
+  SUT := TCollections.CreateList<IInvokable>;
+  CheckNotNull(SUT.Comparer);      
 end;
 
 { TTestCollectionList }

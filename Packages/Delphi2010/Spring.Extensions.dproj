@@ -22,7 +22,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_Description>Spring4D Extensions package</DCC_Description>
 			<DllSuffix>.Delphi2010</DllSuffix>
-			<DCC_DcuOutput>..\..\Library\Delphi2010\$(Config)</DCC_DcuOutput>
+			<DCC_DcuOutput>..\..\Library\Delphi2010\Win32\$(Config)</DCC_DcuOutput>
 			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Extensions.Delphi2010.bpl</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DesignOnlyPackage>false</DesignOnlyPackage>

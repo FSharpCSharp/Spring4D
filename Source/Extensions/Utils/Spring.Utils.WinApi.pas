@@ -24,16 +24,17 @@
 
 {$I Spring.inc}
 
-///	<summary>
-///	  Declares some Windows API for the framework.
-///	</summary>
+/// <summary>
+///   Declares some Windows API for the framework.
+/// </summary>
 unit Spring.Utils.WinAPI; // platform;
 
 interface
 
 {$IFDEF MSWINDOWS}
 uses
-  Windows, WinSvc;
+  Windows,
+  WinSvc;
 
 const
   VER_NT_WORKSTATION       = $0000001;

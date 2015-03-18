@@ -106,9 +106,9 @@ type
     /// </summary>
     class function NewGuid: TGuid; static;
 
-    ///	<summary>
-    ///	  Determines whether the guid equals to another TGuid structure.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether the guid equals to another TGuid structure.
+    /// </summary>
     function Equals(const guid: TGuid): Boolean;
 
     /// <summary>
@@ -128,10 +128,10 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-  ///	<summary>
-  ///	  Provides a static method to create a TMethod structure with an instance
-  ///	  and a methodaddress.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a static method to create a TMethod structure with an instance
+  ///   and a methodaddress.
+  /// </summary>
   TMethodHelper = record helper for TMethod
   public
     class function Create(const instance, methodAddress: Pointer): TMethod; static;
@@ -172,9 +172,9 @@ type
     /// </example>
     procedure ReadBuffer<T: record>(var value: T); overload;
 
-    ///	<summary>
-    ///	  Writes a value of a value type to the stream.
-    ///	</summary>
+    /// <summary>
+    ///   Writes a value of a value type to the stream.
+    /// </summary>
     procedure WriteBuffer<T: record>(const value: T); overload;
   end;
 
@@ -182,20 +182,20 @@ type
   private
     function GetIsEmpty: Boolean;
   public
-    ///	<summary>
-    ///	  Add an array of string to the list.
-    ///	</summary>
+    /// <summary>
+    ///   Add an array of string to the list.
+    /// </summary>
     procedure AddStrings(const strings: array of string); overload;
 
-    ///	<summary>
-    ///	  Adds or updates a name-value pair.
-    ///	</summary>
-    ///	<remarks>
-    ///	  <note type="warning">
-    ///	    There is a <c>Values[name: string]</c>property in the TStrings
-    ///	    class, but the entry will be removed if the value is empty.
-    ///	  </note>
-    ///	</remarks>
+    /// <summary>
+    ///   Adds or updates a name-value pair.
+    /// </summary>
+    /// <remarks>
+    ///   <note type="warning">
+    ///     There is a <c>Values[name: string]</c>property in the TStrings
+    ///     class, but the entry will be removed if the value is empty.
+    ///   </note>
+    /// </remarks>
     procedure AddOrUpdate(const name, value: string);
 
 //    procedure Remove(const s: string);
@@ -231,36 +231,36 @@ type
     /// <seealso cref="ExtractNames(TStrings)" />
     procedure ExtractValues(const strings: TStrings);
 
-    ///	<summary>
-    ///	  Returns a string array that contains all the <b>name</b>entries in
-    ///	  the string list.
-    ///	</summary>
+    /// <summary>
+    ///   Returns a string array that contains all the <b>name</b>entries in
+    ///   the string list.
+    /// </summary>
     function GetNames: TStringDynArray;
 
-    ///	<summary>
-    ///	  Returns a string array that contains all the <b>value</b>entries in
-    ///	  the string list.
-    ///	</summary>
+    /// <summary>
+    ///   Returns a string array that contains all the <b>value</b>entries in
+    ///   the string list.
+    /// </summary>
     function GetValues: TStringDynArray;
 
 //    function GetValue(const name: string): string; overload;
 //    function GetValue(const index: Integer): string; overload;
 
-    ///	<summary>
-    ///	  Gets the corresponding value of the name entry if there is such an
-    ///	  entry and the value is not empty, otherwise, returns the default
-    ///	  value specified by the <paramref name="default" />param.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the corresponding value of the name entry if there is such an
+    ///   entry and the value is not empty, otherwise, returns the default
+    ///   value specified by the <paramref name="default" />param.
+    /// </summary>
     function GetValueOrDefault<T>(const name: string; const default: T): T; experimental;
 
-    ///	<summary>
-    ///	  Try finding a name entry in the list.
-    ///	</summary>
+    /// <summary>
+    ///   Try finding a name entry in the list.
+    /// </summary>
     function TryFindName(const name: string; var index: Integer): Boolean;
 
-    ///	<summary>
-    ///	  Try finding a value entry in the list.
-    ///	</summary>
+    /// <summary>
+    ///   Try finding a value entry in the list.
+    /// </summary>
     function TryFindValue(const value: string; var index: Integer): Boolean;
 
     /// <summary>
@@ -268,14 +268,14 @@ type
     /// </summary>
     function TryFindObject(const obj: TObject; var index: Integer): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether the list contains the specified name entry.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether the list contains the specified name entry.
+    /// </summary>
     function ContainsName(const name: string): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether the list contains the specified value entry.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether the list contains the specified value entry.
+    /// </summary>
     function ContainsValue(const value: string): Boolean;
 
     /// <summary>
@@ -283,18 +283,18 @@ type
     /// </summary>
     function ContainsObject(const obj: TObject): Boolean;
 
-    ///	<summary>
-    ///	  Converts the string list to a dynamic string array.
-    ///	</summary>
+    /// <summary>
+    ///   Converts the string list to a dynamic string array.
+    /// </summary>
     function ToArray: TStringDynArray;
 
-    ///	<summary>
-    ///	  Gets a value indicates whether the strings is empty.
-    ///	</summary>
-    ///	<value>
-    ///	  Returns true if the count of the list is zero, otherwise, returns
-    ///	  false.
-    ///	</value>
+    /// <summary>
+    ///   Gets a value indicates whether the strings is empty.
+    /// </summary>
+    /// <value>
+    ///   Returns true if the count of the list is zero, otherwise, returns
+    ///   false.
+    /// </value>
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 

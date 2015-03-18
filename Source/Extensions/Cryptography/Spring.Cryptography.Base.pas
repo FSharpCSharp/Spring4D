@@ -38,9 +38,9 @@ uses
   Spring.Cryptography;
 
 type
-  ///	<summary>
-  ///	  Abstract base class for hash algorithms.
-  ///	</summary>
+  /// <summary>
+  ///   Abstract base class for hash algorithms.
+  /// </summary>
   THashAlgorithmBase = class abstract(TInterfacedObject, IHashAlgorithm, IInterface)
   protected
     fHash: TBuffer;
@@ -67,9 +67,9 @@ type
   {TODO -oPaul -cGeneral : Refactoring: EncryptBlock/EncryptFinalBlock/Decrypt***}
   {TODO 5 -oPaul -cGeneral : BUG FIXES: TSymmetricAlgorithmBase.Encrypt/Decrypt(inputStream, outputStream)}
 
-  ///	<summary>
-  ///	  Abstract base class for symmetric algorithms.
-  ///	</summary>
+  /// <summary>
+  ///   Abstract base class for symmetric algorithms.
+  /// </summary>
   TSymmetricAlgorithmBase = class abstract(TInterfacedObject, ISymmetricAlgorithm)
   private
     fCipherMode: TCipherMode;
@@ -144,9 +144,9 @@ type
     property LegalKeySizes: ISizeCollection read GetLegalKeySizes;
   end;
 
-  ///	<summary>
-  ///	  TRandomNumberGenerator
-  ///	</summary>
+  /// <summary>
+  ///   TRandomNumberGenerator
+  /// </summary>
   TRandomNumberGenerator = class(TInterfacedObject, IRandomNumberGenerator)
   private
     class constructor Create;

@@ -132,6 +132,7 @@ type
     procedure TestIssue60;
     procedure TestNotify;
     procedure TestNotifyDelegate;
+    procedure TestRemove;
   end;
 
   TTestMulticastEventStackSize = class(TTestCase)
@@ -362,7 +363,8 @@ type
       TCollectionChangedActions = set of TCollectionChangedAction;
   private
     fSUT, fValue: TValue;
-    procedure DoCheck(expected: Boolean = True);
+    procedure DoCheckEquals(expected: Boolean = True);
+    procedure DoCheckCompare(expected: Integer = 0);
   published
     procedure Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
     procedure Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
@@ -371,6 +373,10 @@ type
     procedure Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
 
     procedure Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
+
+    procedure Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
+
+    procedure Test_Compare_StringToString_ValuesAreEqual_ReturnsTrue;
   end;
 
 implementation
@@ -571,7 +577,7 @@ end;
 procedure TTestMulticastEvent.TestEmpty;
 begin
   CheckEquals(0, fEvent.Count);
-  CheckFalse(fEvent.Any);
+  CheckTrue(fEvent.IsEmpty);
 end;
 
 procedure TTestMulticastEvent.TestInvoke;
@@ -668,7 +674,7 @@ procedure TTestMulticastEvent.TestOneHandler;
 begin
   fEvent.Add(HandlerA);
   CheckEquals(1, fEvent.Count);
-  CheckTrue(fEvent.Any);
+  CheckFalse(fEvent.IsEmpty);
 
   fEvent.Invoke(Self);
   CheckTrue(fAInvoked);
@@ -685,13 +691,13 @@ var
   e: Event<TNotifyEvent>;
 begin
   CheckTrue(e.Enabled);
-  CheckFalse(e.Any);
+  CheckTrue(e.IsEmpty);
 
   e.Add(HandlerA);
   e.Add(HandlerB);
   e.Invoke(nil);
 
-  CheckTrue(e.Any);
+  CheckFalse(e.IsEmpty);
   CheckEquals(2, e.Count);
 
   CheckTrue(fAInvoked);
@@ -722,6 +728,13 @@ begin
 
   fEvent.Remove(HandlerB);
   CheckEquals(0, fEvent.Count);
+end;
+
+procedure TTestMulticastEvent.TestRemove;
+begin
+  fEvent.Add(HandlerA);
+  fEvent.Remove(HandlerB);
+  CheckEquals(1, fEvent.Count);
 end;
 {$ENDIF SUPPORTS_GENERIC_EVENTS}
 
@@ -2027,6 +2040,9 @@ begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
   p := t;
+{$IFDEF AUTOREFCOUNT}
+  t := nil;
+{$ENDIF}
   destroyCalled := False;
   p := Default(SmartPointer<TTestClass>);
   CheckTrue(destroyCalled);
@@ -2228,7 +2244,12 @@ end;
 
 {$REGION 'TTestValueHelper'}
 
-procedure TTestValueHelper.DoCheck(expected: Boolean);
+procedure TTestValueHelper.DoCheckCompare(expected: Integer);
+begin
+  CheckEquals(expected, fSUT.CompareTo(fValue));
+end;
+
+procedure TTestValueHelper.DoCheckEquals(expected: Boolean);
 begin
   if expected then
     CheckTrue(fSUT.Equals(fValue))
@@ -2236,39 +2257,55 @@ begin
     CheckFalse(fSUT.Equals(fValue));
 end;
 
+procedure TTestValueHelper.Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
+begin
+  fSUT := Integer(42);
+  fValue := Integer(42);
+  DoCheckCompare;
+end;
+
+procedure TTestValueHelper.Test_Compare_StringToString_ValuesAreEqual_ReturnsTrue;
+begin
+  // bug in XE: TValue.IsType<Extended> (or any fkFloat type) returns true
+  // on a TValue holding a string
+  fSUT := '42';
+  fValue := '42';
+  DoCheckCompare;
+end;
+
 procedure TTestValueHelper.Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
 begin
   fSUT := TValue.From<Byte>(255);
   fValue := -128;
-  DoCheck(False);
+  DoCheckEquals(False);
 end;
 
 procedure TTestValueHelper.Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := TValue.From(caRemoved);
   fValue := TValue.From(caRemoved);
-  DoCheck;
+  DoCheckEquals;
 end;
 
 procedure TTestValueHelper.Test_Equals_IntToInt_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := Integer(42);
   fValue := Integer(42);
-  DoCheck;
+  DoCheckEquals;
 end;
 
 procedure TTestValueHelper.Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := TValue.From([caAdded..caChanged]);
   fValue := TValue.From([caAdded..caChanged]);
-  DoCheck;
+  DoCheckEquals;
 end;
 
 procedure TTestValueHelper.Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := TValue.From<ShortInt>(-128);
   fValue := -128;
-  DoCheck;
+  DoCheckEquals;
 end;
 
 {$ENDREGION}

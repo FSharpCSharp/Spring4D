@@ -36,10 +36,10 @@ uses
   Spring.Collections;
 
 type
-  ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="Spring.Collections|IEnumerator" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides an abstract implementation for the <see cref="Spring.Collections|IEnumerator" />
+  ///    interface.
+  /// </summary>
   TEnumeratorBase = class abstract(TInterfacedObject, IEnumerator)
   private
     function GetCurrentNonGeneric: TValue; virtual; abstract;
@@ -51,10 +51,10 @@ type
     property Current: TValue read GetCurrentNonGeneric;
   end;
 
-  ///	<summary>
-  ///	  Provides a default implementation for the
-  ///	  <see cref="Spring.Collections|IEnumerator&lt;T&gt;" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a default implementation for the <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
   private
     function GetCurrentNonGeneric: TValue; override; final;
@@ -64,10 +64,10 @@ type
     property Current: T read GetCurrent;
   end;
 
-  ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="Spring.Collections|IEnumerable" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides an abstract implementation for the <see cref="Spring.Collections|IEnumerable" />
+  ///    interface.
+  /// </summary>
   TEnumerableBase = class abstract(TInterfacedObject, IInterface,
     IElementType, ICountable, IEnumerable)
   private
@@ -81,6 +81,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
+    function GetIsEmpty: Boolean;
   {$ENDREGION}
   protected
   {$REGION 'Implements IInterface'}
@@ -105,10 +106,10 @@ type
 {$ENDIF}{$ENDIF}
   end;
 
-  ///	<summary>
-  ///	  Provides a default implementation for the
-  ///	  <see cref="Spring.Collections|IEnumerable&lt;T&gt;" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a default implementation for the <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
   TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>)
   private
     fComparer: IComparer<T>;
@@ -244,14 +245,20 @@ type
     function GetEnumerator: IEnumerator<T>; override; final;
   end;
 
-  ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="Spring.Collections|ICollection&lt;T&gt;" /> interface.
-  ///	</summary>
-  ///	<remarks>
-  ///	  The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns
-  ///	  <c>False</c> by default.
-  ///	</remarks>
+  TSourceIterator<T> = class(TIterator<T>)
+  protected
+    fSource: IEnumerable<T>;
+    function GetElementType: PTypeInfo; override;
+  end;
+
+  /// <summary>
+  ///   Provides an abstract implementation for the <see cref="Spring.Collections|ICollection&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
+  /// <remarks>
+  ///   The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns <c>
+  ///   False</c> by default.
+  /// </remarks>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, IReadOnlyCollection<T>)
   protected
     fOnChanged: ICollectionChangedEvent<T>;
@@ -375,10 +382,10 @@ type
     property ValueType: PTypeInfo read GetValueType;
   end;
 
-  ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="Spring.Collections|IList&lt;T&gt;" /> interface.
-  ///	</summary>
+  /// <summary>
+  ///   Provides an abstract implementation for the <see cref="Spring.Collections|IList&lt;T&gt;" />
+  ///    interface.
+  /// </summary>
   TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>, IList)
   private
     function AsList: IList;
@@ -537,6 +544,14 @@ end;
 function TEnumerableBase.GetEnumerator: IEnumerator;
 begin
   Result := GetEnumeratorNonGeneric;
+end;
+
+function TEnumerableBase.GetIsEmpty: Boolean;
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := GetEnumerator;
+  Result := not enumerator.MoveNext;
 end;
 
 {$IFNDEF AUTOREFCOUNT}{$IFNDEF DELPHIXE7_UP}
@@ -1381,6 +1396,16 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TSourceIterator<T>'}
+
+function TSourceIterator<T>.GetElementType: PTypeInfo;
+begin
+  Result := fSource.ElementType;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TCollectionBase<T>'}
 
 constructor TCollectionBase<T>.Create;
@@ -1757,7 +1782,11 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 
+{$IFDEF DELPHIXE_UP}
+  Result := TCollections.CreateList<T>;
+{$ELSE}
   Result := TList<T>.Create;
+{$ENDIF}
   Result.Count := count;
   for i := index to index + count do
     Result[i] := Items[i];

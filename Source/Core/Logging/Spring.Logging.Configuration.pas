@@ -106,13 +106,13 @@ type
     /// </summary>
     SPrefix = 'logging.';
     /// <summary>
-    ///   Since controllers may act as appenders we have to separate the two
-    ///   by appending some text to its name.
+    ///   Since controllers may act as appenders we have to separate the two by
+    ///   appending some text to its name.
     /// </summary>
     SControllerSuffix = '.controller';
     /// <summary>
-    ///   Since controllers may act as appenders we have to separate the two
-    ///   by appending some text to its name.
+    ///   Since controllers may act as appenders we have to separate the two by
+    ///   appending some text to its name.
     /// </summary>
     SAppenderSuffix = '.appender';
     SAddAppenderProc = 'AddAppender';
@@ -137,8 +137,8 @@ type
     ///   propertyFunc on each of them, it may do it own processing and return
     ///   true, if false is returned property is read instead. After all
     ///   properties are read propertiesRead function is called and may be used
-    ///   to finish the registration based on context. The method returns
-    ///   true if any subsections are read or false otherwise.
+    ///   to finish the registration based on context. The method returns true
+    ///   if any subsections are read or false otherwise.
     /// </summary>
     function ReadSection(const sectionName: string;
       const defaultType: TRttiType; const registerProc: TRegisterProc;

@@ -36,15 +36,15 @@ uses
   Spring.Collections.Base;
 
 type
-  ///	<summary>
-  ///	  Represents a collection of keys and values.
-  ///	</summary>
-  ///	<typeparam name="TKey">
-  ///	  The type of the keys in the dictionary.
-  ///	</typeparam>
-  ///	<typeparam name="TValue">
-  ///	  The type of the values in the dictionary.
-  ///	</typeparam>
+  /// <summary>
+  ///   Represents a collection of keys and values.
+  /// </summary>
+  /// <typeparam name="TKey">
+  ///   The type of the keys in the dictionary.
+  /// </typeparam>
+  /// <typeparam name="TValue">
+  ///   The type of the values in the dictionary.
+  /// </typeparam>
   TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
     IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>)
   protected
@@ -158,8 +158,8 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
-    procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
-    function Remove(const key: TKey): Boolean; reintroduce; overload;
+    procedure Add(const key: TKey; const value: TValue); overload; override;
+    function Remove(const key: TKey): Boolean; overload; override;
     function RemovePair(const key: TKey; const value: TValue): Boolean; override;
     function ExtractPair(const key: TKey; const value: TValue): TGenericPair; overload; override;
     function ContainsPair(const key: TKey; const value: TValue): Boolean; override;

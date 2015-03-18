@@ -45,16 +45,16 @@ type
 
   {$REGION 'TType'}
 
-  ///	<summary>
-  ///	  Provides static methods to get RTTI information of a type.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <note type="caller">
-  ///	    When using this class, a shared instance of the TRttiContext class
-  ///	    will be kept, which will make all instances of RTTI types live during
-  ///	    the lifetime.
-  ///	  </note>
-  ///	</remarks>
+  /// <summary>
+  ///   Provides static methods to get RTTI information of a type.
+  /// </summary>
+  /// <remarks>
+  ///   <note type="caller">
+  ///     When using this class, a shared instance of the TRttiContext class
+  ///     will be kept, which will make all instances of RTTI types live
+  ///     during the lifetime.
+  ///   </note>
+  /// </remarks>
   TType = class
   strict private
     class var fContext: TRttiContext;
@@ -75,30 +75,30 @@ type
     class function FindType(const qualifiedName: string): TRttiType; static;
     class function TryGetType(typeInfo: PTypeInfo; out rttiType: TRttiType): Boolean; static;
 
-    ///	<summary>
-    ///	  Returns true if the typeFrom is assignable to the typeTo.
-    ///	</summary>
+    /// <summary>
+    ///   Returns true if the typeFrom is assignable to the typeTo.
+    /// </summary>
     class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; static; inline;
 
-    ///	<summary>
-    ///	  Returns <c>True</c> if the typeInfo is a delegate type.
-    ///	</summary>
+    /// <summary>
+    ///   Returns <c>True</c> if the typeInfo is a delegate type.
+    /// </summary>
     class function IsDelegate(typeInfo: PTypeInfo): Boolean; overload; static;
     class function TryGetInterfaceType(const guid: TGUID; out intfType: TRttiInterfaceType): Boolean; static;
 
-    ///	<summary>
-    ///	  Returns the <see cref="TLazyKind" /> of the typeInfo.
-    ///	</summary>
+    /// <summary>
+    ///   Returns the <see cref="TLazyKind" /> of the typeInfo.
+    /// </summary>
     class function GetLazyKind(typeInfo: PTypeInfo): TLazyKind; static;
 
-    ///	<summary>
-    ///	  Returns the underlying type name of the lazy type.
-    ///	</summary>
+    /// <summary>
+    ///   Returns the underlying type name of the lazy type.
+    /// </summary>
     class function GetLazyTypeName(typeInfo: PTypeInfo): string; static;
 
-    ///	<summary>
-    ///	  Returns <c>True</c> if the type is a lazy type.
-    ///	</summary>
+    /// <summary>
+    ///   Returns <c>True</c> if the type is a lazy type.
+    /// </summary>
     class function IsLazyType(typeInfo: PTypeInfo): Boolean; static;
 
 
@@ -231,34 +231,34 @@ type
   public
     function GetCustomAttributes(attributeClass: TAttributeClass): TArray<TCustomAttribute>; overload;
 
-    ///	<summary>
-    ///	  Gets an array which contains all custom attribute types which the
-    ///	  type applies.
-    ///	</summary>
+    /// <summary>
+    ///   Gets an array which contains all custom attribute types which the
+    ///   type applies.
+    /// </summary>
     function GetCustomAttributes<T: TCustomAttribute>: TArray<T>; overload;
 
     function GetCustomAttribute(attributeClass: TAttributeClass): TCustomAttribute; overload;
 
-    ///	<summary>
-    ///	  Enumerates all applied custom attributes and returns the first one
-    ///	  which is/inherits the specified type.
-    ///	</summary>
+    /// <summary>
+    ///   Enumerates all applied custom attributes and returns the first one
+    ///   which is/inherits the specified type.
+    /// </summary>
     function GetCustomAttribute<T: TCustomAttribute>: T; overload;
 
     function TryGetCustomAttribute(attributeClass: TAttributeClass;
       out attribute: TCustomAttribute): Boolean; overload;
 
-    ///	<summary>
-    ///	  Try getting a custom attribute class which is applied by the type.
-    ///	</summary>
+    /// <summary>
+    ///   Try getting a custom attribute class which is applied by the type.
+    /// </summary>
     function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T): Boolean; overload;
 
     function HasCustomAttribute(attributeClass: TAttributeClass): Boolean; overload;
 
-    ///	<summary>
-    ///	  Determines whether the type applies the specified custom attribute
-    ///	  class.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether the type applies the specified custom attribute
+    ///   class.
+    /// </summary>
     function HasCustomAttribute<T: TCustomAttribute>: Boolean; overload;
   end;
 
@@ -292,14 +292,14 @@ type
     function GetAncestorCount: Integer;
   public
 
-    ///	<summary>
-    ///	  Returns an enumerable collection which contains all the interface
-    ///	  Rtti types that the target type implements.
-    ///	  <note type="note">
-    ///	    Only Guid interfaces will be enumerated.
-    ///	  </note>
-    ///	</summary>
-    ///	<seealso cref="Spring.Collections|IEnumerable&lt;T&gt;" />
+    /// <summary>
+    ///   Returns an enumerable collection which contains all the interface
+    ///   Rtti types that the target type implements.
+    ///   <note type="note">
+    ///     Only Guid interfaces will be enumerated.
+    ///   </note>
+    /// </summary>
+    /// <seealso cref="Spring.Collections|IEnumerable&lt;T&gt;" />
     function GetInterfaces: IEnumerable<TRttiInterfaceType>;
 
     /// <summary>
@@ -336,40 +336,40 @@ type
 
     property BaseTypes: IReadOnlyList<TRttiType> read GetBaseTypes;
 
-    ///	<summary>
-    ///	  Gets an enumerable collection which contains all constructor methods
-    ///	  of the type, including inherited.
-    ///	</summary>
-    ///	<seealso cref="Methods" />
-    ///	<seealso cref="Properties" />
-    ///	<seealso cref="Fields" />
+    /// <summary>
+    ///   Gets an enumerable collection which contains all constructor methods
+    ///   of the type, including inherited.
+    /// </summary>
+    /// <seealso cref="Methods" />
+    /// <seealso cref="Properties" />
+    /// <seealso cref="Fields" />
     property Constructors: IEnumerable<TRttiMethod> read GetConstructors;
 
-    ///	<summary>
-    ///	  Gets a enumerable collection which contains all methods that the type
-    ///	  contains, including inherited.
-    ///	</summary>
-    ///	<seealso cref="Constructors" />
-    ///	<seealso cref="Properties" />
-    ///	<seealso cref="Fields" />
+    /// <summary>
+    ///   Gets a enumerable collection which contains all methods that the type
+    ///   contains, including inherited.
+    /// </summary>
+    /// <seealso cref="Constructors" />
+    /// <seealso cref="Properties" />
+    /// <seealso cref="Fields" />
     property Methods: IEnumerable<TRttiMethod> read GetMethods;
 
-    ///	<summary>
-    ///	  Gets a enumerable collection which contains all properties that the
-    ///	  type contains, including inherited.
-    ///	</summary>
-    ///	<seealso cref="Constructors" />
-    ///	<seealso cref="Methods" />
-    ///	<seealso cref="Fields" />
+    /// <summary>
+    ///   Gets a enumerable collection which contains all properties that the
+    ///   type contains, including inherited.
+    /// </summary>
+    /// <seealso cref="Constructors" />
+    /// <seealso cref="Methods" />
+    /// <seealso cref="Fields" />
     property Properties: IEnumerable<TRttiProperty> read GetProperties;
 
-    ///	<summary>
-    ///	  Gets a enumerable collection which contains all fields that the type
-    ///	  contains, including inherited.
-    ///	</summary>
-    ///	<seealso cref="Constructors" />
-    ///	<seealso cref="Methods" />
-    ///	<seealso cref="Properties" />
+    /// <summary>
+    ///   Gets a enumerable collection which contains all fields that the type
+    ///   contains, including inherited.
+    /// </summary>
+    /// <seealso cref="Constructors" />
+    /// <seealso cref="Methods" />
+    /// <seealso cref="Properties" />
     property Fields: IEnumerable<TRttiField> read GetFields;
 
     property AsClass: TRttiInstanceType read GetAsClass;
@@ -381,9 +381,9 @@ type
     property IsDynamicArray: Boolean read GetIsDynamicArray;
     property IsString: Boolean read GetIsString;
 
-    ///	<summary>
-    ///	  Gets a value indicates whether the current type is generic.
-    ///	</summary>
+    /// <summary>
+    ///   Gets a value indicates whether the current type is generic.
+    /// </summary>
     property IsGenericType: Boolean read GetIsGenericType;
 
     property IsLazyType: Boolean read GetIsLazyType;
@@ -499,10 +499,10 @@ type
 
   TMethodKinds = set of TMethodKind;
 
-  ///	<summary>
-  ///	  Provides static methods to create specifications to filter TRttiMember
-  ///	  objects.
-  ///	</summary>
+  /// <summary>
+  ///   Provides static methods to create specifications to filter TRttiMember
+  ///   objects.
+  /// </summary>
   TFiltersBase<T: TRttiMember> = class(TFiltersNamed<T>)
   public
     class function ContainsParameterType(typeInfo: PTypeInfo): TSpecification<T>;

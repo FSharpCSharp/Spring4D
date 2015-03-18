@@ -160,6 +160,8 @@ begin
 {$ENDIF}
     TTestFromCurrency.Suite,
     TTestFromDateTime.Suite,
+    TTestFromDate.Suite,
+    TTestFromTime.Suite,
     TTestFromObject.Suite,
     TTestFromNullable.Suite,
     TTestFromInterface.Suite,

@@ -55,8 +55,8 @@ type
 
   {$REGION 'TTextLogAppender'}
   /// <summary>
-  ///   Simple appender that outputs the text to given Delphi Text file
-  ///   (or pipe)
+  ///   Simple appender that outputs the text to given Delphi Text file (or
+  ///   pipe)
   /// </summary>
   TTextLogAppender = class(TLogAppenderWithTimeStampFormat)
   public type

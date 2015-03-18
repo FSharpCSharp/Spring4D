@@ -24,9 +24,9 @@
 
 {$I Spring.inc}
 
-///	<summary>
-///	  Provides the internal utilities for Spring4D.
-///	</summary>
+/// <summary>
+///   Provides the internal utilities for Spring4D.
+/// </summary>
 unit Spring.SystemUtils;
 
 interface
@@ -38,9 +38,9 @@ uses
   TypInfo;
 
 type
-  ///	<summary>
-  ///	  Provides static methods to manipulate an enumeration type.
-  ///	</summary>
+  /// <summary>
+  ///   Provides static methods to manipulate an enumeration type.
+  /// </summary>
   TEnum = class
   private
     class function GetEnumTypeInfo<T>: PTypeInfo; static;
@@ -63,67 +63,67 @@ type
     class function Parse<T>(const value: string): T; overload; static;
   end;
 
-  ///	<summary>
-  ///	  Provides static methods to manipulate an Variant type.
-  ///	</summary>
+  /// <summary>
+  ///   Provides static methods to manipulate an Variant type.
+  /// </summary>
   TVariant = class
   public
     class function IsNull(const value: Variant): Boolean; static;
   end;
 
-///	<summary>
-///	  Retrieves the byte length of a unicode string.
-///	</summary>
-///	<param name="s">
-///	  the unicode string.
-///	</param>
-///	<returns>
-///	  The byte length of the unicode string.
-///	</returns>
-///	<remarks>
-///	  Although there is already a routine <c>SysUtils.ByteLength(string)</c>
-///	  function, it only supports unicode strings and doesn't provide overloads
-///	  for WideStrings and AnsiStrings.
-///	</remarks>
-///	<seealso cref="GetByteLength(WideString)" />
-///	<seealso cref="GetByteLength(RawByteString)" />
+/// <summary>
+///   Retrieves the byte length of a unicode string.
+/// </summary>
+/// <param name="s">
+///   the unicode string.
+/// </param>
+/// <returns>
+///   The byte length of the unicode string.
+/// </returns>
+/// <remarks>
+///   Although there is already a routine <c>SysUtils.ByteLength(string)</c>
+///   function, it only supports unicode strings and doesn't provide overloads
+///   for WideStrings and AnsiStrings.
+/// </remarks>
+/// <seealso cref="GetByteLength(WideString)" />
+/// <seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: string): Integer; overload; inline;
 
 {$IFNDEF NEXTGEN}
-///	<summary>
-///	  Retrieves the byte length of a WideString.
-///	</summary>
-///	<param name="s">
-///	  A wide string.
-///	</param>
-///	<returns>
-///	  The byte length of the wide string.
-///	</returns>
-///	<seealso cref="GetByteLength(string)" />
-///	<seealso cref="GetByteLength(RawByteString)" />
+/// <summary>
+///   Retrieves the byte length of a WideString.
+/// </summary>
+/// <param name="s">
+///   A wide string.
+/// </param>
+/// <returns>
+///   The byte length of the wide string.
+/// </returns>
+/// <seealso cref="GetByteLength(string)" />
+/// <seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: WideString): Integer; overload; inline;
 
-///	<summary>
-///	  Retrieves the byte length of a <c>RawByteString</c> (AnsiString or
-///	  UTF8String).
-///	</summary>
-///	<returns>
-///	  The byte length of the raw byte string.
-///	</returns>
-///	<seealso cref="GetByteLength(string)" />
-///	<seealso cref="GetByteLength(WideString)" />
+/// <summary>
+///   Retrieves the byte length of a <c>RawByteString</c> (AnsiString or
+///   UTF8String).
+/// </summary>
+/// <returns>
+///   The byte length of the raw byte string.
+/// </returns>
+/// <seealso cref="GetByteLength(string)" />
+/// <seealso cref="GetByteLength(WideString)" />
 function GetByteLength(const s: RawByteString): Integer; overload; inline;
 {$ENDIF NEXTGEN}
 
 
-///	<summary>
-///	  Overloads. SplitString
-///	</summary>
-///	<remarks>
-///	  Each element of separator defines a separate delimiter character. If two
-///	  delimiters are adjacent, or a delimiter is found at the beginning or end
-///	  of the buffer, the corresponding array element contains Empty.
-///	</remarks>
+/// <summary>
+///   Overloads. SplitString
+/// </summary>
+/// <remarks>
+///   Each element of separator defines a separate delimiter character. If two
+///   delimiters are adjacent, or a delimiter is found at the beginning or end
+///   of the buffer, the corresponding array element contains Empty.
+/// </remarks>
 function SplitString(const buffer: string; const separators: TSysCharSet;
   removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
@@ -131,63 +131,62 @@ function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
 function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
   removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 
-///	<summary>
-///	  Returns a string array that contains the substrings in the buffer that
-///	  are delimited by null char (#0) and ends with an additional null char.
-///	</summary>
-///	<example>
-///	  <code lang="Delphi">
-///	procedure TestSplitNullTerminatedStrings;
-///	var
-///	  buffer: string;
-///	  strings: TStringDynArray;
-///	  s: string;
-///	begin
-///	  buffer := 'C:'#0'D:'#0'E:'#0#0;
-///	  strings := SplitString(PChar(buffer));
-///	  for s in strings do
-///	  begin
-///	    Writeln(s);
-///	  end;
-///	end;</code>
-///	</example>
+/// <summary>
+///   Returns a string array that contains the substrings in the buffer that
+///   are delimited by null char (#0) and ends with an additional null char.
+/// </summary>
+/// <example>
+///   <code lang="Delphi">procedure TestSplitNullTerminatedStrings;
+/// var
+///   buffer: string;
+///   strings: TStringDynArray;
+///   s: string;
+/// begin
+///   buffer := 'C:'#0'D:'#0'E:'#0#0;
+///   strings := SplitString(PChar(buffer));
+///   for s in strings do
+///   begin
+///     Writeln(s);
+///   end;
+/// end;</code>
+/// </example>
 function SplitString(const buffer: PChar): TStringDynArray; overload;
 
-///	<summary>
-///	  Returns a string array that contains the substrings in the buffer that
-///	  are delimited by null char (#0) and ends with an additional null char.
-///	</summary>
+/// <summary>
+///   Returns a string array that contains the substrings in the buffer that
+///   are delimited by null char (#0) and ends with an additional null char.
+/// </summary>
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
   deprecated 'Use the SplitString(PChar) function instead.';
 
-///	<summary>
-///	  Try parsing a string to a datetime value based on the specified format.
-///	  Returns True if the input string matches the format.
-///	</summary>
-///	<param name="s">
-///	  the input string
-///	</param>
-///	<param name="format">
-///	  the format of datetime
-///	</param>
-///	<param name="value">
-///	  output datetime value
-///	</param>
-///	<returns>
-///	  Returns True if the input string can be parsed.
-///	</returns>
+/// <summary>
+///   Try parsing a string to a datetime value based on the specified format.
+///   Returns True if the input string matches the format.
+/// </summary>
+/// <param name="s">
+///   the input string
+/// </param>
+/// <param name="format">
+///   the format of datetime
+/// </param>
+/// <param name="value">
+///   output datetime value
+/// </param>
+/// <returns>
+///   Returns True if the input string can be parsed.
+/// </returns>
 function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 
-///	<summary>
-///	  Parses a string to a datetime value based on the specified format. An
-///	  EConvertError exception will be raised if failed to parse the string.
-///	</summary>
-///	<param name="s">
-///	  the date time string.
-///	</param>
-///	<param name="format">
-///	  the format of datetime.
-///	</param>
+/// <summary>
+///   Parses a string to a datetime value based on the specified format. An
+///   EConvertError exception will be raised if failed to parse the string.
+/// </summary>
+/// <param name="s">
+///   the date time string.
+/// </param>
+/// <param name="format">
+///   the format of datetime.
+/// </param>
 function ConvertStrToDateTime(const s, format: string): TDateTime;
 
 implementation

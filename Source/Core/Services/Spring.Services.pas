@@ -24,9 +24,9 @@
 
 {$I Spring.inc}
 
-///	<summary>
-///	  Defines the common interfaces for a service locator.
-///	</summary>
+/// <summary>
+///   Defines the common interfaces for a service locator.
+/// </summary>
 unit Spring.Services;
 
 interface
@@ -91,9 +91,9 @@ type
 
   {$REGION 'Service locator'}
 
-  ///	<summary>
-  ///	  Defines an abstract interface to locate services.
-  ///	</summary>
+  /// <summary>
+  ///   Defines an abstract interface to locate services.
+  /// </summary>
   IServiceLocator = interface
     ['{E8C39055-6634-4428-B343-2FB0E75527BC}']
     function GetService(serviceType: PTypeInfo): TValue; overload;
@@ -109,16 +109,16 @@ type
 
   TServiceLocatorDelegate = reference to function: IServiceLocator;
 
-  ///	<summary>
-  ///	  Provides a portal to get and query an instance of a service. Use the
-  ///	  global <see cref="Spring.Services|ServiceLocator" /> method to get the
-  ///	  shared instance.
-  ///	</summary>
-  ///	<remarks>
-  ///	  You should use ServiceLocator to query a service insteading of directly
-  ///	  using Spring.Container namespace in your library. The namespace is
-  ///	  supposed to be used to register components in your bootstrap code.
-  ///	</remarks>
+  /// <summary>
+  ///   Provides a portal to get and query an instance of a service. Use the
+  ///   global <see cref="Spring.Services|ServiceLocator" /> method to get the
+  ///   shared instance.
+  /// </summary>
+  /// <remarks>
+  ///   You should use ServiceLocator to query a service insteading of directly
+  ///   using Spring.Container namespace in your library. The namespace is
+  ///   supposed to be used to register components in your bootstrap code.
+  /// </remarks>
   TServiceLocator = class sealed(TInterfaceBase, IServiceLocator)
   private
     fServiceLocatorProvider: TServiceLocatorDelegate;
@@ -155,13 +155,13 @@ type
   {$ENDREGION}
 
 
-///	<summary>
-///	  Gets the shared instance of <see cref="TServiceLocator" /> class.
-///	</summary>
-///	<remarks>
-///	  Since Delphi doesn't support generic methods for interfaces, the result
-///	  type is TServiceLocator instead of IServiceLocator.
-///	</remarks>
+/// <summary>
+///   Gets the shared instance of <see cref="TServiceLocator" /> class.
+/// </summary>
+/// <remarks>
+///   Since Delphi doesn't support generic methods for interfaces, the result
+///   type is TServiceLocator instead of IServiceLocator.
+/// </remarks>
 {$IFDEF AUTOREFCOUNT}[Result: Unsafe]{$ENDIF}
 function ServiceLocator: TServiceLocator; {$IFNDEF AUTOREFCOUNT}inline;{$ENDIF}
 

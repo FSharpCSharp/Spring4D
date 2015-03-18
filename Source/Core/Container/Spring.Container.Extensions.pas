@@ -32,29 +32,29 @@ uses
   Spring.Container.Core;
 
 type
-  ///	<summary>
-  ///	  Base class for all <see cref="TContainer" /> extension objects.
-  ///	</summary>
+  /// <summary>
+  ///   Base class for all <see cref="TContainer" /> extension objects.
+  /// </summary>
   TContainerExtension = class(TInterfacedObject, IContainerExtension)
   private
     fKernel: IKernel;
   protected
-    ///	<summary>
-    ///	  Initial the container with this extension's functionality.
-    ///	</summary>
-    ///	<remarks>
-    ///	  When overridden in a derived class, this method will modify the given
-    ///	  Kernel to install its functions into the container.
-    ///	</remarks>
+    /// <summary>
+    ///   Initial the container with this extension's functionality.
+    /// </summary>
+    /// <remarks>
+    ///   When overridden in a derived class, this method will modify the given
+    ///   Kernel to install its functions into the container.
+    /// </remarks>
     procedure Initialize; virtual; abstract;
 
-    ///	<summary>
-    ///	  The container calls this method when the extension is added.
-    ///	</summary>
-    ///	<param name="kernel">
-    ///	  An <see cref="IKernel" /> instance that gives the extension
-    ///	  access to the internals of the container.
-    ///	</param>
+    /// <summary>
+    ///   The container calls this method when the extension is added.
+    /// </summary>
+    /// <param name="kernel">
+    ///   An <see cref="IKernel" /> instance that gives the extension access to
+    ///   the internals of the container.
+    /// </param>
     procedure InitializeExtension(const kernel: IKernel);
 
     /// <summary>

@@ -151,9 +151,7 @@
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas"/>
-			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.MethodIntercept.pas"/>
 			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.VirtualInterface.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.Builder.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Container.pas"/>

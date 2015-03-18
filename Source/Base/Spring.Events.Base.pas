@@ -37,9 +37,9 @@ uses
 type
   PMethodPointer = ^TMethodPointer;
 
-  ///	<summary>
-  ///	  Base class for multicast event implementation
-  ///	</summary>
+  /// <summary>
+  ///   Base class for multicast event implementation
+  /// </summary>
   TEventBase = class(TInterfacedObject, IEvent)
   private
     fEnabled: Boolean;
@@ -53,6 +53,7 @@ type
     function GetEnabled: Boolean;
     function GetHandlers: TArray<TMethodPointer>;
     function GetInvoke: TMethodPointer;
+    function GetIsEmpty: Boolean;
     function GetIsInvokable: Boolean;
     function GetOnChanged: TEventsChangedEvent;
     procedure SetEnabled(const value: Boolean);
@@ -71,8 +72,6 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Any: Boolean;
-
     {$REGION 'IEvent Methods'}
     procedure Add(const handler: TMethodPointer);
     procedure Remove(const handler: TMethodPointer);
@@ -84,6 +83,7 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: TMethodPointer read GetInvoke;
+    property IsEmpty: Boolean read GetIsEmpty;
     property OnChanged: TEventsChangedEvent read GetOnChanged write SetOnChanged;
   end;
 
@@ -99,6 +99,7 @@ type
 implementation
 
 uses
+  Generics.Defaults,
   TypInfo;
 
 function IsValid(AObject: TObject): Boolean;
@@ -117,13 +118,69 @@ begin
 end;
 
 
+{$REGION 'Method comparer'}
+
+function NopAddref(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function NopRelease(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+begin
+  Result := E_NOINTERFACE;
+end;
+
+function Compare_Method(Inst: Pointer; const Left, Right: TMethodPointer): Integer;
+type
+  UIntPtr = NativeUInt;
+  TMethod = record
+    Code, Data: UIntPtr;
+  end;
+var
+  LMethod, RMethod: TMethod;
+begin
+  LMethod := TMethod(Left);
+  RMethod := TMethod(Right);
+
+  if (LMethod.Data < RMethod.Data)
+    or ((LMethod.Data = RMethod.Data)
+    and (LMethod.Code < RMethod.Code)) then
+    Result := -1
+  else if (LMethod.Data > RMethod.Data)
+    or ((LMethod.Data = RMethod.Data)
+    and (LMethod.Code > RMethod.Code)) then
+    Result := 1
+  else
+    Result := 0;
+end;
+
+const
+  Comparer_Vtable_Method: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_Method
+  );
+  Comparer_Instance_Method: Pointer = @Comparer_Vtable_Method;
+
+{$ENDREGION}
+
+
 {$REGION 'TEventBase'}
 
 constructor TEventBase.Create;
 begin
   inherited Create;
   fEnabled := True;
-  fHandlers := TList<TMethodPointer>.Create;
+  // some Delphi versions have a broken comparer for tkMethod
+  fHandlers := TList<TMethodPointer>.Create(
+    IComparer<TMethodPointer>(@Comparer_Instance_Method));
   fHandlers.OnNotify := Notify;
   fLock := TCriticalSection.Create;
 end;
@@ -152,11 +209,6 @@ begin
   finally
     fLock.Leave;
   end;
-end;
-
-function TEventBase.Any: Boolean;
-begin
-  Result := fHandlers.Count <> 0;
 end;
 
 procedure TEventBase.Clear;
@@ -204,6 +256,11 @@ end;
 function TEventBase.GetInvoke: TMethodPointer;
 begin
   Result := fInvoke;
+end;
+
+function TEventBase.GetIsEmpty: Boolean;
+begin
+  Result := fHandlers.Count = 0;
 end;
 
 function TEventBase.GetIsInvokable: Boolean;

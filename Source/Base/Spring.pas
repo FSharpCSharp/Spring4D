@@ -80,39 +80,40 @@ type
   ///   Describes the action that caused a CollectionChanged event.
   /// </summary>
   TCollectionChangedAction = (
-    ///	<summary>
-    ///	  An item was added to the collection.
-    ///	</summary>
+    /// <summary>
+    ///   An item was added to the collection.
+    /// </summary>
     caAdded,
 
-    ///	<summary>
-    ///	  An item was removed from the collection.
-    ///	</summary>
+    /// <summary>
+    ///   An item was removed from the collection.
+    /// </summary>
     caRemoved,
 
-    ///	<summary>
-    ///	  An item was removed from the collection without considering ownership.
-    ///	</summary>
+    /// <summary>
+    ///   An item was removed from the collection without considering
+    ///   ownership.
+    /// </summary>
     caExtracted,
 
-    ///	<summary>
-    ///	  An item was replaced in the collection.
-    ///	</summary>
+    /// <summary>
+    ///   An item was replaced in the collection.
+    /// </summary>
     caReplaced,
 
-    ///	<summary>
-    ///	  An item was moved within the collection.
-    ///	</summary>
+    /// <summary>
+    ///   An item was moved within the collection.
+    /// </summary>
     caMoved,
 
-    ///	<summary>
-    ///	  The content of the collection changed dramatically.
-    ///	</summary>
+    /// <summary>
+    ///   The content of the collection changed dramatically.
+    /// </summary>
     caReseted,
 
-    ///	<summary>
-    ///	  An item in the collection was changed.
-    ///	</summary>
+    /// <summary>
+    ///   An item in the collection was changed.
+    /// </summary>
     caChanged
   );
 
@@ -160,11 +161,6 @@ type
     function Cast(typeInfo: PTypeInfo): TValue;
 
     /// <summary>
-    ///   Compares two TValue instances.
-    /// </summary>
-    class function Compare(const left, right: TValue): Integer; static;
-
-    /// <summary>
     ///   Compares to another TValue.
     /// </summary>
     function CompareTo(const value: TValue): Integer;
@@ -183,6 +179,11 @@ type
     ///   Checks whether the stored value is an interface reference.
     /// </summary>
     function IsInterface: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is a float type.
+    /// </summary>
+    function IsFloat: Boolean;
 
     /// <summary>
     ///   Checks whether the stored value is a numeric type.
@@ -204,9 +205,9 @@ type
     function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
 {$ENDIF}
 
-    ///	<summary>
-    ///	  Sets the stored value of a nullable.
-    ///	</summary>
+    /// <summary>
+    ///   Sets the stored value of a nullable.
+    /// </summary>
     procedure SetNullableValue(const value: TValue);
 
     /// <summary>
@@ -350,21 +351,22 @@ type
   /// <summary>
   ///   Base interface for anything that has a countable quantity.
   /// </summary>
-  ICountable = interface
+  ICountable = interface(IInvokable)
     ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
+    function GetIsEmpty: Boolean;
   {$ENDREGION}
-
-    /// <summary>
-    ///   Determines whether a countable contains any elements.
-    /// </summary>
-    function Any: Boolean;
 
     /// <summary>
     ///   Returns the number of elements in a countable.
     /// </summary>
     property Count: Integer read GetCount;
+
+    /// <summary>
+    ///   Determines whether a countable contains no elements.
+    /// </summary>
+    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   {$ENDREGION}
@@ -372,48 +374,47 @@ type
 
   {$REGION 'Procedure types'}
 
-  ///	<summary>
-  ///	  Represents a logical predicate.
-  ///	</summary>
-  ///	<param name="arg">
-  ///	  the value needs to be determined.
-  ///	</param>
-  ///	<returns>
-  ///	  Returns <c>True</c> if the value was accepted, otherwise, returns
-  ///	  <c>False</c>.
+  /// <summary>
+  ///   Represents a logical predicate.
+  /// </summary>
+  /// <param name="arg">
+  ///   the value needs to be determined.
+  /// </param>
+  /// <returns>
+  ///   Returns <c>True</c> if the value was accepted, otherwise, returns <c>
+  ///   False</c>.
   /// </returns>
   /// <remarks>
   ///   <note type="tip">
-  ///	    This type redefined the
-  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
-  ///	    type with a const parameter.
-  ///	  </note>
-  ///	</remarks>
-  ///	<seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
+  ///     This type redefined the <see cref="SysUtils|TPredicate`1">
+  ///     SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.
+  ///   </note>
+  /// </remarks>
+  /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
   TPredicate<T> = reference to function(const arg: T): Boolean;
 
-  ///	<summary>
-  ///	  Represents an anonymous method that has a single parameter and does not
-  ///	  return a value.
-  ///	</summary>
-  ///	<seealso cref="TActionProc&lt;T&gt;" />
-  ///	<seealso cref="TActionMethod&lt;T&gt;" />
+  /// <summary>
+  ///   Represents an anonymous method that has a single parameter and does not
+  ///   return a value.
+  /// </summary>
+  /// <seealso cref="TActionProc&lt;T&gt;" />
+  /// <seealso cref="TActionMethod&lt;T&gt;" />
   TAction<T> = reference to procedure(const arg: T);
 
-  ///	<summary>
-  ///	  Represents a procedure that has a single parameter and does not return
-  ///	  a value.
-  ///	</summary>
-  ///	<seealso cref="TAction&lt;T&gt;" />
-  ///	<seealso cref="TActionMethod&lt;T&gt;" />
+  /// <summary>
+  ///   Represents a procedure that has a single parameter and does not return
+  ///   a value.
+  /// </summary>
+  /// <seealso cref="TAction&lt;T&gt;" />
+  /// <seealso cref="TActionMethod&lt;T&gt;" />
   TActionProc<T> = procedure(const arg: T);
 
-  ///	<summary>
-  ///	  Represents a instance method that has a single parameter and does not
-  ///	  return a value.
-  ///	</summary>
-  ///	<seealso cref="TAction&lt;T&gt;" />
-  ///	<seealso cref="TActionProc&lt;T&gt;" />
+  /// <summary>
+  ///   Represents a instance method that has a single parameter and does not
+  ///   return a value.
+  /// </summary>
+  /// <seealso cref="TAction&lt;T&gt;" />
+  /// <seealso cref="TActionProc&lt;T&gt;" />
   TActionMethod<T> = procedure(const arg: T) of object;
 
   /// <summary>
@@ -638,8 +639,10 @@ type
   private
     fValue: T;
     fHasValue: string;
-    function GetValue: T;
+    function GetValue: T; inline;
     function GetHasValue: Boolean; inline;
+    class procedure RaiseCannotAssignPointerToNullable; static;
+    class procedure RaiseNullableTypeHasNoValue; static;
 
     /// <summary>
     ///   Internal use. Marks the current instance as null.
@@ -648,7 +651,7 @@ type
     ///   The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
     ///   method must be private.
     /// </remarks>
-    procedure Clear;
+    procedure Clear; inline;
 
     /// <summary>
     ///   Determines whether a variant value is null or empty.
@@ -707,7 +710,7 @@ type
     ///     else compares their values as usual.
     ///   </para>
     /// </remarks>
-    function Equals(const other: Nullable<T>): Boolean;
+    function Equals(const other: Nullable<T>): Boolean; inline;
 
     /// <summary>
     ///   Gets a value indicating whether the current <see cref="Nullable&lt;T&gt;" />
@@ -793,18 +796,18 @@ type
     ///   <see cref="ILazy" /> instance.
     /// </summary>
     /// <value>
-    ///	  <b>True</b> if a value has been created for this
-    ///	  <see cref="ILazy" /> instance; otherwise, <b>False</b>.
+    ///   <b>True</b> if a value has been created for this <see cref="ILazy" />
+    ///   instance; otherwise, <b>False</b>.
     /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
     /// <summary>
-    ///	  Gets the lazily initialized value of the current
-    ///	  <see cref="ILazy" /> instance.
+    ///   Gets the lazily initialized value of the current <see cref="ILazy" />
+    ///   instance.
     /// </summary>
     /// <value>
-    ///	  The lazily initialized value of the current
-    ///	  <see cref="ILazy" /> instance.
+    ///   The lazily initialized value of the current <see cref="ILazy" />
+    ///   instance.
     /// </value>
     property Value: TValue read GetValue;
   end;
@@ -818,12 +821,12 @@ type
   {$ENDREGION}
 
     /// <summary>
-    ///	  Gets the lazily initialized value of the current
-    ///	  <see cref="ILazy&lt;T&gt;" /> instance.
+    ///   Gets the lazily initialized value of the current <see cref="ILazy&lt;T&gt;" />
+    ///    instance.
     /// </summary>
     /// <value>
-    ///	  The lazily initialized value of the current
-    ///	  <see cref="ILazy&lt;T&gt;" /> instance.
+    ///   The lazily initialized value of the current <see cref="ILazy&lt;T&gt;" />
+    ///    instance.
     /// </value>
     property Value: T read GetValue;
   end;
@@ -849,8 +852,8 @@ type
     ///   <see cref="TLazy&lt;T&gt;" /> instance.
     /// </summary>
     /// <value>
-    ///	  <b>True</b> if a value has been created for this
-    ///	  <see cref="TLazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
+    ///   <b>True</b> if a value has been created for this <see cref="TLazy&lt;T&gt;" />
+    ///    instance; otherwise, <b>False</b>.
     /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
   end;
@@ -896,12 +899,12 @@ type
     constructor CreateFrom(const value: T);
 
     /// <summary>
-    ///	  Gets the lazily initialized value of the current
-    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///   Gets the lazily initialized value of the current <see cref="TLazy&lt;T&gt;" />
+    ///    instance.
     /// </summary>
     /// <value>
-    ///	  The lazily initialized value of the current
-    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///   The lazily initialized value of the current <see cref="TLazy&lt;T&gt;" />
+    ///    instance.
     /// </value>
     property Value: T read GetValue;
   end;
@@ -958,21 +961,20 @@ type
     ///   <see cref="Lazy&lt;T&gt;" /> instance.
     /// </summary>
     /// <value>
-    ///	  <b>True</b> if a value has been created for this
-    ///	  <see cref="Lazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
+    ///   <b>True</b> if a value has been created for this <see cref="Lazy&lt;T&gt;" />
+    ///    instance; otherwise, <b>False</b>.
     /// </value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
     /// <summary>
-    ///	  Gets the lazily initialized value of the current
-    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///   Gets the lazily initialized value of the current <see cref="Lazy&lt;T&gt;" />
+    ///    instance.
     /// </summary>
     /// <value>
-    ///	  The lazily initialized value of the current
-    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///   The lazily initialized value of the current <see cref="Lazy&lt;T&gt;" />
+    ///    instance.
     /// </value>
-    ///	<exception cref="Spring|EInvalidOperationException">
-    ///	</exception>
+    /// <exception cref="Spring|EInvalidOperationException" />
     property Value: T read GetValue;
   end;
 
@@ -1106,11 +1108,13 @@ type
     Action: TEventsChangedAction) of object;
 
 
-  IEvent = interface(ICountable)
+  IEvent = interface
     ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
   {$REGION 'Property Accessors'}
+    function GetCount: Integer;
     function GetInvoke: TMethodPointer;
     function GetEnabled: Boolean;
+    function GetIsEmpty: Boolean;
     function GetIsInvokable: Boolean;
     function GetOnChanged: TEventsChangedEvent;
     procedure SetEnabled(const value: Boolean);
@@ -1123,11 +1127,15 @@ type
     procedure Clear;
     procedure ForEach(const action: TAction<TMethodPointer>);
 
+    property Count: Integer read GetCount;
+
     /// <summary>
     ///   Gets the value indicates whether the multicast event is enabled, or
     ///   sets the value to enable or disable the event.
     /// </summary>
     property Enabled: Boolean read GetEnabled write SetEnabled;
+
+    property IsEmpty: Boolean read GetIsEmpty;
 
     /// <summary>
     ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
@@ -1149,8 +1157,6 @@ type
   IEvent<T> = interface(IEvent)
   {$REGION 'Property Accessors'}
     function GetInvoke: T;
-//    function GetOnChanged: TEventsChangedEvent<T>;
-//    procedure SetOnChanged(const value: TEventsChangedEvent<T>);
   {$ENDREGION}
 
     /// <summary>
@@ -1192,14 +1198,13 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetInvoke: T;
+    function GetIsEmpty: Boolean;
     function GetOnChanged: TEventsChangedEvent<T>;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(value: TEventsChangedEvent<T>);
     procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
-
-    function Any: Boolean;
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
@@ -1209,6 +1214,7 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
+    property IsEmpty: Boolean read GetIsEmpty;
     property OnChanged: TEventsChangedEvent<T> read GetOnChanged write SetOnChanged;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
@@ -1725,6 +1731,22 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TFormatSettingsHelper'}
+
+{$IFDEF DELPHI2010}
+  TFormatSettingsHelper = record helper for TFormatSettings
+  public
+    /// <summary>
+    ///   Creates a TFormatSettings record with current default values provided
+    ///   by the operating system.
+    /// </summary>
+    class function Create: TFormatSettings; static; inline;
+  end;
+{$ENDIF}
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
@@ -1760,9 +1782,9 @@ function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean; overload;
 
 function IsAssignableFrom(const leftTypes, rightTypes: array of PTypeInfo): Boolean; overload;
 
-///	<summary>
-///	  Returns <c>True</c> if the type is a nullable type.
-///	</summary>
+/// <summary>
+///   Returns <c>True</c> if the type is a nullable type.
+/// </summary>
 function IsNullable(typeInfo: PTypeInfo): Boolean;
 
 /// <summary>
@@ -1783,6 +1805,11 @@ function GetTypeSize(typeInfo: PTypeInfo): Integer;
 
 function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 
+/// <summary>
+///   Compares two TValue instances.
+/// </summary>
+function CompareValue(const left, right: TValue): Integer; overload;
+
 procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
@@ -1799,6 +1826,9 @@ uses
   RTLConsts,
   StrUtils,
   SysConst,
+{$IFDEF DELPHI2010}
+  Windows,
+{$ENDIF}
   Spring.Events,
   Spring.Reflection.Core,
   Spring.ResourceStrings;
@@ -1945,6 +1975,49 @@ begin
   end
   else
     Result := nil;
+end;
+
+// TODO: use typekind matrix for comparer functions
+function CompareValue(const left, right: TValue): Integer;
+const
+  EmptyResults: array[Boolean, Boolean] of Integer = ((0, -1), (1, 0));
+var
+  leftIsEmpty, rightIsEmpty: Boolean;
+  leftValue, rightValue: TValue;
+begin
+  leftIsEmpty := left.IsEmpty;
+  rightIsEmpty := right.IsEmpty;
+  if leftIsEmpty or rightIsEmpty then
+    Result := EmptyResults[leftIsEmpty, rightIsEmpty]
+  else if left.IsOrdinal and right.IsOrdinal then
+    Result := Math.CompareValue(left.AsOrdinal, right.AsOrdinal)
+  else if left.IsFloat and right.IsFloat then
+    Result := Math.CompareValue(left.AsExtended, right.AsExtended)
+  else if left.IsString and right.IsString then
+    Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
+  else if left.IsObject and right.IsObject then
+    Result := NativeInt(left.AsObject) - NativeInt(right.AsObject) // TODO: instance comparer
+  else if left.IsVariant and right.IsVariant then
+  begin
+    case VarCompareValue(left.AsVariant, right.AsVariant) of
+      vrEqual: Result := 0;
+      vrLessThan: Result := -1;
+      vrGreaterThan: Result := 1;
+      vrNotEqual: Result := -1;
+    else
+      Result := 0;
+    end;
+  end
+  else if IsNullable(left.TypeInfo) and IsNullable(right.TypeInfo) then
+  begin
+    leftIsEmpty := not left.TryGetNullableValue(leftValue);
+    rightIsEmpty := not right.TryGetNullableValue(rightValue);
+    if leftIsEmpty or rightIsEmpty then
+      Result := EmptyResults[leftIsEmpty, rightIsEmpty]
+    else
+      Result := CompareValue(leftValue, rightValue);
+  end else
+    Result := 0;
 end;
 
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
@@ -2100,52 +2173,9 @@ begin
     raise EInvalidCast.CreateRes(@SInvalidCast);
 end;
 
-// TODO: use typekind matrix for comparer functions
-class function TValueHelper.Compare(const left, right: TValue): Integer;
-const
-  EmptyResults: array[Boolean, Boolean] of Integer = ((0, -1), (1, 0));
-var
-  leftIsEmpty, rightIsEmpty: Boolean;
-  leftValue, rightValue: TValue;
-begin
-  leftIsEmpty := left.IsEmpty;
-  rightIsEmpty := right.IsEmpty;
-  if leftIsEmpty or rightIsEmpty then
-    Result := EmptyResults[leftIsEmpty, rightIsEmpty]
-  else if left.IsOrdinal and right.IsOrdinal then
-    Result := Math.CompareValue(left.AsOrdinal, right.AsOrdinal)
-  else if left.IsType<Extended> and right.IsType<Extended> then
-    Result := Math.CompareValue(left.AsExtended, right.AsExtended)
-  else if left.IsString and right.IsString then
-    Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
-  else if left.IsObject and right.IsObject then
-    Result := NativeInt(left.AsObject) - NativeInt(right.AsObject) // TODO: instance comparer
-  else if left.IsVariant and right.IsVariant then
-  begin
-    case VarCompareValue(left.AsVariant, right.AsVariant) of
-      vrEqual: Result := 0;
-      vrLessThan: Result := -1;
-      vrGreaterThan: Result := 1;
-      vrNotEqual: Result := -1;
-    else
-      Result := 0;
-    end;
-  end
-  else if IsNullable(left.TypeInfo) and IsNullable(right.TypeInfo) then
-  begin
-    leftIsEmpty := not left.TryGetNullableValue(leftValue);
-    rightIsEmpty := not right.TryGetNullableValue(rightValue);
-    if leftIsEmpty or rightIsEmpty then
-      Result := EmptyResults[leftIsEmpty, rightIsEmpty]
-    else
-      Result := Compare(leftValue, rightValue);
-  end else
-    Result := 0;
-end;
-
 function TValueHelper.CompareTo(const value: TValue): Integer;
 begin
-  Result := Compare(Self, value);
+  Result := CompareValue(Self, value);
 end;
 
 function EqualsFail(const left, right: TValue): Boolean;
@@ -2678,6 +2708,11 @@ begin
     Result := TValueData(Self).FTypeInfo.Kind
   else
     Result := tkUnknown;
+end;
+
+function TValueHelper.IsFloat: Boolean;
+begin
+  Result := Kind in [tkInteger, tkFloat, tkInt64];
 end;
 
 function TValueHelper.IsInstance: Boolean;
@@ -3373,7 +3408,7 @@ end;
 function Nullable<T>.GetValue: T;
 begin
   if not HasValue then
-    raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
+    RaiseNullableTypeHasNoValue;
   Result := fValue;
 end;
 
@@ -3395,35 +3430,43 @@ end;
 
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
-  if HasValue and other.HasValue then
+  if HasValue then
   begin
-    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
-      tkInteger: Result := PInteger(@fValue)^ = PInteger(@other.fValue)^;
-{$IFNDEF NEXTGEN}
-      tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
-      tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
-      tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
-      tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
-{$ENDIF}
-      tkFloat:
-      begin
-        case GetTypeData(TypeInfo(T)).FloatType of
-          ftSingle: Result := PSingle(@fValue)^ = PSingle(@other.fValue)^;
-          ftDouble: Result := PDouble(@fValue)^ = PDouble(@other.fValue)^;
-          ftExtended: Result := PExtended(@fValue)^ = PExtended(@other.fValue)^;
-          ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
-          ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
+    if other.HasValue then
+      case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+        tkInteger:
+        begin
+          case SizeOf(T) of
+            1: Result := PByte(@fValue)^ = PByte(@other.fValue)^;
+            2: Result := PWord(@fValue)^ = PWord(@other.fValue)^;
+            4: Result := PCardinal(@fValue)^ = PCardinal(@other.fValue)^;
+          end;
         end;
-      end;
-      tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
-      tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
-      tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
-    else
-      Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
-    end;
+{$IFNDEF NEXTGEN}
+        tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
+        tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
+        tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
+        tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
+{$ENDIF}
+        tkFloat:
+        begin
+          case GetTypeData(TypeInfo(T)).FloatType of
+            ftSingle: Result := PSingle(@fValue)^ = PSingle(@other.fValue)^;
+            ftDouble: Result := PDouble(@fValue)^ = PDouble(@other.fValue)^;
+            ftExtended: Result := PExtended(@fValue)^ = PExtended(@other.fValue)^;
+            ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
+            ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
+          end;
+        end;
+        tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
+        tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
+        tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
+      else
+        Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
+      end
   end
   else
-    Result := HasValue = other.HasValue;
+    Result := not other.HasValue;
 end;
 
 class operator Nullable<T>.Implicit(const value: T): Nullable<T>;
@@ -3470,7 +3513,7 @@ begin
   if not Assigned(value) then
     Result.Clear
   else
-    raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
+    RaiseCannotAssignPointerToNullable;
 end;
 
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
@@ -3486,6 +3529,16 @@ end;
 class operator Nullable<T>.NotEqual(const left, right: Nullable<T>): Boolean;
 begin
   Result := not left.Equals(right);
+end;
+
+class procedure Nullable<T>.RaiseCannotAssignPointerToNullable;
+begin
+  raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
+end;
+
+class procedure Nullable<T>.RaiseNullableTypeHasNoValue;
+begin
+  raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
 end;
 
 {$ENDREGION}
@@ -3915,11 +3968,6 @@ begin
   fInstance.Add(handler);
 end;
 
-function Event<T>.Any: Boolean;
-begin
-  Result := Assigned(fInstance) and fInstance.Any;
-end;
-
 procedure Event<T>.Clear;
 begin
   if Assigned(fInstance) then
@@ -3949,6 +3997,11 @@ function Event<T>.GetInvoke: T;
 begin
   EnsureInitialized;
   Result := fInstance.Invoke;
+end;
+
+function Event<T>.GetIsEmpty: Boolean;
+begin
+  Result := not Assigned(fInstance) or fInstance.IsEmpty;
 end;
 
 function Event<T>.GetOnChanged: TEventsChangedEvent<T>;
@@ -5320,6 +5373,18 @@ begin
   Inc(fIndex);
   Result := fIndex < System.Length(fItems);
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFormatSettingsHelper'}
+
+{$IFDEF DELPHI2010}
+class function TFormatSettingsHelper.Create: TFormatSettings;
+begin
+  GetLocaleFormatSettings(LOCALE_SYSTEM_DEFAULT, Result);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

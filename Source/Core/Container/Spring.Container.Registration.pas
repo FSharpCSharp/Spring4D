@@ -39,9 +39,9 @@ uses
   Spring.Container.Core;
 
 type
-  ///	<summary>
-  ///	  TComponentRegistry
-  ///	</summary>
+  /// <summary>
+  ///   TComponentRegistry
+  /// </summary>
   TComponentRegistry = class(TInterfacedObject, IComponentRegistry)
   private
     fKernel: IKernel;
@@ -126,7 +126,7 @@ type
     function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
     function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
     function AsTransient: IRegistration;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
+    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration;
 
     function PerResolve: IRegistration;
 
@@ -185,7 +185,7 @@ type
     function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration<T>;
     function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration<T>;
     function AsTransient: TRegistration<T>;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>; {$IFDEF CPUARM}experimental;{$ENDIF}
+    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
 
     function PerResolve: TRegistration<T>;
 
@@ -885,9 +885,7 @@ end;
 
 function TRegistration<T>.AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
 begin
-{$WARN SYMBOL_EXPERIMENTAL OFF}
   fRegistration.AsPooled(minPoolSize, maxPoolSize);
-{$WARN SYMBOL_EXPERIMENTAL ON}
   Result := Self;
 end;
 

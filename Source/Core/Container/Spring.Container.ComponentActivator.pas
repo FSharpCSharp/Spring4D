@@ -34,9 +34,9 @@ uses
   Spring.Container.Core;
 
 type
-  ///	<summary>
-  ///	  Abstract ComponentActivator
-  ///	</summary>
+  /// <summary>
+  ///   Abstract ComponentActivator
+  /// </summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator)
   private
     fKernel: IKernel;
@@ -53,9 +53,9 @@ type
     function CreateInstance(const context: ICreationContext): TValue; overload; virtual; abstract;
   end;
 
-  ///	<summary>
-  ///	  Activates an instance by reflection.
-  ///	</summary>
+  /// <summary>
+  ///   Activates an instance by reflection.
+  /// </summary>
   TReflectionComponentActivator = class(TComponentActivatorBase)
   protected
     function SelectEligibleConstructor(
@@ -66,9 +66,9 @@ type
     function CreateInstance(const context: ICreationContext): TValue; override;
   end;
 
-  ///	<summary>
-  ///	  Activates an instance by a TActivatorDelegate delegate.
-  ///	</summary>
+  /// <summary>
+  ///   Activates an instance by a TActivatorDelegate delegate.
+  /// </summary>
   TDelegateComponentActivator = class(TComponentActivatorBase)
   public
     function CreateInstance(const context: ICreationContext): TValue; override;

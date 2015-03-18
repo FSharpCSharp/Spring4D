@@ -193,9 +193,9 @@ type
     procedure Release(const instance: TValue);
   end;
 
-  ///	<summary>
-  ///	  Component Activator
-  ///	</summary>
+  /// <summary>
+  ///   Component Activator
+  /// </summary>
   IComponentActivator = interface
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
     function CreateInstance(const context: ICreationContext): TValue;
@@ -324,9 +324,9 @@ type
       const constructorArguments: array of TValue): TValue;
   end;
 
-  ///	<summary>
-  ///	  TComponentModel
-  ///	</summary>
+  /// <summary>
+  ///   TComponentModel
+  /// </summary>
   TComponentModel = class
   private
     fComponentType: TRttiType;

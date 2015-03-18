@@ -22,7 +22,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_Description>Spring4D Core package</DCC_Description>
 			<DllSuffix>.Delphi2010</DllSuffix>
-			<DCC_DcuOutput>..\..\Library\Delphi2010\$(Config)</DCC_DcuOutput>
+			<DCC_DcuOutput>..\..\Library\Delphi2010\Win32\$(Config)</DCC_DcuOutput>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
 			<DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DesignOnlyPackage>false</DesignOnlyPackage>

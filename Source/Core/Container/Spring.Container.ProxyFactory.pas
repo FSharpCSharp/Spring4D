@@ -64,7 +64,7 @@ constructor TProxyFactory.Create(const kernel: IKernel);
 begin
   inherited Create;
   fKernel := kernel;
-  fSelectors := TCollections.CreateList<IModelInterceptorsSelector>;
+  fSelectors := TCollections.CreateInterfaceList<IModelInterceptorsSelector>;
 end;
 
 procedure TProxyFactory.AddInterceptorSelector(
@@ -112,7 +112,7 @@ var
   interceptors: IList<IInterceptor>;
   interceptor: TValue;
 begin
-  interceptors := TCollections.CreateList<IInterceptor>;
+  interceptors := TCollections.CreateInterfaceList<IInterceptor>;
   for interceptorRef in GetInterceptorsFor(model) do
   begin
     if Assigned(interceptorRef.TypeInfo) then

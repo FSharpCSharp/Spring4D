@@ -84,6 +84,10 @@ procedure TCollectionChangedEventImpl<T>.InternalInvoke(Sender: TObject;
 var
   handler: TMethodPointer;
 begin
+  // If you get exception at this location on NextGen and the handler is nil
+  // it is highly possible that the owner of the collection already released
+  // its weak references. To fix this, free the collection prior to freeing
+  // the object owning it (even if you're using interfaces).
   if Enabled then
     for handler in Handlers do
       TCollectionChangedEvent<T>(handler)(Sender, Item, Action);

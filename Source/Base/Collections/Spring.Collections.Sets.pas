@@ -35,9 +35,9 @@ uses
   Spring.Collections.Base;
 
 type
-  ///	<summary>
-  ///	  The abstract base class for <see cref="THashSet&lt;T&gt;" />.
-  ///	</summary>
+  /// <summary>
+  ///   The abstract base class for <see cref="THashSet&lt;T&gt;" />.
+  /// </summary>
   THashSetBase<T> = class abstract(TCollectionBase<T>)
   private
     type
@@ -48,204 +48,200 @@ type
     procedure AddInternal(const item: T); override;
   end;
 
-  ///	<summary>
-  ///	  Represents a set of values.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The type of elements in the hash set.
-  ///	</typeparam>
+  /// <summary>
+  ///   Represents a set of values.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The type of elements in the hash set.
+  /// </typeparam>
   THashSet<T> = class(THashSetBase<T>, ISet<T>)
   protected
     function GetCount: Integer; override;
   public
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="THashSet&lt;T&gt;" />
-    ///	  class that is empty and uses the default equality comparer for the
-    ///	  set type.
-    ///	</summary>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="THashSet&lt;T&gt;" />
+    ///   class that is empty and uses the default equality comparer for the
+    ///   set type.
+    /// </summary>
     constructor Create; overload; override;
 
-    ///	<summary>
-    ///	  Initializes a new instance of the <see cref="THashSet&lt;T&gt;" />
-    ///	  class that is empty and uses the specified equality comparer for the
-    ///	  set type.
-    ///	</summary>
-    ///	<param name="comparer">
-    ///	  The <see cref="IEqualityComparer&lt;T&gt;" /> implementation to use
-    ///	  when comparing values in the set, or <b>nil</b> to use the default
-    ///	  <see cref="TEqualityComparer&lt;T&gt;" /> implementation for the set
-    ///	  type.
-    ///	</param>
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="THashSet&lt;T&gt;" />
+    ///   class that is empty and uses the specified equality comparer for the
+    ///   set type.
+    /// </summary>
+    /// <param name="comparer">
+    ///   The <see cref="IEqualityComparer&lt;T&gt;" /> implementation to use
+    ///   when comparing values in the set, or <b>nil</b> to use the default <see cref="TEqualityComparer&lt;T&gt;" />
+    ///    implementation for the set type.
+    /// </param>
     constructor Create(const comparer: IEqualityComparer<T>); overload;
 
     destructor Destroy; override;
 
-    ///	<summary>
-    ///	  Returns an enumerator that iterates through a
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</summary>
-    ///	<returns>
-    ///	  A <see cref="THashSet&lt;T&gt;.TEnumerator" /> object for the
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</returns>
+    /// <summary>
+    ///   Returns an enumerator that iterates through a <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </summary>
+    /// <returns>
+    ///   A <see cref="THashSet&lt;T&gt;.TEnumerator" /> object for the <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </returns>
     function GetEnumerator: IEnumerator<T>; override;
 
-    ///	<summary>
-    ///	  Adds the specified element to a set.
-    ///	</summary>
-    ///	<param name="item">
-    ///	  The element to add to the set.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the element is added to the
-    ///	  <see cref="THashSet&lt;T&gt;" /> object; <b>False</b> if the element
-    ///	  is already present.
-    ///	</returns>
+    /// <summary>
+    ///   Adds the specified element to a set.
+    /// </summary>
+    /// <param name="item">
+    ///   The element to add to the set.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the element is added to the <see cref="THashSet&lt;T&gt;" />
+    ///    object; <b>False</b> if the element is already present.
+    /// </returns>
     function Add(const item: T): Boolean; reintroduce;
 
-    ///	<summary>
-    ///	  Removes the specified element from a <see cref="THashSet&lt;T&gt;" />
-    ///	  object.
-    ///	</summary>
-    ///	<param name="item">
-    ///	  The element to remove.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the element is successfully found and removed;
-    ///	  otherwise, <b>False</b>. This method returns <b>False</b> if
-    ///	  <i>item</i> is not found in the <see cref="THashSet&lt;T&gt;" />
-    ///	  object.
-    ///	</returns>
+    /// <summary>
+    ///   Removes the specified element from a <see cref="THashSet&lt;T&gt;" />
+    ///   object.
+    /// </summary>
+    /// <param name="item">
+    ///   The element to remove.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the element is successfully found and removed;
+    ///   otherwise, <b>False</b>. This method returns <b>False</b> if <i>item</i>
+    ///    is not found in the <see cref="THashSet&lt;T&gt;" /> object.
+    /// </returns>
     function Remove(const item: T): Boolean; override;
 
     function Extract(const item: T): T; override;
 
-    ///	<summary>
-    ///	  Removes all elements from a <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</summary>
+    /// <summary>
+    ///   Removes all elements from a <see cref="THashSet&lt;T&gt;" /> object.
+    /// </summary>
     procedure Clear; override;
 
-    ///	<summary>
-    ///	  Determines whether a <see cref="THashSet&lt;T&gt;" /> object contains
-    ///	  the specified element.
-    ///	</summary>
-    ///	<param name="item">
-    ///	  The element to locate in the <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object contains
-    ///	  the specified element; otherwise, <b>False</b>.
-    ///	</returns>
+    /// <summary>
+    ///   Determines whether a <see cref="THashSet&lt;T&gt;" /> object contains
+    ///   the specified element.
+    /// </summary>
+    /// <param name="item">
+    ///   The element to locate in the <see cref="THashSet&lt;T&gt;" /> object.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object contains
+    ///   the specified element; otherwise, <b>False</b>.
+    /// </returns>
     function Contains(const item: T): Boolean; override;
 
-    ///	<summary>
-    ///	  Removes all elements in the specified collection from the current
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</summary>
-    ///	<param name="other">
-    ///	  The collection of items to remove from the
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</param>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>other</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Removes all elements in the specified collection from the current <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </summary>
+    /// <param name="other">
+    ///   The collection of items to remove from the <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </param>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>other</i> is <b>nil</b>.
+    /// </exception>
     procedure ExceptWith(const other: IEnumerable<T>);
 
-    ///	<summary>
-    ///	  Modifies the current <see cref="THashSet&lt;T&gt;" /> object to
-    ///	  contain only elements that are present in that object and in the
-    ///	  specified collection.
-    ///	</summary>
-    ///	<param name="other">
-    ///	  The collection to compare to the current
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</param>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>other</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Modifies the current <see cref="THashSet&lt;T&gt;" /> object to
+    ///   contain only elements that are present in that object and in the
+    ///   specified collection.
+    /// </summary>
+    /// <param name="other">
+    ///   The collection to compare to the current <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </param>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>other</i> is <b>nil</b>.
+    /// </exception>
     procedure IntersectWith(const other: IEnumerable<T>);
 
-    ///	<summary>
-    ///	  Modifies the current <see cref="THashSet&lt;T&gt;" /> object to
-    ///	  contain all elements that are present in itself, the specified
-    ///	  collection, or both.
-    ///	</summary>
-    ///	<param name="other">
-    ///	  The collection to compare to the current
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</param>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>other</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Modifies the current <see cref="THashSet&lt;T&gt;" /> object to
+    ///   contain all elements that are present in itself, the specified
+    ///   collection, or both.
+    /// </summary>
+    /// <param name="other">
+    ///   The collection to compare to the current <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </param>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>other</i> is <b>nil</b>.
+    /// </exception>
     procedure UnionWith(const other: IEnumerable<T>);
 
-    ///	<summary>
-    ///	  Determines whether a <see cref="THashSet&lt;T&gt;" /> object is a
-    ///	  subset of the specified collection.
-    ///	</summary>
-    ///	<param name="other">
-    ///	  The collection to compare to the current
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is a
-    ///	  subset of <i>other</i>; otherwise, <b>False</b>.
-    ///	</returns>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>other</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Determines whether a <see cref="THashSet&lt;T&gt;" /> object is a
+    ///   subset of the specified collection.
+    /// </summary>
+    /// <param name="other">
+    ///   The collection to compare to the current <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is a
+    ///   subset of <i>other</i>; otherwise, <b>False</b>.
+    /// </returns>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>other</i> is <b>nil</b>.
+    /// </exception>
     function IsSubsetOf(const other: IEnumerable<T>): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether a <see cref="THashSet&lt;T&gt;" /> object is a
-    ///	  superset of the specified collection.
-    ///	</summary>
-    ///	<param name="other">
-    ///	  The collection to compare to the current
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is a
-    ///	  superset of <i>other</i>; otherwise, <b>False</b>.
-    ///	</returns>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>other</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Determines whether a <see cref="THashSet&lt;T&gt;" /> object is a
+    ///   superset of the specified collection.
+    /// </summary>
+    /// <param name="other">
+    ///   The collection to compare to the current <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is a
+    ///   superset of <i>other</i>; otherwise, <b>False</b>.
+    /// </returns>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>other</i> is <b>nil</b>.
+    /// </exception>
     function IsSupersetOf(const other: IEnumerable<T>): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether a <see cref="THashSet&lt;T&gt;" /> object and the
-    ///	  specified collection contain the same elements.
-    ///	</summary>
-    ///	<param name="other">
-    ///	  The collection to compare to the current
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is equal
-    ///	  to <i>other</i>; otherwise, <b>False</b>.
-    ///	</returns>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>other</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Determines whether a <see cref="THashSet&lt;T&gt;" /> object and the
+    ///   specified collection contain the same elements.
+    /// </summary>
+    /// <param name="other">
+    ///   The collection to compare to the current <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is equal
+    ///   to <i>other</i>; otherwise, <b>False</b>.
+    /// </returns>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>other</i> is <b>nil</b>.
+    /// </exception>
     function SetEquals(const other: IEnumerable<T>): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether the current <see cref="THashSet&lt;T&gt;" />
-    ///	  object and a specified collection share common elements.
-    ///	</summary>
-    ///	<param name="other">
-    ///	  The collection to compare to the current
-    ///	  <see cref="THashSet&lt;T&gt;" /> object.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object and
-    ///	  <i>other</i> share at least one common element; otherwise,
-    ///	  <b>False</b>.
-    ///	</returns>
-    ///	<exception cref="EArgumentNullException">
-    ///	  <i>other</i> is <b>nil</b>.
-    ///	</exception>
+    /// <summary>
+    ///   Determines whether the current <see cref="THashSet&lt;T&gt;" />
+    ///   object and a specified collection share common elements.
+    /// </summary>
+    /// <param name="other">
+    ///   The collection to compare to the current <see cref="THashSet&lt;T&gt;" />
+    ///    object.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object and <i>
+    ///   other</i> share at least one common element; otherwise, <b>False</b>.
+    /// </returns>
+    /// <exception cref="EArgumentNullException">
+    ///   <i>other</i> is <b>nil</b>.
+    /// </exception>
     function Overlaps(const other: IEnumerable<T>): Boolean;
   end;
 
@@ -349,7 +345,11 @@ begin
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
+{$IFDEF DELPHIXE_UP}
+  list := TCollections.CreateList<T>;
+{$ELSE}
   list := TList<T>.Create;
+{$ENDIF}
   for item in Self do
     if not other.Contains(item) then
       list.Add(item);
