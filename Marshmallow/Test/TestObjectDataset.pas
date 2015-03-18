@@ -1286,6 +1286,7 @@ begin
     LView.Free;
     LClonedDataset.Free;
   end;
+  FCheckCalled := True;
 end;
 {$ENDIF}
 

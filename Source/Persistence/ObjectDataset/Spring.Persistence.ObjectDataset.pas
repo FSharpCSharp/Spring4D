@@ -263,6 +263,7 @@ begin
   if Active then
     Close;
 
+  FColumnAttributeTypeInfo := ASource.FColumnAttributeTypeInfo;
   FItemTypeInfo := ASource.FItemTypeInfo;
   FDataList := ASource.DataList;
   IndexList.DataList := ASource.IndexList.DataList;
