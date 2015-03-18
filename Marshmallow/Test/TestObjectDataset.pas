@@ -693,7 +693,7 @@ begin
     LIntField.FieldName := 'MockID';
     LIntField.DataSet := FDataset;
 
-    LStrField := TStringField.Create(FDataSet);
+    LStrField := TWideStringField.Create(FDataSet);
     LStrField.FieldName := 'Name';
     LStrField.FieldKind := fkLookup;
     LStrField.LookupDataSet := FOrdersDataSet;
@@ -717,7 +717,7 @@ var
   LStrField: TStringField;
 begin
   LCustomers := CreateCustomersList(10);
-  LStrField := TStringField.Create(FDataSet);
+  LStrField := TWideStringField.Create(FDataSet);
   LStrField.FieldName := 'Name';
   LStrField.DataSet := FDataset;
 
@@ -1254,7 +1254,7 @@ begin
 end;
 
 {$IFDEF GUI_TESTS}
-procedure TestTObjectDataset.TestGUI;
+procedure TObjectDatasetTest.TestGUI;
 var
   LCustomers: IList<TCustomer>;
   LView: TfrmObjectDatasetTest;
@@ -1287,8 +1287,6 @@ begin
     LClonedDataset.Free;
   end;
 end;
-
-
 {$ENDIF}
 
 initialization
