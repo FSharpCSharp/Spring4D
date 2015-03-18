@@ -10,13 +10,13 @@ uses
   Forms,
   {$IFNDEF DELPHIXE2_UP}
   RttiPatch,
-  {$ENDIF }
+  {$ENDIF}
   SysUtils,
   TestFramework,
   Spring.TestRunner in '..\..\Tests\Source\Spring.TestRunner.pas',
   {$IFDEF DELPHIXE5_UP}
   FireDAC.VCLUI.Wait,
-  {$ENDIF }
+  {$ENDIF}
   TestCodeGenerator in 'TestCodeGenerator.pas',
   Spring.Persistence.Adapters.ADO in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ADO.pas',
   Spring.Persistence.Adapters.ASA in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ASA.pas',
@@ -24,7 +24,7 @@ uses
   Spring.Persistence.Adapters.FieldCache in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.FieldCache.pas',
   {$IFDEF DELPHIXE5_UP}
   Spring.Persistence.Adapters.FireDAC in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.FireDAC.pas',
-  {$ENDIF }
+  {$ENDIF}
   Spring.Persistence.Adapters.MongoDB in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MongoDB.pas',
   Spring.Persistence.Adapters.MSSQL in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas',
   Spring.Persistence.Adapters.Oracle in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas',
@@ -125,7 +125,7 @@ uses
   TestDatabaseManager in 'TestDatabaseManager.pas',
   {$IFDEF DELPHIXE5_UP}
   TestFireDACAdapter in 'TestFireDACAdapter.pas',
-  {$ENDIF }
+  {$ENDIF}
   TestMapping.RttiExplorer in 'TestMapping.RttiExplorer.pas',
   TestObjectDataset in 'TestObjectDataset.pas',
   TestPersistence in 'TestPersistence.pas',

@@ -5,7 +5,10 @@ unit TestObjectDataset;
 interface
 
 uses
-  TestFramework, Spring.Persistence.ObjectDataset, Spring.Collections, TestEntities,
+  TestFramework,
+  TestEntities,
+  Spring.Collections,
+  Spring.Persistence.ObjectDataset,
   Spring.TestUtils;
 
 type

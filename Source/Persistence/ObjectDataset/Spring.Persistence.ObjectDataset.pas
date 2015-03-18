@@ -256,7 +256,7 @@ type
   {$WARNINGS ON}
 
 
-{ TObjectDataset }
+{$REGION 'TObjectDataset'}
 
 procedure TObjectDataset.Clone(ASource: TObjectDataset);
 begin
@@ -336,7 +336,7 @@ begin
 
     LIndexFieldItem.Field := FindField(LItem);
     if not FProperties.TryGetFirst(LIndexFieldItem.RttiProperty,
-        PropertyFinder(LIndexFieldItem.Field.FieldName)) then
+      PropertyFinder(LIndexFieldItem.Field.FieldName)) then
       raise EObjectDatasetException.CreateFmt('Field %d used for sorting not found in the dataset.', [LIndexFieldItem.Field.Name]);
     LIndexFieldItem.CaseInsensitive := True;
     Result.Add(LIndexFieldItem);
@@ -439,17 +439,13 @@ begin
     LField := ModifiedFields[i];
 
     if not LNeedsSort and Sorted then
-    begin
       LNeedsSort := FieldInSortIndex(LField);
-    end;
 
     // Fields not found in dictionary are calculated or lookup fields, do not post them
     if FProperties.TryGetFirst(LProp, PropertyFinder(LField.FieldName)) then begin
       LFieldValue := LField.Value;
       if VarIsNull(LFieldValue) then
-      begin
-        LProp.SetValue(LItem, TValue.Empty);
-      end
+        LProp.SetValue(LItem, TValue.Empty)
       else
       begin
         LValueFromVariant := TValue.FromVariant(LFieldValue);
@@ -462,12 +458,10 @@ begin
   end;
 
   if State = dsInsert then
-  begin
     if Append then
       Index := IndexList.AddModel(LItem)
     else
       IndexList.InsertModel(LItem, Index);
-  end;
 
   DoFilterRecord(Index);
   if Sorted and LNeedsSort then
@@ -481,15 +475,9 @@ var
   i: Integer;
 begin
   if Sorted and Assigned(FIndexFieldList) then
-  begin
     for i := 0 to FIndexFieldList.Count - 1 do
-    begin
-      if (AField = FIndexFieldList[i].Field) then
-      begin
+      if AField = FIndexFieldList[i].Field then
         Exit(True);
-      end;
-    end;
-  end;
   Result := False;
 end;
 
@@ -512,9 +500,7 @@ function TObjectDataset.GetCurrentModel<T>: T;
 begin
   Result := System.Default(T);
   if Active and (Index > -1) and (Index < RecordCount) then
-  begin
     Result := IndexList.GetModel(Index).AsType<T>;
-  end;
 end;
 
 function TObjectDataset.GetFilterCount: Integer;
@@ -530,9 +516,7 @@ var
 begin
   Result := TCollections.CreateList<T>;
   for i := 0 to IndexList.Count - 1 do
-  begin
     Result.Add(IndexList.GetModel(i).AsType<T>);
-  end;
 end;
 
 function TObjectDataset.GetRecordCount: Integer;
@@ -562,21 +546,15 @@ begin
     if Assigned(FColumnAttributeTypeInfo) then
     begin
       for LAttrib in LProp.GetAttributes do
-      begin
         if (LAttrib.ClassInfo = FColumnAttributeTypeInfo) then
         begin
           FProperties.Add(LProp);
           Break;
         end;
-      end;
     end
     else
-    begin
-      if (LProp.Visibility = mvPublished) then
-      begin
+      if LProp.Visibility = mvPublished then
         FProperties.Add(LProp);
-      end;
-    end;
   end;
 end;
 
@@ -602,22 +580,17 @@ procedure TObjectDataset.InternalInitFieldDefs;
 begin
   FieldDefs.Clear;
   if Fields.Count > 0 then
-  begin
-    LoadFieldDefsFromFields(Fields, FieldDefs);
-  end
+    LoadFieldDefsFromFields(Fields, FieldDefs)
   else
-  begin
     LoadFieldDefsFromItemType;
-  end;
 end;
 
 procedure TObjectDataset.InternalOpen;
 begin
   inherited InternalOpen;
 
-
-  if {$IF CompilerVersion >=27}((FieldOptions.AutoCreateMode <> acExclusive) or not (lcPersistent in Fields.LifeCycles))
-    {$ELSE}DefaultFields{$IFEND} then
+  if {$IF CompilerVersion >=27}(FieldOptions.AutoCreateMode <> acExclusive)
+    or not (lcPersistent in Fields.LifeCycles){$ELSE}DefaultFields{$IFEND} then
     CreateFields;
 
   Reserved := Pointer(FieldListCheckSum);
@@ -646,9 +619,7 @@ begin
   LOwnsObjectsProp := Supports(LDataList, ICollectionOwnership, LOwnedDatalist);
   try
     if LOwnsObjectsProp then
-    begin
       LOwnedDatalist.OwnsObjects := False;
-    end;
     if LChanged then
       TMergeSort.Sort(IndexList, CompareRecords, FIndexFieldList)
     else
@@ -668,7 +639,7 @@ end;
 
 function TObjectDataset.IsCursorOpen: Boolean;
 begin
-  Result := (Assigned(FDataList)) and (inherited IsCursorOpen);
+  Result := Assigned(FDataList) and inherited IsCursorOpen;
 end;
 
 procedure TObjectDataset.LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs);
@@ -716,22 +687,16 @@ var
       tkInteger:
       begin
         LLength := -2;
-        if (ATypeInfo = TypeInfo(Word)) then
-        begin
-          LFieldType := ftWord;
-        end
-        else if (ATypeInfo = TypeInfo(SmallInt)) then
-        begin
-          LFieldType := ftSmallint;
-        end
+        if ATypeInfo = TypeInfo(Word) then
+          LFieldType := ftWord
+        else if ATypeInfo = TypeInfo(SmallInt) then
+          LFieldType := ftSmallint
         else
-        begin
           LFieldType := ftInteger;
-        end;
       end;
       tkEnumeration:
       begin
-        if (ATypeInfo = TypeInfo(Boolean)) then
+        if ATypeInfo = TypeInfo(Boolean) then
         begin
           LFieldType := ftBoolean;
           LLength := -2;
@@ -745,22 +710,22 @@ var
       end;
       tkFloat:
       begin
-        if (ATypeInfo = TypeInfo(TDate)) then
+        if ATypeInfo = TypeInfo(TDate) then
         begin
           LFieldType := ftDate;
           LLength := -2;
         end
-        else if (ATypeInfo = TypeInfo(TDateTime)) then
+        else if ATypeInfo = TypeInfo(TDateTime) then
         begin
           LFieldType := ftDateTime;
           LLength := -2;
         end
-        else if (ATypeInfo = TypeInfo(Currency)) then
+        else if ATypeInfo = TypeInfo(Currency) then
         begin
           LFieldType := ftCurrency;
           LLength := -2;
         end
-        else if (ATypeInfo = TypeInfo(TTime)) then
+        else if ATypeInfo = TypeInfo(TTime) then
         begin
           LFieldType := ftTime;
           LLength := -2;
@@ -915,13 +880,11 @@ var
 begin
   Result := TFilterFunctions.TryGetFunction(FuncName, LGetValueFunc);
   if Result then
-  begin
     ResVal := LGetValueFunc(Args);
-  end;
 end;
 
-function TObjectDataset.ParserGetVariableValue(Sender: TObject; const VarName: string;
-  var Value: Variant): Boolean;
+function TObjectDataset.ParserGetVariableValue(Sender: TObject;
+  const VarName: string; var Value: Variant): Boolean;
 var
   LField: TField;
 begin
@@ -943,9 +906,9 @@ function TObjectDataset.PropertyFinder(
 begin
   Result :=
     function (const prop: TRttiProperty): Boolean
-      begin
-        Result := prop.Name = s;
-      end
+    begin
+      Result := prop.Name = s;
+    end
 end;
 
 procedure TObjectDataset.RebuildPropertiesCache;
@@ -956,25 +919,19 @@ begin
   FProperties.Clear;
   LType := FCtx.GetType(FItemTypeInfo);
   for i := 0 to Fields.Count - 1 do
-  begin
-    FProperties.Add(LType.GetProperty(Fields[i].FieldName) );
-  end;
+    FProperties.Add(LType.GetProperty(Fields[i].FieldName));
 end;
 
 function TObjectDataset.RecordConformsFilter: Boolean;
 begin
   Result := True;
-  if (FFilterIndex >= 0) and (FFilterIndex <  DataListCount ) then
+  if (FFilterIndex >= 0) and (FFilterIndex < DataListCount) then
   begin
     if Assigned(OnFilterRecord) then
       OnFilterRecord(Self, Result)
     else
-    begin
-      if (FFilterParser.Eval) then
-      begin
+      if FFilterParser.Eval then
         Result := FFilterParser.Value;
-      end;
-    end;
   end
   else
     Result := False;
@@ -996,9 +953,7 @@ begin
     FFilterIndex := i;
     FilterCache.Clear;
     if RecordConformsFilter then
-    begin
       IndexList.Add(i, FDataList[i]);
-    end;
   end;
   FilterCache.Clear;
 end;
@@ -1012,14 +967,12 @@ end;
 
 procedure TObjectDataset.DoFilterRecord(AIndex: Integer);
 begin
-  if (IsFilterEntered) and (AIndex > -1) and (AIndex < RecordCount) then
+  if IsFilterEntered and (AIndex > -1) and (AIndex < RecordCount) then
   begin
     FilterCache.Clear;
     FFilterIndex := IndexList[AIndex].DataListIndex;
     if not RecordConformsFilter then
-    begin
       IndexList.Delete(AIndex);
-    end;
   end;
 end;
 
@@ -1031,10 +984,9 @@ begin
   RegisterChangeHandler;
 end;
 
-
 procedure TObjectDataset.SetFilterText(const Value: string);
 begin
-  if (Value = Filter) then
+  if Value = Filter then
     Exit;
 
   if Active then
@@ -1055,9 +1007,7 @@ begin
     end;
   end
   else
-  begin
     inherited SetFilterText(Value);
-  end;
 end;
 
 procedure TObjectDataset.SetSort(const Value: string);
@@ -1073,7 +1023,7 @@ end;
 
 procedure TObjectDataset.SetTrackChanges(const Value: Boolean);
 begin
-  if (FTrackChanges <> Value) then
+  if FTrackChanges <> Value then
   begin
     FTrackChanges := Value;
     RegisterChangeHandler;
@@ -1117,7 +1067,7 @@ begin
   try
     First;
     if Sorted then
-      InternalSetSort( GetChangedSortText(Sort) );   //must use mergesort so we change sort text
+      InternalSetSort(GetChangedSortText(Sort));   //must use mergesort so we change sort text
   finally
     EnableControls;
   end;
@@ -1160,9 +1110,9 @@ begin
     end;
     tkClass:
     begin
-      if (value.AsObject <> nil) then
+      if value.AsObject <> nil then
       begin
-        if (value.AsObject is TStream) then
+        if value.AsObject is TStream then
         begin
           LStream := TStream(value.AsObject);
           LStream.Position := 0;
@@ -1182,11 +1132,12 @@ begin
       end;
     end;
     tkInterface: Result := value.AsInterface;
-    else
-    begin
-      Result := value.AsVariant;
-    end;
+  else
+    Result := value.AsVariant;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.
