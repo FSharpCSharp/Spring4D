@@ -6,12 +6,12 @@ uses
   TestFramework, Spring.Persistence.Core.Interfaces, Spring.Persistence.Core.Types, TestEntities;
 
 type
-  PersistenceTests = class(TTestCase)
+  TPersistenceTest = class(TTestCase)
   public
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestInterface_Rtti();
+    procedure TestInterface_Rtti;
   end;
 
 implementation
@@ -24,12 +24,12 @@ uses
 
 { PersistenceTests }
 
-procedure PersistenceTests.SetUp;
+procedure TPersistenceTest.SetUp;
 begin
   inherited;
 end;
 
-procedure PersistenceTests.TearDown;
+procedure TPersistenceTest.TearDown;
 begin
   inherited;
 end;
@@ -60,7 +60,7 @@ type
     property Test: ITest read FTest write FTest;
   end;
 
-procedure PersistenceTests.TestInterface_Rtti;
+procedure TPersistenceTest.TestInterface_Rtti;
 var
   LBeanType: TRttiType;
   LBean: TBean;
@@ -112,6 +112,6 @@ begin
 end;
 
 initialization
-  RegisterTest(PersistenceTests.Suite);
+  RegisterTest(TPersistenceTest.Suite);
 
 end.

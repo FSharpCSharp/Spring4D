@@ -67,7 +67,7 @@ begin
   WriteLn(Format('Running %d of %d test cases', [RegisteredTests.CountEnabledTestCases, RegisteredTests.CountTestCases]));
   ProcessTestResult(VSoft.DUnit.XMLTestRunner.RunRegisteredTests(OutputFile));
   {$ELSE}
-  TextTestRunner.RunRegisteredTests(){$IFNDEF AUTOREFCOUNT}.Free(){$ENDIF};
+  TextTestRunner.RunRegisteredTests{$IFNDEF AUTOREFCOUNT}.Free{$ENDIF};
   {$ENDIF}
 
   {$IFDEF DEBUG}
@@ -82,10 +82,10 @@ begin
   TestInsight.DUnit.RunRegisteredTests;
   {$ELSE}
   {$IFNDEF FMX}
-  Application.Initialize();
-  TGUITestRunner.RunRegisteredTests();
+  Application.Initialize;
+  TGUITestRunner.RunRegisteredTests;
   {$ELSE}
-  TFMXTestRunner.RunRegisteredTests();
+  TFMXTestRunner.RunRegisteredTests;
   {$ENDIF}
   {$ENDIF}
   ReportMemoryLeaksOnShutdown := True;

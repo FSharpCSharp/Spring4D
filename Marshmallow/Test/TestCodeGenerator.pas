@@ -16,7 +16,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure GenerateSimpleEntity();
+    procedure GenerateSimpleEntity;
   end;
 
 implementation

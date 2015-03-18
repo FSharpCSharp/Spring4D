@@ -3,11 +3,13 @@ unit TestAdaptersASA;
 interface
 
 uses
-  TestFramework, Spring.Persistence.Adapters.ASA
-  , ADODB, Spring.Persistence.SQL.Generators.ASA;
+  TestFramework,
+  ADODB,
+  Spring.Persistence.Adapters.ASA,
+  Spring.Persistence.SQL.Generators.ASA;
 
 type
-  TestTASAConnectionAdapter = class(TTestCase)
+  TASAConnectionAdapterTest = class(TTestCase)
   strict private
     FASAConnectionAdapter: TASAConnectionAdapter;
   public
@@ -17,7 +19,7 @@ type
     procedure TestGetDriverName;
   end;
 
-  TestTASASQLGenerator = class(TTestCase)
+  TASASQLGeneratorTest = class(TTestCase)
   strict private
     FASASQLGenerator: TASASQLGenerator;
   public
@@ -29,18 +31,21 @@ type
 
 implementation
 
-procedure TestTASAConnectionAdapter.SetUp;
+
+{$REGION 'TASAConnectionAdapterTest'}
+
+procedure TASAConnectionAdapterTest.SetUp;
 begin
   FASAConnectionAdapter := TASAConnectionAdapter.Create(TADOConnection.Create(nil));
   FASAConnectionAdapter.AutoFreeConnection := True;
 end;
 
-procedure TestTASAConnectionAdapter.TearDown;
+procedure TASAConnectionAdapterTest.TearDown;
 begin
   FASAConnectionAdapter.Free;
 end;
 
-procedure TestTASAConnectionAdapter.TestGetDriverName;
+procedure TASAConnectionAdapterTest.TestGetDriverName;
 var
   ReturnValue: string;
 begin
@@ -48,17 +53,22 @@ begin
   CheckEqualsString('ASA', ReturnValue);
 end;
 
-procedure TestTASASQLGenerator.SetUp;
+{$ENDREGION}
+
+
+{$REGION 'TASASQLGeneratorTest'}
+
+procedure TASASQLGeneratorTest.SetUp;
 begin
-  FASASQLGenerator := TASASQLGenerator.Create();
+  FASASQLGenerator := TASASQLGenerator.Create;
 end;
 
-procedure TestTASASQLGenerator.TearDown;
+procedure TASASQLGeneratorTest.TearDown;
 begin
   FASASQLGenerator.Free;
 end;
 
-procedure TestTASASQLGenerator.TestGenerateGetLastInsertId;
+procedure TASASQLGeneratorTest.TestGenerateGetLastInsertId;
 var
   ReturnValue: string;
 begin
@@ -66,10 +76,12 @@ begin
   CheckEqualsString('SELECT @@IDENTITY;', ReturnValue);
 end;
 
-initialization
-  RegisterTest(TestTASASQLGenerator.Suite);
-  RegisterTest(TestTASAConnectionAdapter.Suite);
+{$ENDREGION}
 
+
+initialization
+  RegisterTest(TASASQLGeneratorTest.Suite);
+  RegisterTest(TASAConnectionAdapterTest.Suite);
 
 end.
 

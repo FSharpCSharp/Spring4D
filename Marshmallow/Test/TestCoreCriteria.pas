@@ -12,9 +12,7 @@ uses
   ;
 
 type
-  // Test methods for class TCriteria
-
-  TestTCriteria = class(TTestCase)
+  TCriteriaTest = class(TTestCase)
   private
     FCriteria: ICriteria<TCustomer>;
     FSession: TSession;
@@ -64,7 +62,7 @@ uses
   ;
 
 
-procedure TestTCriteria.SetUp;
+procedure TCriteriaTest.SetUp;
 begin
   FSession := TSession.Create(TConnectionFactory.GetInstance(dtSQLite, TestDB));
   FCriteria := FSession.CreateCriteria<TCustomer>;
@@ -84,7 +82,7 @@ begin
     end);
 end;
 
-procedure TestTCriteria.TearDown;
+procedure TCriteriaTest.TearDown;
 begin
   ClearTable(TBL_PEOPLE);
   ClearTable(TBL_ORDERS);
@@ -92,7 +90,7 @@ begin
   FSession.Free;
 end;
 
-procedure TestTCriteria.Add_Eq;
+procedure TCriteriaTest.Add_Eq;
 begin
   FCriteria.Add(TRestrictions.Eq('Name', 'Foo'))
     .Add(TRestrictions.Eq('Age', 42));
@@ -100,7 +98,7 @@ begin
 end;
 
 
-procedure TestTCriteria.Add_SubEntity_Criterion;
+procedure TCriteriaTest.Add_SubEntity_Criterion;
 var
   LOrders: IList<TCustomer_Orders>;
   Age: IProperty;
@@ -135,7 +133,7 @@ begin
   CheckEquals(3, LOrders.First.Customer.Age);
 end;
 
-procedure TestTCriteria.Conjunction;
+procedure TCriteriaTest.Conjunction;
 var
   LCustomers: IList<TCustomer>;
   Age, Name: IProperty;
@@ -157,7 +155,7 @@ begin
   CheckEquals('Foo', LCustomers[0].Name);
 end;
 
-procedure TestTCriteria.Disjunction;
+procedure TCriteriaTest.Disjunction;
 var
   LCustomers: IList<TCustomer>;
   Age, Name: IProperty;
@@ -180,7 +178,7 @@ begin
   CheckEquals(42, LCustomers[1].Age);
 end;
 
-procedure TestTCriteria.AddOrder;
+procedure TCriteriaTest.AddOrder;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -193,7 +191,7 @@ begin
   CheckEquals(42, LCustomers[1].Age);
 end;
 
-procedure TestTCriteria.List_And_And;
+procedure TCriteriaTest.List_And_And;
 var
   LCustomers: IList<TCustomer>;
   Age, Name: IProperty;
@@ -211,7 +209,7 @@ begin
   CheckEquals(42, LCustomers[0].Age);
 end;
 
-procedure TestTCriteria.List_Between;
+procedure TCriteriaTest.List_Between;
 var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
@@ -234,7 +232,7 @@ begin
   CheckEquals(50, LCustomers[0].Age);
 end;
 
-procedure TestTCriteria.List_NeProperty;
+procedure TCriteriaTest.List_NeProperty;
 var
   LCustomers: IList<TCustomer>;
   Age, ID: IProperty;
@@ -268,7 +266,7 @@ begin
   CheckEquals(50, LCustomers[1].Age);
 end;
 
-procedure TestTCriteria.List_Eq_IsNull;
+procedure TCriteriaTest.List_Eq_IsNull;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -289,7 +287,7 @@ begin
   CheckEquals(100, LCustomers[0].Orders[0].Order_Status_Code);
 end;
 
-procedure TestTCriteria.List_Ge_Gt;
+procedure TCriteriaTest.List_Ge_Gt;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -309,7 +307,7 @@ begin
   CheckEquals(50, LCustomers[0].Age);
 end;
 
-procedure TestTCriteria.List_In_NotIn;
+procedure TCriteriaTest.List_In_NotIn;
 var
   LCustomers: IList<TCustomer>;
   LAges: TArray<Integer>;
@@ -348,7 +346,7 @@ begin
   CheckEquals('FooBar', LCustomers[1].Name);
 end;
 
-procedure TestTCriteria.List_LEq_Lt;
+procedure TCriteriaTest.List_LEq_Lt;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -368,7 +366,7 @@ begin
   CheckEquals(42, LCustomers[0].Age);
 end;
 
-procedure TestTCriteria.List_Like;
+procedure TCriteriaTest.List_Like;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -392,7 +390,7 @@ begin
   CheckEquals(1, LCustomers.Count);
 end;
 
-procedure TestTCriteria.List_Not_Eq;
+procedure TCriteriaTest.List_Not_Eq;
 var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
@@ -409,7 +407,7 @@ begin
   CheckEquals(50, LCustomers[0].Age);
 end;
 
-procedure TestTCriteria.List_Or_And;
+procedure TCriteriaTest.List_Or_And;
 var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
@@ -427,7 +425,7 @@ begin
   CheckEquals(42, LCustomers[1].Age);
 end;
 
-procedure TestTCriteria.List_Or_Or;
+procedure TCriteriaTest.List_Or_Or;
 var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
@@ -445,7 +443,7 @@ begin
   CheckEquals(42, LCustomers[1].Age);
 end;
 
-procedure TestTCriteria.List_Property_Eq;
+procedure TCriteriaTest.List_Property_Eq;
 var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
@@ -462,7 +460,7 @@ begin
 end;
 
 {$IFNDEF DELPHIXE}
-procedure TestTCriteria.OperatorOverloading_Eq;
+procedure TCriteriaTest.OperatorOverloading_Eq;
 var
   LCustomers: IList<TCustomer>;
   Age, Name: Prop;
@@ -487,7 +485,7 @@ begin
 end;
 {$ENDIF}
 
-procedure TestTCriteria.Page_GEq_OrderDesc;
+procedure TCriteriaTest.Page_GEq_OrderDesc;
 var
   LPage: IDBPage<TCustomer>;
   Age: IProperty;
@@ -509,7 +507,7 @@ begin
   CheckEquals(8, LPage.Items[2].Age);
 end;
 
-procedure TestTCriteria.Page_SubEntities;
+procedure TCriteriaTest.Page_SubEntities;
 var
   LPage: IDBPage<TCustomer>;
   Age: IProperty;
@@ -540,6 +538,6 @@ end;
 
 initialization
   // Register any test cases with the test runner
-  RegisterTest(TestTCriteria.Suite);
+  RegisterTest(TCriteriaTest.Suite);
 end.
 

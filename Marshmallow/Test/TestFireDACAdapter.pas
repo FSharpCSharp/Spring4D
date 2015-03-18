@@ -33,7 +33,7 @@ type
     [Column] property Height: Nullable<Double> read FHeight write FHeight;
   end;
 
-  TestFireDACSession = class(TTestCase)
+  TFireDACSessionTest = class(TTestCase)
   private
     FConnection: IDBConnection;
     FSession: TSession;
@@ -66,7 +66,7 @@ uses
 
 { TestFireDACSession }
 
-function TestFireDACSession.CreateCustomer(const name: string;
+function TFireDACSessionTest.CreateCustomer(const name: string;
   const age: Integer): TFDCustomer;
 begin
   Result := TFDCustomer.Create;
@@ -74,13 +74,13 @@ begin
   Result.Age := age;
 end;
 
-procedure TestFireDACSession.CreateTables;
+procedure TFireDACSessionTest.CreateTables;
 begin
   FDACConnection.ExecSQL('CREATE TABLE IF NOT EXISTS CUSTOMERS ([ID] INTEGER PRIMARY KEY, [AGE] INTEGER NULL,'+
     '[NAME] NVARCHAR (255), [HEIGHT] FLOAT, [PICTURE] BLOB); ');
 end;
 
-procedure TestFireDACSession.Save;
+procedure TFireDACSessionTest.Save;
 var
   customer: TFDCustomer;
 begin
@@ -93,7 +93,7 @@ begin
   customer.Free;
 end;
 
-procedure TestFireDACSession.SaveNullable;
+procedure TFireDACSessionTest.SaveNullable;
 var
   customer: TFDCustomer;
 begin
@@ -105,7 +105,7 @@ begin
   customer.Free;
 end;
 
-procedure TestFireDACSession.SetUp;
+procedure TFireDACSessionTest.SetUp;
 begin
   FDACConnection := TFDConnection.Create(nil);
   FDACConnection.DriverName := 'SQLite';
@@ -134,14 +134,14 @@ begin
   CreateTables;
 end;
 
-procedure TestFireDACSession.TearDown;
+procedure TFireDACSessionTest.TearDown;
 begin
   inherited TearDown;
   FDACConnection.Free;
   FSession.Free;
 end;
 
-procedure TestFireDACSession.WhenSavingInTransaction_CommitIsSuccessful;
+procedure TFireDACSessionTest.WhenSavingInTransaction_CommitIsSuccessful;
 var
   customer: TFDCustomer;
   transaction: IDBTransaction;
@@ -159,7 +159,7 @@ begin
   CheckEquals('Foo', FSession.FindAll<TFDCustomer>.First.Name);
 end;
 
-procedure TestFireDACSession.WhenSavingInTransaction_RollbackIsSuccessful;
+procedure TFireDACSessionTest.WhenSavingInTransaction_RollbackIsSuccessful;
 var
   customer: TFDCustomer;
   transaction: IDBTransaction;
@@ -177,6 +177,6 @@ begin
 end;
 
 initialization
-  RegisterTest(TestFireDACSession.Suite);
+  RegisterTest(TFireDACSessionTest.Suite);
 
 end.

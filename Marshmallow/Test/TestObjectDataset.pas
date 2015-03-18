@@ -954,52 +954,52 @@ begin
     9 FirstName 3
   }
   //0
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'Bob';
   LCust.Age := 2;
   LCustomers.Add(LCust);
   //1
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 2;
   LCustomers.Add(LCust);
   //2
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 10;
   LCustomers.Add(LCust);
   //3
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 9;
   LCustomers.Add(LCust);
   //4
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 8;
   LCustomers.Add(LCust);
   //5
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 7;
   LCustomers.Add(LCust);
   //6
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 6;
   LCustomers.Add(LCust);
   //7
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 5;
   LCustomers.Add(LCust);
   //8
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 4;
   LCustomers.Add(LCust);
   //9
-  LCust := TCustomer.Create();
+  LCust := TCustomer.Create;
   LCust.Name := 'FirstName';
   LCust.Age := 3;
   LCustomers.Add(LCust);

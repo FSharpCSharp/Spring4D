@@ -15,9 +15,9 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TryConvert_Nullable();
+    procedure TryConvert_Nullable;
     {$IFDEF PERFORMANCE_TESTS}
-    procedure TryConvert_Nullable_Speed();
+    procedure TryConvert_Nullable_Speed;
     {$ENDIF}
   end;
 

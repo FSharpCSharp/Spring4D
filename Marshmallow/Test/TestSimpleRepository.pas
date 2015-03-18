@@ -31,7 +31,7 @@ type
     FSession: TSession;
     FRepository: IPagedRepository<TCustomer,Integer>;
   protected
-    function CreateRepository(): IInterface; virtual;
+    function CreateRepository: IInterface; virtual;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -40,7 +40,7 @@ type
     property Connection: IDBConnection read FConnection write FConnection;
     property Repository: IPagedRepository<TCustomer, Integer> read FRepository write FRepository;
   published
-    procedure FindOne();
+    procedure FindOne;
     procedure Count;
   end;
 
@@ -50,8 +50,8 @@ type
   public
     procedure SetUp; override;
   published
-    procedure FindByName();
-    procedure FindByName_Paged();
+    procedure FindByName;
+    procedure FindByName_Paged;
     procedure FindWhere_ToList;
     procedure FindWhere_UsingCriterion_ToList;
   end;
@@ -79,8 +79,8 @@ uses
 
 procedure TSimpleRepositoryTests.Count;
 begin
-  InsertCustomer();
-  InsertCustomer();
+  InsertCustomer;
+  InsertCustomer;
   CheckEquals(2, FRepository.Count);
 end;
 
@@ -94,7 +94,7 @@ var
   LCustomer: TCustomer;
   RowID: Integer;
 begin
-  InsertCustomer();
+  InsertCustomer;
   RowID := TestDB.GetLastInsertRowID;
   LCustomer := FRepository.FindOne(RowID);
   CheckEquals(RowID, LCustomer.ID);

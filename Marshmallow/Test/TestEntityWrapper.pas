@@ -5,12 +5,10 @@ interface
 uses
   TestFramework,
   TestEntities,
-  Rtti,
-  Spring.TestUtils,
-  Spring.Persistence.Core.Interfaces,
+  Spring.Collections,
   Spring.Persistence.Core.EntityWrapper,
-  Spring.Collections
-  ;
+  Spring.Persistence.Core.Interfaces,
+  Spring.TestUtils;
 
 type
   TPair = class
@@ -40,12 +38,12 @@ type
     constructor Create(const values: IList<TPair>);
   end;
 
-  TTestEntityWrapper = class(TTestCase)
+  TEntityWrapperTest = class(TTestCase)
   private
     fCustomer: TCustomer;
     fSut: TEntityWrapper;
   protected
-    function GetCustomerResultSet(id: Variant; const name: String; age: Integer; middleName: string = ''): IDBResultSet;
+    function GetCustomerResultSet(id: Variant; const name: string; age: Integer; middleName: string = ''): IDBResultSet;
     function GetEmptyResultSet: IDBResultSet;
   public
     procedure SetUp; override;
@@ -61,20 +59,19 @@ type
     procedure SetMemberValue_Name;
   end;
 
-
 implementation
 
 uses
   SysUtils,
   Variants,
   TestConsts,
-  Spring.Persistence.Core.Exceptions
-  ;
+  Spring.Persistence.Core.Exceptions;
 
-{ TTestEntityWrapper }
 
-function TTestEntityWrapper.GetCustomerResultSet(id: Variant;
-  const name: String; age: Integer; middleName: string): IDBResultSet;
+{$REGION 'TEntityWrapperTest'}
+
+function TEntityWrapperTest.GetCustomerResultSet(id: Variant;
+  const name: string; age: Integer; middleName: string): IDBResultSet;
 var
   values: IList<TPair>;
 begin
@@ -87,54 +84,54 @@ begin
   Result := TResultSetListAdapter.Create(values);
 end;
 
-function TTestEntityWrapper.GetEmptyResultSet: IDBResultSet;
+function TEntityWrapperTest.GetEmptyResultSet: IDBResultSet;
 begin
   Result := TResultSetListAdapter.Create(TCollections.CreateObjectList<TPair>);
 end;
 
-procedure TTestEntityWrapper.IsAssigned;
+procedure TEntityWrapperTest.IsAssigned;
 begin
   CheckTrue(Assigned(fSut));
 end;
 
-procedure TTestEntityWrapper.SetMemberValue_Name;
+procedure TEntityWrapperTest.SetMemberValue_Name;
 begin
   fSut.SetMemberValue('Name', 'Foo');
   CheckEquals('Foo', fCustomer.Name);
 end;
 
-procedure TTestEntityWrapper.SetPrimaryKeyToEntity_Exception;
+procedure TEntityWrapperTest.SetPrimaryKeyToEntity_Exception;
 begin
   CheckException(EInvalidCast, procedure begin fSut.SetPrimaryKeyValue(1.01); end);
 end;
 
-procedure TTestEntityWrapper.SetPrimaryKeyToEntity_Successfully;
+procedure TEntityWrapperTest.SetPrimaryKeyToEntity_Successfully;
 begin
   fSut.SetPrimaryKeyValue(1);
   CheckEquals(1, fCustomer.ID);
 end;
 
-procedure TTestEntityWrapper.SetUp;
+procedure TEntityWrapperTest.SetUp;
 begin
   inherited;
   fCustomer := TCustomer.Create;
   fSut := TEntityWrapper.Create(fCustomer);
 end;
 
-procedure TTestEntityWrapper.TearDown;
+procedure TEntityWrapperTest.TearDown;
 begin
   inherited;
   fCustomer.Free;
   fSut.Free;
 end;
 
-procedure TTestEntityWrapper.When_ResultSet_HasColumns_GetColumnValue_Returns_CorrectValue;
+procedure TEntityWrapperTest.When_ResultSet_HasColumns_GetColumnValue_Returns_CorrectValue;
 begin
   CheckEquals('Foo', fSut.GetColumnValueFrom(GetCustomerResultSet(1, 'Foo', 10), CUSTNAME).AsString, 'Name should be Foo');
   CheckEquals(10, fSut.GetColumnValueFrom(GetCustomerResultSet(1, 'Foo', 10), CUSTAGE).AsInteger, 'Age should be 10');
 end;
 
-procedure TTestEntityWrapper.When_ResultSet_HasNoColumns_GetColumnValue_ThrowsException;
+procedure TEntityWrapperTest.When_ResultSet_HasNoColumns_GetColumnValue_ThrowsException;
 begin
   CheckException(EORMColumnNotFound,
     procedure
@@ -143,7 +140,7 @@ begin
     end);
 end;
 
-procedure TTestEntityWrapper.When_ResultSet_HasNoPrimaryKey_GetPrimaryKey_ThrowsException;
+procedure TEntityWrapperTest.When_ResultSet_HasNoPrimaryKey_GetPrimaryKey_ThrowsException;
 begin
   CheckException(EORMPrimaryKeyColumnNotFound,
     procedure
@@ -152,7 +149,7 @@ begin
     end);
 end;
 
-procedure TTestEntityWrapper.When_ResultSet_Has_PrimaryKey_GetPrimaryKey;
+procedure TEntityWrapperTest.When_ResultSet_Has_PrimaryKey_GetPrimaryKey;
 begin
   CheckEquals(1, fSut.GetPrimaryKeyValueFrom(GetCustomerResultSet(1, 'Foo', 10)).AsInteger);
 end;
@@ -225,6 +222,6 @@ begin
 end;
 
 initialization
-  RegisterTest(TTestEntityWrapper.Suite);
+  RegisterTest(TEntityWrapperTest.Suite);
 
 end.

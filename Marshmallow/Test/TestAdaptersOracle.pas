@@ -3,17 +3,16 @@ unit TestAdaptersOracle;
 interface
 
 uses
+  TestFramework,
+  TestEntities,
+  SysUtils,
   Spring.Persistence.Adapters.Oracle,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.Session,
-  Spring.Persistence.SQL.Generators.Oracle,
-  SysUtils,
-  TestEntities,
-  TestFramework
-  ;
+  Spring.Persistence.SQL.Generators.Oracle;
 
 type
-  TestOracleConnectionAdapter = class(TTestCase)
+  TOracleConnectionAdapterTest = class(TTestCase)
   private
     FConnectionAdapter: TOracleConnectionAdapter;
   public
@@ -23,7 +22,7 @@ type
     procedure GetDriverName;
   end;
 
-  TestOracleSession = class(TTestCase)
+  TOracleSessionTest = class(TTestCase)
   private
     FConnection: IDBConnection;
     FManager: TSession;
@@ -31,12 +30,12 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure First();
-    procedure Save_Delete();
-    procedure Page();
+    procedure First;
+    procedure Save_Delete;
+    procedure Page;
   end;
 
-  TestOracleSQLGenerator = class(TTestCase)
+  TOracleSQLGeneratorTest = class(TTestCase)
   private
     fSut: TOracleSQLGenerator;
   public
@@ -54,8 +53,9 @@ implementation
 uses
   ADODB,
   DB,
-  Rtti,
   TypInfo,
+  Variants,
+  Spring,
   Spring.Collections,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.DatabaseManager,
@@ -64,9 +64,7 @@ uses
   Spring.Persistence.Criteria.Properties,
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types,
-  Spring.Persistence.SQL.Commands,
-  Variants
-  ;
+  Spring.Persistence.SQL.Commands;
 
 const
   TBL_COMPANY = 'Vikarina.IMONES';
@@ -92,10 +90,10 @@ begin
   //Provider=OraOLEDB.Oracle;Data Source=SERVER1;User ID=SYSTEM;Password=master
   Result.ConnectionString := Format('Provider=OraOLEDB.Oracle;Data Source=%0:S;Password=%1:S;User ID=%2:S'
     , ['SERVER1', 'master', 'SYSTEM']);
-  Result.Open();
+  Result.Open;
 end;
 
-procedure DropTestTables();
+procedure DropTestTables;
 var
   LConn: TADOConnection;
 begin
@@ -113,13 +111,8 @@ var
 begin
   LConn := CreateTestConnection;
   try
-    LConn.Execute(Format('INSERT INTO '+ TBL_COMPANY + ' (IMONE, IMPAV) VALUES (%0:D, %1:S)'
-      ,
-        [
-          AID
-          ,QuotedStr(ACompName)
-        ]
-      ));
+    LConn.Execute(Format('INSERT INTO '+ TBL_COMPANY + ' (IMONE, IMPAV) VALUES (%0:D, %1:S)',
+      [AID, QuotedStr(ACompName)]));
   finally
     LConn.Free;
   end;
@@ -132,47 +125,42 @@ var
 begin
   LConn := CreateTestConnection;
   try
-    LResults := LConn.Execute(Format('SELECT COUNT(*) FROM %0:S'
-      ,
-        [
-          ATablename
-        ]
-      ));
+    LResults := LConn.Execute(Format('SELECT COUNT(*) FROM %0:S', [ATablename]));
 
     if LResults.RecordCount > 0 then
-    begin
       Result := LResults.Fields.Item[0].Value;
-    end;
   finally
     LConn.Free;
   end;
-
 end;
 
 
-{ TestOracleConnectionAdapter }
+{$REGION 'TOracleConnectionAdapterTest'}
 
-procedure TestOracleConnectionAdapter.GetDriverName;
+procedure TOracleConnectionAdapterTest.GetDriverName;
 begin
   CheckEquals('Oracle', FConnectionAdapter.GetDriverName);
 end;
 
-procedure TestOracleConnectionAdapter.SetUp;
+procedure TOracleConnectionAdapterTest.SetUp;
 begin
   inherited;
   FConnectionAdapter := TOracleConnectionAdapter.Create(CreateTestConnection);
   FConnectionAdapter.AutoFreeConnection := True;
 end;
 
-procedure TestOracleConnectionAdapter.TearDown;
+procedure TOracleConnectionAdapterTest.TearDown;
 begin
   FConnectionAdapter.Free;
   inherited;
 end;
 
-{ TestOracleSession }
+{$ENDREGION}
 
-procedure TestOracleSession.First;
+
+{$REGION 'TOracleSessionTest'}
+
+procedure TOracleSessionTest.First;
 var
   LCompany: TCompany;
 begin
@@ -188,7 +176,7 @@ begin
   end;
 end;
 
-procedure TestOracleSession.Page;
+procedure TOracleSessionTest.Page;
 var
   LCriteria: ICriteria<TCompany>;
   LItems: IList<TCompany>;
@@ -210,7 +198,7 @@ begin
   CheckEquals(10, LItems.Count);
 end;
 
-procedure TestOracleSession.Save_Delete;
+procedure TOracleSessionTest.Save_Delete;
 var
   LCompany: TCompany;
 begin
@@ -230,7 +218,7 @@ begin
   end;
 end;
 
-procedure TestOracleSession.SetUp;
+procedure TOracleSessionTest.SetUp;
 begin
   inherited;
   FConnection := TConnectionFactory.GetInstance(dtOracle, CreateTestConnection);
@@ -253,7 +241,7 @@ begin
   CreateTestTables(FConnection);
 end;
 
-procedure TestOracleSession.TearDown;
+procedure TOracleSessionTest.TearDown;
 begin
   DropTestTables;
   FManager.Free;
@@ -261,9 +249,12 @@ begin
   inherited;
 end;
 
-{ TestOracleSQLGenerator }
+{$ENDREGION}
 
-procedure TestOracleSQLGenerator.CreateParamCreatesTOracleDBParam;
+
+{$REGION 'TOracleSQLGeneratorTest'}
+
+procedure TOracleSQLGeneratorTest.CreateParamCreatesTOracleDBParam;
 var
   field: TSQLInsertField;
   table: TSQLTable;
@@ -282,7 +273,7 @@ begin
   param.Free;
 end;
 
-procedure TestOracleSQLGenerator.GenerateCorrectCreateSequence;
+procedure TOracleSQLGeneratorTest.GenerateCorrectCreateSequence;
 var
   command: TCreateSequenceCommand;
   actual, expected: string;
@@ -297,24 +288,24 @@ begin
   command.Free;
 end;
 
-procedure TestOracleSQLGenerator.SetUp;
+procedure TOracleSQLGeneratorTest.SetUp;
 begin
   inherited;
   fSut := TOracleSQLGenerator.Create;
 end;
 
-procedure TestOracleSQLGenerator.TearDown;
+procedure TOracleSQLGeneratorTest.TearDown;
 begin
   inherited;
   fSut.Free;
 end;
 
-procedure TestOracleSQLGenerator.UseTOracleDBParams;
+procedure TOracleSQLGeneratorTest.UseTOracleDBParams;
 begin
   CheckEquals(TOracleDBParam, fSut.GetParamClass);
 end;
 
-procedure TestOracleSQLGenerator.WhenDataTypeNVARCHAR_ReplaceToNVARCHAR2;
+procedure TOracleSQLGeneratorTest.WhenDataTypeNVARCHAR_ReplaceToNVARCHAR2;
 var
   field: TSQLCreateField;
   table: TSQLTable;
@@ -331,13 +322,15 @@ begin
   field.Free;
 end;
 
+{$ENDREGION}
+
+
 initialization
-  RegisterTest(TestOracleSQLGenerator.Suite);
+  RegisterTest(TOracleSQLGeneratorTest.Suite);
   if FileExists('D:\Oracle\oraociei11.dll') then
   begin
-    RegisterTest(TestOracleConnectionAdapter.Suite);
-    RegisterTest(TestOracleSession.Suite);
+    RegisterTest(TOracleConnectionAdapterTest.Suite);
+    RegisterTest(TOracleSessionTest.Suite);
   end;
-
 
 end.
