@@ -3464,6 +3464,8 @@ begin
       else
         Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
       end
+    else
+      Result := False;
   end
   else
     Result := not other.HasValue;
