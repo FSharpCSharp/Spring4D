@@ -61,6 +61,8 @@ begin
   RegisterTests('Spring.Base', [
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
     TTestNullableBoolean.Suite,
+    TTestNullableDateTime.Suite,
+    TTestNullableInt64.Suite,
     TTestGuard.Suite,
     TTestLazy.Suite,
 {$IFDEF SUPPORTS_GENERIC_EVENTS}

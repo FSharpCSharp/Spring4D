@@ -131,6 +131,7 @@ type
     class function From(buffer: Pointer; typeInfo: PTypeInfo): TValue; overload; static;
     class function From(instance: TObject; classType: TClass): TValue; overload; static;
     class function FromFloat(typeInfo: PTypeInfo; value: Extended): TValue; overload; static;
+    class function FromVariant(const value: Variant): TValue; static;
 
     /// <summary>
     ///   Returns a TValue that holds the value that was passed in a TVarRec.
@@ -2665,6 +2666,62 @@ begin
     ftExtended: Result := TValue.From<Extended>(value);
     ftComp: Result := TValue.From<Comp>(value);
     ftCurr: Result := TValue.From<Currency>(value);
+  end;
+end;
+
+class function TValueHelper.FromVariant(const value: Variant): TValue;
+type
+  TCustomVariantTypeInfo = record
+    Name: string;
+    VType: TVarType;
+  end;
+const
+  CustomVariantTypes: array[0..2] of TCustomVariantTypeInfo = (
+    (Name: 'SQLTimeStampVariantType'; VType: varDouble),
+    (Name: 'SQLTimeStampOffsetVariantType'; VType: varDouble),
+    (Name: 'FMTBcdVariantType'; VType: varInt64)
+  );
+var
+  typeName: string;
+  i: Integer;
+begin
+  case TVarData(Value).VType of
+    varEmpty, varNull: Exit(Empty);
+    varBoolean: Result := TVarData(Value).VBoolean;
+    varShortInt: Result := TVarData(Value).VShortInt;
+    varSmallint: Result := TVarData(Value).VSmallInt;
+    varInteger: Result := TVarData(Value).VInteger;
+    varSingle: Result := TVarData(Value).VSingle;
+    varDouble: Result := TVarData(Value).VDouble;
+    varCurrency: Result := TVarData(Value).VCurrency;
+    varDate: Result := From<TDateTime>(TVarData(Value).VDate);
+    varOleStr: Result := string(TVarData(Value).VOleStr);
+    varDispatch: Result := From<IDispatch>(IDispatch(TVarData(Value).VDispatch));
+    varError: Result := From<HRESULT>(TVarData(Value).VError);
+    varUnknown: Result := From<IInterface>(IInterface(TVarData(Value).VUnknown));
+    varByte: Result := TVarData(Value).VByte;
+    varWord: Result := TVarData(Value).VWord;
+    varLongWord: Result := TVarData(Value).VLongWord;
+    varInt64: Result := TVarData(Value).VInt64;
+    varUInt64: Result := TVarData(Value).VUInt64;
+{$IFNDEF NEXTGEN}
+    varString: Result := string(AnsiString(TVarData(Value).VString));
+{$ENDIF}
+    varUString: Result := UnicodeString(TVarData(Value).VUString);
+  else
+    typeName := VarTypeAsText(TVarData(Value).VType);
+    for i := 0 to High(CustomVariantTypes) do
+      if SameText(typeName, CustomVariantTypes[i].Name) then
+      begin
+        case CustomVariantTypes[i].VType of
+          varDouble: Result := Double(Value);
+          varInt64: Result := StrToInt64(VarToStr(Value)); // see QC#117696
+        else
+          raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
+        end;
+        Exit;
+      end;
+    raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
   end;
 end;
 

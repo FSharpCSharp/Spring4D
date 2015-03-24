@@ -63,6 +63,21 @@ type
     procedure TestIssue55;
   end;
 
+  TTestNullableDateTime = class(TTestCase)
+  private
+    fDateTime: Nullable<TDateTime>;
+  published
+    procedure TestFromVariantSQLTimestamp;
+    procedure TestFromVariantSQLTimestampOffset;
+  end;
+
+  TTestNullableInt64 = class(TTestCase)
+  private
+    fInt64: Nullable<Int64>;
+  published
+    procedure TestFromVariantFmtBcd;
+  end;
+
   TTestGuard = class(TTestCase)
   published
     procedure TestIsNullReference;
@@ -383,6 +398,9 @@ implementation
 
 uses
   Classes,
+  DateUtils,
+  FmtBcd,
+  SqlTimSt,
   SysUtils,
   Variants,
   Rtti,
@@ -2306,6 +2324,47 @@ begin
   fSUT := TValue.From<ShortInt>(-128);
   fValue := -128;
   DoCheckEquals;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestNullableDateTime'}
+
+procedure TTestNullableDateTime.TestFromVariantSQLTimestamp;
+var
+  dt: TDateTime;
+  v: Variant;
+begin
+  dt := EncodeDateTime(2015, 1, 1, 12, 0, 0, 0);
+  v := VarSQLTimeStampCreate(dt);
+  fDateTime := v;
+  CheckEquals(dt, fDateTime);
+end;
+
+procedure TTestNullableDateTime.TestFromVariantSQLTimestampOffset;
+var
+  dt: TDateTime;
+  v: Variant;
+begin
+  dt := EncodeDateTime(2015, 1, 1, 12, 0, 0, 0);
+  v := VarSQLTimeStampOffsetCreate(dt);
+  fDateTime := v;
+  CheckEquals(dt, fDateTime);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestNullableInt64'}
+
+procedure TTestNullableInt64.TestFromVariantFmtBcd;
+var
+  v: Variant;
+begin
+  v := VarFMTBcdCreate('8123456789012345678', 19, 0);
+  fInt64 := v;
+  CheckEquals(8123456789012345678, fInt64);
 end;
 
 {$ENDREGION}
