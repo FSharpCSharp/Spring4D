@@ -1191,6 +1191,7 @@ function TRttiObjectHelper.GetCustomAttributes(
 var
   attribute: TCustomAttribute;
 begin
+  Result := nil;
   for attribute in GetAttributes do
     if attribute.InheritsFrom(attributeClass) then
     begin
