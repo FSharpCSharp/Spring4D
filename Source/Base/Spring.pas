@@ -2309,10 +2309,15 @@ end;
 function EqualsRec2Rec(const left, right: TValue): Boolean;
 var
   context: TRttiContext;
+  recordType: TRttiType;
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
+  field: TRttiField;
+  leftRec, rightRec: Pointer;
+  leftValue, rightValue: TValue;
 begin
-  for method in context.GetType(left.TypeInfo).GetMethods('&op_Equality') do
+  recordType := context.GetType(left.TypeInfo);
+  for method in recordType.GetMethods('&op_Equality') do
   begin
     parameters := method.GetParameters;
     if (Length(parameters) = 2)
@@ -2321,10 +2326,24 @@ begin
       Exit(method.Invoke(nil, [left, right]).AsBoolean);
   end;
 
-  // TODO: handle nullable and probably other Spring base types
-
-  if left.DataSize = right.DataSize then
-    Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize)
+  if left.TypeInfo = right.TypeInfo then
+  begin
+    if IsManaged(left.TypeInfo) then
+    begin
+      leftRec := left.GetReferenceToRawData;
+      rightRec := right.GetReferenceToRawData;
+      for field in recordType.GetFields do
+      begin
+        leftValue := field.GetValue(leftRec);
+        rightValue := field.GetValue(rightRec);
+        if not leftValue.Equals(rightValue) then
+          Exit(False);
+      end;
+      Result := True;
+    end
+    else
+      Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize)
+  end
   else
     Result := False;
 end;
@@ -2700,14 +2719,14 @@ function TValueHelper.IsNumeric: Boolean;
 const
   NumericKinds = [tkInteger, tkChar, tkEnumeration, tkFloat, tkWChar, tkInt64];
 begin
-  Result := IsEmpty or (Kind in NumericKinds);
+  Result := Kind in NumericKinds;
 end;
 
 function TValueHelper.IsString: Boolean;
 const
   StringKinds = [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
 begin
-  Result := IsEmpty or (Kind in StringKinds);
+  Result := Kind in StringKinds;
 end;
 
 {$IFDEF DELPHI2010}

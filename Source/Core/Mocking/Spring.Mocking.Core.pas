@@ -44,15 +44,19 @@ type
     fTypeInfo: PTypeInfo;
     fInterceptor: TMockInterceptor;
     fProxy: TValue;
+    function GetCallBase: Boolean;
     function GetInstance: TValue;
     function GetTypeInfo: PTypeInfo;
+    procedure SetCallBase(const value: Boolean);
     function CreateProxy(typeInfo: PTypeInfo;
       const interceptor: TMockInterceptor): TValue;
   public
-    constructor Create(typeInfo: PTypeInfo;
-      const interceptor: TMockInterceptor; const proxy: TValue) overload;
+    constructor Create(typeInfo: PTypeInfo; const interceptor: TMockInterceptor;
+      const proxy: TValue) overload;
     constructor Create(typeInfo: PTypeInfo;
       behavior: TMockBehavior = TMockBehavior.Dynamic); overload;
+    constructor Create(typeInfo: PTypeInfo;
+      behavior: TMockBehavior; const args: array of TValue); overload;
     destructor Destroy; override;
 
   {$REGION 'Implements IMock'}
@@ -90,7 +94,7 @@ type
   private
     function GetInstance: T;
   public
-    constructor Create(behavior: TMockBehavior = TMockBehavior.Dynamic);
+    constructor Create(behavior: TMockBehavior; const args: array of TValue);
 
   {$REGION 'Implements IMock<T>'}
     function Setup: ISetup<T>;
@@ -126,17 +130,41 @@ implementation
 
 uses
   Spring.Collections,
+  Spring.Reflection,
   Spring.ResourceStrings;
+
+resourcestring
+  SCallCountExceeded = 'call count exceeded: %s';
 
 
 {$REGION 'TMock'}
 
 constructor TMock.Create(typeInfo: PTypeInfo; behavior: TMockBehavior);
 begin
+  Create(typeInfo, behavior, []);
+end;
+
+constructor TMock.Create(typeInfo: PTypeInfo; behavior: TMockBehavior;
+  const args: array of TValue);
+var
+  types: array of PTypeInfo;
+  i: Integer;
+  ctor: TRttiMethod;
+begin
   inherited Create;
   fTypeInfo := typeInfo;
   fInterceptor := TMockInterceptor.Create(behavior);
   fProxy := CreateProxy(typeInfo, fInterceptor);
+  if fTypeInfo.Kind = tkClass then
+  begin
+    SetLength(types, Length(args));
+    for i := 0 to High(args) do
+      types[i] := args[i].TypeInfo;
+    if TType.GetType(fTypeInfo).Methods.TryGetFirst(ctor,
+      TMethodFilters.IsConstructor and
+      TMethodFilters.HasParameterTypes(types)) then
+      ctor.Invoke(fProxy, args);
+  end;
 end;
 
 constructor TMock.Create(typeInfo: PTypeInfo;
@@ -177,6 +205,11 @@ begin
   else
     raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [typeInfo.TypeName]);
   end;
+end;
+
+function TMock.GetCallBase: Boolean;
+begin
+  Result := fInterceptor.CallBase;
 end;
 
 function TMock.GetInstance: TValue;
@@ -251,8 +284,8 @@ begin
         Result := tempValues[callInfo.CallCount - 1]
       else
         if fInterceptor.Behavior = TMockBehavior.Strict then
-          raise EMockException.Create('call count exceeded: ' +
-            Times.AtMost(Length(tempValues)).ToString(callInfo.CallCount));
+          raise EMockException.CreateResFmt(@SCallCountExceeded, [
+            Times.AtMost(Length(tempValues)).ToString(callInfo.CallCount)]);
     end);
   Result := Self;
 end;
@@ -277,6 +310,11 @@ begin
   fInterceptor.ReceivedForAnyArgs(times);
 end;
 
+procedure TMock.SetCallBase(const value: Boolean);
+begin
+  fInterceptor.CallBase := value;
+end;
+
 function TMock.Setup: ISetup;
 begin
   fInterceptor.Setup;
@@ -298,9 +336,10 @@ end;
 
 {$REGION 'TMock<T>'}
 
-constructor TMock<T>.Create(behavior: TMockBehavior);
+constructor TMock<T>.Create(behavior: TMockBehavior;
+  const args: array of TValue);
 begin
-  inherited Create(System.TypeInfo(T), behavior);
+  inherited Create(System.TypeInfo(T), behavior, args);
 end;
 
 function TMock<T>.GetInstance: T;
