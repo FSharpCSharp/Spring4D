@@ -125,7 +125,11 @@ end;
 
 destructor TFireDACResultSetAdapter.Destroy;
 begin
+{$IFNDEF AUTOREFCOUNT}
   Dataset.Free;
+{$ELSE}
+  Dataset.DisposeOf;
+{$ENDIF}
   inherited Destroy;
 end;
 
@@ -174,7 +178,11 @@ end;
 
 destructor TFireDACStatementAdapter.Destroy;
 begin
+{$IFNDEF AUTOREFCOUNT}
   Statement.Free;
+{$ELSE}
+  Statement.DisposeOf;
+{$ENDIF}
   inherited Destroy;
 end;
 
