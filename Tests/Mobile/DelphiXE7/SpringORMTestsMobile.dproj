@@ -251,10 +251,8 @@
         <DCCReference Include="..\..\..\Marshmallow\Test\TestEntities.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestConsts.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestAnsiSQLGenerator.pas"/>
-        <DCCReference Include="..\..\..\Marshmallow\Test\TestCollectionsAdapterResolver.pas"/>
         <DCCReference Include="..\..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityWrapper.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestEntityWrapper.pas"/>
-        <DCCReference Include="..\..\..\Marshmallow\Test\TestCoreCollections.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestCoreEntityMap.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestCoreUtils.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestMapping.RttiExplorer.pas"/>
