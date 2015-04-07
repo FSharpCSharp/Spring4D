@@ -164,6 +164,8 @@ type
     function Add(const item: T): Integer; override;
     procedure Insert(index: Integer; const item: T); override;
 
+    procedure AddRange(const collection: IEnumerable<T>); override;
+
     function Contains(const value: T): Boolean; override;
     function IndexOf(const item: T; index, count: Integer): Integer; override;
     function LastIndexOf(const item: T; index, count: Integer): Integer; override;
@@ -902,6 +904,18 @@ begin
   inherited Insert(Result, item);
 end;
 
+procedure TSortedList<T>.AddRange(const collection: IEnumerable<T>);
+var
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  for item in collection do
+    Add(item);
+end;
+
 function TSortedList<T>.Contains(const value: T): Boolean;
 var
   index: Integer;
@@ -921,7 +935,8 @@ begin
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
-  TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count);
+  if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count) then
+    Result := -1;
 end;
 
 procedure TSortedList<T>.Insert(index: Integer; const item: T);
