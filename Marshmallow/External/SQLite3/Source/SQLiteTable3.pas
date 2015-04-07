@@ -140,8 +140,9 @@ type
   TSQLitePreparedStatement = class;
   TSQLiteFunctions = class;
 
-  ESQLiteException = class(Exception)
-  end;
+  ESQLiteException = class(Exception);
+  ESQLiteConstraintException = class(ESQLiteException);
+  ESQLiteExceptionClass = class of ESQLiteException;
 
   TSQliteParam = class
   public
@@ -1253,18 +1254,25 @@ procedure TSQLiteDatabase.RaiseError(const s: string; const SQL: string);
 var
   Msg: PAnsiChar;
   ret : integer;
+  excClass: ESQLiteExceptionClass;
 begin
   Msg := nil;
   ret := SQLite3_ErrCode(fDB);
 
   if ret <> SQLITE_OK then
     Msg := sqlite3_errmsg(fDB);
+  case ret of
+    SQLITE_CONSTRAINT:
+      excClass := ESqliteConstraintException;
+    else
+      excClass := ESqliteException;
+  end;
 
   if Msg <> nil then
-    raise ESqliteException.CreateFmt(s +'.'#13'Error [%d]: %s.'#13'"%s": %s',
+    raise excClass.CreateFmt(s +'.'#13'Error [%d]: %s.'#13'"%s": %s',
     [ret, SQLiteErrorStr(ret),SQL, Msg])
   else
-    raise ESqliteException.CreateFmt(s, [SQL, 'No message']);
+    raise excClass.CreateFmt(s, [SQL, 'No message']);
 end;
 
 procedure TSQLiteDatabase.RaiseError(const s: string);
@@ -2894,6 +2902,7 @@ begin
   else
     begin
       SQLite3_reset(fStmt);
+      fDB.RaiseError('Cannot execute SQL statement', fSQL);
     end;
   end;
   Result := not fEOF;
@@ -3293,9 +3302,11 @@ begin
 
   SetParams(Params);
 
+  // Even if the SQLitTable raises an exception, it will free the statement in
+  // either case.
+  FOwnedStmt := False;
   {DONE -oLinas -cGeneral : exec query and get resultset}
   Result := TSQLiteUniTable.Create(FDB, FStmt);
-  FOwnedStmt := False;
 end;
 {$HINTS ON}
 
