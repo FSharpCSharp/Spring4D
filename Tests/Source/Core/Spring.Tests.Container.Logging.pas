@@ -189,7 +189,7 @@ begin
   fContainer.Resolve<ILoggerController>.AddAppender(
     TStreamLogAppender.Create(stream));
   fContainer.Resolve<ILogger>.Warn('Test');
-  CheckTrue(EndsStr('[WARN ] Test', stream.DataString));
+  CheckTrue(EndsStr('[WARN ] Test' + sLineBreak, stream.DataString));
 end;
 
 {$ENDREGION}

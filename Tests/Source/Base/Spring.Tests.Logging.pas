@@ -1179,10 +1179,10 @@ begin
       SetLength(s, 1024);
       len := ExceptionErrorMessage(e, nil, @s[1], Length(s));
       SetLength(s, len);
-      CheckEquals('[ERROR] ' + s, Copy(fStream.DataString, 15, MaxInt));
+      CheckEquals('[ERROR] ' + s + sLineBreak, Copy(fStream.DataString, 15, MaxInt));
       fStream.Clear;
       fLogger.Error('With message', e);
-      CheckEquals('[ERROR] With message: ' + s,
+      CheckEquals('[ERROR] With message: ' + s + sLineBreak,
         Copy(fStream.DataString, 15, MaxInt));
     end;
   end;
@@ -1191,7 +1191,7 @@ end;
 procedure TTestStreamLogAppender.TestWrite;
 begin
   fLogger.Info('Test');
-  CheckTrue(EndsStr('[INFO ] Test', fStream.DataString));
+  CheckTrue(EndsStr('[INFO ] Test' + sLineBreak, fStream.DataString));
 end;
 
 {$ENDREGION}
