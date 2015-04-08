@@ -164,6 +164,7 @@ type
     function Add(const item: T): Integer; override;
     procedure Insert(index: Integer; const item: T); override;
 
+    procedure AddRange(const values: array of T); override;
     procedure AddRange(const collection: IEnumerable<T>); override;
 
     function Contains(const value: T): Boolean; override;
@@ -913,6 +914,14 @@ begin
 {$ENDIF}
 
   for item in collection do
+    Add(item);
+end;
+
+procedure TSortedList<T>.AddRange(const values: array of T);
+var
+  item: T;
+begin
+  for item in values do
     Add(item);
 end;
 
