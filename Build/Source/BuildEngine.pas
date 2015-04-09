@@ -197,6 +197,8 @@ type
     OSX32,
     iOSSimulator,
     iOSDevice,
+    iOSDevice32,
+    iOSDevice64,
     Android
   );
 
@@ -454,6 +456,8 @@ const // luckily, the compiler file names have not changed over the Delphi versi
     'dccosx.exe',
     'dccios32.exe',
     'dcciosarm.exe',
+    'dcciosarm.exe',
+    'dcciosarm64.exe',
     'dccaarm.exe'
   );
 var

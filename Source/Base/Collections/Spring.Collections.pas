@@ -2273,6 +2273,9 @@ implementation
 uses
   Character,
   SyncObjs,
+{$IFDEF DELPHIXE8_UP}
+  System.Hash,
+{$ENDIF}
   Spring.Collections.Dictionaries,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
@@ -2761,7 +2764,11 @@ begin
   else
     S := Value;
 
+{$IFDEF DELPHIXE8_UP}
+  Result := THashBobJenkins.GetHashValue(S);
+{$ELSE}
   Result := BobJenkinsHash(PChar(S)^, SizeOf(Char) * Length(S), 0);
+{$ENDIF}
 end;
 
 class function TStringComparer.Ordinal: TStringComparer;

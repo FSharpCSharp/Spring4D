@@ -61,7 +61,7 @@ type
   private
     const fCHashSize = 4 * 8;  // 32 bits
   private
-    fCRCValue: LongWord;
+    fCRCValue: UInt32;
     function GetCrcValue: UInt32;
   protected
     function GetHashSize: Integer; override;
@@ -72,10 +72,10 @@ type
     property CrcValue: UInt32 read GetCrcValue;
   end;
 
-procedure CRC32Init(var crc: LongWord);
-procedure CRC32Update(var crc: LongWord; const buf: Pointer; len: LongWord);
-procedure CRC32BUpdate(var crc: LongWord; const buf: Pointer; len: LongWord);
-function CRC32Final(var crc: LongWord): TBuffer;
+procedure CRC32Init(var crc: UInt32);
+procedure CRC32Update(var crc: UInt32; const buf: Pointer; len: UInt32);
+procedure CRC32BUpdate(var crc: UInt32; const buf: Pointer; len: UInt32);
+function CRC32Final(var crc: UInt32): TBuffer;
 
 procedure CRC16Init(var crc: Word);
 procedure CRC16Update(var crc: Word; const buffer: Pointer; len: Integer);
@@ -88,7 +88,7 @@ uses
 
 const
   //This polynomial ( 0xEDB88320L) DOES generate the same CRC values as ZMODEM and PKZIP
-  crc32_table_b: array[0..255] of LongWord =
+  crc32_table_b: array[0..255] of UInt32 =
   (
     $00000000, $77073096, $EE0E612C, $990951BA, $076DC419,
     $706AF48F, $E963A535, $9E6495A3, $0EDB8832, $79DCB8A4,
@@ -146,7 +146,7 @@ const
 
 
   //This polynomial ($04c11db7) is used at: AUTODIN II, Ethernet, & FDDI
-  crc32_table: array[0..255] of LongWord = (
+  crc32_table: array[0..255] of UInt32 = (
     $00000000, $04c11db7, $09823b6e, $0d4326d9,
     $130476dc, $17c56b6b, $1a864db2, $1e475005,
     $2608edb8, $22c9f00f, $2f8ad6d6, $2b4bcb61,
@@ -218,19 +218,19 @@ const
 {$ENDIF}
 
 {$IFDEF USE_ASM}
-procedure CRC32Init(var crc: LongWord); assembler;
+procedure CRC32Init(var crc: UInt32); assembler;
 asm
   mov   dword ptr [eax],0ffffffffh
 end;
 {$ELSE}
-procedure CRC32Init(var crc: LongWord);
+procedure CRC32Init(var crc: UInt32);
 begin
   crc := $ffffffff;
 end;
 {$ENDIF}
 
 {$IFDEF USE_ASM}
-procedure CRC32Update(var crc: LongWord; const buf: Pointer; len: LongWord); assembler;
+procedure CRC32Update(var crc: UInt32; const buf: Pointer; len: UInt32); assembler;
 asm
   push  esi
   push  ebx
@@ -262,7 +262,7 @@ asm
   pop   esi
 end;
 {$ELSE}
-procedure CRC32Update(var crc: LongWord; const buf: Pointer; len: LongWord);
+procedure CRC32Update(var crc: UInt32; const buf: Pointer; len: UInt32);
 var
   p: PByte;
 begin
@@ -277,7 +277,7 @@ end;
 {$ENDIF}
 
 {$IFDEF USE_ASM}
-procedure CRC32BUpdate(var crc: LongWord; const buf: Pointer; len: LongWord); assembler;
+procedure CRC32BUpdate(var crc: UInt32; const buf: Pointer; len: UInt32); assembler;
 asm
   push  esi
   push  ebx
@@ -311,7 +311,7 @@ asm
   pop   esi
 end;
 {$ELSE}
-procedure CRC32BUpdate(var crc: LongWord; const buf: Pointer; len: LongWord);
+procedure CRC32BUpdate(var crc: UInt32; const buf: Pointer; len: UInt32);
 var
   p: PByte;
 begin
@@ -325,7 +325,7 @@ begin
 end;
 {$ENDIF}
 
-function CRC32Final(var crc: LongWord): TBuffer;
+function CRC32Final(var crc: UInt32): TBuffer;
 begin
   crc := not crc;
   with LongRec(crc) do

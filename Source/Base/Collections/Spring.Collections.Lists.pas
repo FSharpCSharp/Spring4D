@@ -39,6 +39,13 @@ uses
 type
 
 {$IFNDEF DELPHIXE3_UP}
+  {$DEFINE SPRING_ARRAYMANAGERS}
+{$ENDIF}
+{$IFDEF DELPHIXE8_UP}
+  {$DEFINE SPRING_ARRAYMANAGERS}
+{$ENDIF}
+
+{$IFDEF SPRING_ARRAYMANAGERS}
   TArrayManager<T> = class abstract
     procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
     procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
@@ -50,6 +57,15 @@ type
     procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
     procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
   end;
+
+  {$IFDEF WEAKREF}
+  TManualArrayManager<T> = class(TArrayManager<T>)
+  public
+    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
+    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
+    procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
+  end;
+  {$ENDIF}
 {$ENDIF}
 
   ///	<summary>
@@ -237,7 +253,7 @@ uses
 
 {$REGION 'TMoveArrayManager<T>'}
 
-{$IFNDEF DELPHIXE3_UP}
+{$IFDEF SPRING_ARRAYMANAGERS}
 procedure TMoveArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
 begin
   System.FillChar(AArray[Index], Count * SizeOf(T), 0);
@@ -253,6 +269,45 @@ begin
   System.Move(FromArray[FromIndex], ToArray[ToIndex], Count * SizeOf(T));
 end;
 {$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TManualArrayManager<T>'}
+
+{$IF Defined(SPRING_ARRAYMANAGERS) AND Defined(WEAKREF)}
+procedure TManualArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
+begin
+  System.Finalize(AArray[Index], Count);
+  System.FillChar(AArray[Index], Count * SizeOf(T), 0);
+end;
+
+procedure TManualArrayManager<T>.Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer);
+var
+  i: Integer;
+begin
+  if Count > 0 then
+    if FromIndex < ToIndex then
+      for i := Count - 1 downto 0 do
+        AArray[ToIndex + i] := AArray[FromIndex + i]
+    else if FromIndex > ToIndex then
+      for i := 0 to Count - 1 do
+        AArray[ToIndex + i] := AArray[FromIndex + i];
+end;
+
+procedure TManualArrayManager<T>.Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer);
+var
+  i: Integer;
+begin
+  if Count > 0 then
+    if FromIndex < ToIndex then
+      for i := Count - 1 downto 0 do
+        ToArray[ToIndex + i] := FromArray[FromIndex + i]
+    else if FromIndex > ToIndex then
+      for i := 0 to Count - 1 do
+        ToArray[ToIndex + i] := FromArray[FromIndex + i];
+end;
+{$IFEND}
 
 {$ENDREGION}
 
@@ -411,7 +466,7 @@ end;
 
 procedure TList<T>.DeleteRange(index, count: Integer);
 var
-  oldItems: array of T;
+  oldItems: TArray<T>;
   tailCount,
   i: Integer;
 begin
