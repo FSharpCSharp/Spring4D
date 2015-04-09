@@ -236,6 +236,11 @@ type
     function GetEnumerator: IEnumerator<T>;
 
     /// <summary>
+    ///   Applies an accumulator function over a sequence.
+    /// </summary>
+    function Aggregate(const func: TFunc<T, T, T>): T;
+
+    /// <summary>
     ///   Determines whether all elements of a sequence satisfy a condition.
     /// </summary>
     /// <param name="predicate">

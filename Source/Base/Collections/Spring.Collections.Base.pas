@@ -144,6 +144,8 @@ type
 
     function GetEnumerator: IEnumerator<T>; virtual;
 
+    function Aggregate(const func: TFunc<T, T, T>): T;
+
     function All(const predicate: TPredicate<T>): Boolean;
     function Any(const predicate: TPredicate<T>): Boolean; overload;
 
@@ -608,6 +610,23 @@ end;
 class destructor TEnumerableBase<T>.Destroy;
 begin
   fEqualityComparer := nil;
+end;
+
+function TEnumerableBase<T>.Aggregate(const func: TFunc<T, T, T>): T;
+var
+  enumerator: IEnumerator<T>;
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(func), 'func');
+{$ENDIF}
+
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := enumerator.Current;
+  while enumerator.MoveNext do
+    Result := func(Result, enumerator.Current);
 end;
 
 function TEnumerableBase<T>.All(const predicate: TPredicate<T>): Boolean;
