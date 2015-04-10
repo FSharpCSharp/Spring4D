@@ -87,9 +87,12 @@ type
 
 {$IFDEF DELPHIXE_UP}
     function RegisterFactory<TFactoryType: IInterface>(
-      const serviceName: string = ''): TRegistration<TFactoryType>; overload;
+      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
     function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
-      const resolvedServiceName: string): TRegistration<TFactoryType>; overload;
+      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
+    function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
+      const resolvedServiceName: string;
+      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
 {$ENDIF}
 
     function RegisterInstance<TServiceType>(const instance: TServiceType;
@@ -390,17 +393,26 @@ end;
 
 {$IFDEF DELPHIXE_UP}
 function TContainer.RegisterFactory<TFactoryType>(
-  const serviceName: string): TRegistration<TFactoryType>;
+  paramResolution: TParamResolution): TRegistration<TFactoryType>;
+begin
+  Result := RegisterType<TFactoryType>('');
+  Result := Result.AsFactory(paramResolution);
+end;
+
+function TContainer.RegisterFactory<TFactoryType>(
+  const serviceName: string;
+  paramResolution: TParamResolution): TRegistration<TFactoryType>;
 begin
   Result := RegisterType<TFactoryType>(serviceName);
-  Result := Result.AsFactory;
+  Result := Result.AsFactory(paramResolution);
 end;
 
 function TContainer.RegisterFactory<TFactoryType>(const serviceName,
-  resolvedServiceName: string): TRegistration<TFactoryType>;
+  resolvedServiceName: string;
+  paramResolution: TParamResolution): TRegistration<TFactoryType>;
 begin
   Result := RegisterType<TFactoryType>(serviceName);
-  Result := Result.AsFactory(resolvedServiceName);
+  Result := Result.AsFactory(resolvedServiceName, paramResolution);
 end;
 {$ENDIF}
 

@@ -911,6 +911,8 @@ const
 var
   name: string;
   prefix: string;
+  rttiType: TRttiType;
+  method: TRttiMethod;
   typeData: PTypeData;
 begin
   while Assigned(typeInfo) and (typeInfo.Kind = tkInterface) do
@@ -919,6 +921,9 @@ begin
     for prefix in DelegatePrefixStrings do
       if StartsText(prefix, name) then
         Exit(True);
+    rttiType := TType.GetType(typeInfo);
+    if rttiType.Methods.TryGetSingle(method) and (method.Name = 'Invoke') then
+      Exit(True);
     typeData := GetTypeData(typeInfo);
     if Assigned(typeData) and Assigned(typeData.IntfParent) then
       typeInfo := typeData.IntfParent^
