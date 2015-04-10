@@ -180,11 +180,16 @@ function TSingletonLifetimeManager.Resolve(const context: ICreationContext;
 var
   newInstance: TValue;
 begin
+  MonitorEnter(Self);
+  try
   if not Assigned(fInstance) then
   begin
     newInstance := model.ComponentActivator.CreateInstance(context);
     fInstance := TValueHolder.Create(newInstance, model.RefCounting);
     DoAfterConstruction(fInstance);
+  end;
+  finally
+    MonitorExit(Self);
   end;
   Result := fInstance;
 end;
