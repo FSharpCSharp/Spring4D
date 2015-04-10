@@ -56,7 +56,7 @@ var
   LQuery: string;
   LStatement: TMongoStatementAdapter;
   LConn: TMongoDBConnection;
-  LDocs: array of IBSONDocument;
+  LDocs: TArray<IBSONDocument>;
   LCollection: string;
   i: Integer;
 begin

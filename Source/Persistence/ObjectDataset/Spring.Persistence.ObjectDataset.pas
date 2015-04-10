@@ -39,6 +39,8 @@ uses
   Spring.Persistence.ObjectDataset.ExprParser;
 
 type
+  TCustomAttributeClass = class of TCustomAttribute;
+
   TObjectDataset = class(TAbstractObjectDataset)
   private
     FDataList: IObjectList;
@@ -50,13 +52,12 @@ type
     FProperties: IList<TRttiProperty>;
     FSort: string;
     FSorted: Boolean;
-    FCtx: TRttiContext;
 
     FOnAfterFilter: TNotifyEvent;
     FOnAfterSort: TNotifyEvent;
     FOnBeforeFilter: TNotifyEvent;
     FOnBeforeSort: TNotifyEvent;
-    FColumnAttributeTypeInfo: PTypeInfo;
+    FColumnAttributeClass: TCustomAttributeClass;
     FTrackChanges: Boolean;
 
     function GetSort: string;
@@ -67,6 +68,7 @@ type
     function PropertyFinder(const s: string): Spring.TPredicate<TRttiProperty>;
     procedure RegisterChangeHandler;
     procedure UnregisterChangeHandler;
+    procedure SetDataList(const Value: IObjectList);
     procedure SetTrackChanges(const Value: Boolean);
   protected
     procedure DoAfterOpen; override;
@@ -116,86 +118,65 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Makes the current dataset clone of <c>ASource</c>.
-    ///	</summary>
-    {$ENDREGION}
-    procedure Clone(ASource: TObjectDataset);
+    /// <summary>
+    ///   Makes the current dataset clone of <c>ASource</c>.
+    /// </summary>
+    procedure Clone(const ASource: TObjectDataset);
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns underlying model object from the current row.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Returns underlying model object from the current row.
+    /// </summary>
     function GetCurrentModel<T: class>: T;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns newly created list of data containing only filtered items.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Returns newly created list of data containing only filtered items.
+    /// </summary>
     function GetFilteredDataList<T: class>: IList<T>;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Sets the list which will represent the data for the dataset. Dataset
-    ///	  will create it's fields based on model's public or published 
-    ///	  properties which are marked with <c>[Column]</c> attribute.
-    ///	</summary>
-    {$ENDREGION}
-    procedure SetDataList<T: class>(ADataList: IList<T>);
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns the total count of filtered records.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Returns the total count of filtered records.
+    /// </summary>
     property FilterCount: Integer read GetFilterCount;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Checks if dataset is sorted.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Checks if dataset is sorted.
+    /// </summary>
     property Sorted: Boolean read FSorted;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Sorting conditions separated by commas. Can set  different sort order
-    ///	  for multiple fields - <c>Asc</c> stands for ascending, <c>Desc</c> -
-    ///	  descending.
-    ///	</summary>
-    ///	<example>
-    ///	  <code>
-    ///	MyDataset.Sort := 'Name, Id Desc, Description Asc';</code>
-    ///	</example>
-    {$ENDREGION}
+    /// <summary>
+    ///   Sorting conditions separated by commas. Can set  different sort order
+    ///   for multiple fields - <c>Asc</c> stands for ascending, <c>Desc</c> -
+    ///   descending.
+    /// </summary>
+    /// <example>
+    ///   <code>MyDataset.Sort := 'Name, Id Desc, Description Asc';</code>
+    /// </example>
     property Sort: string read GetSort write SetSort;
 
-    property DataList: IObjectList read FDataList;
+    /// <summary>
+    ///   Class of the column attribute. If properties of the entity class are
+    ///   annotated with this attribute, then the dataset will use these
+    ///   properties as fields. If ColumnAttributeClass is null, all the
+    ///   published properties of the entity class will be used as dataset
+    ///   fields.
+    /// </summary>
+    /// <example>
+    ///   <code lang="">MyDataset.ColumnAttributeClass := ColumnAttribute</code>
+    /// </example>
+    property ColumnAttributeClass: TCustomAttributeClass
+      read FColumnAttributeClass write FColumnAttributeClass;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Type info of the column attribute. If entity's properties are annotated with this attribute,
-    ///   then dataset will use these properties as fields.
-    ///   If ColumnAttributeClassInfo is null, all the entity's published properties will be used as dataset fields.
-    ///	</summary>
-    ///	<example>
-    ///	  <code>
-    ///	MyDataset.ColumnAttributeClassInfo := ColumnAttribute.ClassInfo</code>
-    ///	</example>
-    {$ENDREGION}
-    property ColumnAttributeClassInfo: PTypeInfo read FColumnAttributeTypeInfo write FColumnAttributeTypeInfo;
+    /// <summary>
+    ///   The list of objects to display in the dataset.
+    /// </summary>
+    property DataList: IObjectList read FDataList write SetDataList;
   published
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Default length for the string type field in the dataset.
-    ///	</summary>
-    ///	<remarks>
-    ///	  Defaults to <c>250</c> if not set.
-    ///	</remarks>
-    {$ENDREGION}
+    /// <summary>
+    ///   Default length for the string type field in the dataset.
+    /// </summary>
+    /// <remarks>
+    ///   Defaults to <c>250</c> if not set.
+    /// </remarks>
     property DefaultStringFieldLength: Integer read FDefaultStringFieldLength write FDefaultStringFieldLength default 250;
     property TrackChanges: Boolean read FTrackChanges write SetTrackChanges default false;
 
@@ -258,12 +239,12 @@ type
 
 {$REGION 'TObjectDataset'}
 
-procedure TObjectDataset.Clone(ASource: TObjectDataset);
+procedure TObjectDataset.Clone(const ASource: TObjectDataset);
 begin
   if Active then
     Close;
 
-  FColumnAttributeTypeInfo := ASource.FColumnAttributeTypeInfo;
+  FColumnAttributeClass := ASource.FColumnAttributeClass;
   FItemTypeInfo := ASource.FItemTypeInfo;
   FDataList := ASource.DataList;
   IndexList.DataList := ASource.IndexList.DataList;
@@ -314,7 +295,6 @@ begin
   FFilterParser.OnGetVariable := ParserGetVariableValue;
   FFilterParser.OnExecuteFunction := ParserGetFunctionValue;
   FDefaultStringFieldLength := 250;
-  FCtx := TRttiContext.Create;
 end;
 
 function TObjectDataset.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
@@ -407,6 +387,9 @@ end;
 procedure TObjectDataset.DoOnDataListChange(Sender: TObject;
   const Item: TObject; Action: TCollectionChangedAction);
 begin
+  if not Active then
+    Exit;
+
   if IndexList.DataListIsChanging then
     Exit;
   DisableControls;
@@ -451,7 +434,6 @@ begin
       begin
         LValueFromVariant := TValue.FromVariant(LFieldValue);
 
-     //   if TUtils.TryConvert(LValueFromVariant, nil, LProp, LItem.AsObject, LConvertedValue) then
         if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue) then
           LProp.SetValue(LItem, LConvertedValue);
       end;
@@ -534,24 +516,28 @@ procedure TObjectDataset.InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo
 var
   LType: TRttiType;
   LProp: TRttiProperty;
-  LAttrib: TCustomAttribute;
 begin
+  if AItemTypeInfo = nil then
+    Exit;
+
   FProperties.Clear;
 
-  LType := FCtx.GetType(AItemTypeInfo);
+  LType := TType.GetType(AItemTypeInfo);
   for LProp in LType.GetProperties do
   begin
     if not (LProp.Visibility in [mvPublic, mvPublished]) then
       Continue;
 
-    if Assigned(FColumnAttributeTypeInfo) then
+    if (Fields.Count > 0) and Assigned(Fields.FindField(LProp.Name)) then
     begin
-      for LAttrib in LProp.GetAttributes do
-        if (LAttrib.ClassInfo = FColumnAttributeTypeInfo) then
-        begin
-          FProperties.Add(LProp);
-          Break;
-        end;
+      FProperties.Add(LProp);
+      Continue;
+    end;
+
+    if Assigned(FColumnAttributeClass) then
+    begin
+      if LProp.HasCustomAttribute(FColumnAttributeClass) then
+        FProperties.Add(LProp);
     end
     else
       if LProp.Visibility = mvPublished then
@@ -572,9 +558,11 @@ begin
   if not FProperties.Any then
     InitRttiPropertiesFromItemType(AItem.TypeInfo);
 
-  // Fields not found in dictionary are calculated or lookup fields, do not post them
   if FProperties.TryGetFirst(LProperty, PropertyFinder(AField.FieldName)) then
-    Result := ConvertPropertyValueToVariant(LProperty.GetValue(AItem));
+    Result := ConvertPropertyValueToVariant(LProperty.GetValue(AItem))
+  else
+    if AField.FieldKind = fkData then
+      raise EObjectDatasetException.CreateFmt(SPropertyNotFound, [AField.FieldName]);
 end;
 
 procedure TObjectDataset.InternalInitFieldDefs;
@@ -589,6 +577,7 @@ end;
 procedure TObjectDataset.InternalOpen;
 begin
   inherited InternalOpen;
+  IndexList.Rebuild;
 
   if {$IF CompilerVersion >=27}(FieldOptions.AutoCreateMode <> acExclusive)
     or not (lcPersistent in Fields.LifeCycles){$ELSE}DefaultFields{$IFEND} then
@@ -655,6 +644,7 @@ begin
     if FieldDefs.IndexOf(LField.FieldName) = -1 then
     begin
       LFieldDef := FieldDefs.AddFieldDef;
+      TObjectDatasetFieldDef(LFieldDef).Visible := True;
       LFieldDef.Name := LField.FieldName;
       LFieldDef.DataType := LField.DataType;
       LFieldDef.Size := LField.Size;
@@ -788,7 +778,8 @@ begin
   InitRttiPropertiesFromItemType(FItemTypeInfo);
 
   if not FProperties.Any then
-    raise EObjectDatasetException.Create(SColumnPropertiesNotSpecified);
+    if Assigned(FColumnAttributeClass) then
+      raise EObjectDatasetException.Create(SColumnPropertiesNotSpecified);
   for LProp in FProperties do
   begin
     LPropPrettyName := LProp.Name;
@@ -918,7 +909,7 @@ var
   i: Integer;
 begin
   FProperties.Clear;
-  LType := FCtx.GetType(FItemTypeInfo);
+  LType := TType.GetType(FItemTypeInfo);
   for i := 0 to Fields.Count - 1 do
     FProperties.Add(LType.GetProperty(Fields[i].FieldName));
 end;
@@ -977,10 +968,10 @@ begin
   end;
 end;
 
-procedure TObjectDataset.SetDataList<T>(ADataList: IList<T>);
+procedure TObjectDataset.SetDataList(const Value: IObjectList);
 begin
-  FItemTypeInfo := TypeInfo(T);
-  FDataList := ADataList as IObjectList;
+  FDataList := Value;
+  FItemTypeInfo := FDataList.ElementType;
   IndexList.DataList := FDataList;
   RegisterChangeHandler;
 end;
@@ -1068,7 +1059,7 @@ begin
   try
     First;
     if Sorted then
-      InternalSetSort(GetChangedSortText(Sort));   //must use mergesort so we change sort text
+      InternalSetSort(GetChangedSortText(Sort));
   finally
     EnableControls;
   end;
@@ -1096,9 +1087,9 @@ begin
     end;
     tkFloat:
     begin
-      if (value.TypeInfo = TypeInfo(TDateTime)) then
+      if value.TypeInfo = TypeInfo(TDateTime) then
         Result := value.AsType<TDateTime>
-      else if (value.TypeInfo = TypeInfo(TDate)) then
+      else if value.TypeInfo = TypeInfo(TDate) then
         Result := value.AsType<TDate>
       else
         Result := value.AsExtended;

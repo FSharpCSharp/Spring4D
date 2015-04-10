@@ -1,6 +1,7 @@
 unit bsonDoc;
 
 {$WARN SYMBOL_PLATFORM OFF}
+{$I Spring.inc}
 
 interface
 
@@ -309,7 +310,7 @@ var
   {$ENDIF}
   function stmReadBSONDocument:IBSONDocument;
   var
-    p1,p2:int64;
+    p1,p2:{$IFNDEF DELPHIXE8_UP}Int64{$ELSE}UInt64{$ENDIF};
     d:TBSONDocument;
   begin
     OleCheck(stm.Seek(0,soFromCurrent,p1));
@@ -557,7 +558,7 @@ end;
 function TBSONDocument.Save(const stm: IStream;
   fClearDirty: BOOL): HResult;
 var
-  lstart,lx:Int64;
+  lstart,lx:{$IFNDEF DELPHIXE8_UP}Int64{$ELSE}UInt64{$ENDIF};
   ltotal,li,xi:integer;
   procedure stmWrite(p:pointer;s:integer);
   var
@@ -604,7 +605,7 @@ var
   function TryWriteBSONDocument:boolean;
   var
     i:integer;
-    ii,jj:int64;
+    ii,jj:{$IFNDEF DELPHIXE8_UP}Int64{$ELSE}UInt64{$ENDIF};
     di:IBSONDocument;
   begin
     Result:=uu.QueryInterface(IID_IBSONDocument,di)=S_OK;
@@ -648,7 +649,7 @@ var
     IID_IStream:TGUID='{0000000C-0000-0000-C000-000000000046}';
   var
     i,j:integer;
-    ii,jj:int64;
+    ii,jj:{$IFNDEF DELPHIXE8_UP}Int64{$ELSE}UInt64{$ENDIF};
     ss:IStream;
     d:array[0..dSize-1] of byte;
   begin
@@ -682,7 +683,7 @@ var
     IID_IPersistStream:TGUID='{00000109-0000-0000-C000-000000000046}';
   var
     i,j:integer;
-    ii,jj:int64;
+    ii,jj:{$IFNDEF DELPHIXE8_UP}Int64{$ELSE}UInt64{$ENDIF};
     ps:IPersistStream;
   begin
     Result:=uu.QueryInterface(IID_IPersistStream,ps)=S_OK;

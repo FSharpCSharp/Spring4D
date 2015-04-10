@@ -37,7 +37,7 @@ uses
   TypInfo,
   Spring.Collections,
 {$IFDEF DELPHIXE}
-  Spring.Interception.VirtualInterface,
+  Spring.VirtualInterface,
 {$ENDIF}
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Criteria.Interfaces,

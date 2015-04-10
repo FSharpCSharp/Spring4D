@@ -136,11 +136,11 @@ type
   /// </summary>
   TDriverTransactionAdapter<T> = class(TInterfacedObject, IDBTransaction)
   private
-    fTransaction: T;
     fTransactionName: string;
     function GetTransactionName: string;
     procedure SetTransactionName(const value: string);
   protected
+    fTransaction: T;
     procedure Commit; virtual; abstract;
     procedure Rollback; virtual; abstract;
     function InTransaction: Boolean; virtual; abstract;

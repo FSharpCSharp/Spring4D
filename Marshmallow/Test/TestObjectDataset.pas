@@ -118,7 +118,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   FDataset.AppendRecord(['Insert', 59]);
@@ -133,7 +133,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := 'Age = 1';
   FDataset.Filtered := True;
@@ -158,7 +158,7 @@ var
   LBookmark: TBookmark;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := '(AGE <= 3)';
   FDataset.Filtered := True;
@@ -181,7 +181,7 @@ var
   LBookmark: TBookmark;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := '(AGE <= 3)';
   FDataset.Filtered := True;
@@ -210,7 +210,7 @@ var
   LBookmark: TBookmark;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   LBookmark := FDataset.Bookmark;
 
@@ -227,7 +227,7 @@ var
   LBookmark: TBookmark;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   FDataset.Last;
@@ -249,7 +249,7 @@ var
   LBookmark: TBookmark;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Last;
   FDataset.Prior;
@@ -271,7 +271,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   LCustomers.First.MiddleName := 'Foo';
   CheckTrue(LCustomers.First.MiddleName.HasValue);
@@ -287,7 +287,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   LCustomers.First.Age := 1;
   //clear simple type
@@ -344,7 +344,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   CheckEquals(10, FDataset.RecordCount);
   LCustomers.Last.Name := 'Foo';
@@ -368,7 +368,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Filtered := True;
   FDataset.Filter := 'Age < 3';
   FDataset.Open;
@@ -386,7 +386,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Last;
 
@@ -408,7 +408,7 @@ var
 begin
   LCustomers := CreateCustomersList(10);
   LCustomers.OnChanged.Add(DoListChanged);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FRemovedItemAge := -1;
   FDataset.Last;
@@ -422,7 +422,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Sort := 'AGE DESC';
   FDataset.RecNo := 5;
@@ -453,7 +453,7 @@ var
   LDate: TDateTime;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   CheckEquals(10, FDataset.RecordCount);
   FDataset.First;
@@ -475,7 +475,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   FDataset.RecNo := 4;
@@ -494,7 +494,7 @@ begin
   LCustomers.Add(TSpringNullableTest.Create);
   LCustomers.Add(TSpringNullableTest.Create);
 
-  FDataset.SetDataList<TSpringNullableTest>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   FDataset.RecNo := 2;
@@ -511,7 +511,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   CheckFalse(FDataset.Eof);
   CheckTrue(FDataset.Bof);
@@ -526,7 +526,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Last;
   FDataset.Prior;
@@ -542,7 +542,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   CheckEquals(10, FDataset.RecordCount);
 
@@ -607,7 +607,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(5);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Insert;
   FDataset.FieldByName('Age').AsInteger := 6;
@@ -625,7 +625,7 @@ var
   i: Integer;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   i := 0;
@@ -646,7 +646,7 @@ var
   i: Integer;
 begin
   LCustomers := CreateCustomersList(0);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   i := 0;
   while not FDataset.Eof do
@@ -662,7 +662,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   CheckTrue( FDataset.Locate('Age', 5, []) );
@@ -686,8 +686,8 @@ begin
 
   FOrdersDataSet := TObjectDataset.Create(nil);
   try
-    FOrdersDataSet.ColumnAttributeClassInfo := ColumnAttribute.ClassInfo;
-    FOrdersDataSet.SetDataList<TCustomer_Orders>(LOrders);
+    FOrdersDataSet.ColumnAttributeClass := ColumnAttribute;
+    FOrdersDataSet.DataList := LOrders as IObjectList;
 
     LIntField := TIntegerField.Create(FDataSet);
     LIntField.FieldName := 'MockID';
@@ -703,7 +703,7 @@ begin
     LStrField.Lookup := True;
     LStrField.DataSet := FDataset;
 
-    FDataset.SetDataList<TCustomer>(LCustomers);
+    FDataset.DataList := LCustomers as IObjectList;
     FDataset.Open;
     CheckTrue(True);
   finally
@@ -721,7 +721,7 @@ begin
   LStrField.FieldName := 'Name';
   LStrField.DataSet := FDataset;
 
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   CheckEquals(LCustomers[0].Name, LStrField.AsString);
 end;
@@ -731,7 +731,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
  // FDataset.MergeSort(0, LCustomers.Count - 1, FDataset.CompareRecords, );
@@ -745,7 +745,7 @@ var
   LNewCustomer: TCustomer;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   CheckEquals(10, FDataset.RecordCount);
   CheckFalse(FDataset.IsEmpty);
@@ -778,7 +778,7 @@ var
   LOrders: IList<TCustomer_Orders>;
 begin
   LOrders := CreateCustomersOrdersList(10);
-  FDataset.SetDataList<TCustomer_Orders>(LOrders);
+  FDataset.DataList := LOrders as IObjectList;
   FDataset.Open;
   CheckEquals(10, FDataset.RecordCount);
   CheckFalse(FDataset.IsEmpty);
@@ -809,7 +809,7 @@ procedure TObjectDatasetTest.SetUp;
 begin
   inherited;
   FDataset := TObjectDataset.Create(nil);
-  FDataset.ColumnAttributeClassInfo := ColumnAttribute.ClassInfo;
+  FDataset.ColumnAttributeClass := ColumnAttribute;
 end;
 
 procedure TObjectDatasetTest.SimpleSort;
@@ -823,7 +823,7 @@ begin
   LCustomers.Last.Name := 'Michael';
   LCustomers.Last.MiddleName := 'Jordan';
 
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   FDataset.Filtered := False;     //2,0,1
@@ -860,7 +860,7 @@ begin
   LCustomers.First.Name := 'Bob';
   LCustomers.First.MiddleName := 'Middle';
 
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   FDataset.Filtered := True;
@@ -1004,7 +1004,7 @@ begin
   LCust.Age := 3;
   LCustomers.Add(LCust);
 
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   FDataset.Sort := 'Age Desc';
@@ -1037,7 +1037,7 @@ begin
   LCustomers := CreateCustomersList(10);
   FDataset.Filtered := True;
   FDataset.FilterOptions := [foCaseInsensitive];
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
 
@@ -1058,7 +1058,7 @@ begin
   LCustomers.Last.MiddleName := 'Bar';
   FDataset.Filtered := True;
   FDataset.FilterOptions := [foCaseInsensitive];
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := '(IsNull(MiddleName, ''1'') = ''1'')';
   CheckEquals(8, FDataset.RecordCount);
@@ -1081,7 +1081,7 @@ begin
   LDate := EncodeDate(2013,1,1);
   LCustomers.Last.LastEdited := LDate;
 
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := Format('(LastEdited = %S)', [QuotedStr(DateToStr(LDate))]);
   FDataset.Filtered := True;
@@ -1094,7 +1094,7 @@ var
 begin
   LCustomers := CreateCustomersList(5);
   LCustomers.Last.MiddleName := 'Foo';
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := '(MiddleName <> Null)';
   FDataset.Filtered := True;
@@ -1128,7 +1128,7 @@ var
 begin
   LCustomers := CreateCustomersList(10);
   LCustomers.First.Age := 11;
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := '(AGE = 1) OR (AGE = 2)';
   FDataset.Filtered := True;
@@ -1143,7 +1143,7 @@ var
   i: Integer;
 begin
   LCustomers := CreateCustomersList(5);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := '(Age < 2)';
   FDataset.Filtered := True;
@@ -1165,7 +1165,7 @@ var
   LBookmark: TBookmark;
 begin
   LCustomers := CreateCustomersList(10);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Last;
 
@@ -1190,7 +1190,7 @@ var
   i: Integer;
 begin
   LCustomers := CreateCustomersList(5);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.First;
   i := 1;
@@ -1211,7 +1211,7 @@ var
   i: Integer;
 begin
   LCustomers := CreateCustomersList(5);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Sort := 'AGE DESC';
   i := 5;
@@ -1231,7 +1231,7 @@ var
 begin
   LCustomers := CreateCustomersList(5);
   FDataset.TrackChanges := False;
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   CheckEquals(5, FDataset.RecordCount);
@@ -1245,7 +1245,7 @@ var
 begin
   LCustomers := CreateCustomersList(5);
   FDataset.TrackChanges := True;
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
 
   CheckEquals(5, FDataset.RecordCount);

@@ -36,6 +36,7 @@ uses
   Classes,
   DB,
   Generics.Collections,
+  Generics.Defaults,
   Rtti,
   Spring.Collections,
   Spring.Persistence.ObjectDataset.Algorithms.Sort,
@@ -88,18 +89,14 @@ type
     function GetIndex: Integer;
     procedure SetIndex(const Value: Integer);
   protected
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Are filter set and filter text entered?
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Determines if filter is set filter text entered
+    /// </summary>
     function IsFilterEntered: Boolean;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Are FilterIndexed fields available?
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Determines if FilterIndexed fields are available
+    /// </summary>
     function IsFiltered: Boolean;
     // Abstract methods
     procedure DoDeleteRecord(Index: Integer); virtual; abstract;
@@ -165,11 +162,6 @@ type
     procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag); override;
 
     function InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; virtual;
-    {$IFDEF DELPHIXE3_UP}
-    procedure VariantToBuffer(Field: TField; Data: Variant; Buffer: TValueBuffer; NativeFormat: Boolean); virtual;
-    {$ELSE}
-    procedure VariantToBuffer(Field: TField; Data: Variant; Buffer: Pointer; NativeFormat: Boolean); virtual;
-    {$ENDIF}
     function FieldListCheckSum: NativeInt; virtual;
   protected
     property FilterCache: IDictionary<string, Variant> read FFilterCache write FFilterCache;
@@ -180,27 +172,21 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Represents current cursor index in the dataset.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Represents current cursor index in the dataset.
+    /// </summary>
     property Current: Integer read FCurrent;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Represents the current index of the dataset.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Represents the current index of the dataset.
+    /// </summary>
     property Index: Integer read GetIndex write SetIndex;
 
     property IndexList: TODIndexList read FIndexList;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Represents modified fields of the current record.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Represents modified fields of the current record.
+    /// </summary>
     property ModifiedFields: IList<TField> read FModifiedFields;
     property ReadOnly: Boolean read FReadOnly write FReadOnly default False;
   public
@@ -266,8 +252,9 @@ type
   end;
 
 resourcestring
-  SUnsupportedFieldType = 'Unsupported field type (%s) in field %s.';
+  SUnsupportedFieldType = 'Unsupported field type (%s) in field %s';
   SIndexOutOfRange = 'Index out of range';
+  SPropertyNotFound = 'Property ''%s'' not found';
   SColumnPropertiesNotSpecified = 'Type does not have column properties';
 
 implementation
@@ -275,11 +262,12 @@ implementation
 uses
   Contnrs,
   DBConsts,
-  Generics.Defaults,
   Math,
   FMTBcd,
   SysUtils,
+  Types,
   Variants,
+  VarUtils,
   WideStrUtils,
   Spring,
   Spring.Reflection,
@@ -298,11 +286,11 @@ var
   Fld: TField;
   Bookmark: TBookmark;
 
-  function CompareField(var Field: TField; Value: Variant): Boolean; {BG}
+  function CompareField(var Field: TField; Value: Variant): Boolean;
   var
     S: string;
   begin
-    if Field.DataType in [ftString{$IFDEF UNICODE}, ftWideString{$ENDIF UNICODE}] then
+    if Field.DataType in [ftString, ftWideString] then
     begin
       if Value = Null then
         Result := Field.IsNull
@@ -378,14 +366,14 @@ begin
   end;
 end;
 
-{ TCustomObjectDataset }
+{$REGION 'TAbstractObjectDataset'}
 
 function TAbstractObjectDataset.AllocRecordBuffer: TRecordBuffer;
 begin
   if not (csDestroying in ComponentState) then
   begin
     Result := AllocMem(FRowBufSize);
-    Initialize(PVariantList(Result + sizeof(TArrayRecInfo))^, Fields.Count);
+    Initialize(PVariantList(Result + SizeOf(TArrayRecInfo))^, Fields.Count);
   end
   else
     Result := nil;
@@ -404,9 +392,7 @@ begin
   LValue := PObject(Bookmark)^;
   Result := Assigned(Bookmark) and (not LValue.IsEmpty);
   if Result then
-  begin
     Result := IndexList.ContainsModel(LValue);
-  end;
 end;
 
 function TAbstractObjectDataset.CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer;
@@ -421,7 +407,6 @@ begin
     LValue1 := PObject(Bookmark1)^;
     LValue2 := PObject(Bookmark2)^;
     Result := LValue1.CompareTo(LValue2);
-   // Result := PInteger(Bookmark1)^ - PInteger(Bookmark2)^;
   end;
 end;
 
@@ -435,22 +420,10 @@ begin
   FModifiedFields := TCollections.CreateList<TField>;
   FIndexList := TODIndexList.Create;
 
-  LCaseInsensitiveComparer := TEqualityComparer<string>.Construct(
-    function(const Left, Right: string): Boolean
-    begin
-      Result := SameText(Left, Right);
-    end,
-    function(const Value: string): Integer
-    var s: string;
-    begin
-      s := UpperCase(Value);
-      Result := BobJenkinsHash(s[1], Length(s) * SizeOf(s[1]), 0);
-    end
-  );
+  LCaseInsensitiveComparer := TStringComparer.OrdinalIgnoreCase;
   FFieldsCache := TCollections.CreateDictionary<string,TField>(500, LCaseInsensitiveComparer);
-  FFilterCache := TCollections.CreateDictionary<string,Variant>(500,LCaseInsensitiveComparer);
+  FFilterCache := TCollections.CreateDictionary<string,Variant>(500, LCaseInsensitiveComparer);
 end;
-
 
 function TAbstractObjectDataset.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
 begin
@@ -498,8 +471,7 @@ begin
   if FOldValueBuffer = nil then
     FOldValueBuffer := AllocRecordBuffer
   else
-    Finalize(PVariantList(FOldValueBuffer + sizeof(TArrayRecInfo))^,
-      Fields.Count);
+    Finalize(PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
 
   {$IFDEF DELPHIXE5_UP}
   InitRecord(NativeInt(FOldValueBuffer));
@@ -515,9 +487,7 @@ var
 begin
   Result := 0;
   for I := 0 to Fields.Count - 1 do
-  begin
     Result := Result + (NativeInt(Fields[I]) shr (I mod 16));
-  end;
 end;
 
 function TAbstractObjectDataset.FindField(const FieldName: string): TField;
@@ -528,16 +498,12 @@ end;
 
 procedure TAbstractObjectDataset.FreeRecordBuffer(var Buffer: TRecordBuffer);
 begin
-  Finalize(PVariantList(Buffer + sizeof(TArrayRecInfo))^, Fields.Count);
+  Finalize(PVariantList(Buffer + SizeOf(TArrayRecInfo))^, Fields.Count);
   FreeMem(Buffer);
 end;
 
 function TAbstractObjectDataset.GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean;
 begin
-// 2014-06-01, Pue:
-// this Pointer hardcast is needed for XE4 and above and should be no harm below...
-// XE4 and above change the Buffers from TRecordBuffer (PByte) to TRecBuf (NativeInt)
-
   RecBuf := nil;
   case State of
     dsBlockRead, dsBrowse:
@@ -545,13 +511,10 @@ begin
         RecBuf := nil
       else
         RecBuf := Pointer(ActiveBuffer);
-
     dsNewValue, dsInsert, dsEdit:
       RecBuf := Pointer(ActiveBuffer);
-
     dsCalcFields, dsInternalCalc:
       RecBuf := Pointer(CalcBuffer);
-
     dsFilter:
       RecBuf := Pointer(FFilterBuffer);
   end;
@@ -567,20 +530,20 @@ end;
 {$IFDEF DELPHIXE5_UP}
 procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
-  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer)^.Index).AsObject;
+  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
 end;
 {$ENDIF}
 
 {$IFNDEF NEXTGEN}
 procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
-  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer)^.Index).AsObject;
+  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
 end;
 {$ENDIF}
 
 function TAbstractObjectDataset.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
 begin
-  Result := PArrayRecInfo(Buffer)^.BookmarkFlag;
+  Result := PArrayRecInfo(Buffer).BookmarkFlag;
 end;
 
 function TAbstractObjectDataset.GetCanModify: Boolean;
@@ -605,7 +568,307 @@ function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer;
 {$IFEND}
 var
   LRecBuf: TRecordBuffer;
-  LData: Variant;
+  Data: Variant;
+
+  {$IF Defined(DELPHIXE8_UP)}
+  procedure CurrToBuffer(const C: Currency);
+  var
+    LBuff: TValueBuffer;
+  begin
+    if NativeFormat then
+    begin
+      SetLength(LBuff, SizeOf(Currency));
+      TDBBitConverter.UnsafeFrom<Currency>(C, LBuff);
+      DataConvert(Field, LBuff, Buffer, True)
+    end
+    else
+      TDBBitConverter.UnsafeFrom<Currency>(C, Buffer);
+  end;
+  {$ELSEIF Defined(DELPHIXE3_UP)}
+  procedure CurrToBuffer(const C: Currency);
+  var
+    LBuff: TValueBuffer;
+  begin
+    if NativeFormat then
+    begin
+      SetLength(LBuff, SizeOf(Currency));
+      TBitConverter.FromCurrency(C, LBuff);
+      DataConvert(Field, LBuff, Buffer, True)
+    end
+    else
+      TBitConverter.FromCurrency(C, Buffer);
+  end;
+  {$ELSE}
+  procedure CurrToBuffer(const C: Currency);
+  begin
+    if NativeFormat then
+      DataConvert(Field, @C, Buffer, True)
+    else
+      Currency(Buffer^) := C;
+  end;
+  {$IFEND}
+
+  {$IF Defined(DELPHIXE8_UP)}
+  procedure VarToBuffer;
+  var
+    TempBuff: TValueBuffer;
+    PData: Pointer;
+  begin
+    case Field.DataType of
+      ftGuid, ftFixedChar, ftString:
+      begin
+        PAnsiChar(Buffer)[Field.Size] := #0;
+        TempBuff := TEncoding.Default.GetBytes(string(tagVariant(Data).bStrVal));
+        Move(TempBuff[0], Buffer[0], Length(TempBuff));
+      end;
+      ftFixedWideChar, ftWideString:
+      begin
+        TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal);
+        SetLength(TempBuff, Length(TempBuff) + SizeOf(Char));
+        TempBuff[Length(TempBuff) - 2] := 0;
+        TempBuff[Length(TempBuff) - 1] := 0;
+        Move(TempBuff[0], Buffer[0], Length(TempBuff));
+      end;
+      ftSmallint:
+        if tagVariant(Data).vt = VT_UI1 then
+          TDBBitConverter.UnsafeFrom<SmallInt>(Byte(tagVariant(Data).cVal), Buffer)
+        else
+          TDBBitConverter.UnsafeFrom<SmallInt>(tagVariant(Data).iVal, Buffer);
+      ftWord:
+        if tagVariant(Data).vt = VT_UI1 then
+          TDBBitConverter.UnsafeFrom<Word>(tagVariant(Data).bVal, Buffer)
+        else
+          TDBBitConverter.UnsafeFrom<Word>(tagVariant(Data).uiVal, Buffer);
+      ftAutoInc, ftInteger:
+        TDBBitConverter.UnsafeFrom<Integer>(Data, Buffer);
+      ftFloat, ftCurrency:
+        if tagVariant(Data).vt = VT_R8 then
+          TDBBitConverter.UnsafeFrom<Double>(tagVariant(Data).dblVal, Buffer)
+        else
+          TDBBitConverter.UnsafeFrom<Double>(Data, Buffer);
+      ftFMTBCD:
+        TDBBitConverter.UnsafeFrom<TBcd>(VarToBcd(Data), Buffer);
+      ftBCD:
+        if tagVariant(Data).vt = VT_CY then
+          CurrToBuffer(tagVariant(Data).cyVal)
+        else
+          CurrToBuffer(Data);
+      ftBoolean:
+        TDBBitConverter.UnsafeFrom<WordBool>(tagVariant(Data).vbool, Buffer);
+      ftDate, ftTime, ftDateTime:
+        if NativeFormat then
+        begin
+          SetLength(TempBuff, SizeOf(Double));
+          TDBBitConverter.UnsafeFrom<Double>(data, TempBuff);
+          DataConvert(Field, TempBuff, Buffer, True);
+        end
+        else
+          TDBBitConverter.UnsafeFrom<Double>(tagVariant(Data).date, Buffer);
+      ftBytes, ftVarBytes:
+        if NativeFormat then
+        begin
+          PData := VarArrayLock(Data);
+          try
+            DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
+          finally
+            VarArrayUnlock(Data);
+          end;
+        end
+        else
+          TDBBitConverter.UnsafeFromVariant(Data, Buffer);
+      ftInterface:
+      begin
+        TempBuff := BytesOf(@Data, SizeOf(IUnknown));
+        Move(TempBuff[0], Buffer[0], SizeOf(IUnknown));
+      end;
+      ftIDispatch:
+      begin
+        TempBuff := BytesOf(@Data, SizeOf(IDispatch));
+        Move(TempBuff[0], Buffer[0], SizeOf(IDispatch));
+      end;
+      ftLargeInt:
+      begin
+        if PDecimal(@Data).sign > 0 then
+          TDBBitConverter.UnsafeFrom<Int64>(-1 * PDecimal(@Data).Lo64, Buffer)
+        else
+          TDBBitConverter.UnsafeFrom<Int64>(PDecimal(@Data).Lo64, Buffer);
+      end;
+      ftBlob..ftTypedBinary, ftVariant, ftWideMemo: TDBBitConverter.UnsafeFromVariant(Data, Buffer);
+    else
+      DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+        Field.DisplayName]);
+    end;
+  end;
+  {$ELSEIF Defined(DELPHIXE3_UP)}
+  procedure VarToBuffer;
+  var
+    TempBuff: TValueBuffer;
+    PData: Pointer;
+  begin
+    case Field.DataType of
+      ftGuid, ftFixedChar, ftString:
+      begin
+        PAnsiChar(Buffer)[Field.Size] := #0;
+        TempBuff := TEncoding.Default.GetBytes(string(tagVariant(Data).bStrVal));
+        Move(TempBuff[0], Buffer[0], Length(TempBuff));
+      end;
+      ftFixedWideChar, ftWideString:
+      begin
+        TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal);
+        SetLength(TempBuff, Length(TempBuff) + SizeOf(Char));
+        TempBuff[Length(TempBuff) - 2] := 0;
+        TempBuff[Length(TempBuff) - 1] := 0;
+        Move(TempBuff[0], Buffer[0], Length(TempBuff));
+      end;
+      ftSmallint:
+        if tagVariant(Data).vt = VT_UI1 then
+          TBitConverter.FromSmallInt(Byte(tagVariant(Data).cVal), Buffer)
+        else
+          TBitConverter.FromSmallInt(tagVariant(Data).iVal, Buffer);
+      ftWord:
+        if tagVariant(Data).vt = VT_UI1 then
+          TBitConverter.FromWord(tagVariant(Data).bVal, Buffer)
+        else
+          TBitConverter.FromWord(tagVariant(Data).uiVal, Buffer);
+      ftAutoInc, ftInteger:
+        TBitConverter.FromInteger(Data, Buffer);
+      ftFloat, ftCurrency:
+        if tagVariant(Data).vt = VT_R8 then
+          TBitConverter.FromDouble(tagVariant(Data).dblVal, Buffer)
+        else
+          TBitConverter.FromDouble(Data, Buffer);
+      ftFMTBCD:
+        TBitConverter.FromBcd(VarToBcd(Data), Buffer);
+      ftBCD:
+        if tagVariant(Data).vt = VT_CY then
+          CurrToBuffer(tagVariant(Data).cyVal)
+        else
+          CurrToBuffer(Data);
+      ftBoolean:
+        TBitConverter.FromWordBool(tagVariant(Data).vbool, Buffer);
+      ftDate, ftTime, ftDateTime:
+        if NativeFormat then
+        begin
+          SetLength(TempBuff, SizeOf(Double));
+          TBitConverter.FromDouble(data, TempBuff);
+          DataConvert(Field, TempBuff, Buffer, True);
+        end
+        else
+          TBitConverter.FromDouble(tagVariant(Data).date, Buffer);
+      ftBytes, ftVarBytes:
+        if NativeFormat then
+        begin
+          PData := VarArrayLock(Data);
+          try
+            DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
+          finally
+            VarArrayUnlock(Data);
+          end;
+        end
+        else
+          TBitConverter.FromVariant(Data, Buffer);
+      ftInterface:
+      begin
+        TempBuff := BytesOf(@Data, SizeOf(IUnknown));
+        Move(TempBuff[0], Buffer[0], SizeOf(IUnknown));
+      end;
+      ftIDispatch:
+      begin
+        TempBuff := BytesOf(@Data, SizeOf(IDispatch));
+        Move(TempBuff[0], Buffer[0], SizeOf(IDispatch));
+      end;
+      ftLargeInt:
+      begin
+        if PDecimal(@Data).sign > 0 then
+          TBitConverter.FromLargeInt(-1 * PDecimal(@Data).Lo64, Buffer)
+        else
+          TBitConverter.FromLargeInt(PDecimal(@Data).Lo64, Buffer);
+      end;
+      ftBlob..ftTypedBinary, ftVariant, ftWideMemo: TBitConverter.FromVariant(Data, Buffer);
+    else
+      DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+        Field.DisplayName]);
+    end;
+  end;
+  {$ELSE}
+  procedure VarToBuffer;
+  var
+    TempBuff: TArray<Byte>;
+  begin
+    case Field.DataType of
+      ftGuid, ftFixedChar, ftString:
+      begin
+        PAnsiChar(Buffer)[Field.Size] := #0;
+        TempBuff := TEncoding.Default.GetBytes(string(tagVariant(Data).bStrVal));
+        Move(TempBuff[0], PByte(Buffer)[0], Length(TempBuff));
+      end;
+      ftFixedWideChar, ftWideString:
+      begin
+        TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal);
+        SetLength(TempBuff, Length(TempBuff) + SizeOf(Char));
+        TempBuff[Length(TempBuff) - 2] := 0;
+        TempBuff[Length(TempBuff) - 1] := 0;
+        Move(TempBuff[0], PByte(Buffer)[0], Length(TempBuff));
+      end;
+      ftSmallint:
+        if tagVariant(Data).vt = VT_UI1 then
+          SmallInt(Buffer^) := Byte(tagVariant(Data).cVal)
+        else
+          SmallInt(Buffer^) := tagVariant(Data).iVal;
+      ftWord:
+        if tagVariant(Data).vt = VT_UI1 then
+          Word(Buffer^) := tagVariant(Data).bVal
+        else
+          Word(Buffer^) := tagVariant(Data).uiVal;
+      ftAutoInc, ftInteger:
+        Integer(Buffer^) := Data;
+      ftFloat, ftCurrency:
+        if tagVariant(Data).vt = VT_R8 then
+          Double(Buffer^) := tagVariant(Data).dblVal
+        else
+          Double(Buffer^) := Data;
+      ftFMTBCD:
+        TBcd(Buffer^) := VarToBcd(Data);
+      ftBCD:
+        if tagVariant(Data).vt = VT_CY then
+          CurrToBuffer(tagVariant(Data).cyVal)
+        else
+          CurrToBuffer(Data);
+      ftBoolean:
+      begin
+        VarAsType(Data, VT_BOOL);
+        WordBool(Buffer^) := tagVariant(Data).vbool;
+      end;
+      ftDate, ftTime, ftDateTime:
+      begin
+        VarAsType(Data, VT_DATE);
+        if NativeFormat then
+          DataConvert(Field, @date, Buffer, True)
+        else
+          TOleDate(Buffer^) := Data;
+      end;
+      ftBytes, ftVarBytes:
+        if NativeFormat then
+          DataConvert(Field, @Data, Buffer, True)
+        else
+          OleVariant(Buffer^) := Data;
+      ftInterface:
+        IUnknown(Buffer^) := Data;
+      ftIDispatch:
+        IDispatch(Buffer^) := Data;
+      ftLargeInt:
+        if Decimal(Data).sign > 0 then
+          LargeInt(Buffer^) := -1 * Decimal(Data).Lo64
+        else
+          LargeInt(Buffer^) := Decimal(Data).Lo64;
+      ftBlob .. ftTypedBinary, ftVariant, ftWideMemo:
+        OleVariant(Buffer^) := Data;
+    else
+      DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+        Field.DisplayName]);
+    end;
+  end;
+  {$IFEND}
 
   procedure RefreshBuffers;
   begin
@@ -616,11 +879,10 @@ var
 
   function DataToInt64: Int64;
   begin
-    {DONE -oLinas -cGeneral : get rid of ActiveX dependency}
-    if PDecimal(@LData)^{Decimal(LData)}.sign > 0 then
-      Result := -1 * PDecimal(@LData)^{Decimal(LData)}.Lo64
+    if PDecimal(@Data).sign > 0 then
+      Result := -1 * PDecimal(@Data).Lo64
     else
-      Result := PDecimal(@LData)^{Decimal(LData)}.Lo64;
+      Result := PDecimal(@Data).Lo64;
   end;
 
 begin
@@ -632,23 +894,23 @@ begin
   if not Result then
     Exit;
 
-  LData := PVariantList(LRecBuf + sizeof(TArrayRecInfo))^[Field.Index];
+  Data := PVariantList(LRecBuf + SizeOf(TArrayRecInfo))[Field.Index];
 
-  if VarIsEmpty(LData) then
+  if VarIsEmpty(Data) then
   begin
-    DoGetFieldValue(Field, PArrayRecInfo(LRecBuf)^.Index, LData);
-    if VarIsEmpty(LData) then
-      LData := Null;
+    DoGetFieldValue(Field, PArrayRecInfo(LRecBuf).Index, Data);
+    if VarIsEmpty(Data) then
+      Data := Null;
 
-    if VarType(LData) = varInt64 then
-      PVariantList(LRecBuf + sizeof(TArrayRecInfo))[Field.Index] := DataToInt64
+    if VarType(Data) = varInt64 then
+      PVariantList(LRecBuf + SizeOf(TArrayRecInfo))[Field.Index] := DataToInt64
     else
-      PVariantList(LRecBuf + sizeof(TArrayRecInfo))[Field.Index] := LData;
+      PVariantList(LRecBuf + SizeOf(TArrayRecInfo))[Field.Index] := Data;
   end;
 
-  Result := not VarIsNull(LData);
+  Result := not VarIsNull(Data);
   if Result and (Buffer <> nil) then
-    VariantToBuffer(Field, LData, Buffer, NativeFormat);
+    VarToBuffer;
 end;
 
 {$IF Defined(DELPHIXE4_UP)}
@@ -673,8 +935,8 @@ var
 begin
   Result := -1;
   CheckActive;
-  if GetActiveRecBuf(LRecBuf) and (PArrayRecInfo(LRecBuf)^.BookmarkFlag = bfCurrent) then
-    Result := PArrayRecInfo(LRecBuf)^.Index;
+  if GetActiveRecBuf(LRecBuf) and (PArrayRecInfo(LRecBuf).BookmarkFlag = bfCurrent) then
+    Result := PArrayRecInfo(LRecBuf).Index;
 end;
 
 function TAbstractObjectDataset.GetRecNo: Longint;
@@ -683,8 +945,8 @@ var
 begin
   CheckActive;
   Result := -1;
-  if GetActiveRecBuf(LRecBuf) and (PArrayRecInfo(LRecBuf)^.BookmarkFlag = bfCurrent) then
-    Result := PArrayRecInfo(LRecBuf)^.Index + 1;
+  if GetActiveRecBuf(LRecBuf) and (PArrayRecInfo(LRecBuf).BookmarkFlag = bfCurrent) then
+    Result := PArrayRecInfo(LRecBuf).Index + 1;
 end;
 
 function TAbstractObjectDataset.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
@@ -703,7 +965,7 @@ end;
 
 function TAbstractObjectDataset.GetRecordSize: Word;
 begin
-  Result := sizeof(TArrayRecInfo);
+  Result := SizeOf(TArrayRecInfo);
 end;
 
 {$IFDEF DELPHIXE3_UP}
@@ -723,8 +985,7 @@ begin
   if FOldValueBuffer <> nil then
   begin
     try
-      Finalize(PVariantList(FOldValueBuffer + sizeof(TArrayRecInfo))^,
-        Fields.Count);
+      Finalize(PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
       FreeMem(FOldValueBuffer);
     finally
       FOldValueBuffer := nil;
@@ -737,7 +998,7 @@ var
   LRecBuf: TRecordBuffer;
 begin
   if GetActiveRecBuf(LRecBuf) then
-    DoDeleteRecord(PArrayRecInfo(LRecBuf)^.Index);
+    DoDeleteRecord(PArrayRecInfo(LRecBuf).Index);
 end;
 
 procedure TAbstractObjectDataset.InternalEdit;
@@ -747,8 +1008,7 @@ begin
   if FOldValueBuffer = nil then
     FOldValueBuffer := AllocRecordBuffer
   else
-    Finalize(PVariantList(FOldValueBuffer + sizeof(TArrayRecInfo))^,
-      Fields.Count);
+    Finalize(PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
 end;
 
 procedure TAbstractObjectDataset.InternalFirst;
@@ -756,8 +1016,8 @@ begin
   FCurrent := -1;
 end;
 
-function TAbstractObjectDataset.InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
-  DoCheck: Boolean): TGetResult;
+function TAbstractObjectDataset.InternalGetRecord(Buffer: TRecordBuffer;
+  GetMode: TGetMode; DoCheck: Boolean): TGetResult;
 var
   LRecCount: Integer;
 begin
@@ -766,52 +1026,46 @@ begin
     Result := grOK;
     case GetMode of
       gmNext:
-        begin
-          if FCurrent < LRecCount then
-            Inc(FCurrent);
-          if FCurrent >= LRecCount then
-          begin
-            Result := grEOF;
-          end;
-        end;
+      begin
+        if FCurrent < LRecCount then
+          Inc(FCurrent);
+        if FCurrent >= LRecCount then
+          Result := grEOF;
+      end;
       gmPrior:
-        begin
-          if FCurrent <=0 then
-            FCurrent := -1
-          else
-          begin
-            FCurrent := Min(FCurrent - 1, LRecCount - 1);
-          end;
+      begin
+        if FCurrent <=0 then
+          FCurrent := -1
+        else
+          FCurrent := Min(FCurrent - 1, LRecCount - 1);
 
-          if FCurrent < 0 then
-            Result := grBOF;
-        end;
-
+        if FCurrent < 0 then
+          Result := grBOF;
+      end;
       gmCurrent:
+      begin
+        if FCurrent < 0 then
+          Result := grBOF
+        else if FCurrent >= LRecCount then
         begin
-          if FCurrent < 0 then
-            Result := grBOF
-          else if FCurrent >= LRecCount then
-          begin
-            Result := grEOF;
-            FCurrent := LRecCount;
-          end;
+          Result := grEOF;
+          FCurrent := LRecCount;
         end;
+      end;
     end;
 
-    if (Result = grOK) then
+    if Result = grOK then
     begin
-      PArrayRecInfo(Buffer)^.Index := FCurrent;
-      PArrayRecInfo(Buffer)^.BookmarkFlag := bfCurrent;
+      PArrayRecInfo(Buffer).Index := FCurrent;
+      PArrayRecInfo(Buffer).BookmarkFlag := bfCurrent;
 
-      Finalize(PVariantList(Buffer + sizeof(TArrayRecInfo))^, Fields.Count);
+      Finalize(PVariantList(Buffer + SizeOf(TArrayRecInfo))^, Fields.Count);
       {$IFDEF DELPHIXE5_UP}
       GetCalcFields(NativeInt(Buffer));
       {$ELSE}
       GetCalcFields(Buffer);
       {$ENDIF}
     end;
-
   except
     if DoCheck then
       raise ;
@@ -823,7 +1077,7 @@ procedure TAbstractObjectDataset.InternalGotoBookmark(Bookmark: Pointer);
 var
   LValue: TValue;
 begin
-  LValue := PObject(Bookmark)^; // PInteger(Bookmark)^;
+  LValue := PObject(Bookmark)^;
   FCurrent := IndexList.IndexOfModel(LValue);
 end;
 
@@ -861,6 +1115,7 @@ procedure TAbstractObjectDataset.InternalInitFieldDefs;
       end;
     end;
   end;
+
 begin
   FieldDefs.Clear;
   InitFieldDefsFromFields(Fields, FieldDefs);
@@ -871,7 +1126,7 @@ var
   I: Integer;
 begin
   for I := 0 to Fields.Count - 1 do
-    PVariantList(Buffer + sizeof(TArrayRecInfo))[I] := Null;
+    PVariantList(Buffer + SizeOf(TArrayRecInfo))[I] := Null;
 end;
 
 procedure TAbstractObjectDataset.InternalInsert;
@@ -889,7 +1144,7 @@ begin
   FInternalOpen := True;
   FCurrent := -1;
 
-  BookmarkSize := sizeof(Integer);
+  BookmarkSize := SizeOf(Integer);
 
   FieldDefs.Updated := False;
   FieldDefs.Update;
@@ -906,11 +1161,11 @@ begin
   UpdateCursorPos;
   GetActiveRecBuf(LRecBuf);
 
-  case PArrayRecInfo(LRecBuf)^.BookmarkFlag of
+  case PArrayRecInfo(LRecBuf).BookmarkFlag of
     bfEOF: DoPostRecord(-1, True);
     bfInserted: DoPostRecord(FInsertIndex, False)
-    else
-      DoPostRecord(PArrayRecInfo(LRecBuf)^.Index, False)
+  else
+    DoPostRecord(PArrayRecInfo(LRecBuf).Index, False)
   end;
 end;
 
@@ -921,8 +1176,8 @@ end;
 
 procedure TAbstractObjectDataset.InternalSetToRecord(Buffer: TRecordBuffer);
 begin
-  if PArrayRecInfo(Buffer)^.BookmarkFlag in [bfCurrent, bfInserted] then
-    FCurrent := PArrayRecInfo(Buffer)^.Index;
+  if PArrayRecInfo(Buffer).BookmarkFlag in [bfCurrent, bfInserted] then
+    FCurrent := PArrayRecInfo(Buffer).Index;
 end;
 
 function TAbstractObjectDataset.IsCursorOpen: Boolean;
@@ -977,7 +1232,7 @@ end;
 
 procedure TAbstractObjectDataset.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
 begin
-  PArrayRecInfo(Buffer)^.BookmarkFlag := Value;
+  PArrayRecInfo(Buffer).BookmarkFlag := Value;
 end;
 
 procedure TAbstractObjectDataset.SetCurrent(AValue: Integer);
@@ -1000,8 +1255,18 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffe
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean);
 {$ENDIF}
 
-  {$IFDEF DELPHIXE3_UP}
-  procedure BufferToVar(var AData: Variant);
+  procedure BcdToOleVariant(const Bcd: TBcd; var Data: OleVariant);
+  var
+    Temp: OleVariant;
+  begin
+    VarClear(Data);
+    Temp := BcdToStr(Bcd);
+    VarResultCheck(VariantChangeTypeEx(TVarData(Data), TVarData(Temp), VAR_LOCALE_USER_DEFAULT,
+       0, VT_DECIMAL));
+  end;
+
+  {$IF Defined(DELPHIXE8_UP)}
+  procedure BufferToVar(var Data: OleVariant);
   var
     LUnknown: IUnknown;
     LDispatch: IDispatch;
@@ -1009,126 +1274,186 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; Na
   begin
     case Field.DataType of
       ftString, ftFixedChar, ftGuid:
-        AData := AnsiString(PAnsiChar(Buffer));
+        Data := AnsiString(PAnsiChar(Buffer));
       ftWideString, ftFixedWideChar:
-        AData := WideString(PWideChar(Buffer));
+        Data := WideString(PWideChar(Buffer));
       ftAutoInc, ftInteger:
-        AData := TBitConverter.ToLongInt(Buffer);
+        Data := TDBBitConverter.UnsafeInto<LongInt>(Buffer);
       ftSmallInt:
-        AData := TBitConverter.ToSmallInt(Buffer);
+        Data := TDBBitConverter.UnsafeInto<SmallInt>(Buffer);
       ftWord:
-        AData := TBitConverter.ToWord(Buffer);
+        Data := TDBBitConverter.UnsafeInto<Word>(Buffer);
       ftBoolean:
-        AData := TBitConverter.ToWordBool(Buffer);
+        Data := TDBBitConverter.UnsafeInto<WordBool>(Buffer);
       ftFloat, ftCurrency:
-        AData := TBitConverter.ToDouble(Buffer);
+        Data := TDBBitConverter.UnsafeInto<Double>(Buffer);
       ftBlob, ftMemo, ftGraphic, ftVariant, ftWideMemo:
-        AData := TBitConverter.ToVariant(Buffer);
+        Data := TDBBitConverter.UnsafeIntoVariant(Buffer);
       ftInterface:
       begin
         Move(Buffer[0], LUnknown, SizeOf(IUnknown));
-        AData := LUnknown;
+        Data := LUnknown;
       end;
       ftIDispatch:
       begin
         Move(Buffer[0], LDispatch, SizeOf(IDispatch));
-        AData := LDispatch;
+        Data := LDispatch;
       end;
       ftDate, ftTime, ftDateTime:
         if NativeFormat then
         begin
-          SetLength(TempBuff, SizeOf(TVarData(AData).VDate));
+          SetLength(TempBuff, SizeOf(TVarData(Data).VDate));
           DataConvert(Field, Buffer, TempBuff, False);
-          TVarData(AData).VDate := TBitConverter.ToDouble(TempBuff);
+          TVarData(Data).VDate := TDBBitConverter.UnsafeInto<Double>(TempBuff);
         end
         else
-          AData := TBitConverter.ToDouble(Buffer);
+          Data := TDBBitConverter.UnsafeInto<Double>(Buffer);
+      ftFMTBCD:
+        BcdToOleVariant(TDBBitConverter.UnsafeInto<TBcd>(Buffer), Data);
       ftBCD:
         if NativeFormat then
         begin
-          SetLength(TempBuff, SizeOf(TVarData(AData).VCurrency));
+          SetLength(TempBuff, SizeOf(TVarData(Data).VCurrency));
           DataConvert(Field, Buffer, TempBuff, False);
-          TVarData(AData).VCurrency := TBitConverter.ToCurrency(TempBuff);
+          TVarData(Data).VCurrency := TDBBitConverter.UnsafeInto<Currency>(TempBuff);
         end
         else
-          AData := TBitConverter.ToCurrency(Buffer);
+          Data := TDBBitConverter.UnsafeInto<Currency>(Buffer);
       ftBytes, ftVarBytes:
         if NativeFormat then
         begin
-          TempBuff := BytesOf(@AData, SizeOf(Variant));
+          TempBuff := BytesOf(@Data, SizeOf(Variant));
           DataConvert(Field, Buffer, TempBuff, False);
-          AData := TBitConverter.ToVariant(TempBuff);
+          Data := TDBBitConverter.UnsafeIntoVariant(TempBuff);
         end
         else
-          Move(Buffer[0], AData, SizeOf(OleVariant));
+          Data := TDBBitConverter.UnsafeIntoVariant(Buffer);
       ftLargeInt:
-        AData := TBitConverter.ToLargeInt(Buffer);
+        Data := TDBBitConverter.UnsafeInto<Int64>(Buffer);
       else
         DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
           Field.DisplayName]);
     end;
-
   end;
-  {$ELSE}
-  procedure BufferToVar(var AData: Variant);
+  {$ELSEIF Defined(DELPHIXE3_UP)}
+  procedure BufferToVar(var Data: OleVariant);
+  var
+    LUnknown: IUnknown;
+    LDispatch: IDispatch;
+    TempBuff: TValueBuffer;
   begin
     case Field.DataType of
-      ftInterface:
-        AData := IUnknown(Buffer^);
-      ftIDispatch:
-        AData := IDispatch(Buffer^);
-      ftVariant:
-        AData := Variant(Buffer^);
       ftString, ftFixedChar, ftGuid:
-        AData := AnsiString(PAnsiChar(Buffer));
+        Data := AnsiString(PAnsiChar(Buffer));
       ftWideString, ftFixedWideChar:
-        AData := WideString(PWideChar(Buffer));
+        Data := WideString(PWideChar(Buffer));
       ftAutoInc, ftInteger:
-        AData := Longint(Buffer^);
-      ftSmallint:
-        AData := SmallInt(Buffer^);
+        Data := TBitConverter.ToLongInt(Buffer);
+      ftSmallInt:
+        Data := TBitConverter.ToSmallInt(Buffer);
       ftWord:
-        AData := Word(Buffer^);
+        Data := TBitConverter.ToWord(Buffer);
       ftBoolean:
-        AData := WordBool(Buffer^);
+        Data := TBitConverter.ToWordBool(Buffer);
       ftFloat, ftCurrency:
-        AData := Double(Buffer^);
-      ftBlob, ftMemo, ftGraphic, ftWideMemo:
-        AData := Variant(Buffer^);
-
+        Data := TBitConverter.ToDouble(Buffer);
+      ftBlob, ftMemo, ftGraphic, ftVariant, ftWideMemo:
+        Data := TBitConverter.ToVariant(Buffer);
+      ftInterface:
+      begin
+        Move(Buffer[0], LUnknown, SizeOf(IUnknown));
+        Data := LUnknown;
+      end;
+      ftIDispatch:
+      begin
+        Move(Buffer[0], LDispatch, SizeOf(IDispatch));
+        Data := LDispatch;
+      end;
       ftDate, ftTime, ftDateTime:
         if NativeFormat then
-          DataConvert(Field, Buffer, @TVarData(AData).VDate, False)
+        begin
+          SetLength(TempBuff, SizeOf(TVarData(Data).VDate));
+          DataConvert(Field, Buffer, TempBuff, False);
+          TVarData(Data).VDate := TBitConverter.ToDouble(TempBuff);
+        end
         else
-          AData := TDateTime(Buffer^);
-
+          Data := TBitConverter.ToDouble(Buffer);
+      ftFMTBCD:
+        BcdToOleVariant(TBitConverter.ToBcd(Buffer), Data);
       ftBCD:
         if NativeFormat then
-          DataConvert(Field, Buffer, @TVarData(AData).VCurrency, False)
+        begin
+          SetLength(TempBuff, SizeOf(TVarData(Data).VCurrency));
+          DataConvert(Field, Buffer, TempBuff, False);
+          TVarData(Data).VCurrency := TBitConverter.ToCurrency(TempBuff);
+        end
         else
-          AData := Currency(Buffer^);
-
+          Data := TBitConverter.ToCurrency(Buffer);
       ftBytes, ftVarBytes:
         if NativeFormat then
-          DataConvert(Field, Buffer, @AData, False)
-        else
-          AData := Variant(Buffer^);
-
-      ftLargeInt:
         begin
-          TVarData(AData).VType := VT_DECIMAL;
-          Decimal(AData).Lo64 := Int64(Buffer^);
-        end;
-
-    else
-      DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
-        Field.DisplayName]);
+          TempBuff := BytesOf(@Data, SizeOf(Variant));
+          DataConvert(Field, Buffer, TempBuff, False);
+          Data := TBitConverter.ToVariant(TempBuff);
+        end
+        else
+          Data := TBitConverter.ToVariant(Buffer);
+      ftLargeInt:
+        Data := TBitConverter.ToLargeInt(Buffer);
+      else
+        DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+          Field.DisplayName]);
     end;
   end;
-  {$ENDIF}
+  {$ELSE}
+  procedure BufferToVar(var Data: OleVariant);
+  begin
+    case Field.DataType of
+      ftString, ftFixedChar, ftGuid:
+        Data := AnsiString(PAnsiChar(Buffer));
+      ftWideString, ftFixedWideChar:
+        Data := WideString(PWideChar(Buffer));
+      ftAutoInc, ftInteger:
+        Data := LongInt(Buffer^);
+      ftSmallInt:
+        Data := SmallInt(Buffer^);
+      ftWord:
+        Data := Word(Buffer^);
+      ftBoolean:
+        Data := WordBool(Buffer^);
+      ftFloat, ftCurrency:
+        Data := Double(Buffer^);
+      ftBlob, ftMemo, ftGraphic, ftVariant, ftWideMemo:
+        Data := Variant(Buffer^);
+      ftInterface:
+        Data := IUnknown(Buffer^);
+      ftIDispatch:
+        Data := IDispatch(Buffer^);
+      ftDate, ftTime, ftDateTime:
+        if NativeFormat then
+          DataConvert(Field, Buffer, @TVarData(Data).VDate, False) else
+          Data := TDateTime(Buffer^);
+      ftFMTBCD:
+        BcdToOleVariant(TBcd(Buffer^), Data);
+      ftBCD:
+        if NativeFormat then
+          DataConvert(Field, Buffer, @TVarData(Data).VCurrency, False) else
+          Data := Currency(Buffer^);
+      ftBytes, ftVarBytes:
+        if NativeFormat then
+          DataConvert(Field, Buffer, @Data, False) else
+          Data := OleVariant(Buffer^);
+      ftLargeInt:
+        Data := LargeInt(Buffer^);
+      else
+        DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+          Field.DisplayName]);
+    end;
+  end;
+  {$IFEND}
 
 var
-  LData: Variant;
+  LData: OleVariant;
   LRecBuf: TRecordBuffer;
 begin
   if not(State in dsWriteModes) then
@@ -1143,10 +1468,9 @@ begin
 
     Field.Validate(Buffer);
 
-    if FModifiedFields.IndexOf(Field) = -1 then
+    if not FModifiedFields.Contains(Field) then
     begin
-      PVariantList(FOldValueBuffer + sizeof(TArrayRecInfo))[Field.Index] :=
-        Field.Value;
+      PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))[Field.Index] := Field.OldValue;
       FModifiedFields.Add(Field);
     end;
   end;
@@ -1156,7 +1480,7 @@ begin
   else
     BufferToVar(LData);
 
-  PVariantList(LRecBuf + sizeof(TArrayRecInfo))[Field.Index] := LData;
+  PVariantList(LRecBuf + SizeOf(TArrayRecInfo))[Field.Index] := LData;
 
   if not (State in [dsCalcFields, dsInternalCalc, dsFilter, dsNewValue]) then
     DataEvent(deFieldChange, Longint(Field));
@@ -1216,221 +1540,20 @@ begin
   end;
 end;
 
-{$IFDEF DELPHIXE3_UP}
-procedure TAbstractObjectDataset.VariantToBuffer(Field: TField; Data: Variant; Buffer: TValueBuffer;
-  NativeFormat: Boolean);
-var
-  TempBuff: TValueBuffer;
-  PData: Pointer;
+{$ENDREGION}
 
-  procedure CurrToBuffer(const C: Currency);
-  var
-    LBuff: TValueBuffer;
-  begin
-    if NativeFormat then
-    begin
-      SetLength(LBuff, SizeOf(Currency));
-      TBitConverter.FromCurrency(C, LBuff);
-      DataConvert(Field, LBuff, Buffer, True)
-    end
-    else
-      TBitConverter.FromCurrency(C, Buffer);
-  end;
 
-begin
-  case Field.DataType of
-    ftGuid, ftFixedChar, ftString:
-      begin
-        PAnsiChar(Buffer)[Field.Size] := #0;
-        TempBuff := TEncoding.Default.GetBytes(string(tagVariant(Data).bStrVal));
-        Move(TempBuff[0], Buffer[0], Length(TempBuff));
-      end;
-    ftFixedWideChar, ftWideString:
-      begin
-        TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal);
-        SetLength(TempBuff, Length(TempBuff) + SizeOf(Char));
-        TempBuff[Length(TempBuff) - 2] := 0;
-        TempBuff[Length(TempBuff) - 1] := 0;
-        Move(TempBuff[0], Buffer[0], Length(TempBuff));
-      end;
-    ftSmallint:
-      if tagVariant(Data).vt = VT_UI1 then
-        TBitConverter.FromSmallInt(Byte(tagVariant(Data).cVal), Buffer)
-      else
-        TBitConverter.FromSmallInt(tagVariant(Data).iVal, Buffer);
-    ftWord:
-      if tagVariant(Data).vt = VT_UI1 then
-        TBitConverter.FromWord(tagVariant(Data).bVal, Buffer)
-      else
-        TBitConverter.FromWord(tagVariant(Data).uiVal, Buffer);
-    ftAutoInc, ftInteger:
-      TBitConverter.FromInteger(Data, Buffer);
-    ftFloat, ftCurrency:
-      if tagVariant(Data).vt = VT_R8 then
-        TBitConverter.FromDouble(tagVariant(Data).dblVal, Buffer)
-      else
-        TBitConverter.FromDouble(Data, Buffer);
-    ftFMTBCD:
-      TBitConverter.FromBcd(VarToBcd(Data), Buffer);
-    ftBCD:
-      if tagVariant(Data).vt = VT_CY then
-        CurrToBuffer(tagVariant(Data).cyVal)
-      else
-        CurrToBuffer(Data);
-    ftBoolean:
-      TBitConverter.FromWordBool(tagVariant(Data).vbool, Buffer);
-    ftDate, ftTime, ftDateTime:
-      if NativeFormat then
-      begin
-        SetLength(TempBuff, SizeOf(Double));
-        TBitConverter.FromDouble(data, TempBuff);
-        DataConvert(Field, TempBuff, Buffer, True);
-      end
-      else
-        TBitConverter.FromDouble(tagVariant(Data).date, Buffer);
-    ftBytes, ftVarBytes:
-      if NativeFormat then
-      begin
-        PData := VarArrayLock(Data);
-        try
-          DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
-        finally
-          VarArrayUnlock(Data);
-        end;
-      end
-      else
-        TBitConverter.FromVariant(Data, Buffer);
-    ftInterface:
-      begin
-        TempBuff := BytesOf(@Data, SizeOf(IUnknown));
-        Move(TempBuff[0], Buffer[0], SizeOf(IUnknown));
-      end;
-    ftIDispatch:
-      begin
-        TempBuff := BytesOf(@Data, SizeOf(IDispatch));
-        Move(TempBuff[0], Buffer[0], SizeOf(IDispatch));
-      end;
-    ftLargeInt:
-    begin
-      if PDecimal(@Data)^.sign > 0 then
-        TBitConverter.FromLargeInt(-1*PDecimal(@Data)^.Lo64, Buffer)
-      else
-        TBitConverter.FromLargeInt(PDecimal(@Data)^.Lo64, Buffer);
-    end;
-    ftBlob..ftTypedBinary, ftVariant, ftWideMemo: TBitConverter.FromVariant(Data, Buffer);
-  else
-    DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
-      Field.DisplayName]);
-  end;
-end;
-{$ELSE}
-
-procedure TAbstractObjectDataset.VariantToBuffer(Field: TField; Data: Variant; Buffer: Pointer;
-  NativeFormat: Boolean);
-
-  procedure CurrToBuffer(const C: Currency);
-    begin
-      if NativeFormat then
-        DataConvert(Field, @C, Buffer, True)
-      else
-        Currency(Buffer^) := C;
-    end;
-
-var
-  LLength: Integer;
-begin
-  case Field.DataType of
-    ftGuid, ftFixedChar, ftString:
-      begin
-        PAnsiChar(Buffer)[Field.Size] := #0;
-        if (VarType(Data) = varString) then
-        begin
-          LLength := Min(Length(Data), Field.Size);
-          PAnsiChar(Buffer)[LLength] := #0;
-          Move(PChar(string(Data))^, PChar(Buffer)^, LLength);
-        end
-        else
-        begin
-          if Length(Data) = 0 then
-            PAnsiChar(Buffer)[0] := #0
-          else
-            StrCopy(Buffer, tagVariant(Data).bStrVal);
-        end;
-      end;
-    ftFixedWideChar, ftWideString:
-      if tagVariant(Data).bStrVal = nil then
-        PWideChar(Buffer)[0] := #0
-      else
-        WStrCopy(Buffer, tagVariant(Data).bStrVal);
-    ftSmallint:
-      if tagVariant(Data).vt = VT_UI1 then
-        SmallInt(Buffer^) := Byte(tagVariant(Data).cVal)
-      else
-        SmallInt(Buffer^) := tagVariant(Data).iVal;
-    ftWord:
-      if tagVariant(Data).vt = VT_UI1 then
-        Word(Buffer^) := tagVariant(Data).bVal
-      else
-        Word(Buffer^) := tagVariant(Data).uiVal;
-    ftAutoInc, ftInteger:
-      Integer(Buffer^) := Data;
-    ftFloat, ftCurrency:
-      if tagVariant(Data).vt = VT_R8 then
-        Double(Buffer^) := tagVariant(Data).dblVal
-      else
-        Double(Buffer^) := Data;
-    ftFMTBCD:
-      TBcd(Buffer^) := VarToBcd(Data);
-    ftBCD:
-      if tagVariant(Data).vt = VT_CY then
-        CurrToBuffer(tagVariant(Data).cyVal)
-      else
-        CurrToBuffer(Data);
-    ftBoolean:
-      begin
-        VarAsType(Data, VT_BOOL);
-        WordBool(Buffer^) := tagVariant(Data).vbool;
-      end;
-    ftDate, ftTime, ftDateTime:
-      begin
-        VarAsType(Data, VT_DATE);
-        if NativeFormat then
-          DataConvert(Field, @date, Buffer, True)
-        else
-          TOleDate(Buffer^) := Data;
-      end;
-    ftBytes, ftVarBytes:
-      if NativeFormat then
-        DataConvert(Field, @Data, Buffer, True)
-      else
-        OleVariant(Buffer^) := Data;
-    ftInterface:
-      IUnknown(Buffer^) := Data;
-    ftIDispatch:
-      IDispatch(Buffer^) := Data;
-    ftLargeInt:
-      if Decimal(Data).sign > 0 then
-        LargeInt(Buffer^) := -1 * Decimal(Data).Lo64
-      else
-        LargeInt(Buffer^) := Decimal(Data).Lo64;
-    ftBlob .. ftTypedBinary, ftVariant, ftWideMemo:
-      OleVariant(Buffer^) := Data;
-  else
-    DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
-      Field.DisplayName]);
-  end;
-
-end;
-{$ENDIF}
-
-{ TObjectDatasetFieldDefs }
+{$REGION 'TObjectDatasetFieldDefs'}
 
 function TObjectDatasetFieldDefs.GetFieldDefClass: TFieldDefClass;
 begin
   Result := TObjectDatasetFieldDef;
 end;
 
-{ TObjectDatasetFieldDef }
+{$ENDREGION}
+
+
+{$REGION 'TObjectDatasetFieldDef'}
 
 function TObjectDatasetFieldDef.GetDisplayName: string;
 begin
@@ -1442,6 +1565,7 @@ begin
   FDisplayName := Value;
 end;
 
+{$ENDREGION}
 
 
 end.
