@@ -1,0 +1,41 @@
+object frmCoroutinesMain: TfrmCoroutinesMain
+  Left = 0
+  Top = 0
+  Caption = 'Coroutines main'
+  ClientHeight = 567
+  ClientWidth = 384
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 3
+  object memText: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    TextSettings.WordWrap = True
+    Align = Client
+    Size.Width = 384.000000000000000000
+    Size.Height = 523.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Viewport.Width = 376.000000000000000000
+    Viewport.Height = 515.000000000000000000
+  end
+  object cmdRun: TButton
+    Align = Bottom
+    Position.Y = 523.000000000000000000
+    Size.Width = 384.000000000000000000
+    Size.Height = 44.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Text = 'Run...'
+    OnClick = cmdRunClick
+  end
+  object tmrCheck: TTimer
+    Enabled = False
+    Interval = 100
+    OnTimer = tmrCheckTimer
+    Left = 180
+    Top = 268
+  end
+end
