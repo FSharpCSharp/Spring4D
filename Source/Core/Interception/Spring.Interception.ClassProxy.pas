@@ -34,7 +34,7 @@ uses
   Spring.Collections,
   Spring.Interception,
   Spring.Interception.AbstractInvocation,
-  Spring.Interception.MethodIntercept,
+  Spring.MethodIntercept,
   Spring.Reflection.Core;
 
 type

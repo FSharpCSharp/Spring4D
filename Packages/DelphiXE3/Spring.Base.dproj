@@ -146,8 +146,6 @@
         <DCCReference Include="..\..\Source\Base\Spring.Events.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
-        <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.MethodIntercept.pas"/>
-        <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.VirtualInterface.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.Base.pas"/>
@@ -157,12 +155,14 @@
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.NullLogger.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Serializers.pas"/>
+        <DCCReference Include="..\..\Source\Core\Spring.MethodIntercept.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Core.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.SystemUtils.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Times.pas"/>
+        <DCCReference Include="..\..\Source\Core\Spring.VirtualInterface.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

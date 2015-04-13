@@ -33,7 +33,7 @@ uses
   Spring,
   Spring.Collections,
 {$IFDEF DELPHIXE_UP}
-  Spring.Interception.VirtualInterface,
+  Spring.VirtualInterface,
 {$ENDIF}
   Spring.Container.Common,
   Spring.Container.Core;
