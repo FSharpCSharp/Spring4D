@@ -37,9 +37,9 @@ uses
   Spring.Cryptography.Base;
 
 type
-  TMD5Count = array[0..1] of LongWord;
-  TMD5State = array[0..3] of LongWord;
-  TMD5Block = array[0..15] of LongWord;
+  TMD5Count = array[0..1] of UInt32;
+  TMD5State = array[0..3] of UInt32;
+  TMD5Block = array[0..15] of UInt32;
   TMD5CBits = array[0..7] of byte;
   TMD5Digest = array[0..15] of byte;
   TMD5Buffer = array[0..63] of byte;
@@ -67,7 +67,7 @@ type
   end;
 
 procedure MD5Init(var Context: TMD5Context);
-procedure MD5Update(var Context: TMD5Context; Input: PByte; Length: longword);
+procedure MD5Update(var Context: TMD5Context; Input: PByte; Length: UInt32);
 procedure MD5Final(var Context: TMD5Context; var Digest: TMD5Digest);
 
 implementation
@@ -116,17 +116,17 @@ end;
 
 {$IFDEF SUPPORTS_REGION}{$ENDREGION}{$ENDIF}
 
-procedure CopyMemory(Destination: Pointer; Source: Pointer; Length: LongWord);
+procedure CopyMemory(Destination: Pointer; Source: Pointer; Length: UInt32);
 begin
   Move(Source^, Destination^, Length);
 end;
 
-procedure ZeroMemory(Destination: Pointer; Length: LongWord);
+procedure ZeroMemory(Destination: Pointer; Length: UInt32);
 begin
   FillChar(Destination^, Length, 0);
 end;
 
-function F(x, y, z: LongWord): LongWord;
+function F(x, y, z: UInt32): UInt32;
 {$IFDEF CPUX86}
 asm
   // Result := (x and y) or ((not x) and z);
@@ -141,7 +141,7 @@ begin
 end;
 {$ENDIF}
 
-function G(x, y, z: LongWord): LongWord;
+function G(x, y, z: UInt32): UInt32;
 {$IFDEF CPUX86}
 asm
   //Result := (x and z) or (y and (not z));
@@ -156,7 +156,7 @@ begin
 end;
 {$ENDIF}
 
-function H(x, y, z: LongWord): LongWord;
+function H(x, y, z: UInt32): UInt32;
 {$IFDEF CPUX86}
 asm
   //Result := x xor y xor z;
@@ -169,7 +169,7 @@ begin
 end;
 {$ENDIF}
 
-function I(x, y, z: LongWord): LongWord;
+function I(x, y, z: UInt32): UInt32;
 {$IFDEF CPUX86}
 asm
   //Result := y xor (x or (not z));
@@ -183,7 +183,7 @@ begin
 end;
 {$ENDIF}
 
-procedure rot(var x: LongWord; n: BYTE);
+procedure rot(var x: UInt32; n: BYTE);
 {$IFDEF CPUX86}
 asm
   //x := (x shl n) or (x shr (32 - n));
@@ -205,28 +205,28 @@ begin
 end;
 {$ENDIF}
 
-procedure FF(var a: LongWord; b, c, d, x: LongWord; s: BYTE; ac: LongWord);
+procedure FF(var a: UInt32; b, c, d, x: UInt32; s: BYTE; ac: UInt32);
 begin
   inc(a, F(b, c, d) + x + ac);
   rot(a, s);
   inc(a, b);
 end;
 
-procedure GG(var a: LongWord; b, c, d, x: LongWord; s: BYTE; ac: LongWord);
+procedure GG(var a: UInt32; b, c, d, x: UInt32; s: BYTE; ac: UInt32);
 begin
   inc(a, G(b, c, d) + x + ac);
   rot(a, s);
   inc(a, b);
 end;
 
-procedure HH(var a: LongWord; b, c, d, x: LongWord; s: BYTE; ac: LongWord);
+procedure HH(var a: UInt32; b, c, d, x: UInt32; s: BYTE; ac: UInt32);
 begin
   inc(a, H(b, c, d) + x + ac);
   rot(a, s);
   inc(a, b);
 end;
 
-procedure II(var a: LongWord; b, c, d, x: LongWord; s: BYTE; ac: LongWord);
+procedure II(var a: UInt32; b, c, d, x: UInt32; s: BYTE; ac: UInt32);
 begin
   inc(a, I(b, c, d) + x + ac);
   rot(a, s);
@@ -234,11 +234,11 @@ begin
 end;
 
 // Encode Count bytes at Source into (Count / 4) DWORDs at Target
-procedure Encode(Source, Target: pointer; Count: longword);
+procedure Encode(Source, Target: pointer; Count: UInt32);
 var
   S: PByte;
-  T: PLongWord;
-  I: longword;
+  T: PUInt32;
+  I: UInt32;
 begin
   S := Source;
   T := Target;
@@ -257,11 +257,11 @@ begin
 end;
 
 // Decode Count DWORDs at Source into (Count * 4) Bytes at Target
-procedure Decode(Source, Target: pointer; Count: longword);
+procedure Decode(Source, Target: pointer; Count: UInt32);
 var
-  S: PLongWord;
+  S: PUInt32;
   T: PByte;
-  I: longword;
+  I: UInt32;
 begin
   S := Source;
   T := Target;
@@ -282,7 +282,7 @@ end;
 // Transform State according to first 64 bytes at Buffer
 procedure Transform(Buffer: pointer; var State: TMD5State);
 var
-  a, b, c, d: LongWord;
+  a, b, c, d: UInt32;
   Block: TMD5Block;
 begin
   Encode(Buffer, @Block, 64);
@@ -376,11 +376,11 @@ begin
 end;
 
 // Update given Context to include Length bytes of Input
-procedure MD5Update(var Context: TMD5Context; Input: PByte; Length: longword);
+procedure MD5Update(var Context: TMD5Context; Input: PByte; Length: UInt32);
 var
-  Index: longword;
-  PartLen: longword;
-  I: longword;
+  Index: UInt32;
+  PartLen: UInt32;
+  I: UInt32;
 begin
   with Context do
   begin
@@ -411,8 +411,8 @@ end;
 procedure MD5Final(var Context: TMD5Context; var Digest: TMD5Digest);
 var
   Bits: TMD5CBits;
-  Index: longword;
-  PadLen: longword;
+  Index: UInt32;
+  PadLen: UInt32;
 begin
   Decode(@Context.Count, @Bits, 2);
   Index := (Context.Count[0] shr 3) and $3f;

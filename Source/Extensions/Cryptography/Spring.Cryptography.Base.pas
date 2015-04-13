@@ -38,6 +38,8 @@ uses
   Spring.Cryptography;
 
 type
+  PUInt32 = ^UInt32;
+
   /// <summary>
   ///   Abstract base class for hash algorithms.
   /// </summary>

@@ -33,7 +33,7 @@ uses
   Spring,
   Spring.Collections,
 {$IFDEF DELPHIXE_UP}
-  Spring.Interception.VirtualInterface,
+  Spring.VirtualInterface,
 {$ENDIF}
   Spring.Container.Common,
   Spring.Container.Core;
@@ -55,6 +55,8 @@ type
   protected
     procedure CheckIsNonGuidInterface(const serviceType: TRttiType);
 {$IFDEF DELPHIXE_UP}
+    function InternalResolveParams(const method: TRttiMethod;
+      const args: TArray<TValue>; paramResolution: TParamResolution): TArray<TValue>;
     procedure InternalRegisterFactory(const model: TComponentModel;
       const invokeEvent: TVirtualInterfaceInvokeEvent);
 {$ENDIF}
@@ -69,9 +71,11 @@ type
       const serviceName: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
 {$IFDEF DELPHIXE_UP}
-    procedure RegisterFactory(const model: TComponentModel); overload;
     procedure RegisterFactory(const model: TComponentModel;
-      const resolvedServiceName: string); overload;
+      paramResolution: TParamResolution = TParamResolution.ByName); overload;
+    procedure RegisterFactory(const model: TComponentModel;
+      const resolvedServiceName: string;
+      paramResolution: TParamResolution = TParamResolution.ByName); overload;
 {$ENDIF}
     procedure UnregisterAll;
     function HasService(serviceType: PTypeInfo): Boolean; overload;
@@ -134,8 +138,9 @@ type
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
 {$IFDEF DELPHIXE_UP}
-    function AsFactory: IRegistration; overload;
-    function AsFactory(const resolvedServiceName: string): IRegistration; overload;
+    function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
+    function AsFactory(const resolvedServiceName: string;
+      paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
 
     function InterceptedBy(interceptorType: PTypeInfo;
       where: TWhere = TWhere.Last): IRegistration; overload;
@@ -194,8 +199,9 @@ type
     function AsDefault<TServiceType>: TRegistration<T>; overload;
 
 {$IFDEF DELPHIXE_UP}
-    function AsFactory: TRegistration<T>; overload;
-    function AsFactory(const resolvedServiceName: string): TRegistration<T>; overload;
+    function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<T>; overload;
+    function AsFactory(const resolvedServiceName: string;
+      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<T>; overload;
 
     function InterceptedBy(interceptorType: PTypeInfo;
       where: TWhere = TWhere.Last): TRegistration<T>; overload;
@@ -351,6 +357,25 @@ type
     var VTable: PVTable;
   end;
 
+function TComponentRegistry.InternalResolveParams(const method: TRttiMethod;
+  const args: TArray<TValue>; paramResolution: TParamResolution): TArray<TValue>;
+var
+  params: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  case paramResolution of
+    TParamResolution.ByName:
+    begin
+      SetLength(Result, Length(args) - 1);
+      params := method.GetParameters;
+      for i := 0 to High(params) do
+        Result[i] := TNamedValue.Create(params[i].Name, args[i + 1]);
+    end
+  else
+    Result := Copy(args, 1);
+  end;
+end;
+
 procedure TComponentRegistry.InternalRegisterFactory(
   const model: TComponentModel; const invokeEvent: TVirtualInterfaceInvokeEvent);
 var
@@ -391,30 +416,37 @@ begin
     end;
 end;
 
-procedure TComponentRegistry.RegisterFactory(const model: TComponentModel);
+procedure TComponentRegistry.RegisterFactory(const model: TComponentModel;
+  paramResolution: TParamResolution);
 var
   invokeEvent: TVirtualInterfaceInvokeEvent;
 begin
   invokeEvent :=
     procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
+    var
+      arguments: TArray<TValue>;
     begin
+      arguments := InternalResolveParams(method, args, paramResolution);
       result := (fKernel as IKernelInternal).Resolve(
-        method.ReturnType.Handle, Copy(args, 1, High(args)));
+        method.ReturnType.Handle, arguments);
     end;
 
   InternalRegisterFactory(model, invokeEvent);
 end;
 
 procedure TComponentRegistry.RegisterFactory(const model: TComponentModel;
-  const resolvedServiceName: string);
+  const resolvedServiceName: string; paramResolution: TParamResolution);
 var
   invokeEvent: TVirtualInterfaceInvokeEvent;
 begin
   invokeEvent :=
     procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
+    var
+      arguments: TArray<TValue>;
     begin
+      arguments := InternalResolveParams(method, args, paramResolution);
       result := (fKernel as IKernelInternal).Resolve(
-        resolvedServiceName, Copy(args, 1, High(args)));
+        resolvedServiceName, arguments);
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -708,15 +740,17 @@ begin
 end;
 
 {$IFDEF DELPHIXE_UP}
-function TRegistration.AsFactory: IRegistration;
+function TRegistration.AsFactory(
+  paramResolution: TParamResolution): IRegistration;
 begin
-  fKernel.Registry.RegisterFactory(fModel);
+  fKernel.Registry.RegisterFactory(fModel, paramResolution);
   Result := Self;
 end;
 
-function TRegistration.AsFactory(const resolvedServiceName: string): IRegistration;
+function TRegistration.AsFactory(const resolvedServiceName: string;
+  paramResolution: TParamResolution = TParamResolution.ByName): IRegistration;
 begin
-  fKernel.Registry.RegisterFactory(fModel, resolvedServiceName);
+  fKernel.Registry.RegisterFactory(fModel, resolvedServiceName, paramResolution);
   Result := Self;
 end;
 
@@ -907,15 +941,16 @@ begin
 end;
 
 {$IFDEF DELPHIXE_UP}
-function TRegistration<T>.AsFactory: TRegistration<T>;
+function TRegistration<T>.AsFactory(paramResolution: TParamResolution): TRegistration<T>;
 begin
-  fRegistration.AsFactory;
+  fRegistration.AsFactory(paramResolution);
   Result := Self;
 end;
 
-function TRegistration<T>.AsFactory(const resolvedServiceName: string): TRegistration<T>;
+function TRegistration<T>.AsFactory(const resolvedServiceName: string;
+  paramResolution: TParamResolution): TRegistration<T>;
 begin
-  fRegistration.AsFactory(resolvedServiceName);
+  fRegistration.AsFactory(resolvedServiceName, paramResolution);
   Result := Self;
 end;
 

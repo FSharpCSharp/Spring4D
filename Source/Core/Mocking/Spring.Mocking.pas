@@ -119,8 +119,12 @@ type
 
   IMock<T> = interface(IInvokable)
     ['{67AD5AD2-1C23-41BA-8F5D-5C28B3C7ABF7}']
+  {$REGION 'Property Accessors'}
+    function GetCallBase: Boolean;
     function GetInstance: T;
     function GetTypeInfo: PTypeInfo;
+    procedure SetCallBase(const value: Boolean);
+  {$ENDREGION}
 
     function Setup: ISetup<T>;
 
@@ -129,32 +133,58 @@ type
     function ReceivedWithAnyArgs: T; overload;
     function ReceivedWithAnyArgs(const times: Times): T; overload;
 
+    property CallBase: Boolean read GetCallBase write SetCallBase;
     property Instance: T read GetInstance;
     property TypeInfo: PTypeInfo read GetTypeInfo;
   end;
 
   EMockException = class(Exception);
 
+  Setup<T> = record
+  private
+    fSetup: ISetup<T>;
+  public
+    function Executes: IWhen<T>; overload;
+    function Executes(const action: TMockAction): IWhen<T>; overload;
+
+    function Raises<TException: Exception>(
+      const msg: string = ''): IWhen<T>; overload;
+    function Raises<TException: Exception>(
+      const msg: string; const args: array of const): IWhen<T>; overload;
+
+    function Returns<TResult>(const value: TResult): IWhen<T>; overload;
+    function Returns(const values: array of TValue): IWhen<T>; overload;
+  end;
+
   Mock<T> = record
   private
     fMock: IMock<T>;
     function GetInstance: T;
+    function GetCallBase: Boolean;
+    procedure SetCallBase(const value: Boolean);
   public
     class function Create(
-      behavior: TMockBehavior = TMockBehavior.Dynamic): Mock<T>; static;
+      behavior: TMockBehavior = TMockBehavior.Dynamic): Mock<T>; overload; static;
+    class function Create(behavior: TMockBehavior;
+      const args: array of TValue): Mock<T>; overload; static;
+    class function Create(const args: array of TValue;
+      behavior: TMockBehavior = TMockBehavior.Dynamic): Mock<T>; overload; static;
+
+    procedure Free;
 
     class operator Implicit(const value: IMock): Mock<T>;
     class operator Implicit(const value: Mock<T>): IMock;
     class operator Implicit(const value: Mock<T>): IMock<T>;
     class operator Implicit(const value: Mock<T>): T;
 
-    function Setup: ISetup<T>;
+    function Setup: Setup<T>;
 
     function Received: T; overload;
     function Received(const times: Times): T; overload;
     function ReceivedWithAnyArgs: T; overload;
     function ReceivedWithAnyArgs(const times: Times): T; overload;
 
+    property CallBase: Boolean read GetCallBase write SetCallBase;
     property Instance: T read GetInstance;
   end;
 
@@ -196,11 +226,64 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'Setup<T>'}
+
+function Setup<T>.Executes: IWhen<T>;
+begin
+  Result := fSetup.Executes;
+end;
+
+function Setup<T>.Executes(const action: TMockAction): IWhen<T>;
+begin
+  Result := fSetup.Executes(action);
+end;
+
+function Setup<T>.Raises<TException>(const msg: string): IWhen<T>;
+begin
+  Result := fSetup.Raises(ExceptClass(TException), msg);
+end;
+
+function Setup<T>.Raises<TException>(const msg: string;
+  const args: array of const): IWhen<T>;
+begin
+  Result := fSetup.Raises(ExceptClass(TException), msg, args);
+end;
+
+function Setup<T>.Returns<TResult>(const value: TResult): IWhen<T>;
+begin
+  Result := fSetup.Returns(TValue.From<TResult>(value));
+end;
+
+function Setup<T>.Returns(const values: array of TValue): IWhen<T>;
+begin
+  Result := fSetup.Returns(values);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'Mock<T>'}
 
 class function Mock<T>.Create(behavior: TMockBehavior): Mock<T>;
 begin
-  Result := TMock<T>.Create(behavior);
+  Result.fMock := TMock<T>.Create(behavior, []);
+end;
+
+class function Mock<T>.Create(behavior: TMockBehavior;
+  const args: array of TValue): Mock<T>;
+begin
+  Result.fMock := TMock<T>.Create(behavior, args);
+end;
+
+class function Mock<T>.Create(const args: array of TValue;
+  behavior: TMockBehavior): Mock<T>;
+begin
+  Result.fMock := TMock<T>.Create(behavior, args);
+end;
+
+procedure Mock<T>.Free;
+begin
+  fMock := nil;
 end;
 
 class operator Mock<T>.Implicit(const value: IMock): Mock<T>;
@@ -224,14 +307,24 @@ begin
   Result := value.fMock.Instance;
 end;
 
+function Mock<T>.GetCallBase: Boolean;
+begin
+  Result := fMock.CallBase;
+end;
+
 function Mock<T>.GetInstance: T;
 begin
   Result := fMock.Instance;
 end;
 
-function Mock<T>.Setup: ISetup<T>;
+procedure Mock<T>.SetCallBase(const value: Boolean);
 begin
-  Result := fMock.Setup;
+  fMock.CallBase := value
+end;
+
+function Mock<T>.Setup: Setup<T>;
+begin
+  Result.fSetup := fMock.Setup;
 end;
 
 function Mock<T>.Received: T;

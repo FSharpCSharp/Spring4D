@@ -105,7 +105,7 @@ begin
   numbers := TCollections.CreateList<Integer>([1, 2, 3]);
   factory := Mock<INumberParserFactory>.Create;
   Mock.From(factory.Create(','))
-    .Setup.Returns(TValue.From(numbers)).When.Parse('an expression');
+    .Setup.Returns(numbers).When.Parse('an expression');
   parser := factory.Create(',');
   Assert(factory.Create(',').Parse('an expression').EqualsTo([1, 2, 3]));
 

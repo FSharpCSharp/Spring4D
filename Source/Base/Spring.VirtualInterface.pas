@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Interception.VirtualInterface;
+unit Spring.VirtualInterface;
 
 interface
 
@@ -32,7 +32,7 @@ uses
   Generics.Collections,
   Rtti,
   TypInfo,
-  Spring.Interception.MethodIntercept;
+  Spring.MethodIntercept;
 
 type
 {$IFDEF DELPHIXE2_UP}

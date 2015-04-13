@@ -60,6 +60,7 @@ type
       TMockState = (Arrange, Act, Assert);
   private
     fBehavior: TMockBehavior;
+    fCallBase: Boolean;
     fCurrentAction: TMockAction;
     fCurrentTimes: Times;
     fArgsMatching: Boolean;
@@ -83,6 +84,7 @@ type
     procedure WhenForAnyArgs;
 
     property Behavior: TMockBehavior read fBehavior;
+    property CallBase: Boolean read fCallBase write fCallBase;
   end;
 
 implementation
@@ -93,6 +95,10 @@ uses
   Spring.Reflection,
   Spring.Times;
 
+resourcestring
+  SUnexpectedMethodCall = 'unexpected call of %s with arguments: %s';
+  SUnexpectedCallCount = 'unexpected call count: %s';
+
 function ArgsEqual(const left, right: TArray<TValue>): Boolean;
 var
   i: Integer;
@@ -101,6 +107,24 @@ begin
   for i := Low(left) to High(left) do
     if not left[i].Equals(right[i]) then
       Exit(False);
+end;
+
+function ArgsToString(const values: TArray<TValue>): string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 0 to High(values) do
+  begin
+    if Result <> '' then
+      Result := Result + ', ';
+    if values[i].IsString then
+      Result := Result + QuotedStr(values[i].ToString)
+    else if values[i].IsInstance then
+      Result := Result + 'nil'
+    else
+      Result := Result + values[i].ToString;
+  end;
 end;
 
 
@@ -158,19 +182,23 @@ begin
         methodCall := nil;
 
       if not Assigned(methodCall) then
-        if fBehavior = TMockBehavior.Strict then
-          raise EMockException.Create('unexpected call')
+        if fCallBase then
+          invocation.Proceed
         else
-        begin
-          // create results for params
-          if invocation.Method.MethodKind = mkFunction then
-            if invocation.Method.ReturnType.TypeKind = tkInterface then
-            begin
-              methodCall := TMethodCall.Create(CreateMock(invocation),
-                invocation.Arguments);
-              fExpectedCalls.Add(invocation.Method, methodCall);
-            end;
-        end;
+          if fBehavior = TMockBehavior.Strict then
+            raise EMockException.CreateResFmt(@SUnexpectedMethodCall, [
+              invocation.Method.ToString, ArgsToString(invocation.Arguments)])
+          else
+          begin
+            // create results for params
+            if invocation.Method.MethodKind = mkFunction then
+              if invocation.Method.ReturnType.TypeKind = tkInterface then
+              begin
+                methodCall := TMethodCall.Create(CreateMock(invocation),
+                  invocation.Arguments);
+                fExpectedCalls.Add(invocation.Method, methodCall);
+              end;
+          end;
 
       if Assigned(methodCall) then
         invocation.Result := methodCall.Invoke(invocation);
@@ -189,8 +217,8 @@ begin
       else
         callCount := 0;
       if not fCurrentTimes.Verify(callCount) then
-        raise EMockException.Create('call count not correct: ' +
-          fCurrentTimes.ToString(callCount));
+        raise EMockException.CreateResFmt(@SUnexpectedCallCount, [
+          fCurrentTimes.ToString(callCount)]);
     end;
   end;
 end;

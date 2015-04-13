@@ -53,7 +53,7 @@ const
   clDefault = Graphics.clDefault;
 {$ELSE}
 type
-  TColor = LongInt;
+  TColor = Int32;
 
 const
   clDefault = $20000000;

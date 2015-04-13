@@ -79,19 +79,34 @@ type
 
   {$REGION 'TStreamLogAppender'}
   TStreamLogAppender = class(TLogAppenderWithTimeStampFormat)
-  private
+  strict private
     fStream: TStream;
 {$IFNDEF AUTOREFCOUNT}
     fOwnsStream: Boolean;
 {$ENDIF}
     fEncoding: TEncoding;
     fLock: TCriticalSection;
+  strict protected
+    constructor CreateInternal(ownsStream: Boolean;
+      const encoding: TEncoding);
+    procedure SetStream(const stream: TStream);
   protected
     procedure DoSend(const entry: TLogEntry); override;
   public
     constructor Create(const stream: TStream; ownsStream: Boolean = True;
       const encoding: TEncoding = nil);
     destructor Destroy; override;
+  end;
+  {$ENDREGION}
+
+
+  {$REGION 'TFileLogAppender'}
+  TFileLogAppender = class(TStreamLogAppender)
+  private
+    procedure SetFileName(const Value: string);
+  public
+    constructor Create;
+    property FileName: string write SetFileName;
   end;
   {$ENDREGION}
 
@@ -219,8 +234,14 @@ constructor TStreamLogAppender.Create(const stream: TStream;
 begin
   Guard.CheckNotNull(stream, 'stream');
 
-  inherited Create;
   fStream := stream;
+  CreateInternal(ownsStream, encoding);
+end;
+
+constructor TStreamLogAppender.CreateInternal(ownsStream: Boolean;
+  const encoding: TEncoding);
+begin
+  inherited Create;
 {$IFNDEF AUTOREFCOUNT}
   fOwnsStream := ownsStream;
 {$ENDIF}
@@ -245,14 +266,44 @@ procedure TStreamLogAppender.DoSend(const entry: TLogEntry);
 var
   buffer: TBytes;
 begin
+  buffer := fEncoding.GetBytes(FormatTimeStamp(entry.TimeStamp) + ': ' +
+    LEVEL_FIXED[entry.Level] + ' ' + FormatMsg(entry) + sLineBreak);
   fLock.Enter;
   try
-    buffer := fEncoding.GetBytes(FormatTimeStamp(entry.TimeStamp) + ': ' +
-      LEVEL_FIXED[entry.Level] + ' ' + FormatMsg(entry));
     fStream.WriteBuffer(buffer[0], Length(buffer));
   finally
     fLock.Leave;
   end;
+end;
+
+procedure TStreamLogAppender.SetStream(const stream: TStream);
+begin
+  Guard.CheckNotNull(stream, 'stream');
+  fLock.Enter;
+  try
+{$IFNDEF AUTOREFCOUNT}
+    if fOwnsStream then
+      fStream.Free;
+{$ENDIF}
+    fStream := stream;
+  finally
+    fLock.Leave;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFileLogAppender'}
+
+constructor TFileLogAppender.Create;
+begin
+  inherited CreateInternal(True, nil);
+end;
+
+procedure TFileLogAppender.SetFileName(const Value: string);
+begin
+  SetStream(TFileStream.Create(Value, fmCreate or fmShareDenyWrite));
 end;
 
 {$ENDREGION}

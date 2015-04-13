@@ -34,7 +34,7 @@ uses
   Spring.Collections,
   Spring.Interception,
   Spring.Interception.AbstractInvocation,
-  Spring.Interception.VirtualInterface;
+  Spring.VirtualInterface;
 
 type
   TInterfaceProxy = class(TVirtualInterface, IProxyTargetAccessor)

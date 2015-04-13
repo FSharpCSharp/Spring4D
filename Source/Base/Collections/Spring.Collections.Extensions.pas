@@ -39,7 +39,15 @@ uses
   Spring.Collections.Lists;
 
 type
-  TEmptyEnumerable<T> = class(TEnumerableBase<T>);
+  TEmptyEnumerable<T> = class(TEnumerableBase<T>)
+  private
+    class var fInstance: IEnumerable<T>;
+    class function GetInstance: IEnumerable<T>; static;
+    constructor Create; reintroduce;
+  public
+    class destructor Destroy;
+    class property Instance: IEnumerable<T> read GetInstance;
+  end;
 
   TArrayIterator<T> = class(TIterator<T>, IReadOnlyList<T>)
   private
@@ -733,6 +741,28 @@ uses
   Spring.Collections.Sets,
 {$ENDIF}
   Spring.ResourceStrings;
+
+
+{$REGION 'TEmptyEnumerable<T>'}
+
+constructor TEmptyEnumerable<T>.Create;
+begin
+  inherited Create;
+end;
+
+class destructor TEmptyEnumerable<T>.Destroy;
+begin
+  fInstance := nil;
+end;
+
+class function TEmptyEnumerable<T>.GetInstance: IEnumerable<T>;
+begin
+  if fInstance = nil then
+    fInstance := TEmptyEnumerable<T>.Create;
+  Result := fInstance;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TArrayIterator<T>'}

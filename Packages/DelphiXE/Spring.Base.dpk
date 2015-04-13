@@ -53,8 +53,6 @@ contains
   Spring.Events in '..\..\Source\Base\Spring.Events.pas',
   Spring.Events.Base in '..\..\Source\Base\Spring.Events.Base.pas',
   Spring.Helpers in '..\..\Source\Base\Spring.Helpers.pas',
-  Spring.Interception.MethodIntercept in '..\..\Source\Base\Interception\Spring.Interception.MethodIntercept.pas',
-  Spring.Interception.VirtualInterface in '..\..\Source\Base\Interception\Spring.Interception.VirtualInterface.pas',
   Spring.Logging in '..\..\Source\Base\Logging\Spring.Logging.pas',
   Spring.Logging.Appenders in '..\..\Source\Base\Logging\Spring.Logging.Appenders.pas',
   Spring.Logging.Appenders.Base in '..\..\Source\Base\Logging\Spring.Logging.Appenders.Base.pas',
@@ -64,6 +62,7 @@ contains
   Spring.Logging.NullLogger in '..\..\Source\Base\Logging\Spring.Logging.NullLogger.pas',
   Spring.Logging.ResourceStrings in '..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas',
   Spring.Logging.Serializers in '..\..\Source\Base\Logging\Spring.Logging.Serializers.pas',
+  Spring.MethodIntercept in '..\..\Source\Base\Spring.MethodIntercept.pas',
   Spring.Patches.QC93646 in '..\..\Source\Base\Patches\Spring.Patches.QC93646.pas',
   Spring.Patches.QC98671 in '..\..\Source\Base\Patches\Spring.Patches.QC98671.pas',
   Spring.Patches.QC107219 in '..\..\Source\Base\Patches\Spring.Patches.QC107219.pas',
@@ -72,6 +71,7 @@ contains
   Spring.Reflection.ValueConverters in '..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas',
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
   Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas',
-  Spring.Times in '..\..\Source\Base\Spring.Times.pas';
+  Spring.Times in '..\..\Source\Base\Spring.Times.pas',
+  Spring.VirtualInterface in '..\..\Source\Base\Spring.VirtualInterface.pas';
 
 end.

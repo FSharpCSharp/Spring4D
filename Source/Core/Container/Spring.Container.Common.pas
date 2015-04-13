@@ -132,6 +132,25 @@ type
     False
   );
 
+  /// <summary>
+  ///   Defines the way an automatic factory resolves the parameters being
+  ///   passed.
+  /// </summary>
+  TParamResolution = (
+
+    /// <summary>
+    ///   Parameters are resolved by their name in the factory method
+    ///   declaration.
+    /// </summary>
+    ByName,
+
+    /// <summary>
+    ///   Parameters are being passed as they were passed to the factory
+    ///   method.
+    /// </summary>
+    ByValue
+  );
+
   TBaseAttribute = class(TCustomAttribute)
   private
     constructor Create;
@@ -406,8 +425,9 @@ type
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
 {$IFDEF DELPHIXE_UP}
-    function AsFactory: IRegistration; overload;
-    function AsFactory(const resolvedServiceName: string): IRegistration; overload;
+    function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
+    function AsFactory(const resolvedServiceName: string;
+      paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
 
     function InterceptedBy(interceptorType: PTypeInfo;
       where: TWhere = TWhere.Last): IRegistration; overload;

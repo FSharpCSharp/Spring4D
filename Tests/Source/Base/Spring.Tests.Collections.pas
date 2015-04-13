@@ -125,6 +125,24 @@ type
     procedure TestRemoveAll;
   end;
 
+  TTestSortedList = class(TTestCase)
+  private const
+    SortedPrimes: array[0..6] of Integer = (2, 3, 5, 7, 11, 13, 17);
+    NotSortedPrimes: array[0..6] of Integer = (13, 5, 11, 7, 3, 17, 2);
+  private
+    SUT: IList<Integer>;
+    procedure CheckAddRange;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    // Will actually test Add as well
+    procedure TestAddRange_Sorted;
+    procedure TestAddRange_NotSorted;
+
+    procedure TestReturnsMinusOneWhenNotFound;
+  end;
+
   TTestEmptyStringIntegerDictionary = class(TTestCase)
   private
     SUT: IDictionary<string, integer>;
@@ -364,11 +382,8 @@ type
   end;
 
   TTestEnumerable = class(TTestCase)
-  private
-    SUT: IEnumerable<Integer>;
-  protected
-    procedure SetUp; override;
   published
+    procedure TestAggregate;
     procedure TestToArray;
   end;
 
@@ -436,6 +451,7 @@ uses
   Generics.Defaults,
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
+  StrUtils,
   SysUtils;
 
 const
@@ -1020,6 +1036,72 @@ begin
   SUT.Add(1);
   SUT.Add(2);
   SUT.Add(3);
+end;
+
+{ TTestSortedList }
+
+procedure TTestSortedList.CheckAddRange;
+var
+  i: Integer;
+begin
+  CheckEquals(Length(SortedPrimes), SUT.Count);
+  for i := 0 to High(SortedPrimes) do
+    CheckEquals(SortedPrimes[i], SUT[i]);
+end;
+
+procedure TTestSortedList.SetUp;
+begin
+  inherited;
+  SUT := TSortedList<Integer>.Create;
+end;
+
+procedure TTestSortedList.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestSortedList.TestAddRange_NotSorted;
+begin
+  SUT.AddRange(NotSortedPrimes);
+  CheckAddRange;
+
+  SUT.Clear;
+  SUT.AddRange(TCollections.CreateList<Integer>(NotSortedPrimes));
+  CheckAddRange;
+end;
+
+procedure TTestSortedList.TestAddRange_Sorted;
+begin
+  SUT.AddRange(SortedPrimes);
+  CheckAddRange;
+
+  SUT.Clear;
+  SUT.AddRange(TCollections.CreateList<Integer>(SortedPrimes));
+  CheckAddRange;
+end;
+
+procedure TTestSortedList.TestReturnsMinusOneWhenNotFound;
+var
+  Result: Integer;
+begin
+  // Empty
+  Result := SUT.IndexOf(42);
+  CheckEquals(-1, Result);
+
+  SUT.AddRange([2, 3, 5]);
+
+  // At the end
+  Result := SUT.IndexOf(42);
+  CheckEquals(-1, Result);
+
+  // At the beginning
+  Result := SUT.IndexOf(0);
+  CheckEquals(-1, Result);
+
+  // In the middle
+  Result := SUT.IndexOf(4);
+  CheckEquals(-1, Result);
 end;
 
 { TTestStringIntegerDictionary }
@@ -2204,19 +2286,31 @@ end;
 
 { TTestEnumerable }
 
-procedure TTestEnumerable.SetUp;
+procedure TTestEnumerable.TestAggregate;
+var
+  sentence, reversed: string;
+  words: IEnumerable<string>;
 begin
-  SUT := TEnumerable.Range(0, MaxItems);
+  sentence := 'the quick brown fox jumps over the lazy dog';
+  words := TEnumerable.Query<string>(TArray<string>(SplitString(sentence, ' ')));
+  reversed := words.Aggregate(
+    function(workingSentence, next: string): string
+    begin
+      Result := next + ' ' + workingSentence;
+    end);
+  CheckEquals('dog lazy the over jumps fox brown quick the', reversed);
 end;
 
 procedure TTestEnumerable.TestToArray;
 var
+  sut: IEnumerable<Integer>;
   values: TArray<Integer>;
   i: Integer;
 begin
-  values := SUT.ToArray;
+  sut := TEnumerable.Range(0, MaxItems);
+  values := sut.ToArray;
   CheckEquals(MaxItems, Length(values));
-  for i in SUT do
+  for i in sut do
     CheckEquals(i, values[i]);
 end;
 

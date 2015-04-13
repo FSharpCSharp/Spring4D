@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Interception.MethodIntercept;
+unit Spring.MethodIntercept;
 
 interface
 

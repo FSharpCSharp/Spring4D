@@ -144,6 +144,8 @@ type
 
     function GetEnumerator: IEnumerator<T>; virtual;
 
+    function Aggregate(const func: TFunc<T, T, T>): T;
+
     function All(const predicate: TPredicate<T>): Boolean;
     function Any(const predicate: TPredicate<T>): Boolean; overload;
 
@@ -206,6 +208,8 @@ type
     function Skip(count: Integer): IEnumerable<T>;
     function SkipWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
     function SkipWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+
+    function Sum: T; overload;
 
     function Take(count: Integer): IEnumerable<T>;
     function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
@@ -606,6 +610,23 @@ end;
 class destructor TEnumerableBase<T>.Destroy;
 begin
   fEqualityComparer := nil;
+end;
+
+function TEnumerableBase<T>.Aggregate(const func: TFunc<T, T, T>): T;
+var
+  enumerator: IEnumerator<T>;
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(func), 'func');
+{$ENDIF}
+
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := enumerator.Current;
+  while enumerator.MoveNext do
+    Result := func(Result, enumerator.Current);
 end;
 
 function TEnumerableBase<T>.All(const predicate: TPredicate<T>): Boolean;
@@ -1158,6 +1179,23 @@ begin
 {$ENDIF}
 
   Result := TSkipWhileIndexIterator<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.Sum: T;
+var
+  item: T;
+begin
+  Result := Default(T);
+  for item in Self do
+    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+      tkInteger: PInteger(@Result)^ := PInteger(@Result)^ + PInteger(@item)^;
+      tkInt64: PInt64(@Result)^ := PInt64(@Result)^ + PInt64(@item)^;
+      tkFloat:
+      case GetTypeData(TypeInfo(T)).FloatType of
+        ftSingle: PSingle(@Result)^ := PSingle(@Result)^ + PSingle(@item)^;
+        ftDouble: PDouble(@Result)^ := PDouble(@Result)^ + PDouble(@item)^;
+      end;
+    end;
 end;
 
 function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;

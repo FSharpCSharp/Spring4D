@@ -236,6 +236,11 @@ type
     function GetEnumerator: IEnumerator<T>;
 
     /// <summary>
+    ///   Applies an accumulator function over a sequence.
+    /// </summary>
+    function Aggregate(const func: TFunc<T, T, T>): T;
+
+    /// <summary>
     ///   Determines whether all elements of a sequence satisfy a condition.
     /// </summary>
     /// <param name="predicate">
@@ -656,9 +661,17 @@ type
     function SkipWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
 
     /// <summary>
-    ///   Returns a specified number of contiguous elements from the start of a
-    ///   sequence.
+    ///   Computes the sum of the sequence.
     /// </summary>
+    function Sum: T; overload;
+//    function Sum(const selector: TFunc<T, Integer>): Integer; overload;
+//    function Sum(const selector: TFunc<T, Int64>): Int64; overload;
+//    function Sum(const selector: TFunc<T, Double>): Double; overload;
+
+    ///	<summary>
+    ///	  Returns a specified number of contiguous elements from the start of a
+    ///	  sequence.
+    ///	</summary>
     function Take(count: Integer): IEnumerable<T>;
 
     /// <summary>
@@ -2195,7 +2208,7 @@ type
   /// <summary>
   ///   Provides static methods to create an instance of various interfaced
   ///   generic collections such as <see cref="IList&lt;T&gt;" /> or <see cref="IDictionary&lt;TKey, TValue&gt;" />
-  ///    .
+  ///   .
   /// </summary>
   TCollections = class
   public
@@ -2320,6 +2333,9 @@ implementation
 uses
   Character,
   SyncObjs,
+{$IFDEF DELPHIXE8_UP}
+  System.Hash,
+{$ENDIF}
   Spring.Collections.Dictionaries,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
@@ -2736,7 +2752,7 @@ end;
 
 class function TEnumerable.Empty<T>: IEnumerable<T>;
 begin
-  Result := TEmptyEnumerable<T>.Create;
+  Result := TEmptyEnumerable<T>.Instance;
 end;
 
 class function TEnumerable.Max<T>(const source: IEnumerable<T>;
@@ -2867,7 +2883,11 @@ begin
   else
     S := Value;
 
+{$IFDEF DELPHIXE8_UP}
+  Result := THashBobJenkins.GetHashValue(S);
+{$ELSE}
   Result := BobJenkinsHash(PChar(S)^, SizeOf(Char) * Length(S), 0);
+{$ENDIF}
 end;
 
 class function TStringComparer.Ordinal: TStringComparer;

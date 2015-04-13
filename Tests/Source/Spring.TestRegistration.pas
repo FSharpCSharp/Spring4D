@@ -82,6 +82,7 @@ begin
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
     TTestIntegerList.Suite,
+    TTestSortedList.Suite,
     TTestStringIntegerDictionary.Suite,
     TTestEmptyStringIntegerDictionary.Suite,
     TTestEmptyStackOfStrings.Suite,

@@ -42,6 +42,9 @@ type
 {$IFNDEF DELPHIXE3_UP}
   {$DEFINE SPRING_ARRAYMANAGERS}
 {$ENDIF}
+{$IFDEF DELPHIXE8_UP}
+  {$DEFINE SPRING_ARRAYMANAGERS}
+{$ENDIF}
 
 {$IFDEF SPRING_ARRAYMANAGERS}
   TArrayManager<T> = class abstract
@@ -55,6 +58,15 @@ type
     procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
     procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
   end;
+
+  {$IFDEF WEAKREF}
+  TManualArrayManager<T> = class(TArrayManager<T>)
+  public
+    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
+    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
+    procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
+  end;
+  {$ENDIF}
 {$ENDIF}
 
   /// <summary>
@@ -163,6 +175,9 @@ type
   public
     function Add(const item: T): Integer; override;
     procedure Insert(index: Integer; const item: T); override;
+
+    procedure AddRange(const values: array of T); override;
+    procedure AddRange(const collection: IEnumerable<T>); override;
 
     function Contains(const value: T): Boolean; override;
     function IndexOf(const item: T; index, count: Integer): Integer; override;
@@ -279,6 +294,45 @@ begin
   System.Move(FromArray[FromIndex], ToArray[ToIndex], Count * SizeOf(T));
 end;
 {$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TManualArrayManager<T>'}
+
+{$IF Defined(SPRING_ARRAYMANAGERS) AND Defined(WEAKREF)}
+procedure TManualArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
+begin
+  System.Finalize(AArray[Index], Count);
+  System.FillChar(AArray[Index], Count * SizeOf(T), 0);
+end;
+
+procedure TManualArrayManager<T>.Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer);
+var
+  i: Integer;
+begin
+  if Count > 0 then
+    if FromIndex < ToIndex then
+      for i := Count - 1 downto 0 do
+        AArray[ToIndex + i] := AArray[FromIndex + i]
+    else if FromIndex > ToIndex then
+      for i := 0 to Count - 1 do
+        AArray[ToIndex + i] := AArray[FromIndex + i];
+end;
+
+procedure TManualArrayManager<T>.Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer);
+var
+  i: Integer;
+begin
+  if Count > 0 then
+    if FromIndex < ToIndex then
+      for i := Count - 1 downto 0 do
+        ToArray[ToIndex + i] := FromArray[FromIndex + i]
+    else if FromIndex > ToIndex then
+      for i := 0 to Count - 1 do
+        ToArray[ToIndex + i] := FromArray[FromIndex + i];
+end;
+{$IFEND}
 
 {$ENDREGION}
 
@@ -897,9 +951,41 @@ end;
 {$REGION 'TSortedList<T>'}
 
 function TSortedList<T>.Add(const item: T): Integer;
+var
+  lComparer: IComparer<T>;
 begin
-  TArray.BinarySearch<T>(fItems, item, Result, Comparer, 0, fCount);
+  Result := fCount;
+  // This block improves performance when adding a sequence of an already sorted
+  // collection at a cost of one comparison.
+  if Result > 0 then
+  begin
+    lComparer := Comparer;
+    // Is new item greater than the last one?
+    if lComparer.Compare(fItems[Result - 1], item) > 0 then
+      TArray.BinarySearch<T>(fItems, item, Result, lComparer, 0, fCount);
+    // If so, fCount is our insertion point
+  end;
   inherited Insert(Result, item);
+end;
+
+procedure TSortedList<T>.AddRange(const collection: IEnumerable<T>);
+var
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  for item in collection do
+    Add(item);
+end;
+
+procedure TSortedList<T>.AddRange(const values: array of T);
+var
+  item: T;
+begin
+  for item in values do
+    Add(item);
 end;
 
 function TSortedList<T>.Contains(const value: T): Boolean;
@@ -921,7 +1007,8 @@ begin
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
-  TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count);
+  if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count) then
+    Result := -1;
 end;
 
 procedure TSortedList<T>.Insert(index: Integer; const item: T);
