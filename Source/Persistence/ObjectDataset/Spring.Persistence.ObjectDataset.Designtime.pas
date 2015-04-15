@@ -40,7 +40,7 @@ uses
 
 procedure Register;
 begin
-  RegisterComponents('Spring4D Persistence', [TObjectDataset]);
+  RegisterComponents('Spring4D', [TObjectDataset]);
 end;
 
 end.

@@ -96,6 +96,9 @@
 {$IFDEF IOS}
   {$DEFINE FMX}
 {$ENDIF}
+{$IFDEF MACOS}
+  {$DEFINE FMX}
+{$ENDIF}
 
 // This option is needed to enable code browsing (aka Ctrl+Click)
 // It does not affect the binary size or generated code
