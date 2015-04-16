@@ -168,10 +168,8 @@ var
   pair: TPair;
 begin
   for pair in fValues do
-  begin
     if SameText(fieldname, pair.Name) then
       Exit(True);
-  end;
   Result := False;
 end;
 
@@ -195,10 +193,8 @@ var
   pair: TPair;
 begin
   for pair in fValues do
-  begin
     if SameText(fieldname, pair.Name) then
       Exit(pair.Value);
-  end;
   raise EORMColumnNotFound.CreateFmt('Column %s not found in the resultSet', [fieldname]);
 end;
 

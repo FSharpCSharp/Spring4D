@@ -49,7 +49,6 @@ procedure TConnectionFactoryTest.TestGetInstance1;
 var
   ReturnValue: IDBConnection;
 begin
-  ReturnValue := nil;
   ReturnValue := TConnectionFactory.GetInstance(dtSQLite, JSON_SQLITE);
   CheckTrue(Assigned(ReturnValue));
   CheckEqualsString('SQLite3', ReturnValue.GetDriverName);

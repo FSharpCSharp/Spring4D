@@ -1509,6 +1509,8 @@ begin
   ClearTable(TBL_PEOPLE);
   ClearTable(TBL_ORDERS);
   ClearTable(TBL_PRODUCTS);
+  ClearTable(TBL_USERS);
+  ClearTable(TBL_ROLES);
   FManager.Free;
   FSession := nil;
   FConnection := nil;

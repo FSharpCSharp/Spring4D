@@ -19,6 +19,8 @@ const
   TBL_PEOPLE = 'CUSTOMERS';
   TBL_ORDERS = 'Customer_Orders';
   TBL_PRODUCTS = 'PRODUCTS';
+  TBL_USERS = 'USER';
+  TBL_ROLES = 'ROLE';
 
 implementation
 
