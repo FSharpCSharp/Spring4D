@@ -63,19 +63,32 @@ type
 implementation
 
 uses
-  Spring.Persistence.Mapping.RttiExplorer,
+  Rtti,
+  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands.CreateForeignKey,
   Spring.Persistence.SQL.Commands.CreateSequence,
-  Spring.Persistence.SQL.Commands.CreateTable;
+  Spring.Persistence.SQL.Commands.CreateTable,
+  Spring.Reflection;
 
 
 {$REGION 'TDatabaseManager'}
 
 constructor TDatabaseManager.Create(const connection: IDBConnection);
+
+  function GetEntities: IList<TClass>;
+  var
+    rttiType: TRttiType;
+  begin
+    Result := TCollections.CreateList<TClass>;
+    for rttiType in TType.Types do
+      if rttiType.IsClass and rttiType.HasCustomAttribute<EntityAttribute> then
+        Result.Add(rttiType.AsInstance.MetaclassType);
+  end;
+
 begin
   inherited Create;
   fConnection := connection;
-  fEntities := TRttiExplorer.GetEntities;
+  fEntities := GetEntities;
 end;
 
 procedure TDatabaseManager.BuildDatabase;

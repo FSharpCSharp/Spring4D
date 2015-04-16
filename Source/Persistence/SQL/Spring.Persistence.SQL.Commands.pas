@@ -30,6 +30,7 @@ interface
 
 uses
   Spring.Collections,
+  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Types;
 
@@ -90,7 +91,8 @@ type
     procedure SetAssociations(entityClass: TClass); virtual;
     procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn;
-    procedure SetFromForeignColumn(baseTableClass, foreignTableClass: TClass);
+    procedure SetFromForeignColumn(const entityData: TEntityData;
+      foreignTableClass: TClass);
 
     property SelectFields: IList<TSQLSelectField> read fSelectFields;
     property Joins: IList<TSQLJoin> read fJoins;
@@ -200,9 +202,7 @@ uses
   SysUtils,
   TypInfo,
   Spring.Reflection,
-  Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Core.Relation.ManyToOne,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Core.Relation.ManyToOne;
 
 
 {$REGION 'TSelectCommand'}
@@ -288,7 +288,7 @@ begin
   begin
     manyToOneColumn := entityData.ManyToOneColumns[i];
     table := TSQLTable.Create;
-    table.SetFromAttribute(TRttiExplorer.GetTable(manyToOneColumn.MemberType));
+    table.SetFromAttribute(TType.GetType(manyToOneColumn.MemberType).GetCustomAttribute<TableAttribute>);
     fTables.Add(table);
 
     mappedByColumn := TManyToOneRelation.GetMappedByColumn(manyToOneColumn, entityClass);
@@ -309,7 +309,8 @@ begin
   end;
 end;
 
-procedure TSelectCommand.SetFromForeignColumn(baseTableClass, foreignTableClass: TClass);
+procedure TSelectCommand.SetFromForeignColumn(const entityData: TEntityData;
+  foreignTableClass: TClass);
 var
   primaryKeyColumn: ColumnAttribute;
   whereField: TSQLWhereField;
@@ -321,7 +322,7 @@ begin
   if not Assigned(primaryKeyColumn) then
     Exit;
 
-  fForeignColumn := TRttiExplorer.GetForeignKeyColumn(baseTableClass,
+  fForeignColumn := entityData.GetForeignKeyColumn(
     foreignEntityData.EntityTable, primaryKeyColumn);
   if not Assigned(fForeignColumn) then
     Exit;
@@ -551,7 +552,7 @@ begin
   fForeignKeys.Clear;
   for column in columns do
   begin
-    if TRttiExplorer.TryGetColumnAsForeignKey(column, foreignKeyColumn) then
+    if column.Member.TryGetCustomAttribute<ForeignJoinColumnAttribute>(foreignKeyColumn) then
     begin
       foreignKeyField := TSQLForeignKeyField.Create(foreignKeyColumn.Name, fTable);
       foreignKeyField.Constraints := foreignKeyColumn.ForeignStrategies;

@@ -2844,20 +2844,42 @@ begin
 {$ENDIF}
     varUString: Result := UnicodeString(TVarData(Value).VUString);
   else
-    typeName := VarTypeAsText(TVarData(Value).VType);
-    for i := 0 to High(CustomVariantTypes) do
-      if SameText(typeName, CustomVariantTypes[i].Name) then
-      begin
-        case CustomVariantTypes[i].VType of
-          varDouble: Result := Double(Value);
-          varInt64: Result := {$IFDEF DELPHIXE6_UP}Int64(Value);
-            {$ELSE}StrToInt64(VarToStr(Value));{$ENDIF} // see QC#117696
-        else
-          raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
+    case TVarData(Value).VType and not varArray of
+      varSmallint: Result := TValue.From<TArray<SmallInt>>(Value);
+      varInteger: Result := TValue.From<TArray<Integer>>(Value);
+      varSingle: Result := TValue.From<TArray<Single>>(Value);
+      varDouble: Result := TValue.From<TArray<Double>>(Value);
+      varCurrency: Result := TValue.From<TArray<Currency>>(Value);
+      varDate: Result := TValue.From<TArray<TDateTime>>(Value);
+      varOleStr: Result := TValue.From<TArray<string>>(Value);
+      varDispatch: Result := TValue.From<TArray<IDispatch>>(Value);
+      varError: Result := TValue.From<TArray<HRESULT>>(Value);
+      varBoolean: Result := TValue.From<TArray<Boolean>>(Value);
+      varVariant: Result := TValue.From<TArray<Variant>>(Value);
+      varUnknown: Result := TValue.From<TArray<IInterface>>(Value);
+      varShortInt: Result := TValue.From<TArray<ShortInt>>(Value);
+      varByte: Result := TValue.From<TArray<Byte>>(Value);
+      varWord: Result := TValue.From<TArray<Word>>(Value);
+      varLongWord: Result := TValue.From<TArray<LongWord>>(Value);
+      varInt64: Result := TValue.From<TArray<Int64>>(Value);
+      varUInt64: Result := TValue.From<TArray<UInt64>>(Value);
+      varUString: Result := TValue.From<TArray<string>>(Value);
+    else
+      typeName := VarTypeAsText(TVarData(Value).VType);
+      for i := 0 to High(CustomVariantTypes) do
+        if SameText(typeName, CustomVariantTypes[i].Name) then
+        begin
+          case CustomVariantTypes[i].VType of
+            varDouble: Result := Double(Value);
+            varInt64: Result := {$IFDEF DELPHIXE6_UP}Int64(Value);
+              {$ELSE}StrToInt64(VarToStr(Value));{$ENDIF} // see QC#117696
+          else
+            raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
+          end;
+          Exit;
         end;
-        Exit;
-      end;
-    raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
+      raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
+    end;
   end;
 end;
 

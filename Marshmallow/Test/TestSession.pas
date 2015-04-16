@@ -86,7 +86,7 @@ type
     procedure FetchCollection;
     procedure Versioning;
     procedure ListSession_Begin_Commit;
-    procedure When_SpringLazy_Is_OneToMany;
+    procedure When_Lazy_Is_OneToMany;
     procedure When_Registered_RowMapper_And_FindOne_Make_Sure_Its_Used_On_TheSameType;
     procedure When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
     procedure When_Registered_RowMapper_And_GetList_Make_Sure_Its_Used_On_TheSameType;
@@ -1794,23 +1794,19 @@ type
     property Name: string read FName write FName;
   end;
 
-  TSpringLazyCustomer = class(TCustomer)
+  TCustomerWithLazyOneToMany = class(TCustomer)
   private
     [OneToMany(False, [ckCascadeAll])]
-    FSpringLazyOrders: Spring.Lazy<IList<TCustomer_Orders>>;
+    FOrders: Lazy<IList<TCustomer_Orders>>;
     function GetOrders: IList<TCustomer_Orders>;
   public
-    property SpringLazyOrders: IList<TCustomer_Orders> read GetOrders;
+    property OrdersLazy: IList<TCustomer_Orders> read GetOrders;
   end;
 
-
-
-{ TSpringLazyCustomer }
-
-  function TSpringLazyCustomer.GetOrders: IList<TCustomer_Orders>;
-  begin
-    Result := FSpringLazyOrders.Value;
-  end;
+function TCustomerWithLazyOneToMany.GetOrders: IList<TCustomer_Orders>;
+begin
+  Result := FOrders;
+end;
 
 type
   TCustomerRowMapper = class(TInterfacedObject, IRowMapper<TCustomer>)
@@ -1818,13 +1814,11 @@ type
     function MapRow(const resultSet: IDBResultSet): TCustomer;
   end;
 
-  { TCustomerRowMapper }
-
-  function TCustomerRowMapper.MapRow(const resultSet: IDBResultSet): TCustomer;
-  begin
-    Result := TCustomer.Create;
-    Result.Name := resultSet.GetFieldValue('CUSTNAME');
-  end;
+function TCustomerRowMapper.MapRow(const resultSet: IDBResultSet): TCustomer;
+begin
+  Result := TCustomer.Create;
+  Result.Name := resultSet.GetFieldValue('CUSTNAME');
+end;
 
 
 procedure TSessionTest.When_Registered_RowMapper_And_FindAll_Make_Sure_Its_Used_On_TheSameType;
@@ -1867,9 +1861,9 @@ begin
   CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
 end;
 
-procedure TSessionTest.When_SpringLazy_Is_OneToMany;
+procedure TSessionTest.When_Lazy_Is_OneToMany;
 var
-  customer: TSpringLazyCustomer;
+  customer: TCustomerWithLazyOneToMany;
   id: Integer;
 begin
   id := InsertCustomer;
@@ -1877,11 +1871,11 @@ begin
   InsertCustomerOrder(id, 2, 10, 200);
   InsertCustomerOrder(id, 3, 10, 300);
 
-  customer := FSession.FindOne<TSpringLazyCustomer>(id);
-  CheckEquals(3, customer.SpringLazyOrders.Count);
-  CheckEquals(1, customer.SpringLazyOrders[0].Customer_Payment_Method_Id);
-  CheckEquals(2, customer.SpringLazyOrders[1].Customer_Payment_Method_Id);
-  CheckEquals(3, customer.SpringLazyOrders[2].Customer_Payment_Method_Id);
+  customer := FSession.FindOne<TCustomerWithLazyOneToMany>(id);
+  CheckEquals(3, customer.OrdersLazy.Count);
+  CheckEquals(1, customer.OrdersLazy[0].Customer_Payment_Method_Id);
+  CheckEquals(2, customer.OrdersLazy[1].Customer_Payment_Method_Id);
+  CheckEquals(3, customer.OrdersLazy[2].Customer_Payment_Method_Id);
   customer.Free;
 end;
 
@@ -1924,7 +1918,7 @@ procedure TSessionTest.When_WithoutPrimaryKey_FindOne_ThrowException;
 begin
   ExpectedException := EORMUnsupportedType;
   FSession.FindOne<TWithoutPrimaryKey>(1);
-  StopExpectingException('Should not succeed if entitys primary key column is not annotated');
+  StopExpectingException('Should not succeed if entity has no primary key column');
 end;
 
 procedure TSessionTest.When_WithoutTableAttribute_FindOne_ThrowException;

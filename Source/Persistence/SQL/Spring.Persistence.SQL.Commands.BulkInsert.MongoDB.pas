@@ -76,7 +76,7 @@ begin
     for LEntity in entities do
     begin
       if CanClientAutogenerateValue then
-        EntityData.PrimaryKeyColumn.RttiMember.SetValue(LEntity, TValue.FromVariant(Generator.GenerateUniqueId));
+        EntityData.PrimaryKeyColumn.Member.SetValue(LEntity, TValue.FromVariant(Generator.GenerateUniqueId));
 
       InsertCommand.Entity := LEntity;
       Command.Entity := LEntity;

@@ -224,17 +224,15 @@ var
 begin
   LTest1 := TTest1.Create;
   LTest2 := TTest2.Create;
-  TRttiExplorer.RttiCache.RebuildCache;
   try
     LTest2.FId := 220;
 
     CheckFalse(FEntityMap.IsMapped(LTest1));
     CheckFalse(FEntityMap.IsMapped(LTest2));
-    //220 offset
     entityWrapper := TEntityWrapper.Create(LTest1);
     FEntityMap.AddOrReplace(entityWrapper);
+    CheckTrue(FEntityMap.IsMapped(LTest1));
     CheckFalse(FEntityMap.IsMapped(LTest2));
-
   finally
     LTest1.Free;
     LTest2.Free;
@@ -270,7 +268,7 @@ begin
   LCustomer.Name := 'Changed';
   LChangedColumns := FEntityMap.GetChangedMembers(LCustomer, TEntityCache.Get(LCustomer.ClassType));
   CheckEquals(1, LChangedColumns.Count);
-  CheckEquals('Name', LChangedColumns.First.MemberName);
+  CheckEquals('Name', LChangedColumns.First.Member.Name);
   LCustomer.Free;
 end;
 

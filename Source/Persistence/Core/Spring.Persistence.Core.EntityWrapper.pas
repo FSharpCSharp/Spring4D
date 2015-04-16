@@ -25,13 +25,11 @@ type
     function GetPrimaryKeyValueFrom(const resultSet: IDBResultSet): TValue;
 
     function GetColumns: IList<ColumnAttribute>;
-    function GetColumnAttribute(const memberName: string): ColumnAttribute;
+    function GetColumnAttribute(const member: TRttiMember): ColumnAttribute;
     function GetColumnsToMap: TColumnDataList;
-    function GetColumnValue(const memberName: string): TValue; overload;
     function GetColumnValue(const column: TORMAttribute): TValue; overload;
     function GetColumnValueFrom(const resultSet: IDBResultSet; const columnName: string): TValue;
 
-    procedure SetColumnValue(const columnMemberName: string; const value: TValue); overload;
     procedure SetColumnValue(const column: TORMAttribute; const value: TValue); overload;
     procedure SetMemberValue(const memberName: string; const value: TValue);
     procedure SetPrimaryKeyValue(const value: TValue);
@@ -72,9 +70,9 @@ begin
 end;
 
 function TEntityWrapper.GetColumnAttribute(
-  const memberName: string): ColumnAttribute;
+  const member: TRttiMember): ColumnAttribute;
 begin
-  Result := fEntityClassData.ColumnByMemberName(memberName);
+  Result := member.GetCustomAttribute<ColumnAttribute>;
 end;
 
 function TEntityWrapper.GetColumns: IList<ColumnAttribute>;
@@ -92,12 +90,7 @@ end;
 
 function TEntityWrapper.GetColumnValue(const column: TORMAttribute): TValue;
 begin
-  Result := column.RttiMember.GetValue(fEntity);
-end;
-
-function TEntityWrapper.GetColumnValue(const memberName: string): TValue;
-begin
-  Result := fEntityClassData.ColumnByMemberName(memberName).RttiMember.GetValue(fEntity);
+  Result := column.Member.GetValue(fEntity);
 end;
 
 function TEntityWrapper.GetColumnValueFrom(const resultSet: IDBResultSet; const columnName: string): TValue;
@@ -136,7 +129,7 @@ function TEntityWrapper.GetPrimaryKeyValue: TValue;
 begin
   if not fEntityClassData.HasPrimaryKey then
     Exit(TValue.Empty);
-  Result := fEntityClassData.PrimaryKeyColumn.RttiMember.GetValue(fEntity);
+  Result := fEntityClassData.PrimaryKeyColumn.Member.GetValue(fEntity);
 end;
 
 function TEntityWrapper.GetPrimaryKeyValueFrom(const resultSet: IDBResultSet): TValue;
@@ -180,13 +173,7 @@ end;
 
 procedure TEntityWrapper.SetColumnValue(const column: TORMAttribute; const value: TValue);
 begin
-  column.RttiMember.SetValue(fEntity, value);
-end;
-
-procedure TEntityWrapper.SetColumnValue(const columnMemberName: string;
-  const value: TValue);
-begin
-  SetColumnValue(fEntityClassData.ColumnByMemberName(columnMemberName), value);
+  column.Member.SetValue(fEntity, value);
 end;
 
 procedure TEntityWrapper.SetMemberValue(const memberName: string;
@@ -198,7 +185,7 @@ end;
 procedure TEntityWrapper.SetPrimaryKeyValue(const value: TValue);
 begin
   if not value.IsEmpty then
-    TType.SetMemberValue(fEntity, fEntityClassData.PrimaryKeyColumn.MemberName, value);
+    fEntityClassData.PrimaryKeyColumn.Member.SetValue(fEntity, value);
 end;
 
 {$ENDREGION}

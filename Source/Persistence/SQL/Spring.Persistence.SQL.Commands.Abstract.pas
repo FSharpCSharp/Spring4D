@@ -41,7 +41,6 @@ type
   private
     fConnection: IDBConnection;
     fGenerator: ISQLGenerator;
-    fEntityClass: TClass;
     fSQL: string;
     fEntityData: TEntityData;
     fParams: IList<TDBParam>;
@@ -51,7 +50,6 @@ type
 
     property Command: TDMLCommand read GetCommand;
     property Connection: IDBConnection read fConnection;
-    property EntityClass: TClass read fEntityClass;
     property EntityData: TEntityData read fEntityData;
     property Generator: ISQLGenerator read fGenerator;
     property SQL: string read fSQL write fSQL;
@@ -70,6 +68,7 @@ implementation
 
 uses
   Spring,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.SQL.Register;
 
 
@@ -86,8 +85,9 @@ end;
 
 procedure TAbstractCommandExecutor.Build(entityClass: TClass);
 begin
-  fEntityClass := entityClass;
   fEntityData := TEntityCache.Get(entityClass);
+  if not fEntityData.IsTableEntity then
+    raise ETableNotSpecified.Create('Table not specified for class: ' + entityClass.ClassName);
 end;
 
 procedure TAbstractCommandExecutor.BuildParams(const entity: TObject);
@@ -156,4 +156,3 @@ end;
 
 
 end.
-

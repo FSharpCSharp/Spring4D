@@ -30,6 +30,7 @@ interface
 
 uses
   Generics.Collections,
+  Rtti,
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
@@ -38,7 +39,7 @@ uses
 
 type
   TEntityMapKey = string;
-  TEntityMapValue = TArray<TPair<string, TValue>>;
+  TEntityMapValue = TArray<TPair<Pointer, TValue>>;
 
   TEntityMap = class(TInterfacedObject, IEntityMap)
   private
@@ -69,13 +70,15 @@ type
 
     function GetChangedMembers(const instance: TObject;
       const entityData: TEntityData): IList<ColumnAttribute>; virtual;
-    function GetMemberValue(const className, id, memberName: string): TValue;
+    function GetMemberValue(const className, id: string;
+      const member: TRttiMember): TValue;
   end;
 
 implementation
 
 uses
-  Spring.Persistence.Mapping.RttiExplorer;
+  Classes,
+  Spring.Reflection;
 
 
 {$REGION 'TEntityMap'}
@@ -100,7 +103,7 @@ end;
 procedure TEntityMap.FinalizeItem(
   const item: TPair<TEntityMapKey, TEntityMapValue>);
 var
-  pair: TPair<string, TValue>;
+  pair: TPair<Pointer, TValue>;
   value: TValue;
 begin
   for pair in Item.Value do
@@ -153,14 +156,15 @@ begin
     SetLength(Result, 0);
 end;
 
-function TEntityMap.GetMemberValue(const className, id, memberName: string): TValue;
+function TEntityMap.GetMemberValue(const className, id: string;
+  const member: TRttiMember): TValue;
 var
   entityMapValue: TEntityMapValue;
-  pair: TPair<string,TValue>;
+  pair: TPair<Pointer,TValue>;
 begin
   if fEntityValues.TryGetValue(GetEntityKey(className, id), entityMapValue) then
     for pair in entityMapValue do
-      if pair.Key = memberName then
+      if pair.Key = member then
         Exit(pair.Value);
 
   Result := TValue.Empty;
@@ -185,6 +189,49 @@ begin
 end;
 
 procedure TEntityMap.PutEntity(const entity: IEntityWrapper);
+
+  procedure CopyFieldValues(const source, target: TObject);
+  var
+    field: TRttiField;
+    value: TValue;
+    sourceObject, targetObject: TObject;
+  begin
+    Assert(Assigned(source) and Assigned(target));
+    Assert(source.ClassType = target.ClassType);
+
+    for field in TType.GetType(source.ClassInfo).GetFields do
+    begin
+      if field.FieldType.IsInstance then
+      begin
+        sourceObject := field.GetValue(source).AsObject;
+        if not Assigned(sourceObject) then
+          Continue;
+        targetObject := field.GetValue(target).AsObject;
+        if not Assigned(targetObject) then
+          targetObject := TActivator.CreateInstance(sourceObject.ClassType);
+        if targetObject is TPersistent then
+          TPersistent(targetObject).Assign(sourceObject as TPersistent)
+        else
+          CopyFieldValues(sourceObject, targetObject);
+        value := targetObject;
+      end
+      else
+        value := field.GetValue(source);
+
+      field.SetValue(target, value);
+    end;
+  end;
+
+  function Clone(const entity: TObject): TObject;
+  begin
+    Assert(Assigned(entity));
+    Result := TActivator.CreateInstance(entity.ClassType);
+    if Result is TPersistent then
+      TPersistent(Result).Assign(entity as TPersistent)
+    else
+      CopyFieldValues(entity, Result);
+  end;
+
 var
   col: TColumnData;
   columnValue: TValue;
@@ -205,10 +252,11 @@ begin
   for i := 0 to entity.GetColumnsToMap.Count - 1 do
   begin
     col := entity.GetColumnsToMap[i];
-    columnValue := entity.GetColumnValue(col.ColumnAttr);
+    columnValue := entity.GetColumnValue(col.Column);
+    // TODO: support IClonable
     if columnValue.IsObject and (columnValue.AsObject <> nil) then
-      columnValue := TRttiExplorer.Clone(columnValue.AsObject);
-    values[i].Key := col.MemberName;
+      columnValue := Clone(columnValue.AsObject);
+    values[i].Key := col.Member;
     values[i].Value := columnValue;
   end;
   key := GetEntityKey(entity.GetEntity.ClassName, id);

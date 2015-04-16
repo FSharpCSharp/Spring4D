@@ -95,10 +95,10 @@ end;
 class function TManyToOneRelation.GetMappedByColumn(
   const fromColumn: ManyToOneAttribute; entityClass: TClass): ColumnAttribute;
 begin
-  Result := nil;
-  if not TEntityCache.TryGetColumnByMemberName(entityClass, fromColumn.MappedBy, Result) then
+  Result := fromColumn.MappedByMember.GetCustomAttribute<ColumnAttribute>;
+  if Result = nil then
     raise EORMManyToOneMappedByColumnNotFound.CreateFmt(
-      'Mapped by column ("%S") not found in the base class "%S".',
+      'Mapped by column ("%s") not found in the base class "%s".',
       [fromColumn.MappedBy, entityClass.ClassName]);
 end;
 
@@ -144,7 +144,7 @@ begin
   //resolve columns which we need to set
   ResolveColumns(resultSet);
   //assign newly created column to base entity property
-  column.RttiMember.SetValue(entity, NewEntity);
+  column.Member.SetValue(entity, NewEntity);
 end;
 
 {$ENDREGION}

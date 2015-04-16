@@ -65,7 +65,6 @@ type
   private
     fColumns: IList<ColumnAttribute>;
     fSelectColumns: IList<ColumnAttribute>;
-    fColumnMemberNameIndex: IDictionary<string, ColumnAttribute>;
     fColumnsData: TColumnDataList;
     fForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
     fPrimaryKeyColumn: ColumnAttribute;
@@ -73,7 +72,6 @@ type
     fOneToManyColumns: IList<OneToManyAttribute>;
     fManyToOneColumns: IList<ManyToOneAttribute>;
     fSequence: SequenceAttribute;
-    fHasInstanceField: Boolean;
     fEntityClass: TClass;
     fVersionColumn: VersionAttribute;
   protected
@@ -85,16 +83,16 @@ type
     destructor Destroy; override;
 
     function IsTableEntity: Boolean;
-    function ColumnByMemberName(const memberName: string): ColumnAttribute;
     function ColumnByName(const columnName: string): ColumnAttribute;
-    function HasInstanceField: Boolean;
     function HasPrimaryKey: Boolean;
     function HasSequence: Boolean;
     function HasManyToOneRelations: Boolean;
     function HasOneToManyRelations: Boolean;
     function HasVersionColumn: Boolean;
 
-   function GetPrimaryKeyValueAsString(const instance: TObject): string;
+    function GetPrimaryKeyValueAsString(const instance: TObject): string;
+    function GetForeignKeyColumn(const table: TableAttribute;
+      const primaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
 
     property Columns: IList<ColumnAttribute> read fColumns;
     property SelectColumns: IList<ColumnAttribute> read fSelectColumns;
@@ -125,10 +123,10 @@ type
     class function CreateColumnsData(entityClass: TClass): TColumnDataList;
     class function GetColumns(entityClass: TClass): IList<ColumnAttribute>;
     class function GetColumnsData(entityClass: TClass): TColumnDataList;
-    class function TryGetColumnByMemberName(entityClass: TClass;
-      const memberName: string; out column: ColumnAttribute): Boolean;
 
     class function IsValidEntity(entityClass: TClass): Boolean;
+
+
   end;
 
 implementation
@@ -137,9 +135,9 @@ uses
   Generics.Collections,
   SysUtils,
   Rtti,
-  Spring.Reflection,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Reflection;
 
 
 {$REGION 'TColumnDataList'}
@@ -207,8 +205,6 @@ begin
   fForeignKeyColumns := TCollections.CreateList<ForeignJoinColumnAttribute>;
   fOneToManyColumns := TCollections.CreateList<OneToManyAttribute>;
   fManyToOneColumns := TCollections.CreateList<ManyToOneAttribute>;
-  fColumnMemberNameIndex := TCollections.CreateDictionary<string, ColumnAttribute>(
-    TStringComparer.OrdinalIgnoreCase);
 end;
 
 destructor TEntityData.Destroy;
@@ -220,7 +216,6 @@ end;
 procedure TEntityData.AssignTo(Dest: TPersistent);
 var
   target: TEntityData;
-  pair: TPair<string,ColumnAttribute>;
 begin
   if Dest is TEntityData then
   begin
@@ -232,10 +227,6 @@ begin
 
     target.fSelectColumns.Clear;
     target.fSelectColumns.AddRange(SelectColumns);
-
-    target.fColumnMemberNameIndex.Clear;
-    for pair in fColumnMemberNameIndex do
-      target.fColumnMemberNameIndex.Add(pair.Key, pair.Value);
 
     target.fColumnsData.fList.Clear;
     target.fColumnsData.fList.AddRange(fColumnsData.fList);
@@ -254,15 +245,7 @@ begin
     target.fSequence := fSequence;
 
     target.fVersionColumn := fVersionColumn;
-
-    target.fHasInstanceField := fHasInstanceField;
   end;
-end;
-
-function TEntityData.ColumnByMemberName(const memberName: string): ColumnAttribute;
-begin
-  if not fColumnMemberNameIndex.TryGetValue(memberName, Result) then
-    Result := nil;
 end;
 
 function TEntityData.ColumnByName(const columnName: string): ColumnAttribute;
@@ -275,18 +258,24 @@ begin
   Result := nil;
 end;
 
+function TEntityData.GetForeignKeyColumn(const table: TableAttribute;
+  const primaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
+begin
+  Result := ForeignColumns.SingleOrDefault(
+    function(const foreignColumn: ForeignJoinColumnAttribute): Boolean
+    begin
+      Result := SameText(primaryKeyColumn.ColumnName, foreignColumn.ReferencedColumnName)
+       and SameText(Table.TableName, foreignColumn.ReferencedTableName);
+    end);
+end;
+
 function TEntityData.GetPrimaryKeyValueAsString(
   const instance: TObject): string;
 begin
   if Assigned(PrimaryKeyColumn) then
-    Result := PrimaryKeyColumn.RttiMember.GetValue(instance).ToString
+    Result := PrimaryKeyColumn.Member.GetValue(instance).ToString
   else
     Result := '';
-end;
-
-function TEntityData.HasInstanceField: Boolean;
-begin
-  Result := fHasInstanceField;
 end;
 
 function TEntityData.HasManyToOneRelations: Boolean;
@@ -332,8 +321,8 @@ begin
     columnData.Properties := column.Properties;
     columnData.ColumnName := column.ColumnName;
     columnData.TypeInfo := column.MemberType;
-    columnData.MemberName := column.MemberName;
-    columnData.ColumnAttr := column;
+    columnData.Member :=  column.Member;
+    columnData.Column := column;
 
     if column.IsPrimaryKey then
       fColumnsData.PrimaryKeyColumn := columnData;
@@ -346,24 +335,20 @@ begin
       fSelectColumns.Add(column);
 
     fColumnsData.Add(columnData);
-    fColumnMemberNameIndex.Add(column.MemberName, column);
   end;
 end;
 
 procedure TEntityData.SetEntityData(entityClass: TClass);
 begin
   fEntityClass := entityClass;
-  fColumns := TRttiExplorer.GetColumns(entityClass);
+  fColumns := TRttiExplorer.GetColumns(fEntityClass);
   SetColumnsData;
-  fPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(entityClass);
-  if Assigned(fPrimaryKeyColumn) then
-    fPrimaryKeyColumn.IsIdentity := TRttiExplorer.GetColumnIsIdentity(entityClass, fPrimaryKeyColumn);
-  fTable := TRttiExplorer.GetTable(entityClass);
-  fForeignKeyColumns := TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(entityClass);
-  fOneToManyColumns := TRttiExplorer.GetClassMembers<OneToManyAttribute>(entityClass);
-  fManyToOneColumns := TRttiExplorer.GetClassMembers<ManyToOneAttribute>(entityClass);
-  fSequence := TRttiExplorer.GetSequence(entityClass);
-  fHasInstanceField := TRttiExplorer.HasInstanceField(entityClass);
+  fPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(fEntityClass);
+  fTable := TRttiExplorer.GetTable(fEntityClass);
+  fForeignKeyColumns := TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(fEntityClass);
+  fOneToManyColumns := TRttiExplorer.GetClassMembers<OneToManyAttribute>(fEntityClass);
+  fManyToOneColumns := TRttiExplorer.GetClassMembers<ManyToOneAttribute>(fEntityClass);
+  fSequence := TRttiExplorer.GetSequence(fEntityClass);
 end;
 
 {$ENDREGION}
@@ -433,13 +418,6 @@ begin
   finally
     fCriticalSection.Leave;
   end;
-end;
-
-class function TEntityCache.TryGetColumnByMemberName(entityClass: TClass;
-  const memberName: string; out column: ColumnAttribute): Boolean;
-begin
-  column := TEntityCache.Get(entityClass).ColumnByMemberName(memberName);
-  Result := Assigned(column);
 end;
 
 {$ENDREGION}

@@ -80,8 +80,6 @@ end;
 procedure TCreateTableExecutor.Build(entityClass: TClass);
 begin
   inherited Build(entityClass);
-  if not Assigned(EntityData.EntityTable) then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%s"', [entityClass.ClassName]);
 
   fTable.SetFromAttribute(EntityData.EntityTable);
   fCommand.SetCommandFieldsFromColumns(EntityData.Columns);

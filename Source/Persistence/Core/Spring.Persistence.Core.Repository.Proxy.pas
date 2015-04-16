@@ -70,6 +70,7 @@ function FromArgsToConstArray(const args: TArray<TValue>): TArray<TVarRec>;
 procedure FinalizeVarRec(var item: TVarRec);
 procedure FinalizeVarRecArray(var values: TArray<TVarRec>);
 function GetPageArgs(const args: TArray<TValue>; out page: Integer; out pageSize: Integer): TArray<TValue>;
+function GetQueryTextFromMethod(const method: TRttiMethod): string;
 
 implementation
 
@@ -79,7 +80,7 @@ uses
   Variants,
   Spring,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Persistence.Mapping.Attributes,
   Spring.Reflection;
 
 function FromArgsToConstArray(const args: TArray<TValue>): TArray<TVarRec>;
@@ -178,6 +179,15 @@ begin
     Result[i] := args[i];
 end;
 
+function GetQueryTextFromMethod(const method: TRttiMethod): string;
+var
+  attribute: QueryAttribute;
+begin
+  if method.TryGetCustomAttribute<QueryAttribute>(attribute) then
+    Exit(attribute.QueryText);
+  Result := '';
+end;
+
 
 {$REGION 'TProxyRepository<T, TID>'}
 
@@ -223,7 +233,7 @@ begin
       begin
         constArray := FromArgsToConstArray(Args);
         try
-          items := fRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), constArray);
+          items := fRepository.Query(GetQueryTextFromMethod(Method), constArray);
           (items as ICollectionOwnership).OwnsObjects := False;
           Result := TValue.From<T>(items.FirstOrDefault);
         finally
@@ -239,7 +249,7 @@ begin
           constArray := FromArgsToConstArray(pageArgs);
           try
             Result := TValue.From<IDBPage<T>>(fSession.Page<T>(page, pageSize,
-              TRttiExplorer.GetQueryTextFromMethod(Method), constArray));
+              GetQueryTextFromMethod(Method), constArray));
           finally
             FinalizeVarRecArray(constArray);
           end;
@@ -249,7 +259,7 @@ begin
           constArray := FromArgsToConstArray(Args);
           try
             Result := TValue.From<IList<T>>(fRepository.Query(
-              TRttiExplorer.GetQueryTextFromMethod(Method), constArray));
+              GetQueryTextFromMethod(Method), constArray));
           finally
             FinalizeVarRecArray(constArray);
           end;

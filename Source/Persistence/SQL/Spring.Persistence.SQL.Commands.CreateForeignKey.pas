@@ -81,8 +81,6 @@ end;
 procedure TCreateForeignKeyExecutor.Build(entityClass: TClass);
 begin
   inherited Build(entityClass);
-  if not EntityData.IsTableEntity then
-    raise ETableNotSpecified.Create('Table not specified for class: ' + entityClass.ClassName);
 
   fTable.SetFromAttribute(EntityData.EntityTable);
   fCommand.SetCommandFieldsFromColumns(EntityData.Columns);

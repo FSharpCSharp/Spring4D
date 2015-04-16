@@ -104,8 +104,6 @@ end;
 procedure TSelectExecutor.Build(entityClass: TClass);
 begin
   inherited Build(entityClass);
-  if not EntityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
   fTable.SetFromAttribute(EntityData.EntityTable);
 
@@ -146,7 +144,7 @@ begin
   fCommand.WhereFields.Clear;
 
   if Assigned(fForeignEntityClass) then
-    fCommand.SetFromForeignColumn(EntityClass, fForeignEntityClass)
+    fCommand.SetFromForeignColumn(EntityData, fForeignEntityClass)
   else
     fCommand.SetFromPrimaryColumn;
 

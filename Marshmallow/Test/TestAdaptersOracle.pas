@@ -62,9 +62,11 @@ uses
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Criteria.Properties,
+  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types,
-  Spring.Persistence.SQL.Commands;
+  Spring.Persistence.SQL.Commands,
+  Spring.Reflection;
 
 const
   TBL_COMPANY = 'Vikarina.IMONES';
@@ -267,7 +269,7 @@ var
 begin
   table := TSQLTable.CreateFromClass(TCustomer);
   field := TSQLInsertField.Create('MiddleName', table,
-    TEntityCache.Get(TCustomer).ColumnByMemberName('MiddleName'),
+    TType.GetType<TCustomer>.GetProperty('MiddleName').GetCustomAttribute<ColumnAttribute>,
     ':MiddleName');
   param := fSut.CreateParam(field, TValue.Empty);
   CheckEquals(TOracleDBParam, param.ClassType);
@@ -318,7 +320,8 @@ var
 begin
   table := TSQLTable.CreateFromClass(TCustomer);
   field := TSQLCreateField.Create('MiddleName', table);
-  field.SetFromAttribute(TEntityCache.Get(TCustomer).ColumnByMemberName('MiddleName'));
+  field.SetFromAttribute(TType.GetType<TCustomer>.GetProperty(
+    'MiddleName').GetCustomAttribute<ColumnAttribute>);
 
   actual := fSut.GetSQLDataTypeName(field);
   expected := 'NVARCHAR2(50)';

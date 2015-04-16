@@ -145,8 +145,8 @@ var
   metadata: TQueryMetadata;
 begin
   statement := Connection.CreateStatement;
-  version := EntityData.VersionColumn.RttiMember.GetValue(entity);
-  primaryKey := EntityData.PrimaryKeyColumn.RttiMember.GetValue(entity);
+  version := EntityData.VersionColumn.Member.GetValue(entity);
+  primaryKey := EntityData.PrimaryKeyColumn.Member.GetValue(entity);
   query := Generator.GetUpdateVersionFieldQuery(fCommand, EntityData.VersionColumn,
     version.ToVariant, primaryKey.ToVariant);
   metadata.QueryOperation := ctUpdateVersion;
@@ -155,15 +155,12 @@ begin
 
   Result := statement.Execute > 0;
   if Result then
-    EntityData.VersionColumn.RttiMember.SetValue(entity, version.AsInteger + 1);
+    EntityData.VersionColumn.Member.SetValue(entity, version.AsInteger + 1);
 end;
 
 procedure TUpdateExecutor.Build(entityClass: TClass);
 begin
   inherited Build(entityClass);
-
-  if not EntityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
   fTable.SetFromAttribute(EntityData.EntityTable);
   fCommand.PrimaryKeyColumn := EntityData.PrimaryKeyColumn;

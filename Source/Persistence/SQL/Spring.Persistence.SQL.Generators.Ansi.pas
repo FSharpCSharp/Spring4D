@@ -115,7 +115,6 @@ uses
   Variants,
   Spring,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Reflection;
 
 
@@ -708,7 +707,7 @@ begin
       begin
         createField := field.Clone;
         try
-          createField.TypeInfo := TRttiExplorer.GetLastGenericArgumentType(typeInfo).Handle;
+          createField.TypeInfo := TType.GetType(typeInfo).GetGenericArguments[0].Handle;
           Result := GetSQLDataTypeName(createField);
         finally
           createField.Free;

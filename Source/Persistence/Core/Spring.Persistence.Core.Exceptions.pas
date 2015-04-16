@@ -104,7 +104,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Mapping.RttiExplorer,
+  Spring.Reflection;
 
 
 {$REGION 'EBaseORMException'}
@@ -129,7 +130,7 @@ begin
     columns := TRttiExplorer.GetColumns(entity.ClassType);
     for column in columns do
     begin
-      value := TRttiExplorer.GetMemberValue(entity, column.MemberName);
+      value := column.Member.GetValue(entity);
       builder.AppendFormat('[%s] : %s', [column.ColumnName, value.ToString]).AppendLine;
     end;
     Result := builder.ToString;

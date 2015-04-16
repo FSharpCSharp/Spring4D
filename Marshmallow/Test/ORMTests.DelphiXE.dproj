@@ -49,7 +49,6 @@
 			<DCC_DebugInformation>0</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 			<DCC_Optimize>false</DCC_Optimize>
 		</PropertyGroup>
 		<ItemGroup>

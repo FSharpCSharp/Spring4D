@@ -277,7 +277,8 @@ uses
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Interfaces,
-  Spring.Persistence.SQL.Register;
+  Spring.Persistence.SQL.Register,
+  Spring.Reflection;
 
 
 {$REGION 'TSession'}
@@ -331,7 +332,6 @@ var
   fieldValue: Variant;
   value, convertedValue: TValue;
 begin
-  Result := System.Default(T);
   results := GetResultSet(sql, params);
   if not results.IsEmpty then
   begin
@@ -342,7 +342,9 @@ begin
       raise EORMCannotConvertValue.CreateFmt(EXCEPTION_CANNOT_CONVERT_TYPE,
         [value.TypeInfo.Name, PTypeInfo(TypeInfo(T)).Name]);
     Result := convertedValue.AsType<T>;
-  end;
+  end
+  else
+    Result := Default(T);
 end;
 
 function TSession.GetList<T>(const sql: string; const params: array of const): IList<T>;
@@ -350,7 +352,6 @@ begin
   Result := TCollections.CreateObjectList<T>(True);
   FetchFromQueryText(sql, params, Result as IObjectList, TClass(T));
 end;
-
 
 function TSession.GetList<T>(const sql: string;
   const params: IList<TDBParam>): IList<T>;
@@ -378,12 +379,13 @@ var
   selecter: ISelectCommand;
   results: IDBResultSet;
 begin
-  Result := System.Default(T);
   entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
   selecter := GetSelectByIdCommandExecutor(entityClass, id);
   results := selecter.Select;
   if not results.IsEmpty then
-    Result := T(MapEntityFromResultSetRow(results, TypeInfo(T)));
+    Result := T(MapEntityFromResultSetRow(results, entityClass))
+  else
+    Result := Default(T);
 end;
 
 function TSession.FindWhere<T>(const expression: ICriterion): IList<T>;
@@ -400,7 +402,7 @@ end;
 function TSession.FirstOrDefault<T>(const sql: string; const params: array of const): T;
 begin
   if not TryFirst<T>(sql, params, Result) then
-    Result := System.Default(T);
+    Result := Default(T);
 end;
 
 function TSession.GetQueryCount(const sql: string; const params: array of const): Int64;
@@ -480,7 +482,7 @@ end;
 
 procedure TSession.RegisterRowMapper<T>(const rowMapper: IRowMapper<T>);
 begin
-  RegisterNonGenericRowMapper(TypeInfo(T), rowMapper as IRowMapper<TObject>);
+  RegisterNonGenericRowMapper(TClass(T), rowMapper as IRowMapper<TObject>);
 end;
 
 function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;
@@ -558,12 +560,14 @@ begin
   results := GetResultSet(sql, params);
   Result := not results.IsEmpty;
   if Result then
-    value := T(MapEntityFromResultsetRow(results, TypeInfo(T)));
+    value := T(MapEntityFromResultsetRow(results, TClass(T)))
+  else
+    value := Default(T);
 end;
 
 procedure TSession.UnregisterRowMapper<T>;
 begin
-  UnregisterNonGenericRowMapper(TypeInfo(T));
+  UnregisterNonGenericRowMapper(TClass(T));
 end;
 
 procedure TSession.Update(const entity: TObject);

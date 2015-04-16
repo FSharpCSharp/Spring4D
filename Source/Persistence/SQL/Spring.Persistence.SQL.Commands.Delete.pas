@@ -84,8 +84,6 @@ end;
 procedure TDeleteExecutor.Build(entityClass: TClass);
 begin
   inherited Build(entityClass);
-  if not EntityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
   fTable.SetFromAttribute(EntityData.EntityTable);
   fCommand.PrimaryKeyColumnName := EntityData.PrimaryKeyColumn.ColumnName;
@@ -136,7 +134,7 @@ end;
 function TDeleteExecutor.GetPrimaryKeyValue(const entity: TObject): TValue;
 begin
   Assert(EntityData.PrimaryKeyColumn <> nil);
-  Result := EntityData.PrimaryKeyColumn.RttiMember.GetValue(entity);
+  Result := EntityData.PrimaryKeyColumn.Member.GetValue(entity);
 end;
 
 {$ENDREGION}

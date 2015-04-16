@@ -102,8 +102,6 @@ end;
 procedure TInsertExecutor.Build(entityClass: TClass);
 begin
   inherited Build(entityClass);
-  if not EntityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
   fTable.SetFromAttribute(EntityData.EntityTable);
   fColumns.AddRange(EntityData.Columns);

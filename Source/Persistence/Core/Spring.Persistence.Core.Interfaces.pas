@@ -29,6 +29,7 @@ unit Spring.Persistence.Core.Interfaces;
 interface
 
 uses
+  Rtti,
   Variants,
   Spring,
   Spring.Collections,
@@ -308,9 +309,8 @@ type
     ['{E6B12BC9-AA98-4F00-851B-8DDC0AADD36A}']
     function GetEntity: TObject;
     function GetColumns: IList<ColumnAttribute>;
-    function GetColumnAttribute(const memberName: string): ColumnAttribute;
+    function GetColumnAttribute(const member: TRttiMember): ColumnAttribute;
     function GetColumnsToMap: TColumnDataList;
-    function GetColumnValue(const memberName: string): TValue; overload;
     function GetColumnValue(const column: TORMAttribute): TValue; overload;
     function GetColumnValueFrom(const resultSet: IDBResultSet; const columnName: string): TValue;
     function GetPrimaryKeyValue: TValue;
@@ -321,7 +321,6 @@ type
 
     function GetTableName: string;
 
-    procedure SetColumnValue(const columnMemberName: string; const value: TValue); overload;
     procedure SetColumnValue(const column: TORMAttribute; const value: TValue); overload;
     procedure SetPrimaryKeyValue(const value: TValue);
     procedure SetMemberValue(const memberName: string; const value: TValue);
@@ -340,7 +339,8 @@ type
 
     function GetChangedMembers(const instance: TObject;
       const entityData: TEntityData): IList<ColumnAttribute>;
-    function GetMemberValue(const className, id, memberName: string): TValue;
+    function GetMemberValue(const className, id: string;
+      const member: TRttiMember): TValue;
   end;
 
   IDBCommand = interface
