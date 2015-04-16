@@ -29,7 +29,7 @@ type
   protected
     function IsEmpty: Boolean;
     function Next: Boolean;
-    function FieldNameExists(const fieldName: string): Boolean;
+    function FieldExists(const fieldName: string): Boolean;
     function GetFieldValue(index: Integer): Variant; overload;
     function GetFieldValue(const fieldname: string): Variant; overload;
     function GetFieldCount: Integer;
@@ -163,7 +163,7 @@ begin
   fCurrent := 0;
 end;
 
-function TResultSetListAdapter.FieldNameExists(const fieldName: string): Boolean;
+function TResultSetListAdapter.FieldExists(const fieldName: string): Boolean;
 var
   pair: TPair;
 begin

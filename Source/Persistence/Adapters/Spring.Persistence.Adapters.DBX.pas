@@ -29,19 +29,17 @@ unit Spring.Persistence.Adapters.DBX;
 interface
 
 uses
-  DB,
   DBXCommon,
   SqlExpr,
-  SysUtils,
   Spring.Collections,
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Base,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Params;
 
 type
-  EDBXStatementAdapterException = Exception;
+  EDBXAdapterException = class(EORMAdapterException);
 
   /// <summary>
   ///   Represents DBX resultset.
@@ -55,7 +53,7 @@ type
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const fieldName: string): Boolean; override;
+    function FieldExists(const fieldName: string): Boolean; override;
     function GetFieldValue(index: Integer): Variant; overload; override;
     function GetFieldValue(const fieldname: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
@@ -70,7 +68,7 @@ type
     constructor Create(const statement: TSQLQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
-    procedure SetParams(const params: IList<TDBParam>); overload; override;
+    procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -104,68 +102,69 @@ type
 implementation
 
 uses
-  StrUtils,
+  DB,
+  SysUtils,
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.Core.Consts,
-  Spring.Persistence.SQL.Register;
+  Spring.Persistence.Core.Consts;
 
-type
-  EDBXAdapterException = class(Exception);
 
-{ TDBXResultSetAdapter }
+{$REGION 'TDBXResultSetAdapter'}
 
 constructor TDBXResultSetAdapter.Create(const dataSet: TSQLQuery);
 begin
-  inherited Create(dataSet);
-  Dataset.DisableControls;
- // Dataset.CursorLocation := clUseServer;
- // Dataset.CursorType := ctOpenForwardOnly;
-  FFieldCache := TFieldCache.Create(dataSet);
+  inherited Create(DataSet);
+  DataSet.DisableControls;
+ // DataSet.CursorLocation := clUseServer;
+ // DataSet.CursorType := ctOpenForwardOnly;
+  fFieldCache := TFieldCache.Create(dataSet);
 end;
 
 destructor TDBXResultSetAdapter.Destroy;
 begin
-  Dataset.Free;
+  DataSet.Free;
   inherited Destroy;
 end;
 
-function TDBXResultSetAdapter.FieldNameExists(const fieldName: string): Boolean;
+function TDBXResultSetAdapter.FieldExists(const fieldName: string): Boolean;
 begin
-  Result := FFieldCache.FieldNameExists(fieldName);
+  Result := fFieldCache.FieldExists(fieldName);
 end;
 
 function TDBXResultSetAdapter.GetFieldCount: Integer;
 begin
-  Result := Dataset.FieldCount;
+  Result := DataSet.FieldCount;
 end;
 
 function TDBXResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[index].FieldName;
+  Result := DataSet.Fields[index].FieldName;
 end;
 
 function TDBXResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[index].Value;
+  Result := DataSet.Fields[index].Value;
 end;
 
 function TDBXResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
 begin
-  Result := FFieldCache.GetFieldValue(fieldname);
+  Result := fFieldCache.GetFieldValue(fieldname);
 end;
 
 function TDBXResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := Dataset.Eof;
+  Result := DataSet.Eof;
 end;
 
 function TDBXResultSetAdapter.Next: Boolean;
 begin
-  Dataset.Next;
-  Result := not Dataset.Eof;
+  DataSet.Next;
+  Result := not DataSet.Eof;
 end;
 
-{ TDBXStatementAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TDBXStatementAdapter'}
 
 constructor TDBXStatementAdapter.Create(const statement: TSQLQuery);
 begin
@@ -186,40 +185,40 @@ end;
 
 function TDBXStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
-  LStmt: TSQLQuery;
+  query: TSQLQuery;
 begin
   inherited;
-  LStmt := TSQLQuery.Create(nil);
-  LStmt.SQLConnection := Statement.SQLConnection;
-  LStmt.SQL.Text := Statement.SQL.Text;
-  LStmt.Params.AssignValues(Statement.Params);
-  LStmt.DisableControls;
+  query := TSQLQuery.Create(nil);
+  query.SQLConnection := Statement.SQLConnection;
+  query.SQL.Text := Statement.SQL.Text;
+  query.Params.AssignValues(query.Params);
+  query.DisableControls;
   try
-    LStmt.Open;
-    Result := TDBXResultSetAdapter.Create(LStmt);
+    query.Open;
+    Result := TDBXResultSetAdapter.Create(query);
   except
-    on E:Exception do
+    on E: Exception do
     begin
-      Result := TDBXResultSetAdapter.Create(LStmt);
+      Result := TDBXResultSetAdapter.Create(query);
       raise EDBXAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
     end;
   end;
 end;
 
-procedure TDBXStatementAdapter.SetParams(const params: IList<TDBParam>);
+procedure TDBXStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
 var
   param: TDBParam;
   paramName: string;
-  parameter: TParam;
+  p: TParam;
 begin
   inherited;
   for param in params do
   begin
     paramName := param.NormalizeParamName(':', param.Name);
-    parameter := Statement.ParamByName(paramName);
-    parameter.Value := param.Value;
-    if parameter.IsNull then
-      parameter.DataType := param.ParamType;
+    p := Statement.ParamByName(paramName);
+    p.Value := param.Value;
+    if p.IsNull then
+      p.DataType := param.ParamType;
   end;
 end;
 
@@ -229,27 +228,25 @@ begin
   Statement.SQL.Text := commandText;
 end;
 
-{ TDBXConnectionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TDBXConnectionAdapter'}
 
 function TDBXConnectionAdapter.BeginTransaction: IDBTransaction;
-var
-  LTransaction: TDBXTransaction;
 begin
-  if Connection = nil then
-    Exit(nil);
-
-  Connection.Connected := True;
- // LTran := nil;
- // if not Connection.InTransaction then
- // begin
-  LTransaction := Connection.BeginTransaction;
-//  end;
-  Result := TDBXTransactionAdapter.Create(LTransaction);
+  if Assigned(Connection) then
+  begin
+    Connection.Connected := True;
+    Result := TDBXTransactionAdapter.Create(Connection.BeginTransaction);
+  end
+  else
+    Result := nil;
 end;
 
 procedure TDBXConnectionAdapter.Connect;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Connection.Connected := True;
 end;
 
@@ -261,23 +258,25 @@ end;
 
 function TDBXConnectionAdapter.CreateStatement: IDBStatement;
 var
-  LStatement: TSQLQuery;
-  LAdapter: TDBXStatementAdapter;
+  statement: TSQLQuery;
+  adapter: TDBXStatementAdapter;
 begin
-  if Connection = nil then
-    Exit(nil);
+  if Assigned(Connection) then
+  begin
+    statement := TSQLQuery.Create(nil);
+    statement.SQLConnection := Connection;
 
-  LStatement := TSQLQuery.Create(nil);
-  LStatement.SQLConnection := Connection;
-
-  LAdapter := TDBXStatementAdapter.Create(LStatement);
-  LAdapter.ExecutionListeners := ExecutionListeners;
-  Result := LAdapter;
+    adapter := TDBXStatementAdapter.Create(statement);
+    adapter.ExecutionListeners := ExecutionListeners;
+    Result := adapter;
+  end
+  else
+    Result := nil;
 end;
 
 procedure TDBXConnectionAdapter.Disconnect;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Connection.Connected := False;
 end;
 
@@ -288,32 +287,36 @@ end;
 
 function TDBXConnectionAdapter.IsConnected: Boolean;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Result := Connection.Connected
   else
     Result := False;
 end;
 
-{ TDBXTransactionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TDBXTransactionAdapter'}
 
 procedure TDBXTransactionAdapter.Commit;
 begin
-  if fTransaction = nil then
-    Exit;
-
-  Transaction.Connection.CommitFreeAndNil(fTransaction);
+  if Assigned(Transaction) then
+    Transaction.Connection.CommitFreeAndNil(fTransaction);
 end;
 
 function TDBXTransactionAdapter.InTransaction: Boolean;
 begin
-  Result := Assigned(fTransaction);
+  Result := Assigned(Transaction);
 end;
 
 procedure TDBXTransactionAdapter.Rollback;
 begin
-  if Assigned(fTransaction) then
+  if Assigned(Transaction) then
     Transaction.Connection.RollbackFreeAndNil(fTransaction);
 end;
+
+{$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TDBXConnectionAdapter>(dtDBX);

@@ -3,8 +3,11 @@ unit TestDatabaseManager;
 interface
 
 uses
-  TestFramework, Spring.Persistence.Core.AbstractManager, SysUtils, Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Core.DatabaseManager, Spring.TestUtils;
+  TestFramework,
+  SysUtils,
+  Spring.Persistence.Core.DatabaseManager,
+  Spring.Persistence.Core.Interfaces,
+  Spring.TestUtils;
 
 type
   TDatabaseManagerTest = class(TTestCase)

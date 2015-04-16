@@ -115,18 +115,21 @@ begin
   FConnection := TConnectionFactory.GetInstance(dtFireDAC, FDACConnection);
   FConnection.SetQueryLanguage(qlSQLite);
   FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: IList<TDBParam>)
+    procedure(const command: string; const params: IEnumerable<TDBParam>)
     var
       i: Integer;
+      param: TDBParam;
     begin
-      Status(ACommand);
-      for i := 0 to AParams.Count - 1 do
+      Status(command);
+      i := 0;
+      for param in params do
       begin
         Status(Format('%2:d %0:s = %1:s. Type: %3:s',
-          [AParams[i].Name,
-          PrettyPrintVariant(AParams[i].Value),
+          [param.Name,
+          PrettyPrintVariant(param.Value),
           i,
-          VarTypeAsText(VarType(AParams[i].Value))]));
+          VarTypeAsText(VarType(param.Value))]));
+        Inc(i);
       end;
       Status('-----');
     end);

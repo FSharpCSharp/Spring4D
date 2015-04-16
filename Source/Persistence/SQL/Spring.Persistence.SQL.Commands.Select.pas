@@ -125,12 +125,11 @@ var
   param: TDBParam;
   whereField: TSQLWhereField;
 begin
-  inherited BuildParams(entity);
   Assert(not Assigned(entity), 'Entity should not be assigned here');
+  inherited BuildParams(entity);
 
   for whereField in fCommand.WhereFields do
   begin
-    //LParam := CreateParam(LWhereField, TUtils.AsVariant(fID));
     param := Generator.CreateParam(whereField, fID);
     SQLParameters.Add(param);
   end;
@@ -155,11 +154,8 @@ begin
   SQL := Generator.GenerateSelect(fCommand);
   statement := Connection.CreateStatement;
   statement.SetSQLCommand(SQL);
-
   BuildParams(nil);
-  if SQLParameters.Any then
-    statement.SetParams(SQLParameters);
-
+  statement.SetParams(SQLParameters);
   Result := statement.ExecuteQuery;
 end;
 
@@ -168,8 +164,8 @@ var
   statement: IDBStatement;
 begin
   fCommand.WhereFields.Clear;
-  SQL := Generator.GenerateSelect(fCommand);
 
+  SQL := Generator.GenerateSelect(fCommand);
   statement := Connection.CreateStatement;
   statement.SetSQLCommand(SQL);
   Result := statement.ExecuteQuery;

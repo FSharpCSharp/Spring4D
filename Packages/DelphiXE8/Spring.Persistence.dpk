@@ -42,7 +42,6 @@ requires
 
 contains
   Spring.Persistence.Adapters.FieldCache in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.FieldCache.pas',
-  Spring.Persistence.Core.AbstractManager in '..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractManager.pas',
   Spring.Persistence.Core.AbstractSession in '..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas',
   Spring.Persistence.Core.Base in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas',
   Spring.Persistence.Core.ConnectionFactory in '..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas',

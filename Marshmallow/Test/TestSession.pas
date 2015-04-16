@@ -37,8 +37,8 @@ type
     function GenericCreate<T: class, constructor>: T;
     function SimpleCreate(AClass: TClass): TObject;
     function CreateConnection: IDBConnection; virtual;
-    procedure TestExecutionListener(const ACommand: string;
-      const AParams: IList<TDBParam>);
+    procedure TestExecutionListener(const command: string;
+      const params: IEnumerable<TDBParam>);
     procedure TestQueryListener(Sender: TObject; const SQL: string);
   public
     procedure SetUp; override;
@@ -145,7 +145,6 @@ uses
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Graphics,
-  Spring.Persistence.Core.Reflection,
   Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Criteria.Properties,
   Spring.Collections.Extensions,
@@ -274,7 +273,6 @@ function GetValueFromDB(const table, columnName, where: string): Variant;
 begin
   Result := TestDB.GetUniTableIntf(Format('select %s from %s where %s', [columnName, table, where])).Fields[0].Value;
 end;
-
 
 function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil; const OnQuery: THookQuery = nil): Int64;
 var
@@ -485,17 +483,17 @@ begin
   sLog := '';
   sLog2 := '';
   FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: IList<TDBParam>)
+    procedure(const command: string; const params: IEnumerable<TDBParam>)
     begin
-      sLog := ACommand;
-      iParamCount1 := AParams.Count;
+      sLog := command;
+      iParamCount1 := params.Count;
     end);
 
   FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: IList<TDBParam>)
+    procedure(const command: string; const params: IEnumerable<TDBParam>)
     begin
-      sLog2 := ACommand;
-      iParamCount2 := AParams.Count;
+      sLog2 := command;
+      iParamCount2 := params.Count;
     end);
 
   InsertCustomer;
@@ -1516,19 +1514,22 @@ begin
   FConnection := nil;
 end;
 
-procedure TSessionTest.TestExecutionListener(const ACommand: string;
-  const AParams: IList<TDBParam>);
+procedure TSessionTest.TestExecutionListener(const command: string;
+  const params: IEnumerable<TDBParam>);
 var
   i: Integer;
+  param: TDBParam;
 begin
-  Status(ACommand);
-  for i := 0 to AParams.Count - 1 do
+  Status(command);
+  i := 0;
+  for param in params do
   begin
     Status(Format('%2:d %0:s = %1:s. Type: %3:s',
-      [AParams[i].Name,
-      PrettyPrintVariant(AParams[i].Value),
+      [param.Name,
+      PrettyPrintVariant(param.Value),
       i,
-      VarTypeAsText(VarType(AParams[i].Value))]));
+      VarTypeAsText(VarType(param.Value))]));
+    Inc(i);
   end;
   Status('-----');
 end;

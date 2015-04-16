@@ -118,18 +118,15 @@ begin
         item.VExtended^ := value.AsExtended;
         item.VType := vtExtended;
       end;
-      tkRecord:
-      begin
-        //empty TVarRec
-      end;
+      tkRecord: ;
       tkInt64:
       begin
         New(item.VInt64);
         item.VInt64^ := value.AsInt64;
         item.VType := vtInt64;
-      end
-      else
-        raise EORMUnsupportedType.CreateFmt('Unknown open argument type (%s)', [value.ToString]);
+      end;
+    else
+      raise EORMUnsupportedType.CreateFmt('Unknown open argument type (%s)', [value.ToString]);
     end;
     Result[i - 1] := item;
   end;
@@ -196,7 +193,7 @@ begin
   if not Assigned(repositoryClass) then
     fRepository := TSimpleRepository<T,TID>.Create(session)
   else
-    fRepository := TRttiExplorer.CreateExternalType(repositoryClass, [session]) as TSimpleRepository<T,TID>;
+    fRepository := TActivator.CreateInstance(repositoryClass, [session]) as TSimpleRepository<T,TID>;
   fTypeName := PTypeInfo(System.TypeInfo(T)).TypeName;
   fIdTypeName := PTypeInfo(System.TypeInfo(TID)).TypeName;
   fQualifiedTypeName := TType.GetType(System.TypeInfo(T)).QualifiedName;

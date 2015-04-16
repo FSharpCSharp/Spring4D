@@ -30,8 +30,8 @@ interface
 
 {$IFDEF MSWINDOWS}
 uses
-  SysUtils,
   Spring.Persistence.Adapters.ADO,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces;
 
 {
@@ -43,69 +43,61 @@ uses
 }
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Miscrosoft SQL Server resultset.
-  ///	</summary>
-  {$ENDREGION}
+  EMSSQLStatementAdapterException = class(EORMAdapterException);
+
+  /// <summary>
+  ///   Represents Miscrosoft SQL Server resultset.
+  /// </summary>
   TMSSQLResultsetAdapter = class(TADOResultSetAdapter);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Miscrosoft SQL Server statement.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Miscrosoft SQL Server statement.
+  /// </summary>
   TMSSQLStatementAdapter = class(TADOStatementAdapter);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Miscrosoft SQL Server connection.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Miscrosoft SQL Server connection.
+  /// </summary>
   TMSSQLConnectionAdapter = class(TADOConnectionAdapter)
   public
     function BeginTransaction: IDBTransaction; override;
     function GetDriverName: string; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Miscrosoft SQL Server transaction.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Miscrosoft SQL Server transaction.
+  /// </summary>
   TMSSQLTransactionAdapter = class(TADOTransactionAdapter)
   public
     procedure Commit; override;
     procedure Rollback; override;
   end;
-
-  EMSSQLStatementAdapterException = Exception;
-
 {$ENDIF}
 
 implementation
 
 {$IFDEF MSWINDOWS}
-
 uses
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.Core.Consts;
+  Spring.Persistence.Core.Consts,
+  Spring.Persistence.SQL.Generators.MSSQL;
 
-{ TMSSQLConnectionAdapter }
+
+{$REGION 'TMSSQLConnectionAdapter'}
 
 function TMSSQLConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
-  if Connection = nil then
-    Exit(nil);
+  if Assigned(Connection) then
+  begin
+    Connection.Connected := True;
+    GenerateNewID;
+    Connection.Execute(SQL_BEGIN_TRAN + GetTransactionName);
 
-  Connection.Connected := True;
-
-  GenerateNewID;
-
-  Connection.Execute(SQL_BEGIN_TRAN + GetTransactionName);
-
-  Result := TMSSQLTransactionAdapter.Create(Connection);
-  Result.TransactionName := GetTransactionName;
+    Result := TMSSQLTransactionAdapter.Create(Connection);
+    Result.TransactionName := GetTransactionName;
+  end
+  else
+    Result := nil;
 end;
 
 function TMSSQLConnectionAdapter.GetDriverName: string;
@@ -113,27 +105,28 @@ begin
   Result := DRIVER_MSSQL;
 end;
 
-{ TMSSQLTransactionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TMSSQLTransactionAdapter'}
 
 procedure TMSSQLTransactionAdapter.Commit;
 begin
-  if Transaction = nil then
-    Exit;
-
-  Transaction.Execute(SQL_COMMIT_TRAN + TransactionName);
+  if Assigned(Transaction) then
+    Transaction.Execute(SQL_COMMIT_TRAN + TransactionName);
 end;
 
 procedure TMSSQLTransactionAdapter.Rollback;
 begin
-  if Transaction = nil then
-    Exit;
-
-  Transaction.Execute(SQL_ROLLBACK_TRAN + TransactionName);
+  if Assigned(Transaction) then
+    Transaction.Execute(SQL_ROLLBACK_TRAN + TransactionName);
 end;
+
+{$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TMSSQLConnectionAdapter>(dtMSSQL);
-
 {$ENDIF}
 
 end.

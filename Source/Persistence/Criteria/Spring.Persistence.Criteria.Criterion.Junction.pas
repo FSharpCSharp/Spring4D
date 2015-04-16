@@ -104,7 +104,7 @@ begin
   for i := 0 to fCriterions.Count - 1 do
   begin
     if i <> 0 then
-      Result := Result + ' ' + WhereOpNames[GetWhereOperator] + ' ';
+      Result := Result + ' ' + WhereOperatorNames[GetWhereOperator] + ' ';
 
     criterion := fCriterions[i];
     sql := criterion.ToSqlString(params, command, generator, False);

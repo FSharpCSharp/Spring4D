@@ -93,49 +93,49 @@ end;
 
 
 const
-  SQL_SELECT_TEST_SIMPLE = 'SELECT A."NAME",A."AGE",A."HEIGHT"'+ sLineBreak +
+  SQL_SELECT_TEST_SIMPLE = 'SELECT A."NAME", A."AGE", A."HEIGHT"'+ sLineBreak +
     ' FROM TEST.CUSTOMERS A;';
 
-  SQL_SELECT_TEST_JOIN = 'SELECT A."NAME",A."AGE",A."HEIGHT"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN = 'SELECT A."NAME", A."AGE", A."HEIGHT"'+ sLineBreak +
     ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID"=A."PRODID"'+
+    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2 = 'SELECT A."NAME",A."AGE",A."HEIGHT",C."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2 = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
     ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID"=A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID"=A."COUNTRYID"'+
+    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER = 'SELECT A."NAME",A."AGE",A."HEIGHT",C."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2_ORDER = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
     ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID"=A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID"=A."COUNTRYID"'+sLineBreak+
+    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+sLineBreak+
     '  ORDER BY A."AGE" DESC'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_MULTIPLE = 'SELECT A."NAME",A."AGE",A."HEIGHT",C."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2_ORDER_MULTIPLE = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
     ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID"=A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID"=A."COUNTRYID"'+sLineBreak+
-    '  ORDER BY A."AGE" DESC,C."COUNTRYNAME" ASC'+
+    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+sLineBreak+
+    '  ORDER BY A."AGE" DESC, C."COUNTRYNAME" ASC'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP = 'SELECT A."NAME",A."AGE",A."HEIGHT",C."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
     ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID"=A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID"=A."COUNTRYID"'+sLineBreak+
-    '  GROUP BY A."HEIGHT",A."NAME",A."AGE",C."COUNTRYNAME"'+sLineBreak+
-    '  ORDER BY A."AGE" DESC,C."COUNTRYNAME" ASC'+
+    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+sLineBreak+
+    '  GROUP BY A."HEIGHT", A."NAME", A."AGE", C."COUNTRYNAME"'+sLineBreak+
+    '  ORDER BY A."AGE" DESC, C."COUNTRYNAME" ASC'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE = 'SELECT A."NAME",A."AGE",A."HEIGHT",C."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
     ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID"=A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID"=A."COUNTRYID"'+sLineBreak+
+    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+sLineBreak+
     '  WHERE A."NAME" = :NAME'+sLineBreak+
-    '  GROUP BY A."HEIGHT",A."NAME",A."AGE",C."COUNTRYNAME"'+sLineBreak+
-    '  ORDER BY A."AGE" DESC,C."COUNTRYNAME" ASC'+
+    '  GROUP BY A."HEIGHT", A."NAME", A."AGE", C."COUNTRYNAME"'+sLineBreak+
+    '  ORDER BY A."AGE" DESC, C."COUNTRYNAME" ASC'+
     ';';
 
 procedure TAnsiSQLGeneratorTest.TestGenerateSelect;
@@ -222,14 +222,14 @@ end;
 
 const
   SQL_INSERT_TEST = 'INSERT INTO TEST.CUSTOMERS ('+ sLineBreak +
-    '  "NAME","AGE","HEIGHT")'+ sLineBreak +
+    '  "NAME", "AGE", "HEIGHT")'+ sLineBreak +
     '  VALUES ('+ sLineBreak +
-    ':NAME1,:AGE1,:HEIGHT1);';
+    ':NAME1, :AGE1, :HEIGHT1);';
 
   SQL_INSERT_TEST_WITHOUT_SCHEMA = 'INSERT INTO CUSTOMERS ('+ sLineBreak +
-    '  "NAME","AGE","HEIGHT")'+ sLineBreak +
+    '  "NAME", "AGE", "HEIGHT")'+ sLineBreak +
     '  VALUES ('+ sLineBreak +
-    ':NAME1,:AGE1,:HEIGHT1);';
+    ':NAME1, :AGE1, :HEIGHT1);';
 
 procedure TAnsiSQLGeneratorTest.TestGenerateInsert;
 var
@@ -271,7 +271,7 @@ end;
 
 const
   SQL_UPDATE_TEST = 'UPDATE TEST.CUSTOMERS SET ' + sLineBreak
-  + '"NAME"=:NAME1,"AGE"=:AGE1,"HEIGHT"=:HEIGHT1' + sLineBreak + ' WHERE "ID"=:ID1;';
+  + '"NAME" = :NAME1, "AGE" = :AGE1, "HEIGHT" = :HEIGHT1' + sLineBreak + ' WHERE "ID" = :ID1;';
 
 procedure TAnsiSQLGeneratorTest.TestGenerateUpdate;
 var
@@ -297,7 +297,7 @@ end;
 
 const
   SQL_DELETE_TEST = 'DELETE FROM TEST.CUSTOMERS' + sLineBreak
-  + ' WHERE "ID"=:ID1;';
+  + ' WHERE "ID" = :ID1;';
 
 procedure TAnsiSQLGeneratorTest.TestGenerateDelete;
 var

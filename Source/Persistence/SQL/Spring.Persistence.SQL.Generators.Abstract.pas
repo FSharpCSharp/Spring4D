@@ -94,14 +94,12 @@ begin
   Result.Name := paramField.ParamName;
   freeAfter := False;
   convertedValue := value;
-  if (not value.IsEmpty) and (value.IsObject) then
+  if not value.IsEmpty and value.IsObject then
     TryConvert(value, TypeInfo(TStream), convertedValue, freeAfter);
 
   Result.Value := TUtils.AsVariant(convertedValue);
   if VarIsNull(Result.Value) or VarIsEmpty(Result.Value) then
-  begin
     Result.SetParamTypeFromTypeInfo(paramField.Column.MemberType);
-  end;
 
   if freeAfter then
     convertedValue.Free;

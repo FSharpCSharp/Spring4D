@@ -87,7 +87,7 @@ begin
   fCommand.SetCommandFieldsFromColumns(EntityData.Columns);
   fCommand.TableExists := TableExists(fTable.Name);
   if fCommand.TableExists then
-    FillDbTableColumns(fTable.Name, fCommand.DbColumns);
+    FillDbTableColumns(fTable.Name, fCommand.ColumnNames);
 
   fSQLs := Generator.GenerateCreateTable(fCommand);
 end;

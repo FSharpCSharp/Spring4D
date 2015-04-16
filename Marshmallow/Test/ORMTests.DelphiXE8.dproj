@@ -71,7 +71,6 @@
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractManager.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas"/>

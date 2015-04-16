@@ -29,30 +29,26 @@ unit Spring.Persistence.Core.DatabaseManager;
 interface
 
 uses
-  SysUtils,
   Spring.Collections,
-  Spring.Persistence.Core.AbstractManager,
   Spring.Persistence.Core.Interfaces;
 
 type
   /// <summary>
   ///   Responsible for building database structure from annotated entities.
   /// </summary>
-  TDatabaseManager = class(TAbstractManager)
+  TDatabaseManager = class
   private
+    fConnection: IDBConnection;
     fEntities: IList<TClass>;
   protected
-    function GetCreateForeignKeyExecutor(entityClass: TClass;
-      const connection: IDBConnection): IDDLCommand;
-    function GetCreateSequenceExecutor(entityClass: TClass;
-      const connection: IDBConnection): IDDLCommand;
-    function GetCreateTableExecutor(entityClass: TClass;
-      const connection: IDBConnection): IDDLCommand;
-    procedure BuildTables(const entities: IList<TClass>); virtual;
-    procedure BuildForeignKeys(const entities: IList<TClass>); virtual;
-    procedure BuildSequences(const entities: IList<TClass>); virtual;
+    function GetCreateForeignKeyExecutor(entityClass: TClass): IDDLCommand;
+    function GetCreateSequenceExecutor(entityClass: TClass): IDDLCommand;
+    function GetCreateTableExecutor(entityClass: TClass): IDDLCommand;
+    procedure BuildTables(const entities: IEnumerable<TClass>);
+    procedure BuildForeignKeys(const entities: IEnumerable<TClass>);
+    procedure BuildSequences(const entities: IEnumerable<TClass>);
   public
-    constructor Create(const connection: IDBConnection); override;
+    constructor Create(const connection: IDBConnection);
 
     procedure BuildDatabase;
 
@@ -60,6 +56,8 @@ type
     procedure ClearEntities;
 
     function EntityExists(entityClass: TClass): Boolean;
+
+    property Connection: IDBConnection read fConnection;
   end;
 
 implementation
@@ -75,7 +73,8 @@ uses
 
 constructor TDatabaseManager.Create(const connection: IDBConnection);
 begin
-  inherited Create(connection);
+  inherited Create;
+  fConnection := connection;
   fEntities := TRttiExplorer.GetEntities;
 end;
 
@@ -83,50 +82,50 @@ procedure TDatabaseManager.BuildDatabase;
 var
   transaction: IDBTransaction;
 begin
-  if not fEntities.Any then
-    Exit;
+  if not fEntities.IsEmpty then
+  begin
+    transaction := Connection.BeginTransaction;
 
-  transaction := Connection.BeginTransaction;
+    BuildTables(fEntities);
+    BuildForeignKeys(fEntities);
+    BuildSequences(fEntities);
 
-  BuildTables(fEntities);
-  BuildForeignKeys(fEntities);
-  BuildSequences(fEntities);
-
-  transaction.Commit;
+    transaction.Commit;
+  end;
 end;
 
-procedure TDatabaseManager.BuildForeignKeys(const entities: IList<TClass>);
+procedure TDatabaseManager.BuildForeignKeys(const entities: IEnumerable<TClass>);
 var
   entityClass: TClass;
   createForeignKey: IDDLCommand;
 begin
   for entityClass in entities do
   begin
-    createForeignKey := GetCreateForeignKeyExecutor(entityClass, Connection);
+    createForeignKey := GetCreateForeignKeyExecutor(entityClass);
     createForeignKey.Execute;
   end;
 end;
 
-procedure TDatabaseManager.BuildSequences(const entities: IList<TClass>);
+procedure TDatabaseManager.BuildSequences(const entities: IEnumerable<TClass>);
 var
   entityClass: TClass;
   createSequence: IDDLCommand;
 begin
   for entityClass in entities do
   begin
-    createSequence := GetCreateSequenceExecutor(entityClass, Connection);
+    createSequence := GetCreateSequenceExecutor(entityClass);
     createSequence.Execute;
   end;
 end;
 
-procedure TDatabaseManager.BuildTables(const entities: IList<TClass>);
+procedure TDatabaseManager.BuildTables(const entities: IEnumerable<TClass>);
 var
   entityClass: TClass;
   createTable: IDDLCommand;
 begin
   for entityClass in entities do
   begin
-    createTable := GetCreateTableExecutor(entityClass, Connection);
+    createTable := GetCreateTableExecutor(entityClass);
     createTable.Execute;
   end;
 end;
@@ -140,28 +139,28 @@ function TDatabaseManager.EntityExists(entityClass: TClass): Boolean;
 var
   createTable: IDDLCommand;
 begin
-  createTable := GetCreateTableExecutor(entityClass, Connection);
+  createTable := GetCreateTableExecutor(entityClass);
   Result := createTable.TableExists;
 end;
 
-function TDatabaseManager.GetCreateTableExecutor(entityClass: TClass;
-  const connection: IDBConnection): IDDLCommand;
+function TDatabaseManager.GetCreateTableExecutor(
+  entityClass: TClass): IDDLCommand;
 begin
-  Result := TCreateTableExecutor.Create(connection);
+  Result := TCreateTableExecutor.Create(fConnection);
   Result.Build(entityClass);
 end;
 
-function TDatabaseManager.GetCreateForeignKeyExecutor(entityClass: TClass;
-  const connection: IDBConnection): IDDLCommand;
+function TDatabaseManager.GetCreateForeignKeyExecutor(
+  entityClass: TClass): IDDLCommand;
 begin
-  Result := TCreateForeignKeyExecutor.Create(connection);
+  Result := TCreateForeignKeyExecutor.Create(fConnection);
   Result.Build(entityClass);
 end;
 
-function TDatabaseManager.GetCreateSequenceExecutor(entityClass: TClass;
-  const connection: IDBConnection): IDDLCommand;
+function TDatabaseManager.GetCreateSequenceExecutor(
+  entityClass: TClass): IDDLCommand;
 begin
-  Result := TCreateSequenceExecutor.Create(connection);
+  Result := TCreateSequenceExecutor.Create(fConnection);
   Result.Build(entityClass);
 end;
 

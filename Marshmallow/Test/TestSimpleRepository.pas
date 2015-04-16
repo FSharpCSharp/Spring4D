@@ -1,18 +1,14 @@
 unit TestSimpleRepository;
 
-{$I sv.inc}
-
 interface
 
 uses
-  TestFramework, Classes, SysUtils,
-  Variants, Spring.Persistence.Core.Graphics,
-  Spring.Persistence.Core.Session,
+  TestFramework,
+  TestEntities,
   Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.Session,
   Spring.Persistence.Criteria.Interfaces,
-  TestEntities, Rtti, SQLiteTable3,
-  Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.Core.Repository.Proxy;
+  Spring.Persistence.Mapping.Attributes;
 
 type
   ICustomerRepository = interface(IPagedRepository<TCustomer, Integer>)
@@ -57,26 +53,23 @@ type
     procedure FindWhere_UsingCriterion_ToList;
   end;
 
-
 implementation
 
 uses
-  Spring.Persistence.Adapters.SQLite
-  ,Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.SQL.Register
-  ,Spring.Persistence.SQL.Params
-  ,Spring.Collections
-  ,Spring.Persistence.Core.Reflection
-  ,TestConsts
-  ,TestSession
-  ,Spring.Persistence.Criteria.Properties
-  ,Diagnostics
-  ,Spring.Persistence.Core.Repository.Simple
-  ,Generics.Collections
-  ;
+  SysUtils,
+  Variants,
+  TestConsts,
+  TestSession,
+  Spring.Collections,
+  Spring.Persistence.Adapters.SQLite,
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Core.Repository.Proxy,
+  Spring.Persistence.Core.Repository.Simple,
+  Spring.Persistence.Criteria.Properties,
+  Spring.Persistence.SQL.Params;
 
 
-{ TestAbstractRepository }
+{$REGION 'TSimpleRepositoryTests'}
 
 procedure TSimpleRepositoryTests.Count;
 begin
@@ -110,14 +103,17 @@ begin
   FRepository := CreateRepository as IPagedRepository<TCustomer,Integer>;
 
   FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: IList<TDBParam>)
+    procedure(const command: string; const params: IEnumerable<TDBParam>)
     var
       i: Integer;
+      param: TDBParam;
     begin
-      Status(ACommand);
-      for i := 0 to AParams.Count - 1 do
+      Status(command);
+      i := 0;
+      for param in params do
       begin
-        Status(Format('%2:D Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL'), i]));
+        Status(Format('%2:D Param %0:S = %1:S', [param.Name, VarToStrDef(param.Value, 'NULL'), i]));
+        Inc(i);
       end;
       Status('-----');
     end);
@@ -132,7 +128,10 @@ begin
   FSession.Free;
 end;
 
-{ TCustomRepositoryTests }
+{$ENDREGION}
+
+
+{$REGION 'TCustomRepositoryTests'}
 
 procedure TCustomRepositoryTests.FindByName;
 var
@@ -187,6 +186,9 @@ begin
   FCustomerRepository := nil;
   inherited;
 end;
+
+{$ENDREGION}
+
 
 initialization
   RegisterTest(TSimpleRepositoryTests.Suite);

@@ -98,7 +98,7 @@ function TMSSQLServerSQLGenerator.GetPrimaryKeyDefinition(
   const field: TSQLCreateField): string;
 begin
   Result := Format('CONSTRAINT PK_%0:s_%1:s PRIMARY KEY',
-    [field.Table.GetNameWithoutSchema, field.Fieldname]);
+    [field.Table.NameWithoutSchema, field.Fieldname]);
 end;
 
 function TMSSQLServerSQLGenerator.GetQueryLanguage: TQueryLanguage;

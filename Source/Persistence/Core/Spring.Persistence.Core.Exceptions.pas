@@ -96,6 +96,8 @@ type
 
   EORMCannotGenerateQueryStatement = class(EBaseORMException);
 
+  EORMAdapterException = class(Exception);
+
 implementation
 
 uses

@@ -40,7 +40,7 @@ type
 
     function IsEmpty: Boolean; virtual; abstract;
     function Next: Boolean;
-    function FieldNameExists(const fieldName: string): Boolean; virtual; abstract;
+    function FieldExists(const fieldName: string): Boolean; virtual; abstract;
     function GetFieldValue(index: Integer): Variant; overload; virtual; abstract;
     function GetFieldValue(const fieldName: string): Variant; overload; virtual; abstract;
     function GetFieldCount: Integer; virtual; abstract;
@@ -63,7 +63,7 @@ type
     function GetKey(const fieldName: string): TFieldKey; virtual;
 
     function IsEmpty: Boolean; override;
-    function FieldNameExists(const fieldName: string): Boolean; override;
+    function FieldExists(const fieldName: string): Boolean; override;
     function GetFieldValue(index: Integer): Variant; overload; override;
     function GetFieldValue(const fieldName: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
@@ -84,7 +84,7 @@ type
     fCurrent: Integer;
   protected
     function IsEmpty: Boolean; override;
-    function FieldNameExists(const fieldName: string): Boolean; override;
+    function FieldExists(const fieldName: string): Boolean; override;
     function GetFieldValue(index: Integer): Variant; overload; override;
     function GetFieldValue(const fieldname: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
@@ -139,7 +139,7 @@ begin
   fIndexedValues.Add(GetKey(fieldName));
 end;
 
-function TEmbeddedObjectEntity.FieldNameExists(
+function TEmbeddedObjectEntity.FieldExists(
   const fieldName: string): Boolean;
 begin
   Result := fValues.ContainsKey(GetKey(fieldName));
@@ -209,7 +209,7 @@ begin
   fValues.Add(value);
 end;
 
-function TEmbeddedArrayEntity.FieldNameExists(
+function TEmbeddedArrayEntity.FieldExists(
   const fieldName: string): Boolean;
 begin
   Result := False;

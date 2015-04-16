@@ -209,19 +209,15 @@ begin
       Result := 'TMemoryStream';
     ftGraphic: Result := 'TPicture';
     ftFMTBcd:
-    begin
       if TFMTBCDField(AField).Size = 0 then
         Result := 'Int64'
       else
         Result := 'Double';
-    end;
     ftBCD:
-    begin
       if TBCDField(AField).Size = 0 then
         Result := 'Int64'
       else
         Result := 'Double';
-    end;
     ftBoolean: Result := 'Boolean';
     ftDate: Result := 'TDate';
     ftDateTime: Result := 'TDateTime';

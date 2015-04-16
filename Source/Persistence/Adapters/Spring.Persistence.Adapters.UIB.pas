@@ -29,66 +29,60 @@ unit Spring.Persistence.Adapters.UIB;
 interface
 
 uses
-  DB,
-  Generics.Collections,
-  SysUtils,
   uib,
   uibdataset,
   uiblib,
+  Spring.Collections,
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Base,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Params;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Unified Interbase resultset.
-  ///	</summary>
-  {$ENDREGION}
+  EUIBAdapterException = class(EORMAdapterException);
+
+  /// <summary>
+  ///   Represents Unified Interbase resultset.
+  /// </summary>
   TUIBResultSetAdapter = class(TDriverResultSetAdapter<TUIBDataSet>)
   private
-    FFieldCache: IFieldCache;
-    FIsNewTransaction: Boolean;
+    fFieldCache: IFieldCache;
+    fIsNewTransaction: Boolean;
   public
     constructor Create(const dataSet: TUIBDataSet); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const fieldName: string): Boolean; override;
+    function FieldExists(const fieldName: string): Boolean; override;
     function GetFieldValue(index: Integer): Variant; overload; override;
     function GetFieldValue(const fieldname: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
     function GetFieldName(index: Integer): string; override;
 
-    property IsNewTransaction: Boolean read FIsNewTransaction write FIsNewTransaction;
+    property IsNewTransaction: Boolean read fIsNewTransaction write fIsNewTransaction;
   end;
 
-  EUIBStatementAdapterException = Exception;
-
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Unified Interbase statement.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Unified Interbase statement.
+  /// </summary>
   TUIBStatementAdapter = class(TDriverStatementAdapter<TUIBStatement>)
   protected
     procedure AssignParams(const source, target: TSQLParams); virtual;
   public
     destructor Destroy; override;
+
     procedure SetSQLCommand(const commandText: string); override;
-    procedure SetParams(const params: TObjectList<TDBParam>); overload;
+    procedure SetParams(const params: IEnumerable<TDBParam>); override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Unified Interbase connection.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Unified Interbase connection.
+  /// </summary>
   TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>)
   public
     destructor Destroy; override;
@@ -101,11 +95,9 @@ type
     function GetDriverName: string; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Unified Interbase transaction.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Unified Interbase transaction.
+  /// </summary>
   TUIBTransactionAdapter = class(TDriverTransactionAdapter<TUIBTransaction>)
   protected
     function InTransaction: Boolean; override;
@@ -120,68 +112,71 @@ type
 implementation
 
 uses
+  DB,
   StrUtils,
+  SysUtils,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.SQL.Register;
 
-type
-  EUIBAdapterException = class(Exception);
 
-{ TUIBResultSetAdapter }
+{$REGION 'TUIBResultSetAdapter'}
 
 constructor TUIBResultSetAdapter.Create(const dataSet: TUIBDataSet);
 begin
   inherited Create(dataSet);
   Dataset.OnClose := etmStayIn;
-  FFieldCache := TFieldCache.Create(dataSet);
+  fFieldCache := TFieldCache.Create(dataSet);
 end;
 
 destructor TUIBResultSetAdapter.Destroy;
 begin
-  if FIsNewTransaction then
-    Dataset.Transaction.Free;
-  Dataset.Free;
+  if fIsNewTransaction then
+    DataSet.Transaction.Free;
+  DataSet.Free;
   inherited;
 end;
 
-function TUIBResultSetAdapter.FieldNameExists(const fieldName: string): Boolean;
+function TUIBResultSetAdapter.FieldExists(const fieldName: string): Boolean;
 begin
-  Result := FFieldCache.FieldNameExists(fieldName);
+  Result := fFieldCache.FieldExists(fieldName);
 end;
 
 function TUIBResultSetAdapter.GetFieldCount: Integer;
 begin
-  Result := Dataset.FieldCount;
+  Result := DataSet.FieldCount;
 end;
 
 function TUIBResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[index].FieldName;
+  Result := DataSet.Fields[index].FieldName;
 end;
 
 function TUIBResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[index].Value;
+  Result := DataSet.Fields[index].Value;
 end;
 
 function TUIBResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
 begin
-  Result := FFieldCache.GetFieldValue(fieldname);
+  Result := fFieldCache.GetFieldValue(fieldname);
 end;
 
 function TUIBResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := Dataset.Eof;
+  Result := DataSet.Eof;
 end;
 
 function TUIBResultSetAdapter.Next: Boolean;
 begin
-  Dataset.Next;
-  Result := not Dataset.Eof;
+  DataSet.Next;
+  Result := not DataSet.Eof;
 end;
 
-{ TUIBStatementAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TUIBStatementAdapter'}
 
 destructor TUIBStatementAdapter.Destroy;
 begin
@@ -193,7 +188,6 @@ procedure TUIBStatementAdapter.AssignParams(const source, target: TSQLParams);
 var
   i: Integer;
 begin
-//  ATo.Parse(Statement.SQL.Text);
   for i := 0 to source.ParamCount - 1 do
     target.AsVariant[i] := source.AsVariant[i];
 end;
@@ -209,60 +203,54 @@ end;
 
 function TUIBStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
-  LDataset: TUIBDataSet;
-  LTran: TUIBTransaction;
-  LIsNewTran: Boolean;
+  query: TUIBDataSet;
+  isNewTransaction: Boolean;
+  transaction: TUIBTransaction;
+  adapter: TUIBResultSetAdapter;
 begin
   inherited;
-  LDataset := TUIBDataSet.Create(nil);
-  LIsNewTran := (Statement.DataBase.TransactionsCount < 1);
-  if not LIsNewTran then
-  begin
-    LTran := Statement.DataBase.Transactions[0];
-  end
+  query := TUIBDataSet.Create(nil);
+  isNewTransaction := Statement.DataBase.TransactionsCount < 1;
+  if not isNewTransaction then
+    transaction := Statement.DataBase.Transactions[0]
   else
   begin
-    LTran := TUIBTransaction.Create(nil);
-    LTran.DefaultAction := etmRollback;
-    LTran.DataBase := Statement.DataBase;
+    transaction := TUIBTransaction.Create(nil);
+    transaction.DefaultAction := etmRollback;
+    transaction.DataBase := Statement.DataBase;
   end;
-  LTran.DefaultAction := etmRollback;
-  LDataset.DisableControls;
-  LDataset.Transaction := LTran;
-  LDataset.Database := Statement.DataBase;
-  LDataset.UniDirectional := True;
-  LDataset.SQL.Text := Statement.SQL.Text;
-  AssignParams(Statement.Params, LDataset.Params);
+  transaction.DefaultAction := etmRollback;
+  query.DisableControls;
+  query.Transaction := transaction;
+  query.Database := Statement.DataBase;
+  query.UniDirectional := True;
+  query.SQL.Text := Statement.SQL.Text;
+  AssignParams(Statement.Params, query.Params);
   try
-    LDataset.Open;
-    Result := TUIBResultSetAdapter.Create(LDataset);
-    (Result as TUIBResultSetAdapter).IsNewTransaction := LIsNewTran;
+    query.Open;
+    adapter := TUIBResultSetAdapter.Create(query);
+    adapter.IsNewTransaction := isNewTransaction;
+    Result := adapter;
   except
-    on E:Exception do
-    begin
-      Result := TUIBResultSetAdapter.Create(LDataset);
-      (Result as TUIBResultSetAdapter).IsNewTransaction := LIsNewTran;
+    on E: Exception do
       raise EUIBAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
-    end;
   end;
 end;
 
-procedure TUIBStatementAdapter.SetParams(const params: TObjectList<TDBParam>);
+procedure TUIBStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
 var
-  LParam: TDBParam;
-  sParamName: string;
+  param: TDBParam;
+  paramName: string;
 begin
-  inherited SetParams([params.ToArray]);
+  inherited SetParams(params);
 
-  for LParam in params do
+  for param in params do
   begin
-    sParamName := LParam.Name;
-    //strip leading : in param name because UIB does not like them
-    if (LParam.Name <> '') and (StartsStr(':', LParam.Name)) then
-    begin
-      sParamName := Copy(LParam.Name, 2, Length(LParam.Name));
-    end;
-    Statement.Params.ByNameAsVariant[sParamName] := LParam.Value;
+    paramName := param.Name;
+    // strip leading : in param name because UIB does not like them
+    if StartsStr(':', param.Name) then
+      paramName := Copy(param.Name, 2, Length(param.Name));
+    Statement.Params.ByNameAsVariant[paramName] := param.Value;
   end;
 end;
 
@@ -272,67 +260,10 @@ begin
   Statement.SQL.Text := commandText;
 end;
 
-{ TUIBConnectionAdapter }
+{$ENDREGION}
 
-function TUIBConnectionAdapter.BeginTransaction: IDBTransaction;
-var
-  LTran: TUIBTransaction;
-begin
-  if Connection = nil then
-    Exit(nil);
 
-  Connection.Connected := True;
-
- // if Connection.TransactionsCount < 1 then
- // begin
-    LTran := TUIBTransaction.Create(nil);
-    LTran.DataBase := Connection;
-    LTran.DefaultAction := etmRollback;
-    LTran.StartTransaction;
- // end
- // else
- //   LTran := Connection.Transactions[0];
-
-  Result := TUIBTransactionAdapter.Create(LTran);
-end;
-
-procedure TUIBConnectionAdapter.Connect;
-begin
-  if Connection <> nil then
-    Connection.Connected := True;
-end;
-
-constructor TUIBConnectionAdapter.Create(const connection: TUIBDataBase);
-begin
-  inherited Create(connection);
-end;
-
-function TUIBConnectionAdapter.CreateStatement: IDBStatement;
-var
-  LStatement: TUIBStatement;
-  LTran: TUIBTransaction;
-  LAdapter: TUIBStatementAdapter;
-begin
-  if Connection = nil then
-    Exit(nil);
-
-  LStatement := TUIBStatement.Create(nil);
-  if Connection.TransactionsCount > 0 then
-    LTran := Connection.Transactions[Connection.TransactionsCount - 1]
-  else
-  begin
-    LTran := TUIBTransaction.Create(nil);
-    LTran.DefaultAction := etmRollback;
-    LTran.DataBase := Connection;
-  end;
-
-  LStatement.DataBase := Connection;
-  LStatement.Transaction := LTran;
-
-  LAdapter := TUIBStatementAdapter.Create(LStatement);
-  LAdapter.ExecutionListeners := ExecutionListeners;
-  Result := LAdapter;
-end;
+{$REGION 'TUIBConnectionAdapter'}
 
 destructor TUIBConnectionAdapter.Destroy;
 var
@@ -343,9 +274,63 @@ begin
   inherited Destroy;
 end;
 
+function TUIBConnectionAdapter.BeginTransaction: IDBTransaction;
+var
+  transaction: TUIBTransaction;
+begin
+  if Assigned(Connection) then
+  begin
+    Connection.Connected := True;
+
+    transaction := TUIBTransaction.Create(nil);
+    transaction.DataBase := Connection;
+    transaction.DefaultAction := etmRollback;
+    transaction.StartTransaction;
+
+    Result := TUIBTransactionAdapter.Create(transaction);
+  end
+  else
+    Result := nil;
+end;
+
+procedure TUIBConnectionAdapter.Connect;
+begin
+  if Assigned(Connection) then
+    Connection.Connected := True;
+end;
+
+function TUIBConnectionAdapter.CreateStatement: IDBStatement;
+var
+  statement: TUIBStatement;
+  transaction: TUIBTransaction;
+  adapter: TUIBStatementAdapter;
+begin
+  if Assigned(Connection) then
+  begin
+    statement := TUIBStatement.Create(nil);
+    if Connection.TransactionsCount > 0 then
+      transaction := Connection.Transactions[Connection.TransactionsCount - 1]
+    else
+    begin
+      transaction := TUIBTransaction.Create(nil);
+      transaction.DefaultAction := etmRollback;
+      transaction.DataBase := Connection;
+    end;
+
+    statement.DataBase := Connection;
+    statement.Transaction := transaction;
+
+    adapter := TUIBStatementAdapter.Create(statement);
+    adapter.ExecutionListeners := ExecutionListeners;
+    Result := adapter;
+  end
+  else
+    Result := nil;
+end;
+
 procedure TUIBConnectionAdapter.Disconnect;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Connection.Connected := False;
 end;
 
@@ -356,20 +341,18 @@ end;
 
 function TUIBConnectionAdapter.IsConnected: Boolean;
 begin
-  if Connection <> nil then
-    Result := Connection.Connected
-  else
-    Result := False;
+  Result := Assigned(Connection) and Connection.Connected;
 end;
 
-{ TUIBTransactionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TUIBTransactionAdapter'}
 
 procedure TUIBTransactionAdapter.Commit;
 begin
-  if fTransaction = nil then
-    Exit;
-
-  FTransaction.Commit;
+  if Assigned(fTransaction) then
+    fTransaction.Commit;
 end;
 
 constructor TUIBTransactionAdapter.Create(const transaction: TUIBTransaction);
@@ -393,11 +376,12 @@ end;
 
 procedure TUIBTransactionAdapter.Rollback;
 begin
-  if fTransaction = nil then
-    Exit;
-
-  fTransaction.RollBack;
+  if Assigned(fTransaction) then
+    fTransaction.RollBack;
 end;
+
+{$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TUIBConnectionAdapter>(dtUIB);

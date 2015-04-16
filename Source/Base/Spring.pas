@@ -1605,6 +1605,11 @@ type
   TArray = class(Generics.Collections.TArray)
   public
     /// <summary>
+    ///   Concatenates an array of arrays to one array
+    /// </summary>
+    class function Concat<T>(const values: array of TArray<T>): TArray<T>; static;
+
+    /// <summary>
     ///   Determines whether the specified item exists as an element in an
     ///   array.
     /// </summary>
@@ -4862,6 +4867,23 @@ end;
 
 
 {$REGION 'TArray'}
+
+class function TArray.Concat<T>(const values: array of TArray<T>): TArray<T>;
+var
+  i, k, n: Integer;
+begin
+  n := 0;
+  for i := Low(values) to High(values) do
+    Inc(n, Length(values[i]));
+  SetLength(Result, n);
+  n := 0;
+  for i := Low(values) to High(values) do
+    for k := Low(values) to High(values) do
+    begin
+      Result[n] := values[i, k];
+      Inc(n);
+    end;
+end;
 
 class function TArray.Contains<T>(const values: array of T;
   const item: T): Boolean;

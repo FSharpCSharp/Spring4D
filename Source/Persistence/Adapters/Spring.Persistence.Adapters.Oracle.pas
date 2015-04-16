@@ -29,36 +29,30 @@ unit Spring.Persistence.Adapters.Oracle;
 interface
 
 uses
-  SysUtils,
   Spring.Persistence.Adapters.ADO,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Params;
 
 type
-  EOracleStatementAdapterException = Exception;
+  EOracleStatementAdapterException = class(EORMAdapterException);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Oracle resultset.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Oracle resultset.
+  /// </summary>
   TOracleResultsetAdapter = class(TADOResultSetAdapter);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Oracle statement.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Oracle statement.
+  /// </summary>
   TOracleStatementAdapter = class(TADOStatementAdapter)
   public
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Oracle connection.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Oracle connection.
+  /// </summary>
   TOracleConnectionAdapter = class(TADOConnectionAdapter)
   public
     function BeginTransaction: IDBTransaction; override;
@@ -66,11 +60,9 @@ type
     function CreateStatement: IDBStatement; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Oracle transaction.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represents Oracle transaction.
+  /// </summary>
   TOracleTransactionAdapter = class(TADOTransactionAdapter)
   public
     procedure Commit; override;
@@ -83,42 +75,42 @@ uses
   {$IFDEF MSWINDOWS}
   ADODB,
   {$ENDIF}
-  StrUtils,
-  Variants,
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.Core.Consts;
+  Spring.Persistence.Core.Consts,
+  Spring.Persistence.SQL.Generators.Oracle;
 
-{ TOracleConnectionAdapter }
+
+{$REGION 'TOracleConnectionAdapter'}
 
 function TOracleConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
-  if Connection = nil then
-    Exit(nil);
+  if Assigned(Connection) then
+  begin
+    Connection.Connected := True;
+    GenerateNewID;
+    Connection.Execute(SQL_BEGIN_SAVEPOINT + GetTransactionName);
 
-  Connection.Connected := True;
-
-  GenerateNewID;
-
-  Connection.Execute(SQL_BEGIN_SAVEPOINT + GetTransactionName);
-
-  Result := TOracleTransactionAdapter.Create(Connection);
-  Result.TransactionName := GetTransactionName;
+    Result := TOracleTransactionAdapter.Create(Connection);
+    Result.TransactionName := GetTransactionName;
+  end
+  else
+    Result := nil;
 end;
 
 function TOracleConnectionAdapter.CreateStatement: IDBStatement;
 var
-  LStatement: TADOQuery;
-  LAdapter: TOracleStatementAdapter;
+  statement: TADOQuery;
+  adapter: TOracleStatementAdapter;
 begin
-  if Connection = nil then
-    Exit(nil);
+  if Assigned(Connection) then
+  begin
+    statement := TADOQuery.Create(nil);
+    statement.Connection := Connection;
 
-  LStatement := TADOQuery.Create(nil);
-  LStatement.Connection := Connection;
-
-  LAdapter := TOracleStatementAdapter.Create(LStatement);
-  LAdapter.ExecutionListeners := ExecutionListeners;
-  Result := LAdapter;
+    adapter := TOracleStatementAdapter.Create(statement);
+    adapter.ExecutionListeners := ExecutionListeners;
+    Result := adapter;
+  end;
 end;
 
 function TOracleConnectionAdapter.GetDriverName: string;
@@ -126,30 +118,35 @@ begin
   Result := DRIVER_ORACLE;
 end;
 
-{ TOracleStatementAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TOracleStatementAdapter'}
 
 function TOracleStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 begin
   Result := inherited ExecuteQuery(serverSideCursor);
 end;
 
-{ TOracleTransactionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TOracleTransactionAdapter'}
 
 procedure TOracleTransactionAdapter.Commit;
 begin
-  if Transaction = nil then
-    Exit;
-
-  Transaction.Execute('COMMIT');
+  if Assigned(Transaction) then
+    Transaction.Execute('COMMIT');
 end;
 
 procedure TOracleTransactionAdapter.Rollback;
 begin
-  if Transaction = nil then
-    Exit;
-
-  Transaction.Execute(SQL_ROLLBACK_SAVEPOINT + TransactionName);
+  if Assigned(Transaction) then
+    Transaction.Execute(SQL_ROLLBACK_SAVEPOINT + TransactionName);
 end;
+
+{$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TOracleConnectionAdapter>(dtOracle);

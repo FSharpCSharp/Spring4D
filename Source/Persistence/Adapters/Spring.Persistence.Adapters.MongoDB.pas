@@ -35,9 +35,9 @@ interface
 uses
   MongoDB,
   MongoBson,
-  SysUtils,
   Spring.Collections,
   Spring.Persistence.Core.Base,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Params;
@@ -48,7 +48,7 @@ type
     Offset: Integer;
   end;
 
-  EMongoDBStatementAdapterException = Exception;
+  EMongoDBStatementAdapterException = class(EORMAdapterException);
 
   TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect, mstSelectCount, mstSelectOrder, mtPage);
 
@@ -94,7 +94,7 @@ type
     function GetFieldValue(const fieldName: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
     function GetFieldName(index: Integer): string; override;
-    function FieldNameExists(const fieldName: string): Boolean; override;
+    function FieldExists(const fieldName: string): Boolean; override;
 
     property Document: IBSONDocument read fDoc write fDoc;
     property IsInjected: Boolean read fIsInjected write fIsInjected;
@@ -107,7 +107,7 @@ type
   private
     fStatementText: string;
     fStatementType: TMongoStatementType;
-    FFullCollectionName: string;
+    fFullCollectionName: string;
   protected
     function GetStatementType(var statementText: string): TMongoStatementType; virtual;
     function GetStatementPageInfo(const statementText: string; out pageInfo: TPageInfo): string; virtual;
@@ -118,7 +118,7 @@ type
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); override;
-    procedure SetParams(const params: IList<TDBParam>); overload; override;
+    procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
     function GetQueryText: string;
@@ -158,13 +158,13 @@ implementation
 
 uses
   StrUtils,
-  TypInfo,
+  SysUtils,
   Variants,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Generators.MongoDB;
 
-var
+const
   MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'SO', 'page');
 
 
@@ -186,14 +186,15 @@ begin
 end;
 
 procedure TMongoDBConnection.SetConnected(value: Boolean);
-var
-  LIsConnected: Boolean;
 begin
-  LIsConnected := GetConnected;
-  if value and not LIsConnected then
-    Connect
-  else if LIsConnected and not value then
-    disconnect;
+  if not Connected then
+  begin
+    if value then
+      Connect;
+  end
+  else
+    if not value then
+      Disconnect;
 end;
 
 {$ENDREGION}
@@ -219,55 +220,54 @@ end;
 
 destructor TMongoResultSetAdapter.Destroy;
 begin
-  Dataset.Free;
+  DataSet.Free;
   inherited Destroy;
 end;
 
-function TMongoResultSetAdapter.FieldNameExists(const fieldName: string): Boolean;
+function TMongoResultSetAdapter.FieldExists(const fieldName: string): Boolean;
 var
-  LIter: TBsonIterator;
+  iterator: TBsonIterator;
 begin
   Result := False;
   if Assigned(fDoc) then
   begin
-    LIter := fDoc.find(fieldName);
-    if Assigned(LIter) then
+    iterator := fDoc.find(fieldName);
+    if Assigned(iterator) then
     begin
       Result := True;
-      LIter.Free;
+      iterator.Free;
     end;
   end;
 end;
 
 function TMongoResultSetAdapter.GetFieldCount: Integer;
 var
-  LIter: TBsonIterator;
+  iterator: TBsonIterator;
 begin
   Result := 0;
   if Assigned(fDoc) then
   begin
-    LIter := fDoc.iterator;
-    while LIter.next do
-    begin
+    iterator := fDoc.iterator;
+    while iterator.next do
       Inc(Result);
-    end;
   end;
 end;
 
 function TMongoResultSetAdapter.GetFieldName(index: Integer): string;
 var
-  LIter: TBsonIterator;
+  iterator: TBsonIterator;
   i: Integer;
 begin
   Assert(Assigned(fDoc), 'Document not assigned');
-  LIter := fDoc.iterator;
+  iterator := fDoc.iterator;
   i := 0;
-  while LIter.next do
+  while iterator.next do
   begin
     if index = i then
-      Exit(LIter.key);
+      Exit(iterator.key);
     Inc(i);
   end;
+  Result := '';
 end;
 
 function TMongoResultSetAdapter.GetFieldValue(const fieldName: string): Variant;
@@ -279,14 +279,14 @@ end;
 function TMongoResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
   Assert(Assigned(fDoc), 'Document not assigned');
-  Result := fDoc.value( GetFieldname(index) );
+  Result := fDoc.value(GetFieldname(index));
 end;
 
 function TMongoResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := not IsInjected and not Dataset.next;
+  Result := not IsInjected and not DataSet.next;
   if not Result and not IsInjected then
-    fDoc := Dataset.value;
+    fDoc := DataSet.value;
 end;
 
 function TMongoResultSetAdapter.Next: Boolean;
@@ -315,25 +315,25 @@ end;
 function TMongoStatementAdapter.Execute: NativeUInt;
 var
   doc, findDoc: IBSONDocument;
-  LIntf: IInterface;
-  LOk: Boolean;
-  LValue: Variant;
+  intf: IInterface;
+  ok: Boolean;
+  value: Variant;
 begin
   inherited;
   Result := 0;
-  LOk := False;
+  ok := False;
 
   if NativeQueryPresent then
   begin
     case QueryMetadata.QueryOperation of
       ctUpdateVersion:
       begin
-        LIntf := Query;
-        doc := LIntf as IBsonDocument;
-        findDoc := Statement.Connection.findAndModify(GetFullCollectionName, doc
-          , bsonEmpty, BSON(['$inc', BSON(['_version', 1])]));
-        LValue := findDoc['value'];
-        if not (VarIsNull(LValue)) then
+        intf := Query;
+        doc := intf as IBsonDocument;
+        findDoc := Statement.Connection.findAndModify(GetFullCollectionName,
+          doc, bsonEmpty, BSON(['$inc', BSON(['_version', 1])]));
+        value := findDoc['value'];
+        if not VarIsNull(value) then
           Result := 1;
         Exit;
       end;
@@ -344,86 +344,86 @@ begin
     doc := JsonToBson(fStatementText);
 
   case fStatementType of
-    mstInsert: LOk := Statement.Connection.insert(GetFullCollectionName, doc);
+    mstInsert: ok := Statement.Connection.insert(GetFullCollectionName, doc);
     mstUpdate:
     begin
       findDoc := JsonToBson(GetJsonPartFromStatementText(MONGO_STATEMENT_TYPES[mstUpdate]));
       doc := JsonToBson(fStatementText);
-      LOk := Statement.Connection.Update(GetFullCollectionName, findDoc, doc);
+      ok := Statement.Connection.Update(GetFullCollectionName, findDoc, doc);
     end;
-    mstDelete: LOk := Statement.Connection.remove(GetFullCollectionName, doc);
-    mstSelect: LOk := Statement.Connection.findOne(GetFullCollectionName, doc) <> nil;
+    mstDelete: ok := Statement.Connection.remove(GetFullCollectionName, doc);
+    mstSelect: ok := Statement.Connection.findOne(GetFullCollectionName, doc) <> nil;
     mstSelectCount: Exit(Trunc(Statement.Connection.Count(GetFullCollectionName, doc)));
   end;
-  if LOk then
+  if ok then
     Result := 1;
 end;
 
 function TMongoStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
-  LQuery: TMongoDBQuery;
-  LResultset: TMongoResultSetAdapter;
-  LPageInfo: TPageInfo;
-  LCount: Double;
+  dbQuery: TMongoDBQuery;
+  resultSet: TMongoResultSetAdapter;
+  pageInfo: TPageInfo;
+  count: Double;
 begin
   inherited;
-  LQuery := TMongoDBQuery.Create(Statement.Connection);
+  dbQuery := TMongoDBQuery.Create(Statement.Connection);
 
   if fStatementType = mtPage then
   begin
-    fStatementText := GetStatementPageInfo(fStatementText, LPageInfo);
-    LQuery.limit := LPageInfo.Limit;
-    LQuery.skip := LPageInfo.Offset;
+    fStatementText := GetStatementPageInfo(fStatementText, pageInfo);
+    dbQuery.limit := pageInfo.Limit;
+    dbQuery.skip := pageInfo.Offset;
   end;
 
   if fStatementType = mstSelectOrder then
   begin
-    LQuery.sort := JsonToBson(GetJsonPartFromStatementText(MONGO_STATEMENT_TYPES[mstSelectOrder]));
+    dbQuery.sort := JsonToBson(GetJsonPartFromStatementText(MONGO_STATEMENT_TYPES[mstSelectOrder]));
   end;
 
-  LResultset := TMongoResultSetAdapter.Create(LQuery);
-  LResultset.Document := JsonToBson(fStatementText);
+  resultSet := TMongoResultSetAdapter.Create(dbQuery);
+  resultSet.Document := JsonToBson(fStatementText);
   case fStatementType of
     mstInsert:
     begin
-      Statement.Connection.Insert(GetFullCollectionName, LResultset.Document);
-      LResultset.IsInjected := True;
+      Statement.Connection.Insert(GetFullCollectionName, resultSet.Document);
+      resultSet.IsInjected := True;
     end;
     mstSelect, mtPage, mstSelectOrder:
     begin
-      LQuery.query := LResultset.Document;
-      if Statement.Connection.find(GetFullCollectionName, LQuery) then
+      dbQuery.query := resultSet.Document;
+      if Statement.Connection.find(GetFullCollectionName, dbQuery) then
       begin
-        LResultset.Document := nil;
+        resultSet.Document := nil;
       end;
     end;
     mstSelectCount:
     begin
-      LCount := Statement.Connection.count(GetFullCollectionName, LResultset.Document);
-      LResultset.Document := BSON(['n', LCount]);
-      LResultset.IsInjected := True;
+      count := Statement.Connection.count(GetFullCollectionName, resultSet.Document);
+      resultSet.Document := BSON(['n', count]);
+      resultSet.IsInjected := True;
     end;
   end;
-  Result := LResultset;
+  Result := resultSet;
 end;
 
 function TMongoStatementAdapter.GetFullCollectionName: string;
 begin
-  Result := FFullCollectionName;
+  Result := fFullCollectionName;
 end;
 
 function TMongoStatementAdapter.GetJsonPartFromStatementText(const tagName: string): string;
 var
-  iPos, iLength: Integer;
+  i, n: Integer;
 begin
   //read length
-  iPos := PosEx('_', fStatementText);
-  if iPos < 0 then
+  i := PosEx('_', fStatementText);
+  if i < 0 then
     Exit('{}');
-  iLength := StrToInt(Copy(fStatementText, Length(tagName) + 1, iPos - (Length(tagName) + 1)));
-  Result := Copy(fStatementText, iPos + 1, iLength);
-  iPos := PosEx(']', fStatementText);
-  fStatementText := Copy(fStatementText, iPos + 1, Length(fStatementText));
+  n := StrToInt(Copy(fStatementText, Length(tagName) + 1, i - (Length(tagName) + 1)));
+  Result := Copy(fStatementText, i + 1, n);
+  i := PosEx(']', fStatementText);
+  fStatementText := Copy(fStatementText, i + 1, Length(fStatementText));
 end;
 
 function TMongoStatementAdapter.GetQueryText: string;
@@ -433,50 +433,50 @@ end;
 
 function TMongoStatementAdapter.GetStatementPageInfo(const statementText: string; out pageInfo: TPageInfo): string;
 var
-  iStart, iEnd: Integer;
+  startPos, endPos: Integer;
 begin
   //ex. page1_10_[Collection]{}
-  iStart := PosEx('_', statementText);
-  pageInfo.Limit := StrToInt(Copy(statementText, 5, iStart - 5) );
-  iEnd := PosEx('_', statementText, iStart+1);
-  pageInfo.Offset := StrToInt( Copy(statementText, iStart + 1, iEnd - iStart - 1) );
-  iEnd := PosEx(']', statementText, iEnd);
-  Result := Copy(statementText, iEnd+1, Length(statementText));
+  startPos := PosEx('_', statementText);
+  pageInfo.Limit := StrToInt(Copy(statementText, 5, startPos - 5) );
+  endPos := PosEx('_', statementText, startPos+1);
+  pageInfo.Offset := StrToInt( Copy(statementText, startPos + 1, endPos - startPos - 1) );
+  endPos := PosEx(']', statementText, endPos);
+  Result := Copy(statementText, endPos+1, Length(statementText));
 end;
 
 function TMongoStatementAdapter.GetStatementType(var statementText: string): TMongoStatementType;
 var
-  LIdentifier: string;
-  LStartIndex, LEndIndex: Integer;
+  identifier: string;
+  startIndex, endIndex: Integer;
 begin
   statementText := Trim(statementText);
   if Length(statementText) = 0 then
     statementText := 'S';
 
-  LStartIndex := PosEx('[', statementText);
-  LEndIndex := PosEx(']', statementText);
-  FFullCollectionName := Copy(statementText, LStartIndex+1, LEndIndex - LStartIndex-1);
+  startIndex := PosEx('[', statementText);
+  endIndex := PosEx(']', statementText);
+  fFullCollectionName := Copy(statementText, startIndex+1, endIndex - startIndex-1);
 
-  LIdentifier := statementText[1];
-  if LIdentifier = 'I' then
+  identifier := statementText[1];
+  if identifier = 'I' then
     Result := mstInsert
-  else if LIdentifier = 'U' then
+  else if identifier = 'U' then
     Exit(mstUpdate)
-  else if LIdentifier = 'D' then
+  else if identifier = 'D' then
     Result := mstDelete
-  else if (StartsStr('count', statementText)) then
+  else if StartsStr('count', statementText) then
   begin
-    LIdentifier := 'count';
+    identifier := 'count';
     Result := mstSelectCount;
   end
-  else if (StartsStr('page', statementText)) then
+  else if StartsStr('page', statementText) then
     Exit(mtPage)
   else if StartsStr('SO', statementText) then
     Exit(mstSelectOrder)
   else
     Result := mstSelect;
 
-  statementText := Copy(statementText, Length(FFullCollectionName) + 2 + Length(LIdentifier) + 1, Length(statementText));
+  statementText := Copy(statementText, Length(fFullCollectionName) + 2 + Length(identifier) + 1, Length(statementText));
 end;
 
 function TMongoStatementAdapter.IsObjectId(const value: string): Boolean;
@@ -484,18 +484,18 @@ begin
   Result := StartsText('ObjectID("', value);
 end;
 
-procedure TMongoStatementAdapter.SetParams(const params: IList<TDBParam>);
+procedure TMongoStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
 var
   param: TDBParam;
   value: string;
 begin
   inherited;
-  if (fStatementText = '') then
+  if fStatementText = '' then
     Exit;
 
   for param in params do
   begin
-    if (VarType(param.Value) = varUnknown) then
+    if VarType(param.Value) = varUnknown then
       Continue;
     value := VarToStrDef(param.Value, 'null');
     case VarType(param.Value) of
@@ -519,7 +519,7 @@ procedure TMongoStatementAdapter.SetQuery(const metadata: TQueryMetadata;
   const query: Variant);
 begin
   inherited;
-  FFullCollectionName := metadata.TableName;
+  fFullCollectionName := metadata.TableName;
 end;
 
 procedure TMongoStatementAdapter.SetSQLCommand(const commandText: string);
@@ -539,32 +539,35 @@ end;
 
 function TMongoConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
-  if Connection = nil then
-    Exit(nil);
-
-  Result := TMongoTransactionAdapter.Create(Connection);
+  if Assigned(Connection) then
+    Result := TMongoTransactionAdapter.Create(Connection);
 end;
 
 procedure TMongoConnectionAdapter.Connect;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Connection.Connected := True;
 end;
 
 function TMongoConnectionAdapter.CreateStatement: IDBStatement;
 var
-  LStatement: TMongoDBQuery;
-  LAdapter: TMongoStatementAdapter;
+  statement: TMongoDBQuery;
+  adapter: TMongoStatementAdapter;
 begin
-  LStatement := TMongoDBQuery.Create(Connection);
-  LAdapter := TMongoStatementAdapter.Create(LStatement);
-  LAdapter.ExecutionListeners := ExecutionListeners;
-  Result := LAdapter;
+  if Assigned(Connection) then
+  begin
+    statement := TMongoDBQuery.Create(Connection);
+    adapter := TMongoStatementAdapter.Create(statement);
+    adapter.ExecutionListeners := ExecutionListeners;
+    Result := adapter;
+  end
+  else
+    Result := nil;
 end;
 
 procedure TMongoConnectionAdapter.Disconnect;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Connection.Connected := False;
 end;
 

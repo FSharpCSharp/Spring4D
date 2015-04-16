@@ -962,7 +962,7 @@ type
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
 
-    function Add(const item: T): Integer;
+    function Add(const item: T): Integer; stdcall;
 
     /// <summary>
     ///   Inserts an item to the IList&lt;T&gt; at the specified index.
@@ -2327,6 +2327,15 @@ type
   end;
 
 function GetInstanceComparer: Pointer;
+
+const
+  caAdded = Spring.TCollectionChangedAction.caAdded;
+  caRemoved = Spring.TCollectionChangedAction.caRemoved;
+  caExtracted = Spring.TCollectionChangedAction.caExtracted;
+  caReplaced = Spring.TCollectionChangedAction.caReplaced;
+  caMoved = Spring.TCollectionChangedAction.caMoved;
+  caReseted = Spring.TCollectionChangedAction.caReseted;
+  caChanged = Spring.TCollectionChangedAction.caChanged;
 
 implementation
 

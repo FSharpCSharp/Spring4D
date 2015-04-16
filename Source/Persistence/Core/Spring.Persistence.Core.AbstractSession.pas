@@ -33,15 +33,15 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.Persistence.Core.AbstractManager,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Params,
   Spring.Reflection;
 
 type
-  TAbstractSession = class(TAbstractManager)
+  TAbstractSession = class
   private
+    fConnection: IDBConnection;
     fRowMappers: IDictionary<PTypeInfo,IRowMapper<TObject>>;
     fOldStateEntities: IEntityMap;
   protected
@@ -106,7 +106,7 @@ type
     ///   Gets the <c>Resultset</c> from SQL statement.
     /// </summary>
     function GetResultSet(const sqlStatement: string;
-      const params: IList<TDBParam>): IDBResultSet; overload;
+      const params: IEnumerable<TDBParam>): IDBResultSet; overload;
 
     procedure AttachEntity(const entity: IEntityWrapper); virtual;
     procedure DetachEntity(const entity: TObject);  virtual;
@@ -128,11 +128,12 @@ type
 
     procedure UpdateForeignKeysFor(const foreignKeyEntity: IEntityWrapper; const primaryKeyEntity: IEntityWrapper);
   public
-    constructor Create(const connection: IDBConnection); overload; override;
+    constructor Create(const connection: IDBConnection); overload; virtual;
     constructor Create(const connection: IDBConnection;
       const entityMap: IEntityMap); reintroduce; overload;
     destructor Destroy; override;
 
+    property Connection: IDBConnection read fConnection;
     property OldStateEntities: IEntityMap read fOldStateEntities;
   end;
 
@@ -160,7 +161,8 @@ uses
 
 constructor TAbstractSession.Create(const connection: IDBConnection);
 begin
-  inherited Create(connection);
+  inherited Create;
+  fConnection := connection;
   fRowMappers := TCollections.CreateDictionary<PTypeInfo,IRowMapper<TObject>>;
   if fOldStateEntities = nil then
     fOldStateEntities := TEntityMap.Create;
@@ -211,13 +213,11 @@ begin
       else
         Result := DoMapEntity(results, column.TypeInfo);
     end
-    else
-    begin
-      Result := TUtils.FromVariant(value);
-      if not Result.IsEmpty then
-        if TUtils.TryConvert(Result, column.TypeInfo, entity, convertedValue) then
-          Result := convertedValue;
-    end;
+  else
+    Result := TUtils.FromVariant(value);
+    if not Result.IsEmpty then
+      if TUtils.TryConvert(Result, column.TypeInfo, entity, convertedValue) then
+        Result := convertedValue;
   end;
 end;
 
@@ -512,17 +512,12 @@ end;
 
 function TAbstractSession.GetResultSet(const sqlStatement: string;
   const params: array of const): IDBResultSet;
-var
-  parameters: IList<TDBParam>;
 begin
-  parameters := TCollections.CreateObjectList<TDBParam>;
-  if Length(params) > 0 then
-    ConvertParams(params, parameters);
-  Result := GetResultSet(sqlStatement, parameters);
+  Result := GetResultSet(sqlStatement, TDBParams.Create(params));
 end;
 
 function TAbstractSession.GetResultSet(const sqlStatement: string;
-  const params: IList<TDBParam>): IDBResultSet;
+  const params: IEnumerable<TDBParam>): IDBResultSet;
 var
   statement: IDBStatement;
 begin

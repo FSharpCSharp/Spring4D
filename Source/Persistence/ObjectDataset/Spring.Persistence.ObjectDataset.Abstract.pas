@@ -439,10 +439,8 @@ begin
   case Event of
     deLayoutChange:
       if Active then
-      begin
         if Assigned(Reserved) and (FieldListCheckSum <> NativeInt(Reserved)) then
           Reserved := nil;
-      end;
   end;
   inherited;
 end;

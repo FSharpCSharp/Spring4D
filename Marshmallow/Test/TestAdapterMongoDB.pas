@@ -862,20 +862,21 @@ begin
   if DebugHook <> 0 then
   begin
     FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: IList<TDBParam>)
-    var
-      i: Integer;
-    begin
-      Status(ACommand);
-      for i := 0 to AParams.Count - 1 do
+      procedure(const command: string; const params: IEnumerable<TDBParam>)
+      var
+        param: TDBParam;
+        i: Integer;
       begin
-        if (VarType(AParams[i].Value) <> varUnknown) then
+        Status(command);
+        i := 0;
+        for param in params do
         begin
-          Status(Format('%2:D Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL'), i]));
+          if VarType(param.Value) <> varUnknown then
+            Status(Format('%2:D Param %0:S = %1:S', [param.Name, VarToStrDef(param.Value, 'NULL'), i]));
+          Inc(i);
         end;
-      end;
-      Status('-----');
-    end);
+        Status('-----');
+      end);
   end;
   {$WARNINGS ON}
 end;

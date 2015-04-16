@@ -29,21 +29,27 @@ unit Spring.Persistence.Core.Interfaces;
 interface
 
 uses
+  Variants,
   Spring,
   Spring.Collections,
-  Spring.Persistence.SQL.Commands,
-  Spring.Persistence.SQL.Interfaces,
-  Spring.Persistence.SQL.Params,
-  Spring.Persistence.SQL.Types,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Mapping.Attributes,
-  Variants;
+  Spring.Persistence.SQL.Commands,
+  Spring.Persistence.SQL.Interfaces,
+  Spring.Persistence.SQL.Params,
+  Spring.Persistence.SQL.Types;
 
 type
   TDBDriverType = (dtSQLite = 0, {$IFDEF MSWINDOWS}dtADO, dtMSSQL, dtASA, dtOracle,{$ENDIF} dtDBX, dtUIB, dtZeos, dtMongo, dtFireDAC);
 
-  TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: IList<TDBParam>);
+  TExecutionListenerProc = reference to procedure(const command: string; const params: IEnumerable<TDBParam>);
+
+  IFieldCache = interface(IInvokable)
+    ['{11B51ABB-0C29-40CA-A2C1-623CBFF86F4F}']
+    function FieldExists(const fieldName: string): Boolean;
+    function GetFieldValue(const fieldName: string): Variant;
+  end;
 
   /// <summary>
   ///   Represents the result set to fetch data from the database.
@@ -52,7 +58,7 @@ type
     ['{4FA97CFB-4992-4DAA-BB2A-B5CAF84B6B47}']
     function IsEmpty: Boolean;
     function Next: Boolean;
-    function FieldNameExists(const fieldName: string): Boolean;
+    function FieldExists(const fieldName: string): Boolean;
     function GetFieldValue(index: Integer): Variant; overload;
     function GetFieldValue(const fieldname: string): Variant; overload;
     function GetFieldCount: Integer;
@@ -76,7 +82,7 @@ type
     ['{DA905CAA-0FC2-4570-9788-1DC206600171}']
     procedure SetSQLCommand(const commandText: string);
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant);
-    procedure SetParams(const params: IList<TDBParam>); overload;
+    procedure SetParams(const params: IEnumerable<TDBParam>); overload;
     procedure SetParams(const params: array of const); overload;
     function Execute: NativeUInt;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet;

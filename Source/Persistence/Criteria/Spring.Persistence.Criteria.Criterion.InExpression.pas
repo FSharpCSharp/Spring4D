@@ -83,7 +83,7 @@ begin
   Assert(command is TWhereCommand);
 
   Result := Format('%s %s (%s)',
-    [PropertyName, WhereOpNames[GetWhereOperator], ValuesToSeparatedString]);
+    [PropertyName, WhereOperatorNames[GetWhereOperator], ValuesToSeparatedString]);
 
   whereField := TSQLWhereField.Create(Result, GetCriterionTable(command));
   whereField.MatchMode := GetMatchMode;

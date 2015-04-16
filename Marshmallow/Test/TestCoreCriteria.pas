@@ -69,14 +69,17 @@ begin
 
 
   FSession.Connection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: IList<TDBParam>)
+    procedure(const command: string; const params: IEnumerable<TDBParam>)
     var
       i: Integer;
+      param: TDBParam;
     begin
-      Status(ACommand);
-      for i := 0 to AParams.Count - 1 do
+      Status(command);
+      i := 0;
+      for param in params do
       begin
-        Status(Format('%2:D Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL'), i]));
+        Status(Format('%2:D Param %0:S = %1:S', [param.Name, VarToStrDef(param.Value, 'NULL'), i]));
+        Inc(i);
       end;
       Status('-----');
     end);

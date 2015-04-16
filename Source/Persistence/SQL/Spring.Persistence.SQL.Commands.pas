@@ -41,30 +41,29 @@ type
   /// </summary>
   TDMLCommand = class abstract
   private
-    FTable: TSQLTable;
-    FEntity: TObject;
-    FParameterNames: IDictionary<string,Integer>;
+    fTable: TSQLTable;
+    fEntity: TObject;
+    fParameterNames: IDictionary<string,Integer>;
   protected
-    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); virtual; abstract;
+    procedure SetCommandFieldsFromColumns(
+      const columns: IList<ColumnAttribute>); virtual; abstract;
   public
-    constructor Create(ATable: TSQLTable); virtual;
-    destructor Destroy; override;
+    constructor Create(const table: TSQLTable); virtual;
 
-    function GetAndIncParameterName(const AFieldname: string): string; virtual;
-    function GetExistingParameterName(const AFieldname: string): string; virtual;
+    function GetAndIncParameterName(const fieldName: string): string; virtual;
+    function GetExistingParameterName(const fieldName: string): string; virtual;
 
-    property Entity: TObject read FEntity write FEntity;
-    property Table: TSQLTable read FTable;
+    property Entity: TObject read fEntity write fEntity;
+    property Table: TSQLTable read fTable;
   end;
 
   TWhereCommand = class(TDMLCommand)
   private
-    FWhereFields: IList<TSQLWhereField>;
+    fWhereFields: IList<TSQLWhereField>;
   public
-    constructor Create(ATable: TSQLTable); override;
-    destructor Destroy; override;
+    constructor Create(const table: TSQLTable); override;
 
-    property WhereFields: IList<TSQLWhereField> read FWhereFields;
+    property WhereFields: IList<TSQLWhereField> read fWhereFields;
   end;
 
   /// <summary>
@@ -72,35 +71,34 @@ type
   /// </summary>
   TSelectCommand = class(TWhereCommand)
   private
-    FSelectFields: IList<TSQLSelectField>;
-    FJoins: IList<TSQLJoin>;
-    FGroupByFields: IList<TSQLGroupByField>;
-    FOrderByFields: IList<TSQLOrderByField>;
-    FPrimaryKeyColumn: ColumnAttribute;
-    FForeignColumn: ForeignJoinColumnAttribute;
-    FTables: IList<TSQLTable>;
-    FOwnedTable: Boolean;
+    fSelectFields: IList<TSQLSelectField>;
+    fJoins: IList<TSQLJoin>;
+    fGroupByFields: IList<TSQLGroupByField>;
+    fOrderByFields: IList<TSQLOrderByField>;
+    fPrimaryKeyColumn: ColumnAttribute;
+    fForeignColumn: ForeignJoinColumnAttribute;
+    fTables: IList<TSQLTable>;
+    fOwnTable: Boolean;
   public
-    constructor Create(ATable: TSQLTable); overload; override;
-    constructor Create(AEntityClass: TClass); reintroduce; overload;
+    constructor Create(const table: TSQLTable); overload; override;
+    constructor Create(entityClass: TClass); reintroduce; overload;
     destructor Destroy; override;
 
-    function FindTable(AClass: TClass): TSQLTable;
-    function FindCorrespondingTable(ATable: TSQLTable): TSQLTable;
+    function FindTable(entityClass: TClass): TSQLTable;
+    function FindCorrespondingTable(const table: TSQLTable): TSQLTable;
 
-    procedure SetAssociations(AEntityClass: TClass); virtual;
-    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
+    procedure SetAssociations(entityClass: TClass); virtual;
+    procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn;
-    procedure SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
+    procedure SetFromForeignColumn(baseTableClass, foreignTableClass: TClass);
 
-    property SelectFields: IList<TSQLSelectField> read FSelectFields;
-    property Joins: IList<TSQLJoin> read FJoins;
-    property GroupByFields: IList<TSQLGroupByField> read FGroupByFields;
-    property OrderByFields: IList<TSQLOrderByField> read FOrderByFields;
-
-    property ForeignColumn: ForeignJoinColumnAttribute read FForeignColumn write FForeignColumn;
-    property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
-    property Tables: IList<TSQLTable> read FTables;
+    property SelectFields: IList<TSQLSelectField> read fSelectFields;
+    property Joins: IList<TSQLJoin> read fJoins;
+    property GroupByFields: IList<TSQLGroupByField> read fGroupByFields;
+    property OrderByFields: IList<TSQLOrderByField> read fOrderByFields;
+    property PrimaryKeyColumn: ColumnAttribute read fPrimaryKeyColumn write fPrimaryKeyColumn;
+    property ForeignColumn: ForeignJoinColumnAttribute read fForeignColumn write fForeignColumn;
+    property Tables: IList<TSQLTable> read fTables;
   end;
 
   /// <summary>
@@ -108,16 +106,15 @@ type
   /// </summary>
   TInsertCommand = class(TDMLCommand)
   private
-    FInsertFields: IList<TSQLInsertField>;
-    FSequence: SequenceAttribute;
+    fInsertFields: IList<TSQLInsertField>;
+    fSequence: SequenceAttribute;
   public
-    constructor Create(ATable: TSQLTable); override;
-    destructor Destroy; override;
+    constructor Create(const table: TSQLTable); override;
 
-    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
 
-    property InsertFields: IList<TSQLInsertField> read FInsertFields;
-    property Sequence: SequenceAttribute read FSequence write FSequence;
+    property InsertFields: IList<TSQLInsertField> read fInsertFields;
+    property Sequence: SequenceAttribute read fSequence write fSequence;
   end;
 
   /// <summary>
@@ -125,15 +122,15 @@ type
   /// </summary>
   TUpdateCommand = class(TWhereCommand)
   private
-    FUpdateFields: IList<TSQLUpdateField>;
-    FPrimaryKeyColumn: ColumnAttribute;
+    fUpdateFields: IList<TSQLUpdateField>;
+    fPrimaryKeyColumn: ColumnAttribute;
   public
-    constructor Create(ATable: TSQLTable); override;
+    constructor Create(const table: TSQLTable); override;
 
-    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
 
-    property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
-    property UpdateFields: IList<TSQLUpdateField> read FUpdateFields;
+    property UpdateFields: IList<TSQLUpdateField> read fUpdateFields;
+    property PrimaryKeyColumn: ColumnAttribute read fPrimaryKeyColumn write fPrimaryKeyColumn;
   end;
 
   /// <summary>
@@ -141,14 +138,14 @@ type
   /// </summary>
   TDeleteCommand = class(TWhereCommand)
   private
-    FPrimaryKeyColumnName: string;
-    procedure SetPrimaryKeyColumnName(const Value: string);
+    fPrimaryKeyColumnName: string;
+    procedure SetPrimaryKeyColumnName(const value: string);
   public
-    constructor Create(ATable: TSQLTable); override;
+    constructor Create(const table: TSQLTable); override;
 
-    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
 
-    property PrimaryKeyColumnName: string read FPrimaryKeyColumnName write SetPrimaryKeyColumnName;
+    property PrimaryKeyColumnName: string read fPrimaryKeyColumnName write SetPrimaryKeyColumnName;
   end;
 
   /// <summary>
@@ -156,18 +153,17 @@ type
   /// </summary>
   TCreateTableCommand = class(TDMLCommand)
   private
-    FColumns: IList<TSQLCreateField>;
-    FDbColumns: IList<string>;
-    FTableExists: Boolean;
+    fColumns: IList<TSQLCreateField>;
+    fColumnNames: IList<string>;
+    fTableExists: Boolean;
   public
-    constructor Create(ATable: TSQLTable); override;
-    destructor Destroy; override;
+    constructor Create(const table: TSQLTable); override;
 
-    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
 
-    property TableExists: Boolean read FTableExists write FTableExists;
-    property DbColumns: IList<string> read FDbColumns;
-    property Columns: IList<TSQLCreateField> read FColumns;
+    property Columns: IList<TSQLCreateField> read fColumns;
+    property ColumnNames: IList<string> read fColumnNames;
+    property TableExists: Boolean read fTableExists write fTableExists;
   end;
 
   /// <summary>
@@ -175,14 +171,13 @@ type
   /// </summary>
   TCreateForeignKeyCommand = class(TCreateTableCommand)
   private
-    FForeigns: IList<TSQLForeignKeyField>;
+    fForeignKeys: IList<TSQLForeignKeyField>;
   public
-    constructor Create(ATable: TSQLTable); override;
-    destructor Destroy; override;
+    constructor Create(const table: TSQLTable); override;
 
-    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
 
-    property ForeignKeys: IList<TSQLForeignKeyField> read FForeigns;
+    property ForeignKeys: IList<TSQLForeignKeyField> read fForeignKeys;
   end;
 
   /// <summary>
@@ -190,418 +185,408 @@ type
   /// </summary>
   TCreateSequenceCommand = class
   private
-    FSequence: SequenceAttribute;
-    FSequenceExists: Boolean;
+    fSequence: SequenceAttribute;
+    fSequenceExists: Boolean;
   public
-    constructor Create(ASequenceAttribute: SequenceAttribute); virtual;
+    constructor Create(const sequenceAttribute: SequenceAttribute); virtual;
 
-    property SequenceExists: Boolean read FSequenceExists write FSequenceExists;
-    property Sequence: SequenceAttribute read FSequence write FSequence;
+    property Sequence: SequenceAttribute read fSequence write fSequence;
+    property SequenceExists: Boolean read fSequenceExists write fSequenceExists;
   end;
 
 implementation
 
 uses
-  Generics.Defaults,
   SysUtils,
+  TypInfo,
+  Spring.Reflection,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Relation.ManyToOne,
   Spring.Persistence.Mapping.RttiExplorer;
 
-{ TSelectCommand }
 
-constructor TSelectCommand.Create(ATable: TSQLTable);
+{$REGION 'TSelectCommand'}
+
+constructor TSelectCommand.Create(const table: TSQLTable);
 begin
-  inherited Create(ATable);
-  FSelectFields := TCollections.CreateObjectList<TSQLSelectField>;
-  FJoins := TCollections.CreateObjectList<TSQLJoin>;
-  FGroupByFields := TCollections.CreateObjectList<TSQLGroupByField>;
-  FOrderByFields := TCollections.CreateObjectList<TSQLOrderByField>;
-  FTables := TCollections.CreateObjectList<TSQLTable>(True);
-  FForeignColumn := nil;
+  inherited Create(table);
+  fSelectFields := TCollections.CreateObjectList<TSQLSelectField>;
+  fJoins := TCollections.CreateObjectList<TSQLJoin>;
+  fGroupByFields := TCollections.CreateObjectList<TSQLGroupByField>;
+  fOrderByFields := TCollections.CreateObjectList<TSQLOrderByField>;
+  fTables := TCollections.CreateObjectList<TSQLTable>(True);
+  fForeignColumn := nil;
 end;
 
-constructor TSelectCommand.Create(AEntityClass: TClass);
+constructor TSelectCommand.Create(entityClass: TClass);
 var
-  LEntityData: TEntityData;
+  entityData: TEntityData;
 begin
-  FOwnedTable := True;
-  LEntityData := TEntityCache.Get(AEntityClass);
-  FTable := TSQLTable.CreateFromClass(AEntityClass);
-  Create(FTable);
-  SetCommandFieldsFromColumns(LEntityData.Columns);
-  PrimaryKeyColumn := LEntityData.PrimaryKeyColumn;
-  SetAssociations(AEntityClass);
+  fOwnTable := True;
+  entityData := TEntityCache.Get(entityClass);
+  fTable := TSQLTable.CreateFromClass(entityClass);
+  Create(fTable);
+  SetCommandFieldsFromColumns(entityData.Columns);
+  PrimaryKeyColumn := entityData.PrimaryKeyColumn;
+  SetAssociations(entityClass);
 end;
 
 destructor TSelectCommand.Destroy;
 begin
-  if FOwnedTable then
-    FTable.Free;
+  if fOwnTable then
+    fTable.Free;
   inherited Destroy;
 end;
 
-function TSelectCommand.FindCorrespondingTable(ATable: TSQLTable): TSQLTable;
+function TSelectCommand.FindCorrespondingTable(const table: TSQLTable): TSQLTable;
 var
-  LCurrentSQLTable: TSQLTable;
+  currentTable: TSQLTable;
 begin
-  Result := ATable;
+  Result := table;
 
-  if ATable = nil then
+  if table = nil then
     Exit;
 
-  for LCurrentSQLTable in FTables do
-    if SameText(LCurrentSQLTable.GetNameWithoutSchema, ATable.GetNameWithoutSchema) then
-      Exit(LCurrentSQLTable);
+  for currentTable in fTables do
+    if SameText(currentTable.NameWithoutSchema, table.NameWithoutSchema) then
+      Exit(currentTable);
 end;
 
-function TSelectCommand.FindTable(AClass: TClass): TSQLTable;
+function TSelectCommand.FindTable(entityClass: TClass): TSQLTable;
 var
-  LTableName: string;
-  LCurrentSQLTable: TSQLTable;
+  tableName: string;
+  currentTable: TSQLTable;
 begin
-  if AClass = nil then
-    Exit(Table);
+  if entityClass = nil then
+    Exit(fTable);
 
-  LTableName := TEntityCache.Get(AClass).EntityTable.TableName;
+  tableName := TEntityCache.Get(entityClass).EntityTable.TableName;
 
-  for LCurrentSQLTable in FTables do
-    if SameText( LCurrentSQLTable.GetNameWithoutSchema, LTableName) then
-      Exit(LCurrentSQLTable);
-  Result := Table;
+  for currentTable in fTables do
+    if SameText(currentTable.NameWithoutSchema, tableName) then
+      Exit(currentTable);
+  Result := fTable;
 end;
 
-procedure TSelectCommand.SetAssociations(AEntityClass: TClass);
+procedure TSelectCommand.SetAssociations(entityClass: TClass);
 var
-  LEntityData: TEntityData;
-  LManyOneCol: ManyToOneAttribute;
-  LSelectField: TSQLSelectField;
-  LTable: TSQLTable;
-  LMappedTableClass: TClass;
-  LCol: ColumnAttribute;
-  LBuiltFieldname: string;
-  LMappedByCol: ColumnAttribute;
-  LMappedByColname: string;
-  LJoin: TSQLJoin;
+  entityData: TEntityData;
   i: Integer;
+  manyToOneColumn: ManyToOneAttribute;
+  table: TSQLTable;
+  mappedByColumn: ColumnAttribute;
+  mappedByColumnName: string;
+  mappedTableClass: TClass;
+  column: ColumnAttribute;
+  builtFieldName: string;
+  selectField: TSQLSelectField;
+  join: TSQLJoin;
 begin
-  LEntityData := TEntityCache.Get(AEntityClass);
-  i := 0;
+  entityData := TEntityCache.Get(entityClass);
 
-  for LManyOneCol in LEntityData.ManyToOneColumns do
+  for i := 0 to entityData.ManyToOneColumns.Count - 1 do
   begin
-    LTable := TSQLTable.Create;
-    LTable.SetFromAttribute(TRttiExplorer.GetTable(LManyOneCol.MemberType));
-    FTables.Add(LTable);
-    LTable.Alias := LTable.Alias + IntToStr(i);
+    manyToOneColumn := entityData.ManyToOneColumns[i];
+    table := TSQLTable.Create;
+    table.SetFromAttribute(TRttiExplorer.GetTable(manyToOneColumn.MemberType));
+    fTables.Add(table);
+    table.Alias := table.Alias + IntToStr(i);
 
-    LMappedByCol := TManyToOneRelation.GetMappedByColumn(LManyOneCol, AEntityClass);
-    LMappedByColname := LMappedByCol.ColumnName;
-    LMappedTableClass := TRttiExplorer.GetClassFromClassInfo(LManyOneCol.MemberType);
-    for LCol in TEntityCache.Get(LMappedTableClass).Columns do
+    mappedByColumn := TManyToOneRelation.GetMappedByColumn(manyToOneColumn, entityClass);
+    mappedByColumnName := mappedByColumn.ColumnName;
+    mappedTableClass := TType.GetClass(manyToOneColumn.MemberType);
+    for column in TEntityCache.Get(mappedTableClass).Columns do
     begin
-      LBuiltFieldname := TManyToOneRelation.BuildColumnName(LTable.GetNameWithoutSchema, LMappedByColname, LCol.ColumnName);
-      LSelectField := TSQLSelectField.Create(LCol.ColumnName + ' ' + LBuiltFieldname, LTable);
-      FSelectFields.Add(LSelectField);
+      builtFieldName := TManyToOneRelation.BuildColumnName(table.NameWithoutSchema, mappedByColumnName, column.ColumnName);
+      selectField := TSQLSelectField.Create(column.ColumnName + ' ' + builtFieldName, table);
+      fSelectFields.Add(selectField);
     end;
-    //add join
-    LJoin := TSQLJoin.Create(jtLeft);
 
-    LJoin.Segments.Add(TSQLJoinSegment.Create(
-      TSQLField.Create(TEntityCache.Get(LMappedTableClass).PrimaryKeyColumn.ColumnName, LTable)
-      ,TSQLField.Create(LMappedByColname, Table)
-    ));
-
-    FJoins.Add(LJoin);
-    Inc(i);
+    join := TSQLJoin.Create(jtLeft);
+    join.Segments.Add(TSQLJoinSegment.Create(
+      TSQLField.Create(TEntityCache.Get(mappedTableClass).PrimaryKeyColumn.ColumnName, table),
+      TSQLField.Create(mappedByColumnName, fTable)));
+    fJoins.Add(join);
   end;
 end;
 
-procedure TSelectCommand.SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
+procedure TSelectCommand.SetFromForeignColumn(baseTableClass, foreignTableClass: TClass);
 var
   primaryKeyColumn: ColumnAttribute;
   whereField: TSQLWhereField;
   foreignEntityData: TEntityData;
 begin
-  FForeignColumn := nil;
-  foreignEntityData := TEntityCache.Get(AForeignTableClass);
+  fForeignColumn := nil;
+  foreignEntityData := TEntityCache.Get(foreignTableClass);
   primaryKeyColumn := foreignEntityData.PrimaryKeyColumn;
   if not Assigned(primaryKeyColumn) then
     Exit;
 
-  FForeignColumn := TRttiExplorer.GetForeignKeyColumn(ABaseTableClass,
+  fForeignColumn := TRttiExplorer.GetForeignKeyColumn(baseTableClass,
     foreignEntityData.EntityTable, primaryKeyColumn);
-  if not Assigned(FForeignColumn) then
+  if not Assigned(fForeignColumn) then
     Exit;
 
-  whereField := TSQLWhereField.Create(FForeignColumn.Name, FTable, nil,
-    GetAndIncParameterName(FForeignColumn.Name));
+  whereField := TSQLWhereField.Create(fForeignColumn.Name, fTable, nil,
+    GetAndIncParameterName(fForeignColumn.Name));
   WhereFields.Add(whereField);
 end;
 
 procedure TSelectCommand.SetFromPrimaryColumn;
 var
-  LWhereField: TSQLWhereField;
+  whereField: TSQLWhereField;
 begin
-  FForeignColumn := nil;
-  if Assigned(FPrimaryKeyColumn) then
+  fForeignColumn := nil;
+  if Assigned(fPrimaryKeyColumn) then
   begin
-    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.ColumnName, FTable,
-      FPrimaryKeyColumn, GetAndIncParameterName(FPrimaryKeyColumn.ColumnName));
-    WhereFields.Add(LWhereField);
+    whereField := TSQLWhereField.Create(fPrimaryKeyColumn.ColumnName, fTable,
+      fPrimaryKeyColumn, GetAndIncParameterName(fPrimaryKeyColumn.ColumnName));
+    WhereFields.Add(whereField);
   end;
 end;
 
-procedure TSelectCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
+procedure TSelectCommand.SetCommandFieldsFromColumns(
+  const columns: IList<ColumnAttribute>);
 var
-  LColumn: ColumnAttribute;
-  LSelectField: TSQLSelectField;
+  column: ColumnAttribute;
+  selectField: TSQLSelectField;
 begin
-  Assert(Assigned(AColumns), 'AColumns not assigned');
-  FSelectFields.Clear;
-  FJoins.Clear;
+  Assert(Assigned(columns), 'AColumns not assigned');
+  fSelectFields.Clear;
+  fJoins.Clear;
   WhereFields.Clear;
-  FGroupByFields.Clear;
-  FOrderByFields.Clear;
+  fGroupByFields.Clear;
+  fOrderByFields.Clear;
 
-  for LColumn in AColumns do
+  for column in columns do
   begin
-    LSelectField := TSQLSelectField.Create(LColumn.ColumnName, FTable);
-    FSelectFields.Add(LSelectField);
+    selectField := TSQLSelectField.Create(column.ColumnName, fTable);
+    fSelectFields.Add(selectField);
   end;
 end;
 
-{ TInsertCommand }
+{$ENDREGION}
 
-constructor TInsertCommand.Create(ATable: TSQLTable);
+
+{$REGION 'TInsertCommand'}
+
+constructor TInsertCommand.Create(const table: TSQLTable);
 begin
-  inherited Create(ATable);
-  FInsertFields := TCollections.CreateObjectList<TSQLInsertField>;
-  FSequence := nil;
+  inherited Create(table);
+  fInsertFields := TCollections.CreateObjectList<TSQLInsertField>;
+  fSequence := nil;
 end;
 
-destructor TInsertCommand.Destroy;
-begin
-  inherited Destroy;
-end;
-
-procedure TInsertCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
+procedure TInsertCommand.SetCommandFieldsFromColumns(
+  const columns: IList<ColumnAttribute>);
 var
-  LField: TSQLInsertField;
-  LColumn: ColumnAttribute;
+  column: ColumnAttribute;
+  insertField: TSQLInsertField;
 begin
-  Assert(Assigned(AColumns), 'AColumns not assigned');
-  //add fields
-  FInsertFields.Clear;
+  Assert(Assigned(columns), 'AColumns not assigned');
 
-  for LColumn in AColumns do
-  begin
-    if (LColumn.CanInsert) then  //fixes #22
+  fInsertFields.Clear;
+  for column in columns do
+    if column.CanInsert then
     begin
-      LField := TSQLInsertField.Create(LColumn.ColumnName, FTable, LColumn,
-        GetAndIncParameterName(LColumn.ColumnName));
-      FInsertFields.Add(LField);
+      insertField := TSQLInsertField.Create(column.ColumnName, fTable, column,
+        GetAndIncParameterName(column.ColumnName));
+      fInsertFields.Add(insertField);
     end;
-  end;
 end;
 
-{ TUpdateCommand }
+{$ENDREGION}
 
-constructor TUpdateCommand.Create(ATable: TSQLTable);
+
+{$REGION 'TUpdateCommand'}
+
+constructor TUpdateCommand.Create(const table: TSQLTable);
 begin
-  inherited Create(ATable);
-  FUpdateFields := TCollections.CreateObjectList<TSQLUpdateField>;
-  FPrimaryKeyColumn := nil;
+  inherited Create(table);
+  fUpdateFields := TCollections.CreateObjectList<TSQLUpdateField>;
+  fPrimaryKeyColumn := nil;
 end;
 
-procedure TUpdateCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
+procedure TUpdateCommand.SetCommandFieldsFromColumns(
+  const columns: IList<ColumnAttribute>);
 var
-  LField: TSQLUpdateField;
-  LWhereField: TSQLWhereField;
-  LColumn: ColumnAttribute;
+  updateField: TSQLUpdateField;
+  whereField: TSQLWhereField;
+  column: ColumnAttribute;
 begin
-  Assert(Assigned(AColumns), 'AColumns not assigned');
-  //add fields
-  FUpdateFields.Clear;
-  WhereFields.Clear;
+  Assert(Assigned(columns), 'AColumns not assigned');
 
-  for LColumn in AColumns do
-  begin
-    if (LColumn.CanUpdate) then
+  fUpdateFields.Clear;
+  fWhereFields.Clear;
+  for column in columns do
+    if column.CanUpdate then
     begin
-      LField := TSQLUpdateField.Create(LColumn.ColumnName, FTable, LColumn,
-        GetAndIncParameterName(LColumn.ColumnName));
-      FUpdateFields.Add(LField);
+      updateField := TSQLUpdateField.Create(column.ColumnName, fTable, column,
+        GetAndIncParameterName(column.ColumnName));
+      fUpdateFields.Add(updateField);
     end;
-  end;
 
-  //add primary key column
-  if Assigned(FPrimaryKeyColumn) then
+  if Assigned(fPrimaryKeyColumn) then
   begin
-    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.ColumnName, FTable);
-    LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.ColumnName);
-    LWhereField.Column := FPrimaryKeyColumn;
-    WhereFields.Add(LWhereField);
+    whereField := TSQLWhereField.Create(fPrimaryKeyColumn.ColumnName, fTable,
+      fPrimaryKeyColumn, GetAndIncParameterName(fPrimaryKeyColumn.ColumnName));
+    fWhereFields.Add(whereField);
   end;
 end;
 
-{ TDeleteCommand }
+{$ENDREGION}
 
-constructor TDeleteCommand.Create(ATable: TSQLTable);
+
+{$REGION 'TDeleteCommand'}
+
+constructor TDeleteCommand.Create(const table: TSQLTable);
 begin
-  inherited Create(ATable);
-  FPrimaryKeyColumnName := '';
+  inherited Create(table);
+  fPrimaryKeyColumnName := '';
 end;
 
-procedure TDeleteCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
+procedure TDeleteCommand.SetCommandFieldsFromColumns(
+  const columns: IList<ColumnAttribute>);
 begin
-  SetPrimaryKeyColumnName(FPrimaryKeyColumnName);
+  SetPrimaryKeyColumnName(fPrimaryKeyColumnName);
 end;
 
-procedure TDeleteCommand.SetPrimaryKeyColumnName(const Value: string);
+procedure TDeleteCommand.SetPrimaryKeyColumnName(const value: string);
 var
-  LWhereField: TSQLWhereField;
+  whereField: TSQLWhereField;
 begin
-  FPrimaryKeyColumnName := Value;
-  Assert(FPrimaryKeyColumnName <> '', 'Primary key column name is not specified for deletion');
-  WhereFields.Clear;
-  LWhereField := TSQLWhereField.Create(FPrimaryKeyColumnName, FTable);
-  LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumnName);
-  WhereFields.Add(LWhereField);
+  Assert(value <> '', 'Primary key column name is not specified for deletion');
+
+  fPrimaryKeyColumnName := value;
+  fWhereFields.Clear;
+  whereField := TSQLWhereField.Create(fPrimaryKeyColumnName, fTable, nil,
+    GetAndIncParameterName(fPrimaryKeyColumnName));
+  fWhereFields.Add(whereField);
 end;
 
-{ TDMLCommand }
+{$ENDREGION}
 
-constructor TDMLCommand.Create(ATable: TSQLTable);
+
+{$REGION 'TDMLCommand'}
+
+constructor TDMLCommand.Create(const table: TSQLTable);
 begin
   inherited Create;
-  FTable := ATable;
-  FParameterNames := TCollections.CreateDictionary<string,Integer>;
+  fTable := table;
+  fParameterNames := TCollections.CreateDictionary<string,Integer>;
 end;
 
-destructor TDMLCommand.Destroy;
-begin
-  inherited Destroy;
-end;
-
-function TDMLCommand.GetAndIncParameterName(const AFieldname: string): string;
+function TDMLCommand.GetAndIncParameterName(const fieldName: string): string;
 var
-  LIndex: Integer;
-  LUpFieldname: string;
+  index: Integer;
+  upperCaseFieldName: string;
 begin
-  LUpFieldname := UpperCase(Table.GetNameWithoutSchema + '_' + AFieldname);
-  LIndex := 1;
-  if FParameterNames.TryGetValue(LUpFieldname, LIndex) then
-    Inc(LIndex);
-
-  FParameterNames.AddOrSetValue(LUpFieldname, LIndex);
-  Result := Format(':%S%D', [LUpFieldname, LIndex]);
+  upperCaseFieldName := AnsiUpperCase(fTable.NameWithoutSchema + '_' + fieldName);
+  if fParameterNames.TryGetValue(upperCaseFieldName, index) then
+    Inc(index)
+  else
+    index := 1;
+  fParameterNames.AddOrSetValue(upperCaseFieldName, index);
+  Result := Format(':%S%D', [upperCaseFieldName, index]);
 end;
 
-function TDMLCommand.GetExistingParameterName(const AFieldname: string): string;
+function TDMLCommand.GetExistingParameterName(const fieldName: string): string;
 var
-  LIndex: Integer;
-  LUpFieldname: string;
+  index: Integer;
+  upperCaseFieldName: string;
 begin
-  LUpFieldname := UpperCase(AFieldname);
-  if not FParameterNames.TryGetValue(LUpFieldname, LIndex) then
+  upperCaseFieldName := AnsiUpperCase(fieldName);
+  if not fParameterNames.TryGetValue(upperCaseFieldName, index) then
+    index := 1;
+  Result := Format(':%S%D', [upperCaseFieldName, index]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCreateTableCommand'}
+
+constructor TCreateTableCommand.Create(const table: TSQLTable);
+begin
+  inherited Create(table);
+  fColumns := TCollections.CreateObjectList<TSQLCreateField>(True);
+  fColumnNames := TCollections.CreateList<string>(TStringComparer.OrdinalIgnoreCase());
+end;
+
+procedure TCreateTableCommand.SetCommandFieldsFromColumns(
+  const columns: IList<ColumnAttribute>);
+var
+  column: ColumnAttribute;
+  field: TSQLCreateField;
+begin
+  fColumns.Clear;
+  fColumnNames.Clear;
+
+  for column in columns do
   begin
-    LIndex := 1;
-  end;
-  Result := Format(':%S%D', [LUpFieldname, LIndex]);
-end;
-
-{ TCreateTableCommand }
-
-constructor TCreateTableCommand.Create(ATable: TSQLTable);
-var
-  LCaseInsensitiveComparer: IComparer<string>;
-begin
-  inherited Create(ATable);
-  FColumns := TCollections.CreateObjectList<TSQLCreateField>(True);
-  LCaseInsensitiveComparer := TComparer<string>.Construct(
-    function(const Left, Right: string): Integer
-    begin
-      Result := CompareText(Left, Right);
-    end);
-
-  FDbColumns := TCollections.CreateList<string>(LCaseInsensitiveComparer);
-end;
-
-destructor TCreateTableCommand.Destroy;
-begin
-  inherited Destroy;
-end;
-
-procedure TCreateTableCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
-var
-  LCol: ColumnAttribute;
-  LField: TSQLCreateField;
-begin
-  FColumns.Clear;
-  FDbColumns.Clear;
-
-  for LCol in AColumns do
-  begin
-    LField := TSQLCreateField.Create(LCol.ColumnName, FTable);
-    LField.SetFromAttribute(LCol);
-    FColumns.Add(LField);
+    field := TSQLCreateField.Create(column.ColumnName, fTable);
+    field.SetFromAttribute(column);
+    fColumns.Add(field);
   end;
 end;
 
-{ TCreateFKCommand }
+{$ENDREGION}
 
-constructor TCreateForeignKeyCommand.Create(ATable: TSQLTable);
+
+{$REGION 'TCreateForeignKeyCommand'}
+
+constructor TCreateForeignKeyCommand.Create(const table: TSQLTable);
 begin
-  inherited Create(ATable);
-  FForeigns := TCollections.CreateObjectList<TSQLForeignKeyField>(True);
+  inherited Create(table);
+  fForeignKeys := TCollections.CreateObjectList<TSQLForeignKeyField>(True);
 end;
 
-destructor TCreateForeignKeyCommand.Destroy;
-begin
-  inherited Destroy;
-end;
-
-procedure TCreateForeignKeyCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
+procedure TCreateForeignKeyCommand.SetCommandFieldsFromColumns(
+  const columns: IList<ColumnAttribute>);
 var
-  LCol: ColumnAttribute;
-  LForeignKeyColumn: ForeignJoinColumnAttribute;
-  LFKField: TSQLForeignKeyField;
+  column: ColumnAttribute;
+  foreignKeyColumn: ForeignJoinColumnAttribute;
+  foreignKeyField: TSQLForeignKeyField;
 begin
-  inherited SetCommandFieldsFromColumns(AColumns);
-  FForeigns.Clear;
-  for LCol in AColumns do
+  inherited SetCommandFieldsFromColumns(columns);
+  fForeignKeys.Clear;
+  for column in columns do
   begin
-    if TRttiExplorer.TryGetColumnAsForeignKey(LCol, LForeignKeyColumn) then
+    if TRttiExplorer.TryGetColumnAsForeignKey(column, foreignKeyColumn) then
     begin
-      LFKField := TSQLForeignKeyField.Create(LForeignKeyColumn.Name, Table);
-      LFKField.Constraints := LForeignKeyColumn.ForeignStrategies;
-      LFKField.ReferencedColumnName := LForeignKeyColumn.ReferencedColumnName;
-      LFKField.ReferencedTableName := LForeignKeyColumn.ReferencedTableName;
-      FForeigns.Add(LFKField);
+      foreignKeyField := TSQLForeignKeyField.Create(foreignKeyColumn.Name, fTable);
+      foreignKeyField.Constraints := foreignKeyColumn.ForeignStrategies;
+      foreignKeyField.ReferencedColumnName := foreignKeyColumn.ReferencedColumnName;
+      foreignKeyField.ReferencedTableName := foreignKeyColumn.ReferencedTableName;
+      fForeignKeys.Add(foreignKeyField);
     end;
   end;
 end;
 
-{ TCreateSequenceCommand }
+{$ENDREGION}
 
-constructor TCreateSequenceCommand.Create(ASequenceAttribute: SequenceAttribute);
+
+{$REGION 'TCreateSequenceCommand'}
+
+constructor TCreateSequenceCommand.Create(
+  const sequenceAttribute: SequenceAttribute);
 begin
   inherited Create;
-  FSequence := ASequenceAttribute;
+  fSequence := sequenceAttribute;
 end;
 
-{ TWhereCommand }
+{$ENDREGION}
 
-constructor TWhereCommand.Create(ATable: TSQLTable);
+
+{$REGION 'TWhereCommand'}
+
+constructor TWhereCommand.Create(const table: TSQLTable);
 begin
-  inherited Create(ATable);
-  FWhereFields := TCollections.CreateObjectList<TSQLWhereField>;
+  inherited Create(table);
+  fWhereFields := TCollections.CreateObjectList<TSQLWhereField>;
 end;
 
-destructor TWhereCommand.Destroy;
-begin
-  inherited Destroy;
-end;
+{$ENDREGION}
+
 
 end.

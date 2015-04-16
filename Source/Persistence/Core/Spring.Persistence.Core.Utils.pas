@@ -62,8 +62,6 @@ type
     class function SameObject(const left, right: TObject): Boolean;
     class function SamePicture(const left, right: TPicture): Boolean;
     class function SameStream(const left, right: TStream): Boolean;
-
-    class procedure SetNullableValue(targetTypeInfo: PTypeInfo; const AFrom: TValue; var AResult: TValue);
   end;
 
 implementation
@@ -109,9 +107,9 @@ begin
     end;
     tkFloat:
     begin
-      if (value.TypeInfo = TypeInfo(TDateTime)) then
+      if value.TypeInfo = TypeInfo(TDateTime) then
         Result := value.AsType<TDateTime>
-      else if (value.TypeInfo = TypeInfo(TDate)) then
+      else if value.TypeInfo = TypeInfo(TDate) then
         Result := value.AsType<TDate>
       else
         Result := value.AsExtended;
@@ -128,15 +126,15 @@ begin
     end;
     tkClass:
     begin
-      if (value.AsObject <> nil) then
+      if value.AsObject <> nil then
       begin
-        if (value.AsObject is TStream) then
+        if value.AsObject is TStream then
         begin
           stream := TStream(value.AsObject);
           stream.Position := 0;
           Result := LoadFromStreamToVariant(stream);
         end
-        else if (value.AsObject is TPicture) then
+        else if value.AsObject is TPicture then
         begin
           stream := TMemoryStream.Create;
           try
@@ -161,10 +159,8 @@ begin
       end;
     end;
     tkInterface: ;//
-    else
-    begin
-      Result := value.AsVariant;
-    end;
+  else
+    Result := value.AsVariant;
   end;
 end;
 
@@ -342,46 +338,6 @@ begin
   Result := True;
 end;
 
-class procedure TUtils.SetNullableValue(targetTypeInfo: PTypeInfo; const AFrom: TValue; var AResult: TValue);
-var
-  LRecord: TRttiRecordType;
-  LFields: TArray<TRttiField>;
-  LValueField, LHasValueField: TRttiField;
-  LValue: TValue;
-  LResultRef: Pointer;
-  bFree: Boolean;
-begin
-  bFree := False;
-  LRecord := TType.GetType(targetTypeInfo).AsRecord;
-  if Assigned(LRecord) then
-  begin
-    LFields := LRecord.GetFields;
-    Assert(Length(LFields) = 2);
-    LValueField := LFields[0];
-    LHasValueField := LFields[1];
-    TValue.MakeWithoutCopy(nil, LRecord.Handle, AResult);
-    LResultRef := AResult.GetReferenceToRawData;
-    if AFrom.IsEmpty then
-    begin
-      TValue.From<string>('').ExtractRawData(PByte(LResultRef) + LHasValueField.Offset); // LHasValueField.SetValue(LResultRef, '') //Spring Nullable
-    end
-    else
-    begin
-      TValue.From<string>('@').ExtractRawData(PByte(LResultRef) + LHasValueField.Offset);
-        //LHasValueField.SetValue(LResultRef, '@')  //Spring Nullable
-
-      //get type from Nullable<T> and set value to this type
-      if Spring.Persistence.Core.Reflection.TryConvert(AFrom, LValueField.FieldType.Handle, LValue, bFree) then
-        LValue.ExtractRawData(PByte(LResultRef) + LValueField.Offset); // faster than LValueField.SetValue(LResultRef, LValue);
-
-      if bFree then
-      begin
-        FreeValueObject(LValue);
-      end;
-    end;
-  end;
-end;
-
 {$IFNDEF FMX}
 
 const
@@ -490,17 +446,17 @@ end;
 
 class function TUtils.TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean;
 var
-  bFree: Boolean;
+  freeAfterUse: Boolean;
 begin
-  bFree := False;
-  if (AFrom.TypeInfo <> targetTypeInfo) then
+  if AFrom.TypeInfo <> targetTypeInfo then
   begin
     case targetTypeInfo.Kind of
       tkRecord:
       begin
         if IsNullable(targetTypeInfo) then
         begin
-          SetNullableValue(targetTypeInfo, AFrom, AResult);
+          TValue.Make(nil, targetTypeInfo, AResult);
+          AResult.SetNullableValue(AFrom);
           Exit(True);
         end else
         if TType.IsLazyType(targetTypeInfo) then
@@ -512,7 +468,8 @@ begin
         end;
       end;
     end;
-    Result := Spring.Persistence.Core.Reflection.TryConvert(AFrom, targetTypeInfo, AResult, bFree);
+    freeAfterUse := False;
+    Result := Spring.Persistence.Core.Reflection.TryConvert(AFrom, targetTypeInfo, AResult, freeAfterUse);
   end
   else
   begin

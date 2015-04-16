@@ -30,123 +30,17 @@ interface
 
 uses
   Rtti,
-  Types,
   TypInfo;
-
-type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Extends <see cref="Rtti.TRttiType">TRttiType</see> for easier RTTI use.
-  ///	</summary>
-  {$ENDREGION}
-  TRttiTypeHelper = class helper for TRttiType
-  private
-    function ExtractGenericArguments: string;
-    function GetAsInterface: TRttiInterfaceType;
-    function GetIsInterface: Boolean;
-    function GetMethodCount: Integer;
-    function InheritsFrom(OtherType: PTypeInfo): Boolean;
-  public
-    function GetAttributesOfType<T: TCustomAttribute>: TArray<T>;
-    function GetGenericArguments: TArray<TRttiType>;
-    function GetGenericTypeDefinition(const AIncludeUnitName: Boolean = True): string;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Returns the method at the given code address; <b>nil</b> if nothing
-    ///	  is found.
-    ///	</summary>
-    ///	<param name="ACodeAddress">
-    ///	  Code address of the method to find
-    ///	</param>
-    {$ENDREGION}
-    function GetMethod(ACodeAddress: Pointer): TRttiMethod; overload;
-    function GetStandardConstructor: TRttiMethod;
-
-    function IsCovariantTo(OtherClass: TClass): Boolean; overload;
-    function IsCovariantTo(OtherType: PTypeInfo): Boolean; overload;
-    function IsGenericTypeDefinition: Boolean;
-    function IsGenericTypeOf(const BaseTypeName: string): Boolean;
-    function IsInheritedFrom(OtherType: TRttiType): Boolean; overload;
-    function IsInheritedFrom(const OtherTypeName: string): Boolean; overload;
-    function MakeGenericType(TypeArguments: array of PTypeInfo): TRttiType;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the method with the given name and returns if this was
-    ///	  successful.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the field to find
-    ///	</param>
-    ///	<param name="AField">
-    ///	  Field that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetField(const AName: string; out AField: TRttiField): Boolean;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the method with the given code address and returns if this
-    ///	  was successful.
-    ///	</summary>
-    ///	<param name="ACodeAddress">
-    ///	  Code address of the method to find
-    ///	</param>
-    ///	<param name="AMethod">
-    ///	  Method that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetMethod(ACodeAddress: Pointer; out AMethod: TRttiMethod): Boolean; overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the method with the given code address and returns if this
-    ///	  was successful.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the method to find
-    ///	</param>
-    ///	<param name="AMethod">
-    ///	  Method that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetMethod(const AName: string; out AMethod: TRttiMethod): Boolean; overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves the property with the given name and returns if this was
-    ///	  successful.
-    ///	</summary>
-    ///	<param name="AName">
-    ///	  Name of the property to find
-    ///	</param>
-    ///	<param name="AProperty">
-    ///	  Property that was found when Result is <b>True</b>
-    ///	</param>
-    {$ENDREGION}
-    function TryGetProperty(const AName: string; out AProperty: TRttiProperty): Boolean;
-
-    function TryGetStandardConstructor(out AMethod: TRttiMethod): Boolean;
-
-    property AsInterface: TRttiInterfaceType read GetAsInterface;
-    property IsInterface: Boolean read GetIsInterface;
-    property MethodCount: Integer read GetMethodCount;
-  end;
 
 // TODO: use value converter
 function TryConvert(const Self: TValue; ATypeInfo: PTypeInfo;
   out AResult: TValue; out AFreeAfter: Boolean): Boolean;
-
-procedure FreeValueObject(const AValue: TValue);
 
 implementation
 
 uses
   Classes,
   Spring.Collections,
-  Math,
-  StrUtils,
   SysUtils,
 {$IFDEF FMX}
   FMX.Graphics,
@@ -158,27 +52,44 @@ uses
   Variants;
 
 var
-  Context: TRttiContext;
   Enumerations: IDictionary<PTypeInfo, TStrings>;
 
-function IsTypeCovariantTo(ThisType, OtherType: PTypeInfo): Boolean;
+function IsTypeCovariantTo(thisType, otherType: PTypeInfo): Boolean;
 var
-  LType: TRttiType;
+  thisRttiType, otherRttiType: TRttiType;
+  args, otherArgs: TArray<TRttiType>;
+  i: Integer;
 begin
-  LType := Context.GetType(ThisType);
-  Result := Assigned(LType) and LType.IsCovariantTo(OtherType);
-end;
+  Result := False;
+  thisRttiType := TType.GetType(thisType);
+  otherRttiType := TType.GetType(otherType);
+  if thisRttiType.IsGenericType then
+  begin
+    if SameText(thisRttiType.GetGenericTypeDefinition, otherRttiType.GetGenericTypeDefinition) then
+    begin
+      Result := True;
+      args := thisRttiType.GetGenericArguments;
+      otherArgs := otherRttiType.GetGenericArguments;
+      for i := Low(args) to High(args) do
+      begin
+        if args[i].IsInterface and args[i].IsInterface
+          and args[i].InheritsFrom(otherArgs[i].Handle.TypeData.ClassType) then
+          Continue;
 
-function TryGetRttiType(AClass: TClass; out AType: TRttiType): Boolean; overload;
-begin
-  AType := Context.GetType(AClass);
-  Result := Assigned(AType);
-end;
+        if args[i].IsInstance and otherArgs[i].IsInstance
+          and args[i].InheritsFrom(otherArgs[i].Handle.TypeData.ClassType) then
+          Continue;
 
-function TryGetRttiType(ATypeInfo: PTypeInfo; out AType: TRttiType): Boolean; overload;
-begin
-  AType := Context.GetType(ATypeInfo);
-  Result := Assigned(AType);
+        Result := False;
+        Break;
+      end;
+    end
+    else
+      if Assigned(thisRttiType.BaseType) then
+        Result := IsTypeCovariantTo(thisRttiType.BaseType.Handle, otherType);
+  end
+  else
+    Result := IsAssignableFrom(otherType, thisType);
 end;
 
 {$REGION 'Conversion functions'}
@@ -197,7 +108,8 @@ var
   LBuffer: array of Byte;
   LFree: Boolean;
 begin
-  Result := TryGetRttiType(ATarget, LType) and LType.IsGenericTypeOf('Nullable')
+  Result := TType.TryGetType(ATarget, LType) and LType.IsGenericType
+    and (LType.GetGenericTypeDefinition = 'Nullable<>')
     and TryConvert(ASource, LType.GetGenericArguments[0].Handle, LValue, LFree);
   if Result then
   begin
@@ -232,7 +144,7 @@ var
   LStrings: TStrings;
   i: Integer;
 begin
-  Result := TryGetRttiType(ATarget, LType)
+  Result := TType.TryGetType(ATarget, LType)
     and LType.AsInstance.MetaclassType.InheritsFrom(TStrings);
   if Result then
   begin
@@ -240,12 +152,8 @@ begin
     begin
       LStrings := TStringList.Create;
       with TRttiEnumerationType(TType.GetType(ASource.TypeInfo)) do
-      begin
         for i := MinValue to MaxValue do
-        begin
           LStrings.Add(GetEnumName(Handle, i));
-        end;
-      end;
       Enumerations.Add(ASource.TypeInfo, LStrings);
     end;
     AResult := TValue.From(LStrings, TStrings);
@@ -294,7 +202,9 @@ begin
       AResult := TValue.From(ASource.GetReferenceToRawData, ATarget);
       Result := True;
     end else
-    if TryGetRttiType(ASource.TypeInfo, LSourceType) and LSourceType.IsGenericTypeOf('IList') then
+    if TType.TryGetType(ASource.TypeInfo, LSourceType)
+      and LSourceType.IsGenericType
+      and (LSourceType.GetGenericTypeDefinition = 'IList<>') then
     begin
       if (ATarget.TypeName = 'IList')
         and LSourceType.TryGetMethod('AsList', LMethod) then
@@ -305,7 +215,9 @@ begin
       end else
       // assume that the two lists are contravariant
       // TODO: check type parameters for compatibility
-      if TryGetRttiType(ATarget, LTargetType) and LTargetType.IsGenericTypeOf('IList') then
+      if TType.TryGetType(ATarget, LTargetType)
+        and LTargetType.IsGenericType
+        and (LTargetType.GetGenericTypeDefinition = 'IList<>') then
       begin
         LInterface := ASource.AsInterface;
         AResult := TValue.From(@LInterface, ATarget);
@@ -321,8 +233,8 @@ var
   LValue: TValue;
   LFree: Boolean;
 begin
-  Result := TryGetRttiType(ASource.TypeInfo, LType)
-    and LType.IsGenericTypeOf('Nullable');
+  Result := TType.TryGetType(ASource.TypeInfo, LType)
+    and LType.IsGenericType and (LType.GetGenericTypeDefinition = 'Nullable<>');
   if Result then
   begin
     LValue := TValue.From(ASource.GetReferenceToRawData, LType.GetGenericArguments[0].Handle);
@@ -358,9 +270,7 @@ begin
     Result := True;
   end
   else
-  begin
     Result := ConvNullable2Any(ASource, ATarget, AResult);
-  end;
 end;
 
 function ConvSet2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
@@ -370,7 +280,7 @@ var
   LStrings: TStrings;
   i: Integer;
 begin
-  Result := TryGetRttiType(ATarget, LType)
+  Result := TType.TryGetType(ATarget, LType)
     and LType.AsInstance.MetaclassType.InheritsFrom(TStrings);
   if Result then
   begin
@@ -379,12 +289,8 @@ begin
     begin
       LStrings := TStringList.Create;
       with TRttiEnumerationType(TRttiSetType(TType.GetType(ASource.TypeInfo)).ElementType) do
-      begin
         for i := MinValue to MaxValue do
-        begin
           LStrings.Add(GetEnumName(Handle, i));
-        end;
-      end;
       Enumerations.Add(LTypeData.CompType^, LStrings);
     end;
     AResult := TValue.From(LStrings, TStrings);
@@ -666,417 +572,6 @@ const
   );
 {$ENDREGION}
 
-function FindType(const AName: string; out AType: TRttiType): Boolean; overload
-var
-  LType: TRttiType;
-begin
-  AType := Context.FindType(AName);
-  if not Assigned(AType) then
-  begin
-    for LType in Context.GetTypes do
-    begin
-      if SameText(LType.Name, AName) then
-      begin
-        AType := LType;
-        Break;
-      end;
-    end;
-  end;
-  Result := Assigned(AType);
-end;
-
-function FindType(const AGuid: TGUID; out AType: TRttiType): Boolean; overload;
-var
-  LType: TRttiType;
-begin
-  AType := nil;
-  for LType in Context.GetTypes do
-  begin
-    if (LType is TRttiInterfaceType)
-      and IsEqualGUID(TRttiInterfaceType(LType).GUID, AGuid) then
-    begin
-      AType := LType;
-      Break;
-    end;
-  end;
-  Result := Assigned(AType);
-end;
-
-function MergeStrings(Values: TStringDynArray; const Delimiter: string): string;
-var
-  i: Integer;
-begin
-  for i := Low(Values) to High(Values) do
-  begin
-    if i = 0 then
-    begin
-      Result := Values[i];
-    end
-    else
-    begin
-      Result := Result + Delimiter + Values[i];
-    end;
-  end;
-end;
-
-function StripUnitName(const s: string): string;
-begin
-  Result := ReplaceText(s, 'System.', '');
-end;
-
-{$IFDEF VER210}
-function SplitString(const S: string; const Delimiter: Char): TStringDynArray;
-var
-  list: TStrings;
-  i: Integer;
-begin
-  list := TStringList.Create;
-  try
-    list.StrictDelimiter := True;
-    list.Delimiter := Delimiter;
-    list.DelimitedText := s;
-    SetLength(Result, list.Count);
-    for i := Low(Result) to High(Result) do
-    begin
-      Result[i] := list[i];
-    end;
-  finally
-    list.Free;
-  end;
-end;
-{$ENDIF}
-
-procedure FreeValueObject(const AValue: TValue);
-var
-  LObj: TObject;
-begin
-  if AValue.IsObject then
-  begin
-    LObj := AValue.AsObject;
-    if Assigned(LObj) then
-      LObj.Free;
-  end;
-end;
-
-{ TRttiTypeHelper }
-
-function TRttiTypeHelper.ExtractGenericArguments: string;
-var
-  i: Integer;
-  s: string;
-begin
-  s := Name;
-  i := Pos('<', s);
-  if i > 0 then
-  begin
-    Result := Copy(s, Succ(i), Length(s) - Succ(i));
-  end
-  else
-  begin
-    Result := ''
-  end;
-end;
-
-function TRttiTypeHelper.GetAsInterface: TRttiInterfaceType;
-begin
-  Result := Self as TRttiInterfaceType;
-end;
-
-function TRttiTypeHelper.GetAttributesOfType<T>: TArray<T>;
-var
-  LAttribute: TCustomAttribute;
-  LAttributes: TArray<T>;
-  i: Integer;
-begin
-  SetLength(Result, 0);
-  for LAttribute in GetAttributes do
-  begin
-    if LAttribute.InheritsFrom(T) then
-    begin
-      SetLength(Result, Length(Result) + 1);
-      Result[High(Result)] := T(LAttribute);
-    end;
-  end;
-
-  if Assigned(BaseType) then
-  begin
-    for LAttribute in BaseType.GetAttributesOfType<T> do
-    begin
-      if LAttribute.InheritsFrom(T) then
-      begin
-        SetLength(Result, Length(Result) + 1);
-        Result[High(Result)] := T(LAttribute);
-      end;
-    end;
-  end;
-end;
-
-function TRttiTypeHelper.GetGenericArguments: TArray<TRttiType>;
-var
-  i: Integer;
-  args: TStringDynArray;
-begin
-  args := SplitString(ExtractGenericArguments, ',');
-  SetLength(Result, Length(args));
-  for i := 0 to Pred(Length(args)) do
-  begin
-    FindType(args[i], Result[i]);
-  end;
-end;
-
-function TRttiTypeHelper.GetGenericTypeDefinition(
-  const AIncludeUnitName: Boolean = True): string;
-var
-  i: Integer;
-  args: TStringDynArray;
-  s: string;
-begin
-  args := SplitString(ExtractGenericArguments, ',');
-  for i := Low(args) to High(args) do
-  begin
-    // naive implementation - but will work in most cases
-    if (i = 0) and (Length(args) = 1) then
-    begin
-      args[i] := 'T';
-    end
-    else
-    begin
-      args[i] := 'T' + IntToStr(Succ(i));
-    end;
-  end;
-  if IsPublicType and AIncludeUnitName then
-  begin
-    s := QualifiedName;
-    Result := Copy(s, 1, Pos('<', s)) + MergeStrings(args, ',') + '>';
-  end
-  else
-  begin
-    s := Name;
-    Result := Copy(s, 1, Pos('<', s)) + MergeStrings(args, ',') + '>';
-  end;
-end;
-
-function TRttiTypeHelper.GetIsInterface: Boolean;
-begin
-  Result := Self is TRttiInterfaceType;
-end;
-
-function TRttiTypeHelper.GetMethod(ACodeAddress: Pointer): TRttiMethod;
-var
-  LMethod: TRttiMethod;
-begin
-  Result := nil;
-  for LMethod in GetMethods do
-  begin
-    if LMethod.CodeAddress = ACodeAddress then
-    begin
-      Result := LMethod;
-      Break;
-    end;
-  end;
-end;
-
-function TRttiTypeHelper.GetMethodCount: Integer;
-begin
-  Result := Length(GetMethods);
-end;
-
-function TRttiTypeHelper.GetStandardConstructor: TRttiMethod;
-var
-  LMethod: TRttiMethod;
-begin
-  Result := nil;
-  for LMethod in GetMethods do
-  begin
-    if LMethod.IsConstructor and (Length(LMethod.GetParameters) = 0) then
-    begin
-      Result := LMethod;
-      Break;
-    end;
-  end;
-end;
-
-function TRttiTypeHelper.InheritsFrom(OtherType: PTypeInfo): Boolean;
-var
-  LType: TRttiType;
-begin
-  Result := Handle = OtherType;
-
-  if not Result then
-  begin
-    LType := BaseType;
-    while Assigned(LType) and not Result do
-    begin
-      Result := LType.Handle = OtherType;
-      LType := LType.BaseType;
-    end;
-  end;
-end;
-
-function TRttiTypeHelper.IsCovariantTo(OtherType: PTypeInfo): Boolean;
-var
-  t: TRttiType;
-  args, otherArgs: TArray<TRttiType>;
-  i: Integer;
-begin
-  Result := False;
-  t := Context.GetType(OtherType);
-  if Assigned(t) and IsGenericTypeDefinition then
-  begin
-    if SameText(GetGenericTypeDefinition, t.GetGenericTypeDefinition)
-      or SameText(GetGenericTypeDefinition(False), t.GetGenericTypeDefinition(False)) then
-    begin
-      Result := True;
-      args := GetGenericArguments;
-      otherArgs := t.GetGenericArguments;
-      for i := Low(args) to High(args) do
-      begin
-        if args[i].IsInterface and args[i].IsInterface
-          and args[i].InheritsFrom(otherArgs[i].Handle) then
-        begin
-          Continue;
-        end;
-
-        if args[i].IsInstance and otherArgs[i].IsInstance
-          and args[i].InheritsFrom(otherArgs[i].Handle) then
-        begin
-          Continue;
-        end;
-
-        Result := False;
-        Break;
-      end;
-    end
-    else
-    begin
-      if Assigned(BaseType) then
-      begin
-        Result := BaseType.IsCovariantTo(OtherType);
-      end;
-    end;
-  end
-  else
-  begin
-    Result := InheritsFrom(OtherType);
-  end;
-end;
-
-function TRttiTypeHelper.IsCovariantTo(OtherClass: TClass): Boolean;
-begin
-  Result := Assigned(OtherClass) and IsCovariantTo(OtherClass.ClassInfo);
-end;
-
-function TRttiTypeHelper.IsGenericTypeDefinition: Boolean;
-begin
-  Result := Length(GetGenericArguments) > 0;
-  if not Result and Assigned(BaseType) then
-  begin
-    Result := BaseType.IsGenericTypeDefinition;
-  end;
-end;
-
-function TRttiTypeHelper.IsGenericTypeOf(const BaseTypeName: string): Boolean;
-var
-  s: string;
-begin
-  s := Name;
-  Result := (Copy(s, 1, Succ(Length(BaseTypeName))) = (BaseTypeName + '<'))
-    and (Copy(s, Length(s), 1) = '>');
-end;
-
-function TRttiTypeHelper.IsInheritedFrom(const OtherTypeName: string): Boolean;
-var
-  LType: TRttiType;
-begin
-  Result := SameText(Name, OtherTypeName)
-    or (IsPublicType and SameText(QualifiedName, OtherTypeName));
-
-  if not Result then
-  begin
-    LType := BaseType;
-    while Assigned(LType) and not Result do
-    begin
-      Result := SameText(LType.Name, OtherTypeName)
-        or (LType.IsPublicType and SameText(LType.QualifiedName, OtherTypeName));
-      LType := LType.BaseType;
-    end;
-  end;
-end;
-
-function TRttiTypeHelper.IsInheritedFrom(OtherType: TRttiType): Boolean;
-var
-  LType: TRttiType;
-begin
-  Result := Self.Handle = OtherType.Handle;
-
-  if not Result then
-  begin
-    LType := BaseType;
-    while Assigned(LType) and not Result do
-    begin
-      Result := LType.Handle = OtherType.Handle;
-      LType := LType.BaseType;
-    end;
-  end;
-end;
-
-function TRttiTypeHelper.MakeGenericType(TypeArguments: array of PTypeInfo): TRttiType;
-var
-  i: Integer;
-  args: TStringDynArray;
-  s: string;
-begin
-  if IsPublicType then
-  begin
-    args := SplitString(ExtractGenericArguments, ',');
-    for i := Low(args) to High(args) do
-    begin
-      args[i] := Context.GetType(TypeArguments[i]).QualifiedName;
-    end;
-    s := Copy(QualifiedName, 1, Pos('<', QualifiedName)) + MergeStrings(args, ',') + '>';
-    Result := Context.FindType(s);
-  end
-  else
-  begin
-    Result := nil;
-  end;
-end;
-
-function TRttiTypeHelper.TryGetField(const AName: string;
-  out AField: TRttiField): Boolean;
-begin
-  AField := GetField(AName);
-  Result := Assigned(AField);
-end;
-
-function TRttiTypeHelper.TryGetMethod(ACodeAddress: Pointer;
-  out AMethod: TRttiMethod): Boolean;
-begin
-  AMethod := GetMethod(ACodeAddress);
-  Result := Assigned(AMethod);
-end;
-
-function TRttiTypeHelper.TryGetMethod(const AName: string;
-  out AMethod: TRttiMethod): Boolean;
-begin
-  AMethod := GetMethod(AName);
-  Result := Assigned(AMethod);
-end;
-
-function TRttiTypeHelper.TryGetProperty(const AName: string;
-  out AProperty: TRttiProperty): Boolean;
-begin
-  AProperty := GetProperty(AName);
-  Result := Assigned(AProperty);
-end;
-
-function TRttiTypeHelper.TryGetStandardConstructor(
-  out AMethod: TRttiMethod): Boolean;
-begin
-  AMethod := GetStandardConstructor;
-  Result := Assigned(AMethod);
-end;
-
 function TryConvert(const Self: TValue; ATypeInfo: PTypeInfo;
   out AResult: TValue; out AFreeAfter: Boolean): Boolean;
 var
@@ -1087,10 +582,8 @@ var
 begin
   Result := False;
   AFreeAfter := False;
-  if (Self.TypeInfo = nil) then
-  begin
+  if Self.TypeInfo = nil then
     Exit;
-  end;
 
   if Assigned(ATypeInfo) then
   begin
@@ -1111,9 +604,9 @@ begin
             tkClass:
             begin
               {TODO -oLinas -cGeneral : refactor into separate method or class}
-              if (Self.IsObject) and (Self.AsObject <> nil) and (Self.AsObject.InheritsFrom(TStream)) then
+              if Self.IsObject and (Self.AsObject <> nil) and Self.AsObject.InheritsFrom(TStream) then
               begin
-                if (ATypeInfo = System.TypeInfo(TPicture)) then
+                if ATypeInfo = System.TypeInfo(TPicture) then
                 begin
                   //load from TStream into TPicture
                   if TUtils.TryLoadFromStreamToPictureValue(Self.AsObject as TStream, AResult) then
@@ -1127,9 +620,9 @@ begin
               begin
                 LStream := nil;
                 //convert from picture to stream to be able to add it as a parameter
-                if (Self.IsObject) and (Self.AsObject <> nil) then
+                if Self.IsObject and (Self.AsObject <> nil) then
                 begin
-                  if (TPicture(Self.AsObject).Graphic <> nil) then
+                  if TPicture(Self.AsObject).Graphic <> nil then
                   begin
                     LStream := TMemoryStream.Create;
                     AFreeAfter := True;
@@ -1161,9 +654,10 @@ begin
               begin
                 AResult := TValue.From(Self.GetReferenceToRawData, ATypeInfo);
                 Result := True;
-              end else if TryGetRttiType(Self.TypeInfo, LType)
-                and (ATypeInfo.TypeName = 'IList')
-                and LType.IsGenericTypeOf('IList') and LType.TryGetMethod('AsList', LMethod) then
+              end else if TType.TryGetType(Self.TypeInfo, LType)
+                and (ATypeInfo.TypeName = 'IList') and LType.IsGenericType
+                and (LType.GetGenericTypeDefinition = 'IList<>')
+                and LType.TryGetMethod('AsList', LMethod) then
               begin
                 LInterface := LMethod.Invoke(Self, []).AsInterface;
                 TValue.Make(@LInterface, ATypeInfo, AResult);
@@ -1204,9 +698,7 @@ begin
     end;
 
     if not Result then
-    begin
       Result := Self.TryCast(ATypeInfo, AResult);
-    end;
   end;
 end;
 

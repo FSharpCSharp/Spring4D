@@ -168,7 +168,7 @@ begin
 
     Result.Add(LSqlBuilder.ToString);
 
-    LRes := DoGenerateRestoreTable(command.Table.Name, command.Columns, command.DbColumns);
+    LRes := DoGenerateRestoreTable(command.Table.Name, command.Columns, command.ColumnNames);
     Result.AddRange(LRes);
   finally
     LSqlBuilder.Free;

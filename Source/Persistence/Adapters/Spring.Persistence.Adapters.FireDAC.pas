@@ -30,31 +30,24 @@ interface
 
 uses
   DB,
-  FireDAC.Comp.Client,
-  FireDAC.Comp.DataSet,
   FireDAC.DApt,
-  FireDAC.DApt.Intf,
-  FireDAC.DatS,
-  FireDAC.Phys,
-  FireDAC.Phys.Intf,
+  FireDAC.Comp.Client,
   FireDAC.Stan.Async,
   FireDAC.Stan.Def,
-  FireDAC.Stan.Error,
-  FireDAC.Stan.Intf,
   FireDAC.Stan.Option,
   FireDAC.Stan.Param,
-  FireDAC.Stan.Pool,
-  FireDAC.UI.Intf,
   SysUtils,
   Spring.Collections,
-  Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Base,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Params;
 
 type
+  EFireDACAdapterException = class(EORMAdapterException);
+
   TFireDACResultSetAdapter = class(TDriverResultSetAdapter<TFDQuery>)
   private
     fFieldCache: IFieldCache;
@@ -64,7 +57,7 @@ type
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const fieldName: string): Boolean; override;
+    function FieldExists(const fieldName: string): Boolean; override;
     function GetFieldValue(index: Integer): Variant; overload; override;
     function GetFieldValue(const fieldName: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
@@ -76,7 +69,7 @@ type
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetParam(const param: TDBParam); virtual;
-    procedure SetParams(const params: IList<TDBParam>); overload; override;
+    procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -106,19 +99,16 @@ implementation
 uses
   StrUtils,
   Variants,
+  Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.Core.Consts,
-  Spring.Persistence.SQL.Register;
-
-type
-  EFireDACAdapterException = class(Exception);
+  Spring.Persistence.Core.Consts;
 
 
 {$REGION 'TFireDACResultSetAdapter'}
 
 constructor TFireDACResultSetAdapter.Create(const dataSet: TFDQuery);
 begin
-  inherited Create(dataSet);
+  inherited Create(DataSet);
   dataSet.DisableControls;
   fFieldCache := TFieldCache.Create(dataSet);
 end;
@@ -126,32 +116,32 @@ end;
 destructor TFireDACResultSetAdapter.Destroy;
 begin
 {$IFNDEF AUTOREFCOUNT}
-  Dataset.Free;
+  DataSet.Free;
 {$ELSE}
   Dataset.DisposeOf;
 {$ENDIF}
   inherited Destroy;
 end;
 
-function TFireDACResultSetAdapter.FieldNameExists(
+function TFireDACResultSetAdapter.FieldExists(
   const fieldName: string): Boolean;
 begin
-  Result := fFieldCache.FieldNameExists(fieldName);
+  Result := fFieldCache.FieldExists(fieldName);
 end;
 
 function TFireDACResultSetAdapter.GetFieldCount: Integer;
 begin
-  Result := Dataset.FieldCount;
+  Result := DataSet.FieldCount;
 end;
 
 function TFireDACResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[index].FieldName;
+  Result := DataSet.Fields[index].FieldName;
 end;
 
 function TFireDACResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[index].Value;
+  Result := DataSet.Fields[index].Value;
 end;
 
 function TFireDACResultSetAdapter.GetFieldValue(
@@ -162,13 +152,13 @@ end;
 
 function TFireDACResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := Dataset.Eof;
+  Result := DataSet.Eof;
 end;
 
 function TFireDACResultSetAdapter.Next: Boolean;
 begin
-  Dataset.Next;
-  Result := not Dataset.Eof;
+  DataSet.Next;
+  Result := not DataSet.Eof;
 end;
 
 {$ENDREGION}
@@ -232,7 +222,7 @@ begin
     parameter.DataType := param.ParamType;
 end;
 
-procedure TFireDACStatementAdapter.SetParams(const params: IList<TDBParam>);
+procedure TFireDACStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
 var
   param: TDBParam;
 begin
@@ -262,20 +252,21 @@ function TFireDACConnectionAdapter.BeginTransaction: IDBTransaction;
 var
   transaction: TFDTransaction;
 begin
-  if Connection = nil then
-    Exit(nil);
-
-  Connection.Connected := True;
-  if (not Connection.InTransaction) or (Connection.TxOptions.EnableNested) then
+  if Assigned(Connection) then
   begin
-    transaction := TFDTransaction.Create(Connection);
-    transaction.Connection := Connection;
-    transaction.StartTransaction;
+    Connection.Connected := True;
+    if not Connection.InTransaction or Connection.TxOptions.EnableNested then
+    begin
+      transaction := TFDTransaction.Create(Connection);
+      transaction.Connection := Connection;
+      transaction.StartTransaction;
+      Result := TFireDACTransactionAdapter.Create(transaction);
+    end
+    else
+      raise EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
   end
   else
-    raise EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
-
-  Result := TFireDACTransactionAdapter.Create(transaction);
+    Result := nil;
 end;
 
 procedure TFireDACConnectionAdapter.Connect;
@@ -289,15 +280,17 @@ var
   statement: TFDQuery;
   adapter: TFireDACStatementAdapter;
 begin
-  if Connection = nil then
-    Exit(nil);
+  if Assigned(Connection) then
+  begin
+    statement := TFDQuery.Create(nil);
+    statement.Connection := Connection;
 
-  statement := TFDQuery.Create(nil);
-  statement.Connection := Connection;
-
-  adapter := TFireDACStatementAdapter.Create(statement);
-  adapter.ExecutionListeners := ExecutionListeners;
-  Result := adapter;
+    adapter := TFireDACStatementAdapter.Create(statement);
+    adapter.ExecutionListeners := ExecutionListeners;
+    Result := adapter;
+  end
+  else
+    Result := nil;
 end;
 
 procedure TFireDACConnectionAdapter.Disconnect;
@@ -329,7 +322,7 @@ end;
 
 function TFireDACTransactionAdapter.InTransaction: Boolean;
 begin
-  Result := Transaction.Active;
+  Result := Assigned(Transaction) and Transaction.Active;
 end;
 
 procedure TFireDACTransactionAdapter.Rollback;

@@ -33,21 +33,19 @@ uses
   Spring.Persistence.SQL.Interfaces;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent factory for <c>ISQLGenerators.</c> Each custom SQL generator
-  ///	  must register itself with this factory class.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent factory for <c>ISQLGenerators.</c> Each custom SQL generator
+  ///   must register itself with this factory class.
+  /// </summary>
   TSQLGeneratorRegister = class
   strict private
-    class var FGenerators: IDictionary<TQueryLanguage,ISQLGenerator>;
+    class var fGenerators: IDictionary<TQueryLanguage,ISQLGenerator>;
   private
     class constructor Create;
     class destructor Destroy;
   public
-    class procedure RegisterGenerator(const AGenerator: ISQLGenerator);
-    class function GetGenerator(const AQueryLanguage: TQueryLanguage): ISQLGenerator;
+    class procedure RegisterGenerator(const generator: ISQLGenerator);
+    class function GetGenerator(const queryLanguage: TQueryLanguage): ISQLGenerator;
   end;
 
 implementation
@@ -55,28 +53,31 @@ implementation
 uses
   Spring.Persistence.SQL.Generators.Ansi;
 
-{ TSQLGeneratorRegister }
+
+{$REGION 'TSQLGeneratorRegister'}
 
 class constructor TSQLGeneratorRegister.Create;
 begin
-  FGenerators := TCollections.CreateDictionary<TQueryLanguage,ISQLGenerator>;
+  fGenerators := TCollections.CreateDictionary<TQueryLanguage,ISQLGenerator>;
   RegisterGenerator(TAnsiSQLGenerator.Create as ISQLGenerator);
 end;
 
 class destructor TSQLGeneratorRegister.Destroy;
 begin
-  FGenerators := nil;
+  fGenerators := nil;
 end;
 
-class function TSQLGeneratorRegister.GetGenerator(const AQueryLanguage: TQueryLanguage): ISQLGenerator;
+class function TSQLGeneratorRegister.GetGenerator(const queryLanguage: TQueryLanguage): ISQLGenerator;
 begin
-  Result := FGenerators[AQueryLanguage];
+  Result := fGenerators[queryLanguage];
 end;
 
-class procedure TSQLGeneratorRegister.RegisterGenerator(const AGenerator: ISQLGenerator);
+class procedure TSQLGeneratorRegister.RegisterGenerator(const generator: ISQLGenerator);
 begin
-  FGenerators.AddOrSetValue(AGenerator.GetQueryLanguage, AGenerator);
+  fGenerators.AddOrSetValue(generator.GetQueryLanguage, generator);
 end;
+
+{$ENDREGION}
 
 
 end.

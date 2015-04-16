@@ -49,8 +49,10 @@ type
   protected
     function DoGenerateBackupTable(const tableName: string): TArray<string>; virtual;
     function DoGenerateRestoreTable(const tableName: string;
-      const createColumns: IList<TSQLCreateField>; const dbColumns: IList<string>): TArray<string>; virtual;
-    function DoGenerateCreateTable(const tableName: string; const columns: IList<TSQLCreateField>): string; virtual;
+      const createColumns: IList<TSQLCreateField>;
+      const dbColumns: IList<string>): TArray<string>; virtual;
+    function DoGenerateCreateTable(const tableName: string;
+      const columns: IList<TSQLCreateField>): string; virtual;
 
     function GetGroupByAsString(const groupFields: IList<TSQLGroupByField>): string; virtual;
     function GetJoinAsString(const join: TSQLJoin): string; virtual;
@@ -59,12 +61,14 @@ type
     function GetWhereAsString(const whereFields: IList<TSQLWhereField>): string; virtual;
     function GetSelectFieldsAsString(const selectFields: IList<TSQLSelectField>): string; virtual;
     function GetCreateFieldsAsString(const createFields: IList<TSQLCreateField>): string; overload; virtual;
-    function GetCreateFieldsAsString(const ACreateFields: IList<string>): string; overload; virtual;
-    function GetCopyFieldsAsString(const createFields: IList<TSQLCreateField>; const ACopyFields: IList<string>): string; virtual;
+    function GetCreateFieldsAsString(const createFields: IList<string>): string; overload; virtual;
+    function GetCopyFieldsAsString(const createFields: IList<TSQLCreateField>;
+      const copyFields: IList<string>): string; virtual;
     function GetTempTableName: string; virtual;
     function GetPrimaryKeyDefinition(const field: TSQLCreateField): string; virtual;
     function GetSplitStatementSymbol: string; virtual;
-    procedure ParseFullTablename(const fullTableName: string; out tableName, schemaName: string); virtual;
+    procedure ParseFullTablename(const fullTableName: string;
+      out tableName, schemaName: string); virtual;
     function GetEscapeFieldnameChar: Char; override;
     function GetUpdateVersionFieldQuery(const command: TUpdateCommand;
       const versionColumn: VersionAttribute; const version, primaryKey: Variant): Variant; override;
@@ -114,12 +118,13 @@ uses
 
 {$REGION 'TAnsiSQLGenerator'}
 
-function TAnsiSQLGenerator.DoGenerateBackupTable(const tableName: string): TArray<string>;
+function TAnsiSQLGenerator.DoGenerateBackupTable(
+  const tableName: string): TArray<string>;
 begin
   //select old data to temporary table
   SetLength(Result, 2);
   Result[0] := Format('SELECT * INTO %0:S FROM %1:S',
-        [GetTempTableName, tableName]);
+    [GetTempTableName, tableName]);
   //drop table
   Result[1] := Format('DROP TABLE %0:S ', [tableName]);
 end;
@@ -129,7 +134,7 @@ function TAnsiSQLGenerator.DoGenerateBackupTableUsingCreate(
 begin
   SetLength(Result, 2);
   Result[0] := Format('CREATE TABLE %0:S AS SELECT * FROM %1:S',
-        [GetTempTableName, tableName]);
+    [GetTempTableName, tableName]);
   //drop table
   Result[1] := Format('DROP TABLE %0:S ', [tableName]);
 end;
@@ -137,42 +142,40 @@ end;
 function TAnsiSQLGenerator.DoGenerateCreateTable(const tableName: string;
   const columns: IList<TSQLCreateField>): string;
 var
-  LSqlBuilder: TStringBuilder;
+  sqlBuilder: TStringBuilder;
   i: Integer;
-  LField: TSQLCreateField;
+  field: TSQLCreateField;
 begin
-  LSqlBuilder := TStringBuilder.Create;
+  sqlBuilder := TStringBuilder.Create;
   try
-    LSqlBuilder.AppendFormat('CREATE TABLE %0:S ', [tableName])
+    sqlBuilder.AppendFormat('CREATE TABLE %0:S ', [tableName])
       .Append('(')
       .AppendLine;
     for i := 0 to columns.Count - 1 do
     begin
-      LField := columns[i];
+      field := columns[i];
       if i > 0 then
-        LSqlBuilder.Append(',').AppendLine;
+        sqlBuilder.Append(', ').AppendLine;
 
       //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
-      LSqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S',
-        [
-          LField.GetEscapedFieldname(GetEscapeFieldnameChar)
-          ,GetSQLDataTypeName(LField)
-          ,IfThen(cpPrimaryKey in LField.Properties, GetPrimaryKeyDefinition(LField))
-          ,IfThen(cpNotNull in LField.Properties, 'NOT NULL', 'NULL')
-        ]
-      );
+      sqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S', [
+        field.GetEscapedFieldname(GetEscapeFieldnameChar),
+        GetSQLDataTypeName(field),
+        IfThen(cpNotNull in field.Properties, 'NOT NULL', 'NULL'),
+        IfThen(cpPrimaryKey in field.Properties, GetPrimaryKeyDefinition(field))]);
     end;
 
-    LSqlBuilder.AppendLine.Append(')');
+    sqlBuilder.AppendLine.Append(')');
 
-    Result := LSqlBuilder.ToString;
+    Result := sqlBuilder.ToString;
   finally
-    LSqlBuilder.Free;
+    sqlBuilder.Free;
   end;
 end;
 
 function TAnsiSQLGenerator.DoGenerateRestoreTable(const tableName: string;
-  const createColumns: IList<TSQLCreateField>; const dbColumns: IList<string>): TArray<string>;
+  const createColumns: IList<TSQLCreateField>;
+  const dbColumns: IList<string>): TArray<string>;
 begin
   SetLength(Result, 2);
 
@@ -184,249 +187,241 @@ begin
   Result[1] := Format('DROP TABLE %0:S', [GetTempTableName]);
 end;
 
-function TAnsiSQLGenerator.GenerateCreateForeignKey(const command: TCreateForeignKeyCommand): IList<string>;
+function TAnsiSQLGenerator.GenerateCreateForeignKey(
+  const command: TCreateForeignKeyCommand): IList<string>;
 var
-  LSqlBuilder: TStringBuilder;
-  i: Integer;
-  LField: TSQLForeignKeyField;
+  sqlBuilder: TStringBuilder;
+  field: TSQLForeignKeyField;
 begin
   Result := TCollections.CreateList<string>;
-  LSqlBuilder := TStringBuilder.Create;
+  sqlBuilder := TStringBuilder.Create;
   try
-    for i := 0 to command.ForeignKeys.Count - 1 do
+    for field in command.ForeignKeys do
     begin
-      LField := command.ForeignKeys[i];
-      LSqlBuilder.Clear;
-      LSqlBuilder.AppendFormat('ALTER TABLE %0:S ', [command.Table.Name])
+      sqlBuilder.Clear;
+      sqlBuilder.AppendFormat('ALTER TABLE %0:S ', [command.Table.Name])
         .AppendLine
-        .AppendFormat('ADD CONSTRAINT %0:S', [LField.ForeignKeyName])
+        .AppendFormat('ADD CONSTRAINT %0:S', [field.ForeignKeyName])
         .AppendLine
-        .AppendFormat('FOREIGN KEY(%0:S)', [LField.GetEscapedFieldname(GetEscapeFieldnameChar)])
+        .AppendFormat('FOREIGN KEY(%0:S)', [field.GetEscapedFieldname(GetEscapeFieldnameChar)])
         .AppendLine
-        .AppendFormat(' REFERENCES %0:S (%1:S)', [LField.ReferencedTableName, LField.GetEscapedName(LField.ReferencedColumnName, GetEscapeFieldnameChar)])
+        .AppendFormat(' REFERENCES %0:S (%1:S)', [field.ReferencedTableName,
+          field.GetEscapedName(field.ReferencedColumnName, GetEscapeFieldnameChar)])
         .AppendLine
-        .Append(LField.GetConstraintsAsString);
+        .Append(field.ConstraintsAsString);
 
-      Result.Add(LSqlBuilder.ToString)
+      Result.Add(sqlBuilder.ToString);
     end;
   finally
-    LSqlBuilder.Free;
+    sqlBuilder.Free;
   end;
 end;
 
-function TAnsiSQLGenerator.GenerateCreateSequence(const command: TCreateSequenceCommand): string;
+function TAnsiSQLGenerator.GenerateCreateSequence(
+  const command: TCreateSequenceCommand): string;
 begin
   Result := '';
 end;
 
-function TAnsiSQLGenerator.GenerateCreateTable(const command: TCreateTableCommand): IList<string>;
-var
-  LResult: TArray<string>;
+function TAnsiSQLGenerator.GenerateCreateTable(
+  const command: TCreateTableCommand): IList<string>;
 begin
   Assert(Assigned(command));
   Result := TCollections.CreateList<string>;
 
   if command.TableExists then
-  begin
-    LResult := DoGenerateBackupTable(command.Table.Name);
-    Result.AddRange(LResult);
-  end;
+    Result.AddRange(DoGenerateBackupTable(command.Table.Name));
 
-  Result.Add( DoGenerateCreateTable(command.Table.Name, command.Columns) );
+  Result.Add(DoGenerateCreateTable(command.Table.Name, command.Columns));
 
   if command.TableExists then
-  begin
-    LResult := DoGenerateRestoreTable(command.Table.Name, command.Columns,
-      command.DbColumns);
-    Result.AddRange(LResult);
-  end;
+    Result.AddRange(DoGenerateRestoreTable(
+      command.Table.Name, command.Columns, command.ColumnNames));
 end;
 
 function TAnsiSQLGenerator.GenerateDelete(const command: TDeleteCommand): string;
 var
-  LSqlBuilder: TStringBuilder;
-  LWhereField: TSQLWhereField;
-  ix: Integer;
+  sqlBuilder: TStringBuilder;
+  i: Integer;
+  field: TSQLWhereField;
 begin
   Assert(Assigned(command));
 
-  LSqlBuilder := TStringBuilder.Create;
+  sqlBuilder := TStringBuilder.Create;
   try
-    LSqlBuilder.Append('DELETE FROM ')
-      .Append(command.Table.Name);
+    sqlBuilder.AppendFormat('DELETE FROM %0:S', [command.Table.Name]);
 
-    ix := 0;
-
-    for LWhereField in command.WhereFields do
+    for i := 0 to command.WhereFields.Count - 1 do
     begin
-      if ix = 0 then
-        LSqlBuilder.AppendLine.Append(' WHERE ')
+      field := command.WhereFields[i];
+      if i = 0 then
+        sqlBuilder.AppendLine.Append(' WHERE ')
       else
-        LSqlBuilder.Append(' AND ');
+        sqlBuilder.Append(' AND ');
 
       {TODO -oLinas -cGeneral : implement where operators}
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.GetEscapedFieldname(GetEscapeFieldnameChar), LWhereField.ParamName]));
-
-      Inc(ix);
+      sqlBuilder.AppendFormat('%0:S = %1:S',
+        [field.GetEscapedFieldname(GetEscapeFieldnameChar), field.ParamName]);
     end;
 
-    LSqlBuilder.Append(GetSplitStatementSymbol);
+    sqlBuilder.Append(GetSplitStatementSymbol);
 
-    Result := LSqlBuilder.ToString;
+    Result := sqlBuilder.ToString;
   finally
-    LSqlBuilder.Free;
+    sqlBuilder.Free;
   end;
 end;
 
-function TAnsiSQLGenerator.GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string;
+function TAnsiSQLGenerator.GenerateGetLastInsertId(
+  const identityColumn: ColumnAttribute): string;
 begin
   Result := '';
 end;
 
-function TAnsiSQLGenerator.GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string;
+function TAnsiSQLGenerator.GenerateGetNextSequenceValue(
+  const sequence: SequenceAttribute): string;
 begin
   Result := '';
 end;
 
 function TAnsiSQLGenerator.GenerateGetQueryCount(const sql: string): string;
 var
-  LBuilder: TStringBuilder;
-  LSQL: string;
+  sqlBuilder: TStringBuilder;
+  sqlStatement: string;
 begin
-  LBuilder := TStringBuilder.Create;
+  sqlBuilder := TStringBuilder.Create;
   try
-    LSQL := sql;
-    if EndsStr(';', LSQL) then
-      SetLength(LSQL, Length(LSQL)-1);
+    sqlStatement := sql;
+    if EndsStr(';', sqlStatement) then
+      SetLength(sqlStatement, Length(sqlStatement) - 1);
 
-    LBuilder.Append('SELECT COUNT(*) FROM (')
+    sqlBuilder.Append('SELECT COUNT(*) FROM (')
       .AppendLine
-      .Append(LSQL)
+      .Append(sqlStatement)
       .AppendLine
-      .Append(') AS ORM_GET_QUERY_COUNT').Append(GetSplitStatementSymbol)
-      ;
+      .Append(') AS ORM_GET_QUERY_COUNT').Append(GetSplitStatementSymbol);
 
-    Result := LBuilder.ToString;
+    Result := sqlBuilder.ToString;
   finally
-    LBuilder.Free;
+    sqlBuilder.Free;
   end;
 end;
 
 function TAnsiSQLGenerator.GenerateInsert(const command: TInsertCommand): string;
 var
   i: Integer;
-  sFields, sParams: string;
+  field: TSQLInsertField;
+  fields, params: string;
 begin
   Assert(Assigned(command));
   Assert(command.InsertFields.Any);
 
   Result := 'INSERT INTO ';
 
-  sFields := '';
-  sParams := '';
+  fields := '';
+  params := '';
 
   for i := 0 to command.InsertFields.Count - 1 do
   begin
+    field := command.InsertFields[i];
     if i > 0 then
     begin
-      sFields := sFields + ',';
-      sParams := sParams + ',';
+      fields := fields + ', ';
+      params := params + ', ';
     end;
 
-    sFields := sFields + command.InsertFields[i].GetEscapedFieldname(GetEscapeFieldnameChar);
-    sParams := sParams + command.InsertFields[i].ParamName;
+    fields := fields + field.GetEscapedFieldname(GetEscapeFieldnameChar);
+    params := params + field.ParamName;
   end;
 
-  Result := Result + command.Table.Name + ' (' + CRLF + '  ' + sFields + ')' + CRLF +
-    '  VALUES (' + CRLF + sParams + ')' + GetSplitStatementSymbol;
+  Result := Result + command.Table.Name + ' (' + sLineBreak + '  ' + fields + ')' + sLineBreak +
+    '  VALUES (' + sLineBreak + params + ')' + GetSplitStatementSymbol;
 end;
 
 function TAnsiSQLGenerator.GeneratePagedQuery(const sql: string;
   limit, offset: Integer): string;
 var
-  LSQL: string;
+  sqlStatement: string;
 begin
-  LSQL := sql;
-  if EndsStr(';', LSQL) then
-    SetLength(LSQL, Length(LSQL)-1);
+  sqlStatement := sql;
+  if EndsStr(';', sqlStatement) then
+    SetLength(sqlStatement, Length(sqlStatement)-1);
 
-  Result := LSQL + Format(' LIMIT %1:D,%0:D %2:S', [limit, offset, GetSplitStatementSymbol]);
+  Result := sqlStatement + Format(' LIMIT %1:D,%0:D %2:S',
+    [limit, offset, GetSplitStatementSymbol]);
 end;
 
 function TAnsiSQLGenerator.GenerateSelect(const command: TSelectCommand): string;
 var
-  LSqlBuilder: TStringBuilder;
+  sqlBuilder: TStringBuilder;
 begin
   Assert(Assigned(command));
   Assert(command.SelectFields.Any);
   Assert(command.Table.Alias <> '');
 
-  LSqlBuilder := TStringBuilder.Create;
+  sqlBuilder := TStringBuilder.Create;
   try
-    LSqlBuilder.Append('SELECT ')
+    sqlBuilder.Append('SELECT ')
       .Append(GetSelectFieldsAsString(command.SelectFields)).AppendLine
-      .Append(' FROM ').Append(command.Table.GetFullTableName)
+      .Append(' FROM ').Append(command.Table.FullTableName)
       .Append(GetJoinsAsString(command.Joins))
       .Append(GetWhereAsString(command.WhereFields))
       .Append(GetGroupByAsString(command.GroupByFields))
       .Append(GetOrderAsString(command.OrderByFields))
       .Append(GetSplitStatementSymbol);
 
-    Result := LSqlBuilder.ToString;
+    Result := sqlBuilder.ToString;
   finally
-    LSqlBuilder.Free;
+    sqlBuilder.Free;
   end;
 end;
 
 function TAnsiSQLGenerator.GenerateUpdate(const command: TUpdateCommand): string;
 var
-  LSqlBuilder: TStringBuilder;
-  LField: TSQLUpdateField;
-  LWhereField: TSQLWhereField;
-  ix: Integer;
+  sqlBuilder: TStringBuilder;
+  updateField: TSQLUpdateField;
+  whereField: TSQLWhereField;
+  i: Integer;
 begin
   Assert(Assigned(command));
 
   if not command.UpdateFields.Any then
     Exit('');
 
-  LSqlBuilder := TStringBuilder.Create;
+  sqlBuilder := TStringBuilder.Create;
   try
-    LSqlBuilder.Append('UPDATE ')
+    sqlBuilder.Append('UPDATE ')
       .Append(command.Table.Name)
       .Append(' SET ').AppendLine;
 
-    ix := 0;
-
-    for LField in command.UpdateFields do
+    for i := 0 to command.UpdateFields.Count - 1 do
     begin
-      if ix > 0 then
-        LSqlBuilder.Append(',');
+      updateField := command.UpdateFields[i];
+      if i > 0 then
+        sqlBuilder.Append(', ');
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LField.GetEscapedFieldname(GetEscapeFieldnameChar), LField.ParamName]));
-      Inc(ix);
+      sqlBuilder.AppendFormat('%0:S = %1:S',
+        [updateField.GetEscapedFieldname(GetEscapeFieldnameChar), updateField.ParamName]);
     end;
 
-    ix := 0;
-
-    for LWhereField in command.WhereFields do
+    for i := 0 to command.WhereFields.Count - 1 do
     begin
-      if ix = 0 then
-        LSqlBuilder.AppendLine.Append(' WHERE ')
+      whereField := command.WhereFields[i];
+      if i = 0 then
+        sqlBuilder.AppendLine.Append(' WHERE ')
       else
-        LSqlBuilder.Append(' AND ');
+        sqlBuilder.Append(' AND ');
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.GetEscapedFieldname(GetEscapeFieldnameChar), LWhereField.ParamName]));
-
-      Inc(ix);
+      sqlBuilder.AppendFormat('%0:S = %1:S',
+        [whereField.GetEscapedFieldname(GetEscapeFieldnameChar), whereField.ParamName]);
     end;
 
-    LSqlBuilder.Append(GetSplitStatementSymbol);
+    sqlBuilder.Append(GetSplitStatementSymbol);
 
-    Result := LSqlBuilder.ToString;
+    Result := sqlBuilder.ToString;
   finally
-    LSqlBuilder.Free;
+    sqlBuilder.Free;
   end;
 end;
 
@@ -434,54 +429,52 @@ function TAnsiSQLGenerator.GetCreateFieldsAsString(
   const createFields: IList<TSQLCreateField>): string;
 var
   i: Integer;
-  LField: TSQLCreateField;
 begin
   Result := '';
-  i := 0;
-  for LField in createFields do
+
+  for i := 0 to createFields.Count - 1 do
   begin
     if i > 0 then
-      Result := Result + ',';
+      Result := Result + ', ';
 
-    Result := Result + LField.GetEscapedFieldname(GetEscapeFieldnameChar);
-
-    Inc(i);
+    Result := Result + createFields[i].GetEscapedFieldname(GetEscapeFieldnameChar);
   end;
 end;
 
-function TAnsiSQLGenerator.GetCopyFieldsAsString(const createFields: IList<TSQLCreateField>;
-  const ACopyFields: IList<string>): string;
+function TAnsiSQLGenerator.GetCopyFieldsAsString(
+  const createFields: IList<TSQLCreateField>;
+  const copyFields: IList<string>): string;
 var
-  LField: TSQLCreateField;
   i: Integer;
+  field: TSQLCreateField;
 begin
   Result := '';
-  i := 0;
-  for LField in createFields do
-  begin
-    if i > 0 then
-      Result := Result + ',';
 
-    if ACopyFields.Contains(LField.Fieldname) then
-      Result := Result + LField.GetEscapedFieldname(GetEscapeFieldnameChar)
+  for i := 0 to createFields.Count - 1 do
+  begin
+    field := createFields[i];
+    if i > 0 then
+      Result := Result + ', ';
+
+    if copyFields.Contains(field.Fieldname) then
+      Result := Result + field.GetEscapedFieldname(GetEscapeFieldnameChar)
     else
       Result := Result + 'NULL';
-
-    Inc(i);
   end;
 end;
 
-function TAnsiSQLGenerator.GetCreateFieldsAsString(const ACreateFields: IList<string>): string;
+function TAnsiSQLGenerator.GetCreateFieldsAsString(const createFields: IList<string>): string;
 var
   i: Integer;
 begin
   Result := '';
-  for i := 0 to ACreateFields.Count - 1 do
+
+  for i := 0 to createFields.Count - 1 do
   begin
     if i > 0 then
-      Result := Result + ',';
+      Result := Result + ', ';
 
-    Result := Result + ACreateFields[i];
+    Result := Result + createFields[i];
   end;
 end;
 
@@ -493,73 +486,67 @@ end;
 function TAnsiSQLGenerator.GetGroupByAsString(
   const groupFields: IList<TSQLGroupByField>): string;
 var
-  LField: TSQLGroupByField;
   i: Integer;
 begin
   Result := '';
-  i := 0;
 
-  for LField in groupFields do
+  for i := 0 to groupFields.Count - 1 do
   begin
     if i > 0 then
-      Result := Result + ','
+      Result := Result + ', '
     else
-      Result := CRLF + '  GROUP BY ';
+      Result := sLineBreak + '  GROUP BY ';
 
-    Result := Result + LField.GetFullFieldname(GetEscapeFieldnameChar);
-
-    Inc(i);
+    Result := Result + groupFields[i].GetFullFieldName(GetEscapeFieldnameChar);
   end;
 end;
 
 function TAnsiSQLGenerator.GetJoinAsString(const join: TSQLJoin): string;
 var
-  LSegment: TSQLJoinSegment;
   i: Integer;
+  segment: TSQLJoinSegment;
 begin
   Assert(join.Segments.Any);
-  Result := ' ' + TSQLJoin.GetJoinTypeAsString(join.JoinType) + ' ';
+
+  Result := JoinTypeNames[join.JoinType];
+
   for i := 0 to join.Segments.Count - 1 do
   begin
+    segment := join.Segments[i];
     if i > 0 then
       Result := Result + ' AND ';
 
-    LSegment := join.Segments[i];
-
     Result := Result +
-      LSegment.PKField.Table.GetFullTableName + ' ON '  +
-      LSegment.PKField.GetFullFieldname(GetEscapeFieldnameChar) + '=' + LSegment.FKField.GetFullFieldname(GetEscapeFieldnameChar);
+      segment.PrimaryKeyField.Table.FullTableName + ' ON '  +
+      segment.PrimaryKeyField.GetFullFieldName(GetEscapeFieldnameChar) + ' = ' + segment.ForeignKeyField.GetFullFieldName(GetEscapeFieldnameChar);
   end;
 end;
 
 function TAnsiSQLGenerator.GetJoinsAsString(const joinFields: IList<TSQLJoin>): string;
 var
-  LField: TSQLJoin;
+  field: TSQLJoin;
 begin
   Result := '';
-  for LField in joinFields do
-    Result := Result + CRLF + ' ' + GetJoinAsString(LField);
+
+  for field in joinFields do
+    Result := Result + sLineBreak + ' ' + GetJoinAsString(field);
 end;
 
 function TAnsiSQLGenerator.GetOrderAsString(
   const orderByFields: IList<TSQLOrderByField>): string;
 var
   i: Integer;
-  LField: TSQLOrderByField;
 begin
   Result := '';
-  i := 0;
-  for LField in orderByFields do
+
+  for i := 0 to orderByFields.Count - 1 do
   begin
     if i > 0 then
-      Result := Result + ','
+      Result := Result + ', '
     else
-      Result := CRLF + '  ORDER BY ';
+      Result := sLineBreak + '  ORDER BY ';
 
-
-    Result := Result + LField.GetFullOrderByFieldname(GetEscapeFieldnameChar);
-
-    Inc(i);
+    Result := Result + orderByFields[i].GetFullOrderByFieldname(GetEscapeFieldnameChar);
   end;
 end;
 
@@ -575,15 +562,15 @@ end;
 
 procedure TAnsiSQLGenerator.ParseFullTablename(const fullTableName: string; out tableName, schemaName: string);
 var
-  LPos: Integer;
+  pos: Integer;
 begin
-  LPos := PosEx('.', fullTableName);
+  pos := PosEx('.', fullTableName);
   tableName := fullTableName;
   schemaName := '';
-  if LPos > 1 then
+  if pos > 1 then
   begin
-    schemaName := Copy(fullTableName, 1, LPos - 1);
-    tableName := Copy(fullTableName, LPos + 1, Length(fullTableName) - 1);
+    schemaName := Copy(fullTableName, 1, pos - 1);
+    tableName := Copy(fullTableName, pos + 1, Length(fullTableName) - 1);
   end;
 end;
 
@@ -591,19 +578,15 @@ function TAnsiSQLGenerator.GetSelectFieldsAsString(
   const selectFields: IList<TSQLSelectField>): string;
 var
   i: Integer;
-  LField: TSQLSelectField;
 begin
   Result := '';
-  i := 0;
 
-  for LField in selectFields do
+  for i := 0 to selectFields.Count - 1 do
   begin
     if i > 0 then
-      Result := Result + ',';
+      Result := Result + ', ';
 
-    Result := Result + LField.GetFullFieldname(GetEscapeFieldnameChar);
-
-    Inc(i);
+    Result := Result + selectFields[i].GetFullFieldName(GetEscapeFieldnameChar);
   end;
 end;
 
@@ -614,15 +597,15 @@ end;
 
 function TAnsiSQLGenerator.GetSQLDataTypeName(const field: TSQLCreateField): string;
 var
-  LDelphiTypeInfo: PTypeInfo;
-  LClonedField: TSQLCreateField;
+  typeInfo: PTypeInfo;
+  createField: TSQLCreateField;
 begin
-  Assert(field <> nil);
+  Assert(Assigned(field));
   Result := 'INTEGER';
 
-  LDelphiTypeInfo := field.TypeKindInfo;
+  typeInfo := field.TypeInfo;
 
-  case field.TypeKindInfo.Kind of
+  case field.TypeInfo.Kind of
     tkUnknown: ;
     tkInteger, tkInt64, tkEnumeration, tkSet:
     begin
@@ -631,7 +614,7 @@ begin
       else
       begin
         Result := 'INTEGER';
-        if (System.TypeInfo(Boolean) = LDelphiTypeInfo) then
+        if (System.TypeInfo(Boolean) = typeInfo) then
           Result := 'BIT';
       end;
     end;
@@ -639,11 +622,11 @@ begin
     tkChar: Result := Format('CHAR(%D)', [field.Length]);
     tkFloat:
     begin
-      if (System.TypeInfo(TDate) = LDelphiTypeInfo) then
+      if (System.TypeInfo(TDate) = typeInfo) then
         Result := 'DATE'
-      else if (System.TypeInfo(TDateTime) = LDelphiTypeInfo) then
+      else if (System.TypeInfo(TDateTime) = typeInfo) then
         Result := 'TIMESTAMP'
-      else if (System.TypeInfo(TTime) = LDelphiTypeInfo) then
+      else if (System.TypeInfo(TTime) = typeInfo) then
         Result := 'TIME'
       else
         if field.Precision > 0 then
@@ -658,14 +641,14 @@ begin
     tkWString, tkUString: Result := Format('NVARCHAR(%D)', [field.Length]);
     tkRecord:
     begin
-      if IsNullable(LDelphiTypeInfo) or TType.IsLazyType(LDelphiTypeInfo) then
+      if IsNullable(typeInfo) or TType.IsLazyType(typeInfo) then
       begin
-        LClonedField := field.Clone;
+        createField := field.Clone;
         try
-          LClonedField.TypeKindInfo := TRttiExplorer.GetLastGenericArgumentType(LDelphiTypeInfo).Handle;
-          Result := GetSQLDataTypeName(LClonedField);
+          createField.TypeInfo := TRttiExplorer.GetLastGenericArgumentType(typeInfo).Handle;
+          Result := GetSQLDataTypeName(createField);
         finally
-          LClonedField.Free;
+          createField.Free;
         end;
       end;
     end;
@@ -704,42 +687,38 @@ end;
 function TAnsiSQLGenerator.GetUpdateVersionFieldQuery(
   const command: TUpdateCommand; const versionColumn: VersionAttribute;
   const version, primaryKey: Variant): Variant;
-var
-  LSQL: string;
 begin
-  LSQL := Format('UPDATE %0:S SET %1:S = coalesce(%1:S,0) + 1 WHERE (%2:S = %3:S) AND (coalesce(%1:S,0) = %4:S)',
+  Result := Format('UPDATE %0:S SET %1:S = coalesce(%1:S,0) + 1 WHERE (%2:S = %3:S) AND (coalesce(%1:S,0) = %4:S)',
     [command.Table.Name, versionColumn.ColumnName,
     command.PrimaryKeyColumn.ColumnName, VarToStr(primaryKey), VarToStr(version)]);
-  Result := LSQL;
 end;
 
 function TAnsiSQLGenerator.GetWhereAsString(const whereFields: IList<TSQLWhereField>): string;
 var
-  i, ix: Integer;
-  LField: TSQLWhereField;
+  i, index: Integer;
+  field: TSQLWhereField;
 begin
   Result := '';
-  ix := 0;
-  for i:=0 to whereFields.Count - 1 do
+
+  index := 0;
+  for i := 0 to whereFields.Count - 1 do
   begin
-    if i < ix then
+    if i < index then
       Continue;
 
-    ix := i;
+    index := i;
 
-    LField := whereFields[i];
+    field := whereFields[i];
     if i > 0 then
       Result := Result + ' AND '
     else
-      Result := CRLF + '  WHERE ';
+      Result := sLineBreak + '  WHERE ';
 
-    if LField.WhereOperator in StartOperators then
-    begin
-      ix := FindEnd(whereFields, i, LField.WhereOperator, GetEndOperator(LField.WhereOperator));
-    end;
+    if field.WhereOperator in StartOperators then
+      index := FindEnd(whereFields, i, field.WhereOperator, GetEndOperator(field.WhereOperator));
 
-    Result := Result + LField.ToSQLString(GetEscapeFieldnameChar);
-    Inc(ix);
+    Result := Result + field.ToSQLString(GetEscapeFieldnameChar);
+    Inc(index);
   end;
 end;
 

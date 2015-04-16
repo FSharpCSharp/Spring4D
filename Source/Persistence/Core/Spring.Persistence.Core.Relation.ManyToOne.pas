@@ -119,7 +119,7 @@ begin
   begin
     columnData := fNewColumns[i];
     columnName := DoBuildColumnName(columnData);
-    if not resultSet.FieldNameExists(columnName) then
+    if not resultSet.FieldExists(columnName) then
     begin
       fNewColumns.Delete(i);
       Continue;

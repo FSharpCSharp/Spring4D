@@ -154,7 +154,7 @@ begin
       .Append(') AROWNUM ')
       .AppendFormat('WHERE ROWNUM < (%0:D+%1:D) )', [offset+1, limit])
       .AppendLine
-      .AppendFormat(' WHERE r___ >=%0:D', [offset+1]);
+      .AppendFormat(' WHERE r___ > = %0:D', [offset+1]);
 
     Result := LBuilder.ToString;
   finally

@@ -24,7 +24,6 @@ uses
   Spring.Persistence.Adapters.MSSQL in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas',
   Spring.Persistence.Adapters.Oracle in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas',
   Spring.Persistence.Adapters.SQLite in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas',
-  Spring.Persistence.Core.AbstractManager in '..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractManager.pas',
   Spring.Persistence.Core.AbstractSession in '..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas',
   Spring.Persistence.Core.Base in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas',
   Spring.Persistence.Core.ConnectionFactory in '..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas',

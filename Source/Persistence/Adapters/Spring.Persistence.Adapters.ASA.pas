@@ -29,70 +29,64 @@ unit Spring.Persistence.Adapters.ASA;
 interface
 
 uses
-  SysUtils,
   Spring.Persistence.Adapters.ADO,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represents Sybase ASA resultset.
-  ///	</summary>
-  {$ENDREGION}
+  EASAAdapterException = class(EORMAdapterException);
+
+  /// <summary>
+  ///   Represents Sybase ASA resultset.
+  /// </summary>
   TASAResultsetAdapter = class(TADOResultSetAdapter);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent Sybase ASA statement.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent Sybase ASA statement.
+  /// </summary>
   TASAStatementAdapter = class(TADOStatementAdapter);
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent Sybase ASA connection.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent Sybase ASA connection.
+  /// </summary>
   TASAConnectionAdapter = class(TADOConnectionAdapter)
   public
     function BeginTransaction: IDBTransaction; override;
     function GetDriverName: string; override;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  Represent Sybase ASA transaction.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   Represent Sybase ASA transaction.
+  /// </summary>
   TASATransactionAdapter = class(TADOTransactionAdapter)
   public
     procedure Commit; override;
     procedure Rollback; override;
   end;
 
-  ESybaseASAStatementAdapterException = Exception;
-
 implementation
 
 uses
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.Core.Consts;
+  Spring.Persistence.Core.Consts,
+  Spring.Persistence.SQL.Generators.ASA;
 
-{ TASAConnectionAdapter }
+
+{$REGION 'TASAConnectionAdapter'}
 
 function TASAConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
-  if Connection = nil then
-    Exit(nil);
+  if Assigned(Connection) then
+  begin
+    Connection.Connected := True;
+    GenerateNewID;
+    Connection.Execute(SQL_BEGIN_TRAN + GetTransactionName);
 
-  Connection.Connected := True;
-
-  GenerateNewID;
-
-  Connection.Execute(SQL_BEGIN_TRAN + GetTransactionName);
-
-  Result := TASATransactionAdapter.Create(Connection);
-  Result.TransactionName := GetTransactionName;
+    Result := TASATransactionAdapter.Create(Connection);
+    Result.TransactionName := GetTransactionName;
+  end
+  else
+    Result := nil;
 end;
 
 function TASAConnectionAdapter.GetDriverName: string;
@@ -100,23 +94,25 @@ begin
   Result := DRIVER_SYBASE_ASA;
 end;
 
-{ TASATransactionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TASATransactionAdapter'}
 
 procedure TASATransactionAdapter.Commit;
 begin
-  if Transaction = nil then
-    Exit;
-
-  Transaction.Execute(SQL_COMMIT_TRAN + TransactionName);
+  if Assigned(Transaction) then
+    Transaction.Execute(SQL_COMMIT_TRAN + TransactionName);
 end;
 
 procedure TASATransactionAdapter.Rollback;
 begin
-  if Transaction = nil then
-    Exit;
-
-  Transaction.Execute(SQL_ROLLBACK_TRAN + TransactionName);
+  if Assigned(Transaction) then
+    Transaction.Execute(SQL_ROLLBACK_TRAN + TransactionName);
 end;
+
+{$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TASAConnectionAdapter>(dtASA);

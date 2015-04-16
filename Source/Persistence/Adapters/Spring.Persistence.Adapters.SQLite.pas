@@ -30,15 +30,14 @@ interface
 
 uses
   SQLiteTable3,
-  SysUtils,
   Spring.Collections,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.Base,
-  Spring.Persistence.Mapping.Attributes,
+  Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Params;
 
 type
-  ESQLiteStatementAdapterException = Exception;
+  ESQLiteStatementAdapterException = class(EORMAdapterException);
 
   /// <summary>
   ///   Represents SQLite3 resultset.
@@ -47,7 +46,7 @@ type
   public
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function FieldNameExists(const fieldName: string): Boolean; override;
+    function FieldExists(const fieldName: string): Boolean; override;
     function GetFieldValue(index: Integer): Variant; overload; override;
     function GetFieldValue(const fieldName: string): Variant; overload; override;
     function GetFieldCount: Integer; override;
@@ -60,7 +59,7 @@ type
   TSQLiteStatementAdapter = class(TDriverStatementAdapter<ISQLitePreparedStatement>)
   public
     procedure SetSQLCommand(const commandText: string); override;
-    procedure SetParams(const params: IList<TDBParam>); overload; override;
+    procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -93,46 +92,51 @@ implementation
 
 uses
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.Core.Consts;
+  Spring.Persistence.Core.Consts,
+  Spring.Persistence.SQL.Generators.SQLite3;
 
-{ TSQLiteResultSetAdapter }
+
+{$REGION 'TSQLiteResultSetAdapter'}
 
 function TSQLiteResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := Dataset.Fields[index].Value;
+  Result := DataSet.Fields[index].Value;
 end;
 
-function TSQLiteResultSetAdapter.FieldNameExists(const fieldName: string): Boolean;
+function TSQLiteResultSetAdapter.FieldExists(const fieldName: string): Boolean;
 begin
-  Result := (Dataset.FindField(fieldName) <> nil);
+  Result := DataSet.FindField(fieldName) <> nil;
 end;
 
 function TSQLiteResultSetAdapter.GetFieldCount: Integer;
 begin
-  Result := Dataset.FieldCount;
+  Result := DataSet.FieldCount;
 end;
 
 function TSQLiteResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := Dataset.Fields[index].Name;
+  Result := DataSet.Fields[index].Name;
 end;
 
 function TSQLiteResultSetAdapter.GetFieldValue(const fieldName: string): Variant;
 begin
-  Result := Dataset.FieldByName[fieldName].Value;
+  Result := DataSet.FieldByName[fieldName].Value;
 end;
 
 function TSQLiteResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := Dataset.EOF;
+  Result := DataSet.EOF;
 end;
 
 function TSQLiteResultSetAdapter.Next: Boolean;
 begin
-  Result := Dataset.Next;
+  Result := DataSet.Next;
 end;
 
-{ TSQLiteStatementAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TSQLiteStatementAdapter'}
 
 function TSQLiteStatementAdapter.Execute: NativeUInt;
 var
@@ -147,36 +151,20 @@ end;
 
 function TSQLiteStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
-  LDataset: ISQLiteTable;
+  query: ISQLiteTable;
 begin
   inherited;
-  LDataset := Statement.ExecQueryIntf;
-  Result := TSQLiteResultSetAdapter.Create(LDataset);
+  query := Statement.ExecQueryIntf;
+  Result := TSQLiteResultSetAdapter.Create(query);
 end;
 
-function GetParamByName(AStatement: ISQLitePreparedStatement; const AName: string): TSQliteParam;
-var
-  i: Integer;
-begin
-  for i := 0 to AStatement.ParamCount - 1 do
-  begin
-    if AStatement.Params[i].name = AName then
-    begin
-      Exit(AStatement.Params[i]);
-    end;
-  end;
-  Result := nil;
-end;
-
-procedure TSQLiteStatementAdapter.SetParams(const params: IList<TDBParam>);
+procedure TSQLiteStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
 var
   param: TDBParam;
 begin
   inherited;
   for param in params do
-  begin
     Statement.SetParamVariant(param.Name, param.Value);
-  end;
 end;
 
 procedure TSQLiteStatementAdapter.SetSQLCommand(const commandText: string);
@@ -185,55 +173,55 @@ begin
   Statement.PrepareStatement(commandText);
 end;
 
-{ TSQLiteConnectionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TSQLiteConnectionAdapter'}
 
 function TSQLiteConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
-  if Connection = nil then
-    Exit(nil);
+  if Assigned(Connection) then
+  begin
+    Connection.Connected := true;
+    inherited;
+    Connection.ExecSQL(SQL_BEGIN_SAVEPOINT + GetTransactionName);
 
-  Connection.Connected := true;
-
-  inherited;
-
-  Connection.ExecSQL(SQL_BEGIN_SAVEPOINT + GetTransactionName);
-
-  Result := TSQLiteTransactionAdapter.Create(Connection);
-  Result.TransactionName := GetTransactionName;
+    Result := TSQLiteTransactionAdapter.Create(Connection);
+    Result.TransactionName := GetTransactionName;
+  end;
 end;
 
 procedure TSQLiteConnectionAdapter.Connect;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Connection.Connected := True;
 end;
 
 function TSQLiteConnectionAdapter.CreateStatement: IDBStatement;
 var
-  Statement: TSQLitePreparedStatement;
-  LAdapter: TSQLiteStatementAdapter;
+  statement: TSQLitePreparedStatement;
+  adapter: TSQLiteStatementAdapter;
 begin
-  if Connection = nil then
-    Exit(nil);
-
-  Statement := TSQLitePreparedStatement.Create(Connection);
-  LAdapter := TSQLiteStatementAdapter.Create(Statement);
-  LAdapter.ExecutionListeners := ExecutionListeners;
-  Result := LAdapter;
+  if Assigned(Connection) then
+  begin
+    statement := TSQLitePreparedStatement.Create(Connection);
+    adapter := TSQLiteStatementAdapter.Create(statement);
+    adapter.ExecutionListeners := ExecutionListeners;
+    Result := adapter;
+  end
+  else
+    Result := nil;
 end;
 
 procedure TSQLiteConnectionAdapter.Disconnect;
 begin
-  if Connection <> nil then
+  if Assigned(Connection) then
     Connection.Connected := False;
 end;
 
 function TSQLiteConnectionAdapter.IsConnected: Boolean;
 begin
-  if Connection <> nil then
-    Result := Connection.Connected
-  else
-    Result := False;
+  Result := Assigned(Connection) and Connection.Connected;
 end;
 
 function TSQLiteConnectionAdapter.GetDriverName: string;
@@ -241,28 +229,30 @@ begin
   Result := DRIVER_SQLITE;
 end;
 
-{ TSQLiteTransactionAdapter }
+{$ENDREGION}
+
+
+{$REGION 'TSQLiteTransactionAdapter'}
 
 procedure TSQLiteTransactionAdapter.Commit;
 begin
-  if Transaction = nil then
-    Exit;
-
-  Transaction.ExecSQL('RELEASE SAVEPOINT ' + TransactionName);
+  if Assigned(Transaction) then
+    Transaction.ExecSQL('RELEASE SAVEPOINT ' + TransactionName);
 end;
 
 function TSQLiteTransactionAdapter.InTransaction: Boolean;
 begin
-  Result := Transaction.IsTransactionOpen;
+  Result := Assigned(Transaction) and Transaction.IsTransactionOpen;
 end;
 
 procedure TSQLiteTransactionAdapter.Rollback;
 begin
-  if Transaction = nil then
-    Exit;
-
-  Transaction.ExecSQL('ROLLBACK TRANSACTION TO SAVEPOINT ' + TransactionName);
+  if Assigned(Transaction) then
+    Transaction.ExecSQL('ROLLBACK TRANSACTION TO SAVEPOINT ' + TransactionName);
 end;
+
+{$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TSQLiteConnectionAdapter>(dtSQLite);

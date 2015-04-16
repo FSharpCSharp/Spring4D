@@ -30,22 +30,17 @@ interface
 
 uses
   DB,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Persistence.Core.Interfaces;
 
 type
-  IFieldCache = interface(IInvokable)
-    ['{11B51ABB-0C29-40CA-A2C1-623CBFF86F4F}']
-    function FieldNameExists(const fieldName: string): Boolean;
-    function GetFieldValue(const fieldName: string): Variant;
-  end;
-
   TFieldCache = class(TInterfacedObject, IFieldCache)
   private
     fDataSet: TDataSet;
     fValues: IDictionary<string,TField>;
     procedure Build;
   protected
-    function FieldNameExists(const fieldName: string): Boolean;
+    function FieldExists(const fieldName: string): Boolean;
     function GetFieldValue(const fieldName: string): Variant;
   public
     constructor Create(const dataSet: TDataset);
@@ -56,15 +51,6 @@ implementation
 
 {$REGION 'TFieldCache'}
 
-procedure TFieldCache.Build;
-var
-  field: TField;
-begin
-  if not fValues.Any then
-    for field in fDataSet.Fields do
-      fValues.Add(field.FieldName, field);
-end;
-
 constructor TFieldCache.Create(const dataSet: TDataset);
 begin
   inherited Create;
@@ -74,7 +60,16 @@ begin
   Build;
 end;
 
-function TFieldCache.FieldNameExists(const fieldName: string): Boolean;
+procedure TFieldCache.Build;
+var
+  field: TField;
+begin
+  if fValues.IsEmpty then
+    for field in fDataSet.Fields do
+      fValues.Add(field.FieldName, field);
+end;
+
+function TFieldCache.FieldExists(const fieldName: string): Boolean;
 begin
   Result := fValues.ContainsKey(fieldName);
 end;

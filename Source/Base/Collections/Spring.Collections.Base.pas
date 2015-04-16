@@ -417,7 +417,7 @@ type
   public
     destructor Destroy; override;
 
-    function Add(const item: T): Integer; reintroduce; virtual;
+    function Add(const item: T): Integer; reintroduce; virtual; stdcall;
     procedure AddRange(const values: array of T); override;
     procedure AddRange(const collection: IEnumerable<T>); override;
 

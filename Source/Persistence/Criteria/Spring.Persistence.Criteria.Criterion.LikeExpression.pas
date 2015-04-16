@@ -74,7 +74,7 @@ var
 begin
   Assert(command is TWhereCommand);
 
-  Result := Format('%s %s %s', [PropertyName, WhereOpNames[GetWhereOperator],
+  Result := Format('%s %s %s', [PropertyName, WhereOperatorNames[GetWhereOperator],
     GetMatchModeString(fMatchMode, Value.AsString)]);
 
   whereField := TSQLWhereField.Create(Result, GetCriterionTable(command) );

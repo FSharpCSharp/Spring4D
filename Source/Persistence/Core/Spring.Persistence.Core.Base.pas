@@ -47,7 +47,7 @@ type
   protected
     function IsEmpty: Boolean; virtual; abstract;
     function Next: Boolean; virtual; abstract;
-    function FieldNameExists(const fieldName: string): Boolean; virtual; abstract;
+    function FieldExists(const fieldName: string): Boolean; virtual; abstract;
     function GetFieldValue(index: Integer): Variant; overload; virtual; abstract;
     function GetFieldValue(const fieldname: string): Variant; overload; virtual; abstract;
     function GetFieldCount: Integer; virtual; abstract;
@@ -55,7 +55,7 @@ type
   public
     constructor Create(const dataSet: T); virtual;
 
-    property Dataset: T read fDataSet;
+    property DataSet: T read fDataSet;
   end;
 
   /// <summary>
@@ -107,7 +107,7 @@ type
   private
     fStatement: T;
     fListeners: IList<TExecutionListenerProc>;
-    fParams: IList<TDBParam>;
+    fParams: IEnumerable<TDBParam>;
     fSql: string;
     fQuery: Variant;
     fQueryMetadata: TQueryMetadata;
@@ -117,7 +117,7 @@ type
     constructor Create(const statement: T); virtual;
     procedure SetSQLCommand(const commandText: string); virtual;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); virtual;
-    procedure SetParams(const params: IList<TDBParam>); overload; virtual;
+    procedure SetParams(const params: IEnumerable<TDBParam>); overload; virtual;
     procedure SetParams(const params: array of const); overload;
     function Execute: NativeUInt; virtual;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; virtual;
@@ -361,34 +361,28 @@ end;
 procedure TDriverStatementAdapter<T>.NotifyListeners;
 var
   listener: TExecutionListenerProc;
-  params: IList<TDBParam>;
+  params: IEnumerable<TDBParam>;
 begin
   if Assigned(fListeners) and (fSql <> '') then
   begin
     params := fParams;
     if not Assigned(params) then
-      params := TCollections.CreateObjectList<TDBParam>(True);
+      params := TEnumerable.Empty<TDBParam>;
 
     for listener in fListeners do
       listener(fSql, params);
   end;
 end;
 
-procedure TDriverStatementAdapter<T>.SetParams(const params: IList<TDBParam>);
+procedure TDriverStatementAdapter<T>.SetParams(const params: IEnumerable<TDBParam>);
 begin
   fParams := params;
 end;
 
 procedure TDriverStatementAdapter<T>.SetParams(const params: array of const);
-var
-  paramList: IList<TDBParam>;
 begin
   if Length(params) > 0 then
-  begin
-    paramList := TCollections.CreateObjectList<TDBParam>;
-    ConvertParams(params, paramList);
-    SetParams(paramList);
-  end;
+    SetParams(TDBParams.Create(params));
 end;
 
 procedure TDriverStatementAdapter<T>.SetQuery(const metadata: TQueryMetadata;

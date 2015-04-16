@@ -320,8 +320,7 @@ var
 begin
   statement := Connection.CreateStatement;
   statement.SetSQLCommand(sql);
-  if Length(params) > 0 then
-    statement.SetParams(params);
+  statement.SetParams(params);
   Result := statement.Execute;
 end;
 

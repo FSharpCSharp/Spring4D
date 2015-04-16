@@ -65,6 +65,9 @@ type
     class destructor Destroy;
   {$HINTS ON}
   public
+    class function GetClass(typeInfo: PTypeInfo): TClass; static;
+
+    class function GetTypes: IEnumerable<TRttiType>; static;
     class function GetType<T>: TRttiType; overload; static;
     class function GetType(typeInfo: PTypeInfo): TRttiType; overload; static;
     class function GetType(classType: TClass): TRttiType; overload; static;
@@ -112,6 +115,7 @@ type
       const name: string; const value: TValue); static;
 
     class property Context: TRttiContext read fContext;
+    class property Types: IEnumerable<TRttiType> read GetTypes;
   end;
 
 //  IRttiPackage = interface
@@ -229,37 +233,43 @@ type
 
   TRttiObjectHelper = class helper for TRttiObject
   public
-    function GetCustomAttributes(attributeClass: TAttributeClass): TArray<TCustomAttribute>; overload;
+    function GetCustomAttributes(attributeClass: TAttributeClass;
+      inherit: Boolean = False): TArray<TCustomAttribute>; overload;
 
     /// <summary>
     ///   Gets an array which contains all custom attribute types which the
     ///   type applies.
     /// </summary>
-    function GetCustomAttributes<T: TCustomAttribute>: TArray<T>; overload;
+    function GetCustomAttributes<T: TCustomAttribute>(
+      inherit: Boolean = False): TArray<T>; overload;
 
-    function GetCustomAttribute(attributeClass: TAttributeClass): TCustomAttribute; overload;
+    function GetCustomAttribute(attributeClass: TAttributeClass;
+      inherit: Boolean = False): TCustomAttribute; overload;
 
     /// <summary>
     ///   Enumerates all applied custom attributes and returns the first one
     ///   which is/inherits the specified type.
     /// </summary>
-    function GetCustomAttribute<T: TCustomAttribute>: T; overload;
+    function GetCustomAttribute<T: TCustomAttribute>(inherit: Boolean = False): T; overload;
 
     function TryGetCustomAttribute(attributeClass: TAttributeClass;
-      out attribute: TCustomAttribute): Boolean; overload;
+      out attribute: TCustomAttribute; inherit: Boolean = False): Boolean; overload;
 
     /// <summary>
     ///   Try getting a custom attribute class which is applied by the type.
     /// </summary>
-    function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T): Boolean; overload;
+    function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T;
+      inherit: Boolean = False): Boolean; overload;
 
-    function HasCustomAttribute(attributeClass: TAttributeClass): Boolean; overload;
+    function HasCustomAttribute(attributeClass: TAttributeClass;
+      inherit: Boolean = False): Boolean; overload;
 
     /// <summary>
     ///   Determines whether the type applies the specified custom attribute
     ///   class.
     /// </summary>
-    function HasCustomAttribute<T: TCustomAttribute>: Boolean; overload;
+    function HasCustomAttribute<T: TCustomAttribute>(
+      inherit: Boolean = False): Boolean; overload;
   end;
 
   {$ENDREGION}
@@ -333,6 +343,7 @@ type
 
     function TryGetField(const name: string; out field: TRttiField): Boolean;
     function TryGetProperty(const name: string; out prop: TRttiProperty): Boolean;
+    function TryGetMethod(const name: string; out method: TRttiMethod): Boolean;
 
     property BaseTypes: IReadOnlyList<TRttiType> read GetBaseTypes;
 
@@ -489,7 +500,8 @@ type
   TFiltersNamed<T: TRttiNamedObject> = class
   public
     class function IsNamed(const name: string): TSpecification<T>;
-    class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
+    class function HasAttribute(attributeClass: TAttributeClass;
+      inherit: Boolean = False): TSpecification<T>;
   end;
 
   {$ENDREGION}
@@ -569,10 +581,11 @@ type
   THasAttributeFilter<T: TRttiObject> = class(TSpecificationBase<T>)
   private
     fAttributeClass: TAttributeClass;
+    fInherit: Boolean;
   protected
     function IsSatisfiedBy(const member: T): Boolean; override;
   public
-    constructor Create(attributeClass: TAttributeClass);
+    constructor Create(attributeClass: TAttributeClass; inherit: Boolean = False);
   end;
 
   {$ENDREGION}
@@ -841,6 +854,11 @@ begin
   Result := GetType(TypeInfo(T));
 end;
 
+class function TType.GetTypes: IEnumerable<TRttiType>;
+begin
+  Result := TRttiTypeIterator<TRttiType>.Create;
+end;
+
 class function TType.GetType(typeInfo: PTypeInfo): TRttiType;
 begin
   Result := fContext.GetType(typeInfo);
@@ -854,6 +872,15 @@ end;
 class function TType.GetType(const value: TValue): TRttiType;
 begin
   Result := GetType(value.TypeInfo);
+end;
+
+class function TType.GetClass(typeInfo: PTypeInfo): TClass;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckTypeKind(tkClass, typeInfo.Kind, 'typeInfo.Kind');
+{$ENDIF}
+
+  Result := GetTypeData(typeInfo).ClassType;
 end;
 
 class function TType.GetFullName(typeInfo: PTypeInfo): string;
@@ -1163,38 +1190,44 @@ end;
 {$REGION 'TRttiObjectHelper'}
 
 function TRttiObjectHelper.TryGetCustomAttribute(
-  attributeClass: TAttributeClass; out attribute: TCustomAttribute): Boolean;
+  attributeClass: TAttributeClass; out attribute: TCustomAttribute;
+  inherit: Boolean): Boolean;
 begin
-  attribute := GetCustomAttribute(attributeClass);
+  attribute := GetCustomAttribute(attributeClass, inherit);
   Result := Assigned(attribute);
 end;
 
-function TRttiObjectHelper.TryGetCustomAttribute<T>(out attribute: T): Boolean;
+function TRttiObjectHelper.TryGetCustomAttribute<T>(out attribute: T;
+  inherit: Boolean): Boolean;
 begin
-  attribute := GetCustomAttribute<T>;
+  attribute := GetCustomAttribute<T>(inherit);
   Result := Assigned(attribute);
 end;
 
 function TRttiObjectHelper.GetCustomAttribute(
-  attributeClass: TAttributeClass): TCustomAttribute;
+  attributeClass: TAttributeClass; inherit: Boolean): TCustomAttribute;
 var
   attribute: TCustomAttribute;
 begin
   for attribute in GetAttributes do
     if attribute.InheritsFrom(attributeClass) then
       Exit(attribute);
-  Result := nil;
+  if inherit and (Self is TRttiType) and Assigned(TRttiType(Self).BaseType) then
+    Result := TRttiType(Self).BaseType.GetCustomAttribute(attributeClass, inherit)
+  else
+    Result := nil;
 end;
 
-function TRttiObjectHelper.GetCustomAttribute<T>: T;
+function TRttiObjectHelper.GetCustomAttribute<T>(inherit: Boolean): T;
 begin
-  Result := T(GetCustomAttribute(TAttributeClass(T)));
+  Result := T(GetCustomAttribute(TAttributeClass(T), inherit));
 end;
 
 function TRttiObjectHelper.GetCustomAttributes(
-  attributeClass: TAttributeClass): TArray<TCustomAttribute>;
+  attributeClass: TAttributeClass; inherit: Boolean): TArray<TCustomAttribute>;
 var
   attribute: TCustomAttribute;
+  attributes: TArray<TCustomAttribute>;
 begin
   Result := nil;
   for attribute in GetAttributes do
@@ -1203,27 +1236,35 @@ begin
       SetLength(Result, Length(Result) + 1);
       Result[High(Result)] := attribute;
     end;
+  if inherit and (Self is TRttiType) and Assigned(TRttiType(Self).BaseType) then
+  begin
+    attributes := TRttiType(Self).BaseType.GetCustomAttributes(attributeClass, inherit);
+    Result := TArray.Concat<TCustomAttribute>([Result, attributes]);
+  end;
 end;
 
-function TRttiObjectHelper.GetCustomAttributes<T>: TArray<T>;
+function TRttiObjectHelper.GetCustomAttributes<T>(inherit: Boolean): TArray<T>;
 begin
-  TArray<TCustomAttribute>(Result) := GetCustomAttributes(TAttributeClass(T));
+  TArray<TCustomAttribute>(Result) := GetCustomAttributes(TAttributeClass(T), inherit);
 end;
 
 function TRttiObjectHelper.HasCustomAttribute(
-  attributeClass: TAttributeClass): Boolean;
+  attributeClass: TAttributeClass; inherit: Boolean): Boolean;
 var
   attribute: TCustomAttribute;
 begin
   for attribute in GetAttributes do
     if attribute.InheritsFrom(attributeClass) then
       Exit(True);
-  Result := False;
+  if inherit and (Self is TRttiType) and Assigned(TRttiType(Self).BaseType) then
+    Result := TRttiType(Self).BaseType.HasCustomAttribute(attributeClass, inherit)
+  else
+    Result := False;
 end;
 
-function TRttiObjectHelper.HasCustomAttribute<T>: Boolean;
+function TRttiObjectHelper.HasCustomAttribute<T>(inherit: Boolean): Boolean;
 begin
-  Result := HasCustomAttribute(TAttributeClass(T));
+  Result := HasCustomAttribute(TAttributeClass(T), inherit);
 end;
 
 {$ENDREGION}
@@ -1355,14 +1396,14 @@ end;
 
 function TRttiTypeHelper.GetGenericTypeDefinition: string;
 var
-  s: string;
   i: Integer;
 begin
-  s := Name;
-  i := Pos('<', s);
-  if i = 0 then
+  if not IsGenericType then
     raise EInvalidOperationException.CreateResFmt(@SNotGenericType, [Name]);
-  Result := Copy(s, 0, i) + '>';
+  Result := Copy(Name, 0, Pos('<', Name));
+  for i := 1 to High(GetGenericArguments) do
+    Result := Result + ',';
+  Result := Result + '>';
 end;
 
 function TRttiTypeHelper.GetAncestorCount: Integer;
@@ -1522,6 +1563,13 @@ function TRttiTypeHelper.TryGetField(const name: string;
 begin
   field := GetField(name);
   Result := Assigned(field);
+end;
+
+function TRttiTypeHelper.TryGetMethod(const name: string;
+  out method: TRttiMethod): Boolean;
+begin
+  method := GetMethod(name);
+  Result := Assigned(method);
 end;
 
 function TRttiTypeHelper.TryGetProperty(const name: string;
@@ -1731,10 +1779,10 @@ begin
   Result := TNameFilter<T>.Create(name);
 end;
 
-class function TFiltersNamed<T>.HasAttribute(
-  attributeClass: TAttributeClass): TSpecification<T>;
+class function TFiltersNamed<T>.HasAttribute(attributeClass: TAttributeClass;
+  inherit: Boolean = False): TSpecification<T>;
 begin
-  Result := THasAttributeFilter<T>.Create(attributeClass);
+  Result := THasAttributeFilter<T>.Create(attributeClass, inherit);
 end;
 
 {$ENDREGION}
@@ -1829,20 +1877,17 @@ end;
 
 { THasAttributeFilter<T> }
 
-constructor THasAttributeFilter<T>.Create(attributeClass: TAttributeClass);
+constructor THasAttributeFilter<T>.Create(attributeClass: TAttributeClass;
+  inherit: Boolean);
 begin
   inherited Create;
   fAttributeClass := attributeClass;
+  fInherit := inherit;
 end;
 
 function THasAttributeFilter<T>.IsSatisfiedBy(const member: T): Boolean;
-var
-  attribute: TCustomAttribute;
 begin
-  for attribute in member.GetAttributes do
-    if attribute.InheritsFrom(fAttributeClass) then
-      Exit(True);
-  Result := False;
+  Result := member.HasCustomAttribute(fAttributeClass, fInherit);
 end;
 
 { TNameFilter<T> }
