@@ -405,6 +405,7 @@ uses
   Variants,
   Rtti,
   StrUtils,
+  TimeSpan,
   Types;
 
 
@@ -2348,7 +2349,13 @@ var
   v: Variant;
 begin
   dt := EncodeDateTime(2015, 1, 1, 12, 0, 0, 0);
-  v := VarSQLTimeStampOffsetCreate(dt);
+  // this function is broken as it takes the current timezone offset
+  // and not the one appropriate for the date value as the conversion back does
+//  v := VarSQLTimeStampOffsetCreate(dt);
+  // so we create the Variant different
+  VarSQLTimeStampOffsetCreate(v, DateTimeToSQLTimeStampOffset(dt,
+    TTimeZone.Local.GetUtcOffset(dt).Hours,
+    TTimeZone.Local.GetUtcOffset(dt).Minutes));
   fDateTime := v;
   CheckEquals(dt, fDateTime);
 end;
