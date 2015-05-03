@@ -534,26 +534,31 @@ end;
 
 procedure TList<T>.InsertRange(index: Integer; const values: array of T);
 var
+  count: Integer;
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
 {$ENDIF}
 
-  EnsureCapacity(fCount + Length(values));
+  count := Length(values);
+  if count = 0 then
+    Exit;
+
+  EnsureCapacity(fCount + count);
   if index <> fCount then
   begin
-    fArrayManager.Move(fItems, index, index + Length(values), fCount - index);
-    fArrayManager.Finalize(fItems, index, Length(values));
+    fArrayManager.Move(fItems, index, index + count, fCount - index);
+    fArrayManager.Finalize(fItems, index, count);
   end;
 
   if not IsManaged{$IFDEF WEAKREF} and not HasWeakRef{$ENDIF} then
-    System.Move(values[0], fItems[index], Length(values) * SizeOf(T))
+    System.Move(values[0], fItems[index], count * SizeOf(T))
   else
     for i := Low(values) to High(values) do
       fItems[index + i] := values[i];
 
-  Inc(fCount, Length(values));
+  Inc(fCount, count);
   IncreaseVersion;
 
   for i := Low(values) to High(values) do
@@ -573,6 +578,8 @@ begin
 {$ENDIF}
 
     list := TList<T>(collection.AsObject);
+    if list.fCount = 0 then
+      Exit;
 
     EnsureCapacity(fCount + list.fCount);
     if index <> fCount then

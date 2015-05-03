@@ -123,6 +123,8 @@ type
     procedure TestEnumeratorReset_VersionMismatch;
 
     procedure TestRemoveAll;
+
+    procedure TestAddRange_EmptySource;
   end;
 
   TTestSortedList = class(TTestCase)
@@ -640,6 +642,14 @@ procedure TTestIntegerList.TearDown;
 begin
   inherited;
   SUT := nil;
+end;
+
+procedure TTestIntegerList.TestAddRange_EmptySource;
+var
+  list: IList<Integer>;
+begin
+  list := TCollections.CreateList<Integer>;
+  SUT.AddRange(list);
 end;
 
 procedure TTestIntegerList.TestArrayAccess;
