@@ -241,7 +241,7 @@ begin
       if Result then
       begin
         serviceType := componentModel.Services[serviceName];
-        Result := TType.IsAssignable(dependency.TypeInfo, serviceType);
+        Result := IsAssignableFrom(dependency.TypeInfo, serviceType);
       end;
     end;
   end;
