@@ -1010,21 +1010,10 @@ var
 begin
   // TODO: TValue conversion ?
   if TType.TryGetType(instance.ClassInfo, rttiType) then
-  begin
-    field := rttiType.GetField(name);
-    if Assigned(field) then
+    if rttiType.TryGetField(name, field) then
       field.SetValue(instance, value)
-    else
-    begin
-      prop := rttiType.GetProperty(name);
-      if Assigned(prop) then
-        prop.SetValue(instance, value);
-    end;
-  end;
-//    if rttiType.TryGetField(name, field) then
-//      field.SetValue(instance, value)
-//    else if rttiType.TryGetProperty(name, prop) then
-//      prop.SetValue(instance, value);
+    else if rttiType.TryGetProperty(name, prop) then
+      prop.SetValue(instance, value);
 end;
 
 class procedure TType.SetPropertyValue(const instance: TObject;
