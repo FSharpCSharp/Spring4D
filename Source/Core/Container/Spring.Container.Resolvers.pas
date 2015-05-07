@@ -278,7 +278,7 @@ begin
 
   if context.EnterResolution(componentModel, instance) then
   try
-    instance := componentModel.LifetimeManager.Resolve(context);
+    instance := componentModel.LifetimeManager.Resolve(context, componentModel);
   finally
     context.LeaveResolution(componentModel);
   end;

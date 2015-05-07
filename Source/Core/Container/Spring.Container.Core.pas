@@ -191,7 +191,8 @@ type
   /// </summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
-    function Resolve(const context: ICreationContext): TValue;
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue;
     procedure Release(const instance: TValue);
   end;
 

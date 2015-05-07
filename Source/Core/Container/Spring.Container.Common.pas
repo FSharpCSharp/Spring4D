@@ -419,6 +419,9 @@ type
     function AsTransient: IRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration;
 
+    // TODO: refactor
+    function AsCustom(const lifetimeManager: IInterface): IRegistration;
+
     function PerResolve: IRegistration;
 
     function AsDefault: IRegistration; overload;

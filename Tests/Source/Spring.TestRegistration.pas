@@ -214,6 +214,7 @@ begin
     TTestRegisterInterfaces.Suite,
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
+    TTestCustomLifetimeManager.Suite,
     TTestRefCounting.Suite,
     TTestDefaultResolve.Suite,
     TTestInjectionByValue.Suite,

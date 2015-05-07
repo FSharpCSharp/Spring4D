@@ -33,6 +33,7 @@ uses
   SysUtils,
   TypInfo,
   Spring,
+  Spring.Container,
   Spring.Container.Core,
   Spring.Container.LifetimeManager;
 
@@ -105,6 +106,16 @@ type
 
   end;
 
+  TTestCustomLifetimeManager = class(TTestCase)
+  private
+    fContainer: TContainer;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestRegistration;
+  end;
+
 implementation
 
 uses
@@ -152,8 +163,8 @@ var
   obj1, obj2: TObject;
   value: TValue;
 begin
-  obj1 := fLifetimeManager.Resolve(nil).AsObject;
-  obj2 := fLifetimeManager.Resolve(nil).AsObject;
+  obj1 := fLifetimeManager.Resolve(nil, fModel).AsObject;
+  obj2 := fLifetimeManager.Resolve(nil, fModel).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -189,8 +200,8 @@ procedure TTestTransientLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.Resolve(nil).AsObject;
-  obj2 := fLifetimeManager.Resolve(nil).AsObject;
+  obj1 := fLifetimeManager.Resolve(nil, fModel).AsObject;
+  obj2 := fLifetimeManager.Resolve(nil, fModel).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -289,7 +300,7 @@ begin
 {$IFNDEF AUTOREFCOUNT}
   TMockComponent.fFreed := False;
 {$ENDIF}
-  val := fLifetimeManager.Resolve(nil);
+  val := fLifetimeManager.Resolve(nil, fModel);
   obj := val.AsObject;
 {$IFDEF AUTOREFCOUNT}
   val := val.Empty; //Clear the TValue so that it doesn't keep holding reference count to obj
@@ -311,6 +322,53 @@ begin
   CheckEquals(1, obj.RefCount, 'invalid reference count');
   obj := nil;
 {$ENDIF}
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestCustomLifetimeManager'}
+
+type
+  TCustomLifetimeManager = class(TInterfacedObject, ILifetimeManager)
+  public
+    procedure Release(const instance: TValue);
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue;
+  end;
+
+procedure TCustomLifetimeManager.Release(const instance: TValue);
+begin
+end;
+
+function TCustomLifetimeManager.Resolve(const context: ICreationContext;
+  const model: TComponentModel): TValue;
+begin
+  Result := TActivator.CreateInstance(model.ComponentType.AsInstance);
+end;
+
+procedure TTestCustomLifetimeManager.SetUp;
+begin
+  fContainer := TContainer.Create;
+end;
+
+procedure TTestCustomLifetimeManager.TearDown;
+begin
+  fContainer.Free;
+end;
+
+procedure TTestCustomLifetimeManager.TestRegistration;
+var
+  obj: TMockObject;
+begin
+  fContainer.RegisterType<TMockObject>.AsCustom<TCustomLifetimeManager>;
+  fContainer.Build;
+  obj := fContainer.Resolve<TMockObject>;
+  try
+    CheckNotNull(obj);
+  finally
+    obj.Free;
+  end;
 end;
 
 {$ENDREGION}

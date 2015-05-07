@@ -132,6 +132,8 @@ type
     function AsTransient: IRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration;
 
+    function AsCustom(const lifetimeManager: IInterface): IRegistration;
+
     function PerResolve: IRegistration;
 
     function AsDefault: IRegistration; overload;
@@ -197,6 +199,8 @@ type
     function AsDefault: TRegistration<T>; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration<T>; overload;
     function AsDefault<TServiceType>: TRegistration<T>; overload;
+
+    function AsCustom<TLifetimeManagerType: class, constructor, ILifetimeManager>: TRegistration<T>;
 
 {$IFDEF DELPHIXE_UP}
     function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<T>; overload;
@@ -733,6 +737,13 @@ begin
   Result := Self;
 end;
 
+function TRegistration.AsCustom(
+  const lifetimeManager: IInterface): IRegistration;
+begin
+  fModel.LifetimeType := TLifetimeType.Custom;
+  fModel.LifetimeManager := lifetimeManager as ILifetimeManager;
+end;
+
 function TRegistration.AsDefault(serviceType: PTypeInfo): IRegistration;
 begin
   fKernel.Registry.RegisterDefault(fModel, serviceType);
@@ -926,6 +937,12 @@ end;
 function TRegistration<T>.AsDefault: TRegistration<T>;
 begin
   fRegistration.AsDefault;
+  Result := Self;
+end;
+
+function TRegistration<T>.AsCustom<TLifetimeManagerType>: TRegistration<T>;
+begin
+  fRegistration.AsCustom(TLifetimeManagerType.Create);
   Result := Self;
 end;
 
