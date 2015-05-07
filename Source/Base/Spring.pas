@@ -2650,8 +2650,11 @@ const
 
 function TValueHelper.Equals(const value: TValue): Boolean;
 begin
-  Result := Assigned(TypeInfo) and Assigned(value.TypeInfo)
-    and EqualsFunctions[Kind,value.Kind](Self, value);
+  if Assigned(TypeInfo) then
+    Result := Assigned(value.TypeInfo)
+      and EqualsFunctions[Kind,value.Kind](Self, value)
+  else
+    Result := value.IsEmpty;
 end;
 
 procedure TValueHelper.Free;
