@@ -164,47 +164,27 @@ begin
   end;
 end;
 
-
 class function TUtils.FromVariant(const value: Variant): TValue;
 var
-  bStream: TMemoryStream;
-  ptr: Pointer;
-  iDim: Integer;
-  convertedValue : Variant;
-  typeName : string;
+  stream: TMemoryStream;
+  p: Pointer;
+  i: Integer;
 begin
   if VarIsArray(value) then
   begin
-    //make stream from variant
-    bStream := TMemoryStream.Create;
-    iDim := VarArrayDimCount(value);
-    ptr := VarArrayLock(value);
+    // make stream from variant
+    stream := TMemoryStream.Create;
+    i := VarArrayDimCount(value);
+    p := VarArrayLock(value);
     try
-      bStream.Write(ptr^, VarArrayHighBound(value, iDim) + 1);
+      stream.Write(p^, VarArrayHighBound(value, i) + 1);
     finally
       VarArrayUnlock(value);
     end;
-    Result := bStream;
+    Result := stream;
   end
   else
-  begin
-    typeName := VarTypeAsText(VarType(value));
-    if SameText(typeName, 'SQLTimeStampVariantType') or
-       SameText(typeName, 'SQLTimeStampOffsetVariantType') then
-      convertedValue := Double(value)
-    else if SameText(typeName, 'FMTBcdVariantType') then
-    begin
-      {$IFDEF DELPHIXE6_UP}
-      convertedValue := Int64(value);
-      {$ELSE}
-      convertedValue := StrToInt64(VarToStr(value));
-      {$ENDIF}
-    end
-    else
-      convertedValue := value;
-
-    Result := TValue.FromVariant(convertedValue);
-  end;
+    Result := TValue.FromVariant(value);
 end;
 
 class function TUtils.GetResultsetFromVariant(

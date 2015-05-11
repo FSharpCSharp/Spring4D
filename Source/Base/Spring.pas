@@ -2745,7 +2745,8 @@ begin
       begin
         case CustomVariantTypes[i].VType of
           varDouble: Result := Double(Value);
-          varInt64: Result := StrToInt64(VarToStr(Value)); // see QC#117696
+          varInt64: Result := {$IFDEF DELPHIXE6_UP}Int64(Value);
+            {$ELSE}StrToInt64(VarToStr(Value));{$ENDIF} // see QC#117696
         else
           raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
         end;
