@@ -102,6 +102,8 @@ type
     property QueryText: string read fQueryText;
   end;
 
+  TransientAttribute = class(TCustomAttribute);
+
   TORMAttribute = class(TCustomAttribute)
   private
     fMemberKind: TMemberKind;

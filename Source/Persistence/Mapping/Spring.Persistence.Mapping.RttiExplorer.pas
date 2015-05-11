@@ -392,11 +392,13 @@ begin
 
   rttiType := fRttiCache.GetType(entity.ClassType);
   for field in rttiType.GetFields do
-    if field.HasCustomAttribute(relationAttributeClass) then
+    if field.HasCustomAttribute(relationAttributeClass) and
+       (not field.HasCustomAttribute(TransientAttribute)) then
       Result.AddRange(GetSubEntityFromMemberDeep(entity, field));
 
   for prop in rttiType.GetProperties do
-    if prop.HasCustomAttribute(relationAttributeClass) then
+    if prop.HasCustomAttribute(relationAttributeClass) and
+       (not prop.HasCustomAttribute(TransientAttribute)) then
       Result.AddRange(GetSubEntityFromMemberDeep(entity, prop));
 end;
 

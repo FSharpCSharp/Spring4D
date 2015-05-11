@@ -510,12 +510,7 @@ var
   relation: TObject;
   entityWrapper, foreignEntityWrapper: IEntityWrapper;
 begin
-  relations := TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute);
-  for relation in relations do
-  begin
-    Save(relation);
-  end;
-
+  TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute).ForEach(Save);
   Save(entity);
 
   relations := TRttiExplorer.GetRelationsOf(entity, OneToManyAttribute);

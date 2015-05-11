@@ -135,7 +135,8 @@ type
     FCustomer_Payment_Method_Id: Nullable<Integer>;
     FCustomer: TCustomer;
   public
-    constructor Create;
+    constructor Create; overload;
+    constructor Create(orderStatusCode: Integer); overload;
     destructor Destroy; override;
 
     [Column]
@@ -454,6 +455,12 @@ constructor TCustomer_Orders.Create;
 begin
   inherited Create;
   FCustomer := nil;
+end;
+
+constructor TCustomer_Orders.Create(orderStatusCode: Integer);
+begin
+  Create;
+  FOrder_Status_Code := orderStatusCode;
 end;
 
 destructor TCustomer_Orders.Destroy;
