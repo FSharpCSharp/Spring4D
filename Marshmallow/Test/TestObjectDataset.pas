@@ -1264,7 +1264,7 @@ begin
   LCustomers := CreateCustomersList(1000);
   LCustomers.First.Age := 2;
   LCustomers.First.Name := 'Bob';
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   LView := TfrmObjectDatasetTest.Create(nil);
   LClonedDataset := TObjectDataset.Create(nil);
