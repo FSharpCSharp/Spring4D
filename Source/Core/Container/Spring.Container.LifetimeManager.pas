@@ -137,7 +137,7 @@ begin
   case instance.Kind of
     tkClass:
     begin
-      Result := GetInterface(instance.AsObject, IInitializable, intf);
+      Result := GetInterface(instance.AsObject, IID, intf);
       Result := Result or (GetInterface(instance.AsObject, IInterface, localIntf)
         and (IInterface(localIntf).QueryInterface(IID, intf) = S_OK));
     end;

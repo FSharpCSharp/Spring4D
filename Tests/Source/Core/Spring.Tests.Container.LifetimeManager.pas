@@ -63,7 +63,6 @@ type
     function _Release: Integer; stdcall;
   end;
 
-//  [Ignore]
   TLifetimeManagerTestCase = class abstract(TTestCase)
   protected
     fContext: TRttiContext;
