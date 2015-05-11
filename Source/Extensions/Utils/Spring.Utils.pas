@@ -600,7 +600,7 @@ type
     ///   specified string with the string equivalent of the value of the
     ///   variable, then returns the resulting string.
     /// </summary>
-    class function ExpandEnvironmentVariables(const variable: string): string; static; {TODO -o##jwp -cEnhance : Implement this in a cross platform way. }
+    class function ExpandEnvironmentVariables(const value: string): string; static; {TODO -o##jwp -cEnhance : Implement this in a cross platform way. }
 {$ENDIF MSWINDOWS}
 
     class property ApplicationPath: string read fApplicationPath;
@@ -2142,15 +2142,17 @@ end;
 
 {$IFDEF MSWINDOWS}
 class function TEnvironment.ExpandEnvironmentVariables(
-  const variable: string): string;
+  const value: string): string;
 var
   len: Cardinal;
 begin
-  len := MAX_PATH;
+  len := ExpandEnvironmentStrings(PChar(value), nil, 0);
   SetLength(Result, len);
-  len := Windows.ExpandEnvironmentStrings(PChar(variable), PChar(Result), len);
-  Win32Check(len > 0);
-  SetLength(Result, len - 1);
+  len := ExpandEnvironmentStrings(PChar(value), PChar(Result), len);
+  if len <> 0 then
+    SetLength(Result, len - 1)
+  else
+    Result := value;
 end;
 {$ENDIF MSWINDOWS}
 
