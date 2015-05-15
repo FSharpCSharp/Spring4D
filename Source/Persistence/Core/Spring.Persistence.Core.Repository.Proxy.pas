@@ -242,7 +242,7 @@ begin
       end;
       tkInterface:
       begin
-        if TUtils.IsPageType(Method.ReturnType.Handle) then
+        if Method.ReturnType.IsGenericTypeOf<IDBPage<TObject>> then
         begin
           // last two arguments should be page and pagesize
           LArgs := GetPageArgs(Args, LPage, LPageSize);

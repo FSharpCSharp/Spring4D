@@ -44,7 +44,6 @@ type
 
     class function AsVariant(const value: TValue): Variant;
     class function FromVariant(const value: Variant): TValue;
-    class function GetResultsetFromVariant(const value: Variant): IDBResultset;
 
     class function TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean;
 
@@ -52,16 +51,6 @@ type
     class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean;
     class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
     class function TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean;
-
-    class function IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
-    class function IsEnumerable(ATypeInfo: PTypeInfo; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
-    class function IsEnumerable(ATypeInfo: PTypeInfo): Boolean; overload;
-    class function IsEnumerable(value: TValue; out objectList: IObjectList): Boolean; overload;
-    class function IsPageType(typeInfo: PTypeInfo): Boolean;
-
-    class function SameObject(const left, right: TObject): Boolean;
-    class function SamePicture(const left, right: TPicture): Boolean;
-    class function SameStream(const left, right: TStream): Boolean;
   end;
 
 implementation
@@ -187,15 +176,6 @@ begin
     Result := TValue.FromVariant(value);
 end;
 
-class function TUtils.GetResultsetFromVariant(
-  const value: Variant): IDBResultset;
-var
-  LIntf: IInterface;
-begin
-  LIntf := value;
-  Result := LIntf as IDBResultset;
-end;
-
 class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
 var
   lazyType: TRttiType;
@@ -216,39 +196,6 @@ begin
   end;
 end;
 
-class function TUtils.IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean;
-begin
-  Result := IsEnumerable(AObject.ClassInfo, AEnumeratorMethod);
-end;
-
-class function TUtils.IsEnumerable(ATypeInfo: PTypeInfo;
-  out AEnumeratorMethod: TRttiMethod): Boolean;
-var
-  LCtx: TRttiContext;
-begin
-  AEnumeratorMethod := LCtx.GetType(ATypeInfo).GetMethod('GetEnumerator');
-  Result := Assigned(AEnumeratorMethod);
-end;
-
-class function TUtils.IsEnumerable(ATypeInfo: PTypeInfo): Boolean;
-var
-  LEnumeratorMethod: TRttiMethod;
-begin
-  Result := IsEnumerable(ATypeInfo, LEnumeratorMethod);
-end;
-
-class function TUtils.IsEnumerable(value: TValue; out objectList: IObjectList): Boolean;
-begin
-  Result := value.IsInterface;
-  if Result then
-    Result := Supports(value.AsInterface, IObjectList, objectList);
-end;
-
-class function TUtils.IsPageType(typeInfo: PTypeInfo): Boolean;
-begin
-  Result := (typeInfo.Kind = tkInterface) and (PosEx('IDBPage<', typeInfo.TypeName) = 1);
-end;
-
 class function TUtils.LoadFromStreamToVariant(const stream: TStream): OleVariant;
 var
   lock: Pointer;
@@ -260,62 +207,6 @@ begin
   finally
     VarArrayUnlock(Result);
   end;
-end;
-
-class function TUtils.SameObject(const left, right: TObject): Boolean;
-begin
-  Result := left = right;
-  if Result then
-    Exit;
-
-  Result := Assigned(left) and Assigned(right);
-  if not Result then
-    Exit;
-
-  if (left is TPicture) and (right is TPicture) then
-    Result := SamePicture(TPicture(left), TPicture(right))
-  else if (left is TStream) and (right is TStream) then
-    Result := SameStream(TStream(left), TStream(right));
-end;
-
-class function TUtils.SamePicture(const left, right: TPicture): Boolean;
-begin
-  Result := left = right;
-  if Result then
-    Exit;
-
-  Result := left.Graphic = right.Graphic;
-  if Result then
-    Exit;
-
-  Result := Assigned(left.Graphic) and Assigned(right.Graphic);
-  if Result then
-    Result := left.Graphic.Equals(right.Graphic);
-end;
-
-class function TUtils.SameStream(const left, right: TStream): Boolean;
-const
-  Block_Size = 4096;
-var
-  Buffer_1: array[0..Block_Size-1] of byte;
-  Buffer_2: array[0..Block_Size-1] of byte;
-  Buffer_Length: Integer;
-begin
-  Result := False;
-
-  if left.Size <> right.Size then
-    Exit;
-
-  while left.Position < left.Size do
-  begin
-    Buffer_Length := left.Read(Buffer_1, Block_Size);
-    right.Read(Buffer_2, Block_Size);
-
-    if not CompareMem(@Buffer_1, @Buffer_2, Buffer_Length) then
-      Exit;
-  end;
-
-  Result := True;
 end;
 
 {$IFNDEF FMX}

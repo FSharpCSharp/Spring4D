@@ -511,7 +511,7 @@ begin
   if value.IsEmpty then
     Exit;
   
-  if TUtils.IsEnumerable(value, objects) then
+  if value.IsInterface and Supports(value.AsInterface, IObjectList, objects) then
   begin
     for current in objects do
       Result.Add(current);

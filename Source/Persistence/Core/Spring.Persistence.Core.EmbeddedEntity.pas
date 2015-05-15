@@ -237,13 +237,13 @@ end;
 
 function TEmbeddedArrayEntity.GetValue(const fieldName: string): Variant;
 var
-  LResultset: IDBResultSet;
+  results: IDBResultSet;
 begin
   Result := fValues[fCurrent];
   if VarType(Result) = varUnknown then
   begin
-    LResultset := TUtils.GetResultsetFromVariant(Result);
-    Result := LResultset.GetFieldValue(fieldName);
+    results := IInterface(Result) as IDBResultSet;
+    Result := results.GetFieldValue(fieldName);
   end;
 end;
 

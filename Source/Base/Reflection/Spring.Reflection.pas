@@ -329,6 +329,10 @@ type
     /// </summary>
     function GetGenericTypeDefinition: string;
 
+    function HasField(const name: string): Boolean;
+    function HasMethod(const name: string): Boolean;
+    function HasProperty(const name: string): Boolean;
+
     /// <summary>
     ///   Determines whether an instance of the current TRttiType can be
     ///   assigned from an instance of the specified TRttiType.
@@ -338,6 +342,15 @@ type
     /// </param>
     function IsAssignableFrom(const rttiType: TRttiType): Boolean;
 
+    /// <summary>
+    ///   Determines whether the current type is of the specified generic type.
+    /// </summary>
+    /// <param name="genericType">
+    ///   The generic type definition of the type to check for
+    /// </param>
+    function IsGenericTypeOf(const genericType: string): Boolean; overload;
+    function IsGenericTypeOf(genericType: PTypeInfo): Boolean; overload;
+    function IsGenericTypeOf<T>: Boolean; overload; inline;
     function IsType<T>: Boolean; overload;
     function IsType(typeInfo: PTypeInfo): Boolean; overload; inline;
 
@@ -1324,6 +1337,21 @@ begin
   Result := InternalGetProperties;
 end;
 
+function TRttiTypeHelper.HasField(const name: string): Boolean;
+begin
+  Result := Assigned(GetField(name));
+end;
+
+function TRttiTypeHelper.HasMethod(const name: string): Boolean;
+begin
+  Result := Assigned(GetMethod(name));
+end;
+
+function TRttiTypeHelper.HasProperty(const name: string): Boolean;
+begin
+  Result := Assigned(GetProperty(name));
+end;
+
 function TRttiTypeHelper.GetFields: IEnumerable<TRttiField>;
 begin
   Result := InternalGetFields;
@@ -1535,6 +1563,35 @@ end;
 function TRttiTypeHelper.IsAssignableFrom(const rttiType: TRttiType): Boolean;
 begin
   Result := Spring.IsAssignableFrom(Handle, rttiType.Handle);
+end;
+
+function TRttiTypeHelper.IsGenericTypeOf(genericType: PTypeInfo): Boolean;
+var
+  t: TRttiType;
+begin
+  t := TType.GetType(genericType);
+  Result := Assigned(t) and t.IsGenericType
+    and IsGenericTypeOf(t.GetGenericTypeDefinition);
+end;
+
+function TRttiTypeHelper.IsGenericTypeOf<T>: Boolean;
+begin
+  Result := IsGenericTypeOf(TypeInfo(T));
+end;
+
+function TRttiTypeHelper.IsGenericTypeOf(const genericType: string): Boolean;
+var
+  baseType: TRttiType;
+begin
+  if not IsGenericType then
+    Exit(False);
+  if SameText(GetGenericTypeDefinition, genericType)  then
+    Result := True
+  else
+  begin
+    baseType := Self.BaseType;
+    Result := Assigned(baseType) and baseType.IsGenericTypeOf(genericType);
+  end;
 end;
 
 function TRttiTypeHelper.IsType(typeInfo: PTypeInfo): Boolean;

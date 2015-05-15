@@ -109,7 +109,7 @@ procedure TAbstractCommandExecutor.FillDbTableColumns(const tableName: string;
 var
   sqlStatement: string;
   statement: IDBStatement;
-  results: IDBResultset;
+  results: IDBResultSet;
   i: Integer;
 begin
   sqlStatement := Generator.GetTableColumns(tableName);
@@ -134,7 +134,7 @@ var
   sqlStatement: string;
   useTableExists: Boolean;
   statement: IDBStatement;
-  results: IDBResultset;
+  results: IDBResultSet;
 begin
   sqlStatement := Generator.GetSQLTableExists(tableName);
   useTableExists := sqlStatement <> '';

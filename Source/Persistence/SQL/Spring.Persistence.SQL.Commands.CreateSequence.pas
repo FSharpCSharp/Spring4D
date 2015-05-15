@@ -106,7 +106,7 @@ function TCreateSequenceExecutor.SequenceExists: Boolean;
 var
   sqlStatement: string;
   statement: IDBStatement;
-  results: IDBResultset;
+  results: IDBResultSet;
 begin
   Result := False;
   sqlStatement := Generator.GetSQLSequenceCount(fSequence.Sequence.SequenceName);

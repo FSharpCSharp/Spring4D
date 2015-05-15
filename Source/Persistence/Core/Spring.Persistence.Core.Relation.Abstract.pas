@@ -36,7 +36,7 @@ type
   TAbstractRelation = class
   protected
     procedure SetAssociation(const attribute: TORMAttribute;
-      const entity: TObject; const resultSet: IDBResultset); virtual; abstract;
+      const entity: TObject; const resultSet: IDBResultSet); virtual; abstract;
   end;
 
 implementation

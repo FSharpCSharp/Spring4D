@@ -63,8 +63,8 @@ type
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
 
-    function Select: IDBResultset;
-    function SelectAll(entityClass: TClass): IDBResultset;
+    function Select: IDBResultSet;
+    function SelectAll(entityClass: TClass): IDBResultSet;
   end;
 
 implementation
@@ -140,7 +140,7 @@ begin
   Result := fCommand;
 end;
 
-function TSelectExecutor.Select: IDBResultset;
+function TSelectExecutor.Select: IDBResultSet;
 var
   statement: IDBStatement;
 begin

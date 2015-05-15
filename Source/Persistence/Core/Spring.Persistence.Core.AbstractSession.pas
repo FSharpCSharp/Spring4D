@@ -194,14 +194,14 @@ end;
 function TAbstractSession.ColumnFromVariant(const value: Variant;
   const column: TColumnData; const entity: TObject): TValue;
 var
-  results: IDBResultset;
+  results: IDBResultSet;
   list, convertedValue: TValue;
 begin
   case VarType(value) of
     varUnknown:
     begin
-      results := TUtils.GetResultsetFromVariant(value);
-      if TUtils.IsEnumerable(column.TypeInfo) then
+      results := IInterface(value) as IDBResultSet;
+      if TType.GetType(column.TypeInfo).HasMethod('GetEnumerator') then
       begin
         list := TRttiExplorer.GetMemberValueDeep(entity, column.MemberName);
         if TRttiExplorer.GetLastGenericArgumentType(column.TypeInfo).IsInstance then
@@ -365,7 +365,7 @@ begin
     Exit;
 
   results := DoGetLazy(id, entity, column, interfaceType);
-  if not TUtils.IsEnumerable(interfaceType) then
+  if not TType.GetType(interfaceType).HasMethod('GetEnumerator') then
     raise EORMUnsupportedType.CreateFmt('Unsupported ORM lazy type: %s', [interfaceType.TypeName]);
 
   Result := TCollections.CreateObjectList<TObject>(True);
