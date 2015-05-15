@@ -79,6 +79,7 @@
 			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas"/>
 			<DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Serializers.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.MethodIntercept.pas"/>
+			<DCCReference Include="..\..\Source\Base\Patches\Spring.Patches.GetInvokeInfo.pas"/>
 			<DCCReference Include="..\..\Source\Base\Patches\Spring.Patches.QC93646.pas"/>
 			<DCCReference Include="..\..\Source\Base\Patches\Spring.Patches.QC98671.pas"/>
 			<DCCReference Include="..\..\Source\Base\Patches\Spring.Patches.QC107219.pas"/>

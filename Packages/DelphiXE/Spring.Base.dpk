@@ -63,6 +63,7 @@ contains
   Spring.Logging.ResourceStrings in '..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas',
   Spring.Logging.Serializers in '..\..\Source\Base\Logging\Spring.Logging.Serializers.pas',
   Spring.MethodIntercept in '..\..\Source\Base\Spring.MethodIntercept.pas',
+  Spring.Patches.GetInvokeInfo in '..\..\Source\Base\Patches\Spring.Patches.GetInvokeInfo.pas',
   Spring.Patches.QC93646 in '..\..\Source\Base\Patches\Spring.Patches.QC93646.pas',
   Spring.Patches.QC98671 in '..\..\Source\Base\Patches\Spring.Patches.QC98671.pas',
   Spring.Patches.QC107219 in '..\..\Source\Base\Patches\Spring.Patches.QC107219.pas',
