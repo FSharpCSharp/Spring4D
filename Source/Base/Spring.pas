@@ -1874,7 +1874,9 @@ uses
 {$ENDIF}
   Spring.Events,
   Spring.Reflection.Core,
+{$IFDEF DELPHIXE_UP}
   Spring.Reflection.ValueConverters,
+{$ENDIF}
   Spring.ResourceStrings;
 
 var
@@ -3001,9 +3003,11 @@ begin
     end;
     tkClass:
     begin
+{$IFDEF DELPHIXE_UP}
       if TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value) then
         Result := value.AsVariant
       else
+{$ENDIF}
       begin
         obj := AsObject;
 

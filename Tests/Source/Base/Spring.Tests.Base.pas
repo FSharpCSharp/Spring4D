@@ -68,7 +68,9 @@ type
     fDateTime: Nullable<TDateTime>;
   published
     procedure TestFromVariantSQLTimestamp;
+{$IFDEF DELPHIXE_UP}
     procedure TestFromVariantSQLTimestampOffset;
+{$ENDIF}
   end;
 
   TTestNullableInt64 = class(TTestCase)
@@ -2343,6 +2345,7 @@ begin
   CheckEquals(dt, fDateTime);
 end;
 
+{$IFDEF DELPHIXE_UP}
 procedure TTestNullableDateTime.TestFromVariantSQLTimestampOffset;
 var
   dt: TDateTime;
@@ -2359,6 +2362,7 @@ begin
   fDateTime := v;
   CheckEquals(dt, fDateTime);
 end;
+{$ENDIF}
 
 {$ENDREGION}
 

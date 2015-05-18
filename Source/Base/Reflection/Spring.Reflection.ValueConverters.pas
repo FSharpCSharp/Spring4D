@@ -761,7 +761,6 @@ uses
   StrUtils,
   SysUtils,
   Spring,
-  Spring.Reflection,
   Spring.ResourceStrings,
   Spring.SystemUtils;
 
@@ -1376,11 +1375,8 @@ function TStringToDateTimeConverter.DoConvertTo(const value: TValue;
 var
   format: string;
 begin
-  if not parameter.IsEmpty and
-    parameter.TryAsType<string>(format) then
-  begin
-    Result := TValue.From<TDateTime>(ConvertStrToDateTime(value.AsString, format));
-  end
+  if not parameter.IsEmpty and parameter.TryAsType<string>(format) then
+    Result := TValue.From<TDateTime>(ConvertStrToDateTime(value.AsString, format))
   else
     Result := TValue.From<TDateTime>(StrToDateTime(value.AsString));
 end;
@@ -1622,7 +1618,7 @@ function TInterfaceToInterfaceConverter.DoConvertTo(const value: TValue;
 var
   intf: IInterface;
 begin
-  TryGetInterface(value, TType.GetType(targetTypeInfo).AsInterface.GUID, intf);
+  TryGetInterface(value, GetTypeData(targetTypeInfo).Guid, intf);
   TValue.Make(@intf, targetTypeInfo, Result);
 end;
 
