@@ -121,8 +121,6 @@ type
   /// </summary>
   TValueConverter = class abstract(TInterfacedObject, IValueConverter)
   private
-    class var fDefaultConverter: IValueConverter;
-
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo): TValue; overload;
     function ConvertTo(const value: TValue;
@@ -135,72 +133,15 @@ type
       const targetTypeInfo: PTypeInfo;
       out targetValue: TValue;
       const parameter: TValue): Boolean; overload;
-    class function GetDefault: IValueConverter; static;
   protected
     function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; virtual; abstract;
   public
-    class constructor Create;
-    constructor Create; virtual;
-
-    class property Default: IValueConverter read GetDefault;
+    class function Default: IValueConverter; static;
   end;
 
   TConverterClass = class of TValueConverter;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TDefaultValueConverter'}
-
-  /// <summary>
-  ///   Provides default converter shared instance, TDefaultValueConverter is
-  ///   the master in the process of conversion
-  /// </summary>
-  /// <remarks>
-  ///   <para>
-  ///     There is three steps of doing so
-  ///   </para>
-  ///   <list type="number">
-  ///     <item>
-  ///       Find/lock "global" registry
-  ///     </item>
-  ///     <item>
-  ///       Use TValue.TryCast
-  ///     </item>
-  ///     <item>
-  ///       Use RTTI exploring and select apropriate converter.
-  ///     </item>
-  ///   </list>
-  ///   <para>
-  ///     There are four different internall converter types that can be
-  ///     selected to convert:
-  ///   </para>
-  ///   <list type="bullet">
-  ///     <item>
-  ///       TNullable&lt;T&gt; and T
-  ///     </item>
-  ///     <item>
-  ///       Enumeration and Integer/string
-  ///     </item>
-  ///     <item>
-  ///       TColor and Integer/string
-  ///     </item>
-  ///     <item>
-  ///       Integer and string
-  ///     </item>
-  ///     <item>
-  ///       Enumeration and Integer/string
-  ///     </item>
-  ///   </list>
-  /// </remarks>
-  TDefaultValueConverter = class(TValueConverter)
-  protected
-    function DoConvertTo(const value: TValue;
-      const targetTypeInfo: PTypeInfo;
-      const parameter: TValue): TValue; override;
-  end;
 
   {$ENDREGION}
 
@@ -759,43 +700,47 @@ type
         TargetTypeKinds: TTypeKinds;
       end;
 
-      IConverterPackage = interface
-        ['{8388B821-13EC-4CA9-95A1-88D0E89FC46B}']
-        function GetInstance: IValueConverter;
-
-        property Instance: IValueConverter read GetInstance;
+      TTypeMapping<TSource,TTarget> = record
+        SourceType: TSource;
+        TargetType: TTarget;
       end;
 
-      TConverterPackage = class(TInterfacedObject, IConverterPackage)
-      strict private
-        fConverterClass: TConverterClass;
-        fConverter: IValueConverter;
-
-        function GetInstance: IValueConverter;
-      public
-        constructor Create(classType: TConverterClass);
-        property Instance: IValueConverter read GetInstance;
-      end;
-    class var fTypeInfoToTypeInfoRegistry: TDictionary<TConvertedTypeInfo, IConverterPackage>;
-    class var fTypeInfoToTypeKindsRegistry: TDictionary<TConvertedTypeInfo, IConverterPackage>;
-    class var fTypeKindsToTypeInfoRegistry: TDictionary<TConvertedTypeInfo, IConverterPackage>;
-    class var fTypeKindsToTypeKindsRegistry: TDictionary<TConvertedTypeInfo, IConverterPackage>;
+    class var fTypeInfoToTypeInfoRegistry: TDictionary<TTypeMapping<PTypeInfo,PTypeInfo>, IValueConverter>;
+    class var fTypeInfoToTypeKindsRegistry: TDictionary<TTypeMapping<PTypeInfo,TTypeKind>, IValueConverter>;
+    class var fTypeKindsToTypeInfoRegistry: TDictionary<TTypeMapping<TTypeKind,PTypeInfo>, IValueConverter>;
+    class var fTypeKindsToTypeKindsRegistry: TDictionary<TTypeMapping<TTypeKind,TTypeKind>, IValueConverter>;
   public
     class constructor Create;
     class destructor Destroy;
-    class procedure RegisterConverter(const sourceTypeInfo, targetTypeInfo: PTypeInfo;
-      converterClass: TConverterClass); overload;
-    class procedure RegisterConverter(const sourceTypeKinds, targetTypeKinds: TTypeKinds;
-      converterClass: TConverterClass); overload;
-    class procedure RegisterConverter(const sourceTypeKinds: TTypeKinds;
-      targetTypeInfo: PTypeInfo; converterClass: TConverterClass); overload;
-    class procedure RegisterConverter(const sourceTypeInfo: PTypeInfo;
-      targetTypeKinds: TTypeKinds; converterClass: TConverterClass); overload;
 
-    class function CreateConverter(const sourceTypeInfo,
-      targetTypeInfo: PTypeInfo): IValueConverter; deprecated 'Use GetConverter instead.';
-    class function GetConverter(const sourceTypeInfo,
-      targetTypeInfo: PTypeInfo): IValueConverter;
+    class procedure RegisterConverter(
+      sourceTypeInfo, targetTypeInfo: PTypeInfo;
+      converterClass: TConverterClass); overload; static;
+    class procedure RegisterConverter(
+      sourceTypeKinds, targetTypeKinds: TTypeKinds;
+      converterClass: TConverterClass); overload; static;
+    class procedure RegisterConverter(
+      sourceTypeKinds: TTypeKinds; targetTypeInfo: PTypeInfo;
+      converterClass: TConverterClass); overload; static;
+    class procedure RegisterConverter(
+      sourceTypeInfo: PTypeInfo; targetTypeKinds: TTypeKinds;
+      converterClass: TConverterClass); overload; static;
+
+    class procedure RegisterConverter(
+      sourceTypeInfo, targetTypeInfo: PTypeInfo;
+      const converter: IValueConverter); overload; static;
+    class procedure RegisterConverter(
+      sourceTypeKinds, targetTypeKinds: TTypeKinds;
+      const converter: IValueConverter); overload; static;
+    class procedure RegisterConverter(
+      sourceTypeKinds: TTypeKinds; targetTypeInfo: PTypeInfo;
+      const converter: IValueConverter); overload; static;
+    class procedure RegisterConverter(
+      sourceTypeInfo: PTypeInfo; targetTypeKinds: TTypeKinds;
+      const converter: IValueConverter); overload; static;
+
+    class function GetConverter(
+      sourceTypeInfo, targetTypeInfo: PTypeInfo): IValueConverter; static;
   end;
 
   {$ENDREGION}
@@ -830,72 +775,33 @@ begin
 end;
 
 
-{$REGION 'TValueConverter'}
+{$REGION 'DefaultConverter'}
 
-class constructor TValueConverter.Create;
+function NopAddref(inst: Pointer): Integer; stdcall;
 begin
-  inherited;
-  fDefaultConverter := TDefaultValueConverter.Create;
+  Result := -1;
 end;
 
-constructor TValueConverter.Create;
+function NopRelease(inst: Pointer): Integer; stdcall;
 begin
-  inherited;
+  Result := -1;
 end;
 
-class function TValueConverter.GetDefault: IValueConverter;
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
 begin
-  Result := fDefaultConverter;
+  Result := E_NOINTERFACE;
 end;
 
-function TValueConverter.ConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo): TValue;
-begin
-  Result := ConvertTo(value, targetTypeInfo, nil);
-end;
-
-function TValueConverter.ConvertTo(const value: TValue;
+function ConvertToParam(Inst: Pointer; const value: TValue;
   const targetTypeInfo: PTypeInfo;
   const parameter: TValue): TValue;
-begin
-  Guard.CheckNotNull(value.TypeInfo, 'value.TypeInfo');
-  Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
-  try
-    Result := DoConvertTo(value, targetTypeInfo, parameter);
-  except
-    Exception.RaiseOuterException(Exception.CreateResFmt(@SCouldNotConvertValue,
-      [value.TypeInfo.TypeName, targetTypeInfo.TypeName]));
-  end;
-  if Result.IsEmpty then
+
+  procedure RaiseException;
+  begin
     raise Exception.CreateResFmt(@SCouldNotConvertValue,
       [value.TypeInfo.TypeName, targetTypeInfo.TypeName]);
-end;
-
-function TValueConverter.TryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
-begin
-  Result := TryConvertTo(value, targetTypeInfo, targetValue, nil);
-end;
-
-function TValueConverter.TryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
-begin
-  Result := True;
-  try
-    targetValue := DoConvertTo(value, targetTypeInfo, parameter);
-  except
-    Result := False;
   end;
-end;
 
-{$ENDREGION}
-
-
-{$REGION 'TDefaultValueConverter'}
-
-function TDefaultValueConverter.DoConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   converter: IValueConverter;
 begin
@@ -906,8 +812,94 @@ begin
   begin
     // prevent object to Variant cast
     if (value.Kind = tkClass) and (targetTypeInfo.Kind = tkVariant) then
-      Abort;
+      RaiseException;
     Result := value.Cast(targetTypeInfo);
+  end;
+end;
+
+function ConvertTo(Inst: Pointer; const value: TValue;
+  const targetTypeInfo: PTypeInfo): TValue;
+begin
+  Result := ConvertToParam(Inst, value, targetTypeInfo, EmptyValue);
+end;
+
+function TryConvertToParam(Inst: Pointer; const value: TValue;
+  const targetTypeInfo: PTypeInfo;
+  out targetValue: TValue;
+  const parameter: TValue): Boolean;
+begin
+  try
+    targetValue := ConvertToParam(Inst, value, targetTypeInfo, parameter);
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+function TryConvertTo(Inst: Pointer; const value: TValue;
+  const targetTypeInfo: PTypeInfo;
+  out targetValue: TValue): Boolean;
+begin
+  Result := TryConvertToParam(Inst, value, targetTypeInfo, targetValue, EmptyValue);
+end;
+
+const
+  DefaultConverter_Vtable: array[0..6] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @ConvertTo,
+    @ConvertToParam,
+    @TryConvertTo,
+    @TryConvertToParam
+  );
+
+  DefaultConverter_Instance: Pointer = @DefaultConverter_Vtable;
+
+{$ENDREGION}
+
+
+{$REGION 'TValueConverter'}
+
+class function TValueConverter.Default: IValueConverter;
+begin
+  Pointer(Result) := @DefaultConverter_Instance;
+end;
+
+function TValueConverter.ConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo): TValue;
+begin
+  Result := DoConvertTo(value, targetTypeInfo, EmptyValue);
+end;
+
+function TValueConverter.ConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo;
+  const parameter: TValue): TValue;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(value.TypeInfo, 'value.TypeInfo');
+  Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+{$ENDIF}
+
+  Result := DoConvertTo(value, targetTypeInfo, parameter);
+end;
+
+function TValueConverter.TryConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+begin
+  Result := TryConvertTo(value, targetTypeInfo, targetValue, EmptyValue);
+end;
+
+function TValueConverter.TryConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
+  const parameter: TValue): Boolean;
+begin
+  try
+    targetValue := DoConvertTo(value, targetTypeInfo, parameter);
+    Result := True;
+  except
+    Result := False;
   end;
 end;
 
@@ -1641,10 +1633,10 @@ end;
 
 class constructor TValueConverterFactory.Create;
 begin
-  fTypeInfoToTypeInfoRegistry := TDictionary<TConvertedTypeInfo, IConverterPackage>.Create;
-  fTypeInfoToTypeKindsRegistry := TDictionary<TConvertedTypeInfo, IConverterPackage>.Create;
-  fTypeKindsToTypeInfoRegistry := TDictionary<TConvertedTypeInfo, IConverterPackage>.Create;
-  fTypeKindsToTypeKindsRegistry := TDictionary<TConvertedTypeInfo, IConverterPackage>.Create;
+  fTypeInfoToTypeInfoRegistry := TDictionary<TTypeMapping<PTypeInfo,PTypeInfo>, IValueConverter>.Create;
+  fTypeInfoToTypeKindsRegistry := TDictionary<TTypeMapping<PTypeInfo,TTypeKind>, IValueConverter>.Create;
+  fTypeKindsToTypeInfoRegistry := TDictionary<TTypeMapping<TTypeKind,PTypeInfo>, IValueConverter>.Create;
+  fTypeKindsToTypeKindsRegistry := TDictionary<TTypeMapping<TTypeKind,TTypeKind>, IValueConverter>.Create;
 
   RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
     TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
@@ -1827,70 +1819,65 @@ begin
   fTypeKindsToTypeKindsRegistry.Free;
 end;
 
-class function TValueConverterFactory.GetConverter(const sourceTypeInfo,
-  targetTypeInfo: PTypeInfo): IValueConverter;
+class function TValueConverterFactory.GetConverter(
+  sourceTypeInfo, targetTypeInfo: PTypeInfo): IValueConverter;
 var
-  typeInfoPair: TPair<TConvertedTypeInfo, IConverterPackage>;
+  typeToTypeMapping: TTypeMapping<PTypeInfo,PTypeInfo>;
+  typeToKindMapping: TTypeMapping<PTypeInfo,TTypeKind>;
+  kindToTypeMapping: TTypeMapping<TTypeKind,PTypeInfo>;
+  kindToKindMapping: TTypeMapping<TTypeKind,TTypeKind>;
   sourceTypeData: PTypeData;
-  minDepth, depth: Integer;
   cls: TClass;
   converter: IValueConverter;
 begin
   System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
-    for typeInfoPair in fTypeInfoToTypeInfoRegistry do
-    begin
-      if SameTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
-        SameTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
-      begin
-        fTypeInfoToTypeInfoRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
-        Exit(typeInfoPair.Value.Instance);
-      end;
-    end;
+    typeToTypeMapping.SourceType := sourceTypeInfo;
+    typeToTypeMapping.TargetType := targetTypeInfo;
+    if fTypeInfoToTypeInfoRegistry.TryGetValue(typeToTypeMapping, converter) then
+      Exit(converter);
   finally
     System.MonitorExit(fTypeInfoToTypeInfoRegistry);
   end;
 
   System.MonitorEnter(fTypeInfoToTypeKindsRegistry);
   try
-    for typeInfoPair in fTypeInfoToTypeKindsRegistry do
-    begin
-      if SameTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
-        (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds) then
-      begin
-        fTypeInfoToTypeKindsRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
-        Exit(typeInfoPair.Value.Instance);
-      end;
-    end;
+    typeToKindMapping := Default(TTypeMapping<PTypeInfo,TTypeKind>);
+    typeToKindMapping.SourceType := sourceTypeInfo;
+    typeToKindMapping.TargetType := targetTypeInfo.Kind;
+    if fTypeInfoToTypeKindsRegistry.TryGetValue(typeToKindMapping, converter) then
+      Exit(converter);
   finally
     System.MonitorExit(fTypeInfoToTypeKindsRegistry);
   end;
 
   System.MonitorEnter(fTypeKindsToTypeInfoRegistry);
   try
-    for typeInfoPair in fTypeKindsToTypeInfoRegistry do
-    begin
-      if (sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
-        SameTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
-      begin
-        fTypeKindsToTypeInfoRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
-        Exit(typeInfoPair.Value.Instance);
-      end;
-    end;
+    kindToTypeMapping := Default(TTypeMapping<TTypeKind,PTypeInfo>);
+    kindToTypeMapping.SourceType := sourceTypeInfo.Kind;
+    kindToTypeMapping.TargetType := targetTypeInfo;
+    if fTypeKindsToTypeInfoRegistry.TryGetValue(kindToTypeMapping, converter) then
+      Exit(converter);
   finally
     System.MonitorExit(fTypeKindsToTypeInfoRegistry);
   end;
 
   System.MonitorEnter(fTypeKindsToTypeKindsRegistry);
   try
-    for typeInfoPair in fTypeKindsToTypeKindsRegistry do
+    kindToKindMapping := Default(TTypeMapping<TTypeKind,TTypeKind>);
+    kindToKindMapping.SourceType := sourceTypeInfo.Kind;
+    kindToKindMapping.TargetType := targetTypeInfo.Kind;
+    if fTypeKindsToTypeKindsRegistry.TryGetValue(kindToKindMapping, converter) then
     begin
-      if (sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
-        (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds) then
-      begin
-        fTypeKindsToTypeKindsRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
-        Exit(typeInfoPair.Value.Instance);
+      typeToTypeMapping.SourceType := sourceTypeInfo;
+      typeToTypeMapping.TargetType := targetTypeInfo;
+      System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
+      try
+        fTypeInfoToTypeInfoRegistry.Add(typeToTypeMapping, converter);
+      finally
+        System.MonitorExit(fTypeInfoToTypeInfoRegistry);
       end;
+      Exit(converter);
     end;
   finally
     System.MonitorExit(fTypeKindsToTypeKindsRegistry);
@@ -1898,142 +1885,151 @@ begin
 
   if sourceTypeInfo.Kind = tkClass then
   begin
-    minDepth := MaxInt;
     sourceTypeData := sourceTypeInfo.TypeData;
+    cls := sourceTypeData.ClassType.ClassParent;
+    typeToTypeMapping.TargetType := targetTypeInfo;
     System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
     try
-      for typeInfoPair in fTypeInfoToTypeInfoRegistry do
+      while Assigned(cls) do
       begin
-        if (typeInfoPair.Key.SourceTypeInfo.Kind = tkClass)
-          and SameTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
-        begin
-          if sourceTypeData.ClassType.InheritsFrom(
-            typeInfoPair.Key.SourceTypeInfo.TypeData.ClassType) then
-          begin
-            depth := 0;
-            cls := sourceTypeData.ClassType;
-            while cls <> typeInfoPair.Key.SourceTypeInfo.TypeData.ClassType do
-            begin
-              cls := cls.ClassParent;
-              Inc(depth);
-            end;
-
-            if depth < minDepth then
-            begin
-              converter := typeInfoPair.Value.Instance;
-              minDepth := depth;
-            end;
-          end;
-        end;
+        typeToTypeMapping.SourceType := cls.ClassInfo;
+        if fTypeInfoToTypeInfoRegistry.TryGetValue(typeToTypeMapping, converter) then
+          Exit(converter);
+        cls := cls.ClassParent;
       end;
     finally
       System.MonitorExit(fTypeInfoToTypeInfoRegistry);
     end;
-    Result := converter;
   end;
 end;
 
-class function TValueConverterFactory.CreateConverter(const sourceTypeInfo,
-  targetTypeInfo: PTypeInfo): IValueConverter;
+class procedure TValueConverterFactory.RegisterConverter(
+  sourceTypeKinds, targetTypeKinds: TTypeKinds;
+  const converter: IValueConverter);
+var
+  mapping: TTypeMapping<TTypeKind,TTypeKind>;
+  sourceTypeKind: TTypeKind;
+  targetTypeKind: TTypeKind;
 begin
-  Result := GetConverter(sourceTypeInfo, targetTypeInfo);
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  Guard.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
+{$ENDIF}
+
+  System.MonitorEnter(fTypeKindsToTypeKindsRegistry);
+  try
+    mapping := Default(TTypeMapping<TTypeKind,TTypeKind>);
+    for sourceTypeKind in sourceTypeKinds do
+      for targetTypeKind in targetTypeKinds do
+      begin
+        mapping.SourceType := sourceTypeKind;
+        mapping.TargetType := targetTypeKind;
+        fTypeKindsToTypeKindsRegistry.AddOrSetValue(mapping, converter);
+      end;
+  finally
+    System.MonitorExit(fTypeKindsToTypeKindsRegistry);
+  end;
 end;
 
-class procedure TValueConverterFactory.RegisterConverter(const sourceTypeInfo,
-  targetTypeInfo: PTypeInfo; converterClass: TConverterClass);
+class procedure TValueConverterFactory.RegisterConverter(
+  sourceTypeInfo, targetTypeInfo: PTypeInfo;
+  const converter: IValueConverter);
 var
-  key: TConvertedTypeInfo;
+  mapping: TTypeMapping<PTypeInfo,PTypeInfo>;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(sourceTypeInfo, 'sourceTypeInfo');
   Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+{$ENDIF}
 
   System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
-    key.SourceTypeInfo := sourceTypeInfo;
-    key.TargetTypeInfo := targetTypeInfo;
-    fTypeInfoToTypeInfoRegistry.AddOrSetValue(key,
-      TConverterPackage.Create(converterClass));
+    mapping.SourceType := sourceTypeInfo;
+    mapping.TargetType := targetTypeInfo;
+    fTypeInfoToTypeInfoRegistry.AddOrSetValue(mapping, converter);
   finally
     System.MonitorExit(fTypeInfoToTypeInfoRegistry);
   end;
 end;
 
 class procedure TValueConverterFactory.RegisterConverter(
-  const sourceTypeInfo: PTypeInfo; targetTypeKinds: TTypeKinds;
-  converterClass: TConverterClass);
+  sourceTypeInfo: PTypeInfo; targetTypeKinds: TTypeKinds;
+  const converter: IValueConverter);
 var
-  key: TConvertedTypeInfo;
+  mapping: TTypeMapping<PTypeInfo,TTypeKind>;
+  targetTypeKind: TTypeKind;
 begin
-  Guard.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptySourceTypeKind);
-  Guard.CheckNotNull(sourceTypeInfo, 'targetTypeInfo');
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(sourceTypeInfo, 'sourceTypeInfo');
+  Guard.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
+{$ENDIF}
 
   System.MonitorEnter(fTypeInfoToTypeKindsRegistry);
   try
-    key.SourceTypeInfo := sourceTypeInfo;
-    key.TargetTypeKinds := targetTypeKinds;
-    fTypeInfoToTypeKindsRegistry.AddOrSetValue(key,
-      TConverterPackage.Create(converterClass));
+    mapping := Default(TTypeMapping<PTypeInfo,TTypeKind>);
+    mapping.SourceType := sourceTypeInfo;
+    for targetTypeKind in targetTypeKinds do
+    begin
+      mapping.TargetType := targetTypeKind;
+      fTypeInfoToTypeKindsRegistry.AddOrSetValue(mapping, converter);
+    end;
   finally
     System.MonitorExit(fTypeInfoToTypeKindsRegistry);
   end;
 end;
 
 class procedure TValueConverterFactory.RegisterConverter(
-  const sourceTypeKinds: TTypeKinds; targetTypeInfo: PTypeInfo;
-  converterClass: TConverterClass);
+  sourceTypeKinds: TTypeKinds; targetTypeInfo: PTypeInfo;
+  const converter: IValueConverter);
 var
-  key: TConvertedTypeInfo;
+  mapping: TTypeMapping<TTypeKind,PTypeInfo>;
+  sourceTypeKind: TTypeKind;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
   Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+{$ENDIF}
 
   System.MonitorEnter(fTypeKindsToTypeInfoRegistry);
   try
-    key.SourceTypeKinds := sourceTypeKinds;
-    key.TargetTypeInfo := targetTypeInfo;
-    fTypeKindsToTypeInfoRegistry.AddOrSetValue(key,
-      TConverterPackage.Create(converterClass));
+    mapping := Default(TTypeMapping<TTypeKind,PTypeInfo>);
+    mapping.TargetType := targetTypeInfo;
+    for sourceTypeKind in sourceTypeKinds do
+    begin
+      mapping.SourceType := sourceTypeKind;
+      fTypeKindsToTypeInfoRegistry.AddOrSetValue(mapping, converter);
+    end;
   finally
     System.MonitorExit(fTypeKindsToTypeInfoRegistry);
   end;
 end;
 
-class procedure TValueConverterFactory.RegisterConverter(const sourceTypeKinds,
-  targetTypeKinds: TTypeKinds; converterClass: TConverterClass);
-var
-  key: TConvertedTypeInfo;
+class procedure TValueConverterFactory.RegisterConverter(
+  sourceTypeInfo, targetTypeInfo: PTypeInfo;
+  converterClass: TConverterClass);
 begin
-  Guard.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
-  Guard.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
-
-  System.MonitorEnter(fTypeKindsToTypeKindsRegistry);
-  try
-    key.SourceTypeKinds := sourceTypeKinds;
-    key.TargetTypeKinds := targetTypeKinds;
-    fTypeKindsToTypeKindsRegistry.AddOrSetValue(key,
-      TConverterPackage.Create(converterClass));
-  finally
-    System.MonitorExit(fTypeKindsToTypeKindsRegistry);
-  end;
+  RegisterConverter(sourceTypeInfo, targetTypeInfo, converterClass.Create);
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TValueConverterFactory.TConverterPackage'}
-
-constructor TValueConverterFactory.TConverterPackage.Create(
-  classType: TConverterClass);
+class procedure TValueConverterFactory.RegisterConverter(
+  sourceTypeInfo: PTypeInfo; targetTypeKinds: TTypeKinds;
+  converterClass: TConverterClass);
 begin
-  fConverterClass := classType;
+  RegisterConverter(sourceTypeInfo, targetTypeKinds, converterClass.Create);
 end;
 
-function TValueConverterFactory.TConverterPackage.GetInstance: IValueConverter;
+class procedure TValueConverterFactory.RegisterConverter(
+  sourceTypeKinds: TTypeKinds; targetTypeInfo: PTypeInfo;
+  converterClass: TConverterClass);
 begin
-  if not Assigned(fConverter) then
-    fConverter := fConverterClass.Create;
+  RegisterConverter(sourceTypeKinds, targetTypeInfo, converterClass.Create);
+end;
 
-  Result := fConverter;
+class procedure TValueConverterFactory.RegisterConverter(
+  sourceTypeKinds, targetTypeKinds: TTypeKinds;
+  converterClass: TConverterClass);
+begin
+  RegisterConverter(sourceTypeKinds, targetTypeKinds, converterClass.Create);
 end;
 
 {$ENDREGION}

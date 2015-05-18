@@ -1859,6 +1859,9 @@ function LoadFromStreamToVariant(const stream: TStream): OleVariant;
 {$ENDREGION}
 
 
+const
+  EmptyValue: TValue = ();
+
 implementation
 
 uses
