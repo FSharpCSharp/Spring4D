@@ -140,6 +140,7 @@ type
 implementation
 
 uses
+  Classes,
   SysUtils,
   Variants,
   Spring.SystemUtils,
@@ -214,7 +215,7 @@ begin
         Result := DoMapEntity(results, column.TypeInfo);
     end
   else
-    Result := TUtils.FromVariant(value);
+    Result := TValue.FromVariant(value);
     if not Result.IsEmpty then
       if TUtils.TryConvert(Result, column.TypeInfo, entity, convertedValue) then
         Result := convertedValue;
@@ -294,6 +295,27 @@ end;
 
 function TAbstractSession.DoMapObjectInEntity(const resultSet: IDBResultSet;
   const baseEntity: TObject; objectClassInfo: PTypeInfo): TObject;
+
+  function Convert(const value: Variant): TValue;
+  var
+    stream: TMemoryStream;
+    p: Pointer;
+  begin
+    if VarIsArray(value) then
+    begin
+      stream := TMemoryStream.Create;
+      p := VarArrayLock(value);
+      try
+        stream.Write(p^, VarArrayHighBound(value, VarArrayDimCount(value)) + 1);
+      finally
+        VarArrayUnlock(value);
+      end;
+      Result := stream;
+    end
+    else
+      Result := TValue.FromVariant(value);
+  end;
+
 var
   fieldValue: Variant;
   value, convertedValue: TValue;
@@ -302,7 +324,7 @@ begin
   if not resultSet.IsEmpty then
   begin
     fieldValue := resultSet.GetFieldValue(0);
-    value := TUtils.FromVariant(fieldValue);
+    value := Convert(fieldValue);
     try
       if TUtils.TryConvert(value, objectClassInfo, baseEntity, convertedValue) then
         Result := convertedValue.AsObject;         
@@ -480,7 +502,7 @@ var
   column: ColumnAttribute;
   id: TValue;
 begin
-  lazyKind := TType.GetLazyKind(lazyTypeInfo);
+  lazyKind := GetLazyKind(lazyTypeInfo);
   targetType := TType.GetType(lazyTypeInfo).GetGenericArguments[0];
   if targetType = nil then
     raise EORMUnsupportedType.CreateFmt('Insufficient rtti information for lazy type: %s', [lazyTypeInfo.TypeName]);
@@ -600,7 +622,7 @@ begin
     if columnData.IsPrimaryKey then
       Continue;
 
-    if TType.IsLazyType(columnData.TypeInfo) then
+    if IsLazyType(columnData.TypeInfo) then
     begin
       value := ResolveLazyValue(entity, columnData.MemberName, columnData.TypeInfo);
       entity.SetColumnValue(columnData.ColumnAttr, value);
@@ -665,7 +687,7 @@ begin
   while not resultSet.IsEmpty do
   begin
     fieldValue := resultSet.GetFieldValue(index);
-    item := TUtils.FromVariant(fieldValue);
+    item := TValue.FromVariant(fieldValue);
     addMethod.Invoke(list, [item]);
     resultSet.Next;
     Inc(index);

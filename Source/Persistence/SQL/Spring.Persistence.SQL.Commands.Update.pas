@@ -149,7 +149,7 @@ begin
   version := EntityData.VersionColumn.RttiMember.GetValue(entity);
   primaryKey := EntityData.PrimaryKeyColumn.RttiMember.GetValue(entity);
   query := Generator.GetUpdateVersionFieldQuery(fCommand, EntityData.VersionColumn,
-    TUtils.AsVariant(version), TUtils.AsVariant(primaryKey));
+    version.ToVariant, primaryKey.ToVariant);
   metadata.QueryOperation := ctUpdateVersion;
   metadata.TableName := fCommand.Table.Name;
   statement.SetQuery(metadata, query);

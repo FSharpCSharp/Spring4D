@@ -33,24 +33,16 @@ uses
   DB,
   Rtti,
   TypInfo,
-  Spring.Collections,
-  Spring.Persistence.Core.Graphics,
-  Spring.Persistence.Core.Interfaces;
+  Spring.Persistence.Core.Graphics;
 
 type
-  TUtils = class sealed
+  TUtils = class
   public
-    class function LoadFromStreamToVariant(const stream: TStream): OleVariant;
+    class function TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean; static;
 
-    class function AsVariant(const value: TValue): Variant;
-    class function FromVariant(const value: Variant): TValue;
-
-    class function TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean;
-
-    class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
-    class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean;
-    class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
-    class function TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean;
+    class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean; static;
+    class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean; static;
+    class function TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean; static;
   end;
 
 implementation
@@ -73,144 +65,12 @@ uses
   Spring,
   Spring.Reflection,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Reflection,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Core.Reflection;
 
 
 {$REGION 'TUtils'}
 
-class function TUtils.AsVariant(const value: TValue): Variant;
-var
-  stream: TStream;
-  LValue: TValue;
-  LPersist: IStreamPersist;
-begin
-  Result := Null;
-  case value.Kind of
-    tkEnumeration:
-    begin
-      if value.TypeInfo = TypeInfo(Boolean) then
-        Result := value.AsBoolean
-      else
-        Result := value.AsOrdinal;
-    end;
-    tkFloat:
-    begin
-      if value.TypeInfo = TypeInfo(TDateTime) then
-        Result := value.AsType<TDateTime>
-      else if value.TypeInfo = TypeInfo(TDate) then
-        Result := value.AsType<TDate>
-      else
-        Result := value.AsExtended;
-    end;
-    tkRecord:
-    begin
-      if IsNullable(value.TypeInfo) then
-        if value.TryGetNullableValue(LValue) then
-          Exit(AsVariant(LValue));
-
-      if TType.IsLazyType(value.TypeInfo) then
-        if TryGetLazyTypeValue(value, LValue) then
-          Exit(AsVariant(LValue));
-    end;
-    tkClass:
-    begin
-      if value.AsObject <> nil then
-      begin
-        if value.AsObject is TStream then
-        begin
-          stream := TStream(value.AsObject);
-          stream.Position := 0;
-          Result := LoadFromStreamToVariant(stream);
-        end
-        else if value.AsObject is TPicture then
-        begin
-          stream := TMemoryStream.Create;
-          try
-            TPicture(value.AsObject).Graphic.SaveToStream(stream);
-            stream.Position := 0;
-            Result := LoadFromStreamToVariant(stream);
-          finally
-            stream.Free;
-          end;
-        end   //somehow this started to fail recently. needed to add additional condition for TPicture
-        else if Supports(value.AsObject, IStreamPersist, LPersist) then
-        begin
-          stream := TMemoryStream.Create;
-          try
-            LPersist.SaveToStream(stream);
-            stream.Position := 0;
-            Result := LoadFromStreamToVariant(stream);
-          finally
-            stream.Free;
-          end;
-        end;
-      end;
-    end;
-    tkInterface: ;//
-  else
-    Result := value.AsVariant;
-  end;
-end;
-
-class function TUtils.FromVariant(const value: Variant): TValue;
-var
-  stream: TMemoryStream;
-  p: Pointer;
-  i: Integer;
-begin
-  if VarIsArray(value) then
-  begin
-    // make stream from variant
-    stream := TMemoryStream.Create;
-    i := VarArrayDimCount(value);
-    p := VarArrayLock(value);
-    try
-      stream.Write(p^, VarArrayHighBound(value, i) + 1);
-    finally
-      VarArrayUnlock(value);
-    end;
-    Result := stream;
-  end
-  else
-    Result := TValue.FromVariant(value);
-end;
-
-class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
-var
-  lazyType: TRttiType;
-  lazyField: TRttiField;
-  lazy: ILazy;
-begin
-  Result := False;
-  if ALazy.Kind = tkRecord then
-  begin
-    lazyType := TType.GetType(ALazy);
-    lazyField := lazyType.GetField('FLazy');
-    lazy := lazyField.GetValue(ALazy.GetReferenceToRawData).AsInterface as ILazy;
-    Result := (lazy <> nil);
-    if Result then
-    begin
-      AValue := lazy.Value;
-    end;
-  end;
-end;
-
-class function TUtils.LoadFromStreamToVariant(const stream: TStream): OleVariant;
-var
-  lock: Pointer;
-begin
-  Result := VarArrayCreate([0, stream.Size], varByte);
-  lock := VarArrayLock(Result);
-  try
-    stream.ReadBuffer(lock^, stream.Size);
-  finally
-    VarArrayUnlock(Result);
-  end;
-end;
-
 {$IFNDEF FMX}
-
 const
   MinGraphicSize = 44; //we may test up to & including the 11th longword
 
@@ -267,7 +127,6 @@ begin
     FreeMem(Buffer);
   end;
 end;
-
 {$ENDIF}
 
 class function TUtils.TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean;
@@ -312,7 +171,9 @@ begin
   LPic := TPicture.Create;
   Result := TryLoadFromStreamSmart(AStream, LPic);
   if Result then
-    APictureValue := LPic;
+    APictureValue := LPic
+  else
+    LPic.Free;
 end;
 
 class function TUtils.TryConvert(const AFrom: TValue; targetTypeInfo: PTypeInfo; AEntity: TObject; var AResult: TValue): Boolean;
@@ -330,7 +191,7 @@ begin
           AResult.SetNullableValue(AFrom);
           Exit(True);
         end else
-        if TType.IsLazyType(targetTypeInfo) then
+        if IsLazyType(targetTypeInfo) then
         begin
           //AFrom value must be ID of lazy type
           if AFrom.IsEmpty then

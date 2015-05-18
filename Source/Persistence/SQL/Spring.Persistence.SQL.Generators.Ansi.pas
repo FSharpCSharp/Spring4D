@@ -641,7 +641,7 @@ begin
     tkWString, tkUString: Result := Format('NVARCHAR(%D)', [field.Length]);
     tkRecord:
     begin
-      if IsNullable(typeInfo) or TType.IsLazyType(typeInfo) then
+      if IsNullable(typeInfo) or IsLazyType(typeInfo) then
       begin
         createField := field.Clone;
         try

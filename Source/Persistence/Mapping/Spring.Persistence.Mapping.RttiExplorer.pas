@@ -437,8 +437,8 @@ begin
     if not initialValue.TryGetNullableValue(Result) then
       Result := TValue.Empty;
   end
-  else if TType.IsLazyType(Result.TypeInfo) then
-    if not TUtils.TryGetLazyTypeValue(initialValue, Result) then
+  else if IsLazyType(Result.TypeInfo) then
+    if not initialValue.TryGetLazyValue(Result) then
       Result := TValue.Empty;
 end;
 

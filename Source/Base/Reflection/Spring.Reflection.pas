@@ -89,22 +89,6 @@ type
     class function IsDelegate(typeInfo: PTypeInfo): Boolean; overload; static;
     class function TryGetInterfaceType(const guid: TGUID; out intfType: TRttiInterfaceType): Boolean; static;
 
-    /// <summary>
-    ///   Returns the <see cref="TLazyKind" /> of the typeInfo.
-    /// </summary>
-    class function GetLazyKind(typeInfo: PTypeInfo): TLazyKind; static;
-
-    /// <summary>
-    ///   Returns the underlying type name of the lazy type.
-    /// </summary>
-    class function GetLazyTypeName(typeInfo: PTypeInfo): string; static;
-
-    /// <summary>
-    ///   Returns <c>True</c> if the type is a lazy type.
-    /// </summary>
-    class function IsLazyType(typeInfo: PTypeInfo): Boolean; static;
-
-
     class procedure SetFieldValue(const instance: TObject;
       const fieldName: string; const value: TValue); static;
 
@@ -285,7 +269,6 @@ type
     function GetIsClassOrInterface: Boolean;
     function GetAsClass: TRttiInstanceType;
     function GetIsGenericType: Boolean;
-    function GetIsLazyType: Boolean;
     function GetAsDynamicArray: TRttiDynamicArrayType;
     function GetIsDynamicArray: Boolean;
     function GetIsString: Boolean;
@@ -410,7 +393,6 @@ type
     /// </summary>
     property IsGenericType: Boolean read GetIsGenericType;
 
-    property IsLazyType: Boolean read GetIsLazyType;
     property DefaultName: string read GetDefaultName;
     property AncestorCount: Integer read GetAncestorCount;
   end;
@@ -913,39 +895,6 @@ begin
   Result := TType.GetFullName(typeInfo);
 end;
 
-const
-  LazyPrefixStrings: array[lkFunc..High(TLazyKind)] of string = (
-    'TFunc<', 'Lazy<', 'ILazy<');
-
-class function TType.GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
-var
-  name: string;
-begin
-  if Assigned(typeInfo) then
-  begin
-    name := GetTypeName(typeInfo);
-    for Result := lkFunc to High(TLazyKind) do
-      if StartsText(LazyPrefixStrings[Result], name) then
-        Exit;
-  end;
-  Result := lkNone;
-end;
-
-class function TType.GetLazyTypeName(typeInfo: PTypeInfo): string;
-var
-  lazyKind: TLazyKind;
-  name: string;
-  i: Integer;
-begin
-  lazyKind := GetLazyKind(typeInfo);
-  name := GetTypeName(typeInfo);
-  if lazyKind > lkNone then
-  begin
-    i := Length(LazyPrefixStrings[lazyKind]) + 1;
-    Result := Copy(name, i, Length(name) - i )
-  end;
-end;
-
 class function TType.FindType(const qualifiedName: string): TRttiType;
 var
   item: TRttiType;
@@ -989,11 +938,6 @@ begin
       typeInfo := nil;
   end;
   Result := False;
-end;
-
-class function TType.IsLazyType(typeInfo: PTypeInfo): Boolean;
-begin
-  Result := GetLazyKind(typeInfo) <> lkNone;
 end;
 
 class procedure TType.SetFieldValue(const instance: TObject;
@@ -1548,11 +1492,6 @@ end;
 function TRttiTypeHelper.GetIsInterface: Boolean;
 begin
   Result := Self is TRttiInterfaceType;
-end;
-
-function TRttiTypeHelper.GetIsLazyType: Boolean;
-begin
-  Result := TType.IsLazyType(Handle);
 end;
 
 function TRttiTypeHelper.GetIsString: Boolean;

@@ -30,7 +30,7 @@
         <DCC_K>false</DCC_K>
         <DCC_ImageBase>00400000</DCC_ImageBase>
         <GenPackage>true</GenPackage>
-        <DCC_Description>Spring Persistence - ORM</DCC_Description>
+        <DCC_Description>Spring4D Persistence package</DCC_Description>
         <DCC_S>false</DCC_S>
         <VerInfo_Locale>1046</VerInfo_Locale>
         <DCC_F>false</DCC_F>
@@ -84,6 +84,7 @@
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Types.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Utils.pas"/>
+        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ValueConverters.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Abstract.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.Abstract.pas"/>

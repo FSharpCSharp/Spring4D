@@ -49,6 +49,7 @@ implementation
 
 uses
   SysUtils,
+  Spring,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.EmbeddedEntity,
   Spring.Persistence.Core.Exceptions,
@@ -108,7 +109,7 @@ begin
   except
     raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [columnName]);
   end;
-  Result := TUtils.FromVariant(fieldValue);
+  Result := TValue.FromVariant(fieldValue);
 end;
 
 function TEntityWrapper.GetEntity: TObject;
@@ -159,7 +160,7 @@ begin
     raise EORMPrimaryKeyColumnNotFound.CreateFmt(EXCEPTION_PRIMARYKEY_NOTFOUND,
       [columnData.ColumnName]);
   end;
-  Result := TUtils.FromVariant(value);
+  Result := TValue.FromVariant(value);
 end;
 
 function TEntityWrapper.GetTableName: string;

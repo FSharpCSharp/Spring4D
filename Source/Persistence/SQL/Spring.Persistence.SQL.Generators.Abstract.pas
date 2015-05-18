@@ -97,7 +97,7 @@ begin
   if not value.IsEmpty and value.IsObject then
     TryConvert(value, TypeInfo(TStream), convertedValue, freeAfter);
 
-  Result.Value := TUtils.AsVariant(convertedValue);
+  Result.Value := convertedValue.ToVariant;
   if VarIsNull(Result.Value) or VarIsEmpty(Result.Value) then
     Result.SetParamTypeFromTypeInfo(paramField.Column.MemberType);
 

@@ -85,6 +85,7 @@ uses
   Variants,
   mongoID,
   MongoBson,
+  Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.EntityWrapper,
@@ -519,7 +520,7 @@ begin
   if value.IsEmpty then
     Exit;
 
-  variantValue := TUtils.AsVariant(value);    
+  variantValue := value.ToVariant;
   case VarType(variantValue) of
     varString, varUString, varStrArg, varOleStr:
     begin

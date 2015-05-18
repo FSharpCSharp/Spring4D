@@ -218,9 +218,20 @@ type
     function TryGetNullableValue(out value: TValue): Boolean;
 
     /// <summary>
+    ///   Tries to get the stored value of a lazy. Returns false when the lazy
+    ///   was not assigned.
+    /// </summary>
+    function TryGetLazyValue(out value: TValue): Boolean;
+
+    /// <summary>
     ///   Returns the stored value as TObject.
     /// </summary>
     function ToObject: TObject;
+
+    /// <summary>
+    ///   Returns the stored value as Variant.
+    /// </summary>
+    function ToVariant: Variant;
 
     /// <summary>
     ///   If the stored value is an object it will get destroyed/disposed.
@@ -1805,6 +1816,21 @@ function IsNullable(typeInfo: PTypeInfo): Boolean;
 function GetUnderlyingType(typeInfo: PTypeInfo): PTypeInfo;
 
 /// <summary>
+///   Returns the <see cref="TLazyKind" /> of the typeInfo.
+/// </summary>
+function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+
+/// <summary>
+///   Returns the underlying type name of the lazy type.
+/// </summary>
+function GetLazyTypeName(typeInfo: PTypeInfo): string;
+
+/// <summary>
+///   Returns <c>True</c> if the type is a lazy type.
+/// </summary>
+function IsLazyType(typeInfo: PTypeInfo): Boolean;
+
+/// <summary>
 ///   Returns the size that is needed in order to pass an argument of the given
 ///   type.
 /// </summary>
@@ -1828,6 +1854,8 @@ function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
 
 function SkipShortString(P: PByte): Pointer; inline;
+
+function LoadFromStreamToVariant(const stream: TStream): OleVariant;
 {$ENDREGION}
 
 
@@ -1843,6 +1871,7 @@ uses
 {$ENDIF}
   Spring.Events,
   Spring.Reflection.Core,
+  Spring.Reflection.ValueConverters,
   Spring.ResourceStrings;
 
 var
@@ -1987,6 +2016,44 @@ begin
   end
   else
     Result := nil;
+end;
+
+const
+  LazyPrefixStrings: array[lkFunc..High(TLazyKind)] of string = (
+    'TFunc<', 'Lazy<', 'ILazy<');
+
+function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+var
+  name: string;
+begin
+  if Assigned(typeInfo) then
+  begin
+    name := GetTypeName(typeInfo);
+    for Result := lkFunc to High(TLazyKind) do
+      if StartsText(LazyPrefixStrings[Result], name) then
+        Exit;
+  end;
+  Result := lkNone;
+end;
+
+function GetLazyTypeName(typeInfo: PTypeInfo): string;
+var
+  lazyKind: TLazyKind;
+  name: string;
+  i: Integer;
+begin
+  lazyKind := GetLazyKind(typeInfo);
+  name := GetTypeName(typeInfo);
+  if lazyKind > lkNone then
+  begin
+    i := Length(LazyPrefixStrings[lazyKind]) + 1;
+    Result := Copy(name, i, Length(name) - i )
+  end;
+end;
+
+function IsLazyType(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := GetLazyKind(typeInfo) <> lkNone;
 end;
 
 // TODO: use typekind matrix for comparer functions
@@ -2150,6 +2217,19 @@ end;
 function SkipShortString(P: PByte): Pointer;
 begin
   Result := P + P^ + 1;
+end;
+
+function LoadFromStreamToVariant(const stream: TStream): OleVariant;
+var
+  lock: Pointer;
+begin
+  Result := VarArrayCreate([0, stream.Size], varByte);
+  lock := VarArrayLock(Result);
+  try
+    stream.ReadBuffer(lock^, stream.Size);
+  finally
+    VarArrayUnlock(Result);
+  end;
 end;
 
 {$ENDREGION}
@@ -2883,6 +2963,65 @@ begin
     Result := AsObject;
 end;
 
+function TValueHelper.ToVariant: Variant;
+var
+  value: TValue;
+  obj: TObject;
+  stream: TStream;
+  persist: IStreamPersist;
+begin
+  Result := Null;
+  case Kind of
+    tkEnumeration:
+      if IsType<Boolean> then
+        Result := AsBoolean
+      else
+        Result := AsOrdinal;
+    tkFloat:
+      if TypeInfo = System.TypeInfo(TDateTime) then
+        Result := AsType<TDateTime>
+      else if TypeInfo = System.TypeInfo(TDate) then
+        Result := AsType<TDate>
+      else if TypeInfo = System.TypeInfo(TTime) then
+        Result := AsType<TTime>
+      else
+        Result := AsExtended;
+    tkRecord:
+    begin
+      if IsNullable(TypeInfo) then
+        if TryGetNullableValue(value) then
+          Exit(value.ToVariant);
+
+      if IsLazyType(TypeInfo) then
+        if TryGetLazyValue(value) then
+          Exit(value.ToVariant);
+    end;
+    tkClass:
+    begin
+      if TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value) then
+        Result := value.AsVariant
+      else
+      begin
+        obj := AsObject;
+
+        if Supports(obj, IStreamPersist, persist) then
+        begin
+          stream := TMemoryStream.Create;
+          try
+            persist.SaveToStream(stream);
+            stream.Position := 0;
+            Result := LoadFromStreamToVariant(stream);
+          finally
+            stream.Free;
+          end;
+        end;
+      end;
+    end;
+  else
+    Result := AsVariant;
+  end;
+end;
+
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
 var
   typeData: PTypeData;
@@ -2920,6 +3059,32 @@ begin
   end;
   if Result then
     IInterface(Intf) := AsInterface;
+end;
+
+function TValueHelper.TryGetLazyValue(out value: TValue): Boolean;
+var
+  typeInfo: PTypeInfo;
+  lazyKind: TLazyKind;
+  context: TRttiContext;
+  lazyType: TRttiType;
+  lazyField: TRttiField;
+  lazy: ILazy;
+begin
+  typeInfo := TValueData(Self).FTypeInfo;
+  lazyKind := GetLazyKind(typeInfo);
+  case lazyKind of
+    lkRecord:
+    begin
+      lazyType := context.GetType(typeInfo);
+      lazyField := lazyType.GetField('fLazy');
+      lazy := lazyField.GetValue(GetReferenceToRawData).AsInterface as ILazy;
+      Result := Assigned(lazy);
+      if Result then
+        value := lazy.Value;
+    end;
+  else
+    Result := False;
+  end;
 end;
 
 function TValueHelper.TryGetNullableValue(out value: TValue): Boolean;

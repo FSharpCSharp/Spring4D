@@ -33,6 +33,7 @@ uses
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Core.ValueConverters,
   Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,

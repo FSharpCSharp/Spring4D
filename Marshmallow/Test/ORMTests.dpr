@@ -48,6 +48,7 @@ uses
   Spring.Persistence.Core.Session.MongoDB in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.MongoDB.pas',
   Spring.Persistence.Core.Types in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Types.pas',
   Spring.Persistence.Core.Utils in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Utils.pas',
+  Spring.Persistence.Core.ValueConverters in '..\..\Source\Persistence\Core\Spring.Persistence.Core.ValueConverters.pas',
   Spring.Persistence.Criteria in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.pas',
   Spring.Persistence.Criteria.Abstract in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Abstract.pas',
   Spring.Persistence.Criteria.Criterion.Abstract in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.Abstract.pas',

@@ -165,7 +165,7 @@ procedure TDBParam.SetFromTValue(const value: TValue);
 var
   variantValue: Variant;
 begin
-  variantValue := TUtils.AsVariant(value);
+  variantValue := value.ToVariant;
   SetValue(variantValue);
 end;
 

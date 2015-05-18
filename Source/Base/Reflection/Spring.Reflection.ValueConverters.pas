@@ -903,7 +903,12 @@ begin
   if Assigned(converter) then
     Result := converter.ConvertTo(value, targetTypeInfo, parameter)
   else
-    value.TryCast(targetTypeInfo, Result);
+  begin
+    // prevent object to Variant cast
+    if (value.Kind = tkClass) and (targetTypeInfo.Kind = tkVariant) then
+      Abort;
+    Result := value.Cast(targetTypeInfo);
+  end;
 end;
 
 {$ENDREGION}
@@ -1826,6 +1831,10 @@ class function TValueConverterFactory.GetConverter(const sourceTypeInfo,
   targetTypeInfo: PTypeInfo): IValueConverter;
 var
   typeInfoPair: TPair<TConvertedTypeInfo, IConverterPackage>;
+  sourceTypeData: PTypeData;
+  minDepth, depth: Integer;
+  cls: TClass;
+  converter: IValueConverter;
 begin
   System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
@@ -1885,6 +1894,42 @@ begin
     end;
   finally
     System.MonitorExit(fTypeKindsToTypeKindsRegistry);
+  end;
+
+  if sourceTypeInfo.Kind = tkClass then
+  begin
+    minDepth := MaxInt;
+    sourceTypeData := sourceTypeInfo.TypeData;
+    System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
+    try
+      for typeInfoPair in fTypeInfoToTypeInfoRegistry do
+      begin
+        if (typeInfoPair.Key.SourceTypeInfo.Kind = tkClass)
+          and SameTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
+        begin
+          if sourceTypeData.ClassType.InheritsFrom(
+            typeInfoPair.Key.SourceTypeInfo.TypeData.ClassType) then
+          begin
+            depth := 0;
+            cls := sourceTypeData.ClassType;
+            while cls <> typeInfoPair.Key.SourceTypeInfo.TypeData.ClassType do
+            begin
+              cls := cls.ClassParent;
+              Inc(depth);
+            end;
+
+            if depth < minDepth then
+            begin
+              converter := typeInfoPair.Value.Instance;
+              minDepth := depth;
+            end;
+          end;
+        end;
+      end;
+    finally
+      System.MonitorExit(fTypeInfoToTypeInfoRegistry);
+    end;
+    Result := converter;
   end;
 end;
 
