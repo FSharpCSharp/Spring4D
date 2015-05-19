@@ -112,10 +112,10 @@ type
   /// </summary>
   TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>)
   private
-    fComparer: IComparer<T>;
     class var fEqualityComparer: IEqualityComparer<T>;
     function GetEnumeratorNonGeneric: IEnumerator; override; final;
   protected
+    fComparer: IComparer<T>;
   {$REGION 'Property Accessors'}
     function GetComparer: IComparer<T>;
     function GetElementType: PTypeInfo; override;
@@ -947,7 +947,7 @@ end;
 
 function TEnumerableBase<T>.Max: T;
 begin
-  Result := Max(Comparer);
+  Result := Max(fComparer);
 end;
 
 {$IFDEF DELPHIXE_UP}
@@ -991,7 +991,7 @@ end;
 
 function TEnumerableBase<T>.Min: T;
 begin
-  Result := Min(Comparer);
+  Result := Min(fComparer);
 end;
 
 {$IFDEF DELPHIXE_UP}
@@ -1035,7 +1035,7 @@ end;
 
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
 begin
-  Result := TOrderedIterator<T>.Create(Self, Comparer);
+  Result := TOrderedIterator<T>.Create(Self, fComparer);
 end;
 
 function TEnumerableBase<T>.Ordered(
@@ -1993,7 +1993,7 @@ end;
 
 procedure TListBase<T>.Sort;
 begin
-  Sort(Comparer);
+  Sort(fComparer);
 end;
 
 procedure TListBase<T>.Sort(const comparison: TComparison<T>);

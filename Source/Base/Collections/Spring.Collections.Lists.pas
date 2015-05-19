@@ -966,7 +966,7 @@ begin
   // collection at a cost of one comparison.
   if Result > 0 then
   begin
-    lComparer := Comparer;
+    lComparer := fComparer;
     // Is new item greater than the last one?
     if lComparer.Compare(fItems[Result - 1], item) > 0 then
       TArray.BinarySearch<T>(fItems, item, Result, lComparer, 0, fCount);
@@ -999,7 +999,7 @@ function TSortedList<T>.Contains(const value: T): Boolean;
 var
   index: Integer;
 begin
-  Result := TArray.BinarySearch<T>(fItems, value, index, Comparer, 0, fCount);
+  Result := TArray.BinarySearch<T>(fItems, value, index, fComparer, 0, fCount);
 end;
 
 procedure TSortedList<T>.Exchange(index1, index2: Integer);
@@ -1014,7 +1014,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
-  if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count) then
+  if not TArray.BinarySearch<T>(fItems, item, Result, fComparer, index, count) then
     Result := -1;
 end;
 
