@@ -30,7 +30,6 @@ interface
 
 uses
   Generics.Collections,
-  Rtti,
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
@@ -43,7 +42,7 @@ type
 
   TEntityMap = class(TInterfacedObject, IEntityMap)
   private
-    fEntityValues: TDictionary<TEntityMapKey, TEntityMapValue>;
+    fEntityValues: IDictionary<TEntityMapKey, TEntityMapValue>;
     fCriticalSection: ICriticalSection;
   protected
     function GetEntityKey(const instance: TObject): TEntityMapKey; overload;
@@ -71,9 +70,7 @@ type
 implementation
 
 uses
-  Spring.Reflection,
-  Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.Core.Exceptions;
+  Spring.Persistence.Mapping.RttiExplorer;
 
 
 {$REGION 'TEntityMap'}
@@ -82,13 +79,12 @@ constructor TEntityMap.Create;
 begin
   inherited Create;
   fCriticalSection := TInterfacedCriticalSection.Create;
-  fEntityValues := TDictionary<TEntityMapKey,TEntityMapValue>.Create;
+  fEntityValues := TCollections.CreateDictionary<TEntityMapKey,TEntityMapValue>;
 end;
 
 destructor TEntityMap.Destroy;
 begin
   Clear;
-  fEntityValues.Free;
   inherited Destroy;
 end;
 
@@ -197,7 +193,7 @@ begin
     Exit;
 
   SetLength(values, entity.GetColumnsToMap.Count);
-  for i:=0 to entity.GetColumnsToMap.Count - 1 do
+  for i := 0 to entity.GetColumnsToMap.Count - 1 do
   begin
     col := entity.GetColumnsToMap[i];
     columnValue := entity.GetColumnValue(col.ColumnAttr);
