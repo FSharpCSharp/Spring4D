@@ -225,7 +225,6 @@ uses
   TypInfo,
   Variants,
   Spring.Reflection,
-  Spring.Reflection.ValueConverters,
   Spring.SystemUtils,
   Spring.Persistence.ObjectDataset.ExprParser.Functions;
 
@@ -434,7 +433,7 @@ begin
       begin
         LValueFromVariant := TValue.FromVariant(LFieldValue);
 
-        if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue) then
+        if LValueFromVariant.TryConvert(LProp.PropertyType.Handle, LConvertedValue) then
           LProp.SetValue(LItem, LConvertedValue);
       end;
     end;

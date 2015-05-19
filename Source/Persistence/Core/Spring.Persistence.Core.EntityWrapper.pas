@@ -53,10 +53,10 @@ uses
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.EmbeddedEntity,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Utils,
   Spring.Reflection;
 
-{ TEntityWrapper }
+
+{$REGION 'TEntityWrapper'}
 
 constructor TEntityWrapper.Create(const entity: TObject; const columnsToMap: TColumnDataList);
 begin
@@ -200,5 +200,8 @@ begin
   if not value.IsEmpty then
     TType.SetMemberValue(fEntity, fEntityClassData.PrimaryKeyColumn.MemberName, value);
 end;
+
+{$ENDREGION}
+
 
 end.

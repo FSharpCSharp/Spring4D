@@ -111,7 +111,6 @@ uses
   Variants,
   Spring,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Utils,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Reflection;
 

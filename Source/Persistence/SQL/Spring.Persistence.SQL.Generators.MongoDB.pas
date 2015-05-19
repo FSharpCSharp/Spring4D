@@ -91,7 +91,6 @@ uses
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Core.Utils,
   Spring.Persistence.SQL.Register,
   Spring.Reflection;
 

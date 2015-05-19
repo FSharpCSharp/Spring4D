@@ -29,8 +29,10 @@ unit Spring.Persistence.Core.ValueConverters;
 interface
 
 uses
+  Classes,
   Spring,
-  Spring.Reflection.ValueConverters;
+  Spring.Persistence.Core.Graphics,
+  Spring.ValueConverters;
 
 type
   TStreamToVariantConverter = class(TValueConverter)
@@ -47,12 +49,33 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  TStreamToPictureConverter = class(TValueConverter)
+  private
+    function TryLoadFromStreamSmart(const stream: TStream;
+      const picture: TPicture): Boolean;
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
 implementation
 
 uses
-  Classes,
-  Variants,
-  Spring.Persistence.Core.Graphics;
+{$IF Defined(DELPHIXE2_UP) AND NOT Defined(NEXTGEN)}
+  AnsiStrings,
+{$ELSE}
+  SysUtils,
+{$IFEND}
+{$IFNDEF FMX}
+  GIFImg,
+  Graphics,
+  jpeg,
+  pngimage,
+{$ELSE}
+  FMX.Graphics,
+{$ENDIF}
+  Variants;
 
 procedure RegisterConverters;
 begin
@@ -60,6 +83,8 @@ begin
     TStreamToVariantConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TPicture), TypeInfo(Variant),
     TPictureToVariantConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TStream), TypeInfo(TPicture),
+    TStreamToPictureConverter);
 end;
 
 {$REGION 'TStreamToVariantConverter'}
@@ -96,6 +121,93 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TStreamToPictureConverter'}
+
+function TStreamToPictureConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  pic: TPicture;
+  stream: TStream;
+begin
+  pic := TPicture.Create;
+  stream := TStream(value.AsObject);
+  if TryLoadFromStreamSmart(stream, pic) then
+    Result := pic
+  else
+    pic.Free;
+end;
+
+{$ENDREGION}
+
+
+{$IFNDEF FMX}
+function FindGraphicClass(const Buffer; const BufferSize: Int64;
+  out GraphicClass: TGraphicClass): Boolean; overload;
+const
+  MinGraphicSize = 44; //we may test up to & including the 11th longword
+var
+  LongWords: array[Byte] of LongWord absolute Buffer;
+  Words: array[Byte] of Word absolute Buffer;
+begin
+  GraphicClass := nil;
+  Result := False;
+  if BufferSize < MinGraphicSize then Exit;
+  case Words[0] of
+    $4D42: GraphicClass := TBitmap;
+    $D8FF: GraphicClass := TJPEGImage;
+    $4949: if Words[1] = $002A then GraphicClass := TWicImage; //i.e., TIFF
+    $4D4D: if Words[1] = $2A00 then GraphicClass := TWicImage; //i.e., TIFF
+  else
+    if Int64(Buffer) = $A1A0A0D474E5089 then
+      GraphicClass := TPNGImage
+    else if LongWords[0] = $9AC6CDD7 then
+      GraphicClass := TMetafile
+    else if (LongWords[0] = 1) and (LongWords[10] = $464D4520) then
+      GraphicClass := TMetafile
+    else if {$IFDEF DELPHIXE2_UP}AnsiStrings.{$ENDIF}StrLComp(PAnsiChar(@Buffer), 'GIF', 3) = 0 then
+      GraphicClass := TGIFImage
+    else if Words[1] = 1 then
+      GraphicClass := TIcon;
+  end;
+  Result := (GraphicClass <> nil);
+end;
+{$ENDIF}
+
+function TStreamToPictureConverter.TryLoadFromStreamSmart(const stream: TStream;
+  const picture: TPicture): Boolean;
+var
+  LGraphic: TGraphic;
+  LGraphicClass: TGraphicClass;
+  LStream: TMemoryStream;
+begin
+  LGraphic := nil;
+  LStream := TMemoryStream.Create;
+  try
+    stream.Position := 0;
+    LStream.CopyFrom(stream, stream.Size);
+    if LStream.Size = 0 then
+    begin
+      picture.Assign(nil);
+      Exit(True);
+    end;
+{$IFNDEF FMX}
+    if not FindGraphicClass(LStream.Memory^, LStream.Size, LGraphicClass) then
+      Exit(False);
+{$ELSE}
+    LGraphicClass := TBitmap;
+{$ENDIF}
+     // raise EInvalidGraphic.Create(SInvalidImage);
+    LGraphic := LGraphicClass.Create;
+    LStream.Position := 0;
+    LGraphic.LoadFromStream(LStream);
+    picture.Assign(LGraphic);
+    Result := True;
+  finally
+    LStream.Free;
+    LGraphic.Free;
+  end;
+end;
 
 initialization
   RegisterConverters;

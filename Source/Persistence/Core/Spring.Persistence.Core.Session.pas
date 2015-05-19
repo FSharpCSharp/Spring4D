@@ -270,8 +270,6 @@ uses
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.ListSession,
-  Spring.Persistence.Core.Reflection,
-  Spring.Persistence.Core.Utils,
   Spring.Persistence.Criteria,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.Mapping.RttiExplorer,
@@ -329,7 +327,6 @@ var
   results: IDBResultSet;
   fieldValue: Variant;
   value, convertedValue: TValue;
-  mustFree: Boolean;
 begin
   Result := System.Default(T);
   results := GetResultSet(sql, params);
@@ -338,7 +335,7 @@ begin
     fieldValue := results.GetFieldValue(0);
 
     value := TValue.FromVariant(fieldValue);
-    if not TryConvert(value, TypeInfo(T), convertedValue, mustFree) then
+    if not value.TryConvert(TypeInfo(T), convertedValue) then
       raise EORMCannotConvertValue.CreateFmt(EXCEPTION_CANNOT_CONVERT_TYPE,
         [value.TypeInfo.Name, PTypeInfo(TypeInfo(T)).Name]);
     Result := convertedValue.AsType<T>;

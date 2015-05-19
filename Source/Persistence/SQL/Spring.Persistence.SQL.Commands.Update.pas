@@ -66,7 +66,6 @@ implementation
 uses
   Spring,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Utils,
   Spring.Persistence.SQL.Params,
   Spring.Reflection;
 

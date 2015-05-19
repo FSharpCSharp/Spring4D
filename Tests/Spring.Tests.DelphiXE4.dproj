@@ -102,7 +102,7 @@
         <DCCReference Include="Source\Base\Spring.Tests.Collections.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.DesignPatterns.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Helpers.pas"/>
-        <DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.ValueConverters.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.SysUtils.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>

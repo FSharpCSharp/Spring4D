@@ -150,7 +150,6 @@ uses
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Relation.ManyToOne,
-  Spring.Persistence.Core.Utils,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Commands.Delete,
   Spring.Persistence.SQL.Commands.Insert,
@@ -217,7 +216,7 @@ begin
   else
     Result := TValue.FromVariant(value);
     if not Result.IsEmpty then
-      if TUtils.TryConvert(Result, column.TypeInfo, entity, convertedValue) then
+      if Result.TryConvert(column.TypeInfo, convertedValue) then
         Result := convertedValue;
   end;
 end;
@@ -326,8 +325,8 @@ begin
     fieldValue := resultSet.GetFieldValue(0);
     value := Convert(fieldValue);
     try
-      if TUtils.TryConvert(value, objectClassInfo, baseEntity, convertedValue) then
-        Result := convertedValue.AsObject;         
+      if value.TryConvert(objectClassInfo, convertedValue) then
+        Result := convertedValue.AsObject;
     finally
       value.Free;
     end;     

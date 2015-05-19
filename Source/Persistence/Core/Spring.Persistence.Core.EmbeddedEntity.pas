@@ -103,8 +103,7 @@ implementation
 
 uses
   SysUtils,
-  Variants,
-  Spring.Persistence.Core.Utils;
+  Variants;
 
 
 {$REGION 'TEmbeddedEntity'}

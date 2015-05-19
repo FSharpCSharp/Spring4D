@@ -75,11 +75,9 @@ type
 implementation
 
 uses
-  Spring.Persistence.Core.Utils,
-  Spring.Persistence.Core.Reflection,
-  Spring,
   Classes,
-  Variants;
+  Variants,
+  Spring;
 
 
 {$REGION 'TAbstractSQLGenerator'}
@@ -88,21 +86,16 @@ function TAbstractSQLGenerator.CreateParam(const paramField: TSQLParamField;
   const value: TValue): TDBParam;
 var
   convertedValue: TValue;
-  freeAfter: Boolean;
 begin
   Result := GetParamClass.Create;
   Result.Name := paramField.ParamName;
-  freeAfter := False;
   convertedValue := value;
   if not value.IsEmpty and value.IsObject then
-    TryConvert(value, TypeInfo(TStream), convertedValue, freeAfter);
+    value.TryConvert(TypeInfo(TStream), convertedValue);
 
   Result.Value := convertedValue.ToVariant;
   if VarIsNull(Result.Value) or VarIsEmpty(Result.Value) then
     Result.SetParamTypeFromTypeInfo(paramField.Column.MemberType);
-
-  if freeAfter then
-    convertedValue.Free;
 end;
 
 function TAbstractSQLGenerator.FindEnd(

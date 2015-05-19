@@ -32,11 +32,9 @@ uses
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
-  Spring.Persistence.SQL.Params,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Params;
 
 type
   TAbstractCommandExecutor = class(TInterfacedObject, IDBCommand)
@@ -71,12 +69,7 @@ type
 implementation
 
 uses
-  Classes,
-  Variants,
   Spring,
-  Spring.Persistence.Core.Reflection,
-  Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Register;
 
 

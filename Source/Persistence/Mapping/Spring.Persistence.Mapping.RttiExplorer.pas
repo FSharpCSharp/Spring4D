@@ -123,7 +123,6 @@ uses
   Math,
   StrUtils,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Utils,
   Spring.Reflection;
 
 

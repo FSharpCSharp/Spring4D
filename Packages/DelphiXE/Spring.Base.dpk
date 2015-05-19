@@ -68,10 +68,10 @@ contains
   Spring.Patches.QC107219 in '..\..\Source\Base\Patches\Spring.Patches.QC107219.pas',
   Spring.Reflection in '..\..\Source\Base\Reflection\Spring.Reflection.pas',
   Spring.Reflection.Core in '..\..\Source\Base\Reflection\Spring.Reflection.Core.pas',
-  Spring.Reflection.ValueConverters in '..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas',
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
   Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas',
   Spring.Times in '..\..\Source\Base\Spring.Times.pas',
+  Spring.ValueConverters in '..\..\Source\Base\Spring.ValueConverters.pas',
   Spring.VirtualInterface in '..\..\Source\Base\Spring.VirtualInterface.pas';
 
 end.

@@ -43,7 +43,7 @@ uses
   Spring.Tests.DesignPatterns,
   Spring.Tests.Helpers,
   Spring.Tests.Reflection,
-  Spring.Tests.Reflection.ValueConverters,
+  Spring.Tests.ValueConverters,
   Spring.Tests.Logging,
   Spring.Tests.Logging.Serializers,
   Spring.Tests.Container,

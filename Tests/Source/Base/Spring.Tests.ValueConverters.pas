@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.Reflection.ValueConverters;
+unit Spring.Tests.ValueConverters;
 
 interface
 
@@ -31,7 +31,7 @@ interface
 uses
   SysUtils,
   TestFramework,
-  Spring.Reflection.ValueConverters;
+  Spring.ValueConverters;
 
 type
   TEnumeration = (teFirst, teSecond, teLast);

@@ -83,8 +83,7 @@ uses
   SysUtils,
   TypInfo,
   Variants,
-  Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Utils;
+  Spring.Persistence.Core.Exceptions;
 
 
 {$REGION 'TDBParam'}

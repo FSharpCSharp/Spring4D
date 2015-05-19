@@ -212,6 +212,12 @@ type
     procedure SetNullableValue(const value: TValue);
 
     /// <summary>
+    ///   Tries to convert the stored value. Returns false when the conversion
+    ///   is not possible.
+    /// </summary>
+    function TryConvert(targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+
+    /// <summary>
     ///   Tries to get the stored value of a nullable. Returns false when the
     ///   nullable is null.
     /// </summary>
@@ -1875,7 +1881,7 @@ uses
   Spring.Events,
   Spring.Reflection.Core,
 {$IFDEF DELPHIXE_UP}
-  Spring.Reflection.ValueConverters,
+  Spring.ValueConverters,
 {$ENDIF}
   Spring.ResourceStrings;
 
@@ -2979,18 +2985,18 @@ begin
   case Kind of
     tkEnumeration:
       if IsType<Boolean> then
-        Result := AsBoolean
+        Exit(AsBoolean)
       else
-        Result := AsOrdinal;
+        Exit(AsOrdinal);
     tkFloat:
       if TypeInfo = System.TypeInfo(TDateTime) then
-        Result := AsType<TDateTime>
+        Exit(AsType<TDateTime>)
       else if TypeInfo = System.TypeInfo(TDate) then
-        Result := AsType<TDate>
+        Exit(AsType<TDate>)
       else if TypeInfo = System.TypeInfo(TTime) then
-        Result := AsType<TTime>
+        Exit(AsType<TTime>)
       else
-        Result := AsExtended;
+        Exit(AsExtended);
     tkRecord:
     begin
       if IsNullable(TypeInfo) then
@@ -3003,30 +3009,33 @@ begin
     end;
     tkClass:
     begin
-{$IFDEF DELPHIXE_UP}
+    {$IFDEF DELPHIXE_UP}
       if TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value) then
-        Result := value.AsVariant
-      else
-{$ENDIF}
-      begin
-        obj := AsObject;
+        Exit(value.AsVariant);
+    {$ENDIF}
 
-        if Supports(obj, IStreamPersist, persist) then
-        begin
-          stream := TMemoryStream.Create;
-          try
-            persist.SaveToStream(stream);
-            stream.Position := 0;
-            Result := LoadFromStreamToVariant(stream);
-          finally
-            stream.Free;
-          end;
+      obj := AsObject;
+      if Supports(obj, IStreamPersist, persist) then
+      begin
+        stream := TMemoryStream.Create;
+        try
+          persist.SaveToStream(stream);
+          stream.Position := 0;
+          Exit(LoadFromStreamToVariant(stream));
+        finally
+          stream.Free;
         end;
       end;
+
+      Exit(False);
     end;
   else
-    Result := AsVariant;
+    Exit(AsVariant);
   end;
+{$IFDEF DELPHIXE_UP}
+  if TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value) then
+    Exit(value.AsVariant);
+{$ENDIF}
 end;
 
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
@@ -3066,6 +3075,441 @@ begin
   end;
   if Result then
     IInterface(Intf) := AsInterface;
+end;
+
+
+{$REGION 'Conversion functions'}
+type
+  TConvertFunc = function(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+
+function ConvFail(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := False;
+end;
+
+function ConvClass2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := ASource.TryCast(ATarget, AResult);
+end;
+
+function ConvClass2Enum(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := ATarget = TypeInfo(Boolean);
+  if Result then
+    AResult := ASource.AsObject <> nil;
+end;
+
+function ConvFloat2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := Frac(ASource.AsExtended) = 0;
+  if Result then
+    AResult := TValue.FromOrdinal(ATarget, Trunc(ASource.AsExtended));
+end;
+
+function ConvFloat2Str(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LValue: TValue;
+begin
+  if ASource.TypeInfo = TypeInfo(TDate) then
+    LValue := DateToStr(ASource.AsExtended)
+  else if ASource.TypeInfo = TypeInfo(TDateTime) then
+    LValue := DateTimeToStr(ASource.AsExtended)
+  else if ASource.TypeInfo = TypeInfo(TTime) then
+    LValue := TimeToStr(ASource.AsExtended)
+  else
+    LValue := FloatToStr(ASource.AsExtended);
+  Result := LValue.TryCast(ATarget, AResult);
+end;
+
+function ConvIntf2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := ConvClass2Class(ASource.AsInterface as TObject, ATarget, AResult);
+end;
+
+function ConvIntf2Intf(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  intf: IInterface;
+begin
+  Result := ASource.TryAsInterface(ATarget, intf);
+  if Result then
+    TValue.Make(@intf, ATarget, AResult)
+  else
+    AResult := TValue.Empty;
+end;
+
+function ConvOrd2Float(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  AResult := TValue.FromFloat(ATarget, ASource.AsOrdinal);
+  Result := True;
+end;
+
+function ConvOrd2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  AResult := TValue.FromOrdinal(ATarget, ASource.AsOrdinal);
+  Result := True;
+end;
+
+function ConvOrd2Str(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LValue: TValue;
+begin
+  LValue := ASource.ToString;
+  Result := LValue.TryCast(ATarget, AResult);
+end;
+
+function ConvRec2Meth(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := ASource.TypeInfo = TypeInfo(TMethod);
+  if Result then
+  begin
+    AResult := TValue.From(ASource.GetReferenceToRawData, ATarget);
+    Result := True;
+  end
+end;
+
+function ConvStr2Enum(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  AResult := TValue.FromOrdinal(ATarget, GetEnumValue(ATarget, ASource.AsString));
+  Result := True;
+end;
+
+function ConvStr2Float(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  if ATarget = TypeInfo(TDate) then
+    AResult := TValue.From<TDate>(StrToDateDef(ASource.AsString, 0))
+  else if ATarget = TypeInfo(TDateTime) then
+    AResult := TValue.From<TDateTime>(StrToDateTimeDef(ASource.AsString, 0))
+  else if ATarget = TypeInfo(TTime) then
+    AResult := TValue.From<TTime>(StrToTimeDef(ASource.AsString, 0))
+  else
+    AResult := TValue.FromFloat(ATarget, StrToFloatDef(ASource.AsString, 0));
+  Result := True;
+end;
+
+function ConvStr2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  AResult := TValue.FromOrdinal(ATarget, StrToInt64Def(ASource.AsString, 0));
+  Result := True;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Conversions'}
+const
+  Conversions: array[TTypeKind, TTypeKind] of TConvertFunc = (
+    // tkUnknown
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkInteger
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvOrd2Str,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvOrd2Str, ConvFail, ConvFail, ConvFail
+    ),
+    // tkChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkEnumeration
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvOrd2Str, ConvFail, ConvFail, ConvFail
+    ),
+    // tkFloat
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFloat2Ord, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFloat2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFloat2Str, ConvFail, ConvFail, ConvFail
+    ),
+    // tkString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkSet
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkClass
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvClass2Enum, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvClass2Class, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkMethod
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkWChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkLString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkWString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkVariant
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkRecord
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvRec2Meth, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkInterface
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvIntf2Class, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvIntf2Intf, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkInt64
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvOrd2Str, ConvFail, ConvFail, ConvFail
+    ),
+    // tkDynArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkUString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvStr2Ord, ConvFail, ConvStr2Enum, ConvStr2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvStr2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkClassRef
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkPointer
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkProcedure
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    )
+  );
+{$ENDREGION}
+
+
+function TValueHelper.TryConvert(targetTypeInfo: PTypeInfo;
+  out targetValue: TValue): Boolean;
+var
+  value: TValue;
+begin
+  if (TypeInfo = nil) or (targetTypeInfo = nil) then
+  begin
+    targetValue := EmptyValue;
+    Exit(False);
+  end;
+
+  if TypeInfo = targetTypeInfo then
+  begin
+    targetValue := Self;
+    Exit(True);
+  end;
+
+  Result := Conversions[Kind, targetTypeInfo.Kind](Self, targetTypeInfo, targetValue);
+  if not Result then
+  begin
+    if TryGetNullableValue(value) and value.TryCast(targetTypeInfo, targetValue) then
+      Exit(True);
+
+    if TryGetLazyValue(value) and value.TryCast(targetTypeInfo, targetValue) then
+      Exit(True);
+
+    if IsNullable(targetTypeInfo) and TryCast(GetUnderlyingType(targetTypeInfo), value) then
+    begin
+      TValue.Make(nil, targetTypeInfo, targetValue);
+      targetValue.SetNullableValue(value);
+      Exit(True);
+    end;
+
+    case Kind of
+      tkRecord:;
+      {$IFDEF DELPHI2010}
+      // workaround for bug in RTTI.pas (fixed in XE)
+      tkUnknown:
+      begin
+        case targetTypeInfo.Kind of
+          tkInteger, tkEnumeration, tkChar, tkWChar, tkInt64:
+          begin
+            targetValue := TValue.FromOrdinal(targetTypeInfo, 0);
+            Result := True;
+          end;
+          tkFloat:
+          begin
+            targetValue := TValue.From<Extended>(0);
+            Result := True;
+          end;
+          tkUString:
+          begin
+            targetValue := '';
+            Result := True;
+          end;
+        end;
+      end;
+      {$ENDIF}
+    end;
+
+    {$IFDEF DELPHIXE_UP}
+    Result := TValueConverter.Default.TryConvertTo(Self, targetTypeInfo, targetValue);
+    {$ELSE}
+    Result := False;
+    {$ENDIf}
+  end;
 end;
 
 function TValueHelper.TryGetLazyValue(out value: TValue): Boolean;

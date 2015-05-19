@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Reflection.ValueConverters;
+unit Spring.ValueConverters;
 
 interface
 
@@ -792,8 +792,7 @@ begin
 end;
 
 function ConvertToParam(Inst: Pointer; const value: TValue;
-  const targetTypeInfo: PTypeInfo;
-  const parameter: TValue): TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 
   procedure RaiseException;
   begin
@@ -826,13 +825,13 @@ function TryConvertToParam(Inst: Pointer; const value: TValue;
   const targetTypeInfo: PTypeInfo;
   out targetValue: TValue;
   const parameter: TValue): Boolean;
+var
+  converter: IValueConverter;
 begin
-  try
-    targetValue := ConvertToParam(Inst, value, targetTypeInfo, parameter);
-    Result := True;
-  except
-    Result := False;
-  end;
+  converter := TValueConverterFactory.GetConverter(value.TypeInfo, targetTypeInfo);
+  Result := (Assigned(converter)
+    and converter.TryConvertTo(value, targetTypeInfo, targetValue, parameter))
+    or value.TryCast(targetTypeInfo, targetValue);
 end;
 
 function TryConvertTo(Inst: Pointer; const value: TValue;

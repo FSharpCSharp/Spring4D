@@ -42,7 +42,7 @@ uses
   Spring.Tests.DesignPatterns in '..\..\Source\Base\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in '..\..\Source\Base\Spring.Tests.Helpers.pas',
   Spring.Tests.Reflection in '..\..\Source\Base\Spring.Tests.Reflection.pas',
-  Spring.Tests.Reflection.ValueConverters in '..\..\Source\Base\Spring.Tests.Reflection.ValueConverters.pas',
+  Spring.Tests.ValueConverters in '..\..\Source\Base\Spring.Tests.ValueConverters.pas',
   Spring.Tests.SystemUtils in '..\..\Source\Base\Spring.Tests.SystemUtils.pas',
   Spring.Tests.Logging in '..\..\Source\Base\Spring.Tests.Logging.pas',
   Spring.Tests.Logging.Serializers in '..\..\Source\Base\Spring.Tests.Logging.Serializers.pas',

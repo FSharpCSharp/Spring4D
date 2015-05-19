@@ -650,6 +650,7 @@ var
 begin
   list := TCollections.CreateList<Integer>;
   SUT.AddRange(list);
+  Pass;
 end;
 
 procedure TTestIntegerList.TestArrayAccess;
