@@ -2980,6 +2980,18 @@ var
   obj: TObject;
   stream: TStream;
   persist: IStreamPersist;
+
+{$IFDEF DELPHIXE_UP}
+  function TryConvertToVariant(out returnValue: Variant): Boolean;
+  begin
+    Result := TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value);
+    if Result then
+      returnValue := value.AsVariant
+    else
+      returnValue := Null;
+  end;
+{$ENDIF}
+
 begin
   Result := Null;
   case Kind of
@@ -3010,8 +3022,8 @@ begin
     tkClass:
     begin
     {$IFDEF DELPHIXE_UP}
-      if TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value) then
-        Exit(value.AsVariant);
+      if TryConvertToVariant(Result) then
+        Exit;
     {$ENDIF}
 
       obj := AsObject;
@@ -3033,8 +3045,7 @@ begin
     Exit(AsVariant);
   end;
 {$IFDEF DELPHIXE_UP}
-  if TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value) then
-    Exit(value.AsVariant);
+  TryConvertToVariant(Result);
 {$ENDIF}
 end;
 
