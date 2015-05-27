@@ -143,7 +143,6 @@ uses
   Classes,
   SysUtils,
   Variants,
-  Spring.SystemUtils,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.EntityMap,
@@ -615,7 +614,7 @@ var
   i: Integer;
 begin
   entity.SetPrimaryKeyValue(entity.GetPrimaryKeyValueFrom(resultSet));
-  for i:= 0 to entity.GetColumnsToMap.Count - 1 do
+  for i := 0 to entity.GetColumnsToMap.Count - 1 do
   begin
     columnData := entity.GetColumnsToMap[i];
     if columnData.IsPrimaryKey then
