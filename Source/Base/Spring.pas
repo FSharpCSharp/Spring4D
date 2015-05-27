@@ -5506,7 +5506,7 @@ begin
   SetLength(Result, n);
   n := 0;
   for i := Low(values) to High(values) do
-    for k := Low(values) to High(values) do
+    for k := Low(values[i]) to High(values[i]) do
     begin
       Result[n] := values[i, k];
       Inc(n);
