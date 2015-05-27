@@ -225,6 +225,16 @@ type
     property IsRecycled: Boolean read fIsRecycled;
   end;
 
+  TDisposableComponent = class(TInterfacedObject, IInitializable, IDisposable, IAnotherService)
+  private
+    fIsInitialized: Boolean;
+    fOnDispose: TProc;
+  public
+    procedure Initialize;
+    procedure Dispose;
+    property OnDispose: TProc read fOnDispose write fOnDispose;
+  end;
+
   {$ENDREGION}
 
 
@@ -953,6 +963,22 @@ procedure TRecyclableComponent.Recycle;
 begin
   fIsInitialized := False;
   fIsRecycled := True;
+end;
+
+{ TDisposableComponent }
+
+procedure TDisposableComponent.Dispose;
+begin
+  if Assigned(fOnDispose) then
+    fOnDispose;
+end;
+
+procedure TDisposableComponent.Initialize;
+begin
+  if not fIsInitialized then
+    fIsInitialized := True
+  else
+    raise Exception.Create('Initialize called twice');
 end;
 
 { TAgeServiceDecorator }

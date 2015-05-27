@@ -41,6 +41,11 @@ type
   /// <summary>
   ///   Provides static methods to manipulate an enumeration type.
   /// </summary>
+  /// <remarks>
+  ///   This does only work for non enum types that have type info.
+  ///   Discontiguous enumerations and enumerations which don't start at zero
+  ///   don't have typeinfo. See: <see href="http://stackoverflow.com/questions/1420562/why-do-i-get-type-has-no-typeinfo-error-with-an-enum-type" />
+  /// </remarks>
   TEnum = class
   private
     class function GetEnumTypeInfo<T>: PTypeInfo; static;

@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Reflection.Core;
+unit Spring.VirtualClass;
 
 interface
 

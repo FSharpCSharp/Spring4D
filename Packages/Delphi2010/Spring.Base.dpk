@@ -63,10 +63,10 @@ contains
   Spring.Logging.ResourceStrings in '..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas',
   Spring.Logging.Serializers in '..\..\Source\Base\Logging\Spring.Logging.Serializers.pas',
   Spring.Reflection in '..\..\Source\Base\Reflection\Spring.Reflection.pas',
-  Spring.Reflection.Core in '..\..\Source\Base\Reflection\Spring.Reflection.Core.pas',
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
   Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas',
   Spring.Times in '..\..\Source\Base\Spring.Times.pas',
-  Spring.ValueConverters in '..\..\Source\Base\Spring.ValueConverters.pas';
+  Spring.ValueConverters in '..\..\Source\Base\Spring.ValueConverters.pas',
+  Spring.VirtualClass in '..\..\Source\Base\Reflection\Spring.VirtualClass.pas';
 
 end.

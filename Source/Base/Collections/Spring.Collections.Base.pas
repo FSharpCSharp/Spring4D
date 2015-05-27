@@ -1918,6 +1918,13 @@ begin
       Result := inherited QueryInterface(IList<TObject>, Obj)
     else
       Result := E_NOINTERFACE;
+  end else
+  if IsEqualGUID(IID, IInterfaceList) then
+  begin
+    if ElementType.Kind = tkInterface then
+      Result := inherited QueryInterface(IList<IInterface>, Obj)
+    else
+      Result := E_NOINTERFACE;
   end
   else
     Result := inherited;

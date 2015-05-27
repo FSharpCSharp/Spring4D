@@ -600,8 +600,8 @@ type
     /// </exception>
     class procedure CheckRangeExclusive(value, min, max: Integer); overload; static; inline;
 
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static; deprecated 'Use overload with TTypeKind';
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static; deprecated 'Use overload with TTypeKind';
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
     class procedure CheckTypeKind(typeKind: TTypeKind; expectedTypeKind: TTypeKind; const argumentName: string); overload; static; inline;
     class procedure CheckTypeKind(typeKind: TTypeKind; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static; inline;
     class procedure CheckTypeKind<T>(expectedTypeKind: TTypeKind; const argumentName: string); overload; static; inline;
@@ -1879,11 +1879,11 @@ uses
   Windows,
 {$ENDIF}
   Spring.Events,
-  Spring.Reflection.Core,
+  Spring.ResourceStrings,
 {$IFDEF DELPHIXE_UP}
   Spring.ValueConverters,
 {$ENDIF}
-  Spring.ResourceStrings;
+  Spring.VirtualClass;
 
 var
   VirtualClasses: TVirtualClasses;
@@ -2754,8 +2754,11 @@ const
 
 function TValueHelper.Equals(const value: TValue): Boolean;
 begin
-  Result := Assigned(TypeInfo) and Assigned(value.TypeInfo)
-    and EqualsFunctions[Kind,value.Kind](Self, value);
+  if Assigned(TypeInfo) then
+    Result := Assigned(value.TypeInfo)
+      and EqualsFunctions[Kind,value.Kind](Self, value)
+  else
+    Result := value.IsEmpty;
 end;
 
 procedure TValueHelper.Free;

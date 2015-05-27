@@ -29,6 +29,9 @@ implementation
 
 {$R *.dfm}
 
+uses
+  Spring;
+
 procedure TForm28.Button1Click(Sender: TObject);
 begin
   Close;
@@ -38,8 +41,8 @@ procedure TForm28.FormCreate(Sender: TObject);
 begin
   FEditorMonitor := TEditorMonitor.Create;
 
-  FEditorMonitor.AddListener(TCurrentTimeEditUpdater.Create(Edit1));
-  FEditorMonitor.AddListener(TTickTimeEditUpdater.Create(Edit2));
+  FEditorMonitor.Attach(TCurrentTimeEditUpdater.Create(Edit1));
+  FEditorMonitor.Attach(TTickTimeEditUpdater.Create(Edit2));
 end;
 
 procedure TForm28.FormDestroy(Sender: TObject);
@@ -48,15 +51,8 @@ begin
 end;
 
 procedure TForm28.Timer1Timer(Sender: TObject);
-var
-  UpdateProc: TProc<TEditUpdater>;
 begin
-  UpdateProc := procedure(aEditUpdater: TEditUpdater)
-                begin
-                  aEditUpdater.Update;
-                end;
-
-  FEditorMonitor.NotifyListeners(UpdateProc);
+  FEditorMonitor.Notify;
 end;
 
 end.

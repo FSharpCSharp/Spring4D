@@ -89,6 +89,7 @@ type
     procedure TestPooledRefCountedInterface;
     procedure TestInitializable;
     procedure TestRecyclable;
+    procedure TestDisposable;
 
     procedure TestIssue41_DifferentName;
     procedure TestIssue41_DifferentService;
@@ -750,6 +751,25 @@ begin
   service1 := fContainer.Resolve<IAnotherService>; // pool has no available and collects all unused
   CheckFalse(TRecyclableComponent(instance).IsInitialized, 'IsInitialized');
   CheckTrue(TRecyclableComponent(instance).IsRecycled, 'IsRecycled');
+end;
+
+procedure TTestSimpleContainer.TestDisposable;
+var
+  service: IAnotherService;
+  disposed: Boolean;
+begin
+  fContainer.RegisterType<TDisposableComponent>.AsSingleton;
+  fContainer.Build;
+  service := fContainer.Resolve<IAnotherService>;
+  (service as TDisposableComponent).OnDispose :=
+    procedure
+    begin
+      disposed := True;
+    end;
+  service := nil;
+  disposed := False;
+  FreeAndNil(fContainer);
+  CheckTrue(disposed);
 end;
 
 procedure TTestSimpleContainer.TestResolveFuncWithTwoTypes;
