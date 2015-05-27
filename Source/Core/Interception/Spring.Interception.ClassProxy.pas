@@ -35,7 +35,7 @@ uses
   Spring.Interception,
   Spring.Interception.AbstractInvocation,
   Spring.MethodIntercept,
-  Spring.Reflection.Core;
+  Spring.VirtualClass;
 
 type
   TClassProxy = class(TVirtualClass)

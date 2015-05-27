@@ -1829,8 +1829,8 @@ uses
   Windows,
 {$ENDIF}
   Spring.Events,
-  Spring.Reflection.Core,
-  Spring.ResourceStrings;
+  Spring.ResourceStrings,
+  Spring.VirtualClass;
 
 var
   VirtualClasses: TVirtualClasses;

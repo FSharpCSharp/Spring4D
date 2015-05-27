@@ -149,11 +149,11 @@
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Serializers.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.MethodIntercept.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
-        <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Core.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.SystemUtils.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Times.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.VirtualClass.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.VirtualInterface.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
