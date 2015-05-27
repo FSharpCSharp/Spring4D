@@ -71,7 +71,6 @@
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EmbeddedEntity.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityCache.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityMap.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntitySerializer.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityWrapper.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Exceptions.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Graphics.pas"/>

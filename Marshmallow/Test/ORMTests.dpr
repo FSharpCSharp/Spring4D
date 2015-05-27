@@ -33,7 +33,6 @@ uses
   Spring.Persistence.Core.EmbeddedEntity in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EmbeddedEntity.pas',
   Spring.Persistence.Core.EntityCache in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityCache.pas',
   Spring.Persistence.Core.EntityMap in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityMap.pas',
-  Spring.Persistence.Core.EntitySerializer in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntitySerializer.pas',
   Spring.Persistence.Core.Exceptions in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Exceptions.pas',
   Spring.Persistence.Core.Graphics in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Graphics.pas',
   Spring.Persistence.Core.Interfaces in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Interfaces.pas',
