@@ -64,7 +64,6 @@ type
   public
     constructor Create(const session: TSession; typeInfo: PTypeInfo;
       repositoryClass: TClass = nil); reintroduce;
-    destructor Destroy; override;
   end;
 
 function FromArgsToConstArray(const args: TArray<TValue>): TArray<TVarRec>;
@@ -205,38 +204,30 @@ begin
     end;
 end;
 
-destructor TProxyRepository<T, TID>.Destroy;
-begin
-
-  inherited;
-end;
-
 function TProxyRepository<T, TID>.DoOnInvoke(Method: TRttiMethod;
   const Args: TArray<TValue>): TValue;
 var
-  LMethodRef: TMethodReference;
-  LMethodSignature: string;
-  LItems: IList<T>;
-  LConstArray: TArray<TVarRec>;
-  LArgs: TArray<TValue>;
-  LPage, LPageSize: Integer;
+  methodRef: TMethodReference;
+  constArray: TArray<TVarRec>;
+  items: IList<T>;
+  pageArgs: TArray<TValue>;
+  page, pageSize: Integer;
 begin
-  LMethodSignature := TRttiExplorer.GetMethodSignature(Method);
-  if fDefaultMethods.TryGetValue(LMethodSignature, LMethodRef) then
-    Result := LMethodRef(Args)
+  if fDefaultMethods.TryGetValue(Method.ToString, methodRef) then
+    Result := methodRef(Args)
   else
   begin
     case Method.ReturnType.TypeKind of
       tkInteger, tkInt64: Result := fRepository.Count;
       tkClass, tkClassRef, tkPointer:
       begin
-        LConstArray := FromArgsToConstArray(Args);
+        constArray := FromArgsToConstArray(Args);
         try
-          LItems := fRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray);
-          (LItems as ICollectionOwnership).OwnsObjects := False;
-          Result := TValue.From<T>(LItems.FirstOrDefault);
+          items := fRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), constArray);
+          (items as ICollectionOwnership).OwnsObjects := False;
+          Result := TValue.From<T>(items.FirstOrDefault);
         finally
-          FinalizeVarRecArray(LConstArray);
+          FinalizeVarRecArray(constArray);
         end;
       end;
       tkInterface:
@@ -244,26 +235,29 @@ begin
         if Method.ReturnType.IsGenericTypeOf<IDBPage<TObject>> then
         begin
           // last two arguments should be page and pagesize
-          LArgs := GetPageArgs(Args, LPage, LPageSize);
-          LConstArray := FromArgsToConstArray(LArgs);
+          pageArgs := GetPageArgs(Args, page, pageSize);
+          constArray := FromArgsToConstArray(pageArgs);
           try
-            Result := TValue.From<IDBPage<T>>(fSession.Page<T>(LPage, LPageSize, TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray));
+            Result := TValue.From<IDBPage<T>>(fSession.Page<T>(page, pageSize,
+              TRttiExplorer.GetQueryTextFromMethod(Method), constArray));
           finally
-            FinalizeVarRecArray(LConstArray);
+            FinalizeVarRecArray(constArray);
           end;
         end
         else
         begin
-          LConstArray := FromArgsToConstArray(Args);
+          constArray := FromArgsToConstArray(Args);
           try
-            Result := TValue.From<IList<T>>(fRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray));
+            Result := TValue.From<IList<T>>(fRepository.Query(
+              TRttiExplorer.GetQueryTextFromMethod(Method), constArray));
           finally
-            FinalizeVarRecArray(LConstArray);
+            FinalizeVarRecArray(constArray);
           end;
         end;
       end
       else
-        raise EORMUnsupportedType.CreateFmt('Unknown method (%s) return type: %s', [Method.ToString, Method.ReturnType.ToString]);
+        raise EORMUnsupportedType.CreateFmt('Unknown method (%s) return type: %s',
+          [Method.ToString, Method.ReturnType.ToString]);
     end;
   end;
 end;
@@ -310,12 +304,12 @@ begin
     begin
       fRepository.Insert(Args[1].AsInterface as IEnumerable<T>);
     end);
-  RegisterMethod(Format('function Save(const entity: %0:S): %0:S', [fTypeName]),
+  RegisterMethod(Format('function Save(const entity: %0:s): %0:s', [fTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       Result := fRepository.Save(Args[1].AsType<T>);
     end);
-  RegisterMethod(Format('function Save(const entities: IEnumerable<%0:S>): IEnumerable<%0:S>', [fQualifiedTypeName]),
+  RegisterMethod(Format('function Save(const entities: IEnumerable<%0:s>): IEnumerable<%0:s>', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       Result := TValue.From<IEnumerable<T>>(fRepository.Save(Args[1].AsInterface as IEnumerable<T>));
