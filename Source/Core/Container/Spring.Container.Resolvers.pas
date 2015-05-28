@@ -252,7 +252,6 @@ function TDependencyResolver.Resolve(const context: ICreationContext;
 var
   i: Integer;
   componentModel: TComponentModel;
-  modelRef: SmartPointer<TObject>;
   instance: TValue;
 begin
   if CanResolveFromContext(context, dependency, argument) then
@@ -265,16 +264,7 @@ begin
   if CanResolveFromArgument(context, dependency, argument) then
     Exit(argument);
 
-  if not Kernel.Registry.HasService(dependency.TypeInfo)
-    and dependency.TargetType.IsClass then
-  begin
-    componentModel := TComponentModel.Create(dependency.TargetType);
-    componentModel.Services.AddOrSetValue('default', dependency.TypeInfo);
-    Kernel.Builder.Build(componentModel);
-    modelRef := componentModel;
-  end
-  else
-    componentModel := Kernel.Registry.FindOne(dependency.TypeInfo, argument);
+  componentModel := Kernel.Registry.FindOne(dependency.TypeInfo, argument);
 
   if context.EnterResolution(componentModel, instance) then
   try

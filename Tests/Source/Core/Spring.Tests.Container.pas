@@ -99,7 +99,6 @@ type
     procedure TestIssue50;
 
     procedure TestResolveFuncWithTwoTypes;
-    procedure TestResolveUnknownClass;
     procedure TestResolveUnknownClasses;
   end;
 
@@ -784,21 +783,6 @@ begin
     end);
 end;
 
-procedure TTestSimpleContainer.TestResolveUnknownClass;
-var
-  component: TBootstrapComponent;
-begin
-  fContainer.RegisterType<TNameService>;
-  fContainer.Build;
-
-  component := nil;
-  try
-    component := fContainer.Resolve<TBootstrapComponent>;
-    CheckEquals('Name', component.NameService.Name);
-  finally
-    component.Free;
-  end;
-end;
 
 procedure TTestSimpleContainer.TestResolveUnknownClasses;
 var
