@@ -67,6 +67,6 @@ contains
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
   Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas',
   Spring.Times in '..\..\Source\Base\Spring.Times.pas',
-  Spring.VirtualClass in '..\..\Source\Base\Reflection\Spring.VirtualClass.pas';
+  Spring.VirtualClass in '..\..\Source\Base\Spring.VirtualClass.pas';
 
 end.
