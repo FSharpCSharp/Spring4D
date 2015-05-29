@@ -60,7 +60,6 @@ contains
   Spring.Persistence.Core.Relation.ManyToOne in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Relation.ManyToOne.pas',
   Spring.Persistence.Core.Repository.Simple in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Simple.pas',
   Spring.Persistence.Core.Session in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.pas',
-  Spring.Persistence.Core.Types in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Types.pas',
   Spring.Persistence.Core.ValueConverters in '..\..\Source\Persistence\Core\Spring.Persistence.Core.ValueConverters.pas',
   Spring.Persistence.Criteria in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.pas',
   Spring.Persistence.Criteria.Abstract in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Abstract.pas',

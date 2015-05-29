@@ -29,10 +29,8 @@ unit Spring.Persistence.Mapping.CodeGenerator.Abstract;
 interface
 
 uses
-  Spring.Collections
-  ,Spring.Persistence.Core.Types
-  ,Spring
-  ;
+  Spring,
+  Spring.Collections;
 
 type
   TColumnData = class
@@ -102,10 +100,9 @@ type
 implementation
 
 uses
-  SysUtils
-  ;
+  SysUtils;
 
-{ TEntityData }
+{ TEntityModelData }
 
 constructor TEntityModelData.Create;
 begin

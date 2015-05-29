@@ -91,7 +91,6 @@
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Simple.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.MongoDB.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Types.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ValueConverters.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Abstract.pas"/>
