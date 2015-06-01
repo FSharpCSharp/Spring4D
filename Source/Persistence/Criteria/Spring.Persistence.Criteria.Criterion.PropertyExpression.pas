@@ -31,7 +31,6 @@ interface
 uses
   Spring,
   Spring.Collections,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Criteria.Criterion.Abstract,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
@@ -62,6 +61,7 @@ implementation
 
 uses
   SysUtils;
+
 
 {$REGION 'TPropertyExpression'}
 

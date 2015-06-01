@@ -36,197 +36,143 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>
-  ///	  The criterion package may be used by applications as a framework for
-  ///	  building new kinds of Criterion. However, it is intended that most
-  ///	  applications will simply use the built-in criterion types via the
-  ///	  static factory methods of this class.
-  ///	</summary>
-  {$ENDREGION}
+  /// <summary>
+  ///   The criterion package may be used by applications as a framework for
+  ///   building new kinds of Criterion. However, it is intended that most
+  ///   applications will simply use the built-in criterion types via the
+  ///   static factory methods of this class.
+  /// </summary>
   TRestrictions = class sealed
   public
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply an <b>"equal"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply an <b>"equal"</b> constraint to the named property.
+    /// </summary>
     class function Eq(const APropertyName: string; const AValue: TValue): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a <b>"not equal"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a <b>"not equal"</b> constraint to the named property.
+    /// </summary>
     class function NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a <b>"greater than or equal"</b> constraint to the named
-    ///	  property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a <b>"greater than or equal"</b> constraint to the named
+    ///   property.
+    /// </summary>
     class function GEq(const APropertyName: string; const AValue: TValue): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a <b>"greater than"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a <b>"greater than"</b> constraint to the named property.
+    /// </summary>
     class function Gt(const APropertyName: string; const AValue: TValue): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply an <b>"is null"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply an <b>"is null"</b> constraint to the named property.
+    /// </summary>
     class function IsNull(const APropertyName: string): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply an <b>"is not null"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply an <b>"is not null"</b> constraint to the named property.
+    /// </summary>
     class function IsNotNull(const APropertyName: string): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a <b>"like"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a <b>"like"</b> constraint to the named property.
+    /// </summary>
     class function Like(const APropertyName, AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a <b>"not like"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a <b>"not like"</b> constraint to the named property.
+    /// </summary>
     class function NotLike(const APropertyName, AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a <b>"less than or equal"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a <b>"less than or equal"</b> constraint to the named property.
+    /// </summary>
     class function LEq(const APropertyName: string; const AValue: TValue): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a <b>"less than"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a <b>"less than"</b> constraint to the named property.
+    /// </summary>
     class function Lt(const APropertyName: string; const AValue: TValue): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply an <b>"in"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply an <b>"in"</b> constraint to the named property.
+    /// </summary>
     class function &In(const APropertyName: string; const AValues: TArray<TValue>): ICriterion; overload;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply an <b>"in"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply an <b>"in"</b> constraint to the named property.
+    /// </summary>
     class function &In<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion; overload;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply an <b>"not in"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply an <b>"not in"</b> constraint to the named property.
+    /// </summary>
     class function NotIn(const APropertyName: string; const AValues: TArray<TValue>): ICriterion; overload;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply an <b>"not in"</b> constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply an <b>"not in"</b> constraint to the named property.
+    /// </summary>
     class function NotIn<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion; overload;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Return the conjuction of two expressions.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Return the conjuction of two expressions.
+    /// </summary>
     class function &And(ALeft, ARight: ICriterion): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Return the disjuction of two expressions.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Return the disjuction of two expressions.
+    /// </summary>
     class function &Or(ALeft, ARight: ICriterion): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Return the negation of an expression.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Return the negation of an expression.
+    /// </summary>
     class function &Not(AExpression: ICriterion): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a "<b>not equal</b>" constraint to two properties.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a "<b>not equal</b>" constraint to two properties.
+    /// </summary>
     class function NeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply an "<b>equal</b>" constraint to two properties.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply an "<b>equal</b>" constraint to two properties.
+    /// </summary>
     class function EqProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a "<b>greater than or equal</b>" constraint to two properties.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a "<b>greater than or equal</b>" constraint to two properties.
+    /// </summary>
     class function GeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a "<b>greater than</b>" constraint to two properties.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a "<b>greater than</b>" constraint to two properties.
+    /// </summary>
     class function GtProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a "<b>less than or equal</b>" constraint to two properties.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a "<b>less than or equal</b>" constraint to two properties.
+    /// </summary>
     class function LeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a "<b>less than</b>" constraint to two properties.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a "<b>less than</b>" constraint to two properties.
+    /// </summary>
     class function LtProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Apply a "<b>between</b>" constraint to the named property.
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Apply a "<b>between</b>" constraint to the named property.
+    /// </summary>
     class function Between(const APropertyName: string; const ALow, AHigh: TValue): ICriterion;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Group expressions together in a single conjunction (A and B and C...)
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Group expressions together in a single conjunction (A and B and C...)
+    /// </summary>
     class function Conjunction: TConjunction;
 
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Group expressions together in a single disjunction (A or B or C...)
-    ///	</summary>
-    {$ENDREGION}
+    /// <summary>
+    ///   Group expressions together in a single disjunction (A or B or C...)
+    /// </summary>
     class function Disjunction: TDisjunction;
   end;
 

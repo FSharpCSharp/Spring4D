@@ -167,17 +167,17 @@ type
 implementation
 
 uses
+  Spring.Collections,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Criteria.Criterion.PropertyExpression,
-  Spring.Persistence.Criteria.OrderBy,
-  Spring.Collections
-  ;
+  Spring.Persistence.Criteria.OrderBy;
 
 
 function GetProp(const name: string; const classz: TClass): Prop;
 begin
   Result := Prop.ForName(name, classz);
 end;
+
 
 {$REGION 'TProperty'}
 
@@ -441,7 +441,7 @@ end;
 {$ENDREGION}
 
 
-{ Prop }
+{$REGION 'Prop'}
 
 class operator Prop.Equal(const Left, Right: Prop): TExpr;
 begin
@@ -631,7 +631,10 @@ begin
   Result.fCriterion := Left.fProp.NeProperty(Right.fProp);
 end;
 
-{ TExpr }
+{$ENDREGION}
+
+
+{$REGION 'TExpr'}
 
 class function TExpr.From(const criterion: ICriterion): TExpr;
 begin
@@ -662,5 +665,8 @@ class operator TExpr.Implicit(const criterion: ICriterion): TExpr;
 begin
   Result.fCriterion := criterion;
 end;
+
+{$ENDREGION}
+
 
 end.

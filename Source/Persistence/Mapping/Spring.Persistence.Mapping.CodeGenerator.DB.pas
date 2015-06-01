@@ -29,33 +29,33 @@ unit Spring.Persistence.Mapping.CodeGenerator.DB;
 interface
 
 uses
-  Spring.Persistence.Mapping.CodeGenerator.Abstract
-  ,Generics.Collections
-  ,ADODB
-  ,DB
-  ,Classes
-  ;
+  ADODB,
+  Classes,
+  DB,
+  Spring.Collections,
+  Spring.Persistence.Mapping.CodeGenerator.Abstract;
 
 type
   TEntityModelDataLoader = class
   private
-    FEntities: TObjectList<TEntityModelData>;
-    FConnected: Boolean;
-    FDefaultSchemaName: string;
-    FDBConnection: TADOConnection;
-    FConnectionString: string;
-    FPrimaryKeys: TDictionary<string, Boolean>;
-    FDatabaseName: string;
-    FOutputDir: string;
-    FUnitPrefix: string;
-    FUseNullableTypes: Boolean;
+    fEntities: IList<TEntityModelData>;
+    fConnected: Boolean;
+    fDefaultSchemaName: string;
+    fDBConnection: TADOConnection;
+    fConnectionString: string;
+    fPrimaryKeys: IDictionary<string, Boolean>;
+    fDatabaseName: string;
+    fOutputDir: string;
+    fUnitPrefix: string;
+    fUseNullableTypes: Boolean;
   protected
-    function CreateEntityDataFromFields(AFields: TFields; const ATableName: string): TEntityModelData;
-    function GetFieldTypeName(AField: TField): string;
-    procedure GetTables(var AList: TStrings; ASystemTables: Boolean = False);
+    function CreateEntityDataFromFields(const fields: TFields;
+      const tableName: string): TEntityModelData;
+    function GetFieldTypeName(const field: TField): string;
+    procedure GetTables(var tables: TStrings; systemTables: Boolean = False);
     procedure ParseTableName(const ATableName: string; out ATable, ASchema: string);
 
-    function GetIsAutoIncField(ADataset: TADODataSet; const AColumnName: string): Boolean;
+    function GetIsAutoIncField(const dataset: TADODataSet; const columnName: string): Boolean;
     function GetIsPrimaryKeyField(ADataset: TADODataSet; const AColumnName: string): Boolean;
     function GetPrimKeyFindKey(const ATable, ASchema, AColumn: string): string;
     procedure LoadPrimaryKeys;
@@ -64,135 +64,130 @@ type
     destructor Destroy; override;
 
     function Connect: Boolean;
-    function GetUnitName(const ATableName: string): string;
+    function GetUnitName(const tableName: string): string;
 
     function Execute: Boolean;
 
     procedure LoadTables;
     //serializable properties
-    property DatabaseName: string read FDatabaseName write FDatabaseName;
-    property DefaultSchemaName: string read FDefaultSchemaName write FDefaultSchemaName;
-    property Connected: Boolean read FConnected;
-    property ConnectionString: string read FConnectionString write FConnectionString;
-    property OutputDir: string read FOutputDir write FOutputDir;
-    property UnitPrefix: string read FUnitPrefix write FUnitPrefix;
-    property UseNullableTypes: Boolean read FUseNullableTypes write FUseNullableTypes;
-    property Entities: TObjectList<TEntityModelData> read FEntities;
+    property DatabaseName: string read fDatabaseName write fDatabaseName;
+    property DefaultSchemaName: string read fDefaultSchemaName write fDefaultSchemaName;
+    property Connected: Boolean read fConnected;
+    property ConnectionString: string read fConnectionString write fConnectionString;
+    property OutputDir: string read fOutputDir write fOutputDir;
+    property UnitPrefix: string read fUnitPrefix write fUnitPrefix;
+    property UseNullableTypes: Boolean read fUseNullableTypes write fUseNullableTypes;
+    property Entities: IList<TEntityModelData> read fEntities;
   end;
 
 implementation
 
 uses
-  SysUtils
-  ,Variants
-  ,StrUtils
-  ;
+  StrUtils,
+  SysUtils,
+  Variants;
 
-{ TEntityModelDataLoader }
 
-function TEntityModelDataLoader.Connect: Boolean;
-begin
-  FConnected := False;
-
-  if FDBConnection.Connected then
-    FDBConnection.Close;
-
-  FDBConnection.ConnectionString := FConnectionString;
-  FDBConnection.Open;
-
-  FConnected := FDBConnection.Connected;
-  Result := FConnected;
-end;
+{$REGION 'TEntityModelDataLoader'}
 
 constructor TEntityModelDataLoader.Create;
 begin
   inherited Create;
-  FEntities := TObjectList<TEntityModelData>.Create(True);
+  fEntities := TCollections.CreateObjectList<TEntityModelData>;
 
-  FUnitPrefix := 'ORM.Model.';
+  fUnitPrefix := 'ORM.Model.';
 
-  FDBConnection := TADOConnection.Create(nil);
-  FDBConnection.LoginPrompt := False;
-  FPrimaryKeys := TDictionary<string, Boolean>.Create;
-end;
-
-function TEntityModelDataLoader.CreateEntityDataFromFields(AFields: TFields; const ATableName: string): TEntityModelData;
-var
-  LField, LNameField, LIsNullableField, LPrecisionField, LScaleField, LCharLength, LDescrField: TField;
-  LColumnData: TColumnData;
-  LTable, LSchema: string;
- // LOut: Boolean;
-  LDataset: TADODataSet;
-  VDBName, VSchemaName, VTableName: Variant;
-begin
-  Result := TEntityModelData.Create;
-  ParseTableName(ATableName, LTable, LSchema);
-  Result.TableName := LTable;
-  Result.SchemaName := LSchema;
-
-  LDataset := TADODataSet.Create(nil);
-  try
-    if (LSchema <> '') then
-      VSchemaName := LSchema;
-
-    if (DatabaseName <> '') then
-      VDBName := DatabaseName;
-
-    VTableName := LTable;
-
-    FDBConnection.OpenSchema(siColumns, VarArrayOf([VDBName, VSchemaName, VTableName]), EmptyParam, LDataset);
-
-    LNameField := LDataset.FieldByName('COLUMN_NAME');
-    LIsNullableField := LDataset.FieldByName('IS_NULLABLE');
-    LPrecisionField := LDataset.FieldByName('NUMERIC_PRECISION');
-    LScaleField := LDataset.FieldByName('NUMERIC_SCALE');
-    LCharLength := LDataset.FieldByName('CHARACTER_MAXIMUM_LENGTH');
-    LDescrField := LDataset.FieldByName('DESCRIPTION');
-
-    while not LDataset.Eof do
-    begin
-      LColumnData := TColumnData.Create;
-      LColumnData.ColumnName := LNameField.AsString;
-      LColumnData.IsRequired := not LIsNullableField.AsBoolean;
-      LColumnData.NotNull := not LIsNullableField.AsBoolean;
-
-      if not LPrecisionField.IsNull then
-        LColumnData.ColumnPrecision := LPrecisionField.AsInteger;
-
-      if not LScaleField.IsNull then
-        LColumnData.ColumnScale := LScaleField.AsInteger;
-
-      if not LCharLength.IsNull then
-        LColumnData.ColumnLength := LCharLength.AsInteger;
-
-      if not LDescrField.IsNull then
-        LColumnData.ColumnDescription := LDescrField.AsString;
-
-      LField := AFields.FindField(LColumnData.ColumnName);
-      if Assigned(LField) then
-      begin
-        LColumnData.IsPrimaryKey := GetIsPrimaryKeyField(LField.DataSet as TADODataSet, LColumnData.ColumnName);
-        LField.Required := LColumnData.IsRequired;
-        LColumnData.ColumnTypeName := GetFieldTypeName(LField);
-        LColumnData.DontUpdate := LField.ReadOnly;
-        LColumnData.IsAutogenerated := GetIsAutoIncField(LField.DataSet as TADODataSet, LColumnData.ColumnName);
-      end;
-
-      Result.Columns.Add(LColumnData);
-
-      LDataset.Next;
-    end;
-  finally
-    LDataset.Free;
-  end;
+  fDBConnection := TADOConnection.Create(nil);
+  fDBConnection.LoginPrompt := False;
+  fPrimaryKeys := TCollections.CreateDictionary<string, Boolean>;
 end;
 
 destructor TEntityModelDataLoader.Destroy;
 begin
-  FEntities.Free;
-  FDBConnection.Free;
-  FPrimaryKeys.Free;
+  fDBConnection.Free;
   inherited Destroy;
+end;
+
+function TEntityModelDataLoader.Connect: Boolean;
+begin
+  fConnected := False;
+
+  if fDBConnection.Connected then
+    fDBConnection.Close;
+
+  fDBConnection.ConnectionString := fConnectionString;
+  fDBConnection.Open;
+
+  fConnected := fDBConnection.Connected;
+  Result := fConnected;
+end;
+
+function TEntityModelDataLoader.CreateEntityDataFromFields(
+  const fields: TFields; const tableName: string): TEntityModelData;
+var
+  field, nameField, isNullableField, precisionField, scaleField, charLength, descriptionField: TField;
+  columnData: TColumnData;
+  table, schema: string;
+  dataset: TADODataSet;
+  schemaName: Variant;
+begin
+  Result := TEntityModelData.Create;
+  ParseTableName(tableName, table, schema);
+  Result.TableName := table;
+  Result.SchemaName := schema;
+
+  dataset := TADODataSet.Create(nil);
+  try
+    if schema <> '' then
+      schemaName := schema;
+
+    fDBConnection.OpenSchema(siColumns, VarArrayOf([fDatabaseName, schemaName, table]), EmptyParam, dataset);
+
+    nameField := dataset.FieldByName('COLUMN_NAME');
+    isNullableField := dataset.FieldByName('IS_NULLABLE');
+    precisionField := dataset.FieldByName('NUMERIC_PRECISION');
+    scaleField := dataset.FieldByName('NUMERIC_SCALE');
+    charLength := dataset.FieldByName('CHARACTER_MAXIMUM_LENGTH');
+    descriptionField := dataset.FieldByName('DESCRIPTION');
+
+    while not dataset.Eof do
+    begin
+      columnData := TColumnData.Create;
+      columnData.ColumnName := nameField.AsString;
+      columnData.IsRequired := not isNullableField.AsBoolean;
+      columnData.NotNull := not isNullableField.AsBoolean;
+
+      if not precisionField.IsNull then
+        columnData.ColumnPrecision := precisionField.AsInteger;
+
+      if not scaleField.IsNull then
+        columnData.ColumnScale := scaleField.AsInteger;
+
+      if not charLength.IsNull then
+        columnData.ColumnLength := charLength.AsInteger;
+
+      if not descriptionField.IsNull then
+        columnData.ColumnDescription := descriptionField.AsString;
+
+      field := fields.FindField(columnData.ColumnName);
+      if Assigned(field) then
+      begin
+        columnData.IsPrimaryKey :=
+          GetIsPrimaryKeyField(field.DataSet as TADODataSet, columnData.ColumnName);
+        field.Required := columnData.IsRequired;
+        columnData.ColumnTypeName := GetFieldTypeName(field);
+        columnData.DontUpdate := field.ReadOnly;
+        columnData.IsAutogenerated :=
+          GetIsAutoIncField(field.DataSet as TADODataSet, columnData.ColumnName);
+      end;
+
+      Result.Columns.Add(columnData);
+
+      dataset.Next;
+    end;
+  finally
+    dataset.Free;
+  end;
 end;
 
 function TEntityModelDataLoader.Execute: Boolean;
@@ -200,21 +195,21 @@ begin
   Result := False;
 end;
 
-function TEntityModelDataLoader.GetFieldTypeName(AField: TField): string;
+function TEntityModelDataLoader.GetFieldTypeName(const field: TField): string;
 begin
-  Result := FieldTypeNames[AField.DataType];
+  Result := FieldTypeNames[field.DataType];
 
-  case AField.DataType of
+  case field.DataType of
     ftBytes, ftVarBytes, ftBlob, ftMemo, ftFmtMemo, ftOraBlob, ftOraClob, ftStream, ftObject:
       Result := 'TMemoryStream';
     ftGraphic: Result := 'TPicture';
     ftFMTBcd:
-      if TFMTBCDField(AField).Size = 0 then
+      if TFMTBCDField(field).Size = 0 then
         Result := 'Int64'
       else
         Result := 'Double';
     ftBCD:
-      if TBCDField(AField).Size = 0 then
+      if TBCDField(field).Size = 0 then
         Result := 'Int64'
       else
         Result := 'Double';
@@ -239,22 +234,20 @@ begin
   end;
 end;
 
-function TEntityModelDataLoader.GetIsAutoIncField(ADataset: TADODataSet;
-  const AColumnName: string): Boolean;
+function TEntityModelDataLoader.GetIsAutoIncField(const dataset: TADODataSet;
+  const columnName: string): Boolean;
 var
+  props: Properties;
   i: Integer;
-  LProps: Properties;
-  LPropName: string;
+  propName: string;
 begin
-  LProps := ADataset.Recordset.Fields.Item[AColumnName].Properties;
+  props := dataset.Recordset.Fields.Item[columnName].Properties;
 
-  for i := 0 to LProps.Count - 1 do
+  for i := 0 to props.Count - 1 do
   begin
-    LPropName := LowerCase( string(LProps.Item[i].Name));
-    if PosEx('autoincrement', LPropName) > 0 then
-    begin
-      Exit( (LProps.Item[i].Value));
-    end;
+    propName := LowerCase( string(props.Item[i].Name));
+    if Pos('autoincrement', propName) > 0 then
+      Exit(props.Item[i].Value);
   end;
   Result := False;
 end;
@@ -284,70 +277,66 @@ begin
   Result := UpperCase(ASchema + '.' + ATable + '_' + AColumn);
 end;
 
-procedure TEntityModelDataLoader.GetTables(var AList: TStrings; ASystemTables: Boolean);
+procedure TEntityModelDataLoader.GetTables(var tables: TStrings; systemTables: Boolean);
 var
-  LTypeField,
-  LNameField
-  ,LSchemaField: TField;
-  LTableType: WideString;
-  LTablename: string;
-  LDataSet: TADODataSet;
+  typeField, nameField, schemaField: TField;
+  tableType, tableName: string;
+  dataset: TADODataSet;
 begin
-  if not FConnected then
+  if not fConnected then
     Exit;
 
-  LDataSet := TADODataSet.Create(nil);
+  dataset := TADODataSet.Create(nil);
   try
-    FDBConnection.OpenSchema(siTables, EmptyParam, EmptyParam, LDataSet);
-    LTypeField := LDataSet.FieldByName('TABLE_TYPE'); { do not localize }
-    LNameField := LDataSet.FieldByName('TABLE_NAME'); { do not localize }
-    LSchemaField := LDataSet.FieldByName('TABLE_SCHEMA'); { do not localize }
-    AList.BeginUpdate;
+    fDBConnection.OpenSchema(siTables, EmptyParam, EmptyParam, dataset);
+    typeField := dataset.FieldByName('TABLE_TYPE'); { do not localize }
+    nameField := dataset.FieldByName('TABLE_NAME'); { do not localize }
+    schemaField := dataset.FieldByName('TABLE_SCHEMA'); { do not localize }
+    tables.BeginUpdate;
     try
-      AList.Clear;
-      while not LDataSet.EOF do
+      tables.Clear;
+      while not dataset.EOF do
       begin
-        LTableType := LTypeField.AsWideString;
-        if (LTableType = 'TABLE') or
-           (ASystemTables and (LTableType = 'SYSTEM TABLE')) then
+        tableType := typeField.AsWideString;
+        if (tableType = 'TABLE')
+          or (systemTables and (tableType = 'SYSTEM TABLE')) then
         begin
-          LTablename := LNameField.AsString;
-          if (LSchemaField.AsString <> '') then
-            LTablename := LSchemaField.AsString + '.' + LTablename;
-          AList.Add(LTablename);
+          tableName := nameField.AsString;
+          if schemaField.AsString <> '' then
+            tableName := schemaField.AsString + '.' + tableName;
+          tables.Add(tableName);
         end;
-        LDataSet.Next;
+        dataset.Next;
       end;
     finally
-      AList.EndUpdate;
+      tables.EndUpdate;
     end;
   finally
-    LDataSet.Free;
+    dataset.Free;
   end;
 end;
 
-function TEntityModelDataLoader.GetUnitName(const ATableName: string): string;
+function TEntityModelDataLoader.GetUnitName(const tableName: string): string;
 begin
-  Result := FUnitPrefix + ATableName;
+  Result := fUnitPrefix + tableName;
 end;
 
 procedure TEntityModelDataLoader.LoadPrimaryKeys;
 var
-  LDataset: TADODataSet;
-  LTablenameField, LColumnNameField, LSchemaField: TField;
+  dataset: TADODataSet;
+  tableNameField, columnNameField, schemaField: TField;
   VDBName, VSchemaName, VTableName: Variant;
   LTables: TStrings;
   LFullTable, LTable, LSchema: string;
 begin
-  FPrimaryKeys.Clear;
+  fPrimaryKeys.Clear;
 
-  LDataset := TADODataSet.Create(nil);
+  dataset := TADODataSet.Create(nil);
   LTables := TStringList.Create;
   try
     GetTables(LTables);
 
-    if (DatabaseName <> '') then
-      VDBName := DatabaseName;
+    VDBName := fDatabaseName;
 
     for LFullTable in LTables do
     begin
@@ -358,23 +347,23 @@ begin
 
       VTableName := LTable;
 
-      FDBConnection.OpenSchema(siPrimaryKeys, VarArrayOf([ VDBName , VSchemaName , VTableName ])
-        , EmptyParam, LDataset);
+      fDBConnection.OpenSchema(siPrimaryKeys, VarArrayOf([ VDBName , VSchemaName , VTableName ])
+        , EmptyParam, dataset);
 
-      LTablenameField := LDataset.FieldByName('TABLE_NAME');
-      LColumnNameField := LDataset.FieldByName('COLUMN_NAME');
-      LSchemaField := LDataset.FieldByName('TABLE_SCHEMA');
+      tableNameField := dataset.FieldByName('TABLE_NAME');
+      columnNameField := dataset.FieldByName('COLUMN_NAME');
+      schemaField := dataset.FieldByName('TABLE_SCHEMA');
 
-      while not LDataset.Eof do
+      while not dataset.Eof do
       begin
-        FPrimaryKeys.Add(
-          GetPrimKeyFindKey(LTablenameField.AsString, LSchemaField.AsString,
-            LColumnNameField.AsString), True);
-        LDataset.Next;
+        fPrimaryKeys.Add(
+          GetPrimKeyFindKey(tableNameField.AsString, schemaField.AsString,
+            columnNameField.AsString), True);
+        dataset.Next;
       end;
     end;
   finally
-    LDataset.Free;
+    dataset.Free;
     LTables.Free;
   end;
 end;
@@ -386,16 +375,16 @@ var
   LDataset: TADODataSet;
   LEntityModel: TEntityModelData;
 begin
-  FEntities.Clear;
+  fEntities.Clear;
 
-  if not FConnected then
+  if not fConnected then
     if not Connect then
       Exit;
 
   LTables := TStringList.Create;
   LDataset := TADODataSet.Create(nil);
   try
-    LDataset.Connection := FDBConnection;
+    LDataset.Connection := fDBConnection;
     LDataset.DisableControls;
     GetTables(LTables);
 
@@ -411,7 +400,7 @@ begin
         if LDataset.Fields.Count > 0 then
         begin
           LEntityModel := CreateEntityDataFromFields(LDataset.Fields, LTableName);
-          FEntities.Add(LEntityModel);
+          fEntities.Add(LEntityModel);
         end;
       except
         on E:Exception do
@@ -440,5 +429,8 @@ begin
     ASchema := Copy(ATableName, 1, LIndex - 1);
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

@@ -31,7 +31,6 @@ interface
 uses
   Rtti,
   Spring.Collections,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Criteria.Criterion.Abstract,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
