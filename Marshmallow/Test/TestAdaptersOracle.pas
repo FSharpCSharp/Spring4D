@@ -189,7 +189,7 @@ begin
   begin
     InsertCompany(i, Format('%D Company', [i]));
   end;
-  Imone := TProperty<TCompany>.ForName('IMONE');
+  Imone := TProperty<TCompany>.Create('IMONE');
 
   LCriteria := FManager.CreateCriteria<TCompany>;
   LCriteria.Add(Imone.GEq(1));

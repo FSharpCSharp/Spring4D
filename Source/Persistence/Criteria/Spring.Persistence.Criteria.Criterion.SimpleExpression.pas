@@ -87,7 +87,7 @@ begin
   paramName := command.GetAndIncParameterName(fPropertyName);
 
   whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
-  whereField.MatchMode := GetMatchMode;
+  whereField.MatchMode := MatchMode;
   whereField.WhereOperator := GetWhereOperator;
   whereField.ParamName := paramName;
 

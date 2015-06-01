@@ -265,10 +265,10 @@ type
     ///     <c>var Key: Prop;
     ///     begin
     ///     Key := GetProp('KEY');
-    ///     fRepository.FindWhere(Key = 100).Page(1,10).ToList;
+    ///     fRepository.FindWhere(Key = 100).Page(1,10);
     ///     </c>
     /// </example>
-    function FindWhere(const expression: ICriterion): ICriteria<T>; overload;
+    function FindWhere(const expression: ICriterion): IList<T>; overload;
   end;
 
   IEmbeddedEntity = interface(IInvokable)

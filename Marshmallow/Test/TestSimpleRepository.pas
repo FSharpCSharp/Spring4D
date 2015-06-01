@@ -169,8 +169,7 @@ begin
   InsertCustomer(10, 'Foo');
 
   CheckEquals('Foo', FCustomerRepository
-    .FindWhere(GetProp(CUSTNAME) = 'Foo')
-    .ToList
+    .FindWhere(Prop.Create(CUSTNAME) = 'Foo')
     .First.Name);
 end;
 

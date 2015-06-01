@@ -30,6 +30,7 @@ interface
 
 uses
   Spring.Collections,
+  Spring.Persistence.Criteria.Criterion.Abstract,
   Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
@@ -37,18 +38,13 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  TJunction = class(TInterfacedObject, ICriterion)
+  TJunction = class(TAbstractCriterion)
   private
     fCriterions: IList<ICriterion>;
-    fEntityClass: TClass;
-    function GetEntityClass: TClass;
-    procedure SetEntityClass(value: TClass);
   protected
-    function GetMatchMode: TMatchMode; virtual;
-    function GetWhereOperator: TWhereOperator; virtual; abstract;
     function ToSqlString(const params: IList<TDBParam>;
       const command: TDMLCommand; const generator: ISQLGenerator;
-      addToCommand: Boolean): string; virtual;
+      addToCommand: Boolean): string; override;
   public
     constructor Create; virtual;
 
@@ -72,21 +68,6 @@ function TJunction.Add(const criterion: ICriterion): TJunction;
 begin
   fCriterions.Add(criterion);
   Result := Self;
-end;
-
-function TJunction.GetEntityClass: TClass;
-begin
-  Result := fEntityClass;
-end;
-
-function TJunction.GetMatchMode: TMatchMode;
-begin
-  Result := mmExact;
-end;
-
-procedure TJunction.SetEntityClass(value: TClass);
-begin
-  fEntityClass := value;
 end;
 
 function TJunction.ToSqlString(const params: IList<TDBParam>;

@@ -889,7 +889,7 @@ var
 begin
   InsertObject(FMongoConnection, 100, 1);
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
-  Key := TProperty<TMongoEntity>.ForName('KEY');
+  Key := TProperty<TMongoEntity>.Create('KEY');
 
   LKeys := LCriteria.Add(Key.Between(1, 2)).ToList;
   CheckEquals(0, LKeys.Count, 'Between 0');
@@ -908,7 +908,7 @@ var
 begin
   InsertObject(FMongoConnection, 100, 1);
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
-  Key := TProperty<TMongoEntity>.ForName('KEY');
+  Key := TProperty<TMongoEntity>.Create('KEY');
   LKeys := LCriteria.Add(Key.Eq(100)).ToList;
   CheckEquals(1, LKeys.Count, 'Eq');
 
@@ -941,7 +941,7 @@ var
 begin
   InsertObject(FMongoConnection, 100, 1);
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
-  Key := TProperty<TMongoEntity>.ForName('KEY');
+  Key := TProperty<TMongoEntity>.Create('KEY');
   LKeys := LCriteria.Add(Key.InInt(TArray<Integer>.Create(100,1,2))).ToList;
   CheckEquals(1, LKeys.Count, 'In');
 
@@ -958,7 +958,7 @@ var
 begin
   InsertObject(FMongoConnection, 100, 1, 'Foobar');
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
-  Name := TProperty<TMongoEntity>.ForName('Name');
+  Name := TProperty<TMongoEntity>.Create('Name');
 
   LKeys := LCriteria.Add(Name.NotLike('bar')).ToList;
   CheckEquals(0, LKeys.Count, 'Not Like');
@@ -976,7 +976,7 @@ var
 begin
   InsertObject(FMongoConnection, 100, 1);
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
-  Key := TProperty<TMongoEntity>.ForName('KEY');
+  Key := TProperty<TMongoEntity>.Create('KEY');
 
   LKeys := LCriteria.Add(Restrictions.&Not( Key.Eq(100))).ToList;
   CheckEquals(0, LKeys.Count, 'Not');
@@ -990,7 +990,7 @@ var
 begin
   InsertObject(FMongoConnection, Null, 1);
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
-  Key := TProperty<TMongoEntity>.ForName('KEY');
+  Key := TProperty<TMongoEntity>.Create('KEY');
   LKeys := LCriteria.Add(Key.IsNotNull).ToList;
   CheckEquals(0, LKeys.Count, 'Not Null');
 
@@ -1007,8 +1007,8 @@ var
 begin
   InsertObject(FMongoConnection, 999, 1);
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
-  Key := TProperty<TMongoEntity>.ForName('KEY');
-  Id := TProperty<TMongoEntity>.ForName('_id');
+  Key := TProperty<TMongoEntity>.Create('KEY');
+  Id := TProperty<TMongoEntity>.Create('_id');
 
   LKeys := LCriteria.Add(Restrictions.Or(Key.NotEq(999), Id.NotEq(1)) ).ToList;
   CheckEquals(0, LKeys.Count, 'Simple Or');
@@ -1023,7 +1023,7 @@ begin
   InsertObject(FMongoConnection, 999, 1);
   InsertObject(FMongoConnection, 1000, 2);
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
-  Key := TProperty<TMongoEntity>.ForName('KEY');
+  Key := TProperty<TMongoEntity>.Create('KEY');
 
   LKeys := LCriteria.OrderBy(Key.Desc).ToList;
   CheckEquals(2, LKeys.Count);
@@ -1333,8 +1333,8 @@ var
   Key: Prop;
 begin
   InsertObject(FConnection, 100, 1);
-  Key := GetProp('KEY');
-  CheckEquals(1, FProxyRepository.FindWhere(Key = 100).Page(1,10).GetTotalItems);
+  Key := Prop.Create('KEY');
+  CheckEquals(1, FProxyRepository.FindWhere.Add(Key = 100).Page(1,10).GetTotalItems);
 end;
 
 procedure TMongoProxyRepositoryTest.DefaultMethod_Query;

@@ -76,7 +76,7 @@ begin
   Result := Format('%s %s %s', [PropertyName, WhereOperatorNames[GetWhereOperator],
     GetMatchModeString(fMatchMode, Value.AsString)]);
 
-  whereField := TSQLWhereField.Create(Result, GetCriterionTable(command) );
+  whereField := TSQLWhereField.Create(Result, GetCriterionTable(command));
   whereField.MatchMode := GetMatchMode;
   whereField.WhereOperator := GetWhereOperator;
 

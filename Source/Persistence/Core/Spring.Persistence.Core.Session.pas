@@ -89,9 +89,9 @@ type
     /// </summary>
     /// <example>
     ///   <code lang="Delphi">Age := GetProp(CUSTAGE);
-    /// session.FindWhere&lt;TCustomer&gt;(Age = 10).ToList;</code>
+    /// session.FindWhere&lt;TCustomer&gt;(Age = 10);</code>
     /// </example>
-    function FindWhere<T:class, constructor>(const expression: ICriterion): ICriteria<T>;
+    function FindWhere<T:class, constructor>(const expression: ICriterion): IList<T>;
 
     /// <summary>
     ///   Executes sql statement which does not return resultset.
@@ -383,9 +383,9 @@ begin
     Result := T(MapEntityFromResultSetRow(results, TypeInfo(T)));
 end;
 
-function TSession.FindWhere<T>(const expression: ICriterion): ICriteria<T>;
+function TSession.FindWhere<T>(const expression: ICriterion): IList<T>;
 begin
-  Result := CreateCriteria<T>.Where(expression);
+  Result := CreateCriteria<T>.Where(expression).ToList;
 end;
 
 function TSession.First<T>(const sql: string; const params: array of const): T;

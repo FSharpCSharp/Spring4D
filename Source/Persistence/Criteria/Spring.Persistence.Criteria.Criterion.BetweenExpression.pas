@@ -104,7 +104,7 @@ begin
     whereField.Free;
 
   //1st parameter Low
-  param := generator.GetParamClass.Create; // TDBParam.Create;
+  param := generator.GetParamClass.Create;
   param.SetFromTValue(fLowValue);
   param.Name := paramName;
   params.Add(param);

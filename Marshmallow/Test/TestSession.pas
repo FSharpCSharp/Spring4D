@@ -660,8 +660,8 @@ var
   Age: Prop;
 begin
   InsertCustomer(10);
-  Age := GetProp(CUSTAGE);
-  CheckEquals(10, FManager.FindWhere<TCustomer>(Age = 10).ToList.First.Age);
+  Age := Prop.Create(CUSTAGE);
+  CheckEquals(10, FManager.FindWhere<TCustomer>(Age = 10).First.Age);
 end;
 
 procedure TSessionTest.First;
@@ -1103,7 +1103,7 @@ begin
   LListSession.CommitListSession;
 
  // LCustomers := FManager.FindAll<TCustomer>;
-  LProp := TProperty<TCustomer>.ForName('CUSTAGE');
+  LProp := TProperty<TCustomer>.Create('CUSTAGE');
   LCustomers := FManager.CreateCriteria<TCustomer>.OrderBy(LProp.Asc).ToList;
   CheckEquals(3, LCustomers.Count);
   CheckEquals(1, LCustomers.First.Age);

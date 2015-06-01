@@ -40,17 +40,21 @@ type
   TAbstractCriterion = class(TInterfacedObject, ICriterion)
   private
     fEntityClass: TClass;
-    procedure SetEntityClass(value: TClass);
     function GetEntityClass: TClass;
+    procedure SetEntityClass(value: TClass);
   protected
     function GetCriterionTable(const command: TDMLCommand): TSQLTable; overload; virtual;
     function GetCriterionTable(const command: TDMLCommand;
       const table: TSQLTable): TSQLTable; overload; virtual;
     function GetMatchMode: TMatchMode; virtual;
-    function GetWhereOperator: TWhereOperator; virtual;
+    function GetWhereOperator: TWhereOperator; virtual; abstract;
+
     function ToSqlString(const params: IList<TDBParam>;
       const command: TDMLCommand; const generator: ISQLGenerator;
-      addToCommand: Boolean): string; virtual;
+      addToCommand: Boolean): string; virtual; abstract;
+
+    property MatchMode: TMatchMode read GetMatchMode;
+    property WhereOperator: TWhereOperator read GetWhereOperator;
   end;
 
 implementation
@@ -85,21 +89,12 @@ begin
   Result := mmExact;
 end;
 
-function TAbstractCriterion.GetWhereOperator: TWhereOperator;
-begin
-  Result := woEqual;
-end;
-
 procedure TAbstractCriterion.SetEntityClass(value: TClass);
 begin
   fEntityClass := value;
 end;
 
-function TAbstractCriterion.ToSqlString(const params: IList<TDBParam>;
-  const command: TDMLCommand; const generator: ISQLGenerator;
-  addToCommand: Boolean): string;
-begin
-  Result := '';
-end;
+{$ENDREGION}
+
 
 end.

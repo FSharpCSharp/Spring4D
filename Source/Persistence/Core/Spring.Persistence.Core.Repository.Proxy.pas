@@ -274,10 +274,10 @@ begin
     begin
       Result := TValue.From<ICriteria<T>>(fRepository.FindWhere);
     end);
-  RegisterMethod(Format('function FindWhere(const expression: ICriterion): ICriteria<%s>', [fQualifiedTypeName]),
+  RegisterMethod(Format('function FindWhere(const expression: ICriterion): IList<%s>', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
-      Result := TValue.From<ICriteria<T>>(fRepository.FindWhere(Args[1].AsInterface as ICriterion));
+      Result := TValue.From<IList<T>>(fRepository.FindWhere(Args[1].AsInterface as ICriterion));
     end);
   RegisterMethod(Format('function FindOne(const id: %s): %s', [fIdTypeName, fTypeName]),
     function(const Args: TArray<TValue>): TValue

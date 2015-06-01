@@ -80,14 +80,10 @@ type
   ICriterion = interface(IInvokable)
     ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
     function GetEntityClass: TClass;
-    function GetMatchMode: TMatchMode;
-    function GetWhereOperator: TWhereOperator;
     procedure SetEntityClass(value: TClass);
     function ToSqlString(const params: IList<TDBParam>; const command: TDMLCommand;
       const generator: ISQLGenerator; addToCommand: Boolean): string;
     property EntityClass: TClass read GetEntityClass write SetEntityClass;
-    property MatchMode: TMatchMode read GetMatchMode;
-    property WhereOperator: TWhereOperator read GetWhereOperator;
   end;
 
   /// <summary>
@@ -139,12 +135,6 @@ type
     ///   Clear current Criteria.
     /// </summary>
     procedure Clear;
-
-    /// <summary>
-    ///   Returns the count of the added <see cref="Spring.Persistence.Criteria.Interfaces|ICriterion" />
-    ///    instances.
-    /// </summary>
-    function Count: Integer;
 
     /// <summary>
     ///   Returns the results.
@@ -203,14 +193,12 @@ type
 
     function GetEntityClass: TClass;
     function GetPropertyName: string;
-    procedure SetEntityClass(value: TClass);
-    procedure SetPropertyName(const value: string);
 
     function Asc: IOrderBy;
     function Desc: IOrderBy;
 
-    property EntityClass: TClass read GetEntityClass write SetEntityClass;
-    property PropertyName: string read GetPropertyName write SetPropertyName;
+    property EntityClass: TClass read GetEntityClass;
+    property PropertyName: string read GetPropertyName;
   end;
 
 implementation

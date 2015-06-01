@@ -47,20 +47,21 @@ type
     fOrderBy: IList<IOrderBy>;
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fSession: TSession;
+    function GetCount: Integer;
   protected
     constructor Create(const session: TSession); virtual;
 
     function GenerateSqlStatement(const params: IList<TDBParam>): string;
-    function Page(page, itemsPerPage: Integer): IDBPage<T>; virtual;
+    function Page(page, itemsPerPage: Integer): IDBPage<T>;
   public
-    function Add(const criterion: ICriterion): ICriteria<T>; virtual;
-    function Where(const criterion: ICriterion): ICriteria<T>; virtual;
-    function OrderBy(const orderBy: IOrderBy): ICriteria<T>; virtual;
+    function Add(const criterion: ICriterion): ICriteria<T>;
+    function Where(const criterion: ICriterion): ICriteria<T>;
+    function OrderBy(const orderBy: IOrderBy): ICriteria<T>;
 
-    procedure Clear; virtual;
-    function Count: Integer; virtual;
+    procedure Clear;
     function ToList: IList<T>;
 
+    property Count: Integer read GetCount;
     property Criterions: IList<ICriterion> read fCriterions;
     property EntityClass: TClass read fEntityClass;
     property Session: TSession read fSession;
@@ -88,8 +89,8 @@ end;
 
 function TCriteria<T>.Add(const criterion: ICriterion): ICriteria<T>;
 begin
-  if criterion.GetEntityClass = nil then
-    criterion.SetEntityClass(fEntityClass);
+  if criterion.EntityClass = nil then
+    criterion.EntityClass := fEntityClass;
   fCriterions.Add(criterion);
   Result := Self;
 end;
@@ -100,7 +101,7 @@ begin
   fOrderBy.Clear;
 end;
 
-function TCriteria<T>.Count: Integer;
+function TCriteria<T>.GetCount: Integer;
 begin
   Result := fCriterions.Count;
 end;

@@ -101,7 +101,7 @@ procedure TCriteriaTest.Add_Eq;
 begin
   FCriteria.Add(Restrictions.Eq('Name', 'Foo'))
     .Add(Restrictions.Eq('Age', 42));
-  CheckEquals(2, FCriteria.Count);
+  CheckEquals(2, (FCriteria as TCriteria<TCustomer>).Count);
 end;
 
 
@@ -114,7 +114,7 @@ var
 begin
   LCriteria := FSession.CreateCriteria<TCustomer_Orders>;
 
-  Age := TProperty<TCustomer>.ForName(CUSTAGE);
+  Age := TProperty<TCustomer>.Create(CUSTAGE);
 
   for i := 1 to 10 do
   begin
@@ -145,8 +145,8 @@ var
   LCustomers: IList<TCustomer>;
   Age, Name: IProperty;
 begin
-  Age := TProperty.ForName(CUSTAGE);
-  Name := TProperty.ForName(CUSTNAME);
+  Age := TProperty.Create(CUSTAGE);
+  Name := TProperty.Create(CUSTNAME);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
@@ -167,8 +167,8 @@ var
   LCustomers: IList<TCustomer>;
   Age, Name: IProperty;
 begin
-  Age := TProperty.ForName(CUSTAGE);
-  Name := TProperty.ForName(CUSTNAME);
+  Age := TProperty.Create(CUSTAGE);
+  Name := TProperty.Create(CUSTNAME);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
@@ -203,8 +203,8 @@ var
   LCustomers: IList<TCustomer>;
   Age, Name: IProperty;
 begin
-  Age := TProperty.ForName(CUSTAGE);
-  Name := TProperty.ForName(CUSTNAME);
+  Age := TProperty.Create(CUSTAGE);
+  Name := TProperty.Create(CUSTNAME);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
@@ -221,7 +221,7 @@ var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
 begin
-  Age := TProperty.ForName(CUSTAGE);
+  Age := TProperty.Create(CUSTAGE);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
@@ -247,8 +247,8 @@ begin
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
-  Age := TProperty<TCustomer>.ForName(CUSTAGE);
-  ID := TProperty<TCustomer>.ForName(CUSTID);
+  Age := TProperty<TCustomer>.Create(CUSTAGE);
+  ID := TProperty<TCustomer>.Create(CUSTID);
 
   LCustomers := FCriteria.Add(Restrictions.NeProperty(CUSTAGE, CUSTID))
     .ToList;
@@ -264,8 +264,8 @@ begin
   CheckEquals(50, LCustomers[1].Age);
 
   FCriteria.Clear;
-  Age := TProperty.ForName(CUSTAGE);
-  ID := TProperty.ForName(CUSTID);
+  Age := TProperty.Create(CUSTAGE);
+  ID := TProperty.Create(CUSTID);
   LCustomers := FCriteria.Add(Age.NeProperty(ID)).Add(Age.NeProperty(CUSTNAME))
     .ToList;
   CheckEquals(2, LCustomers.Count);
@@ -402,7 +402,7 @@ var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
 begin
-  Age := TProperty.ForName(CUSTAGE);
+  Age := TProperty.Create(CUSTAGE);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
@@ -419,7 +419,7 @@ var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
 begin
-  Age := TProperty.ForName(CUSTAGE);
+  Age := TProperty.Create(CUSTAGE);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
@@ -437,7 +437,7 @@ var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
 begin
-  Age := TProperty.ForName(CUSTAGE);
+  Age := TProperty.Create(CUSTAGE);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
   //WHERE ((A.CUSTAGE =:CUSTAGE1 OR A.CUSTAGE = :CUSTAGE2) OR A.CUSTAGE >=:CUSTAGE3)
@@ -455,7 +455,7 @@ var
   LCustomers: IList<TCustomer>;
   Age: IProperty;
 begin
-  Age := TProperty.ForName(CUSTAGE);
+  Age := TProperty.Create(CUSTAGE);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
@@ -472,8 +472,8 @@ var
   LCustomers: IList<TCustomer>;
   Age, Name: Prop;
 begin
-  Age := GetProp(CUSTAGE);
-  Name := GetProp(CUSTNAME);
+  Age := Prop.Create(CUSTAGE);
+  Name := Prop.Create(CUSTNAME);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
   LCustomers := FCriteria.Where((Age = 42) and (Age <> 50) and (Age = Age){$IFDEF DELPHIXE2_UP} and (Age in [42]){$ENDIF})
@@ -498,7 +498,7 @@ var
   Age: IProperty;
   i: Integer;
 begin
-  Age := TProperty.ForName(CUSTAGE);
+  Age := TProperty.Create(CUSTAGE);
   //add 10 customers
   for i := 1 to 10 do
   begin
@@ -521,7 +521,7 @@ var
   i: Integer;
   LCustId: Integer;
 begin
-  Age := TProperty.ForName(CUSTAGE);
+  Age := TProperty.Create(CUSTAGE);
   //add 10 customers
   for i := 1 to 10 do
   begin

@@ -51,7 +51,7 @@ type
     function FindOne(const id: TID): T; virtual;
     function FindAll: IList<T>; virtual;
     function FindWhere: ICriteria<T>; overload; virtual;
-    function FindWhere(const expression: ICriterion): ICriteria<T>; overload; virtual;
+    function FindWhere(const expression: ICriterion): IList<T>; overload; virtual;
 
     function Save(const entity: T): T; overload; virtual;
     function Save(const entities: IEnumerable<T>): IEnumerable<T>; overload; virtual;
@@ -147,7 +147,7 @@ begin
 end;
 
 function TSimpleRepository<T, TID>.FindWhere(
-  const expression: ICriterion): ICriteria<T>;
+  const expression: ICriterion): IList<T>;
 begin
   Result := fSession.FindWhere<T>(expression);
 end;

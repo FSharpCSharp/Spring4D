@@ -45,48 +45,47 @@ type
     fPropertyName: string;
     fEntityClass: TClass;
   protected
-    constructor Create; virtual;
-  protected
-    function Eq(const value: TValue): ICriterion; virtual;
-    function NotEq(const value: TValue): ICriterion; virtual;
-    function GEq(const value: TValue): ICriterion; virtual;
-    function Gt(const value: TValue): ICriterion; virtual;
-    function IsNull: ICriterion; virtual;
-    function IsNotNull: ICriterion; virtual;
-    function Like(const value: string; matchMode: TMatchMode = mmExact): ICriterion; virtual;
-    function NotLike(const value: string; matchMode: TMatchMode = mmExact): ICriterion; virtual;
-    function LEq(const value: TValue): ICriterion; virtual;
-    function Lt(const value: TValue): ICriterion; virtual;
+    function Eq(const value: TValue): ICriterion;
+    function NotEq(const value: TValue): ICriterion;
+    function GEq(const value: TValue): ICriterion;
+    function Gt(const value: TValue): ICriterion;
+    function IsNull: ICriterion;
+    function IsNotNull: ICriterion;
+    function Like(const value: string; matchMode: TMatchMode = mmExact): ICriterion;
+    function NotLike(const value: string; matchMode: TMatchMode = mmExact): ICriterion;
+    function LEq(const value: TValue): ICriterion;
+    function Lt(const value: TValue): ICriterion;
     function &In<T>(const value: TArray<T>): ICriterion;
     function NotIn<T>(const value: TArray<T>): ICriterion;
-    function InStr(const value: TArray<string>): ICriterion; virtual;
-    function NotInStr(const value: TArray<string>): ICriterion; virtual;
-    function InInt(const value: TArray<Integer>): ICriterion; virtual;
-    function NotInInt(const value: TArray<Integer>): ICriterion; virtual;
-    function Between(const low, high: TValue): ICriterion; virtual;
-    function Asc: IOrderBy; virtual;
-    function Desc: IOrderBy; virtual;
+    function InStr(const value: TArray<string>): ICriterion;
+    function NotInStr(const value: TArray<string>): ICriterion;
+    function InInt(const value: TArray<Integer>): ICriterion;
+    function NotInInt(const value: TArray<Integer>): ICriterion;
+    function Between(const low, high: TValue): ICriterion;
+    function Asc: IOrderBy;
+    function Desc: IOrderBy;
 
-    function EqProperty(const other: IProperty): ICriterion; overload; virtual;
-    function EqProperty(const otherPropertyName: string): ICriterion; overload; virtual;
-    function NeProperty(const other: IProperty): ICriterion; overload; virtual;
-    function NeProperty(const otherPropertyName: string): ICriterion; overload; virtual;
-    function GeProperty(const other: IProperty): ICriterion; overload; virtual;
-    function GeProperty(const otherPropertyName: string): ICriterion; overload; virtual;
-    function GtProperty(const other: IProperty): ICriterion; overload; virtual;
-    function GtProperty(const otherPropertyName: string): ICriterion; overload; virtual;
-    function LeProperty(const other: IProperty): ICriterion; overload; virtual;
-    function LeProperty(const otherPropertyName: string): ICriterion; overload; virtual;
-    function LtProperty(const other: IProperty): ICriterion; overload; virtual;
-    function LtProperty(const otherPropertyName: string): ICriterion; overload; virtual;
+    function EqProperty(const other: IProperty): ICriterion; overload;
+    function EqProperty(const otherPropertyName: string): ICriterion; overload;
+    function NeProperty(const other: IProperty): ICriterion; overload;
+    function NeProperty(const otherPropertyName: string): ICriterion; overload;
+    function GeProperty(const other: IProperty): ICriterion; overload;
+    function GeProperty(const otherPropertyName: string): ICriterion; overload;
+    function GtProperty(const other: IProperty): ICriterion; overload;
+    function GtProperty(const otherPropertyName: string): ICriterion; overload;
+    function LeProperty(const other: IProperty): ICriterion; overload;
+    function LeProperty(const otherPropertyName: string): ICriterion; overload;
+    function LtProperty(const other: IProperty): ICriterion; overload;
+    function LtProperty(const otherPropertyName: string): ICriterion; overload;
 
-    function GetEntityClass: TClass; virtual;
-    function GetPropertyName: string; virtual;
-    procedure SetEntityClass(value: TClass); virtual;
-    procedure SetPropertyName(const value: string); virtual;
+    function GetEntityClass: TClass;
+    function GetPropertyName: string;
+    procedure SetEntityClass(value: TClass);
+    procedure SetPropertyName(const value: string);
   public
-    class function ForName(const propertyName: string): TProperty;
+    constructor Create(const propertyName: string; entityClass: TClass = nil);
 
+    property EntityClass: TClass read GetEntityClass;
     property PropertyName: string read GetPropertyName write SetPropertyName;
   end;
 
@@ -95,20 +94,18 @@ type
   /// </summary>
   TProperty<T: class> = class(TProperty)
   public
-    class function ForName(const propertyName: string): TProperty;
+    constructor Create(const propertyName: string);
   end;
 
   TExpr = record
   private
     fCriterion: ICriterion;
   public
-    class function From(const criterion: ICriterion): TExpr; static;
-
     class operator Implicit(const criterion: ICriterion): TExpr; overload;
     class operator Implicit(const expr: TExpr): ICriterion; overload;
 
-    class operator LogicalAnd(const Left, Right: TExpr): ICriterion;
-    class operator LogicalOr(const Left, Right: TExpr): ICriterion;
+    class operator LogicalAnd(const left, right: TExpr): ICriterion;
+    class operator LogicalOr(const left, right: TExpr): ICriterion;
     class operator LogicalNot(const expr: TExpr): ICriterion;
   end;
 
@@ -120,37 +117,37 @@ type
   private
     fProp: IProperty;
   public
-    class function ForName(const propertyName: string; const classType: TClass): Prop; static;
+    constructor Create(const propertyName: string; const entityClass: TClass = nil);
 
-    class operator Equal(const Left, Right: Prop): TExpr; overload;
-    class operator Equal(const Left: Prop; const Right: Variant): TExpr; overload;
-    class operator Equal(const Left: Variant; const Right: Prop): TExpr; overload;
+    class operator Equal(const left, right: Prop): TExpr; overload;
+    class operator Equal(const left: Prop; const right: Variant): TExpr; overload;
+    class operator Equal(const left: Variant; const right: Prop): TExpr; overload;
 
-    class operator NotEqual(const Left, Right: Prop): TExpr; overload;
-    class operator NotEqual(const Left: Prop; const Right: Variant): TExpr; overload;
-    class operator NotEqual(const Left: Variant; const Right: Prop): TExpr; overload;
+    class operator NotEqual(const left, right: Prop): TExpr; overload;
+    class operator NotEqual(const left: Prop; const right: Variant): TExpr; overload;
+    class operator NotEqual(const left: Variant; const right: Prop): TExpr; overload;
 
-    class operator GreaterThan(const Left, Right: Prop): TExpr; overload;
-    class operator GreaterThan(const Left: Prop; const Right: Variant): TExpr; overload;
-    class operator GreaterThan(const Left: Variant; const Right: Prop): TExpr; overload;
+    class operator GreaterThan(const left, right: Prop): TExpr; overload;
+    class operator GreaterThan(const left: Prop; const right: Variant): TExpr; overload;
+    class operator GreaterThan(const left: Variant; const right: Prop): TExpr; overload;
 
-    class operator GreaterThanOrEqual(const Left, Right: Prop): TExpr; overload;
-    class operator GreaterThanOrEqual(const Left: Prop; const Right: Variant): TExpr; overload;
-    class operator GreaterThanOrEqual(const Left: Variant; const Right: Prop): TExpr; overload;
+    class operator GreaterThanOrEqual(const left, right: Prop): TExpr; overload;
+    class operator GreaterThanOrEqual(const left: Prop; const right: Variant): TExpr; overload;
+    class operator GreaterThanOrEqual(const left: Variant; const right: Prop): TExpr; overload;
 
-    class operator LessThan(const Left, Right: Prop): TExpr; overload;
-    class operator LessThan(const Left: Prop; const Right: Variant): TExpr; overload;
-    class operator LessThan(const Left: Variant; const Right: Prop): TExpr; overload;
+    class operator LessThan(const left, right: Prop): TExpr; overload;
+    class operator LessThan(const left: Prop; const right: Variant): TExpr; overload;
+    class operator LessThan(const left: Variant; const right: Prop): TExpr; overload;
 
-    class operator LessThanOrEqual(const Left, Right: Prop): TExpr; overload;
-    class operator LessThanOrEqual(const Left: Prop; const Right: Variant): TExpr; overload;
-    class operator LessThanOrEqual(const Left: Variant; const Right: Prop): TExpr; overload;
+    class operator LessThanOrEqual(const left, right: Prop): TExpr; overload;
+    class operator LessThanOrEqual(const left: Prop; const right: Variant): TExpr; overload;
+    class operator LessThanOrEqual(const left: Variant; const right: Prop): TExpr; overload;
 
-    class operator In(const Left: Prop; const Right: TArray<string>): TExpr; overload;
-    class operator In(const Left: Prop; const Right: array of string): TExpr; overload;
-    class operator In(const Left: Prop; const Right: array of Integer): TExpr; overload;
-    class operator In(const Left: Prop; const Right: TArray<Integer>): TExpr; overload;
-    class operator In(const Left: Prop; const Right: TSetNumbers): TExpr; overload;
+    class operator In(const left: Prop; const right: TArray<string>): TExpr; overload;
+    class operator In(const left: Prop; const right: array of string): TExpr; overload;
+    class operator In(const left: Prop; const right: array of Integer): TExpr; overload;
+    class operator In(const left: Prop; const right: TArray<Integer>): TExpr; overload;
+    class operator In(const left: Prop; const right: TSetNumbers): TExpr; overload;
 
     function IsNull: ICriterion;
     function IsNotNull: ICriterion;
@@ -162,8 +159,6 @@ type
     function Desc: IOrderBy;
   end;
 
-  function GetProp(const name: string; const classType: TClass = nil): Prop;
-
 implementation
 
 uses
@@ -173,17 +168,12 @@ uses
   Spring.Persistence.Criteria.OrderBy;
 
 
-function GetProp(const name: string; const classType: TClass): Prop;
-begin
-  Result := Prop.ForName(name, classType);
-end;
-
-
 {$REGION 'TProperty'}
 
-constructor TProperty.Create;
+constructor TProperty.Create(const propertyName: string; entityClass: TClass);
 begin
-  inherited Create;
+  fPropertyName := propertyName;
+  fEntityClass := entityClass;
 end;
 
 function TProperty.Asc: IOrderBy;
@@ -220,16 +210,10 @@ end;
 function TProperty.EqProperty(const other: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, other.GetPropertyName, woEqual,
+    PropertyName, other.PropertyName, woEqual,
     TSQLTable.CreateFromClass(fEntityClass),
-    TSQLTable.CreateFromClass(other.GetEntityClass));
-  Result.SetEntityClass(GetEntityClass);
-end;
-
-class function TProperty.ForName(const propertyName: string): TProperty;
-begin
-  Result := TProperty.Create;
-  Result.fPropertyName := propertyName;
+    TSQLTable.CreateFromClass(other.EntityClass));
+  Result.SetEntityClass(EntityClass);
 end;
 
 function TProperty.GeProperty(const otherPropertyName: string): ICriterion;
@@ -430,12 +414,11 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TGenericProperty<T>'}
+{$REGION 'TProperty<T>'}
 
-class function TProperty<T>.ForName(const propertyName: string): TProperty;
+constructor TProperty<T>.Create(const propertyName: string);
 begin
-  Result := TProperty.ForName(propertyName);
-  Result.fEntityClass := T;
+  inherited Create(propertyName, T);
 end;
 
 {$ENDREGION}
@@ -443,61 +426,66 @@ end;
 
 {$REGION 'Prop'}
 
-class operator Prop.Equal(const Left, Right: Prop): TExpr;
+constructor Prop.Create(const propertyName: string; const entityClass: TClass);
 begin
-  Result.fCriterion := Left.fProp.EqProperty(Right.fProp);
+  fProp := TProperty.Create(propertyName, entityClass);
 end;
 
-class operator Prop.Equal(const Left: Prop; const Right: Variant): TExpr;
+class operator Prop.Equal(const left, right: Prop): TExpr;
 begin
-  Result.fCriterion := Left.fProp.Eq(TValue.FromVariant(Right));
+  Result.fCriterion := left.fProp.EqProperty(right.fProp);
 end;
 
-class operator Prop.In(const Left: Prop; const Right: TArray<string>): TExpr;
+class operator Prop.Equal(const left: Prop; const right: Variant): TExpr;
 begin
-  Result.fCriterion := Left.fProp.InStr(Right);
+  Result.fCriterion := left.fProp.Eq(TValue.FromVariant(right));
 end;
 
-class operator Prop.In(const Left: Prop; const Right: array of string): TExpr;
+class operator Prop.In(const left: Prop; const right: TArray<string>): TExpr;
+begin
+  Result.fCriterion := left.fProp.InStr(right);
+end;
+
+class operator Prop.In(const left: Prop; const right: array of string): TExpr;
 var
   rightArray: TArray<string>;
   I: Integer;
 begin
-  SetLength(rightArray, Length(Right));
-  for I := Low(Right) to High(Right) do
-    rightArray[I] := Right[I];
+  SetLength(rightArray, Length(right));
+  for I := Low(right) to High(right) do
+    rightArray[I] := right[I];
 
-  Result.fCriterion := Left.fProp.InStr(rightArray);
+  Result.fCriterion := left.fProp.InStr(rightArray);
 end;
 
-class operator Prop.In(const Left: Prop; const Right: array of Integer): TExpr;
+class operator Prop.In(const left: Prop; const right: array of Integer): TExpr;
 var
   rightArray: TArray<Integer>;
   I: Integer;
 begin
-  SetLength(rightArray, Length(Right));
-  for I := Low(Right) to High(Right) do
-    rightArray[I] := Right[I];
-  Result.fCriterion := Left.fProp.InInt(rightArray);
+  SetLength(rightArray, Length(right));
+  for I := Low(right) to High(right) do
+    rightArray[I] := right[I];
+  Result.fCriterion := left.fProp.InInt(rightArray);
 end;
 
-class operator Prop.In(const Left: Prop; const Right: TArray<Integer>): TExpr;
+class operator Prop.In(const left: Prop; const right: TArray<Integer>): TExpr;
 begin
-  Result.fCriterion := Left.fProp.InInt(Right);
+  Result.fCriterion := left.fProp.InInt(right);
 end;
 
-class operator Prop.In(const Left: Prop; const Right: TSetNumbers): TExpr;
+class operator Prop.In(const left: Prop; const right: TSetNumbers): TExpr;
 var
   rightArray: TArray<Integer>;
   lright: TSetNumbers;
 begin
-  lright := Right;
+  lright := right;
   rightArray := TEnumerable.Range(0, 256)
     .Where(function(const value: Integer): Boolean
     begin
       Result := value in lright;
     end).ToArray;
-  Result.fCriterion := Left.fProp.InInt(rightArray);
+  Result.fCriterion := left.fProp.InInt(rightArray);
 end;
 
 function Prop.IsNull: ICriterion;
@@ -535,100 +523,94 @@ begin
   Result := fProp.Desc;
 end;
 
-class operator Prop.Equal(const Left: Variant; const Right: Prop): TExpr;
+class operator Prop.Equal(const left: Variant; const right: Prop): TExpr;
 begin
-  Result.fCriterion := Right.fProp.Eq(TValue.FromVariant(Left));
+  Result.fCriterion := right.fProp.Eq(TValue.FromVariant(left));
 end;
 
-class function Prop.ForName(const propertyName: string; const classType: TClass): Prop;
+class operator Prop.GreaterThan(const left, right: Prop): TExpr;
 begin
-  Result.fProp := TProperty.ForName(propertyName);
-  Result.fProp.EntityClass := classType;
+  Result.fCriterion := left.fProp.GtProperty(right.fProp);
 end;
 
-class operator Prop.GreaterThan(const Left, Right: Prop): TExpr;
+class operator Prop.GreaterThan(const left: Prop;
+  const right: Variant): TExpr;
 begin
-  Result.fCriterion := Left.fProp.GtProperty(Right.fProp);
+  Result.fCriterion := left.fProp.Gt(TValue.FromVariant(right));
 end;
 
-class operator Prop.GreaterThan(const Left: Prop;
-  const Right: Variant): TExpr;
+class operator Prop.GreaterThan(const left: Variant;
+  const right: Prop): TExpr;
 begin
-  Result.fCriterion := Left.fProp.Gt(TValue.FromVariant(Right));
+  Result.fCriterion := right.fProp.Lt(TValue.FromVariant(left));
 end;
 
-class operator Prop.GreaterThan(const Left: Variant;
-  const Right: Prop): TExpr;
+class operator Prop.GreaterThanOrEqual(const left, right: Prop): TExpr;
 begin
-  Result.fCriterion := Right.fProp.Lt(TValue.FromVariant(Left));
+  Result.fCriterion := left.fProp.GeProperty(right.fProp);
 end;
 
-class operator Prop.GreaterThanOrEqual(const Left, Right: Prop): TExpr;
+class operator Prop.GreaterThanOrEqual(const left: Prop;
+  const right: Variant): TExpr;
 begin
-  Result.fCriterion := Left.fProp.GeProperty(Right.fProp);
+  Result.fCriterion := left.fProp.GEq(TValue.FromVariant(right));
 end;
 
-class operator Prop.GreaterThanOrEqual(const Left: Prop;
-  const Right: Variant): TExpr;
+class operator Prop.GreaterThanOrEqual(const left: Variant;
+  const right: Prop): TExpr;
 begin
-  Result.fCriterion := Left.fProp.GEq(TValue.FromVariant(Right));
+  Result.fCriterion := right.fProp.LEq(TValue.FromVariant(left));
 end;
 
-class operator Prop.GreaterThanOrEqual(const Left: Variant;
-  const Right: Prop): TExpr;
+class operator Prop.LessThan(const left, right: Prop): TExpr;
 begin
-  Result.fCriterion := Right.fProp.LEq(TValue.FromVariant(Left));
+  Result.fCriterion := left.fProp.LtProperty(right.fProp);
 end;
 
-class operator Prop.LessThan(const Left, Right: Prop): TExpr;
+class operator Prop.LessThan(const left: Prop;
+  const right: Variant): TExpr;
 begin
-  Result.fCriterion := Left.fProp.LtProperty(Right.fProp);
+  Result.fCriterion := left.fProp.Lt(TValue.FromVariant(right));
 end;
 
-class operator Prop.LessThan(const Left: Prop;
-  const Right: Variant): TExpr;
+class operator Prop.LessThan(const left: Variant;
+  const right: Prop): TExpr;
 begin
-  Result.fCriterion := Left.fProp.Lt(TValue.FromVariant(Right));
+  Result.fCriterion := right.fProp.Gt(TValue.FromVariant(left));
 end;
 
-class operator Prop.LessThan(const Left: Variant;
-  const Right: Prop): TExpr;
+class operator Prop.LessThanOrEqual(const left, right: Prop): TExpr;
 begin
-  Result.fCriterion := Right.fProp.Gt(TValue.FromVariant(Left));
+  Result.fCriterion := left.fProp.LeProperty(right.fProp);
 end;
 
-class operator Prop.LessThanOrEqual(const Left, Right: Prop): TExpr;
+class operator Prop.LessThanOrEqual(const left: Prop;
+  const right: Variant): TExpr;
 begin
-  Result.fCriterion := Left.fProp.LeProperty(Right.fProp);
+  Result.fCriterion := left.fProp.LEq(TValue.FromVariant(right));
 end;
 
-class operator Prop.LessThanOrEqual(const Left: Prop;
-  const Right: Variant): TExpr;
+class operator Prop.LessThanOrEqual(const left: Variant;
+  const right: Prop): TExpr;
 begin
-  Result.fCriterion := Left.fProp.LEq(TValue.FromVariant(Right));
+  Result.fCriterion := right.fProp.GEq(TValue.FromVariant(left));
 end;
 
-class operator Prop.LessThanOrEqual(const Left: Variant;
-  const Right: Prop): TExpr;
+class operator Prop.NotEqual(const left: Variant;
+  const right: Prop): TExpr;
 begin
-  Result.fCriterion := Right.fProp.GEq(TValue.FromVariant(Left));
+  Result.fCriterion := right.fProp.NotEq(TValue.FromVariant(left));
 end;
 
-class operator Prop.NotEqual(const Left: Variant;
-  const Right: Prop): TExpr;
+class operator Prop.NotEqual(const left: Prop;
+  const right: Variant): TExpr;
 begin
-  Result.fCriterion := Right.fProp.NotEq(TValue.FromVariant(Left));
+  Result.fCriterion := left.fProp.NotEq(TValue.FromVariant(right));
 end;
 
-class operator Prop.NotEqual(const Left: Prop;
-  const Right: Variant): TExpr;
+class operator Prop.NotEqual(const left, right: Prop): TExpr;
 begin
-  Result.fCriterion := Left.fProp.NotEq(TValue.FromVariant(Right));
-end;
-
-class operator Prop.NotEqual(const Left, Right: Prop): TExpr;
-begin
-  Result.fCriterion := Left.fProp.NeProperty(Right.fProp);
+  Result.fCriterion := left.fProp.NeProperty(right.fProp);
 end;
 
 {$ENDREGION}
@@ -636,24 +618,19 @@ end;
 
 {$REGION 'TExpr'}
 
-class function TExpr.From(const criterion: ICriterion): TExpr;
-begin
-  Result.fCriterion := criterion;
-end;
-
 class operator TExpr.Implicit(const expr: TExpr): ICriterion;
 begin
   Result := expr.fCriterion;
 end;
 
-class operator TExpr.LogicalAnd(const Left, Right: TExpr): ICriterion;
+class operator TExpr.LogicalAnd(const left, right: TExpr): ICriterion;
 begin
-  Result := Restrictions.&And(Left.fCriterion, Right.fCriterion);
+  Result := Restrictions.&And(left.fCriterion, right.fCriterion);
 end;
 
-class operator TExpr.LogicalOr(const Left, Right: TExpr): ICriterion;
+class operator TExpr.LogicalOr(const left, right: TExpr): ICriterion;
 begin
-  Result := Restrictions.&Or(Left.fCriterion, Right.fCriterion);
+  Result := Restrictions.&Or(left.fCriterion, right.fCriterion);
 end;
 
 class operator TExpr.LogicalNot(const expr: TExpr): ICriterion;
