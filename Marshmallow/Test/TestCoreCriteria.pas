@@ -5,11 +5,15 @@ interface
 {$I Spring.inc}
 
 uses
-  TestFramework, Spring.Collections, Spring.Persistence.Criteria, Generics.Collections
-  , Spring.Persistence.Criteria.Interfaces, Spring.Persistence.Criteria.Criterion.Abstract
-  , Spring.Persistence.Criteria.Abstract, TestEntities, Spring.Persistence.Criteria.Restrictions
-  ,Spring.Persistence.Core.Session
-  ;
+  TestFramework,
+  Generics.Collections,
+  TestEntities,
+  Spring.Collections,
+  Spring.Persistence.Core.Session,
+  Spring.Persistence.Criteria,
+  Spring.Persistence.Criteria.Criterion.Abstract,
+  Spring.Persistence.Criteria.Interfaces,
+  Spring.Persistence.Criteria.Restrictions;
 
 type
   TCriteriaTest = class(TTestCase)
