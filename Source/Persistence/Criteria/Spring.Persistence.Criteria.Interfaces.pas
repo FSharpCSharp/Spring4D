@@ -73,7 +73,7 @@ type
   /// <summary>
   ///   An object-oriented representation of a query criterion that may be used
   ///   as a restriction in a <see cref="Spring.Persistence.Criteria.Interfaces|ICriteria&lt;T&gt;" />
-  ///    query. Built-in criterion types are provided by the <see cref="Spring.Persistence.Criteria.Restrictions|TRestrictions" />
+  ///    query. Built-in criterion types are provided by the <see cref="Spring.Persistence.Criteria.Restrictions|Restrictions" />
   ///    factory class. This interface might be implemented by application
   ///   classes that define custom restriction criteria.
   /// </summary>
@@ -98,7 +98,7 @@ type
   ///   placed upon the result set. The <see cref="Spring.Persistence.Core.Session|TSession" />
   ///    is a factory for <see cref="Spring.Persistence.Criteria.Interfaces|ICriteria&lt;T&gt;" />
   ///    . <see cref="Spring.Persistence.Criteria.Interfaces|ICriterion" />
-  ///   instances are usually obtained via the factory methods on <see cref="Spring.Persistence.Criteria.Restrictions|TRestrictions" />
+  ///   instances are usually obtained via the factory methods on <see cref="Spring.Persistence.Criteria.Restrictions|Restrictions" />
   ///    .
   /// </summary>
   /// <example>
@@ -106,8 +106,8 @@ type
   ///   cats: IList&lt;TCat&gt;;
   /// begin
   ///   cats := session.CreateCriteria&lt;TCat&gt;
-  ///     .Add(TRestrictions.Like('name', 'Iz%'))
-  ///     .Add(TRestrictions.Gt('weight', MIN_WEIGHT))
+  ///     .Add(Restrictions.Like('name', 'Iz%'))
+  ///     .Add(Restrictions.Gt('weight', MIN_WEIGHT))
   ///     .OrderBy(TOrder.Asc('age')).ToList;</code>
   ///   <code lang="Delphi">var
   ///   cats: IList&lt;TCat&gt;;
@@ -167,7 +167,7 @@ type
   ///   A factory for property specific criterion and projection instances.
   /// </summary>
   /// <remarks>
-  ///   For detailed methods documentation look in <see cref="Spring.Persistence.Criteria.Restrictions|TRestrictions" />
+  ///   For detailed methods documentation look in <see cref="Spring.Persistence.Criteria.Restrictions|Restrictions" />
   ///   .
   /// </remarks>
   IProperty = interface(IInvokable)

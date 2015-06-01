@@ -30,6 +30,7 @@ interface
 
 uses
   Rtti,
+  Spring,
   Spring.Collections,
   Spring.Persistence.Criteria.Criterion.SimpleExpression,
   Spring.Persistence.SQL.Commands,
@@ -110,12 +111,10 @@ begin
       Result := Result + ',';
 
     value := fValues[i];
-    case value.Kind of
-      tkChar, tkWChar, tkLString, tkWString, tkUString, tkString:
-        s := QuotedStr(value.AsString)
+    if value.IsString then
+      s := QuotedStr(value.AsString)
     else
       s := value.ToString;
-    end;
     Result := Result + s;
   end;
 end;

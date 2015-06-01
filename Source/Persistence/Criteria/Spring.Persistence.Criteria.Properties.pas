@@ -120,7 +120,7 @@ type
   private
     fProp: IProperty;
   public
-    class function ForName(const propertyName: string; const classz: TClass): Prop; static;
+    class function ForName(const propertyName: string; const classType: TClass): Prop; static;
 
     class operator Equal(const Left, Right: Prop): TExpr; overload;
     class operator Equal(const Left: Prop; const Right: Variant): TExpr; overload;
@@ -162,7 +162,7 @@ type
     function Desc: IOrderBy;
   end;
 
-  function GetProp(const name: string; const classz: TClass = nil): Prop;
+  function GetProp(const name: string; const classType: TClass = nil): Prop;
 
 implementation
 
@@ -173,9 +173,9 @@ uses
   Spring.Persistence.Criteria.OrderBy;
 
 
-function GetProp(const name: string; const classz: TClass): Prop;
+function GetProp(const name: string; const classType: TClass): Prop;
 begin
-  Result := Prop.ForName(name, classz);
+  Result := Prop.ForName(name, classType);
 end;
 
 
@@ -194,7 +194,7 @@ end;
 
 function TProperty.Between(const low, high: TValue): ICriterion;
 begin
-  Result := TRestrictions.Between(PropertyName, low, high);
+  Result := Restrictions.Between(PropertyName, low, high);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -206,7 +206,7 @@ end;
 
 function TProperty.Eq(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.Eq(fPropertyName, value);
+  Result := Restrictions.Eq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -251,7 +251,7 @@ end;
 
 function TProperty.GEq(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.GEq(fPropertyName, value);
+  Result := Restrictions.GEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -267,7 +267,7 @@ end;
 
 function TProperty.Gt(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.Gt(fPropertyName, value);
+  Result := Restrictions.Gt(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -290,7 +290,7 @@ end;
 
 function TProperty.&In<T>(const value: TArray<T>): ICriterion;
 begin
-  Result := TRestrictions.&In<T>(fPropertyName, value);
+  Result := Restrictions.&In<T>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -308,13 +308,13 @@ end;
 
 function TProperty.IsNotNull: ICriterion;
 begin
-  Result := TRestrictions.IsNotNull(fPropertyName);
+  Result := Restrictions.IsNotNull(fPropertyName);
   Result.SetEntityClass(GetEntityClass);
 end;
 
 function TProperty.IsNull: ICriterion;
 begin
-  Result := TRestrictions.IsNull(fPropertyName);
+  Result := Restrictions.IsNull(fPropertyName);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -337,19 +337,19 @@ end;
 
 function TProperty.LEq(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.LEq(fPropertyName, value);
+  Result := Restrictions.LEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
 function TProperty.Like(const value: string; matchMode: TMatchMode): ICriterion;
 begin
-  Result := TRestrictions.Like(fPropertyName, value, matchMode);
+  Result := Restrictions.Like(fPropertyName, value, matchMode);
   Result.SetEntityClass(GetEntityClass);
 end;
 
 function TProperty.Lt(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.Lt(fPropertyName, value);
+  Result := Restrictions.Lt(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -389,13 +389,13 @@ end;
 
 function TProperty.NotEq(const value: TValue): ICriterion;
 begin
-  Result := TRestrictions.NotEq(fPropertyName, value);
+  Result := Restrictions.NotEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
 function TProperty.NotIn<T>(const value: TArray<T>): ICriterion;
 begin
-  Result := TRestrictions.NotIn<T>(fPropertyName, value);
+  Result := Restrictions.NotIn<T>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -413,7 +413,7 @@ end;
 
 function TProperty.NotLike(const value: string; matchMode: TMatchMode): ICriterion;
 begin
-  Result := TRestrictions.NotLike(fPropertyName, value, matchMode);
+  Result := Restrictions.NotLike(fPropertyName, value, matchMode);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -540,10 +540,10 @@ begin
   Result.fCriterion := Right.fProp.Eq(TValue.FromVariant(Left));
 end;
 
-class function Prop.ForName(const propertyName: string; const classz: TClass): Prop;
+class function Prop.ForName(const propertyName: string; const classType: TClass): Prop;
 begin
   Result.fProp := TProperty.ForName(propertyName);
-  Result.fProp.EntityClass := classz;
+  Result.fProp.EntityClass := classType;
 end;
 
 class operator Prop.GreaterThan(const Left, Right: Prop): TExpr;
@@ -648,17 +648,17 @@ end;
 
 class operator TExpr.LogicalAnd(const Left, Right: TExpr): ICriterion;
 begin
-  Result := TRestrictions.&And(Left.fCriterion, Right.fCriterion);
+  Result := Restrictions.&And(Left.fCriterion, Right.fCriterion);
 end;
 
 class operator TExpr.LogicalOr(const Left, Right: TExpr): ICriterion;
 begin
-  Result := TRestrictions.&Or(Left.fCriterion, Right.fCriterion);
+  Result := Restrictions.&Or(Left.fCriterion, Right.fCriterion);
 end;
 
 class operator TExpr.LogicalNot(const expr: TExpr): ICriterion;
 begin
-  Result := TRestrictions.&Not(expr.fCriterion);
+  Result := Restrictions.&Not(expr.fCriterion);
 end;
 
 class operator TExpr.Implicit(const criterion: ICriterion): TExpr;

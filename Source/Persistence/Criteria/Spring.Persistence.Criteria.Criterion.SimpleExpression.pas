@@ -86,7 +86,7 @@ begin
   inherited;
   paramName := command.GetAndIncParameterName(fPropertyName);
 
-  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command) {ACommand.Table});
+  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
   whereField.MatchMode := GetMatchMode;
   whereField.WhereOperator := GetWhereOperator;
   whereField.ParamName := paramName;

@@ -978,7 +978,7 @@ begin
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
   Key := TProperty<TMongoEntity>.ForName('KEY');
 
-  LKeys := LCriteria.Add(TRestrictions.&Not( Key.Eq(100))).ToList;
+  LKeys := LCriteria.Add(Restrictions.&Not( Key.Eq(100))).ToList;
   CheckEquals(0, LKeys.Count, 'Not');
 end;
 
@@ -1010,7 +1010,7 @@ begin
   Key := TProperty<TMongoEntity>.ForName('KEY');
   Id := TProperty<TMongoEntity>.ForName('_id');
 
-  LKeys := LCriteria.Add(TRestrictions.Or(Key.NotEq(999), Id.NotEq(1)) ).ToList;
+  LKeys := LCriteria.Add(Restrictions.Or(Key.NotEq(999), Id.NotEq(1)) ).ToList;
   CheckEquals(0, LKeys.Count, 'Simple Or');
 end;
 
