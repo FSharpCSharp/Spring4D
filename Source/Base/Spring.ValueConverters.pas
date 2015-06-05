@@ -776,22 +776,55 @@ end;
 
 {$REGION 'DefaultConverter'}
 
-function NopAddref(inst: Pointer): Integer; stdcall;
-begin
-  Result := -1;
-end;
+type
+  TDefaultConverter = class
+  private
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
 
-function NopRelease(inst: Pointer): Integer; stdcall;
-begin
-  Result := -1;
-end;
+    function ConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo): TValue; overload;
+    function ConvertToParam(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; overload;
+    function TryConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      out targetValue: TValue): Boolean; overload;
+    function TryConvertToParam(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      out targetValue: TValue;
+      const parameter: TValue): Boolean; overload;
+  private const
+    Vtable: array[0..6] of Pointer =
+    (
+      @TDefaultConverter.QueryInterface,
+      @TDefaultConverter._AddRef,
+      @TDefaultConverter._Release,
+      @TDefaultConverter.ConvertTo,
+      @TDefaultConverter.ConvertToParam,
+      @TDefaultConverter.TryConvertTo,
+      @TDefaultConverter.TryConvertToParam
+    );
+    Instance: Pointer = @TDefaultConverter.Vtable;
+  end;
 
-function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+function TDefaultConverter.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
   Result := E_NOINTERFACE;
 end;
 
-function ConvertToParam(Inst: Pointer; const value: TValue;
+function TDefaultConverter._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TDefaultConverter._Release: Integer;
+begin
+  Result := -1;
+end;
+
+function TDefaultConverter.ConvertToParam(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 
   procedure RaiseException;
@@ -815,13 +848,13 @@ begin
   end;
 end;
 
-function ConvertTo(Inst: Pointer; const value: TValue;
+function TDefaultConverter.ConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo): TValue;
 begin
-  Result := ConvertToParam(Inst, value, targetTypeInfo, EmptyValue);
+  Result := ConvertToParam(value, targetTypeInfo, EmptyValue);
 end;
 
-function TryConvertToParam(Inst: Pointer; const value: TValue;
+function TDefaultConverter.TryConvertToParam(const value: TValue;
   const targetTypeInfo: PTypeInfo;
   out targetValue: TValue;
   const parameter: TValue): Boolean;
@@ -834,26 +867,12 @@ begin
     or value.TryCast(targetTypeInfo, targetValue);
 end;
 
-function TryConvertTo(Inst: Pointer; const value: TValue;
+function TDefaultConverter.TryConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo;
   out targetValue: TValue): Boolean;
 begin
-  Result := TryConvertToParam(Inst, value, targetTypeInfo, targetValue, EmptyValue);
+  Result := TryConvertToParam(value, targetTypeInfo, targetValue, EmptyValue);
 end;
-
-const
-  DefaultConverter_Vtable: array[0..6] of Pointer =
-  (
-    @NopQueryInterface,
-    @NopAddref,
-    @NopRelease,
-    @ConvertTo,
-    @ConvertToParam,
-    @TryConvertTo,
-    @TryConvertToParam
-  );
-
-  DefaultConverter_Instance: Pointer = @DefaultConverter_Vtable;
 
 {$ENDREGION}
 
@@ -862,7 +881,7 @@ const
 
 class function TValueConverter.Default: IValueConverter;
 begin
-  Pointer(Result) := @DefaultConverter_Instance;
+  Pointer(Result) := @TDefaultConverter.Instance;
 end;
 
 function TValueConverter.ConvertTo(const value: TValue;
