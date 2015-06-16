@@ -112,7 +112,7 @@ type
   /// <summary>
   ///   Represents an observable subject.
   /// </summary>
-  IObservable<T> = interface
+  IObservable<T> = interface(IInvokable)
     procedure Attach(const observer: T);
     procedure Detach(const observer: T);
     procedure Notify;
@@ -147,7 +147,7 @@ type
   /// <summary>
   ///   Defines the core methods of a specification interface.
   /// </summary>
-  ISpecification<T> = interface
+  ISpecification<T> = interface(IInvokable)
     function IsSatisfiedBy(const item: T): Boolean;
     // DO NOT ADD ANY METHODS HERE!!!
   end;
