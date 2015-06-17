@@ -43,6 +43,14 @@ const
   doOwnsKeys = Generics.Collections.doOwnsKeys;
   doOwnsValues = Generics.Collections.doOwnsValues;
 
+  caAdded = Spring.caAdded;
+  caRemoved = Spring.caRemoved;
+  caExtracted = Spring.caExtracted;
+  caReplaced = Spring.caReplaced;
+  caMoved = Spring.caMoved;
+  caReseted = Spring.caReseted;
+  caChanged = Spring.caChanged;
+
 type
   {$REGION 'Forward definitions'}
   IEnumerator = interface;
