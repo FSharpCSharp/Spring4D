@@ -20,6 +20,7 @@ implementation
 
 uses
   TypInfo,
+  SysUtils,
   Spring;
 
 { TTestCoreUtils }

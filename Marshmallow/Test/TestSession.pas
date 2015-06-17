@@ -785,7 +785,7 @@ begin
 end;
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TestTSession.GetOne;
+procedure TSessionTest.GetOne;
 var
   LResultset: IDBResultset;
   LEntity: TCustomer;
@@ -876,7 +876,7 @@ begin
     [iCount, sw.ElapsedMilliseconds, LVal2]));
 end;
 
-procedure TestTSession.InsertList;
+procedure TSessionTest.InsertList;
 var
   LCustomers: IList<TCustomer>;
   LCustomer: TCustomer;
@@ -1967,14 +1967,14 @@ end;
 { TestTDetachedSession }
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TestTDetachedSession.Performance;
+procedure TDetachedSessionTest.Performance;
 var
   LCount: Integer;
   LStopWatch: TStopwatch;
   LProducts: IList<TProduct>;
 begin
   LCount := 50000;
-  TestTSession.InsertProducts(LCount);
+  TSessionTest.InsertProducts(LCount);
 
   LStopWatch := TStopwatch.StartNew;
   LProducts := FSession.FindAll<TProduct>;
@@ -2000,14 +2000,14 @@ type
     Result.Price := resultSet.GetFieldValue('PRODPRICE');
   end;
 
-procedure TestTDetachedSession.Performance_RowMapper;
+procedure TDetachedSessionTest.Performance_RowMapper;
 var
   LCount: Integer;
   LStopWatch: TStopwatch;
   LProducts: IList<TProduct>;
 begin
   LCount := 50000;
-  TestTSession.InsertProducts(LCount);
+  TSessionTest.InsertProducts(LCount);
   FSession.RegisterRowMapper<TProduct>(TProductRowMapper.Create);
 
   LStopWatch := TStopwatch.StartNew;

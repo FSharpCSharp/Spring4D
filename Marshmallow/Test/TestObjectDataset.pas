@@ -577,13 +577,13 @@ begin
 end;
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TestTObjectDataset.InsertionSort_Speed;
+procedure TObjectDatasetTest.InsertionSort_Speed;
 var
   LCustomers: IList<TCustomer>;
   swMerge, swInsertion: TStopwatch;
 begin
   LCustomers := CreateCustomersList(10000);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   //now merge sort will be used
   swMerge := TStopwatch.StartNew;
@@ -1104,13 +1104,13 @@ begin
 end;
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TestTObjectDataset.Filter_Performance_Test;
+procedure TObjectDatasetTest.Filter_Performance_Test;
 var
   LCustomers: IList<TCustomer>;
   sw: TStopwatch;
 begin
   LCustomers := CreateCustomersList(50000);
-  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
   FDataset.Filter := '((AGE = 2)) OR ((AGE = 3)) OR ((AGE = 4)) OR ((AGE = 1)) OR ((AGE = 100)) OR ((AGE = 1000)) OR ((AGE = 999)) OR '+
   ' ((NAME = ''Some Long Name Name sdsdsd sdsd aaaaaaaaaaaaaaaaaaaaaaaaaa     WWEEW    sdddddddddddddddddd sd sd  sds d sd sds d sdds sd wewewew vew ewe we we we we we we''))';

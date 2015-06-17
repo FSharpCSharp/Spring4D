@@ -764,7 +764,7 @@ begin
 end;
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TestMongoSession.Performance;
+procedure TMongoSessionTest.Performance;
 var
   LKey: TMongoEntity;
   i, iCount: Integer;

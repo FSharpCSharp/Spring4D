@@ -254,7 +254,7 @@ begin
 end;
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TestTRttiExplorer.TestCloneSpeed;
+procedure TRttiExplorerTest.TestCloneSpeed;
 var
   LCustomer, LCloned: TCustomer;
   i, iMax: Integer;

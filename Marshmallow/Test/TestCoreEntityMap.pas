@@ -153,7 +153,7 @@ begin
 end;
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TestTEntityMap.TestAddOrReplace_Clone_Speed;
+procedure TEntityMapTest.TestAddOrReplace_Clone_Speed;
 var
   iCount: Integer;
   sw: TStopwatch;
