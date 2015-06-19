@@ -30,7 +30,6 @@ interface
 
 uses
   Classes,
-  Generics.Defaults,
   Spring,
   Spring.Collections,
   Spring.Persistence.Mapping.Attributes;
@@ -199,74 +198,12 @@ end;
 
 {$REGION 'TEntityData'}
 
-procedure TEntityData.AssignTo(Dest: TPersistent);
-var
-  LDest: TEntityData;
-  LPair: TPair<string,ColumnAttribute>;
-begin
-  if Dest is TEntityData then
-  begin
-    LDest := TEntityData(Dest);
-
-    LDest.fTable := fTable;
-    LDest.fColumns.Clear;
-    LDest.fColumns.AddRange(Columns);
-
-    LDest.fSelectColumns.Clear;
-    LDest.fSelectColumns.AddRange(SelectColumns);
-
-    LDest.fColumnMemberNameIndex.Clear;
-    for LPair in fColumnMemberNameIndex do
-      LDest.fColumnMemberNameIndex.Add(LPair.Key, LPair.Value);
-
-    LDest.fColumnsData.fList.Clear;
-    LDest.fColumnsData.fList.AddRange(fColumnsData.fList);
-
-    LDest.fForeignKeyColumns.Clear;
-    LDest.fForeignKeyColumns.AddRange(fForeignKeyColumns);
-
-    LDest.fPrimaryKeyColumn := fPrimaryKeyColumn;
-
-    LDest.fOneToManyColumns.Clear;
-    LDest.fOneToManyColumns.AddRange(fOneToManyColumns);
-
-    LDest.fManyToOneColumns.Clear;
-    LDest.fManyToOneColumns.AddRange(ManyToOneColumns);
-
-    LDest.fSequence := fSequence;
-
-    LDest.fVersionColumn := fVersionColumn;
-
-    LDest.fHasInstanceField := fHasInstanceField;
-  end;
-end;
-
-function TEntityData.ColumnByMemberName(const memberName: string): ColumnAttribute;
-begin
-  if not fColumnMemberNameIndex.TryGetValue(memberName, Result) then
-    Result := nil;
-end;
-
-function TEntityData.ColumnByName(const columnName: string): ColumnAttribute;
-var
-  LAttribute: ColumnAttribute;
-begin
-  for LAttribute in fColumns do
-    if SameText(LAttribute.ColumnName, columnName) then
-      Exit(LAttribute);
-  Result := nil;
-end;
-
 constructor TEntityData.Create;
 begin
   inherited Create;
   fColumns := TCollections.CreateList<ColumnAttribute>;
   fSelectColumns := TCollections.CreateList<ColumnAttribute>;
   fColumnsData := TColumnDataList.Create;
-  fPrimaryKeyColumn := nil;
-  fTable := nil;
-  fSequence := nil;
-  fVersionColumn := nil;
   fForeignKeyColumns := TCollections.CreateList<ForeignJoinColumnAttribute>;
   fOneToManyColumns := TCollections.CreateList<OneToManyAttribute>;
   fManyToOneColumns := TCollections.CreateList<ManyToOneAttribute>;
@@ -280,17 +217,71 @@ begin
   inherited Destroy;
 end;
 
+procedure TEntityData.AssignTo(Dest: TPersistent);
+var
+  target: TEntityData;
+  pair: TPair<string,ColumnAttribute>;
+begin
+  if Dest is TEntityData then
+  begin
+    target := TEntityData(Dest);
+
+    target.fTable := fTable;
+    target.fColumns.Clear;
+    target.fColumns.AddRange(Columns);
+
+    target.fSelectColumns.Clear;
+    target.fSelectColumns.AddRange(SelectColumns);
+
+    target.fColumnMemberNameIndex.Clear;
+    for pair in fColumnMemberNameIndex do
+      target.fColumnMemberNameIndex.Add(pair.Key, pair.Value);
+
+    target.fColumnsData.fList.Clear;
+    target.fColumnsData.fList.AddRange(fColumnsData.fList);
+
+    target.fForeignKeyColumns.Clear;
+    target.fForeignKeyColumns.AddRange(fForeignKeyColumns);
+
+    target.fPrimaryKeyColumn := fPrimaryKeyColumn;
+
+    target.fOneToManyColumns.Clear;
+    target.fOneToManyColumns.AddRange(fOneToManyColumns);
+
+    target.fManyToOneColumns.Clear;
+    target.fManyToOneColumns.AddRange(ManyToOneColumns);
+
+    target.fSequence := fSequence;
+
+    target.fVersionColumn := fVersionColumn;
+
+    target.fHasInstanceField := fHasInstanceField;
+  end;
+end;
+
+function TEntityData.ColumnByMemberName(const memberName: string): ColumnAttribute;
+begin
+  if not fColumnMemberNameIndex.TryGetValue(memberName, Result) then
+    Result := nil;
+end;
+
+function TEntityData.ColumnByName(const columnName: string): ColumnAttribute;
+var
+  column: ColumnAttribute;
+begin
+  for column in fColumns do
+    if SameText(column.ColumnName, columnName) then
+      Exit(column);
+  Result := nil;
+end;
+
 function TEntityData.GetPrimaryKeyValueAsString(
   const instance: TObject): string;
-var
-  LValue: TValue;
 begin
-  Result := '';
   if Assigned(PrimaryKeyColumn) then
-  begin
-    LValue := PrimaryKeyColumn.RttiMember.GetValue(instance);
-    Result := LValue.ToString;
-  end;
+    Result := PrimaryKeyColumn.RttiMember.GetValue(instance).ToString
+  else
+    Result := '';
 end;
 
 function TEntityData.HasInstanceField: Boolean;
@@ -330,32 +321,32 @@ end;
 
 procedure TEntityData.SetColumnsData;
 var
-  LColData: TColumnData;
-  LCol: ColumnAttribute;
+  columnData: TColumnData;
+  column: ColumnAttribute;
 begin
   if fColumnsData.Count > 0 then
     Exit;
 
-  for LCol in fColumns do
+  for column in fColumns do
   begin
-    LColData.Properties := LCol.Properties;
-    LColData.ColumnName := LCol.ColumnName;
-    LColData.TypeInfo := LCol.MemberType;
-    LColData.MemberName := LCol.MemberName;
-    LColData.ColumnAttr := LCol;
+    columnData.Properties := column.Properties;
+    columnData.ColumnName := column.ColumnName;
+    columnData.TypeInfo := column.MemberType;
+    columnData.MemberName := column.MemberName;
+    columnData.ColumnAttr := column;
 
-    if LCol.IsPrimaryKey then
-      fColumnsData.PrimaryKeyColumn := LColData;
+    if column.IsPrimaryKey then
+      fColumnsData.PrimaryKeyColumn := columnData;
 
-    if LCol.IsVersionColumn then
-      fVersionColumn := LCol as VersionAttribute;
+    if column.IsVersionColumn then
+      fVersionColumn := column as VersionAttribute;
 
-    LColData.IsLazy := IsLazyType(LColData.TypeInfo);
-    if not LColData.IsLazy then
-      fSelectColumns.Add(LCol);
+    columnData.IsLazy := IsLazyType(columnData.TypeInfo);
+    if not columnData.IsLazy then
+      fSelectColumns.Add(column);
 
-    fColumnsData.Add(LColData);
-    fColumnMemberNameIndex.Add(LCol.MemberName, LCol);
+    fColumnsData.Add(columnData);
+    fColumnMemberNameIndex.Add(column.MemberName, column);
   end;
 end;
 
@@ -388,13 +379,13 @@ end;
 
 class function TEntityCache.CreateColumnsData(entityClass: TClass): TColumnDataList;
 var
-  LEntityData: TEntityData;
+  entityData: TEntityData;
 begin
   Result := TColumnDataList.Create;
-  LEntityData := Get(entityClass);
-  LEntityData.SetColumnsData;
-  Result.List.AddRange(LEntityData.ColumnsData.List);
-  Result.PrimaryKeyColumn := LEntityData.ColumnsData.PrimaryKeyColumn;
+  entityData := Get(entityClass);
+  entityData.SetColumnsData;
+  Result.List.AddRange(entityData.ColumnsData.List);
+  Result.PrimaryKeyColumn := entityData.ColumnsData.PrimaryKeyColumn;
 end;
 
 class function TEntityCache.Get(entityClass: TClass): TEntityData;
@@ -419,19 +410,19 @@ end;
 
 class function TEntityCache.GetColumnsData(entityClass: TClass): TColumnDataList;
 var
-  LEntityData: TEntityData;
+  entityData: TEntityData;
 begin
-  LEntityData := Get(entityClass);
-  LEntityData.SetColumnsData;
-  Result := LEntityData.ColumnsData;
+  entityData := Get(entityClass);
+  entityData.SetColumnsData;
+  Result := entityData.ColumnsData;
 end;
 
 class function TEntityCache.IsValidEntity(entityClass: TClass): Boolean;
 var
-  LEntityData: TEntityData;
+  entityData: TEntityData;
 begin
-  LEntityData := TEntityCache.Get(entityClass);
-  Result := LEntityData.IsTableEntity and LEntityData.HasPrimaryKey;
+  entityData := TEntityCache.Get(entityClass);
+  Result := entityData.IsTableEntity and entityData.HasPrimaryKey;
 end;
 
 class function TEntityCache.TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
