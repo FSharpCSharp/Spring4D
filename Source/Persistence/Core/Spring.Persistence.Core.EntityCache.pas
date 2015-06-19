@@ -52,7 +52,6 @@ type
     function GetEnumerator: IEnumerator<TColumnData>;
 
     function Add(const columnData: TColumnData): Integer;
-//    function IsEmpty: Boolean;
     procedure Delete(index: Integer);
 
     function TryGetPrimaryKeyColumn(out primaryKeyColumn: TColumnData): Boolean;
@@ -131,8 +130,6 @@ type
       const memberName: string; out column: ColumnAttribute): Boolean;
 
     class function IsValidEntity(entityClass: TClass): Boolean;
-
-    class property Entities: IDictionary<TClass, TEntityData> read fEntities;
   end;
 
 implementation
@@ -178,11 +175,6 @@ function TColumnDataList.GetItem(index: Integer): TColumnData;
 begin
   Result := fList[index];
 end;
-
-//function TColumnDataList.IsEmpty: Boolean;
-//begin
-//  Result := fList.IsEmpty;
-//end;
 
 procedure TColumnDataList.SetItem(index: Integer; const value: TColumnData);
 begin
@@ -407,16 +399,16 @@ end;
 
 class function TEntityCache.Get(entityClass: TClass): TEntityData;
 begin
-  if not TryGet(entityClass, Result) then
-  begin
-    Result := TEntityData.Create;
-    Result.SetEntityData(entityClass);
-    fCriticalSection.Enter;
-    try
-      fEntities.AddOrSetValue(entityClass, Result);
-    finally
-      fCriticalSection.Leave;
+  fCriticalSection.Enter;
+  try
+    if not fEntities.TryGetValue(entityClass, Result) then
+    begin
+      Result := TEntityData.Create;
+      Result.SetEntityData(entityClass);
+      fEntities.Add(entityClass, Result);
     end;
+  finally
+    fCriticalSection.Leave;
   end;
 end;
 
@@ -439,15 +431,17 @@ var
   LEntityData: TEntityData;
 begin
   LEntityData := TEntityCache.Get(entityClass);
-
-  Result := Assigned(LEntityData)
-    and LEntityData.IsTableEntity
-    and LEntityData.HasPrimaryKey;
+  Result := LEntityData.IsTableEntity and LEntityData.HasPrimaryKey;
 end;
 
 class function TEntityCache.TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
 begin
-  Result := fEntities.TryGetValue(entityClass, entityData);
+  fCriticalSection.Enter;
+  try
+    Result := fEntities.TryGetValue(entityClass, entityData);
+  finally
+    fCriticalSection.Leave;
+  end;
 end;
 
 class function TEntityCache.TryGetColumnByMemberName(entityClass: TClass;
