@@ -215,7 +215,7 @@ type
     ///   Tries to convert the stored value. Returns false when the conversion
     ///   is not possible.
     /// </summary>
-    function TryConvert(targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+    function TryConvert(targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean; overload;
 
     /// <summary>
     ///   Tries to get the stored value of a nullable. Returns false when the
@@ -230,9 +230,20 @@ type
     function TryGetLazyValue(out value: TValue): Boolean;
 
     /// <summary>
+    ///   Tries to convert the stored value. Returns false when the conversion
+    ///   is not possible.
+    /// </summary>
+    function TryToType<T>(out targetValue: T): Boolean; overload;
+
+    /// <summary>
     ///   Returns the stored value as TObject.
     /// </summary>
     function ToObject: TObject;
+
+    /// <summary>
+    ///   Converts stored value to the specified type
+    /// </summary>
+    function ToType<T>: T;
 
     /// <summary>
     ///   Returns the stored value as Variant.
@@ -2977,6 +2988,12 @@ begin
     Result := AsObject;
 end;
 
+function TValueHelper.ToType<T>: T;
+begin
+  if not TryToType<T>(Result) then
+    raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
 function TValueHelper.ToVariant: Variant;
 var
   value: TValue;
@@ -3579,6 +3596,15 @@ begin
       end;
     end;
   end;
+end;
+
+function TValueHelper.TryToType<T>(out targetValue: T): Boolean;
+var
+  value: TValue;
+begin
+  Result := TryConvert(System.TypeInfo(T), value);
+  if Result then
+    value.Get<T>(targetValue);
 end;
 
 {$ENDREGION}
