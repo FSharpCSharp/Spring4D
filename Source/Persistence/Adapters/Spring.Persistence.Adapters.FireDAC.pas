@@ -87,9 +87,14 @@ type
   end;
 
   TFireDACTransactionAdapter = class(TDriverTransactionAdapter<TFDTransaction>)
+  private
+    fOwnsObject: Boolean;
   protected
     function InTransaction: Boolean; override;
   public
+    constructor Create(const transaction: TFDTransaction;
+      ownsObject: Boolean = False); reintroduce;
+    destructor Destroy; overload; override;
     procedure Commit; override;
     procedure Rollback; override;
   end;
@@ -257,10 +262,10 @@ begin
     Connection.Connected := True;
     if not Connection.InTransaction or Connection.TxOptions.EnableNested then
     begin
-      transaction := TFDTransaction.Create(Connection);
+      transaction := TFDTransaction.Create(nil);
       transaction.Connection := Connection;
       transaction.StartTransaction;
-      Result := TFireDACTransactionAdapter.Create(transaction);
+      Result := TFireDACTransactionAdapter.Create(transaction, True);
     end
     else
       raise EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
@@ -313,6 +318,20 @@ end;
 
 
 {$REGION 'TFireDACTransactionAdapter'}
+
+constructor TFireDACTransactionAdapter.Create(const transaction: TFDTransaction;
+  ownsObject: Boolean);
+begin
+  inherited Create(transaction);
+  fOwnsObject := ownsObject
+end;
+
+destructor TFireDACTransactionAdapter.Destroy;
+begin
+  inherited Destroy;
+  if fOwnsObject then
+    fTransaction.Free;
+end;
 
 procedure TFireDACTransactionAdapter.Commit;
 begin
