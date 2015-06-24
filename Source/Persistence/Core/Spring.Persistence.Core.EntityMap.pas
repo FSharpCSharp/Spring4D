@@ -42,8 +42,13 @@ type
 
   TEntityMap = class(TInterfacedObject, IEntityMap)
   private
-    fEntityValues: IDictionary<TEntityMapKey, TEntityMapValue>;
     fCriticalSection: ICriticalSection;
+    {$IFDEF NEXTGEN}
+    // not using IDictionary here because of nextgen compiler issue
+    fEntityValues: TDictionary<TEntityMapKey, TEntityMapValue>;
+    {$ELSE}
+    fEntityValues: IDictionary<TEntityMapKey, TEntityMapValue>;
+    {$ENDIF}
   protected
     function GetEntityKey(const instance: TObject): TEntityMapKey; overload;
     function GetEntityKey(const className, id: string): TEntityMapKey; overload;
@@ -79,7 +84,11 @@ constructor TEntityMap.Create;
 begin
   inherited Create;
   fCriticalSection := TInterfacedCriticalSection.Create;
+  {$IFDEF NEXTGEN}
+  fEntityValues := TDictionary<TEntityMapKey,TEntityMapValue>.Create;
+  {$ELSE}
   fEntityValues := TCollections.CreateDictionary<TEntityMapKey,TEntityMapValue>;
+  {$ENDIF}
 end;
 
 destructor TEntityMap.Destroy;
