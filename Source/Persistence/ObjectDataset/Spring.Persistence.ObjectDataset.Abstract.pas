@@ -47,6 +47,9 @@ type
   TRecordBuffer = TRecBuf;
   PAnsiChar = MarshaledAString;
 {$ENDIF !NEXTGEN}
+{$IFNDEF DELPHIXE3_UP}
+  TValueBuffer  = Pointer;
+{$ENDIF}
   PVariantList = ^TVariantList;
   TVariantList = array [0 .. 0] of OleVariant;
   PArrayRecInfo = ^TArrayRecInfo;
@@ -134,11 +137,14 @@ type
     function AllocRecBuf: TRecBuf; override;
     procedure FreeRecBuf(var Buffer: TRecBuf); override;
     {$ENDIF}
-    {$IFDEF DELPHIXE5_UP}
-    procedure GetBookmarkData(Buffer: TRecBuf; Data: TBookmark); overload; override;
+    {$IFDEF DELPHIXE4_UP}
+    procedure GetBookmarkData(Buffer: TRecBuf; Data: TBookmark); override;
     {$ENDIF}
     {$IFNDEF NEXTGEN}
-    procedure GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); overload; override;
+    {$IFDEF DELPHIXE3_UP}
+    procedure GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark); override;
+    {$ENDIF}
+    procedure GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
     {$ENDIF}
 
     function GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag; override;
@@ -147,11 +153,7 @@ type
     function GetRecordSize: Word; override;
     procedure BindFields(Binding: Boolean); override;
 
-    {$IFDEF DELPHIXE3_UP}
-    procedure InternalAddRecord(Buffer: TRecordBuffer; Append: Boolean); override;
-    {$ELSE}
-    procedure InternalAddRecord(Buffer: Pointer; Append: Boolean); override;
-    {$ENDIF}
+    procedure InternalAddRecord(Buffer: {$IFDEF DELPHIXE3_UP}TRecordBuffer{$ELSE}Pointer{$ENDIF}; Append: Boolean); override;
     procedure InternalClose; override;
     procedure InternalDelete; override;
     procedure InternalFirst; override;
@@ -204,11 +206,7 @@ type
     function CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer; override;
     function CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream; override;
 
-    {$IFDEF DELPHIXE2_UP}
-    procedure DataEvent(Event: TDataEvent; Info: NativeInt); override;
-    {$ELSE}
-    procedure DataEvent(Event: TDataEvent; Info: LongInt); override;
-    {$ENDIF}
+    procedure DataEvent(Event: TDataEvent; Info: {$IFDEF DELPHIXE2_UP}NativeInt{$ELSE}LongInt{$ENDIF}); override;
 
     function GetBlobFieldData(FieldNo: Integer; var Buffer: TBlobByteData): Integer; override;
     function Locate(const KeyFields: string; const KeyValues: Variant;
@@ -216,23 +214,10 @@ type
     function Lookup(const KeyFields: string; const KeyValues: Variant;
       const ResultFields: string): Variant; override;
     function GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean; virtual;
-    {$IF Defined(DELPHIXE4_UP)}
-    function GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean; override;
-    function GetFieldData(Field: TField; var Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
-    {$ELSEIF Defined(DELPHIXE3_UP)}
-    function GetFieldData(Field: TField; Buffer: TValueBuffer): Boolean; override;
-    function GetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
-    {$ELSE}
-    function GetFieldData(Field: TField; Buffer: Pointer): Boolean; override;
-    function GetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean): Boolean; override;
-    {$IFEND}
-    {$IF Defined(DELPHIXE3_UP)}
+    function GetFieldData(Field: TField; {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer): Boolean; override;
+    function GetFieldData(Field: TField; {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
     procedure SetFieldData(Field: TField; Buffer: TValueBuffer); override;
     procedure SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean); override;
-    {$ELSE}
-    procedure SetFieldData(Field: TField; Buffer: Pointer); override;
-    procedure SetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean); override;
-    {$IFEND}
   published
     property AfterCancel;
     property AfterClose;
@@ -286,6 +271,19 @@ uses
   Spring.Persistence.ObjectDataset.ActiveX;
 
 type
+{$IF Defined(DELPHIXE3_UP) and not Defined(DELPHIXE8_UP)}
+  TDBBitConverter = class
+  private
+    class procedure InternalFromMove<T>(const Value: T; var B: TArray<Byte>; Offset: Integer = 0); static; inline;
+    class function InternalIntoMove<T>(const B: TArray<Byte>; Offset: Integer = 0): T; static; inline;
+  public
+    class procedure UnsafeFrom<T>(const Value: T; var B: TArray<Byte>; Offset: Integer = 0); static; inline;
+    class function UnsafeInTo<T>(const B: TArray<Byte>; Offset: Integer = 0): T; static; inline;
+
+    class procedure UnsafeFromVariant(const Value: Variant; var B: TArray<Byte>; Offset: Integer = 0); static; inline;
+    class function UnsafeInToVariant(const B: TArray<Byte>; Offset: Integer = 0): Variant; static; inline;
+  end;
+{$IFEND}
   EAbstractObjectDatasetException = class(Exception);
 
 function DataSetLocateThrough(DataSet: TDataSet; const KeyFields: string;
@@ -376,6 +374,49 @@ begin
   end;
 end;
 
+{$IF Defined(DELPHIXE3_UP) and not Defined(DELPHIXE8_UP)}
+class procedure TDBBitConverter.InternalFromMove<T>(const Value: T;
+  var B: TArray<Byte>; Offset: Integer);
+begin
+  Move(Value, B[Offset], SizeOf(T));
+end;
+
+class function TDBBitConverter.InternalIntoMove<T>(const B: TArray<Byte>;
+  Offset: Integer): T;
+begin
+  Move(B[Offset], Result, SizeOf(T));
+end;
+
+class procedure TDBBitConverter.UnsafeFrom<T>(const Value: T;
+  var B: TArray<Byte>; Offset: Integer);
+type
+  PT = ^T;
+begin
+  PT(@B[Offset])^ := Value;
+end;
+
+class function TDBBitConverter.UnsafeInTo<T>(const B: TArray<Byte>;
+  Offset: Integer): T;
+type
+  PT = ^T;
+begin
+  Result := PT(@B[Offset])^;
+end;
+
+class procedure TDBBitConverter.UnsafeFromVariant(const Value: Variant;
+  var B: TArray<Byte>; Offset: Integer);
+begin
+  InternalFromMove<Variant>(Value, B, Offset);
+end;
+
+class function TDBBitConverter.UnsafeInToVariant(const B: TArray<Byte>;
+  Offset: Integer): Variant;
+begin
+  InternalIntoMove<Variant>(B, Offset);
+end;
+{$IFEND}
+
+
 {$REGION 'TAbstractObjectDataset'}
 
 function TAbstractObjectDataset.AllocRecordBuffer: TRecordBuffer;
@@ -447,11 +488,8 @@ begin
   Result := TODBlobStream.Create(Field as TBlobField, Mode);
 end;
 
-{$IFDEF DELPHIXE2_UP}
-procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: NativeInt);
-{$ELSE}
-procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: LongInt);
-{$ENDIF}
+procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent;
+  Info: {$IFDEF DELPHIXE2_UP}NativeInt{$ELSE}LongInt{$ENDIF});
 begin
   case Event of
     deLayoutChange:
@@ -488,11 +526,7 @@ begin
   else
     Finalize(PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
 
-  {$IFDEF DELPHIXE5_UP}
-  InitRecord(NativeInt(FOldValueBuffer));
-  {$ELSE}
-  InitRecord(FOldValueBuffer);
-  {$ENDIF}
+  InitRecord({$IFDEF DELPHIXE4_UP}NativeInt(FOldValueBuffer){$ELSE}FOldValueBuffer{$ENDIF});
   inherited DoOnNewRecord;
 end;
 
@@ -549,7 +583,7 @@ begin
   Result := inherited GetBlobFieldData(FieldNo, Buffer);
 end;
 
-{$IFDEF DELPHIXE5_UP}
+{$IFDEF DELPHIXE4_UP}
 procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
   PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
@@ -557,6 +591,13 @@ end;
 {$ENDIF}
 
 {$IFNDEF NEXTGEN}
+{$IFDEF DELPHIXE3_UP}
+procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
+begin
+  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
+end;
+{$ENDIF}
+
 procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
@@ -578,21 +619,14 @@ begin
   Result := inherited GetFieldClass(FieldDef);
 end;
 
-{$IF Defined(DELPHIXE4_UP)}
-function TAbstractObjectDataset.GetFieldData(Field: TField; var Buffer: TValueBuffer;
+function TAbstractObjectDataset.GetFieldData(Field: TField;
+  {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
-{$ELSEIF Defined(DELPHIXE3_UP)}
-function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer;
-  NativeFormat: Boolean): Boolean;
-{$ELSE}
-function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer;
-  NativeFormat: Boolean): Boolean;
-{$IFEND}
 var
   LRecBuf: TRecordBuffer;
   Data: Variant;
 
-  {$IF Defined(DELPHIXE8_UP)}
+  {$IFDEF DELPHIXE3_UP}
   procedure CurrToBuffer(const C: Currency);
   var
     LBuff: TValueBuffer;
@@ -606,20 +640,6 @@ var
     else
       TDBBitConverter.UnsafeFrom<Currency>(C, Buffer);
   end;
-  {$ELSEIF Defined(DELPHIXE3_UP)}
-  procedure CurrToBuffer(const C: Currency);
-  var
-    LBuff: TValueBuffer;
-  begin
-    if NativeFormat then
-    begin
-      SetLength(LBuff, SizeOf(Currency));
-      TBitConverter.FromCurrency(C, LBuff);
-      DataConvert(Field, LBuff, Buffer, True)
-    end
-    else
-      TBitConverter.FromCurrency(C, Buffer);
-  end;
   {$ELSE}
   procedure CurrToBuffer(const C: Currency);
   begin
@@ -628,9 +648,9 @@ var
     else
       Currency(Buffer^) := C;
   end;
-  {$IFEND}
+  {$ENDIF}
 
-  {$IF Defined(DELPHIXE8_UP)}
+  {$IFDEF DELPHIXE3_UP}
   procedure VarToBuffer;
   var
     TempBuff: TValueBuffer;
@@ -721,97 +741,6 @@ var
         Field.DisplayName]);
     end;
   end;
-  {$ELSEIF Defined(DELPHIXE3_UP)}
-  procedure VarToBuffer;
-  var
-    TempBuff: TValueBuffer;
-    PData: Pointer;
-  begin
-    case Field.DataType of
-      ftGuid, ftFixedChar, ftString:
-      begin
-        PAnsiChar(Buffer)[Field.Size] := #0;
-        TempBuff := TEncoding.Default.GetBytes(string(tagVariant(Data).bStrVal));
-        Move(TempBuff[0], Buffer[0], Length(TempBuff));
-      end;
-      ftFixedWideChar, ftWideString:
-      begin
-        TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal);
-        SetLength(TempBuff, Length(TempBuff) + SizeOf(Char));
-        TempBuff[Length(TempBuff) - 2] := 0;
-        TempBuff[Length(TempBuff) - 1] := 0;
-        Move(TempBuff[0], Buffer[0], Length(TempBuff));
-      end;
-      ftSmallint:
-        if tagVariant(Data).vt = VT_UI1 then
-          TBitConverter.FromSmallInt(Byte(tagVariant(Data).cVal), Buffer)
-        else
-          TBitConverter.FromSmallInt(tagVariant(Data).iVal, Buffer);
-      ftWord:
-        if tagVariant(Data).vt = VT_UI1 then
-          TBitConverter.FromWord(tagVariant(Data).bVal, Buffer)
-        else
-          TBitConverter.FromWord(tagVariant(Data).uiVal, Buffer);
-      ftAutoInc, ftInteger:
-        TBitConverter.FromInteger(Data, Buffer);
-      ftFloat, ftCurrency:
-        if tagVariant(Data).vt = VT_R8 then
-          TBitConverter.FromDouble(tagVariant(Data).dblVal, Buffer)
-        else
-          TBitConverter.FromDouble(Data, Buffer);
-      ftFMTBCD:
-        TBitConverter.FromBcd(VarToBcd(Data), Buffer);
-      ftBCD:
-        if tagVariant(Data).vt = VT_CY then
-          CurrToBuffer(tagVariant(Data).cyVal)
-        else
-          CurrToBuffer(Data);
-      ftBoolean:
-        TBitConverter.FromWordBool(tagVariant(Data).vbool, Buffer);
-      ftDate, ftTime, ftDateTime:
-        if NativeFormat then
-        begin
-          SetLength(TempBuff, SizeOf(Double));
-          TBitConverter.FromDouble(data, TempBuff);
-          DataConvert(Field, TempBuff, Buffer, True);
-        end
-        else
-          TBitConverter.FromDouble(tagVariant(Data).date, Buffer);
-      ftBytes, ftVarBytes:
-        if NativeFormat then
-        begin
-          PData := VarArrayLock(Data);
-          try
-            DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
-          finally
-            VarArrayUnlock(Data);
-          end;
-        end
-        else
-          TBitConverter.FromVariant(Data, Buffer);
-      ftInterface:
-      begin
-        TempBuff := BytesOf(@Data, SizeOf(IUnknown));
-        Move(TempBuff[0], Buffer[0], SizeOf(IUnknown));
-      end;
-      ftIDispatch:
-      begin
-        TempBuff := BytesOf(@Data, SizeOf(IDispatch));
-        Move(TempBuff[0], Buffer[0], SizeOf(IDispatch));
-      end;
-      ftLargeInt:
-      begin
-        if PDecimal(@Data).sign > 0 then
-          TBitConverter.FromLargeInt(-1 * PDecimal(@Data).Lo64, Buffer)
-        else
-          TBitConverter.FromLargeInt(PDecimal(@Data).Lo64, Buffer);
-      end;
-      ftBlob..ftTypedBinary, ftVariant, ftWideMemo: TBitConverter.FromVariant(Data, Buffer);
-    else
-      DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
-        Field.DisplayName]);
-    end;
-  end;
   {$ELSE}
   procedure VarToBuffer;
   var
@@ -890,7 +819,7 @@ var
         Field.DisplayName]);
     end;
   end;
-  {$IFEND}
+  {$ENDIF}
 
   procedure RefreshBuffers;
   begin
@@ -935,13 +864,8 @@ begin
     VarToBuffer;
 end;
 
-{$IF Defined(DELPHIXE4_UP)}
-function TAbstractObjectDataset.GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean;
-{$ELSEIF Defined(DELPHIXE3_UP)}
-function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer): Boolean;
-{$ELSE}
-function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
-{$IFEND}
+function TAbstractObjectDataset.GetFieldData(Field: TField;
+  {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer): Boolean;
 begin
   Result := GetFieldData(Field, Buffer, True);
 end;
@@ -990,11 +914,9 @@ begin
   Result := SizeOf(TArrayRecInfo);
 end;
 
-{$IFDEF DELPHIXE3_UP}
-procedure TAbstractObjectDataset.InternalAddRecord(Buffer: TRecordBuffer; Append: Boolean);
-{$ELSE}
-procedure TAbstractObjectDataset.InternalAddRecord(Buffer: Pointer; Append: Boolean);
-{$ENDIF}
+
+procedure TAbstractObjectDataset.InternalAddRecord(
+  Buffer: {$IFDEF DELPHIXE3_UP}TRecordBuffer{$ELSE}Pointer{$ENDIF}; Append: Boolean);
 begin
   DoPostRecord(Current, Append);
 end;
@@ -1082,11 +1004,7 @@ begin
       PArrayRecInfo(Buffer).BookmarkFlag := bfCurrent;
 
       Finalize(PVariantList(Buffer + SizeOf(TArrayRecInfo))^, Fields.Count);
-      {$IFDEF DELPHIXE5_UP}
-      GetCalcFields(NativeInt(Buffer));
-      {$ELSE}
-      GetCalcFields(Buffer);
-      {$ENDIF}
+      GetCalcFields({$IFDEF DELPHIXE4_UP}NativeInt(Buffer){$ELSE}Buffer{$ENDIF});
     end;
   except
     if DoCheck then
@@ -1262,20 +1180,12 @@ begin
   FCurrent := AValue;
 end;
 
-{$IFDEF DELPHIXE3_UP}
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffer);
-{$ELSE}
-procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer);
-{$ENDIF}
 begin
   SetFieldData(Field, Buffer, True);
 end;
 
-{$IFDEF DELPHIXE3_UP}
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean);
-{$ELSE}
-procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean);
-{$ENDIF}
 
   procedure BcdToOleVariant(const Bcd: TBcd; var Data: OleVariant);
   var
@@ -1287,7 +1197,7 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; Na
        0, VT_DECIMAL));
   end;
 
-  {$IF Defined(DELPHIXE8_UP)}
+  {$IFDEF DELPHIXE3_UP}
   procedure BufferToVar(var Data: OleVariant);
   var
     LUnknown: IUnknown;
@@ -1359,78 +1269,6 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; Na
           Field.DisplayName]);
     end;
   end;
-  {$ELSEIF Defined(DELPHIXE3_UP)}
-  procedure BufferToVar(var Data: OleVariant);
-  var
-    LUnknown: IUnknown;
-    LDispatch: IDispatch;
-    TempBuff: TValueBuffer;
-  begin
-    case Field.DataType of
-{$IFNDEF NEXTGEN}
-      ftString, ftFixedChar, ftGuid:
-        Data := AnsiString(PAnsiChar(Buffer));
-{$ENDIF}
-      ftWideString, ftFixedWideChar:
-        Data := WideString(PWideChar(Buffer));
-      ftAutoInc, ftInteger:
-        Data := TBitConverter.ToLongInt(Buffer);
-      ftSmallInt:
-        Data := TBitConverter.ToSmallInt(Buffer);
-      ftWord:
-        Data := TBitConverter.ToWord(Buffer);
-      ftBoolean:
-        Data := TBitConverter.ToWordBool(Buffer);
-      ftFloat, ftCurrency:
-        Data := TBitConverter.ToDouble(Buffer);
-      ftBlob, ftMemo, ftGraphic, ftVariant, ftWideMemo:
-        Data := TBitConverter.ToVariant(Buffer);
-      ftInterface:
-      begin
-        Move(Buffer[0], LUnknown, SizeOf(IUnknown));
-        Data := LUnknown;
-      end;
-      ftIDispatch:
-      begin
-        Move(Buffer[0], LDispatch, SizeOf(IDispatch));
-        Data := LDispatch;
-      end;
-      ftDate, ftTime, ftDateTime:
-        if NativeFormat then
-        begin
-          SetLength(TempBuff, SizeOf(TVarData(Data).VDate));
-          DataConvert(Field, Buffer, TempBuff, False);
-          TVarData(Data).VDate := TBitConverter.ToDouble(TempBuff);
-        end
-        else
-          Data := TBitConverter.ToDouble(Buffer);
-      ftFMTBCD:
-        BcdToOleVariant(TBitConverter.ToBcd(Buffer), Data);
-      ftBCD:
-        if NativeFormat then
-        begin
-          SetLength(TempBuff, SizeOf(TVarData(Data).VCurrency));
-          DataConvert(Field, Buffer, TempBuff, False);
-          TVarData(Data).VCurrency := TBitConverter.ToCurrency(TempBuff);
-        end
-        else
-          Data := TBitConverter.ToCurrency(Buffer);
-      ftBytes, ftVarBytes:
-        if NativeFormat then
-        begin
-          TempBuff := BytesOf(@Data, SizeOf(Variant));
-          DataConvert(Field, Buffer, TempBuff, False);
-          Data := TBitConverter.ToVariant(TempBuff);
-        end
-        else
-          Data := TBitConverter.ToVariant(Buffer);
-      ftLargeInt:
-        Data := TBitConverter.ToLargeInt(Buffer);
-      else
-        DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
-          Field.DisplayName]);
-    end;
-  end;
   {$ELSE}
   procedure BufferToVar(var Data: OleVariant);
   begin
@@ -1476,7 +1314,7 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; Na
           Field.DisplayName]);
     end;
   end;
-  {$IFEND}
+  {$ENDIF}
 
 var
   LData: OleVariant;
