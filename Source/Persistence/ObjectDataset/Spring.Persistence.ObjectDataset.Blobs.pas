@@ -59,6 +59,11 @@ uses
   DBConsts,
   Variants;
 
+{$IFDEF NEXTGEN}
+type
+  WideString = UnicodeString;
+{$ENDIF}
+
 { TODBlobStream }
 
 constructor TODBlobStream.Create(Field: TBlobField; Mode: TBlobStreamMode);
@@ -111,7 +116,11 @@ begin
       else
       begin
         { Convert OleStr into a pascal string (format used by TBlobField) }
+{$IFNDEF NEXTGEN}
         FFieldData := AnsiString(FFieldData);
+{$ELSE}
+        FFieldData := VarToStr(FFieldData);
+{$ENDIF}
         Size := Length(FFieldData);
       end;
     end
@@ -125,12 +134,21 @@ function TODBlobStream.Realloc(var NewCapacity: Integer): Pointer;
  procedure VarAlloc(var V: Variant; Field: TFieldType);
   var
     W: WideString;
+{$IFNDEF NEXTGEN}
     S: AnsiString;
+{$ELSE}
+    S: string;
+{$ENDIF}
   begin
     if Field = ftMemo then
     begin
+
       if not VarIsNull(V) then
+{$IFNDEF NEXTGEN}
         S := AnsiString(V);
+{$ELSE}
+        S := VarToStr(V);
+{$ENDIF}
       SetLength(S, NewCapacity);
       V := S;
     end

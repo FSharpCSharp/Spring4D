@@ -34,7 +34,7 @@ unit Spring.Persistence.ObjectDataset.ExprParser;
 interface
 
 uses
-  SysUtils, Contnrs;
+  SysUtils, Generics.Collections;
 
 type
   TOnGetVariableValue = function(Sender: TObject; const VarName: string;
@@ -134,6 +134,8 @@ type
     property Str: string read FStr;
     property Pos: Integer read FPos;
   end;
+
+  TObjectList = TObjectList<TObject>;
 
   TScan = class(TObjectList)
   private

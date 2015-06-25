@@ -43,6 +43,10 @@ uses
   Spring.Persistence.ObjectDataset.IndexList;
 
 type
+{$IFDEF NEXTGEN}
+  TRecordBuffer = TRecBuf;
+  PAnsiChar = MarshaledAString;
+{$ENDIF !NEXTGEN}
   PVariantList = ^TVariantList;
   TVariantList = array [0 .. 0] of OleVariant;
   PArrayRecInfo = ^TArrayRecInfo;
@@ -124,8 +128,12 @@ type
     function GetCurrentDataList: IObjectList; virtual; abstract;
 
     // Abstract overrides
-    function AllocRecordBuffer: TRecordBuffer; override;
-    procedure FreeRecordBuffer(var Buffer: TRecordBuffer); override;
+    function AllocRecordBuffer: TRecordBuffer; {$IFNDEF NEXTGEN}override;{$ENDIF}
+    procedure FreeRecordBuffer(var Buffer: TRecordBuffer); {$IFNDEF NEXTGEN}override;{$ENDIF}
+    {$IFDEF NEXTGEN}
+    function AllocRecBuf: TRecBuf; override;
+    procedure FreeRecBuf(var Buffer: TRecBuf); override;
+    {$ENDIF}
     {$IFDEF DELPHIXE5_UP}
     procedure GetBookmarkData(Buffer: TRecBuf; Data: TBookmark); overload; override;
     {$ENDIF}
@@ -147,7 +155,7 @@ type
     procedure InternalClose; override;
     procedure InternalDelete; override;
     procedure InternalFirst; override;
-    procedure InternalGotoBookmark(Bookmark: Pointer); override;
+    procedure InternalGotoBookmark(Bookmark: {$IFDEF DELPHIXE3_UP}TBookmark{$ELSE}Pointer{$ENDIF}); override;
     procedure InternalHandleException; override;
     procedure InternalInitFieldDefs; override;
     procedure InternalInitRecord(Buffer: TRecordBuffer); override;
@@ -260,7 +268,10 @@ resourcestring
 implementation
 
 uses
+{$IFNDEF NEXTGEN}
   Contnrs,
+  WideStrUtils,
+{$ENDIF}
   DBConsts,
   Math,
   FMTBcd,
@@ -268,7 +279,6 @@ uses
   Types,
   Variants,
   VarUtils,
-  WideStrUtils,
   Spring,
   Spring.Reflection,
   Spring.SystemUtils,
@@ -372,12 +382,19 @@ function TAbstractObjectDataset.AllocRecordBuffer: TRecordBuffer;
 begin
   if not (csDestroying in ComponentState) then
   begin
-    Result := AllocMem(FRowBufSize);
+    Pointer(Result) := AllocMem(FRowBufSize);
     Initialize(PVariantList(Result + SizeOf(TArrayRecInfo))^, Fields.Count);
   end
   else
-    Result := nil;
+    Pointer(Result) := nil;
 end;
+
+{$IFDEF NEXTGEN}
+function TAbstractObjectDataset.AllocRecBuf: TRecBuf;
+begin
+  Result := AllocRecordBuffer;
+end;
+{$ENDIF}
 
 procedure TAbstractObjectDataset.BindFields(Binding: Boolean);
 begin
@@ -466,7 +483,7 @@ procedure TAbstractObjectDataset.DoOnNewRecord;
 begin
   FModifiedFields.Clear;
 
-  if FOldValueBuffer = nil then
+  if Pointer(FOldValueBuffer) = nil then
     FOldValueBuffer := AllocRecordBuffer
   else
     Finalize(PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
@@ -497,26 +514,33 @@ end;
 procedure TAbstractObjectDataset.FreeRecordBuffer(var Buffer: TRecordBuffer);
 begin
   Finalize(PVariantList(Buffer + SizeOf(TArrayRecInfo))^, Fields.Count);
-  FreeMem(Buffer);
+  FreeMem(Pointer(Buffer));
 end;
+
+{$IFDEF NEXTGEN}
+procedure TAbstractObjectDataset.FreeRecBuf(var Buffer: TRecBuf);
+begin
+  FreeRecordBuffer(Buffer);
+end;
+{$ENDIF}
 
 function TAbstractObjectDataset.GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean;
 begin
-  RecBuf := nil;
+  Pointer(RecBuf) := nil;
   case State of
     dsBlockRead, dsBrowse:
       if IsEmpty then
-        RecBuf := nil
+        Pointer(RecBuf) := nil
       else
-        RecBuf := Pointer(ActiveBuffer);
+        Pointer(RecBuf) := Pointer(ActiveBuffer);
     dsNewValue, dsInsert, dsEdit:
-      RecBuf := Pointer(ActiveBuffer);
+      Pointer(RecBuf) := Pointer(ActiveBuffer);
     dsCalcFields, dsInternalCalc:
-      RecBuf := Pointer(CalcBuffer);
+      Pointer(RecBuf) := Pointer(CalcBuffer);
     dsFilter:
-      RecBuf := Pointer(FFilterBuffer);
+      Pointer(RecBuf) := Pointer(FFilterBuffer);
   end;
-  Result := RecBuf <> nil;
+  Result := Pointer(RecBuf) <> nil;
 end;
 
 function TAbstractObjectDataset.GetBlobFieldData(FieldNo: Integer;
@@ -980,13 +1004,13 @@ begin
   FInternalOpen := False;
   BindFields(False);
   FieldDefs.Updated := False;
-  if FOldValueBuffer <> nil then
+  if Pointer(FOldValueBuffer) <> nil then
   begin
     try
       Finalize(PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
-      FreeMem(FOldValueBuffer);
+      FreeMem(Pointer(FOldValueBuffer));
     finally
-      FOldValueBuffer := nil;
+      Pointer(FOldValueBuffer) := nil;
     end;
   end;
 end;
@@ -1003,7 +1027,7 @@ procedure TAbstractObjectDataset.InternalEdit;
 begin
   FModifiedFields.Clear;
 
-  if FOldValueBuffer = nil then
+  if Pointer(FOldValueBuffer) = nil then
     FOldValueBuffer := AllocRecordBuffer
   else
     Finalize(PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
@@ -1071,7 +1095,7 @@ begin
   end;
 end;
 
-procedure TAbstractObjectDataset.InternalGotoBookmark(Bookmark: Pointer);
+procedure TAbstractObjectDataset.InternalGotoBookmark(Bookmark: {$IFDEF DELPHIXE3_UP}TBookmark{$ELSE}Pointer{$ENDIF});
 var
   LValue: TValue;
 begin
@@ -1271,8 +1295,10 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; Na
     TempBuff: TValueBuffer;
   begin
     case Field.DataType of
+{$IFNDEF NEXTGEN}
       ftString, ftFixedChar, ftGuid:
         Data := AnsiString(PAnsiChar(Buffer));
+{$ENDIF}
       ftWideString, ftFixedWideChar:
         Data := WideString(PWideChar(Buffer));
       ftAutoInc, ftInteger:
@@ -1341,8 +1367,10 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; Na
     TempBuff: TValueBuffer;
   begin
     case Field.DataType of
+{$IFNDEF NEXTGEN}
       ftString, ftFixedChar, ftGuid:
         Data := AnsiString(PAnsiChar(Buffer));
+{$ENDIF}
       ftWideString, ftFixedWideChar:
         Data := WideString(PWideChar(Buffer));
       ftAutoInc, ftInteger:
