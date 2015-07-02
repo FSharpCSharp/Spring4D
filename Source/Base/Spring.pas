@@ -1927,6 +1927,8 @@ begin
   end
   else if (rightType.Kind = tkInterface) and (leftType.Kind = tkInterface) then
   begin
+    if (ifHasGuid in leftData.IntfFlags) and IsEqualGUID(leftData.Guid, rightData.Guid) then
+      Exit(True);
     Result := Assigned(rightData.IntfParent) and (rightData.IntfParent^ = leftType);
     while not Result and Assigned(rightData.IntfParent) do
     begin
