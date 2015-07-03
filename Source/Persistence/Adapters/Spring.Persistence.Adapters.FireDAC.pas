@@ -220,11 +220,9 @@ var
   parameter: TFDParam;
 begin
   paramName := param.NormalizeParamName(':', param.Name);
-
   parameter := Statement.ParamByName(paramName);
+  parameter.DataType := param.ParamType;
   parameter.Value := param.Value;
-  if parameter.IsNull then
-    parameter.DataType := param.ParamType;
 end;
 
 procedure TFireDACStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
