@@ -1,6 +1,7 @@
 unit TestSession;
 
 {$I sv.inc}
+{.$DEFINE PERFORMANCE_TESTS}
 
 interface
 
@@ -31,7 +32,6 @@ type
   TSessionTest = class(TTestCase)
   protected
     FConnection: IDBConnection;
-    FManager: TMockSession;
     FSession: TMockSession;
   protected
     function GenericCreate<T: class, constructor>: T;
@@ -45,8 +45,6 @@ type
     procedure TearDown; override;
 
     class procedure InsertProducts(iCount: Integer);
-
-    property Session: TMockSession read FSession write FSession;
   published
     procedure First;
     procedure Fetch;
@@ -357,10 +355,10 @@ var
   id: Integer;
   product: TUnannotatedProduct;
 begin
-  FManager.RegisterRowMapper<TUnannotatedProduct>(TUnannotatedProductRowMapper.Create);
+  FSession.RegisterRowMapper<TUnannotatedProduct>(TUnannotatedProductRowMapper.Create);
   id := InsertProduct('Bread', 0.99);
 
-  product := FManager.Single<TUnannotatedProduct>('select * from '+ TBL_PRODUCTS +' where PRODID = :0', [id]);
+  product := FSession.Single<TUnannotatedProduct>('select * from '+ TBL_PRODUCTS +' where PRODID = :0', [id]);
   CheckEquals(id, product.ID, 'Primary key should be equal');
   CheckEquals('Bread', product.Name, 'Name should be equal');
   CheckEquals(0.99, product.Price, 0.01, 'Price should be equal');
@@ -382,11 +380,11 @@ begin
 
   InsertCustomer;
 
-  LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
+  LCustomer := FSession.FirstOrDefault<TCustomer>(sSql, []);
   try
     CheckEquals(25, LCustomer.Age);
 
-    FManager.Delete(LCustomer);
+    FSession.Delete(LCustomer);
 
     LResults := TestDB.GetUniTableIntf('SELECT COUNT(*) FROM ' + TBL_PEOPLE);
     CheckEquals(0, LResults.Fields[0].AsInteger);
@@ -400,7 +398,7 @@ begin
   try
     LCustomer.Name := 'Inserted';
 
-    FManager.Save(LCustomer);
+    FSession.Save(LCustomer);
 
     LResults := TestDB.GetUniTableIntf('SELECT COUNT(*) FROM ' + TBL_PEOPLE);
     CheckEquals(1, LResults.Fields[0].AsInteger);
@@ -421,7 +419,7 @@ var
 begin
   InsertCustomer;
   iLastID := TestDB.GetLastInsertRowID;
-  LCustomer := FManager.FindOne<TCustomer>(iLastID);
+  LCustomer := FSession.FindOne<TCustomer>(iLastID);
   try
     CheckTrue(ctOneTime = LCustomer.CustomerType);
   finally
@@ -430,12 +428,12 @@ begin
 
   InsertCustomerEnum(Ord(ctBusinessClass));
   iLastID := TestDB.GetLastInsertRowID;
-  LCustomer := FManager.FindOne<TCustomer>(iLastID);
+  LCustomer := FSession.FindOne<TCustomer>(iLastID);
   try
     CheckTrue(ctBusinessClass = LCustomer.CustomerType);
 
     LCustomer.CustomerType := ctReturning;
-    FManager.Save(LCustomer);
+    FSession.Save(LCustomer);
     LVal := GetDBValue(Format('select custtype from ' + TBL_PEOPLE + ' where custid = %D', [iLastID]));
     CheckTrue(Integer(LVal) = Ord(ctReturning));
   finally
@@ -444,7 +442,7 @@ begin
 
   InsertCustomerEnum(20);
   iLastID := TestDB.GetLastInsertRowID;
-  LCustomer := FManager.FindOne<TCustomer>(iLastID);
+  LCustomer := FSession.FindOne<TCustomer>(iLastID);
   try
     CheckTrue(20 = Ord(LCustomer.CustomerType));
   finally
@@ -454,7 +452,7 @@ end;
 
 procedure TSessionTest.Execute;
 begin
-  FManager.Execute('INSERT INTO CUSTOMERS SELECT * FROM CUSTOMERS;', []);
+  FSession.Execute('INSERT INTO CUSTOMERS SELECT * FROM CUSTOMERS;', []);
   Pass;
 end;
 
@@ -466,12 +464,12 @@ var
   LRes: Integer;
   LResDouble: Double;
 begin
-  LRes := FManager.ExecuteScalar<Integer>(SQL_EXEC_SCALAR, []);
+  LRes := FSession.ExecuteScalar<Integer>(SQL_EXEC_SCALAR, []);
   CheckEquals(0, LRes);
   InsertCustomer;
-  LRes := FManager.ExecuteScalar<Integer>(SQL_EXEC_SCALAR, []);
+  LRes := FSession.ExecuteScalar<Integer>(SQL_EXEC_SCALAR, []);
   CheckEquals(1, LRes);
-  LResDouble := FManager.ExecuteScalar<Double>(SQL_EXEC_SCALAR_DOUBLE, []);
+  LResDouble := FSession.ExecuteScalar<Double>(SQL_EXEC_SCALAR_DOUBLE, []);
   CheckEquals(1, LResDouble, 0.1);
 end;
 
@@ -499,7 +497,7 @@ begin
 
   InsertCustomer;
   sSql := 'select * from ' + TBL_PEOPLE;
-  LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
+  LCustomer := FSession.FirstOrDefault<TCustomer>(sSql, []);
   try
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
@@ -513,7 +511,7 @@ begin
     sLog := '';
     sLog2 := '';
 
-    FManager.Update(LCustomer);
+    FSession.Update(LCustomer);
 
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
@@ -524,7 +522,7 @@ begin
     sLog := '';
     sLog2 := '';
     LCustomer.Name := 'Insert Execution Listener test';
-    FManager.Insert(LCustomer);
+    FSession.Insert(LCustomer);
 
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
@@ -534,7 +532,7 @@ begin
 
     sLog := '';
     sLog2 := '';
-    FManager.Delete(LCustomer);
+    FSession.Delete(LCustomer);
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
     CheckEqualsString(sLog, sLog2);
@@ -562,7 +560,7 @@ begin
   role.Description := 'FooBar';
   user.AddRole(role);
 
-  FManager.SaveAll(user);
+  FSession.SaveAll(user);
 
   CheckEquals(1, GetTableRecordCount('User'), 'Should insert 1 user into User table');
   CheckEquals(1, GetTableRecordCount('Role'), 'Should insert 1 role into Role table');
@@ -571,12 +569,12 @@ begin
   user.Free;
   role.Free;
 
-  users := FManager.FindAll<TUser>;
+  users := FSession.FindAll<TUser>;
   CheckEquals(1, users.Count, 'Should find 1 user from User table');
   CheckEquals('Foo', users.First.Name, 'User name is Foo');
   CheckEquals('FooBar', users.First.Roles.First.Description, 'User''s role description is FooBar');
 
-  roles := FManager.FindAll<TRole>;
+  roles := FSession.FindAll<TRole>;
   CheckEquals(1, roles.Count, 'Should find 1 role from Role table');
   CheckEquals('FooBar', roles.First.Description, 'Role description is FooBar');
   CheckEquals('Foo', roles.First.Users.First.Name, 'Role''s user name is Foo');
@@ -590,20 +588,20 @@ begin
   sSql := 'SELECT * FROM ' + TBL_PEOPLE;
   LCollection := TCollections.CreateList<TCustomer>(True);
 
-  FManager.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
+  FSession.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
   CheckEquals(0, LCollection.Count);
 
   LCollection.Clear;
 
   InsertCustomer;
-  FManager.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
+  FSession.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
   CheckEquals(1, LCollection.Count);
   CheckEquals(25, LCollection[0].Age);
 
   LCollection.Clear;
 
   InsertCustomer(15);
-  FManager.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
+  FSession.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
   CheckEquals(2, LCollection.Count);
   CheckEquals(15, LCollection[1].Age);
 end;
@@ -614,7 +612,7 @@ var
 begin
   InsertCustomer;
   LCollection := TCollections.CreateObjectList<TCustomer>;
-  FManager.FetchFromQueryText('SELECT * FROM ' + TBL_PEOPLE, [], LCollection as IObjectList, TCustomer);
+  FSession.FetchFromQueryText('SELECT * FROM ' + TBL_PEOPLE, [], LCollection as IObjectList, TCustomer);
   CheckEquals(1, LCollection.Count);
 end;
 
@@ -623,7 +621,7 @@ var
   LCollection: IList<TCustomer>;
   i: Integer;
 begin
-  LCollection := FManager.FindAll<TCustomer>;
+  LCollection := FSession.FindAll<TCustomer>;
   CheckEquals(0, LCollection.Count);
   TestDB.BeginTransaction;
   for i := 1 to 10 do
@@ -632,7 +630,7 @@ begin
   end;
   TestDB.Commit;
 
-  LCollection := FManager.FindAll<TCustomer>;
+  LCollection := FSession.FindAll<TCustomer>;
   CheckEquals(10, LCollection.Count);
 end;
 
@@ -641,12 +639,12 @@ var
   LCustomer: TCustomer;
   RowID: Integer;
 begin
-  LCustomer := FManager.FindOne<TCustomer>(1);
+  LCustomer := FSession.FindOne<TCustomer>(1);
   CheckTrue(LCustomer = nil);
 
   InsertCustomer;
   RowID := TestDB.GetLastInsertRowID;
-  LCustomer := FManager.FindOne<TCustomer>(RowID);
+  LCustomer := FSession.FindOne<TCustomer>(RowID);
   try
     CheckTrue(LCustomer <> nil);
     CheckEquals(RowID, LCustomer.ID);
@@ -661,7 +659,7 @@ var
 begin
   InsertCustomer(10);
   Age := Prop.Create(CUSTAGE);
-  CheckEquals(10, FManager.FindWhere<TCustomer>(Age = 10).First.Age);
+  CheckEquals(10, FSession.FindWhere<TCustomer>(Age = 10).First.Age);
 end;
 
 procedure TSessionTest.First;
@@ -671,7 +669,7 @@ var
   fsPic: TFileStream;
 begin
   sSql := 'SELECT * FROM ' + TBL_PEOPLE;
-  LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
+  LCustomer := FSession.FirstOrDefault<TCustomer>(sSql, []);
 
   CheckTrue(System.Default(TCustomer) = LCustomer);
 
@@ -685,7 +683,7 @@ begin
 
   CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
 
-  LCustomer := FManager.First<TCustomer>(sSql, []);
+  LCustomer := FSession.First<TCustomer>(sSql, []);
   try
     CheckTrue(Assigned(LCustomer));
     CheckEquals(25, LCustomer.Age);
@@ -696,7 +694,7 @@ begin
   end;
   InsertCustomer(15);
 
-  LCustomer := FManager.First<TCustomer>(sSql, []);
+  LCustomer := FSession.First<TCustomer>(sSql, []);
   try
     CheckTrue(Assigned(LCustomer));
     CheckEquals(25, LCustomer.Age);
@@ -705,7 +703,7 @@ begin
   end;
 
   sSql := sSql + ' WHERE '+CUSTAGE+' = :0 AND '+CUSTNAME+'=:1';
-  LCustomer := FManager.First<TCustomer>(sSql, [15, 'Demo']);
+  LCustomer := FSession.First<TCustomer>(sSql, [15, 'Demo']);
   try
     CheckTrue(Assigned(LCustomer));
     CheckEquals(15, LCustomer.Age);
@@ -726,11 +724,11 @@ var
 begin
   fsPic := TFileStream.Create(PictureFilename, fmOpenRead or fmShareDenyNone);
   try
-    LCustomer := FManager.SingleOrDefault<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
+    LCustomer := FSession.SingleOrDefault<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
     CheckFalse(Assigned(LCustomer));
     InsertCustomerAvatar(25, 'Nullable Lazy', 2.36, 'Middle', fsPic);
 
-    LCustomer := FManager.SingleOrDefault<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
+    LCustomer := FSession.SingleOrDefault<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
     try
       CheckTrue(LCustomer.AvatarLazy.HasValue, 'Lazy should have value');
       CheckTrue(LCustomer.AvatarLazy.Value.Height > 0, 'Height should be more than 0');
@@ -755,7 +753,7 @@ begin
     LCustomer.Name := 'Test';
     LCustomer.Age := 10;
 
-    FManager.Save(LCustomer);
+    FSession.Save(LCustomer);
 
     InsertCustomerOrder(LCustomer.ID, 10, 5, 100.59);
     InsertCustomerOrder(LCustomer.ID, 20, 15, 150.59);
@@ -763,7 +761,7 @@ begin
     CheckEquals(0, LCustomer.Orders.Count);
     LCustomerID := LCustomer.ID;
     LCustomer.Free;
-    LCustomer := FManager.FindOne<TCustomer>(LCustomerID);
+    LCustomer := FSession.FindOne<TCustomer>(LCustomerID);
     LList := LCustomer.Orders;
     CheckEquals(2, LList.Count);
     CheckEquals(LCustomer.ID, LList.First.Customer_ID);
@@ -776,7 +774,7 @@ begin
     LCustomer.Free;
   end;
   ClearTable(TBL_ORDERS);
-  LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
+  LCustomer := FSession.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
   try
     CheckEquals(0, LCustomer.OrdersIntf.Count);
   finally
@@ -840,9 +838,9 @@ begin
   Status(Format('Add %D objects in %D ms.',
     [iCount, sw.ElapsedMilliseconds]));
   //get customers
-  LResultset := FManager.GetResultset('SELECT * FROM ' + TBL_PEOPLE, []);
+  LResultset := FSession.GetResultset('SELECT * FROM ' + TBL_PEOPLE, []);
   sw := TStopwatch.StartNew;
-  LCustomers := FManager.FindAll<TCustomer>;
+  LCustomers := FSession.FindAll<TCustomer>;
   sw.Stop;
   CheckEquals(iCount, LCustomers.Count);
 
@@ -851,7 +849,7 @@ begin
 
   //get products
   sw := TStopwatch.StartNew;
-  LProducts := FManager.FindAll<TProduct>;
+  LProducts := FSession.FindAll<TProduct>;
   sw.Stop;
   CheckEquals(iCount, LProducts.Count);
 
@@ -859,7 +857,7 @@ begin
     [iCount, sw.ElapsedMilliseconds]));
 
   //get customers non object
-  LResultset := FManager.GetResultset('SELECT * FROM CUSTOMERS', []);
+  LResultset := FSession.GetResultset('SELECT * FROM CUSTOMERS', []);
   sw := TStopwatch.StartNew;
   while not LResultset.IsEmpty do
   begin
@@ -894,8 +892,8 @@ begin
     LCustomers.Add(LCustomer);
   end;
   LStopwatch := TStopwatch.StartNew;
-  LTran := FManager.BeginTransaction;
-  FManager.SaveList<TCustomer>(LCustomers);
+  LTran := FSession.BeginTransaction;
+  FSession.SaveList<TCustomer>(LCustomers);
   LTran.Commit;
   LStopwatch.Stop;
   CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
@@ -910,8 +908,8 @@ begin
     LCustomers.Add(LCustomer);
   end;
   LStopwatch := TStopwatch.StartNew;
-  LTran := FManager.BeginTransaction;
-  FManager.InsertList<TCustomer>(LCustomers);
+  LTran := FSession.BeginTransaction;
+  FSession.InsertList<TCustomer>(LCustomers);
   LTran.Commit;
   LStopwatch.Stop;
   CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
@@ -922,16 +920,16 @@ begin
     LCustomer.Age :=  LCount + 1;
   end;
   LStopwatch := TStopwatch.StartNew;
-  LTran := FManager.BeginTransaction;
-  FManager.UpdateList<TCustomer>(LCustomers);
+  LTran := FSession.BeginTransaction;
+  FSession.UpdateList<TCustomer>(LCustomers);
   LTran.Commit;
   LStopwatch.Stop;
   CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
   Status(Format('Update List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
 
   LStopwatch := TStopwatch.StartNew;
-  LTran := FManager.BeginTransaction;
-  FManager.DeleteList<TCustomer>(LCustomers);
+  LTran := FSession.BeginTransaction;
+  FSession.DeleteList<TCustomer>(LCustomers);
   LTran.Commit;
   LStopwatch.Stop;
   CheckEquals(0, GetTableRecordCount(TBL_PEOPLE));
@@ -953,17 +951,17 @@ begin
     LForeignCustomer.Age := 28;
     LForeignCustomer.EMail := 'john@gmail.com';
 
-    FManager.Save(LForeignCustomer);
+    FSession.Save(LForeignCustomer);
 
     CheckEquals('John', GetValueFromDB(TBL_PEOPLE, CUSTNAME, CUSTID + '=' + IntToStr(LForeignCustomer.ID)), 'Name is not saved');
 
-    LCustomer := FManager.FindOne<TCustomer>(LForeignCustomer.ID);
+    LCustomer := FSession.FindOne<TCustomer>(LForeignCustomer.ID);
 
     CheckEquals('John', LCustomer.Name);
     CheckEquals(28, LCustomer.Age);
     LForeignCustomer.Free;
 
-    LForeignCustomer := FManager.FindOne<TForeignCustomer>(LCustomer.ID);
+    LForeignCustomer := FSession.FindOne<TForeignCustomer>(LCustomer.ID);
     CheckEquals('US', LForeignCustomer.Country);
     CheckEquals('John', LForeignCustomer.Name);
     CheckEquals(28, LForeignCustomer.Age);
@@ -974,8 +972,8 @@ begin
 
     LCustomer := TCustomer.Create;
     LCustomer.Name := 'Foo';
-    FManager.Save(LCustomer);
-    LForeignCustomer := FManager.FindOne<TForeignCustomer>(LCustomer.ID);
+    FSession.Save(LCustomer);
+    LForeignCustomer := FSession.FindOne<TForeignCustomer>(LCustomer.ID);
 
     CheckEquals('Foo', LForeignCustomer.Name);
     CheckFalse(LForeignCustomer.Country.HasValue);
@@ -1003,7 +1001,7 @@ begin
 
     CheckTrue(Assigned(LCustomer.Avatar), 'Picture assigned successfully');
 
-    FManager.Insert(LCustomer);
+    FSession.Insert(LCustomer);
 
     LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE);
     CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString, 'String column should be inserted');
@@ -1023,7 +1021,7 @@ begin
     LCustomer.Height := 41.1;
     LCustomer.MiddleName := 'Middle Test';
 
-    FManager.Insert(LCustomer);
+    FSession.Insert(LCustomer);
     LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where ['+CUSTAGE+'] = 15;');
     CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString);
     CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger);
@@ -1059,12 +1057,12 @@ begin
     LCustomer.LastEdited := EncodeDate(2009, 1, 12);
     customers.Add(LCustomer);
   end;
-  LTran := FManager.BeginTransaction;
-  FManager.InsertList<TCustomer>(customers);
+  LTran := FSession.BeginTransaction;
+  FSession.InsertList<TCustomer>(customers);
   LTran.Commit;
   CheckEquals(100, GetTableRecordCount(TBL_PEOPLE), 'Should be 100 records inserted');
-  LTran := FManager.BeginTransaction;
-  FManager.DeleteList<TCustomer>(customers.Where(IsAdult));
+  LTran := FSession.BeginTransaction;
+  FSession.DeleteList<TCustomer>(customers.Where(IsAdult));
   LTran.Commit;
   CheckEquals(17, GetTableRecordCount(TBL_PEOPLE));
 end;
@@ -1079,9 +1077,9 @@ begin
   //fetch some customers from db
   InsertCustomer(15, 'Bar');
   InsertCustomer(10, 'Foo');
-  LCustomers := FManager.FindAll<TCustomer>;
+  LCustomers := FSession.FindAll<TCustomer>;
   CheckEquals(2, LCustomers.Count);
-  LListSession := FManager.BeginListSession<TCustomer>(LCustomers);
+  LListSession := FSession.BeginListSession<TCustomer>(LCustomers);
 
   //add some customers
   LCustomer := TCustomer.Create;
@@ -1102,9 +1100,9 @@ begin
   LCustomers.First.Name := 'Edited Foo';
   LListSession.CommitListSession;
 
- // LCustomers := FManager.FindAll<TCustomer>;
+ // LCustomers := FSession.FindAll<TCustomer>;
   LProp := TProperty<TCustomer>.Create('CUSTAGE');
-  LCustomers := FManager.CreateCriteria<TCustomer>.OrderBy(LProp.Asc).ToList;
+  LCustomers := FSession.CreateCriteria<TCustomer>.OrderBy(LProp.Asc).ToList;
   CheckEquals(3, LCustomers.Count);
   CheckEquals(1, LCustomers.First.Age);
   CheckEquals(9, LCustomers[1].Age);
@@ -1154,11 +1152,11 @@ begin
     LCustomer.Name := 'ManyToOne';
     LCustomer.Age := 15;
 
-    FManager.Save(LCustomer);
+    FSession.Save(LCustomer);
 
     InsertCustomerOrder(LCustomer.ID, 1, 1, 100.50);
 
-    LOrder := FManager.Single<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
+    LOrder := FSession.Single<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
     CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
     LID := LOrder.ORDER_ID;
     CheckTrue(Assigned(LOrder.Customer), 'Cannot get customer (inside order) from DB');
@@ -1166,7 +1164,7 @@ begin
     CheckEquals(LCustomer.Age, LOrder.Customer.Age);
     FreeAndNil(LOrder);
 
-    LOrder := FManager.FindOne<TCustomer_Orders>(LID);
+    LOrder := FSession.FindOne<TCustomer_Orders>(LID);
     CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
     CheckTrue(Assigned(LOrder.Customer), 'Cannot get customer (inside order) from DB');
     CheckEquals('ManyToOne', LOrder.Customer.Name);
@@ -1174,7 +1172,7 @@ begin
     FreeAndNil(LOrder);
 
     ClearTable(TBL_PEOPLE);  //cascade also deletes records from related table
-    LOrder := FManager.SingleOrDefault<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
+    LOrder := FSession.SingleOrDefault<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
     CheckFalse(Assigned(LOrder), 'Cannot get Order from DB');
   finally
     LCustomer.Free;
@@ -1210,7 +1208,7 @@ var
   LCustomer: TCustomer;
 begin
   InsertCustomerNullable(25, 'Demo', 15.25, 'Middle');
-  LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
+  LCustomer := FSession.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
   try
     CheckTrue(LCustomer.MiddleName.HasValue);
     CheckEqualsString('Middle', LCustomer.MiddleName.Value);
@@ -1219,7 +1217,7 @@ begin
   end;
 
   TestDB.ExecSQL('UPDATE ' + TBL_PEOPLE + ' SET '+CUST_MIDDLENAME+' = NULL;');
-  LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
+  LCustomer := FSession.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
   try
     CheckFalse(LCustomer.MiddleName.HasValue);
   finally
@@ -1241,17 +1239,17 @@ begin
   end;
   TestDB.Commit;
 
-  LPage := FManager.Page<TCustomer>(1, 10, 'select * from ' + TBL_PEOPLE, []);
+  LPage := FSession.Page<TCustomer>(1, 10, 'select * from ' + TBL_PEOPLE, []);
   CheckEquals(iTotal, LPage.GetTotalItems);
   CheckEquals(10, LPage.Items.Count);
   CheckEquals(1, LPage.Items[0].Age);
 
-  LPage := FManager.Page<TCustomer>(2, 10, 'select * from ' + TBL_PEOPLE, []);
+  LPage := FSession.Page<TCustomer>(2, 10, 'select * from ' + TBL_PEOPLE, []);
   CheckEquals(iTotal, LPage.GetTotalItems);
   CheckEquals(10, LPage.Items.Count);
   CheckEquals(11, LPage.Items[0].Age);
 
-  LPage := FManager.Page<TCustomer>(3, 4);
+  LPage := FSession.Page<TCustomer>(3, 4);
   CheckEquals(iTotal, LPage.GetTotalItems);
   CheckEquals(4, LPage.Items.Count);
   CheckEquals(9, LPage.Items[0].Age);
@@ -1273,7 +1271,7 @@ begin
     LCustomer.Height := 1.1;
     LCustomer.Avatar := LPicture;
 
-    FManager.Save(LCustomer);
+    FSession.Save(LCustomer);
 
     LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE);
     CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString);
@@ -1293,7 +1291,7 @@ begin
     LCustomer.Height := 41.1;
     LCustomer.MiddleName := 'Middle Test';
 
-    FManager.Save(LCustomer);
+    FSession.Save(LCustomer);
     LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where ['+CUSTAGE+'] = 15;');
     CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString);
     CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger);
@@ -1314,7 +1312,7 @@ var
   LOrder1, LOrder2, LNewOrder1, LNewOrder2: TCustomer_Orders;
 begin
   InsertCustomer;
-  LCustomers := FManager.FindAll<TCustomer>;
+  LCustomers := FSession.FindAll<TCustomer>;
 
   LOrder1 := TCustomer_Orders.Create;
   LOrder2 := TCustomer_Orders.Create;
@@ -1327,22 +1325,22 @@ begin
     LOrder2.Customer_ID := LCustomers.First.ID;
     LOrder2.Order_Status_Code := 2;
 
-    LOrder1.Customer := FManager.FindOne<TCustomer>(LOrder1.Customer_ID);
-    LOrder2.Customer := FManager.FindOne<TCustomer>(LOrder2.Customer_ID);
+    LOrder1.Customer := FSession.FindOne<TCustomer>(LOrder1.Customer_ID);
+    LOrder2.Customer := FSession.FindOne<TCustomer>(LOrder2.Customer_ID);
 
     LOrder1.Customer.Name := 'John Malkowich';
 
-    FManager.SaveAll(LOrder1);
+    FSession.SaveAll(LOrder1);
 
     CheckEquals(1, GetTableRecordCount(TBL_ORDERS));
 
-    LNewOrder1 := FManager.FindOne<TCustomer_Orders>(LOrder1.ORDER_ID);
+    LNewOrder1 := FSession.FindOne<TCustomer_Orders>(LOrder1.ORDER_ID);
     CheckEquals(LOrder1.Customer.Name, LNewOrder1.Customer.Name);
 
     LOrder2.Customer.Name := 'Bob Marley';
-    FManager.SaveAll(LOrder2);
+    FSession.SaveAll(LOrder2);
 
-    LNewOrder2 := FManager.FindOne<TCustomer_Orders>(LOrder2.ORDER_ID);
+    LNewOrder2 := FSession.FindOne<TCustomer_Orders>(LOrder2.ORDER_ID);
     CheckEquals(LOrder2.Customer.Name, LNewOrder2.Customer.Name);
 
   finally
@@ -1363,7 +1361,7 @@ begin
   InsertCustomerOrder(id, 1, 5, 0);
   InsertCustomerOrder(id, 2, 57, 0);
 
-  customers := FManager.FindAll<TCustomer>;
+  customers := FSession.FindAll<TCustomer>;
   CheckEquals(2, customers.First.Orders.Count);
 
   order := TCustomer_Orders.Create;
@@ -1372,9 +1370,9 @@ begin
 
   customers.First.Orders.Add(order);
 
-  FManager.SaveAll(customers.First);
+  FSession.SaveAll(customers.First);
 
-  customers := FManager.FindAll<TCustomer>;
+  customers := FSession.FindAll<TCustomer>;
   CheckEquals(3, customers.First.Orders.Count);
 end;
 
@@ -1424,7 +1422,7 @@ begin
   customer.Name := 'Foo';
   customer.Orders.Add(TCustomer_Orders.Create(123));
 
-  FManager.SaveAll(customer);
+  FSession.SaveAll(customer);
 
   CheckTrue(customer.Id <> -1);
   CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
@@ -1446,7 +1444,7 @@ begin
   order.Total_Order_Price := 100;
   customer.Orders.Add(order);
 
-  FManager.SaveAll(customer);
+  FSession.SaveAll(customer);
 
   CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
   CheckEquals(1, GetTableRecordCount(TBL_ORDERS));
@@ -1470,30 +1468,30 @@ begin
     LCustomer.Name := 'Foo';
     LCustomer.Age := 15;
 
-    FManager.Save(LCustomer);
+    FSession.Save(LCustomer);
     LCustId := LCustomer.ID;
     LCustomer.Free;
     InsertCustomerOrder(LCustId, 1, 2, 10);
     InsertCustomerOrder(LCustId, 2, 3, 20);
 
-    LCustomer := FManager.FindOne<TCustomer>(LCustId);
+    LCustomer := FSession.FindOne<TCustomer>(LCustId);
     CheckEquals(2, LCustomer.OrdersIntf.Count);
 
     //change values of subentities
     LCustomer.OrdersIntf.First.Order_Status_Code := 99;
     LCustomer.OrdersIntf.Last.Order_Status_Code := 111;
 
-    FManager.SaveAll(LCustomer);
+    FSession.SaveAll(LCustomer);
 
     CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
     CheckEquals(2, GetTableRecordCount(TBL_ORDERS));
 
-    LNewCustomers := FManager.FindAll<TCustomer>;
+    LNewCustomers := FSession.FindAll<TCustomer>;
     CheckEquals(1, LNewCustomers.Count);
     CheckEquals('Foo', LNewCustomers.First.Name);
     CheckEquals(15, LNewCustomers.First.Age);
 
-    LNewOrders := FManager.FindAll<TCustomer_Orders>;
+    LNewOrders := FSession.FindAll<TCustomer_Orders>;
     CheckEquals(2, LNewOrders.Count);
     CheckEquals(10, LNewOrders.First.Total_Order_Price);
     CheckEquals(99, LNewOrders.First.Order_Status_Code);
@@ -1518,7 +1516,7 @@ end;
 procedure TSessionTest.SetUp;
 begin
   FConnection := CreateConnection;
-  FManager := TMockSession.Create(FConnection);
+  FSession := TMockSession.Create(FConnection);
   FConnection.AddExecutionListener(TestExecutionListener);
 end;
 
@@ -1539,7 +1537,7 @@ begin
     LCustStream.LoadFromFile(PictureFilename);
     LCustomer.StreamLazy := LCustStream;
 
-    FManager.Save(LCustomer);
+    FSession.Save(LCustomer);
 
     LResults := TestDB.GetUniTableIntf(SQL_GET_ALL_CUSTOMERS);
     CheckFalse(LResults.EOF);
@@ -1564,8 +1562,7 @@ begin
   ClearTable(TBL_PRODUCTS);
   ClearTable(TBL_USERS);
   ClearTable(TBL_ROLES);
-  FManager.Free;
-  FSession := nil;
+  FSession.Free;
   FConnection := nil;
 end;
 
@@ -1698,7 +1695,7 @@ begin
 
   InsertCustomer;
 
-  LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
+  LCustomer := FSession.FirstOrDefault<TCustomer>(sSql, []);
   try
     CheckEquals(25, LCustomer.Age);
 
@@ -1706,7 +1703,7 @@ begin
     LCustomer.Name := 'Update Test';
 
 
-    FManager.Update(LCustomer);
+    FSession.Update(LCustomer);
 
     LResults := TestDB.GetUniTableIntf('SELECT * FROM ' + TBL_PEOPLE);
     CheckEquals(LCustomer.Age, LResults.FieldByName[CUSTAGE].AsInteger);
@@ -1714,7 +1711,7 @@ begin
     CheckFalse(LCustomer.MiddleName.HasValue);
 
     LCustomer.MiddleName := 'Middle';
-    FManager.Update(LCustomer);
+    FSession.Update(LCustomer);
 
     LResults := TestDB.GetUniTableIntf('SELECT * FROM ' + TBL_PEOPLE);
     CheckEqualsString(LCustomer.MiddleName, LResults.FieldByName[CUST_MIDDLENAME].AsString);
@@ -1739,9 +1736,9 @@ begin
     LCustomer.Name := 'Bar';
     LCustomer.Height := 1.1;
 
-    FManager.Update(LCustomer);
+    FSession.Update(LCustomer);
 
-    LDBCustomer := FManager.FindOne<TCustomer>(LId);
+    LDBCustomer := FSession.FindOne<TCustomer>(LId);
     CheckEquals(LCustomer.Name, LDBCustomer.Name);
   finally
     LCustomer.Free;
@@ -1756,21 +1753,21 @@ var
 begin
   LModel := TProduct.Create;
   LModel.Name := 'Initial version';
-  FManager.Save(LModel);
+  FSession.Save(LModel);
 
-  LModelLoaded := FManager.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
+  LModelLoaded := FSession.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
   CheckEquals(1, LModelLoaded.Version);
   LModelLoaded.Name := 'Updated version No. 1';
 
-  LModelOld := FManager.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
+  LModelOld := FSession.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
   CheckEquals(1, LModelOld.Version);
   LModelOld.Name := 'Updated version No. 2';
 
-  FManager.Save(LModelLoaded);
+  FSession.Save(LModelLoaded);
   CheckEquals(2, LModelLoaded.Version);
 
   try
-    FManager.Save(LModelOld);
+    FSession.Save(LModelOld);
     bOk := False;
   except
     on E:EORMOptimisticLockException do
@@ -1831,9 +1828,9 @@ var
   customer: TCustomer;
   customers: IList<TCustomer>;
 begin
-  FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
+  FSession.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
   InsertCustomer(20, 'Demo');
-  customers := FManager.FindAll<TCustomer>;
+  customers := FSession.FindAll<TCustomer>;
   customer := customers.First;
   CheckEquals('Demo', customer.Name, 'Make sure name is mapped');
   CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
@@ -1844,10 +1841,10 @@ var
   customer: TCustomer;
   id: TValue;
 begin
-  FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
+  FSession.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
   id := TValue.FromVariant(InsertCustomer(20, 'Demo'));
 
-  customer := FManager.FindOne<TCustomer>(id);
+  customer := FSession.FindOne<TCustomer>(id);
   CheckEquals('Demo', customer.Name, 'Make sure name is mapped');
   CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
   customer.Free;
@@ -1858,9 +1855,9 @@ var
   customer: TCustomer;
   customers: IList<TCustomer>;
 begin
-  FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
+  FSession.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
   InsertCustomer(20, 'Demo');
-  customers := FManager.GetList<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
+  customers := FSession.GetList<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
   customer := customers.First;
   CheckEquals('Demo', customer.Name, 'Make sure name is mapped');
   CheckEquals(-1, customer.ID, 'We are not mapping id in customer row mapper so it should be -1');
@@ -1876,7 +1873,7 @@ begin
   InsertCustomerOrder(id, 2, 10, 200);
   InsertCustomerOrder(id, 3, 10, 300);
 
-  customer := FManager.FindOne<TSpringLazyCustomer>(id);
+  customer := FSession.FindOne<TSpringLazyCustomer>(id);
   CheckEquals(3, customer.SpringLazyOrders.Count);
   CheckEquals(1, customer.SpringLazyOrders[0].Customer_Payment_Method_Id);
   CheckEquals(2, customer.SpringLazyOrders[1].Customer_Payment_Method_Id);
@@ -1886,17 +1883,17 @@ end;
 
 procedure TSessionTest.When_Trying_To_Register_RowMapper_Again_For_The_Same_Type_Throw_Exception;
 begin
-  FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
+  FSession.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create);
   CheckException(
     EORMRowMapperAlreadyRegistered,
-    procedure begin FManager.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create); end
+    procedure begin FSession.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create); end
     , 'Registering multiple RowMappers for the same type is not allowed');
 end;
 
 procedure TSessionTest.When_UnannotatedEntity_FindOne_ThrowException;
 begin
   try
-    FManager.FindOne<TUnanotatedEntity>(1);
+    FSession.FindOne<TUnanotatedEntity>(1);
     Fail('Should not succeed if entity is not annotated');
   except
     on E:Exception do
@@ -1928,7 +1925,7 @@ type
 procedure TSessionTest.When_WithoutPrimaryKey_FindOne_ThrowException;
 begin
   try
-    FManager.FindOne<TWithoutPrimaryKey>(1);
+    FSession.FindOne<TWithoutPrimaryKey>(1);
     Fail('Should not succeed if entitys primary key column is not annotated');
   except
     on E:Exception do
@@ -1941,7 +1938,7 @@ end;
 procedure TSessionTest.When_WithoutTableAttribute_FindOne_ThrowException;
 begin
   try
-    FManager.FindOne<TWithoutTable>(1);
+    FSession.FindOne<TWithoutTable>(1);
     Fail('Should not succeed if entity is not annotated with table');
   except
     on E:Exception do
