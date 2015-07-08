@@ -39,6 +39,37 @@ uses
 
 type
   {$REGION 'TLoggingConfiguration'}
+  /// <summary>
+  ///   <para>
+  ///     This class serves two purposes: 1) as a logger class assignment
+  ///     holder (used together with container sub-resolver) 2) loader of the
+  ///     text-based configuration.
+  ///   </para>
+  ///   <para>
+  ///     Configuration loader tries to streamline the process allowing the
+  ///     configuration to be as simple as possible. The loading process adds
+  ///     default logger and controller registration if none is specified
+  ///     (with default properties). The simplest configuration may contain
+  ///     only appenders and all logging is directed to them. If you need to
+  ///     specify multiple loggers with different properties you may also
+  ///     omit the <c>controller</c> section.
+  ///   </para>
+  ///   <para>
+  ///     If you use multiple loggers or controllers (and do not want to mark
+  ///     all your injections with proper names) make sure to register one as
+  ///     the default, this is done by naming them <c>default</c> (after <c>
+  ///     logger</c>/ <c>controller</c> prefix respectively).
+  ///   </para>
+  ///   <para>
+  ///     When used with the logging sub-resolver, you may use <c>assign</c>
+  ///     property of the logger. The sub-resolver will make sure that proper
+  ///     logger is injected to all sub-classes of the assigned class (unless
+  ///     overridden by other logger assignment on the sub-class).
+  ///     Configuration can then be used to specify different logging
+  ///     structure to different classes solely by modifying the
+  ///     configuration without touching the code.
+  ///   </para>
+  /// </summary>
   TLoggingConfiguration = class
   private
     fTypes: IDictionary<PTypeInfo, string>;
