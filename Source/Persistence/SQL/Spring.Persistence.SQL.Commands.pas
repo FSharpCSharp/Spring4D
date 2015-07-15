@@ -297,7 +297,7 @@ begin
     mappedTableClass := TType.GetClass(manyToOneColumn.MemberType);
     for column in TEntityCache.Get(mappedTableClass).Columns do
     begin
-      builtFieldName := TManyToOneRelation.BuildColumnName(table.NameWithoutSchema, mappedByColumnName, column.ColumnName);
+      builtFieldName := TManyToOneRelation.BuildColumnName(table.NameWithoutSchema, column.ColumnName);
       selectField := TSQLSelectField.Create(column.ColumnName + ' ' + builtFieldName, table);
       fSelectFields.Add(selectField);
     end;

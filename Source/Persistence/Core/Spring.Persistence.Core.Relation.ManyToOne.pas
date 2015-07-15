@@ -43,7 +43,6 @@ type
     fNewEntityClass: TClass;
     fNewTableName: string;
   protected
-    function DoBuildColumnName(const column: TColumnData): string; virtual;
     procedure ResolveColumns(const resultSet: IDBResultSet); virtual;
   public
     NewEntity: TObject;
@@ -51,8 +50,7 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
 
-    class function BuildColumnName(
-      const tableName, mappedByColumnName, columnName: string): string;
+    class function BuildColumnName(const tableName, columnName: string): string;
     class function GetMappedByColumn(const fromColumn: ManyToOneAttribute;
       entityClass: TClass): ColumnAttribute;
 
@@ -70,7 +68,8 @@ uses
   SysUtils,
   Spring,
   Spring.Reflection,
-  Spring.Persistence.Core.Exceptions;
+  Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.SQL.Types;
 
 
 {$REGION 'TManyToOneRelation'}
@@ -88,15 +87,9 @@ begin
   inherited Destroy;
 end;
 
-class function TManyToOneRelation.BuildColumnName(const tableName, mappedByColumnName,
-  columnName: string): string;
+class function TManyToOneRelation.BuildColumnName(const tableName, columnName: string): string;
 begin
-  Result := Format('%0:S_%1:S_%2:S', [tableName, mappedByColumnName, columnName]);
-end;
-
-function TManyToOneRelation.DoBuildColumnName(const column: TColumnData): string;
-begin
-  Result := BuildColumnName(fNewTableName, fMappedByColumn.ColumnName, column.ColumnName);
+  Result := Format('%0:S$%1:S', [TSQLAliasGenerator.GetAlias(tableName), columnName]);
 end;
 
 class function TManyToOneRelation.GetMappedByColumn(
@@ -118,7 +111,8 @@ begin
   for i := fNewColumns.Count - 1 downto 0 do
   begin
     columnData := fNewColumns[i];
-    columnName := DoBuildColumnName(columnData);
+
+    columnName := BuildColumnName(fNewTableName, columnData.ColumnName);
     if not resultSet.FieldExists(columnName) then
     begin
       fNewColumns.Delete(i);

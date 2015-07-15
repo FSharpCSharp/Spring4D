@@ -149,6 +149,7 @@ uses
   Spring.Collections.Extensions,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Register,
+  Spring.Persistence.SQL.Types,
   Spring.Reflection;
 
 const
@@ -1124,8 +1125,8 @@ begin
 end;
 
 const
-  SQL_MANY_TO_ONE: string = 'SELECT O.*, C.CUSTID CUSTOMERS_Customer_ID_CUSTID '+
-    ' ,C.CUSTNAME CUSTOMERS_Customer_ID_CUSTNAME, C.CUSTAGE CUSTOMERS_Customer_ID_CUSTAGE '+
+  SQL_MANY_TO_ONE: string = 'SELECT O.*, C.CUSTID %0:S$CUSTID '+
+    ' ,C.CUSTNAME %0:S$CUSTNAME, C.CUSTAGE %0:S$CUSTAGE '+
     ' FROM '+ TBL_ORDERS + ' O '+
     ' LEFT OUTER JOIN ' + TBL_PEOPLE + ' C ON C.CUSTID=O.Customer_ID;';
 
@@ -1146,6 +1147,7 @@ var
   LOrder: TCustomer_Orders;
   LCustomer: TCustomer;
   LID: Integer;
+  sql: string;
 begin
   LCustomer := TCustomer.Create;
   try
@@ -1156,7 +1158,9 @@ begin
 
     InsertCustomerOrder(LCustomer.ID, 1, 1, 100.50);
 
-    LOrder := FSession.Single<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
+    sql := Format(SQL_MANY_TO_ONE, [TSQLAliasGenerator.GetAlias(TBL_PEOPLE)]);
+
+    LOrder := FSession.Single<TCustomer_Orders>(sql, []);
     CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
     LID := LOrder.ORDER_ID;
     CheckTrue(Assigned(LOrder.Customer), 'Cannot get customer (inside order) from DB');
@@ -1172,7 +1176,7 @@ begin
     FreeAndNil(LOrder);
 
     ClearTable(TBL_PEOPLE);  //cascade also deletes records from related table
-    LOrder := FSession.SingleOrDefault<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
+    LOrder := FSession.SingleOrDefault<TCustomer_Orders>(sql, []);
     CheckFalse(Assigned(LOrder), 'Cannot get Order from DB');
   finally
     LCustomer.Free;

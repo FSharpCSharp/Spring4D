@@ -295,12 +295,13 @@ type
   private
     class var fAliases: IDictionary<string,string>;
     class var fCharIndex: Byte;
+
+    class function AliasExists(const tableName: string): Boolean;
   public
     class constructor Create;
     class destructor Destroy;
 
-    class function AliasExists(const table: TSQLTable): Boolean;
-    class function GetAlias(const table: TSQLTable): string;
+    class function GetAlias(const tableName: string): string;
   end;
 
 const
@@ -392,7 +393,7 @@ end;
 function TSQLTable.GetAlias: string;
 begin
   if fAlias = '' then
-    fAlias := TSQLAliasGenerator.GetAlias(Self);
+    fAlias := TSQLAliasGenerator.GetAlias(Name);
   Result := fAlias;
 end;
 
@@ -530,21 +531,24 @@ begin
   inherited;
 end;
 
-class function TSQLAliasGenerator.AliasExists(const table: TSQLTable): Boolean;
+class function TSQLAliasGenerator.AliasExists(const tableName: string): Boolean;
 begin
-  Result := fAliases.ContainsKey(table.Name);
+  Result := fAliases.ContainsKey(tableName);
 end;
 
-class function TSQLAliasGenerator.GetAlias(const table: TSQLTable): string;
+class function TSQLAliasGenerator.GetAlias(const tableName: string): string;
+var
+  tblNameUpcase: string;
 begin
-  if not AliasExists(table) then
+  tblNameUpcase := UpperCase(tableName);
+  if not AliasExists(tblNameUpcase) then
   begin
     Result := Chr(fCharIndex);
-    fAliases.Add(table.Name, Result);
+    fAliases.Add(tblNameUpcase, Result);
     Inc(fCharIndex);
   end
   else
-    Result := fAliases[table.Name];
+    Result := fAliases[tblNameUpcase];
 end;
 
 {$ENDREGION}
