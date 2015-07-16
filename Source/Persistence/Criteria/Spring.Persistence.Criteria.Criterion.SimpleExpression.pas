@@ -91,7 +91,7 @@ begin
   whereField.WhereOperator := GetWhereOperator;
   whereField.ParamName := paramName;
 
-  Result := whereField.ToSQLString(Generator.GetEscapeFieldnameChar); {TODO -oLinas -cGeneral : fix escape fields}
+  Result := generator.GenerateWhere(whereField);
   param := TDBParam.Create;
   param.SetFromTValue(fValue);
   param.Name := paramName;

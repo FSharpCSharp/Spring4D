@@ -54,6 +54,9 @@ type
     function DoGenerateCreateTable(const tableName: string;
       const columns: IList<TSQLCreateField>): string; virtual;
 
+    function GetTableNameWithAlias(const table: TSQLTable): string; virtual;
+    function GetQualifiedFieldName(const field: TSQLField): string; virtual;
+    function GetEscapedFieldName(const field: TSQLField): string; virtual;
     function GetGroupByAsString(const groupFields: IList<TSQLGroupByField>): string; virtual;
     function GetJoinAsString(const join: TSQLJoin): string; virtual;
     function GetJoinsAsString(const joinFields: IList<TSQLJoin>): string; virtual;
@@ -69,11 +72,12 @@ type
     function GetSplitStatementSymbol: string; virtual;
     procedure ParseFullTablename(const fullTableName: string;
       out tableName, schemaName: string); virtual;
-    function GetEscapeFieldnameChar: Char; override;
+    function GetEscapeChar: Char; override;
     function GetUpdateVersionFieldQuery(const command: TUpdateCommand;
       const versionColumn: VersionAttribute; const version, primaryKey: Variant): Variant; override;
   public
     function GetQueryLanguage: TQueryLanguage; override;
+    function GenerateWhere(const field: TSQLWhereField): string; override;
     function GenerateSelect(const command: TSelectCommand): string; override;
     function GenerateInsert(const command: TInsertCommand): string; override;
     function GenerateUpdate(const command: TUpdateCommand): string; override;
@@ -158,7 +162,7 @@ begin
 
       //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
       sqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S', [
-        field.GetEscapedFieldname(GetEscapeFieldnameChar),
+        GetEscapedFieldName(field),
         GetSQLDataTypeName(field),
         IfThen(cpNotNull in field.Properties, 'NOT NULL', 'NULL'),
         IfThen(cpPrimaryKey in field.Properties, GetPrimaryKeyDefinition(field))]);
@@ -202,10 +206,10 @@ begin
         .AppendLine
         .AppendFormat('ADD CONSTRAINT %0:S', [field.ForeignKeyName])
         .AppendLine
-        .AppendFormat('FOREIGN KEY(%0:S)', [field.GetEscapedFieldname(GetEscapeFieldnameChar)])
+        .AppendFormat('FOREIGN KEY(%0:S)', [GetEscapedFieldName(field)])
         .AppendLine
         .AppendFormat(' REFERENCES %0:S (%1:S)', [field.ReferencedTableName,
-          field.GetEscapedName(field.ReferencedColumnName, GetEscapeFieldnameChar)])
+          AnsiQuotedStr(field.ReferencedColumnName, GetEscapeChar)])
         .AppendLine
         .Append(field.ConstraintsAsString);
 
@@ -261,7 +265,7 @@ begin
       {TODO -oLinas -cGeneral : implement where operators}
 
       sqlBuilder.AppendFormat('%0:S = %1:S',
-        [field.GetEscapedFieldname(GetEscapeFieldnameChar), field.ParamName]);
+        [GetEscapedFieldName(field), field.ParamName]);
     end;
 
     sqlBuilder.Append(GetSplitStatementSymbol);
@@ -330,7 +334,7 @@ begin
       params := params + ', ';
     end;
 
-    fields := fields + field.GetEscapedFieldname(GetEscapeFieldnameChar);
+    fields := fields + GetEscapedFieldName(field);
     params := params + field.ParamName;
   end;
 
@@ -357,13 +361,12 @@ var
 begin
   Assert(Assigned(command));
   Assert(command.SelectFields.Any);
-  Assert(command.Table.Alias <> '');
 
   sqlBuilder := TStringBuilder.Create;
   try
     sqlBuilder.Append('SELECT ')
       .Append(GetSelectFieldsAsString(command.SelectFields)).AppendLine
-      .Append(' FROM ').Append(command.Table.FullTableName)
+      .Append(' FROM ').Append(GetTableNameWithAlias(command.Table))
       .Append(GetJoinsAsString(command.Joins))
       .Append(GetWhereAsString(command.WhereFields))
       .Append(GetGroupByAsString(command.GroupByFields))
@@ -401,7 +404,7 @@ begin
         sqlBuilder.Append(', ');
 
       sqlBuilder.AppendFormat('%0:S = %1:S',
-        [updateField.GetEscapedFieldname(GetEscapeFieldnameChar), updateField.ParamName]);
+        [GetEscapedFieldName(updateField), updateField.ParamName]);
     end;
 
     for i := 0 to command.WhereFields.Count - 1 do
@@ -413,7 +416,7 @@ begin
         sqlBuilder.Append(' AND ');
 
       sqlBuilder.AppendFormat('%0:S = %1:S',
-        [whereField.GetEscapedFieldname(GetEscapeFieldnameChar), whereField.ParamName]);
+        [GetEscapedFieldName(whereField), whereField.ParamName]);
     end;
 
     sqlBuilder.Append(GetSplitStatementSymbol);
@@ -422,6 +425,27 @@ begin
   finally
     sqlBuilder.Free;
   end;
+end;
+
+function TAnsiSQLGenerator.GenerateWhere(const field: TSQLWhereField): string;
+begin
+  if field is TSQLWherePropertyField then
+    Result := Format('%s %s %s', [
+      TSQLAliasGenerator.GetAlias(field.Table.Name) + '.' + field.LeftSQL,
+      WhereOperatorNames[field.WhereOperator],
+      TSQLAliasGenerator.GetAlias(TSQLWherePropertyField(field).OtherTable.Name) + '.' + field.RightSQL])
+  else
+    case field.WhereOperator of
+      woIsNull, woIsNotNull: Result := GetQualifiedFieldName(field) + ' ' + WhereOperatorNames[field.WhereOperator];
+      woLike, woNotLike, woIn, woNotIn: Result := GetQualifiedFieldName(field);
+      woOr, woAnd: Result := Format('(%s %s %s)', [field.LeftSQL, WhereOperatorNames[field.WhereOperator], field.RightSQL]);
+      woNot: Result := Format('%s (%s)', [WhereOperatorNames[field.WhereOperator], field.LeftSQL]);
+      woOrEnd, woAndEnd, woNotEnd: Result := '';
+      woJunction: Result := Format('(%s)', [field.LeftSQL]);
+      woBetween: Result := Format('(%s %s %s AND %s)', [GetQualifiedFieldName(field), WhereOperatorNames[field.WhereOperator], field.ParamName, field.ParamName2]);
+    else
+      Result := GetQualifiedFieldName(field) + ' ' + WhereOperatorNames[field.WhereOperator] + ' ' + field.ParamName + ' ';
+    end;
 end;
 
 function TAnsiSQLGenerator.GetCreateFieldsAsString(
@@ -436,8 +460,13 @@ begin
     if i > 0 then
       Result := Result + ', ';
 
-    Result := Result + createFields[i].GetEscapedFieldname(GetEscapeFieldnameChar);
+    Result := Result + GetEscapedFieldName(createFields[i]);
   end;
+end;
+
+function TAnsiSQLGenerator.GetQualifiedFieldName(const field: TSQLField): string;
+begin
+  Result := TSQLAliasGenerator.GetAlias(field.Table.Name) + '.' + GetEscapedFieldName(field);
 end;
 
 function TAnsiSQLGenerator.GetCopyFieldsAsString(
@@ -455,8 +484,8 @@ begin
     if i > 0 then
       Result := Result + ', ';
 
-    if copyFields.Contains(field.Fieldname) then
-      Result := Result + field.GetEscapedFieldname(GetEscapeFieldnameChar)
+    if copyFields.Contains(field.Name) then
+      Result := Result + GetEscapedFieldname(field)
     else
       Result := Result + 'NULL';
   end;
@@ -477,7 +506,20 @@ begin
   end;
 end;
 
-function TAnsiSQLGenerator.GetEscapeFieldnameChar: Char;
+function TAnsiSQLGenerator.GetEscapedFieldName(const field: TSQLField): string;
+var
+  alias: string;
+begin
+  Result := AnsiQuotedStr(field.Name, GetEscapeChar);
+  if field is TSQLSelectField then
+  begin
+    alias := TSQLSelectField(field).Alias;
+    if alias <> '' then
+      Result := Result + ' AS ' + alias;
+  end;
+end;
+
+function TAnsiSQLGenerator.GetEscapeChar: Char;
 begin
   Result := '"';
 end;
@@ -496,7 +538,7 @@ begin
     else
       Result := sLineBreak + '  GROUP BY ';
 
-    Result := Result + groupFields[i].GetFullFieldName(GetEscapeFieldnameChar);
+    Result := Result + GetQualifiedFieldName(groupFields[i]);
   end;
 end;
 
@@ -516,8 +558,8 @@ begin
       Result := Result + ' AND ';
 
     Result := Result +
-      segment.PrimaryKeyField.Table.FullTableName + ' ON '  +
-      segment.PrimaryKeyField.GetFullFieldName(GetEscapeFieldnameChar) + ' = ' + segment.ForeignKeyField.GetFullFieldName(GetEscapeFieldnameChar);
+      GetTableNameWithAlias(segment.PrimaryKeyField.Table) + ' ON '  +
+      GetQualifiedFieldName(segment.PrimaryKeyField) + ' = ' + GetQualifiedFieldName(segment.ForeignKeyField);
   end;
 end;
 
@@ -545,7 +587,8 @@ begin
     else
       Result := sLineBreak + '  ORDER BY ';
 
-    Result := Result + orderByFields[i].GetFullOrderByFieldname(GetEscapeFieldnameChar);
+    Result := Result + GetQualifiedFieldName(orderByFields[i]) +
+      SortingDirectionNames[orderByFields[i].SortingDirection];
   end;
 end;
 
@@ -585,7 +628,7 @@ begin
     if i > 0 then
       Result := Result + ', ';
 
-    Result := Result + selectFields[i].GetFullFieldName(GetEscapeFieldnameChar);
+    Result := Result + GetQualifiedFieldName(selectFields[i]);
   end;
 end;
 
@@ -678,6 +721,11 @@ begin
   Result := Format('SELECT * FROM %0:S WHERE 1<>2 %1:S', [tableName, GetSplitStatementSymbol]);
 end;
 
+function TAnsiSQLGenerator.GetTableNameWithAlias(const table: TSQLTable): string;
+begin
+  Result := table.Name + ' AS ' + TSQLAliasGenerator.GetAlias(table.Name);
+end;
+
 function TAnsiSQLGenerator.GetTempTableName: string;
 begin
   Result := TBL_TEMP;
@@ -716,7 +764,7 @@ begin
     if field.WhereOperator in StartOperators then
       index := FindEnd(whereFields, i, field.WhereOperator, GetEndOperator(field.WhereOperator));
 
-    Result := Result + field.ToSQLString(GetEscapeFieldnameChar);
+    Result := Result + GenerateWhere(field);
     Inc(index);
   end;
 end;

@@ -93,49 +93,49 @@ end;
 
 
 const
-  SQL_SELECT_TEST_SIMPLE = 'SELECT A."NAME", A."AGE", A."HEIGHT"'+ sLineBreak +
-    ' FROM TEST.CUSTOMERS A;';
+  SQL_SELECT_TEST_SIMPLE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT"'+ sLineBreak +
+    ' FROM TEST.CUSTOMERS AS t0;';
 
-  SQL_SELECT_TEST_JOIN = 'SELECT A."NAME", A."AGE", A."HEIGHT"'+ sLineBreak +
-    ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+
+  SQL_SELECT_TEST_JOIN = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT"'+ sLineBreak +
+    ' FROM TEST.CUSTOMERS AS t0' + sLineBreak +
+    '  INNER JOIN TEST.PRODUCTS AS t1 ON t1."ID" = t0."PRODID"'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2 = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
-    ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+
+  SQL_SELECT_TEST_JOIN_2 = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+    ' FROM TEST.CUSTOMERS AS t0' + sLineBreak +
+    '  INNER JOIN TEST.PRODUCTS AS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES AS t2 ON t2."ID" = t0."COUNTRYID"'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
-    ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+sLineBreak+
-    '  ORDER BY A."AGE" DESC'+
+  SQL_SELECT_TEST_JOIN_2_ORDER = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+    ' FROM TEST.CUSTOMERS AS t0' + sLineBreak +
+    '  INNER JOIN TEST.PRODUCTS AS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES AS t2 ON t2."ID" = t0."COUNTRYID"'+sLineBreak+
+    '  ORDER BY t0."AGE" DESC'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_MULTIPLE = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
-    ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+sLineBreak+
-    '  ORDER BY A."AGE" DESC, C."COUNTRYNAME" ASC'+
+  SQL_SELECT_TEST_JOIN_2_ORDER_MULTIPLE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+    ' FROM TEST.CUSTOMERS AS t0' + sLineBreak +
+    '  INNER JOIN TEST.PRODUCTS AS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES AS t2 ON t2."ID" = t0."COUNTRYID"'+sLineBreak+
+    '  ORDER BY t0."AGE" DESC, t2."COUNTRYNAME" ASC'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
-    ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+sLineBreak+
-    '  GROUP BY A."HEIGHT", A."NAME", A."AGE", C."COUNTRYNAME"'+sLineBreak+
-    '  ORDER BY A."AGE" DESC, C."COUNTRYNAME" ASC'+
+  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+    ' FROM TEST.CUSTOMERS AS t0' + sLineBreak +
+    '  INNER JOIN TEST.PRODUCTS AS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES AS t2 ON t2."ID" = t0."COUNTRYID"'+sLineBreak+
+    '  GROUP BY t0."HEIGHT", t0."NAME", t0."AGE", t2."COUNTRYNAME"'+sLineBreak+
+    '  ORDER BY t0."AGE" DESC, t2."COUNTRYNAME" ASC'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE = 'SELECT A."NAME", A."AGE", A."HEIGHT", C."COUNTRYNAME"'+ sLineBreak +
-    ' FROM TEST.CUSTOMERS A' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS B ON B."ID" = A."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C."ID" = A."COUNTRYID"'+sLineBreak+
-    '  WHERE A."NAME" = :NAME'+sLineBreak+
-    '  GROUP BY A."HEIGHT", A."NAME", A."AGE", C."COUNTRYNAME"'+sLineBreak+
-    '  ORDER BY A."AGE" DESC, C."COUNTRYNAME" ASC'+
+  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+    ' FROM TEST.CUSTOMERS AS t0' + sLineBreak +
+    '  INNER JOIN TEST.PRODUCTS AS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
+    '  LEFT OUTER JOIN TEST.COUNTRIES AS t2 ON t2."ID" = t0."COUNTRYID"'+sLineBreak+
+    '  WHERE t0."NAME" = :NAME'+sLineBreak+
+    '  GROUP BY t0."HEIGHT", t0."NAME", t0."AGE", t2."COUNTRYNAME"'+sLineBreak+
+    '  ORDER BY t0."AGE" DESC, t2."COUNTRYNAME" ASC'+
     ';';
 
 procedure TAnsiSQLGeneratorTest.TestGenerateSelect;
@@ -146,11 +146,8 @@ var
   LJoin: TSQLJoin;
 begin
   LTable := CreateTestTable;
-  LTable.Alias := 'A';
   LJoinTable := CreateTestJoinTable;
-  LJoinTable.Alias := 'B';
   LCountriesTable := CreateTestCOUNTRYTable;
-  LCountriesTable.Alias := 'C';
   LCommand := TSelectCommand.Create(LTable);
   try
     LCommand.SelectFields.Add(TSQLSelectField.Create('NAME', LTable));
@@ -189,13 +186,12 @@ begin
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
     CheckEqualsSQL(SQL_SELECT_TEST_JOIN_2, sSql);
 
-    LCommand.OrderByFields.Add(TSQLOrderByField.Create('AGE', LTable));
-    LCommand.OrderByFields[0].SortingDirection := stDescending;
+    LCommand.OrderByFields.Add(TSQLOrderByField.Create('AGE', LTable, stDescending));
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
     CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER, sSql);
 
-    LCommand.OrderByFields.Add(TSQLOrderByField.Create('COUNTRYNAME', LCountriesTable));
+    LCommand.OrderByFields.Add(TSQLOrderByField.Create('COUNTRYNAME', LCountriesTable, stAscending));
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
     CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER_MULTIPLE, sSql);
 

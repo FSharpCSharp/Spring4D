@@ -48,7 +48,7 @@ type
     function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
     function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
-    function GetEscapeFieldnameChar: Char; override;
+    function GetEscapeChar: Char; override;
   end;
 
 implementation
@@ -86,7 +86,7 @@ end;
 
 // Pü 2014-06-01:
 // MySQL has the backtick as FieldEscape unless MySQL is set to Ansi mode
-function TMySQLGenerator.GetEscapeFieldnameChar: Char;
+function TMySQLGenerator.GetEscapeChar: Char;
 begin
   Result := '`';
 end;

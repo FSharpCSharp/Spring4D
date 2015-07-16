@@ -54,7 +54,7 @@ type
     function GetTableColumns(const tableName: string): string; override;
     function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
     function GetSQLTableExists(const tableName: string): string; override;
-    function GetEscapeFieldnameChar: Char; override;
+    function GetEscapeChar: Char; override;
   end;
 
 implementation
@@ -91,7 +91,7 @@ begin
   Result := '';
 end;
 
-function TNoSQLGenerator.GetEscapeFieldnameChar: Char;
+function TNoSQLGenerator.GetEscapeChar: Char;
 begin
   Result := '"';
 end;

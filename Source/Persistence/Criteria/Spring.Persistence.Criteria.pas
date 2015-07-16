@@ -124,8 +124,8 @@ begin
     for orderBy in fOrderBy do
     begin
       orderField := TSQLOrderByField.Create(orderBy.GetPropertyName,
-        command.FindTable(orderBy.GetEntityClass));
-      orderField.SortingDirection := orderBy.GetSortingDirection;
+        command.FindTable(orderBy.GetEntityClass),
+        orderBy.SortingDirection);
       command.OrderByFields.Add(orderField);
     end;
 

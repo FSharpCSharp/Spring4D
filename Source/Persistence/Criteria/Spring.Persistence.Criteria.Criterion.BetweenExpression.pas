@@ -96,7 +96,7 @@ begin
   whereField.ParamName := paramName;
   whereField.ParamName2 := paramName2;
 
-  Result := whereField.ToSQLString(generator.GetEscapeFieldnameChar); {TODO -oLinas -cGeneral : fix escape fields}
+  Result := generator.GenerateWhere(whereField);
 
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(whereField)

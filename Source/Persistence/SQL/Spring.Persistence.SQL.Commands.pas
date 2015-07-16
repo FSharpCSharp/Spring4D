@@ -290,7 +290,6 @@ begin
     table := TSQLTable.Create;
     table.SetFromAttribute(TRttiExplorer.GetTable(manyToOneColumn.MemberType));
     fTables.Add(table);
-    table.Alias := table.Alias + IntToStr(i);
 
     mappedByColumn := TManyToOneRelation.GetMappedByColumn(manyToOneColumn, entityClass);
     mappedByColumnName := mappedByColumn.ColumnName;
@@ -298,7 +297,7 @@ begin
     for column in TEntityCache.Get(mappedTableClass).Columns do
     begin
       builtFieldName := TManyToOneRelation.BuildColumnName(table.NameWithoutSchema, column.ColumnName);
-      selectField := TSQLSelectField.Create(column.ColumnName + ' ' + builtFieldName, table);
+      selectField := TSQLSelectField.Create(column.ColumnName, table, builtFieldName);
       fSelectFields.Add(selectField);
     end;
 

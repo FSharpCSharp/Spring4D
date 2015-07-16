@@ -89,7 +89,7 @@ end;
 
 class function TManyToOneRelation.BuildColumnName(const tableName, columnName: string): string;
 begin
-  Result := Format('%0:S$%1:S', [TSQLAliasGenerator.GetAlias(tableName), columnName]);
+  Result := TSQLAliasGenerator.GetAlias(tableName) + '$' + columnName;
 end;
 
 class function TManyToOneRelation.GetMappedByColumn(

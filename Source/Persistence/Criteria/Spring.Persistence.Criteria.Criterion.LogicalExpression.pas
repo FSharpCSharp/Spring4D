@@ -95,7 +95,7 @@ begin
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(endOp);
 
-  Result := whereField.ToSQLString(generator.GetEscapeFieldnameChar);
+  Result := generator.GenerateWhere(whereField);
 
   if not addToCommand then
   begin

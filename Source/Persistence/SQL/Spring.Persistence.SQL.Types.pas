@@ -42,74 +42,44 @@ type
     fName: string;
     fSchema: string;
     fDescription: string;
-    fAlias: string;
-    function GetAlias: string;
     function GetName: string;
     function GetNameWithoutSchema: string;
-    function GetFullTableName: string;
   public
     class function CreateFromClass(entityClass: TClass): TSQLTable;
 
-    function SchemaExists: Boolean;
-
     procedure SetFromAttribute(const attribute: TableAttribute);
 
-    property Alias: string read GetAlias write fAlias;
     property Description: string read fDescription write fDescription;
     property Name: string read GetName write fName;
     property Schema: string read fSchema write fSchema;
     property NameWithoutSchema: string read GetNameWithoutSchema;
-    property FullTableName: string read GetFullTableName;
   end;
 
   /// <summary>
   ///   Represents field of the database table.
   /// </summary>
-  ISQLField = interface
-    ['{2316102E-61A3-4454-A7B2-18090C384882}']
-    function GetFieldname: string;
-    function GetFullFieldName(const escapeChar: Char): string;
-    function GetTable: TSQLTable;
-    function GetAlias: string;
-    procedure SetAlias(const value: string);
-    property Alias: string read GetAlias write SetAlias;
-    property Fieldname: string read GetFieldname;
-    property Table: TSQLTable read GetTable;
-  end;
-
-  /// <summary>
-  ///   Represents field of the database table.
-  /// </summary>
-  TSQLField = class(TInterfacedObject, ISQLField)
+  TSQLField = class
   private
+    fName: string;
     fTable: TSQLTable;
-    fFieldname: string;
-    fAlias: string;
-    fColumn: ColumnAttribute;
-    function GetFieldname: string;
+    function GetName: string;
     function GetTable: TSQLTable;
-    function GetAlias: string;
-    procedure SetAlias(const value: string);
   public
-    constructor Create(const fieldName: string; const table: TSQLTable); virtual;
+    constructor Create(const name: string; const table: TSQLTable); virtual;
 
-    function GetFullFieldName(const escapeChar: Char): string; virtual;
-    function GetEscapedName(const name: string; const escapeChar: Char): string; virtual;
-    function GetEscapedFieldname(const escapeChar: Char): string; virtual;
-
-    property Alias: string read GetAlias write SetAlias;
-    property Column: ColumnAttribute read fColumn write fColumn;
-    property Fieldname: string read GetFieldname write fFieldname;
-    property Table: TSQLTable read GetTable write fTable;
+    property Name: string read GetName;
+    property Table: TSQLTable read GetTable;
   end;
 
   TSQLParamField = class(TSQLField)
   private
+    fColumn: ColumnAttribute;
     fParamName: string;
   public
-    constructor Create(const fieldName: string; const table: TSQLTable;
+    constructor Create(const name: string; const table: TSQLTable;
       const column: ColumnAttribute; const paramName: string); reintroduce; virtual;
 
+    property Column: ColumnAttribute read fColumn;
     property ParamName: string read fParamName write fParamName;
   end;
 
@@ -117,7 +87,15 @@ type
   ///   Represents field of the database table which is used in <c>select</c>
   ///   statements.
   /// </summary>
-  TSQLSelectField = class(TSQLField);
+  TSQLSelectField = class(TSQLField)
+  private
+    fAlias: string;
+  public
+    constructor Create(const name: string; const table: TSQLTable;
+      const alias: string = ''); reintroduce;
+
+    property Alias: string read fAlias;
+  end;
 
   /// <summary>
   ///   Represents field of the database table which is used in <c>insert</c>
@@ -171,7 +149,7 @@ type
     function GetForeignKeyName: string;
     function GetConstraintsAsString: string;
   public
-    constructor Create(const fieldName: string; const table: TSQLTable;
+    constructor Create(const name: string; const table: TSQLTable;
       const referencedColumnName, referencedTableName: string;
       constraints: TForeignStrategies); reintroduce; overload;
 
@@ -204,10 +182,8 @@ type
     fRightSQL: string;
     fParamName2: string;
   public
-    constructor Create(const fieldName: string; const table: TSQLTable); reintroduce; overload;
+    constructor Create(const name: string; const table: TSQLTable); reintroduce; overload;
     constructor Create(const leftSQL, rightSQL: string); reintroduce; overload;
-
-    function ToSQLString(const escapeChar: Char): string; virtual;
 
     property MatchMode: TMatchMode read fMatchMode write fMatchMode;
     property WhereOperator: TWhereOperator read fWhereOperator write fWhereOperator;
@@ -223,13 +199,9 @@ type
   TSQLWherePropertyField = class(TSQLWhereField)
   private
     fOtherTable: TSQLTable;
-    function GetFullLeftFieldName: string;
-    function GetFullRightFieldName: string;
   public
     constructor Create(const leftPropertyName, rightPropertyName: string;
       const leftTable, rightTable: TSQLTable); overload;
-
-    function ToSQLString(const escapeChar: Char): string; override;
 
     property OtherTable: TSQLTable read fOtherTable write fOtherTable;
   end;
@@ -251,11 +223,10 @@ type
   private
     fSortingDirection: TSortingDirection;
   public
-    constructor Create(const fieldName: string; const table: TSQLTable); override;
+    constructor Create(const name: string; const table: TSQLTable;
+      sortingDirection: TSortingDirection = stAscending); reintroduce;
 
-    function GetFullOrderByFieldname(const escapeChar: Char): string;
-
-    property SortingDirection: TSortingDirection read fSortingDirection write fSortingDirection;
+    property SortingDirection: TSortingDirection read fSortingDirection;
   end;
 
   TSQLJoinType = (jtInner, jtLeft);
@@ -265,13 +236,14 @@ type
   /// </summary>
   TSQLJoinSegment = class
   private
-    fPrimaryKeyField: ISQLField;
-    fForeignKeyField: ISQLField;
+    fPrimaryKeyField: TSQLField;
+    fForeignKeyField: TSQLField;
   public
-    constructor Create(const primaryKeyField, foreignKeyField: ISQLField);
+    constructor Create(const primaryKeyField, foreignKeyField: TSQLField);
+    destructor Destroy; override;
 
-    property PrimaryKeyField: ISQLField read fPrimaryKeyField write fPrimaryKeyField;
-    property ForeignKeyField: ISQLField read fForeignKeyField write fForeignKeyField;
+    property PrimaryKeyField: TSQLField read fPrimaryKeyField;
+    property ForeignKeyField: TSQLField read fForeignKeyField;
   end;
 
   /// <summary>
@@ -292,11 +264,9 @@ type
   ///   Static class which is used to generate table aliases.
   /// </summary>
   TSQLAliasGenerator = class
-  private
+  strict private
     class var fAliases: IDictionary<string,string>;
-    class var fCharIndex: Byte;
-
-    class function AliasExists(const tableName: string): Boolean;
+    class var fIndex: Integer;
   public
     class constructor Create;
     class destructor Destroy;
@@ -345,7 +315,9 @@ implementation
 
 uses
   StrUtils,
+  SyncObjs,
   SysUtils,
+  Spring,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions;
 
@@ -390,35 +362,17 @@ begin
   Result.SetFromAttribute(entityData.EntityTable);
 end;
 
-function TSQLTable.GetAlias: string;
-begin
-  if fAlias = '' then
-    fAlias := TSQLAliasGenerator.GetAlias(Name);
-  Result := fAlias;
-end;
-
-function TSQLTable.GetFullTableName: string;
-begin
-  Result := Name + ' ' + Alias;
-end;
-
 function TSQLTable.GetName: string;
 begin
-  Result := '';
-  if SchemaExists then
-    Result := fSchema + '.';
-
-  Result := Result + fName;
+  if fSchema <> '' then
+    Result := fSchema + '.' + fName
+  else
+    Result := fName
 end;
 
 function TSQLTable.GetNameWithoutSchema: string;
 begin
   Result := fName;
-end;
-
-function TSQLTable.SchemaExists: Boolean;
-begin
-  Result := fSchema <> '';
 end;
 
 procedure TSQLTable.SetFromAttribute(const attribute: TableAttribute);
@@ -432,62 +386,21 @@ end;
 
 {$REGION 'TSQLField'}
 
-constructor TSQLField.Create(const fieldName: string; const table: TSQLTable);
+constructor TSQLField.Create(const name: string; const table: TSQLTable);
 begin
   inherited Create;
-  fFieldname := fieldName;
+  fName := name;
   fTable := table;
-  fAlias := '';
 end;
 
-function TSQLField.GetAlias: string;
+function TSQLField.GetName: string;
 begin
-  Result := fAlias;
-end;
-
-function TSQLField.GetEscapedFieldname(const escapeChar: Char): string;
-var
-  pos: Integer;
-  fieldName, aliasName: string;
-begin
-  pos := PosEx(' ', fFieldname);
-  if pos > 1 then
-  begin
-    //escape all words including alias name
-    fieldName := GetEscapedName(Copy(fFieldname, 1, pos - 1), escapeChar);
-    aliasName := Copy(fFieldname, pos, Length(fFieldname));
-    Result := fieldName + aliasName;
-  end
-  else
-    Result := GetEscapedName(fFieldname, escapeChar);
-end;
-
-function TSQLField.GetEscapedName(const name: string; const escapeChar: Char): string;
-begin
-  Result := AnsiQuotedStr(name, escapeChar);
-end;
-
-function TSQLField.GetFieldname: string;
-begin
-  Result := fFieldname;
-end;
-
-function TSQLField.GetFullFieldName(const escapeChar: Char): string;
-begin
-  if fAlias <> '' then
-    Result := fAlias
-  else
-    Result := fTable.Alias + '.' + GetEscapedFieldname(escapeChar);
+  Result := fName;
 end;
 
 function TSQLField.GetTable: TSQLTable;
 begin
   Result := fTable;
-end;
-
-procedure TSQLField.SetAlias(const value: string);
-begin
-  fAlias := value;
 end;
 
 {$ENDREGION}
@@ -507,11 +420,18 @@ end;
 
 {$REGION 'TSQLJoinSegment'}
 
-constructor TSQLJoinSegment.Create(const primaryKeyField, foreignKeyField: ISQLField);
+constructor TSQLJoinSegment.Create(const primaryKeyField, foreignKeyField: TSQLField);
 begin
   inherited Create;
   fPrimaryKeyField := primaryKeyField;
   fForeignKeyField := foreignKeyField;
+end;
+
+destructor TSQLJoinSegment.Destroy;
+begin
+  fForeignKeyField.Free;
+  fPrimaryKeyField.Free;
+  inherited;
 end;
 
 {$ENDREGION}
@@ -521,34 +441,25 @@ end;
 
 class constructor TSQLAliasGenerator.Create;
 begin
-  fAliases := TCollections.CreateDictionary<string,string>(100);
-  fCharIndex := 65;
+  fAliases := TCollections.CreateDictionary<string,string>(100,
+    TStringComparer.OrdinalIgnoreCase);
+  fIndex := -1;
 end;
 
 class destructor TSQLAliasGenerator.Destroy;
 begin
   fAliases := nil;
-  inherited;
-end;
-
-class function TSQLAliasGenerator.AliasExists(const tableName: string): Boolean;
-begin
-  Result := fAliases.ContainsKey(tableName);
 end;
 
 class function TSQLAliasGenerator.GetAlias(const tableName: string): string;
-var
-  tblNameUpcase: string;
 begin
-  tblNameUpcase := UpperCase(tableName);
-  if not AliasExists(tblNameUpcase) then
+  if not fAliases.TryGetValue(tableName, Result) then
   begin
-    Result := Chr(fCharIndex);
-    fAliases.Add(tblNameUpcase, Result);
-    Inc(fCharIndex);
+    Result := 't' + IntToStr(TInterlocked.Increment(fIndex));
+    fAliases.AddOrSetValue(tableName, Result);
   end
   else
-    Result := fAliases[tblNameUpcase];
+    Result := fAliases[tableName];
 end;
 
 {$ENDREGION}
@@ -556,15 +467,11 @@ end;
 
 {$REGION 'TSQLOrderField'}
 
-constructor TSQLOrderByField.Create(const fieldName: string; const table: TSQLTable);
+constructor TSQLOrderByField.Create(const name: string;
+  const table: TSQLTable; sortingDirection: TSortingDirection);
 begin
-  inherited Create(fieldName, table);
-  fSortingDirection := stAscending;
-end;
-
-function TSQLOrderByField.GetFullOrderByFieldname(const escapeChar: Char): string;
-begin
-  Result := GetFullFieldName(escapeChar) + SortingDirectionNames[fSortingDirection];
+  inherited Create(name, table);
+  fSortingDirection := sortingDirection;
 end;
 
 {$ENDREGION}
@@ -572,9 +479,9 @@ end;
 
 {$REGION 'TSQLWhereField'}
 
-constructor TSQLWhereField.Create(const fieldName: string; const table: TSQLTable);
+constructor TSQLWhereField.Create(const name: string; const table: TSQLTable);
 begin
-  inherited Create(fieldName, table, nil, ':' + fieldName);
+  inherited Create(name, table, nil, ':' + name);
   fWhereOperator := woEqual;
   fMatchMode := mmExact;
 end;
@@ -588,21 +495,6 @@ begin
   fRightSQL := rightSQL;
 end;
 
-function TSQLWhereField.ToSQLString(const escapeChar: Char): string;
-begin
-  case WhereOperator of
-    woIsNull, woIsNotNull: Result := GetFullFieldName(escapeChar) + ' ' + WhereOperatorNames[WhereOperator];
-    woLike, woNotLike, woIn, woNotIn: Result := GetFullFieldName(escapeChar);
-    woOr, woAnd: Result := Format('(%s %s %s)', [fLeftSQL, WhereOperatorNames[WhereOperator], fRightSQL]);
-    woNot: Result := Format('%s (%s)', [WhereOperatorNames[WhereOperator], fLeftSQL]);
-    woOrEnd, woAndEnd, woNotEnd: Result := '';
-    woJunction: Result := Format('(%s)', [fLeftSQL]);
-    woBetween: Result := Format('(%s %s %s AND %s)', [GetFullFieldName(escapeChar), WhereOperatorNames[WhereOperator], ParamName, ParamName2]);
-  else
-    Result := GetFullFieldName(escapeChar) + ' ' + WhereOperatorNames[WhereOperator] + ' ' + ParamName + ' ';
-  end;
-end;
-
 {$ENDREGION}
 
 
@@ -610,7 +502,7 @@ end;
 
 function TSQLCreateField.Clone: TSQLCreateField;
 begin
-  Result := TSQLCreateField.Create(fFieldname, fTable);
+  Result := TSQLCreateField.Create(fName, fTable);
   Result.SetFromAttribute(fColumnAttribute);
 end;
 
@@ -636,11 +528,11 @@ end;
 
 {$REGION 'TSQLForeignKeyField'}
 
-constructor TSQLForeignKeyField.Create(const fieldName: string;
+constructor TSQLForeignKeyField.Create(const name: string;
   const table: TSQLTable; const referencedColumnName,
   referencedTableName: string; constraints: TForeignStrategies);
 begin
-  inherited Create(fieldname, table);
+  inherited Create(name, table);
   fReferencedColumnName := referencedColumnName;
   fReferencedTableName := referencedTableName;
   fConstraints := constraints;
@@ -658,7 +550,7 @@ end;
 
 function TSQLForeignKeyField.GetForeignKeyName: string;
 begin
-  Result := Format('FK_%0:s_%1:s', [fTable.GetNameWithoutSchema, Fieldname]);
+  Result := Format('FK_%0:s_%1:s', [fTable.NameWithoutSchema, Name]);
 end;
 
 {$ENDREGION}
@@ -674,32 +566,29 @@ begin
   fOtherTable := rightTable;
 end;
 
-function TSQLWherePropertyField.GetFullLeftFieldName: string;
-begin
-  Result := fTable.Alias + '.' + fLeftSQL;
-end;
-
-function TSQLWherePropertyField.GetFullRightFieldName: string;
-begin
-  Result := fOtherTable.Alias + '.' + fRightSQL;
-end;
-
-function TSQLWherePropertyField.ToSQLString(const escapeChar: Char): string;
-begin
-  Result := Format('%s %s %s', [GetFullLeftFieldname, WhereOperatorNames[fWhereOperator], GetFullRightFieldname]);
-end;
-
 {$ENDREGION}
 
 
 {$REGION 'TSQLParamField'}
 
-constructor TSQLParamField.Create(const fieldName: string;
-  const table: TSQLTable; const column: ColumnAttribute; const paramName: string);
+constructor TSQLParamField.Create(const name: string; const table: TSQLTable;
+  const column: ColumnAttribute; const paramName: string);
 begin
-  inherited Create(fieldName, table);
+  inherited Create(name, table);
   fColumn := column;
   fParamName := paramName;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSQLSelectField'}
+
+constructor TSQLSelectField.Create(const name: string;
+  const table: TSQLTable; const alias: string);
+begin
+  inherited Create(name, table);
+  fAlias := alias;
 end;
 
 {$ENDREGION}

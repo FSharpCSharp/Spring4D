@@ -79,7 +79,7 @@ begin
   whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command) );
   whereField.MatchMode := GetMatchMode;
   whereField.WhereOperator := GetWhereOperator;
-  Result := whereField.ToSQLString(Generator.GetEscapeFieldnameChar);
+  Result := generator.GenerateWhere(whereField);
 
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(whereField)

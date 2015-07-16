@@ -47,18 +47,16 @@ type
     class var fsJson: TFormatSettings;
     class constructor Create;
   protected
-    function GetExpressionFromWhereField(const field: TSQLWhereField; fieldIndex: Integer): string; virtual;
     function ResolveFieldAndExpression(const fieldName: string; out field: string;
       out expression: string; const delta: Integer = 1): Boolean;
     function GetPrefix(const table: TSQLTable): string; virtual;
-    function GetSortingDirection(sortingDirection: TSortingDirection): string; virtual;
     function WrapResult(const AResult: string): string; virtual;
 
     function DoGetInsertJson(const command: TInsertCommand): string;
     function DoGetUpdateJson(const command: TUpdateCommand): string;
-    function DoGetFindUpdateJson(const command: TUpdateCommand): string;    
+    function DoGetFindUpdateJson(const command: TUpdateCommand): string;
     function CreateClassInsertCommandAndTable(const fromValue: TValue): TInsertCommand;
-    function CreateClassUpdateCommandAndTable(const fromValue: TValue): TUpdateCommand;    
+    function CreateClassUpdateCommandAndTable(const fromValue: TValue): TUpdateCommand;
     function ToJsonValue(const value: TValue): string;
   public
     function GetQueryLanguage: TQueryLanguage; override;
@@ -66,6 +64,7 @@ type
     function GetUpdateVersionFieldQuery(const command: TUpdateCommand;
       const versionColumn: VersionAttribute; const version, primaryKey: Variant): Variant; override;
 
+    function GenerateWhere(const field: TSQLWhereField): string; override;
     function GenerateSelect(const command: TSelectCommand): string; override;
     function GenerateInsert(const command: TInsertCommand): string; override;
     function GenerateUpdate(const command: TUpdateCommand): string; override;
@@ -106,8 +105,6 @@ begin
   fsJson.TimeSeparator := ':';
   fsJson.LongDateFormat := 'yyyy-mm-dd hh:mm:ss';
 end;
-
-
 
 function TMongoDBGenerator.CreateClassInsertCommandAndTable(
   const fromValue: TValue): TInsertCommand;
@@ -168,7 +165,7 @@ begin
       Result := Result + ',';
 
     value := field.Column.GetValue(command.Entity);
-    Result := Result + QuotedStr(field.Fieldname) + ': ' + ToJsonValue(value);    
+    Result := Result + QuotedStr(field.Name) + ': ' + ToJsonValue(value);
   end;  
   Result := Result + '}';
 end;
@@ -208,13 +205,13 @@ begin
     case insertField.Column.MemberType.Kind of
       tkClass:
       begin
-        Result := Result + QuotedStr(insertField.Fieldname) + ': ';
+        Result := Result + QuotedStr(insertField.Name) + ': ';
         current := insertField.Column.GetValue(command.Entity);
         Result := Result + GetJsonValueFromClass(current);         
       end;
       tkInterface:
       begin
-        Result := Result + QuotedStr(insertField.Fieldname) + ': [';
+        Result := Result + QuotedStr(insertField.Name) + ': [';
         list := insertField.Column.GetValue(command.Entity).AsInterface as IList;
         for j := 0 to list.Count - 1 do
         begin
@@ -235,7 +232,7 @@ begin
         if command.Entity <> nil then
           current := insertField.Column.GetValue(command.Entity);
           
-        Result := Result + QuotedStr(insertField.Fieldname) + ': ' 
+        Result := Result + QuotedStr(insertField.Name) + ': '
           + ToJsonValue(current);
       end;          
     end;
@@ -278,13 +275,13 @@ begin
     case updateField.Column.MemberType.Kind of
       tkClass:
       begin
-        Result := Result + QuotedStr(updateField.Fieldname) + ': ';
+        Result := Result + QuotedStr(updateField.Name) + ': ';
         current := updateField.Column.GetValue(command.Entity);
         Result := Result + GetJsonValueFromClass(current);         
       end;
       tkInterface:
       begin
-        Result := Result + QuotedStr(updateField.Fieldname) + ': [';
+        Result := Result + QuotedStr(updateField.Name) + ': [';
         list := updateField.Column.GetValue(command.Entity).AsInterface as IList;
         for j := 0 to list.Count - 1 do
         begin
@@ -305,7 +302,7 @@ begin
         if command.Entity <> nil then
           current := updateField.Column.GetValue(command.Entity);
           
-        Result := Result + QuotedStr(updateField.Fieldname) + ': ' 
+        Result := Result + QuotedStr(updateField.Name) + ': '
           + ToJsonValue(current);
       end;          
     end;
@@ -327,7 +324,7 @@ end;
 function TMongoDBGenerator.GenerateInsert(
   const command: TInsertCommand): string;
 begin
-  if (command.Entity = nil) then
+  if command.Entity = nil then
     Exit('');
   Result := DoGetInsertJson(command);
   Result := 'I' + GetPrefix(command.Table) + Result;
@@ -339,54 +336,43 @@ begin
   Result := Format('page%d_%d_%s', [limit, offset, Copy(sql, 2, Length(sql))]);
 end;
 
-function TMongoDBGenerator.GenerateSelect(
-  const command: TSelectCommand): string;
+function TMongoDBGenerator.GenerateSelect(const command: TSelectCommand): string;
+const
+  SortingDirectionNames: array[TSortingDirection] of string = ('1', '-1');
 var
-  LField, LPrevField: TSQLWhereField;
-  i, LFieldIndex: Integer;
-  LStmtType: string;
+  field, previousField: TSQLWhereField;
+  i: Integer;
+  statementType: string;
 begin
   Result := '';
-  LStmtType := 'S';
-  LFieldIndex := 0;
+  statementType := 'S';
   for i := 0 to command.WhereFields.Count - 1 do
   begin
-    LField := command.WhereFields[i];
-    LPrevField := command.WhereFields[Max(0, i - 1)];
+    field := command.WhereFields[i];
+    previousField := command.WhereFields[Max(0, i - 1)];
 
-    if not (LPrevField.WhereOperator in StartOperators) and not (LField.WhereOperator in EndOperators)  then
-    begin
-      if i <> 0 then
-        Result := Result + ',';
-    end;
+    if not (previousField.WhereOperator in StartOperators)
+      and not (field.WhereOperator in EndOperators) and (i <> 0) then
+      Result := Result + ',';
 
-    if (LField.WhereOperator in StartEndOperators) then
-    begin
-      Dec(LFieldIndex);
-    end;
-    Result := Result + GetExpressionFromWhereField(LField, LFieldIndex);
-    Inc(LFieldIndex);
+    Result := Result + GenerateWhere(field);
   end;
 
   for i := 0 to command.OrderByFields.Count - 1 do
   begin
-    if i<>0 then
-      LStmtType := LStmtType + ','
+    if i <> 0 then
+      statementType := statementType + ','
     else
-    begin
-      LStmtType := 'SO';
-    end;
+      statementType := 'SO';
 
-    LStmtType := LStmtType + '{' + AnsiQuotedStr(command.OrderByFields[i].Fieldname, '"') + ': ' +
-      GetSortingDirection(command.OrderByFields[i].SortingDirection) + '}';
+    statementType := statementType + '{' + AnsiQuotedStr(command.OrderByFields[i].Name, '"') + ': ' +
+      SortingDirectionNames[command.OrderByFields[i].SortingDirection] + '}';
   end;
-  if Length(LStmtType) > 1 then
-  begin
-    Insert(IntToStr(Length(LStmtType)-2) + '_', LStmtType, 3); //insert length   SO100_{}
-  end;
+  if Length(statementType) > 1 then
+    Insert(IntToStr(Length(statementType)-2) + '_', statementType, 3); //insert length   SO100_{}
 
   Result := WrapResult(Result);
-  Result := LStmtType + GetPrefix(command.Table) + Result;
+  Result := statementType + GetPrefix(command.Table) + Result;
 end;
 
 function TMongoDBGenerator.GenerateUniqueId: Variant;
@@ -399,7 +385,7 @@ function TMongoDBGenerator.GenerateUpdate(
 var
   findUpdateJson: string;
 begin
-  if (command.Entity = nil) then
+  if command.Entity = nil then
     Exit('');
 
   findUpdateJson := DoGetFindUpdateJson(command);
@@ -410,8 +396,7 @@ begin
     DoGetUpdateJson(command)]);
 end;
 
-function TMongoDBGenerator.GetExpressionFromWhereField(
-  const field: TSQLWhereField; fieldIndex: Integer): string;
+function TMongoDBGenerator.GenerateWhere(const field: TSQLWhereField): string;
 const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual} '=', {woNotEqual} '$ne', {woMore} '$gt', {woLess} '$lt',
@@ -423,47 +408,36 @@ var
   LField, LExpression: string;
 begin
   case field.WhereOperator of
-    woEqual: Result := '{' + AnsiQuotedStr(field.Fieldname, '"') + ' : ' + field.ParamName + '}';
+    woEqual: Result := '{' + AnsiQuotedStr(field.Name, '"') + ' : ' + field.ParamName + '}';
     woNotEqual, woMoreOrEqual, woMore, woLess, woLessOrEqual :
-      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(field.Fieldname, '"'), WhereOpNames[field.WhereOperator], field.ParamName]);
-    woIsNotNull: Result := Format('{%S: { $ne: null }}', [AnsiQuotedStr(field.Fieldname, '"')]);
-    woIsNull: Result := Format('{%S: null}', [AnsiQuotedStr(field.Fieldname, '"')]);
+      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(field.Name, '"'), WhereOpNames[field.WhereOperator], field.ParamName]);
+    woIsNotNull: Result := Format('{%S: { $ne: null }}', [AnsiQuotedStr(field.Name, '"')]);
+    woIsNull: Result := Format('{%S: null}', [AnsiQuotedStr(field.Name, '"')]);
     woBetween: Result := Format('{$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %2:S} } ] }'
-      , [AnsiQuotedStr(field.Fieldname, '"'), field.ParamName, field.ParamName2]);
+      , [AnsiQuotedStr(field.Name, '"'), field.ParamName, field.ParamName2]);
     woOr, woAnd:
-    begin
-        Result := Format('{%S: [', [WhereOpNames[field.WhereOperator]]);
-    end;
+      Result := Format('{%S: [', [WhereOpNames[field.WhereOperator]]);
     woNot: Result := Format('%S: ', [WhereOpNames[field.WhereOperator]]);
     woNotEnd: Result := '';
     woOrEnd, woAndEnd: Result := ']}';
     woLike:
     begin
-      Result := field.Fieldname;
-      if ResolveFieldAndExpression(field.Fieldname, LField, LExpression) then
+      Result := field.Name;
+      if ResolveFieldAndExpression(field.Name, LField, LExpression) then
         Result := Format('{ %S: { $regex: ''.*%S.*'', $options: ''i''}}', [AnsiQuotedStr(LField, '"'), LExpression]);
     end;
     woNotLike:
     begin
-      Result := field.Fieldname;
-      if ResolveFieldAndExpression(field.Fieldname, LField, LExpression) then
+      Result := field.Name;
+      if ResolveFieldAndExpression(field.Name, LField, LExpression) then
         Result := Format('{ %S: { $not: "/.*%S.*/i"}}', [AnsiQuotedStr(LField, '"'), LExpression]);
     end;
     woIn, woNotIn:
     begin
-      Result := field.Fieldname;
-      if ResolveFieldAndExpression(field.Fieldname, LField, LExpression) then
+      Result := field.Name;
+      if ResolveFieldAndExpression(field.Name, LField, LExpression) then
         Result := Format('{%S: { %S: [%S] } }', [AnsiQuotedStr(LField, '"'), WhereOpNames[field.WhereOperator], LExpression]);
     end;
-  end;
-end;
-
-function TMongoDBGenerator.GetSortingDirection(sortingDirection: TSortingDirection): string;
-begin
-  Result := '1';
-  case sortingDirection of
-    stAscending: Result := '1';
-    stDescending: Result := '-1';
   end;
 end;
 

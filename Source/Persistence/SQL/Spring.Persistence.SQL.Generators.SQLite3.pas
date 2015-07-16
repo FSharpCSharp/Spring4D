@@ -99,7 +99,7 @@ begin
       //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
       LSqlBuilder.AppendFormat(' %0:S %1:S %2:S %3:S %4:S %5:S',
         [
-          LField.Fieldname
+          LField.Name
           ,GetSQLDataTypeName(LField)
           ,IfThen(cpPrimaryKey in LField.Properties, 'PRIMARY KEY')
           ,IfThen(LField.IsIdentity, 'AUTOINCREMENT')
@@ -161,7 +161,7 @@ begin
         LSqlBuilder.Append(',').AppendLine;
 
       LSqlBuilder.AppendFormat(' CONSTRAINT %0:S FOREIGN KEY (%1:S) REFERENCES %2:S (%3:S)',
-        [LField.ForeignKeyName, LField.Fieldname, LField.ReferencedTableName, LField.ReferencedColumnName]);
+        [LField.ForeignKeyName, LField.Name, LField.ReferencedTableName, LField.ReferencedColumnName]);
 
     end;
     LSqlBuilder.Append(');');
