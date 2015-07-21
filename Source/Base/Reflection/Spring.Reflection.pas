@@ -908,6 +908,8 @@ class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
 const
   DelegatePrefixStrings: array[0..2] of string = (
     'TFunc<', 'TProc<', 'TPredicate<');
+  DelegatePrefixNonGenericStrings: array[0..1] of string = (
+    'TProc', 'TPredicate');
 var
   name: string;
   prefix: string;
@@ -918,6 +920,9 @@ begin
   while Assigned(typeInfo) and (typeInfo.Kind = tkInterface) do
   begin
     name := GetTypeName(typeInfo);
+    for prefix in DelegatePrefixNonGenericStrings do
+      if SameText(prefix, name) then
+        Exit(True);
     for prefix in DelegatePrefixStrings do
       if StartsText(prefix, name) then
         Exit(True);
