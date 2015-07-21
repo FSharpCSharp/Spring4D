@@ -384,7 +384,9 @@ type
   ///   </note>
   /// </remarks>
   /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
+  {$M+}
   TPredicate<T> = reference to function(const arg: T): Boolean;
+  {$M-}
 
   /// <summary>
   ///   Represents an anonymous method that has a single parameter and does not
@@ -392,7 +394,9 @@ type
   /// </summary>
   /// <seealso cref="TActionProc&lt;T&gt;" />
   /// <seealso cref="TActionMethod&lt;T&gt;" />
+  {$M+}
   TAction<T> = reference to procedure(const arg: T);
+  {$M-}
 
   /// <summary>
   ///   Represents a procedure that has a single parameter and does not return
