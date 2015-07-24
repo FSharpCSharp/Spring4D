@@ -43,17 +43,16 @@ type
     function GetEntityClass: TClass;
     procedure SetEntityClass(value: TClass);
   protected
-    function GetCriterionTable(const command: TDMLCommand): TSQLTable; overload; virtual;
+    function GetCriterionTable(const command: TDMLCommand): TSQLTable; overload;
     function GetCriterionTable(const command: TDMLCommand;
-      const table: TSQLTable): TSQLTable; overload; virtual;
-    function GetMatchMode: TMatchMode; virtual;
+      const table: TSQLTable): TSQLTable; overload;
     function GetWhereOperator: TWhereOperator; virtual; abstract;
 
     function ToSqlString(const params: IList<TDBParam>;
       const command: TDMLCommand; const generator: ISQLGenerator;
       addToCommand: Boolean): string; virtual; abstract;
 
-    property MatchMode: TMatchMode read GetMatchMode;
+    property EntityClass: TClass read GetEntityClass write SetEntityClass;
     property WhereOperator: TWhereOperator read GetWhereOperator;
   end;
 
@@ -82,11 +81,6 @@ end;
 function TAbstractCriterion.GetEntityClass: TClass;
 begin
   Result := fEntityClass;
-end;
-
-function TAbstractCriterion.GetMatchMode: TMatchMode;
-begin
-  Result := mmExact;
 end;
 
 procedure TAbstractCriterion.SetEntityClass(value: TClass);

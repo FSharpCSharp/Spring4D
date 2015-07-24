@@ -41,8 +41,8 @@ type
   TSimpleExpression = class(TAbstractCriterion)
   private
     fPropertyName: string;
-    fValue: TValue;
     fOperator: TWhereOperator;
+    fValue: TValue;
   protected
     function GetWhereOperator: TWhereOperator; override;
     function ToSqlString(const params: IList<TDBParam>; const command: TDMLCommand;
@@ -83,15 +83,15 @@ var
   param: TDBParam;
 begin
   Assert(command is TWhereCommand);
-  inherited;
+
   paramName := command.GetAndIncParameterName(fPropertyName);
 
   whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
-  whereField.MatchMode := MatchMode;
-  whereField.WhereOperator := GetWhereOperator;
+  whereField.WhereOperator := WhereOperator;
   whereField.ParamName := paramName;
 
   Result := generator.GenerateWhere(whereField);
+
   param := TDBParam.Create;
   param.SetFromTValue(fValue);
   param.Name := paramName;

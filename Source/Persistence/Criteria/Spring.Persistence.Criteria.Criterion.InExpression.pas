@@ -82,12 +82,11 @@ var
 begin
   Assert(command is TWhereCommand);
 
-  Result := Format('%s %s (%s)',
-    [PropertyName, WhereOperatorNames[GetWhereOperator], ValuesToSeparatedString]);
+  whereField := TSQLWhereField.Create(PropertyName, GetCriterionTable(command));
+  whereField.WhereOperator := WhereOperator;
+  whereField.RightSQL := ValuesToSeparatedString;
 
-  whereField := TSQLWhereField.Create(Result, GetCriterionTable(command));
-  whereField.MatchMode := GetMatchMode;
-  whereField.WhereOperator := GetWhereOperator;
+  Result := generator.GenerateWhere(whereField);
 
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(whereField)
@@ -104,7 +103,7 @@ begin
   if fValues = nil then
     Exit('NULL');
 
-  Result := '';
+  Result := '(';
   for i := Low(fValues) to High(fValues) do
   begin
     if i > 0 then
@@ -117,6 +116,7 @@ begin
       s := value.ToString;
     Result := Result + s;
   end;
+  Result := Result + ')';
 end;
 
 {$ENDREGION}

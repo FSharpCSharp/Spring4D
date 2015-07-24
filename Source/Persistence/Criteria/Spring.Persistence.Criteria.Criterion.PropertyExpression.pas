@@ -97,12 +97,9 @@ var
   table, otherTable: TSQLTable;
 begin
   Assert(command is TWhereCommand);
-  inherited;
-  table := fTable;
-  otherTable := fOtherTable;
 
-  table := GetCriterionTable(command, table);
-  otherTable := GetCriterionTable(command, otherTable);
+  table := GetCriterionTable(command, fTable);
+  otherTable := GetCriterionTable(command, fOtherTable);
 
   if not Assigned(table) then
     table := command.Table;
@@ -110,11 +107,12 @@ begin
   if not Assigned(otherTable) then
     otherTable := command.Table;
 
-  whereField := TSQLWherePropertyField.Create(AnsiUpperCase(fPropertyName),
-    AnsiUpperCase(fOtherPropertyName), table, otherTable);
-  whereField.MatchMode := GetMatchMode;
-  whereField.WhereOperator := GetWhereOperator;
+  whereField := TSQLWherePropertyField.Create(
+    fPropertyName, fOtherPropertyName, table, otherTable);
+  whereField.WhereOperator := WhereOperator;
+
   Result := generator.GenerateWhere(whereField);
+
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(whereField)
   else

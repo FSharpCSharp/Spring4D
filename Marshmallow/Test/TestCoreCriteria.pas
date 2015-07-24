@@ -378,8 +378,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   InsertCustomer(42, 'FooBar');
-  LCustomers := FCriteria.Add(Restrictions.Like(CUSTNAME, 'Foo'))
-    .ToList;
+  LCustomers := FCriteria.Add(Restrictions.Like(CUSTNAME, 'Foo')).ToList;
   CheckEquals(0, LCustomers.Count);
   FCriteria.Clear;
   FCriteria.Add(Restrictions.Like(CUSTNAME, 'Foo', mmAnywhere));
@@ -547,4 +546,3 @@ initialization
   // Register any test cases with the test runner
   RegisterTest(TCriteriaTest.Suite);
 end.
-

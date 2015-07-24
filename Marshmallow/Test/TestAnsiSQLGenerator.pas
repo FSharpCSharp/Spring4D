@@ -3,16 +3,16 @@ unit TestAnsiSQLGenerator;
 interface
 
 uses
-  TestFramework, Spring.Persistence.SQL.Generators.Abstract
-  , Spring.Persistence.SQL.Generators.Ansi, Spring.Persistence.SQL.Commands
-  , Spring.Persistence.SQL.Types, Spring.Collections;
+  TestFramework,
+  Spring.Collections,
+  Spring.Persistence.SQL.Commands,
+  Spring.Persistence.SQL.Generators.Ansi,
+  Spring.Persistence.SQL.Types;
 
 type
   TAnsiSQLGeneratorTest = class(TTestCase)
   private
     FAnsiSQLGenerator: TAnsiSQLGenerator;
-  protected
-    procedure CheckEqualsSQL(const AExpected, ASQL: string);
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -33,13 +33,11 @@ type
 implementation
 
 uses
-  SysUtils,
-  StrUtils
-  ,TestEntities
-  ,Spring.Persistence.Mapping.RttiExplorer
-  ,Spring.Persistence.Mapping.Attributes
-  ,Generics.Collections
-  ;
+//  SysUtils,
+  TestEntities,
+  Spring.TestUtils,
+  Spring.Persistence.Mapping.Attributes,
+  Spring.Persistence.Mapping.RttiExplorer;
 
 function CreateTestTable: TSQLTable;
 begin
@@ -47,7 +45,6 @@ begin
   Result.Schema := 'TEST';
   Result.Name := 'CUSTOMERS';
   Result.Description := 'Customers table';
-//  Result.Alias := 'C';
 end;
 
 function CreateTestJoinTable: TSQLTable;
@@ -56,7 +53,6 @@ begin
   Result.Schema := 'TEST';
   Result.Name := 'PRODUCTS';
   Result.Description := 'Products table';
- // Result.Alias := 'P';
 end;
 
 function CreateTestCOUNTRYTable: TSQLTable;
@@ -65,19 +61,6 @@ begin
   Result.Schema := 'TEST';
   Result.Name := 'COUNTRIES';
   Result.Description := 'Countries table';
- // Result.Alias := 'P';
-end;
-
-procedure TAnsiSQLGeneratorTest.CheckEqualsSQL(const AExpected, ASQL: string);
-var
-  LExpected, LSQL: string;
-begin
-  LExpected := ReplaceStr(AExpected, ' ', '');
-  LExpected := ReplaceStr(LExpected, sLineBreak, '');
-
-  LSQL := ReplaceStr(ASQL, ' ', '');
-  LSQL := ReplaceStr(LSQL, sLineBreak, '');
-  CheckEqualsString(LExpected, LSQL, 'SQL not equals');
 end;
 
 procedure TAnsiSQLGeneratorTest.SetUp;
@@ -90,7 +73,6 @@ begin
   FAnsiSQLGenerator.Free;
   FAnsiSQLGenerator := nil;
 end;
-
 
 const
   SQL_SELECT_TEST_SIMPLE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT"'+ sLineBreak +
@@ -158,33 +140,25 @@ begin
     CheckEqualsString(SQL_SELECT_TEST_SIMPLE, sSql);
 
     LJoin := TSQLJoin.Create(jtInner);
-    LJoin.Segments.Add
-    (
-      TSQLJoinSegment.Create
-      (
-        TSQLField.Create('ID', LJoinTable)
-        ,TSQLField.Create('PRODID', LTable)
-      )
-    );
+    LJoin.Segments.Add(
+      TSQLJoinSegment.Create(
+        TSQLField.Create('ID', LJoinTable),
+        TSQLField.Create('PRODID', LTable)));
     LCommand.Joins.Add(LJoin);
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
-    CheckEqualsSQL(SQL_SELECT_TEST_JOIN, sSql);
+    CheckEqualsString(SQL_SELECT_TEST_JOIN, sSql);
 
     LCommand.SelectFields.Add(TSQLSelectField.Create('COUNTRYNAME', LCountriesTable));
     LJoin := TSQLJoin.Create(jtLeft);
-    LJoin.Segments.Add
-    (
-      TSQLJoinSegment.Create
-      (
-        TSQLField.Create('ID', LCountriesTable)
-        ,TSQLField.Create('COUNTRYID', LTable)
-      )
-    );
+    LJoin.Segments.Add(
+      TSQLJoinSegment.Create(
+        TSQLField.Create('ID', LCountriesTable),
+        TSQLField.Create('COUNTRYID', LTable)));
     LCommand.Joins.Add(LJoin);
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
-    CheckEqualsSQL(SQL_SELECT_TEST_JOIN_2, sSql);
+    CheckEqualsString(SQL_SELECT_TEST_JOIN_2, sSql);
 
     LCommand.OrderByFields.Add(TSQLOrderByField.Create('AGE', LTable, stDescending));
 
@@ -206,8 +180,7 @@ begin
     LCommand.WhereFields.Add(TSQLWhereField.Create('NAME', LTable));
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
-    CheckEqualsSQL(SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE, sSql);
-
+    CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE, sSql);
   finally
     LTable.Free;
     LJoinTable.Free;
@@ -246,7 +219,6 @@ begin
     LTable.Schema := '';
     ReturnValue := FAnsiSQLGenerator.GenerateInsert(LCommand);
     CheckEqualsString(SQL_INSERT_TEST_WITHOUT_SCHEMA, ReturnValue);
-
   finally
     LCommand.Free;
     LTable.Free;
@@ -266,8 +238,10 @@ begin
 end;
 
 const
-  SQL_UPDATE_TEST = 'UPDATE TEST.CUSTOMERS SET ' + sLineBreak
-  + '"NAME" = :NAME1, "AGE" = :AGE1, "HEIGHT" = :HEIGHT1' + sLineBreak + ' WHERE "ID" = :ID1;';
+  SQL_UPDATE_TEST =
+    'UPDATE TEST.CUSTOMERS SET ' + sLineBreak +
+    '"NAME" = :NAME1, "AGE" = :AGE1, "HEIGHT" = :HEIGHT1' + sLineBreak +
+    ' WHERE "ID" = :ID1;';
 
 procedure TAnsiSQLGeneratorTest.TestGenerateUpdate;
 var
@@ -292,8 +266,9 @@ begin
 end;
 
 const
-  SQL_DELETE_TEST = 'DELETE FROM TEST.CUSTOMERS' + sLineBreak
-  + ' WHERE "ID" = :ID1;';
+  SQL_DELETE_TEST =
+    'DELETE FROM TEST.CUSTOMERS' + sLineBreak +
+    ' WHERE "ID" = :ID1;';
 
 procedure TAnsiSQLGeneratorTest.TestGenerateDelete;
 var
@@ -348,9 +323,8 @@ begin
     LCols := TRttiExplorer.GetColumns(TCustomer);
     LCommand.SetCommandFieldsFromColumns(LCols);
     LCommand.ForeignKeys.Add(
-      TSQLForeignKeyField.Create('FKColumn', LTable, 'RefColumn', 'RefTable', [fsOnDeleteCascade, fsOnUpdateCascade]
-      )
-    );
+      TSQLForeignKeyField.Create(
+        'FKColumn', LTable, 'RefColumn', 'RefTable', [fsOnDeleteCascade, fsOnUpdateCascade]));
 
     LSQL := FAnsiSQLGenerator.GenerateCreateForeignKey(LCommand);
     CheckTrue(LSQL.Any);
@@ -378,7 +352,8 @@ end;
 
 const
   SQL_COUNT_TEST = 'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1;';
-  SQL_COUNT = 'SELECT COUNT(*) FROM (' + sLineBreak +
+  SQL_COUNT =
+    'SELECT COUNT(*) FROM (' + sLineBreak +
     'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1' + sLineBreak +
     ') AS ORM_GET_QUERY_COUNT;';
 
@@ -399,7 +374,7 @@ begin
 end;
 
 initialization
-  // Register any test cases with the test runner
   RegisterTest(TAnsiSQLGeneratorTest.Suite);
+
 end.
 

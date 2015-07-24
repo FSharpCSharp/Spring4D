@@ -76,7 +76,6 @@ function TJunction.ToSqlString(const params: IList<TDBParam>;
 var
   i: Integer;
   criterion: ICriterion;
-  sql: string;
   whereField: TSQLWhereField;
 begin
   Assert(command is TWhereCommand);
@@ -85,18 +84,15 @@ begin
   for i := 0 to fCriterions.Count - 1 do
   begin
     if i <> 0 then
-      Result := Result + ' ' + WhereOperatorNames[GetWhereOperator] + ' ';
+      Result := Result + ' ' + WhereOperatorNames[WhereOperator] + ' ';
 
     criterion := fCriterions[i];
-    sql := criterion.ToSqlString(params, command, generator, False);
-
-    Result := Result + sql;
+    Result := Result + criterion.ToSqlString(params, command, generator, False);
   end;
 
   if addToCommand then
   begin
     whereField := TSQLWhereField.Create(Result, '');
-    whereField.MatchMode := GetMatchMode;
     whereField.WhereOperator := woJunction;
     TWhereCommand(command).WhereFields.Add(whereField);
   end;

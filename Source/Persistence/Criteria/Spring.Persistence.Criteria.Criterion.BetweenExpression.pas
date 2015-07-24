@@ -87,12 +87,11 @@ var
   paramName, paramName2: string;
 begin
   Assert(command is TWhereCommand);
-  inherited;
+
   paramName := command.GetAndIncParameterName(fPropertyName);
   paramName2 := command.GetAndIncParameterName(fPropertyName);
   whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
-  whereField.MatchMode := GetMatchMode;
-  whereField.WhereOperator := GetWhereOperator;
+  whereField.WhereOperator := WhereOperator;
   whereField.ParamName := paramName;
   whereField.ParamName2 := paramName2;
 

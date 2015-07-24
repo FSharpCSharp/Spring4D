@@ -29,14 +29,13 @@ unit Spring.TestUtils;
 interface
 
 uses
-  Classes,
-  IniFiles,
   SysUtils,
   TestFramework;
 
 type
   TAbstractTestHelper = class helper for TAbstractTest
   public
+    procedure CheckEqualsString(expected, actual: string; msg: string = '');
     procedure CheckException(expected: ExceptionClass; const method: TProc; const msg: string = '');
     procedure Pass; inline;
   end;
@@ -44,6 +43,11 @@ type
 procedure ProcessTestResult(const ATestResult: TTestResult);
 
 implementation
+
+uses
+  Math,
+  StrUtils;
+
 
 procedure ProcessTestResult(const ATestResult: TTestResult);
 begin
@@ -60,6 +64,33 @@ end;
 {$ENDIF}
 
 {$REGION 'TAbstractTestHelper'}
+
+procedure TAbstractTestHelper.CheckEqualsString(expected, actual, msg: string);
+
+  procedure EqualsFail(index: Integer); overload;
+  const
+    ContextCharCount = 20;
+  begin
+    if (msg <> '') and not EndsText(sLineBreak, msg) then
+      msg := msg + sLineBreak;
+    msg :=
+      'Strings differ at position ' + IntToStr(index) + sLineBreak +
+      'Expected: ' + ReplaceStr(Copy(expected, Max(1, index - ContextCharCount), ContextCharCount * 2), sLineBreak, '  ') + sLineBreak +
+      'But was:  ' + ReplaceStr(Copy(actual, Max(1, index - ContextCharCount), ContextCharCount * 2), sLineBreak, '  ') + sLineBreak +
+      '----------' + DupeString('-', Min(ContextCharCount, index - 1)) + '^';
+    Fail(msg);
+  end;
+
+var
+  i: Integer;
+begin
+  FCheckCalled := True;
+  for i := 1 to Min(Length(expected), Length(actual)) do
+    if expected[i] <> actual[i] then
+      EqualsFail(i);
+  if Length(expected) <> Length(actual) then
+    EqualsFail(Min(Length(expected), Length(actual)) + 1);
+end;
 
 procedure TAbstractTestHelper.CheckException(expected: ExceptionClass;
   const method: TProc; const msg: string);

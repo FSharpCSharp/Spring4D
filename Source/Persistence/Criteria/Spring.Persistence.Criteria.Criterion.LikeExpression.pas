@@ -52,9 +52,6 @@ type
 
 implementation
 
-uses
-  SysUtils;
-
 
 {$REGION 'TLikeExpression'}
 
@@ -73,12 +70,11 @@ var
 begin
   Assert(command is TWhereCommand);
 
-  Result := Format('%s %s %s', [PropertyName, WhereOperatorNames[GetWhereOperator],
-    GetMatchModeString(fMatchMode, Value.AsString)]);
+  whereField := TSQLWhereField.Create(PropertyName, GetCriterionTable(command));
+  whereField.WhereOperator := WhereOperator;
+  whereField.RightSQL := GetMatchModeString(fMatchMode, Value.AsString);
 
-  whereField := TSQLWhereField.Create(Result, GetCriterionTable(command));
-  whereField.MatchMode := GetMatchMode;
-  whereField.WhereOperator := GetWhereOperator;
+  Result := generator.GenerateWhere(whereField);
 
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(whereField)

@@ -75,10 +75,10 @@ var
   whereField: TSQLWhereField;
 begin
   Assert(command is TWhereCommand);
-  inherited;
-  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command) );
-  whereField.MatchMode := GetMatchMode;
-  whereField.WhereOperator := GetWhereOperator;
+
+  whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
+  whereField.WhereOperator := WhereOperator;
+
   Result := generator.GenerateWhere(whereField);
 
   if addToCommand then

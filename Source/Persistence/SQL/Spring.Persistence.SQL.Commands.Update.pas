@@ -179,14 +179,12 @@ begin
 
   for updateField in fCommand.UpdateFields do
   begin
-   // LParam := CreateParam(entity, updateField);
     param := Generator.CreateParam(updateField, updateField.Column.GetValue(entity));
     SQLParameters.Add(param);
   end;
 
   for whereField in fCommand.WhereFields do
   begin
-   // param := CreateParam(entity, whereField);
     param := Generator.CreateParam(whereField, whereField.Column.GetValue(entity));
     SQLParameters.Add(param);
   end;

@@ -430,21 +430,42 @@ end;
 function TAnsiSQLGenerator.GenerateWhere(const field: TSQLWhereField): string;
 begin
   if field is TSQLWherePropertyField then
-    Result := Format('%s %s %s', [
+    Result := Format('(%s %s %s)', [
       TSQLAliasGenerator.GetAlias(field.Table.Name) + '.' + field.LeftSQL,
       WhereOperatorNames[field.WhereOperator],
       TSQLAliasGenerator.GetAlias(TSQLWherePropertyField(field).OtherTable.Name) + '.' + field.RightSQL])
   else
     case field.WhereOperator of
-      woIsNull, woIsNotNull: Result := GetQualifiedFieldName(field) + ' ' + WhereOperatorNames[field.WhereOperator];
-      woLike, woNotLike, woIn, woNotIn: Result := GetQualifiedFieldName(field);
-      woOr, woAnd: Result := Format('(%s %s %s)', [field.LeftSQL, WhereOperatorNames[field.WhereOperator], field.RightSQL]);
-      woNot: Result := Format('%s (%s)', [WhereOperatorNames[field.WhereOperator], field.LeftSQL]);
+      woIsNull, woIsNotNull:
+        Result := GetQualifiedFieldName(field) + ' ' + WhereOperatorNames[field.WhereOperator];
+      woLike, woNotLike, woIn, woNotIn:
+        // TODO: support parameter
+        Result := Format('(%s %s %s)', [
+          GetQualifiedFieldName(field),
+          WhereOperatorNames[field.WhereOperator],
+          field.RightSQL]);
+      woOr, woAnd:
+        Result := Format('(%s %s %s)', [
+          field.LeftSQL,
+          WhereOperatorNames[field.WhereOperator],
+          field.RightSQL]);
+      woNot:
+        Result := Format('%s (%s)', [
+          WhereOperatorNames[field.WhereOperator],
+          field.LeftSQL]);
       woOrEnd, woAndEnd, woNotEnd: Result := '';
       woJunction: Result := Format('(%s)', [field.LeftSQL]);
-      woBetween: Result := Format('(%s %s %s AND %s)', [GetQualifiedFieldName(field), WhereOperatorNames[field.WhereOperator], field.ParamName, field.ParamName2]);
+      woBetween:
+        Result := Format('(%s %s %s AND %s)', [
+          GetQualifiedFieldName(field),
+          WhereOperatorNames[field.WhereOperator],
+          field.ParamName,
+          field.ParamName2]);
     else
-      Result := GetQualifiedFieldName(field) + ' ' + WhereOperatorNames[field.WhereOperator] + ' ' + field.ParamName + ' ';
+      Result := Format('%s %s %s', [
+        GetQualifiedFieldName(field),
+        WhereOperatorNames[field.WhereOperator],
+        field.ParamName]);
     end;
 end;
 
@@ -756,10 +777,10 @@ begin
     index := i;
 
     field := whereFields[i];
-    if i > 0 then
-      Result := Result + ' AND '
+    if i = 0 then
+      Result := sLineBreak + '  WHERE '
     else
-      Result := sLineBreak + '  WHERE ';
+      Result := Result + ' AND ';
 
     if field.WhereOperator in StartOperators then
       index := FindEnd(whereFields, i, field.WhereOperator, GetEndOperator(field.WhereOperator));

@@ -79,10 +79,9 @@ var
   whereField, endOp: TSQLWhereField;
 begin
   Assert(command is TWhereCommand);
-  inherited;
+
   whereField := TSQLWhereField.Create('', '');
-  whereField.MatchMode := GetMatchMode;
-  whereField.WhereOperator := GetWhereOperator;
+  whereField.WhereOperator := WhereOperator;
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(whereField);
   whereField.LeftSQL := fLeft.ToSqlString(params, command, generator, addToCommand);
@@ -90,7 +89,6 @@ begin
     whereField.RightSQL := fRight.ToSqlString(params, command, generator, addToCommand);
 
   endOp := TSQLWhereField.Create('', '');
-  endOp.MatchMode := GetMatchMode;
   endOp.WhereOperator := GetEndOperator(fOperator);
   if addToCommand then
     TWhereCommand(command).WhereFields.Add(endOp);

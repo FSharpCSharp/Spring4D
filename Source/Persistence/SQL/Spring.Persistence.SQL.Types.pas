@@ -177,7 +177,6 @@ type
   TSQLWhereField = class(TSQLParamField)
   private
     fWhereOperator: TWhereOperator;
-    fMatchMode: TMatchMode;
     fLeftSQL: string;
     fRightSQL: string;
     fParamName2: string;
@@ -185,7 +184,6 @@ type
     constructor Create(const name: string; const table: TSQLTable); reintroduce; overload;
     constructor Create(const leftSQL, rightSQL: string); reintroduce; overload;
 
-    property MatchMode: TMatchMode read fMatchMode write fMatchMode;
     property WhereOperator: TWhereOperator read fWhereOperator write fWhereOperator;
     property LeftSQL: string read fLeftSQL write fLeftSQL;
     property RightSQL: string read fRightSQL write fRightSQL;
@@ -308,8 +306,8 @@ const
     ' ON UPDATE NO ACTION'    // fsOnUpdateNoAction
     );
 
-  function GetMatchModeString(matchMode: TMatchMode; const pattern: string): string;
-  function GetEndOperator(startOperator: TWhereOperator): TWhereOperator;
+function GetMatchModeString(matchMode: TMatchMode; const pattern: string): string;
+function GetEndOperator(startOperator: TWhereOperator): TWhereOperator;
 
 implementation
 
@@ -483,14 +481,12 @@ constructor TSQLWhereField.Create(const name: string; const table: TSQLTable);
 begin
   inherited Create(name, table, nil, ':' + name);
   fWhereOperator := woEqual;
-  fMatchMode := mmExact;
 end;
 
 constructor TSQLWhereField.Create(const leftSQL, rightSQL: string);
 begin
-  Create('', nil);
+  inherited Create(name, table, nil, ':' + name);
   fWhereOperator := woOr;
-  fMatchMode := mmExact;
   fLeftSQL := leftSQL;
   fRightSQL := rightSQL;
 end;
