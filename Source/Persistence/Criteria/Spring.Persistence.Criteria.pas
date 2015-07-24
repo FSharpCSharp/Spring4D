@@ -109,7 +109,6 @@ end;
 function TCriteria<T>.GenerateSqlStatement(const params: IList<TDBParam>): string;
 var
   criterion: ICriterion;
-  whereField: TSQLWhereField;
   orderField: TSQLOrderByField;
   orderBy: IOrderBy;
   command: TSelectCommand;

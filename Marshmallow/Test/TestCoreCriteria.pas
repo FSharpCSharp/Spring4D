@@ -133,7 +133,7 @@ begin
   CheckEquals(1, LOrders.First.Customer.Age);
 
   LCriteria.Clear;
-  LOrders := LCriteria.Add(Age.InInt(TArray<Integer>.Create(1,2,3)))
+  LOrders := LCriteria.Add(Age.&In(TArray<Integer>.Create(1,2,3)))
     .OrderBy(Age.Desc)
     .ToList;
   CheckEquals(3, LOrders.Count);

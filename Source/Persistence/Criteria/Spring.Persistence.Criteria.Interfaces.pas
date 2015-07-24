@@ -178,10 +178,10 @@ type
     function NotLike(const value: string; matchMode: TMatchMode = mmExact): ICriterion;
     function LEq(const value: TValue): ICriterion;
     function Lt(const value: TValue): ICriterion;
-    function &InStr(const values: TArray<string>): ICriterion;
-    function NotInStr(const values: TArray<string>): ICriterion;
-    function &InInt(const values: TArray<Integer>): ICriterion;
-    function NotInInt(const values: TArray<Integer>): ICriterion;
+    function &In(const values: TArray<string>): ICriterion; overload;
+    function &In(const values: TArray<Integer>): ICriterion; overload;
+    function NotIn(const values: TArray<string>): ICriterion; overload;
+    function NotIn(const values: TArray<Integer>): ICriterion; overload;
     function Between(const low, high: TValue): ICriterion;
 
     function EqProperty(const other: IProperty): ICriterion; overload;

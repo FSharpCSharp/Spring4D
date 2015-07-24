@@ -55,12 +55,10 @@ type
     function NotLike(const value: string; matchMode: TMatchMode = mmExact): ICriterion;
     function LEq(const value: TValue): ICriterion;
     function Lt(const value: TValue): ICriterion;
-    function &In<T>(const value: TArray<T>): ICriterion;
-    function NotIn<T>(const value: TArray<T>): ICriterion;
-    function InStr(const value: TArray<string>): ICriterion;
-    function NotInStr(const value: TArray<string>): ICriterion;
-    function InInt(const value: TArray<Integer>): ICriterion;
-    function NotInInt(const value: TArray<Integer>): ICriterion;
+    function &In(const value: TArray<string>): ICriterion; overload;
+    function &In(const value: TArray<Integer>): ICriterion; overload;
+    function NotIn(const value: TArray<string>): ICriterion; overload;
+    function NotIn(const value: TArray<Integer>): ICriterion; overload;
     function Between(const low, high: TValue): ICriterion;
     function Asc: IOrderBy;
     function Desc: IOrderBy;
@@ -97,23 +95,24 @@ type
     constructor Create(const propertyName: string);
   end;
 
-  TExpr = record
-  private
-    fCriterion: ICriterion;
-  public
-    class operator Implicit(const criterion: ICriterion): TExpr; overload;
-    class operator Implicit(const expr: TExpr): ICriterion; overload;
-
-    class operator LogicalAnd(const left, right: TExpr): ICriterion;
-    class operator LogicalOr(const left, right: TExpr): ICriterion;
-    class operator LogicalNot(const expr: TExpr): ICriterion;
-  end;
-
   /// <summary>
   ///   Represents record to hold entity's property name for using in
   ///   ICriteria&lt;T&gt; searches.
   /// </summary>
   Prop = record
+  private
+    type
+      TExpr = record
+      private
+        fCriterion: ICriterion;
+      public
+        class operator Implicit(const value: ICriterion): TExpr; overload;
+        class operator Implicit(const value: TExpr): ICriterion; overload;
+
+        class operator LogicalAnd(const left, right: TExpr): ICriterion;
+        class operator LogicalOr(const left, right: TExpr): ICriterion;
+        class operator LogicalNot(const value: TExpr): ICriterion;
+      end;
   private
     fProp: IProperty;
   public
@@ -144,8 +143,6 @@ type
     class operator LessThanOrEqual(const left: Variant; const right: Prop): TExpr; overload;
 
     class operator In(const left: Prop; const right: TArray<string>): TExpr; overload;
-    class operator In(const left: Prop; const right: array of string): TExpr; overload;
-    class operator In(const left: Prop; const right: array of Integer): TExpr; overload;
     class operator In(const left: Prop; const right: TArray<Integer>): TExpr; overload;
     class operator In(const left: Prop; const right: TSetNumbers): TExpr; overload;
 
@@ -202,8 +199,9 @@ end;
 
 function TProperty.EqProperty(const otherPropertyName: string): ICriterion;
 begin
-  Result := TPropertyExpression.Create(PropertyName, otherPropertyName, woEqual
-    , TSQLTable.CreateFromClass(fEntityClass), nil);
+  Result := TPropertyExpression.Create(
+    PropertyName, otherPropertyName, woEqual,
+    TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -272,21 +270,15 @@ begin
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.&In<T>(const value: TArray<T>): ICriterion;
+function TProperty.&In(const value: TArray<Integer>): ICriterion;
 begin
-  Result := Restrictions.&In<T>(fPropertyName, value);
+  Result := Restrictions.In<Integer>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.InInt(const value: TArray<Integer>): ICriterion;
+function TProperty.&In(const value: TArray<string>): ICriterion;
 begin
-  Result := &In<Integer>(value);
-  Result.SetEntityClass(GetEntityClass);
-end;
-
-function TProperty.InStr(const value: TArray<string>): ICriterion;
-begin
-  Result := &In<string>(value);
+  Result := Restrictions.In<string>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -377,21 +369,15 @@ begin
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NotIn<T>(const value: TArray<T>): ICriterion;
+function TProperty.NotIn(const value: TArray<Integer>): ICriterion;
 begin
-  Result := Restrictions.NotIn<T>(fPropertyName, value);
+  Result := Restrictions.NotIn<Integer>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
-function TProperty.NotInInt(const value: TArray<Integer>): ICriterion;
+function TProperty.NotIn(const value: TArray<string>): ICriterion;
 begin
-  Result := NotIn<Integer>(value);
-  Result.SetEntityClass(GetEntityClass);
-end;
-
-function TProperty.NotInStr(const value: TArray<string>): ICriterion;
-begin
-  Result := NotIn<string>(value);
+  Result := Restrictions.NotIn<string>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
 end;
 
@@ -443,35 +429,12 @@ end;
 
 class operator Prop.In(const left: Prop; const right: TArray<string>): TExpr;
 begin
-  Result.fCriterion := left.fProp.InStr(right);
-end;
-
-class operator Prop.In(const left: Prop; const right: array of string): TExpr;
-var
-  rightArray: TArray<string>;
-  I: Integer;
-begin
-  SetLength(rightArray, Length(right));
-  for I := Low(right) to High(right) do
-    rightArray[I] := right[I];
-
-  Result.fCriterion := left.fProp.InStr(rightArray);
-end;
-
-class operator Prop.In(const left: Prop; const right: array of Integer): TExpr;
-var
-  rightArray: TArray<Integer>;
-  I: Integer;
-begin
-  SetLength(rightArray, Length(right));
-  for I := Low(right) to High(right) do
-    rightArray[I] := right[I];
-  Result.fCriterion := left.fProp.InInt(rightArray);
+  Result.fCriterion := left.fProp.&In(right);
 end;
 
 class operator Prop.In(const left: Prop; const right: TArray<Integer>): TExpr;
 begin
-  Result.fCriterion := left.fProp.InInt(right);
+  Result.fCriterion := left.fProp.&In(right);
 end;
 
 class operator Prop.In(const left: Prop; const right: TSetNumbers): TExpr;
@@ -485,7 +448,7 @@ begin
     begin
       Result := value in lright;
     end).ToArray;
-  Result.fCriterion := left.fProp.InInt(rightArray);
+  Result.fCriterion := left.fProp.&In(rightArray);
 end;
 
 function Prop.IsNull: ICriterion;
@@ -616,31 +579,31 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TExpr'}
+{$REGION 'Prop.TExpr'}
 
-class operator TExpr.Implicit(const expr: TExpr): ICriterion;
+class operator Prop.TExpr.Implicit(const value: TExpr): ICriterion;
 begin
-  Result := expr.fCriterion;
+  Result := value.fCriterion;
 end;
 
-class operator TExpr.LogicalAnd(const left, right: TExpr): ICriterion;
+class operator Prop.TExpr.LogicalAnd(const left, right: TExpr): ICriterion;
 begin
   Result := Restrictions.&And(left.fCriterion, right.fCriterion);
 end;
 
-class operator TExpr.LogicalOr(const left, right: TExpr): ICriterion;
+class operator Prop.TExpr.LogicalOr(const left, right: TExpr): ICriterion;
 begin
   Result := Restrictions.&Or(left.fCriterion, right.fCriterion);
 end;
 
-class operator TExpr.LogicalNot(const expr: TExpr): ICriterion;
+class operator Prop.TExpr.LogicalNot(const value: TExpr): ICriterion;
 begin
-  Result := Restrictions.&Not(expr.fCriterion);
+  Result := Restrictions.&Not(value.fCriterion);
 end;
 
-class operator TExpr.Implicit(const criterion: ICriterion): TExpr;
+class operator Prop.TExpr.Implicit(const value: ICriterion): TExpr;
 begin
-  Result.fCriterion := criterion;
+  Result.fCriterion := value;
 end;
 
 {$ENDREGION}

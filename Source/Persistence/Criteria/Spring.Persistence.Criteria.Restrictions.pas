@@ -104,6 +104,12 @@ type
     /// <summary>
     ///   Apply an <b>"in"</b> constraint to the named property.
     /// </summary>
+    class function &In(const propertyName: string;
+      const values: array of const): ICriterion; overload; static;
+
+    /// <summary>
+    ///   Apply an <b>"in"</b> constraint to the named property.
+    /// </summary>
     class function &In<T>(const propertyName: string;
       const values: TArray<T>): ICriterion; overload; static;
 
@@ -112,6 +118,12 @@ type
     /// </summary>
     class function NotIn(const propertyName: string;
       const values: TArray<TValue>): ICriterion; overload; static;
+
+    /// <summary>
+    ///   Apply an <b>"not in"</b> constraint to the named property.
+    /// </summary>
+    class function NotIn(const propertyName: string;
+      const values: array of const): ICriterion; overload; static;
 
     /// <summary>
     ///   Apply an <b>"not in"</b> constraint to the named property.
@@ -192,6 +204,15 @@ uses
   Spring.Persistence.Criteria.Criterion.LogicalExpression,
   Spring.Persistence.Criteria.Criterion.PropertyExpression,
   Spring.Persistence.Criteria.Criterion.BetweenExpression;
+
+function Copy(const values: array of const): TArray<TValue>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := 0 to High(values) do
+    Result[i] := TValue.FromVarRec(TVarRec(values[i]));
+end;
 
 
 {$REGION 'Restrictions'}
@@ -277,6 +298,12 @@ begin
   Result := TInExpression.Create(propertyName, values, woIn);
 end;
 
+class function Restrictions.&In(const propertyName: string;
+  const values: array of const): ICriterion;
+begin
+  Result := TInExpression.Create(propertyName, Copy(values), woIn);
+end;
+
 class function Restrictions.&In<T>(const propertyName: string;
   const values: TArray<T>): ICriterion;
 begin
@@ -333,6 +360,12 @@ class function Restrictions.NotIn(const propertyName: string;
   const values: TArray<TValue>): ICriterion;
 begin
   Result := TInExpression.Create(propertyName, values, woNotIn);
+end;
+
+class function Restrictions.NotIn(const propertyName: string;
+  const values: array of const): ICriterion;
+begin
+  Result := TInExpression.Create(propertyName, Copy(values), woNotIn);
 end;
 
 class function Restrictions.NotIn<T>(const propertyName: string;

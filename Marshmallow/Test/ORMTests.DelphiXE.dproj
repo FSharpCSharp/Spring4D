@@ -26,6 +26,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_Define>TESTINSIGHT;$(DCC_Define)</DCC_Define>
 			<SanitizedProjectName>ORMTests_DelphiXE</SanitizedProjectName>
 			<VerInfo_Locale>1031</VerInfo_Locale>
 			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>

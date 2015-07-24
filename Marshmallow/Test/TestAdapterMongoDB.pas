@@ -942,11 +942,11 @@ begin
   InsertObject(FMongoConnection, 100, 1);
   LCriteria := FManager.CreateCriteria<TMongoEntity>;
   Key := TProperty<TMongoEntity>.Create('KEY');
-  LKeys := LCriteria.Add(Key.InInt(TArray<Integer>.Create(100,1,2))).ToList;
+  LKeys := LCriteria.Add(Key.&In(TArray<Integer>.Create(100,1,2))).ToList;
   CheckEquals(1, LKeys.Count, 'In');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Key.NotInInt(TArray<Integer>.Create(0,1,2))).ToList;
+  LKeys := LCriteria.Add(Key.NotIn(TArray<Integer>.Create(0,1,2))).ToList;
   CheckEquals(1, LKeys.Count, 'Not In');
 end;
 
