@@ -44,7 +44,7 @@ type
   protected
     function GetWhereOperator: TWhereOperator; override;
     function ToSqlString(const params: IList<TDBParam>;
-      const command: TDMLCommand; const generator: ISQLGenerator;
+      const command: TWhereCommand; const generator: ISQLGenerator;
       addToCommand: Boolean): string; override;
   public
     constructor Create(const propertyName: string; whereOperator: TWhereOperator); virtual;
@@ -69,20 +69,18 @@ begin
 end;
 
 function TNullExpression.ToSqlString(const params: IList<TDBParam>;
-  const command: TDMLCommand; const generator: ISQLGenerator;
+  const command: TWhereCommand; const generator: ISQLGenerator;
   addToCommand: Boolean): string;
 var
   whereField: TSQLWhereField;
 begin
-  Assert(command is TWhereCommand);
-
   whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
   whereField.WhereOperator := WhereOperator;
 
   Result := generator.GenerateWhere(whereField);
 
   if addToCommand then
-    TWhereCommand(command).WhereFields.Add(whereField)
+    command.WhereFields.Add(whereField)
   else
     whereField.Free;
 end;

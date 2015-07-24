@@ -81,9 +81,15 @@ type
     ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
     function GetEntityClass: TClass;
     procedure SetEntityClass(value: TClass);
-    function ToSqlString(const params: IList<TDBParam>; const command: TDMLCommand;
-      const generator: ISQLGenerator; addToCommand: Boolean): string;
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TWhereCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string;
     property EntityClass: TClass read GetEntityClass write SetEntityClass;
+  end;
+
+  IJunction = interface(ICriterion)
+    ['{2266D5F6-E2AD-4B6C-8244-432621918B0C}']
+    function Add(const criterion: ICriterion): IJunction;
   end;
 
   /// <summary>

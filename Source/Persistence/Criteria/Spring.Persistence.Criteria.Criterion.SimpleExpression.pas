@@ -45,8 +45,9 @@ type
     fValue: TValue;
   protected
     function GetWhereOperator: TWhereOperator; override;
-    function ToSqlString(const params: IList<TDBParam>; const command: TDMLCommand;
-      const generator: ISQLGenerator; addToCommand: Boolean): string; override;
+    function ToSqlString(const params: IList<TDBParam>;
+      const command: TWhereCommand; const generator: ISQLGenerator;
+      addToCommand: Boolean): string; override;
   public
     constructor Create(const propertyName: string; const value: TValue;
       whereOperator: TWhereOperator); virtual;
@@ -75,15 +76,13 @@ begin
 end;
 
 function TSimpleExpression.ToSqlString(const params: IList<TDBParam>;
-  const command: TDMLCommand; const generator: ISQLGenerator;
+  const command: TWhereCommand; const generator: ISQLGenerator;
   addToCommand: Boolean): string;
 var
   paramName: string;
   whereField: TSQLWhereField;
   param: TDBParam;
 begin
-  Assert(command is TWhereCommand);
-
   paramName := command.GetAndIncParameterName(fPropertyName);
 
   whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
@@ -98,7 +97,7 @@ begin
   params.Add(param);
 
   if addToCommand then
-    TWhereCommand(command).WhereFields.Add(whereField)
+    command.WhereFields.Add(whereField)
   else
     whereField.Free;
 end;

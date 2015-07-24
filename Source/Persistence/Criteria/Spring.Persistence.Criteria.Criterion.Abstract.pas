@@ -49,7 +49,7 @@ type
     function GetWhereOperator: TWhereOperator; virtual; abstract;
 
     function ToSqlString(const params: IList<TDBParam>;
-      const command: TDMLCommand; const generator: ISQLGenerator;
+      const command: TWhereCommand; const generator: ISQLGenerator;
       addToCommand: Boolean): string; virtual; abstract;
 
     property EntityClass: TClass read GetEntityClass write SetEntityClass;

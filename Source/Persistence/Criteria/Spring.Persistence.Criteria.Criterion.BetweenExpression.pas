@@ -47,7 +47,7 @@ type
   protected
     function GetWhereOperator: TWhereOperator; override;
     function ToSqlString(const params: IList<TDBParam>;
-      const command: TDMLCommand; const generator: ISQLGenerator;
+      const command: TWhereCommand; const generator: ISQLGenerator;
       addToCommand: Boolean): string; override;
   public
     constructor Create(const propertyName: string;
@@ -79,15 +79,13 @@ begin
 end;
 
 function TBetweenExpression.ToSqlString(const params: IList<TDBParam>;
-  const command: TDMLCommand; const generator: ISQLGenerator;
+  const command: TWhereCommand; const generator: ISQLGenerator;
   addToCommand: Boolean): string;
 var
   param: TDBParam;
   whereField: TSQLWhereField;
   paramName, paramName2: string;
 begin
-  Assert(command is TWhereCommand);
-
   paramName := command.GetAndIncParameterName(fPropertyName);
   paramName2 := command.GetAndIncParameterName(fPropertyName);
   whereField := TSQLWhereField.Create(fPropertyName, GetCriterionTable(command));
@@ -98,7 +96,7 @@ begin
   Result := generator.GenerateWhere(whereField);
 
   if addToCommand then
-    TWhereCommand(command).WhereFields.Add(whereField)
+    command.WhereFields.Add(whereField)
   else
     whereField.Free;
 

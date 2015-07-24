@@ -47,7 +47,7 @@ type
   protected
     function GetWhereOperator: TWhereOperator; override;
     function ToSqlString(const params: IList<TDBParam>;
-      const command: TDMLCommand; const generator: ISQLGenerator;
+      const command: TWhereCommand; const generator: ISQLGenerator;
       addToCommand: Boolean): string; override;
   public
     constructor Create(const left, right: ICriterion; whereOperator: TWhereOperator); virtual;
@@ -73,29 +73,26 @@ begin
 end;
 
 function TLogicalExpression.ToSqlString(const params: IList<TDBParam>;
-  const command: TDMLCommand; const generator: ISQLGenerator;
+  const command: TWhereCommand; const generator: ISQLGenerator;
   addToCommand: Boolean): string;
 var
   whereField, endOp: TSQLWhereField;
 begin
-  Assert(command is TWhereCommand);
-
   whereField := TSQLWhereField.Create('', '');
   whereField.WhereOperator := WhereOperator;
   if addToCommand then
-    TWhereCommand(command).WhereFields.Add(whereField);
+    command.WhereFields.Add(whereField);
   whereField.LeftSQL := fLeft.ToSqlString(params, command, generator, addToCommand);
   if Assigned(fRight) then
     whereField.RightSQL := fRight.ToSqlString(params, command, generator, addToCommand);
 
+  Result := generator.GenerateWhere(whereField);
+
   endOp := TSQLWhereField.Create('', '');
   endOp.WhereOperator := GetEndOperator(fOperator);
   if addToCommand then
-    TWhereCommand(command).WhereFields.Add(endOp);
-
-  Result := generator.GenerateWhere(whereField);
-
-  if not addToCommand then
+    command.WhereFields.Add(endOp)
+  else
   begin
     whereField.Free;
     endOp.Free;

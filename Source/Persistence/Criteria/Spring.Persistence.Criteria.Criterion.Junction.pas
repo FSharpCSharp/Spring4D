@@ -38,19 +38,17 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  TJunction = class(TAbstractCriterion)
+  TJunction = class(TAbstractCriterion, IJunction)
   private
     fCriterions: IList<ICriterion>;
   protected
     function ToSqlString(const params: IList<TDBParam>;
-      const command: TDMLCommand; const generator: ISQLGenerator;
+      const command: TWhereCommand; const generator: ISQLGenerator;
       addToCommand: Boolean): string; override;
   public
     constructor Create; virtual;
 
-    function Add(const criterion: ICriterion): TJunction;
-
-    property Criterions: IList<ICriterion> read fCriterions;
+    function Add(const criterion: ICriterion): IJunction;
   end;
 
 implementation
@@ -64,22 +62,20 @@ begin
   fCriterions := TCollections.CreateList<ICriterion>;
 end;
 
-function TJunction.Add(const criterion: ICriterion): TJunction;
+function TJunction.Add(const criterion: ICriterion): IJunction;
 begin
   fCriterions.Add(criterion);
   Result := Self;
 end;
 
 function TJunction.ToSqlString(const params: IList<TDBParam>;
-  const command: TDMLCommand; const generator: ISQLGenerator;
+  const command: TWhereCommand; const generator: ISQLGenerator;
   addToCommand: Boolean): string;
 var
   i: Integer;
   criterion: ICriterion;
   whereField: TSQLWhereField;
 begin
-  Assert(command is TWhereCommand);
-
   Result := '';
   for i := 0 to fCriterions.Count - 1 do
   begin
@@ -94,7 +90,7 @@ begin
   begin
     whereField := TSQLWhereField.Create(Result, '');
     whereField.WhereOperator := woJunction;
-    TWhereCommand(command).WhereFields.Add(whereField);
+    command.WhereFields.Add(whereField);
   end;
 end;
 

@@ -30,8 +30,6 @@ interface
 
 uses
   Spring,
-  Spring.Persistence.Criteria.Criterion.Conjunction,
-  Spring.Persistence.Criteria.Criterion.Disjunction,
   Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Types;
 
@@ -174,17 +172,19 @@ type
     /// <summary>
     ///   Group expressions together in a single conjunction (A and B and C...)
     /// </summary>
-    class function Conjunction: TConjunction; static;
+    class function Conjunction: IJunction; static;
 
     /// <summary>
     ///   Group expressions together in a single disjunction (A or B or C...)
     /// </summary>
-    class function Disjunction: TDisjunction; static;
+    class function Disjunction: IJunction; static;
   end;
 
 implementation
 
 uses
+  Spring.Persistence.Criteria.Criterion.Conjunction,
+  Spring.Persistence.Criteria.Criterion.Disjunction,
   Spring.Persistence.Criteria.Criterion.SimpleExpression,
   Spring.Persistence.Criteria.Criterion.NullExpression,
   Spring.Persistence.Criteria.Criterion.LikeExpression,
@@ -225,12 +225,12 @@ begin
   Result := TBetweenExpression.Create(propertyName, lowValue, highValue, woBetween);
 end;
 
-class function Restrictions.Conjunction: TConjunction;
+class function Restrictions.Conjunction: IJunction;
 begin
   Result := TConjunction.Create;
 end;
 
-class function Restrictions.Disjunction: TDisjunction;
+class function Restrictions.Disjunction: IJunction;
 begin
   Result := TDisjunction.Create;
 end;
