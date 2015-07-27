@@ -1896,15 +1896,9 @@ end;
 
 procedure TSessionTest.When_UnannotatedEntity_FindOne_ThrowException;
 begin
-  try
-    FSession.FindOne<TUnanotatedEntity>(1);
-    Fail('Should not succeed if entity is not annotated');
-  except
-    on E:Exception do
-    begin
-      CheckIs(E, EORMUnsupportedType);
-    end;
-  end;
+  ExpectedException := EORMUnsupportedType;
+  FSession.FindOne<TUnanotatedEntity>(1);
+  StopExpectingException('Should not succeed if entity is not annotated');
 end;
 
 type
@@ -1928,28 +1922,16 @@ type
 
 procedure TSessionTest.When_WithoutPrimaryKey_FindOne_ThrowException;
 begin
-  try
-    FSession.FindOne<TWithoutPrimaryKey>(1);
-    Fail('Should not succeed if entitys primary key column is not annotated');
-  except
-    on E:Exception do
-    begin
-      CheckIs(E, EORMUnsupportedType);
-    end;
-  end;
+  ExpectedException := EORMUnsupportedType;
+  FSession.FindOne<TWithoutPrimaryKey>(1);
+  StopExpectingException('Should not succeed if entitys primary key column is not annotated');
 end;
 
 procedure TSessionTest.When_WithoutTableAttribute_FindOne_ThrowException;
 begin
-  try
-    FSession.FindOne<TWithoutTable>(1);
-    Fail('Should not succeed if entity is not annotated with table');
-  except
-    on E:Exception do
-    begin
-      CheckIs(E, EORMUnsupportedType);
-    end;
-  end;
+  ExpectedException := EORMUnsupportedType;
+  FSession.FindOne<TWithoutTable>(1);
+  StopExpectingException('Should not succeed if entity is not annotated with table');
 end;
 
 type
@@ -1984,22 +1966,19 @@ begin
   CheckEquals(LCount, LProducts.Count);
 end;
 
-
 type
   TProductRowMapper = class(TInterfacedObject, IRowMapper<TProduct>)
   protected
     function MapRow(const resultSet: IDBResultSet): TProduct;
   end;
 
-  { TProductRowMapper }
-
-  function TProductRowMapper.MapRow(const resultSet: IDBResultSet): TProduct;
-  begin
-    Result := TProduct.Create;
-    Result.ID := resultSet.GetFieldValue('PRODID');
-    Result.Name := resultSet.GetFieldValue('PRODNAME');
-    Result.Price := resultSet.GetFieldValue('PRODPRICE');
-  end;
+function TProductRowMapper.MapRow(const resultSet: IDBResultSet): TProduct;
+begin
+  Result := TProduct.Create;
+  Result.ID := resultSet.GetFieldValue('PRODID');
+  Result.Name := resultSet.GetFieldValue('PRODNAME');
+  Result.Price := resultSet.GetFieldValue('PRODPRICE');
+end;
 
 procedure TDetachedSessionTest.Performance_RowMapper;
 var
@@ -2017,7 +1996,6 @@ begin
   Status(Format('Loaded %d simple products using RowMapper in %d ms', [LCount, LStopWatch.ElapsedMilliseconds]));
   CheckEquals(LCount, LProducts.Count);
 end;
-
 {$ENDIF}
 
 procedure TDetachedSessionTest.SaveAlwaysInsertsEntity;
@@ -2065,10 +2043,7 @@ begin
   CheckEquals(1, FSession.FindAll<TCustomer>.Count);
 end;
 
-
-
 initialization
-  // Register any test cases with the test runner
   RegisterTest(TSessionTest.Suite);
   RegisterTest(TDetachedSessionTest.Suite);
 
@@ -2081,5 +2056,3 @@ finalization
   TestDB.Free;
 
 end.
-
-

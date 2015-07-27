@@ -148,6 +148,9 @@ type
     function GetList<T: class, constructor>(const sql: string;
       const params: array of const): IList<T>; overload;
 
+    /// <summary>
+    ///   Retrieves multiple models from the sql statement.
+    /// </summary>
     function GetList<T: class, constructor>(const sql: string;
       const params: IList<TDBParam>): IList<T>; overload;
 

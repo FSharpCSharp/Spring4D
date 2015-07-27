@@ -77,7 +77,7 @@ type
       const resultSet: IDBResultSet; classInfo: PTypeInfo);
 
     function DoGetLazy(const id: TValue; const entity: TObject;
-      const column: ColumnAttribute; classInfo: Pointer): IDBResultSet;
+      const column: ColumnAttribute; classInfo: PTypeInfo): IDBResultSet;
 
     function GetLazyValueAsInterface(const id: TValue; const entity: TObject;
       const column: ColumnAttribute; interfaceType: PTypeInfo): IInterface;
@@ -241,17 +241,15 @@ begin
 end;
 
 function TAbstractSession.DoGetLazy(const id: TValue; const entity: TObject;
-  const column: ColumnAttribute; classInfo: Pointer): IDBResultSet;
+  const column: ColumnAttribute; classInfo: PTypeInfo): IDBResultSet;
 var
   baseEntityClass, entityToLoadClass: TClass;
   rttiType: TRttiType;
-  types: TArray<TRttiType>;
 begin
   baseEntityClass := entity.ClassType;
   rttiType := TType.GetType(classInfo);
-  types := rttiType.GetGenericArguments;
-  if Length(types) > 0 then
-    rttiType := types[High(types)];
+  if rttiType.IsGenericTypeOf('IEnumerable<>') then
+    rttiType := rttiType.GetGenericArguments[0];
   entityToLoadClass := rttiType.AsInstance.MetaclassType;
 
   if not TEntityCache.IsValidEntity(entityToLoadClass) then
@@ -380,14 +378,13 @@ function TAbstractSession.GetLazyValueAsInterface(const id: TValue;
 var
   results: IDBResultSet;
 begin
-  Result := nil;
-  if not Assigned(entity) or id.IsEmpty then
-    Exit;
-
-  results := DoGetLazy(id, entity, column, interfaceType);
-  if not TType.GetType(interfaceType).HasMethod('GetEnumerator') then
+  if not TType.GetType(interfaceType).IsGenericTypeOf('IEnumerable<>') then
     raise EORMUnsupportedType.CreateFmt('Unsupported ORM lazy type: %s', [interfaceType.TypeName]);
 
+  if not Assigned(entity) or id.IsEmpty then
+    Exit(nil);
+
+  results := DoGetLazy(id, entity, column, interfaceType);
   Result := TCollections.CreateObjectList<TObject>(True);
   SetInterfaceListOfObjects(Result as IObjectList, results, interfaceType);
 end;

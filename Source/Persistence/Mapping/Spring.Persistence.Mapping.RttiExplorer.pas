@@ -401,16 +401,15 @@ end;
 
 class function TRttiExplorer.GetEntityRttiType(typeInfo: PTypeInfo): TRttiType;
 var
-  rttiType, currType: TRttiType;
+  rttiType: TRttiType;
   entityData: TEntityData;
 begin
   rttiType := fRttiCache.GetType(typeInfo);
   if rttiType = nil then
     raise EORMUnsupportedType.CreateFmt('Cannot get type information from %s', [typeInfo.TypeName]);
 
-  for currType in rttiType.GetGenericArguments do
-    if currType.IsInstance then
-      Exit(currType);
+  if rttiType.IsGenericTypeOf('IEnumerable<>') then
+    Exit(GetEntityRttiType(rttiType.GetGenericArguments[0].Handle));
 
   if not rttiType.IsInstance then
     raise EORMUnsupportedType.CreateFmt('%s is not an instance type.', [typeInfo.TypeName]);
