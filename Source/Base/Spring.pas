@@ -3540,17 +3540,17 @@ begin
           tkInteger, tkEnumeration, tkChar, tkWChar, tkInt64:
           begin
             targetValue := TValue.FromOrdinal(targetTypeInfo, 0);
-            Result := True;
+            Exit(True);
           end;
           tkFloat:
           begin
             targetValue := TValue.From<Extended>(0);
-            Result := True;
+            Exit(True);
           end;
           tkUString:
           begin
             targetValue := '';
-            Result := True;
+            Exit(True);
           end;
         end;
       end;
