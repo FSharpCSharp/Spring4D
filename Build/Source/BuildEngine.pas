@@ -749,7 +749,8 @@ begin
     fSourceBaseDir := ApplicationPath + fSourceBaseDir;
     fSourcePaths.DelimitedText := iniFile.ReadString('Globals', 'SourcePaths', '');
     for i := 0 to fSourcePaths.Count - 1 do
-      fSourcePaths[i] := IncludeTrailingPathDelimiter(fSourceBaseDir) + fSourcePaths[i];
+      fSourcePaths[i] := ExcludeTrailingPathDelimiter(
+	    IncludeTrailingPathDelimiter(fSourceBaseDir) + fSourcePaths[i]);
     selectedTasks.DelimitedText := iniFile.ReadString('Globals', 'SelectedTasks', '');
     fPauseAfterEachStep := iniFile.ReadBool('Globals', 'PauseAfterEachStep', False);
     fRunTests := iniFile.ReadBool('Globals', 'RunTests', False);
