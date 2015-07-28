@@ -95,7 +95,8 @@ begin
     TTestInterfaceList.Suite,
     TTestCollectionList.Suite,
     TTestEnumerable.Suite,
-    TTestListAdapter.Suite
+    TTestListAdapter.Suite,
+    TTestMultiMap.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [

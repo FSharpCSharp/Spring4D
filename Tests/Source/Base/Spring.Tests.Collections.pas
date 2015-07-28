@@ -445,6 +445,16 @@ type
     procedure TestListSort;
   end;
 
+  TTestMultiMap = class(TTestCase)
+  private
+    SUT: IMultiMap<Integer,Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestAddPair;
+  end;
+
 implementation
 
 uses
@@ -2542,6 +2552,25 @@ begin
   SUT.AddRange([9, 7, 5, 4, 6, 8]);
   SUT.Sort;
   CheckTrue(InternalList.EqualsTo([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+end;
+
+{ TTestMultiMap }
+
+procedure TTestMultiMap.SetUp;
+begin
+  SUT := TCollections.CreateMultiMap<Integer,Integer>;
+end;
+
+procedure TTestMultiMap.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestMultiMap.TestAddPair;
+begin
+  SUT.Add(TPair<Integer,Integer>.Create(1,1));
+  CheckEquals(1, SUT.Count);
+  CheckEquals(1, SUT[1].First);
 end;
 
 end.
