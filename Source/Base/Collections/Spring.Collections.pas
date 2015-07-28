@@ -2249,9 +2249,14 @@ type
     class function CreateDictionary<TKey, TValue>(dictionary: Generics.Collections.TDictionary<TKey, TValue>; ownership: TOwnershipType): IDictionary<TKey, TValue>; overload; static;
 
     class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
     class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships;
+      const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
 
     class function CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>; overload; static;
+    class function CreateBidiDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>): IBidiDictionary<TKey, TValue>; overload; static;
 
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
@@ -2675,14 +2680,34 @@ begin
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>(
+  const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>;
+begin
+  Result := TMultiMap<TKey, TValue>.Create(comparer);
+end;
+
+class function TCollections.CreateMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
   Result := TObjectMultiMap<TKey, TValue>.Create(ownerships);
 end;
 
+class function TCollections.CreateMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships;
+  const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>;
+begin
+  Result := TObjectMultiMap<TKey, TValue>.Create(ownerships, comparer);
+end;
+
 class function TCollections.CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>;
 begin
   Result := TBidiDictionary<TKey, TValue>.Create;
+end;
+
+class function TCollections.CreateBidiDictionary<TKey, TValue>(
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>): IBidiDictionary<TKey, TValue>;
+begin
+  Result := TBidiDictionary<TKey, TValue>.Create(keyComparer, valueComparer);
 end;
 
 class function TCollections.CreateStack<T>: IStack<T>;

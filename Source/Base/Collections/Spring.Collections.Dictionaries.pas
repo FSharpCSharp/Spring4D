@@ -189,7 +189,8 @@ type
     function _Release: Integer; override;
   {$ENDREGION}
   public
-    constructor Create(const controller: IInterface);
+    constructor Create(const controller: IInterface;
+      const comparer: IEqualityComparer<TKey>);
     property Controller: IInterface read GetController;
   end;
 
@@ -216,6 +217,8 @@ type
   {$ENDREGION}
   public
     constructor Create; overload; override;
+    constructor Create(const keyComparer: IEqualityComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>); overload;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
 //    function Contains(const value: TGenericPair;
@@ -618,9 +621,9 @@ end;
 {$REGION 'TContainedDictionary<TKey, TValue>'}
 
 constructor TContainedDictionary<TKey, TValue>.Create(
-  const controller: IInterface);
+  const controller: IInterface; const comparer: IEqualityComparer<TKey>);
 begin
-  inherited Create;
+  inherited Create(comparer);
   fController := Pointer(controller);
 end;
 
@@ -721,9 +724,16 @@ end;
 
 constructor TBidiDictionary<TKey, TValue>.Create;
 begin
+  Create(nil, nil);
+end;
+
+constructor TBidiDictionary<TKey, TValue>.Create(
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>);
+begin
   inherited Create;
-  fKeysByValue := TDictionary<TValue, TKey>.Create;
-  fValuesByKey := TDictionary<TKey, TValue>.Create;
+  fKeysByValue := TDictionary<TValue, TKey>.Create(valueComparer);
+  fValuesByKey := TDictionary<TKey, TValue>.Create(keyComparer);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.Add(const key: TKey;
