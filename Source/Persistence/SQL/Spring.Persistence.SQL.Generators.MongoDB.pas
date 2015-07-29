@@ -90,6 +90,7 @@ uses
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Register,
   Spring.Reflection;
 
@@ -109,44 +110,40 @@ end;
 function TMongoDBGenerator.CreateClassInsertCommandAndTable(
   const fromValue: TValue): TInsertCommand;
 var
-  fields: IList<ColumnAttribute>;
-  entity: IEntityWrapper;
-  entityObject: TObject;
+  entity: TObject;
   table: TSQLTable;
+  fields: IList<ColumnAttribute>;
 begin
-  entityObject := fromValue.AsObject;
-  entity := TEntityWrapper.Create(entityObject);
-  
+  entity := fromValue.AsObject;
+
   table := TSQLTable.Create;
-  table.Name := entityObject.ClassName;   
-   
-  fields := TCollections.CreateList<ColumnAttribute>;
-  fields.AddRange(entity.GetColumns);
-  
+  table.Name := entity.ClassName;
+
+  fields := TCollections.CreateList<ColumnAttribute>(
+    TRttiExplorer.GetColumns(entity.ClassType));
+
   Result := TInsertCommand.Create(table);
-  Result.Entity := entityObject;
+  Result.Entity := entity;
   Result.SetCommandFieldsFromColumns(fields);
 end;
 
 function TMongoDBGenerator.CreateClassUpdateCommandAndTable(
   const fromValue: TValue): TUpdateCommand;
 var
-  fields: IList<ColumnAttribute>;
-  entity: IEntityWrapper;
-  entityObject: TObject;
+  entity: TObject;
   table: TSQLTable;
+  fields: IList<ColumnAttribute>;
 begin
-  entityObject := fromValue.AsObject;
-  entity := TEntityWrapper.Create(entityObject);
-  
+  entity := fromValue.AsObject;
+
   table := TSQLTable.Create;
-  table.Name := entityObject.ClassName;   
-   
-  fields := TCollections.CreateList<ColumnAttribute>;
-  fields.AddRange(entity.GetColumns);
-  
+  table.Name := entity.ClassName;
+
+  fields := TCollections.CreateList<ColumnAttribute>(
+    TRttiExplorer.GetColumns(entity.ClassType));
+
   Result := TUpdateCommand.Create(table);
-  Result.Entity := entityObject;
+  Result.Entity := entity;
   Result.SetCommandFieldsFromColumns(fields);  
 end;
 

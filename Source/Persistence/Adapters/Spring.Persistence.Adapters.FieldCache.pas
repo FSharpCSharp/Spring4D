@@ -48,6 +48,9 @@ type
 
 implementation
 
+uses
+  Spring.Persistence.Core.Exceptions;
+
 
 {$REGION 'TFieldCache'}
 
@@ -75,8 +78,12 @@ begin
 end;
 
 function TFieldCache.GetFieldValue(const fieldName: string): Variant;
+var
+  field: TField;
 begin
-  Result := fValues[fieldName].Value;
+  if fValues.TryGetValue(fieldName, field) then
+    Exit(field.Value);
+  raise EORMColumnNotFound.CreateFmt('Column %s not found in the resultSet', [fieldname]);
 end;
 
 {$ENDREGION}

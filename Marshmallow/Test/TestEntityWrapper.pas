@@ -18,8 +18,8 @@ type
   public
     constructor Create(const name: string; const value: Variant);
 
-    property Name: string read FName;
-    property Value: Variant read FValue;
+    property Name: string read fName;
+    property Value: Variant read fValue;
   end;
 
   TResultSetListAdapter = class(TInterfacedObject, IDBResultset)
@@ -31,7 +31,7 @@ type
     function Next: Boolean;
     function FieldExists(const fieldName: string): Boolean;
     function GetFieldValue(index: Integer): Variant; overload;
-    function GetFieldValue(const fieldname: string): Variant; overload;
+    function GetFieldValue(const fieldName: string): Variant; overload;
     function GetFieldCount: Integer;
     function GetFieldName(index: Integer): string;
   public
@@ -41,7 +41,7 @@ type
   TEntityWrapperTest = class(TTestCase)
   private
     fCustomer: TCustomer;
-    fSut: TEntityWrapper;
+    fSut: IEntityWrapper;
   protected
     function GetCustomerResultSet(id: Variant; const name: string; age: Integer; middleName: string = ''): IDBResultSet;
     function GetEmptyResultSet: IDBResultSet;
@@ -56,7 +56,6 @@ type
     procedure When_ResultSet_HasColumns_GetColumnValue_Returns_CorrectValue;
     procedure SetPrimaryKeyToEntity_Successfully;
     procedure SetPrimaryKeyToEntity_Exception;
-    procedure SetMemberValue_Name;
   end;
 
 implementation
@@ -94,15 +93,10 @@ begin
   CheckTrue(Assigned(fSut));
 end;
 
-procedure TEntityWrapperTest.SetMemberValue_Name;
-begin
-  fSut.SetMemberValue('Name', 'Foo');
-  CheckEquals('Foo', fCustomer.Name);
-end;
-
 procedure TEntityWrapperTest.SetPrimaryKeyToEntity_Exception;
 begin
-  CheckException(EInvalidCast, procedure begin fSut.SetPrimaryKeyValue(1.01); end);
+  ExpectedException := EORMInvalidConversion;
+  fSut.SetPrimaryKeyValue(1.01);
 end;
 
 procedure TEntityWrapperTest.SetPrimaryKeyToEntity_Successfully;
@@ -122,39 +116,33 @@ procedure TEntityWrapperTest.TearDown;
 begin
   inherited;
   fCustomer.Free;
-  fSut.Free;
+  fSut := nil;
 end;
 
 procedure TEntityWrapperTest.When_ResultSet_HasColumns_GetColumnValue_Returns_CorrectValue;
 begin
-  CheckEquals('Foo', fSut.GetColumnValueFrom(GetCustomerResultSet(1, 'Foo', 10), CUSTNAME).AsString, 'Name should be Foo');
-  CheckEquals(10, fSut.GetColumnValueFrom(GetCustomerResultSet(1, 'Foo', 10), CUSTAGE).AsInteger, 'Age should be 10');
+  CheckEquals('Foo', GetCustomerResultSet(1, 'Foo', 10).GetFieldValue(CUSTNAME), 'Name should be Foo');
+  CheckEquals(10, GetCustomerResultSet(1, 'Foo', 10).GetFieldValue(CUSTAGE), 'Age should be 10');
 end;
 
 procedure TEntityWrapperTest.When_ResultSet_HasNoColumns_GetColumnValue_ThrowsException;
 begin
-  CheckException(EORMColumnNotFound,
-    procedure
-    begin
-      fSut.GetColumnValueFrom(GetEmptyResultSet, CUSTNAME);
-    end);
+  ExpectedException := EORMColumnNotFound;
+  GetEmptyResultSet.GetFieldValue(CUSTNAME);
 end;
 
 procedure TEntityWrapperTest.When_ResultSet_HasNoPrimaryKey_GetPrimaryKey_ThrowsException;
 begin
-  CheckException(EORMPrimaryKeyColumnNotFound,
-    procedure
-    begin
-      fSut.GetPrimaryKeyValueFrom(GetCustomerResultSet(Null, 'Foo', 10));
-    end);
+  ExpectedException := EORMPrimaryKeyColumnNotFound;
+  fSut.GetPrimaryKeyValue(GetCustomerResultSet(Null, 'Foo', 10));
 end;
 
 procedure TEntityWrapperTest.When_ResultSet_Has_PrimaryKey_GetPrimaryKey;
 begin
-  CheckEquals(1, fSut.GetPrimaryKeyValueFrom(GetCustomerResultSet(1, 'Foo', 10)).AsInteger);
+  CheckEquals(1, fSut.GetPrimaryKeyValue(GetCustomerResultSet(1, 'Foo', 10)).AsInteger);
 end;
 
-{ TMockResultSet }
+{ TResultSetListAdapter }
 
 constructor TResultSetListAdapter.Create(const values: IList<TPair>);
 begin
@@ -168,7 +156,7 @@ var
   pair: TPair;
 begin
   for pair in fValues do
-    if SameText(fieldname, pair.Name) then
+    if SameText(fieldName, pair.Name) then
       Exit(True);
   Result := False;
 end;
@@ -188,14 +176,14 @@ begin
   Result := fValues[index].Value;
 end;
 
-function TResultSetListAdapter.GetFieldValue(const fieldname: string): Variant;
+function TResultSetListAdapter.GetFieldValue(const fieldName: string): Variant;
 var
   pair: TPair;
 begin
   for pair in fValues do
-    if SameText(fieldname, pair.Name) then
+    if SameText(fieldName, pair.Name) then
       Exit(pair.Value);
-  raise EORMColumnNotFound.CreateFmt('Column %s not found in the resultSet', [fieldname]);
+  raise EORMColumnNotFound.CreateFmt('Column %s not found in the resultSet', [fieldName]);
 end;
 
 function TResultSetListAdapter.IsEmpty: Boolean;

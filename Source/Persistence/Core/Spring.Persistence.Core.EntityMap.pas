@@ -241,25 +241,25 @@ var
   key: string;
   id: string;
 begin
-  columnValue := entity.GetPrimaryKeyValue;
+  columnValue := entity.PrimaryKeyValue;
   if columnValue.IsEmpty then
     Exit;
   id := columnValue.ToString;
   if id = '' then
     Exit;
 
-  SetLength(values, entity.GetColumnsToMap.Count);
-  for i := 0 to entity.GetColumnsToMap.Count - 1 do
+  SetLength(values, entity.ColumnsData.Count);
+  for i := 0 to entity.ColumnsData.Count - 1 do
   begin
-    col := entity.GetColumnsToMap[i];
-    columnValue := entity.GetColumnValue(col.Column);
+    col := entity.ColumnsData[i];
+    columnValue := entity.GetValue(col.Member);
     // TODO: support IClonable
     if columnValue.IsObject and (columnValue.AsObject <> nil) then
       columnValue := Clone(columnValue.AsObject);
     values[i].Key := col.Member;
     values[i].Value := columnValue;
   end;
-  key := GetEntityKey(entity.GetEntity.ClassName, id);
+  key := GetEntityKey(entity.Entity.ClassName, id);
   fCriticalSection.Enter;
   try
     pair := fEntityValues.ExtractPair(key);

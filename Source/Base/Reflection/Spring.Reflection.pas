@@ -432,6 +432,7 @@ type
     function GetAsMethod: TRttiMethod;
     function GetAsProperty: TRttiProperty;
     function GetAsField: TRttiField;
+    function GetMemberType: TRttiType;
   public
 //    procedure InvokeMember(instance: TValue; const arguments: array of TValue);
     function GetValue(const instance: TValue): TValue; overload;
@@ -447,6 +448,7 @@ type
     property IsProtected: Boolean read GetIsProtected;
     property IsPublic: Boolean read GetIsPublic;
     property IsPublished: Boolean read GetIsPublished;
+    property MemberType: TRttiType read GetMemberType;
   end;
 
   {$ENDREGION}
@@ -1617,6 +1619,16 @@ end;
 function TRttiMemberHelper.GetIsPublished: Boolean;
 begin
   Result := Visibility = mvPublished;
+end;
+
+function TRttiMemberHelper.GetMemberType: TRttiType;
+begin
+  if IsProperty then
+    Result := AsProperty.PropertyType
+  else if IsField then
+    Result := AsField.FieldType
+  else
+    Result := AsMethod.ReturnType;
 end;
 
 function TRttiMemberHelper.GetIsConstructor: Boolean;

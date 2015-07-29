@@ -125,8 +125,6 @@ type
     class function GetColumnsData(entityClass: TClass): TColumnDataList;
 
     class function IsValidEntity(entityClass: TClass): Boolean;
-
-
   end;
 
 implementation

@@ -307,26 +307,34 @@ type
 
   IEntityWrapper = interface(IInvokable)
     ['{E6B12BC9-AA98-4F00-851B-8DDC0AADD36A}']
+  {$REGION 'Property Accessors'}
     function GetEntity: TObject;
-    function GetColumns: IList<ColumnAttribute>;
-    function GetColumnAttribute(const member: TRttiMember): ColumnAttribute;
-    function GetColumnsToMap: TColumnDataList;
-    function GetColumnValue(const column: TORMAttribute): TValue; overload;
-    function GetColumnValueFrom(const resultSet: IDBResultSet; const columnName: string): TValue;
-    function GetPrimaryKeyValue: TValue;
-    function GetPrimaryKeyValueFrom(const resultSet: IDBResultSet): TValue;
-    function GetOneToManyColumns: IList<OneToManyAttribute>;
-    function GetManyToOneColumns: IList<ManyToOneAttribute>;
-    function GetForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
-
+    function GetColumnsData: TColumnDataList;
+    function GetOneToManyColumns: IEnumerable<OneToManyAttribute>;
+    function GetManyToOneColumns: IEnumerable<ManyToOneAttribute>;
+    function GetForeignKeyColumns: IEnumerable<ForeignJoinColumnAttribute>;
     function GetTableName: string;
+    function GetPrimaryKeyValue: TValue; overload;
+  {$ENDREGION}
 
-    procedure SetColumnValue(const column: TORMAttribute; const value: TValue); overload;
+    function GetValue(const member: TRttiMember): TValue;
+    function GetPrimaryKeyValue(const resultSet: IDBResultSet): TValue; overload;
+
+    procedure SetValue(const member: TRttiMember; const value: TValue);
     procedure SetPrimaryKeyValue(const value: TValue);
-    procedure SetMemberValue(const memberName: string; const value: TValue);
 
     function HasOneToManyRelations: Boolean;
     function HasManyToOneRelations: Boolean;
+
+    property Entity: TObject read GetEntity;
+    property ColumnsData: TColumnDataList read GetColumnsData;
+
+    property TableName: string read GetTableName;
+    property OneToManyColumns: IEnumerable<OneToManyAttribute> read GetOneToManyColumns;
+    property ManyToOneColumns: IEnumerable<ManyToOneAttribute> read GetManyToOneColumns;
+    property ForeignKeyColumns: IEnumerable<ForeignJoinColumnAttribute> read GetForeignKeyColumns;
+
+    property PrimaryKeyValue: TValue read GetPrimaryKeyValue;
   end;
 
   IEntityMap = interface(IInvokable)

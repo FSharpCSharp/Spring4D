@@ -509,12 +509,12 @@ begin
     raise EORMUnsupportedType.CreateFmt('Insufficient rtti information for lazy type: %s', [lazyTypeInfo.TypeName]);
   Result := TValue.Empty;
 
-  column := entity.GetColumnAttribute(columnMember);
-  id := entity.GetPrimaryKeyValue;
+  column := columnMember.GetCustomAttribute<ColumnAttribute>;
+  id := entity.PrimaryKeyValue;
   case targetType.TypeKind of
-    tkClass: Result := ResolveLazyClass(id, entity.GetEntity, lazyKind, targetType, column);
-    tkInterface: Result := ResolveLazyInterface(id, entity.GetEntity, lazyKind, targetType, column);
-    tkRecord: Result := ResolveLazyRecord(id, entity.GetEntity, lazyKind, targetType, column);
+    tkClass: Result := ResolveLazyClass(id, entity.Entity, lazyKind, targetType, column);
+    tkInterface: Result := ResolveLazyInterface(id, entity.Entity, lazyKind, targetType, column);
+    tkRecord: Result := ResolveLazyRecord(id, entity.Entity, lazyKind, targetType, column);
   else
     raise EORMUnsupportedType.CreateFmt('Unsupported target type: %s', [targetType.Name]);
   end;
@@ -597,9 +597,9 @@ begin
   begin
     manyToOne := TManyToOneRelation.Create;
     try
-      for column in entity.GetManyToOneColumns do
+      for column in entity.ManyToOneColumns do
       begin
-        manyToOne.SetAssociation(column, entity.GetEntity, resultSet);
+        manyToOne.SetAssociation(column, entity.Entity, resultSet);
         entityWrapper := TEntityWrapper.Create(manyToOne.NewEntity, manyToOne.NewColumns);
         DoMapEntityFromColumns(entityWrapper, resultSet);
       end;
@@ -617,17 +617,17 @@ var
   value: TValue;
   i: Integer;
 begin
-  entity.SetPrimaryKeyValue(entity.GetPrimaryKeyValueFrom(resultSet));
-  for i := 0 to entity.GetColumnsToMap.Count - 1 do
+  entity.SetPrimaryKeyValue(entity.GetPrimaryKeyValue(resultSet));
+  for i := 0 to entity.ColumnsData.Count - 1 do
   begin
-    columnData := entity.GetColumnsToMap[i];
+    columnData := entity.ColumnsData[i];
     if columnData.IsPrimaryKey then
       Continue;
 
     if IsLazyType(columnData.TypeInfo) then
     begin
       value := ResolveLazyValue(entity, columnData.Member, columnData.TypeInfo);
-      entity.SetColumnValue(columnData.Column, value);
+      entity.SetValue(columnData.Member, value);
     end
     else
     begin
@@ -636,8 +636,8 @@ begin
       except
         raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [columnData.ColumnName]);
       end;
-      value := ColumnFromVariant(fieldValue, columnData, entity.GetEntity);
-      entity.SetColumnValue(columnData.Column, value);
+      value := ColumnFromVariant(fieldValue, columnData, entity.Entity);
+      entity.SetValue(columnData.Member, value);
     end;
   end;
 end;
@@ -664,11 +664,11 @@ var
 begin
   if not entity.HasOneToManyRelations then
     Exit;
-  for column in entity.GetOneToManyColumns do
+  for column in entity.OneToManyColumns do
   begin
     value := ResolveLazyValue(entity, column.Member, column.MemberType);
     if not value.IsEmpty then
-      entity.SetColumnValue(column, value);
+      entity.SetValue(column.Member, value);
   end;
 end;
 
@@ -708,14 +708,14 @@ var
   primaryKeyValue: TValue;
   primaryKeyTableName: string;
 begin
-  primaryKeyValue := primaryKeyEntity.GetPrimaryKeyValue;
+  primaryKeyValue := primaryKeyEntity.PrimaryKeyValue;
   if primaryKeyValue.IsEmpty then
     Exit;
-  primaryKeyTableName := primaryKeyEntity.GetTableName;
-  for forColAttribute in foreignKeyEntity.GetForeignKeyColumns do
+  primaryKeyTableName := primaryKeyEntity.TableName;
+  for forColAttribute in foreignKeyEntity.ForeignKeyColumns do
   begin
     if SameText(forColAttribute.ReferencedTableName, primaryKeyTableName) then
-      foreignKeyEntity.SetColumnValue(forColAttribute, primaryKeyValue);
+      foreignKeyEntity.SetValue(forColAttribute.Member, primaryKeyValue);
   end;
 end;
 

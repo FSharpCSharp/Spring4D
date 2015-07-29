@@ -64,6 +64,8 @@ type
   EORMColumnNotFound = class(EBaseORMException);
   EORMPrimaryKeyColumnNotFound = class(EBaseORMException);
 
+  EORMInvalidConversion = class(EBaseORMException);
+
   EORMContainerDoesNotHaveAddMethod = class(Exception);
 
   EORMContainerDoesNotHaveClearMethod = class(Exception);
