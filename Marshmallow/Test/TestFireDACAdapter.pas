@@ -113,7 +113,7 @@ begin
  // FDACConnection.Params.Add('Database=:memory:');
 //  inherited SetUp;
   FConnection := TConnectionFactory.GetInstance(dtFireDAC, FDACConnection);
-  FConnection.SetQueryLanguage(qlSQLite);
+  FConnection.QueryLanguage := qlSQLite;
   FConnection.AddExecutionListener(
     procedure(const command: string; const params: IEnumerable<TDBParam>)
     var

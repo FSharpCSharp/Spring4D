@@ -435,7 +435,7 @@ function TSession.GetQueryCountSql(const sql: string): string;
 var
   generator: ISQLGenerator;
 begin
-  generator := TSQLGeneratorRegister.GetGenerator(Connection.GetQueryLanguage);
+  generator := TSQLGeneratorRegister.GetGenerator(Connection.QueryLanguage);
   Result := generator.GenerateGetQueryCount(sql);
 end;
 

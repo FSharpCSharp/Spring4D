@@ -79,7 +79,7 @@ begin
   Guard.CheckNotNull(connection, 'connection');
   inherited Create;
   fConnection := connection;
-  fGenerator := TSQLGeneratorRegister.GetGenerator(fConnection.GetQueryLanguage);
+  fGenerator := TSQLGeneratorRegister.GetGenerator(fConnection.QueryLanguage);
   fParams := TCollections.CreateObjectList<TDBParam>;
 end;
 

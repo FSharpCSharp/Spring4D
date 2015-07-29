@@ -67,13 +67,15 @@ type
     fConnection: T;
     fListeners: IList<TExecutionListenerProc>;
     fQueryLanguage: TQueryLanguage;
+    fAllowServerSideCursor: Boolean;
     fAutoFreeConnection: Boolean;
     fTransationId: Integer;
 
-    procedure SetQueryLanguage(queryLanguage: TQueryLanguage);
-    function GetExecutionListeners: IList<TExecutionListenerProc>;
     function GetAutoFreeConnection: Boolean;
+    function GetExecutionListeners: IList<TExecutionListenerProc>;
+    function GetQueryLanguage: TQueryLanguage;
     procedure SetAutoFreeConnection(value: Boolean);
+    procedure SetQueryLanguage(value: TQueryLanguage);
   protected
     procedure Connect; virtual; abstract;
     procedure Disconnect; virtual; abstract;
@@ -86,12 +88,12 @@ type
     procedure AddExecutionListener(const listenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners;
 
-    function GetQueryLanguage: TQueryLanguage; virtual;
     function TryResolveQueryLanguage(out queryLanguage: TQueryLanguage): Boolean; virtual;
   public
     constructor Create(const connection: T); virtual;
     destructor Destroy; override;
 
+    property AllowServerSideCursor: Boolean read fAllowServerSideCursor write fAllowServerSideCursor;
     property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;
     property Connection: T read fConnection;
     property ExecutionListeners: IList<TExecutionListenerProc> read GetExecutionListeners;
@@ -111,6 +113,7 @@ type
     fSql: string;
     fQuery: Variant;
     fQueryMetadata: TQueryMetadata;
+    fAllowServerSideCursor: Boolean;
   protected
     procedure NotifyListeners; virtual;
   public
@@ -124,6 +127,7 @@ type
 
     function NativeQueryPresent: Boolean; virtual;
 
+    property AllowServerSideCursor: Boolean read fAllowServerSideCursor write fAllowServerSideCursor;
     property ExecutionListeners: IList<TExecutionListenerProc> read fListeners write fListeners;
     property Statement: T read fStatement;
     property Query: Variant read fQuery write fQuery;
@@ -249,6 +253,7 @@ begin
   fListeners := TCollections.CreateList<TExecutionListenerProc>;
   fQueryLanguage := qlAnsiSQL;
   fTransationId := 0;
+  fAllowServerSideCursor := True;
   fAutoFreeConnection := False;
   TryResolveQueryLanguage(fQueryLanguage);
 end;
@@ -292,10 +297,9 @@ begin
   fAutoFreeConnection := value;
 end;
 
-procedure TDriverConnectionAdapter<T>.SetQueryLanguage(queryLanguage: TQueryLanguage);
+procedure TDriverConnectionAdapter<T>.SetQueryLanguage(value: TQueryLanguage);
 begin
-  if fQueryLanguage <> queryLanguage then
-    fQueryLanguage := queryLanguage;
+  fQueryLanguage := value;
 end;
 
 function TDriverConnectionAdapter<T>.TryResolveQueryLanguage(
@@ -485,7 +489,7 @@ constructor TPager.Create(const connection: IDBConnection);
 begin
   inherited Create;
   fConnection := connection;
-  fGenerator := TSQLGeneratorRegister.GetGenerator(connection.GetQueryLanguage);
+  fGenerator := TSQLGeneratorRegister.GetGenerator(connection.QueryLanguage);
 end;
 
 constructor TPager.Create(const connection: IDBConnection; page,

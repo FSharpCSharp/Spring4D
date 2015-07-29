@@ -225,20 +225,6 @@ begin
   end;
 end;
 
-type
-  TDBParamHelper = class helper for TDBParam
-    function ToVariant(dataType: TFieldType): Variant; overload;
-  end;
-
-function TDBParamHelper.ToVariant(dataType: TFieldType): Variant;
-begin
-  case dataType of
-    ftVarBytes: Result := Value.ConvertTo<TArray<Byte>>;
-  else
-    Result := ToVariant;
-  end;
-end;
-
 procedure TADOStatementAdapter.SetParam(const param: TDBParam);
 var
   paramName: string;

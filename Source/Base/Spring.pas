@@ -170,7 +170,12 @@ type
     /// <summary>
     ///   Comverts the stored value to another type.
     /// </summary>
-    function ConvertTo<T>: T;
+    function ConvertTo<T>: T; overload;
+
+    /// <summary>
+    ///   Comverts the stored value to another type.
+    /// </summary>
+    function ConvertTo(targetType: PTypeInfo): TValue; overload;
 
     /// <summary>
     ///   Checks for equality with another TValue.
@@ -221,13 +226,13 @@ type
     ///   Tries to convert the stored value. Returns false when the conversion
     ///   is not possible.
     /// </summary>
-    function TryConvert<T>(out targetValue: T): Boolean; overload;
+    function TryConvert(targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean; overload;
 
     /// <summary>
     ///   Tries to convert the stored value. Returns false when the conversion
     ///   is not possible.
     /// </summary>
-    function TryConvert(targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean; overload;
+    function TryConvert<T>(out targetValue: T): Boolean; overload;
 
     /// <summary>
     ///   Tries to get the stored value of a nullable. Returns false when the
@@ -2304,6 +2309,12 @@ begin
   Result := CompareValue(Self, value);
 end;
 
+function TValueHelper.ConvertTo(targetType: PTypeInfo): TValue;
+begin
+  if not TryConvert(Result) then
+    RaiseConversionError(TypeInfo, targetType);
+end;
+
 function TValueHelper.ConvertTo<T>: T;
 begin
   if not TryConvert<T>(Result) then
@@ -3527,15 +3538,6 @@ const
 {$ENDREGION}
 
 
-function TValueHelper.TryConvert<T>(out targetValue: T): Boolean;
-var
-  value: TValue;
-begin
-  Result := TryConvert(System.TypeInfo(T), value);
-  if Result then
-    targetValue := value.AsType<T>;
-end;
-
 function TValueHelper.TryConvert(targetTypeInfo: PTypeInfo;
   out targetValue: TValue): Boolean;
 var
@@ -3602,6 +3604,15 @@ begin
     Result := False;
     {$ENDIf}
   end;
+end;
+
+function TValueHelper.TryConvert<T>(out targetValue: T): Boolean;
+var
+  value: TValue;
+begin
+  Result := TryConvert(System.TypeInfo(T), value);
+  if Result then
+    targetValue := value.AsType<T>;
 end;
 
 function TValueHelper.TryGetLazyValue(out value: TValue): Boolean;

@@ -70,6 +70,8 @@ type
       const versionColumn: VersionAttribute; const version, primaryKey: Variant): Variant;
     function GetParamClass: TDBParamClass;
     function CreateParam(const paramField: TSQLParamField; const value: TValue): TDBParam;
+
+    property QueryLanguage: TQueryLanguage read GetQueryLanguage;
   end;
 
 implementation

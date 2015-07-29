@@ -854,7 +854,7 @@ begin
   FMongoConnection.Connected := True;
   FConnection := TConnectionFactory.GetInstance(dtMongo, FMongoConnection);
   FConnection.AutoFreeConnection := True;
-  FConnection.SetQueryLanguage(qlMongoDB);
+  FConnection.QueryLanguage := qlMongoDB;
   FManager := TMongoDBSession.Create(FConnection);
   FManager.Execute('D[UnitTests.MongoTest]{}', []); //delete all
   FManager.Execute('D[UnitTests.AutoId]{}', []); //delete all
@@ -1119,7 +1119,7 @@ begin
   FMongoConnection.Connected := True;
   FConnection := TConnectionFactory.GetInstance(dtMongo, FMongoConnection);
   FConnection.AutoFreeConnection := True;
-  FConnection.SetQueryLanguage(qlMongoDB);
+  FConnection.QueryLanguage := qlMongoDB;
   FSession := TMongoDBSession.Create(FConnection);
   FSession.Execute('D[UnitTests.MongoTest]{}', []); //delete all
   FSession.Execute('D[UnitTests.AutoId]{}', []); //delete all
@@ -1388,7 +1388,7 @@ procedure TMongoProxyRepositoryTest.SetUp;
 begin
   inherited;
   FDBConnection := TConnectionFactory.GetInstance(dtMongo, Connection);
-  FDBConnection.SetQueryLanguage(qlMongoDB);
+  FDBConnection.QueryLanguage := qlMongoDB;
   FSession := TMongoDBSession.Create(FDBConnection);
   FProxyRepository := TProxyRepository<TMongoEntity, Integer>.Create(FSession, TypeInfo(ICustomerRepository)
     , TMongoDBRepository<TMongoEntity, Integer>) as ICustomerRepository;

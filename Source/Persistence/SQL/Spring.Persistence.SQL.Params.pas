@@ -54,7 +54,8 @@ type
     constructor Create(const name: string; const value: TValue); virtual;
 
     function GetNormalizedParamName(const prefix: string = ':'): string;
-    function ToVariant: Variant; virtual;
+    function ToVariant: Variant; overload; virtual;
+    function ToVariant(dataType: TFieldType): Variant; overload; virtual;
 
     property Name: string read fName;
     property ParamType: TFieldType read fParamType;
@@ -99,6 +100,16 @@ end;
 function TDBParam.ToVariant: Variant;
 begin
   Result := fValue.ToVariant;
+end;
+
+function TDBParam.ToVariant(dataType: TFieldType): Variant;
+begin
+  case dataType of
+    ftVarBytes: Result := fValue.ConvertTo<TArray<Byte>>;
+    ftGuid: Result := fValue.ConvertTo<string>;
+  else
+    Result := ToVariant;
+  end;
 end;
 
 function TDBParam.TypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType;

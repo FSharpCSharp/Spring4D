@@ -74,7 +74,7 @@ end;
 
 class procedure TSQLGeneratorRegister.RegisterGenerator(const generator: ISQLGenerator);
 begin
-  fGenerators.AddOrSetValue(generator.GetQueryLanguage, generator);
+  fGenerators.AddOrSetValue(generator.QueryLanguage, generator);
 end;
 
 {$ENDREGION}

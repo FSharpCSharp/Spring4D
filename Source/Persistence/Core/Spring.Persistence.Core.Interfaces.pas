@@ -111,22 +111,27 @@ type
   /// </summary>
   IDBConnection = interface(IInvokable)
     ['{256B8F14-7FF1-4442-A202-358B24756654}']
+  {$REGION 'Property Accessors'}
+    function GetAutoFreeConnection: Boolean;
+    function GetExecutionListeners: IList<TExecutionListenerProc>;
+    function GetQueryLanguage: TQueryLanguage;
+    procedure SetAutoFreeConnection(value: Boolean);
+    procedure SetQueryLanguage(value: TQueryLanguage);
+  {$ENDREGION}
+
     procedure Connect;
     procedure Disconnect;
     function IsConnected: Boolean;
     function CreateStatement: IDBStatement;
     function BeginTransaction: IDBTransaction;
     function GetDriverName: string;
-    function GetQueryLanguage: TQueryLanguage;
-    procedure SetQueryLanguage(queryLanguage: TQueryLanguage);
 
     procedure AddExecutionListener(const listenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners;
-    function GetExecutionListeners: IList<TExecutionListenerProc>;
-    property ExecutionListeners: IList<TExecutionListenerProc> read GetExecutionListeners;
-    function GetAutoFreeConnection: Boolean;
-    procedure SetAutoFreeConnection(value: Boolean);
+
     property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;
+    property ExecutionListeners: IList<TExecutionListenerProc> read GetExecutionListeners;
+    property QueryLanguage: TQueryLanguage read GetQueryLanguage write SetQueryLanguage;
   end;
 
   /// <summary>

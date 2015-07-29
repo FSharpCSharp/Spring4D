@@ -115,7 +115,7 @@ var
   generator: ISQLGenerator;
 begin
   command := TSelectCommand.Create(fEntityClass);
-  generator := TSQLGeneratorRegister.GetGenerator(fSession.Connection.GetQueryLanguage);
+  generator := TSQLGeneratorRegister.GetGenerator(fSession.Connection.QueryLanguage);
   try
     for criterion in Criterions do
       criterion.ToSqlString(params, command, generator, True);
