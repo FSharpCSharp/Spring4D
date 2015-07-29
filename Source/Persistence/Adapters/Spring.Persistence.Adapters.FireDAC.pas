@@ -199,7 +199,7 @@ begin
   query.SQL.Text := Statement.SQL.Text;
   query.Params.AssignValues(Statement.Params);
   query.DisableControls;
-  if serverSideCursor then
+  if AllowServerSideCursor and serverSideCursor then
     query.FetchOptions.CursorKind := ckForwardOnly;
   try
     query.OpenOrExecute;
@@ -287,6 +287,7 @@ begin
 
     adapter := TFireDACStatementAdapter.Create(statement);
     adapter.ExecutionListeners := ExecutionListeners;
+    adapter.AllowServerSideCursor := AllowServerSideCursor;
     Result := adapter;
   end
   else
