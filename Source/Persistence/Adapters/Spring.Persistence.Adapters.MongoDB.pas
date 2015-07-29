@@ -495,10 +495,10 @@ begin
 
   for param in params do
   begin
-    if VarType(param.Value) = varUnknown then
+    if VarType(param.ToVariant) = varUnknown then
       Continue;
-    value := VarToStrDef(param.Value, 'null');
-    case VarType(param.Value) of
+    value := VarToStrDef(param.ToVariant, 'null');
+    case VarType(param.ToVariant) of
       varString, varUString, varStrArg, varOleStr:
       begin
         if IsObjectId(value) then   //ObjectID("sdsd457845")

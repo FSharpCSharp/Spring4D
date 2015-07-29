@@ -91,9 +91,7 @@ begin
 
   Result := generator.GenerateWhere(whereField);
 
-  param := TDBParam.Create;
-  param.SetFromTValue(fValue);
-  param.Name := paramName;
+  param := generator.GetParamClass.Create(paramName, fValue);
   params.Add(param);
 
   if addToCommand then

@@ -59,6 +59,7 @@ type
   TSQLiteStatementAdapter = class(TDriverStatementAdapter<ISQLitePreparedStatement>)
   public
     procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParam(const param: TDBParam); virtual;
     procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
@@ -158,13 +159,15 @@ begin
   Result := TSQLiteResultSetAdapter.Create(query);
 end;
 
+procedure TSQLiteStatementAdapter.SetParam(const param: TDBParam);
+begin
+  Statement.SetParamVariant(param.Name, param.ToVariant);
+end;
+
 procedure TSQLiteStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
-var
-  param: TDBParam;
 begin
   inherited;
-  for param in params do
-    Statement.SetParamVariant(param.Name, param.Value);
+  params.ForEach(SetParam);
 end;
 
 procedure TSQLiteStatementAdapter.SetSQLCommand(const commandText: string);

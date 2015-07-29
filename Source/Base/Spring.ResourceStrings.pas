@@ -32,6 +32,7 @@ resourcestring
 
   {$REGION 'Spring'}
 
+  STypeConversionError         = '%s cannot be converted to %s';
   SNotSupportedException       = '%s is not supported.';
   SNotImplementedException     = '%s is not implemented.';
   SNotSupportedOperation       = 'Not supported operation.';

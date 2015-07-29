@@ -100,15 +100,11 @@ begin
   else
     whereField.Free;
 
-  //1st parameter Low
-  param := generator.GetParamClass.Create;
-  param.SetFromTValue(fLowValue);
-  param.Name := paramName;
+  // 1st parameter Low
+  param := generator.GetParamClass.Create(paramName, fLowValue);
   params.Add(param);
-  //2nd parameter High
-  param := generator.GetParamClass.Create;
-  param.SetFromTValue(fHighValue);
-  param.Name := paramName2;
+  // 2nd parameter High
+  param := generator.GetParamClass.Create(paramName2, fHighValue);
   params.Add(param);
 end;
 

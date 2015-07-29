@@ -126,6 +126,7 @@ type
   private
     function GetTypeKind: TTypeKind;
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
+    class procedure RaiseConversionError(source, target: PTypeInfo); static;
   public
 
     class function From(buffer: Pointer; typeInfo: PTypeInfo): TValue; overload; static;
@@ -165,6 +166,11 @@ type
     ///   Compares to another TValue.
     /// </summary>
     function CompareTo(const value: TValue): Integer;
+
+    /// <summary>
+    ///   Comverts the stored value to another type.
+    /// </summary>
+    function ConvertTo<T>: T;
 
     /// <summary>
     ///   Checks for equality with another TValue.
@@ -210,6 +216,12 @@ type
     ///   Sets the stored value of a nullable.
     /// </summary>
     procedure SetNullableValue(const value: TValue);
+
+    /// <summary>
+    ///   Tries to convert the stored value. Returns false when the conversion
+    ///   is not possible.
+    /// </summary>
+    function TryConvert<T>(out targetValue: T): Boolean; overload;
 
     /// <summary>
     ///   Tries to convert the stored value. Returns false when the conversion
@@ -2292,6 +2304,12 @@ begin
   Result := CompareValue(Self, value);
 end;
 
+function TValueHelper.ConvertTo<T>: T;
+begin
+  if not TryConvert<T>(Result) then
+    RaiseConversionError(TypeInfo, System.TypeInfo(T));
+end;
+
 function EqualsFail(const left, right: TValue): Boolean;
 begin
   Result := False;
@@ -2973,6 +2991,18 @@ begin
   Result := TypeInfo = System.TypeInfo(Variant);
 end;
 
+class procedure TValueHelper.RaiseConversionError(source, target: PTypeInfo);
+var
+  sourceTypeName: string;
+begin
+  if Assigned(source) then
+    sourceTypeName := source.TypeName
+  else
+    sourceTypeName := '<unknown>';
+  raise EConvertError.CreateResFmt(@STypeConversionError, [
+    sourceTypeName, target.TypeName]);
+end;
+
 procedure TValueHelper.SetNullableValue(const value: TValue);
 var
   typeInfo: PTypeInfo;
@@ -3496,6 +3526,15 @@ const
   );
 {$ENDREGION}
 
+
+function TValueHelper.TryConvert<T>(out targetValue: T): Boolean;
+var
+  value: TValue;
+begin
+  Result := TryConvert(System.TypeInfo(T), value);
+  if Result then
+    targetValue := value.AsType<T>;
+end;
 
 function TValueHelper.TryConvert(targetTypeInfo: PTypeInfo;
   out targetValue: TValue): Boolean;

@@ -219,19 +219,16 @@ var
   paramName: string;
   parameter: TFDParam;
 begin
-  paramName := param.NormalizeParamName(':', param.Name);
+  paramName := param.GetNormalizedParamName;
   parameter := Statement.ParamByName(paramName);
   parameter.DataType := param.ParamType;
-  parameter.Value := param.Value;
+  parameter.Value := param.ToVariant;
 end;
 
 procedure TFireDACStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
-var
-  param: TDBParam;
 begin
   inherited;
-  for param in params do
-    SetParam(param);
+  params.ForEach(SetParam);
 end;
 
 procedure TFireDACStatementAdapter.SetSQLCommand(const commandText: string);

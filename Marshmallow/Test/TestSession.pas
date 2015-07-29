@@ -1582,9 +1582,9 @@ begin
   begin
     Status(Format('%2:d %0:s = %1:s. Type: %3:s',
       [param.Name,
-      PrettyPrintVariant(param.Value),
+      PrettyPrintVariant(param.ToVariant),
       i,
-      VarTypeAsText(VarType(param.Value))]));
+      VarTypeAsText(VarType(param.ToVariant))]));
     Inc(i);
   end;
   Status('-----');

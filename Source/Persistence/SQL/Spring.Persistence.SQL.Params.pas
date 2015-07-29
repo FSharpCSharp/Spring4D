@@ -46,29 +46,19 @@ type
   TDBParam = class
   private
     fName: string;
+    fValue: TValue;
     fParamType: TFieldType;
-    fValue: Variant;
-    fTypeInfo: PTypeInfo;
   protected
-    function GetName: string; virtual;
-    procedure SetName(const name: string); virtual;
-    procedure SetValue(const value: Variant); virtual;
-    function FromTypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType; virtual;
+    function TypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType; virtual;
   public
-    constructor Create; overload; virtual;
-    constructor Create(const name: string; const value: Variant); overload; virtual;
-    constructor Create(const name: string; const value: TVarRec); overload; virtual;
+    constructor Create(const name: string; const value: TValue); virtual;
 
-    procedure SetFromTValue(const value: TValue);
-    procedure SetFromVarRec(const value: TVarRec);
-    procedure SetParamTypeFromTypeInfo(typeInfo: PTypeInfo);
+    function GetNormalizedParamName(const prefix: string = ':'): string;
+    function ToVariant: Variant; virtual;
 
-    class function NormalizeParamName(const prefix: string; const paramName: string): string;
-
-    property TypeInfo: PTypeInfo read fTypeInfo;
-    property Name: string read GetName write SetName;
+    property Name: string read fName;
     property ParamType: TFieldType read fParamType;
-    property Value: Variant read fValue write SetValue;
+    property Value: TValue read fValue;
   end;
 
   TDBParams = record
@@ -81,34 +71,41 @@ implementation
 uses
   StrUtils,
   SysUtils,
-  TypInfo,
-  Variants,
+//  TypInfo,
+//  Variants,
   Spring.Persistence.Core.Exceptions;
 
 
 {$REGION 'TDBParam'}
 
-constructor TDBParam.Create;
+constructor TDBParam.Create(const name: string; const value: TValue);
 begin
   inherited Create;
+  fName := AnsiUpperCase(name);
+  if not StartsStr(':', fName) then
+    fName := ':' + fName;
+  fValue := value;
+  fParamType := TypeInfoToFieldType(fValue.TypeInfo);
 end;
 
-constructor TDBParam.Create(const name: string; const value: Variant);
+function TDBParam.GetNormalizedParamName(const prefix: string): string;
 begin
-  Create;
-  fName := name;
-  SetValue(value);
+  if StartsStr(prefix, fName) then
+    Result := Copy(fName, Length(prefix) + 1)
+  else
+    Result := fName;
 end;
 
-constructor TDBParam.Create(const name: string; const value: TVarRec);
+function TDBParam.ToVariant: Variant;
 begin
-  Create;
-  fName := name;
-  SetFromVarRec(value);
+  Result := fValue.ToVariant;
 end;
 
-function TDBParam.FromTypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType;
+function TDBParam.TypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType;
 begin
+  if not Assigned(typeInfo) then
+    Exit(ftUnknown);
+
   case typeInfo.Kind of
     tkInteger, tkSet: Result := ftInteger;
     tkInt64: Result := ftLargeint;
@@ -129,122 +126,20 @@ begin
       else if typeInfo = System.TypeInfo(Currency) then
         Result := ftCurrency
       else if typeInfo = System.TypeInfo(Extended) then
-        Result := DB.ftExtended
+        Result := TFieldType.ftExtended
       else
         Result := ftFloat;
     tkClass, tkArray, tkInterface, tkDynArray: Result := ftBlob;
     tkVariant: Result := ftVariant;
     tkRecord:
       if IsNullable(typeInfo) then
-        Result := FromTypeInfoToFieldType(GetUnderlyingType(typeInfo))
+        Result := TypeInfoToFieldType(GetUnderlyingType(typeInfo))
       else
         Result := ftBlob;
     tkClassRef, tkPointer: Result := ftReference;
   else
     Result := ftUnknown;
   end;
-end;
-
-function TDBParam.GetName: string;
-begin
-  Result := AnsiUpperCase(fName);
-  if not StartsStr(':', Result) then
-    Result := ':' + Result;
-end;
-
-class function TDBParam.NormalizeParamName(const prefix,
-  paramName: string): string;
-begin
-  Result := paramName;
-  if StartsStr(prefix, paramName) then
-    Result := Copy(paramName, 2, Length(paramName));
-end;
-
-procedure TDBParam.SetFromTValue(const value: TValue);
-var
-  variantValue: Variant;
-begin
-  variantValue := value.ToVariant;
-  SetValue(variantValue);
-end;
-
-procedure TDBParam.SetFromVarRec(const value: TVarRec);
-begin
-  case value.VType of
-{$IFNDEF NEXTGEN}
-    vtAnsiString:
-    begin
-      fParamType := ftString;
-      fValue := string(value.VAnsiString);
-    end;
-    vtString:
-    begin
-      fParamType := ftString;
-      fValue := string(value.VString);
-    end;
-{$ENDIF}
-{$IF Declared(WideString)}
-    vtWideString:
-    begin
-      fParamType := ftWideString;
-      fValue := string(value.VWideString);
-    end;
-{$IFEND}
-    vtUnicodeString:
-    begin
-      fParamType := ftWideString;
-      fValue := string(value.VUnicodeString);
-    end;
-    vtInt64:
-    begin
-      fParamType := ftLargeint;
-      fValue := Int64(value.VInt64^);
-    end;
-    vtInteger:
-    begin
-      fParamType := ftInteger;
-      fValue := value.VInteger;
-    end;
-    vtExtended:
-    begin
-      fParamType := DB.ftExtended;
-      fValue := Extended(value.VExtended^);
-    end;
-    vtCurrency:
-    begin
-      fParamType := ftCurrency;
-      fValue := Currency(value.VCurrency^);
-    end;
-    vtBoolean:
-    begin
-      fParamType := ftBoolean;
-      fValue := value.VBoolean;
-    end;
-    vtVariant:
-    begin
-      fParamType := ftVariant;
-      fValue := Variant(value.VVariant^);
-    end
-  else
-    raise EBaseORMException.Create('Unknown parameter type');
-  end;
-end;
-
-procedure TDBParam.SetName(const name: string);
-begin
-  fName := name;
-end;
-
-procedure TDBParam.SetParamTypeFromTypeInfo(typeInfo: PTypeInfo);
-begin
-  fTypeInfo := typeInfo;
-  fParamType := FromTypeInfoToFieldType(fTypeInfo);
-end;
-
-procedure TDBParam.SetValue(const value: Variant);
-begin
-  fParamType := VarTypeToDataType(VarType(value));
-  fValue := value;
 end;
 
 {$ENDREGION}
@@ -263,9 +158,7 @@ begin
     params := TCollections.CreateObjectList<TDBParam>;
     for i := Low(values) to High(values) do
     begin
-      param := TDBParam.Create;
-      param.Name := Format(':%D', [i]);
-      param.SetFromVarRec(values[i]);
+      param := TDBParam.Create(Format(':%d', [i]), TValue.FromVarRec(values[i]));
       params.Add(param);
     end;
     Result := params;

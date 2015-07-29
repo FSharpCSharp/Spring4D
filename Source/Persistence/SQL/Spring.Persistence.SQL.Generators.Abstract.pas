@@ -88,36 +88,33 @@ function TAbstractSQLGenerator.CreateParam(const paramField: TSQLParamField;
 var
   convertedValue: TValue;
 begin
-  Result := GetParamClass.Create;
-  Result.Name := paramField.ParamName;
-  convertedValue := value;
-  if not value.IsEmpty and value.IsObject then
-    value.TryConvert(TypeInfo(TStream), convertedValue);
+  if value.IsEmpty or not value.IsObject or
+    not value.TryConvert(TypeInfo(TStream), convertedValue) then
+    convertedValue := value;
 
-  Result.Value := convertedValue.ToVariant;
-  if VarIsNull(Result.Value) or VarIsEmpty(Result.Value) then
-    Result.SetParamTypeFromTypeInfo(paramField.Column.MemberType);
+  if convertedValue.IsEmpty then
+    TValueData(convertedValue).FTypeInfo := paramField.Column.MemberType;
+  Result := GetParamClass.Create(paramField.ParamName, convertedValue);
 end;
 
-function TAbstractSQLGenerator.FindEnd(
-  const whereFields: IList<TSQLWhereField>; startIndex: Integer; startToken,
-  endToken: TWhereOperator): Integer;
+function TAbstractSQLGenerator.FindEnd(const whereFields: IList<TSQLWhereField>;
+  startIndex: Integer; startToken, endToken: TWhereOperator): Integer;
 var
-  LCount: Integer;
+  count: Integer;
 begin
-  LCount := 0;
+  count := 0;
   for Result := startIndex to whereFields.Count - 1 do
   begin
     if whereFields[Result].WhereOperator = startToken then
     begin
-      Inc(LCount);
+      Inc(count);
       Continue;
     end;
 
     if whereFields[Result].WhereOperator = endToken then
     begin
-      Dec(LCount);
-      if LCount = 0 then
+      Dec(count);
+      if count = 0 then
         Exit;
     end;
   end;

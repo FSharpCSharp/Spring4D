@@ -82,7 +82,7 @@ begin
       i := 0;
       for param in params do
       begin
-        Status(Format('%2:D Param %0:S = %1:S', [param.Name, VarToStrDef(param.Value, 'NULL'), i]));
+        Status(Format('%2:D Param %0:S = %1:S', [param.Name, VarToStrDef(param.ToVariant, 'NULL'), i]));
         Inc(i);
       end;
       Status('-----');
@@ -225,8 +225,7 @@ begin
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
 
-  LCustomers := FCriteria.Add(Restrictions.Between(CUSTAGE, 42, 50))
-    .ToList;
+  LCustomers := FCriteria.Add(Restrictions.Between(CUSTAGE, 42, 50)).ToList;
 
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);

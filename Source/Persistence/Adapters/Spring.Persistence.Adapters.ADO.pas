@@ -117,6 +117,7 @@ uses
   DB,
   SysUtils,
   Variants,
+  Spring,
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
@@ -224,25 +225,36 @@ begin
   end;
 end;
 
+type
+  TDBParamHelper = class helper for TDBParam
+    function ToVariant(dataType: TFieldType): Variant; overload;
+  end;
+
+function TDBParamHelper.ToVariant(dataType: TFieldType): Variant;
+begin
+  case dataType of
+    ftVarBytes: Result := Value.ConvertTo<TArray<Byte>>;
+  else
+    Result := ToVariant;
+  end;
+end;
+
 procedure TADOStatementAdapter.SetParam(const param: TDBParam);
 var
   paramName: string;
   parameter: TParameter;
 begin
-  paramName := param.NormalizeParamName(':', param.Name);
+  paramName := param.GetNormalizedParamName;
   parameter := Statement.Parameters.ParamByName(paramName);
-  parameter.Value := param.Value;
-  if VarIsNull(param.Value) or VarIsEmpty(param.Value) then
+  parameter.Value := param.ToVariant(parameter.DataType);
+  if VarIsNull(parameter.Value) or VarIsEmpty(parameter.Value) then
     parameter.DataType := param.ParamType;
 end;
 
 procedure TADOStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
-var
-  param: TDBParam;
 begin
   inherited;
-  for param in params do
-    SetParam(param);
+  params.ForEach(SetParam);
 end;
 
 procedure TADOStatementAdapter.SetSQLCommand(const commandText: string);

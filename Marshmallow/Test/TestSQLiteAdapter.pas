@@ -254,9 +254,7 @@ var
   LParam: TDBParam;
 begin
   Params := TCollections.CreateObjectList<TDBParam>;
-  LParam := TDBParam.Create;
-  LParam.Name := ':NAME';
-  LParam.Value := 'Test';
+  LParam := TDBParam.Create(':NAME', 'Test');
   Params.Add(LParam);
 
   FSQLiteStatementAdapter.SetParams(Params);

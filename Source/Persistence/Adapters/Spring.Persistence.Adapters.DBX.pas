@@ -68,6 +68,7 @@ type
     constructor Create(const statement: TSQLQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParam(const param: TDBParam); virtual;
     procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
@@ -205,21 +206,22 @@ begin
   end;
 end;
 
-procedure TDBXStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
+procedure TDBXStatementAdapter.SetParam(const param: TDBParam);
 var
-  param: TDBParam;
   paramName: string;
-  p: TParam;
+  parameter: TParam;
+begin
+  paramName := param.GetNormalizedParamName;
+  parameter := Statement.ParamByName(paramName);
+  parameter.Value := param.ToVariant;
+  if parameter.IsNull then
+    parameter.DataType := param.ParamType;
+end;
+
+procedure TDBXStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
 begin
   inherited;
-  for param in params do
-  begin
-    paramName := param.NormalizeParamName(':', param.Name);
-    p := Statement.ParamByName(paramName);
-    p.Value := param.Value;
-    if p.IsNull then
-      p.DataType := param.ParamType;
-  end;
+  params.ForEach(SetParam);
 end;
 
 procedure TDBXStatementAdapter.SetSQLCommand(const commandText: string);

@@ -239,7 +239,7 @@ begin
       i := 0;
       for param in params do
       begin
-        Status(Format('%2:D Param %0:S = %1:S', [param.Name, VarToStrDef(param.Value, 'NULL'), i]));
+        Status(Format('%2:D Param %0:S = %1:S', [param.Name, VarToStrDef(param.ToVariant, 'NULL'), i]));
         Inc(i);
       end;
       Status('-----');
@@ -272,7 +272,7 @@ begin
     TType.GetType<TCustomer>.GetProperty('MiddleName').GetCustomAttribute<ColumnAttribute>,
     ':MiddleName');
   param := fSut.CreateParam(field, TValue.Empty);
-  CheckEquals(TOracleDBParam, param.ClassType);
+  CheckIs(param, TOracleDBParam);
   CheckEquals(Ord(ftWideString), Ord(param.ParamType),
     'ParamType should be ftWidestring but was: ' + GetEnumName(System.TypeInfo(TFieldType), Ord(param.ParamType)));
   table.Free;

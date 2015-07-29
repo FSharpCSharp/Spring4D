@@ -63,7 +63,7 @@ type
 
   TOracleDBParam = class(TDBParam)
   protected
-    function FromTypeInfoToFieldType(ATypeInfo: PTypeInfo): TFieldType; override;
+    function TypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType; override;
   end;
 
 implementation
@@ -215,17 +215,20 @@ end;
 {$ENDREGION}
 
 
-{ TOracleDBParam }
+{$REGION 'TOracleDBParam'}
 
-function TOracleDBParam.FromTypeInfoToFieldType(
-  ATypeInfo: PTypeInfo): TFieldType;
+function TOracleDBParam.TypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType;
 begin
-  Result := inherited FromTypeInfoToFieldType(ATypeInfo);
-  case ATypeInfo.Kind of
-    tkClass, tkArray, tkDynArray, tkInterface:
-      Result := ftOraBlob;
-  end;
+  Result := inherited TypeInfoToFieldType(typeInfo);
+  if Assigned(typeInfo) then
+    case typeInfo.Kind of
+      tkClass, tkArray, tkDynArray, tkInterface:
+        Result := ftOraBlob;
+    end;
 end;
+
+{$ENDREGION}
+
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TOracleSQLGenerator.Create);
