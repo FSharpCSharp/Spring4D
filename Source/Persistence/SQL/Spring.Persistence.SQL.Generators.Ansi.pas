@@ -743,7 +743,7 @@ end;
 
 function TAnsiSQLGenerator.GetTableNameWithAlias(const table: TSQLTable): string;
 begin
-  Result := table.Name + ' AS ' + TSQLAliasGenerator.GetAlias(table.Name);
+  Result := table.Name + ' ' + TSQLAliasGenerator.GetAlias(table.Name);
 end;
 
 function TAnsiSQLGenerator.GetTempTableName: string;
