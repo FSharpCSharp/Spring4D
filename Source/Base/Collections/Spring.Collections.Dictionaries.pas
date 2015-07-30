@@ -173,6 +173,8 @@ type
     procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; reintroduce; overload;
     function ExtractPair(const key: TKey): TGenericPair; reintroduce; overload;
+    function GetValueOrDefault(const key: TKey): TValue; overload;
+    function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
@@ -252,6 +254,10 @@ type
   {$REGION 'Implements IBidiDictionary<TKey, TValue>'}
     function ExtractKey(const value: TValue): TKey;
     function ExtractValue(const key: TKey): TValue;
+    function GetKeyOrDefault(const value: TValue): TKey; overload;
+    function GetKeyOrDefault(const value: TValue; const defaultValue: TKey): TKey; overload;
+    function GetValueOrDefault(const key: TKey): TValue; overload;
+    function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
     function RemoveKey(const key: TKey): Boolean;
     function RemoveValue(const value: TValue): Boolean;
     function TryGetKey(const value: TValue; out key: TKey): Boolean;
@@ -508,6 +514,19 @@ end;
 function TDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
 begin
   Result := fKeys;
+end;
+
+function TDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey): TValue;
+begin
+  if not fDictionary.TryGetValue(key, Result) then
+    Result := Default(TValue);
+end;
+
+function TDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey;
+  const defaultValue: TValue): TValue;
+begin
+  if not fDictionary.TryGetValue(key, Result) then
+    Result := defaultValue;
 end;
 
 function TDictionary<TKey, TValue>.GetValues: IReadOnlyCollection<TValue>;
@@ -850,6 +869,20 @@ begin
   Result := fKeysByValue[value];
 end;
 
+function TBidiDictionary<TKey, TValue>.GetKeyOrDefault(
+  const value: TValue): TKey;
+begin
+  if not fKeysByValue.TryGetValue(value, Result) then
+    Result := Default(TKey);
+end;
+
+function TBidiDictionary<TKey, TValue>.GetKeyOrDefault(const value: TValue;
+  const defaultValue: TKey): TKey;
+begin
+  if not fKeysByValue.TryGetValue(value, Result) then
+    Result := defaultValue;
+end;
+
 function TBidiDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
 begin
   Result := fValuesByKey.Keys;
@@ -858,6 +891,20 @@ end;
 function TBidiDictionary<TKey, TValue>.GetValue(const key: TKey): TValue;
 begin
   Result := fValuesByKey[key];
+end;
+
+function TBidiDictionary<TKey, TValue>.GetValueOrDefault(
+  const key: TKey): TValue;
+begin
+  if not fValuesByKey.TryGetValue(key, Result) then
+    Result := Default(TValue);
+end;
+
+function TBidiDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey;
+  const defaultValue: TValue): TValue;
+begin
+  if not fValuesByKey.TryGetValue(key, Result) then
+    Result := defaultValue;
 end;
 
 function TBidiDictionary<TKey, TValue>.GetValues: IReadOnlyCollection<TValue>;

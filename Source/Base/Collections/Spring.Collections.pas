@@ -1513,6 +1513,18 @@ type
     function ContainsValue(const value: TValue): Boolean;
 
     /// <summary>
+    ///   Gets the value for a given key if a matching key exists in the
+    ///   dictionary; returns the default value otherwise.
+    /// </summary>
+    function GetValueOrDefault(const key: TKey): TValue; overload;
+
+    /// <summary>
+    ///   Gets the value for a given key if a matching key exists in the
+    ///   dictionary; returns the given default value otherwise.
+    /// </summary>
+    function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
+
+    /// <summary>
     ///   Gets the value associated with the specified key.
     /// </summary>
     /// <param name="key">
@@ -1795,6 +1807,18 @@ type
     function ExtractValue(const key: TKey): TValue;
 
     /// <summary>
+    ///   Gets the key for a given value if a matching value exists in the
+    ///   dictionary; returns the default value for <c>TKey</c> otherwise.
+    /// </summary>
+    function GetKeyOrDefault(const value: TValue): TKey; overload;
+
+    /// <summary>
+    ///   Gets the key for a given value if a matching value exists in the
+    ///   dictionary; returns the given default value for <c>TKey</c> otherwise.
+    /// </summary>
+    function GetKeyOrDefault(const value: TValue; const defaultValue: TKey): TKey; overload;
+
+    /// <summary>
     ///   Remove the key/value pair that is currently mapped to the specified
     ///   key.
     /// </summary>
@@ -1813,14 +1837,6 @@ type
     ///   <b>True</b> if the key was found; otherwise, <b>False</b>.
     /// </returns>
     function TryGetKey(const value: TValue; out key: TKey): Boolean;
-
-    /// <summary>
-    ///   Gets the value associated with the specified key.
-    /// </summary>
-    /// <returns>
-    ///   <b>True</b> if the value was found; otherwise, <b>False.</b>
-    /// </returns>
-    function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     property Key[const value: TValue]: TKey read GetKey write SetKey;
     property Value[const key: TKey]: TValue read GetValue write SetValue; default;
