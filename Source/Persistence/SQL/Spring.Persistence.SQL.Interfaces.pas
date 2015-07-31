@@ -37,13 +37,25 @@ uses
   Spring.Persistence.SQL.Types,
   Spring.Persistence.SQL.Params;
 
+const
+  qlAnsiSQL     = 'QUERY_LANGUAGE_ANSI';
+  qlSQLite      = 'QUERY_LANGUAGE_SQLITE';
+  qlMSSQL       = 'QUERY_LANGUAGE_MSSQL';
+  qlASA         = 'QUERY_LANGUAGE_ASA';
+  qlOracle      = 'QUERY_LANGUAGE_ORACLE';
+  qlFirebird    = 'QUERY_LANGUAGE_FIREBIRD';
+  qlPostgreSQL  = 'QUERY_LANGUAGE_POSTGRESQL';
+  qlMySQL       = 'QUERY_LANGUAGE_MYSQL';
+  qlNoSQL       = 'QUERY_LANGUAGE_NOSQL';
+  qlMongoDB     = 'QUERY_LANGUAGE_MONGODB';
+
 type
+  TQueryLanguage = type string;
+
   ICommandExecutionListener = interface
     ['{590E86C8-0B05-4BFE-9B26-3A9A4D0510BF}']
     procedure ExecutingCommand(const command: string; const list: IList);
   end;
-
-  TQueryLanguage = (qlAnsiSQL = 0, qlSQLite, qlMSSQL, qlASA, qlOracle, qlFirebird, qlPostgreSQL, qlMySQL, qlNoSQL, qlMongoDB);
 
   ISQLGenerator = interface
     ['{8F46D275-50E4-4DE8-9E56-7D6599935E32}']

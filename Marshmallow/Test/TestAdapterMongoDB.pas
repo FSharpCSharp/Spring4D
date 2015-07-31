@@ -155,7 +155,7 @@ type
     procedure TestIsConnected;
     procedure TestCreateStatement;
     procedure TestBeginTransaction;
-    procedure TestGetDriverName;
+    procedure TestGetQueryLanguage;
   end;
 
   TMongoSessionTest = class(TTestCase)
@@ -522,12 +522,9 @@ begin
   CheckTrue(Assigned(LTran));
 end;
 
-procedure TMongoConnectionAdapterTest.TestGetDriverName;
-var
-  LDriverName: string;
+procedure TMongoConnectionAdapterTest.TestGetQueryLanguage;
 begin
-  LDriverName := FMongoConnectionAdapter.GetDriverName;
-  CheckEquals('MongoDB', LDriverName);
+  CheckEquals(qlMongoDB, FMongoConnectionAdapter.QueryLanguage);
 end;
 
 {$ENDREGION}

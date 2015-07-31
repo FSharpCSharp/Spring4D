@@ -86,7 +86,6 @@ type
     function IsConnected: Boolean; override;
     function CreateStatement: IDBStatement; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
   end;
 
   /// <summary>
@@ -283,11 +282,6 @@ procedure TZeosConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
     Connection.Connected := False;
-end;
-
-function TZeosConnectionAdapter.GetDriverName: string;
-begin
-  Result := DRIVER_ZEOS;
 end;
 
 function TZeosConnectionAdapter.IsConnected: Boolean;

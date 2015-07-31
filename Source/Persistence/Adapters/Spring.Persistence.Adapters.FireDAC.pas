@@ -83,7 +83,6 @@ type
     function IsConnected: Boolean; override;
     function CreateStatement: IDBStatement; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
   end;
 
   TFireDACTransactionAdapter = class(TDriverTransactionAdapter<TFDTransaction>)
@@ -298,11 +297,6 @@ procedure TFireDACConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
     Connection.Connected := False;
-end;
-
-function TFireDACConnectionAdapter.GetDriverName: string;
-begin
-  Result := 'FireDAC';
 end;
 
 function TFireDACConnectionAdapter.IsConnected: Boolean;

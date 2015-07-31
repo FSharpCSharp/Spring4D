@@ -55,8 +55,8 @@ type
   /// </summary>
   TOracleConnectionAdapter = class(TADOConnectionAdapter)
   public
+    procedure AfterConstruction; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
     function CreateStatement: IDBStatement; override;
   end;
 
@@ -77,10 +77,17 @@ uses
   {$ENDIF}
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts,
-  Spring.Persistence.SQL.Generators.Oracle;
+  Spring.Persistence.SQL.Generators.Oracle,
+  Spring.Persistence.SQL.Interfaces;
 
 
 {$REGION 'TOracleConnectionAdapter'}
+
+procedure TOracleConnectionAdapter.AfterConstruction;
+begin
+  inherited;
+  QueryLanguage := qlOracle;
+end;
 
 function TOracleConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
@@ -111,11 +118,6 @@ begin
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
   end;
-end;
-
-function TOracleConnectionAdapter.GetDriverName: string;
-begin
-  Result := DRIVER_ORACLE;
 end;
 
 {$ENDREGION}

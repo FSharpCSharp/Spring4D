@@ -130,12 +130,12 @@ type
   /// </summary>
   TMongoConnectionAdapter = class(TDriverConnectionAdapter<TMongoDBConnection>, IDBConnection)
   public
+    procedure AfterConstruction; override;
     procedure Connect; override;
     procedure Disconnect; override;
     function IsConnected: Boolean; override;
     function CreateStatement: IDBStatement; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
   end;
 
   /// <summary>
@@ -162,7 +162,9 @@ uses
   Variants,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.SQL.Commands,
-  Spring.Persistence.SQL.Generators.MongoDB;
+  Spring.Persistence.SQL.Generators.MongoDB,
+  Spring.Persistence.SQL.Interfaces;
+
 
 const
   MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'SO', 'page');
@@ -537,6 +539,12 @@ end;
 
 {$REGION 'TMongoConnectionAdapter'}
 
+procedure TMongoConnectionAdapter.AfterConstruction;
+begin
+  inherited;
+  QueryLanguage := qlMongoDB;
+end;
+
 function TMongoConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
   if Assigned(Connection) then
@@ -569,11 +577,6 @@ procedure TMongoConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
     Connection.Connected := False;
-end;
-
-function TMongoConnectionAdapter.GetDriverName: string;
-begin
-  Result := 'MongoDB';
 end;
 
 function TMongoConnectionAdapter.IsConnected: Boolean;

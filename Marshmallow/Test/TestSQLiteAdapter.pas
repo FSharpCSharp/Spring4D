@@ -53,7 +53,7 @@ type
     procedure TestIsConnected;
     procedure TestCreateStatement;
     procedure TestBeginTransaction;
-    procedure TestGetDriverName;
+    procedure TestGetQueryLanguage;
   end;
 
   TSQLiteTransactionAdapterTest = class(TTestCase)
@@ -72,7 +72,8 @@ type
 implementation
 
 uses
-  DB;
+  DB,
+  Spring.Persistence.SQL.Interfaces;
 
 var
   TestDB: TSQLiteDatabase = nil;
@@ -359,13 +360,9 @@ begin
   CheckTrue(ReturnValue.TransactionName <> '');
 end;
 
-procedure TSQLiteConnectionAdapterTest.TestGetDriverName;
-var
-  ReturnValue: string;
+procedure TSQLiteConnectionAdapterTest.TestGetQueryLanguage;
 begin
-  ReturnValue := FSQLiteConnectionAdapter.GetDriverName;
-
-  CheckEqualsString('SQLite3', ReturnValue);
+  CheckEquals(qlSQLite, FSQLiteConnectionAdapter.QueryLanguage);
 end;
 
 function TSQLiteTransactionAdapterTest.CreateAndBeginTransaction: TSQLiteTransactionAdapter;

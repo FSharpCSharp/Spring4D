@@ -19,7 +19,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure GetDriverName;
+    procedure TestGetQueryLanguage;
   end;
 
   TOracleSessionTest = class(TTestCase)
@@ -66,6 +66,7 @@ uses
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types,
   Spring.Persistence.SQL.Commands,
+  Spring.Persistence.SQL.Interfaces,
   Spring.Reflection;
 
 const
@@ -141,9 +142,9 @@ end;
 
 {$REGION 'TOracleConnectionAdapterTest'}
 
-procedure TOracleConnectionAdapterTest.GetDriverName;
+procedure TOracleConnectionAdapterTest.TestGetQueryLanguage;
 begin
-  CheckEquals('Oracle', FConnectionAdapter.GetDriverName);
+  CheckEquals(qlOracle, FConnectionAdapter.QueryLanguage);
 end;
 
 procedure TOracleConnectionAdapterTest.SetUp;

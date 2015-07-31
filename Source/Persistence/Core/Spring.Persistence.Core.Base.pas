@@ -75,20 +75,17 @@ type
     function GetExecutionListeners: IList<TExecutionListenerProc>;
     function GetQueryLanguage: TQueryLanguage;
     procedure SetAutoFreeConnection(value: Boolean);
-    procedure SetQueryLanguage(value: TQueryLanguage);
+    procedure SetQueryLanguage(const value: TQueryLanguage);
   protected
     procedure Connect; virtual; abstract;
     procedure Disconnect; virtual; abstract;
     function IsConnected: Boolean; virtual; abstract;
     function CreateStatement: IDBStatement; virtual; abstract;
     function BeginTransaction: IDBTransaction; virtual;
-    function GetDriverName: string; virtual; abstract;
     function GetTransactionName: string; virtual;
     function GenerateNewID: Integer; virtual;
     procedure AddExecutionListener(const listenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners;
-
-    function TryResolveQueryLanguage(out queryLanguage: TQueryLanguage): Boolean; virtual;
   public
     constructor Create(const connection: T); virtual;
     destructor Destroy; override;
@@ -255,7 +252,6 @@ begin
   fTransationId := 0;
   fAllowServerSideCursor := True;
   fAutoFreeConnection := False;
-  TryResolveQueryLanguage(fQueryLanguage);
 end;
 
 destructor TDriverConnectionAdapter<T>.Destroy;
@@ -297,42 +293,9 @@ begin
   fAutoFreeConnection := value;
 end;
 
-procedure TDriverConnectionAdapter<T>.SetQueryLanguage(value: TQueryLanguage);
+procedure TDriverConnectionAdapter<T>.SetQueryLanguage(const value: TQueryLanguage);
 begin
   fQueryLanguage := value;
-end;
-
-function TDriverConnectionAdapter<T>.TryResolveQueryLanguage(
-  out queryLanguage: TQueryLanguage): Boolean;
-var
-  driverName: string;
-begin
-  Result := True;
-  driverName := GetDriverName;
-
-  if ContainsText(driverName, DRIVER_MSSQL) then
-    queryLanguage := qlMSSQL
-  else if ContainsText(driverName, DRIVER_SQLITE) then
-    queryLanguage := qlSQLite
-  else if ContainsText(driverName, DRIVER_ORACLE) then
-    queryLanguage := qlOracle
-  else if ContainsText(driverName, DRIVER_SYBASE_ASA) then
-    queryLanguage := qlASA
-  else if ContainsText(driverName, DRIVER_MYSQL) then
-    queryLanguage := qlMySQL
-  else if ContainsText(driverName, DRIVER_UIB) then
-    queryLanguage := qlFirebird
-  else if ContainsText(driverName, DRIVER_FIREBIRD) then
-    queryLanguage := qlFirebird
-  else if ContainsText(driverName, DRIVER_POSTGRESQL) then
-    queryLanguage := qlPostgreSQL
-  else if ContainsText(driverName, DRIVER_MONGODB) then
-    queryLanguage := qlMongoDB
-  else
-  begin
-    Result := False;
-    queryLanguage := qlAnsiSQL;
-  end;
 end;
 
 {$ENDREGION}

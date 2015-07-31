@@ -87,7 +87,6 @@ type
     function IsConnected: Boolean; override;
     function CreateStatement: IDBStatement; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
   end;
 
   /// <summary>
@@ -301,11 +300,6 @@ procedure TADOConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
     Connection.Connected := False;
-end;
-
-function TADOConnectionAdapter.GetDriverName: string;
-begin
-  Result := DRIVER_ADO;
 end;
 
 function TADOConnectionAdapter.IsConnected: Boolean;

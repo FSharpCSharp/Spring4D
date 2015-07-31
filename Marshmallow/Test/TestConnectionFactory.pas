@@ -21,10 +21,10 @@ type
 implementation
 
 uses
-  SQLiteTable3
-  ,Spring.Persistence.Adapters.SQLite
-  ,TestEntities
-  ;
+  SQLiteTable3,
+  Spring.Persistence.Adapters.SQLite,
+  Spring.Persistence.SQL.Interfaces,
+  TestEntities;
 
 procedure TConnectionFactoryTest.TestGetInstance;
 var
@@ -51,7 +51,7 @@ var
 begin
   ReturnValue := TConnectionFactory.GetInstance(dtSQLite, JSON_SQLITE);
   CheckTrue(Assigned(ReturnValue));
-  CheckEqualsString('SQLite3', ReturnValue.GetDriverName);
+  CheckEquals(qlSQLite, ReturnValue.QueryLanguage);
   CheckTrue(ReturnValue.IsConnected);
 end;
 
@@ -66,7 +66,7 @@ begin
   sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
   ReturnValue := TConnectionFactory.GetInstanceFromFile(dtSQLite, sDir + FILE_JSON);
   CheckTrue(Assigned(ReturnValue));
-  CheckEqualsString('SQLite3', ReturnValue.GetDriverName);
+  CheckEquals(qlSQLite, ReturnValue.QueryLanguage);
   CheckTrue(ReturnValue.IsConnected);
 end;
 

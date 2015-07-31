@@ -56,13 +56,13 @@ type
     class constructor Create;
     class destructor Destroy;
 
-    class function GetInstance(key: TDBDriverType;
+    class function GetInstance(const key: TDBDriverType;
       const externalConnection: TObject): IDBConnection; overload;
-    class function GetInstance(key: TDBDriverType;
+    class function GetInstance(const key: TDBDriverType;
       const jsonString: string): IDBConnection; overload;
-    class function GetInstanceFromFile(key: TDBDriverType;
+    class function GetInstanceFromFile(const key: TDBDriverType;
       const jsonFilename: string): IDBConnection;
-    class procedure RegisterConnection<T: class, IDBConnection>(key: TDBDriverType);
+    class procedure RegisterConnection<T: class, IDBConnection>(const key: TDBDriverType);
   end;
 
  implementation
@@ -114,7 +114,7 @@ begin
     .GetInterface(IDBConnection, Result);
 end;
 
-class function TConnectionFactory.GetInstance(key: TDBDriverType;
+class function TConnectionFactory.GetInstance(const key: TDBDriverType;
   const externalConnection: TObject): IDBConnection;
 var
   connectionClass: TClass;
@@ -127,7 +127,7 @@ begin
     raise EORMUnsupportedType.Create('Connection type not supported');
 end;
 
-class function TConnectionFactory.GetInstance(key: TDBDriverType;
+class function TConnectionFactory.GetInstance(const key: TDBDriverType;
   const jsonString: string): IDBConnection;
 var
   externalConnection: TObject;
@@ -149,7 +149,7 @@ begin
   Result.AutoFreeConnection := True;
 end;
 
-class function TConnectionFactory.GetInstanceFromFile(key: TDBDriverType;
+class function TConnectionFactory.GetInstanceFromFile(const key: TDBDriverType;
   const jsonFilename: string): IDBConnection;
 var
   fileStream: TStringStream;
@@ -164,7 +164,7 @@ begin
   end;
 end;
 
-class procedure TConnectionFactory.RegisterConnection<T>(key: TDBDriverType);
+class procedure TConnectionFactory.RegisterConnection<T>(const key: TDBDriverType);
 begin
   if fRegistered.ContainsKey(key) then
     raise EORMConnectionAlreadyRegistered.Create('Connection already registered');

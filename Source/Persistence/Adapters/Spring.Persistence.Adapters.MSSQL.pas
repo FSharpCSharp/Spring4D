@@ -60,8 +60,8 @@ type
   /// </summary>
   TMSSQLConnectionAdapter = class(TADOConnectionAdapter)
   public
+    procedure AfterConstruction; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
   end;
 
   /// <summary>
@@ -80,10 +80,17 @@ implementation
 uses
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts,
-  Spring.Persistence.SQL.Generators.MSSQL;
+  Spring.Persistence.SQL.Generators.MSSQL,
+  Spring.Persistence.SQL.Interfaces;
 
 
 {$REGION 'TMSSQLConnectionAdapter'}
+
+procedure TMSSQLConnectionAdapter.AfterConstruction;
+begin
+  inherited;
+  QueryLanguage := qlMSSQL;
+end;
 
 function TMSSQLConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
@@ -98,11 +105,6 @@ begin
   end
   else
     Result := nil;
-end;
-
-function TMSSQLConnectionAdapter.GetDriverName: string;
-begin
-  Result := DRIVER_MSSQL;
 end;
 
 {$ENDREGION}

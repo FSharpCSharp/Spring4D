@@ -70,12 +70,12 @@ type
   /// </summary>
   TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>)
   public
+    procedure AfterConstruction; override;
     procedure Connect; override;
     procedure Disconnect; override;
     function IsConnected: Boolean; override;
     function CreateStatement: IDBStatement; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
   end;
 
   /// <summary>
@@ -94,7 +94,8 @@ implementation
 uses
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts,
-  Spring.Persistence.SQL.Generators.SQLite3;
+  Spring.Persistence.SQL.Generators.SQLite3,
+  Spring.Persistence.SQL.Interfaces;
 
 
 {$REGION 'TSQLiteResultSetAdapter'}
@@ -181,6 +182,12 @@ end;
 
 {$REGION 'TSQLiteConnectionAdapter'}
 
+procedure TSQLiteConnectionAdapter.AfterConstruction;
+begin
+  inherited;
+  QueryLanguage := qlSQLite;
+end;
+
 function TSQLiteConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
   if Assigned(Connection) then
@@ -225,11 +232,6 @@ end;
 function TSQLiteConnectionAdapter.IsConnected: Boolean;
 begin
   Result := Assigned(Connection) and Connection.Connected;
-end;
-
-function TSQLiteConnectionAdapter.GetDriverName: string;
-begin
-  Result := DRIVER_SQLITE;
 end;
 
 {$ENDREGION}

@@ -87,12 +87,12 @@ type
   public
     destructor Destroy; override;
 
+    procedure AfterConstruction;
     procedure Connect; override;
     procedure Disconnect; override;
     function IsConnected: Boolean; override;
     function CreateStatement: IDBStatement; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
   end;
 
   /// <summary>
@@ -116,8 +116,8 @@ uses
   StrUtils,
   SysUtils,
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.Core.Consts,
-  Spring.Persistence.SQL.Register;
+  Spring.Persistence.SQL.Firebird,
+  Spring.Persistence.SQL.Interfaces;
 
 
 {$REGION 'TUIBResultSetAdapter'}
@@ -274,6 +274,12 @@ begin
   inherited Destroy;
 end;
 
+procedure TUIBConnectionAdapter.AfterConstruction;
+begin
+  inherited;
+  QueryLanguage := qlFirebird;
+end;
+
 function TUIBConnectionAdapter.BeginTransaction: IDBTransaction;
 var
   transaction: TUIBTransaction;
@@ -332,11 +338,6 @@ procedure TUIBConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
     Connection.Connected := False;
-end;
-
-function TUIBConnectionAdapter.GetDriverName: string;
-begin
-  Result := DRIVER_UIB;
 end;
 
 function TUIBConnectionAdapter.IsConnected: Boolean;

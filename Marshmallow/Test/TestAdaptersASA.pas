@@ -16,7 +16,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestGetDriverName;
+    procedure TestGetQueryLanguage;
   end;
 
   TASASQLGeneratorTest = class(TTestCase)
@@ -30,6 +30,9 @@ type
   end;
 
 implementation
+
+uses
+  Spring.Persistence.SQL.Interfaces;
 
 
 {$REGION 'TASAConnectionAdapterTest'}
@@ -45,12 +48,9 @@ begin
   FASAConnectionAdapter.Free;
 end;
 
-procedure TASAConnectionAdapterTest.TestGetDriverName;
-var
-  ReturnValue: string;
+procedure TASAConnectionAdapterTest.TestGetQueryLanguage;
 begin
-  ReturnValue := FASAConnectionAdapter.GetDriverName;
-  CheckEqualsString('ASA', ReturnValue);
+  CheckEquals(qlASA, FASAConnectionAdapter.QueryLanguage);
 end;
 
 {$ENDREGION}

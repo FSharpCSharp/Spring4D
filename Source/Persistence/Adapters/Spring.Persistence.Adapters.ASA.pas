@@ -51,8 +51,8 @@ type
   /// </summary>
   TASAConnectionAdapter = class(TADOConnectionAdapter)
   public
+    procedure AfterConstruction; override;
     function BeginTransaction: IDBTransaction; override;
-    function GetDriverName: string; override;
   end;
 
   /// <summary>
@@ -69,10 +69,17 @@ implementation
 uses
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts,
-  Spring.Persistence.SQL.Generators.ASA;
+  Spring.Persistence.SQL.Generators.ASA,
+  Spring.Persistence.SQL.Interfaces;
 
 
 {$REGION 'TASAConnectionAdapter'}
+
+procedure TASAConnectionAdapter.AfterConstruction;
+begin
+  inherited;
+  QueryLanguage := qlASA;
+end;
 
 function TASAConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
@@ -87,11 +94,6 @@ begin
   end
   else
     Result := nil;
-end;
-
-function TASAConnectionAdapter.GetDriverName: string;
-begin
-  Result := DRIVER_SYBASE_ASA;
 end;
 
 {$ENDREGION}

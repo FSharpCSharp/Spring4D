@@ -46,7 +46,7 @@ type
     procedure TestIsConnected;
     procedure TestCreateStatement;
     procedure TestBeginTransaction;
-    procedure TestGetDriverName;
+    procedure TestGetQueryLanguage;
   end;
 
   TestTUIBRegression = class(TTestCase)
@@ -229,9 +229,9 @@ begin
   CheckTrue(FConnection.IsConnected);
 end;
 
-procedure TestTUIBConnectionAdapter.TestGetDriverName;
+procedure TestTUIBConnectionAdapter.TestGetQueryLanguage;
 begin
-  CheckEqualsString('UIB', FConnection.GetDriverName);
+  CheckEquals(qlFirebird, FConnection.QueryLanguage);
 end;
 
 procedure TestTUIBConnectionAdapter.TestIsConnected;

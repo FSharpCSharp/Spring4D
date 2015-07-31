@@ -43,7 +43,7 @@ uses
   Spring.Persistence.SQL.Types;
 
 const
-  dtSQLite  = 'DRIVER_TYPE_SQLite';
+  dtSQLite  = 'DRIVER_TYPE_SQLITE';
   dtADO     = 'DRIVER_TYPE_ADO';
   dtMSSQL   = 'DRIVER_TYPE_MSSQL';
   dtASA     = 'DRIVER_TYPE_ASA';
@@ -129,7 +129,7 @@ type
     function GetExecutionListeners: IList<TExecutionListenerProc>;
     function GetQueryLanguage: TQueryLanguage;
     procedure SetAutoFreeConnection(value: Boolean);
-    procedure SetQueryLanguage(value: TQueryLanguage);
+    procedure SetQueryLanguage(const value: TQueryLanguage);
   {$ENDREGION}
 
     procedure Connect;
@@ -137,7 +137,6 @@ type
     function IsConnected: Boolean;
     function CreateStatement: IDBStatement;
     function BeginTransaction: IDBTransaction;
-    function GetDriverName: string;
 
     procedure AddExecutionListener(const listenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners;
