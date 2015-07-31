@@ -231,7 +231,7 @@ var
 begin
   paramName := param.GetNormalizedParamName;
   parameter := Statement.Parameters.ParamByName(paramName);
-  parameter.Value := param.ToVariant(parameter.DataType);
+  parameter.Value := param.ToVariant;
   if VarIsNull(parameter.Value) or VarIsEmpty(parameter.Value) then
     parameter.DataType := param.ParamType;
 end;

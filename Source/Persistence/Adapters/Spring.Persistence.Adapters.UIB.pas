@@ -75,6 +75,7 @@ type
     destructor Destroy; override;
 
     procedure SetSQLCommand(const commandText: string); override;
+    procedure SetParam(const param: TDBParam);
     procedure SetParams(const params: IEnumerable<TDBParam>); override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
@@ -87,7 +88,7 @@ type
   public
     destructor Destroy; override;
 
-    procedure AfterConstruction;
+    procedure AfterConstruction; override;
     procedure Connect; override;
     procedure Disconnect; override;
     function IsConnected: Boolean; override;
@@ -116,7 +117,8 @@ uses
   StrUtils,
   SysUtils,
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.SQL.Firebird,
+  Spring.Persistence.Core.Consts,
+  Spring.Persistence.SQL.Generators.Firebird,
   Spring.Persistence.SQL.Interfaces;
 
 
@@ -237,21 +239,21 @@ begin
   end;
 end;
 
-procedure TUIBStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
+procedure TUIBStatementAdapter.SetParam(const param: TDBParam);
 var
-  param: TDBParam;
   paramName: string;
 begin
-  inherited SetParams(params);
+  paramName := param.Name;
+  // strip leading : in param name because UIB does not like them
+  if StartsStr(':', param.Name) then
+    paramName := Copy(param.Name, 2, Length(param.Name));
+  Statement.Params.ByNameAsVariant[paramName] := param.ToVariant;
+end;
 
-  for param in params do
-  begin
-    paramName := param.Name;
-    // strip leading : in param name because UIB does not like them
-    if StartsStr(':', param.Name) then
-      paramName := Copy(param.Name, 2, Length(param.Name));
-    Statement.Params.ByNameAsVariant[paramName] := param.Value;
-  end;
+procedure TUIBStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
+begin
+  inherited;
+  params.ForEach(SetParam);
 end;
 
 procedure TUIBStatementAdapter.SetSQLCommand(const commandText: string);

@@ -209,16 +209,13 @@ begin
   paramName := param.Name;
   if StartsStr(':', param.Name) then
     paramName := Copy(param.Name, 2, Length(param.Name));
-  Statement.Params.ParamValues[paramName] := param.Value;
+  Statement.Params.ParamValues[paramName] := param.ToVariant;
 end;
 
 procedure TZeosStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
-var
-  param: TDBParam;
 begin
   inherited;
-  for param in params do
-    SetParam(param);
+  params.ForEach(SetParam);
 end;
 
 procedure TZeosStatementAdapter.SetSQLCommand(const commandText: string);

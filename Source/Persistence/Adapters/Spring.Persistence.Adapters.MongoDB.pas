@@ -118,6 +118,7 @@ type
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); override;
+    procedure SetParam(const param: TDBParam);
     procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
@@ -486,35 +487,36 @@ begin
   Result := StartsText('ObjectID("', value);
 end;
 
-procedure TMongoStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
+procedure TMongoStatementAdapter.SetParam(const param: TDBParam);
 var
-  param: TDBParam;
   value: string;
+begin
+  if VarType(param.ToVariant) = varUnknown then
+    Exit;
+  value := VarToStrDef(param.ToVariant, 'null');
+  case VarType(param.ToVariant) of
+    varString, varUString, varStrArg, varOleStr:
+    begin
+      if IsObjectId(value) then   //ObjectID("sdsd457845")
+      begin
+        value := ReplaceStr(value, '"', '\"');
+        value := Format('"%S"', [value]);
+      end
+      else
+        value := AnsiQuotedStr(value, '"');
+    end;
+  end;
+
+  fStatementText := StringReplace(fStatementText, param.Name, value, [rfReplaceAll]);
+end;
+
+procedure TMongoStatementAdapter.SetParams(const params: IEnumerable<TDBParam>);
 begin
   inherited;
   if fStatementText = '' then
     Exit;
 
-  for param in params do
-  begin
-    if VarType(param.ToVariant) = varUnknown then
-      Continue;
-    value := VarToStrDef(param.ToVariant, 'null');
-    case VarType(param.ToVariant) of
-      varString, varUString, varStrArg, varOleStr:
-      begin
-        if IsObjectId(value) then   //ObjectID("sdsd457845")
-        begin
-          value := ReplaceStr(value, '"', '\"');
-          value := Format('"%S"', [value]);
-        end
-        else
-          value := AnsiQuotedStr(value, '"');
-      end;
-    end;
-
-    fStatementText := StringReplace(fStatementText, param.Name, value, [rfReplaceAll]);
-  end;
+  params.ForEach(SetParam);
 end;
 
 procedure TMongoStatementAdapter.SetQuery(const metadata: TQueryMetadata;
