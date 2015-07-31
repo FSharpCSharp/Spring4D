@@ -60,14 +60,13 @@ begin
   end;
 end;
 
-
 procedure TDatabaseManagerTest.SetUp;
 var
   sDir: string;
 begin
   inherited;
   sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
-  FConnection := TConnectionFactory.GetInstanceFromFilename(dtSQLite, sDir + FILE_CONN_SQLITE);
+  FConnection := TConnectionFactory.GetInstanceFromFile(dtSQLite, sDir + FILE_CONN_SQLITE);
   FDatabaseManager := TDatabaseManager.Create(FConnection);
 end;
 

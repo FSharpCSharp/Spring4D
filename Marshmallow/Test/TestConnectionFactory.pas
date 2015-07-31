@@ -64,7 +64,7 @@ var
   sDir: string;
 begin
   sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
-  ReturnValue := TConnectionFactory.GetInstanceFromFilename(dtSQLite, sDir + FILE_JSON);
+  ReturnValue := TConnectionFactory.GetInstanceFromFile(dtSQLite, sDir + FILE_JSON);
   CheckTrue(Assigned(ReturnValue));
   CheckEqualsString('SQLite3', ReturnValue.GetDriverName);
   CheckTrue(ReturnValue.IsConnected);
