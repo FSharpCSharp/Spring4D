@@ -42,10 +42,23 @@ uses
   Spring.Persistence.SQL.Params,
   Spring.Persistence.SQL.Types;
 
-type
-  TDBDriverType = (dtSQLite = 0, {$IFDEF MSWINDOWS}dtADO, dtMSSQL, dtASA, dtOracle,{$ENDIF} dtDBX, dtUIB, dtZeos, dtMongo, dtFireDAC);
+const
+  dtSQLite  = 'DRIVER_TYPE_SQLite';
+  dtADO     = 'DRIVER_TYPE_ADO';
+  dtMSSQL   = 'DRIVER_TYPE_MSSQL';
+  dtASA     = 'DRIVER_TYPE_ASA';
+  dtOracle  = 'DRIVER_TYPE_ORACLE';
+  dtDBX     = 'DRIVER_TYPE_DBX';
+  dtUIB     = 'DRIVER_TYPE_UIB';
+  dtZeos    = 'DRIVER_TYPE_ZEOS';
+  dtMongo   = 'DRIVER_TYPE_MONGO';
+  dtFireDAC = 'DRIVER_TYPE_FIREDAC';
 
-  TExecutionListenerProc = reference to procedure(const command: string; const params: IEnumerable<TDBParam>);
+type
+  TDBDriverType = type string;
+
+  TExecutionListenerProc = reference to procedure(const command: string;
+    const params: IEnumerable<TDBParam>);
 
   IFieldCache = interface(IInvokable)
     ['{11B51ABB-0C29-40CA-A2C1-623CBFF86F4F}']
@@ -275,39 +288,6 @@ type
     ///     </c>
     /// </example>
     function FindWhere(const expression: ICriterion): IList<T>; overload;
-  end;
-
-  IEmbeddedEntity = interface(IInvokable)
-    ['{49A1BF38-F54D-4888-8189-02CA34B01D04}']
-    function IsObject: Boolean;
-    function IsArray: Boolean;
-    function GetValue(const fieldName: string): Variant;
-  end;
-
-  IEntitySerializer = interface
-    ['{BF7320F9-2B57-4B8C-997D-2F157D626D0D}']
-  end;
-
-  IODBC = interface
-    ['{7A235A2E-1ABA-4AD6-A6FD-276A16374596}']
-    function GetDatasources: TArray<string>;
-  end;
-
-  ICollectionEnumerator<T: class, constructor> = interface(IInvokable)
-    ['{B1908786-00B2-454E-9D87-054A0A2CE8B3}']
-    function GetCurrent: T;
-    function MoveNext: Boolean;
-    property Current: T read GetCurrent;
-  end;
-
-  ICollectionAdapter<T: class, constructor> = interface(IInvokable)
-    ['{378C9FEF-BAE0-4C47-A21E-7A8A510C6757}']
-    procedure Add(const entity: T);
-    procedure Clear;
-    function Count: Integer;
-    function GetEnumerator: ICollectionEnumerator<T>;
-
-    function IsAddSupported: Boolean;
   end;
 
   IEntityWrapper = interface(IInvokable)
