@@ -160,6 +160,7 @@ type
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;
     class operator Explicit(const specification: ISpecification<T>): TSpecification<T>;
+    class operator Explicit(const specification: TPredicate<T>): TSpecification<T>;
     class operator Explicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator LogicalAnd(const left, right: TSpecification<T>): TSpecification<T>;
     class operator LogicalOr(const left, right: TSpecification<T>): TSpecification<T>;
@@ -392,6 +393,12 @@ begin
 end;
 
 class operator TSpecification<T>.Implicit(
+  const specification: TPredicate<T>): TSpecification<T>;
+begin
+  TPredicate<T>(Result.fSpecification) := specification;
+end;
+
+class operator TSpecification<T>.Implicit(
   const specification: TSpecification<T>): ISpecification<T>;
 begin
   Result := specification.fSpecification;
@@ -403,16 +410,16 @@ begin
   ISpecification<T>(Result) := specification.fSpecification;
 end;
 
-class operator TSpecification<T>.Implicit(
-  const specification: TPredicate<T>): TSpecification<T>;
-begin
-  TPredicate<T>(Result.fSpecification) := specification;
-end;
-
 class operator TSpecification<T>.Explicit(
   const specification: ISpecification<T>): TSpecification<T>;
 begin
   Result.fSpecification := specification;
+end;
+
+class operator TSpecification<T>.Explicit(
+  const specification: TPredicate<T>): TSpecification<T>;
+begin
+  TPredicate<T>(Result.fSpecification) := specification;
 end;
 
 class operator TSpecification<T>.Explicit(
