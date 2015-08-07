@@ -111,7 +111,7 @@ type
   ///   Class which holds cached data of annotated entities.
   /// </summary>
   TEntityCache = class
-  private
+  strict private
     class var fEntities: IDictionary<TClass,TEntityData>;
     class var fCriticalSection: ICriticalSection;
   public

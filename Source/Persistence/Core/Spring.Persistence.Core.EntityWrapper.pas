@@ -17,8 +17,11 @@ type
     fColumnsData: TColumnDataList;
     function GetEntity: TObject;
     function GetColumnsData: TColumnDataList;
+    procedure SetEntity(const value: TObject);
   public
-    constructor Create(const entity: TObject; const columnsData: TColumnDataList = nil);
+    constructor Create(const entity: TObject;
+      const columnsData: TColumnDataList = nil); overload;
+    constructor Create(entityClass: TClass); overload;
 
     function GetPrimaryKeyValue: TValue; overload;
     function GetPrimaryKeyValue(const resultSet: IDBResultSet): TValue; overload;
@@ -62,6 +65,13 @@ begin
   fColumnsData := columnsData;
   if not Assigned(fColumnsData) then
     fColumnsData := fEntityClassData.ColumnsData;
+end;
+
+constructor TEntityWrapper.Create(entityClass: TClass);
+begin
+  inherited Create;
+  fEntityClassData := TEntityCache.Get(entityClass);
+  fColumnsData := fEntityClassData.ColumnsData;
 end;
 
 function TEntityWrapper.GetColumnsData: TColumnDataList;
@@ -146,6 +156,11 @@ begin
       raise EORMInvalidConversion.CreateFmt('Error while setting member %s - converting %s to %s failed',
         [member.Name, value.TypeInfo.TypeName, member.MemberType.Name]);
   end;
+end;
+
+procedure TEntityWrapper.SetEntity(const value: TObject);
+begin
+  fEntity := value;
 end;
 
 procedure TEntityWrapper.SetPrimaryKeyValue(const value: TValue);

@@ -62,7 +62,8 @@ begin
     for entity in ACollection do
     begin
       entityWrapper := TEntityWrapper.Create(entity);
-      SetLazyColumns(entityWrapper);
+      {$MESSAGE HINT 'fix me'}
+//      SetLazyColumns(entityWrapper);
       AttachEntity(entityWrapper);
     end;
     inserter.BulkExecute<T>(ACollection);

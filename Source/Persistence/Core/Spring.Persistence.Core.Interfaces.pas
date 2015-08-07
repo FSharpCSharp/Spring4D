@@ -299,6 +299,7 @@ type
     function GetForeignKeyColumns: IEnumerable<ForeignJoinColumnAttribute>;
     function GetTableName: string;
     function GetPrimaryKeyValue: TValue; overload;
+    procedure SetEntity(const value: TObject);
   {$ENDREGION}
 
     function GetValue(const member: TRttiMember): TValue;
@@ -310,7 +311,7 @@ type
     function HasOneToManyRelations: Boolean;
     function HasManyToOneRelations: Boolean;
 
-    property Entity: TObject read GetEntity;
+    property Entity: TObject read GetEntity write SetEntity;
     property ColumnsData: TColumnDataList read GetColumnsData;
 
     property TableName: string read GetTableName;
