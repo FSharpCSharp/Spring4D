@@ -884,6 +884,7 @@ type
   private
     fLock: TCriticalSection;
     fIsValueCreated: Boolean;
+    fOwnsObjects: Boolean;
   {$REGION 'Property Accessors'}
     function GetIsValueCreated: Boolean;
     function GetValueNonGeneric: TValue; virtual; abstract;
@@ -930,10 +931,14 @@ type
     ///   The delegate that is invoked to produce the lazily initialized value
     ///   when it is needed.
     /// </param>
+    /// <param name="ownsObject">
+    ///   If <b>true</b> the value - if any got created - will be destroyed
+    ///   when going out of scope. Only when T is a class type.
+    /// </param>
     /// <exception cref="EArgumentNullException">
     ///   <i>valueFactory</i> is <b>nil</b>.
     /// </exception>
-    constructor Create(const valueFactory: TFunc<T>);
+    constructor Create(const valueFactory: TFunc<T>; ownsObject: Boolean = False);
 
     /// <summary>
     ///   Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
@@ -942,7 +947,13 @@ type
     /// <param name="value">
     ///   The initialized value.
     /// </param>
-    constructor CreateFrom(const value: T);
+    /// <param name="ownsObject">
+    ///   If <b>true</b> the value - if any got created - will be destroyed
+    ///   when going out of scope. Only when T is a class type.
+    /// </param>
+    constructor CreateFrom(const value: T; ownsObject: Boolean = False);
+
+    destructor Destroy; override;
 
     /// <summary>
     ///   Gets the lazily initialized value of the current <see cref="TLazy&lt;T&gt;" />
@@ -977,10 +988,14 @@ type
     ///   The delegate that is invoked to produce the lazily initialized value
     ///   when it is needed.
     /// </param>
+    /// <param name="ownsObject">
+    ///   If <b>true</b> the value - if any got created - will be destroyed
+    ///   when going out of scope. Only when T is a class type.
+    /// </param>
     /// <exception cref="EArgumentNullException">
     ///   <i>valueFactory</i> is <b>nil</b>.
     /// </exception>
-    constructor Create(const valueFactory: TFunc<T>);
+    constructor Create(const valueFactory: TFunc<T>; ownsObject: Boolean = False);
 
     /// <summary>
     ///   Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
@@ -989,7 +1004,11 @@ type
     /// <param name="value">
     ///   The initialized value.
     /// </param>
-    constructor CreateFrom(const value: T);
+    /// <param name="ownsObject">
+    ///   If <b>true</b> the value - if any got created - will be destroyed
+    ///   when going out of scope. Only when T is a class type.
+    /// </param>
+    constructor CreateFrom(const value: T; ownsObject: Boolean = False);
 
     class operator Implicit(const value: Lazy<T>): ILazy<T>;
     class operator Implicit(const value: Lazy<T>): T;
@@ -4436,19 +4455,31 @@ end;
 
 {$REGION 'TLazy<T>'}
 
-constructor TLazy<T>.Create(const valueFactory: TFunc<T>);
+constructor TLazy<T>.Create(const valueFactory: TFunc<T>; ownsObject: Boolean);
 begin
   Guard.CheckNotNull(Assigned(valueFactory), 'valueFactory');
 
   inherited Create;
+  fOwnsObjects := ownsObject;
   fValueFactory := valueFactory;
 end;
 
-constructor TLazy<T>.CreateFrom(const value: T);
+constructor TLazy<T>.CreateFrom(const value: T; ownsObject: Boolean);
 begin
   inherited Create;
   fValue := value;
   fIsValueCreated := True;
+  fOwnsObjects := ownsObject;
+end;
+
+destructor TLazy<T>.Destroy;
+begin
+  inherited;
+  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkClass then
+{$IFNDEF AUTOREFCOUNT}
+    if fOwnsObjects then
+      FreeAndNil(fValue);
+{$ENDIF}
 end;
 
 procedure TLazy<T>.EnsureInitialized;
@@ -4487,14 +4518,14 @@ end;
 
 {$REGION 'Lazy<T>'}
 
-constructor Lazy<T>.Create(const valueFactory: TFunc<T>);
+constructor Lazy<T>.Create(const valueFactory: TFunc<T>; ownsObject: Boolean);
 begin
-  fLazy := TLazy<T>.Create(valueFactory);
+  fLazy := TLazy<T>.Create(valueFactory, ownsObject);
 end;
 
-constructor Lazy<T>.CreateFrom(const value: T);
+constructor Lazy<T>.CreateFrom(const value: T; ownsObject: Boolean);
 begin
-  fLazy := TLazy<T>.CreateFrom(value);
+  fLazy := TLazy<T>.CreateFrom(value, ownsObject);
 end;
 
 function Lazy<T>.GetValue: T;
