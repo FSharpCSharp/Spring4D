@@ -54,16 +54,12 @@ type
 
     FProducts: Lazy<IList<TProduct>>;
 
-    //[Column('AVATAR', [], 50, 0, 0, 'Customers avatar')]
-   // FAvatar: Lazy<TPicture>;
-
     [Column('CUSTSTREAM', [], 50, 0, 0, 'Customers stream')]
     FStream: Lazy<TMemoryStream>;
 
     [Column('AVATAR', [], 50, 0, 0, 'Customers avatar')]
-    FAvatarNullable: Lazy<Nullable<TPicture>>;
+    FAvatar: Lazy<TPicture>;
     FStrings: TStrings;
-    procedure SetAvatarLazy(const Value: Nullable<TPicture>);
   public
     FName: string;
     FAge: Integer;
@@ -81,7 +77,6 @@ type
     procedure SetAvatar(const Value: TPicture);
     function GetOrders: IList<TCustomer_Orders>;
     function GetOrdersIntf: IList<TCustomer_Orders>;
-    function GetAvatarLazy: Nullable<TPicture>;
     function GetCustStream: TMemoryStream;
     procedure SetCustStream(const Value: TMemoryStream);
     procedure SetProducts(const Value: IList<TProduct>);
@@ -108,7 +103,6 @@ type
     property CustomerType: TCustomerType read FCustomerType write FCustomerType;
     property Products: IList<TProduct> read GetProducts write SetProducts;
     property Avatar: TPicture read GetAvatar write SetAvatar;
-    property AvatarLazy: Nullable<TPicture> read GetAvatarLazy write SetAvatarLazy;
     property Orders: IList<TCustomer_Orders> read GetOrders;
     property OrdersIntf: IList<TCustomer_Orders> read GetOrdersIntf write SetOrdersIntf;
     property StreamLazy: Lazy<TMemoryStream> read FStream write FStream;
@@ -360,55 +354,41 @@ end;
 destructor TCustomer.Destroy;
 begin
   FStrings.Free;
-{$IFNDEF AUTOREFCOUNT}
-  if FAvatarNullable.IsValueCreated then
-    if FAvatarNullable.Value.HasValue then
-      FAvatarNullable.Value.Value.Free;
-{$ENDIF}
   inherited Destroy;
 end;
 
 function TCustomer.GetAvatar: TPicture;
 begin
-  Result := FAvatarNullable.Value.Value;
-end;
-
-function TCustomer.GetAvatarLazy: Nullable<TPicture>;
-begin
-  Result := FAvatarNullable.Value;
+  Result := FAvatar;
 end;
 
 function TCustomer.GetCustStream: TMemoryStream;
 begin
-  Result := FStream.Value;
+  Result := FStream;
 end;
 
 function TCustomer.GetOrders: IList<TCustomer_Orders>;
 begin
-  Result := FOrders.Value;
+  Result := FOrders;
 end;
 
 function TCustomer.GetOrdersIntf: IList<TCustomer_Orders>;
 begin
-  Result := FOrders.Value;
+  Result := FOrders;
 end;
 
 function TCustomer.GetProducts: IList<TProduct>;
 begin
-  Result := FProducts.Value;
+  Result := FProducts;
 end;
 
 procedure TCustomer.SetAvatar(const Value: TPicture);
 begin
-  if FAvatarNullable.IsAssigned then
-    FAvatarNullable.Value.Value.Assign(Value)
+  if FAvatar.IsValueCreated then
+    FAvatar.Value.Assign(Value)
   else
-    FAvatarNullable.CreateFrom(Value);
-end;
-
-procedure TCustomer.SetAvatarLazy(const Value: Nullable<TPicture>);
-begin
-  FAvatarNullable := Value;
+    // take ownership
+    FAvatar.CreateFrom(Value, True);
 end;
 
 procedure TCustomer.SetCustStream(const Value: TMemoryStream);

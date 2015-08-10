@@ -73,7 +73,6 @@ uses
   StrUtils,
   SysUtils,
   TypInfo,
-//  Variants,
   Spring.Persistence.Core.Exceptions;
 
 

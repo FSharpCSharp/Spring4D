@@ -155,13 +155,10 @@ var
 begin
   rttiType := TType.GetType(typeInfo);
   if rttiType = nil then
-    raise EORMUnsupportedType.CreateFmt('Cannot get type information from %s', [typeInfo.TypeName]);
-
-  if rttiType.IsGenericTypeOf('IEnumerable<>') then
-    Exit(GetEntityRttiType(rttiType.GetGenericArguments[0].Handle));
+    raise EORMUnsupportedType.CreateFmt('Type %s must contain RTTI', [typeInfo.TypeName]);
 
   if not rttiType.IsInstance then
-    raise EORMUnsupportedType.CreateFmt('Type %s must be a class type.', [typeInfo.TypeName]);
+    raise EORMUnsupportedType.CreateFmt('Type %s must be a class type', [typeInfo.TypeName]);
 
   if not rttiType.HasCustomAttribute<TableAttribute>(True) then
     raise EORMUnsupportedType.CreateFmt('Type %s requires [Table] attribute', [typeInfo.TypeName]);

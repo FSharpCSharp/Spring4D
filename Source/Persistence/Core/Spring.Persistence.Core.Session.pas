@@ -370,7 +370,7 @@ begin
   selecter := GetSelectCommandExecutor(entityClass);
   results := selecter.SelectAll(entityClass);
   Result := TCollections.CreateObjectList<T>(True);
-  MapFromResultSetToCollection(results, Result as IObjectList, T);
+  MapEntitiesFromResultSet(results, Result as IObjectList, T);
 end;
 
 function TSession.FindOne<T>(const id: TValue): T;
