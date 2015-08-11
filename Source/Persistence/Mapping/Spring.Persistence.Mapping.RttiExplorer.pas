@@ -64,7 +64,7 @@ type
     class function GetTable(classType: TClass): TableAttribute; overload; static;
     class function GetPrimaryKeyColumn(classType: TClass): ColumnAttribute; static;
     class function GetSequence(classType: TClass): SequenceAttribute; static;
-    class function GetUniqueConstraints(classType: TClass): IList<UniqueConstraint>; static;
+    class function GetUniqueConstraints(classType: TClass): IList<UniqueConstraintAttribute>; static;
   end;
 
 implementation
@@ -261,9 +261,9 @@ begin
   Result := TType.GetType(classType).GetCustomAttribute<TableAttribute>(True);
 end;
 
-class function TRttiExplorer.GetUniqueConstraints(classType: TClass): IList<UniqueConstraint>;
+class function TRttiExplorer.GetUniqueConstraints(classType: TClass): IList<UniqueConstraintAttribute>;
 begin
-  Result := GetClassMembers<UniqueConstraint>(classType);
+  Result := GetClassMembers<UniqueConstraintAttribute>(classType);
 end;
 
 {$ENDREGION}

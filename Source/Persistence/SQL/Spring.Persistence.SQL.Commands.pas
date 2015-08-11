@@ -201,8 +201,7 @@ implementation
 uses
   SysUtils,
   TypInfo,
-  Spring.Reflection,
-  Spring.Persistence.Core.Relation.ManyToOne;
+  Spring.Reflection;
 
 
 {$REGION 'TSelectCommand'}
@@ -288,15 +287,15 @@ begin
   begin
     manyToOneColumn := entityData.ManyToOneColumns[i];
     table := TSQLTable.Create;
-    table.SetFromAttribute(TType.GetType(manyToOneColumn.MemberType).GetCustomAttribute<TableAttribute>);
+    table.SetFromAttribute(manyToOneColumn.Member.MemberType.GetCustomAttribute<TableAttribute>);
     fTables.Add(table);
 
-    mappedByColumn := TManyToOneRelation.GetMappedByColumn(manyToOneColumn, entityClass);
+    mappedByColumn := manyToOneColumn.MappedByColumn;
     mappedByColumnName := mappedByColumn.ColumnName;
-    mappedTableClass := TType.GetClass(manyToOneColumn.MemberType);
+    mappedTableClass := manyToOneColumn.Member.MemberType.AsInstance.MetaclassType;
     for column in TEntityCache.Get(mappedTableClass).Columns do
     begin
-      builtFieldName := TManyToOneRelation.BuildColumnName(table.NameWithoutSchema, column.ColumnName);
+      builtFieldName := TSQLAliasGenerator.GetAlias(table.NameWithoutSchema) + '$' + column.ColumnName;
       selectField := TSQLSelectField.Create(column.ColumnName, table, builtFieldName);
       fSelectFields.Add(selectField);
     end;

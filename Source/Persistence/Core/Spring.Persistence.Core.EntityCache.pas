@@ -35,7 +35,7 @@ uses
   Spring.Persistence.Mapping.Attributes;
 
 type
-  TColumnDataList = class
+  TColumnDataList = class(TPersistent)
   private
     fList: IList<TColumnData>;
     fPrimaryKeyColumn: TColumnData;
@@ -43,8 +43,9 @@ type
     function GetCount: Integer;
     function GetItem(index: Integer): TColumnData;
     procedure SetItem(index: Integer; const value: TColumnData);
+    procedure SetPrimaryKeyColumn(const value: TColumnData);
   protected
-    procedure SetPrimaryKeyColumn(const Value: TColumnData); virtual;
+    procedure AssignTo(Dest: TPersistent); override;
   public
     constructor Create; virtual;
 
@@ -53,12 +54,10 @@ type
     function Add(const columnData: TColumnData): Integer;
     procedure Delete(index: Integer);
 
-    function TryGetPrimaryKeyColumn(out primaryKeyColumn: TColumnData): Boolean;
-
     property Count: Integer read GetCount;
     property Items[Index: Integer]: TColumnData read GetItem write SetItem; default;
     property PrimaryKeyColumn: TColumnData read fPrimaryKeyColumn write SetPrimaryKeyColumn;
-    property List: IList<TColumnData> read fList;
+    property PrimaryKeyExists: Boolean read fPrimaryKeyExists;
   end;
 
   TEntityData = class(TPersistent)
@@ -74,12 +73,11 @@ type
     fSequence: SequenceAttribute;
     fEntityClass: TClass;
     fVersionColumn: VersionAttribute;
+    procedure InitColumnsData;
   protected
     procedure AssignTo(Dest: TPersistent); override;
-    procedure SetColumnsData; virtual;
-    procedure SetEntityData(entityClass: TClass); virtual;
   public
-    constructor Create; virtual;
+    constructor Create(entityClass: TClass);
     destructor Destroy; override;
 
     function IsTableEntity: Boolean;
@@ -97,7 +95,7 @@ type
     property Columns: IList<ColumnAttribute> read fColumns;
     property SelectColumns: IList<ColumnAttribute> read fSelectColumns;
     property ColumnsData: TColumnDataList read fColumnsData write fColumnsData;
-    property ForeignColumns: IList<ForeignJoinColumnAttribute> read fForeignKeyColumns;
+    property ForeignKeyColumns: IList<ForeignJoinColumnAttribute> read fForeignKeyColumns;
     property OneToManyColumns: IList<OneToManyAttribute> read fOneToManyColumns;
     property ManyToOneColumns: IList<ManyToOneAttribute> read fManyToOneColumns;
     property PrimaryKeyColumn: ColumnAttribute read fPrimaryKeyColumn;
@@ -117,14 +115,11 @@ type
   public
     class constructor Create;
 
-    class function Get(entityClass: TClass): TEntityData;
-    class function TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
+    class function Get(entityClass: TClass): TEntityData; static;
 
-    class function CreateColumnsData(entityClass: TClass): TColumnDataList;
-    class function GetColumns(entityClass: TClass): IList<ColumnAttribute>;
-    class function GetColumnsData(entityClass: TClass): TColumnDataList;
+    class function CreateColumnsData(entityClass: TClass): TColumnDataList; static;
 
-    class function IsValidEntity(entityClass: TClass): Boolean;
+    class function IsValidEntity(entityClass: TClass): Boolean; static;
   end;
 
 implementation
@@ -149,6 +144,22 @@ end;
 function TColumnDataList.Add(const columnData: TColumnData): Integer;
 begin
   Result := fList.Add(columnData);
+end;
+
+procedure TColumnDataList.AssignTo(Dest: TPersistent);
+var
+  target: TColumnDataList;
+begin
+  if Dest is TColumnDataList then
+  begin
+    target := TColumnDataList(Dest);
+
+    target.fList.Clear;
+    target.fList.AddRange(fList);
+
+    target.fPrimaryKeyColumn := fPrimaryKeyColumn;
+    target.fPrimaryKeyExists := fPrimaryKeyExists;
+  end;
 end;
 
 procedure TColumnDataList.Delete(index: Integer);
@@ -176,18 +187,18 @@ begin
   fList[index] := value;
 end;
 
-procedure TColumnDataList.SetPrimaryKeyColumn(const Value: TColumnData);
+procedure TColumnDataList.SetPrimaryKeyColumn(const value: TColumnData);
 begin
-  fPrimaryKeyColumn := Value;
+  fPrimaryKeyColumn := value;
   fPrimaryKeyExists := True;
 end;
 
-function TColumnDataList.TryGetPrimaryKeyColumn(out primaryKeyColumn: TColumnData): Boolean;
-begin
-  Result := fPrimaryKeyExists;
-  if Result then
-    primaryKeyColumn := fPrimaryKeyColumn;
-end;
+//function TColumnDataList.TryGetPrimaryKeyColumn(out primaryKeyColumn: TColumnData): Boolean;
+//begin
+//  Result := fPrimaryKeyExists;
+//  if Result then
+//    primaryKeyColumn := fPrimaryKeyColumn;
+//end;
 
 {$ENDREGION}
 
@@ -197,12 +208,20 @@ end;
 constructor TEntityData.Create;
 begin
   inherited Create;
-  fColumns := TCollections.CreateList<ColumnAttribute>;
+
   fSelectColumns := TCollections.CreateList<ColumnAttribute>;
   fColumnsData := TColumnDataList.Create;
-  fForeignKeyColumns := TCollections.CreateList<ForeignJoinColumnAttribute>;
-  fOneToManyColumns := TCollections.CreateList<OneToManyAttribute>;
-  fManyToOneColumns := TCollections.CreateList<ManyToOneAttribute>;
+
+  fEntityClass := entityClass;
+  fColumns := TRttiExplorer.GetColumns(fEntityClass);
+  fForeignKeyColumns := TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(fEntityClass);
+  fOneToManyColumns := TRttiExplorer.GetClassMembers<OneToManyAttribute>(fEntityClass);
+  fManyToOneColumns := TRttiExplorer.GetClassMembers<ManyToOneAttribute>(fEntityClass);
+  fPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(fEntityClass);
+  fTable := TRttiExplorer.GetTable(fEntityClass);
+  fSequence := TRttiExplorer.GetSequence(fEntityClass);
+
+  InitColumnsData;
 end;
 
 destructor TEntityData.Destroy;
@@ -241,7 +260,6 @@ begin
     target.fManyToOneColumns.AddRange(ManyToOneColumns);
 
     target.fSequence := fSequence;
-
     target.fVersionColumn := fVersionColumn;
   end;
 end;
@@ -259,7 +277,7 @@ end;
 function TEntityData.GetForeignKeyColumn(const table: TableAttribute;
   const primaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
 begin
-  Result := ForeignColumns.SingleOrDefault(
+  Result := fForeignKeyColumns.SingleOrDefault(
     function(const foreignColumn: ForeignJoinColumnAttribute): Boolean
     begin
       Result := SameText(primaryKeyColumn.ColumnName, foreignColumn.ReferencedColumnName)
@@ -270,8 +288,8 @@ end;
 function TEntityData.GetPrimaryKeyValueAsString(
   const instance: TObject): string;
 begin
-  if Assigned(PrimaryKeyColumn) then
-    Result := PrimaryKeyColumn.Member.GetValue(instance).ToString
+  if Assigned(fPrimaryKeyColumn) then
+    Result := fPrimaryKeyColumn.Member.GetValue(instance).ToString
   else
     Result := '';
 end;
@@ -306,21 +324,17 @@ begin
   Result := Assigned(fTable);
 end;
 
-procedure TEntityData.SetColumnsData;
+procedure TEntityData.InitColumnsData;
 var
-  columnData: TColumnData;
   column: ColumnAttribute;
+  columnData: TColumnData;
 begin
-  if fColumnsData.Count > 0 then
-    Exit;
-
   for column in fColumns do
   begin
-    columnData.Properties := column.Properties;
     columnData.ColumnName := column.ColumnName;
-    columnData.TypeInfo := column.MemberType;
-    columnData.Member :=  column.Member;
-    columnData.Column := column;
+    columnData.Properties := column.Properties;
+    columnData.Member := column.Member;
+    columnData.IsLazy := IsLazyType(column.Member.MemberType.Handle);
 
     if column.IsPrimaryKey then
       fColumnsData.PrimaryKeyColumn := columnData;
@@ -328,25 +342,11 @@ begin
     if column.IsVersionColumn then
       fVersionColumn := column as VersionAttribute;
 
-    columnData.IsLazy := IsLazyType(columnData.TypeInfo);
     if not columnData.IsLazy then
       fSelectColumns.Add(column);
 
     fColumnsData.Add(columnData);
   end;
-end;
-
-procedure TEntityData.SetEntityData(entityClass: TClass);
-begin
-  fEntityClass := entityClass;
-  fColumns := TRttiExplorer.GetColumns(fEntityClass);
-  SetColumnsData;
-  fPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(fEntityClass);
-  fTable := TRttiExplorer.GetTable(fEntityClass);
-  fForeignKeyColumns := TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(fEntityClass);
-  fOneToManyColumns := TRttiExplorer.GetClassMembers<OneToManyAttribute>(fEntityClass);
-  fManyToOneColumns := TRttiExplorer.GetClassMembers<ManyToOneAttribute>(fEntityClass);
-  fSequence := TRttiExplorer.GetSequence(fEntityClass);
 end;
 
 {$ENDREGION}
@@ -366,9 +366,7 @@ var
 begin
   Result := TColumnDataList.Create;
   entityData := Get(entityClass);
-  entityData.SetColumnsData;
-  Result.List.AddRange(entityData.ColumnsData.List);
-  Result.PrimaryKeyColumn := entityData.ColumnsData.PrimaryKeyColumn;
+  Result.Assign(entityData.ColumnsData);
 end;
 
 class function TEntityCache.Get(entityClass: TClass): TEntityData;
@@ -377,8 +375,7 @@ begin
   try
     if not fEntities.TryGetValue(entityClass, Result) then
     begin
-      Result := TEntityData.Create;
-      Result.SetEntityData(entityClass);
+      Result := TEntityData.Create(entityClass);
       fEntities.Add(entityClass, Result);
     end;
   finally
@@ -386,36 +383,12 @@ begin
   end;
 end;
 
-class function TEntityCache.GetColumns(entityClass: TClass): IList<ColumnAttribute>;
-begin
-  Result := Get(entityClass).Columns;
-end;
-
-class function TEntityCache.GetColumnsData(entityClass: TClass): TColumnDataList;
-var
-  entityData: TEntityData;
-begin
-  entityData := Get(entityClass);
-  entityData.SetColumnsData;
-  Result := entityData.ColumnsData;
-end;
-
 class function TEntityCache.IsValidEntity(entityClass: TClass): Boolean;
 var
   entityData: TEntityData;
 begin
-  entityData := TEntityCache.Get(entityClass);
+  entityData := Get(entityClass);
   Result := entityData.IsTableEntity and entityData.HasPrimaryKey;
-end;
-
-class function TEntityCache.TryGet(entityClass: TClass; out entityData: TEntityData): Boolean;
-begin
-  fCriticalSection.Enter;
-  try
-    Result := fEntities.TryGetValue(entityClass, entityData);
-  finally
-    fCriticalSection.Leave;
-  end;
 end;
 
 {$ENDREGION}

@@ -93,7 +93,7 @@ end;
 
 procedure TRttiExplorerTest.TestGetUniqueConstraints;
 var
-  ReturnValue: IList<UniqueConstraint>;
+  ReturnValue: IList<UniqueConstraintAttribute>;
   AClass: TClass;
 begin
   AClass := FCustomer.ClassType;

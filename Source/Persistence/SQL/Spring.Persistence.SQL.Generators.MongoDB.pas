@@ -199,7 +199,7 @@ begin
       Result := Result + ',';
 
     insertField := command.InsertFields[i];
-    case insertField.Column.MemberType.Kind of
+    case insertField.Column.Member.MemberType.TypeKind of
       tkClass:
       begin
         Result := Result + QuotedStr(insertField.Name) + ': ';
@@ -269,7 +269,7 @@ begin
       Result := Result + ',';
     {TODO -oLinas -cGeneral : use dot notation in future for sub properties}
     updateField := command.UpdateFields[i];
-    case updateField.Column.MemberType.Kind of
+    case updateField.Column.Member.MemberType.TypeKind of
       tkClass:
       begin
         Result := Result + QuotedStr(updateField.Name) + ': ';

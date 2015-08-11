@@ -37,10 +37,7 @@ uses
 type
   TManyToOneRelation = class(TAbstractRelation)
   private
-    fEntityData: TEntityData;
-    fMappedByColumn: ColumnAttribute;
     fNewColumns: TColumnDataList;
-    fNewEntityClass: TClass;
     fNewTableName: string;
   protected
     procedure ResolveColumns(const resultSet: IDBResultSet); virtual;
@@ -51,15 +48,12 @@ type
     destructor Destroy; override;
 
     class function BuildColumnName(const tableName, columnName: string): string;
-    class function GetMappedByColumn(const fromColumn: ManyToOneAttribute;
-      entityClass: TClass): ColumnAttribute;
 
-    procedure SetAssociation(const attribute: TORMAttribute;
-      const entity: TObject; const resultSet: IDBResultSet); override;
+    procedure SetAssociation(const entity: TObject;
+      const association: AssociationAttribute;
+      const resultSet: IDBResultSet); override;
 
-    property EntityData: TEntityData read fEntityData;
     property NewColumns: TColumnDataList read fNewColumns;
-    property NewEntityClass: TClass read fNewEntityClass;
   end;
 
 implementation
@@ -92,16 +86,6 @@ begin
   Result := TSQLAliasGenerator.GetAlias(tableName) + '$' + columnName;
 end;
 
-class function TManyToOneRelation.GetMappedByColumn(
-  const fromColumn: ManyToOneAttribute; entityClass: TClass): ColumnAttribute;
-begin
-  Result := fromColumn.MappedByMember.GetCustomAttribute<ColumnAttribute>;
-  if Result = nil then
-    raise EORMManyToOneMappedByColumnNotFound.CreateFmt(
-      'Mapped by column ("%s") not found in the base class "%s".',
-      [fromColumn.MappedBy, entityClass.ClassName]);
-end;
-
 procedure TManyToOneRelation.ResolveColumns(const resultSet: IDBResultSet);
 var
   i: Integer;
@@ -110,6 +94,7 @@ var
 begin
   for i := fNewColumns.Count - 1 downto 0 do
   begin
+    // dealing with records here so assignments necessary (cannot just set members)
     columnData := fNewColumns[i];
 
     columnName := BuildColumnName(fNewTableName, columnData.ColumnName);
@@ -125,26 +110,21 @@ begin
   end;
 end;
 
-procedure TManyToOneRelation.SetAssociation(const attribute: TORMAttribute;
-  const entity: TObject; const resultSet: IDBResultSet);
+procedure TManyToOneRelation.SetAssociation(const entity: TObject;
+  const association: AssociationAttribute; const resultSet: IDBResultSet);
 var
-  column: ManyToOneAttribute;
+  newEntityClass: TClass;
+  entityData: TEntityData;
 begin
-  column := attribute as ManyToOneAttribute;
-  //check if entity has associations attributes
-  fNewEntityClass := TType.GetType(column.MemberType).AsInstance.MetaclassType;
-  fEntityData := TEntityCache.Get(fNewEntityClass);
-  fNewTableName := fEntityData.EntityTable.TableName;
-  NewEntity := TActivator.CreateInstance(fNewEntityClass);
+  newEntityClass := association.Member.MemberType.AsInstance.MetaclassType;
+  entityData := TEntityCache.Get(newEntityClass);
+  fNewTableName := entityData.EntityTable.TableName;
+  NewEntity := TActivator.CreateInstance(newEntityClass);
   if Assigned(fNewColumns) then
     fNewColumns.Free;
-  fNewColumns := TEntityCache.CreateColumnsData(fNewEntityClass);
-  //get column name from MappedBy field or property
-  fMappedByColumn := GetMappedByColumn(column, entity.ClassType);
-  //resolve columns which we need to set
+  fNewColumns := TEntityCache.CreateColumnsData(newEntityClass);
   ResolveColumns(resultSet);
-  //assign newly created column to base entity property
-  column.Member.SetValue(entity, NewEntity);
+  association.Member.SetValue(entity, NewEntity);
 end;
 
 {$ENDREGION}

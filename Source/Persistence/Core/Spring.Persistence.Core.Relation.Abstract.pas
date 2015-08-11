@@ -35,8 +35,9 @@ uses
 type
   TAbstractRelation = class
   protected
-    procedure SetAssociation(const attribute: TORMAttribute;
-      const entity: TObject; const resultSet: IDBResultSet); virtual; abstract;
+    procedure SetAssociation(const entity: TObject;
+      const association: AssociationAttribute;
+      const resultSet: IDBResultSet); virtual; abstract;
   end;
 
 implementation

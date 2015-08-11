@@ -78,7 +78,8 @@ implementation
 uses
   Classes,
   Variants,
-  Spring;
+  Spring,
+  Spring.Reflection;
 
 
 {$REGION 'TAbstractSQLGenerator'}
@@ -93,7 +94,7 @@ begin
     convertedValue := value;
 
   if convertedValue.IsEmpty then
-    TValueData(convertedValue).FTypeInfo := paramField.Column.MemberType;
+    TValueData(convertedValue).FTypeInfo := paramField.Column.Member.MemberType.Handle;
   Result := GetParamClass.Create(paramField.ParamName, convertedValue);
 end;
 

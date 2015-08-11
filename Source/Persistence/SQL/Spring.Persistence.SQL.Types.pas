@@ -317,7 +317,8 @@ uses
   SysUtils,
   Spring,
   Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Core.Exceptions;
+  Spring.Persistence.Core.Exceptions,
+  Spring.Reflection;
 
 function GetMatchModeString(matchMode: TMatchMode; const pattern: string): string;
 const
@@ -516,7 +517,7 @@ begin
     fIsPrimaryKey := fIsIdentity
   else
     fIsPrimaryKey := cpPrimaryKey in attribute.Properties;
-  fTypeInfo := attribute.MemberType;
+  fTypeInfo := attribute.Member.MemberType.Handle;
 end;
 
 {$ENDREGION}

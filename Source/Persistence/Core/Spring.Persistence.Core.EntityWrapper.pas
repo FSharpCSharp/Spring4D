@@ -76,7 +76,7 @@ end;
 
 function TEntityWrapper.GetColumnsData: TColumnDataList;
 begin
-  Result := fColumnsData
+  Result := fColumnsData;
 end;
 
 function TEntityWrapper.GetValue(const member: TRttiMember): TValue;
@@ -91,7 +91,7 @@ end;
 
 function TEntityWrapper.GetForeignKeyColumns: IEnumerable<ForeignJoinColumnAttribute>;
 begin
-  Result := fEntityClassData.ForeignColumns;
+  Result := fEntityClassData.ForeignKeyColumns;
 end;
 
 function TEntityWrapper.GetManyToOneColumns: IEnumerable<ManyToOneAttribute>;
@@ -119,12 +119,12 @@ begin
   if resultSet is TEmbeddedEntity then
     Exit(TValue.Empty);
 
-  if not ColumnsData.TryGetPrimaryKeyColumn(columnData) then
+  if not fColumnsData.PrimaryKeyExists then
     raise EORMPrimaryKeyColumnNotFound.CreateFmt(
       'Primary key column cannot be found for entity: %s', [fEntity.ClassName]);
 
   try
-    value := resultSet.GetFieldValue(columnData.ColumnName);
+    value := resultSet.GetFieldValue(fColumnsData.PrimaryKeyColumn.ColumnName);
   except
     raise EORMPrimaryKeyColumnNotFound.CreateFmt(EXCEPTION_PRIMARYKEY_NOTFOUND,
       [columnData.ColumnName]);
