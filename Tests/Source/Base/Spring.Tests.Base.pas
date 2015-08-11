@@ -98,6 +98,7 @@ type
     procedure TestByValueFactory;
     procedure TestByValue;
     procedure Test_Initializer_RaisesArgumentException_NotReferenceType;
+    procedure TestIsLazyType;
   end;
 
 {$IFDEF SUPPORTS_GENERIC_EVENTS}
@@ -781,6 +782,15 @@ begin
   CheckEquals(CExpectedBalance, (fBalance as ILazy).Value.AsInteger);
 
   CheckTrue(fBalance.IsValueCreated);
+end;
+
+procedure TTestLazy.TestIsLazyType;
+begin
+  CheckTrue(IsLazyType(TypeInfo(Lazy<Integer>)));
+  CheckTrue(IsLazyType(TypeInfo(ILazy<Integer>)));
+  CheckTrue(IsLazyType(TypeInfo(TFunc<Integer>)));
+  CheckFalse(IsLazyType(TypeInfo(TFunc<string,Integer>)));
+  CheckTrue(IsLazyType(TypeInfo(TFunc<TFunc<string,Integer>>)));
 end;
 
 procedure TTestLazy.Test_Initializer_RaisesArgumentException_NotReferenceType;
