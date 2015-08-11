@@ -46,6 +46,9 @@ type
   public
     constructor Create(const model: TComponentModel;
       const arguments: array of TValue);
+{$IFNDEF AUTOREFCOUNT}
+    destructor Destroy; override;
+{$ENDIF}
 
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel; const argument: TValue): Boolean;
@@ -65,12 +68,17 @@ type
 implementation
 
 uses
+  SyncObjs,
   SysUtils,
   TypInfo,
   Spring.Container.Injection,
   Spring.Container.ResourceStrings,
   Spring.Reflection;
 
+{$IFNDEF AUTOREFCOUNT}
+type
+  TInterfacedObjectAccess = class(TInterfacedObject);
+{$ENDIF}
 
 {$REGION 'TCreationContext'}
 
@@ -90,6 +98,19 @@ begin
   fPerResolveInstances := TCollections.CreateDictionary<TComponentModel, TValue>;
 end;
 
+{$IFNDEF AUTOREFCOUNT}
+destructor TCreationContext.Destroy;
+var
+  instance: TValue;
+  interfacedObject: TInterfacedObject;
+begin
+  for instance in fPerResolveInstances.Values do
+    if instance.TryAsType(interfacedObject) then
+      TInterlocked.Decrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
+  inherited;
+end;
+{$ENDIF}
+
 procedure TCreationContext.AddArgument(const argument: TValue);
 begin
   if argument.IsType<TTypedValue> then
@@ -102,8 +123,16 @@ end;
 
 procedure TCreationContext.AddPerResolve(const model: TComponentModel;
   const instance: TValue);
+{$IFNDEF AUTOREFCOUNT}
+var
+  interfacedObject: TInterfacedObject;
+{$ENDIF}
 begin
   fPerResolveInstances.Add(model, instance);
+{$IFNDEF AUTOREFCOUNT}
+  if instance.TryAsType(interfacedObject) then
+    TInterlocked.Increment(TInterfacedObjectAccess(interfacedObject).fRefCount);
+{$ENDIF}
 end;
 
 function TCreationContext.CanResolve(const context: ICreationContext;
