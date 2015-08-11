@@ -1819,6 +1819,8 @@ function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
 
 function SkipShortString(P: PByte): Pointer; inline;
+
+function GetGenericTypeParameters(const typeName: string): TArray<string>;
 {$ENDREGION}
 
 
@@ -2143,6 +2145,53 @@ end;
 function SkipShortString(P: PByte): Pointer;
 begin
   Result := P + P^ + 1;
+end;
+
+function GetGenericTypeParameters(const typeName: string): TArray<string>;
+
+  function ScanChar(const s: string; var index: Integer): Boolean;
+  var
+    level: Integer;
+  begin
+    Result := False;
+    level := 0;
+    while index <= Length(s) do
+    begin
+      case s[index] of
+        ',': if level = 0 then Exit(True);
+        '<': Inc(level);
+        '>': Dec(level);
+      end;
+      Inc(index);
+      Result := level = 0;
+    end;
+  end;
+
+  function SplitTypes(const s: string): TArray<string>;
+  var
+    startPos, index: Integer;
+  begin
+    startPos := 1;
+    index := 1;
+    while ScanChar(s, index) do
+    begin
+      SetLength(Result, Length(Result) + 1);
+      Result[High(Result)] := Copy(s, startPos, index - startPos);
+      Inc(index);
+      startPos := index;
+    end;
+  end;
+
+var
+  i: Integer;
+  s: string;
+begin
+  s := typeName;
+  i := Pos('<', s);
+  if i = 0 then
+    Exit(nil);
+  s := Copy(s, i + 1, Length(s) - i - 1);
+  Result := SplitTypes(s);
 end;
 
 {$ENDREGION}

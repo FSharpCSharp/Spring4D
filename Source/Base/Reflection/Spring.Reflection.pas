@@ -867,7 +867,8 @@ begin
   begin
     name := GetTypeName(typeInfo);
     for Result := lkFunc to High(TLazyKind) do
-      if StartsText(LazyPrefixStrings[Result], name) then
+      if StartsText(LazyPrefixStrings[Result], name)
+        and (Length(GetGenericTypeParameters(name)) = 1) then
         Exit;
   end;
   Result := lkNone;
@@ -1220,51 +1221,11 @@ end;
 // TDictionary<string, TObject>
 // TDictionary<string, IDictionary<string, TObject>>
 function TRttiTypeHelper.GetGenericArguments: TArray<TRttiType>;
-
-  function ScanChar(const s: string; var index: Integer): Boolean;
-  var
-    level: Integer;
-  begin
-    Result := False;
-    level := 0;
-    while index <= Length(s) do
-    begin
-      case s[index] of
-        ',': if level = 0 then Exit(True);
-        '<': Inc(level);
-        '>': Dec(level);
-      end;
-      Inc(index);
-      Result := level = 0;
-    end;
-  end;
-
-  function SplitTypes(const s: string): TStringDynArray;
-  var
-    startPos, index: Integer;
-  begin
-    startPos := 1;
-    index := 1;
-    while ScanChar(s, index) do
-    begin
-      SetLength(Result, Length(Result) + 1);
-      Result[High(Result)] := Copy(s, startPos, index - startPos);
-      Inc(index);
-      startPos := index;
-    end;
-  end;
-
 var
+  names: TArray<string>;
   i: Integer;
-  s: string;
-  names: TStringDynArray;
 begin
-  s := Name;
-  i := Pos('<', s);
-  if i = 0 then
-    Exit(nil);
-  s := Copy(s, i + 1, Length(s) - i - 1);
-  names := SplitTypes(s);
+  names := GetGenericTypeParameters(Name);
   SetLength(Result, Length(names));
   for i := Low(names) to High(names) do
     Result[i] := TType.FindType(names[i]);
