@@ -155,7 +155,7 @@ begin
   fTypeInfo := typeInfo;
   fInterceptor := TMockInterceptor.Create(behavior);
   fProxy := CreateProxy(typeInfo, fInterceptor);
-  if fTypeInfo.Kind = tkClass then
+  if (fTypeInfo.Kind = tkClass) and (Length(args) > 0) then
   begin
     SetLength(types, Length(args));
     for i := 0 to High(args) do
