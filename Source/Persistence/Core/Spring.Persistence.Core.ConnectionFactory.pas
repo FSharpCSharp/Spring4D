@@ -71,6 +71,7 @@ uses
   Classes,
   Rtti,
   SysUtils,
+  TypInfo,
   Spring,
   Spring.Persistence.Core.Exceptions,
   Spring.Reflection;

@@ -72,7 +72,7 @@ implementation
 uses
   StrUtils,
   SysUtils,
-//  TypInfo,
+  TypInfo,
 //  Variants,
   Spring.Persistence.Core.Exceptions;
 
