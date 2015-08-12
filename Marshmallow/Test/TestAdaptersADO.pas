@@ -191,7 +191,7 @@ var
 begin
   lResult := TADOExecuteCall.Create(Self, queries);
   Result := lResult;
-  fMockConnectionObject.Setup.Executes(lResult.Execute).WhenForAnyArgs
+  fMockConnectionObject.Setup.Executes(lResult.Execute).When(Args.Any)
     .Execute('', o, 0);
 end;
 
@@ -199,9 +199,9 @@ procedure TBaseADOAdapterTest.SetupOpen;
 begin
   with fMockConnectionObject.Setup.Executes do
   begin
-    WhenForAnyArgs.Get_ConnectionString;
-    WhenForAnyArgs.Get_State;
-    WhenForAnyArgs.Open('', '', '', 0);
+    When(Args.Any).Get_ConnectionString;
+    When(Args.Any).Get_State;
+    When(Args.Any).Open('', '', '', 0);
   end;
 end;
 
@@ -251,7 +251,7 @@ begin
   CheckException(EADOAdapterException,
     procedure begin fAdapter.BeginTransaction end);
 
-  fMockConnectionObject.Setup.Executes.WhenForAnyArgs.BeginTrans;
+  fMockConnectionObject.Setup.Executes.When(Args.Any).BeginTrans;
   transaction := fAdapter.BeginTransaction;
   CheckNotNull(transaction);
 end;
@@ -281,7 +281,7 @@ end;
 procedure TADOConnectionAdapterTest.TestDisconnect;
 begin
   fMockConnectionObject.Setup.Returns([adStateConnecting, adStateConnecting,
-    adStateOpen]).WhenForAnyArgs.Get_State;
+    adStateOpen]).When(Args.Any).Get_State;
   fAdapter.Connection.ConnectionObject := fMockConnectionObject;
 
   CheckException(EADOAdapterException,
@@ -300,11 +300,11 @@ begin
     procedure begin fAdapter.IsConnected end);
 
   fMockConnectionObject.Setup.Returns([adStateConnecting, adStateConnecting,
-    adStateOpen, adStateOpen]).WhenForAnyArgs.Get_State;
+    adStateOpen, adStateOpen]).When(Args.Any).Get_State;
   CheckTrue(fAdapter.IsConnected);
 
   fMockConnectionObject.Setup.Returns([adStateConnecting, adStateConnecting,
-    adStateClosed, adStateClosed]).WhenForAnyArgs.Get_State;
+    adStateClosed, adStateClosed]).When(Args.Any).Get_State;
   CheckFalse(fAdapter.IsConnected);
 end;
 

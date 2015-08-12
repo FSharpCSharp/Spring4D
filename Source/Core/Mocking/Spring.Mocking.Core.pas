@@ -64,8 +64,8 @@ type
 
     procedure Received; overload;
     procedure Received(const times: Times); overload;
-    procedure ReceivedWithAnyArgs; overload;
-    procedure ReceivedWithAnyArgs(const times: Times); overload;
+    procedure Received(const match: TArgMatch); overload;
+    procedure Received(const times: Times; const match: TArgMatch); overload;
   {$ENDREGION}
 
   {$REGION 'Implements ISetup'}
@@ -82,8 +82,8 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IWhen'}
-    procedure When;
-    procedure WhenForAnyArgs;
+    procedure When; overload;
+    procedure When(const match: TArgMatch); overload;
   {$ENDREGION}
 
     property Instance: TValue read GetInstance;
@@ -101,8 +101,8 @@ type
 
     function Received: T; overload;
     function Received(const times: Times): T; overload;
-    function ReceivedWithAnyArgs: T; overload;
-    function ReceivedWithAnyArgs(const times: Times): T; overload;
+    function Received(const match: TArgMatch): T; overload;
+    function Received(const times: Times; const match: TArgMatch): T; overload;
   {$ENDREGION}
 
   {$REGION 'Implements ISetup<T>'}
@@ -119,8 +119,8 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IWhen<T>'}
-    function When: T;
-    function WhenForAnyArgs: T;
+    function When: T; overload;
+    function When(const match: TArgMatch): T; overload;
   {$ENDREGION}
 
     property Instance: T read GetInstance;
@@ -300,14 +300,14 @@ begin
   fInterceptor.Received(times);
 end;
 
-procedure TMock.ReceivedWithAnyArgs;
+procedure TMock.Received(const match: TArgMatch);
 begin
-  fInterceptor.ReceivedForAnyArgs(Times.AtLeastOnce);
+  fInterceptor.Received(Times.AtLeastOnce, match);
 end;
 
-procedure TMock.ReceivedWithAnyArgs(const times: Times);
+procedure TMock.Received(const times: Times; const match: TArgMatch);
 begin
-  fInterceptor.ReceivedForAnyArgs(times);
+  fInterceptor.Received(times, match);
 end;
 
 procedure TMock.SetCallBase(const value: Boolean);
@@ -325,9 +325,9 @@ begin
   fInterceptor.When;
 end;
 
-procedure TMock.WhenForAnyArgs;
+procedure TMock.When(const match: TArgMatch);
 begin
-  fInterceptor.WhenForAnyArgs;
+  fInterceptor.When(match);
 end;
 
 {$ENDREGION}
@@ -384,15 +384,15 @@ begin
   Result := Instance;
 end;
 
-function TMock<T>.ReceivedWithAnyArgs: T;
+function TMock<T>.Received(const match: TArgMatch): T;
 begin
-  inherited ReceivedWithAnyArgs;
+  inherited Received(match);
   Result := Instance;
 end;
 
-function TMock<T>.ReceivedWithAnyArgs(const times: Times): T;
+function TMock<T>.Received(const times: Times; const match: TArgMatch): T;
 begin
-  inherited ReceivedWithAnyArgs(times);
+  inherited Received(times, match);
   Result := Instance;
 end;
 
@@ -420,9 +420,9 @@ begin
   Result := Instance;
 end;
 
-function TMock<T>.WhenForAnyArgs: T;
+function TMock<T>.When(const match: TArgMatch): T;
 begin
-  fInterceptor.WhenForAnyArgs;
+  fInterceptor.When(match);
   Result := Instance;
 end;
 

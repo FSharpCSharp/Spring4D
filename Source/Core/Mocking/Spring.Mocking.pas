@@ -33,6 +33,7 @@ uses
   SysUtils,
   TypInfo,
   Spring,
+  Spring.DesignPatterns,
   Spring.Interception,
   Spring.Times;
 
@@ -44,6 +45,8 @@ type
   Times = Spring.Times.Times;
 
   TValue = Rtti.TValue;
+
+  TArgMatch = TPredicate<TArray<TValue>>;
 
 const
   DefaultMockBehavior = TMockBehavior.Dynamic;
@@ -67,8 +70,8 @@ type
 
   IWhen = interface(IInvokable)
     ['{DAD0B65B-8CEF-4513-ADE8-38E8F9AAFA9A}']
-    procedure When;
-    procedure WhenForAnyArgs;
+    procedure When; overload;
+    procedure When(const match: TArgMatch); overload;
   end;
 
   ISetup = interface(IInvokable)
@@ -94,8 +97,8 @@ type
 
     procedure Received; overload;
     procedure Received(const times: Times); overload;
-    procedure ReceivedWithAnyArgs; overload;
-    procedure ReceivedWithAnyArgs(const times: Times); overload;
+    procedure Received(const match: TArgMatch); overload;
+    procedure Received(const times: Times; const match: TArgMatch); overload;
 
     property Instance: TValue read GetInstance;
     property TypeInfo: PTypeInfo read GetTypeInfo;
@@ -103,8 +106,8 @@ type
 
   IWhen<T> = interface(IInvokable)
     ['{4162918E-4DE6-47D6-B609-D5A17F3FBE2B}']
-    function When: T;
-    function WhenForAnyArgs: T;
+    function When: T; overload;
+    function When(const match: TArgMatch): T; overload;
   end;
 
   ISetup<T> = interface(IInvokable)
@@ -134,8 +137,8 @@ type
 
     function Received: T; overload;
     function Received(const times: Times): T; overload;
-    function ReceivedWithAnyArgs: T; overload;
-    function ReceivedWithAnyArgs(const times: Times): T; overload;
+    function Received(const match: TArgMatch): T; overload;
+    function Received(const times: Times; const match: TArgMatch): T; overload;
 
     property CallBase: Boolean read GetCallBase write SetCallBase;
     property Instance: T read GetInstance;
@@ -186,8 +189,8 @@ type
 
     function Received: T; overload;
     function Received(const times: Times): T; overload;
-    function ReceivedWithAnyArgs: T; overload;
-    function ReceivedWithAnyArgs(const times: Times): T; overload;
+    function Received(const match: TArgMatch): T; overload;
+    function Received(const times: Times; const match: TArgMatch): T; overload;
 
     property CallBase: Boolean read GetCallBase write SetCallBase;
     property Instance: T read GetInstance;
@@ -197,6 +200,25 @@ type
   public
     class function From<T: IInterface>(const value: T): Mock<T>; static;
   end;
+
+  TMatchArgument = record
+  private
+    Index: Integer;
+  public
+    class operator Equal(const left: TMatchArgument; const right: TValue): TSpecification<TArray<TValue>>;
+  end;
+
+  TMatchArguments = record
+  strict private
+    function GetAny: TArgMatch;
+    function GetItems(index: Integer): TMatchArgument;
+  public
+    property Any: TArgMatch read GetAny;
+    property Items[index: Integer]: TMatchArgument read GetItems; default;
+  end;
+
+const
+  Args: TMatchArguments = ();
 
 implementation
 
@@ -358,16 +380,16 @@ begin
   Result := fMock.Received(times);
 end;
 
-function Mock<T>.ReceivedWithAnyArgs: T;
+function Mock<T>.Received(const match: TArgMatch): T;
 begin
   EnsureInitialized;
-  Result := fMock.ReceivedWithAnyArgs;
+  Result := fMock.Received(match);
 end;
 
-function Mock<T>.ReceivedWithAnyArgs(const times: Times): T;
+function Mock<T>.Received(const times: Times; const match: TArgMatch): T;
 begin
   EnsureInitialized;
-  Result := fMock.ReceivedWithAnyArgs(times);
+  Result := fMock.Received(times, match);
 end;
 
 {$ENDREGION}
@@ -391,6 +413,47 @@ begin
       Result := (interceptor as TObject) is TMockInterceptor
     end) as TMockInterceptor, proxy);
   Result.fMock := mock as IMock<T>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMatchArg'}
+
+class operator TMatchArgument.Equal(const left: TMatchArgument;
+  const right: TValue): TSpecification<TArray<TValue>>;
+var
+  capturedRight: TValue;
+  index: Integer;
+begin
+  capturedRight := right;
+  index := left.Index;
+  Result :=
+    function(const args: TArray<TValue>): Boolean
+    begin
+      if index > High(args) then
+        Exit(False);
+      Result := args[index].Equals(capturedRight);
+    end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMatchParams'}
+
+function TMatchArguments.GetAny: TArgMatch;
+begin
+  Result :=
+    function(const args: TArray<TValue>): Boolean
+    begin
+      Result := True;
+    end;
+end;
+
+function TMatchArguments.GetItems(index: Integer): TMatchArgument;
+begin
+  Result.Index := index;
 end;
 
 {$ENDREGION}

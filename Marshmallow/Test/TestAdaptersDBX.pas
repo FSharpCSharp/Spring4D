@@ -232,12 +232,12 @@ var
   params: Managed<TStrings>;
   statement: IDBStatement;
 begin
-  fMockConnection.Setup.Executes.WhenForAnyArgs.RegisterClient(nil, nil);
+  fMockConnection.Setup.Executes.When(Args.Any).RegisterClient(nil, nil);
   params := TStringList.Create;
   TType.SetFieldValue(fMockConnection, 'FParams', params.Value);
   statement := fAdapter.CreateStatement;
   CheckNotNull(statement);
-  fMockConnection.Setup.Executes.WhenForAnyArgs.UnRegisterClient(nil);
+  fMockConnection.Setup.Executes.When(Args.Any).UnRegisterClient(nil);
   statement := nil;
 end;
 
@@ -256,10 +256,10 @@ end;
 
 procedure TDBXConnectionAdapterTest.TestIsConnected;
 begin
-  fMockConnection.Setup.Returns<Boolean>(True).WhenForAnyArgs.GetConnected;
+  fMockConnection.Setup.Returns<Boolean>(True).When(Args.Any).GetConnected;
   CheckTrue(fAdapter.IsConnected);
 
-  fMockConnection.Setup.Returns<Boolean>(False).WhenForAnyArgs.GetConnected;
+  fMockConnection.Setup.Returns<Boolean>(False).When(Args.Any).GetConnected;
   CheckFalse(fAdapter.IsConnected);
 end;
 
@@ -280,7 +280,7 @@ end;
 procedure TDBXTransactionAdapterTest.TearDown;
 begin
   // Used by destructor
-  fMockConnection.Setup.Executes.WhenForAnyArgs.RollbackFreeAndNil(
+  fMockConnection.Setup.Executes.When(Args.Any).RollbackFreeAndNil(
     fDBXTransaction);
   fTransaction := nil;
   FreeAndNil(fDBXTransaction);
@@ -338,7 +338,7 @@ begin
   TType.SetFieldValue(fMockConnection, 'FParams', fParams);
   fDBXStatement := TSQLQuery.Create(nil);
   // TValue cannot compare events
-  fMockConnection.Setup.Executes.WhenForAnyArgs.RegisterClient(nil, nil);
+  fMockConnection.Setup.Executes.When(Args.Any).RegisterClient(nil, nil);
   fDBXStatement.SQLConnection := fMockConnection;
   fStatement := TDBXStatementAdapter.Create(fDBXStatement,
     TDBXExceptionHandler.Create);
@@ -368,7 +368,7 @@ begin
   begin
     Executes.When.SetConnected(True);
     Returns<Integer>(0).When.GetDataSetCount;
-    Executes.WhenForAnyArgs.UnRegisterClient(nil);
+    Executes.When(Args.Any).UnRegisterClient(nil);
   end;
 
   try
