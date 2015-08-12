@@ -105,7 +105,7 @@ var
   interfacedObject: TInterfacedObject;
 begin
   for instance in fPerResolveInstances.Values do
-    if instance.TryAsType(interfacedObject) then
+    if instance.TryAsType<TInterfacedObject>(interfacedObject) then
       TInterlocked.Decrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
   inherited;
 end;
@@ -130,7 +130,7 @@ var
 begin
   fPerResolveInstances.Add(model, instance);
 {$IFNDEF AUTOREFCOUNT}
-  if instance.TryAsType(interfacedObject) then
+  if instance.TryAsType<TInterfacedObject>(interfacedObject) then
     TInterlocked.Increment(TInterfacedObjectAccess(interfacedObject).fRefCount);
 {$ENDIF}
 end;
