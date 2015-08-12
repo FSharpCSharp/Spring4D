@@ -292,6 +292,11 @@ type
     procedure Post(const item: TObject);
   end;
 
+  TSafeCallObject = class
+  public
+    procedure SafeCallMethod; virtual; safecall; abstract;
+  end;
+
 implementation
 
 uses

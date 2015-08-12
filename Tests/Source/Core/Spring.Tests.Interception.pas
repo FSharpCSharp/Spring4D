@@ -70,6 +70,7 @@ type
 
     procedure ClassProxy_should_implement_additional_interfaces;
     procedure ClassProxy_for_class_already_implementing_additional_interfaces;
+    procedure ClassProxy_should_not_fail_on_safecall;
     procedure InterfaceProxy_should_implement_additional_interfaces;
 
     procedure InterfaceProxy_with_additional_interfaces_handles_refcount;
@@ -433,6 +434,17 @@ begin
   finally
     proxy.Free;
   end;
+end;
+
+procedure TProxyTest.ClassProxy_should_not_fail_on_safecall;
+var
+  proxy: TObject;
+begin
+  // Since safecall does not have Extended info generated for the method, it
+  // may fail with EInsufficientRtti in case internal checks are in wrong order.
+  proxy := TProxyGenerator.CreateClassProxy<TSafeCallObject>([]);
+  proxy.Free;
+  Pass;
 end;
 
 procedure TProxyTest.ClassProxy_for_class_already_implementing_additional_interfaces;

@@ -140,9 +140,9 @@ begin
   Result := TType.GetType(ClassProxy).Methods.Where(
     function(const method: TRttiMethod): Boolean
     begin
-      if not (method.MethodKind in [mkFunction, mkProcedure]) then
-        Exit(False);
       if not method.HasExtendedInfo then
+        Exit(False);
+      if not (method.MethodKind in [mkFunction, mkProcedure]) then
         Exit(False);
       if method.DispatchKind <> dkVtable then
       begin
