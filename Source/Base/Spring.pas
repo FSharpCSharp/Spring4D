@@ -2361,7 +2361,7 @@ end;
 
 function TValueHelper.ConvertTo(targetType: PTypeInfo): TValue;
 begin
-  if not TryConvert(Result) then
+  if not TryConvert(targetType, Result) then
     RaiseConversionError(TypeInfo, targetType);
 end;
 
