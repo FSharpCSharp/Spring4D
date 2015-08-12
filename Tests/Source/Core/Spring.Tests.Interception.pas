@@ -75,6 +75,8 @@ type
     procedure InterfaceProxy_with_additional_interfaces_handles_refcount;
 
     procedure Mixin;
+
+    procedure CustomProxyWithSafecallMethod;
   end;
 
   TStorageTests = class(TTestCase)
@@ -113,6 +115,7 @@ uses
   Spring.Container.AutoMockExtension,
   Spring.Container.Core,
   Spring.Mocking,
+  Spring.Interception.CustomProxy,
   Spring.TestUtils;
 
 
@@ -433,6 +436,40 @@ begin
   finally
     proxy.Free;
   end;
+end;
+
+type
+  TMyMock = class(TCustomProxy)
+  public
+    procedure SomeProcedure; virtual; safecall;
+    function SafeCallProcedure(const s: WideString): Integer; virtual; safecall;
+  end;
+
+procedure TMyMock.SomeProcedure;
+begin
+  Intercept;
+end;
+
+function TMyMock.SafeCallProcedure(const s: WideString): Integer;
+begin
+  Result := Intercept([s]).AsInteger;
+end;
+
+procedure TProxyTest.CustomProxyWithSafecallMethod;
+var
+  mock: Mock<TMyMock>;
+begin
+  mock := Mock<TMyMock>.Create;
+  mock.Setup.Returns(42).When.SafeCallProcedure('test');
+  CheckEquals(42, mock.Instance.SafeCallProcedure('test'));
+  mock.Received(Times.Once).SafeCallProcedure('test');
+
+  mock := Mock<TMyMock>.Create;
+  mock.Setup.Executes.When.SomeProcedure;
+  mock.Instance.SomeProcedure;
+  mock.Received(Times.Once).SomeProcedure;
+
+  Pass;
 end;
 
 procedure TProxyTest.ClassProxy_for_class_already_implementing_additional_interfaces;

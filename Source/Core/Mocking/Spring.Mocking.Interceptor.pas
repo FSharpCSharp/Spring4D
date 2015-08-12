@@ -189,16 +189,15 @@ begin
             raise EMockException.CreateResFmt(@SUnexpectedMethodCall, [
               invocation.Method.ToString, ArgsToString(invocation.Arguments)])
           else
-          begin
             // create results for params
-            if invocation.Method.MethodKind = mkFunction then
-              if invocation.Method.ReturnType.TypeKind = tkInterface then
-              begin
-                methodCall := TMethodCall.Create(CreateMock(invocation),
-                  invocation.Arguments);
-                fExpectedCalls.Add(invocation.Method, methodCall);
-              end;
-          end;
+            if invocation.Method.HasExtendedInfo
+              and (invocation.Method.MethodKind = mkFunction)
+              and (invocation.Method.ReturnType.TypeKind = tkInterface) then
+            begin
+              methodCall := TMethodCall.Create(CreateMock(invocation),
+                invocation.Arguments);
+              fExpectedCalls.Add(invocation.Method, methodCall);
+            end;
 
       if Assigned(methodCall) then
         invocation.Result := methodCall.Invoke(invocation);
@@ -275,7 +274,8 @@ begin
   Inc(fCallCount);
   if Assigned(fAction) then
     Result := fAction(TCallInfo.Create(invocation, fCallCount));
-  if invocation.Method.MethodKind = mkFunction then
+  if invocation.Method.HasExtendedInfo
+    and (invocation.Method.MethodKind = mkFunction) then
     Result := Result.Cast(invocation.Method.ReturnType.Handle);
 end;
 
