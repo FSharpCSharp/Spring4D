@@ -29,10 +29,17 @@ unit Spring.Persistence.Core.Exceptions;
 interface
 
 uses
-  SysUtils;
+  SysUtils,
+  Spring;
 
 type
-  EBaseORMException = class(Exception)
+  /// <summary>
+  ///   Base class for all ORM related exceptions. Cannot be instantiated
+  ///   directly.
+  /// </summary>
+  EORMException = class abstract(Exception);
+
+  EBaseORMException = class(EORMException)
   protected
     function EntityToString(const entity: TObject): string; virtual;
   public
@@ -45,17 +52,17 @@ type
 
   ETableNotSpecified = class(EBaseORMException);
 
-  EORMMethodNotImplemented = class(Exception);
+  EORMMethodNotImplemented = class(EORMException);
 
-  EUnknownMember = class(Exception);
+  EUnknownMember = class(EORMException);
 
-  EORMEnumException = class(Exception);
+  EORMEnumException = class(EORMException);
 
-  EEntityManagerNotSet = class(Exception);
+  EEntityManagerNotSet = class(EORMException);
 
-  EUnknownJoinType = class(Exception);
+  EUnknownJoinType = class(EORMException);
 
-  EORMRecordNotFoundException = class(Exception);
+  EORMRecordNotFoundException = class(EORMException);
 
   EORMUpdateNotSuccessfulException = class(EBaseORMException);
 
@@ -66,44 +73,70 @@ type
 
   EORMInvalidConversion = class(EBaseORMException);
 
-  EORMContainerDoesNotHaveAddMethod = class(Exception);
+  EORMContainerDoesNotHaveAddMethod = class(EORMException);
 
-  EORMContainerDoesNotHaveClearMethod = class(Exception);
+  EORMContainerDoesNotHaveClearMethod = class(EORMException);
 
-  EORMContainerDoesNotHaveCountMethod = class(Exception);
+  EORMContainerDoesNotHaveCountMethod = class(EORMException);
 
-  EORMContainerAddMustHaveOneParameter = class(Exception);
+  EORMContainerAddMustHaveOneParameter = class(EORMException);
 
-  EORMContainerItemTypeNotSupported = class(Exception);
+  EORMContainerItemTypeNotSupported = class(EORMException);
 
-  EORMUnsupportedType = class(Exception);
+  EORMUnsupportedType = class(EORMException);
 
-  EORMUnsupportedOperation = class(Exception);
+  EORMUnsupportedOperation = class(EORMException);
 
-  EORMConnectionAlreadyRegistered = class(Exception);
-  EORMRowMapperAlreadyRegistered = class(Exception);
-  EORMConnectionNotRegistered = class(Exception);
+  EORMConnectionAlreadyRegistered = class(EORMException);
+  EORMRowMapperAlreadyRegistered = class(EORMException);
+  EORMConnectionNotRegistered = class(EORMException);
 
-  EORMManyToOneMappedByColumnNotFound = class(Exception);
+  EORMManyToOneMappedByColumnNotFound = class(EORMException);
 
-  EORMTransactionNotStarted = class(Exception);
+  EORMTransactionNotStarted = class(EORMException);
 
-  EORMListInSession = class(Exception);
+  EORMListInSession = class(EORMException);
 
-  EORMCannotConvertValue = class(Exception);
+  EORMCannotConvertValue = class(EORMException);
 
-  EORMInvalidArguments = class(Exception);
+  EORMInvalidArguments = class(EORMException);
 
   EORMOptimisticLockException = class(EBaseORMException);
 
   EORMCannotGenerateQueryStatement = class(EBaseORMException);
 
-  EORMAdapterException = class(Exception);
+  /// <summary>
+  ///   Base class for all adapter related exceptions. Ie. exceptions that may
+  ///   occur when calling directly into the DB driver (ie. outside ORM scope).
+  ///   Unless generic failure exception is encountered, adapter functions may
+  ///   not raise any other exception that doesn't descent from this base
+  ///   class.
+  /// </summary>
+  /// <remarks>
+  ///   Additionally optional <c>Code</c> property has been added that may be
+  ///   used by any descendant which can provide such information.
+  /// </remarks>
+  EORMAdapterException = class abstract(EORMException)
+  strict private
+    fCode: Nullable<Integer>;
+  public
+    constructor Create(const msg: string); overload;
+    constructor CreateFmt(const msg: string; const args: array of const); overload;
+    constructor Create(const msg: string; aCode: Integer); overload;
+    constructor CreateFmt(const msg: string; const args: array of const; aCode: Integer); overload;
+
+    /// <summary>
+    ///   Status code of the operation (optional).
+    /// </summary>
+    /// <remarks>
+    ///   Driver dependent
+    /// </remarks>
+    property Code: Nullable<Integer> read fCode;
+  end;
 
 implementation
 
 uses
-  Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Mapping.Attributes,
@@ -127,5 +160,31 @@ end;
 
 {$ENDREGION}
 
+
+{ EORMAdapterException }
+
+constructor EORMAdapterException.Create(const msg: string);
+begin
+  inherited Create(msg);
+end;
+
+constructor EORMAdapterException.Create(const msg: string; aCode: Integer);
+begin
+  Create(msg);
+  fCode := aCode;
+end;
+
+constructor EORMAdapterException.CreateFmt(const msg: string;
+  const args: array of const);
+begin
+  inherited CreateFmt(msg, args);
+end;
+
+constructor EORMAdapterException.CreateFmt(const msg: string;
+  const args: array of const; aCode: Integer);
+begin
+  CreateFmt(msg, args);
+  fCode := aCode;
+end;
 
 end.
