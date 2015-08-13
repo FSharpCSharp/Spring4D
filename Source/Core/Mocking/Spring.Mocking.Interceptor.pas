@@ -73,8 +73,6 @@ type
   public
     constructor Create(behavior: TMockBehavior = TMockBehavior.Dynamic);
 
-    procedure Setup;
-
     procedure Received(const times: Times);
     procedure ReceivedForAnyArgs(const times: Times);
 
@@ -241,18 +239,15 @@ begin
   fCurrentAction := action;
 end;
 
-procedure TMockInterceptor.Setup;
-begin
-  fState := TMockState.Arrange;
-end;
-
 procedure TMockInterceptor.When;
 begin
+  fState := TMockState.Arrange;
   fArgsMatching := True;
 end;
 
 procedure TMockInterceptor.WhenForAnyArgs;
 begin
+  fState := TMockState.Arrange;
   fArgsMatching := False;
 end;
 

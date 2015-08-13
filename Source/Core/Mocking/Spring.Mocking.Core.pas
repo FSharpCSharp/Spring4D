@@ -317,7 +317,6 @@ end;
 
 function TMock.Setup: ISetup;
 begin
-  fInterceptor.Setup;
   Result := Self;
 end;
 
