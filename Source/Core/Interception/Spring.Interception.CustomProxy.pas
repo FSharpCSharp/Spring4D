@@ -112,8 +112,8 @@ begin
   try
     invocation.Proceed;
   finally
-    for i := 1 to High(args) do
-      PValue(@args[i])^ := arguments[i - 1];
+    for i := 0 to High(args) do
+      PValue(@args[i])^ := arguments[i];
     Result := invocation.Result;
   end;
 end;
