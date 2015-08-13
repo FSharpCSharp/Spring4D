@@ -31,6 +31,7 @@ interface
 {$IFDEF MSWINDOWS}
 uses
   ADODB,
+  ComObj,
   SysUtils,
   Spring.Collections,
   Spring.Persistence.Core.Base,
@@ -116,6 +117,8 @@ type
   protected
     function GetAdapterException(const exc: Exception;
       const defaultMsg: string): Exception; override;
+    function GetDriverException(const exc: EOleSysError;
+      const defaultMsg: string): Exception; virtual;
   end;
 
 {$ENDIF}
@@ -135,7 +138,7 @@ uses
 {$REGION 'TADOResultSetAdapter'}
 
 constructor TADOResultSetAdapter.Create(const dataSet: TADODataSet;
-  const aExceptionHandler: IORMExceptionHandler);
+      const aExceptionHandler: IORMExceptionHandler);
 begin
   inherited Create(DataSet, aExceptionHandler);
   DataSet.DisableControls;
@@ -200,7 +203,11 @@ end;
 function TADOStatementAdapter.Execute: NativeUInt;
 begin
   inherited;
-  Result := Statement.ExecSQL;
+  try
+    Result := Statement.ExecSQL;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TADOStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
@@ -225,7 +232,7 @@ begin
     begin
       //make sure that resultset is always created to avoid memory leak
       Result := TADOResultSetAdapter.Create(LStmt, ExceptionHandler);
-      raise EADOAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
+      raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
     end;
   end;
 end;
@@ -262,11 +269,13 @@ end;
 function TADOConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
   if Assigned(Connection) then
-  begin
+  try
     Connection.Connected := True;
     if not Connection.InTransaction then
       Connection.BeginTrans;
     Result := TADOTransactionAdapter.Create(Connection, ExceptionHandler);
+  except
+    raise HandleException;
   end
   else
     Result := nil;
@@ -275,7 +284,11 @@ end;
 procedure TADOConnectionAdapter.Connect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := True;
+  except
+    raise HandleException;
+  end;
 end;
 
 constructor TADOConnectionAdapter.Create(const connection: TADOConnection);
@@ -311,13 +324,21 @@ end;
 procedure TADOConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := False;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TADOConnectionAdapter.IsConnected: Boolean;
 begin
   if Assigned(Connection) then
+  try
     Result := Connection.Connected
+  except
+    raise HandleException;
+  end
   else
     Result := False;
 end;
@@ -330,18 +351,29 @@ end;
 procedure TADOTransactionAdapter.Commit;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.CommitTrans;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TADOTransactionAdapter.InTransaction: Boolean;
 begin
-  Result := Transaction.InTransaction;
+  if Assigned(Transaction) then
+    Result := Transaction.InTransaction
+  else
+    Result := False;
 end;
 
 procedure TADOTransactionAdapter.Rollback;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.RollbackTrans;
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}
@@ -362,6 +394,27 @@ end;
 
 function TADOExceptionHandler.GetAdapterException(const exc: Exception;
   const defaultMsg: string): Exception;
+begin
+  // All ADO calls should be safecalls which means we can solely rely on OLE
+  // exception handling.
+  if exc is EOleSysError then
+  begin
+    // OLE specific exception
+    Result := GetDriverException(EOleSysError(exc), defaultMsg);
+    if not Assigned(Result) then
+      Result := EADOAdapterException.Create(defaultMsg,
+        EOleSysError(exc).ErrorCode);
+  end
+  else if exc is EDatabaseError then
+    Result := EADOAdapterException.Create(defaultMsg)
+  else if exc is ESafecallException then // Safecall excpetion handler is not set
+    Result := EADOAdapterException.Create(defaultMsg)
+  else
+    Result := nil;
+end;
+
+function TADOExceptionHandler.GetDriverException(
+  const exc: EOleSysError; const defaultMsg: string): Exception;
 begin
   Result := nil;
 end;
