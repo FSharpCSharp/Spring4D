@@ -33,9 +33,11 @@ uses
   SysUtils,
   TypInfo,
   Spring,
+  Spring.DesignPatterns,
   Spring.Interception,
   Spring.Mocking,
   Spring.Mocking.Interceptor,
+  Spring.Mocking.Matching,
   Spring.Times;
 
 type

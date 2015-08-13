@@ -51,6 +51,7 @@ uses
   Spring.Tests.Container.Logging,
 {$IFDEF DELPHIXE_UP}
   Spring.Tests.Interception,
+  Spring.Tests.Mocking,
 {$ENDIF}
   Spring.Tests.Pool,
   Spring.Tests.Utils,
@@ -243,7 +244,8 @@ begin
     TProxyTest.Suite,
     TStorageTests.Suite,
     TTestInterception.Suite,
-    TTestMocks.Suite
+    TTestMocks.Suite,
+    TParameterMatchingTests.Suite
   ]);
 {$ENDIF}
 

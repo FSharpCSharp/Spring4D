@@ -34,7 +34,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Interception,
-  Spring.Mocking;
+  Spring.Mocking,
+  Spring.Mocking.Matching;
 
 {$SCOPEDENUMS ON}
 
@@ -171,6 +172,8 @@ begin
     TMockState.Arrange:
     begin
       if not Assigned(fMatch) then
+        fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments);
+      if not Assigned(fMatch) then
         fMatch := CreateArgMatch(invocation.Arguments);
       methodCall := TMethodCall.Create(fCurrentAction, fMatch);
       fExpectedCalls.Add(invocation.Method, methodCall);
@@ -231,7 +234,6 @@ procedure TMockInterceptor.Received(const times: Times);
 begin
   fState := TMockState.Assert;
   fCurrentTimes := times;
-  fMatch := nil;
 end;
 
 procedure TMockInterceptor.Received(const times: Times; const match: TArgMatch);
@@ -249,7 +251,6 @@ end;
 procedure TMockInterceptor.When;
 begin
   fState := TMockState.Arrange;
-  fMatch := nil;
 end;
 
 procedure TMockInterceptor.When(const match: TArgMatch);

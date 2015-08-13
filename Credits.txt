@@ -26,6 +26,7 @@ Acknowledgements:
 * Alexandr Demcenko (Many classes in the Spring.Cryptography are based on his native cryptographical code implementation)
 * Allen Bauer (Event<T> and Nullable<T> are based on prototypes shown in his blog)
 * Linas Naginionis is the original author of the Marshmallow ORM which Spring Persistence is based on
+* Alexander Benikowski (his idea for wrapping the parameter index into any supported type used by mock parameter matching)
 
 Donations
 * Documentation Insight

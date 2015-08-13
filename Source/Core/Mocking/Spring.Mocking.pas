@@ -33,8 +33,10 @@ uses
   SysUtils,
   TypInfo,
   Spring,
+  Spring.Collections,
   Spring.DesignPatterns,
   Spring.Interception,
+  Spring.Mocking.Matching,
   Spring.Times;
 
 {$SCOPEDENUMS ON}
@@ -46,7 +48,7 @@ type
 
   TValue = Rtti.TValue;
 
-  TArgMatch = TPredicate<TArray<TValue>>;
+  Arg = Spring.Mocking.Matching.Arg;
 
 const
   DefaultMockBehavior = TMockBehavior.Dynamic;
@@ -201,28 +203,10 @@ type
     class function From<T: IInterface>(const value: T): Mock<T>; static;
   end;
 
-  TMatchArgument = record
-  private
-    Index: Integer;
-  public
-    class operator Equal(const left: TMatchArgument; const right: TValue): TSpecification<TArray<TValue>>;
-  end;
-
-  TMatchArguments = record
-  strict private
-    function GetAny: TArgMatch;
-    function GetItems(index: Integer): TMatchArgument;
-  public
-    property Any: TArgMatch read GetAny;
-    property Items[index: Integer]: TMatchArgument read GetItems; default;
-  end;
-
-const
-  Args: TMatchArguments = ();
-
 implementation
 
 uses
+  Spring.Helpers,
   Spring.Mocking.Core,
   Spring.Mocking.Interceptor;
 
@@ -413,47 +397,6 @@ begin
       Result := (interceptor as TObject) is TMockInterceptor
     end) as TMockInterceptor, proxy);
   Result.fMock := mock as IMock<T>;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TMatchArg'}
-
-class operator TMatchArgument.Equal(const left: TMatchArgument;
-  const right: TValue): TSpecification<TArray<TValue>>;
-var
-  capturedRight: TValue;
-  index: Integer;
-begin
-  capturedRight := right;
-  index := left.Index;
-  Result :=
-    function(const args: TArray<TValue>): Boolean
-    begin
-      if index > High(args) then
-        Exit(False);
-      Result := args[index].Equals(capturedRight);
-    end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TMatchParams'}
-
-function TMatchArguments.GetAny: TArgMatch;
-begin
-  Result :=
-    function(const args: TArray<TValue>): Boolean
-    begin
-      Result := True;
-    end;
-end;
-
-function TMatchArguments.GetItems(index: Integer): TMatchArgument;
-begin
-  Result.Index := index;
 end;
 
 {$ENDREGION}
