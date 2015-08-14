@@ -277,7 +277,6 @@ var
   mappedByColumnName: string;
   mappedTableClass: TClass;
   column: ColumnAttribute;
-  builtFieldName: string;
   selectField: TSQLSelectField;
   join: TSQLJoin;
 begin
@@ -286,7 +285,8 @@ begin
   for i := 0 to entityData.ManyToOneColumns.Count - 1 do
   begin
     manyToOneColumn := entityData.ManyToOneColumns[i];
-    table := TSQLTable.Create;
+    // hardcode the index, many to one join tables start at index 1 (0 is the base table)
+    table := TSQLTable.Create(i + 1);
     table.SetFromAttribute(manyToOneColumn.Member.MemberType.GetCustomAttribute<TableAttribute>);
     fTables.Add(table);
 
@@ -295,8 +295,7 @@ begin
     mappedTableClass := manyToOneColumn.Member.MemberType.AsInstance.MetaclassType;
     for column in TEntityCache.Get(mappedTableClass).Columns do
     begin
-      builtFieldName := TSQLAliasGenerator.GetAlias(table.NameWithoutSchema) + '$' + column.ColumnName;
-      selectField := TSQLSelectField.Create(column.ColumnName, table, builtFieldName);
+      selectField := TSQLSelectField.Create(column.ColumnName, table, True);
       fSelectFields.Add(selectField);
     end;
 

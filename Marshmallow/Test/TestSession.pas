@@ -1125,29 +1125,16 @@ begin
 end;
 
 const
-  SQL_MANY_TO_ONE: string = 'SELECT O.*, C.CUSTID %0:S$CUSTID '+
-    ' ,C.CUSTNAME %0:S$CUSTNAME, C.CUSTAGE %0:S$CUSTAGE '+
-    ' FROM '+ TBL_ORDERS + ' O '+
-    ' LEFT OUTER JOIN ' + TBL_PEOPLE + ' C ON C.CUSTID=O.Customer_ID;';
-
- {
- SELECT B.Order_Status_Code,B.Date_Order_Placed,B.Total_Order_Price,B.ORDER_ID,B.Customer_ID,
- B.Customer_Payment_Method_Id,A0.CUSTID Customers_Customer_ID_CUSTID,A0.AVATAR Customers_Customer_ID_AVATAR,
- A0.CUSTSTREAM Customers_Customer_ID_CUSTSTREAM,A0.CUSTNAME Customers_Customer_ID_CUSTNAME,
- A0.CUSTAGE Customers_Customer_ID_CUSTAGE,A0.CUSTHEIGHT Customers_Customer_ID_CUSTHEIGHT,
- A0.LastEdited Customers_Customer_ID_LastEdited,A0.EMAIL Customers_Customer_ID_EMAIL,
- A0.MIDDLENAME Customers_Customer_ID_MIDDLENAME,A0.CUSTTYPE Customers_Customer_ID_CUSTTYPE
- FROM Customer_Orders B
-  LEFT OUTER JOIN Customers A0 ON A0.CUSTID=B.Customer_ID LIMIT 0,1 ;
-
- }
+  SQL_MANY_TO_ONE: string =
+    'SELECT t0.*, t1.CUSTID AS t1$CUSTID , t1.CUSTNAME t1$CUSTNAME, t1.CUSTAGE t1$CUSTAGE '+
+    ' FROM ' + TBL_ORDERS + ' t0' + sLineBreak +
+    '  LEFT OUTER JOIN ' + TBL_PEOPLE + ' t1 ON t1.CUSTID = t0.Customer_ID;';
 
 procedure TSessionTest.ManyToOne;
 var
   LOrder: TCustomer_Orders;
   LCustomer: TCustomer;
   LID: Integer;
-  sql: string;
 begin
   LCustomer := TCustomer.Create;
   try
@@ -1158,9 +1145,7 @@ begin
 
     InsertCustomerOrder(LCustomer.ID, 1, 1, 100.50);
 
-    sql := Format(SQL_MANY_TO_ONE, [TSQLAliasGenerator.GetAlias(TBL_PEOPLE)]);
-
-    LOrder := FSession.Single<TCustomer_Orders>(sql, []);
+    LOrder := FSession.Single<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
     CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
     LID := LOrder.ORDER_ID;
     CheckTrue(Assigned(LOrder.Customer), 'Cannot get customer (inside order) from DB');
@@ -1176,7 +1161,7 @@ begin
     FreeAndNil(LOrder);
 
     ClearTable(TBL_PEOPLE);  //cascade also deletes records from related table
-    LOrder := FSession.SingleOrDefault<TCustomer_Orders>(sql, []);
+    LOrder := FSession.SingleOrDefault<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
     CheckFalse(Assigned(LOrder), 'Cannot get Order from DB');
   finally
     LCustomer.Free;

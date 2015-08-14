@@ -237,6 +237,7 @@ end;
 procedure TRttiRowMapper.SetAssociations(const entity: IEntityWrapper;
   const resultSet: IDBResultSet);
 var
+  i: Integer;
   manyToOne: TManyToOneRelation;
   column: ManyToOneAttribute;
   entityWrapper: IEntityWrapper;
@@ -245,12 +246,17 @@ begin
   begin
     manyToOne := TManyToOneRelation.Create;
     try
+      i := 1;
       for column in entity.ManyToOneColumns do
       begin
+        // associations are numbered from 1 to n
+        // (this is used for column alias lookup - see TSelectCommand.SetAssociations
+        manyToOne.Index := i;
         manyToOne.SetAssociation(entity.Entity, column, resultSet);
         entityWrapper := TEntityWrapper.Create(manyToOne.NewEntity, manyToOne.NewColumns);
         // TODO use pre created rowmapper
         DoMapEntityFromColumns(entityWrapper, resultSet);
+        Inc(i);
       end;
     finally
       manyToOne.Free;

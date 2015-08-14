@@ -38,16 +38,14 @@ type
   TManyToOneRelation = class(TAbstractRelation)
   private
     fNewColumns: TColumnDataList;
-    fNewTableName: string;
   protected
     procedure ResolveColumns(const resultSet: IDBResultSet); virtual;
   public
+    Index: Integer;
     NewEntity: TObject;
 
     constructor Create; virtual;
     destructor Destroy; override;
-
-    class function BuildColumnName(const tableName, columnName: string): string;
 
     procedure SetAssociation(const entity: TObject;
       const association: AssociationAttribute;
@@ -81,11 +79,6 @@ begin
   inherited Destroy;
 end;
 
-class function TManyToOneRelation.BuildColumnName(const tableName, columnName: string): string;
-begin
-  Result := TSQLAliasGenerator.GetAlias(tableName) + '$' + columnName;
-end;
-
 procedure TManyToOneRelation.ResolveColumns(const resultSet: IDBResultSet);
 var
   i: Integer;
@@ -97,7 +90,7 @@ begin
     // dealing with records here so assignments necessary (cannot just set members)
     columnData := fNewColumns[i];
 
-    columnName := BuildColumnName(fNewTableName, columnData.ColumnName);
+    columnName := 't' + IntToStr(Index) + '$' + columnData.ColumnName;
     if not resultSet.FieldExists(columnName) then
     begin
       fNewColumns.Delete(i);
@@ -118,7 +111,6 @@ var
 begin
   newEntityClass := association.Member.MemberType.AsInstance.MetaclassType;
   entityData := TEntityCache.Get(newEntityClass);
-  fNewTableName := entityData.EntityTable.TableName;
   NewEntity := TActivator.CreateInstance(newEntityClass);
   if Assigned(fNewColumns) then
     fNewColumns.Free;

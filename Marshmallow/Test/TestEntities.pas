@@ -333,6 +333,29 @@ type
     property Role: TRole read fRole write fRole;
   end;
 
+  [Table('DETAIL')]
+  TDetailEntity = class
+  protected
+    [Column('ID', [cpPrimaryKey])]
+    fId: string;
+  end;
+
+  [Table('MASTER')]
+  TMasterEntity = class
+  protected
+    [Column('ID', [cpPrimaryKey])]
+    fId: string;
+
+    [Column('DETAIL1_ID')]
+    fDetail1Id: string;
+    [Column('DETAIL2_ID')]
+    fDetail2Id: string;
+    [ManyToOne(True, [ckCascadeAll], 'fDetail1Id')]
+    fDetail1: TDetailEntity;
+    [ManyToOne(True, [ckCascadeAll], 'fDetail2Id')]
+    fDetail2: TDetailEntity;
+  end;
+
 var
   PictureFilename, OutputDir: string;
 
@@ -488,9 +511,7 @@ var
 begin
   Result := TCollections.CreateList<TRole>;
   for userRole in fUserRoles.Value do
-  begin
     Result.Add(userRole.Role);
-  end;
 end;
 
 { TRole }

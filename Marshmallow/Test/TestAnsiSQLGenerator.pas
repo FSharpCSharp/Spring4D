@@ -28,12 +28,13 @@ type
     procedure TestGenerateGetLastInsertId;
     procedure TestGeneratePagedQuery;
     procedure TestGenerateGetQueryCount;
+
+    procedure TestGenerateSelectWithAggregation;
   end;
 
 implementation
 
 uses
-//  SysUtils,
   TestEntities,
   Spring.TestUtils,
   Spring.Persistence.Mapping.Attributes,
@@ -49,7 +50,7 @@ end;
 
 function CreateTestJoinTable: TSQLTable;
 begin
-  Result := TSQLTable.Create;
+  Result := TSQLTable.Create(1);
   Result.Schema := 'TEST';
   Result.Name := 'PRODUCTS';
   Result.Description := 'Products table';
@@ -57,7 +58,7 @@ end;
 
 function CreateTestCOUNTRYTable: TSQLTable;
 begin
-  Result := TSQLTable.Create;
+  Result := TSQLTable.Create(2);
   Result.Schema := 'TEST';
   Result.Name := 'COUNTRIES';
   Result.Description := 'Countries table';
@@ -75,49 +76,49 @@ begin
 end;
 
 const
-  SQL_SELECT_TEST_SIMPLE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT"'+ sLineBreak +
+  SQL_SELECT_TEST_SIMPLE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT"' + sLineBreak +
     ' FROM TEST.CUSTOMERS t0;';
 
-  SQL_SELECT_TEST_JOIN = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT"' + sLineBreak +
     ' FROM TEST.CUSTOMERS t0' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"'+
+    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"' +
     ';';
 
-  SQL_SELECT_TEST_JOIN_2 = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2 = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"' + sLineBreak +
     ' FROM TEST.CUSTOMERS t0' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"'+
+    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"' +sLineBreak +
+    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"' +
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2_ORDER = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"' + sLineBreak +
     ' FROM TEST.CUSTOMERS t0' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"'+sLineBreak+
+    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"' + sLineBreak +
+    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"' + sLineBreak +
     '  ORDER BY t0."AGE" DESC'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_MULTIPLE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2_ORDER_MULTIPLE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"' + sLineBreak +
     ' FROM TEST.CUSTOMERS t0' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"'+sLineBreak+
+    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"' + sLineBreak +
+    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"' + sLineBreak +
     '  ORDER BY t0."AGE" DESC, t2."COUNTRYNAME" ASC'+
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"' + sLineBreak +
     ' FROM TEST.CUSTOMERS t0' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"'+sLineBreak+
-    '  GROUP BY t0."HEIGHT", t0."NAME", t0."AGE", t2."COUNTRYNAME"'+sLineBreak+
-    '  ORDER BY t0."AGE" DESC, t2."COUNTRYNAME" ASC'+
+    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"' + sLineBreak +
+    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"' + sLineBreak +
+    '  GROUP BY t0."HEIGHT", t0."NAME", t0."AGE", t2."COUNTRYNAME"' + sLineBreak +
+    '  ORDER BY t0."AGE" DESC, t2."COUNTRYNAME" ASC' +
     ';';
 
-  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"'+ sLineBreak +
+  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE = 'SELECT t0."NAME", t0."AGE", t0."HEIGHT", t2."COUNTRYNAME"' + sLineBreak +
     ' FROM TEST.CUSTOMERS t0' + sLineBreak +
-    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"'+sLineBreak+
-    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"'+sLineBreak+
-    '  WHERE t0."NAME" = :NAME'+sLineBreak+
-    '  GROUP BY t0."HEIGHT", t0."NAME", t0."AGE", t2."COUNTRYNAME"'+sLineBreak+
-    '  ORDER BY t0."AGE" DESC, t2."COUNTRYNAME" ASC'+
+    '  INNER JOIN TEST.PRODUCTS t1 ON t1."ID" = t0."PRODID"' + sLineBreak +
+    '  LEFT OUTER JOIN TEST.COUNTRIES t2 ON t2."ID" = t0."COUNTRYID"' + sLineBreak +
+    '  WHERE t0."NAME" = :NAME' + sLineBreak +
+    '  GROUP BY t0."HEIGHT", t0."NAME", t0."AGE", t2."COUNTRYNAME"' + sLineBreak +
+    '  ORDER BY t0."AGE" DESC, t2."COUNTRYNAME" ASC' +
     ';';
 
 procedure TAnsiSQLGeneratorTest.TestGenerateSelect;
@@ -186,6 +187,27 @@ begin
     LJoinTable.Free;
     LCountriesTable.Free;
     LCommand.Free;
+  end;
+end;
+
+procedure TAnsiSQLGeneratorTest.TestGenerateSelectWithAggregation;
+const
+  expectedSql =
+    'SELECT t0."ID", t0."DETAIL1_ID", t0."DETAIL2_ID", t1."ID" AS t1$ID, t2."ID" AS t2$ID' + sLineBreak +
+    ' FROM MASTER t0' + sLineBreak +
+    '  LEFT OUTER JOIN DETAIL t1 ON t1."ID" = t0."DETAIL1_ID"' + sLineBreak +
+    '  LEFT OUTER JOIN DETAIL t2 ON t2."ID" = t0."DETAIL2_ID"' +
+    ';';
+var
+  select: TSelectCommand;
+  sql: string;
+begin
+  select := TSelectCommand.Create(TMasterEntity);
+  try
+    sql := FAnsiSQLGenerator.GenerateSelect(select);
+    CheckEqualsString(expectedSql, sql);
+  finally
+    select.Free;
   end;
 end;
 

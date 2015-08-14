@@ -430,9 +430,9 @@ function TAnsiSQLGenerator.GenerateWhere(const field: TSQLWhereField): string;
 begin
   if field is TSQLWherePropertyField then
     Result := Format('(%s %s %s)', [
-      TSQLAliasGenerator.GetAlias(field.Table.Name) + '.' + field.LeftSQL,
+      field.Table.Alias + '.' + field.LeftSQL,
       WhereOperatorNames[field.WhereOperator],
-      TSQLAliasGenerator.GetAlias(TSQLWherePropertyField(field).OtherTable.Name) + '.' + field.RightSQL])
+      TSQLWherePropertyField(field).OtherTable.Alias + '.' + field.RightSQL])
   else
     case field.WhereOperator of
       woIsNull, woIsNotNull:
@@ -486,7 +486,7 @@ end;
 
 function TAnsiSQLGenerator.GetQualifiedFieldName(const field: TSQLField): string;
 begin
-  Result := TSQLAliasGenerator.GetAlias(field.Table.Name) + '.' + GetEscapedFieldName(field);
+  Result := field.Table.Alias + '.' + GetEscapedFieldName(field);
 end;
 
 function TAnsiSQLGenerator.GetCopyFieldsAsString(
@@ -527,16 +527,10 @@ begin
 end;
 
 function TAnsiSQLGenerator.GetEscapedFieldName(const field: TSQLField): string;
-var
-  alias: string;
 begin
   Result := AnsiQuotedStr(field.Name, GetEscapeChar);
-  if field is TSQLSelectField then
-  begin
-    alias := TSQLSelectField(field).Alias;
-    if alias <> '' then
-      Result := Result + ' AS ' + alias;
-  end;
+  if (field is TSQLSelectField) and TSQLSelectField(field).NeedsAlias then
+    Result := Result + ' AS ' + field.Table.Alias + '$' + field.Name;
 end;
 
 function TAnsiSQLGenerator.GetEscapeChar: Char;
@@ -743,7 +737,7 @@ end;
 
 function TAnsiSQLGenerator.GetTableNameWithAlias(const table: TSQLTable): string;
 begin
-  Result := table.Name + ' ' + TSQLAliasGenerator.GetAlias(table.Name);
+  Result := table.Name + ' ' + table.Alias;
 end;
 
 function TAnsiSQLGenerator.GetTempTableName: string;

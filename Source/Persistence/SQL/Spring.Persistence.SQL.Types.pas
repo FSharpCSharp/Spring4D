@@ -42,13 +42,17 @@ type
     fName: string;
     fSchema: string;
     fDescription: string;
+    fIndex: Integer;
     function GetName: string;
     function GetNameWithoutSchema: string;
+    function GetAlias: string;
   public
+    constructor Create(const index: Integer = 0);
     class function CreateFromClass(entityClass: TClass): TSQLTable;
 
     procedure SetFromAttribute(const attribute: TableAttribute);
 
+    property Alias: string read GetAlias;
     property Description: string read fDescription write fDescription;
     property Name: string read GetName write fName;
     property Schema: string read fSchema write fSchema;
@@ -89,12 +93,11 @@ type
   /// </summary>
   TSQLSelectField = class(TSQLField)
   private
-    fAlias: string;
+    fNeedsAlias: Boolean;
   public
     constructor Create(const name: string; const table: TSQLTable;
-      const alias: string = ''); reintroduce;
-
-    property Alias: string read fAlias;
+      needsAlias: Boolean = False); reintroduce;
+    property NeedsAlias: Boolean read fNeedsAlias;
   end;
 
   /// <summary>
@@ -258,20 +261,6 @@ type
     property Segments: IList<TSQLJoinSegment> read fSegments write fSegments;
   end;
 
-  /// <summary>
-  ///   Static class which is used to generate table aliases.
-  /// </summary>
-  TSQLAliasGenerator = class
-  strict private
-    class var fAliases: IDictionary<string,string>;
-    class var fIndex: Integer;
-  public
-    class constructor Create;
-    class destructor Destroy;
-
-    class function GetAlias(const tableName: string): string;
-  end;
-
 const
   WhereOperatorNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
@@ -346,6 +335,12 @@ end;
 
 {$REGION 'TSQLTable'}
 
+constructor TSQLTable.Create(const index: Integer);
+begin
+  inherited Create;
+  fIndex := index;
+end;
+
 class function TSQLTable.CreateFromClass(entityClass: TClass): TSQLTable;
 var
   entityData: TEntityData;
@@ -359,6 +354,11 @@ begin
 
   Result := TSQLTable.Create;
   Result.SetFromAttribute(entityData.EntityTable);
+end;
+
+function TSQLTable.GetAlias: string;
+begin
+  Result := 't' + IntToStr(fIndex);
 end;
 
 function TSQLTable.GetName: string;
@@ -431,34 +431,6 @@ begin
   fForeignKeyField.Free;
   fPrimaryKeyField.Free;
   inherited;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSQLAliasGenerator'}
-
-class constructor TSQLAliasGenerator.Create;
-begin
-  fAliases := TCollections.CreateDictionary<string,string>(100,
-    TStringComparer.OrdinalIgnoreCase);
-  fIndex := -1;
-end;
-
-class destructor TSQLAliasGenerator.Destroy;
-begin
-  fAliases := nil;
-end;
-
-class function TSQLAliasGenerator.GetAlias(const tableName: string): string;
-begin
-  if not fAliases.TryGetValue(tableName, Result) then
-  begin
-    Result := 't' + IntToStr(TInterlocked.Increment(fIndex));
-    fAliases.AddOrSetValue(tableName, Result);
-  end
-  else
-    Result := fAliases[tableName];
 end;
 
 {$ENDREGION}
@@ -581,11 +553,11 @@ end;
 
 {$REGION 'TSQLSelectField'}
 
-constructor TSQLSelectField.Create(const name: string;
-  const table: TSQLTable; const alias: string);
+constructor TSQLSelectField.Create(const name: string; const table: TSQLTable;
+  needsAlias: Boolean);
 begin
   inherited Create(name, table);
-  fAlias := alias;
+  fNeedsAlias := needsAlias;
 end;
 
 {$ENDREGION}
