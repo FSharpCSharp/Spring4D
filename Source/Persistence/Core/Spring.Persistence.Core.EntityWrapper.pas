@@ -21,7 +21,8 @@ type
   public
     constructor Create(const entity: TObject;
       const columnsData: TColumnDataList = nil); overload;
-    constructor Create(entityClass: TClass); overload;
+    constructor Create(entityClass: TClass;
+      const columnsData: TColumnDataList = nil); overload;
 
     function GetPrimaryKeyValue: TValue; overload;
     function GetPrimaryKeyValue(const resultSet: IDBResultSet): TValue; overload;
@@ -57,21 +58,22 @@ uses
 
 {$REGION 'TEntityWrapper'}
 
-constructor TEntityWrapper.Create(const entity: TObject; const columnsData: TColumnDataList);
+constructor TEntityWrapper.Create(const entity: TObject;
+  const columnsData: TColumnDataList);
 begin
-  inherited Create;
+  Create(entity.ClassType, columnsData);
   fEntity := entity;
-  fEntityClassData := TEntityCache.Get(entity.ClassType);
-  fColumnsData := columnsData;
-  if not Assigned(fColumnsData) then
-    fColumnsData := fEntityClassData.ColumnsData;
 end;
 
-constructor TEntityWrapper.Create(entityClass: TClass);
+constructor TEntityWrapper.Create(entityClass: TClass;
+  const columnsData: TColumnDataList);
 begin
   inherited Create;
   fEntityClassData := TEntityCache.Get(entityClass);
   fColumnsData := fEntityClassData.ColumnsData;
+  fColumnsData := columnsData;
+  if not Assigned(fColumnsData) then
+    fColumnsData := fEntityClassData.ColumnsData;
 end;
 
 function TEntityWrapper.GetColumnsData: TColumnDataList;

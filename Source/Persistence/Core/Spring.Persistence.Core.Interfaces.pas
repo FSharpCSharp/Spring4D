@@ -165,6 +165,8 @@ type
     function MapRow(const resultSet: IDBResultSet): T;
   end;
 
+  IRowMapper = IRowMapper<TObject>;
+
   /// <summary>
   ///   Represents list session which can be used to sync changes in the list
   ///   with the database table. E.g. entities from the database can be fetched

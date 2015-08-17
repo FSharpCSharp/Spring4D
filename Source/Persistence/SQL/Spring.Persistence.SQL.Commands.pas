@@ -199,8 +199,10 @@ type
 implementation
 
 uses
+  Rtti,
   SysUtils,
   TypInfo,
+  Spring,
   Spring.Reflection;
 
 
@@ -269,31 +271,28 @@ end;
 
 procedure TSelectCommand.SetAssociations(entityClass: TClass);
 var
-  entityData: TEntityData;
   i: Integer;
   manyToOneColumn: ManyToOneAttribute;
+  memberType: TRttiType;
+  entityData: TEntityData;
   table: TSQLTable;
-  mappedByColumn: ColumnAttribute;
-  mappedByColumnName: string;
-  mappedTableClass: TClass;
   column: ColumnAttribute;
   selectField: TSQLSelectField;
   join: TSQLJoin;
 begin
-  entityData := TEntityCache.Get(entityClass);
-
-  for i := 0 to entityData.ManyToOneColumns.Count - 1 do
+  i := 0;
+  for manyToOneColumn in TEntityCache.Get(entityClass).ManyToOneColumns do
   begin
-    manyToOneColumn := entityData.ManyToOneColumns[i];
+    memberType := manyToOneColumn.Member.MemberType;
+    if IsLazyType(memberType.Handle) then
+      memberType := memberType.GetGenericArguments[0];
+    entityData := TEntityCache.Get(memberType.AsInstance.MetaclassType);
     // hardcode the index, many to one join tables start at index 1 (0 is the base table)
     table := TSQLTable.Create(i + 1);
-    table.SetFromAttribute(manyToOneColumn.Member.MemberType.GetCustomAttribute<TableAttribute>);
+    table.SetFromAttribute(entityData.EntityTable);
     fTables.Add(table);
 
-    mappedByColumn := manyToOneColumn.MappedByColumn;
-    mappedByColumnName := mappedByColumn.ColumnName;
-    mappedTableClass := manyToOneColumn.Member.MemberType.AsInstance.MetaclassType;
-    for column in TEntityCache.Get(mappedTableClass).Columns do
+    for column in entityData.Columns do
     begin
       selectField := TSQLSelectField.Create(column.ColumnName, table, True);
       fSelectFields.Add(selectField);
@@ -301,9 +300,11 @@ begin
 
     join := TSQLJoin.Create(jtLeft);
     join.Segments.Add(TSQLJoinSegment.Create(
-      TSQLField.Create(TEntityCache.Get(mappedTableClass).PrimaryKeyColumn.ColumnName, table),
-      TSQLField.Create(mappedByColumnName, fTable)));
+      TSQLField.Create(entityData.PrimaryKeyColumn.ColumnName, table),
+      TSQLField.Create(manyToOneColumn.MappedByColumn.ColumnName, fTable)));
     fJoins.Add(join);
+
+    Inc(i);
   end;
 end;
 

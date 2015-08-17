@@ -1126,7 +1126,9 @@ end;
 
 const
   SQL_MANY_TO_ONE: string =
-    'SELECT t0.*, t1.CUSTID AS t1$CUSTID , t1.CUSTNAME t1$CUSTNAME, t1.CUSTAGE t1$CUSTAGE '+
+    'SELECT t0.*, t1.CUSTID AS t1$CUSTID, t1.CUSTNAME t1$CUSTNAME, ' +
+    't1.CUSTAGE t1$CUSTAGE, t1.CUSTHEIGHT t1$CUSTHEIGHT, t1.LastEdited t1$LastEdited, ' +
+    't1.EMAIL t1$EMAIL, t1.MIDDLENAME t1$MIDDLENAME, t1.CUSTTYPE t1$CUSTTYPE' + sLineBreak +
     ' FROM ' + TBL_ORDERS + ' t0' + sLineBreak +
     '  LEFT OUTER JOIN ' + TBL_PEOPLE + ' t1 ON t1.CUSTID = t0.Customer_ID;';
 

@@ -482,7 +482,7 @@ end;
 
 procedure TSession.RegisterRowMapper<T>(const rowMapper: IRowMapper<T>);
 begin
-  RegisterNonGenericRowMapper(TClass(T), rowMapper as IRowMapper<TObject>);
+  RegisterNonGenericRowMapper(TClass(T), rowMapper as IRowMapper);
 end;
 
 function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;

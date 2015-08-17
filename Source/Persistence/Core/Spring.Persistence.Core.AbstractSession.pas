@@ -33,6 +33,7 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
+  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Params,
@@ -40,15 +41,46 @@ uses
 
 type
   TAbstractSession = class
+  private type
+    IRowMapperInternal = interface(IRowMapper)
+      procedure MapAssociation(const entity: IEntityWrapper;
+        const resultSet: IDBResultSet); overload;
+    end;
+
+    TRowMapperInternal = class(TInterfacedObject, IRowMapper, IRowMapperInternal)
+    private
+      fEntityClass: TClass;
+      fSession: TAbstractSession;
+      fEntityWrapper: IEntityWrapper;
+      fRowMappers: IList<IRowMapperInternal>;
+      fMember: TRttiMember;
+      fColumnsData: TColumnDataList;
+
+      function ResolveLazyValue(const entity: IEntityWrapper;
+        const columnMember: TRttiMember): TValue;
+
+      procedure SetAssociations(const entity: IEntityWrapper;
+        const resultSet: IDBResultSet);
+      procedure SetEntityFromColumns(const entity: IEntityWrapper;
+        const resultSet: IDBResultSet);
+      procedure SetLazyColumns(const entity: IEntityWrapper);
+
+      procedure MapAssociation(const baseEntity: IEntityWrapper;
+        const resultSet: IDBResultSet); overload;
+      procedure MapEntityFromColumns(const entity: IEntityWrapper;
+        const resultSet: IDBResultSet);
+    public
+      constructor Create(entityClass: TClass; session: TAbstractSession;
+        member: TRttiMember = nil; index: Integer = 0);
+      destructor Destroy; override;
+      function MapRow(const resultSet: IDBResultSet): TObject; overload;
+    end;
   private
     fConnection: IDBConnection;
-    fRowMappers: IDictionary<TClass,IRowMapper<TObject>>;
+    fRowMappers: IDictionary<TClass,IRowMapper>;
     fOldStateEntities: IEntityMap;
 
     {$REGION 'Lazy resolution mechanism - internal use only}
-    function ColumnFromVariant(const value: Variant; const column: TColumnData;
-      const entity: TObject): TValue;
-
     function MapAggregatedObject(const resultSet: IDBResultSet;
       const baseEntity: TObject; classType: TClass): TObject;
 
@@ -124,7 +156,7 @@ type
       const selectColumn: ColumnAttribute = nil): ISelectCommand; virtual;
 
     procedure RegisterNonGenericRowMapper(entityClass: TClass;
-      const rowMapper: IRowMapper<TObject>);
+      const rowMapper: IRowMapper);
     procedure UnregisterNonGenericRowMapper(entityClass: TClass);
 
     procedure UpdateForeignKeysFor(
@@ -139,28 +171,6 @@ type
     property OldStateEntities: IEntityMap read fOldStateEntities;
   end;
 
-  TRttiRowMapper = class(TInterfacedObject, IRowMapper<TObject>)
-  private
-    fEntityClass: TClass;
-    fSession: TAbstractSession;
-    fEntityWrapper: IEntityWrapper;
-
-    function ResolveLazyValue(const entity: IEntityWrapper;
-      const columnMember: TRttiMember): TValue;
-
-    procedure SetAssociations(const entity: IEntityWrapper;
-      const resultSet: IDBResultSet);
-    procedure SetEntityFromColumns(const entity: IEntityWrapper;
-      const resultSet: IDBResultSet);
-    procedure SetLazyColumns(const entity: IEntityWrapper);
-
-    procedure DoMapEntityFromColumns(const entity: IEntityWrapper;
-      const resultSet: IDBResultSet);
-  public
-    constructor Create(entityClass: TClass; session: TAbstractSession);
-    function MapRow(const resultSet: IDBResultSet): TObject;
-  end;
-
 implementation
 
 uses
@@ -168,151 +178,14 @@ uses
   SysUtils,
   Variants,
   Spring.Persistence.Core.Consts,
-  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Relation.ManyToOne,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Commands.Delete,
   Spring.Persistence.SQL.Commands.Insert,
   Spring.Persistence.SQL.Commands.Select,
   Spring.Persistence.SQL.Commands.Update;
-
-
-{$REGION 'TRttiRowMapper'}
-
-constructor TRttiRowMapper.Create(entityClass: TClass; session: TAbstractSession);
-begin
-  inherited Create;
-  fEntityClass := entityClass;
-  fSession := session;
-  fEntityWrapper := TEntityWrapper.Create(entityClass);
-end;
-
-procedure TRttiRowMapper.DoMapEntityFromColumns(const entity: IEntityWrapper;
-  const resultSet: IDBResultSet);
-begin
-  SetEntityFromColumns(entity, resultSet);
-  SetLazyColumns(entity);
-  SetAssociations(entity, resultSet);
-  fSession.AttachEntity(entity);
-end;
-
-function TRttiRowMapper.MapRow(const resultSet: IDBResultSet): TObject;
-begin
-  Result := TActivator.CreateInstance(fEntityClass);
-  fEntityWrapper.Entity := Result;
-  DoMapEntityFromColumns(fEntityWrapper, resultSet);
-end;
-
-function TRttiRowMapper.ResolveLazyValue(const entity: IEntityWrapper;
-  const columnMember: TRttiMember): TValue;
-var
-  memberType: PTypeInfo;
-  targetType: TRttiType;
-  column: ColumnAttribute;
-  id: TValue;
-begin
-  memberType := columnMember.MemberType.Handle;
-  if GetLazyKind(memberType) <> lkRecord then
-    raise EORMUnsupportedType.CreateFmt('Unsupported type: %s - expected Lazy<T>', [memberType.TypeName]);
-  targetType := TType.GetType(memberType).GetGenericArguments[0];
-  if targetType = nil then
-    raise EORMUnsupportedType.CreateFmt('Unsupported type: %s - insufficient rtti', [memberType.TypeName]);
-  Result := TValue.Empty;
-
-  column := columnMember.GetCustomAttribute<ColumnAttribute>;
-  id := entity.PrimaryKeyValue;
-  case targetType.TypeKind of
-    tkClass: Result := fSession.ResolveLazyObject(id, entity.Entity, targetType.AsInstance.MetaclassType, column);
-    tkInterface: Result := fSession.ResolveLazyInterface(id, entity.Entity, targetType, column);
-  else
-    raise EORMUnsupportedType.CreateFmt('Unsupported type: %s', [targetType.Name]);
-  end;
-  if not Result.IsEmpty then
-    TValueData(Result).FTypeInfo := memberType;
-end;
-
-procedure TRttiRowMapper.SetAssociations(const entity: IEntityWrapper;
-  const resultSet: IDBResultSet);
-var
-  i: Integer;
-  manyToOne: TManyToOneRelation;
-  column: ManyToOneAttribute;
-  entityWrapper: IEntityWrapper;
-begin
-  if entity.HasManyToOneRelations then
-  begin
-    manyToOne := TManyToOneRelation.Create;
-    try
-      i := 1;
-      for column in entity.ManyToOneColumns do
-      begin
-        // associations are numbered from 1 to n
-        // (this is used for column alias lookup - see TSelectCommand.SetAssociations
-        manyToOne.Index := i;
-        manyToOne.SetAssociation(entity.Entity, column, resultSet);
-        entityWrapper := TEntityWrapper.Create(manyToOne.NewEntity, manyToOne.NewColumns);
-        // TODO use pre created rowmapper
-        DoMapEntityFromColumns(entityWrapper, resultSet);
-        Inc(i);
-      end;
-    finally
-      manyToOne.Free;
-    end;
-  end;
-end;
-
-procedure TRttiRowMapper.SetEntityFromColumns(const entity: IEntityWrapper;
-  const resultSet: IDBResultSet);
-var
-  columnData: TColumnData;
-  fieldValue: Variant;
-  value: TValue;
-  i: Integer;
-begin
-  entity.SetPrimaryKeyValue(entity.GetPrimaryKeyValue(resultSet));
-  for i := 0 to entity.ColumnsData.Count - 1 do
-  begin
-    columnData := entity.ColumnsData[i];
-    if columnData.IsPrimaryKey then
-      Continue;
-
-    if columnData.IsLazy then
-    begin
-      value := ResolveLazyValue(entity, columnData.Member);
-      entity.SetValue(columnData.Member, value);
-    end
-    else
-    begin
-      try
-        fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
-      except
-        raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [columnData.ColumnName]);
-      end;
-      value := fSession.ColumnFromVariant(fieldValue, columnData, entity.Entity);
-      entity.SetValue(columnData.Member, value);
-    end;
-  end;
-end;
-
-procedure TRttiRowMapper.SetLazyColumns(const entity: IEntityWrapper);
-var
-  column: OneToManyAttribute;
-  value: TValue;
-begin
-  if not entity.HasOneToManyRelations then
-    Exit;
-  for column in entity.OneToManyColumns do
-  begin
-    value := ResolveLazyValue(entity, column.Member);
-    if not value.IsEmpty then
-      entity.SetValue(column.Member, value);
-  end;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TAbstractSession'}
@@ -321,7 +194,7 @@ constructor TAbstractSession.Create(const connection: IDBConnection);
 begin
   inherited Create;
   fConnection := connection;
-  fRowMappers := TCollections.CreateDictionary<TClass,IRowMapper<TObject>>;
+  fRowMappers := TCollections.CreateDictionary<TClass,IRowMapper>;
   if fOldStateEntities = nil then
     fOldStateEntities := TEntityMap.Create;
 end;
@@ -347,17 +220,6 @@ end;
 procedure TAbstractSession.DetachEntity(const entity: TObject);
 begin
   fOldStateEntities.Remove(entity);
-end;
-
-function TAbstractSession.ColumnFromVariant(const value: Variant;
-  const column: TColumnData; const entity: TObject): TValue;
-var
-  convertedValue: TValue;
-begin
-  Result := TValue.FromVariant(value);
-  if not Result.IsEmpty then
-    if Result.TryConvert(column.Member.MemberType.Handle, convertedValue) then
-      Result := convertedValue;
 end;
 
 procedure TAbstractSession.DoDelete(const entity: TObject;
@@ -509,11 +371,11 @@ procedure TAbstractSession.MapEntitiesFromResultSet(
   const resultSet: IDBResultSet; const collection: IObjectList;
   classType: TClass);
 var
-  rowMapper: IRowMapper<TObject>;
+  rowMapper: IRowMapper;
   entity: TObject;
 begin
   if not fRowMappers.TryGetValue(classType, rowMapper) then
-    rowMapper := TRttiRowMapper.Create(classType, Self);
+    rowMapper := TRowMapperInternal.Create(classType, Self);
 
   while not resultSet.IsEmpty do
   begin
@@ -526,16 +388,16 @@ end;
 function TAbstractSession.MapEntityFromResultSetRow(
   const resultSet: IDBResultSet; entityClass: TClass): TObject;
 var
-  rowMapper: IRowMapper<TObject>;
+  rowMapper: IRowMapper;
 begin
   if not fRowMappers.TryGetValue(entityClass, rowMapper) then
-    rowMapper := TRttiRowMapper.Create(entityClass, Self);
+    rowMapper := TRowMapperInternal.Create(entityClass, Self);
 
   Result := rowMapper.MapRow(resultSet)
 end;
 
 procedure TAbstractSession.RegisterNonGenericRowMapper(entityClass: TClass;
-  const rowMapper: IRowMapper<TObject>);
+  const rowMapper: IRowMapper);
 begin
   if fRowMappers.ContainsKey(entityClass) then
     raise EORMRowMapperAlreadyRegistered.CreateFmt('Row Mapper already registered for type: %s', [entityClass.ClassName]);
@@ -657,6 +519,186 @@ begin
   for forColAttribute in foreignKeyEntity.ForeignKeyColumns do
     if SameText(forColAttribute.ReferencedTableName, primaryKeyTableName) then
       foreignKeyEntity.SetValue(forColAttribute.Member, primaryKeyValue);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAbstractSession.TRowMapperInternal'}
+
+constructor TAbstractSession.TRowMapperInternal.Create(entityClass: TClass;
+  session: TAbstractSession; member: TRttiMember; index: Integer);
+
+  procedure ResolveColumns;
+  var
+    i: Integer;
+    columnData: TColumnData;
+  begin
+    for i := fColumnsData.Count - 1 downto 0 do
+    begin
+      // dealing with records here so assignments necessary (cannot just set members)
+      columnData := fColumnsData[i];
+      columnData.ColumnName := Format('t%d$%s', [index, columnData.ColumnName]);
+      fColumnsData[i] := columnData;
+      if columnData.IsPrimaryKey then
+        fColumnsData.PrimaryKeyColumn := columnData;
+    end;
+  end;
+
+var
+  i: Integer;
+  column: ManyToOneAttribute;
+begin
+  inherited Create;
+  fEntityClass := entityClass;
+  fSession := session;
+  if index = 0 then
+    fEntityWrapper := TEntityWrapper.Create(entityClass)
+  else
+  begin
+    fColumnsData := TColumnDataList.Create;
+    fColumnsData.Assign(TEntityCache.Get(fEntityClass).ColumnsData);
+    ResolveColumns;
+    fEntityWrapper := TEntityWrapper.Create(fEntityClass, fColumnsData);
+    fMember := member;
+  end;
+  if fEntityWrapper.HasManyToOneRelations then
+  begin
+    fRowMappers := TCollections.CreateList<IRowMapperInternal>;
+    i := 1;
+    for column in fEntityWrapper.ManyToOneColumns do
+    begin
+      fRowMappers.Add(TRowMapperInternal.Create(
+        column.Member.MemberType.AsInstance.MetaclassType, session, column.Member, i));
+      Inc(i);
+    end;
+  end;
+end;
+
+destructor TAbstractSession.TRowMapperInternal.Destroy;
+begin
+  fColumnsData.Free;
+  inherited;
+end;
+
+procedure TAbstractSession.TRowMapperInternal.MapAssociation(
+  const baseEntity: IEntityWrapper; const resultSet: IDBResultSet);
+var
+  entity: TObject;
+begin
+  entity := fMember.GetValue(baseEntity.Entity).AsObject;
+  if not Assigned(entity) then
+  begin
+    entity := TActivator.CreateInstance(fEntityClass);
+    fMember.SetValue(baseEntity.Entity, entity);
+  end;
+  fEntityWrapper.Entity := entity;
+  MapEntityFromColumns(fEntityWrapper, resultSet);
+end;
+
+procedure TAbstractSession.TRowMapperInternal.MapEntityFromColumns(
+  const entity: IEntityWrapper; const resultSet: IDBResultSet);
+begin
+  SetEntityFromColumns(entity, resultSet);
+  SetLazyColumns(entity);
+  SetAssociations(entity, resultSet);
+  fSession.AttachEntity(entity);
+end;
+
+function TAbstractSession.TRowMapperInternal.MapRow(
+  const resultSet: IDBResultSet): TObject;
+begin
+  Result := TActivator.CreateInstance(fEntityClass);
+  fEntityWrapper.Entity := Result;
+  MapEntityFromColumns(fEntityWrapper, resultSet);
+end;
+
+function TAbstractSession.TRowMapperInternal.ResolveLazyValue(
+  const entity: IEntityWrapper; const columnMember: TRttiMember): TValue;
+var
+  memberType: PTypeInfo;
+  targetType: TRttiType;
+  column: ColumnAttribute;
+  id: TValue;
+begin
+  memberType := columnMember.MemberType.Handle;
+  if GetLazyKind(memberType) <> lkRecord then
+    raise EORMUnsupportedType.CreateFmt('Unsupported type: %s - expected Lazy<T>', [memberType.TypeName]);
+  targetType := TType.GetType(memberType).GetGenericArguments[0];
+  if targetType = nil then
+    raise EORMUnsupportedType.CreateFmt('Unsupported type: %s - insufficient rtti', [memberType.TypeName]);
+  Result := TValue.Empty;
+
+  column := columnMember.GetCustomAttribute<ColumnAttribute>;
+  id := entity.PrimaryKeyValue;
+  case targetType.TypeKind of
+    tkClass: Result := fSession.ResolveLazyObject(id, entity.Entity, targetType.AsInstance.MetaclassType, column);
+    tkInterface: Result := fSession.ResolveLazyInterface(id, entity.Entity, targetType, column);
+  else
+    raise EORMUnsupportedType.CreateFmt('Unsupported type: %s', [targetType.Name]);
+  end;
+  if not Result.IsEmpty then
+    TValueData(Result).FTypeInfo := memberType;
+end;
+
+procedure TAbstractSession.TRowMapperInternal.SetAssociations(
+  const entity: IEntityWrapper; const resultSet: IDBResultSet);
+var
+  rowMapper: IRowMapperInternal;
+begin
+  if Assigned(fRowMappers) then
+    for rowMapper in fRowMappers do
+      rowMapper.MapAssociation(entity, resultSet);
+end;
+
+procedure TAbstractSession.TRowMapperInternal.SetEntityFromColumns(
+  const entity: IEntityWrapper; const resultSet: IDBResultSet);
+var
+  columnData: TColumnData;
+  fieldValue: Variant;
+  value: TValue;
+  i: Integer;
+begin
+  entity.SetPrimaryKeyValue(entity.GetPrimaryKeyValue(resultSet));
+  for i := 0 to entity.ColumnsData.Count - 1 do
+  begin
+    columnData := entity.ColumnsData[i];
+    if columnData.IsPrimaryKey then
+      Continue;
+
+    if columnData.IsLazy then
+    begin
+      value := ResolveLazyValue(entity, columnData.Member);
+      entity.SetValue(columnData.Member, value);
+    end
+    else
+    begin
+      try
+        fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
+      except
+        raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [columnData.ColumnName]);
+      end;
+      value := TValue.FromVariant(fieldValue);
+      value := value.ConvertTo(columnData.Member.MemberType.Handle);
+      entity.SetValue(columnData.Member, value);
+    end;
+  end;
+end;
+
+procedure TAbstractSession.TRowMapperInternal.SetLazyColumns(
+  const entity: IEntityWrapper);
+var
+  column: OneToManyAttribute;
+  value: TValue;
+begin
+  if not entity.HasOneToManyRelations then
+    Exit;
+  for column in entity.OneToManyColumns do
+  begin
+    value := ResolveLazyValue(entity, column.Member);
+    if not value.IsEmpty then
+      entity.SetValue(column.Member, value);
+  end;
 end;
 
 {$ENDREGION}

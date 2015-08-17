@@ -116,9 +116,6 @@ type
     class constructor Create;
 
     class function Get(entityClass: TClass): TEntityData; static;
-
-    class function CreateColumnsData(entityClass: TClass): TColumnDataList; static;
-
     class function IsValidEntity(entityClass: TClass): Boolean; static;
   end;
 
@@ -358,15 +355,6 @@ class constructor TEntityCache.Create;
 begin
   fCriticalSection := TInterfacedCriticalSection.Create;
   fEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
-end;
-
-class function TEntityCache.CreateColumnsData(entityClass: TClass): TColumnDataList;
-var
-  entityData: TEntityData;
-begin
-  Result := TColumnDataList.Create;
-  entityData := Get(entityClass);
-  Result.Assign(entityData.ColumnsData);
 end;
 
 class function TEntityCache.Get(entityClass: TClass): TEntityData;

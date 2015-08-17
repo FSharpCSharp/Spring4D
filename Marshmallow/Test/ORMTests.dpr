@@ -37,8 +37,6 @@ uses
   Spring.Persistence.Core.Graphics in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Graphics.pas',
   Spring.Persistence.Core.Interfaces in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Interfaces.pas',
   Spring.Persistence.Core.ListSession in '..\..\Source\Persistence\Core\Spring.Persistence.Core.ListSession.pas',
-  Spring.Persistence.Core.Relation.Abstract in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Relation.Abstract.pas',
-  Spring.Persistence.Core.Relation.ManyToOne in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Relation.ManyToOne.pas',
   Spring.Persistence.Core.Repository.MongoDB in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.MongoDB.pas',
   Spring.Persistence.Core.Repository.Proxy in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Proxy.pas',
   Spring.Persistence.Core.Repository.Simple in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Simple.pas',

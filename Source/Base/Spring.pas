@@ -3615,7 +3615,7 @@ begin
   if (TypeInfo = nil) or (targetTypeInfo = nil) then
   begin
     targetValue := EmptyValue;
-    Exit(False);
+    Exit(True);
   end;
 
   if TypeInfo = targetTypeInfo then
