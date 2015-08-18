@@ -349,9 +349,6 @@ begin
     Exit(nil);
 
   entityData := TEntityCache.Get(entityClass);
-  if not entityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Entity ("%s") is not a table', [entityClass.ClassName]);
-
   Result := TSQLTable.Create;
   Result.SetFromAttribute(entityData.EntityTable);
 end;

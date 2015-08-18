@@ -280,12 +280,11 @@ uses
   TypInfo,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Consts,
-  Spring.Persistence.Core.EntityWrapper,
+  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.ListSession,
   Spring.Persistence.Criteria,
   Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Register,
   Spring.Reflection;
@@ -372,28 +371,24 @@ end;
 
 function TSession.FindAll<T>: IList<T>;
 var
-  entityClass: TClass;
   selecter: ISelectCommand;
   results: IDBResultSet;
 begin
-  entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
-  selecter := GetSelectCommandExecutor(entityClass);
-  results := selecter.SelectAll(entityClass);
+  selecter := GetSelectCommandExecutor(T);
+  results := selecter.SelectAll(T);
   Result := TCollections.CreateObjectList<T>(True);
   MapEntitiesFromResultSet(results, Result as IObjectList, T);
 end;
 
 function TSession.FindOne<T>(const id: TValue): T;
 var
-  entityClass: TClass;
   selecter: ISelectCommand;
   results: IDBResultSet;
 begin
-  entityClass := TRttiExplorer.GetEntityClass(TypeInfo(T));
-  selecter := GetSelectByIdCommandExecutor(entityClass, id);
+  selecter := GetSelectByIdCommandExecutor(T, id);
   results := selecter.Select;
   if not results.IsEmpty then
-    Result := T(MapEntityFromResultSetRow(results, entityClass))
+    Result := T(MapEntityFromResultSetRow(results, T))
   else
     Result := Default(T);
 end;
@@ -459,19 +454,16 @@ end;
 
 procedure TSession.InsertAll(const entity: TObject);
 var
-  relations: IList<TObject>;
+  entityData: TEntityData;
   relation: TObject;
-  entityWrapper, foreignEntityWrapper: IEntityWrapper;
 begin
-  TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute).ForEach(Insert);
+  entityData := TEntityCache.Get(entity.ClassType);
+  entityData.GetRelations(entity, ManyToOneAttribute).ForEach(Insert);
   Insert(entity);
 
-  entityWrapper := TEntityWrapper.Create(entity);
-  relations := TRttiExplorer.GetRelationsOf(entity, OneToManyAttribute);
-  for relation in relations do
+  for relation in entityData.GetRelations(entity, OneToManyAttribute) do
   begin
-    foreignEntityWrapper := TEntityWrapper.Create(relation);
-    UpdateForeignKeysFor(foreignEntityWrapper, entityWrapper);
+    UpdateForeignKeys(entity, relation);
     InsertAll(relation);
   end;
 end;
@@ -511,7 +503,7 @@ end;
 
 procedure TSession.RegisterRowMapper<T>(const rowMapper: IRowMapper<T>);
 begin
-  RegisterNonGenericRowMapper(TClass(T), rowMapper as IRowMapper);
+  RegisterNonGenericRowMapper(T, rowMapper as IRowMapper);
 end;
 
 function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;
@@ -537,19 +529,16 @@ end;
 
 procedure TSession.SaveAll(const entity: TObject);
 var
-  relations: IList<TObject>;
+  entityData: TEntityData;
   relation: TObject;
-  entityWrapper, foreignEntityWrapper: IEntityWrapper;
 begin
-  TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute).ForEach(Save);
+  entityData := TEntityCache.Get(entity.ClassType);
+  entityData.GetRelations(entity, ManyToOneAttribute).ForEach(Save);
   Save(entity);
 
-  entityWrapper := TEntityWrapper.Create(entity);
-  relations := TRttiExplorer.GetRelationsOf(entity, OneToManyAttribute);
-  for relation in relations do
+  for relation in entityData.GetRelations(entity, OneToManyAttribute) do
   begin
-    foreignEntityWrapper := TEntityWrapper.Create(relation);
-    UpdateForeignKeysFor(foreignEntityWrapper, entityWrapper);
+    UpdateForeignKeys(entity, relation);
     SaveAll(relation);
   end;
 end;
@@ -589,14 +578,14 @@ begin
   results := GetResultSet(sql, params);
   Result := not results.IsEmpty;
   if Result then
-    value := T(MapEntityFromResultsetRow(results, TClass(T)))
+    value := T(MapEntityFromResultsetRow(results, T))
   else
     value := Default(T);
 end;
 
 procedure TSession.UnregisterRowMapper<T>;
 begin
-  UnregisterNonGenericRowMapper(TClass(T));
+  UnregisterNonGenericRowMapper(T);
 end;
 
 procedure TSession.Update(const entity: TObject);
@@ -609,19 +598,16 @@ end;
 
 procedure TSession.UpdateAll(const entity: TObject);
 var
-  relations: IList<TObject>;
+  entityData: TEntityData;
   relation: TObject;
-  entityWrapper, foreignEntityWrapper: IEntityWrapper;
 begin
-  TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute).ForEach(Update);
+  entityData := TEntityCache.Get(entity.ClassType);
+  entityData.GetRelations(entity, ManyToOneAttribute).ForEach(Update);
   Update(entity);
 
-  entityWrapper := TEntityWrapper.Create(entity);
-  relations := TRttiExplorer.GetRelationsOf(entity, OneToManyAttribute);
-  for relation in relations do
+  for relation in entityData.GetRelations(entity, OneToManyAttribute) do
   begin
-    foreignEntityWrapper := TEntityWrapper.Create(relation);
-    UpdateForeignKeysFor(foreignEntityWrapper, entityWrapper);
+    UpdateForeignKeys(entity, relation);
     UpdateAll(relation);
   end;
 end;

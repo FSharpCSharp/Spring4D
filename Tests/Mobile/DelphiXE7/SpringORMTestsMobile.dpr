@@ -52,7 +52,6 @@ uses
   TestEntityWrapper in '..\..\..\Marshmallow\Test\TestEntityWrapper.pas',
   TestCoreEntityMap in '..\..\..\Marshmallow\Test\TestCoreEntityMap.pas',
   TestCoreUtils in '..\..\..\Marshmallow\Test\TestCoreUtils.pas',
-  TestMapping.RttiExplorer in '..\..\..\Marshmallow\Test\TestMapping.RttiExplorer.pas',
   TestPersistence in '..\..\..\Marshmallow\Test\TestPersistence.pas',
   TestSession in '..\..\..\Marshmallow\Test\TestSession.pas',
   TestCommands in '..\..\..\Marshmallow\Test\TestCommands.pas',

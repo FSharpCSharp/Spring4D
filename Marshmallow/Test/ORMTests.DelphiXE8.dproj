@@ -110,7 +110,6 @@
         <DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.Abstract.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.DB.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.RttiExplorer.pas"/>
         <DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.pas"/>
         <DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Abstract.pas"/>
         <DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.ActiveX.pas"/>
@@ -159,7 +158,6 @@
         <DCCReference Include="TestCoreUtils.pas"/>
         <DCCReference Include="TestDatabaseManager.pas"/>
         <DCCReference Include="TestFireDACAdapter.pas"/>
-        <DCCReference Include="TestMapping.RttiExplorer.pas"/>
         <DCCReference Include="TestObjectDataset.pas"/>
         <DCCReference Include="TestPersistence.pas"/>
         <DCCReference Include="TestSession.pas"/>

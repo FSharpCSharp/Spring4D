@@ -55,14 +55,14 @@ type
     function GetEntityKey(const className, id: string): TEntityMapKey; overload;
     function GetEntityValues(const instance: TObject; const id: string): TEntityMapValue;
 
-    procedure PutEntity(const entity: IEntityWrapper);
+    procedure PutEntity(const entity: TObject);
 
     procedure FinalizeItem(const item: TPair<TEntityMapKey, TEntityMapValue>);
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure AddOrReplace(const instance: IEntityWrapper);
+    procedure AddOrReplace(const instance: TObject);
     procedure Remove(const instance: TObject);
     procedure Clear;
 
@@ -113,7 +113,7 @@ begin
   end;
 end;
 
-procedure TEntityMap.AddOrReplace(const instance: IEntityWrapper);
+procedure TEntityMap.AddOrReplace(const instance: TObject);
 begin
   Assert(Assigned(instance), 'Entity not assigned');
   PutEntity(instance);
@@ -128,7 +128,8 @@ begin
   fEntityValues.Clear;
 end;
 
-function TEntityMap.GetChangedMembers(const instance: TObject; const entityData: TEntityData): IList<ColumnAttribute>;
+function TEntityMap.GetChangedMembers(const instance: TObject;
+  const entityData: TEntityData): IList<ColumnAttribute>;
 var
   currentValue, dirtyValue: TValue;
   id: string;
@@ -188,7 +189,7 @@ begin
   Result := fEntityValues.ContainsKey(GetEntityKey(instance));
 end;
 
-procedure TEntityMap.PutEntity(const entity: IEntityWrapper);
+procedure TEntityMap.PutEntity(const entity: TObject);
 
   procedure CopyFieldValues(const source, target: TObject);
   var
@@ -240,26 +241,28 @@ var
   pair: TPair<TEntityMapKey,TEntityMapValue>;
   key: string;
   id: string;
+
+  entityData: TEntityData;
 begin
-  columnValue := entity.PrimaryKeyValue;
-  if columnValue.IsEmpty then
-    Exit;
+  entityData := TEntityCache.Get(entity.ClassType);
+
+  columnValue := entityData.PrimaryKeyColumn.Member.GetValue(entity);
   id := columnValue.ToString;
   if id = '' then
     Exit;
 
-  SetLength(values, entity.ColumnsData.Count);
-  for i := 0 to entity.ColumnsData.Count - 1 do
+  SetLength(values, entityData.ColumnsData.Count);
+  for i := 0 to entityData.ColumnsData.Count - 1 do
   begin
-    col := entity.ColumnsData[i];
-    columnValue := entity.GetValue(col.Member);
+    col := entityData.ColumnsData[i];
+    columnValue := col.Member.GetValue(entity);
     // TODO: support IClonable
     if columnValue.IsObject and (columnValue.AsObject <> nil) then
       columnValue := Clone(columnValue.AsObject);
     values[i].Key := col.Member;
     values[i].Value := columnValue;
   end;
-  key := GetEntityKey(entity.Entity.ClassName, id);
+  key := GetEntityKey(entity.ClassName, id);
   fCriticalSection.Enter;
   try
     pair := fEntityValues.ExtractPair(key);

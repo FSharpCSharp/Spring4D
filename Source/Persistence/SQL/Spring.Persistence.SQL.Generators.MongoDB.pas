@@ -87,10 +87,6 @@ uses
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Core.EntityWrapper,
-  Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Register,
   Spring.Reflection;
 
@@ -112,19 +108,15 @@ function TMongoDBGenerator.CreateClassInsertCommandAndTable(
 var
   entity: TObject;
   table: TSQLTable;
-  fields: IList<ColumnAttribute>;
 begin
   entity := fromValue.AsObject;
 
   table := TSQLTable.Create;
   table.Name := entity.ClassName;
 
-  fields := TCollections.CreateList<ColumnAttribute>(
-    TRttiExplorer.GetColumns(entity.ClassType));
-
   Result := TInsertCommand.Create(table);
   Result.Entity := entity;
-  Result.SetCommandFieldsFromColumns(fields);
+  Result.SetCommandFieldsFromColumns(TEntityCache.Get(entity.ClassType).Columns);
 end;
 
 function TMongoDBGenerator.CreateClassUpdateCommandAndTable(
@@ -132,19 +124,15 @@ function TMongoDBGenerator.CreateClassUpdateCommandAndTable(
 var
   entity: TObject;
   table: TSQLTable;
-  fields: IList<ColumnAttribute>;
 begin
   entity := fromValue.AsObject;
 
   table := TSQLTable.Create;
   table.Name := entity.ClassName;
 
-  fields := TCollections.CreateList<ColumnAttribute>(
-    TRttiExplorer.GetColumns(entity.ClassType));
-
   Result := TUpdateCommand.Create(table);
   Result.Entity := entity;
-  Result.SetCommandFieldsFromColumns(fields);  
+  Result.SetCommandFieldsFromColumns(TEntityCache.Get(entity.ClassType).Columns);
 end;
 
 function TMongoDBGenerator.DoGetFindUpdateJson(

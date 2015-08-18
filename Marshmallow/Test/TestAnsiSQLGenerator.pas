@@ -37,8 +37,8 @@ implementation
 uses
   TestEntities,
   Spring.TestUtils,
-  Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Mapping.Attributes;
 
 function CreateTestTable: TSQLTable;
 begin
@@ -321,7 +321,7 @@ begin
   LTable := CreateTestTable;
   LCommand := TCreateTableCommand.Create(LTable);
   try
-    LCols := TRttiExplorer.GetColumns(TCustomer);
+    LCols := TEntityCache.Get(TCustomer).Columns;
     LCommand.SetCommandFieldsFromColumns(LCols);
 
     ReturnValue := FAnsiSQLGenerator.GenerateCreateTable(LCommand);
@@ -342,7 +342,7 @@ begin
   LTable := CreateTestTable;
   LCommand := TCreateForeignKeyCommand.Create(LTable);
   try
-    LCols := TRttiExplorer.GetColumns(TCustomer);
+    LCols := TEntityCache.Get(TCustomer).Columns;
     LCommand.SetCommandFieldsFromColumns(LCols);
     LCommand.ForeignKeys.Add(
       TSQLForeignKeyField.Create(

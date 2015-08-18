@@ -109,9 +109,6 @@ begin
       if not fSession.IsNew(Item) then
       begin
         entityDetails := TEntityCache.Get(T);
-        if not entityDetails.HasPrimaryKey then
-          raise EORMPrimaryKeyColumnNotFound.CreateFmt('Primary key column not found for entity: %s',
-            [entityDetails.EntityClass.ClassName]);
         value := entityDetails.PrimaryKeyColumn.GetValue(Item);
         if fPrimaryKeys.Add(value) then
           fSession.OldStateEntities.Remove(Item);

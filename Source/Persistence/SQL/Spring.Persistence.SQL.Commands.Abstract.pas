@@ -86,8 +86,6 @@ end;
 procedure TAbstractCommandExecutor.Build(entityClass: TClass);
 begin
   fEntityData := TEntityCache.Get(entityClass);
-  if not fEntityData.IsTableEntity then
-    raise ETableNotSpecified.Create('Table not specified for class: ' + entityClass.ClassName);
 end;
 
 procedure TAbstractCommandExecutor.BuildParams(const entity: TObject);

@@ -43,7 +43,7 @@ type
   /// </summary>
   TDetachedSession = class(TSession)
   protected
-    procedure AttachEntity(const entity: IEntityWrapper); override;
+    procedure AttachEntity(const entity: TObject); override;
     procedure DetachEntity(const entity: TObject); override;
   end;
 
@@ -52,7 +52,7 @@ implementation
 
 {$REGION 'TDetachedSession'}
 
-procedure TDetachedSession.AttachEntity(const entity: IEntityWrapper);
+procedure TDetachedSession.AttachEntity(const entity: TObject);
 begin
   // do nothing
 end;

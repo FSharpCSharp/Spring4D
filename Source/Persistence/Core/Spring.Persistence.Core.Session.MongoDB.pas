@@ -35,38 +35,33 @@ uses
 type
   TMongoDBSession = class(TSession)
   public
-    procedure BulkInsert<T: class, constructor>(ACollection: IEnumerable<T>);
+    procedure BulkInsert<T: class, constructor>(const entities: IEnumerable<T>);
   end;
 
 implementation
 
 uses
   Spring.Persistence.Adapters.MongoDB,
-  Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Core.EntityWrapper,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.SQL.Commands.BulkInsert.MongoDB;
 
 
 {$REGION 'TMongoDBSession'}
 
-procedure TMongoDBSession.BulkInsert<T>(ACollection: IEnumerable<T>);
+procedure TMongoDBSession.BulkInsert<T>(const entities: IEnumerable<T>);
 var
   inserter: TMongoDBBulkInsertExecutor;
   entity: T;
-  entityWrapper: IEntityWrapper;
 begin
   inserter := TMongoDBBulkInsertExecutor.Create(Connection);
   try
     inserter.Build(T);
-    for entity in ACollection do
+    for entity in entities do
     begin
-      entityWrapper := TEntityWrapper.Create(entity);
       {$MESSAGE HINT 'fix me'}
 //      SetLazyColumns(entityWrapper);
-      AttachEntity(entityWrapper);
+      AttachEntity(entity);
     end;
-    inserter.BulkExecute<T>(ACollection);
+    inserter.BulkExecute<T>(entities);
   finally
     inserter.Free;
   end;

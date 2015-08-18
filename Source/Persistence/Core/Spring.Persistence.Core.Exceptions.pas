@@ -105,8 +105,8 @@ implementation
 uses
   Spring,
   Spring.Collections,
+  Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Reflection;
 
 
@@ -120,7 +120,6 @@ end;
 function EBaseORMException.EntityToString(const entity: TObject): string;
 var
   builder: TStringBuilder;
-  columns: IList<ColumnAttribute>;
   column: ColumnAttribute;
   value: TValue;
 begin
@@ -129,8 +128,7 @@ begin
   builder := TStringBuilder.Create;
   try
     builder.AppendFormat('ClassName: %s', [entity.ClassName]).AppendLine;
-    columns := TRttiExplorer.GetColumns(entity.ClassType);
-    for column in columns do
+    for column in TEntityCache.Get(entity.ClassType).Columns do
     begin
       value := column.Member.GetValue(entity);
       builder.AppendFormat('[%s] : %s', [column.ColumnName, value.ToString]).AppendLine;

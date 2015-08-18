@@ -108,8 +108,6 @@ end;
 
 function TEntityWrapper.GetPrimaryKeyValue: TValue;
 begin
-  if not fEntityClassData.HasPrimaryKey then
-    Exit(TValue.Empty);
   Result := GetValue(fEntityClassData.PrimaryKeyColumn.Member);
 end;
 

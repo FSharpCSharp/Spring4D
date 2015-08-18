@@ -63,7 +63,6 @@ uses
   Spring.Persistence.Mapping.CodeGenerator in '..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.pas',
   Spring.Persistence.Mapping.CodeGenerator.Abstract in '..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.Abstract.pas',
   Spring.Persistence.Mapping.CodeGenerator.DB in '..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.DB.pas',
-  Spring.Persistence.Mapping.RttiExplorer in '..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.RttiExplorer.pas',
   Spring.Persistence.ObjectDataset in '..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.pas',
   Spring.Persistence.ObjectDataset.Abstract in '..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Abstract.pas',
   Spring.Persistence.ObjectDataset.ActiveX in '..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.ActiveX.pas',
@@ -114,7 +113,6 @@ uses
   {$IFDEF DELPHIXE5_UP}
   TestFireDACAdapter in 'TestFireDACAdapter.pas',
   {$ENDIF}
-  TestMapping.RttiExplorer in 'TestMapping.RttiExplorer.pas',
   TestObjectDataset in 'TestObjectDataset.pas',
   TestPersistence in 'TestPersistence.pas',
   TestSession in 'TestSession.pas',

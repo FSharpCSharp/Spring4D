@@ -75,7 +75,6 @@ contains
   Spring.Persistence.Criteria.Properties in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Properties.pas',
   Spring.Persistence.Criteria.Restrictions in '..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Restrictions.pas',
   Spring.Persistence.Mapping.Attributes in '..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.Attributes.pas',
-  Spring.Persistence.Mapping.RttiExplorer in '..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.RttiExplorer.pas',
   Spring.Persistence.ObjectDataset in '..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.pas',
   Spring.Persistence.ObjectDataset.Abstract in '..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Abstract.pas',
   Spring.Persistence.ObjectDataset.ActiveX in '..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.ActiveX.pas',

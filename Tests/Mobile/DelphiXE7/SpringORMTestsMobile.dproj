@@ -255,7 +255,6 @@
         <DCCReference Include="..\..\..\Marshmallow\Test\TestEntityWrapper.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestCoreEntityMap.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestCoreUtils.pas"/>
-        <DCCReference Include="..\..\..\Marshmallow\Test\TestMapping.RttiExplorer.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestPersistence.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestSession.pas"/>
         <DCCReference Include="..\..\..\Marshmallow\Test\TestCommands.pas"/>

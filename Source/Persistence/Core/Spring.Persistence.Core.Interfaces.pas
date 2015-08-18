@@ -326,7 +326,7 @@ type
 
   IEntityMap = interface(IInvokable)
     ['{64F25680-A0F8-4A23-86D2-88A2F5F7D5EC}']
-    procedure AddOrReplace(const instance: IEntityWrapper);
+    procedure AddOrReplace(const instance: TObject);
     procedure Remove(const instance: TObject);
     procedure Clear;
 

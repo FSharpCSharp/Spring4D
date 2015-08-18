@@ -73,24 +73,25 @@ type
     fSequence: SequenceAttribute;
     fEntityClass: TClass;
     fVersionColumn: VersionAttribute;
+    class function GetAttributes<T: TORMAttribute>(entityClass: TClass): IList<T>; static;
     procedure InitColumnsData;
+    procedure InitORMAttributes;
   protected
     procedure AssignTo(Dest: TPersistent); override;
   public
     constructor Create(entityClass: TClass);
     destructor Destroy; override;
 
-    function IsTableEntity: Boolean;
-    function ColumnByName(const columnName: string): ColumnAttribute;
-    function HasPrimaryKey: Boolean;
     function HasSequence: Boolean;
     function HasManyToOneRelations: Boolean;
     function HasOneToManyRelations: Boolean;
     function HasVersionColumn: Boolean;
 
-    function GetPrimaryKeyValueAsString(const instance: TObject): string;
     function GetForeignKeyColumn(const table: TableAttribute;
       const primaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
+    function GetPrimaryKeyValueAsString(const instance: TObject): string;
+    function GetRelations(const entity: TObject;
+      const relationAttributeClass: TAttributeClass): IList<TObject>;
 
     property Columns: IList<ColumnAttribute> read fColumns;
     property SelectColumns: IList<ColumnAttribute> read fSelectColumns;
@@ -111,7 +112,7 @@ type
   TEntityCache = class
   strict private
     class var fEntities: IDictionary<TClass,TEntityData>;
-    class var fCriticalSection: ICriticalSection;
+    class var fLock: ICriticalSection;
   public
     class constructor Create;
 
@@ -126,7 +127,6 @@ uses
   SysUtils,
   Rtti,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Reflection;
 
 
@@ -202,22 +202,31 @@ end;
 
 {$REGION 'TEntityData'}
 
-constructor TEntityData.Create;
+constructor TEntityData.Create(entityClass: TClass);
 begin
   inherited Create;
 
+  fEntityClass := entityClass;
+  InitORMAttributes;
+
+  fTable := TType.GetType(fEntityClass).GetCustomAttribute<TableAttribute>(True);
+  if not Assigned(fTable) then
+    raise EORMUnsupportedType.CreateFmt('Type %s requires [Table] attribute', [fEntityClass.ClassName]);
+  fColumns := GetAttributes<ColumnAttribute>(fEntityClass);
+  fPrimaryKeyColumn := fColumns.FirstOrDefault(
+    function(const column: ColumnAttribute): Boolean
+    begin
+      Result := column.IsPrimaryKey;
+    end);
+  if not Assigned(fPrimaryKeyColumn) then
+    raise EORMUnsupportedType.CreateFmt('Type %s requires primary key [Column]', [fEntityClass.ClassName]);
+  fForeignKeyColumns := GetAttributes<ForeignJoinColumnAttribute>(fEntityClass);
+  fOneToManyColumns := GetAttributes<OneToManyAttribute>(fEntityClass);
+  fManyToOneColumns := GetAttributes<ManyToOneAttribute>(fEntityClass);
+  fSequence := TType.GetType(fEntityClass).GetCustomAttribute<SequenceAttribute>(True);
+
   fSelectColumns := TCollections.CreateList<ColumnAttribute>;
   fColumnsData := TColumnDataList.Create;
-
-  fEntityClass := entityClass;
-  fColumns := TRttiExplorer.GetColumns(fEntityClass);
-  fForeignKeyColumns := TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(fEntityClass);
-  fOneToManyColumns := TRttiExplorer.GetClassMembers<OneToManyAttribute>(fEntityClass);
-  fManyToOneColumns := TRttiExplorer.GetClassMembers<ManyToOneAttribute>(fEntityClass);
-  fPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(fEntityClass);
-  fTable := TRttiExplorer.GetTable(fEntityClass);
-  fSequence := TRttiExplorer.GetSequence(fEntityClass);
-
   InitColumnsData;
 end;
 
@@ -261,14 +270,23 @@ begin
   end;
 end;
 
-function TEntityData.ColumnByName(const columnName: string): ColumnAttribute;
+class function TEntityData.GetAttributes<T>(entityClass: TClass): IList<T>;
 var
-  column: ColumnAttribute;
+  rttiType: TRttiType;
+  attribute: T;
+  rttiField: TRttiField;
+  rttiProperty: TRttiProperty;
 begin
-  for column in fColumns do
-    if SameText(column.ColumnName, columnName) then
-      Exit(column);
-  Result := nil;
+  Result := TCollections.CreateList<T>;
+  rttiType := TType.GetType(entityClass);
+
+  for rttiField in rttiType.GetFields do
+    for attribute in rttiField.GetCustomAttributes<T> do
+      Result.Add(attribute);
+
+  for rttiProperty in rttiType.GetProperties do
+    for attribute in rttiProperty.GetCustomAttributes<T> do
+      Result.Add(attribute);
 end;
 
 function TEntityData.GetForeignKeyColumn(const table: TableAttribute;
@@ -285,25 +303,81 @@ end;
 function TEntityData.GetPrimaryKeyValueAsString(
   const instance: TObject): string;
 begin
-  if Assigned(fPrimaryKeyColumn) then
-    Result := fPrimaryKeyColumn.Member.GetValue(instance).ToString
-  else
-    Result := '';
+  Result := fPrimaryKeyColumn.Member.GetValue(instance).ToString
+end;
+
+function TEntityData.GetRelations(const entity: TObject;
+  const relationAttributeClass: TAttributeClass): IList<TObject>;
+
+  function GetMemberValueDeep(const initialValue: TValue): TValue;
+  begin
+    Result := initialValue;
+    if IsNullable(Result.TypeInfo) then
+    begin
+      if not initialValue.TryGetNullableValue(Result) then
+        Result := TValue.Empty;
+    end
+    else if IsLazyType(Result.TypeInfo) then
+      if not initialValue.TryGetLazyValue(Result) then
+        Result := TValue.Empty;
+  end;
+
+  function GetSubEntityFromMemberDeep(const entity: TObject;
+    const rttiMember: TRttiMember): IList<TObject>;
+  var
+    memberValue: TValue;
+    value: TValue;
+    objects: IObjectList;
+    current: TObject;
+  begin
+    Result := TCollections.CreateList<TObject>;
+
+    memberValue := rttiMember.GetValue(entity);
+    if memberValue.IsEmpty then
+      Exit;
+
+    value := GetMemberValueDeep(memberValue);
+    if value.IsEmpty then
+      Exit;
+
+    if value.IsInterface and Supports(value.AsInterface, IObjectList, objects) then
+    begin
+      for current in objects do
+        Result.Add(current);
+      value := TValue.Empty;
+    end;
+
+    if value.IsObject and (value.AsObject <> nil) then
+      Result.Add(value.AsObject);
+  end;
+
+var
+  rttiType: TRttiType;
+  field: TRttiField;
+  prop: TRttiProperty;
+begin
+  Result := TCollections.CreateList<TObject>;
+
+  rttiType := TType.GetType(entity.ClassType);
+  for field in rttiType.GetFields do
+    if field.HasCustomAttribute(relationAttributeClass)
+      and not field.HasCustomAttribute(TransientAttribute) then
+      Result.AddRange(GetSubEntityFromMemberDeep(entity, field));
+
+  for prop in rttiType.GetProperties do
+    if prop.HasCustomAttribute(relationAttributeClass)
+      and not prop.HasCustomAttribute(TransientAttribute) then
+      Result.AddRange(GetSubEntityFromMemberDeep(entity, prop));
 end;
 
 function TEntityData.HasManyToOneRelations: Boolean;
 begin
-  Result := fManyToOneColumns.Count > 0;
+  Result := fManyToOneColumns.Any;
 end;
 
 function TEntityData.HasOneToManyRelations: Boolean;
 begin
   Result := fOneToManyColumns.Any;
-end;
-
-function TEntityData.HasPrimaryKey: Boolean;
-begin
-  Result := Assigned(fPrimaryKeyColumn);
 end;
 
 function TEntityData.HasSequence: Boolean;
@@ -314,11 +388,6 @@ end;
 function TEntityData.HasVersionColumn: Boolean;
 begin
   Result := Assigned(fVersionColumn);
-end;
-
-function TEntityData.IsTableEntity: Boolean;
-begin
-  Result := Assigned(fTable);
 end;
 
 procedure TEntityData.InitColumnsData;
@@ -346,6 +415,38 @@ begin
   end;
 end;
 
+procedure TEntityData.InitORMAttributes;
+var
+  rttiType: TRttiType;
+  attribute: TORMAttribute;
+  rttiField: TRttiField;
+  rttiProperty: TRttiProperty;
+begin
+  rttiType := TType.GetType(fEntityClass);
+
+  for attribute in rttiType.GetCustomAttributes<TORMAttribute>(True) do
+  begin
+    attribute.EntityClass := fEntityClass;
+    attribute.MemberKind := mkClass;
+  end;
+
+  for rttiField in rttiType.GetFields do
+    for attribute in rttiField.GetCustomAttributes<TORMAttribute> do
+    begin
+      attribute.EntityClass := fEntityClass;
+      attribute.MemberKind := mkField;
+      attribute.Member := rttiField;
+    end;
+
+  for rttiProperty in rttiType.GetProperties do
+    for attribute in rttiProperty.GetCustomAttributes<TORMAttribute> do
+    begin
+      attribute.EntityClass := fEntityClass;
+      attribute.MemberKind := mkProperty;
+      attribute.Member := rttiProperty;
+    end;
+end;
+
 {$ENDREGION}
 
 
@@ -353,13 +454,13 @@ end;
 
 class constructor TEntityCache.Create;
 begin
-  fCriticalSection := TInterfacedCriticalSection.Create;
+  fLock := TInterfacedCriticalSection.Create;
   fEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
 end;
 
 class function TEntityCache.Get(entityClass: TClass): TEntityData;
 begin
-  fCriticalSection.Enter;
+  fLock.Enter;
   try
     if not fEntities.TryGetValue(entityClass, Result) then
     begin
@@ -367,16 +468,28 @@ begin
       fEntities.Add(entityClass, Result);
     end;
   finally
-    fCriticalSection.Leave;
+    fLock.Leave;
   end;
 end;
 
 class function TEntityCache.IsValidEntity(entityClass: TClass): Boolean;
 var
-  entityData: TEntityData;
+  entityType: TRttiType;
 begin
-  entityData := Get(entityClass);
-  Result := entityData.IsTableEntity and entityData.HasPrimaryKey;
+  fLock.Enter;
+  try
+    if fEntities.ContainsKey(entityClass) then
+      Exit(True);
+  finally
+    fLock.Leave;
+  end;
+  entityType := TType.GetType(entityClass);
+  Result := entityType.HasCustomAttribute<TableAttribute>(True)
+    and TEntityData.GetAttributes<ColumnAttribute>(entityClass).Any(
+      function(const column: ColumnAttribute): Boolean
+      begin
+        Result := column.IsPrimaryKey;
+      end);
 end;
 
 {$ENDREGION}

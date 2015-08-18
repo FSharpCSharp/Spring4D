@@ -118,7 +118,7 @@ begin
 
   fCommand.Entity := entity;
   sqlStatement := Generator.GenerateUpdate(fCommand);
-  if (sqlStatement = '') then
+  if sqlStatement = '' then
     raise EORMCannotGenerateQueryStatement.Create(entity);
 
   statement.SetSQLCommand(sqlStatement);
@@ -134,7 +134,7 @@ end;
 
 function TUpdateExecutor.HasChangedVersionColumnOnly: Boolean;
 begin
-  Result := (fColumns.Count = 1) and (fColumns.First.IsVersionColumn);
+  Result := (fColumns.Count = 1) and fColumns.First.IsVersionColumn;
 end;
 
 function TUpdateExecutor.TryIncrementVersionFor(const entity: TObject): Boolean;

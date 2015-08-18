@@ -97,7 +97,6 @@
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Properties.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Restrictions.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.Attributes.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.RttiExplorer.pas"/>
         <DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.pas"/>
         <DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Abstract.pas"/>
         <DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.ActiveX.pas"/>

@@ -140,8 +140,8 @@ type
     function GetResultSet(const sqlStatement: string;
       const params: IEnumerable<TDBParam>): IDBResultSet; overload;
 
-    procedure AttachEntity(const entity: IEntityWrapper); virtual;
-    procedure DetachEntity(const entity: TObject);  virtual;
+    procedure AttachEntity(const entity: TObject); virtual;
+    procedure DetachEntity(const entity: TObject); virtual;
 
     procedure DoInsert(const entity: TObject; const inserter: IInsertCommand); virtual;
     procedure DoUpdate(const entity: TObject; const updater: IUpdateCommand); virtual;
@@ -159,8 +159,7 @@ type
       const rowMapper: IRowMapper);
     procedure UnregisterNonGenericRowMapper(entityClass: TClass);
 
-    procedure UpdateForeignKeysFor(
-      const foreignKeyEntity, primaryKeyEntity: IEntityWrapper);
+    procedure UpdateForeignKeys(const baseEntity, subEntity: TObject);
   public
     constructor Create(const connection: IDBConnection); overload; virtual;
     constructor Create(const connection: IDBConnection;
@@ -181,7 +180,6 @@ uses
   Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
-  Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Commands.Delete,
   Spring.Persistence.SQL.Commands.Insert,
   Spring.Persistence.SQL.Commands.Select,
@@ -212,7 +210,7 @@ begin
   inherited;
 end;
 
-procedure TAbstractSession.AttachEntity(const entity: IEntityWrapper);
+procedure TAbstractSession.AttachEntity(const entity: TObject);
 begin
   fOldStateEntities.AddOrReplace(entity);
 end;
@@ -249,12 +247,9 @@ end;
 
 procedure TAbstractSession.DoInsert(const entity: TObject;
   const inserter: IInsertCommand);
-var
-  entityWrapper: IEntityWrapper;
 begin
-  entityWrapper := TEntityWrapper.Create(entity);
   inserter.Execute(entity);
-  AttachEntity(entityWrapper);
+  AttachEntity(entity);
 end;
 
 function TAbstractSession.MapAggregatedObject(const resultSet: IDBResultSet;
@@ -300,12 +295,9 @@ end;
 
 procedure TAbstractSession.DoUpdate(const entity: TObject;
   const updater: IUpdateCommand);
-var
-  entityWrapper: IEntityWrapper;
 begin
-  entityWrapper := TEntityWrapper.Create(entity);
   updater.Execute(entity);
-  AttachEntity(entityWrapper);
+  AttachEntity(entity);
 end;
 
 procedure TAbstractSession.FetchFromQueryText(const sqlStatement: string;
@@ -505,20 +497,22 @@ begin
   fRowMappers.Remove(entityClass);
 end;
 
-procedure TAbstractSession.UpdateForeignKeysFor(
-  const foreignKeyEntity, primaryKeyEntity: IEntityWrapper);
+procedure TAbstractSession.UpdateForeignKeys(
+  const baseEntity, subEntity: TObject);
 var
+  baseEntityData, subEntityData: TEntityData;
   forColAttribute: ForeignJoinColumnAttribute;
   primaryKeyValue: TValue;
   primaryKeyTableName: string;
 begin
-  primaryKeyValue := primaryKeyEntity.PrimaryKeyValue;
-  if primaryKeyValue.IsEmpty then
-    Exit;
-  primaryKeyTableName := primaryKeyEntity.TableName;
-  for forColAttribute in foreignKeyEntity.ForeignKeyColumns do
+  baseEntityData := TEntityCache.Get(baseEntity.ClassType);
+  subEntityData := TEntityCache.Get(subEntity.ClassType);
+
+  primaryKeyValue := baseEntityData.PrimaryKeyColumn.Member.GetValue(baseEntity);
+  primaryKeyTableName := baseEntityData.EntityTable.TableName;
+  for forColAttribute in subEntityData.ForeignKeyColumns do
     if SameText(forColAttribute.ReferencedTableName, primaryKeyTableName) then
-      foreignKeyEntity.SetValue(forColAttribute.Member, primaryKeyValue);
+      forColAttribute.Member.SetValue(subEntity, primaryKeyValue);
 end;
 
 {$ENDREGION}
@@ -602,7 +596,7 @@ begin
   SetEntityFromColumns(entity, resultSet);
   SetLazyColumns(entity);
   SetAssociations(entity, resultSet);
-  fSession.AttachEntity(entity);
+  fSession.AttachEntity(entity.Entity);
 end;
 
 function TAbstractSession.TRowMapperInternal.MapRow(

@@ -33,17 +33,14 @@ type
 implementation
 
 uses
-  SysUtils
-  ,Spring.Persistence.Mapping.Attributes
-  ,Spring.Persistence.Mapping.RttiExplorer
-  ,Spring.Persistence.Core.EntityCache
-  ,Spring.Persistence.Core.EntityWrapper
-  ,Spring.Persistence.Core.Interfaces
-  ,Diagnostics
-  ,Generics.Collections
-  ;
+  Diagnostics,
+  Generics.Collections,
+  SysUtils,
+  Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.Mapping.Attributes;
 
 type
+  [Table]
   TTest1 = class
   public
     [Column('TESTID', [cpRequired, cpPrimaryKey, cpNotNull], 0, 0, 0, 'Primary Key')]
@@ -51,6 +48,7 @@ type
     FId: Integer;
   end;
 
+  [Table]
   TTest2 = class
   public
     [Column('TESTID', [cpRequired, cpPrimaryKey, cpNotNull], 0, 0, 0, 'Primary Key')]
@@ -89,7 +87,6 @@ var
   ReturnValue: Boolean;
   AObject, LClone: TCustomer;
   LCompany, LClonedCompany: TCompany;
-  entityWrapper: IEntityWrapper;
 begin
   AObject := CreateCustomer;
   LCompany := CreateCompany;
@@ -98,15 +95,13 @@ begin
   try
     ReturnValue := FEntityMap.IsMapped(AObject);
     CheckFalse(ReturnValue);
-    entityWrapper := TEntityWrapper.Create(LClone);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(LClone);
     ReturnValue := FEntityMap.IsMapped(AObject);
     CheckTrue(ReturnValue);
 
     ReturnValue := FEntityMap.IsMapped(LCompany);
     CheckFalse(ReturnValue);
-    entityWrapper := TEntityWrapper.Create(LClonedCompany);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(LClonedCompany);
 
     ReturnValue := FEntityMap.IsMapped(LCompany);
     CheckTrue(ReturnValue);
@@ -121,13 +116,11 @@ end;
 procedure TEntityMapTest.TestAdd;
 var
   LCustomer: TCustomer;
-  entityWrapper: IEntityWrapper;
 begin
   LCustomer := CreateCustomer;
   try
     CheckFalse(FEntityMap.IsMapped(LCustomer));
-    entityWrapper := TEntityWrapper.Create(LCustomer);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
   finally
     LCustomer.Free;
@@ -137,15 +130,13 @@ end;
 procedure TEntityMapTest.TestAddOrReplace;
 var
   LCustomer: TCustomer;
-  entityWrapper: IEntityWrapper;
 begin
   LCustomer := CreateCustomer;
   try
     CheckFalse(FEntityMap.IsMapped(LCustomer));
-    entityWrapper := TEntityWrapper.Create(LCustomer);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
   finally
     LCustomer.Free;
@@ -163,7 +154,6 @@ var
   LObjectDict: IDictionary<string,TObject>;
   LNativeDict: TDictionary<string,TValue>;
   LValue: TValue;
-  entityWrapper: IEntityWrapper;
 begin
   iCount := 50000;
   LCustomers := TCollections.CreateObjectList<TCustomer>(True);
@@ -174,24 +164,21 @@ begin
 
   sw := TStopwatch.StartNew;
   for i := 0 to iCount - 1 do
-  begin
-    entityWrapper := TEntityWrapper.Create(LCustomers[i]);
-    FEntityMap.AddOrReplace(entityWrapper);
-  end;
+    FEntityMap.AddOrReplace(LCustomers[i]);
   sw.Stop;
 
   Status(Format('%D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
 
-  //previous implementation
-  LObjectDict := TCollections.CreateDictionary<string, TObject>([doOwnsValues]);
-  sw := TStopwatch.StartNew;
-  for i := 0 to iCount - 1 do
-  begin
-    LObjectDict.AddOrSetValue('some random key', TRttiExplorer.Clone(LCustomers[i]));
-  end;
-  sw.Stop;
-
-  Status(Format('Previous implementation: %D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
+//  //previous implementation
+//  LObjectDict := TCollections.CreateDictionary<string, TObject>([doOwnsValues]);
+//  sw := TStopwatch.StartNew;
+//  for i := 0 to iCount - 1 do
+//  begin
+//    LObjectDict.AddOrSetValue('some random key', TRttiExplorer.Clone(LCustomers[i]));
+//  end;
+//  sw.Stop;
+//
+//  Status(Format('Previous implementation: %D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
 
   iCount := iCount * 10;
   sw := TStopwatch.StartNew;
@@ -220,7 +207,6 @@ procedure TEntityMapTest.TestHash;
 var
   LTest1: TTest1;
   LTest2: TTest2;
-  entityWrapper: IEntityWrapper;
 begin
   LTest1 := TTest1.Create;
   LTest2 := TTest2.Create;
@@ -229,8 +215,7 @@ begin
 
     CheckFalse(FEntityMap.IsMapped(LTest1));
     CheckFalse(FEntityMap.IsMapped(LTest2));
-    entityWrapper := TEntityWrapper.Create(LTest1);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(LTest1);
     CheckTrue(FEntityMap.IsMapped(LTest1));
     CheckFalse(FEntityMap.IsMapped(LTest2));
   finally
@@ -242,12 +227,10 @@ end;
 procedure TEntityMapTest.TestRemove;
 var
   LCustomer: TCustomer;
-  entityWrapper: IEntityWrapper;
 begin
   LCustomer := CreateCustomer;
   try
-    entityWrapper := TEntityWrapper.Create(LCustomer);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
     FEntityMap.Remove(LCustomer);
     CheckFalse(FEntityMap.IsMapped(LCustomer));
@@ -260,11 +243,9 @@ procedure TEntityMapTest.When_Changed_One_Property_GetChangedMembers_Returns_It;
 var
   LCustomer: TCustomer;
   LChangedColumns: IList<ColumnAttribute>;
-  entityWrapper: IEntityWrapper;
 begin
   LCustomer := CreateCustomer;
-  entityWrapper := TEntityWrapper.Create(LCustomer);
-  FEntityMap.AddOrReplace(entityWrapper);
+  FEntityMap.AddOrReplace(LCustomer);
   LCustomer.Name := 'Changed';
   LChangedColumns := FEntityMap.GetChangedMembers(LCustomer, TEntityCache.Get(LCustomer.ClassType));
   CheckEquals(1, LChangedColumns.Count);
@@ -275,14 +256,12 @@ end;
 procedure TEntityMapTest.When_Replaced_Entity_No_MemoryLeaks;
 var
   company: TCompany;
-  entityWrapper: IEntityWrapper;
 begin
   company := TCompany.Create;
   try
-    entityWrapper := TEntityWrapper.Create(company);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(company);
     company.Logo.LoadFromFile(PictureFilename);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(company);
   finally
     company.Free;
   end;
@@ -293,12 +272,10 @@ end;
 procedure TEntityMapTest.TestClear;
 var
   LCustomer: TCustomer;
-  entityWrapper: IEntityWrapper;
 begin
   LCustomer := CreateCustomer;
   try
-    entityWrapper := TEntityWrapper.Create(LCustomer);
-    FEntityMap.AddOrReplace(entityWrapper);
+    FEntityMap.AddOrReplace(LCustomer);
     CheckTrue(FEntityMap.IsMapped(LCustomer));
     FEntityMap.Clear;
     CheckFalse(FEntityMap.IsMapped(LCustomer));
