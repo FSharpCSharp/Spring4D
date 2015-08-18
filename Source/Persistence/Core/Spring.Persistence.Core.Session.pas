@@ -166,9 +166,14 @@ type
     function FindAll<T: class, constructor>: IList<T>;
 
     /// <summary>
-    ///   Inserts model to the database .
+    ///   Inserts model to the database.
     /// </summary>
     procedure Insert(const entity: TObject);
+
+    /// <summary>
+    ///   Inserts model and its aggregations to the database.
+    /// </summary>
+    procedure InsertAll(const entity: TObject);
 
     /// <summary>
     ///   Inserts models to the database.
@@ -182,12 +187,17 @@ type
     function IsNew(const entity: TObject): Boolean;
 
     /// <summary>
-    ///   Updates model in a database.
+    ///   Updates model in the database.
     /// </summary>
     procedure Update(const entity: TObject);
 
     /// <summary>
-    ///   Updates multiple models in a database.
+    ///   Updates model and its aggregations in the database.
+    /// </summary>
+    procedure UpdateAll(const entity: TObject);
+
+    /// <summary>
+    ///   Updates multiple models in the database.
     /// </summary>
     procedure UpdateList<T: class, constructor>(const entities: IEnumerable<T>);
 
@@ -447,6 +457,25 @@ begin
   DoInsert(entity, inserter);
 end;
 
+procedure TSession.InsertAll(const entity: TObject);
+var
+  relations: IList<TObject>;
+  relation: TObject;
+  entityWrapper, foreignEntityWrapper: IEntityWrapper;
+begin
+  TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute).ForEach(Insert);
+  Insert(entity);
+
+  entityWrapper := TEntityWrapper.Create(entity);
+  relations := TRttiExplorer.GetRelationsOf(entity, OneToManyAttribute);
+  for relation in relations do
+  begin
+    foreignEntityWrapper := TEntityWrapper.Create(relation);
+    UpdateForeignKeysFor(foreignEntityWrapper, entityWrapper);
+    InsertAll(relation);
+  end;
+end;
+
 procedure TSession.InsertList<T>(const entities: IEnumerable<T>);
 var
   inserter: IInsertCommand;
@@ -515,10 +544,10 @@ begin
   TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute).ForEach(Save);
   Save(entity);
 
+  entityWrapper := TEntityWrapper.Create(entity);
   relations := TRttiExplorer.GetRelationsOf(entity, OneToManyAttribute);
   for relation in relations do
   begin
-    entityWrapper := TEntityWrapper.Create(entity);
     foreignEntityWrapper := TEntityWrapper.Create(relation);
     UpdateForeignKeysFor(foreignEntityWrapper, entityWrapper);
     SaveAll(relation);
@@ -576,6 +605,25 @@ var
 begin
   updater := GetUpdateCommandExecutor(entity.ClassType);
   DoUpdate(entity, updater);
+end;
+
+procedure TSession.UpdateAll(const entity: TObject);
+var
+  relations: IList<TObject>;
+  relation: TObject;
+  entityWrapper, foreignEntityWrapper: IEntityWrapper;
+begin
+  TRttiExplorer.GetRelationsOf(entity, ManyToOneAttribute).ForEach(Update);
+  Update(entity);
+
+  entityWrapper := TEntityWrapper.Create(entity);
+  relations := TRttiExplorer.GetRelationsOf(entity, OneToManyAttribute);
+  for relation in relations do
+  begin
+    foreignEntityWrapper := TEntityWrapper.Create(relation);
+    UpdateForeignKeysFor(foreignEntityWrapper, entityWrapper);
+    UpdateAll(relation);
+  end;
 end;
 
 procedure TSession.UpdateList<T>(const entities: IEnumerable<T>);
