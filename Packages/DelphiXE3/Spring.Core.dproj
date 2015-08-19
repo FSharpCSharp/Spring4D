@@ -150,6 +150,7 @@
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas"/>
+        <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.CustomProxy.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas"/>
         <DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas"/>
         <DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.pas"/>
