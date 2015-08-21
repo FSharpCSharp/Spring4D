@@ -46,7 +46,7 @@ type
     function Execute(const query: string; const params: array of const): NativeUInt; virtual;
     function Query(const query: string; const params: array of const): IList<T>; virtual;
 
-    function Count: Int64; virtual;
+    function Count: Integer; virtual;
 
     function FindOne(const id: TID): T; virtual;
     function FindAll: IList<T>; virtual;
@@ -90,9 +90,9 @@ begin
   fNamespace := GetNamespaceFromType;
 end;
 
-function TSimpleRepository<T, TID>.Count: Int64;
+function TSimpleRepository<T, TID>.Count: Integer;
 begin
-  Result := fSession.Page<T>(1, 1).GetTotalItems;
+  Result := fSession.Page<T>(1, 1).ItemCount;
 end;
 
 procedure TSimpleRepository<T, TID>.Delete(const entity: T);

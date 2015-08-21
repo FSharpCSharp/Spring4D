@@ -81,17 +81,17 @@ type
     fRowMappers: IDictionary<TClass,IRowMapper>;
     fOldStateEntities: IEntityMap;
 
-    {$REGION 'Lazy resolution mechanism - internal use only}
+    {$REGION 'Lazy resolution mechanism - internal use only'}
     function MapAggregatedObject(const resultSet: IDBResultSet;
-      const baseEntity: TObject; classType: TClass): TObject;
+      const baseEntity: TObject; entityClass: TClass): TObject;
 
     function DoGetLazy(const id: TValue; const entity: TObject;
-      const column: ColumnAttribute; classType: TClass): IDBResultSet;
+      const column: ColumnAttribute; entityClass: TClass): IDBResultSet;
 
     function GetLazyValueAsInterface(const id: TValue; const entity: TObject;
       const column: ColumnAttribute; entityClass: TClass): IInterface;
     function GetLazyValueAsObject(const id: TValue; const entity: TObject;
-      const column: ColumnAttribute; classType: TClass): TObject;
+      const column: ColumnAttribute; entityClass: TClass): TObject;
 
     function ResolveLazyInterface(const id: TValue; const entity: TObject;
       interfaceType: TRttiType; const column: ColumnAttribute): TValue;
@@ -100,24 +100,20 @@ type
     {$ENDREGION}
   protected
     /// <summary>
-    ///   Retrieves multiple models from the resultset into Spring <c>
-    ///   ICollection&lt;T&gt;).</c>
+    ///   Retrieves multiple models from the resultset into a list of entities.
     /// </summary>
-    procedure FetchFromQueryText(const sqlStatement: string;
-      const params: array of const; const collection: IObjectList;
-      classType: TClass); overload;
-    procedure FetchFromQueryText(const sqlStatement: string;
-      const params: IList<TDBParam>; const collection: IObjectList;
-      classType: TClass); overload;
+    procedure FetchFromCustomQuery(const sql: string;
+      const params: IEnumerable<TDBParam>; const list: IObjectList;
+      entityClass: TClass); overload;
 
     /// <summary>
     ///   Maps resultset into a list of entities
     /// </summary>
     procedure MapEntitiesFromResultSet(const resultSet: IDBResultSet;
-      const collection: IObjectList; classType: TClass);
+      const list: IObjectList; entityClass: TClass);
 
     /// <summary>
-    /// Maps resultset row into the entity
+    /// Maps resultset row into an entity instance
     /// </summary>
     function MapEntityFromResultSetRow(const resultSet: IDBResultSet;
       entityClass: TClass): TObject;
@@ -132,13 +128,7 @@ type
     /// <summary>
     ///   Gets the resultset from SQL statement.
     /// </summary>
-    function GetResultSet(const sqlStatement: string;
-      const params: array of const): IDBResultSet; overload;
-
-    /// <summary>
-    ///   Gets the resultset from SQL statement.
-    /// </summary>
-    function GetResultSet(const sqlStatement: string;
+    function GetResultSet(const sql: string;
       const params: IEnumerable<TDBParam>): IDBResultSet; overload;
 
     procedure AttachEntity(const entity: TObject); virtual;
@@ -229,13 +219,13 @@ begin
 end;
 
 function TAbstractSession.DoGetLazy(const id: TValue; const entity: TObject;
-  const column: ColumnAttribute; classType: TClass): IDBResultSet;
+  const column: ColumnAttribute; entityClass: TClass): IDBResultSet;
 var
   baseEntityClass,
   entityToLoadClass: TClass;
 begin
   baseEntityClass := entity.ClassType;
-  entityToLoadClass := classType;
+  entityToLoadClass := entityClass;
 
   if not TEntityCache.IsValidEntity(entityToLoadClass) then
     entityToLoadClass := baseEntityClass;
@@ -254,7 +244,7 @@ begin
 end;
 
 function TAbstractSession.MapAggregatedObject(const resultSet: IDBResultSet;
-  const baseEntity: TObject; classType: TClass): TObject;
+  const baseEntity: TObject; entityClass: TClass): TObject;
 
   function Convert(const value: Variant): TValue;
   var
@@ -286,7 +276,7 @@ begin
     fieldValue := resultSet.GetFieldValue(0);
     value := Convert(fieldValue);
     try
-      if value.TryConvert(classType.ClassInfo, convertedValue) then
+      if value.TryConvert(entityClass.ClassInfo, convertedValue) then
         Result := convertedValue.AsObject;
     finally
       value.Free;
@@ -301,22 +291,13 @@ begin
   AttachEntity(entity);
 end;
 
-procedure TAbstractSession.FetchFromQueryText(const sqlStatement: string;
-  const params: IList<TDBParam>; const collection: IObjectList; classType: TClass);
+procedure TAbstractSession.FetchFromCustomQuery(const sql: string;
+  const params: IEnumerable<TDBParam>; const list: IObjectList; entityClass: TClass);
 var
   results: IDBResultSet;
 begin
-  results := GetResultSet(sqlStatement, params);
-  MapEntitiesFromResultSet(results, collection, classType);
-end;
-
-procedure TAbstractSession.FetchFromQueryText(const sqlStatement: string;
-  const params: array of const; const collection: IObjectList; classType: TClass);
-var
-  results: IDBResultSet;
-begin
-  results := GetResultSet(sqlStatement, params);
-  MapEntitiesFromResultSet(results, collection, classType);
+  results := GetResultSet(sql, params);
+  MapEntitiesFromResultSet(results, list, entityClass);
 end;
 
 function TAbstractSession.GetDeleteCommandExecutor(
@@ -349,31 +330,31 @@ end;
 
 function TAbstractSession.GetLazyValueAsObject(const id: TValue;
   const entity: TObject; const column: ColumnAttribute;
-  classType: TClass): TObject;
+  entityClass: TClass): TObject;
 var
   results: IDBResultSet;
 begin
   if not Assigned(entity) or id.IsEmpty then
     Exit(nil);
 
-  results := DoGetLazy(id, entity, column, classType);
-  Result := MapAggregatedObject(results, entity, classType);
+  results := DoGetLazy(id, entity, column, entityClass);
+  Result := MapAggregatedObject(results, entity, entityClass);
 end;
 
 procedure TAbstractSession.MapEntitiesFromResultSet(
-  const resultSet: IDBResultSet; const collection: IObjectList;
-  classType: TClass);
+  const resultSet: IDBResultSet; const list: IObjectList;
+  entityClass: TClass);
 var
   rowMapper: IRowMapper;
   entity: TObject;
 begin
-  if not fRowMappers.TryGetValue(classType, rowMapper) then
-    rowMapper := TRowMapperInternal.Create(classType, Self);
+  if not fRowMappers.TryGetValue(entityClass, rowMapper) then
+    rowMapper := TRowMapperInternal.Create(entityClass, Self);
 
   while not resultSet.IsEmpty do
   begin
     entity := rowMapper.MapRow(resultSet);
-    collection.Add(entity);
+    list.Add(entity);
     resultSet.Next;
   end;
 end;
@@ -386,7 +367,7 @@ begin
   if not fRowMappers.TryGetValue(entityClass, rowMapper) then
     rowMapper := TRowMapperInternal.Create(entityClass, Self);
 
-  Result := rowMapper.MapRow(resultSet)
+  Result := rowMapper.MapRow(resultSet);
 end;
 
 procedure TAbstractSession.RegisterNonGenericRowMapper(entityClass: TClass;
@@ -440,22 +421,14 @@ begin
   Result := TValue.From<Lazy<TObject>>(TLazy<TObject>.Create(factory, True));
 end;
 
-function TAbstractSession.GetResultSet(const sqlStatement: string;
-  const params: array of const): IDBResultSet;
-begin
-  Result := GetResultSet(sqlStatement, TDBParams.Create(params));
-end;
-
-function TAbstractSession.GetResultSet(const sqlStatement: string;
+function TAbstractSession.GetResultSet(const sql: string;
   const params: IEnumerable<TDBParam>): IDBResultSet;
 var
   statement: IDBStatement;
 begin
-  Assert(Assigned(params), 'Parameters must be assigned');
   statement := Connection.CreateStatement;
-  statement.SetSQLCommand(sqlStatement);
-
-  if params.Any then
+  statement.SetSQLCommand(sql);
+  if Assigned(params) then
     statement.SetParams(params);
   Result := statement.ExecuteQuery;
 end;

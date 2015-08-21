@@ -150,7 +150,7 @@ begin
   InsertCustomer(10, 'Foo', 1);
   InsertCustomer(15, 'Bar', 2);
   LCustomerPage := FCustomerRepository.FindByNamePaged('Foo', 0, 10);
-  CheckEquals(1, LCustomerPage.GetTotalItems);
+  CheckEquals(1, LCustomerPage.ItemCount);
   CheckEquals('Foo', LCustomerPage.Items.First.Name);
 end;
 

@@ -155,10 +155,9 @@ var
   params: IList<TDBParam>;
   sql: string;
 begin
-  params := TCollections.CreateObjectList<TDBParam>(True);
+  params := TCollections.CreateObjectList<TDBParam>;
   sql := GenerateSqlStatement(params);
-  Result := TCollections.CreateObjectList<T>(True);
-  Result := Session.GetList<T>(sql, params);
+  Result := fSession.GetList<T>(sql, params);
 end;
 
 function TCriteria<T>.Where(const criterion: ICriterion): ICriteria<T>;

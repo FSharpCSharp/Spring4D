@@ -54,8 +54,7 @@ type
   TSession = class(TAbstractSession)
   protected
     function GetQueryCountSql(const sql: string): string;
-    function GetQueryCount(const sql: string; const params: array of const): Int64; overload;
-    function GetQueryCount(const sql: string; const params: IList<TDBParam>): Int64; overload;
+    function GetQueryCount(const sql: string; const params: IEnumerable<TDBParam>): Int64;
   public
     /// <summary>
     ///   Starts a new List Session. ListSession monitors changes in the
@@ -133,7 +132,7 @@ type
     ///   exception</c> if model does not exist.
     /// </summary>
     function Single<T: class, constructor>(const sql: string;
-      const params: array of const): T; overload;
+      const params: array of const): T;
 
     /// <summary>
     ///   Retrieves only one entity model from the database. Returns default
@@ -152,7 +151,7 @@ type
     ///   Retrieves multiple models from the sql statement.
     /// </summary>
     function GetList<T: class, constructor>(const sql: string;
-      const params: IList<TDBParam>): IList<T>; overload;
+      const params: IEnumerable<TDBParam>): IList<T>; overload;
 
     /// <summary>
     ///   Retrieves single model from the database based on its primary key
@@ -214,24 +213,23 @@ type
     /// <summary>
     ///   Fetches data in pages. Pages are 1-indexed.
     /// </summary>
-    function Page<T: class, constructor>(
-      page, itemsPerPage: Integer): IDBPage<T>; overload;
+    function Page<T: class, constructor>(index, size: Integer): IDBPage<T>; overload;
 
     /// <summary>
     ///   Fetches data in pages. You do not need to write custom sql for this,
     ///   just use ordinary sql. All the work will be done for you.  Pages are
     ///   1-indexed.
     /// </summary>
-    function Page<T: class, constructor>(page, itemsPerPage: Integer;
+    function Page<T: class, constructor>(index, size: Integer;
       const sql: string; const params: array of const): IDBPage<T>; overload;
 
     /// <summary>
     ///   Fetches data in pages. You do not need to write custom sql for this,
-    ///   just use ordinary sql. All the work will be done for you. Pages are
+    ///   just use ordinary sql. All the work will be done for you.  Pages are
     ///   1-indexed.
     /// </summary>
-    function Page<T: class, constructor>(page, itemsPerPage: Integer;
-      const sql: string; const params: IList<TDBParam>): IDBPage<T>; overload;
+    function Page<T: class, constructor>(index, size: Integer;
+      const sql: string; const params: IEnumerable<TDBParam>): IDBPage<T>; overload;
 
     /// <summary>
     ///   Saves the entity to the database. It will do update or the insert
@@ -331,7 +329,7 @@ var
 begin
   statement := Connection.CreateStatement;
   statement.SetSQLCommand(sql);
-  statement.SetParams(params);
+  statement.SetParams(TDBParams.Create(params));
   Result := statement.Execute;
 end;
 
@@ -341,7 +339,7 @@ var
   fieldValue: Variant;
   value, convertedValue: TValue;
 begin
-  results := GetResultSet(sql, params);
+  results := GetResultSet(sql, TDBParams.Create(params));
   if not results.IsEmpty then
   begin
     fieldValue := results.GetFieldValue(0);
@@ -354,19 +352,6 @@ begin
   end
   else
     Result := Default(T);
-end;
-
-function TSession.GetList<T>(const sql: string; const params: array of const): IList<T>;
-begin
-  Result := TCollections.CreateObjectList<T>(True);
-  FetchFromQueryText(sql, params, Result as IObjectList, TClass(T));
-end;
-
-function TSession.GetList<T>(const sql: string;
-  const params: IList<TDBParam>): IList<T>;
-begin
-  Result := TCollections.CreateObjectList<T>(True);
-  FetchFromQueryText(sql, params, Result as IObjectList, TClass(T));
 end;
 
 function TSession.FindAll<T>: IList<T>;
@@ -410,26 +395,25 @@ begin
     Result := Default(T);
 end;
 
-function TSession.GetQueryCount(const sql: string; const params: array of const): Int64;
-var
-  sqlStatement: string;
-  results: IDBResultSet;
+function TSession.GetList<T>(const sql: string;
+  const params: array of const): IList<T>;
 begin
-  sqlStatement := GetQueryCountSql(sql);
-  results := GetResultSet(sqlStatement, params);
-  if results.IsEmpty then
-    Result := 0
-  else
-    Result := results.GetFieldValue(0);
+  Result := GetList<T>(sql, TDBParams.Create(params));
 end;
 
-function TSession.GetQueryCount(const sql: string; const params: IList<TDBParam>): Int64;
+function TSession.GetList<T>(const sql: string;
+  const params: IEnumerable<TDBParam>): IList<T>;
+begin
+  Result := TCollections.CreateObjectList<T>(True);
+  FetchFromCustomQuery(sql, params, Result as IObjectList, TClass(T));
+end;
+
+function TSession.GetQueryCount(const sql: string;
+  const params: IEnumerable<TDBParam>): Int64;
 var
-  sqlStatement: string;
   results: IDBResultSet;
 begin
-  sqlStatement := GetQueryCountSql(sql);
-  results := GetResultSet(sqlStatement, params);
+  results := GetResultSet(GetQueryCountSql(sql), params);
   if results.IsEmpty then
     Result := 0
   else
@@ -483,40 +467,32 @@ begin
   Result := not OldStateEntities.IsMapped(entity);
 end;
 
-function TSession.Page<T>(page, itemsPerPage: Integer): IDBPage<T>;
+function TSession.Page<T>(index, size: Integer): IDBPage<T>;
 begin
-  Result := CreateCriteria<T>.Page(page, itemsPerPage);
+  Result := CreateCriteria<T>.Page(index, size);
 end;
 
-function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;
-  const params: IList<TDBParam>): IDBPage<T>;
+function TSession.Page<T>(index, size: Integer; const sql: string;
+  const params: array of const): IDBPage<T>;
+begin
+  Result := Page<T>(index, size, sql, TDBParams.Create(params));
+end;
+
+function TSession.Page<T>(index, size: Integer; const sql: string;
+  const params: IEnumerable<TDBParam>): IDBPage<T>;
 var
   pager: TPager;
-  sqlStatement: string;
 begin
-  pager := TPager.Create(Connection, page, itemsPerPage);
+  pager := TPager.Create(Connection, index, size);
   Result := TDriverPageAdapter<T>.Create(pager);
-  pager.TotalItems := GetQueryCount(sql, params);
-  sqlStatement := pager.BuildSQL(sql);
-  FetchFromQueryText(sqlStatement, params, Result.Items as IObjectList, TClass(T));
+  pager.ItemCount := GetQueryCount(sql, params);
+  FetchFromCustomQuery(pager.BuildSQL(sql), params, Result.Items as IObjectList, TClass(T));
 end;
+
 
 procedure TSession.RegisterRowMapper<T>(const rowMapper: IRowMapper<T>);
 begin
   RegisterNonGenericRowMapper(T, rowMapper as IRowMapper);
-end;
-
-function TSession.Page<T>(page, itemsPerPage: Integer; const sql: string;
-  const params: array of const): IDBPage<T>;
-var
-  pager: TPager;
-  sqlStatement: string;
-begin
-  pager := TPager.Create(Connection, page, itemsPerPage) as TPager;
-  Result := TDriverPageAdapter<T>.Create(pager);
-  pager.TotalItems := GetQueryCount(sql, params);
-  sqlStatement := pager.BuildSQL(sql);
-  FetchFromQueryText(sqlStatement, params, Result.Items as IObjectList, TClass(T));
 end;
 
 procedure TSession.Save(const entity: TObject);
@@ -571,14 +547,15 @@ begin
   Result := FirstOrDefault<T>(sql, params);
 end;
 
-function TSession.TryFirst<T>(const sql: string; const params: array of const; out value: T): Boolean;
+function TSession.TryFirst<T>(const sql: string; const params: array of const;
+  out value: T): Boolean;
 var
   results: IDBResultSet;
 begin
-  results := GetResultSet(sql, params);
+  results := GetResultSet(sql, TDBParams.Create(params));
   Result := not results.IsEmpty;
   if Result then
-    value := T(MapEntityFromResultsetRow(results, T))
+    value := T(MapEntityFromResultSetRow(results, T))
   else
     value := Default(T);
 end;

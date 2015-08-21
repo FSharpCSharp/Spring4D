@@ -97,8 +97,7 @@ type
     ['{DA905CAA-0FC2-4570-9788-1DC206600171}']
     procedure SetSQLCommand(const commandText: string);
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant);
-    procedure SetParams(const params: IEnumerable<TDBParam>); overload;
-    procedure SetParams(const params: array of const); overload;
+    procedure SetParams(const params: IEnumerable<TDBParam>);
     function Execute: NativeUInt;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet;
   end;
@@ -198,7 +197,7 @@ type
 
   ICrudRepository<T: class, constructor; TID> = interface(IRepository<T, TID>)
     ['{E490DD59-5466-4036-8CA5-852D8F7EF527}']
-    function Count: Int64;
+    function Count: Integer;
 
     /// <summary>
     ///   Retrieves single model from the database based on its primary key

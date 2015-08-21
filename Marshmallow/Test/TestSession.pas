@@ -589,20 +589,20 @@ begin
   sSql := 'SELECT * FROM ' + TBL_PEOPLE;
   LCollection := TCollections.CreateList<TCustomer>(True);
 
-  FSession.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
+  FSession.FetchFromCustomQuery(sSql, nil, LCollection as IObjectList, TCustomer);
   CheckEquals(0, LCollection.Count);
 
   LCollection.Clear;
 
   InsertCustomer;
-  FSession.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
+  FSession.FetchFromCustomQuery(sSql, nil, LCollection as IObjectList, TCustomer);
   CheckEquals(1, LCollection.Count);
   CheckEquals(25, LCollection[0].Age);
 
   LCollection.Clear;
 
   InsertCustomer(15);
-  FSession.FetchFromQueryText(sSql, [], LCollection as IObjectList, TCustomer);
+  FSession.FetchFromCustomQuery(sSql, nil, LCollection as IObjectList, TCustomer);
   CheckEquals(2, LCollection.Count);
   CheckEquals(15, LCollection[1].Age);
 end;
@@ -613,7 +613,7 @@ var
 begin
   InsertCustomer;
   LCollection := TCollections.CreateObjectList<TCustomer>;
-  FSession.FetchFromQueryText('SELECT * FROM ' + TBL_PEOPLE, [], LCollection as IObjectList, TCustomer);
+  FSession.FetchFromCustomQuery('SELECT * FROM ' + TBL_PEOPLE, nil, LCollection as IObjectList, TCustomer);
   CheckEquals(1, LCollection.Count);
 end;
 
@@ -1231,17 +1231,17 @@ begin
   TestDB.Commit;
 
   LPage := FSession.Page<TCustomer>(1, 10, 'select * from ' + TBL_PEOPLE, []);
-  CheckEquals(iTotal, LPage.GetTotalItems);
+  CheckEquals(iTotal, LPage.ItemCount);
   CheckEquals(10, LPage.Items.Count);
   CheckEquals(1, LPage.Items[0].Age);
 
   LPage := FSession.Page<TCustomer>(2, 10, 'select * from ' + TBL_PEOPLE, []);
-  CheckEquals(iTotal, LPage.GetTotalItems);
+  CheckEquals(iTotal, LPage.ItemCount);
   CheckEquals(10, LPage.Items.Count);
   CheckEquals(11, LPage.Items[0].Age);
 
   LPage := FSession.Page<TCustomer>(3, 4);
-  CheckEquals(iTotal, LPage.GetTotalItems);
+  CheckEquals(iTotal, LPage.ItemCount);
   CheckEquals(4, LPage.Items.Count);
   CheckEquals(9, LPage.Items[0].Age);
 end;

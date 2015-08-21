@@ -1322,7 +1322,7 @@ end;
 procedure TMongoProxyRepositoryTest.DefaultMethod_FindWhere;
 begin
   InsertObject(FConnection, 100, 1);
-  CheckEquals(1, FProxyRepository.FindWhere.Page(1,10).GetTotalItems);
+  CheckEquals(1, FProxyRepository.FindWhere.Page(1,10).ItemCount);
 end;
 
 procedure TMongoProxyRepositoryTest.DefaultMethod_FindWhere_Expression;
@@ -1331,7 +1331,7 @@ var
 begin
   InsertObject(FConnection, 100, 1);
   Key := Prop.Create('KEY');
-  CheckEquals(1, FProxyRepository.FindWhere.Add(Key = 100).Page(1,10).GetTotalItems);
+  CheckEquals(1, FProxyRepository.FindWhere.Add(Key = 100).Page(1,10).ItemCount);
 end;
 
 procedure TMongoProxyRepositoryTest.DefaultMethod_Query;

@@ -506,8 +506,8 @@ begin
   LPage := FCriteria.Add(Age.GEq(5))
     .OrderBy(Age.Desc).Page(0, 3);
 
-  CheckEquals(6, LPage.GetTotalItems);
-  CheckEquals(2, LPage.GetTotalPages);
+  CheckEquals(6, LPage.ItemCount);
+  CheckEquals(2, LPage.PageCount);
   CheckEquals(10, LPage.Items[0].Age);
   CheckEquals(8, LPage.Items[2].Age);
 end;
@@ -532,8 +532,8 @@ begin
   LPage := FCriteria.Add(Age.GEq(5))
     .OrderBy(Age.Desc).Page(0, 3);
 
-  CheckEquals(6, LPage.GetTotalItems);
-  CheckEquals(2, LPage.GetTotalPages);
+  CheckEquals(6, LPage.ItemCount);
+  CheckEquals(2, LPage.PageCount);
   CheckEquals(10, LPage.Items[0].Age);
   CheckEquals(8, LPage.Items[2].Age);
 

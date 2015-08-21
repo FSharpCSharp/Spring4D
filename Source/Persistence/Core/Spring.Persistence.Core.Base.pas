@@ -117,8 +117,7 @@ type
     constructor Create(const statement: T); virtual;
     procedure SetSQLCommand(const commandText: string); virtual;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); virtual;
-    procedure SetParams(const params: IEnumerable<TDBParam>); overload; virtual;
-    procedure SetParams(const params: array of const); overload;
+    procedure SetParams(const params: IEnumerable<TDBParam>); virtual;
     function Execute: NativeUInt; virtual;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; virtual;
 
@@ -159,24 +158,19 @@ type
   TPager = class
   private
     fConnection: IDBConnection;
-    fCurrentPage: Integer;
+    fPageIndex: Integer;
     fPageSize: Integer;
-    fTotalItems: Int64;
+    fItemCount: Integer;
     fGenerator: ISQLGenerator;
-    function GetLimit: Integer;
-    function GetOffset: Integer;
   public
-    constructor Create(const connection: IDBConnection); overload; virtual;
-    constructor Create(const connection: IDBConnection; page, itemsPerPage: Integer); overload;
+    constructor Create(const connection: IDBConnection; index, size: Integer);
 
     function BuildSQL(const sql: string): string;
 
     property Connection: IDBConnection read fConnection;
-    property Page: Integer read fCurrentPage write fCurrentPage;
-    property ItemsPerPage: Integer read fPageSize write fPageSize;
-    property TotalItems: Int64 read fTotalItems write fTotalItems;
-    property Limit: Integer read GetLimit;
-    property Offset: Integer read GetOffset;
+    property PageIndex: Integer read fPageIndex;
+    property PageSize: Integer read fPageSize;
+    property ItemCount: Integer read fItemCount write fItemCount;
   end;
 
   /// <summary>
@@ -187,17 +181,20 @@ type
   private
     fItems: IList<T>;
     fPager: TPager;
-  protected
-    function GetCurrentPage: Integer;
-    function GetItemsPerPage: Integer;
-    function GetTotalPages: Integer;
-    function GetTotalItems: Int64;
+    function GetPageIndex: Integer;
+    function GetPageSize: Integer;
+    function GetPageCount: Integer;
+    function GetItemCount: Integer;
     function GetItems: IList<T>;
-
-    property Items: IList<T> read GetItems;
   public
     constructor Create(const pager: TPager); virtual;
     destructor Destroy; override;
+
+    property PageIndex: Integer read GetPageIndex;
+    property PageSize: Integer read GetPageSize;
+    property PageCount: Integer read GetPageCount;
+    property ItemCount: Integer read GetItemCount;
+    property Items: IList<T> read GetItems;
   end;
 
 implementation
@@ -346,12 +343,6 @@ begin
   fParams := params;
 end;
 
-procedure TDriverStatementAdapter<T>.SetParams(const params: array of const);
-begin
-  if Length(params) > 0 then
-    SetParams(TDBParams.Create(params));
-end;
-
 procedure TDriverStatementAdapter<T>.SetQuery(const metadata: TQueryMetadata;
   const query: Variant);
 begin
@@ -388,9 +379,9 @@ begin
   inherited Destroy;
 end;
 
-function TDriverPageAdapter<T>.GetCurrentPage: Integer;
+function TDriverPageAdapter<T>.GetItemCount: Integer;
 begin
-  Result := fPager.Page;
+  Result := fPager.ItemCount;
 end;
 
 function TDriverPageAdapter<T>.GetItems: IList<T>;
@@ -398,21 +389,26 @@ begin
   Result := fItems;
 end;
 
-function TDriverPageAdapter<T>.GetItemsPerPage: Integer;
+function TDriverPageAdapter<T>.GetPageCount: Integer;
+var
+  itemCount: Integer;
+  pageSize: Integer;
 begin
-  Result := fPager.ItemsPerPage;
-end;
-
-function TDriverPageAdapter<T>.GetTotalItems: Int64;
-begin
-  Result := fPager.TotalItems;
-end;
-
-function TDriverPageAdapter<T>.GetTotalPages: Integer;
-begin
-  Result := GetTotalItems div GetItemsPerPage;
-  if (GetTotalItems mod GetItemsPerPage) <> 0 then
+  itemCount := GetItemCount;
+  pageSize := GetPageSize;
+  Result := itemCount div pageSize;
+  if (itemCount mod pageSize) <> 0 then
     Inc(Result);
+end;
+
+function TDriverPageAdapter<T>.GetPageIndex: Integer;
+begin
+  Result := fPager.PageIndex;
+end;
+
+function TDriverPageAdapter<T>.GetPageSize: Integer;
+begin
+  Result := fPager.PageSize;
 end;
 
 {$ENDREGION}
@@ -448,37 +444,23 @@ end;
 
 {$REGION 'TPager'}
 
-constructor TPager.Create(const connection: IDBConnection);
+constructor TPager.Create(const connection: IDBConnection; index, size: Integer);
 begin
   inherited Create;
   fConnection := connection;
   fGenerator := TSQLGeneratorRegister.GetGenerator(connection.QueryLanguage);
-end;
-
-constructor TPager.Create(const connection: IDBConnection; page,
-  itemsPerPage: Integer);
-begin
-  Create(connection);
-  fCurrentPage := page;
-  fPageSize := itemsPerPage;
+  fPageIndex := index;
+  fPageSize := size;
 end;
 
 function TPager.BuildSQL(const sql: string): string;
+var
+  offset: Integer;
 begin
-  Result := fGenerator.GeneratePagedQuery(sql, Limit, Offset);
-end;
-
-function TPager.GetLimit: Integer;
-begin
-  Result := ItemsPerPage;
-end;
-
-function TPager.GetOffset: Integer;
-begin
-  if Page <= 1 then
-    Result := 0
-  else
-    Result := (Page * ItemsPerPage) - ItemsPerPage;
+  offset := 0;
+  if fPageIndex > 1 then
+    offset := (fPageIndex - 1) * fPageSize;
+  Result := fGenerator.GeneratePagedQuery(sql, fPageSize, offset);
 end;
 
 {$ENDREGION}

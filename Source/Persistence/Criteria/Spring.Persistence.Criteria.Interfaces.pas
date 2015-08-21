@@ -46,12 +46,16 @@ type
   /// </remarks>
   IDBPage<T: class> = interface(IInvokable)
     ['{384357E2-A0B1-4EEE-9A22-2C01479D4148}']
-    function GetCurrentPage: Integer;
-    function GetItemsPerPage: Integer;
-    function GetTotalPages: Integer;
-    function GetTotalItems: Int64;
+    function GetPageIndex: Integer;
+    function GetPageSize: Integer;
+    function GetPageCount: Integer;
+    function GetItemCount: Integer;
     function GetItems: IList<T>;
 
+    property PageIndex: Integer read GetPageIndex;
+    property PageSize: Integer read GetPageSize;
+    property PageCount: Integer read GetPageCount;
+    property ItemCount: Integer read GetItemCount;
     property Items: IList<T> read GetItems;
   end;
 

@@ -160,9 +160,9 @@ type
   ///   identities.
   /// </summary>
   /// <remarks>
-  ///   If ASeqSQL is defined then framework will execute this SQL statement
-  ///   when performing an insert. Returned value will be written into the 
-  ///   entity's primary key column.
+  ///   If sequenceSQL is defined then framework will execute this SQL
+  ///   statement when performing an insert. Returned value will be written
+  ///   into the entity's primary key column.
   /// </remarks>
   SequenceAttribute = class(TORMAttribute)
   private
@@ -171,7 +171,8 @@ type
     fIncrement: Integer;
     fSequenceSQL: string;
   public
-    constructor Create(const sequenceName: string; initialValue: NativeInt; increment: Integer);  overload;
+    constructor Create(const sequenceName: string; initialValue: NativeInt;
+      increment: Integer); overload;
     constructor Create(const sequenceSQL: string); overload;
 
     property SequenceName: string read fSequenceName;
@@ -200,7 +201,8 @@ type
     function GetMappedByColumn: ColumnAttribute;
     procedure SetEntityClass(const value: TClass); override;
   public
-    constructor Create(required: Boolean; cascade: TCascadeKinds; const mappedBy: string); overload;
+    constructor Create(required: Boolean; cascade: TCascadeKinds;
+      const mappedBy: string); overload;
 
     property MappedBy: string read fMappedBy;
     property MappedByColumn: ColumnAttribute read GetMappedByColumn;
