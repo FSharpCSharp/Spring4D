@@ -36,7 +36,8 @@ uses
   Spring.Collections.Dictionaries;
 
 type
-  TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>, IMultiMap<TKey, TValue>)
+  TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>,
+    IMultiMap<TKey, TValue>, IReadOnlyMultiMap<TKey, TValue>)
   private
     type
       TGenericPair = Generics.Collections.TPair<TKey, TValue>;
@@ -86,6 +87,7 @@ type
     fCount: Integer;
     fEmpty: ICollection<TValue>;
     fValues: TValueCollection;
+    function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
   protected
     fValueComparer: IComparer<TValue>;
   {$REGION 'Property Accessors'}
@@ -217,6 +219,11 @@ begin
 
   list.Add(value);
   Inc(fCount);
+end;
+
+function TMultiMapBase<TKey, TValue>.AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey, TValue>;
+begin
+  Result := Self;
 end;
 
 procedure TMultiMapBase<TKey, TValue>.Clear;

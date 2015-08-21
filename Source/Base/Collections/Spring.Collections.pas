@@ -1475,6 +1475,80 @@ type
     property ValueType: PTypeInfo read GetValueType;
   end;
 
+  IReadOnlyMap<TKey, TValue> = interface(IReadOnlyCollection<TPair<TKey, TValue>>)
+    ['{1FBECEB8-582E-4108-BB44-F21A06FE425B}']
+  {$REGION 'Property Accessors'}
+    function GetKeys: IReadOnlyCollection<TKey>;
+    function GetKeyType: PTypeInfo;
+    function GetValues: IReadOnlyCollection<TValue>;
+    function GetValueType: PTypeInfo;
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Determines whether the map contains the specified key/value pair.
+    /// </summary>
+    /// <param name="key">
+    ///   The key of the pair to locate in the map.
+    /// </param>
+    /// <param name="value">
+    ///   The value of the pair to locate in the map.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the map contains a pair with the specified key and
+    ///   value; otherwise <b>False</b>.
+    /// </returns>
+    function ContainsPair(const key: TKey; const value: TValue): Boolean;
+
+    /// <summary>
+    ///   Determines whether the map contains an element with the specified
+    ///   key.
+    /// </summary>
+    /// <param name="key">
+    ///   The key to locate in the map.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the map contains an element with the key; otherwise, <b>
+    ///   False</b>.
+    /// </returns>
+    function ContainsKey(const key: TKey): Boolean;
+
+    /// <summary>
+    ///   Determines whether the map contains an element with the specified
+    ///   value. <br />
+    /// </summary>
+    /// <param name="value">
+    ///   The value to locate in the map.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the map contains an element with the value; otherwise,
+    ///   <b>False</b>.
+    /// </returns>
+    function ContainsValue(const value: TValue): Boolean;
+
+    /// <summary>
+    ///   Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///   keys of the map.
+    /// </summary>
+    /// <value>
+    ///   An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the keys of
+    ///   the object that implements map.
+    /// </value>
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+
+    /// <summary>
+    ///   Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///   values in the map.
+    /// </summary>
+    /// <value>
+    ///   An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the values
+    ///   in the object that implements map.
+    /// </value>
+    property Values: IReadOnlyCollection<TValue> read GetValues;
+
+    property KeyType: PTypeInfo read GetKeyType;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
   /// <summary>
   ///   Represents a generic read-only collection of key/value pairs.
   /// </summary>
@@ -1484,33 +1558,11 @@ type
   /// <typeparam name="TValue">
   ///   The type of values in the read-only dictionary.
   /// </typeparam>
-  IReadOnlyDictionary<TKey, TValue> = interface(IReadOnlyCollection<TPair<TKey, TValue>>)
+  IReadOnlyDictionary<TKey, TValue> = interface(IReadOnlyMap<TKey, TValue>)
     ['{39F7C68B-373E-4758-808C-705D3978E38F}']
   {$REGION 'Property Accessors'}
     function GetItem(const key: TKey): TValue;
-    function GetKeys: IReadOnlyCollection<TKey>;
-    function GetKeyType: PTypeInfo;
-    function GetValues: IReadOnlyCollection<TValue>;
-    function GetValueType: PTypeInfo;
   {$ENDREGION}
-
-    /// <summary>
-    ///   Determines whether the read-only dictionary contains the specified
-    ///   key/value pair.
-    /// </summary>
-    function ContainsPair(const key: TKey; const value: TValue): Boolean;
-
-    /// <summary>
-    ///   Determines whether the read-only dictionary contains an element that
-    ///   has the specified key.
-    /// </summary>
-    function ContainsKey(const key: TKey): Boolean;
-
-    /// <summary>
-    ///   Determines whether the read-only dictionary contains an element that
-    ///   has the specified value.
-    /// </summary>
-    function ContainsValue(const value: TValue): Boolean;
 
     /// <summary>
     ///   Gets the value for a given key if a matching key exists in the
@@ -1547,20 +1599,6 @@ type
     ///   dictionary.
     /// </summary>
     property Items[const key: TKey]: TValue read GetItem; default;
-
-    /// <summary>
-    ///   Gets an enumerable collection that contains the keys in the read-only
-    ///   dictionary.
-    /// </summary>
-    property Keys: IReadOnlyCollection<TKey> read GetKeys;
-
-    /// <summary>
-    ///   Gets an enumerable collection that contains the values in the
-    ///   read-only dictionary.
-    /// </summary>
-    property Values: IReadOnlyCollection<TValue> read GetValues;
-    property KeyType: PTypeInfo read GetKeyType;
-    property ValueType: PTypeInfo read GetValueType;
   end;
 
   /// <summary>
@@ -1842,11 +1880,23 @@ type
     property Value[const key: TKey]: TValue read GetValue write SetValue; default;
   end;
 
+  IReadOnlyMultiMap<TKey, TValue> = interface(IReadOnlyMap<TKey, TValue>)
+    ['{5411F9EC-5A56-4F40-890A-089A08AE795F}']
+  {$REGION 'Property Accessors'}
+    function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
+  {$ENDREGION}
+
+    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
+    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
+  end;
+
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
     ['{8598095E-92A7-4FCC-9F78-8EE7653B8B49}']
   {$REGION 'Property Accessors'}
     function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
+
+    function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
 
     function ExtractValues(const key: TKey): IReadOnlyCollection<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;

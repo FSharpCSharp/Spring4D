@@ -342,7 +342,8 @@ type
     property Controller: IInterface read GetController;
   end;
 
-  TMapBase<TKey, T> = class(TCollectionBase<TPair<TKey, T>>, IMap<TKey, T>)
+  TMapBase<TKey, T> = class(TCollectionBase<TPair<TKey, T>>, IMap<TKey, T>,
+    IReadOnlyMap<TKey, T>)
   private
     type
       TGenericPair = Generics.Collections.TPair<TKey, T>;
