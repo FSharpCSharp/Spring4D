@@ -2169,14 +2169,15 @@ function GetGenericTypeParameters(const typeName: string): TArray<string>;
 
   function SplitTypes(const s: string): TArray<string>;
   var
-    startPos, index: Integer;
+    startPos, index, len: Integer;
   begin
     startPos := 1;
     index := 1;
     while ScanChar(s, index) do
     begin
-      SetLength(Result, Length(Result) + 1);
-      Result[High(Result)] := Copy(s, startPos, index - startPos);
+      len := Length(Result);
+      SetLength(Result, len + 1);
+      Result[len] := Copy(s, startPos, index - startPos);
       Inc(index);
       startPos := index;
     end;
