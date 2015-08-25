@@ -159,10 +159,10 @@ type
 
   {$REGION 'Implements IMap<TKey, TValue>'}
     procedure Add(const key: TKey; const value: TValue); overload; override;
-    function Remove(const key: TKey): Boolean; overload; override;
-    function RemovePair(const key: TKey; const value: TValue): Boolean; override;
-    function ExtractPair(const key: TKey; const value: TValue): TGenericPair; overload; override;
-    function ContainsPair(const key: TKey; const value: TValue): Boolean; override;
+    function Remove(const key: TKey): Boolean; override;
+    function Remove(const key: TKey; const value: TValue): Boolean; override;
+    function Extract(const key: TKey; const value: TValue): TGenericPair; override;
+    function Contains(const key: TKey; const value: TValue): Boolean; override;
     function ContainsKey(const key: TKey): Boolean; override;
     function ContainsValue(const value: TValue): Boolean; override;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
@@ -235,9 +235,9 @@ type
   {$REGION 'Implements IMap<TKey, TValue>'}
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
-    function RemovePair(const key: TKey; const value: TValue): Boolean; override;
-    function ExtractPair(const key: TKey; const value: TValue): TGenericPair; overload; override;
-    function ContainsPair(const key: TKey; const value: TValue): Boolean; override;
+    function Remove(const key: TKey; const value: TValue): Boolean; override;
+    function Extract(const key: TKey; const value: TValue): TGenericPair; override;
+    function Contains(const key: TKey; const value: TValue): Boolean; override;
     function ContainsKey(const key: TKey): Boolean; override;
     function ContainsValue(const value: TValue): Boolean; override;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
@@ -371,7 +371,7 @@ begin
     Result := comparer.Equals(TGenericPair.Create(value.Key, item), value);
 end;
 
-function TDictionary<TKey, TValue>.ExtractPair(const key: TKey;
+function TDictionary<TKey, TValue>.Extract(const key: TKey;
   const value: TValue): TGenericPair;
 var
   found: Boolean;
@@ -447,7 +447,7 @@ begin
   Result := fDictionary.ContainsKey(key);
 end;
 
-function TDictionary<TKey, TValue>.ContainsPair(const key: TKey;
+function TDictionary<TKey, TValue>.Contains(const key: TKey;
   const value: TValue): Boolean;
 var
   item: TValue;
@@ -496,7 +496,7 @@ begin
     fDictionary.Remove(key);
 end;
 
-function TDictionary<TKey, TValue>.RemovePair(const key: TKey;
+function TDictionary<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
   comparer: IEqualityComparer<TValue>;
@@ -794,7 +794,7 @@ begin
   Result := fValuesByKey.ContainsKey(key);
 end;
 
-function TBidiDictionary<TKey, TValue>.ContainsPair(const key: TKey;
+function TBidiDictionary<TKey, TValue>.Contains(const key: TKey;
   const value: TValue): Boolean;
 var
   item: TValue;
@@ -831,11 +831,11 @@ begin
   raise ENotImplementedException.Create('ExtractPair');
 end;
 
-function TBidiDictionary<TKey, TValue>.ExtractPair(const key: TKey;
+function TBidiDictionary<TKey, TValue>.Extract(const key: TKey;
   const value: TValue): TGenericPair;
 begin
-  Result := fValuesByKey.ExtractPair(key, value);
-  fKeysByValue.ExtractPair(value, key);
+  Result := fValuesByKey.Extract(key, value);
+  fKeysByValue.Extract(value, key);
 end;
 
 function TBidiDictionary<TKey, TValue>.ExtractValue(const key: TKey): TValue;
@@ -917,7 +917,7 @@ begin
   Result := RemoveKey(key);
 end;
 
-function TBidiDictionary<TKey, TValue>.RemovePair(const key: TKey;
+function TBidiDictionary<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
   item: TValue;

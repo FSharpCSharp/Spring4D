@@ -118,9 +118,9 @@ type
   {$REGION 'Implements IMap<TKey, TValue>'}
     procedure Add(const key: TKey; const value: TValue); override;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
-    function RemovePair(const key: TKey; const value: TValue): Boolean; override;
-    function ExtractPair(const key: TKey; const value: TValue): TGenericPair; override;
-    function ContainsPair(const key: TKey; const value: TValue): Boolean; override;
+    function Remove(const key: TKey; const value: TValue): Boolean; overload; override;
+    function Extract(const key: TKey; const value: TValue): TGenericPair; override;
+    function Contains(const key: TKey; const value: TValue): Boolean; override;
     function ContainsKey(const key: TKey): Boolean; override;
     function ContainsValue(const value: TValue): Boolean; override;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
@@ -243,17 +243,17 @@ begin
     Result := False;
 end;
 
-function TMultiMapBase<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
-begin
-  Result := fDictionary.ContainsKey(key);
-end;
-
-function TMultiMapBase<TKey, TValue>.ContainsPair(const key: TKey;
+function TMultiMapBase<TKey, TValue>.Contains(const key: TKey;
   const value: TValue): Boolean;
 var
   values: IReadOnlyCollection<TValue>;
 begin
   Result := TryGetValues(key, values) and values.Contains(value);
+end;
+
+function TMultiMapBase<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
+begin
+  Result := fDictionary.ContainsKey(key);
 end;
 
 function TMultiMapBase<TKey, TValue>.ContainsValue(const value: TValue): Boolean;
@@ -266,7 +266,7 @@ begin
   Result := False;
 end;
 
-function TMultiMapBase<TKey, TValue>.ExtractPair(const key: TKey;
+function TMultiMapBase<TKey, TValue>.Extract(const key: TKey;
   const value: TValue): TGenericPair;
 var
   list: ICollection<TValue>;
@@ -323,7 +323,7 @@ begin
   Result := fValues;
 end;
 
-function TMultiMapBase<TKey, TValue>.RemovePair(const key: TKey;
+function TMultiMapBase<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
   list: ICollection<TValue>;

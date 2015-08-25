@@ -369,13 +369,13 @@ type
 
     function Remove(const item: TGenericPair): Boolean; overload; override; final;
     function Remove(const key: TKey): Boolean; reintroduce; overload; virtual; abstract;
-    function RemovePair(const key: TKey; const value: T): Boolean; virtual; abstract;
+    function Remove(const key: TKey; const value: T): Boolean; reintroduce; overload; virtual; abstract;
 
-    function Extract(const item: TGenericPair): TGenericPair; override; final;
-    function ExtractPair(const key: TKey; const value: T): TGenericPair; virtual; abstract;
+    function Extract(const item: TGenericPair): TGenericPair; overload; override; final;
+    function Extract(const key: TKey; const value: T): TGenericPair; reintroduce; overload; virtual; abstract;
 
-    function Contains(const item: TGenericPair): Boolean; override; final;
-    function ContainsPair(const key: TKey; const value: T): Boolean; virtual; abstract;
+    function Contains(const item: TGenericPair): Boolean; overload; override; final;
+    function Contains(const key: TKey; const value: T): Boolean; overload; virtual; abstract;
     function ContainsKey(const key: TKey): Boolean; virtual; abstract;
     function ContainsValue(const value: T): Boolean; virtual; abstract;
 
@@ -1683,12 +1683,12 @@ end;
 
 function TMapBase<TKey, T>.Contains(const item: TGenericPair): Boolean;
 begin
-  Result := ContainsPair(item.Key, item.Value);
+  Result := Contains(item.Key, item.Value);
 end;
 
 function TMapBase<TKey, T>.Extract(const item: TGenericPair): TGenericPair;
 begin
-  Result := ExtractPair(item.Key, item.Value);
+  Result := Extract(item.Key, item.Value);
 end;
 
 function TMapBase<TKey, T>.GetKeyType: PTypeInfo;
@@ -1720,7 +1720,7 @@ end;
 
 function TMapBase<TKey, T>.Remove(const item: TGenericPair): Boolean;
 begin
-  Result := RemovePair(item.Key, item.Value);
+  Result := Remove(item.Key, item.Value);
 end;
 
 procedure TMapBase<TKey, T>.ValueChanged(const Item: T;

@@ -1497,7 +1497,7 @@ type
     ///   <b>True</b> if the map contains a pair with the specified key and
     ///   value; otherwise <b>False</b>.
     /// </returns>
-    function ContainsPair(const key: TKey; const value: TValue): Boolean;
+    function Contains(const key: TKey; const value: TValue): Boolean;
 
     /// <summary>
     ///   Determines whether the map contains an element with the specified
@@ -1661,9 +1661,9 @@ type
     ///   <b>True</b> if the pair was successfully removed; otherwise, <b>False</b>
     ///    .
     /// </returns>
-    function RemovePair(const key: TKey; const value: TValue): Boolean; overload;
+    function Remove(const key: TKey; const value: TValue): Boolean; overload;
 
-    function ExtractPair(const key: TKey; const value: TValue): TPair<TKey, TValue>;
+    function Extract(const key: TKey; const value: TValue): TPair<TKey, TValue>;
 
     /// <summary>
     ///   Determines whether the IMap&lt;TKey,TValue&gt; contains the specified
@@ -1679,7 +1679,7 @@ type
     ///   <b>True</b> if the IMap&lt;TKey, TValue&gt; contains a pair with the
     ///   specified key and value; otherwise <b>False</b>.
     /// </returns>
-    function ContainsPair(const key: TKey; const value: TValue): Boolean;
+    function Contains(const key: TKey; const value: TValue): Boolean;
 
     /// <summary>
     ///   Determines whether the IMap&lt;TKey, TValue&gt; contains an element
