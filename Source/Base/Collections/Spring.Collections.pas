@@ -2376,6 +2376,13 @@ type
 
     class function Select<T, TResult>(const source: IEnumerable<T>;
       const selector: TFunc<T, TResult>): IEnumerable<TResult>; overload; static;
+
+    class function GroupBy<T, TKey, TElement>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T, TKey>;
+      const elementSelector: TFunc<T, TElement>): IEnumerable<IGrouping<TKey,TElement>>; overload; static;
+    class function GroupBy<T, TKey, TElement, TResult>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T, TKey>; const elementSelector: TFunc<T, TElement>;
+      const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -2856,6 +2863,23 @@ end;
 class function TEnumerable.Empty<T>: IEnumerable<T>;
 begin
   Result := TEmptyEnumerable<T>.Instance;
+end;
+
+class function TEnumerable.GroupBy<T, TKey, TElement>(
+  const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
+  const elementSelector: TFunc<T, TElement>): IEnumerable<IGrouping<TKey, TElement>>;
+begin
+  Result := TGroupedEnumerable<T, TKey, TElement>.Create(
+    source, keySelector, elementSelector);
+end;
+
+class function TEnumerable.GroupBy<T, TKey, TElement, TResult>(
+  const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
+  const elementSelector: TFunc<T, TElement>;
+  const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>;
+begin
+  Result := TGroupedEnumerable<T, TKey, TElement, TResult>.Create(
+    source, keySelector, elementSelector, resultSelector);
 end;
 
 class function TEnumerable.Max<T>(const source: IEnumerable<T>;
