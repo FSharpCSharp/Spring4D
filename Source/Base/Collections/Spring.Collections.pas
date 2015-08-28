@@ -1896,6 +1896,9 @@ type
     function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
 
+    procedure AddRange(const key: TKey; const values: array of TValue); overload;
+    procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;
+
     function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
 
     function ExtractValues(const key: TKey): IReadOnlyCollection<TValue>;

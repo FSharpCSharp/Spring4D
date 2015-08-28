@@ -128,6 +128,8 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMultiMap<TKey, TValue>'}
+    procedure AddRange(const key: TKey; const values: array of TValue); overload;
+    procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;
     function ExtractValues(const key: TKey): IReadOnlyCollection<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
@@ -219,6 +221,28 @@ begin
 
   list.Add(value);
   Inc(fCount);
+end;
+
+procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;
+  const values: array of TValue);
+var
+  item: TValue;
+begin
+  for item in values do
+    Add(key, item);
+end;
+
+procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;
+  const collection: IEnumerable<TValue>);
+var
+  item: TValue;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  for item in collection do
+    Add(key, item);
 end;
 
 function TMultiMapBase<TKey, TValue>.AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey, TValue>;
