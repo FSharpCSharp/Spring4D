@@ -120,7 +120,7 @@ type
     procedure AddOrSetValue(const key, value: TValue);
 
     function ExtractPair(const key: TValue): TPair<TValue, TValue>;
-    procedure Remove(const key: TValue); overload;
+    function Remove(const key: TValue): Boolean;
 
     function ContainsKey(const key: TValue): Boolean;
     function ContainsValue(const value: TValue): Boolean;
@@ -558,9 +558,9 @@ begin
     Result := inherited;
 end;
 
-procedure TDictionaryAdapter<TKey, T>.Remove(const key: TValue);
+function TDictionaryAdapter<TKey, T>.Remove(const key: TValue): Boolean;
 begin
-  fSource.Remove(key.AsType<TKey>);
+  Result := fSource.Remove(key.AsType<TKey>);
 end;
 
 function TDictionaryAdapter<TKey, T>.TryGetValue(const key: TValue;
