@@ -45,6 +45,10 @@ type
 
   TValue = Rtti.TValue;
 
+const
+  DefaultMockBehavior = TMockBehavior.Dynamic;
+
+type
   TCallInfo = record
   private
     fInvocation: IInvocation;
@@ -159,16 +163,17 @@ type
   Mock<T> = record
   private
     fMock: IMock<T>;
+    procedure EnsureInitialized; inline;
     function GetInstance: T;
     function GetCallBase: Boolean;
     procedure SetCallBase(const value: Boolean);
   public
     class function Create(
-      behavior: TMockBehavior = TMockBehavior.Dynamic): Mock<T>; overload; static;
+      behavior: TMockBehavior = DefaultMockBehavior): Mock<T>; overload; static;
     class function Create(behavior: TMockBehavior;
       const args: array of TValue): Mock<T>; overload; static;
     class function Create(const args: array of TValue;
-      behavior: TMockBehavior = TMockBehavior.Dynamic): Mock<T>; overload; static;
+      behavior: TMockBehavior = DefaultMockBehavior): Mock<T>; overload; static;
 
     procedure Free;
 
@@ -282,6 +287,12 @@ begin
   Result.fMock := TMock<T>.Create(behavior, args);
 end;
 
+procedure Mock<T>.EnsureInitialized;
+begin
+  if not Assigned(fMock) then
+    fMock := TMock<T>.Create(DefaultMockBehavior, [])
+end;
+
 procedure Mock<T>.Free;
 begin
   fMock := nil;
@@ -289,62 +300,74 @@ end;
 
 class operator Mock<T>.Implicit(const value: IMock): Mock<T>;
 begin
+  Assert(Assigned(value));
   Assert(value.TypeInfo = System.TypeInfo(T));
   Result.fMock := value as IMock<T>;
 end;
 
 class operator Mock<T>.Implicit(const value: Mock<T>): IMock;
 begin
+  value.EnsureInitialized;
   Result := value.fMock as IMock;
 end;
 
 class operator Mock<T>.Implicit(const value: Mock<T>): IMock<T>;
 begin
+  value.EnsureInitialized;
   Result := value.fMock;
 end;
 
 class operator Mock<T>.Implicit(const value: Mock<T>): T;
 begin
+  value.EnsureInitialized;
   Result := value.fMock.Instance;
 end;
 
 function Mock<T>.GetCallBase: Boolean;
 begin
+  EnsureInitialized;
   Result := fMock.CallBase;
 end;
 
 function Mock<T>.GetInstance: T;
 begin
+  EnsureInitialized;
   Result := fMock.Instance;
 end;
 
 procedure Mock<T>.SetCallBase(const value: Boolean);
 begin
+  EnsureInitialized;
   fMock.CallBase := value
 end;
 
 function Mock<T>.Setup: Setup<T>;
 begin
+  EnsureInitialized;
   Result.fSetup := fMock.Setup;
 end;
 
 function Mock<T>.Received: T;
 begin
+  EnsureInitialized;
   Result := fMock.Received;
 end;
 
 function Mock<T>.Received(const times: Times): T;
 begin
+  EnsureInitialized;
   Result := fMock.Received(times);
 end;
 
 function Mock<T>.ReceivedWithAnyArgs: T;
 begin
+  EnsureInitialized;
   Result := fMock.ReceivedWithAnyArgs;
 end;
 
 function Mock<T>.ReceivedWithAnyArgs(const times: Times): T;
 begin
+  EnsureInitialized;
   Result := fMock.ReceivedWithAnyArgs(times);
 end;
 

@@ -71,7 +71,7 @@ type
   protected
     procedure Intercept(const invocation: IInvocation);
   public
-    constructor Create(behavior: TMockBehavior = TMockBehavior.Dynamic);
+    constructor Create(behavior: TMockBehavior = DefaultMockBehavior);
 
     procedure Received(const times: Times);
     procedure ReceivedForAnyArgs(const times: Times);

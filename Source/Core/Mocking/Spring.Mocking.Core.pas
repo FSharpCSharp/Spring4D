@@ -54,7 +54,7 @@ type
     constructor Create(typeInfo: PTypeInfo; const interceptor: TMockInterceptor;
       const proxy: TValue) overload;
     constructor Create(typeInfo: PTypeInfo;
-      behavior: TMockBehavior = TMockBehavior.Dynamic); overload;
+      behavior: TMockBehavior = DefaultMockBehavior); overload;
     constructor Create(typeInfo: PTypeInfo;
       behavior: TMockBehavior; const args: array of TValue); overload;
     destructor Destroy; override;
