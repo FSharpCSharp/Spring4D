@@ -973,6 +973,8 @@ begin
   FItemTypeInfo := FDataList.ElementType;
   IndexList.DataList := FDataList;
   RegisterChangeHandler;
+  if Active then
+    Refresh;
 end;
 
 procedure TObjectDataset.SetFilterText(const Value: string);
