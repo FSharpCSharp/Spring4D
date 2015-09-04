@@ -907,7 +907,7 @@ begin
   CheckFalse(Assigned(e));
   CheckFalse(Guard.IsNullReference(e, TypeInfo(TNotifyEvent)));
 {$ELSE}
-  {$MESSAGE WARN 'Delphi problem'}
+//  {$MESSAGE WARN 'Delphi problem'}
 {$ENDIF}
 end;
 

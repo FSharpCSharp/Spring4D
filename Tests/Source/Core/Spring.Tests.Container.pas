@@ -276,9 +276,8 @@ type
     procedure TestDependencyTypeIsRecord;
     procedure TestDependencyTypeIsInterface;
 {$ELSE}
-    {$MESSAGE WARN 'Test me again later'}
     // These tests fail due to some compiler/RTL problem, the circular
-    // dependency excpetion is raised but during re-raise in some finally block
+    // dependency exception is raised but during re-raise in some finally block
     // AV is raised instead. This is rare corner case not considered to be a
     // major issue.
 {$ENDIF}

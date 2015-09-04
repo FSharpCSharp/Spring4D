@@ -442,7 +442,7 @@ type
   TMyMock = class(TCustomProxy)
   public
     procedure SomeProcedure; virtual; safecall;
-    function SafeCallProcedure(const s: WideString): Integer; virtual; safecall;
+    function SafeCallProcedure(const s: string): Integer; virtual; safecall;
   end;
 
 procedure TMyMock.SomeProcedure;
@@ -450,7 +450,7 @@ begin
   Intercept;
 end;
 
-function TMyMock.SafeCallProcedure(const s: WideString): Integer;
+function TMyMock.SafeCallProcedure(const s: string): Integer;
 begin
   Result := Intercept([s]).AsInteger;
 end;
