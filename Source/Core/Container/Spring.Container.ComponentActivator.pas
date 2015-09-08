@@ -203,7 +203,7 @@ function TDelegateComponentActivator.CreateInstance(
 begin
   if not Assigned(Model.ActivatorDelegate) then
     raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
-  Result := Model.ActivatorDelegate.Invoke;
+  Result := Model.ActivatorDelegate();
   ExecuteInjections(Result, context);
 end;
 

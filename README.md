@@ -12,7 +12,7 @@ Just run the Build.exe and select the Delphi versions you want to install Spring
 
 Current version
 ---------------
-1.1 (2014-09-12)
+1.1.2 (2015-09-08)
 
 Known issues
 ------------
