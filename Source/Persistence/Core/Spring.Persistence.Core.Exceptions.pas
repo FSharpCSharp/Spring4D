@@ -118,25 +118,11 @@ begin
 end;
 
 function EBaseORMException.EntityToString(const entity: TObject): string;
-var
-  builder: TStringBuilder;
-  column: ColumnAttribute;
-  value: TValue;
 begin
   if not Assigned(entity) then
-    Exit('null');
-  builder := TStringBuilder.Create;
-  try
-    builder.AppendFormat('ClassName: %s', [entity.ClassName]).AppendLine;
-    for column in TEntityCache.Get(entity.ClassType).Columns do
-    begin
-      value := column.Member.GetValue(entity);
-      builder.AppendFormat('[%s] : %s', [column.ColumnName, value.ToString]).AppendLine;
-    end;
-    Result := builder.ToString;
-  finally
-    builder.Free;
-  end;
+    Result := 'null'
+  else
+    Result := 'ClassName: ' + entity.ClassName;
 end;
 
 {$ENDREGION}
