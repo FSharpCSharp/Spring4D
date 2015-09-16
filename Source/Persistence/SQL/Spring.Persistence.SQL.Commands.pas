@@ -80,6 +80,9 @@ type
     fForeignColumn: ForeignJoinColumnAttribute;
     fTables: IList<TSQLTable>;
     fOwnTable: Boolean;
+  protected
+    procedure InternalSetAssociations(entityClass: TClass;
+      const baseTable: TSQLTable; var index: Integer);
   public
     constructor Create(const table: TSQLTable); overload; override;
     constructor Create(entityClass: TClass); reintroduce; overload;
@@ -87,8 +90,7 @@ type
 
     function FindTable(entityClass: TClass): TSQLTable;
     function FindCorrespondingTable(const table: TSQLTable): TSQLTable;
-
-    procedure SetAssociations(entityClass: TClass); virtual;
+    procedure SetAssociations(entityClass: TClass); overload;
     procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn;
     procedure SetFromForeignColumn(const entityData: TEntityData;
@@ -269,9 +271,9 @@ begin
   Result := fTable;
 end;
 
-procedure TSelectCommand.SetAssociations(entityClass: TClass);
+procedure TSelectCommand.InternalSetAssociations(entityClass: TClass;
+  const baseTable: TSQLTable; var index: Integer);
 var
-  i: Integer;
   manyToOneColumn: ManyToOneAttribute;
   memberType: TRttiType;
   entityData: TEntityData;
@@ -280,18 +282,17 @@ var
   selectField: TSQLSelectField;
   join: TSQLJoin;
 begin
-  i := 0;
   for manyToOneColumn in TEntityCache.Get(entityClass).ManyToOneColumns do
   begin
     memberType := manyToOneColumn.Member.MemberType;
     if IsLazyType(memberType.Handle) then
       memberType := memberType.GetGenericArguments[0];
     entityData := TEntityCache.Get(memberType.AsInstance.MetaclassType);
-    // hardcode the index, many to one join tables start at index 1 (0 is the base table)
-    table := TSQLTable.Create(i + 1);
+
+    Inc(index);
+    table := TSQLTable.Create(index);
     table.SetFromAttribute(entityData.EntityTable);
     fTables.Add(table);
-
     for column in entityData.Columns do
     begin
       selectField := TSQLSelectField.Create(column.ColumnName, table, True);
@@ -301,11 +302,22 @@ begin
     join := TSQLJoin.Create(jtLeft);
     join.Segments.Add(TSQLJoinSegment.Create(
       TSQLField.Create(entityData.PrimaryKeyColumn.ColumnName, table),
-      TSQLField.Create(manyToOneColumn.MappedByColumn.ColumnName, fTable)));
+      TSQLField.Create(manyToOneColumn.MappedByColumn.ColumnName, baseTable)));
     fJoins.Add(join);
 
-    Inc(i);
+    // support associates having associates themselves.
+    InternalSetAssociations(memberType.AsInstance.MetaclassType, table, index);
   end;
+end;
+
+procedure TSelectCommand.SetAssociations(entityClass: TClass);
+var
+  index: Integer;
+begin
+  // When SetAssociations is called initially this value should be provided
+  // starting from 0 (base table) and is incremented for each associate recursively
+  index := 0;
+  InternalSetAssociations(entityClass, fTable, index);
 end;
 
 procedure TSelectCommand.SetFromForeignColumn(const entityData: TEntityData;

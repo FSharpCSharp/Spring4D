@@ -345,7 +345,6 @@ type
   protected
     [Column('ID', [cpPrimaryKey])]
     fId: string;
-
     [Column('DETAIL1_ID')]
     fDetail1Id: string;
     [Column('DETAIL2_ID')]
@@ -354,6 +353,36 @@ type
     fDetail1: TDetailEntity;
     [ManyToOne(True, [ckCascadeAll], 'fDetail2Id')]
     fDetail2: TDetailEntity;
+  end;
+
+  [Table('SUBSIDIARY')]
+  TSubsidiaryAssociate = class
+    [Column('SID', [cpPrimaryKey])]
+    FSid: Int64;
+  end;
+
+  [Table('TAX_CODE_RULE')]
+  TTaxCodeRule = class
+    [Column('SID', [cpPrimaryKey])]
+    FSid: Int64;
+    [Column('SBS_SID')]
+    FSbsSid: Nullable<Int64>;
+    [ManyToOne(False, [ckCascadeAll], 'FSbsSid')]
+    FSubsidiary: TSubsidiaryAssociate;
+  end;
+
+  [Table('TAX')]
+  TTax = class
+    [Column('SID', [cpPrimaryKey])]
+    FSid: Int64;
+    [Column('SBS_SID')]
+    FSbsSid: Nullable<Int64>;
+    [Column('TAX_CODE_RULE_SID')]
+    FTaxCodeRuleSid: Nullable<Int64>;
+    [ManyToOne(False, [ckCascadeAll], 'FTaxCodeRuleSid')]
+    FTaxCodeRule: TTaxCodeRule;
+    [ManyToOne(False, [ckCascadeAll], 'FSbsSid')]
+    FSubsidiary: TSubsidiaryAssociate;
   end;
 
 var

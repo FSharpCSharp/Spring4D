@@ -70,7 +70,6 @@ constructor TEntityWrapper.Create(entityClass: TClass;
 begin
   inherited Create;
   fEntityClassData := TEntityCache.Get(entityClass);
-  fColumnsData := fEntityClassData.ColumnsData;
   fColumnsData := columnsData;
   if not Assigned(fColumnsData) then
     fColumnsData := fEntityClassData.ColumnsData;

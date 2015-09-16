@@ -70,8 +70,9 @@ type
       procedure MapEntityFromColumns(const entity: IEntityWrapper;
         const resultSet: IDBResultSet);
     public
-      constructor Create(entityClass: TClass; session: TAbstractSession;
-        member: TRttiMember = nil; index: Integer = 0);
+      constructor Create(entityClass: TClass; const session: TAbstractSession); overload;
+      constructor Create(entityClass: TClass; const session: TAbstractSession;
+        const member: TRttiMember; var index: Integer); overload;
       destructor Destroy; override;
       function MapRow(const resultSet: IDBResultSet): TObject; overload;
     end;
@@ -521,7 +522,16 @@ end;
 {$REGION 'TAbstractSession.TRowMapperInternal'}
 
 constructor TAbstractSession.TRowMapperInternal.Create(entityClass: TClass;
-  session: TAbstractSession; member: TRttiMember; index: Integer);
+  const session: TAbstractSession);
+var
+  index: Integer;
+begin
+  index := 0;
+  Create(entityClass, session, nil, index);
+end;
+
+constructor TAbstractSession.TRowMapperInternal.Create(entityClass: TClass;
+  const session: TAbstractSession; const member: TRttiMember; var index: Integer);
 
   procedure ResolveColumns;
   var
@@ -540,12 +550,12 @@ constructor TAbstractSession.TRowMapperInternal.Create(entityClass: TClass;
   end;
 
 var
-  i: Integer;
   column: ManyToOneAttribute;
 begin
   inherited Create;
   fEntityClass := entityClass;
   fSession := session;
+
   if index = 0 then
     fEntityWrapper := TEntityWrapper.Create(entityClass)
   else
@@ -556,15 +566,15 @@ begin
     fEntityWrapper := TEntityWrapper.Create(fEntityClass, fColumnsData);
     fMember := member;
   end;
+
   if fEntityWrapper.HasManyToOneRelations then
   begin
     fRowMappers := TCollections.CreateList<IRowMapperInternal>;
-    i := 1;
     for column in fEntityWrapper.ManyToOneColumns do
     begin
+      Inc(index);
       fRowMappers.Add(TRowMapperInternal.Create(
-        column.Member.MemberType.AsInstance.MetaclassType, session, column.Member, i));
-      Inc(i);
+        column.Member.MemberType.AsInstance.MetaclassType, session, column.Member, index));
     end;
   end;
 end;

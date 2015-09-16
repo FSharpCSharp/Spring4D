@@ -30,6 +30,7 @@ type
     procedure TestGenerateGetQueryCount;
 
     procedure TestGenerateSelectWithAggregation;
+    procedure TestGenerateSelectWithNestedAggregation;
   end;
 
 implementation
@@ -203,6 +204,27 @@ var
   sql: string;
 begin
   select := TSelectCommand.Create(TMasterEntity);
+  try
+    sql := FAnsiSQLGenerator.GenerateSelect(select);
+    CheckEqualsString(expectedSql, sql);
+  finally
+    select.Free;
+  end;
+end;
+
+procedure TAnsiSQLGeneratorTest.TestGenerateSelectWithNestedAggregation;
+const
+  expectedSql =
+    'SELECT t0."SID", t0."SBS_SID", t0."TAX_CODE_RULE_SID", t1."SID" AS t1$SID, t1."SBS_SID" AS t1$SBS_SID, t2."SID" AS t2$SID, t3."SID" AS t3$SID' + sLineBreak +
+    ' FROM TAX t0' + sLineBreak +
+    '  LEFT OUTER JOIN TAX_CODE_RULE t1 ON t1."SID" = t0."TAX_CODE_RULE_SID"' + sLineBreak +
+    '  LEFT OUTER JOIN SUBSIDIARY t2 ON t2."SID" = t1."SBS_SID"' + sLineBreak +
+    '  LEFT OUTER JOIN SUBSIDIARY t3 ON t3."SID" = t0."SBS_SID";';
+var
+  select: TSelectCommand;
+  sql: string;
+begin
+  select := TSelectCommand.Create(TTax);
   try
     sql := FAnsiSQLGenerator.GenerateSelect(select);
     CheckEqualsString(expectedSql, sql);
