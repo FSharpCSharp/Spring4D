@@ -784,17 +784,17 @@ type
     function _Release: Integer; stdcall;
 
     function ConvertTo(const value: TValue;
-      const targetTypeInfo: PTypeInfo): TValue; overload;
+      const targetTypeInfo: PTypeInfo): TValue;
     function ConvertToParam(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      const parameter: TValue): TValue; overload;
+      const parameter: TValue): TValue;
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue): Boolean; overload;
+      out targetValue: TValue): Boolean;
     function TryConvertToParam(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       out targetValue: TValue;
-      const parameter: TValue): Boolean; overload;
+      const parameter: TValue): Boolean;
   private const
     Vtable: array[0..6] of Pointer =
     (
