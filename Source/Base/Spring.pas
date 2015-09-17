@@ -2171,6 +2171,7 @@ function GetGenericTypeParameters(const typeName: string): TArray<string>;
   var
     startPos, index, len: Integer;
   begin
+    Result := nil;
     startPos := 1;
     index := 1;
     while ScanChar(s, index) do
@@ -3773,6 +3774,7 @@ end;
 
 constructor TWeakReferences.Create;
 begin
+  inherited Create;
   fLock := TCriticalSection.Create;
   fWeakReferences := TObjectDictionary<Pointer, TList>.Create([doOwnsValues]);
 end;
@@ -4226,6 +4228,7 @@ end;
 
 constructor TEventArgs.Create;
 begin
+  inherited Create;
 end;
 
 {$ENDREGION}
@@ -4377,6 +4380,7 @@ end;
 
 constructor SmartPointer<T>.TSmartPointer.Create(const value);
 begin
+  inherited Create;
   fValue := Pointer(value);
 end;
 
@@ -4393,6 +4397,7 @@ end;
 
 constructor TSmartPointer<T>.Create;
 begin
+  inherited Create;
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
     tkClass: PObject(@fValue)^ := TActivator.CreateInstance(TypeInfo(T));
     tkPointer: PPointer(@fValue)^ := AllocMem(GetTypeSize(GetTypeData(TypeInfo(T)).RefType^));
@@ -4401,6 +4406,7 @@ end;
 
 constructor TSmartPointer<T>.Create(const value: T);
 begin
+  inherited Create;
   fValue := value;
 end;
 

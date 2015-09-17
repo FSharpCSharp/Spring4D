@@ -268,10 +268,12 @@ function TMethodCall.Invoke(const invocation: IInvocation): TValue;
 begin
   Inc(fCallCount);
   if Assigned(fAction) then
-    Result := fAction(TCallInfo.Create(invocation, fCallCount));
-  if invocation.Method.HasExtendedInfo
+    Result := fAction(TCallInfo.Create(invocation, fCallCount))
+  else if invocation.Method.HasExtendedInfo
     and (invocation.Method.MethodKind = mkFunction) then
-    Result := Result.Cast(invocation.Method.ReturnType.Handle);
+    Result := Result.Cast(invocation.Method.ReturnType.Handle)
+  else
+    Result := TValue.Empty;
 end;
 
 {$ENDREGION}

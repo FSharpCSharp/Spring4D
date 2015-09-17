@@ -515,13 +515,11 @@ end;
 
 function TFactory<TKey, TBaseType>.GetInstance(key: TKey): TBaseType;
 var
-  factoryMethod : TFactoryMethod<TBaseType>;
+  factoryMethod: TFactoryMethod<TBaseType>;
 begin
-  if not IsRegistered(key) then
+  if not fFactoryMethods.TryGetValue(key, factoryMethod) or not Assigned(factoryMethod) then
     raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
-  factoryMethod := fFactoryMethods.Items[key];
-  if Assigned(factoryMethod) then
-    Result := factoryMethod;
+  Result := factoryMethod;
 end;
 
 function TFactory<TKey, TBaseType>.IsRegistered(key: TKey): boolean;

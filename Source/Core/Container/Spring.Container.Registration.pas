@@ -742,6 +742,7 @@ function TRegistration.AsCustom(
 begin
   fModel.LifetimeType := TLifetimeType.Custom;
   fModel.LifetimeManager := lifetimeManager as ILifetimeManager;
+  Result := Self;
 end;
 
 function TRegistration.AsDefault(serviceType: PTypeInfo): IRegistration;

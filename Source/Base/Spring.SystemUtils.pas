@@ -425,6 +425,7 @@ begin
   Guard.CheckRange(len >= 0, 'len');
 
   if (buffer = nil) or (len = 0) then Exit;
+  Result := nil;
   head := buffer;
   tail := head + len - 1;
   p := head;
@@ -449,6 +450,7 @@ var
   entry: string;
 begin
   if (buffer = nil) or (buffer^ = #0) then Exit;
+  Result := nil;
   p := buffer;
   while p^ <> #0 do
   begin

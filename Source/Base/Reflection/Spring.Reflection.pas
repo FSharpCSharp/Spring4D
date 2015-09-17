@@ -886,7 +886,9 @@ begin
   begin
     i := Length(LazyPrefixStrings[lazyKind]) + 1;
     Result := Copy(name, i, Length(name) - i )
-  end;
+  end
+  else
+    Result := '';
 end;
 
 class function TType.FindType(const qualifiedName: string): TRttiType;
@@ -1115,6 +1117,7 @@ function TRttiObjectHelper.GetCustomAttributes(
 var
   attribute: TCustomAttribute;
 begin
+  Result := nil;
   for attribute in GetAttributes do
     if attribute.InheritsFrom(attributeClass) then
     begin
@@ -1342,7 +1345,9 @@ begin
       intfType := intfType.BaseType;
     end;
     Result := list.Values;
-  end;
+  end
+  else
+    Result := TEnumerable.Empty<TRttiInterfaceType>;
 end;
 
 function TRttiTypeHelper.GetIsClass: Boolean;
