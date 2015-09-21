@@ -132,6 +132,9 @@ var
 begin
   LConfirmed := False;
   LProduct := TProduct.Create;
+  LProduct.CreationDate := Trunc(Now);
+  LProduct.CreationDateTime := Now;
+  LProduct.CreationTime := Frac(Now);
   try
     LConfirmed := TProductEditForm.Edit(LProduct);
     if LConfirmed then

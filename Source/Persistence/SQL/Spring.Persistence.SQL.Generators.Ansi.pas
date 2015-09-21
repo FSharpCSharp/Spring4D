@@ -664,39 +664,32 @@ begin
   case field.TypeInfo.Kind of
     tkUnknown: ;
     tkInteger, tkInt64, tkEnumeration, tkSet:
-    begin
       if field.Precision > 0 then
         Result := Format('NUMERIC(%0:D, %1:D)', [field.Precision, field.Scale])
       else
-      begin
-        Result := 'INTEGER';
-        if (System.TypeInfo(Boolean) = typeInfo) then
-          Result := 'BIT';
-      end;
-    end;
-
+        if typeInfo = System.TypeInfo(Boolean) then
+          Result := 'BIT'
+        else
+          Result := 'INTEGER';
     tkChar: Result := Format('CHAR(%D)', [field.Length]);
     tkFloat:
-    begin
-      if (System.TypeInfo(TDate) = typeInfo) then
+      if typeInfo = System.TypeInfo(TDate) then
         Result := 'DATE'
-      else if (System.TypeInfo(TDateTime) = typeInfo) then
+      else if typeInfo = System.TypeInfo(TDateTime) then
         Result := 'TIMESTAMP'
-      else if (System.TypeInfo(TTime) = typeInfo) then
+      else if typeInfo = System.TypeInfo(TTime) then
         Result := 'TIME'
       else
         if field.Precision > 0 then
           Result := Format('NUMERIC(%0:D, %1:D)', [field.Precision, field.Scale])
         else
           Result := 'FLOAT';
-    end;
     tkString, tkLString: Result := Format('VARCHAR(%D)', [field.Length]);
     tkClass, tkArray, tkDynArray, tkVariant: Result := 'BLOB';
     tkMethod: ;
     tkWChar: Result := Format('NCHAR(%D)', [field.Length]);
     tkWString, tkUString: Result := Format('NVARCHAR(%D)', [field.Length]);
     tkRecord:
-    begin
       if IsNullable(typeInfo) or IsLazyType(typeInfo) then
       begin
         createField := field.Clone;
@@ -707,7 +700,6 @@ begin
           createField.Free;
         end;
       end;
-    end;
     tkInterface: ;
     tkClassRef: ;
     tkPointer: ;

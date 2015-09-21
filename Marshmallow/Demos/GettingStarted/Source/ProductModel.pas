@@ -18,6 +18,9 @@ type
     FName: string;
     FPrice: Currency;
     FQuantity: Integer;
+    fCreationDate: TDate;
+    fCreationDateTime: TDateTime;
+    fCreationTime: TTime;
   public
     property ID: Integer read FId;
     [Column('PRODNAME', [], 50, 0, 0, 'Product name')]
@@ -26,6 +29,12 @@ type
     property Price: Currency read FPrice write FPrice;
     [Column('PRODQUANTITY')]
     property Quantity: Integer read FQuantity write FQuantity;
+    [Column('PRODCREATIONDATE')]
+    property CreationDate: TDate read fCreationDate write fCreationDate;
+    [Column('PRODCREATIONDATETIME')]
+    property CreationDateTime: TDateTime read fCreationDateTime write fCreationDateTime;
+    [Column('PRODCREATIONTIME')]
+    property CreationTime: TTime read fCreationTime write fCreationTime;
   end;
 
 implementation

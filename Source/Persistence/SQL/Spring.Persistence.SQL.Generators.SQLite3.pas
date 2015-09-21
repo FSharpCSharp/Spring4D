@@ -62,6 +62,7 @@ implementation
 uses
   StrUtils,
   SysUtils,
+  Spring,
   Spring.Persistence.SQL.Register;
 
 
@@ -188,7 +189,16 @@ end;
 
 function TSQLiteSQLGenerator.GetSQLDataTypeName(
   const field: TSQLCreateField): string;
+var
+  typeInfo: PTypeInfo;
 begin
+  typeInfo := field.TypeInfo;
+  if (typeInfo = System.TypeInfo(TDateTime))
+    or (typeInfo = System.TypeInfo(TTime)) then
+    Exit('DATETIME')
+  else if (typeInfo = System.TypeInfo(TDate)) then
+    Exit('DATE');
+
   Result := inherited GetSQLDataTypeName(field);
   if ContainsStr(Result, 'CHAR') then
     Result := 'TEXT';

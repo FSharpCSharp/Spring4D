@@ -3153,12 +3153,10 @@ begin
       else
         Exit(AsOrdinal);
     tkFloat:
-      if TypeInfo = System.TypeInfo(TDateTime) then
+      if (TypeInfo = System.TypeInfo(TDateTime))
+        or (TypeInfo = System.TypeInfo(TDate))
+        or (TypeInfo = System.TypeInfo(TTime)) then
         Exit(AsType<TDateTime>)
-      else if TypeInfo = System.TypeInfo(TDate) then
-        Exit(AsType<TDate>)
-      else if TypeInfo = System.TypeInfo(TTime) then
-        Exit(AsType<TTime>)
       else
         Exit(AsExtended);
     tkRecord:

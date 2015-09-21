@@ -173,7 +173,6 @@ var
   statement: IDBStatement;
   resultSet: IDBResultSet;
 begin
-
   if EntityData.HasVersionColumn then
     EntityData.VersionColumn.Member.SetValue(entity, EntityData.VersionColumn.InitialValue);
 
