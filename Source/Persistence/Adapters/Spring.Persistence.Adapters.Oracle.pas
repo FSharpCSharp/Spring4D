@@ -35,8 +35,6 @@ uses
   Spring.Persistence.SQL.Params;
 
 type
-  EOracleStatementAdapterException = class(EORMAdapterException);
-
   /// <summary>
   ///   Represents Oracle resultset.
   /// </summary>
@@ -92,13 +90,15 @@ end;
 function TOracleConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
   if Assigned(Connection) then
-  begin
+  try
     Connection.Connected := True;
     GenerateNewID;
     Connection.Execute(SQL_BEGIN_SAVEPOINT + GetTransactionName);
 
     Result := TOracleTransactionAdapter.Create(Connection, ExceptionHandler);
     Result.TransactionName := GetTransactionName;
+  except
+    raise HandleException;
   end
   else
     Result := nil;
@@ -117,7 +117,9 @@ begin
     adapter := TOracleStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
-  end;
+  end
+  else
+    Result := nil;
 end;
 
 {$ENDREGION}
@@ -138,13 +140,21 @@ end;
 procedure TOracleTransactionAdapter.Commit;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.Execute('COMMIT');
+  except
+    raise HandleException;
+  end;
 end;
 
 procedure TOracleTransactionAdapter.Rollback;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.Execute(SQL_ROLLBACK_SAVEPOINT + TransactionName);
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}
