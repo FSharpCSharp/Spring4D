@@ -130,7 +130,8 @@ uses
   Spring.Persistence.Core.EntityWrapper in '..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityWrapper.pas',
   TestEntityWrapper in 'TestEntityWrapper.pas',
   TestAdaptersADO in 'TestAdaptersADO.pas',
-  TestMockADOConnection in 'TestMockADOConnection.pas';
+  TestMockADOConnection in 'TestMockADOConnection.pas',
+  TestAdaptersMSSQL in 'TestAdaptersMSSQL.pas';
 
 begin
   OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));

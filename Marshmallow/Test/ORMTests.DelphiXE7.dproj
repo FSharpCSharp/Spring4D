@@ -173,6 +173,7 @@
         <DCCReference Include="TestEntityWrapper.pas"/>
         <DCCReference Include="TestAdaptersADO.pas"/>
         <DCCReference Include="TestMockADOConnection.pas"/>
+        <DCCReference Include="TestAdaptersMSSQL.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
