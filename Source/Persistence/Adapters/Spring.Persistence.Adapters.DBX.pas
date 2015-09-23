@@ -107,12 +107,15 @@ type
   protected
     function GetAdapterException(const exc: Exception;
       const defaultMsg: string): Exception; override;
+    function GetDriverException(const exc: TDBXError;
+      const defaultMsg: string): Exception; virtual;
   end;
 
 implementation
 
 uses
   DB,
+  SysConst,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
 
@@ -185,7 +188,11 @@ end;
 function TDBXStatementAdapter.Execute: NativeUInt;
 begin
   inherited;
-  Result := Statement.ExecSQL;
+  try
+    Result := Statement.ExecSQL;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TDBXStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
@@ -205,7 +212,7 @@ begin
     on E: Exception do
     begin
       Result := TDBXResultSetAdapter.Create(query, ExceptionHandler);
-      raise EDBXAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
+      raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
     end;
   end;
 end;
@@ -242,10 +249,13 @@ end;
 function TDBXConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
   if Assigned(Connection) then
-  begin
+  try
     Connection.Connected := True;
     Result := TDBXTransactionAdapter.Create(Connection.BeginTransaction,
       ExceptionHandler);
+  except
+    raise HandleException;
+    Result := nil;
   end
   else
     Result := nil;
@@ -254,7 +264,11 @@ end;
 procedure TDBXConnectionAdapter.Connect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := True;
+  except
+    raise HandleException;
+  end;
 end;
 
 constructor TDBXConnectionAdapter.Create(const connection: TSQLConnection);
@@ -290,7 +304,11 @@ end;
 procedure TDBXConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := False;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TDBXConnectionAdapter.IsConnected: Boolean;
@@ -309,7 +327,11 @@ end;
 procedure TDBXTransactionAdapter.Commit;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.Connection.CommitFreeAndNil(fTransaction);
+  except
+    raise HandleException;
+  end;
 end;
 
 function TDBXTransactionAdapter.InTransaction: Boolean;
@@ -320,7 +342,11 @@ end;
 procedure TDBXTransactionAdapter.Rollback;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.Connection.RollbackFreeAndNil(fTransaction);
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}
@@ -329,6 +355,22 @@ end;
 {$REGION 'TDBXExceptionHandler'}
 
 function TDBXExceptionHandler.GetAdapterException(const exc: Exception;
+  const defaultMsg: string): Exception;
+begin
+  if exc is TDBXError then
+  begin
+    Result := GetDriverException(TDBXError(exc), defaultMsg);
+    if not Assigned(Result) then
+      Result := EDBXAdapterException.Create(defaultMsg,
+        TDBXError(exc).ErrorCode);
+  end
+  else if exc is EDatabaseError then
+    Result := EDBXAdapterException.Create(defaultMsg)
+  else
+    Result := nil;
+end;
+
+function TDBXExceptionHandler.GetDriverException(const exc: TDBXError;
   const defaultMsg: string): Exception;
 begin
   Result := nil;

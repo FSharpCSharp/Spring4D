@@ -131,7 +131,9 @@ uses
   TestEntityWrapper in 'TestEntityWrapper.pas',
   TestAdaptersADO in 'TestAdaptersADO.pas',
   TestMockADOConnection in 'TestMockADOConnection.pas',
-  TestAdaptersMSSQL in 'TestAdaptersMSSQL.pas';
+  TestAdaptersMSSQL in 'TestAdaptersMSSQL.pas',
+  TestAdaptersDBX in 'TestAdaptersDBX.pas',
+  TestSQLConnection in 'TestSQLConnection.pas';
 
 begin
   OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
