@@ -41,6 +41,18 @@ type
     function RegisterExpectedMemoryLeak(p: Pointer): Boolean; inline;
   end;
 
+  TSimpleUnitTest<T: class, constructor> = class(TTestCase)
+  private type
+    TInterfacedObjectAccess = class(TInterfacedObject);
+  private
+    fSUT: T;
+  strict protected
+    property SUT: T read fSUT;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  end;
+
 procedure ProcessTestResult(const ATestResult: TTestResult);
 
 implementation
@@ -138,5 +150,28 @@ end;
 
 {$ENDREGION}
 
+
+{ TSimpleUnitTest<T> }
+
+procedure TSimpleUnitTest<T>.SetUp;
+begin
+  inherited;
+  fSUT := T.Create;
+  if fSUT is TInterfacedObject then
+    TInterfacedObjectAccess(fSUT)._AddRef;
+end;
+
+procedure TSimpleUnitTest<T>.TearDown;
+var lSUT: T;
+begin
+  // Prevent ARC code execution (if enabled)
+  Pointer(lSUT) := Pointer(fSUT);
+  Pointer(fSUT) := nil;
+  if lSUT is TInterfacedObject then
+    TInterfacedObjectAccess(lSUT)._Release
+  else
+    lSUT.Free;
+  inherited;
+end;
 
 end.
