@@ -100,7 +100,7 @@ begin
     GenerateNewID;
     Connection.Execute(SQL_BEGIN_TRAN + GetTransactionName);
 
-    Result := TMSSQLTransactionAdapter.Create(Connection);
+    Result := TMSSQLTransactionAdapter.Create(Connection, ExceptionHandler);
     Result.TransactionName := GetTransactionName;
   end
   else

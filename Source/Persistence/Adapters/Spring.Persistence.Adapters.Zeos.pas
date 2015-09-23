@@ -29,6 +29,7 @@ unit Spring.Persistence.Adapters.Zeos;
 interface
 
 uses
+  SysUtils,
   ZAbstractConnection,
   ZAbstractDataset,
   ZDataset,
@@ -48,7 +49,8 @@ type
   private
     fFieldCache: IFieldCache;
   public
-    constructor Create(const dataSet: TZAbstractDataset); override;
+    constructor Create(const dataSet: TZAbstractDataset;
+      const aExceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -78,8 +80,11 @@ type
   ///   Represents Zeos connection.
   /// </summary>
   TZeosConnectionAdapter = class(TDriverConnectionAdapter<TZAbstractConnection>)
+  protected
+    constructor Create(const AConnection: TZAbstractConnection;
+      const aExceptionHandler: IORMExceptionHandler); overload; override;
   public
-    constructor Create(const AConnection: TZAbstractConnection); override;
+    constructor Create(const AConnection: TZAbstractConnection); overload; override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -99,12 +104,17 @@ type
     procedure Rollback; override;
   end;
 
+  TZeosExceptionHandler = class(TORMExceptionHandler)
+  protected
+    function GetAdapterException(const exc: Exception;
+      const defaultMsg: string): Exception; override;
+  end;
+
 implementation
 
 uses
   DB,
   StrUtils,
-  SysUtils,
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
@@ -112,9 +122,10 @@ uses
 
 {$REGION 'TZeosResultSetAdapter'}
 
-constructor TZeosResultSetAdapter.Create(const dataSet: TZAbstractDataset);
+constructor TZeosResultSetAdapter.Create(const dataSet: TZAbstractDataset;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet);
+  inherited Create(DataSet, aExceptionHandler);
   Dataset.DisableControls;
   fFieldCache := TFieldCache.Create(dataSet);
 end;
@@ -192,11 +203,11 @@ begin
   query.DisableControls;
   try
     query.Open;
-    Result := TZeosResultSetAdapter.Create(query);
+    Result := TZeosResultSetAdapter.Create(query, ExceptionHandler);
   except
     on E: Exception do
     begin
-      Result := TZeosResultSetAdapter.Create(query);
+      Result := TZeosResultSetAdapter.Create(query, ExceptionHandler);
       raise EZeosAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
     end;
   end;
@@ -238,7 +249,7 @@ begin
     if not Connection.InTransaction then
       Connection.StartTransaction;
 
-    Result := TZeosTransactionAdapter.Create(Connection);
+    Result := TZeosTransactionAdapter.Create(Connection, ExceptionHandler);
   end
   else
     Result := nil;
@@ -253,7 +264,14 @@ end;
 constructor TZeosConnectionAdapter.Create(
   const AConnection: TZAbstractConnection);
 begin
-  inherited Create(AConnection);
+  Create(AConnection);
+end;
+
+constructor TZeosConnectionAdapter.Create(
+  const AConnection: TZAbstractConnection;
+  const aExceptionHandler: IORMExceptionHandler);
+begin
+  inherited Create(AConnection, aExceptionHandler);
   Connection.LoginPrompt := False;
 end;
 
@@ -267,7 +285,7 @@ begin
     statement := TZQuery.Create(nil);
     statement.Connection := Connection;
 
-    adapter := TZeosStatementAdapter.Create(statement);
+    adapter := TZeosStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
   end
@@ -310,6 +328,16 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TZeosExceptionHandler'}
+
+function TZeosExceptionHandler.GetAdapterException(const exc: Exception;
+  const defaultMsg: string): Exception;
+begin
+  Result := nil;
+end;
+
+{$ENDREGION}
 
 initialization
   TConnectionFactory.RegisterConnection<TZeosConnectionAdapter>(dtZeos);

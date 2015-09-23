@@ -52,7 +52,8 @@ type
   private
     fFieldCache: IFieldCache;
   public
-    constructor Create(const dataSet: TFDQuery); override;
+    constructor Create(const dataSet: TFDQuery;
+      const aExceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -75,8 +76,11 @@ type
   end;
 
   TFireDACConnectionAdapter = class(TDriverConnectionAdapter<TFDConnection>)
+  protected
+    constructor Create(const connection: TFDConnection;
+      const aExceptionHandler: IORMExceptionHandler); overload; override;
   public
-    constructor Create(const connection: TFDConnection); override;
+    constructor Create(const connection: TFDConnection); overload; override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -92,10 +96,17 @@ type
     function InTransaction: Boolean; override;
   public
     constructor Create(const transaction: TFDTransaction;
+      const aExceptionHandler: IORMExceptionHandler;
       ownsObject: Boolean = False); reintroduce;
     destructor Destroy; overload; override;
     procedure Commit; override;
     procedure Rollback; override;
+  end;
+
+  TFireDACExceptionHandler = class(TORMExceptionHandler)
+  protected
+    function GetAdapterException(const exc: Exception;
+      const defaultMsg: string): Exception; override;
   end;
 
 implementation
@@ -110,9 +121,10 @@ uses
 
 {$REGION 'TFireDACResultSetAdapter'}
 
-constructor TFireDACResultSetAdapter.Create(const dataSet: TFDQuery);
+constructor TFireDACResultSetAdapter.Create(const dataSet: TFDQuery;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet);
+  inherited Create(DataSet, aExceptionHandler);
   dataSet.DisableControls;
   fFieldCache := TFieldCache.Create(dataSet);
 end;
@@ -202,12 +214,12 @@ begin
     query.FetchOptions.CursorKind := ckForwardOnly;
   try
     query.OpenOrExecute;
-    Result := TFireDACResultSetAdapter.Create(query);
+    Result := TFireDACResultSetAdapter.Create(query, ExceptionHandler);
   except
     on E:Exception do
     begin
       //make sure that resultset is always created to avoid memory leak
-      Result := TFireDACResultSetAdapter.Create(query);
+      Result := TFireDACResultSetAdapter.Create(query, ExceptionHandler);
       raise EFireDACAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
     end;
   end;
@@ -243,7 +255,13 @@ end;
 
 constructor TFireDACConnectionAdapter.Create(const connection: TFDConnection);
 begin
-  inherited Create(connection);
+  Create(connection, TFireDACExceptionHandler.Create);
+end;
+
+constructor TFireDACConnectionAdapter.Create(const connection: TFDConnection;
+  const aExceptionHandler: IORMExceptionHandler);
+begin
+  inherited Create(connection, aExceptionHandler);
   Connection.LoginPrompt := False;
 end;
 
@@ -259,7 +277,8 @@ begin
       transaction := TFDTransaction.Create(nil);
       transaction.Connection := Connection;
       transaction.StartTransaction;
-      Result := TFireDACTransactionAdapter.Create(transaction, True);
+      Result := TFireDACTransactionAdapter.Create(transaction, ExceptionHandler,
+        True);
     end
     else
       raise EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
@@ -284,7 +303,7 @@ begin
     statement := TFDQuery.Create(nil);
     statement.Connection := Connection;
 
-    adapter := TFireDACStatementAdapter.Create(statement);
+    adapter := TFireDACStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     adapter.AllowServerSideCursor := AllowServerSideCursor;
     Result := adapter;
@@ -310,9 +329,9 @@ end;
 {$REGION 'TFireDACTransactionAdapter'}
 
 constructor TFireDACTransactionAdapter.Create(const transaction: TFDTransaction;
-  ownsObject: Boolean);
+  const aExceptionHandler: IORMExceptionHandler; ownsObject: Boolean);
 begin
-  inherited Create(transaction);
+  inherited Create(transaction, aExceptionHandler);
   fOwnsObject := ownsObject
 end;
 
@@ -342,6 +361,16 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TFireDACExceptionHandler'}
+
+function TFireDACExceptionHandler.GetAdapterException(const exc: Exception;
+  const defaultMsg: string): Exception;
+begin
+  Result := nil;
+end;
+
+{$ENDREGION}
 
 initialization
   TConnectionFactory.RegisterConnection<TFireDACConnectionAdapter>(dtFireDAC);

@@ -31,6 +31,7 @@ interface
 uses
   DBXCommon,
   SqlExpr,
+  SysUtils,
   Spring.Collections,
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Base,
@@ -48,7 +49,8 @@ type
   private
     fFieldCache: IFieldCache;
   public
-    constructor Create(const dataSet: TSQLQuery); override;
+    constructor Create(const dataSet: TSQLQuery;
+      const aExceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -65,7 +67,6 @@ type
   /// </summary>
   TDBXStatementAdapter = class(TDriverStatementAdapter<TSQLQuery>)
   public
-    constructor Create(const statement: TSQLQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetParam(const param: TDBParam); virtual;
@@ -78,8 +79,11 @@ type
   ///   Represents DBX connection.
   /// </summary>
   TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>)
+  protected
+    constructor Create(const connection: TSQLConnection;
+      const aExceptionHandler: IORMExceptionHandler); overload; override;
   public
-    constructor Create(const connection: TSQLConnection); override;
+    constructor Create(const connection: TSQLConnection); overload; override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -99,20 +103,26 @@ type
     procedure Rollback; override;
   end;
 
+  TDBXExceptionHandler = class(TORMExceptionHandler)
+  protected
+    function GetAdapterException(const exc: Exception;
+      const defaultMsg: string): Exception; override;
+  end;
+
 implementation
 
 uses
   DB,
-  SysUtils,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
 
 
 {$REGION 'TDBXResultSetAdapter'}
 
-constructor TDBXResultSetAdapter.Create(const dataSet: TSQLQuery);
+constructor TDBXResultSetAdapter.Create(const dataSet: TSQLQuery;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet);
+  inherited Create(DataSet, aExceptionHandler);
   DataSet.DisableControls;
  // DataSet.CursorLocation := clUseServer;
  // DataSet.CursorType := ctOpenForwardOnly;
@@ -166,11 +176,6 @@ end;
 
 {$REGION 'TDBXStatementAdapter'}
 
-constructor TDBXStatementAdapter.Create(const statement: TSQLQuery);
-begin
-  inherited Create(statement);
-end;
-
 destructor TDBXStatementAdapter.Destroy;
 begin
   Statement.Free;
@@ -195,11 +200,11 @@ begin
   query.DisableControls;
   try
     query.Open;
-    Result := TDBXResultSetAdapter.Create(query);
+    Result := TDBXResultSetAdapter.Create(query, ExceptionHandler);
   except
     on E: Exception do
     begin
-      Result := TDBXResultSetAdapter.Create(query);
+      Result := TDBXResultSetAdapter.Create(query, ExceptionHandler);
       raise EDBXAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
     end;
   end;
@@ -239,7 +244,8 @@ begin
   if Assigned(Connection) then
   begin
     Connection.Connected := True;
-    Result := TDBXTransactionAdapter.Create(Connection.BeginTransaction);
+    Result := TDBXTransactionAdapter.Create(Connection.BeginTransaction,
+      ExceptionHandler);
   end
   else
     Result := nil;
@@ -253,7 +259,13 @@ end;
 
 constructor TDBXConnectionAdapter.Create(const connection: TSQLConnection);
 begin
-  inherited Create(connection);
+  Create(connection, TDBXExceptionHandler.Create);
+end;
+
+constructor TDBXConnectionAdapter.Create(const connection: TSQLConnection;
+  const aExceptionHandler: IORMExceptionHandler);
+begin
+  inherited Create(connection, aExceptionHandler);
   Connection.LoginPrompt := False;
 end;
 
@@ -267,7 +279,7 @@ begin
     statement := TSQLQuery.Create(nil);
     statement.SQLConnection := Connection;
 
-    adapter := TDBXStatementAdapter.Create(statement);
+    adapter := TDBXStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
   end
@@ -313,6 +325,16 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TDBXExceptionHandler'}
+
+function TDBXExceptionHandler.GetAdapterException(const exc: Exception;
+  const defaultMsg: string): Exception;
+begin
+  Result := nil;
+end;
+
+{$ENDREGION}
 
 initialization
   TConnectionFactory.RegisterConnection<TDBXConnectionAdapter>(dtDBX);

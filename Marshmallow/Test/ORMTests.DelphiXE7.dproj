@@ -71,6 +71,7 @@
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas"/>
+        <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.UIB.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas"/>
@@ -145,6 +146,7 @@
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Params.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Register.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Types.pas"/>
+        <DCCReference Include="TestExceptions.pas"/>
         <DCCReference Include="TestAdaptersMongoDB.pas"/>
         <DCCReference Include="TestAdaptersASA.pas"/>
         <DCCReference Include="TestAdaptersOracle.pas"/>

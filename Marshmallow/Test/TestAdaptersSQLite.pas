@@ -129,7 +129,7 @@ procedure TSQLiteResultSetAdapterTest.SetUp;
 begin
   DeleteAllCustomers;
   FDataset := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
-  FSQLiteResultSetAdapter := TSQLiteResultSetAdapter.Create(FDataset);
+  FSQLiteResultSetAdapter := TSQLiteResultSetAdapter.Create(FDataset, nil);
 end;
 
 procedure TSQLiteResultSetAdapterTest.TearDown;
@@ -152,7 +152,7 @@ begin
 
   LTable := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
 
-  LAdapter := TSQLiteResultSetAdapter.Create(LTable);
+  LAdapter := TSQLiteResultSetAdapter.Create(LTable, nil);
   try
     CheckFalse(LAdapter.IsEmpty);
   finally
@@ -163,7 +163,7 @@ begin
 
   LTable := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
 
-  LAdapter := TSQLiteResultSetAdapter.Create(LTable);
+  LAdapter := TSQLiteResultSetAdapter.Create(LTable, nil);
   try
     CheckTrue(LAdapter.IsEmpty);
   finally
@@ -184,7 +184,7 @@ begin
   try
     LTable := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
 
-    LAdapter := TSQLiteResultSetAdapter.Create(LTable);
+    LAdapter := TSQLiteResultSetAdapter.Create(LTable, nil);
     try
       CheckTrue(LAdapter.Next);
       CheckFalse(LAdapter.Next);
@@ -208,7 +208,7 @@ begin
   try
     LTable := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
 
-    LAdapter := TSQLiteResultSetAdapter.Create(LTable);
+    LAdapter := TSQLiteResultSetAdapter.Create(LTable, nil);
     try
       CheckTrue(LAdapter.GetFieldValue(0) = LID1);
       CheckEquals(15, LAdapter.GetFieldValue(1));
@@ -234,7 +234,7 @@ begin
 
   LStmt := TestDB.GetPreparedStatementIntf(SQL_SELECT_ALL);
 
-  FSQLiteStatementAdapter := TSQLiteStatementAdapter.Create(LStmt);
+  FSQLiteStatementAdapter := TSQLiteStatementAdapter.Create(LStmt, nil);
 end;
 
 procedure TSQLiteStatementAdapterTest.TearDown;
@@ -291,7 +291,8 @@ begin
 
   InsertCustomer('Test', 15, 1.1);
   LAdapter := FSQLiteStatementAdapter;
-  LStmt := TSQLiteStatementAdapter.Create(TestDB.GetPreparedStatement(FCommandText));
+  LStmt := TSQLiteStatementAdapter.Create(
+    TestDB.GetPreparedStatement(FCommandText), nil);
   try
     LStmt.SetSQLCommand(FCommandText);
     FSQLiteStatementAdapter := LStmt;
@@ -367,7 +368,7 @@ end;
 
 function TSQLiteTransactionAdapterTest.CreateAndBeginTransaction: TSQLiteTransactionAdapter;
 begin
-  Result := TSQLiteTransactionAdapter.Create(TestDB);
+  Result := TSQLiteTransactionAdapter.Create(TestDB, nil);
   Result.TransactionName := 'T1';
   Result.Transaction.ExecSQL('SAVEPOINT T1');
 end;

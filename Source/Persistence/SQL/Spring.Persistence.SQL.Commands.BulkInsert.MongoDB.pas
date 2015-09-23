@@ -63,7 +63,8 @@ begin
   if not entities.Any then
     Exit;
   LConn := (Connection as TMongoConnectionAdapter).Connection;
-  LStatement := TMongoStatementAdapter.Create(nil);
+  LStatement := TMongoStatementAdapter.Create(nil,
+    TMongoDBExceptionHandler.Create);
   try
     SetLength(LDocs, entities.Count);
     i := 0;

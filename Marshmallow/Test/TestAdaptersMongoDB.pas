@@ -299,7 +299,7 @@ end;
 procedure TMongoResultSetAdapterTest.SetUp;
 begin
   inherited;
-  FMongoResultSetAdapter := TMongoResultSetAdapter.Create(Query);
+  FMongoResultSetAdapter := TMongoResultSetAdapter.Create(Query, nil);
 end;
 
 procedure TMongoResultSetAdapterTest.TearDown;
@@ -401,7 +401,7 @@ end;
 procedure TMongoStatementAdapterTest.SetUp;
 begin
   inherited;
-  FMongoStatementAdapter := TMongoStatementAdapter.Create(Query);
+  FMongoStatementAdapter := TMongoStatementAdapter.Create(Query, nil);
 end;
 
 procedure TMongoStatementAdapterTest.TearDown;

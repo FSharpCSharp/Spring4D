@@ -31,6 +31,7 @@ interface
 {$IFDEF MSWINDOWS}
 uses
   ADODB,
+  SysUtils,
   Spring.Collections,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
@@ -49,7 +50,8 @@ type
   private
     fFieldCache: IFieldCache;
   public
-    constructor Create(const dataSet: TADODataSet); override;
+    constructor Create(const dataSet: TADODataSet;
+      const aExceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -66,7 +68,6 @@ type
   /// </summary>
   TADOStatementAdapter = class(TDriverStatementAdapter<TADOQuery>)
   public
-    constructor Create(const statement: TADOQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetParam(const param: TDBParam); virtual;
@@ -79,8 +80,11 @@ type
   ///   Represent ADO connection.
   /// </summary>
   TADOConnectionAdapter = class(TDriverConnectionAdapter<TADOConnection>)
+  protected
+    constructor Create(const connection: TADOConnection;
+      const aExceptionHandler: IORMExceptionHandler); overload; override;
   public
-    constructor Create(const connection: TADOConnection); override;
+    constructor Create(const connection: TADOConnection); overload; override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -107,6 +111,13 @@ type
   public
     function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
   end;
+
+  TADOExceptionHandler = class(TORMExceptionHandler)
+  protected
+    function GetAdapterException(const exc: Exception;
+      const defaultMsg: string): Exception; override;
+  end;
+
 {$ENDIF}
 
 implementation
@@ -114,7 +125,6 @@ implementation
 {$IFDEF MSWINDOWS}
 uses
   DB,
-  SysUtils,
   Variants,
   Spring,
   Spring.Persistence.Adapters.FieldCache,
@@ -124,9 +134,10 @@ uses
 
 {$REGION 'TADOResultSetAdapter'}
 
-constructor TADOResultSetAdapter.Create(const dataSet: TADODataSet);
+constructor TADOResultSetAdapter.Create(const dataSet: TADODataSet;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet);
+  inherited Create(DataSet, aExceptionHandler);
   DataSet.DisableControls;
 //  DataSet.CursorLocation := clUseServer;
 //  DataSet.CursorType := ctOpenForwardOnly;
@@ -180,11 +191,6 @@ end;
 
 {$REGION 'TADOStatementAdapter'}
 
-constructor TADOStatementAdapter.Create(const statement: TADOQuery);
-begin
-  inherited Create(statement);
-end;
-
 destructor TADOStatementAdapter.Destroy;
 begin
   Statement.Free;
@@ -213,12 +219,12 @@ begin
   LStmt.DisableControls;
   try
     LStmt.Open;
-    Result := TADOResultSetAdapter.Create(LStmt);
+    Result := TADOResultSetAdapter.Create(LStmt, ExceptionHandler);
   except
     on E: Exception do
     begin
       //make sure that resultset is always created to avoid memory leak
-      Result := TADOResultSetAdapter.Create(LStmt);
+      Result := TADOResultSetAdapter.Create(LStmt, ExceptionHandler);
       raise EADOAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
     end;
   end;
@@ -260,7 +266,7 @@ begin
     Connection.Connected := True;
     if not Connection.InTransaction then
       Connection.BeginTrans;
-    Result := TADOTransactionAdapter.Create(Connection);
+    Result := TADOTransactionAdapter.Create(Connection, ExceptionHandler);
   end
   else
     Result := nil;
@@ -274,7 +280,13 @@ end;
 
 constructor TADOConnectionAdapter.Create(const connection: TADOConnection);
 begin
-  inherited Create(connection);
+  Create(connection, TADOExceptionHandler.Create);
+end;
+
+constructor TADOConnectionAdapter.Create(const connection: TADOConnection;
+  const aExceptionHandler: IORMExceptionHandler);
+begin
+  inherited Create(connection, aExceptionHandler);
   Connection.LoginPrompt := False;
 end;
 
@@ -288,7 +300,7 @@ begin
     statement := TADOQuery.Create(nil);
     statement.Connection := Connection;
 
-    adapter := TADOStatementAdapter.Create(statement);
+    adapter := TADOStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
   end
@@ -345,6 +357,16 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TADOExceptionHandler'}
+
+function TADOExceptionHandler.GetAdapterException(const exc: Exception;
+  const defaultMsg: string): Exception;
+begin
+  Result := nil;
+end;
+
+{$ENDREGION}
 
 initialization
   TConnectionFactory.RegisterConnection<TADOConnectionAdapter>(dtADO);

@@ -33,6 +33,7 @@ unit Spring.Persistence.Adapters.MongoDB;
 interface
 
 uses
+  SysUtils,
   MongoDB,
   MongoBson,
   Spring.Collections,
@@ -114,7 +115,8 @@ type
     function IsObjectId(const value: string): Boolean; virtual;
     function GetJsonPartFromStatementText(const tagName: string): string; virtual;
   public
-    constructor Create(const statement: TMongoDBQuery); override;
+    constructor Create(const statement: TMongoDBQuery;
+      const aExceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); override;
@@ -131,6 +133,7 @@ type
   /// </summary>
   TMongoConnectionAdapter = class(TDriverConnectionAdapter<TMongoDBConnection>, IDBConnection)
   public
+    constructor Create(const connection: TMongoDBConnection); override;
     procedure AfterConstruction; override;
     procedure Connect; override;
     procedure Disconnect; override;
@@ -155,11 +158,16 @@ type
     procedure Rollback;
   end;
 
+  TMongoDBExceptionHandler = class(TORMExceptionHandler)
+  protected
+    function GetAdapterException(const exc: Exception;
+      const defaultMsg: string): Exception; override;
+  end;
+
 implementation
 
 uses
   StrUtils,
-  SysUtils,
   Variants,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.SQL.Commands,
@@ -302,9 +310,10 @@ end;
 
 {$REGION 'TMongoStatementAdapter'}
 
-constructor TMongoStatementAdapter.Create(const statement: TMongoDBQuery);
+constructor TMongoStatementAdapter.Create(const statement: TMongoDBQuery;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(statement);
+  inherited Create(statement, ExceptionHandler);
   fStatementText := '';
   fStatementType := mstSelect;
 end;
@@ -384,7 +393,7 @@ begin
     dbQuery.sort := JsonToBson(GetJsonPartFromStatementText(MONGO_STATEMENT_TYPES[mstSelectOrder]));
   end;
 
-  resultSet := TMongoResultSetAdapter.Create(dbQuery);
+  resultSet := TMongoResultSetAdapter.Create(dbQuery, ExceptionHandler);
   resultSet.Document := JsonToBson(fStatementText);
   case fStatementType of
     mstInsert:
@@ -559,6 +568,12 @@ begin
     Connection.Connected := True;
 end;
 
+constructor TMongoConnectionAdapter.Create(
+  const connection: TMongoDBConnection);
+begin
+  Create(connection, TMongoDBExceptionHandler.Create);
+end;
+
 function TMongoConnectionAdapter.CreateStatement: IDBStatement;
 var
   statement: TMongoDBQuery;
@@ -567,7 +582,7 @@ begin
   if Assigned(Connection) then
   begin
     statement := TMongoDBQuery.Create(Connection);
-    adapter := TMongoStatementAdapter.Create(statement);
+    adapter := TMongoStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
   end
@@ -616,6 +631,16 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TMongoDBExceptionHandler'}
+
+function TMongoDBExceptionHandler.GetAdapterException(const exc: Exception;
+  const defaultMsg: string): Exception;
+begin
+  Result := nil;
+end;
+
+{$ENDREGION}
 
 initialization
   TConnectionFactory.RegisterConnection<TMongoConnectionAdapter>(dtMongo);

@@ -29,19 +29,30 @@ unit Spring.Persistence.Core.Base;
 interface
 
 uses
+  SysUtils,
   Spring.Collections,
   Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Commands.Page,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Params;
 
 type
+  TDriverAdapterBase = class(TInterfacedObject)
+  private
+    fExceptionHandler: IORMExceptionHandler;
+  protected
+    constructor Create(const aExceptionHandler: IORMExceptionHandler);
+    function HandleException(const defaultMsg: string = ''): Exception;
+    property ExceptionHandler: IORMExceptionHandler read fExceptionHandler;
+  end;
+
   /// <summary>
   ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBResultSet" />
   ///   adapter which descendents must override.
   /// </summary>
-  TDriverResultSetAdapter<T> = class(TInterfacedObject, IDBResultSet)
+  TDriverResultSetAdapter<T> = class(TDriverAdapterBase, IDBResultSet)
   private
     fDataSet: T;
   protected
@@ -53,7 +64,8 @@ type
     function GetFieldCount: Integer; virtual; abstract;
     function GetFieldName(index: Integer): string; virtual; abstract;
   public
-    constructor Create(const dataSet: T); virtual;
+    constructor Create(const dataSet: T;
+      const aExceptionHandler: IORMExceptionHandler); virtual;
 
     property DataSet: T read fDataSet;
   end;
@@ -62,7 +74,7 @@ type
   ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBConnection" />
   ///   adapter which descendents must override.
   /// </summary>
-  TDriverConnectionAdapter<T> = class(TInterfacedObject, IDBConnection)
+  TDriverConnectionAdapter<T> = class(TDriverAdapterBase, IDBConnection)
   private
     fConnection: T;
     fListeners: IList<TExecutionListenerProc>;
@@ -77,6 +89,9 @@ type
     procedure SetAutoFreeConnection(value: Boolean);
     procedure SetQueryLanguage(const value: TQueryLanguage);
   protected
+    constructor Create(const connection: T;
+      const aExceptionHandler: IORMExceptionHandler); overload; virtual;
+
     procedure Connect; virtual; abstract;
     procedure Disconnect; virtual; abstract;
     function IsConnected: Boolean; virtual; abstract;
@@ -87,7 +102,7 @@ type
     procedure AddExecutionListener(const listenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners;
   public
-    constructor Create(const connection: T); virtual;
+    constructor Create(const connection: T); overload; virtual; abstract;
     destructor Destroy; override;
 
     property AllowServerSideCursor: Boolean read fAllowServerSideCursor write fAllowServerSideCursor;
@@ -102,7 +117,7 @@ type
   ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBStatement" />
   ///   adapter which descendents must override.
   /// </summary>
-  TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
+  TDriverStatementAdapter<T> = class(TDriverAdapterBase, IDBStatement)
   private
     fStatement: T;
     fListeners: IList<TExecutionListenerProc>;
@@ -114,7 +129,9 @@ type
   protected
     procedure NotifyListeners; virtual;
   public
-    constructor Create(const statement: T); virtual;
+    constructor Create(const statement: T;
+      const aExceptionHandler: IORMExceptionHandler); virtual;
+
     procedure SetSQLCommand(const commandText: string); virtual;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); virtual;
     procedure SetParams(const params: IEnumerable<TDBParam>); virtual;
@@ -134,7 +151,7 @@ type
   ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBTransaction" />
   ///   adapter which descendents must override.
   /// </summary>
-  TDriverTransactionAdapter<T> = class(TInterfacedObject, IDBTransaction)
+  TDriverTransactionAdapter<T> = class(TDriverAdapterBase, IDBTransaction)
   private
     fTransactionName: string;
     function GetTransactionName: string;
@@ -145,7 +162,8 @@ type
     procedure Rollback; virtual; abstract;
     function InTransaction: Boolean; virtual; abstract;
   public
-    constructor Create(const transaction: T); virtual;
+    constructor Create(const transaction: T;
+      const aExceptionHandler: IORMExceptionHandler); virtual;
     destructor Destroy; override;
 
     property Transaction: T read fTransaction;
@@ -202,7 +220,6 @@ implementation
 uses
   StrUtils,
   SyncObjs,
-  SysUtils,
   TypInfo,
   Variants,
   Spring,
@@ -210,12 +227,29 @@ uses
   Spring.Persistence.SQL.Register,
   Spring.Reflection;
 
+{$REGION 'TDriverAdapterBase'}
+
+constructor TDriverAdapterBase.Create(
+  const aExceptionHandler: IORMExceptionHandler);
+begin
+  inherited Create;
+  fExceptionHandler := aExceptionHandler;
+end;
+
+function TDriverAdapterBase.HandleException(const defaultMsg: string): Exception;
+begin
+  Result := ExceptionHandler.HandleException(defaultMsg);
+end;
+
+{$ENDREGION}
+
 
 {$REGION 'TDriverResultSetAdapter<T>'}
 
-constructor TDriverResultSetAdapter<T>.Create(const dataSet: T);
+constructor TDriverResultSetAdapter<T>.Create(const dataSet: T;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create;
+  inherited Create(aExceptionHandler);
   fDataSet := dataSet;
 end;
 
@@ -241,9 +275,10 @@ begin
   fListeners.Clear;
 end;
 
-constructor TDriverConnectionAdapter<T>.Create(const connection: T);
+constructor TDriverConnectionAdapter<T>.Create(const connection: T;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create;
+  inherited Create(aExceptionHandler);
   fConnection := connection;
   fListeners := TCollections.CreateList<TExecutionListenerProc>;
   fQueryLanguage := qlAnsiSQL;
@@ -301,9 +336,10 @@ end;
 
 {$REGION 'TDriverStatementAdapter<T>'}
 
-constructor TDriverStatementAdapter<T>.Create(const statement: T);
+constructor TDriverStatementAdapter<T>.Create(const statement: T;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create;
+  inherited Create(aExceptionHandler);
   fStatement := statement;
   fQuery := Null;
 end;
@@ -419,9 +455,10 @@ end;
 
 {$REGION 'TDriverTransactionAdapter<T>'}
 
-constructor TDriverTransactionAdapter<T>.Create(const transaction: T);
+constructor TDriverTransactionAdapter<T>.Create(const transaction: T;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create;
+  inherited Create(aExceptionHandler);
   fTransaction := transaction;
 end;
 

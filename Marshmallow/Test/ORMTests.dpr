@@ -24,6 +24,12 @@ uses
   Spring.Persistence.Adapters.MSSQL in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas',
   Spring.Persistence.Adapters.Oracle in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas',
   Spring.Persistence.Adapters.SQLite in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas',
+  {$IFDEF ENABLE_UIB}
+  Spring.Persistence.Adapters.UIB in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.UIB.pas',
+  {$ENDIF}
+  {$IFDEF ENABLE_ZEOS}
+  Spring.Persistence.Adapters.Zeos in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Zeos.pas',
+  {$ENDIF}
   Spring.Persistence.Core.AbstractSession in '..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas',
   Spring.Persistence.Core.Base in '..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas',
   Spring.Persistence.Core.ConnectionFactory in '..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas',
@@ -98,6 +104,7 @@ uses
   Spring.Persistence.SQL.Params in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Params.pas',
   Spring.Persistence.SQL.Register in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Register.pas',
   Spring.Persistence.SQL.Types in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Types.pas',
+  TestExceptions in 'TestExceptions.pas',
   TestAdaptersMongoDB in 'TestAdaptersMongoDB.pas',
   TestAdaptersASA in 'TestAdaptersASA.pas',
   TestAdaptersOracle in 'TestAdaptersOracle.pas',

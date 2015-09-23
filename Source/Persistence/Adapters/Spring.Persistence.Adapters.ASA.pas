@@ -89,7 +89,7 @@ begin
     GenerateNewID;
     Connection.Execute(SQL_BEGIN_TRAN + GetTransactionName);
 
-    Result := TASATransactionAdapter.Create(Connection);
+    Result := TASATransactionAdapter.Create(Connection, ExceptionHandler);
     Result.TransactionName := GetTransactionName;
   end
   else

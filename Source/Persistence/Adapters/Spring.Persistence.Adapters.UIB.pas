@@ -29,6 +29,7 @@ unit Spring.Persistence.Adapters.UIB;
 interface
 
 uses
+  SysUtils,
   uib,
   uibdataset,
   uiblib,
@@ -51,7 +52,8 @@ type
     fFieldCache: IFieldCache;
     fIsNewTransaction: Boolean;
   public
-    constructor Create(const dataSet: TUIBDataSet); override;
+    constructor Create(const dataSet: TUIBDataSet;
+      const aExceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -86,6 +88,7 @@ type
   /// </summary>
   TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>)
   public
+    constructor Create(const connection: TUIBDataBase); overload; override;
     destructor Destroy; override;
 
     procedure AfterConstruction; override;
@@ -103,11 +106,18 @@ type
   protected
     function InTransaction: Boolean; override;
   public
-    constructor Create(const transaction: TUIBTransaction); override;
+    constructor Create(const transaction: TUIBTransaction;
+      const aExceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     procedure Commit; override;
     procedure Rollback; override;
+  end;
+
+  TUIBExceptionHandler = class(TORMExceptionHandler)
+  protected
+    function GetAdapterException(const exc: Exception;
+      const defaultMsg: string): Exception; override;
   end;
 
 implementation
@@ -115,7 +125,6 @@ implementation
 uses
   DB,
   StrUtils,
-  SysUtils,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.SQL.Generators.Firebird,
@@ -124,9 +133,10 @@ uses
 
 {$REGION 'TUIBResultSetAdapter'}
 
-constructor TUIBResultSetAdapter.Create(const dataSet: TUIBDataSet);
+constructor TUIBResultSetAdapter.Create(const dataSet: TUIBDataSet;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(dataSet);
+  inherited Create(dataSet, aExceptionHandler);
   Dataset.OnClose := etmStayIn;
   fFieldCache := TFieldCache.Create(dataSet);
 end;
@@ -230,7 +240,7 @@ begin
   AssignParams(Statement.Params, query.Params);
   try
     query.Open;
-    adapter := TUIBResultSetAdapter.Create(query);
+    adapter := TUIBResultSetAdapter.Create(query, ExceptionHandler);
     adapter.IsNewTransaction := isNewTransaction;
     Result := adapter;
   except
@@ -295,7 +305,7 @@ begin
     transaction.DefaultAction := etmRollback;
     transaction.StartTransaction;
 
-    Result := TUIBTransactionAdapter.Create(transaction);
+    Result := TUIBTransactionAdapter.Create(transaction, ExceptionHandler);
   end
   else
     Result := nil;
@@ -305,6 +315,11 @@ procedure TUIBConnectionAdapter.Connect;
 begin
   if Assigned(Connection) then
     Connection.Connected := True;
+end;
+
+constructor TUIBConnectionAdapter.Create(const connection: TUIBDataBase);
+begin
+  Create(connection, TUIBExceptionHandler.Create);
 end;
 
 function TUIBConnectionAdapter.CreateStatement: IDBStatement;
@@ -328,7 +343,7 @@ begin
     statement.DataBase := Connection;
     statement.Transaction := transaction;
 
-    adapter := TUIBStatementAdapter.Create(statement);
+    adapter := TUIBStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
   end
@@ -358,9 +373,10 @@ begin
     fTransaction.Commit;
 end;
 
-constructor TUIBTransactionAdapter.Create(const transaction: TUIBTransaction);
+constructor TUIBTransactionAdapter.Create(const transaction: TUIBTransaction;
+  const aExceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(transaction);
+  inherited Create(transaction, aExceptionHandler);
   fTransaction.DefaultAction := etmRollback;
   if not InTransaction then
     fTransaction.StartTransaction;
@@ -385,6 +401,16 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TUIBExceptionHandler'}
+
+function TUIBExceptionHandler.GetAdapterException(const exc: Exception;
+  const defaultMsg: string): Exception;
+begin
+  Result := nil;
+end;
+
+{$ENDREGION}
 
 initialization
   TConnectionFactory.RegisterConnection<TUIBConnectionAdapter>(dtUIB);

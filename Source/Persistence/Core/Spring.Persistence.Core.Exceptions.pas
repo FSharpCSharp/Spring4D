@@ -134,6 +134,60 @@ type
     property Code: Nullable<Integer> read fCode;
   end;
 
+  TORMAdapterExceptionClass = class of EORMAdapterException;
+
+  /// <summary>
+  ///   Used by adapaters to obtain concrete exception from driver
+  ///   (ADO, DBX, ...) specific information.
+  /// </summary>
+  IORMExceptionHandler = interface
+    /// <summary>
+    ///   Returns specific exception instance for given (driver specific)
+    ///   exception (mostly its message or code is used) raised as outer or
+    ///   default exception that the caller must raise.
+    /// </summary>
+    function HandleException(const defaultMsg: string): Exception;
+  end;
+
+  /// <summary>
+  ///   Exception helper class that handles some basic checks then delegates to
+  ///   provider-specific implementation.
+  /// </summary>
+  TORMExceptionHandler = class abstract(TInterfacedObject, IORMExceptionHandler)
+  protected
+    /// <summary>
+    ///   Returns specific exception instance for given (adapter/driver
+    ///   specific) exception or <c>nil</c> if given exception is not adapter
+    ///   specific and is considered a generic failure in which case the
+    ///   original exception is propagated. The returned instance is raised as
+    ///   outer exception.
+    /// </summary>
+    /// <remarks>
+    ///   If the DB driver is implemented correctly, it should either raise
+    ///   specific exception for specific failure or more generic exception
+    ///   with a specific error code set . Unfortunately this is not true for
+    ///   all drivers so only generic error may be raised and only the
+    ///   exception message differentiates the errors (which are driver
+    ///   dependent).
+    /// </remarks>
+    function GetAdapterException(const exc: Exception;
+      const defaultMsg: string): Exception; virtual; abstract;
+  public
+    /// <summary>
+    ///   Handles current exception and converts it to ORM specific one.
+    /// </summary>
+    /// <param name="inst">
+    ///   Source instance of the exception, if adapter specific exception is
+    ///   encountered, it may be used to raise driver specific exception that
+    ///   cannot be handled generally.
+    /// </param>
+    /// <param name="defaultMsg">
+    ///   Default message to use
+    /// </param>
+    function HandleException(const defaultMsg: string = ''): Exception;
+  end;
+
+
 implementation
 
 uses
@@ -161,7 +215,7 @@ end;
 {$ENDREGION}
 
 
-{ EORMAdapterException }
+{$REGION 'EORMAdapterException'}
 
 constructor EORMAdapterException.Create(const msg: string);
 begin
@@ -186,5 +240,57 @@ begin
   CreateFmt(msg, args);
   fCode := aCode;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TORMExceptionHandler'}
+
+type
+  ExceptionHelper = class helper for Exception
+    procedure SetAcquireInnerException;
+  end;
+
+procedure ExceptionHelper.SetAcquireInnerException;
+begin
+  Self.FAcquireInnerException := True;
+end;
+
+function TORMExceptionHandler.HandleException(const defaultMsg: string): Exception;
+var
+  exc: TObject;
+begin
+  exc := ExceptObject;
+  // If ORM exception is encountered just propagate it
+  if exc is EORMException then
+    // Revive the exception object so it doesn't get destroyed when the except
+    // block ends.
+    Exit(AcquireExceptionObject);
+
+  if exc is Exception then
+  begin
+    if defaultMsg = '' then
+      Result := GetAdapterException(Exception(exc), Exception(exc).Message)
+    else
+      Result := GetAdapterException(Exception(exc), defaultMsg);
+  end
+  else
+    // Any TObject may be risen, GetAdapterException doesn't deal with that
+    Result := nil;
+
+  if not Assigned(Result) then
+    // Non-handled exceptions are just propageted and treated as system-failuers
+    // that ORM-specific except blocks should not handle (this includes EAbort).
+    // Revive the exception object so it doesn't get destroyed when the except
+    // block ends.
+    Exit(AcquireExceptionObject);
+
+  // New exception will acquire inner exception and thus will be raised as outer
+  // but with standard `raise` keyword later without the need of calling
+  // `Exception.RaiseOuterException`, this will revive the exception object.
+  Result.SetAcquireInnerException;
+end;
+
+{$ENDREGION}
 
 end.

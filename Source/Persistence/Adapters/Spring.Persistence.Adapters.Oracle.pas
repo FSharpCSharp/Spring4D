@@ -97,7 +97,7 @@ begin
     GenerateNewID;
     Connection.Execute(SQL_BEGIN_SAVEPOINT + GetTransactionName);
 
-    Result := TOracleTransactionAdapter.Create(Connection);
+    Result := TOracleTransactionAdapter.Create(Connection, ExceptionHandler);
     Result.TransactionName := GetTransactionName;
   end
   else
@@ -114,7 +114,7 @@ begin
     statement := TADOQuery.Create(nil);
     statement.Connection := Connection;
 
-    adapter := TOracleStatementAdapter.Create(statement);
+    adapter := TOracleStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
   end;

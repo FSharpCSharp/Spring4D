@@ -29,6 +29,7 @@ unit Spring.Persistence.Adapters.SQLite;
 interface
 
 uses
+  SysUtils,
   SQLiteTable3,
   Spring.Collections,
   Spring.Persistence.Core.Base,
@@ -70,6 +71,7 @@ type
   /// </summary>
   TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>)
   public
+    constructor Create(const connection: TSQLiteDatabase); override;
     procedure AfterConstruction; override;
     procedure Connect; override;
     procedure Disconnect; override;
@@ -87,6 +89,12 @@ type
   public
     procedure Commit; override;
     procedure Rollback; override;
+  end;
+
+  TSQLiteExceptionHandler = class(TORMExceptionHandler)
+  protected
+    function GetAdapterException(const exc: Exception;
+      const defaultMsg: string): Exception; override;
   end;
 
 implementation
@@ -157,7 +165,7 @@ var
 begin
   inherited;
   query := Statement.ExecQueryIntf;
-  Result := TSQLiteResultSetAdapter.Create(query);
+  Result := TSQLiteResultSetAdapter.Create(query, ExceptionHandler);
 end;
 
 procedure TSQLiteStatementAdapter.SetParam(const param: TDBParam);
@@ -196,7 +204,7 @@ begin
     inherited;
     Connection.ExecSQL(SQL_BEGIN_SAVEPOINT + GetTransactionName);
 
-    Result := TSQLiteTransactionAdapter.Create(Connection);
+    Result := TSQLiteTransactionAdapter.Create(Connection, ExceptionHandler);
     Result.TransactionName := GetTransactionName;
   end;
 end;
@@ -207,6 +215,11 @@ begin
     Connection.Connected := True;
 end;
 
+constructor TSQLiteConnectionAdapter.Create(const connection: TSQLiteDatabase);
+begin
+  Create(connection, TSQLiteExceptionHandler.Create);
+end;
+
 function TSQLiteConnectionAdapter.CreateStatement: IDBStatement;
 var
   statement: TSQLitePreparedStatement;
@@ -215,7 +228,7 @@ begin
   if Assigned(Connection) then
   begin
     statement := TSQLitePreparedStatement.Create(Connection);
-    adapter := TSQLiteStatementAdapter.Create(statement);
+    adapter := TSQLiteStatementAdapter.Create(statement, ExceptionHandler);
     adapter.ExecutionListeners := ExecutionListeners;
     Result := adapter;
   end
@@ -258,6 +271,16 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TSQLiteExceptionHandler'}
+
+function TSQLiteExceptionHandler.GetAdapterException(const exc: Exception;
+  const defaultMsg: string): Exception;
+begin
+  Result := nil;
+end;
+
+{$ENDREGION}
 
 initialization
   TConnectionFactory.RegisterConnection<TSQLiteConnectionAdapter>(dtSQLite);
