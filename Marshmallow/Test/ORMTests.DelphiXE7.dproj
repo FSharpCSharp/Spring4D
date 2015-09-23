@@ -145,7 +145,7 @@
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Params.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Register.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Types.pas"/>
-        <DCCReference Include="TestAdapterMongoDB.pas"/>
+        <DCCReference Include="TestAdaptersMongoDB.pas"/>
         <DCCReference Include="TestAdaptersASA.pas"/>
         <DCCReference Include="TestAdaptersOracle.pas"/>
         <DCCReference Include="TestSQLServerSQLGenerator.pas"/>
@@ -157,12 +157,12 @@
         <DCCReference Include="TestCoreEntityMap.pas"/>
         <DCCReference Include="TestCoreUtils.pas"/>
         <DCCReference Include="TestDatabaseManager.pas"/>
-        <DCCReference Include="TestFireDACAdapter.pas"/>
+        <DCCReference Include="TestAdaptersFireDAC.pas"/>
         <DCCReference Include="TestObjectDataset.pas"/>
         <DCCReference Include="TestPersistence.pas"/>
         <DCCReference Include="TestSession.pas"/>
         <DCCReference Include="TestSimpleRepository.pas"/>
-        <DCCReference Include="TestSQLiteAdapter.pas"/>
+        <DCCReference Include="TestAdaptersSQLite.pas"/>
         <DCCReference Include="TestEntities.pas"/>
         <DCCReference Include="ViewTestObjectDataset.pas">
             <Form>frmObjectDatasetTest</Form>

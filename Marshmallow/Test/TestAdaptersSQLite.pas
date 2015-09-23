@@ -1,4 +1,4 @@
-unit TestSQLiteAdapter;
+unit TestAdaptersSQLite;
 
 interface
 

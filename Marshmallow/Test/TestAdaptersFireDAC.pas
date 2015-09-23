@@ -1,4 +1,4 @@
-unit TestFireDACAdapter;
+unit TestAdaptersFireDAC;
 
 interface
 
@@ -49,8 +49,6 @@ type
     procedure SaveNullable;
     procedure WhenSavingInTransaction_RollbackIsSuccessful;
     procedure WhenSavingInTransaction_CommitIsSuccessful;
-
-
   end;
 
 implementation

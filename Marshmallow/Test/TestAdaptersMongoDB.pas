@@ -1,4 +1,4 @@
-﻿unit TestAdapterMongoDB;
+﻿unit TestAdaptersMongoDB;
 
 interface
 

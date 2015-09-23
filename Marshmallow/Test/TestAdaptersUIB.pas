@@ -1,4 +1,4 @@
-unit TestAdapterUIB;
+unit TestAdaptersUIB;
 
 interface
 
