@@ -425,10 +425,12 @@ end;
 
 initialization
   // Register any test cases with the test runner
-  RegisterTest(TSQLiteResultSetAdapterTest.Suite);
-  RegisterTest(TSQLiteStatementAdapterTest.Suite);
-  RegisterTest(TSQLiteConnectionAdapterTest.Suite);
-  RegisterTest(TSQLiteTransactionAdapterTest.Suite);
+  RegisterTests('Spring.Persistence.Adapters', [
+    TSQLiteResultSetAdapterTest.Suite,
+    TSQLiteStatementAdapterTest.Suite,
+    TSQLiteConnectionAdapterTest.Suite,
+    TSQLiteTransactionAdapterTest.Suite
+  ]);
 
   TestDB := TSQLiteDatabase.Create(':memory:');
 

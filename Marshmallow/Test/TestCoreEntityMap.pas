@@ -288,6 +288,6 @@ end;
 
 initialization
   // Register any test cases with the test runner
-  RegisterTest(TEntityMapTest.Suite);
+  RegisterTest('Spring.Persistence.Core', TEntityMapTest.Suite);
 end.
 

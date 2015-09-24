@@ -418,7 +418,7 @@ begin
 end;
 
 initialization
-  RegisterTest(TAnsiSQLGeneratorTest.Suite);
+  RegisterTest('Spring.Persistence.Generators', TAnsiSQLGeneratorTest.Suite);
 
 end.
 

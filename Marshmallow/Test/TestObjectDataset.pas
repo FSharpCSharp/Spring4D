@@ -1289,6 +1289,6 @@ end;
 {$ENDIF}
 
 initialization
-  RegisterTest(TObjectDatasetTest.Suite);
+  RegisterTest('Spring.Persistence.ObjectDataset', TObjectDatasetTest.Suite);
 
 end.

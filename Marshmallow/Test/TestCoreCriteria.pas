@@ -594,5 +594,5 @@ end;
 
 initialization
   // Register any test cases with the test runner
-  RegisterTest(TCriteriaTest.Suite);
+  RegisterTest('Spring.Persistence.Criteria', TCriteriaTest.Suite);
 end.

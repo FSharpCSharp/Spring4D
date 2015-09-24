@@ -2024,8 +2024,10 @@ begin
 end;
 
 initialization
-  RegisterTest(TSessionTest.Suite);
-  RegisterTest(TDetachedSessionTest.Suite);
+  RegisterTests('Spring.Persistence.Core', [
+    TSessionTest.Suite,
+    TDetachedSessionTest.Suite
+  ]);
 
   TestDB := TSQLiteDatabase.Create(':memory:');
  // TestDB := TSQLiteDatabase.Create('file::memory:?cache=shared');

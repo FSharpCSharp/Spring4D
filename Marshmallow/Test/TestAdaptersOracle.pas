@@ -335,11 +335,13 @@ end;
 
 
 initialization
-  RegisterTest(TOracleSQLGeneratorTest.Suite);
+  RegisterTest('Spring.Persistence.Adapters', TOracleSQLGeneratorTest.Suite);
   if FileExists('D:\Oracle\oraociei11.dll') then
   begin
-    RegisterTest(TOracleConnectionAdapterTest.Suite);
-    RegisterTest(TOracleSessionTest.Suite);
+    RegisterTests('Spring.Persistence.Adapters', [
+      TOracleConnectionAdapterTest.Suite,
+      TOracleSessionTest.Suite
+    ]);
   end;
 
 end.

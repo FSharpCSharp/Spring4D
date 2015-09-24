@@ -178,6 +178,6 @@ begin
 end;
 
 initialization
-  RegisterTest(TFireDACSessionTest.Suite);
+  RegisterTest('Spring.Persistence.Adapters', TFireDACSessionTest.Suite);
 
 end.

@@ -80,8 +80,10 @@ end;
 
 
 initialization
-  RegisterTest(TASASQLGeneratorTest.Suite);
-  RegisterTest(TASAConnectionAdapterTest.Suite);
+  RegisterTests('Spring.Persistence.Adapters', [
+    TASASQLGeneratorTest.Suite,
+    TASAConnectionAdapterTest.Suite
+  ]);
 
 end.
 

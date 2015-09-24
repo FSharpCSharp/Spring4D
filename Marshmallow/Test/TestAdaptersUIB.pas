@@ -311,9 +311,11 @@ initialization
       TestDB.Connected := True;
       if TestDB.Connected then
       begin
-        RegisterTest(TestTUIBResultSetAdapter.Suite);
-        RegisterTest(TestTUIBConnectionAdapter.Suite);
-        RegisterTest(TestTUIBRegression.Suite);
+        RegisterTests('Spring.Persistence.Adapters', [
+          TestTUIBResultSetAdapter.Suite,
+          TestTUIBConnectionAdapter.Suite,
+          TestTUIBRegression.Suite
+        ]);
       end;
     except
       raise;

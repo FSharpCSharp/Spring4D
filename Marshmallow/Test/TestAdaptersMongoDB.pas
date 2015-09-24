@@ -1,4 +1,4 @@
-﻿unit TestAdaptersMongoDB;
+unit TestAdaptersMongoDB;
 
 interface
 
@@ -1419,14 +1419,16 @@ initialization
     bCreated := CreateProcess(nil, PChar(sExecLine), nil, nil, True, 0, nil, nil, StartInfo, ProcInfo);
     if bCreated then
     begin
-      RegisterTest(TMongoResultSetAdapterTest.Suite);
-      RegisterTest(TMongoStatementAdapterTest.Suite);
-      RegisterTest(TMongoConnectionAdapterTest.Suite);
-      RegisterTest(TMongoSessionTest.Suite);
-      RegisterTest(TMongoRepositoryTest.Suite);
+      RegisterTests('Spring.Persistence.Adapters', [
+        TMongoResultSetAdapterTest.Suite,
+        TMongoStatementAdapterTest.Suite,
+        TMongoConnectionAdapterTest.Suite,
+        TMongoSessionTest.Suite,
+        TMongoRepositoryTest.Suite
       {$IF CompilerVersion > 22}
-      RegisterTest(TMongoProxyRepositoryTest.Suite);
+        ,TMongoProxyRepositoryTest.Suite
       {$IFEND}
+      ]);
     end;
   end;
 
