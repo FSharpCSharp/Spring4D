@@ -287,7 +287,6 @@ end;
 {$HINTS ON}
 
 initialization
-  // Register any test cases with the test runner
   RegisterTest('Spring.Persistence.Core', TEntityMapTest.Suite);
-end.
 
+end.

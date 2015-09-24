@@ -52,7 +52,7 @@ type
     fFieldCache: IFieldCache;
   public
     constructor Create(const dataSet: TADODataSet;
-      const aExceptionHandler: IORMExceptionHandler); override;
+      const exceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -83,7 +83,7 @@ type
   TADOConnectionAdapter = class(TDriverConnectionAdapter<TADOConnection>)
   protected
     constructor Create(const connection: TADOConnection;
-      const aExceptionHandler: IORMExceptionHandler); overload; override;
+      const exceptionHandler: IORMExceptionHandler); overload; override;
   public
     constructor Create(const connection: TADOConnection); overload; override;
 
@@ -138,9 +138,9 @@ uses
 {$REGION 'TADOResultSetAdapter'}
 
 constructor TADOResultSetAdapter.Create(const dataSet: TADODataSet;
-      const aExceptionHandler: IORMExceptionHandler);
+      const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet, aExceptionHandler);
+  inherited Create(DataSet, exceptionHandler);
   DataSet.DisableControls;
 //  DataSet.CursorLocation := clUseServer;
 //  DataSet.CursorType := ctOpenForwardOnly;
@@ -212,26 +212,25 @@ end;
 
 function TADOStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 var
-  LStmt: TADODataSet;
+  dataSet: TADODataSet;
 begin
   inherited;
-  LStmt := TADODataSet.Create(nil);
+  dataSet := TADODataSet.Create(nil);
 //  if AServerSideCursor then
 //    LStmt.CursorLocation := clUseServer;
-  LStmt.CursorType := ctOpenForwardOnly;
-  LStmt.CacheSize := 50;
-  LStmt.Connection := Statement.Connection;
-  LStmt.CommandText := Statement.SQL.Text;
-  LStmt.Parameters.AssignValues(Statement.Parameters);
-  LStmt.DisableControls;
+  dataSet.CursorType := ctOpenForwardOnly;
+  dataSet.CacheSize := 50;
+  dataSet.Connection := Statement.Connection;
+  dataSet.CommandText := Statement.SQL.Text;
+  dataSet.Parameters.AssignValues(Statement.Parameters);
+  dataSet.DisableControls;
   try
-    LStmt.Open;
-    Result := TADOResultSetAdapter.Create(LStmt, ExceptionHandler);
+    dataSet.Open;
+    Result := TADOResultSetAdapter.Create(dataSet, ExceptionHandler);
   except
     on E: Exception do
     begin
-      //make sure that resultset is always created to avoid memory leak
-      Result := TADOResultSetAdapter.Create(LStmt, ExceptionHandler);
+      dataSet.Free;
       raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
     end;
   end;
@@ -297,9 +296,9 @@ begin
 end;
 
 constructor TADOConnectionAdapter.Create(const connection: TADOConnection;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(connection, aExceptionHandler);
+  inherited Create(connection, exceptionHandler);
   Connection.LoginPrompt := False;
 end;
 
@@ -420,6 +419,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TADOConnectionAdapter>(dtADO);

@@ -131,4 +131,5 @@ end;
 initialization
   RegisterTest('Spring.Persistence.Adapters',
     TMSSQLConnectionAdapterTest.Suite);
+
 end.

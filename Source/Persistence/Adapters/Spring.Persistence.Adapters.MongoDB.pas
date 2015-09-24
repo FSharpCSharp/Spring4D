@@ -116,7 +116,7 @@ type
     function GetJsonPartFromStatementText(const tagName: string): string; virtual;
   public
     constructor Create(const statement: TMongoDBQuery;
-      const aExceptionHandler: IORMExceptionHandler); override;
+      const exceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); override;
@@ -311,7 +311,7 @@ end;
 {$REGION 'TMongoStatementAdapter'}
 
 constructor TMongoStatementAdapter.Create(const statement: TMongoDBQuery;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
   inherited Create(statement, ExceptionHandler);
   fStatementText := '';
@@ -641,6 +641,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TMongoConnectionAdapter>(dtMongo);

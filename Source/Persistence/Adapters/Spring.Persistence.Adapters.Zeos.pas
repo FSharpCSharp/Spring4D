@@ -50,7 +50,7 @@ type
     fFieldCache: IFieldCache;
   public
     constructor Create(const dataSet: TZAbstractDataset;
-      const aExceptionHandler: IORMExceptionHandler); override;
+      const exceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -81,10 +81,10 @@ type
   /// </summary>
   TZeosConnectionAdapter = class(TDriverConnectionAdapter<TZAbstractConnection>)
   protected
-    constructor Create(const AConnection: TZAbstractConnection;
-      const aExceptionHandler: IORMExceptionHandler); overload; override;
+    constructor Create(const connection: TZAbstractConnection;
+      const exceptionHandler: IORMExceptionHandler); overload; override;
   public
-    constructor Create(const AConnection: TZAbstractConnection); overload; override;
+    constructor Create(const connection: TZAbstractConnection); overload; override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -123,9 +123,9 @@ uses
 {$REGION 'TZeosResultSetAdapter'}
 
 constructor TZeosResultSetAdapter.Create(const dataSet: TZAbstractDataset;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet, aExceptionHandler);
+  inherited Create(DataSet, exceptionHandler);
   Dataset.DisableControls;
   fFieldCache := TFieldCache.Create(dataSet);
 end;
@@ -264,14 +264,14 @@ end;
 constructor TZeosConnectionAdapter.Create(
   const AConnection: TZAbstractConnection);
 begin
-  Create(AConnection);
+  Create(connection);
 end;
 
 constructor TZeosConnectionAdapter.Create(
-  const AConnection: TZAbstractConnection;
-  const aExceptionHandler: IORMExceptionHandler);
+  const connection: TZAbstractConnection;
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(AConnection, aExceptionHandler);
+  inherited Create(connection, exceptionHandler);
   Connection.LoginPrompt := False;
 end;
 
@@ -338,6 +338,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TZeosConnectionAdapter>(dtZeos);

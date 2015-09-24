@@ -50,7 +50,7 @@ type
     fFieldCache: IFieldCache;
   public
     constructor Create(const dataSet: TSQLQuery;
-      const aExceptionHandler: IORMExceptionHandler); override;
+      const exceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -81,7 +81,7 @@ type
   TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>)
   protected
     constructor Create(const connection: TSQLConnection;
-      const aExceptionHandler: IORMExceptionHandler); overload; override;
+      const exceptionHandler: IORMExceptionHandler); overload; override;
   public
     constructor Create(const connection: TSQLConnection); overload; override;
 
@@ -120,9 +120,9 @@ uses
 {$REGION 'TDBXResultSetAdapter'}
 
 constructor TDBXResultSetAdapter.Create(const dataSet: TSQLQuery;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet, aExceptionHandler);
+  inherited Create(DataSet, exceptionHandler);
   DataSet.DisableControls;
  // DataSet.CursorLocation := clUseServer;
  // DataSet.CursorType := ctOpenForwardOnly;
@@ -263,9 +263,9 @@ begin
 end;
 
 constructor TDBXConnectionAdapter.Create(const connection: TSQLConnection;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(connection, aExceptionHandler);
+  inherited Create(connection, exceptionHandler);
   Connection.LoginPrompt := False;
 end;
 
@@ -335,6 +335,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TDBXConnectionAdapter>(dtDBX);

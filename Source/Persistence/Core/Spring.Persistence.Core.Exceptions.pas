@@ -118,20 +118,20 @@ type
   /// </remarks>
   EORMAdapterException = class abstract(EORMException)
   strict private
-    fCode: Nullable<Integer>;
+    fErrorCode: Nullable<Integer>;
   public
     constructor Create(const msg: string); overload;
+    constructor Create(const msg: string; errorCode: Integer); overload;
     constructor CreateFmt(const msg: string; const args: array of const); overload;
-    constructor Create(const msg: string; aCode: Integer); overload;
-    constructor CreateFmt(const msg: string; const args: array of const; aCode: Integer); overload;
+    constructor CreateFmt(const msg: string; const args: array of const; errorCode: Integer); overload;
 
     /// <summary>
-    ///   Status code of the operation (optional).
+    ///   Error code of the operation (optional).
     /// </summary>
     /// <remarks>
     ///   Driver dependent
     /// </remarks>
-    property Code: Nullable<Integer> read fCode;
+    property ErrorCode: Nullable<Integer> read fErrorCode;
   end;
 
   TORMAdapterExceptionClass = class of EORMAdapterException;
@@ -222,10 +222,10 @@ begin
   inherited Create(msg);
 end;
 
-constructor EORMAdapterException.Create(const msg: string; aCode: Integer);
+constructor EORMAdapterException.Create(const msg: string; errorCode: Integer);
 begin
   Create(msg);
-  fCode := aCode;
+  fErrorCode := errorCode;
 end;
 
 constructor EORMAdapterException.CreateFmt(const msg: string;
@@ -235,10 +235,10 @@ begin
 end;
 
 constructor EORMAdapterException.CreateFmt(const msg: string;
-  const args: array of const; aCode: Integer);
+  const args: array of const; errorCode: Integer);
 begin
   CreateFmt(msg, args);
-  fCode := aCode;
+  fErrorCode := errorCode;
 end;
 
 {$ENDREGION}
@@ -292,5 +292,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

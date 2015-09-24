@@ -44,7 +44,7 @@ type
       const defaultMsg: string): Exception; override;
   end;
 
-  TTestORMExceptionHandler = class(TSimpleUnitTest<TORMExceptionHandlerImpl>)
+  TTestORMExceptionHandler = class(TTestCase<TORMExceptionHandlerImpl>)
   protected
     procedure RaiseTestException(const exc: TObject;
       const defaultMsg: string = '');

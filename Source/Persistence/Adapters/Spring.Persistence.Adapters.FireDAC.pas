@@ -53,7 +53,7 @@ type
     fFieldCache: IFieldCache;
   public
     constructor Create(const dataSet: TFDQuery;
-      const aExceptionHandler: IORMExceptionHandler); override;
+      const exceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -78,7 +78,7 @@ type
   TFireDACConnectionAdapter = class(TDriverConnectionAdapter<TFDConnection>)
   protected
     constructor Create(const connection: TFDConnection;
-      const aExceptionHandler: IORMExceptionHandler); overload; override;
+      const exceptionHandler: IORMExceptionHandler); overload; override;
   public
     constructor Create(const connection: TFDConnection); overload; override;
 
@@ -96,7 +96,7 @@ type
     function InTransaction: Boolean; override;
   public
     constructor Create(const transaction: TFDTransaction;
-      const aExceptionHandler: IORMExceptionHandler;
+      const exceptionHandler: IORMExceptionHandler;
       ownsObject: Boolean = False); reintroduce;
     destructor Destroy; overload; override;
     procedure Commit; override;
@@ -122,9 +122,9 @@ uses
 {$REGION 'TFireDACResultSetAdapter'}
 
 constructor TFireDACResultSetAdapter.Create(const dataSet: TFDQuery;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet, aExceptionHandler);
+  inherited Create(DataSet, exceptionHandler);
   dataSet.DisableControls;
   fFieldCache := TFieldCache.Create(dataSet);
 end;
@@ -259,9 +259,9 @@ begin
 end;
 
 constructor TFireDACConnectionAdapter.Create(const connection: TFDConnection;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(connection, aExceptionHandler);
+  inherited Create(connection, exceptionHandler);
   Connection.LoginPrompt := False;
 end;
 
@@ -329,9 +329,9 @@ end;
 {$REGION 'TFireDACTransactionAdapter'}
 
 constructor TFireDACTransactionAdapter.Create(const transaction: TFDTransaction;
-  const aExceptionHandler: IORMExceptionHandler; ownsObject: Boolean);
+  const exceptionHandler: IORMExceptionHandler; ownsObject: Boolean);
 begin
-  inherited Create(transaction, aExceptionHandler);
+  inherited Create(transaction, exceptionHandler);
   fOwnsObject := ownsObject
 end;
 
@@ -371,6 +371,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TFireDACConnectionAdapter>(dtFireDAC);

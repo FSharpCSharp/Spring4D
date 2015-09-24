@@ -53,7 +53,7 @@ type
     fIsNewTransaction: Boolean;
   public
     constructor Create(const dataSet: TUIBDataSet;
-      const aExceptionHandler: IORMExceptionHandler); override;
+      const exceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     function IsEmpty: Boolean; override;
@@ -107,7 +107,7 @@ type
     function InTransaction: Boolean; override;
   public
     constructor Create(const transaction: TUIBTransaction;
-      const aExceptionHandler: IORMExceptionHandler); override;
+      const exceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
 
     procedure Commit; override;
@@ -134,9 +134,9 @@ uses
 {$REGION 'TUIBResultSetAdapter'}
 
 constructor TUIBResultSetAdapter.Create(const dataSet: TUIBDataSet;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(dataSet, aExceptionHandler);
+  inherited Create(dataSet, exceptionHandler);
   Dataset.OnClose := etmStayIn;
   fFieldCache := TFieldCache.Create(dataSet);
 end;
@@ -374,9 +374,9 @@ begin
 end;
 
 constructor TUIBTransactionAdapter.Create(const transaction: TUIBTransaction;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(transaction, aExceptionHandler);
+  inherited Create(transaction, exceptionHandler);
   fTransaction.DefaultAction := etmRollback;
   if not InTransaction then
     fTransaction.StartTransaction;
@@ -411,6 +411,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 initialization
   TConnectionFactory.RegisterConnection<TUIBConnectionAdapter>(dtUIB);

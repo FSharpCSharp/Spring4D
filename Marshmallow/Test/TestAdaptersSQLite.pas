@@ -125,6 +125,8 @@ begin
 end;
 
 
+{$REGION 'TSQLiteResultSetAdapterTest'}
+
 procedure TSQLiteResultSetAdapterTest.SetUp;
 begin
   DeleteAllCustomers;
@@ -226,6 +228,11 @@ begin
   end;
 end;
 
+{$ENDREGION}
+
+
+{$REGION 'TSQLiteStatementAdapterTest'}
+
 procedure TSQLiteStatementAdapterTest.SetUp;
 var
   LStmt: ISQLitePreparedStatement;
@@ -306,6 +313,11 @@ begin
   end;
 end;
 
+{$ENDREGION}
+
+
+{$REGION 'TSQLiteConnectionAdapterTest'}
+
 procedure TSQLiteConnectionAdapterTest.SetUp;
 begin
   FSQLiteConnectionAdapter := TSQLiteConnectionAdapter.Create(TestDB);
@@ -373,6 +385,11 @@ begin
   Result.Transaction.ExecSQL('SAVEPOINT T1');
 end;
 
+{$ENDREGION}
+
+
+{$REGION 'TSQLiteTransactionAdapterTest'}
+
 procedure TSQLiteTransactionAdapterTest.SetUp;
 begin
   FSQLiteTransactionAdapter := CreateAndBeginTransaction;
@@ -411,13 +428,14 @@ begin
   CheckEquals(1, GetCustomersCount);
 end;
 
+{$ENDREGION}
+
+
 type
   TSQLiteEvents = class
   public
     class procedure DoOnAfterOpen(Sender: TObject);
   end;
-
-{ TSQLiteEvents }
 
 class procedure TSQLiteEvents.DoOnAfterOpen(Sender: TObject);
 begin
@@ -425,7 +443,6 @@ begin
 end;
 
 initialization
-  // Register any test cases with the test runner
   RegisterTests('Spring.Persistence.Adapters', [
     TSQLiteResultSetAdapterTest.Suite,
     TSQLiteStatementAdapterTest.Suite,
@@ -434,13 +451,8 @@ initialization
   ]);
 
   TestDB := TSQLiteDatabase.Create(':memory:');
-
-  //create tables
   TestDB.OnAfterOpen := TSQLiteEvents.DoOnAfterOpen;
-
   CreateTables;
-
-  //insert data
 
 finalization
   TestDB.Free;

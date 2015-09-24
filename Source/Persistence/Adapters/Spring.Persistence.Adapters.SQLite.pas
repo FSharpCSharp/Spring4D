@@ -282,6 +282,7 @@ end;
 
 {$ENDREGION}
 
+
 initialization
   TConnectionFactory.RegisterConnection<TSQLiteConnectionAdapter>(dtSQLite);
 

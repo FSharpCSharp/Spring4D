@@ -122,11 +122,6 @@ begin
 end;
 
 initialization
-  // Register any test cases with the test runner
   RegisterTest('Spring.Persistence.Core', TDatabaseManagerTest.Suite);
 
-
-
-
 end.
-

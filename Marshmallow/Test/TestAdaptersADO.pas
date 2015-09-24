@@ -67,7 +67,7 @@ type
   end;
 
   TADOExceptionHandlerAccess = class(TADOExceptionHandler);
-  TADOExceptionHandlerTest = class(TSimpleUnitTest<TADOExceptionHandlerAccess>)
+  TADOExceptionHandlerTest = class(TTestCase<TADOExceptionHandlerAccess>)
   published
     procedure TestGetAdapterException_EDatabaseError;
     procedure TestGetAdapterException_ESafecallException;
@@ -97,6 +97,7 @@ implementation
 uses
   TestEntities,
   TestExceptions;
+
 
 {$REGION 'TADOExecuteCall'}
 
@@ -333,40 +334,40 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_EDatabaseError;
 var
-  exc, result: SmartPointer<Exception>;
+  exc, result: Managed<Exception>;
 begin
   exc := EDatabaseError.Create('');
   result := SUT.GetAdapterException(exc, 'message');
   CheckIs(result, EADOAdapterException);
   CheckEqualsString('message', result.Value.Message);
-  CheckFalse(EADOAdapterException(result.Value).Code.HasValue);
+  CheckFalse(EADOAdapterException(result.Value).ErrorCode.HasValue);
 end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_EOleSysError;
 var
-  exc, result: SmartPointer<Exception>;
+  exc, result: Managed<Exception>;
 begin
   exc := EOleException.Create('', -1, '', '', 0);
   result := SUT.GetAdapterException(exc, 'message');
   CheckIs(result, EADOAdapterException);
   CheckEqualsString('message', result.Value.Message);
-  CheckEquals(-1, EADOAdapterException(result.Value).Code);
+  CheckEquals(-1, EADOAdapterException(result.Value).ErrorCode);
 end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_ESafecallException;
 var
-  exc, result: SmartPointer<Exception>;
+  exc, result: Managed<Exception>;
 begin
   exc := ESafecallException.Create('');
   result := SUT.GetAdapterException(exc, 'message');
   CheckIs(result, EADOAdapterException);
   CheckEqualsString('message', result.Value.Message);
-  CheckFalse(EADOAdapterException(result.Value).Code.HasValue);
+  CheckFalse(EADOAdapterException(result.Value).ErrorCode.HasValue);
 end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_Others_Return_Nil;
 var
-  exc, result: SmartPointer<Exception>;
+  exc, result: Managed<Exception>;
 begin
   exc := Exception.Create('');
   result := SUT.GetAdapterException(exc, '');
@@ -374,6 +375,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 initialization
   RegisterTests('Spring.Persistence.Adapters', [

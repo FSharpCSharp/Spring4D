@@ -1402,8 +1402,8 @@ end;
 
 var
   sExecLine: string;
-  StartInfo  : TStartupInfo;
-  ProcInfo   : TProcessInformation;
+  StartInfo: TStartupInfo;
+  ProcInfo: TProcessInformation;
   bCreated: Boolean;
 
 initialization

@@ -31,8 +31,8 @@ interface
 uses
   SysUtils,
   Spring.Collections,
-  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Criteria.Interfaces,
   Spring.Persistence.SQL.Commands.Page,
   Spring.Persistence.SQL.Interfaces,
@@ -43,7 +43,7 @@ type
   private
     fExceptionHandler: IORMExceptionHandler;
   protected
-    constructor Create(const aExceptionHandler: IORMExceptionHandler);
+    constructor Create(const exceptionHandler: IORMExceptionHandler);
     function HandleException(const defaultMsg: string = ''): Exception;
     property ExceptionHandler: IORMExceptionHandler read fExceptionHandler;
   end;
@@ -65,7 +65,7 @@ type
     function GetFieldName(index: Integer): string; virtual; abstract;
   public
     constructor Create(const dataSet: T;
-      const aExceptionHandler: IORMExceptionHandler); virtual;
+      const exceptionHandler: IORMExceptionHandler); virtual;
 
     property DataSet: T read fDataSet;
   end;
@@ -90,7 +90,7 @@ type
     procedure SetQueryLanguage(const value: TQueryLanguage);
   protected
     constructor Create(const connection: T;
-      const aExceptionHandler: IORMExceptionHandler); overload; virtual;
+      const exceptionHandler: IORMExceptionHandler); overload; virtual;
 
     procedure Connect; virtual; abstract;
     procedure Disconnect; virtual; abstract;
@@ -130,7 +130,7 @@ type
     procedure NotifyListeners; virtual;
   public
     constructor Create(const statement: T;
-      const aExceptionHandler: IORMExceptionHandler); virtual;
+      const exceptionHandler: IORMExceptionHandler); virtual;
 
     procedure SetSQLCommand(const commandText: string); virtual;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); virtual;
@@ -163,7 +163,7 @@ type
     function InTransaction: Boolean; virtual; abstract;
   public
     constructor Create(const transaction: T;
-      const aExceptionHandler: IORMExceptionHandler); virtual;
+      const exceptionHandler: IORMExceptionHandler); virtual;
     destructor Destroy; override;
 
     property Transaction: T read fTransaction;
@@ -227,13 +227,14 @@ uses
   Spring.Persistence.SQL.Register,
   Spring.Reflection;
 
+
 {$REGION 'TDriverAdapterBase'}
 
 constructor TDriverAdapterBase.Create(
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
   inherited Create;
-  fExceptionHandler := aExceptionHandler;
+  fExceptionHandler := exceptionHandler;
 end;
 
 function TDriverAdapterBase.HandleException(const defaultMsg: string): Exception;
@@ -247,9 +248,9 @@ end;
 {$REGION 'TDriverResultSetAdapter<T>'}
 
 constructor TDriverResultSetAdapter<T>.Create(const dataSet: T;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(aExceptionHandler);
+  inherited Create(exceptionHandler);
   fDataSet := dataSet;
 end;
 
@@ -276,9 +277,9 @@ begin
 end;
 
 constructor TDriverConnectionAdapter<T>.Create(const connection: T;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(aExceptionHandler);
+  inherited Create(exceptionHandler);
   fConnection := connection;
   fListeners := TCollections.CreateList<TExecutionListenerProc>;
   fQueryLanguage := qlAnsiSQL;
@@ -337,9 +338,9 @@ end;
 {$REGION 'TDriverStatementAdapter<T>'}
 
 constructor TDriverStatementAdapter<T>.Create(const statement: T;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(aExceptionHandler);
+  inherited Create(exceptionHandler);
   fStatement := statement;
   fQuery := Null;
 end;
@@ -456,9 +457,9 @@ end;
 {$REGION 'TDriverTransactionAdapter<T>'}
 
 constructor TDriverTransactionAdapter<T>.Create(const transaction: T;
-  const aExceptionHandler: IORMExceptionHandler);
+  const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(aExceptionHandler);
+  inherited Create(exceptionHandler);
   fTransaction := transaction;
 end;
 

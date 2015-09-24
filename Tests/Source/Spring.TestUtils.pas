@@ -41,7 +41,7 @@ type
     function RegisterExpectedMemoryLeak(p: Pointer): Boolean; inline;
   end;
 
-  TSimpleUnitTest<T: class, constructor> = class(TTestCase)
+  TTestCase<T: class, constructor> = class(TTestCase)
   private type
     TInterfacedObjectAccess = class(TInterfacedObject);
   private
@@ -75,6 +75,7 @@ begin
   Result := CallerAddr;
 end;
 {$ENDIF}
+
 
 {$REGION 'TAbstractTestHelper'}
 
@@ -151,9 +152,9 @@ end;
 {$ENDREGION}
 
 
-{ TSimpleUnitTest<T> }
+{$REGION 'TTestCase<T>'}
 
-procedure TSimpleUnitTest<T>.SetUp;
+procedure TTestCase<T>.SetUp;
 begin
   inherited;
   fSUT := T.Create;
@@ -161,17 +162,21 @@ begin
     TInterfacedObjectAccess(fSUT)._AddRef;
 end;
 
-procedure TSimpleUnitTest<T>.TearDown;
-var lSUT: T;
+procedure TTestCase<T>.TearDown;
+var
+  tmp: T;
 begin
   // Prevent ARC code execution (if enabled)
-  Pointer(lSUT) := Pointer(fSUT);
-  Pointer(fSUT) := nil;
-  if lSUT is TInterfacedObject then
-    TInterfacedObjectAccess(lSUT)._Release
+  PPointer(@tmp)^ := PPointer(@fSUT)^;
+  PPointer(@fSUT)^ := nil;
+  if tmp is TInterfacedObject then
+    TInterfacedObjectAccess(tmp)._Release
   else
-    lSUT.Free;
+    tmp.Free;
   inherited;
 end;
+
+{$ENDREGION}
+
 
 end.

@@ -59,10 +59,10 @@ uses
   Spring.Persistence.SQL.Interfaces,
   Spring.Collections,
   TestSession,
-  Variants
-  ;
+  Variants;
 
-{ TestFireDACSession }
+
+{$REGION 'TFireDACSessionTest'}
 
 function TFireDACSessionTest.CreateCustomer(const name: string;
   const age: Integer): TFDCustomer;
@@ -176,6 +176,9 @@ begin
   transaction.Rollback;
   CheckEquals(0, FSession.FindAll<TFDCustomer>.Count);
 end;
+
+{$ENDREGION}
+
 
 initialization
   RegisterTest('Spring.Persistence.Adapters', TFireDACSessionTest.Suite);
