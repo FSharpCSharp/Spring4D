@@ -945,6 +945,7 @@ type
     class operator Implicit(const value: Lazy<T>): ILazy<T>;
     class operator Implicit(const value: Lazy<T>): T;
     class operator Implicit(const value: T): Lazy<T>;
+    class operator Implicit(const value: TFunc<T>): Lazy<T>;
     class operator Implicit(const value: TLazy<T>): Lazy<T>;
 
     /// <summary>
@@ -3718,6 +3719,11 @@ end;
 class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
 begin
   Result.fLazy := TLazy<T>.CreateFrom(value);
+end;
+
+class operator Lazy<T>.Implicit(const value: TFunc<T>): Lazy<T>;
+begin
+  Result.fLazy := TLazy<T>.Create(value);
 end;
 
 class operator Lazy<T>.Implicit(const value: TLazy<T>): Lazy<T>;
