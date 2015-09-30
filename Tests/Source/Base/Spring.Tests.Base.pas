@@ -33,6 +33,7 @@ unit Spring.Tests.Base;
 interface
 
 uses
+  Classes,
   TypInfo,
   TestFramework,
   Spring.TestUtils,
@@ -434,10 +435,69 @@ type
     procedure FromVariantProperlyHandlesVariantArrays;
   end;
 
+{$IFNDEF DELPHI2010}
+  TTestManagedObject = class(TTestCase)
+  published
+    procedure TestInitialization;
+  end;
+
+  TTestObject = class(TManagedObject)
+  private
+    [Default(42)]
+    fIntValue: Integer;
+    [Default(High(Int64))]
+    fInt64Value: Int64;
+    [Default(High(UInt64))]
+    fUInt64Value: UInt64;
+    [Default(Low(Int64))]
+    fInt64Value2: Int64;
+    [Default(Low(UInt64))]
+    fUInt64Value2: UInt64;
+    [Default('test')]
+    fStrValue: string;
+    [Default(True)]
+    fBoolValue: Boolean;
+    [Default(20.5)]
+    fDoubleValue: Double;
+    [Default('2015-09-30 17:30:00')]
+    fDateTime: TDateTime;
+    [Managed]
+    fObjValue: TObject;
+    [Managed(TPersistent)]
+    fObjValue2: TObject;
+    [Managed(False)]
+    fObjValue3: TObject;
+  {$IFNDEF NEXTGEN}
+    [Default('x')]
+    fAnsiCharValue: AnsiChar;
+  {$ENDIF}
+    [Default('y')]
+    fWideCharValue: WideChar;
+    [Default('z')]
+    fCharValue: Char;
+  {$IFDEF DELPHIXE_UP}
+    [Managed(TInterfacedObject)]
+    fIntfValue: IInterface;
+  {$ENDIF}
+
+    fIntValue_Prop: Integer;
+    fStrValue_Prop: string;
+    procedure SetStrValue_Prop(const Value: string); virtual;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    [Default(43)]
+    property IntValue: Integer read fIntValue_Prop write fIntValue_Prop;
+
+    [Default('hello')]
+    property StrValue: string read fStrValue_Prop write SetStrValue_Prop;
+  end;
+{$ENDIF}
+
 implementation
 
 uses
-  Classes,
   DateUtils,
   FmtBcd,
   SqlTimSt,
@@ -2725,6 +2785,66 @@ begin
   fInt64 := v;
   CheckEquals(8123456789012345678, fInt64);
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestManagedObject'}
+
+{$IFNDEF DELPHI2010}
+constructor TTestObject.Create;
+begin
+  // no inherited here for testing (initialization is done within NewInstance)
+  fObjValue3 := TObject.Create;
+end;
+
+destructor TTestObject.Destroy;
+begin
+  // no inherited here for testing (finalization is done within FreeInstance)
+end;
+
+procedure TTestObject.SetStrValue_Prop(const Value: string);
+begin
+  fStrValue_Prop := Value;
+end;
+
+procedure TTestManagedObject.TestInitialization;
+var
+  obj: TTestObject;
+begin
+  obj := TTestObject.Create;
+  try
+    // check field initializations
+    CheckEquals(42, obj.fIntValue);
+    CheckEquals(High(Int64), obj.fInt64Value);
+    CheckEquals(High(UInt64), obj.fUInt64Value);
+    CheckEquals(Low(Int64), obj.fInt64Value2);
+    CheckEquals(Low(UInt64), obj.fUInt64Value2);
+    CheckEquals('test', obj.fStrValue);
+    CheckTrue(obj.fBoolValue);
+    CheckEquals(20.5, obj.fDoubleValue);
+    CheckEquals(EncodeDateTime(2015, 9, 30, 17, 30, 0, 0), obj.fDateTime);
+    CheckIs(obj.fObjValue, TObject);
+    CheckIs(obj.fObjValue2, TPersistent);
+    CheckIs(obj.fObjValue3, TObject);
+  {$IFNDEF NEXTGEN}
+    CheckEquals('x', Char(obj.fAnsiCharValue));
+  {$ENDIF}
+    CheckEquals('y', Char(obj.fWideCharValue));
+    CheckEquals('z', Char(obj.fCharValue));
+  {$IFDEF DELPHIXE_UP}
+    CheckNotNull(obj.fIntfValue);
+    CheckIs(obj.fIntfValue as TObject, TInterfacedObject);
+  {$ENDIF}
+
+    // check property initializations
+    CheckEquals(43, obj.fIntValue_Prop);
+    CheckEquals('hello', obj.fStrValue_Prop);
+  finally
+    obj.Free;
+  end;
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

@@ -79,6 +79,12 @@ begin
     TTestValueHelper.Suite
   ]);
 
+{$IFNDEF DELPHI2010}
+  RegisterTests('Spring.Base', [
+    TTestManagedObject.Suite
+  ]);
+{$ENDIF}
+
   RegisterTests('Spring.Base.Collections', [
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
