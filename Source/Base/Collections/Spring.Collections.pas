@@ -2418,6 +2418,8 @@ type
     class function CreateSortedInterfaceList<T: IInterface>(const values: array of T): IList<T>; overload; static;
     class function CreateSortedInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static; inline;
 
+    class function CreateObservableList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static; inline;
+
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static; inline;
     class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload; static; inline;
     class function CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static; inline;
@@ -2831,6 +2833,16 @@ begin
   Result := TList<T>.Create;
 {$ENDIF}
   Result.AddRange(values);
+end;
+
+class function TCollections.CreateObservableList<T>(
+  ownsObjects: Boolean): IList<T>;
+begin
+{$IFDEF DELPHIXE_UP}
+  IList<TObject>(Result) := TObservableList<T>.Create(ownsObjects);
+{$ELSE}
+  Result := TObservableList<T>.Create(ownsObjects);
+{$ENDIF}
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(

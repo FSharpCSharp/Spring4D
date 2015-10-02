@@ -262,6 +262,22 @@ type
   end;
 {$ENDIF}
 
+  TObservableList<T: class> = class(
+    {$IFDEF DELPHIXE_UP}TFoldedObjectList<T>{$ELSE}TObjectList<T>{$ENDIF},
+    INotifyPropertyChanged)
+  private
+    fOnPropertyChanged: Event<TPropertyChangedEvent>;
+    function GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+  protected
+    procedure DoItemPropertyChanged(sender: TObject;
+      const eventArgs: IPropertyChangedEventArgs);
+    procedure DoPropertyChanged(const propertyName: string);
+    procedure Changed(const value: {$IFDEF DELPHIXE_UP}TObject{$ELSE}T{$ENDIF};
+      action: TCollectionChangedAction); override;
+  public
+    property OnPropertyChanged: IEvent<TPropertyChangedEvent> read GetOnPropertyChanged;
+  end;
+
 implementation
 
 uses
@@ -1351,6 +1367,49 @@ begin
   Result := TypeInfo(T);
 end;
 {$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TObservableList<T> }
+
+procedure TObservableList<T>.DoItemPropertyChanged(sender: TObject;
+  const eventArgs: IPropertyChangedEventArgs);
+begin
+  inherited Changed(T(sender), caChanged);
+end;
+
+procedure TObservableList<T>.DoPropertyChanged(const propertyName: string);
+begin
+  fOnPropertyChanged.Invoke(Self,
+    TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
+end;
+
+function TObservableList<T>.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+begin
+  Result := fOnPropertyChanged;
+end;
+
+procedure TObservableList<T>.Changed(
+  const value: {$IFDEF DELPHIXE_UP}TObject{$ELSE}T{$ENDIF};
+  action: TCollectionChangedAction);
+var
+  notifyPropertyChanged: INotifyPropertyChanged;
+  propertyChanged: IEvent<TPropertyChangedEvent>;
+begin
+  if Supports({$IFDEF DELPHIXE_UP}value{$ELSE}PObject(@value)^{$ENDIF},
+    INotifyPropertyChanged, notifyPropertyChanged) then
+  begin
+    propertyChanged := notifyPropertyChanged.OnPropertyChanged;
+    case Action of
+      caAdded: propertyChanged.Add(DoItemPropertyChanged);
+      caRemoved, caExtracted: propertyChanged.Remove(DoItemPropertyChanged);
+    end;
+  end;
+
+  inherited;
+  DoPropertyChanged('Count');
+end;
 
 {$ENDREGION}
 
