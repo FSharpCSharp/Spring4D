@@ -922,8 +922,9 @@ function TBidiDictionary<TKey, TValue>.Remove(const key: TKey;
 var
   item: TValue;
 begin
-  if fValuesByKey.TryGetValue(key, item)
-    and TEqualityComparer<TValue>.Default.Equals(value, item) then
+  Result := fValuesByKey.TryGetValue(key, item)
+    and TEqualityComparer<TValue>.Default.Equals(value, item);
+  if Result then
   begin
     fValuesByKey.Remove(key);
     fKeysByValue.Remove(value);
