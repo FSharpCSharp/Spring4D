@@ -1,11 +1,11 @@
-package UIBD16Win32D;
+package UIBD21Win32D;
 
 {$R *.res}
 {$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
 {$ALIGN 8}
 {$ASSERTIONS ON}
 {$BOOLEVAL OFF}
-{$DEBUGINFO ON}
+{$DEBUGINFO OFF}
 {$EXTENDEDSYNTAX ON}
 {$IMPORTEDDATA ON}
 {$IOCHECKS ON}
@@ -24,7 +24,7 @@ package UIBD16Win32D;
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
 {$ENDIF IMPLICITBUILDING}
-{$DESCRIPTION 'UIB Components for XE2 D16'}
+{$DESCRIPTION 'UIB Components for Delphi/RAD Studio XE7'}
 {$DESIGNONLY}
 {$IMPLICITBUILD ON}
 
@@ -40,7 +40,7 @@ requires
   vclx,
   dclstd,
   vcldb,
-  UIBD16Win32R;
+  UIBD21Win32R;
 
 contains
   uibreg in '..\source\uibreg.pas',
