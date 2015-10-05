@@ -1325,6 +1325,11 @@ begin
 
   GetActiveRecBuf(LRecBuf);
 
+  if Buffer = nil then
+    LData := Null
+  else
+    BufferToVar(LData);
+
   if Field.FieldNo > 0 then
   begin
     if ReadOnly and not(State in [dsSetKey, dsFilter]) then
@@ -1338,11 +1343,6 @@ begin
       FModifiedFields.Add(Field);
     end;
   end;
-
-  if Buffer = nil then
-    LData := Null
-  else
-    BufferToVar(LData);
 
   PVariantList(LRecBuf + SizeOf(TArrayRecInfo))[Field.Index] := LData;
 
