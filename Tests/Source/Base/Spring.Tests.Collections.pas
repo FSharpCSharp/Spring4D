@@ -203,6 +203,7 @@ type
     procedure TestStackPeek;
     procedure TestStackPeekOrDefault;
     procedure TestStackTryPeek;
+    procedure TestStackTryPop;
 {$IFDEF DELPHIXE_UP}
     procedure TestStackTrimExcess;
 {$ENDIF}
@@ -253,6 +254,7 @@ type
     procedure TestQueueDequeue;
     procedure TestQueuePeek;
     procedure TestQueuePeekOrDefault;
+    procedure TestQueueTryDequeue;
     procedure TestQueueTryPeek;
 {$IFDEF DELPHIXE_UP}
     procedure TestQueueTrimExcess;
@@ -1396,6 +1398,26 @@ begin
   CheckEquals(Expected, Actual);
 end;
 
+procedure TTestStackOfInteger.TestStackTryPop;
+var
+  Expected: Integer;
+  Actual: Integer;
+begin
+  CheckFalse(SUT.TryPop(Actual));
+  Expected := 0;
+  CheckEquals(Expected, Actual);
+  for Actual := 1 to MaxItems do
+    SUT.Push(Actual);
+  for Expected := MaxItems downto 1 do
+  begin
+    CheckTrue(SUT.TryPop(Actual));
+    CheckEquals(Expected, Actual);
+  end;
+  CheckFalse(SUT.TryPop(Actual));
+  CheckEquals(0, Actual);
+  CheckTrue(SUT.IsEmpty);
+end;
+
 { TTestStackOfIntegerChangedEvent }
 
 procedure TTestStackOfIntegerChangedEvent.SetUp;
@@ -1657,6 +1679,26 @@ begin
   CheckEquals(0, queue.Capacity);
 end;
 {$ENDIF}
+
+procedure TTestQueueOfInteger.TestQueueTryDequeue;
+var
+  Expected: Integer;
+  Actual: Integer;
+begin
+  CheckFalse(SUT.TryDequeue(Actual));
+  Expected := 0;
+  CheckEquals(Expected, Actual);
+  for Actual := 1 to MaxItems do
+    SUT.Enqueue(Actual);
+  for Expected := 1 to MaxItems do
+  begin
+    CheckTrue(SUT.TryDequeue(Actual));
+    CheckEquals(Expected, Actual);
+  end;
+  CheckFalse(SUT.TryDequeue(Actual));
+  CheckEquals(0, Actual);
+  CheckTrue(SUT.IsEmpty);
+end;
 
 procedure TTestQueueOfInteger.TestQueueTryPeek;
 var

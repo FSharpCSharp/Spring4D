@@ -1918,6 +1918,7 @@ type
     function Peek: TValue;
     function PeekOrDefault: TValue;
     function TryPeek(out item: TValue): Boolean;
+    function TryPop(out item: TValue): Boolean;
     property OnChanged: IEvent read GetOnChanged;
   end;
 
@@ -1965,7 +1966,33 @@ type
     /// </returns>
     function Peek: T;
     function PeekOrDefault: T;
+
+    /// <summary>
+    ///   Attempts to return an element from the top of the stack without
+    ///   removing it.
+    /// </summary>
+    /// <param name="item">
+    ///   The element at the top of the stack if the operation was successful, <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was returned from the top of the stack;
+    ///   otherwise, <b>False</b>.
+    /// </returns>
     function TryPeek(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the top of the stacke.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful, <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed and returned from the top of
+    ///   the stack; otherwise, <b>False</b>.
+    /// </returns>
+    function TryPop(out item: T): Boolean;
 
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
@@ -1981,6 +2008,7 @@ type
     function Dequeue: TValue;
     function Peek: TValue;
     function PeekOrDefault: TValue;
+    function TryDequeue(out item: TValue): Boolean;
     function TryPeek(out item: TValue): Boolean;
     property OnChanged: IEvent read GetOnChanged;
   end;
@@ -2030,6 +2058,33 @@ type
     /// </returns>
     function Peek: T;
     function PeekOrDefault: T;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the beginning of the
+    ///   queue.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful, <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed and returned from the beginning
+    ///   of the queue; otherwise, <b>False</b>.
+    /// </returns>
+    function TryDequeue(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to return an element from the beginning of the queue without
+    ///   removing it.
+    /// </summary>
+    /// <param name="item">
+    ///   The element at the beginning of the queue if the operation was
+    ///   successful, <b>Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was returned from the beginning of the
+    ///   queue; otherwise, <b>False</b>.
+    /// </returns>
     function TryPeek(out item: T): Boolean;
 
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
