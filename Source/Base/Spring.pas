@@ -800,6 +800,22 @@ type
   TNullableBoolean = Nullable<Boolean>;
   TNullableGuid = Nullable<TGUID>;
 
+  /// <summary>
+  ///   Helper record for fast access to nullable value via RTTI.
+  /// </summary>
+  TNullableHelper = record
+  strict private
+    fValueField: PRecordTypeField;
+    fHasValueField: PRecordTypeField;
+    function GetValueType: PTypeInfo; inline;
+  public
+    constructor Create(typeInfo: PTypeInfo);
+    function GetValue(instance: Pointer): TValue; inline;
+    function HasValue(instance: Pointer): Boolean; inline;
+    procedure SetValue(instance: Pointer; const value: TValue); inline;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
   {$ENDREGION}
 
 
@@ -2087,18 +2103,12 @@ end;
 
 function GetUnderlyingType(typeInfo: PTypeInfo): PTypeInfo;
 var
-  context: TRttiContext;
-  rttiType: TRttiType;
-  valueField: TRttiField;
+  nullable: TNullableHelper;
 begin
   if IsNullable(typeInfo) then
   begin
-    rttiType := context.GetType(typeInfo);
-    valueField := rttiType.GetField('fValue');
-    if Assigned(valueField) then
-      Result := valueField.FieldType.Handle
-    else
-      Result := nil;
+    nullable := TNullableHelper.Create(typeInfo);
+    Result := nullable.ValueType;
   end
   else
     Result := nil;
@@ -3114,29 +3124,15 @@ end;
 procedure TValueHelper.SetNullableValue(const value: TValue);
 var
   typeInfo: PTypeInfo;
-  context: TRttiContext;
-  rttiType: TRttiType;
-  valueField, hasValueField: TRttiField;
+  nullable: TNullableHelper;
   instance: Pointer;
 begin
   typeInfo := TValueData(Self).FTypeInfo;
   if IsNullable(typeInfo) then
   begin
-    rttiType := context.GetType(typeInfo);
-    valueField := rttiType.GetField('fValue');
-    if Assigned(valueField) then
-    begin
-      hasValueField := rttiType.GetField('fHasValue');
-      if Assigned(hasValueField) then
-      begin
-        instance := GetReferenceToRawData;
-        valueField.SetValue(instance, value);
-        if value.IsEmpty then
-          hasValueField.SetValue(instance, '')
-        else
-          hasValueField.SetValue(instance, '@');
-      end;
-    end;
+    instance := GetReferenceToRawData;
+    nullable := TNullableHelper.Create(typeInfo);
+    nullable.SetValue(instance, value);
   end;
 end;
 
@@ -3739,29 +3735,20 @@ end;
 function TValueHelper.TryGetNullableValue(out value: TValue): Boolean;
 var
   typeInfo: PTypeInfo;
-  context: TRttiContext;
-  rttiType: TRttiType;
-  hasValueField, valueField: TRttiField;
+  nullable: TNullableHelper;
   instance: Pointer;
 begin
   typeInfo := TValueData(Self).FTypeInfo;
   Result := IsNullable(typeInfo);
   if Result then
   begin
-    rttiType := context.GetType(typeInfo);
-    hasValueField := rttiType.GetField('fHasValue');
-    if Assigned(hasValueField) then
-    begin
-      instance := GetReferenceToRawData;
-      Result := hasValueField.GetValue(instance).AsString <> '';
-      if Result then
-      begin
-        valueField := rttiType.GetField('fValue');
-        Result := Assigned(valueField);
-        if Result then
-          value := valueField.GetValue(instance);
-      end;
-    end;
+    instance := GetReferenceToRawData;
+    if instance = nil then
+      Exit(False);
+    nullable := TNullableHelper.Create(typeInfo);
+    Result := nullable.HasValue(instance);
+    if Result then
+      value := nullable.GetValue(instance);
   end;
 end;
 
@@ -4452,6 +4439,47 @@ end;
 class procedure Nullable<T>.RaiseNullableTypeHasNoValue;
 begin
   raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNullableHelper'}
+
+constructor TNullableHelper.Create(typeInfo: PTypeInfo);
+var
+  p: PByte;
+begin
+  p := @typeInfo.TypeData.ManagedFldCount;
+  Inc(p, SizeOf(Integer) + SizeOf(TManagedField) * PInteger(p)^);
+  Inc(p, SizeOf(Byte) + SizeOf(Pointer) * p^);
+  Inc(p, SizeOf(Integer));
+  fValueField := PRecordTypeField(p);
+  fHasValueField := PRecordTypeField(PByte(SkipShortString(@fValueField.Name)) + SizeOf(TAttrData));
+end;
+
+function TNullableHelper.GetValue(instance: Pointer): TValue;
+begin
+  TValue.Make(instance, fValueField.Field.TypeRef^, Result);
+end;
+
+function TNullableHelper.GetValueType: PTypeInfo;
+begin
+  Result := fValueField.Field.TypeRef^;
+end;
+
+function TNullableHelper.HasValue(instance: Pointer): Boolean;
+begin
+  Result := PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ <> '';
+end;
+
+procedure TNullableHelper.SetValue(instance: Pointer; const value: TValue);
+begin
+  value.Cast(fValueField.Field.TypeRef^).ExtractRawData(instance);
+  if value.IsEmpty then
+    PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ := ''
+  else
+    PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ := '@';
 end;
 
 {$ENDREGION}
