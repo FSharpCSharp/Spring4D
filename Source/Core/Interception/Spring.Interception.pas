@@ -30,10 +30,13 @@ interface
 
 uses
   Rtti,
+  SysUtils,
   Spring,
   Spring.Collections;
 
 type
+  EInterceptionException = class(Exception);
+
   IInvocation = interface
     ['{A307FB1B-CA96-4B20-84FE-A71B286F0924}']
     function GetArguments: TArray<TValue>;
@@ -186,9 +189,9 @@ type
 implementation
 
 uses
-  SysUtils,
   TypInfo,
   Spring.Interception.ClassProxy,
+  Spring.Interception.CustomProxy,
   Spring.Interception.InterfaceProxy;
 
 
@@ -264,9 +267,14 @@ class function TProxyGenerator.CreateClassProxy(classType: TClass;
 var
   proxy: TClassProxy;
 begin
-  proxy := TClassProxy.Create(
-    classType, additionalInterfaces, options, interceptors);
-  Result := proxy.CreateInstance;
+  if classType.InheritsFrom(TCustomProxy) then
+    Result := TCustomProxyClass(classType).Create(options, interceptors)
+  else
+  begin
+    proxy := TClassProxy.Create(
+      classType, additionalInterfaces, options, interceptors);
+    Result := proxy.CreateInstance;
+  end;
 end;
 
 class function TProxyGenerator.CreateInterfaceProxyWithTarget<T>(

@@ -773,6 +773,12 @@ begin
       and (left.TypeName = right.TypeName));
 end;
 
+procedure RaiseInvalidConversionError(sourceType, targetType: PTypeInfo);
+begin
+  raise EInvalidOperationException.CreateFmt('Trying to convert %s to %s',
+    [sourceType.TypeName, targetType.TypeName]);
+end;
+
 
 {$REGION 'DefaultConverter'}
 
@@ -963,7 +969,9 @@ begin
   else if targetTypeInfo = TypeInfo(ShortInt) then
     Result := TValue.From<ShortInt>(StrToInt(value.AsString))
   else if targetTypeInfo = TypeInfo(Byte) then
-    Result := TValue.From<Byte>(StrToInt(value.AsString));
+    Result := TValue.From<Byte>(StrToInt(value.AsString))
+  else
+    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1020,7 +1028,9 @@ begin
   else if targetTypeInfo = TypeInfo(ShortInt) then
     Result := TValue.From<ShortInt>(Integer(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(Byte) then
-    Result := TValue.From<Byte>(Integer(value.AsBoolean));
+    Result := TValue.From<Byte>(Integer(value.AsBoolean))
+  else
+    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1073,7 +1083,9 @@ begin
 
     TValue.Make(nil, targetTypeInfo, Result);
     Result.SetNullableValue(innerValue);
-  end;
+  end
+  else
+    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1236,7 +1248,9 @@ begin
   else if targetTypeInfo = TypeInfo(ShortInt) then
     Result := TValue.From<ShortInt>(Floor(value.AsExtended))
   else if targetTypeInfo = TypeInfo(Byte) then
-    Result := TValue.From<Byte>(Floor(value.AsExtended));
+    Result := TValue.From<Byte>(Floor(value.AsExtended))
+  else
+    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1259,8 +1273,12 @@ begin
         Result := TValue.From<Double>(StrToFloat(value.AsString));
       ftSingle:
         Result := TValue.From<Single>(StrToFloat(value.AsString));
+    else
+      RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
     end;
-  end;
+  end
+  else
+    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1544,7 +1562,9 @@ var
 begin
   guid := GetTypeData(targetTypeInfo)^.Guid;
   if value.AsObject.GetInterface(guid, p) then
-    TValue.MakeWithoutCopy(@p, targetTypeInfo, Result);
+    TValue.MakeWithoutCopy(@p, targetTypeInfo, Result)
+  else
+    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}

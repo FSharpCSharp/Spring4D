@@ -146,6 +146,7 @@ type
     function Peek: TValue;
     function PeekOrDefault: TValue;
     function TryPeek(out item: TValue): Boolean;
+    function TryPop(out item: TValue): Boolean;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
@@ -163,6 +164,7 @@ type
     function Dequeue: TValue;
     function Peek: TValue;
     function PeekOrDefault: TValue;
+    function TryDequeue(out item: TValue): Boolean;
     function TryPeek(out item: TValue): Boolean;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
@@ -631,7 +633,20 @@ var
 begin
   Result := fSource.TryPeek(value);
   if Result then
-    item := TValue.From<T>(value);
+    item := TValue.From<T>(value)
+  else
+    item := TValue.Empty;
+end;
+
+function TStackAdapter<T>.TryPop(out item: TValue): Boolean;
+var
+  value: T;
+begin
+  Result := fSource.TryPop(value);
+  if Result then
+    item := TValue.From<T>(value)
+  else
+    item := TValue.Empty;
 end;
 
 {$ENDREGION}
@@ -686,13 +701,26 @@ begin
     Result := inherited;
 end;
 
+function TQueueAdapter<T>.TryDequeue(out item: TValue): Boolean;
+var
+  value: T;
+begin
+  Result := fSource.TryDequeue(value);
+  if Result then
+    item := TValue.From<T>(value)
+  else
+    item := TValue.Empty;
+end;
+
 function TQueueAdapter<T>.TryPeek(out item: TValue): Boolean;
 var
   value: T;
 begin
   Result := fSource.TryPeek(value);
   if Result then
-    item := TValue.From<T>(value);
+    item := TValue.From<T>(value)
+  else
+    item := TValue.Empty;
 end;
 
 {$ENDREGION}

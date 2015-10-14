@@ -10,6 +10,7 @@ interface
     {$DEFINE DESKTOP}
   {$ENDIF}
 {$ENDIF}
+{$LEGACYIFEND ON}
 
 uses
   System.SysUtils,

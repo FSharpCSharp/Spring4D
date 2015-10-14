@@ -459,6 +459,7 @@ implementation
 
 constructor TBaseAttribute.Create;
 begin
+  inherited Create;
 end;
 
 { LifetimeAttributeBase }

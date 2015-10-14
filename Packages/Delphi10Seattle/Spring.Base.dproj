@@ -1,4 +1,4 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{8F00FFD6-085B-4B31-B6A2-D3157F252221}</ProjectGuid>
         <MainSource>Spring.Base.dpk</MainSource>

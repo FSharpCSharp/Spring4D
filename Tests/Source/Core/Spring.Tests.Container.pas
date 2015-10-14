@@ -99,7 +99,6 @@ type
     procedure TestIssue50;
 
     procedure TestResolveFuncWithTwoTypes;
-    procedure TestResolveUnknownClass;
     procedure TestResolveUnknownClasses;
   end;
 
@@ -277,9 +276,8 @@ type
     procedure TestDependencyTypeIsRecord;
     procedure TestDependencyTypeIsInterface;
 {$ELSE}
-    {$MESSAGE WARN 'Test me again later'}
     // These tests fail due to some compiler/RTL problem, the circular
-    // dependency excpetion is raised but during re-raise in some finally block
+    // dependency exception is raised but during re-raise in some finally block
     // AV is raised instead. This is rare corner case not considered to be a
     // major issue.
 {$ENDIF}
@@ -784,21 +782,6 @@ begin
     end);
 end;
 
-procedure TTestSimpleContainer.TestResolveUnknownClass;
-var
-  component: TBootstrapComponent;
-begin
-  fContainer.RegisterType<TNameService>;
-  fContainer.Build;
-
-  component := nil;
-  try
-    component := fContainer.Resolve<TBootstrapComponent>;
-    CheckEquals('Name', component.NameService.Name);
-  finally
-    component.Free;
-  end;
-end;
 
 procedure TTestSimpleContainer.TestResolveUnknownClasses;
 var

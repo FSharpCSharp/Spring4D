@@ -71,9 +71,7 @@ type
   protected
     procedure Intercept(const invocation: IInvocation);
   public
-    constructor Create(behavior: TMockBehavior = TMockBehavior.Dynamic);
-
-    procedure Setup;
+    constructor Create(behavior: TMockBehavior = DefaultMockBehavior);
 
     procedure Received(const times: Times);
     procedure ReceivedForAnyArgs(const times: Times);
@@ -189,16 +187,15 @@ begin
             raise EMockException.CreateResFmt(@SUnexpectedMethodCall, [
               invocation.Method.ToString, ArgsToString(invocation.Arguments)])
           else
-          begin
             // create results for params
-            if invocation.Method.MethodKind = mkFunction then
-              if invocation.Method.ReturnType.TypeKind = tkInterface then
-              begin
-                methodCall := TMethodCall.Create(CreateMock(invocation),
-                  invocation.Arguments);
-                fExpectedCalls.Add(invocation.Method, methodCall);
-              end;
-          end;
+            if invocation.Method.HasExtendedInfo
+              and (invocation.Method.MethodKind = mkFunction)
+              and (invocation.Method.ReturnType.TypeKind = tkInterface) then
+            begin
+              methodCall := TMethodCall.Create(CreateMock(invocation),
+                invocation.Arguments);
+              fExpectedCalls.Add(invocation.Method, methodCall);
+            end;
 
       if Assigned(methodCall) then
         invocation.Result := methodCall.Invoke(invocation);
@@ -242,18 +239,15 @@ begin
   fCurrentAction := action;
 end;
 
-procedure TMockInterceptor.Setup;
-begin
-  fState := TMockState.Arrange;
-end;
-
 procedure TMockInterceptor.When;
 begin
+  fState := TMockState.Arrange;
   fArgsMatching := True;
 end;
 
 procedure TMockInterceptor.WhenForAnyArgs;
 begin
+  fState := TMockState.Arrange;
   fArgsMatching := False;
 end;
 
@@ -274,9 +268,12 @@ function TMethodCall.Invoke(const invocation: IInvocation): TValue;
 begin
   Inc(fCallCount);
   if Assigned(fAction) then
-    Result := fAction(TCallInfo.Create(invocation, fCallCount));
-  if invocation.Method.MethodKind = mkFunction then
-    Result := Result.Cast(invocation.Method.ReturnType.Handle);
+    Result := fAction(TCallInfo.Create(invocation, fCallCount))
+  else if invocation.Method.HasExtendedInfo
+    and (invocation.Method.MethodKind = mkFunction) then
+    Result := Result.Cast(invocation.Method.ReturnType.Handle)
+  else
+    Result := TValue.Empty;
 end;
 
 {$ENDREGION}

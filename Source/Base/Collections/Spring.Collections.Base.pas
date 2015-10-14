@@ -342,7 +342,8 @@ type
     property Controller: IInterface read GetController;
   end;
 
-  TMapBase<TKey, T> = class(TCollectionBase<TPair<TKey, T>>, IMap<TKey, T>)
+  TMapBase<TKey, T> = class(TCollectionBase<TPair<TKey, T>>, IMap<TKey, T>,
+    IReadOnlyMap<TKey, T>)
   private
     type
       TGenericPair = Generics.Collections.TPair<TKey, T>;
@@ -368,13 +369,13 @@ type
 
     function Remove(const item: TGenericPair): Boolean; overload; override; final;
     function Remove(const key: TKey): Boolean; reintroduce; overload; virtual; abstract;
-    function RemovePair(const key: TKey; const value: T): Boolean; virtual; abstract;
+    function Remove(const key: TKey; const value: T): Boolean; reintroduce; overload; virtual; abstract;
 
-    function Extract(const item: TGenericPair): TGenericPair; override; final;
-    function ExtractPair(const key: TKey; const value: T): TGenericPair; virtual; abstract;
+    function Extract(const item: TGenericPair): TGenericPair; overload; override; final;
+    function Extract(const key: TKey; const value: T): TGenericPair; reintroduce; overload; virtual; abstract;
 
-    function Contains(const item: TGenericPair): Boolean; override; final;
-    function ContainsPair(const key: TKey; const value: T): Boolean; virtual; abstract;
+    function Contains(const item: TGenericPair): Boolean; overload; override; final;
+    function Contains(const key: TKey; const value: T): Boolean; overload; virtual; abstract;
     function ContainsKey(const key: TKey): Boolean; virtual; abstract;
     function ContainsValue(const value: T): Boolean; virtual; abstract;
 
@@ -730,7 +731,6 @@ function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>;
   const comparer: IEqualityComparer<T>): Boolean;
 var
   e1, e2: IEnumerator<T>;
-  hasNext: Boolean;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
@@ -740,16 +740,10 @@ begin
   e1 := GetEnumerator;
   e2 := collection.GetEnumerator;
 
-  while True do
-  begin
-    hasNext := e1.MoveNext;
-    if hasNext <> e2.MoveNext then
-      Exit(False)
-    else if not hasNext then
-      Exit(True);
-    if hasNext and not comparer.Equals(e1.Current, e2.Current) then
+  while e1.MoveNext do
+    if not (e2.MoveNext and comparer.Equals(e1.Current, e2.Current)) then
       Exit(False);
-  end;
+  Result := not e2.MoveNext;
 end;
 
 function TEnumerableBase<T>.First: T;
@@ -891,8 +885,8 @@ end;
 
 function TEnumerableBase<T>.Last(const predicate: TPredicate<T>): T;
 var
-  item: T;
   found: Boolean;
+  item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -900,13 +894,11 @@ begin
 
   found := False;
   for item in Self do
-  begin
     if predicate(item) then
     begin
-      found := True;
       Result := item;
+      found := True;
     end;
-  end;
   if not found then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
@@ -959,28 +951,24 @@ end;
 
 function TEnumerableBase<T>.Max(const comparer: IComparer<T>): T;
 var
-  flag: Boolean;
+  hasValue: Boolean;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  flag := False;
+  hasValue := False;
   for item in Self do
-  begin
-    if flag then
+    if not hasValue then
     begin
-      if comparer.Compare(item, Result) > 0 then
-        Result := item;
+      Result := item;
+      hasValue := True;
     end
     else
-    begin
-      flag := True;
-      Result := item;
-    end;
-  end;
-  if not flag then
+      if comparer.Compare(item, Result) > 0 then
+        Result := item;
+  if not hasValue then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
@@ -1003,28 +991,24 @@ end;
 
 function TEnumerableBase<T>.Min(const comparer: IComparer<T>): T;
 var
-  flag: Boolean;
+  hasValue: Boolean;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  flag := False;
+  hasValue := False;
   for item in Self do
-  begin
-    if flag then
+    if not hasValue then
     begin
-      if fComparer.Compare(item, Result) < 0 then
-        Result := item;
+      Result := item;
+      hasValue := True;
     end
     else
-    begin
-      flag := True;
-      Result := item;
-    end;
-  end;
-  if not flag then
+      if fComparer.Compare(item, Result) < 0 then
+        Result := item;
+  if not hasValue then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
@@ -1078,8 +1062,8 @@ end;
 function TEnumerableBase<T>.Single(const predicate: TPredicate<T>): T;
 var
   enumerator: IEnumerator<T>;
-  item: T;
   found: Boolean;
+  item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1095,8 +1079,8 @@ begin
     begin
       if found then
         raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
-      found := True;
       Result := item;
+      found := True;
     end;
   until not enumerator.MoveNext;
   if not found then
@@ -1131,8 +1115,8 @@ function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>;
   const defaultValue: T): T;
 var
   enumerator: IEnumerator<T>;
-  item: T;
   found: Boolean;
+  item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1148,8 +1132,8 @@ begin
     begin
       if found then
         raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
-      found := True;
       Result := item;
+      found := True;
     end;
   until not enumerator.MoveNext;
   if not found then
@@ -1229,6 +1213,7 @@ var
   count: Integer;
   item: T;
 begin
+  Result := nil;
   if Supports(Self, ICollection<T>, collection) then
   begin
     count := collection.Count;
@@ -1682,12 +1667,12 @@ end;
 
 function TMapBase<TKey, T>.Contains(const item: TGenericPair): Boolean;
 begin
-  Result := ContainsPair(item.Key, item.Value);
+  Result := Contains(item.Key, item.Value);
 end;
 
 function TMapBase<TKey, T>.Extract(const item: TGenericPair): TGenericPair;
 begin
-  Result := ExtractPair(item.Key, item.Value);
+  Result := Extract(item.Key, item.Value);
 end;
 
 function TMapBase<TKey, T>.GetKeyType: PTypeInfo;
@@ -1719,7 +1704,7 @@ end;
 
 function TMapBase<TKey, T>.Remove(const item: TGenericPair): Boolean;
 begin
-  Result := RemovePair(item.Key, item.Value);
+  Result := Remove(item.Key, item.Value);
 end;
 
 procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
@@ -1778,16 +1763,17 @@ begin
 end;
 
 procedure TListBase<T>.DeleteRange(index, count: Integer);
-var
-  i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 
-  for i := 1 to count do
+  while count > 0 do
+  begin
     Delete(index);
+    Dec(count);
+  end;
 end;
 
 function TListBase<T>.First: T;

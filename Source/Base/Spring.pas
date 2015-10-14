@@ -437,7 +437,9 @@ type
   ///   </note>
   /// </remarks>
   /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
+  {$M+}
   TPredicate<T> = reference to function(const arg: T): Boolean;
+  {$M-}
 
   /// <summary>
   ///   Represents an anonymous method that has a single parameter and does not
@@ -445,7 +447,9 @@ type
   /// </summary>
   /// <seealso cref="TActionProc&lt;T&gt;" />
   /// <seealso cref="TActionMethod&lt;T&gt;" />
+  {$M+}
   TAction<T> = reference to procedure(const arg: T);
+  {$M-}
 
   /// <summary>
   ///   Represents a procedure that has a single parameter and does not return
@@ -915,13 +919,20 @@ type
   private
     fValueFactory: TFunc<T>;
     fValue: T;
-    procedure EnsureInitialized; inline;
+    procedure InitializeValue;
   {$REGION 'Property Accessors'}
     function GetValue: T;
     function GetValueNonGeneric: TValue; override; final;
     function TFunc<T>.Invoke = GetValue;
   {$ENDREGION}
   public
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
+    ///   record. When lazy initialization occurs, the default constructor of
+    ///   the target type is used.
+    /// </summary>
+    constructor Create; overload;
+
     /// <summary>
     ///   Initializes a new instance of the <see cref="TLazy&lt;T&gt;" />
     ///   class. When lazy initialization occurs, the specified initialization
@@ -938,7 +949,7 @@ type
     /// <exception cref="EArgumentNullException">
     ///   <i>valueFactory</i> is <b>nil</b>.
     /// </exception>
-    constructor Create(const valueFactory: TFunc<T>; ownsObject: Boolean = False);
+    constructor Create(const valueFactory: TFunc<T>; ownsObject: Boolean = False); overload;
 
     /// <summary>
     ///   Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
@@ -978,7 +989,15 @@ type
     function GetIsAssigned: Boolean;
     function GetIsValueCreated: Boolean;
     function GetValue: T;
+    class procedure RaiseNoDelegateAssigned; static;
   public
+    /// <summary>
+    ///   Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
+    ///   record. When lazy initialization occurs, the default constructor of
+    ///   the target type is used.
+    /// </summary>
+    class function Create: Lazy<T>; overload; static;
+
     /// <summary>
     ///   Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
     ///   record. When lazy initialization occurs, the specified initialization
@@ -995,7 +1014,7 @@ type
     /// <exception cref="EArgumentNullException">
     ///   <i>valueFactory</i> is <b>nil</b>.
     /// </exception>
-    constructor Create(const valueFactory: TFunc<T>; ownsObject: Boolean = False);
+    constructor Create(const valueFactory: TFunc<T>; ownsObject: Boolean = False); overload;
 
     /// <summary>
     ///   Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
@@ -1013,6 +1032,7 @@ type
     class operator Implicit(const value: Lazy<T>): ILazy<T>;
     class operator Implicit(const value: Lazy<T>): T;
     class operator Implicit(const value: T): Lazy<T>;
+    class operator Implicit(const value: TFunc<T>): Lazy<T>;
     class operator Implicit(const value: TLazy<T>): Lazy<T>;
 
     /// <summary>
@@ -1551,13 +1571,14 @@ type
     function CreateInstance: TValue;
   end;
 
+  TConstructor = function(InstanceOrVMT: Pointer; Alloc: ShortInt = 1): Pointer;
+
   TActivator = record
   private
-    type TConstructor = function(InstanceOrVMT: Pointer; Alloc: ShortInt): Pointer;
     class var Context: TRttiContext;
     class var ConstructorCache: TDictionary<TClass,TConstructor>;
     class function FindConstructor(const classType: TRttiInstanceType;
-      const arguments: array of TValue): TRttiMethod; static;
+      const arguments: array of TValue): TRttiMethod; overload; static;
     class procedure RaiseNoConstructorFound(classType: TClass); static;
   public
     class constructor Create;
@@ -1581,6 +1602,8 @@ type
     class function CreateInstance<T: class>: T; overload; static; inline;
     class function CreateInstance<T: class>(
       const arguments: array of TValue): T; overload; static;
+
+    class function FindConstructor(classType: TClass): TConstructor; overload; static;
   end;
 
   {$ENDREGION}
@@ -2029,6 +2052,8 @@ begin
   end
   else if (rightType.Kind = tkInterface) and (leftType.Kind = tkInterface) then
   begin
+    if (ifHasGuid in leftData.IntfFlags) and IsEqualGUID(leftData.Guid, rightData.Guid) then
+      Exit(True);
     Result := Assigned(rightData.IntfParent) and (rightData.IntfParent^ = leftType);
     while not Result and Assigned(rightData.IntfParent) do
     begin
@@ -2315,14 +2340,16 @@ function GetGenericTypeParameters(const typeName: string): TArray<string>;
 
   function SplitTypes(const s: string): TArray<string>;
   var
-    startPos, index: Integer;
+    startPos, index, len: Integer;
   begin
+    Result := nil;
     startPos := 1;
     index := 1;
     while ScanChar(s, index) do
     begin
-      SetLength(Result, Length(Result) + 1);
-      Result[High(Result)] := Copy(s, startPos, index - startPos);
+      len := Length(Result);
+      SetLength(Result, len + 1);
+      Result[len] := Copy(s, startPos, index - startPos);
       Inc(index);
       startPos := index;
     end;
@@ -4453,6 +4480,24 @@ end;
 
 {$REGION 'TLazy<T>'}
 
+constructor TLazy<T>.Create;
+var
+  classType: TClass;
+  ctor: TConstructor;
+begin
+  Guard.CheckTypeKind<T>([tkClass], 'T');
+
+  classType := GetTypeData(TypeInfo(T)).ClassType;
+  ctor := TActivator.FindConstructor(classType);
+
+  inherited Create;
+  fValueFactory :=
+    function: T
+    begin
+      PObject(@Result)^ := ctor(classType);
+    end;
+end;
+
 constructor TLazy<T>.Create(const valueFactory: TFunc<T>; ownsObject: Boolean);
 begin
   Guard.CheckNotNull(Assigned(valueFactory), 'valueFactory');
@@ -4480,18 +4525,12 @@ begin
 {$ENDIF}
 end;
 
-procedure TLazy<T>.EnsureInitialized;
+procedure TLazy<T>.InitializeValue;
 begin
-  if fIsValueCreated then
-    Exit;
-
   fLock.Enter;
   try
     if fIsValueCreated then
       Exit;
-
-    if not Assigned(fValueFactory) then
-      raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
 
     fValue := fValueFactory();
     fIsValueCreated := True;
@@ -4502,7 +4541,8 @@ end;
 
 function TLazy<T>.GetValue: T;
 begin
-  EnsureInitialized;
+  if not fIsValueCreated then
+    InitializeValue;
   Result := fValue;
 end;
 
@@ -4515,6 +4555,11 @@ end;
 
 
 {$REGION 'Lazy<T>'}
+
+class function Lazy<T>.Create: Lazy<T>;
+begin
+  Result.fLazy := TLazy<T>.Create;
+end;
 
 constructor Lazy<T>.Create(const valueFactory: TFunc<T>; ownsObject: Boolean);
 begin
@@ -4529,7 +4574,7 @@ end;
 function Lazy<T>.GetValue: T;
 begin
   if not Assigned(fLazy) then
-    raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+    RaiseNoDelegateAssigned;
 
   Result := fLazy.Value;
 end;
@@ -4559,9 +4604,19 @@ begin
   Result.fLazy := TLazy<T>.CreateFrom(value);
 end;
 
+class operator Lazy<T>.Implicit(const value: TFunc<T>): Lazy<T>;
+begin
+  Result.fLazy := TLazy<T>.Create(value);
+end;
+
 class operator Lazy<T>.Implicit(const value: TLazy<T>): Lazy<T>;
 begin
   Result.fLazy := value;
+end;
+
+class procedure Lazy<T>.RaiseNoDelegateAssigned;
+begin
+  raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
 end;
 
 {$ENDREGION}
@@ -4613,6 +4668,7 @@ end;
 
 constructor TWeakReferences.Create;
 begin
+  inherited Create;
   fLock := TCriticalSection.Create;
   fWeakReferences := TObjectDictionary<Pointer, TList>.Create([doOwnsValues]);
 end;
@@ -5066,6 +5122,7 @@ end;
 
 constructor TEventArgs.Create;
 begin
+  inherited Create;
 end;
 
 {$ENDREGION}
@@ -5217,6 +5274,7 @@ end;
 
 constructor SmartPointer<T>.TSmartPointer.Create(const value);
 begin
+  inherited Create;
   fValue := Pointer(value);
 end;
 
@@ -5233,6 +5291,7 @@ end;
 
 constructor TSmartPointer<T>.Create;
 begin
+  inherited Create;
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
     tkClass: PObject(@fValue)^ := TActivator.CreateInstance(TypeInfo(T));
     tkPointer: PPointer(@fValue)^ := AllocMem(GetTypeSize(GetTypeData(TypeInfo(T)).RefType^));
@@ -5241,6 +5300,7 @@ end;
 
 constructor TSmartPointer<T>.Create(const value: T);
 begin
+  inherited Create;
   fValue := value;
 end;
 
@@ -5318,18 +5378,9 @@ end;
 class function TActivator.CreateInstance(classType: TClass): TObject;
 var
   ctor: TConstructor;
-  rttiType: TRttiType;
-  method: TRttiMethod;
 begin
-  if not ConstructorCache.TryGetValue(classType, ctor) then
-  begin
-    rttiType := Context.GetType(classType);
-    method := FindConstructor(TRttiInstanceType(rttiType), []);
-    if not Assigned(method) then
-      RaiseNoConstructorFound(classType);
-    ctor := method.CodeAddress;
-  end;
-  Result := ctor(classType, 1);
+  ctor := FindConstructor(classType);
+  Result := ctor(classType);
 end;
 
 class function TActivator.CreateInstance(classType: TClass;
@@ -5350,6 +5401,28 @@ class function TActivator.CreateInstance<T>(
   const arguments: array of TValue): T;
 begin
   Result := T(CreateInstance(TClass(T), arguments));
+end;
+
+class function TActivator.FindConstructor(classType: TClass): TConstructor;
+var
+  method: TRttiMethod;
+begin
+  if ConstructorCache.TryGetValue(classType, Result) then
+    Exit;
+
+  for method in Context.GetType(classType).GetMethods do
+  begin
+    if not method.IsConstructor then
+      Continue;
+
+    if Length(method.GetParameters) = 0 then
+    begin
+      Result := method.CodeAddress;
+      ConstructorCache.AddOrSetValue(classType, Result);
+      Exit;
+    end;
+  end;
+  Result := nil;
 end;
 
 class function TActivator.FindConstructor(const classType: TRttiInstanceType;
@@ -5373,7 +5446,7 @@ var
 begin
   for method in classType.GetMethods do
   begin
-    if method.MethodKind <> mkConstructor then
+    if not method.IsConstructor then
       Continue;
 
     if Assignable(method.GetParameters, arguments) then

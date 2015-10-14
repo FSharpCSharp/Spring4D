@@ -55,6 +55,9 @@ type
   ///   The type of elements in the hash set.
   /// </typeparam>
   THashSet<T> = class(THashSetBase<T>, ISet<T>)
+  private
+    procedure DoKeyNotify(Sender: TObject; const Item: T;
+      Action: TCollectionNotification);
   protected
     function GetCount: Integer; override;
   public
@@ -277,12 +280,19 @@ constructor THashSet<T>.Create(const comparer: IEqualityComparer<T>);
 begin
   inherited Create;
   fDictionary := TGenericDictionary.Create(comparer);
+  fDictionary.OnKeyNotify := DoKeyNotify;
 end;
 
 destructor THashSet<T>.Destroy;
 begin
   fDictionary.Free;
   inherited Destroy;
+end;
+
+procedure THashSet<T>.DoKeyNotify(Sender: TObject; const Item: T;
+  Action: TCollectionNotification);
+begin
+  Changed(Item, TCollectionChangedAction(Action));
 end;
 
 function THashSet<T>.Add(const item: T): Boolean;

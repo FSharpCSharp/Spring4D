@@ -205,6 +205,7 @@ type
     procedure TestStackPeek;
     procedure TestStackPeekOrDefault;
     procedure TestStackTryPeek;
+    procedure TestStackTryPop;
 {$IFDEF DELPHIXE_UP}
     procedure TestStackTrimExcess;
 {$ENDIF}
@@ -255,6 +256,7 @@ type
     procedure TestQueueDequeue;
     procedure TestQueuePeek;
     procedure TestQueuePeekOrDefault;
+    procedure TestQueueTryDequeue;
     procedure TestQueueTryPeek;
 {$IFDEF DELPHIXE_UP}
     procedure TestQueueTrimExcess;
@@ -445,6 +447,16 @@ type
     procedure TestListReverse2;
 
     procedure TestListSort;
+  end;
+
+  TTestMultiMap = class(TTestCase)
+  private
+    SUT: IMultiMap<Integer,Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestAddPair;
   end;
 
 implementation
@@ -1397,6 +1409,26 @@ begin
   CheckEquals(Expected, Actual);
 end;
 
+procedure TTestStackOfInteger.TestStackTryPop;
+var
+  Expected: Integer;
+  Actual: Integer;
+begin
+  CheckFalse(SUT.TryPop(Actual));
+  Expected := 0;
+  CheckEquals(Expected, Actual);
+  for Actual := 1 to MaxItems do
+    SUT.Push(Actual);
+  for Expected := MaxItems downto 1 do
+  begin
+    CheckTrue(SUT.TryPop(Actual));
+    CheckEquals(Expected, Actual);
+  end;
+  CheckFalse(SUT.TryPop(Actual));
+  CheckEquals(0, Actual);
+  CheckTrue(SUT.IsEmpty);
+end;
+
 { TTestStackOfIntegerChangedEvent }
 
 procedure TTestStackOfIntegerChangedEvent.SetUp;
@@ -1658,6 +1690,26 @@ begin
   CheckEquals(0, queue.Capacity);
 end;
 {$ENDIF}
+
+procedure TTestQueueOfInteger.TestQueueTryDequeue;
+var
+  Expected: Integer;
+  Actual: Integer;
+begin
+  CheckFalse(SUT.TryDequeue(Actual));
+  Expected := 0;
+  CheckEquals(Expected, Actual);
+  for Actual := 1 to MaxItems do
+    SUT.Enqueue(Actual);
+  for Expected := 1 to MaxItems do
+  begin
+    CheckTrue(SUT.TryDequeue(Actual));
+    CheckEquals(Expected, Actual);
+  end;
+  CheckFalse(SUT.TryDequeue(Actual));
+  CheckEquals(0, Actual);
+  CheckTrue(SUT.IsEmpty);
+end;
 
 procedure TTestQueueOfInteger.TestQueueTryPeek;
 var
@@ -2553,6 +2605,25 @@ begin
   SUT.AddRange([9, 7, 5, 4, 6, 8]);
   SUT.Sort;
   CheckTrue(InternalList.EqualsTo([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+end;
+
+{ TTestMultiMap }
+
+procedure TTestMultiMap.SetUp;
+begin
+  SUT := TCollections.CreateMultiMap<Integer,Integer>;
+end;
+
+procedure TTestMultiMap.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestMultiMap.TestAddPair;
+begin
+  SUT.Add(TPair<Integer,Integer>.Create(1,1));
+  CheckEquals(1, SUT.Count);
+  CheckEquals(1, SUT[1].First);
 end;
 
 end.

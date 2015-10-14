@@ -513,7 +513,7 @@ begin
     Result := FindOne(serviceName);
     if not Assigned(Result) then
       raise EResolveException.CreateResFmt(@SServiceNotFound, [serviceName]);
-    if not Result.HasService(serviceType) then
+    if not IsAssignableFrom(serviceType, Result.Services[serviceName]) then
       raise EResolveException.CreateResFmt(@SCannotResolveType, [
         serviceType.TypeName]);
   end
@@ -742,6 +742,7 @@ function TRegistration.AsCustom(
 begin
   fModel.LifetimeType := TLifetimeType.Custom;
   fModel.LifetimeManager := lifetimeManager as ILifetimeManager;
+  Result := Self;
 end;
 
 function TRegistration.AsDefault(serviceType: PTypeInfo): IRegistration;

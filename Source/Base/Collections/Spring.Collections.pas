@@ -43,6 +43,14 @@ const
   doOwnsKeys = Generics.Collections.doOwnsKeys;
   doOwnsValues = Generics.Collections.doOwnsValues;
 
+  caAdded = Spring.caAdded;
+  caRemoved = Spring.caRemoved;
+  caExtracted = Spring.caExtracted;
+  caReplaced = Spring.caReplaced;
+  caMoved = Spring.caMoved;
+  caReseted = Spring.caReseted;
+  caChanged = Spring.caChanged;
+
 type
   {$REGION 'Forward definitions'}
   IEnumerator = interface;
@@ -1467,6 +1475,80 @@ type
     property ValueType: PTypeInfo read GetValueType;
   end;
 
+  IReadOnlyMap<TKey, TValue> = interface(IReadOnlyCollection<TPair<TKey, TValue>>)
+    ['{1FBECEB8-582E-4108-BB44-F21A06FE425B}']
+  {$REGION 'Property Accessors'}
+    function GetKeys: IReadOnlyCollection<TKey>;
+    function GetKeyType: PTypeInfo;
+    function GetValues: IReadOnlyCollection<TValue>;
+    function GetValueType: PTypeInfo;
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Determines whether the map contains the specified key/value pair.
+    /// </summary>
+    /// <param name="key">
+    ///   The key of the pair to locate in the map.
+    /// </param>
+    /// <param name="value">
+    ///   The value of the pair to locate in the map.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the map contains a pair with the specified key and
+    ///   value; otherwise <b>False</b>.
+    /// </returns>
+    function Contains(const key: TKey; const value: TValue): Boolean;
+
+    /// <summary>
+    ///   Determines whether the map contains an element with the specified
+    ///   key.
+    /// </summary>
+    /// <param name="key">
+    ///   The key to locate in the map.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the map contains an element with the key; otherwise, <b>
+    ///   False</b>.
+    /// </returns>
+    function ContainsKey(const key: TKey): Boolean;
+
+    /// <summary>
+    ///   Determines whether the map contains an element with the specified
+    ///   value. <br />
+    /// </summary>
+    /// <param name="value">
+    ///   The value to locate in the map.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the map contains an element with the value; otherwise,
+    ///   <b>False</b>.
+    /// </returns>
+    function ContainsValue(const value: TValue): Boolean;
+
+    /// <summary>
+    ///   Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///   keys of the map.
+    /// </summary>
+    /// <value>
+    ///   An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the keys of
+    ///   the object that implements map.
+    /// </value>
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+
+    /// <summary>
+    ///   Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///   values in the map.
+    /// </summary>
+    /// <value>
+    ///   An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the values
+    ///   in the object that implements map.
+    /// </value>
+    property Values: IReadOnlyCollection<TValue> read GetValues;
+
+    property KeyType: PTypeInfo read GetKeyType;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
   /// <summary>
   ///   Represents a generic read-only collection of key/value pairs.
   /// </summary>
@@ -1476,33 +1558,23 @@ type
   /// <typeparam name="TValue">
   ///   The type of values in the read-only dictionary.
   /// </typeparam>
-  IReadOnlyDictionary<TKey, TValue> = interface(IReadOnlyCollection<TPair<TKey, TValue>>)
+  IReadOnlyDictionary<TKey, TValue> = interface(IReadOnlyMap<TKey, TValue>)
     ['{39F7C68B-373E-4758-808C-705D3978E38F}']
   {$REGION 'Property Accessors'}
     function GetItem(const key: TKey): TValue;
-    function GetKeys: IReadOnlyCollection<TKey>;
-    function GetKeyType: PTypeInfo;
-    function GetValues: IReadOnlyCollection<TValue>;
-    function GetValueType: PTypeInfo;
   {$ENDREGION}
 
     /// <summary>
-    ///   Determines whether the read-only dictionary contains the specified
-    ///   key/value pair.
+    ///   Gets the value for a given key if a matching key exists in the
+    ///   dictionary; returns the default value otherwise.
     /// </summary>
-    function ContainsPair(const key: TKey; const value: TValue): Boolean;
+    function GetValueOrDefault(const key: TKey): TValue; overload;
 
     /// <summary>
-    ///   Determines whether the read-only dictionary contains an element that
-    ///   has the specified key.
+    ///   Gets the value for a given key if a matching key exists in the
+    ///   dictionary; returns the given default value otherwise.
     /// </summary>
-    function ContainsKey(const key: TKey): Boolean;
-
-    /// <summary>
-    ///   Determines whether the read-only dictionary contains an element that
-    ///   has the specified value.
-    /// </summary>
-    function ContainsValue(const value: TValue): Boolean;
+    function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
 
     /// <summary>
     ///   Gets the value associated with the specified key.
@@ -1527,20 +1599,6 @@ type
     ///   dictionary.
     /// </summary>
     property Items[const key: TKey]: TValue read GetItem; default;
-
-    /// <summary>
-    ///   Gets an enumerable collection that contains the keys in the read-only
-    ///   dictionary.
-    /// </summary>
-    property Keys: IReadOnlyCollection<TKey> read GetKeys;
-
-    /// <summary>
-    ///   Gets an enumerable collection that contains the values in the
-    ///   read-only dictionary.
-    /// </summary>
-    property Values: IReadOnlyCollection<TValue> read GetValues;
-    property KeyType: PTypeInfo read GetKeyType;
-    property ValueType: PTypeInfo read GetValueType;
   end;
 
   /// <summary>
@@ -1603,9 +1661,9 @@ type
     ///   <b>True</b> if the pair was successfully removed; otherwise, <b>False</b>
     ///    .
     /// </returns>
-    function RemovePair(const key: TKey; const value: TValue): Boolean; overload;
+    function Remove(const key: TKey; const value: TValue): Boolean; overload;
 
-    function ExtractPair(const key: TKey; const value: TValue): TPair<TKey, TValue>;
+    function Extract(const key: TKey; const value: TValue): TPair<TKey, TValue>;
 
     /// <summary>
     ///   Determines whether the IMap&lt;TKey,TValue&gt; contains the specified
@@ -1621,7 +1679,7 @@ type
     ///   <b>True</b> if the IMap&lt;TKey, TValue&gt; contains a pair with the
     ///   specified key and value; otherwise <b>False</b>.
     /// </returns>
-    function ContainsPair(const key: TKey; const value: TValue): Boolean;
+    function Contains(const key: TKey; const value: TValue): Boolean;
 
     /// <summary>
     ///   Determines whether the IMap&lt;TKey, TValue&gt; contains an element
@@ -1787,6 +1845,18 @@ type
     function ExtractValue(const key: TKey): TValue;
 
     /// <summary>
+    ///   Gets the key for a given value if a matching value exists in the
+    ///   dictionary; returns the default value for <c>TKey</c> otherwise.
+    /// </summary>
+    function GetKeyOrDefault(const value: TValue): TKey; overload;
+
+    /// <summary>
+    ///   Gets the key for a given value if a matching value exists in the
+    ///   dictionary; returns the given default value for <c>TKey</c> otherwise.
+    /// </summary>
+    function GetKeyOrDefault(const value: TValue; const defaultValue: TKey): TKey; overload;
+
+    /// <summary>
     ///   Remove the key/value pair that is currently mapped to the specified
     ///   key.
     /// </summary>
@@ -1806,16 +1876,18 @@ type
     /// </returns>
     function TryGetKey(const value: TValue; out key: TKey): Boolean;
 
-    /// <summary>
-    ///   Gets the value associated with the specified key.
-    /// </summary>
-    /// <returns>
-    ///   <b>True</b> if the value was found; otherwise, <b>False.</b>
-    /// </returns>
-    function TryGetValue(const key: TKey; out value: TValue): Boolean;
-
     property Key[const value: TValue]: TKey read GetKey write SetKey;
     property Value[const key: TKey]: TValue read GetValue write SetValue; default;
+  end;
+
+  IReadOnlyMultiMap<TKey, TValue> = interface(IReadOnlyMap<TKey, TValue>)
+    ['{5411F9EC-5A56-4F40-890A-089A08AE795F}']
+  {$REGION 'Property Accessors'}
+    function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
+  {$ENDREGION}
+
+    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
+    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
@@ -1823,6 +1895,11 @@ type
   {$REGION 'Property Accessors'}
     function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
+
+    procedure AddRange(const key: TKey; const values: array of TValue); overload;
+    procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;
+
+    function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
 
     function ExtractValues(const key: TKey): IReadOnlyCollection<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
@@ -1841,6 +1918,7 @@ type
     function Peek: TValue;
     function PeekOrDefault: TValue;
     function TryPeek(out item: TValue): Boolean;
+    function TryPop(out item: TValue): Boolean;
     property OnChanged: IEvent read GetOnChanged;
   end;
 
@@ -1888,7 +1966,33 @@ type
     /// </returns>
     function Peek: T;
     function PeekOrDefault: T;
+
+    /// <summary>
+    ///   Attempts to return an element from the top of the stack without
+    ///   removing it.
+    /// </summary>
+    /// <param name="item">
+    ///   The element at the top of the stack if the operation was successful, <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was returned from the top of the stack;
+    ///   otherwise, <b>False</b>.
+    /// </returns>
     function TryPeek(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the top of the stacke.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful, <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed and returned from the top of
+    ///   the stack; otherwise, <b>False</b>.
+    /// </returns>
+    function TryPop(out item: T): Boolean;
 
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
@@ -1904,6 +2008,7 @@ type
     function Dequeue: TValue;
     function Peek: TValue;
     function PeekOrDefault: TValue;
+    function TryDequeue(out item: TValue): Boolean;
     function TryPeek(out item: TValue): Boolean;
     property OnChanged: IEvent read GetOnChanged;
   end;
@@ -1953,6 +2058,33 @@ type
     /// </returns>
     function Peek: T;
     function PeekOrDefault: T;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the beginning of the
+    ///   queue.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful, <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed and returned from the beginning
+    ///   of the queue; otherwise, <b>False</b>.
+    /// </returns>
+    function TryDequeue(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to return an element from the beginning of the queue without
+    ///   removing it.
+    /// </summary>
+    /// <param name="item">
+    ///   The element at the beginning of the queue if the operation was
+    ///   successful, <b>Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was returned from the beginning of the
+    ///   queue; otherwise, <b>False</b>.
+    /// </returns>
     function TryPeek(out item: T): Boolean;
 
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -2241,9 +2373,14 @@ type
     class function CreateDictionary<TKey, TValue>(dictionary: Generics.Collections.TDictionary<TKey, TValue>; ownership: TOwnershipType): IDictionary<TKey, TValue>; overload; static;
 
     class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
     class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships;
+      const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
 
     class function CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>; overload; static;
+    class function CreateBidiDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>): IBidiDictionary<TKey, TValue>; overload; static;
 
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
@@ -2284,6 +2421,7 @@ type
 
     class function OfType<T, TResult>(const source: IEnumerable<T>): IEnumerable<TResult>; static;
 
+    class function Query<T>(const source: array of T): IEnumerable<T>; overload; static;
     class function Query<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
     class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
 
@@ -2293,6 +2431,13 @@ type
 
     class function Select<T, TResult>(const source: IEnumerable<T>;
       const selector: TFunc<T, TResult>): IEnumerable<TResult>; overload; static;
+
+    class function GroupBy<T, TKey, TElement>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T, TKey>;
+      const elementSelector: TFunc<T, TElement>): IEnumerable<IGrouping<TKey,TElement>>; overload; static;
+    class function GroupBy<T, TKey, TElement, TResult>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T, TKey>; const elementSelector: TFunc<T, TElement>;
+      const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -2327,15 +2472,6 @@ type
   end;
 
 function GetInstanceComparer: Pointer;
-
-const
-  caAdded = Spring.TCollectionChangedAction.caAdded;
-  caRemoved = Spring.TCollectionChangedAction.caRemoved;
-  caExtracted = Spring.TCollectionChangedAction.caExtracted;
-  caReplaced = Spring.TCollectionChangedAction.caReplaced;
-  caMoved = Spring.TCollectionChangedAction.caMoved;
-  caReseted = Spring.TCollectionChangedAction.caReseted;
-  caChanged = Spring.TCollectionChangedAction.caChanged;
 
 implementation
 
@@ -2675,14 +2811,34 @@ begin
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>(
+  const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>;
+begin
+  Result := TMultiMap<TKey, TValue>.Create(comparer);
+end;
+
+class function TCollections.CreateMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
   Result := TObjectMultiMap<TKey, TValue>.Create(ownerships);
 end;
 
+class function TCollections.CreateMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships;
+  const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>;
+begin
+  Result := TObjectMultiMap<TKey, TValue>.Create(ownerships, comparer);
+end;
+
 class function TCollections.CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>;
 begin
   Result := TBidiDictionary<TKey, TValue>.Create;
+end;
+
+class function TCollections.CreateBidiDictionary<TKey, TValue>(
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>): IBidiDictionary<TKey, TValue>;
+begin
+  Result := TBidiDictionary<TKey, TValue>.Create(keyComparer, valueComparer);
 end;
 
 class function TCollections.CreateStack<T>: IStack<T>;
@@ -2764,6 +2920,23 @@ begin
   Result := TEmptyEnumerable<T>.Instance;
 end;
 
+class function TEnumerable.GroupBy<T, TKey, TElement>(
+  const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
+  const elementSelector: TFunc<T, TElement>): IEnumerable<IGrouping<TKey, TElement>>;
+begin
+  Result := TGroupedEnumerable<T, TKey, TElement>.Create(
+    source, keySelector, elementSelector);
+end;
+
+class function TEnumerable.GroupBy<T, TKey, TElement, TResult>(
+  const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
+  const elementSelector: TFunc<T, TElement>;
+  const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>;
+begin
+  Result := TGroupedEnumerable<T, TKey, TElement, TResult>.Create(
+    source, keySelector, elementSelector, resultSelector);
+end;
+
 class function TEnumerable.Max<T>(const source: IEnumerable<T>;
   const selector: TFunc<T, Integer>): Integer;
 begin
@@ -2780,6 +2953,11 @@ class function TEnumerable.OfType<T, TResult>(
   const source: IEnumerable<T>): IEnumerable<TResult>;
 begin
   Result := TOfTypeIterator<T, TResult>.Create(source);
+end;
+
+class function TEnumerable.Query<T>(const source: array of T): IEnumerable<T>;
+begin
+  Result := TArrayIterator<T>.Create(source);
 end;
 
 class function TEnumerable.Query<T>(const source: TArray<T>): IEnumerable<T>;

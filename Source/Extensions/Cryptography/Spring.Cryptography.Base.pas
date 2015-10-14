@@ -212,10 +212,11 @@ end;
 
 function THashAlgorithmBase.ComputeHash(const inputStream: TStream): TBuffer;
 var
-  buffer: array[0..512-1] of Byte;
+  buffer: TBytes;
   count: Integer;
 begin
   Guard.CheckNotNull(inputStream, 'inputStream');
+  SetLength(buffer, 1024 * 1024);
   HashInit;
   count := inputStream.Read(buffer[0], Length(buffer));
   while count > 0 do

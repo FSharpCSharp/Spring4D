@@ -54,7 +54,7 @@ type
     constructor Create(typeInfo: PTypeInfo; const interceptor: TMockInterceptor;
       const proxy: TValue) overload;
     constructor Create(typeInfo: PTypeInfo;
-      behavior: TMockBehavior = TMockBehavior.Dynamic); overload;
+      behavior: TMockBehavior = DefaultMockBehavior); overload;
     constructor Create(typeInfo: PTypeInfo;
       behavior: TMockBehavior; const args: array of TValue); overload;
     destructor Destroy; override;
@@ -155,7 +155,7 @@ begin
   fTypeInfo := typeInfo;
   fInterceptor := TMockInterceptor.Create(behavior);
   fProxy := CreateProxy(typeInfo, fInterceptor);
-  if fTypeInfo.Kind = tkClass then
+  if (fTypeInfo.Kind = tkClass) and (Length(args) > 0) then
   begin
     SetLength(types, Length(args));
     for i := 0 to High(args) do
@@ -317,7 +317,6 @@ end;
 
 function TMock.Setup: ISetup;
 begin
-  fInterceptor.Setup;
   Result := Self;
 end;
 

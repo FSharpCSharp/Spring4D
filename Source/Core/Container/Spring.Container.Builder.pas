@@ -225,7 +225,8 @@ var
 begin
   if Assigned(model.LifetimeManager) then
   begin
-    model.LifetimeType := TLifetimeType.Custom;
+    if model.LifetimeType = TLifetimeType.Unknown then
+      model.LifetimeType := TLifetimeType.Custom;
     Exit;
   end;
   if model.LifetimeType = TLifetimeType.Unknown then

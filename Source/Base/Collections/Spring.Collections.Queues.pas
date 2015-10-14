@@ -67,6 +67,7 @@ type
     function Dequeue: T;
     function Peek: T;
     function PeekOrDefault: T;
+    function TryDequeue(out item: T): Boolean;
     function TryPeek(out item: T): Boolean;
 
     procedure TrimExcess;
@@ -181,6 +182,15 @@ end;
 procedure TQueue<T>.TrimExcess;
 begin
   fQueue.TrimExcess;
+end;
+
+function TQueue<T>.TryDequeue(out item: T): Boolean;
+begin
+  Result := fQueue.Count > 0;
+  if Result then
+    item := fQueue.Dequeue
+  else
+    item := Default(T);
 end;
 
 function TQueue<T>.TryPeek(out item: T): Boolean;

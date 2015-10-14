@@ -76,24 +76,18 @@ type
   /// </remarks>
   /// <threadsafety static="true" />
   TSingleton = record
-  strict private
-    class var
-      fMappings: IDictionary<TClass, TObject>;
-
-      /// <summary>
-      ///   Tracks all instances of the singleton objects and free them in
-      ///   reversed order.
-      /// </summary>
-      fInstances: IList<TObject>;
-
-      fCriticalSection: TCriticalSection;
-
-    class constructor Create;
-  {$HINTS OFF}
-    class destructor Destroy;
-  {$HINTS ON}
-
+  strict private type
+    TSingleton<T: class> = record
+    private class var
+      fInstance: T;
+    public
+      class destructor Destroy;
+    end;
+  class var
+    fCriticalSection: TCriticalSection;
   public
+    class constructor Create;
+    class destructor Destroy;
 
     /// <summary>
     ///   Gets the shared instance of a class.
@@ -112,7 +106,7 @@ type
   /// <summary>
   ///   Represents an observable subject.
   /// </summary>
-  IObservable<T> = interface
+  IObservable<T> = interface(IInvokable)
     procedure Attach(const observer: T);
     procedure Detach(const observer: T);
     procedure Notify;
@@ -147,7 +141,7 @@ type
   /// <summary>
   ///   Defines the core methods of a specification interface.
   /// </summary>
-  ISpecification<T> = interface
+  ISpecification<T> = interface(IInvokable)
     function IsSatisfiedBy(const item: T): Boolean;
     // DO NOT ADD ANY METHODS HERE!!!
   end;
@@ -166,6 +160,7 @@ type
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;
     class operator Explicit(const specification: ISpecification<T>): TSpecification<T>;
+    class operator Explicit(const specification: TPredicate<T>): TSpecification<T>;
     class operator Explicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator LogicalAnd(const left, right: TSpecification<T>): TSpecification<T>;
     class operator LogicalOr(const left, right: TSpecification<T>): TSpecification<T>;
@@ -296,8 +291,6 @@ uses
 
 class constructor TSingleton.Create;
 begin
-  fMappings :=  TCollections.CreateDictionary<TClass, TObject>(4);
-  fInstances := TCollections.CreateObjectList<TObject>(True);
   fCriticalSection := TCriticalSection.Create;
 end;
 
@@ -308,17 +301,27 @@ end;
 
 class function TSingleton.GetInstance<T>: T;
 begin
-  fCriticalSection.Enter;
-  try
-    if not fMappings.TryGetValue(T, TObject(Result)) then
-    begin
-      Result := T.Create;
-      fMappings.AddOrSetValue(T, TObject(Result));
-      fInstances.Add(Result);
+  if not Assigned(TSingleton<T>.fInstance) then
+  begin
+    fCriticalSection.Enter;
+    try
+      if not Assigned(TSingleton<T>.fInstance) then
+        TSingleton<T>.fInstance := T.Create;
+    finally
+      fCriticalSection.Leave;
     end;
-  finally
-    fCriticalSection.Leave;
   end;
+  Result := TSingleton<T>.fInstance;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSingleton.TSingleton<T>'}
+
+class destructor TSingleton.TSingleton<T>.Destroy;
+begin
+  fInstance.Free;
 end;
 
 {$ENDREGION}
@@ -390,6 +393,12 @@ begin
 end;
 
 class operator TSpecification<T>.Implicit(
+  const specification: TPredicate<T>): TSpecification<T>;
+begin
+  TPredicate<T>(Result.fSpecification) := specification;
+end;
+
+class operator TSpecification<T>.Implicit(
   const specification: TSpecification<T>): ISpecification<T>;
 begin
   Result := specification.fSpecification;
@@ -401,16 +410,16 @@ begin
   ISpecification<T>(Result) := specification.fSpecification;
 end;
 
-class operator TSpecification<T>.Implicit(
-  const specification: TPredicate<T>): TSpecification<T>;
-begin
-  TPredicate<T>(Result.fSpecification) := specification;
-end;
-
 class operator TSpecification<T>.Explicit(
   const specification: ISpecification<T>): TSpecification<T>;
 begin
   Result.fSpecification := specification;
+end;
+
+class operator TSpecification<T>.Explicit(
+  const specification: TPredicate<T>): TSpecification<T>;
+begin
+  TPredicate<T>(Result.fSpecification) := specification;
 end;
 
 class operator TSpecification<T>.Explicit(
@@ -506,13 +515,11 @@ end;
 
 function TFactory<TKey, TBaseType>.GetInstance(key: TKey): TBaseType;
 var
-  factoryMethod : TFactoryMethod<TBaseType>;
+  factoryMethod: TFactoryMethod<TBaseType>;
 begin
-  if not IsRegistered(key) then
+  if not fFactoryMethods.TryGetValue(key, factoryMethod) or not Assigned(factoryMethod) then
     raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
-  factoryMethod := fFactoryMethods.Items[key];
-  if Assigned(factoryMethod) then
-    Result := factoryMethod;
+  Result := factoryMethod;
 end;
 
 function TFactory<TKey, TBaseType>.IsRegistered(key: TKey): boolean;
@@ -525,7 +532,6 @@ procedure TFactory<TKey, TBaseType>.RegisterFactoryMethod(key: TKey;
 begin
   if IsRegistered(key) then
     raise TFactoryMethodKeyAlreadyRegisteredException.Create('Factory already registered');
-
   fFactoryMethods.Add(key, factoryMethod);
 end;
 
@@ -533,7 +539,6 @@ procedure TFactory<TKey, TBaseType>.UnRegisterFactoryMethod(key: TKey);
 begin
   if not IsRegistered(key) then
     raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
-
   fFactoryMethods.Remove(key);
 end;
 
@@ -572,9 +577,7 @@ end;
 function TClassTypeRegistry<TValue>.GetValue(classType: TClass): TValue;
 begin
   if not TryGetValue(classType, Result) then
-  begin
     raise Exception.Create('Failed to get value');
-  end;
 end;
 
 function TClassTypeRegistry<TValue>.GetValues: IEnumerable<TValue>;

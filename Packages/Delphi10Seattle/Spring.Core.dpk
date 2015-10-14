@@ -56,6 +56,7 @@ contains
   Spring.Interception in '..\..\Source\Core\Interception\Spring.Interception.pas',
   Spring.Interception.AbstractInvocation in '..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas',
   Spring.Interception.ClassProxy in '..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas',
+  Spring.Interception.CustomProxy in '..\..\Source\Core\Interception\Spring.Interception.CustomProxy.pas',
   Spring.Interception.InterfaceProxy in '..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas',
   Spring.Interception.ResourceStrings in '..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas',
   Spring.Logging.Configuration in '..\..\Source\Core\Logging\Spring.Logging.Configuration.pas',

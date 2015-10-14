@@ -68,6 +68,7 @@ type
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
+    function TryPop(out item: T): Boolean;
 
     procedure TrimExcess;
 
@@ -211,6 +212,15 @@ begin
   Result := fStack.Count > 0;
   if Result then
     item := fStack.Peek
+  else
+    item := Default(T);
+end;
+
+function TStack<T>.TryPop(out item: T): Boolean;
+begin
+  Result := fStack.Count > 0;
+  if Result then
+    item := fStack.Pop
   else
     item := Default(T);
 end;
