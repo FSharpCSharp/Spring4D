@@ -1467,9 +1467,6 @@ end;
 
 procedure TTestStackOfIntegerChangedEvent.TestEmpty;
 begin
-  CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
-
   SUT.Push(0);
 
   CheckFalse(fAInvoked);
@@ -1493,8 +1490,6 @@ begin
   CheckTrue(fAAction = caRemoved, 'different collection notifications');
 
   SUT.OnChanged.Remove(HandlerA);
-  CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
 procedure TTestStackOfIntegerChangedEvent.TestTwoHandlers;
@@ -1519,10 +1514,7 @@ begin
   CheckEquals(0, fBItem, 'handler B: different item');
 
   SUT.OnChanged.Remove(HandlerA);
-  CheckEquals(1, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.IsEmpty);
   SUT.OnChanged.Remove(HandlerB);
-  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
 procedure TTestStackOfIntegerChangedEvent.TestNonGenericChangedEvent;
@@ -1532,16 +1524,12 @@ var
 begin
   event := SUT.OnChanged;
 
-  CheckTrue(event.IsEmpty);
   CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
   event.Add(TMethodPointer(method));
-
-  CheckEquals(1, event.Count);
-  CheckEquals(1, SUT.OnChanged.Count);
 
   SUT.Push(0);
 
@@ -1763,9 +1751,6 @@ end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestEmpty;
 begin
-  CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
-
   SUT.Enqueue(0);
 
   CheckFalse(fAInvoked);
@@ -1789,8 +1774,6 @@ begin
   CheckTrue(fAAction = caRemoved, 'different collection notifications');
 
   SUT.OnChanged.Remove(HandlerA);
-  CheckEquals(0, SUT.OnChanged.Count);
-  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestTwoHandlers;
@@ -1815,10 +1798,7 @@ begin
   CheckEquals(0, fBItem, 'handler B: different item');
 
   SUT.OnChanged.Remove(HandlerA);
-  CheckEquals(1, SUT.OnChanged.Count);
-  CheckFalse(SUT.OnChanged.IsEmpty);
   SUT.OnChanged.Remove(HandlerB);
-  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestNonGenericChangedEvent;
@@ -1828,16 +1808,12 @@ var
 begin
   event := SUT.OnChanged;
 
-  CheckTrue(event.IsEmpty);
   CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
   event.Add(TMethodPointer(method));
-
-  CheckEquals(1, event.Count);
-  CheckEquals(1, SUT.OnChanged.Count);
 
   SUT.Enqueue(0);
 

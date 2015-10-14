@@ -103,8 +103,6 @@ type
     procedure InternalInvoke(Params: Pointer; StackSize: Integer);
     procedure Invoke;
   protected
-    procedure EventsChanged(const item: TMethodPointer;
-      action: TEventsChangedAction); override;
     procedure Notify(Sender: TObject; const Item: TMethodPointer;
       Action: TCollectionNotification); override;
   public
@@ -573,18 +571,6 @@ destructor TEvent.Destroy;
 begin
   fInvocations.Free;
   inherited Destroy;
-end;
-
-procedure TEvent.EventsChanged(const item: TMethodPointer;
-  action: TEventsChangedAction);
-begin
-  case fTypeInfo.Kind of
-    tkMethod: inherited;
-    tkInterface:
-      if Assigned(OnChanged) then
-        TEventsChangedEvent<IInterface>(OnChanged)(Self,
-          MethodPointerToMethodReference(item), action);
-  end;
 end;
 
 procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);

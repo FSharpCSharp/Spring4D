@@ -1476,7 +1476,7 @@ end;
 
 procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  if fOnChanged.IsInvokable then
+  if fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item, action);
 end;
 
@@ -1700,8 +1700,8 @@ end;
 procedure TMapBase<TKey, T>.KeyChanged(const Item: TKey;
   Action: TCollectionChangedAction);
 begin
-  if Assigned(fOnKeyChanged) and fOnKeyChanged.IsInvokable then
-      fOnKeyChanged.Invoke(Self, Item, Action)
+  if Assigned(fOnKeyChanged) and fOnKeyChanged.CanInvoke then
+    fOnKeyChanged.Invoke(Self, Item, Action)
 end;
 
 function TMapBase<TKey, T>.Remove(const item: TGenericPair): Boolean;
@@ -1712,7 +1712,7 @@ end;
 procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
   Action: TCollectionChangedAction);
 begin
-  if Assigned(fOnValueChanged) and fOnValueChanged.IsInvokable then
+  if Assigned(fOnValueChanged) and fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, Item, Action)
 end;
 

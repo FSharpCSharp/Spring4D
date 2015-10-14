@@ -221,7 +221,7 @@ end;
 
 procedure TQueue<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  if fOnChanged.IsInvokable then
+  if fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item, action);
 end;
 

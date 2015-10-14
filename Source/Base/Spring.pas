@@ -1185,34 +1185,30 @@ type
 
   {$REGION 'Multicast Event'}
 
-  TEventsChangedAction = caAdded..caRemoved;
   TMethodPointer = procedure of object;
-  TEventsChangedEvent<T> = procedure(Sender: TObject; const Item: T;
-    Action: TEventsChangedAction) of object;
-  TEventsChangedEvent = procedure(Sender: TObject; const Item: TMethodPointer;
-    Action: TEventsChangedAction) of object;
-
 
   IEvent = interface
     ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
   {$REGION 'Property Accessors'}
-    function GetCount: Integer;
+    function GetCanInvoke: Boolean;
     function GetInvoke: TMethodPointer;
     function GetEnabled: Boolean;
-    function GetIsEmpty: Boolean;
-    function GetIsInvokable: Boolean;
-    function GetOnChanged: TEventsChangedEvent;
+    function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(const value: TEventsChangedEvent);
+    procedure SetOnChanged(const value: TNotifyEvent);
   {$ENDREGION}
 
     procedure Add(const handler: TMethodPointer);
     procedure Remove(const handler: TMethodPointer);
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
-    procedure ForEach(const action: TAction<TMethodPointer>);
 
-    property Count: Integer read GetCount;
+    /// <summary>
+    ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
+    ///   Enabled</see> and contains any event handler. Otherwise returns <b>
+    ///   False</b>.
+    /// </summary>
+    property CanInvoke: Boolean read GetCanInvoke;
 
     /// <summary>
     ///   Gets the value indicates whether the multicast event is enabled, or
@@ -1220,16 +1216,8 @@ type
     /// </summary>
     property Enabled: Boolean read GetEnabled write SetEnabled;
 
-    property IsEmpty: Boolean read GetIsEmpty;
-
-    /// <summary>
-    ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
-    ///   Enabled</see> and contains any event handler. Otherwise returns <b>
-    ///   False</b>.
-    /// </summary>
-    property IsInvokable: Boolean read GetIsInvokable;
     property Invoke: TMethodPointer read GetInvoke;
-    property OnChanged: TEventsChangedEvent read GetOnChanged write SetOnChanged;
+    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
   end;
 
   /// <summary>
@@ -1280,13 +1268,12 @@ type
   Event<T> = record
   private
     fInstance: IEvent<T>;
-    function GetCount: Integer;
+    function GetCanInvoke: Boolean;
     function GetEnabled: Boolean;
     function GetInvoke: T;
-    function GetIsEmpty: Boolean;
-    function GetOnChanged: TEventsChangedEvent<T>;
+    function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(value: TEventsChangedEvent<T>);
+    procedure SetOnChanged(value: TNotifyEvent);
     procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
@@ -1296,11 +1283,10 @@ type
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
 
-    property Count: Integer read GetCount;
+    property CanInvoke: Boolean read GetCanInvoke;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
-    property IsEmpty: Boolean read GetIsEmpty;
-    property OnChanged: TEventsChangedEvent<T> read GetOnChanged write SetOnChanged;
+    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
     class operator Implicit(var value: Event<T>): IEvent<T>;
@@ -4949,12 +4935,9 @@ begin
     fInstance := TEvent<T>.Create;
 end;
 
-function Event<T>.GetCount: Integer;
+function Event<T>.GetCanInvoke: Boolean;
 begin
-  if Assigned(fInstance) then
-    Result := fInstance.Count
-  else
-    Result := 0;
+  Result := Assigned(fInstance) and fInstance.CanInvoke;
 end;
 
 function Event<T>.GetEnabled: Boolean;
@@ -4968,15 +4951,10 @@ begin
   Result := fInstance.Invoke;
 end;
 
-function Event<T>.GetIsEmpty: Boolean;
-begin
-  Result := not Assigned(fInstance) or fInstance.IsEmpty;
-end;
-
-function Event<T>.GetOnChanged: TEventsChangedEvent<T>;
+function Event<T>.GetOnChanged: TNotifyEvent;
 begin
   EnsureInitialized;
-  Result := TEventsChangedEvent<T>(fInstance.OnChanged);
+  Result := fInstance.OnChanged;
 end;
 
 procedure Event<T>.Remove(const handler: T);
@@ -4997,10 +4975,10 @@ begin
   fInstance.Enabled := value;
 end;
 
-procedure Event<T>.SetOnChanged(value: TEventsChangedEvent<T>);
+procedure Event<T>.SetOnChanged(value: TNotifyEvent);
 begin
   EnsureInitialized;
-  fInstance.OnChanged := TEventsChangedEvent(value);
+  fInstance.OnChanged := value;
 end;
 
 class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;

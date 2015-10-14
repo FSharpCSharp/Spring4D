@@ -144,12 +144,8 @@ type
     procedure HandlerDouble(const value: Double);
     procedure HandlerExtended(const value: Extended);
 
-    procedure HandleChanged(Sender: TObject; const handler: TEventInt64;
-      action: TEventsChangedAction);
-    procedure HandleChanged2(Sender: TObject;
-      const handler: TProc<Integer, string>; action: TEventsChangedAction);
+    procedure HandleChanged(Sender: TObject);
   published
-    procedure TestEmpty;
     procedure TestInvoke;
     procedure TestOneHandler;
     procedure TestTwoHandlers;
@@ -616,19 +612,11 @@ var
   e: Event<TProc<Integer, string>>;
 begin
   e.Add(fProc);
-  CheckEquals(1, e.Count);
   e.Invoke(CNumber, CText);
   CheckEquals(CNumber, fHandlerInvokeCount);
   e.Remove(fProc);
-  CheckEquals(0, e.Count);
   e.Invoke(CNumber, CText);
   CheckEquals(CNumber, fHandlerInvokeCount);
-end;
-
-procedure TTestMulticastEvent.TestEmpty;
-begin
-  CheckEquals(0, fEvent.Count);
-  CheckTrue(fEvent.IsEmpty);
 end;
 
 procedure TTestMulticastEvent.TestInvoke;
@@ -683,9 +671,7 @@ var
 begin
   event.OnChanged := HandleChanged;
   event.Add(HandlerInt64);
-  CheckTrue(fAInvoked);
   event.Remove(HandlerInt64);
-  CheckTrue(fBInvoked);
   CheckEquals(2, fHandlerInvokeCount);
 end;
 
@@ -693,39 +679,20 @@ procedure TTestMulticastEvent.TestNotifyDelegate;
 var
   event2: Event<TProc<Integer, string>>;
 begin
-  event2.OnChanged := HandleChanged2;
+  event2.OnChanged := HandleChanged;
   event2.Add(fProc);
-  CheckTrue(fAInvoked);
   event2.Remove(fProc);
-  CheckTrue(fBInvoked);
   CheckEquals(2, fHandlerInvokeCount);
 end;
 
-procedure TTestMulticastEvent.HandleChanged(Sender: TObject;
-  const handler: TEventInt64; action: TEventsChangedAction);
+procedure TTestMulticastEvent.HandleChanged(Sender: TObject);
 begin
-  handler(42);
-  case action of
-    caAdded: fAInvoked := True;
-    caRemoved: fBInvoked := True;
-  end
-end;
-
-procedure TTestMulticastEvent.HandleChanged2(Sender: TObject;
-  const handler: TProc<Integer, string>; action: TEventsChangedAction);
-begin
-  handler(1, CText);
-  case action of
-    caAdded: fAInvoked := True;
-    caRemoved: fBInvoked := True;
-  end
+  Inc(fHandlerInvokeCount);
 end;
 
 procedure TTestMulticastEvent.TestOneHandler;
 begin
   fEvent.Add(HandlerA);
-  CheckEquals(1, fEvent.Count);
-  CheckFalse(fEvent.IsEmpty);
 
   fEvent.Invoke(Self);
   CheckTrue(fAInvoked);
@@ -734,7 +701,6 @@ begin
   CheckSame(nil, fBSender);
 
   fEvent.Remove(HandlerA);
-  CheckEquals(0, fEvent.Count);
 end;
 
 procedure TTestMulticastEvent.TestRecordType;
@@ -742,14 +708,14 @@ var
   e: Event<TNotifyEvent>;
 begin
   CheckTrue(e.Enabled);
-  CheckTrue(e.IsEmpty);
+//  CheckTrue(e.IsEmpty);
 
   e.Add(HandlerA);
   e.Add(HandlerB);
   e.Invoke(nil);
 
-  CheckFalse(e.IsEmpty);
-  CheckEquals(2, e.Count);
+//  CheckFalse(e.IsEmpty);
+//  CheckEquals(2, e.Count);
 
   CheckTrue(fAInvoked);
   CheckSame(nil, fASender);
@@ -757,10 +723,10 @@ begin
   CheckSame(nil, fBSender);
 
   e.Remove(HandlerA);
-  CheckEquals(1, e.Count);
+//  CheckEquals(1, e.Count);
 
   e.Remove(HandlerB);
-  CheckEquals(0, e.Count);
+//  CheckEquals(0, e.Count);
 end;
 
 procedure TTestMulticastEvent.TestTwoHandlers;
@@ -775,17 +741,16 @@ begin
   CheckSame(nil, fBSender);
 
   fEvent.Remove(HandlerA);
-  CheckEquals(1, fEvent.Count);
 
   fEvent.Remove(HandlerB);
-  CheckEquals(0, fEvent.Count);
 end;
 
 procedure TTestMulticastEvent.TestRemove;
 begin
   fEvent.Add(HandlerA);
   fEvent.Remove(HandlerB);
-  CheckEquals(1, fEvent.Count);
+  fEvent.Invoke(nil);
+  Check(fAInvoked);
 end;
 {$ENDIF SUPPORTS_GENERIC_EVENTS}
 
