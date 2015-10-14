@@ -829,10 +829,10 @@ end;
 function TList<T>.Contains(const value: T;
   const comparer: IEqualityComparer<T>): Boolean;
 var
-  index: Integer;
+  i: Integer;
 begin
-  for index := 0 to fCount - 1 do
-    if comparer.Equals(value, fItems[index]) then
+  for i := 0 to fCount - 1 do
+    if comparer.Equals(value, fItems[i]) then
       Exit(True);
   Result := False;
 end;
@@ -989,10 +989,10 @@ end;
 
 procedure TSortedList<T>.AddRange(const values: array of T);
 var
-  item: T;
+  i: Integer;
 begin
-  for item in values do
-    Add(item);
+  for i := Low(values) to High(values) do
+    Add(values[i]);
 end;
 
 function TSortedList<T>.Contains(const value: T): Boolean;

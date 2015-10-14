@@ -226,10 +226,10 @@ end;
 procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;
   const values: array of TValue);
 var
-  item: TValue;
+  i: Integer;
 begin
-  for item in values do
-    Add(key, item);
+  for i := Low(values) to High(values) do
+    Add(key, values[i]);
 end;
 
 procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;

@@ -6229,12 +6229,11 @@ end;
 
 procedure DynamicArray<T>.Remove(const items: array of T);
 var
-  item: T;
-  index: Integer;
+  i, index: Integer;
 begin
-  for item in items do
+  for i := Low(items) to High(items) do
   begin
-    index := IndexOf(item);
+    index := IndexOf(items[i]);
     if index > -1 then
       Delete(index);
   end;
@@ -6242,12 +6241,11 @@ end;
 
 procedure DynamicArray<T>.Remove(const items: TArray<T>);
 var
-  item: T;
-  index: Integer;
+  i, index: Integer;
 begin
-  for item in items do
+  for i := Low(items) to High(items) do
   begin
-    index := IndexOf(item);
+    index := IndexOf(items[i]);
     if index > -1 then
       Delete(index);
   end;

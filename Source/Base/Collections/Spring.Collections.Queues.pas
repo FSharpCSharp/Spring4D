@@ -99,11 +99,11 @@ end;
 
 constructor TQueue<T>.Create(const values: array of T);
 var
-  item: T;
+  i: Integer;
 begin
   Create;
-  for item in values do
-    Enqueue(item);
+  for i := Low(values) to High(values) do
+    Enqueue(values[i]);
 end;
 
 constructor TQueue<T>.Create(const collection: IEnumerable<T>);

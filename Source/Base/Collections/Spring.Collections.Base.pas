@@ -1456,10 +1456,10 @@ end;
 
 procedure TCollectionBase<T>.AddRange(const values: array of T);
 var
-  item: T;
+  i: Integer;
 begin
-  for item in values do
-    Add(item);
+  for i := Low(values) to High(values) do
+    Add(values[i]);
 end;
 
 procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
@@ -1502,10 +1502,10 @@ end;
 
 procedure TCollectionBase<T>.ExtractRange(const values: array of T);
 var
-  item: T;
+  i: Integer;
 begin
-  for item in values do
-    Extract(item);
+  for i := Low(values) to High(values) do
+    Extract(values[i]);
 end;
 
 procedure TCollectionBase<T>.ExtractRange(const collection: IEnumerable<T>);
@@ -1532,25 +1532,27 @@ end;
 
 procedure TCollectionBase<T>.MoveTo(const collection: ICollection<T>);
 var
-  item: T;
+  values: TArray<T>;
+  i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
 {$ENDIF}
 
-  for item in ToArray do
+  values := ToArray;
+  for i := Low(values) to High(values) do
   begin
-    Extract(item);
-    collection.Add(item);
+    Extract(values[i]);
+    collection.Add(values[i]);
   end;
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const values: array of T);
 var
-  item: T;
+  i: Integer;
 begin
-  for item in values do
-    Remove(item);
+  for i := Low(values) to High(values) do
+    Remove(values[i]);
 end;
 
 procedure TCollectionBase<T>.RemoveAll(const predicate: TPredicate<T>);
@@ -1845,15 +1847,15 @@ end;
 
 procedure TListBase<T>.InsertRange(index: Integer; const values: array of T);
 var
-  item: T;
+  i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
-  for item in values do
+  for i := Low(values) to High(values) do
   begin
-    Insert(index, item);
+    Insert(index, values[i]);
     Inc(index);
   end;
 end;

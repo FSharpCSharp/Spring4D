@@ -99,11 +99,11 @@ end;
 
 constructor TStack<T>.Create(const values: array of T);
 var
-  item: T;
+  i: Integer;
 begin
   Create;
-  for item in values do
-    Push(item);
+  for i := Low(values) to High(values) do
+    Push(values[i]);
 end;
 
 constructor TStack<T>.Create(const collection: IEnumerable<T>);
