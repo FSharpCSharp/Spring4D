@@ -1708,6 +1708,11 @@ type
     class function Copy<T>(const values: array of T): TArray<T>; static;
 
     /// <summary>
+    ///   Executes the specified action for each item in the specified array.
+    /// </summary>
+    class procedure ForEach<T>(const values: array of T; const action: TAction<T>); static;
+
+    /// <summary>
     ///   Searches for the specified object and returns the index of the first
     ///   occurrence within the entire array.
     /// </summary>
@@ -1743,7 +1748,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Dynamic array'}
+  {$REGION 'Vector<T>'}
 
 {$IFDEF DELPHI2010}
   TArrayEnumerator<T> = class
@@ -1760,11 +1765,13 @@ type
     property Current: T read GetCurrent;
   end;
 
-  DynamicArray<T> = record
+  Vector<T> = record
   private
-    fItems: TArray<T>; // DO NOT ADD ANY OTHER MEMBERS !!!
+    fData: TArray<T>; // DO NOT ADD ANY OTHER MEMBERS !!!
     function GetCount: Integer; inline;
+    function GetFirst: T; inline;
     function GetItem(index: Integer): T; inline;
+    function GetLast: T; inline;
     procedure SetCount(value: Integer); inline;
     procedure SetItem(index: Integer; const value: T); inline;
     procedure InternalInsert(index: Integer; const items: array of T);
@@ -1773,20 +1780,20 @@ type
     function InternalIndexOfInt(const item: Integer): Integer;
     function InternalIndexOfStr(const item: string): Integer;
   public
-    class operator Implicit(const value: TArray<T>): DynamicArray<T>; inline;
-    class operator Implicit(const value: DynamicArray<T>): TArray<T>; inline;
-    class operator Add(const left, right: DynamicArray<T>): DynamicArray<T>; inline;
-    class operator Add(const left: DynamicArray<T>; const right: TArray<T>): DynamicArray<T>; inline;
-    class operator Add(const left: TArray<T>; const right: DynamicArray<T>): DynamicArray<T>; inline;
-    class operator Add(const left: DynamicArray<T>; const right: T): DynamicArray<T>; inline;
-    class operator Add(const left: T; const right: DynamicArray<T>): DynamicArray<T>; inline;
-    class operator Subtract(const left, right: DynamicArray<T>): DynamicArray<T>; inline;
-    class operator Subtract(const left: DynamicArray<T>; const right: T): DynamicArray<T>; inline;
-    class operator In(const left: T; const right: DynamicArray<T>): Boolean; inline;
-    class operator In(const left, right: DynamicArray<T>): Boolean; inline;
-    class operator In(const left: TArray<T>; const right: DynamicArray<T>): Boolean; inline;
-    class operator Equal(const left, right: DynamicArray<T>): Boolean; inline;
-    class operator NotEqual(const left, right: DynamicArray<T>): Boolean; inline;
+    class operator Implicit(const value: TArray<T>): Vector<T>; inline;
+    class operator Implicit(const value: Vector<T>): TArray<T>; inline;
+    class operator Add(const left, right: Vector<T>): Vector<T>; inline;
+    class operator Add(const left: Vector<T>; const right: TArray<T>): Vector<T>; inline;
+    class operator Add(const left: TArray<T>; const right: Vector<T>): Vector<T>; inline;
+    class operator Add(const left: Vector<T>; const right: T): Vector<T>; inline;
+    class operator Add(const left: T; const right: Vector<T>): Vector<T>; inline;
+    class operator Subtract(const left, right: Vector<T>): Vector<T>; inline;
+    class operator Subtract(const left: Vector<T>; const right: T): Vector<T>; inline;
+    class operator In(const left: T; const right: Vector<T>): Boolean; inline;
+    class operator In(const left, right: Vector<T>): Boolean; inline;
+    class operator In(const left: TArray<T>; const right: Vector<T>): Boolean; inline;
+    class operator Equal(const left, right: Vector<T>): Boolean; inline;
+    class operator NotEqual(const left, right: Vector<T>): Boolean; inline;
 
     procedure Assign(const items: array of T);
     procedure Clear; inline;
@@ -1794,12 +1801,13 @@ type
     function Add(const item: T): Integer; overload; inline;
     procedure Add(const items: array of T); overload;
     procedure Add(const items: TArray<T>); overload; inline;
-    procedure Add(const items: DynamicArray<T>); overload; inline;
+    procedure Add(const items: Vector<T>); overload; inline;
     procedure Insert(index: Integer; const item: T); overload; inline;
     procedure Insert(index: Integer; const items: array of T); overload;
     procedure Insert(index: Integer; const items: TArray<T>); overload; inline;
     procedure Delete(index: Integer); overload; inline;
     procedure Delete(index: Integer; count: Integer); overload; inline;
+    function Remove: T; overload; inline;
     procedure Remove(const item: T); overload; inline;
     procedure Remove(const items: array of T); overload;
     procedure Remove(const items: TArray<T>); overload; inline;
@@ -1811,19 +1819,24 @@ type
     function Equals(const items: array of T): Boolean; overload;
     function Equals(const items: TArray<T>): Boolean; overload; inline;
 
-    function Slice(index: Integer): DynamicArray<T>; overload; inline;
-    function Slice(index: Integer; count: Integer): DynamicArray<T>; overload; inline;
-    function Splice(index: Integer; count: Integer): DynamicArray<T>; overload; inline;
-    function Splice(index: Integer; count: Integer; const items: array of T): DynamicArray<T>; overload;
+    function Slice(index: Integer): Vector<T>; overload; inline;
+    function Slice(index: Integer; count: Integer): Vector<T>; overload; inline;
+    function Splice(index: Integer; count: Integer): Vector<T>; overload; inline;
+    function Splice(index: Integer; count: Integer; const items: array of T): Vector<T>; overload;
 
     procedure Sort; overload; inline;
     procedure Sort(const comparer: IComparer<T>); overload; inline;
     procedure Sort(const comparer: TComparison<T>); overload; inline;
     procedure Reverse;
 
+    procedure ForEach(const action: TAction<T>); inline;
+
     function GetEnumerator: TArrayEnumerator<T>; inline;
     property Count: Integer read GetCount;
+    property Data: TArray<T> read fData;
+    property First: T read GetFirst;
     property Items[index: Integer]: T read GetItem write SetItem; default;
+    property Last: T read GetLast;
     property Length: Integer read GetCount write SetCount;
   end;
 
@@ -5788,6 +5801,15 @@ begin
     Result[i] := values[i];
 end;
 
+class procedure TArray.ForEach<T>(const values: array of T;
+  const action: TAction<T>);
+var
+  i: Integer;
+begin
+  for i := Low(values) to High(values) do
+    action(values[i]);
+end;
+
 class function TArray.IndexOf<T>(const values: array of T;
   const item: T): Integer;
 begin
@@ -5825,89 +5847,89 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'DynamicArray<T>'}
+{$REGION 'Vector<T>'}
 
-class operator DynamicArray<T>.Add(const left, right: DynamicArray<T>): DynamicArray<T>;
+class operator Vector<T>.Add(const left, right: Vector<T>): Vector<T>;
 begin
   Result := left;
-  Result.Add(right.fItems);
+  Result.Add(right.fData);
 end;
 
-class operator DynamicArray<T>.Add(const left: DynamicArray<T>;
-  const right: TArray<T>): DynamicArray<T>;
-begin
-  Result := left;
-  Result.Add(right);
-end;
-
-class operator DynamicArray<T>.Add(const left: TArray<T>;
-  const right: DynamicArray<T>): DynamicArray<T>;
-begin
-  Result := left;
-  Result.Add(right.fItems);
-end;
-
-class operator DynamicArray<T>.Add(const left: DynamicArray<T>;
-  const right: T): DynamicArray<T>;
+class operator Vector<T>.Add(const left: Vector<T>;
+  const right: TArray<T>): Vector<T>;
 begin
   Result := left;
   Result.Add(right);
 end;
 
-class operator DynamicArray<T>.Add(const left: T;
-  const right: DynamicArray<T>): DynamicArray<T>;
+class operator Vector<T>.Add(const left: TArray<T>;
+  const right: Vector<T>): Vector<T>;
 begin
-  SetLength(Result.fItems, 1);
-  Result.fItems[0] := left;
+  Result := left;
+  Result.Add(right.fData);
+end;
+
+class operator Vector<T>.Add(const left: Vector<T>;
+  const right: T): Vector<T>;
+begin
+  Result := left;
   Result.Add(right);
 end;
 
-function DynamicArray<T>.Add(const item: T): Integer;
+class operator Vector<T>.Add(const left: T;
+  const right: Vector<T>): Vector<T>;
 begin
-  Result := System.Length(fItems);
-  SetLength(fItems, Result + 1);
-  fItems[Result] := item;
+  SetLength(Result.fData, 1);
+  Result.fData[0] := left;
+  Result.Add(right);
 end;
 
-procedure DynamicArray<T>.Add(const items: array of T);
+function Vector<T>.Add(const item: T): Integer;
 begin
-  InternalInsert(System.Length(fItems), items);
+  Result := System.Length(fData);
+  SetLength(fData, Result + 1);
+  fData[Result] := item;
 end;
 
-procedure DynamicArray<T>.Add(const items: TArray<T>);
+procedure Vector<T>.Add(const items: array of T);
+begin
+  InternalInsert(System.Length(fData), items);
+end;
+
+procedure Vector<T>.Add(const items: TArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
-  InternalInsert(System.Length(fItems), items);
+  InternalInsert(System.Length(fData), items);
 {$ELSE}
-  System.Insert(items, fItems, System.Length(fItems));
+  System.Insert(items, fData, System.Length(fData));
 {$ENDIF}
 end;
 
-procedure DynamicArray<T>.Add(const items: DynamicArray<T>);
+procedure Vector<T>.Add(const items: Vector<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
-  InternalInsert(System.Length(items.fItems), items.fItems);
+  InternalInsert(System.Length(items.fData), items.fData);
 {$ELSE}
-  System.Insert(items.fItems, fItems, System.Length(items.fItems));
+  System.Insert(items.fData, fData, System.Length(items.fData));
 {$ENDIF}
 end;
 
-procedure DynamicArray<T>.Assign(const items: array of T);
+procedure Vector<T>.Assign(const items: array of T);
 begin
-  fItems := TArray.Copy<T>(items);
+  fData := TArray.Copy<T>(items);
 end;
 
-procedure DynamicArray<T>.Clear;
+procedure Vector<T>.Clear;
 begin
-  fItems := nil;
+  fData := nil;
 end;
 
-function DynamicArray<T>.Contains(const item: T): Boolean;
+function Vector<T>.Contains(const item: T): Boolean;
 begin
   Result := IndexOf(item) > -1;
 end;
 
-function DynamicArray<T>.Contains(const items: array of T): Boolean;
+function Vector<T>.Contains(const items: array of T): Boolean;
 var
   i: Integer;
 begin
@@ -5917,7 +5939,7 @@ begin
   Result := True;
 end;
 
-function DynamicArray<T>.Contains(const items: TArray<T>): Boolean;
+function Vector<T>.Contains(const items: TArray<T>): Boolean;
 var
   i: Integer;
 begin
@@ -5927,168 +5949,186 @@ begin
   Result := True;
 end;
 
-procedure DynamicArray<T>.Delete(index: Integer);
+procedure Vector<T>.Delete(index: Integer);
 {$IFNDEF DELPHIXE7_UP}
 var
   n, i: Integer;
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  n := System.Length(fItems);
+  n := System.Length(fData);
   if (index < 0) or (index >= n) then
     Exit;
   Dec(n);
-  fItems[index] := Default(T);
+  fData[index] := Default(T);
   if index <> n then
 {$IFDEF WEAKREF}
     if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := index to n - 1 do
-        fItems[i] := fItems[i + 1];
+        fData[i] := fData[i + 1];
     end
     else
 {$ENDIF}
     begin
-      System.Move(fItems[index + 1], fItems[index], (n - index) * SizeOf(T));
-      System.FillChar(fItems[n], SizeOf(T), 0);
+      System.Move(fData[index + 1], fData[index], (n - index) * SizeOf(T));
+      System.FillChar(fData[n], SizeOf(T), 0);
     end;
-  SetLength(fItems, n);
+  SetLength(fData, n);
 {$ELSE}
-  System.Delete(fItems, index, 1);
+  System.Delete(fData, index, 1);
 {$ENDIF}
 end;
 
-procedure DynamicArray<T>.Delete(index, count: Integer);
+procedure Vector<T>.Delete(index, count: Integer);
 {$IFNDEF DELPHIXE7_UP}
 var
   n, i: Integer;
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  n := System.Length(fItems);
+  n := System.Length(fData);
   if (index < 0) or (index >= n) then
     Exit;
   if count > n - index then
     count := n - index;
   Dec(n, count);
   for i := index to index + count - 1 do
-    fItems[i] := Default(T);
+    fData[i] := Default(T);
   if index <> n then
 {$IFDEF WEAKREF}
     if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := index to n - count do
-        fItems[i] := fItems[i + count];
+        fData[i] := fData[i + count];
     end
     else
 {$ENDIF}
     begin
-      System.Move(fItems[index + count], fItems[index], (n - index) * SizeOf(T));
-      System.FillChar(fItems[n], count * SizeOf(T), 0);
+      System.Move(fData[index + count], fData[index], (n - index) * SizeOf(T));
+      System.FillChar(fData[n], count * SizeOf(T), 0);
     end;
-  SetLength(fItems, n);
+  SetLength(fData, n);
 {$ELSE}
-  System.Delete(fItems, index, count);
+  System.Delete(fData, index, count);
 {$ENDIF}
 end;
 
-class operator DynamicArray<T>.Equal(const left, right: DynamicArray<T>): Boolean;
+class operator Vector<T>.Equal(const left, right: Vector<T>): Boolean;
 begin
-  Result := left.Equals(right.fItems);
+  Result := left.Equals(right.fData);
 end;
 
-function DynamicArray<T>.Equals(const items: array of T): Boolean;
+function Vector<T>.Equals(const items: array of T): Boolean;
 var
   n, i: Integer;
 begin
-  n := System.Length(fItems);
+  n := System.Length(fData);
   if n <> System.Length(items) then
     Exit(False);
   Result := True;
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
     tkInteger:
       for i := 0 to n - 1 do
-        if PInteger(@fItems[i])^ <> PInteger(@items[i])^ then
+        if PInteger(@fData[i])^ <> PInteger(@items[i])^ then
           Exit(False);
     tkUString:
       for i := 0 to n - 1 do
-        if PUnicodeString(@fItems[i])^ <> PUnicodeString(@items[i])^ then
+        if PUnicodeString(@fData[i])^ <> PUnicodeString(@items[i])^ then
           Exit(False);
   else
     Result := InternalEquals(items);
   end;
 end;
 
-function DynamicArray<T>.Equals(const items: TArray<T>): Boolean;
+function Vector<T>.Equals(const items: TArray<T>): Boolean;
 var
   n, i: Integer;
 begin
-  n := System.Length(fItems);
+  n := System.Length(fData);
   if n <> System.Length(items) then
     Exit(False);
   Result := True;
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
     tkInteger:
       for i := 0 to n - 1 do
-        if PInteger(@fItems[i])^ <> PInteger(@items[i])^ then
+        if PInteger(@fData[i])^ <> PInteger(@items[i])^ then
           Exit(False);
     tkUString:
       for i := 0 to n - 1 do
-        if PUnicodeString(@fItems[i])^ <> PUnicodeString(@items[i])^ then
+        if PUnicodeString(@fData[i])^ <> PUnicodeString(@items[i])^ then
           Exit(False);
   else
     Result := InternalEquals(items);
   end;
 end;
 
-function DynamicArray<T>.GetCount: Integer;
+procedure Vector<T>.ForEach(const action: TAction<T>);
+var
+  i: Integer;
 begin
-  Result := System.Length(fItems);
+  for i := Low(fData) to High(fData) do
+    action(fData[i]);
 end;
 
-function DynamicArray<T>.GetEnumerator: TArrayEnumerator<T>;
+function Vector<T>.GetCount: Integer;
+begin
+  Result := System.Length(fData);
+end;
+
+function Vector<T>.GetEnumerator: TArrayEnumerator<T>;
 begin
 {$IFDEF DELPHI2010}
-  Result := TArrayEnumerator<T>.Create(fItems);
+  Result := TArrayEnumerator<T>.Create(fData);
 {$ELSE}
-  Result.fItems := fItems;
+  Result.fItems := fData;
   Result.fIndex := -1;
 {$ENDIF}
 end;
 
-function DynamicArray<T>.GetItem(index: Integer): T;
+function Vector<T>.GetFirst: T;
 begin
-  Result := fItems[index];
+  Result := fData[0];
 end;
 
-class operator DynamicArray<T>.Implicit(const value: TArray<T>): DynamicArray<T>;
+function Vector<T>.GetItem(index: Integer): T;
 begin
-  Result.fItems := value;
+  Result := fData[index];
 end;
 
-class operator DynamicArray<T>.Implicit(const value: DynamicArray<T>): TArray<T>;
+function Vector<T>.GetLast: T;
 begin
-  Result := value.fItems;
+  Result := fData[High(fData)];
 end;
 
-class operator DynamicArray<T>.In(const left: T;
-  const right: DynamicArray<T>): Boolean;
+class operator Vector<T>.Implicit(const value: TArray<T>): Vector<T>;
+begin
+  Result.fData := value;
+end;
+
+class operator Vector<T>.Implicit(const value: Vector<T>): TArray<T>;
+begin
+  Result := value.fData;
+end;
+
+class operator Vector<T>.In(const left: T;
+  const right: Vector<T>): Boolean;
 begin
   Result := right.Contains(left);
 end;
 
-class operator DynamicArray<T>.In(const left, right: DynamicArray<T>): Boolean;
+class operator Vector<T>.In(const left, right: Vector<T>): Boolean;
 begin
-  Result := right.Contains(left.fItems);
+  Result := right.Contains(left.fData);
 end;
 
-class operator DynamicArray<T>.In(const left: TArray<T>;
-  const right: DynamicArray<T>): Boolean;
+class operator Vector<T>.In(const left: TArray<T>;
+  const right: Vector<T>): Boolean;
 begin
   Result := right.Contains(left);
 end;
 
-function DynamicArray<T>.IndexOf(const item: T): Integer;
+function Vector<T>.IndexOf(const item: T): Integer;
 begin
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
     tkInteger: Result := InternalIndexOfInt(PInteger(@item)^);
@@ -6098,7 +6138,7 @@ begin
   end;
 end;
 
-procedure DynamicArray<T>.Insert(index: Integer; const item: T);
+procedure Vector<T>.Insert(index: Integer; const item: T);
 {$IFNDEF DELPHIXE7_UP}
 var
   count: Integer;
@@ -6106,119 +6146,128 @@ var
 {$ENDIF}
 begin
 {$IFNDEF DELPHIXE7_UP}
-  count := System.Length(fItems);
-  SetLength(fItems, count + 1);
+  count := System.Length(fData);
+  SetLength(fData, count + 1);
   if index <> count then
 {$IFDEF WEAKREF}
     if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := count - 1 downto index do
-        fItems[i + 1] := fItems[i];
+        fData[i + 1] := fData[i];
     end
     else
 {$ENDIF}
     begin
-      System.Move(fItems[index], fItems[index + 1], (count - index) * SizeOf(T));
-      System.FillChar(fItems[index], SizeOf(T), 0);
+      System.Move(fData[index], fData[index + 1], (count - index) * SizeOf(T));
+      System.FillChar(fData[index], SizeOf(T), 0);
     end;
-  fItems[index] := item;
+  fData[index] := item;
 {$ELSE}
-  System.Insert(item, fItems, index);
+  System.Insert(item, fData, index);
 {$ENDIF}
 end;
 
-procedure DynamicArray<T>.Insert(index: Integer; const items: array of T);
+procedure Vector<T>.Insert(index: Integer; const items: array of T);
 begin
   InternalInsert(index, items);
 end;
 
-procedure DynamicArray<T>.Insert(index: Integer; const items: TArray<T>);
+procedure Vector<T>.Insert(index: Integer; const items: TArray<T>);
 begin
 {$IFNDEF DELPHIXE7_UP}
   InternalInsert(index, items);
 {$ELSE}
-  System.Insert(items, fItems, index);
+  System.Insert(items, fData, index);
 {$ENDIF}
 end;
 
-function DynamicArray<T>.InternalEquals(const items: array of T): Boolean;
+function Vector<T>.InternalEquals(const items: array of T): Boolean;
 var
   comparer: IEqualityComparer<T>;
   i: Integer;
 begin
   comparer := TEqualityComparer<T>.Default;
-  for i := 0 to System.Length(fItems) - 1 do
-    if not comparer.Equals(fItems[i], items[i]) then
+  for i := 0 to System.Length(fData) - 1 do
+    if not comparer.Equals(fData[i], items[i]) then
       Exit(False);
   Result := True;
 end;
 
-function DynamicArray<T>.InternalIndexOf(const item: T): Integer;
+function Vector<T>.InternalIndexOf(const item: T): Integer;
 var
   comparer: IEqualityComparer<T>;
 begin
   comparer := TEqualityComparer<T>.Default;
-  for Result := 0 to High(fItems) do
-    if comparer.Equals(fItems[Result], item) then
+  for Result := 0 to High(fData) do
+    if comparer.Equals(fData[Result], item) then
       Exit;
   Result := -1;
 end;
 
-function DynamicArray<T>.InternalIndexOfInt(const item: Integer): Integer;
+function Vector<T>.InternalIndexOfInt(const item: Integer): Integer;
 begin
-  for Result := 0 to High(fItems) do
-    if PInteger(@fItems[Result])^ = item then
+  for Result := 0 to High(fData) do
+    if PInteger(@fData[Result])^ = item then
       Exit;
   Result := -1;
 end;
 
-function DynamicArray<T>.InternalIndexOfStr(const item: string): Integer;
+function Vector<T>.InternalIndexOfStr(const item: string): Integer;
 begin
-  for Result := 0 to High(fItems) do
-    if PUnicodeString(@fItems[Result])^ = item then
+  for Result := 0 to High(fData) do
+    if PUnicodeString(@fData[Result])^ = item then
       Exit;
   Result := -1;
 end;
 
-procedure DynamicArray<T>.InternalInsert(index: Integer; const items: array of T);
+procedure Vector<T>.InternalInsert(index: Integer; const items: array of T);
 var
   count, len, i: Integer;
 begin
-  count := System.Length(fItems);
+  count := System.Length(fData);
   len := System.Length(items);
-  SetLength(fItems, count + len);
+  SetLength(fData, count + len);
   if index <> count then
 {$IFDEF WEAKREF}
     if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
     begin
       for i := count - 1 downto index do
-        fItems[i + len] := fItems[i];
+        fData[i + len] := fData[i];
     end
     else
 {$ENDIF}
     begin
-      System.Move(fItems[index], fItems[index + len], (count - index) * SizeOf(T));
+      System.Move(fData[index], fData[index + len], (count - index) * SizeOf(T));
       if {$IFDEF DELPHIXE7_UP}System.IsManagedType(T){$ELSE}Rtti.IsManaged(TypeInfo(T)){$ENDIF} then
-        System.FillChar(fItems[index], len * SizeOf(T), 0);
+        System.FillChar(fData[index], len * SizeOf(T), 0);
     end;
   if {$IFDEF DELPHIXE7_UP}System.IsManagedType(T){$ELSE}Rtti.IsManaged(TypeInfo(T)){$ENDIF} then
   begin
     for i := Low(items) to High(items) do
     begin
-      fItems[index] := items[i];
+      fData[index] := items[i];
       Inc(index);
     end;
   end
   else
-    System.Move(items[0], fItems[index], len * SizeOf(T));
+    System.Move(items[0], fData[index], len * SizeOf(T));
 end;
 
-class operator DynamicArray<T>.NotEqual(const left, right: DynamicArray<T>): Boolean;
+class operator Vector<T>.NotEqual(const left, right: Vector<T>): Boolean;
 begin
-  Result := not left.Equals(right.fItems);
+  Result := not left.Equals(right.fData);
 end;
 
-procedure DynamicArray<T>.Remove(const item: T);
+function Vector<T>.Remove: T;
+var
+  n: Integer;
+begin
+  n := High(fData);
+  Result := fData[n];
+  SetLength(fData, n);
+end;
+
+procedure Vector<T>.Remove(const item: T);
 var
   index: Integer;
 begin
@@ -6227,7 +6276,7 @@ begin
     Delete(index);
 end;
 
-procedure DynamicArray<T>.Remove(const items: array of T);
+procedure Vector<T>.Remove(const items: array of T);
 var
   i, index: Integer;
 begin
@@ -6239,7 +6288,7 @@ begin
   end;
 end;
 
-procedure DynamicArray<T>.Remove(const items: TArray<T>);
+procedure Vector<T>.Remove(const items: TArray<T>);
 var
   i, index: Integer;
 begin
@@ -6251,7 +6300,7 @@ begin
   end;
 end;
 
-procedure DynamicArray<T>.Reverse;
+procedure Vector<T>.Reverse;
 var
   tmp: T;
   b, e: Integer;
@@ -6260,78 +6309,78 @@ begin
   e := Count - 1;
   while b < e do
   begin
-    tmp := fItems[b];
-    fItems[b] := fItems[e];
-    fItems[e] := tmp;
+    tmp := fData[b];
+    fData[b] := fData[e];
+    fData[e] := tmp;
     Inc(b);
     Dec(e);
   end;
 end;
 
-procedure DynamicArray<T>.SetCount(value: Integer);
+procedure Vector<T>.SetCount(value: Integer);
 begin
-  SetLength(fItems, value);
+  SetLength(fData, value);
 end;
 
-procedure DynamicArray<T>.SetItem(index: Integer; const value: T);
+procedure Vector<T>.SetItem(index: Integer; const value: T);
 begin
-  fItems[index] := value;
+  fData[index] := value;
 end;
 
-function DynamicArray<T>.Slice(index: Integer): DynamicArray<T>;
+function Vector<T>.Slice(index: Integer): Vector<T>;
 begin
-  Result.fItems := Copy(fItems, index);
+  Result.fData := Copy(fData, index);
 end;
 
-function DynamicArray<T>.Slice(index, count: Integer): DynamicArray<T>;
+function Vector<T>.Slice(index, count: Integer): Vector<T>;
 begin
-  Result.fItems := Copy(fItems, index, count);
+  Result.fData := Copy(fData, index, count);
 end;
 
-procedure DynamicArray<T>.Sort;
+procedure Vector<T>.Sort;
 begin
-  TArray.Sort<T>(fItems);
+  TArray.Sort<T>(fData);
 end;
 
-procedure DynamicArray<T>.Sort(const comparer: IComparer<T>);
+procedure Vector<T>.Sort(const comparer: IComparer<T>);
 begin
-  TArray.Sort<T>(fItems, comparer);
+  TArray.Sort<T>(fData, comparer);
 end;
 
-procedure DynamicArray<T>.Sort(const comparer: TComparison<T>);
+procedure Vector<T>.Sort(const comparer: TComparison<T>);
 begin
-  TArray.Sort<T>(fItems, IComparer<T>(PPointer(@comparer)^));
+  TArray.Sort<T>(fData, IComparer<T>(PPointer(@comparer)^));
 end;
 
-function DynamicArray<T>.Splice(index, count: Integer): DynamicArray<T>;
+function Vector<T>.Splice(index, count: Integer): Vector<T>;
 begin
   Result := Splice(index, count, []);
 end;
 
-function DynamicArray<T>.Splice(index, count: Integer;
-  const items: array of T): DynamicArray<T>;
+function Vector<T>.Splice(index, count: Integer;
+  const items: array of T): Vector<T>;
 var
   n, i: Integer;
 begin
-  n := System.Length(fItems);
+  n := System.Length(fData);
   if (index < 0) or (index >= n) then
     Exit;
   if count > n - index then
     count := n - index;
-  Result.fItems := Copy(fItems, index, count);
+  Result.fData := Copy(fData, index, count);
   Delete(index, count);
   Insert(index, items);
 end;
 
-class operator DynamicArray<T>.Subtract(const left,
-  right: DynamicArray<T>): DynamicArray<T>;
+class operator Vector<T>.Subtract(const left,
+  right: Vector<T>): Vector<T>;
 begin
   Result := left;
-  Result.Remove(right.fItems);
+  Result.Remove(right.fData);
 end;
 
-class operator DynamicArray<T>.Subtract(const left: DynamicArray<T>;
-  const right: T): DynamicArray<T>;
+class operator Vector<T>.Subtract(const left: Vector<T>;
+  const right: T): Vector<T>;
 begin
   Result := left;
   Result.Remove(right);

@@ -352,7 +352,7 @@ type
     procedure TestRecordType_Manage_Typed_Pointer;
   end;
 
-  TTestDynamicArray = class(TTestCase)
+  TTestVector = class(TTestCase)
   published
     procedure ClassOperatorAdd_InputNotModified;
 
@@ -373,6 +373,8 @@ type
     procedure DeleteRange_Mid;
     procedure DeleteRange_IndexLessThanZero_NothingHappens;
     procedure DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
+
+    procedure Remove_ArrayContainsElements;
   end;
 
   TTestValueHelper = class(TTestCase)
@@ -2101,11 +2103,11 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestDynamicArray'}
+{$REGION 'TTestVector'}
 
-procedure TTestDynamicArray.ClassOperatorAdd_InputNotModified;
+procedure TTestVector.ClassOperatorAdd_InputNotModified;
 var
-  arr, arr2: DynamicArray<Integer>;
+  arr, arr2: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2 := arr + 6;
@@ -2113,9 +2115,9 @@ begin
   CheckEquals(6, arr2.Count);
 end;
 
-procedure TTestDynamicArray.ClassOperatorIn_ArrayInArray_True;
+procedure TTestVector.ClassOperatorIn_ArrayInArray_True;
 var
-  arr, arr2: DynamicArray<Integer>;
+  arr, arr2: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2.Add([1, 2, 3]);
@@ -2123,34 +2125,34 @@ begin
 end;
 
 
-procedure TTestDynamicArray.ClassOperatorIn_ArrayNotInArray_False;
+procedure TTestVector.ClassOperatorIn_ArrayNotInArray_False;
 var
-  arr, arr2: DynamicArray<Integer>;
+  arr, arr2: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2.Add([1, 2, 3, 6]);
   CheckFalse(arr2 in arr);
 end;
 
-procedure TTestDynamicArray.ClassOperatorIn_ItemInArray_True;
+procedure TTestVector.ClassOperatorIn_ItemInArray_True;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   CheckTrue(3 in arr);
 end;
 
-procedure TTestDynamicArray.ClassOperatorIn_ItemNotInArray_False;
+procedure TTestVector.ClassOperatorIn_ItemNotInArray_False;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   CheckFalse(6 in arr);
 end;
 
-procedure TTestDynamicArray.ClassOperatorSubtract_InputNotModified;
+procedure TTestVector.ClassOperatorSubtract_InputNotModified;
 var
-  arr, arr2: DynamicArray<Integer>;
+  arr, arr2: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2 := arr - 3;
@@ -2158,9 +2160,9 @@ begin
   CheckEquals(4, arr2.Count);
 end;
 
-procedure TTestDynamicArray.DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
+procedure TTestVector.DeleteRange_GreaterThanLengthMinusCount_DeleteUntilEnd;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(2, 4);
@@ -2169,9 +2171,9 @@ begin
   CheckEquals(2, arr[1]);
 end;
 
-procedure TTestDynamicArray.DeleteRange_IndexLessThanZero_NothingHappens;
+procedure TTestVector.DeleteRange_IndexLessThanZero_NothingHappens;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(-1, 2);
@@ -2183,9 +2185,9 @@ begin
   CheckEquals(5, arr[4]);
 end;
 
-procedure TTestDynamicArray.DeleteRange_Mid;
+procedure TTestVector.DeleteRange_Mid;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(2, 2);
@@ -2195,9 +2197,9 @@ begin
   CheckEquals(5, arr[2]);
 end;
 
-procedure TTestDynamicArray.Delete_End;
+procedure TTestVector.Delete_End;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(4);
@@ -2208,9 +2210,9 @@ begin
   CheckEquals(4, arr[3]);
 end;
 
-procedure TTestDynamicArray.Delete_IndexEqualsCount_NothingHappens;
+procedure TTestVector.Delete_IndexEqualsCount_NothingHappens;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(5);
@@ -2222,9 +2224,9 @@ begin
   CheckEquals(5, arr[4]);
 end;
 
-procedure TTestDynamicArray.Delete_IndexLessThanZero_NothingHappens;
+procedure TTestVector.Delete_IndexLessThanZero_NothingHappens;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(-1);
@@ -2236,9 +2238,9 @@ begin
   CheckEquals(5, arr[4]);
 end;
 
-procedure TTestDynamicArray.Delete_Mid;
+procedure TTestVector.Delete_Mid;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(2);
@@ -2249,9 +2251,9 @@ begin
   CheckEquals(5, arr[3]);
 end;
 
-procedure TTestDynamicArray.Delete_Start;
+procedure TTestVector.Delete_Start;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   arr.Delete(0);
@@ -2262,12 +2264,25 @@ begin
   CheckEquals(5, arr[3]);
 end;
 
-procedure TTestDynamicArray.IndexOf_ItemInArray;
+procedure TTestVector.IndexOf_ItemInArray;
 var
-  arr: DynamicArray<Integer>;
+  arr: Vector<Integer>;
 begin
   arr.Add([1, 2, 3, 4, 5]);
   CheckEquals(2, arr.IndexOf(3));
+end;
+
+procedure TTestVector.Remove_ArrayContainsElements;
+var
+  arr: Vector<Integer>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckEquals(5, arr.Remove);
+  CheckEquals(4, arr.Remove);
+  CheckEquals(3, arr.Remove);
+  CheckEquals(2, arr.Remove);
+  CheckEquals(1, arr.Remove);
+  CheckEquals(0, arr.Count);
 end;
 
 {$ENDREGION}
