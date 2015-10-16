@@ -65,7 +65,7 @@ type
     class procedure RegisterConnection<T: class, IDBConnection>(const key: TDBDriverType);
   end;
 
- implementation
+implementation
 
 uses
   Classes,
@@ -140,9 +140,14 @@ begin
   if Assigned(jsonObject) then
   try
     qualifiedName := GetJsonPair(jsonObject, 0).JsonString.Value;
-    externalConnection := TActivator.CreateInstance(qualifiedName);
-    SetConnectionProperties(externalConnection, GetJsonPair(jsonObject, 0).JsonValue as TJSONObject);
-    SetConnectionConnected(qualifiedName, externalConnection);
+    externalConnection := TActivator.CreateInstance(qualifiedName, [nil]);
+    try
+      SetConnectionProperties(externalConnection, GetJsonPair(jsonObject, 0).JsonValue as TJSONObject);
+      SetConnectionConnected(qualifiedName, externalConnection);
+    except
+      externalConnection.Free;
+      raise;
+    end;
   finally
     jsonObject.Free;
   end;

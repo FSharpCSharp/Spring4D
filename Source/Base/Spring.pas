@@ -1593,7 +1593,9 @@ type
       const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
 
     class function CreateInstance(typeInfo: PTypeInfo): TObject; overload; static; inline;
-    class function CreateInstance(const typeName: string): TObject; overload; static;
+    class function CreateInstance(const typeName: string): TObject; overload; static; inline;
+    class function CreateInstance(const typeName: string;
+      const arguments: array of TValue): TObject; overload; static;
 
     class function CreateInstance(classType: TClass): TObject; overload; static;
     class function CreateInstance(classType: TClass;
@@ -5381,11 +5383,17 @@ begin
 end;
 
 class function TActivator.CreateInstance(const typeName: string): TObject;
+begin
+  Result := CreateInstance(typeName, []);
+end;
+
+class function TActivator.CreateInstance(const typeName: string;
+  const arguments: array of TValue): TObject;
 var
   rttiType: TRttiType;
 begin
   rttiType := Context.FindType(typeName);
-  Result := CreateInstance(TRttiInstanceType(rttiType), []).AsObject;
+  Result := CreateInstance(TRttiInstanceType(rttiType), arguments).AsObject;
 end;
 
 class function TActivator.CreateInstance(classType: TClass): TObject;
