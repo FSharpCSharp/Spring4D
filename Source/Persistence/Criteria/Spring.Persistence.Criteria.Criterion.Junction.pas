@@ -74,6 +74,7 @@ function TJunction.ToSqlString(const params: IList<TDBParam>;
 var
   i: Integer;
   criterion: ICriterion;
+  sql: string;
   whereField: TSQLWhereField;
 begin
   Result := '';
@@ -83,7 +84,10 @@ begin
       Result := Result + ' ' + WhereOperatorNames[WhereOperator] + ' ';
 
     criterion := fCriterions[i];
-    Result := Result + criterion.ToSqlString(params, command, generator, False);
+    sql := criterion.ToSqlString(params, command, generator, False);
+    if criterion is TJunction then
+      sql := '(' + sql + ')';
+    Result := Result + sql;
   end;
 
   if addToCommand then

@@ -85,7 +85,7 @@ begin
   CheckEquals(0, GetTableCount(FConnection));
   FDatabaseManager.BuildDatabase;
 
-  iCount := 6;
+  iCount := 7;
 
   sTables := GetTables(FConnection);
   if Pos('sqlite_sequence', sTables) > 0 then

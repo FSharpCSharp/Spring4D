@@ -109,6 +109,22 @@ type
     property CustStream: TMemoryStream read GetCustStream write SetCustStream;
   end;
 
+  [Entity]
+  [Table('PERSONS')]
+  TPerson = class
+  private
+    fSid: Int64;
+    fLastName: string;
+    fFirstName: string;
+  public
+    [Column('SID', [cpPrimaryKey])]
+    property Sid: Int64 read fSid write fSid;
+    [Column('LAST_NAME')]
+    property LastName: string read fLastName write fLastName;
+    [Column('FIRST_NAME')]
+    property FirstName: string read fFirstName write fFirstName;
+  end;
+
   TForeignCustomer = class(TCustomer)
   private
     FCountry: Nullable<string>;
