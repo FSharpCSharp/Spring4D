@@ -6300,7 +6300,7 @@ procedure Vector<T>.Remove(const items: TArray<T>);
 var
   i, index: Integer;
 begin
-  for i := Low(items) to High(items) do
+  for i := 0 to System.Length(items) - 1 do
   begin
     index := IndexOf(items[i]);
     if index > -1 then
