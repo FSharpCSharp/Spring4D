@@ -38,6 +38,7 @@ type
     procedure CheckEqualsString(expected, actual: string; msg: string = '');
     procedure CheckException(expected: ExceptionClass; const method: TProc; const msg: string = '');
     procedure Pass; inline;
+    function RegisterExpectedMemoryLeak(p: Pointer): Boolean; inline;
   end;
 
 procedure ProcessTestResult(const ATestResult: TTestResult);
@@ -116,6 +117,23 @@ end;
 procedure TAbstractTestHelper.Pass;
 begin
   FCheckCalled := True;
+end;
+
+function TAbstractTestHelper.RegisterExpectedMemoryLeak(p: Pointer): Boolean;
+{$IFNDEF MSWINDOWS}
+var
+  memMgrEx: TMemoryManagerEx;
+{$ENDIF}
+begin
+{$IFDEF MSWINDOWS}
+  Result := System.RegisterExpectedMemoryLeak(p);
+{$ELSE}
+  GetMemoryManager(memMgrEx);
+  if Assigned(memMgrEx.RegisterExpectedMemoryLeak) then
+    Result := memMgrEx.RegisterExpectedMemoryLeak(p)
+  else
+    Result := False;
+{$ENDIF}
 end;
 
 {$ENDREGION}

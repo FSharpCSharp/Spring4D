@@ -4548,6 +4548,7 @@ begin
       Exit;
 
     fValue := fValueFactory();
+    fValueFactory := nil;
     fIsValueCreated := True;
   finally
     fLock.Leave;

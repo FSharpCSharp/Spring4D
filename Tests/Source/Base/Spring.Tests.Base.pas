@@ -44,6 +44,8 @@ type
   TTestNullableInteger = class(TTestCase)
   private
     fInteger: Nullable<Integer>;
+  protected
+    procedure TearDown; override;
   published
     procedure TestInitialValue;
     procedure GetValueOrDefault;
@@ -59,6 +61,8 @@ type
   TTestNullableBoolean = class(TTestCase)
   private
     fBoolean: Nullable<Boolean>;
+  protected
+    procedure TearDown; override;
   published
     procedure TestIssue55;
   end;
@@ -66,6 +70,8 @@ type
   TTestNullableDateTime = class(TTestCase)
   private
     fDateTime: Nullable<TDateTime>;
+  protected
+    procedure TearDown; override;
   published
     procedure TestFromVariantSQLTimestamp;
 {$IFDEF DELPHIXE_UP}
@@ -76,6 +82,8 @@ type
   TTestNullableInt64 = class(TTestCase)
   private
     fInt64: Nullable<Int64>;
+  protected
+    procedure TearDown; override;
   published
     procedure TestFromVariantFmtBcd;
   end;
@@ -94,6 +102,7 @@ type
   protected
     const
       CExpectedBalance = 100;
+    procedure TearDown; override;
   published
     procedure TestByValueFactory;
     procedure TestByValue;
@@ -278,6 +287,7 @@ type
     fSUT: Tuple<Integer, string>;
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure Test_Create;
     procedure Test_Pack;
@@ -298,6 +308,7 @@ type
     fSUT: Tuple<Integer, string, Boolean>;
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure Test_Create;
     procedure Test_Pack;
@@ -320,6 +331,7 @@ type
     fSUT: Tuple<Integer, string, Boolean, Char>;
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure Test_Create;
     procedure Test_Pack;
@@ -385,6 +397,8 @@ type
     fSUT, fValue: TValue;
     procedure DoCheckEquals(expected: Boolean = True);
     procedure DoCheckCompare(expected: Integer = 0);
+  protected
+    procedure TearDown; override;
   published
     procedure Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
     procedure Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
@@ -426,6 +440,12 @@ begin
   CheckFalse(fInteger.HasValue);
   CheckEquals(Default(Integer), fInteger.GetValueOrDefault);
   CheckEquals(18, fInteger.GetValueOrDefault(18));
+end;
+
+procedure TTestNullableInteger.TearDown;
+begin
+  inherited;
+  fInteger := nil;
 end;
 
 procedure TTestNullableInteger.TestAssignFive;
@@ -510,6 +530,12 @@ end;
 
 {$REGION 'TTestNullableBoolean'}
 
+procedure TTestNullableBoolean.TearDown;
+begin
+  inherited;
+  fBoolean := nil;
+end;
+
 procedure TTestNullableBoolean.TestIssue55;
 var
   v: Variant;
@@ -546,6 +572,7 @@ begin
   fBSender := nil;
   fBInvoked := False;
   fHandlerInvokeCount := 0;
+  fProc := nil;
 end;
 
 procedure TTestMulticastEvent.HandlerA(sender: TObject);
@@ -801,6 +828,12 @@ var
 begin
   ExpectedException := EArgumentException;
   TLazyInitializer.EnsureInitialized<Integer>(i, function: Integer begin Exit(42) end);
+end;
+
+procedure TTestLazy.TearDown;
+begin
+  inherited;
+  fBalance := nil;
 end;
 
 procedure TTestLazy.TestByValue;
@@ -1586,6 +1619,12 @@ begin
   fSUT := Tuple<Integer, string>.Create(42, 'foo');
 end;
 
+procedure TTestTuplesDouble.TearDown;
+begin
+  inherited;
+  fSUT := Default(Tuple<Integer, string, Boolean>);
+end;
+
 procedure TTestTuplesDouble.Test_Create;
 begin
   CheckEquals(42, fSUT.Value1);
@@ -1691,6 +1730,12 @@ end;
 procedure TTestTuplesTriple.SetUp;
 begin
   fSUT := Tuple<Integer, string, Boolean>.Create(42, 'foo', True);
+end;
+
+procedure TTestTuplesTriple.TearDown;
+begin
+  inherited;
+  fSUT := Default(Tuple<Integer, string, Boolean>);
 end;
 
 procedure TTestTuplesTriple.Test_Create;
@@ -1826,6 +1871,12 @@ end;
 procedure TTestTuplesQuadruple.SetUp;
 begin
   fSUT := Tuple<Integer, string, Boolean, Char>.Create(42, 'foo', True, 'X');
+end;
+
+procedure TTestTuplesQuadruple.TearDown;
+begin
+  inherited;
+  fSUT := Default(Tuple<Integer, string, Boolean, Char>);
 end;
 
 procedure TTestTuplesQuadruple.Test_Create;
@@ -2303,6 +2354,13 @@ begin
     CheckFalse(fSUT.Equals(fValue));
 end;
 
+procedure TTestValueHelper.TearDown;
+begin
+  fSUT := TValue.Empty;
+  fValue := TValue.Empty;
+  inherited;
+end;
+
 procedure TTestValueHelper.Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
 begin
   fSUT := Integer(42);
@@ -2359,6 +2417,12 @@ end;
 
 {$REGION 'TTestNullableDateTime'}
 
+procedure TTestNullableDateTime.TearDown;
+begin
+  fDateTime := nil;
+  inherited;
+end;
+
 procedure TTestNullableDateTime.TestFromVariantSQLTimestamp;
 var
   dt: TDateTime;
@@ -2393,6 +2457,12 @@ end;
 
 
 {$REGION 'TTestNullableInt64'}
+
+procedure TTestNullableInt64.TearDown;
+begin
+  fInt64 := nil;
+  inherited;
+end;
 
 procedure TTestNullableInt64.TestFromVariantFmtBcd;
 var

@@ -32,11 +32,19 @@ interface
 
 {$IFDEF FMX}
 uses
+ {$IFDEF LEAKCHECK}
+  LeakCheck,
+  LeakCheck.Utils,
+ {$ENDIF LEAKCHECK}
   System.StartUpCopy,
   FMX.Forms,
   FMXTestRunner;
-{$ELSE}
-{$ENDIF}
+{$ELSE FMX}
+ {$IFDEF LEAKCHECK}
+uses
+  LeakCheck;
+ {$ENDIF LEAKCHECK}
+{$ENDIF FMX}
 
 implementation
 

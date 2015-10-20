@@ -67,6 +67,7 @@ type
 
       TValueCollection = class(TContainedReadOnlyCollection<TValue>)
       private
+        {$IFDEF WEAKREF}[Weak]{$ENDIF}
         fOwner: TMultiMapBase<TKey, TValue>;
       protected
       {$REGION 'Property Accessors'}

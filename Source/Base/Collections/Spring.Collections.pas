@@ -1083,7 +1083,14 @@ type
   TLinkedListNode<T> = class sealed
   protected
     fList: Pointer;
+    {$IFDEF WEAKREF}
+    // Indicates whether some list already incremented the refcount
+    fOwned: Boolean;
+    {$ENDIF}
+    // Linked list keeps references locally
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fNext: TLinkedListNode<T>;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fPrev: TLinkedListNode<T>;
     fItem: T;
     function GetList: ILinkedList<T>;

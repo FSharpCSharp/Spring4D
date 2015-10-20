@@ -140,6 +140,7 @@ type
     fExpectedString: string;
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestNameService;
     procedure TestIntegerArgument;
@@ -177,6 +178,7 @@ type
   protected
     procedure DoRegisterComponents; virtual;
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestConstructorInjection;
     procedure TestMethodInjection;
@@ -951,6 +953,9 @@ begin
 {$ENDIF}
   fNameService := nil;
 
+  fServices := Default(TArray<INameService>);
+  fServiceValues := Default(TArray<TValue>);
+
   inherited TearDown;
 end;
 
@@ -1024,6 +1029,13 @@ begin
   CheckNotNull(fPrimitive.NameService, 'NameService should not be nil.');
   CheckTrue(fPrimitive.NameService is TNameService, 'Unexpected type.');
   CheckEquals(TNameService.NameString, fPrimitive.NameService.Name);
+end;
+
+procedure TTestActivatorDelegate.TearDown;
+begin
+  inherited;
+  fPrimitive := nil;
+  fExpectedString := '';
 end;
 
 procedure TTestActivatorDelegate.TestIntegerArgument;
@@ -1206,6 +1218,12 @@ begin
   DoRegisterComponents;
   fContainer.Build;
   fExplorer := fContainer.Resolve<IInjectionExplorer>;
+end;
+
+procedure TNamedInjectionsTestCase.TearDown;
+begin
+  inherited;
+  fExplorer := nil;
 end;
 
 procedure TNamedInjectionsTestCase.TestConstructorInjection;

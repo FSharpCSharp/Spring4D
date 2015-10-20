@@ -100,6 +100,7 @@ type
     fController: ISerializerController;
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestInterfacedObject;
     procedure TestInterfacedNoObject;
@@ -430,6 +431,12 @@ begin
   fController := TLoggerController.Create;
   fController.AddSerializer(TReflectionTypeSerializer.Create);
   fSerializer := TInterfaceSerializer.Create;
+end;
+
+procedure TTestInterfaceSerializer.TearDown;
+begin
+  inherited;
+  fController := nil;
 end;
 
 procedure TTestInterfaceSerializer.TestInterfacedNoObject;

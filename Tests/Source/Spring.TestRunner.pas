@@ -42,6 +42,21 @@ uses
   {$ENDIF}
   TextTestRunner;
 {$ELSE}
+  {$IFDEF LEAKCHECK}
+  LeakCheck,
+  SysUtils,
+  StrUtils,
+  Classes,
+  DateUtils,
+  Rtti,
+  TestFramework,
+  LeakCheck.Utils,
+  LeakCheck.Cycle,
+  LeakCheck.DUnit,
+  LeakCheck.DUnitCycle,
+  Spring.Reflection,
+  Spring.ValueConverters,
+  {$ENDIF}
   {$IFDEF TESTINSIGHT}
   TestInsight.DUnit;
   {$ELSE}
@@ -56,6 +71,55 @@ uses
 
 var
   OutputFile: string = 'Spring.Tests.Reports.xml';
+
+{$IFDEF LEAKCHECK}
+function IgnoreValueConverters(const Instance: TObject; ClassType: TClass): Boolean;
+begin
+  Result := ClassType.InheritsFrom(TValueConverter);
+  if Result then
+    IgnoreManagedFields(Instance, ClassType);
+end;
+
+function IgnoreTimeZoneCache(const Instance: TObject; ClassType: TClass): Boolean;
+begin
+  Result := ClassType.ClassName = 'TLocalTimeZone.TYearlyChanges';
+  if Result then
+    IgnoreManagedFields(Instance, ClassType);
+end;
+
+function IgnoreEmptyEnumerable(const Instance: TObject; ClassType: TClass): Boolean;
+begin
+  Result := StartsStr('TEmptyEnumerable<', ClassType.ClassName);
+end;
+
+procedure InitializeLeakCheck;
+var
+  intfType: TRttiInterfaceType;
+begin
+  MemLeakMonitorClass := TLeakCheckGraphMonitor;//TLeakCheckCycleGraphMonitor;
+  // For ORM ignore strings as well since it assignes them to global attributes
+  // which creates unignorable leaks.
+  TLeakCheck.IgnoredLeakTypes := [tkUnknown, tkUString];
+  TLeakCheck.InstanceIgnoredProc := IgnoreMultipleObjects;
+  AddIgnoreObjectProc([
+    IgnoreRttiObjects,
+    IgnoreValueConverters,
+    IgnoreEmptyEnumerable,
+    IgnoreAnonymousMethodPointers,
+    IgnoreCustomAttributes,
+    IgnoreTimeZoneCache
+  ]);
+  // Initialize few things so they dont't leak in the tests
+  TThread.CurrentThread;
+  TType.FindType('System.TObject'); // Initialize RTTI package maps
+  TType.TryGetInterfaceType(IUnknown, intfType); // Initialize Spring.TType interface map
+  intfType := nil;
+{$IFDEF DELPHIXE_UP}
+  TTimeZone.Local.ID;
+{$ENDIF}
+  StrToBool('True'); // Initialize StrToBool array cache
+end;
+{$ENDIF}
 
 procedure RunRegisteredTests;
 begin
@@ -78,6 +142,9 @@ begin
   end;
   {$ENDIF}
 {$ELSE}
+  {$IFDEF LEAKCHECK}
+  InitializeLeakCheck;
+  {$ENDIF}
   {$IFDEF TESTINSIGHT}
   TestInsight.DUnit.RunRegisteredTests;
   {$ELSE}

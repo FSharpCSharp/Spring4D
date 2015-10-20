@@ -570,6 +570,8 @@ end;
 procedure TStorageTests.TearDown;
 begin
   fSUT.Free;
+  fPrimaryStorage := nil;
+  fSecondaryStorage := nil;
 end;
 
 procedure TStorageTests.Save_should_use_primaryStorage_when_it_is_up;

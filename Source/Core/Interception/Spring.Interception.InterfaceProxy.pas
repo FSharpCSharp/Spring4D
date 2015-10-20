@@ -103,6 +103,12 @@ begin
       @STypeParameterContainsNoRtti, [proxyType.Name]);
 
   inherited Create(proxyType, HandleInvoke);
+{$IFDEF AUTOREFCOUNT}
+  // Release reference held by ancestor (bypass RSP-10177)
+  __ObjRelease;
+  // Release reference created by passing closure to HandleInvoke (RSP-10176)
+  __ObjRelease;
+{$ENDIF}
   fInterceptors := TCollections.CreateInterfaceList<IInterceptor>(interceptors);
   fInterceptorSelector := options.Selector;
   fTarget := TValue.From(target);

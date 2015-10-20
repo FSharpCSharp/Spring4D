@@ -341,6 +341,7 @@ type
     SUT: IList<TPersistent>;
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestQueryInterface;
     procedure TestObjectListCreate;
@@ -353,6 +354,7 @@ type
     SUT: IList<IInvokable>;
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestInterfaceListCreate;
     procedure TestGetElementType;
@@ -399,6 +401,7 @@ type
       Action: TCollectionChangedAction);
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestListAdd;
     procedure TestListAddRangeArray;
@@ -485,6 +488,7 @@ procedure TTestEmptyHashSet.TearDown;
 begin
   inherited;
   fSet := nil;
+  fEmpty := nil;
 end;
 
 procedure TTestEmptyHashSet.TestEmpty;
@@ -1863,6 +1867,7 @@ procedure TTestListOfIntegerAsIEnumerable.TearDown;
 begin
   inherited;
   SUT := nil;
+  InternalList := nil;
 end;
 
 procedure TTestListOfIntegerAsIEnumerable.TestEnumerableIsEmpty;
@@ -2008,6 +2013,10 @@ begin
   CheckCount(1);
   CheckEvent(1, caAdded);
   CheckNode(node, 1, nil, nil);
+{$IFDEF AUTOREFCOUNT}
+  CheckTrue(node.fOwned);
+  CheckEquals(2, node.RefCount);
+{$ENDIF}
 end;
 
 procedure TTestLinkedList.TestAddFirstNode_ListContainsTwoItems;
@@ -2109,6 +2118,12 @@ begin
   SUT := TObjectList<TPersistent>.Create as IList<TPersistent>;
 end;
 
+procedure TTestObjectList.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
 procedure TTestObjectList.TestGetElementType;
 begin
   Check(TypeInfo(TPersistent) = SUT.ElementType);
@@ -2155,6 +2170,12 @@ end;
 
 type
   TInvokable = class(TInterfacedObject, IInvokable);
+
+procedure TTestInterfaceList.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
 
 procedure TTestInterfaceList.TestCopyTo;
 var
@@ -2389,6 +2410,13 @@ procedure TTestListAdapter.SetUp;
 begin
   InternalList := TCollections.CreateList<Integer>([1, 2, 3]);
   SUT := InternalList.AsList;
+end;
+
+procedure TTestListAdapter.TearDown;
+begin
+  inherited;
+  SUT := nil;
+  InternalList := nil;
 end;
 
 procedure TTestListAdapter.TestListAdd;
