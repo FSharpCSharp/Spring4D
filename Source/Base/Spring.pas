@@ -3708,21 +3708,16 @@ end;
 
 function TValueHelper.TryGetLazyValue(out value: TValue): Boolean;
 var
-  typeInfo: PTypeInfo;
-  lazyKind: TLazyKind;
-  context: TRttiContext;
-  lazyType: TRttiType;
-  lazyField: TRttiField;
+  instance: PInterface;
   lazy: ILazy;
 begin
-  typeInfo := TValueData(Self).FTypeInfo;
-  lazyKind := GetLazyKind(typeInfo);
-  case lazyKind of
+  case GetLazyKind(TValueData(Self).FTypeInfo) of
     lkRecord:
     begin
-      lazyType := context.GetType(typeInfo);
-      lazyField := lazyType.GetField('fLazy');
-      lazy := lazyField.GetValue(GetReferenceToRawData).AsInterface as ILazy;
+      instance := GetReferenceToRawData;
+      if instance = nil then
+        Exit(False);
+      lazy := instance^ as ILazy;
       Result := Assigned(lazy);
       if Result then
         value := lazy.Value;
