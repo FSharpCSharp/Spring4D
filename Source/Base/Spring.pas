@@ -1530,12 +1530,22 @@ type
 
   {$REGION 'Smart pointer'}
 
-  ISmartPointer<T> = reference to function: T;
+  IManaged<T> = reference to function: T;
 
-  SmartPointer<T> = record
+  TManaged<T> = class(TInterfacedObject, IManaged<T>)
+  private
+    fValue: T;
+    function Invoke: T; inline;
+  public
+    constructor Create; overload;
+    constructor Create(const value: T); overload;
+    destructor Destroy; override;
+  end;
+
+  Managed<T> = record
   private
     type
-      TSmartPointer = class(TInterfacedObject)
+      TFinalizer = class(TInterfacedObject)
       private
         fValue: Pointer;
       public
@@ -1546,19 +1556,9 @@ type
     fValue: T;
     fFinalizer: IInterface;
   public
-    class operator Implicit(const value: T): SmartPointer<T>;
-    class operator Implicit(const value: SmartPointer<T>): T;
+    class operator Implicit(const value: T): Managed<T>;
+    class operator Implicit(const value: Managed<T>): T;
     property Value: T read fValue;
-  end;
-
-  TSmartPointer<T> = class(TInterfacedObject, ISmartPointer<T>)
-  private
-    fValue: T;
-    function Invoke: T; inline;
-  public
-    constructor Create; overload;
-    constructor Create(const value: T); overload;
-    destructor Destroy; override;
   end;
 
   {$ENDREGION}
@@ -5267,45 +5267,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'SmartPointer<T>'}
+{$REGION 'TManaged<T>'}
 
-class operator SmartPointer<T>.Implicit(const value: T): SmartPointer<T>;
-begin
-  Result.fValue := value;
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
-    {$IFNDEF AUTOREFCOUNT}tkClass,{$ENDIF}
-    tkPointer: Result.fFinalizer := TSmartPointer.Create(Result.fValue);
-  end;
-end;
-
-class operator SmartPointer<T>.Implicit(const value: SmartPointer<T>): T;
-begin
-  Result := value.fValue;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'SmartPointer<T>.TSmartPointer'}
-
-constructor SmartPointer<T>.TSmartPointer.Create(const value);
-begin
-  inherited Create;
-  fValue := Pointer(value);
-end;
-
-destructor SmartPointer<T>.TSmartPointer.Destroy;
-begin
-  FinalizeValue(fValue, TypeInfo(T));
-  inherited;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSmartPointer<T>'}
-
-constructor TSmartPointer<T>.Create;
+constructor TManaged<T>.Create;
 begin
   inherited Create;
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
@@ -5314,21 +5278,57 @@ begin
   end;
 end;
 
-constructor TSmartPointer<T>.Create(const value: T);
+constructor TManaged<T>.Create(const value: T);
 begin
   inherited Create;
   fValue := value;
 end;
 
-destructor TSmartPointer<T>.Destroy;
+destructor TManaged<T>.Destroy;
 begin
   FinalizeValue(fValue, TypeInfo(T));
   inherited;
 end;
 
-function TSmartPointer<T>.Invoke: T;
+function TManaged<T>.Invoke: T;
 begin
   Result := fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Managed<T>'}
+
+class operator Managed<T>.Implicit(const value: T): Managed<T>;
+begin
+  Result.fValue := value;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    {$IFNDEF AUTOREFCOUNT}tkClass,{$ENDIF}
+    tkPointer: Result.fFinalizer := TFinalizer.Create(Result.fValue);
+  end;
+end;
+
+class operator Managed<T>.Implicit(const value: Managed<T>): T;
+begin
+  Result := value.fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Managed<T>.TFinalizer'}
+
+constructor Managed<T>.TFinalizer.Create(const value);
+begin
+  inherited Create;
+  fValue := Pointer(value);
+end;
+
+destructor Managed<T>.TFinalizer.Destroy;
+begin
+  FinalizeValue(fValue, TypeInfo(T));
+  inherited;
 end;
 
 {$ENDREGION}

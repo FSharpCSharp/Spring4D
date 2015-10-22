@@ -73,7 +73,7 @@ begin
     TTestTuplesDouble.Suite,
     TTestTuplesTriple.Suite,
     TTestTuplesQuadruple.Suite,
-    TTestSmartPointer.Suite,
+    TTestManaged.Suite,
     TTestVector.Suite,
     TTestValueHelper.Suite
   ]);
