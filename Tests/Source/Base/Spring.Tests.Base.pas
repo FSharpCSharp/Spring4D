@@ -407,6 +407,18 @@ type
     procedure Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
 
     procedure Test_Compare_StringToString_ValuesAreEqual_ReturnsTrue;
+
+    procedure EqualsReturnsTrueForEqualVariants;
+    procedure EqualsReturnsTrueForUnassignedVariants;
+    procedure EqualsReturnsTrueForEqualVariantArrays;
+    procedure EqualsReturnsTrueForEqualVariantArraysTwoDimensions;
+    procedure EqualsReturnsTrueForEqualVariantArraysWithDifferentType;
+    procedure EqualsReturnsFalseForDifferentVariants;
+    procedure EqualsReturnsFalseForDifferentVariantsOneIsUnassigned;
+    procedure EqualsReturnsFalseForDifferentVariantArraysWithDifferentLength;
+    procedure EqualsReturnsFalseForDifferentVariantArraysWithSameLength;
+    procedure EqualsReturnsTrueForEqualVariantArrayOfVariantArray;
+    procedure EqualsReturnsFalseForDifferentVariantArrayOfVariantArray;
   end;
 
 implementation
@@ -2317,6 +2329,185 @@ begin
     CheckTrue(fSUT.Equals(fValue))
   else
     CheckFalse(fSUT.Equals(fValue));
+end;
+
+procedure TTestValueHelper.EqualsReturnsFalseForDifferentVariantArrayOfVariantArray;
+var
+  v1, v2: Variant;
+  v3, v4: Variant;
+begin
+  v1 := VarArrayCreate([0, 2], varVariant);
+  v3 := VarArrayCreate([0, 2], varVariant);
+  v1[0] := 0;
+  v1[1] := 1;
+  v1[2] := 2;
+  v3[0] := v1;
+  v3[1] := v1;
+  v3[2] := v1;
+  v2 := VarArrayCreate([0, 2], varVariant);
+  v4 := VarArrayCreate([0, 2], varVariant);
+  v2[0] := 0;
+  v2[1] := 1;
+  v2[2] := 3;
+  v4[0] := v2;
+  v4[1] := v2;
+  v4[2] := v2;
+
+  fSUT := TValue.From(v1);
+  fValue := TValue.From(v2);
+  DoCheckEquals(False);
+end;
+
+procedure TTestValueHelper.EqualsReturnsFalseForDifferentVariantArraysWithDifferentLength;
+var
+  v1, v2: Variant;
+begin
+  v1 := VarArrayCreate([0, 2], varInteger);
+  v1[0] := 0;
+  v1[1] := 1;
+  v1[2] := 2;
+  v2 := VarArrayCreate([0, 3], varInteger);
+  v2[0] := 0;
+  v2[1] := 1;
+  v2[2] := 2;
+  v2[3] := 3;
+
+  fSUT := TValue.From(v1);
+  fValue := TValue.From(v2);
+  DoCheckEquals(False);
+end;
+
+procedure TTestValueHelper.EqualsReturnsFalseForDifferentVariantArraysWithSameLength;
+var
+  v1, v2: Variant;
+begin
+  v1 := VarArrayCreate([0, 2], varInteger);
+  v1[0] := 0;
+  v1[1] := 1;
+  v1[2] := 2;
+  v2 := VarArrayCreate([0, 2], varInteger);
+  v2[0] := 0;
+  v2[1] := 1;
+  v2[2] := 3;
+
+  fSUT := TValue.From(v1);
+  fValue := TValue.From(v2);
+  DoCheckEquals(False);
+end;
+
+procedure TTestValueHelper.EqualsReturnsFalseForDifferentVariants;
+begin
+  fSUT := TValue.From(Variant('test'));
+  fValue := TValue.From(Variant('tets'));
+  DoCheckEquals(False);
+end;
+
+procedure TTestValueHelper.EqualsReturnsFalseForDifferentVariantsOneIsUnassigned;
+begin
+  fSUT := TValue.From(Variant('test'));
+  fValue := TValue.From(Unassigned);
+  DoCheckEquals(False);
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForEqualVariantArrayOfVariantArray;
+var
+  v1, v2: Variant;
+  v3, v4: Variant;
+begin
+  v1 := VarArrayCreate([0, 2], varVariant);
+  v3 := VarArrayCreate([0, 2], varVariant);
+  v1[0] := 0;
+  v1[1] := 1;
+  v1[2] := 2;
+  v3[0] := v1;
+  v3[1] := v1;
+  v3[2] := v1;
+  v2 := VarArrayCreate([0, 2], varVariant);
+  v4 := VarArrayCreate([0, 2], varVariant);
+  v2[0] := 0;
+  v2[1] := 1;
+  v2[2] := 2;
+  v4[0] := v2;
+  v4[1] := v2;
+  v4[2] := v2;
+
+  fSUT := TValue.From(v1);
+  fValue := TValue.From(v2);
+  DoCheckEquals;
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForEqualVariantArrays;
+var
+  v1, v2: Variant;
+begin
+  v1 := VarArrayCreate([0, 2], varInteger);
+  v1[0] := 0;
+  v1[1] := 1;
+  v1[2] := 2;
+  v2 := VarArrayCreate([0, 2], varInteger);
+  v2[0] := 0;
+  v2[1] := 1;
+  v2[2] := 2;
+
+  fSUT := TValue.From(v1);
+  fValue := TValue.From(v2);
+  DoCheckEquals;
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForEqualVariantArraysTwoDimensions;
+var
+  v1, v2: Variant;
+begin
+  v1 := VarArrayCreate([0, 2, 0, 1], varInteger);
+  v1[0,0] := 0;
+  v1[1,0] := 1;
+  v1[2,0] := 2;
+  v1[0,1] := 3;
+  v1[1,1] := 4;
+  v1[2,1] := 5;
+  v2 := VarArrayCreate([0, 2, 0, 1], varInteger);
+  v2[0,0] := 0;
+  v2[1,0] := 1;
+  v2[2,0] := 2;
+  v2[0,1] := 3;
+  v2[1,1] := 4;
+  v2[2,1] := 5;
+
+  fSUT := TValue.From(v1);
+  fValue := TValue.From(v2);
+  DoCheckEquals;
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForEqualVariantArraysWithDifferentType;
+var
+  v1, v2: Variant;
+begin
+  v1 := VarArrayCreate([0, 2], varInteger);
+  v1[0] := 0;
+  v1[1] := 1;
+  v1[2] := 2;
+  v2 := VarArrayCreate([0, 2], varByte);
+  v2[0] := 0;
+  v2[1] := 1;
+  v2[2] := 2;
+
+  fSUT := TValue.From(v1);
+  fValue := TValue.From(v2);
+  DoCheckEquals;
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForEqualVariants;
+begin
+  fSUT := TValue.From(Variant('test'));
+  fValue := TValue.From(Variant('test'));
+  DoCheckEquals;
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForUnassignedVariants;
+begin
+  fSUT := TValue.From(Unassigned);
+  fValue := TValue.From(Unassigned);
+  DoCheckEquals;
 end;
 
 procedure TTestValueHelper.TearDown;

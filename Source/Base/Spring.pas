@@ -124,7 +124,7 @@ type
 
   TValueHelper = record helper for TValue
   private
-    function GetTypeKind: TTypeKind;
+    function GetTypeKind: TTypeKind; inline;
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
     class procedure RaiseConversionError(source, target: PTypeInfo); static;
   public
@@ -1951,7 +1951,14 @@ function SkipShortString(P: PByte): Pointer; inline;
 function LoadFromStreamToVariant(const stream: TStream): OleVariant;
 
 function GetGenericTypeParameters(const typeName: string): TArray<string>;
-{$ENDREGION}
+
+/// <summary>
+///   Indicates whether two Variant values are equal. Unlike using the equals
+///   operator this function also supports variant arrays.
+/// </summary>
+function SameValue(const left, right: Variant): Boolean; overload;
+
+  {$ENDREGION}
 
 
 const
@@ -2378,6 +2385,75 @@ begin
   Result := SplitTypes(s);
 end;
 
+type
+  TVarArrayBoundHelper = record helper for TVarArrayBound
+    function GetHighBound: Integer; inline;
+    property HighBound: Integer read GetHighBound;
+  end;
+
+function TVarArrayBoundHelper.GetHighBound: Integer;
+begin
+  Result := LowBound + ElementCount - 1;
+end;
+
+function SameValue(const left, right: Variant): Boolean;
+
+  function MoveNext(const bounds: TArray<TVarArrayBound>;
+    var indices: TArray<Integer>): Boolean;
+  var
+    i: Integer;
+  begin
+    for i := Length(indices) - 1 downto 0 do
+      if indices[i] < bounds[i].HighBound then
+      begin
+        Inc(indices[i]);
+        Exit(True);
+      end
+      else
+        indices[i] := bounds[i].LowBound;
+    Result := False;
+  end;
+
+var
+  isArray: Boolean;
+  leftArr, rightArr: PVarArray;
+  i, count: Integer;
+  indices: TArray<Integer>;
+  bounds: TArray<TVarArrayBound>;
+begin
+  isArray := VarType(left) and varArray = varArray;
+  if isArray <> (VarType(right) and varArray = varArray) then
+    Exit(False);
+
+  if not isArray then
+    Exit(left = right);
+
+  leftArr := VarArrayAsPSafeArray(left);
+  rightArr := VarArrayAsPSafeArray(right);
+  if leftArr.DimCount <> rightArr.DimCount then
+    Exit(False);
+  SetLength(indices, leftArr.DimCount);
+  SetLength(bounds, leftArr.DimCount);
+{$RANGECHECKS OFF}
+  for i := leftArr.DimCount - 1 downto 0 do
+  begin
+    count := leftArr.Bounds[i].ElementCount;
+    if count = 0 then
+      Exit(True);
+    if count <> rightArr.Bounds[i].ElementCount then
+      Exit(False);
+    bounds[leftArr.DimCount - 1 - i] := leftArr.Bounds[i];
+  end;
+{$IFDEF RANGECHECKS_ON}
+{$RANGECHECKS ON}
+{$ENDIF}
+  repeat
+    if not SameValue(VarArrayGet(left, indices), VarArrayGet(right, indices)) then
+      Exit(False);
+  until not MoveNext(bounds, indices);
+  Result := True;
+end;
+
 {$ENDREGION}
 
 
@@ -2560,7 +2636,7 @@ end;
 
 function EqualsVar2Var(const left, right: TValue): Boolean;
 begin
-  Result := left.AsVariant = right.AsVariant;
+  Result := SameValue(left.AsVariant, right.AsVariant);
 end;
 
 function EqualsRec2Rec(const left, right: TValue): Boolean;
@@ -2902,8 +2978,7 @@ const
 function TValueHelper.Equals(const value: TValue): Boolean;
 begin
   if Assigned(TypeInfo) then
-    Result := Assigned(value.TypeInfo)
-      and EqualsFunctions[Kind,value.Kind](Self, value)
+    Result := EqualsFunctions[Kind, value.Kind](Self, value)
   else
     Result := value.IsEmpty;
 end;
