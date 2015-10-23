@@ -36,7 +36,7 @@
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;Data.Win;System.Win;Web.Win;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <DCC_Define>_CONSOLE_TESTRUNNER;USE_SPRING;_PERFORMANCE_TESTS;GUI_TESTS;_TESTINSIGHT;$(DCC_Define)</DCC_Define>
-        <DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\..\Source\;..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;..\External\uib\Source\;..\External\FastMM\;..\External\MongoDB\;..\External\SQLite3\Source;..\..\Tests\;..\..\Tests\Source\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\..\Source\;..\..\Source\Base;..\..\Source\Base\Collections;..\External\uib\Source\;..\External\FastMM\;..\External\MongoDB\;..\External\SQLite3\Source;..\..\Tests\;..\..\Tests\Source\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_UsePackage>vcl;vclx;VclSmp;rtl;vclimg;svnui;svn;bdertl;TeeUI;TeeDB;Tee;vclactnband;vcldb;dbrtl;vcldbx;vcltouch;xmlrtl;dsnap;dsnapcon;vclib;ibxpress;adortl;IndyCore;IndySystem;IndyProtocols;inet;intrawebdb_110_150;Intraweb_110_150;vclie;websnap;webdsnap;inetdb;inetdbbde;inetdbxpress;soaprtl;vclribbon;dbexpress;DbxCommonDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;DbxClientDriver;DataSnapClient;dbxcds;DataSnapServer;AzureCloud;DBXInterBaseDriver;DBXMySQLDriver;DBXFirebirdDriver;DBXSybaseASEDriver;DBXSybaseASADriver;DBXOracleDriver;DBXMSSQLDriver;DBXInformixDriver;DBXDb2Driver;CodeSiteExpressVcl;$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_ImageBase>00400000</DCC_ImageBase>
         <DCC_DcuOutput>.\$(Config)\$(Platform)\DCU</DCC_DcuOutput>

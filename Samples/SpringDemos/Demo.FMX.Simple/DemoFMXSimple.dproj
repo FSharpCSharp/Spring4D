@@ -56,7 +56,7 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Base\Reflection;..\..\..\Source\Base\Logging;..\..\..\Source\Core\Container;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Base\Logging;..\..\..\Source\Core\Container;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <AUP_READ_EXTERNAL_STORAGE>true</AUP_READ_EXTERNAL_STORAGE>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>

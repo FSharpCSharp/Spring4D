@@ -63,7 +63,7 @@
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <DCC_Define>SPRING_ENABLE_GUARD;SPRING_NO_WARNING;$(DCC_Define)</DCC_Define>
-        <DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Base\Logging;..\Source\Core\Container;..\Source\Core\Services;..\Source\Core\Logging;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;.\Source\dUnit;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Logging;..\Source\Core\Container;..\Source\Core\Services;..\Source\Core\Logging;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;.\Source\dUnit;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <SanitizedProjectName>Spring_Tests_Logging_CodeSite_XE6</SanitizedProjectName>
         <Manifest_File>None</Manifest_File>
         <VerInfo_Locale>1029</VerInfo_Locale>

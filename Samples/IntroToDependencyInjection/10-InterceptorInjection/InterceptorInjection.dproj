@@ -32,7 +32,7 @@
 			<SanitizedProjectName>InterceptorInjection</SanitizedProjectName>
 			<DCC_DependencyCheckOutputName>Win32\Debug\DecoratorInjection.exe</DCC_DependencyCheckOutputName>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
-			<DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Base\Interception;..\..\..\Source\Base\Logging;..\..\..\Source\Base\Patches;..\..\..\Source\Base\Logging;..\..\..\Source\Base\Reflection;..\..\..\Source\Core\Container;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\..\Source\Base\Logging;..\..\..\Source\Base\Patches;..\..\..\Source\Base\Logging;..\..\..\Source\Core\Container;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Define>CONSOLEAPP;$(DCC_Define)</DCC_Define>
 			<DCC_UsePackage>bindcompfmx;fmx;rtl;dbrtl;IndySystem;DbxClientDriver;bindcomp;inetdb;DBXInterBaseDriver;DataSnapCommon;DataSnapClient;DataSnapServer;DataSnapProviderClient;xmlrtl;ibxpress;DbxCommonDriver;IndyProtocols;DBXMySQLDriver;dbxcds;bindengine;FMXTee;soaprtl;DBXOracleDriver;dsnap;DBXInformixDriver;IndyCore;fmxase;CloudService;FmxTeeUI;DBXFirebirdDriver;inet;fmxobj;inetdbxpress;DBXSybaseASADriver;fmxdae;dbexpress;DataSnapIndy10ServerTransport;IPIndyImpl;$(DCC_UsePackage)</DCC_UsePackage>
 			<DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
