@@ -1,6 +1,5 @@
 unit TestSession;
 
-{$I sv.inc}
 {.$DEFINE PERFORMANCE_TESTS}
 
 interface

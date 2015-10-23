@@ -1,7 +1,5 @@
 unit TestObjectDataset;
 
-{$I sv.inc}
-
 interface
 
 uses
