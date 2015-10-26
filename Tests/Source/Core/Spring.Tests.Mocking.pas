@@ -36,6 +36,7 @@ type
   TParameterMatchingTests = class(TTestCase)
   published
     procedure ArgsEvaluationOrder;
+    procedure OutParameterCanBeSet;
   end;
 
 implementation
@@ -106,6 +107,27 @@ begin
   end;
 
   Pass;
+end;
+
+type
+  IOutParamTest = interface(IInvokable)
+    procedure Test(out value: Integer);
+  end;
+
+procedure TParameterMatchingTests.OutParameterCanBeSet;
+var
+  mock: Mock<IOutParamTest>;
+  i: Integer;
+begin
+  mock.Setup.Executes(
+    function(const call: TCallInfo): TValue
+    begin
+      CheckEquals(42, call[0].AsInteger);
+      call[0] := 43;
+    end).When(Arg.Any).Test(i);
+  i := 42;
+  mock.Instance.Test(i);
+  CheckEquals(43, i);
 end;
 
 end.

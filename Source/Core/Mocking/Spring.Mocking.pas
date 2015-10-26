@@ -58,11 +58,14 @@ type
   private
     fInvocation: IInvocation;
     fCallCount: Integer;
-    function GetMethod: TRttiMethod;
+    function GetArg(index: Integer): TValue;
     function GetArguments: TArray<TValue>;
     function GetCallCount: Integer;
+    function GetMethod: TRttiMethod;
+    procedure SetArg(index: Integer; const value: TValue);
   public
     constructor Create(const invocation: IInvocation; callCount: Integer);
+    property Args[index: Integer]: TValue read GetArg write SetArg; default;
     property Arguments: TArray<TValue> read GetArguments;
     property CallCount: Integer read GetCallCount;
     property Method: TRttiMethod read GetMethod;
@@ -224,6 +227,11 @@ begin
   fCallCount := callCount;
 end;
 
+function TCallInfo.GetArg(index: Integer): TValue;
+begin
+  Result := fInvocation.Arguments[index];
+end;
+
 function TCallInfo.GetArguments: TArray<TValue>;
 begin
   Result := fInvocation.Arguments;
@@ -237,6 +245,11 @@ end;
 function TCallInfo.GetMethod: TRttiMethod;
 begin
   Result := fInvocation.Method;
+end;
+
+procedure TCallInfo.SetArg(index: Integer; const value: TValue);
+begin
+  fInvocation.Arguments[index] := value;
 end;
 
 {$ENDREGION}
