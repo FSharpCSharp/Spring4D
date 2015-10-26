@@ -95,6 +95,8 @@ type
     function GetInstance: TValue;
     function GetTypeInfo: PTypeInfo;
 
+    procedure Reset;
+
     function Setup: ISetup;
 
     procedure Received; overload;
@@ -134,6 +136,8 @@ type
     function GetTypeInfo: PTypeInfo;
     procedure SetCallBase(const value: Boolean);
   {$ENDREGION}
+
+    procedure Reset;
 
     function Setup: ISetup<T>;
 
@@ -181,6 +185,7 @@ type
       behavior: TMockBehavior = DefaultMockBehavior): Mock<T>; overload; static;
 
     procedure Free;
+    procedure Reset;
 
     class operator Implicit(const value: IMock): Mock<T>;
     class operator Implicit(const value: Mock<T>): IMock;
@@ -374,6 +379,11 @@ function Mock<T>.Received(const times: Times; const match: TArgMatch): T;
 begin
   EnsureInitialized;
   Result := fMock.Received(times, match);
+end;
+
+procedure Mock<T>.Reset;
+begin
+  fMock.Reset;
 end;
 
 {$ENDREGION}

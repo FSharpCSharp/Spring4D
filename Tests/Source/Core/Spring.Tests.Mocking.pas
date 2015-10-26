@@ -81,8 +81,7 @@ begin
     sut.Test4('', Self, '');
   end;
 
-  mock := Mock<IMockTest>.Create(TMockBehavior.Strict);
-  sut := mock.Instance;
+  mock.Reset;
   with mock.Setup.Executes do
   begin
     When.Test1(Arg.IsInRange(3, 6), Arg.IsAny<string>);
@@ -94,8 +93,7 @@ begin
       end);
   end;
 
-  mock := Mock<IMockTest>.Create(TMockBehavior.Strict);
-  sut := mock.Instance;
+  mock.Reset;
   with mock.Setup.Executes do
   begin
     When.Test1(Arg.IsIn([3, 4, 5, 6]), Arg.IsAny<string>);

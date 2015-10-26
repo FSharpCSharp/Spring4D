@@ -77,6 +77,8 @@ type
     procedure Received(const times: Times); overload;
     procedure Received(const times: Times; const match: TArgMatch); overload;
 
+    procedure Reset;
+
     procedure Returns(const action: TMockAction);
 
     procedure When; overload;
@@ -241,6 +243,13 @@ begin
   fState := TMockState.Assert;
   fCurrentTimes := times;
   fMatch := match;
+end;
+
+procedure TMockInterceptor.Reset;
+begin
+  fState := TMockState.Act;
+  fExpectedCalls.Clear;
+  fReceivedCalls.Clear;
 end;
 
 procedure TMockInterceptor.Returns(const action: TMockAction);

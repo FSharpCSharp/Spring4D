@@ -62,6 +62,8 @@ type
     destructor Destroy; override;
 
   {$REGION 'Implements IMock'}
+    procedure Reset;
+
     function Setup: ISetup;
 
     procedure Received; overload;
@@ -310,6 +312,11 @@ end;
 procedure TMock.Received(const times: Times; const match: TArgMatch);
 begin
   fInterceptor.Received(times, match);
+end;
+
+procedure TMock.Reset;
+begin
+  fInterceptor.Reset;
 end;
 
 procedure TMock.SetCallBase(const value: Boolean);
