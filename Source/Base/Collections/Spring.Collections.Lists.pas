@@ -48,12 +48,14 @@ type
 
 {$IFDEF SPRING_ARRAYMANAGERS}
   TArrayManager<T> = class abstract
+  public
     procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
     procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
     procedure Finalize(var AArray: array of T; Index, Count: Integer); overload; virtual; abstract;
   end;
 
   TMoveArrayManager<T> = class(TArrayManager<T>)
+  public
     procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
     procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
     procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
