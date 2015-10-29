@@ -558,6 +558,9 @@ type
   Guard = record
   private
     class procedure RaiseArgumentException(typeKind: TTypeKind; const argumentName: string); overload; static;
+    class procedure RaiseCannotAssignPointerToNullable; static;
+    class procedure RaiseNullableHasNoValue; static;
+    class procedure RaiseNoDelegateAssigned; static;
   public
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string = ''); static; inline;
@@ -689,24 +692,10 @@ type
   private
     fValue: T;
     fHasValue: string;
+    class var fComparer: IEqualityComparer<T>;
+    class function EqualsInternal(const left, right: T): Boolean; static;
     function GetValue: T; inline;
     function GetHasValue: Boolean; inline;
-    class procedure RaiseCannotAssignPointerToNullable; static;
-    class procedure RaiseNullableTypeHasNoValue; static;
-
-    /// <summary>
-    ///   Internal use. Marks the current instance as null.
-    /// </summary>
-    /// <remarks>
-    ///   The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
-    ///   method must be private.
-    /// </remarks>
-    procedure Clear; inline;
-
-    /// <summary>
-    ///   Determines whether a variant value is null or empty.
-    /// </summary>
-    class function VarIsNullOrEmpty(const value: Variant): Boolean; static; inline;
   public
     /// <summary>
     ///   Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />
@@ -760,7 +749,7 @@ type
     ///     else compares their values as usual.
     ///   </para>
     /// </remarks>
-    function Equals(const other: Nullable<T>): Boolean; inline;
+    function Equals(const other: Nullable<T>): Boolean;
 
     /// <summary>
     ///   Gets a value indicating whether the current <see cref="Nullable&lt;T&gt;" />
@@ -776,14 +765,14 @@ type
     /// </exception>
     property Value: T read GetValue;
 
-    class operator Implicit(const value: Nullable<T>): T;
+    class operator Implicit(const value: Nullable<T>): T; inline;
     class operator Implicit(const value: T): Nullable<T>;
     class operator Implicit(const value: Nullable<T>): Variant;
     class operator Implicit(const value: Variant): Nullable<T>;
     class operator Implicit(value: Pointer): Nullable<T>;
-    class operator Explicit(const value: Nullable<T>): T;
-    class operator Equal(const left, right: Nullable<T>): Boolean;
-    class operator NotEqual(const left, right: Nullable<T>): Boolean;
+    class operator Explicit(const value: Nullable<T>): T; inline;
+    class operator Equal(const left, right: Nullable<T>): Boolean; inline;
+    class operator NotEqual(const left, right: Nullable<T>): Boolean; inline;
   end;
 
   TNullableString = Nullable<string>;
@@ -1004,8 +993,7 @@ type
     fLazy: ILazy<T>;
     function GetIsAssigned: Boolean;
     function GetIsValueCreated: Boolean;
-    function GetValue: T;
-    class procedure RaiseNoDelegateAssigned; static;
+    function GetValue: T; inline;
   public
     /// <summary>
     ///   Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
@@ -1958,6 +1946,11 @@ function GetGenericTypeParameters(const typeName: string): TArray<string>;
 /// </summary>
 function SameValue(const left, right: Variant): Boolean; overload;
 
+/// <summary>
+///   Determines whether a variant value is null or empty.
+/// </summary>
+function VarIsNullOrEmpty(const value: Variant): Boolean;
+
   {$ENDREGION}
 
 
@@ -1967,6 +1960,7 @@ const
 implementation
 
 uses
+  DateUtils,
   Math,
   RTLConsts,
   StrUtils,
@@ -2452,6 +2446,11 @@ begin
       Exit(False);
   until not MoveNext(bounds, indices);
   Result := True;
+end;
+
+function VarIsNullOrEmpty(const value: Variant): Boolean;
+begin
+  Result := FindVarData(value).VType in [varEmpty, varNull];
 end;
 
 {$ENDREGION}
@@ -4324,6 +4323,21 @@ begin
   raise EInvalidEnumArgumentException.CreateResFmt(
     @SInvalidEnumArgument, [argumentName]) at ReturnAddress;
 end;
+
+class procedure Guard.RaiseCannotAssignPointerToNullable;
+begin
+  raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
+end;
+
+class procedure Guard.RaiseNullableHasNoValue;
+begin
+  raise EInvalidOperationException.CreateRes(@SNullableHasNoValue);
+end;
+
+class procedure Guard.RaiseNoDelegateAssigned;
+begin
+  raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+end;
 {$IFDEF OPTIMIZATIONS_ON}
   {$UNDEF OPTIMIZATIONS_ON}
   {$O+}
@@ -4354,18 +4368,10 @@ begin
     fHasValue := CHasValueFlag;
   end
   else
-    Clear;
-end;
-
-procedure Nullable<T>.Clear;
-begin
-  fHasValue := '';
-  fValue := Default(T);
-end;
-
-class function Nullable<T>.VarIsNullOrEmpty(const value: Variant): Boolean;
-begin
-  Result := VarIsNull(value) or VarIsEmpty(value);
+  begin
+    fHasValue := '';
+    fValue := Default(T);
+  end;
 end;
 
 function Nullable<T>.GetHasValue: Boolean;
@@ -4376,7 +4382,7 @@ end;
 function Nullable<T>.GetValue: T;
 begin
   if not HasValue then
-    RaiseNullableTypeHasNoValue;
+    Guard.RaiseNullableHasNoValue;
   Result := fValue;
 end;
 
@@ -4398,50 +4404,64 @@ end;
 
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
-  if HasValue then
-  begin
-    if other.HasValue then
-      case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
-        tkInteger:
-        begin
-          case SizeOf(T) of
-            1: Result := PByte(@fValue)^ = PByte(@other.fValue)^;
-            2: Result := PWord(@fValue)^ = PWord(@other.fValue)^;
-            4: Result := PCardinal(@fValue)^ = PCardinal(@other.fValue)^;
-          end;
-        end;
+  if not HasValue then
+    Exit(not other.HasValue);
+  if not other.HasValue then
+    Exit(False);
+
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkInteger, tkEnumeration:
+    begin
+      case SizeOf(T) of
+        1: Result := PByte(@fValue)^ = PByte(@other.fValue)^;
+        2: Result := PWord(@fValue)^ = PWord(@other.fValue)^;
+        4: Result := PCardinal(@fValue)^ = PCardinal(@other.fValue)^;
+      end;
+    end;
 {$IFNDEF NEXTGEN}
-        tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
-        tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
-        tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
-        tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
+    tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
+    tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
+    tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
+    tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
 {$ENDIF}
-        tkFloat:
-        begin
-          case GetTypeData(TypeInfo(T)).FloatType of
-            ftSingle: Result := PSingle(@fValue)^ = PSingle(@other.fValue)^;
-            ftDouble: Result := PDouble(@fValue)^ = PDouble(@other.fValue)^;
-            ftExtended: Result := PExtended(@fValue)^ = PExtended(@other.fValue)^;
-            ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
-            ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
-          end;
-        end;
-        tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
-        tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
-        tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
+    tkFloat:
+    begin
+      if TypeInfo(T) = TypeInfo(Single) then
+        Result := Math.SameValue(PSingle(@fValue)^, PSingle(@other.fValue)^)
+      else if TypeInfo(T) = TypeInfo(Double) then
+        Result := Math.SameValue(PDouble(@fValue)^, PDouble(@other.fValue)^)
+      else if TypeInfo(T) = TypeInfo(Extended) then
+        Result := Math.SameValue(PExtended(@fValue)^, PExtended(@other.fValue)^)
+      else if TypeInfo(T) = TypeInfo(TDateTime) then
+        Result := SameDateTime(PDateTime(@fValue)^, PDateTime(@other.fValue)^)
       else
-        Result := TEqualityComparer<T>.Default.Equals(fValue, other.fValue)
-      end
-    else
-      Result := False;
-  end
+        case GetTypeData(TypeInfo(T)).FloatType of
+          ftSingle: Result := Math.SameValue(PSingle(@fValue)^, PSingle(@other.fValue)^);
+          ftDouble: Result := Math.SameValue(PDouble(@fValue)^, PDouble(@other.fValue)^);
+          ftExtended: Result := Math.SameValue(PExtended(@fValue)^, PExtended(@other.fValue)^);
+          ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
+          ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
+        end;
+    end;
+    tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
+    tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
+    tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
   else
-    Result := not other.HasValue;
+    Result := EqualsInternal(fValue, other.fValue);
+  end;
+end;
+
+class function Nullable<T>.EqualsInternal(const left, right: T): Boolean;
+begin
+  if not Assigned(fComparer) then
+    fComparer := TEqualityComparer<T>.Default;
+  Result := fComparer.Equals(left, right);
 end;
 
 class operator Nullable<T>.Implicit(const value: T): Nullable<T>;
 begin
-  Result := Nullable<T>.Create(value);
+  Result.fValue := value;
+  Result.fHasValue := CHasValueFlag;
 end;
 
 class operator Nullable<T>.Implicit(const value: Nullable<T>): T;
@@ -4472,18 +4492,22 @@ begin
   if not VarIsNullOrEmpty(value) then
   begin
     v := TValue.FromVariant(value);
-    Result := Nullable<T>.Create(v.AsType<T>);
+    Result.fValue := v.AsType<T>;
+    Result.fHasValue := CHasValueFlag;
   end
   else
-    Result.Clear;
+  begin
+    Result.fHasValue := '';
+    Result.fValue := Default(T);
+  end;
 end;
 
 class operator Nullable<T>.Implicit(value: Pointer): Nullable<T>;
 begin
-  if not Assigned(value) then
-    Result.Clear
-  else
-    RaiseCannotAssignPointerToNullable;
+  if Assigned(value) then
+    Guard.RaiseCannotAssignPointerToNullable;
+  Result.fHasValue := '';
+  Result.fValue := Default(T);
 end;
 
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
@@ -4499,16 +4523,6 @@ end;
 class operator Nullable<T>.NotEqual(const left, right: Nullable<T>): Boolean;
 begin
   Result := not left.Equals(right);
-end;
-
-class procedure Nullable<T>.RaiseCannotAssignPointerToNullable;
-begin
-  raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
-end;
-
-class procedure Nullable<T>.RaiseNullableTypeHasNoValue;
-begin
-  raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
 end;
 
 {$ENDREGION}
@@ -4674,8 +4688,7 @@ end;
 function Lazy<T>.GetValue: T;
 begin
   if not Assigned(fLazy) then
-    RaiseNoDelegateAssigned;
-
+    Guard.RaiseNoDelegateAssigned;
   Result := fLazy.Value;
 end;
 
@@ -4712,11 +4725,6 @@ end;
 class operator Lazy<T>.Implicit(const value: TLazy<T>): Lazy<T>;
 begin
   Result.fLazy := value;
-end;
-
-class procedure Lazy<T>.RaiseNoDelegateAssigned;
-begin
-  raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
 end;
 
 {$ENDREGION}
