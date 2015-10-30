@@ -169,7 +169,7 @@ type
       const msg: string; const args: array of const): IWhen<T>; overload;
 
     function Returns<TResult>(const value: TResult): IWhen<T>; overload;
-    function Returns(const values: array of TValue): IWhen<T>; overload;
+    function Returns<TResult>(const values: array of TResult): IWhen<T>; overload;
   end;
 
   Mock<T> = record
@@ -191,9 +191,9 @@ type
     procedure Reset;
 
     class operator Implicit(const value: IMock): Mock<T>;
-    class operator Implicit(const value: Mock<T>): IMock;
-    class operator Implicit(const value: Mock<T>): IMock<T>;
-    class operator Implicit(const value: Mock<T>): T;
+    class operator Implicit(var value: Mock<T>): IMock;
+    class operator Implicit(var value: Mock<T>): IMock<T>;
+    class operator Implicit(var value: Mock<T>): T;
 
     function Setup: Setup<T>;
 
@@ -283,9 +283,15 @@ begin
   Result := fSetup.Returns(TValue.From<TResult>(value));
 end;
 
-function Setup<T>.Returns(const values: array of TValue): IWhen<T>;
+function Setup<T>.Returns<TResult>(const values: array of TResult): IWhen<T>;
+var
+  i: Integer;
+  tempValues: TArray<TValue>;
 begin
-  Result := fSetup.Returns(values);
+  SetLength(tempValues, Length(values));
+  for i := 0 to High(values) do
+    tempValues[i] := TValue.From<TResult>(values[i]);
+  Result := fSetup.Returns(tempValues);
 end;
 
 {$ENDREGION}
@@ -328,19 +334,19 @@ begin
   Result.fMock := value as IMock<T>;
 end;
 
-class operator Mock<T>.Implicit(const value: Mock<T>): IMock;
+class operator Mock<T>.Implicit(var value: Mock<T>): IMock;
 begin
   value.EnsureInitialized;
   Result := value.fMock as IMock;
 end;
 
-class operator Mock<T>.Implicit(const value: Mock<T>): IMock<T>;
+class operator Mock<T>.Implicit(var value: Mock<T>): IMock<T>;
 begin
   value.EnsureInitialized;
   Result := value.fMock;
 end;
 
-class operator Mock<T>.Implicit(const value: Mock<T>): T;
+class operator Mock<T>.Implicit(var value: Mock<T>): T;
 begin
   value.EnsureInitialized;
   Result := value.fMock.Instance;

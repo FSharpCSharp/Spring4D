@@ -37,6 +37,7 @@ type
   published
     procedure ArgsEvaluationOrder;
     procedure OutParameterCanBeSet;
+    procedure VerifyChecksParameterValuesProperly;
   end;
 
 implementation
@@ -128,6 +129,21 @@ begin
   i := 42;
   mock.Instance.Test(i);
   CheckEquals(43, i);
+end;
+
+procedure TParameterMatchingTests.VerifyChecksParameterValuesProperly;
+var
+  mock: Mock<IMockTest>;
+  sut: IMockTest;
+begin
+  sut := mock;
+  sut.Test1(4, 'test');
+  mock.Received(Times.Once).Test1(Arg.IsAny<Integer>, 'test');
+  CheckException(EMockException,
+    procedure
+    begin
+      mock.Received.Test1(Arg.IsIn<Integer>([3, 5]), Arg.IsAny<string>);
+    end);
 end;
 
 end.

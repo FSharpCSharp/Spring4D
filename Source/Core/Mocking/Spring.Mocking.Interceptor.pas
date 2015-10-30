@@ -219,6 +219,8 @@ begin
       if fReceivedCalls.TryGetValues(invocation.Method, arguments) then
       begin
         if not Assigned(fMatch) then
+          fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments);
+        if not Assigned(fMatch) then
           fMatch := CreateArgMatch(invocation.Arguments);
         callCount := arguments.Where(fMatch).Count;
         fMatch := nil;
