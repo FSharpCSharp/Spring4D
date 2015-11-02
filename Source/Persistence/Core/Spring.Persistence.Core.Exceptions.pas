@@ -134,6 +134,15 @@ type
     property ErrorCode: Nullable<Integer> read fErrorCode;
   end;
 
+  /// <summary>
+  ///   Constraint validation exception such as duplicate primary key or unique
+  ///   column.
+  /// </summary>
+  /// <remarks>
+  ///   May not be supported by all adapters!
+  /// </remarks>
+  EORMConstraintException = class(EORMAdapterException);
+
   TORMAdapterExceptionClass = class of EORMAdapterException;
 
   /// <summary>
