@@ -6,19 +6,47 @@ uses
   TestFramework,
   SysUtils,
   SQLiteTable3,
+  Spring,
   Spring.Collections,
   Spring.Persistence.Adapters.SQLite,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.Exceptions,
   Spring.Persistence.SQL.Params,
   Spring.TestUtils;
 
 type
-  TSQLiteResultSetAdapterTest = class(TTestCase)
+  TSQLiteExceptionHandlerAccess = class(TSQLiteExceptionHandler);
+  TSQLiteExceptionHandlerTest = class(TTestCase<TSQLiteExceptionHandlerAccess>)
+  published
+    procedure TestGetAdapterException_ESQLiteException;
+    procedure TestGetAdapterException_ESQLiteConstraintException;
+    procedure TestGetAdapterException_Others_Return_Nil;
+  end;
+
+  TBaseSQLiteConnectionAdapterTest = class(TTestCase)
+  protected const
+    SQL_SELECT_ALL = 'SELECT * FROM CUSTOMERS;';
+  strict private
+    fTestDb: TSQLiteDatabase;
+  strict protected
+    fConnection: IDBConnection;
+    procedure CreateTables;
+    procedure DeleteAllCustomers;
+    procedure DeleteCustomer(AID: Integer);
+    function GetCustomersCount: Integer;
+    function InsertCustomer(AName: string; AAge: Integer; AHeight: Double): Int64;
+    property TestDb: TSQLiteDatabase read fTestDb;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  end;
+
+  TSQLiteResultSetAdapterTest = class(TBaseSQLiteConnectionAdapterTest)
   private
-    FSQLiteResultSetAdapter: TSQLiteResultSetAdapter;
-    FDataset: ISQLiteTable;
-  public
+    fResultSet: IDBResultSet;
+    function CreateResultSet: IDBResultSet;
+  protected
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -27,46 +55,50 @@ type
     procedure TestGetFieldValue;
   end;
 
-  TSQLiteStatementAdapterTest = class(TTestCase)
+  TSQLiteStatementAdapterTest = class(TBaseSQLiteConnectionAdapterTest)
   private
-    FSQLiteStatementAdapter: TSQLiteStatementAdapter;
-    FCommandText: string;
-  public
+    fStatement: IDBStatement;
+    fCommandText: string;
+  protected
     procedure SetUp; override;
     procedure TearDown; override;
   published
     procedure TestSetSQLCommand;
+    procedure TestSetSQLCommand_Exception;
     procedure TestSetParams;
     procedure TestExecute;
+    procedure TestExecute_Exception;
     procedure TestExecuteQuery;
+    procedure TestExecuteQuery_Exception;
   end;
 
-  TSQLiteConnectionAdapterTest = class(TTestCase)
+  TSQLiteConnectionAdapterTest = class(TBaseSQLiteConnectionAdapterTest)
   private
-    FSQLiteConnectionAdapter: TSQLiteConnectionAdapter;
-  public
-    procedure SetUp; override;
-    procedure TearDown; override;
+    function CreateFailDB: TSQLiteDatabase;
   published
     procedure TestConnect;
+    procedure TestConnect_Exception;
     procedure TestDisconnect;
     procedure TestIsConnected;
     procedure TestCreateStatement;
     procedure TestBeginTransaction;
+    procedure TestBeginTransaction_Exception;
     procedure TestGetQueryLanguage;
   end;
 
-  TSQLiteTransactionAdapterTest = class(TTestCase)
+  TSQLiteTransactionAdapterTest = class(TBaseSQLiteConnectionAdapterTest)
   private
-    FSQLiteTransactionAdapter: TSQLiteTransactionAdapter;
+    fTransaction: IDBTransaction;
   protected
-    function CreateAndBeginTransaction: TSQLiteTransactionAdapter;
+    function CreateAndBeginTransaction: IDBTransaction;
   public
     procedure SetUp; override;
     procedure TearDown; override;
   published
     procedure TestCommit;
+    procedure TestCommit_Exception;
     procedure TestRollback;
+    procedure TestRollback_Exception;
   end;
 
 implementation
@@ -75,157 +107,176 @@ uses
   DB,
   Spring.Persistence.SQL.Interfaces;
 
+{$REGION 'TSQLiteExceptionHandlerTest'}
+
+procedure TSQLiteExceptionHandlerTest.TestGetAdapterException_ESQLiteConstraintException;
 var
-  TestDB: TSQLiteDatabase = nil;
-
-const
-  SQL_SELECT_ALL = 'SELECT * FROM CUSTOMERS;';
-
-procedure CreateTables;
+  exc, result: Managed<Exception>;
 begin
-  TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS CUSTOMERS ([ID] INTEGER PRIMARY KEY, [AGE] INTEGER NULL,'+
+  exc := ESQLiteConstraintException.Create('', 1);
+  result := SUT.GetAdapterException(exc, 'message');
+  CheckIs(result, EORMConstraintException);
+  CheckEqualsString('message', result.Value.Message);
+  CheckEquals(1, EORMConstraintException(result.Value).ErrorCode);
+end;
+
+procedure TSQLiteExceptionHandlerTest.TestGetAdapterException_ESQLiteException;
+var
+  exc, result: Managed<Exception>;
+begin
+  exc := ESQLiteException.Create('');
+  result := SUT.GetAdapterException(exc, 'message');
+  CheckIs(result, ESQLiteAdapterException);
+  CheckEqualsString('message', result.Value.Message);
+  CheckEquals(-1, ESQLiteAdapterException(result.Value).ErrorCode);
+end;
+
+procedure TSQLiteExceptionHandlerTest.TestGetAdapterException_Others_Return_Nil;
+var
+  exc, result: Managed<Exception>;
+begin
+  exc := Exception.Create('');
+  result := SUT.GetAdapterException(exc, '');
+  CheckNull(result);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBaseSQLiteConnectionAdapterTest'}
+
+procedure TBaseSQLiteConnectionAdapterTest.CreateTables;
+begin
+  fTestDb.ExecSQL('CREATE TABLE IF NOT EXISTS CUSTOMERS ([ID] INTEGER PRIMARY KEY, [AGE] INTEGER NULL,'+
     '[NAME] VARCHAR (255), [HEIGHT] FLOAT, [PICTURE] BLOB); ');
-  if not TestDB.TableExists('CUSTOMERS') then
+  if not fTestDb.TableExists('CUSTOMERS') then
     raise Exception.Create('Table CUSTOMERS does not exist');
 end;
 
-function InsertCustomer(AName: string; AAge: Integer; AHeight: Double): Int64;
+procedure TBaseSQLiteConnectionAdapterTest.DeleteAllCustomers;
+begin
+  fTestDb.ExecSQL('DELETE FROM CUSTOMERS;');
+end;
+
+procedure TBaseSQLiteConnectionAdapterTest.DeleteCustomer(AID: Integer);
+begin
+  fTestDb.ExecSQL('DELETE FROM CUSTOMERS WHERE ID = ?', [AID]);
+end;
+
+function TBaseSQLiteConnectionAdapterTest.GetCustomersCount: Integer;
 var
-  LStmt: ISQLitePreparedStatement;
+  lTable: ISQLiteTable;
+begin
+  lTable := fTestDb.GetUniTableIntf('SELECT COUNT(*) FROM CUSTOMERS;');
+  Result := lTable.Fields[0].AsIntegerDef;
+end;
+
+function TBaseSQLiteConnectionAdapterTest.InsertCustomer(AName: string;
+  AAge: Integer; AHeight: Double): Int64;
+var
+  lStmt: ISQLitePreparedStatement;
 begin
   Result := -1;
-  LStmt := TestDB.GetPreparedStatementIntf('INSERT INTO CUSTOMERS ([NAME], [AGE], [HEIGHT]) VALUES (:NAME, :AGE, :HEIGHT);');
+  lStmt := fTestDb.GetPreparedStatementIntf('INSERT INTO CUSTOMERS ([NAME], [AGE], [HEIGHT]) VALUES (:NAME, :AGE, :HEIGHT);');
 
-  LStmt.SetParamInt(':AGE', AAge);
-  LStmt.SetParamText(':NAME', AName);
-  LStmt.SetParamFloat(':HEIGHT', AHeight);
+  lStmt.SetParamInt(':AGE', AAge);
+  lStmt.SetParamText(':NAME', AName);
+  lStmt.SetParamFloat(':HEIGHT', AHeight);
 
-  if LStmt.ExecSQL then
+  if lStmt.ExecSQL then
   begin
-    Result := TestDB.GetLastInsertRowID;
+    Result := fTestDb.GetLastInsertRowID;
   end;
 end;
 
-procedure DeleteCustomer(AID: Integer);
+procedure TBaseSQLiteConnectionAdapterTest.SetUp;
 begin
-  TestDB.ExecSQL('DELETE FROM CUSTOMERS WHERE ID = ?', [AID]);
+  inherited;
+  fTestDb := TSQLiteDatabase.Create(':memory:');
+  fConnection := TSQLiteConnectionAdapter.Create(fTestDb);
+  fConnection.AutoFreeConnection := True;
+  CreateTables;
 end;
 
-procedure DeleteAllCustomers;
+procedure TBaseSQLiteConnectionAdapterTest.TearDown;
 begin
-  TestDB.ExecSQL('DELETE FROM CUSTOMERS;');
+  fConnection := nil;
+  inherited;
 end;
 
-function GetCustomersCount: Integer;
-var
-  LTable: ISQLiteTable;
-begin
-  LTable := TestDB.GetUniTableIntf('SELECT COUNT(*) FROM CUSTOMERS;');
-  Result := LTable.Fields[0].AsIntegerDef;
-end;
+{$ENDREGION}
 
 
 {$REGION 'TSQLiteResultSetAdapterTest'}
 
+function TSQLiteResultSetAdapterTest.CreateResultSet: IDBResultSet;
+var
+  lStatement: IDBStatement;
+begin
+  lStatement := fConnection.CreateStatement;
+  lStatement.SetSQLCommand(SQL_SELECT_ALL);
+  Result := lStatement.ExecuteQuery;
+end;
+
 procedure TSQLiteResultSetAdapterTest.SetUp;
 begin
-  DeleteAllCustomers;
-  FDataset := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
-  FSQLiteResultSetAdapter := TSQLiteResultSetAdapter.Create(FDataset, nil);
+  inherited;
+  fResultSet := CreateResultSet;
 end;
 
 procedure TSQLiteResultSetAdapterTest.TearDown;
 begin
-  DeleteAllCustomers;
-  FSQLiteResultSetAdapter.Free;
-  FSQLiteResultSetAdapter := nil;
-  FDataset := nil;
+  fResultSet := nil;
+  inherited;
 end;
 
 procedure TSQLiteResultSetAdapterTest.TestIsEmpty;
 var
-  LID: Int64;
-  LAdapter: TSQLiteResultSetAdapter;
-  LTable: ISQLiteTable;
+  lId: Int64;
 begin
-  CheckTrue(FSQLiteResultSetAdapter.IsEmpty);
+  CheckTrue(fResultSet.IsEmpty);
 
-  LID := InsertCustomer('Test', 15, 1.1);
+  lId := InsertCustomer('Test', 15, 1.1);
+  fResultSet := CreateResultSet;
 
-  LTable := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
+  CheckFalse(fResultSet.IsEmpty);
 
-  LAdapter := TSQLiteResultSetAdapter.Create(LTable, nil);
-  try
-    CheckFalse(LAdapter.IsEmpty);
-  finally
-    LAdapter.Free;
-  end;
+  DeleteCustomer(lId);
+  fResultSet := CreateResultSet;
 
-  DeleteCustomer(LID);
-
-  LTable := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
-
-  LAdapter := TSQLiteResultSetAdapter.Create(LTable, nil);
-  try
-    CheckTrue(LAdapter.IsEmpty);
-  finally
-    LAdapter.Free;
-  end;
+  CheckTrue(fResultSet.IsEmpty);
 end;
 
 procedure TSQLiteResultSetAdapterTest.TestNext;
-var
-  LID1, LID2: Int64;
-  LAdapter: TSQLiteResultSetAdapter;
-  LTable: ISQLiteTable;
 begin
-  CheckFalse(FSQLiteResultSetAdapter.Next);
+  CheckFalse(fResultSet.Next);
 
-  LID1 := InsertCustomer('Test', 15, 1.1);
-  LID2 := InsertCustomer('Test2', 65, 95.1);
-  try
-    LTable := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
+  InsertCustomer('Test', 15, 1.1);
+  InsertCustomer('Test2', 65, 95.1);
+  fResultSet := CreateResultSet;
 
-    LAdapter := TSQLiteResultSetAdapter.Create(LTable, nil);
-    try
-      CheckTrue(LAdapter.Next);
-      CheckFalse(LAdapter.Next);
-    finally
-      LAdapter.Free;
-    end;
-  finally
-    DeleteCustomer(LID1);
-    DeleteCustomer(LID2);
-  end;
+  CheckTrue(fResultSet.Next);
+  CheckFalse(fResultSet.Next);
 end;
 
 procedure TSQLiteResultSetAdapterTest.TestGetFieldValue;
 var
-  LID1, LID2: Int64;
-  LAdapter: TSQLiteResultSetAdapter;
-  LTable: ISQLiteTable;
+  lId1, lId2: Int64;
 begin
-  LID1 := InsertCustomer('Test', 15, 1.1);
-  LID2 := InsertCustomer('Test2', 65, 95.1);
-  try
-    LTable := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
+  lId1 := InsertCustomer('Test', 15, 1.1);
+  lId2 := InsertCustomer('Test2', 65, 95.1);
 
-    LAdapter := TSQLiteResultSetAdapter.Create(LTable, nil);
-    try
-      CheckTrue(LAdapter.GetFieldValue(0) = LID1);
-      CheckEquals(15, LAdapter.GetFieldValue(1));
-      CheckEquals(15, LAdapter.GetFieldValue('AGE'));
+  fResultSet := CreateResultSet;
 
-      CheckEqualsString('Test', LAdapter.GetFieldValue(2));
-      CheckEqualsString('Test', LAdapter.GetFieldValue('NAME'));
+  CheckEquals(lId1, fResultSet.GetFieldValue(0));
+  CheckEquals(15, fResultSet.GetFieldValue(1));
+  CheckEquals(15, fResultSet.GetFieldValue('AGE'));
 
-    finally
-      LAdapter.Free;
-    end;
-  finally
-    DeleteCustomer(LID1);
-    DeleteCustomer(LID2);
-  end;
+  CheckEqualsString('Test', fResultSet.GetFieldValue(2));
+  CheckEqualsString('Test', fResultSet.GetFieldValue('NAME'));
+
+  CheckTrue(fResultSet.Next);
+  CheckEquals(lId2, fResultSet.GetFieldValue(0));
 end;
 
 {$ENDREGION}
@@ -234,26 +285,30 @@ end;
 {$REGION 'TSQLiteStatementAdapterTest'}
 
 procedure TSQLiteStatementAdapterTest.SetUp;
-var
-  LStmt: ISQLitePreparedStatement;
 begin
-  FCommandText := 'SELECT * FROM CUSTOMERS WHERE NAME = :NAME;';
+  inherited;
 
-  LStmt := TestDB.GetPreparedStatementIntf(SQL_SELECT_ALL);
+  fCommandText := 'SELECT * FROM CUSTOMERS WHERE NAME = :NAME;';
 
-  FSQLiteStatementAdapter := TSQLiteStatementAdapter.Create(LStmt, nil);
+  fStatement := fConnection.CreateStatement;
 end;
 
 procedure TSQLiteStatementAdapterTest.TearDown;
 begin
-  FSQLiteStatementAdapter.Free;
-  FSQLiteStatementAdapter := nil;
+  fStatement := nil;
+  inherited;
 end;
 
 procedure TSQLiteStatementAdapterTest.TestSetSQLCommand;
 begin
-  FSQLiteStatementAdapter.SetSQLCommand(FCommandText);
+  fStatement.SetSQLCommand(fCommandText);
   Pass;
+end;
+
+procedure TSQLiteStatementAdapterTest.TestSetSQLCommand_Exception;
+begin
+  ExpectedException := ESQLiteAdapterException;
+  fStatement.SetSQLCommand('TOTALLY INVALID SQL');
 end;
 
 procedure TSQLiteStatementAdapterTest.TestSetParams;
@@ -265,7 +320,7 @@ begin
   LParam := TDBParam.Create(':NAME', 'Test');
   Params.Add(LParam);
 
-  FSQLiteStatementAdapter.SetParams(Params);
+  fStatement.SetParams(Params);
   Pass;
 end;
 
@@ -273,11 +328,11 @@ procedure TSQLiteStatementAdapterTest.TestExecute;
 var
   ReturnValue: NativeUInt;
 begin
-  FSQLiteStatementAdapter.SetSQLCommand('INSERT INTO CUSTOMERS(NAME) VALUES (:NAME);');
+  fStatement.SetSQLCommand('INSERT INTO CUSTOMERS(NAME) VALUES (:NAME);');
 
   TestSetParams;
 
-  ReturnValue := FSQLiteStatementAdapter.Execute;
+  ReturnValue := fStatement.Execute;
 
   CheckEquals(1, ReturnValue);
 end;
@@ -285,32 +340,42 @@ end;
 procedure TSQLiteStatementAdapterTest.TestExecuteQuery;
 var
   ReturnValue: IDBResultset;
-  LStmt, LAdapter: TSQLiteStatementAdapter;
 begin
-  FSQLiteStatementAdapter.SetSQLCommand(FCommandText);
+  fStatement.SetSQLCommand(fCommandText);
 
   TestSetParams;
 
-  ReturnValue := FSQLiteStatementAdapter.ExecuteQuery;
+  ReturnValue := fStatement.ExecuteQuery;
 
   CheckTrue(Assigned(ReturnValue));
   CheckTrue(ReturnValue.IsEmpty);
 
   InsertCustomer('Test', 15, 1.1);
-  LAdapter := FSQLiteStatementAdapter;
-  LStmt := TSQLiteStatementAdapter.Create(
-    TestDB.GetPreparedStatement(FCommandText), nil);
-  try
-    LStmt.SetSQLCommand(FCommandText);
-    FSQLiteStatementAdapter := LStmt;
-    TestSetParams;
-    FSQLiteStatementAdapter := LAdapter;
-    ReturnValue := LStmt.ExecuteQuery;
-    CheckTrue(Assigned(ReturnValue));
-    CheckFalse(ReturnValue.IsEmpty);
-  finally
-    LStmt.Free;
-  end;
+  fStatement := fConnection.CreateStatement;
+  fStatement.SetSQLCommand(fCommandText);
+
+  TestSetParams;
+
+  ReturnValue := fStatement.ExecuteQuery;
+
+  CheckTrue(Assigned(ReturnValue));
+  CheckFalse(ReturnValue.IsEmpty);
+end;
+
+procedure TSQLiteStatementAdapterTest.TestExecuteQuery_Exception;
+begin
+  InsertCustomer('Test', 1, 1);
+  fStatement.SetSQLCommand('INSERT INTO CUSTOMERS(ID,NAME) VALUES (1, "A");');
+  ExpectedException := EORMConstraintException;
+  fStatement.ExecuteQuery;
+end;
+
+procedure TSQLiteStatementAdapterTest.TestExecute_Exception;
+begin
+  InsertCustomer('Test', 1, 1);
+  fStatement.SetSQLCommand('INSERT INTO CUSTOMERS(ID,NAME) VALUES (1, "A");');
+  ExpectedException := EORMConstraintException;
+  fStatement.Execute;
 end;
 
 {$ENDREGION}
@@ -318,40 +383,37 @@ end;
 
 {$REGION 'TSQLiteConnectionAdapterTest'}
 
-procedure TSQLiteConnectionAdapterTest.SetUp;
-begin
-  FSQLiteConnectionAdapter := TSQLiteConnectionAdapter.Create(TestDB);
-end;
-
-procedure TSQLiteConnectionAdapterTest.TearDown;
-begin
-  FSQLiteConnectionAdapter.Free;
-  FSQLiteConnectionAdapter := nil;
-end;
-
 procedure TSQLiteConnectionAdapterTest.TestConnect;
 begin
-  FSQLiteConnectionAdapter.Connect;
+  fConnection.Connect;
 
-  CheckTrue(TestDB.Connected);
+  CheckTrue(TestDb.Connected);
+end;
+
+procedure TSQLiteConnectionAdapterTest.TestConnect_Exception;
+begin
+  fConnection := TSQLiteConnectionAdapter.Create(CreateFailDB);
+  fConnection.AutoFreeConnection := True;
+  ExpectedException:=ESQLiteAdapterException;
+  fConnection.Connect;
 end;
 
 procedure TSQLiteConnectionAdapterTest.TestDisconnect;
 begin
-  FSQLiteConnectionAdapter.Disconnect;
+  fConnection.Disconnect;
 
-  CheckFalse(TestDB.Connected);
+  CheckFalse(TestDb.Connected);
 end;
 
 procedure TSQLiteConnectionAdapterTest.TestIsConnected;
 var
   ReturnValue: Boolean;
 begin
-  FSQLiteConnectionAdapter.Disconnect;
-  ReturnValue := FSQLiteConnectionAdapter.IsConnected;
+  fConnection.Disconnect;
+  ReturnValue := fConnection.IsConnected;
   CheckFalse(ReturnValue);
-  FSQLiteConnectionAdapter.Connect;
-  ReturnValue := FSQLiteConnectionAdapter.IsConnected;
+  fConnection.Connect;
+  ReturnValue := fConnection.IsConnected;
   CheckTrue(ReturnValue);
 end;
 
@@ -359,30 +421,45 @@ procedure TSQLiteConnectionAdapterTest.TestCreateStatement;
 var
   ReturnValue: IDBStatement;
 begin
-  ReturnValue := FSQLiteConnectionAdapter.CreateStatement;
+  ReturnValue := fConnection.CreateStatement;
 
   CheckTrue(Assigned(ReturnValue));
+end;
+
+function TSQLiteConnectionAdapterTest.CreateFailDB: TSQLiteDatabase;
+begin
+  Result := TSQLiteDatabase.Create('');
+  // Some name that should fail. Posix has almost no restrictions but we know
+  // null cannot be a directory. On Windows this will fail as well (made sure
+  // by tho colon).
+  Result.Filename:='/dev/null/fail:';
 end;
 
 procedure TSQLiteConnectionAdapterTest.TestBeginTransaction;
 var
   ReturnValue: IDBTransaction;
 begin
-  ReturnValue := FSQLiteConnectionAdapter.BeginTransaction;
+  ReturnValue := fConnection.BeginTransaction;
   CheckTrue(Assigned(ReturnValue));
   CheckTrue(ReturnValue.TransactionName <> '');
 end;
 
-procedure TSQLiteConnectionAdapterTest.TestGetQueryLanguage;
+procedure TSQLiteConnectionAdapterTest.TestBeginTransaction_Exception;
 begin
-  CheckEquals(qlSQLite, FSQLiteConnectionAdapter.QueryLanguage);
+  fConnection := TSQLiteConnectionAdapter.Create(CreateFailDB);
+  fConnection.AutoFreeConnection := True;
+  ExpectedException:=ESQLiteAdapterException;
+  fConnection.BeginTransaction;
 end;
 
-function TSQLiteTransactionAdapterTest.CreateAndBeginTransaction: TSQLiteTransactionAdapter;
+procedure TSQLiteConnectionAdapterTest.TestGetQueryLanguage;
 begin
-  Result := TSQLiteTransactionAdapter.Create(TestDB, nil);
-  Result.TransactionName := 'T1';
-  Result.Transaction.ExecSQL('SAVEPOINT T1');
+  CheckEquals(qlSQLite, fConnection.QueryLanguage);
+end;
+
+function TSQLiteTransactionAdapterTest.CreateAndBeginTransaction: IDBTransaction;
+begin
+  Result := fConnection.BeginTransaction;
 end;
 
 {$ENDREGION}
@@ -392,70 +469,66 @@ end;
 
 procedure TSQLiteTransactionAdapterTest.SetUp;
 begin
-  FSQLiteTransactionAdapter := CreateAndBeginTransaction;
+  inherited;
+  fTransaction := CreateAndBeginTransaction;
 end;
 
 procedure TSQLiteTransactionAdapterTest.TearDown;
 begin
-  FSQLiteTransactionAdapter.Free;
-  FSQLiteTransactionAdapter := nil;
+  fTransaction := nil;
+  inherited;
 end;
 
 procedure TSQLiteTransactionAdapterTest.TestCommit;
 begin
   InsertCustomer('Test', 15, 1.1);
-  FSQLiteTransactionAdapter.Commit;
+  fTransaction.Commit;
   CheckEquals(1, GetCustomersCount);
 
-  FSQLiteTransactionAdapter.Free;
-  FSQLiteTransactionAdapter := CreateAndBeginTransaction;
+  fTransaction := CreateAndBeginTransaction;
   DeleteAllCustomers;
-  FSQLiteTransactionAdapter.Commit;
+  fTransaction.Commit;
   CheckEquals(0, GetCustomersCount);
+end;
+
+procedure TSQLiteTransactionAdapterTest.TestCommit_Exception;
+begin
+  fConnection.Disconnect;
+  ExpectedException := ESQLiteAdapterException;
+  fTransaction.Commit;
 end;
 
 procedure TSQLiteTransactionAdapterTest.TestRollback;
 begin
   InsertCustomer('Test', 15, 1.1);
-  FSQLiteTransactionAdapter.Rollback;
+  fTransaction.Rollback;
   CheckEquals(0, GetCustomersCount);
 
   InsertCustomer('Test', 15, 1.1);
-  FSQLiteTransactionAdapter.Free;
-  FSQLiteTransactionAdapter := CreateAndBeginTransaction;
+  fTransaction := CreateAndBeginTransaction;
   InsertCustomer('Test2', 15, 1.1);
-  FSQLiteTransactionAdapter.Rollback;
+  fTransaction.Rollback;
   CheckEquals(1, GetCustomersCount);
+end;
+
+procedure TSQLiteTransactionAdapterTest.TestRollback_Exception;
+begin
+  fConnection.Disconnect;
+  ExpectedException := ESQLiteAdapterException;
+  fTransaction.Rollback;
 end;
 
 {$ENDREGION}
 
 
-type
-  TSQLiteEvents = class
-  public
-    class procedure DoOnAfterOpen(Sender: TObject);
-  end;
-
-class procedure TSQLiteEvents.DoOnAfterOpen(Sender: TObject);
-begin
-  CreateTables;
-end;
-
 initialization
-  RegisterTests('Spring.Persistence.Adapters', [
-    TSQLiteResultSetAdapterTest.Suite,
-    TSQLiteStatementAdapterTest.Suite,
+
+RegisterTests('Spring.Persistence.Adapters', [
+    TSQLiteExceptionHandlerTest.Suite,
     TSQLiteConnectionAdapterTest.Suite,
+    TSQLiteStatementAdapterTest.Suite,
+    TSQLiteResultSetAdapterTest.Suite,
     TSQLiteTransactionAdapterTest.Suite
   ]);
 
-  TestDB := TSQLiteDatabase.Create(':memory:');
-  TestDB.OnAfterOpen := TSQLiteEvents.DoOnAfterOpen;
-  CreateTables;
-
-finalization
-  TestDB.Free;
-
 end.
-

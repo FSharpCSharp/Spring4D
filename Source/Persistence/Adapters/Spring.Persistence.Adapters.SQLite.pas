@@ -38,7 +38,7 @@ uses
   Spring.Persistence.SQL.Params;
 
 type
-  ESQLiteStatementAdapterException = class(EORMAdapterException);
+  ESQLiteAdapterException = class(EORMAdapterException);
 
   /// <summary>
   ///   Represents SQLite3 resultset.
@@ -153,10 +153,14 @@ var
   affectedRows: Integer;
 begin
   inherited;
-  if Statement.ExecSQL(affectedRows) then
-    Result := affectedRows
-  else
-    Result := 0;
+  try
+    if Statement.ExecSQL(affectedRows) then
+      Result := affectedRows
+    else
+      Result := 0;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TSQLiteStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
@@ -164,7 +168,11 @@ var
   query: ISQLiteTable;
 begin
   inherited;
-  query := Statement.ExecQueryIntf;
+  try
+    query := Statement.ExecQueryIntf;
+  except
+    raise HandleException;
+  end;
   Result := TSQLiteResultSetAdapter.Create(query, ExceptionHandler);
 end;
 
@@ -182,7 +190,11 @@ end;
 procedure TSQLiteStatementAdapter.SetSQLCommand(const commandText: string);
 begin
   inherited;
-  Statement.PrepareStatement(commandText);
+  try
+    Statement.PrepareStatement(commandText);
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}
@@ -199,20 +211,28 @@ end;
 function TSQLiteConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
   if Assigned(Connection) then
-  begin
+  try
     Connection.Connected := true;
     inherited;
     Connection.ExecSQL(SQL_BEGIN_SAVEPOINT + GetTransactionName);
 
     Result := TSQLiteTransactionAdapter.Create(Connection, ExceptionHandler);
     Result.TransactionName := GetTransactionName;
-  end;
+  except
+    raise HandleException;
+  end
+  else
+    Result := nil;
 end;
 
 procedure TSQLiteConnectionAdapter.Connect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := True;
+  except
+    raise HandleException;
+  end;
 end;
 
 constructor TSQLiteConnectionAdapter.Create(const connection: TSQLiteDatabase);
@@ -239,7 +259,11 @@ end;
 procedure TSQLiteConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := False;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TSQLiteConnectionAdapter.IsConnected: Boolean;
@@ -255,7 +279,11 @@ end;
 procedure TSQLiteTransactionAdapter.Commit;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.ExecSQL('RELEASE SAVEPOINT ' + TransactionName);
+  except
+    raise HandleException;
+  end;
 end;
 
 function TSQLiteTransactionAdapter.InTransaction: Boolean;
@@ -266,7 +294,11 @@ end;
 procedure TSQLiteTransactionAdapter.Rollback;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.ExecSQL('ROLLBACK TRANSACTION TO SAVEPOINT ' + TransactionName);
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}
@@ -277,7 +309,14 @@ end;
 function TSQLiteExceptionHandler.GetAdapterException(const exc: Exception;
   const defaultMsg: string): Exception;
 begin
-  Result := nil;
+  if exc is ESQLiteConstraintException then
+    Result := EORMConstraintException.Create(defaultMsg,
+      ESQLiteException(exc).ErrorCode)
+  else if exc is ESQLiteException then
+    Result := ESQLiteAdapterException.Create(defaultMsg,
+      ESQLiteException(exc).ErrorCode)
+  else
+    Result := nil;
 end;
 
 {$ENDREGION}
