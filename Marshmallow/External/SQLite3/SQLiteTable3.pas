@@ -139,7 +139,16 @@ type
   TSQLitePreparedStatement = class;
   TSQLiteFunctions = class;
 
-  ESQLiteException = class(Exception);
+  ESQLiteException = class(Exception)
+  private
+    FErrorCode: Integer;
+  public
+    property ErrorCode: Integer read FErrorCode;
+
+    constructor Create(const Msg: string; ErrorCode: Integer = -1);
+    constructor CreateFmt(const Msg: string; const Args: array of const;
+      ErrorCode: Integer = -1);
+  end;
   ESQLiteConstraintException = class(ESQLiteException);
   ESQLiteExceptionClass = class of ESQLiteException;
 
@@ -1269,9 +1278,9 @@ begin
 
   if Msg <> nil then
     raise excClass.CreateFmt(s +'.'#13'Error [%d]: %s.'#13'"%s": %s',
-    [ret, SQLiteErrorStr(ret),SQL, Msg])
+    [ret, SQLiteErrorStr(ret),SQL, Msg], ret)
   else
-    raise excClass.CreateFmt(s, [SQL, 'No message']);
+    raise excClass.CreateFmt(s, [SQL, 'No message'], ret);
 end;
 
 procedure TSQLiteDatabase.RaiseError(const s: string);
@@ -1287,9 +1296,9 @@ begin
 
   if Msg <> nil then
     raise ESqliteException.CreateFmt(s +'.'#13'Error [%d]: %s.'#13'%s',
-      [ret, SQLiteErrorStr(ret), Msg])
+      [ret, SQLiteErrorStr(ret), Msg], ret)
   else
-    raise ESqliteException.Create(s);
+    raise ESqliteException.Create(s, ret);
 end;
 
 procedure TSQLiteDatabase.SetSynchronised(Value: boolean);
@@ -1643,11 +1652,11 @@ begin
       begin
         Msg := Sqlite3_ErrMsg(Fdb);
         raise ESqliteException.CreateFmt('Failed to open database "%s" : %s',
-          [FFileName, Msg]);
+          [FFileName, Msg], iResult);
       end
       else
         raise ESqliteException.CreateFmt('Failed to open database "%s" : unknown error',
-          [FFileName]);
+          [FFileName], iResult);
 
 
     if (Password <> '') then
@@ -2235,7 +2244,7 @@ begin
           end;
         SQLITE_BUSY:
           raise ESqliteException.CreateFmt('Could not prepare SQL statement',
-            [SQL, 'SQLite is Busy']);
+            [SQL, 'SQLite is Busy'], iStepResult);
       else
         begin
         SQLite3_reset(stmt);
@@ -3964,6 +3973,21 @@ begin
 end;
 
 {$IFEND}
+
+{ ESQLiteException }
+
+constructor ESQLiteException.Create(const Msg: string; ErrorCode: Integer);
+begin
+  inherited Create(Msg);
+  FErrorCode := ErrorCode;
+end;
+
+constructor ESQLiteException.CreateFmt(const Msg: string;
+  const Args: array of const; ErrorCode: Integer);
+begin
+  inherited CreateFmt(Msg, Args);
+  FErrorCode := ErrorCode;
+end;
 
 initialization
   TSQLiteDatabase.FColumnTypes := TDictionary<string,Integer>.Create(DEF_COLCOUNT);
