@@ -36,6 +36,7 @@ uses
   FireDAC.Stan.Def,
   FireDAC.Stan.Option,
   FireDAC.Stan.Param,
+  FireDAC.Stan.Error,
   SysUtils,
   Spring.Collections,
   Spring.Persistence.Core.Base,
@@ -195,8 +196,12 @@ end;
 function TFireDACStatementAdapter.Execute: NativeUInt;
 begin
   inherited;
-  Statement.ExecSQL;
-  Result := Statement.RowsAffected;
+  try
+    Statement.ExecSQL;
+    Result := Statement.RowsAffected;
+  except
+    raise HandleException;
+  end
 end;
 
 function TFireDACStatementAdapter.ExecuteQuery(
@@ -220,7 +225,7 @@ begin
     begin
       //make sure that resultset is always created to avoid memory leak
       Result := TFireDACResultSetAdapter.Create(query, ExceptionHandler);
-      raise EFireDACAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
+      raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
     end;
   end;
 end;
@@ -270,7 +275,7 @@ var
   transaction: TFDTransaction;
 begin
   if Assigned(Connection) then
-  begin
+  try
     Connection.Connected := True;
     if not Connection.InTransaction or Connection.TxOptions.EnableNested then
     begin
@@ -282,6 +287,8 @@ begin
     end
     else
       raise EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
+  except
+    raise HandleException;
   end
   else
     Result := nil;
@@ -290,7 +297,11 @@ end;
 procedure TFireDACConnectionAdapter.Connect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := True;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TFireDACConnectionAdapter.CreateStatement: IDBStatement;
@@ -315,7 +326,11 @@ end;
 procedure TFireDACConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := False;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TFireDACConnectionAdapter.IsConnected: Boolean;
@@ -337,15 +352,22 @@ end;
 
 destructor TFireDACTransactionAdapter.Destroy;
 begin
-  inherited Destroy;
-  if fOwnsObject then
-    fTransaction.Free;
+  try
+    inherited Destroy;
+  finally
+    if fOwnsObject then
+      fTransaction.Free;
+  end;
 end;
 
 procedure TFireDACTransactionAdapter.Commit;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.Commit;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TFireDACTransactionAdapter.InTransaction: Boolean;
@@ -356,7 +378,11 @@ end;
 procedure TFireDACTransactionAdapter.Rollback;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.Rollback;
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}
@@ -367,7 +393,21 @@ end;
 function TFireDACExceptionHandler.GetAdapterException(const exc: Exception;
   const defaultMsg: string): Exception;
 begin
-  Result := nil;
+  if exc is EFDDBEngineException then
+    with EFDDBEngineException(exc) do
+  begin
+    case Kind of
+      ekUKViolated,
+      ekFKViolated :
+        Result := EORMConstraintException.Create(defaultMsg, ErrorCode);
+      else
+        Result := EFireDACAdapterException.Create(defaultMsg, ErrorCode);
+    end;
+  end
+  else if exc is EDatabaseError then
+    Result := EFireDACAdapterException.Create(defaultMsg)
+  else
+    Result := nil;
 end;
 
 {$ENDREGION}

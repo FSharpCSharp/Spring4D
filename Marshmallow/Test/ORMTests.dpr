@@ -133,7 +133,8 @@ uses
   TestMockADOConnection in 'TestMockADOConnection.pas',
   TestAdaptersMSSQL in 'TestAdaptersMSSQL.pas',
   TestAdaptersDBX in 'TestAdaptersDBX.pas',
-  TestSQLConnection in 'TestSQLConnection.pas';
+  TestSQLConnection in 'TestSQLConnection.pas',
+  TestFireDACConnection in 'TestFireDACConnection.pas';
 
 begin
   OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
