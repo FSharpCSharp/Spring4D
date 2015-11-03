@@ -3,6 +3,7 @@ unit TestAdaptersUIB;
 interface
 
 uses
+  StrUtils,
   TestFramework,
   uib,
   uibdataset,
@@ -63,11 +64,15 @@ uses
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.SQL.Interfaces;
 
-const
-  FILE_JSON = 'Conn_Firebird.json';
-
 var
   TestDB: TUIBDataBase = nil;
+  ConnJson: string = '{' +
+                     '  "uib.TUIBDataBase": {' +
+                     '    "UserName": "SYSDBA",' +
+                     '    "PassWord": "masterkey",' +
+                     '    "DatabaseName": "%s"' +
+                     '  }' +
+                     '}';
 
 function GetFirstValue(const ASQL: string): Variant;
 var
@@ -104,7 +109,7 @@ begin
   FDataset.UniDirectional := True;
   FDataset.SQL.Text := 'select * from IMONES;';
   FDataset.Open;
-  FUIBResultSetAdapter := TUIBResultSetAdapter.Create(FDataset);
+  FUIBResultSetAdapter := TUIBResultSetAdapter.Create(FDataset, nil);
 end;
 
 procedure TestTUIBResultSetAdapter.TearDown;
@@ -162,7 +167,7 @@ var
 begin
   inherited;
   sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
-  FConnection := TConnectionFactory.GetInstanceFromFile(dtUIB, sDir + FILE_JSON);
+  FConnection := TConnectionFactory.GetInstance(dtUIB, ConnJson);
 end;
 
 procedure TestTUIBConnectionAdapter.TearDown;
@@ -240,7 +245,7 @@ var
 begin
   inherited;
   sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
-  FConnection := TConnectionFactory.GetInstanceFromFile(dtUIB, sDir + FILE_JSON);
+  FConnection := TConnectionFactory.GetInstance(dtUIB, ConnJson);
   FManager := TSession.Create(FConnection);
 end;
 
@@ -299,18 +304,26 @@ begin
   end;
 end;
 
-initialization
- { TestDB := TUIBDataBase.Create(nil);
+var
+  FileName: string = 'ALGA.GDB';
+
+procedure Init;
+begin
+  TestDB := TUIBDataBase.Create(nil);
   // Register any test cases with the test runner
-  if FileExists('D:\DB\GDB\CAA\ALGA.GDB') then
+  if FileExists(FileName) then
   begin
+    FileName := ExpandFileName(FileName);
     TestDB.UserName := 'SYSDBA';
     TestDB.PassWord := 'masterkey';
-    TestDB.DatabaseName := 'localhost:D:\DB\GDB\CAA\ALGA.GDB';
+    TestDB.DatabaseName := 'localhost/gds_db:' + FileName;
     try
       TestDB.Connected := True;
       if TestDB.Connected then
       begin
+        ConnJson := Format(ConnJson, [ReplaceStr(TestDB.DatabaseName, '\', '\\')]);
+        CreateTestTables(TConnectionFactory.GetInstance(dtUIB, ConnJson),
+          [TUIBCompany]);
         RegisterTests('Spring.Persistence.Adapters', [
           TestTUIBResultSetAdapter.Suite,
           TestTUIBConnectionAdapter.Suite,
@@ -320,11 +333,14 @@ initialization
     except
       raise;
     end;
+  end;
+end;
 
-  end;}
+initialization
+  Init;
 
 finalization
- // TestDB.Free;
+  TestDB.Free;
 
 end.
 

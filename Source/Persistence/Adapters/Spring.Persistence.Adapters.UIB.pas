@@ -281,8 +281,11 @@ destructor TUIBConnectionAdapter.Destroy;
 var
   i: Integer;
 begin
-  for i := 0 to Connection.TransactionsCount - 1 do
-    Connection.Transactions[i].Free;
+  if Assigned(Connection) then
+  begin
+    for i := 0 to Connection.TransactionsCount - 1 do
+      Connection.Transactions[i].Free;
+  end;
   inherited Destroy;
 end;
 

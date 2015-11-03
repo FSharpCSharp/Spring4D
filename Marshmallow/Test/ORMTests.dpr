@@ -26,6 +26,7 @@ uses
   Spring.Persistence.Adapters.SQLite in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas',
   {$IFDEF ENABLE_UIB}
   Spring.Persistence.Adapters.UIB in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.UIB.pas',
+  TestAdaptersUIB in 'TestAdaptersUIB.pas',
   {$ENDIF}
   {$IFDEF ENABLE_ZEOS}
   Spring.Persistence.Adapters.Zeos in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Zeos.pas',
