@@ -185,10 +185,17 @@ begin
   statement := Connection.CreateStatement;
   statement.SetSQLCommand(sqlStatement);
   statement.SetParams(SQLParameters);
-  resultSet := statement.ExecuteQuery(false);
-  value := GetIdentityValue(resultSet);
-  if not value.IsEmpty then
-    EntityData.PrimaryKeyColumn.Member.SetValue(entity, value);
+  // Certain adapters will fail (Oracle ADO) since the DB will return only
+  // scalar value and not a result set so only request it when needed.
+  if SupportsIdentityColumn then
+  begin
+    resultSet := statement.ExecuteQuery(false);
+    value := GetIdentityValue(resultSet);
+    if not value.IsEmpty then
+      EntityData.PrimaryKeyColumn.Member.SetValue(entity, value);
+  end
+  else
+    statement.Execute;
 end;
 
 function TInsertExecutor.GetInsertQueryText: string;

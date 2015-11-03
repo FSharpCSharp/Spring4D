@@ -263,6 +263,10 @@ type
     property Phone: string read FPhone write FPhone;
   end;
 
+  [Table('IMONES', 'VIKARINA')]
+  [Sequence('GNR_IMONESID', 1, 1)]
+  TOracleSeqCompany = class(TUIBCompany);
+
   TUserRole = class;
   TRole = class;
 
