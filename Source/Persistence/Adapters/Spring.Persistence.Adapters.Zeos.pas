@@ -262,9 +262,9 @@ begin
 end;
 
 constructor TZeosConnectionAdapter.Create(
-  const AConnection: TZAbstractConnection);
+  const connection: TZAbstractConnection);
 begin
-  Create(connection);
+  Create(connection, TZeosExceptionHandler.Create);
 end;
 
 constructor TZeosConnectionAdapter.Create(
