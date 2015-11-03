@@ -106,20 +106,6 @@ uses
 const
   TBL_COMPANY = 'Vikarina.IMONES';
 
-procedure CreateTestTables(AConnection: IDBConnection);
-var
-  LDBManager: TDatabaseManager;
-begin
-  LDBManager := TDatabaseManager.Create(AConnection);
-  try
-    LDBManager.ClearEntities;
-    LDBManager.RegisterEntity(TCompany);
-    LDBManager.BuildDatabase;
-  finally
-    LDBManager.Free;
-  end;
-end;
-
 function CreateTestConnection: TADOConnection;
 begin
   Result := TADOConnection.Create(nil);
@@ -343,7 +329,7 @@ begin
       Status('-----');
     end);
 
-  CreateTestTables(fConnection);
+  CreateTestTables(fConnection, [TCompany]);
 end;
 
 procedure TOracleSessionTest.TearDown;
