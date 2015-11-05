@@ -110,12 +110,12 @@ type
 implementation
 
 uses
-  DbxSqlite,
   Spring.Persistence.Core.Consts,
   TestExceptions;
 
 type
   TDBXTransactionAdapterAccess = class(TDBXTransactionAdapter);
+
 
 {$REGION 'TDBXExceptionHandlerTest'}
 
@@ -388,6 +388,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 initialization
   RegisterTests('Spring.Persistence.Adapters', [

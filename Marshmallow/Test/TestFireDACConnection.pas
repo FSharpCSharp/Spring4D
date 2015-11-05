@@ -29,7 +29,7 @@ unit TestFireDACConnection;
 interface
 
 uses
-  Data.DB,
+  DB,
   FireDAC.Comp.Client;
 
 type

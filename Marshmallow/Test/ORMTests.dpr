@@ -120,6 +120,7 @@ uses
   TestDatabaseManager in 'TestDatabaseManager.pas',
   {$IFDEF DELPHIXE5_UP}
   TestAdaptersFireDAC in 'TestAdaptersFireDAC.pas',
+  TestFireDACConnection in 'TestFireDACConnection.pas',
   {$ENDIF}
   TestObjectDataset in 'TestObjectDataset.pas',
   TestPersistence in 'TestPersistence.pas',
@@ -134,8 +135,7 @@ uses
   TestMockADOConnection in 'TestMockADOConnection.pas',
   TestAdaptersMSSQL in 'TestAdaptersMSSQL.pas',
   TestAdaptersDBX in 'TestAdaptersDBX.pas',
-  TestSQLConnection in 'TestSQLConnection.pas',
-  TestFireDACConnection in 'TestFireDACConnection.pas';
+  TestSQLConnection in 'TestSQLConnection.pas';
 
 begin
   OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
