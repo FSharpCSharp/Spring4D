@@ -59,8 +59,8 @@ type
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
     function FieldExists(const fieldName: string): Boolean; override;
-    function GetFieldValue(index: Integer): Variant; overload; override;
-    function GetFieldValue(const fieldname: string): Variant; overload; override;
+    function GetFieldValue(index: Integer): Variant; override;
+    function GetFieldValue(const fieldname: string): Variant; override;
     function GetFieldCount: Integer; override;
     function GetFieldName(index: Integer): string; override;
 
@@ -88,7 +88,7 @@ type
   /// </summary>
   TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>)
   public
-    constructor Create(const connection: TUIBDataBase); overload; override;
+    constructor Create(const connection: TUIBDataBase); override;
     destructor Destroy; override;
 
     procedure AfterConstruction; override;

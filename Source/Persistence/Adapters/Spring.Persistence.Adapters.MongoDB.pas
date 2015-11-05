@@ -91,8 +91,8 @@ type
 
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
-    function GetFieldValue(index: Integer): Variant; overload; override;
-    function GetFieldValue(const fieldName: string): Variant; overload; override;
+    function GetFieldValue(index: Integer): Variant; override;
+    function GetFieldValue(const fieldName: string): Variant; override;
     function GetFieldCount: Integer; override;
     function GetFieldName(index: Integer): string; override;
     function FieldExists(const fieldName: string): Boolean; override;
@@ -121,7 +121,7 @@ type
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetQuery(const metadata: TQueryMetadata; const query: Variant); override;
     procedure SetParam(const param: TDBParam);
-    procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
+    procedure SetParams(const params: IEnumerable<TDBParam>); override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
     function GetQueryText: string;

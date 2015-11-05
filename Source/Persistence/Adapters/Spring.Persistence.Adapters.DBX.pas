@@ -56,8 +56,8 @@ type
     function IsEmpty: Boolean; override;
     function Next: Boolean; override;
     function FieldExists(const fieldName: string): Boolean; override;
-    function GetFieldValue(index: Integer): Variant; overload; override;
-    function GetFieldValue(const fieldname: string): Variant; overload; override;
+    function GetFieldValue(index: Integer): Variant; override;
+    function GetFieldValue(const fieldname: string): Variant; override;
     function GetFieldCount: Integer; override;
     function GetFieldName(index: Integer): string; override;
   end;
@@ -70,7 +70,7 @@ type
     destructor Destroy; override;
     procedure SetSQLCommand(const commandText: string); override;
     procedure SetParam(const param: TDBParam); virtual;
-    procedure SetParams(const params: IEnumerable<TDBParam>); overload; override;
+    procedure SetParams(const params: IEnumerable<TDBParam>); override;
     function Execute: NativeUInt; override;
     function ExecuteQuery(serverSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -81,9 +81,9 @@ type
   TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>)
   protected
     constructor Create(const connection: TSQLConnection;
-      const exceptionHandler: IORMExceptionHandler); overload; override;
+      const exceptionHandler: IORMExceptionHandler); override;
   public
-    constructor Create(const connection: TSQLConnection); overload; override;
+    constructor Create(const connection: TSQLConnection); override;
 
     procedure Connect; override;
     procedure Disconnect; override;
