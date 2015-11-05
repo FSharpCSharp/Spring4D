@@ -255,7 +255,6 @@ begin
       ExceptionHandler);
   except
     raise HandleException;
-    Result := nil;
   end
   else
     Result := nil;
