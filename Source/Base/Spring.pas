@@ -2146,7 +2146,9 @@ begin
   begin
     i := Length(LazyPrefixStrings[lazyKind]) + 1;
     Result := Copy(name, i, Length(name) - i )
-  end;
+  end
+  else
+    Result := '';
 end;
 
 function IsLazyType(typeInfo: PTypeInfo): Boolean;

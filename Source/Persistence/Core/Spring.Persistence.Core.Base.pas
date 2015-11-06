@@ -233,6 +233,7 @@ end;
 function TDriverConnectionAdapter<T>.BeginTransaction: IDBTransaction;
 begin
   GenerateNewID;
+  Result := nil;
 end;
 
 procedure TDriverConnectionAdapter<T>.ClearExecutionListeners;
@@ -310,11 +311,13 @@ end;
 function TDriverStatementAdapter<T>.Execute: NativeUInt;
 begin
   NotifyListeners;
+  Result := 0;
 end;
 
 function TDriverStatementAdapter<T>.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
 begin
   NotifyListeners;
+  Result := nil;
 end;
 
 function TDriverStatementAdapter<T>.NativeQueryPresent: Boolean;

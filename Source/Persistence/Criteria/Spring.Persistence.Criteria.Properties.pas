@@ -169,6 +169,7 @@ uses
 
 constructor TProperty.Create(const propertyName: string; entityClass: TClass);
 begin
+  inherited Create;
   fPropertyName := propertyName;
   fEntityClass := entityClass;
 end;
