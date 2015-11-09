@@ -166,12 +166,20 @@ end;
 
 function TUIBResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := DataSet.Fields[index].Value;
+  try
+    Result := DataSet.Fields[index].Value;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TUIBResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
 begin
-  Result := fFieldCache.GetFieldValue(fieldname);
+  try
+    Result := fFieldCache.GetFieldValue(fieldname);
+  except
+    raise HandleException;
+  end;
 end;
 
 function TUIBResultSetAdapter.IsEmpty: Boolean;
@@ -181,7 +189,11 @@ end;
 
 function TUIBResultSetAdapter.Next: Boolean;
 begin
-  DataSet.Next;
+  try
+    DataSet.Next;
+  except
+    raise HandleException;
+  end;
   Result := not DataSet.Eof;
 end;
 
@@ -207,10 +219,14 @@ end;
 function TUIBStatementAdapter.Execute: NativeUInt;
 begin
   inherited;
-  Statement.Prepare;
-  Statement.ExecSQL;
-  Result := Statement.RowsAffected;
-  Statement.Close(etmStayIn);
+  try
+    Statement.Prepare;
+    Statement.ExecSQL;
+    Result := Statement.RowsAffected;
+    Statement.Close(etmStayIn);
+  except
+    raise HandleException;
+  end;
 end;
 
 function TUIBStatementAdapter.ExecuteQuery(serverSideCursor: Boolean): IDBResultSet;
@@ -245,7 +261,7 @@ begin
     Result := adapter;
   except
     on E: Exception do
-      raise EUIBAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
+      raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
   end;
 end;
 
@@ -300,7 +316,7 @@ var
   transaction: TUIBTransaction;
 begin
   if Assigned(Connection) then
-  begin
+  try
     Connection.Connected := True;
 
     transaction := TUIBTransaction.Create(nil);
@@ -309,6 +325,8 @@ begin
     transaction.StartTransaction;
 
     Result := TUIBTransactionAdapter.Create(transaction, ExceptionHandler);
+  except
+    raise HandleException;
   end
   else
     Result := nil;
@@ -317,7 +335,11 @@ end;
 procedure TUIBConnectionAdapter.Connect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := True;
+  except
+    raise HandleException;
+  end;
 end;
 
 constructor TUIBConnectionAdapter.Create(const connection: TUIBDataBase);
@@ -357,7 +379,11 @@ end;
 procedure TUIBConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := False;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TUIBConnectionAdapter.IsConnected: Boolean;
@@ -373,7 +399,11 @@ end;
 procedure TUIBTransactionAdapter.Commit;
 begin
   if Assigned(fTransaction) then
+  try
     fTransaction.Commit;
+  except
+    raise HandleException;
+  end;
 end;
 
 constructor TUIBTransactionAdapter.Create(const transaction: TUIBTransaction;
@@ -382,7 +412,11 @@ begin
   inherited Create(transaction, exceptionHandler);
   fTransaction.DefaultAction := etmRollback;
   if not InTransaction then
+  try
     fTransaction.StartTransaction;
+  except
+    raise HandleException;
+  end;
 end;
 
 destructor TUIBTransactionAdapter.Destroy;
@@ -399,7 +433,11 @@ end;
 procedure TUIBTransactionAdapter.Rollback;
 begin
   if Assigned(fTransaction) then
+  try
     fTransaction.RollBack;
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}
@@ -410,7 +448,10 @@ end;
 function TUIBExceptionHandler.GetAdapterException(const exc: Exception;
   const defaultMsg: string): Exception;
 begin
-  Result := nil;
+  if exc is EUIBError then
+    Result := EUIBAdapterException.Create(defaultMsg, EUIBError(exc).ErrorCode)
+  else
+    Result := nil;
 end;
 
 {$ENDREGION}

@@ -153,12 +153,20 @@ end;
 
 function TZeosResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := DataSet.Fields[index].Value;
+  try
+    Result := DataSet.Fields[index].Value;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TZeosResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
 begin
-  Result := fFieldCache.GetFieldValue(fieldname);
+  try
+    Result := fFieldCache.GetFieldValue(fieldname);
+  except
+    raise HandleException;
+  end;
 end;
 
 function TZeosResultSetAdapter.IsEmpty: Boolean;
@@ -168,7 +176,11 @@ end;
 
 function TZeosResultSetAdapter.Next: Boolean;
 begin
-  DataSet.Next;
+  try
+    DataSet.Next;
+  except
+    raise HandleException;
+  end;
   Result := not DataSet.Eof;
 end;
 
@@ -186,8 +198,12 @@ end;
 function TZeosStatementAdapter.Execute: NativeUInt;
 begin
   inherited;
-  Statement.ExecSQL;
-  Result := Statement.RowsAffected;
+  try
+    Statement.ExecSQL;
+    Result := Statement.RowsAffected;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TZeosStatementAdapter.ExecuteQuery(
@@ -208,7 +224,7 @@ begin
     on E: Exception do
     begin
       Result := TZeosResultSetAdapter.Create(query, ExceptionHandler);
-      raise EZeosAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
+      raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
     end;
   end;
 end;
@@ -243,13 +259,15 @@ end;
 function TZeosConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
   if Assigned(Connection) then
-  begin
+  try
     Connection.Connected := True;
 
     if not Connection.InTransaction then
       Connection.StartTransaction;
 
     Result := TZeosTransactionAdapter.Create(Connection, ExceptionHandler);
+  except
+    raise HandleException;
   end
   else
     Result := nil;
@@ -258,7 +276,11 @@ end;
 procedure TZeosConnectionAdapter.Connect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := True;
+  except
+    raise HandleException;
+  end;
 end;
 
 constructor TZeosConnectionAdapter.Create(
@@ -296,7 +318,11 @@ end;
 procedure TZeosConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
+  try
     Connection.Connected := False;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TZeosConnectionAdapter.IsConnected: Boolean;
@@ -312,7 +338,11 @@ end;
 procedure TZeosTransactionAdapter.Commit;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.Commit;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TZeosTransactionAdapter.InTransaction: Boolean;
@@ -323,7 +353,11 @@ end;
 procedure TZeosTransactionAdapter.Rollback;
 begin
   if Assigned(Transaction) then
+  try
     Transaction.Rollback;
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}
@@ -334,7 +368,10 @@ end;
 function TZeosExceptionHandler.GetAdapterException(const exc: Exception;
   const defaultMsg: string): Exception;
 begin
-  Result := nil;
+  if exc is EDatabaseError then
+    Result := EZeosAdapterException.Create(defaultMsg)
+  else
+    Result := nil;
 end;
 
 {$ENDREGION}
