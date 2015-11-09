@@ -148,8 +148,7 @@ begin
   except
     on E:Exception do
     begin
-      //make sure that resultset is always created to avoid memory leak
-      Result := TFireDACResultSetAdapter.Create(query, ExceptionHandler);
+      query.Free;
       raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
     end;
   end;

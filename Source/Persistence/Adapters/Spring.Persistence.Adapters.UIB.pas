@@ -203,7 +203,12 @@ begin
     Result := adapter;
   except
     on E: Exception do
+    begin
+      query.Free;
+      if isNewTransaction then
+        transaction.Free;
       raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
+    end;
   end;
 end;
 

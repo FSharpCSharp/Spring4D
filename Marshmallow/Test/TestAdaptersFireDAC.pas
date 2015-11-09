@@ -426,7 +426,6 @@ begin
       CheckNotNull(E.InnerException);
       CheckEqualsString(Format(EXCEPTION_CANNOT_OPEN_QUERY,
         [E.InnerException.Message]), E.Message);
-      CheckNotNull(resultSet);
       resultSet := nil;
     end;
   end;

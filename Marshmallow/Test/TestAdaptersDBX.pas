@@ -368,6 +368,7 @@ begin
   begin
     Executes.When.SetConnected(True);
     Returns<Integer>(0).When.GetDataSetCount;
+    Executes.WhenForAnyArgs.UnRegisterClient(nil);
   end;
 
   try
@@ -380,8 +381,6 @@ begin
       CheckNotNull(E.InnerException);
       CheckEqualsString(Format(EXCEPTION_CANNOT_OPEN_QUERY,
         [E.InnerException.Message]), E.Message);
-      CheckNotNull(resultSet);
-      fMockConnection.Setup.Executes.WhenForAnyArgs.UnRegisterClient(nil);
       resultSet := nil;
     end;
   end;

@@ -142,7 +142,7 @@ begin
   except
     on E: Exception do
     begin
-      Result := TZeosResultSetAdapter.Create(query, ExceptionHandler);
+      query.Free;
       raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
     end;
   end;
