@@ -110,7 +110,11 @@ uses
 
 function TSQLiteResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
-  Result := DataSet.Fields[index].Value;
+  try
+    Result := DataSet.Fields[index].Value;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TSQLiteResultSetAdapter.FieldExists(const fieldName: string): Boolean;
@@ -130,7 +134,11 @@ end;
 
 function TSQLiteResultSetAdapter.GetFieldValue(const fieldName: string): Variant;
 begin
-  Result := DataSet.FieldByName[fieldName].Value;
+  try
+    Result := DataSet.FieldByName[fieldName].Value;
+  except
+    raise HandleException;
+  end;
 end;
 
 function TSQLiteResultSetAdapter.IsEmpty: Boolean;
@@ -140,7 +148,11 @@ end;
 
 function TSQLiteResultSetAdapter.Next: Boolean;
 begin
-  Result := DataSet.Next;
+  try
+    Result := DataSet.Next;
+  except
+    raise HandleException;
+  end;
 end;
 
 {$ENDREGION}

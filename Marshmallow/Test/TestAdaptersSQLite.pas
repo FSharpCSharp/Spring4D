@@ -4,6 +4,7 @@ interface
 
 uses
   TestFramework,
+  Rtti,
   SysUtils,
   SQLiteTable3,
   Spring,
@@ -13,6 +14,7 @@ uses
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.SQL.Params,
+  Spring.Reflection,
   Spring.TestUtils;
 
 type
@@ -46,13 +48,16 @@ type
   private
     fResultSet: IDBResultSet;
     function CreateResultSet: IDBResultSet;
+    procedure WithDamagedStatementDo(const proc: TProc);
   protected
     procedure SetUp; override;
     procedure TearDown; override;
   published
     procedure TestIsEmpty;
     procedure TestNext;
+    procedure TestNext_Exception;
     procedure TestGetFieldValue;
+    procedure TestGetFieldValue_Exception;
   end;
 
   TSQLiteStatementAdapterTest = class(TBaseSQLiteConnectionAdapterTest)
@@ -259,6 +264,36 @@ begin
   CheckFalse(fResultSet.Next);
 end;
 
+procedure TSQLiteResultSetAdapterTest.TestNext_Exception;
+begin
+  InsertCustomer('Test', 15, 1.1);
+  fResultSet := CreateResultSet;
+
+  WithDamagedStatementDo(
+    procedure
+    begin
+      CheckException(ESQLiteAdapterException,
+        procedure begin fResultSet.Next end);
+    end);
+end;
+
+procedure TSQLiteResultSetAdapterTest.WithDamagedStatementDo(const proc: TProc);
+var
+  lSqlTable: TObject;
+  fieldStm: TRttiField;
+  tempStmt: TValue;
+begin
+  lSqlTable := (fResultSet as TSQLiteResultSetAdapter).DataSet as TObject;
+  fieldStm := TType.GetType(lSqlTable).GetField('fStmt');
+  tempStmt := fieldStm.GetValue(lSqlTable);
+  fieldStm.SetValue(lSqlTable, nil);
+  try
+    proc();
+  finally
+    fieldStm.SetValue(lSqlTable, tempStmt);
+  end;
+end;
+
 procedure TSQLiteResultSetAdapterTest.TestGetFieldValue;
 var
   lId1, lId2: Int64;
@@ -277,6 +312,14 @@ begin
 
   CheckTrue(fResultSet.Next);
   CheckEquals(lId2, fResultSet.GetFieldValue(0));
+end;
+
+procedure TSQLiteResultSetAdapterTest.TestGetFieldValue_Exception;
+begin
+  CheckException(ESQLiteAdapterException,
+    procedure begin fResultSet.GetFieldValue(0) end);
+  CheckException(ESQLiteAdapterException,
+    procedure begin fResultSet.GetFieldValue('NAME') end);
 end;
 
 {$ENDREGION}
