@@ -34,7 +34,6 @@ uses
   ZAbstractDataset,
   ZDataset,
   Spring.Collections,
-  Spring.Persistence.Adapters.DataSet,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
@@ -46,7 +45,7 @@ type
   /// <summary>
   ///   Represents Zeos resultset.
   /// </summary>
-  TZeosResultSetAdapter = class(TDataSetResultSetAdapter<TZAbstractDataset>);
+  TZeosResultSetAdapter = class(TDriverResultSetAdapter<TZAbstractDataset>);
 
   /// <summary>
   ///   Represents Zeos statement.
@@ -101,7 +100,6 @@ implementation
 uses
   DB,
   StrUtils,
-  Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
 

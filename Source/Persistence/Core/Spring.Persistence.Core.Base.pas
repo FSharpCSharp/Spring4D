@@ -29,6 +29,7 @@ unit Spring.Persistence.Core.Base;
 interface
 
 uses
+  DB,
   SysUtils,
   Spring.Collections,
   Spring.Persistence.Core.Exceptions,
@@ -52,20 +53,22 @@ type
   ///   Base <see cref="Spring.Persistence.Core.Interfaces|IDBResultSet" />
   ///   adapter which descendents must override.
   /// </summary>
-  TDriverResultSetAdapter<T> = class(TDriverAdapterBase, IDBResultSet)
+  TDriverResultSetAdapter<T: TDataSet> = class(TDriverAdapterBase, IDBResultSet)
   private
     fDataSet: T;
+    fFieldCache: IFieldCache;
   protected
-    function IsEmpty: Boolean; virtual; abstract;
-    function Next: Boolean; virtual; abstract;
-    function FieldExists(const fieldName: string): Boolean; virtual; abstract;
-    function GetFieldValue(index: Integer): Variant; overload; virtual; abstract;
-    function GetFieldValue(const fieldname: string): Variant; overload; virtual; abstract;
-    function GetFieldCount: Integer; virtual; abstract;
-    function GetFieldName(index: Integer): string; virtual; abstract;
+    function IsEmpty: Boolean;
+    function Next: Boolean;
+    function FieldExists(const fieldName: string): Boolean;
+    function GetFieldValue(index: Integer): Variant; overload;
+    function GetFieldValue(const fieldname: string): Variant; overload;
+    function GetFieldCount: Integer;
+    function GetFieldName(index: Integer): string;
   public
     constructor Create(const dataSet: T;
-      const exceptionHandler: IORMExceptionHandler); virtual;
+      const exceptionHandler: IORMExceptionHandler);
+    destructor Destroy; override;
 
     property DataSet: T read fDataSet;
   end;
@@ -223,6 +226,7 @@ uses
   TypInfo,
   Variants,
   Spring,
+  Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Consts,
   Spring.Persistence.SQL.Register,
   Spring.Reflection;
@@ -252,6 +256,68 @@ constructor TDriverResultSetAdapter<T>.Create(const dataSet: T;
 begin
   inherited Create(exceptionHandler);
   fDataSet := dataSet;
+  fDataSet.DisableControls;
+  fFieldCache := TFieldCache.Create(dataSet);
+end;
+
+destructor TDriverResultSetAdapter<T>.Destroy;
+begin
+{$IFNDEF AUTOREFCOUNT}
+  fDataSet.Free;
+{$ELSE}
+  fDataset.DisposeOf;
+{$ENDIF}
+  inherited Destroy;
+end;
+
+function TDriverResultSetAdapter<T>.FieldExists(
+  const fieldName: string): Boolean;
+begin
+  Result := fFieldCache.FieldExists(fieldName);
+end;
+
+function TDriverResultSetAdapter<T>.GetFieldCount: Integer;
+begin
+  Result := fDataSet.FieldCount;
+end;
+
+function TDriverResultSetAdapter<T>.GetFieldName(index: Integer): string;
+begin
+  Result := fDataSet.Fields[index].FieldName;
+end;
+
+function TDriverResultSetAdapter<T>.GetFieldValue(index: Integer): Variant;
+begin
+  try
+    Result := fDataSet.Fields[index].Value;
+  except
+    raise HandleException;
+  end;
+end;
+
+function TDriverResultSetAdapter<T>.GetFieldValue(
+  const fieldName: string): Variant;
+begin
+  try
+    Result := fFieldCache.GetFieldValue(fieldName);
+  except
+    raise HandleException;
+  end;
+end;
+
+function TDriverResultSetAdapter<T>.IsEmpty: Boolean;
+begin
+  Result := fDataSet.Eof;
+end;
+
+function TDriverResultSetAdapter<T>.Next: Boolean;
+begin
+  try
+    fDataSet.Next;
+  except
+    raise HandleException;
+  end;
+  Result := not DataSet.Eof;
 end;
 
 {$ENDREGION}

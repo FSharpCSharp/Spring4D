@@ -82,20 +82,23 @@ type
   /// <summary>
   ///   Represents MongoDB resultset.
   /// </summary>
-  TMongoResultSetAdapter = class(TDriverResultSetAdapter<TMongoDBQuery>)
+  TMongoResultSetAdapter = class(TDriverAdapterBase, IDBResultSet)
   private
+    fDataSet: TMongoDBQuery;
     fDoc: IBSONDocument;
     fIsInjected: Boolean;
   public
+    constructor Create(const dataSet: TMongoDBQuery;
+      const exceptionHandler: IORMExceptionHandler);
     destructor Destroy; override;
 
-    function IsEmpty: Boolean; override;
-    function Next: Boolean; override;
-    function GetFieldValue(index: Integer): Variant; override;
-    function GetFieldValue(const fieldName: string): Variant; override;
-    function GetFieldCount: Integer; override;
-    function GetFieldName(index: Integer): string; override;
-    function FieldExists(const fieldName: string): Boolean; override;
+    function IsEmpty: Boolean;
+    function Next: Boolean;
+    function GetFieldValue(index: Integer): Variant; overload;
+    function GetFieldValue(const fieldName: string): Variant; overload;
+    function GetFieldCount: Integer;
+    function GetFieldName(index: Integer): string;
+    function FieldExists(const fieldName: string): Boolean;
 
     property Document: IBSONDocument read fDoc write fDoc;
     property IsInjected: Boolean read fIsInjected write fIsInjected;
@@ -229,9 +232,16 @@ end;
 
 {$REGION 'TMongoResultSetAdapter'}
 
+constructor TMongoResultSetAdapter.Create(const dataSet: TMongoDBQuery;
+  const exceptionHandler: IORMExceptionHandler);
+begin
+  inherited Create(exceptionHandler);
+  fDataSet := dataSet;
+end;
+
 destructor TMongoResultSetAdapter.Destroy;
 begin
-  DataSet.Free;
+  fDataSet.Free;
   inherited Destroy;
 end;
 
@@ -295,9 +305,9 @@ end;
 
 function TMongoResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := not IsInjected and not DataSet.next;
+  Result := not IsInjected and not fDataSet.next;
   if not Result and not IsInjected then
-    fDoc := DataSet.value;
+    fDoc := fDataSet.value;
 end;
 
 function TMongoResultSetAdapter.Next: Boolean;

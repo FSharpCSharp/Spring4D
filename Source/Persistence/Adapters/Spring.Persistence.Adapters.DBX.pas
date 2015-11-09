@@ -33,8 +33,6 @@ uses
   SqlExpr,
   SysUtils,
   Spring.Collections,
-  Spring.Persistence.Adapters.DataSet,
-  Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
@@ -46,11 +44,7 @@ type
   /// <summary>
   ///   Represents DBX resultset.
   /// </summary>
-  TDBXResultSetAdapter = class(TDataSetResultSetAdapter<TSQLQuery>)
-  public
-    constructor Create(const dataSet: TSQLQuery;
-      const exceptionHandler: IORMExceptionHandler); override;
-  end;
+  TDBXResultSetAdapter = class(TDriverResultSetAdapter<TSQLQuery>);
 
   /// <summary>
   ///   Represents DBX statement.
@@ -108,19 +102,6 @@ uses
   SysConst,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
-
-
-{$REGION 'TDBXResultSetAdapter'}
-
-constructor TDBXResultSetAdapter.Create(const dataSet: TSQLQuery;
-  const exceptionHandler: IORMExceptionHandler);
-begin
- // DataSet.CursorLocation := clUseServer;
- // DataSet.CursorType := ctOpenForwardOnly;
-  inherited Create(DataSet, exceptionHandler);
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TDBXStatementAdapter'}

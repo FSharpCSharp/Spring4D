@@ -43,15 +43,20 @@ type
   /// <summary>
   ///   Represents SQLite3 resultset.
   /// </summary>
-  TSQLiteResultSetAdapter = class(TDriverResultSetAdapter<ISQLiteTable>)
+  TSQLiteResultSetAdapter = class(TDriverAdapterBase, IDBResultSet)
+  private
+    fDataSet: ISQLiteTable;
   public
-    function IsEmpty: Boolean; override;
-    function Next: Boolean; override;
-    function FieldExists(const fieldName: string): Boolean; override;
-    function GetFieldValue(index: Integer): Variant; override;
-    function GetFieldValue(const fieldName: string): Variant; override;
-    function GetFieldCount: Integer; override;
-    function GetFieldName(index: Integer): string; override;
+    constructor Create(const dataSet: ISQLiteTable;
+      const exceptionHandler: IORMExceptionHandler);
+
+    function IsEmpty: Boolean;
+    function Next: Boolean;
+    function FieldExists(const fieldName: string): Boolean;
+    function GetFieldValue(index: Integer): Variant; overload;
+    function GetFieldValue(const fieldName: string): Variant; overload;
+    function GetFieldCount: Integer;
+    function GetFieldName(index: Integer): string;
   end;
 
   /// <summary>
@@ -108,10 +113,17 @@ uses
 
 {$REGION 'TSQLiteResultSetAdapter'}
 
+constructor TSQLiteResultSetAdapter.Create(const dataSet: ISQLiteTable;
+  const exceptionHandler: IORMExceptionHandler);
+begin
+  inherited Create(exceptionHandler);
+  fDataSet := dataSet;
+end;
+
 function TSQLiteResultSetAdapter.GetFieldValue(index: Integer): Variant;
 begin
   try
-    Result := DataSet.Fields[index].Value;
+    Result := fDataSet.Fields[index].Value;
   except
     raise HandleException;
   end;
@@ -119,23 +131,23 @@ end;
 
 function TSQLiteResultSetAdapter.FieldExists(const fieldName: string): Boolean;
 begin
-  Result := DataSet.FindField(fieldName) <> nil;
+  Result := fDataSet.FindField(fieldName) <> nil;
 end;
 
 function TSQLiteResultSetAdapter.GetFieldCount: Integer;
 begin
-  Result := DataSet.FieldCount;
+  Result := fDataSet.FieldCount;
 end;
 
 function TSQLiteResultSetAdapter.GetFieldName(index: Integer): string;
 begin
-  Result := DataSet.Fields[index].Name;
+  Result := fDataSet.Fields[index].Name;
 end;
 
 function TSQLiteResultSetAdapter.GetFieldValue(const fieldName: string): Variant;
 begin
   try
-    Result := DataSet.FieldByName[fieldName].Value;
+    Result := fDataSet.FieldByName[fieldName].Value;
   except
     raise HandleException;
   end;
@@ -143,13 +155,13 @@ end;
 
 function TSQLiteResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := DataSet.EOF;
+  Result := fDataSet.EOF;
 end;
 
 function TSQLiteResultSetAdapter.Next: Boolean;
 begin
   try
-    Result := DataSet.Next;
+    Result := fDataSet.Next;
   except
     raise HandleException;
   end;

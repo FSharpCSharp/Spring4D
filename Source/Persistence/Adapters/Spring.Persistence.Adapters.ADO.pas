@@ -34,7 +34,6 @@ uses
   ComObj,
   SysUtils,
   Spring.Collections,
-  Spring.Persistence.Adapters.DataSet,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
@@ -48,11 +47,7 @@ type
   /// <summary>
   ///   Represent ADO resultset.
   /// </summary>
-  TADOResultSetAdapter = class(TDataSetResultSetAdapter<TADODataSet>)
-  public
-    constructor Create(const dataSet: TADODataSet;
-      const exceptionHandler: IORMExceptionHandler); override;
-  end;
+  TADOResultSetAdapter = class(TDriverResultSetAdapter<TADODataSet>);
 
   /// <summary>
   ///   Represent ADO statement.
@@ -120,22 +115,8 @@ uses
   DB,
   Variants,
   Spring,
-  Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
-
-
-{$REGION 'TADOResultSetAdapter'}
-
-constructor TADOResultSetAdapter.Create(const dataSet: TADODataSet;
-      const exceptionHandler: IORMExceptionHandler);
-begin
-//  DataSet.CursorLocation := clUseServer;
-//  DataSet.CursorType := ctOpenForwardOnly;
-  inherited Create(DataSet, exceptionHandler);
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TADOStatementAdapter'}

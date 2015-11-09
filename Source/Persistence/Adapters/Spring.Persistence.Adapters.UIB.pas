@@ -34,8 +34,6 @@ uses
   uibdataset,
   uiblib,
   Spring.Collections,
-  Spring.Persistence.Adapters.DataSet,
-  Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
@@ -48,12 +46,12 @@ type
   /// <summary>
   ///   Represents Unified Interbase resultset.
   /// </summary>
-  TUIBResultSetAdapter = class(TDataSetResultSetAdapter<TUIBDataSet>)
+  TUIBResultSetAdapter = class(TDriverResultSetAdapter<TUIBDataSet>)
   private
     fIsNewTransaction: Boolean;
   public
     constructor Create(const dataSet: TUIBDataSet;
-      const exceptionHandler: IORMExceptionHandler); override;
+      const exceptionHandler: IORMExceptionHandler);
     destructor Destroy; override;
 
     property IsNewTransaction: Boolean read fIsNewTransaction write fIsNewTransaction;

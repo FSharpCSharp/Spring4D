@@ -279,18 +279,19 @@ end;
 
 procedure TSQLiteResultSetAdapterTest.WithDamagedStatementDo(const proc: TProc);
 var
-  lSqlTable: TObject;
-  fieldStm: TRttiField;
+  sqlTable: TObject;
+  field: TRttiField;
   tempStmt: TValue;
 begin
-  lSqlTable := (fResultSet as TSQLiteResultSetAdapter).DataSet as TObject;
-  fieldStm := TType.GetType(lSqlTable).GetField('fStmt');
-  tempStmt := fieldStm.GetValue(lSqlTable);
-  fieldStm.SetValue(lSqlTable, nil);
+  field := TType.GetType(fResultSet as TObject).GetField('fDataSet');
+  sqlTable := field.GetValue(fResultSet as TObject).AsInterface as TObject;
+  field := TType.GetType(sqlTable).GetField('fStmt');
+  tempStmt := field.GetValue(sqlTable);
+  field.SetValue(sqlTable, nil);
   try
     proc();
   finally
-    fieldStm.SetValue(lSqlTable, tempStmt);
+    field.SetValue(sqlTable, tempStmt);
   end;
 end;
 

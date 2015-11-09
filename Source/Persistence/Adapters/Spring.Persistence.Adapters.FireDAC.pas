@@ -39,7 +39,6 @@ uses
   FireDAC.Stan.Error,
   SysUtils,
   Spring.Collections,
-  Spring.Persistence.Adapters.DataSet,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
@@ -50,7 +49,7 @@ uses
 type
   EFireDACAdapterException = class(EORMAdapterException);
 
-  TFireDACResultSetAdapter = class(TDataSetResultSetAdapter<TFDQuery>);
+  TFireDACResultSetAdapter = class(TDriverResultSetAdapter<TFDQuery>);
 
   TFireDACStatementAdapter = class(TDriverStatementAdapter<TFDQuery>)
   public
@@ -101,7 +100,6 @@ implementation
 uses
   StrUtils,
   Variants,
-  Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
 
