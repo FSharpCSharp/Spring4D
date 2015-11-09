@@ -39,6 +39,7 @@ uses
   FireDAC.Stan.Error,
   SysUtils,
   Spring.Collections,
+  Spring.Persistence.Adapters.DataSet,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
@@ -49,22 +50,7 @@ uses
 type
   EFireDACAdapterException = class(EORMAdapterException);
 
-  TFireDACResultSetAdapter = class(TDriverResultSetAdapter<TFDQuery>)
-  private
-    fFieldCache: IFieldCache;
-  public
-    constructor Create(const dataSet: TFDQuery;
-      const exceptionHandler: IORMExceptionHandler); override;
-    destructor Destroy; override;
-
-    function IsEmpty: Boolean; override;
-    function Next: Boolean; override;
-    function FieldExists(const fieldName: string): Boolean; override;
-    function GetFieldValue(index: Integer): Variant; override;
-    function GetFieldValue(const fieldName: string): Variant; override;
-    function GetFieldCount: Integer; override;
-    function GetFieldName(index: Integer): string; override;
-  end;
+  TFireDACResultSetAdapter = class(TDataSetResultSetAdapter<TFDQuery>);
 
   TFireDACStatementAdapter = class(TDriverStatementAdapter<TFDQuery>)
   public
@@ -118,67 +104,6 @@ uses
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
-
-
-{$REGION 'TFireDACResultSetAdapter'}
-
-constructor TFireDACResultSetAdapter.Create(const dataSet: TFDQuery;
-  const exceptionHandler: IORMExceptionHandler);
-begin
-  inherited Create(DataSet, exceptionHandler);
-  dataSet.DisableControls;
-  fFieldCache := TFieldCache.Create(dataSet);
-end;
-
-destructor TFireDACResultSetAdapter.Destroy;
-begin
-{$IFNDEF AUTOREFCOUNT}
-  DataSet.Free;
-{$ELSE}
-  Dataset.DisposeOf;
-{$ENDIF}
-  inherited Destroy;
-end;
-
-function TFireDACResultSetAdapter.FieldExists(
-  const fieldName: string): Boolean;
-begin
-  Result := fFieldCache.FieldExists(fieldName);
-end;
-
-function TFireDACResultSetAdapter.GetFieldCount: Integer;
-begin
-  Result := DataSet.FieldCount;
-end;
-
-function TFireDACResultSetAdapter.GetFieldName(index: Integer): string;
-begin
-  Result := DataSet.Fields[index].FieldName;
-end;
-
-function TFireDACResultSetAdapter.GetFieldValue(index: Integer): Variant;
-begin
-  Result := DataSet.Fields[index].Value;
-end;
-
-function TFireDACResultSetAdapter.GetFieldValue(
-  const fieldName: string): Variant;
-begin
-  Result := fFieldCache.GetFieldValue(fieldName);
-end;
-
-function TFireDACResultSetAdapter.IsEmpty: Boolean;
-begin
-  Result := DataSet.Eof;
-end;
-
-function TFireDACResultSetAdapter.Next: Boolean;
-begin
-  DataSet.Next;
-  Result := not DataSet.Eof;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TFireDACStatementAdapter'}

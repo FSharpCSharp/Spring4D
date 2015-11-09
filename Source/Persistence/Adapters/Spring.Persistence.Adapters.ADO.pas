@@ -34,6 +34,7 @@ uses
   ComObj,
   SysUtils,
   Spring.Collections,
+  Spring.Persistence.Adapters.DataSet,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
@@ -47,21 +48,10 @@ type
   /// <summary>
   ///   Represent ADO resultset.
   /// </summary>
-  TADOResultSetAdapter = class(TDriverResultSetAdapter<TADODataSet>)
-  private
-    fFieldCache: IFieldCache;
+  TADOResultSetAdapter = class(TDataSetResultSetAdapter<TADODataSet>)
   public
     constructor Create(const dataSet: TADODataSet;
       const exceptionHandler: IORMExceptionHandler); override;
-    destructor Destroy; override;
-
-    function IsEmpty: Boolean; override;
-    function Next: Boolean; override;
-    function FieldExists(const fieldName: string): Boolean; override;
-    function GetFieldValue(index: Integer): Variant; override;
-    function GetFieldValue(const fieldName: string): Variant; override;
-    function GetFieldCount: Integer; override;
-    function GetFieldName(index: Integer): string; override;
   end;
 
   /// <summary>
@@ -140,53 +130,9 @@ uses
 constructor TADOResultSetAdapter.Create(const dataSet: TADODataSet;
       const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet, exceptionHandler);
-  DataSet.DisableControls;
 //  DataSet.CursorLocation := clUseServer;
 //  DataSet.CursorType := ctOpenForwardOnly;
-  fFieldCache := TFieldCache.Create(dataSet);
-end;
-
-destructor TADOResultSetAdapter.Destroy;
-begin
-  DataSet.Free;
-  inherited Destroy;
-end;
-
-function TADOResultSetAdapter.FieldExists(const fieldName: string): Boolean;
-begin
-  Result := fFieldCache.FieldExists(fieldName);
-end;
-
-function TADOResultSetAdapter.GetFieldCount: Integer;
-begin
-  Result := DataSet.FieldCount;
-end;
-
-function TADOResultSetAdapter.GetFieldName(index: Integer): string;
-begin
-  Result := DataSet.Fields[index].FieldName;
-end;
-
-function TADOResultSetAdapter.GetFieldValue(index: Integer): Variant;
-begin
-  Result := DataSet.Fields[index].Value;
-end;
-
-function TADOResultSetAdapter.GetFieldValue(const fieldName: string): Variant;
-begin
-  Result := fFieldCache.GetFieldValue(fieldName);
-end;
-
-function TADOResultSetAdapter.IsEmpty: Boolean;
-begin
-  Result := DataSet.Eof;
-end;
-
-function TADOResultSetAdapter.Next: Boolean;
-begin
-  DataSet.Next;
-  Result := not DataSet.Eof;
+  inherited Create(DataSet, exceptionHandler);
 end;
 
 {$ENDREGION}

@@ -34,6 +34,7 @@ uses
   ZAbstractDataset,
   ZDataset,
   Spring.Collections,
+  Spring.Persistence.Adapters.DataSet,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
@@ -45,22 +46,7 @@ type
   /// <summary>
   ///   Represents Zeos resultset.
   /// </summary>
-  TZeosResultSetAdapter = class(TDriverResultSetAdapter<TZAbstractDataset>)
-  private
-    fFieldCache: IFieldCache;
-  public
-    constructor Create(const dataSet: TZAbstractDataset;
-      const exceptionHandler: IORMExceptionHandler); override;
-    destructor Destroy; override;
-
-    function IsEmpty: Boolean; override;
-    function Next: Boolean; override;
-    function FieldExists(const fieldName: string): Boolean; override;
-    function GetFieldValue(index: Integer): Variant; override;
-    function GetFieldValue(const fieldname: string): Variant; override;
-    function GetFieldCount: Integer; override;
-    function GetFieldName(index: Integer): string; override;
-  end;
+  TZeosResultSetAdapter = class(TDataSetResultSetAdapter<TZAbstractDataset>);
 
   /// <summary>
   ///   Represents Zeos statement.
@@ -118,73 +104,6 @@ uses
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.Consts;
-
-
-{$REGION 'TZeosResultSetAdapter'}
-
-constructor TZeosResultSetAdapter.Create(const dataSet: TZAbstractDataset;
-  const exceptionHandler: IORMExceptionHandler);
-begin
-  inherited Create(DataSet, exceptionHandler);
-  Dataset.DisableControls;
-  fFieldCache := TFieldCache.Create(dataSet);
-end;
-
-destructor TZeosResultSetAdapter.Destroy;
-begin
-  DataSet.Free;
-  inherited;
-end;
-
-function TZeosResultSetAdapter.FieldExists(const fieldName: string): Boolean;
-begin
-  Result := fFieldCache.FieldExists(fieldName);
-end;
-
-function TZeosResultSetAdapter.GetFieldCount: Integer;
-begin
-  Result := DataSet.FieldCount;
-end;
-
-function TZeosResultSetAdapter.GetFieldName(index: Integer): string;
-begin
-  Result := DataSet.Fields[index].FieldName;
-end;
-
-function TZeosResultSetAdapter.GetFieldValue(index: Integer): Variant;
-begin
-  try
-    Result := DataSet.Fields[index].Value;
-  except
-    raise HandleException;
-  end;
-end;
-
-function TZeosResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
-begin
-  try
-    Result := fFieldCache.GetFieldValue(fieldname);
-  except
-    raise HandleException;
-  end;
-end;
-
-function TZeosResultSetAdapter.IsEmpty: Boolean;
-begin
-  Result := DataSet.Eof;
-end;
-
-function TZeosResultSetAdapter.Next: Boolean;
-begin
-  try
-    DataSet.Next;
-  except
-    raise HandleException;
-  end;
-  Result := not DataSet.Eof;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TZeosStatementAdapter' }

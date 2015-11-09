@@ -33,6 +33,7 @@ uses
   SqlExpr,
   SysUtils,
   Spring.Collections,
+  Spring.Persistence.Adapters.DataSet,
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
@@ -45,21 +46,10 @@ type
   /// <summary>
   ///   Represents DBX resultset.
   /// </summary>
-  TDBXResultSetAdapter = class(TDriverResultSetAdapter<TSQLQuery>)
-  private
-    fFieldCache: IFieldCache;
+  TDBXResultSetAdapter = class(TDataSetResultSetAdapter<TSQLQuery>)
   public
     constructor Create(const dataSet: TSQLQuery;
       const exceptionHandler: IORMExceptionHandler); override;
-    destructor Destroy; override;
-
-    function IsEmpty: Boolean; override;
-    function Next: Boolean; override;
-    function FieldExists(const fieldName: string): Boolean; override;
-    function GetFieldValue(index: Integer): Variant; override;
-    function GetFieldValue(const fieldname: string): Variant; override;
-    function GetFieldCount: Integer; override;
-    function GetFieldName(index: Integer): string; override;
   end;
 
   /// <summary>
@@ -125,53 +115,9 @@ uses
 constructor TDBXResultSetAdapter.Create(const dataSet: TSQLQuery;
   const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(DataSet, exceptionHandler);
-  DataSet.DisableControls;
  // DataSet.CursorLocation := clUseServer;
  // DataSet.CursorType := ctOpenForwardOnly;
-  fFieldCache := TFieldCache.Create(dataSet);
-end;
-
-destructor TDBXResultSetAdapter.Destroy;
-begin
-  DataSet.Free;
-  inherited Destroy;
-end;
-
-function TDBXResultSetAdapter.FieldExists(const fieldName: string): Boolean;
-begin
-  Result := fFieldCache.FieldExists(fieldName);
-end;
-
-function TDBXResultSetAdapter.GetFieldCount: Integer;
-begin
-  Result := DataSet.FieldCount;
-end;
-
-function TDBXResultSetAdapter.GetFieldName(index: Integer): string;
-begin
-  Result := DataSet.Fields[index].FieldName;
-end;
-
-function TDBXResultSetAdapter.GetFieldValue(index: Integer): Variant;
-begin
-  Result := DataSet.Fields[index].Value;
-end;
-
-function TDBXResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
-begin
-  Result := fFieldCache.GetFieldValue(fieldname);
-end;
-
-function TDBXResultSetAdapter.IsEmpty: Boolean;
-begin
-  Result := DataSet.Eof;
-end;
-
-function TDBXResultSetAdapter.Next: Boolean;
-begin
-  DataSet.Next;
-  Result := not DataSet.Eof;
+  inherited Create(DataSet, exceptionHandler);
 end;
 
 {$ENDREGION}

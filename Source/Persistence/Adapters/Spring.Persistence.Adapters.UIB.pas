@@ -34,6 +34,7 @@ uses
   uibdataset,
   uiblib,
   Spring.Collections,
+  Spring.Persistence.Adapters.DataSet,
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
@@ -47,22 +48,13 @@ type
   /// <summary>
   ///   Represents Unified Interbase resultset.
   /// </summary>
-  TUIBResultSetAdapter = class(TDriverResultSetAdapter<TUIBDataSet>)
+  TUIBResultSetAdapter = class(TDataSetResultSetAdapter<TUIBDataSet>)
   private
-    fFieldCache: IFieldCache;
     fIsNewTransaction: Boolean;
   public
     constructor Create(const dataSet: TUIBDataSet;
       const exceptionHandler: IORMExceptionHandler); override;
     destructor Destroy; override;
-
-    function IsEmpty: Boolean; override;
-    function Next: Boolean; override;
-    function FieldExists(const fieldName: string): Boolean; override;
-    function GetFieldValue(index: Integer): Variant; override;
-    function GetFieldValue(const fieldname: string): Variant; override;
-    function GetFieldCount: Integer; override;
-    function GetFieldName(index: Integer): string; override;
 
     property IsNewTransaction: Boolean read fIsNewTransaction write fIsNewTransaction;
   end;
@@ -136,65 +128,15 @@ uses
 constructor TUIBResultSetAdapter.Create(const dataSet: TUIBDataSet;
   const exceptionHandler: IORMExceptionHandler);
 begin
-  inherited Create(dataSet, exceptionHandler);
   Dataset.OnClose := etmStayIn;
-  fFieldCache := TFieldCache.Create(dataSet);
+  inherited Create(dataSet, exceptionHandler);
 end;
 
 destructor TUIBResultSetAdapter.Destroy;
 begin
   if fIsNewTransaction then
     DataSet.Transaction.Free;
-  DataSet.Free;
   inherited;
-end;
-
-function TUIBResultSetAdapter.FieldExists(const fieldName: string): Boolean;
-begin
-  Result := fFieldCache.FieldExists(fieldName);
-end;
-
-function TUIBResultSetAdapter.GetFieldCount: Integer;
-begin
-  Result := DataSet.FieldCount;
-end;
-
-function TUIBResultSetAdapter.GetFieldName(index: Integer): string;
-begin
-  Result := DataSet.Fields[index].FieldName;
-end;
-
-function TUIBResultSetAdapter.GetFieldValue(index: Integer): Variant;
-begin
-  try
-    Result := DataSet.Fields[index].Value;
-  except
-    raise HandleException;
-  end;
-end;
-
-function TUIBResultSetAdapter.GetFieldValue(const fieldname: string): Variant;
-begin
-  try
-    Result := fFieldCache.GetFieldValue(fieldname);
-  except
-    raise HandleException;
-  end;
-end;
-
-function TUIBResultSetAdapter.IsEmpty: Boolean;
-begin
-  Result := DataSet.Eof;
-end;
-
-function TUIBResultSetAdapter.Next: Boolean;
-begin
-  try
-    DataSet.Next;
-  except
-    raise HandleException;
-  end;
-  Result := not DataSet.Eof;
 end;
 
 {$ENDREGION}
