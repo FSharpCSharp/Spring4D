@@ -1636,62 +1636,54 @@ var
   Msg: PAnsiChar;
   iResult: Integer;
 begin
-  Msg := nil;
   FConnected := False;
-  try
-    iResult := SQLITE_OK;
+  iResult := SQLITE_OK;
 
-    case FEncoding of
-      seUTF8: iResult := sqlite3_open_v2(PAnsiChar(UTF8Encode(FFileName)), Fdb,
-        SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE or SQLITE_OPEN_URI, nil);
-      seUTF16: iResult := SQLite3_Open16(PChar(FFileName), Fdb);
-    end;
+  case FEncoding of
+    seUTF8: iResult := sqlite3_open_v2(PAnsiChar(UTF8Encode(FFileName)), Fdb,
+      SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE or SQLITE_OPEN_URI, nil);
+    seUTF16: iResult := SQLite3_Open16(PChar(FFileName), Fdb);
+  end;
 
-    if iResult <> SQLITE_OK then
-      if Assigned(Fdb) then
-      begin
-        Msg := Sqlite3_ErrMsg(Fdb);
-        raise ESqliteException.CreateFmt('Failed to open database "%s" : %s',
-          [FFileName, Msg], iResult);
-      end
-      else
-        raise ESqliteException.CreateFmt('Failed to open database "%s" : unknown error',
-          [FFileName], iResult);
-
-
-    if (Password <> '') then
+  if iResult <> SQLITE_OK then
+    if Assigned(Fdb) then
     begin
-      //db is encrypted
+      Msg := Sqlite3_ErrMsg(Fdb);
+      raise ESqliteException.CreateFmt('Failed to open database "%s" : %s',
+        [FFileName, Msg], iResult);
+    end
+    else
+      raise ESqliteException.CreateFmt('Failed to open database "%s" : unknown error',
+        [FFileName], iResult);
+
+
+  if (Password <> '') then
+  begin
+    //db is encrypted
 
 {$IFNDEF USE_SYSTEM_SQLITE}
-      if not Assigned(sqlite3_key) then
-        raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
-
-      iResult := sqlite3_key(fDB, PAnsiChar(Password), Length(Password));
-      if iResult <> SQLITE_OK then
-      begin
-        RaiseError('Cannot encrypt database', '');
-      end;
-{$ELSE}
+    if not Assigned(sqlite3_key) then
       raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
-{$ENDIF}
-    end;
 
-    FConnected := True;
+    iResult := sqlite3_key(fDB, PAnsiChar(Password), Length(Password));
+    if iResult <> SQLITE_OK then
+    begin
+      RaiseError('Cannot encrypt database', '');
+    end;
+{$ELSE}
+    raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
+{$ENDIF}
+  end;
+
+  FConnected := True;
 //set a few configs
 //L.G. Do not call it here. Because busy handler is not setted here,
 // any share violation causing exception!
 
 //    self.ExecSQL('PRAGMA SYNCHRONOUS=NORMAL;');
 //    self.ExecSQL('PRAGMA temp_store = MEMORY;');
-    if Assigned(FOnAfterOpen) then
-      FOnAfterOpen(Self);
-
-
-  finally
-    if Assigned(Msg) then
-      SQLite3_Free(Msg);
-  end;
+  if Assigned(FOnAfterOpen) then
+    FOnAfterOpen(Self);
 end;
 
 function TSQLiteDatabase.GetTableValue(const SQL: string): int64;
