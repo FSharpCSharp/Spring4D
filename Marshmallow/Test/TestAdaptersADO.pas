@@ -30,19 +30,23 @@ interface
 
 uses
   SysUtils,
+  Variants,
   DB,
   ADOInt,
   ADODB,
+  Classes,
   ComObj,
   TestFramework,
   Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Mocking,
+  Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Adapters.ADO,
   Spring.Persistence.SQL.Interfaces,
+  Spring.Reflection,
   Spring.TestUtils,
   TestMockADOConnection;
 
@@ -90,6 +94,28 @@ type
   published
     procedure TestCommit;
     procedure TestRollback;
+  end;
+
+  // Test it here since we need some exception handler
+  TDriverResultSetAdapterTest = class(TTestCase)
+  private
+    fDataSet: Mock<TDataSet>;
+    fResultSet: IDBResultSet;
+    procedure CreateResultSet;
+    procedure FreeResultSet;
+    function AddField(fieldClass: TFieldClass; const name: string): TField;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestIsEmpty;
+    procedure TestNext;
+    procedure TestFieldExists;
+    procedure TestFieldCount;
+    procedure TestFieldName;
+    procedure TestNext_Exception;
+    procedure TestGetFieldValue;
+    procedure TestGetFieldValue_Exception;
   end;
 
 implementation
@@ -377,10 +403,178 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TDriverResultSetAdapterTest'}
+
+function TDriverResultSetAdapterTest.AddField(fieldClass: TFieldClass;
+  const name: string): TField;
+begin
+  Result := fieldClass.Create(fDataSet);
+  Result.FieldName := name;
+  Result.DataSet := fDataSet;
+end;
+
+procedure TDriverResultSetAdapterTest.CreateResultSet;
+begin
+  if Assigned(fResultSet) then
+    FreeResultSet;
+
+  fResultSet := TDriverResultSetAdapter<TDataSet>.Create(fDataSet,
+    TADOExceptionHandler.Create);
+end;
+
+procedure TDriverResultSetAdapterTest.FreeResultSet;
+begin
+  // Clear the internal value so mock is not freed and does not raise exception
+  // during cleanup.
+  TType.SetFieldValue(fResultSet as TObject, 'fDataSet', nil);
+  fResultSet := nil;
+end;
+
+procedure TDriverResultSetAdapterTest.SetUp;
+begin
+  inherited;
+  fDataSet := Mock<TDataSet>.Create(TMockBehavior.Strict,
+    [TValue.From<TComponent>(nil)]);
+  CreateResultSet;
+end;
+
+procedure TDriverResultSetAdapterTest.TearDown;
+begin
+  inherited;
+  FreeResultSet;
+  fDataSet.Free;
+end;
+
+procedure TDriverResultSetAdapterTest.TestFieldCount;
+begin
+  CheckEquals(0, fResultSet.GetFieldCount);
+
+  AddField(TStringField, 'name');
+  CreateResultSet;
+  CheckEquals(1, fResultSet.GetFieldCount);
+
+  AddField(TIntegerField, 'value');
+  CreateResultSet;
+  CheckEquals(2, fResultSet.GetFieldCount);
+end;
+
+procedure TDriverResultSetAdapterTest.TestFieldExists;
+begin
+  CheckFalse(fResultSet.FieldExists('name'));
+
+  AddField(TStringField, 'name');
+  CreateResultSet;
+  CheckTrue(fResultSet.FieldExists('name'));
+  CheckFalse(fResultSet.FieldExists('value'));
+end;
+
+procedure TDriverResultSetAdapterTest.TestFieldName;
+begin
+  AddField(TStringField, 'name');
+  AddField(TIntegerField, 'value');
+  CreateResultSet;
+
+  CheckEqualsString('name', fResultSet.GetFieldName(0));
+  CheckEqualsString('value', fResultSet.GetFieldName(1));
+end;
+
+procedure TDriverResultSetAdapterTest.TestGetFieldValue;
+var
+  valueBuffer: TValueBuffer;
+  stringField, integerField: TField;
+begin
+  stringField := AddField(TStringField, 'name');
+  TStringField(stringField).Transliterate := False;
+  integerField := AddField(TIntegerField, 'value');
+  CreateResultSet;
+  fDataSet.Setup.Executes(
+    function(const callInfo: TCallInfo): TValue
+    var
+      valueBuffer: TValueBuffer;
+    begin
+      valueBuffer := callInfo.Arguments[1].AsType<TValueBuffer>;
+      if callInfo.Arguments[0].AsObject = stringField then
+      begin
+        valueBuffer[0] := Ord('t');
+        valueBuffer[1] := Ord('e');
+        valueBuffer[2] := Ord('s');
+        valueBuffer[3] := Ord('t');
+        Result := True;
+      end
+      else if callInfo.Arguments[0].AsObject = integerField then
+      begin
+        valueBuffer[0] := 42;
+        Result := True;
+      end
+      else
+        Result := False;
+      end).WhenForAnyArgs.GetFieldData(nil, valueBuffer, False);
+
+    CheckEqualsString('test', fResultSet.GetFieldValue(0));
+    CheckEqualsString('test', fResultSet.GetFieldValue('name'));
+    CheckEquals(42, fResultSet.GetFieldValue(1));
+    CheckEquals(42, fResultSet.GetFieldValue('value'));
+
+    fDataSet.Setup.Returns(False).WhenForAnyArgs.GetFieldData(nil, valueBuffer,
+      False);
+
+    CheckTrue(VarIsNull(fResultSet.GetFieldValue(0)));
+    CheckTrue(VarIsNull(fResultSet.GetFieldValue('name')));
+    CheckTrue(VarIsNull(fResultSet.GetFieldValue(1)));
+    CheckTrue(VarIsNull(fResultSet.GetFieldValue('value')));
+end;
+
+procedure TDriverResultSetAdapterTest.TestGetFieldValue_Exception;
+var
+  valueBuffer: TValueBuffer;
+begin
+  AddField(TStringField, 'name');
+  CreateResultSet;
+  fDataSet.Setup.Raises<EDatabaseError>.WhenForAnyArgs.GetFieldData(nil,
+    valueBuffer, False);
+
+  CheckException(EADOAdapterException,
+    procedure begin fResultSet.GetFieldValue(0) end);
+  CheckException(EADOAdapterException,
+    procedure begin fResultSet.GetFieldValue('name') end);
+end;
+
+procedure TDriverResultSetAdapterTest.TestIsEmpty;
+begin
+  CheckTrue(fResultSet.IsEmpty);
+
+  TType.SetFieldValue(fDataSet, 'fEOF', False);
+  CheckFalse(fResultSet.IsEmpty);
+end;
+
+procedure TDriverResultSetAdapterTest.TestNext;
+begin
+  fDataSet.Setup.Executes.When.MoveBy(1);
+
+  CheckFalse(fResultSet.Next);
+
+  TType.SetFieldValue(fDataSet, 'fEOF', False);
+  CheckTrue(fResultSet.Next);
+
+  fDataSet.Received(Times.Exactly(2)).MoveBy(1);
+end;
+
+procedure TDriverResultSetAdapterTest.TestNext_Exception;
+begin
+  fDataSet.Setup.Raises<EDatabaseError>.When.MoveBy(1);
+
+  CheckException(EADOAdapterException,
+    procedure begin fResultSet.Next end);
+end;
+
+{$ENDREGION}
+
+
 initialization
   RegisterTests('Spring.Persistence.Adapters', [
     TADOConnectionAdapterTest.Suite,
     TADOTransactionAdapterTest.Suite,
-    TADOExceptionHandlerTest.Suite]);
+    TADOExceptionHandlerTest.Suite,
+    TDriverResultSetAdapterTest.Suite]);
 
 end.
