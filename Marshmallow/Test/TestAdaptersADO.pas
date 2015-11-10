@@ -405,6 +405,17 @@ end;
 
 {$REGION 'TDriverResultSetAdapterTest'}
 
+type
+  TMockField = class(TField)
+  public // get RTTI access for this originally protected method which we want to mock
+    function GetAsVariant: Variant; override;
+  end;
+
+function TMockField.GetAsVariant: Variant;
+begin
+  Result := inherited;
+end;
+
 function TDriverResultSetAdapterTest.AddField(fieldClass: TFieldClass;
   const name: string): TField;
 begin
@@ -480,63 +491,54 @@ end;
 
 procedure TDriverResultSetAdapterTest.TestGetFieldValue;
 var
-  valueBuffer: TValueBuffer;
-  stringField, integerField: TField;
+  stringField, integerField: Mock<TMockField>;
 begin
-  stringField := AddField(TStringField, 'name');
-  TStringField(stringField).Transliterate := False;
-  integerField := AddField(TIntegerField, 'value');
+  stringField := Mock<TMockField>.Create(TMockBehavior.Strict, [fDataSet.Instance]);
+  stringField.Instance.FieldName := 'name';
+  stringField.Instance.DataSet := fDataSet;
+  stringField.Setup.Returns('test').When.Value;
+
+  integerField := Mock<TMockField>.Create(TMockBehavior.Strict, [fDataSet.Instance]);
+  integerField.Instance.FieldName := 'value';
+  integerField.Instance.DataSet := fDataSet;
+  integerField.Setup.Returns(42).When.Value;
+
   CreateResultSet;
-  fDataSet.Setup.Executes(
-    function(const callInfo: TCallInfo): TValue
-    var
-      valueBuffer: TValueBuffer;
-    begin
-      valueBuffer := callInfo.Arguments[1].AsType<TValueBuffer>;
-      if callInfo.Arguments[0].AsObject = stringField then
-      begin
-        valueBuffer[0] := Ord('t');
-        valueBuffer[1] := Ord('e');
-        valueBuffer[2] := Ord('s');
-        valueBuffer[3] := Ord('t');
-        Result := True;
-      end
-      else if callInfo.Arguments[0].AsObject = integerField then
-      begin
-        valueBuffer[0] := 42;
-        Result := True;
-      end
-      else
-        Result := False;
-      end).WhenForAnyArgs.GetFieldData(nil, valueBuffer, False);
 
-    CheckEqualsString('test', fResultSet.GetFieldValue(0));
-    CheckEqualsString('test', fResultSet.GetFieldValue('name'));
-    CheckEquals(42, fResultSet.GetFieldValue(1));
-    CheckEquals(42, fResultSet.GetFieldValue('value'));
+  CheckEqualsString('test', fResultSet.GetFieldValue(0));
+  CheckEqualsString('test', fResultSet.GetFieldValue('name'));
+  CheckEquals(42, fResultSet.GetFieldValue(1));
+  CheckEquals(42, fResultSet.GetFieldValue('value'));
 
-    fDataSet.Setup.Returns(False).WhenForAnyArgs.GetFieldData(nil, valueBuffer,
-      False);
+  stringField.Setup.Returns(Null).When.Value;
+  integerField.Setup.Returns(Null).When.Value;
 
-    CheckTrue(VarIsNull(fResultSet.GetFieldValue(0)));
-    CheckTrue(VarIsNull(fResultSet.GetFieldValue('name')));
-    CheckTrue(VarIsNull(fResultSet.GetFieldValue(1)));
-    CheckTrue(VarIsNull(fResultSet.GetFieldValue('value')));
+  CheckTrue(VarIsNull(fResultSet.GetFieldValue(0)));
+  CheckTrue(VarIsNull(fResultSet.GetFieldValue('name')));
+  CheckTrue(VarIsNull(fResultSet.GetFieldValue(1)));
+  CheckTrue(VarIsNull(fResultSet.GetFieldValue('value')));
+
+  stringField.Received(4).Value;
+  integerField.Received(4).Value;
 end;
 
 procedure TDriverResultSetAdapterTest.TestGetFieldValue_Exception;
 var
-  valueBuffer: TValueBuffer;
+  field: Mock<TMockField>;
 begin
-  AddField(TStringField, 'name');
+  field := Mock<TMockField>.Create(TMockBehavior.Strict, [fDataSet.Instance]);
+  field.Instance.FieldName := 'name';
+  field.Instance.DataSet := fDataSet;
+  field.Setup.Raises<EDatabaseError>.When.Value;
+
   CreateResultSet;
-  fDataSet.Setup.Raises<EDatabaseError>.WhenForAnyArgs.GetFieldData(nil,
-    valueBuffer, False);
 
   CheckException(EADOAdapterException,
     procedure begin fResultSet.GetFieldValue(0) end);
   CheckException(EADOAdapterException,
     procedure begin fResultSet.GetFieldValue('name') end);
+
+  field.Received(2).Value;
 end;
 
 procedure TDriverResultSetAdapterTest.TestIsEmpty;
@@ -556,7 +558,7 @@ begin
   TType.SetFieldValue(fDataSet, 'fEOF', False);
   CheckTrue(fResultSet.Next);
 
-  fDataSet.Received(Times.Exactly(2)).MoveBy(1);
+  fDataSet.Received(2).MoveBy(1);
 end;
 
 procedure TDriverResultSetAdapterTest.TestNext_Exception;

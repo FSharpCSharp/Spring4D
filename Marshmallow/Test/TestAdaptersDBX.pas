@@ -207,7 +207,7 @@ procedure TDBXConnectionAdapterTest.TestConnect;
 begin
   fMockConnection.Setup.Executes.When.SetConnected(True);
   fAdapter.Connect;
-  fMockConnection.Received(Times.Once).SetConnected(True);
+  fMockConnection.Received(1).SetConnected(True);
 
   Pass;
 end;
@@ -249,7 +249,7 @@ begin
 
   fMockConnection.Setup.Executes.When.SetConnected(False);
   fAdapter.Disconnect;
-  fMockConnection.Received(Times.Once).SetConnected(False);
+  fMockConnection.Received(2).SetConnected(False);
 
   Pass;
 end;
@@ -300,14 +300,14 @@ begin
   TDBXTransactionAdapterAccess(fTransaction).fTransaction := nil;
   fTransaction.Commit;
 
-  fMockConnection.Received(Times.Once).CommitFreeAndNil(fDBXTransaction);
+  fMockConnection.Received(2).CommitFreeAndNil(fDBXTransaction);
 end;
 
 procedure TDBXTransactionAdapterTest.TestDestroy;
 begin
   fMockConnection.Setup.Executes.When.RollbackFreeAndNil(fDBXTransaction);
   fTransaction := nil;
-  fMockConnection.Received(Times.Once).RollbackFreeAndNil(fDBXTransaction);
+  fMockConnection.Received(1).RollbackFreeAndNil(fDBXTransaction);
   Pass;
 end;
 
@@ -323,7 +323,7 @@ begin
   TDBXTransactionAdapterAccess(fTransaction).fTransaction := nil;
   fTransaction.Rollback;
 
-  fMockConnection.Received(Times.Once).RollbackFreeAndNil(fDBXTransaction);
+  fMockConnection.Received(2).RollbackFreeAndNil(fDBXTransaction);
 end;
 
 {$ENDREGION}

@@ -255,7 +255,7 @@ procedure TFireDACConnectionAdapterTest.TestConnect;
 begin
   fMockConnection.Setup.Executes.When.SetConnected(True);
   fConnection.Connect;
-  fMockConnection.Received(Times.Once).SetConnected(True);
+  fMockConnection.Received(1).SetConnected(True);
 
   Pass;
 end;
@@ -294,7 +294,7 @@ begin
 
   fMockConnection.Setup.Executes.When.SetConnected(False);
   fConnection.Disconnect;
-  fMockConnection.Received(Times.Once).SetConnected(False);
+  fMockConnection.Received(2).SetConnected(False);
 
   Pass;
 end;
