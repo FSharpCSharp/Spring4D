@@ -197,9 +197,9 @@ begin
               fExpectedCalls.Add(invocation.Method, methodCall);
             end;
 
+      fReceivedCalls.Add(invocation.Method, invocation.Arguments);
       if Assigned(methodCall) then
         invocation.Result := methodCall.Invoke(invocation);
-      fReceivedCalls.Add(invocation.Method, invocation.Arguments);
     end;
     TMockState.Assert:
     begin
