@@ -158,21 +158,20 @@ procedure TTestCase<T>.SetUp;
 begin
   inherited;
   fSUT := T.Create;
-  if fSUT is TInterfacedObject then
+{$IFNDEF AUTOREFCOUNT}
+  if fSUT.InheritsFrom(TInterfacedObject) then
     TInterfacedObjectAccess(fSUT)._AddRef;
+{$ENDIF}
 end;
 
 procedure TTestCase<T>.TearDown;
-var
-  tmp: T;
 begin
-  // Prevent ARC code execution (if enabled)
-  PPointer(@tmp)^ := PPointer(@fSUT)^;
-  PPointer(@fSUT)^ := nil;
-  if tmp is TInterfacedObject then
-    TInterfacedObjectAccess(tmp)._Release
+{$IFNDEF AUTOREFCOUNT}
+  if fSUT.InheritsFrom(TInterfacedObject) then
+    TInterfacedObjectAccess(fSUT)._Release
   else
-    tmp.Free;
+{$ENDIF}
+    fSUT.Free;
   inherited;
 end;
 
