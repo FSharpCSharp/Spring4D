@@ -709,7 +709,7 @@ type
   end;
 
   TRepeatIterator<T> = class(TIterator<T>)
-  public
+  private
     fElement: T;
     fCount: Integer;
     fIndex: Integer;
@@ -2620,7 +2620,6 @@ function TEnumerableSorter<T>.Sort(var elements: TArray<T>;
 var
   index: Integer;
   comparer: TComparison<Integer>;
-  return: array of Integer;
 begin
   ComputeKeys(elements, count);
   SetLength(Result, count);

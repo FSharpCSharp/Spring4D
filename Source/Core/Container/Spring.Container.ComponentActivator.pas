@@ -43,7 +43,7 @@ type
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
   protected
-    procedure ExecuteInjections(var instance: TValue; context: ICreationContext); overload;
+    procedure ExecuteInjections(var instance: TValue; const context: ICreationContext); overload;
     procedure ExecuteInjections(const instance: TValue;
       const injections: IList<IInjection>; const context: ICreationContext); overload;
     property Kernel: IKernel read fKernel;
@@ -97,7 +97,7 @@ begin
 end;
 
 procedure TComponentActivatorBase.ExecuteInjections(var instance: TValue;
-  context: ICreationContext);
+  const context: ICreationContext);
 begin
   if Model.LifetimeType in [TLifetimeType.Singleton, TLifetimeType.PerResolve,
     TLifetimeType.SingletonPerThread] then

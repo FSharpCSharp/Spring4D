@@ -4198,7 +4198,7 @@ class procedure Guard.CheckSet<T>(argumentValue: Cardinal;
 var
   typeInfo: PTypeInfo;
   data: PTypeData;
-  minValue, maxValue: Cardinal;
+  maxValue: Cardinal;
 begin
   Guard.CheckTypeKind<T>(tkSet, 'T');
 
@@ -4882,8 +4882,6 @@ end;
 {$REGION 'TWeakReference<T>'}
 
 constructor TWeakReference<T>.Create(const target: T);
-var
-  instance: TObject;
 begin
   inherited Create;
   SetTarget(target);

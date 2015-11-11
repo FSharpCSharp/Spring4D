@@ -788,7 +788,6 @@ procedure TList<T>.DeleteAllInternal(const predicate: TPredicate<T>;
   notification: TCollectionChangedAction);
 var
   i, n: Integer;
-  items: TArray<T>;
   item: T;
 begin
   n := 0;
