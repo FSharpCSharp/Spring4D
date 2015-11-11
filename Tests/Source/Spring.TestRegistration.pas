@@ -245,7 +245,8 @@ begin
     TStorageTests.Suite,
     TTestInterception.Suite,
     TTestMocks.Suite,
-    TParameterMatchingTests.Suite
+    TParameterMatchingTests.Suite,
+    ReceivedChecksForInputValueOfVarParams.Suite
   ]);
 {$ENDIF}
 

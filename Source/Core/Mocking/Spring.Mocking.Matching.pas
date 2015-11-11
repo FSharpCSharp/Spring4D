@@ -72,10 +72,8 @@ type
   TRangeKind = (Inclusive, Exclusive);
 
   Arg = record
-  strict private
+  private
     fIndex: Integer;
-    class function GetAny: TArgMatch; static;
-    class function GetItems(index: Integer): Arg; static;
   public
     class function IsAny<T>: T; overload; static;
     class function IsAny<T>(const condition: TPredicate<T>): T; overload; static;
@@ -88,8 +86,13 @@ type
     class function IsNotIn<T>(const values: array of T): T; overload; static;
     class function IsNotIn<T>(const values: IEnumerable<T>): T; overload; static;
     class function IsNotNil<T>: T; static;
+  end;
 
-    class property Any: TArgMatch read GetAny;
+  Args = record
+  strict private
+    class function GetItems(index: Integer): Arg; static;
+  public
+    class function Any(const args: TArray<TValue>): Boolean; static;
     class property Items[index: Integer]: Arg read GetItems; default;
   end;
 
@@ -114,6 +117,9 @@ var
 begin
   if Assigned(conditions) then
   begin
+    if Length(conditions) <> Length(indizes) then
+      raise ENotSupportedException.Create('when using Arg all arguments must be passed using this way');
+
     SetLength(idxArr, Length(indizes));
     for i := Low(idxArr) to High(idxArr) do
       case indizes[i].Kind of
@@ -131,6 +137,8 @@ begin
           idxArr[(indizes[i].AsType<IInterface> as TIndexWrapper).fIndex] := i;
           PValue(@indizes[i])^ := TValue.Empty;
         end;
+        tkVariant:
+          idxArr[Integer(indizes[i].AsVariant)] := i;
       else
         raise ENotSupportedException.Create('type not supported');
       end;
@@ -185,6 +193,8 @@ begin
       TObject(PPointer(@Result)^) := TIndexWrapper.Create(index);
     tkInterface:
       IInterface(PPointer(@Result)^) := TIndexWrapper.Create(index);
+    tkVariant:
+      PVariant(@Result)^ := index;
   else
     raise ENotSupportedException.Create('type not supported');
   end;
@@ -204,20 +214,6 @@ end;
 
 
 {$REGION 'Arg'}
-
-class function Arg.GetAny: TArgMatch;
-begin
-  Result :=
-    function(const args: TArray<TValue>): Boolean
-    begin
-      Result := True;
-    end;
-end;
-
-class function Arg.GetItems(index: Integer): Arg;
-begin
-  Result.fIndex := index;
-end;
 
 class function Arg.IsAny<T>: T;
 begin
@@ -339,6 +335,21 @@ begin
     begin
       Result := not arg.IsEmpty;
     end);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Args'}
+
+class function Args.Any(const args: TArray<TValue>): Boolean;
+begin
+  Result := True;
+end;
+
+class function Args.GetItems(index: Integer): Arg;
+begin
+  Result.fIndex := index;
 end;
 
 {$ENDREGION}

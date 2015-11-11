@@ -38,6 +38,14 @@ type
     procedure ArgsEvaluationOrder;
     procedure OutParameterCanBeSet;
     procedure VerifyChecksParameterValuesProperly;
+    procedure TestVariant;
+  end;
+
+  ReceivedChecksForInputValueOfVarParams = class(TTestCase)
+  published
+    procedure WhenParamTypeIsInteger;
+    procedure WhenParamTypeIsString;
+    procedure WhenParamTypeIsVariant;
   end;
 
 implementation
@@ -51,7 +59,17 @@ type
     procedure Test2(const s: string; i: Integer; b: Boolean);
     procedure Test3(const s1: string; o: TObject; const s2: string);
     procedure Test4(const s1: string; o: ITest; const s2: string);
+    procedure TestVariant(const v: Variant);
   end;
+
+  IVarParamTest = interface(IInvokable)
+    procedure TestInteger(var i: Integer);
+    procedure TestString(var s: string);
+    procedure TestVariant(var v: Variant);
+  end;
+
+
+{$REGION 'TParameterMatchingTests'}
 
 procedure TParameterMatchingTests.ArgsEvaluationOrder;
 var
@@ -125,10 +143,20 @@ begin
     begin
       CheckEquals(42, call[0].AsInteger);
       call[0] := 43;
-    end).When(Arg.Any).Test(i);
+    end).When(Args.Any).Test(i);
   i := 42;
   mock.Instance.Test(i);
   CheckEquals(43, i);
+end;
+
+procedure TParameterMatchingTests.TestVariant;
+var
+  mock: Mock<IMockTest>;
+begin
+  mock.Instance.TestVariant(42);
+  mock.Received.TestVariant(42);
+  mock.Received.TestVariant(Arg.IsEqual(42));
+  Pass;
 end;
 
 procedure TParameterMatchingTests.VerifyChecksParameterValuesProperly;
@@ -138,12 +166,74 @@ var
 begin
   sut := mock;
   sut.Test1(4, 'test');
-  mock.Received(Times.Once).Test1(Arg.IsAny<Integer>, 'test');
+  mock.Received(Times.Once).Test1(Arg.IsAny<Integer>, Arg.IsEqual('test'));
   CheckException(EMockException,
     procedure
     begin
       mock.Received.Test1(Arg.IsIn<Integer>([3, 5]), Arg.IsAny<string>);
     end);
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'ReceivedChecksForInputValueOfVarParams'}
+
+procedure ReceivedChecksForInputValueOfVarParams.WhenParamTypeIsInteger;
+var
+  m: Mock<IVarParamTest>;
+  i: Integer;
+begin
+  i := 1;
+  m.Behavior := TMockBehavior.Strict;
+  m.Setup.Executes(
+    function(const info: TCallInfo): TValue
+    begin
+      info[0] := 2;
+    end).When.TestInteger(i);
+  m.Instance.TestInteger(i);
+  i := 1;
+  m.Received.TestInteger(i);
+  FCheckCalled := True;
+end;
+
+procedure ReceivedChecksForInputValueOfVarParams.WhenParamTypeIsString;
+var
+  m: Mock<IVarParamTest>;
+  s: string;
+begin
+  s := '1';
+  m.Behavior := TMockBehavior.Strict;
+  m.Setup.Executes(
+    function(const info: TCallInfo): TValue
+    begin
+      info[0] := '2';
+    end).When.TestString(s);
+  m.Instance.TestString(s);
+  s := '1';
+  m.Received.TestString(s);
+  FCheckCalled := True;
+end;
+
+procedure ReceivedChecksForInputValueOfVarParams.WhenParamTypeIsVariant;
+var
+  m: Mock<IVarParamTest>;
+  v: Variant;
+begin
+  v := '1';
+  m.Behavior := TMockBehavior.Strict;
+  m.Setup.Executes(
+    function(const info: TCallInfo): TValue
+    begin
+      info[0] := '2';
+    end).When.TestVariant(v);
+  m.Instance.TestVariant(v);
+  v := '1';
+  m.Received.TestVariant(v);
+  FCheckCalled := True;
+end;
+
+{$ENDREGION}
+
 
 end.
