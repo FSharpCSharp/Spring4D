@@ -84,7 +84,7 @@ type
     procedure When; overload;
     procedure When(const match: TArgMatch); overload;
 
-    property Behavior: TMockBehavior read fBehavior;
+    property Behavior: TMockBehavior read fBehavior write fBehavior;
     property CallBase: Boolean read fCallBase write fCallBase;
   end;
 

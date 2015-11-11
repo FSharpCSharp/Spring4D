@@ -46,9 +46,11 @@ type
     fTypeInfo: PTypeInfo;
     fInterceptor: TMockInterceptor;
     fProxy: TValue;
+    function GetBehavior: TMockBehavior;
     function GetCallBase: Boolean;
     function GetInstance: TValue;
     function GetTypeInfo: PTypeInfo;
+    procedure SetBehavior(const value: TMockBehavior);
     procedure SetCallBase(const value: Boolean);
     function CreateProxy(typeInfo: PTypeInfo;
       const interceptor: TMockInterceptor): TValue;
@@ -211,6 +213,11 @@ begin
   end;
 end;
 
+function TMock.GetBehavior: TMockBehavior;
+begin
+  Result := fInterceptor.Behavior;
+end;
+
 function TMock.GetCallBase: Boolean;
 begin
   Result := fInterceptor.CallBase;
@@ -317,6 +324,11 @@ end;
 procedure TMock.Reset;
 begin
   fInterceptor.Reset;
+end;
+
+procedure TMock.SetBehavior(const value: TMockBehavior);
+begin
+  fInterceptor.Behavior := value;
 end;
 
 procedure TMock.SetCallBase(const value: Boolean);

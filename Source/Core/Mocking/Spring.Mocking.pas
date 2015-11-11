@@ -134,9 +134,11 @@ type
   IMock<T> = interface(IInvokable)
     ['{67AD5AD2-1C23-41BA-8F5D-5C28B3C7ABF7}']
   {$REGION 'Property Accessors'}
+    function GetBehavior: TMockBehavior;
     function GetCallBase: Boolean;
     function GetInstance: T;
     function GetTypeInfo: PTypeInfo;
+    procedure SetBehavior(const value: TMockBehavior);
     procedure SetCallBase(const value: Boolean);
   {$ENDREGION}
 
@@ -149,6 +151,7 @@ type
     function Received(const match: TArgMatch): T; overload;
     function Received(const times: Times; const match: TArgMatch): T; overload;
 
+    property Behavior: TMockBehavior read GetBehavior write SetBehavior;
     property CallBase: Boolean read GetCallBase write SetCallBase;
     property Instance: T read GetInstance;
     property TypeInfo: PTypeInfo read GetTypeInfo;
@@ -177,7 +180,9 @@ type
     fMock: IMock<T>;
     procedure EnsureInitialized; inline;
     function GetInstance: T;
+    function GetBehavior: TMockBehavior;
     function GetCallBase: Boolean;
+    procedure SetBehavior(const value: TMockBehavior);
     procedure SetCallBase(const value: Boolean);
   public
     class function Create(
@@ -202,6 +207,7 @@ type
     function Received(const match: TArgMatch): T; overload;
     function Received(const times: Times; const match: TArgMatch): T; overload;
 
+    property Behavior: TMockBehavior read GetBehavior write SetBehavior;
     property CallBase: Boolean read GetCallBase write SetCallBase;
     property Instance: T read GetInstance;
   end;
@@ -352,6 +358,12 @@ begin
   Result := value.fMock.Instance;
 end;
 
+function Mock<T>.GetBehavior: TMockBehavior;
+begin
+  EnsureInitialized;
+  Result := fMock.Behavior;
+end;
+
 function Mock<T>.GetCallBase: Boolean;
 begin
   EnsureInitialized;
@@ -362,6 +374,12 @@ function Mock<T>.GetInstance: T;
 begin
   EnsureInitialized;
   Result := fMock.Instance;
+end;
+
+procedure Mock<T>.SetBehavior(const value: TMockBehavior);
+begin
+  EnsureInitialized;
+  fMock.Behavior := value;
 end;
 
 procedure Mock<T>.SetCallBase(const value: Boolean);
