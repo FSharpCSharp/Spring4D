@@ -108,6 +108,12 @@ type
     property Selector: IInterceptorSelector read fSelector write fSelector;
   end;
 
+  IDynamicProxy = interface
+    ['{7DDA3562-3F82-4FA0-9869-9FB27E0CF89D}']
+    procedure AddAdditionalInterface(typeInfo: PTypeInfo;
+      const options: TProxyGenerationOptions);
+  end;
+
   TProxyGenerator = record
   public
     class function CreateClassProxy<T: class>(
