@@ -210,7 +210,7 @@ begin
               fExpectedCalls.Add(invocation.Method, methodCall);
             end;
 
-      fReceivedCalls.Add(invocation.Method, invocation.Arguments);
+      fReceivedCalls.Add(invocation.Method, Copy(invocation.Arguments));
       if Assigned(methodCall) then
         invocation.Result := methodCall.Invoke(invocation);
     end;
