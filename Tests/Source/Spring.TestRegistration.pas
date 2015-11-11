@@ -246,7 +246,9 @@ begin
     TTestInterception.Suite,
     TTestMocks.Suite,
     TParameterMatchingTests.Suite,
-    ReceivedChecksForInputValueOfVarParams.Suite
+    ReceivedChecksForInputValueOfVarParams.Suite,
+    MockReturnsOtherMockInDynamicMode.Suite,
+    MockDynamicallySupportsOtherInterfaces.Suite
   ]);
 {$ENDIF}
 

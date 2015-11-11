@@ -48,6 +48,17 @@ type
     procedure WhenParamTypeIsVariant;
   end;
 
+  MockReturnsOtherMockInDynamicMode = class(TTestCase)
+  published
+    procedure WhenNoExpectationWasDefined;
+    procedure NotWhenExpectationWasDefined;
+  end;
+
+  MockDynamicallySupportsOtherInterfaces = class(TTestCase)
+  published
+    procedure WhenAsFunctionIsCalled;
+  end;
+
 implementation
 
 uses
@@ -66,6 +77,15 @@ type
     procedure TestInteger(var i: Integer);
     procedure TestString(var s: string);
     procedure TestVariant(var v: Variant);
+  end;
+
+  IChild = interface(IInvokable)
+    ['{8B6803C9-CF42-45FC-AA96-8F558FE32F8B}']
+    function GetNumber: Integer;
+  end;
+
+  IParent = interface(IInvokable)
+    function GetChild: IChild;
   end;
 
 
@@ -231,6 +251,51 @@ begin
   v := '1';
   m.Received.TestVariant(v);
   FCheckCalled := True;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'MockReturnsOtherMockInDynamicMode'}
+
+procedure MockReturnsOtherMockInDynamicMode.NotWhenExpectationWasDefined;
+var
+  parentMock: Mock<IParent>;
+  child: IChild;
+begin
+  parentMock.Setup.Returns(nil).When.GetChild;
+  child := parentMock.Instance.GetChild;
+  CheckNull(child);
+  ExpectedException := EMockException;
+  Mock.From(child);
+end;
+
+procedure MockReturnsOtherMockInDynamicMode.WhenNoExpectationWasDefined;
+var
+  parentMock: Mock<IParent>;
+  child: IChild;
+  childMock: Mock<IChild>;
+begin
+  child := parentMock.Instance.GetChild;
+  CheckNotNull(child);
+  CheckEquals(0, child.GetNumber);
+  childMock := Mock.From(child);
+  childMock.Setup.Returns(42).When.GetNumber;
+  CheckEquals(42, child.GetNumber);
+  childMock.Received(2).GetNumber;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'MockDynamicallySupportsOtherInterfaces'}
+
+procedure MockDynamicallySupportsOtherInterfaces.WhenAsFunctionIsCalled;
+var
+  parentMock: Mock<IParent>;
+begin
+  parentMock.AsType<IChild>.Setup.Returns(42).When.GetNumber;
+  CheckEquals(42, (parentMock.Instance as IChild).GetNumber);
 end;
 
 {$ENDREGION}
