@@ -24,7 +24,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_Define>SPRING_ENABLE_GUARD;$(DCC_Define)</DCC_Define>
+			<DCC_Define>SPRING_ENABLE_GUARD;TESTINSIGHT;$(DCC_Define)</DCC_Define>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_DcuOutput>Lib\DelphiXE\$(Platform)\$(Config)</DCC_DcuOutput>
 			<DCC_ExeOutput>Bin\DelphiXE\$(Platform)\$(Config)</DCC_ExeOutput>

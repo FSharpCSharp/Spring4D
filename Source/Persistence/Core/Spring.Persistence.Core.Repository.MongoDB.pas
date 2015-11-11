@@ -40,7 +40,7 @@ type
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fSession: TMongoDBSession;
   public
-    procedure Insert(const entities: IEnumerable<T>); overload; override;
+    procedure Insert(const entities: IEnumerable<T>); override;
     function Query(const query: string;
       const params: array of const): IList<T>; override;
   public

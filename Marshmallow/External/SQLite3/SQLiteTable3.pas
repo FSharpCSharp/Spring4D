@@ -139,7 +139,16 @@ type
   TSQLitePreparedStatement = class;
   TSQLiteFunctions = class;
 
-  ESQLiteException = class(Exception);
+  ESQLiteException = class(Exception)
+  private
+    FErrorCode: Integer;
+  public
+    property ErrorCode: Integer read FErrorCode;
+
+    constructor Create(const Msg: string; ErrorCode: Integer = -1);
+    constructor CreateFmt(const Msg: string; const Args: array of const;
+      ErrorCode: Integer = -1);
+  end;
   ESQLiteConstraintException = class(ESQLiteException);
   ESQLiteExceptionClass = class of ESQLiteException;
 
@@ -1269,9 +1278,9 @@ begin
 
   if Msg <> nil then
     raise excClass.CreateFmt(s +'.'#13'Error [%d]: %s.'#13'"%s": %s',
-    [ret, SQLiteErrorStr(ret),SQL, Msg])
+    [ret, SQLiteErrorStr(ret),SQL, Msg], ret)
   else
-    raise excClass.CreateFmt(s, [SQL, 'No message']);
+    raise excClass.CreateFmt(s, [SQL, 'No message'], ret);
 end;
 
 procedure TSQLiteDatabase.RaiseError(const s: string);
@@ -1287,9 +1296,9 @@ begin
 
   if Msg <> nil then
     raise ESqliteException.CreateFmt(s +'.'#13'Error [%d]: %s.'#13'%s',
-      [ret, SQLiteErrorStr(ret), Msg])
+      [ret, SQLiteErrorStr(ret), Msg], ret)
   else
-    raise ESqliteException.Create(s);
+    raise ESqliteException.Create(s, ret);
 end;
 
 procedure TSQLiteDatabase.SetSynchronised(Value: boolean);
@@ -1627,62 +1636,54 @@ var
   Msg: PAnsiChar;
   iResult: Integer;
 begin
-  Msg := nil;
   FConnected := False;
-  try
-    iResult := SQLITE_OK;
+  iResult := SQLITE_OK;
 
-    case FEncoding of
-      seUTF8: iResult := sqlite3_open_v2(PAnsiChar(UTF8Encode(FFileName)), Fdb,
-        SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE or SQLITE_OPEN_URI, nil);
-      seUTF16: iResult := SQLite3_Open16(PChar(FFileName), Fdb);
-    end;
+  case FEncoding of
+    seUTF8: iResult := sqlite3_open_v2(PAnsiChar(UTF8Encode(FFileName)), Fdb,
+      SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE or SQLITE_OPEN_URI, nil);
+    seUTF16: iResult := SQLite3_Open16(PChar(FFileName), Fdb);
+  end;
 
-    if iResult <> SQLITE_OK then
-      if Assigned(Fdb) then
-      begin
-        Msg := Sqlite3_ErrMsg(Fdb);
-        raise ESqliteException.CreateFmt('Failed to open database "%s" : %s',
-          [FFileName, Msg]);
-      end
-      else
-        raise ESqliteException.CreateFmt('Failed to open database "%s" : unknown error',
-          [FFileName]);
-
-
-    if (Password <> '') then
+  if iResult <> SQLITE_OK then
+    if Assigned(Fdb) then
     begin
-      //db is encrypted
+      Msg := Sqlite3_ErrMsg(Fdb);
+      raise ESqliteException.CreateFmt('Failed to open database "%s" : %s',
+        [FFileName, Msg], iResult);
+    end
+    else
+      raise ESqliteException.CreateFmt('Failed to open database "%s" : unknown error',
+        [FFileName], iResult);
+
+
+  if (Password <> '') then
+  begin
+    //db is encrypted
 
 {$IFNDEF USE_SYSTEM_SQLITE}
-      if not Assigned(sqlite3_key) then
-        raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
-
-      iResult := sqlite3_key(fDB, PAnsiChar(Password), Length(Password));
-      if iResult <> SQLITE_OK then
-      begin
-        RaiseError('Cannot encrypt database', '');
-      end;
-{$ELSE}
+    if not Assigned(sqlite3_key) then
       raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
-{$ENDIF}
-    end;
 
-    FConnected := True;
+    iResult := sqlite3_key(fDB, PAnsiChar(Password), Length(Password));
+    if iResult <> SQLITE_OK then
+    begin
+      RaiseError('Cannot encrypt database', '');
+    end;
+{$ELSE}
+    raise ESQLiteException.Create('Loaded SQLite library does not support database encryption');
+{$ENDIF}
+  end;
+
+  FConnected := True;
 //set a few configs
 //L.G. Do not call it here. Because busy handler is not setted here,
 // any share violation causing exception!
 
 //    self.ExecSQL('PRAGMA SYNCHRONOUS=NORMAL;');
 //    self.ExecSQL('PRAGMA temp_store = MEMORY;');
-    if Assigned(FOnAfterOpen) then
-      FOnAfterOpen(Self);
-
-
-  finally
-    if Assigned(Msg) then
-      SQLite3_Free(Msg);
-  end;
+  if Assigned(FOnAfterOpen) then
+    FOnAfterOpen(Self);
 end;
 
 function TSQLiteDatabase.GetTableValue(const SQL: string): int64;
@@ -2235,7 +2236,7 @@ begin
           end;
         SQLITE_BUSY:
           raise ESqliteException.CreateFmt('Could not prepare SQL statement',
-            [SQL, 'SQLite is Busy']);
+            [SQL, 'SQLite is Busy'], iStepResult);
       else
         begin
         SQLite3_reset(stmt);
@@ -3964,6 +3965,21 @@ begin
 end;
 
 {$IFEND}
+
+{ ESQLiteException }
+
+constructor ESQLiteException.Create(const Msg: string; ErrorCode: Integer);
+begin
+  inherited Create(Msg);
+  FErrorCode := ErrorCode;
+end;
+
+constructor ESQLiteException.CreateFmt(const Msg: string;
+  const Args: array of const; ErrorCode: Integer);
+begin
+  inherited CreateFmt(Msg, Args);
+  FErrorCode := ErrorCode;
+end;
 
 initialization
   TSQLiteDatabase.FColumnTypes := TDictionary<string,Integer>.Create(DEF_COLCOUNT);

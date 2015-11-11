@@ -190,7 +190,9 @@ end;
 
 
 initialization
-  RegisterTest(TSimpleRepositoryTests.Suite);
-  RegisterTest(TCustomRepositoryTests.Suite);
+  RegisterTests('Spring.Persistence.Core', [
+    TSimpleRepositoryTests.Suite,
+    TCustomRepositoryTests.Suite
+  ]);
 
 end.

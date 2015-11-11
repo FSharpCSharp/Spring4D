@@ -24,78 +24,29 @@
 
 {$I Spring.inc}
 
-unit Spring.Persistence.SQL.Commands.BulkInsert.MongoDB;
+unit TestFireDACConnection;
 
 interface
 
 uses
-  Spring.Collections,
-  Spring.Persistence.SQL.Commands.Insert;
+  DB,
+  FireDAC.Comp.Client;
 
 type
-  TMongoDBBulkInsertExecutor = class(TInsertExecutor)
+  // See TestSQLConnection for more info
+  {$RTTI EXPLICIT
+    METHODS([vcPrivate..vcPublished])
+    PROPERTIES(DefaultPropertyRttiVisibility)
+    FIELDS(DefaultFieldRttiVisibility)}
+  TTestFDConnection = class(TFDConnection)
   public
-    procedure BulkExecute<T: class, constructor>(const entities: IEnumerable<T>);
+    function GetConnected: Boolean; override; abstract;
+    procedure RegisterClient(Client: TObject;
+      Event: TConnectChangeEvent); override; abstract;
+    procedure SetConnected(Value: Boolean); override; abstract;
+    procedure UnRegisterClient(Client: TObject); override; abstract;
   end;
 
 implementation
-
-uses
-  Rtti,
-  MongoBson,
-  Spring.Reflection,
-  Spring.Persistence.SQL.Types,
-  Spring.Persistence.Adapters.MongoDB;
-
-
-{$REGION 'TMongoDBBulkInsertExecutor'}
-
-procedure TMongoDBBulkInsertExecutor.BulkExecute<T>(const entities: IEnumerable<T>);
-var
-  LEntity: T;
-  LQuery: string;
-  LStatement: TMongoStatementAdapter;
-  LConn: TMongoDBConnection;
-  LDocs: TArray<IBSONDocument>;
-  LCollection: string;
-  i: Integer;
-begin
-  if not entities.Any then
-    Exit;
-  LConn := (Connection as TMongoConnectionAdapter).Connection;
-  LStatement := TMongoStatementAdapter.Create(nil,
-    TMongoDBExceptionHandler.Create);
-  try
-    SetLength(LDocs, entities.Count);
-    i := 0;
-
-    if CanClientAutogenerateValue then
-      InsertCommand.InsertFields.Add(TSQLInsertField.Create(
-        EntityData.PrimaryKeyColumn.ColumnName, Table, EntityData.PrimaryKeyColumn,
-        InsertCommand.GetAndIncParameterName(EntityData.PrimaryKeyColumn.ColumnName)));
-
-    for LEntity in entities do
-    begin
-      if CanClientAutogenerateValue then
-        EntityData.PrimaryKeyColumn.Member.SetValue(LEntity, TValue.FromVariant(Generator.GenerateUniqueId));
-
-      InsertCommand.Entity := LEntity;
-      Command.Entity := LEntity;
-      LQuery := Generator.GenerateInsert(InsertCommand);
-      LStatement.SetSQLCommand(LQuery);
-      if (LCollection = '') then
-        LCollection := LStatement.GetFullCollectionName;
-      LDocs[i] := JsonToBson(LStatement.GetQueryText);
-      Inc(i);
-    end;
-
-    LConn.Insert(LCollection, LDocs);
-  finally
-    LStatement.Free;
-  end;
-end;
-
-{$ENDREGION}
-
 
 end.

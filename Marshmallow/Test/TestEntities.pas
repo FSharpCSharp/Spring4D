@@ -31,6 +31,7 @@ uses
   Spring,
   Spring.Collections,
   Spring.Persistence.Core.Graphics,
+  Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes;
 
 const
@@ -262,6 +263,10 @@ type
     property Phone: string read FPhone write FPhone;
   end;
 
+  [Table('IMONES', 'VIKARINA')]
+  [Sequence('GNR_IMONESID', 1, 1)]
+  TOracleSeqCompany = class(TUIBCompany);
+
   TUserRole = class;
   TRole = class;
 
@@ -404,10 +409,31 @@ type
 var
   PictureFilename, OutputDir: string;
 
+procedure CreateTestTables(AConnection: IDBConnection;
+  const Entities: array of TClass);
+
 implementation
 
 uses
-  SysUtils;
+  SysUtils,
+  Spring.Persistence.Core.DatabaseManager;
+
+procedure CreateTestTables(AConnection: IDBConnection;
+  const Entities: array of TClass);
+var
+  LDBManager: TDatabaseManager;
+  entity: TClass;
+begin
+  LDBManager := TDatabaseManager.Create(AConnection);
+  try
+    LDBManager.ClearEntities;
+    for entity in Entities do
+      LDBManager.RegisterEntity(entity);
+    LDBManager.BuildDatabase;
+  finally
+    LDBManager.Free;
+  end;
+end;
 
 { TCustomer }
 

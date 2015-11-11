@@ -91,6 +91,6 @@ end;
 {$ENDIF}
 
 initialization
-  RegisterTest(TConnectionFactoryTest.Suite);
+  RegisterTest('Spring.Persistence.Core', TConnectionFactoryTest.Suite);
 
 end.

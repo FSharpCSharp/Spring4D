@@ -1,4 +1,4 @@
-﻿unit TestAdapterMongoDB;
+unit TestAdaptersMongoDB;
 
 interface
 
@@ -299,7 +299,7 @@ end;
 procedure TMongoResultSetAdapterTest.SetUp;
 begin
   inherited;
-  FMongoResultSetAdapter := TMongoResultSetAdapter.Create(Query);
+  FMongoResultSetAdapter := TMongoResultSetAdapter.Create(Query, nil);
 end;
 
 procedure TMongoResultSetAdapterTest.TearDown;
@@ -401,7 +401,7 @@ end;
 procedure TMongoStatementAdapterTest.SetUp;
 begin
   inherited;
-  FMongoStatementAdapter := TMongoStatementAdapter.Create(Query);
+  FMongoStatementAdapter := TMongoStatementAdapter.Create(Query, nil);
 end;
 
 procedure TMongoStatementAdapterTest.TearDown;
@@ -1402,8 +1402,8 @@ end;
 
 var
   sExecLine: string;
-  StartInfo  : TStartupInfo;
-  ProcInfo   : TProcessInformation;
+  StartInfo: TStartupInfo;
+  ProcInfo: TProcessInformation;
   bCreated: Boolean;
 
 initialization
@@ -1419,14 +1419,16 @@ initialization
     bCreated := CreateProcess(nil, PChar(sExecLine), nil, nil, True, 0, nil, nil, StartInfo, ProcInfo);
     if bCreated then
     begin
-      RegisterTest(TMongoResultSetAdapterTest.Suite);
-      RegisterTest(TMongoStatementAdapterTest.Suite);
-      RegisterTest(TMongoConnectionAdapterTest.Suite);
-      RegisterTest(TMongoSessionTest.Suite);
-      RegisterTest(TMongoRepositoryTest.Suite);
+      RegisterTests('Spring.Persistence.Adapters', [
+        TMongoResultSetAdapterTest.Suite,
+        TMongoStatementAdapterTest.Suite,
+        TMongoConnectionAdapterTest.Suite,
+        TMongoSessionTest.Suite,
+        TMongoRepositoryTest.Suite
       {$IF CompilerVersion > 22}
-      RegisterTest(TMongoProxyRepositoryTest.Suite);
+        ,TMongoProxyRepositoryTest.Suite
       {$IFEND}
+      ]);
     end;
   end;
 
