@@ -141,6 +141,8 @@ type
     /// </summary>
     class function FromVarRec(const value: TVarRec): TValue; static;
 
+    function AsPointer: Pointer;
+
 {$IFDEF DELPHI2010}
     function AsString: string;
 {$ENDIF}
@@ -2460,6 +2462,24 @@ end;
 
 {$REGION 'TValueHelper'}
 
+function TValueHelper.AsPointer: Pointer;
+begin
+  case Kind of
+    tkPointer:
+{$IFDEF DELPHI2010}
+      Result := Pointer(TValueData(Self).FAsSLong);
+{$ELSE}
+      Result := TValueData(Self).FAsPointer;
+{$ENDIF}
+    tkClass:
+      Result := AsObject;
+    tkInterface:
+      Result := Pointer(AsInterface);
+  else
+    raise EInvalidCast.CreateRes(@SInvalidCast);
+  end;
+end;
+
 {$IFDEF DELPHI2010}
 function TValueHelper.AsString: string;
 begin
@@ -2623,6 +2643,11 @@ end;
 function EqualsClass2Class(const left, right: TValue): Boolean;
 begin
   Result := left.AsObject = right.AsObject;
+end;
+
+function EqualsPointer2Pointer(const left, right: TValue): Boolean;
+begin
+  Result := left.AsPointer = right.AsPointer;
 end;
 
 function EqualsIntf2Intf(const left, right: TValue): Boolean;
@@ -2958,7 +2983,7 @@ const
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkPointer, tkProcedure
-      EqualsFail, EqualsFail
+      EqualsPointer2Pointer, EqualsFail
     ),
     // tkProcedure
     (

@@ -396,6 +396,11 @@ type
   protected
     procedure TearDown; override;
   published
+    procedure Test_AsPointer_Pointer;
+    procedure Test_AsPointer_Class;
+    procedure Test_AsPointer_Interface;
+    procedure Test_AsPointer_OtherWillRaise;
+
     procedure Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
     procedure Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
     procedure Test_Equals_IntToInt_ValuesAreEqual_ReturnsTrue;
@@ -419,6 +424,9 @@ type
     procedure EqualsReturnsFalseForDifferentVariantArraysWithSameLength;
     procedure EqualsReturnsTrueForEqualVariantArrayOfVariantArray;
     procedure EqualsReturnsFalseForDifferentVariantArrayOfVariantArray;
+
+    procedure EqualsReturnsTrueForEqualPointers;
+    procedure EqualsReturnsFalseForUnequalPointers;
   end;
 
 implementation
@@ -2409,6 +2417,20 @@ begin
   DoCheckEquals(False);
 end;
 
+procedure TTestValueHelper.EqualsReturnsFalseForUnequalPointers;
+begin
+  fSUT := TValue.From<Pointer>(Self);
+  fValue := TValue.From<Pointer>(nil);
+  DoCheckEquals(False);
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForEqualPointers;
+begin
+  fSUT := TValue.From<Pointer>(Self);
+  fValue := TValue.From<Pointer>(Self);
+  DoCheckEquals;
+end;
+
 procedure TTestValueHelper.EqualsReturnsTrueForEqualVariantArrayOfVariantArray;
 var
   v1, v2: Variant;
@@ -2515,6 +2537,37 @@ begin
   fSUT := TValue.Empty;
   fValue := TValue.Empty;
   inherited;
+end;
+
+procedure TTestValueHelper.Test_AsPointer_Class;
+begin
+  fSUT := Self;
+  CheckEquals(Pointer(Self), fSUT.AsPointer);
+end;
+
+procedure TTestValueHelper.Test_AsPointer_Interface;
+var
+  intf: IInterface;
+begin
+  intf := TInterfacedObject.Create;
+  fSUT := TValue.From<IInterface>(intf);
+  CheckEquals(NativeInt(Pointer(intf)), NativeInt(fSUT.AsPointer));
+end;
+
+procedure TTestValueHelper.Test_AsPointer_OtherWillRaise;
+begin
+  ExpectedException := EInvalidCast;
+  fSUT := Integer(42);
+  fSUT.AsPointer;
+end;
+
+procedure TTestValueHelper.Test_AsPointer_Pointer;
+var
+  ptr: Pointer;
+begin
+  ptr := Self;
+  fSUT := TValue.From<Pointer>(ptr);
+  CheckEquals(ptr, fSUT.AsPointer);
 end;
 
 procedure TTestValueHelper.Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
