@@ -2647,6 +2647,11 @@ begin
   Result := left.AsString = right.AsString;
 end;
 
+function EqualsStr2Var(const left, right: TValue): Boolean;
+begin
+  Result := SameValue(left.AsString, right.AsVariant);
+end;
+
 function EqualsClass2Class(const left, right: TValue): Boolean;
 begin
   Result := left.AsObject = right.AsObject;
@@ -2670,6 +2675,11 @@ end;
 function EqualsVar2Var(const left, right: TValue): Boolean;
 begin
   Result := SameValue(left.AsVariant, right.AsVariant);
+end;
+
+function EqualsVar2Str(const left, right: TValue): Boolean;
+begin
+  Result := SameValue(left.AsVariant, right.AsString);
 end;
 
 function EqualsRec2Rec(const left, right: TValue): Boolean;
@@ -2752,7 +2762,7 @@ const
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
-      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      EqualsStr2Str, EqualsStr2Str, EqualsStr2Var, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
       EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
       // tkPointer, tkProcedure
@@ -2791,7 +2801,7 @@ const
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
-      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      EqualsStr2Str, EqualsStr2Str, EqualsStr2Var, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
       EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
       // tkPointer, tkProcedure
@@ -2843,7 +2853,7 @@ const
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
-      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      EqualsStr2Str, EqualsStr2Str, EqualsStr2Var, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
       EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
       // tkPointer, tkProcedure
@@ -2856,7 +2866,7 @@ const
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
-      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      EqualsStr2Str, EqualsStr2Str, EqualsStr2Var, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
       EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
       // tkPointer, tkProcedure
@@ -2878,13 +2888,13 @@ const
     // tkVariant
     (
       // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-      EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsVar2Str, EqualsFail, EqualsFail,
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
-      EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
+      EqualsVar2Str, EqualsFail, EqualsFail, EqualsFail, EqualsVar2Str,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
-      EqualsStr2Str, EqualsStr2Str, EqualsVar2Var, EqualsFail, EqualsFail,
+      EqualsVar2Str, EqualsVar2Str, EqualsVar2Var, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
-      EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
+      EqualsFail, EqualsFail, EqualsFail, EqualsVar2Str, EqualsFail,
       // tkPointer, tkProcedure
       EqualsFail, EqualsFail
     ),
@@ -2960,7 +2970,7 @@ const
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
       EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
-      EqualsStr2Str, EqualsStr2Str, EqualsFail, EqualsFail, EqualsFail,
+      EqualsStr2Str, EqualsStr2Str, EqualsStr2Var, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
       EqualsFail, EqualsFail, EqualsFail, EqualsStr2Str, EqualsFail,
       // tkPointer, tkProcedure
