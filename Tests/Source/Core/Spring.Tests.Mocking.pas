@@ -283,6 +283,10 @@ begin
   childMock.Setup.Returns(42).When.GetNumber;
   CheckEquals(42, child.GetNumber);
   childMock.Received(2).GetNumber;
+
+  child := parentMock.Instance.GetChild;
+  CheckEquals(42, child.GetNumber);
+  childMock.Received(3).GetNumber;
 end;
 
 {$ENDREGION}

@@ -206,7 +206,7 @@ begin
               and (invocation.Method.MethodKind = mkFunction)
               and (invocation.Method.ReturnType.TypeKind = tkInterface) then
             begin
-              methodCall := TMethodCall.Create(CreateMock(invocation), fMatch);
+              methodCall := TMethodCall.Create(CreateMock(invocation), CreateArgMatch(invocation.Arguments));
               fExpectedCalls.Add(invocation.Method, methodCall);
             end;
 
