@@ -560,7 +560,6 @@ type
   Guard = record
   private
     class procedure RaiseArgumentException(typeKind: TTypeKind; const argumentName: string); overload; static;
-    class procedure RaiseCannotAssignPointerToNullable; static;
     class procedure RaiseNullableHasNoValue; static;
     class procedure RaiseNoDelegateAssigned; static;
   public
@@ -771,7 +770,6 @@ type
     class operator Implicit(const value: T): Nullable<T>;
     class operator Implicit(const value: Nullable<T>): Variant;
     class operator Implicit(const value: Variant): Nullable<T>;
-    class operator Implicit(value: Pointer): Nullable<T>;
     class operator Explicit(const value: Nullable<T>): T; inline;
     class operator Equal(const left, right: Nullable<T>): Boolean; inline;
     class operator NotEqual(const left, right: Nullable<T>): Boolean; inline;
@@ -4351,11 +4349,6 @@ begin
     @SInvalidEnumArgument, [argumentName]) at ReturnAddress;
 end;
 
-class procedure Guard.RaiseCannotAssignPointerToNullable;
-begin
-  raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
-end;
-
 class procedure Guard.RaiseNullableHasNoValue;
 begin
   raise EInvalidOperationException.CreateRes(@SNullableHasNoValue);
@@ -4527,14 +4520,6 @@ begin
     Result.fHasValue := '';
     Result.fValue := Default(T);
   end;
-end;
-
-class operator Nullable<T>.Implicit(value: Pointer): Nullable<T>;
-begin
-  if Assigned(value) then
-    Guard.RaiseCannotAssignPointerToNullable;
-  Result.fHasValue := '';
-  Result.fValue := Default(T);
 end;
 
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;

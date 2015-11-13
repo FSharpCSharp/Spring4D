@@ -56,7 +56,6 @@ resourcestring
   SFileNotFoundException          = 'File not found: %s';
   SDirectoryNotFoundException     = 'Directory not found: %s';
   SNullableHasNoValue             = 'Nullable must have a value.';
-  SCannotAssignPointerToNullable  = 'Cannot assigned non-null pointer to nullable type.';
   STypeNotRegistered              = '%s was not registered.';
   SServiceNotExists               = 'The service "%s" does not exist.';
   STimeoutException               = 'Timeout';

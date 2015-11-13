@@ -50,12 +50,14 @@ type
     procedure TestInitialValue;
     procedure GetValueOrDefault;
     procedure TestAssignFive;
-    procedure TestAssignNil;
     procedure TestException;
     procedure TestLocalVariable;
     procedure TestFromVariant;
     procedure TestEquals;
     procedure TestDefaultReturnsInitialValue;
+    procedure TestAssignFloat;
+    procedure TestAssignStringNonInt;
+    procedure TestAssignStringInt;
   end;
 
   TTestNullableBoolean = class(TTestCase)
@@ -461,7 +463,7 @@ end;
 procedure TTestNullableInteger.TearDown;
 begin
   inherited;
-  fInteger := nil;
+  fInteger := Null;
 end;
 
 procedure TTestNullableInteger.TestAssignFive;
@@ -473,12 +475,23 @@ begin
   Check(fInteger.Value <> 3);
 end;
 
-procedure TTestNullableInteger.TestAssignNil;
+procedure TTestNullableInteger.TestAssignFloat;
 begin
-  fInteger := 5;
-  CheckTrue(fInteger.HasValue);
-  fInteger := nil;
-  CheckFalse(fInteger.HasValue);
+  ExpectedException := EInvalidCast;
+  fInteger := 99.9;
+end;
+
+procedure TTestNullableInteger.TestAssignStringInt;
+begin
+  // Nullable does NOT do a variant type conversion but is strict about the underlying type
+  ExpectedException := EInvalidCast;
+  fInteger := '5';
+end;
+
+procedure TTestNullableInteger.TestAssignStringNonInt;
+begin
+  ExpectedException := EInvalidCast;
+  fInteger := '5x';
 end;
 
 procedure TTestNullableInteger.TestDefaultReturnsInitialValue;
@@ -549,7 +562,7 @@ end;
 procedure TTestNullableBoolean.TearDown;
 begin
   inherited;
-  fBoolean := nil;
+  fBoolean := Null;
 end;
 
 procedure TTestNullableBoolean.TestIssue55;
@@ -2628,7 +2641,7 @@ end;
 
 procedure TTestNullableDateTime.TearDown;
 begin
-  fDateTime := nil;
+  fDateTime := Null;
   inherited;
 end;
 
@@ -2669,7 +2682,7 @@ end;
 
 procedure TTestNullableInt64.TearDown;
 begin
-  fInt64 := nil;
+  fInt64 := Null;
   inherited;
 end;
 
