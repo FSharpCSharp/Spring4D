@@ -179,6 +179,11 @@ type
   Mock<T> = record
   private
     fMock: IMock<T>;
+  {$HINTS OFF}
+    // cause record to be passed as reference on const parameter
+    // because it does not fit in a register
+    fDummy: Pointer;
+  {$HINTS OFF}
     procedure EnsureInitialized; inline;
     function GetInstance: T;
     function GetBehavior: TMockBehavior;
@@ -197,9 +202,9 @@ type
     procedure Reset;
 
     class operator Implicit(const value: IMock): Mock<T>;
-    class operator Implicit(var value: Mock<T>): IMock;
-    class operator Implicit(var value: Mock<T>): IMock<T>;
-    class operator Implicit(var value: Mock<T>): T;
+    class operator Implicit(const value: Mock<T>): IMock;
+    class operator Implicit(const value: Mock<T>): IMock<T>;
+    class operator Implicit(const value: Mock<T>): T;
 
     function Setup: Setup<T>;
 
@@ -362,19 +367,19 @@ begin
   Result.fMock := value as IMock<T>;
 end;
 
-class operator Mock<T>.Implicit(var value: Mock<T>): IMock;
+class operator Mock<T>.Implicit(const value: Mock<T>): IMock;
 begin
   value.EnsureInitialized;
   Result := value.fMock as IMock;
 end;
 
-class operator Mock<T>.Implicit(var value: Mock<T>): IMock<T>;
+class operator Mock<T>.Implicit(const value: Mock<T>): IMock<T>;
 begin
   value.EnsureInitialized;
   Result := value.fMock;
 end;
 
-class operator Mock<T>.Implicit(var value: Mock<T>): T;
+class operator Mock<T>.Implicit(const value: Mock<T>): T;
 begin
   value.EnsureInitialized;
   Result := value.fMock.Instance;

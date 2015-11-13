@@ -52,6 +52,8 @@ type
   published
     procedure WhenNoExpectationWasDefined;
     procedure NotWhenExpectationWasDefined;
+
+    procedure DependingOnInputArguments;
   end;
 
   MockDynamicallySupportsOtherInterfaces = class(TTestCase)
@@ -65,7 +67,8 @@ uses
   Spring.Mocking;
 
 type
-  IMockTest = interface(IInvokable)
+  {$M+}
+  IMockTest = interface
     procedure Test1(i: Integer; const s: string);
     procedure Test2(const s: string; i: Integer; b: Boolean);
     procedure Test3(const s1: string; o: TObject; const s2: string);
@@ -73,19 +76,28 @@ type
     procedure TestVariant(const v: Variant);
   end;
 
-  IVarParamTest = interface(IInvokable)
+  IVarParamTest = interface
     procedure TestInteger(var i: Integer);
     procedure TestString(var s: string);
     procedure TestVariant(var v: Variant);
   end;
 
-  IChild = interface(IInvokable)
+  IChild = interface
     ['{8B6803C9-CF42-45FC-AA96-8F558FE32F8B}']
     function GetNumber: Integer;
   end;
 
-  IParent = interface(IInvokable)
+  IParent = interface
     function GetChild: IChild;
+  end;
+
+  INameHolder = interface
+    function GetName: string;
+    property Name: string read GetName;
+  end;
+
+  IFoo = interface
+    function Foo(index: Integer): INameHolder;
   end;
 
 
@@ -257,6 +269,17 @@ end;
 
 
 {$REGION 'MockReturnsOtherMockInDynamicMode'}
+
+procedure MockReturnsOtherMockInDynamicMode.DependingOnInputArguments;
+var
+  foo: IFoo;
+begin
+  foo := Mock<IFoo>.Create;
+  Mock.From(foo.Foo(1)).Setup.Returns('One').When.Name;
+  Mock.From(foo.Foo(2)).Setup.Returns('Two').When.Name;
+  CheckEquals('One', foo.Foo(1).Name);
+  CheckEquals('Two', foo.Foo(2).Name);
+end;
 
 procedure MockReturnsOtherMockInDynamicMode.NotWhenExpectationWasDefined;
 var
