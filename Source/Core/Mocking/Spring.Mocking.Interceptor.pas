@@ -227,6 +227,7 @@ begin
       end
       else
         callCount := 0;
+      fState := TMockState.Act;
       if not fCurrentTimes.Verify(callCount) then
         raise EMockException.CreateResFmt(@SUnexpectedCallCount, [
           fCurrentTimes.ToString(callCount)]);
