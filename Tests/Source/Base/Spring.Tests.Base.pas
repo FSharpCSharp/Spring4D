@@ -58,6 +58,7 @@ type
     procedure TestAssignFloat;
     procedure TestAssignStringNonInt;
     procedure TestAssignStringInt;
+    procedure TestNullableNull;
   end;
 
   TTestNullableBoolean = class(TTestCase)
@@ -463,7 +464,7 @@ end;
 procedure TTestNullableInteger.TearDown;
 begin
   inherited;
-  fInteger := Null;
+  fInteger := Nullable.Null;
 end;
 
 procedure TTestNullableInteger.TestAssignFive;
@@ -514,6 +515,16 @@ begin
   dirtyValue := 5;
 end;
 
+procedure TTestNullableInteger.TestNullableNull;
+begin
+  fInteger := 42;
+  CheckEquals(42, fInteger.Value);
+  fInteger := Nullable.Null;
+  Check(not fInteger.HasValue);
+  Check(fInteger = Nullable.Null);
+  CheckFalse(fInteger <> Nullable.Null);
+end;
+
 procedure TTestNullableInteger.TestFromVariant;
 var
   value: Variant;
@@ -562,7 +573,7 @@ end;
 procedure TTestNullableBoolean.TearDown;
 begin
   inherited;
-  fBoolean := Null;
+  fBoolean := Nullable.Null;
 end;
 
 procedure TTestNullableBoolean.TestIssue55;
@@ -2641,7 +2652,7 @@ end;
 
 procedure TTestNullableDateTime.TearDown;
 begin
-  fDateTime := Null;
+  fDateTime := Nullable.Null;
   inherited;
 end;
 
@@ -2682,7 +2693,7 @@ end;
 
 procedure TTestNullableInt64.TearDown;
 begin
-  fInt64 := Null;
+  fInt64 := Nullable.Null;
   inherited;
 end;
 

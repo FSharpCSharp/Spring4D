@@ -681,6 +681,14 @@ type
 
   {$REGION 'Nullable Types'}
 
+  Nullable = record
+  private
+    const HasValue = 'True';
+    class function GetNull: Nullable; static; inline;
+  public
+    class property Null: Nullable read GetNull;
+  end;
+
   /// <summary>
   ///   A nullable type can represent the normal range of values for its
   ///   underlying value type, plus an additional <c>Null</c> value.
@@ -766,6 +774,7 @@ type
     /// </exception>
     property Value: T read GetValue;
 
+    class operator Implicit(const value: Nullable): Nullable<T>; inline;
     class operator Implicit(const value: Nullable<T>): T; inline;
     class operator Implicit(const value: T): Nullable<T>;
     class operator Implicit(const value: Nullable<T>): Variant;
@@ -4366,15 +4375,21 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Nullable<T>'}
+{$REGION 'Nullable'}
 
-const
-  CHasValueFlag = '@';
+class function Nullable.GetNull: Nullable;
+begin
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Nullable<T>'}
 
 constructor Nullable<T>.Create(const value: T);
 begin
   fValue := value;
-  fHasValue := CHasValueFlag;
+  fHasValue := Nullable.HasValue;
 end;
 
 constructor Nullable<T>.Create(const value: Variant);
@@ -4385,7 +4400,7 @@ begin
   begin
     v := TValue.FromVariant(value);
     fValue := v.AsType<T>;
-    fHasValue := CHasValueFlag;
+    fHasValue := Nullable.HasValue;
   end
   else
   begin
@@ -4481,7 +4496,7 @@ end;
 class operator Nullable<T>.Implicit(const value: T): Nullable<T>;
 begin
   Result.fValue := value;
-  Result.fHasValue := CHasValueFlag;
+  Result.fHasValue := Nullable.HasValue;
 end;
 
 class operator Nullable<T>.Implicit(const value: Nullable<T>): T;
@@ -4513,13 +4528,15 @@ begin
   begin
     v := TValue.FromVariant(value);
     Result.fValue := v.AsType<T>;
-    Result.fHasValue := CHasValueFlag;
+    Result.fHasValue := Nullable.HasValue;
   end
   else
-  begin
-    Result.fHasValue := '';
     Result.fValue := Default(T);
-  end;
+end;
+
+class operator Nullable<T>.Implicit(const value: Nullable): Nullable<T>;
+begin
+  Result.fValue := Default(T);
 end;
 
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
@@ -4575,7 +4592,7 @@ begin
   if value.IsEmpty then
     PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ := ''
   else
-    PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ := '@';
+    PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ := Nullable.HasValue;
 end;
 
 {$ENDREGION}
