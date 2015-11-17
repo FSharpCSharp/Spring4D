@@ -146,7 +146,7 @@ type
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fContainer: TContainer;
     class var GlobalInstance: IServiceLocator;
-    class constructor Create;
+    class procedure Init; static;
   public
     constructor Create(const container: TContainer);
 
@@ -604,7 +604,7 @@ end;
 
 {$REGION 'TServiceLocatorAdapter'}
 
-class constructor TServiceLocatorAdapter.Create;
+class procedure TServiceLocatorAdapter.Init;
 begin
   GlobalInstance := TServiceLocatorAdapter.Create(GlobalContainer);
   ServiceLocator.Initialize(
@@ -665,5 +665,8 @@ begin
   TServiceLocatorAdapter.GlobalInstance := nil;
   FreeAndNil(TContainer.GlobalInstance);
 end;
+
+initialization
+  TServiceLocatorAdapter.Init;
 
 end.
