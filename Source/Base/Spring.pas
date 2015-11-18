@@ -562,6 +562,7 @@ type
     class procedure RaiseArgumentException(typeKind: TTypeKind; const argumentName: string); overload; static;
     class procedure RaiseNullableHasNoValue; static;
     class procedure RaiseNoDelegateAssigned; static;
+    class procedure RaiseInvalidTypeCast(sourceType, targetType: PTypeInfo); static;
   public
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string = ''); static; inline;
@@ -2483,7 +2484,8 @@ begin
     tkInterface:
       Result := Pointer(AsInterface);
   else
-    raise EInvalidCast.CreateRes(@SInvalidCast);
+    Guard.RaiseInvalidTypeCast(TypeInfo, System.TypeInfo(Pointer));
+    Result := nil;
   end;
 end;
 
@@ -2502,7 +2504,7 @@ begin
 {$ENDIF}
   if not TryAsInterface(System.TypeInfo(T), Result) then
   if not TryAsType<T>(Result) then
-    raise EInvalidCast.CreateRes(@SInvalidCast);
+    Guard.RaiseInvalidTypeCast(TypeInfo, System.TypeInfo(T));
 end;
 
 function TValueHelper.Cast(typeInfo: PTypeInfo): TValue;
@@ -2512,7 +2514,7 @@ begin
   if TryAsInterface(typeInfo, intf) then
     TValue.Make(@intf, typeInfo, Result)
   else if not TryCast(typeInfo, Result) then
-    raise EInvalidCast.CreateRes(@SInvalidCast);
+    Guard.RaiseInvalidTypeCast(Self.TypeInfo, typeInfo);
 end;
 
 function TValueHelper.CompareTo(const value: TValue): Integer;
@@ -3236,7 +3238,7 @@ begin
   else
     sourceTypeName := '<unknown>';
   raise EConvertError.CreateResFmt(@STypeConversionError, [
-    sourceTypeName, target.TypeName]);
+    sourceTypeName, target.TypeName]) at ReturnAddress;
 end;
 
 procedure TValueHelper.SetNullableValue(const value: TValue);
@@ -3265,7 +3267,7 @@ end;
 function TValueHelper.ToType<T>: T;
 begin
   if not TryToType<T>(Result) then
-    raise EInvalidCast.CreateRes(@SInvalidCast);
+    Guard.RaiseInvalidTypeCast(TypeInfo, System.TypeInfo(T));
 end;
 
 function TValueHelper.ToVariant: Variant;
@@ -4368,14 +4370,20 @@ begin
     @SInvalidEnumArgument, [argumentName]) at ReturnAddress;
 end;
 
+class procedure Guard.RaiseInvalidTypeCast(sourceType, targetType: PTypeInfo);
+begin
+  raise EInvalidCastException.CreateResFmt(@SInvalidTypeCast, [
+    sourceType.TypeName, targetType.TypeName]) at ReturnAddress;
+end;
+
 class procedure Guard.RaiseNullableHasNoValue;
 begin
-  raise EInvalidOperationException.CreateRes(@SNullableHasNoValue);
+  raise EInvalidOperationException.CreateRes(@SNullableHasNoValue) at ReturnAddress;
 end;
 
 class procedure Guard.RaiseNoDelegateAssigned;
 begin
-  raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+  raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned) at ReturnAddress;
 end;
 {$IFDEF OPTIMIZATIONS_ON}
   {$UNDEF OPTIMIZATIONS_ON}

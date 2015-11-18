@@ -48,6 +48,7 @@ resourcestring
   SUnexpectedTypeKindArgument  = 'Unexpected type kind %s for the argument %s.';
   SInvalidOperationBufferSizeShouldBeSame = 'Buffer size should be the same.';
   SInvalidArgumentFormat = 'Invalid format for argument "%s".';
+  SInvalidTypeCast             = 'Invalid cast: %s to %s.';
 
   SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
 
