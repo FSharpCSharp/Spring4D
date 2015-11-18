@@ -3061,20 +3061,47 @@ begin
 end;
 
 class function TValueHelper.FromVariant(const value: Variant): TValue;
-type
-  TCustomVariantTypeInfo = record
-    Name: string;
-    VType: TVarType;
+
+  procedure FromCustomVariant(const Value: Variant; var Result: TValue);
+  type
+    PCustomVariantTypeInfo = ^TCustomVariantTypeInfo;
+    TCustomVariantTypeInfo = record
+      Name: string;
+      VType: TVarType;
+    end;
+  const
+    CustomVariantTypes: array[0..2] of TCustomVariantTypeInfo = (
+      (Name: 'SQLTimeStampVariantType'; VType: varDouble),
+      (Name: 'SQLTimeStampOffsetVariantType'; VType: varDouble),
+      (Name: 'FMTBcdVariantType'; VType: varInt64)
+    );
+  var
+    typeName: string;
+    i: Integer;
+    info: PCustomVariantTypeInfo;
+  begin
+    typeName := VarTypeAsText(TVarData(Value).VType);
+    for i := 0 to High(CustomVariantTypes) do
+    begin
+      info := @CustomVariantTypes[i];
+      if typeName = info.Name then
+      begin
+        case info.VType of
+          varDouble: Result := Double(Value);
+          varInt64: Result := {$IFDEF DELPHIXE6_UP}Int64(Value);
+            {$ELSE}StrToInt64(VarToStr(Value));{$ENDIF} // see QC#117696
+        else
+          raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
+        end;
+        Exit;
+      end;
+    end;
+    raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
   end;
-const
-  CustomVariantTypes: array[0..2] of TCustomVariantTypeInfo = (
-    (Name: 'SQLTimeStampVariantType'; VType: varDouble),
-    (Name: 'SQLTimeStampOffsetVariantType'; VType: varDouble),
-    (Name: 'FMTBcdVariantType'; VType: varInt64)
-  );
+
 var
-  typeName: string;
-  i: Integer;
+  typeInfo: PTypeInfo;
+  arr: Pointer;
 begin
   case TVarData(Value).VType of
     varEmpty, varNull: Exit(Empty);
@@ -3094,48 +3121,46 @@ begin
     varWord: Result := TVarData(Value).VWord;
     varLongWord: Result := TVarData(Value).VLongWord;
     varInt64: Result := TVarData(Value).VInt64;
+{$IFDEF DELPHI2010}
+    varUInt64: Result := TValue.From<UInt64>(TVarData(Value).VUInt64);
+{$ELSE}
     varUInt64: Result := TVarData(Value).VUInt64;
+{$ENDIF}
 {$IFNDEF NEXTGEN}
     varString: Result := string(AnsiString(TVarData(Value).VString));
 {$ENDIF}
     varUString: Result := UnicodeString(TVarData(Value).VUString);
   else
-    case TVarData(Value).VType and not varArray of
-      varSmallint: Result := TValue.From<TArray<SmallInt>>(Value);
-      varInteger: Result := TValue.From<TArray<Integer>>(Value);
-      varSingle: Result := TValue.From<TArray<Single>>(Value);
-      varDouble: Result := TValue.From<TArray<Double>>(Value);
-      varCurrency: Result := TValue.From<TArray<Currency>>(Value);
-      varDate: Result := TValue.From<TArray<TDateTime>>(Value);
-      varOleStr: Result := TValue.From<TArray<string>>(Value);
-      varDispatch: Result := TValue.From<TArray<IDispatch>>(Value);
-      varError: Result := TValue.From<TArray<HRESULT>>(Value);
-      varBoolean: Result := TValue.From<TArray<Boolean>>(Value);
-      varVariant: Result := TValue.From<TArray<Variant>>(Value);
-      varUnknown: Result := TValue.From<TArray<IInterface>>(Value);
-      varShortInt: Result := TValue.From<TArray<ShortInt>>(Value);
-      varByte: Result := TValue.From<TArray<Byte>>(Value);
-      varWord: Result := TValue.From<TArray<Word>>(Value);
-      varLongWord: Result := TValue.From<TArray<LongWord>>(Value);
-      varInt64: Result := TValue.From<TArray<Int64>>(Value);
-      varUInt64: Result := TValue.From<TArray<UInt64>>(Value);
-      varUString: Result := TValue.From<TArray<string>>(Value);
+    if TVarData(Value).VType and varArray = varArray then
+    begin
+      case TVarData(Value).VType and not varArray of
+        varSmallint: typeInfo := System.TypeInfo(TArray<SmallInt>);
+        varInteger: typeInfo := System.TypeInfo(TArray<Integer>);
+        varSingle: typeInfo := System.TypeInfo(TArray<Single>);
+        varDouble: typeInfo := System.TypeInfo(TArray<Double>);
+        varCurrency: typeInfo := System.TypeInfo(TArray<Currency>);
+        varDate: typeInfo := System.TypeInfo(TArray<TDateTime>);
+        varOleStr: typeInfo := System.TypeInfo(TArray<string>);
+        varDispatch: typeInfo := System.TypeInfo(TArray<IDispatch>);
+        varError: typeInfo := System.TypeInfo(TArray<HRESULT>);
+        varBoolean: typeInfo := System.TypeInfo(TArray<Boolean>);
+        varVariant: typeInfo := System.TypeInfo(TArray<Variant>);
+        varUnknown: typeInfo := System.TypeInfo(TArray<IInterface>);
+        varShortInt: typeInfo := System.TypeInfo(TArray<ShortInt>);
+        varByte: typeInfo := System.TypeInfo(TArray<Byte>);
+        varWord: typeInfo := System.TypeInfo(TArray<Word>);
+        varLongWord: typeInfo := System.TypeInfo(TArray<LongWord>);
+        varInt64: typeInfo := System.TypeInfo(TArray<Int64>);
+        varUInt64: typeInfo := System.TypeInfo(TArray<UInt64>);
+        varUString:  typeInfo := System.TypeInfo(TArray<string>);
+      else
+        raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
+      end;
+      DynArrayFromVariant(arr, Value, typeInfo);
+      TValue.MakeWithoutCopy(@arr, typeInfo, Result);
+    end
     else
-      typeName := VarTypeAsText(TVarData(Value).VType);
-      for i := 0 to High(CustomVariantTypes) do
-        if SameText(typeName, CustomVariantTypes[i].Name) then
-        begin
-          case CustomVariantTypes[i].VType of
-            varDouble: Result := Double(Value);
-            varInt64: Result := {$IFDEF DELPHIXE6_UP}Int64(Value);
-              {$ELSE}StrToInt64(VarToStr(Value));{$ENDIF} // see QC#117696
-          else
-            raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
-          end;
-          Exit;
-        end;
-      raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
-    end;
+      FromCustomVariant(Value, Result);
   end;
 end;
 

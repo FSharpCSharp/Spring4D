@@ -430,6 +430,8 @@ type
 
     procedure EqualsReturnsTrueForEqualPointers;
     procedure EqualsReturnsFalseForUnequalPointers;
+
+    procedure FromVariantProperlyHandlesVariantArrays;
   end;
 
 implementation
@@ -2554,6 +2556,24 @@ begin
   fSUT := TValue.From(Unassigned);
   fValue := TValue.From(Unassigned);
   DoCheckEquals;
+end;
+
+procedure TTestValueHelper.FromVariantProperlyHandlesVariantArrays;
+var
+  v: Variant;
+  arr: TArray<Integer>;
+begin
+  v := VarArrayCreate([0, 2], varInteger);
+  v[0] := 0;
+  v[1] := 1;
+  v[2] := 2;
+  fSUT := TValue.FromVariant(v);
+  Check(fSUT.TypeInfo = TypeInfo(TArray<Integer>));
+  arr := fSUT.AsType<TArray<Integer>>;
+  CheckEquals(3, Length(arr));
+  CheckEquals(0, arr[0]);
+  CheckEquals(1, arr[1]);
+  CheckEquals(2, arr[2]);
 end;
 
 procedure TTestValueHelper.TearDown;
