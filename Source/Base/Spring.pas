@@ -3159,6 +3159,7 @@ begin
       else
         raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
       end;
+      arr := nil;
       DynArrayFromVariant(arr, Value, typeInfo);
       TValue.MakeWithoutCopy(@arr, typeInfo, Result);
     end
