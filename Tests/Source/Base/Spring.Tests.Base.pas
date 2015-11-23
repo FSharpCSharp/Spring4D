@@ -350,7 +350,7 @@ type
     procedure Test_Unpack_ThreeValues;
   end;
 
-  TTestManaged = class(TTestCase)
+  TTestOwned = class(TTestCase)
   published
     procedure TestInterfaceType_Instance_Gets_Created;
     procedure TestInterfaceType_Instance_Gets_Destroyed_When_Created;
@@ -2071,43 +2071,43 @@ begin
   inherited;
 end;
 
-procedure TTestManaged.TestInterfaceType_Instance_Gets_Created;
+procedure TTestOwned.TestInterfaceType_Instance_Gets_Created;
 var
-  p: IManaged<TTestClass>;
+  p: IOwned<TTestClass>;
 begin
-  p := TManaged<TTestClass>.Create();
+  p := TOwned<TTestClass>.Create();
   CheckTrue(p.CreateCalled);
 end;
 
-procedure TTestManaged.TestInterfaceType_Instance_Gets_Destroyed_When_Created;
+procedure TTestOwned.TestInterfaceType_Instance_Gets_Destroyed_When_Created;
 var
-  p: IManaged<TTestClass>;
+  p: IOwned<TTestClass>;
   destroyCalled: Boolean;
 begin
-  p := TManaged<TTestClass>.Create();
+  p := TOwned<TTestClass>.Create();
   p.DestroyCalled := @destroyCalled;
   destroyCalled := False;
   p := nil;
   CheckTrue(destroyCalled);
 end;
 
-procedure TTestManaged.TestInterfaceType_Instance_Gets_Destroyed_When_Injected;
+procedure TTestOwned.TestInterfaceType_Instance_Gets_Destroyed_When_Injected;
 var
   t: TTestClass;
-  p: IManaged<TTestClass>;
+  p: IOwned<TTestClass>;
   destroyCalled: Boolean;
 begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
-  p := TManaged<TTestClass>.Create(t);
+  p := TOwned<TTestClass>.Create(t);
   destroyCalled := False;
   p := nil;
   CheckTrue(destroyCalled);
 end;
 
-procedure TTestManaged.TestRecordType_Implicit_FromInstance_Works;
+procedure TTestOwned.TestRecordType_Implicit_FromInstance_Works;
 var
-  p: Managed<TTestClass>;
+  p: Owned<TTestClass>;
   t: TTestClass;
 begin
   t := TTestClass.Create;
@@ -2115,9 +2115,9 @@ begin
   CheckSame(t, p.Value);
 end;
 
-procedure TTestManaged.TestRecordType_Implicit_ToInstance_Works;
+procedure TTestOwned.TestRecordType_Implicit_ToInstance_Works;
 var
-  p: Managed<TTestClass>;
+  p: Owned<TTestClass>;
   t, t2: TTestClass;
 begin
   t := TTestClass.Create;
@@ -2126,9 +2126,9 @@ begin
   CheckSame(t, t2);
 end;
 
-procedure TTestManaged.TestRecordType_Instance_Gets_Destroyed;
+procedure TTestOwned.TestRecordType_Instance_Gets_Destroyed;
 var
-  p: Managed<TTestClass>;
+  p: Owned<TTestClass>;
   t: TTestClass;
   destroyCalled: Boolean;
 begin
@@ -2139,7 +2139,7 @@ begin
   t := nil;
 {$ENDIF}
   destroyCalled := False;
-  p := Default(Managed<TTestClass>);
+  p := Default(Owned<TTestClass>);
   CheckTrue(destroyCalled);
 end;
 
@@ -2150,11 +2150,11 @@ type
     s: string;
   end;
 
-procedure TTestManaged.TestRecordType_Manage_Typed_Pointer;
+procedure TTestOwned.TestRecordType_Manage_Typed_Pointer;
 var
-  p: IManaged<PMyRecord>;
+  p: IOwned<PMyRecord>;
 begin
-  p := TManaged<PMyRecord>.Create();
+  p := TOwned<PMyRecord>.Create();
   p.x := 11;
   p.y := 22;
   p.s := 'Hello World';

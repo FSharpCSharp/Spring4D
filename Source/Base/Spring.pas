@@ -1530,9 +1530,9 @@ type
 
   {$REGION 'Smart pointer'}
 
-  IManaged<T> = reference to function: T;
+  IOwned<T> = reference to function: T;
 
-  TManaged<T> = class(TInterfacedObject, IManaged<T>)
+  TOwned<T> = class(TInterfacedObject, IOwned<T>)
   private
     fValue: T;
     function Invoke: T; inline;
@@ -1542,7 +1542,7 @@ type
     destructor Destroy; override;
   end;
 
-  Managed<T> = record
+  Owned<T> = record
   private
     type
       TFinalizer = class(TInterfacedObject)
@@ -1556,8 +1556,8 @@ type
     fValue: T;
     fFinalizer: IInterface;
   public
-    class operator Implicit(const value: T): Managed<T>;
-    class operator Implicit(const value: Managed<T>): T;
+    class operator Implicit(const value: T): Owned<T>;
+    class operator Implicit(const value: Owned<T>): T;
     property Value: T read fValue;
   end;
 
@@ -1940,6 +1940,7 @@ function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 function CompareValue(const left, right: TValue): Integer; overload;
 
 procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
+procedure FinalizeRecordPointer(const value; typeInfo: PTypeInfo); inline;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
@@ -2293,19 +2294,21 @@ begin
 end;
 
 procedure FinalizeValue(const value; typeInfo: PTypeInfo);
-var
-  recTypeInfo: PTypeInfo;
 begin
   case typeInfo.Kind of
     tkClass: {$IFNDEF AUTOREFCOUNT}TObject(value).Free;{$ELSE}TObject(value).DisposeOf;{$ENDIF}
-    tkPointer:
-    begin
-      recTypeInfo := GetTypeData(typeInfo).RefType^;
-      FinalizeArray(Pointer(value), recTypeInfo, 1);
-      FillChar(Pointer(value)^, GetTypeData(recTypeInfo).RecSize, 0);
-      FreeMem(Pointer(value));
-    end;
+    tkPointer: FinalizeRecordPointer(value, typeInfo);
   end;
+end;
+
+procedure FinalizeRecordPointer(const value; typeInfo: PTypeInfo);
+var
+  recTypeInfo: PTypeInfo;
+begin
+  recTypeInfo := typeInfo.TypeData.RefType^;
+  FinalizeArray(Pointer(value), recTypeInfo, 1);
+  FillChar(Pointer(value)^, recTypeInfo.TypeData.RecSize, 0);
+  FreeMem(Pointer(value));
 end;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
@@ -5421,9 +5424,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TManaged<T>'}
+{$REGION 'TOwned<T>'}
 
-constructor TManaged<T>.Create;
+constructor TOwned<T>.Create;
 begin
   inherited Create;
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
@@ -5432,19 +5435,21 @@ begin
   end;
 end;
 
-constructor TManaged<T>.Create(const value: T);
+constructor TOwned<T>.Create(const value: T);
 begin
   inherited Create;
   fValue := value;
 end;
 
-destructor TManaged<T>.Destroy;
+destructor TOwned<T>.Destroy;
 begin
-  FinalizeValue(fValue, TypeInfo(T));
-  inherited;
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkClass: {$IFNDEF AUTOREFCOUNT}PObject(@fValue).Free;{$ELSE}PObject(@fValue).DisposeOf;{$ENDIF}
+    tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
+  end;
 end;
 
-function TManaged<T>.Invoke: T;
+function TOwned<T>.Invoke: T;
 begin
   Result := fValue;
 end;
@@ -5452,18 +5457,17 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Managed<T>'}
+{$REGION 'Owned<T>'}
 
-class operator Managed<T>.Implicit(const value: T): Managed<T>;
+class operator Owned<T>.Implicit(const value: T): Owned<T>;
 begin
   Result.fValue := value;
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
-    {$IFNDEF AUTOREFCOUNT}tkClass,{$ENDIF}
-    tkPointer: Result.fFinalizer := TFinalizer.Create(Result.fValue);
+    tkClass, tkPointer: Result.fFinalizer := TFinalizer.Create(Result.fValue);
   end;
 end;
 
-class operator Managed<T>.Implicit(const value: Managed<T>): T;
+class operator Owned<T>.Implicit(const value: Owned<T>): T;
 begin
   Result := value.fValue;
 end;
@@ -5471,17 +5475,20 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Managed<T>.TFinalizer'}
+{$REGION 'Owned<T>.TFinalizer'}
 
-constructor Managed<T>.TFinalizer.Create(const value);
+constructor Owned<T>.TFinalizer.Create(const value);
 begin
   inherited Create;
   fValue := Pointer(value);
 end;
 
-destructor Managed<T>.TFinalizer.Destroy;
+destructor Owned<T>.TFinalizer.Destroy;
 begin
-  FinalizeValue(fValue, TypeInfo(T));
+  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    tkClass: {$IFNDEF AUTOREFCOUNT}TObject(fValue).Free;{$ELSE}TObject(fValue).DisposeOf;{$ENDIF}
+    tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
+  end;
   inherited;
 end;
 
