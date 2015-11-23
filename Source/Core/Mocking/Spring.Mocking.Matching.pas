@@ -90,9 +90,10 @@ type
 
   Args = record
   strict private
+    class function GetAny: TPredicate<TArray<TValue>>; static;
     class function GetItems(index: Integer): Arg; static;
   public
-    class function Any(const args: TArray<TValue>): Boolean; static;
+    class property Any: TPredicate<TArray<TValue>> read GetAny;
     class property Items[index: Integer]: Arg read GetItems; default;
   end;
 
@@ -342,9 +343,13 @@ end;
 
 {$REGION 'Args'}
 
-class function Args.Any(const args: TArray<TValue>): Boolean;
+class function Args.GetAny: TPredicate<TArray<TValue>>;
 begin
-  Result := True;
+  Result :=
+    function(const args: TArray<TValue>): Boolean
+    begin
+      Result := True;
+    end;
 end;
 
 class function Args.GetItems(index: Integer): Arg;
