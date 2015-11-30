@@ -205,7 +205,7 @@ begin
     tkInterface:
     begin
       Supports(TProxyGenerator.CreateInterfaceProxyWithoutTarget(
-        typeInfo, [interceptor]), GetTypeData(typeInfo).Guid, intf);
+        typeInfo, [interceptor]), typeInfo.TypeData.Guid, intf);
       TValue.Make(@intf, typeInfo, Result);
     end;
   else

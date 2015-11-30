@@ -545,7 +545,7 @@ begin
 
   if typeInfo.Kind = tkMethod then
   begin
-    typeData := GetTypeData(typeInfo);
+    typeData := typeInfo.TypeData;
     fInvocations := TMethodInvocations.Create(typeData, InternalInvoke);
   end
   else if typeInfo.Kind = tkInterface then

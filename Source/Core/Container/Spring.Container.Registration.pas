@@ -415,7 +415,7 @@ begin
         if maxVirtualIndex > 3 then
           TVirtualInterfaceHack(factory).VTable[3] :=
             TVirtualInterfaceHack(factory).VTable[maxVirtualIndex];
-      factory.QueryInterface(GetTypeData(model.ComponentTypeInfo).Guid, intf);
+      factory.QueryInterface(model.ComponentTypeInfo.TypeData.Guid, intf);
       TValue.Make(@intf, model.ComponentTypeInfo, Result);
     end;
 end;

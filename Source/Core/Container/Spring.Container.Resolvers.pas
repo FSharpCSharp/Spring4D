@@ -192,7 +192,7 @@ begin
   if dependency.TypeInfo.Kind = tkInterface then
   begin
     if instance.IsObject then
-      instance.AsObject.GetInterface(GetTypeData(dependency.TypeInfo).Guid, intf)
+      instance.AsObject.GetInterface(dependency.TypeInfo.TypeData.Guid, intf)
     else
     begin
       if TType.IsDelegate(dependency.TypeInfo) then
@@ -201,7 +201,7 @@ begin
         IInterface(intf) := instance.AsInterface;
       end
       else
-        instance.AsInterface.QueryInterface(GetTypeData(dependency.TypeInfo).Guid, intf);
+        instance.AsInterface.QueryInterface(dependency.TypeInfo.TypeData.Guid, intf);
     end;
     TValue.MakeWithoutCopy(@intf, dependency.TypeInfo, Result);
     Result := Kernel.ProxyFactory.CreateInstance(context, Result, model, []);

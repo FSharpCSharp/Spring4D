@@ -240,8 +240,8 @@ begin
   begin
     TInterfaceProxy.Create(additionalInterfaces[i - 1], [], options, nil,
       fInterceptors.ToArray).QueryInterface(
-      GetTypeData(additionalInterfaces[i - 1]).Guid, fAdditionalInterfaces[i - 1]);
-    table.Entries[i].IID := GetTypeData(additionalInterfaces[i - 1]).Guid;
+      additionalInterfaces[i - 1].TypeData.Guid, fAdditionalInterfaces[i - 1]);
+    table.Entries[i].IID := additionalInterfaces[i - 1].TypeData.Guid;
     table.Entries[i].VTable := nil;
     table.Entries[i].IOffset := 0;
 {$IFDEF CPU64BITS}

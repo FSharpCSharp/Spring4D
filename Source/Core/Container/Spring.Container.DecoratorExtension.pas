@@ -140,7 +140,7 @@ function TDecoratorComponentActivator.CreateInstance(
   var
     intf: Pointer;
   begin
-    if AObject.GetInterface(GetTypeData(ATarget).Guid, intf) then
+    if AObject.GetInterface(ATarget.TypeData.Guid, intf) then
       TValue.MakeWithoutCopy(@intf, ATarget, Result);
   end;
 {$ENDIF}

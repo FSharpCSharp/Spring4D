@@ -928,7 +928,7 @@ var
 begin
   while Assigned(typeInfo) and (typeInfo.Kind = tkInterface) do
   begin
-    name := GetTypeName(typeInfo);
+    name := typeInfo.TypeName;
     for prefix in DelegatePrefixNonGenericStrings do
       if SameText(prefix, name) then
         Exit(True);

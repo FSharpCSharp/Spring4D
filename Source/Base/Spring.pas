@@ -2249,8 +2249,8 @@ begin
   if leftType = rightType then
     Exit(True);
 
-  leftData := GetTypeData(leftType);
-  rightData := GetTypeData(rightType);
+  leftData := leftType.TypeData;
+  rightData := rightType.TypeData;
   if (rightType.Kind = tkClass) and (leftType.Kind = tkClass) then
     Result := rightData.ClassType.InheritsFrom(leftData.ClassType)
   else if (rightType.Kind = tkClass) and (leftType.Kind = tkInterface) then
@@ -2266,7 +2266,7 @@ begin
     while not Result and Assigned(rightData.IntfParent) do
     begin
       Result := rightData.IntfParent^ = leftType;
-      rightData := GetTypeData(rightData.IntfParent^);
+      rightData := rightData.IntfParent^.TypeData;
     end;
   end
   else
@@ -2289,7 +2289,7 @@ const
   PrefixString = 'Nullable<';    // DO NOT LOCALIZE
 begin
   Result := Assigned(typeInfo) and (typeInfo.Kind = tkRecord)
-    and StartsText(PrefixString, GetTypeName(typeInfo));
+    and StartsText(PrefixString, typeInfo.TypeName);
 end;
 
 function GetUnderlyingType(typeInfo: PTypeInfo): PTypeInfo;
@@ -2315,7 +2315,7 @@ var
 begin
   if Assigned(typeInfo) then
   begin
-    name := GetTypeName(typeInfo);
+    name := typeInfo.TypeName;
     for Result := lkFunc to High(TLazyKind) do
       if StartsText(LazyPrefixStrings[Result], name)
         and (Length(GetGenericTypeParameters(name)) = 1) then
@@ -2331,7 +2331,7 @@ var
   i: Integer;
 begin
   lazyKind := GetLazyKind(typeInfo);
-  name := GetTypeName(typeInfo);
+  name := typeInfo.TypeName;
   if lazyKind > lkNone then
   begin
     i := Length(LazyPrefixStrings[lazyKind]) + 1;
@@ -2390,8 +2390,6 @@ begin
 end;
 
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
-var
-  typeData: PTypeData;
 const
   COrdinalSizes: array[TOrdType] of Integer = (
     SizeOf(ShortInt){1},
@@ -2426,15 +2424,9 @@ begin
     tkWChar:
       Result := SizeOf(WideChar){2};
     tkInteger, tkEnumeration:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := COrdinalSizes[typeData.OrdType];
-      end;
+      Result := COrdinalSizes[typeInfo.TypeData.OrdType];
     tkFloat:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := CFloatSizes[typeData.FloatType];
-      end;
+      Result := CFloatSizes[typeInfo.TypeData.FloatType];
     tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray, tkPointer, tkProcedure:
       Result := SizeOf(Pointer);
     tkMethod:
@@ -2444,26 +2436,15 @@ begin
     tkVariant:
       Result := SizeOf(Variant);
     tkSet:
-      begin
-        // big sets have no typeInfo for now
-        typeData := GetTypeData(typeInfo);
-        Result := CSetSizes[typeData.OrdType];
-      end;
+      // big sets have no typeInfo for now
+      Result := CSetSizes[typeInfo.TypeData.OrdType];
     tkRecord:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := typeData.RecSize;
-      end;
+      Result := typeInfo.TypeData.RecSize;
     tkArray:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := typeData.ArrayData.Size;
-      end;
-    else
-      begin
-        Assert(False, 'Unsupported type'); { TODO -o##jwp -cEnhance : add more context to the assert }
-        Result := -1;
-      end;
+      Result := typeInfo.TypeData.ArrayData.Size;
+  else
+    Assert(False, 'Unsupported type'); { TODO -o##jwp -cEnhance : add more context to the assert }
+    Result := -1;
   end;
 end;
 
@@ -2803,7 +2784,7 @@ begin
   defaultField := nil;
   case fieldType.Kind of
     tkInteger, tkEnumeration:
-      case GetTypeData(fieldType).OrdType of
+      case fieldType.TypeData.OrdType of
         otSByte: defaultField := TDefaultField<ShortInt>.Create(value, offset);
         otSWord: defaultField := TDefaultField<SmallInt>.Create(value, offset);
         otSLong: defaultField := TDefaultField<Integer>.Create(value, offset);
@@ -2819,7 +2800,7 @@ begin
       if (fieldType = TypeInfo(TDateTime)) and (VarType(value) = varUString) then
         defaultField := TDefaultField<TDateTime>.Create(StrToDateTime(value, FormatSettings), offset)
       else
-        case GetTypeData(FieldType).FloatType of
+        case FieldType.TypeData.FloatType of
           ftSingle: defaultField := TDefaultField<Single>.Create(value, offset);
           ftDouble: defaultField := TDefaultField<Double>.Create(value, offset);
           ftExtended: defaultField := TDefaultField<Extended>.Create(value, offset);
@@ -2835,7 +2816,7 @@ begin
     tkVariant:
       defaultField := TDefaultField<Variant>.Create(value, offset);
     tkInt64:
-      if GetTypeData(fieldType).MinInt64Value > GetTypeData(fieldType).MaxInt64Value then
+      if fieldType.TypeData.MinInt64Value > fieldType.TypeData.MaxInt64Value then
         defaultField := TDefaultField<UInt64>.Create(value, offset)
       else
         defaultField := TDefaultField<Int64>.Create(value, offset);
@@ -2861,7 +2842,7 @@ begin
   defaultField := nil;
   case fieldType.Kind of
     tkInteger, tkEnumeration:
-      case GetTypeData(fieldType).OrdType of
+      case fieldType.TypeData.OrdType of
         otSByte: defaultField := TDefaultProperty<ShortInt>.Create(value, propInfo);
         otSWord: defaultField := TDefaultProperty<SmallInt>.Create(value, propInfo);
         otSLong: defaultField := TDefaultProperty<Integer>.Create(value, propInfo);
@@ -2877,7 +2858,7 @@ begin
       if (fieldType = TypeInfo(TDateTime)) and (VarType(value) = varUString) then
         defaultField := TDefaultProperty<TDateTime>.Create(StrToDateTime(value, FormatSettings), propInfo)
       else
-        case GetTypeData(FieldType).FloatType of
+        case fieldType.TypeData.FloatType of
           ftSingle: defaultField := TDefaultProperty<Single>.Create(value, propInfo);
           ftDouble: defaultField := TDefaultProperty<Double>.Create(value, propInfo);
           ftExtended: defaultField := TDefaultProperty<Extended>.Create(value, propInfo);
@@ -2893,7 +2874,7 @@ begin
     tkVariant:
       defaultField := TDefaultProperty<Variant>.Create(value, propInfo);
     tkInt64:
-      if GetTypeData(fieldType).MinInt64Value > GetTypeData(fieldType).MaxInt64Value then
+      if fieldType.TypeData.MinInt64Value > fieldType.TypeData.MaxInt64Value then
         defaultField := TDefaultProperty<UInt64>.Create(value, propInfo)
       else
         defaultField := TDefaultProperty<Int64>.Create(value, propInfo);
@@ -2946,7 +2927,7 @@ begin
     tkClass:
     begin
       if not Assigned(classType) and createInstance then
-        classType := GetTypeData(fieldType).ClassType;
+        classType := fieldType.TypeData.ClassType;
       managedField := TManagedObjectField.Create(classType, offset)
     end;
     tkInterface:
@@ -3266,7 +3247,7 @@ function EqualsInt2Int(const left, right: TValue): Boolean;
 var
   leftValue, rightValue: Int64;
 begin
-  case GetTypeData(left.TypeInfo).OrdType of
+  case left.TypeInfo.TypeData.OrdType of
     otSByte: leftValue := TValueData(left).FAsSByte;
     otSWord: leftValue := TValueData(left).FAsSWord;
     otSLong: leftValue := TValueData(left).FAsSLong;
@@ -3274,7 +3255,7 @@ begin
     leftValue := TValueData(left).FAsULong;
   end;
 
-  case GetTypeData(right.TypeInfo).OrdType of
+  case right.TypeInfo.TypeData.OrdType of
     otSByte: rightValue := TValueData(right).FAsSByte;
     otSWord: rightValue := TValueData(right).FAsSWord;
     otSLong: rightValue := TValueData(right).FAsSLong;
@@ -3773,7 +3754,7 @@ end;
 class function TValueHelper.FromFloat(typeInfo: PTypeInfo;
   value: Extended): TValue;
 begin
-  case GetTypeData(typeInfo).FloatType of
+  case typeInfo.TypeData.FloatType of
     ftSingle: Result := TValue.From<Single>(value);
     ftDouble: Result := TValue.From<Double>(value);
     ftExtended: Result := TValue.From<Extended>(value);
@@ -4110,7 +4091,7 @@ begin
     Result := True
   else
   begin
-    typeData := GetTypeData(typeInfo);
+    typeData := typeInfo.TypeData;
     if Kind = tkClass then
     begin
 {$IFDEF AUTOREFCOUNT}
@@ -4129,7 +4110,7 @@ begin
         Result := True;
         Break;
       end;
-      typeData := GetTypeData(typeData.IntfParent^);
+      typeData := typeData.IntfParent^.TypeData;
     end;
   end;
   if Result then
@@ -4928,7 +4909,7 @@ begin
   Guard.CheckTypeKind<T>(tkEnumeration, 'T');
 
   typeInfo := System.TypeInfo(T);
-  data := GetTypeData(typeInfo);
+  data := typeInfo.TypeData;
   Guard.CheckNotNull(data, 'data');
 
   if (argumentValue < data.MinValue) or (argumentValue > data.MaxValue) then
@@ -5003,12 +4984,12 @@ begin
   Guard.CheckTypeKind<T>(tkSet, 'T');
 
   typeInfo := System.TypeInfo(T);
-  data := GetTypeData(typeInfo);
+  data := typeInfo.TypeData;
   Guard.CheckNotNull(data, 'data');
 
   if Assigned(data.CompType) then
   begin
-    data := GetTypeData(data.CompType^);
+    data := data.CompType^.TypeData;
     maxValue := (1 shl (data.MaxValue - data.MinValue + 1)) - 1;
   end
   else
@@ -6263,7 +6244,7 @@ end;
 
 class function TActivator.CreateInstance(typeInfo: PTypeInfo): TObject;
 begin
-  Result := CreateInstance(GetTypeData(typeInfo).ClassType);
+  Result := CreateInstance(typeInfo.TypeData.ClassType);
 end;
 
 class function TActivator.CreateInstance(const typeName: string): TObject;

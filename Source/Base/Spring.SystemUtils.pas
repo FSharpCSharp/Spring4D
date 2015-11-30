@@ -216,7 +216,7 @@ var
   typeInfo: PTypeInfo;
 begin
   typeInfo := TEnum.GetEnumTypeInfo<T>;
-  Result := GetTypeData(typeInfo);
+  Result := typeInfo.TypeData;
 end;
 
 class function TEnum.ConvertToInteger<T>(const value: T): Integer;
