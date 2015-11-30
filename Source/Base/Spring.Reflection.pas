@@ -957,12 +957,9 @@ begin
   Guard.CheckNotNull(instance, 'instance');
 {$ENDIF}
 
-  if TryGetType(instance.ClassInfo, rttiType) then
-  begin
-    field := rttiType.GetField(fieldName);
-    if Assigned(field) then
-      field.SetValue(instance, value);
-  end;
+  if TryGetType(instance.ClassInfo, rttiType)
+    and rttiType.TryGetField(fieldName, field) then
+    field.SetValue(instance, value);
 end;
 
 class procedure TType.SetMemberValue(const instance: TObject;
@@ -973,7 +970,7 @@ var
   prop: TRttiProperty;
 begin
   // TODO: TValue conversion ?
-  if TType.TryGetType(instance.ClassInfo, rttiType) then
+  if TryGetType(instance.ClassInfo, rttiType) then
     if rttiType.TryGetField(name, field) then
       field.SetValue(instance, value)
     else if rttiType.TryGetProperty(name, prop) then
@@ -990,12 +987,9 @@ begin
   Guard.CheckNotNull(instance, 'instance');
 {$ENDIF}
 
-  if TryGetType(instance.ClassInfo, rttiType) then
-  begin
-    prop := rttiType.GetProperty(propertyName);
-    if Assigned(prop) then
-      prop.SetValue(instance, value);
-  end;
+  if TryGetType(instance.ClassInfo, rttiType)
+    and rttiType.TryGetProperty(propertyName, prop) then
+    prop.SetValue(instance, value);
 end;
 
 class function TType.TryGetInterfaceType(const guid: TGUID;
@@ -1012,13 +1006,9 @@ begin
       begin
         fInterfaceTypes := TCollections.CreateDictionary<TGuid, TRttiInterfaceType>;
         for item in fContext.GetTypes do
-        begin
-          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags)
+          if item.IsInterface and TRttiInterfaceType(item).HasGuid
             and not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then
-          begin
             fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
-          end;
-        end;
       end;
     finally
       fSection.Leave;
