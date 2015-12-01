@@ -250,7 +250,7 @@ begin
     TProxyTest.Suite,
     TStorageTests.Suite,
     TTestInterception.Suite,
-    TTestMocks.Suite,
+    TTestAutoMockingExtension.Suite,
     TParameterMatchingTests.Suite,
     ReceivedChecksForInputValueOfVarParams.Suite,
     MockReturnsOtherMockInDynamicMode.Suite,

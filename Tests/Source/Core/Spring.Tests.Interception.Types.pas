@@ -297,6 +297,10 @@ type
     procedure SafeCallMethod; virtual; safecall; abstract;
   end;
 
+  ICommandChannel<T: class> = interface(IInvokable)
+    function Send(const item: T): Integer;
+  end;
+
 implementation
 
 uses
