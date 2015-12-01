@@ -29,6 +29,7 @@ __recovery/
 *.bak
 *.ficfg
 *.mes
+Library/
 Logs/
 Samples/**/*.exe
 Tests/Bin/

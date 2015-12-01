@@ -140,6 +140,8 @@ begin
         end;
         tkVariant:
           idxArr[Integer(indizes[i].AsVariant)] := i;
+        tkDynArray:
+          idxArr[TArray<Integer>(indizes[i].GetReferenceToRawData^)[0]] := i;
       else
         raise ENotSupportedException.Create('type not supported');
       end;
@@ -196,6 +198,8 @@ begin
       IInterface(PPointer(@Result)^) := TIndexWrapper.Create(index);
     tkVariant:
       PVariant(@Result)^ := index;
+    tkDynArray:
+      TArray<Integer>(PPointer(@Result)^) := TArray<Integer>.Create(index);
   else
     raise ENotSupportedException.Create('type not supported');
   end;

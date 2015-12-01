@@ -104,10 +104,12 @@ function ArgsEqual(const left, right: TArray<TValue>): Boolean;
 var
   i: Integer;
 begin
-  Result := Length(left) = Length(right);
+  if Length(left) <> Length(right) then
+    Exit(False);
   for i := Low(left) to High(left) do
     if not left[i].Equals(right[i]) then
       Exit(False);
+  Result := True;
 end;
 
 function ArgsToString(const values: TArray<TValue>): string;

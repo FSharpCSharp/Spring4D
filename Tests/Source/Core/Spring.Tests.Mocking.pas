@@ -39,6 +39,7 @@ type
     procedure OutParameterCanBeSet;
     procedure VerifyChecksParameterValuesProperly;
     procedure TestVariant;
+    procedure TestDynArray;
   end;
 
   ReceivedChecksForInputValueOfVarParams = class(TTestCase)
@@ -74,6 +75,7 @@ type
     procedure Test3(const s1: string; o: TObject; const s2: string);
     procedure Test4(const s1: string; o: ITest; const s2: string);
     procedure TestVariant(const v: Variant);
+    procedure TestDynArray(const v: TArray<string>);
   end;
 
   IVarParamTest = interface
@@ -179,6 +181,21 @@ begin
   i := 42;
   mock.Instance.Test(i);
   CheckEquals(43, i);
+end;
+
+procedure TParameterMatchingTests.TestDynArray;
+var
+  mock: Mock<IMockTest>;
+  arr: TArray<string>;
+begin
+  arr := TArray<string>.Create('test');
+  mock.Setup.Executes.When.TestDynArray(Arg.IsAny<TArray<string>>);
+  mock.Instance.TestDynArray(nil);
+  mock.Instance.TestDynArray(arr);
+  mock.Received(2).TestDynArray(Arg.IsAny<TArray<string>>);
+  mock.Received(1).TestDynArray(nil);
+  mock.Received(1).TestDynArray(arr);
+  Pass;
 end;
 
 procedure TParameterMatchingTests.TestVariant;

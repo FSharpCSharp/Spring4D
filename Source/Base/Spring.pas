@@ -3429,6 +3429,20 @@ begin
     Result := False;
 end;
 
+function EqualsDynArray2DynArray(const left, right: TValue): Boolean;
+var
+  i: Integer;
+begin
+  if PPointer(left.GetReferenceToRawData)^ = PPointer(right.GetReferenceToRawData)^ then
+    Exit(True);
+  if left.GetArrayLength <> right.GetArrayLength then
+    Exit(False);
+  for i := 0 to left.GetArrayLength - 1 do
+    if not left.GetArrayElement(i).Equals(right.GetArrayElement(i)) then
+      Exit(False);
+  Result := True;
+end;
+
 {$REGION 'Equals functions'}
 type
   TEqualsFunc = function(const left, right: TValue): Boolean;
@@ -3664,7 +3678,7 @@ const
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef
-      EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
+      EqualsFail, EqualsFail, EqualsDynArray2DynArray, EqualsFail, EqualsFail,
       // tkPointer, tkProcedure
       EqualsFail, EqualsFail
     ),
