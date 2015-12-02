@@ -1631,7 +1631,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TTypeInfoHelper}
+  {$REGION 'TTypeInfoHelper'}
 
   TTypeInfoHelper = record helper for TTypeInfo
   public
@@ -1644,7 +1644,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TTypeDataHelper}
+  {$REGION 'TTypeDataHelper'}
 
   TTypeDataHelper = record helper for TTypeData
   public
