@@ -151,7 +151,8 @@ begin
   ]);
 
   RegisterTests('Spring.Base.Reflection', [
-    TTestType.Suite
+    TTestType.Suite,
+    TTestMethodHelper.Suite
   ]);
 
   RegisterTests('Spring.Base.Reflection.ValueConverters', [

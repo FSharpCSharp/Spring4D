@@ -510,11 +510,26 @@ type
 
   {$REGION 'TRttiMethodHelper'}
 
+  {$HINTS OFF}
+  TRttiMethodHack = class(TRttiMethod)
+  private
+    function GetParameters: TArray<TRttiParameter>; override;
+  end;
+  {$HINTS ON}
+
   TRttiMethodHelper = class helper for TRttiMethod
   private
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+    procedure FixParameters(var parameters: TArray<TRttiParameter>);
     function GetReturnTypeHandle: PTypeInfo;
   public
+    /// <summary>
+    ///   Returns the parameters of the method
+    /// </summary>
+    /// <remarks>
+    ///   This fixes RSP-9824
+    /// </remarks>
+    function GetParameters: TArray<TRttiParameter>; inline;
 
     /// <summary>
     ///   Invokes the method.
@@ -4639,6 +4654,36 @@ begin
     and (typeInfo.Kind = tkInterface)
     and IsAssignableFrom(typeInfo, value.TypeInfo) then
     PValueData(@value).FTypeInfo := typeInfo;
+end;
+
+type
+  TRttiObjectHelper = class helper for TRttiObject
+  private
+    procedure SetParent(const parent: TRttiObject); inline;
+  end;
+
+procedure TRttiObjectHelper.SetParent(const parent: TRttiObject);
+begin
+  Self.FParent := parent;
+end;
+
+procedure TRttiMethodHelper.FixParameters(
+  var parameters: TArray<TRttiParameter>);
+var
+  i: Integer;
+begin
+  for i := 0 to High(parameters) do
+    parameters[i].SetParent(Self);
+end;
+
+function TRttiMethodHack.GetParameters: TArray<TRttiParameter>; //FI:W521
+begin //FI:W519
+end;
+
+function TRttiMethodHelper.GetParameters: TArray<TRttiParameter>;
+begin
+  Result := TRttiMethodHack(Self).GetParameters;
+  FixParameters(Result);
 end;
 
 function TRttiMethodHelper.GetReturnTypeHandle: PTypeInfo;
