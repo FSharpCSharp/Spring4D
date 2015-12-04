@@ -135,7 +135,10 @@ begin
   if TryLoadFromStreamSmart(stream, pic) then
     Result := pic
   else
+  begin
     pic.Free;
+    Result := TValue.Empty;
+  end;
 end;
 
 {$ENDREGION}

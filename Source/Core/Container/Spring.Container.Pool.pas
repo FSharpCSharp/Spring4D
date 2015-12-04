@@ -171,7 +171,7 @@ var
 begin
   if not fMinPoolsize.HasValue then
     Exit;
-  for i := 0 to fMinPoolsize.Value - 1 do
+  for i := 0 to fMinPoolsize.Value - 1 do //FI:W528
   begin
     instance := AddNewInstance(context);
     fAvailableList.Enqueue(instance);

@@ -5144,8 +5144,8 @@ end;
 
 {$REGION 'Nullable'}
 
-class function Nullable.GetNull: Nullable;
-begin
+class function Nullable.GetNull: Nullable; //FI:W521
+begin //FI:W519
 end;
 
 {$ENDREGION}
@@ -6168,6 +6168,7 @@ begin
     tkClass: {$IFNDEF AUTOREFCOUNT}PObject(@fValue).Free;{$ELSE}PObject(@fValue).DisposeOf;{$ENDIF}
     tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
   end;
+  inherited;
 end;
 
 function TOwned<T>.Invoke: T;

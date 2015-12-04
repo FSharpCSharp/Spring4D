@@ -1313,15 +1313,10 @@ begin
 end;
 
 function TRttiTypeHelper.GetGenericTypeDefinition: string;
-var
-  i: Integer;
 begin
   if not IsGenericType then
     raise EInvalidOperationException.CreateResFmt(@SNotGenericType, [Name]);
-  Result := Copy(Name, 0, Pos('<', Name));
-  for i := 1 to High(GetGenericArguments) do
-    Result := Result + ',';
-  Result := Result + '>';
+  Result := Copy(Name, 0, Pos('<', Name)) + DupeString(',', High(GetGenericArguments)) + '>';
 end;
 
 function TRttiTypeHelper.GetAncestorCount: Integer;
@@ -1356,7 +1351,7 @@ function TRttiTypeHelper.GetBaseTypes: IReadOnlyList<TRttiType>;
 var
   count: Integer;
   t: TRttiType;
-  baseTypes: TArray<TRttiType>;
+  types: TArray<TRttiType>;
 begin
   count := 0;
   t := Self;
@@ -1366,17 +1361,17 @@ begin
     t := t.BaseType;
   end;
 
-  SetLength(baseTypes, count);
+  SetLength(types, count);
   count := 0;
   t := Self;
   while Assigned(t) do
   begin
-    baseTypes[count] := t;
+    types[count] := t;
     Inc(count);
     t := t.BaseType;
   end;
 
-  Result := TArrayIterator<TRttiType>.Create(baseTypes);
+  Result := TArrayIterator<TRttiType>.Create(types);
 end;
 
 function TRttiTypeHelper.GetInterfaces: IEnumerable<TRttiInterfaceType>;

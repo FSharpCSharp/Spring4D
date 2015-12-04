@@ -109,7 +109,7 @@ begin
     if PNativeInt(AObject)^ > $FFFF then
       Result := PNativeInt(AObject)^ = PNativeInt(PNativeInt(AObject)^ + vmtSelfPtr)^;
   except
-  end;
+  end; //FI:W501
 end;
 
 

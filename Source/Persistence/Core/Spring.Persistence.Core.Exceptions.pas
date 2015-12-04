@@ -150,6 +150,7 @@ type
   ///   (ADO, DBX, ...) specific information.
   /// </summary>
   IORMExceptionHandler = interface
+    ['{2ACF3197-867F-49FB-9E37-0A35742D66B0}']
     /// <summary>
     ///   Returns specific exception instance for given (driver specific)
     ///   exception (mostly its message or code is used) raised as outer or

@@ -287,7 +287,7 @@ begin
 end;
 
 procedure TSingletonPerThreadLifetimeManager.Release(const instance: TValue);
-begin
+begin //FI:W519
 end;
 
 {$ENDREGION}

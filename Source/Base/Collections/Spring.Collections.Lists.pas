@@ -1063,7 +1063,7 @@ begin
   fCollection := collection;
 end;
 
-destructor TCollectionList<T>.Destroy;
+destructor TCollectionList<T>.Destroy; //FI:W504
 begin
   // not calling inherited because we don't want to call Clear
 end;

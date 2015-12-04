@@ -39,7 +39,7 @@ type
     procedure CheckEquals(expected, actual: UInt64; msg: string = ''); overload;
   {$ENDIF}
   public
-    procedure CheckEqualsString(expected, actual: string; msg: string = '');
+    procedure CheckEqualsString(const expected, actual: string; msg: string = '');
     procedure CheckException(expected: ExceptionClass; const method: TProc; const msg: string = '');
     procedure Pass; inline;
     function RegisterExpectedMemoryLeak(p: Pointer): Boolean; inline;
@@ -92,7 +92,7 @@ begin
 end;
 {$ENDIF}
 
-procedure TAbstractTestHelper.CheckEqualsString(expected, actual, msg: string);
+procedure TAbstractTestHelper.CheckEqualsString(const expected, actual: string; msg: string);
 
   procedure EqualsFail(index: Integer); overload;
   const

@@ -536,7 +536,7 @@ end;
 
 
 procedure DummyRegister(const classes: array of TClass);
-begin
+begin //FI:W519
   //Does nothing but the classes are already referenced which forces RTTI
   //generation (linker doesn't strip them)
 end;
