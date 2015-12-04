@@ -482,10 +482,12 @@ type
   private
     function GetIsGetter: Boolean;
     function GetIsSetter: Boolean;
+    function GetParameterCount: Integer;
     function InternalGetParameters: IEnumerable<TRttiParameter>;
   public
     property IsGetter: Boolean read GetIsGetter;
     property IsSetter: Boolean read GetIsSetter;
+    property ParameterCount: Integer read GetParameterCount;
     property Parameters: IEnumerable<TRttiParameter> read InternalGetParameters;
   end;
 
@@ -1711,6 +1713,11 @@ begin
         Exit(True);
     end;
   Result := False;
+end;
+
+function TRttiMethodHelper.GetParameterCount: Integer;
+begin
+  Result := Length(GetParameters);
 end;
 
 function TRttiMethodHelper.InternalGetParameters: IEnumerable<TRttiParameter>;
