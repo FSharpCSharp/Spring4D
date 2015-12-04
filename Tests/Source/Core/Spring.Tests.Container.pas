@@ -100,6 +100,9 @@ type
 
     procedure TestResolveFuncWithTwoTypes;
     procedure TestResolveUnknownClasses;
+
+    procedure TestResolveComponentDoesNotFallbackToTObject;
+    procedure TestResolveComponentDoesCallOverriddenConstructor;
   end;
 
   // Same Service, Different Implementations
@@ -770,6 +773,54 @@ begin
   disposed := False;
   FreeAndNil(fContainer);
   CheckTrue(disposed);
+end;
+
+type
+  TTestComponent = class(TComponent);
+
+  TTestComponent2 = class(TComponent)
+  private
+    fConstructorCalled: Boolean;
+  public
+    constructor Create(owner: TComponent); override;
+  end;
+
+constructor TTestComponent2.Create(owner: TComponent);
+begin
+  inherited;
+  fConstructorCalled := True;
+end;
+
+procedure TTestSimpleContainer.TestResolveComponentDoesCallOverriddenConstructor;
+var
+  obj: TTestComponent2;
+begin
+  fContainer.RegisterType<TTestComponent2>;
+  fContainer.Build;
+  obj := fContainer.Resolve<TTestComponent2>;
+  try
+    CheckIs(obj, TTestComponent2);
+    CheckTrue(obj.fConstructorCalled);
+    CheckNull(obj.Owner);
+  finally
+    obj.Free;
+  end;
+end;
+
+procedure TTestSimpleContainer.TestResolveComponentDoesNotFallbackToTObject;
+var
+  obj: TComponent;
+begin
+  fContainer.RegisterType<TTestComponent>;
+  fContainer.Build;
+  obj := fContainer.Resolve<TTestComponent>;
+  try
+    CheckIs(obj, TTestComponent);
+    Check(obj.ComponentStyle = [csInheritable]);
+    CheckNull(obj.Owner);
+  finally
+    obj.Free;
+  end;
 end;
 
 procedure TTestSimpleContainer.TestResolveFuncWithTwoTypes;
