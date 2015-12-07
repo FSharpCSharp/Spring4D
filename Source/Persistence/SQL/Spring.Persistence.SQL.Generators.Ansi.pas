@@ -618,15 +618,15 @@ end;
 
 procedure TAnsiSQLGenerator.ParseFullTablename(const fullTableName: string; out tableName, schemaName: string);
 var
-  pos: Integer;
+  i: Integer;
 begin
-  pos := PosEx('.', fullTableName);
+  i := Pos('.', fullTableName);
   tableName := fullTableName;
   schemaName := '';
-  if pos > 1 then
+  if i > 1 then
   begin
-    schemaName := Copy(fullTableName, 1, pos - 1);
-    tableName := Copy(fullTableName, pos + 1, Length(fullTableName) - 1);
+    schemaName := Copy(fullTableName, 1, i - 1);
+    tableName := Copy(fullTableName, i + 1, Length(fullTableName) - 1);
   end;
 end;
 
