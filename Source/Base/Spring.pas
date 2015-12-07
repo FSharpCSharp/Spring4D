@@ -2157,6 +2157,10 @@ function VarIsNullOrEmpty(const value: Variant): Boolean;
 /// </summary>
 function GetFieldTable(ClassType: TClass): TFieldTable;
 
+{$IFNDEF DELPHIXE3_UP}
+function Pos(const SubStr, Str: UnicodeString; Offset: Integer): Integer; overload;
+{$ENDIF}
+
   {$ENDREGION}
 
 
@@ -2642,6 +2646,14 @@ function VarIsNullOrEmpty(const value: Variant): Boolean;
 begin
   Result := FindVarData(value).VType in [varEmpty, varNull];
 end;
+
+{$IFNDEF DELPHIXE3_UP}
+function Pos(const SubStr, Str: UnicodeString; Offset: Integer): Integer;
+asm
+  jmp PosEx
+end;
+{$ENDIF}
+
 
 {$ENDREGION}
 
