@@ -280,7 +280,7 @@ end;
 
 procedure TADOConnectionAdapterTest.TestDisconnect;
 begin
-  fMockConnectionObject.Setup.Returns([adStateConnecting, adStateConnecting,
+  fMockConnectionObject.Setup.Returns<Integer>([adStateConnecting, adStateConnecting,
     adStateOpen]).When(Args.Any).Get_State;
   fAdapter.Connection.ConnectionObject := fMockConnectionObject;
 
@@ -299,11 +299,11 @@ begin
   CheckException(EADOAdapterException,
     procedure begin fAdapter.IsConnected end);
 
-  fMockConnectionObject.Setup.Returns([adStateConnecting, adStateConnecting,
+  fMockConnectionObject.Setup.Returns<Integer>([adStateConnecting, adStateConnecting,
     adStateOpen, adStateOpen]).When(Args.Any).Get_State;
   CheckTrue(fAdapter.IsConnected);
 
-  fMockConnectionObject.Setup.Returns([adStateConnecting, adStateConnecting,
+  fMockConnectionObject.Setup.Returns<Integer>([adStateConnecting, adStateConnecting,
     adStateClosed, adStateClosed]).When(Args.Any).Get_State;
   CheckFalse(fAdapter.IsConnected);
 end;
@@ -360,7 +360,7 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_EDatabaseError;
 var
-  exc, result: Managed<Exception>;
+  exc, result: Owned<Exception>;
 begin
   exc := EDatabaseError.Create('');
   result := SUT.GetAdapterException(exc, 'message');
@@ -371,7 +371,7 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_EOleSysError;
 var
-  exc, result: Managed<Exception>;
+  exc, result: Owned<Exception>;
 begin
   exc := EOleException.Create('', -1, '', '', 0);
   result := SUT.GetAdapterException(exc, 'message');
@@ -382,7 +382,7 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_ESafecallException;
 var
-  exc, result: Managed<Exception>;
+  exc, result: Owned<Exception>;
 begin
   exc := ESafecallException.Create('');
   result := SUT.GetAdapterException(exc, 'message');
@@ -393,7 +393,7 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_Others_Return_Nil;
 var
-  exc, result: Managed<Exception>;
+  exc, result: Owned<Exception>;
 begin
   exc := Exception.Create('');
   result := SUT.GetAdapterException(exc, '');
