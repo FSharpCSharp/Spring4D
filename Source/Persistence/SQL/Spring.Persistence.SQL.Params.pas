@@ -44,11 +44,10 @@ type
   ///   Represents query parameter.
   /// </summary>
   TDBParam = class
-  private
+  protected
     fName: string;
     fValue: TValue;
     fParamType: TFieldType;
-  protected
     function TypeInfoToFieldType(typeInfo: PTypeInfo): TFieldType; virtual;
   public
     constructor Create(const name: string; const value: TValue); virtual;
