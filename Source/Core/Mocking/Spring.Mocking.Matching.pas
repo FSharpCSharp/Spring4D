@@ -131,7 +131,11 @@ begin
         tkClass:
         begin
           idxArr[indizes[i].AsType<TIndexWrapper>.fIndex] := i;
+{$IFNDEF AUTOREFCOUNT}
           indizes[i].AsType<TIndexWrapper>.Free;
+{$ELSE}
+          indizes[i].AsType<TIndexWrapper>.DisposeOf;
+{$ENDIF}
         end;
         tkInterface:
         begin
@@ -186,10 +190,12 @@ begin
   case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
     tkInteger, tkChar, tkWChar, tkEnumeration, tkSet, tkInt64:
       PByte(@Result)^ := index;
+{$IFNDEF NEXTGEN}
     tkLString:
       PAnsiString(@Result)^ := AnsiString(IntToStr(index));
     tkWString:
       PWideString(@Result)^ := IntToStr(index);
+{$ENDIF}
     tkUString:
       PUnicodeString(@Result)^ := IntToStr(index);
     tkClass:
