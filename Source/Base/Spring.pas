@@ -2050,6 +2050,17 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TType'}
+
+  TType = class
+    class function HasWeakRef<T>: Boolean; inline; static;
+    class function IsManaged<T>: Boolean; inline; static;
+    class function Kind<T>: TTypeKind; inline; static;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
@@ -2120,8 +2131,6 @@ function IsLazyType(typeInfo: PTypeInfo): Boolean;
 ///   passed as pointer.
 /// </remarks>
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
-
-function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 
 /// <summary>
 ///   Compares two TValue instances.
@@ -2465,11 +2474,6 @@ begin
     Assert(False, 'Unsupported type'); { TODO -o##jwp -cEnhance : add more context to the assert }
     Result := -1;
   end;
-end;
-
-function GetTypeKind(typeInfo: PTypeInfo): TTypeKind;
-begin
-  Result := typeInfo.Kind;
 end;
 
 procedure FinalizeValue(const value; typeInfo: PTypeInfo);
@@ -4873,36 +4877,16 @@ end;
 
 class procedure Guard.CheckTypeKind<T>(expectedTypeKind: TTypeKind;
   const argumentName: string);
-{$IFNDEF DELPHIXE7_UP}
-var
-  typeKind: TTypeKind;
-{$ENDIF}
 begin
-{$IFDEF DELPHIXE7_UP}
-  if System.GetTypeKind(T) <> expectedTypeKind then
-    RaiseArgumentException(System.GetTypeKind(T), argumentName);
-{$ELSE}
-  typeKind := GetTypeKind(TypeInfo(T));
-  if typeKind <> expectedTypeKind then
-    RaiseArgumentException(typeKind, argumentName);
-{$ENDIF}
+  if TType.Kind<T> <> expectedTypeKind then
+    RaiseArgumentException(TType.Kind<T>, argumentName);
 end;
 
 class procedure Guard.CheckTypeKind<T>(expectedTypeKinds: TTypeKinds;
   const argumentName: string);
-{$IFNDEF DELPHIXE7_UP}
-var
-  typeKind: TTypeKind;
-{$ENDIF}
 begin
-{$IFDEF DELPHIXE7_UP}
-  if not (System.GetTypeKind(T) in expectedTypeKinds) then
-    RaiseArgumentException(System.GetTypeKind(T), argumentName);
-{$ELSE}
-  typeKind := GetTypeKind(TypeInfo(T));
-  if not (typeKind in expectedTypeKinds) then
-    RaiseArgumentException(typeKind, argumentName);
-{$ENDIF}
+  if not (TType.Kind<T> in expectedTypeKinds) then
+    RaiseArgumentException(TType.Kind<T>, argumentName);
 end;
 
 class procedure Guard.CheckFalse(condition: Boolean; const msg: string);
@@ -5268,7 +5252,7 @@ begin
   if not other.HasValue then
     Exit(False);
 
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkInteger, tkEnumeration:
     begin
       case SizeOf(T) of
@@ -5484,7 +5468,7 @@ end;
 destructor TLazy<T>.Destroy;
 begin
   inherited;
-  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkClass then
+  if TType.Kind<T> = tkClass then
 {$IFNDEF AUTOREFCOUNT}
     if fOwnsObjects then
       FreeAndNil(fValue);
@@ -5610,7 +5594,7 @@ begin
     value := valueFactory;
     if PPointer(@value)^ = nil then
       raise EInvalidOperationException.CreateRes(@SValueFactoryReturnedNil);
-    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+    case TType.Kind<T> of
       tkClass:
         if TInterlocked.CompareExchange(PObject(@target)^, PObject(@value)^, TObject(nil)) <> nil then
           PObject(@value)^.Free;
@@ -6207,7 +6191,7 @@ end;
 constructor TOwned<T>.Create;
 begin
   inherited Create;
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkClass: PObject(@fValue)^ := TActivator.CreateInstance(TypeInfo(T));
     tkPointer: PPointer(@fValue)^ := AllocMem(GetTypeSize(GetTypeData(TypeInfo(T)).RefType^));
   end;
@@ -6221,7 +6205,7 @@ end;
 
 destructor TOwned<T>.Destroy;
 begin
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkClass: {$IFNDEF AUTOREFCOUNT}PObject(@fValue).Free;{$ELSE}PObject(@fValue).DisposeOf;{$ENDIF}
     tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
   end;
@@ -6241,7 +6225,7 @@ end;
 class operator Owned<T>.Implicit(const value: T): Owned<T>;
 begin
   Result.fValue := value;
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkClass, tkPointer: Result.fFinalizer := TFinalizer.Create(Result.fValue);
   end;
 end;
@@ -6264,7 +6248,7 @@ end;
 
 destructor Owned<T>.TFinalizer.Destroy;
 begin
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkClass: {$IFNDEF AUTOREFCOUNT}TObject(fValue).Free;{$ELSE}TObject(fValue).DisposeOf;{$ENDIF}
     tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
   end;
@@ -6909,7 +6893,7 @@ begin
   fData[index] := Default(T);
   if index <> n then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if TType.HasWeakRef<T> then
     begin
       for i := index to n - 1 do
         fData[i] := fData[i + 1];
@@ -6943,7 +6927,7 @@ begin
     fData[i] := Default(T);
   if index <> n then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if TType.HasWeakRef<T> then
     begin
       for i := index to n - count do
         fData[i] := fData[i + count];
@@ -6973,7 +6957,7 @@ begin
   if n <> System.Length(items) then
     Exit(False);
   Result := True;
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkInteger:
       for i := 0 to n - 1 do
         if PInteger(@fData[i])^ <> PInteger(@items[i])^ then
@@ -6995,7 +6979,7 @@ begin
   if n <> System.Length(items) then
     Exit(False);
   Result := True;
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkInteger:
       for i := 0 to n - 1 do
         if PInteger(@fData[i])^ <> PInteger(@items[i])^ then
@@ -7076,7 +7060,7 @@ end;
 
 function Vector<T>.IndexOf(const item: T): Integer;
 begin
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkInteger: Result := InternalIndexOfInt(PInteger(@item)^);
     tkUString: Result := InternalIndexOfStr(PUnicodeString(@item)^);
   else
@@ -7096,7 +7080,7 @@ begin
   SetLength(fData, count + 1);
   if index <> count then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if TType.HasWeakRef<T> then
     begin
       for i := count - 1 downto index do
         fData[i + 1] := fData[i];
@@ -7175,7 +7159,7 @@ begin
   SetLength(fData, count + len);
   if index <> count then
 {$IFDEF WEAKREF}
-    if {$IFDEF DELPHIXE7_UP}System.HasWeakRef(T){$ELSE}HasWeakRef(TypeInfo(T)){$ENDIF} then
+    if TType.HasWeakRef<T> then
     begin
       for i := count - 1 downto index do
         fData[i + len] := fData[i];
@@ -7184,10 +7168,10 @@ begin
 {$ENDIF}
     begin
       System.Move(fData[index], fData[index + len], (count - index) * SizeOf(T));
-      if {$IFDEF DELPHIXE7_UP}System.IsManagedType(T){$ELSE}Rtti.IsManaged(TypeInfo(T)){$ENDIF} then
+      if TType.IsManaged<T> then
         System.FillChar(fData[index], len * SizeOf(T), 0);
     end;
-  if {$IFDEF DELPHIXE7_UP}System.IsManagedType(T){$ELSE}Rtti.IsManaged(TypeInfo(T)){$ENDIF} then
+  if TType.IsManaged<T> then
   begin
     for i := Low(items) to High(items) do
     begin
@@ -7365,6 +7349,42 @@ begin
   GetLocaleFormatSettings(LOCALE_SYSTEM_DEFAULT, Result);
 end;
 {$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TType'}
+
+class function TType.HasWeakRef<T>: Boolean;
+begin
+{$IFDEF DELPHIXE7_UP}
+  Result := System.HasWeakRef(T);
+{$ELSE}
+  {$IFDEF WEAKREF}
+  Result := TypInfo.HasWeakRef(TypeInfo(T));
+  {$ELSE}
+  Result := False;
+  {$ENDIF}
+{$ENDIF}
+end;
+
+class function TType.IsManaged<T>: Boolean;
+begin
+{$IFDEF DELPHIXE7_UP}
+  Result := System.IsManagedType(T);
+{$ELSE}
+  Result := Rtti.IsManaged(TypeInfo(T));
+{$ENDIF}
+end;
+
+class function TType.Kind<T>: TTypeKind;
+begin
+{$IFDEF DELPHIXE7_UP}
+  Result := System.GetTypeKind(T);
+{$ELSE}
+  Result := PTypeInfo(TypeInfo(T)).Kind;
+{$ENDIF}
+end;
 
 {$ENDREGION}
 

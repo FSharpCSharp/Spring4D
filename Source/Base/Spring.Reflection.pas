@@ -55,7 +55,7 @@ type
   ///     during the lifetime.
   ///   </note>
   /// </remarks>
-  TType = class
+  TType = class(Spring.TType)
   strict private
     class var fContext: TRttiContext;
     class var fSection: TCriticalSection;

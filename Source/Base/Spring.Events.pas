@@ -623,7 +623,11 @@ var
   handler: TMethodPointer;
 begin
   for handler in Handlers do
-    if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
+{$IFDEF DELPHI2010}
+    if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
+{$ELSE}
+    if TType.Kind<T> = tkInterface then
+{$ENDIF}
       TAction<IInterface>(action)(MethodPointerToMethodReference(handler))
     else
       TAction<TMethodPointer>(action)(handler);
@@ -631,7 +635,11 @@ end;
 
 procedure TEvent<T>.Add(handler: T);
 begin
-  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
+{$IFDEF DELPHI2010}
+  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
+{$ELSE}
+  if TType.Kind<T> = tkInterface then
+{$ENDIF}
     inherited Add(MethodReferenceToMethodPointer(handler))
   else
     inherited Add(PMethodPointer(@handler)^);
@@ -639,7 +647,11 @@ end;
 
 procedure TEvent<T>.Remove(handler: T);
 begin
-  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
+{$IFDEF DELPHI2010}
+  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
+{$ELSE}
+  if TType.Kind<T> = tkInterface then
+{$ENDIF}
     inherited Remove(MethodReferenceToMethodPointer(handler))
   else
     inherited Remove(PMethodPointer(@handler)^);
@@ -647,7 +659,11 @@ end;
 
 function TEvent<T>.GetInvoke: T;
 begin
-  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkInterface then
+{$IFDEF DELPHI2010}
+  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
+{$ELSE}
+  if TType.Kind<T> = tkInterface then
+{$ENDIF}
     TProc(PPointer(@Result)^) := Self
   else
     PMethodPointer(@Result)^ := fInvoke;

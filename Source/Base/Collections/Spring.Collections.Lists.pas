@@ -345,15 +345,14 @@ constructor TList<T>.Create;
 begin
   inherited Create;
 {$IFDEF WEAKREF}
-  if HasWeakRef then
+  if TType.HasWeakRef<T> then
     fArrayManager := TManualArrayManager<T>.Create
   else
 {$ENDIF}
-    case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
-      tkClass: TArrayManager<TObject>(fArrayManager) := TMoveArrayManager<TObject>.Create;
+    if TType.Kind<T> = tkClass then
+      TArrayManager<TObject>(fArrayManager) := TMoveArrayManager<TObject>.Create
     else
       fArrayManager := TMoveArrayManager<T>.Create;
-    end;
 end;
 
 constructor TList<T>.Create(const values: array of T);
@@ -402,12 +401,10 @@ end;
 function TList<T>.GetEnumerator: IEnumerator<T>;
 begin
 {$IFNDEF DELPHI2010}
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
-    tkClass: IEnumerator<TObject>(Result) :=
-      TList<TObject>.TEnumerator.Create(TList<TObject>(Self));
+  if TType.Kind<T> = tkClass then
+    IEnumerator<TObject>(Result) := TList<TObject>.TEnumerator.Create(TList<TObject>(Self))
   else
     Result := TEnumerator.Create(Self);
-  end;
 {$ELSE}
   Result := TEnumerator.Create(Self);
 {$ENDIF}
@@ -554,7 +551,7 @@ begin
     fArrayManager.Finalize(fItems, index, count);
   end;
 
-  if not IsManaged{$IFDEF WEAKREF} and not HasWeakRef{$ENDIF} then
+  if not TType.IsManaged<T>{$IFDEF WEAKREF} and not TType.HasWeakRef<T>{$ENDIF} then
     System.Move(values[0], fItems[index], count * SizeOf(T))
   else
     for i := Low(values) to High(values) do
@@ -590,7 +587,7 @@ begin
       fArrayManager.Finalize(fItems, index, list.fCount);
     end;
 
-    if not IsManaged{$IFDEF WEAKREF} and not HasWeakRef{$ENDIF} then
+    if not TType.IsManaged<T>{$IFDEF WEAKREF} and not TType.HasWeakRef<T>{$ENDIF} then
       System.Move(list.fItems[0], fItems[index], list.fCount * SizeOf(T))
     else
       for i := Low(list.fItems) to list.fCount - 1 do

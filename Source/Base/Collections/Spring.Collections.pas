@@ -2351,58 +2351,58 @@ type
   /// </summary>
   TCollections = class
   public
-    class function CreateList<T>: IList<T>; overload; static;
-    class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateList<T>: IList<T>; overload; static; inline;
+    class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload; static; inline;
     class function CreateList<T>(const comparer: TComparison<T>): IList<T>; overload; static;
     class function CreateList<T>(const values: array of T): IList<T>; overload; static;
     class function CreateList<T>(const values: IEnumerable<T>): IList<T>; overload; static;
-    class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static;
-    class function CreateList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean): IList<T>; overload; static;
-    class function CreateList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean): IList<T>; overload; static;
-    class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
-    class function CreateObjectList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
-    class function CreateObjectList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static; inline;
+    class function CreateList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean): IList<T>; overload; static; inline;
+    class function CreateList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean): IList<T>; overload; static; inline;
+    class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static; inline;
+    class function CreateObjectList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean = True): IList<T>; overload; static; inline;
+    class function CreateObjectList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean = True): IList<T>; overload; static; inline;
     class function CreateObjectList<T: class>(const values: array of T; ownsObjects: Boolean = True): IList<T>; overload; static;
-    class function CreateObjectList<T: class>(const values: IEnumerable<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
-    class function CreateInterfaceList<T: IInterface>: IList<T>; overload; static;
-    class function CreateInterfaceList<T: IInterface>(const comparer: IComparer<T>): IList<T>; overload; static;
-    class function CreateInterfaceList<T: IInterface>(const comparer: TComparison<T>): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const values: IEnumerable<T>; ownsObjects: Boolean = True): IList<T>; overload; static; inline;
+    class function CreateInterfaceList<T: IInterface>: IList<T>; overload; static; inline;
+    class function CreateInterfaceList<T: IInterface>(const comparer: IComparer<T>): IList<T>; overload; static; inline;
+    class function CreateInterfaceList<T: IInterface>(const comparer: TComparison<T>): IList<T>; overload; static; inline;
     class function CreateInterfaceList<T: IInterface>(const values: array of T): IList<T>; overload; static;
-    class function CreateInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static; inline;
 
-    class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer): IDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(dictionary: Generics.Collections.TDictionary<TKey, TValue>; ownership: TOwnershipType): IDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static; inline;
+    class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload; static; inline;
+    class function CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static; inline;
+    class function CreateDictionary<TKey, TValue>(capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static; inline;
+    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>; overload; static; inline;
+    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer): IDictionary<TKey, TValue>; overload; static; inline;
+    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static; inline;
+    class function CreateDictionary<TKey, TValue>(dictionary: Generics.Collections.TDictionary<TKey, TValue>; ownership: TOwnershipType): IDictionary<TKey, TValue>; overload; static; inline;
 
-    class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
-    class function CreateMultiMap<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
-    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static; inline;
+    class function CreateMultiMap<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static; inline;
+    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static; inline;
     class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships;
-      const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
+      const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static; inline;
 
-    class function CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>; overload; static;
+    class function CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>; overload; static; inline;
     class function CreateBidiDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>;
-      const valueComparer: IEqualityComparer<TValue>): IBidiDictionary<TKey, TValue>; overload; static;
+      const valueComparer: IEqualityComparer<TValue>): IBidiDictionary<TKey, TValue>; overload; static; inline;
 
-    class function CreateStack<T>: IStack<T>; overload; static;
-    class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
+    class function CreateStack<T>: IStack<T>; overload; static; inline;
+    class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static; inline;
     class function CreateStack<T>(const values: array of T): IStack<T>; overload; static;
-    class function CreateStack<T>(const values: IEnumerable<T>): IStack<T>; overload; static;
+    class function CreateStack<T>(const values: IEnumerable<T>): IStack<T>; overload; static; inline;
 
-    class function CreateQueue<T>: IQueue<T>; overload; static;
-    class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload; static;
+    class function CreateQueue<T>: IQueue<T>; overload; static; inline;
+    class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload; static; inline;
     class function CreateQueue<T>(const values: array of T): IQueue<T>; overload; static;
-    class function CreateQueue<T>(const values: IEnumerable<T>): IQueue<T>; overload; static;
+    class function CreateQueue<T>(const values: IEnumerable<T>): IQueue<T>; overload; static; inline;
 
-    class function CreateSet<T>: ISet<T>; overload; static;
-    class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
+    class function CreateSet<T>: ISet<T>; overload; static; inline;
+    class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static; inline;
     class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
-    class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
+    class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static; inline;
   end;
 
   TEnumerable = class
@@ -2552,7 +2552,7 @@ end;
 class function TCollections.CreateList<T>: IList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
-  case System.GetTypeKind(T) of
+  case TType.Kind<T> of
     tkClass: IList<TObject>(Result) := TFoldedObjectList<T>.Create(False);
     tkInterface: IList<IInterface>(Result) := TFoldedInterfaceList<T>.Create;
   else
@@ -2566,7 +2566,7 @@ end;
 class function TCollections.CreateList<T>(const comparer: IComparer<T>): IList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
-  case System.GetTypeKind(T) of
+  case TType.Kind<T> of
     tkClass: IList<TObject>(Result) :=
       TFoldedObjectList<T>.Create(IComparer<TObject>(comparer), False);
     tkInterface: IList<IInterface>(Result) :=
@@ -2583,7 +2583,7 @@ class function TCollections.CreateList<T>(
   const comparer: TComparison<T>): IList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
-  case System.GetTypeKind(T) of
+  case TType.Kind<T> of
     tkClass: IList<TObject>(Result) :=
       TFoldedObjectList<T>.Create(IComparer<TObject>(PPointer(@comparer)^), False);
     tkInterface: IList<IInterface>(Result) :=

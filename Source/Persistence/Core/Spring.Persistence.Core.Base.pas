@@ -356,7 +356,7 @@ end;
 
 destructor TDriverConnectionAdapter<T>.Destroy;
 begin
-  if {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} = tkClass then
+  if TType.Kind<T> = tkClass then
     if AutoFreeConnection then
       PObject(@fConnection).Free;
   inherited Destroy;

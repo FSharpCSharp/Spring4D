@@ -187,7 +187,7 @@ end;
 class function TMatcherFactory.WrapIndex<T>(index: Integer): T;
 begin
   Result := Default(T);
-  case {$IFDEF DELPHIXE7_UP}System.GetTypeKind(T){$ELSE}GetTypeKind(TypeInfo(T)){$ENDIF} of
+  case TType.Kind<T> of
     tkInteger, tkChar, tkWChar, tkEnumeration, tkSet, tkInt64:
       PByte(@Result)^ := index;
 {$IFNDEF NEXTGEN}
