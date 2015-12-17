@@ -1793,7 +1793,7 @@ type
     fFinalizer: IInterface;
   public
     class operator Implicit(const value: T): Owned<T>;
-    class operator Implicit(const value: Owned<T>): T;
+    class operator Implicit(const value: Owned<T>): T; inline;
     property Value: T read fValue;
   end;
 
