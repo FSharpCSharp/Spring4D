@@ -4136,9 +4136,9 @@ begin
     if Kind = tkClass then
     begin
 {$IFDEF AUTOREFCOUNT}
-      Self.FData.FValueData.ExtractRawData(@obj);
+      TValueData(Self).FValueData.ExtractRawData(@obj);
 {$ELSE}
-      obj := TObject(Self.FData.FAsObject);
+      obj := TObject(TValueData(Self).FAsObject);
 {$ENDIF}
       Exit(obj.GetInterface(typeData.Guid, Intf));
     end;
