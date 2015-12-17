@@ -3152,6 +3152,7 @@ begin
   if fState = STATE_ENUMERATOR then
   begin
     fIndex := 0;
+    fState := STATE_RUNNING;
   end;
 
   if fState = STATE_RUNNING then

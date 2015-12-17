@@ -112,6 +112,7 @@ begin
     TTestWhere.Suite,
     TTestSelect.Suite,
     TTestRange.Suite,
+    TTestRepeated.Suite,
     TTestConcat.Suite,
     TTestSelectMany.Suite,
     TTestAny.Suite,
