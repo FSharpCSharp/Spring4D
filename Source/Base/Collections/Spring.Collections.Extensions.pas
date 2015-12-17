@@ -772,9 +772,7 @@ var
   i: Integer;
 begin
   inherited Create;
-  SetLength(fValues, Length(values));
-  for i := Low(values) to High(values) do
-    fValues[i] := values[i];
+  fValues := TArray.Copy<T>(values);
 end;
 
 constructor TArrayIterator<T>.Create(const values: TArray<T>);
