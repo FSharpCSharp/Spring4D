@@ -565,6 +565,189 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Procedure types'}
+
+  /// <summary>
+  ///   Represents a logical predicate.
+  /// </summary>
+  /// <param name="arg">
+  ///   the value needs to be determined.
+  /// </param>
+  /// <returns>
+  ///   Returns <c>True</c> if the value was accepted, otherwise, returns <c>
+  ///   False</c>.
+  /// </returns>
+  /// <remarks>
+  ///   <note type="tip">
+  ///     This type redefined the <see cref="SysUtils|TPredicate`1">
+  ///     SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.
+  ///   </note>
+  /// </remarks>
+  /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
+  {$M+}
+  TPredicate<T> = reference to function(const arg: T): Boolean;
+  {$M-}
+
+  /// <summary>
+  ///   Represents an anonymous method that has a single parameter and does not
+  ///   return a value.
+  /// </summary>
+  /// <seealso cref="TActionProc&lt;T&gt;" />
+  /// <seealso cref="TActionMethod&lt;T&gt;" />
+  {$M+}
+  TAction<T> = reference to procedure(const arg: T);
+
+  TAction<T1, T2> = reference to procedure(const arg1: T1; const arg2: T2);
+
+  TAction<T1, T2, T3> = reference to procedure(const arg1: T1; const arg2: T2; const arg3: T3);
+
+  TAction<T1, T2, T3, T4> = reference to procedure(const arg1: T1; const arg2: T2; const arg3: T3; const arg4: T4);
+  {$M-}
+
+  /// <summary>
+  ///   Represents a procedure that has a single parameter and does not return
+  ///   a value.
+  /// </summary>
+  /// <seealso cref="TAction&lt;T&gt;" />
+  /// <seealso cref="TActionMethod&lt;T&gt;" />
+  TActionProc<T> = procedure(const arg: T);
+
+  /// <summary>
+  ///   Represents a instance method that has a single parameter and does not
+  ///   return a value.
+  /// </summary>
+  /// <seealso cref="TAction&lt;T&gt;" />
+  /// <seealso cref="TActionProc&lt;T&gt;" />
+  TActionMethod<T> = procedure(const arg: T) of object;
+
+  /// <summary>
+  ///   Represents a anonymous method that has the same signature as
+  ///   TNotifyEvent.
+  /// </summary>
+  {$M+}
+  TNotifyProc = reference to procedure(Sender: TObject);
+  {$M-}
+
+  /// <summary>
+  ///   An event type like TNotifyEvent that also has a generic item parameter.
+  /// </summary>
+  TNotifyEvent<T> = procedure(Sender: TObject; const item: T) of object;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Multicast Event'}
+
+  TMethodPointer = procedure of object;
+
+  IEvent = interface
+    ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
+  {$REGION 'Property Accessors'}
+    function GetCanInvoke: Boolean;
+    function GetInvoke: TMethodPointer;
+    function GetEnabled: Boolean;
+    function GetOnChanged: TNotifyEvent;
+    procedure SetEnabled(const value: Boolean);
+    procedure SetOnChanged(const value: TNotifyEvent);
+  {$ENDREGION}
+
+    procedure Add(const handler: TMethodPointer);
+    procedure Remove(const handler: TMethodPointer);
+
+    /// <summary>
+    ///   Removes all event handlers which were registered by an instance.
+    /// </summary>
+    procedure RemoveAll(instance: Pointer);
+
+    /// <summary>
+    ///   Clears all event handlers.
+    /// </summary>
+    procedure Clear;
+
+    /// <summary>
+    ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
+    ///   Enabled</see> and contains any event handler. Otherwise returns <b>
+    ///   False</b>.
+    /// </summary>
+    property CanInvoke: Boolean read GetCanInvoke;
+
+    /// <summary>
+    ///   Gets the value indicates whether the multicast event is enabled, or
+    ///   sets the value to enable or disable the event.
+    /// </summary>
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+
+    property Invoke: TMethodPointer read GetInvoke;
+    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+  end;
+
+  /// <summary>
+  ///   Represents a multicast event.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The event handler type must be an instance procedural type such as
+  ///   TNotifyEvent.
+  /// </typeparam>
+  IEvent<T> = interface(IEvent)
+  {$REGION 'Property Accessors'}
+    function GetInvoke: T;
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Adds an event handler to the list.
+    /// </summary>
+    procedure Add(handler: T);
+
+    /// <summary>
+    ///   Removes an event handler if it was added to the event.
+    /// </summary>
+    procedure Remove(handler: T);
+
+    /// <summary>
+    ///   Invokes all event handlers.
+    /// </summary>
+    property Invoke: T read GetInvoke;
+  end;
+
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
+  Event<T> = record
+  private
+    fInstance: IEvent<T>;
+    function GetCanInvoke: Boolean;
+    function GetEnabled: Boolean;
+    function GetInvoke: T;
+    function GetOnChanged: TNotifyEvent;
+    procedure SetEnabled(const value: Boolean);
+    procedure SetOnChanged(value: TNotifyEvent);
+    procedure EnsureInitialized;
+  public
+    class function Create: Event<T>; static;
+
+    procedure Add(const handler: T);
+    procedure Remove(const handler: T);
+    procedure RemoveAll(instance: Pointer);
+    procedure Clear;
+
+    property CanInvoke: Boolean read GetCanInvoke;
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+    property Invoke: T read GetInvoke;
+    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+
+    class operator Implicit(const value: IEvent<T>): Event<T>;
+    class operator Implicit(var value: Event<T>): IEvent<T>;
+    class operator Implicit(var value: Event<T>): T;
+    class operator Implicit(const value: T): Event<T>;
+  end;
+{$ENDIF}
+
+  INotifyEvent = IEvent<TNotifyEvent>;
+
+  INotifyEvent<T> = interface(IEvent<TNotifyEvent<T>>)
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Interfaces'}
 
   /// <summary>
@@ -652,71 +835,6 @@ type
     /// </summary>
     property IsEmpty: Boolean read GetIsEmpty;
   end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Procedure types'}
-
-  /// <summary>
-  ///   Represents a logical predicate.
-  /// </summary>
-  /// <param name="arg">
-  ///   the value needs to be determined.
-  /// </param>
-  /// <returns>
-  ///   Returns <c>True</c> if the value was accepted, otherwise, returns <c>
-  ///   False</c>.
-  /// </returns>
-  /// <remarks>
-  ///   <note type="tip">
-  ///     This type redefined the <see cref="SysUtils|TPredicate`1">
-  ///     SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.
-  ///   </note>
-  /// </remarks>
-  /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
-  {$M+}
-  TPredicate<T> = reference to function(const arg: T): Boolean;
-  {$M-}
-
-  /// <summary>
-  ///   Represents an anonymous method that has a single parameter and does not
-  ///   return a value.
-  /// </summary>
-  /// <seealso cref="TActionProc&lt;T&gt;" />
-  /// <seealso cref="TActionMethod&lt;T&gt;" />
-  {$M+}
-  TAction<T> = reference to procedure(const arg: T);
-  {$M-}
-
-  /// <summary>
-  ///   Represents a procedure that has a single parameter and does not return
-  ///   a value.
-  /// </summary>
-  /// <seealso cref="TAction&lt;T&gt;" />
-  /// <seealso cref="TActionMethod&lt;T&gt;" />
-  TActionProc<T> = procedure(const arg: T);
-
-  /// <summary>
-  ///   Represents a instance method that has a single parameter and does not
-  ///   return a value.
-  /// </summary>
-  /// <seealso cref="TAction&lt;T&gt;" />
-  /// <seealso cref="TActionProc&lt;T&gt;" />
-  TActionMethod<T> = procedure(const arg: T) of object;
-
-  /// <summary>
-  ///   Represents a anonymous method that has the same signature as
-  ///   TNotifyEvent.
-  /// </summary>
-  {$M+}
-  TNotifyProc = reference to procedure(Sender: TObject);
-  {$M-}
-
-  /// <summary>
-  ///   An event type like TNotifyEvent that also has a generic item parameter.
-  /// </summary>
-  TNotifyEvent<T> = procedure(Sender: TObject; const item: T) of object;
 
   {$ENDREGION}
 
@@ -1428,124 +1546,6 @@ type
     function TryGetTarget(out target: T): Boolean;
     property Target: T read GetTarget write SetTarget;
     property IsAlive: Boolean read GetIsAlive;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Multicast Event'}
-
-  TMethodPointer = procedure of object;
-
-  IEvent = interface
-    ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
-  {$REGION 'Property Accessors'}
-    function GetCanInvoke: Boolean;
-    function GetInvoke: TMethodPointer;
-    function GetEnabled: Boolean;
-    function GetOnChanged: TNotifyEvent;
-    procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(const value: TNotifyEvent);
-  {$ENDREGION}
-
-    procedure Add(const handler: TMethodPointer);
-    procedure Remove(const handler: TMethodPointer);
-    procedure RemoveAll(instance: Pointer);
-    procedure Clear;
-
-    /// <summary>
-    ///   Returns <b>True</b> when the event will do anything because it is <see cref="Spring|IEvent.Enabled">
-    ///   Enabled</see> and contains any event handler. Otherwise returns <b>
-    ///   False</b>.
-    /// </summary>
-    property CanInvoke: Boolean read GetCanInvoke;
-
-    /// <summary>
-    ///   Gets the value indicates whether the multicast event is enabled, or
-    ///   sets the value to enable or disable the event.
-    /// </summary>
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-
-    property Invoke: TMethodPointer read GetInvoke;
-    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
-  end;
-
-  /// <summary>
-  ///   Represents a multicast event.
-  /// </summary>
-  /// <typeparam name="T">
-  ///   The event handler type must be an instance procedural type such as
-  ///   TNotifyEvent.
-  /// </typeparam>
-  IEvent<T> = interface(IEvent)
-  {$REGION 'Property Accessors'}
-    function GetInvoke: T;
-  {$ENDREGION}
-
-    /// <summary>
-    ///   Adds an event handler to the list.
-    /// </summary>
-    procedure Add(handler: T);
-
-    /// <summary>
-    ///   Removes an event handler if it was added to the event.
-    /// </summary>
-    procedure Remove(handler: T);
-
-    /// <summary>
-    ///   Removes all event handlers which were registered by an instance.
-    /// </summary>
-    procedure RemoveAll(instance: Pointer);
-
-    /// <summary>
-    ///   Clears all event handlers.
-    /// </summary>
-    procedure Clear;
-
-    /// <summary>
-    ///   Iterates all event handlers and perform the specified action on each
-    ///   one.
-    /// </summary>
-    procedure ForEach(const action: TAction<T>);
-
-    /// <summary>
-    ///   Invokes all event handlers.
-    /// </summary>
-    property Invoke: T read GetInvoke;
-  end;
-
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
-  Event<T> = record
-  private
-    fInstance: IEvent<T>;
-    function GetCanInvoke: Boolean;
-    function GetEnabled: Boolean;
-    function GetInvoke: T;
-    function GetOnChanged: TNotifyEvent;
-    procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(value: TNotifyEvent);
-    procedure EnsureInitialized;
-  public
-    class function Create: Event<T>; static;
-
-    procedure Add(const handler: T);
-    procedure Remove(const handler: T);
-    procedure RemoveAll(instance: Pointer);
-    procedure Clear;
-
-    property CanInvoke: Boolean read GetCanInvoke;
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-    property Invoke: T read GetInvoke;
-    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
-
-    class operator Implicit(const value: IEvent<T>): Event<T>;
-    class operator Implicit(var value: Event<T>): IEvent<T>;
-    class operator Implicit(var value: Event<T>): T;
-    class operator Implicit(const value: T): Event<T>;
-  end;
-{$ENDIF}
-
-  INotifyEvent<T> = interface(IEvent<TNotifyEvent<T>>)
   end;
 
   {$ENDREGION}
