@@ -232,7 +232,7 @@ function THashAlgorithmBase.ComputeHashOfFile(const fileName: string): TBuffer;
 var
   stream: TStream;
 begin
-  stream := TFileStream.Create(fileName, fmOpenRead or fmShareExclusive);
+  stream := TFileStream.Create(fileName, fmOpenRead or fmShareDenyNone);
   try
     Result := ComputeHash(stream);
   finally
