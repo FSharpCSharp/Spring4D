@@ -521,24 +521,27 @@ type
 
   {$REGION 'TRttiMethodHelper'}
 
+{$IF CompilerVersion < 31}
   {$HINTS OFF}
   TRttiMethodHack = class(TRttiMethod)
   private
     function GetParameters: TArray<TRttiParameter>; override;
   end;
   {$HINTS ON}
+{$IFEND}
 
   TRttiMethodHelper = class helper for TRttiMethod
   private
+    function GetReturnTypeHandle: PTypeInfo;
+{$IF CompilerVersion < 31}
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
     procedure FixParameters(const parameters: TArray<TRttiParameter>);
-    function GetReturnTypeHandle: PTypeInfo;
   public
     /// <summary>
     ///   Returns the parameters of the method
     /// </summary>
     /// <remarks>
-    ///   This fixes RSP-9824
+    ///   This fixes the incorrect Parent property of TRttiParameter (RSP-9824).
     /// </remarks>
     function GetParameters: TArray<TRttiParameter>; inline;
 
@@ -546,7 +549,7 @@ type
     ///   Invokes the method.
     /// </summary>
     /// <remarks>
-    ///   This method fixes the missing interface cast support in TValue.
+    ///   This fixes the missing interface cast support in TValue (QC#123729).
     /// </remarks>
     function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
 
@@ -554,7 +557,7 @@ type
     ///   Invokes the method.
     /// </summary>
     /// <remarks>
-    ///   This method fixes the missing interface cast support in TValue.
+    ///   This fixes the missing interface cast support in TValue (QC#123729).
     /// </remarks>
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
 
@@ -562,9 +565,11 @@ type
     ///   Invokes the method.
     /// </summary>
     /// <remarks>
-    ///   This method fixes the missing interface cast support in TValue.
+    ///   This fixes the missing interface cast support in TValue (QC#123729).
     /// </remarks>
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+{$IFEND}
+  public
 
     /// <summary>
     ///   Returns the PTypeInfo of the ReturnType if assigned; otherwise
@@ -4729,7 +4734,14 @@ var
 begin
   Result := TryConvert(System.TypeInfo(T), value);
   if Result then
-    value.Get<T>(targetValue);
+  begin
+    if TValueData(Self).FTypeInfo = nil then
+    begin
+      FillChar(Pointer(@targetValue)^, SizeOf(T), 0);
+      Exit;
+    end;
+    ExtractRawData(@targetValue);
+  end;
 end;
 
 {$ENDREGION}
@@ -4737,6 +4749,18 @@ end;
 
 {$REGION 'TRttiMethodHelper'}
 
+function TRttiMethodHelper.GetReturnTypeHandle: PTypeInfo;
+var
+  returnType: TRttiType;
+begin
+  returnType := Self.ReturnType;
+  if Assigned(returnType) then
+    Result := returnType.Handle
+  else
+    Result := nil;
+end;
+
+{$IF CompilerVersion < 31}
 procedure TRttiMethodHelper.DispatchValue(const value: TValue;
   typeInfo: PTypeInfo);
 type
@@ -4778,17 +4802,6 @@ begin
   FixParameters(Result);
 end;
 
-function TRttiMethodHelper.GetReturnTypeHandle: PTypeInfo;
-var
-  returnType: TRttiType;
-begin
-  returnType := Self.ReturnType;
-  if Assigned(returnType) then
-    Result := returnType.Handle
-  else
-    Result := nil;
-end;
-
 function TRttiMethodHelper.Invoke(Instance: TObject;
   const Args: array of TValue): TValue;
 begin
@@ -4818,6 +4831,7 @@ begin
   else
     Result := Self.DispatchInvoke(Instance, Args);
 end;
+{$IFEND}
 
 {$ENDREGION}
 
