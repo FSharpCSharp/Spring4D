@@ -350,6 +350,7 @@ type
   TValueHelper = record helper for TValue
   private
     function GetTypeKind: TTypeKind; inline;
+    function GetValueType: TRttiType;
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
     class procedure RaiseConversionError(source, target: PTypeInfo); static;
   public
@@ -507,6 +508,11 @@ type
     ///   value is an empty reference type.
     /// </remarks>
     property Kind: TTypeKind read GetTypeKind;
+
+    /// <summary>
+    ///   Returns the TRttiType of the stored value.
+    /// </summary>
+    property ValueType: TRttiType read GetValueType;
   end;
 
   {$ENDREGION}
@@ -1653,11 +1659,15 @@ type
   {$REGION 'TTypeInfoHelper'}
 
   TTypeInfoHelper = record helper for TTypeInfo
+  strict private
+    function GetRttiType: TRttiType; inline;
   public
 {$IFNDEF DELPHIXE3_UP}
     function TypeData: PTypeData; inline;
 {$ENDIF}
     function TypeName: string; inline;
+
+    property RttiType: TRttiType read GetRttiType;
   end;
 
   {$ENDREGION}
@@ -2057,9 +2067,21 @@ type
   {$REGION 'TType'}
 
   TType = class
+  private
+    class var fContext: TRttiContext;
+  public
+    class constructor Create;
+    class destructor Destroy;
+
     class function HasWeakRef<T>: Boolean; inline; static;
     class function IsManaged<T>: Boolean; inline; static;
     class function Kind<T>: TTypeKind; inline; static;
+
+    class function GetType<T>: TRttiType; overload; static; inline;
+    class function GetType(typeInfo: Pointer): TRttiType; overload; static; inline;
+    class function GetType(classType: TClass): TRttiInstanceType; overload; static; inline;
+
+    class property Context: TRttiContext read fContext;
   end;
 
   {$ENDREGION}
@@ -2204,7 +2226,6 @@ uses
   Spring.VirtualClass;
 
 var
-  Context: TRttiContext;
   VirtualClasses: TVirtualClasses;
   WeakReferences: TWeakReferences;
 
@@ -2788,7 +2809,7 @@ var
   a: TCustomAttribute;
   setter: Pointer;
 begin
-  t := Context.GetType(classType);
+  t := TType.GetType(classType);
   for f in t.GetFields do
     for a in f.GetAttributes do
       if a is DefaultAttribute then
@@ -3448,7 +3469,7 @@ var
   leftRec, rightRec: Pointer;
   leftValue, rightValue: TValue;
 begin
-  recordType := Context.GetType(left.TypeInfo);
+  recordType := left.TypeInfo.RttiType;
   for method in recordType.GetMethods('&op_Equality') do
   begin
     parameters := method.GetParameters;
@@ -3979,6 +4000,11 @@ begin
     Result := TValueData(Self).FTypeInfo.Kind
   else
     Result := tkUnknown;
+end;
+
+function TValueHelper.GetValueType: TRttiType;
+begin
+  Result := TypeInfo.RttiType;
 end;
 
 function TValueHelper.IsFloat: Boolean;
@@ -5970,6 +5996,11 @@ end;
 
 {$REGION 'TTypeInfoHelper'}
 
+function TTypeInfoHelper.GetRttiType: TRttiType;
+begin
+  Result := TType.GetType(@Self);
+end;
+
 {$IFNDEF DELPHIXE3_UP}
 function TTypeInfoHelper.TypeData: PTypeData;
 begin
@@ -6333,7 +6364,7 @@ class function TActivator.CreateInstance(const typeName: string;
 var
   rttiType: TRttiType;
 begin
-  rttiType := Context.FindType(typeName);
+  rttiType := TType.Context.FindType(typeName);
   Result := CreateInstance(TRttiInstanceType(rttiType), arguments).AsObject;
 end;
 
@@ -6350,7 +6381,7 @@ class function TActivator.CreateInstance(classType: TClass;
 var
   rttiType: TRttiType;
 begin
-  rttiType := Context.GetType(classType);
+  rttiType := TType.GetType(classType);
   Result := CreateInstance(TRttiInstanceType(rttiType), arguments).AsObject;
 end;
 
@@ -6373,7 +6404,7 @@ begin
   if ConstructorCache.TryGetValue(classType, Result) then
     Exit;
 
-  for method in Context.GetType(classType).GetMethods do
+  for method in TType.GetType(classType).GetMethods do
   begin
     if not method.IsConstructor then
       Continue;
@@ -7374,6 +7405,31 @@ end;
 
 
 {$REGION 'TType'}
+
+class constructor TType.Create;
+begin
+  fContext := TRttiContext.Create;
+end;
+
+class destructor TType.Destroy;
+begin
+  fContext.Free;
+end;
+
+class function TType.GetType(typeInfo: Pointer): TRttiType;
+begin
+  Result := fContext.GetType(typeInfo);
+end;
+
+class function TType.GetType(classType: TClass): TRttiInstanceType;
+begin
+  Result := TRttiInstanceType(fContext.GetType(classType));
+end;
+
+class function TType.GetType<T>: TRttiType;
+begin
+  Result := fContext.GetType(TypeInfo(T));
+end;
 
 class function TType.HasWeakRef<T>: Boolean;
 begin
