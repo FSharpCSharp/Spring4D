@@ -18,4 +18,4 @@ Known issues
 Some warnings when compiling for mobile compilers.
 The deployment of the unit test project might fail for mobile compilers (iOS ARM and Android).
 
-Copyright (c) 2009 - 2014 Spring4D Team
+Copyright (c) 2009 - 2016 Spring4D Team
