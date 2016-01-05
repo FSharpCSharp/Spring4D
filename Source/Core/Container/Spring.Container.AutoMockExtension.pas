@@ -95,9 +95,12 @@ begin
     and mockedType.IsInterface and not mockedType.IsType<IInterface> then
     Exit(True);
 
-  if dependency.TargetType.IsInterface
-    and not fKernel.Registry.HasService(dependency.TypeInfo) then
-    Exit(True);
+  if dependency.TargetType.IsInterface then
+    if argument.IsEmpty then
+      Exit(not fKernel.Registry.HasService(dependency.TypeInfo))
+    else
+      if argument.IsType<string> then
+        Exit(not fKernel.Registry.HasService(dependency.TypeInfo, argument.AsString));
 
   Result := False;
 end;
