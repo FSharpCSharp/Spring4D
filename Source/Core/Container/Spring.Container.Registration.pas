@@ -324,7 +324,7 @@ begin
 {$ENDIF}
 
   internalServiceName := serviceName;
-  Validate(model.ComponentType, TType.GetType(serviceType), internalServiceName);
+  Validate(model.ComponentType, serviceType.RttiType, internalServiceName);
   model.Services[internalServiceName] := serviceType;
   fServiceTypeMappings.Add(serviceType, model);
   fServiceNameMappings.Add(internalServiceName, model);
@@ -459,15 +459,12 @@ end;
 
 function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
-var
-  componentType: TRttiType;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
 {$ENDIF}
 
-  componentType := TType.GetType(componentTypeInfo);
-  Result := TComponentModel.Create(componentType);
+  Result := TComponentModel.Create(componentTypeInfo.RttiType);
   fModels.Add(Result);
 end;
 

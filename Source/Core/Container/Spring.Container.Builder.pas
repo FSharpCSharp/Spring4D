@@ -276,7 +276,7 @@ begin
       if TType.IsAssignable(attribute.ServiceType, targetType.Handle) then
       begin
         if attribute.ServiceType <> targetType.Handle then
-          targetType := TType.GetType(attribute.ServiceType);
+          targetType := attribute.ServiceType.RttiType;
         dependency := TDependencyModel.Create(targetType, target);
       end
       else

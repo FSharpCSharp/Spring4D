@@ -90,6 +90,7 @@ type
 implementation
 
 uses
+  TypInfo,
   Spring.Reflection,
   Spring.ResourceStrings;
 
@@ -101,7 +102,7 @@ constructor TInterfaceProxy.Create(proxyType: PTypeInfo;
   const options: TProxyGenerationOptions; const target: IInterface;
   const interceptors: array of IInterceptor);
 begin
-  if not TType.GetType(proxyType).Methods.Any then
+  if not proxyType.RttiType.Methods.Any then
     raise EInvalidOperationException.CreateResFmt(
       @STypeParameterContainsNoRtti, [proxyType.Name]);
 

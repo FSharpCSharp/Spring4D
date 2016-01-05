@@ -545,7 +545,6 @@ end;
 constructor TEvent.Create(typeInfo: PTypeInfo);
 var
   typeData: PTypeData;
-  ctx: TRttiContext;
   method: TRttiMethod;
 begin
   //TODO: If Embt ever adds TRttiMethodType.CreateImplementation this could be done in pure pascal way
@@ -563,7 +562,7 @@ begin
   end
   else if typeInfo.Kind = tkInterface then
   begin
-    method := ctx.GetType(typeInfo).GetMethod('Invoke');
+    method := typeInfo.RttiType.GetMethod('Invoke');
     if not Assigned(method) then
       raise EInvalidOperationException.CreateResFmt(@STypeParameterContainsNoRtti, [typeInfo.Name]);
     New(typeData);

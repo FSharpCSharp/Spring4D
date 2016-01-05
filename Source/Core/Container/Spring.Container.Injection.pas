@@ -170,7 +170,7 @@ var
 begin
   for i := Low(parameterTypes) to High(parameterTypes) do
     fDependencies[i] := TDependencyModel.Create(
-      TType.GetType(parameterTypes[i]), fDependencies[i].Target);
+      parameterTypes[i].RttiType, fDependencies[i].Target);
 end;
 
 function TInjectionBase.GetArguments: TArray<TValue>;

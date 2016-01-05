@@ -603,7 +603,7 @@ begin
   memberType := columnMember.MemberType.Handle;
   if GetLazyKind(memberType) <> lkRecord then
     raise EORMUnsupportedType.CreateFmt('Unsupported type: %s - expected Lazy<T>', [memberType.TypeName]);
-  targetType := TType.GetType(memberType).GetGenericArguments[0];
+  targetType := memberType.RttiType.GetGenericArguments[0];
   if targetType = nil then
     raise EORMUnsupportedType.CreateFmt('Unsupported type: %s - insufficient rtti', [memberType.TypeName]);
   Result := TValue.Empty;

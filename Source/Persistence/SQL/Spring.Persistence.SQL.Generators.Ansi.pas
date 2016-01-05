@@ -694,7 +694,7 @@ begin
       begin
         createField := field.Clone;
         try
-          createField.TypeInfo := TType.GetType(typeInfo).GetGenericArguments[0].Handle;
+          createField.TypeInfo := typeInfo.RttiType.GetGenericArguments[0].Handle;
           Result := GetSQLDataTypeName(createField);
         finally
           createField.Free;

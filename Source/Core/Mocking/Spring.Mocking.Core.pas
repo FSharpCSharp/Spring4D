@@ -166,7 +166,7 @@ begin
     SetLength(types, Length(args));
     for i := 0 to High(args) do
       types[i] := args[i].TypeInfo;
-    if TType.GetType(fTypeInfo).Methods.TryGetFirst(ctor,
+    if fTypeInfo.RttiType.Methods.TryGetFirst(ctor,
       TMethodFilters.IsConstructor and
       TMethodFilters.HasParameterTypes(types)) then
       ctor.Invoke(fProxy, args);
