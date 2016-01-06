@@ -76,7 +76,8 @@ begin
     TTestTuplesQuadruple.Suite,
     TTestOwned.Suite,
     TTestVector.Suite,
-    TTestValueHelper.Suite
+    TTestValueHelper.Suite,
+    TArrayTest.Suite
   ]);
 
 {$IFNDEF DELPHI2010}

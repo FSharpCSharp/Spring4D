@@ -963,8 +963,9 @@ begin
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
 {$ENDIF}
 
-  Result := inherited;
-//  TArray.BinarySearch<T>(fItems, item, Result, fComparer, index - count + 1, count);
+  if not TArray.BinarySearchUpperBound<T>(
+    fItems, item, Result, fComparer, index, count) then
+    Result := -1;
 end;
 
 procedure TSortedList<T>.Move(currentIndex, newIndex: Integer);
@@ -974,8 +975,7 @@ end;
 
 procedure TSortedList<T>.SetItem(index: Integer; const value: T);
 begin
-  Delete(index);
-  Add(value);
+  raise EInvalidOperationException.Create('SetItem');
 end;
 
 {$ENDREGION}

@@ -504,11 +504,21 @@ type
   end;
 {$ENDIF}
 
+  TArrayTest = class(TTestCase)
+  published
+    procedure TestBinarySearchUpperBound;
+    procedure TestBinarySearchUpperBoundSubRange;
+
+    procedure TestLastIndexOf;
+    procedure TestLastIndexOfSubRange;
+  end;
+
 implementation
 
 uses
   DateUtils,
   FmtBcd,
+  Generics.Defaults,
   SqlTimSt,
   SysUtils,
   Variants,
@@ -2902,6 +2912,52 @@ begin
   end;
 end;
 {$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayTest'}
+
+procedure TArrayTest.TestBinarySearchUpperBound;
+var
+  values: TArray<Integer>;
+  index: Integer;
+begin
+  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
+  CheckTrue(TArray.BinarySearchUpperBound<Integer>(values, 5, index));
+  CheckEquals(6, index);
+end;
+
+procedure TArrayTest.TestBinarySearchUpperBoundSubRange;
+var
+  values: TArray<Integer>;
+  index: Integer;
+begin
+  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
+  CheckTrue(TArray.BinarySearchUpperBound<Integer>(values, 5, index,
+    TComparer<Integer>.Default, 0, 6));
+  CheckEquals(5, index);
+end;
+
+procedure TArrayTest.TestLastIndexOf;
+var
+  values: TArray<Integer>;
+  index: Integer;
+begin
+  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
+  index := TArray.LastIndexOf<Integer>(values, 5);
+  CheckEquals(6, index);
+end;
+
+procedure TArrayTest.TestLastIndexOfSubRange;
+var
+  values: TArray<Integer>;
+  index: Integer;
+begin
+  values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
+  index := TArray.LastIndexOf<Integer>(values, 5, 0, 6);
+  CheckEquals(5, index);
+end;
 
 {$ENDREGION}
 
