@@ -154,6 +154,23 @@ type
     procedure Move(currentIndex, newIndex: Integer); override;
   end;
 
+  TSortedObjectList<T: class> = class(TSortedList<T>, ICollectionOwnership)
+  private
+    fOwnsObjects: Boolean;
+  {$REGION 'Property Accessors'}
+    function GetOwnsObjects: Boolean;
+    procedure SetOwnsObjects(const value: Boolean);
+  {$ENDREGION}
+  protected
+    procedure Changed(const item: T; action: TCollectionChangedAction); override;
+  public
+    constructor Create; override;
+    constructor Create(ownsObjects: Boolean); overload;
+    constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
+
+    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
+  end;
+
   TCollectionList<T: TCollectionItem> = class(TListBase<T>)
   private
     type
@@ -230,6 +247,16 @@ type
   end;
 
   TFoldedInterfaceList<T{: IInterface}> = class(TList<IInterface>)
+  protected
+    function GetElementType: PTypeInfo; override;
+  end;
+
+  TFoldedSortedObjectList<T{: class}> = class(TSortedObjectList<TObject>)
+  protected
+    function GetElementType: PTypeInfo; override;
+  end;
+
+  TFoldedSortedInterfaceList<T{: IInterface}> = class(TSortedList<IInterface>)
   protected
     function GetElementType: PTypeInfo; override;
   end;
@@ -864,17 +891,17 @@ end;
 
 function TSortedList<T>.Add(const item: T): Integer;
 var
-  lComparer: IComparer<T>;
+  comparer: IComparer<T>;
 begin
   Result := fCount;
   // This block improves performance when adding a sequence of an already sorted
   // collection at a cost of one comparison.
   if Result > 0 then
   begin
-    lComparer := fComparer;
+    comparer := fComparer;
     // Is new item greater than the last one?
-    if lComparer.Compare(fItems[Result - 1], item) > 0 then
-      TArray.BinarySearch<T>(fItems, item, Result, lComparer, 0, fCount);
+    if comparer.Compare(fItems[Result - 1], item) > 0 then
+      TArray.BinarySearch<T>(fItems, item, Result, comparer, 0, fCount);
     // If so, fCount is our insertion point
   end;
   inherited Insert(Result, item);
@@ -949,6 +976,51 @@ procedure TSortedList<T>.SetItem(index: Integer; const value: T);
 begin
   Delete(index);
   Add(value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedObjectList<T>'}
+
+constructor TSortedObjectList<T>.Create;
+begin
+  Create(True);
+end;
+
+constructor TSortedObjectList<T>.Create(ownsObjects: Boolean);
+begin
+  inherited Create;
+  fOwnsObjects := ownsObjects;
+end;
+
+constructor TSortedObjectList<T>.Create(const comparer: IComparer<T>;
+  ownsObjects: Boolean);
+begin
+  inherited Create(comparer);
+  fOwnsObjects := ownsObjects;
+end;
+
+procedure TSortedObjectList<T>.Changed(const item: T;
+  action: TCollectionChangedAction);
+begin
+  inherited Changed(item, action);
+  if OwnsObjects and (action = caRemoved) then
+{$IFNDEF AUTOREFCOUNT}
+    item.Free;
+{$ELSE}
+    item.DisposeOf;
+{$ENDIF}
+end;
+
+function TSortedObjectList<T>.GetOwnsObjects: Boolean;
+begin
+  Result := fOwnsObjects;
+end;
+
+procedure TSortedObjectList<T>.SetOwnsObjects(const value: Boolean);
+begin
+  fOwnsObjects := value;
 end;
 
 {$ENDREGION}
@@ -1251,6 +1323,30 @@ end;
 
 {$IFDEF DELPHIXE_UP}
 function TFoldedInterfaceList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedSortedObjectList<T>'}
+
+{$IFDEF DELPHIXE_UP}
+function TFoldedSortedObjectList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedSortedInterfaceList<T>'}
+
+{$IFDEF DELPHIXE_UP}
+function TFoldedSortedInterfaceList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
 end;
