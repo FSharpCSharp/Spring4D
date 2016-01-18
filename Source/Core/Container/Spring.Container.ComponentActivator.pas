@@ -40,7 +40,7 @@ type
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator)
   private
     fKernel: IKernel;
-    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fModel: TComponentModel;
   protected
     procedure ExecuteInjections(var instance: TValue; const context: ICreationContext); overload;

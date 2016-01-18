@@ -143,7 +143,7 @@ type
   /// </summary>
   TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
   private
-    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fContainer: TContainer;
     class var GlobalInstance: IServiceLocator;
     class procedure Init; static;
