@@ -335,7 +335,7 @@ begin
   fNames.RootDir := properties.GetValueOrDefault('Names.RootDir', 'RootDir');
   fNames.DebugDCUPath := properties.GetValueOrDefault('Names.DebugDCUPath', 'Debug DCU Path');
 
-  fExists := fRegistry.KeyExists(fKeys.BDS);
+  fExists := fRegistry.KeyExists(fKeys.LibraryKey);
   if fExists then
   begin
     EnsureOpenKey(fKeys.BDS);
