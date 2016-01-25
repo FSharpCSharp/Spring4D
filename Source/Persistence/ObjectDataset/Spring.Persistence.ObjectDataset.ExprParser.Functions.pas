@@ -212,7 +212,7 @@ begin
     function(const args: Variant): Variant
     begin
       Assert(VarArrayLength(Args) = 2, 'InStr requires 2 arguments');
-      Result := Pos(Args[0], Args[1]);
+      Result := Pos(string(Args[0]), string(Args[1]));
     end);
   RegisterFunction('Replace',
     function(const args: Variant): Variant
