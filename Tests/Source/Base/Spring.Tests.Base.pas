@@ -210,6 +210,8 @@ type
     fTestedTypeKinds: TTypeKinds;
     const
       PointerSize = SizeOf(Pointer);
+    type
+      TByteSet = set of Byte;
   protected
     procedure MatchType(const aTypeInfo: PTypeInfo; const aExpectedTypeKind: TTypeKind;
       const aExpectedTypeSize: Integer);
@@ -260,6 +262,7 @@ type
     procedure Test_GetTypeSize_PWideChar;
     procedure Test_GetTypeSize_Real;
     procedure Test_GetTypeSize_Set;
+    procedure Test_GetTypeSize_SetOfByte;
     procedure Test_GetTypeSize_ShortInt;
 {$IFNDEF NEXTGEN}
     procedure Test_GetTypeSize_ShortString;
@@ -1570,6 +1573,11 @@ end;
 procedure TTestSpringEventsMethods.Test_GetTypeSize_Set;
 begin
   MatchType(TypeInfo(TTypeKinds), tkSet, SizeOf(TTypeKinds));
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_SetOfByte;
+begin
+  MatchType(TypeInfo(TByteSet), tkSet, SizeOf(TByteSet));
 end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_Single;

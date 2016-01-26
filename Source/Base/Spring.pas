@@ -2137,6 +2137,11 @@ function IsLazyType(typeInfo: PTypeInfo): Boolean;
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
 
 /// <summary>
+///   Returns the size of the passed set type
+/// </summary>
+function GetSetSize(typeInfo: PTypeInfo): Integer;
+
+/// <summary>
 ///   Compares two TValue instances.
 /// </summary>
 function CompareValue(const left, right: TValue): Integer; overload;
@@ -2424,6 +2429,25 @@ begin
     Result := 0;
 end;
 
+function GetSetSize(typeInfo: PTypeInfo): Integer;
+var
+  typeData: PTypeData;
+  count: Integer;
+begin
+  typeData := GetTypeData(typeInfo);
+  typeData := GetTypeData(typeData.CompType^);
+  if typeData.MinValue = 0 then
+    case typeData.MaxValue of
+      0..7: Exit(1);
+      8..15: Exit(2);
+      16..31: Exit(4);
+    end;
+  count := typeData.MaxValue - typeData.MinValue + 1;
+  Result := count div 8;
+  if count mod 8 <> 0 then
+    Inc(Result);
+end;
+
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
 const
   COrdinalSizes: array[TOrdType] of Integer = (
@@ -2443,13 +2467,6 @@ const
 {$ENDIF}
     SizeOf(Comp){8},
     SizeOf(Currency){8});
-  CSetSizes: array[TOrdType] of Integer = (
-    SizeOf(ShortInt){1},
-    SizeOf(Byte){1},
-    SizeOf(SmallInt){2},
-    SizeOf(Word){2},
-    SizeOf(Integer){4},
-    SizeOf(Cardinal){4});
 begin
   case typeInfo.Kind of
 {$IFNDEF NEXTGEN}
@@ -2471,8 +2488,7 @@ begin
     tkVariant:
       Result := SizeOf(Variant);
     tkSet:
-      // big sets have no typeInfo for now
-      Result := CSetSizes[typeInfo.TypeData.OrdType];
+      Result := GetSetSize(typeInfo);
     tkRecord:
       Result := typeInfo.TypeData.RecSize;
     tkArray:
