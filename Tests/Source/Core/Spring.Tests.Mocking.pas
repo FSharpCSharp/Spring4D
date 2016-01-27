@@ -40,6 +40,8 @@ type
     procedure VerifyChecksParameterValuesProperly;
     procedure TestVariant;
     procedure TestDynArray;
+
+    procedure ReturnsMultipleValues;
   end;
 
   ReceivedChecksForInputValueOfVarParams = class(TTestCase)
@@ -181,6 +183,21 @@ begin
   i := 42;
   mock.Instance.Test(i);
   CheckEquals(43, i);
+end;
+
+procedure TParameterMatchingTests.ReturnsMultipleValues;
+var
+  mock: Mock<IChild>;
+begin
+  mock.Setup.Returns([1,2,3]).When.GetNumber;
+  CheckEquals(1, mock.Instance.GetNumber);
+  CheckEquals(2, mock.Instance.GetNumber);
+  CheckEquals(3, mock.Instance.GetNumber);
+  CheckEquals(0, mock.Instance.GetNumber);
+  mock.Received(4).GetNumber;
+  mock.Behavior := TMockBehavior.Strict;
+  ExpectedException := EMockException;
+  mock.Instance.GetNumber;
 end;
 
 procedure TParameterMatchingTests.TestDynArray;
