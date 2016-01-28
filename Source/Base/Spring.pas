@@ -2090,7 +2090,7 @@ type
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
-function SplitString(const s: string; delimiter: Char): TStringDynArray;
+function SplitString(const s, delimiters: string): TStringDynArray;
 {$ENDIF}
 
 {$IFNDEF DELPHIXE2_UP}
@@ -2233,21 +2233,33 @@ var
 {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
-function SplitString(const s: string; delimiter: Char): TStringDynArray;
+function SplitString(const s, delimiters: string): TStringDynArray;
 var
-  list: TStrings;
+  splitCount: Integer;
+  startIndex: Integer;
+  foundIndex: Integer;
   i: Integer;
 begin
-  list := TStringList.Create;
-  try
-    list.StrictDelimiter := True;
-    list.Delimiter := delimiter;
-    list.DelimitedText := s;
-    SetLength(Result, list.Count);
-    for i := 0 to list.Count - 1 do
-      Result[i] := list[i];
-  finally
-    list.Free;
+  Result := nil;
+
+  if s <> '' then
+  begin
+    splitCount := 0;
+    for i := 1 to Length(s) do
+      if IsDelimiter(delimiters, s, i) then
+        Inc(splitCount);
+
+    SetLength(Result, splitCount + 1);
+
+    startIndex := 1;
+    for i := 0 to splitCount - 1 do
+    begin
+      foundIndex := FindDelimiter(delimiters, s, startIndex);
+      Result[i] := Copy(s, startIndex, foundIndex - startIndex);
+      startIndex := foundIndex + 1;
+    end;
+
+    Result[splitCount] := Copy(s, startIndex, Length(s) - startIndex + 1);
   end;
 end;
 {$ENDIF}
