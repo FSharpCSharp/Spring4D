@@ -2478,6 +2478,27 @@ type
     function AsList<T: TCollectionItem>: IList<T>; overload;
   end;
 
+  TArrayManager<T> = class abstract
+{$IFDEF WEAKREF}
+  private
+  {$IFDEF DELPHIXE7_UP}
+    class function GetHasWeakRef: Boolean; static; inline;
+    class property HasWeakRef: Boolean read GetHasWeakRef;
+  {$ELSE}
+    class var fHasWeakRef: Boolean;
+    class property HasWeakRef: Boolean read fHasWeakRef;
+    class constructor Create;
+  {$ENDIF}
+{$ENDIF}
+  public
+    class procedure Move(var items: TArray<T>;
+      const fromIndex, toIndex, count: Integer); overload; static; inline;
+    class procedure Move(var fromItems, toItems: TArray<T>;
+      const fromIndex, toIndex, count: Integer); overload; static; inline;
+    class procedure Finalize(var items: TArray<T>;
+      const index, count: Integer); static; inline;
+  end;
+
 function GetInstanceComparer: Pointer;
 
 implementation
@@ -3161,6 +3182,81 @@ end;
 function TCollectionHelper.AsList<T>: IList<T>;
 begin
   Result := TCollectionList<T>.Create(Self);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayManager<T>'}
+
+{$IFDEF WEAKREF}
+{$IFNDEF DELPHIXE7_UP}
+class constructor TArrayManager<T>.Create;
+begin
+  fHasWeakRef := TType.HasWeakRef<T>;
+end;
+{$ELSE}
+class function TArrayManager<T>.GetHasWeakRef: Boolean;
+begin
+  Result := System.HasWeakRef(T);
+end;
+{$ENDIF}
+{$ENDIF}
+
+class procedure TArrayManager<T>.Finalize(var items: TArray<T>;
+  const index, count: Integer);
+begin
+{$IFDEF WEAKREF}
+  if HasWeakRef then
+    System.Finalize(items[index], count);
+{$ENDIF}
+  System.FillChar(items[index], count * SizeOf(T), 0);
+end;
+
+class procedure TArrayManager<T>.Move(var items: TArray<T>;
+  const fromIndex, toIndex, count: Integer);
+{$IFDEF WEAKREF}
+var
+  i: Integer;
+begin
+  if HasWeakRef then
+  begin
+    if count > 0 then
+      if fromIndex < toIndex then
+        for i := count - 1 downto 0 do
+          items[toIndex + i] := items[fromIndex + i]
+      else if fromIndex > toIndex then
+        for i := 0 to Count - 1 do
+          items[toIndex + i] := items[fromIndex + i];
+  end
+  else
+{$ELSE}
+begin
+{$ENDIF}
+    System.Move(items[fromIndex], items[toIndex], count * SizeOf(T));
+end;
+
+class procedure TArrayManager<T>.Move(var fromItems, toItems: TArray<T>;
+  const fromIndex, toIndex, count: Integer);
+{$IFDEF WEAKREF}
+var
+  i: Integer;
+begin
+  if HasWeakRef then
+  begin
+    if count > 0 then
+      if fromIndex < toIndex then
+        for i := count - 1 downto 0 do
+          toItems[toIndex + i] := fromItems[fromIndex + i]
+      else if fromIndex > toIndex then
+        for i := 0 to count - 1 do
+          toItems[toIndex + i] := fromItems[fromIndex + i];
+  end
+  else
+{$ELSE}
+begin
+{$ENDIF}
+    System.Move(fromItems[fromIndex], toItems[toIndex], count * SizeOf(T));
 end;
 
 {$ENDREGION}

@@ -30,7 +30,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
   Generics.Defaults,
   SysUtils,
   Spring,
@@ -38,39 +37,6 @@ uses
   Spring.Collections.Base;
 
 type
-
-{$IFNDEF DELPHIXE3_UP}
-  {$DEFINE SPRING_ARRAYMANAGERS}
-{$ENDIF}
-{$IFDEF DELPHIXE8_UP}
-  {$DEFINE SPRING_ARRAYMANAGERS}
-{$ENDIF}
-
-{$IFDEF SPRING_ARRAYMANAGERS}
-  TArrayManager<T> = class abstract
-  public
-    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
-    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
-    procedure Finalize(var AArray: array of T; Index, Count: Integer); overload; virtual; abstract;
-  end;
-
-  TMoveArrayManager<T> = class(TArrayManager<T>)
-  public
-    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
-    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
-    procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
-  end;
-
-  {$IFDEF WEAKREF}
-  TManualArrayManager<T> = class(TArrayManager<T>)
-  public
-    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
-    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
-    procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
-  end;
-  {$ENDIF}
-{$ENDIF}
-
   /// <summary>
   ///   Represents a strongly typed list of elements that can be accessed by
   ///   index. Provides methods to search, sort, and manipulate lists.
@@ -95,11 +61,11 @@ type
         function MoveNext: Boolean; override;
         procedure Reset; override;
       end;
+      TArrayManager = TArrayManager<T>;
   private
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
-    fArrayManager: TArrayManager<T>;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
     procedure DeleteAllInternal(const predicate: TPredicate<T>;
       notification: TCollectionChangedAction);
@@ -118,10 +84,8 @@ type
     procedure EnsureCapacity(capacity: Integer); inline;
     procedure Grow(capacity: Integer);
   public
-    constructor Create; override;
     constructor Create(const values: array of T); override;
     constructor Create(const collection: IEnumerable<T>); override;
-    destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
 
@@ -278,82 +242,7 @@ uses
   Spring.ResourceStrings;
 
 
-{$REGION 'TMoveArrayManager<T>'}
-
-{$IFDEF SPRING_ARRAYMANAGERS}
-procedure TMoveArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
-begin
-  System.FillChar(AArray[Index], Count * SizeOf(T), 0);
-end;
-
-procedure TMoveArrayManager<T>.Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer);
-begin
-  System.Move(AArray[FromIndex], AArray[ToIndex], Count * SizeOf(T));
-end;
-
-procedure TMoveArrayManager<T>.Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer);
-begin
-  System.Move(FromArray[FromIndex], ToArray[ToIndex], Count * SizeOf(T));
-end;
-{$ENDIF}
-
-{$ENDREGION}
-
-
-{$REGION 'TManualArrayManager<T>'}
-
-{$IF Defined(SPRING_ARRAYMANAGERS) AND Defined(WEAKREF)}
-procedure TManualArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
-begin
-  System.Finalize(AArray[Index], Count);
-  System.FillChar(AArray[Index], Count * SizeOf(T), 0);
-end;
-
-procedure TManualArrayManager<T>.Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer);
-var
-  i: Integer;
-begin
-  if Count > 0 then
-    if FromIndex < ToIndex then
-      for i := Count - 1 downto 0 do
-        AArray[ToIndex + i] := AArray[FromIndex + i]
-    else if FromIndex > ToIndex then
-      for i := 0 to Count - 1 do
-        AArray[ToIndex + i] := AArray[FromIndex + i];
-end;
-
-procedure TManualArrayManager<T>.Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer);
-var
-  i: Integer;
-begin
-  if Count > 0 then
-    if FromIndex < ToIndex then
-      for i := Count - 1 downto 0 do
-        ToArray[ToIndex + i] := FromArray[FromIndex + i]
-    else if FromIndex > ToIndex then
-      for i := 0 to Count - 1 do
-        ToArray[ToIndex + i] := FromArray[FromIndex + i];
-end;
-{$IFEND}
-
-{$ENDREGION}
-
-
 {$REGION 'TList<T>'}
-
-constructor TList<T>.Create;
-begin
-  inherited Create;
-{$IFDEF WEAKREF}
-  if TType.HasWeakRef<T> then
-    fArrayManager := TManualArrayManager<T>.Create
-  else
-{$ENDIF}
-    if TType.Kind<T> = tkClass then
-      TArrayManager<TObject>(fArrayManager) := TMoveArrayManager<TObject>.Create
-    else
-      fArrayManager := TMoveArrayManager<T>.Create;
-end;
 
 constructor TList<T>.Create(const values: array of T);
 var
@@ -385,12 +274,6 @@ begin
   end
   else
     inherited;
-end;
-
-destructor TList<T>.Destroy;
-begin
-  inherited Destroy;
-  fArrayManager.Free;
 end;
 
 function TList<T>.GetCount: Integer;
@@ -521,8 +404,8 @@ begin
   EnsureCapacity(fCount + 1);
   if index <> fCount then
   begin
-    fArrayManager.Move(fItems, index, index + 1, fCount - index);
-    fArrayManager.Finalize(fItems, index, 1);
+    TArrayManager.Move(fItems, index, index + 1, fCount - index);
+    TArrayManager.Finalize(fItems, index, 1);
   end;
   fItems[index] := item;
   Inc(fCount);
@@ -547,8 +430,8 @@ begin
   EnsureCapacity(fCount + count);
   if index <> fCount then
   begin
-    fArrayManager.Move(fItems, index, index + count, fCount - index);
-    fArrayManager.Finalize(fItems, index, count);
+    TArrayManager.Move(fItems, index, index + count, fCount - index);
+    TArrayManager.Finalize(fItems, index, count);
   end;
 
   if not TType.IsManaged<T>{$IFDEF WEAKREF} and not TType.HasWeakRef<T>{$ENDIF} then
@@ -583,8 +466,8 @@ begin
     EnsureCapacity(fCount + list.fCount);
     if index <> fCount then
     begin
-      fArrayManager.Move(fItems, index, index + list.fCount, fCount - index);
-      fArrayManager.Finalize(fItems, index, list.fCount);
+      TArrayManager.Move(fItems, index, index + list.fCount, fCount - index);
+      TArrayManager.Finalize(fItems, index, list.fCount);
     end;
 
     if not TType.IsManaged<T>{$IFDEF WEAKREF} and not TType.HasWeakRef<T>{$ENDIF} then
@@ -613,8 +496,8 @@ begin
   Dec(fCount);
   if index <> fCount then
   begin
-    fArrayManager.Move(fItems, index + 1, index, fCount - index);
-    fArrayManager.Finalize(fItems, fCount, 1);
+    TArrayManager.Move(fItems, index + 1, index, fCount - index);
+    TArrayManager.Finalize(fItems, fCount, 1);
   end;
   IncreaseVersion;
 
@@ -636,16 +519,16 @@ begin
     Exit;
 
   SetLength(oldItems, count);
-  fArrayManager.Move(fItems, oldItems, index, 0, count);
+  TArrayManager.Move(fItems, oldItems, index, 0, count);
 
   tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
-    fArrayManager.Move(fItems, index + count, index, tailCount);
-    fArrayManager.Finalize(fItems, fCount - count, count);
+    TArrayManager.Move(fItems, index + count, index, tailCount);
+    TArrayManager.Finalize(fItems, fCount - count, count);
   end
   else
-    fArrayManager.Finalize(fItems, index, count);
+    TArrayManager.Finalize(fItems, index, count);
 
   Dec(fCount, count);
   IncreaseVersion;
@@ -674,11 +557,11 @@ begin
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
-    fArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
+    TArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
   else
-    fArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
+    TArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
 
-  fArrayManager.Finalize(fItems, newIndex, 1);
+  TArrayManager.Finalize(fItems, newIndex, 1);
   fItems[newIndex] := temp;
   IncreaseVersion;
 
@@ -795,8 +678,8 @@ begin
     begin
       item := fItems[i];
       Inc(n);
-      fArrayManager.Move(fItems, i + 1, i, fCount - i - 1);
-      fArrayManager.Finalize(fItems, fCount - 1, 1);
+      TArrayManager.Move(fItems, i + 1, i, fCount - i - 1);
+      TArrayManager.Finalize(fItems, fCount - 1, 1);
       Dec(fCount);
       Changed(item, notification);
     end
@@ -913,7 +796,8 @@ end;
 
 constructor TObjectList<T>.Create;
 begin
-  Create(True);
+  inherited Create;
+  fOwnsObjects := True;
 end;
 
 constructor TObjectList<T>.Create(ownsObjects: Boolean);
@@ -929,16 +813,6 @@ begin
   fOwnsObjects := ownsObjects;
 end;
 
-function TObjectList<T>.GetOwnsObjects: Boolean;
-begin
-  Result := fOwnsObjects;
-end;
-
-procedure TObjectList<T>.SetOwnsObjects(const value: Boolean);
-begin
-  fOwnsObjects := value;
-end;
-
 procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
   inherited Changed(item, action);
@@ -948,6 +822,16 @@ begin
 {$ELSE}
     item.DisposeOf;
 {$ENDIF}
+end;
+
+function TObjectList<T>.GetOwnsObjects: Boolean;
+begin
+  Result := fOwnsObjects;
+end;
+
+procedure TObjectList<T>.SetOwnsObjects(const value: Boolean);
+begin
+  fOwnsObjects := value;
 end;
 
 {$ENDREGION}
