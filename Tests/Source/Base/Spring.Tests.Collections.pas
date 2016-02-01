@@ -198,7 +198,6 @@ type
     procedure FillStack;
   published
     procedure TestStackCreate;
-    procedure TestStackCreate2;
     procedure TestStackInitializesEmpty;
     procedure TestStackPopPushBalances;
     procedure TestStackClear;
@@ -209,6 +208,16 @@ type
 {$IFDEF DELPHIXE_UP}
     procedure TestStackTrimExcess;
 {$ENDIF}
+  end;
+
+  TTestStackOfTBytes = class(TTestCase)
+  private
+    SUT: IStack<TBytes>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestStackPush;
   end;
 
   TTestStackOfIntegerChangedEvent = class(TTestCase)
@@ -1357,20 +1366,6 @@ begin
   CheckTrue(SUT.EqualsTo(values));
 end;
 
-procedure TTestStackOfInteger.TestStackCreate2;
-var
-  stack: Generics.Collections.TStack<Integer>;
-begin
-  stack := Generics.Collections.TStack<Integer>.Create;
-  try
-    SUT := TStack<Integer>.Create(stack, otReference);
-  finally
-    SUT := nil;
-    stack.Free;
-  end;
-  Pass;
-end;
-
 procedure TTestStackOfInteger.TestStackInitializesEmpty;
 begin
   CheckEquals(0, SUT.Count);
@@ -1445,6 +1440,31 @@ begin
   CheckFalse(SUT.TryPop(value));
   CheckEquals(0, value);
   CheckTrue(SUT.IsEmpty);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestStackOfTBytes'}
+
+procedure TTestStackOfTBytes.SetUp;
+begin
+  SUT := TStack<TBytes>.Create;
+end;
+
+procedure TTestStackOfTBytes.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestStackOfTBytes.TestStackPush;
+var
+  b: TBytes;
+begin
+  b := TBytes.Create(0);
+  SUT.Push(b);
+  CheckEquals(1, SUT.Count);
+  Check(b = SUT.Peek);
 end;
 
 {$ENDREGION}

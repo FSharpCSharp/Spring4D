@@ -94,6 +94,7 @@ begin
     TTestEmptyStringIntegerDictionary.Suite,
     TTestEmptyStackOfStrings.Suite,
     TTestStackOfInteger.Suite,
+    TTestStackOfTBytes.Suite,
     TTestStackOfIntegerChangedEvent.Suite,
     TTestEmptyQueueOfInteger.Suite,
     TTestQueueOfInteger.Suite,

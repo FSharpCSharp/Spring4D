@@ -1972,6 +1972,11 @@ type
     ///   The element at the top of the IStack&lt;T&gt;.
     /// </returns>
     function Peek: T;
+
+    /// <summary>
+    ///   Returns the element at the top of the IStack&lt;T&gt; without
+    ///   removing it. Returns <b>Default(T)</b> if the stack is empty.
+    /// </summary>
     function PeekOrDefault: T;
 
     /// <summary>
@@ -2880,11 +2885,8 @@ begin
 end;
 
 class function TCollections.CreateStack<T>(ownsObjects: Boolean): IStack<T>;
-var
-  stack: Generics.Collections.TObjectStack<T>;
 begin
-  stack := Generics.Collections.TObjectStack<T>.Create(ownsObjects);
-  Result := TStack<T>.Create(stack, otOwned);
+  Result := TObjectStack<T>.Create(ownsObjects);
 end;
 
 class function TCollections.CreateStack<T>(const values: array of T): IStack<T>;
