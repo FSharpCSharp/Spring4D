@@ -757,19 +757,32 @@ begin
 end;
 
 procedure TTestSimpleContainer.TestDisposable;
+
+  // place in a separate call to generate finalization around returned
+  // TRegistration
+  procedure Register;
+  begin
+    fContainer.RegisterType<TDisposableComponent>.AsSingleton;
+  end;
+
 var
   service: IAnotherService;
   disposed: Boolean;
+  component: TDisposableComponent;
 begin
-  fContainer.RegisterType<TDisposableComponent>.AsSingleton;
+  Register;
   fContainer.Build;
   service := fContainer.Resolve<IAnotherService>;
-  (service as TDisposableComponent).OnDispose :=
+  component:=(service as TDisposableComponent);
+  component.OnDispose :=
     procedure
     begin
       disposed := True;
     end;
   service := nil;
+{$IFDEF AUTOREFCOUNT}
+  component := nil;
+{$ENDIF}
   disposed := False;
   FreeAndNil(fContainer);
   CheckTrue(disposed);

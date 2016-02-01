@@ -54,6 +54,7 @@ uses
 {$IFDEF DELPHIXE_UP}
   Spring.Tests.Interception in '..\..\Source\Core\Spring.Tests.Interception.pas',
   Spring.Tests.Interception.Types in '..\..\Source\Core\Spring.Tests.Interception.Types.pas',
+  Spring.Tests.Mocking in '..\..\Source\Core\Spring.Tests.Mocking.pas',
 {$ENDIF}
   Spring.Tests.Pool in '..\..\Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in '..\..\Source\Extensions\Spring.Tests.Cryptography.pas',

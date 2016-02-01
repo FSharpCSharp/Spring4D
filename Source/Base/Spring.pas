@@ -30,6 +30,10 @@
 /// </summary>
 unit Spring;
 
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
+
 interface
 
 uses
