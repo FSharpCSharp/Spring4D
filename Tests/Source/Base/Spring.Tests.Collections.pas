@@ -251,7 +251,6 @@ type
     procedure TearDown; override;
   published
     procedure TestQueueCreate;
-    procedure TestQueueCreate2;
     procedure TestQueueClear;
     procedure TestQueueDequeue;
     procedure TestQueuePeek;
@@ -261,6 +260,16 @@ type
 {$IFDEF DELPHIXE_UP}
     procedure TestQueueTrimExcess;
 {$ENDIF}
+  end;
+
+  TTestQueueOfTBytes = class(TTestCase)
+  private
+    SUT: IQueue<TBytes>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestQueueEnqueue;
   end;
 
   TTestQueueOfIntegerChangedEvent = class(TTestCase)
@@ -1629,20 +1638,6 @@ begin
   CheckTrue(SUT.EqualsTo(values));
 end;
 
-procedure TTestQueueOfInteger.TestQueueCreate2;
-var
-  queue: Generics.Collections.TQueue<Integer>;
-begin
-  queue := Generics.Collections.TQueue<Integer>.Create;
-  try
-    SUT := TQueue<Integer>.Create(queue, otReference);
-  finally
-    SUT := nil;
-    queue.Free;
-  end;
-  Pass;
-end;
-
 procedure TTestQueueOfInteger.TestQueueDequeue;
 var
   i: Integer;
@@ -1712,6 +1707,31 @@ begin
   SUT.Enqueue(MaxItems);
   CheckTrue(SUT.TryPeek(value));
   CheckEquals(MaxItems, value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestQueueOfTBytes'}
+
+procedure TTestQueueOfTBytes.SetUp;
+begin
+  SUT := TQueue<TBytes>.Create;
+end;
+
+procedure TTestQueueOfTBytes.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestQueueOfTBytes.TestQueueEnqueue;
+var
+  b: TBytes;
+begin
+  b := TBytes.Create(0);
+  SUT.Enqueue(b);
+  CheckEquals(1, SUT.Count);
+  Check(b = SUT.Peek);
 end;
 
 {$ENDREGION}

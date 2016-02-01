@@ -2064,6 +2064,11 @@ type
     ///   The element at the beginning of the IQueue&lt;T&gt;.
     /// </returns>
     function Peek: T;
+
+    /// <summary>
+    ///   Returns the element at the beginning of the IQueue&lt;T&gt; without
+    ///   removing it. Returns <b>Default(T)</b> if the queue is empty.
+    /// </summary>
     function PeekOrDefault: T;
 
     /// <summary>
@@ -2899,11 +2904,8 @@ begin
 end;
 
 class function TCollections.CreateQueue<T>(ownsObjects: Boolean): IQueue<T>;
-var
-  queue: Generics.Collections.TObjectQueue<T>;
 begin
-  queue := Generics.Collections.TObjectQueue<T>.Create(ownsObjects);
-  Result := TQueue<T>.Create(queue, otOwned);
+  Result := TObjectQueue<T>.Create(ownsObjects);
 end;
 
 class function TCollections.CreateQueue<T>(const values: array of T): IQueue<T>;

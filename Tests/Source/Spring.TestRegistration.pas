@@ -97,6 +97,7 @@ begin
     TTestStackOfIntegerChangedEvent.Suite,
     TTestEmptyQueueOfInteger.Suite,
     TTestQueueOfInteger.Suite,
+    TTestQueueOfTBytes.Suite,
     TTestQueueOfIntegerChangedEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite,
     TTestLinkedList.Suite,
