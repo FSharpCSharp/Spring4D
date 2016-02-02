@@ -1793,15 +1793,6 @@ type
   end;
 
   Owned<T> = record
-  private
-    type
-      TFinalizer = class(TInterfacedObject)
-      private
-        fValue: Pointer;
-      public
-        constructor Create(const value);
-        destructor Destroy; override;
-      end;
   strict private
     fValue: T;
     fFinalizer: IInterface;
@@ -6269,7 +6260,9 @@ end;
 destructor TOwned<T>.Destroy;
 begin
   case TType.Kind<T> of
-    tkClass: {$IFNDEF AUTOREFCOUNT}PObject(@fValue).Free;{$ELSE}PObject(@fValue).DisposeOf;{$ENDIF}
+{$IFNDEF AUTOREFCOUNT}
+    tkClass: PObject(@fValue).Free;
+{$ENDIF}
     tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
   end;
   inherited;
@@ -6289,33 +6282,16 @@ class operator Owned<T>.Implicit(const value: T): Owned<T>;
 begin
   Result.fValue := value;
   case TType.Kind<T> of
-    tkClass, tkPointer: Result.fFinalizer := TFinalizer.Create(Result.fValue);
+{$IFNDEF AUTOREFCOUNT}
+    tkClass,
+{$ENDIF}
+    tkPointer: Result.fFinalizer := TOwned<T>.Create(Result.fValue);
   end;
 end;
 
 class operator Owned<T>.Implicit(const value: Owned<T>): T;
 begin
   Result := value.fValue;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'Owned<T>.TFinalizer'}
-
-constructor Owned<T>.TFinalizer.Create(const value);
-begin
-  inherited Create;
-  fValue := Pointer(value);
-end;
-
-destructor Owned<T>.TFinalizer.Destroy;
-begin
-  case TType.Kind<T> of
-    tkClass: {$IFNDEF AUTOREFCOUNT}TObject(fValue).Free;{$ELSE}TObject(fValue).DisposeOf;{$ENDIF}
-    tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
-  end;
-  inherited;
 end;
 
 {$ENDREGION}

@@ -2150,10 +2150,15 @@ end;
 procedure TTestOwned.TestInterfaceType_Instance_Gets_Destroyed_When_Created;
 var
   p: IOwned<TTestClass>;
+  t: TTestClass;
   destroyCalled: Boolean;
 begin
   p := TOwned<TTestClass>.Create();
-  p.DestroyCalled := @destroyCalled;
+  t := p;
+  t.DestroyCalled := @destroyCalled;
+{$IFDEF AUTOREFCOUNT}
+  t := nil;
+{$ENDIF}
   destroyCalled := False;
   p := nil;
   CheckTrue(destroyCalled);
@@ -2168,6 +2173,9 @@ begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
   p := TOwned<TTestClass>.Create(t);
+{$IFDEF AUTOREFCOUNT}
+  t := nil;
+{$ENDIF}
   destroyCalled := False;
   p := nil;
   CheckTrue(destroyCalled);
