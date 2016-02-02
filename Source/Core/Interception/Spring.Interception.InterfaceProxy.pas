@@ -108,7 +108,7 @@ begin
 
   inherited Create(proxyType, HandleInvoke);
 {$IFDEF AUTOREFCOUNT}
-  // Release reference held by ancestor (bypass RSP-10177)
+  // Release reference held by ancestor RawCallBack (bypass RSP-10177)
   __ObjRelease;
   // Release reference created by passing closure to HandleInvoke (RSP-10176)
   __ObjRelease;
@@ -117,7 +117,14 @@ begin
   fInterceptorSelector := options.Selector;
   fTarget := TValue.From(target);
   fTypeInfo := proxyType;
-  fAdditionalInterfaces := TCollections.CreateObjectList<TInterfaceProxy>;
+  // Do not own the object, let ARC deal with its lifetime. Calling DisposeOf
+  // causes an AV since we need to release the refcount above to ever let it
+  // release by the main reference (it. the variable containing result of
+  // this ctor). Calling DisposeOf will clear the internal data which makes the
+  // object free its memory until all references are cleared, once they AR, they
+  // could cause an AV. Normal release chain however is immune to that.
+  fAdditionalInterfaces := TCollections.CreateObjectList<TInterfaceProxy>
+    {$IFDEF AUTOREFCOUNT}(False){$ENDIF};
   GenerateInterfaces(additionalInterfaces, options);
 end;
 
