@@ -341,6 +341,8 @@ end;
 
 type
   TMockedFireDACTransactionAdapter = class(TFireDACTransactionAdapter)
+  private
+    fInTransaction: Boolean;
   public
     function InTransaction: Boolean; override;
   end;
@@ -349,10 +351,13 @@ function TMockedFireDACTransactionAdapter.InTransaction: Boolean;
 begin
   // We need to return true to let the Rollback fail since we closed the
   // connection.
-  Result := True;
+  Result := fInTransaction;
 end;
 
 procedure TFireDACTransactionAdapterTest.TestDestroy_Will_Free_fTrancastion_On_Rollback_Exception;
+const
+  objDestroyingFlag = Integer($80000000);
+  objDisposedFlag = Integer($40000000);
 var
   lTransaction: TFDTransaction;
 {$IFDEF AUTOREFCOUNT}
@@ -367,17 +372,19 @@ begin
   lTransaction.StartTransaction;
   lInternalTransaction := TMockedFireDACTransactionAdapter.Create(lTransaction,
     TFireDACExceptionHandler.Create, True);
+  lInternalTransaction.fInTransaction := True;
   fTransaction := lInternalTransaction;
   fSqliteConnection.Connected := False;
   CheckException(EFireDACAdapterException,
     procedure begin fTransaction := nil; end);
-  lInternalTransaction.FreeInstance; // Prevent memory leak
+  lInternalTransaction.fInTransaction := False;
 {$IFNDEF AUTOREFCOUNT}
   // CleanupInstance should clear the name if freed properly
   CheckEquals('', lTransaction.Name);
 {$ELSE}
-  ChekEquals(1, lTransaction.RefCount);
+  CheckEquals(objDisposedFlag or 1, lTransaction.RefCount);
 {$ENDIF}
+  lInternalTransaction.FreeInstance; // Prevent memory leak
 end;
 
 procedure TFireDACTransactionAdapterTest.TestRollback;
@@ -490,6 +497,7 @@ begin
  // FDACConnection.Params.Add('Database=:memory:');
 //  inherited SetUp;
   FConnection := TConnectionFactory.GetInstance(dtFireDAC, FDACConnection);
+  FConnection.AutoFreeConnection := True;
   FConnection.QueryLanguage := qlSQLite;
   FConnection.AddExecutionListener(
     procedure(const command: string; const params: IEnumerable<TDBParam>)
@@ -517,8 +525,9 @@ end;
 procedure TFireDACSessionTest.TearDown;
 begin
   inherited TearDown;
-  FDACConnection.Free;
   FSession.Free;
+  FDACConnection := nil;
+  FConnection := nil;
 end;
 
 procedure TFireDACSessionTest.WhenSavingInTransaction_CommitIsSuccessful;

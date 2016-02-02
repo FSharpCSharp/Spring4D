@@ -38,6 +38,11 @@ const
   CustomerColumnCount = 10;
 
 type
+  // ARC note: when using relationships that create a cycle (like TCustomer and
+  // TCustomer_Orders and others) it is needed to break the cycle in destructor.
+  // TSession will call DisposeOf but that doesn't call CleanupInstance, that
+  // would clear the references, sometimes calling DisposeOf is just not enough.
+
   TProduct = class;
   TCustomer_Orders = class;
 
@@ -285,6 +290,7 @@ type
     property UserRoles: IList<TUserRole> read GetUserRoles;
   public
     constructor Create;
+    destructor Destroy; override;
 
     procedure AddRole(role: TRole);
 
@@ -312,6 +318,7 @@ type
     property UserRoles: IList<TUserRole> read GetUserRoles;
   public
     constructor Create;
+    destructor Destroy; override;
 
     property Id: Integer read fId;
     [Column]
@@ -540,7 +547,12 @@ end;
 destructor TCustomer_Orders.Destroy;
 begin
   if Assigned(FCustomer) then
+  begin
+{$IFDEF AUTOREFCOUNT}
+    FCustomer.DisposeOf;
+{$ENDIF}
     FCustomer.Free;
+  end;
 
   inherited Destroy;
 end;
@@ -576,6 +588,12 @@ begin
   fUserRoles := TCollections.CreateObjectList<TUserRole>;
 end;
 
+destructor TUser.Destroy;
+begin
+  fUserRoles := nil;
+  inherited;
+end;
+
 function TUser.GetRoles: IList<TRole>;
 var
   userRole: TUserRole;
@@ -590,6 +608,12 @@ end;
 constructor TRole.Create;
 begin
   fUserRoles := TCollections.CreateObjectList<TUserRole>;
+end;
+
+destructor TRole.Destroy;
+begin
+  fUserRoles := nil;
+  inherited;
 end;
 
 function TRole.GetUserRoles: IList<TUserRole>;
@@ -624,9 +648,19 @@ end;
 destructor TUserRole.Destroy;
 begin
   if OwnsUser in fOwnerships then
+  begin
+{$IFDEF AUTOREFCOUNT}
+    fUser.DisposeOf;
+{$ENDIF}
     fUser.Free;
+  end;
   if OwnsRole in fOwnerships then
+  begin
+{$IFDEF AUTOREFCOUNT}
+    fRole.DisposeOf;
+{$ENDIF}
     fRole.Free;
+  end;
   inherited Destroy;
 end;
 

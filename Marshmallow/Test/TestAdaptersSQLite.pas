@@ -206,6 +206,7 @@ end;
 procedure TBaseSQLiteConnectionAdapterTest.TearDown;
 begin
   fConnection := nil;
+  fTestDb := nil;
   inherited;
 end;
 
@@ -283,9 +284,9 @@ var
   field: TRttiField;
   tempStmt: TValue;
 begin
-  field := TType.GetType(fResultSet as TObject).GetField('fDataSet');
+  field := TType.GetType((fResultSet as TObject).ClassType).GetField('fDataSet');
   sqlTable := field.GetValue(fResultSet as TObject).AsInterface as TObject;
-  field := TType.GetType(sqlTable).GetField('fStmt');
+  field := TType.GetType(sqlTable.ClassType).GetField('fStmt');
   tempStmt := field.GetValue(sqlTable);
   field.SetValue(sqlTable, nil);
   try

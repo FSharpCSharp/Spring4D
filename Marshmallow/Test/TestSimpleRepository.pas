@@ -125,7 +125,9 @@ begin
   ClearTable(TBL_PEOPLE);
   ClearTable(TBL_ORDERS);
   ClearTable(TBL_PRODUCTS);
+  FRepository := nil;
   FSession.Free;
+  FConnection := nil;
 end;
 
 {$ENDREGION}

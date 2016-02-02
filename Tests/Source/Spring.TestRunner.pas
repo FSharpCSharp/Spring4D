@@ -57,7 +57,19 @@ uses
   Spring,
   Spring.Reflection,
   Spring.ValueConverters,
-  Spring.Tests.Base,
+    {$IFNDEF ORM_TESTS}
+    Spring.Tests.Base,
+    {$ELSE}
+    LeakCheck.Cycle.Utils,
+    Spring.Persistence.Core.EntityCache,
+    Spring.Persistence.Mapping.Attributes,
+      {$IFDEF DELPHIXE5_UP}
+      FireDAC.Comp.Client,
+      {$ENDIF}
+      {$IFNDEF FMX} // non mobile
+      DBXCommon,
+      {$ENDIF}
+    {$ENDIF}
   {$ENDIF}
   {$IFDEF TESTINSIGHT}
   TestInsight.DUnit;
@@ -97,6 +109,13 @@ end;
 procedure InitializeLeakCheck;
 var
   intfType: TRttiInterfaceType;
+{$IFDEF ORM_TESTS}
+  lType: TRttiType;
+  {$IFDEF DELPHIXE5_UP}
+  fdConnection: TFDConnection;
+  fdQuery: TFDQuery;
+  {$ENDIF}
+{$ENDIF}
 begin
   MemLeakMonitorClass := TLeakCheckGraphMonitor;//TLeakCheckCycleGraphMonitor;
   // For ORM ignore strings as well since it assignes them to global attributes
@@ -104,6 +123,9 @@ begin
   TLeakCheck.IgnoredLeakTypes := [tkUnknown, tkUString];
   TLeakCheck.InstanceIgnoredProc := IgnoreMultipleObjects;
   AddIgnoreObjectProc([
+{$IFDEF ANDROID}
+    IgnoreJNIBridgeClasses,
+{$ENDIF}
     IgnoreRttiObjects,
     IgnoreValueConverters,
     IgnoreEmptyEnumerable,
@@ -120,8 +142,46 @@ begin
   TTimeZone.Local.ID;
 {$ENDIF}
   StrToBool('True'); // Initialize StrToBool array cache
+{$IFDEF DELPHIXE5_UP}
+  TEncoding.ANSI;
+{$ENDIF}
+  TEncoding.ASCII;
+  TEncoding.Default;
   TEncoding.UTF7;
+  TEncoding.UTF8;
+  TEncoding.Unicode;
+{$IFNDEF ORM_TESTS}
   GetFieldTable(TTestObject);
+{$ELSE}
+  // Initialize global Entity cache
+  for lType in TType.Context.GetTypes do
+    if lType.IsClass and lType.HasCustomAttribute(TableAttribute, True) then
+  begin
+    TEntityCache.Get(lType.AsInstance.MetaclassType);
+  end;
+  {$IFDEF DELPHIXE5_UP}
+  // Initialize FireDAC singletons
+  fdConnection := TFDConnection.Create(nil);
+  try
+    fdConnection.DriverName := 'SQLite';
+    fdConnection.Connected := True;
+    fdQuery := TFDQuery.Create(nil);
+    try
+      fdQuery.Connection := fdConnection;
+      fdQuery.SQL.Text := 'SELECT COUNT(*) FROM sqlite_master';
+      fdQuery.OpenOrExecute;
+    finally
+      fdQuery.Free;
+    end;
+  finally
+    fdConnection.Free;
+  end;
+  {$ENDIF}
+  {$IFNDEF FMX} // non mobile
+  // Initialize DBX singletons
+  TDBXConnectionFactory.GetConnectionFactory;
+  {$ENDIF}
+{$ENDIF}
 end;
 {$ENDIF}
 
