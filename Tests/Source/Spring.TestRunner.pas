@@ -54,8 +54,10 @@ uses
   LeakCheck.Cycle,
   LeakCheck.DUnit,
   LeakCheck.DUnitCycle,
+  Spring,
   Spring.Reflection,
   Spring.ValueConverters,
+  Spring.Tests.Base,
   {$ENDIF}
   {$IFDEF TESTINSIGHT}
   TestInsight.DUnit;
@@ -118,6 +120,8 @@ begin
   TTimeZone.Local.ID;
 {$ENDIF}
   StrToBool('True'); // Initialize StrToBool array cache
+  TEncoding.UTF7;
+  GetFieldTable(TTestObject);
 end;
 {$ENDIF}
 
