@@ -703,6 +703,10 @@ type
       TTypeMapping<TSource,TTarget> = record
         SourceType: TSource;
         TargetType: TTarget;
+{$IFDEF NEXTGEN}
+        // Fixes incorrect register argument passing
+        Padding: Pointer;
+{$ENDIF}
       end;
 
     class var fTypeInfoToTypeInfoRegistry: TDictionary<TTypeMapping<PTypeInfo,PTypeInfo>, IValueConverter>;
@@ -1866,6 +1870,9 @@ var
 begin
   System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
+{$IFDEF NEXTGEN}
+    typeToTypeMapping := Default(TTypeMapping<PTypeInfo,PTypeInfo>);
+{$ENDIF}
     typeToTypeMapping.SourceType := sourceTypeInfo;
     typeToTypeMapping.TargetType := targetTypeInfo;
     if fTypeInfoToTypeInfoRegistry.TryGetValue(typeToTypeMapping, converter) then
@@ -1978,6 +1985,9 @@ begin
 
   System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
+{$IFDEF NEXTGEN}
+    mapping := Default(TTypeMapping<PTypeInfo,PTypeInfo>);
+{$ENDIF}
     mapping.SourceType := sourceTypeInfo;
     mapping.TargetType := targetTypeInfo;
     fTypeInfoToTypeInfoRegistry.AddOrSetValue(mapping, converter);
