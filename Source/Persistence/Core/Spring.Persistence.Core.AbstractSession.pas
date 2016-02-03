@@ -385,21 +385,29 @@ var
   entityClass: TClass;
   capturedId: TValue;
   factory: TFunc<IInterface>;
+{$IFDEF AUTOREFCOUNT}
+  capturedSelf: Pointer;
+{$ENDIF}
 begin
   if not interfaceType.IsGenericTypeOf('IEnumerable<>') then
     raise EORMUnsupportedType.CreateFmt('Unsupported type: %s', [interfaceType.Name]);
   entityClass := interfaceType.GetGenericArguments[0].AsInstance.MetaclassType;
 
+  // Break reference held by the anonymous function closure (RSP-10176).
+  // Do not use __ObjRelease but use unsafe pointer here, if the lazy is
+  // released before TAbstractSession, it would destroy it.
+{$IFDEF AUTOREFCOUNT}
+  capturedSelf := Self;
+{$ENDIF}
   capturedId := id;
   factory :=
     function: IInterface
     begin
-      Result := GetLazyValueAsInterface(capturedId, entity, column, entityClass);
-    end;
 {$IFDEF AUTOREFCOUNT}
-  // Release reference held by the anonymous function closure (RSP-10176)
-  __ObjRelease;
+      with TAbstractSession(capturedSelf) do
 {$ENDIF}
+        Result := GetLazyValueAsInterface(capturedId, entity, column, entityClass);
+    end;
   Result := TValue.From<Lazy<IInterface>>(TLazy<IInterface>.Create(factory));
 end;
 
@@ -409,17 +417,24 @@ function TAbstractSession.ResolveLazyObject(const id: TValue;
 var
   capturedId: TValue;
   factory: TFunc<TObject>;
+{$IFDEF AUTOREFCOUNT}
+  capturedSelf: Pointer;
+{$ENDIF}
 begin
+  // Break reference held by the anonymous function closure (RSP-10176).
+  // See above for details.
+{$IFDEF AUTOREFCOUNT}
+  capturedSelf := Self;
+{$ENDIF}
   capturedId := id;
   factory :=
     function: TObject
     begin
-      Result := GetLazyValueAsObject(capturedId, entity, column, entityClass);
-    end;
 {$IFDEF AUTOREFCOUNT}
-  // Release reference held by the anonymous function closure (RSP-10176)
-  __ObjRelease;
+      with TAbstractSession(capturedSelf) do
 {$ENDIF}
+        Result := GetLazyValueAsObject(capturedId, entity, column, entityClass);
+    end;
   Result := TValue.From<Lazy<TObject>>(TLazy<TObject>.Create(factory, True));
 end;
 
