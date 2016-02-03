@@ -109,6 +109,7 @@ type
 implementation
 
 uses
+  Rtti,
   StrUtils,
   SysUtils,
   TypInfo,

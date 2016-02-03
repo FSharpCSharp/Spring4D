@@ -367,6 +367,7 @@ type
 implementation
 
 uses
+  Spring,
   Spring.Persistence.Core.Exceptions,
   Spring.Reflection;
 
