@@ -286,17 +286,30 @@ end;
 function TMock.Returns(const values: array of TValue): IWhen;
 var
   tempValues: TArray<TValue>;
+{$IFDEF AUTOREFCOUNT}
+  capturedSelf: Pointer;
+{$ENDIF}
 begin
   tempValues := TArray.Copy<TValue>(values);
+{$IFDEF AUTOREFCOUNT}
+  // Break reference cycle held by the anonymous function closure (RSP-10176)
+  // (Do not use __ObjRelease like in other places that suffers from this issue,
+  // since the interceptor action can be reassigned and it could free Self when
+  // undesired to, use "unsafe" pointer.)
+  capturedSelf := Self;
+{$ENDIF}
   fInterceptor.Returns(
     function(const callInfo: TCallInfo): TValue
     begin
-      if callInfo.CallCount <= Length(tempValues) then
-        Result := tempValues[callInfo.CallCount - 1]
-      else
-        if fInterceptor.Behavior = TMockBehavior.Strict then
-          raise EMockException.CreateResFmt(@SCallCountExceeded, [
-            Times.AtMost(Length(tempValues)).ToString(callInfo.CallCount)]);
+{$IFDEF AUTOREFCOUNT}
+      with TMock(capturedSelf) do
+{$ENDIF}
+        if callInfo.CallCount <= Length(tempValues) then
+          Result := tempValues[callInfo.CallCount - 1]
+        else
+          if fInterceptor.Behavior = TMockBehavior.Strict then
+            raise EMockException.CreateResFmt(@SCallCountExceeded, [
+              Times.AtMost(Length(tempValues)).ToString(callInfo.CallCount)]);
     end);
   Result := Self;
 end;
