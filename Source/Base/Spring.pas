@@ -7442,11 +7442,17 @@ begin
 end;
 
 class function TType.Kind<T>: TTypeKind;
-begin
 {$IFDEF DELPHIXE7_UP}
+begin
   Result := System.GetTypeKind(T);
 {$ELSE}
-  Result := PTypeInfo(TypeInfo(T)).Kind;
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := System.TypeInfo(T);
+  if typeInfo = nil then
+    Exit(tkUnknown);
+  Result := typeInfo.Kind;
 {$ENDIF}
 end;
 
