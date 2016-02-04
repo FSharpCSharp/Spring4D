@@ -316,6 +316,15 @@ type
     procedure TestResolveArrayOfLazy;
   end;
 
+  TTestDecorators = class(TContainerTestCase)
+  protected
+    procedure SetUp; override;
+  published
+    procedure RegisterOneDecoratorResolveReturnsDecorator;
+    procedure RegisterOneDecoratorWithFailingConditionResolvesWithoutDecorator;
+    procedure RegisterTwoDecoratorsResolveReturnsLastDecorator;
+    procedure RegisterTwoDecoratorsResolveWithParameterReturnsCorrectValue;
+  end;
 
 implementation
 
@@ -2029,6 +2038,73 @@ begin
   CheckIs(services[2].Value, TCollectionItemC);
   service := fContainer.Resolve<Lazy<ICollectionItem>>;
   CheckIs(service.Value, TCollectionItemD);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDecorators'}
+
+procedure TTestDecorators.RegisterOneDecoratorResolveReturnsDecorator;
+var
+  service: IAgeService;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAgeService>;
+  CheckIs(service, TAgeServiceDecorator);
+  CheckEquals(TNameAgeComponent.DefaultAge, service.Age);
+end;
+
+procedure TTestDecorators.RegisterOneDecoratorWithFailingConditionResolvesWithoutDecorator;
+var
+  service: IAgeService;
+  conditionCalled: Boolean;
+begin
+  conditionCalled := False;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>(
+    function(const m: TComponentModel): Boolean
+    begin
+      Result := False;
+      conditionCalled := True;
+    end);
+  CheckTrue(conditionCalled);
+  fContainer.Build;
+  service := fContainer.Resolve<IAgeService>;
+  CheckIs(service, TNameAgeComponent);
+  CheckEquals(TNameAgeComponent.DefaultAge, service.Age);
+end;
+
+procedure TTestDecorators.RegisterTwoDecoratorsResolveReturnsLastDecorator;
+var
+  service: IAgeService;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator2>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAgeService>;
+  CheckIs(service, TAgeServiceDecorator2);
+  CheckEquals(TNameAgeComponent.DefaultAge, service.Age);
+end;
+
+procedure TTestDecorators.RegisterTwoDecoratorsResolveWithParameterReturnsCorrectValue;
+var
+  service: IAgeService;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator2>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAgeService>([42]);
+  CheckIs(service, TAgeServiceDecorator2);
+  CheckEquals(42, service.Age);
+end;
+
+procedure TTestDecorators.SetUp;
+begin
+  inherited;
+
+  fContainer.RegisterType<TNameAgeComponent>;
+  fContainer.Build;
 end;
 
 {$ENDREGION}

@@ -239,7 +239,8 @@ begin
     TTestLazyDependencies.Suite,
     TTestLazyDependenciesDetectRecursion.Suite,
     TTestDecoratorExtension.Suite,
-    TTestManyDependencies.Suite
+    TTestManyDependencies.Suite,
+    TTestDecorators.Suite
   ]);
 
   RegisterTests('Spring.Core.Logging', [
