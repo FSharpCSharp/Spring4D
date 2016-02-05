@@ -67,6 +67,7 @@ type
       const exceptionHandler: IORMExceptionHandler); override;
   public
     constructor Create(const connection: TFDConnection); override;
+    destructor Destroy; override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -245,6 +246,15 @@ begin
     Result := nil;
 end;
 
+destructor TFireDACConnectionAdapter.Destroy;
+begin
+{$IFDEF AUTOREFCOUNT}
+  if AutoFreeConnection then
+    Connection.DisposeOf;
+{$ENDIF}
+  inherited;
+end;
+
 procedure TFireDACConnectionAdapter.Disconnect;
 begin
   if Assigned(Connection) then
@@ -278,7 +288,12 @@ begin
     inherited Destroy;
   finally
     if fOwnsObject then
+    begin
+{$IFDEF NEXTGEN}
+      fTransaction.DisposeOf;
+{$ENDIF}
       fTransaction.Free;
+    end;
   end;
 end;
 
