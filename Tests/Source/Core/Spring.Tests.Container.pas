@@ -296,12 +296,6 @@ type
     procedure PerformChecks; override;
   end;
 
-  TTestDecoratorExtension = class(TContainerTestCase)
-  published
-    procedure TestResolveReturnsDecorator;
-    procedure TestResolveWithResolverOverride;
-  end;
-
   TTestManyDependencies = class(TContainerTestCase)
   protected
     procedure SetUp; override;
@@ -331,7 +325,6 @@ implementation
 uses
   Spring.Collections,
   Spring.Container.Core,
-  Spring.Container.DecoratorExtension,
   Spring.Container.Resolvers,
   Spring.TestUtils;
 
@@ -1882,39 +1875,6 @@ begin
 
   ExpectedException := ECircularDependencyException;
   inherited;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestDecoratorExtension'}
-
-procedure TTestDecoratorExtension.TestResolveReturnsDecorator;
-var
-  service: IAgeService;
-begin
-  fContainer.AddExtension<TDecoratorContainerExtension>;
-  fContainer.RegisterType<TAgeServiceDecorator2>;
-  fContainer.RegisterType<TAgeServiceDecorator>;
-  fContainer.RegisterType<TNameAgeComponent>;
-  fContainer.Build;
-
-  service := fContainer.Resolve<IAgeService>;
-  CheckTrue(service is TAgeServiceDecorator2);
-end;
-
-procedure TTestDecoratorExtension.TestResolveWithResolverOverride;
-var
-  service: IAgeService;
-begin
-  fContainer.AddExtension<TDecoratorContainerExtension>;
-  fContainer.RegisterType<TAgeServiceDecorator>;
-  fContainer.RegisterType<TNameAgeComponent>;
-  fContainer.Build;
-
-  service := fContainer.Resolve<IAgeService>([TNamedValue.From('age', 21)]);
-  CheckTrue(service is TAgeServiceDecorator);
-  CheckEquals(21, service.Age);
 end;
 
 {$ENDREGION}

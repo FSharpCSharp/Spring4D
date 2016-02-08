@@ -238,7 +238,6 @@ begin
     TTestRegisterInterfaceTypes.Suite,
     TTestLazyDependencies.Suite,
     TTestLazyDependenciesDetectRecursion.Suite,
-    TTestDecoratorExtension.Suite,
     TTestManyDependencies.Suite,
     TTestDecorators.Suite
   ]);
