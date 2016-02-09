@@ -45,7 +45,7 @@ type
   IComponentRegistry = interface;
   IDecoratorResolver = interface;
   IBuilderInspector = interface;
-  ISubDependencyResolver = interface;
+  IResolver = interface;
   IDependencyResolver = interface;
   IInjection = interface;
   IDependencyInjector = interface;
@@ -248,7 +248,7 @@ type
       const fieldName: string; const value: TValue): IInjection; overload;
   end;
 
-  ISubDependencyResolver = interface
+  IResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel; const argument: TValue): Boolean;
@@ -262,7 +262,7 @@ type
   ///   to detect cycled dependency graphs and also being used to provide
   ///   arguments to components.
   /// </summary>
-  ICreationContext = interface(ISubDependencyResolver)
+  ICreationContext = interface(IResolver)
     ['{0E788A94-AD9B-4951-85C1-40F877BB8A24}']
     function EnterResolution(const model: TComponentModel;
       out instance: TValue): Boolean;
@@ -275,7 +275,7 @@ type
       out handled: IInjection): Boolean;
   end;
 
-  IDependencyResolver = interface(ISubDependencyResolver)
+  IDependencyResolver = interface(IResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
     function CanResolve(const context: ICreationContext;
       const dependencies: TArray<TDependencyModel>;
@@ -284,8 +284,8 @@ type
       const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
 
-    procedure AddSubResolver(const subResolver: ISubDependencyResolver);
-    procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
+    procedure AddResolver(const resolver: IResolver);
+    procedure RemoveResolver(const resolver: IResolver);
   end;
 
   TInterceptorReference = record

@@ -51,7 +51,7 @@ uses
   Spring.Mocking.Core;
 
 type
-  TAutoMockResolver = class(TInterfacedObject, ISubDependencyResolver)
+  TAutoMockResolver = class(TInterfacedObject, IResolver)
   private
     fKernel: TKernel;
     procedure EnsureMockRegistered(const mockedType: TRttiType);
@@ -71,8 +71,8 @@ type
 
 procedure TAutoMockExtension.Initialize;
 begin
-  Kernel.Resolver.AddSubResolver(
-    TAutoMockResolver.Create(Kernel) as ISubDependencyResolver);
+  Kernel.Resolver.AddResolver(
+    TAutoMockResolver.Create(Kernel) as IResolver);
 end;
 
 {$ENDREGION}

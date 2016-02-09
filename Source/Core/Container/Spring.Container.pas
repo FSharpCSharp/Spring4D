@@ -221,10 +221,10 @@ begin
   Builder.OnBuild.Add(HandleBuild);
   InitializeInspectors;
 
-  Resolver.AddSubResolver(TLazyResolver.Create(Self));
-  Resolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
-  Resolver.AddSubResolver(TCollectionResolver.Create(Self));
-  Resolver.AddSubResolver(TComponentOwnerResolver.Create(Self));
+  Resolver.AddResolver(TLazyResolver.Create(Self));
+  Resolver.AddResolver(TDynamicArrayResolver.Create(Self));
+  Resolver.AddResolver(TCollectionResolver.Create(Self));
+  Resolver.AddResolver(TComponentOwnerResolver.Create(Self));
 end;
 
 destructor TContainer.Destroy;
