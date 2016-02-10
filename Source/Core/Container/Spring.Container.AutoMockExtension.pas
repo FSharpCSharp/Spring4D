@@ -61,9 +61,9 @@ type
     constructor Create(const kernel: TKernel);
 
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean;
+      const target: ITarget; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue;
+      const target: ITarget; const argument: TValue): TValue;
   end;
 
 
@@ -87,21 +87,21 @@ begin
 end;
 
 function TAutoMockResolver.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const target: ITarget; const argument: TValue): Boolean;
 var
   mockedType: TRttiType;
 begin
-  if dependency.TargetType.IsGenericType
-    and TryGetMockedType(dependency.TargetType, mockedType)
+  if target.TargetType.IsGenericType
+    and TryGetMockedType(target.TargetType, mockedType)
     and mockedType.IsInterface and not mockedType.IsType(TypeInfo(IInterface)) then
     Exit(True);
 
-  if dependency.TargetType.IsInterface and not IsLazyType(dependency.TypeInfo) then
+  if target.TargetType.IsInterface and not IsLazyType(target.TypeInfo) then
     if argument.IsEmpty then
-      Exit(not fKernel.Registry.HasService(dependency.TypeInfo))
+      Exit(not fKernel.Registry.HasService(target.TypeInfo))
     else
       if argument.IsString then
-        Exit(not fKernel.Registry.HasService(dependency.TypeInfo, argument.AsString));
+        Exit(not fKernel.Registry.HasService(target.TypeInfo, argument.AsString));
 
   Result := False;
 end;
@@ -132,22 +132,22 @@ begin
 end;
 
 function TAutoMockResolver.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const target: ITarget; const argument: TValue): TValue;
 var
   mockDirectly: Boolean;
   mockedType: TRttiType;
   mockName: string;
 begin
-  mockDirectly := dependency.TargetType.IsGenericType
-    and TryGetMockedType(dependency.TargetType, mockedType);
+  mockDirectly := target.TargetType.IsGenericType
+    and TryGetMockedType(target.TargetType, mockedType);
   if not mockDirectly then
-    mockedType := dependency.TargetType;
+    mockedType := target.TargetType;
   mockName := 'IMock<' + mockedType.DefaultName + '>';
   EnsureMockRegistered(mockedType);
   Result := (fKernel as IKernelInternal).Resolve(mockName);
   if mockDirectly then
   begin
-    TValueData(Result).FTypeInfo := dependency.TargetType.Handle;
+    TValueData(Result).FTypeInfo := target.TargetType.Handle;
     Exit;
   end
   else

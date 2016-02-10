@@ -51,9 +51,9 @@ type
     destructor Destroy; override;
 
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean;
+      const target: ITarget; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue;
+      const target: ITarget; const argument: TValue): TValue;
 
     function EnterResolution(const model: TComponentModel;
       out instance: TValue): Boolean;
@@ -139,14 +139,14 @@ begin
 end;
 
 function TCreationContext.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const target: ITarget; const argument: TValue): Boolean;
 var
   i: Integer;
 begin
   fLock.BeginRead;
   try
     for i := fTypedArguments.Count - 1 downto 0 do // check most recently added first
-      if fTypedArguments[i].TypeInfo = dependency.TypeInfo then
+      if fTypedArguments[i].TypeInfo = target.TypeInfo then
         Exit(True);
     Result := False;
   finally
@@ -261,19 +261,19 @@ begin
 end;
 
 function TCreationContext.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const target: ITarget; const argument: TValue): TValue;
 var
   i: Integer;
 begin
   fLock.BeginRead;
   try
     for i := fTypedArguments.Count - 1 downto 0 do
-      if fTypedArguments[i].TypeInfo = dependency.TypeInfo then
+      if fTypedArguments[i].TypeInfo = target.TypeInfo then
         Exit(fTypedArguments[i].Value);
   finally
     fLock.EndRead;
   end;
-  raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
+  raise EResolveException.CreateResFmt(@SCannotResolveType, [target.Name]);
 end;
 
 {$ENDREGION}

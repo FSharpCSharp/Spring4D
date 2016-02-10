@@ -57,20 +57,37 @@ type
 
   TActivatorDelegate<T> = reference to function: T;
 
-  TDependencyModel = record
+  ITarget = interface
+    ['{B365D350-5333-4C48-BD28-BD482EC15692}']
+    function GetParentType: TRttiType;
+    function GetTargetType: TRttiType;
+    function GetTarget: TRttiNamedObject;
+    function GetTargetTypeInfo: PTypeInfo;
+    function GetTargetTypeName: string;
+
+    property ParentType: TRttiType read GetParentType;
+    property TargetType: TRttiType read GetTargetType;
+    property Target: TRttiNamedObject read GetTarget;
+    property Name: string read GetTargetTypeName;
+    property TypeInfo: PTypeInfo read GetTargetTypeInfo;
+  end;
+
+  TTarget = class(TInterfacedObject, ITarget)
   private
     fTargetType: TRttiType;
     fTarget: TRttiNamedObject;
-    function GetParentType: TRttiType; inline;
-    function GetTargetTypeInfo: PTypeInfo; inline;
-    function GetTargetTypeName: string; inline;
+    function GetParentType: TRttiType;
+    function GetTargetType: TRttiType;
+    function GetTarget: TRttiNamedObject;
+    function GetTargetTypeInfo: PTypeInfo;
+    function GetTargetTypeName: string;
   public
     constructor Create(const targetType: TRttiType;
       const target: TRttiNamedObject);
 
     property ParentType: TRttiType read GetParentType;
-    property TargetType: TRttiType read fTargetType;
-    property Target: TRttiNamedObject read fTarget;
+    property TargetType: TRttiType read GetTargetType;
+    property Target: TRttiNamedObject read GetTarget;
     property Name: string read GetTargetTypeName;
     property TypeInfo: PTypeInfo read GetTargetTypeInfo;
   end;
@@ -143,9 +160,8 @@ type
       const decoratorModel: TComponentModel;
       const condition: Predicate<TComponentModel>);
 
-    function Resolve(const dependency: TDependencyModel;
-      const model: TComponentModel; const context: ICreationContext;
-      const decoratee: TValue): TValue;
+    function Resolve(const target: ITarget; const model: TComponentModel;
+      const context: ICreationContext; const decoratee: TValue): TValue;
   end;
 
   /// <summary>
@@ -206,7 +222,7 @@ type
     function GetTargetName: string;
     function GetHasTarget: Boolean;
     function GetArguments: TArray<TValue>;
-    function GetDependencies: TArray<TDependencyModel>;
+    function GetDependencies: TArray<ITarget>;
   {$ENDREGION}
 
     procedure Initialize(const target: TRttiMember);
@@ -219,7 +235,7 @@ type
     property TargetName: string read GetTargetName;
     property HasTarget: Boolean read GetHasTarget;
     property Arguments: TArray<TValue> read GetArguments;
-    property Dependencies: TArray<TDependencyModel> read GetDependencies;
+    property Dependencies: TArray<ITarget> read GetDependencies;
   end;
 
   IInjectionList = IList<IInjection>;
@@ -251,9 +267,9 @@ type
   IResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean;
+      const target: ITarget; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue;
+      const target: ITarget; const argument: TValue): TValue;
   end;
 
   /// <summary>
@@ -278,10 +294,10 @@ type
   IDependencyResolver = interface(IResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
     function CanResolve(const context: ICreationContext;
-      const dependencies: TArray<TDependencyModel>;
+      const dependencies: TArray<ITarget>;
       const arguments: TArray<TValue>): Boolean; overload;
     function Resolve(const context: ICreationContext;
-      const dependencies: TArray<TDependencyModel>;
+      const dependencies: TArray<ITarget>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     procedure AddResolver(const resolver: IResolver);
@@ -475,16 +491,16 @@ uses
   Spring.Reflection;
 
 
-{$REGION 'TDependencyModel'}
+{$REGION 'TTarget'}
 
-constructor TDependencyModel.Create(const targetType: TRttiType;
+constructor TTarget.Create(const targetType: TRttiType;
   const target: TRttiNamedObject);
 begin
   fTargetType := targetType;
   fTarget := target;
 end;
 
-function TDependencyModel.GetParentType: TRttiType;
+function TTarget.GetParentType: TRttiType;
 begin
   if fTarget is TRttiParameter then
     Result := fTarget.Parent.Parent as TRttiType
@@ -492,7 +508,17 @@ begin
     Result := fTarget.Parent as TRttiType;
 end;
 
-function TDependencyModel.GetTargetTypeInfo: PTypeInfo;
+function TTarget.GetTarget: TRttiNamedObject;
+begin
+  Result := fTarget;
+end;
+
+function TTarget.GetTargetType: TRttiType;
+begin
+  Result := fTargetType;
+end;
+
+function TTarget.GetTargetTypeInfo: PTypeInfo;
 begin
   if Assigned(fTargetType) then
     Result := fTargetType.Handle
@@ -500,7 +526,7 @@ begin
     Result := nil;
 end;
 
-function TDependencyModel.GetTargetTypeName: string;
+function TTarget.GetTargetTypeName: string;
 begin
   Result := fTargetType.DefaultName;
 end;
@@ -722,13 +748,13 @@ function TInjectableMethodFilter.IsSatisfiedBy(
   const method: TRttiMethod): Boolean;
 var
   params: TArray<TRttiParameter>;
-  dependencies: TArray<TDependencyModel>;
+  dependencies: TArray<ITarget>;
   i: Integer;
 begin
   params := method.GetParameters;
   SetLength(dependencies, Length(params));
   for i := Low(dependencies) to High(dependencies) do
-    dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
+    dependencies[i] := TTarget.Create(params[i].ParamType, params[i]);
   Result := fKernel.Resolver.CanResolve(nil, dependencies, fArguments);
 end;
 

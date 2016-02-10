@@ -74,11 +74,9 @@ type
     procedure EnsureConfiguration;
   public
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel;
-      const argument: TValue): Boolean; override;
+      const target: ITarget; const argument: TValue): Boolean; override;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel;
-      const argument: TValue): TValue; override;
+      const target: ITarget; const argument: TValue): TValue; override;
   end;
 
   {$ENDREGION}
@@ -128,18 +126,18 @@ end;
 {$REGION 'TLoggerResolver'}
 
 function TLoggerResolver.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const target: ITarget; const argument: TValue): Boolean;
 var
   componentType: TRttiType;
 begin
-  Result := (dependency.TypeInfo = System.TypeInfo(ILogger))
-    and (dependency.TypeInfo <> argument.TypeInfo)
+  Result := (target.TypeInfo = System.TypeInfo(ILogger))
+    and (target.TypeInfo <> argument.TypeInfo)
     and argument.IsEmpty // this is true for injections and even false for named injections
-    and Assigned(dependency.Target) and Assigned(dependency.Target.Parent);
+    and Assigned(target.Target) and Assigned(target.Target.Parent);
   if Result then
   begin
     EnsureConfiguration;
-    componentType := dependency.ParentType;
+    componentType := target.ParentType;
     Result := fConfiguration.HasLogger(componentType.Handle);
 
     if not Result and componentType.IsInstance then
@@ -172,14 +170,14 @@ begin
 end;
 
 function TLoggerResolver.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const target: ITarget; const argument: TValue): TValue;
 var
   handle: PTypeInfo;
   componentType: TRttiType;
 begin
   Assert(Assigned(fConfiguration));
 
-  componentType := dependency.ParentType;
+  componentType := target.ParentType;
   if fConfiguration.HasLogger(componentType.Handle) then
     handle := componentType.Handle
   else
