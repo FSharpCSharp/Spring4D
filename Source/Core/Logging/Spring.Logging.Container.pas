@@ -137,7 +137,7 @@ begin
   if Result then
   begin
     EnsureConfiguration;
-    componentType := target.ParentType;
+    componentType := target.Member.Parent;
     Result := fConfiguration.HasLogger(componentType.Handle);
 
     if not Result and componentType.IsInstance then
@@ -177,7 +177,7 @@ var
 begin
   Assert(Assigned(fConfiguration));
 
-  componentType := target.ParentType;
+  componentType := target.Member.Parent;
   if fConfiguration.HasLogger(componentType.Handle) then
     handle := componentType.Handle
   else

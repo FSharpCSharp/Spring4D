@@ -278,7 +278,7 @@ begin
         targetType := TRttiParameter(target).ParamType
       else
         raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
-          dependency.Name]);
+          dependency.TypeInfo.TypeName]);
       if TType.IsAssignable(attribute.ServiceType, targetType.Handle) then
       begin
         if attribute.ServiceType <> targetType.Handle then
@@ -287,7 +287,7 @@ begin
       end
       else
         raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
-          dependency.Name]);
+          dependency.TypeInfo.TypeName]);
     end;
   end
   else

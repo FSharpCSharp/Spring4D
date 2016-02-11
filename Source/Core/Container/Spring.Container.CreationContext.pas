@@ -273,7 +273,7 @@ begin
   finally
     fLock.EndRead;
   end;
-  raise EResolveException.CreateResFmt(@SCannotResolveType, [target.Name]);
+  raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
 end;
 
 {$ENDREGION}

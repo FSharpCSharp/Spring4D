@@ -91,12 +91,12 @@ function TAutoMockResolver.CanResolve(const context: ICreationContext;
 var
   mockedType: TRttiType;
 begin
-  if target.TargetType.IsGenericType
-    and TryGetMockedType(target.TargetType, mockedType)
+  if target.TypeInfo.RttiType.IsGenericType
+    and TryGetMockedType(target.TypeInfo.RttiType, mockedType)
     and mockedType.IsInterface and not mockedType.IsType(TypeInfo(IInterface)) then
     Exit(True);
 
-  if target.TargetType.IsInterface and not IsLazyType(target.TypeInfo) then
+  if (target.TypeInfo.Kind = tkInterface) and not IsLazyType(target.TypeInfo) then
     if argument.IsEmpty then
       Exit(not fKernel.Registry.HasService(target.TypeInfo))
     else
@@ -138,16 +138,16 @@ var
   mockedType: TRttiType;
   mockName: string;
 begin
-  mockDirectly := target.TargetType.IsGenericType
-    and TryGetMockedType(target.TargetType, mockedType);
+  mockDirectly := target.TypeInfo.RttiType.IsGenericType
+    and TryGetMockedType(target.TypeInfo.RttiType, mockedType);
   if not mockDirectly then
-    mockedType := target.TargetType;
+    mockedType := target.TypeInfo.RttiType;
   mockName := 'IMock<' + mockedType.DefaultName + '>';
   EnsureMockRegistered(mockedType);
   Result := (fKernel as IKernelInternal).Resolve(mockName);
   if mockDirectly then
   begin
-    TValueData(Result).FTypeInfo := target.TargetType.Handle;
+    TValueData(Result).FTypeInfo := target.TypeInfo;
     Exit;
   end
   else

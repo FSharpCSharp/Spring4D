@@ -391,7 +391,7 @@ begin
     and inherited CanResolve(context, target, argument);
   if Result then
   begin
-    targetType := GetLazyType(target.TargetType.Handle).RttiType;
+    targetType := GetLazyType(target.TypeInfo).RttiType;
     newTarget := TTarget.Create(targetType, target.Target);
     Result := Kernel.Resolver.CanResolve(context, newTarget, argument);
   end;
@@ -428,10 +428,10 @@ var
   hasEntered: Boolean;
 begin
   if not IsLazyType(target.TypeInfo) then
-    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.Name]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
 
   lazyKind := GetLazyKind(target.TypeInfo);
-  targetType := GetLazyType(target.TargetType.Handle).RttiType;
+  targetType := GetLazyType(target.TypeInfo).RttiType;
   newTarget := TTarget.Create(targetType, target.Target);
   if Kernel.Registry.HasService(targetType.Handle) then
   begin
@@ -456,7 +456,7 @@ begin
       tkInt64: Result := InternalResolve<Int64>(
         context, newTarget, argument, lazyKind);
     else
-      raise EResolveException.CreateResFmt(@SCannotResolveType, [target.Name]);
+      raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
     end;
     TValueData(Result).FTypeInfo := target.TypeInfo;
   finally
@@ -498,8 +498,9 @@ var
   targetType: TRttiType;
   newTarget: ITarget;
 begin
-  targetType := target.TargetType;
+  targetType := target.TypeInfo.RttiType;
   Result := targetType.IsDynamicArray
+
     and inherited CanResolve(context, target, argument);
   if Result then
   begin
@@ -516,9 +517,9 @@ var
   newTarget: ITarget;
   values: TArray<TValue>;
 begin
-  targetType := target.TargetType;
+  targetType := target.TypeInfo.RttiType;
   if not targetType.IsDynamicArray then
-    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.Name]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
   targetType := targetType.AsDynamicArray.ElementType;
   newTarget := TTarget.Create(targetType, nil);
 
@@ -540,7 +541,7 @@ var
   targetType: TRttiType;
   newTarget: ITarget;
 begin
-  targetType := target.TargetType;
+  targetType := target.TypeInfo.RttiType;
   Result := targetType.IsGenericType
     and MatchText(targetType.GetGenericTypeDefinition, SupportedTypes)
     and inherited CanResolve(context, target, argument);
@@ -581,7 +582,7 @@ begin
       TValue.Make(@list, target.TypeInfo, Result);
     end;
   else
-    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.Name]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
   end;
 end;
 

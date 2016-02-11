@@ -59,37 +59,27 @@ type
 
   ITarget = interface
     ['{B365D350-5333-4C48-BD28-BD482EC15692}']
-    function GetParentType: TRttiType;
-    function GetTargetType: TRttiType;
+    function GetTypeInfo: PTypeInfo;
+//    function GetName: string;
+    function GetMember: TRttiMember;
     function GetTarget: TRttiNamedObject;
-    function GetTargetTypeInfo: PTypeInfo;
-    function GetTargetTypeName: string;
 
-    property ParentType: TRttiType read GetParentType;
-    property TargetType: TRttiType read GetTargetType;
+    property TypeInfo: PTypeInfo read GetTypeInfo;
+    property Member: TRttiMember read GetMember;
     property Target: TRttiNamedObject read GetTarget;
-    property Name: string read GetTargetTypeName;
-    property TypeInfo: PTypeInfo read GetTargetTypeInfo;
   end;
 
   TTarget = class(TInterfacedObject, ITarget)
   private
     fTargetType: TRttiType;
     fTarget: TRttiNamedObject;
-    function GetParentType: TRttiType;
-    function GetTargetType: TRttiType;
+    function GetTypeInfo: PTypeInfo;
+//    function GetName: string;
+    function GetMember: TRttiMember;
     function GetTarget: TRttiNamedObject;
-    function GetTargetTypeInfo: PTypeInfo;
-    function GetTargetTypeName: string;
   public
     constructor Create(const targetType: TRttiType;
       const target: TRttiNamedObject);
-
-    property ParentType: TRttiType read GetParentType;
-    property TargetType: TRttiType read GetTargetType;
-    property Target: TRttiNamedObject read GetTarget;
-    property Name: string read GetTargetTypeName;
-    property TypeInfo: PTypeInfo read GetTargetTypeInfo;
   end;
 
   TKernel = class;
@@ -500,12 +490,12 @@ begin
   fTarget := target;
 end;
 
-function TTarget.GetParentType: TRttiType;
+function TTarget.GetMember: TRttiMember;
 begin
   if fTarget is TRttiParameter then
-    Result := fTarget.Parent.Parent as TRttiType
+    Result := fTarget.Parent as TRttiMember
   else
-    Result := fTarget.Parent as TRttiType;
+    Result := fTarget as TRttiMember;
 end;
 
 function TTarget.GetTarget: TRttiNamedObject;
@@ -513,22 +503,12 @@ begin
   Result := fTarget;
 end;
 
-function TTarget.GetTargetType: TRttiType;
-begin
-  Result := fTargetType;
-end;
-
-function TTarget.GetTargetTypeInfo: PTypeInfo;
+function TTarget.GetTypeInfo: PTypeInfo;
 begin
   if Assigned(fTargetType) then
     Result := fTargetType.Handle
   else
     Result := nil;
-end;
-
-function TTarget.GetTargetTypeName: string;
-begin
-  Result := fTargetType.DefaultName;
 end;
 
 {$ENDREGION'}
