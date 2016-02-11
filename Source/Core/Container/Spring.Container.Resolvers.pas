@@ -50,9 +50,11 @@ type
       const target: ITarget; const argument: TValue): TValue; virtual; abstract;
   end;
 
-  TDependencyResolver = class(TResolverBase, IDependencyResolver)
+  TDependencyResolver = class(TInterfacedObject, IDependencyResolver)
   private
+    fKernel: IKernel;
     fResolvers: IList<IResolver>;
+    property Kernel: IKernel read fKernel;
   protected
     function CanResolveFromArgument(const context: ICreationContext;
       const target: ITarget; const argument: TValue): Boolean;
@@ -67,16 +69,16 @@ type
     constructor Create(const kernel: TKernel);
 
     function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean; overload; override;
+      const target: ITarget; const argument: TValue): Boolean; overload;
     function CanResolve(const context: ICreationContext;
       const targets: TArray<ITarget>;
-      const arguments: TArray<TValue>): Boolean; reintroduce; overload; virtual;
+      const arguments: TArray<TValue>): Boolean; overload;
 
     function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue; overload; override;
+      const target: ITarget; const argument: TValue): TValue; overload;
     function Resolve(const context: ICreationContext;
       const targets: TArray<ITarget>;
-      const arguments: TArray<TValue>): TArray<TValue>; reintroduce; overload; virtual;
+      const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     procedure AddResolver(const resolver: IResolver);
     procedure RemoveResolver(const resolver: IResolver);
@@ -185,7 +187,8 @@ end;
 
 constructor TDependencyResolver.Create(const kernel: TKernel);
 begin
-  inherited Create(kernel);
+  inherited Create;
+  fKernel := kernel;
   fResolvers := TCollections.CreateInterfaceList<IResolver>;
 end;
 

@@ -281,8 +281,13 @@ type
       out handled: IInjection): Boolean;
   end;
 
-  IDependencyResolver = interface(IResolver)
+  IDependencyResolver = interface
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
+    function CanResolve(const context: ICreationContext;
+      const target: ITarget; const argument: TValue): Boolean; overload;
+    function Resolve(const context: ICreationContext;
+      const target: ITarget; const argument: TValue): TValue; overload;
+
     function CanResolve(const context: ICreationContext;
       const dependencies: TArray<ITarget>;
       const arguments: TArray<TValue>): Boolean; overload;
