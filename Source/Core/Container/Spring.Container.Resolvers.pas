@@ -52,9 +52,9 @@ type
 
   TDependencyResolver = class(TInterfacedObject, IDependencyResolver)
   private
-    fKernel: IKernel;
+    fKernel: TKernel;
     fResolvers: IList<IResolver>;
-    property Kernel: IKernel read fKernel;
+    property Kernel: TKernel read fKernel;
   protected
     function CanResolveFromArgument(const context: ICreationContext;
       const target: ITarget; const argument: TValue): Boolean;

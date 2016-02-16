@@ -32,13 +32,12 @@ uses
   Spring.Container,
   Spring.Container.Builder,
   Spring.Container.ComponentActivator,
-  Spring.Container.Core,
-  Spring.Container.Extensions;
+  Spring.Container.Core;
 
 type
-  TActivatorContainerExtension = class(TContainerExtension)
-  protected
-    procedure Initialize; override;
+  TActivatorContainerExtension = class(TInterfacedObject, IContainerExtension)
+  public
+    procedure Initialize(const kernel: IKernel);
   end;
 
   TActivatorInspector = class(TInspectorBase)
@@ -66,9 +65,9 @@ uses
 
 {$REGION 'TActivatorContainerExtension'}
 
-procedure TActivatorContainerExtension.Initialize;
+procedure TActivatorContainerExtension.Initialize(const kernel: IKernel);
 begin
-  Kernel.Builder.AddInspector(TActivatorInspector.Create);
+  kernel.Builder.AddInspector(TActivatorInspector.Create);
 end;
 
 {$ENDREGION}

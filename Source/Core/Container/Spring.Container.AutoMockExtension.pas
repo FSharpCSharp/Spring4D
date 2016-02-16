@@ -29,12 +29,12 @@ unit Spring.Container.AutoMockExtension;
 interface
 
 uses
-  Spring.Container.Extensions;
+  Spring.Container.Core;
 
 type
-  TAutoMockExtension = class(TContainerExtension)
-  protected
-    procedure Initialize; override;
+  TAutoMockExtension = class(TInterfacedObject, IContainerExtension)
+  public
+    procedure Initialize(const kernel: TKernel);
   end;
 
 implementation
@@ -45,7 +45,6 @@ uses
   TypInfo,
   Spring,
   Spring.Container.Common,
-  Spring.Container.Core,
   Spring.Reflection,
   Spring.Mocking,
   Spring.Mocking.Core;
@@ -69,10 +68,9 @@ type
 
 {$REGION 'TAutoMockExtension'}
 
-procedure TAutoMockExtension.Initialize;
+procedure TAutoMockExtension.Initialize(const kernel: TKernel);
 begin
-  Kernel.Resolver.AddResolver(
-    TAutoMockResolver.Create(Kernel) as IResolver);
+  kernel.Resolver.AddResolver(TAutoMockResolver.Create(kernel));
 end;
 
 {$ENDREGION}

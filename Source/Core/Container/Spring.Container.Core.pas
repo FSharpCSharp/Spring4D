@@ -100,8 +100,7 @@ type
   /// </summary>
   IContainerExtension = interface
     ['{E78748FB-D75C-447C-B984-9782A8F26C20}']
-    procedure Initialize;
-    procedure InitializeExtension(const kernel: TKernel);
+    procedure Initialize(const kernel: TKernel);
   end;
 
   /// <summary>
@@ -559,8 +558,7 @@ end;
 procedure TKernel.AddExtension(const extension: IContainerExtension);
 begin
   fExtensions.Add(extension);
-  extension.InitializeExtension(Self);
-  extension.Initialize;
+  extension.Initialize(Self);
 end;
 
 procedure TKernel.SetLogger(const logger: ILogger);
