@@ -37,13 +37,12 @@ uses
 type
   TActivatorContainerExtension = class(TInterfacedObject, IContainerExtension)
   public
-    procedure Initialize(const kernel: IKernel);
+    procedure Initialize(const kernel: TKernel);
   end;
 
-  TActivatorInspector = class(TInspectorBase)
-  protected
-    procedure DoProcessModel(const kernel: TKernel;
-      const model: TComponentModel); override;
+  TActivatorInspector = class(TInterfacedObject, IBuilderInspector)
+  public
+    procedure ProcessModel(const kernel: TKernel; const model: TComponentModel);
   end;
 
   TReflectionComponentActivator2 = class(TReflectionComponentActivator)
@@ -65,7 +64,7 @@ uses
 
 {$REGION 'TActivatorContainerExtension'}
 
-procedure TActivatorContainerExtension.Initialize(const kernel: IKernel);
+procedure TActivatorContainerExtension.Initialize(const kernel: TKernel);
 begin
   kernel.Builder.AddInspector(TActivatorInspector.Create);
 end;
@@ -75,7 +74,7 @@ end;
 
 {$REGION 'TActivatorInspector'}
 
-procedure TActivatorInspector.DoProcessModel(const kernel: TKernel;
+procedure TActivatorInspector.ProcessModel(const kernel: TKernel;
   const model: TComponentModel);
 begin
   if not Assigned(model.ActivatorDelegate) then
