@@ -77,7 +77,8 @@ end;
 procedure TActivatorInspector.ProcessModel(const kernel: TKernel;
   const model: TComponentModel);
 begin
-  if not Assigned(model.ActivatorDelegate) then
+  if not Assigned(model.ComponentActivator)
+    or (model.ComponentActivator is TReflectionComponentActivator) then
     model.ComponentActivator := TReflectionComponentActivator2.Create(kernel, model);
 end;
 

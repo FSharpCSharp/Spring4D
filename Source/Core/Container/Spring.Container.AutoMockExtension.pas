@@ -45,6 +45,7 @@ uses
   TypInfo,
   Spring,
   Spring.Container.Common,
+  Spring.Container.ComponentActivator,
   Spring.Reflection,
   Spring.Mocking,
   Spring.Mocking.Core;
@@ -115,7 +116,7 @@ begin
     // only for interfaces
     mockModel := fKernel.Registry.RegisterComponent(TMock<IInterface>.ClassInfo);
     fKernel.Registry.RegisterService(mockModel, TypeInfo(IMock<IInterface>), mockName);
-    mockModel.ActivatorDelegate :=
+    mockModel.ComponentActivator := TDelegateComponentActivator.Create(fKernel, mockModel,
       function: TValue
       var
         mock: TMock;
@@ -123,7 +124,7 @@ begin
         mock := TMock<IInterface>.NewInstance as TMock;
         mock.Create(mockedType.Handle);
         Result := mock;
-      end;
+      end);
     mockModel.LifetimeType := TLifetimeType.Singleton;
     fKernel.Builder.Build(mockModel);
   end;

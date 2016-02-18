@@ -399,13 +399,10 @@ procedure TComponentActivatorInspector.ProcessModel(
   const kernel: TKernel; const model: TComponentModel);
 begin
   if not Assigned(model.ComponentActivator) then
-    if not Assigned(model.ActivatorDelegate) then
-      if model.ComponentType.TypeKind = tkClass then
+    if model.ComponentType.TypeKind = tkClass then
         model.ComponentActivator := TReflectionComponentActivator.Create(kernel, model)
       else
-        raise EBuilderException.CreateResFmt(@SRegistrationIncomplete, [model.ComponentTypeName])
-    else
-      model.ComponentActivator := TDelegateComponentActivator.Create(kernel, model);
+        raise EBuilderException.CreateResFmt(@SRegistrationIncomplete, [model.ComponentTypeName]);
 end;
 
 {$ENDREGION}

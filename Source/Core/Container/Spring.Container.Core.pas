@@ -363,7 +363,6 @@ type
     fLifetimeType: TLifetimeType;
     fLifetimeManager: ILifetimeManager;
     fComponentActivator: IComponentActivator;
-    fActivatorDelegate: TActivatorDelegate;
     fMinPoolsize: Integer;
     fMaxPoolsize: Integer;
     fRefCounting: TRefCounting;
@@ -396,7 +395,6 @@ type
     property LifetimeType: TLifetimeType read fLifetimeType write fLifetimeType;
     property LifetimeManager: ILifetimeManager read fLifetimeManager write fLifetimeManager;
     property ComponentActivator: IComponentActivator read fComponentActivator write fComponentActivator;
-    property ActivatorDelegate: TActivatorDelegate read fActivatorDelegate write fActivatorDelegate;
 
     property ConstructorInjections: IInjectionList read fConstructorInjections;
     property MethodInjections: IInjectionList read fMethodInjections;

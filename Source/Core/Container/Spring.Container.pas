@@ -57,13 +57,13 @@ type
     function RegisterInstanceInternal(serviceType: PTypeInfo; const instance;
       const serviceName: string): TRegistration;
 
-    class function MakeActivatorDelegate<T>(const delegate: TActivatorDelegate<T>): TActivatorDelegate; overload; static;
+    function MakeActivatorDelegate<T>(const delegate: TActivatorDelegate<T>; const model: TComponentModel): IComponentActivator; overload;
   {$IFDEF DELPHIXE7_UP}
-    class function MakeActivatorDelegateObj(const delegate: IInterface; typeInfo: Pointer): TActivatorDelegate; static;
-    class function MakeActivatorDelegateIntf(const delegate: IInterface; typeInfo: Pointer): TActivatorDelegate; static;
+    function MakeActivatorDelegateObj(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IComponentActivator;
+    function MakeActivatorDelegateIntf(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IComponentActivator;
   {$ENDIF}
-    class function MakeActivatorDelegate(const instance: TValue): TActivatorDelegate; overload; static;
-    class function MakeActivatorDelegate(const instance; instanceType: PTypeInfo): TActivatorDelegate; overload; static;
+    function MakeActivatorDelegate(const instance: TValue; const model: TComponentModel): IComponentActivator; overload;
+    function MakeActivatorDelegate(const instance; instanceType: PTypeInfo; const model: TComponentModel): IComponentActivator; overload;
 
     class var GlobalInstance: TContainer;
     type TValueArray = array of TValue;
@@ -184,6 +184,7 @@ implementation
 uses
   TypInfo,
   Spring.Container.Builder,
+  Spring.Container.ComponentActivator,
   Spring.Container.CreationContext,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
@@ -270,70 +271,71 @@ begin
     Builder.AddInspector(inspector);
 end;
 
-class function TContainer.MakeActivatorDelegate(
-  const instance: TValue): TActivatorDelegate;
+function TContainer.MakeActivatorDelegate(
+  const instance: TValue; const model: TComponentModel): IComponentActivator;
 var
   value: TValue;
 begin
   value := instance;
-  Result :=
+  Result := TDelegateComponentActivator.Create(Self, model,
     function: TValue
     begin
       Result := value;
-    end;
+    end);
 end;
 
-class function TContainer.MakeActivatorDelegate(const instance;
-  instanceType: PTypeInfo): TActivatorDelegate;
+function TContainer.MakeActivatorDelegate(const instance;
+  instanceType: PTypeInfo; const model: TComponentModel): IComponentActivator;
 var
   value: TValue;
 begin
   TValue.Make(@instance, instanceType, value);
-  Result :=
+  Result := TDelegateComponentActivator.Create(Self, model,
     function: TValue
     begin
       Result := value;
-    end;
+    end);
 end;
 
-class function TContainer.MakeActivatorDelegate<T>(
-  const delegate: TActivatorDelegate<T>): TActivatorDelegate;
+function TContainer.MakeActivatorDelegate<T>(
+  const delegate: TActivatorDelegate<T>;
+  const model: TComponentModel): IComponentActivator;
 begin
-  Result :=
+  Result := TDelegateComponentActivator.Create(Self, model,
     function: TValue
     var
       instance: T;
     begin
       instance := delegate();
       Result := TValue.From(@instance, TypeInfo(T));
-    end;
+    end);
 end;
 
 {$IFDEF DELPHIXE7_UP}
-class function TContainer.MakeActivatorDelegateIntf(
-  const delegate: IInterface; typeInfo: Pointer): TActivatorDelegate;
+function TContainer.MakeActivatorDelegateIntf(const delegate: IInterface;
+  typeInfo: Pointer; const model: TComponentModel): IComponentActivator;
 begin
-  Result :=
+  Result := TDelegateComponentActivator.Create(Self, model,
     function: TValue
     var
       instance: IInterface;
     begin
       instance := TActivatorDelegate<IInterface>(delegate)();
       Result := TValue.From(@instance, typeInfo);
-    end;
+    end);
 end;
 
-class function TContainer.MakeActivatorDelegateObj(
-  const delegate: IInterface; typeInfo: Pointer): TActivatorDelegate;
+function TContainer.MakeActivatorDelegateObj(const delegate: IInterface;
+  typeInfo: Pointer; const model: TComponentModel): IComponentActivator;
 begin
-  Result :=
+  Result := TDelegateComponentActivator.Create(Self, model,
     function: TValue
     var
       instance: TObject;
     begin
       instance := TActivatorDelegate<TObject>(delegate)();
       Result := TValue.From(@instance, typeInfo);
-    end;
+    end);
 end;
 {$ENDIF}
 
@@ -420,7 +422,7 @@ function TContainer.RegisterInstanceInternal(serviceType: PTypeInfo;
   const instance; const serviceName: string): TRegistration;
 begin
   Result := RegisterType(serviceType, serviceType, serviceName);
-  Result.Model.ActivatorDelegate := MakeActivatorDelegate(instance, serviceType);
+  Result.Model.ComponentActivator := MakeActivatorDelegate(instance, serviceType, Result.Model);
 end;
 
 function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
@@ -433,7 +435,7 @@ function TContainer.RegisterInstance(serviceType: PTypeInfo;
   const instance: TValue; const serviceName: string): TRegistration;
 begin
   Result := RegisterType(serviceType, serviceType, serviceName);
-  Result.Model.ActivatorDelegate := MakeActivatorDelegate(instance);
+  Result.Model.ComponentActivator := MakeActivatorDelegate(instance, Result.Model);
 end;
 
 function TContainer.RegisterType<TComponentType>: TRegistration;
@@ -459,10 +461,10 @@ begin
   Result := RegisterType(TypeInfo(TComponentType));
 {$IFDEF DELPHIXE7_UP}
   case GetTypeKind(TComponentType) of
-    tkClass: Result.Model.ActivatorDelegate := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TComponentType));
-    tkInterface: Result.Model.ActivatorDelegate := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TComponentType));
+    tkClass: Result.Model.ComponentActivator := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
+    tkInterface: Result.Model.ComponentActivator := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
   else{$ELSE}begin{$ENDIF}
-    Result.Model.ActivatorDelegate := MakeActivatorDelegate<TComponentType>(delegate);
+    Result.Model.ComponentActivator := MakeActivatorDelegate<TComponentType>(delegate, Result.Model);
   end;
 end;
 
@@ -473,10 +475,10 @@ begin
   Result := RegisterType(TypeInfo(TServiceType), TypeInfo(TServiceType), serviceName);
 {$IFDEF DELPHIXE7_UP}
   case GetTypeKind(TServiceType) of
-    tkClass: Result.Model.ActivatorDelegate := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TServiceType));
-    tkInterface: Result.Model.ActivatorDelegate := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TServiceType));
+    tkClass: Result.Model.ComponentActivator := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TServiceType), Result.Model);
+    tkInterface: Result.Model.ComponentActivator := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TServiceType), Result.Model);
   else{$ELSE}begin{$ENDIF}
-    Result.Model.ActivatorDelegate := MakeActivatorDelegate<TServiceType>(delegate);
+    Result.Model.ComponentActivator := MakeActivatorDelegate<TServiceType>(delegate, Result.Model);
   end;
 end;
 
@@ -487,10 +489,10 @@ begin
   Result := RegisterType(TypeInfo(TServiceType), TypeInfo(TComponentType), serviceName);
 {$IFDEF DELPHIXE7_UP}
   case GetTypeKind(TComponentType) of
-    tkClass: Result.Model.ActivatorDelegate := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TComponentType));
-    tkInterface: Result.Model.ActivatorDelegate := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TComponentType));
+    tkClass: Result.Model.ComponentActivator := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
+    tkInterface: Result.Model.ComponentActivator := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
   else{$ELSE}begin{$ENDIF}
-    Result.Model.ActivatorDelegate := MakeActivatorDelegate<TComponentType>(delegate);
+    Result.Model.ComponentActivator := MakeActivatorDelegate<TComponentType>(delegate, Result.Model);
   end;
 end;
 
