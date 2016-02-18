@@ -47,8 +47,7 @@ type
 
     procedure AddInterceptorSelector(const selector: IModelInterceptorsSelector);
 
-    function CreateInstance(const context: ICreationContext;
-      const instance: TValue; const model: TComponentModel;
+    function CreateInstance(const instance: TValue; const model: TComponentModel;
       const constructorArguments: array of TValue): TValue;
   end;
 
@@ -75,8 +74,8 @@ begin
   fSelectors.Add(selector);
 end;
 
-function TProxyFactory.CreateInstance(const context: ICreationContext;
-  const instance: TValue; const model: TComponentModel;
+function TProxyFactory.CreateInstance(const instance: TValue;
+  const model: TComponentModel;
   const constructorArguments: array of TValue): TValue;
 var
   interceptors: TArray<IInterceptor>;

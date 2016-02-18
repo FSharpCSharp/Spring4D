@@ -73,10 +73,8 @@ type
     fConfiguration: TLoggingConfiguration;
     procedure EnsureConfiguration;
   public
-    function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean; override;
-    function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue; override;
+    function CanResolve(const request: IRequest): Boolean; override;
+    function Resolve(const request: IRequest): TValue; override;
   end;
 
   {$ENDREGION}
@@ -125,13 +123,18 @@ end;
 
 {$REGION 'TLoggerResolver'}
 
-function TLoggerResolver.CanResolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): Boolean;
+function TLoggerResolver.CanResolve(const request: IRequest): Boolean;
 var
+  target: ITarget;
+  argument: TValue;
   componentType: TRttiType;
 begin
-  Result := (target.TypeInfo = System.TypeInfo(ILogger))
-    and (target.TypeInfo <> argument.TypeInfo)
+  target := request.Target;
+  if target = nil then
+    Exit(False);
+  argument := request.Parameter;
+  Result := (request.Service = System.TypeInfo(ILogger))
+    and (request.Service <> argument.TypeInfo)
     and argument.IsEmpty // this is true for injections and even false for named injections
     and Assigned(target.Target) and Assigned(target.Target.Parent);
   if Result then
@@ -169,15 +172,14 @@ begin
   end;
 end;
 
-function TLoggerResolver.Resolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): TValue;
+function TLoggerResolver.Resolve(const request: IRequest): TValue;
 var
   handle: PTypeInfo;
   componentType: TRttiType;
 begin
   Assert(Assigned(fConfiguration));
 
-  componentType := target.Member.Parent;
+  componentType := request.Target.Member.Parent;
   if fConfiguration.HasLogger(componentType.Handle) then
     handle := componentType.Handle
   else

@@ -44,10 +44,8 @@ type
   public
     constructor Create(const kernel: TKernel);
 
-    function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean; virtual;
-    function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue; virtual; abstract;
+    function CanResolve(const request: IRequest): Boolean; virtual;
+    function Resolve(const request: IRequest): TValue; virtual; abstract;
   end;
 
   TDependencyResolver = class(TInterfacedObject, IDependencyResolver)
@@ -56,26 +54,20 @@ type
     fResolvers: IList<IResolver>;
     property Kernel: TKernel read fKernel;
   protected
-    function CanResolveFromArgument(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean;
-    function CanResolveFromContext(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean;
-    function CanResolveFromResolvers(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean;
-    function InternalResolveValue(const context: ICreationContext;
-      const model: TComponentModel; const target: ITarget;
-      const instance: TValue): TValue;
+    function CanResolveFromArgument(const request: IRequest): Boolean; // TODO can be moved to IRequest
+    function CanResolveFromContext(const request: IRequest): Boolean;
+    function CanResolveFromResolvers(const request: IRequest): Boolean;
+    function InternalResolveValue(const model: TComponentModel;
+      serviceType: PTypeInfo; const instance: TValue): TValue;
   public
     constructor Create(const kernel: TKernel);
 
-    function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean; overload;
+    function CanResolve(const request: IRequest): Boolean; overload;
     function CanResolve(const context: ICreationContext;
       const targets: TArray<ITarget>;
       const arguments: TArray<TValue>): Boolean; overload;
 
-    function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue; overload;
+    function Resolve(const request: IRequest): TValue; overload;
     function Resolve(const context: ICreationContext;
       const targets: TArray<ITarget>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
@@ -86,30 +78,23 @@ type
 
   TLazyResolver = class(TResolverBase)
   private
-    function InternalResolve<T>(const context: ICreationContext;
-      const target: ITarget; const argument: TValue; lazyKind: TLazyKind): TValue;
-
+    function InternalResolve<T>(const request: IRequest;
+      lazyKind: TLazyKind): TValue;
   public
-    function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean; override;
-    function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue; override;
+    function CanResolve(const request: IRequest): Boolean; override;
+    function Resolve(const request: IRequest): TValue; override;
   end;
 
   TDynamicArrayResolver = class(TResolverBase)
   public
-    function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean; override;
-    function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue; override;
+    function CanResolve(const request: IRequest): Boolean; override;
+    function Resolve(const request: IRequest): TValue; override;
   end;
 
   TCollectionResolver = class(TResolverBase)
   public
-    function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean; override;
-    function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue; override;
+    function CanResolve(const request: IRequest): Boolean; override;
+    function Resolve(const request: IRequest): TValue; override;
   end;
 
   TComponentOwnerResolver = class(TResolverBase)
@@ -118,10 +103,8 @@ type
   public
     constructor Create(const kernel: TKernel);
 
-    function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean; override;
-    function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue; override;
+    function CanResolve(const request: IRequest): Boolean; override;
+    function Resolve(const request: IRequest): TValue; override;
   end;
 
   TDecoratorResolver = class(TInterfacedObject, IDecoratorResolver)
@@ -141,8 +124,8 @@ type
     procedure AddDecorator(decoratedType: PTypeInfo;
       const decoratorModel: TComponentModel;
       const condition: Predicate<TComponentModel>);
-    function Resolve(const target: ITarget; const model: TComponentModel;
-      const context: ICreationContext; const decoratee: TValue): TValue;
+    function Resolve(const request: IRequest;
+      const model: TComponentModel; const decoratee: TValue): TValue;
   end;
 
 implementation
@@ -151,7 +134,6 @@ uses
   Classes,
   StrUtils,
   TypInfo,
-  Spring.Collections.Lists,
   Spring.Container.CreationContext,
   Spring.Container.ResourceStrings,
   Spring.Reflection;
@@ -169,15 +151,17 @@ begin
   fKernel := kernel;
 end;
 
-function TResolverBase.CanResolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): Boolean;
+function TResolverBase.CanResolve(const request: IRequest): Boolean;
+var
+  parameter: TValue;
 begin
-  if not argument.IsEmpty and argument.IsString then
-    Result := not Kernel.Registry.HasService(target.TypeInfo, argument.AsString)
-      and (target.TypeInfo <> argument.TypeInfo)
+  parameter := request.Parameter;
+  if not parameter.IsEmpty and parameter.IsString then
+    Result := not Kernel.Registry.HasService(request.Service, parameter.AsString)
+      and (request.Service <> parameter.TypeInfo)
   else
-    Result := not Kernel.Registry.HasService(target.TypeInfo)
-      and (target.TypeInfo <> argument.TypeInfo);
+    Result := not Kernel.Registry.HasService(request.Service)
+      and (request.Service <> parameter.TypeInfo);
 end;
 
 {$ENDREGION}
@@ -204,64 +188,61 @@ begin
   fResolvers.Remove(resolver);
 end;
 
-function TDependencyResolver.InternalResolveValue(
-  const context: ICreationContext; const model: TComponentModel;
-  const target: ITarget; const instance: TValue): TValue;
+function TDependencyResolver.InternalResolveValue(const model: TComponentModel;
+  serviceType: PTypeInfo; const instance: TValue): TValue;
 var
   intf: Pointer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(context, 'context');
-  Guard.CheckNotNull(target, 'target');
+  Guard.CheckNotNull(serviceType, 'serviceType');
   Guard.CheckNotNull(not instance.IsEmpty, 'instance');
 {$ENDIF}
 
-  if target.TypeInfo.Kind = tkInterface then
+  if serviceType.Kind = tkInterface then
   begin
     if instance.IsObject then
-      instance.AsObject.GetInterface(target.TypeInfo.TypeData.Guid, intf)
+      instance.AsObject.GetInterface(serviceType.TypeData.Guid, intf)
     else
     begin
-      if IsMethodReference(target.TypeInfo) then
+      if IsMethodReference(serviceType) then
       begin
         intf := nil;
         IInterface(intf) := instance.AsInterface;
       end
       else
-        instance.AsInterface.QueryInterface(target.TypeInfo.TypeData.Guid, intf);
+        instance.AsInterface.QueryInterface(serviceType.TypeData.Guid, intf);
     end;
-    TValue.MakeWithoutCopy(@intf, target.TypeInfo, Result);
-    Result := Kernel.ProxyFactory.CreateInstance(context, Result, model, []);
+    TValue.MakeWithoutCopy(@intf, serviceType, Result);
+    Result := Kernel.ProxyFactory.CreateInstance(Result, model, []);
   end
   else
     Result := instance;
-
-  Result := Kernel.DecoratorResolver.Resolve(target, model, context, Result);
 end;
 
-function TDependencyResolver.CanResolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): Boolean;
+function TDependencyResolver.CanResolve(const request: IRequest): Boolean;
 var
+  argument: TValue;
   kind: TTypeKind;
   serviceName: string;
   serviceType: PTypeInfo;
   componentModel: TComponentModel;
 begin
-  if target.TypeInfo = nil then
+  if Assigned(request.Target) and (request.Target.TypeInfo = nil) then
     Exit(True);
 
-  if CanResolveFromContext(context, target, argument) then
+  if CanResolveFromContext(request) then
     Exit(True);
 
-  if CanResolveFromResolvers(context, target, argument) then
+  if CanResolveFromResolvers(request) then
     Exit(True);
 
+  argument := request.Parameter;
   if argument.IsEmpty then
-    Result := Kernel.Registry.HasDefault(target.TypeInfo)
-  else if CanResolveFromArgument(context, target, argument) then
+    Result := Kernel.Registry.HasDefault(request.Service)
+  else if CanResolveFromArgument(request) then
     Result := True
   else if argument.TryAsType(TypeInfo(TTypeKind), kind) and (kind = tkDynArray) then
-    Result := Kernel.Registry.HasService(target.TypeInfo)
+    Result := Kernel.Registry.HasService(request.Service)
   else
   begin
     Result := argument.IsString;
@@ -273,59 +254,67 @@ begin
       if Result then
       begin
         serviceType := componentModel.Services[serviceName];
-        Result := IsAssignableFrom(target.TypeInfo, serviceType);
+        Result := IsAssignableFrom(request.Service, serviceType);
       end;
     end;
   end;
 end;
 
-function TDependencyResolver.Resolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): TValue;
+function TDependencyResolver.Resolve(const request: IRequest): TValue;
 var
   i: Integer;
   componentModel: TComponentModel;
   instance: TValue;
 begin
-  if target.TypeInfo = nil then
+  if Assigned(request.Target) and (request.Target.TypeInfo = nil) then
     Exit(TValue.Empty);
 
-  if CanResolveFromContext(context, target, argument) then
-    Exit(context.Resolve(context, target, argument));
+  if CanResolveFromContext(request) then
+    Exit(request.Context.Resolve(request));
 
   for i := fResolvers.Count - 1 downto 0 do
-    if fResolvers[i].CanResolve(context, target, argument) then
-      Exit(fResolvers[i].Resolve(context, target, argument));
+    if fResolvers[i].CanResolve(request) then
+      Exit(fResolvers[i].Resolve(request));
 
-  if CanResolveFromArgument(context, target, argument) then
-    Exit(argument);
+  if CanResolveFromArgument(request) then
+    Exit(request.Parameter);
 
-  componentModel := Kernel.Registry.FindOne(target.TypeInfo, argument);
+  componentModel := Kernel.Registry.FindOne(request.Service, request.Parameter);
 
-  if context.EnterResolution(componentModel, instance) then
+  if request.Context.EnterResolution(componentModel, instance) then
   try
-    instance := componentModel.LifetimeManager.Resolve(context, componentModel);
+    instance := componentModel.LifetimeManager.Resolve(request.Context, componentModel);
   finally
-    context.LeaveResolution(componentModel);
+    request.Context.LeaveResolution(componentModel);
   end;
-  Result := InternalResolveValue(context, componentModel, target, instance);
+  Result := InternalResolveValue(componentModel, request.Service, instance);
+
+  Result := Kernel.DecoratorResolver.Resolve(request, componentModel, Result);
 end;
 
 function TDependencyResolver.CanResolve(const context: ICreationContext;
   const targets: TArray<ITarget>; const arguments: TArray<TValue>): Boolean;
 var
   i: Integer;
+  request: IRequest;
 begin
   if Length(targets) = Length(arguments) then
   begin
     for i := Low(targets) to High(targets) do
-      if not CanResolve(context, targets[i], arguments[i]) then
+    begin
+      request := TRequest.Create(targets[i].TypeInfo, context, targets[i], arguments[i]);
+      if not CanResolve(request) then
         Exit(False);
+    end;
   end
   else if arguments = nil then
   begin
     for i := Low(targets) to High(targets) do
-      if not CanResolve(context, targets[i], nil) then
+    begin
+      request := TRequest.Create(targets[i].TypeInfo, context, targets[i], nil);
+      if not CanResolve(request) then
         Exit(False);
+    end;
   end
   else
     Exit(False);
@@ -333,32 +322,31 @@ begin
 end;
 
 function TDependencyResolver.CanResolveFromArgument(
-  const context: ICreationContext; const target: ITarget;
-  const argument: TValue): Boolean;
+  const request: IRequest): Boolean;
+var
+  argument: TValue;
 begin
-  Result := Assigned(argument.TypeInfo) and argument.IsType(target.TypeInfo);
+  argument := request.Parameter;
+  Result := Assigned(argument.TypeInfo) and argument.IsType(request.Service);
   if not Result and (argument.Kind in [tkInteger, tkFloat, tkInt64]) then
-    Result := argument.Kind = target.TypeInfo.Kind;
+    Result := argument.Kind = request.Service.Kind;
   if Result and argument.IsString then
-    Result := not Kernel.Registry.HasService(target.TypeInfo, argument.AsString);
+    Result := not Kernel.Registry.HasService(request.Service, argument.AsString);
 end;
 
 function TDependencyResolver.CanResolveFromContext(
-  const context: ICreationContext;  const target: ITarget;
-  const argument: TValue): Boolean;
+  const request: IRequest): Boolean;
 begin
-  Result := Assigned(context)
-    and context.CanResolve(context, target, argument);
+  Result := Assigned(request.Context) and request.Context.CanResolve(request);
 end;
 
 function TDependencyResolver.CanResolveFromResolvers(
-  const context: ICreationContext; const target: ITarget;
-  const argument: TValue): Boolean;
+  const request: IRequest): Boolean;
 var
   i: Integer;
 begin
   for i := fResolvers.Count - 1 downto 0 do
-    if fResolvers[i].CanResolve(context, target, argument) then
+    if fResolvers[i].CanResolve(request) then
       Exit(True);
   Result := False;
 end;
@@ -367,16 +355,23 @@ function TDependencyResolver.Resolve(const context: ICreationContext;
   const targets: TArray<ITarget>; const arguments: TArray<TValue>): TArray<TValue>;
 var
   i: Integer;
+  request: IRequest;
 begin
   if Assigned(arguments) and (Length(arguments) <> Length(targets)) then
     raise EResolveException.CreateRes(@SUnsatisfiedResolutionArgumentCount);
   SetLength(Result, Length(targets));
   if Assigned(arguments) then
     for i := Low(targets) to High(targets) do
-      Result[i] := Resolve(context, targets[i], arguments[i])
+    begin
+      request := TRequest.Create(targets[i].TypeInfo, context, targets[i], arguments[i]);
+      Result[i] := Resolve(request);
+    end
   else
     for i := Low(targets) to High(targets) do
-      Result[i] := Resolve(context, targets[i], nil);
+    begin
+      request := TRequest.Create(targets[i].TypeInfo, context, targets[i], nil);
+      Result[i] := Resolve(request);
+    end;
 end;
 
 {$ENDREGION}
@@ -384,34 +379,31 @@ end;
 
 {$REGION 'TLazyResolver'}
 
-function TLazyResolver.CanResolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): Boolean;
+function TLazyResolver.CanResolve(const request: IRequest): Boolean;
 var
-  targetType: TRttiType;
-  newTarget: ITarget;
+  serviceType: PTypeInfo;
+  newRequest: IRequest;
 begin
-  Result := IsLazyType(target.TypeInfo)
-    and inherited CanResolve(context, target, argument);
+  Result := IsLazyType(request.Service) 
+    and inherited CanResolve(request);
   if Result then
   begin
-    targetType := GetLazyType(target.TypeInfo).RttiType;
-    newTarget := TTarget.Create(targetType, target.Target);
-    Result := Kernel.Resolver.CanResolve(context, newTarget, argument);
+    serviceType := GetLazyType(request.Service);
+    newRequest := TRequest.Create(serviceType, request.Context, request.Target, request.Parameter);
+    Result := Kernel.Resolver.CanResolve(newRequest);
   end;
 end;
 
-function TLazyResolver.InternalResolve<T>(const context: ICreationContext;
-  const target: ITarget; const argument: TValue; lazyKind: TLazyKind): TValue;
+function TLazyResolver.InternalResolve<T>(const request: IRequest;
+  lazyKind: TLazyKind): TValue;
 var
-  value: TValue;
   factory: Func<T>;
   intf: IInterface;
 begin
-  value := argument;
   factory :=
     function: T
     begin
-      Kernel.Resolver.Resolve(context, target, value).AsType(TypeInfo(T), Result);
+      Kernel.Resolver.Resolve(request).AsType(TypeInfo(T), Result);
     end;
 
   case lazyKind of
@@ -421,25 +413,23 @@ begin
   end;
 end;
 
-function TLazyResolver.Resolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): TValue;
+function TLazyResolver.Resolve(const request: IRequest): TValue;
 var
   lazyKind: TLazyKind;
-  targetType: TRttiType;
-  newTarget: ITarget;
+  serviceType: PTypeInfo;
   componentModel: TComponentModel;
+  newRequest: IRequest;
   hasEntered: Boolean;
 begin
-  if not IsLazyType(target.TypeInfo) then
-    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
+  if not IsLazyType(request.Service) then
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [request.Service.TypeName]);
 
-  lazyKind := GetLazyKind(target.TypeInfo);
-  targetType := GetLazyType(target.TypeInfo).RttiType;
-  newTarget := TTarget.Create(targetType, target.Target);
-  if Kernel.Registry.HasService(targetType.Handle) then
+  lazyKind := GetLazyKind(request.Service);
+  serviceType := GetLazyType(request.Service);
+  if Kernel.Registry.HasService(serviceType) then
   begin
-    componentModel := Kernel.Registry.FindOne(targetType.Handle, argument);
-    hasEntered := context.EnterResolution(componentModel, Result);
+    componentModel := Kernel.Registry.FindOne(serviceType, request.Parameter);
+    hasEntered := request.Context.EnterResolution(componentModel, Result);
   end
   else
   begin
@@ -447,24 +437,20 @@ begin
     hasEntered := False;
   end;
   try
-    case targetType.TypeKind of
-      tkClass: Result := InternalResolve<TObject>(
-        context, newTarget, argument, lazyKind);
-      tkInterface: Result := InternalResolve<IInterface>(
-        context, newTarget, argument, lazyKind);
-      tkUString: Result := InternalResolve<string>(
-        context, newTarget, argument, lazyKind);
-      tkInteger: Result := InternalResolve<Integer>(
-        context, newTarget, argument, lazyKind);
-      tkInt64: Result := InternalResolve<Int64>(
-        context, newTarget, argument, lazyKind);
+    newRequest := TRequest.Create(serviceType, request.Context, request.Target, request.Parameter);
+    case serviceType.Kind of
+      tkClass: Result := InternalResolve<TObject>(newRequest, lazyKind);
+      tkInterface: Result := InternalResolve<IInterface>(newRequest, lazyKind);
+      tkUString: Result := InternalResolve<string>(newRequest, lazyKind);
+      tkInteger: Result := InternalResolve<Integer>(newRequest, lazyKind);
+      tkInt64: Result := InternalResolve<Int64>(newRequest, lazyKind);
     else
-      raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
+      raise EResolveException.CreateResFmt(@SCannotResolveType, [request.Service.TypeName]);
     end;
-    TValueData(Result).FTypeInfo := target.TypeInfo;
+    TValueData(Result).FTypeInfo := request.Service;
   finally
     if hasEntered then
-      context.LeaveResolution(componentModel);
+      request.Context.LeaveResolution(componentModel);
   end;
 end;
 
@@ -473,16 +459,17 @@ end;
 
 {$REGION 'TDynamicArrayResolver'}
 
-function ResolveDynamicArray(const kernel: TKernel; const context: ICreationContext;
-  const target: ITarget; const targetType: TRttiType): TArray<TValue>;
+function ResolveDynamicArray(const kernel: TKernel;
+  const context: ICreationContext; targetType: PTypeInfo): TArray<TValue>;
 var
   serviceType: PTypeInfo;
   models: TArray<TComponentModel>;
   i: Integer;
   serviceName: string;
+  newRequest: IRequest;
 begin
   // TODO: remove dependency on lazy type
-  serviceType := targetType.Handle;
+  serviceType := targetType;
   if IsLazyType(serviceType) then
     serviceType := GetLazyType(serviceType);
   models := kernel.Registry.FindAll(serviceType).ToArray;
@@ -491,43 +478,37 @@ begin
   for i := Low(models) to High(models) do
   begin
     serviceName := models[i].GetServiceName(serviceType);
-    Result[i] := Kernel.Resolver.Resolve(context, target, serviceName);
+    newRequest := TRequest.Create(targetType, context, nil, serviceName);
+    Result[i] := Kernel.Resolver.Resolve(newRequest);
   end;
 end;
 
-function TDynamicArrayResolver.CanResolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): Boolean;
+function TDynamicArrayResolver.CanResolve(const request: IRequest): Boolean;
 var
-  targetType: TRttiType;
-  newTarget: ITarget;
+  serviceType: PTypeInfo;
+  newRequest: IRequest;
 begin
-  targetType := target.TypeInfo.RttiType;
-  Result := targetType.IsDynamicArray
-
-    and inherited CanResolve(context, target, argument);
+  Result := (request.Service.Kind = tkDynArray)
+    and inherited CanResolve(request);
   if Result then
   begin
-    targetType := targetType.AsDynamicArray.ElementType;
-    newTarget := TTarget.Create(targetType, nil);
-    Result := Kernel.Resolver.CanResolve(context, newTarget, TValue.From(tkDynArray));
+    serviceType := request.Service.TypeData.DynArrElType^;
+    newRequest := TRequest.Create(serviceType, request.Context, request.Target, TValue.From(tkDynArray));
+    Result := Kernel.Resolver.CanResolve(newRequest);
   end;
 end;
 
-function TDynamicArrayResolver.Resolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): TValue;
+function TDynamicArrayResolver.Resolve(const request: IRequest): TValue;
 var
-  targetType: TRttiType;
-  newTarget: ITarget;
+  serviceType: PTypeInfo;
   values: TArray<TValue>;
 begin
-  targetType := target.TypeInfo.RttiType;
-  if not targetType.IsDynamicArray then
-    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
-  targetType := targetType.AsDynamicArray.ElementType;
-  newTarget := TTarget.Create(targetType, nil);
+  if request.Service.Kind <> tkDynArray then
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [request.Service.TypeName]);
+  serviceType := request.Service.TypeData.DynArrElType^;
 
-  values := ResolveDynamicArray(Kernel, context, newTarget, targetType);
-  Result := TValue.FromArray(target.TypeInfo, values);
+  values := ResolveDynamicArray(Kernel, request.Context, serviceType);
+  Result := TValue.FromArray(request.Service, values);
 end;
 
 {$ENDREGION}
@@ -535,58 +516,55 @@ end;
 
 {$REGION 'TCollectionResolver'}
 
-function TCollectionResolver.CanResolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): Boolean;
+function TCollectionResolver.CanResolve(const request: IRequest): Boolean;
 const
   SupportedTypes: array[0..4] of string = (
     'IList<>', 'IReadOnlyList<>', 'ICollection<>', 'IReadOnlyCollection<T>', 'IEnumerable<>');
 var
   targetType: TRttiType;
-  newTarget: ITarget;
+  newRequest: IRequest;
 begin
-  targetType := target.TypeInfo.RttiType;
-  Result := targetType.IsGenericType
-    and MatchText(targetType.GetGenericTypeDefinition, SupportedTypes)
-    and inherited CanResolve(context, target, argument);
+  targetType := request.Service.RttiType;
+  Result := inherited CanResolve(request) 
+    and targetType.IsGenericType
+    and MatchText(targetType.GetGenericTypeDefinition, SupportedTypes);
   if Result then
   begin
     targetType := GetElementType(targetType.Handle).RttiType;
-    newTarget := TTarget.Create(targetType, nil);
-    Result := targetType.IsClassOrInterface
-      and Kernel.Resolver.CanResolve(context, newTarget, TValue.From(tkDynArray));
+    if not targetType.IsClassOrInterface then
+      Exit(False);
+    newRequest := TRequest.Create(targetType.Handle, request.Context, request.Target, TValue.From(tkDynArray));
+    Result := Kernel.Resolver.CanResolve(newRequest);
   end;
 end;
 
-function TCollectionResolver.Resolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): TValue;
+function TCollectionResolver.Resolve(const request: IRequest): TValue;
 var
-  itemType: TRttiType;
-  newTarget: ITarget;
+  itemType: PTypeInfo;
   values: TArray<TValue>;
   list: IInterface;
   i: Integer;
 begin
-  itemType := GetElementType(target.TypeInfo).RttiType;
-  newTarget := TTarget.Create(itemType, nil);
-  values := ResolveDynamicArray(Kernel, context, newTarget, itemType);
-  case itemType.TypeKind of
+  itemType := GetElementType(request.Service);
+  values := ResolveDynamicArray(Kernel, request.Context, itemType);
+  case itemType.Kind of
     tkClass:
     begin
-      list := TCollections.CreateObjectList(itemType.Handle, False);
+      list := TCollections.CreateObjectList(itemType, False);
       for i := Low(values) to High(values) do
-        IObjectList(list).Add(values[i].AsObject);
-      TValue.Make(@list, target.TypeInfo, Result);
+        Spring.Collections.IObjectList(list).Add(values[i].AsObject);
     end;
     tkInterface:
     begin
-      list := TCollections.CreateInterfaceList(itemType.Handle);
+      list := TCollections.CreateInterfaceList(itemType);
       for i := Low(values) to High(values) do
         Spring.Collections.IInterfaceList(list).Add(values[i].AsInterface);
-      TValue.Make(@list, target.TypeInfo, Result);
     end;
   else
-    raise EResolveException.CreateResFmt(@SCannotResolveType, [target.TypeInfo.TypeName]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [request.Service.TypeName]);
   end;
+
+  TValue.Make(@list, request.Service, Result);
 end;
 
 {$ENDREGION}
@@ -600,14 +578,19 @@ begin
   fVirtualIndex := TType.GetType(TComponent).Constructors.First.VirtualIndex;
 end;
 
-function TComponentOwnerResolver.CanResolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): Boolean;
+function TComponentOwnerResolver.CanResolve(const request: IRequest): Boolean;
 var
+  target: ITarget;
+  argument: TValue;
   method: TRttiMethod;
 begin
+  target := request.Target;
+  if target = nil then
+    Exit(False);
+  argument := request.Parameter;
   if target.TypeInfo <> TypeInfo(TComponent) then
     Exit(False);
-  if Kernel.Registry.HasService(target.TypeInfo) then
+  if Kernel.Registry.HasService(TypeInfo(TComponent)) then
     Exit(False);
   if not argument.IsEmpty then
     Exit(False);
@@ -619,8 +602,7 @@ begin
     and (method.Parent.AsInstance.MetaclassType.InheritsFrom(TComponent));
 end;
 
-function TComponentOwnerResolver.Resolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): TValue;
+function TComponentOwnerResolver.Resolve(const request: IRequest): TValue;
 begin
   TValue.Make(nil, TComponent.ClassInfo, Result);
 end;
@@ -662,22 +644,21 @@ begin
     end);
 end;
 
-function TDecoratorResolver.Resolve(const target: ITarget;
-  const model: TComponentModel; const context: ICreationContext;
-  const decoratee: TValue): TValue;
+function TDecoratorResolver.Resolve(const request: IRequest;
+  const model: TComponentModel; const decoratee: TValue): TValue;
 var
   decoratorModel: TComponentModel;
   index: Integer;
 begin
   Result := decoratee;
-  for decoratorModel in GetDecorators(target.TypeInfo, model) do
+  for decoratorModel in GetDecorators(request.Service, model) do
   begin
     // TODO: make this more explicit to just inject on the decorator constructor
-    index := context.AddArgument(TTypedValue.Create(Result, target.TypeInfo));
+    index := request.Context.AddArgument(TTypedValue.Create(Result, request.Service));
     try
-      Result := decoratorModel.LifetimeManager.Resolve(context, decoratorModel).Cast(target.TypeInfo);
+      Result := decoratorModel.LifetimeManager.Resolve(request.Context, decoratorModel).Cast(request.Service);
     finally
-      context.RemoveTypedArgument(index);
+      request.Context.RemoveTypedArgument(index);
     end;
   end;
 end;

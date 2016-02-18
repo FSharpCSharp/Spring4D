@@ -60,10 +60,8 @@ type
   public
     constructor Create(const kernel: TKernel);
 
-    function CanResolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): Boolean;
-    function Resolve(const context: ICreationContext;
-      const target: ITarget; const argument: TValue): TValue;
+    function CanResolve(const request: IRequest): Boolean;
+    function Resolve(const request: IRequest): TValue;
   end;
 
 
@@ -85,22 +83,25 @@ begin
   fKernel := kernel;
 end;
 
-function TAutoMockResolver.CanResolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): Boolean;
+function TAutoMockResolver.CanResolve(const request: IRequest): Boolean;
 var
+  serviceType: TRttiType;
   mockedType: TRttiType;
+  argument: TValue;
 begin
-  if target.TypeInfo.RttiType.IsGenericType
-    and TryGetMockedType(target.TypeInfo.RttiType, mockedType)
+  serviceType := request.Service.RttiType;
+  if serviceType.IsGenericType
+    and TryGetMockedType(serviceType, mockedType)
     and mockedType.IsInterface and not mockedType.IsType(TypeInfo(IInterface)) then
     Exit(True);
 
-  if (target.TypeInfo.Kind = tkInterface) and not IsLazyType(target.TypeInfo) then
+  argument := request.Parameter;
+  if serviceType.IsInterface and not IsLazyType(serviceType.Handle) then
     if argument.IsEmpty then
-      Exit(not fKernel.Registry.HasService(target.TypeInfo))
+      Exit(not fKernel.Registry.HasService(serviceType.Handle))
     else
       if argument.IsString then
-        Exit(not fKernel.Registry.HasService(target.TypeInfo, argument.AsString));
+        Exit(not fKernel.Registry.HasService(serviceType.Handle, argument.AsString));
 
   Result := False;
 end;
@@ -130,23 +131,24 @@ begin
   end;
 end;
 
-function TAutoMockResolver.Resolve(const context: ICreationContext;
-  const target: ITarget; const argument: TValue): TValue;
+function TAutoMockResolver.Resolve(const request: IRequest): TValue;
 var
+  serviceType: TRttiType;
   mockDirectly: Boolean;
   mockedType: TRttiType;
   mockName: string;
 begin
-  mockDirectly := target.TypeInfo.RttiType.IsGenericType
-    and TryGetMockedType(target.TypeInfo.RttiType, mockedType);
+  serviceType := request.Service.RttiType;
+  mockDirectly := serviceType.IsGenericType
+    and TryGetMockedType(serviceType, mockedType);
   if not mockDirectly then
-    mockedType := target.TypeInfo.RttiType;
+    mockedType := serviceType;
   mockName := 'IMock<' + mockedType.DefaultName + '>';
   EnsureMockRegistered(mockedType);
   Result := (fKernel as IKernelInternal).Resolve(mockName);
   if mockDirectly then
   begin
-    TValueData(Result).FTypeInfo := target.TypeInfo;
+    TValueData(Result).FTypeInfo := serviceType.Handle;
     Exit;
   end
   else
