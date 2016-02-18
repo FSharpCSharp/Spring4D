@@ -286,6 +286,9 @@ type
     // AV is raised instead. This is rare corner case not considered to be a
     // major issue.
 {$ENDIF}
+    procedure TestDependencyTypeIsSingletonAlreadyInstantiated;
+    procedure TestDependencyTypeIsSingletonNotYetInstantiated;
+    procedure TestResolveLazyOfSingletonCreatedLater;
   end;
 
   TTestLazyDependenciesDetectRecursion = class(TTestLazyDependencies)
@@ -1774,6 +1777,87 @@ begin
   PerformChecks;
 end;
 {$ENDIF}
+
+type
+  TTestWithLazySingletonBase = class
+  private
+    fA: INameService;
+    fB: Lazy<INameService>;
+  public
+    property A: INameService read fA;
+    property B: Lazy<INameService> read fB;
+  end;
+
+  TTestWithLazySingletonResolveFirst = class(TTestWithLazySingletonBase)
+  public
+    constructor Create(const a: INameService; const b: Lazy<INameService>);
+  end;
+
+  TTestWithLazySingletonResolveLast = class(TTestWithLazySingletonBase)
+  public
+    constructor Create(const b: Lazy<INameService>; const a: INameService);
+  end;
+
+constructor TTestWithLazySingletonResolveFirst.Create(const a: INameService;
+  const b: Lazy<INameService>);
+begin
+  fA := a;
+  fB := b;
+end;
+
+constructor TTestWithLazySingletonResolveLast.Create(
+  const b: Lazy<INameService>; const a: INameService);
+begin
+  fA := a;
+  fB := b;
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsSingletonAlreadyInstantiated;
+var
+  test: TTestWithLazySingletonResolveFirst;
+begin
+  fContainer.RegisterType<INameService, TNameService>.AsSingleton;
+  fContainer.RegisterType<TTestWithLazySingletonResolveFirst>;
+  fContainer.Build;
+
+  test := fContainer.Resolve<TTestWithLazySingletonResolveFirst>;
+  try
+    CheckSame(test.A, test.B.Value);
+  finally
+    test.Free;
+  end;
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsSingletonNotYetInstantiated;
+var
+  test: TTestWithLazySingletonResolveLast;
+begin
+  fContainer.RegisterType<INameService, TNameService>.AsSingleton;
+  fContainer.RegisterType<TTestWithLazySingletonResolveLast>;
+  fContainer.Build;
+
+  test := fContainer.Resolve<TTestWithLazySingletonResolveLast>;
+  try
+    CheckSame(test.A, test.B.Value);
+  finally
+    test.Free;
+  end;
+end;
+
+procedure TTestLazyDependencies.TestResolveLazyOfSingletonCreatedLater;
+var
+  x: Lazy<INameService>;
+  y: INameService;
+begin
+  fContainer.RegisterType<INameService, TNameService>.AsSingleton;
+  fContainer.Build;
+
+  x := fContainer.Resolve<Lazy<INameService>>;
+  CheckFalse(x.IsValueCreated);
+  CheckIs(x.Value, TNameService);
+  y := fContainer.Resolve<INameService>;
+  CheckSame(x.Value, y);
+end;
 
 {$ENDREGION}
 
