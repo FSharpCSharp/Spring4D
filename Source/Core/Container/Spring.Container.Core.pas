@@ -83,6 +83,12 @@ type
       const target: TRttiNamedObject);
   end;
 
+  IConstructorSelector = interface
+    ['{E8C15B1F-EF8F-4167-8C9E-2BD0BB3E0BE1}']
+    function Find(const context: ICreationContext;
+      const model: TComponentModel): IInjection;
+  end;
+
   TKernel = class;
 
   IKernelInternal = interface
@@ -365,6 +371,7 @@ type
     fProxyFactory: IProxyFactory;
     fExtensions: IList<IContainerExtension>;
     fLogger: ILogger;
+    fConstructorSelector: IConstructorSelector;
     fDecoratorResolver: IDecoratorResolver;
     procedure SetLogger(const logger: ILogger);
   public
@@ -378,6 +385,7 @@ type
     property Resolver: IDependencyResolver read fResolver;
     property Logger: ILogger read fLogger write SetLogger;
     property ProxyFactory: IProxyFactory read fProxyFactory;
+    property ConstructorSelector: IConstructorSelector read fConstructorSelector write fConstructorSelector;
     property DecoratorResolver: IDecoratorResolver read fDecoratorResolver;
   end;
 
@@ -502,6 +510,7 @@ uses
   Spring.Container.Builder,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
+  Spring.Container.Providers,
   Spring.Container.ProxyFactory,
   Spring.Container.Registration,
   Spring.Container.Resolvers,
@@ -577,6 +586,7 @@ begin
   fResolver := TDependencyResolver.Create(Self);
   fProxyFactory := TProxyFactory.Create(Self);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
+  fConstructorSelector := TConstructorSelector.Create(Self);
   fDecoratorResolver := TDecoratorResolver.Create;
 end;
 

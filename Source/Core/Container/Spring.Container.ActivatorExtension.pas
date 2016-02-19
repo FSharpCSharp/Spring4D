@@ -29,10 +29,7 @@ unit Spring.Container.ActivatorExtension;
 interface
 
 uses
-  Spring.Container,
-  Spring.Container.Builder,
-  Spring.Container.Core,
-  Spring.Container.Providers;
+  Spring.Container.Core;
 
 type
   TActivatorContainerExtension = class(TInterfacedObject, IContainerExtension)
@@ -40,55 +37,49 @@ type
     procedure Initialize(const kernel: TKernel);
   end;
 
-  TActivatorInspector = class(TInterfacedObject, IBuilderInspector)
-  public
-    procedure ProcessModel(const kernel: TKernel; const model: TComponentModel);
-  end;
-
-  TReflectionProvider2 = class(TReflectionProvider)
-  protected
-    function SelectEligibleConstructor(
-      const context: ICreationContext): IInjection; override;
-  end;
-
 implementation
 
 uses
-  Generics.Defaults,
   Rtti,
   Spring.Collections,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
   Spring.Reflection;
 
+type
+  TStrictConstructorSelector = class(TInterfacedObject, IConstructorSelector)
+  private
+    fKernel: TKernel;
+    function TryHandle(const context: ICreationContext;
+      const candidate: IInjection; var winner: IInjection): Boolean;
+    property Kernel: TKernel read fKernel;
+  public
+    constructor Create(const kernel: TKernel);
+    function Find(const context: ICreationContext;
+      const model: TComponentModel): IInjection;
+  end;
+
 
 {$REGION 'TActivatorContainerExtension'}
 
 procedure TActivatorContainerExtension.Initialize(const kernel: TKernel);
 begin
-  kernel.Builder.AddInspector(TActivatorInspector.Create);
+  kernel.ConstructorSelector := TStrictConstructorSelector.Create(kernel);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TActivatorInspector'}
+{$REGION 'TStrictConstructorSelector'}
 
-procedure TActivatorInspector.ProcessModel(const kernel: TKernel;
-  const model: TComponentModel);
+constructor TStrictConstructorSelector.Create(const kernel: TKernel);
 begin
-  if not Assigned(model.Provider)
-    or (model.Provider is TReflectionProvider) then
-    model.Provider := TReflectionProvider2.Create(kernel, model);
+  inherited Create;
+  fKernel := kernel;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TReflectionProvider2'}
-
-function TReflectionProvider2.SelectEligibleConstructor(
-  const context: ICreationContext): IInjection;
+function TStrictConstructorSelector.Find(const context: ICreationContext;
+  const model: TComponentModel): IInjection;
 var
   maxCount: Integer;
   targetType: TRttiType;
@@ -129,6 +120,18 @@ begin
   if candidates.Count > 1 then
     raise EResolveException.CreateResFmt(@SAmbiguousConstructor, [targetType.DefaultName]);
   Result := candidate;
+end;
+
+function TStrictConstructorSelector.TryHandle(const context: ICreationContext;
+  const candidate: IInjection; var winner: IInjection): Boolean;
+var
+  injection: IInjection;
+begin
+  Result := context.TryHandle(candidate, injection)
+    and Kernel.Resolver.CanResolve(
+    context, injection.Dependencies, injection.Arguments);
+  if Result then
+    winner := injection;
 end;
 
 {$ENDREGION}
