@@ -95,11 +95,14 @@ type
     procedure TestResolveComponentDoesCallOverriddenConstructor;
 
     procedure TestRecordConstructorNotConsidered;
+    procedure TestRegisterCustomDelegate;
 
 {$IFDEF DELPHIXE_UP}
     procedure TestClassContainsAbstractMethods;
 {$ENDIF}
   end;
+
+  TNameServiceFunc = reference to function(const name: string): INameService;
 
   // Same Service, Different Implementations
   TTestDifferentServiceImplementations = class(TContainerTestCase)
@@ -819,6 +822,24 @@ begin
   finally
     obj.Free;
   end;
+end;
+
+procedure TTestSimpleContainer.TestRegisterCustomDelegate;
+var
+  func: TNameServiceFunc;
+  service: INameService;
+begin
+  fContainer.RegisterType<INameService, TNameService>('default');
+  fContainer.RegisterInstance<TNameServiceFunc>(
+    function(const name: string): INameService
+    begin
+      Result := fContainer.Resolve<INameService>(name);
+    end);
+  fContainer.Build;
+
+  func := fContainer.Resolve<TNameServiceFunc>();
+  service := func('default');
+  CheckIs(service, TNameService);
 end;
 
 procedure TTestSimpleContainer.TestResolveFuncWithTwoTypes;

@@ -50,13 +50,13 @@ type
   IInjection = interface;
   IDependencyInjector = interface;
   ILifetimeManager = interface;
-  IComponentActivator = interface;
+  IProvider = interface;
   IContainerExtension = interface;
   ICreationContext = interface;
   IRequest = interface;
   IProxyFactory = interface;
 
-  TActivatorDelegate<T> = reference to function: T;
+  TProviderDelegate<T> = reference to function: T;
 
   ITarget = interface
     ['{B365D350-5333-4C48-BD28-BD482EC15692}']
@@ -193,10 +193,14 @@ type
   end;
 
   /// <summary>
-  ///   Component Activator
+  ///   Creates instances of services.
   /// </summary>
-  IComponentActivator = interface
+  IProvider = interface
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
+
+    /// <summary>
+    ///   Creates an instance within the specified context.
+    /// </summary>
     function CreateInstance(const context: ICreationContext): TValue;
   end;
 
@@ -386,7 +390,7 @@ type
     fComponentType: TRttiType;
     fLifetimeType: TLifetimeType;
     fLifetimeManager: ILifetimeManager;
-    fComponentActivator: IComponentActivator;
+    fProvider: IProvider;
     fMinPoolsize: Integer;
     fMaxPoolsize: Integer;
     fRefCounting: TRefCounting;
@@ -418,7 +422,7 @@ type
 
     property LifetimeType: TLifetimeType read fLifetimeType write fLifetimeType;
     property LifetimeManager: ILifetimeManager read fLifetimeManager write fLifetimeManager;
-    property ComponentActivator: IComponentActivator read fComponentActivator write fComponentActivator;
+    property Provider: IProvider read fProvider write fProvider;
 
     property ConstructorInjections: IInjectionList read fConstructorInjections;
     property MethodInjections: IInjectionList read fMethodInjections;
@@ -496,7 +500,6 @@ implementation
 uses
   TypInfo,
   Spring.Container.Builder,
-  Spring.Container.ComponentActivator,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.ProxyFactory,

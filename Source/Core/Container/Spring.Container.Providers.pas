@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Container.ComponentActivator;
+unit Spring.Container.Providers;
 
 interface
 
@@ -36,9 +36,9 @@ uses
 
 type
   /// <summary>
-  ///   Abstract ComponentActivator
+  ///   Abstract Provider
   /// </summary>
-  TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator)
+  TProviderBase = class abstract(TInterfacedObject, IProvider)
   private
     fKernel: TKernel;
     fModel: TComponentModel;
@@ -56,7 +56,7 @@ type
   /// <summary>
   ///   Activates an instance by reflection.
   /// </summary>
-  TReflectionComponentActivator = class(TComponentActivatorBase)
+  TReflectionProvider = class(TProviderBase)
   protected
     function SelectEligibleConstructor(
       const context: ICreationContext): IInjection; virtual;
@@ -69,12 +69,12 @@ type
   /// <summary>
   ///   Activates an instance by a TActivatorDelegate delegate.
   /// </summary>
-  TDelegateComponentActivator = class(TComponentActivatorBase)
+  TDelegateProvider = class(TProviderBase)
   private
-    fDelegate: TActivatorDelegate;
+    fDelegate: TProviderDelegate;
   public
     constructor Create(const kernel: TKernel; const model: TComponentModel;
-      const delegate: TActivatorDelegate);
+      const delegate: TProviderDelegate);
     function CreateInstance(const context: ICreationContext): TValue; override;
   end;
 
@@ -88,9 +88,9 @@ uses
   Spring.Reflection;
 
 
-{$REGION 'TComponentActivatorBase'}
+{$REGION 'TProviderBase'}
 
-constructor TComponentActivatorBase.Create(const kernel: TKernel;
+constructor TProviderBase.Create(const kernel: TKernel;
   const model: TComponentModel);
 begin
   Guard.CheckNotNull(kernel, 'kernel');
@@ -100,7 +100,7 @@ begin
   fModel := model;
 end;
 
-procedure TComponentActivatorBase.ExecuteInjections(var instance: TValue;
+procedure TProviderBase.ExecuteInjections(var instance: TValue;
   const context: ICreationContext);
 begin
   if Model.LifetimeType in [TLifetimeType.Singleton, TLifetimeType.PerResolve,
@@ -127,7 +127,7 @@ begin
   end;
 end;
 
-procedure TComponentActivatorBase.ExecuteInjections(const instance: TValue;
+procedure TProviderBase.ExecuteInjections(const instance: TValue;
   const injections: IList<IInjection>; const context: ICreationContext);
 var
   injection: IInjection;
@@ -144,9 +144,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TReflectionComponentActivator'}
+{$REGION 'TReflectionProvider'}
 
-function TReflectionComponentActivator.CreateInstance(
+function TReflectionProvider.CreateInstance(
   const context: ICreationContext): TValue;
 var
   injection: IInjection;
@@ -162,7 +162,7 @@ begin
   ExecuteInjections(Result, context);
 end;
 
-function TReflectionComponentActivator.SelectEligibleConstructor(
+function TReflectionProvider.SelectEligibleConstructor(
   const context: ICreationContext): IInjection;
 var
   candidate, winner: IInjection;
@@ -185,7 +185,7 @@ begin
   Result := winner;
 end;
 
-function TReflectionComponentActivator.TryHandle(const context: ICreationContext;
+function TReflectionProvider.TryHandle(const context: ICreationContext;
   const candidate: IInjection; var winner: IInjection): Boolean;
 var
   injection: IInjection;
@@ -200,16 +200,16 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDelegateComponentActivator'}
+{$REGION 'TDelegateProvider'}
 
-constructor TDelegateComponentActivator.Create(const kernel: TKernel;
-  const model: TComponentModel; const delegate: TActivatorDelegate);
+constructor TDelegateProvider.Create(const kernel: TKernel;
+  const model: TComponentModel; const delegate: TProviderDelegate);
 begin
   inherited Create(kernel, model);
   fDelegate := delegate;
 end;
 
-function TDelegateComponentActivator.CreateInstance(
+function TDelegateProvider.CreateInstance(
   const context: ICreationContext): TValue;
 begin
   Result := fDelegate();

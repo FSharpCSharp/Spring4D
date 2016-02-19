@@ -45,7 +45,7 @@ uses
   TypInfo,
   Spring,
   Spring.Container.Common,
-  Spring.Container.ComponentActivator,
+  Spring.Container.Providers,
   Spring.Reflection,
   Spring.Mocking,
   Spring.Mocking.Core;
@@ -117,7 +117,7 @@ begin
     // only for interfaces
     mockModel := fKernel.Registry.RegisterComponent(TMock<IInterface>.ClassInfo);
     fKernel.Registry.RegisterService(mockModel, TypeInfo(IMock<IInterface>), mockName);
-    mockModel.ComponentActivator := TDelegateComponentActivator.Create(fKernel, mockModel,
+    mockModel.Provider := TDelegateProvider.Create(fKernel, mockModel,
       function: TValue
       var
         mock: TMock;

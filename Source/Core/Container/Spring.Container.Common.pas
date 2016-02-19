@@ -390,7 +390,7 @@ type
 
   {$REGION 'Common Container Interfaces'}
 
-  TActivatorDelegate = reference to function: TValue;
+  TProviderDelegate = reference to function: TValue;
 
   TWhere = (First, Last);
 

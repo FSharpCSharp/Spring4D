@@ -41,7 +41,7 @@ uses
   Spring.Container.LifetimeManager;
 
 type
-  TMockActivator = class(TInterfaceBase, IComponentActivator)
+  TMockProvider = class(TInterfaceBase, IProvider)
   private
     fModel: TComponentModel;
   public
@@ -69,7 +69,7 @@ type
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
-    fActivator: TMockActivator;
+    fProvider: TMockProvider;
     procedure SetUp; override;
     procedure TearDown; override;
   end;
@@ -87,7 +87,7 @@ type
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
-    fActivator: TMockActivator;
+    fProvider: TMockProvider;
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -129,14 +129,14 @@ begin
   inherited;
   fContext := TRttiContext.Create;
   fModel := TComponentModel.Create(fContext.GetType(TMockObject).AsInstance);
-  fActivator := TMockActivator.Create(fModel);
-  fModel.ComponentActivator := fActivator;
+  fProvider := TMockProvider.Create(fModel);
+  fModel.Provider := fProvider;
 end;
 
 procedure TLifetimeManagerTestCase.TearDown;
 begin
   fModel.Free;
-  fActivator.Free;
+  fProvider.Free;
   fContext.Free;
   inherited;
 end;
@@ -169,7 +169,7 @@ begin
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
     CheckSame(obj1, obj2);
-    CheckSame(fActivator.Model, fModel);
+    CheckSame(fProvider.Model, fModel);
   finally
     // Obtain the TValue before freeing the object so releasing the instance the
     // second time won't fail
@@ -206,7 +206,7 @@ begin
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
     CheckTrue(obj1 <> obj2);
-    CheckSame(fActivator.Model, fModel);
+    CheckSame(fProvider.Model, fModel);
   finally
     fLifetimeManager.Release(obj1);
     fLifetimeManager.Release(obj2);
@@ -216,20 +216,20 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMockComponentActivator'}
+{$REGION 'TMockProvider'}
 
-constructor TMockActivator.Create(const model: TComponentModel);
+constructor TMockProvider.Create(const model: TComponentModel);
 begin
   inherited Create;
   fModel := model;
 end;
 
-function TMockActivator.CreateInstance: TValue;
+function TMockProvider.CreateInstance: TValue;
 begin
   Result := fModel.ComponentType.AsInstance.MetaclassType.Create;
 end;
 
-function TMockActivator.CreateInstance(
+function TMockProvider.CreateInstance(
   const context: ICreationContext): TValue;
 begin
   Result := CreateInstance;
@@ -268,8 +268,8 @@ begin
   fContext := TRttiContext.Create;
   fModel := TComponentModel.Create(fContext.GetType(TMockComponent).AsInstance);
   fModel.RefCounting := TRefCounting.True;
-  fActivator := TMockActivator.Create(fModel);
-  fModel.ComponentActivator := fActivator;
+  fProvider := TMockProvider.Create(fModel);
+  fModel.Provider := fProvider;
   fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
 end;
 
@@ -277,7 +277,7 @@ procedure TTestRefCounting.TearDown;
 begin
   fLifetimeManager := nil;
   fModel.Free;
-  fActivator.Free;
+  fProvider.Free;
   fContext.Free;
   inherited;
 end;

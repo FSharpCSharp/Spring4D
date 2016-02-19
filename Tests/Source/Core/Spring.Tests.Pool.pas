@@ -41,7 +41,7 @@ type
     property ID: Integer read fID;
   end;
 
-  TMockActivator = class(TInterfaceBase, IComponentActivator)
+  TMockProvider = class(TInterfaceBase, IProvider)
   private
     fLastID: Integer;
   public
@@ -51,7 +51,7 @@ type
 
   TTestObjectPool = class(TTestCase)
   private
-    fActivator: TMockActivator;
+    fActivator: TMockProvider;
     fPool: IObjectPool;
   protected
     function CreatePool(initialPoolSize, maxPoolSize: Integer): IObjectPool;
@@ -66,15 +66,19 @@ type
 
 implementation
 
-{ TMockActivator }
 
-function TMockActivator.CreateInstance(const context: ICreationContext): TValue;
+{$REGION 'TMockProvider'}
+
+function TMockProvider.CreateInstance(const context: ICreationContext): TValue;
 begin
   Inc(fLastID);
   Result := TMockIDObject.Create(fLastID);
 end;
 
-{ TMockObject }
+{$ENDREGION}
+
+
+{$REGION 'TMockIDObject'}
 
 constructor TMockIDObject.Create(id: Integer);
 begin
@@ -82,12 +86,15 @@ begin
   fID := id;
 end;
 
-{ TTestObjectPool }
+{$ENDREGION}
+
+
+{$REGION 'TTestObjectPool'}
 
 procedure TTestObjectPool.SetUp;
 begin
   inherited;
-  fActivator := TMockActivator.Create;
+  fActivator := TMockProvider.Create;
 end;
 
 procedure TTestObjectPool.TearDown;
@@ -165,5 +172,8 @@ begin
 
   CheckEquals(3, fActivator.LastID, 'LastID should be still 3.');
 end;
+
+{$ENDREGION}
+
 
 end.

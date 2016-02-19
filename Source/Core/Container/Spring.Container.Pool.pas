@@ -47,7 +47,7 @@ type
     procedure ReleaseInstance(const instance: T);
   end;
 
-  IPoolableObjectFactory = interface(IComponentActivator)
+  IPoolableObjectFactory = interface(IProvider)
     ['{56F9E805-A115-4E3A-8583-8D0B5462D98A}']
     function Validate(const instance: TObject): Boolean;
     procedure Activate(const instance: TObject);
@@ -63,7 +63,7 @@ type
   TSimpleObjectPool = class(TInterfacedObject, IObjectPool)
   private
     fLock: TCriticalSection;
-    fActivator: IComponentActivator;
+    fProvider: IProvider;
     fMinPoolsize: Nullable<Integer>;
     fMaxPoolsize: Nullable<Integer>;
     fAvailableList: IQueue<Pointer>;
@@ -79,7 +79,7 @@ type
     property MinPoolsize: Nullable<Integer> read fMinPoolsize;
     property MaxPoolsize: Nullable<Integer> read fMaxPoolsize;
   public
-    constructor Create(const activator: IComponentActivator; minPoolSize, maxPoolSize: Integer);
+    constructor Create(const provider: IProvider; minPoolSize, maxPoolSize: Integer);
     destructor Destroy; override;
     procedure Initialize(const context: ICreationContext); virtual;
     function GetInstance(const context: ICreationContext): TObject; virtual;
@@ -98,11 +98,11 @@ type
 
 {$REGION 'TSimpleObjectPool'}
 
-constructor TSimpleObjectPool.Create(const activator: IComponentActivator;
+constructor TSimpleObjectPool.Create(const provider: IProvider;
   minPoolSize, maxPoolSize: Integer);
 begin
   inherited Create;
-  fActivator := activator;
+  fProvider := provider;
   if minPoolSize > 0 then
     fMinPoolsize := minPoolSize;
   if maxPoolSize > 0 then
@@ -125,7 +125,7 @@ function TSimpleObjectPool.AddNewInstance(const context: ICreationContext): TObj
 var
   refCounted: IRefCounted;
 begin
-  Result := fActivator.CreateInstance(context).AsObject;
+  Result := fProvider.CreateInstance(context).AsObject;
   if Result.InheritsFrom(TInterfacedObject) then
     TInterfacedObjectAccess(Result)._AddRef
   else if Supports(Result, IRefCounted, refCounted) then

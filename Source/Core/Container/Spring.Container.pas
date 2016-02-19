@@ -57,13 +57,13 @@ type
     function RegisterInstanceInternal(serviceType: PTypeInfo; const instance;
       const serviceName: string): TRegistration;
 
-    function MakeActivatorDelegate<T>(const delegate: TActivatorDelegate<T>; const model: TComponentModel): IComponentActivator; overload;
+    function CreateProvider<T>(const delegate: TProviderDelegate<T>; const model: TComponentModel): IProvider; overload;
   {$IFDEF DELPHIXE7_UP}
-    function MakeActivatorDelegateObj(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IComponentActivator;
-    function MakeActivatorDelegateIntf(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IComponentActivator;
+    function CreateProviderObj(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IProvider;
+    function CreateProviderIntf(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IProvider;
   {$ENDIF}
-    function MakeActivatorDelegate(const instance: TValue; const model: TComponentModel): IComponentActivator; overload;
-    function MakeActivatorDelegate(const instance; instanceType: PTypeInfo; const model: TComponentModel): IComponentActivator; overload;
+    function CreateProvider(const instance: TValue; const model: TComponentModel): IProvider; overload;
+    function CreateProvider(const instance; instanceType: PTypeInfo; const model: TComponentModel): IProvider; overload;
 
     class var GlobalInstance: TContainer;
     type TValueArray = array of TValue;
@@ -108,12 +108,12 @@ type
       const serviceName: string = ''): TRegistration; overload;
 
     function RegisterType<TComponentType>(
-      const delegate: TActivatorDelegate<TComponentType>): TRegistration; overload; inline;
+      const delegate: TProviderDelegate<TComponentType>): TRegistration; overload; inline;
     function RegisterType<TServiceType>(
-      const delegate: TActivatorDelegate<TServiceType>;
+      const delegate: TProviderDelegate<TServiceType>;
       const serviceName: string): TRegistration; overload; inline;
     function RegisterType<TServiceType, TComponentType>(
-      const delegate: TActivatorDelegate<TComponentType>;
+      const delegate: TProviderDelegate<TComponentType>;
       const serviceName: string = ''): TRegistration; overload; inline;
 
     procedure Build;
@@ -184,8 +184,8 @@ implementation
 uses
   TypInfo,
   Spring.Container.Builder,
-  Spring.Container.ComponentActivator,
   Spring.Container.CreationContext,
+  Spring.Container.Providers,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
   Spring.Reflection;
@@ -257,7 +257,7 @@ var
 begin
   inspectors := TArray<IBuilderInspector>.Create(
     TInterfaceInspector.Create,
-    TComponentActivatorInspector.Create,
+    TProviderInspector.Create,
     TLifetimeInspector.Create,
     TInjectionTargetInspector.Create,
     TConstructorInspector.Create,
@@ -271,37 +271,37 @@ begin
     Builder.AddInspector(inspector);
 end;
 
-function TContainer.MakeActivatorDelegate(
-  const instance: TValue; const model: TComponentModel): IComponentActivator;
+function TContainer.CreateProvider(
+  const instance: TValue; const model: TComponentModel): IProvider;
 var
   value: TValue;
 begin
   value := instance;
-  Result := TDelegateComponentActivator.Create(Self, model,
+  Result := TDelegateProvider.Create(Self, model,
     function: TValue
     begin
       Result := value;
     end);
 end;
 
-function TContainer.MakeActivatorDelegate(const instance;
-  instanceType: PTypeInfo; const model: TComponentModel): IComponentActivator;
+function TContainer.CreateProvider(const instance;
+  instanceType: PTypeInfo; const model: TComponentModel): IProvider;
 var
   value: TValue;
 begin
   TValue.Make(@instance, instanceType, value);
-  Result := TDelegateComponentActivator.Create(Self, model,
+  Result := TDelegateProvider.Create(Self, model,
     function: TValue
     begin
       Result := value;
     end);
 end;
 
-function TContainer.MakeActivatorDelegate<T>(
-  const delegate: TActivatorDelegate<T>;
-  const model: TComponentModel): IComponentActivator;
+function TContainer.CreateProvider<T>(
+  const delegate: TProviderDelegate<T>;
+  const model: TComponentModel): IProvider;
 begin
-  Result := TDelegateComponentActivator.Create(Self, model,
+  Result := TDelegateProvider.Create(Self, model,
     function: TValue
     var
       instance: T;
@@ -312,28 +312,28 @@ begin
 end;
 
 {$IFDEF DELPHIXE7_UP}
-function TContainer.MakeActivatorDelegateIntf(const delegate: IInterface;
-  typeInfo: Pointer; const model: TComponentModel): IComponentActivator;
+function TContainer.CreateProviderIntf(const delegate: IInterface;
+  typeInfo: Pointer; const model: TComponentModel): IProvider;
 begin
-  Result := TDelegateComponentActivator.Create(Self, model,
+  Result := TDelegateProvider.Create(Self, model,
     function: TValue
     var
       instance: IInterface;
     begin
-      instance := TActivatorDelegate<IInterface>(delegate)();
+      instance := TProviderDelegate<IInterface>(delegate)();
       Result := TValue.From(@instance, typeInfo);
     end);
 end;
 
-function TContainer.MakeActivatorDelegateObj(const delegate: IInterface;
-  typeInfo: Pointer; const model: TComponentModel): IComponentActivator;
+function TContainer.CreateProviderObj(const delegate: IInterface;
+  typeInfo: Pointer; const model: TComponentModel): IProvider;
 begin
-  Result := TDelegateComponentActivator.Create(Self, model,
+  Result := TDelegateProvider.Create(Self, model,
     function: TValue
     var
       instance: TObject;
     begin
-      instance := TActivatorDelegate<TObject>(delegate)();
+      instance := TProviderDelegate<TObject>(delegate)();
       Result := TValue.From(@instance, typeInfo);
     end);
 end;
@@ -422,7 +422,7 @@ function TContainer.RegisterInstanceInternal(serviceType: PTypeInfo;
   const instance; const serviceName: string): TRegistration;
 begin
   Result := RegisterType(serviceType, serviceType, serviceName);
-  Result.Model.ComponentActivator := MakeActivatorDelegate(instance, serviceType, Result.Model);
+  Result.Model.Provider := CreateProvider(instance, serviceType, Result.Model);
 end;
 
 function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
@@ -435,7 +435,7 @@ function TContainer.RegisterInstance(serviceType: PTypeInfo;
   const instance: TValue; const serviceName: string): TRegistration;
 begin
   Result := RegisterType(serviceType, serviceType, serviceName);
-  Result.Model.ComponentActivator := MakeActivatorDelegate(instance, Result.Model);
+  Result.Model.Provider := CreateProvider(instance, Result.Model);
 end;
 
 function TContainer.RegisterType<TComponentType>: TRegistration;
@@ -456,43 +456,43 @@ begin
 end;
 
 function TContainer.RegisterType<TComponentType>(
-  const delegate: TActivatorDelegate<TComponentType>): TRegistration;
+  const delegate: TProviderDelegate<TComponentType>): TRegistration;
 begin
   Result := RegisterType(TypeInfo(TComponentType));
 {$IFDEF DELPHIXE7_UP}
   case GetTypeKind(TComponentType) of
-    tkClass: Result.Model.ComponentActivator := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
-    tkInterface: Result.Model.ComponentActivator := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
+    tkClass: Result.Model.Provider := CreateProviderObj(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
+    tkInterface: Result.Model.Provider := CreateProviderIntf(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
   else{$ELSE}begin{$ENDIF}
-    Result.Model.ComponentActivator := MakeActivatorDelegate<TComponentType>(delegate, Result.Model);
+    Result.Model.Provider := CreateProvider<TComponentType>(delegate, Result.Model);
   end;
 end;
 
 function TContainer.RegisterType<TServiceType>(
-  const delegate: TActivatorDelegate<TServiceType>;
+  const delegate: TProviderDelegate<TServiceType>;
   const serviceName: string): TRegistration;
 begin
   Result := RegisterType(TypeInfo(TServiceType), TypeInfo(TServiceType), serviceName);
 {$IFDEF DELPHIXE7_UP}
   case GetTypeKind(TServiceType) of
-    tkClass: Result.Model.ComponentActivator := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TServiceType), Result.Model);
-    tkInterface: Result.Model.ComponentActivator := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TServiceType), Result.Model);
+    tkClass: Result.Model.Provider := CreateProviderObj(PInterface(@delegate)^, TypeInfo(TServiceType), Result.Model);
+    tkInterface: Result.Model.Provider := CreateProviderIntf(PInterface(@delegate)^, TypeInfo(TServiceType), Result.Model);
   else{$ELSE}begin{$ENDIF}
-    Result.Model.ComponentActivator := MakeActivatorDelegate<TServiceType>(delegate, Result.Model);
+    Result.Model.Provider := CreateProvider<TServiceType>(delegate, Result.Model);
   end;
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
-  const delegate: TActivatorDelegate<TComponentType>;
+  const delegate: TProviderDelegate<TComponentType>;
   const serviceName: string): TRegistration;
 begin
   Result := RegisterType(TypeInfo(TServiceType), TypeInfo(TComponentType), serviceName);
 {$IFDEF DELPHIXE7_UP}
   case GetTypeKind(TComponentType) of
-    tkClass: Result.Model.ComponentActivator := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
-    tkInterface: Result.Model.ComponentActivator := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
+    tkClass: Result.Model.Provider := CreateProviderObj(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
+    tkInterface: Result.Model.Provider := CreateProviderIntf(PInterface(@delegate)^, TypeInfo(TComponentType), Result.Model);
   else{$ELSE}begin{$ENDIF}
-    Result.Model.ComponentActivator := MakeActivatorDelegate<TComponentType>(delegate, Result.Model);
+    Result.Model.Provider := CreateProvider<TComponentType>(delegate, Result.Model);
   end;
 end;
 

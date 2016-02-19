@@ -31,8 +31,8 @@ interface
 uses
   Spring.Container,
   Spring.Container.Builder,
-  Spring.Container.ComponentActivator,
-  Spring.Container.Core;
+  Spring.Container.Core,
+  Spring.Container.Providers;
 
 type
   TActivatorContainerExtension = class(TInterfacedObject, IContainerExtension)
@@ -45,7 +45,7 @@ type
     procedure ProcessModel(const kernel: TKernel; const model: TComponentModel);
   end;
 
-  TReflectionComponentActivator2 = class(TReflectionComponentActivator)
+  TReflectionProvider2 = class(TReflectionProvider)
   protected
     function SelectEligibleConstructor(
       const context: ICreationContext): IInjection; override;
@@ -77,17 +77,17 @@ end;
 procedure TActivatorInspector.ProcessModel(const kernel: TKernel;
   const model: TComponentModel);
 begin
-  if not Assigned(model.ComponentActivator)
-    or (model.ComponentActivator is TReflectionComponentActivator) then
-    model.ComponentActivator := TReflectionComponentActivator2.Create(kernel, model);
+  if not Assigned(model.Provider)
+    or (model.Provider is TReflectionProvider) then
+    model.Provider := TReflectionProvider2.Create(kernel, model);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TReflectionComponentActivator2'}
+{$REGION 'TReflectionProvider2'}
 
-function TReflectionComponentActivator2.SelectEligibleConstructor(
+function TReflectionProvider2.SelectEligibleConstructor(
   const context: ICreationContext): IInjection;
 var
   maxCount: Integer;

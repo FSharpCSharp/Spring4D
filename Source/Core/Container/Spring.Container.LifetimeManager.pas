@@ -184,7 +184,7 @@ begin
   try
     if not Assigned(fInstance) then
     begin
-      newInstance := model.ComponentActivator.CreateInstance(context);
+      newInstance := model.Provider.CreateInstance(context);
       fInstance := TValueHolder.Create(newInstance, model.RefCounting);
       DoAfterConstruction(fInstance);
     end;
@@ -215,7 +215,7 @@ end;
 function TTransientLifetimeManager.Resolve(const context: ICreationContext;
   const model: TComponentModel): TValue;
 begin
-  Result := model.ComponentActivator.CreateInstance(context);
+  Result := model.Provider.CreateInstance(context);
   DoAfterConstruction(Result);
 end;
 
@@ -272,7 +272,7 @@ begin
   try
     if not fInstances.TryGetValue(threadID, holder) then
     begin
-      instance := model.ComponentActivator.CreateInstance(context);
+      instance := model.Provider.CreateInstance(context);
       holder := CreateHolder(instance, model.RefCounting);
       fInstances[threadID] := holder;
       DoAfterConstruction(holder);
@@ -307,7 +307,7 @@ begin
   CheckPoolingSupported(model.ComponentType);
   inherited Create(model);
   fPool := TSimpleObjectPool.Create(
-    model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
+    model.Provider, model.MinPoolsize, model.MaxPoolsize);
 end;
 
 function TPooledLifetimeManager.Resolve(const context: ICreationContext;

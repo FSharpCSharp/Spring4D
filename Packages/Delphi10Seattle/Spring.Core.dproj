@@ -99,12 +99,12 @@
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.AutoMockExtension.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Common.pas"/>
-        <DCCReference Include="..\..\Source\Core\Container\Spring.Container.ComponentActivator.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Core.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.CreationContext.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
+        <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Providers.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.ProxyFactory.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
