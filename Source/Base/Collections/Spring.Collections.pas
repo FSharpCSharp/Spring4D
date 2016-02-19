@@ -2438,6 +2438,18 @@ type
 
     class function OfType<T, TResult>(const source: IEnumerable<T>): IEnumerable<TResult>; static;
 
+    class function OrderBy<T, TKey>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T,TKey>): IEnumerable<T>; overload; static;
+    class function OrderBy<T, TKey>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T,TKey>;
+      const comparer: IComparer<TKey>): IEnumerable<T>; overload; static;
+
+    class function OrderByDescending<T, TKey>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T,TKey>): IEnumerable<T>; overload; static;
+    class function OrderByDescending<T, TKey>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T,TKey>;
+      const comparer: IComparer<TKey>): IEnumerable<T>; overload; static;
+
     class function Query<T>(const source: array of T): IEnumerable<T>; overload; static;
     class function Query<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
     class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
@@ -2449,12 +2461,19 @@ type
     class function Select<T, TResult>(const source: IEnumerable<T>;
       const selector: TFunc<T, TResult>): IEnumerable<TResult>; overload; static;
 
+    class function SelectMany<T, TResult>(const source: IEnumerable<T>;
+      const selector: TFunc<T, IEnumerable<TResult>>): IEnumerable<TResult>; overload; static;
+
+    class function GroupBy<T, TKey>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T, TKey>): IEnumerable<IGrouping<TKey,T>>; overload; static;
     class function GroupBy<T, TKey, TElement>(const source: IEnumerable<T>;
       const keySelector: TFunc<T, TKey>;
       const elementSelector: TFunc<T, TElement>): IEnumerable<IGrouping<TKey,TElement>>; overload; static;
     class function GroupBy<T, TKey, TElement, TResult>(const source: IEnumerable<T>;
       const keySelector: TFunc<T, TKey>; const elementSelector: TFunc<T, TElement>;
       const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload; static;
+
+    class function Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -2952,6 +2971,13 @@ begin
   Result := TEmptyEnumerable<T>.Instance;
 end;
 
+class function TEnumerable.GroupBy<T, TKey>(const source: IEnumerable<T>;
+  const keySelector: TFunc<T, TKey>): IEnumerable<IGrouping<TKey, T>>;
+begin
+  Result := TGroupedEnumerable<T, TKey, T>.Create(
+    source, keySelector, function(item: T): T begin Result := item end);
+end;
+
 class function TEnumerable.GroupBy<T, TKey, TElement>(
   const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
   const elementSelector: TFunc<T, TElement>): IEnumerable<IGrouping<TKey, TElement>>;
@@ -2987,6 +3013,33 @@ begin
   Result := TOfTypeIterator<T, TResult>.Create(source);
 end;
 
+class function TEnumerable.OrderBy<T, TKey>(const source: IEnumerable<T>;
+  const keySelector: TFunc<T, TKey>): IEnumerable<T>;
+begin
+  Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector);
+end;
+
+class function TEnumerable.OrderBy<T, TKey>(const source: IEnumerable<T>;
+  const keySelector: TFunc<T, TKey>;
+  const comparer: IComparer<TKey>): IEnumerable<T>;
+begin
+  Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector, comparer);
+end;
+
+class function TEnumerable.OrderByDescending<T, TKey>(
+  const source: IEnumerable<T>;
+  const keySelector: TFunc<T, TKey>): IEnumerable<T>;
+begin
+  Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector, nil, True);
+end;
+
+class function TEnumerable.OrderByDescending<T, TKey>(
+  const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
+  const comparer: IComparer<TKey>): IEnumerable<T>;
+begin
+  Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector, comparer, True);
+end;
+
 class function TEnumerable.Query<T>(const source: array of T): IEnumerable<T>;
 begin
   Result := TArrayIterator<T>.Create(source);
@@ -3018,6 +3071,17 @@ class function TEnumerable.Select<T, TResult>(const source: IEnumerable<T>;
   const selector: TFunc<T, TResult>): IEnumerable<TResult>;
 begin
   Result := TSelectIterator<T, TResult>.Create(source, selector);
+end;
+
+class function TEnumerable.SelectMany<T, TResult>(const source: IEnumerable<T>;
+  const selector: TFunc<T, IEnumerable<TResult>>): IEnumerable<TResult>;
+begin
+  Result := TSelectManyIterator<T, TResult>.Create(source, selector);
+end;
+
+class function TEnumerable.Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TUnionIterator<T>.Create(first, second);
 end;
 
 {$ENDREGION}
