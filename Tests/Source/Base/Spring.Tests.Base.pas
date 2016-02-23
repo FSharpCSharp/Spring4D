@@ -436,6 +436,9 @@ type
     procedure EqualsReturnsFalseForUnequalPointers;
 
     procedure FromVariantProperlyHandlesVariantArrays;
+
+    procedure ConvertStringToIntegerFailsForInvalidString;
+    procedure ConvertStringToFloatFailsForInvalidString;
   end;
 
 {$IFNDEF DELPHI2010}
@@ -2427,6 +2430,22 @@ end;
 
 
 {$REGION 'TTestValueHelper'}
+
+procedure TTestValueHelper.ConvertStringToFloatFailsForInvalidString;
+var
+  f: Double;
+begin
+  fSUT := 'foo';
+  CheckFalse(fSUT.TryConvert<Double>(f));
+end;
+
+procedure TTestValueHelper.ConvertStringToIntegerFailsForInvalidString;
+var
+  i: Integer;
+begin
+  fSUT := 'foo';
+  CheckFalse(fSUT.TryConvert<Integer>(i));
+end;
 
 procedure TTestValueHelper.DoCheckCompare(expected: Integer);
 begin

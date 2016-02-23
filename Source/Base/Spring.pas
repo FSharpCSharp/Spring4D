@@ -4308,22 +4308,44 @@ begin
 end;
 
 function ConvStr2Float(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+var
+  s: string;
+  d: TDateTime;
+  f: Extended;
 begin
+  s := source.AsString;
+  if target = TypeInfo(TDateTime) then
+  begin
+    Result := TryStrToDateTime(s, d);
+    if Result then
+      value := TValue.From<TDateTime>(d);
+  end else
   if target = TypeInfo(TDate) then
-    value := TValue.From<TDate>(StrToDateDef(source.AsString, 0))
-  else if target = TypeInfo(TDateTime) then
-    value := TValue.From<TDateTime>(StrToDateTimeDef(source.AsString, 0))
-  else if target = TypeInfo(TTime) then
-    value := TValue.From<TTime>(StrToTimeDef(source.AsString, 0))
-  else
-    value := TValue.FromFloat(target, StrToFloatDef(source.AsString, 0));
-  Result := True;
+  begin
+    Result := TryStrToDate(s, d);
+    if Result then
+      value := TValue.From<TDate>(d);
+  end else
+  if target = TypeInfo(TTime) then
+  begin
+    Result := TryStrToTime(s, d);
+    if Result then
+      value := TValue.From<TTime>(d);
+  end else
+  begin
+    Result := TryStrToFloat(s, f);
+    if Result then
+      value := TValue.FromFloat(target, f);
+  end;
 end;
 
 function ConvStr2Ord(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+var
+  i: Int64;
 begin
-  value := TValue.FromOrdinal(target, StrToInt64Def(source.AsString, 0));
-  Result := True;
+  Result := TryStrToInt64(source.AsString, i);
+  if Result then
+    value := TValue.FromOrdinal(target, i);
 end;
 
 {$ENDREGION}
