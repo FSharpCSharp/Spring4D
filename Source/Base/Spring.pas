@@ -530,7 +530,7 @@ type
   TRttiMethodHelper = class helper for TRttiMethod
   private
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
-    procedure FixParameters(var parameters: TArray<TRttiParameter>);
+    procedure FixParameters(const parameters: TArray<TRttiParameter>);
     function GetReturnTypeHandle: PTypeInfo;
   public
     /// <summary>
@@ -3854,7 +3854,7 @@ end;
 
 class function TValueHelper.FromVariant(const value: Variant): TValue;
 
-  procedure FromCustomVariant(const Value: Variant; var Result: TValue);
+  procedure FromCustomVariant(const value: Variant; out result: TValue);
   type
     PCustomVariantTypeInfo = ^TCustomVariantTypeInfo;
     TCustomVariantTypeInfo = record
@@ -3872,16 +3872,16 @@ class function TValueHelper.FromVariant(const value: Variant): TValue;
     i: Integer;
     info: PCustomVariantTypeInfo;
   begin
-    typeName := VarTypeAsText(TVarData(Value).VType);
+    typeName := VarTypeAsText(TVarData(value).VType);
     for i := 0 to High(CustomVariantTypes) do
     begin
       info := @CustomVariantTypes[i];
       if typeName = info.Name then
       begin
         case info.VType of
-          varDouble: Result := Double(Value);
-          varInt64: Result := {$IFDEF DELPHIXE6_UP}Int64(Value);
-            {$ELSE}StrToInt64(VarToStr(Value));{$ENDIF} // see QC#117696
+          varDouble: result := Double(value);
+          varInt64: result := {$IFDEF DELPHIXE6_UP}Int64(value);
+            {$ELSE}StrToInt64(VarToStr(value));{$ENDIF} // see QC#117696
         else
           raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
         end;
@@ -3895,43 +3895,43 @@ var
   typeInfo: PTypeInfo;
   arr: Pointer;
 begin
-  case TVarData(Value).VType of
+  case TVarData(value).VType of
     varEmpty, varNull: Exit(Empty);
-    varBoolean: Result := TVarData(Value).VBoolean;
-    varShortInt: Result := TVarData(Value).VShortInt;
-    varSmallint: Result := TVarData(Value).VSmallInt;
-    varInteger: Result := TVarData(Value).VInteger;
+    varBoolean: Result := TVarData(value).VBoolean;
+    varShortInt: Result := TVarData(value).VShortInt;
+    varSmallint: Result := TVarData(value).VSmallInt;
+    varInteger: Result := TVarData(value).VInteger;
 {$IFDEF DELPHIXE4_UP}
-    varSingle: Result := TVarData(Value).VSingle;
-    varDouble: Result := TVarData(Value).VDouble;
-    varCurrency: Result := TVarData(Value).VCurrency;
+    varSingle: Result := TVarData(value).VSingle;
+    varDouble: Result := TVarData(value).VDouble;
+    varCurrency: Result := TVarData(value).VCurrency;
 {$ELSE}
-    varSingle: Result := TValue.From<Single>(TVarData(Value).VSingle);
-    varDouble: Result := TValue.From<Double>(TVarData(Value).VDouble);
-    varCurrency: Result := TValue.From<Currency>(TVarData(Value).VCurrency);
+    varSingle: Result := TValue.From<Single>(TVarData(value).VSingle);
+    varDouble: Result := TValue.From<Double>(TVarData(value).VDouble);
+    varCurrency: Result := TValue.From<Currency>(TVarData(value).VCurrency);
 {$ENDIF}
-    varDate: Result := From<TDateTime>(TVarData(Value).VDate);
-    varOleStr: Result := string(TVarData(Value).VOleStr);
-    varDispatch: Result := From<IDispatch>(IDispatch(TVarData(Value).VDispatch));
-    varError: Result := From<HRESULT>(TVarData(Value).VError);
-    varUnknown: Result := From<IInterface>(IInterface(TVarData(Value).VUnknown));
-    varByte: Result := TVarData(Value).VByte;
-    varWord: Result := TVarData(Value).VWord;
-    varLongWord: Result := TVarData(Value).VLongWord;
-    varInt64: Result := TVarData(Value).VInt64;
+    varDate: Result := From<TDateTime>(TVarData(value).VDate);
+    varOleStr: Result := string(TVarData(value).VOleStr);
+    varDispatch: Result := From<IDispatch>(IDispatch(TVarData(value).VDispatch));
+    varError: Result := From<HRESULT>(TVarData(value).VError);
+    varUnknown: Result := From<IInterface>(IInterface(TVarData(value).VUnknown));
+    varByte: Result := TVarData(value).VByte;
+    varWord: Result := TVarData(value).VWord;
+    varLongWord: Result := TVarData(value).VLongWord;
+    varInt64: Result := TVarData(value).VInt64;
 {$IFDEF DELPHIXE4_UP}
-    varUInt64: Result := TVarData(Value).VUInt64;
+    varUInt64: Result := TVarData(value).VUInt64;
 {$ELSE}
-    varUInt64: Result := TValue.From<UInt64>(TVarData(Value).VUInt64);
+    varUInt64: Result := TValue.From<UInt64>(TVarData(value).VUInt64);
 {$ENDIF}
 {$IFNDEF NEXTGEN}
-    varString: Result := string(AnsiString(TVarData(Value).VString));
+    varString: Result := string(AnsiString(TVarData(value).VString));
 {$ENDIF}
-    varUString: Result := UnicodeString(TVarData(Value).VUString);
+    varUString: Result := UnicodeString(TVarData(value).VUString);
   else
-    if TVarData(Value).VType and varArray = varArray then
+    if TVarData(value).VType and varArray = varArray then
     begin
-      case TVarData(Value).VType and not varArray of
+      case TVarData(value).VType and not varArray of
         varSmallint: typeInfo := System.TypeInfo(TArray<SmallInt>);
         varInteger: typeInfo := System.TypeInfo(TArray<Integer>);
         varSingle: typeInfo := System.TypeInfo(TArray<Single>);
@@ -3955,11 +3955,11 @@ begin
         raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
       end;
       arr := nil;
-      DynArrayFromVariant(arr, Value, typeInfo);
+      DynArrayFromVariant(arr, value, typeInfo);
       TValue.MakeWithoutCopy(@arr, typeInfo, Result);
     end
     else
-      FromCustomVariant(Value, Result);
+      FromCustomVariant(value, Result);
   end;
 end;
 
@@ -4214,115 +4214,115 @@ end;
 
 {$REGION 'Conversion functions'}
 type
-  TConvertFunc = function(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+  TConvertFunc = function(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 
-function ConvFail(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvFail(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
   Result := False;
 end;
 
-function ConvClass2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvClass2Class(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  Result := ASource.TryCast(ATarget, AResult);
+  Result := source.TryCast(target, value);
 end;
 
-function ConvClass2Enum(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvClass2Enum(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  Result := ATarget = TypeInfo(Boolean);
+  Result := target = TypeInfo(Boolean);
   if Result then
-    AResult := ASource.AsObject <> nil;
+    value := source.AsObject <> nil;
 end;
 
-function ConvFloat2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvFloat2Ord(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  Result := Frac(ASource.AsExtended) = 0;
+  Result := Frac(source.AsExtended) = 0;
   if Result then
-    AResult := TValue.FromOrdinal(ATarget, Trunc(ASource.AsExtended));
+    value := TValue.FromOrdinal(target, Trunc(source.AsExtended));
 end;
 
-function ConvFloat2Str(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvFloat2Str(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 var
-  LValue: TValue;
+  temp: TValue;
 begin
-  if ASource.TypeInfo = TypeInfo(TDate) then
-    LValue := DateToStr(ASource.AsExtended)
-  else if ASource.TypeInfo = TypeInfo(TDateTime) then
-    LValue := DateTimeToStr(ASource.AsExtended)
-  else if ASource.TypeInfo = TypeInfo(TTime) then
-    LValue := TimeToStr(ASource.AsExtended)
+  if source.TypeInfo = TypeInfo(TDate) then
+    temp := DateToStr(source.AsExtended)
+  else if source.TypeInfo = TypeInfo(TDateTime) then
+    temp := DateTimeToStr(source.AsExtended)
+  else if source.TypeInfo = TypeInfo(TTime) then
+    temp := TimeToStr(source.AsExtended)
   else
-    LValue := FloatToStr(ASource.AsExtended);
-  Result := LValue.TryCast(ATarget, AResult);
+    temp := FloatToStr(source.AsExtended);
+  Result := temp.TryCast(target, value);
 end;
 
-function ConvIntf2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvIntf2Class(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  Result := ConvClass2Class(ASource.AsInterface as TObject, ATarget, AResult);
+  Result := ConvClass2Class(source.AsInterface as TObject, target, value);
 end;
 
-function ConvIntf2Intf(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvIntf2Intf(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 var
   intf: IInterface;
 begin
-  Result := ASource.TryAsInterface(ATarget, intf);
+  Result := source.TryAsInterface(target, intf);
   if Result then
-    TValue.Make(@intf, ATarget, AResult)
+    TValue.Make(@intf, target, value)
   else
-    AResult := TValue.Empty;
+    value := TValue.Empty;
 end;
 
-function ConvOrd2Float(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvOrd2Float(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  AResult := TValue.FromFloat(ATarget, ASource.AsOrdinal);
+  value := TValue.FromFloat(target, source.AsOrdinal);
   Result := True;
 end;
 
-function ConvOrd2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvOrd2Ord(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  AResult := TValue.FromOrdinal(ATarget, ASource.AsOrdinal);
+  value := TValue.FromOrdinal(target, source.AsOrdinal);
   Result := True;
 end;
 
-function ConvOrd2Str(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvOrd2Str(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 var
-  LValue: TValue;
+  temp: TValue;
 begin
-  LValue := ASource.ToString;
-  Result := LValue.TryCast(ATarget, AResult);
+  temp := source.ToString;
+  Result := temp.TryCast(target, value);
 end;
 
-function ConvRec2Meth(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvRec2Meth(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  Result := ASource.TypeInfo = TypeInfo(TMethod);
+  Result := source.TypeInfo = TypeInfo(TMethod);
   if Result then
   begin
-    AResult := TValue.From(ASource.GetReferenceToRawData, ATarget);
+    value := TValue.From(source.GetReferenceToRawData, target);
     Result := True;
   end
 end;
 
-function ConvStr2Enum(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvStr2Enum(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  AResult := TValue.FromOrdinal(ATarget, GetEnumValue(ATarget, ASource.AsString));
+  value := TValue.FromOrdinal(target, GetEnumValue(target, source.AsString));
   Result := True;
 end;
 
-function ConvStr2Float(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvStr2Float(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  if ATarget = TypeInfo(TDate) then
-    AResult := TValue.From<TDate>(StrToDateDef(ASource.AsString, 0))
-  else if ATarget = TypeInfo(TDateTime) then
-    AResult := TValue.From<TDateTime>(StrToDateTimeDef(ASource.AsString, 0))
-  else if ATarget = TypeInfo(TTime) then
-    AResult := TValue.From<TTime>(StrToTimeDef(ASource.AsString, 0))
+  if target = TypeInfo(TDate) then
+    value := TValue.From<TDate>(StrToDateDef(source.AsString, 0))
+  else if target = TypeInfo(TDateTime) then
+    value := TValue.From<TDateTime>(StrToDateTimeDef(source.AsString, 0))
+  else if target = TypeInfo(TTime) then
+    value := TValue.From<TTime>(StrToTimeDef(source.AsString, 0))
   else
-    AResult := TValue.FromFloat(ATarget, StrToFloatDef(ASource.AsString, 0));
+    value := TValue.FromFloat(target, StrToFloatDef(source.AsString, 0));
   Result := True;
 end;
 
-function ConvStr2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+function ConvStr2Ord(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 begin
-  AResult := TValue.FromOrdinal(ATarget, StrToInt64Def(ASource.AsString, 0));
+  value := TValue.FromOrdinal(target, StrToInt64Def(source.AsString, 0));
   Result := True;
 end;
 
@@ -4733,7 +4733,7 @@ begin
 end;
 
 procedure TRttiMethodHelper.FixParameters(
-  var parameters: TArray<TRttiParameter>);
+  const parameters: TArray<TRttiParameter>);
 var
   i: Integer;
 begin
@@ -7329,13 +7329,13 @@ end;
 function Vector<T>.Splice(index, count: Integer;
   const items: array of T): Vector<T>;
 var
-  n, i: Integer;
+  i: Integer;
 begin
-  n := System.Length(fData);
-  if (index < 0) or (index >= n) then
+  i := System.Length(fData);
+  if (index < 0) or (index >= i) then
     Exit;
-  if count > n - index then
-    count := n - index;
+  if count > i - index then
+    count := i - index;
   Result.fData := Copy(fData, index, count);
   Delete(index, count);
   Insert(index, items);
