@@ -167,9 +167,9 @@ end;
 
 procedure TMockInterceptor.Intercept(const invocation: IInvocation);
 var
-  methodCalls: IReadOnlyCollection<TMethodCall>;
+  methodCalls: IReadOnlyList<TMethodCall>;
   methodCall: TMethodCall;
-  arguments: IReadOnlyCollection<TArray<TValue>>;
+  arguments: IReadOnlyList<TArray<TValue>>;
   callCount: Integer;
 begin
   case fState of

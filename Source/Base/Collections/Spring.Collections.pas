@@ -1890,17 +1890,17 @@ type
   IReadOnlyMultiMap<TKey, TValue> = interface(IReadOnlyMap<TKey, TValue>)
     ['{5411F9EC-5A56-4F40-890A-089A08AE795F}']
   {$REGION 'Property Accessors'}
-    function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
+    function GetItems(const key: TKey): IReadOnlyList<TValue>;
   {$ENDREGION}
 
-    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
-    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
+    function TryGetValues(const key: TKey; out values: IReadOnlyList<TValue>): Boolean;
+    property Items[const key: TKey]: IReadOnlyList<TValue> read GetItems; default;
   end;
 
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
     ['{8598095E-92A7-4FCC-9F78-8EE7653B8B49}']
   {$REGION 'Property Accessors'}
-    function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
+    function GetItems(const key: TKey): IReadOnlyList<TValue>;
   {$ENDREGION}
 
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
@@ -1908,9 +1908,9 @@ type
 
     function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
 
-    function ExtractValues(const key: TKey): IReadOnlyCollection<TValue>;
-    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
-    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
+    function ExtractValues(const key: TKey): IReadOnlyList<TValue>;
+    function TryGetValues(const key: TKey; out values: IReadOnlyList<TValue>): Boolean;
+    property Items[const key: TKey]: IReadOnlyList<TValue> read GetItems; default;
   end;
 
   IStack = interface(IEnumerable)
