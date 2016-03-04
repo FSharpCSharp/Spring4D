@@ -97,6 +97,7 @@ type
     procedure TestListMultipleDelete;
     procedure TestListSimpleExchange;
     procedure TestListReverse;
+    procedure TestListReverseEmpty;
     procedure TestListSort;
     procedure TestListIndexOf;
     procedure TestLastIndexOf;
@@ -910,6 +911,15 @@ begin
 
   for i := ListCountLimit downto 0 do
     CheckEquals(i, SUT[ListCountLimit - i]);
+
+  ExpectedException := EArgumentOutOfRangeException;
+  SUT.Reverse(SUT.Count - 1, 2);
+end;
+
+procedure TTestIntegerList.TestListReverseEmpty;
+begin
+  SUT.Reverse;
+  Pass;
 end;
 
 procedure TTestIntegerList.TestListSimpleExchange;
