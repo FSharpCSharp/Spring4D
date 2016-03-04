@@ -875,7 +875,7 @@ begin
   Result := Assigned(converter)
     and converter.TryConvertTo(value, targetTypeInfo, targetValue, parameter);
   if not Result then
-{$IFDEF DELPHIXE}
+{$IFNDEF DELPHIXE2_UP}
     // workaround for wrong TValue.TryCast for string to float (it calls ConvStr2Str by mistake)
     if not ((value.Kind in [tkString, tkLString, tkWString, tkUString])
       and (targetTypeInfo.Kind = tkFloat)) then
