@@ -833,6 +833,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
   CheckEquals(1.11, outFloat);
+  CheckFalse(fConverter.TryConvertTo(TValue.From<string>('foo'), TypeInfo(Extended), outValue));
 end;
 
 procedure TTestFromString.TestStringToEnum;

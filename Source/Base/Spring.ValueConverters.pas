@@ -872,9 +872,15 @@ var
   converter: IValueConverter;
 begin
   converter := TValueConverterFactory.GetConverter(value.TypeInfo, targetTypeInfo);
-  Result := (Assigned(converter)
-    and converter.TryConvertTo(value, targetTypeInfo, targetValue, parameter))
-    or value.TryCast(targetTypeInfo, targetValue);
+  Result := Assigned(converter)
+    and converter.TryConvertTo(value, targetTypeInfo, targetValue, parameter);
+  if not Result then
+{$IFDEF DELPHIXE}
+    // workaround for wrong TValue.TryCast for string to float (it calls ConvStr2Str by mistake)
+    if not ((value.Kind in [tkString, tkLString, tkWString, tkUString])
+      and (targetTypeInfo.Kind = tkFloat)) then
+{$ENDIF}
+    Result := value.TryCast(targetTypeInfo, targetValue);
 end;
 
 function TDefaultConverter.TryConvertTo(const value: TValue;
