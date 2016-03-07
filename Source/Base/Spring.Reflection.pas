@@ -183,7 +183,7 @@ type
   private
     fParentType: TRttiType;
     fSelector: TFunc<TRttiType,TArray<T>>;
-    fEnumerateBaseType: Boolean;
+    fInherit: Boolean;
     fPredicate: TPredicate<T>;
     fTargetType: TRttiType;
     fMembers: TArray<T>;
@@ -192,10 +192,10 @@ type
   public
     constructor Create(const parentType: TRttiType;
       const selector: TFunc<TRttiType,TArray<T>>;
-      enumerateBaseType: Boolean); overload;
+      inherit: Boolean); overload;
     constructor Create(const parentType: TRttiType;
       const selector: TFunc<TRttiType,TArray<T>>;
-      enumerateBaseType: Boolean;
+      inherit: Boolean;
       const predicate: TPredicate<T>); overload;
 
     function Clone: TIterator<T>; override;
@@ -264,15 +264,11 @@ type
     function GetAsDynamicArray: TRttiDynamicArrayType;
     function GetIsDynamicArray: Boolean;
     function GetIsString: Boolean;
-    function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
-    function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
-    function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerable<TRttiProperty>;
-    function InternalGetFields(enumerateBaseType: Boolean = True): IEnumerable<TRttiField>;
+    function GetMethodsEnumerable: IEnumerable<TRttiMethod>;
+    function GetPropertiesEnumerable: IEnumerable<TRttiProperty>;
+    function GetFieldsEnumerable: IEnumerable<TRttiField>;
     function GetBaseTypes: IReadOnlyList<TRttiType>;
-    function GetConstructors: IEnumerable<TRttiMethod>;
-    function GetMethods: IEnumerable<TRttiMethod>;
-    function GetProperties: IEnumerable<TRttiProperty>;
-    function GetFields: IEnumerable<TRttiField>;
+    function GetConstructorsEnumerable: IEnumerable<TRttiMethod>;
     function GetDefaultName: string;
     function GetAncestorCount: Integer;
   public
@@ -346,7 +342,7 @@ type
     /// <seealso cref="Methods" />
     /// <seealso cref="Properties" />
     /// <seealso cref="Fields" />
-    property Constructors: IEnumerable<TRttiMethod> read GetConstructors;
+    property Constructors: IEnumerable<TRttiMethod> read GetConstructorsEnumerable;
 
     /// <summary>
     ///   Gets a enumerable collection which contains all methods that the type
@@ -355,7 +351,7 @@ type
     /// <seealso cref="Constructors" />
     /// <seealso cref="Properties" />
     /// <seealso cref="Fields" />
-    property Methods: IEnumerable<TRttiMethod> read GetMethods;
+    property Methods: IEnumerable<TRttiMethod> read GetMethodsEnumerable;
 
     /// <summary>
     ///   Gets a enumerable collection which contains all properties that the
@@ -364,7 +360,7 @@ type
     /// <seealso cref="Constructors" />
     /// <seealso cref="Methods" />
     /// <seealso cref="Fields" />
-    property Properties: IEnumerable<TRttiProperty> read GetProperties;
+    property Properties: IEnumerable<TRttiProperty> read GetPropertiesEnumerable;
 
     /// <summary>
     ///   Gets a enumerable collection which contains all fields that the type
@@ -373,7 +369,7 @@ type
     /// <seealso cref="Constructors" />
     /// <seealso cref="Methods" />
     /// <seealso cref="Properties" />
-    property Fields: IEnumerable<TRttiField> read GetFields;
+    property Fields: IEnumerable<TRttiField> read GetFieldsEnumerable;
 
     property AsClass: TRttiInstanceType read GetAsClass;
     property AsInterface: TRttiInterfaceType read GetAsInterface;
@@ -1001,26 +997,26 @@ end;
 {$REGION 'TRttiMemberIterator<T>'}
 
 constructor TRttiMemberIterator<T>.Create(const parentType: TRttiType;
-  const selector: TFunc<TRttiType,TArray<T>>; enumerateBaseType: Boolean);
+  const selector: TFunc<TRttiType,TArray<T>>; inherit: Boolean);
 begin
-  Create(parentType, selector, enumerateBaseType, nil);
+  Create(parentType, selector, inherit, nil);
 end;
 
 constructor TRttiMemberIterator<T>.Create(const parentType: TRttiType;
-  const selector: TFunc<TRttiType, TArray<T>>; enumerateBaseType: Boolean;
+  const selector: TFunc<TRttiType, TArray<T>>; inherit: Boolean;
   const predicate: TPredicate<T>);
 begin
   inherited Create;
   fParentType := parentType;
   fSelector := selector;
-  fEnumerateBaseType := enumerateBaseType;
+  fInherit := inherit;
   fPredicate := predicate;
 end;
 
 function TRttiMemberIterator<T>.Clone: TIterator<T>;
 begin
   Result := TRttiMemberIterator<T>.Create(
-    fParentType, fSelector, fEnumerateBaseType, fPredicate);
+    fParentType, fSelector, fInherit, fPredicate);
 end;
 
 procedure TRttiMemberIterator<T>.Initialize(const targetType: TRttiType);
@@ -1030,7 +1026,7 @@ begin
   if Assigned(fTargetType) then
     fMembers := fSelector(fTargetType)
   else
-    SetLength(fMembers, 0);
+    fMembers := nil;
 end;
 
 function TRttiMemberIterator<T>.MoveNext: Boolean;
@@ -1054,7 +1050,7 @@ begin
         fCurrent := fMembers[fIndex];
         Exit(True);
       end;
-      if fEnumerateBaseType then
+      if fInherit then
         Initialize(fTargetType.BaseType)
       else
         Initialize(nil);
@@ -1090,7 +1086,7 @@ begin
     while fIndex < High(fTypes) do
     begin
       Inc(fIndex);
-      if not (fTypes[fIndex].InheritsFrom(T)) then
+      if not fTypes[fIndex].InheritsFrom(T) then
         Continue;
       fCurrent := T(fTypes[fIndex]);
       Exit(True);
@@ -1186,49 +1182,40 @@ end;
 
 {$REGION 'TRttiTypeHelper'}
 
-function TRttiTypeHelper.InternalGetConstructors(
-  enumerateBaseType: Boolean): IEnumerable<TRttiMethod>;
+function TRttiTypeHelper.GetConstructorsEnumerable: IEnumerable<TRttiMethod>;
 begin
   Result := TRttiMemberIterator<TRttiMethod>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiMethod>
     begin
       Result := targetType.GetDeclaredMethods;
-    end, enumerateBaseType, TMethodFilters.IsConstructor());
+    end, True, TMethodFilters.IsConstructor());
 end;
 
-function TRttiTypeHelper.InternalGetMethods(
-  enumerateBaseType: Boolean): IEnumerable<TRttiMethod>;
+function TRttiTypeHelper.GetMethodsEnumerable: IEnumerable<TRttiMethod>;
 begin
   Result := TRttiMemberIterator<TRttiMethod>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiMethod>
     begin
       Result := targetType.GetDeclaredMethods;
-    end, enumerateBaseType);
+    end, True);
 end;
 
-function TRttiTypeHelper.InternalGetProperties(
-  enumerateBaseType: Boolean): IEnumerable<TRttiProperty>;
+function TRttiTypeHelper.GetPropertiesEnumerable: IEnumerable<TRttiProperty>;
 begin
   Result := TRttiMemberIterator<TRttiProperty>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiProperty>
     begin
       Result := targetType.GetDeclaredProperties;
-    end, enumerateBaseType);
+    end, True);
 end;
 
-function TRttiTypeHelper.InternalGetFields(
-  enumerateBaseType: Boolean): IEnumerable<TRttiField>;
+function TRttiTypeHelper.GetFieldsEnumerable: IEnumerable<TRttiField>;
 begin
   Result := TRttiMemberIterator<TRttiField>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiField>
     begin
       Result := targetType.GetDeclaredFields;
-    end, enumerateBaseType);
-end;
-
-function TRttiTypeHelper.GetConstructors: IEnumerable<TRttiMethod>;
-begin
-  Result := InternalGetConstructors;
+    end, True);
 end;
 
 function TRttiTypeHelper.GetDefaultName: string;
@@ -1247,16 +1234,6 @@ begin
     Result := nil;
 end;
 
-function TRttiTypeHelper.GetMethods: IEnumerable<TRttiMethod>;
-begin
-  Result := InternalGetMethods;
-end;
-
-function TRttiTypeHelper.GetProperties: IEnumerable<TRttiProperty>;
-begin
-  Result := InternalGetProperties;
-end;
-
 function TRttiTypeHelper.HasField(const name: string): Boolean;
 begin
   Result := Assigned(GetField(name));
@@ -1270,11 +1247,6 @@ end;
 function TRttiTypeHelper.HasProperty(const name: string): Boolean;
 begin
   Result := Assigned(GetProperty(name));
-end;
-
-function TRttiTypeHelper.GetFields: IEnumerable<TRttiField>;
-begin
-  Result := InternalGetFields;
 end;
 
 // Nullable<TDateTime>
