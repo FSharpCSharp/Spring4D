@@ -1223,7 +1223,13 @@ begin
   if IsPublicType then
     Result := QualifiedName
   else
-    Result := Name;
+    case TypeKind of
+      tkClass: Result := TRttiInstanceType(Self).DeclaringUnitName + '.' + Name;
+      tkInterface: Result := TRttiInterfaceType(Self).DeclaringUnitName + '.' + Name;
+      tkDynArray: Result := TRttiDynamicArrayType(Self).DeclaringUnitName + '.' + Name;
+    else
+      Result := Name;
+    end;
 end;
 
 function TRttiTypeHelper.GetMember(const name: string): TRttiMember;
