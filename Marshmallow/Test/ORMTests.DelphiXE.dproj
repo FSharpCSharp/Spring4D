@@ -65,11 +65,9 @@
 			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas"/>
-			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.UIB.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas"/>
-			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Consts.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DatabaseManager.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DetachedSession.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EmbeddedEntity.pas"/>
@@ -82,6 +80,7 @@
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.MongoDB.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Proxy.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Simple.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ResourceStrings.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.MongoDB.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ValueConverters.pas"/>
@@ -167,6 +166,8 @@
 			<DCCReference Include="TestAdaptersADO.pas"/>
 			<DCCReference Include="TestMockADOConnection.pas"/>
 			<DCCReference Include="TestAdaptersMSSQL.pas"/>
+			<DCCReference Include="TestAdaptersDBX.pas"/>
+			<DCCReference Include="TestSQLConnection.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

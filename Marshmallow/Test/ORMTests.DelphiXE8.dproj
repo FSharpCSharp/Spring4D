@@ -71,10 +71,11 @@
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas"/>
+        <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.UIB.pas"/>
+        <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Zeos.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas"/>
-        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Consts.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DatabaseManager.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DetachedSession.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EmbeddedEntity.pas"/>
@@ -87,6 +88,7 @@
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.MongoDB.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Proxy.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Simple.pas"/>
+        <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ResourceStrings.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.MongoDB.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ValueConverters.pas"/>
@@ -145,7 +147,8 @@
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Params.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Register.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Types.pas"/>
-        <DCCReference Include="TestAdapterMongoDB.pas"/>
+        <DCCReference Include="TestExceptions.pas"/>
+        <DCCReference Include="TestAdaptersMongoDB.pas"/>
         <DCCReference Include="TestAdaptersASA.pas"/>
         <DCCReference Include="TestAdaptersOracle.pas"/>
         <DCCReference Include="TestSQLServerSQLGenerator.pas"/>
@@ -157,18 +160,23 @@
         <DCCReference Include="TestCoreEntityMap.pas"/>
         <DCCReference Include="TestCoreUtils.pas"/>
         <DCCReference Include="TestDatabaseManager.pas"/>
-        <DCCReference Include="TestFireDACAdapter.pas"/>
+        <DCCReference Include="TestAdaptersFireDAC.pas"/>
         <DCCReference Include="TestObjectDataset.pas"/>
         <DCCReference Include="TestPersistence.pas"/>
         <DCCReference Include="TestSession.pas"/>
         <DCCReference Include="TestSimpleRepository.pas"/>
-        <DCCReference Include="TestSQLiteAdapter.pas"/>
+        <DCCReference Include="TestAdaptersSQLite.pas"/>
         <DCCReference Include="TestEntities.pas"/>
         <DCCReference Include="ViewTestObjectDataset.pas">
             <Form>frmObjectDatasetTest</Form>
         </DCCReference>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityWrapper.pas"/>
         <DCCReference Include="TestEntityWrapper.pas"/>
+        <DCCReference Include="TestAdaptersADO.pas"/>
+        <DCCReference Include="TestMockADOConnection.pas"/>
+        <DCCReference Include="TestAdaptersMSSQL.pas"/>
+        <DCCReference Include="TestAdaptersDBX.pas"/>
+        <DCCReference Include="TestSQLConnection.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -620,13 +628,13 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
-                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
             </Deployment>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>

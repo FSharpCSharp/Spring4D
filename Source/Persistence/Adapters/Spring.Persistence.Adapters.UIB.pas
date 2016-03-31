@@ -116,7 +116,7 @@ uses
   DB,
   StrUtils,
   Spring.Persistence.Core.ConnectionFactory,
-  Spring.Persistence.Core.Consts,
+  Spring.Persistence.Core.ResourceStrings,
   Spring.Persistence.SQL.Generators.Firebird,
   Spring.Persistence.SQL.Interfaces;
 
@@ -205,7 +205,7 @@ begin
       query.Free;
       if isNewTransaction then
         transaction.Free;
-      raise HandleException(Format(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]));
+      raise HandleException(Format(SCannotOpenQuery, [E.Message]));
     end;
   end;
 end;

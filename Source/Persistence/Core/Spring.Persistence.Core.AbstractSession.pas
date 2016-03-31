@@ -167,10 +167,10 @@ uses
   Classes,
   SysUtils,
   Variants,
-  Spring.Persistence.Core.Consts,
   Spring.Persistence.Core.EntityMap,
   Spring.Persistence.Core.EntityWrapper,
   Spring.Persistence.Core.Exceptions,
+  Spring.Persistence.Core.ResourceStrings,
   Spring.Persistence.SQL.Commands.Delete,
   Spring.Persistence.SQL.Commands.Insert,
   Spring.Persistence.SQL.Commands.Select,
@@ -686,7 +686,7 @@ begin
       try
         fieldValue := resultSet.GetFieldValue(columnData.ColumnName);
       except
-        raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [columnData.ColumnName]);
+        raise EORMColumnNotFound.CreateResFmt(@SColumnNotFound, [columnData.ColumnName]);
       end;
       value := TValue.FromVariant(fieldValue);
       value := value.ConvertTo(columnData.Member.MemberType.Handle);
