@@ -115,6 +115,7 @@ type
     procedure Sort(const comparer: IComparer<T>); override;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); override;
+    procedure MoveTo(const collection: ICollection<T>; const predicate: TPredicate<T>); override;
     function ToArray: TArray<T>; override;
   end;
 
@@ -566,6 +567,28 @@ begin
   IncreaseVersion;
 
   Changed(temp, caMoved);
+end;
+
+procedure TList<T>.MoveTo(const collection: ICollection<T>;
+  const predicate: TPredicate<T>);
+var
+  i: Integer;
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  i := 0;
+  while i < fCount do
+    if not Assigned(predicate) or predicate(fItems[i]) then
+    begin
+      item := fItems[i];
+      DeleteInternal(i, caExtracted);
+      collection.Add(item);
+    end
+    else
+      Inc(i);
 end;
 
 procedure TList<T>.Clear;

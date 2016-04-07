@@ -824,7 +824,26 @@ type
     /// </param>
     procedure CopyTo(var values: TArray<T>; index: Integer);
 
-    procedure MoveTo(const collection: ICollection<T>);
+    /// <summary>
+    ///   Moves the elements of the ICollection&lt;T&gt; to the specified
+    ///   collection.
+    /// </summary>
+    /// <remarks>
+    ///   This internally uses Extract to make sure that objects from a list
+    ///   with <b>OwnsObject</b> are not getting destroyed.
+    /// </remarks>
+    procedure MoveTo(const collection: ICollection<T>); overload;
+
+    /// <summary>
+    ///   Moves the elements of the ICollection&lt;T&gt; that are matching the
+    ///   specified predicate to the specified collection.
+    /// </summary>
+    /// <remarks>
+    ///   This internally uses Extract to make sure that objects from a list
+    ///   with <b>OwnsObject</b> are not getting destroyed.
+    /// </remarks>
+    procedure MoveTo(const collection: ICollection<T>;
+      const predicate: TPredicate<T>); overload;
 
     /// <summary>
     ///   Removes the first occurrence of a specific element from the
