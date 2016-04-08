@@ -693,12 +693,30 @@ procedure TAbstractSession.TRowMapperInternal.SetOneToManyColumns(
 var
   column: OneToManyAttribute;
   value: TValue;
+  items: IObjectList;
+  entityClass: TClass;
+  id: TValue;
+  results: IDBResultSet;
 begin
   for column in entity.OneToManyColumns do
   begin
-    value := ResolveLazyValue(entity, column.Member);
-    if not value.IsEmpty then
-      entity.SetValue(column.Member, value);
+    if column.Member.IsField then
+    begin
+      value := ResolveLazyValue(entity, column.Member);
+      if not value.IsEmpty then
+        entity.SetValue(column.Member, value);
+    end;
+    if column.Member.IsProperty then
+    begin
+      if not column.Member.MemberType.IsInterface
+        or not Supports(entity.GetValue(column.Member).AsInterface, IObjectList, items) then
+        raise EORMUnsupportedType.CreateFmt(
+          'Unsupported type: %s - expected IList<T: class>', [column.Member.MemberType.Name]);
+      entityClass := items.ElementType.TypeData.ClassType;
+      id := entity.PrimaryKeyValue;
+      results := fSession.GetResultSetById(entityClass, id, entity.Entity.ClassType);
+      fSession.MapEntitiesFromResultSet(results, items, entityClass);
+    end;
   end;
 end;
 
