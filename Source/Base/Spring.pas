@@ -7481,4 +7481,11 @@ end;
 {$ENDREGION}
 
 
+initialization
+
+finalization
+  // make sure this properly gets freed because it appears
+  // the class destructor is not running all the time
+  TType.fContext.Free;
+
 end.
