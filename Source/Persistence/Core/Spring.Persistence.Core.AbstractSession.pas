@@ -63,7 +63,7 @@ type
         const resultSet: IDBResultSet);
       procedure SetEntityFromColumns(const entity: IEntityWrapper;
         const resultSet: IDBResultSet);
-      procedure SetLazyColumns(const entity: IEntityWrapper);
+      procedure SetOneToManyColumns(const entity: IEntityWrapper);
 
       procedure MapAssociation(const baseEntity: IEntityWrapper;
         const resultSet: IDBResultSet); overload;
@@ -85,7 +85,7 @@ type
     function MapAggregatedObject(const resultSet: IDBResultSet;
       const baseEntity: TObject; entityClass: TClass): TObject;
 
-    function DoGetLazy(const id: TValue; const entity: TObject;
+    function LoadOneToManyAssociation(const id: TValue; const entity: TObject;
       const column: ColumnAttribute; entityClass: TClass): IDBResultSet;
 
     function GetLazyValueAsInterface(const id: TValue; const entity: TObject;
@@ -218,8 +218,9 @@ begin
   DetachEntity(entity);
 end;
 
-function TAbstractSession.DoGetLazy(const id: TValue; const entity: TObject;
-  const column: ColumnAttribute; entityClass: TClass): IDBResultSet;
+function TAbstractSession.LoadOneToManyAssociation(const id: TValue;
+  const entity: TObject; const column: ColumnAttribute;
+  entityClass: TClass): IDBResultSet;
 var
   baseEntityClass,
   entityToLoadClass: TClass;
@@ -323,7 +324,7 @@ begin
   if not Assigned(entity) or id.IsEmpty then
     Exit(nil);
 
-  results := DoGetLazy(id, entity, column, entityClass);
+  results := LoadOneToManyAssociation(id, entity, column, entityClass);
   Result := TCollections.CreateObjectList<TObject>(True);
   MapEntitiesFromResultSet(results, Result as IObjectList, entityClass);
 end;
@@ -337,7 +338,7 @@ begin
   if not Assigned(entity) or id.IsEmpty then
     Exit(nil);
 
-  results := DoGetLazy(id, entity, column, entityClass);
+  results := LoadOneToManyAssociation(id, entity, column, entityClass);
   Result := MapAggregatedObject(results, entity, entityClass);
 end;
 
@@ -409,11 +410,7 @@ begin
       with TAbstractSession(capturedSelf) do
 {$ENDIF}
         Result := GetLazyValueAsInterface(capturedId,
-{$IFNDEF AUTOREFCOUNT}
-          entity,
-{$ELSE}
-          capturedEntity,
-{$ENDIF}
+          {$IFNDEF AUTOREFCOUNT}entity,{$ELSE}capturedEntity,{$ENDIF}
           column, entityClass);
     end;
   Result := TValue.From<Lazy<IInterface>>(TLazy<IInterface>.Create(factory));
@@ -444,11 +441,7 @@ begin
       with TAbstractSession(capturedSelf) do
 {$ENDIF}
         Result := GetLazyValueAsObject(capturedId,
-{$IFNDEF AUTOREFCOUNT}
-          entity,
-{$ELSE}
-          capturedEntity,
-{$ENDIF}
+          {$IFNDEF AUTOREFCOUNT}entity,{$ELSE}capturedEntity,{$ENDIF}
           column, entityClass);
     end;
   Result := TValue.From<Lazy<TObject>>(TLazy<TObject>.Create(factory, True));
@@ -610,7 +603,7 @@ procedure TAbstractSession.TRowMapperInternal.MapEntityFromColumns(
   const entity: IEntityWrapper; const resultSet: IDBResultSet);
 begin
   SetEntityFromColumns(entity, resultSet);
-  SetLazyColumns(entity);
+  SetOneToManyColumns(entity);
   SetAssociations(entity, resultSet);
   fSession.AttachEntity(entity.Entity);
 end;
@@ -695,14 +688,12 @@ begin
   end;
 end;
 
-procedure TAbstractSession.TRowMapperInternal.SetLazyColumns(
+procedure TAbstractSession.TRowMapperInternal.SetOneToManyColumns(
   const entity: IEntityWrapper);
 var
   column: OneToManyAttribute;
   value: TValue;
 begin
-  if not entity.HasOneToManyRelations then
-    Exit;
   for column in entity.OneToManyColumns do
   begin
     value := ResolveLazyValue(entity, column.Member);
