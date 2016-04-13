@@ -394,10 +394,9 @@ end;
 
 function TableAttribute.GetNamespace: string;
 begin
-  Result := '';
-  if Schema <> '' then
-    Result := Schema + '.';
-  Result := Result + TableName;
+  Result := TableName;
+  if fSchema <> '' then
+    Result := fSchema + '.' + Result;
 end;
 
 function TableAttribute.GetTableName: string;
@@ -416,7 +415,8 @@ end;
 
 {$REGION 'SequenceAttribute'}
 
-constructor SequenceAttribute.Create(const sequenceName: string; initialValue: NativeInt; increment: Integer);
+constructor SequenceAttribute.Create(const sequenceName: string;
+  initialValue: NativeInt; increment: Integer);
 begin
   inherited Create;
   fSequenceName := sequenceName;
