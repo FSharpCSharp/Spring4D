@@ -67,6 +67,7 @@ type
   PInterface = ^IInterface;
 
   TValue = Rtti.TValue;
+  PValue = ^TValue;
 
   TAttributeClass = class of TCustomAttribute;
 
