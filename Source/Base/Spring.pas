@@ -3473,6 +3473,10 @@ var
   leftRec, rightRec: Pointer;
   leftValue, rightValue: TValue;
 begin
+  if (left.TypeInfo = TypeInfo(TValue)) and (right.TypeInfo = TypeInfo(TValue)) then
+    Exit(PValue(left.GetReferenceToRawData).Equals(
+      PValue(right.GetReferenceToRawData)^));
+
   recordType := left.TypeInfo.RttiType;
   for method in recordType.GetMethods('&op_Equality') do
   begin

@@ -435,6 +435,8 @@ type
     procedure EqualsReturnsTrueForEqualPointers;
     procedure EqualsReturnsFalseForUnequalPointers;
 
+    procedure EqualsReturnsTrueForEqualTValue;
+
     procedure FromVariantProperlyHandlesVariantArrays;
 
     procedure ConvertStringToIntegerFailsForInvalidString;
@@ -2549,6 +2551,16 @@ procedure TTestValueHelper.EqualsReturnsTrueForEqualPointers;
 begin
   fSUT := TValue.From<Pointer>(Self);
   fValue := TValue.From<Pointer>(Self);
+  DoCheckEquals;
+end;
+
+procedure TTestValueHelper.EqualsReturnsTrueForEqualTValue;
+var
+  nums: TArray<Integer>;
+begin
+  nums := TArray<Integer>.Create(42);
+  fSUT := TValue.From(TValue.From(nums));
+  fValue := TValue.From(TValue.From(nums));
   DoCheckEquals;
 end;
 
