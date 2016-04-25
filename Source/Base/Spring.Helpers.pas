@@ -515,6 +515,7 @@ type
     property IsPublished: Boolean read GetIsPublished;
   end;
 
+{$IF CompilerVersion < 31}
   TRttiMethodHelper = class helper for TRttiMethod
   private
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
@@ -523,6 +524,7 @@ type
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
   end;
+{$IFEND}
 
   TRttiPropertyHelper = class helper for TRttiProperty
   public
@@ -1347,6 +1349,7 @@ end;
 
 {$REGION 'TRttiMethodHelper'}
 
+{$IF CompilerVersion < 31}
 procedure TRttiMethodHelper.DispatchValue(const value: TValue;
   typeInfo: PTypeInfo);
 begin
@@ -1397,6 +1400,7 @@ begin
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
   Result := Self.DispatchInvoke(Instance, Args);
 end;
+{$IFEND}
 
 {$ENDREGION}
 
@@ -1517,9 +1521,9 @@ begin
     if Kind = tkClass then
     begin
 {$IFDEF AUTOREFCOUNT}
-      Self.FData.FValueData.ExtractRawData(@obj);
+      TValueData(Self).FValueData.ExtractRawData(@obj);
 {$ELSE}
-      obj := TObject(Self.FData.FAsObject);
+      obj := TObject(TValueData(Self).FAsObject);
 {$ENDIF}
       Exit(obj.GetInterface(typeData.Guid, Intf));
     end;
