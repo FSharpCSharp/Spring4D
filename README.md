@@ -12,7 +12,7 @@ Just run the Build.exe and select the Delphi versions you want to install Spring
 
 Current version
 ---------------
-1.1.3 (2015-12-08)
+1.1.4 (2016-04-25)
 
 Known issues
 ------------
@@ -24,4 +24,4 @@ Please support us
 [![btn_donate_LG.gif](https://bitbucket.org/repo/jxX7Lj/images/1283204942-btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KG4H9QT3MSDN8)
 
 
-Copyright (c) 2009 - 2015 Spring4D Team
+Copyright (c) 2009 - 2016 Spring4D Team
