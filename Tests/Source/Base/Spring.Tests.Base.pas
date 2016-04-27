@@ -60,6 +60,7 @@ type
     procedure TestAssignStringNonInt;
     procedure TestAssignStringInt;
     procedure TestNullableNull;
+    procedure TestAssignNull;
   end;
 
   TTestNullableBoolean = class(TTestCase)
@@ -550,6 +551,15 @@ procedure TTestNullableInteger.TestAssignFloat;
 begin
   ExpectedException := EInvalidCast;
   fInteger := 99.9;
+end;
+
+procedure TTestNullableInteger.TestAssignNull;
+var
+  n: Nullable<Integer>;
+begin
+  n := 5;
+  n := Null;
+  Check(not n.HasValue);
 end;
 
 procedure TTestNullableInteger.TestAssignStringInt;

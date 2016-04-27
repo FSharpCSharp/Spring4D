@@ -1147,7 +1147,7 @@ type
 
     class operator Implicit(const value: Nullable): Nullable<T>; inline;
     class operator Implicit(const value: Nullable<T>): T; inline;
-    class operator Implicit(const value: T): Nullable<T>;
+    class operator Implicit(const value: T): Nullable<T>; inline;
     class operator Implicit(const value: Nullable<T>): Variant;
     class operator Implicit(const value: Variant): Nullable<T>;
     class operator Explicit(const value: Nullable<T>): T; inline;
@@ -5429,12 +5429,12 @@ begin
     Result.fHasValue := Nullable.HasValue;
   end
   else
-    Result.fValue := Default(T);
+    Result := Default(Nullable<T>);
 end;
 
 class operator Nullable<T>.Implicit(const value: Nullable): Nullable<T>;
 begin
-  Result.fValue := Default(T);
+  Result := Default(Nullable<T>);
 end;
 
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
