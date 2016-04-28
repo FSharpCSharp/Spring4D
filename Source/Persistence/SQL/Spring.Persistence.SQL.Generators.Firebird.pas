@@ -112,7 +112,9 @@ begin
   if EndsStr(';', s) then
     SetLength(s, Length(s) - 1);
 
-  Result := s + Format(' ROWS %1:d TO %0:d;', [offset + limit, offset]);
+  // Row numbers are 1-based
+  // see http://www.firebirdsql.org/refdocs/langrefupd20-select.html#langrefupd20-select-rows
+  Result := s + Format(' ROWS %0:d TO %1:d;', [offset + 1, offset + limit]);
 end;
 
 function TFirebirdSQLGenerator.GetQueryLanguage: TQueryLanguage;
