@@ -130,7 +130,7 @@ begin
   query := TSQLQuery.Create(nil);
   query.SQLConnection := Statement.SQLConnection;
   query.SQL.Text := Statement.SQL.Text;
-  query.Params.AssignValues(query.Params);
+  query.Params.AssignValues(Statement.Params);
   query.DisableControls;
   try
     query.Open;
