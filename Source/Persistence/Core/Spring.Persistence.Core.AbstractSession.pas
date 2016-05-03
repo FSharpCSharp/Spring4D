@@ -386,7 +386,7 @@ function TAbstractSession.ResolveLazyInterface(const id: TValue;
 var
   entityClass: TClass;
   capturedId: TValue;
-  factory: TFunc<IInterface>;
+  factory: Func<IInterface>;
 {$IFDEF AUTOREFCOUNT}
   capturedSelf: Pointer;
   capturedEntity: Pointer;
@@ -422,7 +422,7 @@ function TAbstractSession.ResolveLazyObject(const id: TValue;
   const column: ColumnAttribute): TValue;
 var
   capturedId: TValue;
-  factory: TFunc<TObject>;
+  factory: Func<TObject>;
 {$IFDEF AUTOREFCOUNT}
   capturedSelf: Pointer;
   capturedEntity: Pointer;

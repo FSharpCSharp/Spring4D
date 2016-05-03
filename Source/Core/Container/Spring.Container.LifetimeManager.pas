@@ -29,7 +29,6 @@ unit Spring.Container.LifetimeManager;
 interface
 
 uses
-  SysUtils,
   Spring,
   Spring.Collections,
   Spring.Container.Common,
@@ -54,7 +53,7 @@ type
 
   TSingletonLifetimeManager = class(TLifetimeManagerBase)
   private
-    fInstance: TFunc<TValue>;
+    fInstance: Func<TValue>;
   public
     destructor Destroy; override;
     function Resolve(const context: ICreationContext;
@@ -71,12 +70,12 @@ type
 
   TSingletonPerThreadLifetimeManager = class(TLifetimeManagerBase)
   private
-    fInstances: IDictionary<TThreadID, TFunc<TValue>>;
+    fInstances: IDictionary<TThreadID, Func<TValue>>;
   protected
-    procedure HandleValueChanged(sender: TObject; const item: TFunc<TValue>;
+    procedure HandleValueChanged(sender: TObject; const item: Func<TValue>;
       action: TCollectionChangedAction);
     function CreateHolder(const instance: TValue;
-      refCounting: TRefCounting): TFunc<TValue>; virtual;
+      refCounting: TRefCounting): Func<TValue>; virtual;
   public
     constructor Create(const model: TComponentModel); override;
     destructor Destroy; override;
@@ -100,6 +99,7 @@ implementation
 uses
   Classes,
   Rtti,
+  SysUtils,
   TypInfo,
   Spring.Container.ResourceStrings,
   Spring.Reflection;
@@ -237,12 +237,12 @@ end;
 constructor TSingletonPerThreadLifetimeManager.Create(const model: TComponentModel);
 begin
   inherited Create(model);
-  fInstances := TCollections.CreateDictionary<TThreadID, TFunc<TValue>>;
+  fInstances := TCollections.CreateDictionary<TThreadID, Func<TValue>>;
   fInstances.OnValueChanged.Add(HandleValueChanged);
 end;
 
 function TSingletonPerThreadLifetimeManager.CreateHolder(
-  const instance: TValue; refCounting: TRefCounting): TFunc<TValue>;
+  const instance: TValue; refCounting: TRefCounting): Func<TValue>;
 begin
   Result := TValueHolder.Create(instance, refCounting);
 end;
@@ -255,7 +255,7 @@ begin
 end;
 
 procedure TSingletonPerThreadLifetimeManager.HandleValueChanged(sender: TObject;
-  const item: TFunc<TValue>; action: TCollectionChangedAction);
+  const item: Func<TValue>; action: TCollectionChangedAction);
 begin
   if action = caRemoved then
   begin
@@ -268,7 +268,7 @@ function TSingletonPerThreadLifetimeManager.Resolve(
 var
   threadID: THandle;
   instance: TValue;
-  holder: TFunc<TValue>;
+  holder: Func<TValue>;
 begin
   threadID := TThread.CurrentThread.ThreadID;
   MonitorEnter(Self);

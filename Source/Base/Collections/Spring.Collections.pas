@@ -243,7 +243,7 @@ type
     /// <summary>
     ///   Applies an accumulator function over a sequence.
     /// </summary>
-    function Aggregate(const func: TFunc<T, T, T>): T;
+    function Aggregate(const func: Func<T, T, T>): T;
 
     /// <summary>
     ///   Determines whether all elements of a sequence satisfy a condition.
@@ -256,7 +256,7 @@ type
     ///   in the specified predicate, or if the sequence is empty; otherwise, <b>
     ///   False</b>.
     /// </returns>
-    function All(const predicate: TPredicate<T>): Boolean;
+    function All(const predicate: Predicate<T>): Boolean;
 
     /// <summary>
     ///   Determines whether a sequence contains any elements.
@@ -277,7 +277,7 @@ type
     ///   <b>True</b> if any elements in the source sequence pass the test in
     ///   the specified predicate; otherwise, <b>False</b>.
     /// </returns>
-    function Any(const predicate: TPredicate<T>): Boolean; overload;
+    function Any(const predicate: Predicate<T>): Boolean; overload;
 
     /// <summary>
     ///   Concatenates two sequences.
@@ -401,7 +401,7 @@ type
     ///   The first element in the sequence that passes the test in the
     ///   specified predicate function.
     /// </returns>
-    function First(const predicate: TPredicate<T>): T; overload;
+    function First(const predicate: Predicate<T>): T; overload;
 
     /// <summary>
     ///   Returns the first element of a sequence, or a default value if the
@@ -438,7 +438,7 @@ type
     ///   the test specified by predicate; otherwise, the first element in
     ///   source that passes the test specified by predicate.
     /// </returns>
-    function FirstOrDefault(const predicate: TPredicate<T>): T; overload;
+    function FirstOrDefault(const predicate: Predicate<T>): T; overload;
 
     /// <summary>
     ///   Returns the first element of the sequence that satisfies a condition
@@ -455,12 +455,12 @@ type
     ///   test specified by predicate; otherwise, the first element in source
     ///   that passes the test specified by predicate.
     /// </returns>
-    function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function FirstOrDefault(const predicate: Predicate<T>; const defaultValue: T): T; overload;
 
     /// <summary>
     ///   Performs the specified action on each element of a sequence.
     /// </summary>
-    procedure ForEach(const action: TAction<T>);
+    procedure ForEach(const action: Action<T>);
 
     /// <summary>
     ///   Returns the last element of a sequence.
@@ -481,7 +481,7 @@ type
     ///   The last element in the sequence that passes the test in the
     ///   specified predicate function.
     /// </returns>
-    function Last(const predicate: TPredicate<T>): T; overload;
+    function Last(const predicate: Predicate<T>): T; overload;
 
     /// <summary>
     ///   Returns the last element of a sequence, or a default value if the
@@ -518,7 +518,7 @@ type
     ///   pass the test in the predicate function; otherwise, the last element
     ///   that passes the test in the predicate function.
     /// </returns>
-    function LastOrDefault(const predicate: TPredicate<T>): T; overload;
+    function LastOrDefault(const predicate: Predicate<T>): T; overload;
 
     /// <summary>
     ///   Returns the last element of a sequence that satisfies a condition or
@@ -535,7 +535,7 @@ type
     ///   the test in the predicate function; otherwise, the last element that
     ///   passes the test in the predicate function.
     /// </returns>
-    function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function LastOrDefault(const predicate: Predicate<T>; const defaultValue: T): T; overload;
 
     /// <summary>
     ///   Returns the maximum value in a sequence.
@@ -545,7 +545,7 @@ type
     /// </returns>
     function Max: T; overload;
 
-    function Max(const selector: TFunc<T, Integer>): Integer; overload;
+    function Max(const selector: Func<T, Integer>): Integer; overload;
 
     /// <summary>
     ///   Returns the maximum value in a sequence by using the specified <see cref="IComparer&lt;T&gt;" />
@@ -568,7 +568,7 @@ type
     /// </returns>
     function Min: T; overload;
 
-    function Min(const selector: TFunc<T, Integer>): Integer; overload;
+    function Min(const selector: Func<T, Integer>): Integer; overload;
 
     /// <summary>
     ///   Returns the minimum value in a sequence by using the specified <see cref="IComparer&lt;T&gt;" />
@@ -616,7 +616,7 @@ type
     ///   Returns the only element of a sequence, and throws an exception if
     ///   there is not exactly one element in the sequence.
     /// </summary>
-    function Single(const predicate: TPredicate<T>): T; overload;
+    function Single(const predicate: Predicate<T>): T; overload;
 
     /// <summary>
     ///   Returns the only element of a sequence, or a default value if the
@@ -637,7 +637,7 @@ type
     ///   condition or a default value if no such element exists; this method
     ///   throws an exception if more than one element satisfies the condition.
     /// </summary>
-    function SingleOrDefault(const predicate: TPredicate<T>): T; overload;
+    function SingleOrDefault(const predicate: Predicate<T>): T; overload;
 
     /// <summary>
     ///   Returns the only element of a sequence that satisfies a specified
@@ -645,7 +645,7 @@ type
     ///   this method throws an exception if more than one element satisfies
     ///   the condition.
     /// </summary>
-    function SingleOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function SingleOrDefault(const predicate: Predicate<T>; const defaultValue: T): T; overload;
 
     /// <summary>
     ///   Bypasses a specified number of elements in a sequence and then
@@ -657,22 +657,22 @@ type
     ///   Bypasses elements in a sequence as long as a specified condition is
     ///   true and then returns the remaining elements.
     /// </summary>
-    function SkipWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
+    function SkipWhile(const predicate: Predicate<T>): IEnumerable<T>; overload;
 
     /// <summary>
     ///   Bypasses elements in a sequence as long as a specified condition is
     ///   true and then returns the remaining elements. The element's index is
     ///   used in the logic of the predicate function.
     /// </summary>
-    function SkipWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+    function SkipWhile(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
 
     /// <summary>
     ///   Computes the sum of the sequence.
     /// </summary>
     function Sum: T; overload;
-//    function Sum(const selector: TFunc<T, Integer>): Integer; overload;
-//    function Sum(const selector: TFunc<T, Int64>): Int64; overload;
-//    function Sum(const selector: TFunc<T, Double>): Double; overload;
+//    function Sum(const selector: Func<T, Integer>): Integer; overload;
+//    function Sum(const selector: Func<T, Int64>): Int64; overload;
+//    function Sum(const selector: Func<T, Double>): Double; overload;
 
     /// <summary>
     ///   Returns a specified number of contiguous elements from the start of a
@@ -684,14 +684,14 @@ type
     ///   Returns elements from a sequence as long as a specified condition is
     ///   true.
     /// </summary>
-    function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
+    function TakeWhile(const predicate: Predicate<T>): IEnumerable<T>; overload;
 
     /// <summary>
     ///   Returns elements from a sequence as long as a specified condition is
     ///   true. The element's index is used in the logic of the predicate
     ///   function.
     /// </summary>
-    function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+    function TakeWhile(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
 
     /// <summary>
     ///   Creates a new array which is filled with the elements in the
@@ -708,7 +708,7 @@ type
     ///   Try getting the first element in a sequence that satisfies a
     ///   specified condition.
     /// </summary>
-    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetFirst(out value: T; const predicate: Predicate<T>): Boolean; overload;
 
     /// <summary>
     ///   Try getting the last element in a sequence.
@@ -719,7 +719,7 @@ type
     ///   Try getting the last element in a sequence that satisfies a specified
     ///   condition.
     /// </summary>
-    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetLast(out value: T; const predicate: Predicate<T>): Boolean; overload;
 
     /// <summary>
     ///   Try getting the only element in a sequence.
@@ -730,12 +730,12 @@ type
     ///   Try getting the only element in a sequence that satisfies a specified
     ///   condition.
     /// </summary>
-    function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetSingle(out value: T; const predicate: Predicate<T>): Boolean; overload;
 
     /// <summary>
     ///   Filters a sequence of values based on a predicate.
     /// </summary>
-    function Where(const predicate: TPredicate<T>): IEnumerable<T>; overload;
+    function Where(const predicate: Predicate<T>): IEnumerable<T>; overload;
 
     /// <summary>
     ///   Gets the assigned comparer. If not comparer was assigned it returns
@@ -847,7 +847,7 @@ type
     ///   with <b>OwnsObject</b> are not getting destroyed.
     /// </remarks>
     function MoveTo(const collection: ICollection<T>;
-      const predicate: TPredicate<T>): Integer; overload;
+      const predicate: Predicate<T>): Integer; overload;
 
     /// <summary>
     ///   Removes the first occurrence of a specific element from the
@@ -863,12 +863,12 @@ type
     ///   ICollection&lt;T&gt;.
     /// </returns>
     function Remove(const item: T): Boolean;
-    procedure RemoveAll(const predicate: TPredicate<T>);
+    procedure RemoveAll(const predicate: Predicate<T>);
     procedure RemoveRange(const values: array of T); overload;
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
 
     function Extract(const item: T): T;
-    function ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>;
+    function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
     procedure ExtractRange(const values: array of T); overload;
     procedure ExtractRange(const collection: IEnumerable<T>); overload;
 
@@ -2608,7 +2608,7 @@ type
 
   TEnumerable = class
   public
-    class function CombinePredicates<T>(const predicate1, predicate2: TPredicate<T>): TPredicate<T>; static;
+    class function CombinePredicates<T>(const predicate1, predicate2: Predicate<T>): Predicate<T>; static;
 
     /// <summary>
     ///   Returns the elements of the specified sequence or the type
@@ -2642,22 +2642,22 @@ type
     class function From<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
 
     class function Min<T>(const source: IEnumerable<T>;
-      const selector: TFunc<T, Integer>): Integer; overload; static;
+      const selector: Func<T, Integer>): Integer; overload; static;
     class function Max<T>(const source: IEnumerable<T>;
-      const selector: TFunc<T, Integer>): Integer; overload; static;
+      const selector: Func<T, Integer>): Integer; overload; static;
 
     class function OfType<T, TResult>(const source: IEnumerable<T>): IEnumerable<TResult>; static;
 
     class function OrderBy<T, TKey>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T,TKey>): IEnumerable<T>; overload; static;
+      const keySelector: Func<T,TKey>): IEnumerable<T>; overload; static;
     class function OrderBy<T, TKey>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T,TKey>;
+      const keySelector: Func<T,TKey>;
       const comparer: IComparer<TKey>): IEnumerable<T>; overload; static;
 
     class function OrderByDescending<T, TKey>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T,TKey>): IEnumerable<T>; overload; static;
+      const keySelector: Func<T,TKey>): IEnumerable<T>; overload; static;
     class function OrderByDescending<T, TKey>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T,TKey>;
+      const keySelector: Func<T,TKey>;
       const comparer: IComparer<TKey>): IEnumerable<T>; overload; static;
 
     class function Range(start, count: Integer): IEnumerable<Integer>; static;
@@ -2665,22 +2665,22 @@ type
     class function Repeated<T>(const element: T; count: Integer): IEnumerable<T>; static;
 
     class function Select<T, TResult>(const source: IEnumerable<T>;
-      const selector: TFunc<T, TResult>): IEnumerable<TResult>; overload; static;
+      const selector: Func<T, TResult>): IEnumerable<TResult>; overload; static;
 
     class function SelectMany<T, TResult>(const source: IEnumerable<T>;
-      const selector: TFunc<T, IEnumerable<TResult>>): IEnumerable<TResult>; overload; static;
+      const selector: Func<T, IEnumerable<TResult>>): IEnumerable<TResult>; overload; static;
 
     class function ToLookup<T, TKey>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T, TKey>): ILookup<TKey, T>; overload; static;
+      const keySelector: Func<T, TKey>): ILookup<TKey, T>; overload; static;
 
     class function Distinct<T>(const source: IEnumerable<T>): IEnumerable<T>; overload; static;
     class function Distinct<T>(const source: IEnumerable<T>;
       const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
 
     class function DistinctBy<T, TKey>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T, TKey>): IEnumerable<T>; overload; static;
+      const keySelector: Func<T, TKey>): IEnumerable<T>; overload; static;
     class function DistinctBy<T, TKey>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T, TKey>;
+      const keySelector: Func<T, TKey>;
       const comparer: IEqualityComparer<TKey>): IEnumerable<T>; overload; static;
 
     class function &Except<T>(const first, second: IEnumerable<T>): IEnumerable<T>; overload; static;
@@ -2688,13 +2688,13 @@ type
       const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
 
     class function GroupBy<T, TKey>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T, TKey>): IEnumerable<IGrouping<TKey,T>>; overload; static;
+      const keySelector: Func<T, TKey>): IEnumerable<IGrouping<TKey,T>>; overload; static;
     class function GroupBy<T, TKey, TElement>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T, TKey>;
-      const elementSelector: TFunc<T, TElement>): IEnumerable<IGrouping<TKey,TElement>>; overload; static;
+      const keySelector: Func<T, TKey>;
+      const elementSelector: Func<T, TElement>): IEnumerable<IGrouping<TKey,TElement>>; overload; static;
     class function GroupBy<T, TKey, TElement, TResult>(const source: IEnumerable<T>;
-      const keySelector: TFunc<T, TKey>; const elementSelector: TFunc<T, TElement>;
-      const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload; static;
+      const keySelector: Func<T, TKey>; const elementSelector: Func<T, TElement>;
+      const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload; static;
 
     class function Intersect<T>(const first, second: IEnumerable<T>): IEnumerable<T>; overload; static;
     class function Intersect<T>(const first, second: IEnumerable<T>;
@@ -3383,7 +3383,7 @@ end;
 {$REGION 'TEnumerable'}
 
 class function TEnumerable.CombinePredicates<T>(const predicate1,
-  predicate2: TPredicate<T>): TPredicate<T>;
+  predicate2: Predicate<T>): Predicate<T>;
 begin
   Result :=
     function(const x: T): Boolean
@@ -3417,13 +3417,13 @@ begin
 end;
 
 class function TEnumerable.DistinctBy<T, TKey>(const source: IEnumerable<T>;
-  const keySelector: TFunc<T, TKey>): IEnumerable<T>;
+  const keySelector: Func<T, TKey>): IEnumerable<T>;
 begin
   Result := TDistinctByIterator<T, TKey>.Create(source, keySelector, nil);
 end;
 
 class function TEnumerable.DistinctBy<T, TKey>(const source: IEnumerable<T>;
-  const keySelector: TFunc<T, TKey>;
+  const keySelector: Func<T, TKey>;
   const comparer: IEqualityComparer<TKey>): IEnumerable<T>;
 begin
   Result := TDistinctByIterator<T, TKey>.Create(source, keySelector, comparer);
@@ -3463,24 +3463,24 @@ begin
 end;
 
 class function TEnumerable.GroupBy<T, TKey>(const source: IEnumerable<T>;
-  const keySelector: TFunc<T, TKey>): IEnumerable<IGrouping<TKey, T>>;
+  const keySelector: Func<T, TKey>): IEnumerable<IGrouping<TKey, T>>;
 begin
   Result := TGroupedEnumerable<T, TKey, T>.Create(
-    source, keySelector, function(item: T): T begin Result := item end);
+    source, keySelector, function(const item: T): T begin Result := item end);
 end;
 
 class function TEnumerable.GroupBy<T, TKey, TElement>(
-  const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
-  const elementSelector: TFunc<T, TElement>): IEnumerable<IGrouping<TKey, TElement>>;
+  const source: IEnumerable<T>; const keySelector: Func<T, TKey>;
+  const elementSelector: Func<T, TElement>): IEnumerable<IGrouping<TKey, TElement>>;
 begin
   Result := TGroupedEnumerable<T, TKey, TElement>.Create(
     source, keySelector, elementSelector);
 end;
 
 class function TEnumerable.GroupBy<T, TKey, TElement, TResult>(
-  const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
-  const elementSelector: TFunc<T, TElement>;
-  const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>;
+  const source: IEnumerable<T>; const keySelector: Func<T, TKey>;
+  const elementSelector: Func<T, TElement>;
+  const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>;
 begin
   Result := TGroupedEnumerable<T, TKey, TElement, TResult>.Create(
     source, keySelector, elementSelector, resultSelector);
@@ -3499,13 +3499,13 @@ begin
 end;
 
 class function TEnumerable.Max<T>(const source: IEnumerable<T>;
-  const selector: TFunc<T, Integer>): Integer;
+  const selector: Func<T, Integer>): Integer;
 begin
   Result := Select<T, Integer>(source, selector).Max;
 end;
 
 class function TEnumerable.Min<T>(const source: IEnumerable<T>;
-  const selector: TFunc<T, Integer>): Integer;
+  const selector: Func<T, Integer>): Integer;
 begin
   Result := Select<T, Integer>(source, selector).Min;
 end;
@@ -3517,13 +3517,13 @@ begin
 end;
 
 class function TEnumerable.OrderBy<T, TKey>(const source: IEnumerable<T>;
-  const keySelector: TFunc<T, TKey>): IEnumerable<T>;
+  const keySelector: Func<T, TKey>): IEnumerable<T>;
 begin
   Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector);
 end;
 
 class function TEnumerable.OrderBy<T, TKey>(const source: IEnumerable<T>;
-  const keySelector: TFunc<T, TKey>;
+  const keySelector: Func<T, TKey>;
   const comparer: IComparer<TKey>): IEnumerable<T>;
 begin
   Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector, comparer);
@@ -3531,13 +3531,13 @@ end;
 
 class function TEnumerable.OrderByDescending<T, TKey>(
   const source: IEnumerable<T>;
-  const keySelector: TFunc<T, TKey>): IEnumerable<T>;
+  const keySelector: Func<T, TKey>): IEnumerable<T>;
 begin
   Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector, nil, True);
 end;
 
 class function TEnumerable.OrderByDescending<T, TKey>(
-  const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
+  const source: IEnumerable<T>; const keySelector: Func<T, TKey>;
   const comparer: IComparer<TKey>): IEnumerable<T>;
 begin
   Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector, comparer, True);
@@ -3555,22 +3555,22 @@ begin
 end;
 
 class function TEnumerable.Select<T, TResult>(const source: IEnumerable<T>;
-  const selector: TFunc<T, TResult>): IEnumerable<TResult>;
+  const selector: Func<T, TResult>): IEnumerable<TResult>;
 begin
   Result := TSelectIterator<T, TResult>.Create(source, selector);
 end;
 
 class function TEnumerable.SelectMany<T, TResult>(const source: IEnumerable<T>;
-  const selector: TFunc<T, IEnumerable<TResult>>): IEnumerable<TResult>;
+  const selector: Func<T, IEnumerable<TResult>>): IEnumerable<TResult>;
 begin
   Result := TSelectManyIterator<T, TResult>.Create(source, selector);
 end;
 
 class function TEnumerable.ToLookup<T, TKey>(const source: IEnumerable<T>;
-  const keySelector: TFunc<T, TKey>): ILookup<TKey, T>;
+  const keySelector: Func<T, TKey>): ILookup<TKey, T>;
 begin
   Result := TLookup<TKey, T>.Create<T>(source, keySelector,
-    function(x: T): T
+    function(const x: T): T
     begin
       Result := x
     end);

@@ -90,7 +90,7 @@ type
 
     function RegisterDecorator<TService; TDecorator: TService>: TRegistration<TDecorator>; overload;
     function RegisterDecorator<TService; TDecorator: TService>(
-      const condition: TPredicate<TComponentModel>): TRegistration<TDecorator>; overload;
+      const condition: Predicate<TComponentModel>): TRegistration<TDecorator>; overload;
 
     function RegisterFactory<TFactoryType: IInterface>(
       paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
@@ -369,7 +369,7 @@ begin
 end;
 
 function TContainer.RegisterDecorator<TService, TDecorator>(
-  const condition: TPredicate<TComponentModel>): TRegistration<TDecorator>;
+  const condition: Predicate<TComponentModel>): TRegistration<TDecorator>;
 begin
   Result := RegisterType<TDecorator,TDecorator>;
   fDecoratorResolver.AddDecorator(TypeInfo(TService), Result.Model, condition);

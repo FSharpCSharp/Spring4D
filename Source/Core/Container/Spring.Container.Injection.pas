@@ -323,7 +323,7 @@ end;
 function TDependencyInjector.InjectConstructor(const model: TComponentModel;
   const parameterTypes: array of PTypeInfo): IInjection;
 var
-  predicate: TPredicate<TRttiMethod>;
+  predicate: Predicate<TRttiMethod>;
   method: TRttiMethod;
 begin
   predicate := TMethodFilters.IsConstructor
@@ -360,7 +360,7 @@ end;
 function TDependencyInjector.InjectMethod(const model: TComponentModel;
   const methodName: string; const parameterTypes: array of PTypeInfo): IInjection;
 var
-  predicate: TPredicate<TRttiMethod>;
+  predicate: Predicate<TRttiMethod>;
   method: TRttiMethod;
   injectionExists: Boolean;
 begin
@@ -421,7 +421,7 @@ end;
 function TDependencyInjector.InjectConstructor(
   const model: TComponentModel): IInjection;
 var
-  predicate: TPredicate<TRttiMethod>;
+  predicate: Predicate<TRttiMethod>;
   method: TRttiMethod;
 begin
   predicate := TMethodFilters.IsConstructor

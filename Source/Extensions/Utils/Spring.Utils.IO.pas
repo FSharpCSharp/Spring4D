@@ -477,8 +477,7 @@ type
 
 
 {$IFDEF MSWINDOWS}
-  // Spring.TPredicate<TFileSystemEntry>
-  TFileSystemEntryPredicate = reference to function (const entry:TFileSystemEntry): Boolean;
+  TFileSystemEntryPredicate = Predicate<TFileSystemEntry>;
 
   /// <summary>
   ///   Inspects a file enumerator.

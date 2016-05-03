@@ -30,7 +30,6 @@ interface
 
 uses
   Generics.Defaults,
-  SysUtils,
   Spring,
   Spring.Collections;
 
@@ -48,7 +47,7 @@ type
   private
     source: IEnumerable<TSource>;
 
-    class function IdentityFunction(x: TSource): TSource; static;
+    class function IdentityFunction(const x: TSource): TSource; static;
     class function Add(const Left, Right): TSource; static;
   public
     class operator Implicit(const value: IEnumerable<TSource>): Enumerable<TSource>;
@@ -71,7 +70,7 @@ type
     ///   gt; according to a specified key selector function.
     /// </summary>
     {$ENDREGION}
-    function ToDictionary<TKey>(const keySelector: TFunc<TSource, TKey>): IDictionary<TKey, TSource>; overload;
+    function ToDictionary<TKey>(const keySelector: Func<TSource, TKey>): IDictionary<TKey, TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -79,7 +78,7 @@ type
     ///   gt; according to a specified key selector function and key comparer.
     /// </summary>
     {$ENDREGION}
-    function ToDictionary<TKey>(const keySelector: TFunc<TSource, TKey>;
+    function ToDictionary<TKey>(const keySelector: Func<TSource, TKey>;
       const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TSource>; overload;
 
     {$REGION 'Documentation'}
@@ -88,11 +87,11 @@ type
     ///    according to specified key selector and element selector functions.
     /// </summary>
     {$ENDREGION}
-    function ToDictionary<TKey, TElement>(const keySelector: TFunc<TSource, TKey>;
-      const elementSelector: TFunc<TSource, TElement>): IDictionary<TKey, TElement>; overload;
+    function ToDictionary<TKey, TElement>(const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>): IDictionary<TKey, TElement>; overload;
 
-    function ToDictionary<TKey, TElement>(const keySelector: TFunc<TSource, TKey>;
-      const elementSelector: TFunc<TSource, TElement>;
+    function ToDictionary<TKey, TElement>(const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>;
       const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TElement>; overload;
 
     {$REGION 'Documentation'}
@@ -115,7 +114,7 @@ type
     ///   Applies an accumulator function over a sequence.
     /// </summary>
     {$ENDREGION}
-    function Aggregate(const func: TFunc<TSource, TSource, TSource>): TSource; overload;
+    function Aggregate(const func: Func<TSource, TSource, TSource>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -124,7 +123,7 @@ type
     /// </summary>
     {$ENDREGION}
     function Aggregate<TAccumulate>(const seed: TAccumulate;
-      const func: TFunc<TAccumulate, TSource, TAccumulate>): TAccumulate; overload;
+      const func: Func<TAccumulate, TSource, TAccumulate>): TAccumulate; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -134,15 +133,15 @@ type
     /// </summary>
     {$ENDREGION}
     function Aggregate<TAccumulate, TResult>(const seed: TAccumulate;
-      const func: TFunc<TAccumulate, TSource, TAccumulate>;
-      const resultSelector: TFunc<TAccumulate, TResult>): TResult; overload;
+      const func: Func<TAccumulate, TSource, TAccumulate>;
+      const resultSelector: Func<TAccumulate, TResult>): TResult; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
     ///   Determines whether all elements of a sequence satisfy a condition.
     /// </summary>
     {$ENDREGION}
-    function All(const predicate: TPredicate<TSource>): Boolean;
+    function All(const predicate: Predicate<TSource>): Boolean;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -156,7 +155,7 @@ type
     ///   Determines whether any element of a sequence satisfies a condition.
     /// </summary>
     {$ENDREGION}
-    function Any(const predicate: TPredicate<TSource>): Boolean; overload;
+    function Any(const predicate: Predicate<TSource>): Boolean; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -165,7 +164,7 @@ type
     ///   sequence.
     /// </summary>
     {$ENDREGION}
-    function Average(const selector: TFunc<TSource, Double>): Double; overload;
+    function Average(const selector: Func<TSource, Double>): Double; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -174,7 +173,7 @@ type
     ///   sequence.
     /// </summary>
     {$ENDREGION}
-    function Average(const selector: TFunc<TSource, Int64>): Double; overload;
+    function Average(const selector: Func<TSource, Int64>): Double; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -226,7 +225,7 @@ type
     ///   sequence satisfy a condition.
     /// </summary>
     {$ENDREGION}
-    function Count(const predicate: TPredicate<TSource>): Integer; overload;
+    function Count(const predicate: Predicate<TSource>): Integer; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -312,7 +311,7 @@ type
     ///   Performs the specified action on each element of a sequence.
     /// </summary>
     {$ENDREGION}
-    procedure ForEach(const action: TAction<TSource>);
+    procedure ForEach(const action: Action<TSource>);
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -327,7 +326,7 @@ type
     ///   condition.
     /// </summary>
     {$ENDREGION}
-    function First(const predicate: TPredicate<TSource>): TSource; overload;
+    function First(const predicate: Predicate<TSource>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -351,7 +350,7 @@ type
     ///   or a default value if no such element is found.
     /// </summary>
     {$ENDREGION}
-    function FirstOrDefault(const predicate: TPredicate<TSource>): TSource; overload;
+    function FirstOrDefault(const predicate: Predicate<TSource>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -359,7 +358,7 @@ type
     ///   or the specified default value if no such element is found.
     /// </summary>
     {$ENDREGION}
-    function FirstOrDefault(const predicate: TPredicate<TSource>; const defaultValue: TSource): TSource; overload;
+    function FirstOrDefault(const predicate: Predicate<TSource>; const defaultValue: TSource): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -367,7 +366,7 @@ type
     ///   selector function.
     /// </summary>
     {$ENDREGION}
-    function GroupBy<TKey>(const keySelector: TFunc<TSource, TKey>): IEnumerable<IGrouping<TKey, TSource>>; overload;
+    function GroupBy<TKey>(const keySelector: Func<TSource, TKey>): IEnumerable<IGrouping<TKey, TSource>>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -375,7 +374,7 @@ type
     ///   selector function and compares the keys by using a specified comparer.
     /// </summary>
     {$ENDREGION}
-    function GroupBy<TKey>(const keySelector: TFunc<TSource, TKey>;
+    function GroupBy<TKey>(const keySelector: Func<TSource, TKey>;
       const comparer: IEqualityComparer<TKey>): IEnumerable<IGrouping<TKey, TSource>>; overload;
 
     {$REGION 'Documentation'}
@@ -385,8 +384,8 @@ type
     ///   specified function.
     /// </summary>
     {$ENDREGION}
-    function GroupBy<TKey, TElement>(const keySelector: TFunc<TSource, TKey>;
-      const elementSelector: TFunc<TSource, TElement>): IEnumerable<IGrouping<TKey, TElement>>; overload;
+    function GroupBy<TKey, TElement>(const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>): IEnumerable<IGrouping<TKey, TElement>>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -395,8 +394,8 @@ type
     ///   elements are projected by using a specified function.
     /// </summary>
     {$ENDREGION}
-    function GroupBy<TKey, TElement>(const keySelector: TFunc<TSource, TKey>;
-      const elementSelector: TFunc<TSource, TElement>;
+    function GroupBy<TKey, TElement>(const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>;
       const comparer: IEqualityComparer<TKey>): IEnumerable<IGrouping<TKey, TElement>>; overload;
 
     {$REGION 'Documentation'}
@@ -406,8 +405,8 @@ type
     ///   key.
     /// </summary>
     {$ENDREGION}
-    function GroupBy<TKey, TResult>(const keySelector: TFunc<TSource, TKey>;
-      const resultSelector: TFunc<TKey, IEnumerable<TSource>, TResult>): IEnumerable<TResult>; overload;
+    function GroupBy<TKey, TResult>(const keySelector: Func<TSource, TKey>;
+      const resultSelector: Func<TKey, IEnumerable<TSource>, TResult>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -416,8 +415,8 @@ type
     ///   key. The keys are compared by using a specified comparer.
     /// </summary>
     {$ENDREGION}
-    function GroupBy<TKey, TResult>(const keySelector: TFunc<TSource, TKey>;
-      const resultSelector: TFunc<TKey, IEnumerable<TSource>, TResult>;
+    function GroupBy<TKey, TResult>(const keySelector: Func<TSource, TKey>;
+      const resultSelector: Func<TKey, IEnumerable<TSource>, TResult>;
       const comparer: IEqualityComparer<TKey>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
@@ -428,9 +427,9 @@ type
     ///   function.
     /// </summary>
     {$ENDREGION}
-    function GroupBy<TKey, TElement, TResult>(const keySelector: TFunc<TSource, TKey>;
-      const elementSelector: TFunc<TSource, TElement>;
-      const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload;
+    function GroupBy<TKey, TElement, TResult>(const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>;
+      const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -440,9 +439,9 @@ type
     ///   elements of each group are projected by using a specified function.
     /// </summary>
     {$ENDREGION}
-    function GroupBy<TKey, TElement, TResult>(const keySelector: TFunc<TSource, TKey>;
-      const elementSelector: TFunc<TSource, TElement>;
-      const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>;
+    function GroupBy<TKey, TElement, TResult>(const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>;
+      const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>;
       const comparer: IEqualityComparer<TKey>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
@@ -453,9 +452,9 @@ type
     /// </summary>
     {$ENDREGION}
     function GroupJoin<TInner, TKey, TResult>(const inner: IEnumerable<TInner>;
-      const outerKeySelector: TFunc<TSource, TKey>;
-      const innerKeySelector: TFunc<TInner, TKey>;
-      const resultSelector: TFunc<TSource, IEnumerable<TInner>, TResult>): IEnumerable<TResult>; overload;
+      const outerKeySelector: Func<TSource, TKey>;
+      const innerKeySelector: Func<TInner, TKey>;
+      const resultSelector: Func<TSource, IEnumerable<TInner>, TResult>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -465,9 +464,9 @@ type
     /// </summary>
     {$ENDREGION}
     function GroupJoin<TInner, TKey, TResult>(const inner: IEnumerable<TInner>;
-      const outerKeySelector: TFunc<TSource, TKey>;
-      const innerKeySelector: TFunc<TInner, TKey>;
-      const resultSelector: TFunc<TSource, IEnumerable<TInner>, TResult>;
+      const outerKeySelector: Func<TSource, TKey>;
+      const innerKeySelector: Func<TInner, TKey>;
+      const resultSelector: Func<TSource, IEnumerable<TInner>, TResult>;
       const comparer: IEqualityComparer<TKey>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
@@ -501,9 +500,9 @@ type
     /// </summary>
     {$ENDREGION}
     function Join<TInner, TKey, TResult>(const inner: IEnumerable<TInner>;
-      const outerKeySelector: TFunc<TSource, TKey>;
-      const innerKeySelector: TFunc<TInner, TKey>;
-      const resultSelector: TFunc<TSource, TInner, TResult>): IEnumerable<TResult>; overload;
+      const outerKeySelector: Func<TSource, TKey>;
+      const innerKeySelector: Func<TInner, TKey>;
+      const resultSelector: Func<TSource, TInner, TResult>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -512,9 +511,9 @@ type
     /// </summary>
     {$ENDREGION}
     function Join<TInner, TKey, TResult>(const inner: IEnumerable<TInner>;
-      const outerKeySelector: TFunc<TSource, TKey>;
-      const innerKeySelector: TFunc<TInner, TKey>;
-      const resultSelector: TFunc<TSource, TInner, TResult>;
+      const outerKeySelector: Func<TSource, TKey>;
+      const innerKeySelector: Func<TInner, TKey>;
+      const resultSelector: Func<TSource, TInner, TResult>;
       const comparer: IEqualityComparer<TKey>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
@@ -530,7 +529,7 @@ type
     ///   condition.
     /// </summary>
     {$ENDREGION}
-    function Last(const predicate: TPredicate<TSource>): TSource; overload;
+    function Last(const predicate: Predicate<TSource>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -554,7 +553,7 @@ type
     ///   a default value if no such element is found.
     /// </summary>
     {$ENDREGION}
-    function LastOrDefault(const predicate: TPredicate<TSource>): TSource; overload;
+    function LastOrDefault(const predicate: Predicate<TSource>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -562,7 +561,7 @@ type
     ///   the specified default value if no such element is found.
     /// </summary>
     {$ENDREGION}
-    function LastOrDefault(const predicate: TPredicate<TSource>; const defaultValue: TSource): TSource; overload;
+    function LastOrDefault(const predicate: Predicate<TSource>; const defaultValue: TSource): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -577,7 +576,7 @@ type
     ///   returns the maximum Double value.
     /// </summary>
     {$ENDREGION}
-    function Max(const selector: TFunc<TSource, Double>): Double; overload;
+    function Max(const selector: Func<TSource, Double>): Double; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -585,7 +584,7 @@ type
     ///   returns the maximum Int64 value.
     /// </summary>
     {$ENDREGION}
-    function Max(const selector: TFunc<TSource, Int64>): Int64; overload;
+    function Max(const selector: Func<TSource, Int64>): Int64; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -593,7 +592,7 @@ type
     ///   comparer to compare key values.
     /// </summary>
     {$ENDREGION}
-    function MaxBy<TKey>(const selector: TFunc<TSource, TKey>): TSource; overload;
+    function MaxBy<TKey>(const selector: Func<TSource, TKey>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -601,7 +600,7 @@ type
     ///   specified comparer to compare key values.
     /// </summary>
     {$ENDREGION}
-    function MaxBy<TKey>(const selector: TFunc<TSource, TKey>; const comparer: IComparer<TKey>): TSource; overload;
+    function MaxBy<TKey>(const selector: Func<TSource, TKey>; const comparer: IComparer<TKey>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -616,7 +615,7 @@ type
     ///   returns the minumum Double value.
     /// </summary>
     {$ENDREGION}
-    function Min(const selector: TFunc<TSource, Double>): Double; overload;
+    function Min(const selector: Func<TSource, Double>): Double; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -624,7 +623,7 @@ type
     ///   returns the minimum Int64 value.
     /// </summary>
     {$ENDREGION}
-    function Min(const selector: TFunc<TSource, Int64>): Int64; overload;
+    function Min(const selector: Func<TSource, Int64>): Int64; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -632,7 +631,7 @@ type
     ///   comparer to compare key values.
     /// </summary>
     {$ENDREGION}
-    function MinBy<TKey>(const selector: TFunc<TSource, TKey>): TSource; overload;
+    function MinBy<TKey>(const selector: Func<TSource, TKey>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -640,7 +639,7 @@ type
     ///   specified comparer to compare key values.
     /// </summary>
     {$ENDREGION}
-    function MinBy<TKey>(const selector: TFunc<TSource, TKey>; const comparer: IComparer<TKey>): TSource; overload;
+    function MinBy<TKey>(const selector: Func<TSource, TKey>; const comparer: IComparer<TKey>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -655,7 +654,7 @@ type
     ///   key.
     /// </summary>
     {$ENDREGION}
-    function OrderBy<TKey>(const keySelector: TFunc<TSource, TKey>): IEnumerable<TSource>; overload;
+    function OrderBy<TKey>(const keySelector: Func<TSource, TKey>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -663,7 +662,7 @@ type
     ///   specified comparer.
     /// </summary>
     {$ENDREGION}
-    function OrderBy<TKey>(const keySelector: TFunc<TSource, TKey>;
+    function OrderBy<TKey>(const keySelector: Func<TSource, TKey>;
       const comparer: IComparer<TKey>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
@@ -673,7 +672,7 @@ type
     /// </summary>
     {$ENDREGION}
     function OrderByDescending<TKey>(
-      const keySelector: TFunc<TSource, TKey>): IEnumerable<TSource>; overload;
+      const keySelector: Func<TSource, TKey>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -681,7 +680,7 @@ type
     ///   specified comparer.
     /// </summary>
     {$ENDREGION}
-    function OrderByDescending<TKey>(const keySelector: TFunc<TSource, TKey>;
+    function OrderByDescending<TKey>(const keySelector: Func<TSource, TKey>;
       const comparer: IComparer<TKey>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
@@ -696,7 +695,7 @@ type
     ///   Projects each element of a sequence into a new form.
     /// </summary>
     {$ENDREGION}
-    function Select(const selector: TFunc<TSource, TSource>): IEnumerable<TSource>; overload;
+    function Select(const selector: Func<TSource, TSource>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -704,7 +703,7 @@ type
     /// </summary>
     {$ENDREGION}
     function Select<TResult>(
-      const selector: TFunc<TSource, TResult>): IEnumerable<TResult>; overload;
+      const selector: Func<TSource, TResult>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -712,7 +711,7 @@ type
     ///   the element's index.
     /// </summary>
     {$ENDREGION}
-    function Select(const selector: TFunc<TSource, Integer, TSource>): IEnumerable<TSource>; overload;
+    function Select(const selector: Func<TSource, Integer, TSource>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -721,7 +720,7 @@ type
     /// </summary>
     {$ENDREGION}
     function Select<TResult>(
-      const selector: TFunc<TSource, Integer, TResult>): IEnumerable<TResult>; overload;
+      const selector: Func<TSource, Integer, TResult>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -730,7 +729,7 @@ type
     /// </summary>
     {$ENDREGION}
     function SelectMany<TResult>(
-      const selector: TFunc<TSource, IEnumerable<TResult>>): IEnumerable<TResult>; overload;
+      const selector: Func<TSource, IEnumerable<TResult>>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -740,7 +739,7 @@ type
     /// </summary>
     {$ENDREGION}
     function SelectMany<TResult>(
-      const selector: TFunc<TSource, Integer, IEnumerable<TResult>>): IEnumerable<TResult>; overload;
+      const selector: Func<TSource, Integer, IEnumerable<TResult>>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -750,8 +749,8 @@ type
     /// </summary>
     {$ENDREGION}
     function SelectMany<TCollection, TResult>(
-      const collectionSelector: TFunc<TSource, IEnumerable<TCollection>>;
-      const resultSelector: TFunc<TSource, TCollection, TResult>): IEnumerable<TResult>; overload;
+      const collectionSelector: Func<TSource, IEnumerable<TCollection>>;
+      const resultSelector: Func<TSource, TCollection, TResult>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -762,8 +761,8 @@ type
     /// </summary>
     {$ENDREGION}
     function SelectMany<TCollection, TResult>(
-      const collectionSelector: TFunc<TSource, Integer, IEnumerable<TCollection>>;
-      const resultSelector: TFunc<TSource, TCollection, TResult>): IEnumerable<TResult>; overload;
+      const collectionSelector: Func<TSource, Integer, IEnumerable<TCollection>>;
+      const resultSelector: Func<TSource, TCollection, TResult>): IEnumerable<TResult>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -803,7 +802,7 @@ type
     ///   there is not exactly one element in the sequence.
     /// </summary>
     {$ENDREGION}
-    function Single(const predicate: TPredicate<TSource>): TSource; overload;
+    function Single(const predicate: Predicate<TSource>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -830,7 +829,7 @@ type
     ///   throws an exception if more than one element satisfies the condition.
     /// </summary>
     {$ENDREGION}
-    function SingleOrDefault(const predicate: TPredicate<TSource>): TSource; overload;
+    function SingleOrDefault(const predicate: Predicate<TSource>): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -840,7 +839,7 @@ type
     ///   the condition.
     /// </summary>
     {$ENDREGION}
-    function SingleOrDefault(const predicate: TPredicate<TSource>; const defaultValue: TSource): TSource; overload;
+    function SingleOrDefault(const predicate: Predicate<TSource>; const defaultValue: TSource): TSource; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -856,7 +855,7 @@ type
     ///   true and then returns the remaining elements.
     /// </summary>
     {$ENDREGION}
-    function SkipWhile(const predicate: TPredicate<TSource>): IEnumerable<TSource>; overload;
+    function SkipWhile(const predicate: Predicate<TSource>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -865,7 +864,7 @@ type
     ///   used in the logic of the predicate function.
     /// </summary>
     {$ENDREGION}
-    function SkipWhile(const predicate: TFunc<TSource, Integer, Boolean>): IEnumerable<TSource>; overload;
+    function SkipWhile(const predicate: Func<TSource, Integer, Boolean>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -881,7 +880,7 @@ type
     ///   sequence.
     /// </summary>
     {$ENDREGION}
-    function Sum(const selector: TFunc<TSource, Integer>): Integer; overload;
+    function Sum(const selector: Func<TSource, Integer>): Integer; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -890,7 +889,7 @@ type
     ///   input sequence.
     /// </summary>
     {$ENDREGION}
-    function Sum(const selector: TFunc<TSource, Nullable<Integer>>): Nullable<Integer>; overload;
+    function Sum(const selector: Func<TSource, Nullable<Integer>>): Nullable<Integer>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -898,7 +897,7 @@ type
     ///   invoking a transform function on each element of the input sequence.
     /// </summary>
     {$ENDREGION}
-    function Sum(const selector: TFunc<TSource, Int64>): Int64; overload;
+    function Sum(const selector: Func<TSource, Int64>): Int64; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -907,7 +906,7 @@ type
     ///   input sequence.
     /// </summary>
     {$ENDREGION}
-    function Sum(const selector: TFunc<TSource, Nullable<Int64>>): Nullable<Int64>; overload;
+    function Sum(const selector: Func<TSource, Nullable<Int64>>): Nullable<Int64>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -916,7 +915,7 @@ type
     ///   sequence.
     /// </summary>
     {$ENDREGION}
-    function Sum(const selector: TFunc<TSource, Single>): Single; overload;
+    function Sum(const selector: Func<TSource, Single>): Single; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -925,7 +924,7 @@ type
     ///   input sequence.
     /// </summary>
     {$ENDREGION}
-    function Sum(const selector: TFunc<TSource, Nullable<Single>>): Nullable<Single>; overload;
+    function Sum(const selector: Func<TSource, Nullable<Single>>): Nullable<Single>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -934,7 +933,7 @@ type
     ///   sequence.
     /// </summary>
     {$ENDREGION}
-    function Sum(const selector: TFunc<TSource, Double>): Double; overload;
+    function Sum(const selector: Func<TSource, Double>): Double; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -943,7 +942,7 @@ type
     ///   input sequence.
     /// </summary>
     {$ENDREGION}
-    function Sum(const selector: TFunc<TSource, Nullable<Double>>): Nullable<Double>; overload;
+    function Sum(const selector: Func<TSource, Nullable<Double>>): Nullable<Double>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -959,7 +958,7 @@ type
     ///   true.
     /// </summary>
     {$ENDREGION}
-    function TakeWhile(const predicate: TPredicate<TSource>): IEnumerable<TSource>; overload;
+    function TakeWhile(const predicate: Predicate<TSource>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -968,7 +967,7 @@ type
     ///   function.
     /// </summary>
     {$ENDREGION}
-    function TakeWhile(const predicate: TFunc<TSource, Integer, Boolean>): IEnumerable<TSource>; overload;
+    function TakeWhile(const predicate: Func<TSource, Integer, Boolean>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -976,7 +975,7 @@ type
     ///   ascending order according to a key.
     /// </summary>
     {$ENDREGION}
-    function ThenBy<TKey>(const keySelector: TFunc<TSource, TKey>): IEnumerable<TSource>; overload;
+    function ThenBy<TKey>(const keySelector: Func<TSource, TKey>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -984,7 +983,7 @@ type
     ///   ascending order by using a specified comparer.
     /// </summary>
     {$ENDREGION}
-    function ThenBy<TKey>(const keySelector: TFunc<TSource, TKey>;
+    function ThenBy<TKey>(const keySelector: Func<TSource, TKey>;
       const comparer: IComparer<TKey>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
@@ -994,7 +993,7 @@ type
     /// </summary>
     {$ENDREGION}
     function ThenByDescending<TKey>(
-      const keySelector: TFunc<TSource, TKey>): IEnumerable<TSource>; overload;
+      const keySelector: Func<TSource, TKey>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -1002,7 +1001,7 @@ type
     ///   descending order by using a specified comparer.
     /// </summary>
     {$ENDREGION}
-    function ThenByDescending<TKey>(const keySelector: TFunc<TSource, TKey>;
+    function ThenByDescending<TKey>(const keySelector: Func<TSource, TKey>;
       const comparer: IComparer<TKey>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
@@ -1011,7 +1010,7 @@ type
     ///   a specified key selector function.
     /// </summary>
     {$ENDREGION}
-    function ToLookup(const keySelector: TFunc<TSource, TSource>): ILookup<TSource, TSource>; overload;
+    function ToLookup(const keySelector: Func<TSource, TSource>): ILookup<TSource, TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -1019,7 +1018,7 @@ type
     ///   a specified key selector function.
     /// </summary>
     {$ENDREGION}
-    function ToLookup<TKey>(const keySelector: TFunc<TSource, TKey>): ILookup<TKey, TSource>; overload;
+    function ToLookup<TKey>(const keySelector: Func<TSource, TKey>): ILookup<TKey, TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -1027,7 +1026,7 @@ type
     ///   a specified key selector function and key comparer.
     /// </summary>
     {$ENDREGION}
-    function ToLookup(const keySelector: TFunc<TSource, TSource>;
+    function ToLookup(const keySelector: Func<TSource, TSource>;
       const comparer: IEqualityComparer<TSource>): ILookup<TSource, TSource>; overload;
 
     {$REGION 'Documentation'}
@@ -1036,7 +1035,7 @@ type
     ///   a specified key selector function and key comparer.
     /// </summary>
     {$ENDREGION}
-    function ToLookup<TKey>(const keySelector: TFunc<TSource, TKey>;
+    function ToLookup<TKey>(const keySelector: Func<TSource, TKey>;
       const comparer: IEqualityComparer<TKey>): ILookup<TKey, TSource>; overload;
 
     {$REGION 'Documentation'}
@@ -1045,8 +1044,8 @@ type
     ///   specified key selector and element selector functions.
     /// </summary>
     {$ENDREGION}
-    function ToLookup<TKey, TElement>(const keySelector: TFunc<TSource, TKey>;
-      const elementSelector: TFunc<TSource, TElement>): ILookup<TKey, TElement>; overload;
+    function ToLookup<TKey, TElement>(const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>): ILookup<TKey, TElement>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -1055,8 +1054,8 @@ type
     ///   function.
     /// </summary>
     {$ENDREGION}
-    function ToLookup<TKey, TElement>(const keySelector: TFunc<TSource, TKey>;
-      const elementSelector: TFunc<TSource, TElement>;
+    function ToLookup<TKey, TElement>(const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>;
       const comparer: IEqualityComparer<TKey>): ILookup<TKey, TElement>; overload;
 
     {$REGION 'Documentation'}
@@ -1072,7 +1071,7 @@ type
     ///   condition.
     /// </summary>
     {$ENDREGION}
-    function TryGetFirst(out value: TSource; const predicate: TPredicate<TSource>): Boolean; overload;
+    function TryGetFirst(out value: TSource; const predicate: Predicate<TSource>): Boolean; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -1087,7 +1086,7 @@ type
     ///   condition.
     /// </summary>
     {$ENDREGION}
-    function TryGetLast(out value: TSource; const predicate: TPredicate<TSource>): Boolean; overload;
+    function TryGetLast(out value: TSource; const predicate: Predicate<TSource>): Boolean; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -1118,7 +1117,7 @@ type
     ///   Filters a sequence of values based on a predicate.
     /// </summary>
     {$ENDREGION}
-    function Where(const predicate: TPredicate<TSource>): IEnumerable<TSource>; overload;
+    function Where(const predicate: Predicate<TSource>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -1126,7 +1125,7 @@ type
     ///   index is used in the logic of the predicate function.
     /// </summary>
     {$ENDREGION}
-    function Where(const predicate: TFunc<TSource, Integer, Boolean>): IEnumerable<TSource>; overload;
+    function Where(const predicate: Func<TSource, Integer, Boolean>): IEnumerable<TSource>; overload;
 
     {$REGION 'Documentation'}
     /// <summary>
@@ -1135,7 +1134,7 @@ type
     /// </summary>
     {$ENDREGION}
     function Zip<TSecond, TResult>(const second: IEnumerable<TSecond>;
-      const resultSelector: TFunc<TSource, TSecond, TResult>): IEnumerable<TResult>;
+      const resultSelector: Func<TSource, TSecond, TResult>): IEnumerable<TResult>;
   end;
 
 implementation
@@ -1148,7 +1147,7 @@ uses
 
 {$REGION 'Enumerable<TSource>'}
 
-class function Enumerable<TSource>.IdentityFunction(x: TSource): TSource;
+class function Enumerable<TSource>.IdentityFunction(const x: TSource): TSource;
 begin
   Result := x;
 end;
@@ -1166,7 +1165,7 @@ end;
 
 class function Enumerable<TSource>.Add(const Left, Right): TSource;
 begin
-  case PTypeInfo(TypeInfo(TSource)).Kind of
+  case TType.Kind<TSource> of
     tkInteger: PInteger(@Result)^ := Integer(Left) + Integer(Right);
     tkInt64: PInt64(@Result)^ := Int64(Left) + Int64(Right);
     tkFloat:
@@ -1182,7 +1181,7 @@ begin
   end;
 end;
 
-function Enumerable<TSource>.Aggregate(const func: TFunc<TSource, TSource, TSource>): TSource;
+function Enumerable<TSource>.Aggregate(const func: Func<TSource, TSource, TSource>): TSource;
 var
   enumerator: IEnumerator<TSource>;
 begin
@@ -1198,7 +1197,7 @@ begin
 end;
 
 function Enumerable<TSource>.Aggregate<TAccumulate>(const seed: TAccumulate;
-  const func: TFunc<TAccumulate, TSource, TAccumulate>): TAccumulate;
+  const func: Func<TAccumulate, TSource, TAccumulate>): TAccumulate;
 var
   enumerator: IEnumerator<TSource>;
 begin
@@ -1212,8 +1211,8 @@ begin
 end;
 
 function Enumerable<TSource>.Aggregate<TAccumulate, TResult>(const seed: TAccumulate;
-  const func: TFunc<TAccumulate, TSource, TAccumulate>;
-  const resultSelector: TFunc<TAccumulate, TResult>): TResult;
+  const func: Func<TAccumulate, TSource, TAccumulate>;
+  const resultSelector: Func<TAccumulate, TResult>): TResult;
 var
   enumerator: IEnumerator<TSource>;
   accumulate: TAccumulate;
@@ -1229,7 +1228,7 @@ begin
   Result := resultSelector(accumulate);
 end;
 
-function Enumerable<TSource>.All(const predicate: TPredicate<TSource>): Boolean;
+function Enumerable<TSource>.All(const predicate: Predicate<TSource>): Boolean;
 var
   item: TSource;
 begin
@@ -1252,7 +1251,7 @@ begin
   Result := enumerator.MoveNext;
 end;
 
-function Enumerable<TSource>.Any(const predicate: TPredicate<TSource>): Boolean;
+function Enumerable<TSource>.Any(const predicate: Predicate<TSource>): Boolean;
 var
   item: TSource;
 begin
@@ -1265,7 +1264,7 @@ begin
       Exit(True);
 end;
 
-function Enumerable<TSource>.Average(const selector: TFunc<TSource, Double>): Double;
+function Enumerable<TSource>.Average(const selector: Func<TSource, Double>): Double;
 var
   sum: Double;
   count: Int64;
@@ -1286,7 +1285,7 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
-function Enumerable<TSource>.Average(const selector: TFunc<TSource, Int64>): Double;
+function Enumerable<TSource>.Average(const selector: Func<TSource, Int64>): Double;
 var
   sum: Int64;
   count: Int64;
@@ -1347,7 +1346,7 @@ begin
   Result := source.Count;
 end;
 
-function Enumerable<TSource>.Count(const predicate: TPredicate<TSource>): Integer;
+function Enumerable<TSource>.Count(const predicate: Predicate<TSource>): Integer;
 var
   item: TSource;
 begin
@@ -1432,7 +1431,7 @@ begin
   Result := source.First;
 end;
 
-function Enumerable<TSource>.First(const predicate: TPredicate<TSource>): TSource;
+function Enumerable<TSource>.First(const predicate: Predicate<TSource>): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1454,7 +1453,7 @@ begin
   Result := source.FirstOrDefault(defaultValue);
 end;
 
-function Enumerable<TSource>.FirstOrDefault(const predicate: TPredicate<TSource>): TSource;
+function Enumerable<TSource>.FirstOrDefault(const predicate: Predicate<TSource>): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1462,7 +1461,7 @@ begin
   Result := source.FirstOrDefault(predicate);
 end;
 
-function Enumerable<TSource>.FirstOrDefault(const predicate: TPredicate<TSource>;
+function Enumerable<TSource>.FirstOrDefault(const predicate: Predicate<TSource>;
   const defaultValue: TSource): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
@@ -1471,7 +1470,7 @@ begin
   Result := source.FirstOrDefault(predicate, defaultValue);
 end;
 
-procedure Enumerable<TSource>.ForEach(const action: TAction<TSource>);
+procedure Enumerable<TSource>.ForEach(const action: Action<TSource>);
 var
   item: TSource;
 begin
@@ -1490,26 +1489,26 @@ begin
 end;
 
 function Enumerable<TSource>.GroupBy<TKey>(
-  const keySelector: TFunc<TSource, TKey>): IEnumerable<IGrouping<TKey, TSource>>;
+  const keySelector: Func<TSource, TKey>): IEnumerable<IGrouping<TKey, TSource>>;
 begin
   Result := GroupBy<TKey, TSource>(keySelector, IdentityFunction, nil);
 end;
 
-function Enumerable<TSource>.GroupBy<TKey>(const keySelector: TFunc<TSource, TKey>;
+function Enumerable<TSource>.GroupBy<TKey>(const keySelector: Func<TSource, TKey>;
   const comparer: IEqualityComparer<TKey>): IEnumerable<IGrouping<TKey, TSource>>;
 begin
   Result := GroupBy<TKey, TSource>(keySelector, IdentityFunction, comparer)
 end;
 
 function Enumerable<TSource>.GroupBy<TKey, TElement>(
-  const keySelector: TFunc<TSource, TKey>;
-  const elementSelector: TFunc<TSource, TElement>): IEnumerable<IGrouping<TKey, TElement>>;
+  const keySelector: Func<TSource, TKey>;
+  const elementSelector: Func<TSource, TElement>): IEnumerable<IGrouping<TKey, TElement>>;
 begin
   Result := GroupBy<TKey, TElement>(keySelector, elementSelector, nil);
 end;
 
 function Enumerable<TSource>.GroupBy<TKey, TElement>(
-  const keySelector: TFunc<TSource, TKey>; const elementSelector: TFunc<TSource, TElement>;
+  const keySelector: Func<TSource, TKey>; const elementSelector: Func<TSource, TElement>;
   const comparer: IEqualityComparer<TKey>): IEnumerable<IGrouping<TKey, TElement>>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
@@ -1520,15 +1519,15 @@ begin
     source, keySelector, elementSelector, comparer);
 end;
 
-function Enumerable<TSource>.GroupBy<TKey, TResult>(const keySelector: TFunc<TSource, TKey>;
-  const resultSelector: TFunc<TKey, IEnumerable<TSource>, TResult>): IEnumerable<TResult>;
+function Enumerable<TSource>.GroupBy<TKey, TResult>(const keySelector: Func<TSource, TKey>;
+  const resultSelector: Func<TKey, IEnumerable<TSource>, TResult>): IEnumerable<TResult>;
 begin
   Result := GroupBy<TKey, TSource, TResult>(
     keySelector, IdentityFunction, resultSelector, nil);
 end;
 
-function Enumerable<TSource>.GroupBy<TKey, TResult>(const keySelector: TFunc<TSource, TKey>;
-  const resultSelector: TFunc<TKey, IEnumerable<TSource>, TResult>;
+function Enumerable<TSource>.GroupBy<TKey, TResult>(const keySelector: Func<TSource, TKey>;
+  const resultSelector: Func<TKey, IEnumerable<TSource>, TResult>;
   const comparer: IEqualityComparer<TKey>): IEnumerable<TResult>;
 begin
   Result := GroupBy<TKey, TSource, TResult>(
@@ -1536,16 +1535,16 @@ begin
 end;
 
 function Enumerable<TSource>.GroupBy<TKey, TElement, TResult>(
-  const keySelector: TFunc<TSource, TKey>; const elementSelector: TFunc<TSource, TElement>;
-  const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>;
+  const keySelector: Func<TSource, TKey>; const elementSelector: Func<TSource, TElement>;
+  const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>;
 begin
   Result := GroupBy<TKey, TElement, TResult>(
     keySelector, elementSelector, resultSelector, nil);
 end;
 
 function Enumerable<TSource>.GroupBy<TKey, TElement, TResult>(
-  const keySelector: TFunc<TSource, TKey>; const elementSelector: TFunc<TSource, TElement>;
-  const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>;
+  const keySelector: Func<TSource, TKey>; const elementSelector: Func<TSource, TElement>;
+  const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>;
   const comparer: IEqualityComparer<TKey>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
@@ -1558,18 +1557,18 @@ begin
 end;
 
 function Enumerable<TSource>.GroupJoin<TInner, TKey, TResult>(
-  const inner: IEnumerable<TInner>; const outerKeySelector: TFunc<TSource, TKey>;
-  const innerKeySelector: TFunc<TInner, TKey>;
-  const resultSelector: TFunc<TSource, IEnumerable<TInner>, TResult>): IEnumerable<TResult>;
+  const inner: IEnumerable<TInner>; const outerKeySelector: Func<TSource, TKey>;
+  const innerKeySelector: Func<TInner, TKey>;
+  const resultSelector: Func<TSource, IEnumerable<TInner>, TResult>): IEnumerable<TResult>;
 begin
   Result := GroupJoin<TInner, TKey, TResult>(
     inner, outerKeySelector, innerKeySelector, resultSelector, nil);
 end;
 
 function Enumerable<TSource>.GroupJoin<TInner, TKey, TResult>(
-  const inner: IEnumerable<TInner>; const outerKeySelector: TFunc<TSource, TKey>;
-  const innerKeySelector: TFunc<TInner, TKey>;
-  const resultSelector: TFunc<TSource, IEnumerable<TInner>, TResult>;
+  const inner: IEnumerable<TInner>; const outerKeySelector: Func<TSource, TKey>;
+  const innerKeySelector: Func<TInner, TKey>;
+  const resultSelector: Func<TSource, IEnumerable<TInner>, TResult>;
   const comparer: IEqualityComparer<TKey>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'outer');
@@ -1603,18 +1602,18 @@ begin
 end;
 
 function Enumerable<TSource>.Join<TInner, TKey, TResult>(
-  const inner: IEnumerable<TInner>; const outerKeySelector: TFunc<TSource, TKey>;
-  const innerKeySelector: TFunc<TInner, TKey>;
-  const resultSelector: TFunc<TSource, TInner, TResult>): IEnumerable<TResult>;
+  const inner: IEnumerable<TInner>; const outerKeySelector: Func<TSource, TKey>;
+  const innerKeySelector: Func<TInner, TKey>;
+  const resultSelector: Func<TSource, TInner, TResult>): IEnumerable<TResult>;
 begin
   Result := Join<TInner, TKey, TResult>(
     inner, outerKeySelector, innerKeySelector, resultSelector, nil);
 end;
 
 function Enumerable<TSource>.Join<TInner, TKey, TResult>(
-  const inner: IEnumerable<TInner>; const outerKeySelector: TFunc<TSource, TKey>;
-  const innerKeySelector: TFunc<TInner, TKey>;
-  const resultSelector: TFunc<TSource, TInner, TResult>;
+  const inner: IEnumerable<TInner>; const outerKeySelector: Func<TSource, TKey>;
+  const innerKeySelector: Func<TInner, TKey>;
+  const resultSelector: Func<TSource, TInner, TResult>;
   const comparer: IEqualityComparer<TKey>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'outer');
@@ -1634,7 +1633,7 @@ begin
   Result := source.Last;
 end;
 
-function Enumerable<TSource>.Last(const predicate: TPredicate<TSource>): TSource;
+function Enumerable<TSource>.Last(const predicate: Predicate<TSource>): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1656,7 +1655,7 @@ begin
   Result := source.LastOrDefault(defaultValue);
 end;
 
-function Enumerable<TSource>.LastOrDefault(const predicate: TPredicate<TSource>): TSource;
+function Enumerable<TSource>.LastOrDefault(const predicate: Predicate<TSource>): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1664,7 +1663,7 @@ begin
   Result := source.LastOrDefault(predicate);
 end;
 
-function Enumerable<TSource>.LastOrDefault(const predicate: TPredicate<TSource>;
+function Enumerable<TSource>.LastOrDefault(const predicate: Predicate<TSource>;
   const defaultValue: TSource): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
@@ -1700,23 +1699,23 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
-function Enumerable<TSource>.Max(const selector: TFunc<TSource, Double>): Double;
+function Enumerable<TSource>.Max(const selector: Func<TSource, Double>): Double;
 begin
   Result := Select<Double>(selector).Max;
 end;
 
-function Enumerable<TSource>.Max(const selector: TFunc<TSource, Int64>): Int64;
+function Enumerable<TSource>.Max(const selector: Func<TSource, Int64>): Int64;
 begin
   Result := Select<Int64>(selector).Max;
 end;
 
 function Enumerable<TSource>.MaxBy<TKey>(
-  const selector: TFunc<TSource, TKey>): TSource;
+  const selector: Func<TSource, TKey>): TSource;
 begin
   Result := MaxBy<TKey>(selector, TComparer<TKey>.Default);
 end;
 
-function Enumerable<TSource>.MaxBy<TKey>(const selector: TFunc<TSource, TKey>;
+function Enumerable<TSource>.MaxBy<TKey>(const selector: Func<TSource, TKey>;
   const comparer: IComparer<TKey>): TSource;
 var
   enumerator: IEnumerator<TSource>;
@@ -1774,23 +1773,23 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
-function Enumerable<TSource>.Min(const selector: TFunc<TSource, Double>): Double;
+function Enumerable<TSource>.Min(const selector: Func<TSource, Double>): Double;
 begin
   Result := Select<Double>(selector).Min;
 end;
 
-function Enumerable<TSource>.Min(const selector: TFunc<TSource, Int64>): Int64;
+function Enumerable<TSource>.Min(const selector: Func<TSource, Int64>): Int64;
 begin
   Result := Select<Int64>(selector).Min;
 end;
 
 function Enumerable<TSource>.MinBy<TKey>(
-  const selector: TFunc<TSource, TKey>): TSource;
+  const selector: Func<TSource, TKey>): TSource;
 begin
   Result := MinBy<TKey>(selector, TComparer<TKey>.Default);
 end;
 
-function Enumerable<TSource>.MinBy<TKey>(const selector: TFunc<TSource, TKey>;
+function Enumerable<TSource>.MinBy<TKey>(const selector: Func<TSource, TKey>;
   const comparer: IComparer<TKey>): TSource;
 var
   enumerator: IEnumerator<TSource>;
@@ -1827,12 +1826,12 @@ begin
 end;
 
 function Enumerable<TSource>.OrderBy<TKey>(
-  const keySelector: TFunc<TSource, TKey>): IEnumerable<TSource>;
+  const keySelector: Func<TSource, TKey>): IEnumerable<TSource>;
 begin
   Result := OrderBy<TKey>(keySelector, nil);
 end;
 
-function Enumerable<TSource>.OrderBy<TKey>(const keySelector: TFunc<TSource, TKey>;
+function Enumerable<TSource>.OrderBy<TKey>(const keySelector: Func<TSource, TKey>;
   const comparer: IComparer<TKey>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
@@ -1842,13 +1841,13 @@ begin
 end;
 
 function Enumerable<TSource>.OrderByDescending<TKey>(
-  const keySelector: TFunc<TSource, TKey>): IEnumerable<TSource>;
+  const keySelector: Func<TSource, TKey>): IEnumerable<TSource>;
 begin
   Result := OrderByDescending<TKey>(keySelector, nil);
 end;
 
 function Enumerable<TSource>.OrderByDescending<TKey>(
-  const keySelector: TFunc<TSource, TKey>;
+  const keySelector: Func<TSource, TKey>;
   const comparer: IComparer<TKey>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
@@ -1864,13 +1863,13 @@ begin
   Result := TReversedIterator<TSource>.Create(source);
 end;
 
-function Enumerable<TSource>.Select(const selector: TFunc<TSource, TSource>): IEnumerable<TSource>;
+function Enumerable<TSource>.Select(const selector: Func<TSource, TSource>): IEnumerable<TSource>;
 begin
   Result := Select<TSource>(selector);
 end;
 
 function Enumerable<TSource>.Select<TResult>(
-  const selector: TFunc<TSource, TResult>): IEnumerable<TResult>;
+  const selector: Func<TSource, TResult>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(selector), 'selector');
@@ -1879,13 +1878,13 @@ begin
 end;
 
 function Enumerable<TSource>.Select(
-  const selector: TFunc<TSource, Integer, TSource>): IEnumerable<TSource>;
+  const selector: Func<TSource, Integer, TSource>): IEnumerable<TSource>;
 begin
   Result := Select<TSource>(selector);
 end;
 
 function Enumerable<TSource>.Select<TResult>(
-  const selector: TFunc<TSource, Integer, TResult>): IEnumerable<TResult>;
+  const selector: Func<TSource, Integer, TResult>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(selector), 'selector');
@@ -1894,7 +1893,7 @@ begin
 end;
 
 function Enumerable<TSource>.SelectMany<TResult>(
-  const selector: TFunc<TSource, IEnumerable<TResult>>): IEnumerable<TResult>;
+  const selector: Func<TSource, IEnumerable<TResult>>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(selector), 'selector');
@@ -1903,7 +1902,7 @@ begin
 end;
 
 function Enumerable<TSource>.SelectMany<TResult>(
-  const selector: TFunc<TSource, Integer, IEnumerable<TResult>>): IEnumerable<TResult>;
+  const selector: Func<TSource, Integer, IEnumerable<TResult>>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(selector), 'selector');
@@ -1912,8 +1911,8 @@ begin
 end;
 
 function Enumerable<TSource>.SelectMany<TCollection, TResult>(
-  const collectionSelector: TFunc<TSource, IEnumerable<TCollection>>;
-  const resultSelector: TFunc<TSource, TCollection, TResult>): IEnumerable<TResult>;
+  const collectionSelector: Func<TSource, IEnumerable<TCollection>>;
+  const resultSelector: Func<TSource, TCollection, TResult>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(collectionSelector), 'collectionSelector');
@@ -1924,8 +1923,8 @@ begin
 end;
 
 function Enumerable<TSource>.SelectMany<TCollection, TResult>(
-  const collectionSelector: TFunc<TSource, Integer, IEnumerable<TCollection>>;
-  const resultSelector: TFunc<TSource, TCollection, TResult>): IEnumerable<TResult>;
+  const collectionSelector: Func<TSource, Integer, IEnumerable<TCollection>>;
+  const resultSelector: Func<TSource, TCollection, TResult>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(collectionSelector), 'collectionSelector');
@@ -1973,7 +1972,7 @@ begin
   Result := source.Single;
 end;
 
-function Enumerable<TSource>.Single(const predicate: TPredicate<TSource>): TSource;
+function Enumerable<TSource>.Single(const predicate: Predicate<TSource>): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1995,7 +1994,7 @@ begin
   Result := source.SingleOrDefault(defaultValue);
 end;
 
-function Enumerable<TSource>.SingleOrDefault(const predicate: TPredicate<TSource>): TSource;
+function Enumerable<TSource>.SingleOrDefault(const predicate: Predicate<TSource>): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -2003,7 +2002,7 @@ begin
   Result := source.SingleOrDefault(predicate);
 end;
 
-function Enumerable<TSource>.SingleOrDefault(const predicate: TPredicate<TSource>;
+function Enumerable<TSource>.SingleOrDefault(const predicate: Predicate<TSource>;
   const defaultValue: TSource): TSource;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
@@ -2019,7 +2018,7 @@ begin
   Result := TSkipIterator<TSource>.Create(source, count);
 end;
 
-function Enumerable<TSource>.SkipWhile(const predicate: TPredicate<TSource>): IEnumerable<TSource>;
+function Enumerable<TSource>.SkipWhile(const predicate: Predicate<TSource>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -2028,7 +2027,7 @@ begin
 end;
 
 function Enumerable<TSource>.SkipWhile(
-  const predicate: TFunc<TSource, Integer, Boolean>): IEnumerable<TSource>;
+  const predicate: Func<TSource, Integer, Boolean>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -2049,7 +2048,7 @@ begin
     Result := Add(Result, item);
 end;
 
-function Enumerable<TSource>.Sum(const selector: TFunc<TSource, Integer>): Integer;
+function Enumerable<TSource>.Sum(const selector: Func<TSource, Integer>): Integer;
 var
   item: TSource;
 begin
@@ -2062,7 +2061,7 @@ begin
 end;
 
 function Enumerable<TSource>.Sum(
-  const selector: TFunc<TSource, Nullable<Integer>>): Nullable<Integer>;
+  const selector: Func<TSource, Nullable<Integer>>): Nullable<Integer>;
 var
   item: TSource;
 begin
@@ -2074,7 +2073,7 @@ begin
     Result := Result.Value + selector(item).GetValueOrDefault;
 end;
 
-function Enumerable<TSource>.Sum(const selector: TFunc<TSource, Int64>): Int64;
+function Enumerable<TSource>.Sum(const selector: Func<TSource, Int64>): Int64;
 var
   item: TSource;
 begin
@@ -2087,7 +2086,7 @@ begin
 end;
 
 function Enumerable<TSource>.Sum(
-  const selector: TFunc<TSource, Nullable<Int64>>): Nullable<Int64>;
+  const selector: Func<TSource, Nullable<Int64>>): Nullable<Int64>;
 var
   item: TSource;
 begin
@@ -2099,7 +2098,7 @@ begin
     Result := Result.Value + selector(item).GetValueOrDefault;
 end;
 
-function Enumerable<TSource>.Sum(const selector: TFunc<TSource, Single>): Single;
+function Enumerable<TSource>.Sum(const selector: Func<TSource, Single>): Single;
 var
   item: TSource;
 begin
@@ -2112,7 +2111,7 @@ begin
 end;
 
 function Enumerable<TSource>.Sum(
-  const selector: TFunc<TSource, Nullable<Single>>): Nullable<Single>;
+  const selector: Func<TSource, Nullable<Single>>): Nullable<Single>;
 var
   item: TSource;
 begin
@@ -2124,7 +2123,7 @@ begin
     Result := Result.Value + selector(item).GetValueOrDefault;
 end;
 
-function Enumerable<TSource>.Sum(const selector: TFunc<TSource, Double>): Double;
+function Enumerable<TSource>.Sum(const selector: Func<TSource, Double>): Double;
 var
   item: TSource;
 begin
@@ -2137,7 +2136,7 @@ begin
 end;
 
 function Enumerable<TSource>.Sum(
-  const selector: TFunc<TSource, Nullable<Double>>): Nullable<Double>;
+  const selector: Func<TSource, Nullable<Double>>): Nullable<Double>;
 var
   item: TSource;
 begin
@@ -2156,7 +2155,7 @@ begin
   Result := TTakeIterator<TSource>.Create(source, count);
 end;
 
-function Enumerable<TSource>.TakeWhile(const predicate: TPredicate<TSource>): IEnumerable<TSource>;
+function Enumerable<TSource>.TakeWhile(const predicate: Predicate<TSource>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -2165,7 +2164,7 @@ begin
 end;
 
 function Enumerable<TSource>.TakeWhile(
-  const predicate: TFunc<TSource, Integer, Boolean>): IEnumerable<TSource>;
+  const predicate: Func<TSource, Integer, Boolean>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -2174,12 +2173,12 @@ begin
 end;
 
 function Enumerable<TSource>.ThenBy<TKey>(
-  const keySelector: TFunc<TSource, TKey>): IEnumerable<TSource>;
+  const keySelector: Func<TSource, TKey>): IEnumerable<TSource>;
 begin
   Result := ThenBy<TKey>(keySelector, nil);
 end;
 
-function Enumerable<TSource>.ThenBy<TKey>(const keySelector: TFunc<TSource, TKey>;
+function Enumerable<TSource>.ThenBy<TKey>(const keySelector: Func<TSource, TKey>;
   const comparer: IComparer<TKey>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
@@ -2189,12 +2188,12 @@ begin
 end;
 
 function Enumerable<TSource>.ThenByDescending<TKey>(
-  const keySelector: TFunc<TSource, TKey>): IEnumerable<TSource>;
+  const keySelector: Func<TSource, TKey>): IEnumerable<TSource>;
 begin
   Result := ThenByDescending<TKey>(keySelector, nil);
 end;
 
-function Enumerable<TSource>.ThenByDescending<TKey>(const keySelector: TFunc<TSource, TKey>;
+function Enumerable<TSource>.ThenByDescending<TKey>(const keySelector: Func<TSource, TKey>;
   const comparer: IComparer<TKey>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
@@ -2211,28 +2210,28 @@ begin
 end;
 
 function Enumerable<TSource>.ToDictionary<TKey>(
-  const keySelector: TFunc<TSource, TKey>): IDictionary<TKey, TSource>;
+  const keySelector: Func<TSource, TKey>): IDictionary<TKey, TSource>;
 begin
   Result := ToDictionary<TKey, TSource>(keySelector, IdentityFunction, nil);
 end;
 
 function Enumerable<TSource>.ToDictionary<TKey>(
-  const keySelector: TFunc<TSource, TKey>;
+  const keySelector: Func<TSource, TKey>;
   const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TSource>;
 begin
   Result := ToDictionary<TKey, TSource>(keySelector, IdentityFunction, comparer);
 end;
 
 function Enumerable<TSource>.ToDictionary<TKey, TElement>(
-  const keySelector: TFunc<TSource, TKey>;
-  const elementSelector: TFunc<TSource, TElement>): IDictionary<TKey, TElement>;
+  const keySelector: Func<TSource, TKey>;
+  const elementSelector: Func<TSource, TElement>): IDictionary<TKey, TElement>;
 begin
   Result := ToDictionary<TKey, TElement>(keySelector, elementSelector, nil);
 end;
 
 function Enumerable<TSource>.ToDictionary<TKey, TElement>(
-  const keySelector: TFunc<TSource, TKey>;
-  const elementSelector: TFunc<TSource, TElement>;
+  const keySelector: Func<TSource, TKey>;
+  const elementSelector: Func<TSource, TElement>;
   const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TElement>;
 var
   item: TSource;
@@ -2255,38 +2254,38 @@ begin
 end;
 
 function Enumerable<TSource>.ToLookup(
-  const keySelector: TFunc<TSource, TSource>): ILookup<TSource, TSource>;
+  const keySelector: Func<TSource, TSource>): ILookup<TSource, TSource>;
 begin
   Result := ToLookup<TSource, TSource>(keySelector, IdentityFunction, nil);
 end;
 
 function Enumerable<TSource>.ToLookup<TKey>(
-  const keySelector: TFunc<TSource, TKey>): ILookup<TKey, TSource>;
+  const keySelector: Func<TSource, TKey>): ILookup<TKey, TSource>;
 begin
   Result := ToLookup<TKey, TSource>(keySelector, IdentityFunction, nil);
 end;
 
-function Enumerable<TSource>.ToLookup(const keySelector: TFunc<TSource, TSource>;
+function Enumerable<TSource>.ToLookup(const keySelector: Func<TSource, TSource>;
   const comparer: IEqualityComparer<TSource>): ILookup<TSource, TSource>;
 begin
   Result := ToLookup<TSource, TSource>(keySelector, IdentityFunction, comparer);
 end;
 
-function Enumerable<TSource>.ToLookup<TKey>(const keySelector: TFunc<TSource, TKey>;
+function Enumerable<TSource>.ToLookup<TKey>(const keySelector: Func<TSource, TKey>;
   const comparer: IEqualityComparer<TKey>): ILookup<TKey, TSource>;
 begin
   Result := ToLookup<TKey, TSource>(keySelector, IdentityFunction, comparer);
 end;
 
 function Enumerable<TSource>.ToLookup<TKey, TElement>(
-  const keySelector: TFunc<TSource, TKey>;
-  const elementSelector: TFunc<TSource, TElement>): ILookup<TKey, TElement>;
+  const keySelector: Func<TSource, TKey>;
+  const elementSelector: Func<TSource, TElement>): ILookup<TKey, TElement>;
 begin
   Result := ToLookup<TKey, TElement>(keySelector, elementSelector, nil);
 end;
 
 function Enumerable<TSource>.ToLookup<TKey, TElement>(
-  const keySelector: TFunc<TSource, TKey>; const elementSelector: TFunc<TSource, TElement>;
+  const keySelector: Func<TSource, TKey>; const elementSelector: Func<TSource, TElement>;
   const comparer: IEqualityComparer<TKey>): ILookup<TKey, TElement>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
@@ -2312,7 +2311,7 @@ begin
 end;
 
 function Enumerable<TSource>.TryGetFirst(out value: TSource;
-  const predicate: TPredicate<TSource>): Boolean;
+  const predicate: Predicate<TSource>): Boolean;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
 
@@ -2327,7 +2326,7 @@ begin
 end;
 
 function Enumerable<TSource>.TryGetLast(out value: TSource;
-  const predicate: TPredicate<TSource>): Boolean;
+  const predicate: Predicate<TSource>): Boolean;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
 
@@ -2353,7 +2352,7 @@ begin
   Result := TUnionIterator<TSource>.Create(source, second, comparer);
 end;
 
-function Enumerable<TSource>.Where(const predicate: TPredicate<TSource>): IEnumerable<TSource>;
+function Enumerable<TSource>.Where(const predicate: Predicate<TSource>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -2362,7 +2361,7 @@ begin
 end;
 
 function Enumerable<TSource>.Where(
-  const predicate: TFunc<TSource, Integer, Boolean>): IEnumerable<TSource>;
+  const predicate: Func<TSource, Integer, Boolean>): IEnumerable<TSource>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -2371,7 +2370,7 @@ begin
 end;
 
 function Enumerable<TSource>.Zip<TSecond, TResult>(const second: IEnumerable<TSecond>;
-  const resultSelector: TFunc<TSource, TSecond, TResult>): IEnumerable<TResult>;
+  const resultSelector: Func<TSource, TSecond, TResult>): IEnumerable<TResult>;
 begin
 //  Guard.CheckNotNull(Assigned(source), 'first');
 //  Guard.CheckNotNull(Assigned(second), 'second');

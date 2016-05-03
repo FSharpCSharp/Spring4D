@@ -375,12 +375,12 @@ end;
 
 procedure TProxyTest.Should_be_able_to_wrap_interface_with_one_method;
 var
-  len: TFunc<string, Integer>;
+  len: Func<string, Integer>;
   wrapped: IAnsweringEngine;
   i: Integer;
 begin
   len :=
-    function(s: string): Integer
+    function(const s: string): Integer
     begin
       Result := Length(s);
     end;

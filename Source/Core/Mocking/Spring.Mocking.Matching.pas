@@ -36,13 +36,13 @@ uses
   Spring.DesignPatterns;
 
 type
-  TArgMatch = TPredicate<TArray<TValue>>;
+  TArgMatch = Predicate<TArray<TValue>>;
 
   TMatcherFactory = record
   private
-    class threadvar conditionStack: TArray<TPredicate<TValue>>;
+    class threadvar conditionStack: TArray<Predicate<TValue>>;
 
-    class function AddMatcher(const condition: TPredicate<TValue>): Integer; static;
+    class function AddMatcher(const condition: Predicate<TValue>): Integer; static;
 
     class function GetIndex(const v: TValue): Integer; static;
     class procedure SetIndex(typeInfo: PTypeInfo; index: Integer; var Result); static;
@@ -56,7 +56,7 @@ type
     ///   Creates a new matcher and returns its index wrapped into a value of
     ///   type T.
     /// </summary>
-    class function CreateMatcher<T>(const condition: TPredicate<TValue>): T; static;
+    class function CreateMatcher<T>(const condition: Predicate<TValue>): T; static;
 
     /// <summary>
     ///   Creates an array of match predicates based on the passed arguments
@@ -65,7 +65,7 @@ type
     ///   Spring.Mocking.Arg</c> .
     /// </summary>
     class function CreateMatchers(const indizes: TArray<TValue>;
-      const parameters: TArray<TRttiParameter>): TPredicate<TArray<TValue>>; static;
+      const parameters: TArray<TRttiParameter>): Predicate<TArray<TValue>>; static;
   end;
 
   TRangeKind = (Inclusive, Exclusive);
@@ -75,7 +75,7 @@ type
     fIndex: Integer;
   public
     class function IsAny<T>: T; overload; static;
-    class function IsAny<T>(const condition: TPredicate<T>): T; overload; static;
+    class function IsAny<T>(const condition: Predicate<T>): T; overload; static;
     class function IsEqual<T>(const value: T): T; static;
     class function IsIn(const values: TByteSet): Byte; overload; static;
     class function IsIn<T>(const values: array of T): T; overload; static;
@@ -92,10 +92,10 @@ type
 
   TArgs = record
   strict private
-    class function GetAny: TPredicate<TArray<TValue>>; static;
+    class function GetAny: Predicate<TArray<TValue>>; static;
     class function GetItems(index: Integer): TArg; static;
   public
-    class property Any: TPredicate<TArray<TValue>> read GetAny;
+    class property Any: Predicate<TArray<TValue>> read GetAny;
     class property Items[index: Integer]: TArg read GetItems; default;
   end;
 
@@ -255,10 +255,10 @@ end;
 {$REGION 'TMatcherFactory'}
 
 class function TMatcherFactory.CreateMatchers(const indizes: TArray<TValue>;
-  const parameters: TArray<TRttiParameter>): TPredicate<TArray<TValue>>;
+  const parameters: TArray<TRttiParameter>): Predicate<TArray<TValue>>;
 var
   refParamCount, emptyParamCount, i: Integer;
-  conditions: TArray<TPredicate<TValue>>;
+  conditions: TArray<Predicate<TValue>>;
 begin
   if Assigned(conditionStack) then
   begin
@@ -299,7 +299,7 @@ begin
 end;
 
 class function TMatcherFactory.CreateMatcher<T>(
-  const condition: TPredicate<TValue>): T;
+  const condition: Predicate<TValue>): T;
 var
   index: Integer;
 begin
@@ -308,7 +308,7 @@ begin
 end;
 
 class function TMatcherFactory.AddMatcher(
-  const condition: TPredicate<TValue>): Integer;
+  const condition: Predicate<TValue>): Integer;
 begin
   Result := Length(conditionStack);
   SetLength(conditionStack, Result + 1);
@@ -372,7 +372,7 @@ begin
     end);
 end;
 
-class function TArg.IsAny<T>(const condition: TPredicate<T>): T;
+class function TArg.IsAny<T>(const condition: Predicate<T>): T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
@@ -515,7 +515,7 @@ end;
 
 {$REGION 'TArgs'}
 
-class function TArgs.GetAny: TPredicate<TArray<TValue>>;
+class function TArgs.GetAny: Predicate<TArray<TValue>>;
 begin
   Result :=
     function(const args: TArray<TValue>): Boolean

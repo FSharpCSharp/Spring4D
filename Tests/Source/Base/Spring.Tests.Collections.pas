@@ -2638,7 +2638,7 @@ begin
   sentence := 'the quick brown fox jumps over the lazy dog';
   words := TEnumerable.From<string>(TArray<string>(SplitString(sentence, ' ')));
   reversed := words.Aggregate(
-    function(workingSentence, next: string): string
+    function(const workingSentence, next: string): string
     begin
       Result := next + ' ' + workingSentence;
     end);

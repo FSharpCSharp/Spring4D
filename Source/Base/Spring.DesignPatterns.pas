@@ -156,11 +156,11 @@ type
     function IsSatisfiedBy(const item: T): Boolean;
 
     class operator Implicit(const specification: ISpecification<T>): TSpecification<T>;
-    class operator Implicit(const specification: TPredicate<T>): TSpecification<T>;
+    class operator Implicit(const specification: Predicate<T>): TSpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
-    class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;
+    class operator Implicit(const specification: TSpecification<T>): Predicate<T>;
     class operator Explicit(const specification: ISpecification<T>): TSpecification<T>;
-    class operator Explicit(const specification: TPredicate<T>): TSpecification<T>;
+    class operator Explicit(const specification: Predicate<T>): TSpecification<T>;
     class operator Explicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator LogicalAnd(const left, right: TSpecification<T>): TSpecification<T>;
     class operator LogicalOr(const left, right: TSpecification<T>): TSpecification<T>;
@@ -170,9 +170,9 @@ type
   /// <summary>
   ///   Provides the abstract base class for Specification.
   /// </summary>
-  TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>)
+  TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, Predicate<T>)
   protected
-    function TPredicate<T>.Invoke = IsSatisfiedBy;
+    function Predicate<T>.Invoke = IsSatisfiedBy;
     function IsSatisfiedBy(const item: T): Boolean; virtual; abstract;
   end;
 
@@ -392,9 +392,9 @@ begin
 end;
 
 class operator TSpecification<T>.Implicit(
-  const specification: TPredicate<T>): TSpecification<T>;
+  const specification: Predicate<T>): TSpecification<T>;
 begin
-  TPredicate<T>(Result.fSpecification) := specification;
+  Predicate<T>(Result.fSpecification) := specification;
 end;
 
 class operator TSpecification<T>.Implicit(
@@ -404,7 +404,7 @@ begin
 end;
 
 class operator TSpecification<T>.Implicit(
-  const specification: TSpecification<T>): TPredicate<T>;
+  const specification: TSpecification<T>): Predicate<T>;
 begin
   ISpecification<T>(Result) := specification.fSpecification;
 end;
@@ -416,9 +416,9 @@ begin
 end;
 
 class operator TSpecification<T>.Explicit(
-  const specification: TPredicate<T>): TSpecification<T>;
+  const specification: Predicate<T>): TSpecification<T>;
 begin
-  TPredicate<T>(Result.fSpecification) := specification;
+  Predicate<T>(Result.fSpecification) := specification;
 end;
 
 class operator TSpecification<T>.Explicit(

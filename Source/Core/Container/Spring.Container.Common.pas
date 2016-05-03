@@ -43,23 +43,23 @@ type
   {$M+}
   IFactory<TResult> = interface(TFunc<TResult>)
     function Invoke: TResult;
-  end;
+  end deprecated 'Use Spring.Func<TResult> instead';
 
   IFactory<T,TResult> = interface(TFunc<T,TResult>)
     function Invoke(Arg: T): TResult;
-  end;
+  end deprecated 'Use Spring.Func<T, TResult> instead';
 
   IFactory<T1,T2,TResult> = interface(TFunc<T1,T2,TResult>)
     function Invoke(Arg1: T1; Arg2: T2): TResult;
-  end;
+  end deprecated 'Use Spring.Func<T1, T2, TResult> instead';
 
   IFactory<T1,T2,T3,TResult> = interface(TFunc<T1,T2,T3,TResult>)
     function Invoke(Arg1: T1; Arg2: T2; Arg3: T3): TResult;
-  end;
+  end deprecated 'Use Spring.Func<T1, T2, T3, TResult> instead';
 
   IFactory<T1,T2,T3,T4,TResult> = interface(TFunc<T1,T2,T3,T4,TResult>)
     function Invoke(Arg1: T1; Arg2: T2; Arg3: T3; Arg4: T4): TResult;
-  end;
+  end deprecated 'Use Spring.Func<T1, T2, T3, T4, TResult> instead';
   {$M-}
 
   {$ENDREGION}

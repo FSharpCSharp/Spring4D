@@ -746,41 +746,72 @@ type
 
   {$REGION 'Procedure types'}
 
-  /// <summary>
-  ///   Represents a logical predicate.
-  /// </summary>
-  /// <param name="arg">
-  ///   the value needs to be determined.
-  /// </param>
-  /// <returns>
-  ///   Returns <c>True</c> if the value was accepted, otherwise, returns <c>
-  ///   False</c>.
-  /// </returns>
-  /// <remarks>
-  ///   <note type="tip">
-  ///     This type redefined the <see cref="SysUtils|TPredicate`1">
-  ///     SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.
-  ///   </note>
-  /// </remarks>
-  /// <seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
   {$M+}
-  TPredicate<T> = reference to function(const arg: T): Boolean;
-  {$M-}
+  /// <summary>
+  ///   Encapsulates a method that has no parameters and does not return a
+  ///   value.
+  /// </summary>
+  Action = reference to procedure;
 
   /// <summary>
-  ///   Represents an anonymous method that has a single parameter and does not
-  ///   return a value.
+  ///   Encapsulates a method that has a single parameter and does not return a
+  ///   value.
   /// </summary>
-  /// <seealso cref="TActionProc&lt;T&gt;" />
-  /// <seealso cref="TActionMethod&lt;T&gt;" />
-  {$M+}
-  TAction<T> = reference to procedure(const arg: T);
+  Action<T> = reference to procedure(const arg: T);
 
-  TAction<T1, T2> = reference to procedure(const arg1: T1; const arg2: T2);
+  /// <summary>
+  ///   Encapsulates a method that has two parameters and does not return a
+  ///   value.
+  /// </summary>
+  Action<T1, T2> = reference to procedure(const arg1: T1; const arg2: T2);
 
-  TAction<T1, T2, T3> = reference to procedure(const arg1: T1; const arg2: T2; const arg3: T3);
+  /// <summary>
+  ///   Encapsulates a method that has three parameters and does not return a
+  ///   value.
+  /// </summary>
+  Action<T1, T2, T3> = reference to procedure(const arg1: T1; const arg2: T2; const arg3: T3);
 
-  TAction<T1, T2, T3, T4> = reference to procedure(const arg1: T1; const arg2: T2; const arg3: T3; const arg4: T4);
+  /// <summary>
+  ///   Encapsulates a method that has four parameters and does not return a
+  ///   value.
+  /// </summary>
+  Action<T1, T2, T3, T4> = reference to procedure(const arg1: T1; const arg2: T2; const arg3: T3; const arg4: T4);
+
+  /// <summary>
+  ///   Encapsulates a method that has no parameters and returns a value of the
+  ///   type specified by the <i>TResult</i> parameter.
+  /// </summary>
+  Func<TResult> = reference to function: TResult;
+
+  /// <summary>
+  ///   Encapsulates a method that has one parameter and returns a value of the
+  ///   type specified by the <i>TResult</i> parameter.
+  /// </summary>
+  Func<T, TResult> = reference to function(const arg: T): TResult;
+
+  /// <summary>
+  ///   Encapsulates a method that has two parameters and returns a value of
+  ///   the type specified by the <i>TResult</i> parameter.
+  /// </summary>
+  Func<T1, T2, TResult> = reference to function(const arg1: T1; const arg2: T2): TResult;
+
+  /// <summary>
+  ///   Encapsulates a method that has three parameters and returns a value of
+  ///   the type specified by the <i>TResult</i> parameter.
+  /// </summary>
+  Func<T1, T2, T3, TResult> = reference to function(const arg1: T1; const arg2: T2; const arg3: T3): TResult;
+
+  /// <summary>
+  ///   Encapsulates a method that has four parameters and returns a value of
+  ///   the type specified by the <i>TResult</i> parameter.
+  /// </summary>
+  Func<T1, T2, T3, T4, TResult> = reference to function(const arg1: T1; const arg2: T2; const arg3: T3; const arg4: T4): TResult;
+
+  /// <summary>
+  ///   Represents the method that defines a set of criteria and determines
+  ///   whether the specified object meets those criteria.
+  /// </summary>
+  Predicate<T> = reference to function(const arg: T): Boolean;
   {$M-}
 
   /// <summary>
@@ -1435,7 +1466,7 @@ type
     lkNone,
 
     /// <summary>
-    ///   Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    ///   Type is <see cref="Spring|Func&lt;T&gt;" />.
     /// </summary>
     lkFunc,
 
@@ -1534,15 +1565,15 @@ type
   /// <typeparam name="T">
   ///   The type of object that is being lazily initialized.
   /// </typeparam>
-  TLazy<T> = class(TLazy, ILazy<T>, TFunc<T>)
+  TLazy<T> = class(TLazy, ILazy<T>, Func<T>)
   private
-    fValueFactory: TFunc<T>;
+    fValueFactory: Func<T>;
     fValue: T;
     procedure InitializeValue;
   {$REGION 'Property Accessors'}
     function GetValue: T;
     function GetValueNonGeneric: TValue; override; final;
-    function TFunc<T>.Invoke = GetValue;
+    function Func<T>.Invoke = GetValue;
   {$ENDREGION}
   public
     /// <summary>
@@ -1568,7 +1599,7 @@ type
     /// <exception cref="EArgumentNullException">
     ///   <i>valueFactory</i> is <b>nil</b>.
     /// </exception>
-    constructor Create(const valueFactory: TFunc<T>; ownsObject: Boolean = False); overload;
+    constructor Create(const valueFactory: Func<T>; ownsObject: Boolean = False); overload;
 
     /// <summary>
     ///   Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
@@ -1632,7 +1663,7 @@ type
     /// <exception cref="EArgumentNullException">
     ///   <i>valueFactory</i> is <b>nil</b>.
     /// </exception>
-    constructor Create(const valueFactory: TFunc<T>; ownsObject: Boolean = False); overload;
+    constructor Create(const valueFactory: Func<T>; ownsObject: Boolean = False); overload;
 
     /// <summary>
     ///   Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
@@ -1650,7 +1681,7 @@ type
     class operator Implicit(const value: Lazy<T>): ILazy<T>;
     class operator Implicit(const value: Lazy<T>): T;
     class operator Implicit(const value: T): Lazy<T>;
-    class operator Implicit(const value: TFunc<T>): Lazy<T>;
+    class operator Implicit(const value: Func<T>): Lazy<T>;
     class operator Implicit(const value: TLazy<T>): Lazy<T>;
 
     /// <summary>
@@ -1718,7 +1749,7 @@ type
     ///     method will destroy the instances that were not stored.
     ///   </para>
     /// </remarks>
-    class function EnsureInitialized<T>(var target: T; const valueFactory: TFunc<T>): T; overload; static;
+    class function EnsureInitialized<T>(var target: T; const valueFactory: Func<T>): T; overload; static;
   end;
 
   {$ENDREGION}
@@ -2245,7 +2276,7 @@ type
     ///   Executes the specified action for each item in the specified array.
     /// </summary>
     class procedure ForEach<T>(const values: array of T;
-      const action: TAction<T>); static;
+      const action: Action<T>); static;
 
     /// <summary>
     ///   Searches for the specified element and returns the index of the first
@@ -2462,7 +2493,7 @@ type
     procedure Sort(const comparer: TComparison<T>); overload; inline;
     procedure Reverse;
 
-    procedure ForEach(const action: TAction<T>); inline;
+    procedure ForEach(const action: Action<T>); inline;
 
     function GetEnumerator: TArrayEnumerator<T>; inline;
     property Count: Integer read GetCount;
@@ -2763,7 +2794,7 @@ end;
 
 const
   LazyPrefixStrings: array[lkFunc..High(TLazyKind)] of string = (
-    'TFunc<', 'Lazy<', 'ILazy<');
+    'Func<', 'Lazy<', 'ILazy<');
 
 function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
 var
@@ -2773,7 +2804,8 @@ begin
   begin
     name := typeInfo.TypeName;
     for Result := lkFunc to High(TLazyKind) do
-      if StartsText(LazyPrefixStrings[Result], name)
+      if (StartsText(LazyPrefixStrings[Result], name)
+        or ((Result = lkFunc) and StartsText('T' + LazyPrefixStrings[Result], name)))
         and (Length(GetGenericTypeParameters(name)) = 1) then
         Exit;
   end;
@@ -6865,7 +6897,7 @@ begin
     end;
 end;
 
-constructor TLazy<T>.Create(const valueFactory: TFunc<T>; ownsObject: Boolean);
+constructor TLazy<T>.Create(const valueFactory: Func<T>; ownsObject: Boolean);
 begin
   Guard.CheckNotNull(Assigned(valueFactory), 'valueFactory');
 
@@ -6929,7 +6961,7 @@ begin
   Result.fLazy := TLazy<T>.Create;
 end;
 
-constructor Lazy<T>.Create(const valueFactory: TFunc<T>; ownsObject: Boolean);
+constructor Lazy<T>.Create(const valueFactory: Func<T>; ownsObject: Boolean);
 begin
   fLazy := TLazy<T>.Create(valueFactory, ownsObject);
 end;
@@ -6971,7 +7003,7 @@ begin
   Result.fLazy := TLazy<T>.CreateFrom(value);
 end;
 
-class operator Lazy<T>.Implicit(const value: TFunc<T>): Lazy<T>;
+class operator Lazy<T>.Implicit(const value: Func<T>): Lazy<T>;
 begin
   Result.fLazy := TLazy<T>.Create(value);
 end;
@@ -7000,7 +7032,7 @@ begin
 end;
 
 class function TLazyInitializer.EnsureInitialized<T>(var target: T;
-  const valueFactory: TFunc<T>): T;
+  const valueFactory: Func<T>): T;
 var
   value: T;
 begin
@@ -8327,7 +8359,7 @@ begin
 end;
 
 class procedure TArray.ForEach<T>(const values: array of T;
-  const action: TAction<T>);
+  const action: Action<T>);
 var
   i: Integer;
 begin
@@ -9013,7 +9045,7 @@ begin
   end;
 end;
 
-procedure Vector<T>.ForEach(const action: TAction<T>);
+procedure Vector<T>.ForEach(const action: Action<T>);
 var
   i: Integer;
 begin

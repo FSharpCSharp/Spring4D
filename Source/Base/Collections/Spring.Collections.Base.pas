@@ -125,11 +125,11 @@ type
   {$ENDREGION}
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload; virtual;
-    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetFirst(out value: T; const predicate: Predicate<T>): Boolean; overload;
     function TryGetLast(out value: T): Boolean; overload; virtual;
-    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetLast(out value: T; const predicate: Predicate<T>): Boolean; overload;
     function TryGetSingle(out value: T): Boolean; overload; virtual;
-    function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetSingle(out value: T; const predicate: Predicate<T>): Boolean; overload;
 
     property Comparer: IComparer<T> read GetComparer;
   public
@@ -139,10 +139,10 @@ type
 
     function GetEnumerator: IEnumerator<T>; virtual;
 
-    function Aggregate(const func: TFunc<T, T, T>): T;
+    function Aggregate(const func: Func<T, T, T>): T;
 
-    function All(const predicate: TPredicate<T>): Boolean;
-    function Any(const predicate: TPredicate<T>): Boolean; overload;
+    function All(const predicate: Predicate<T>): Boolean;
+    function Any(const predicate: Predicate<T>): Boolean; overload;
 
     function Concat(const second: IEnumerable<T>): IEnumerable<T>;
 
@@ -159,27 +159,27 @@ type
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
     function First: T; overload; virtual;
-    function First(const predicate: TPredicate<T>): T; overload;
+    function First(const predicate: Predicate<T>): T; overload;
     function FirstOrDefault: T; overload;
     function FirstOrDefault(const defaultValue: T): T; overload; virtual;
-    function FirstOrDefault(const predicate: TPredicate<T>): T; overload;
-    function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function FirstOrDefault(const predicate: Predicate<T>): T; overload;
+    function FirstOrDefault(const predicate: Predicate<T>; const defaultValue: T): T; overload;
 
-    procedure ForEach(const action: TAction<T>); overload;
+    procedure ForEach(const action: Action<T>); overload;
 
     function Last: T; overload; virtual;
-    function Last(const predicate: TPredicate<T>): T; overload;
+    function Last(const predicate: Predicate<T>): T; overload;
     function LastOrDefault: T; overload;
     function LastOrDefault(const defaultValue: T): T; overload; virtual;
-    function LastOrDefault(const predicate: TPredicate<T>): T; overload;
-    function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function LastOrDefault(const predicate: Predicate<T>): T; overload;
+    function LastOrDefault(const predicate: Predicate<T>; const defaultValue: T): T; overload;
 
     function Max: T; overload;
-    function Max(const selector: TFunc<T, Integer>): Integer; overload;
+    function Max(const selector: Func<T, Integer>): Integer; overload;
     function Max(const comparer: IComparer<T>): T; overload;
     function Max(const comparer: TComparison<T>): T; overload;
     function Min: T; overload;
-    function Min(const selector: TFunc<T, Integer>): Integer; overload;
+    function Min(const selector: Func<T, Integer>): Integer; overload;
     function Min(const comparer: IComparer<T>): T; overload;
     function Min(const comparer: TComparison<T>): T; overload;
 
@@ -192,23 +192,23 @@ type
     function Shuffled: IEnumerable<T>; virtual;
 
     function Single: T; overload; virtual;
-    function Single(const predicate: TPredicate<T>): T; overload;
+    function Single(const predicate: Predicate<T>): T; overload;
     function SingleOrDefault: T; overload;
     function SingleOrDefault(const defaultValue: T): T; overload; virtual;
-    function SingleOrDefault(const predicate: TPredicate<T>): T; overload;
-    function SingleOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function SingleOrDefault(const predicate: Predicate<T>): T; overload;
+    function SingleOrDefault(const predicate: Predicate<T>; const defaultValue: T): T; overload;
 
     function Skip(count: Integer): IEnumerable<T>;
-    function SkipWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
-    function SkipWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+    function SkipWhile(const predicate: Predicate<T>): IEnumerable<T>; overload;
+    function SkipWhile(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
 
     function Sum: T; overload;
 
     function Take(count: Integer): IEnumerable<T>;
-    function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
-    function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+    function TakeWhile(const predicate: Predicate<T>): IEnumerable<T>; overload;
+    function TakeWhile(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
 
-    function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
+    function Where(const predicate: Predicate<T>): IEnumerable<T>; virtual;
 
     function ToArray: TArray<T>; virtual;
   end;
@@ -280,19 +280,19 @@ type
     procedure Clear; virtual; abstract;
 
     function Remove(const item: T): Boolean; virtual; abstract;
-    procedure RemoveAll(const predicate: TPredicate<T>); virtual;
+    procedure RemoveAll(const predicate: Predicate<T>); virtual;
     procedure RemoveRange(const values: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
 
     function Extract(const item: T): T; virtual; abstract;
-    function ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>; virtual;
+    function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>; virtual;
     procedure ExtractRange(const values: array of T); overload; virtual;
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
     function MoveTo(const collection: ICollection<T>): Integer; overload;
     function MoveTo(const collection: ICollection<T>;
-      const predicate: TPredicate<T>): Integer; overload; virtual;
+      const predicate: Predicate<T>): Integer; overload; virtual;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -602,7 +602,7 @@ begin
   Create(IComparer<T>(PPointer(@comparer)^));
 end;
 
-function TEnumerableBase<T>.Aggregate(const func: TFunc<T, T, T>): T;
+function TEnumerableBase<T>.Aggregate(const func: Func<T, T, T>): T;
 var
   enumerator: IEnumerator<T>;
   item: T;
@@ -619,7 +619,7 @@ begin
     Result := func(Result, enumerator.Current);
 end;
 
-function TEnumerableBase<T>.All(const predicate: TPredicate<T>): Boolean;
+function TEnumerableBase<T>.All(const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
@@ -633,7 +633,7 @@ begin
       Exit(False);
 end;
 
-function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;
+function TEnumerableBase<T>.Any(const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
@@ -766,7 +766,7 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
-function TEnumerableBase<T>.First(const predicate: TPredicate<T>): T;
+function TEnumerableBase<T>.First(const predicate: Predicate<T>): T;
 var
   item: T;
 begin
@@ -796,12 +796,12 @@ begin
     Result := defaultValue;
 end;
 
-function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>): T;
+function TEnumerableBase<T>.FirstOrDefault(const predicate: Predicate<T>): T;
 begin
   Result := FirstOrDefault(predicate, Default(T));
 end;
 
-function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>;
+function TEnumerableBase<T>.FirstOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
 var
   item: T;
@@ -816,7 +816,7 @@ begin
   Result := defaultValue;
 end;
 
-procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
+procedure TEnumerableBase<T>.ForEach(const action: Action<T>);
 var
   item: T;
 begin
@@ -872,7 +872,7 @@ begin
   until not enumerator.MoveNext;
 end;
 
-function TEnumerableBase<T>.Last(const predicate: TPredicate<T>): T;
+function TEnumerableBase<T>.Last(const predicate: Predicate<T>): T;
 var
   found: Boolean;
   item: T;
@@ -906,12 +906,12 @@ begin
     Result := item;
 end;
 
-function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>): T;
+function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>): T;
 begin
   Result := LastOrDefault(predicate, Default(T));
 end;
 
-function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>;
+function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
 var
   item: T;
@@ -931,7 +931,7 @@ begin
   Result := Max(fComparer);
 end;
 
-function TEnumerableBase<T>.Max(const selector: TFunc<T, Integer>): Integer;
+function TEnumerableBase<T>.Max(const selector: Func<T, Integer>): Integer;
 begin
   Result := TEnumerable.Max<T>(Self, selector);
 end;
@@ -969,7 +969,7 @@ begin
   Result := Min(fComparer);
 end;
 
-function TEnumerableBase<T>.Min(const selector: TFunc<T, Integer>): Integer;
+function TEnumerableBase<T>.Min(const selector: Func<T, Integer>): Integer;
 begin
   Result := TEnumerable.Min<T>(Self, selector);
 end;
@@ -1053,7 +1053,7 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
 end;
 
-function TEnumerableBase<T>.Single(const predicate: TPredicate<T>): T;
+function TEnumerableBase<T>.Single(const predicate: Predicate<T>): T;
 var
   enumerator: IEnumerator<T>;
   found: Boolean;
@@ -1100,12 +1100,12 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>): T;
+function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>): T;
 begin
   Result := SingleOrDefault(predicate, Default(T));
 end;
 
-function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>;
+function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
 var
   enumerator: IEnumerator<T>;
@@ -1140,7 +1140,7 @@ begin
 end;
 
 function TEnumerableBase<T>.SkipWhile(
-  const predicate: TPredicate<T>): IEnumerable<T>;
+  const predicate: Predicate<T>): IEnumerable<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1150,7 +1150,7 @@ begin
 end;
 
 function TEnumerableBase<T>.SkipWhile(
-  const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
+  const predicate: Func<T, Integer, Boolean>): IEnumerable<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1182,7 +1182,7 @@ begin
 end;
 
 function TEnumerableBase<T>.TakeWhile(
-  const predicate: TPredicate<T>): IEnumerable<T>;
+  const predicate: Predicate<T>): IEnumerable<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1192,7 +1192,7 @@ begin
 end;
 
 function TEnumerableBase<T>.TakeWhile(
-  const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
+  const predicate: Func<T, Integer, Boolean>): IEnumerable<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1265,7 +1265,7 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
+function TEnumerableBase<T>.TryGetFirst(out value: T; const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
@@ -1295,7 +1295,7 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
+function TEnumerableBase<T>.TryGetLast(out value: T; const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
@@ -1329,7 +1329,7 @@ begin
 end;
 
 function TEnumerableBase<T>.TryGetSingle(out value: T;
-  const predicate: TPredicate<T>): Boolean;
+  const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
@@ -1347,7 +1347,7 @@ begin
 end;
 
 function TEnumerableBase<T>.Where(
-  const predicate: TPredicate<T>): IEnumerable<T>;
+  const predicate: Predicate<T>): IEnumerable<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
@@ -1510,7 +1510,7 @@ begin
   end;
 end;
 
-function TCollectionBase<T>.ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>;
+function TCollectionBase<T>.ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
 var
   items: TArray<T>;
 begin
@@ -1555,7 +1555,7 @@ begin
 end;
 
 function TCollectionBase<T>.MoveTo(const collection: ICollection<T>;
-  const predicate: TPredicate<T>): Integer;
+  const predicate: Predicate<T>): Integer;
 var
   values: TArray<T>;
   i: Integer;
@@ -1583,7 +1583,7 @@ begin
     Remove(values[i]);
 end;
 
-procedure TCollectionBase<T>.RemoveAll(const predicate: TPredicate<T>);
+procedure TCollectionBase<T>.RemoveAll(const predicate: Predicate<T>);
 begin
   RemoveRange(Where(predicate).ToArray);
 end;

@@ -165,7 +165,7 @@ type
     ['{AC84E128-1C52-465A-9B10-C79A58DD3BEA}']
     procedure AddDecorator(decoratedType: PTypeInfo;
       const decoratorModel: TComponentModel;
-      const condition: TPredicate<TComponentModel>);
+      const condition: Predicate<TComponentModel>);
 
     function Resolve(const dependency: TDependencyModel;
       const model: TComponentModel; const context: ICreationContext;
@@ -392,7 +392,7 @@ type
     property Interceptors: IList<TInterceptorReference> read fInterceptors;
   end;
 
-  TValueHolder = class(TInterfacedObject, TFunc<TValue>)
+  TValueHolder = class(TInterfacedObject, Func<TValue>)
   private
     // DON'T CHANGE ORDER!!!
     fLifetimeWatcher: IInterface;

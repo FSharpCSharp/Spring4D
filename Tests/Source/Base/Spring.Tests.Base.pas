@@ -139,7 +139,7 @@ type
     fBSender: TObject;
     fBInvoked: Boolean;
     fHandlerInvokeCount: Integer;
-    fProc: TProc<Integer, string>;
+    fProc: Action<Integer, string>;
   strict protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -780,7 +780,7 @@ begin
   inherited;
   fEvent := TMulticastNotifyEvent.Create();
   fProc :=
-    procedure(i: Integer; s: string)
+    procedure(const i: Integer; const s: string)
     begin
       Inc(fHandlerInvokeCount, i);
       CheckEquals(CText, s);
@@ -873,7 +873,7 @@ end;
 
 procedure TTestMulticastEvent.TestDelegate;
 var
-  e: Event<TProc<Integer, string>>;
+  e: Event<Action<Integer, string>>;
 begin
   e.Add(fProc);
   e.Invoke(CNumber, CText);
@@ -1006,7 +1006,7 @@ end;
 
 procedure TTestMulticastEvent.TestNotifyDelegate;
 var
-  event2: Event<TProc<Integer, string>>;
+  event2: Event<Action<Integer, string>>;
 begin
   event2.OnChanged := HandleChanged;
   event2.Add(fProc);
@@ -1115,7 +1115,7 @@ end;
 
 procedure TTestLazy.TestByValueFactory;
 var
-  factory: TFunc<Integer>;
+  factory: Func<Integer>;
 begin
   factory :=
     function: Integer
@@ -1137,8 +1137,11 @@ begin
   CheckTrue(IsLazyType(TypeInfo(Lazy<Integer>)));
   CheckTrue(IsLazyType(TypeInfo(ILazy<Integer>)));
   CheckTrue(IsLazyType(TypeInfo(TFunc<Integer>)));
+  CheckTrue(IsLazyType(TypeInfo(Func<Integer>)));
   CheckFalse(IsLazyType(TypeInfo(TFunc<string,Integer>)));
   CheckTrue(IsLazyType(TypeInfo(TFunc<TFunc<string,Integer>>)));
+  CheckTrue(IsLazyType(TypeInfo(Func<TFunc<string,Integer>>)));
+  CheckTrue(IsLazyType(TypeInfo(TFunc<Func<string,Integer>>)));
 end;
 
 procedure TTestLazy.Test_Initializer_RaisesArgumentException_NotReferenceType;

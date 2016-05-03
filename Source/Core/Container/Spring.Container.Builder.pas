@@ -105,7 +105,7 @@ type
   TInjectionTargetInspector = class(TInspectorBase)
   private
     class var
-      fHasNoTargetCondition: TPredicate<IInjection>;
+      fHasNoTargetCondition: Predicate<IInjection>;
     class constructor Create;
   protected
     procedure CheckConstructorInjections(const kernel: IKernel; const model: TComponentModel);
@@ -302,7 +302,7 @@ end;
 procedure TConstructorInspector.DoProcessModel(
   const kernel: IKernel; const model: TComponentModel);
 var
-  predicate: TPredicate<TRttiMethod>;
+  predicate: Predicate<TRttiMethod>;
   injection: IInjection;
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
@@ -333,7 +333,7 @@ end;
 procedure TMethodInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
-  condition: TPredicate<TRttiMethod>;
+  condition: Predicate<TRttiMethod>;
   method: TRttiMethod;
   injection: IInjection;
   parameters: TArray<TRttiParameter>;
@@ -366,7 +366,7 @@ end;
 procedure TPropertyInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
-  condition: TPredicate<TRttiProperty>;
+  condition: Predicate<TRttiProperty>;
   prop: TRttiProperty;
   injection: IInjection;
   argument: TValue;
@@ -392,7 +392,7 @@ end;
 procedure TFieldInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
-  condition: TPredicate<TRttiField>;
+  condition: Predicate<TRttiField>;
   field: TRttiField;
   injection: IInjection;
   argument: TValue;
@@ -451,7 +451,7 @@ end;
 procedure TInjectionTargetInspector.CheckConstructorInjections(
   const kernel: IKernel; const model: TComponentModel);
 var
-  filter: TPredicate<TRttiMethod>;
+  filter: Predicate<TRttiMethod>;
   injection: IInjection;
   method: TRttiMethod;
 begin
@@ -470,7 +470,7 @@ end;
 procedure TInjectionTargetInspector.CheckMethodInjections(
   const kernel: IKernel; const model: TComponentModel);
 var
-  filter: TPredicate<TRttiMethod>;
+  filter: Predicate<TRttiMethod>;
   injection: IInjection;
   method: TRttiMethod;
 begin

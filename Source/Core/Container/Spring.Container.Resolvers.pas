@@ -142,7 +142,7 @@ type
     type
       TDecoratorEntry = record
         DecoratorModel: TComponentModel;
-        Condition: TPredicate<TComponentModel>;
+        Condition: Predicate<TComponentModel>;
       end;
   private
     fDecorators: IMultiMap<PTypeInfo, TDecoratorEntry>;
@@ -153,7 +153,7 @@ type
 
     procedure AddDecorator(decoratedType: PTypeInfo;
       const decoratorModel: TComponentModel;
-      const condition: TPredicate<TComponentModel>);
+      const condition: Predicate<TComponentModel>);
     function Resolve(const dependency: TDependencyModel;
       const model: TComponentModel; const context: ICreationContext;
       const decoratee: TValue): TValue;
@@ -423,7 +423,7 @@ function TLazyResolver.InternalResolveClass(const context: ICreationContext;
 var
   dependencyModel: TDependencyModel;
   value: TValue;
-  factory: TFunc<TObject>;
+  factory: Func<TObject>;
 begin
   dependencyModel := dependency;
   value := argument;
@@ -434,7 +434,7 @@ begin
     end;
 
   case lazyKind of
-    lkFunc: Result := TValue.From<TFunc<TObject>>(factory);
+    lkFunc: Result := TValue.From<Func<TObject>>(factory);
     lkRecord: Result := TValue.From<Lazy<TObject>>(Lazy<TObject>.Create(factory));
     lkInterface: Result := TValue.From<ILazy<TObject>>(TLazy<TObject>.Create(factory));
   end;
@@ -446,7 +446,7 @@ function TLazyResolver.InternalResolveInterface(const context: ICreationContext;
 var
   dependencyModel: TDependencyModel;
   value: TValue;
-  factory: TFunc<IInterface>;
+  factory: Func<IInterface>;
 begin
   dependencyModel := dependency;
   value := argument;
@@ -457,7 +457,7 @@ begin
     end;
 
   case lazyKind of
-    lkFunc: Result := TValue.From<TFunc<IInterface>>(factory);
+    lkFunc: Result := TValue.From<Func<IInterface>>(factory);
     lkRecord: Result := TValue.From<Lazy<IInterface>>(Lazy<IInterface>.Create(factory));
     lkInterface: Result := TValue.From<ILazy<IInterface>>(TLazy<IInterface>.Create(factory));
   end;
@@ -668,7 +668,7 @@ end;
 
 procedure TDecoratorResolver.AddDecorator(decoratedType: PTypeInfo;
   const decoratorModel: TComponentModel;
-  const condition: TPredicate<TComponentModel>);
+  const condition: Predicate<TComponentModel>);
 var
   entry: TDecoratorEntry;
 begin
@@ -686,7 +686,7 @@ begin
       begin
         Result := not Assigned(entry.Condition) or entry.Condition(decoratedModel);
       end),
-    function(entry: TDecoratorEntry): TComponentModel
+    function(const entry: TDecoratorEntry): TComponentModel
     begin
       Result := entry.DecoratorModel;
     end);

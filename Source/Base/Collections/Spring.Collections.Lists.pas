@@ -99,10 +99,10 @@ type
     procedure Delete(index: Integer); override;
     procedure DeleteRange(index, count: Integer); override;
 
-    procedure RemoveAll(const predicate: TPredicate<T>); override;
+    procedure RemoveAll(const predicate: Predicate<T>); override;
 
     function Extract(const item: T): T; override;
-    function ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>; override;
+    function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>; override;
     function ExtractAt(index: Integer): T; override;
 
     function GetRange(index, count: Integer): IList<T>; override;
@@ -114,8 +114,8 @@ type
     procedure Sort(const comparer: IComparer<T>; index, count: Integer); override;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); override;
-    function MoveTo(const collection: ICollection<T>;
-      const predicate: TPredicate<T>): Integer; override;
+    function MoveTo(const collection: ICollection<T>; 
+      const predicate: Predicate<T>): Integer; override;
     function ToArray: TArray<T>; override;
   end;
 
@@ -223,16 +223,16 @@ type
 
   TAnonymousReadOnlyList<T> = class(TEnumerableBase<T>, IReadOnlyList<T>)
   private
-    fCount: TFunc<Integer>;
-    fItems: TFunc<Integer, T>;
+    fCount: Func<Integer>;
+    fItems: Func<Integer, T>;
     fIterator: IEnumerable<T>;
   protected
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
-    constructor Create(const count: TFunc<Integer>;
-      const items: TFunc<Integer, T>;
+    constructor Create(const count: Func<Integer>;
+      const items: Func<Integer, T>;
       const iterator: IEnumerable<T>{$IFDEF DELPHIXE3_UP} = nil{$ENDIF});
 
     function GetEnumerator: IEnumerator<T>; override;
@@ -653,7 +653,7 @@ begin
 end;
 
 function TList<T>.MoveTo(const collection: ICollection<T>;
-  const predicate: TPredicate<T>): Integer;
+  const predicate: Predicate<T>): Integer;
 var
   i: Integer;
   item: T;
@@ -707,7 +707,7 @@ begin
   Result := Length(fItems);
 end;
 
-procedure TList<T>.RemoveAll(const predicate: TPredicate<T>);
+procedure TList<T>.RemoveAll(const predicate: Predicate<T>);
 var
   index: Integer;
 begin
@@ -785,7 +785,7 @@ begin
   DeleteInternal(index, caExtracted);
 end;
 
-function TList<T>.ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>;
+function TList<T>.ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
 var
   index: Integer;
   list: TListBase<T>;
@@ -1303,8 +1303,8 @@ end;
 
 {$REGION 'TAnonymousReadOnlyList<T>'}
 
-constructor TAnonymousReadOnlyList<T>.Create(const count: TFunc<Integer>;
-  const items: TFunc<Integer, T>; const iterator: IEnumerable<T>);
+constructor TAnonymousReadOnlyList<T>.Create(const count: Func<Integer>;
+  const items: Func<Integer, T>; const iterator: IEnumerable<T>);
 begin
   inherited Create;
   fCount := count;

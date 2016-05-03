@@ -841,10 +841,10 @@ end;
 
 class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
 const
-  DelegatePrefixStrings: array[0..2] of string = (
-    'TFunc<', 'TProc<', 'TPredicate<');
+  DelegatePrefixStrings: array[0..5] of string = (
+    'TFunc<', 'TProc<', 'TPredicate<', 'Action<', 'Func<', 'Predicate<');
   DelegatePrefixNonGenericStrings: array[0..1] of string = (
-    'TProc', 'TPredicate');
+    'TProc', 'Action');
 var
   name: string;
   prefix: string;

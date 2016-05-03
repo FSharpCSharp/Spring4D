@@ -705,13 +705,13 @@ type
   /// </summary>
   TStringMatchers = class
   public
-    class function ContainsText(const s: string): TPredicate<string>;
-    class function StartsText(const s: string): TPredicate<string>;
-    class function EndsText(const s: string): TPredicate<string>;
-    class function SameText(const s: string): TPredicate<string>;
-    class function InStrings(const values: TStrings): TPredicate<string>;
-    class function InArray(const values: array of string): TPredicate<string>;
-    class function InCollection(const values: IEnumerable<string>): TPredicate<string>; overload;
+    class function ContainsText(const s: string): Predicate<string>;
+    class function StartsText(const s: string): Predicate<string>;
+    class function EndsText(const s: string): Predicate<string>;
+    class function SameText(const s: string): Predicate<string>;
+    class function InStrings(const values: TStrings): Predicate<string>;
+    class function InArray(const values: array of string): Predicate<string>;
+    class function InCollection(const values: IEnumerable<string>): Predicate<string>; overload;
   end;
 
   {$ENDREGION}
@@ -2460,7 +2460,7 @@ end;
 
 {$REGION 'TStringMatchers'}
 
-class function TStringMatchers.ContainsText(const s: string): TPredicate<string>;
+class function TStringMatchers.ContainsText(const s: string): Predicate<string>;
 begin
   Result :=
     function(const value: string): Boolean
@@ -2469,7 +2469,7 @@ begin
     end;
 end;
 
-class function TStringMatchers.StartsText(const s: string): TPredicate<string>;
+class function TStringMatchers.StartsText(const s: string): Predicate<string>;
 begin
   Result :=
     function(const value: string): Boolean
@@ -2478,7 +2478,7 @@ begin
     end;
 end;
 
-class function TStringMatchers.EndsText(const s: string): TPredicate<string>;
+class function TStringMatchers.EndsText(const s: string): Predicate<string>;
 begin
   Result :=
     function(const value: string): Boolean
@@ -2487,7 +2487,7 @@ begin
     end;
 end;
 
-class function TStringMatchers.SameText(const s: string): TPredicate<string>;
+class function TStringMatchers.SameText(const s: string): Predicate<string>;
 begin
   Result :=
     function(const value: string): Boolean
@@ -2497,7 +2497,7 @@ begin
 end;
 
 class function TStringMatchers.InArray(
-  const values: array of string): TPredicate<string>;
+  const values: array of string): Predicate<string>;
 var
   localValues: TArray<string>;
 begin
@@ -2515,7 +2515,7 @@ begin
 end;
 
 class function TStringMatchers.InStrings(
-  const values: TStrings): TPredicate<string>;
+  const values: TStrings): Predicate<string>;
 begin
   Result :=
     function(const value: string): Boolean
@@ -2525,7 +2525,7 @@ begin
 end;
 
 class function TStringMatchers.InCollection(
-  const values: IEnumerable<string>): TPredicate<string>;
+  const values: IEnumerable<string>): Predicate<string>;
 begin
   Result :=
     function(const value: string): Boolean
