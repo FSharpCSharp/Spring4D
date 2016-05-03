@@ -2609,6 +2609,12 @@ type
     class function Distinct<T>(const source: IEnumerable<T>;
       const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
 
+    class function DistinctBy<T, TKey>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T, TKey>): IEnumerable<T>; overload; static;
+    class function DistinctBy<T, TKey>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T, TKey>;
+      const comparer: IEqualityComparer<TKey>): IEnumerable<T>; overload; static;
+
     class function GroupBy<T, TKey>(const source: IEnumerable<T>;
       const keySelector: TFunc<T, TKey>): IEnumerable<IGrouping<TKey,T>>; overload; static;
     class function GroupBy<T, TKey, TElement>(const source: IEnumerable<T>;
@@ -3332,6 +3338,19 @@ class function TEnumerable.Distinct<T>(const source: IEnumerable<T>;
   const comparer: IEqualityComparer<T>): IEnumerable<T>;
 begin
   Result := TDistinctIterator<T>.Create(source, comparer);
+end;
+
+class function TEnumerable.DistinctBy<T, TKey>(const source: IEnumerable<T>;
+  const keySelector: TFunc<T, TKey>): IEnumerable<T>;
+begin
+  Result := TDistinctByIterator<T, TKey>.Create(source, keySelector, nil);
+end;
+
+class function TEnumerable.DistinctBy<T, TKey>(const source: IEnumerable<T>;
+  const keySelector: TFunc<T, TKey>;
+  const comparer: IEqualityComparer<TKey>): IEnumerable<T>;
+begin
+  Result := TDistinctByIterator<T, TKey>.Create(source, keySelector, comparer);
 end;
 
 class function TEnumerable.Empty<T>: IEnumerable<T>;
