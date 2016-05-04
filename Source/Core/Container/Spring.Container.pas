@@ -361,7 +361,12 @@ var
   model: TComponentModel;
 begin
   Build; // need to run the inspectors to fully initialize the component models
-  for model in Kernel.Registry.FindAll.Where(condition) do
+  for model in Kernel.Registry.FindAll.Where(
+    function(const model: TComponentModel): Boolean
+    begin
+      Result := model.HasService(serviceType)
+        and (not Assigned(condition) or condition(model));
+    end) do
     model.ComponentActivator := TDecoratorComponentActivator.Create(
       Kernel, decoratorModel, model.ComponentActivator, serviceType);
 end;
@@ -415,24 +420,14 @@ end;
 function TContainer.RegisterDecorator<TService, TDecorator>: TRegistration<TDecorator>;
 begin
   Result := RegisterType<TDecorator,TDecorator>;
-
-  InternalRegisterDecorator(TypeInfo(TService), Result.Model,
-    function(const model: TComponentModel): Boolean
-    begin
-      Result := model.HasService(TypeInfo(TService));
-    end);
+  InternalRegisterDecorator(TypeInfo(TService), Result.Model, nil);
 end;
 
 function TContainer.RegisterDecorator<TService, TDecorator>(
   const condition: TPredicate<TComponentModel>): TRegistration<TDecorator>;
 begin
   Result := RegisterType<TDecorator,TDecorator>;
-
-  InternalRegisterDecorator(TypeInfo(TService), Result.Model,
-    function(const model: TComponentModel): Boolean
-    begin
-      Result := model.HasService(TypeInfo(TService)) and condition(model);
-    end);
+  InternalRegisterDecorator(TypeInfo(TService), Result.Model, condition);
 end;
 
 {$IFDEF DELPHIXE_UP}
