@@ -3942,6 +3942,7 @@ class function TValueHelper.FromVariant(const value: Variant): TValue;
   var
     typeName: string;
     i: Integer;
+    tmp: Int64;
     info: PCustomVariantTypeInfo;
   begin
     typeName := VarTypeAsText(TVarData(value).VType);
@@ -3952,8 +3953,11 @@ class function TValueHelper.FromVariant(const value: Variant): TValue;
       begin
         case info.VType of
           varDouble: result := Double(value);
-          varInt64: result := {$IFDEF DELPHIXE6_UP}Int64(value);
-            {$ELSE}StrToInt64(VarToStr(value));{$ENDIF} // see QC#117696
+          varInt64:
+            if TryStrToInt64(VarToStr(value), tmp) then
+              Result := tmp
+            else
+              Result := Double(value);
         else
           raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
         end;

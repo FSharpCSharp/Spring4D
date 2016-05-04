@@ -442,6 +442,8 @@ type
 
     procedure ConvertStringToIntegerFailsForInvalidString;
     procedure ConvertStringToFloatFailsForInvalidString;
+
+    procedure FromCustomVariantFmtBcd;
   end;
 
 {$IFNDEF DELPHI2010}
@@ -2683,6 +2685,21 @@ begin
   fSUT := TValue.From(Unassigned);
   fValue := TValue.From(Unassigned);
   DoCheckEquals;
+end;
+
+procedure TTestValueHelper.FromCustomVariantFmtBcd;
+var
+  v: Variant;
+begin
+  v := VarFMTBcdCreate('999999999999999999', 19, 0);
+  fSUT := TValue.FromVariant(v);
+  Check(fSUT.Kind = tkInt64);
+  CheckEquals(999999999999999999, fSUT.AsInt64);
+
+  v := VarFMTBcdCreate(12.5);
+  fSUT := TValue.FromVariant(v);
+  Check(fSUT.Kind = tkFloat);
+  CheckEquals(12.5, fSUT.AsType<Double>);
 end;
 
 procedure TTestValueHelper.FromVariantProperlyHandlesVariantArrays;
