@@ -551,11 +551,13 @@ function TListResolver.Resolve(const context: ICreationContext;
 var
   itemType: TRttiType;
   arrayType: TRttiType;
+  dependencyModel: TDependencyModel;
   values: TValue;
 begin
   itemType := dependency.TargetType.GetGenericArguments[0];
   arrayType := dependency.TargetType.GetMethod('ToArray').ReturnType;
-  values := (Kernel as IKernelInternal).Resolve(arrayType.Handle);
+  dependencyModel := TDependencyModel.Create(arrayType, dependency.Target);
+  values := Kernel.Resolver.Resolve(context, dependencyModel, argument);
   case itemType.TypeKind of
     tkClass:
     begin
