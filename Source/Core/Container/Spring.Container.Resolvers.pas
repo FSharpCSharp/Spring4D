@@ -445,9 +445,16 @@ begin
   lazyKind := GetLazyKind(dependency.TypeInfo);
   targetType := dependency.TargetType.GetGenericArguments[0];
   dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
+  if Kernel.Registry.HasService(targetType.Handle) then
+  begin
   componentModel := Kernel.Registry.FindOne(targetType.Handle, argument);
-
   hasEntered := context.EnterResolution(componentModel, Result);
+  end
+  else
+  begin
+    componentModel := nil;
+    hasEntered := False;
+  end;
   try
     case targetType.TypeKind of
       tkClass: Result := InternalResolveClass(
