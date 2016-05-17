@@ -989,7 +989,7 @@ type
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
 
-    function Add(const item: T): Integer; stdcall;
+    function Add(const item: T): Integer;
 
     /// <summary>
     ///   Inserts an item to the IList&lt;T&gt; at the specified index.
