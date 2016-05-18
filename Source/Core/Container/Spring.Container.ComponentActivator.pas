@@ -204,6 +204,12 @@ function TReflectionComponentActivator.TryHandle(const context: ICreationContext
 var
   injection: IInjection;
 begin
+  // RTTI cannot handle open array parameters
+  if candidate.Target.IsMethod
+    and candidate.Target.AsMethod.Parameters.Any(
+    TParameterFilters.HasFlags([pfArray])) then
+    Exit(False);
+
   Result := context.TryHandle(candidate, injection)
     and Kernel.Resolver.CanResolve(
     context, injection.Dependencies, injection.Arguments);
