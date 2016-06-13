@@ -412,6 +412,15 @@ type
     function Equals(const value: TValue): Boolean;
 
     /// <summary>
+    ///   Returns the stored nullable value or <c>TValue.Empty</c> when it is
+    ///   null.
+    /// </summary>
+    /// <exception cref="EInvalidOperationException">
+    ///   When the stored value is not a nullable value.
+    /// </exception>
+    function GetNullableValue: TValue;
+
+    /// <summary>
     ///   Checks whether the stored value is an object or interface reference.
     /// </summary>
     function IsInstance: Boolean;
@@ -4071,6 +4080,24 @@ begin
     vtInt64: Result := value.VInt64^;
     vtUnicodeString: Result := string(value.VUnicodeString);
   end;
+end;
+
+function TValueHelper.GetNullableValue: TValue;
+var
+  nullable: TNullableHelper;
+  instance: Pointer;
+begin
+  if not IsNullable(TypeInfo) then
+    raise EInvalidOperationException.CreateRes(@SValueDoesNotContainNullable);
+
+  instance := GetReferenceToRawData;
+  if instance = nil then
+    Exit(False);
+  nullable := TNullableHelper.Create(TypeInfo);
+  if nullable.HasValue(instance) then
+    Result := nullable.GetValue(instance)
+  else
+    Result := TValue.Empty;
 end;
 
 function TValueHelper.GetTypeKind: TTypeKind;
