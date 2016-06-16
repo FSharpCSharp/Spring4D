@@ -1,0 +1,193 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{8ED77B7F-0D39-4F50-9C16-F6DB1709C519}</ProjectGuid>
+			<MainSource>Spring.Reactive.dpk</MainSource>
+			<ProjectVersion>12.3</ProjectVersion>
+			<Base>True</Base>
+			<Config Condition="'$(Config)'==''">Debug</Config>
+			<Platform>Win32</Platform>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<AppType>Package</AppType>
+			<FrameworkType>None</FrameworkType>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
+			<GenPackage>true</GenPackage>
+			<DllSuffix>.DelphiXE</DllSuffix>
+			<GenDll>true</GenDll>
+			<DCC_Description>Spring4D Reactive package</DCC_Description>
+			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
+			<DCC_DcuOutput>..\..\Library\DelphiXE\$(Platform)\$(Config)</DCC_DcuOutput>
+			<DCC_ExeOutput>.\$(Config)\$(Platform)</DCC_ExeOutput>
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+			<DCC_Optimize>false</DCC_Optimize>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+			<DCC_DebugInformation>false</DCC_DebugInformation>
+		</PropertyGroup>
+		<ItemGroup>
+			<DelphiCompile Include="Spring.Reactive.dpk">
+				<MainSource>MainSource</MainSource>
+			</DelphiCompile>
+			<DCCReference Include="Spring.Base.dcp"/>
+			<DCCReference Include="..\..\Source\Reactive\Spring.Reactive.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Spring.Reactive.AnonymousObservable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Spring.Reactive.AnonymousObserver.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.AsyncLock.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.CurrentThreadScheduler.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.DefaultScheduler.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ImmediateScheduler.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.LocalScheduler.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ScheduledItem.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.Scheduler.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerDefaults.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerQueue.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.VirtualTimeScheduler.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.AnonymousDisposable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.BooleanDisposable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.CompositeDisposable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.DefaultDisposable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.RefCountDisposable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SerialDisposable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SingleAssignmentDisposable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.StableCompositeDisposable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.GroupedObservable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.AutoDetachObserver.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.ConcatSink.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Observers.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.PriorityQueue.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Producer.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Sink.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Stubs.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.TailRecursiveSink.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Spring.Reactive.Notification.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.AddRef.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.All.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Any.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Buffer.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.CombineLatest.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Concat.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Distinct.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.DistinctUntilChanged.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Empty.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.FromEvent.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.GroupBy.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.IgnoreElements.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Merge.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Never.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Range.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Return.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Sample.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Select.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Skip.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipLast.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipUntil.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipWhile.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Take.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeLast.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeUntil.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeWhile.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throw.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Timer.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.ToObservable.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throttle.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Where.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Window.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Spring.Reactive.ObservableBase.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Spring.Reactive.ObserverBase.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.AsyncSubject.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.BehaviorSubject.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.ReplaySubject.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.Subject.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.SubjectBase.pas"/>
+			<DCCReference Include="..\..\Source\Reactive\Spring.Reactive.TimeInterval.pas"/>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
+		<ProjectExtensions>
+			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
+			<Borland.ProjectType>Package</Borland.ProjectType>
+			<BorlandProject>
+				<Delphi.Personality>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1031</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+					<Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Bpl\edbdesign220rsdelphixe.bpl">File C:\Users\Public\Documents\RAD Studio\8.0\Bpl\edbdesign220rsdelphixe.bpl not found</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madBasic\BDS8\madBasic_.bpl">File C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madBasic\BDS8\madBasic_.bpl not found</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madBasic\BDS8\madHelp_.bpl">File C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madBasic\BDS8\madHelp_.bpl not found</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madDisAsm\BDS8\madDisAsm_.bpl">File C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madDisAsm\BDS8\madDisAsm_.bpl not found</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madExcept\BDS8\madExcept_.bpl">File C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madExcept\BDS8\madExcept_.bpl not found</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madExcept\BDS8\madExceptIde_.bpl">File C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madExcept\BDS8\madExceptIde_.bpl not found</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madExcept\BDS8\madExceptVcl_.bpl">File C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madExcept\BDS8\madExceptVcl_.bpl not found</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madExcept\BDS8\madExceptWizard_.bpl">File C:\Users\Public\Documents\RAD Studio\8.0\Comps\madCollection\madExcept\BDS8\madExceptWizard_.bpl not found</Excluded_Packages>
+						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Bpl\SynEdit_D101B.bpl">SynEdit component suite</Excluded_Packages>
+					</Excluded_Packages>
+					<Source>
+						<Source Name="MainSource">Spring.Reactive.dpk</Source>
+					</Source>
+				</Delphi.Personality>
+				<Platforms>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+	</Project>

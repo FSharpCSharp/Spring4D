@@ -1091,6 +1091,24 @@ type
   end;
 
   /// <summary>
+  ///   Defines a generalized method that a value type or class implements to
+  ///   create a type-specific method for determining equality of instances.
+  /// </summary>
+  IEquatable = interface(IInvokable)
+    ['{76F1F18C-A8F1-4E90-B7A5-58B809E89D9F}']
+
+    /// <summary>
+    ///   Indicates whether the current object is equal to another object of
+    ///   the same type.
+    /// </summary>
+    /// <remarks>
+    ///   The parameter is not const in order to make it easier to implement
+    ///   this interface via TObject.Equals.
+    /// </remarks>
+    function Equals(other: TObject): Boolean;
+  end;
+
+  /// <summary>
   ///   Base interface for anything that has a countable quantity.
   /// </summary>
   ICountable = interface(IInvokable)
@@ -2911,6 +2929,8 @@ function AtomicDecrement(var target: Integer): Integer;
 function AtomicExchange(var target: Pointer; value: Pointer): Pointer;
 function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer; overload;
 function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): TObject; overload;
+function AtomicExchange(var target: Integer; newValue: Integer): Integer; overload;
+function AtomicExchange(var target: Pointer; newValue: Pointer): Pointer; overload;
 {$ENDIF}
 
 procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
@@ -3660,7 +3680,33 @@ asm
 {$ENDIF}
 {$IFDEF CPUX64}
   mov rax,r8
-  lock cmpxchg [rcx],edx
+  lock cmpxchg [rcx],rdx
+{$ENDIF}
+end;
+
+function AtomicExchange(var target: Integer; newValue: Integer): Integer;
+asm
+{$IFDEF CPUX86}
+  mov ecx,eax
+  mov eax,edx
+  lock xchg [ecx],eax
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov eax,edx
+  lock xchg [rcx],eax
+{$ENDIF}
+end;
+
+function AtomicExchange(var target: Pointer; newValue: Pointer): Pointer;
+asm
+{$IFDEF CPUX86}
+  mov ecx,eax
+  mov eax,edx
+  lock xchg [ecx],eax
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov rax,rdx
+  lock xchg [rcx],rax
 {$ENDIF}
 end;
 {$ENDIF}
@@ -4416,7 +4462,7 @@ begin
     Result := CreateFieldTable(classType);
 {$ELSE}
 begin
-  TMonitor.Enter(TInitTable.InitTables);
+  MonitorEnter(TInitTable.InitTables);
   try
     if not TInitTable.InitTables.TryGetValue(classType, Result) then
     begin
@@ -4424,7 +4470,7 @@ begin
       TInitTable.InitTables.Add(classType, Result);
     end;
   finally
-    TMonitor.Exit(TInitTable.InitTables);
+    MonitorExit(TInitTable.InitTables);
   end;
 {$ENDIF}
 end;

@@ -6,6 +6,9 @@
         <Projects Include="Spring.Base.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="Spring.Reactive.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="Spring.Core.dproj">
             <Dependencies/>
         </Projects>
@@ -19,6 +22,9 @@
             <Dependencies/>
         </Projects>
         <Projects Include="Spring.Extensions.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\..\Tests\Spring.Reactive.Tests.Delphi10Seattle.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="..\..\Tests\Spring.Tests.Delphi10Seattle.dproj">
@@ -40,6 +46,15 @@
     </Target>
     <Target Name="Spring_Base:Make">
         <MSBuild Projects="Spring.Base.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Spring_Reactive">
+        <MSBuild Projects="Spring.Reactive.dproj"/>
+    </Target>
+    <Target Name="Spring_Reactive:Clean">
+        <MSBuild Projects="Spring.Reactive.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Reactive:Make">
+        <MSBuild Projects="Spring.Reactive.dproj" Targets="Make"/>
     </Target>
     <Target Name="Spring_Core">
         <MSBuild Projects="Spring.Core.dproj"/>
@@ -86,6 +101,15 @@
     <Target Name="Spring_Extensions:Make">
         <MSBuild Projects="Spring.Extensions.dproj" Targets="Make"/>
     </Target>
+    <Target Name="Spring_Reactive_Tests_Delphi10Seattle">
+        <MSBuild Projects="..\..\Tests\Spring.Reactive.Tests.Delphi10Seattle.dproj"/>
+    </Target>
+    <Target Name="Spring_Reactive_Tests_Delphi10Seattle:Clean">
+        <MSBuild Projects="..\..\Tests\Spring.Reactive.Tests.Delphi10Seattle.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Reactive_Tests_Delphi10Seattle:Make">
+        <MSBuild Projects="..\..\Tests\Spring.Reactive.Tests.Delphi10Seattle.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Spring_Tests_Delphi10Seattle">
         <MSBuild Projects="..\..\Tests\Spring.Tests.Delphi10Seattle.dproj"/>
     </Target>
@@ -96,13 +120,13 @@
         <MSBuild Projects="..\..\Tests\Spring.Tests.Delphi10Seattle.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="Spring_Base;Spring_Core;Spring_Data;Spring_Data_Designtime;Spring_Persistence;Spring_Extensions;Spring_Tests_Delphi10Seattle"/>
+        <CallTarget Targets="Spring_Base;Spring_Reactive;Spring_Core;Spring_Data;Spring_Data_Designtime;Spring_Persistence;Spring_Extensions;Spring_Reactive_Tests_Delphi10Seattle;Spring_Tests_Delphi10Seattle"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Data:Clean;Spring_Data_Designtime:Clean;Spring_Persistence:Clean;Spring_Extensions:Clean;Spring_Tests_Delphi10Seattle:Clean"/>
+        <CallTarget Targets="Spring_Base:Clean;Spring_Reactive:Clean;Spring_Core:Clean;Spring_Data:Clean;Spring_Data_Designtime:Clean;Spring_Persistence:Clean;Spring_Extensions:Clean;Spring_Reactive_Tests_Delphi10Seattle:Clean;Spring_Tests_Delphi10Seattle:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Data:Make;Spring_Data_Designtime:Make;Spring_Persistence:Make;Spring_Extensions:Make;Spring_Tests_Delphi10Seattle:Make"/>
+        <CallTarget Targets="Spring_Base:Make;Spring_Reactive:Make;Spring_Core:Make;Spring_Data:Make;Spring_Data_Designtime:Make;Spring_Persistence:Make;Spring_Extensions:Make;Spring_Reactive_Tests_Delphi10Seattle:Make;Spring_Tests_Delphi10Seattle:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

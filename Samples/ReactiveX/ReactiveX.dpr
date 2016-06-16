@@ -18,39 +18,19 @@ uses
   Test1 in 'Test1.pas',
   Test2 in 'Test2.pas',
   Spring.Collections,
-  Spring.Console in '..\..\Source\Reactive\Spring.Console.pas',
-  Spring.Reactive in '..\..\Source\Reactive\Spring.Reactive.pas',
-  Spring.Reactive.AnonymousObservable in '..\..\Source\Reactive\Spring.Reactive.AnonymousObservable.pas',
-  Spring.Reactive.AnonymousObserver in '..\..\Source\Reactive\Spring.Reactive.AnonymousObserver.pas',
-  Spring.Reactive.Disposables in '..\..\Source\Reactive\Spring.Reactive.Disposables.pas',
-  Spring.Reactive.Observable.Empty in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Empty.pas',
-  Spring.Reactive.Observable.Never in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Never.pas',
-  Spring.Reactive.Observable.Return in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Return.pas',
-  Spring.Reactive.Observable.Throw in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throw.pas',
-  Spring.Reactive.ObservableBase in '..\..\Source\Reactive\Spring.Reactive.ObservableBase.pas',
-  Spring.Reactive.Observers in '..\..\Source\Reactive\Spring.Reactive.Observers.pas',
-  Spring.Reactive.Producer in '..\..\Source\Reactive\Spring.Reactive.Producer.pas',
-  Spring.Reactive.Sink in '..\..\Source\Reactive\Spring.Reactive.Sink.pas',
-  Spring.Reactive.Stubs in '..\..\Source\Reactive\Spring.Reactive.Stubs.pas',
-  Spring.Reactive.Subjects.AsyncSubject in '..\..\Source\Reactive\Spring.Reactive.Subjects.AsyncSubject.pas',
-  Spring.Reactive.Subjects.BehaviorSubject in '..\..\Source\Reactive\Spring.Reactive.Subjects.BehaviorSubject.pas',
-  Spring.Reactive.Subjects.ReplaySubject in '..\..\Source\Reactive\Spring.Reactive.Subjects.ReplaySubject.pas',
-  Spring.Reactive.Subjects.Subject in '..\..\Source\Reactive\Spring.Reactive.Subjects.Subject.pas',
-  Spring.Reactive.Subjects.SubjectBase in '..\..\Source\Reactive\Spring.Reactive.Subjects.SubjectBase.pas',
-  Spring.Reactive.TimeInterval in '..\..\Source\Reactive\Spring.Reactive.TimeInterval.pas',
-  Spring.Reactive.Observable.Range in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Range.pas',
-  Spring.Reactive.Observable.Where in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Where.pas',
-  Spring.Reactive.Observable.Distinct in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Distinct.pas',
-  Spring.Reactive.Observable.DistinctUntilChanged in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.DistinctUntilChanged.pas',
-  Spring.Reactive.Observable.IgnoreElements in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.IgnoreElements.pas',
-  Spring.Reactive.Observable.Skip in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Skip.pas',
-  Spring.Reactive.Observable.Take in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Take.pas',
-  Spring.Reactive.Concurrency.DefaultScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.DefaultScheduler.pas',
-  Spring.Reactive.Concurrency.LocalScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.LocalScheduler.pas',
-  Spring.Reactive.Concurrency.ImmediateScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ImmediateScheduler.pas',
-  Spring.Reactive.Concurrency.SchedulerDefaults in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerDefaults.pas',
-  Spring.Reactive.Observable.Timer in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Timer.pas',
-  Spring.Reactive.Observable.ToObservable in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.ToObservable.pas';
+  Spring.Console,
+  Spring.Reactive,
+  Spring.Reactive.Concurrency.DefaultScheduler;
+
+procedure WriteLine(const value: Integer); overload;
+begin
+  Writeln(value);
+end;
+
+procedure WriteLine(const value: string); overload;
+begin
+  Writeln(value);
+end;
 
 procedure Main;
 var
@@ -61,7 +41,22 @@ var
   subject: ISubject<Integer>;
   distinct: IObservable<Integer>;
   noElements: IObservable<Integer>;
+  s: IScheduler;
+  work: Action<Action>;
+  token: IDisposable;
+
 begin
+//  Observable.Interval(TTimeSpan.FromMilliseconds(150))
+//    .Sample(TTimeSpan.FromSeconds(1))
+//    .Subscribe(WriteLine);
+//
+//  Readln;
+
+  Enumerable.ToObservable<Integer>(TEnumerable.Range(1, 100)).Subscribe(
+    WriteLine);
+  Readln;
+
+
 //  Example1.Main;
 //  Example2.Main;
 //  Example3.Main;
@@ -217,17 +212,33 @@ begin
 //    .Subscribe(Console.WriteLine<Integer>, procedure begin Writeln('Completed') end);
 //  Readln;
 
-  Enumerable.ToObservable<Integer>(TCollections.CreateList<Integer>([1, 2, 3, 4, 5, 6, 7, 8, 9]))
-    .Subscribe(Console.WriteLine<Integer>);
+  //!!!TODO!!!
+//  Enumerable.ToObservable<Integer>(TCollections.CreateList<Integer>([1, 2, 3, 4, 5, 6, 7, 8, 9]))
+//    .Subscribe(Console.WriteLine<Integer>);
+
+
+//  s := TDefaultScheduler.Create;
+//  work :=
+//    procedure(const self: Action)
+//    begin
+//      Writeln('Running on ', TThread.CurrentThread.ThreadID);
+//      self();
+//    end;
+//  token := s.Schedule(work);
+//  Readln;
+//  Writeln('Cancelling');
+//  token.Dispose;
+//  Writeln('Cancelled');
 end;
 
 begin
   try
     Main;
+//    Writeln('ended');
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
   end;
   ReportMemoryLeaksOnShutdown := True;
-  Readln;
+//  Readln;
 end.

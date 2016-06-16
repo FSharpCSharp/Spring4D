@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{ED5F4035-5793-417C-B772-9EED286B0BA9}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="..\..\Packages\Delphi10Tokyo\Spring.Reactive.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ReactiveX.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="Spring_Reactive">
+        <MSBuild Projects="..\..\Packages\Delphi10Tokyo\Spring.Reactive.dproj"/>
+    </Target>
+    <Target Name="Spring_Reactive:Clean">
+        <MSBuild Projects="..\..\Packages\Delphi10Tokyo\Spring.Reactive.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Reactive:Make">
+        <MSBuild Projects="..\..\Packages\Delphi10Tokyo\Spring.Reactive.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ReactiveX">
+        <MSBuild Projects="ReactiveX.dproj"/>
+    </Target>
+    <Target Name="ReactiveX:Clean">
+        <MSBuild Projects="ReactiveX.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ReactiveX:Make">
+        <MSBuild Projects="ReactiveX.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="Spring_Reactive;ReactiveX"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="Spring_Reactive:Clean;ReactiveX:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="Spring_Reactive:Make;ReactiveX:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

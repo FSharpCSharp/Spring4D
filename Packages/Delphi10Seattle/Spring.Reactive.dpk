@@ -1,0 +1,110 @@
+package Spring.Reactive;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'Spring4D Reactive package'}
+{$LIBSUFFIX '.Delphi10Seattle'}
+{$RUNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  Spring.Base;
+
+contains
+  Spring.Reactive in '..\..\Source\Reactive\Spring.Reactive.pas',
+  Spring.Reactive.AnonymousObservable in '..\..\Source\Reactive\Spring.Reactive.AnonymousObservable.pas',
+  Spring.Reactive.AnonymousObserver in '..\..\Source\Reactive\Spring.Reactive.AnonymousObserver.pas',
+  Spring.Reactive.Concurrency.AsyncLock in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.AsyncLock.pas',
+  Spring.Reactive.Concurrency.CurrentThreadScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.CurrentThreadScheduler.pas',
+  Spring.Reactive.Concurrency.DefaultScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.DefaultScheduler.pas',
+  Spring.Reactive.Concurrency.ImmediateScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ImmediateScheduler.pas',
+  Spring.Reactive.Concurrency.LocalScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.LocalScheduler.pas',
+  Spring.Reactive.Concurrency.ScheduledItem in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ScheduledItem.pas',
+  Spring.Reactive.Concurrency.Scheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.Scheduler.pas',
+  Spring.Reactive.Concurrency.SchedulerDefaults in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerDefaults.pas',
+  Spring.Reactive.Concurrency.SchedulerQueue in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerQueue.pas',
+  Spring.Reactive.Concurrency.VirtualTimeScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.VirtualTimeScheduler.pas',
+  Spring.Reactive.Disposables in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.pas',
+  Spring.Reactive.Disposables.AnonymousDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.AnonymousDisposable.pas',
+  Spring.Reactive.Disposables.BooleanDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.BooleanDisposable.pas',
+  Spring.Reactive.Disposables.CompositeDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.CompositeDisposable.pas',
+  Spring.Reactive.Disposables.DefaultDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.DefaultDisposable.pas',
+  Spring.Reactive.Disposables.RefCountDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.RefCountDisposable.pas',
+  Spring.Reactive.Disposables.SerialDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SerialDisposable.pas',
+  Spring.Reactive.Disposables.SingleAssignmentDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SingleAssignmentDisposable.pas',
+  Spring.Reactive.Disposables.StableCompositeDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.StableCompositeDisposable.pas',
+  Spring.Reactive.GroupedObservable in '..\..\Source\Reactive\Observable\Spring.Reactive.GroupedObservable.pas',
+  Spring.Reactive.Internal.AutoDetachObserver in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.AutoDetachObserver.pas',
+  Spring.Reactive.Internal.ConcatSink in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.ConcatSink.pas',
+  Spring.Reactive.Internal.Observers in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Observers.pas',
+  Spring.Reactive.Internal.PriorityQueue in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.PriorityQueue.pas',
+  Spring.Reactive.Internal.Producer in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Producer.pas',
+  Spring.Reactive.Internal.Sink in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Sink.pas',
+  Spring.Reactive.Internal.Stubs in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Stubs.pas',
+  Spring.Reactive.Internal.TailRecursiveSink in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.TailRecursiveSink.pas',
+  Spring.Reactive.Notification in '..\..\Source\Reactive\Spring.Reactive.Notification.pas',
+  Spring.Reactive.Observable.AddRef in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.AddRef.pas',
+  Spring.Reactive.Observable.All in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.All.pas',
+  Spring.Reactive.Observable.Any in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Any.pas',
+  Spring.Reactive.Observable.Buffer in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Buffer.pas',
+  Spring.Reactive.Observable.CombineLatest in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.CombineLatest.pas',
+  Spring.Reactive.Observable.Concat in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Concat.pas',
+  Spring.Reactive.Observable.Distinct in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Distinct.pas',
+  Spring.Reactive.Observable.DistinctUntilChanged in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.DistinctUntilChanged.pas',
+  Spring.Reactive.Observable.Empty in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Empty.pas',
+  Spring.Reactive.Observable.FromEvent in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.FromEvent.pas',
+  Spring.Reactive.Observable.GroupBy in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.GroupBy.pas',
+  Spring.Reactive.Observable.IgnoreElements in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.IgnoreElements.pas',
+  Spring.Reactive.Observable.Merge in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Merge.pas',
+  Spring.Reactive.Observable.Never in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Never.pas',
+  Spring.Reactive.Observable.Range in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Range.pas',
+  Spring.Reactive.Observable.Return in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Return.pas',
+  Spring.Reactive.Observable.Sample in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Sample.pas',
+  Spring.Reactive.Observable.Select in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Select.pas',
+  Spring.Reactive.Observable.Skip in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Skip.pas',
+  Spring.Reactive.Observable.SkipLast in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipLast.pas',
+  Spring.Reactive.Observable.SkipUntil in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipUntil.pas',
+  Spring.Reactive.Observable.SkipWhile in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipWhile.pas',
+  Spring.Reactive.Observable.Take in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Take.pas',
+  Spring.Reactive.Observable.TakeLast in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeLast.pas',
+  Spring.Reactive.Observable.TakeUntil in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeUntil.pas',
+  Spring.Reactive.Observable.TakeWhile in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeWhile.pas',
+  Spring.Reactive.Observable.Throw in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throw.pas',
+  Spring.Reactive.Observable.Timer in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Timer.pas',
+  Spring.Reactive.Observable.ToObservable in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.ToObservable.pas',
+  Spring.Reactive.Observable.Throttle in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throttle.pas',
+  Spring.Reactive.Observable.Where in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Where.pas',
+  Spring.Reactive.Observable.Window in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Window.pas',
+  Spring.Reactive.ObservableBase in '..\..\Source\Reactive\Spring.Reactive.ObservableBase.pas',
+  Spring.Reactive.ObserverBase in '..\..\Source\Reactive\Spring.Reactive.ObserverBase.pas',
+  Spring.Reactive.Subjects.AsyncSubject in '..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.AsyncSubject.pas',
+  Spring.Reactive.Subjects.BehaviorSubject in '..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.BehaviorSubject.pas',
+  Spring.Reactive.Subjects.ReplaySubject in '..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.ReplaySubject.pas',
+  Spring.Reactive.Subjects.Subject in '..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.Subject.pas',
+  Spring.Reactive.Subjects.SubjectBase in '..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.SubjectBase.pas',
+  Spring.Reactive.TimeInterval in '..\..\Source\Reactive\Spring.Reactive.TimeInterval.pas';
+
+end.
