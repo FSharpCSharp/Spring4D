@@ -165,6 +165,7 @@ type
 
   {$ENDREGION}
 
+
 implementation
 
 uses
@@ -311,7 +312,7 @@ var
 begin
   P := AdditionalInfoOf(typeData);
   CallConvention := TCallConv(PByte(p)^);
-  ParamInfos := PParameterInfos(Cardinal(P) + 1);
+  ParamInfos := PParameterInfos(UIntPtr(P) + 1);
 
   StackSize := SizeOf(Pointer); // Self in stack
 {$IFNDEF CPUX64}
