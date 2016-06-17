@@ -149,7 +149,7 @@ type
   {$REGION 'TIntegerToStringConverter'}
 
   /// <summary>
-  ///   Simply provides conversion routine beetwen Integer and
+  ///   Simply provides conversion routine between Integer and
   ///   string/UnicodeString
   /// </summary>
   TIntegerToStringConverter = class(TValueConverter)
@@ -165,7 +165,7 @@ type
   {$REGION 'TStringToIntegerConverter'}
 
   /// <summary>
-  ///   Simply provides conversion routine beetwen string and Integer
+  ///   Simply provides conversion routine between string and Integer
   /// </summary>
   TStringToIntegerConverter = class(TValueConverter)
   protected
@@ -180,7 +180,7 @@ type
   {$REGION 'TIntegerToBooleanConverter'}
 
   /// <summary>
-  ///   Simply provides conversion routine beetwen Integer and Boolean
+  ///   Simply provides conversion routine between Integer and Boolean
   /// </summary>
   TIntegerToBooleanConverter = class(TValueConverter)
   protected
@@ -195,7 +195,7 @@ type
   {$REGION 'TBooleanToIntegerConverter'}
 
   /// <summary>
-  ///   Simply provides conversion routine beetwen Boolean and Integer
+  ///   Simply provides conversion routine between Boolean and Integer
   /// </summary>
   TBooleanToIntegerConverter = class(TValueConverter)
   protected
@@ -210,7 +210,7 @@ type
   {$REGION 'TBooleanToStringConverter'}
 
   /// <summary>
-  ///   Simply provides conversion routine beetwen Boolean and string
+  ///   Simply provides conversion routine between Boolean and string
   /// </summary>
   TBooleanToStringConverter = class(TValueConverter)
   protected
@@ -225,7 +225,7 @@ type
   {$REGION 'TStringToBooleanConverter'}
 
   /// <summary>
-  ///   Simply provides conversion routine beetwen string and Boolean
+  ///   Simply provides conversion routine between string and Boolean
   /// </summary>
   TStringToBooleanConverter = class(TValueConverter)
   protected
@@ -240,7 +240,7 @@ type
   {$REGION 'TNullableToTypeConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen Nullable(T) and T
+  ///   Provides conversion routine between Nullable(T) and T
   /// </summary>
   /// <remarks>
   ///   Internally it use another Converter to delegate conversion routine if
@@ -259,7 +259,7 @@ type
   {$REGION 'TTypeToNullableConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen T and Nullable(T)
+  ///   Provides conversion routine between T and Nullable(T)
   /// </summary>
   /// <remarks>
   ///   Internally it use another Converter to delegate conversion routine if
@@ -278,7 +278,7 @@ type
   {$REGION 'TEnumToIntegerConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen enumeration and Integer
+  ///   Provides conversion routine between enumeration and Integer
   /// </summary>
   TEnumToIntegerConverter = class(TValueConverter)
   protected
@@ -293,7 +293,7 @@ type
   {$REGION 'TIntegerToEnumConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen Integer and enumeration
+  ///   Provides conversion routine between Integer and enumeration
   /// </summary>
   TIntegerToEnumConverter = class(TValueConverter)
   protected
@@ -308,7 +308,7 @@ type
   {$REGION 'TEnumToStringConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen enumeration and string
+  ///   Provides conversion routine between enumeration and string
   /// </summary>
   TEnumToStringConverter = class(TValueConverter)
   protected
@@ -323,7 +323,7 @@ type
   {$REGION 'TStringToEnumConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen string and enumeration
+  ///   Provides conversion routine between string and enumeration
   /// </summary>
   TStringToEnumConverter = class(TValueConverter)
   protected
@@ -338,7 +338,7 @@ type
   {$REGION 'TSetToStringConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen set and string
+  ///   Provides conversion routine between set and string
   /// </summary>
   TSetToStringConverter = class(TValueConverter)
   protected
@@ -353,7 +353,7 @@ type
   {$REGION 'TStringToSetConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen string and enumeration
+  ///   Provides conversion routine between string and enumeration
   /// </summary>
   TStringToSetConverter = class(TValueConverter)
   protected
@@ -368,7 +368,7 @@ type
   {$REGION 'TFloatToStringConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen float and string
+  ///   Provides conversion routine between float and string
   /// </summary>
   TFloatToStringConverter = class(TValueConverter)
   protected
@@ -383,7 +383,7 @@ type
   {$REGION 'TFloatToIntegerConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen float and Integer
+  ///   Provides conversion routine between float and Integer
   /// </summary>
   TFloatToIntegerConverter = class(TValueConverter)
   protected
@@ -398,7 +398,7 @@ type
   {$REGION 'TStringToFloatConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen string and float
+  ///   Provides conversion routine between string and float
   /// </summary>
   TStringToFloatConverter = class(TValueConverter)
   protected
@@ -414,7 +414,7 @@ type
 
 {$IFNDEF SPRING_DISABLE_GRAPHICS}
   /// <summary>
-  ///   Provides conversion routine beetwen TColor and string
+  ///   Provides conversion routine between TColor and string
   /// </summary>
   TColorToStringConverter = class(TValueConverter)
   protected
@@ -431,7 +431,7 @@ type
 
 {$IFNDEF SPRING_DISABLE_GRAPHICS}
   /// <summary>
-  ///   Provides conversion routine beetwen string and TColor
+  ///   Provides conversion routine between string and TColor
   /// </summary>
   TStringToColorConverter = class(TValueConverter)
   protected
@@ -447,7 +447,7 @@ type
   {$REGION 'TCurrencyToStringConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen Currency and string
+  ///   Provides conversion routine between Currency and string
   /// </summary>
   TCurrencyToStringConverter = class(TValueConverter)
   protected
@@ -462,7 +462,7 @@ type
   {$REGION 'TStringToCurrencyConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen string and Currency
+  ///   Provides conversion routine between string and Currency
   /// </summary>
   TStringToCurrencyConverter = class(TValueConverter)
   protected
@@ -477,7 +477,7 @@ type
   {$REGION 'TStringToDateTimeConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen string and TDateTime
+  ///   Provides conversion routine between string and TDateTime
   /// </summary>
   TStringToDateTimeConverter = class(TValueConverter)
   protected
@@ -492,7 +492,7 @@ type
   {$REGION 'TDateTimeToStringConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen TDateTime and string
+  ///   Provides conversion routine between TDateTime and string
   /// </summary>
   TDateTimeToStringConverter = class(TValueConverter)
   protected
@@ -567,7 +567,7 @@ type
   {$REGION 'TObjectToStringConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen TObject and string
+  ///   Provides conversion routine between TObject and string
   /// </summary>
   TObjectToStringConverter = class(TValueConverter)
   protected
@@ -582,7 +582,7 @@ type
   {$REGION 'TObjectToInterfaceConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen TObject and IInterface
+  ///   Provides conversion routine between TObject and IInterface
   /// </summary>
   /// <remarks>
   ///   acc. to #82433 TValue.TryAsType(T) raised an AV because ConvClass2Intf
@@ -601,7 +601,7 @@ type
   {$REGION 'TInterfaceToObjectConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen TObject and IInterface
+  ///   Provides conversion routine between TObject and IInterface
   /// </summary>
   TInterfaceToObjectConverter = class(TValueConverter)
   protected
@@ -616,7 +616,7 @@ type
   {$REGION 'TInterfaceToInterfaceConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen Interface and Interface
+  ///   Provides conversion routine between Interface and Interface
   /// </summary>
   TInterfaceToInterfaceConverter = class(TValueConverter)
   protected
@@ -631,7 +631,7 @@ type
   {$REGION 'TObjectToClassConverter'}
 
   /// <summary>
-  ///   Provides conversion routine beetwen TObject and TClass
+  ///   Provides conversion routine between TObject and TClass
   /// </summary>
   TObjectToClassConverter = class(TValueConverter)
   protected
@@ -647,7 +647,7 @@ type
 
 {$IFNDEF NEXTGEN}
   /// <summary>
-  ///   Provides conversion routine beetwen UnicodeString and WideString
+  ///   Provides conversion routine between UnicodeString and WideString
   /// </summary>
   /// <remarks>
   ///   acc. to #82487 Rtti.ConvStr2Str is wrong (when cast a unicode string to
@@ -668,7 +668,7 @@ type
 
 {$IFNDEF NEXTGEN}
   /// <summary>
-  ///   Provides conversion routine beetwen UnicodeString and WideString
+  ///   Provides conversion routine between UnicodeString and WideString
   /// </summary>
   TWStringToStringConverter = class(TValueConverter)
   protected
