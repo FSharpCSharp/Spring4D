@@ -489,6 +489,21 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TStringToGUIDConverter'}
+
+  /// <summary>
+  ///   Provides conversion routine between string and TGUID
+  /// </summary>
+  TStringToGUIDConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TDateTimeToStringConverter'}
 
   /// <summary>
@@ -677,6 +692,21 @@ type
       const parameter: TValue): TValue; override;
   end;
 {$ENDIF}
+
+  {$ENDREGION}
+
+
+  {$REGION 'TGUIDToStringConverter}
+
+  /// <summary>
+  ///   Provides conversion routine between TGUID and string
+  /// </summary>
+  TGUIDToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
 
   {$ENDREGION}
 
@@ -1064,6 +1094,7 @@ function TNullableToTypeConverter.DoConvertTo(const value: TValue;
 var
   innerValue: TValue;
 begin
+  innerValue := TValue.Empty;
   if value.TryGetNullableValue(innerValue)
     and (innerValue.TypeInfo <> targetTypeInfo) then
     Result := TValueConverter.Default.ConvertTo(innerValue,
@@ -1430,6 +1461,17 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TStringToGUIDConverter'}
+
+function TStringToGUIDConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<TGUID>(StringToGUID(value.AsString));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TDateToStringConverter'}
 
 function TDateToStringConverter.DoConvertTo(const value: TValue;
@@ -1673,6 +1715,17 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TGUIDToStringConverter'}
+
+function TGUIDToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := value.AsType<TGUID>.ToString;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TValueConverterFactory'}
 
 class constructor TValueConverterFactory.Create;
@@ -1832,6 +1885,8 @@ begin
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TDateTime), TStringToDateTimeConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TDate), TStringToDateConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TTime), TStringToTimeConverter);
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TGUID), TStringToGUIDConverter);
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<TGUID>), TTypeToNullableConverter);
 
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Currency>), TTypeToNullableConverter);
 {$IFNDEF SPRING_DISABLE_GRAPHICS}
@@ -1853,6 +1908,9 @@ begin
 
   RegisterConverter([tkInterface], [tkInterface], TInterfaceToInterfaceConverter);
   RegisterConverter([tkInterface], [tkClass], TInterfaceToObjectConverter);
+
+  RegisterConverter(TypeInfo(TGUID), [tkString, tkUString, tkLString, tkWString], TGUIDToStringConverter);
+  RegisterConverter(TypeInfo(Nullable<TGUID>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 end;
 
 class destructor TValueConverterFactory.Destroy;

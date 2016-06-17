@@ -175,7 +175,7 @@ end;
 procedure TEntityWrapper.SetValue(const member: TRttiMember; const value: TValue);
 begin
   try
-    member.SetValue(fEntity, value);
+    member.SetValue(fEntity, value.ConvertTo(member.MemberType.Handle));
   except
     on E: EInvalidCast do
       raise EORMInvalidConversion.CreateFmt('Error while setting member %s - converting %s to %s failed',

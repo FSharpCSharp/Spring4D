@@ -89,6 +89,9 @@ type
     procedure TestStringToNullableDateTime;
     procedure TestStringToNullableDate;
     procedure TestStringToNullableTime;
+
+    procedure TestStringToGuid;
+    procedure TestStringToNullableGuid;
   end;
 
 {$IFNDEF NEXTGEN}
@@ -600,6 +603,8 @@ type
   published
     procedure TestCustomFloatToString;
     procedure TestStringToCustomFloat;
+    procedure TestGuidToString;
+    procedure TestNullableGuidToString;
   end;
 
 type
@@ -636,6 +641,7 @@ const
   RedValue = clRed;
   BlueValue = clBlue;
 {$ENDIF HAS_UNIT_SYSTEM_UITYPES}
+  GuidString = '{AAEE5928-F8C7-405C-A85B-F9D863EED75F}';
 
 {$IFDEF HAS_UNIT_SYSTEM_UITYPES}
 function ColorToRGB(i : TColor) : Longint;
@@ -834,6 +840,31 @@ begin
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
   CheckEquals(1.11, outFloat);
   CheckFalse(fConverter.TryConvertTo(TValue.From<string>('foo'), TypeInfo(Extended), outValue));
+end;
+
+procedure TTestFromString.TestStringToGuid;
+var
+  outValue: TValue;
+  outGuid: TGUID;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(GuidString),
+    TypeInfo(TGUID));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TGUID>(outGuid));
+  CheckTrue(TGUID.Create(GuidString) = outGuid);
+  CheckFalse(fConverter.TryConvertTo(TValue.From<string>('no-guid'), TypeInfo(TGUID), outValue));
+end;
+
+procedure TTestFromString.TestStringToNullableGuid;
+var
+  outValue: TValue;
+  outGuid: Nullable<TGUID>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(GuidString),
+    TypeInfo(Nullable<TGUID>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<TGUID>>(outGuid));
+  CheckTrue(TGUID.Create(GuidString) = outGuid);
 end;
 
 procedure TTestFromString.TestStringToEnum;
@@ -4706,6 +4737,28 @@ begin
   CheckEquals(FloatToStr(1.11), outStr);
 end;
 
+procedure TTestCustomTypes.TestGuidToString;
+var
+  outValue: TValue;
+  outString: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TGUID>(StringToGuid(GuidString)), TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outString));
+  CheckEquals(GuidString, outString);
+end;
+
+procedure TTestCustomTypes.TestNullableGuidToString;
+var
+  outValue: TValue;
+  outString: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TGUID>>(StringToGuid(GuidString)), TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outString));
+  CheckEquals(GuidString, outString);
+end;
+
 procedure TTestCustomTypes.TestStringToCustomFloat;
 var
   outValue: TValue;
@@ -4944,5 +4997,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

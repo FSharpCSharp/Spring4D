@@ -4325,6 +4325,9 @@ begin
       if IsLazyType(TypeInfo) then
         if TryGetLazyValue(value) then
           Exit(value.ToVariant);
+
+      if TypeInfo = System.TypeInfo(TGUID) then
+        Exit(AsType<TGUID>.ToString);
     end;
     tkClass:
     begin
