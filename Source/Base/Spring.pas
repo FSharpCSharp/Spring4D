@@ -88,6 +88,27 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TGuidHelper'}
+
+{$IFDEF DELPHI2010}
+  TGuidHelper = record helper for TGUID
+  public
+    class function Create(const B: TBytes): TGUID; overload; static;
+    class function Create(const S: string): TGUID; overload; static;
+    class function Create(A: Integer; B: SmallInt; C: SmallInt; const D: TBytes): TGUID; overload; static;
+
+    class function Empty: TGuid; static;
+    class function NewGuid: TGuid; static;
+
+    function Equals(const guid: TGuid): Boolean;
+    function ToByteArray: TBytes;
+    function ToString: string;
+  end;
+{$ENDIF}
+
+  {$ENDREGION}
+
+
   {$REGION 'TActivator'}
 
   IObjectActivator = interface
@@ -2779,6 +2800,66 @@ begin
   Result := FindVarData(value).VType in [varEmpty, varNull];
 end;
 
+{$ENDREGION}
+
+
+{$REGION 'TGuidHelper'}
+
+{$IFDEF DELPHI2010}
+class function TGuidHelper.Create(const B: TBytes): TGUID;
+begin
+  if Length(B) <> 16 then
+    raise EArgumentException.CreateResFmt(@SInvalidGuidArray, [16]);
+  Move(B[0], Result, SizeOf(Result));
+end;
+
+class function TGuidHelper.Create(const S: string): TGUID;
+begin
+  Result := StringToGUID(S);
+end;
+
+class function TGuidHelper.Create(A: Integer; B, C: SmallInt;
+  const D: TBytes): TGUID;
+begin
+  if Length(D) <> 16 then
+    raise EArgumentException.CreateResFmt(@SInvalidGuidArray, [8]);
+  Result.D1 := LongWord(A);
+  Result.D2 := Word(B);
+  Result.D3 := Word(C);
+  Move(D[0], Result.D4, SizeOf(Result.D4));
+end;
+
+class function TGuidHelper.Empty: TGuid;
+begin
+  FillChar(Result, SizeOf(Result), 0);
+end;
+
+function TGuidHelper.Equals(const guid: TGuid): Boolean;
+var
+  a, b: PIntegerArray;
+begin
+  a := PIntegerArray(@Self);
+  b := PIntegerArray(@guid);
+  Result := (a^[0] = b^[0]) and (a^[1] = b^[1]) and (a^[2] = b^[2]) and (a^[3] = b^[3]);
+end;
+
+class function TGuidHelper.NewGuid: TGuid;
+begin
+  if CreateGUID(Result) <> S_OK then
+    RaiseLastOSError;
+end;
+
+function TGuidHelper.ToByteArray: TBytes;
+begin
+  SetLength(Result, 16);
+  Move(D1, Result[0], SizeOf(Self));
+end;
+
+function TGuidHelper.ToString: string;
+begin
+  Result := GuidToString(Self);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
