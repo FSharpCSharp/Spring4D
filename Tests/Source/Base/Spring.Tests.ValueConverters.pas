@@ -31,6 +31,7 @@ interface
 uses
   SysUtils,
   TestFramework,
+  Spring.TestUtils,
   Spring.ValueConverters;
 
 type
@@ -543,6 +544,7 @@ type
     procedure TestNullableShortIntToAnsiString;
 {$ENDIF}
     procedure TestNullableFloatToInteger;
+    procedure TestNullableFloatToIntger_ExceptionWhenDecimalPlaces;
     procedure TestNullableFloatToCardinal;
     procedure TestNullableFloatToSmallInt;
     procedure TestNullableFloatToShortInt;
@@ -2591,7 +2593,7 @@ var
   outValue: TValue;
   outInt: Integer;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.00),
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
@@ -2603,7 +2605,7 @@ var
   outValue: TValue;
   outInt: Cardinal;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.00),
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
@@ -2615,7 +2617,7 @@ var
   outValue: TValue;
   outInt: SmallInt;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.00),
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
@@ -2627,7 +2629,7 @@ var
   outValue: TValue;
   outInt: ShortInt;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.00),
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
@@ -2739,7 +2741,7 @@ var
   outValue: TValue;
   outNullable: Nullable<Integer>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.00),
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
@@ -2751,7 +2753,7 @@ var
   outValue: TValue;
   outNullable: Nullable<Cardinal>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.00),
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
@@ -2763,7 +2765,7 @@ var
   outValue: TValue;
   outNullable: Nullable<SmallInt>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.00),
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
@@ -2775,7 +2777,7 @@ var
   outValue: TValue;
   outNullable: Nullable<ShortInt>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.00),
     TypeInfo(Nullable<ShortInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
@@ -3443,11 +3445,18 @@ var
   outValue: TValue;
   outInt: Integer;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.11)),
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.00)),
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
   CheckEquals(1, outInt);
+end;
+
+procedure TTestFromNullable.TestNullableFloatToIntger_ExceptionWhenDecimalPlaces;
+begin
+  ExpectedException := EConvertError;
+  fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.11)),
+    TypeInfo(Integer));
 end;
 
 procedure TTestFromNullable.TestNullableFloatToCardinal;
@@ -3455,7 +3464,7 @@ var
   outValue: TValue;
   outInt: Cardinal;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.11)),
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.00)),
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
@@ -3467,7 +3476,7 @@ var
   outValue: TValue;
   outInt: SmallInt;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.11)),
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.00)),
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
@@ -3479,7 +3488,7 @@ var
   outValue: TValue;
   outInt: ShortInt;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.11)),
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<Extended>>(Nullable<Extended>.Create(1.00)),
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));

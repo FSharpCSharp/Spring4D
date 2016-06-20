@@ -807,9 +807,9 @@ begin
       and (left.TypeName = right.TypeName));
 end;
 
-procedure RaiseInvalidConversionError(sourceType, targetType: PTypeInfo);
+procedure RaiseConvertError(sourceType, targetType: PTypeInfo);
 begin
-  raise EInvalidOperationException.CreateFmt('Trying to convert %s to %s',
+  raise EConvertError.CreateFmt('Trying to convert %s to %s',
     [sourceType.TypeName, targetType.TypeName]);
 end;
 
@@ -1011,7 +1011,7 @@ begin
   else if targetTypeInfo = TypeInfo(Byte) then
     Result := TValue.From<Byte>(StrToInt(value.AsString))
   else
-    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
+    RaiseConvertError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1070,7 +1070,7 @@ begin
   else if targetTypeInfo = TypeInfo(Byte) then
     Result := TValue.From<Byte>(Integer(value.AsBoolean))
   else
-    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
+    RaiseConvertError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1126,7 +1126,7 @@ begin
     Result.SetNullableValue(innerValue);
   end
   else
-    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
+    RaiseConvertError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1273,25 +1273,30 @@ end;
 
 function TFloatToIntegerConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  f: Extended;
 begin
+  f := value.AsExtended;
+  if Frac(f) <> 0 then
+    RaiseConvertError(value.TypeInfo, targetTypeInfo);
   if targetTypeInfo = TypeInfo(Integer) then
-    Result := TValue.From<Integer>(Floor(value.AsExtended))
+    Result := TValue.From<Integer>(Floor(f))
   else if targetTypeInfo = TypeInfo(Cardinal) then
-    Result := TValue.From<Cardinal>(Floor(value.AsExtended))
+    Result := TValue.From<Cardinal>(Floor(f))
   else if targetTypeInfo = TypeInfo(Int64) then
-    Result := TValue.From<Int64>(Floor(value.AsExtended))
+    Result := TValue.From<Int64>(Floor(f))
   else if targetTypeInfo = TypeInfo(UInt64) then
-    Result := TValue.From<UInt64>(Floor(value.AsExtended))
+    Result := TValue.From<UInt64>(Floor(f))
   else if targetTypeInfo = TypeInfo(SmallInt) then
-    Result := TValue.From<SmallInt>(Floor(value.AsExtended))
+    Result := TValue.From<SmallInt>(Floor(f))
   else if targetTypeInfo = TypeInfo(Word) then
-    Result := TValue.From<Word>(Floor(value.AsExtended))
+    Result := TValue.From<Word>(Floor(f))
   else if targetTypeInfo = TypeInfo(ShortInt) then
-    Result := TValue.From<ShortInt>(Floor(value.AsExtended))
+    Result := TValue.From<ShortInt>(Floor(f))
   else if targetTypeInfo = TypeInfo(Byte) then
-    Result := TValue.From<Byte>(Floor(value.AsExtended))
+    Result := TValue.From<Byte>(Floor(f))
   else
-    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
+    RaiseConvertError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1315,11 +1320,11 @@ begin
       ftSingle:
         Result := TValue.From<Single>(StrToFloat(value.AsString));
     else
-      RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
+      RaiseConvertError(value.TypeInfo, targetTypeInfo);
     end;
   end
   else
-    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
+    RaiseConvertError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
@@ -1616,7 +1621,7 @@ begin
   if value.AsObject.GetInterface(guid, p) then
     TValue.MakeWithoutCopy(@p, targetTypeInfo, Result)
   else
-    RaiseInvalidConversionError(value.TypeInfo, targetTypeInfo);
+    RaiseConvertError(value.TypeInfo, targetTypeInfo);
 end;
 
 {$ENDREGION}
