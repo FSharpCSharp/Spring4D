@@ -2598,10 +2598,10 @@ type
     ///   An empty <see cref="IEnumerable&lt;T&gt;" /> whose type argument is <i>
     ///   T</i>.
     /// </returns>
-    class function Empty<T>: IEnumerable<T>; static;
+    class function Empty<T>: IReadOnlyList<T>; static;
 
-    class function From<T>(const source: array of T): IEnumerable<T>; overload; static;
-    class function From<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
+    class function From<T>(const source: array of T): IReadOnlyList<T>; overload; static;
+    class function From<T>(const source: TArray<T>): IReadOnlyList<T>; overload; static;
     class function From<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
 
     class function Min<T>(const source: IEnumerable<T>;
@@ -3413,17 +3413,17 @@ begin
   Result := TDistinctByIterator<T, TKey>.Create(source, keySelector, comparer);
 end;
 
-class function TEnumerable.Empty<T>: IEnumerable<T>;
+class function TEnumerable.Empty<T>: IReadOnlyList<T>;
 begin
   Result := TEmptyEnumerable<T>.Instance;
 end;
 
-class function TEnumerable.From<T>(const source: array of T): IEnumerable<T>;
+class function TEnumerable.From<T>(const source: array of T): IReadOnlyList<T>;
 begin
   Result := TArrayIterator<T>.Create(source);
 end;
 
-class function TEnumerable.From<T>(const source: TArray<T>): IEnumerable<T>;
+class function TEnumerable.From<T>(const source: TArray<T>): IReadOnlyList<T>;
 begin
   Result := TArrayIterator<T>.Create(source);
 end;

@@ -39,7 +39,6 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
-  Spring.Collections.Extensions,
   Spring.DesignPatterns;
 
 type
@@ -238,11 +237,11 @@ type
     function GetAsDynamicArray: TRttiDynamicArrayType;
     function GetIsDynamicArray: Boolean;
     function GetIsString: Boolean;
-    function GetMethodsEnumerable: IEnumerable<TRttiMethod>;
-    function GetPropertiesEnumerable: IEnumerable<TRttiProperty>;
-    function GetFieldsEnumerable: IEnumerable<TRttiField>;
+    function GetMethodsInternal: IReadOnlyList<TRttiMethod>;
+    function GetPropertiesInternal: IReadOnlyList<TRttiProperty>;
+    function GetFieldsInternal: IReadOnlyList<TRttiField>;
     function GetBaseTypes: IReadOnlyList<TRttiType>;
-    function GetConstructorsEnumerable: IEnumerable<TRttiMethod>;
+    function GetConstructorsInternal: IReadOnlyList<TRttiMethod>;
     function GetDefaultName: string;
     function GetAncestorCount: Integer;
   public
@@ -260,7 +259,7 @@ type
     ///   </note>
     /// </summary>
     /// <seealso cref="Spring.Collections|IEnumerable&lt;T&gt;" />
-    function GetInterfaces: IEnumerable<TRttiInterfaceType>;
+    function GetInterfaces: IReadOnlyList<TRttiInterfaceType>;
 
     /// <summary>
     ///   Gets an array of types which contains all generic arguments.
@@ -321,7 +320,7 @@ type
     /// <seealso cref="Methods" />
     /// <seealso cref="Properties" />
     /// <seealso cref="Fields" />
-    property Constructors: IEnumerable<TRttiMethod> read GetConstructorsEnumerable;
+    property Constructors: IReadOnlyList<TRttiMethod> read GetConstructorsInternal;
 
     /// <summary>
     ///   Gets a enumerable collection which contains all methods that the type
@@ -330,7 +329,7 @@ type
     /// <seealso cref="Constructors" />
     /// <seealso cref="Properties" />
     /// <seealso cref="Fields" />
-    property Methods: IEnumerable<TRttiMethod> read GetMethodsEnumerable;
+    property Methods: IReadOnlyList<TRttiMethod> read GetMethodsInternal;
 
     /// <summary>
     ///   Gets a enumerable collection which contains all properties that the
@@ -339,7 +338,7 @@ type
     /// <seealso cref="Constructors" />
     /// <seealso cref="Methods" />
     /// <seealso cref="Fields" />
-    property Properties: IEnumerable<TRttiProperty> read GetPropertiesEnumerable;
+    property Properties: IReadOnlyList<TRttiProperty> read GetPropertiesInternal;
 
     /// <summary>
     ///   Gets a enumerable collection which contains all fields that the type
@@ -348,7 +347,7 @@ type
     /// <seealso cref="Constructors" />
     /// <seealso cref="Methods" />
     /// <seealso cref="Properties" />
-    property Fields: IEnumerable<TRttiField> read GetFieldsEnumerable;
+    property Fields: IReadOnlyList<TRttiField> read GetFieldsInternal;
 
     property AsClass: TRttiInstanceType read GetAsClass;
     property AsInterface: TRttiInterfaceType read GetAsInterface;
@@ -1105,24 +1104,24 @@ begin
   SetLength(Result, n);
 end;
 
-function TRttiTypeHelper.GetConstructorsEnumerable: IEnumerable<TRttiMethod>;
+function TRttiTypeHelper.GetConstructorsInternal: IReadOnlyList<TRttiMethod>;
 begin
-  Result := TArrayIterator<TRttiMethod>.Create(GetConstructors());
+  Result := TEnumerable.From<TRttiMethod>(GetConstructors);
 end;
 
-function TRttiTypeHelper.GetMethodsEnumerable: IEnumerable<TRttiMethod>;
+function TRttiTypeHelper.GetMethodsInternal: IReadOnlyList<TRttiMethod>;
 begin
-  Result := TArrayIterator<TRttiMethod>.Create(GetMethods());
+  Result := TEnumerable.From<TRttiMethod>(GetMethods);
 end;
 
-function TRttiTypeHelper.GetPropertiesEnumerable: IEnumerable<TRttiProperty>;
+function TRttiTypeHelper.GetPropertiesInternal: IReadOnlyList<TRttiProperty>;
 begin
-  Result := TArrayIterator<TRttiProperty>.Create(GetProperties());
+  Result := TEnumerable.From<TRttiProperty>(GetProperties);
 end;
 
-function TRttiTypeHelper.GetFieldsEnumerable: IEnumerable<TRttiField>;
+function TRttiTypeHelper.GetFieldsInternal: IReadOnlyList<TRttiField>;
 begin
-  Result := TArrayIterator<TRttiField>.Create(GetFields());
+  Result := TEnumerable.From<TRttiField>(GetFields);
 end;
 
 function TRttiTypeHelper.GetDefaultName: string;
@@ -1235,12 +1234,13 @@ begin
     t := t.BaseType;
   end;
 
-  Result := TArrayIterator<TRttiType>.Create(types);
+  Result := TEnumerable.From<TRttiType>(types);
 end;
 
-function TRttiTypeHelper.GetInterfaces: IEnumerable<TRttiInterfaceType>;
+function TRttiTypeHelper.GetInterfaces: IReadOnlyList<TRttiInterfaceType>;
 var
-  list: IDictionary<TGUID, TRttiInterfaceType>;
+  guids: ISet<TGUID>;
+  list: IList<TRttiInterfaceType>;
   classType: TClass;
   table: PInterfaceTable;
   entry: TInterfaceEntry;
@@ -1249,7 +1249,8 @@ var
 begin
   if IsClass then
   begin
-    list := TCollections.CreateDictionary<TGUID, TRttiInterfaceType>;
+    guids := TCollections.CreateSet<TGUID>;
+    list := TCollections.CreateList<TRttiInterfaceType>;
     classType := AsInstance.MetaclassType;
     while Assigned(classType) do
     begin
@@ -1259,29 +1260,30 @@ begin
         for i := 0 to table.EntryCount - 1 do
         begin
           entry := table.Entries[i];
-          if not list.ContainsKey(entry.IID)
-            and (entry.IID <> EmptyGuid)
-            and TType.TryGetInterfaceType(entry.IID, intfType) then
-            list[entry.IID] := intfType;
+          if (entry.IID <> EmptyGuid)
+            and TType.TryGetInterfaceType(entry.IID, intfType)
+            and guids.Add(entry.IID) then
+            list.Add(intfType);
         end;
       end;
       classType := classType.ClassParent;
     end;
-    Result := list.Values;
+    Result := list.AsReadOnlyList;
   end
   else
   if IsInterface then
   begin
-    list := TCollections.CreateDictionary<TGUID, TRttiInterfaceType>;
+    guids := TCollections.CreateSet<TGUID>;
+    list := TCollections.CreateList<TRttiInterfaceType>;
     intfType := AsInterface;
     while Assigned(intfType) do
     begin
-      if intfType.HasGuid and not list.ContainsKey(intfType.GUID)
-        and (intfType.GUID <> EmptyGuid) then
-        list[intfType.GUID] := intfType;
+      if intfType.HasGuid and (intfType.GUID <> EmptyGuid)
+        and guids.Add(intfType.GUID) then
+        list.Add(intfType);
       intfType := intfType.BaseType;
     end;
-    Result := list.Values;
+    Result := list.AsReadOnlyList;
   end
   else
     Result := TEnumerable.Empty<TRttiInterfaceType>;
@@ -1602,7 +1604,7 @@ end;
 
 function TRttiMethodHelper.GetParametersList: IReadOnlyList<TRttiParameter>;
 begin
-  Result := TArrayIterator<TRttiParameter>.Create(GetParameters());
+  Result := TEnumerable.From<TRttiParameter>(GetParameters);
 end;
 
 {$ENDREGION}

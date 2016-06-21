@@ -39,17 +39,31 @@ uses
   Spring.Collections.Lists;
 
 type
-  TEmptyEnumerable<T> = class(TEnumerableBase<T>)
+  TEmptyEnumerable<T> = class(TEnumerableBase<T>, IReadOnlyList<T>)
   private
-    class var fInstance: IEnumerable<T>;
-    class function GetInstance: IEnumerable<T>; static;
+    class var fInstance: IReadOnlyList<T>;
+    class function GetInstance: IReadOnlyList<T>; static;
     constructor Create; reintroduce;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
   public
     class destructor Destroy;
-    class property Instance: IEnumerable<T> read GetInstance;
+
+    function GetRange(index, count: Integer): IList<T>;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function ToArray: TArray<T>; override;
+
+    class property Instance: IReadOnlyList<T> read GetInstance;
   end;
 
-  TArrayIterator<T> = class(TIterator<T>, IReadOnlyList<T>)
+  TArrayIterator<T> = class(TIterator<T>, IReadOnlyList<T>, IArrayAccess<T>)
   private
     fValues: TArray<T>;
     fIndex: Integer;
@@ -57,6 +71,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
     function GetItem(index: Integer): T;
+    function GetItems: TArray<T>;
   {$ENDREGION}
     function Clone: TIterator<T>; override;
     function TryMoveNext(var current: T): Boolean; override;
@@ -865,11 +880,56 @@ begin
   fInstance := nil;
 end;
 
-class function TEmptyEnumerable<T>.GetInstance: IEnumerable<T>;
+function TEmptyEnumerable<T>.GetCount: Integer;
+begin
+  Result := 0;
+end;
+
+class function TEmptyEnumerable<T>.GetInstance: IReadOnlyList<T>;
 begin
   if fInstance = nil then
     fInstance := TEmptyEnumerable<T>.Create;
   Result := fInstance;
+end;
+
+function TEmptyEnumerable<T>.GetItem(index: Integer): T;
+begin
+  Guard.RaiseArgumentOutOfRangeException('index');
+end;
+
+function TEmptyEnumerable<T>.GetRange(index, count: Integer): IList<T>;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange(index = 0, 'index');
+  Guard.CheckRange(count = 0, 'count');
+{$ENDIF}
+
+{$IFDEF DELPHIXE_UP}
+  Result := TCollections.CreateList<T>;
+{$ELSE}
+  Result := TList<T>.Create;
+{$ENDIF}
+end;
+
+function TEmptyEnumerable<T>.IndexOf(const item: T): Integer;
+begin
+  Result := -1;
+end;
+
+function TEmptyEnumerable<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := -1;
+end;
+
+function TEmptyEnumerable<T>.IndexOf(const item: T; index,
+  count: Integer): Integer;
+begin
+  Result := -1;
+end;
+
+function TEmptyEnumerable<T>.ToArray: TArray<T>;
+begin
+  Result := nil;
 end;
 
 {$ENDREGION}
@@ -903,6 +963,11 @@ begin
 {$ENDIF}
 
   Result := fValues[index];
+end;
+
+function TArrayIterator<T>.GetItems: TArray<T>;
+begin
+  Result := fValues;
 end;
 
 function TArrayIterator<T>.GetRange(index, count: Integer): IList<T>;
