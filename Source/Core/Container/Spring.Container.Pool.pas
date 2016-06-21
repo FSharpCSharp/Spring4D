@@ -37,13 +37,13 @@ uses
 type
   IObjectPool = interface
     ['{E5842280-3750-46C0-8C91-0888EFFB0ED5}']
-    procedure Initialize(const context: ICreationContext);
-    function GetInstance(const context: ICreationContext): TObject;
+    procedure Initialize(const context: IContext);
+    function GetInstance(const context: IContext): TObject;
     procedure ReleaseInstance(const instance: TObject);
   end;
 
   IObjectPool<T> = interface(IObjectPool)
-    function GetInstance(const context: ICreationContext): T;
+    function GetInstance(const context: IContext): T;
     procedure ReleaseInstance(const instance: T);
   end;
 
@@ -71,7 +71,7 @@ type
     fInstances: IList<Pointer>;
     fInitialized: Boolean;
   protected
-    function AddNewInstance(const context: ICreationContext): TObject;
+    function AddNewInstance(const context: IContext): TObject;
     procedure CollectInactiveInstances;
     function GetAvailableObject: TObject;
     procedure InstancesChanged(Sender: TObject; const item: Pointer;
@@ -81,8 +81,8 @@ type
   public
     constructor Create(const provider: IProvider; minPoolSize, maxPoolSize: Integer);
     destructor Destroy; override;
-    procedure Initialize(const context: ICreationContext); virtual;
-    function GetInstance(const context: ICreationContext): TObject; virtual;
+    procedure Initialize(const context: IContext); virtual;
+    function GetInstance(const context: IContext): TObject; virtual;
     procedure ReleaseInstance(const instance: TObject); virtual;
   end;
 
@@ -121,7 +121,7 @@ begin
   inherited Destroy;
 end;
 
-function TSimpleObjectPool.AddNewInstance(const context: ICreationContext): TObject;
+function TSimpleObjectPool.AddNewInstance(const context: IContext): TObject;
 var
   refCounted: IRefCounted;
 begin
@@ -156,7 +156,7 @@ begin
   end;
 end;
 
-procedure TSimpleObjectPool.Initialize(const context: ICreationContext);
+procedure TSimpleObjectPool.Initialize(const context: IContext);
 var
   i: Integer;
   instance: TObject;
@@ -192,7 +192,7 @@ begin
   Result := fAvailableList.Dequeue;
 end;
 
-function TSimpleObjectPool.GetInstance(const context: ICreationContext): TObject;
+function TSimpleObjectPool.GetInstance(const context: IContext): TObject;
 begin
   fLock.Acquire;
   try

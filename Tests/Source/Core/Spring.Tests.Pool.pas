@@ -45,7 +45,7 @@ type
   private
     fLastID: Integer;
   public
-    function CreateInstance(const context: ICreationContext): TValue;
+    function CreateInstance(const context: IContext): TValue;
     property LastID: Integer read fLastID;
   end;
 
@@ -69,7 +69,7 @@ implementation
 
 {$REGION 'TMockProvider'}
 
-function TMockProvider.CreateInstance(const context: ICreationContext): TValue;
+function TMockProvider.CreateInstance(const context: IContext): TValue;
 begin
   Inc(fLastID);
   Result := TMockIDObject.Create(fLastID);

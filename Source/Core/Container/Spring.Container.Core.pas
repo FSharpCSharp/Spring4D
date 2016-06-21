@@ -52,7 +52,7 @@ type
   ILifetimeManager = interface;
   IProvider = interface;
   IContainerExtension = interface;
-  ICreationContext = interface;
+  IContext = interface;
   IRequest = interface;
   IProxyFactory = interface;
 
@@ -85,7 +85,7 @@ type
 
   IConstructorSelector = interface
     ['{E8C15B1F-EF8F-4167-8C9E-2BD0BB3E0BE1}']
-    function Find(const context: ICreationContext;
+    function Find(const context: IContext;
       const model: TComponentModel): IInjection;
   end;
 
@@ -193,7 +193,7 @@ type
   /// </summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
-    function Resolve(const context: ICreationContext;
+    function Resolve(const context: IContext;
       const model: TComponentModel): TValue;
     procedure Release(const instance: TValue);
   end;
@@ -207,7 +207,7 @@ type
     /// <summary>
     ///   Creates an instance within the specified context.
     /// </summary>
-    function CreateInstance(const context: ICreationContext): TValue;
+    function CreateInstance(const context: IContext): TValue;
   end;
 
   /// <summary>
@@ -267,12 +267,12 @@ type
   IRequest = interface
     ['{ACEB84B5-1E9B-465E-ADEF-3EE82C15D6F1}']
     function GetService: PTypeInfo;
-    function GetContext: ICreationContext;
+    function GetContext: IContext;
     function GetTarget: ITarget;
     function GetParameter: TValue;
 
     property Service: PTypeInfo read GetService;
-    property Context: ICreationContext read GetContext;
+    property Context: IContext read GetContext;
     property Target: ITarget read GetTarget;
     property Parameter: TValue read GetParameter;
   end;
@@ -280,15 +280,15 @@ type
   TRequest = class(TInterfacedObject, IRequest)
   private
     fService: PTypeInfo;
-    fContext: ICreationContext;
+    fContext: IContext;
     fTarget: ITarget;
     fParameter: TValue;
     function GetService: PTypeInfo;
-    function GetContext: ICreationContext;
+    function GetContext: IContext;
     function GetTarget: ITarget;
     function GetParameter: TValue;
   public
-    constructor Create(service: PTypeInfo; const context: ICreationContext;
+    constructor Create(service: PTypeInfo; const context: IContext;
       const target: ITarget; const parameter: TValue);
   end;
 
@@ -304,7 +304,7 @@ type
   ///   to detect cycled dependency graphs and also being used to provide
   ///   arguments to components.
   /// </summary>
-  ICreationContext = interface(IResolver)
+  IContext = interface(IResolver)
     ['{0E788A94-AD9B-4951-85C1-40F877BB8A24}']
     function EnterResolution(const model: TComponentModel;
       out instance: TValue): Boolean;
@@ -322,10 +322,10 @@ type
     function CanResolve(const request: IRequest): Boolean; overload;
     function Resolve(const request: IRequest): TValue; overload;
 
-    function CanResolve(const context: ICreationContext;
+    function CanResolve(const context: IContext;
       const dependencies: TArray<ITarget>;
       const arguments: TArray<TValue>): Boolean; overload;
-    function Resolve(const context: ICreationContext;
+    function Resolve(const context: IContext;
       const dependencies: TArray<ITarget>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
 
@@ -816,7 +816,7 @@ end;
 
 {$REGION 'TRequest'}
 
-constructor TRequest.Create(service: PTypeInfo; const context: ICreationContext;
+constructor TRequest.Create(service: PTypeInfo; const context: IContext;
   const target: ITarget; const parameter: TValue);
 begin
   inherited Create;
@@ -826,7 +826,7 @@ begin
   fParameter := parameter;
 end;
 
-function TRequest.GetContext: ICreationContext;
+function TRequest.GetContext: IContext;
 begin
   Result := fContext;
 end;

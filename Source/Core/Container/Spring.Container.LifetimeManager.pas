@@ -44,7 +44,7 @@ type
     function TryGetInterfaceWithoutCopy(const instance: TValue; const IID: TGUID; out intf): Boolean;
   public
     constructor Create(const model: TComponentModel); virtual;
-    function Resolve(const context: ICreationContext;
+    function Resolve(const context: IContext;
       const model: TComponentModel): TValue; overload; virtual; abstract;
     procedure Release(const instance: TValue); virtual; abstract;
   end;
@@ -56,14 +56,14 @@ type
     fInstance: Func<TValue>;
   public
     destructor Destroy; override;
-    function Resolve(const context: ICreationContext;
+    function Resolve(const context: IContext;
       const model: TComponentModel): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
   TTransientLifetimeManager = class(TLifetimeManagerBase)
   public
-    function Resolve(const context: ICreationContext;
+    function Resolve(const context: IContext;
       const model: TComponentModel): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
@@ -79,7 +79,7 @@ type
   public
     constructor Create(const model: TComponentModel); override;
     destructor Destroy; override;
-    function Resolve(const context: ICreationContext;
+    function Resolve(const context: IContext;
       const model: TComponentModel): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
@@ -89,7 +89,7 @@ type
     fPool: IObjectPool;
   public
     constructor Create(const model: TComponentModel); override;
-    function Resolve(const context: ICreationContext;
+    function Resolve(const context: IContext;
       const model: TComponentModel): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
@@ -175,7 +175,7 @@ begin
   inherited Destroy;
 end;
 
-function TSingletonLifetimeManager.Resolve(const context: ICreationContext;
+function TSingletonLifetimeManager.Resolve(const context: IContext;
   const model: TComponentModel): TValue;
 var
   newInstance: TValue;
@@ -212,7 +212,7 @@ end;
 
 {$REGION 'TTransientLifetimeManager'}
 
-function TTransientLifetimeManager.Resolve(const context: ICreationContext;
+function TTransientLifetimeManager.Resolve(const context: IContext;
   const model: TComponentModel): TValue;
 begin
   Result := model.Provider.CreateInstance(context);
@@ -261,7 +261,7 @@ begin
 end;
 
 function TSingletonPerThreadLifetimeManager.Resolve(
-  const context: ICreationContext; const model: TComponentModel): TValue;
+  const context: IContext; const model: TComponentModel): TValue;
 var
   threadID: THandle;
   instance: TValue;
@@ -310,7 +310,7 @@ begin
     model.Provider, model.MinPoolsize, model.MaxPoolsize);
 end;
 
-function TPooledLifetimeManager.Resolve(const context: ICreationContext;
+function TPooledLifetimeManager.Resolve(const context: IContext;
   const model: TComponentModel): TValue;
 begin
   Result := fPool.GetInstance(context);

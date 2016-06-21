@@ -50,12 +50,12 @@ type
   TStrictConstructorSelector = class(TInterfacedObject, IConstructorSelector)
   private
     fKernel: TKernel;
-    function TryHandle(const context: ICreationContext;
+    function TryHandle(const context: IContext;
       const candidate: IInjection; var winner: IInjection): Boolean;
     property Kernel: TKernel read fKernel;
   public
     constructor Create(const kernel: TKernel);
-    function Find(const context: ICreationContext;
+    function Find(const context: IContext;
       const model: TComponentModel): IInjection;
   end;
 
@@ -78,7 +78,7 @@ begin
   fKernel := kernel;
 end;
 
-function TStrictConstructorSelector.Find(const context: ICreationContext;
+function TStrictConstructorSelector.Find(const context: IContext;
   const model: TComponentModel): IInjection;
 var
   maxCount: Integer;
@@ -122,7 +122,7 @@ begin
   Result := candidate;
 end;
 
-function TStrictConstructorSelector.TryHandle(const context: ICreationContext;
+function TStrictConstructorSelector.TryHandle(const context: IContext;
   const candidate: IInjection; var winner: IInjection): Boolean;
 var
   injection: IInjection;

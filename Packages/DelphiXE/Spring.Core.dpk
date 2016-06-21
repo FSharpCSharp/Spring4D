@@ -39,7 +39,7 @@ contains
   Spring.Container.Builder in '..\..\Source\Core\Container\Spring.Container.Builder.pas',
   Spring.Container.Common in '..\..\Source\Core\Container\Spring.Container.Common.pas',
   Spring.Container.Core in '..\..\Source\Core\Container\Spring.Container.Core.pas',
-  Spring.Container.CreationContext in '..\..\Source\Core\Container\Spring.Container.CreationContext.pas',
+  Spring.Container.Context in '..\..\Source\Core\Container\Spring.Container.Context.pas',
   Spring.Container.Injection in '..\..\Source\Core\Container\Spring.Container.Injection.pas',
   Spring.Container.LifetimeManager in '..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas',
   Spring.Container.Pool in '..\..\Source\Core\Container\Spring.Container.Pool.pas',
