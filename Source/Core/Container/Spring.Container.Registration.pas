@@ -84,7 +84,6 @@ type
     function HasService(const serviceName: string): Boolean; overload;
     function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
     function HasDefault(serviceType: PTypeInfo): Boolean;
-    function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const serviceName: string): TComponentModel; overload;
     function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
     function FindDefault(serviceType: PTypeInfo): TComponentModel;
@@ -406,19 +405,6 @@ end;
 function TComponentRegistry.FindOne(const serviceName: string): TComponentModel;
 begin
   fServiceNameMappings.TryGetValue(serviceName, Result);
-end;
-
-function TComponentRegistry.FindOne(componentType: PTypeInfo): TComponentModel;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(componentType, 'componentType');
-{$ENDIF}
-
-  Result := fModels.FirstOrDefault(
-    function(const model: TComponentModel): Boolean
-    begin
-      Result := model.ComponentTypeInfo = componentType;
-    end);
 end;
 
 function TComponentRegistry.FindOne(serviceType: PTypeInfo;

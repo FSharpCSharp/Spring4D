@@ -132,10 +132,6 @@ type
 
     function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
-
-    { Experimental Release Methods }
-    procedure Release(instance: TObject); overload;
-    procedure Release(instance: IInterface); overload;
   end;
 
   /// <summary>
@@ -211,6 +207,7 @@ end;
 procedure TContainer.CheckBuildRequired;
 begin
   if fChangedModels.Any then
+    // TODO just call Build instead of exception?
     raise EContainerException.CreateRes(@SContainerRequiresBuild);
 end;
 
@@ -610,24 +607,6 @@ begin
     request := TRequest.Create(targetType.Handle, context, nil, serviceName);
     Result[i] := Resolver.Resolve(request);
   end;
-end;
-
-procedure TContainer.Release(instance: TObject);
-var
-  model: TComponentModel;
-begin
-  Guard.CheckNotNull(instance, 'instance');
-
-  model := Registry.FindOne(instance.ClassInfo);
-  if model = nil then
-    raise EContainerException.CreateResFmt(@STypeNotFound, [instance.ClassName]);
-  model.LifetimeManager.Release(instance);
-end;
-
-procedure TContainer.Release(instance: IInterface);
-begin
-  Guard.CheckNotNull(instance, 'instance');
-  {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
 
 {$ENDREGION}

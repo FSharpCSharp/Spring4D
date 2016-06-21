@@ -103,6 +103,7 @@ uses
   RTLConsts,
   Spring.Reflection,
   Spring.Container.Common,
+  Spring.Container.Core,
   Spring.Container.Registration,
   Spring.Logging,
   Spring.Logging.Extensions,
@@ -262,6 +263,7 @@ class procedure TLoggingConfiguration.LoadFromStrings(const container: TContaine
 var
   ini: TMemIniFile;
   configuration: TLoggingConfiguration;
+  model: TComponentModel;
   reader: TConfigurationReader;
 begin
   Guard.CheckNotNull(container, 'container');
@@ -277,9 +279,8 @@ begin
 
     //Register and build the configuration so we can be sure container will
     //properly release it
-    container.RegisterType<TLoggingConfiguration>.AsSingleton.AsDefault;
-    container.Builder.Build(container.Registry.FindOne(
-      TypeInfo(TLoggingConfiguration)));
+    model := container.RegisterType<TLoggingConfiguration>.AsSingleton.AsDefault.Model;
+    container.Builder.Build(model);
     configuration := container.Resolve<TLoggingConfiguration>;
 
     reader := TConfigurationReader.Create(container, ini);
@@ -532,7 +533,7 @@ begin
   classType := GetType(typeName, True);
   Result := classType.QualifiedName;
 
-  if fContainer.Registry.FindOne(classType.Handle) = nil then
+  if not fContainer.Registry.HasService(TypeInfo(ILogEventConverter), Result) then
     fContainer.RegisterType(classType.Handle).AsSingleton
       .Implements(TypeInfo(ILogEventConverter), Result);
 end;
