@@ -64,10 +64,10 @@ type
     class destructor Destroy;
   {$HINTS ON}
   public
+    class function GetClasses: IEnumerable<TRttiInstanceType>; static;
+    class function GetInterfaces: IEnumerable<TRttiInterfaceType>; static;
     class function GetTypes: IEnumerable<TRttiType>; static;
-//    class function GetTypes: IEnumerable<TRttiType>;
-    class function GetFullName(typeInfo: PTypeInfo): string; overload; static;
-    class function GetFullName<T>: string; overload; static;
+
     class function FindType(const qualifiedName: string): TRttiType; static;
     class function TryGetType(typeInfo: PTypeInfo; out rttiType: TRttiType): Boolean; static;
 
@@ -91,72 +91,9 @@ type
     class procedure SetMemberValue(const instance: TObject;
       const name: string; const value: TValue); static;
 
+    class property Classes: IEnumerable<TRttiInstanceType> read GetClasses;
+    class property Interfaces: IEnumerable<TRttiInterfaceType> read GetInterfaces;
     class property Types: IEnumerable<TRttiType> read GetTypes;
-  end;
-
-//  IRttiPackage = interface
-//    ['{7365872F-36E1-424F-96F4-522357F0A9A4}']
-//    {$REGION 'Property Accessors
-//      function GetHandle: HINST;
-//      function GetTypes: IEnumerable<TRttiType>;
-//    {$ENDREGION}
-//
-//    property Handle: HINST read GetHandle;
-//    function FindType(const qualifiedName: string): TRttiType;
-//    property Types: IEnumerable<TRttiType> read GetTypes;
-//  end;
-
-  IReflection = interface
-    ['{E3B66C0B-4827-44C4-BDD9-27F1A856FDDD}']
-  {$REGION 'Property Accessors'}
-    function GetClasses: IEnumerable<TRttiInstanceType>;
-    function GetInterfaces: IEnumerable<TRttiInterfaceType>;
-    function GetTypes: IEnumerable<TRttiType>;
-//    function GetPackages: IEnumerable<TRttiPackage>;
-  {$ENDREGION}
-
-    function GetType(const typeInfo: PTypeInfo): TRttiType; overload;
-    function GetType(const classType: TClass): TRttiType; overload;
-    function GetType(const instance: TObject): TRttiType; overload;
-//    function GetType(const interfaceGuid: TGuid): TRttiType; overload;
-    function GetType(const instance: TValue): TRttiType; overload;
-
-    function GetFullName(const typeInfo: PTypeInfo): string; overload;
-
-    function FindType(const qualifiedName: string): TRttiType;
-
-//    function FindAllWhere(): IEnumerable<TRttiType>;
-
-    property Classes: IEnumerable<TRttiInstanceType> read GetClasses;
-    property Interfaces: IEnumerable<TRttiInterfaceType> read GetInterfaces;
-    property Types: IEnumerable<TRttiType> read GetTypes;
-//    property Packages: IEnumerable<TRttiPackage> read GetPackages;
-  end;
-
-  TReflection = class(TInterfacedObject, IReflection)
-  strict private
-    class var fContext: TRttiContext;
-    function GetClasses: IEnumerable<TRttiInstanceType>;
-    function GetInterfaces: IEnumerable<TRttiInterfaceType>;
-    function GetTypes: IEnumerable<TRttiType>;
-//    function GetPackages: IEnumerable<TRttiPackage>;
-    class constructor Create;
-  {$HINTS OFF}
-    class destructor Destroy;
-  {$HINTS ON}
-  public
-    function GetType(const typeInfo: PTypeInfo): TRttiType; overload;
-    function GetType(const classType: TClass): TRttiType; overload;
-    function GetType(const instance: TObject): TRttiType; overload;
-    function GetType(const instance: TValue): TRttiType; overload;
-
-    function GetFullName(const typeInfo: PTypeInfo): string; overload;
-    function FindType(const qualifiedName: string): TRttiType;
-
-    property Classes: IEnumerable<TRttiInstanceType> read GetClasses;
-    property Interfaces: IEnumerable<TRttiInterfaceType> read GetInterfaces;
-    property Types: IEnumerable<TRttiType> read GetTypes;
-//    property Packages: IEnumerable<TRttiPackage> read GetPackages;
   end;
 
   {$ENDREGION}
@@ -391,22 +328,21 @@ type
 
   TRttiMemberHelper = class helper for TRttiMember
   private
-    function GetIsPrivate: Boolean;
-    function GetIsProtected: Boolean;
-    function GetIsPublic: Boolean;
-    function GetIsPublished: Boolean;
-    function GetIsConstructor: Boolean;
-    function GetIsProperty: Boolean;
-    function GetIsMethod: Boolean;
-    function GetIsField: Boolean;
-    function GetAsMethod: TRttiMethod;
-    function GetAsProperty: TRttiProperty;
-    function GetAsField: TRttiField;
+    function GetIsPrivate: Boolean; inline;
+    function GetIsProtected: Boolean; inline;
+    function GetIsPublic: Boolean; inline;
+    function GetIsPublished: Boolean; inline;
+    function GetIsConstructor: Boolean; inline;
+    function GetIsProperty: Boolean; inline;
+    function GetIsMethod: Boolean; inline;
+    function GetIsField: Boolean; inline;
+    function GetAsMethod: TRttiMethod; inline;
+    function GetAsProperty: TRttiProperty; inline;
+    function GetAsField: TRttiField; inline;
     function GetMemberType: TRttiType;
     function GetIsReadable: Boolean;
     function GetIsWritable: Boolean;
   public
-//    procedure InvokeMember(instance: TValue; const arguments: array of TValue);
     function GetValue(const instance: TValue): TValue; overload;
     procedure SetValue(const instance: TValue; const value: TValue); overload;
     property AsMethod: TRttiMethod read GetAsMethod;
@@ -819,26 +755,19 @@ begin
   fSection.Free;
 end;
 
+class function TType.GetClasses: IEnumerable<TRttiInstanceType>;
+begin
+  Result := TRttiTypeIterator<TRttiInstanceType>.Create;
+end;
+
+class function TType.GetInterfaces: IEnumerable<TRttiInterfaceType>;
+begin
+  Result := TRttiTypeIterator<TRttiInterfaceType>.Create;
+end;
+
 class function TType.GetTypes: IEnumerable<TRttiType>;
 begin
   Result := TRttiTypeIterator<TRttiType>.Create;
-end;
-
-class function TType.GetFullName(typeInfo: PTypeInfo): string;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(typeInfo, 'typeInfo');
-{$ENDIF}
-
-  Result := Context.GetType(typeInfo).QualifiedName;
-end;
-
-class function TType.GetFullName<T>: string;
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := System.TypeInfo(T);
-  Result := TType.GetFullName(typeInfo);
 end;
 
 class function TType.FindType(const qualifiedName: string): TRttiType;
@@ -913,7 +842,10 @@ var
   field: TRttiField;
   prop: TRttiProperty;
 begin
-  // TODO: TValue conversion ?
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(instance, 'instance');
+{$ENDIF}
+
   if TryGetType(instance.ClassInfo, rttiType) then
     if rttiType.TryGetField(name, field) then
       field.SetValue(instance, value)
@@ -1573,7 +1505,7 @@ begin
   for prop in Parent.GetProperties do
     if prop is TRttiInstanceProperty then
     begin
-      code := GetCodeAddress(prop.Parent.AsInstance.MetaclassType,
+      code := GetCodeAddress(TRttiInstanceType(prop.Parent).MetaclassType,
         TRttiInstanceProperty(prop).PropInfo.GetProc);
       if code = CodeAddress then
         Exit(True);
@@ -1589,7 +1521,7 @@ begin
   for prop in Parent.GetProperties do
     if prop is TRttiInstanceProperty then
     begin
-      code := GetCodeAddress(prop.Parent.AsInstance.MetaclassType,
+      code := GetCodeAddress(TRttiInstanceType(prop.Parent).MetaclassType,
         TRttiInstanceProperty(prop).PropInfo.SetProc);
       if code = CodeAddress then
         Exit(True);
@@ -1752,9 +1684,9 @@ end;
 function TTypeFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   if member.IsProperty then
-    Result := member.AsProperty.PropertyType.Handle = fTypeInfo
+    Result := TRttiProperty(member).PropertyType.Handle = fTypeInfo
   else if member.IsField then
-    Result := member.AsField.FieldType.Handle = fTypeInfo
+    Result := TRttiField(member).FieldType.Handle = fTypeInfo
   else
     Result := False;
 end;
@@ -1776,7 +1708,10 @@ var
   parameters: TArray<TRttiParameter>;
   i: Integer;
 begin
-  parameters := member.AsMethod.GetParameters;
+  if not member.IsMethod then
+    Exit(False);
+
+  parameters := TRttiMethod(member).GetParameters;
   Result := Length(parameters) = Length(fTypes);
   if Result then
     for i := Low(parameters) to High(parameters) do
@@ -1800,12 +1735,9 @@ var
 begin
   Result := False;
   if member.IsMethod then
-  begin
-    parameters := member.AsMethod.GetParameters;
-    for parameter in parameters do
+    for parameter in TRttiMethod(member).GetParameters do
       if parameter.ParamType.Handle = fTypeInfo then
         Exit(True);
-  end;
 end;
 
 { THasParameterFlagsFilter<T> }
@@ -1818,17 +1750,13 @@ end;
 
 function THasParameterFlagsFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 var
-  parameters: TArray<TRttiParameter>;
   parameter: TRttiParameter;
 begin
-  Result := False;
   if member.IsMethod then
-  begin
-    parameters := member.AsMethod.GetParameters;
-    for parameter in parameters do
+    for parameter in TRttiMethod(member).GetParameters do
       if parameter.Flags * fFlags <> [] then
         Exit(True);
-  end;
+  Result := False;
 end;
 
 { TMethodKindFilter<T> }
@@ -1843,9 +1771,9 @@ function TMethodKindFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
 {$IFDEF DELPHI2010}
   // explicit cast to prevent the compiler from choking
-  Result := TRttiMember(member).IsMethod and (TRttiMember(member).AsMethod.MethodKind in fFlags);
+  Result := TRttiMember(member).IsMethod and (TRttiMethod(member).MethodKind in fFlags);
 {$ELSE}
-  Result := member.IsMethod and (member.AsMethod.MethodKind in fFlags);
+  Result := member.IsMethod and (TRttiMethod(member).MethodKind in fFlags);
 {$ENDIF}
 end;
 
@@ -1854,9 +1782,9 @@ end;
 function TInvokableFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   if member.IsProperty then
-    Result := member.AsProperty.IsWritable
+    Result := TRttiProperty(member).IsWritable
   else if member.IsMethod then
-    Result := not (member.AsMethod.MethodKind in [mkClassConstructor, mkClassDestructor])
+    Result := not (TRttiMethod(member).MethodKind in [mkClassConstructor, mkClassDestructor])
   else
     Result := True;
 end;
@@ -1885,14 +1813,14 @@ end;
 
 function TInstanceMethodFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
-  Result := member.IsMethod and not member.AsMethod.IsClassMethod;
+  Result := member.IsMethod and not TRttiMethod(member).IsClassMethod;
 end;
 
 { TClassMethodFilter<T> }
 
 function TClassMethodFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
-  Result := member.IsMethod and member.AsMethod.IsClassMethod;
+  Result := member.IsMethod and TRttiMethod(member).IsClassMethod;
 end;
 
 { TIsClassFilter }
@@ -1921,86 +1849,6 @@ function THasFlagsFilter.IsSatisfiedBy(
   const parameter: TRttiParameter): Boolean;
 begin
   Result := parameter.Flags * fFlags = fFlags;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TReflection'}
-
-class constructor TReflection.Create;
-begin
-  fContext := TRttiContext.Create;
-end;
-
-class destructor TReflection.Destroy;
-begin
-  fContext.Free;
-end;
-
-function TReflection.FindType(const qualifiedName: string): TRttiType;
-begin
-  Result := fContext.FindType(qualifiedName);
-end;
-
-function TReflection.GetClasses: IEnumerable<TRttiInstanceType>;
-begin
-  Result := TRttiTypeIterator<TRttiInstanceType>.Create;
-end;
-
-function TReflection.GetFullName(const typeInfo: PTypeInfo): string;
-var
-  t: TRttiType;
-begin
-  t := fContext.GetType(typeInfo);
-  if t = nil then
-    Exit('');
-  if t.IsPublicType then
-    Result := t.QualifiedName
-  else
-    Result := t.Name;
-end;
-
-function TReflection.GetInterfaces: IEnumerable<TRttiInterfaceType>;
-begin
-  Result := TRttiTypeIterator<TRttiInterfaceType>.Create;
-end;
-
-function TReflection.GetType(const typeInfo: PTypeInfo): TRttiType;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(typeInfo, 'typeInfo');
-{$ENDIF}
-
-  Result := fContext.GetType(typeInfo);
-end;
-
-function TReflection.GetType(const classType: TClass): TRttiType;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(classType, 'classType');
-{$ENDIF}
-
-  Result := fContext.GetType(classType.ClassInfo);
-end;
-
-function TReflection.GetType(const instance: TObject): TRttiType;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(instance, 'instance');
-{$ENDIF}
-
-  Result := fContext.GetType(instance.ClassInfo);
-end;
-
-function TReflection.GetType(const instance: TValue): TRttiType;
-begin
-  Result := fContext.GetType(instance.TypeInfo);
-end;
-
-function TReflection.GetTypes: IEnumerable<TRttiType>;
-begin
-  Result := TRttiTypeIterator<TRttiType>.Create;
 end;
 
 {$ENDREGION}
