@@ -1,4 +1,4 @@
-unit Spring.Persistence.ObjectDataset.ActiveX;
+unit Spring.Data.ObjectDataset.ActiveX;
 
 interface
 

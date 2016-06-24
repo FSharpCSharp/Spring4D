@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Persistence.ObjectDataset;
+unit Spring.Data.ObjectDataset;
 
 interface
 
@@ -34,13 +34,11 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.Persistence.ObjectDataset.Abstract,
-  Spring.Persistence.ObjectDataset.Algorithms.Sort,
-  Spring.Persistence.ObjectDataset.ExprParser;
+  Spring.Data.ObjectDataset.Abstract,
+  Spring.Data.ObjectDataset.Algorithms.Sort,
+  Spring.Data.ObjectDataset.ExprParser;
 
 type
-  TCustomAttributeClass = class of TCustomAttribute;
-
   TObjectDataset = class(TAbstractObjectDataset)
   private
     FDataList: IObjectList;
@@ -57,7 +55,7 @@ type
     FOnAfterSort: TNotifyEvent;
     FOnBeforeFilter: TNotifyEvent;
     FOnBeforeSort: TNotifyEvent;
-    FColumnAttributeClass: TCustomAttributeClass;
+    FColumnAttributeClass: TAttributeClass;
     FTrackChanges: Boolean;
 
     function GetSort: string;
@@ -77,8 +75,7 @@ type
     procedure DoPostRecord(Index: Integer; Append: Boolean); override;
     procedure RebuildPropertiesCache; override;
 
-    function DataListCount: Integer; override;
-    function GetCurrentDataList: IObjectList; override;
+    function DataListCount: Integer;
     function GetRecordCount: Integer; override;
     function RecordConformsFilter: Boolean; override;
     procedure UpdateFilter; override;
@@ -163,7 +160,7 @@ type
     /// <example>
     ///   <code lang="">MyDataset.ColumnAttributeClass := ColumnAttribute</code>
     /// </example>
-    property ColumnAttributeClass: TCustomAttributeClass
+    property ColumnAttributeClass: TAttributeClass
       read FColumnAttributeClass write FColumnAttributeClass;
 
     /// <summary>
@@ -226,7 +223,7 @@ uses
   Variants,
   Spring.Reflection,
   Spring.SystemUtils,
-  Spring.Persistence.ObjectDataset.ExprParser.Functions;
+  Spring.Data.ObjectDataset.ExprParser.Functions;
 
 type
   EObjectDatasetException = class(Exception);
@@ -237,6 +234,22 @@ type
 
 
 {$REGION 'TObjectDataset'}
+
+constructor TObjectDataset.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FProperties := TCollections.CreateList<TRttiProperty>;
+  FFilterParser := TExprParser.Create;
+  FFilterParser.OnGetVariable := ParserGetVariableValue;
+  FFilterParser.OnExecuteFunction := ParserGetFunctionValue;
+  FDefaultStringFieldLength := 250;
+end;
+
+destructor TObjectDataset.Destroy;
+begin
+  FFilterParser.Free;
+  inherited Destroy;
+end;
 
 procedure TObjectDataset.Clone(const ASource: TObjectDataset);
 begin
@@ -286,16 +299,6 @@ begin
   Result := ValueToVariant(AValue);
 end;
 
-constructor TObjectDataset.Create(AOwner: TComponent);
-begin
-  inherited Create(AOwner);
-  FProperties := TCollections.CreateList<TRttiProperty>;
-  FFilterParser := TExprParser.Create;
-  FFilterParser.OnGetVariable := ParserGetVariableValue;
-  FFilterParser.OnExecuteFunction := ParserGetFunctionValue;
-  FDefaultStringFieldLength := 250;
-end;
-
 function TObjectDataset.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
 var
   LText, LItem: string;
@@ -328,12 +331,6 @@ begin
   Result := 0;
   if Assigned(FDataList) then
     Result := FDataList.Count;
-end;
-
-destructor TObjectDataset.Destroy;
-begin
-  FFilterParser.Free;
-  inherited Destroy;
 end;
 
 procedure TObjectDataset.DoAfterOpen;
@@ -471,11 +468,6 @@ begin
     Result := Copy(Result, 1, Length(Result) - 1)
   else
     Result := Result + ' ';
-end;
-
-function TObjectDataset.GetCurrentDataList: IObjectList;
-begin
-  Result := DataList;
 end;
 
 function TObjectDataset.GetCurrentModel<T>: T;
@@ -643,7 +635,6 @@ begin
     if FieldDefs.IndexOf(LField.FieldName) = -1 then
     begin
       LFieldDef := FieldDefs.AddFieldDef;
-      TObjectDatasetFieldDef(LFieldDef).Visible := True;
       LFieldDef.Name := LField.FieldName;
       LFieldDef.DataType := LField.DataType;
       LFieldDef.Size := LField.Size;
@@ -662,12 +653,10 @@ end;
 procedure TObjectDataset.LoadFieldDefsFromItemType;
 var
   LProp: TRttiProperty;
- // LAttrib: TCustomAttribute;
-  LPropPrettyName: string;
   LFieldType: TFieldType;
-  LFieldDef: TObjectDatasetFieldDef;
+  LFieldDef: TFieldDef;
   LLength, LPrecision, LScale: Integer;
-  LRequired, LDontUpdate, LHidden: Boolean;
+  LRequired, LDontUpdate: Boolean;
 
   procedure DoGetFieldType(ATypeInfo: PTypeInfo);
   var
@@ -781,50 +770,17 @@ begin
       raise EObjectDatasetException.Create(SColumnPropertiesNotSpecified);
   for LProp in FProperties do
   begin
-    LPropPrettyName := LProp.Name;
     LLength := -2;
     LPrecision := -2;
     LScale := -2;
     LRequired := False;
     LDontUpdate := False;
-    LHidden := False;
-    {TODO -oOwner -cGeneral : what to do with values from ColumnAttribute?}
-    {for LAttrib in LProp.GetAttributes do
-    begin
-      if LAttrib is ColumnAttribute then
-      begin
-        if (ColumnAttribute(LAttrib).ColumnName <> '') then
-          LPropPrettyName := ColumnAttribute(LAttrib).ColumnName;
-
-        if (ColumnAttribute(LAttrib).Length <> 0) then
-          LLength := ColumnAttribute(LAttrib).Length;
-
-        if (ColumnAttribute(LAttrib).Precision <> 0) then
-          LPrecision := ColumnAttribute(LAttrib).Precision;
-
-        if (ColumnAttribute(LAttrib).Scale <> 0) then
-          LScale := ColumnAttribute(LAttrib).Scale;
-
-        if (ColumnAttribute(LAttrib).Description <> '') then
-          LPropPrettyName := ColumnAttribute(LAttrib).Description;
-
-        LRequired := ( cpRequired in ColumnAttribute(LAttrib).Properties );
-        LDontUpdate := ( cpDontInsert in ColumnAttribute(LAttrib).Properties )
-          or ( cpDontUpdate in ColumnAttribute(LAttrib).Properties );
-
-        LHidden :=  ( cpHidden in ColumnAttribute(LAttrib).Properties );
-
-        Break;
-      end;
-    end;}
-
     LFieldType := ftWideString;
 
     DoGetFieldType(LProp.PropertyType.Handle);
 
-    LFieldDef := FieldDefs.AddFieldDef as TObjectDatasetFieldDef;
+    LFieldDef := FieldDefs.AddFieldDef;
     LFieldDef.Name := LProp.Name;
-    LFieldDef.SetRealDisplayName(LPropPrettyName);
 
     LFieldDef.DataType := LFieldType;
     if LLength <> -2 then
@@ -843,8 +799,6 @@ begin
 
     if LDontUpdate then
       LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadOnly];
-
-    LFieldDef.Visible := not LHidden;
 
     if not LProp.IsWritable then
       LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadOnly];

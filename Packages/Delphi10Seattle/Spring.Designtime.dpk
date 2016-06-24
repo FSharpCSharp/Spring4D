@@ -34,6 +34,6 @@ requires
   Spring.Persistence;
 
 contains
-  Spring.Persistence.ObjectDataset.Designtime in '..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Designtime.pas';
+  Spring.Data.ObjectDataset.Designtime in '..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.Designtime.pas';
 
 end.

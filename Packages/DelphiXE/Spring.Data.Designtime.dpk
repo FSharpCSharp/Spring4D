@@ -1,4 +1,4 @@
-package Spring.Designtime;
+package Spring.Data.Designtime;
 
 {$R *.res}
 {$ALIGN 8}
@@ -22,15 +22,15 @@ package Spring.Designtime;
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
-{$DESCRIPTION 'Spring4D Components'}
+{$DESCRIPTION 'Spring4D Data designtime package'}
 {$LIBSUFFIX '.DelphiXE'}
 {$DESIGNONLY}
 {$IMPLICITBUILD OFF}
 
 requires
-  Spring.Persistence;
+  Spring.Data;
 
 contains
-  Spring.Persistence.ObjectDataset.Designtime in '..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Designtime.pas';
+  Spring.Data.ObjectDataset.Designtime in '..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.Designtime.pas';
 
 end.

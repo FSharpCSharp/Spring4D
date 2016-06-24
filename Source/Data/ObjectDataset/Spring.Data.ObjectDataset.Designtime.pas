@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Persistence.ObjectDataset.Designtime;
+unit Spring.Data.ObjectDataset.Designtime;
 
 interface
 
@@ -34,9 +34,9 @@ implementation
 
 uses
   Classes,
-  Spring.Persistence.ObjectDataset;
+  Spring.Data.ObjectDataset;
 
-{$R 'Spring.Persistence.ObjectDataset.dcr'}
+{$R 'Spring.Data.ObjectDataset.dcr'}
 
 procedure Register;
 begin

@@ -24,14 +24,14 @@
 
 {$I Spring.inc}
 
-unit Spring.Persistence.ObjectDataset.Blobs;
+unit Spring.Data.ObjectDataset.Blobs;
 
 interface
 
 uses
   Classes,
   DB,
-  Spring.Persistence.ObjectDataset.Abstract;
+  Spring.Data.ObjectDataset.Abstract;
 
 type
   TODBlobStream = class(TMemoryStream)

@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Persistence.ObjectDataset.IndexList;
+unit Spring.Data.ObjectDataset.IndexList;
 
 interface
 
@@ -39,7 +39,7 @@ type
     DataListObject: TValue;
   end;
 
-  TODIndexList = class
+  TIndexList = class
   private
     FDataList: IObjectList;
     FList: TList<TIndexItem>;
@@ -80,9 +80,9 @@ type
 implementation
 
 
-{$REGION 'TODIndexList'}
+{$REGION 'TIndexList'}
 
-function TODIndexList.Add(ADataListIndex: Integer; const ADataListObject: TValue): Integer;
+function TIndexList.Add(ADataListIndex: Integer; const ADataListObject: TValue): Integer;
 var
   LItem: TIndexItem;
 begin
@@ -91,7 +91,7 @@ begin
   Result := FList.Add(LItem);
 end;
 
-function TODIndexList.AddModel(const AModel: TValue): Integer;
+function TIndexList.AddModel(const AModel: TValue): Integer;
 begin
   FChangingDataList := True;
   try
@@ -102,28 +102,28 @@ begin
   end;
 end;
 
-procedure TODIndexList.Clear;
+procedure TIndexList.Clear;
 begin
   FList.Clear;
 end;
 
-function TODIndexList.ContainsModel(const AModel: TValue): Boolean;
+function TIndexList.ContainsModel(const AModel: TValue): Boolean;
 begin
   Result := (IndexOfModel(AModel) <> -1);
 end;
 
-constructor TODIndexList.Create;
+constructor TIndexList.Create;
 begin
   inherited Create;
   FList := TList<TIndexItem>.Create;
 end;
 
-procedure TODIndexList.Delete(Index: Integer);
+procedure TIndexList.Delete(Index: Integer);
 begin
   FList.Delete(Index);
 end;
 
-procedure TODIndexList.DeleteModel(AIndex: Integer);
+procedure TIndexList.DeleteModel(AIndex: Integer);
 var
   LFixIndex: Integer;
 begin
@@ -138,13 +138,13 @@ begin
   end;
 end;
 
-destructor TODIndexList.Destroy;
+destructor TIndexList.Destroy;
 begin
   FList.Free;
   inherited Destroy;
 end;
 
-procedure TODIndexList.FixIndexes(AStart: Integer);
+procedure TIndexList.FixIndexes(AStart: Integer);
 var
   i: Integer;
   LItem: TIndexItem;
@@ -159,22 +159,22 @@ begin
     end;
 end;
 
-function TODIndexList.GetCount: Integer;
+function TIndexList.GetCount: Integer;
 begin
   Result := FList.Count;
 end;
 
-function TODIndexList.GetItem(Index: Integer): TIndexItem;
+function TIndexList.GetItem(Index: Integer): TIndexItem;
 begin
   Result := FList[Index];
 end;
 
-function TODIndexList.GetModel(const AIndex: Integer): TValue;
+function TIndexList.GetModel(const AIndex: Integer): TValue;
 begin
   Result := Items[AIndex].DataListObject; // FDataList[Items[AIndex]];
 end;
 
-function TODIndexList.IndexOfModel(const AModel: TValue): Integer;
+function TIndexList.IndexOfModel(const AModel: TValue): Integer;
 begin
   if AModel.IsEmpty then
     Exit(-1);
@@ -185,7 +185,7 @@ begin
   Result := -1;
 end;
 
-procedure TODIndexList.Insert(AIndex, ADataListIndex: Integer; const AModel: TValue);
+procedure TIndexList.Insert(AIndex, ADataListIndex: Integer; const AModel: TValue);
 var
   LItem: TIndexItem;
 begin
@@ -194,7 +194,7 @@ begin
   FList.Insert(AIndex, LItem);
 end;
 
-procedure TODIndexList.InsertModel(const AModel: TValue; AIndex: Integer);
+procedure TIndexList.InsertModel(const AModel: TValue; AIndex: Integer);
 begin
   FChangingDataList := True;
   try
@@ -205,7 +205,7 @@ begin
   end;
 end;
 
-procedure TODIndexList.Rebuild;
+procedure TIndexList.Rebuild;
 var
   i: Integer;
 begin
@@ -215,18 +215,18 @@ begin
       Add(i, FDataList[i]);
 end;
 
-procedure TODIndexList.SetDataList(const Value: IObjectList);
+procedure TIndexList.SetDataList(const Value: IObjectList);
 begin
   FDataList := Value;
   Rebuild;
 end;
 
-procedure TODIndexList.SetItem(Index: Integer; const Value: TIndexItem);
+procedure TIndexList.SetItem(Index: Integer; const Value: TIndexItem);
 begin
   FList[Index] := Value;
 end;
 
-procedure TODIndexList.SetModel(AIndex: Integer; const AModel: TValue);
+procedure TIndexList.SetModel(AIndex: Integer; const AModel: TValue);
 var
   LItem: TIndexItem;
 begin

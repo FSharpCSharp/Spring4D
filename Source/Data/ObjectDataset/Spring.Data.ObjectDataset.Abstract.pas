@@ -25,7 +25,7 @@
 {$I Spring.inc}
 {$R-,Q-}
 
-unit Spring.Persistence.ObjectDataset.Abstract;
+unit Spring.Data.ObjectDataset.Abstract;
 
 {$IFDEF DELPHIXE4_UP}
   {$ZEROBASEDSTRINGS OFF}
@@ -36,12 +36,9 @@ interface
 uses
   Classes,
   DB,
-  Generics.Collections,
   Generics.Defaults,
-  Rtti,
   Spring.Collections,
-  Spring.Persistence.ObjectDataset.Algorithms.Sort,
-  Spring.Persistence.ObjectDataset.IndexList;
+  Spring.Data.ObjectDataset.IndexList;
 
 type
 {$IFDEF NEXTGEN}
@@ -60,24 +57,6 @@ type
     BookmarkFlag: TBookmarkFlag;
   end;
 
-  TAttributeClass = class of TCustomAttribute;
-
-  TObjectDatasetFieldDef = class(TFieldDef)
-  private
-    FDisplayName: string;
-    FVisible: Boolean;
-  protected
-    function GetDisplayName: string; override;
-  public
-    procedure SetRealDisplayName(const Value: string);
-    property Visible: Boolean read FVisible write FVisible;
-  end;
-
-  TObjectDatasetFieldDefs = class(TFieldDefs)
-  protected
-    function GetFieldDefClass: TFieldDefClass; override;
-  end;
-
   TAbstractObjectDataset = class(TDataset)
   private
     FRowBufSize: Integer;
@@ -89,7 +68,7 @@ type
     FModifiedFields: IList<TField>;
     FFieldsCache: IDictionary<string,TField>;
     FFilterCache: IDictionary<string, Variant>;
-    FIndexList: TODIndexList;
+    FIndexList: TIndexList;
     FInsertIndex: Integer;
     {$IFDEF DELPHIXE3_UP}
     FReserved: Pointer;
@@ -118,7 +97,6 @@ type
     function GetCanModify: Boolean; override;
     function GetRecNo: Longint; override;
     function GetRecordCount: Integer; override;
-    function GetFieldDefsClass: TFieldDefsClass; override;
     function GetFieldClass(FieldDef: TFieldDef): TFieldClass; override;
     procedure SetFiltered(Value: Boolean); override;
 
@@ -128,8 +106,6 @@ type
     procedure SetCurrent(AValue: Integer); virtual;
     procedure SetRecBufSize; virtual;
     procedure RebuildFieldCache;
-    function DataListCount: Integer; virtual;
-    function GetCurrentDataList: IObjectList; virtual; abstract;
 
     // Abstract overrides
     function AllocRecordBuffer: TRecordBuffer; {$IFNDEF NEXTGEN}override;{$ENDIF}
@@ -193,7 +169,7 @@ type
     /// </summary>
     property Index: Integer read GetIndex write SetIndex;
 
-    property IndexList: TODIndexList read FIndexList;
+    property IndexList: TIndexList read FIndexList;
 
     /// <summary>
     ///   Represents modified fields of the current record.
@@ -254,22 +230,20 @@ resourcestring
 implementation
 
 uses
-{$IFNDEF NEXTGEN}
+{$IFNDEF DELPHIXE3_UP}
   Contnrs,
-  WideStrUtils,
+{$ELSE}
+  Generics.Collections,
 {$ENDIF}
   DBConsts,
+  FmtBcd,
   Math,
-  FMTBcd,
   SysUtils,
-  Types,
   Variants,
   VarUtils,
   Spring,
-  Spring.Reflection,
-  Spring.SystemUtils,
-  Spring.Persistence.ObjectDataset.Blobs,
-  Spring.Persistence.ObjectDataset.ActiveX;
+  Spring.Data.ObjectDataset.ActiveX,
+  Spring.Data.ObjectDataset.Blobs;
 
 type
 {$IF Defined(DELPHIXE3_UP) and not Defined(DELPHIXE8_UP)}
@@ -420,6 +394,27 @@ end;
 
 {$REGION 'TAbstractObjectDataset'}
 
+constructor TAbstractObjectDataset.Create(AOwner: TComponent);
+var
+  LCaseInsensitiveComparer: IEqualityComparer<string>;
+begin
+  inherited Create(AOwner);
+  FInternalOpen := False;
+  FReadOnly := False;
+  FModifiedFields := TCollections.CreateList<TField>;
+  FIndexList := TIndexList.Create;
+
+  LCaseInsensitiveComparer := TStringComparer.OrdinalIgnoreCase;
+  FFieldsCache := TCollections.CreateDictionary<string,TField>(500, LCaseInsensitiveComparer);
+  FFilterCache := TCollections.CreateDictionary<string,Variant>(500, LCaseInsensitiveComparer);
+end;
+
+destructor TAbstractObjectDataset.Destroy;
+begin
+  FIndexList.Free;
+  inherited Destroy;
+end;
+
 function TAbstractObjectDataset.AllocRecordBuffer: TRecordBuffer;
 begin
   if not (csDestroying in ComponentState) then
@@ -469,21 +464,6 @@ begin
   end;
 end;
 
-constructor TAbstractObjectDataset.Create(AOwner: TComponent);
-var
-  LCaseInsensitiveComparer: IEqualityComparer<string>;
-begin
-  inherited Create(AOwner);
-  FInternalOpen := False;
-  FReadOnly := False;
-  FModifiedFields := TCollections.CreateList<TField>;
-  FIndexList := TODIndexList.Create;
-
-  LCaseInsensitiveComparer := TStringComparer.OrdinalIgnoreCase;
-  FFieldsCache := TCollections.CreateDictionary<string,TField>(500, LCaseInsensitiveComparer);
-  FFilterCache := TCollections.CreateDictionary<string,Variant>(500, LCaseInsensitiveComparer);
-end;
-
 function TAbstractObjectDataset.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
 begin
   Result := TODBlobStream.Create(Field as TBlobField, Mode);
@@ -499,17 +479,6 @@ begin
           Reserved := nil;
   end;
   inherited;
-end;
-
-function TAbstractObjectDataset.DataListCount: Integer;
-begin
-  Result := 0;
-end;
-
-destructor TAbstractObjectDataset.Destroy;
-begin
-  FIndexList.Free;
-  inherited Destroy;
 end;
 
 procedure TAbstractObjectDataset.DoBeforeInsert;
@@ -871,11 +840,6 @@ begin
   Result := GetFieldData(Field, Buffer, True);
 end;
 
-function TAbstractObjectDataset.GetFieldDefsClass: TFieldDefsClass;
-begin
-  Result := TObjectDatasetFieldDefs;
-end;
-
 function TAbstractObjectDataset.GetIndex: Integer;
 var
   LRecBuf: TRecordBuffer;
@@ -1166,7 +1130,6 @@ begin
   for i := 0 to Fields.Count - 1 do
   begin
     Fields[i].DisplayLabel := FieldDefs[i].DisplayName;
-    Fields[i].Visible := (FieldDefs[i] as TObjectDatasetFieldDef).Visible;
     FFieldsCache.Add(Fields[i].FieldName, Fields[i]);
   end;
 end;
@@ -1403,31 +1366,6 @@ begin
     Resync([rmCenter]);
     DoAfterScroll;
   end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TObjectDatasetFieldDefs'}
-
-function TObjectDatasetFieldDefs.GetFieldDefClass: TFieldDefClass;
-begin
-  Result := TObjectDatasetFieldDef;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TObjectDatasetFieldDef'}
-
-function TObjectDatasetFieldDef.GetDisplayName: string;
-begin
-  Result := FDisplayName;
-end;
-
-procedure TObjectDatasetFieldDef.SetRealDisplayName(const Value: string);
-begin
-  FDisplayName := Value;
 end;
 
 {$ENDREGION}

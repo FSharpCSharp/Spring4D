@@ -24,22 +24,19 @@
 
 {$I Spring.inc}
 
-unit Spring.Persistence.ObjectDataset.Algorithms.Sort;
+unit Spring.Data.ObjectDataset.Algorithms.Sort;
 
 interface
 
 uses
-  Spring.Collections,
-  Spring.Reflection,
-  Spring.Persistence.ObjectDataset.IndexList,
+  DB,
   Rtti,
-  DB
-  ;
+  Spring.Collections,
+  Spring.Data.ObjectDataset.IndexList;
 
 const
   MIN_MERGE = 32;
   MIN_GALLOP = 7;
-  INITIAL_TMP_STORAGE_LENGTH = 256;
   STACK_LENGTH = 85;
 
 type
@@ -82,7 +79,7 @@ type
     class function MinRunLength(n: Integer): Integer;
     class procedure PushRun(ARunBase, ARunLen: Integer);
   public
-    class procedure Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
+    class procedure Sort(const ADataList: IList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>);
   end;
 
   TQuickSort = class sealed
@@ -92,30 +89,30 @@ type
       FFilteredIndexes: IList<Integer>;
       FFiltered: Boolean;
   private
-    class procedure QuickSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
+    class procedure QuickSort(ALow, AHigh: Integer; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
-      ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+    class procedure Sort(const ADataList: IList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
+      const AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
   end;
 
   TMergeSort = class sealed
   private
     class var
-      FDataList: TODIndexList;
+      FDataList: TIndexList;
   private
-    class procedure MergeSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
+    class procedure MergeSort(ALow, AHigh: Integer; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
+    class procedure Sort(const ADataList: TIndexList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>);
   end;
 
   TInsertionSort = class sealed
   private
     class var
-      FDataList: TODIndexList;
+      FDataList: TIndexList;
   private
-    class procedure InsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
+    class procedure InsertionSort(ALow, AHigh: Integer; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(AStartIndex: Integer; ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
+    class procedure Sort(AStartIndex: Integer; const ADataList: TIndexList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>);
   end;
 
   TBinaryInsertionSort = class sealed
@@ -125,11 +122,11 @@ type
       FFilteredIndexes: IList<Integer>;
       FFiltered: Boolean;
   private
-    class function BinarySearch(ALow, AHigh: Integer; const AKey: TValue; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>): Integer;
-    class procedure BinaryInsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
+    class function BinarySearch(ALow, AHigh: Integer; const AKey: TValue; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>): Integer;
+    class procedure BinaryInsertionSort(ALow, AHigh: Integer; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
-      ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+    class procedure Sort(const ADataList: IList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
+      const AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
   end;
 
 implementation
@@ -812,7 +809,8 @@ begin
   end;
 end;
 
-class procedure TTimSort.Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
+class procedure TTimSort.Sort(const ADataList: IList;
+  const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>);
 var
   nRemaining, initRunLen, minRun, LrunLen, lo, hi, force: Integer;
 begin
@@ -870,8 +868,8 @@ end;
 
 { TQuickSort }
 
-class procedure TQuickSort.QuickSort(ALow, AHigh: Integer; Compare: TCompareRecords;
-  AIndexFieldList: IList<TIndexFieldInfo>);
+class procedure TQuickSort.QuickSort(ALow, AHigh: Integer;
+  const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
 var
   LLow, LHigh: Integer;
   iPivot: Integer;
@@ -913,8 +911,9 @@ begin
 
 end;
 
-class procedure TQuickSort.Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
-  ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+class procedure TQuickSort.Sort(const ADataList: IList;
+  const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
+  const AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
 begin
   FDataList := ADataList;
   FFilteredIndexes := AFilteredIndexes;
@@ -924,8 +923,8 @@ end;
 
 { TMergeSort }
 
-class procedure TMergeSort.MergeSort(ALow, AHigh: Integer; Compare: TCompareRecords;
-  AIndexFieldList: IList<TIndexFieldInfo>);
+class procedure TMergeSort.MergeSort(ALow, AHigh: Integer;
+  const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
 var
   LCache: TArray<TValue>;
 
@@ -982,7 +981,8 @@ begin
   PerformMergeSort(ALow, AHigh, Compare, AIndexFieldList);
 end;
 
-class procedure TMergeSort.Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
+class procedure TMergeSort.Sort(const ADataList: TIndexList;
+  const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>);
 begin
   FDataList := ADataList;
   MergeSort(0, FDataList.Count - 1, AComparator, AIndexFields);
@@ -990,8 +990,8 @@ end;
 
 { TInsertionSort }
 
-class procedure TInsertionSort.InsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords;
-  AIndexFieldList: IList<TIndexFieldInfo>);
+class procedure TInsertionSort.InsertionSort(ALow, AHigh: Integer;
+  const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
 var
   i, j : Integer;
   LTemp: TValue;
@@ -1009,8 +1009,9 @@ Begin
   End;
 end;
 
-class procedure TInsertionSort.Sort(AStartIndex: Integer; ADataList: TODIndexList; AComparator: TCompareRecords;
-  AIndexFields: IList<TIndexFieldInfo>);
+class procedure TInsertionSort.Sort(AStartIndex: Integer;
+  const ADataList: TIndexList; const AComparator: TCompareRecords;
+  const AIndexFields: IList<TIndexFieldInfo>);
 begin
   FDataList := ADataList;
   AStartIndex := AStartIndex - 1;
@@ -1021,8 +1022,8 @@ end;
 
 { TBinaryInsertionSort }
 
-class procedure TBinaryInsertionSort.BinaryInsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords;
-  AIndexFieldList: IList<TIndexFieldInfo>);
+class procedure TBinaryInsertionSort.BinaryInsertionSort(ALow, AHigh: Integer;
+  const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
 var
   i, j, ins: Integer;
   LTemp: TValue;
@@ -1041,7 +1042,9 @@ begin
   end;
 end;
 
-class function TBinaryInsertionSort.BinarySearch(ALow, AHigh: Integer; const AKey: TValue; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>): Integer;
+class function TBinaryInsertionSort.BinarySearch(ALow, AHigh: Integer;
+  const AKey: TValue; const Compare: TCompareRecords;
+  const AIndexFieldList: IList<TIndexFieldInfo>): Integer;
 var
   iMid: Integer;
 begin
@@ -1063,8 +1066,9 @@ begin
   end;
 end;
 
-class procedure TBinaryInsertionSort.Sort(ADataList: IList; AComparator: TCompareRecords;
-  AIndexFields: IList<TIndexFieldInfo>; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+class procedure TBinaryInsertionSort.Sort(const ADataList: IList;
+  const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
+  const AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
 begin
   FDataList := ADataList;
   FFilteredIndexes := AFilteredIndexes;

@@ -6,7 +6,7 @@ uses
   TestFramework,
   TestEntities,
   Spring.Collections,
-  Spring.Persistence.ObjectDataset,
+  Spring.Data.ObjectDataset,
   Spring.TestUtils;
 
 type
@@ -1289,6 +1289,6 @@ end;
 {$ENDIF}
 
 initialization
-  RegisterTest('Spring.Persistence.ObjectDataset', TObjectDatasetTest.Suite);
+  RegisterTest('Spring.Data.ObjectDataset', TObjectDatasetTest.Suite);
 
 end.

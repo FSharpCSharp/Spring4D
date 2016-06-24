@@ -86,7 +86,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="Spring.Persistence.dcp"/>
-        <DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Designtime.pas"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.Designtime.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
