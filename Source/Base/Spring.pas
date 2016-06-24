@@ -2308,7 +2308,7 @@ function MethodPointerToMethodReference(const method: TMethodPointer): IInterfac
 
 function SkipShortString(P: PByte): Pointer; inline;
 
-function LoadFromStreamToVariant(const stream: TStream): OleVariant;
+function StreamToVariant(const stream: TStream): Variant;
 
 function GetGenericTypeParameters(const typeName: string): TArray<string>;
 
@@ -2712,7 +2712,7 @@ begin
   Result := P + P^ + 1;
 end;
 
-function LoadFromStreamToVariant(const stream: TStream): OleVariant;
+function StreamToVariant(const stream: TStream): Variant;
 var
   lock: Pointer;
 begin
@@ -4424,20 +4424,26 @@ begin
     {$ENDIF}
 
       obj := AsObject;
-      if Supports(obj, IStreamPersist, persist) then
+      if obj is TStream then
+      begin
+        stream := TStream(obj);
+        stream.Position := 0;
+        Exit(StreamToVariant(stream));
+      end
+      else if Supports(obj, IStreamPersist, persist) then
       begin
         stream := TMemoryStream.Create;
         try
           persist.SaveToStream(stream);
           stream.Position := 0;
-          Exit(LoadFromStreamToVariant(stream));
+          Exit(StreamToVariant(stream));
         finally
           stream.Free;
         end;
       end;
-
-      Exit(False);
     end;
+    tkInterface:
+      Exit(AsInterface);
   else
     Exit(AsVariant);
   end;

@@ -96,7 +96,7 @@ var
 begin
   stream := TStream(value.AsObject);
   stream.Position := 0;
-  Result := TValue.From<Variant>(LoadFromStreamToVariant(stream));
+  Result := TValue.From<Variant>(StreamToVariant(stream));
 end;
 
 {$ENDREGION}
@@ -113,7 +113,7 @@ begin
   try
     TPicture(value.AsObject).Graphic.SaveToStream(stream);
     stream.Position := 0;
-    Result := TValue.From<Variant>(LoadFromStreamToVariant(stream));
+    Result := TValue.From<Variant>(StreamToVariant(stream));
   finally
     stream.Free;
   end;

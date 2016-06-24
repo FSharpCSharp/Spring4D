@@ -61,9 +61,6 @@ type
     function GetSort: string;
     procedure SetSort(const Value: string);
     function GetFilterCount: Integer;
-    // we cannot use IDictionary, because it changes order of items.
-    // we use list with predicate searching - slower, but working
-    function PropertyFinder(const s: string): Spring.TPredicate<TRttiProperty>;
     procedure RegisterChangeHandler;
     procedure UnregisterChangeHandler;
     procedure SetDataList(const Value: IObjectList);
@@ -88,7 +85,6 @@ type
     procedure DoOnDataListChange(Sender: TObject; const Item: TObject; Action: TCollectionChangedAction);
 
     function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
-    function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
     function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
     function ParserGetFunctionValue(Sender: TObject; const FuncName: string;
@@ -109,8 +105,6 @@ type
     function GetChangedSortText(const ASortText: string): string;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
     function FieldInSortIndex(AField: TField): Boolean;
-    function ValueToVariant(const value: TValue): Variant;
-    function StreamToVariant(AStream: TStream): OleVariant;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -293,12 +287,6 @@ begin
   end;
 end;
 
-function TObjectDataset.ConvertPropertyValueToVariant(const AValue: TValue): Variant;
-begin
-  {TODO -oOwner -cGeneral : could use some routine from Spring in future}
-  Result := ValueToVariant(AValue);
-end;
-
 function TObjectDataset.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
 var
   LText, LItem: string;
@@ -422,7 +410,8 @@ begin
       LNeedsSort := FieldInSortIndex(LField);
 
     // Fields not found in dictionary are calculated or lookup fields, do not post them
-    if FProperties.TryGetFirst(LProp, PropertyFinder(LField.FieldName)) then begin
+    if FProperties.TryGetFirst(LProp, TPropertyFilters.IsNamed(LField.FieldName)) then
+    begin
       LFieldValue := LField.Value;
       if VarIsNull(LFieldValue) then
         LProp.SetValue(LItem, TValue.Empty)
@@ -549,8 +538,8 @@ begin
   if not FProperties.Any then
     InitRttiPropertiesFromItemType(AItem.TypeInfo);
 
-  if FProperties.TryGetFirst(LProperty, PropertyFinder(AField.FieldName)) then
-    Result := ConvertPropertyValueToVariant(LProperty.GetValue(AItem))
+  if FProperties.TryGetFirst(LProperty, TPropertyFilters.IsNamed(AField.FieldName)) then
+    Result := LProperty.GetValue(AItem).ToVariant
   else
     if AField.FieldKind = fkData then
       raise EObjectDatasetException.CreateFmt(SPropertyNotFound, [AField.FieldName]);
@@ -805,19 +794,6 @@ begin
   end;
 end;
 
-function TObjectDataset.StreamToVariant(AStream: TStream): OleVariant;
-var
-  DataPtr: Pointer;
-begin
-  Result := VarArrayCreate([0, AStream.Size], varByte);
-  DataPtr := VarArrayLock(Result);
-  try
-    AStream.ReadBuffer(DataPtr^, AStream.Size);
-  finally
-    VarArrayUnlock(Result);
-  end;
-end;
-
 function TObjectDataset.ParserGetFunctionValue(Sender: TObject; const FuncName: string;
   const Args: Variant; var ResVal: Variant): Boolean;
 var
@@ -1023,65 +999,6 @@ begin
   First;
 
   DoOnAfterFilter;
-end;
-
-function TObjectDataset.ValueToVariant(const value: TValue): Variant;
-var
-  LStream: TStream;
-  LValue: TValue;
-  LPersist: IStreamPersist;
-begin
-  Result := Null;
-  case value.Kind of
-    tkEnumeration:
-    begin
-      if value.TypeInfo = TypeInfo(Boolean) then
-        Result := value.AsBoolean
-      else
-        Result := value.AsOrdinal;
-    end;
-    tkFloat:
-    begin
-      if value.TypeInfo = TypeInfo(TDateTime) then
-        Result := value.AsType<TDateTime>
-      else if value.TypeInfo = TypeInfo(TDate) then
-        Result := value.AsType<TDate>
-      else
-        Result := value.AsExtended;
-    end;
-    tkRecord:
-    begin
-      if IsNullable(value.TypeInfo) then
-        if value.TryGetNullableValue(LValue) then
-          Result := ValueToVariant(LValue);
-    end;
-    tkClass:
-    begin
-      if value.AsObject <> nil then
-      begin
-        if value.AsObject is TStream then
-        begin
-          LStream := TStream(value.AsObject);
-          LStream.Position := 0;
-          Result := StreamToVariant(LStream);
-        end
-        else if Supports(value.AsObject, IStreamPersist, LPersist) then
-        begin
-          LStream := TMemoryStream.Create;
-          try
-            LPersist.SaveToStream(LStream);
-            LStream.Position := 0;
-            Result := StreamToVariant(LStream);
-          finally
-            LStream.Free;
-          end;
-        end;
-      end;
-    end;
-    tkInterface: Result := value.AsInterface;
-  else
-    Result := value.AsVariant;
-  end;
 end;
 
 {$ENDREGION}
