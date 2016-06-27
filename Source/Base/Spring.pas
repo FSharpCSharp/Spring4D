@@ -180,6 +180,15 @@ type
   end;
 {$ENDIF}
 
+  /// <summary>
+  ///   This attribute marks automatically initialized interface or object
+  ///   fields inside of classes that inherit from TManagedObject or are using
+  ///   the mechanism provided by TFieldTable.
+  /// </summary>
+  /// <remarks>
+  ///   Because of limited RTTI in Delphi 2010 interface fields are only
+  ///   supported when the interface type has a GUID.
+  /// </remarks>
   ManagedAttribute = class(TBaseAttribute)
   private
     fCreateInstance: Boolean;
@@ -3141,9 +3150,14 @@ procedure TFieldTable.AddManagedField(fieldType: PTypeInfo; offset: Integer;
         for i := 0 to interfaceTable.EntryCount - 1 do
         begin
           Result := @interfaceTable.Entries[i];
+          {$IFNDEF DELPHI2010}
           if p^^ = intf then
             Exit;
           Inc(p);
+          {$ELSE}
+          if Result.IID.Equals(intf.TypeData.Guid) then
+            Exit;
+          {$ENDIF}
         end;
       end;
       cls := cls.ClassParent;
@@ -3164,6 +3178,12 @@ begin
       managedField := TManagedObjectField.Create(classType, offset)
     end;
     tkInterface:
+      {$IFDEF DELPHI2010}
+      // Delphi 2010 does not have the PPTypeInfo array
+      // after the TInterfaceEntry array in TInterfaceTable
+      // so only interfaces with a GUID can be used
+      if ifHasGuid in fieldType.TypeData.IntfFlags then
+      {$ENDIF}
       managedField := TManagedInterfaceField.Create(classType, offset, GetInterfaceEntry(classType, fieldType));
   end;
   if managedField <> nil then
