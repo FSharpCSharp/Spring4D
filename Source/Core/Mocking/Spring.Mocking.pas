@@ -34,7 +34,6 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.DesignPatterns,
   Spring.Interception,
   Spring.Mocking.Matching,
   Spring.Times;

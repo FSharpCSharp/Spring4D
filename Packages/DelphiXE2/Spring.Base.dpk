@@ -67,6 +67,7 @@ contains
   Spring.Logging.ResourceStrings in '..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas',
   Spring.Logging.Serializers in '..\..\Source\Base\Logging\Spring.Logging.Serializers.pas',
   Spring.MethodIntercept in '..\..\Source\Base\Spring.MethodIntercept.pas',
+  Spring.Patterns.Specification in '..\..\Source\Base\Patterns\Spring.Patterns.Specification.pas',
   Spring.Reflection in '..\..\Source\Base\Spring.Reflection.pas',
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
   Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas',

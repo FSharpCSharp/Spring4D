@@ -37,7 +37,7 @@ uses
   Spring.Collections,
   Spring.Logging,
   Spring.Container.Common,
-  Spring.DesignPatterns;
+  Spring.Patterns.Specification;
 
 type
   { Forward Declarations }
@@ -428,7 +428,7 @@ type
 
   EActivatorException = class(EContainerException);
 
-  TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
+  TInjectableMethodFilter = class(TSpecification<TRttiMethod>)
   private
     fKernel: IKernel;
     fModel: TComponentModel;
@@ -439,7 +439,7 @@ type
     function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
   end;
 
-  TContainsMemberFilter = class(TSpecificationBase<IInjection>)
+  TContainsMemberFilter = class(TSpecification<IInjection>)
   private
     fMember: TRttiMember;
   public
@@ -449,10 +449,10 @@ type
 
   TInjectionFilters = class
   public
-    class function ContainsMember(const member: TRttiMember): TSpecification<IInjection>;
+    class function ContainsMember(const member: TRttiMember): Specification<IInjection>;
     class function IsInjectableMethod(const kernel: IKernel;
       const model: TComponentModel;
-      const arguments: TArray<TValue>): TSpecification<TRttiMethod>;
+      const arguments: TArray<TValue>): Specification<TRttiMethod>;
   end;
 
 implementation
@@ -718,14 +718,14 @@ end;
 {$REGION 'TInjectionFilters'}
 
 class function TInjectionFilters.ContainsMember(
-  const member: TRttiMember): TSpecification<IInjection>;
+  const member: TRttiMember): Specification<IInjection>;
 begin
   Result := TContainsMemberFilter.Create(member);
 end;
 
 class function TInjectionFilters.IsInjectableMethod(const kernel: IKernel;
   const model: TComponentModel;
-  const arguments: TArray<TValue>): TSpecification<TRttiMethod>;
+  const arguments: TArray<TValue>): Specification<TRttiMethod>;
 begin
   Result := TInjectableMethodFilter.Create(kernel, model, arguments);
 end;

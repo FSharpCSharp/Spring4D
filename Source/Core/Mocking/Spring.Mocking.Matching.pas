@@ -32,8 +32,7 @@ uses
   Rtti,
   SysUtils,
   Spring,
-  Spring.Collections,
-  Spring.DesignPatterns;
+  Spring.Collections;
 
 type
   TArgMatch = Predicate<TArray<TValue>>;

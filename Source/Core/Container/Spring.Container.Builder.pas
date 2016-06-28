@@ -580,13 +580,13 @@ procedure TAbstractMethodInspector.DoProcessModel(const kernel: IKernel;
       end);
     virtualMethodsGrouped := TEnumerable.GroupBy<TRttiMethod,SmallInt>(
       virtualMethods,
-      function(method: TRttiMethod): SmallInt
+      function(const method: TRttiMethod): SmallInt
       begin
         Result := method.VirtualIndex;
       end);
     virtualMethods := TEnumerable.Select<IGrouping<SmallInt,TRttiMethod>, TRttiMethod>(
       virtualMethodsGrouped,
-      function(group: IGrouping<SmallInt,TRttiMethod>): TRttiMethod
+      function(const group: IGrouping<SmallInt,TRttiMethod>): TRttiMethod
       begin
         Result := group.First;
       end);
