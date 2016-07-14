@@ -2993,10 +2993,16 @@ begin
     for a in p.GetAttributes do
       if a is DefaultAttribute then
       begin
-        if not p.IsWritable then
-          raise EInvalidOperationException.Create('Property not writable'); // TODO
+        if p.IsWritable then
+          setter := TRttiInstanceProperty(p).PropInfo.SetProc
+        else
+        begin
+          // if the property is read-only but backed by a field it can be initialized
+          setter := TRttiInstanceProperty(p).PropInfo.GetProc;
+          if IntPtr(setter) and PROPSLOT_MASK <> PROPSLOT_FIELD then
+            raise EInvalidOperationException.Create('Property not writable'); // TODO
+        end;
 
-        setter := TRttiInstanceProperty(p).PropInfo.SetProc;
         if IntPtr(setter) and PROPSLOT_MASK = PROPSLOT_FIELD then
           AddDefaultField(p.PropertyType.Handle, DefaultAttribute(a).Value,
             IntPtr(setter) and not PROPSLOT_MASK)
