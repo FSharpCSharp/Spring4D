@@ -3041,6 +3041,10 @@ begin
     tkFloat:
       if (fieldType = TypeInfo(TDateTime)) and (VarType(value) = varUString) then
         defaultField := TDefaultField<TDateTime>.Create(StrToDateTime(value, FormatSettings), offset)
+      else if (fieldType = TypeInfo(TDate)) and (VarType(value) = varUString) then
+        defaultField := TDefaultField<TDate>.Create(StrToDate(value, FormatSettings), offset)
+      else if (fieldType = TypeInfo(TTime)) and (VarType(value) = varUString) then
+        defaultField := TDefaultField<TTime>.Create(StrToTime(value, FormatSettings), offset)
       else
         case FieldType.TypeData.FloatType of
           ftSingle: defaultField := TDefaultField<Single>.Create(value, offset);
@@ -3099,6 +3103,10 @@ begin
     tkFloat:
       if (fieldType = TypeInfo(TDateTime)) and (VarType(value) = varUString) then
         defaultField := TDefaultProperty<TDateTime>.Create(StrToDateTime(value, FormatSettings), propInfo)
+      else if (fieldType = TypeInfo(TDate)) and (VarType(value) = varUString) then
+        defaultField := TDefaultProperty<TDate>.Create(StrToDate(value, FormatSettings), propInfo)
+      else if (fieldType = TypeInfo(TTime)) and (VarType(value) = varUString) then
+        defaultField := TDefaultProperty<TTime>.Create(StrToTime(value, FormatSettings), propInfo)
       else
         case fieldType.TypeData.FloatType of
           ftSingle: defaultField := TDefaultProperty<Single>.Create(value, propInfo);
