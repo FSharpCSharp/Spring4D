@@ -183,7 +183,7 @@ type
   /// <summary>
   ///   This attribute marks automatically initialized interface or object
   ///   fields inside of classes that inherit from TManagedObject or are using
-  ///   the mechanism provided by TFieldTable.
+  ///   the mechanism provided by TInitTable.
   /// </summary>
   /// <remarks>
   ///   Because of limited RTTI in Delphi 2010 interface fields are only
@@ -204,9 +204,9 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TFieldTable'}
+  {$REGION 'TInitTable'}
 
-  TFieldTable = class
+  TInitTable = class
   strict private type
     TDefaultField = class abstract
     public
@@ -280,10 +280,10 @@ type
     DefaultFields: TArray<TDefaultField>;
     ManagedFields: TArray<TManagedField>;
   private class var
-{$IFNDEF MSWINDOWS}
-    FieldTables: TDictionary<TClass,TFieldTable>;
+{$IFDEF USE_VMTAUTOTABLE}
+    InitTables: TObjectList<TInitTable>;
 {$ELSE}
-    FieldTables: TObjectList<TFieldTable>;
+    InitTables: TDictionary<TClass,TInitTable>;
 {$ENDIF}
     FormatSettings: TFormatSettings;
     procedure AddDefaultField(fieldType: PTypeInfo; const value: Variant;
@@ -2297,7 +2297,7 @@ function VarIsNullOrEmpty(const value: Variant): Boolean;
 ///   Returns the field table for the given class that contains all fields that
 ///   have Default or Managed attribute annotations.
 /// </summary>
-function GetFieldTable(ClassType: TClass): TFieldTable;
+function GetInitTable(ClassType: TClass): TInitTable;
 
   {$ENDREGION}
 
@@ -2950,14 +2950,14 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFieldTable'}
+{$REGION 'TInitTable'}
 
-class constructor TFieldTable.Create;
+class constructor TInitTable.Create;
 begin
-{$IFNDEF MSWINDOWS}
-  FieldTables := TObjectDictionary<TClass,TFieldTable>.Create([doOwnsValues]);
+{$IFDEF USE_VMTAUTOTABLE}
+  InitTables := TObjectList<TInitTable>.Create;
 {$ELSE}
-  FieldTables := TObjectList<TFieldTable>.Create;
+  InitTables := TObjectDictionary<TClass,TInitTable>.Create([doOwnsValues]);
 {$ENDIF}
   FormatSettings := TFormatSettings.Create;
   FormatSettings.DateSeparator := '-';
@@ -2966,12 +2966,12 @@ begin
   FormatSettings.ShortTimeFormat := 'hh:mm:ss';
 end;
 
-class destructor TFieldTable.Destroy;
+class destructor TInitTable.Destroy;
 begin
-  FieldTables.Free;
+  InitTables.Free;
 end;
 
-constructor TFieldTable.Create(classType: TClass);
+constructor TInitTable.Create(classType: TClass);
 var
   t: TRttiType;
   f: TRttiField;
@@ -3012,7 +3012,7 @@ begin
       end;
 end;
 
-destructor TFieldTable.Destroy;
+destructor TInitTable.Destroy;
 var
   i: Integer;
 begin
@@ -3023,7 +3023,7 @@ begin
   inherited;
 end;
 
-procedure TFieldTable.AddDefaultField(fieldType: PTypeInfo;
+procedure TInitTable.AddDefaultField(fieldType: PTypeInfo;
   const value: Variant; offset: Integer);
 var
   i: Integer;
@@ -3085,7 +3085,7 @@ begin
   end;
 end;
 
-procedure TFieldTable.AddDefaultProperty(fieldType: PTypeInfo;
+procedure TInitTable.AddDefaultProperty(fieldType: PTypeInfo;
   const value: Variant; propInfo: PPropInfo);
 var
   i: Integer;
@@ -3147,7 +3147,7 @@ begin
   end;
 end;
 
-procedure TFieldTable.AddManagedField(fieldType: PTypeInfo; offset: Integer;
+procedure TInitTable.AddManagedField(fieldType: PTypeInfo; offset: Integer;
   classType: TClass; createInstance: Boolean);
 
   function GetInterfaceEntry(cls: TClass; intf: PTypeInfo): PInterfaceEntry;
@@ -3208,35 +3208,40 @@ begin
   end;
 end;
 
-{$IFDEF MSWINDOWS}
-function CreateFieldTable(ClassType: TClass): TFieldTable;
+{$IFDEF USE_VMTAUTOTABLE}
+function CreateFieldTable(ClassType: TClass): TInitTable;
 var
   n: UINT_PTR;
 begin
-  Result := TFieldTable.Create(ClassType);
+  Result := TInitTable.Create(ClassType);
   WriteProcessMemory(GetCurrentProcess,
     Pointer(NativeInt(ClassType) + vmtAutoTable), @Result, SizeOf(Pointer), n);
-  TFieldTable.FieldTables.Add(Result);
+  TInitTable.InitTables.Add(Result);
 end;
 {$ENDIF}
 
-function GetFieldTable(ClassType: TClass): TFieldTable;
-{$IFDEF MSWINDOWS}
+function GetInitTable(ClassType: TClass): TInitTable;
+{$IFDEF USE_VMTAUTOTABLE}
 begin
   Result := PPointer(NativeInt(ClassType) + vmtAutoTable)^;
   if Result = nil then
     Result := CreateFieldTable(ClassType);
 {$ELSE}
 begin
-  if not TFieldTable.FieldTables.TryGetValue(ClassType, Result) then
-  begin
-    Result := TFieldTable.Create(ClassType);
-    TFieldTable.FieldTables.Add(ClassType, Result);
+  TMonitor.Enter(TInitTable.InitTables);
+  try
+    if not TInitTable.InitTables.TryGetValue(ClassType, Result) then
+    begin
+      Result := TInitTable.Create(ClassType);
+      TInitTable.InitTables.Add(ClassType, Result);
+    end;
+  finally
+    TMonitor.Exit(TInitTable.InitTables);
   end;
 {$ENDIF}
 end;
 
-procedure TFieldTable.InitInstance(instance: Pointer);
+procedure TInitTable.InitInstance(instance: Pointer);
 var
   i: Integer;
 begin
@@ -3247,7 +3252,7 @@ begin
 end;
 
 {$IFNDEF AUTOREFCOUNT}
-procedure TFieldTable.CleanupInstance(instance: Pointer);
+procedure TInitTable.CleanupInstance(instance: Pointer);
 var
   i: Integer;
 begin
@@ -3259,16 +3264,16 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFieldTable.TDefaultField<T>'}
+{$REGION 'TInitTable.TDefaultField<T>'}
 
-constructor TFieldTable.TDefaultField<T>.Create(const value: Variant; offset: Integer);
+constructor TInitTable.TDefaultField<T>.Create(const value: Variant; offset: Integer);
 begin
   inherited Create;
   fValue := TValue.FromVariant(value).AsType<T>; // TODO
   fOffset := offset;
 end;
 
-procedure TFieldTable.TDefaultField<T>.InitializeValue(instance: Pointer);
+procedure TInitTable.TDefaultField<T>.InitializeValue(instance: Pointer);
 begin
   PT(PByte(instance) + fOffset)^ := fValue;
 end;
@@ -3276,16 +3281,16 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFieldTable.TDefaultProperty<T>'}
+{$REGION 'TInitTable.TDefaultProperty<T>'}
 
-constructor TFieldTable.TDefaultProperty<T>.Create(const value: Variant; propInfo: PPropInfo);
+constructor TInitTable.TDefaultProperty<T>.Create(const value: Variant; propInfo: PPropInfo);
 begin
   inherited Create;
   fValue := TValue.FromVariant(value).AsType<T>; // TODO
   fPropInfo := propInfo;
 end;
 
-class function TFieldTable.GetCodePointer(instance: TObject; p: Pointer): Pointer;
+class function TInitTable.GetCodePointer(instance: TObject; p: Pointer): Pointer;
 begin
   if IntPtr(p) and PROPSLOT_MASK = PROPSLOT_VIRTUAL then
     Result := PPointer(PNativeInt(instance)^ + SmallInt(IntPtr(p)))^
@@ -3293,7 +3298,7 @@ begin
     Result := p;
 end;
 
-procedure TFieldTable.TDefaultProperty<T>.InitializeValue(instance: Pointer);
+procedure TInitTable.TDefaultProperty<T>.InitializeValue(instance: Pointer);
 var
   method: TMethod;
 begin
@@ -3308,9 +3313,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFieldTable.TManagedObjectField'}
+{$REGION 'TInitTable.TManagedObjectField'}
 
-constructor TFieldTable.TManagedObjectField.Create(cls: TClass; offset: Integer);
+constructor TInitTable.TManagedObjectField.Create(cls: TClass; offset: Integer);
 begin
   inherited Create;
   fOffset := offset;
@@ -3319,12 +3324,12 @@ begin
     fCtor := TActivator.FindConstructor(cls);
 end;
 
-procedure TFieldTable.TManagedObjectField.FinalizeValue(instance: Pointer);
+procedure TInitTable.TManagedObjectField.FinalizeValue(instance: Pointer);
 begin
   FreeAndNil(Pointer(PByte(instance) + fOffset)^);
 end;
 
-procedure TFieldTable.TManagedObjectField.InitializeValue(instance: Pointer);
+procedure TInitTable.TManagedObjectField.InitializeValue(instance: Pointer);
 begin
   if Assigned(fCtor) then
     TObject(Pointer(PByte(instance) + fOffset)^) := TObject(fCtor(fCls));
@@ -3333,7 +3338,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFieldTable.TManagedInterfaceField'}
+{$REGION 'TInitTable.TManagedInterfaceField'}
 
 function InvokeImplGetter(const Self: TObject; implGetter: NativeUInt): IInterface;
 var
@@ -3369,18 +3374,18 @@ begin
   {$IFEND}
 end;
 
-constructor TFieldTable.TManagedInterfaceField.Create(cls: TClass; offset: Integer;
+constructor TInitTable.TManagedInterfaceField.Create(cls: TClass; offset: Integer;
   entry: PInterfaceEntry);
 begin
   inherited Create(cls, offset);
   fEntry := entry
 end;
 
-procedure TFieldTable.TManagedInterfaceField.FinalizeValue(instance: Pointer);
+procedure TInitTable.TManagedInterfaceField.FinalizeValue(instance: Pointer);
 begin
 end;
 
-procedure TFieldTable.TManagedInterfaceField.InitializeValue(instance: Pointer);
+procedure TInitTable.TManagedInterfaceField.InitializeValue(instance: Pointer);
 var
   obj: Pointer;
   intf: Pointer;
@@ -3406,7 +3411,7 @@ end;
 {$IFNDEF AUTOREFCOUNT}
 procedure TManagedObject.FreeInstance;
 begin
-  GetFieldTable(ClassType).CleanupInstance(Self);
+  GetInitTable(ClassType).CleanupInstance(Self);
   inherited;
 end;
 {$ENDIF}
@@ -3414,7 +3419,7 @@ end;
 class function TManagedObject.NewInstance: TObject;
 begin
   Result := inherited;
-  GetFieldTable(Self).InitInstance(Result);
+  GetInitTable(Self).InitInstance(Result);
 end;
 
 {$ENDREGION}
@@ -3425,7 +3430,7 @@ end;
 {$IFNDEF AUTOREFCOUNT}
 procedure TManagedInterfacedObject.FreeInstance;
 begin
-  GetFieldTable(ClassType).CleanupInstance(Self);
+  GetInitTable(ClassType).CleanupInstance(Self);
   inherited;
 end;
 {$ENDIF}
@@ -3433,7 +3438,7 @@ end;
 class function TManagedInterfacedObject.NewInstance: TObject;
 begin
   Result := inherited;
-  GetFieldTable(Self).InitInstance(Result);
+  GetInitTable(Self).InitInstance(Result);
 end;
 
 {$ENDREGION}
