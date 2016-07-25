@@ -3309,7 +3309,7 @@ end;
 
 class function TEnumerable.Range(start, count: Integer): IEnumerable<Integer>;
 begin
-  Result := TRangeIterator<Integer>.Create(start, count);
+  Result := TRangeIterator.Create(start, count);
 end;
 
 class function TEnumerable.Repeated<T>(const element: T;
