@@ -2129,7 +2129,8 @@ end;
 
 constructor TLookup<TKey, TElement>.TGroupings.Create;
 begin
-  inherited Create(False);
+  inherited Create;
+  OwnsObjects := False;
 end;
 
 procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TGrouping;
