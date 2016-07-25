@@ -3153,14 +3153,18 @@ procedure TInitTable.AddManagedField(fieldType: PTypeInfo; offset: Integer;
   function GetInterfaceEntry(cls: TClass; intf: PTypeInfo): PInterfaceEntry;
   var
     interfaceTable: PInterfaceTable;
+    {$IFNDEF DELPHI2010}
     p: PPPTypeInfo;
+    {$ENDIF}
     i: Integer;
   begin
     repeat
       interfaceTable := cls.GetInterfaceTable;
       if interfaceTable <> nil then
       begin
+        {$IFNDEF DELPHI2010}
         p := @interfaceTable.Entries[interfaceTable.EntryCount];
+        {$ENDIF}
         for i := 0 to interfaceTable.EntryCount - 1 do
         begin
           Result := @interfaceTable.Entries[i];
