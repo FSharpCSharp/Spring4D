@@ -81,7 +81,8 @@ type
     destructor Destroy; override;
     class constructor Create;
 
-    function CreateInstance: TObject;
+    function CreateInstance: TObject; overload;
+    function CreateInstance(const constructorArguments: array of TValue): TObject; overload;
   end;
 
 implementation
@@ -122,11 +123,17 @@ begin
 end;
 
 function TClassProxy.CreateInstance: TObject;
+begin
+  Result := CreateInstance([]);
+end;
+
+function TClassProxy.CreateInstance(
+  const constructorArguments: array of TValue): TObject;
 var
   table: PInterfaceTable;
   i: Integer;
 begin
-  Result := ProxyClass.Create;
+  Result := TActivator.CreateInstance(ProxyClass, constructorArguments);
   fProxies.Add(Result, Self);
 
   table := ProxyClassData.IntfTable;
