@@ -120,7 +120,7 @@ type
 
   TActivator = record
   private
-    class var ConstructorCache: TDictionary<TClass,TConstructor>;
+    class var ConstructorCache: TDictionary<PTypeInfo,TConstructor>;
     class function FindConstructor(const classType: TRttiInstanceType;
       const arguments: array of TValue): TRttiMethod; overload; static;
     class procedure RaiseNoConstructorFound(classType: TClass); static;
@@ -6576,7 +6576,7 @@ end;
 
 class constructor TActivator.Create;
 begin
-  ConstructorCache := TDictionary<TClass,TConstructor>.Create;
+  ConstructorCache := TDictionary<PTypeInfo,TConstructor>.Create;
 end;
 
 class destructor TActivator.Destroy;
@@ -6661,13 +6661,15 @@ end;
 
 class function TActivator.FindConstructor(classType: TClass): TConstructor;
 var
+  classInfo: PTypeInfo;
   method: TRttiMethod;
 begin
   Assert(Assigned(classType));
-  if ConstructorCache.TryGetValue(classType, Result) then
+  classInfo := classType.ClassInfo;
+  if ConstructorCache.TryGetValue(classInfo, Result) then
     Exit;
 
-  for method in TType.GetType(classType).GetMethods do
+  for method in TType.GetType(classInfo).GetMethods do
   begin
     if not method.IsConstructor then
       Continue;
@@ -6675,7 +6677,7 @@ begin
     if Length(method.GetParameters) = 0 then
     begin
       Result := method.CodeAddress;
-      ConstructorCache.AddOrSetValue(classType, Result);
+      ConstructorCache.AddOrSetValue(classInfo, Result);
       Exit;
     end;
   end;
@@ -6709,7 +6711,7 @@ begin
     if Assignable(method.GetParameters, arguments) then
     begin
       if Length(arguments) = 0 then
-        ConstructorCache.AddOrSetValue(classType.MetaclassType, method.CodeAddress);
+        ConstructorCache.AddOrSetValue(classType.Handle, method.CodeAddress);
       Exit(method);
     end;
   end;
