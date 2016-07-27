@@ -6642,10 +6642,14 @@ end;
 class function TActivator.CreateInstance(classType: TClass;
   const arguments: array of TValue): TObject;
 var
-  rttiType: TRttiType;
+  ctor: TRttiMethod;
 begin
-  rttiType := TType.GetType(classType);
-  Result := CreateInstance(TRttiInstanceType(rttiType), arguments).AsObject;
+  if Length(arguments) = 0 then
+    Exit(CreateInstance(classType));
+  ctor := FindConstructor(TType.GetType(classType), arguments);
+  if not Assigned(ctor) then
+    RaiseNoConstructorFound(classType);
+  Result := ctor.Invoke(classType, arguments).AsObject;
 end;
 
 class function TActivator.CreateInstance<T>: T;
