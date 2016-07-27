@@ -2270,6 +2270,11 @@ function GetSetSize(typeInfo: PTypeInfo): Integer;
 /// </summary>
 function CompareValue(const left, right: TValue): Integer; overload;
 
+/// <summary>
+///   Returns the types of the values.
+/// </summary>
+function TypesOf(const values: array of TValue): TArray<PTypeInfo>;
+
 procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
 procedure FinalizeRecordPointer(const value; typeInfo: PTypeInfo); inline;
 
@@ -2632,6 +2637,15 @@ begin
     Assert(False, 'Unsupported type'); { TODO -o##jwp -cEnhance : add more context to the assert }
     Result := -1;
   end;
+end;
+
+function TypesOf(const values: array of TValue): TArray<PTypeInfo>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := 0 to High(values) do
+    Result[i] := values[i].TypeInfo;
 end;
 
 procedure FinalizeValue(const value; typeInfo: PTypeInfo);
