@@ -4,8 +4,10 @@ del /f /q /s *.bak
 del /f /q /s *.dcu
 del /f /q /s *.ddp
 del /f /q /s *.~*
+del /f /q /s *.ficfg
 del /f /q /s *.local
 del /f /q /s *.identcache
+del /f /q /s *.stat
 del /f /q /s *.tvsconfig
 
 del /f /q /s *.bpl
@@ -21,6 +23,9 @@ del /f /q /s Tests\Bin\*.*
 del /f /q /s Tests\Lib\*.*
 
 for /f "tokens=* delims=" %%i in ('dir /s /b /a:d __history') do (
+  rd /s /q "%%i"
+)
+for /f "tokens=* delims=" %%i in ('dir /s /b /a:d __recovery') do (
   rd /s /q "%%i"
 )
 if "%1"=="" goto :eof
