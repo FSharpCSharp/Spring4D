@@ -40,6 +40,7 @@ type
     procedure VerifyChecksParameterValuesProperly;
     procedure TestVariant;
     procedure TestDynArray;
+    procedure TestRecord;
 
     procedure ReturnsMultipleValues;
   end;
@@ -102,6 +103,16 @@ type
 
   IFoo = interface
     function Foo(index: Integer): INameHolder;
+  end;
+
+  TRec = record
+    Int: Integer;
+    Str: string;
+  end;
+
+  TFoo = class
+  public
+    function Method(const rec: TRec): Integer; virtual; abstract;
   end;
 
 
@@ -212,6 +223,19 @@ begin
   mock.Received(2).TestDynArray(Arg.IsAny<TArray<string>>);
   mock.Received(1).TestDynArray(nil);
   mock.Received(1).TestDynArray(arr);
+  Pass;
+end;
+
+procedure TParameterMatchingTests.TestRecord;
+var
+  mock: Mock<TFoo>;
+  rec: TRec;
+begin
+  rec.Int := -42;
+  rec.Str := 'test';
+  mock.Setup.Returns(42).When.Method(rec);
+  CheckEquals(42, mock.Instance.Method(rec));
+  mock.Received(1).Method(rec);
   Pass;
 end;
 
