@@ -74,7 +74,8 @@ type
 
   TAggregatedInterfaceProxy = class(TInterfaceProxy)
   private
-    fController: Pointer;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fOwner: TInterfaceProxy;
     function QueryInterfaceInternal(const IID: TGUID; out Obj): HResult;
   protected
     function _AddRef: Integer; override;
@@ -85,7 +86,7 @@ type
       const options: TProxyGenerationOptions;
       const target: IInterface;
       const interceptors: array of IInterceptor;
-      const controller: IInterface);
+      const owner: TInterfaceProxy);
 
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   end;
@@ -235,20 +236,21 @@ end;
 constructor TAggregatedInterfaceProxy.Create(proxyType: PTypeInfo;
   const additionalInterfaces: array of PTypeInfo;
   const options: TProxyGenerationOptions; const target: IInterface;
-  const interceptors: array of IInterceptor; const controller: IInterface);
+  const interceptors: array of IInterceptor;
+  const owner: TInterfaceProxy);
 begin
   inherited Create(proxyType, additionalInterfaces, options, target, interceptors);
-  fController := Pointer(controller);
+  fOwner := owner;
 end;
 
 function TAggregatedInterfaceProxy.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
   if IID = IInterface then
-    Exit(IInterface(fController).QueryInterface(IID, Obj));
+    Exit(fOwner.QueryInterface(IID, Obj));
   Result := inherited;
   if Result <> S_OK then
-    Result := IInterface(fController).QueryInterface(IID, Obj);
+    Result := fOwner.QueryInterface(IID, Obj);
 end;
 
 function TAggregatedInterfaceProxy.QueryInterfaceInternal(const IID: TGUID;
@@ -259,12 +261,12 @@ end;
 
 function TAggregatedInterfaceProxy._AddRef: Integer;
 begin
-  Result := IInterface(fController)._AddRef;
+  Result := fOwner._AddRef;
 end;
 
 function TAggregatedInterfaceProxy._Release: Integer;
 begin
-  Result := IInterface(fController)._Release;
+  Result := fOwner._Release;
 end;
 
 {$ENDREGION}
