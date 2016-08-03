@@ -828,22 +828,28 @@ type
     ///   Moves the elements of the ICollection&lt;T&gt; to the specified
     ///   collection.
     /// </summary>
+    /// <returns>
+    ///   The number of elements that were moved.
+    /// </returns>
     /// <remarks>
     ///   This internally uses Extract to make sure that objects from a list
     ///   with <b>OwnsObject</b> are not getting destroyed.
     /// </remarks>
-    procedure MoveTo(const collection: ICollection<T>); overload;
+    function MoveTo(const collection: ICollection<T>): Integer; overload;
 
     /// <summary>
     ///   Moves the elements of the ICollection&lt;T&gt; that are matching the
     ///   specified predicate to the specified collection.
     /// </summary>
+    /// <returns>
+    ///   The number of elements that were moved.
+    /// </returns>
     /// <remarks>
     ///   This internally uses Extract to make sure that objects from a list
     ///   with <b>OwnsObject</b> are not getting destroyed.
     /// </remarks>
-    procedure MoveTo(const collection: ICollection<T>;
-      const predicate: TPredicate<T>); overload;
+    function MoveTo(const collection: ICollection<T>;
+      const predicate: TPredicate<T>): Integer; overload;
 
     /// <summary>
     ///   Removes the first occurrence of a specific element from the
