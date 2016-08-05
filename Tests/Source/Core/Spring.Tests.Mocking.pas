@@ -233,9 +233,9 @@ var
 begin
   rec.Int := -42;
   rec.Str := 'test';
-  mock.Setup.Returns(42).When.Method(rec);
+  mock.Setup.Returns(42).When.Method(Arg.IsAny<TRec>);
   CheckEquals(42, mock.Instance.Method(rec));
-  mock.Received(1).Method(rec);
+  mock.Received(1).Method(Arg.IsAny<TRec>);
   Pass;
 end;
 

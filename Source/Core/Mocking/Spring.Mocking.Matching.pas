@@ -41,14 +41,10 @@ type
   private
     class threadvar conditions: TArray<TPredicate<TValue>>;
 
-    type
-      TIndexWrapper = class(TInterfacedObject)
-      private
-        fIndex: Integer;
-        constructor Create(index: Integer);
-      end;
-
     class function AddMatcher(const condition: TPredicate<TValue>): Integer; static;
+
+    class function GetIndex(const v: TValue): Integer; static;
+    class procedure SetIndex(typeInfo: PTypeInfo; index: Integer; var Result); static;
 
     /// <summary>
     ///   Wraps the index of the parameter matcher in a value of type T.
@@ -102,7 +98,147 @@ implementation
 uses
   Generics.Defaults,
   Rtti,
-  TypInfo;
+  TypInfo,
+  Spring.ResourceStrings;
+
+type
+  TIndexWrapper = class(TInterfacedObject)
+  private
+    fIndex: Integer;
+    constructor Create(index: Integer);
+  end;
+
+function GetIndexFail(const v: TValue): Integer;
+begin
+  raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [v.TypeInfo.TypeName]);
+end;
+
+function GetIndexOrdinal(const v: TValue): Integer;
+begin
+  Result := v.AsOrdinal;
+end;
+
+function GetIndexFloat(const v: TValue): Integer;
+begin
+  Result := Trunc(v.AsExtended);
+end;
+
+function GetIndexString(const v: TValue): Integer;
+begin
+  Result := StrToInt(v.AsString);
+end;
+
+function GetIndexObject(const v: TValue): Integer;
+begin
+  Result := v.AsType<TIndexWrapper>.fIndex;
+{$IFNDEF AUTOREFCOUNT}
+  v.AsType<TIndexWrapper>.Free;
+{$ELSE}
+  v.AsType<TIndexWrapper>.DisposeOf;
+{$ENDIF}
+end;
+
+function GetIndexInterface(const v: TValue): Integer;
+begin
+  Result := (v.AsType<IInterface> as TIndexWrapper).fIndex;
+  PValue(@v)^ := TValue.Empty;
+end;
+
+function GetIndexRecord(const v: TValue): Integer;
+var
+  fields: TArray<TRttiField>;
+begin
+  fields := TType.GetType(v.TypeInfo).GetFields;
+  if Length(fields) = 0 then
+    raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [v.TypeInfo.TypeName]);
+  Result := TMatcherFactory.GetIndex(fields[0].GetValue(v.GetReferenceToRawData));
+end;
+
+function GetIndexArray(const v: TValue): Integer;
+begin
+  Result := TMatcherFactory.GetIndex(v.GetArrayElement(0));
+end;
+
+function GetIndexVariant(const v: TValue): Integer;
+begin
+  Result := v.AsVariant;
+end;
+
+procedure SetIndexFail(typeInfo: PTypeInfo; index: Integer; var Result);
+begin
+  raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [typeInfo.TypeName]);
+end;
+
+procedure SetIndexOrdinal(typeInfo: PTypeInfo; index: Integer; var Result);
+begin
+  PByte(@Result)^ := index;
+end;
+
+procedure SetIndexFloat(typeInfo: PTypeInfo; index: Integer; var Result);
+begin
+  case typeInfo.TypeData.FloatType of
+    ftSingle:
+      PSingle(@Result)^ := index;
+    ftDouble:
+      PDouble(@Result)^ := index;
+    ftExtended:
+      PExtended(@Result)^ := index;
+    ftComp:
+      PComp(@Result)^ := index;
+    ftCurr:
+      PCurrency(@Result)^ := index;
+  end;
+end;
+
+procedure SetIndexString(typeInfo: PTypeInfo; index: Integer; var Result);
+var
+  s: string;
+begin
+  s := IntToStr(index);
+  case typeInfo.Kind of
+{$IFNDEF NEXTGEN}
+    tkLString:
+      PAnsiString(@Result)^ := AnsiString(s);
+    tkWString:
+      PWideString(@Result)^ := s;
+{$ENDIF}
+    tkUString:
+      PUnicodeString(@Result)^ := s;
+  end;
+end;
+
+procedure SetIndexObject(typeInfo: PTypeInfo; index: Integer; var Result);
+begin
+  TObject(PPointer(@Result)^) := TIndexWrapper.Create(index);
+end;
+
+procedure SetIndexInterface(typeInfo: PTypeInfo; index: Integer; var Result);
+begin
+  IInterface(PPointer(@Result)^) := TIndexWrapper.Create(index);
+end;
+
+procedure SetIndexRecord(typeInfo: PTypeInfo; index: Integer; var Result);
+var
+  fields: TArray<TRttiField>;
+begin
+  fields := typeInfo.RttiType.GetFields;
+  if Length(fields) = 0 then
+    raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [typeInfo.TypeName]);
+  TMatcherFactory.SetIndex(fields[0].FieldType.Handle, index, Result);
+end;
+
+procedure SetIndexArray(typeInfo: PTypeInfo; index: Integer; var Result);
+const
+  len: NativeInt = 1;
+begin
+  DynArraySetLength(PPointer(@Result)^, typeInfo, 1, @len);
+  TMatcherFactory.SetIndex(typeInfo.TypeData.DynArrElType^, index, PPointer(@Result)^^);
+end;
+
+procedure SetIndexVariant(typeInfo: PTypeInfo; index: Integer; var Result);
+begin
+  PVariant(@Result)^ := index;
+end;
 
 
 {$REGION 'TMatcherFactory'}
@@ -121,33 +257,7 @@ begin
 
     SetLength(idxArr, Length(indizes));
     for i := Low(idxArr) to High(idxArr) do
-      case indizes[i].Kind of
-        tkInteger, tkChar, tkWChar, tkEnumeration, tkSet, tkInt64:
-          idxArr[indizes[i].AsOrdinal] := i;
-        tkLString, tkWString, tkUString:
-          idxArr[StrToInt(indizes[i].AsString)] := i;
-        tkClass:
-        begin
-          idxArr[indizes[i].AsType<TIndexWrapper>.fIndex] := i;
-{$IFNDEF AUTOREFCOUNT}
-          indizes[i].AsType<TIndexWrapper>.Free;
-{$ELSE}
-          indizes[i].AsType<TIndexWrapper>.DisposeOf;
-{$ENDIF}
-        end;
-        tkInterface:
-        begin
-          idxArr[(indizes[i].AsType<IInterface> as TIndexWrapper).fIndex] := i;
-          PValue(@indizes[i])^ := TValue.Empty;
-        end;
-        tkVariant:
-          idxArr[Integer(indizes[i].AsVariant)] := i;
-        tkDynArray:
-          idxArr[TArray<Integer>(indizes[i].GetReferenceToRawData^)[0]] := i;
-      else
-        raise ENotSupportedException.Create('type not supported');
-      end;
-
+      idxArr[GetIndex(indizes[i])] := i;
     capturedConditions := conditions;
     conditions := nil;
     Result :=
@@ -182,39 +292,45 @@ begin
   conditions[Result] := condition;
 end;
 
+class function TMatcherFactory.GetIndex(const v: TValue): Integer;
+const
+  Handlers: array[TTypeKind] of function(const v: TValue): Integer = (
+    GetIndexFail, GetIndexOrdinal, GetIndexOrdinal, GetIndexOrdinal, GetIndexFloat,
+    GetIndexFail, GetIndexOrdinal, GetIndexObject, GetIndexFail, GetIndexOrdinal,
+    GetIndexString, GetIndexString, GetIndexVariant, GetIndexFail, GetIndexRecord,
+    GetIndexInterface, GetIndexOrdinal, GetIndexArray, GetIndexString, GetIndexFail,
+    GetIndexFail, GetIndexFail);
+begin
+  Result := Handlers[TValueData(v).FTypeInfo.Kind](v);
+end;
+
+class procedure TMatcherFactory.SetIndex(typeInfo: PTypeInfo; index: Integer; var Result);
+const
+  Handlers: array[TTypeKind] of procedure (typeInfo: PTypeInfo; index: Integer; var Result) = (
+    SetIndexFail, SetIndexOrdinal, SetIndexOrdinal, SetIndexOrdinal, SetIndexFloat,
+    SetIndexFail, SetIndexOrdinal, SetIndexObject, SetIndexFail, SetIndexOrdinal,
+    SetIndexString, SetIndexString, SetIndexVariant, SetIndexFail, SetIndexRecord,
+    SetIndexInterface, SetIndexOrdinal, SetIndexArray, SetIndexString, SetIndexFail,
+    SetIndexFail, SetIndexFail);
+begin
+  Handlers[typeInfo.Kind](typeInfo, index, Result);
+end;
+
 class function TMatcherFactory.WrapIndex<T>(index: Integer): T;
+var
+  f: TRttiField;
+  v: TValue;
 begin
   Result := Default(T);
-  case TType.Kind<T> of
-    tkInteger, tkChar, tkWChar, tkEnumeration, tkSet, tkInt64:
-      PByte(@Result)^ := index;
-{$IFNDEF NEXTGEN}
-    tkLString:
-      PAnsiString(@Result)^ := AnsiString(IntToStr(index));
-    tkWString:
-      PWideString(@Result)^ := IntToStr(index);
-{$ENDIF}
-    tkUString:
-      PUnicodeString(@Result)^ := IntToStr(index);
-    tkClass:
-      TObject(PPointer(@Result)^) := TIndexWrapper.Create(index);
-    tkInterface:
-      IInterface(PPointer(@Result)^) := TIndexWrapper.Create(index);
-    tkVariant:
-      PVariant(@Result)^ := index;
-    tkDynArray:
-      TArray<Integer>(PPointer(@Result)^) := TArray<Integer>.Create(index);
-  else
-    raise ENotSupportedException.Create('type not supported');
-  end;
+  SetIndex(TypeInfo(T), index, Result);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TMatcherFactory.TIndexWrapper'}
+{$REGION 'TIndexWrapper'}
 
-constructor TMatcherFactory.TIndexWrapper.Create(index: Integer);
+constructor TIndexWrapper.Create(index: Integer);
 begin
   fIndex := index;
 end;
