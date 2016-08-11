@@ -1177,7 +1177,7 @@ end;
 
 procedure TTestRepeated.EmptyRepeated;
 var
-  obj: Owned<TObject>;
+  obj: Managed<TObject>;
 begin
   CheckTrue(TEnumerable.Repeated<Integer>(100, 0).EqualsTo([]));
   obj := TObject.Create;
@@ -1215,7 +1215,7 @@ end;
 
 procedure TTestRepeated.ValidRepeated;
 var
-  obj: Owned<TObject>;
+  obj: Managed<TObject>;
 begin
   CheckTrue(TEnumerable.Repeated<Integer>(5, 3).EqualsTo([5, 5, 5]));
   obj := TObject.Create;

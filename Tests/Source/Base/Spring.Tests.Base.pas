@@ -2172,19 +2172,19 @@ end;
 
 procedure TTestOwned.TestInterfaceType_Instance_Gets_Created;
 var
-  p: IOwned<TTestClass>;
+  p: IManaged<TTestClass>;
 begin
-  p := TOwned<TTestClass>.Create();
+  p := TManaged<TTestClass>.Create();
   CheckTrue(p.CreateCalled);
 end;
 
 procedure TTestOwned.TestInterfaceType_Instance_Gets_Destroyed_When_Created;
 var
-  p: IOwned<TTestClass>;
+  p: IManaged<TTestClass>;
   t: TTestClass;
   destroyCalled: Boolean;
 begin
-  p := TOwned<TTestClass>.Create();
+  p := TManaged<TTestClass>.Create();
   t := p;
   t.DestroyCalled := @destroyCalled;
 {$IFDEF AUTOREFCOUNT}
@@ -2198,12 +2198,12 @@ end;
 procedure TTestOwned.TestInterfaceType_Instance_Gets_Destroyed_When_Injected;
 var
   t: TTestClass;
-  p: IOwned<TTestClass>;
+  p: IManaged<TTestClass>;
   destroyCalled: Boolean;
 begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
-  p := TOwned<TTestClass>.Create(t);
+  p := TManaged<TTestClass>.Create(t);
 {$IFDEF AUTOREFCOUNT}
   t := nil;
 {$ENDIF}
@@ -2214,7 +2214,7 @@ end;
 
 procedure TTestOwned.TestRecordType_Implicit_FromInstance_Works;
 var
-  p: Owned<TTestClass>;
+  p: Managed<TTestClass>;
   t: TTestClass;
 begin
   t := TTestClass.Create;
@@ -2224,7 +2224,7 @@ end;
 
 procedure TTestOwned.TestRecordType_Implicit_ToInstance_Works;
 var
-  p: Owned<TTestClass>;
+  p: Managed<TTestClass>;
   t, t2: TTestClass;
 begin
   t := TTestClass.Create;
@@ -2235,7 +2235,7 @@ end;
 
 procedure TTestOwned.TestRecordType_Instance_Gets_Destroyed;
 var
-  p: Owned<TTestClass>;
+  p: Managed<TTestClass>;
   t: TTestClass;
   destroyCalled: Boolean;
 begin
@@ -2246,7 +2246,7 @@ begin
   t := nil;
 {$ENDIF}
   destroyCalled := False;
-  p := Default(Owned<TTestClass>);
+  p := Default(Managed<TTestClass>);
   CheckTrue(destroyCalled);
 end;
 
@@ -2259,9 +2259,9 @@ type
 
 procedure TTestOwned.TestRecordType_Manage_Typed_Pointer;
 var
-  p: IOwned<PMyRecord>;
+  p: IManaged<PMyRecord>;
 begin
-  p := TOwned<PMyRecord>.Create();
+  p := TManaged<PMyRecord>.Create();
   p.x := 11;
   p.y := 22;
   p.s := 'Hello World';

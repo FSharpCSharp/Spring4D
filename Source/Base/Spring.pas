@@ -1825,9 +1825,9 @@ type
 
   {$REGION 'Smart pointer'}
 
-  IOwned<T> = reference to function: T;
+  IManaged<T> = reference to function: T;
 
-  TOwned<T> = class(TInterfacedObject, IOwned<T>)
+  TManaged<T> = class(TInterfacedObject, IManaged<T>)
   private
     fValue: T;
     function Invoke: T; inline;
@@ -1837,13 +1837,13 @@ type
     destructor Destroy; override;
   end;
 
-  Owned<T> = record
+  Managed<T> = record
   strict private
     fValue: T;
     fFinalizer: IInterface;
   public
-    class operator Implicit(const value: T): Owned<T>;
-    class operator Implicit(const value: Owned<T>): T; inline;
+    class operator Implicit(const value: T): Managed<T>;
+    class operator Implicit(const value: Managed<T>): T; inline;
     property Value: T read fValue;
   end;
 
@@ -6515,9 +6515,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TOwned<T>'}
+{$REGION 'TManaged<T>'}
 
-constructor TOwned<T>.Create;
+constructor TManaged<T>.Create;
 begin
   inherited Create;
   case TType.Kind<T> of
@@ -6526,13 +6526,13 @@ begin
   end;
 end;
 
-constructor TOwned<T>.Create(const value: T);
+constructor TManaged<T>.Create(const value: T);
 begin
   inherited Create;
   fValue := value;
 end;
 
-destructor TOwned<T>.Destroy;
+destructor TManaged<T>.Destroy;
 begin
   case TType.Kind<T> of
 {$IFNDEF AUTOREFCOUNT}
@@ -6543,7 +6543,7 @@ begin
   inherited;
 end;
 
-function TOwned<T>.Invoke: T;
+function TManaged<T>.Invoke: T;
 begin
   Result := fValue;
 end;
@@ -6551,20 +6551,24 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Owned<T>'}
+{$REGION 'Managed<T>'}
 
-class operator Owned<T>.Implicit(const value: T): Owned<T>;
+class operator Managed<T>.Implicit(const value: T): Managed<T>;
 begin
   Result.fValue := value;
   case TType.Kind<T> of
 {$IFNDEF AUTOREFCOUNT}
     tkClass,
 {$ENDIF}
-    tkPointer: Result.fFinalizer := TOwned<T>.Create(Result.fValue);
+    tkPointer:
+      if PPointer(@value)^ = nil then
+        Result.fFinalizer := nil
+      else
+        Result.fFinalizer := TManaged<T>.Create(value);
   end;
 end;
 
-class operator Owned<T>.Implicit(const value: Owned<T>): T;
+class operator Managed<T>.Implicit(const value: Managed<T>): T;
 begin
   Result := value.fValue;
 end;
