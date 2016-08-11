@@ -730,10 +730,21 @@ end;
 
 function TEnumerableBase<T>.EqualsTo(const values: array of T): Boolean;
 var
-  collection: IEnumerable<T>;
+  comparer: IEqualityComparer<T>;
+  e: IEnumerator<T>;
+  i: Integer;
 begin
-  collection := TArrayIterator<T>.Create(values);
-  Result := EqualsTo(collection);
+  comparer := EqualityComparer;
+  e := GetEnumerator;
+  i := 0;
+
+  while e.MoveNext do
+  begin
+    if not ((i < Length(values)) and comparer.Equals(e.Current, values[i])) then
+      Exit(False);
+    Inc(i);
+  end;
+  Result := i = Length(values);
 end;
 
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>): Boolean;
@@ -1875,8 +1886,11 @@ begin
   Result := TList<T>.Create;
 {$ENDIF}
   Result.Count := count;
-  for i := index to index + count do
-    Result[i] := Items[i];
+  for i := 0 to count - 1 do
+  begin
+    Result[i] := Items[index];
+    Inc(index);
+  end;
 end;
 
 function TListBase<T>.IndexOf(const item: T): Integer;

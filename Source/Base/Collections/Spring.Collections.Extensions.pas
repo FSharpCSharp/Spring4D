@@ -64,6 +64,8 @@ type
     function Clone: TIterator<T>; override;
     function MoveNext: Boolean; override;
 
+    function GetRange(index, count: Integer): IList<T>;
+
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
@@ -799,6 +801,28 @@ begin
 {$ENDIF}
 
   Result := fValues[index];
+end;
+
+function TArrayIterator<T>.GetRange(index, count: Integer): IList<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Length(fValues)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
+{$ENDIF}
+
+{$IFDEF DELPHIXE_UP}
+  Result := TCollections.CreateList<T>;
+{$ELSE}
+  Result := TList<T>.Create;
+{$ENDIF}
+  Result.Count := count;
+  for i := 0 to count - 1 do
+  begin
+    Result[i] := fValues[index];
+    Inc(index);
+  end;
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T): Integer;

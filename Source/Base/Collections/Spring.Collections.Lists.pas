@@ -236,6 +236,8 @@ type
 
     function GetEnumerator: IEnumerator<T>; override;
 
+    function GetRange(index, count: Integer): IList<T>;
+
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
@@ -358,7 +360,7 @@ end;
 function TList<T>.GetRange(index, count: Integer): IList<T>;
 var
   list: TList<T>;
-{$IFNDEF DELPHIXE2_UP}
+{$IFNDEF DELPHIXE_UP}
   i: Integer;
 {$ENDIF}
 begin
@@ -369,7 +371,7 @@ begin
 
   list := TList<T>.Create;
   list.fCount := count;
-{$IFDEF DELPHIXE2_UP}
+{$IFDEF DELPHIXE_UP}
   list.fItems := Copy(fItems, index, count);
 {$ELSE}
   SetLength(list.fItems, count);
@@ -1300,6 +1302,28 @@ end;
 function TAnonymousReadOnlyList<T>.GetItem(index: Integer): T;
 begin
   Result := fItems(index);
+end;
+
+function TAnonymousReadOnlyList<T>.GetRange(index, count: Integer): IList<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+{$IFDEF DELPHIXE_UP}
+  Result := TCollections.CreateList<T>;
+{$ELSE}
+  Result := TList<T>.Create;
+{$ENDIF}
+  Result.Count := count;
+  for i := 0 to count - 1 do
+  begin
+    Result[i] := fItems(index);
+    Inc(index);
+  end;
 end;
 
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T): Integer;
