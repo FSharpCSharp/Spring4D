@@ -519,6 +519,11 @@ type
     procedure TestLastIndexOfSubRange;
   end;
 
+  TWeakTest = class(TTestCase)
+  published
+    procedure TestIsAlive;
+  end;
+
 implementation
 
 uses
@@ -2980,6 +2985,23 @@ begin
   values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
   index := TArray.LastIndexOf<Integer>(values, 5, 0, 6);
   CheckEquals(5, index);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWeakTest'}
+
+procedure TWeakTest.TestIsAlive;
+var
+  weak: Weak<IInterface>;
+  intf: IInterface;
+begin
+  intf := TInterfacedObject.Create;
+  weak := intf;
+  CheckTrue(weak.IsAlive);
+  intf := nil;
+  CheckFalse(weak.IsAlive);
 end;
 
 {$ENDREGION}

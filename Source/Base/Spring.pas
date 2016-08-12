@@ -1558,7 +1558,7 @@ type
   private
     fTarget: Pointer;
   protected
-    function GetIsAlive: Boolean;
+    function GetIsAlive: Boolean; inline;
     procedure RegisterWeakRef(address: Pointer; instance: Pointer);
     procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
   public
@@ -1570,7 +1570,7 @@ type
 
   TWeakReference<T> = class(TWeakReference, IWeakReference<T>)
   private
-    function GetTarget: T;
+    function GetTarget: T; inline;
     procedure SetTarget(const value: T);
   public
     constructor Create(const target: T);
@@ -1580,7 +1580,7 @@ type
     property Target: T read GetTarget write SetTarget;
   end;
 
-  WeakReference<T> = record
+  Weak<T> = record
   private
     fReference: IWeakReference<T>;
     function GetIsAlive: Boolean; inline;
@@ -1589,14 +1589,11 @@ type
   public
     constructor Create(const target: T);
 
-    class operator Implicit(const value: T): WeakReference<T>; overload; inline;
-    class operator Implicit(const value: TWeakReference<T>): WeakReference<T>; overload; inline;
-    class operator Implicit(const value: WeakReference<T>): T; overload; inline;
-    class operator Implicit(const value: IWeakReference<T>): WeakReference<T>; overload; inline;
-    class operator Implicit(const value: WeakReference<T>): IWeakReference<T>; overload; inline;
+    class operator Implicit(const value: T): Weak<T>; overload; inline;
+    class operator Implicit(const value: Weak<T>): T; overload; inline;
 
-    class operator Equal(const left: WeakReference<T>; const right: T): Boolean; overload; inline;
-    class operator NotEqual(const left: WeakReference<T>; const right: T): Boolean; overload; inline;
+    class operator Equal(const left: Weak<T>; const right: T): Boolean; overload; inline;
+    class operator NotEqual(const left: Weak<T>; const right: T): Boolean; overload; inline;
 
     function TryGetTarget(out target: T): Boolean;
     property Target: T read GetTarget write SetTarget;
@@ -6092,19 +6089,19 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'WeakReference<T>'}
+{$REGION 'Weak<T>'}
 
-constructor WeakReference<T>.Create(const target: T);
+constructor Weak<T>.Create(const target: T);
 begin
   fReference := TWeakReference<T>.Create(target);
 end;
 
-function WeakReference<T>.GetIsAlive: Boolean;
+function Weak<T>.GetIsAlive: Boolean;
 begin
   Result := Assigned(fReference) and fReference.IsAlive;
 end;
 
-function WeakReference<T>.GetTarget: T;
+function Weak<T>.GetTarget: T;
 begin
   if Assigned(fReference) then
     Result := fReference.Target
@@ -6112,7 +6109,7 @@ begin
     Result := Default(T);
 end;
 
-procedure WeakReference<T>.SetTarget(const value: T);
+procedure Weak<T>.SetTarget(const value: T);
 begin
   if Assigned(fReference) then
     fReference.Target := value
@@ -6120,40 +6117,22 @@ begin
     fReference := TWeakReference<T>.Create(value);
 end;
 
-function WeakReference<T>.TryGetTarget(out target: T): Boolean;
+function Weak<T>.TryGetTarget(out target: T): Boolean;
 begin
   Result := Assigned(fReference) and fReference.TryGetTarget(target);
 end;
 
-class operator WeakReference<T>.Implicit(const value: T): WeakReference<T>;
+class operator Weak<T>.Implicit(const value: T): Weak<T>;
 begin
   Result.Target := value;
 end;
 
-class operator WeakReference<T>.Implicit(
-  const value: TWeakReference<T>): WeakReference<T>;
-begin
-  Result.fReference := value;
-end;
-
-class operator WeakReference<T>.Implicit(const value: WeakReference<T>): T;
+class operator Weak<T>.Implicit(const value: Weak<T>): T;
 begin
   Result := value.Target;
 end;
 
-class operator WeakReference<T>.Implicit(
-  const value: IWeakReference<T>): WeakReference<T>;
-begin
-  Result.fReference := value;
-end;
-
-class operator WeakReference<T>.Implicit(
-  const value: WeakReference<T>): IWeakReference<T>;
-begin
-  Result := value.fReference;
-end;
-
-class operator WeakReference<T>.Equal(const left: WeakReference<T>;
+class operator Weak<T>.Equal(const left: Weak<T>;
   const right: T): Boolean;
 begin
   if Assigned(left.fReference) then
@@ -6162,7 +6141,7 @@ begin
     Result := PPointer(@right)^ = nil;
 end;
 
-class operator WeakReference<T>.NotEqual(const left: WeakReference<T>;
+class operator Weak<T>.NotEqual(const left: Weak<T>;
   const right: T): Boolean;
 begin
   if Assigned(left.fReference) then

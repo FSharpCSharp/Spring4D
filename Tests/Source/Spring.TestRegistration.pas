@@ -77,7 +77,8 @@ begin
     TTestOwned.Suite,
     TTestVector.Suite,
     TTestValueHelper.Suite,
-    TArrayTest.Suite
+    TArrayTest.Suite,
+    TWeakTest.Suite
   ]);
 
 {$IFNDEF DELPHI2010}
