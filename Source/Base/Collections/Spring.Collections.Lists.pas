@@ -360,7 +360,7 @@ end;
 function TList<T>.GetRange(index, count: Integer): IList<T>;
 var
   list: TList<T>;
-{$IFNDEF DELPHIXE_UP}
+{$IFNDEF DELPHIXE2_UP}
   i: Integer;
 {$ENDIF}
 begin
@@ -371,9 +371,11 @@ begin
 
   list := TList<T>.Create;
   list.fCount := count;
-{$IFDEF DELPHIXE_UP}
+{$IFDEF DELPHIXE2_UP}
   list.fItems := Copy(fItems, index, count);
 {$ELSE}
+  // the compiler passes wrong typeinfo for the generated call
+  // to _DynArrayCopyRange up to XE
   SetLength(list.fItems, count);
   for i := 0 to count - 1 do
   begin
