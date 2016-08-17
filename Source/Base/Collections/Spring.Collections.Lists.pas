@@ -916,19 +916,14 @@ end;
 {$REGION 'TSortedList<T>'}
 
 function TSortedList<T>.Add(const item: T): Integer;
-var
-  comparer: IComparer<T>;
 begin
   Result := fCount;
-  // This block improves performance when adding a sequence of an already sorted
-  // collection at a cost of one comparison.
   if Result > 0 then
   begin
-    comparer := fComparer;
-    // Is new item greater than the last one?
-    if comparer.Compare(fItems[Result - 1], item) > 0 then
-      TArray.BinarySearch<T>(fItems, item, Result, comparer, 0, fCount);
-    // If so, fCount is our insertion point
+    // If the new item is smaller than the last one in the list ...
+    if fComparer.Compare(item, fItems[Result - 1]) < 0 then
+      // ... search for the correct insertion point
+      TArray.BinarySearch<T>(fItems, item, Result, fComparer, 0, fCount);
   end;
   inherited Insert(Result, item);
 end;
