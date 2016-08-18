@@ -474,13 +474,20 @@ type
   TTestMultiMap = class(TTestCase)
   private
     SUT: IMultiMap<Integer,Integer>;
+    ValueAddedCount, ValueRemovedCount: Integer;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
+
+    procedure ValueChanged(Sender: TObject; const Item: Integer;
+      Action: TCollectionChangedAction);
   published
     procedure TestAddPair;
 
     procedure TestAddStringPair;
+
+    procedure TestInternalEventHandlersDetached;
+    procedure TestValueChangedCalledProperly;
   end;
 
 implementation
@@ -2688,6 +2695,8 @@ end;
 procedure TTestMultiMap.SetUp;
 begin
   SUT := TCollections.CreateMultiMap<Integer,Integer>;
+  ValueAddedCount := 0;
+  ValueRemovedCount := 0;
 end;
 
 procedure TTestMultiMap.TearDown;
@@ -2712,6 +2721,44 @@ begin
   pair.Value := 'World';
   map.Add('Test', pair);
   CheckEquals(1, map.Count);
+end;
+
+procedure TTestMultiMap.TestInternalEventHandlersDetached;
+var
+  items: IReadOnlyList<Integer>;
+begin
+  SUT.Add(1, 1);
+  items := SUT[1];
+  CheckEquals(1, items.Count);
+  SUT := nil;
+  CheckEquals(0, items.Count);
+  // this raised an AV under LEAKCHECK when the internal change handlers
+  // of the multimap where not detached from the value lists upon their removal
+  items := nil;
+end;
+
+procedure TTestMultiMap.TestValueChangedCalledProperly;
+begin
+  SUT.OnValueChanged.Add(ValueChanged);
+  SUT.Add(1, 1);
+  SUT.Add(1, 2);
+  CheckEquals(2, ValueAddedCount);
+  SUT.Remove(1, 1);
+  CheckEquals(1, ValueRemovedCount);
+
+  SUT.Add(1, 3);
+  CheckEquals(3, ValueAddedCount);
+  SUT := nil;
+  CheckEquals(3, ValueRemovedCount);
+end;
+
+procedure TTestMultiMap.ValueChanged(Sender: TObject; const Item: Integer;
+  Action: TCollectionChangedAction);
+begin
+  case Action of
+    caAdded: Inc(ValueAddedCount);
+    caRemoved: Inc(ValueRemovedCount);
+  end;
 end;
 
 {$ENDREGION}

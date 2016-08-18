@@ -143,6 +143,8 @@ type
       Action: TCollectionChangedAction);
     procedure DoValueChanged(Sender: TObject; const Item: TValue;
       Action: TCollectionChangedAction);
+    procedure DoValuesChanged(Sender: TObject; const Item: IList<TValue>;
+      Action: TCollectionChangedAction);
   protected
     function CreateCollection(const comparer: IComparer<TValue>): IList<TValue>; override;
     function CreateDictionary(const comparer: IEqualityComparer<TKey>): TDictionary<TKey, IList<TValue>>; override;
@@ -262,10 +264,8 @@ function TMultiMapBase<TKey, TValue>.Contains(const value: TGenericPair;
 var
   list: IList<TValue>;
 begin
-  if fDictionary.TryGetValue(value.key, list) then
-    Result := list.Contains(value.Value)
-  else
-    Result := False;
+  Result := fDictionary.TryGetValue(value.key, list)
+    and list.Contains(value.Value);
 end;
 
 function TMultiMapBase<TKey, TValue>.Contains(const key: TKey;
@@ -358,7 +358,7 @@ begin
   begin
     Dec(fCount);
     if not list.Any then
-      fDictionary.Remove(key)
+      fDictionary.Remove(key);
   end;
 end;
 
@@ -503,7 +503,6 @@ begin
 {$ELSE}
   Result := TList<TValue>.Create(comparer);
 {$ENDIF}
-  Result.OnChanged.Add(DoValueChanged);
 end;
 
 function TMultiMap<TKey, TValue>.CreateDictionary(
@@ -511,6 +510,7 @@ function TMultiMap<TKey, TValue>.CreateDictionary(
 begin
   Result := TContainedDictionary<TKey, IList<TValue>>.Create(Self, comparer);
   Result.OnKeyChanged.Add(DoKeyChanged);
+  Result.OnValueChanged.Add(DoValuesChanged);
 end;
 
 procedure TMultiMap<TKey, TValue>.DoKeyChanged(Sender: TObject;
@@ -523,6 +523,19 @@ procedure TMultiMap<TKey, TValue>.DoValueChanged(Sender: TObject;
   const Item: TValue; Action: TCollectionChangedAction);
 begin
   ValueChanged(Item, Action);
+end;
+
+procedure TMultiMap<TKey, TValue>.DoValuesChanged(Sender: TObject;
+  const Item: IList<TValue>; Action: TCollectionChangedAction);
+begin
+  case Action of
+    caAdded: Item.OnChanged.Add(DoValueChanged);
+    caRemoved:
+    begin
+      Item.Clear;
+      Item.OnChanged.Remove(DoValueChanged);
+    end;
+  end;
 end;
 
 {$ENDREGION}

@@ -151,7 +151,7 @@ begin
   TEncoding.UTF8;
   TEncoding.Unicode;
 {$IFNDEF ORM_TESTS}
-  GetFieldTable(TTestObject);
+  GetInitTable(TTestObject);
 {$ELSE}
   // Initialize global Entity cache
   for lType in TType.Context.GetTypes do
