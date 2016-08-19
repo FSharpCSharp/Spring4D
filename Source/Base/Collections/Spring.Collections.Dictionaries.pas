@@ -92,11 +92,11 @@ type
       {$ENDREGION}
       end;
 
-      TOrderedEnumerable = class(TContainedIterator<TGenericPair>)
+      TOrderedEnumerable = class(TIterator<TGenericPair>)
       private
+        fSource: TDictionary<TKey, TValue>;
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fDictionary: TGenericDictionary;
-        fComparer: IComparer<TKey>;
         fSortedKeys: TArray<TKey>;
         fIndex: Integer;
       protected
@@ -104,9 +104,8 @@ type
         function GetCount: Integer; override;
       {$ENDREGION}
       public
-        constructor Create(const controller: IInterface;
-          const dictionary: TGenericDictionary;
-          const comparer: IComparer<TKey>);
+        constructor Create(const source: TDictionary<TKey, TValue>);
+        destructor Destroy; override;
         function Clone: TIterator<TGenericPair>; override;
         function MoveNext: Boolean; override;
       end;
@@ -544,7 +543,7 @@ end;
 
 function TDictionary<TKey, TValue>.Ordered: IEnumerable<TGenericPair>;
 begin
-  Result := TOrderedEnumerable.Create(Self, fDictionary, TComparer<TKey>.Default());
+  Result := TOrderedEnumerable.Create(Self);
 end;
 
 procedure TDictionary<TKey, TValue>.SetItem(const key: TKey;
@@ -670,17 +669,27 @@ end;
 {$REGION 'TDictionary<TKey, TValue>.TOrderedEnumerable'}
 
 constructor TDictionary<TKey, TValue>.TOrderedEnumerable.Create(
-  const controller: IInterface; const dictionary: TGenericDictionary;
-  const comparer: IComparer<TKey>);
+  const source: TDictionary<TKey, TValue>);
 begin
-  inherited Create(controller);
-  fDictionary := dictionary;
-  fComparer := comparer;
+  inherited Create;
+  fSource := source;
+{$IFNDEF AUTOREFCOUNT}
+  fSource._AddRef;
+{$ENDIF}
+  fDictionary := fSource.fDictionary;
+end;
+
+destructor TDictionary<TKey, TValue>.TOrderedEnumerable.Destroy;
+begin
+{$IFNDEF AUTOREFCOUNT}
+  fSource._Release;
+{$ENDIF}
+  inherited Destroy;
 end;
 
 function TDictionary<TKey, TValue>.TOrderedEnumerable.Clone: TIterator<TGenericPair>;
 begin
-  Result := TOrderedEnumerable.Create(Controller, fDictionary, fComparer);
+  Result := TOrderedEnumerable.Create(fSource);
 end;
 
 function TDictionary<TKey, TValue>.TOrderedEnumerable.GetCount: Integer;
@@ -700,7 +709,7 @@ begin
 {$ELSE}
     fSortedKeys := fDictionary.Keys.ToArray;
 {$ENDIF}
-    TArray.Sort<TKey>(fSortedKeys, fComparer);
+    TArray.Sort<TKey>(fSortedKeys);
     fState := STATE_RUNNING;
   end;
 

@@ -190,7 +190,7 @@ type
 
     function Ordered: IEnumerable<T>; overload; virtual;
     function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload; virtual;
-    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload; virtual;
+    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload;
 
     function Reversed: IEnumerable<T>; virtual;
 

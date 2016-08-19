@@ -175,6 +175,8 @@ type
     procedure TestDictionaryContainsKey;
     procedure TestMapAdd;
     procedure TestMapRemove;
+    procedure TestOrdered;
+    procedure TestOrdered_Issue179;
   end;
 
   TTestEmptyStackofStrings = class(TTestCase)
@@ -1260,6 +1262,54 @@ procedure TTestStringIntegerDictionary.TestMapRemove;
 begin
   (SUT as IMap<string, Integer>).Remove('one');
   CheckFalse(SUT.ContainsKey('one'), 'TestMapRemove: Values does contain "one"');
+end;
+
+procedure TTestStringIntegerDictionary.TestOrdered;
+var
+  pairs: TArray<TPair<string, Integer>>;
+begin
+  SUT.Clear;
+  SUT.Add('1', 1);
+  SUT.Add('2', 2);
+  SUT.Add('3', 3);
+
+  pairs := SUT.Ordered.ToArray;
+  CheckEquals(3, Length(pairs));
+  // check if sorted by key
+  CheckEquals('1', pairs[0].Key);
+  CheckEquals('2', pairs[1].Key);
+  CheckEquals('3', pairs[2].Key);
+end;
+
+procedure TTestStringIntegerDictionary.TestOrdered_Issue179;
+var
+  o: IEnumerable<TPair<string,Integer>>;
+  e: IEnumerator<TPair<string,Integer>>;
+  i: Integer;
+begin
+  // this test is making sure that .Ordered is properly reference counted
+  // and captures the dictionary keeping it alive
+
+  o := SUT.Ordered;
+  e := o.GetEnumerator;
+
+  // should not destroy the dictionary because of the ordered enumerable
+  SUT := nil;
+
+  // even now it should not be destroyed because
+  // the enumerator is still keeping it alive
+  o := nil;
+
+  // make sure that the dictionary is really still there and contains the items
+  i := 0;
+  while e.MoveNext do
+    Inc(i);
+  CheckEquals(3, i);
+
+  // now setting the reference to the enumerator should finally
+  // trigger the destruction of the dictionary as this was the
+  // last reference keeping it alive
+  e := nil;
 end;
 
 {$ENDREGION}
