@@ -2124,7 +2124,7 @@ var
 begin
   Result := GetGrouping(key, False);
   if not Assigned(Result) then
-    Result := TEnumerableBase<TElement>.Create;
+    Result := TEmptyEnumerable<TElement>.Instance;
 end;
 
 {$ENDREGION}
