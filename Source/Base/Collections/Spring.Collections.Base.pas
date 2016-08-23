@@ -381,8 +381,8 @@ type
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
     procedure AddInternal(const item: TGenericPair); override; final;
-    procedure KeyChanged(const Item: TKey; Action: TCollectionChangedAction); virtual;
-    procedure ValueChanged(const Item: T; Action: TCollectionChangedAction); virtual;
+    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); virtual;
+    procedure ValueChanged(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
 
@@ -1802,11 +1802,11 @@ begin
   Result := TypeInfo(T);
 end;
 
-procedure TMapBase<TKey, T>.KeyChanged(const Item: TKey;
-  Action: TCollectionChangedAction);
+procedure TMapBase<TKey, T>.KeyChanged(const item: TKey;
+  action: TCollectionChangedAction);
 begin
   if Assigned(fOnKeyChanged) and fOnKeyChanged.CanInvoke then
-    fOnKeyChanged.Invoke(Self, Item, Action)
+    fOnKeyChanged.Invoke(Self, item, action)
 end;
 
 function TMapBase<TKey, T>.Remove(const item: TGenericPair): Boolean;
@@ -1814,11 +1814,11 @@ begin
   Result := Remove(item.Key, item.Value);
 end;
 
-procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
-  Action: TCollectionChangedAction);
+procedure TMapBase<TKey, T>.ValueChanged(const item: T;
+  action: TCollectionChangedAction);
 begin
   if Assigned(fOnValueChanged) and fOnValueChanged.CanInvoke then
-    fOnValueChanged.Invoke(Self, Item, Action)
+    fOnValueChanged.Invoke(Self, item, action)
 end;
 
 {$ENDREGION}

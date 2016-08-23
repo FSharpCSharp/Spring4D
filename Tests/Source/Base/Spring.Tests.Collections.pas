@@ -534,9 +534,32 @@ type
     procedure ExtractDoesNotDestroysItemButReturnsIt;
   end;
 
+  TTestOrderedDictionary = class(TTestCase)
+  private
+    SUT: IOrderedDictionary<Integer,string>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+
+    procedure CheckCount(expected: Integer);
+  published
+    procedure TestAddKeyValue;
+    procedure TestKeysGetEnumerator;
+    procedure TestKeysToArray;
+    procedure TestValuesGetEnumerator;
+    procedure TestValuesToArray;
+    procedure TestGetEnumerator;
+    procedure TestGetItemByIndex;
+    procedure TestAddOrSetValue;
+    procedure TestRemove;
+    procedure TestExtractPair;
+    procedure TestToArray;
+  end;
+
 implementation
 
 uses
+  Spring.Collections.Dictionaries,
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
   StrUtils,
@@ -2410,7 +2433,7 @@ end;
 procedure TTestInterfaceList.TestInterfaceListCreate;
 begin
   SUT := TCollections.CreateList<IInvokable>;
-  CheckNotNull(SUT.Comparer);      
+  CheckNotNull(SUT.Comparer);
 end;
 
 {$ENDREGION}
@@ -3037,6 +3060,216 @@ procedure TTestObjectQueue.TearDown;
 begin
   SUT := nil;
   inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestOrderedDictionary'}
+
+procedure TTestOrderedDictionary.CheckCount(expected: Integer);
+begin
+  CheckEquals(expected, SUT.Count, 'Count');
+  CheckEquals(expected, SUT.Keys.Count, 'Keys.Count');
+  CheckEquals(expected, SUT.Values.Count, 'Values.Count');
+end;
+
+procedure TTestOrderedDictionary.SetUp;
+begin
+  SUT := TOrderedDictionary<Integer,string>.Create;
+end;
+
+procedure TTestOrderedDictionary.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestOrderedDictionary.TestAddKeyValue;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  CheckCount(4);
+end;
+
+procedure TTestOrderedDictionary.TestAddOrSetValue;
+var
+  values: TArray<string>;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  SUT.AddOrSetValue(2, 'e');
+
+  CheckCount(4);
+
+  values := SUT.Values.ToArray;
+  CheckEquals(values[0], 'a');
+  CheckEquals(values[1], 'e');
+  CheckEquals(values[2], 'c');
+  CheckEquals(values[3], 'd');
+end;
+
+procedure TTestOrderedDictionary.TestExtractPair;
+var
+  pair: TPair<Integer,string>;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  pair := SUT.ExtractPair(5);
+  CheckEquals(5, pair.Key);
+  CheckEquals('', pair.Value);
+  CheckCount(4);
+  pair := SUT.ExtractPair(4);
+  CheckEquals(4, pair.Key);
+  CheckEquals('d', pair.Value);
+  CheckCount(3);
+  pair := SUT.Extract(3, 'c');
+  CheckEquals(3, pair.Key);
+  CheckEquals('c', pair.Value);
+  CheckCount(2);
+end;
+
+procedure TTestOrderedDictionary.TestGetEnumerator;
+var
+  pair: TPair<Integer,string>;
+  i: Integer;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  i := 0;
+  for pair in SUT do
+  begin
+    Inc(i);
+    CheckEquals(i, pair.Key);
+  end;
+  CheckEquals(4, i);
+end;
+
+procedure TTestOrderedDictionary.TestGetItemByIndex;
+var
+  i: Integer;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  for i := 0 to SUT.Count - 1 do
+    CheckEquals(i + 1, SUT.Items[i].Key);
+end;
+
+procedure TTestOrderedDictionary.TestKeysGetEnumerator;
+var
+  i, key: Integer;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  i := 0;
+  for key in SUT.Keys do
+  begin
+    Inc(i);
+    CheckEquals(i, key);
+  end;
+  CheckEquals(4, i);
+end;
+
+procedure TTestOrderedDictionary.TestKeysToArray;
+var
+  keys: TArray<Integer>;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  keys := SUT.Keys.ToArray;
+  CheckEquals(4, Length(keys));
+  CheckEquals(1, keys[0]);
+  CheckEquals(2, keys[1]);
+  CheckEquals(3, keys[2]);
+  CheckEquals(4, keys[3]);
+end;
+
+procedure TTestOrderedDictionary.TestRemove;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  CheckTrue(SUT.Remove(3));
+  CheckCount(3);
+  CheckFalse(SUT.Remove(4, 'e'));
+  CheckCount(3);
+  CheckTrue(SUT.Remove(4, 'd'));
+  CheckCount(2);
+end;
+
+procedure TTestOrderedDictionary.TestToArray;
+var
+  items: TArray<TPair<Integer, string>>;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  items := SUT.ToArray;
+  CheckEquals(4, Length(items));
+  CheckEquals(1, items[0].Key);
+  CheckEquals(2, items[1].Key);
+  CheckEquals(3, items[2].Key);
+  CheckEquals(4, items[3].Key);
+  CheckEquals('a', items[0].Value);
+  CheckEquals('b', items[1].Value);
+  CheckEquals('c', items[2].Value);
+  CheckEquals('d', items[3].Value);
+end;
+
+procedure TTestOrderedDictionary.TestValuesGetEnumerator;
+const
+  Values: array[1..4] of string = ('a', 'b', 'c', 'd');
+var
+  i: Integer;
+  value: string;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  i := 0;
+  for value in SUT.Values do
+  begin
+    Inc(i);
+    CheckEquals(Values[i], value);
+  end;
+  CheckEquals(4, i);
+end;
+
+procedure TTestOrderedDictionary.TestValuesToArray;
+var
+  values: TArray<string>;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  values := SUT.Values.ToArray;
+  CheckEquals(4, Length(values));
+  CheckEquals('a', values[0]);
+  CheckEquals('b', values[1]);
+  CheckEquals('c', values[2]);
+  CheckEquals('d', values[3]);
 end;
 
 {$ENDREGION}

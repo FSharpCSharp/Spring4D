@@ -114,7 +114,8 @@ begin
     TTestMultiMap.Suite,
     TTestBidiDictionary.Suite,
     TTestObjectStack.Suite,
-    TTestObjectQueue.Suite
+    TTestObjectQueue.Suite,
+    TTestOrderedDictionary.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [

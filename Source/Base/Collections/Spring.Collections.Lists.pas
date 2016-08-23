@@ -310,6 +310,14 @@ type
     property OnPropertyChanged: IEvent<TPropertyChangedEvent> read GetOnPropertyChanged;
   end;
 
+  TKeyList<TKey> = class(TList<TKey>)
+  private
+    fComparer: IEqualityComparer<TKey>;
+  public
+    constructor Create(const comparer: IEqualityComparer<TKey>);
+    function IndexOf(const item: TKey; index, count: Integer): Integer; override;
+  end;
+
 implementation
 
 uses
@@ -1548,6 +1556,25 @@ begin
 
   inherited Changed(value, action);
   DoPropertyChanged('Count');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TKeyList<TKey>'}
+
+constructor TKeyList<TKey>.Create(const comparer: IEqualityComparer<TKey>);
+begin
+  inherited Create;
+  fComparer := comparer;
+  if fComparer = nil then
+    fComparer := TEqualityComparer<TKey>.Default;
+end;
+
+function TKeyList<TKey>.IndexOf(const item: TKey; index,
+  count: Integer): Integer;
+begin
+  Result := TArray.IndexOf<TKey>(fItems, item, index, count, fComparer);
 end;
 
 {$ENDREGION}
