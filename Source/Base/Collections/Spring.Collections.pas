@@ -2602,6 +2602,9 @@ type
     class function SelectMany<T, TResult>(const source: IEnumerable<T>;
       const selector: TFunc<T, IEnumerable<TResult>>): IEnumerable<TResult>; overload; static;
 
+    class function ToLookup<T, TKey>(const source: IEnumerable<T>;
+      const keySelector: TFunc<T, TKey>): ILookup<TKey, T>; overload; static;
+
     class function Distinct<T>(const source: IEnumerable<T>): IEnumerable<T>; overload; static;
     class function Distinct<T>(const source: IEnumerable<T>;
       const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
@@ -3442,6 +3445,16 @@ class function TEnumerable.SelectMany<T, TResult>(const source: IEnumerable<T>;
   const selector: TFunc<T, IEnumerable<TResult>>): IEnumerable<TResult>;
 begin
   Result := TSelectManyIterator<T, TResult>.Create(source, selector);
+end;
+
+class function TEnumerable.ToLookup<T, TKey>(const source: IEnumerable<T>;
+  const keySelector: TFunc<T, TKey>): ILookup<TKey, T>;
+begin
+  Result := TLookup<TKey, T>.Create<T>(source, keySelector,
+    function(x: T): T
+    begin
+      Result := x
+    end);
 end;
 
 class function TEnumerable.Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>;
