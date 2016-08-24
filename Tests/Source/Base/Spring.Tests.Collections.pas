@@ -492,6 +492,11 @@ type
     procedure TestValueChangedCalledProperly;
   end;
 
+  TTestBidiDictionary = class(TTestCase)
+  published
+    procedure AddDictionary;
+  end;
+
 implementation
 
 uses
@@ -2809,6 +2814,26 @@ begin
     caAdded: Inc(ValueAddedCount);
     caRemoved: Inc(ValueRemovedCount);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionary'}
+
+procedure TTestBidiDictionary.AddDictionary;
+var
+  dict: IDictionary<Integer,string>;
+  bidi: IBidiDictionary<Integer,string>;
+begin
+  dict := TCollections.CreateDictionary<Integer,string>;
+  dict.Add(1,'a');
+  dict.Add(2,'b');
+  dict.Add(3,'c');
+  dict.Add(4,'d');
+  bidi := TCollections.CreateBidiDictionary<Integer,string>;
+  bidi.AddRange(dict);
+  CheckTrue(bidi.EqualsTo(dict));
 end;
 
 {$ENDREGION}

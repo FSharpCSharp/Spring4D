@@ -160,7 +160,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
-    procedure Add(const key: TKey; const value: TValue); overload; override;
+    procedure Add(const key: TKey; const value: TValue); override;
     function Remove(const key: TKey): Boolean; override;
     function Remove(const key: TKey; const value: TValue): Boolean; override;
     function Extract(const key: TKey; const value: TValue): TGenericPair; override;
@@ -235,7 +235,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
-    procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
+    procedure Add(const key: TKey; const value: TValue); override;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
     function Remove(const key: TKey; const value: TValue): Boolean; override;
     function Extract(const key: TKey; const value: TValue): TGenericPair; override;
