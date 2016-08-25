@@ -618,6 +618,13 @@ type
     function Reversed: IEnumerable<T>;
 
     /// <summary>
+    ///   Returns the sequence in a shuffled order.
+    /// </summary>
+{$IFDEF DELPHIXE_UP}
+    function Shuffled: IEnumerable<T>;
+{$ENDIF}
+
+    /// <summary>
     ///   Returns the only element of a sequence, and throws an exception if
     ///   there is not exactly one element in the sequence.
     /// </summary>

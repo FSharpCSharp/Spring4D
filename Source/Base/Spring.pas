@@ -2167,6 +2167,25 @@ type
       const comparer: IEqualityComparer<T>): Integer; overload; static;
 
     /// <summary>
+    ///   Shuffles the elements in the array using the Fisher-Yates algorithm.
+    /// </summary>
+    class procedure Shuffle<T>(var values: array of T); overload; static;
+
+    /// <summary>
+    ///   Shuffles the elements in the array starting at the specified index
+    ///   using the Fisher-Yates algorithm.
+    /// </summary>
+    class procedure Shuffle<T>(var values: array of T;
+      index: Integer); overload; static;
+
+    /// <summary>
+    ///   Shuffles the specified count of elements in the array starting at the
+    ///   specified index using the Fisher-Yates algorithm.
+    /// </summary>
+    class procedure Shuffle<T>(var values: array of T;
+      index, count: Integer); overload; static;
+
+    /// <summary>
     ///   Sorts the elements in an array using the specified comparison.
     /// </summary>
     class procedure Sort<T>(var values: array of T; const comparison: TComparison<T>); overload; static;
@@ -7630,6 +7649,36 @@ class procedure TArray.Sort<T>(var values: array of T;
   const comparison: TComparison<T>; index, count: Integer);
 begin
   Sort<T>(values, IComparer<T>(PPointer(@comparison)^), index, count);
+end;
+
+class procedure TArray.Shuffle<T>(var values: array of T);
+begin
+  Shuffle<T>(values, 0, Length(values));
+end;
+
+class procedure TArray.Shuffle<T>(var values: array of T; index: Integer);
+begin
+  Shuffle<T>(values, index, Length(values) - index);
+end;
+
+class procedure TArray.Shuffle<T>(var values: array of T; index,
+  count: Integer);
+var
+  i, n: Integer;
+  temp: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
+{$ENDIF}
+
+  for i := index to index + count - 1 do
+  begin
+    n := Random(index + count - i) + i;
+    temp := values[i];
+    values[i] := values[n];
+    values[n] := temp;
+  end;
 end;
 
 {$ENDREGION}

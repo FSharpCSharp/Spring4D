@@ -184,6 +184,10 @@ type
 
     function Reversed: IEnumerable<T>; virtual;
 
+{$IFDEF DELPHIXE_UP}
+    function Shuffled: IEnumerable<T>; virtual;
+{$ENDIF}
+
     function Single: T; overload; virtual;
     function Single(const predicate: TPredicate<T>): T; overload;
     function SingleOrDefault: T; overload;
@@ -1027,6 +1031,17 @@ function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 begin
   Result := TReversedIterator<T>.Create(Self);
 end;
+
+{$IFDEF DELPHIXE_UP}
+function TEnumerableBase<T>.Shuffled: IEnumerable<T>;
+var
+  items: TArray<T>;
+begin
+  items := ToArray;
+  TArray.Shuffle<T>(items);
+  Result := TArrayIterator<T>.Create(items);
+end;
+{$ENDIF}
 
 function TEnumerableBase<T>.Single: T;
 var
