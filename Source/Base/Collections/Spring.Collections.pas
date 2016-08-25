@@ -1835,6 +1835,18 @@ type
     function ExtractPair(const key: TKey): TPair<TKey, TValue>; overload;
 
     /// <summary>
+    ///   Gets the value for a given key if a matching key exists in the
+    ///   dictionary; returns the default value otherwise.
+    /// </summary>
+    function GetValueOrDefault(const key: TKey): TValue; overload;
+
+    /// <summary>
+    ///   Gets the value for a given key if a matching key exists in the
+    ///   dictionary; returns the given default value otherwise.
+    /// </summary>
+    function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
+
+    /// <summary>
     ///   Gets the value associated with the specified key.
     /// </summary>
     /// <param name="key">
