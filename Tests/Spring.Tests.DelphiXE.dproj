@@ -43,6 +43,8 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_RangeChecking>true</DCC_RangeChecking>
+			<DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
@@ -52,6 +54,7 @@
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="Source\Spring.TestBootstrap.pas"/>
+			<DCCReference Include="Source\Spring.Testing.pas"/>
 			<DCCReference Include="Source\Spring.TestRegistration.pas"/>
 			<DCCReference Include="Source\Spring.TestRunner.pas"/>
 			<DCCReference Include="Source\Spring.TestUtils.pas"/>
@@ -75,6 +78,7 @@
 			<DCCReference Include="Source\Core\Spring.Tests.Interception.Types.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
 			<DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
+			<DCCReference Include="Source\Spring.Tests.Testing.pas"/>
 			<DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>

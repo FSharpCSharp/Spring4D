@@ -118,6 +118,8 @@ type
     procedure TestGetRange_LastItems;
 
     procedure TestExtract_ItemNotInList;
+    procedure TestExtractAll_OneItemInList;
+    procedure TestExtractAll_MultipleItemsInList_RemoveSome;
 
     procedure TestEnumeratorMoveNext_VersionMismatch;
     procedure TestEnumeratorReset;
@@ -779,6 +781,40 @@ begin
   ExpectedException := EInvalidOperationException;
   e.Reset;
   ExpectedException := nil;
+end;
+
+procedure TTestIntegerList.TestExtractAll_MultipleItemsInList_RemoveSome;
+var
+  callCount: Integer;
+begin
+  callCount := 0;
+  SUT.AddRange([1, 2, 3, 4, 5]);
+  SUT.RemoveAll(
+    function(const i: Integer): Boolean
+    begin
+      Result := Odd(i);
+      Inc(callCount);
+    end);
+  CheckEquals(5, callCount);
+  CheckEquals(2, SUT.Count);
+  CheckEquals(2, SUT[0]);
+  CheckEquals(4, SUT[1]);
+end;
+
+procedure TTestIntegerList.TestExtractAll_OneItemInList;
+var
+  callCount: Integer;
+begin
+  callCount := 0;
+  SUT.Add(1);
+  SUT.RemoveAll(
+    function(const i: Integer): Boolean
+    begin
+      Result := True;
+      Inc(callCount);
+    end);
+  CheckEquals(1, callCount);
+  CheckEquals(0, SUT.Count);
 end;
 
 procedure TTestIntegerList.TestExtract_ItemNotInList;

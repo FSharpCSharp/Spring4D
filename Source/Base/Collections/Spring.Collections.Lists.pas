@@ -743,25 +743,14 @@ end;
 procedure TList<T>.DeleteAllInternal(const predicate: TPredicate<T>;
   notification: TCollectionChangedAction);
 var
-  i, n: Integer;
-  item: T;
+  index: Integer;
 begin
-  n := 0;
-  i := 0;
-  while i < fCount do
-  begin
-    if predicate(fItems[i]) then
-    begin
-      item := fItems[i];
-      Inc(n);
-      TArrayManager.Move(fItems, i + 1, i, fCount - i - 1);
-      TArrayManager.Finalize(fItems, fCount - 1, 1);
-      Dec(fCount);
-      Changed(item, notification);
-    end
+  index := 0;
+  while index < fCount do
+    if predicate(fItems[index]) then
+      DeleteInternal(index, notification)
     else
-      Inc(i)
-  end;
+      Inc(index);
 end;
 
 function TList<T>.Extract(const item: T): T;
