@@ -444,6 +444,10 @@ type
     procedure ConvertStringToFloatFailsForInvalidString;
 
     procedure FromCustomVariantFmtBcd;
+
+    procedure TryToType_ConvertIntToStr;
+    procedure TryToType_ConvertStrToInt;
+    procedure TryToType_ConvertStringToNullableString;
   end;
 
 {$IFNDEF DELPHI2010}
@@ -2816,6 +2820,33 @@ begin
   fSUT := TValue.From<ShortInt>(-128);
   fValue := -128;
   DoCheckEquals;
+end;
+
+procedure TTestValueHelper.TryToType_ConvertIntToStr;
+var
+  value: string;
+begin
+  fSUT := 42;
+  CheckTrue(fSUT.TryToType<string>(value));
+  CheckEquals('42', value);
+end;
+
+procedure TTestValueHelper.TryToType_ConvertStringToNullableString;
+var
+  value: Nullable<string>;
+begin
+  fSUT := '42';
+  CheckTrue(fSUT.TryToType<Nullable<string>>(value));
+  CheckTrue(value.HasValue);
+  CheckEquals('42', value);
+end;
+
+procedure TTestValueHelper.TryToType_ConvertStrToInt;
+var
+  value: Integer;
+begin
+  fSUT := 'foo';
+  CheckFalse(fSUT.TryToType<Integer>(value));
 end;
 
 {$ENDREGION}

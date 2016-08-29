@@ -4966,12 +4966,15 @@ begin
   Result := TryConvert(System.TypeInfo(T), value);
   if Result then
   begin
-    if TValueData(Self).FTypeInfo = nil then
+    // avoid extra overhead of value.AsType<T>
+    // since we know value contains the exact type of T
+    // use the same code as the private TValue.Get<T> method
+    if TValueData(value).FTypeInfo = nil then
     begin
       FillChar(Pointer(@targetValue)^, SizeOf(T), 0);
       Exit;
     end;
-    ExtractRawData(@targetValue);
+    value.ExtractRawData(@targetValue);
   end;
 end;
 
