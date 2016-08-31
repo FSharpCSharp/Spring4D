@@ -36,7 +36,7 @@ uses
   Classes,
   Spring.Data.ObjectDataSet;
 
-{$R 'Spring.Data.ObjectDataset.dcr'}
+{$R ..\..\Resources\Spring.Data.ObjectDataSet.dcr}
 
 procedure Register;
 begin
