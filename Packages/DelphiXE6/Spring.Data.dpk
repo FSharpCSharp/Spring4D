@@ -1,0 +1,44 @@
+package Spring.Data;
+
+{$R *.res}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DESCRIPTION 'Spring4D Data package'}
+{$LIBSUFFIX '.DelphiXE6'}
+{$RUNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  dbrtl,
+  Spring.Base;
+
+contains
+  Spring.Data.ObjectDataSet in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.pas',
+  Spring.Data.ObjectDataSet.Abstract in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Abstract.pas',
+  Spring.Data.ObjectDataSet.ActiveX in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ActiveX.pas',
+  Spring.Data.ObjectDataSet.Algorithms.Sort in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Algorithms.Sort.pas',
+  Spring.Data.ObjectDataSet.Blobs in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Blobs.pas',
+  Spring.Data.ObjectDataSet.ExprParser.Functions in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ExprParser.Functions.pas',
+  Spring.Data.ObjectDataSet.ExprParser in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ExprParser.pas',
+  Spring.Data.ObjectDataSet.IndexList in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.IndexList.pas';
+
+end.
