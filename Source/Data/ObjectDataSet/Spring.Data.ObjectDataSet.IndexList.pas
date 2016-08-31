@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Data.ObjectDataset.IndexList;
+unit Spring.Data.ObjectDataSet.IndexList;
 
 interface
 

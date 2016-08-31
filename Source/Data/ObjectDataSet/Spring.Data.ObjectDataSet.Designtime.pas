@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Data.ObjectDataset.Designtime;
+unit Spring.Data.ObjectDataSet.Designtime;
 
 interface
 
@@ -34,13 +34,13 @@ implementation
 
 uses
   Classes,
-  Spring.Data.ObjectDataset;
+  Spring.Data.ObjectDataSet;
 
 {$R 'Spring.Data.ObjectDataset.dcr'}
 
 procedure Register;
 begin
-  RegisterComponents('Spring4D', [TObjectDataset]);
+  RegisterComponents('Spring4D', [TObjectDataSet]);
 end;
 
 end.

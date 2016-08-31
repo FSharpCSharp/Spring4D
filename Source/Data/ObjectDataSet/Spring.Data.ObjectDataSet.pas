@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Data.ObjectDataset;
+unit Spring.Data.ObjectDataSet;
 
 interface
 
@@ -34,12 +34,12 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.Data.ObjectDataset.Abstract,
-  Spring.Data.ObjectDataset.Algorithms.Sort,
-  Spring.Data.ObjectDataset.ExprParser;
+  Spring.Data.ObjectDataSet.Abstract,
+  Spring.Data.ObjectDataSet.Algorithms.Sort,
+  Spring.Data.ObjectDataSet.ExprParser;
 
 type
-  TObjectDataset = class(TAbstractObjectDataset)
+  TObjectDataSet = class(TAbstractObjectDataSet)
   private
     FDataList: IObjectList;
     FDefaultStringFieldLength: Integer;
@@ -112,7 +112,7 @@ type
     /// <summary>
     ///   Makes the current dataset clone of <c>ASource</c>.
     /// </summary>
-    procedure Clone(const ASource: TObjectDataset);
+    procedure Clone(const ASource: TObjectDataSet);
 
     /// <summary>
     ///   Returns underlying model object from the current row.
@@ -217,19 +217,19 @@ uses
   Variants,
   Spring.Reflection,
   Spring.SystemUtils,
-  Spring.Data.ObjectDataset.ExprParser.Functions;
+  Spring.Data.ObjectDataSet.ExprParser.Functions;
 
 type
-  EObjectDatasetException = class(Exception);
+  EObjectDataSetException = class(Exception);
   
   {$WARNINGS OFF}
   TWideCharSet = set of Char;
   {$WARNINGS ON}
 
 
-{$REGION 'TObjectDataset'}
+{$REGION 'TObjectDataSet'}
 
-constructor TObjectDataset.Create(AOwner: TComponent);
+constructor TObjectDataSet.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FProperties := TCollections.CreateList<TRttiProperty>;
@@ -239,13 +239,13 @@ begin
   FDefaultStringFieldLength := 250;
 end;
 
-destructor TObjectDataset.Destroy;
+destructor TObjectDataSet.Destroy;
 begin
   FFilterParser.Free;
   inherited Destroy;
 end;
 
-procedure TObjectDataset.Clone(const ASource: TObjectDataset);
+procedure TObjectDataSet.Clone(const ASource: TObjectDataSet);
 begin
   if Active then
     Close;
@@ -263,7 +263,7 @@ begin
     Sort := ASource.Sort;
 end;
 
-function TObjectDataset.CompareRecords(const Item1, Item2: TValue;
+function TObjectDataSet.CompareRecords(const Item1, Item2: TValue;
   AIndexFieldList: IList<TIndexFieldInfo>): Integer;
 var
   i: Integer;
@@ -287,7 +287,7 @@ begin
   end;
 end;
 
-function TObjectDataset.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
+function TObjectDataSet.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
 var
   LText, LItem: string;
   LSplittedFields: TStringDynArray;
@@ -307,21 +307,21 @@ begin
 
     LIndexFieldItem.Field := FindField(LItem);
     if not FProperties.TryGetFirst(LIndexFieldItem.RttiProperty,
-      PropertyFinder(LIndexFieldItem.Field.FieldName)) then
-      raise EObjectDatasetException.CreateFmt('Field %d used for sorting not found in the dataset.', [LIndexFieldItem.Field.Name]);
+      TPropertyFilters.IsNamed(LIndexFieldItem.Field.FieldName)) then
+      raise EObjectDataSetException.CreateFmt('Field %d used for sorting not found in the dataset.', [LIndexFieldItem.Field.Name]);
     LIndexFieldItem.CaseInsensitive := True;
     Result.Add(LIndexFieldItem);
   end;
 end;
 
-function TObjectDataset.DataListCount: Integer;
+function TObjectDataSet.DataListCount: Integer;
 begin
   Result := 0;
   if Assigned(FDataList) then
     Result := FDataList.Count;
 end;
 
-procedure TObjectDataset.DoAfterOpen;
+procedure TObjectDataSet.DoAfterOpen;
 begin
   if Filtered then
   begin
@@ -331,12 +331,12 @@ begin
   inherited DoAfterOpen;
 end;
 
-procedure TObjectDataset.DoDeleteRecord(Index: Integer);
+procedure TObjectDataSet.DoDeleteRecord(Index: Integer);
 begin
   IndexList.DeleteModel(Index);
 end;
 
-procedure TObjectDataset.DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant);
+procedure TObjectDataSet.DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant);
 var
   LItem: TValue;
 begin
@@ -344,31 +344,31 @@ begin
   Value := InternalGetFieldValue(Field, LItem);
 end;
 
-procedure TObjectDataset.DoOnAfterFilter;
+procedure TObjectDataSet.DoOnAfterFilter;
 begin
   if Assigned(FOnAfterFilter) then
     FOnAfterFilter(Self);
 end;
 
-procedure TObjectDataset.DoOnAfterSort;
+procedure TObjectDataSet.DoOnAfterSort;
 begin
   if Assigned(FOnAfterSort) then
     FOnAfterSort(Self);
 end;
 
-procedure TObjectDataset.DoOnBeforeFilter;
+procedure TObjectDataSet.DoOnBeforeFilter;
 begin
   if Assigned(FOnBeforeFilter) then
     FOnBeforeFilter(Self);
 end;
 
-procedure TObjectDataset.DoOnBeforeSort;
+procedure TObjectDataSet.DoOnBeforeSort;
 begin
   if Assigned(FOnBeforeSort) then
     FOnBeforeSort(Self);
 end;
 
-procedure TObjectDataset.DoOnDataListChange(Sender: TObject;
+procedure TObjectDataSet.DoOnDataListChange(Sender: TObject;
   const Item: TObject; Action: TCollectionChangedAction);
 begin
   if not Active then
@@ -384,7 +384,7 @@ begin
   end;
 end;
 
-procedure TObjectDataset.DoPostRecord(Index: Integer; Append: Boolean);
+procedure TObjectDataSet.DoPostRecord(Index: Integer; Append: Boolean);
 var
   LItem: TValue;
   LConvertedValue: TValue;
@@ -438,7 +438,7 @@ begin
   SetCurrent(Index);
 end;
 
-function TObjectDataset.FieldInSortIndex(AField: TField): Boolean;
+function TObjectDataSet.FieldInSortIndex(AField: TField): Boolean;
 var
   i: Integer;
 begin
@@ -449,7 +449,7 @@ begin
   Result := False;
 end;
 
-function TObjectDataset.GetChangedSortText(const ASortText: string): string;
+function TObjectDataSet.GetChangedSortText(const ASortText: string): string;
 begin
   Result := ASortText;
 
@@ -459,21 +459,21 @@ begin
     Result := Result + ' ';
 end;
 
-function TObjectDataset.GetCurrentModel<T>: T;
+function TObjectDataSet.GetCurrentModel<T>: T;
 begin
   Result := System.Default(T);
   if Active and (Index > -1) and (Index < RecordCount) then
     Result := IndexList.GetModel(Index).AsType<T>;
 end;
 
-function TObjectDataset.GetFilterCount: Integer;
+function TObjectDataSet.GetFilterCount: Integer;
 begin
   Result := 0;
   if Filtered then
     Result := IndexList.Count;
 end;
 
-function TObjectDataset.GetFilteredDataList<T>: IList<T>;
+function TObjectDataSet.GetFilteredDataList<T>: IList<T>;
 var
   i: Integer;
 begin
@@ -482,17 +482,17 @@ begin
     Result.Add(IndexList.GetModel(i).AsType<T>);
 end;
 
-function TObjectDataset.GetRecordCount: Integer;
+function TObjectDataSet.GetRecordCount: Integer;
 begin
   Result := IndexList.Count;
 end;
 
-function TObjectDataset.GetSort: string;
+function TObjectDataSet.GetSort: string;
 begin
   Result := FSort;
 end;
 
-procedure TObjectDataset.InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo);
+procedure TObjectDataSet.InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo);
 var
   LType: TRttiType;
   LProp: TRttiProperty;
@@ -525,13 +525,13 @@ begin
   end;
 end;
 
-procedure TObjectDataset.InternalClose;
+procedure TObjectDataSet.InternalClose;
 begin
   inherited;
   UnregisterChangeHandler;
 end;
 
-function TObjectDataset.InternalGetFieldValue(AField: TField; const AItem: TValue): Variant;
+function TObjectDataSet.InternalGetFieldValue(AField: TField; const AItem: TValue): Variant;
 var
   LProperty: TRttiProperty;
 begin
@@ -542,10 +542,10 @@ begin
     Result := LProperty.GetValue(AItem).ToVariant
   else
     if AField.FieldKind = fkData then
-      raise EObjectDatasetException.CreateFmt(SPropertyNotFound, [AField.FieldName]);
+      raise EObjectDataSetException.CreateFmt(SPropertyNotFound, [AField.FieldName]);
 end;
 
-procedure TObjectDataset.InternalInitFieldDefs;
+procedure TObjectDataSet.InternalInitFieldDefs;
 begin
   FieldDefs.Clear;
   if Fields.Count > 0 then
@@ -554,7 +554,7 @@ begin
     LoadFieldDefsFromItemType;
 end;
 
-procedure TObjectDataset.InternalOpen;
+procedure TObjectDataSet.InternalOpen;
 begin
   inherited InternalOpen;
   IndexList.Rebuild;
@@ -568,7 +568,7 @@ begin
   SetRecBufSize;
 end;
 
-procedure TObjectDataset.InternalSetSort(const AValue: string; AIndex: Integer);
+procedure TObjectDataSet.InternalSetSort(const AValue: string; AIndex: Integer);
 var
   Pos: Integer;
   LDataList: IObjectList;
@@ -607,12 +607,12 @@ begin
   DoOnAfterSort;
 end;
 
-function TObjectDataset.IsCursorOpen: Boolean;
+function TObjectDataSet.IsCursorOpen: Boolean;
 begin
   Result := Assigned(FDataList) and inherited IsCursorOpen;
 end;
 
-procedure TObjectDataset.LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs);
+procedure TObjectDataSet.LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs);
 var
   i: integer;
   LField: TField;
@@ -639,7 +639,7 @@ begin
   end;
 end;
 
-procedure TObjectDataset.LoadFieldDefsFromItemType;
+procedure TObjectDataSet.LoadFieldDefsFromItemType;
 var
   LProp: TRttiProperty;
   LFieldType: TFieldType;
@@ -756,7 +756,7 @@ begin
 
   if not FProperties.Any then
     if Assigned(FColumnAttributeClass) then
-      raise EObjectDatasetException.Create(SColumnPropertiesNotSpecified);
+      raise EObjectDataSetException.Create(SColumnPropertiesNotSpecified);
   for LProp in FProperties do
   begin
     LLength := -2;
@@ -794,7 +794,7 @@ begin
   end;
 end;
 
-function TObjectDataset.ParserGetFunctionValue(Sender: TObject; const FuncName: string;
+function TObjectDataSet.ParserGetFunctionValue(Sender: TObject; const FuncName: string;
   const Args: Variant; var ResVal: Variant): Boolean;
 var
   LGetValueFunc: TFunctionGetValueProc;
@@ -804,7 +804,7 @@ begin
     ResVal := LGetValueFunc(Args);
 end;
 
-function TObjectDataset.ParserGetVariableValue(Sender: TObject;
+function TObjectDataSet.ParserGetVariableValue(Sender: TObject;
   const VarName: string; var Value: Variant): Boolean;
 var
   LField: TField;
@@ -822,17 +822,7 @@ begin
   end;
 end;
 
-function TObjectDataset.PropertyFinder(
-  const s: string): Spring.TPredicate<TRttiProperty>;
-begin
-  Result :=
-    function (const prop: TRttiProperty): Boolean
-    begin
-      Result := prop.Name = s;
-    end
-end;
-
-procedure TObjectDataset.RebuildPropertiesCache;
+procedure TObjectDataSet.RebuildPropertiesCache;
 var
   LType: TRttiType;
   i: Integer;
@@ -843,7 +833,7 @@ begin
     FProperties.Add(LType.GetProperty(Fields[i].FieldName));
 end;
 
-function TObjectDataset.RecordConformsFilter: Boolean;
+function TObjectDataSet.RecordConformsFilter: Boolean;
 begin
   Result := True;
   if (FFilterIndex >= 0) and (FFilterIndex < DataListCount) then
@@ -858,7 +848,7 @@ begin
     Result := False;
 end;
 
-procedure TObjectDataset.RefreshFilter;
+procedure TObjectDataSet.RefreshFilter;
 var
   i: Integer;
 begin
@@ -879,14 +869,14 @@ begin
   FilterCache.Clear;
 end;
 
-procedure TObjectDataset.RegisterChangeHandler;
+procedure TObjectDataSet.RegisterChangeHandler;
 begin
   UnregisterChangeHandler;
   if Assigned(FDataList) and FTrackChanges then
     FDataList.OnChanged.Add(DoOnDataListChange);
 end;
 
-procedure TObjectDataset.DoFilterRecord(AIndex: Integer);
+procedure TObjectDataSet.DoFilterRecord(AIndex: Integer);
 begin
   if IsFilterEntered and (AIndex > -1) and (AIndex < RecordCount) then
   begin
@@ -897,7 +887,7 @@ begin
   end;
 end;
 
-procedure TObjectDataset.SetDataList(const Value: IObjectList);
+procedure TObjectDataSet.SetDataList(const Value: IObjectList);
 begin
   FDataList := Value;
   FItemTypeInfo := FDataList.ElementType;
@@ -907,7 +897,7 @@ begin
     Refresh;
 end;
 
-procedure TObjectDataset.SetFilterText(const Value: string);
+procedure TObjectDataSet.SetFilterText(const Value: string);
 begin
   if Value = Filter then
     Exit;
@@ -933,7 +923,7 @@ begin
     inherited SetFilterText(Value);
 end;
 
-procedure TObjectDataset.SetSort(const Value: string);
+procedure TObjectDataSet.SetSort(const Value: string);
 begin
   CheckActive;
   if State in dsEditModes then
@@ -944,7 +934,7 @@ begin
   Resync([]);
 end;
 
-procedure TObjectDataset.SetTrackChanges(const Value: Boolean);
+procedure TObjectDataSet.SetTrackChanges(const Value: Boolean);
 begin
   if FTrackChanges <> Value then
   begin
@@ -953,13 +943,13 @@ begin
   end;
 end;
 
-procedure TObjectDataset.UnregisterChangeHandler;
+procedure TObjectDataSet.UnregisterChangeHandler;
 begin
   if Assigned(FDataList) then
     FDataList.OnChanged.Remove(DoOnDataListChange);
 end;
 
-procedure TObjectDataset.UpdateFilter;
+procedure TObjectDataSet.UpdateFilter;
 var
   LSaveState: TDataSetState;
 begin

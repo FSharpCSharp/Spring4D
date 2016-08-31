@@ -1,4 +1,4 @@
-unit TestObjectDataset;
+unit TestObjectDataSet;
 
 interface
 
@@ -6,13 +6,13 @@ uses
   TestFramework,
   TestEntities,
   Spring.Collections,
-  Spring.Data.ObjectDataset,
+  Spring.Data.ObjectDataSet,
   Spring.TestUtils;
 
 type
-  TObjectDatasetTest = class(TTestCase)
+  TObjectDataSetTest = class(TTestCase)
   private
-    FDataset: TObjectDataset;
+    FDataset: TObjectDataSet;
     FRemovedItemAge: Integer;
   protected
     function CreateCustomersList(ASize: Integer = 10; ACreateMock: Boolean = False): IList<TCustomer>; virtual;
@@ -84,7 +84,7 @@ uses
   Diagnostics,
   Generics.Defaults,
   SysUtils,
-  ViewTestObjectDataset,
+  ViewTestObjectDataSet,
   Spring,
   Spring.Persistence.Mapping.Attributes;
 
@@ -109,9 +109,9 @@ type
     property Age: Spring.Nullable<Integer> read FAge write FAge;
   end;
 
-{ TestTObjectDataset }
+{ TestTObjectDataSet }
 
-procedure TObjectDatasetTest.AddRecord;
+procedure TObjectDataSetTest.AddRecord;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -126,7 +126,7 @@ begin
   CheckEquals(59, FDataset.Fields[1].AsInteger);
 end;
 
-procedure TObjectDatasetTest.Append_Filtered;
+procedure TObjectDataSetTest.Append_Filtered;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -150,7 +150,7 @@ begin
   CheckEquals(2, FDataset.RecordCount);
 end;
 
-procedure TObjectDatasetTest.Bookmark_Filtered;
+procedure TObjectDataSetTest.Bookmark_Filtered;
 var
   LCustomers: IList<TCustomer>;
   LBookmark: TBookmark;
@@ -173,7 +173,7 @@ begin
   CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
 end;
 
-procedure TObjectDatasetTest.Bookmark_Filtered_2;
+procedure TObjectDataSetTest.Bookmark_Filtered_2;
 var
   LCustomers: IList<TCustomer>;
   LBookmark: TBookmark;
@@ -202,7 +202,7 @@ begin
   CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
 end;
 
-procedure TObjectDatasetTest.Bookmark_Filtered_Fail;
+procedure TObjectDataSetTest.Bookmark_Filtered_Fail;
 var
   LCustomers: IList<TCustomer>;
   LBookmark: TBookmark;
@@ -219,7 +219,7 @@ begin
   CheckFalse(FDataset.BookmarkValid(LBookmark));
 end;
 
-procedure TObjectDatasetTest.Bookmark_Simple;
+procedure TObjectDataSetTest.Bookmark_Simple;
 var
   LCustomers: IList<TCustomer>;
   LBookmark: TBookmark;
@@ -241,7 +241,7 @@ begin
   CheckEquals(9, FDataset.FieldByName('AGE').AsInteger);
 end;
 
-procedure TObjectDatasetTest.Bookmark_Sorted;
+procedure TObjectDataSetTest.Bookmark_Sorted;
 var
   LCustomers: IList<TCustomer>;
   LBookmark: TBookmark;
@@ -264,7 +264,7 @@ begin
   CheckEquals(9, FDataset.FieldByName('AGE').AsInteger);
 end;
 
-procedure TObjectDatasetTest.ClearField_Nullable;
+procedure TObjectDataSetTest.ClearField_Nullable;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -280,7 +280,7 @@ begin
   CheckFalse(LCustomers.First.MiddleName.HasValue);
 end;
 
-procedure TObjectDatasetTest.ClearField_SimpleType;
+procedure TObjectDataSetTest.ClearField_SimpleType;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -297,7 +297,7 @@ begin
   //clear nullable type
 end;
 
-function TObjectDatasetTest.CreateCustomersList(ASize: Integer; ACreateMock: Boolean): IList<TCustomer>;
+function TObjectDataSetTest.CreateCustomersList(ASize: Integer; ACreateMock: Boolean): IList<TCustomer>;
 var
   LCustomer: TCustomer;
   i: Integer;
@@ -320,7 +320,7 @@ begin
   end;
 end;
 
-function TObjectDatasetTest.CreateCustomersOrdersList(ASize: Integer): IList<TCustomer_Orders>;
+function TObjectDataSetTest.CreateCustomersOrdersList(ASize: Integer): IList<TCustomer_Orders>;
 var
   LOrder: TCustomer_Orders;
   i: Integer;
@@ -337,7 +337,7 @@ begin
   end;
 end;
 
-procedure TObjectDatasetTest.Delete;
+procedure TObjectDataSetTest.Delete;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -361,7 +361,7 @@ begin
 end;
 
 
-procedure TObjectDatasetTest.Delete_Filtered;
+procedure TObjectDataSetTest.Delete_Filtered;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -379,7 +379,7 @@ begin
   CheckEquals(8, LCustomers.Count);
 end;
 
-procedure TObjectDatasetTest.Delete_Last;
+procedure TObjectDataSetTest.Delete_Last;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -400,7 +400,7 @@ begin
   CheckEquals(8, FDataset.FieldByName('Age').AsInteger);
 end;
 
-procedure TObjectDatasetTest.Delete_Notification;
+procedure TObjectDataSetTest.Delete_Notification;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -415,7 +415,7 @@ begin
   CheckEquals(10, FRemovedItemAge);
 end;
 
-procedure TObjectDatasetTest.Delete_Sorted;
+procedure TObjectDataSetTest.Delete_Sorted;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -433,7 +433,7 @@ begin
   CheckEquals(10, FDataset.RecordCount);
 end;
 
-procedure TObjectDatasetTest.DoListChanged(Sender: TObject; const Item: TCustomer;
+procedure TObjectDataSetTest.DoListChanged(Sender: TObject; const Item: TCustomer;
   Action: TCollectionChangedAction);
 begin
   case Action of
@@ -445,7 +445,7 @@ begin
   end;
 end;
 
-procedure TObjectDatasetTest.Edit;
+procedure TObjectDataSetTest.Edit;
 var
   LCustomers: IList<TCustomer>;
   LDate: TDateTime;
@@ -468,7 +468,7 @@ begin
   CheckEquals(LDate, LCustomers[0].LastEdited);
 end;
 
-procedure TObjectDatasetTest.Edit_Nullable;
+procedure TObjectDataSetTest.Edit_Nullable;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -483,7 +483,7 @@ begin
   CheckEquals('Foo', FDataset.FieldByName('MiddleName').AsString);
 end;
 
-procedure TObjectDatasetTest.Edit_SpringNullable;
+procedure TObjectDataSetTest.Edit_SpringNullable;
 var
   LCustomers: IList<TSpringNullableTest>;
 begin
@@ -504,7 +504,7 @@ begin
   CheckEquals(10, FDataset.FieldByName('Age').AsInteger);
 end;
 
-procedure TObjectDatasetTest.Eof_AfterLast;
+procedure TObjectDataSetTest.Eof_AfterLast;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -519,7 +519,7 @@ begin
 
 end;
 
-procedure TObjectDatasetTest.Eof_AfterNext;
+procedure TObjectDataSetTest.Eof_AfterNext;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -535,7 +535,7 @@ begin
   CheckTrue(FDataset.Eof);
 end;
 
-procedure TObjectDatasetTest.Append;
+procedure TObjectDataSetTest.Append;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -575,7 +575,7 @@ begin
 end;
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TObjectDatasetTest.InsertionSort_Speed;
+procedure TObjectDataSetTest.InsertionSort_Speed;
 var
   LCustomers: IList<TCustomer>;
   swMerge, swInsertion: TStopwatch;
@@ -600,7 +600,7 @@ begin
 end;
 {$ENDIF}
 
-procedure TObjectDatasetTest.Insert_Simple;
+procedure TObjectDataSetTest.Insert_Simple;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -617,7 +617,7 @@ begin
   CheckEquals('Foo', FDataset.FieldByName('Name').AsString);
 end;
 
-procedure TObjectDatasetTest.Iterating;
+procedure TObjectDataSetTest.Iterating;
 var
   LCustomers: IList<TCustomer>;
   i: Integer;
@@ -638,7 +638,7 @@ begin
   CheckEquals(10, i);
 end;
 
-procedure TObjectDatasetTest.Iterating_Empty;
+procedure TObjectDataSetTest.Iterating_Empty;
 var
   LCustomers: IList<TCustomer>;
   i: Integer;
@@ -655,7 +655,7 @@ begin
   CheckEquals(0, i);
 end;
 
-procedure TObjectDatasetTest.Locate;
+procedure TObjectDataSetTest.Locate;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -671,18 +671,18 @@ begin
   CheckFalse( FDataset.Locate('Age', 50, []) );
 end;
 
-procedure TObjectDatasetTest.LookUpField;
+procedure TObjectDataSetTest.LookUpField;
 var
   LCustomers: IList<TCustomer>;
   LIntField: TIntegerField;
   LStrField: TStringField;
   LOrders: IList<TCustomer_Orders>;
-  FOrdersDataSet: TObjectDataset;
+  FOrdersDataSet: TObjectDataSet;
 begin
   LCustomers := CreateCustomersList(10, True);
   LOrders := CreateCustomersOrdersList(10);
 
-  FOrdersDataSet := TObjectDataset.Create(nil);
+  FOrdersDataSet := TObjectDataSet.Create(nil);
   try
     FOrdersDataSet.ColumnAttributeClass := ColumnAttribute;
     FOrdersDataSet.DataList := LOrders as IObjectList;
@@ -709,7 +709,7 @@ begin
   end;
 end;
 
-procedure TObjectDatasetTest.SimpleDefinedFields;
+procedure TObjectDataSetTest.SimpleDefinedFields;
 var
   LCustomers: IList<TCustomer>;
   LStrField: TStringField;
@@ -724,7 +724,7 @@ begin
   CheckEquals(LCustomers[0].Name, LStrField.AsString);
 end;
 
-procedure TObjectDatasetTest.MergeSort_Try;
+procedure TObjectDataSetTest.MergeSort_Try;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -737,7 +737,7 @@ begin
   Pass;
 end;
 
-procedure TObjectDatasetTest.Open;
+procedure TObjectDataSetTest.Open;
 var
   LCustomers: IList<TCustomer>;
   LNewCustomer: TCustomer;
@@ -771,7 +771,7 @@ begin
   CheckEquals('Customer', FDataset.FieldByName('MiddleName').AsString);
 end;
 
-procedure TObjectDatasetTest.Open_Orders;
+procedure TObjectDataSetTest.Open_Orders;
 var
   LOrders: IList<TCustomer_Orders>;
 begin
@@ -788,7 +788,7 @@ begin
   CheckFalse(LOrders.First.Total_Order_Price.HasValue);
 end;
 
-procedure TObjectDatasetTest.QuickSortTest;
+procedure TObjectDataSetTest.QuickSortTest;
 var
   LArray: TArray<Integer>;
 begin
@@ -803,14 +803,14 @@ begin
   Pass;
 end;
 
-procedure TObjectDatasetTest.SetUp;
+procedure TObjectDataSetTest.SetUp;
 begin
   inherited;
-  FDataset := TObjectDataset.Create(nil);
+  FDataset := TObjectDataSet.Create(nil);
   FDataset.ColumnAttributeClass := ColumnAttribute;
 end;
 
-procedure TObjectDatasetTest.SimpleSort;
+procedure TObjectDataSetTest.SimpleSort;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -846,7 +846,7 @@ begin
   CheckEquals('Middle', FDataset.FieldByName('MiddleName').AsString);
 end;
 
-procedure TObjectDatasetTest.Sort;
+procedure TObjectDataSetTest.Sort;
 var
   LCustomers: IList<TCustomer>;
   i: Integer;
@@ -933,7 +933,7 @@ begin
   CheckEquals('Bob', FDataset.FieldByName('Name').AsString);
 end;
 
-procedure TObjectDatasetTest.Sort_Regression;
+procedure TObjectDataSetTest.Sort_Regression;
 var
   LCustomers: IList<TCustomer>;
   LCust: TCustomer;
@@ -1022,13 +1022,13 @@ begin
  // CheckEquals('Bob', FDataset.FieldByName('Name').AsString);
 end;
 
-procedure TObjectDatasetTest.TearDown;
+procedure TObjectDataSetTest.TearDown;
 begin
   inherited;
   FDataset.Free;
 end;
 
-procedure TObjectDatasetTest.Filter;
+procedure TObjectDataSetTest.Filter;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -1047,7 +1047,7 @@ begin
   CheckEquals(8, FDataset.RecordCount);
 end;
 
-procedure TObjectDatasetTest.Filter_Custom_Functions;
+procedure TObjectDataSetTest.Filter_Custom_Functions;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -1070,7 +1070,7 @@ begin
   CheckEquals(0, FDataset.RecordCount);
 end;
 
-procedure TObjectDatasetTest.Filter_DateTime;
+procedure TObjectDataSetTest.Filter_DateTime;
 var
   LCustomers: IList<TCustomer>;
   LDate: TDate;
@@ -1086,7 +1086,7 @@ begin
   CheckEquals(1, FDataset.RecordCount);
 end;
 
-procedure TObjectDatasetTest.Filter_Null;
+procedure TObjectDataSetTest.Filter_Null;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -1102,7 +1102,7 @@ begin
 end;
 
 {$IFDEF PERFORMANCE_TESTS}
-procedure TObjectDatasetTest.Filter_Performance_Test;
+procedure TObjectDataSetTest.Filter_Performance_Test;
 var
   LCustomers: IList<TCustomer>;
   sw: TStopwatch;
@@ -1120,7 +1120,7 @@ begin
 end;
 {$ENDIF}
 
-procedure TObjectDatasetTest.Filter_Without_Brackets;
+procedure TObjectDataSetTest.Filter_Without_Brackets;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -1134,7 +1134,7 @@ begin
   CheckEquals(1, FDataset.RecordCount);
 end;
 
-procedure TObjectDatasetTest.GetCurrentModel_Filtered;
+procedure TObjectDataSetTest.GetCurrentModel_Filtered;
 var
   LCustomers: IList<TCustomer>;
   LCurrentCustomer: TCustomer;
@@ -1156,7 +1156,7 @@ begin
   end;
 end;
 
-procedure TObjectDatasetTest.GetCurrentModel_RandomAccess;
+procedure TObjectDataSetTest.GetCurrentModel_RandomAccess;
 var
   LCustomers: IList<TCustomer>;
   LCurrentCustomer: TCustomer;
@@ -1181,7 +1181,7 @@ begin
   CheckEquals(4, FDataset.GetCurrentModel<TCustomer>.Age);
 end;
 
-procedure TObjectDatasetTest.GetCurrentModel_Simple;
+procedure TObjectDataSetTest.GetCurrentModel_Simple;
 var
   LCustomers: IList<TCustomer>;
   LCurrentCustomer: TCustomer;
@@ -1202,7 +1202,7 @@ begin
   end;
 end;
 
-procedure TObjectDatasetTest.GetCurrentModel_Sorted;
+procedure TObjectDataSetTest.GetCurrentModel_Sorted;
 var
   LCustomers: IList<TCustomer>;
   LCurrentCustomer: TCustomer;
@@ -1223,7 +1223,7 @@ begin
   end;
 end;
 
-procedure TObjectDatasetTest.WhenIsNotTrackingChanges_DeletedItemFromList_IsNotSynced;
+procedure TObjectDataSetTest.WhenIsNotTrackingChanges_DeletedItemFromList_IsNotSynced;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -1237,7 +1237,7 @@ begin
   CheckEquals(5, FDataset.RecordCount);
 end;
 
-procedure TObjectDatasetTest.WhenIsTrackingChanges_DeletedItemFromList_IsSynced;
+procedure TObjectDataSetTest.WhenIsTrackingChanges_DeletedItemFromList_IsSynced;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -1252,20 +1252,20 @@ begin
 end;
 
 {$IFDEF GUI_TESTS}
-procedure TObjectDatasetTest.TestGUI;
+procedure TObjectDataSetTest.TestGUI;
 var
   LCustomers: IList<TCustomer>;
-  LView: TfrmObjectDatasetTest;
+  LView: TfrmObjectDataSetTest;
   sw: TStopwatch;
-  LClonedDataset: TObjectDataset;
+  LClonedDataset: TObjectDataSet;
 begin
   LCustomers := CreateCustomersList(1000);
   LCustomers.First.Age := 2;
   LCustomers.First.Name := 'Bob';
   FDataset.DataList := LCustomers as IObjectList;
   FDataset.Open;
-  LView := TfrmObjectDatasetTest.Create(nil);
-  LClonedDataset := TObjectDataset.Create(nil);
+  LView := TfrmObjectDataSetTest.Create(nil);
+  LClonedDataset := TObjectDataSet.Create(nil);
   try
     LView.Dataset := FDataset;
     LView.dsList.DataSet := FDataset;
@@ -1289,6 +1289,6 @@ end;
 {$ENDIF}
 
 initialization
-  RegisterTest('Spring.Data.ObjectDataset', TObjectDatasetTest.Suite);
+  RegisterTest('Spring.Data.ObjectDataSet', TObjectDataSetTest.Suite);
 
 end.

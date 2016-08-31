@@ -25,7 +25,7 @@
 {$I Spring.inc}
 {$R-,Q-}
 
-unit Spring.Data.ObjectDataset.Abstract;
+unit Spring.Data.ObjectDataSet.Abstract;
 
 {$IFDEF DELPHIXE4_UP}
   {$ZEROBASEDSTRINGS OFF}
@@ -38,7 +38,7 @@ uses
   DB,
   Generics.Defaults,
   Spring.Collections,
-  Spring.Data.ObjectDataset.IndexList;
+  Spring.Data.ObjectDataSet.IndexList;
 
 type
 {$IFDEF NEXTGEN}
@@ -57,7 +57,7 @@ type
     BookmarkFlag: TBookmarkFlag;
   end;
 
-  TAbstractObjectDataset = class(TDataset)
+  TAbstractObjectDataSet = class(TDataSet)
   private
     FRowBufSize: Integer;
     FFilterBuffer: TRecordBuffer;
@@ -242,8 +242,8 @@ uses
   Variants,
   VarUtils,
   Spring,
-  Spring.Data.ObjectDataset.ActiveX,
-  Spring.Data.ObjectDataset.Blobs;
+  Spring.Data.ObjectDataSet.ActiveX,
+  Spring.Data.ObjectDataSet.Blobs;
 
 type
 {$IF Defined(DELPHIXE3_UP) and not Defined(DELPHIXE8_UP)}
@@ -259,7 +259,7 @@ type
     class function UnsafeInToVariant(const B: TArray<Byte>; Offset: Integer = 0): Variant; static; inline;
   end;
 {$IFEND}
-  EAbstractObjectDatasetException = class(Exception);
+  EAbstractObjectDataSetException = class(Exception);
 
 function DataSetLocateThrough(DataSet: TDataSet; const KeyFields: string;
   const KeyValues: Variant; Options: TLocateOptions): Boolean;
@@ -392,9 +392,9 @@ end;
 {$IFEND}
 
 
-{$REGION 'TAbstractObjectDataset'}
+{$REGION 'TAbstractObjectDataSet'}
 
-constructor TAbstractObjectDataset.Create(AOwner: TComponent);
+constructor TAbstractObjectDataSet.Create(AOwner: TComponent);
 var
   LCaseInsensitiveComparer: IEqualityComparer<string>;
 begin
@@ -409,13 +409,13 @@ begin
   FFilterCache := TCollections.CreateDictionary<string,Variant>(500, LCaseInsensitiveComparer);
 end;
 
-destructor TAbstractObjectDataset.Destroy;
+destructor TAbstractObjectDataSet.Destroy;
 begin
   FIndexList.Free;
   inherited Destroy;
 end;
 
-function TAbstractObjectDataset.AllocRecordBuffer: TRecordBuffer;
+function TAbstractObjectDataSet.AllocRecordBuffer: TRecordBuffer;
 begin
   if not (csDestroying in ComponentState) then
   begin
@@ -427,19 +427,19 @@ begin
 end;
 
 {$IFDEF NEXTGEN}
-function TAbstractObjectDataset.AllocRecBuf: TRecBuf;
+function TAbstractObjectDataSet.AllocRecBuf: TRecBuf;
 begin
   Result := AllocRecordBuffer;
 end;
 {$ENDIF}
 
-procedure TAbstractObjectDataset.BindFields(Binding: Boolean);
+procedure TAbstractObjectDataSet.BindFields(Binding: Boolean);
 begin
   inherited BindFields(Binding);
   RebuildFieldCache;
 end;
 
-function TAbstractObjectDataset.BookmarkValid(Bookmark: TBookmark): Boolean;
+function TAbstractObjectDataSet.BookmarkValid(Bookmark: TBookmark): Boolean;
 var
   LValue: TValue;
 begin
@@ -449,7 +449,7 @@ begin
     Result := IndexList.ContainsModel(LValue);
 end;
 
-function TAbstractObjectDataset.CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer;
+function TAbstractObjectDataSet.CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer;
 const
   LRetCodes: array [Boolean, Boolean] of ShortInt = ((2, -1), (1, 0));
 var
@@ -464,12 +464,12 @@ begin
   end;
 end;
 
-function TAbstractObjectDataset.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
+function TAbstractObjectDataSet.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
 begin
   Result := TODBlobStream.Create(Field as TBlobField, Mode);
 end;
 
-procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent;
+procedure TAbstractObjectDataSet.DataEvent(Event: TDataEvent;
   Info: {$IFDEF DELPHIXE2_UP}NativeInt{$ELSE}LongInt{$ENDIF});
 begin
   case Event of
@@ -481,13 +481,13 @@ begin
   inherited;
 end;
 
-procedure TAbstractObjectDataset.DoBeforeInsert;
+procedure TAbstractObjectDataSet.DoBeforeInsert;
 begin
   FInsertIndex := Max(RecNo - 1, 0);
   inherited;
 end;
 
-procedure TAbstractObjectDataset.DoOnNewRecord;
+procedure TAbstractObjectDataSet.DoOnNewRecord;
 begin
   FModifiedFields.Clear;
 
@@ -500,7 +500,7 @@ begin
   inherited DoOnNewRecord;
 end;
 
-function TAbstractObjectDataset.FieldListCheckSum: NativeInt;
+function TAbstractObjectDataSet.FieldListCheckSum: NativeInt;
 var
   I: Integer;
 begin
@@ -509,26 +509,26 @@ begin
     Result := Result + (NativeInt(Fields[I]) shr (I mod 16));
 end;
 
-function TAbstractObjectDataset.FindField(const FieldName: string): TField;
+function TAbstractObjectDataSet.FindField(const FieldName: string): TField;
 begin
   if not FFieldsCache.TryGetValue(FieldName, Result) then
     Result := nil;
 end;
 
-procedure TAbstractObjectDataset.FreeRecordBuffer(var Buffer: TRecordBuffer);
+procedure TAbstractObjectDataSet.FreeRecordBuffer(var Buffer: TRecordBuffer);
 begin
   Finalize(PVariantList(Buffer + SizeOf(TArrayRecInfo))^, Fields.Count);
   FreeMem(Pointer(Buffer));
 end;
 
 {$IFDEF NEXTGEN}
-procedure TAbstractObjectDataset.FreeRecBuf(var Buffer: TRecBuf);
+procedure TAbstractObjectDataSet.FreeRecBuf(var Buffer: TRecBuf);
 begin
   FreeRecordBuffer(Buffer);
 end;
 {$ENDIF}
 
-function TAbstractObjectDataset.GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean;
+function TAbstractObjectDataSet.GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean;
 begin
   Pointer(RecBuf) := nil;
   case State of
@@ -547,14 +547,14 @@ begin
   Result := Pointer(RecBuf) <> nil;
 end;
 
-function TAbstractObjectDataset.GetBlobFieldData(FieldNo: Integer;
+function TAbstractObjectDataSet.GetBlobFieldData(FieldNo: Integer;
   var Buffer: TBlobByteData): Integer;
 begin
   Result := inherited GetBlobFieldData(FieldNo, Buffer);
 end;
 
 {$IFDEF DELPHIXE4_UP}
-procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
+procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
   PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
 end;
@@ -562,34 +562,34 @@ end;
 
 {$IFNDEF NEXTGEN}
 {$IFDEF DELPHIXE3_UP}
-procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
+procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
 begin
   PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
 end;
 {$ENDIF}
 
-procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
+procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
 end;
 {$ENDIF}
 
-function TAbstractObjectDataset.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
+function TAbstractObjectDataSet.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
 begin
   Result := PArrayRecInfo(Buffer).BookmarkFlag;
 end;
 
-function TAbstractObjectDataset.GetCanModify: Boolean;
+function TAbstractObjectDataSet.GetCanModify: Boolean;
 begin
   Result := not FReadOnly;
 end;
 
-function TAbstractObjectDataset.GetFieldClass(FieldDef: TFieldDef): TFieldClass;
+function TAbstractObjectDataSet.GetFieldClass(FieldDef: TFieldDef): TFieldClass;
 begin
   Result := inherited GetFieldClass(FieldDef);
 end;
 
-function TAbstractObjectDataset.GetFieldData(Field: TField;
+function TAbstractObjectDataSet.GetFieldData(Field: TField;
   {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
 var
@@ -834,13 +834,13 @@ begin
     VarToBuffer;
 end;
 
-function TAbstractObjectDataset.GetFieldData(Field: TField;
+function TAbstractObjectDataSet.GetFieldData(Field: TField;
   {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer): Boolean;
 begin
   Result := GetFieldData(Field, Buffer, True);
 end;
 
-function TAbstractObjectDataset.GetIndex: Integer;
+function TAbstractObjectDataSet.GetIndex: Integer;
 var
   LRecBuf: TRecordBuffer;
 begin
@@ -850,7 +850,7 @@ begin
     Result := PArrayRecInfo(LRecBuf).Index;
 end;
 
-function TAbstractObjectDataset.GetRecNo: Longint;
+function TAbstractObjectDataSet.GetRecNo: Longint;
 var
   LRecBuf: TRecordBuffer;
 begin
@@ -860,7 +860,7 @@ begin
     Result := PArrayRecInfo(LRecBuf).Index + 1;
 end;
 
-function TAbstractObjectDataset.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
+function TAbstractObjectDataSet.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
   DoCheck: Boolean): TGetResult;
 begin
   if Filtered then
@@ -869,24 +869,24 @@ begin
   Result := InternalGetRecord(Buffer, GetMode, DoCheck);
 end;
 
-function TAbstractObjectDataset.GetRecordCount: Integer;
+function TAbstractObjectDataSet.GetRecordCount: Integer;
 begin
   Result := -1;
 end;
 
-function TAbstractObjectDataset.GetRecordSize: Word;
+function TAbstractObjectDataSet.GetRecordSize: Word;
 begin
   Result := SizeOf(TArrayRecInfo);
 end;
 
 
-procedure TAbstractObjectDataset.InternalAddRecord(
+procedure TAbstractObjectDataSet.InternalAddRecord(
   Buffer: {$IFDEF DELPHIXE3_UP}TRecordBuffer{$ELSE}Pointer{$ENDIF}; Append: Boolean);
 begin
   DoPostRecord(Current, Append);
 end;
 
-procedure TAbstractObjectDataset.InternalClose;
+procedure TAbstractObjectDataSet.InternalClose;
 begin
   FInternalOpen := False;
   BindFields(False);
@@ -902,7 +902,7 @@ begin
   end;
 end;
 
-procedure TAbstractObjectDataset.InternalDelete;
+procedure TAbstractObjectDataSet.InternalDelete;
 var
   LRecBuf: TRecordBuffer;
 begin
@@ -910,7 +910,7 @@ begin
     DoDeleteRecord(PArrayRecInfo(LRecBuf).Index);
 end;
 
-procedure TAbstractObjectDataset.InternalEdit;
+procedure TAbstractObjectDataSet.InternalEdit;
 begin
   FModifiedFields.Clear;
 
@@ -920,12 +920,12 @@ begin
     Finalize(PVariantList(FOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
 end;
 
-procedure TAbstractObjectDataset.InternalFirst;
+procedure TAbstractObjectDataSet.InternalFirst;
 begin
   FCurrent := -1;
 end;
 
-function TAbstractObjectDataset.InternalGetRecord(Buffer: TRecordBuffer;
+function TAbstractObjectDataSet.InternalGetRecord(Buffer: TRecordBuffer;
   GetMode: TGetMode; DoCheck: Boolean): TGetResult;
 var
   LRecCount: Integer;
@@ -978,7 +978,7 @@ begin
   end;
 end;
 
-procedure TAbstractObjectDataset.InternalGotoBookmark(Bookmark: {$IFDEF DELPHIXE3_UP}TBookmark{$ELSE}Pointer{$ENDIF});
+procedure TAbstractObjectDataSet.InternalGotoBookmark(Bookmark: {$IFDEF DELPHIXE3_UP}TBookmark{$ELSE}Pointer{$ENDIF});
 var
   LValue: TValue;
 begin
@@ -986,13 +986,13 @@ begin
   FCurrent := IndexList.IndexOfModel(LValue);
 end;
 
-procedure TAbstractObjectDataset.InternalHandleException;
+procedure TAbstractObjectDataSet.InternalHandleException;
 begin
   if Assigned(Classes.ApplicationHandleException) then
     Classes.ApplicationHandleException(Self);
 end;
 
-procedure TAbstractObjectDataset.InternalInitFieldDefs;
+procedure TAbstractObjectDataSet.InternalInitFieldDefs;
 
   procedure InitFieldDefsFromFields(AFields: TFields; AFieldDefs: TFieldDefs);
   var
@@ -1026,7 +1026,7 @@ begin
   InitFieldDefsFromFields(Fields, FieldDefs);
 end;
 
-procedure TAbstractObjectDataset.InternalInitRecord(Buffer: TRecordBuffer);
+procedure TAbstractObjectDataSet.InternalInitRecord(Buffer: TRecordBuffer);
 var
   I: Integer;
 begin
@@ -1034,17 +1034,17 @@ begin
     PVariantList(Buffer + SizeOf(TArrayRecInfo))[I] := Null;
 end;
 
-procedure TAbstractObjectDataset.InternalInsert;
+procedure TAbstractObjectDataSet.InternalInsert;
 begin
   inherited;
 end;
 
-procedure TAbstractObjectDataset.InternalLast;
+procedure TAbstractObjectDataSet.InternalLast;
 begin
   FCurrent := RecordCount;
 end;
 
-procedure TAbstractObjectDataset.InternalOpen;
+procedure TAbstractObjectDataSet.InternalOpen;
 begin
   FInternalOpen := True;
   FCurrent := -1;
@@ -1058,7 +1058,7 @@ begin
   SetRecBufSize; }
 end;
 
-procedure TAbstractObjectDataset.InternalPost;
+procedure TAbstractObjectDataSet.InternalPost;
 var
   LRecBuf: TRecordBuffer;
 begin
@@ -1074,33 +1074,33 @@ begin
   end;
 end;
 
-procedure TAbstractObjectDataset.InternalRefresh;
+procedure TAbstractObjectDataSet.InternalRefresh;
 begin
   FIndexList.Rebuild;
 end;
 
-procedure TAbstractObjectDataset.InternalSetToRecord(Buffer: TRecordBuffer);
+procedure TAbstractObjectDataSet.InternalSetToRecord(Buffer: TRecordBuffer);
 begin
   if PArrayRecInfo(Buffer).BookmarkFlag in [bfCurrent, bfInserted] then
     FCurrent := PArrayRecInfo(Buffer).Index;
 end;
 
-function TAbstractObjectDataset.IsCursorOpen: Boolean;
+function TAbstractObjectDataSet.IsCursorOpen: Boolean;
 begin
   Result := FInternalOpen;
 end;
 
-function TAbstractObjectDataset.IsFiltered: Boolean;
+function TAbstractObjectDataSet.IsFiltered: Boolean;
 begin
   Result := Filtered;
 end;
 
-function TAbstractObjectDataset.IsFilterEntered: Boolean;
+function TAbstractObjectDataSet.IsFilterEntered: Boolean;
 begin
   Result := (Filtered) and (Trim(Filter) <> '');
 end;
 
-function TAbstractObjectDataset.Locate(const KeyFields: string; const KeyValues: Variant;
+function TAbstractObjectDataSet.Locate(const KeyFields: string; const KeyValues: Variant;
   Options: TLocateOptions): Boolean;
 begin
   DoBeforeScroll;
@@ -1112,7 +1112,7 @@ begin
   end;
 end;
 
-function TAbstractObjectDataset.Lookup(const KeyFields: string; const KeyValues: Variant;
+function TAbstractObjectDataSet.Lookup(const KeyFields: string; const KeyValues: Variant;
   const ResultFields: string): Variant;
 begin
   Result := Null;
@@ -1122,7 +1122,7 @@ begin
   end;
 end;
 
-procedure TAbstractObjectDataset.RebuildFieldCache;
+procedure TAbstractObjectDataSet.RebuildFieldCache;
 var
   i: Integer;
 begin
@@ -1134,22 +1134,22 @@ begin
   end;
 end;
 
-procedure TAbstractObjectDataset.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
+procedure TAbstractObjectDataSet.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
 begin
   PArrayRecInfo(Buffer).BookmarkFlag := Value;
 end;
 
-procedure TAbstractObjectDataset.SetCurrent(AValue: Integer);
+procedure TAbstractObjectDataSet.SetCurrent(AValue: Integer);
 begin
   FCurrent := AValue;
 end;
 
-procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffer);
+procedure TAbstractObjectDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer);
 begin
   SetFieldData(Field, Buffer, True);
 end;
 
-procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean);
+procedure TAbstractObjectDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean);
 
   procedure BcdToOleVariant(const Bcd: TBcd; var Data: OleVariant);
   var
@@ -1314,7 +1314,7 @@ begin
     DataEvent(deFieldChange, Longint(Field));
 end;
 
-procedure TAbstractObjectDataset.SetFiltered(Value: Boolean);
+procedure TAbstractObjectDataSet.SetFiltered(Value: Boolean);
 begin
   if Filtered <> Value then
   begin
@@ -1341,20 +1341,20 @@ begin
   end;
 end;
 
-procedure TAbstractObjectDataset.SetIndex(const Value: Integer);
+procedure TAbstractObjectDataSet.SetIndex(const Value: Integer);
 begin
   if (Value < 0) or (Value >= RecordCount) then
-    raise EAbstractObjectDatasetException.Create(SIndexOutOfRange);
+    raise EAbstractObjectDataSetException.Create(SIndexOutOfRange);
 
   FCurrent := Value;
 end;
 
-procedure TAbstractObjectDataset.SetRecBufSize;
+procedure TAbstractObjectDataSet.SetRecBufSize;
 begin
   FRowBufSize := SizeOf(TArrayRecInfo) + (Fields.Count * SizeOf(Variant));
 end;
 
-procedure TAbstractObjectDataset.SetRecNo(Value: Integer);
+procedure TAbstractObjectDataSet.SetRecNo(Value: Integer);
 begin
   CheckBrowseMode;
   Value :=  Min(max(Value, 1), RecordCount);

@@ -1,7 +1,7 @@
-object frmObjectDatasetTest: TfrmObjectDatasetTest
+object frmObjectDataSetTest: TfrmObjectDataSetTest
   Left = 0
   Top = 0
-  Caption = 'TObjectDataset Test'
+  Caption = 'TObjectDataSet Test'
   ClientHeight = 590
   ClientWidth = 1051
   Color = clBtnFace

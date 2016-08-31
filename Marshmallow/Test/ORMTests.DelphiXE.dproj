@@ -104,14 +104,14 @@
 			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.Abstract.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.DB.pas"/>
-			<DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.pas"/>
-			<DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.Abstract.pas"/>
-			<DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.ActiveX.pas"/>
-			<DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.Algorithms.Sort.pas"/>
-			<DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.Blobs.pas"/>
-			<DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.ExprParser.pas"/>
-			<DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.ExprParser.Functions.pas"/>
-			<DCCReference Include="..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.IndexList.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Abstract.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ActiveX.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Algorithms.Sort.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Blobs.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ExprParser.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ExprParser.Functions.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.IndexList.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Abstract.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.BulkInsert.MongoDB.pas"/>
@@ -152,14 +152,14 @@
 			<DCCReference Include="TestCoreEntityMap.pas"/>
 			<DCCReference Include="TestCoreUtils.pas"/>
 			<DCCReference Include="TestDatabaseManager.pas"/>
-			<DCCReference Include="TestObjectDataset.pas"/>
+			<DCCReference Include="TestObjectDataSet.pas"/>
 			<DCCReference Include="TestPersistence.pas"/>
 			<DCCReference Include="TestSession.pas"/>
 			<DCCReference Include="TestSimpleRepository.pas"/>
 			<DCCReference Include="TestAdaptersSQLite.pas"/>
 			<DCCReference Include="TestEntities.pas"/>
-			<DCCReference Include="ViewTestObjectDataset.pas">
-				<Form>frmObjectDatasetTest</Form>
+			<DCCReference Include="ViewTestObjectDataSet.pas">
+				<Form>frmObjectDataSetTest</Form>
 			</DCCReference>
 			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityWrapper.pas"/>
 			<DCCReference Include="TestEntityWrapper.pas"/>

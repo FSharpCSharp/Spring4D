@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Data.ObjectDataset.Algorithms.Sort;
+unit Spring.Data.ObjectDataSet.Algorithms.Sort;
 
 interface
 
@@ -32,7 +32,7 @@ uses
   DB,
   Rtti,
   Spring.Collections,
-  Spring.Data.ObjectDataset.IndexList;
+  Spring.Data.ObjectDataSet.IndexList;
 
 const
   MIN_MERGE = 32;

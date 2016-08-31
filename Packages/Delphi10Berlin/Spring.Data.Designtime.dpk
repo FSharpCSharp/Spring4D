@@ -34,6 +34,6 @@ requires
   Spring.Data;
 
 contains
-  Spring.Data.ObjectDataset.Designtime in '..\..\Source\Data\ObjectDataset\Spring.Data.ObjectDataset.Designtime.pas';
+  Spring.Data.ObjectDataSet.Designtime in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Designtime.pas';
 
 end.

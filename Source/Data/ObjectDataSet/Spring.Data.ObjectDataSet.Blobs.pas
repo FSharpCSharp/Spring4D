@@ -24,20 +24,20 @@
 
 {$I Spring.inc}
 
-unit Spring.Data.ObjectDataset.Blobs;
+unit Spring.Data.ObjectDataSet.Blobs;
 
 interface
 
 uses
   Classes,
   DB,
-  Spring.Data.ObjectDataset.Abstract;
+  Spring.Data.ObjectDataSet.Abstract;
 
 type
   TODBlobStream = class(TMemoryStream)
   private
     FField: TBlobField;
-    FDataSet: TAbstractObjectDataset;
+    FDataSet: TAbstractObjectDataSet;
     FBuffer: TRecordBuffer;
     FFieldNo: Integer;
     FModified: Boolean;
@@ -71,7 +71,7 @@ begin
   inherited Create;
   FField := Field;
   FFieldNo := FField.FieldNo - 1;
-  FDataSet := FField.Dataset as TAbstractObjectDataset;
+  FDataSet := FField.Dataset as TAbstractObjectDataSet;
   FFieldData := Null;
   FData := Null;
   if not FDataSet.GetActiveRecBuf(FBuffer) then

@@ -62,8 +62,8 @@ uses
   TestFireDACConnection in '..\..\..\Marshmallow\Test\TestFireDACConnection.pas',
   TestAdaptersFireDAC in '..\..\..\Marshmallow\Test\TestAdaptersFireDAC.pas',
   {$ENDIF }
-  //+TestObjectDataset in '..\..\..\Marshmallow\Test\TestObjectDataset.pas',
-  //+ViewTestObjectDataset in '..\..\Source\Persistence\ViewTestObjectDataset.pas' {frmObjectDatasetTest},
+  //+TestObjectDataSet in '..\..\..\Marshmallow\Test\TestObjectDataSet.pas',
+  //+ViewTestObjectDataSet in '..\..\Source\Persistence\ViewTestObjectDataSet.pas' {frmObjectDataSetTest},
   TestSimpleRepository in '..\..\..\Marshmallow\Test\TestSimpleRepository.pas',
   TestAdaptersSQLite in '..\..\..\Marshmallow\Test\TestAdaptersSQLite.pas',
   Spring.Tests.Persistence.FmxRefForm in '..\..\Source\Persistence\Spring.Tests.Persistence.FmxRefForm.pas' {PersistenceFmxRefForm};
@@ -90,7 +90,7 @@ begin
   Application.Initialize;
   Application.CreateForm(TfrmTestInsightDUnitFMXRunner, frmTestInsightDUnitFMXRunner);
   Application.CreateForm(TPersistenceFmxRefForm, PersistenceFmxRefForm);
-  //Application.CreateForm(TfrmObjectDatasetTest, frmObjectDatasetTest);
+  //Application.CreateForm(TfrmObjectDataSetTest, frmObjectDataSetTest);
   Application.Run;
   //RunRegisteredTests();
   TestFramework.ClearRegistry;

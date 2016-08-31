@@ -43,7 +43,7 @@ type
     function FieldExists(const fieldName: string): Boolean;
     function GetFieldValue(const fieldName: string): Variant;
   public
-    constructor Create(const dataSet: TDataset);
+    constructor Create(const dataSet: TDataSet);
   end;
 
 implementation
@@ -54,7 +54,7 @@ uses
 
 {$REGION 'TFieldCache'}
 
-constructor TFieldCache.Create(const dataSet: TDataset);
+constructor TFieldCache.Create(const dataSet: TDataSet);
 begin
   inherited Create;
   fDataSet := dataSet;
