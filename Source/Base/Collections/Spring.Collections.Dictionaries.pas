@@ -248,7 +248,7 @@ type
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
     procedure AddOrSetValue(const key: TKey; const value: TValue);
-    function Extract(const key: TKey): TValue; reintroduce; overload; inline;
+    function Extract(const key: TKey): TValue; reintroduce; overload;
     function ExtractPair(const key: TKey): TGenericPair; reintroduce; overload;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
   {$ENDREGION}

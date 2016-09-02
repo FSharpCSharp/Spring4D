@@ -205,12 +205,6 @@ type
 
 implementation
 
-uses
-  Spring.Collections,
-  Spring.Persistence.Core.EntityCache,
-  Spring.Persistence.Mapping.Attributes,
-  Spring.Reflection;
-
 
 {$REGION 'EORMException'}
 
@@ -300,7 +294,7 @@ function TORMExceptionHandler.HandleException(const defaultMsg: string): Excepti
 {$IFDEF AUTOREFCOUNT}
   function AcquireExceptionObject: Exception; // fixes RSP-13652
   begin
-    Pointer(Result):=System.AcquireExceptionObject;
+    Pointer(Result) := System.AcquireExceptionObject;
   end;
 {$ENDIF}
 
