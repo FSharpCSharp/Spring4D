@@ -4846,6 +4846,15 @@ function TValueHelper.TryConvert(targetTypeInfo: PTypeInfo;
 var
   value: TValue;
 begin
+  {$IFDEF DELPHI2010}
+  // Fix for TValue.Cast not converting TValue.Empty to any type
+  if (TypeInfo = nil) and (targetTypeInfo <> nil) then
+  begin
+    TValue.Make(nil, targetTypeInfo, targetValue);
+    Exit(True);
+  end;
+  {$ENDIF}
+
   if (TypeInfo = nil) or (targetTypeInfo = nil) then
   begin
     targetValue := EmptyValue;

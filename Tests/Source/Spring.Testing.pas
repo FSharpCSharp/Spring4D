@@ -38,9 +38,12 @@ const
 
 type
   TTestingAttribute = class(TCustomAttribute)
+  private
+    function GetValue(index: Integer): TValue;
   protected
     fValues: TArray<TValue>;
     constructor Create(const values: string; const delimiters: string = DefaultDelimiters);
+    property Values[index: Integer]: TValue read GetValue;
   end;
 
   /// <summary>
@@ -144,6 +147,14 @@ begin
   SetLength(fValues, Length(tempValues));
   for i := 0 to High(tempValues) do
     fValues[i] := tempValues[i];
+end;
+
+function TTestingAttribute.GetValue(index: Integer): TValue;
+begin
+  if index < Length(fValues) then
+    Result := fValues[index]
+  else
+    Result := TValue.Empty;
 end;
 
 {$ENDREGION}
@@ -371,7 +382,6 @@ procedure TTestSuite.AddTests(testClass: TTestCaseClass);
     argIndex: Integer = 0; paramIndex: Integer = 0);
   var
     attribute: TTestingAttribute;
-    value: TValue;
     i: Integer;
     enumType: TRttiEnumerationType;
   begin
@@ -388,8 +398,8 @@ procedure TTestSuite.AddTests(testClass: TTestCaseClass);
       if (paramIndex = 0) or not method.HasCustomAttribute<SequentialAttribute> then
         for i := 0 to High(attribute.fValues) do
         begin
-          value := attribute.fValues[i];
-          value.TryConvert(parameters[paramIndex].ParamType.Handle, arguments[paramIndex]);
+          attribute.Values[i].TryConvert(
+            parameters[paramIndex].ParamType.Handle, arguments[paramIndex]);
           if paramIndex = Length(parameters) - 1 then
             suite.AddTest(testClass.Create(method, arguments) as ITest)
           else
@@ -397,13 +407,8 @@ procedure TTestSuite.AddTests(testClass: TTestCaseClass);
         end
       else
       begin
-        if argIndex < Length(attribute.fValues) then
-        begin
-          value := attribute.fValues[argIndex];
-          value.TryConvert(parameters[paramIndex].ParamType.Handle, arguments[paramIndex]);
-        end
-        else
-          arguments[paramIndex] := TValue.Empty;
+        attribute.Values[argIndex].TryConvert(
+          parameters[paramIndex].ParamType.Handle, arguments[paramIndex]);
         if paramIndex = Length(parameters) - 1 then
           suite.AddTest(testClass.Create(method, arguments) as ITest)
         else
@@ -449,12 +454,11 @@ begin
       for attribute in method.GetCustomAttributes<TestCaseAttribute> do
       begin
         for i := 0 to High(parameters) do
-          attribute.fValues[i].TryConvert(
+          attribute.Values[i].TryConvert(
             parameters[i].ParamType.Handle, arguments[i]);
         if method.ReturnType <> nil then
-          attribute.fValues[High(attribute.fValues)].TryConvert(
+          attribute.Values[High(arguments)].TryConvert(
             method.ReturnType.Handle, arguments[High(arguments)]);
-
         suite.AddTest(testClass.Create(method, arguments) as ITest);
       end;
 
