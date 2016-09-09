@@ -318,6 +318,7 @@ type
     procedure RegisterOneDecoratorWithFailingConditionResolvesWithoutDecorator;
     procedure RegisterTwoDecoratorsResolveReturnsLastDecorator;
     procedure RegisterTwoDecoratorsResolveWithParameterReturnsCorrectValue;
+    procedure RegisterOneDecoratorInitializeIsCalled;
   end;
 
 implementation
@@ -2005,6 +2006,20 @@ end;
 
 {$REGION 'TTestDecorators'}
 
+procedure TTestDecorators.RegisterOneDecoratorInitializeIsCalled;
+var
+  service: IAnotherService;
+begin
+  fContainer.RegisterType<IAnotherService, TInitializableComponent>;
+  fContainer.RegisterDecorator<IAnotherService, TAnotherServiceDecorator>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAnotherService>;
+  CheckIs(service, TAnotherServiceDecorator);
+  service := (service as TAnotherServiceDecorator).Service;
+  CheckIs(service, TInitializableComponent);
+  Check((service as TInitializableComponent).IsInitialized);
+end;
+
 procedure TTestDecorators.RegisterOneDecoratorResolveReturnsDecorator;
 var
   service: IAgeService;
@@ -2028,9 +2043,10 @@ begin
       Result := False;
       conditionCalled := True;
     end);
-  CheckTrue(conditionCalled);
+  CheckFalse(conditionCalled);
   fContainer.Build;
   service := fContainer.Resolve<IAgeService>;
+  CheckTrue(conditionCalled);
   CheckIs(service, TNameAgeComponent);
   CheckEquals(TNameAgeComponent.DefaultAge, service.Age);
 end;

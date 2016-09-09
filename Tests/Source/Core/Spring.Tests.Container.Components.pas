@@ -235,6 +235,14 @@ type
     property OnDispose: TProc read fOnDispose write fOnDispose;
   end;
 
+  TAnotherServiceDecorator = class(TInterfacedObject, IAnotherService)
+  private
+    fAnotherService: IAnotherService;
+  public
+    constructor Create(const anotherService: IAnotherService);
+    property Service: IAnotherService read fAnotherService;
+  end;
+
   {$ENDREGION}
 
 
@@ -1096,6 +1104,15 @@ end;
 
 constructor TTypeB.Create(const someService: ISomeService);
 begin
+end;
+
+{ TAnotherServiceDecorator }
+
+constructor TAnotherServiceDecorator.Create(
+  const anotherService: IAnotherService);
+begin
+  inherited Create;
+  fAnotherService := anotherService;
 end;
 
 end.
