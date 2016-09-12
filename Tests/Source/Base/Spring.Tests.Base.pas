@@ -722,7 +722,7 @@ begin
 {$IFDEF UNSAFE_NULLABLE}
   v := fBoolean;
 {$ELSE}
-  v := fBoolean.GetValueOrDefault;
+  v := fBoolean.ToVariant;
 {$ENDIF}
   CheckTrue(v);
 end;
@@ -2904,7 +2904,11 @@ var
 begin
   dt := EncodeDateTime(2015, 1, 1, 12, 0, 0, 0);
   v := VarSQLTimeStampCreate(dt);
+{$IFDEF UNSAFE_NULLABLE}
   fDateTime := v;
+{$ELSE}
+  fDateTime := Nullable<TDateTime>(v);
+{$ENDIF}
   CheckEquals(dt, fDateTime.Value);
 end;
 
@@ -2922,7 +2926,11 @@ begin
   VarSQLTimeStampOffsetCreate(v, DateTimeToSQLTimeStampOffset(dt,
     TTimeZone.Local.GetUtcOffset(dt).Hours,
     TTimeZone.Local.GetUtcOffset(dt).Minutes));
+{$IFDEF UNSAFE_NULLABLE}
   fDateTime := v;
+{$ELSE}
+  fDateTime := Nullable<TDateTime>(v);
+{$ENDIF}
   CheckEquals(dt, fDateTime.Value);
 end;
 {$ENDIF}
@@ -2943,7 +2951,11 @@ var
   v: Variant;
 begin
   v := VarFMTBcdCreate('8123456789012345678', 19, 0);
+{$IFDEF UNSAFE_NULLABLE}
   fInt64 := v;
+{$ELSE}
+  fInt64 := Nullable<Int64>(v);
+{$ENDIF}
   CheckEquals(8123456789012345678, fInt64.Value);
 end;
 
