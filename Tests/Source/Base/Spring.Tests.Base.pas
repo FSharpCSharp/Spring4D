@@ -25,6 +25,9 @@
 unit Spring.Tests.Base;
 
 {$I Spring.inc}
+{$IFDEF UNSAFE_NULLABLE}
+  {$WARN SYMBOL_DEPRECATED OFF}
+{$ENDIF}
 
 {$IF Defined(MACOS) AND NOT Defined(IOS)}
   {$DEFINE LogConsole}
@@ -61,6 +64,7 @@ type
     procedure TestAssignStringInt;
     procedure TestNullableNull;
     procedure TestAssignNull;
+    procedure TestTryGetValue;
   end;
 
   TTestNullableBoolean = class(TTestCase)
@@ -575,7 +579,11 @@ end;
 procedure TTestNullableInteger.TestAssignFloat;
 begin
   ExpectedException := EInvalidCast;
+{$IFDEF UNSAFE_NULLABLE}
   fInteger := 99.9;
+{$ELSE}
+  fInteger := Nullable<Integer>(99.9);
+{$ENDIF}
 end;
 
 procedure TTestNullableInteger.TestAssignNull;
@@ -583,7 +591,7 @@ var
   n: Nullable<Integer>;
 begin
   n := 5;
-  n := Null;
+  n := Nullable.Null;
   Check(not n.HasValue);
 end;
 
@@ -591,13 +599,21 @@ procedure TTestNullableInteger.TestAssignStringInt;
 begin
   // Nullable does NOT do a variant type conversion but is strict about the underlying type
   ExpectedException := EInvalidCast;
+{$IFDEF UNSAFE_NULLABLE}
   fInteger := '5';
+{$ELSE}
+  fInteger := Nullable<Integer>('5');
+{$ENDIF}
 end;
 
 procedure TTestNullableInteger.TestAssignStringNonInt;
 begin
   ExpectedException := EInvalidCast;
+{$IFDEF UNSAFE_NULLABLE}
   fInteger := '5x';
+{$ELSE}
+  fInteger := Nullable<Integer>('5x');
+{$ENDIF}
 end;
 
 procedure TTestNullableInteger.TestDefaultReturnsInitialValue;
@@ -630,6 +646,19 @@ begin
   CheckFalse(fInteger <> Nullable.Null);
 end;
 
+procedure TTestNullableInteger.TestTryGetValue;
+var
+  b: Boolean;
+  i: Integer;
+begin
+  b := fInteger.TryGetValue(i);
+  CheckFalse(b);
+  fInteger := 42;
+  b := fInteger.TryGetValue(i);
+  CheckTrue(b);
+  CheckEquals(42, i);
+end;
+
 procedure TTestNullableInteger.TestFromVariant;
 var
   value: Variant;
@@ -640,7 +669,11 @@ begin
   fInteger := Nullable<Integer>.Create(value);
   CheckFalse(fInteger.HasValue);
 
+{$IFDEF UNSAFE_NULLABLE}
   fInteger := value;
+{$ELSE}
+  fInteger := Nullable<Integer>(value);
+{$ENDIF}
   CheckFalse(fInteger.HasValue);
 
   value := ExpectedInteger;
@@ -686,7 +719,11 @@ var
   v: Variant;
 begin
   fBoolean := True;
+{$IFDEF UNSAFE_NULLABLE}
   v := fBoolean;
+{$ELSE}
+  v := fBoolean.GetValueOrDefault;
+{$ENDIF}
   CheckTrue(v);
 end;
 
@@ -2838,7 +2875,7 @@ begin
   fSUT := '42';
   CheckTrue(fSUT.TryToType<Nullable<string>>(value));
   CheckTrue(value.HasValue);
-  CheckEquals('42', value);
+  CheckEquals('42', value.Value);
 end;
 
 procedure TTestValueHelper.TryToType_ConvertStrToInt;
@@ -2868,7 +2905,7 @@ begin
   dt := EncodeDateTime(2015, 1, 1, 12, 0, 0, 0);
   v := VarSQLTimeStampCreate(dt);
   fDateTime := v;
-  CheckEquals(dt, fDateTime);
+  CheckEquals(dt, fDateTime.Value);
 end;
 
 {$IFDEF DELPHIXE_UP}
@@ -2886,7 +2923,7 @@ begin
     TTimeZone.Local.GetUtcOffset(dt).Hours,
     TTimeZone.Local.GetUtcOffset(dt).Minutes));
   fDateTime := v;
-  CheckEquals(dt, fDateTime);
+  CheckEquals(dt, fDateTime.Value);
 end;
 {$ENDIF}
 
@@ -2907,7 +2944,7 @@ var
 begin
   v := VarFMTBcdCreate('8123456789012345678', 19, 0);
   fInt64 := v;
-  CheckEquals(8123456789012345678, fInt64);
+  CheckEquals(8123456789012345678, fInt64.Value);
 end;
 
 {$ENDREGION}

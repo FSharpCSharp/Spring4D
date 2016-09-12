@@ -870,7 +870,7 @@ begin
     TypeInfo(Nullable<TGUID>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TGUID>>(outGuid));
-  CheckTrue(TGUID.Create(GuidString) = outGuid);
+  CheckTrue(TGUID.Create(GuidString) = outGuid.Value);
 end;
 
 procedure TTestFromString.TestStringToEnum;

@@ -1171,6 +1171,20 @@ type
     function Equals(const other: Nullable<T>): Boolean;
 
     /// <summary>
+    ///   Returns the stored value as variant.
+    /// </summary>
+    /// <exception cref="EInvalidCast">
+    ///   The type of T cannot be cast to Variant
+    /// </exception>
+    function ToVariant: Variant;
+
+    /// <summary>
+    ///   Gets the stored value. Returns <c>False</c> if it does not contain a
+    ///   value.
+    /// </summary>
+    function TryGetValue(out value: T): Boolean; inline;
+
+    /// <summary>
     ///   Gets a value indicating whether the current <see cref="Nullable&lt;T&gt;" />
     ///    structure has a value.
     /// </summary>
@@ -1185,11 +1199,19 @@ type
     property Value: T read GetValue;
 
     class operator Implicit(const value: Nullable): Nullable<T>; inline;
-    class operator Implicit(const value: Nullable<T>): T; inline;
     class operator Implicit(const value: T): Nullable<T>; inline;
+
+{$IFDEF UNSAFE_NULLABLE}
+    class operator Implicit(const value: Nullable<T>): T; inline;
+      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit operator - use Value property';{$ENDIF}
     class operator Implicit(const value: Nullable<T>): Variant;
+      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
     class operator Implicit(const value: Variant): Nullable<T>;
-    class operator Explicit(const value: Nullable<T>): T; inline;
+      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
+{$ENDIF}
+
+    class operator Explicit(const value: Variant): Nullable<T>;
+
     class operator Equal(const left, right: Nullable<T>): Boolean; inline;
     class operator NotEqual(const left, right: Nullable<T>): Boolean; inline;
   end;
@@ -2293,7 +2315,7 @@ function SameValue(const left, right: Variant): Boolean; overload;
 /// <summary>
 ///   Determines whether a variant value is null or empty.
 /// </summary>
-function VarIsNullOrEmpty(const value: Variant): Boolean;
+function VarIsNullOrEmpty(const value: Variant): Boolean; inline;
 
 /// <summary>
 ///   Returns the field table for the given class that contains all fields that
@@ -5640,6 +5662,7 @@ begin
   Result.fHasValue := Nullable.HasValue;
 end;
 
+{$IFDEF UNSAFE_NULLABLE}
 class operator Nullable<T>.Implicit(const value: Nullable<T>): T;
 begin
   Result := value.Value;
@@ -5674,15 +5697,25 @@ begin
   else
     Result := Default(Nullable<T>);
 end;
+{$ENDIF}
+
+class operator Nullable<T>.Explicit(const value: Variant): Nullable<T>;
+var
+  v: TValue;
+begin
+  if not VarIsNullOrEmpty(value) then
+  begin
+    v := TValue.FromVariant(value);
+    Result.fValue := v.AsType<T>;
+    Result.fHasValue := Nullable.HasValue;
+  end
+  else
+    Result := Default(Nullable<T>);
+end;
 
 class operator Nullable<T>.Implicit(const value: Nullable): Nullable<T>;
 begin
   Result := Default(Nullable<T>);
-end;
-
-class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
-begin
-  Result := value.Value;
 end;
 
 class operator Nullable<T>.Equal(const left, right: Nullable<T>): Boolean;
@@ -5693,6 +5726,29 @@ end;
 class operator Nullable<T>.NotEqual(const left, right: Nullable<T>): Boolean;
 begin
   Result := not left.Equals(right);
+end;
+
+function Nullable<T>.ToVariant: Variant;
+var
+  v: TValue;
+begin
+  if HasValue then
+  begin
+    v := TValue.From<T>(fValue);
+    if v.IsType<Boolean> then
+      Result := v.AsBoolean
+    else
+      Result := v.AsVariant;
+  end
+  else
+    Result := Null;
+end;
+
+function Nullable<T>.TryGetValue(out value: T): Boolean;
+begin
+  Result := fHasValue <> '';
+  if Result then
+    value := fValue;
 end;
 
 {$ENDREGION}

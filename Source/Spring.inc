@@ -74,6 +74,20 @@
   {$UNDEF USE_VMTAUTOTABLE}
 {$ENDIF}
 
+// This will enable implicit assignment compatibility of Variant and Nullable<T>
+// This reduces type safety as the compiler might try to turn types into Variants
+// first to then assign them to a nullable
+// Example: n of type Nullable<Integer> might be assigned a string because the
+// compiler tries to turn the string into an Integer via VarToInt.
+// This is against the type safety provided by Nullable<T> where it only accepts
+// values of the type T.
+// Use this define to provide backwards compatibility.
+{.$DEFINE UNSAFE_NULLABLE}
+{$IFDEF UNSAFE_NULLABLE}
+  // Raise deprecated warning in places where implicit operators are being used
+  {$DEFINE UNSAFE_NULLABLE_WARN}
+{$ENDIF}
+
 // This will disable the execution of guard code when assertions are turned off
 {$IFNDEF ASSERTIONS_ON}
   {$IFNDEF SPRING_ENABLE_GUARD}
