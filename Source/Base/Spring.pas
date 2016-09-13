@@ -97,10 +97,11 @@ type
     class function Create(const S: string): TGUID; overload; static;
     class function Create(A: Integer; B: SmallInt; C: SmallInt; const D: TBytes): TGUID; overload; static;
 
+    class function &&op_Equality(const left, right: TGUID): Boolean; static;
+    class function &&op_Inequality(const left, right: TGUID): Boolean; static; inline;
     class function Empty: TGuid; static;
     class function NewGuid: TGuid; static;
 
-    function Equals(const guid: TGuid): Boolean;
     function ToByteArray: TBytes;
     function ToString: string;
   end;
@@ -2459,7 +2460,7 @@ begin
   end
   else if (rightType.Kind = tkInterface) and (leftType.Kind = tkInterface) then
   begin
-    if (ifHasGuid in leftData.IntfFlags) and IsEqualGUID(leftData.Guid, rightData.Guid) then
+    if (ifHasGuid in leftData.IntfFlags) and (leftData.Guid = rightData.Guid) then
       Exit(True);
     Result := Assigned(rightData.IntfParent) and (rightData.IntfParent^ = leftType);
     while not Result and Assigned(rightData.IntfParent) do
@@ -2876,19 +2877,24 @@ begin
   FillChar(Result, SizeOf(Result), 0);
 end;
 
-function TGuidHelper.Equals(const guid: TGuid): Boolean;
-var
-  a, b: PIntegerArray;
-begin
-  a := PIntegerArray(@Self);
-  b := PIntegerArray(@guid);
-  Result := (a^[0] = b^[0]) and (a^[1] = b^[1]) and (a^[2] = b^[2]) and (a^[3] = b^[3]);
-end;
-
 class function TGuidHelper.NewGuid: TGuid;
 begin
   if CreateGUID(Result) <> S_OK then
     RaiseLastOSError;
+end;
+
+class function TGuidHelper.&&op_Equality(const left, right: TGUID): Boolean;
+var
+  a, b: PIntegerArray;
+begin
+  a := PIntegerArray(@left);
+  b := PIntegerArray(@right);
+  Result := (a^[0] = b^[0]) and (a^[1] = b^[1]) and (a^[2] = b^[2]) and (a^[3] = b^[3]);
+end;
+
+class function TGuidHelper.&&op_Inequality(const left, right: TGUID): Boolean;
+begin
+  Result := not (left = right);
 end;
 
 function TGuidHelper.ToByteArray: TBytes;
@@ -3206,7 +3212,7 @@ procedure TInitTable.AddManagedField(fieldType: PTypeInfo; offset: Integer;
             Exit;
           Inc(p);
           {$ELSE}
-          if Result.IID.Equals(intf.TypeData.Guid) then
+          if Result.IID = intf.TypeData.Guid then
             Exit;
           {$ENDIF}
         end;

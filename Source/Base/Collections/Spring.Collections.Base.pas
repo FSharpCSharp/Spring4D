@@ -1975,14 +1975,14 @@ end;
 
 function TListBase<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IObjectList) then
+  if IID = IObjectList then
   begin
     if ElementType.Kind = tkClass then
       Result := inherited QueryInterface(IList<TObject>, Obj)
     else
       Result := E_NOINTERFACE;
   end else
-  if IsEqualGUID(IID, IInterfaceList) then
+  if IID = IInterfaceList then
   begin
     if ElementType.Kind = tkInterface then
       Result := inherited QueryInterface(IList<IInterface>, Obj)

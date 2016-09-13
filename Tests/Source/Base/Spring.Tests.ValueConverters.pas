@@ -853,11 +853,7 @@ begin
     TypeInfo(TGUID));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TGUID>(outGuid));
-{$IFDEF DELPHI2010}
-  CheckTrue(TGUID.Create(GuidString).Equals(outGuid));
-{$ELSE}
   CheckTrue(TGUID.Create(GuidString) = outGuid);
-{$ENDIF}
   CheckFalse(fConverter.TryConvertTo(TValue.From<string>('no-guid'), TypeInfo(TGUID), outValue));
 end;
 

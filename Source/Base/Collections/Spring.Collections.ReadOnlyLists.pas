@@ -122,7 +122,7 @@ end;
 function TAbstractReadOnlyList<T>.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IObjectReadOnlyList) then
+  if IID = IObjectReadOnlyList then
   begin
     if ElementType.Kind = tkClass then
       Result := inherited QueryInterface(IReadOnlyList<TObject>, Obj)

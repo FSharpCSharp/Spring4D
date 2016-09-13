@@ -289,7 +289,7 @@ end;
 function TCollectionAdapter<T>.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
-  if IsEqualGUID(IID, ICollection<T>) then
+  if IID = ICollection<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
@@ -442,7 +442,7 @@ end;
 
 function TListAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IList<T>) then
+  if IID = IList<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
@@ -551,7 +551,7 @@ end;
 function TDictionaryAdapter<TKey, T>.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IDictionary<TKey, T>) then
+  if IID = IDictionary<TKey, T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
@@ -618,7 +618,7 @@ end;
 
 function TStackAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IStack<T>) then
+  if IID = IStack<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
@@ -692,7 +692,7 @@ end;
 
 function TQueueAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IQueue<T>) then
+  if IID = IQueue<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
@@ -766,7 +766,7 @@ end;
 
 function THashSetAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, ISet<T>) then
+  if IID = ISet<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
