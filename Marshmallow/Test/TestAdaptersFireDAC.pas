@@ -478,14 +478,16 @@ begin
 end;
 
 procedure TFireDACSessionTest.SaveNullable;
+const
+  OnePointOne: Double = 1.1;
 var
   customer: TFDCustomer;
 begin
   customer := CreateCustomer('Foo', 25);
-  customer.Height := 1.1;
+  customer.Height := OnePointOne;
   FSession.Save(customer);
 
-  CheckEquals(1.1, FSession.FindAll<TFDCustomer>.First.Height, 0.01);
+  CheckEquals(OnePointOne, FSession.FindAll<TFDCustomer>.First.Height);
   customer.Free;
 end;
 

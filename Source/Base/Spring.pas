@@ -1202,9 +1202,12 @@ type
     class operator Implicit(const value: Nullable): Nullable<T>; inline;
     class operator Implicit(const value: T): Nullable<T>; inline;
 
-{$IFDEF UNSAFE_NULLABLE}
+{$IFDEF IMPLICIT_NULLABLE}
     class operator Implicit(const value: Nullable<T>): T; inline;
-      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit operator - use Value property';{$ENDIF}
+      {$IFDEF IMPLICIT_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit operator - use Value property';{$ENDIF}
+{$ENDIF}
+
+{$IFDEF UNSAFE_NULLABLE}
     class operator Implicit(const value: Nullable<T>): Variant;
       {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
     class operator Implicit(const value: Variant): Nullable<T>;
@@ -5668,12 +5671,14 @@ begin
   Result.fHasValue := Nullable.HasValue;
 end;
 
-{$IFDEF UNSAFE_NULLABLE}
+{$IFDEF IMPLICIT_NULLABLE}
 class operator Nullable<T>.Implicit(const value: Nullable<T>): T;
 begin
   Result := value.Value;
 end;
+{$ENDIF}
 
+{$IFDEF UNSAFE_NULLABLE}
 class operator Nullable<T>.Implicit(const value: Nullable<T>): Variant;
 var
   v: TValue;

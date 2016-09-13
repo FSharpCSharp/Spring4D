@@ -81,11 +81,20 @@
 // compiler tries to turn the string into an Integer via VarToInt.
 // This is against the type safety provided by Nullable<T> where it only accepts
 // values of the type T.
-// Use this define to provide backwards compatibility.
-{.$DEFINE UNSAFE_NULLABLE}
+// Use this define to provide backwards compatibility. It is enabled by default
+// for now to find possible issues rather than changing the behavior without notice
+{$DEFINE UNSAFE_NULLABLE}
 {$IFDEF UNSAFE_NULLABLE}
   // Raise deprecated warning in places where implicit operators are being used
   {$DEFINE UNSAFE_NULLABLE_WARN}
+{$ENDIF}
+// This will enable the implicit operator for unboxing a nullable value
+// Be aware that this may possibly raise an exception if the nullable does not
+// contain a value, i.e. is null
+{$DEFINE IMPLICIT_NULLABLE}
+{$IFDEF IMPLICIT_NULLABLE}
+  // Raise deprecated warning in places where implicit operators are being used
+  {.$DEFINE IMPLICIT_NULLABLE_WARN}
 {$ENDIF}
 
 // This will disable the execution of guard code when assertions are turned off
