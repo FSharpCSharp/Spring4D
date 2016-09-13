@@ -1171,6 +1171,8 @@ type
     /// </remarks>
     function Equals(const other: Nullable<T>): Boolean;
 
+    function ToString: string;
+
     /// <summary>
     ///   Returns the stored value as variant.
     /// </summary>
@@ -5737,6 +5739,19 @@ end;
 class operator Nullable<T>.NotEqual(const left, right: Nullable<T>): Boolean;
 begin
   Result := not left.Equals(right);
+end;
+
+function Nullable<T>.ToString: string;
+var
+  v: TValue;
+begin
+  if HasValue then
+  begin
+    v := TValue.From<T>(fValue);
+    Result := v.ToString;
+  end
+  else
+    Result := 'Null';
 end;
 
 function Nullable<T>.ToVariant: Variant;
