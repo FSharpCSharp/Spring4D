@@ -1206,14 +1206,14 @@ type
 
 {$IFDEF IMPLICIT_NULLABLE}
     class operator Implicit(const value: Nullable<T>): T; inline;
-      {$IFDEF IMPLICIT_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit operator - use Value property';{$ENDIF}
+      {$IFDEF IMPLICIT_NULLABLE_WARN}inline; deprecated 'Possible unsafe operation involving implicit operator - use Value property';{$ENDIF}
 {$ENDIF}
 
 {$IFDEF UNSAFE_NULLABLE}
     class operator Implicit(const value: Nullable<T>): Variant;
-      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
+      {$IFDEF UNSAFE_NULLABLE_WARN}inline; deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
     class operator Implicit(const value: Variant): Nullable<T>;
-      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
+      {$IFDEF UNSAFE_NULLABLE_WARN}inline; deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
 {$ENDIF}
 
     class operator Explicit(const value: Variant): Nullable<T>;
