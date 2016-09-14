@@ -532,6 +532,11 @@ type
     procedure TestIsAlive;
   end;
 
+  TTestVirtualClass = class(TTestCase)
+  published
+    procedure TestIntegrity;
+  end;
+
 implementation
 
 uses
@@ -544,7 +549,8 @@ uses
   Rtti,
   StrUtils,
   TimeSpan,
-  Types;
+  Types,
+  Spring.VirtualClass;
 
 
 {$REGION 'TTestNullableInteger'}
@@ -3082,6 +3088,57 @@ begin
   CheckTrue(weak.IsAlive);
   intf := nil;
   CheckFalse(weak.IsAlive);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestVirtualClass'}
+
+type
+  {$M+}
+  TIntegrityCheckObject = class
+  protected
+    InitField: string;
+  published
+    PublishedField: TObject;
+  public
+    procedure VirtualMethod0; virtual;
+    procedure VirtualMethod1; virtual;
+  published
+    procedure PublishedMethod1;
+  end;
+
+procedure TIntegrityCheckObject.PublishedMethod1;
+begin
+end;
+
+procedure TIntegrityCheckObject.VirtualMethod0;
+begin
+end;
+
+procedure TIntegrityCheckObject.VirtualMethod1;
+begin
+end;
+
+procedure TTestVirtualClass.TestIntegrity;
+var
+  data: PClassData;
+begin
+  data := GetClassData(TIntegrityCheckObject);
+  Check(data.SelfPtr = TIntegrityCheckObject);
+  Check(data.InitTable <> nil);
+  Check(data.FieldTable <> nil);
+  Check(data.FieldTable.Count = 1);
+  Check(data.FieldTable.ClassTab.Count = 1);
+  Check(data.FieldTable.ClassTab.ClassRef[0]^ = TObject);
+  Check(data.MethodTable <> nil);
+  Check(data.MethodTable.Count = 1);
+  check(PVmtMethodEntry(PByte(data.MethodTable) + SizeOf(Word)).CodeAddress = @TIntegrityCheckObject.PublishedMethod1);
+  Check(data.TypeInfo = TypeInfo(TIntegrityCheckObject));
+  Check(@data.Destroy = @TObject.Destroy);
+  Check(data.VirtualMethods[0] = @TIntegrityCheckObject.VirtualMethod0);
+  Check(data.VirtualMethods[1] = @TIntegrityCheckObject.VirtualMethod1);
 end;
 
 {$ENDREGION}

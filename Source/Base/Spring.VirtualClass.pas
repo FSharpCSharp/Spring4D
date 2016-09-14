@@ -35,6 +35,11 @@ uses
   SyncObjs,
   TypInfo;
 
+{$IF not declared(CPP_ABI_ADJUST)}
+const
+  CPP_ABI_ADJUST = 0;
+{$IFEND}
+
 type
   TVirtualClasses = class
   private
@@ -78,12 +83,12 @@ type
   PClassData = ^TClassData;
   TClassData = record
     SelfPtr: TClass;
-    IntfTable: Pointer;
+    IntfTable: PInterfaceTable;
     AutoTable: Pointer;
-    InitTable: Pointer;
+    InitTable: PTypeInfo;
     TypeInfo: PTypeInfo;
-    FieldTable: Pointer;
-    MethodTable: Pointer;
+    FieldTable: PVmtFieldTable;
+    MethodTable: PVmtMethodTable;
     DynamicTable: Pointer;
 {$IFNDEF NEXTGEN}
     ClassName: PShortString;
@@ -109,7 +114,11 @@ type
     FreeInstance: TFreeInstance;
     Destroy: TDestroy;
 
-    VirtualMethods: PVirtualMethodTable;
+{$IF CPP_ABI_ADJUST > 0)}
+    CPP_API: array[1..CPP_ABI_ADJUST div SizeOf(Pointer)] of Pointer;
+{$IFEND}
+
+    VirtualMethods: array[0..999] of Pointer;
   end;
 
   PVmtMethodExTable = ^TVmtMethodExTable;

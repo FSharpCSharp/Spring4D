@@ -78,7 +78,8 @@ begin
     TTestVector.Suite,
     TTestValueHelper.Suite,
     TArrayTest.Suite,
-    TWeakTest.Suite
+    TWeakTest.Suite,
+    TTestVirtualClass.Suite
   ]);
 
 {$IFNDEF DELPHI2010}
