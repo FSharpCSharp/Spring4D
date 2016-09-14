@@ -165,6 +165,15 @@ type
     procedure TestNotify;
     procedure TestNotifyDelegate;
     procedure TestRemove;
+
+    procedure TestClassProcedureHandler;
+    procedure TestInstanceProcedureHandler;
+  end;
+
+  TEventHandler = class
+    class var fClassHandlerInvoked: Boolean;
+    class procedure HandleInt64Static(const value: Int64);
+    procedure HandleInt64(const value: Int64);
   end;
 
   TTestMulticastEventStackSize = class(TTestCase)
@@ -761,6 +770,7 @@ begin
   fBInvoked := False;
   fHandlerInvokeCount := 0;
   fProc := nil;
+  TEventHandler.fClassHandlerInvoked := False;
 end;
 
 procedure TTestMulticastEvent.HandlerA(sender: TObject);
@@ -799,6 +809,16 @@ begin
   Inc(fHandlerInvokeCount);
 end;
 
+procedure TTestMulticastEvent.TestClassProcedureHandler;
+var
+  e: Event<TEventInt64>;
+begin
+  e.Add(TEventHandler.HandleInt64Static);
+  e.Invoke(42);
+  e.Remove(TEventHandler.HandleInt64Static);
+  CheckTrue(TEventHandler.fClassHandlerInvoked);
+end;
+
 procedure TTestMulticastEvent.TestDelegate;
 var
   e: Event<TProc<Integer, string>>;
@@ -809,6 +829,18 @@ begin
   e.Remove(fProc);
   e.Invoke(CNumber, CText);
   CheckEquals(CNumber, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestInstanceProcedureHandler;
+var
+  e: Event<TEventInt64>;
+  t: TEventHandler;
+begin
+  t := TEventHandler.Create;
+  e.Add(t.HandleInt64);
+  e.Invoke(42);
+  CheckTrue(t.fClassHandlerInvoked);
+  t.Free;
 end;
 
 procedure TTestMulticastEvent.TestInvoke;
@@ -945,6 +977,16 @@ begin
   Check(fAInvoked);
 end;
 {$ENDIF SUPPORTS_GENERIC_EVENTS}
+
+procedure TEventHandler.HandleInt64(const value: Int64);
+begin
+  fClassHandlerInvoked := value = 42;
+end;
+
+class procedure TEventHandler.HandleInt64Static(const value: Int64);
+begin
+  fClassHandlerInvoked := value = 42;
+end;
 
 {$ENDREGION}
 

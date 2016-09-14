@@ -97,19 +97,30 @@ uses
   Generics.Defaults,
   TypInfo;
 
-function IsValid(AObject: TObject): Boolean;
-{$IFDEF DELPHI2010}
-type
-  PNativeInt = ^NativeInt;
-{$ENDIF}
+function IsClassPtr(p: Pointer): Boolean;
+begin
+  try
+    Result := PPointer(NativeInt(p) + vmtSelfPtr)^ = p;
+  except
+    Result := False;
+  end;
+end;
+
+function IsValidObj(p: Pointer): Boolean;
 begin
   Result := False;
-  if Assigned(AObject) then
+  if Assigned(p) then
   try
-    if PNativeInt(AObject)^ > $FFFF then
-      Result := PNativeInt(AObject)^ = PNativeInt(PNativeInt(AObject)^ + vmtSelfPtr)^;
+    if not IsClassPtr(p) then
+      if PNativeInt(p)^ > $FFFF then
+        Result := PPointer(p)^ = PPointer(PNativeInt(p)^ + vmtSelfPtr)^;
   except
   end; //FI:W501
+end;
+
+function SafeIsClass(p: Pointer; cls: TClass): Boolean; inline;
+begin
+  Result := IsValidObj(p) and (TObject(p) is cls);
 end;
 
 
@@ -262,10 +273,9 @@ var
   data: Pointer;
 begin
   data := TMethod(Item).Data;
-  case Action of
-    cnAdded:
-    begin
-      if IsValid(data) and (TObject(data) is TComponent) then
+  if SafeIsClass(data, TComponent) then
+    case Action of
+      cnAdded:
       begin
         if fNotificationHandler = nil then
         begin
@@ -274,16 +284,10 @@ begin
         end;
         fNotificationHandler.FreeNotification(TComponent(data));
       end;
-    end;
-    cnRemoved:
-    begin
-      if IsValid(data) and (TObject(data) is TComponent) then
-      begin
+      cnRemoved:
         if fNotificationHandler <> nil then
           fNotificationHandler.RemoveFreeNotification(TComponent(data));
-      end;
     end;
-  end;
 
   EventsChanged;
 end;
