@@ -29,6 +29,7 @@ unit Spring.Mocking.Matching;
 interface
 
 uses
+  Rtti,
   SysUtils,
   Spring,
   Spring.Collections,
@@ -39,7 +40,7 @@ type
 
   TMatcherFactory = record
   private
-    class threadvar conditions: TArray<TPredicate<TValue>>;
+    class threadvar conditionStack: TArray<TPredicate<TValue>>;
 
     class function AddMatcher(const condition: TPredicate<TValue>): Integer; static;
 
@@ -62,7 +63,8 @@ type
     ///   contain the index of the according match predicate on the global <c>
     ///   conditions</c> variable passed by <c>Spring.Mocking.Arg</c>.
     /// </summary>
-    class function CreateMatchers(const indizes: TArray<TValue>): TPredicate<TArray<TValue>>; static;
+    class function CreateMatchers(const indizes: TArray<TValue>;
+      const parameters: TArray<TRttiParameter>): TPredicate<TArray<TValue>>; static;
   end;
 
   TRangeKind = (Inclusive, Exclusive);
@@ -97,7 +99,6 @@ implementation
 
 uses
   Generics.Defaults,
-  Rtti,
   TypInfo,
   Spring.ResourceStrings;
 
@@ -243,30 +244,35 @@ end;
 
 {$REGION 'TMatcherFactory'}
 
-class function TMatcherFactory.CreateMatchers(
-  const indizes: TArray<TValue>): TPredicate<TArray<TValue>>;
+class function TMatcherFactory.CreateMatchers(const indizes: TArray<TValue>;
+  const parameters: TArray<TRttiParameter>): TPredicate<TArray<TValue>>;
 var
-  capturedConditions: TArray<TPredicate<TValue>>;
-  idxArr: TArray<Integer>;
-  i: Integer;
+  refParamCount, i: Integer;
+  conditions: TArray<TPredicate<TValue>>;
 begin
-  if Assigned(conditions) then
+  if Assigned(conditionStack) then
   begin
-    if Length(conditions) <> Length(indizes) then
+    refParamCount := 0;
+    for i := 0 to High(parameters) do
+      if parameters[i].Flags * [pfVar, pfOut] <> [] then
+        Inc(refParamCount);
+
+    if Length(conditionStack) + refParamCount <> Length(indizes) then
       raise ENotSupportedException.Create('when using Arg all arguments must be passed using this way');
 
-    SetLength(idxArr, Length(indizes));
-    for i := Low(idxArr) to High(idxArr) do
-      idxArr[GetIndex(indizes[i])] := i;
-    capturedConditions := conditions;
-    conditions := nil;
+    SetLength(conditions, Length(indizes));
+    for i := Low(indizes) to High(indizes) do
+      if parameters[i].Flags * [pfVar, pfOut] = [] then
+        conditions[i] := conditionStack[GetIndex(indizes[i])];
+    conditionStack := nil;
+
     Result :=
       function(const args: TArray<TValue>): Boolean
       var
         i: Integer;
       begin
-        for i := Low(idxArr) to High(idxArr) do
-          if not capturedConditions[i](args[idxArr[i]]) then
+        for i := Low(conditions) to High(conditions) do
+          if Assigned(conditions[i]) and not conditions[i](args[i]) then
             Exit(False);
         Result := True;
       end;
@@ -287,9 +293,9 @@ end;
 class function TMatcherFactory.AddMatcher(
   const condition: TPredicate<TValue>): Integer;
 begin
-  Result := Length(conditions);
-  SetLength(conditions, Result + 1);
-  conditions[Result] := condition;
+  Result := Length(conditionStack);
+  SetLength(conditionStack, Result + 1);
+  conditionStack[Result] := condition;
 end;
 
 class function TMatcherFactory.GetIndex(const v: TValue): Integer;

@@ -65,7 +65,8 @@ type
     fExpectedCalls: IMultiMap<TRttiMethod,TMethodCall>;
     fReceivedCalls: IMultiMap<TRttiMethod,TArray<TValue>>;
     fState: TMockState;
-    class function CreateArgMatch(const arguments: TArray<TValue>): TArgMatch; static;
+    class function CreateArgMatch(const arguments: TArray<TValue>;
+      const parameters: TArray<TRttiParameter>): TArgMatch; static;
     class function CreateMock(const invocation: IInvocation): TMockAction; static;
     procedure InterceptArrange(const invocation: IInvocation);
     procedure InterceptAct(const invocation: IInvocation);
@@ -102,18 +103,6 @@ uses
 resourcestring
   SUnexpectedMethodCall = 'unexpected call of %s with arguments: %s';
   SUnexpectedCallCount = 'unexpected call count: %s';
-
-function ArgsEqual(const left, right: TArray<TValue>): Boolean;
-var
-  i: Integer;
-begin
-  if Length(left) <> Length(right) then
-    Exit(False);
-  for i := Low(left) to High(left) do
-    if not left[i].Equals(right[i]) then
-      Exit(False);
-  Result := True;
-end;
 
 function ArgsToString(const values: TArray<TValue>): string;
 var
@@ -158,13 +147,24 @@ begin
     end;
 end;
 
-class function TMockInterceptor.CreateArgMatch(
-  const arguments: TArray<TValue>): TArgMatch;
+class function TMockInterceptor.CreateArgMatch(const arguments: TArray<TValue>;
+  const parameters: TArray<TRttiParameter>): TArgMatch;
 begin
   Result :=
     function(const args: TArray<TValue>): Boolean
+    var
+      i: Integer;
     begin
-      Result := ArgsEqual(args, arguments);
+      if Length(arguments) <> Length(args) then
+        Exit(False);
+      for i := Low(arguments) to High(arguments) do
+      begin
+        if Assigned(parameters) and (pfOut in parameters[i].Flags) then
+          Continue;
+        if not arguments[i].Equals(args[i]) then
+          Exit(False);
+      end;
+      Result := True;
     end;
 end;
 
@@ -203,7 +203,8 @@ begin
           and (invocation.Method.MethodKind = mkFunction)
           and (invocation.Method.ReturnType.TypeKind = tkInterface) then
         begin
-          methodCall := TMethodCall.Create(CreateMock(invocation), CreateArgMatch(invocation.Arguments));
+          methodCall := TMethodCall.Create(CreateMock(invocation),
+            CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters));
           fExpectedCalls.Add(invocation.Method, methodCall);
         end;
 
@@ -217,9 +218,9 @@ var
   methodCall: TMethodCall;
 begin
   if not Assigned(fMatch) then
-    fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments);
+    fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters);
   if not Assigned(fMatch) then
-    fMatch := CreateArgMatch(invocation.Arguments);
+    fMatch := CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters);
   methodCall := TMethodCall.Create(fCurrentAction, fMatch);
   fExpectedCalls.Add(invocation.Method, methodCall);
   fState := TMockState.Act;
@@ -234,9 +235,9 @@ begin
   if fReceivedCalls.TryGetValues(invocation.Method, arguments) then
   begin
     if not Assigned(fMatch) then
-      fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments);
+      fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters);
     if not Assigned(fMatch) then
-      fMatch := CreateArgMatch(invocation.Arguments);
+      fMatch := CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters);
     callCount := arguments.Where(fMatch).Count;
     fMatch := nil;
   end

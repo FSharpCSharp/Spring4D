@@ -77,6 +77,7 @@ type
     procedure Test2(const s: string; i: Integer; b: Boolean);
     procedure Test3(const s1: string; o: TObject; const s2: string);
     procedure Test4(const s1: string; o: ITest; const s2: string);
+    procedure Test5(const s1: string; var x: Integer; o: ITest; const s2: string);
     procedure TestVariant(const v: Variant);
     procedure TestDynArray(const v: TArray<string>);
   end;
@@ -122,6 +123,7 @@ procedure TParameterMatchingTests.ArgsEvaluationOrder;
 var
   mock: Mock<IMockTest>;
   sut: IMockTest;
+  dummy: Integer;
 begin
   mock := Mock<IMockTest>.Create(TMockBehavior.Strict);
   sut := mock.Instance;
@@ -146,6 +148,9 @@ begin
 
     When.Test4(Arg.IsAny<string>, Arg.IsEqual<ITest>(Self), Arg.IsAny<string>);
     sut.Test4('', Self, '');
+
+    When.Test5(Arg.IsAny<string>, dummy, Arg.IsEqual<ITest>(Self), Arg.IsAny<string>);
+    sut.Test5('', dummy, Self, '');
   end;
 
   mock.Reset;
