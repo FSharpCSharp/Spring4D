@@ -386,7 +386,7 @@ end;
 
 procedure TObjectDataSet.DoPostRecord(Index: Integer; Append: Boolean);
 var
-  LItem: TValue;
+  LItem: TObject;
   LConvertedValue: TValue;
   LValueFromVariant: TValue;
   LFieldValue: Variant;
@@ -463,7 +463,7 @@ function TObjectDataSet.GetCurrentModel<T>: T;
 begin
   Result := System.Default(T);
   if Active and (Index > -1) and (Index < RecordCount) then
-    Result := IndexList.GetModel(Index).AsType<T>;
+    Result := IndexList.GetModel(Index) as T;
 end;
 
 function TObjectDataSet.GetFilterCount: Integer;
@@ -479,7 +479,7 @@ var
 begin
   Result := TCollections.CreateList<T>;
   for i := 0 to IndexList.Count - 1 do
-    Result.Add(IndexList.GetModel(i).AsType<T>);
+    Result.Add(IndexList.GetModel(i));
 end;
 
 function TObjectDataSet.GetRecordCount: Integer;

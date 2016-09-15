@@ -30,13 +30,12 @@ interface
 
 uses
   Generics.Collections,
-  Rtti,
   Spring.Collections;
 
 type
   TIndexItem = record
     DataListIndex: Integer;
-    DataListObject: TValue;
+    DataListObject: TObject;
   end;
 
   TIndexList = class
@@ -51,7 +50,7 @@ type
   protected
     procedure FixIndexes(AStart: Integer);
 
-    procedure Insert(AIndex, ADataListIndex: Integer; const AModel: TValue);
+    procedure Insert(AIndex, ADataListIndex: Integer; const AModel: TObject);
 
     property Items[Index: Integer]: TIndexItem read GetItem write SetItem; default;
   public
@@ -60,15 +59,15 @@ type
 
     procedure Rebuild;
 
-    function Add(ADataListIndex: Integer; const ADataListObject: TValue): Integer; virtual;
-    function AddModel(const AModel: TValue): Integer;
-    function ContainsModel(const AModel: TValue): Boolean;
+    function Add(ADataListIndex: Integer; const ADataListObject: TObject): Integer; virtual;
+    function AddModel(const AModel: TObject): Integer;
+    function ContainsModel(const AModel: TObject): Boolean;
     procedure Delete(Index: Integer);
     procedure DeleteModel(AIndex: Integer);
-    function IndexOfModel(const AModel: TValue): Integer;
-    procedure InsertModel(const AModel: TValue; AIndex: Integer);
-    function GetModel(const AIndex: Integer): TValue;
-    procedure SetModel(AIndex: Integer; const AModel: TValue);
+    function IndexOfModel(const AModel: TObject): Integer;
+    procedure InsertModel(const AModel: TObject; AIndex: Integer);
+    function GetModel(const AIndex: Integer): TObject;
+    procedure SetModel(AIndex: Integer; const AModel: TObject);
 
     procedure Clear;
 
@@ -82,7 +81,7 @@ implementation
 
 {$REGION 'TIndexList'}
 
-function TIndexList.Add(ADataListIndex: Integer; const ADataListObject: TValue): Integer;
+function TIndexList.Add(ADataListIndex: Integer; const ADataListObject: TObject): Integer;
 var
   LItem: TIndexItem;
 begin
@@ -91,11 +90,11 @@ begin
   Result := FList.Add(LItem);
 end;
 
-function TIndexList.AddModel(const AModel: TValue): Integer;
+function TIndexList.AddModel(const AModel: TObject): Integer;
 begin
   FChangingDataList := True;
   try
-    FDataList.Add(AModel.AsObject);
+    FDataList.Add(AModel);
     Result := Add(FDataList.Count - 1, AModel);
   finally
     FChangingDataList := False;
@@ -107,9 +106,9 @@ begin
   FList.Clear;
 end;
 
-function TIndexList.ContainsModel(const AModel: TValue): Boolean;
+function TIndexList.ContainsModel(const AModel: TObject): Boolean;
 begin
-  Result := (IndexOfModel(AModel) <> -1);
+  Result := IndexOfModel(AModel) <> -1;
 end;
 
 constructor TIndexList.Create;
@@ -169,23 +168,23 @@ begin
   Result := FList[Index];
 end;
 
-function TIndexList.GetModel(const AIndex: Integer): TValue;
+function TIndexList.GetModel(const AIndex: Integer): TObject;
 begin
   Result := Items[AIndex].DataListObject; // FDataList[Items[AIndex]];
 end;
 
-function TIndexList.IndexOfModel(const AModel: TValue): Integer;
+function TIndexList.IndexOfModel(const AModel: TObject): Integer;
 begin
-  if AModel.IsEmpty then
+  if AModel = nil then
     Exit(-1);
 
   for Result := 0 to Count - 1 do
-    if GetModel(Result).AsObject = AModel.AsObject then
+    if GetModel(Result) = AModel then
       Exit;
   Result := -1;
 end;
 
-procedure TIndexList.Insert(AIndex, ADataListIndex: Integer; const AModel: TValue);
+procedure TIndexList.Insert(AIndex, ADataListIndex: Integer; const AModel: TObject);
 var
   LItem: TIndexItem;
 begin
@@ -194,11 +193,11 @@ begin
   FList.Insert(AIndex, LItem);
 end;
 
-procedure TIndexList.InsertModel(const AModel: TValue; AIndex: Integer);
+procedure TIndexList.InsertModel(const AModel: TObject; AIndex: Integer);
 begin
   FChangingDataList := True;
   try
-    FDataList.Add(AModel.AsObject);
+    FDataList.Add(AModel);
     Insert(AIndex, FDataList.Count - 1, AModel);
   finally
     FChangingDataList := False;
@@ -226,7 +225,7 @@ begin
   FList[Index] := Value;
 end;
 
-procedure TIndexList.SetModel(AIndex: Integer; const AModel: TValue);
+procedure TIndexList.SetModel(AIndex: Integer; const AModel: TObject);
 var
   LItem: TIndexItem;
 begin

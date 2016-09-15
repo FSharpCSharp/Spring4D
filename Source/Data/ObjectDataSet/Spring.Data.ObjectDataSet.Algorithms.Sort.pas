@@ -926,7 +926,7 @@ end;
 class procedure TMergeSort.MergeSort(ALow, AHigh: Integer;
   const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
 var
-  LCache: TArray<TValue>;
+  LCache: TArray<TObject>;
 
   procedure Merge(Low, Mid, High: Integer);
   var
@@ -994,7 +994,7 @@ class procedure TInsertionSort.InsertionSort(ALow, AHigh: Integer;
   const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
 var
   i, j : Integer;
-  LTemp: TValue;
+  LTemp: TObject;
 Begin
   for i:= ALow + 1 to AHigh Do
   begin

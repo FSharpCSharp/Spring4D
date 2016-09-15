@@ -440,28 +440,23 @@ begin
 end;
 
 function TAbstractObjectDataSet.BookmarkValid(Bookmark: TBookmark): Boolean;
-var
-  LValue: TValue;
 begin
-  LValue := PObject(Bookmark)^;
-  Result := Assigned(Bookmark) and (not LValue.IsEmpty);
-  if Result then
-    Result := IndexList.ContainsModel(LValue);
+  Result := Assigned(Bookmark) and Assigned(PObject(Bookmark)^)
+    and IndexList.ContainsModel(PObject(Bookmark)^);
 end;
 
 function TAbstractObjectDataSet.CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer;
 const
-  LRetCodes: array [Boolean, Boolean] of ShortInt = ((2, -1), (1, 0));
-var
-  LValue1, LValue2: TValue;
+  RetCodes: array[Boolean, Boolean] of ShortInt = ((2, -1), (1, 0));
 begin
-  Result := LRetCodes[Bookmark1 = nil, Bookmark2 = nil];
+  Result := RetCodes[Bookmark1 = nil, Bookmark2 = nil];
   if Result = 2 then
-  begin
-    LValue1 := PObject(Bookmark1)^;
-    LValue2 := PObject(Bookmark2)^;
-    Result := LValue1.CompareTo(LValue2);
-  end;
+    if PNativeUInt(Bookmark1)^ < PNativeUInt(Bookmark2)^ then
+      Result := -1
+    else if PNativeUInt(Bookmark1)^ > PNativeUInt(Bookmark2)^ then
+      Result := 1
+    else
+      Result := 0;
 end;
 
 function TAbstractObjectDataSet.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
@@ -556,7 +551,7 @@ end;
 {$IFDEF DELPHIXE4_UP}
 procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
-  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
+  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index);
 end;
 {$ENDIF}
 
@@ -564,13 +559,13 @@ end;
 {$IFDEF DELPHIXE3_UP}
 procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
 begin
-  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
+  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index);
 end;
 {$ENDIF}
 
 procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
-  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index).AsObject;
+  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index);
 end;
 {$ENDIF}
 
@@ -979,11 +974,8 @@ begin
 end;
 
 procedure TAbstractObjectDataSet.InternalGotoBookmark(Bookmark: {$IFDEF DELPHIXE3_UP}TBookmark{$ELSE}Pointer{$ENDIF});
-var
-  LValue: TValue;
 begin
-  LValue := PObject(Bookmark)^;
-  FCurrent := IndexList.IndexOfModel(LValue);
+  FCurrent := IndexList.IndexOfModel(PObject(Bookmark)^);
 end;
 
 procedure TAbstractObjectDataSet.InternalHandleException;
