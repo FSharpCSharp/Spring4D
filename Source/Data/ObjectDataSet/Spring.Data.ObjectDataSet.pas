@@ -50,13 +50,13 @@ type
     FProperties: IList<TRttiProperty>;
     FSort: string;
     FSorted: Boolean;
-
-    FOnAfterFilter: TNotifyEvent;
-    FOnAfterSort: TNotifyEvent;
-    FOnBeforeFilter: TNotifyEvent;
-    FOnBeforeSort: TNotifyEvent;
     FColumnAttributeClass: TAttributeClass;
     FTrackChanges: Boolean;
+
+    FBeforeFilter: TDataSetNotifyEvent;
+    FAfterFilter: TDataSetNotifyEvent;
+    FBeforeSort: TDataSetNotifyEvent;
+    FAfterSort: TDataSetNotifyEvent;
 
     function GetSort: string;
     procedure SetSort(const Value: string);
@@ -77,10 +77,10 @@ type
     function RecordConformsFilter: Boolean; override;
     procedure UpdateFilter; override;
 
-    procedure DoOnAfterFilter; virtual;
-    procedure DoOnBeforeFilter; virtual;
-    procedure DoOnBeforeSort; virtual;
-    procedure DoOnAfterSort; virtual;
+    procedure DoAfterFilter; virtual;
+    procedure DoAfterSort; virtual;
+    procedure DoBeforeFilter; virtual;
+    procedure DoBeforeSort; virtual;
 
     procedure DoOnDataListChange(Sender: TObject; const Item: TObject; Action: TCollectionChangedAction);
 
@@ -176,7 +176,6 @@ type
     property Filtered;
     property FilterOptions;
 
-
     property AfterCancel;
     property AfterClose;
     property AfterDelete;
@@ -195,16 +194,16 @@ type
     property BeforePost;
     property BeforeRefresh;
     property BeforeScroll;
-
-    property OnAfterFilter: TNotifyEvent read FOnAfterFilter write FOnAfterFilter;
-    property OnBeforeFilter: TNotifyEvent read FOnBeforeFilter write FOnBeforeFilter;
-    property OnAfterSort: TNotifyEvent read FOnAfterSort write FOnAfterSort;
-    property OnBeforeSort: TNotifyEvent read FOnBeforeSort write FOnBeforeSort;
     property OnDeleteError;
     property OnEditError;
     property OnFilterRecord;
     property OnNewRecord;
     property OnPostError;
+
+    property BeforeFilter: TDataSetNotifyEvent read FBeforeFilter write FBeforeFilter;
+    property AfterFilter: TDataSetNotifyEvent read FAfterFilter write FAfterFilter;
+    property BeforeSort: TDataSetNotifyEvent read FBeforeSort write FBeforeSort;
+    property AfterSort: TDataSetNotifyEvent read FAfterSort write FAfterSort;
   end;
 
 implementation
@@ -345,28 +344,28 @@ begin
   Value := InternalGetFieldValue(Field, LItem);
 end;
 
-procedure TObjectDataSet.DoOnAfterFilter;
+procedure TObjectDataSet.DoAfterFilter;
 begin
-  if Assigned(FOnAfterFilter) then
-    FOnAfterFilter(Self);
+  if Assigned(FAfterFilter) then
+    FAfterFilter(Self);
 end;
 
-procedure TObjectDataSet.DoOnAfterSort;
+procedure TObjectDataSet.DoAfterSort;
 begin
-  if Assigned(FOnAfterSort) then
-    FOnAfterSort(Self);
+  if Assigned(FAfterSort) then
+    FAfterSort(Self);
 end;
 
-procedure TObjectDataSet.DoOnBeforeFilter;
+procedure TObjectDataSet.DoBeforeFilter;
 begin
-  if Assigned(FOnBeforeFilter) then
-    FOnBeforeFilter(Self);
+  if Assigned(FBeforeFilter) then
+    FBeforeFilter(Self);
 end;
 
-procedure TObjectDataSet.DoOnBeforeSort;
+procedure TObjectDataSet.DoBeforeSort;
 begin
-  if Assigned(FOnBeforeSort) then
-    FOnBeforeSort(Self);
+  if Assigned(FBeforeSort) then
+    FBeforeSort(Self);
 end;
 
 procedure TObjectDataSet.DoOnDataListChange(Sender: TObject;
@@ -580,7 +579,7 @@ begin
   if IsEmpty then
     Exit;
 
-  DoOnBeforeSort;
+  DoBeforeSort;
 
   LChanged := AValue <> FSort;
   FIndexFieldList := CreateIndexList(AValue);
@@ -605,7 +604,7 @@ begin
 
     SetCurrent(Pos);
   end;
-  DoOnAfterSort;
+  DoAfterSort;
 end;
 
 function TObjectDataSet.IsCursorOpen: Boolean;
@@ -957,7 +956,7 @@ begin
   if not Active then
     Exit;
 
-  DoOnBeforeFilter;
+  DoBeforeFilter;
 
   if IsFilterEntered then
   begin
@@ -989,7 +988,7 @@ begin
   Resync([]);
   First;
 
-  DoOnAfterFilter;
+  DoAfterFilter;
 end;
 
 {$ENDREGION}
