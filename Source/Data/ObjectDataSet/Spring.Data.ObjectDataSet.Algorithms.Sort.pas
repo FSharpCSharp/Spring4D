@@ -47,17 +47,18 @@ type
     CaseInsensitive: Boolean;
   end;
 
-  TCompareRecords = function(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer of object;
+  TCompareRecords = function(const Item1, Item2: TObject;
+    const AIndexFieldList: IList<TIndexFieldInfo>): Integer of object;
 
   TTimSort = class sealed
   private
     class var
       FMinGallop: Integer;
       stackSize: Integer;  // Number of pending runs on stack
-      FDataList: IList;
+      FDataList: IObjectList;
       FComparator: TCompareRecords;
       FIndexFields: IList<TIndexFieldInfo>;
-      tmp: TArray<TValue>;
+      tmp: TArray<TObject>;
       runBase: TArray<Integer>;
       runLen: TArray<Integer>;
   private
@@ -68,8 +69,8 @@ type
     class function CountRunAndMakeAscending(Lo, Hi: Integer): Integer;
     class procedure ReverseRange(ALo, AHi: Integer);
     class procedure BinarySort(Lo, Hi, Start: Integer);
-    class function gallopLeft(const key: TValue; base, len, hint: Integer; ATmp: Boolean = False): Integer;
-    class function gallopRight(const key: TValue; base, len, hint: Integer; ATmp: Boolean = False): Integer;
+    class function gallopLeft(const key: TObject; base, len, hint: Integer; ATmp: Boolean = False): Integer;
+    class function gallopRight(const key: TObject; base, len, hint: Integer; ATmp: Boolean = False): Integer;
 
     class procedure MergeCollapse;
     class procedure mergeForceCollapse;
@@ -79,19 +80,19 @@ type
     class function MinRunLength(n: Integer): Integer;
     class procedure PushRun(ARunBase, ARunLen: Integer);
   public
-    class procedure Sort(const ADataList: IList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>);
+    class procedure Sort(const ADataList: IObjectList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>);
   end;
 
   TQuickSort = class sealed
   private
     class var
-      FDataList: IList;
+      FDataList: IObjectList;
       FFilteredIndexes: IList<Integer>;
       FFiltered: Boolean;
   private
     class procedure QuickSort(ALow, AHigh: Integer; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(const ADataList: IList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
+    class procedure Sort(const ADataList: IObjectList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
       const AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
   end;
 
@@ -118,25 +119,21 @@ type
   TBinaryInsertionSort = class sealed
   private
     class var
-      FDataList: IList;
+      FDataList: IObjectList;
       FFilteredIndexes: IList<Integer>;
       FFiltered: Boolean;
   private
-    class function BinarySearch(ALow, AHigh: Integer; const AKey: TValue; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>): Integer;
+    class function BinarySearch(ALow, AHigh: Integer; const AKey: TObject; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>): Integer;
     class procedure BinaryInsertionSort(ALow, AHigh: Integer; const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(const ADataList: IList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
+    class procedure Sort(const ADataList: IObjectList; const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
       const AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
   end;
 
 implementation
 
 uses
-  SysUtils
-  ;
-
-
-
+  SysUtils;
 
 { TTimSort }
 
@@ -173,7 +170,7 @@ end;
 class procedure TTimSort.BinarySort(Lo, Hi, Start: Integer);
 var
   i, left, right, mid, n: Integer;
-  pivot: TValue;
+  pivot: TObject;
 begin
   Assert((Lo <= Start) and (Start <= Hi));
   if Start = Lo then
@@ -235,10 +232,10 @@ begin
   Result := runHi - Lo;
 end;
 
-class function TTimSort.gallopLeft(const key: TValue; base, len, hint: Integer; ATmp: Boolean): Integer;
+class function TTimSort.gallopLeft(const key: TObject; base, len, hint: Integer; ATmp: Boolean): Integer;
 var
   lastOfs, ofs, maxOfs, Ltmp, m: Integer;
-  LValue: TValue;
+  LValue: TObject;
 begin
   Assert( (len > 0) and (hint >= 0) and (hint < len) );
   lastOfs := 0;
@@ -319,10 +316,10 @@ begin
   Result := ofs;
 end;
 
-class function TTimSort.gallopRight(const key: TValue; base, len, hint: Integer; ATmp: Boolean): Integer;
+class function TTimSort.gallopRight(const key: TObject; base, len, hint: Integer; ATmp: Boolean): Integer;
 var
   lastOfs, ofs, maxOfs, Ltmp, m: Integer;
-  LValue: TValue;
+  LValue: TObject;
 begin
   Assert( (len > 0) and (hint >= 0) and (hint < len));
   ofs := 1;
@@ -796,7 +793,7 @@ end;
 
 class procedure TTimSort.ReverseRange(ALo, AHi: Integer);
 var
-  LItem: TValue;
+  LItem: TObject;
 begin
   Dec(AHi);
   while (ALo < AHi) do
@@ -809,7 +806,7 @@ begin
   end;
 end;
 
-class procedure TTimSort.Sort(const ADataList: IList;
+class procedure TTimSort.Sort(const ADataList: IObjectList;
   const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>);
 var
   nRemaining, initRunLen, minRun, LrunLen, lo, hi, force: Integer;
@@ -873,7 +870,7 @@ class procedure TQuickSort.QuickSort(ALow, AHigh: Integer;
 var
   LLow, LHigh: Integer;
   iPivot: Integer;
-  LPivot: TValue;
+  LPivot: TObject;
 begin
   if (FDataList.Count = 0) or ( (AHigh - ALow) <= 0 ) then
     Exit;
@@ -911,7 +908,7 @@ begin
 
 end;
 
-class procedure TQuickSort.Sort(const ADataList: IList;
+class procedure TQuickSort.Sort(const ADataList: IObjectList;
   const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
   const AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
 begin
@@ -1026,7 +1023,7 @@ class procedure TBinaryInsertionSort.BinaryInsertionSort(ALow, AHigh: Integer;
   const Compare: TCompareRecords; const AIndexFieldList: IList<TIndexFieldInfo>);
 var
   i, j, ins: Integer;
-  LTemp: TValue;
+  LTemp: TObject;
 begin
   for i := 1 to AHigh do
   begin
@@ -1043,7 +1040,7 @@ begin
 end;
 
 class function TBinaryInsertionSort.BinarySearch(ALow, AHigh: Integer;
-  const AKey: TValue; const Compare: TCompareRecords;
+  const AKey: TObject; const Compare: TCompareRecords;
   const AIndexFieldList: IList<TIndexFieldInfo>): Integer;
 var
   iMid: Integer;
@@ -1066,7 +1063,7 @@ begin
   end;
 end;
 
-class procedure TBinaryInsertionSort.Sort(const ADataList: IList;
+class procedure TBinaryInsertionSort.Sort(const ADataList: IObjectList;
   const AComparator: TCompareRecords; const AIndexFields: IList<TIndexFieldInfo>;
   const AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
 begin

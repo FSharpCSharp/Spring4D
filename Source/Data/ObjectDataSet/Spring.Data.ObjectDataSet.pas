@@ -84,7 +84,8 @@ type
 
     procedure DoOnDataListChange(Sender: TObject; const Item: TObject; Action: TCollectionChangedAction);
 
-    function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
+    function CompareRecords(const Item1, Item2: TObject;
+      const AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
     function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
     function ParserGetFunctionValue(Sender: TObject; const FuncName: string;
@@ -263,8 +264,8 @@ begin
     Sort := ASource.Sort;
 end;
 
-function TObjectDataSet.CompareRecords(const Item1, Item2: TValue;
-  AIndexFieldList: IList<TIndexFieldInfo>): Integer;
+function TObjectDataSet.CompareRecords(const Item1, Item2: TObject;
+  const AIndexFieldList: IList<TIndexFieldInfo>): Integer;
 var
   i: Integer;
   LFieldInfo: TIndexFieldInfo;
