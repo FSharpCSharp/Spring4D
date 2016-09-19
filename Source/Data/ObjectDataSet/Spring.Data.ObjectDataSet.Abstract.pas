@@ -97,7 +97,6 @@ type
     function GetCanModify: Boolean; override;
     function GetRecNo: Longint; override;
     function GetRecordCount: Integer; override;
-    function GetFieldClass(FieldDef: TFieldDef): TFieldClass; override;
     procedure SetFiltered(Value: Boolean); override;
 
     procedure DoOnNewRecord; override;
@@ -138,7 +137,6 @@ type
     procedure InternalHandleException; override;
     procedure InternalInitFieldDefs; override;
     procedure InternalInitRecord(Buffer: TRecordBuffer); override;
-    procedure InternalInsert; override;
     procedure DoBeforeInsert; override;
     procedure InternalLast; override;
     procedure InternalOpen; override;
@@ -579,11 +577,6 @@ begin
   Result := not FReadOnly;
 end;
 
-function TAbstractObjectDataSet.GetFieldClass(FieldDef: TFieldDef): TFieldClass;
-begin
-  Result := inherited GetFieldClass(FieldDef);
-end;
-
 function TAbstractObjectDataSet.GetFieldData(Field: TField;
   {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
@@ -923,25 +916,25 @@ end;
 function TAbstractObjectDataSet.InternalGetRecord(Buffer: TRecordBuffer;
   GetMode: TGetMode; DoCheck: Boolean): TGetResult;
 var
-  LRecCount: Integer;
+  recCount: Integer;
 begin
   try
-    LRecCount := IndexList.Count;
+    recCount := RecordCount;
     Result := grOK;
     case GetMode of
       gmNext:
       begin
-        if FCurrent < LRecCount then
+        if FCurrent < recCount then
           Inc(FCurrent);
-        if FCurrent >= LRecCount then
+        if FCurrent >= recCount then
           Result := grEOF;
       end;
       gmPrior:
       begin
-        if FCurrent <=0 then
+        if FCurrent <= 0 then
           FCurrent := -1
         else
-          FCurrent := Min(FCurrent - 1, LRecCount - 1);
+          FCurrent := Min(FCurrent - 1, recCount - 1);
 
         if FCurrent < 0 then
           Result := grBOF;
@@ -950,10 +943,10 @@ begin
       begin
         if FCurrent < 0 then
           Result := grBOF
-        else if FCurrent >= LRecCount then
+        else if FCurrent >= recCount then
         begin
           Result := grEOF;
-          FCurrent := LRecCount;
+          FCurrent := recCount;
         end;
       end;
     end;
@@ -973,7 +966,8 @@ begin
   end;
 end;
 
-procedure TAbstractObjectDataSet.InternalGotoBookmark(Bookmark: {$IFDEF DELPHIXE3_UP}TBookmark{$ELSE}Pointer{$ENDIF});
+procedure TAbstractObjectDataSet.InternalGotoBookmark(
+  Bookmark: {$IFDEF DELPHIXE3_UP}TBookmark{$ELSE}Pointer{$ENDIF});
 begin
   FCurrent := IndexList.IndexOfModel(PObject(Bookmark)^);
 end;
@@ -1024,11 +1018,6 @@ var
 begin
   for I := 0 to Fields.Count - 1 do
     PVariantList(Buffer + SizeOf(TArrayRecInfo))[I] := Null;
-end;
-
-procedure TAbstractObjectDataSet.InternalInsert;
-begin
-  inherited;
 end;
 
 procedure TAbstractObjectDataSet.InternalLast;
@@ -1220,9 +1209,9 @@ procedure TAbstractObjectDataSet.SetFieldData(Field: TField; Buffer: TValueBuffe
           Data := TDBBitConverter.UnsafeIntoVariant(Buffer);
       ftLargeInt:
         Data := TDBBitConverter.UnsafeInto<Int64>(Buffer);
-      else
-        DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
-          Field.DisplayName]);
+    else
+      DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+        Field.DisplayName]);
     end;
   end;
   {$ELSE}
@@ -1265,9 +1254,9 @@ procedure TAbstractObjectDataSet.SetFieldData(Field: TField; Buffer: TValueBuffe
           Data := OleVariant(Buffer^);
       ftLargeInt:
         Data := LargeInt(Buffer^);
-      else
-        DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
-          Field.DisplayName]);
+    else
+      DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+        Field.DisplayName]);
     end;
   end;
   {$ENDIF}
@@ -1309,7 +1298,6 @@ end;
 procedure TAbstractObjectDataSet.SetFiltered(Value: Boolean);
 begin
   if Filtered <> Value then
-  begin
     if Active then
     begin
       CheckBrowseMode;
@@ -1327,10 +1315,7 @@ begin
       end;
     end
     else
-    begin
       inherited SetFiltered(Value);
-    end;
-  end;
 end;
 
 procedure TAbstractObjectDataSet.SetIndex(const Value: Integer);

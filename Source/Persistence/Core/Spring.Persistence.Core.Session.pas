@@ -121,7 +121,7 @@ type
       const params: array of const): T;
 
     /// <summary>
-    ///   Retrieves first and only model or the default value if model does not
+    ///   Retrieves first and only model or the default value if model does not
     ///   exist.
     /// </summary>
     function FirstOrDefault<T: class, constructor>(const sql: string;
@@ -135,8 +135,8 @@ type
       const params: array of const): T;
 
     /// <summary>
-    ///   Retrieves only one entity model from the database. Returns default
-    ///   value if model does not exist.
+    ///   Retrieves only one entity model from the database. Returns default
+    ///   value if model does not exist.
     /// </summary>
     function SingleOrDefault<T: class, constructor>(const sql: string;
       const params: array of const): T;
@@ -238,14 +238,14 @@ type
     procedure Save(const entity: TObject);
 
     /// <summary>
-    ///   Saves the entity and all entities it contains to the database. It
+    ///   Saves the entity and all entities it contains to the database. It
     ///   will do update or the insert based on the entity state.
     /// </summary>
     /// <remarks>
     ///   <para>
-    ///     Use with caution when inserting new entities containing identity
-    ///     primary keys. If both base (main) and sub entities are newly
-    ///     created then framework won't be able to resolve their
+    ///     Use with caution when inserting new entities containing identity
+    ///     primary keys. If both base (main) and sub entities are newly
+    ///     created then framework won't be able to resolve their
     ///     relationships because their primary keys aren't known at save
     ///     time.
     ///   </para>

@@ -136,12 +136,12 @@ type
     property Sorted: Boolean read FSorted;
 
     /// <summary>
-    ///   Sorting conditions separated by commas. Can set  different sort order
-    ///   for multiple fields - <c>Asc</c> stands for ascending, <c>Desc</c> -
+    ///   Sorting conditions separated by commas. Can set different sort order
+    ///   for multiple fields - <c>Asc</c> stands for ascending, <c>Desc</c> -
     ///   descending.
     /// </summary>
     /// <example>
-    ///   <code>MyDataset.Sort := 'Name, Id Desc, Description Asc';</code>
+    ///   <code lang="">MyDataset.Sort := 'Name, Id Desc, Description Asc';</code>
     /// </example>
     property Sort: string read GetSort write SetSort;
 
@@ -164,13 +164,13 @@ type
     property DataList: IObjectList read FDataList write SetDataList;
   published
     /// <summary>
-    ///   Default length for the string type field in the dataset.
+    ///   Default length for the string type field in the dataset.
     /// </summary>
     /// <remarks>
     ///   Defaults to <c>250</c> if not set.
     /// </remarks>
     property DefaultStringFieldLength: Integer read FDefaultStringFieldLength write FDefaultStringFieldLength default 250;
-    property TrackChanges: Boolean read FTrackChanges write SetTrackChanges default false;
+    property TrackChanges: Boolean read FTrackChanges write SetTrackChanges default False;
 
     property Filter;
     property Filtered;
@@ -559,7 +559,7 @@ begin
   inherited InternalOpen;
   IndexList.Rebuild;
 
-  if {$IF CompilerVersion >=27}(FieldOptions.AutoCreateMode <> acExclusive)
+  if {$IF CompilerVersion >= 27}(FieldOptions.AutoCreateMode <> acExclusive)
     or not (lcPersistent in Fields.LifeCycles){$ELSE}DefaultFields{$IFEND} then
     CreateFields;
 
