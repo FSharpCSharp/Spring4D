@@ -76,15 +76,8 @@ type
     function GetIndex: Integer;
     procedure SetIndex(const Value: Integer);
   protected
-    /// <summary>
-    ///   Determines if filter is set filter text entered
-    /// </summary>
     function IsFilterEntered: Boolean;
 
-    /// <summary>
-    ///   Determines if FilterIndexed fields are available
-    /// </summary>
-    function IsFiltered: Boolean;
     // Abstract methods
     procedure DoDeleteRecord(Index: Integer); virtual; abstract;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); virtual; abstract;
@@ -467,9 +460,9 @@ procedure TAbstractObjectDataSet.DataEvent(Event: TDataEvent;
 begin
   case Event of
     deLayoutChange:
-      if Active then
-        if Assigned(Reserved) and (FieldListCheckSum <> NativeInt(Reserved)) then
-          Reserved := nil;
+      if Active and Assigned(Reserved)
+        and (FieldListCheckSum <> NativeInt(Reserved)) then
+        Reserved := nil;
   end;
   inherited;
 end;
@@ -549,7 +542,7 @@ end;
 {$IFDEF DELPHIXE4_UP}
 procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
-  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index);
+  PObject(Data)^ := IndexList.Models[PArrayRecInfo(Buffer).Index];
 end;
 {$ENDIF}
 
@@ -557,13 +550,13 @@ end;
 {$IFDEF DELPHIXE3_UP}
 procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
 begin
-  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index);
+  PObject(Data)^ := IndexList.Models[PArrayRecInfo(Buffer).Index];
 end;
 {$ENDIF}
 
 procedure TAbstractObjectDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
-  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer).Index);
+  PObject(Data)^ := IndexList.Models[PArrayRecInfo(Buffer).Index];
 end;
 {$ENDIF}
 
@@ -1071,14 +1064,9 @@ begin
   Result := FInternalOpen;
 end;
 
-function TAbstractObjectDataSet.IsFiltered: Boolean;
-begin
-  Result := Filtered;
-end;
-
 function TAbstractObjectDataSet.IsFilterEntered: Boolean;
 begin
-  Result := (Filtered) and (Trim(Filter) <> '');
+  Result := Filtered and (Trim(Filter) <> '');
 end;
 
 function TAbstractObjectDataSet.Locate(const KeyFields: string; const KeyValues: Variant;
@@ -1098,9 +1086,7 @@ function TAbstractObjectDataSet.Lookup(const KeyFields: string; const KeyValues:
 begin
   Result := Null;
   if DataSetLocateThrough(Self, KeyFields, KeyValues, []) then
-  begin
     Result := FieldValues[ResultFields];
-  end;
 end;
 
 procedure TAbstractObjectDataSet.RebuildFieldCache;

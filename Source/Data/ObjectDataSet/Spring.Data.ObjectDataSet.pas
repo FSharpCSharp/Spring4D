@@ -39,6 +39,13 @@ uses
   Spring.Data.ObjectDataSet.ExprParser;
 
 type
+  TIndexFieldInfo = record
+    Field: TField;
+    RttiProperty: TRttiProperty;
+    Descending: Boolean;
+    CaseInsensitive: Boolean;
+  end;
+
   TObjectDataSet = class(TAbstractObjectDataSet)
   private
     FDataList: IObjectList;
@@ -46,7 +53,7 @@ type
     FFilterIndex: Integer;
     FFilterParser: TExprParser;
     FItemTypeInfo: PTypeInfo;
-    FIndexFieldList: IList<TIndexFieldInfo>;
+    FIndexFields: TArray<TIndexFieldInfo>;
     FProperties: IList<TRttiProperty>;
     FSort: string;
     FSorted: Boolean;
@@ -84,8 +91,7 @@ type
 
     procedure DoOnDataListChange(Sender: TObject; const Item: TObject; Action: TCollectionChangedAction);
 
-    function CompareRecords(const Item1, Item2: TObject;
-      const AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
+    function CompareRecords(const Item1, Item2: TObject): Integer; virtual;
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
     function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
     function ParserGetFunctionValue(Sender: TObject; const FuncName: string;
@@ -104,7 +110,7 @@ type
     procedure SetFilterText(const Value: string); override;
 
     function GetChangedSortText(const ASortText: string): string;
-    function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
+    function CreateIndexList(const ASortText: string): TArray<TIndexFieldInfo>;
     function FieldInSortIndex(AField: TField): Boolean;
   public
     constructor Create(AOwner: TComponent); override;
@@ -216,7 +222,7 @@ uses
   TypInfo,
   Variants,
   Spring.Reflection,
-  Spring.SystemUtils,
+//  Spring.SystemUtils,
   Spring.Data.ObjectDataSet.ExprParser.Functions;
 
 type
@@ -263,8 +269,7 @@ begin
     Sort := ASource.Sort;
 end;
 
-function TObjectDataSet.CompareRecords(const Item1, Item2: TObject;
-  const AIndexFieldList: IList<TIndexFieldInfo>): Integer;
+function TObjectDataSet.CompareRecords(const Item1, Item2: TObject): Integer;
 var
   i: Integer;
   LFieldInfo: TIndexFieldInfo;
@@ -272,9 +277,9 @@ var
 begin
   Result := 0;
 
-  for i := 0 to AIndexFieldList.Count - 1 do
+  for i := 0 to High(FIndexFields) do
   begin
-    LFieldInfo := AIndexFieldList[i];
+    LFieldInfo := FIndexFields[i];
     LValue1 := LFieldInfo.RttiProperty.GetValue(Item1);
     LValue2 := LFieldInfo.RttiProperty.GetValue(Item2);
 
@@ -287,30 +292,31 @@ begin
   end;
 end;
 
-function TObjectDataSet.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
+function TObjectDataSet.CreateIndexList(const ASortText: string): TArray<TIndexFieldInfo>;
 var
-  LText, LItem: string;
-  LSplittedFields: TStringDynArray;
-  LIndexFieldItem: TIndexFieldInfo;
-  i: Integer;
+  splittedText: TStringDynArray;
+  fieldName: string;
+  info: TIndexFieldInfo;
+  i, n: Integer;
 begin
-  Result := TCollections.CreateList<TIndexFieldInfo>;
-  LSplittedFields := SplitString(ASortText, [','], True);
-  for LText in LSplittedFields do
+  Result := nil;
+  splittedText := SplitString(ASortText, ',');
+  for i := 0 to High(splittedText) do
   begin
-    LItem := UpperCase(LText);
-    LIndexFieldItem.Descending := Pos('DESC', LItem) > 1;
-    LItem := Trim(LText);
-    i := Pos(' ', LItem);
-    if i > 1 then
-      LItem := Copy(LItem, 1, i - 1);
+    fieldName := Trim(splittedText[i]);
+    info.Descending := EndsStr(' DESC', AnsiUpperCase(fieldName));
+    if info.Descending then
+      fieldName := Trim(Copy(fieldName, 1, Length(fieldName) - 5));
 
-    LIndexFieldItem.Field := FindField(LItem);
-    if not FProperties.TryGetFirst(LIndexFieldItem.RttiProperty,
-      TPropertyFilters.IsNamed(LIndexFieldItem.Field.FieldName)) then
-      raise EObjectDataSetException.CreateFmt('Field %d used for sorting not found in the dataset.', [LIndexFieldItem.Field.Name]);
-    LIndexFieldItem.CaseInsensitive := True;
-    Result.Add(LIndexFieldItem);
+    info.Field := FindField(fieldName);
+    if Assigned(info.Field) and FProperties.TryGetFirst(info.RttiProperty,
+      TPropertyFilters.IsNamed(fieldName)) then
+    begin
+      info.CaseInsensitive := True;
+      n := Length(Result);
+      SetLength(Result, n + 1);
+      Result[n] := info;
+    end;
   end;
 end;
 
@@ -340,7 +346,7 @@ procedure TObjectDataSet.DoGetFieldValue(Field: TField; Index: Integer; var Valu
 var
   LItem: TValue;
 begin
-  LItem := IndexList.GetModel(Index);
+  LItem := IndexList.Models[Index];
   Value := InternalGetFieldValue(Field, LItem);
 end;
 
@@ -374,7 +380,7 @@ begin
   if not Active then
     Exit;
 
-  if IndexList.DataListIsChanging then
+  if IndexList.IsChanging then
     Exit;
   DisableControls;
   try
@@ -398,7 +404,7 @@ begin
   if State = dsInsert then
     LItem := TActivator.CreateInstance(FItemTypeInfo)
   else
-    LItem := IndexList.GetModel(Index);
+    LItem := IndexList.Models[Index];
 
   LNeedsSort := False;
 
@@ -442,9 +448,9 @@ function TObjectDataSet.FieldInSortIndex(AField: TField): Boolean;
 var
   i: Integer;
 begin
-  if Sorted and Assigned(FIndexFieldList) then
-    for i := 0 to FIndexFieldList.Count - 1 do
-      if AField = FIndexFieldList[i].Field then
+  if Sorted and Assigned(FIndexFields) then
+    for i := 0 to High(FIndexFields) - 1 do
+      if AField = FIndexFields[i].Field then
         Exit(True);
   Result := False;
 end;
@@ -463,7 +469,7 @@ function TObjectDataSet.GetCurrentModel<T>: T;
 begin
   Result := System.Default(T);
   if Active and (Index > -1) and (Index < RecordCount) then
-    Result := IndexList.GetModel(Index) as T;
+    Result := IndexList.Models[Index] as T;
 end;
 
 function TObjectDataSet.GetFilterCount: Integer;
@@ -479,7 +485,7 @@ var
 begin
   Result := TCollections.CreateList<T>;
   for i := 0 to IndexList.Count - 1 do
-    Result.Add(IndexList.GetModel(i));
+    Result.Add(IndexList.Models[i]);
 end;
 
 function TObjectDataSet.GetRecordCount: Integer;
@@ -571,9 +577,8 @@ end;
 procedure TObjectDataSet.InternalSetSort(const AValue: string; AIndex: Integer);
 var
   Pos: Integer;
-  LDataList: IObjectList;
-  LOwnedDatalist: ICollectionOwnership;
-  LOwnsObjectsProp: Boolean;
+  ownership: ICollectionOwnership;
+  ownsObjects: Boolean;
   LChanged: Boolean;
 begin
   if IsEmpty then
@@ -582,27 +587,29 @@ begin
   DoBeforeSort;
 
   LChanged := AValue <> FSort;
-  FIndexFieldList := CreateIndexList(AValue);
+  FIndexFields := CreateIndexList(AValue);
+  FSorted := Length(FIndexFields) > 0;
+  FSort := AValue;
 
   Pos := Current;
-  LDataList := FDataList;
-  LOwnsObjectsProp := Supports(LDataList, ICollectionOwnership, LOwnedDatalist);
-  try
-    if LOwnsObjectsProp then
-      LOwnedDatalist.OwnsObjects := False;
-    if LChanged then
-      TMergeSort.Sort(IndexList, CompareRecords, FIndexFieldList)
-    else
-      TInsertionSort.Sort(AIndex, IndexList, CompareRecords, FIndexFieldList);
 
-    FSorted := FIndexFieldList.Count > 0;
-    FSort := AValue;
+  if FSorted then
+  begin
+    ownsObjects := Supports(FDataList, ICollectionOwnership, ownership)
+      and ownership.OwnsObjects;
+    try
+      if ownsObjects then
+        ownership.OwnsObjects := False;
+      if LChanged then
+        TMergeSort.Sort(IndexList, CompareRecords)
+      else
+        TInsertionSort.Sort(AIndex, IndexList, CompareRecords);
+    finally
+      if ownsObjects then
+        ownership.OwnsObjects := True;
 
-  finally
-    if LOwnsObjectsProp then
-      LOwnedDatalist.OwnsObjects := True;
-
-    SetCurrent(Pos);
+      SetCurrent(Pos);
+    end;
   end;
   DoAfterSort;
 end;
