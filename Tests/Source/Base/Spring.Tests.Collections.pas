@@ -492,6 +492,7 @@ type
 
     procedure TestInternalEventHandlersDetached;
     procedure TestValueChangedCalledProperly;
+    procedure TestValuesOrdered;
   end;
 
   TTestBidiDictionary = class(TTestCase)
@@ -2841,6 +2842,20 @@ begin
   CheckEquals(3, ValueAddedCount);
   SUT := nil;
   CheckEquals(3, ValueRemovedCount);
+end;
+
+procedure TTestMultiMap.TestValuesOrdered;
+begin
+  SUT.Add(1, 1);
+  SUT.Add(1, 2);
+  SUT.Add(2, 3);
+  SUT.Add(2, 4);
+  SUT.Add(3, 5);
+  SUT.Add(3, 6);
+  SUT.Add(4, 7);
+  SUT.Add(4, 8);
+
+  CheckTrue(SUT.Values.Ordered.EqualsTo([1, 2, 3, 4, 5, 6, 7, 8]));
 end;
 
 procedure TTestMultiMap.ValueChanged(Sender: TObject; const Item: Integer;

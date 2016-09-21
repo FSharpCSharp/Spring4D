@@ -485,7 +485,7 @@ begin
   i := 0;
   for list in fOwner.fDictionary.Values do
   begin
-    list.CopyTo(Result, 0);
+    list.CopyTo(Result, i);
     Inc(i, list.Count);
   end;
 end;
