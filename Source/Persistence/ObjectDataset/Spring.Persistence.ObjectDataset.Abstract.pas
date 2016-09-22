@@ -23,6 +23,7 @@
 {***************************************************************************}
 
 {$I Spring.inc}
+{$R-,Q-}
 
 unit Spring.Persistence.ObjectDataset.Abstract;
 
@@ -51,7 +52,7 @@ type
   TValueBuffer  = Pointer;
 {$ENDIF}
   PVariantList = ^TVariantList;
-  TVariantList = array [0 .. 0] of OleVariant;
+  TVariantList = array[0..0] of OleVariant;
   PArrayRecInfo = ^TArrayRecInfo;
 
   TArrayRecInfo = record
