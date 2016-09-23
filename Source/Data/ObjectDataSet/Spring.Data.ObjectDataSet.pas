@@ -46,7 +46,7 @@ type
     CaseInsensitive: Boolean;
   end;
 
-  TObjectDataSet = class(TAbstractObjectDataSet)
+  TObjectDataSet = class(TCustomVirtualDataSet)
   private
     FDataList: IObjectList;
     FDefaultStringFieldLength: Integer;
@@ -105,8 +105,8 @@ type
 
     function  IsCursorOpen: Boolean; override;
     procedure InternalInitFieldDefs; override;
-    procedure InternalOpen; override;
     procedure InternalClose; override;
+    procedure InternalCreateFields; override;
     procedure SetFilterText(const Value: string); override;
 
     function GetChangedSortText(const ASortText: string): string;
@@ -537,6 +537,15 @@ begin
   UnregisterChangeHandler;
 end;
 
+procedure TObjectDataSet.InternalCreateFields;
+begin
+  IndexList.Rebuild;
+
+  if {$IF CompilerVersion >= 27}(FieldOptions.AutoCreateMode <> acExclusive)
+    or not (lcPersistent in Fields.LifeCycles){$ELSE}DefaultFields{$IFEND} then
+    CreateFields;
+end;
+
 function TObjectDataSet.InternalGetFieldValue(AField: TField; const AItem: TValue): Variant;
 var
   LProperty: TRttiProperty;
@@ -558,20 +567,6 @@ begin
     LoadFieldDefsFromFields(Fields, FieldDefs)
   else
     LoadFieldDefsFromItemType;
-end;
-
-procedure TObjectDataSet.InternalOpen;
-begin
-  inherited InternalOpen;
-  IndexList.Rebuild;
-
-  if {$IF CompilerVersion >= 27}(FieldOptions.AutoCreateMode <> acExclusive)
-    or not (lcPersistent in Fields.LifeCycles){$ELSE}DefaultFields{$IFEND} then
-    CreateFields;
-
-  Reserved := Pointer(FieldListCheckSum);
-  BindFields(True);
-  SetRecBufSize;
 end;
 
 procedure TObjectDataSet.InternalSetSort(const AValue: string; AIndex: Integer);

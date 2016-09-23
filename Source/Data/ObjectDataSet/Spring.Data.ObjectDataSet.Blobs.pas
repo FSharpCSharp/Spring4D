@@ -37,7 +37,7 @@ type
   TODBlobStream = class(TMemoryStream)
   private
     FField: TBlobField;
-    FDataSet: TAbstractObjectDataSet;
+    FDataSet: TCustomVirtualDataSet;
     FBuffer: TRecordBuffer;
     FFieldNo: Integer;
     FModified: Boolean;
@@ -71,7 +71,7 @@ begin
   inherited Create;
   FField := Field;
   FFieldNo := FField.FieldNo - 1;
-  FDataSet := FField.Dataset as TAbstractObjectDataSet;
+  FDataSet := FField.Dataset as TCustomVirtualDataSet;
   FFieldData := Null;
   FData := Null;
   if not FDataSet.GetActiveRecBuf(FBuffer) then
