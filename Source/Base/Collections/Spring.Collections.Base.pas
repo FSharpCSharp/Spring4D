@@ -448,6 +448,9 @@ type
     procedure Delete(index: Integer); virtual; abstract;
     procedure DeleteRange(index, count: Integer); virtual;
 
+    function ExtractAt(index: Integer): T; virtual; abstract;
+    function ExtractRange(index, count: Integer): TArray<T>; overload; virtual;
+
     function GetRange(index, count: Integer): IList<T>; virtual;
 
     function IndexOf(const item: T): Integer; overload;
@@ -1821,6 +1824,26 @@ begin
   while count > 0 do
   begin
     Delete(index);
+    Dec(count);
+  end;
+end;
+
+function TListBase<T>.ExtractRange(index, count: Integer): TArray<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+  SetLength(Result, count);
+  i := 0;
+
+  while count > 0 do
+  begin
+    Result[i] := ExtractAt(index);
+    Inc(i);
     Dec(count);
   end;
 end;

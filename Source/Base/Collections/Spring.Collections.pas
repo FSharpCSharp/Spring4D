@@ -1050,6 +1050,18 @@ type
     procedure DeleteRange(index, count: Integer);
 
     /// <summary>
+    ///   Extracts the item at the specified index.
+    /// </summary>
+    /// <param name="index">
+    ///   The zero-based index of the item to extract.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///   <i>index</i> is not a valid index in the IList&lt;T&gt;.
+    /// </exception>
+    function ExtractAt(index: Integer): T;
+    function ExtractRange(index, count: Integer): TArray<T>; overload;
+
+    /// <summary>
     ///   Creates a new list that contains a range of the elements in the
     ///   original list.
     /// </summary>

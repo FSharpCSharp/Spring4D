@@ -106,6 +106,7 @@ type
 
     function Extract(const item: T): T; override;
     procedure ExtractAll(const predicate: TPredicate<T>); override;
+    function ExtractAt(index: Integer): T; override;
 
     function GetRange(index, count: Integer): IList<T>; override;
 
@@ -216,6 +217,7 @@ type
     procedure DeleteRange(index, count: Integer); override;
 
     function Extract(const item: T): T; override;
+    function ExtractAt(index: Integer): T; override;
 
     procedure Exchange(index1, index2: Integer); override;
     procedure Move(currentIndex, newIndex: Integer); override;
@@ -773,6 +775,16 @@ begin
   end;
 end;
 
+function TList<T>.ExtractAt(index: Integer): T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+{$ENDIF}
+
+  Result := fItems[index];
+  DeleteInternal(index, caExtracted);
+end;
+
 procedure TList<T>.ExtractAll(const predicate: TPredicate<T>);
 begin
   DeleteAllInternal(predicate, caExtracted);
@@ -1142,6 +1154,16 @@ begin
     Result := T(fCollection.Items[index]);
     DeleteInternal(index, caExtracted);
   end;
+end;
+
+function TCollectionList<T>.ExtractAt(index: Integer): T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+{$ENDIF}
+
+  Result := T(fCollection.Items[index]);
+  DeleteInternal(index, caExtracted);
 end;
 
 function TCollectionList<T>.GetCapacity: Integer;
