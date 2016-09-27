@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Data.ObjectDataSet.Designtime;
+unit Spring.Data.Registration;
 
 interface
 

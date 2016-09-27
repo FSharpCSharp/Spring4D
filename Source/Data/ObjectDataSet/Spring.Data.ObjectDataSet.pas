@@ -34,9 +34,9 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.Data.ObjectDataSet.Abstract,
-  Spring.Data.ObjectDataSet.Algorithms.Sort,
-  Spring.Data.ObjectDataSet.ExprParser;
+  Spring.Data.ExpressionParser,
+  Spring.Data.Sorting,
+  Spring.Data.VirtualDataSet;
 
 type
   TIndexFieldInfo = record
@@ -222,8 +222,7 @@ uses
   TypInfo,
   Variants,
   Spring.Reflection,
-//  Spring.SystemUtils,
-  Spring.Data.ObjectDataSet.ExprParser.Functions;
+  Spring.Data.ExpressionParser.Functions;
 
 type
   EObjectDataSetException = class(Exception);

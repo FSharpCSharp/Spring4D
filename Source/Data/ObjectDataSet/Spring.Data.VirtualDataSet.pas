@@ -25,7 +25,7 @@
 {$I Spring.inc}
 {$R-,Q-}
 
-unit Spring.Data.ObjectDataSet.Abstract;
+unit Spring.Data.VirtualDataSet;
 
 {$IFDEF DELPHIXE4_UP}
   {$ZEROBASEDSTRINGS OFF}
@@ -39,7 +39,7 @@ uses
   Generics.Defaults,
   SysUtils,
   Spring.Collections,
-  Spring.Data.ObjectDataSet.IndexList;
+  Spring.Data.IndexList;
 
 type
   EVirtualDataSetException = class(Exception);
@@ -284,7 +284,7 @@ uses
   Variants,
   VarUtils,
   Spring,
-  Spring.Data.ObjectDataSet.ActiveX;
+  Spring.Data.ActiveX;
 
 {$IF Defined(DELPHIXE3_UP) and not Defined(DELPHIXE8_UP)}
 type

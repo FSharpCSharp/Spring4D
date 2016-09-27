@@ -94,13 +94,13 @@
         </DelphiCompile>
         <DCCReference Include="dbrtl.dcp"/>
         <DCCReference Include="Spring.Base.dcp"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ActiveX.pas"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ExpressionParser.pas"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ExpressionParser.Functions.pas"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.IndexList.pas"/>
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.pas"/>
-        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Abstract.pas"/>
-        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ActiveX.pas"/>
-        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Algorithms.Sort.pas"/>
-        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ExprParser.Functions.pas"/>
-        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ExprParser.pas"/>
-        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.IndexList.pas"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.Sorting.pas"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.VirtualDataSet.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

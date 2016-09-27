@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Data.ObjectDataSet.ExprParser.Functions;
+unit Spring.Data.ExpressionParser.Functions;
 
 interface
 

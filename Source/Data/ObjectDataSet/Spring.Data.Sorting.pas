@@ -24,7 +24,7 @@
 
 {$I Spring.inc}
 
-unit Spring.Data.ObjectDataSet.Algorithms.Sort;
+unit Spring.Data.Sorting;
 
 interface
 
@@ -32,7 +32,7 @@ uses
   DB,
   Rtti,
   Spring.Collections,
-  Spring.Data.ObjectDataSet.IndexList;
+  Spring.Data.IndexList;
 
 type
   TCompareRecords = function(const Item1, Item2: TObject): Integer of object;

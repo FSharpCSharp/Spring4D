@@ -87,7 +87,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="Spring.Data.dcp"/>
-        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Designtime.pas"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.Registration.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
