@@ -449,7 +449,7 @@ var
   i: Integer;
 begin
   if Sorted and Assigned(FIndexFields) then
-    for i := 0 to High(FIndexFields) - 1 do
+    for i := 0 to High(FIndexFields) do
       if AField = FIndexFields[i].Field then
         Exit(True);
   Result := False;

@@ -36,7 +36,6 @@ contains
   Spring.Data.ObjectDataSet.Abstract in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Abstract.pas',
   Spring.Data.ObjectDataSet.ActiveX in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ActiveX.pas',
   Spring.Data.ObjectDataSet.Algorithms.Sort in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Algorithms.Sort.pas',
-  Spring.Data.ObjectDataSet.Blobs in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.Blobs.pas',
   Spring.Data.ObjectDataSet.ExprParser.Functions in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ExprParser.Functions.pas',
   Spring.Data.ObjectDataSet.ExprParser in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.ExprParser.pas',
   Spring.Data.ObjectDataSet.IndexList in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.IndexList.pas';
