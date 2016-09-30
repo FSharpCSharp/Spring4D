@@ -33,8 +33,8 @@ uses
 
 type
   TIndexItem = record
-    DataListIndex: Integer;
-    DataListObject: TObject;
+    Index: Integer;
+    Obj: TObject;
   end;
 
   TIndexList = class
@@ -43,35 +43,33 @@ type
     fIndexes: IList<TIndexItem>;
     fIsChanging: Boolean;
     function GetCount: Integer;
-    function GetItem(Index: Integer): TIndexItem;
-    function GetModel(Index: Integer): TObject;
-    procedure SetDataList(const Value: IObjectList);
-    procedure SetItem(Index: Integer; const Value: TIndexItem);
-    procedure SetModel(Index: Integer; const Value: TObject);
+    function GetIndexes: IReadOnlyList<TIndexItem>;
+    function GetObject(index: Integer): TObject;
+    procedure SetDataList(const value: IObjectList);
+    procedure SetObject(index: Integer; const value: TObject);
 
-    procedure FixIndexes(AStart: Integer);
-    procedure Insert(AIndex, ADataListIndex: Integer; const AModel: TObject);
-    property Items[Index: Integer]: TIndexItem read GetItem write SetItem; default;
+    procedure FixIndexes(startIndex: Integer);
   public
     constructor Create;
 
-    procedure Rebuild;
+    function AddIndex(index: Integer): Integer;
+    procedure DeleteIndex(index: Integer);
 
-    function Add(ADataListIndex: Integer; const ADataListObject: TObject): Integer; virtual;
-    function AddModel(const Model: TObject): Integer;
-    procedure Delete(Index: Integer);
-    procedure DeleteModel(Index: Integer);
-    procedure InsertModel(const Model: TObject; Index: Integer);
+    function AddObject(const obj: TObject): Integer;
+    procedure DeleteObject(index: Integer);
+    procedure InsertObject(const obj: TObject; index: Integer);
 
-    function ContainsModel(const Model: TObject): Boolean;
-    function IndexOfModel(const Model: TObject): Integer;
+    function Contains(const obj: TObject): Boolean;
+    function IndexOf(const obj: TObject): Integer;
 
     procedure Clear;
+    procedure Rebuild;
 
     property Count: Integer read GetCount;
     property DataList: IObjectList read fDataList write SetDataList;
+    property Indexes: IReadOnlyList<TIndexItem> read GetIndexes;
     property IsChanging: Boolean read fIsChanging;
-    property Models[Index: Integer]: TObject read GetModel write SetModel;
+    property Objects[index: Integer]: TObject read GetObject write SetObject;
   end;
 
 implementation
@@ -85,21 +83,20 @@ begin
   fIndexes := TCollections.CreateList<TIndexItem>;
 end;
 
-function TIndexList.Add(ADataListIndex: Integer; const ADataListObject: TObject): Integer;
+function TIndexList.AddIndex(index: Integer): Integer;
 var
-  LItem: TIndexItem;
+  indexItem: TIndexItem;
 begin
-  LItem.DataListIndex := ADataListIndex;
-  LItem.DataListObject := ADataListObject;
-  Result := fIndexes.Add(LItem);
+  indexItem.Index := index;
+  indexItem.Obj := fDataList[index];
+  Result := fIndexes.Add(indexItem);
 end;
 
-function TIndexList.AddModel(const Model: TObject): Integer;
+function TIndexList.AddObject(const obj: TObject): Integer;
 begin
   fIsChanging := True;
   try
-    fDataList.Add(Model);
-    Result := Add(fDataList.Count - 1, Model);
+    Result := AddIndex(fDataList.Add(obj));
   finally
     fIsChanging := False;
   end;
@@ -110,44 +107,45 @@ begin
   fIndexes.Clear;
 end;
 
-function TIndexList.ContainsModel(const Model: TObject): Boolean;
+function TIndexList.Contains(const obj: TObject): Boolean;
 begin
-  Result := IndexOfModel(Model) <> -1;
+  Result := IndexOf(obj) <> -1;
 end;
 
-procedure TIndexList.Delete(Index: Integer);
+procedure TIndexList.DeleteIndex(index: Integer);
 begin
-  fIndexes.Delete(Index);
+  fIndexes.Delete(index);
 end;
 
-procedure TIndexList.DeleteModel(Index: Integer);
+procedure TIndexList.DeleteObject(index: Integer);
 var
-  LFixIndex: Integer;
+  fixIndex: Integer;
 begin
-  LFixIndex := Items[Index].DataListIndex;
+  fixIndex := fIndexes[index].Index;
   fIsChanging := True;
   try
-    fDataList.Delete(LFixIndex);
-    Delete(Index);
-    FixIndexes(LFixIndex);
+    fDataList.Delete(fixIndex);
+    DeleteIndex(index);
+    FixIndexes(fixIndex);
   finally
     fIsChanging := False;
   end;
 end;
 
-procedure TIndexList.FixIndexes(AStart: Integer);
+procedure TIndexList.FixIndexes(startIndex: Integer);
 var
   i: Integer;
-  LItem: TIndexItem;
+  indexItem: TIndexItem;
 begin
   for i := 0 to Count - 1 do
-    if Items[i].DataListIndex > AStart then
+  begin
+    indexItem := fIndexes[i];
+    if indexItem.Index > startIndex then
     begin
-      LItem.DataListIndex := Items[i].DataListIndex - 1;
-      LItem.DataListObject := Items[i].DataListObject;
-      Items[i] := LItem;
-      //Items[i] := Items[i] - 1;
+      Dec(indexItem.Index);
+      fIndexes[i] := indexItem;
     end;
+  end;
 end;
 
 function TIndexList.GetCount: Integer;
@@ -155,42 +153,36 @@ begin
   Result := fIndexes.Count;
 end;
 
-function TIndexList.GetItem(Index: Integer): TIndexItem;
+function TIndexList.GetIndexes: IReadOnlyList<TIndexItem>;
 begin
-  Result := fIndexes[Index];
+  Result := fIndexes.AsReadOnlyList;
 end;
 
-function TIndexList.GetModel(Index: Integer): TObject;
+function TIndexList.GetObject(index: Integer): TObject;
 begin
-  Result := Items[Index].DataListObject; // FDataList[Items[AIndex]];
+  Result := fIndexes[index].Obj;
 end;
 
-function TIndexList.IndexOfModel(const Model: TObject): Integer;
+function TIndexList.IndexOf(const obj: TObject): Integer;
 begin
-  if Model = nil then
+  if obj = nil then
     Exit(-1);
 
   for Result := 0 to Count - 1 do
-    if Models[Result] = Model then
+    if Objects[Result] = obj then
       Exit;
   Result := -1;
 end;
 
-procedure TIndexList.Insert(AIndex, ADataListIndex: Integer; const AModel: TObject);
+procedure TIndexList.InsertObject(const obj: TObject; index: Integer);
 var
-  LItem: TIndexItem;
-begin
-  LItem.DataListIndex := ADataListIndex;
-  LItem.DataListObject := AModel;
-  fIndexes.Insert(AIndex, LItem);
-end;
-
-procedure TIndexList.InsertModel(const Model: TObject; Index: Integer);
+  indexItem: TIndexItem;
 begin
   fIsChanging := True;
   try
-    fDataList.Add(Model);
-    Insert(Index, fDataList.Count - 1, Model);
+    indexItem.Index := fDataList.Add(obj);
+    indexItem.Obj := obj;
+    fIndexes.Insert(index, indexItem);
   finally
     fIsChanging := False;
   end;
@@ -203,7 +195,7 @@ begin
   Clear;
   if Assigned(fDataList) then
     for i := 0 to fDataList.Count - 1 do
-      Add(i, fDataList[i]);
+      AddIndex(i);
 end;
 
 procedure TIndexList.SetDataList(const Value: IObjectList);
@@ -212,19 +204,13 @@ begin
   Rebuild;
 end;
 
-procedure TIndexList.SetItem(Index: Integer; const Value: TIndexItem);
-begin
-  fIndexes[Index] := Value;
-end;
-
-procedure TIndexList.SetModel(Index: Integer; const Value: TObject);
+procedure TIndexList.SetObject(index: Integer; const Value: TObject);
 var
-  LItem: TIndexItem;
+  indexItem: TIndexItem;
 begin
-  LItem := Items[Index];
-  LItem.DataListObject := Value;
-  Items[Index] := LItem;
- // FDataList[Items[AIndex]] := Value;
+  indexItem := fIndexes[index];
+  indexItem.Obj := Value;
+  fIndexes[index] := indexItem;
 end;
 
 {$ENDREGION}

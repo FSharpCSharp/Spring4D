@@ -744,6 +744,7 @@ var
 begin
   LCustomers := CreateCustomersList(10);
   FDataset.DataList := LCustomers as IObjectList;
+  FDataset.TrackChanges := True;
   FDataset.Open;
   CheckEquals(10, FDataset.RecordCount);
   CheckFalse(FDataset.IsEmpty);
@@ -761,8 +762,8 @@ begin
   LNewCustomer.Name := 'New';
   LNewCustomer.MiddleName := 'Customer';
   LNewCustomer.Age := 58;
-  FDataset.IndexList.AddModel(LNewCustomer);
- // LCustomers.Add(LNewCustomer);
+//  FDataset.IndexList.AddModel(LNewCustomer);
+  LCustomers.Add(LNewCustomer);
 
   CheckEquals(11, FDataset.RecordCount);
   FDataset.Last;

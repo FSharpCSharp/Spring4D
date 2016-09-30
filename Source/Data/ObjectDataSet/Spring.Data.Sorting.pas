@@ -65,7 +65,7 @@ var
     i, j, k: Integer;
   begin
     for i := Low to High do
-      LCache[i] := ADataList.Models[i];
+      LCache[i] := ADataList.Objects[i];
     i := Low;
     j := Mid + 1;
     k := Low;
@@ -73,12 +73,12 @@ var
     begin
       if Compare(LCache[i], LCache[j]) <= 0 then
       begin
-        ADataList.Models[k] := LCache[i];
+        ADataList.Objects[k] := LCache[i];
         Inc(i);
       end
       else
       begin
-        ADataList.Models[k] := LCache[j];
+        ADataList.Objects[k] := LCache[j];
         Inc(j);
       end;
       Inc(k);
@@ -86,7 +86,7 @@ var
 
     while i <= Mid do
     begin
-      ADataList.Models[k] := LCache[i];
+      ADataList.Objects[k] := LCache[i];
       Inc(k);
       Inc(i);
     end;
@@ -126,15 +126,15 @@ var
 Begin
   for i := ALow + 1 to AHigh Do
   begin
-    LTemp := ADataList.Models[i];
+    LTemp := ADataList.Objects[i];
     j := i;
-    while (j > 0) and (Compare(ADataList.Models[j - 1], LTemp) > 0) do
+    while (j > 0) and (Compare(ADataList.Objects[j - 1], LTemp) > 0) do
     begin
-      ADataList.Models[j] := ADataList.Models[j - 1];
+      ADataList.Objects[j] := ADataList.Objects[j - 1];
       Dec(j);
     end;
-    ADataList.Models[j] := LTemp;
-  End;
+    ADataList.Objects[j] := LTemp;
+  end;
 end;
 
 class procedure TInsertionSort.Sort(AStartIndex: Integer;
