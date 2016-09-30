@@ -612,7 +612,7 @@ end;
 {$IFDEF DELPHIXE4_UP}
 procedure TCustomVirtualDataSet.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
-  PObject(Data)^ := fIndexList.Objects[PArrayRecInfo(Buffer).Index];
+  PObject(Data)^ := fIndexList[PArrayRecInfo(Buffer).Index];
 end;
 
 procedure TCustomVirtualDataSet.SetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
@@ -628,7 +628,7 @@ end;
 {$IFDEF DELPHIXE3_UP}
 procedure TCustomVirtualDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
 begin
-  PObject(Data)^ := fIndexList.Objects[PArrayRecInfo(Buffer).Index];
+  PObject(Data)^ := fIndexList[PArrayRecInfo(Buffer).Index];
 end;
 
 procedure TCustomVirtualDataSet.SetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
@@ -642,7 +642,7 @@ end;
 
 procedure TCustomVirtualDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
-  PObject(Data)^ := fIndexList.Objects[PArrayRecInfo(Buffer).Index];
+  PObject(Data)^ := fIndexList[PArrayRecInfo(Buffer).Index];
 end;
 
 procedure TCustomVirtualDataSet.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);

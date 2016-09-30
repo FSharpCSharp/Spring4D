@@ -116,7 +116,6 @@
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ExpressionParser.Functions.pas"/>
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.IndexList.pas"/>
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.pas"/>
-        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.Sorting.pas"/>
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.VirtualDataSet.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Abstract.pas"/>

@@ -35,7 +35,6 @@ uses
   Spring,
   Spring.Collections,
   Spring.Data.ExpressionParser,
-  Spring.Data.Sorting,
   Spring.Data.VirtualDataSet;
 
 type
@@ -342,14 +341,14 @@ end;
 
 procedure TObjectDataSet.DoDeleteRecord(Index: Integer);
 begin
-  IndexList.DeleteObject(Index);
+  IndexList.DeleteItem(Index);
 end;
 
 procedure TObjectDataSet.DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant);
 var
   obj: TObject;
 begin
-  obj := IndexList.Objects[Index];
+  obj := IndexList.Items[Index];
   Value := InternalGetFieldValue(Field, obj);
 end;
 
@@ -406,7 +405,7 @@ begin
   if State = dsInsert then
     newItem := TActivator.CreateInstance(fItemTypeInfo)
   else
-    newItem := IndexList.Objects[Index];
+    newItem := IndexList.Items[Index];
 
   sortNeeded := False;
 
@@ -431,9 +430,9 @@ begin
 
   if State = dsInsert then
     if Append then
-      Index := IndexList.AddObject(newItem)
+      Index := IndexList.AddItem(newItem)
     else
-      IndexList.InsertObject(newItem, Index);
+      IndexList.InsertItem(newItem, Index);
 
   DoFilterRecord(Index);
   if Sorted and sortNeeded then
@@ -467,7 +466,7 @@ function TObjectDataSet.GetCurrentModel<T>: T;
 begin
   Result := System.Default(T);
   if Active and (Index > -1) and (Index < RecordCount) then
-    Result := IndexList.Objects[Index] as T;
+    Result := IndexList.Items[Index] as T;
 end;
 
 function TObjectDataSet.GetFilterCount: Integer;
@@ -483,7 +482,7 @@ var
 begin
   Result := TCollections.CreateList<T>;
   for i := 0 to IndexList.Count - 1 do
-    Result.Add(IndexList.Objects[i]);
+    Result.Add(IndexList.Items[i]);
 end;
 
 function TObjectDataSet.GetRecordCount: Integer;
@@ -594,9 +593,9 @@ begin
       if ownsObjects then
         ownership.OwnsObjects := False;
       if changed then
-        TMergeSort.Sort(IndexList, CompareRecords)
+        IndexList.MergeSort(CompareRecords)
       else
-        TInsertionSort.Sort(index, IndexList, CompareRecords);
+        IndexList.InsertionSort(index, CompareRecords);
     finally
       if ownsObjects then
         ownership.OwnsObjects := True;
