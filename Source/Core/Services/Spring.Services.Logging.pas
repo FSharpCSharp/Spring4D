@@ -24,10 +24,10 @@
 
 {$I Spring.inc}
 
-///	<summary>
-///	  Defines an independent logging service.
-///	</summary>
-unit Spring.Services.Logging;
+/// <summary>
+///   Defines an independent logging service.
+/// </summary>
+unit Spring.Services.Logging deprecated 'Use Spring.Logging instead';
 
 interface
 
