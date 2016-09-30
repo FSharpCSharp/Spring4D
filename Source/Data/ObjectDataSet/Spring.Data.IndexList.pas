@@ -44,7 +44,7 @@ type
     fIndexes: IList<TIndexItem>;
     fIsChanging: Boolean;
     function GetCount: Integer;
-    function GetIndexes: IReadOnlyList<TIndexItem>;
+    function GetIndex(index: Integer): TIndexItem;
     function GetItem(index: Integer): TObject;
     procedure SetDataList(const value: IObjectList);
     procedure SetItem(index: Integer; const value: TObject);
@@ -71,7 +71,7 @@ type
 
     property Count: Integer read GetCount;
     property DataList: IObjectList read fDataList write SetDataList;
-    property Indexes: IReadOnlyList<TIndexItem> read GetIndexes;
+    property Indexes[index: Integer]: TIndexItem read GetIndex;
     property IsChanging: Boolean read fIsChanging;
     property Items[index: Integer]: TObject read GetItem write SetItem; default;
   end;
@@ -157,9 +157,9 @@ begin
   Result := fIndexes.Count;
 end;
 
-function TIndexList.GetIndexes: IReadOnlyList<TIndexItem>;
+function TIndexList.GetIndex(index: Integer): TIndexItem;
 begin
-  Result := fIndexes.AsReadOnlyList;
+  Result := fIndexes[index];;
 end;
 
 function TIndexList.GetItem(index: Integer): TObject;

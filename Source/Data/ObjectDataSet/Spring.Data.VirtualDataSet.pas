@@ -118,7 +118,7 @@ type
     procedure DoDeleteRecord(Index: Integer); virtual;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); virtual;
     procedure DoPostRecord(Index: Integer; Append: Boolean); virtual;
-    function RecordConformsFilter: Boolean; virtual; abstract;
+    function RecordMatchesFilter: Boolean; virtual; abstract;
     procedure UpdateFilter; virtual; abstract;
     procedure RebuildPropertiesCache; virtual; abstract;
 

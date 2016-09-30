@@ -80,7 +80,7 @@ type
 
     function DataListCount: Integer;
     function GetRecordCount: Integer; override;
-    function RecordConformsFilter: Boolean; override;
+    function RecordMatchesFilter: Boolean; override;
     procedure UpdateFilter; override;
 
     procedure DoAfterFilter; virtual;
@@ -106,6 +106,7 @@ type
     procedure InternalInitFieldDefs; override;
     procedure InternalClose; override;
     procedure InternalCreateFields; override;
+    procedure InternalRefresh; override;
     procedure SetFilterText(const Value: string); override;
 
     function GetChangedSortText(const sortText: string): string;
@@ -566,6 +567,13 @@ begin
     LoadFieldDefsFromItemType;
 end;
 
+procedure TObjectDataSet.InternalRefresh;
+begin
+  RefreshFilter;
+  if Sorted then
+    InternalSetSort(Sort);
+end;
+
 procedure TObjectDataSet.InternalSetSort(const value: string; index: Integer);
 var
   pos: Integer;
@@ -824,7 +832,7 @@ begin
     fProperties.Add(itemType.GetProperty(Fields[i].FieldName));
 end;
 
-function TObjectDataSet.RecordConformsFilter: Boolean;
+function TObjectDataSet.RecordMatchesFilter: Boolean;
 begin
   Result := True;
   if (fFilterIndex >= 0) and (fFilterIndex < DataListCount) then
@@ -854,7 +862,7 @@ begin
   begin
     fFilterIndex := i;
     FilterCache.Clear;
-    if RecordConformsFilter then
+    if RecordMatchesFilter then
       IndexList.AddIndex(i);
   end;
   FilterCache.Clear;
@@ -873,7 +881,7 @@ begin
   begin
     FilterCache.Clear;
     fFilterIndex := IndexList.Indexes[index].Index;
-    if not RecordConformsFilter then
+    if not RecordMatchesFilter then
       IndexList.DeleteIndex(index);
   end;
 end;
