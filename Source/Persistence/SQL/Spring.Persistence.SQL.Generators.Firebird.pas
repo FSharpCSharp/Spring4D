@@ -126,9 +126,9 @@ function TFirebirdSQLGenerator.GetSQLDataTypeName(
   const field: TSQLCreateField): string;
 begin
   Result := inherited GetSQLDataTypeName(field);
-  if StartsText(Result, 'NCHAR') then
+  if StartsText('NCHAR', Result) then
     Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET UNICODE_FSS'
-  else if StartsText(Result, 'NVARCHAR') then
+  else if StartsText('NVARCHAR', Result) then
     Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET UNICODE_FSS';
 end;
 
