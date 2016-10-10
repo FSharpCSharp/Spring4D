@@ -1884,12 +1884,12 @@ type
   public
     constructor Create(const value1: T1; const value2: T2);
     function Equals(const value: Tuple<T1, T2>): Boolean;
-    procedure Unpack(out value1: T1; out value2: T2); overload;
+    procedure Unpack(out value1: T1; out value2: T2); inline;
     class operator Equal(const left, right: Tuple<T1, T2>): Boolean;
     class operator NotEqual(const left, right: Tuple<T1, T2>): Boolean;
-    class operator Implicit(const value: Tuple<T1, T2>): TArray<TValue>;
-    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2>;
-    class operator Implicit(const value: array of const): Tuple<T1, T2>;
+    class operator Implicit(const values: Tuple<T1, T2>): TArray<TValue>;
+    class operator Implicit(const values: TArray<TValue>): Tuple<T1, T2>;
+    class operator Implicit(const values: array of const): Tuple<T1, T2>;
     property Value1: T1 read fValue1;
     property Value2: T2 read fValue2;
   end;
@@ -1902,14 +1902,14 @@ type
   public
     constructor Create(const value1: T1; const value2: T2; const value3: T3);
     function Equals(const value: Tuple<T1, T2, T3>): Boolean;
-    procedure Unpack(out value1: T1; out value2: T2); overload;
-    procedure Unpack(out value1: T1; out value2: T2; out value3: T3); overload;
+    procedure Unpack(out value1: T1; out value2: T2); overload; inline;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3); overload; inline;
     class operator Equal(const left, right: Tuple<T1, T2, T3>): Boolean;
     class operator NotEqual(const left, right: Tuple<T1, T2, T3>): Boolean;
-    class operator Implicit(const value: Tuple<T1, T2, T3>): TArray<TValue>;
-    class operator Implicit(const value: Tuple<T1, T2, T3>): Tuple<T1, T2>;
-    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2, T3>;
-    class operator Implicit(const value: array of const): Tuple<T1, T2, T3>;
+    class operator Implicit(const values: Tuple<T1, T2, T3>): TArray<TValue>;
+    class operator Implicit(const values: Tuple<T1, T2, T3>): Tuple<T1, T2>;
+    class operator Implicit(const values: TArray<TValue>): Tuple<T1, T2, T3>;
+    class operator Implicit(const values: array of const): Tuple<T1, T2, T3>;
     property Value1: T1 read fValue1;
     property Value2: T2 read fValue2;
     property Value3: T3 read fValue3;
@@ -1924,16 +1924,16 @@ type
   public
     constructor Create(const value1: T1; const value2: T2; const value3: T3; const value4: T4);
     function Equals(const value: Tuple<T1, T2, T3, T4>): Boolean;
-    procedure Unpack(out value1: T1; out value2: T2); overload;
-    procedure Unpack(out value1: T1; out value2: T2; out value3: T3); overload;
-    procedure Unpack(out value1: T1; out value2: T2; out value3: T3; out value4: T4); overload;
+    procedure Unpack(out value1: T1; out value2: T2); overload; inline;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3); overload; inline;
+    procedure Unpack(out value1: T1; out value2: T2; out value3: T3; out value4: T4); overload; inline;
     class operator Equal(const left, right: Tuple<T1, T2, T3, T4>): Boolean;
     class operator NotEqual(const left, right: Tuple<T1, T2, T3, T4>): Boolean;
-    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): TArray<TValue>;
-    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2>;
-    class operator Implicit(const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2, T3>;
-    class operator Implicit(const value: TArray<TValue>): Tuple<T1, T2, T3, T4>;
-    class operator Implicit(const value: array of const): Tuple<T1, T2, T3, T4>;
+    class operator Implicit(const values: Tuple<T1, T2, T3, T4>): TArray<TValue>;
+    class operator Implicit(const values: Tuple<T1, T2, T3, T4>): Tuple<T1, T2>;
+    class operator Implicit(const values: Tuple<T1, T2, T3, T4>): Tuple<T1, T2, T3>;
+    class operator Implicit(const values: TArray<TValue>): Tuple<T1, T2, T3, T4>;
+    class operator Implicit(const values: array of const): Tuple<T1, T2, T3, T4>;
     property Value1: T1 read fValue1;
     property Value2: T2 read fValue2;
     property Value3: T3 read fValue3;
@@ -1942,12 +1942,12 @@ type
 
   Tuple = class
   public
-    class function Pack<T1, T2>(const value1: T1;
-      const value2: T2): Tuple<T1, T2>; overload; static;
-    class function Pack<T1, T2, T3>(const value1: T1; const value2: T2;
-      const value3: T3): Tuple<T1, T2, T3>; overload; static;
-    class function Pack<T1, T2, T3, T4>(const value1: T1; const value2: T2;
-      const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>; overload; static;
+    class function Create<T1, T2>(const value1: T1;
+      const value2: T2): Tuple<T1, T2>; overload; static; inline;
+    class function Create<T1, T2, T3>(const value1: T1; const value2: T2;
+      const value3: T3): Tuple<T1, T2, T3>; overload; static; inline;
+    class function Create<T1, T2, T3, T4>(const value1: T1; const value2: T2;
+      const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>; overload; static; inline;
   end;
 
   {$ENDREGION}
@@ -6833,25 +6833,29 @@ begin
 end;
 
 class operator Tuple<T1, T2>.Implicit(
-  const value: Tuple<T1, T2>): TArray<TValue>;
+  const values: Tuple<T1, T2>): TArray<TValue>;
 begin
   SetLength(Result, 2);
-  Result[0] := TValue.From<T1>(value.Value1);
-  Result[1] := TValue.From<T2>(value.Value2);
+  Result[0] := TValue.From<T1>(values.Value1);
+  Result[1] := TValue.From<T2>(values.Value2);
 end;
 
 class operator Tuple<T1, T2>.Implicit(
-  const value: TArray<TValue>): Tuple<T1, T2>;
+  const values: TArray<TValue>): Tuple<T1, T2>;
 begin
-  Result.fValue1 := value[0].AsType<T1>;
-  Result.fValue2 := value[1].AsType<T2>;
+  Result.fValue1 := values[0].AsType<T1>;
+  Result.fValue2 := values[1].AsType<T2>;
 end;
 
 class operator Tuple<T1, T2>.Implicit(
-  const value: array of const): Tuple<T1, T2>;
+  const values: array of const): Tuple<T1, T2>;
+var
+  value: TValue;
 begin
-  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
-  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
+  value := TValue.FromVarRec(values[0]);
+  Result.fValue1 := value.AsType<T1>;
+  value := TValue.FromVarRec(values[1]);
+  Result.fValue2 := value.AsType<T2>;
 end;
 
 class operator Tuple<T1, T2>.NotEqual(const left,
@@ -6900,35 +6904,40 @@ begin
 end;
 
 class operator Tuple<T1, T2, T3>.Implicit(
-  const value: Tuple<T1, T2, T3>): TArray<TValue>;
+  const values: Tuple<T1, T2, T3>): TArray<TValue>;
 begin
   SetLength(Result, 3);
-  Result[0] := TValue.From<T1>(value.Value1);
-  Result[1] := TValue.From<T2>(value.Value2);
-  Result[2] := TValue.From<T3>(value.Value3);
+  Result[0] := TValue.From<T1>(values.Value1);
+  Result[1] := TValue.From<T2>(values.Value2);
+  Result[2] := TValue.From<T3>(values.Value3);
 end;
 
 class operator Tuple<T1, T2, T3>.Implicit(
-  const value: Tuple<T1, T2, T3>): Tuple<T1, T2>;
+  const values: Tuple<T1, T2, T3>): Tuple<T1, T2>;
 begin
-  Result.fValue1 := value.Value1;
-  Result.fValue2 := value.Value2;
+  Result.fValue1 := values.Value1;
+  Result.fValue2 := values.Value2;
 end;
 
 class operator Tuple<T1, T2, T3>.Implicit(
-  const value: TArray<TValue>): Tuple<T1, T2, T3>;
+  const values: TArray<TValue>): Tuple<T1, T2, T3>;
 begin
-  Result.fValue1 := value[0].AsType<T1>;
-  Result.fValue2 := value[1].AsType<T2>;
-  Result.fValue3 := value[2].AsType<T3>;
+  Result.fValue1 := values[0].AsType<T1>;
+  Result.fValue2 := values[1].AsType<T2>;
+  Result.fValue3 := values[2].AsType<T3>;
 end;
 
 class operator Tuple<T1, T2, T3>.Implicit(
-  const value: array of const): Tuple<T1, T2, T3>;
+  const values: array of const): Tuple<T1, T2, T3>;
+var
+  value: TValue;
 begin
-  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
-  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
-  Result.fValue3 := TValue.FromVarRec(value[2]).AsType<T3>;
+  value := TValue.FromVarRec(values[0]);
+  Result.fValue1 := value.AsType<T1>;
+  value := TValue.FromVarRec(values[1]);
+  Result.fValue2 := value.AsType<T2>;
+  value := TValue.FromVarRec(values[2]);
+  Result.fValue3 := value.AsType<T3>;
 end;
 
 class operator Tuple<T1, T2, T3>.NotEqual(const left,
@@ -6990,46 +6999,52 @@ begin
 end;
 
 class operator Tuple<T1, T2, T3, T4>.Implicit(
-  const value: Tuple<T1, T2, T3, T4>): TArray<TValue>;
+  const values: Tuple<T1, T2, T3, T4>): TArray<TValue>;
 begin
   SetLength(Result, 4);
-  Result[0] := TValue.From<T1>(value.Value1);
-  Result[1] := TValue.From<T2>(value.Value2);
-  Result[2] := TValue.From<T3>(value.Value3);
-  Result[3] := TValue.From<T4>(value.Value4);
+  Result[0] := TValue.From<T1>(values.Value1);
+  Result[1] := TValue.From<T2>(values.Value2);
+  Result[2] := TValue.From<T3>(values.Value3);
+  Result[3] := TValue.From<T4>(values.Value4);
 end;
 
 class operator Tuple<T1, T2, T3, T4>.Implicit(
-  const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2>;
+  const values: Tuple<T1, T2, T3, T4>): Tuple<T1, T2>;
 begin
-  Result.fValue1 := value.Value1;
-  Result.fValue2 := value.Value2;
+  Result.fValue1 := values.Value1;
+  Result.fValue2 := values.Value2;
 end;
 
 class operator Tuple<T1, T2, T3, T4>.Implicit(
-  const value: Tuple<T1, T2, T3, T4>): Tuple<T1, T2, T3>;
+  const values: Tuple<T1, T2, T3, T4>): Tuple<T1, T2, T3>;
 begin
-  Result.fValue1 := value.Value1;
-  Result.fValue2 := value.Value2;
-  Result.fValue3 := value.Value3;
+  Result.fValue1 := values.Value1;
+  Result.fValue2 := values.Value2;
+  Result.fValue3 := values.Value3;
 end;
 
 class operator Tuple<T1, T2, T3, T4>.Implicit(
-  const value: TArray<TValue>): Tuple<T1, T2, T3, T4>;
+  const values: TArray<TValue>): Tuple<T1, T2, T3, T4>;
 begin
-  Result.fValue1 := value[0].AsType<T1>;
-  Result.fValue2 := value[1].AsType<T2>;
-  Result.fValue3 := value[2].AsType<T3>;
-  Result.fValue4 := value[3].AsType<T4>;
+  Result.fValue1 := values[0].AsType<T1>;
+  Result.fValue2 := values[1].AsType<T2>;
+  Result.fValue3 := values[2].AsType<T3>;
+  Result.fValue4 := values[3].AsType<T4>;
 end;
 
 class operator Tuple<T1, T2, T3, T4>.Implicit(
-  const value: array of const): Tuple<T1, T2, T3, T4>;
+  const values: array of const): Tuple<T1, T2, T3, T4>;
+var
+  value: TValue;
 begin
-  Result.fValue1 := TValue.FromVarRec(value[0]).AsType<T1>;
-  Result.fValue2 := TValue.FromVarRec(value[1]).AsType<T2>;
-  Result.fValue3 := TValue.FromVarRec(value[2]).AsType<T3>;
-  Result.fValue4 := TValue.FromVarRec(value[3]).AsType<T4>;
+  value := TValue.FromVarRec(values[0]);
+  Result.fValue1 := value.AsType<T1>;
+  value := TValue.FromVarRec(values[1]);
+  Result.fValue2 := value.AsType<T2>;
+  value := TValue.FromVarRec(values[2]);
+  Result.fValue3 := value.AsType<T3>;
+  value := TValue.FromVarRec(values[3]);
+  Result.fValue4 := value.AsType<T4>;
 end;
 
 class operator Tuple<T1, T2, T3, T4>.NotEqual(const left,
@@ -7066,22 +7081,28 @@ end;
 
 {$REGION 'Tuple'}
 
-class function Tuple.Pack<T1, T2>(const value1: T1;
+class function Tuple.Create<T1, T2>(const value1: T1;
   const value2: T2): Tuple<T1, T2>;
 begin
-  Result := Tuple<T1, T2>.Create(value1, value2);
+  Result.fValue1 := value1;
+  Result.fValue2 := value2;
 end;
 
-class function Tuple.Pack<T1, T2, T3>(const value1: T1; const value2: T2;
+class function Tuple.Create<T1, T2, T3>(const value1: T1; const value2: T2;
   const value3: T3): Tuple<T1, T2, T3>;
 begin
-  Result := Tuple<T1, T2, T3>.Create(value1, value2, value3);
+  Result.fValue1 := value1;
+  Result.fValue2 := value2;
+  Result.fValue3 := value3;
 end;
 
-class function Tuple.Pack<T1, T2, T3, T4>(const value1: T1; const value2: T2;
+class function Tuple.Create<T1, T2, T3, T4>(const value1: T1; const value2: T2;
   const value3: T3; const value4: T4): Tuple<T1, T2, T3, T4>;
 begin
-  Result := Tuple<T1, T2, T3, T4>.Create(value1, value2, value3, value4);
+  Result.fValue1 := value1;
+  Result.fValue2 := value2;
+  Result.fValue3 := value3;
+  Result.fValue4 := value4;
 end;
 
 {$ENDREGION}

@@ -1911,7 +1911,7 @@ procedure TTestTuplesDouble.Test_Pack;
 var
   tup: Tuple<Integer, string>;
 begin
-  tup := Tuple.Pack(Integer(42), 'foo');
+  tup := Tuple.Create(Integer(42), 'foo');
   CheckEquals(42, tup.Value1);
   CheckEquals('foo', tup.Value2);
 end;
@@ -2039,7 +2039,7 @@ procedure TTestTuplesTriple.Test_Pack;
 var
   tup: Tuple<Integer, string, Boolean>;
 begin
-  tup := Tuple.Pack(Integer(42), 'foo', True);
+  tup := Tuple.Create(Integer(42), 'foo', True);
   CheckEquals(42, tup.Value1);
   CheckEquals('foo', tup.Value2);
   CheckEquals(True, tup.Value3);
@@ -2195,7 +2195,7 @@ procedure TTestTuplesQuadruple.Test_Pack;
 var
   tup: Tuple<Integer, string, Boolean, Char>;
 begin
-  tup := Tuple.Pack(Integer(42), 'foo', True, 'X');
+  tup := Tuple.Create(Integer(42), 'foo', True, 'X');
   CheckEquals(42, tup.Value1);
   CheckEquals('foo', tup.Value2);
   CheckEquals(True, tup.Value3);
