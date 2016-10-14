@@ -957,6 +957,31 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TInterfacedObjectEx'}
+
+  /// <summary>
+  ///   Provides an improved implementation for TInterfacedObject that was
+  ///   introduced in Delphi XE7 for earlier versions. It makes sure that
+  ///   reference counting during destruction does not call the destructor
+  ///   recursively by using the highest bit in the FRefCount field to mark the
+  ///   instance as currently being destroyed.
+  /// </summary>
+  {$IF not defined(DELPHIXE7_UP) and not defined(AUTOREFCOUNT)}
+  TInterfacedObjectEx = class(TInterfacedObject)
+  private
+    const objDestroyingFlag = Integer($80000000);
+    function GetRefCount: Integer; inline;
+  public
+    procedure BeforeDestruction; override;
+    property RefCount: Integer read GetRefCount;
+  end;
+  {$ELSE}
+  TInterfacedObjectEx = TInterfacedObject;
+  {$IFEND}
+
+  {$ENDREGION}
+
+
   {$REGION 'Guard'}
 
   /// <summary>
@@ -5193,6 +5218,24 @@ function TInterfaceBase._Release: Integer;
 begin
   Result := -1;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterfacedObjectEx'}
+
+{$IF not defined(DELPHIXE7_UP) and not defined(AUTOREFCOUNT)}
+procedure TInterfacedObjectEx.BeforeDestruction;
+begin
+  inherited;
+  FRefCount := objDestroyingFlag;
+end;
+
+function TInterfacedObjectEx.GetRefCount: Integer;
+begin
+  Result := FRefCount and not objDestroyingFlag;
+end;
+{$IFEND}
 
 {$ENDREGION}
 
