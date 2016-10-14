@@ -58,13 +58,6 @@
   {$ENDIF}
 {$ENDIF}
 
-{$IFDEF ASSEMBLER}
-  {$DEFINE SUPPORTS_GENERIC_EVENTS}
-{$ELSE}
-  // Current System.Rtti does not support creating implementations that we need
-  // so until that happens Events cannot be supported on non-Intel architectures
-{$ENDIF}
-
 {$IFDEF MSWINDOWS}
   // Use the unused vmtAutoTable slot in the class VMT to store the init table
   // otherwise a global dictionary will be used which is slightly slower

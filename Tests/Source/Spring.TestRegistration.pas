@@ -66,10 +66,8 @@ begin
     TTestNullableInt64.Suite,
     TTestGuard.Suite,
     TTestLazy.Suite,
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
     TTestMulticastEvent.Suite,
     TTestMulticastEventStackSize.Suite,
-{$ENDIF}
     TTestSpringEventsMethods.Suite,
     TTestTuplesDouble.Suite,
     TTestTuplesTriple.Suite,

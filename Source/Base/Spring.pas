@@ -765,7 +765,6 @@ type
     property Invoke: T read GetInvoke;
   end;
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
   Event<T> = record
   private
     fInstance: IEvent<T>;
@@ -794,7 +793,6 @@ type
     class operator Implicit(var value: Event<T>): T;
     class operator Implicit(const value: T): Event<T>;
   end;
-{$ENDIF}
 
   INotifyEvent = IEvent<TNotifyEvent>;
 
@@ -6300,7 +6298,6 @@ end;
 
 {$REGION 'Event<T>'}
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
 class function Event<T>.Create: Event<T>;
 begin
   Result := TEvent<T>.Create;
@@ -6391,7 +6388,6 @@ begin
   Result.Clear;
   Result.Add(value);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 

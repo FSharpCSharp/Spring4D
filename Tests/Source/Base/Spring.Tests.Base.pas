@@ -119,7 +119,6 @@ type
     procedure TestIsLazyType;
   end;
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
   {$M+}
   TProc<T1, T2> = reference to procedure(arg1: T1; arg2: T2);
   {$M-}
@@ -216,7 +215,6 @@ type
     procedure TestIssue60Single;
     procedure TestIssue60SingleAssignedConst;
   end;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
   TTestSpringEventsMethods = class(TTestCase)
   private
@@ -749,7 +747,6 @@ end;
 
 {$REGION 'TTestMulticastEvent'}
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
 procedure TTestMulticastEvent.SetUp;
 begin
   inherited;
@@ -978,7 +975,6 @@ begin
   fEvent.Invoke(nil);
   Check(fAInvoked);
 end;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 procedure TEventHandler.HandleInt64(const value: Int64);
 begin
@@ -1192,7 +1188,6 @@ end;
 
 {$REGION 'TTestMulticastEventStackSize'}
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
 procedure TTestMulticastEventStackSize.SetUp;
 begin
   inherited;
@@ -1411,7 +1406,6 @@ begin
 {$ENDIF LogConsole}
   CheckEquals(expected, fHandlerInvokeCount);
 end;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 
