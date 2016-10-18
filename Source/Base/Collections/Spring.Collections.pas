@@ -1998,39 +1998,51 @@ type
   {$ENDREGION}
 
     /// <summary>
-    ///   Removes all elements from the IStack&lt;T&gt;.
+    ///   Removes all elements from the stack.
     /// </summary>
     procedure Clear;
 
     /// <summary>
-    ///   Inserts an element at the top of the IStack&lt;T&gt;.
+    ///   Inserts an element at the top of the stack.
     /// </summary>
     /// <param name="item">
-    ///   The element to push onto the IStack&lt;T&gt;. The value can be <b>nil</b>
-    ///    for reference types.
+    ///   The element to push onto the stack. The value can be <b>nil</b> for
+    ///   reference types.
     /// </param>
     procedure Push(const item: T);
 
     /// <summary>
-    ///   Removes and returns the element at the top of the IStack&lt;T&gt;.
+    ///   Removes and returns the element at the top of the stack.
     /// </summary>
     /// <returns>
-    ///   The element removed from the top of the IStack&lt;T&gt;.
+    ///   The element removed from the top of the stack.
     /// </returns>
+    /// <remarks>
+    ///   This will return nil to prevent a dangling reference if the stack has
+    ///   ownership over the instances. <br />
+    /// </remarks>
     function Pop: T;
 
     /// <summary>
-    ///   Returns the element at the top of the IStack&lt;T&gt; without
-    ///   removing it.
+    ///   Removes and returns the element at the top of the stack without
+    ///   considering ownership.
     /// </summary>
     /// <returns>
-    ///   The element at the top of the IStack&lt;T&gt;.
+    ///   The element removed from the top of the stack.
+    /// </returns>
+    function Extract: T;
+
+    /// <summary>
+    ///   Returns the element at the top of the stack without removing it.
+    /// </summary>
+    /// <returns>
+    ///   The element at the top of the stack.
     /// </returns>
     function Peek: T;
 
     /// <summary>
-    ///   Returns the element at the top of the IStack&lt;T&gt; without
-    ///   removing it. Returns <b>Default(T)</b> if the stack is empty.
+    ///   Returns the element at the top of the stack without removing it.
+    ///   Returns <b>Default(T)</b> if the stack is empty.
     /// </summary>
     function PeekOrDefault: T;
 
@@ -2049,7 +2061,7 @@ type
     function TryPeek(out item: T): Boolean;
 
     /// <summary>
-    ///   Attempts to remove and return the element at the top of the stacke.
+    ///   Attempts to remove and return the element at the top of the stack.
     /// </summary>
     /// <param name="item">
     ///   The element that was removed if the operation was successful, <b>
@@ -2060,6 +2072,20 @@ type
     ///   the stack; otherwise, <b>False</b>.
     /// </returns>
     function TryPop(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the top of the stack
+    ///   without considering ownership. <br />
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful, <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed and returned from the top of
+    ///   the stack; otherwise, <b>False</b>.
+    /// </returns>
+    function TryExtract(out item: T): Boolean;
 
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
@@ -2093,41 +2119,52 @@ type
   {$ENDREGION}
 
     /// <summary>
-    ///   Removes all elements from the IQueue&lt;T&gt;.
+    ///   Removes all elements from the queue.
     /// </summary>
     procedure Clear;
 
     /// <summary>
-    ///   Adds an element to the end of the IQueue&lt;T&gt;.
+    ///   Adds an element to the end of the queue.
     /// </summary>
     /// <param name="item">
-    ///   The element to add to the IQueue&lt;T&gt;. The value can be <b>nil</b>
-    ///    for reference types.
+    ///   The element to add to the queue. The value can be <b>nil</b> for
+    ///   reference types.
     /// </param>
     procedure Enqueue(const item: T);
 
     /// <summary>
-    ///   Removes and returns the element at the beginning of the
-    ///   IQueue&lt;T&gt;.
+    ///   Removes and returns the element at the beginning of the queue.
     /// </summary>
     /// <returns>
-    ///   The element that is removed from the beginning of the
-    ///   IQueue&lt;T&gt;.
+    ///   The element that is removed from the beginning of the queue.
     /// </returns>
+    /// <remarks>
+    ///   This will return nil to prevent a dangling reference if the queue has
+    ///   ownership over the instances.
+    /// </remarks>
     function Dequeue: T;
 
     /// <summary>
-    ///   Returns the element at the beginning of the IQueue&lt;T&gt; without
-    ///   removing it.
+    ///   Removes and returns the element at the beginning of the queue without
+    ///   considering ownership.
     /// </summary>
     /// <returns>
-    ///   The element at the beginning of the IQueue&lt;T&gt;.
+    ///   The element that is removed from the beginning of the queue.
+    /// </returns>
+    function Extract: T;
+
+    /// <summary>
+    ///   Returns the element at the beginning of the queue without removing
+    ///   it.
+    /// </summary>
+    /// <returns>
+    ///   The element at the beginning of the queue.
     /// </returns>
     function Peek: T;
 
     /// <summary>
-    ///   Returns the element at the beginning of the IQueue&lt;T&gt; without
-    ///   removing it. Returns <b>Default(T)</b> if the queue is empty.
+    ///   Returns the element at the beginning of the queue without removing
+    ///   it. Returns <b>Default(T)</b> if the queue is empty.
     /// </summary>
     function PeekOrDefault: T;
 
@@ -2144,6 +2181,20 @@ type
     ///   of the queue; otherwise, <b>False</b>.
     /// </returns>
     function TryDequeue(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the beginning of the
+    ///   queue without considering ownership.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful, <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed and returned from the beginning
+    ///   of the queue; otherwise, <b>False</b>.
+    /// </returns>
+    function TryExtract(out item: T): Boolean;
 
     /// <summary>
     ///   Attempts to return an element from the beginning of the queue without

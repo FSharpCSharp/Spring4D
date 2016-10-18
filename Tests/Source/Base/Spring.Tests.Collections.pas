@@ -233,7 +233,7 @@ type
     fAAction, fBAction: TCollectionChangedAction;
     procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
     procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
-  public
+  protected
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -241,6 +241,28 @@ type
     procedure TestOneHandler;
     procedure TestTwoHandlers;
     procedure TestNonGenericChangedEvent;
+  end;
+
+  TTestObjectStack = class(TTestCase)
+  private
+    SUT: IStack<TObject>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure PopDestroysItemAndReturnsNil;
+    procedure ExtractDoesNotDestroysItemButReturnsIt;
+  end;
+
+  TTestObjectQueue = class(TTestCase)
+  private
+    SUT: IQueue<TObject>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure DequeueDestroysItemAndReturnsNil;
+    procedure ExtractDoesNotDestroysItemButReturnsIt;
   end;
 
   TTestEmptyQueueOfInteger = class(TTestCase)
@@ -2885,6 +2907,95 @@ begin
   bidi := TCollections.CreateBidiDictionary<Integer,string>;
   bidi.AddRange(dict);
   CheckTrue(bidi.EqualsTo(dict));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestObjectStack'}
+
+procedure TTestObjectStack.ExtractDoesNotDestroysItemButReturnsIt;
+var
+  obj1, obj2, obj: TObject;
+begin
+  obj1 := TObject.Create;
+  obj2 := TObject.Create;
+
+  // stack -> LIFO
+  SUT.Push(obj1);
+  SUT.Push(obj2);
+  CheckSame(obj2, SUT.Extract);
+  CheckTrue(SUT.TryExtract(obj));
+  CheckSame(obj1, obj);
+
+  obj2.Free;
+  obj1.Free;
+end;
+
+procedure TTestObjectStack.PopDestroysItemAndReturnsNil;
+var
+  obj: TObject;
+begin
+  SUT.Push(TObject.Create);
+  SUT.Push(TObject.Create);
+  CheckNull(SUT.Pop);
+  CheckTrue(SUT.TryPop(obj));
+  CheckNull(obj);
+end;
+
+procedure TTestObjectStack.SetUp;
+begin
+  inherited;
+  SUT := TObjectStack<TObject>.Create;
+end;
+
+procedure TTestObjectStack.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestObjectQueue'}
+
+procedure TTestObjectQueue.DequeueDestroysItemAndReturnsNil;
+begin
+  SUT.Enqueue(TObject.Create);
+  SUT.Enqueue(TObject.Create);
+  CheckNull(SUT.Dequeue);
+  CheckNull(SUT.Dequeue);
+end;
+
+procedure TTestObjectQueue.ExtractDoesNotDestroysItemButReturnsIt;
+var
+  obj1, obj2, obj: TObject;
+begin
+  obj1 := TObject.Create;
+  obj2 := TObject.Create;
+
+  // queue -> FIFO
+  SUT.Enqueue(obj1);
+  SUT.Enqueue(obj2);
+  CheckSame(obj1, SUT.Extract);
+  CheckTrue(SUT.TryExtract(obj));
+  CheckSame(obj2, obj);
+
+  obj2.Free;
+  obj1.Free;
+end;
+
+procedure TTestObjectQueue.SetUp;
+begin
+  inherited;
+  SUT := TObjectQueue<TObject>.Create;
+end;
+
+procedure TTestObjectQueue.TearDown;
+begin
+  SUT := nil;
+  inherited;
 end;
 
 {$ENDREGION}
