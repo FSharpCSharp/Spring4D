@@ -1266,15 +1266,14 @@ type
   /// </summary>
   TNullableHelper = record
   strict private
-    fValueField: PRecordTypeField;
-    fHasValueField: PRecordTypeField;
-    function GetValueType: PTypeInfo; inline;
+    fValueType: PTypeInfo;
+    fHasValueOffset: NativeInt;
   public
     constructor Create(typeInfo: PTypeInfo);
     function GetValue(instance: Pointer): TValue; inline;
     function HasValue(instance: Pointer): Boolean; inline;
     procedure SetValue(instance: Pointer; const value: TValue); inline;
-    property ValueType: PTypeInfo read GetValueType;
+    property ValueType: PTypeInfo read fValueType;
   end;
 
   {$ENDREGION}
@@ -4285,7 +4284,7 @@ begin
 
   instance := GetReferenceToRawData;
   if instance = nil then
-    Exit(False);
+    Exit(TValue.Empty);
   nullable := TNullableHelper.Create(TypeInfo);
   if nullable.HasValue(instance) then
     Result := nullable.GetValue(instance)
@@ -5834,37 +5833,40 @@ end;
 constructor TNullableHelper.Create(typeInfo: PTypeInfo);
 var
   p: PByte;
+  field: PRecordTypeField;
 begin
   p := @typeInfo.TypeData.ManagedFldCount;
+  // skip TTypeData.ManagedFldCount and TTypeData.ManagedFields
   Inc(p, SizeOf(Integer) + SizeOf(TManagedField) * PInteger(p)^);
+  // skip TTypeData.NumOps and TTypeData.RecOps
   Inc(p, SizeOf(Byte) + SizeOf(Pointer) * p^);
+  // skip TTypeData.RecFldCnt
   Inc(p, SizeOf(Integer));
-  fValueField := PRecordTypeField(p);
-  fHasValueField := PRecordTypeField(PByte(SkipShortString(@fValueField.Name)) + SizeOf(TAttrData));
+  // get TTypeData.RecFields[0]
+  field := PRecordTypeField(p);
+  fValueType := field.Field.TypeRef^;
+  // get TTypeData.RecFields[1]
+  field := PRecordTypeField(PByte(SkipShortString(@field.Name)) + SizeOf(TAttrData));
+  fHasValueOffset := field.Field.FldOffset;
 end;
 
 function TNullableHelper.GetValue(instance: Pointer): TValue;
 begin
-  TValue.Make(instance, fValueField.Field.TypeRef^, Result);
-end;
-
-function TNullableHelper.GetValueType: PTypeInfo;
-begin
-  Result := fValueField.Field.TypeRef^;
+  TValue.Make(instance, fValueType, Result);
 end;
 
 function TNullableHelper.HasValue(instance: Pointer): Boolean;
 begin
-  Result := PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ <> '';
+  Result := PUnicodeString(PByte(instance) + fHasValueOffset)^ <> '';
 end;
 
 procedure TNullableHelper.SetValue(instance: Pointer; const value: TValue);
 begin
-  value.Cast(fValueField.Field.TypeRef^).ExtractRawData(instance);
+  value.Cast(fValueType).ExtractRawData(instance);
   if value.IsEmpty then
-    PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ := ''
+    PUnicodeString(PByte(instance) + fHasValueOffset)^ := ''
   else
-    PUnicodeString(PByte(instance) + fHasValueField.Field.FldOffset)^ := Nullable.HasValue;
+    PUnicodeString(PByte(instance) + fHasValueOffset)^ := Nullable.HasValue;
 end;
 
 {$ENDREGION}

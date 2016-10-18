@@ -461,6 +461,8 @@ type
     procedure TryToType_ConvertIntToStr;
     procedure TryToType_ConvertStrToInt;
     procedure TryToType_ConvertStringToNullableString;
+
+    procedure GetNullableValue_ValueIsEmpty_ReturnsEmpty;
   end;
 
 {$IFNDEF DELPHI2010}
@@ -2816,6 +2818,18 @@ begin
   CheckEquals(0, arr[0]);
   CheckEquals(1, arr[1]);
   CheckEquals(2, arr[2]);
+end;
+
+procedure TTestValueHelper.GetNullableValue_ValueIsEmpty_ReturnsEmpty;
+begin
+  fSUT := TValue.From<Nullable<Integer>>(Default(Nullable<Integer>));
+  fValue := fSUT.GetNullableValue;
+  CheckTrue(fValue.IsEmpty);
+
+  fSUT := TValue.Empty;
+  TValueData(fSUT).FTypeInfo := TypeInfo(Nullable<Integer>);
+  fValue := fSUT.GetNullableValue;
+  CheckTrue(fValue.IsEmpty);
 end;
 
 procedure TTestValueHelper.TearDown;
