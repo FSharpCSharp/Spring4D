@@ -703,6 +703,10 @@ begin
 {$IFDEF PUREPASCAL}
       TMethodImplementation(fProxy) := TRttiInvokableType(typeInfo.RttiType)
         .CreateImplementation(nil, InternalInvokeMethod);
+{$IFDEF AUTOREFCOUNT}
+      // Release reference created by passing closure to InternalInvokeMethod (RSP-10176)
+      __ObjRelease;
+{$ENDIF}
       TMethod(fInvoke) := TMethodImplementation(fProxy).AsMethod;
 {$ELSE}
       typeData := typeInfo.TypeData;
@@ -718,6 +722,12 @@ begin
 {$IFDEF PUREPASCAL}
       TVirtualInterface.Create(typeInfo, InternalInvokeDelegate)
         .QueryInterface(typeInfo.TypeData.Guid, fProxy);
+{$IFDEF AUTOREFCOUNT}
+      // Release reference held by TVirtualInterface.RawCallBack (bypass RSP-10177)
+      IInterface(fProxy)._Release;
+      // Release reference created by passing closure to InternalInvokeDelegate (RSP-10176)
+      __ObjRelease;
+{$ENDIF}
 {$ELSE}
       New(typeData);
       try
