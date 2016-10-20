@@ -1251,7 +1251,8 @@ begin
 {$ENDIF LogConsole}
   eventDouble := Event<TEventDouble>.Create();
   eventDouble.Add(HandlerDouble);
-  eventDouble.Invoke(42); Inc(expected);
+  eventDouble.Invoke(42);
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
@@ -1269,7 +1270,8 @@ begin
 {$ENDIF LogConsole}
   eventDouble := Event<TEventDouble>.Create();
   eventDouble.Add(HandlerDouble);
-  eventDouble.Invoke(Double42); Inc(expected);
+  eventDouble.Invoke(Double42);
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
@@ -1287,7 +1289,8 @@ begin
 {$ENDIF LogConsole}
   eventExtended := Event<TEventExtended>.Create();
   eventExtended.Add(HandlerExtended);
-  eventExtended.Invoke(42); Inc(expected);
+  eventExtended.Invoke(42);
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
@@ -1305,7 +1308,8 @@ begin
 {$ENDIF LogConsole}
   eventExtended := Event<TEventExtended>.Create();
   eventExtended.Add(HandlerExtended);
-  eventExtended.Invoke(Extended42); Inc(expected);
+  eventExtended.Invoke(Extended42);
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
@@ -1316,6 +1320,7 @@ procedure TTestMulticastEventStackSize.TestIssue60GuidAssignedConst;
 var
   eventExtended: Event<TEventGuid>;
   expected: Integer;
+  guid: TGUID;
 begin
   expected := 0;
 {$IFDEF LogConsole}
@@ -1324,7 +1329,9 @@ begin
 {$ENDIF LogConsole}
   eventExtended := Event<TEventGuid>.Create();
   eventExtended.Add(HandlerGuid);
-  eventExtended.Invoke(GUID42); Inc(expected);
+  guid := GUID42;
+  eventExtended.Invoke(guid); // pass variable to avoid AV during method interception
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
@@ -1343,7 +1350,8 @@ begin
 {$ENDIF LogConsole}
   eventInt64 := Event<TEventInt64>.Create();
   eventInt64.Add(HandlerInt64);
-  eventInt64.Invoke(42); Inc(expected);
+  eventInt64.Invoke(42);
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
@@ -1362,7 +1370,8 @@ begin
 {$ENDIF LogConsole}
   eventInt64 := Event<TEventInt64>.Create();
   eventInt64.Add(HandlerInt64);
-  eventInt64.Invoke(Int6442); Inc(expected);
+  eventInt64.Invoke(Int6442);
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
@@ -1381,7 +1390,8 @@ begin
 {$ENDIF LogConsole}
   eventSingle := Event<TEventSingle>.Create();
   eventSingle.Add(HandlerSingle);
-  eventSingle.Invoke(42); Inc(expected);
+  eventSingle.Invoke(42);
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
@@ -1400,7 +1410,8 @@ begin
 {$ENDIF LogConsole}
   eventSingle := Event<TEventSingle>.Create();
   eventSingle.Add(HandlerSingle);
-  eventSingle.Invoke(Single42); Inc(expected);
+  eventSingle.Invoke(Single42);
+  Inc(expected);
 {$IFDEF LogConsole}
   LogLeave(expected);
 {$ENDIF LogConsole}
