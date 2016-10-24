@@ -159,7 +159,7 @@ end;
 
 function TIndexList.GetIndex(index: Integer): TIndexItem;
 begin
-  Result := fIndexes[index];;
+  Result := fIndexes[index];
 end;
 
 function TIndexList.GetItem(index: Integer): TObject;

@@ -74,20 +74,19 @@ type
   protected
     procedure DoAfterOpen; override;
     procedure DoDeleteRecord(Index: Integer); override;
+    procedure DoFilterRecord(var Accept: Boolean); override;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); override;
     procedure DoPostRecord(Index: Integer; Append: Boolean); override;
     procedure RebuildPropertiesCache; override;
 
     function DataListCount: Integer;
     function GetRecordCount: Integer; override;
-    function RecordMatchesFilter: Boolean; override;
     procedure UpdateFilter; override;
 
     procedure DoAfterFilter; virtual;
     procedure DoAfterSort; virtual;
     procedure DoBeforeFilter; virtual;
     procedure DoBeforeSort; virtual;
-    procedure DoFilterRecord(index: Integer); virtual;
 
     procedure DoOnDataListChange(Sender: TObject; const Item: TObject; Action: TCollectionChangedAction);
 
@@ -100,7 +99,6 @@ type
     procedure InternalSetSort(const value: string; index: Integer = 0); virtual;
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
-    procedure RefreshFilter; virtual;
 
     function IsCursorOpen: Boolean; override;
     procedure InternalInitFieldDefs; override;
@@ -345,6 +343,23 @@ begin
   IndexList.DeleteItem(Index);
 end;
 
+procedure TObjectDataSet.DoFilterRecord(var Accept: Boolean);
+begin
+  if (fFilterIndex >= 0) and (fFilterIndex < DataListCount) then
+  begin
+    if Assigned(OnFilterRecord) then
+      OnFilterRecord(Self, Accept)
+    else
+    begin
+      FilterCache.Clear;
+      if fFilterParser.Eval then
+        Accept := fFilterParser.Value;
+    end;
+  end
+  else
+    Accept := False;
+end;
+
 procedure TObjectDataSet.DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant);
 var
   obj: TObject;
@@ -435,7 +450,6 @@ begin
     else
       IndexList.InsertItem(newItem, Index);
 
-  DoFilterRecord(Index);
   if Sorted and sortNeeded then
     InternalSetSort(Sort, Index);
 
@@ -569,7 +583,6 @@ end;
 
 procedure TObjectDataSet.InternalRefresh;
 begin
-  RefreshFilter;
   if Sorted then
     InternalSetSort(Sort);
 end;
@@ -814,7 +827,7 @@ begin
     field := FindField(Varname);
     if Assigned(field) then
     begin
-      Value := InternalGetFieldValue(field, fDataList[fFilterIndex]);
+      Value := InternalGetFieldValue(field, IndexList.Items[Index]);
       FilterCache.Add(VarName, Value);
       Result := True;
     end;
@@ -832,58 +845,11 @@ begin
     fProperties.Add(itemType.GetProperty(Fields[i].FieldName));
 end;
 
-function TObjectDataSet.RecordMatchesFilter: Boolean;
-begin
-  Result := True;
-  if (fFilterIndex >= 0) and (fFilterIndex < DataListCount) then
-  begin
-    if Assigned(OnFilterRecord) then
-      OnFilterRecord(Self, Result)
-    else
-      if fFilterParser.Eval then
-        Result := fFilterParser.Value;
-  end
-  else
-    Result := False;
-end;
-
-procedure TObjectDataSet.RefreshFilter;
-var
-  i: Integer;
-begin
-  IndexList.Clear;
-  if not IsFilterEntered then
-  begin
-    IndexList.Rebuild;
-    Exit;
-  end;
-
-  for i := 0 to fDataList.Count - 1 do
-  begin
-    fFilterIndex := i;
-    FilterCache.Clear;
-    if RecordMatchesFilter then
-      IndexList.AddIndex(i);
-  end;
-  FilterCache.Clear;
-end;
-
 procedure TObjectDataSet.RegisterChangeHandler;
 begin
   UnregisterChangeHandler;
   if Assigned(fDataList) and fTrackChanges then
     fDataList.OnChanged.Add(DoOnDataListChange);
-end;
-
-procedure TObjectDataSet.DoFilterRecord(index: Integer);
-begin
-  if IsFilterEntered and (index > -1) and (index < RecordCount) then
-  begin
-    FilterCache.Clear;
-    fFilterIndex := IndexList.Indexes[index].Index;
-    if not RecordMatchesFilter then
-      IndexList.DeleteIndex(index);
-  end;
 end;
 
 procedure TObjectDataSet.SetDataList(const value: IObjectList);
@@ -949,15 +915,13 @@ begin
 end;
 
 procedure TObjectDataSet.UpdateFilter;
-var
-  tmp: TDataSetState;
 begin
   if not Active then
     Exit;
 
   DoBeforeFilter;
 
-  if IsFilterEntered then
+  if IsFiltered then
   begin
     fFilterParser.EnableWildcardMatching := not (foNoPartialCompare in FilterOptions);
     fFilterParser.CaseInsensitive := foCaseInsensitive in FilterOptions;
@@ -966,13 +930,6 @@ begin
       fFilterParser.Expression := AnsiUpperCase(Filter)
     else
       fFilterParser.Expression := Filter;
-  end;
-
-  tmp := SetTempState(dsFilter);
-  try
-    RefreshFilter;
-  finally
-    RestoreState(tmp);
   end;
 
   DisableControls;

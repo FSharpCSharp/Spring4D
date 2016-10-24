@@ -112,13 +112,13 @@ type
         procedure Truncate;
       end;
 
-    function IsFilterEntered: Boolean;
+    function IsFiltered: Boolean;
 
     // Abstract methods
     procedure DoDeleteRecord(Index: Integer); virtual;
+    procedure DoFilterRecord(var Accept: Boolean); virtual;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); virtual;
     procedure DoPostRecord(Index: Integer; Append: Boolean); virtual;
-    function RecordMatchesFilter: Boolean; virtual; abstract;
     procedure UpdateFilter; virtual; abstract;
     procedure RebuildPropertiesCache; virtual; abstract;
 
@@ -533,6 +533,11 @@ begin
     fOnDeleteRecord(Self, Index);
 end;
 
+procedure TCustomVirtualDataSet.DoFilterRecord(var Accept: Boolean);
+begin
+  OnFilterRecord(Self, Accept);
+end;
+
 procedure TCustomVirtualDataSet.DoGetFieldValue(Field: TField; Index: Integer;
   var Value: Variant);
 begin
@@ -668,7 +673,7 @@ function TCustomVirtualDataSet.GetFieldData(Field: TField;
   {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
 var
-  LRecBuf: TRecordBuffer;
+  recBuf: TRecordBuffer;
   Data: Variant;
 
   {$IFDEF DELPHIXE3_UP}
@@ -885,23 +890,23 @@ begin
   if not Assigned(Reserved) then
     RefreshBuffers;
 
-  Result := GetActiveRecBuf(LRecBuf);
+  Result := GetActiveRecBuf(recBuf);
 
   if not Result then
     Exit;
 
-  Data := PVariantList(LRecBuf + SizeOf(TArrayRecInfo))[Field.Index];
+  Data := PVariantList(recBuf + SizeOf(TArrayRecInfo))[Field.Index];
 
   if VarIsEmpty(Data) then
   begin
-    DoGetFieldValue(Field, PArrayRecInfo(LRecBuf).Index, Data);
+    DoGetFieldValue(Field, PArrayRecInfo(recBuf).Index, Data);
     if VarIsEmpty(Data) then
       Data := Null;
 
     if VarType(Data) = varInt64 then
-      PVariantList(LRecBuf + SizeOf(TArrayRecInfo))[Field.Index] := DataToInt64
+      PVariantList(recBuf + SizeOf(TArrayRecInfo))[Field.Index] := DataToInt64
     else
-      PVariantList(LRecBuf + SizeOf(TArrayRecInfo))[Field.Index] := Data;
+      PVariantList(recBuf + SizeOf(TArrayRecInfo))[Field.Index] := Data;
   end;
 
   Result := not VarIsNull(Data);
@@ -937,10 +942,31 @@ end;
 
 function TCustomVirtualDataSet.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
   DoCheck: Boolean): TGetResult;
+var
+  accept: Boolean;
+  tmp: TDataSetState;
 begin
-  if Filtered then
-    fFilterBuffer := Buffer;
-  Result := InternalGetRecord(Buffer, GetMode, DoCheck);
+  if not IsFiltered then
+    Exit(InternalGetRecord(Buffer, GetMode, DoCheck));
+
+  fFilterBuffer := Buffer;
+  tmp := SetTempState(dsFilter);
+  try
+    Accept := True;
+    repeat
+      Result := InternalGetRecord(Buffer, GetMode, DoCheck);
+      if Result = grOK then
+      begin
+        DoFilterRecord(Accept);
+        if not Accept and (GetMode = gmCurrent) then
+          Result := grError;
+      end;
+    until Accept or (Result <> grOK);
+  except
+    ApplicationHandleException(Self);
+    Result := grError;
+  end;
+  RestoreState(tmp);
 end;
 
 function TCustomVirtualDataSet.GetRecordCount: Integer;
@@ -1166,9 +1192,9 @@ begin
   Result := fInternalOpen;
 end;
 
-function TCustomVirtualDataSet.IsFilterEntered: Boolean;
+function TCustomVirtualDataSet.IsFiltered: Boolean;
 begin
-  Result := Filtered and (Trim(Filter) <> '');
+  Result := Filtered and ((Trim(Filter) <> '') or Assigned(OnFilterRecord));
 end;
 
 function TCustomVirtualDataSet.Locate(const KeyFields: string; const KeyValues: Variant;
