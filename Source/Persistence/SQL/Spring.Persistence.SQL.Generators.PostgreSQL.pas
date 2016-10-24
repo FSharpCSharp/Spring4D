@@ -29,11 +29,13 @@ unit Spring.Persistence.SQL.Generators.PostgreSQL;
 interface
 
 uses
+  Spring,
   Spring.Persistence.Mapping.Attributes,
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Interfaces,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Types,
+  Spring.Persistence.SQL.Params;
 
 type
   /// <summary>
@@ -46,17 +48,29 @@ type
     function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
     function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
+
+    function CreateParam(const paramField: TSQLParamField; const value: TValue): TDBParam; override;
   end;
+
+  TPostgreDBParam = class(TDBParam);
 
 implementation
 
 uses
+  DB,
   StrUtils,
   SysUtils,
   Spring.Persistence.SQL.Register;
 
 
 {$REGION 'TPostgreSQLGenerator'}
+
+function TPostgreSQLGenerator.CreateParam(const paramField: TSQLParamField; const value: TValue): TDBParam;
+begin
+  Result := inherited CreateParam(paramField, value);
+  if Assigned(paramField.Column) and (paramField.Column.Length > 1000) then
+    TPostgreDBParam(Result).fParamType := ftWideMemo;
+end;
 
 function TPostgreSQLGenerator.GenerateCreateSequence(
   const command: TCreateSequenceCommand): string;
