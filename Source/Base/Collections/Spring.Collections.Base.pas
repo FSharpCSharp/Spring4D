@@ -265,7 +265,8 @@ type
   ///   The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns <c>
   ///   False</c> by default.
   /// </remarks>
-  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, IReadOnlyCollection<T>)
+  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>,
+    IReadOnlyCollection<T>, INotifyCollectionChanged<T>)
   protected
     fOnChanged: ICollectionChangedEvent<T>;
   {$REGION 'Property Accessors'}

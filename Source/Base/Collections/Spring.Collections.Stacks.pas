@@ -40,7 +40,7 @@ type
   /// <typeparam name="T">
   ///   Specifies the type of elements in the stack.
   /// </typeparam>
-  TStack<T> = class(TEnumerableBase<T>, IStack<T>)
+  TStack<T> = class(TEnumerableBase<T>, IStack<T>, INotifyCollectionChanged<T>)
   private
     type
       TEnumerator = class(TEnumeratorBase<T>)

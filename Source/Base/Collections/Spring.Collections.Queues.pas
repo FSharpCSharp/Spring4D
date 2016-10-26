@@ -40,7 +40,7 @@ type
   /// <typeparam name="T">
   ///   Specifies the type of elements in the queue.
   /// </typeparam>
-  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>)
+  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>, INotifyCollectionChanged<T>)
   private
     type
       TEnumerator = class(TEnumeratorBase<T>)

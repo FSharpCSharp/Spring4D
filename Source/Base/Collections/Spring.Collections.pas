@@ -93,6 +93,15 @@ type
   ICollectionChangedEvent<T> = interface(IEvent<TCollectionChangedEvent<T>>)
   end;
 
+  INotifyCollectionChanged<T> = interface
+    ['{B4F756F2-B436-462D-8046-AB70377228F1}']
+  {$REGION 'Property Accessors'}
+    function GetOnChanged: ICollectionChangedEvent<T>;
+  {$ENDREGION}
+
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+  end;
+
   /// <summary>
   ///   Supports a simple iteration over a non-generic collection.
   /// </summary>

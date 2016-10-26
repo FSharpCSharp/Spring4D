@@ -42,7 +42,8 @@ type
   /// <typeparam name="T">
   ///   Specifies the element type of the linked list.
   /// </typeparam>
-  TLinkedList<T> = class(TCollectionBase<T>, ILinkedList<T>)
+  TLinkedList<T> = class(TCollectionBase<T>, ILinkedList<T>,
+    INotifyCollectionChanged<T>)
   private
     type
       TEnumerator = class(TEnumeratorBase<T>)
