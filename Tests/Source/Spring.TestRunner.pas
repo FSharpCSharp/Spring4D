@@ -57,6 +57,7 @@ uses
   Spring,
   Spring.Reflection,
   Spring.ValueConverters,
+  Spring.VirtualClass,
     {$IFNDEF ORM_TESTS}
     Spring.Tests.Base,
     {$ELSE}
@@ -106,6 +107,9 @@ begin
   Result := StartsStr('TEmptyEnumerable<', ClassType.ClassName);
 end;
 
+type
+  TVirtualClasses = class(Spring.VirtualClass.TVirtualClasses);
+
 procedure InitializeLeakCheck;
 var
   intfType: TRttiInterfaceType;
@@ -138,6 +142,7 @@ begin
   TType.FindType('System.TObject'); // Initialize RTTI package maps
   TType.TryGetInterfaceType(IUnknown, intfType); // Initialize Spring.TType interface map
   intfType := nil;
+  TVirtualClasses.Default.GetVirtualClass(TInterfacedObject);
 {$IFDEF DELPHIXE_UP}
   TTimeZone.Local.ID;
 {$ENDIF}

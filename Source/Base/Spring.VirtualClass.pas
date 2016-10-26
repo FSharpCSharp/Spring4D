@@ -126,12 +126,18 @@ type
   end;
 
   TVirtualClasses = class
-  private
+  strict private
     fClasses: TList;
     fLock: TCriticalSection;
+    class var fDefault: TVirtualClasses;
+  protected
+    class property Default: TVirtualClasses read fDefault;
   public
     constructor Create;
     destructor Destroy; override;
+
+    class constructor Create;
+    class destructor Destroy;
 
     function GetVirtualClass(classType: TClass): TClass;
     procedure Proxify(const instance: TObject);
@@ -278,6 +284,16 @@ begin
   fLock.Free;
   fClasses.Free;
   inherited;
+end;
+
+class constructor TVirtualClasses.Create;
+begin
+  fDefault := TVirtualClasses.Create;
+end;
+
+class destructor TVirtualClasses.Destroy;
+begin
+  fDefault.Free;
 end;
 
 function TVirtualClasses.GetVirtualClass(classType: TClass): TClass;

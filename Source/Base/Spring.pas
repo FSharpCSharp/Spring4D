@@ -1592,18 +1592,6 @@ type
     property Target: T read GetTarget write SetTarget;
   end;
 
-  TWeakReferences = class
-  private
-    fLock: TCriticalSection;
-    fWeakReferences: TDictionary<Pointer, TList>;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure RegisterWeakRef(address: Pointer; instance: Pointer);
-    procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
-  end;
-
   TWeakReference = class abstract(TInterfacedObject)
   private
     fTarget: Pointer;
@@ -1612,9 +1600,6 @@ type
     procedure RegisterWeakRef(address: Pointer; instance: Pointer);
     procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
   public
-    class constructor Create;
-    class destructor Destroy;
-
     property IsAlive: Boolean read GetIsAlive;
   end;
 
@@ -2374,10 +2359,6 @@ uses
   Spring.ValueConverters,
 {$ENDIF}
   Spring.VirtualClass;
-
-var
-  VirtualClasses: TVirtualClasses;
-  WeakReferences: TWeakReferences;
 
 
 {$REGION 'Routines'}
@@ -6075,6 +6056,25 @@ end;
 
 {$REGION 'TWeakReferences'}
 
+type
+  TWeakReferences = class
+  strict private
+    fLock: TCriticalSection;
+    fWeakReferences: TDictionary<Pointer, TList>;
+    class var fDefault: TWeakReferences;
+  protected
+    class property Default: TWeakReferences read fDefault;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    class constructor Create;
+    class destructor Destroy;
+
+    procedure RegisterWeakRef(address: Pointer; instance: Pointer);
+    procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
+  end;
+
 constructor TWeakReferences.Create;
 begin
   inherited Create;
@@ -6087,6 +6087,16 @@ begin
   fWeakReferences.Free;
   fLock.Free;
   inherited;
+end;
+
+class constructor TWeakReferences.Create;
+begin
+  fDefault := TWeakReferences.Create;
+end;
+
+class destructor TWeakReferences.Destroy;
+begin
+  fDefault.Free;
 end;
 
 procedure TWeakReferences.RegisterWeakRef(address, instance: Pointer);
@@ -6138,17 +6148,8 @@ end;
 
 {$REGION 'TWeakReference'}
 
-class constructor TWeakReference.Create;
-begin
-  VirtualClasses := TVirtualClasses.Create;
-  WeakReferences := TWeakReferences.Create;
-end;
-
-class destructor TWeakReference.Destroy;
-begin
-  WeakReferences.Free;
-  VirtualClasses.Free;
-end;
+type
+  TVirtualClasses = class(Spring.VirtualClass.TVirtualClasses);
 
 function TWeakReference.GetIsAlive: Boolean;
 begin
@@ -6160,21 +6161,20 @@ var
   freeInstance: TFreeInstance;
 begin
   freeInstance := GetClassData(Self.ClassParent).FreeInstance;
-  WeakReferences.UnregisterWeakRef(nil, Self);
-
+  TWeakReferences.Default.UnregisterWeakRef(nil, Self);
   freeInstance(Self);
 end;
 
 procedure TWeakReference.RegisterWeakRef(address, instance: Pointer);
 begin
-  VirtualClasses.Proxify(instance);
+  TVirtualClasses.Default.Proxify(instance);
   GetClassData(TObject(instance).ClassType).FreeInstance := WeakRefFreeInstance;
-  WeakReferences.RegisterWeakRef(@fTarget, instance);
+  TWeakReferences.Default.RegisterWeakRef(@fTarget, instance);
 end;
 
 procedure TWeakReference.UnregisterWeakRef(address, instance: Pointer);
 begin
-  WeakReferences.UnregisterWeakRef(address, instance);
+  TWeakReferences.Default.UnregisterWeakRef(address, instance);
 end;
 
 {$ENDREGION}
