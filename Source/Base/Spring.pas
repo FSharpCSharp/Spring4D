@@ -386,6 +386,8 @@ type
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
     class procedure RaiseConversionError(source, target: PTypeInfo); static;
   public
+    class function &&op_Equality(const left, right: TValue): Boolean; static; inline;
+    class function &&op_Inequality(const left, right: TValue): Boolean; static; inline;
 
     class function From(buffer: Pointer; typeInfo: PTypeInfo): TValue; overload; static;
     class function From(instance: TObject; classType: TClass): TValue; overload; static;
@@ -4330,6 +4332,16 @@ end;
 function TValueHelper.IsVariant: Boolean;
 begin
   Result := TypeInfo = System.TypeInfo(Variant);
+end;
+
+class function TValueHelper.&&op_Equality(const left, right: TValue): Boolean;
+begin
+  Result := left.Equals(right);
+end;
+
+class function TValueHelper.&&op_Inequality(const left, right: TValue): Boolean;
+begin
+  Result := not left.Equals(right);
 end;
 
 class procedure TValueHelper.RaiseConversionError(source, target: PTypeInfo);
