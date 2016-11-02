@@ -60,10 +60,44 @@ type
     function TestCustomAttribute(const x, y: Integer): Integer;
   end;
 
+  TestData = class
+    class function ConvertCases: TArray<TArray<TValue>>; static;
+    class function EvenNumbers: TArray<Integer>; static;
+    class function TestCases: TArray<TTestCaseData>; static;
+  end;
+
+  TDataDrivenTest = class(TTestCase)
+    class function DivideCases: TArray<TArray<TValue>>; static;
+
+    [TestCaseSource('DivideCases')]
+    procedure DivideTest(n, d, q: Integer);
+
+    [TestCaseSource(TestData, 'ConvertCases')]
+    procedure ConvertTest(i: Integer; s: string);
+
+    [TestCaseSource(TestData, 'EvenNumbers')]
+    procedure TestMethod(i: Integer);
+
+    [TestCaseSource(TestData, 'TestCases')]
+    function DivideTest2(n, d: Integer): Integer;
+  end;
+
+  TSuiteSetUpTearDownTest = class(TTestCase)
+  private
+    class var fCount: Integer;
+  protected
+    class procedure SetUp; override;
+    class procedure TearDown; override;
+  published
+    procedure CheckCount1;
+    procedure CheckCount2;
+  end;
+
 implementation
 
 uses
   Rtti,
+  SysUtils,
   TypInfo;
 
 
@@ -103,7 +137,100 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TDataDrivenTest'}
+
+class function TestData.ConvertCases: TArray<TArray<TValue>>;
+begin
+//  Result := [[1,'1'],[22,'22']];
+  Result := TArray<TArray<TValue>>.Create(
+    TArray<TValue>.Create(1, '1'),
+    TArray<TValue>.Create(22, '22')
+  );
+end;
+
+class function TestData.EvenNumbers: TArray<Integer>;
+begin
+//  Result := [2, 4, 6, 8];
+  Result :=  TArray<Integer>.Create(2, 4, 6, 8);
+end;
+
+class function TestData.TestCases: TArray<TTestCaseData>;
+begin
+//  Result := [
+//    TTestCaseData.Create([12, 3]).Returns(4),
+//    TTestCaseData.Create([12, 2]).Returns(6),
+//    TTestCaseData.Create([12, 4]).Returns(3),
+//    TTestCaseData.Create([0, 0]).Raises(EDivByZero).SetName('DivideByZero')
+//  ];
+  Result := TArray<TTestCaseData>.Create(
+    TTestCaseData.Create([12, 3]).Returns(4),
+    TTestCaseData.Create([12, 2]).Returns(6),
+    TTestCaseData.Create([12, 4]).Returns(3),
+    TTestCaseData.Create([0, 0]).Raises(EDivByZero).SetName('DivideByZero')
+  );
+end;
+
+procedure TDataDrivenTest.ConvertTest(i: Integer; s: string);
+begin
+  CheckEquals(s, IntToStr(i));
+end;
+
+class function TDataDrivenTest.DivideCases: TArray<TArray<TValue>>;
+begin
+//  Result := [[12,3,4],[12,2,6],[12,4,3]];
+  Result := TArray<TArray<TValue>>.Create(
+    TArray<TValue>.Create(12, 3, 4),
+    TArray<TValue>.Create(12, 2, 6),
+    TArray<TValue>.Create(12, 4, 3)
+  );
+end;
+
+procedure TDataDrivenTest.DivideTest(n, d, q: Integer);
+begin
+  CheckEquals(q, n / d);
+end;
+
+function TDataDrivenTest.DivideTest2(n, d: Integer): Integer;
+begin
+  Result := n div d;
+end;
+
+procedure TDataDrivenTest.TestMethod(i: Integer);
+begin
+  Check(i mod 2 = 0);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSuiteSetUpTearDownTest'}
+
+procedure TSuiteSetUpTearDownTest.CheckCount1;
+begin
+  CheckEquals(1, fCount);
+end;
+
+procedure TSuiteSetUpTearDownTest.CheckCount2;
+begin
+  CheckEquals(1, fCount);
+end;
+
+class procedure TSuiteSetUpTearDownTest.SetUp;
+begin
+  Inc(fCount);
+end;
+
+class procedure TSuiteSetUpTearDownTest.TearDown;
+begin
+  Dec(fCount);
+end;
+
+{$ENDREGION}
+
+
 initialization
   TSelfTest.Register('Spring.Testing');
+  TDataDrivenTest.Register('Spring.Testing');
+  TSuiteSetUpTearDownTest.Register('Spring.Testing');
 
 end.

@@ -31,12 +31,15 @@ interface
 uses
   TestFramework,
   Classes,
-  Rtti;
+  Rtti,
+  Spring;
 
 const
   DefaultDelimiters = ';';
 
 type
+  TValue = Rtti.TValue;
+
   TTestingAttribute = class(TCustomAttribute)
   private
     function GetValue(index: Integer): TValue;
@@ -60,6 +63,17 @@ type
   TestCaseAttribute = class(TTestingAttribute)
   public
     constructor Create(const values: string; const delimiters: string = DefaultDelimiters);
+  end;
+
+  TestCaseSourceAttribute = class(TBaseAttribute)
+  private
+    fSourceType: TClass;
+    fSourceName: string;
+  public
+    constructor Create(sourceType: TClass; const sourceName: string); overload;
+    constructor Create(const sourceName: string); overload;
+    property SourceType: TClass read fSourceType;
+    property SourceName: string read fSourceName;
   end;
 
   /// <summary>
@@ -103,15 +117,22 @@ type
   end;
 
   TTestCase = class(TestFramework.TTestCase)
-  strict private
+  private
     fMethod: TRttiMethod;
     fArgs: TArray<TValue>;
-    fExpectedException: ExpectedExceptionAttribute;
+    fExpectedException: ExceptionClass;
+    fUserMessage: string;
+    fName: string;
   protected
     procedure Invoke(AMethod: TTestMethod); override;
+
+    class procedure SetUp; reintroduce; virtual;
+    class procedure TearDown; reintroduce; virtual;
   public
     constructor Create(const method: TRttiMethod; const args: TArray<TValue>); reintroduce;
     function GetName: string; override;
+
+    property Name: string read fName write fName;
     class function Suite: ITestSuite; override;
 
     class procedure Register; overload;
@@ -120,9 +141,28 @@ type
   TTestCaseClass = class of TTestCase;
 
   TTestSuite = class(TestFramework.TTestSuite)
+  private
+    fTestClass: TTestCaseClass;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
   public
     constructor Create(testClass: TTestCaseClass); overload;
     procedure AddTests(testClass: TTestCaseClass); reintroduce;
+  end;
+
+  TTestCaseData = record
+  private
+    fValues: TArray<TValue>;
+    fExceptionType: ExceptionClass;
+    fUserMessage: string;
+    fName: string;
+  public
+    constructor Create(const values: array of TValue);
+    function Raises(exceptionType: ExceptionClass;
+      const userMessage: string = ''): TTestCaseData;
+    function Returns(const value: TValue): TTestCaseData;
+    function SetName(const name: string): TTestCaseData;
   end;
 
 implementation
@@ -131,8 +171,61 @@ uses
   StrUtils,
   SysUtils,
   TypInfo,
-  Spring,
   Spring.Reflection;
+
+type
+  TRttiMethodHelper = class helper for TRttiMethod
+    procedure ConvertValues(const values: TArray<TValue>;
+      const arguments: TArray<TValue>);
+  end;
+
+{$REGION 'TRttiMethodHelper'}
+
+procedure TRttiMethodHelper.ConvertValues(const values: TArray<TValue>;
+  const arguments: TArray<TValue>);
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+  value: TValue;
+  retType: TRttiType;
+begin
+  parameters := GetParameters;
+  for i := 0 to High(parameters) do
+  begin
+    if i < Length(values) then
+      value := values[i]
+    else
+      value := TValue.Empty;
+    value.TryConvert(parameters[i].ParamType.Handle, arguments[i]);
+  end;
+  retType := ReturnType;
+  if retType <> nil then
+  begin
+    i := Length(parameters);
+    if i < Length(values) then
+      value := values[i]
+    else
+      value := TValue.Empty;
+    value.TryConvert(retType.Handle, arguments[i]);
+  end;
+end;
+
+{$ENDREGION}
+
+
+function IsTestMethod(const method: TRttiMethod;
+  const parameters: TArray<TRttiParameter>): Boolean;
+var
+  parameter: TRttiParameter;
+begin
+  if method.HasCustomAttribute<TestAttribute> then
+    Exit(True)
+  else
+    for parameter in parameters do
+      if parameter.HasCustomAttribute<TTestingAttribute> then
+        Exit(True);
+  Result := False;
+end;
 
 
 {$REGION 'TTestingAttribute'}
@@ -165,6 +258,25 @@ end;
 constructor TestCaseAttribute.Create(const values, delimiters: string);
 begin
   inherited Create(values, delimiters);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TestCaseSourceAttribute'}
+
+constructor TestCaseSourceAttribute.Create(sourceType: TClass;
+  const sourceName: string);
+begin
+  inherited Create;
+  fSourceType := sourceType;
+  fSourceName := sourceName;
+end;
+
+constructor TestCaseSourceAttribute.Create(const sourceName: string);
+begin
+  inherited Create;
+  fSourceName := sourceName;
 end;
 
 {$ENDREGION}
@@ -225,10 +337,16 @@ end;
 {$REGION 'TTestCase'}
 
 constructor TTestCase.Create(const method: TRttiMethod; const args: TArray<TValue>);
+var
+  attribute: ExpectedExceptionAttribute;
 begin
   inherited Create(method.Name);
   fMethod := method;
-  fExpectedException := fMethod.GetCustomAttribute<ExpectedExceptionAttribute>;
+  if fMethod.TryGetCustomAttribute<ExpectedExceptionAttribute>(attribute) then
+  begin
+    fExpectedException := attribute.fExceptionType;
+    fUserMessage := attribute.fUserMessage;
+  end;
   fArgs := Copy(args);
 end;
 
@@ -308,6 +426,9 @@ function TTestCase.GetName: string;
   end;
 
 begin
+  if fName <> '' then
+    Exit(fName);
+
   if Assigned(fMethod) then
   begin
     Result := fMethod.Name;
@@ -320,7 +441,7 @@ begin
         FormatValue(fArgs[High(fArgs)]);
   end
   else
-    Result := inherited;
+    Result := inherited GetName;
 end;
 
 procedure TTestCase.Invoke(AMethod: TTestMethod);
@@ -329,7 +450,7 @@ var
 begin
   FTestMethodInvoked := True;
   if Assigned(fExpectedException) then
-    StartExpectingException(fExpectedException.fExceptionType);
+    StartExpectingException(fExpectedException);
   if Assigned(fMethod) then
   begin
     if fMethod.ReturnType = nil then
@@ -346,7 +467,7 @@ begin
   else
     AMethod;
   if Assigned(fExpectedException) then
-    StopExpectingException(fExpectedException.fUserMessage);
+    StopExpectingException(fUserMessage);
 end;
 
 class procedure TTestCase.Register;
@@ -359,9 +480,19 @@ begin
   TestFramework.RegisterTest(suitePath, Suite);
 end;
 
+class procedure TTestCase.SetUp;
+begin
+  // do nothing
+end;
+
 class function TTestCase.Suite: ITestSuite;
 begin
   Result := TTestSuite.Create(Self);
+end;
+
+class procedure TTestCase.TearDown;
+begin
+  // do nothing
 end;
 
 {$ENDREGION}
@@ -372,7 +503,22 @@ end;
 constructor TTestSuite.Create(testClass: TTestCaseClass);
 begin
   inherited Create(testClass.ClassName);
+  fTestClass := testClass;
   AddTests(testClass);
+end;
+
+procedure TTestSuite.SetUp;
+begin
+  inherited;
+  if Assigned(fTestClass) then
+    fTestClass.SetUp;
+end;
+
+procedure TTestSuite.TearDown;
+begin
+  if Assigned(fTestClass) then
+    fTestClass.TearDown;
+  inherited;
 end;
 
 procedure TTestSuite.AddTests(testClass: TTestCaseClass);
@@ -417,18 +563,52 @@ procedure TTestSuite.AddTests(testClass: TTestCaseClass);
     end;
   end;
 
-  function IsTestMethod(const method: TRttiMethod;
-    const parameters: TArray<TRttiParameter>): Boolean;
+  procedure HandleSourceAttribute(const suite: ITestSuite;
+    const method: TRttiMethod; const parameters: TArray<TRttiParameter>;
+    const arguments: TArray<TValue>);
   var
-    parameter: TRttiParameter;
+    sourceAttribute: TestCaseSourceAttribute;
+    sourceMethod: TRttiMethod;
+    values: TValue;
+    data: TTestCaseData;
+    testCase: TTestCase;
   begin
-    if method.HasCustomAttribute<TestAttribute> then
-      Exit(True)
-    else
-      for parameter in parameters do
-        if parameter.HasCustomAttribute<TTestingAttribute> then
-          Exit(True);
-    Result := False;
+    for sourceAttribute in method.GetCustomAttributes<TestCaseSourceAttribute> do
+    begin
+      if sourceAttribute.SourceType <> nil then
+        sourceMethod := TType.GetType(sourceAttribute.SourceType).GetMethod(sourceAttribute.SourceName)
+      else
+        sourceMethod := TType.GetType(testClass).GetMethod(sourceAttribute.SourceName);
+      if Assigned(sourceMethod) and sourceMethod.IsStatic then
+      begin
+        for values in sourceMethod.Invoke(testClass, []).GetArray do
+        begin
+          if values.TryAsType<TTestCaseData>(data) then
+          begin
+            method.ConvertValues(data.fValues, arguments);
+            testCase := testClass.Create(method, arguments);
+            if data.fExceptionType <> nil then
+            begin
+              testCase.fExpectedException := data.fExceptionType;
+              testCase.fUserMessage := data.fUserMessage;
+            end;
+            if data.fName <> '' then
+              testCase.Name := data.fName;
+            suite.AddTest(testCase as ITest);
+            Continue;
+          end;
+
+          if Length(parameters) > 1 then
+          begin
+            method.ConvertValues(values.GetArray, arguments);
+            suite.AddTest(testClass.Create(method, arguments) as ITest);
+          end
+          else
+            if values.TryConvert(parameters[0].ParamType.Handle, arguments[0]) then
+              suite.AddTest(testClass.Create(method, arguments) as ITest);
+        end;
+      end;
+    end;
   end;
 
 var
@@ -437,36 +617,68 @@ var
   arguments: TArray<TValue>;
   suite: ITestSuite;
   attribute: TestCaseAttribute;
-  i: Integer;
 begin
   for method in TType.GetType(testClass).GetMethods do
-    if method.Visibility = mvPublished then
+  begin
+    if not method.IsPublished or method.IsStatic then
+      Continue;
+
+    parameters := method.GetParameters;
+    if method.ReturnType = nil then
+      SetLength(arguments, Length(parameters))
+    else
+      SetLength(arguments, Length(parameters) + 1);
+
+    suite := TTestSuite.Create(method.Name);
+    AddTest(suite);
+
+    for attribute in method.GetCustomAttributes<TestCaseAttribute> do
     begin
-      parameters := method.GetParameters;
-      if method.ReturnType = nil then
-        SetLength(arguments, Length(parameters))
-      else
-        SetLength(arguments, Length(parameters) + 1);
-
-      suite := TTestSuite.Create(method.Name);
-      AddTest(suite);
-
-      for attribute in method.GetCustomAttributes<TestCaseAttribute> do
-      begin
-        for i := 0 to High(parameters) do
-          attribute.Values[i].TryConvert(
-            parameters[i].ParamType.Handle, arguments[i]);
-        if method.ReturnType <> nil then
-          attribute.Values[High(arguments)].TryConvert(
-            method.ReturnType.Handle, arguments[High(arguments)]);
-        suite.AddTest(testClass.Create(method, arguments) as ITest);
-      end;
-
-      if Length(parameters) = 0 then
-        suite.AddTest(testClass.Create(method, nil) as ITest)
-      else if IsTestMethod(method, parameters) then
-        InternalInvoke(suite, method, parameters, arguments);
+      method.ConvertValues(attribute.fValues, arguments);
+      suite.AddTest(testClass.Create(method, arguments) as ITest);
     end;
+
+    HandleSourceAttribute(suite, method, parameters, arguments);
+
+    if Length(parameters) = 0 then
+      suite.AddTest(testClass.Create(method, nil) as ITest)
+    else if IsTestMethod(method, parameters) then
+      InternalInvoke(suite, method, parameters, arguments);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestCaseData'}
+
+constructor TTestCaseData.Create(const values: array of TValue);
+begin
+  fValues := TArray.Copy<TValue>(values);
+end;
+
+function TTestCaseData.Raises(exceptionType: ExceptionClass;
+  const userMessage: string): TTestCaseData;
+begin
+  fExceptionType := exceptionType;
+  fUserMessage := userMessage;
+  Result := Self;
+end;
+
+function TTestCaseData.Returns(const value: TValue): TTestCaseData;
+var
+  i: Integer;
+begin
+  i := Length(fValues);
+  SetLength(fValues, i + 1);
+  fValues[i] := value;
+  Result := Self;
+end;
+
+function TTestCaseData.SetName(const name: string): TTestCaseData;
+begin
+  fName := name;
+  Result := Self;
 end;
 
 {$ENDREGION}

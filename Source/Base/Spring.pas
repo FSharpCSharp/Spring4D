@@ -445,6 +445,11 @@ type
     function Equals(const value: TValue): Boolean;
 
     /// <summary>
+    ///   Returns the array content.
+    /// </summary>
+    function GetArray: TArray<TValue>;
+
+    /// <summary>
     ///   Returns the stored nullable value or <c>TValue.Empty</c> when it is
     ///   null.
     /// </summary>
@@ -4255,6 +4260,17 @@ begin
   end;
 end;
 
+function TValueHelper.GetArray: TArray<TValue>;
+var
+  len: Integer;
+  i: Integer;
+begin
+  len := GetArrayLength;
+  SetLength(Result, len);
+  for i := 0 to len - 1 do
+    Result[i] := GetArrayElement(i);
+end;
+
 function TValueHelper.GetNullableValue: TValue;
 var
   nullable: TNullableHelper;
@@ -4938,7 +4954,9 @@ begin
     end;
 
     case Kind of
-      tkRecord:;
+      tkRecord:
+        if TypeInfo = System.TypeInfo(TValue) then
+          Exit(AsType<TValue>.TryConvert(targetTypeInfo, targetValue));
       {$IFDEF DELPHI2010}
       // workaround for bug in RTTI.pas (fixed in XE)
       tkUnknown:
