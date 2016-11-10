@@ -106,6 +106,8 @@ constructor TInterfaceProxy.Create(proxyType: PTypeInfo;
   const options: TProxyGenerationOptions; const target: IInterface;
   const interceptors: array of IInterceptor);
 begin
+  Guard.CheckTypeKind(proxyType, tkInterface, 'proxyType');
+
   if not proxyType.RttiType.Methods.Any then
     raise EInvalidOperationException.CreateResFmt(
       @STypeParameterContainsNoRtti, [proxyType.Name]);
