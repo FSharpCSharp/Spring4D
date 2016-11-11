@@ -984,7 +984,7 @@ begin
       hasValue := True;
     end
     else
-      if fComparer.Compare(item, Result) < 0 then
+      if comparer.Compare(item, Result) < 0 then
         Result := item;
   if not hasValue then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
