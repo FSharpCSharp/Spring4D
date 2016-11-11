@@ -3144,7 +3144,7 @@ var
 begin
   values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
   CheckTrue(TArray.BinarySearchUpperBound<Integer>(values, 5, index,
-    TComparer<Integer>.Default, 0, 6));
+    TComparer<Integer>.Default(), 0, 6));
   CheckEquals(5, index);
 end;
 

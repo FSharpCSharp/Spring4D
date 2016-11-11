@@ -2019,11 +2019,37 @@ type
 
     /// <summary>
     ///   Searches a range of elements in a sorted array for the given value,
+    ///   using a binary search algorithm returning the index for the first
+    ///   found value using the specified comparison.
+    /// </summary>
+    class function BinarySearch<T>(const values: array of T; const item: T;
+      out foundIndex: Integer; const comparison: TComparison<T>;
+      index, count: Integer): Boolean; overload; static;
+
+    /// <summary>
+    ///   Searches a sorted array for the given value, using a binary search
+    ///   algorithm returning the index for the first found value using the
+    ///   specified comparison.
+    /// </summary>
+    class function BinarySearch<T>(const values: array of T; const item: T;
+      out foundIndex: Integer; const comparison: TComparison<T>): Boolean; overload; static;
+
+    /// <summary>
+    ///   Searches a range of elements in a sorted array for the given value,
     ///   using a binary search algorithm returning the index for the last
     ///   found value using the specified comparer.
     /// </summary>
     class function BinarySearchUpperBound<T>(const values: array of T;
       const item: T; out foundIndex: Integer; const comparer: IComparer<T>;
+      index, count: Integer): Boolean; overload; static;
+
+    /// <summary>
+    ///   Searches a range of elements in a sorted array for the given value,
+    ///   using a binary search algorithm returning the index for the last
+    ///   found value using the specified comparison.
+    /// </summary>
+    class function BinarySearchUpperBound<T>(const values: array of T;
+      const item: T; out foundIndex: Integer; const comparison: TComparison<T>;
       index, count: Integer): Boolean; overload; static;
 
     /// <summary>
@@ -2034,6 +2060,15 @@ type
     class function BinarySearchUpperBound<T>(const values: array of T;
       const item: T; out foundIndex: Integer;
       const comparer: IComparer<T>): Boolean; overload; static;
+
+    /// <summary>
+    ///   Searches a sorted array for the given value, using a binary search
+    ///   algorithm returning the index for the last found value using the
+    ///   specified comparer.
+    /// </summary>
+    class function BinarySearchUpperBound<T>(const values: array of T;
+      const item: T; out foundIndex: Integer;
+      const comparison: TComparison<T>): Boolean; overload; static;
 
     /// <summary>
     ///   Searches a sorted array for the given value, using a binary search
@@ -2130,6 +2165,18 @@ type
     class function LastIndexOf<T>(const values: array of T; const item: T;
       index, count: Integer;
       const comparer: IEqualityComparer<T>): Integer; overload; static;
+
+    /// <summary>
+    ///   Sorts the elements in an array using the specified comparison.
+    /// </summary>
+    class procedure Sort<T>(var values: array of T; const comparison: TComparison<T>); overload; static;
+
+    /// <summary>
+    ///   Sorts the specified range of elements in an array using the specified
+    ///   comparison.
+    /// </summary>
+    class procedure Sort<T>(var values: array of T;
+      const comparison: TComparison<T>; index, count: Integer); overload; static;
   end;
 
   {$ENDREGION}
@@ -7367,6 +7414,21 @@ end;
 
 {$REGION 'TArray'}
 
+class function TArray.BinarySearch<T>(const values: array of T; const item: T;
+  out foundIndex: Integer; const comparison: TComparison<T>; index,
+  count: Integer): Boolean;
+begin
+  Result := BinarySearch<T>(values, item, foundIndex,
+    IComparer<T>(PPointer(@comparison)^), index, count);
+end;
+
+class function TArray.BinarySearch<T>(const values: array of T; const item: T;
+  out foundIndex: Integer; const comparison: TComparison<T>): Boolean;
+begin
+  Result := BinarySearch<T>(values, item, foundIndex,
+    IComparer<T>(PPointer(@comparison)^));
+end;
+
 class function TArray.BinarySearchUpperBound<T>(const values: array of T;
   const item: T; out foundIndex: Integer; const comparer: IComparer<T>;
   index, count: Integer): Boolean;
@@ -7416,7 +7478,23 @@ class function TArray.BinarySearchUpperBound<T>(const values: array of T;
   const item: T; out foundIndex: Integer): Boolean;
 begin
   Result := BinarySearchUpperBound<T>(values, item, foundIndex,
-    TComparer<T>.Default, Low(values), Length(values));
+    TComparer<T>.Default(), Low(values), Length(values));
+end;
+
+class function TArray.BinarySearchUpperBound<T>(const values: array of T;
+  const item: T; out foundIndex: Integer; const comparison: TComparison<T>;
+  index, count: Integer): Boolean;
+begin
+  Result := BinarySearchUpperBound<T>(values, item, foundIndex,
+    IComparer<T>(PPointer(@comparison)^), index, count);
+end;
+
+class function TArray.BinarySearchUpperBound<T>(const values: array of T;
+  const item: T; out foundIndex: Integer;
+  const comparison: TComparison<T>): Boolean;
+begin
+  Result := BinarySearchUpperBound<T>(values, item, foundIndex,
+    IComparer<T>(PPointer(@comparison)^), Low(values), Length(values));
 end;
 
 class function TArray.Concat<T>(const values: array of TArray<T>): TArray<T>;
@@ -7540,6 +7618,18 @@ begin
     if comparer.Equals(values[i], item) then
       Exit(i);
   Result := -1;
+end;
+
+class procedure TArray.Sort<T>(var values: array of T;
+  const comparison: TComparison<T>);
+begin
+  Sort<T>(values, IComparer<T>(PPointer(@comparison)^));
+end;
+
+class procedure TArray.Sort<T>(var values: array of T;
+  const comparison: TComparison<T>; index, count: Integer);
+begin
+  Sort<T>(values, IComparer<T>(PPointer(@comparison)^), index, count);
 end;
 
 {$ENDREGION}
