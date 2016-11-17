@@ -39,6 +39,7 @@ resourcestring
   SServiceNotFound = 'Service not found: %s';
   SCircularDependencyDetected = 'Circular dependency detected on type: %s';
   SCannotResolveType = 'Cannot resolve type: %s';
+  SCannotResolveTypeNamed = 'Cannot resolve type: %s with name: %s';
   SResolutionStackUnbalanced = 'Resolution stack is unbalanced';
   SNoDefaultFound = 'No default found for type: %s';
   SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor of type: %s';

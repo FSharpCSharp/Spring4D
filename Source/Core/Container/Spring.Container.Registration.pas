@@ -514,8 +514,8 @@ begin
     if not Assigned(Result) then
       raise EResolveException.CreateResFmt(@SServiceNotFound, [serviceName]);
     if not IsAssignableFrom(serviceType, Result.Services[serviceName]) then
-      raise EResolveException.CreateResFmt(@SCannotResolveType, [
-        serviceType.TypeName]);
+      raise EResolveException.CreateResFmt(@SCannotResolveTypeNamed, [
+        serviceType.TypeName, serviceName]);
   end
   else
     raise EResolveException.CreateResFmt(@SCannotResolveType, [
