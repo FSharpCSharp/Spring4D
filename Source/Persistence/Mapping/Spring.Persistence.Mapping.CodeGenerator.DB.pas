@@ -393,7 +393,7 @@ begin
       if LDataset.Active then
         LDataset.Close;
 
-      LDataset.CommandText := Format('SELECT * FROM %0:S WHERE 1=2', [LTableName]);
+      LDataset.CommandText := Format('SELECT * FROM %0:s WHERE 1=2', [LTableName]);
       try
         LDataset.Open;
 

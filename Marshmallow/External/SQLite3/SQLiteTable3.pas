@@ -1329,7 +1329,7 @@ begin
       else
         sVal := 'False';
 
-      ExecSQL(Format('PRAGMA read_uncommitted = %S',[sVal]));
+      ExecSQL(Format('PRAGMA read_uncommitted = %s',[sVal]));
       FReadUncommitted := Value;
     end;
   end;
@@ -1548,7 +1548,7 @@ begin
   if (sqlite3_table_column_metadata(fDB, ADbName, PAnsiChar(TableName), PAnsiChar(ColumnName), ADatatype,
     ACollSeq, ANotNull, APrimKey, AAutoinc) <> SQLITE_OK) then
   begin
-    RaiseError(Format('Cannot get table ([%S]) column ([%S]) metadata.', [TableName, ColumnName]), '');
+    RaiseError(Format('Cannot get table ([%s]) column ([%s]) metadata.', [TableName, ColumnName]), '');
   end;
 
   bNotNull := Boolean(ANotNull);

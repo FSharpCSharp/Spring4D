@@ -519,7 +519,7 @@ begin
       if IsObjectId(value) then   //ObjectID("sdsd457845")
       begin
         value := ReplaceStr(value, '"', '\"');
-        value := Format('"%S"', [value]);
+        value := Format('"%s"', [value]);
       end
       else
         value := AnsiQuotedStr(value, '"');

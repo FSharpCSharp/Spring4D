@@ -467,7 +467,7 @@ begin
 
     LCustomer.CustomerType := ctReturning;
     FSession.Save(LCustomer);
-    LVal := GetDBValue(Format('select custtype from ' + TBL_PEOPLE + ' where custid = %D', [iLastID]));
+    LVal := GetDBValue(Format('select custtype from ' + TBL_PEOPLE + ' where custid = %d', [iLastID]));
     CheckTrue(Integer(LVal) = Ord(ctReturning));
   finally
     LCustomer.Free;
@@ -854,7 +854,7 @@ begin
     LEntity.Free;
   end;
   sw.Stop;
-  Status(Format('GenericCreate %D objects in %D ms.',
+  Status(Format('GenericCreate %d objects in %d ms.',
     [iCount, sw.ElapsedMilliseconds]));
 
   sw := TStopwatch.StartNew;
@@ -864,7 +864,7 @@ begin
     LObject.Free;
   end;
   sw.Stop;
-  Status(Format('SimpleCreate %D objects in %D ms.',
+  Status(Format('SimpleCreate %d objects in %d ms.',
     [iCount, sw.ElapsedMilliseconds]));
   sw := TStopwatch.StartNew;
   LCustomers := TCollections.CreateObjectList<TCustomer>;
@@ -873,7 +873,7 @@ begin
     LCustomers.Add(TCustomer.Create);
   end;
   sw.Stop;
-  Status(Format('Add %D objects in %D ms.',
+  Status(Format('Add %d objects in %d ms.',
     [iCount, sw.ElapsedMilliseconds]));
   //get customers
   LResultset := FSession.GetResultset('SELECT * FROM ' + TBL_PEOPLE, []);
@@ -882,7 +882,7 @@ begin
   sw.Stop;
   CheckEquals(iCount, LCustomers.Count);
 
-  Status(Format('FindAll complex TCustomer %D objects in %D ms.',
+  Status(Format('FindAll complex TCustomer %d objects in %d ms.',
     [iCount, sw.ElapsedMilliseconds]));
 
   //get products
@@ -891,7 +891,7 @@ begin
   sw.Stop;
   CheckEquals(iCount, LProducts.Count);
 
-  Status(Format('FindAll simple TProduct %D objects in %D ms.',
+  Status(Format('FindAll simple TProduct %d objects in %d ms.',
     [iCount, sw.ElapsedMilliseconds]));
 
   //get customers non object
@@ -908,7 +908,7 @@ begin
     LResultset.Next;
   end;
   sw.Stop;
-  Status(Format('Resultset %D objects in %D ms. %S',
+  Status(Format('Resultset %d objects in %d ms. %s',
     [iCount, sw.ElapsedMilliseconds, LVal2]));
 end;
 

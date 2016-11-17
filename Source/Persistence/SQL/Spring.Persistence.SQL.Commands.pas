@@ -498,7 +498,7 @@ begin
   else
     index := 1;
   fParameterNames.AddOrSetValue(upperCaseFieldName, index);
-  Result := Format(':%S%D', [upperCaseFieldName, index]);
+  Result := Format(':%s%d', [upperCaseFieldName, index]);
 end;
 
 function TDMLCommand.GetExistingParameterName(const fieldName: string): string;
@@ -509,7 +509,7 @@ begin
   upperCaseFieldName := AnsiUpperCase(fieldName);
   if not fParameterNames.TryGetValue(upperCaseFieldName, index) then
     index := 1;
-  Result := Format(':%S%D', [upperCaseFieldName, index]);
+  Result := Format(':%s%d', [upperCaseFieldName, index]);
 end;
 
 {$ENDREGION}

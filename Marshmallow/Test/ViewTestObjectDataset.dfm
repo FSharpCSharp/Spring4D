@@ -51,7 +51,6 @@ object frmObjectDataSetTest: TfrmObjectDataSetTest
     DataSource = dsList
     Align = alTop
     TabOrder = 1
-    ExplicitWidth = 665
   end
   object edFilter: TEdit
     Left = 0
@@ -61,8 +60,6 @@ object frmObjectDataSetTest: TfrmObjectDataSetTest
     Align = alBottom
     TabOrder = 2
     OnKeyDown = edFilterKeyDown
-    ExplicitTop = 352
-    ExplicitWidth = 665
   end
   object sbTotal: TStatusBar
     Left = 0
@@ -71,8 +68,6 @@ object frmObjectDataSetTest: TfrmObjectDataSetTest
     Height = 19
     Panels = <>
     SimplePanel = True
-    ExplicitTop = 373
-    ExplicitWidth = 665
   end
   object dbgClone: TDBGrid
     Left = 568
@@ -99,8 +94,6 @@ object frmObjectDataSetTest: TfrmObjectDataSetTest
     State = cbChecked
     TabOrder = 3
     OnClick = cbFilteredClick
-    ExplicitLeft = 683
-    ExplicitTop = 426
   end
   object dsList: TDataSource
     Left = 488

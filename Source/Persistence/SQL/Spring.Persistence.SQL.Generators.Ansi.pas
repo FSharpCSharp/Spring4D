@@ -682,7 +682,7 @@ begin
           Result := 'BIT'
         else
           Result := 'INTEGER';
-    tkChar: Result := Format('CHAR(%D)', [field.Length]);
+    tkChar: Result := Format('CHAR(%d)', [field.Length]);
     tkFloat:
       if typeInfo = System.TypeInfo(TDate) then
         Result := 'DATE'
@@ -695,11 +695,11 @@ begin
           Result := Format('NUMERIC(%0:d, %1:d)', [field.Precision, field.Scale])
         else
           Result := 'FLOAT';
-    tkString, tkLString: Result := Format('VARCHAR(%D)', [field.Length]);
+    tkString, tkLString: Result := Format('VARCHAR(%d)', [field.Length]);
     tkClass, tkArray, tkDynArray, tkVariant: Result := 'BLOB';
     tkMethod: ;
-    tkWChar: Result := Format('NCHAR(%D)', [field.Length]);
-    tkWString, tkUString: Result := Format('NVARCHAR(%D)', [field.Length]);
+    tkWChar: Result := Format('NCHAR(%d)', [field.Length]);
+    tkWString, tkUString: Result := Format('NVARCHAR(%d)', [field.Length]);
     tkRecord:
       if IsNullable(typeInfo) or IsLazyType(typeInfo) then
       begin

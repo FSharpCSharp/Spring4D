@@ -66,7 +66,7 @@ procedure TfrmObjectDataSetTest.DoAfterScroll(ADataset: TDataSet);
 begin
   if ADataset.Active and not (ADataset.Eof or ADataset.Bof) then
   begin
-    sbTotal.SimpleText := Format('%d from %D records. Filter: %D', [ADataset.RecNo, ADataset.RecordCount, FDataset.FilterCount]);
+    sbTotal.SimpleText := Format('%d from %d records. Filter: %d', [ADataset.RecNo, ADataset.RecordCount, FDataset.FilterCount]);
   end;
 end;
 
