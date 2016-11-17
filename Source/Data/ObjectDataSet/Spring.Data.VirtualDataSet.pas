@@ -1447,7 +1447,7 @@ end;
 procedure TCustomVirtualDataSet.SetRecNo(Value: Integer);
 begin
   CheckBrowseMode;
-  Value :=  Min(max(Value, 1), RecordCount);
+  Value := Min(max(Value, 1), RecordCount);
 
   if RecNo <> Value then
   begin

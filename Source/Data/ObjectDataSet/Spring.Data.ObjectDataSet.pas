@@ -81,6 +81,7 @@ type
 
     function DataListCount: Integer;
     function GetRecordCount: Integer; override;
+    procedure InitFilterParser;
     procedure UpdateFilter; override;
 
     procedure DoAfterFilter; virtual;
@@ -104,6 +105,7 @@ type
     procedure InternalInitFieldDefs; override;
     procedure InternalClose; override;
     procedure InternalCreateFields; override;
+    procedure InternalOpen; override;
     procedure InternalRefresh; override;
     procedure SetFilterText(const Value: string); override;
 
@@ -510,6 +512,17 @@ begin
   Result := fSort;
 end;
 
+procedure TObjectDataSet.InitFilterParser;
+begin
+  fFilterParser.EnableWildcardMatching := not (foNoPartialCompare in FilterOptions);
+  fFilterParser.CaseInsensitive := foCaseInsensitive in FilterOptions;
+
+  if foCaseInsensitive in FilterOptions then
+    fFilterParser.Expression := AnsiUpperCase(Filter)
+  else
+    fFilterParser.Expression := Filter;
+end;
+
 procedure TObjectDataSet.InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo);
 var
   itemType: TRttiType;
@@ -579,6 +592,13 @@ begin
     LoadFieldDefsFromFields(Fields, FieldDefs)
   else
     LoadFieldDefsFromItemType;
+end;
+
+procedure TObjectDataSet.InternalOpen;
+begin
+  if IsFiltered then
+    InitFilterParser;
+  inherited;
 end;
 
 procedure TObjectDataSet.InternalRefresh;
@@ -922,15 +942,7 @@ begin
   DoBeforeFilter;
 
   if IsFiltered then
-  begin
-    fFilterParser.EnableWildcardMatching := not (foNoPartialCompare in FilterOptions);
-    fFilterParser.CaseInsensitive := foCaseInsensitive in FilterOptions;
-
-    if foCaseInsensitive in FilterOptions then
-      fFilterParser.Expression := AnsiUpperCase(Filter)
-    else
-      fFilterParser.Expression := Filter;
-  end;
+    InitFilterParser;
 
   DisableControls;
   try
