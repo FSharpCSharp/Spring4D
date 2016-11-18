@@ -414,7 +414,7 @@ type
   end;
 
 var
-  PictureFilename, OutputDir: string;
+  PictureFilename, ScannerFileName, OutputDir: string;
 
 procedure CreateTestTables(AConnection: IDBConnection;
   const Entities: array of TClass);

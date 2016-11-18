@@ -138,6 +138,7 @@ uses
 begin
   OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
   PictureFilename := IncludeTrailingPathDelimiter(ExpandFileName(OutputDir + '..\..')) + 'DelphiOOP.png';
+  ScannerFilename := IncludeTrailingPathDelimiter(ExpandFileName(OutputDir + '..\..')) + 'DelphiOOP.pdf';
 
   RunRegisteredTests;
 end.

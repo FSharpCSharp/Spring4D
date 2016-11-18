@@ -280,7 +280,8 @@ begin
       if value.TryConvert(entityClass.ClassInfo, convertedValue) then
         Result := convertedValue.AsObject;
     finally
-      value.Free;
+      if value.IsObject and (value.AsObject <> convertedValue.AsObject) then
+        value.Free;
     end;     
   end;
 end;

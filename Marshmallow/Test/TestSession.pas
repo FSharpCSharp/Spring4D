@@ -69,6 +69,7 @@ type
     procedure Nullable;
     procedure GetLazyValue;
     procedure GetLazyNullable;
+    procedure GetLazyStream;
     procedure FindOne;
     procedure FindWhere;
     procedure When_UnannotatedEntity_FindOne_ThrowException;
@@ -281,6 +282,13 @@ begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_ORDERS + ' ([Customer_Id], [Customer_Payment_Method_Id], [Order_Status_Code], [Total_Order_Price]) '+
     ' VALUES (?,?,?,?);',
     [ACustID, ACustPaymID, AOrderStatusCode, ATotalPrice]);
+  Result := TestDB.GetLastInsertRowID;
+end;
+
+function InsertCustomerStream(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; const AMiddleName: string = ''; AStream: TStream = nil): Variant;
+begin
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' (['+CUSTAGE+'], ['+CUSTNAME+'], ['+CUSTHEIGHT+'], ['+CUST_MIDDLENAME+'], ['+CUST_STREAM+']) VALUES (?,?,?,?,?);',
+    [AAge, AName, AHeight, AMiddleName, AStream]);
   Result := TestDB.GetLastInsertRowID;
 end;
 
@@ -777,6 +785,32 @@ begin
 
   finally
     fsPic.Free;
+  end;
+end;
+
+procedure TSessionTest.GetLazyStream;
+var
+  customer: TCustomer;
+  stream: TMemoryStream;
+begin
+  stream := TMemoryStream.Create;
+  try
+    stream.LoadFromFile(ScannerFileName);
+
+    customer := FSession.SingleOrDefault<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
+    CheckFalse(Assigned(customer));
+    InsertCustomerStream(25, 'Stream Lazy', 2.36, 'Middle', stream);
+
+    customer := FSession.SingleOrDefault<TCustomer>(SQL_GET_ALL_CUSTOMERS, []);
+    try
+      CheckNotNull(customer.CustStream, 'Lazy should have value');
+      CheckTrue(customer.CustStream.Size > 0, 'Size should be more than 0');
+      CheckEquals(stream.Size, customer.CustStream.Size, 'file"s size not equals.');
+    finally
+      customer.Free;
+    end;
+  finally
+    stream.Free;
   end;
 end;
 
