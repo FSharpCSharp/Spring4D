@@ -39,6 +39,7 @@ uses
   FMXTestRunner in '..\..\Source\dUnit\FMXTestRunner.pas' {FMXTestRunner},
   TestInsight.DUnitFMXRunner in '..\..\Source\TestInsight.DUnitFMXRunner.pas' {frmTestInsightDUnitFMXRunner},
   Spring.TestRunner in '..\..\Source\Spring.TestRunner.pas',
+  Spring.Tests.Utils in '..\..\Source\Extensions\Spring.Tests.Utils.pas',
   Spring.Persistence.Core.Graphics in '..\..\..\Source\Persistence\Core\Spring.Persistence.Core.Graphics.pas',
   TestCodeGenerator in '..\..\..\Marshmallow\Test\TestCodeGenerator.pas',
   TestEntities in '..\..\..\Marshmallow\Test\TestEntities.pas',
@@ -62,7 +63,7 @@ uses
   TestFireDACConnection in '..\..\..\Marshmallow\Test\TestFireDACConnection.pas',
   TestAdaptersFireDAC in '..\..\..\Marshmallow\Test\TestAdaptersFireDAC.pas',
   {$ENDIF }
-  //+TestObjectDataSet in '..\..\..\Marshmallow\Test\TestObjectDataSet.pas',
+  TestObjectDataSet in '..\..\..\Marshmallow\Test\TestObjectDataSet.pas',
   //+ViewTestObjectDataSet in '..\..\Source\Persistence\ViewTestObjectDataSet.pas' {frmObjectDataSetTest},
   TestSimpleRepository in '..\..\..\Marshmallow\Test\TestSimpleRepository.pas',
   TestAdaptersSQLite in '..\..\..\Marshmallow\Test\TestAdaptersSQLite.pas',
@@ -76,10 +77,12 @@ begin
 {$IF Defined(MSWINDOWS)}
   OutputDir := IncludeTrailingPathDelimiter(ExpandFileName(ExtractFileDir(ParamStr(0))));
   PictureFilename := IncludeTrailingPathDelimiter(ExpandFileName(OutputDir + '..\..\..\..\Marshmallow\Test')) + 'DelphiOOP.png';
+  ScannerFilename := IncludeTrailingPathDelimiter(ExpandFileName(OutputDir + '..\..\..\..\Marshmallow\Test')) + 'DelphiOOP.pdf';
 {$ELSEIF Defined(ANDROID)}
   // Must be deployed to assets\internal
   OutputDir := IncludeTrailingPathDelimiter(System.IOUtils.TPath.GetDocumentsPath);
   PictureFilename := OutputDir + 'DelphiOOP.png';
+  ScannerFilename := OutputDir + 'DelphiOOP.pdf';
   OutputDir := '/storage/emulated/0/';
 {$ELSE}
   {$MESSAGE ERROR 'Unsupported platform'}
