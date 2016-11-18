@@ -157,7 +157,7 @@ begin
   query := callInfo[0].ToString;
   try
     if fCurrentCallIndex < fQueries.Count then
-      fTestCase.CheckEquals(fQueries[fCurrentCallIndex], query,
+      fTestCase.CheckEqualsString(fQueries[fCurrentCallIndex], query,
         Format('Invalid query, index: %d', [fCurrentCallIndex]))
     else
       fTestCase.Fail(Format('Invalid query, no query expected index: %d query: %s',

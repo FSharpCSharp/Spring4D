@@ -483,7 +483,7 @@ function TObjectDataSet.GetCurrentModel<T>: T;
 begin
   Result := System.Default(T);
   if Active and (Index > -1) and (Index < RecordCount) then
-    Result := IndexList.Items[Index] as T;
+    Result := T(IndexList.Items[Index]);
 end;
 
 function TObjectDataSet.GetFilterCount: Integer;
