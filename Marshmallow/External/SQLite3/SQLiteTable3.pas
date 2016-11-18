@@ -270,6 +270,7 @@ type
     procedure SetSynchronised(Value: boolean);
     procedure DoQuery(const value: string);
     procedure SetEvents();
+    class procedure EnsureInitialized; static;
   public
     {$REGION 'Doc'}
       /// <summary>
@@ -1362,6 +1363,18 @@ begin
   end;
 end;
 
+class procedure TSQLiteDatabase.EnsureInitialized;
+begin
+{$IF Declared(sqlite3_initialize)}
+  try
+    if sqlite3_initialize <> SQLITE_OK then
+      raise ESqliteException.Create('SQLite library cannot be initialized');
+  except on EExternalException do
+    raise ESqliteException.Create('SQLite library cannot be found');
+  end;
+{$IFEND}
+end;
+
 {$WARNINGS OFF}
 procedure TSQLiteDatabase.ExecSQL(Query: TSQLiteQuery);
 var
@@ -1636,6 +1649,8 @@ var
   Msg: PAnsiChar;
   iResult: Integer;
 begin
+  EnsureInitialized;
+
   FConnected := False;
   iResult := SQLITE_OK;
 
@@ -1840,6 +1855,7 @@ end;
 
 function TSQLiteDatabase.Version: string;
 begin
+  EnsureInitialized;
   Result := UTF8ToString(SQLite3_Version);
 end;
 
