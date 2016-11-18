@@ -84,7 +84,9 @@ uses
   Diagnostics,
   Generics.Defaults,
   SysUtils,
+{$IFDEF GUI_TESTS}
   ViewTestObjectDataSet,
+{$ENDIF}
   Spring,
   Spring.Persistence.Mapping.Attributes;
 
