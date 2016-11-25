@@ -110,6 +110,29 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TType'}
+
+  TType = class
+  private
+    class var fContext: TRttiContext;
+  public
+    class constructor Create;
+    class destructor Destroy;
+
+    class function HasWeakRef<T>: Boolean; inline; static;
+    class function IsManaged<T>: Boolean; inline; static;
+    class function Kind<T>: TTypeKind; inline; static;
+
+    class function GetType<T>: TRttiType; overload; static; inline;
+    class function GetType(typeInfo: Pointer): TRttiType; overload; static; inline;
+    class function GetType(classType: TClass): TRttiInstanceType; overload; static; inline;
+
+    class property Context: TRttiContext read fContext;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TActivator'}
 
   IObjectActivator = interface
@@ -2201,29 +2224,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TType'}
-
-  TType = class
-  private
-    class var fContext: TRttiContext;
-  public
-    class constructor Create;
-    class destructor Destroy;
-
-    class function HasWeakRef<T>: Boolean; inline; static;
-    class function IsManaged<T>: Boolean; inline; static;
-    class function Kind<T>: TTypeKind; inline; static;
-
-    class function GetType<T>: TRttiType; overload; static; inline;
-    class function GetType(typeInfo: Pointer): TRttiType; overload; static; inline;
-    class function GetType(classType: TClass): TRttiInstanceType; overload; static; inline;
-
-    class property Context: TRttiContext read fContext;
-  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE_UP}
@@ -2923,6 +2923,73 @@ begin
   Result := GuidToString(Self);
 end;
 {$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TType'}
+
+class constructor TType.Create;
+begin
+  fContext := TRttiContext.Create;
+end;
+
+class destructor TType.Destroy;
+begin
+  fContext.Free;
+end;
+
+class function TType.GetType(typeInfo: Pointer): TRttiType;
+begin
+  Result := fContext.GetType(typeInfo);
+end;
+
+class function TType.GetType(classType: TClass): TRttiInstanceType;
+begin
+  Result := TRttiInstanceType(fContext.GetType(classType));
+end;
+
+class function TType.GetType<T>: TRttiType;
+begin
+  Result := fContext.GetType(TypeInfo(T));
+end;
+
+class function TType.HasWeakRef<T>: Boolean;
+begin
+{$IFDEF DELPHIXE7_UP}
+  Result := System.HasWeakRef(T);
+{$ELSE}
+  {$IFDEF WEAKREF}
+  Result := TypInfo.HasWeakRef(TypeInfo(T));
+  {$ELSE}
+  Result := False;
+  {$ENDIF}
+{$ENDIF}
+end;
+
+class function TType.IsManaged<T>: Boolean;
+begin
+{$IFDEF DELPHIXE7_UP}
+  Result := System.IsManagedType(T);
+{$ELSE}
+  Result := Rtti.IsManaged(TypeInfo(T));
+{$ENDIF}
+end;
+
+class function TType.Kind<T>: TTypeKind;
+{$IFDEF DELPHIXE7_UP}
+begin
+  Result := System.GetTypeKind(T);
+{$ELSE}
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := System.TypeInfo(T);
+  if typeInfo = nil then
+    Exit(tkUnknown);
+  Result := typeInfo.Kind;
+{$ENDIF}
+end;
 
 {$ENDREGION}
 
@@ -7937,73 +8004,6 @@ begin
   GetLocaleFormatSettings(LOCALE_SYSTEM_DEFAULT, Result);
 end;
 {$ENDIF}
-
-{$ENDREGION}
-
-
-{$REGION 'TType'}
-
-class constructor TType.Create;
-begin
-  fContext := TRttiContext.Create;
-end;
-
-class destructor TType.Destroy;
-begin
-  fContext.Free;
-end;
-
-class function TType.GetType(typeInfo: Pointer): TRttiType;
-begin
-  Result := fContext.GetType(typeInfo);
-end;
-
-class function TType.GetType(classType: TClass): TRttiInstanceType;
-begin
-  Result := TRttiInstanceType(fContext.GetType(classType));
-end;
-
-class function TType.GetType<T>: TRttiType;
-begin
-  Result := fContext.GetType(TypeInfo(T));
-end;
-
-class function TType.HasWeakRef<T>: Boolean;
-begin
-{$IFDEF DELPHIXE7_UP}
-  Result := System.HasWeakRef(T);
-{$ELSE}
-  {$IFDEF WEAKREF}
-  Result := TypInfo.HasWeakRef(TypeInfo(T));
-  {$ELSE}
-  Result := False;
-  {$ENDIF}
-{$ENDIF}
-end;
-
-class function TType.IsManaged<T>: Boolean;
-begin
-{$IFDEF DELPHIXE7_UP}
-  Result := System.IsManagedType(T);
-{$ELSE}
-  Result := Rtti.IsManaged(TypeInfo(T));
-{$ENDIF}
-end;
-
-class function TType.Kind<T>: TTypeKind;
-{$IFDEF DELPHIXE7_UP}
-begin
-  Result := System.GetTypeKind(T);
-{$ELSE}
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := System.TypeInfo(T);
-  if typeInfo = nil then
-    Exit(tkUnknown);
-  Result := typeInfo.Kind;
-{$ENDIF}
-end;
 
 {$ENDREGION}
 
