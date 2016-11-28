@@ -86,8 +86,8 @@ type
   private
     class var fCount: Integer;
   protected
-    class procedure SetUp; override;
-    class procedure TearDown; override;
+    class procedure SetUpFixture; override;
+    class procedure TearDownFixture; override;
   published
     procedure CheckCount1;
     procedure CheckCount2;
@@ -215,12 +215,12 @@ begin
   CheckEquals(1, fCount);
 end;
 
-class procedure TSuiteSetUpTearDownTest.SetUp;
+class procedure TSuiteSetUpTearDownTest.SetUpFixture;
 begin
   Inc(fCount);
 end;
 
-class procedure TSuiteSetUpTearDownTest.TearDown;
+class procedure TSuiteSetUpTearDownTest.TearDownFixture;
 begin
   Dec(fCount);
 end;

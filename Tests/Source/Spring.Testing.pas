@@ -126,8 +126,8 @@ type
   protected
     procedure Invoke(AMethod: TTestMethod); override;
 
-    class procedure SetUp; reintroduce; virtual;
-    class procedure TearDown; reintroduce; virtual;
+    class procedure SetUpFixture; virtual;
+    class procedure TearDownFixture; virtual;
   public
     constructor Create(const method: TRttiMethod; const args: TArray<TValue>); reintroduce;
     function GetName: string; override;
@@ -480,7 +480,7 @@ begin
   TestFramework.RegisterTest(suitePath, Suite);
 end;
 
-class procedure TTestCase.SetUp;
+class procedure TTestCase.SetUpFixture;
 begin
   // do nothing
 end;
@@ -490,7 +490,7 @@ begin
   Result := TTestSuite.Create(Self);
 end;
 
-class procedure TTestCase.TearDown;
+class procedure TTestCase.TearDownFixture;
 begin
   // do nothing
 end;
@@ -511,13 +511,13 @@ procedure TTestSuite.SetUp;
 begin
   inherited;
   if Assigned(fTestClass) then
-    fTestClass.SetUp;
+    fTestClass.SetUpFixture;
 end;
 
 procedure TTestSuite.TearDown;
 begin
   if Assigned(fTestClass) then
-    fTestClass.TearDown;
+    fTestClass.TearDownFixture;
   inherited;
 end;
 
