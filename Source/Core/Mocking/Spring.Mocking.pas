@@ -181,7 +181,7 @@ type
     // cause record to be passed as reference on const parameter
     // because it does not fit in a register
     fDummy: Pointer;
-  {$HINTS OFF}
+  {$HINTS ON}
     procedure EnsureInitialized; inline;
     function GetInstance: T;
     function GetBehavior: TMockBehavior;
