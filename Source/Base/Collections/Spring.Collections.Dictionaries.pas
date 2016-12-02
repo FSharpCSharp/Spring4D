@@ -51,6 +51,7 @@ type
     type
       TGenericDictionary = Generics.Collections.TDictionary<TKey, TValue>;
       TGenericPair = Generics.Collections.TPair<TKey, TValue>;
+      TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
 
       TKeyCollection = class(TContainedReadOnlyCollection<TKey>)
       private
@@ -341,12 +342,16 @@ end;
 procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
   const Item: TKey; Action: TCollectionNotification);
 begin
+  if Assigned(fOnKeyNotify) then
+    fOnKeyNotify(Sender, Item, Action);
   inherited KeyChanged(Item, TCollectionChangedAction(action));
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
   const Item: TValue; Action: TCollectionNotification);
 begin
+  if Assigned(fOnValueNotify) then
+    fOnValueNotify(Sender, Item, Action);
   inherited ValueChanged(Item, TCollectionChangedAction(Action));
 end;
 
