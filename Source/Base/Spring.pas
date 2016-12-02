@@ -1909,6 +1909,11 @@ type
     property Value: T read fValue;
   end;
 
+  Managed = record
+  public
+    class function New<T>(const value: T): IManaged<T>; static;
+  end;
+
   {$ENDREGION}
 
 
@@ -6788,6 +6793,16 @@ end;
 class operator Managed<T>.Implicit(const value: Managed<T>): T;
 begin
   Result := value.fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Managed'}
+
+class function Managed.New<T>(const value: T): IManaged<T>;
+begin
+  Result := TManaged<T>.Create(value);
 end;
 
 {$ENDREGION}
