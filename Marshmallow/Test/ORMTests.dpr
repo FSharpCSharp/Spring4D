@@ -108,6 +108,7 @@ uses
   TestAdaptersASA in 'TestAdaptersASA.pas',
   TestAdaptersOracle in 'TestAdaptersOracle.pas',
   TestSQLServerSQLGenerator in 'TestSQLServerSQLGenerator.pas',
+  TestPostgreSQLGenerator in 'TestPostgreSQLGenerator.pas',
   TestAnsiSQLGenerator in 'TestAnsiSQLGenerator.pas',
   TestCommands in 'TestCommands.pas',
   TestConnectionFactory in 'TestConnectionFactory.pas',

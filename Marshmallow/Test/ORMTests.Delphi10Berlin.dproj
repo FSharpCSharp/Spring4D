@@ -185,6 +185,7 @@
         <DCCReference Include="TestAdaptersASA.pas"/>
         <DCCReference Include="TestAdaptersOracle.pas"/>
         <DCCReference Include="TestSQLServerSQLGenerator.pas"/>
+        <DCCReference Include="TestPostgreSQLGenerator.pas"/>
         <DCCReference Include="TestAnsiSQLGenerator.pas"/>
         <DCCReference Include="TestCommands.pas"/>
         <DCCReference Include="TestConnectionFactory.pas"/>

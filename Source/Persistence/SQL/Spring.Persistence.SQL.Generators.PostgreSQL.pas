@@ -47,6 +47,7 @@ type
     function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
     function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
+    function GeneratePagedQuery(const sql: string; limit, offset: Integer): string; override;
     function GetSQLDataTypeName(const field: TSQLCreateField): string; override;
 
     function CreateParam(const paramField: TSQLParamField; const value: TValue): TDBParam; override;
@@ -94,6 +95,19 @@ function TPostgreSQLGenerator.GenerateGetNextSequenceValue(
   const sequence: SequenceAttribute): string;
 begin
   Result := Format('SELECT nextval(%0:s);', [QuotedStr(sequence.SequenceName)]);
+end;
+
+function TPostgreSQLGenerator.GeneratePagedQuery(const sql: string; limit,
+  offset: Integer): string;
+var
+  sqlStatement: string;
+begin
+  sqlStatement := sql;
+  if EndsStr(';', sqlStatement) then
+    SetLength(sqlStatement, Length(sqlStatement) - 1);
+
+  Result := sqlStatement + Format(' LIMIT %0:d OFFSET %1:d %2:s',
+    [limit, offset, GetSplitStatementSymbol]);
 end;
 
 function TPostgreSQLGenerator.GetQueryLanguage: TQueryLanguage;

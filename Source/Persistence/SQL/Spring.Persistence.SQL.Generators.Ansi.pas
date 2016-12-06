@@ -351,7 +351,7 @@ begin
   if EndsStr(';', sqlStatement) then
     SetLength(sqlStatement, Length(sqlStatement) - 1);
 
-  Result := sqlStatement + Format(' LIMIT %1:d,%0:d %2:s',
+  Result := sqlStatement + Format(' LIMIT %1:d, %0:d%2:s',
     [limit, offset, GetSplitStatementSymbol]);
 end;
 
