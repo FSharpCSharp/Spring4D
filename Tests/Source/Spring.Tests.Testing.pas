@@ -230,7 +230,9 @@ end;
 
 initialization
   TSelfTest.Register('Spring.Testing');
+{$IFNDEF DELPHI2010}
   TDataDrivenTest.Register('Spring.Testing');
+{$ENDIF}
   TSuiteSetUpTearDownTest.Register('Spring.Testing');
 
 end.
