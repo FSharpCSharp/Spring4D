@@ -404,6 +404,7 @@ type
 
   TValueHelper = record helper for TValue
   private
+    procedure Init(typeInfo: Pointer);
     function GetTypeKind: TTypeKind; inline;
     function GetValueType: TRttiType;
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
@@ -411,6 +412,21 @@ type
   public
     class function &&op_Equality(const left, right: TValue): Boolean; static; inline;
     class function &&op_Inequality(const left, right: TValue): Boolean; static; inline;
+
+{$IFNDEF DELPHIXE4_UP}
+    class function &&op_Implicit(value: Single): TValue; overload; static; inline;
+    class function &&op_Implicit(value: Double): TValue; overload; static; inline;
+    class function &&op_Implicit(value: Currency): TValue; overload; static; inline;
+    class function &&op_Implicit(value: UInt64): TValue; overload; static; inline;
+{$ENDIF}
+
+{$IFNDEF DELPHIXE8_UP}
+    class function &&op_Implicit(const value: TVarRec): TValue; overload; static; inline;
+{$ENDIF}
+
+    class function &&op_Implicit(value: TDateTime): TValue; overload; static; inline;
+    class function &&op_Implicit(value: TDate): TValue; overload; static; inline;
+    class function &&op_Implicit(value: TTime): TValue; overload; static; inline;
 
     class function From(buffer: Pointer; typeInfo: PTypeInfo): TValue; overload; static;
     class function From(instance: TObject; classType: TClass): TValue; overload; static;
@@ -3576,6 +3592,30 @@ end;
 
 {$REGION 'TValueHelper'}
 
+var
+  Nop_Instance: Pointer;
+
+procedure TValueHelper.Init(typeInfo: Pointer);
+begin
+  with TValueData(Self) do
+  begin
+    FTypeInfo := typeInfo;
+{$IF SizeOf(Extended) > SizeOf(TMethod)}
+    FAsExtended := 0;
+{$ELSE SizeOf(Extended) <= SizeOf(TMethod)}
+    FAsMethod.Code := nil;
+    FAsMethod.Data := nil;
+{$IFEND}
+{$IFDEF DELPHI2010}
+    FHeapData := nil;
+    Pointer(FHeapData) := Nop_Instance;
+{$ELSE}
+    FValueData := nil;
+    Pointer(FValueData) := Nop_Instance;
+{$ENDIF}
+  end;
+end;
+
 function TValueHelper.AsPointer: Pointer;
 begin
   case Kind of
@@ -4425,6 +4465,57 @@ end;
 class function TValueHelper.&&op_Equality(const left, right: TValue): Boolean;
 begin
   Result := left.Equals(right);
+end;
+
+{$IFNDEF DELPHIXE4_UP}
+class function TValueHelper.&&op_Implicit(value: Double): TValue;
+begin
+  Result.Init(System.TypeInfo(Double));
+  TValueData(Result).FAsDouble := value;
+end;
+
+class function TValueHelper.&&op_Implicit(value: Single): TValue;
+begin
+  Result.Init(System.TypeInfo(Single));
+  TValueData(Result).FAsSingle := value;
+end;
+
+class function TValueHelper.&&op_Implicit(value: UInt64): TValue;
+begin
+  Result.Init(System.TypeInfo(UInt64));
+  TValueData(Result).FAsUInt64 := value;
+end;
+
+class function TValueHelper.&&op_Implicit(value: Currency): TValue;
+begin
+  Result.Init(System.TypeInfo(Currency));
+  TValueData(Result).FAsCurr := value;
+end;
+{$ENDIF}
+
+{$IFNDEF DELPHIXE8_UP}
+class function TValueHelper.&&op_Implicit(const value: TVarRec): TValue;
+begin
+  Result := TValue.FromVarRec(value);
+end;
+{$ENDIF}
+
+class function TValueHelper.&&op_Implicit(value: TDate): TValue;
+begin
+  Result.Init(System.TypeInfo(TDate));
+  TValueData(Result).FAsDouble := value;
+end;
+
+class function TValueHelper.&&op_Implicit(value: TTime): TValue;
+begin
+  Result.Init(System.TypeInfo(TTime));
+  TValueData(Result).FAsDouble := value;
+end;
+
+class function TValueHelper.&&op_Implicit(value: TDateTime): TValue;
+begin
+  Result.Init(System.TypeInfo(TDateTime));
+  TValueData(Result).FAsDouble := value;
 end;
 
 class function TValueHelper.&&op_Inequality(const left, right: TValue): Boolean;
@@ -8023,7 +8114,17 @@ end;
 {$ENDREGION}
 
 
+procedure Init;
+begin
+{$IFDEF DELPHI2010}
+  Nop_Instance := Pointer(TValueData(TValue.Empty).FHeapData);
+{$ELSE}
+  Nop_Instance := Pointer(TValueData(TValue.Empty).FValueData);
+{$ENDIF}
+end;
+
 initialization
+  Init;
 
 finalization
   // make sure this properly gets freed because it appears

@@ -461,6 +461,8 @@ type
     procedure TryToType_ConvertStringToNullableString;
 
     procedure GetNullableValue_ValueIsEmpty_ReturnsEmpty;
+
+    procedure ImplicitOperators;
   end;
 
 {$IFNDEF DELPHI2010}
@@ -2835,6 +2837,21 @@ begin
   TValueData(fSUT).FTypeInfo := TypeInfo(Nullable<Integer>);
   fValue := fSUT.GetNullableValue;
   CheckTrue(fValue.IsEmpty);
+end;
+
+procedure TTestValueHelper.ImplicitOperators;
+var
+  d: Double;
+begin
+  d := 3.14;
+  fSUT := d;
+  Check(fSUT.TypeInfo = TypeInfo(Double));
+  fSUT := Now;
+  Check(fSUT.TypeInfo = TypeInfo(TDateTime));
+  fSUT := TDate(Date);
+  Check(fSUT.TypeInfo = TypeInfo(TDate));
+  fSUT := TTime(Time);
+  Check(fSUT.TypeInfo = TypeInfo(TTime));
 end;
 
 procedure TTestValueHelper.TearDown;
