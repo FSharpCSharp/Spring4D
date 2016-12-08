@@ -51,11 +51,11 @@ uses
   Spring.Tests.Container.LifetimeManager in 'Source\Core\Spring.Tests.Container.LifetimeManager.pas',
   Spring.Tests.Container in 'Source\Core\Spring.Tests.Container.pas',
   Spring.Tests.Container.Logging in 'Source\Core\Spring.Tests.Container.Logging.pas',
-  {$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   Spring.Tests.Interception in 'Source\Core\Spring.Tests.Interception.pas',
   Spring.Tests.Interception.Types in 'Source\Core\Spring.Tests.Interception.Types.pas',
   Spring.Tests.Mocking in 'Source\Core\Spring.Tests.Mocking.pas',
-  {$ENDIF }
+{$ENDIF}
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in 'Source\Extensions\Spring.Tests.Cryptography.pas',
   Spring.Tests.Testing in 'Source\Spring.Tests.Testing.pas',
