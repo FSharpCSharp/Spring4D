@@ -36,6 +36,8 @@ type
   TParameterMatchingTests = class(TTestCase)
   published
     procedure ArgsEvaluationOrder;
+    procedure ArgsStackProperlyCleaned;
+
     procedure OutParameterCanBeSet;
     procedure VerifyChecksParameterValuesProperly;
     procedure TestVariant;
@@ -184,6 +186,20 @@ type
   IOutParamTest = interface(IInvokable)
     procedure Test(out value: Integer);
   end;
+
+procedure TParameterMatchingTests.ArgsStackProperlyCleaned;
+var
+  mock: Mock<IMockTest>;
+begin
+  mock := Mock<IMockTest>.Create(TMockBehavior.Strict);
+  mock.Received(Times.Never).Test1(Arg.IsAny<Integer>, Arg.IsAny<string>);
+
+  mock.Setup.Executes.When.Test2(Arg.IsAny<string>, Arg.IsAny<Integer>, Arg.IsAny<Boolean>);
+  mock.Instance.Test2('', 0, False);
+  mock.Received(Times.Once).Test2(Arg.IsAny<string>, Arg.IsAny<Integer>, Arg.IsAny<Boolean>);
+
+  Pass;
+end;
 
 procedure TParameterMatchingTests.OutParameterCanBeSet;
 var

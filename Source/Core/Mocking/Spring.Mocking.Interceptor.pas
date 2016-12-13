@@ -217,14 +217,17 @@ procedure TMockInterceptor.InterceptArrange(const invocation: IInvocation);
 var
   methodCall: TMethodCall;
 begin
-  if not Assigned(fMatch) then
-    fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters);
-  if not Assigned(fMatch) then
-    fMatch := CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters);
-  methodCall := TMethodCall.Create(fCurrentAction, fMatch);
-  fExpectedCalls.Add(invocation.Method, methodCall);
-  fState := TMockState.Act;
-  fMatch := nil;
+  try
+    if not Assigned(fMatch) then
+      fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters);
+    if not Assigned(fMatch) then
+      fMatch := CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters);
+    methodCall := TMethodCall.Create(fCurrentAction, fMatch);
+    fExpectedCalls.Add(invocation.Method, methodCall);
+  finally
+    fState := TMockState.Act;
+    fMatch := nil;
+  end;
 end;
 
 procedure TMockInterceptor.InterceptAssert(const invocation: IInvocation);
@@ -232,18 +235,21 @@ var
   arguments: IReadOnlyList<TArray<TValue>>;
   callCount: Integer;
 begin
-  if fReceivedCalls.TryGetValues(invocation.Method, arguments) then
-  begin
+  try
     if not Assigned(fMatch) then
       fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters);
-    if not Assigned(fMatch) then
-      fMatch := CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters);
-    callCount := arguments.Where(fMatch).Count;
+    if fReceivedCalls.TryGetValues(invocation.Method, arguments) then
+    begin
+      if not Assigned(fMatch) then
+        fMatch := CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters);
+      callCount := arguments.Where(fMatch).Count;
+    end
+    else
+      callCount := 0;
+  finally
+    fState := TMockState.Act;
     fMatch := nil;
-  end
-  else
-    callCount := 0;
-  fState := TMockState.Act;
+  end;
   if not fCurrentTimes.Verify(callCount) then
     raise EMockException.CreateResFmt(@SUnexpectedCallCount, [
       fCurrentTimes.ToString(callCount)]);
