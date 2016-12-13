@@ -222,8 +222,6 @@ type
     fTestedTypeKinds: TTypeKinds;
     const
       PointerSize = SizeOf(Pointer);
-    type
-      TByteSet = set of Byte;
   protected
     procedure MatchType(const aTypeInfo: PTypeInfo; const aExpectedTypeKind: TTypeKind;
       const aExpectedTypeSize: Integer);

@@ -54,6 +54,7 @@ type
   {$REGION 'Type redefinitions'}
 
   TBytes = SysUtils.TBytes;
+  TByteSet = set of Byte;
 
   TStringDynArray = Types.TStringDynArray;
 
