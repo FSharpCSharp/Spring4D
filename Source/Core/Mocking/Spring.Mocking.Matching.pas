@@ -59,9 +59,10 @@ type
     class function CreateMatcher<T>(const condition: TPredicate<TValue>): T; static;
 
     /// <summary>
-    ///   Creates an array match predicate based on the passed arguments that
-    ///   contain the index of the according match predicate on the global <c>
-    ///   conditions</c> variable passed by <c>Spring.Mocking.Arg</c>.
+    ///   Creates an array of match predicates based on the passed arguments
+    ///   that contain the index of the according match predicate on the thread
+    ///   local <c>conditionsStack</c> variable that was filled by <c>
+    ///   Spring.Mocking.Arg</c> .
     /// </summary>
     class function CreateMatchers(const indizes: TArray<TValue>;
       const parameters: TArray<TRttiParameter>): TPredicate<TArray<TValue>>; static;
@@ -69,36 +70,40 @@ type
 
   TRangeKind = (Inclusive, Exclusive);
 
-  Arg = record
+  TArg = record
   private
     fIndex: Integer;
   public
     class function IsAny<T>: T; overload; static;
     class function IsAny<T>(const condition: TPredicate<T>): T; overload; static;
     class function IsEqual<T>(const value: T): T; static;
+    class function IsIn(const values: TByteSet): Byte; overload; static;
     class function IsIn<T>(const values: array of T): T; overload; static;
     class function IsIn<T>(const values: IEnumerable<T>): T; overload; static;
     class function IsInRange<T>(const lowValue, highValue: T;
       rangeKind: TRangeKind = TRangeKind.Inclusive): T; static;
     class function IsNil<T>: T; static;
+    class function IsNotIn(const values: TByteSet): Byte; overload; static;
     class function IsNotIn<T>(const values: array of T): T; overload; static;
     class function IsNotIn<T>(const values: IEnumerable<T>): T; overload; static;
     class function IsNotNil<T>: T; static;
+    class function IsRegex(const pattern: string): string; static;
   end;
 
-  Args = record
+  TArgs = record
   strict private
     class function GetAny: TPredicate<TArray<TValue>>; static;
-    class function GetItems(index: Integer): Arg; static;
+    class function GetItems(index: Integer): TArg; static;
   public
     class property Any: TPredicate<TArray<TValue>> read GetAny;
-    class property Items[index: Integer]: Arg read GetItems; default;
+    class property Items[index: Integer]: TArg read GetItems; default;
   end;
 
 implementation
 
 uses
   Generics.Defaults,
+  RegularExpressions,
   TypInfo,
   Spring.ResourceStrings;
 
@@ -197,6 +202,11 @@ var
 begin
   s := IntToStr(index);
   case typeInfo.Kind of
+    tkWChar:
+    begin
+      Assert(index <= 9); // only support up to index 9 for a Char
+      PWideChar(@Result)^ := s[1];
+    end;
 {$IFNDEF NEXTGEN}
     tkLString:
       PAnsiString(@Result)^ := AnsiString(s);
@@ -247,24 +257,31 @@ end;
 class function TMatcherFactory.CreateMatchers(const indizes: TArray<TValue>;
   const parameters: TArray<TRttiParameter>): TPredicate<TArray<TValue>>;
 var
-  refParamCount, i: Integer;
+  refParamCount, emptyParamCount, i: Integer;
   conditions: TArray<TPredicate<TValue>>;
 begin
   if Assigned(conditionStack) then
   begin
-    refParamCount := 0;
-    for i := 0 to High(parameters) do
-      if parameters[i].Flags * [pfVar, pfOut] <> [] then
-        Inc(refParamCount);
+    try
+      refParamCount := 0;
+      for i := 0 to High(parameters) do
+        if parameters[i].Flags * [pfVar, pfOut] <> [] then
+          Inc(refParamCount);
+      emptyParamCount := 0;
+      for i := 0 to High(indizes) do
+        if indizes[i].IsEmpty then // nil can be passed without Arg, we handle it
+          Inc(emptyParamCount);
 
-    if Length(conditionStack) + refParamCount <> Length(indizes) then
-      raise ENotSupportedException.Create('when using Arg all arguments must be passed using this way');
+      if Length(conditionStack) + refParamCount + emptyParamCount <> Length(indizes) then
+        raise ENotSupportedException.Create('when using Arg all arguments must be passed using this way');
 
-    SetLength(conditions, Length(indizes));
-    for i := Low(indizes) to High(indizes) do
-      if parameters[i].Flags * [pfVar, pfOut] = [] then
-        conditions[i] := conditionStack[GetIndex(indizes[i])];
-    conditionStack := nil;
+      SetLength(conditions, Length(indizes));
+      for i := Low(indizes) to High(indizes) do
+        if (parameters[i].Flags * [pfVar, pfOut] = []) and not indizes[i].IsEmpty then
+          conditions[i] := conditionStack[GetIndex(indizes[i])];
+    finally
+      conditionStack := nil;
+    end;
 
     Result :=
       function(const args: TArray<TValue>): Boolean
@@ -302,7 +319,7 @@ class function TMatcherFactory.GetIndex(const v: TValue): Integer;
 const
   Handlers: array[TTypeKind] of function(const v: TValue): Integer = (
     GetIndexFail, GetIndexOrdinal, GetIndexOrdinal, GetIndexOrdinal, GetIndexFloat,
-    GetIndexFail, GetIndexOrdinal, GetIndexObject, GetIndexFail, GetIndexOrdinal,
+    GetIndexFail, GetIndexOrdinal, GetIndexObject, GetIndexFail, GetIndexString,
     GetIndexString, GetIndexString, GetIndexVariant, GetIndexFail, GetIndexRecord,
     GetIndexInterface, GetIndexOrdinal, GetIndexArray, GetIndexString, GetIndexFail,
     GetIndexFail, GetIndexFail);
@@ -314,7 +331,7 @@ class procedure TMatcherFactory.SetIndex(typeInfo: PTypeInfo; index: Integer; va
 const
   Handlers: array[TTypeKind] of procedure (typeInfo: PTypeInfo; index: Integer; var Result) = (
     SetIndexFail, SetIndexOrdinal, SetIndexOrdinal, SetIndexOrdinal, SetIndexFloat,
-    SetIndexFail, SetIndexOrdinal, SetIndexObject, SetIndexFail, SetIndexOrdinal,
+    SetIndexFail, SetIndexOrdinal, SetIndexObject, SetIndexFail, SetIndexString,
     SetIndexString, SetIndexString, SetIndexVariant, SetIndexFail, SetIndexRecord,
     SetIndexInterface, SetIndexOrdinal, SetIndexArray, SetIndexString, SetIndexFail,
     SetIndexFail, SetIndexFail);
@@ -344,9 +361,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Arg'}
+{$REGION 'TArg'}
 
-class function Arg.IsAny<T>: T;
+class function TArg.IsAny<T>: T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
@@ -355,7 +372,7 @@ begin
     end);
 end;
 
-class function Arg.IsAny<T>(const condition: TPredicate<T>): T;
+class function TArg.IsAny<T>(const condition: TPredicate<T>): T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
@@ -364,7 +381,7 @@ begin
     end);
 end;
 
-class function Arg.IsEqual<T>(const value: T): T;
+class function TArg.IsEqual<T>(const value: T): T;
 var
   comparer: IEqualityComparer<T>;
 begin
@@ -376,26 +393,31 @@ begin
     end);
 end;
 
-class function Arg.IsIn<T>(const values: array of T): T;
+class function TArg.IsIn(const values: TByteSet): Byte;
 var
-  capturedValues: TArray<T>;
-  comparer: IEqualityComparer<T>;
+  capturedValues: TByteSet;
 begin
-  capturedValues := TArray.Copy<T>(values);
-  comparer := TEqualityComparer<T>.Default;
-  Result := TMatcherFactory.CreateMatcher<T>(
+  capturedValues := values;
+  Result := TMatcherFactory.CreateMatcher<Byte>(
     function(const arg: TValue): Boolean
-    var
-      i: Integer;
     begin
-      for i := Low(capturedValues) to High(capturedValues) do
-        if comparer.Equals(arg.AsType<T>, capturedValues[i]) then
-          Exit(True);
-      Result := False;
+      Result := arg.AsType<Byte> in capturedValues;
     end);
 end;
 
-class function Arg.IsIn<T>(const values: IEnumerable<T>): T;
+class function TArg.IsIn<T>(const values: array of T): T;
+var
+  capturedValues: TArray<T>;
+begin
+  capturedValues := TArray.Copy<T>(values);
+  Result := TMatcherFactory.CreateMatcher<T>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := TArray.Contains<T>(capturedValues, arg.AsType<T>);
+    end);
+end;
+
+class function TArg.IsIn<T>(const values: IEnumerable<T>): T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
@@ -404,7 +426,7 @@ begin
     end);
 end;
 
-class function Arg.IsInRange<T>(const lowValue, highValue: T;
+class function TArg.IsInRange<T>(const lowValue, highValue: T;
   rangeKind: TRangeKind): T;
 var
   comparer: IComparer<T>;
@@ -412,17 +434,20 @@ begin
   comparer := TComparer<T>.Default;
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
+    var
+      value: T;
     begin
+      value := arg.AsType<T>;
       if rangeKind = TRangeKind.Exclusive then
-        Result := (comparer.Compare(arg.AsType<T>, lowValue) > 0)
-          and (comparer.Compare(arg.AsType<T>, highValue) < 0)
+        Result := (comparer.Compare(value, lowValue) > 0)
+          and (comparer.Compare(value, highValue) < 0)
       else
-        Result := (comparer.Compare(arg.AsType<T>, lowValue) >= 0)
-          and (comparer.Compare(arg.AsType<T>, highValue) <= 0);
+        Result := (comparer.Compare(value, lowValue) >= 0)
+          and (comparer.Compare(value, highValue) <= 0);
     end);
 end;
 
-class function Arg.IsNil<T>: T;
+class function TArg.IsNil<T>: T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
@@ -431,26 +456,31 @@ begin
     end);
 end;
 
-class function Arg.IsNotIn<T>(const values: array of T): T;
+class function TArg.IsNotIn<T>(const values: array of T): T;
 var
   capturedValues: TArray<T>;
-  comparer: IEqualityComparer<T>;
 begin
   capturedValues := TArray.Copy<T>(values);
-  comparer := TEqualityComparer<T>.Default;
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
-    var
-      i: Integer;
     begin
-      for i := Low(capturedValues) to High(capturedValues) do
-        if comparer.Equals(arg.AsType<T>, capturedValues[i]) then
-          Exit(False);
-      Result := True;
+      Result := not TArray.Contains<T>(capturedValues, arg.AsType<T>);
     end);
 end;
 
-class function Arg.IsNotIn<T>(const values: IEnumerable<T>): T;
+class function TArg.IsNotIn(const values: TByteSet): Byte;
+var
+  capturedValues: TByteSet;
+begin
+  capturedValues := values;
+  Result := TMatcherFactory.CreateMatcher<Byte>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := not (arg.AsType<Byte> in capturedValues);
+    end);
+end;
+
+class function TArg.IsNotIn<T>(const values: IEnumerable<T>): T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
@@ -459,7 +489,7 @@ begin
     end);
 end;
 
-class function Arg.IsNotNil<T>: T;
+class function TArg.IsNotNil<T>: T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
@@ -468,12 +498,24 @@ begin
     end);
 end;
 
+class function TArg.IsRegex(const pattern: string): string;
+var
+  regex: TRegEx;
+begin
+  regex := TRegEx.Create(pattern);
+  Result := TMatcherFactory.CreateMatcher<string>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := regex.IsMatch(pattern);
+    end);
+end;
+
 {$ENDREGION}
 
 
-{$REGION 'Args'}
+{$REGION 'TArgs'}
 
-class function Args.GetAny: TPredicate<TArray<TValue>>;
+class function TArgs.GetAny: TPredicate<TArray<TValue>>;
 begin
   Result :=
     function(const args: TArray<TValue>): Boolean
@@ -482,7 +524,7 @@ begin
     end;
 end;
 
-class function Args.GetItems(index: Integer): Arg;
+class function TArgs.GetItems(index: Integer): TArg;
 begin
   Result.fIndex := index;
 end;

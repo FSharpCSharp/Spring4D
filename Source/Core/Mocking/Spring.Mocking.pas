@@ -48,10 +48,9 @@ type
 
   TValue = Rtti.TValue;
 
-  Arg = Spring.Mocking.Matching.Arg;
-  Args = Spring.Mocking.Matching.Args;
-
 const
+  Arg: TArg = ();
+  Args: TArgs = ();
   DefaultMockBehavior = TMockBehavior.Dynamic;
 
 type
