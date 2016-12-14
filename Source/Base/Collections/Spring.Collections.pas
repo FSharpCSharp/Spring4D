@@ -2567,6 +2567,10 @@ type
     /// </returns>
     class function Empty<T>: IEnumerable<T>; static;
 
+    class function From<T>(const source: array of T): IEnumerable<T>; overload; static;
+    class function From<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
+    class function From<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
+
     class function Min<T>(const source: IEnumerable<T>;
       const selector: TFunc<T, Integer>): Integer; overload; static;
     class function Max<T>(const source: IEnumerable<T>;
@@ -2585,10 +2589,6 @@ type
     class function OrderByDescending<T, TKey>(const source: IEnumerable<T>;
       const keySelector: TFunc<T,TKey>;
       const comparer: IComparer<TKey>): IEnumerable<T>; overload; static;
-
-    class function Query<T>(const source: array of T): IEnumerable<T>; overload; static;
-    class function Query<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
-    class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
 
     class function Range(start, count: Integer): IEnumerable<Integer>; static;
 
@@ -3318,6 +3318,22 @@ begin
   Result := TEmptyEnumerable<T>.Instance;
 end;
 
+class function TEnumerable.From<T>(const source: array of T): IEnumerable<T>;
+begin
+  Result := TArrayIterator<T>.Create(source);
+end;
+
+class function TEnumerable.From<T>(const source: TArray<T>): IEnumerable<T>;
+begin
+  Result := TArrayIterator<T>.Create(source);
+end;
+
+class function TEnumerable.From<T>(
+  const source: TEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TEnumerableAdapter<T>.Create(source);
+end;
+
 class function TEnumerable.GroupBy<T, TKey>(const source: IEnumerable<T>;
   const keySelector: TFunc<T, TKey>): IEnumerable<IGrouping<TKey, T>>;
 begin
@@ -3385,22 +3401,6 @@ class function TEnumerable.OrderByDescending<T, TKey>(
   const comparer: IComparer<TKey>): IEnumerable<T>;
 begin
   Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector, comparer, True);
-end;
-
-class function TEnumerable.Query<T>(const source: array of T): IEnumerable<T>;
-begin
-  Result := TArrayIterator<T>.Create(source);
-end;
-
-class function TEnumerable.Query<T>(const source: TArray<T>): IEnumerable<T>;
-begin
-  Result := TArrayIterator<T>.Create(source);
-end;
-
-class function TEnumerable.Query<T>(
-  const source: TEnumerable<T>): IEnumerable<T>;
-begin
-  Result := TEnumerableAdapter<T>.Create(source);
 end;
 
 class function TEnumerable.Range(start, count: Integer): IEnumerable<Integer>;

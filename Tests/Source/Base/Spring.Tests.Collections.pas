@@ -2539,7 +2539,7 @@ var
   words: IEnumerable<string>;
 begin
   sentence := 'the quick brown fox jumps over the lazy dog';
-  words := TEnumerable.Query<string>(TArray<string>(SplitString(sentence, ' ')));
+  words := TEnumerable.From<string>(TArray<string>(SplitString(sentence, ' ')));
   reversed := words.Aggregate(
     function(workingSentence, next: string): string
     begin
