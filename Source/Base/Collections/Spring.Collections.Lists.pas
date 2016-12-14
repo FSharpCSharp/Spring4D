@@ -113,7 +113,7 @@ type
     procedure Move(currentIndex, newIndex: Integer); override;
 
     procedure Reverse(index, count: Integer); override;
-    procedure Sort(const comparer: IComparer<T>); override;
+    procedure Sort(const comparer: IComparer<T>; index, count: Integer); override;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); override;
     function MoveTo(const collection: ICollection<T>;
@@ -595,9 +595,9 @@ begin
     Changed(oldItems[i], caRemoved);
 end;
 
-procedure TList<T>.Sort(const comparer: IComparer<T>);
+procedure TList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
-  TArray.Sort<T>(fItems, comparer, 0, fCount);
+  TArray.Sort<T>(fItems, comparer, index, count);
   IncreaseVersion;
 
   Changed(Default(T), caReseted);

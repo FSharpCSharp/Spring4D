@@ -465,8 +465,10 @@ type
     procedure Reverse(index, count: Integer); overload; virtual; abstract;
 
     procedure Sort; overload;
-    procedure Sort(const comparer: IComparer<T>); overload; virtual; abstract;
-    procedure Sort(const comparison: TComparison<T>); overload;
+    procedure Sort(const comparer: IComparer<T>); overload;
+    procedure Sort(const comparer: TComparison<T>); overload;
+    procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload; virtual; abstract;
+    procedure Sort(const comparer: TComparison<T>; index, count: Integer); overload;
 
     function ToArray: TArray<T>; override;
     procedure TrimExcess;
@@ -2036,12 +2038,23 @@ end;
 
 procedure TListBase<T>.Sort;
 begin
-  Sort(fComparer);
+  Sort(fComparer, 0, Count);
 end;
 
-procedure TListBase<T>.Sort(const comparison: TComparison<T>);
+procedure TListBase<T>.Sort(const comparer: IComparer<T>);
 begin
-  Sort(IComparer<T>(PPointer(@comparison)^));
+  Sort(comparer, 0, Count);
+end;
+
+procedure TListBase<T>.Sort(const comparer: TComparison<T>);
+begin
+  Sort(IComparer<T>(PPointer(@comparer)^), 0, Count);
+end;
+
+procedure TListBase<T>.Sort(const comparer: TComparison<T>; index,
+  count: Integer);
+begin
+  Sort(IComparer<T>(PPointer(@comparer)^), index, count);
 end;
 
 function TListBase<T>.ToArray: TArray<T>;

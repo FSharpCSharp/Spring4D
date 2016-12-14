@@ -1076,6 +1076,8 @@ type
     procedure Sort; overload;
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparer: TComparison<T>); overload;
+    procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
+    procedure Sort(const comparer: TComparison<T>; index, count: Integer); overload;
 
     /// <summary>
     ///   Determines the index of a specific item in the IList&lt;T&gt;.
