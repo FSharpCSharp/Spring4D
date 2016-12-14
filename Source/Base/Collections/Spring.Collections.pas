@@ -2602,6 +2602,10 @@ type
     class function SelectMany<T, TResult>(const source: IEnumerable<T>;
       const selector: TFunc<T, IEnumerable<TResult>>): IEnumerable<TResult>; overload; static;
 
+    class function Distinct<T>(const source: IEnumerable<T>): IEnumerable<T>; overload; static;
+    class function Distinct<T>(const source: IEnumerable<T>;
+      const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
+
     class function GroupBy<T, TKey>(const source: IEnumerable<T>;
       const keySelector: TFunc<T, TKey>): IEnumerable<IGrouping<TKey,T>>; overload; static;
     class function GroupBy<T, TKey, TElement>(const source: IEnumerable<T>;
@@ -3314,6 +3318,18 @@ end;
 
 
 {$REGION 'TEnumerable'}
+
+class function TEnumerable.Distinct<T>(
+  const source: IEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TDistinctIterator<T>.Create(source, nil);
+end;
+
+class function TEnumerable.Distinct<T>(const source: IEnumerable<T>;
+  const comparer: IEqualityComparer<T>): IEnumerable<T>;
+begin
+  Result := TDistinctIterator<T>.Create(source, comparer);
+end;
 
 class function TEnumerable.Empty<T>: IEnumerable<T>;
 begin
