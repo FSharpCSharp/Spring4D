@@ -74,6 +74,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; override;
     function GetCount: Integer; override;
+    function GetIsEmpty: Boolean; override;
     function GetItem(index: Integer): T; override;
     function GetItems: TArray<T>;
     procedure SetCapacity(value: Integer); override;
@@ -341,6 +342,11 @@ begin
 {$ELSE}
   Result := TEnumerator.Create(Self);
 {$ENDIF}
+end;
+
+function TList<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
 end;
 
 function TList<T>.GetItem(index: Integer): T;

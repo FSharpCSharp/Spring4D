@@ -77,7 +77,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
-    function GetIsEmpty: Boolean;
+    function GetIsEmpty: Boolean; virtual;
   {$ENDREGION}
   protected
   {$REGION 'Implements IInterface'}
@@ -93,6 +93,7 @@ type
 
     property Count: Integer read GetCount;
     property ElementType: PTypeInfo read GetElementType;
+    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   /// <summary>
@@ -405,8 +406,8 @@ type
   {$HINTS ON}
   protected
   {$REGION 'Property Accessors'}
-    function GetCount: Integer; override;
     function GetCapacity: Integer; virtual; abstract;
+    function GetCount: Integer; override;
     function GetItem(index: Integer): T; virtual; abstract;
     procedure SetCount(count: Integer); virtual;
     procedure SetCapacity(value: Integer); virtual; abstract;
@@ -521,11 +522,8 @@ end;
 {$REGION 'TEnumerableBase'}
 
 function TEnumerableBase.Any: Boolean;
-var
-  enumerator: IEnumerator;
 begin
-  enumerator := GetEnumerator;
-  Result := enumerator.MoveNext;
+  Result := not IsEmpty;
 end;
 
 function TEnumerableBase.AsObject: TObject;
