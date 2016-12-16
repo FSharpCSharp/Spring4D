@@ -195,7 +195,7 @@ var
 begin
   if (IID <> ObjCastGUID) or fTarget.IsEmpty then
   begin
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
     if Result = S_OK then
       Exit;
   end;
@@ -250,7 +250,7 @@ function TAggregatedInterfaceProxy.QueryInterface(const IID: TGUID;
 begin
   if IID = IInterface then
     Exit(fOwner.QueryInterface(IID, Obj));
-  Result := inherited;
+  Result := inherited QueryInterface(IID, Obj);
   if Result <> S_OK then
     Result := fOwner.QueryInterface(IID, Obj);
 end;

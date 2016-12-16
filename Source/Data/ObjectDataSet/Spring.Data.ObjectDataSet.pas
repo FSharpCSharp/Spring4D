@@ -558,7 +558,7 @@ end;
 
 procedure TObjectDataSet.InternalClose;
 begin
-  inherited;
+  inherited InternalClose;
   UnregisterChangeHandler;
 end;
 
@@ -598,7 +598,7 @@ procedure TObjectDataSet.InternalOpen;
 begin
   if IsFiltered then
     InitFilterParser;
-  inherited;
+  inherited InternalOpen;
 end;
 
 procedure TObjectDataSet.InternalRefresh;

@@ -313,7 +313,7 @@ end;
 destructor TStack<T>.TEnumerator.Destroy;
 begin
   fStack._Release;
-  inherited;
+  inherited Destroy;
 end;
 
 function TStack<T>.TEnumerator.GetCurrent: T;

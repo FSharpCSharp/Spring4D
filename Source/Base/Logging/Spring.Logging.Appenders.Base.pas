@@ -117,7 +117,7 @@ uses
 
 constructor TLogAppenderBase.Create;
 begin
-  inherited;
+  inherited Create;
   fEnabled := True;
   fLevels := LOG_BASIC_LEVELS;
   fEntryTypes := LOG_BASIC_ENTRY_TYPES;

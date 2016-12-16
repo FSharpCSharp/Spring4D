@@ -200,7 +200,7 @@ uses
 
 constructor TLoggerBase.Create;
 begin
-  inherited;
+  inherited Create;
   fDefaultLevel := TLogLevel.Info;
   fEnabled := True;
   fLevels := LOG_BASIC_LEVELS;
@@ -647,7 +647,7 @@ end;
 destructor TLoggerBase.TLogTracking.Destroy;
 begin
   fLogger.Leave(fLevel, fClassType, fMethodName);
-  inherited;
+  inherited Destroy;
 end;
 
 {$ENDREGION}

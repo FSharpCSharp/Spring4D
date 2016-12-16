@@ -191,7 +191,7 @@ type
 
 constructor TLoggingConfiguration.Create;
 begin
-  inherited;
+  inherited Create;
   fTypes := TCollections.CreateDictionary<PTypeInfo, string>;
 end;
 

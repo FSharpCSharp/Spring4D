@@ -641,7 +641,7 @@ begin
 {$ELSE}
   fValue^.AsObject.DisposeOf;
 {$ENDIF}
-  inherited;
+  inherited Destroy;
 end;
 
 function TValueHolder.TComponentHolder._AddRef: Integer;
@@ -659,7 +659,7 @@ end;
 procedure TValueHolder.TComponentHolder.Notification(Component: TComponent;
   Operation: TOperation);
 begin
-  inherited;
+  inherited Notification(Component, Operation);
   if Operation = opRemove then
     fValue^ := nil;
 end;

@@ -469,7 +469,7 @@ procedure ManyValuedAssociationAttribute.SetEntityClass(const value: TClass);
 var
   rttiType: TRttiType;
 begin
-  inherited;
+  inherited SetEntityClass(value);
   rttiType := TType.GetType(fEntityClass);
   fMappedByMember := rttiType.GetField(fMappedBy);
   if not Assigned(fMappedByMember) then
@@ -484,7 +484,7 @@ end;
 constructor OneToManyAttribute.Create(required: Boolean;
   cascade: TCascadeKinds);
 begin
-  inherited;
+  inherited Create(required, cascade);
 end;
 
 {$ENDREGION}

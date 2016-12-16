@@ -509,7 +509,7 @@ end;
 
 procedure TTestSuite.SetUp;
 begin
-  inherited;
+  inherited SetUp;
   if Assigned(fTestClass) then
     fTestClass.SetUpFixture;
 end;
@@ -518,7 +518,7 @@ procedure TTestSuite.TearDown;
 begin
   if Assigned(fTestClass) then
     fTestClass.TearDownFixture;
-  inherited;
+  inherited TearDown;
 end;
 
 procedure TTestSuite.AddTests(testClass: TTestCaseClass);

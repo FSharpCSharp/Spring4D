@@ -209,7 +209,7 @@ destructor TMultiMapBase<TKey, TValue>.Destroy;
 begin
   fValues.Free;
   fDictionary.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TMultiMapBase<TKey, TValue>.Add(const key: TKey; const value: TValue);
@@ -570,7 +570,7 @@ end;
 procedure TObjectMultiMap<TKey, TValue>.KeyChanged(const item: TKey;
   action: TCollectionChangedAction);
 begin
-  inherited;
+  inherited KeyChanged(item, action);
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
 {$IFNDEF AUTOREFCOUNT}
     PObject(@item).Free;
@@ -582,7 +582,7 @@ end;
 procedure TObjectMultiMap<TKey, TValue>.ValueChanged(const item: TValue;
   action: TCollectionChangedAction);
 begin
-  inherited;
+  inherited ValueChanged(item, action);
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
 {$IFNDEF AUTOREFCOUNT}
     PObject(@item).Free;

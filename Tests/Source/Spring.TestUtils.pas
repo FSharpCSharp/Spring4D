@@ -186,7 +186,7 @@ end;
 
 procedure TTestCase<T>.SetUp;
 begin
-  inherited;
+  inherited SetUp;
   fSUT := T.Create;
 {$IFNDEF AUTOREFCOUNT}
   if fSUT.InheritsFrom(TInterfacedObject) then
@@ -202,7 +202,7 @@ begin
   else
 {$ENDIF}
     fSUT.Free;
-  inherited;
+  inherited TearDown;
 end;
 
 {$ENDREGION}

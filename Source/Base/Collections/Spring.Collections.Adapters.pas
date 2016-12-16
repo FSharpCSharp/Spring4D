@@ -295,7 +295,7 @@ begin
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TCollectionAdapter<T>.Remove(const item: TValue): Boolean;
@@ -448,7 +448,7 @@ begin
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 procedure TListAdapter<T>.Reverse;
@@ -557,7 +557,7 @@ begin
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TDictionaryAdapter<TKey, T>.Remove(const key: TValue): Boolean;
@@ -624,7 +624,7 @@ begin
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TStackAdapter<T>.TryPeek(out item: TValue): Boolean;
@@ -698,7 +698,7 @@ begin
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TQueueAdapter<T>.TryDequeue(out item: TValue): Boolean;
@@ -772,7 +772,7 @@ begin
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function THashSetAdapter<T>.SetEquals(const other: IEnumerable): Boolean;

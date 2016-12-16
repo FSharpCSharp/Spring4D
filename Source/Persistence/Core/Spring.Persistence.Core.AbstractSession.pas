@@ -198,7 +198,7 @@ end;
 destructor TAbstractSession.Destroy;
 begin
   fOldStateEntities := nil;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TAbstractSession.AttachEntity(const entity: TObject);
@@ -582,7 +582,7 @@ end;
 destructor TAbstractSession.TRowMapperInternal.Destroy;
 begin
   fColumnsData.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TAbstractSession.TRowMapperInternal.MapAssociation(

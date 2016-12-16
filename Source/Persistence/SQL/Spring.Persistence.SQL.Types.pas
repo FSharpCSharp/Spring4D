@@ -433,7 +433,7 @@ destructor TSQLJoinSegment.Destroy;
 begin
   fForeignKeyField.Free;
   fPrimaryKeyField.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 {$ENDREGION}

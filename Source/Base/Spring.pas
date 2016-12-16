@@ -3163,7 +3163,7 @@ begin
     FreeAndNil(DefaultFields[i]);
   for i := 0 to High(ManagedFields) do
     FreeAndNil(ManagedFields[i]);
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TInitTable.AddDefaultField(fieldType: PTypeInfo;
@@ -3559,13 +3559,13 @@ end;
 procedure TManagedObject.FreeInstance;
 begin
   GetInitTable(ClassType).CleanupInstance(Self);
-  inherited;
+  inherited FreeInstance;
 end;
 {$ENDIF}
 
 class function TManagedObject.NewInstance: TObject;
 begin
-  Result := inherited;
+  Result := inherited NewInstance;
   GetInitTable(Self).InitInstance(Result);
 end;
 
@@ -3578,13 +3578,13 @@ end;
 procedure TManagedInterfacedObject.FreeInstance;
 begin
   GetInitTable(ClassType).CleanupInstance(Self);
-  inherited;
+  inherited FreeInstance;
 end;
 {$ENDIF}
 
 class function TManagedInterfacedObject.NewInstance: TObject;
 begin
-  Result := inherited;
+  Result := inherited NewInstance;
   GetInitTable(Self).InitInstance(Result);
 end;
 
@@ -5399,7 +5399,7 @@ end;
 {$IF not defined(DELPHIXE7_UP) and not defined(AUTOREFCOUNT)}
 procedure TInterfacedObjectEx.BeforeDestruction;
 begin
-  inherited;
+  inherited BeforeDestruction;
   FRefCount := objDestroyingFlag;
 end;
 
@@ -6049,14 +6049,14 @@ end;
 
 constructor TLazy.Create;
 begin
-  inherited;
+  inherited Create;
   fLock := TCriticalSection.Create;
 end;
 
 destructor TLazy.Destroy;
 begin
   fLock.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TLazy.GetIsValueCreated: Boolean;
@@ -6106,7 +6106,7 @@ end;
 
 destructor TLazy<T>.Destroy;
 begin
-  inherited;
+  inherited Destroy;
   if TType.Kind<T> = tkClass then
 {$IFNDEF AUTOREFCOUNT}
     if fOwnsObjects then
@@ -6280,7 +6280,7 @@ destructor TWeakReferences.Destroy;
 begin
   fWeakReferences.Free;
   fLock.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 class constructor TWeakReferences.Create;
@@ -6385,7 +6385,7 @@ end;
 destructor TWeakReference<T>.Destroy;
 begin
   SetTarget(Default(T));
-  inherited;
+  inherited Destroy;
 end;
 
 function TWeakReference<T>.GetTarget: T;
@@ -6727,7 +6727,7 @@ end;
 procedure TNotificationHandler.Notification(Component: TComponent;
   Operation: TOperation);
 begin
-  inherited;
+  inherited Notification(Component, Operation);
   if Assigned(fOnNotification) then
     fOnNotification(Component, Operation);
 end;
@@ -6786,7 +6786,7 @@ end;
 destructor TInterfacedCriticalSection.TScopedLock.Destroy;
 begin
   fCriticalSection.Leave;
-  inherited;
+  inherited Destroy;
 end;
 
 {$ENDREGION}
@@ -6854,7 +6854,7 @@ begin
 {$ENDIF}
     tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
   end;
-  inherited;
+  inherited Destroy;
 end;
 
 function TManaged<T>.Invoke: T;

@@ -2085,7 +2085,7 @@ end;
 destructor TLookup<TKey, TElement>.Destroy;
 begin
   fGroupingKeys.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TLookup<TKey, TElement>.Contains(const key: TKey): Boolean;
@@ -2177,7 +2177,7 @@ end;
 procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TGrouping;
   action: TCollectionChangedAction);
 begin
-  inherited;
+  inherited Changed(item, action);
   case action of
     caAdded: TGrouping(item)._AddRef;
     caRemoved: TGrouping(item)._Release;
@@ -2252,7 +2252,7 @@ end;
 destructor TJoinIterator<TOuter, TInner, TKey, TResult>.Destroy;
 begin
   fLookup.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TJoinIterator<TOuter, TInner, TKey, TResult>.Clone: TIterator<TResult>;
@@ -2346,7 +2346,7 @@ end;
 destructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Destroy;
 begin
   fLookup.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Clone: TIterator<TResult>;

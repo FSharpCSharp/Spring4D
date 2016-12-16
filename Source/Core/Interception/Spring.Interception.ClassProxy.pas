@@ -114,7 +114,7 @@ end;
 destructor TClassProxy.Destroy;
 begin
   FreeMem(ProxyClassData.IntfTable);
-  inherited;
+  inherited Destroy;
 end;
 
 class constructor TClassProxy.Create;

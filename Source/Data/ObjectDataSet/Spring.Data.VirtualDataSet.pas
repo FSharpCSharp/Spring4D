@@ -524,7 +524,7 @@ begin
         and (FieldListCheckSum(Self) <> NativeInt(Reserved)) then
         Reserved := nil;
   end;
-  inherited;
+  inherited DataEvent(Event, Info);
 end;
 
 procedure TCustomVirtualDataSet.DoDeleteRecord(Index: Integer);

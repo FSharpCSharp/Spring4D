@@ -139,7 +139,7 @@ begin
   if Assigned(fMethodTable) then
     FreeMem(fMethodTable);
   fIntercepts.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TVirtualInterface.DoInvoke(UserData: Pointer;
@@ -163,7 +163,7 @@ begin
     Result := S_OK;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TVirtualInterface.QueryInterfaceFromIntf(
@@ -177,7 +177,7 @@ end;
 
 function TVirtualInterface._AddRef: Integer;
 begin
-  Result := inherited;
+  Result := inherited _AddRef;
 end;
 
 function TVirtualInterface._AddRefFromIntf: Integer;
@@ -190,7 +190,7 @@ end;
 
 function TVirtualInterface._Release: Integer;
 begin
-  Result := inherited;
+  Result := inherited _Release;
 end;
 
 function TVirtualInterface._ReleaseFromIntf: Integer;

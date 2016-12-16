@@ -1704,7 +1704,7 @@ end;
 
 constructor TMapBase<TKey, T>.Create;
 begin
-  inherited;
+  inherited Create;
   fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
 end;
@@ -1843,7 +1843,7 @@ end;
 
 function TListBase<T>.GetCount: Integer;
 begin
-  Result := inherited;
+  Result := inherited GetCount;
 end;
 
 function TListBase<T>.GetRange(index, count: Integer): IList<T>;
@@ -1965,7 +1965,7 @@ begin
       Result := E_NOINTERFACE;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TListBase<T>.LastIndexOf(const item: T): Integer;

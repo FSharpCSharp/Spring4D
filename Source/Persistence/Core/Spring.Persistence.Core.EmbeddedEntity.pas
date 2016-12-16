@@ -197,7 +197,7 @@ end;
 
 constructor TEmbeddedArrayEntity.Create;
 begin
-  inherited;
+  inherited Create;
   fValues := TCollections.CreateList<Variant>;
   fCurrent := -1;
 end;

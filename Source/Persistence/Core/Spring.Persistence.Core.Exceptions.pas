@@ -211,7 +211,7 @@ implementation
 {$IFDEF AUTOREFCOUNT}
 procedure EORMException.RaisingException(P: PExceptionRecord);
 begin
-  inherited;
+  inherited RaisingException(P);
   // fixes AcquireExceptionObject ARC issue (RSP-13652)
   if Assigned(InnerException) then
     InnerException.__ObjRelease;

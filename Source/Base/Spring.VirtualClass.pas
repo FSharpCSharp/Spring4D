@@ -255,7 +255,7 @@ end;
 destructor TVirtualClass.Destroy;
 begin
   DestroyVirtualClass(fProxyClass);
-  inherited;
+  inherited Destroy;
 end;
 
 function TVirtualClass.GetClassProxyData: PClassData;
@@ -283,7 +283,7 @@ begin
     DestroyVirtualClass(classType);
   fLock.Free;
   fClasses.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 class constructor TVirtualClasses.Create;

@@ -213,14 +213,14 @@ end;
 
 constructor TBuilder.Create;
 begin
-  inherited;
+  inherited Create;
   fString := TStringBuilder.Create;
 end;
 
 destructor TBuilder.Destroy;
 begin
   fString.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TBuilder.EndAppender;

@@ -177,7 +177,7 @@ begin
 {$ELSE}
     fProxy := TValue.Empty;
 {$ENDIF}
-  inherited;
+  inherited Destroy;
 end;
 
 function TMock.CreateProxy(typeInfo: PTypeInfo;

@@ -197,7 +197,7 @@ begin
   fNotificationHandler := nil;
   fHandlers.Free;
   fLock.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TEventBase.EventsChanged;

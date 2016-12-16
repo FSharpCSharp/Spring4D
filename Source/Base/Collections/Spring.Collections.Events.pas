@@ -53,7 +53,7 @@ implementation
 
 constructor TCollectionChangedEventImpl<T>.Create;
 begin
-  inherited;
+  inherited Create;
   TCollectionChangedEvent<T>(fInvoke) := InternalInvoke;
 end;
 

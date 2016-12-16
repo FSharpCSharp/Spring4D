@@ -519,7 +519,7 @@ end;
 destructor TLinkedList<T>.TEnumerator.Destroy;
 begin
   fList._Release;
-  inherited;
+  inherited Destroy;
 end;
 
 function TLinkedList<T>.TEnumerator.GetCurrent: T;

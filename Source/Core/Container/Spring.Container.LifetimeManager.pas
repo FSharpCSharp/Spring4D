@@ -251,7 +251,7 @@ destructor TSingletonPerThreadLifetimeManager.Destroy;
 begin
   // Needs to be freed prior our weakrefs get cleared
   fInstances := nil;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TSingletonPerThreadLifetimeManager.HandleValueChanged(sender: TObject;

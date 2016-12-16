@@ -122,7 +122,7 @@ begin
   // Needs to be freed prior our weakrefs get cleared
   fInstances := nil;
   fLock.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TSimpleObjectPool.AddNewInstance(const context: ICreationContext): TObject;

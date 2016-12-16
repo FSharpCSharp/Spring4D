@@ -244,7 +244,7 @@ destructor TMethodImplementationHack.Destroy;
 begin
   if FInvokeInfo <> nil then
     FInvokeInfo.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TRttiInvokableTypeHelper.CreateImplementation(AUserData: Pointer;
@@ -818,7 +818,7 @@ end;
 procedure TEvent.Notify(Sender: TObject; const Item: TMethodPointer;
   Action: TCollectionNotification);
 begin
-  inherited;
+  inherited Notify(Sender, Item, Action);
   if fTypeInfo.Kind = tkInterface then
     case Action of
       cnAdded: IInterface(TMethod(Item).Data)._AddRef;
@@ -883,7 +883,7 @@ end;
 
 constructor TNotifyEventImpl.Create;
 begin
-  inherited;
+  inherited Create;
   TNotifyEvent(fInvoke) := InternalInvoke;
 end;
 
@@ -918,7 +918,7 @@ end;
 
 constructor TNotifyEventImpl<T>.Create;
 begin
-  inherited;
+  inherited Create;
   TNotifyEvent<T>(fInvoke) := InternalInvoke;
 end;
 
@@ -953,7 +953,7 @@ end;
 
 constructor TPropertyChangedEventImpl.Create;
 begin
-  inherited;
+  inherited Create;
   TPropertyChangedEvent(fInvoke) := InternalInvoke;
 end;
 

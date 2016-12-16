@@ -191,7 +191,7 @@ uses
 
 constructor TLogAppenderWithTimeStampFormat.Create;
 begin
-  inherited;
+  inherited Create;
   Format := 'hh:nn:ss:zzz';
 end;
 
@@ -259,7 +259,7 @@ begin
     fStream.Free;
 {$ENDIF}
   fLock.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TStreamLogAppender.DoSend(const entry: TLogEntry);

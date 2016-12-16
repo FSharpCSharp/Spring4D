@@ -107,7 +107,7 @@ begin
   for instance in fPerResolveInstances.Values do
     if instance.TryAsType<TInterfacedObject>(interfacedObject) and Assigned(interfacedObject) then
       TInterlocked.Decrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
-  inherited;
+  inherited Destroy;
 end;
 {$ENDIF}
 

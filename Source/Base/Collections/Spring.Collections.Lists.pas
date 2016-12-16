@@ -323,7 +323,7 @@ begin
     end;
   end
   else
-    inherited;
+    inherited Create(collection);
 end;
 
 function TList<T>.GetCount: Integer;
@@ -1430,7 +1430,7 @@ begin
     end;
   end;
 
-  inherited;
+  inherited Changed(value, action);
   DoPropertyChanged('Count');
 end;
 
