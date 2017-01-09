@@ -4753,8 +4753,14 @@ begin
 end;
 
 function ConvOrd2Ord(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+var
+  i: Int64;
 begin
-  value := TValue.FromOrdinal(target, source.AsOrdinal);
+  i := source.AsOrdinal;
+  with target.TypeData^ do
+    if (i < MinValue) or (i > MaxValue) then
+      Exit(False);
+  value := TValue.FromOrdinal(target, i);
   Result := True;
 end;
 
@@ -5110,7 +5116,7 @@ begin
     if TryGetLazyValue(value) and value.TryCast(targetTypeInfo, targetValue) then
       Exit(True);
 
-    if IsNullable(targetTypeInfo) and TryCast(GetUnderlyingType(targetTypeInfo), value) then
+    if IsNullable(targetTypeInfo) and TryConvert(GetUnderlyingType(targetTypeInfo), value) then
     begin
       TValue.Make(nil, targetTypeInfo, targetValue);
       targetValue.SetNullableValue(value);

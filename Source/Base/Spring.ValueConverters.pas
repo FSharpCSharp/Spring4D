@@ -1225,8 +1225,13 @@ end;
 
 function TIntegerToEnumConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  i: Integer;
 begin
-  TValue.Make(value.AsInteger, targetTypeInfo, Result);
+  i := value.AsInteger;
+  with targetTypeInfo.TypeData^ do
+    Guard.CheckRangeInclusive(i, MinValue, MaxValue);
+  TValue.Make(i, targetTypeInfo, Result);
 end;
 
 {$ENDREGION}

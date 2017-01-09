@@ -457,11 +457,14 @@ type
     procedure TryToType_ConvertIntToStr;
     procedure TryToType_ConvertStrToInt;
     procedure TryToType_ConvertStringToNullableString;
+    procedure TryToType_ConvertIntegerToNullableEnum;
 
     procedure GetNullableValue_ValueIsEmpty_ReturnsEmpty;
 
     procedure ImplicitOperators;
   end;
+
+  TEnumeration = (teFirst, teSecond, teLast);
 
 {$IFNDEF DELPHI2010}
   TTestManagedObject = class(TTestCase)
@@ -2939,6 +2942,22 @@ begin
   fSUT := TValue.From<ShortInt>(-128);
   fValue := -128;
   DoCheckEquals;
+end;
+
+procedure TTestValueHelper.TryToType_ConvertIntegerToNullableEnum;
+var
+  value: Nullable<TEnumeration>;
+begin
+  fSUT := Integer(1);
+  CheckTrue(fSUT.TryToType<Nullable<TEnumeration>>(value));
+  CheckEquals(1, Integer(value.Value));
+
+  fSUT := Integer(3);
+  CheckFalse(fSUT.TryToType<Nullable<TEnumeration>>(value));
+
+  fSUT := TValue.Empty;
+  CheckTrue(fSUT.TryToType<Nullable<TEnumeration>>(value));
+  CheckFalse(value.HasValue);
 end;
 
 procedure TTestValueHelper.TryToType_ConvertIntToStr;
