@@ -402,6 +402,9 @@ begin
 
   if IndexList.IsChanging then
     Exit;
+
+  IndexList.Rebuild;
+
   DisableControls;
   try
     Refresh;
