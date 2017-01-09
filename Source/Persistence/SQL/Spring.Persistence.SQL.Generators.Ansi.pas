@@ -46,7 +46,6 @@ type
   TAnsiSQLGenerator = class(TAbstractSQLGenerator)
   protected
     function DoGenerateBackupTableUsingCreate(const tableName: string): TArray<string>;
-  protected
     function DoGenerateBackupTable(const tableName: string): TArray<string>; virtual;
     function DoGenerateRestoreTable(const tableName: string;
       const createColumns: IList<TSQLCreateField>;
