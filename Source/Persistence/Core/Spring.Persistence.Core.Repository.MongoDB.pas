@@ -29,6 +29,7 @@ unit Spring.Persistence.Core.Repository.MongoDB;
 interface
 
 uses
+  Spring,
   Spring.Collections,
   Spring.Persistence.Core.Repository.Simple,
   Spring.Persistence.Core.Session,
@@ -42,7 +43,7 @@ type
   public
     procedure Insert(const entities: IEnumerable<T>); override;
     function Query(const query: string;
-      const params: array of const): IList<T>; override;
+      const params: array of TValue): IList<T>; override;
   public
     constructor Create(const session: TSession); override;
   end;
@@ -67,7 +68,7 @@ begin
 end;
 
 function TMongoDBRepository<T, TID>.Query(const query: string;
-  const params: array of const): IList<T>;
+  const params: array of TValue): IList<T>;
 var
   LQuery: string;
 begin

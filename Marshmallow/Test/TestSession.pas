@@ -481,11 +481,11 @@ begin
     LCustomer.Free;
   end;
 
-  InsertCustomerEnum(20);
+  InsertCustomerEnum(Ord(ctPrimary));
   iLastID := TestDB.GetLastInsertRowID;
   LCustomer := FSession.FindOne<TCustomer>(iLastID);
   try
-    CheckTrue(20 = Ord(LCustomer.CustomerType));
+    CheckTrue(ctPrimary = LCustomer.CustomerType);
   finally
     LCustomer.Free;
   end;

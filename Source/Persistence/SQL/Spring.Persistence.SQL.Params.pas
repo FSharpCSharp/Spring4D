@@ -63,7 +63,7 @@ type
 
   TDBParams = record
   public
-    class function Create(const values: array of const): IEnumerable<TDBParam>; static;
+    class function Create(const values: array of TValue): IEnumerable<TDBParam>; static;
   end;
 
 implementation
@@ -158,7 +158,7 @@ end;
 
 {$REGION 'TDBParams'}
 
-class function TDBParams.Create(const values: array of const): IEnumerable<TDBParam>;
+class function TDBParams.Create(const values: array of TValue): IEnumerable<TDBParam>;
 var
   i: Integer;
   param: TDBParam;
@@ -169,7 +169,7 @@ begin
     params := TCollections.CreateObjectList<TDBParam>;
     for i := Low(values) to High(values) do
     begin
-      param := TDBParam.Create(Format(':%d', [i]), TValue.FromVarRec(values[i]));
+      param := TDBParam.Create(Format(':%d', [i]), values[i]);
       params.Add(param);
     end;
     Result := params;
