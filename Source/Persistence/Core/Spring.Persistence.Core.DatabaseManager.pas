@@ -54,6 +54,7 @@ type
 
     procedure RegisterEntity(entityClass: TClass);
     procedure ClearEntities;
+    procedure UnregisterEntity(entityClass: TClass);
 
     function EntityExists(entityClass: TClass): Boolean;
 
@@ -180,6 +181,11 @@ end;
 procedure TDatabaseManager.RegisterEntity(entityClass: TClass);
 begin
   fEntities.Add(entityClass);
+end;
+
+procedure TDatabaseManager.UnregisterEntity(entityClass: TClass);
+begin
+  fEntities.Remove(entityClass)
 end;
 
 {$ENDREGION}
