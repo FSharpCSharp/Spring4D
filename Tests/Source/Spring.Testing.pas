@@ -655,6 +655,7 @@ end;
 constructor TTestCaseData.Create(const values: array of TValue);
 begin
   fValues := TArray.Copy<TValue>(values);
+  fExceptionType := nil;
 end;
 
 function TTestCaseData.Raises(exceptionType: ExceptionClass;
