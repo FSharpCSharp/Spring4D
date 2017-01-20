@@ -129,6 +129,19 @@ type
     function Returns(const values: array of TValue): IWhen<T>; overload;
   end;
 
+  IMockSequence = interface
+  {$REGION 'Property Accessors'}
+    function GetCompleted: Boolean;
+    function GetCurrent: Integer;
+  {$ENDREGION}
+
+    function AddStep: Integer;
+    procedure MoveNext;
+
+    property Completed: Boolean read GetCompleted;
+    property Current: Integer read GetCurrent;
+  end;
+
   IMock<T> = interface(IInvokable)
     ['{67AD5AD2-1C23-41BA-8F5D-5C28B3C7ABF7}']
   {$REGION 'Property Accessors'}
@@ -142,7 +155,8 @@ type
 
     procedure Reset;
 
-    function Setup: ISetup<T>;
+    function Setup: ISetup<T>; overload;
+    function Setup(const sequence: IMockSequence): ISetup<T>; overload;
 
     function Received: T; overload;
     function Received(const times: Times): T; overload;
@@ -203,7 +217,8 @@ type
     class operator Implicit(const value: Mock<T>): IMock<T>;
     class operator Implicit(const value: Mock<T>): T;
 
-    function Setup: Setup<T>;
+    function Setup: Setup<T>; overload;
+    function Setup(const sequence: IMockSequence): Setup<T>; overload;
 
     function Received: T; overload;
     function Received(const times: Times): T; overload;
@@ -220,6 +235,21 @@ type
   Mock = record
   public
     class function From<T: IInterface>(const value: T): Mock<T>; static;
+  end;
+
+  MockSequence = record
+  private
+    fSequence: IMockSequence;
+  {$HINTS OFF}
+    // cause record to be passed as reference on const parameter
+    // because it does not fit in a register
+    fDummy: Pointer;
+  {$HINTS ON}
+    procedure EnsureInitialized;
+    function GetCompleted: Boolean;
+  public
+    class operator Implicit(const value: MockSequence): IMockSequence;
+    property Completed: Boolean read GetCompleted;
   end;
 
 implementation
@@ -418,6 +448,12 @@ begin
   Result.fSetup := fMock.Setup;
 end;
 
+function Mock<T>.Setup(const sequence: IMockSequence): Setup<T>;
+begin
+  EnsureInitialized;
+  Result.fSetup := fMock.Setup(sequence);
+end;
+
 function Mock<T>.Received: T;
 begin
   EnsureInitialized;
@@ -468,6 +504,28 @@ begin
       Result := (interceptor as TObject) is TMockInterceptor
     end) as TMockInterceptor, proxy);
   Result.fMock := mock as IMock<T>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'MockSequence'}
+
+procedure MockSequence.EnsureInitialized;
+begin
+  if not Assigned(fSequence) then
+    fSequence := TMockSequence.Create;
+end;
+
+function MockSequence.GetCompleted: Boolean;
+begin
+  Result := Assigned(fSequence) and fSequence.Completed;
+end;
+
+class operator MockSequence.Implicit(const value: MockSequence): IMockSequence;
+begin
+  value.EnsureInitialized;
+  Result := value.fSequence;
 end;
 
 {$ENDREGION}

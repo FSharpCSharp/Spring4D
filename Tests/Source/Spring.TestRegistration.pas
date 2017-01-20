@@ -261,7 +261,8 @@ begin
     TParameterMatchingTests.Suite,
     ReceivedChecksForInputValueOfVarParams.Suite,
     MockReturnsOtherMockInDynamicMode.Suite,
-    MockDynamicallySupportsOtherInterfaces.Suite
+    MockDynamicallySupportsOtherInterfaces.Suite,
+    MockSequenceTest.Suite
   ]);
 {$ENDIF}
 

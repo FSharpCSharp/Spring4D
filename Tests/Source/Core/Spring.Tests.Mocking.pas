@@ -67,6 +67,12 @@ type
     procedure WhenAsFunctionIsCalled;
   end;
 
+  MockSequenceTest = class(TTestCase)
+  published
+    procedure AssertsWrongOrder;
+    procedure SequenceWorksUsingWith;
+  end;
+
 implementation
 
 uses
@@ -406,5 +412,52 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'MockSequenceTest'}
+
+procedure MockSequenceTest.AssertsWrongOrder;
+var
+  seq: MockSequence;
+  mock: Mock<IMockTest>;
+  mock2: Mock<IChild>;
+begin
+  CheckFalse(seq.Completed);
+  mock.Behavior := TMockBehavior.Strict;
+  mock2.Behavior := TMockBehavior.Strict;
+  mock.Setup(seq).Executes.When.Test1(0, '');
+  mock2.Setup(seq).Returns([2, 3]).When.GetNumber;
+  mock.Setup(seq).Executes.When.Test2('', 0, False);
+  CheckFalse(seq.Completed);
+
+  mock.Instance.Test1(0, '');
+  CheckEquals(2, mock2.Instance.GetNumber);
+  CheckEquals(3, mock2.Instance.GetNumber);
+  mock.Instance.Test2('', 0, False);
+  Check(seq.Completed);
+end;
+
+{$ENDREGION}
+
+
+procedure MockSequenceTest.SequenceWorksUsingWith;
+var
+  seq: MockSequence;
+  mock: Mock<IMockTest>;
+begin
+  mock.Behavior := TMockBehavior.Strict;
+  with mock.Setup(seq).Executes do
+  begin
+    When.Test1(1, 'a');
+    When.Test2('b', 2, True);
+  end;
+
+  with mock.Instance do
+  begin
+    Test1(1, 'a');
+    Test2('b', 2, True);
+  end;
+
+  Check(seq.Completed);
+end;
 
 end.
