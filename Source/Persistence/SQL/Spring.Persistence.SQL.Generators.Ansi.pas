@@ -81,7 +81,7 @@ type
     function GenerateInsert(const command: TInsertCommand): string; override;
     function GenerateUpdate(const command: TUpdateCommand): string; override;
     function GenerateDelete(const command: TDeleteCommand): string; override;
-    function GenerateCreateTable(const command: TCreateTableCommand):  IList<string>; override;
+    function GenerateCreateTable(const command: TCreateTableCommand): IList<string>; override;
     function GenerateCreateForeignKey(const command: TCreateForeignKeyCommand): IList<string>; override;
 
     /// <summary>
@@ -159,7 +159,6 @@ begin
       if i > 0 then
         sqlBuilder.Append(', ').AppendLine;
 
-      //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
       sqlBuilder.AppendFormat('%0:s %1:s %2:s %3:s', [
         GetEscapedFieldName(field),
         GetSQLDataTypeName(field),

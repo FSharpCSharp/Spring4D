@@ -93,7 +93,6 @@ begin
       if i > 0 then
         sqlBuilder.Append(', ').AppendLine;
 
-      //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
       sqlBuilder.AppendFormat('%0:s %1:s %2:s %3:s', [
         GetEscapedFieldName(field),
         GetSQLDataTypeName(field),
