@@ -128,6 +128,7 @@ type
   private
     fUpdateFields: IList<TSQLUpdateField>;
     fPrimaryKeyColumn: ColumnAttribute;
+    fVersionColumn: ColumnAttribute;
   public
     constructor Create(const table: TSQLTable); override;
 
@@ -135,6 +136,7 @@ type
 
     property UpdateFields: IList<TSQLUpdateField> read fUpdateFields;
     property PrimaryKeyColumn: ColumnAttribute read fPrimaryKeyColumn write fPrimaryKeyColumn;
+    property VersionColumn: ColumnAttribute read fVersionColumn write fVersionColumn;
   end;
 
   /// <summary>
@@ -430,7 +432,7 @@ begin
   fUpdateFields.Clear;
   fWhereFields.Clear;
   for column in columns do
-    if column.CanUpdate then
+    if column.CanUpdate and not Column.IsVersionColumn then
     begin
       updateField := TSQLUpdateField.Create(column.ColumnName, fTable, column,
         GetAndIncParameterName(column.ColumnName));
@@ -441,6 +443,17 @@ begin
   begin
     whereField := TSQLWhereField.Create(fPrimaryKeyColumn.ColumnName, fTable,
       fPrimaryKeyColumn, GetAndIncParameterName(fPrimaryKeyColumn.ColumnName));
+    fWhereFields.Add(whereField);
+  end;
+
+  if Assigned(fVersionColumn) then
+  begin
+    updateField := TSQLUpdateField.Create(fVersionColumn.ColumnName, fTable,
+      fVersionColumn, GetAndIncParameterName(fVersionColumn.ColumnName));
+    fUpdateFields.Add(updateField);
+
+    whereField := TSQLWhereField.Create(fVersionColumn.ColumnName, fTable,
+      fVersionColumn, GetAndIncParameterName(fVersionColumn.ColumnName));
     fWhereFields.Add(whereField);
   end;
 end;

@@ -308,6 +308,8 @@ type
     constructor Create(initialValue: Integer = 0); overload;
     constructor Create(const columnName: string; initialValue: Integer = 0); overload;
 
+    procedure IncrementValue(const instance: TObject);
+
     property InitialValue: Integer read FInitialValue;
   end;
 
@@ -697,6 +699,15 @@ end;
 function VersionAttribute.GetIsVersionColumn: Boolean;
 begin
   Result := True;
+end;
+
+procedure VersionAttribute.IncrementValue(const instance: TObject);
+var
+  value: Int64;
+begin
+  value := fMember.GetValue(instance).AsOrdinal;
+  Inc(value);
+  fMember.SetValue(instance, value);
 end;
 
 {$ENDREGION}

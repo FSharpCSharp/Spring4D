@@ -1773,37 +1773,30 @@ end;
 procedure TSessionTest.Versioning;
 var
   LModel, LModelOld, LModelLoaded: TProduct;
-  bOk: Boolean;
 begin
   LModel := TProduct.Create;
   LModel.Name := 'Initial version';
   FSession.Save(LModel);
 
-  LModelLoaded := FSession.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
+  LModelLoaded := FSession.FindOne<TProduct>(LModel.Id);
   CheckEquals(1, LModelLoaded.Version);
   LModelLoaded.Name := 'Updated version No. 1';
 
-  LModelOld := FSession.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
+  LModelOld := FSession.FindOne<TProduct>(LModel.Id);
   CheckEquals(1, LModelOld.Version);
   LModelOld.Name := 'Updated version No. 2';
 
   FSession.Save(LModelLoaded);
   CheckEquals(2, LModelLoaded.Version);
 
+  ExpectedException := EORMOptimisticLockException;
   try
     FSession.Save(LModelOld);
-    bOk := False;
-  except
-    on E:EORMOptimisticLockException do
-    begin
-      bOk := True;
-    end;
-  end;
-  CheckTrue(bOk, 'This should fail because version already changed to the same entity');
-
-  LModel.Free;
-  LModelLoaded.Free;
-  LModelOld.Free;
+  finally
+    LModel.Free;
+    LModelLoaded.Free;
+    LModelOld.Free;
+  end
 end;
 
 type

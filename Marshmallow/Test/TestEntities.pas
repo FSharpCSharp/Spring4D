@@ -240,7 +240,8 @@ type
   private
     FName: string;
     FPrice: Double;
-    [Version('_version', 1)] FVersion: Integer;
+    [Version('_version', 1)]
+    FVersion: Integer;
   public
     property ID: Integer read FId write FId;
     [Column('PRODNAME', [], 50, 0, 0, 'Product name')]
