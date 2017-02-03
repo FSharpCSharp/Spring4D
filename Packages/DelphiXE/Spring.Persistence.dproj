@@ -15,12 +15,12 @@
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
 		</PropertyGroup>
-		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
 			<Cfg_1>true</Cfg_1>
 			<CfgParent>Base</CfgParent>
 			<Base>true</Base>
 		</PropertyGroup>
-		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
 			<Cfg_2>true</Cfg_2>
 			<CfgParent>Base</CfgParent>
 			<Base>true</Base>
@@ -46,15 +46,15 @@
 			<DCC_DcuOutput>..\..\Library\DelphiXE\$(Platform)\$(Config)</DCC_DcuOutput>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
-			<DCC_DebugInformation>0</DCC_DebugInformation>
-			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
-			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
-		</PropertyGroup>
-		<PropertyGroup Condition="'$(Cfg_2)'!=''">
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+			<DCC_DebugInformation>false</DCC_DebugInformation>
+			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
 		</PropertyGroup>
 		<ItemGroup>
 			<DelphiCompile Include="Spring.Persistence.dpk">
@@ -125,14 +125,14 @@
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Params.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Register.pas"/>
 			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Types.pas"/>
-			<BuildConfiguration Include="Debug">
+			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
 			</BuildConfiguration>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
-			<BuildConfiguration Include="Release">
+			<BuildConfiguration Include="Debug">
 				<Key>Cfg_1</Key>
 				<CfgParent>Base</CfgParent>
 			</BuildConfiguration>
