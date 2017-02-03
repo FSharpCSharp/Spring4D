@@ -712,6 +712,7 @@ var
         PAnsiChar(Buffer)[Field.Size] := #0;
         TempBuff := TEncoding.Default.GetBytes(string(tagVariant(Data).bStrVal));
         Move(TempBuff[0], Buffer[0], Length(TempBuff));
+        PAnsiChar(Buffer)[Min(Field.Size, Length(TempBuff))] := #0;
       end;
       ftFixedWideChar, ftWideString:
       begin
@@ -814,6 +815,7 @@ var
         PAnsiChar(Buffer)[Field.Size] := #0;
         TempBuff := TEncoding.Default.GetBytes(string(tagVariant(Data).bStrVal));
         Move(TempBuff[0], PByte(Buffer)[0], Length(TempBuff));
+        PAnsiChar(Buffer)[Min(Field.Size, Length(TempBuff))] := #0;
       end;
       ftFixedWideChar, ftWideString:
       begin
