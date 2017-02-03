@@ -762,7 +762,12 @@ var
         readOnly := True;
       end;
       tkRecord:
-        if IsNullable(typeInfo) then
+        if typeInfo = System.TypeInfo(TGUID) then
+        begin
+          fieldType := ftGuid;
+          len := 38;
+        end
+        else if IsNullable(typeInfo) then
           DoGetFieldType(GetUnderlyingType(typeInfo));
       tkInt64:
       begin
