@@ -111,8 +111,8 @@ var
   generator: ISQLGenerator;
 const
   expected =
-    '(t0."FIRST_NAME" = :PERSONS_FIRST_NAME1 OR t0."FIRST_NAME" = :PERSONS_FIRST_NAME2) AND ' +
-    '(t0."LAST_NAME" = :PERSONS_LAST_NAME1 OR t0."LAST_NAME" = :PERSONS_LAST_NAME2)';
+    '(t0."FIRST_NAME" = :FIRST_NAME1 OR t0."FIRST_NAME" = :FIRST_NAME2) AND ' +
+    '(t0."LAST_NAME" = :LAST_NAME1 OR t0."LAST_NAME" = :LAST_NAME2)';
 begin
   command := TSelectCommand.Create(TPerson);
   try

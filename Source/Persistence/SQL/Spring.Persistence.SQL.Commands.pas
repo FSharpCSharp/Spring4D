@@ -492,7 +492,7 @@ var
   index: Integer;
   upperCaseFieldName: string;
 begin
-  upperCaseFieldName := AnsiUpperCase(fTable.NameWithoutSchema + '_' + fieldName);
+  upperCaseFieldName := AnsiUpperCase(fieldName);
   if fParameterNames.TryGetValue(upperCaseFieldName, index) then
     Inc(index)
   else
