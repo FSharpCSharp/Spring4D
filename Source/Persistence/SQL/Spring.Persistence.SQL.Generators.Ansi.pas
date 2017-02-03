@@ -670,16 +670,19 @@ begin
 
   typeInfo := field.TypeInfo;
 
-  case field.TypeInfo.Kind of
+  case typeInfo.Kind of
     tkUnknown: ;
-    tkInteger, tkInt64, tkEnumeration, tkSet:
+    tkInteger, tkSet:
+      if field.Precision > 0 then
+        Result := Format('NUMERIC(%0:d, %1:d)', [field.Precision, field.Scale]);
+    tkEnumeration:
+      if typeInfo = System.TypeInfo(Boolean) then
+        Result := 'BIT';
+    tkInt64:
       if field.Precision > 0 then
         Result := Format('NUMERIC(%0:d, %1:d)', [field.Precision, field.Scale])
       else
-        if typeInfo = System.TypeInfo(Boolean) then
-          Result := 'BIT'
-        else
-          Result := 'INTEGER';
+        Result := 'BIGINT';
     tkChar: Result := Format('CHAR(%d)', [field.Length]);
     tkFloat:
       if typeInfo = System.TypeInfo(TDate) then
