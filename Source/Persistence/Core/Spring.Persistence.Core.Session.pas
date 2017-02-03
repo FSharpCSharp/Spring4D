@@ -490,7 +490,6 @@ begin
   FetchFromCustomQuery(pager.BuildSQL(sql), params, Result.Items as IObjectList, TClass(T));
 end;
 
-
 procedure TSession.RegisterRowMapper<T>(const rowMapper: IRowMapper<T>);
 begin
   RegisterNonGenericRowMapper(T, rowMapper as IRowMapper);

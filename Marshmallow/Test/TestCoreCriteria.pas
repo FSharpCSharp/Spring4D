@@ -44,6 +44,7 @@ type
     procedure Disjunction;
     procedure Conjunction;
     procedure TestJunctions;
+    procedure TestSelfReferencedAssociate;
 {$IFNDEF DELPHIXE}
     // TODO: split into several tests - not everything here is compatible across all Delphi versions
     procedure OperatorOverloading_Eq;
@@ -148,13 +149,42 @@ begin
   end;
 end;
 
+procedure TCriteriaTest.TestSelfReferencedAssociate; // see issue #219
+var
+  resourceName: IProperty;
+  criteria: ICriteria<TResource>;
+  params: IList<TDBParam>;
+  sqlWhere: string;
+  command: TSelectCommand;
+  generator: ISQLGenerator;
+const
+  expected = 't0."RESOURCE_NAME" = :RESOURCE_NAME1';
+begin
+  criteria := FSession.CreateCriteria<TResource>;
+
+  {No entity provided so this should generate where clause against base table}
+  resourceName := TProperty.Create('RESOURCE_NAME');
+  criteria.Add(resourceName.Eq('Test'));
+
+  command := TSelectCommand.Create(TResource);
+  try
+    generator := TSQLGeneratorRegister.GetGenerator(qlOracle);
+    params := TCollections.CreateList<TDBParam>(True);
+
+    sqlWhere := (criteria as TCriteria<TResource>).Criterions[0].ToSqlString(params, command, generator, False);
+
+    CheckEqualsString(expected, sqlWhere);
+  finally
+    command.Free;
+  end;
+end;
+
 procedure TCriteriaTest.Add_Eq;
 begin
   FCriteria.Add(Restrictions.Eq('Name', 'Foo'))
     .Add(Restrictions.Eq('Age', 42));
-  CheckEquals(2, (FCriteria as TCriteria<TCustomer>).Count);
+  CheckEquals(2, (FCriteria as TCriteria<TCustomer>).Criterions.Count);
 end;
-
 
 procedure TCriteriaTest.Add_SubEntity_Criterion;
 var

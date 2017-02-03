@@ -413,6 +413,48 @@ type
     FSubsidiary: TSubsidiaryAssociate;
   end;
 
+  TResourceAssociate = class;
+
+  [Table('RESOURCE')]
+  TResource = class
+  private
+    [Column('SID', [cpRequired, cpPrimaryKey], 19,0)]
+    FSid: Integer;
+
+    [Column('RESOURCE_NAME', [], 50)]
+    FResourceName: string;
+
+    [Column('ASSOC_RES_SID', [], 50)]
+    FResourceAssociateSid: Integer;
+
+    [ManyToOne(False, [ckCascadeAll], 'FResourceAssociateSid')]
+    FResourceAssociate : TResourceAssociate;
+
+    function GetResourceAssociateName: string;
+    procedure SetResourceAssociateName(const Value: string);
+  public
+    constructor Create;
+    destructor Destroy; override;
+    property Sid : Integer read FSid write FSid;
+    property ResourceName : string read FResourceName write FResourceName;
+    property ResourceAssociateSid : Integer read FResourceAssociateSid write FResourceAssociateSid;
+    property ResourceAssociateName : string read GetResourceAssociateName write SetResourceAssociateName;
+
+  end;
+
+  [Table('RESOURCE')]
+  TResourceAssociate = class
+  private
+    [Column('SID', [cpRequired, cpPrimaryKey], 19,0)]
+    FSid: Integer;
+
+    [Column('RESOURCE_NAME', [], 50)]
+    FResourceName: string;
+  public
+    property Sid : Integer read FSid write FSid;
+    property ResourceName : string read FResourceName write FResourceName;
+  end;
+
 var
   PictureFilename, ScannerFileName, OutputDir: string;
 
@@ -664,6 +706,27 @@ begin
   inherited Destroy;
 end;
 
+{ TResource }
+
+constructor TResource.Create;
+begin
+  FResourceAssociate := TResourceAssociate.Create;
+end;
+
+destructor TResource.Destroy;
+begin
+  FResourceAssociate.Free;
+  inherited;
+end;
+
+function TResource.GetResourceAssociateName: string;
+begin
+  Result := FResourceAssociate.ResourceName;
+end;
+
+procedure TResource.SetResourceAssociateName(const Value: string);
+begin
+  FResourceAssociate.ResourceName := Value;
+end;
+
 end.
-
-
