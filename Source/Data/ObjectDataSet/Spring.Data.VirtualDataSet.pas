@@ -103,12 +103,12 @@ type
         fFieldData: Variant;
       protected
         procedure ReadBlobData;
-        function Realloc(var NewCapacity: Longint): Pointer; override;
+        function Realloc(var NewCapacity: LongInt): Pointer; override;
       public
         constructor Create(Field: TBlobField; Mode: TBlobStreamMode);
         destructor Destroy; override;
 
-        function Write(const Buffer; Count: LongInt): Longint; override;
+        function Write(const Buffer; Count: LongInt): LongInt; override;
         procedure Truncate;
       end;
 
@@ -721,6 +721,16 @@ var
         TempBuff[Length(TempBuff) - 1] := 0;
         Move(TempBuff[0], Buffer[0], Length(TempBuff));
       end;
+      ftShortint:
+        if tagVariant(Data).vt = VT_UI1 then
+          TDBBitConverter.UnsafeFrom<ShortInt>(ShortInt(tagVariant(Data).cVal), Buffer)
+        else
+          TDBBitConverter.UnsafeFrom<ShortInt>(ShortInt(tagVariant(Data).bVal), Buffer);
+      ftByte:
+        if tagVariant(Data).vt = VT_UI1 then
+          TDBBitConverter.UnsafeFrom<Byte>(Byte(tagVariant(Data).cVal), Buffer)
+        else
+          TDBBitConverter.UnsafeFrom<Byte>(tagVariant(Data).bVal, Buffer);
       ftSmallint:
         if tagVariant(Data).vt = VT_UI1 then
           TDBBitConverter.UnsafeFrom<SmallInt>(Byte(tagVariant(Data).cVal), Buffer)
@@ -733,6 +743,8 @@ var
           TDBBitConverter.UnsafeFrom<Word>(tagVariant(Data).uiVal, Buffer);
       ftAutoInc, ftInteger:
         TDBBitConverter.UnsafeFrom<Integer>(Data, Buffer);
+      ftLongWord:
+        TDBBitConverter.UnsafeFrom<Cardinal>(Data, Buffer);
       ftFloat, ftCurrency:
         if tagVariant(Data).vt = VT_R8 then
           TDBBitConverter.UnsafeFrom<Double>(tagVariant(Data).dblVal, Buffer)
@@ -811,6 +823,16 @@ var
         TempBuff[Length(TempBuff) - 1] := 0;
         Move(TempBuff[0], PByte(Buffer)[0], Length(TempBuff));
       end;
+      ftShortint:
+        if tagVariant(Data).vt = VT_UI1 then
+          ShortInt(Buffer^) := ShortInt(tagVariant(Data).cVal)
+        else
+          ShortInt(Buffer^) := ShortInt(tagVariant(Data).bVal);
+      ftByte:
+        if tagVariant(Data).vt = VT_UI1 then
+          Byte(Buffer^) := Byte(tagVariant(Data).cVal)
+        else
+          Byte(Buffer^) := tagVariant(Data).bVal;
       ftSmallint:
         if tagVariant(Data).vt = VT_UI1 then
           SmallInt(Buffer^) := Byte(tagVariant(Data).cVal)
@@ -823,6 +845,8 @@ var
           Word(Buffer^) := tagVariant(Data).uiVal;
       ftAutoInc, ftInteger:
         Integer(Buffer^) := Data;
+      ftLongWord:
+        Cardinal(Buffer^) := tagVariant(Data).uintVal;
       ftFloat, ftCurrency:
         if tagVariant(Data).vt = VT_R8 then
           Double(Buffer^) := tagVariant(Data).dblVal
@@ -930,7 +954,7 @@ begin
     Result := PArrayRecInfo(recBuf).Index;
 end;
 
-function TCustomVirtualDataSet.GetRecNo: Longint;
+function TCustomVirtualDataSet.GetRecNo: LongInt;
 var
   recBuf: TRecordBuffer;
 begin
@@ -1272,6 +1296,12 @@ procedure TCustomVirtualDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer
         Data := WideString(PWideChar(Buffer));
       ftAutoInc, ftInteger:
         Data := TDBBitConverter.UnsafeInto<LongInt>(Buffer);
+      ftLongWord:
+        Data := TDBBitConverter.UnsafeInto<LongWord>(Buffer);
+      ftShortint:
+        Data := TDBBitConverter.UnsafeInto<ShortInt>(Buffer);
+      ftByte:
+        Data := TDBBitConverter.UnsafeInto<Byte>(Buffer);
       ftSmallInt:
         Data := TDBBitConverter.UnsafeInto<SmallInt>(Buffer);
       ftWord:
@@ -1338,6 +1368,12 @@ procedure TCustomVirtualDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer
         Data := WideString(PWideChar(Buffer));
       ftAutoInc, ftInteger:
         Data := LongInt(Buffer^);
+      ftLongWord:
+        Data := LongWord(Buffer^);
+      ftShortint:
+        Data := ShortInt(Buffer^);
+      ftByte:
+        Data := Byte(Buffer^);
       ftSmallInt:
         Data := SmallInt(Buffer^);
       ftWord:
@@ -1600,7 +1636,7 @@ begin
 end;
 
 function TCustomVirtualDataSet.TBlobStream.Write(const Buffer;
-  Count: Integer): Longint;
+  Count: Integer): LongInt;
 begin
   Result := inherited Write(Buffer, Count);
   fModified := True;

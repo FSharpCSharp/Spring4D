@@ -693,28 +693,19 @@ var
   procedure DoGetFieldType(typeInfo: PTypeInfo);
   begin
     case typeInfo.Kind of
-      tkInteger:
+      tkInteger, tkEnumeration:
       begin
         len := -2;
-        if typeInfo = System.TypeInfo(Word) then
-          fieldType := ftWord
-        else if typeInfo = System.TypeInfo(SmallInt) then
-          fieldType := ftSmallint
-        else
-          fieldType := ftInteger;
-      end;
-      tkEnumeration:
-      begin
         if typeInfo = System.TypeInfo(Boolean) then
-        begin
-          fieldType := ftBoolean;
-          len := -2;
-        end
+          fieldType := ftBoolean
         else
-        begin
-          fieldType := ftWideString;
-          if len = -2 then
-            len := fDefaultStringFieldLength;
+          case typeInfo.TypeData.OrdType of
+            otSByte: fieldType := ftShortint;
+            otUByte: fieldType := ftByte;
+            otSWord: fieldType := ftSmallint;
+            otUWord: fieldType := ftWord;
+            otSLong: fieldType := ftInteger;
+            otULong: fieldType := ftLongWord;
         end;
       end;
       tkFloat:
