@@ -950,8 +950,8 @@ type
     fValue: TValue;
     fName: string;
   public
-    constructor Create(const name: string; const value: TValue);
-    class function From<T>(const name: string; const value: T): TNamedValue; overload; static;
+    constructor Create(const value: TValue; const name: string);
+    class function From<T>(const value: T; const name: string): TNamedValue; overload; static;
 
     class operator Implicit(const value: TNamedValue): TValue;
     class operator Implicit(const value: TValue): TNamedValue;
@@ -973,8 +973,9 @@ type
     fValue: TValue;
     fTypeInfo: PTypeInfo;
   public
-    constructor Create(const typeInfo: PTypeInfo; const value: TValue);
-    class function From<T>(const typeInfo: PTypeInfo; const value: T): TTypedValue; overload; static;
+    constructor Create(const value: TValue; const typeInfo: PTypeInfo);
+    class function From<T>(const value: T): TTypedValue; overload; static;
+    class function From<T>(const value: T; const typeInfo: PTypeInfo): TTypedValue; overload; static;
 
     class operator Implicit(const value: TTypedValue): TValue;
     class operator Implicit(const value: TValue): TTypedValue;
@@ -5389,17 +5390,17 @@ end;
 
 {$REGION 'TNamedValue'}
 
-constructor TNamedValue.Create(const name: string; const value: TValue);
+constructor TNamedValue.Create(const value: TValue; const name: string);
 begin
-  fName := name;
   fValue := value;
+  fName := name;
 end;
 
-class function TNamedValue.From<T>(const name: string;
-  const value: T): TNamedValue;
+class function TNamedValue.From<T>(const value: T;
+  const name: string): TNamedValue;
 begin
-  Result.fName := name;
   Result.fValue := TValue.From<T>(value);
+  Result.fName := name;
 end;
 
 class operator TNamedValue.Implicit(const value: TNamedValue): TValue;
@@ -5417,17 +5418,23 @@ end;
 
 {$REGION 'TTypedValue'}
 
-constructor TTypedValue.Create(const typeInfo: PTypeInfo; const value: TValue);
+constructor TTypedValue.Create(const value: TValue; const typeInfo: PTypeInfo);
 begin
-  fTypeInfo := typeInfo;
   fValue := value;
+  fTypeInfo := typeInfo;
 end;
 
-class function TTypedValue.From<T>(const typeInfo: PTypeInfo;
-  const value: T): TTypedValue;
+class function TTypedValue.From<T>(const value: T): TTypedValue;
 begin
-  Result.fTypeInfo := typeInfo;
   Result.fValue := TValue.From<T>(value);
+  Result.fTypeInfo := System.TypeInfo(T);
+end;
+
+class function TTypedValue.From<T>(const value: T;
+  const typeInfo: PTypeInfo): TTypedValue;
+begin
+  Result.fValue := TValue.From<T>(value);
+  Result.fTypeInfo := typeInfo;
 end;
 
 class operator TTypedValue.Implicit(const value: TTypedValue): TValue;

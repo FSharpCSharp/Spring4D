@@ -1584,7 +1584,7 @@ begin
 
   CheckEquals('test', fContainer.Resolve<INameService>('dynamic', ['test']).Name);
 
-  CheckEquals('test', fContainer.Resolve<INameService>([TNamedValue.From('name', 'test')]).Name);
+  CheckEquals('test', fContainer.Resolve<INameService>([TNamedValue.From('test', 'name')]).Name);
 end;
 
 procedure TTestResolverOverride.TestResolveWithClass;
@@ -1594,7 +1594,7 @@ begin
 
   CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([fDummy]).Name);
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From(fDummy, 'obj')]).Name);
 end;
 
 procedure TTestResolverOverride.TestResolveWithDependency;
@@ -1610,7 +1610,7 @@ begin
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 
-  service := fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]);
+  service := fContainer.Resolve<INameService>([TNamedValue.From(fDummy, 'obj')]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 end;
@@ -1628,7 +1628,7 @@ begin
   fDummy.Free;
   fDummy := TPersistent.Create;
 
-  service := fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]);
+  service := fContainer.Resolve<INameService>([TNamedValue.From(fDummy, 'obj')]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 end;
@@ -1640,7 +1640,7 @@ begin
 
   CheckEquals('test' + fDummy.ClassName, fContainer.Resolve<INameService>(['test', fDummy]).Name);
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From(fDummy, 'obj')]).Name);
 end;
 
 {$ENDREGION}

@@ -711,7 +711,7 @@ begin
     if Result.IsObject and (dependency.TypeInfo.Kind = tkInterface) then
       Result := ConvClass2Inf(Result.AsObject, dependency.TypeInfo);
   {$ENDIF}
-    context.AddArgument(TTypedValue.Create(dependency.TypeInfo, Result));
+    context.AddArgument(TTypedValue.Create(Result, dependency.TypeInfo));
     Result := decoratorModel.LifetimeManager.Resolve(context, decoratorModel);
   end;
 end;

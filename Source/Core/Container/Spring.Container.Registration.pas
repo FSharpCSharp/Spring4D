@@ -376,7 +376,7 @@ begin
       SetLength(Result, Length(args) - 1);
       params := method.GetParameters;
       for i := 0 to High(params) do
-        Result[i] := TNamedValue.Create(params[i].Name, args[i + 1]);
+        Result[i] := TNamedValue.Create(args[i + 1], params[i].Name);
     end
   else
     Result := Copy(args, 1);
