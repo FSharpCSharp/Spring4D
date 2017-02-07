@@ -145,6 +145,12 @@ type
     ByName,
 
     /// <summary>
+    ///   Parameters are resolved by their type in the factory method
+    ///   declaration.
+    /// </summary>
+    ByType,
+
+    /// <summary>
     ///   Parameters are being passed as they were passed to the factory
     ///   method.
     /// </summary>

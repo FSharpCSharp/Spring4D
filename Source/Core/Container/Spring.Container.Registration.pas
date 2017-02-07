@@ -377,6 +377,12 @@ begin
       params := method.GetParameters;
       for i := 0 to High(params) do
         Result[i] := TNamedValue.Create(args[i + 1], params[i].Name);
+    end;
+    TParamResolution.ByType:
+    begin
+      SetLength(Result, Length(args) - 1);
+      for i := 1 to High(args) do
+        Result[i - 1] := TTypedValue.Create(args[i], args[i].TypeInfo);
     end
   else
     Result := Copy(args, 1);
