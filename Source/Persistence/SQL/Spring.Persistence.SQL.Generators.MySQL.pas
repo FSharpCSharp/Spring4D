@@ -113,7 +113,9 @@ end;
 function TMySQLGenerator.GenerateGetLastInsertId(
   const identityColumn: ColumnAttribute): string;
 begin
-  Result := 'SELECT LAST_INSERT_ID();';
+  // Workaround for LAST_INSERT_ID returning UNSIGNED BIGINT since MySQL 5.6.9
+  // as this usually maps to field of ftFloat (at least it does in ZEOS)
+  Result := 'SELECT CAST(LAST_INSERT_ID() as SIGNED INTEGER);';
 end;
 
 function TMySQLGenerator.GenerateGetNextSequenceValue(

@@ -62,7 +62,7 @@ uses
 function TMSSQLServerSQLGenerator.GenerateGetLastInsertId(
   const identityColumn: ColumnAttribute): string;
 begin
-  Result := 'SELECT CAST( SCOPE_IDENTITY() AS BIGINT);';
+  Result := 'SELECT CAST(SCOPE_IDENTITY() AS BIGINT);';
 end;
 
 function TMSSQLServerSQLGenerator.GeneratePagedQuery(const sql: string;
