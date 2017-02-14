@@ -137,6 +137,7 @@ type
 
     function AddStep: Integer;
     procedure MoveNext;
+    procedure Reset;
 
     property Completed: Boolean read GetCompleted;
     property Current: Integer read GetCurrent;
@@ -249,6 +250,8 @@ type
     function GetCompleted: Boolean;
   public
     class operator Implicit(const value: MockSequence): IMockSequence;
+
+    procedure Reset;
     property Completed: Boolean read GetCompleted;
   end;
 
@@ -526,6 +529,12 @@ class operator MockSequence.Implicit(const value: MockSequence): IMockSequence;
 begin
   value.EnsureInitialized;
   Result := value.fSequence;
+end;
+
+procedure MockSequence.Reset;
+begin
+  if Assigned(fSequence) then
+    fSequence.Reset;
 end;
 
 {$ENDREGION}
