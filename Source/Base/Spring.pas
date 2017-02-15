@@ -619,6 +619,7 @@ type
 
   TRttiMethodHelper = class helper for TRttiMethod
   private
+    function GetIsAbstract: Boolean;
     function GetReturnTypeHandle: PTypeInfo;
 {$IF CompilerVersion < 31}
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
@@ -657,6 +658,11 @@ type
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
 {$IFEND}
   public
+
+    /// <summary>
+    ///   Returns if the method is dynamic or virtual abstract.
+    /// </summary>
+    property IsAbstract: Boolean read GetIsAbstract;
 
     /// <summary>
     ///   Returns the PTypeInfo of the ReturnType if assigned; otherwise
@@ -2432,6 +2438,10 @@ function VarIsNullOrEmpty(const value: Variant): Boolean; inline;
 /// </summary>
 function GetInitTable(ClassType: TClass): TInitTable;
 
+function GetVirtualMethod(const classType: TClass; const index: Integer): Pointer; inline;
+
+function GetAbstractError: Pointer;
+
   {$ENDREGION}
 
 
@@ -2945,6 +2955,21 @@ end;
 function VarIsNullOrEmpty(const value: Variant): Boolean;
 begin
   Result := FindVarData(value).VType in [varEmpty, varNull];
+end;
+
+function GetVirtualMethod(const classType: TClass; const index: Integer): Pointer;
+begin
+  Result := PPointer(UINT_PTR(classType) + UINT_PTR(index * SizeOf(Pointer)))^;
+end;
+
+type
+  TAbstractObject = class
+    procedure AbstractMethod; virtual; abstract;
+  end;
+
+function GetAbstractError: Pointer;
+begin
+  Result := PPointer(TAbstractObject)^
 end;
 
 {$ENDREGION}
@@ -5300,6 +5325,19 @@ end;
 
 
 {$REGION 'TRttiMethodHelper'}
+
+function TRttiMethodHelper.GetIsAbstract: Boolean;
+var
+  code: Pointer;
+begin
+  case DispatchKind of
+    dkVtable: code := GetVirtualMethod(Parent.AsInstance.MetaclassType, VirtualIndex);
+    dkDynamic: code := GetDynaMethod(Parent.AsInstance.MetaclassType, VirtualIndex);
+  else
+    code := nil;
+  end;
+  Result := code = GetAbstractError;
+end;
 
 function TRttiMethodHelper.GetReturnTypeHandle: PTypeInfo;
 var
