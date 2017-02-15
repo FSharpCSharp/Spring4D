@@ -24,13 +24,3 @@
    end
    else
      CheckMySQLError(FPlainDriver, FHandle, lcExecute, LogSQL);
-@@ -457,6 +470,9 @@
-     else
-       Result := (AStatus = 0);
- 
-+    if not Result then
-+      Exit;
-+
-     if LastResultSet <> nil then
-       LastResultSet.Close;
-     LastResultSet := nil;
