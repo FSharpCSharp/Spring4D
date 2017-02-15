@@ -63,6 +63,11 @@ type
     procedure AddSerializer(const serializer: ITypeSerializer);
 
     function FindSerializer(typeInfo: PTypeInfo): ITypeSerializer;
+
+    property StackTraceCollector: IStackTraceCollector read fStackTraceCollector
+      write fStackTraceCollector;
+    property StackTraceFormatter: IStackTraceFormatter read fStackTraceFormatter
+      write fStackTraceFormatter;
   end;
   {$ENDREGION}
 
@@ -172,14 +177,16 @@ var
   s: string;
 begin
   stack := fStackTraceCollector.Collect;
-  formatted := fStackTraceFormatter.Format(stack);
-
   if Length(stack) = 0 then
     Exit;
 
+  formatted := fStackTraceFormatter.Format(stack);
+
   s := formatted[0];
   for i := 1 to High(formatted) do
-    s := s + #$A + formatted[i];
+    s := s + sLineBreak + formatted[i];
+
+  DoSend(TLogEntry.Create(entry.Level, TLogEntryType.CallStack, s));
 end;
 
 {$ENDREGION}

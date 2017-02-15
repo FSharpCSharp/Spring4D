@@ -48,6 +48,7 @@ uses
   Spring.Logging.Controller,
   Spring.Logging.Extensions,
   Spring.Logging.Loggers,
+  Spring.Mocking,
   Spring.Tests.Logging.Types;
 
 type
@@ -66,6 +67,7 @@ type
     procedure TestAddSerializer;
     procedure TestFindSerializer;
     procedure TestSendWithSerializer;
+    procedure TestStackTrace;
   end;
   {$ENDREGION}
 
@@ -375,6 +377,86 @@ begin
   CheckEquals(3, appender.WriteCount);
   CheckEquals(1, serializer.HandlesTypeCount);
   CheckEquals(Ord(TLogEntryType.SerializedData), Ord(appender.Entry.EntryType));
+end;
+
+procedure TTestLoggerController.TestStackTrace;
+var
+  appender: TAppenderMock;
+  intf: ILogAppender;
+  collectorMock: Mock<TStackTraceCollector>;
+  formatterMock: Mock<TStackTraceFormatter>;
+  seq: MockSequence;
+  entry: TLogEntry;
+  stack: TArray<Pointer>;
+  formatted: TArray<string>;
+begin
+  appender := TAppenderMock.Create;
+  intf := appender;
+
+  collectorMock.Behavior := TMockBehavior.Strict;
+  collectorMock.CallBase := False;
+  formatterMock.Behavior := TMockBehavior.Strict;
+  formatterMock.CallBase := False;
+
+  fController.AddAppender(intf);
+  with (fController as TLoggerController) do
+  begin
+    StackTraceCollector := collectorMock;
+    StackTraceFormatter := formatterMock;
+  end;
+
+  try
+    entry := TLogEntry.Create(TLogLevel.Error, 'Message').AddStack;
+    fController.Send(entry);
+    CheckEquals(1, appender.WriteCount);
+    CheckEqualsString(entry.Msg, appender.Entry.Msg);
+    // No calls to collector and formatter expected
+
+    // Empty stack
+    appender.EntryTypes := appender.EntryTypes + [TLogEntryType.CallStack];
+    entry := TLogEntry.Create(TLogLevel.Error, 'Message').AddStack;
+    CheckEquals(1, appender.WriteCount);
+    CheckEqualsString(entry.Msg, appender.Entry.Msg);
+    collectorMock.Setup(Seq).Returns<TArray<Pointer>>(nil).When.Collect;
+    fController.Send(entry);
+    // No calls to formatter expected
+    Check(seq.Completed);
+    CheckEquals(2, appender.WriteCount);
+    CheckEqualsString(entry.Msg, appender.Entry.Msg);
+
+    // One line stack
+    seq := Default(MockSequence);
+    stack := TArray<Pointer>.Create(Pointer($12345678));
+    formatted := TArray<string>.Create('$12345678');
+    collectorMock.Setup(Seq).Returns<TArray<Pointer>>(stack).When.Collect;
+    formatterMock.Setup(Seq).Returns<TArray<string>>(formatted).When.Format(stack);
+    fController.Send(entry);
+    Check(seq.Completed);
+    CheckEquals(4, appender.WriteCount);
+    CheckEqualsString(formatted[0], appender.Entry.Msg);
+    Check(appender.Entry.Level = entry.Level);
+    Check(appender.Entry.EntryType = TLogEntryType.CallStack);
+
+    // Multi line stack
+    seq := Default(MockSequence);
+    stack := TArray<Pointer>.Create(Pointer(1), Pointer(1));
+    formatted := TArray<string>.Create('1', '2');
+    collectorMock.Setup(Seq).Returns<TArray<Pointer>>(stack).When.Collect;
+    formatterMock.Setup(Seq).Returns<TArray<string>>(formatted).When.Format(stack);
+    fController.Send(entry);
+    Check(seq.Completed);
+    CheckEquals(6, appender.WriteCount);
+    CheckEqualsString(formatted[0] + sLineBreak + formatted[1],
+      appender.Entry.Msg);
+    Check(appender.Entry.Level = entry.Level);
+    Check(appender.Entry.EntryType = TLogEntryType.CallStack);
+  finally
+    with (fController as TLoggerController) do
+    begin
+      StackTraceCollector := nil;
+      StackTraceFormatter := nil;
+    end;
+  end;
 end;
 
 {$ENDREGION}

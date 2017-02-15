@@ -177,6 +177,16 @@ type
     property PString: string read fString;
   end;
 
+  TStackTraceCollector = class(TInterfaceBase, IStackTraceCollector)
+  public
+    function Collect: TArray<Pointer>; virtual; abstract;
+  end;
+
+  TStackTraceFormatter = class(TInterfaceBase, IStackTraceFormatter)
+  public
+    function Format(const stack: TArray<Pointer>): TArray<string>; virtual; abstract;
+  end;
+
 implementation
 
 
