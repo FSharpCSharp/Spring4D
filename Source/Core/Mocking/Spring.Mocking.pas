@@ -137,7 +137,6 @@ type
 
     function AddStep: Integer;
     procedure MoveNext;
-    procedure Reset;
 
     property Completed: Boolean read GetCompleted;
     property Current: Integer read GetCurrent;
@@ -533,8 +532,7 @@ end;
 
 procedure MockSequence.Reset;
 begin
-  if Assigned(fSequence) then
-    fSequence.Reset;
+  fSequence := nil;
 end;
 
 {$ENDREGION}

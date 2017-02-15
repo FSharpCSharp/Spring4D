@@ -71,6 +71,7 @@ type
   published
     procedure AssertsWrongOrder;
     procedure SequenceWorksUsingWith;
+    procedure ResetClearsSequence;
   end;
 
 implementation
@@ -438,6 +439,22 @@ end;
 
 {$ENDREGION}
 
+
+procedure MockSequenceTest.ResetClearsSequence;
+var
+  mock: Mock<IMockTest>;
+  seq: MockSequence;
+begin
+  mock.Behavior := TMockBehavior.Strict;
+  mock.Setup(seq).Executes.When.Test1(1, 'a');
+  mock.Instance.Test1(1, 'a');
+
+  seq.Reset;
+  mock.Setup(seq).Executes.When.Test1(2, 'b');
+  mock.Instance.Test1(2, 'b');
+
+  Pass;
+end;
 
 procedure MockSequenceTest.SequenceWorksUsingWith;
 var

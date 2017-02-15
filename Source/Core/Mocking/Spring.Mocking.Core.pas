@@ -143,7 +143,6 @@ type
   public
     function AddStep: Integer;
     procedure MoveNext;
-    procedure Reset;
   end;
 
 implementation
@@ -458,11 +457,6 @@ function TMockSequence.AddStep: Integer;
 begin
   Result := fCount;
   Inc(fCount);
-end;
-
-procedure TMockSequence.Reset;
-begin
-  fCurrent := 0;
 end;
 
 function TMockSequence.GetCompleted: Boolean;
