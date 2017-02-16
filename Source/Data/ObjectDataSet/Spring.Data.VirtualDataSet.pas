@@ -884,10 +884,10 @@ var
       ftIDispatch:
         IDispatch(Buffer^) := Data;
       ftLargeInt:
-        if Decimal(Data).sign > 0 then
-          LargeInt(Buffer^) := -1 * Decimal(Data).Lo64
+        if PDecimal(@Data).sign > 0 then
+          LargeInt(Buffer^) := -1 * PDecimal(@Data).Lo64
         else
-          LargeInt(Buffer^) := Decimal(Data).Lo64;
+          LargeInt(Buffer^) := PDecimal(@Data).Lo64;
       ftBlob .. ftTypedBinary, ftVariant, ftWideMemo:
         OleVariant(Buffer^) := Data;
     else

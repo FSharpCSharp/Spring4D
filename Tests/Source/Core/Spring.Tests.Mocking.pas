@@ -273,7 +273,7 @@ var
 begin
   mock.Instance.TestVariant(42);
   mock.Received.TestVariant(42);
-  mock.Received.TestVariant(Arg.IsEqual(42));
+  mock.Received.TestVariant(Arg.IsEqual<Integer>(42));
   Pass;
 end;
 
