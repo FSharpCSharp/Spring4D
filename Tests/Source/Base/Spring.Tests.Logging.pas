@@ -48,7 +48,9 @@ uses
   Spring.Logging.Controller,
   Spring.Logging.Extensions,
   Spring.Logging.Loggers,
+{$IFNDEF DELPHI2010}
   Spring.Mocking,
+{$ENDIF}
   Spring.Tests.Logging.Types;
 
 type
@@ -67,7 +69,9 @@ type
     procedure TestAddSerializer;
     procedure TestFindSerializer;
     procedure TestSendWithSerializer;
+{$IFNDEF DELPHI2010}
     procedure TestStackTrace;
+{$ENDIF}
   end;
   {$ENDREGION}
 
@@ -379,6 +383,7 @@ begin
   CheckEquals(Ord(TLogEntryType.SerializedData), Ord(appender.Entry.EntryType));
 end;
 
+{$IFNDEF DELPHI2010}
 procedure TTestLoggerController.TestStackTrace;
 var
   appender: TAppenderMock;
@@ -458,6 +463,7 @@ begin
     end;
   end;
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
