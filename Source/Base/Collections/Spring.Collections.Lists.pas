@@ -289,6 +289,9 @@ type
 implementation
 
 uses
+{$IFDEF DELPHIXE4}
+  Rtti, // suppress hint about inlining
+{$ENDIF}
   TypInfo,
   Spring.Collections.Extensions,
   Spring.Events,

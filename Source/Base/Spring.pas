@@ -1279,7 +1279,7 @@ type
     property Value: T read GetValue;
 
     class operator Implicit(const value: Nullable): Nullable<T>; inline;
-    class operator Implicit(const value: T): Nullable<T>; inline;
+    class operator Implicit(const value: T): Nullable<T>; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
 
 {$IFDEF IMPLICIT_NULLABLE}
     class operator Implicit(const value: Nullable<T>): T; inline;
@@ -1288,7 +1288,9 @@ type
 
 {$IFDEF UNSAFE_NULLABLE}
     class operator Implicit(const value: Nullable<T>): Variant;
+      {$IFNDEF DELPHIXE4}
       {$IFDEF UNSAFE_NULLABLE_WARN}inline; deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
+      {$ENDIF}
     class operator Implicit(const value: Variant): Nullable<T>;
       {$IFDEF UNSAFE_NULLABLE_WARN}inline; deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
 {$ENDIF}
@@ -1929,7 +1931,7 @@ type
     fFinalizer: IInterface;
   public
     class operator Implicit(const value: T): Managed<T>;
-    class operator Implicit(const value: Managed<T>): T; inline;
+    class operator Implicit(const value: Managed<T>): T; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
     property Value: T read fValue;
   end;
 

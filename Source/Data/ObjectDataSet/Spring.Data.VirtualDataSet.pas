@@ -289,10 +289,10 @@ resourcestring
 type
   TDBBitConverter = class
   private
-    class procedure InternalFromMove<T>(const Value: T; var B: TArray<Byte>; Offset: Integer = 0); static; inline;
+    class procedure InternalFromMove<T>(const Value: T; var B: TArray<Byte>; Offset: Integer = 0); static; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
     class function InternalIntoMove<T>(const B: TArray<Byte>; Offset: Integer = 0): T; static; inline;
   public
-    class procedure UnsafeFrom<T>(const Value: T; var B: TArray<Byte>; Offset: Integer = 0); static; inline;
+    class procedure UnsafeFrom<T>(const Value: T; var B: TArray<Byte>; Offset: Integer = 0); static; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
     class function UnsafeInTo<T>(const B: TArray<Byte>; Offset: Integer = 0): T; static; inline;
 
     class procedure UnsafeFromVariant(const Value: Variant; var B: TArray<Byte>; Offset: Integer = 0); static; inline;
