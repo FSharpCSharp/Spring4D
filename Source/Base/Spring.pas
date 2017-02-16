@@ -2961,7 +2961,7 @@ end;
 
 function GetVirtualMethod(const classType: TClass; const index: Integer): Pointer;
 begin
-  Result := PPointer(UINT_PTR(classType) + UINT_PTR(index * SizeOf(Pointer)))^;
+  Result := PPointer(UIntPtr(classType) + UIntPtr(index * SizeOf(Pointer)))^;
 end;
 
 type
@@ -3452,7 +3452,7 @@ end;
 {$IFDEF USE_VMTAUTOTABLE}
 function CreateFieldTable(ClassType: TClass): TInitTable;
 var
-  n: UINT_PTR;
+  n: UIntPtr;
 begin
   Result := TInitTable.Create(ClassType);
   WriteProcessMemory(GetCurrentProcess,
