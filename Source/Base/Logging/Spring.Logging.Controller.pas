@@ -45,16 +45,16 @@ type
     fStackTraceFormatter: IStackTraceFormatter;
     fAppenders: IList<ILogAppender>;
   protected
-    procedure DoSend(const entry: TLogEntry); override;
+    procedure DoSend(const event: TLogEvent); override;
 
-    procedure SendData(const entry: TLogEntry);
-    procedure SendStack(const entry: TLogEntry);
+    procedure SendData(const event: TLogEvent);
+    procedure SendStack(const event: TLogEvent);
 
     /// <summary>
-    ///   Returns <c>true</c> if level is enabled and any of the <c>entryTypes</c>
+    ///   Returns <c>true</c> if level is enabled and any of the <c>eventTypes</c>
     ///    is enabled in any of the appenders or <c>false</c> otherwise
     /// </summary>
-    function IsLoggable(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean;
+    function IsLoggable(level: TLogLevel; eventTypes: TLogEventTypes): Boolean;
   public
     constructor Create; overload;
     constructor Create(const appenders: TArray<ILogAppender>); overload;
@@ -114,7 +114,7 @@ begin
   fSerializers.Add(serializer);
 end;
 
-procedure TLoggerController.DoSend(const entry: TLogEntry);
+procedure TLoggerController.DoSend(const event: TLogEvent);
 var
   appender: ILogAppender;
 begin
@@ -124,16 +124,16 @@ begin
   // appenders first and get their level and enabled state to check if there is
   // something to do in the first place
   for appender in fAppenders do
-    appender.Send(entry);
+    appender.Send(event);
 
-  if not entry.Data.IsEmpty
-    and IsLoggable(entry.Level, [TLogEntryType.SerializedData]) then
-      SendData(entry);
+  if not event.Data.IsEmpty
+    and IsLoggable(event.Level, [TLogEventType.SerializedData]) then
+      SendData(event);
 
-  if entry.AddStackValue and Assigned(fStackTraceCollector)
+  if event.AddStackValue and Assigned(fStackTraceCollector)
     and Assigned(fStackTraceFormatter)
-    and IsLoggable(entry.Level, [TLogEntryType.CallStack]) then
-      SendStack(entry);
+    and IsLoggable(event.Level, [TLogEventType.CallStack]) then
+      SendStack(event);
 end;
 
 function TLoggerController.FindSerializer(typeInfo: PTypeInfo): ITypeSerializer;
@@ -148,30 +148,30 @@ begin
 end;
 
 function TLoggerController.IsLoggable(level: TLogLevel;
-  entryTypes: TLogEntryTypes): Boolean;
+  eventTypes: TLogEventTypes): Boolean;
 var
   appender: ILogAppender;
 begin
   for appender in fAppenders do
     if appender.Enabled and (level in appender.Levels)
-      and (entryTypes * appender.EntryTypes <> []) then
+      and (eventTypes * appender.EventTypes <> []) then
         Exit(True);
 
   Result := False;
 end;
 
-procedure TLoggerController.SendData(const entry: TLogEntry);
+procedure TLoggerController.SendData(const event: TLogEvent);
 var
   serializer: ITypeSerializer;
 begin
-  serializer := FindSerializer(entry.Data.TypeInfo);
+  serializer := FindSerializer(event.Data.TypeInfo);
 
   if Assigned(serializer) then
-    DoSend(TLogEntry.Create(entry.Level, TLogEntryType.SerializedData,
-      serializer.Serialize(Self, entry.Data)));
+    DoSend(TLogEvent.Create(event.Level, TLogEventType.SerializedData,
+      serializer.Serialize(Self, event.Data)));
 end;
 
-procedure TLoggerController.SendStack(const entry: TLogEntry);
+procedure TLoggerController.SendStack(const event: TLogEvent);
 var
   stack: TArray<Pointer>;
   formatted: TArray<string>;
@@ -188,7 +188,7 @@ begin
   for i := 1 to High(formatted) do
     s := s + sLineBreak + formatted[i];
 
-  DoSend(TLogEntry.Create(entry.Level, TLogEntryType.CallStack, s));
+  DoSend(TLogEvent.Create(event.Level, TLogEventType.CallStack, s));
 end;
 
 {$ENDREGION}

@@ -66,7 +66,7 @@ type
     PTextFile = ^TextFile;
   protected
     fFile: PTextFile;
-    procedure DoSend(const entry: TLogEntry); override;
+    procedure DoSend(const event: TLogEvent); override;
   public
 
     /// <summary>
@@ -98,7 +98,7 @@ type
       const encoding: TEncoding);
     procedure SetStream(const stream: TStream);
   protected
-    procedure DoSend(const entry: TLogEntry); override;
+    procedure DoSend(const event: TLogEvent); override;
   public
     constructor Create(const stream: TStream; ownsStream: Boolean = True;
       const encoding: TEncoding = nil);
@@ -126,7 +126,7 @@ type
 {$IFDEF MSWINDOWS}
   TTraceLogAppender = class(TLogAppenderWithTimeStampFormat)
   protected
-    procedure DoSend(const entry: TLogEntry); override;
+    procedure DoSend(const event: TLogEvent); override;
   end;
 {$ENDIF}
 
@@ -140,7 +140,7 @@ type
   private
     fService: IFMXLoggingService;
   protected
-    procedure DoSend(const entry: TLogEntry); override;
+    procedure DoSend(const event: TLogEvent); override;
   public
     constructor Create;
   end;
@@ -157,7 +157,7 @@ type
     fTagMarshaller: TMarshaller;
     fTag: MarshaledAString; //fTag is valid as long as marshaller is referenced
   protected
-    procedure DoSend(const entry: TLogEntry); override;
+    procedure DoSend(const event: TLogEvent); override;
   public
     /// <summary>
     ///   Creates Android logcat log appender, the tag can be used to
@@ -235,10 +235,10 @@ begin
   Create(@ErrOutput);
 end;
 
-procedure TTextLogAppender.DoSend(const entry: TLogEntry);
+procedure TTextLogAppender.DoSend(const event: TLogEvent);
 begin
-  Writeln(fFile^, FormatTimeStamp(entry.TimeStamp), ': ',
-    LEVEL_FIXED[entry.Level], ' ', FormatMsg(entry));
+  Writeln(fFile^, FormatTimeStamp(event.TimeStamp), ': ',
+    LEVEL_FIXED[event.Level], ' ', FormatMsg(event));
   Flush(fFile^);
 end;
 
@@ -280,12 +280,12 @@ begin
   inherited Destroy;
 end;
 
-procedure TStreamLogAppender.DoSend(const entry: TLogEntry);
+procedure TStreamLogAppender.DoSend(const event: TLogEvent);
 var
   buffer: TBytes;
 begin
-  buffer := fEncoding.GetBytes(FormatTimeStamp(entry.TimeStamp) + ': ' +
-    LEVEL_FIXED[entry.Level] + ' ' + FormatMsg(entry) + sLineBreak);
+  buffer := fEncoding.GetBytes(FormatTimeStamp(event.TimeStamp) + ': ' +
+    LEVEL_FIXED[event.Level] + ' ' + FormatMsg(event) + sLineBreak);
   fLock.Enter;
   try
     fStream.WriteBuffer(buffer[0], Length(buffer));
@@ -330,12 +330,12 @@ end;
 {$REGION 'TTraceLogAppender'}
 
 {$IFDEF MSWINDOWS}
-procedure TTraceLogAppender.DoSend(const entry: TLogEntry);
+procedure TTraceLogAppender.DoSend(const event: TLogEvent);
 var
   buffer: string;
 begin
-  buffer := FormatTimeStamp(entry.TimeStamp) + ': ' + LEVEL[entry.Level] + ' ' +
-    FormatMsg(entry);
+  buffer := FormatTimeStamp(event.TimeStamp) + ': ' + LEVEL[event.Level] + ' ' +
+    FormatMsg(event);
   OutputDebugString(PChar(buffer));
 end;
 {$ENDIF}
@@ -352,10 +352,10 @@ begin
     IFMXLoggingService) as IFMXLoggingService;
 end;
 
-procedure TFMXLogAppender.DoSend(const entry: TLogEntry);
+procedure TFMXLogAppender.DoSend(const event: TLogEvent);
 begin
-  fService.Log(FormatTimeStamp(entry.TimeStamp) + ': ' + LEVEL[entry.Level] + ' ' +
-    FormatMsg(entry), []);
+  fService.Log(FormatTimeStamp(event.TimeStamp) + ': ' + LEVEL[event.Level] + ' ' +
+    FormatMsg(event), []);
 end;
 {$ENDIF}
 
@@ -371,7 +371,7 @@ begin
   fTag := FTagMarshaller.AsAnsi(Tag).ToPointer;
 end;
 
-procedure TAndroidLogAppender.DoSend(const entry: TLogEntry);
+procedure TAndroidLogAppender.DoSend(const event: TLogEvent);
 const
   LEVEL: array[TLogLevel] of android_LogPriority = (
     ANDROID_LOG_UNKNOWN,
@@ -387,8 +387,8 @@ var
   m: TMarshaller;
   buffer: string;
 begin
-  buffer := FormatTimeStamp(entry.TimeStamp) + ': ' + FormatMsg(entry);
-  __android_log_write(LEVEL[entry.Level], fTag, m.AsAnsi(buffer).ToPointer);
+  buffer := FormatTimeStamp(event.TimeStamp) + ': ' + FormatMsg(event);
+  __android_log_write(LEVEL[event.Level], fTag, m.AsAnsi(buffer).ToPointer);
 end;
 {$ENDIF}
 

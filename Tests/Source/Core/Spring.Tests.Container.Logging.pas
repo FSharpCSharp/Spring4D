@@ -428,7 +428,7 @@ begin
     .Add('someString = test')
     .Add('someEnum = Warn')
     .Add('levels = Error, Info')
-    .Add('entryTypes = Text, Entering');
+    .Add('eventTypes = Text, Entering');
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
 
   fContainer.Build;
@@ -441,7 +441,7 @@ begin
   CheckEquals('test', appender.SomeString);
   CheckEquals(Ord(TLogLevel.Warn), Ord(appender.SomeEnum));
   Check([TLogLevel.Error, TLogLevel.Info] = appender.Levels);
-  Check([TLogEntryType.Text, TLogEntryType.Entering] = appender.EntryTypes);
+  Check([TLogEventType.Text, TLogEventType.Entering] = appender.EventTypes);
 end;
 
 procedure TTestLoggingConfiguration.TestReadSingleControllerAsDefault;
@@ -477,7 +477,7 @@ begin
 
   appender := TObject(fContainer.Resolve<ILogAppender>) as TAppenderMock;
   CheckTrue(appender.WriteCalled);
-  CheckEquals('test', appender.Entry.Msg);
+  CheckEquals('test', appender.Event.Msg);
 end;
 
 procedure TTestLoggingConfiguration.TestUnknownClass;
@@ -657,7 +657,7 @@ begin
     .Add('[appenders\appender2]')
     .Add('class = Spring.Tests.Logging.Types.TAppenderMock2')
     .Add('levels = Fatal, Error, Warn')
-    .Add('entryTypes = Text, Value');
+    .Add('eventTypes = Text, Value');
 
   fStrings
     .Add('[controllers\default]')
@@ -668,7 +668,7 @@ begin
     .Add('class = Spring.Tests.Logging.Types.TLoggerController2')
     .Add('appender = appender2')
     .Add('levels = Fatal, Error')
-    .Add('entryTypes = Text, SerializedData');
+    .Add('eventTypes = Text, SerializedData');
 
   fStrings
     .Add('[loggers\default]');
@@ -677,7 +677,7 @@ begin
     .Add('class = Spring.Tests.Logging.Types.TLogger2')
     .Add('controller = controller2')
     .Add('levels = Fatal')
-    .Add('entryTypes = Leaving')
+    .Add('eventTypes = Leaving')
     .Add('assign = Spring.Tests.Logging.Types.TImpl');
 
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
@@ -832,7 +832,7 @@ begin
     .BeginAppender('app1', TAppenderMock)
       .Enabled(False)
       .Levels([TLogLevel.Warn])
-      .EntryTypes([TLogEntryType.Text])
+      .EventTypes([TLogEventType.Text])
       .Prop('someProp', True)
     .EndAppender
 
@@ -844,7 +844,7 @@ begin
     'class = Spring.Tests.Logging.Types.TAppenderMock' + NL +
     'enabled = False' + NL +
     'levels = [Warn]' + NL +
-    'entryTypes = [Text]' + NL +
+    'eventTypes = [Text]' + NL +
     'someProp = True' + NL +
     NL +
     '[appenders\app2]' + NL +
@@ -937,7 +937,7 @@ begin
     .BeginController
       .Enabled(True)
       .Levels([TLogLevel.Fatal, TLogLevel.Error])
-      .EntryTypes([TLogEntryType.Text, TLogEntryType.Value])
+      .EventTypes([TLogEventType.Text, TLogEventType.Value])
       .AddAppender('app1')
       .Prop('test', 0)
     .EndController
@@ -956,7 +956,7 @@ begin
     '[controllers\default]' + NL +
     'enabled = True' + NL +
     'levels = [Error,Fatal]' + NL +
-    'entryTypes = [Text,Value]' + NL +
+    'eventTypes = [Text,Value]' + NL +
     'appender = app1' + NL +
     'test = 0' + NL +
     NL +
@@ -986,7 +986,7 @@ begin
     .BeginLogger
       .Enabled(True)
       .Levels([TLogLevel.Error, TLogLevel.Debug])
-      .EntryTypes([TLogEntryType.Text, TLogEntryType.Value])
+      .EventTypes([TLogEventType.Text, TLogEventType.Value])
       .Controller('ctl1')
       .Prop('test', TLogLevel.Trace)
     .EndLogger
@@ -1005,7 +1005,7 @@ begin
     '[loggers\default]' + NL +
     'enabled = True' + NL +
     'levels = [Debug,Error]' + NL +
-    'entryTypes = [Text,Value]' + NL +
+    'eventTypes = [Text,Value]' + NL +
     'controller = ctl1' + NL +
     'test = Trace' + NL +
     NL +

@@ -67,8 +67,8 @@ type
       '[FATAL]'
     );
   public
-    class function FormatText(const entry: TLogEntry): string; static; inline;
-    class function FormatMsg(const entry: TLogEntry): string; static; inline;
+    class function FormatText(const event: TLogEvent): string; static; inline;
+    class function FormatMsg(const event: TLogEvent): string; static; inline;
     class function FormatException(const e: Exception): string; static; //noinline
     class function FormatMethodName(classType: TClass;
       const methodName: string): string; static; inline;
@@ -78,9 +78,9 @@ type
       const methodName: string): string; static; inline;
   {$ENDREGION}
   protected
-    procedure DoSend(const entry: TLogEntry); virtual; abstract;
+    procedure DoSend(const event: TLogEvent); virtual; abstract;
   public
-    procedure Send(const entry: TLogEntry);
+    procedure Send(const event: TLogEvent);
   end;
 
   {$ENDREGION}
@@ -124,37 +124,37 @@ begin
     Result := methodName;
 end;
 
-class function TLogAppenderBase.FormatMsg(const entry: TLogEntry): string;
+class function TLogAppenderBase.FormatMsg(const event: TLogEvent): string;
 begin
-  if entry.Exception = nil then
-    Result := FormatText(entry)
+  if event.Exception = nil then
+    Result := FormatText(event)
   else
-    if entry.Msg <> '' then
-      Result := FormatText(entry) + ': ' + FormatException(entry.Exception)
+    if event.Msg <> '' then
+      Result := FormatText(event) + ': ' + FormatException(event.Exception)
     else
-      Result := FormatException(entry.Exception);
+      Result := FormatException(event.Exception);
 end;
 
-class function TLogAppenderBase.FormatText(const entry: TLogEntry): string;
+class function TLogAppenderBase.FormatText(const event: TLogEvent): string;
 begin
-  case entry.EntryType of
-    TLogEntryType.Text,
-    TLogEntryType.SerializedData,
-    TLogEntryType.CallStack:
-      Result := entry.Msg;
+  case event.EventType of
+    TLogEventType.Text,
+    TLogEventType.SerializedData,
+    TLogEventType.CallStack:
+      Result := event.Msg;
 
-    TLogEntryType.Entering:
-      Result := FormatEntering(entry.ClassType, entry.Msg);
+    TLogEventType.Entering:
+      Result := FormatEntering(event.ClassType, event.Msg);
 
-    TLogEntryType.Leaving:
-      Result := FormatLeaving(entry.ClassType, entry.Msg);
+    TLogEventType.Leaving:
+      Result := FormatLeaving(event.ClassType, event.Msg);
   end;
 end;
 
-procedure TLogAppenderBase.Send(const entry: TLogEntry);
+procedure TLogAppenderBase.Send(const event: TLogEvent);
 begin
-  if IsEnabled(entry.Level, [entry.EntryType]) then
-    DoSend(entry);
+  if IsEnabled(event.Level, [event.EventType]) then
+    DoSend(event);
 end;
 
 {$ENDREGION}

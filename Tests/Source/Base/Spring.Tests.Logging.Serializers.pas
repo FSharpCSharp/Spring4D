@@ -220,7 +220,7 @@ end;
 
 procedure TTestSimpleTypeSerializer.TestSet;
 begin
-  CheckValue('[SerializedData]', TValue.From([TLogEntryType.SerializedData]), tkSet);
+  CheckValue('[SerializedData]', TValue.From([TLogEventType.SerializedData]), tkSet);
 end;
 
 {$IFNDEF NEXTGEN}

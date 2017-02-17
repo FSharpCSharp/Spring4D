@@ -88,7 +88,7 @@ type
 
     procedure CheckEvent(enabled: Boolean; level: TLogLevel; const msg: string;
       const e: Exception = nil);
-    procedure TestLogEntry(enabled: Boolean); overload;
+    procedure TestLogEvent(enabled: Boolean); overload;
     procedure TestLog(enabled: Boolean); overload;
     procedure TestFatal(enabled: Boolean); overload;
     procedure TestError(enabled: Boolean); overload;
@@ -113,7 +113,7 @@ type
 
     procedure TestLoggerProperties;
 
-    procedure TestLogEntry; overload;
+    procedure TestLogEvent; overload;
 
     procedure TestLog; overload;
     procedure TestFatal; overload;
@@ -274,29 +274,29 @@ var
 begin
   controller := TLoggerControllerAccess(TLoggerController(fController));
 
-  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.Text]));
+  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEventType.Text]));
 
   appender := TAppenderMock.Create;
   appender.Enabled := False;
   controller.AddAppender(appender);
-  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.Text]));
+  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEventType.Text]));
 
   appender.Enabled := True;
   appender.Levels := [];
-  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.Text]));
+  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEventType.Text]));
 
   appender.Levels := [TLogLevel.Fatal];
-  appender.EntryTypes := [];
-  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.Text]));
+  appender.EventTypes := [];
+  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEventType.Text]));
 
   appender := TAppenderMock.Create;
   controller.AddAppender(appender);
   appender.Levels := [TLogLevel.Fatal];
-  appender.EntryTypes := [TLogEntryType.Text, TLogEntryType.Value];
-  CheckTrue(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.Text]));
-  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.CallStack]));
-  CheckTrue(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.CallStack,
-    TLogEntryType.Text]));
+  appender.EventTypes := [TLogEventType.Text, TLogEventType.Value];
+  CheckTrue(controller.IsLoggable(TLogLevel.Fatal, [TLogEventType.Text]));
+  CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEventType.CallStack]));
+  CheckTrue(controller.IsLoggable(TLogLevel.Fatal, [TLogEventType.CallStack,
+    TLogEventType.Text]));
 end;
 
 procedure TTestLoggerController.TestSend;
@@ -310,11 +310,11 @@ begin
   intf := appender;
 
   fController.AddAppender(intf);
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
+  fController.Send(TLogEvent.Create(TLogLevel.Fatal, MSG));
 
   CheckTrue(appender.WriteCalled);
-  CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Entry.Level));
-  CheckEquals(MSG, appender.Entry.Msg);
+  CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Event.Level));
+  CheckEquals(MSG, appender.Event.Msg);
 end;
 
 procedure TTestLoggerController.TestSendDisabled;
@@ -329,16 +329,16 @@ begin
   fController.AddAppender(intf);
 
   TLoggerController(fController).Enabled := False;
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
+  fController.Send(TLogEvent.Create(TLogLevel.Fatal, MSG));
   CheckFalse(appender.WriteCalled);
 
   TLoggerController(fController).Enabled := True;
   TLoggerController(fController).Levels := [];
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
+  fController.Send(TLogEvent.Create(TLogLevel.Fatal, MSG));
   CheckFalse(appender.WriteCalled);
 
   TLoggerController(fController).Levels := LOG_ALL_LEVELS - [TLogLevel.Fatal];
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
+  fController.Send(TLogEvent.Create(TLogLevel.Fatal, MSG));
   CheckFalse(appender.WriteCalled);
 end;
 
@@ -358,29 +358,29 @@ begin
   //Check that we only output the message and not the data if the appender
   //does not habe SerializedData level
   appender.Levels := [TLogLevel.Fatal];
-  appender.EntryTypes := [TLogEntryType.Text];
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, TLogEntryType.Text, 'test',
+  appender.EventTypes := [TLogEventType.Text];
+  fController.Send(TLogEvent.Create(TLogLevel.Fatal, TLogEventType.Text, 'test',
     nil, -1));
   CheckEquals(1, appender.WriteCount);
   CheckEquals(0, serializer.HandlesTypeCount);
-  CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Entry.Level));
+  CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Event.Level));
 
   //... or is disabled
   appender.Enabled := False;
   appender.Levels := [TLogLevel.Fatal];
-  appender.EntryTypes := [TLogEntryType.Text, TLogEntryType.SerializedData];
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, TLogEntryType.Text, 'test',
+  appender.EventTypes := [TLogEventType.Text, TLogEventType.SerializedData];
+  fController.Send(TLogEvent.Create(TLogLevel.Fatal, TLogEventType.Text, 'test',
     nil, -1));
   CheckEquals(1, appender.WriteCount);
   CheckEquals(0, serializer.HandlesTypeCount);
 
   //Finally test that we dispatch the call and both messages are logged
   appender.Enabled := True;
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, TLogEntryType.Text, 'test',
+  fController.Send(TLogEvent.Create(TLogLevel.Fatal, TLogEventType.Text, 'test',
     nil, -1));
   CheckEquals(3, appender.WriteCount);
   CheckEquals(1, serializer.HandlesTypeCount);
-  CheckEquals(Ord(TLogEntryType.SerializedData), Ord(appender.Entry.EntryType));
+  CheckEquals(Ord(TLogEventType.SerializedData), Ord(appender.Event.EventType));
 end;
 
 {$IFNDEF DELPHI2010}
@@ -391,7 +391,7 @@ var
   collectorMock: Mock<TStackTraceCollector>;
   formatterMock: Mock<TStackTraceFormatter>;
   seq: MockSequence;
-  entry: TLogEntry;
+  event: TLogEvent;
   stack: TArray<Pointer>;
   formatted: TArray<string>;
 begin
@@ -411,23 +411,23 @@ begin
   end;
 
   try
-    entry := TLogEntry.Create(TLogLevel.Error, 'Message').AddStack;
-    fController.Send(entry);
+    event := TLogEvent.Create(TLogLevel.Error, 'Message').AddStack;
+    fController.Send(event);
     CheckEquals(1, appender.WriteCount);
-    CheckEqualsString(entry.Msg, appender.Entry.Msg);
+    CheckEqualsString(event.Msg, appender.Event.Msg);
     // No calls to collector and formatter expected
 
     // Empty stack
-    appender.EntryTypes := appender.EntryTypes + [TLogEntryType.CallStack];
-    entry := TLogEntry.Create(TLogLevel.Error, 'Message').AddStack;
+    appender.EventTypes := appender.EventTypes + [TLogEventType.CallStack];
+    event := TLogEvent.Create(TLogLevel.Error, 'Message').AddStack;
     CheckEquals(1, appender.WriteCount);
-    CheckEqualsString(entry.Msg, appender.Entry.Msg);
+    CheckEqualsString(event.Msg, appender.Event.Msg);
     collectorMock.Setup(Seq).Returns<TArray<Pointer>>(nil).When.Collect;
-    fController.Send(entry);
+    fController.Send(event);
     // No calls to formatter expected
     Check(seq.Completed);
     CheckEquals(2, appender.WriteCount);
-    CheckEqualsString(entry.Msg, appender.Entry.Msg);
+    CheckEqualsString(event.Msg, appender.Event.Msg);
 
     // One line stack
     seq := Default(MockSequence);
@@ -435,12 +435,12 @@ begin
     formatted := TArray<string>.Create('$12345678');
     collectorMock.Setup(Seq).Returns<TArray<Pointer>>(stack).When.Collect;
     formatterMock.Setup(Seq).Returns<TArray<string>>(formatted).When.Format(stack);
-    fController.Send(entry);
+    fController.Send(event);
     Check(seq.Completed);
     CheckEquals(4, appender.WriteCount);
-    CheckEqualsString(formatted[0], appender.Entry.Msg);
-    Check(appender.Entry.Level = entry.Level);
-    Check(appender.Entry.EntryType = TLogEntryType.CallStack);
+    CheckEqualsString(formatted[0], appender.Event.Msg);
+    Check(appender.Event.Level = event.Level);
+    Check(appender.Event.EventType = TLogEventType.CallStack);
 
     // Multi line stack
     seq := Default(MockSequence);
@@ -448,13 +448,13 @@ begin
     formatted := TArray<string>.Create('1', '2');
     collectorMock.Setup(Seq).Returns<TArray<Pointer>>(stack).When.Collect;
     formatterMock.Setup(Seq).Returns<TArray<string>>(formatted).When.Format(stack);
-    fController.Send(entry);
+    fController.Send(event);
     Check(seq.Completed);
     CheckEquals(6, appender.WriteCount);
     CheckEqualsString(formatted[0] + sLineBreak + formatted[1],
-      appender.Entry.Msg);
-    Check(appender.Entry.Level = entry.Level);
-    Check(appender.Entry.EntryType = TLogEntryType.CallStack);
+      appender.Event.Msg);
+    Check(appender.Event.Level = event.Level);
+    Check(appender.Event.EventType = TLogEventType.CallStack);
   finally
     with (fController as TLoggerController) do
     begin
@@ -473,14 +473,14 @@ end;
 procedure TTestLogger.CheckEvent(enabled: Boolean; level: TLogLevel;
   const msg: string; const e: Exception = nil);
 begin
-  CheckEquals(enabled, Controller.LastEntry.Level <> TLogLevel.Unknown);
+  CheckEquals(enabled, Controller.LastEvent.Level <> TLogLevel.Unknown);
   if (not enabled) then
     Exit;
 
-  CheckEquals(Ord(level), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Text), Ord(Controller.LastEntry.EntryType));
-  CheckEquals(msg, Controller.LastEntry.Msg);
-  CheckSame(e, Controller.LastEntry.Exception);
+  CheckEquals(Ord(level), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Text), Ord(Controller.LastEvent.EventType));
+  CheckEquals(msg, Controller.LastEvent.Msg);
+  CheckSame(e, Controller.LastEvent.Exception);
 end;
 
 procedure TTestLogger.SetUp;
@@ -556,55 +556,55 @@ begin
 
   Logger.Enabled := False;
   fLogger.Enter(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warn];
   fLogger.Enter(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   fLogger.Enter(TLogLevel.Warn, nil, '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering),  Ord(Controller.LastEvent.EventType));
 
   Controller.Reset;
 
   Logger.Enabled := False;
   fLogger.Enter(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warn];
   fLogger.Enter(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   fLogger.Enter(TLogLevel.Warn, nil, '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering),  Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   Logger.DefaultLevel := TLogLevel.Info;
   fLogger.Enter(TClass(nil), '');
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   Logger.DefaultLevel := TLogLevel.Warn;
   fLogger.Enter(TClass(nil), '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering),  Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   fLogger.Enter(TObject(nil), '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering),  Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   fLogger.Enter(Self, '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering),  Ord(Controller.LastEvent.EventType));
 
   fLogger.Enter('');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering),  Ord(Controller.LastEvent.EventType));
 end;
 
 procedure TTestLogger.TestError(enabled: Boolean);
@@ -711,18 +711,18 @@ begin
 
   Logger.Enabled := True;
   Logger.Levels := [];
-  CheckFalse(Logger.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
+  CheckFalse(Logger.IsEnabled(TLogLevel.Fatal, [TLogEventType.Text]));
 
   Logger.Levels := [TLogLevel.Fatal];
-  Logger.EntryTypes := [];
-  CheckFalse(Logger.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
+  Logger.EventTypes := [];
+  CheckFalse(Logger.IsEnabled(TLogLevel.Fatal, [TLogEventType.Text]));
 
   Logger.Levels := [TLogLevel.Fatal];
-  Logger.EntryTypes := [TLogEntryType.Text, TLogEntryType.Value];
-  CheckTrue(Logger.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
-  CheckFalse(Logger.IsEnabled(TLogLevel.Fatal, [TLogEntryType.CallStack]));
-  CheckTrue(Logger.IsEnabled(TLogLevel.Fatal, [TLogEntryType.CallStack,
-    TLogEntryType.Text]));
+  Logger.EventTypes := [TLogEventType.Text, TLogEventType.Value];
+  CheckTrue(Logger.IsEnabled(TLogLevel.Fatal, [TLogEventType.Text]));
+  CheckFalse(Logger.IsEnabled(TLogLevel.Fatal, [TLogEventType.CallStack]));
+  CheckTrue(Logger.IsEnabled(TLogLevel.Fatal, [TLogEventType.CallStack,
+    TLogEventType.Text]));
 
   ExpectedException := EArgumentException;
   Logger.IsEnabled(TLogLevel.Warn, []);
@@ -806,40 +806,40 @@ begin
 
   Logger.Enabled := False;
   fLogger.Leave(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warn];
   fLogger.Leave(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   fLogger.Leave(TLogLevel.Warn, nil, '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving),  Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   Logger.DefaultLevel := TLogLevel.Info;
   fLogger.Leave(TClass(nil), '');
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   Logger.DefaultLevel := TLogLevel.Warn;
   fLogger.Leave(TClass(nil), '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving),  Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   fLogger.Leave(TObject(nil), '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving),  Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   fLogger.Leave(Self, '');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving),  Ord(Controller.LastEvent.EventType));
 
   fLogger.Leave('');
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving),  Ord(Controller.LastEvent.EventType));
 end;
 
 procedure TTestLogger.TestLevels;
@@ -851,23 +851,23 @@ begin
   Check(LOG_ALL_LEVELS = Logger.Levels, 'Levels');
 end;
 
-procedure TTestLogger.TestLogEntry(enabled: Boolean);
+procedure TTestLogger.TestLogEvent(enabled: Boolean);
 begin
   Controller.Reset;
-  fLogger.Log(TLogEntry.Create(TLogLevel.Fatal, 'L1'));
+  fLogger.Log(TLogEvent.Create(TLogLevel.Fatal, 'L1'));
   CheckEvent(enabled, TLogLevel.Fatal, 'L1');
 
   Controller.Reset;
-  fLogger.Log(TLogEntry.Create(TLogLevel.Error, 'L2').SetException(fException));
+  fLogger.Log(TLogEvent.Create(TLogLevel.Error, 'L2').SetException(fException));
   CheckEvent(enabled, TLogLevel.Error, 'L2', fException);
 end;
 
-procedure TTestLogger.TestLogEntry;
+procedure TTestLogger.TestLogEvent;
 begin
   Logger.Levels := [TLogLevel.Fatal, TLogLevel.Error];
-  TestLogEntry(True);
+  TestLogEvent(True);
   Logger.Levels := [];
-  TestLogEntry(False);
+  TestLogEvent(False);
 end;
 
 procedure TTestLogger.TestLoggerProperties;
@@ -918,69 +918,69 @@ begin
   Logger.Enabled := False;
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warn];
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   result := fLogger.Track(TLogLevel.Warn, nil, '');
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving), Ord(Controller.LastEvent.EventType));
 
   Controller.Reset;
 
-  Logger.EntryTypes:=[];
+  Logger.EventTypes := [];
   result := fLogger.Track(TLogLevel.Warn, nil, '');
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
   Controller.Reset;
 
-  Logger.EntryTypes:=[TLogEntryType.Entering];
+  Logger.EventTypes := [TLogEventType.Entering];
   result := fLogger.Track(TLogLevel.Warn, nil, '');
   CheckNotNull(result);
-  CheckTrue(TLogLevel.Warn = Controller.LastEntry.Level);
-  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
+  CheckTrue(TLogLevel.Warn = Controller.LastEvent.Level);
+  CheckEquals(Ord(TLogEventType.Entering), Ord(Controller.LastEvent.EventType));
   result := nil;
-  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogEventType.Entering), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
-  Logger.EntryTypes:=[TLogEntryType.Leaving];
+  Logger.EventTypes := [TLogEventType.Leaving];
   result := fLogger.Track(TLogLevel.Warn, nil, '');
   CheckNotNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
   result := nil;
-  CheckTrue(TLogLevel.Warn = Controller.LastEntry.Level);
-  CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
+  CheckTrue(TLogLevel.Warn = Controller.LastEvent.Level);
+  CheckEquals(Ord(TLogEventType.Leaving), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
-  Logger.EntryTypes:=[TLogEntryType.Entering, TLogEntryType.Leaving];
+  Logger.EventTypes := [TLogEventType.Entering, TLogEventType.Leaving];
   Logger.Enabled := False;
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warn];
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEvent.Level);
 
   result := fLogger.Track(TLogLevel.Warn, nil, '');
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   Logger.DefaultLevel := TLogLevel.Info;
@@ -990,34 +990,34 @@ begin
   Logger.DefaultLevel := TLogLevel.Warn;
   result := fLogger.Track(TClass(nil), '');
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   Logger.DefaultLevel := TLogLevel.Warn;
   result := fLogger.Track(TObject(nil), '');
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 
   Logger.DefaultLevel := TLogLevel.Warn;
   result := fLogger.Track(Self, '');
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Entering), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEvent.Level));
+  CheckEquals(Ord(TLogEventType.Leaving), Ord(Controller.LastEvent.EventType));
   Controller.Reset;
 end;
 
@@ -1168,7 +1168,7 @@ var
   e: Exception;
   len: Integer;
 begin
-  result := TLogAppenderBase.FormatMsg(TLogEntry.Create(TLogLevel.Unknown,
+  result := TLogAppenderBase.FormatMsg(TLogEvent.Create(TLogLevel.Unknown,
     'message'));
   CheckEquals('message', result);
 
@@ -1177,7 +1177,7 @@ begin
     SetLength(s, 1024);
     len := ExceptionErrorMessage(e, nil, @s[1], Length(s));
     SetLength(s, len);
-    result := TLogAppenderBase.FormatMsg(TLogEntry.Create(TLogLevel.Unknown,
+    result := TLogAppenderBase.FormatMsg(TLogEvent.Create(TLogLevel.Unknown,
       'message', e));
     CheckEquals('message: ' + s, result);
   finally
@@ -1189,24 +1189,24 @@ procedure TTestLogAppenderBase.TestFormatText;
 var
   result: string;
 begin
-  result := TLogAppenderBase. FormatText(TLogEntry.Create(TLogLevel.Unknown,
+  result := TLogAppenderBase. FormatText(TLogEvent.Create(TLogLevel.Unknown,
     'message'));
   CheckEquals('message', result);
 
-  result := TLogAppenderBase. FormatText(TLogEntry.Create(TLogLevel.Unknown,
-    TLogEntryType.SerializedData, 'message'));
+  result := TLogAppenderBase. FormatText(TLogEvent.Create(TLogLevel.Unknown,
+    TLogEventType.SerializedData, 'message'));
   CheckEquals('message', result);
 
-  result := TLogAppenderBase. FormatText(TLogEntry.Create(TLogLevel.Unknown,
-    TLogEntryType.CallStack, 'message'));
+  result := TLogAppenderBase. FormatText(TLogEvent.Create(TLogLevel.Unknown,
+    TLogEventType.CallStack, 'message'));
   CheckEquals('message', result);
 
-  result := TLogAppenderBase.FormatText(TLogEntry.Create(TLogLevel.Unknown,
-    TLogEntryType.Entering, 'message', nil));
+  result := TLogAppenderBase.FormatText(TLogEvent.Create(TLogLevel.Unknown,
+    TLogEventType.Entering, 'message', nil));
   CheckEquals('Entering: message', result);
 
-  result := TLogAppenderBase.FormatText(TLogEntry.Create(TLogLevel.Unknown,
-    TLogEntryType.Leaving, 'message', nil));
+  result := TLogAppenderBase.FormatText(TLogEvent.Create(TLogLevel.Unknown,
+    TLogEventType.Leaving, 'message', nil));
   CheckEquals('Leaving: message', result);
 end;
 
@@ -1220,20 +1220,20 @@ begin
     Assert(appender is TLogAppenderBase);
 
     appender.Enabled := False;
-    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
+    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEventType.Text]));
 
     appender.Enabled := True;
     appender.Levels := [];
-    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
+    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEventType.Text]));
 
     appender.Levels := [TLogLevel.Fatal];
-    appender.EntryTypes := [];
-    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
+    appender.EventTypes := [];
+    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEventType.Text]));
 
     appender.Levels := [TLogLevel.Fatal];
-    appender.EntryTypes := [TLogEntryType.Text, TLogEntryType.Value];
-    CheckTrue(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
-    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.CallStack]));
+    appender.EventTypes := [TLogEventType.Text, TLogEventType.Value];
+    CheckTrue(appender.IsEnabled(TLogLevel.Fatal, [TLogEventType.Text]));
+    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEventType.CallStack]));
   finally
     appender.Free;
   end;

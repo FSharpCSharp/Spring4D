@@ -33,7 +33,7 @@ procedure TestTrack;
 begin
   log.Track(TLogLevel.Info, TLogger, 'TestTrack');
   log.Warn('Warning text');
-  log.Log(TLogEntry.Create(TLogLevel.Info, 'Log message with color')
+  log.Log(TLogEvent.Create(TLogLevel.Info, 'Log message with color')
     .SetColor($5555FF));
 end;
 

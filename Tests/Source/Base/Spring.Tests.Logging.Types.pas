@@ -45,16 +45,16 @@ type
   TAppenderMock = class(TLogAppenderBase)
   private
     fWriteCount: Integer;
-    fEntry: TLogEntry;
+    fEvent: TLogEvent;
     fSomeFloat: Extended;
     fSomeInt: Integer;
     fSomeEnum: TLogLevel;
     fSomeString: string;
     function GetWriteCalled: Boolean;
   protected
-    procedure DoSend(const entry: TLogEntry); override;
+    procedure DoSend(const event: TLogEvent); override;
   public
-    property Entry: TLogEntry read fEntry;
+    property Event: TLogEvent read fEvent;
     property WriteCalled: Boolean read GetWriteCalled;
     property WriteCount: Integer read fWriteCount;
     property SomeFloat: Extended read fSomeFloat write fSomeFloat;
@@ -65,20 +65,20 @@ type
 
   TAppenderMock2 = class(TLogAppenderBase)
   protected
-    procedure DoSend(const entry: TLogEntry); override;
+    procedure DoSend(const event: TLogEvent); override;
   end;
 
   TLoggerControllerMock = class(TLoggerBase, ILoggerController, ILogAppender)
   private
-    fLastEntry: TLogEntry;
+    fLastEvent: TLogEvent;
   public
-    procedure AddAppender(const appedner: ILogAppender);
-    procedure Send(const entry: TLogEntry);
+    procedure AddAppender(const appender: ILogAppender);
+    procedure Send(const event: TLogEvent);
     procedure Reset;
     function GetEnabled: Boolean;
     function GetLevels: TLogLevels;
-    function GetEntryTypes: TLogEntryTypes;
-    property LastEntry: TLogEntry read FLastEntry;
+    function GetEventTypes: TLogEventTypes;
+    property LastEvent: TLogEvent read fLastEvent;
   end;
 
   TLoggerController2 = class(TLoggerController);
@@ -191,10 +191,10 @@ implementation
 
 {$REGION 'TAppenderMock'}
 
-procedure TAppenderMock.DoSend(const entry: TLogEntry);
+procedure TAppenderMock.DoSend(const event: TLogEvent);
 begin
   Inc(fWriteCount);
-  fEntry := entry;
+  fEvent := event;
 end;
 
 function TAppenderMock.GetWriteCalled: Boolean;
@@ -227,7 +227,7 @@ end;
 
 {$REGION 'TLoggerControllerMock'}
 
-procedure TLoggerControllerMock.AddAppender(const appedner: ILogAppender);
+procedure TLoggerControllerMock.AddAppender(const appender: ILogAppender);
 begin
   raise ETestError.Create('Should be inaccessible');
 end;
@@ -237,9 +237,9 @@ begin
   Result := True;
 end;
 
-function TLoggerControllerMock.GetEntryTypes: TLogEntryTypes;
+function TLoggerControllerMock.GetEventTypes: TLogEventTypes;
 begin
-  Result := LOG_ALL_ENTRY_TYPES;
+  Result := LOG_ALL_EVENT_TYPES;
 end;
 
 function TLoggerControllerMock.GetLevels: TLogLevels;
@@ -249,12 +249,12 @@ end;
 
 procedure TLoggerControllerMock.Reset;
 begin
-  fLastEntry := TLogEntry.Create(TLogLevel.Unknown, '');
+  fLastEvent := TLogEvent.Create(TLogLevel.Unknown, '');
 end;
 
-procedure TLoggerControllerMock.Send(const entry: TLogEntry);
+procedure TLoggerControllerMock.Send(const event: TLogEvent);
 begin
-  fLastEntry := entry;
+  fLastEvent := event;
 end;
 
 {$ENDREGION}
@@ -262,7 +262,7 @@ end;
 
 {$REGION 'TAppenderMock2'}
 
-procedure TAppenderMock2.DoSend(const entry: TLogEntry);
+procedure TAppenderMock2.DoSend(const event: TLogEvent);
 begin
 end;
 

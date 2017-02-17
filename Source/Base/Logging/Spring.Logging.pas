@@ -89,7 +89,7 @@ const
   ];
 
 type
-  TLogEntryType = (
+  TLogEventType = (
     /// <summary>
     ///   Is the most basic logging type all loggers should keep enabled
     /// </summary>
@@ -97,8 +97,8 @@ type
     Value,
     /// <summary>
     ///   Should only be called if stack is sent to the appender. The appender
-    ///   may treat it in a specific way. No one else should use this entry
-    ///   type. If this entry type is not set, callstack logging will be
+    ///   may treat it in a specific way. No one else should use this event
+    ///   type. If this event type is not set, callstack logging will be
     ///   disabled completely, this may have significant performance impact on
     ///   some platforms.
     /// </summary>
@@ -106,22 +106,22 @@ type
     /// <summary>
     ///   Should only be called if serialized data (object, record, etc.) is
     ///   sent to the appender. The appender may treat it in a specific way. No
-    ///   one else should use this entry type. If this level is not set, data
+    ///   one else should use this event type. If this level is not set, data
     ///   serialization logging will be disabled completely.
     /// </summary>
     SerializedData,
     Entering,
     Leaving
   );
-  TLogEntryTypes = set of TLogEntryType;
+  TLogEventTypes = set of TLogEventType;
 
 const
-  LOG_ALL_ENTRY_TYPES = [Low(TLogEntryType)..High(TLogEntryType)];
-  LOG_BASIC_ENTRY_TYPES = [
-    TLogEntryType.Text,
-    TLogEntryType.Value,
-    TLogEntryType.Entering,
-    TLogEntryType.Leaving
+  LOG_ALL_EVENT_TYPES = [Low(TLogEventType)..High(TLogEventType)];
+  LOG_BASIC_EVENT_TYPES = [
+    TLogEventType.Text,
+    TLogEventType.Value,
+    TLogEventType.Entering,
+    TLogEventType.Leaving
   ];
 
 type
@@ -145,18 +145,18 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TLogEntry'}
+  {$REGION 'TLogEvent'}
 
-  TLogEntry = record
+  TLogEvent = record
   private
     fLevel: TLogLevel;
-    fEntryType: TLogEntryType;
+    fEventType: TLogEventType;
     fMsg: string;
     fTimeStamp: TDateTime;
     fException: Exception;
     /// <summary>
     ///   Leave as default to instruct the appender/viewer to choose the
-    ///   default color based on the level or entry contents or prescribe the
+    ///   default color based on the level or event contents or prescribe the
     ///   color of your choosing (not that some appenders may ignore the
     ///   color).
     /// </summary>
@@ -177,27 +177,27 @@ type
     fTag: NativeInt;
   public
     constructor Create(level: TLogLevel; const msg: string); overload;
-    constructor Create(level: TLogLevel; entryType: TLogEntryType;
+    constructor Create(level: TLogLevel; eventType: TLogEventType;
       const msg: string); overload;
     constructor Create(level: TLogLevel; const msg: string;
       const e: Exception); overload;
-    constructor Create(level: TLogLevel; entryType: TLogEntryType;
+    constructor Create(level: TLogLevel; eventType: TLogEventType;
       const msg: string; const classType: TClass); overload;
-    constructor Create(level: TLogLevel; entryType: TLogEntryType;
+    constructor Create(level: TLogLevel; eventType: TLogEventType;
       const msg: string; const classType: TClass; const data: TValue); overload;
     {constructor Create(level : TLogLevel; const msg : string;
       color : TColor = clDefault; fontStyle : TFontStyles = []; )}
 
-    function SetException(const e: Exception): TLogEntry;
-    function SetColor(color: TColor): TLogEntry;
-    function SetStyle(style: TLogStyles): TLogEntry;
-    function SetClassType(const classType: TClass): TLogEntry;
-    function AddStack: TLogEntry;
-    function SetData(const Data: TValue): TLogEntry;
-    function SetTag(tag: NativeInt): TLogEntry;
+    function SetException(const e: Exception): TLogEvent;
+    function SetColor(color: TColor): TLogEvent;
+    function SetStyle(style: TLogStyles): TLogEvent;
+    function SetClassType(const classType: TClass): TLogEvent;
+    function AddStack: TLogEvent;
+    function SetData(const Data: TValue): TLogEvent;
+    function SetTag(tag: NativeInt): TLogEvent;
 
     property Level: TLogLevel read fLevel;
-    property EntryType: TLogEntryType read fEntryType;
+    property EventType: TLogEventType read fEventType;
     property Msg: string read fMsg;
     property TimeStamp: TDateTime read fTimeStamp;
     property Exception: Exception read fException;
@@ -217,19 +217,19 @@ type
   ILoggerBase = interface
     ['{2CACEE4B-631D-4B31-970C-7B82F49311B4}']
     function GetEnabled: Boolean;
-    function GetEntryTypes: TLogEntryTypes;
+    function GetEventTypes: TLogEventTypes;
     function GetLevels: TLogLevels;
 
     /// <summary>
-    ///   Returns <c>true</c> if level is enabled and any of the <c>entryTypes</c>
+    ///   Returns <c>true</c> if level is enabled and any of the <c>eventTypes</c>
     ///    is enabled or <c>false</c> otherwise.
     /// </summary>
-    /// <param name="entryTypes">
-    ///   Specifies entry types to check, <b>must not be empty</b>! Defaults to
+    /// <param name="eventTypes">
+    ///   Specifies event types to check, <b>must not be empty</b>! Defaults to
     ///   <c>Text</c>.
     /// </param>
     function IsEnabled(level: TLogLevel;
-      entryType: TLogEntryTypes = [TLogEntryType.Text]): Boolean;
+      eventType: TLogEventTypes = [TLogEventType.Text]): Boolean;
     function IsFatalEnabled: Boolean;
     function IsErrorEnabled: Boolean;
     function IsWarnEnabled: Boolean;
@@ -239,7 +239,7 @@ type
     function IsTraceEnabled: Boolean;
 
     property Enabled: Boolean read GetEnabled;
-    property EntryTypes: TLogEntryTypes read GetEntryTypes;
+    property EventTypes: TLogEventTypes read GetEventTypes;
     property Levels: TLogLevels read GetLevels;
   end;
 
@@ -250,7 +250,7 @@ type
 
   ILogger = interface(ILoggerBase)
     ['{8655E906-C12D-4EB3-8291-30CEAB769B26}']
-    procedure Log(const entry: TLogEntry); overload;
+    procedure Log(const event: TLogEvent); overload;
 
     procedure LogValue(const name: string; const value: TValue); overload;
     procedure LogValue(level: TLogLevel; const name: string;
@@ -343,7 +343,7 @@ type
 
   ILogAppender = interface(ILoggerBase)
     ['{70DDEB60-3D01-48FB-92CF-A738A8C4BC85}']
-    procedure Send(const entry: TLogEntry);
+    procedure Send(const event: TLogEvent);
   end;
 
   {$ENDREGION}
@@ -370,17 +370,17 @@ type
     ['{6514ADA8-A0A0-4234-A5EE-FBAFE34B58F2}']
     function GetDefaultLevel: TLogLevel;
     function GetEnabled: Boolean;
-    function GetEntryTypes: TLogEntryTypes;
+    function GetEventTypes: TLogEventTypes;
     function GetLevels: TLogLevels;
 
     procedure SetDefaultLevel(value: TLogLevel);
     procedure SetEnabled(value: Boolean);
-    procedure SetEntryTypes(value: TLogEntryTypes);
+    procedure SetEventTypes(value: TLogEventTypes);
     procedure SetLevels(value: TLogLevels);
 
     property DefaultLevel: TLogLevel read GetDefaultLevel write SetDefaultLevel;
     property Enabled: Boolean read GetEnabled write SetEnabled;
-    property EntryTypes: TLogEntryTypes read GetEntryTypes write SetEntryTypes;
+    property EventTypes: TLogEventTypes read GetEventTypes write SetEventTypes;
     property Levels: TLogLevels read GetLevels write SetLevels;
   end;
 
@@ -390,13 +390,13 @@ type
 implementation
 
 
-{$REGION 'TLogEntry'}
+{$REGION 'TLogEvent'}
 
-constructor TLogEntry.Create(level: TLogLevel; const msg: string);
+constructor TLogEvent.Create(level: TLogLevel; const msg: string);
 begin
   fTimeStamp := Now; // Do this ASAP
   fLevel := level;
-  fEntryType := TLogEntryType.Text;
+  fEventType := TLogEventType.Text;
   fMsg := msg;
 
   // Set default values
@@ -411,72 +411,72 @@ begin
   Assert(fData.IsEmpty);
 end;
 
-constructor TLogEntry.Create(level: TLogLevel; const msg: string;
+constructor TLogEvent.Create(level: TLogLevel; const msg: string;
   const e: Exception);
 begin
   Create(level, msg);
   fException := e;
 end;
 
-constructor TLogEntry.Create(level: TLogLevel; entryType: TLogEntryType;
+constructor TLogEvent.Create(level: TLogLevel; eventType: TLogEventType;
   const msg: string; const classType: TClass);
 begin
   Create(level, msg);
   fClassType := classType;
-  fEntryType := entryType;
+  fEventType := eventType;
 end;
 
-constructor TLogEntry.Create(level: TLogLevel; entryType: TLogEntryType;
+constructor TLogEvent.Create(level: TLogLevel; eventType: TLogEventType;
   const msg: string; const classType: TClass; const data: TValue);
 begin
-  Create(level, entryType, msg, classType);
+  Create(level, eventType, msg, classType);
   fData := data;
 end;
 
-constructor TLogEntry.Create(level: TLogLevel; entryType: TLogEntryType;
+constructor TLogEvent.Create(level: TLogLevel; eventType: TLogEventType;
   const msg: string);
 begin
   Create(level, msg);
-  fEntryType := entryType;
+  fEventType := eventType;
 end;
 
-function TLogEntry.SetColor(color: TColor): TLogEntry;
+function TLogEvent.SetColor(color: TColor): TLogEvent;
 begin
   Result := Self;
   Result.fColor := color;
 end;
 
-function TLogEntry.AddStack: TLogEntry;
+function TLogEvent.AddStack: TLogEvent;
 begin
   Result := Self;
   Result.fAddStack := True;
 end;
 
-function TLogEntry.SetClassType(const classType: TClass): TLogEntry;
+function TLogEvent.SetClassType(const classType: TClass): TLogEvent;
 begin
   Result := Self;
   Result.fClassType := classType;
 end;
 
-function TLogEntry.SetData(const Data: TValue): TLogEntry;
+function TLogEvent.SetData(const Data: TValue): TLogEvent;
 begin
   Result := Self;
   Result.fData := Data;
 end;
 
-function TLogEntry.SetException(const e: Exception): TLogEntry;
+function TLogEvent.SetException(const e: Exception): TLogEvent;
 begin
   Result := Self;
   Result.fException := e;
 end;
 
-function TLogEntry.SetStyle(style: TLogStyles): TLogEntry;
+function TLogEvent.SetStyle(style: TLogStyles): TLogEvent;
 begin
   Result := Self;
   Result.fStyle := style;
 end;
 
-function TLogEntry.SetTag(tag: NativeInt): TLogEntry;
+function TLogEvent.SetTag(tag: NativeInt): TLogEvent;
 begin
   Result := Self;
   Result.fTag := tag;

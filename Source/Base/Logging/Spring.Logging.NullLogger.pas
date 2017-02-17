@@ -45,10 +45,10 @@ type
     class constructor Create;
 
     function GetEnabled: Boolean;
-    function GetEntryTypes: TLogEntryTypes;
+    function GetEventTypes: TLogEventTypes;
     function GetLevels: TLogLevels;
   public
-    function IsEnabled(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean; inline;
+    function IsEnabled(level: TLogLevel; eventTypes: TLogEventTypes): Boolean; inline;
     function IsFatalEnabled: Boolean;
     function IsErrorEnabled: Boolean;
     function IsWarnEnabled: Boolean;
@@ -57,7 +57,7 @@ type
     function IsDebugEnabled: Boolean;
     function IsTraceEnabled: Boolean;
 
-    procedure Log(const entry: TLogEntry); overload;
+    procedure Log(const event: TLogEvent); overload;
 
     procedure LogValue(const name: string; const value: TValue); overload;
     procedure LogValue(level: TLogLevel; const name: string;
@@ -158,7 +158,7 @@ begin
   fGlobalInstance := TNullLogger.Create;
 end;
 
-procedure TNullLogger.Log(const entry: TLogEntry);
+procedure TNullLogger.Log(const event: TLogEvent);
 begin //FI:W519
 end;
 
@@ -243,7 +243,7 @@ begin
   Result := False;
 end;
 
-function TNullLogger.GetEntryTypes: TLogEntryTypes;
+function TNullLogger.GetEventTypes: TLogEventTypes;
 begin
   Result := [];
 end;
@@ -279,7 +279,7 @@ begin
   Result := False;
 end;
 
-function TNullLogger.IsEnabled(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean;
+function TNullLogger.IsEnabled(level: TLogLevel; eventTypes: TLogEventTypes): Boolean;
 begin
   Result := False;
 end;
