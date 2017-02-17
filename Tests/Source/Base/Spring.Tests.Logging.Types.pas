@@ -68,11 +68,10 @@ type
     procedure DoSend(const entry: TLogEntry); override;
   end;
 
-  TLoggerControllerMock = class(TInterfacedObject, ILoggerController, ILogAppender)
+  TLoggerControllerMock = class(TLoggerBase, ILoggerController, ILogAppender)
   private
     fLastEntry: TLogEntry;
   public
-
     procedure AddAppender(const appedner: ILogAppender);
     procedure Send(const entry: TLogEntry);
     procedure Reset;

@@ -35,27 +35,14 @@ interface
 uses
   SysUtils,
   Spring,
-  Spring.Logging;
+  Spring.Logging,
+  Spring.Logging.Loggers;
 
 type
   {$REGION 'TLogAppenderBase'}
-  TLogAppenderBase = class abstract(TInterfacedObject, ILogAppender,
-    ILoggerProperties)
+
+  TLogAppenderBase = class abstract(TLoggerBase, ILogAppender)
   private
-    fDefaultLevel: TLogLevel;
-    fEnabled: Boolean;
-    fLevels: TLogLevels;
-    fEntryTypes: TLogEntryTypes;
-
-    function GetDefaultLevel: TLogLevel;
-    function GetEnabled: Boolean;
-    function GetLevels: TLogLevels;
-    function GetEntryTypes: TLogEntryTypes;
-
-    procedure SetDefaultLevel(value: TLogLevel);
-    procedure SetEnabled(value: Boolean);
-    procedure SetLevels(value: TLogLevels);
-    procedure SetEntryTypes(value: TLogEntryTypes);
   {$REGION 'Helper constants and functions'}
   protected const
     //May or may not be used by descendants, its here just for convenience
@@ -91,19 +78,11 @@ type
       const methodName: string): string; static; inline;
   {$ENDREGION}
   protected
-    function IsEnabled(level: TLogLevel;
-      entryType: TLogEntryType): Boolean; inline;
     procedure DoSend(const entry: TLogEntry); virtual; abstract;
   public
-    constructor Create;
-
     procedure Send(const entry: TLogEntry);
-
-    property DefaultLevel: TLogLevel read GetDefaultLevel write SetDefaultLevel;
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-    property Levels: TLogLevels read GetLevels write SetLevels;
-    property EntryTypes: TLogEntryTypes read GetEntryTypes write SetEntryTypes;
   end;
+
   {$ENDREGION}
 
 
@@ -114,14 +93,6 @@ uses
 
 
 {$REGION 'TLogAppenderBase'}
-
-constructor TLogAppenderBase.Create;
-begin
-  inherited Create;
-  fEnabled := True;
-  fLevels := LOG_BASIC_LEVELS;
-  fEntryTypes := LOG_BASIC_ENTRY_TYPES;
-end;
 
 class function TLogAppenderBase.FormatEntering(classType: TClass;
   const methodName: string): string;
@@ -180,56 +151,10 @@ begin
   end;
 end;
 
-function TLogAppenderBase.GetDefaultLevel: TLogLevel;
-begin
-  Result := fDefaultLevel;
-end;
-
-function TLogAppenderBase.GetEnabled: Boolean;
-begin
-  Result := fEnabled;
-end;
-
-function TLogAppenderBase.GetEntryTypes: TLogEntryTypes;
-begin
-  Result := fEntryTypes;
-end;
-
-function TLogAppenderBase.GetLevels: TLogLevels;
-begin
-  Result := fLevels;
-end;
-
-function TLogAppenderBase.IsEnabled(level: TLogLevel;
-  entryType: TLogEntryType): Boolean;
-begin
-  Result := fEnabled and (level in fLevels) and (entryType in fEntryTypes);
-end;
-
 procedure TLogAppenderBase.Send(const entry: TLogEntry);
 begin
-  if IsEnabled(entry.Level, entry.EntryType) then
+  if IsEnabled(entry.Level, [entry.EntryType]) then
     DoSend(entry);
-end;
-
-procedure TLogAppenderBase.SetDefaultLevel(value: TLogLevel);
-begin
-  fDefaultLevel := value;
-end;
-
-procedure TLogAppenderBase.SetEnabled(value: Boolean);
-begin
-  fEnabled := value;
-end;
-
-procedure TLogAppenderBase.SetEntryTypes(value: TLogEntryTypes);
-begin
-  fEntryTypes := value;
-end;
-
-procedure TLogAppenderBase.SetLevels(value: TLogLevels);
-begin
-  fLevels := value;
 end;
 
 {$ENDREGION}

@@ -34,6 +34,8 @@ uses
   Spring.Logging;
 
 type
+  {$REGION 'TNullLogger'}
+
   /// <summary>
   ///   Logger that does nothing and does it in fastes way possible.
   /// </summary>
@@ -41,11 +43,11 @@ type
   private
     class var fGlobalInstance: ILogger;
     class constructor Create;
-  public
-    function GetEnabled: Boolean;
-    function GetLevels: TLogLevels;
-    function GetEntryTypes: TLogEntryTypes;
 
+    function GetEnabled: Boolean;
+    function GetEntryTypes: TLogEntryTypes;
+    function GetLevels: TLogLevels;
+  public
     function IsEnabled(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean; inline;
     function IsFatalEnabled: Boolean;
     function IsErrorEnabled: Boolean;
@@ -142,6 +144,9 @@ type
 
     class property GlobalInstance: ILogger read fGlobalInstance;
   end;
+
+  {$ENDREGION}
+
 
 implementation
 
@@ -433,5 +438,6 @@ begin //FI:W519
 end;
 
 {$ENDREGION}
+
 
 end.

@@ -1220,20 +1220,20 @@ begin
     Assert(appender is TLogAppenderBase);
 
     appender.Enabled := False;
-    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, TLogEntryType.Text));
+    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
 
     appender.Enabled := True;
     appender.Levels := [];
-    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, TLogEntryType.Text));
+    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
 
     appender.Levels := [TLogLevel.Fatal];
     appender.EntryTypes := [];
-    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, TLogEntryType.Text));
+    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
 
     appender.Levels := [TLogLevel.Fatal];
     appender.EntryTypes := [TLogEntryType.Text, TLogEntryType.Value];
-    CheckTrue(appender.IsEnabled(TLogLevel.Fatal, TLogEntryType.Text));
-    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, TLogEntryType.CallStack));
+    CheckTrue(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.Text]));
+    CheckFalse(appender.IsEnabled(TLogLevel.Fatal, [TLogEntryType.CallStack]));
   finally
     appender.Free;
   end;

@@ -37,6 +37,7 @@ uses
 
 type
   {$REGION 'TLoggerController'}
+
   TLoggerController = class(TLogAppenderBase, ILoggerController, ISerializerController)
   private
     fSerializers: IList<ITypeSerializer>;
@@ -69,6 +70,7 @@ type
     property StackTraceFormatter: IStackTraceFormatter read fStackTraceFormatter
       write fStackTraceFormatter;
   end;
+
   {$ENDREGION}
 
 

@@ -63,6 +63,7 @@ const
 {$SCOPEDENUMS ON}
 type
   {$REGION 'Log Level and formating definitions and constants'}
+
   TLogLevel = (
     /// <summary>
     ///   Excluded from all states and should never be used!
@@ -140,10 +141,12 @@ type
     NoEscape
   );
   TLogStyles = set of TLogStyle;
-{$ENDREGION}
+
+  {$ENDREGION}
 
 
   {$REGION 'TLogEntry'}
+
   TLogEntry = record
   private
     fLevel: TLogLevel;
@@ -205,24 +208,46 @@ type
     property Data: TValue read fData;
     property Tag: NativeInt read fTag;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'ILoggerBase'}
+
   ILoggerBase = interface
     ['{2CACEE4B-631D-4B31-970C-7B82F49311B4}']
-    function GetLevels: TLogLevels;
-    function GetEntryTypes: TLogEntryTypes;
     function GetEnabled: Boolean;
+    function GetEntryTypes: TLogEntryTypes;
+    function GetLevels: TLogLevels;
 
-    property Levels: TLogLevels read GetLevels;
-    property EntryTypes: TLogEntryTypes read GetEntryTypes;
+    /// <summary>
+    ///   Returns <c>true</c> if level is enabled and any of the <c>entryTypes</c>
+    ///    is enabled or <c>false</c> otherwise.
+    /// </summary>
+    /// <param name="entryTypes">
+    ///   Specifies entry types to check, <b>must not be empty</b>! Defaults to
+    ///   <c>Text</c>.
+    /// </param>
+    function IsEnabled(level: TLogLevel;
+      entryType: TLogEntryTypes = [TLogEntryType.Text]): Boolean;
+    function IsFatalEnabled: Boolean;
+    function IsErrorEnabled: Boolean;
+    function IsWarnEnabled: Boolean;
+    function IsInfoEnabled: Boolean;
+    function IsTextEnabled: Boolean;
+    function IsDebugEnabled: Boolean;
+    function IsTraceEnabled: Boolean;
+
     property Enabled: Boolean read GetEnabled;
+    property EntryTypes: TLogEntryTypes read GetEntryTypes;
+    property Levels: TLogLevels read GetLevels;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'ILogger'}
+
   ILogger = interface(ILoggerBase)
     ['{8655E906-C12D-4EB3-8291-30CEAB769B26}']
     procedure Log(const entry: TLogEntry); overload;
@@ -309,45 +334,33 @@ type
       const methodName: string): IInterface; overload;
     function Track(level: TLogLevel; const classType: TClass;
       const methodName: string): IInterface; overload;
-
-    /// <summary>
-    ///   Returns <c>true</c> if level is enabled and any of the <c>entryTypes</c>
-    ///    is enabled or <c>false</c> otherwise.
-    /// </summary>
-    /// <param name="entryTypes">
-    ///   Specifies entry types to check, <b>must not be empty</b>! Defaults to
-    ///   <c>Text</c>.
-    /// </param>
-    function IsEnabled(level: TLogLevel;
-      entryTypes: TLogEntryTypes = [TLogEntryType.Text]): Boolean;
-    function IsFatalEnabled: Boolean;
-    function IsErrorEnabled: Boolean;
-    function IsWarnEnabled: Boolean;
-    function IsInfoEnabled: Boolean;
-    function IsTextEnabled: Boolean;
-    function IsDebugEnabled: Boolean;
-    function IsTraceEnabled: Boolean;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'ILogAppender'}
+
   ILogAppender = interface(ILoggerBase)
     ['{70DDEB60-3D01-48FB-92CF-A738A8C4BC85}']
     procedure Send(const entry: TLogEntry);
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'ILoggerController'}
+
   ILoggerController = interface(ILogAppender)
     ['{6556A795-6F1B-4392-92FC-8E3391E3CB07}']
     procedure AddAppender(const appender: ILogAppender);
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'ILoggerProperties'}
+
   /// <summary>
   ///   Interface that can be used to change logger/appender settings during
   ///   runtime. It is hidden within this interface so that it is not widely
@@ -357,19 +370,20 @@ type
     ['{6514ADA8-A0A0-4234-A5EE-FBAFE34B58F2}']
     function GetDefaultLevel: TLogLevel;
     function GetEnabled: Boolean;
-    function GetLevels: TLogLevels;
     function GetEntryTypes: TLogEntryTypes;
+    function GetLevels: TLogLevels;
 
     procedure SetDefaultLevel(value: TLogLevel);
     procedure SetEnabled(value: Boolean);
-    procedure SetLevels(value: TLogLevels);
     procedure SetEntryTypes(value: TLogEntryTypes);
+    procedure SetLevels(value: TLogLevels);
 
     property DefaultLevel: TLogLevel read GetDefaultLevel write SetDefaultLevel;
     property Enabled: Boolean read GetEnabled write SetEnabled;
-    property Levels: TLogLevels read GetLevels write SetLevels;
     property EntryTypes: TLogEntryTypes read GetEntryTypes write SetEntryTypes;
+    property Levels: TLogLevels read GetLevels write SetLevels;
   end;
+
   {$ENDREGION}
 
 

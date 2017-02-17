@@ -40,6 +40,7 @@ uses
 
 type
   {$REGION 'TLogAppenderWithTimeStampFormat'}
+
   TLogAppenderWithTimeStampFormat = class abstract(TLogAppenderBase)
   private
     FFormat: string;
@@ -50,10 +51,12 @@ type
 
     property Format: string read FFormat write FFormat;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TTextLogAppender'}
+
   /// <summary>
   ///   Simple appender that outputs the text to given Delphi Text file (or
   ///   pipe)
@@ -65,19 +68,23 @@ type
     fFile: PTextFile;
     procedure DoSend(const entry: TLogEntry); override;
   public
+
     /// <summary>
     ///   Make sure that the pointer doesn;t get out of scope!
     /// </summary>
     constructor Create(output: PTextFile); overload;
+
     /// <summary>
     ///   Uses stderr
     /// </summary>
     constructor Create; overload;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TStreamLogAppender'}
+
   TStreamLogAppender = class(TLogAppenderWithTimeStampFormat)
   strict private
     fStream: TStream;
@@ -97,10 +104,12 @@ type
       const encoding: TEncoding = nil);
     destructor Destroy; override;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TFileLogAppender'}
+
   TFileLogAppender = class(TStreamLogAppender)
   private
     procedure SetFileName(const Value: string);
@@ -108,20 +117,24 @@ type
     constructor Create;
     property FileName: string write SetFileName;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TTraceLogAppender'}
+
 {$IFDEF MSWINDOWS}
   TTraceLogAppender = class(TLogAppenderWithTimeStampFormat)
   protected
     procedure DoSend(const entry: TLogEntry); override;
   end;
 {$ENDIF}
+
  {$ENDREGION}
 
 
   {$REGION 'TFMXLogAppender'}
+
 {$IFDEF FMX}
   TFMXLogAppender = class(TLogAppenderWithTimeStampFormat)
   private
@@ -132,10 +145,12 @@ type
     constructor Create;
   end;
 {$ENDIF}
+
   {$ENDREGION}
 
 
   {$REGION 'TAndroidLogAppender'}
+
 {$IFDEF ANDROID}
   TAndroidLogAppender = class(TLogAppenderWithTimeStampFormat)
   private
@@ -151,10 +166,12 @@ type
     constructor Create(const tag: string = 'delphiapp');
   end;
 {$ENDIF}
+
   {$ENDREGION}
 
 
   {$REGION 'Default log appender assignment'}
+
 {$IFDEF MSWINDOWS}
  {$IFDEF CONSOLE}
   TDefaultLogAppender = TTextLogAppender;
@@ -172,6 +189,7 @@ type
     TDefaultLogAppender = TTextLogAppender;
  {$ENDIF FMX}
 {$ENDIF MSWINDOWS}
+
   {$ENDREGION}
 
 
