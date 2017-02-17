@@ -3452,7 +3452,7 @@ end;
 {$IFDEF USE_VMTAUTOTABLE}
 function CreateFieldTable(ClassType: TClass): TInitTable;
 var
-  n: UIntPtr;
+  n: UINT_PTR;
 begin
   Result := TInitTable.Create(ClassType);
   WriteProcessMemory(GetCurrentProcess,
