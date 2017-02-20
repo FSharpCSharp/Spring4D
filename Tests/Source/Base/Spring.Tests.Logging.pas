@@ -55,6 +55,7 @@ uses
 
 type
   {$REGION 'TTestLoggerController'}
+
   TTestLoggerController = class(TTestCase)
   private
     fController: ILoggerController;
@@ -66,17 +67,19 @@ type
     procedure TestIsLoggable;
     procedure TestSend;
     procedure TestSendDisabled;
-    procedure TestAddSerializer;
+    procedure TestAddEventConverter;
     procedure TestFindSerializer;
     procedure TestSendWithSerializer;
 {$IFNDEF DELPHI2010}
     procedure TestStackTrace;
 {$ENDIF}
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TTestLogger'}
+
   TTestLogger = class(TTestCase)
   private
     fController: ILoggerController;
@@ -128,10 +131,12 @@ type
     procedure TestLeaving;
     procedure TestTrack;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TAppenderTestCase'}
+
   TAppenderTestCase = class abstract(TTestCase)
   protected
     fController: ILoggerController;
@@ -141,10 +146,12 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TTestLogAppenderBase'}
+
   TTestLogAppenderBase = class(TTestCase)
   published
     procedure TestIsEnabled;
@@ -152,10 +159,12 @@ type
     procedure TestFormatText;
     procedure TestFormatMsg;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TTestStreamLogAppender'}
+
   TTestStreamLogAppender = class(TAppenderTestCase)
   private
     fStream: TStringStream;
@@ -166,6 +175,7 @@ type
     procedure TestWrite;
     procedure TestException;
   end;
+
   {$ENDREGION}
 
 
@@ -173,6 +183,7 @@ implementation
 
 
 {$REGION 'Internal test classes and helpers'}
+
 type
   TTestLoggerHelper = class helper for TTestLogger
   private
@@ -197,6 +208,7 @@ function TTestLoggerHelper.GetLogger: TLogger;
 begin
   Result := TObject(fLogger) as TLogger;
 end;
+
 {$ENDREGION}
 
 
@@ -223,7 +235,6 @@ var
 begin
   appender := TAppenderMock.Create;
   intf := appender;
-
   fController.AddAppender(intf);
 
   f := TType.GetType<TLoggerController>.GetField('fAppenders');
@@ -233,20 +244,20 @@ begin
   CheckSame(intf, appenders[0]);
 end;
 
-procedure TTestLoggerController.TestAddSerializer;
+procedure TTestLoggerController.TestAddEventConverter;
 var
   serializer: TTypeSerializerMock;
-  intf: ITypeSerializer;
+  intf: ILogEventConverter;
   f: TRttiField;
-  serializers: IList<ITypeSerializer>;
+  serializers: IList<ILogEventConverter>;
 begin
   serializer := TTypeSerializerMock.Create;
   intf := serializer;
 
-  (fController as ISerializerController).AddSerializer(intf);
+  fController.AddEventConverter(intf);
 
-  f := TType.GetType<TLoggerController>.GetField('fSerializers');
-  serializers := f.GetValue(TObject(fController)).AsType<IList<ITypeSerializer>>;
+  f := TType.GetType<TLoggerController>.GetField('fConverters');
+  serializers := f.GetValue(TObject(fController)).AsType<IList<ILogEventConverter>>;
 
   CheckEquals(1, serializers.Count);
   CheckSame(intf, serializers[0]);
@@ -259,10 +270,10 @@ var
   controller: ISerializerController;
 begin
   serializer := TTypeSerializerMock.Create;
-  intf := serializer;
   controller := (fController as ISerializerController);
-  controller.AddSerializer(intf);
+  fController.AddEventConverter(serializer);
 
+  intf := serializer;
   CheckSame(intf, controller.FindSerializer(TypeInfo(Integer)));
   CheckNull(controller.FindSerializer(TypeInfo(Double)));
 end;
@@ -353,16 +364,28 @@ begin
   intf := appender;
 
   fController.AddAppender(intf);
-  (fController as ISerializerController).AddSerializer(serializer);
+  fController.AddEventConverter(serializer);
+
+  //Check that we only output the message and not the data if the controller
+  //does not have SerializedData level
+  appender.Levels := [TLogLevel.Fatal];
+  appender.EventTypes := [TLogEventType.Text, TLogEventType.SerializedData];
+  (fController as ILoggerProperties).EventTypes := [TLogEventType.Text];
+  fController.Send(TLogEvent.Create(TLogLevel.Fatal, TLogEventType.Text, 'test',
+    nil, -1));
+  CheckEquals(1, appender.WriteCount);
+  CheckEquals(1, serializer.HandlesTypeCount);
+  CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Event.Level));
+  (fController as ILoggerProperties).EventTypes := LOG_ALL_EVENT_TYPES;
 
   //Check that we only output the message and not the data if the appender
-  //does not habe SerializedData level
+  //does not have SerializedData level
   appender.Levels := [TLogLevel.Fatal];
   appender.EventTypes := [TLogEventType.Text];
   fController.Send(TLogEvent.Create(TLogLevel.Fatal, TLogEventType.Text, 'test',
     nil, -1));
-  CheckEquals(1, appender.WriteCount);
-  CheckEquals(0, serializer.HandlesTypeCount);
+  CheckEquals(2, appender.WriteCount);
+  CheckEquals(2, serializer.HandlesTypeCount);
   CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Event.Level));
 
   //... or is disabled
@@ -371,15 +394,15 @@ begin
   appender.EventTypes := [TLogEventType.Text, TLogEventType.SerializedData];
   fController.Send(TLogEvent.Create(TLogLevel.Fatal, TLogEventType.Text, 'test',
     nil, -1));
-  CheckEquals(1, appender.WriteCount);
-  CheckEquals(0, serializer.HandlesTypeCount);
+  CheckEquals(2, appender.WriteCount);
+  CheckEquals(3, serializer.HandlesTypeCount);
 
   //Finally test that we dispatch the call and both messages are logged
   appender.Enabled := True;
   fController.Send(TLogEvent.Create(TLogLevel.Fatal, TLogEventType.Text, 'test',
     nil, -1));
-  CheckEquals(3, appender.WriteCount);
-  CheckEquals(1, serializer.HandlesTypeCount);
+  CheckEquals(4, appender.WriteCount);
+  CheckEquals(4, serializer.HandlesTypeCount);
   CheckEquals(Ord(TLogEventType.SerializedData), Ord(appender.Event.EventType));
 end;
 
@@ -399,68 +422,69 @@ begin
   intf := appender;
 
   collectorMock.Behavior := TMockBehavior.Strict;
-  collectorMock.CallBase := False;
   formatterMock.Behavior := TMockBehavior.Strict;
-  formatterMock.CallBase := False;
 
   fController.AddAppender(intf);
-  with (fController as TLoggerController) do
-  begin
-    StackTraceCollector := collectorMock;
-    StackTraceFormatter := formatterMock;
-  end;
-
+  fController.AddEventConverter(TCallStackEventConverter.Create(collectorMock,
+    formatterMock));
   try
     event := TLogEvent.Create(TLogLevel.Error, 'Message').AddStack;
+
+    // Disabled by controller
+    appender.EventTypes := LOG_ALL_EVENT_TYPES;
     fController.Send(event);
     CheckEquals(1, appender.WriteCount);
+    CheckEqualsString(event.Msg, appender.Event.Msg);
+
+    // Disabled by appender
+    appender.EventTypes := LOG_BASIC_EVENT_TYPES;
+    (fController as ILoggerProperties).EventTypes := LOG_ALL_EVENT_TYPES;
+    fController.Send(event);
+    CheckEquals(2, appender.WriteCount);
     CheckEqualsString(event.Msg, appender.Event.Msg);
     // No calls to collector and formatter expected
 
     // Empty stack
-    appender.EventTypes := appender.EventTypes + [TLogEventType.CallStack];
-    event := TLogEvent.Create(TLogLevel.Error, 'Message').AddStack;
-    CheckEquals(1, appender.WriteCount);
-    CheckEqualsString(event.Msg, appender.Event.Msg);
+    appender.EventTypes := LOG_ALL_EVENT_TYPES;
     collectorMock.Setup(Seq).Returns<TArray<Pointer>>(nil).When.Collect;
+    formatterMock.Setup(Seq).Returns<TArray<string>>(nil).When.Format(nil);
     fController.Send(event);
     // No calls to formatter expected
     Check(seq.Completed);
-    CheckEquals(2, appender.WriteCount);
-    CheckEqualsString(event.Msg, appender.Event.Msg);
+    CheckEquals(4, appender.WriteCount);
+    CheckEqualsString('', appender.Event.Msg);
+    Check(appender.Event.Level = event.Level);
+    Check(appender.Event.EventType = TLogEventType.CallStack);
 
     // One line stack
-    seq := Default(MockSequence);
+    seq.Reset;
     stack := TArray<Pointer>.Create(Pointer($12345678));
     formatted := TArray<string>.Create('$12345678');
     collectorMock.Setup(Seq).Returns<TArray<Pointer>>(stack).When.Collect;
     formatterMock.Setup(Seq).Returns<TArray<string>>(formatted).When.Format(stack);
     fController.Send(event);
     Check(seq.Completed);
-    CheckEquals(4, appender.WriteCount);
+    CheckEquals(6, appender.WriteCount);
     CheckEqualsString(formatted[0], appender.Event.Msg);
     Check(appender.Event.Level = event.Level);
     Check(appender.Event.EventType = TLogEventType.CallStack);
 
     // Multi line stack
-    seq := Default(MockSequence);
+    seq.Reset;
     stack := TArray<Pointer>.Create(Pointer(1), Pointer(1));
     formatted := TArray<string>.Create('1', '2');
     collectorMock.Setup(Seq).Returns<TArray<Pointer>>(stack).When.Collect;
     formatterMock.Setup(Seq).Returns<TArray<string>>(formatted).When.Format(stack);
     fController.Send(event);
     Check(seq.Completed);
-    CheckEquals(6, appender.WriteCount);
+    CheckEquals(8, appender.WriteCount);
     CheckEqualsString(formatted[0] + sLineBreak + formatted[1],
       appender.Event.Msg);
     Check(appender.Event.Level = event.Level);
     Check(appender.Event.EventType = TLogEventType.CallStack);
   finally
-    with (fController as TLoggerController) do
-    begin
-      StackTraceCollector := nil;
-      StackTraceFormatter := nil;
-    end;
+    // Release mock references
+    fController := nil;
   end;
 end;
 {$ENDIF}
@@ -1283,6 +1307,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.
 

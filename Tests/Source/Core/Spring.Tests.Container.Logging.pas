@@ -54,15 +54,18 @@ uses
 
 type
   {$REGION 'TTestLogInsideContainer'}
+
   TTestLogInsideContainer = class(TContainerTestCase)
   published
     procedure TestLog;
     procedure TestChainedControllers;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TTestLogSubResolverAndConfiguration'}
+
   TTestLogSubResolverAndConfiguration = class(TContainerTestCase)
   protected
     procedure SetUp; override;
@@ -76,10 +79,12 @@ type
     procedure TestMethod;
     procedure TestLazy;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TTestLoggingConfiguration'}
+
   TTestLoggingConfiguration = class(TContainerTestCase)
   private
     fStrings: TStrings;
@@ -106,17 +111,19 @@ type
 
     procedure TestAddAppendersToControllers;
     procedure TestAddChainedController;
-    procedure TestAddSerializersToControllers;
+    procedure TestAddConvertersToControllers;
     procedure TestAddLoggerAssignments;
 
     procedure TestSimpleConfiguration;
     procedure TestComplexConfiguration;
     procedure Test_LoadFromStrings_Ensures_Container_Resolve_CanBeFreedWithoutErrors;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TTestLoggingConfigurationBuilder'}
+
   TTestLoggingConfigurationBuilder = class(TContainerTestCase)
   private const
     NL = sLineBreak;
@@ -131,6 +138,7 @@ type
 
     procedure TestComplexConfiguration;
   end;
+
   {$ENDREGION}
 
 
@@ -597,22 +605,22 @@ begin
   CheckSame(fContainer.Resolve<ILogger>('logging.logger2'), objImpl.Logger2);
 end;
 
-procedure TTestLoggingConfiguration.TestAddSerializersToControllers;
+procedure TTestLoggingConfiguration.TestAddConvertersToControllers;
 var
   controller1,
   controller2: ILoggerController;
   serializer1,
-  serializer2: ITypeSerializer;
+  serializer2: ILogEventConverter;
   f: TRttiField;
-  serializers: IList<ITypeSerializer>;
+  serializers: IList<ILogEventConverter>;
 begin
   fStrings
     .Add('[controllers\controller1]')
-    .Add('serializer = TTypeSerializerMock');
+    .Add('converter = TTypeSerializerMock');
   fStrings
     .Add('[controllers\controller2]')
-    .Add('serializer = TTypeSerializerMock2')
-    .Add('serializer = TTypeSerializerMock');
+    .Add('converter = TTypeSerializerMock2')
+    .Add('converter = TTypeSerializerMock');
 
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
   fContainer.Build;
@@ -620,18 +628,18 @@ begin
   controller1 := fContainer.Resolve<ILoggerController>('logging.controller1.controller');
   controller2 := fContainer.Resolve<ILoggerController>('logging.controller2.controller');
 
-  serializer1 := fContainer.Resolve<ITypeSerializer>(
+  serializer1 := fContainer.Resolve<ILogEventConverter>(
     GetQualifiedClassName(TTypeSerializerMock));
-  serializer2 := fContainer.Resolve<ITypeSerializer>(
+  serializer2 := fContainer.Resolve<ILogEventConverter>(
     GetQualifiedClassName(TTypeSerializerMock2));
 
-  f := TType.GetType<TLoggerController>.GetField('fSerializers');
+  f := TType.GetType<TLoggerController>.GetField('fConverters');
 
-  serializers := f.GetValue(TObject(controller1)).AsType<IList<ITypeSerializer>>;
+  serializers := f.GetValue(TObject(controller1)).AsType<IList<ILogEventConverter>>;
   CheckEquals(1, serializers.Count);
   CheckSame(serializer1, serializers[0]);
 
-  serializers := f.GetValue(TObject(controller2)).AsType<IList<ITypeSerializer>>;
+  serializers := f.GetValue(TObject(controller2)).AsType<IList<ILogEventConverter>>;
   CheckEquals(2, serializers.Count);
   CheckSame(serializer2, serializers[0]);
   CheckSame(serializer1, serializers[1]);
@@ -963,12 +971,12 @@ begin
     '[controllers\ctl2]' + NL +
     'class = TSomeController' + NL +
     'appender = ctl1' + NL +
-    'serializer = TSomeSerializer' + NL +
+    'converter = TSomeSerializer' + NL +
     NL +
     '[controllers\ctl3]' + NL +
     'class = Spring.Tests.Logging.Types.TLoggerControllerMock' + NL +
     'appender = ctl1' + NL +
-    'serializer = Spring.Tests.Logging.Types.TTypeSerializerMock' + NL +
+    'converter = Spring.Tests.Logging.Types.TTypeSerializerMock' + NL +
     NL, builder.ToString);
 
 end;

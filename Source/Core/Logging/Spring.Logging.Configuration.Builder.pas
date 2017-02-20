@@ -37,9 +37,11 @@ uses
 
 type
   {$REGION 'TLoggingConfigurationBuilder'}
+
   TLoggingConfigurationBuilder = record
   private type
     {$REGION 'IBuilder'}
+
     IBuilder = interface
       procedure BeginAppender(const name: string; const className: string);
       procedure EndAppender;
@@ -54,9 +56,11 @@ type
 
       function ToString: string;
     end;
+
     {$ENDREGION}
   public type
     {$REGION 'TAppenderBuilder'}
+
     TAppenderBuilder = record
     private
       fBuilder: IBuilder;
@@ -70,9 +74,11 @@ type
       function Prop(const name: string; const value: TValue): TAppenderBuilder; overload;
       function Prop<E>(const name: string; const value: E): TAppenderBuilder; overload;
     end;
+
     {$ENDREGION}
 
     {$REGION 'TControllerBuilder'}
+
     TControllerBuilder = record
     private
       fBuilder: IBuilder;
@@ -89,9 +95,11 @@ type
       function Prop(const name: string; const value: TValue): TControllerBuilder; overload;
       function Prop<E>(const name: string; const value: E): TControllerBuilder; overload;
     end;
+
     {$ENDREGION}
 
     {$REGION 'TLoggerBuilder'}
+
     TLoggerBuilder = record
     private
       fBuilder: IBuilder;
@@ -108,6 +116,7 @@ type
       function Prop(const name: string; const value: TValue): TLoggerBuilder; overload;
       function Prop<E>(const name: string; const value: E): TLoggerBuilder; overload;
     end;
+
     {$ENDREGION}
   private
     fBuilder: IBuilder;
@@ -132,6 +141,7 @@ type
 
     function ToString: string;
   end;
+
   {$ENDREGION}
 
 
@@ -144,7 +154,7 @@ const
   SEventTypes = 'eventTypes';
   SAppender = 'appender';
   SController = 'controller';
-  SSerializer = 'serializer';
+  SEventConverter = 'converter';
   SAssign = 'assign';
   SDefault = 'default';
 type
@@ -153,6 +163,7 @@ type
 
 
 {$REGION 'TBuilder'}
+
   TBuilder = class(TInterfacedObject, TLoggingConfigurationBuilder.IBuilder)
   private
     fString: TStringBuilder;
@@ -257,6 +268,7 @@ begin
   Result := fString.ToString;
   FreeAndNil(fString);
 end;
+
 {$ENDREGION}
 
 
@@ -385,7 +397,7 @@ function TLoggingConfigurationBuilder.TControllerBuilder.AddSerializer(
   const className: string): TControllerBuilder;
 begin
   Guard.checkNotNull(className <> '', 'className');
-  fBuilder.Prop(SSerializer, className);
+  fBuilder.Prop(SEventConverter, className);
   Result := Self;
 end;
 
@@ -393,7 +405,7 @@ function TLoggingConfigurationBuilder.TControllerBuilder.AddSerializer(
   const classType: TClass): TControllerBuilder;
 begin
   Guard.checkNotNull(classType, 'classType');
-  fBuilder.Prop(SSerializer, GetQualifiedClassName(classType));
+  fBuilder.Prop(SEventConverter, GetQualifiedClassName(classType));
   Result := Self;
 end;
 

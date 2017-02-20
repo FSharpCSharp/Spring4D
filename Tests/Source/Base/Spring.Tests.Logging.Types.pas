@@ -39,7 +39,8 @@ uses
   Spring.Logging.Appenders.Base,
   Spring.Logging.Controller,
   Spring.Logging.Extensions,
-  Spring.Logging.Loggers;
+  Spring.Logging.Loggers,
+  Spring.Logging.Serializers;
 
 type
   TAppenderMock = class(TLogAppenderBase)
@@ -71,13 +72,17 @@ type
   TLoggerControllerMock = class(TLoggerBase, ILoggerController, ILogAppender)
   private
     fLastEvent: TLogEvent;
+    fAppnederOnly: Boolean;
   public
     procedure AddAppender(const appender: ILogAppender);
+    procedure AddEventConverter(const converter: ILogEventConverter);
     procedure Send(const event: TLogEvent);
+    procedure SendToAppenders(const event: TLogEvent);
     procedure Reset;
     function GetEnabled: Boolean;
     function GetLevels: TLogLevels;
     function GetEventTypes: TLogEventTypes;
+    function IsLoggable(level: TLogLevel; eventTypes: TLogEventTypes): Boolean;
     property LastEvent: TLogEvent read fLastEvent;
   end;
 
@@ -133,13 +138,13 @@ type
   TSomeRecord = record
   end;
 
-  TTypeSerializerMock = class(TInterfacedObject, ITypeSerializer)
+  TTypeSerializerMock = class(TSerializerBase, ITypeSerializer)
   private
     fHandlesTypeCount: Integer;
   public
-    function HandlesType(typeInfo: PTypeInfo): Boolean;
+    function CanHandleType(typeInfo: PTypeInfo): Boolean; override;
     function Serialize(const controller: ISerializerController;
-      const value: TValue; nestingLevel: Integer = 0): string;
+      const value: TValue; nestingLevel: Integer = 0): string; override;
 
     property HandlesTypeCount: Integer read fHandlesTypeCount;
   end;
@@ -232,6 +237,12 @@ begin
   raise ETestError.Create('Should be inaccessible');
 end;
 
+procedure TLoggerControllerMock.AddEventConverter(
+  const converter: ILogEventConverter);
+begin
+  raise ETestError.Create('Should be inaccessible');
+end;
+
 function TLoggerControllerMock.GetEnabled: Boolean;
 begin
   Result := True;
@@ -247,6 +258,12 @@ begin
   Result := LOG_ALL_LEVELS;
 end;
 
+function TLoggerControllerMock.IsLoggable(level: TLogLevel;
+  eventTypes: TLogEventTypes): Boolean;
+begin
+  Result := True;
+end;
+
 procedure TLoggerControllerMock.Reset;
 begin
   fLastEvent := TLogEvent.Create(TLogLevel.Unknown, '');
@@ -255,6 +272,13 @@ end;
 procedure TLoggerControllerMock.Send(const event: TLogEvent);
 begin
   fLastEvent := event;
+  fAppnederOnly := False;
+end;
+
+procedure TLoggerControllerMock.SendToAppenders(const event: TLogEvent);
+begin
+  fLastEvent := event;
+  fAppnederOnly := True;
 end;
 
 {$ENDREGION}
@@ -271,10 +295,10 @@ end;
 
 {$REGION 'TTypeSerializerMock'}
 
-function TTypeSerializerMock.HandlesType(typeInfo: PTypeInfo): Boolean;
+function TTypeSerializerMock.CanHandleType(typeInfo: PTypeInfo): Boolean;
 begin
   Inc(fHandlesTypeCount);
-  Result := typeInfo^.Kind = tkInteger;
+  Result := typeInfo.Kind = tkInteger;
 end;
 
 function TTypeSerializerMock.Serialize(const controller: ISerializerController;

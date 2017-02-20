@@ -351,9 +351,23 @@ type
 
   {$REGION 'ILoggerController'}
 
+  ILogEventConverter = interface;
+
   ILoggerController = interface(ILogAppender)
     ['{6556A795-6F1B-4392-92FC-8E3391E3CB07}']
     procedure AddAppender(const appender: ILogAppender);
+    procedure AddEventConverter(const converter: ILogEventConverter);
+
+    /// <summary>
+    ///   Returns <c>True</c> if level is enabled and any of the <c>eventTypes</c>
+    ///    is enabled in any of the appenders or <c>False</c> otherwise
+    /// </summary>
+    function IsLoggable(level: TLogLevel; eventTypes: TLogEventTypes): Boolean;
+
+    /// <summary>
+    ///   Send the event directly to appenders and skip converters.
+    /// </summary>
+    procedure SendToAppenders(const event: TLogEvent);
   end;
 
   {$ENDREGION}
@@ -382,6 +396,48 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property EventTypes: TLogEventTypes read GetEventTypes write SetEventTypes;
     property Levels: TLogLevels read GetLevels write SetLevels;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'ILogEventConverter'}
+
+  /// <summary>
+  ///   Used by <see cref="Spring.Logging|ILoggerController" /> to convert
+  ///   complex logging events (values, stack traces) to simpler ones (text).
+  /// </summary>
+  /// <remarks>
+  ///   <para>
+  ///     Implementations should use SendToAppenders method of the controller
+  ///     to prevent stack overflow.
+  ///   </para>
+  ///   <para>
+  ///     Note that only one converter may consume the event, once <c>
+  ///     HandleEvent</c> returns <c>True</c> enumeration of converters is
+  ///     stopped.
+  ///   </para>
+  /// </remarks>
+  ILogEventConverter = interface
+    ['{80DC67A5-CA3D-4A57-B843-AA1F9E1BB4F2}']
+    function GetEventType: TLogEventType;
+
+    /// <summary>
+    ///   Consume the event and return <c>True</c> if the event was processed.
+    /// </summary>
+    /// <param name="owner">
+    ///   controller that can be used to output the data
+    /// </param>
+    /// <param name="event">
+    ///   event being processed
+    /// </param>
+    /// <returns>
+    ///   <c>True</c> if the event was processed or <c>False</c> otherwise.
+    /// </returns>
+    function HandleEvent(const controller: ILoggerController;
+      const event: TLogEvent): Boolean;
+
+    property EventType: TLogEventType read GetEventType;
   end;
 
   {$ENDREGION}
