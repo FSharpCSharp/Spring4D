@@ -1054,10 +1054,10 @@ type
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string = ''); static; inline;
 
-    class procedure CheckInheritsFrom(obj: TObject; parentClass: TClass; const argumentName: string); overload; static; inline;
+    class procedure CheckInheritsFrom(const obj: TObject; parentClass: TClass; const argumentName: string); overload; static; inline;
     class procedure CheckInheritsFrom(cls, parentClass: TClass; const argumentName: string); overload; static; inline;
 
-    class procedure CheckNotNull(argumentValue: TObject; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(const argumentValue: TObject; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(argumentValue: Pointer; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(const argumentValue: IInterface; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(condition: Boolean; const parameterName: string); overload; static; inline;
@@ -5612,7 +5612,7 @@ begin
       cls.ClassName, parentClass.ClassName]);
 end;
 
-class procedure Guard.CheckInheritsFrom(obj: TObject; parentClass: TClass;
+class procedure Guard.CheckInheritsFrom(const obj: TObject; parentClass: TClass;
   const argumentName: string);
 begin
   if Assigned(obj) then
@@ -5638,7 +5638,7 @@ begin
   Guard.CheckNotNull(Assigned(argumentValue), argumentName);
 end;
 
-class procedure Guard.CheckNotNull(argumentValue: TObject;
+class procedure Guard.CheckNotNull(const argumentValue: TObject;
   const argumentName: string);
 begin
   Guard.CheckNotNull(Assigned(argumentValue), argumentName);
