@@ -88,9 +88,13 @@ type
   protected
     class procedure SetUpFixture; override;
     class procedure TearDownFixture; override;
+
+    procedure MethodRaisingException;
   published
     procedure CheckCount1;
     procedure CheckCount2;
+
+    procedure TestNoStackoverflow;
   end;
 
 implementation
@@ -220,9 +224,19 @@ begin
   Inc(fCount);
 end;
 
+procedure TSuiteSetUpTearDownTest.MethodRaisingException;
+begin
+  raise EProgrammerNotFound.Create('');
+end;
+
 class procedure TSuiteSetUpTearDownTest.TearDownFixture;
 begin
   Dec(fCount);
+end;
+
+procedure TSuiteSetUpTearDownTest.TestNoStackoverflow;
+begin
+  CheckException(MethodRaisingException, EProgrammerNotFound);
 end;
 
 {$ENDREGION}

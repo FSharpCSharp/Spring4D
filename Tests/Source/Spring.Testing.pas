@@ -451,7 +451,7 @@ begin
   FTestMethodInvoked := True;
   if Assigned(fExpectedException) then
     StartExpectingException(fExpectedException);
-  if Assigned(fMethod) then
+  if Assigned(fMethod) and (fMethod.CodeAddress = TMethod(AMethod).Code) then
   begin
     if fMethod.ReturnType = nil then
       fMethod.Invoke(Self, fArgs)
