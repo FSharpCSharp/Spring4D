@@ -406,7 +406,9 @@ type
   TValueHelper = record helper for TValue
   private
     procedure Init(typeInfo: Pointer);
+{$IFNDEF DELPHIXE8_UP}
     function GetTypeKind: TTypeKind; inline;
+{$ENDIF}
     function GetValueType: TRttiType;
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
     class procedure RaiseConversionError(source, target: PTypeInfo); static;
@@ -593,9 +595,11 @@ type
     /// </summary>
     /// <remarks>
     ///   This fixes the issue with returning <c>tkUnknown</c> when the stored
-    ///   value is an empty reference type.
+    ///   value is an empty reference type (RSP-10071).
     /// </remarks>
+{$IFNDEF DELPHIXE8_UP}
     property Kind: TTypeKind read GetTypeKind;
+{$ENDIF}
 
     /// <summary>
     ///   Returns the TRttiType of the stored value.
@@ -4496,13 +4500,19 @@ begin
     Result := TValue.Empty;
 end;
 
+{$IFNDEF DELPHIXE8_UP}
 function TValueHelper.GetTypeKind: TTypeKind;
 begin
-  if Assigned(TValueData(Self).FTypeInfo) then
-    Result := TValueData(Self).FTypeInfo.Kind
+{$IFDEF DELPHI2010}
+  if (TValueData(Self).FTypeInfo = nil) or (TValueData(Self).FHeapData = nil) then
+{$ELSE}
+  if (TValueData(Self).FTypeInfo = nil) or (TValueData(Self).FValueData = nil) then
+{$ENDIF}
+    Result := tkUnknown
   else
-    Result := tkUnknown;
+    Result := TValueData(Self).FTypeInfo.Kind;
 end;
+{$ENDIF}
 
 function TValueHelper.GetValueType: TRttiType;
 begin
