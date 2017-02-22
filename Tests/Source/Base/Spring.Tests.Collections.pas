@@ -246,28 +246,6 @@ type
     procedure TestNonGenericChangedEvent;
   end;
 
-  TTestObjectStack = class(TTestCase)
-  private
-    SUT: IStack<TObject>;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure PopDestroysItemAndReturnsNil;
-    procedure ExtractDoesNotDestroysItemButReturnsIt;
-  end;
-
-  TTestObjectQueue = class(TTestCase)
-  private
-    SUT: IQueue<TObject>;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure DequeueDestroysItemAndReturnsNil;
-    procedure ExtractDoesNotDestroysItemButReturnsIt;
-  end;
-
   TTestEmptyQueueOfInteger = class(TTestCase)
   private
     SUT: IQueue<Integer>;
@@ -525,6 +503,28 @@ type
   TTestBidiDictionary = class(TTestCase)
   published
     procedure AddDictionary;
+  end;
+
+  TTestObjectStack = class(TTestCase)
+  private
+    SUT: IStack<TObject>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure PopDestroysItemAndReturnsNil;
+    procedure ExtractDoesNotDestroysItemButReturnsIt;
+  end;
+
+  TTestObjectQueue = class(TTestCase)
+  private
+    SUT: IQueue<TObject>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure DequeueDestroysItemAndReturnsNil;
+    procedure ExtractDoesNotDestroysItemButReturnsIt;
   end;
 
 implementation

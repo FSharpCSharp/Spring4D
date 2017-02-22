@@ -55,7 +55,8 @@ type
 implementation
 
 uses     
-  SysUtils;
+  SysUtils,
+  TypInfo;
 
 
 {$REGION 'TProxyFactory'}

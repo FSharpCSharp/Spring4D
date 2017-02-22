@@ -223,7 +223,7 @@ begin
     ftFloat: Result := 'Double';
     ftCurrency: Result := 'Currency';
     ftAutoInc: Result := 'Int64';
-    ftLongWord: Result := 'LongWord';
+    ftLongWord: Result := 'Cardinal';
     ftGuid: Result := 'TGuid';
     ftShortint: Result := 'ShortInt';
     ftByte: Result := 'Byte';

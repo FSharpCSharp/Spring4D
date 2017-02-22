@@ -199,7 +199,8 @@ type
     iOSDevice,
     iOSDevice32,
     iOSDevice64,
-    Android
+    Android,
+    Linux64
   );
 
 const
@@ -458,7 +459,8 @@ const // luckily, the compiler file names have not changed over the Delphi versi
     'dcciosarm.exe',
     'dcciosarm.exe',
     'dcciosarm64.exe',
-    'dccaarm.exe'
+    'dccaarm.exe',
+    'dcclinux64.exe'
   );
 var
   knownPlatform: TKnownPlatforms;

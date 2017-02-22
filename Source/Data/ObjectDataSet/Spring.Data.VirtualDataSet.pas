@@ -123,7 +123,7 @@ type
 
     // Basic overrides
     function GetCanModify: Boolean; override;
-    function GetRecNo: LongInt; override;
+    function GetRecNo: {$IFDEF DELPHIX_TOKYO_UP}Integer{$ELSE}LongInt{$ENDIF}; override;
     function GetRecordCount: Integer; override;
     procedure SetFiltered(Value: Boolean); override;
 
@@ -956,7 +956,7 @@ begin
     Result := PArrayRecInfo(recBuf).Index;
 end;
 
-function TCustomVirtualDataSet.GetRecNo: LongInt;
+function TCustomVirtualDataSet.GetRecNo: {$IFDEF DELPHIX_TOKYO_UP}Integer{$ELSE}LongInt{$ENDIF};
 var
   recBuf: TRecordBuffer;
 begin
@@ -1297,9 +1297,9 @@ procedure TCustomVirtualDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer
       ftWideString, ftFixedWideChar:
         Data := WideString(PWideChar(Buffer));
       ftAutoInc, ftInteger:
-        Data := TDBBitConverter.UnsafeInto<LongInt>(Buffer);
+        Data := TDBBitConverter.UnsafeInto<Integer>(Buffer);
       ftLongWord:
-        Data := TDBBitConverter.UnsafeInto<LongWord>(Buffer);
+        Data := TDBBitConverter.UnsafeInto<Cardinal>(Buffer);
       ftShortint:
         Data := TDBBitConverter.UnsafeInto<ShortInt>(Buffer);
       ftByte:
@@ -1369,9 +1369,9 @@ procedure TCustomVirtualDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer
       ftWideString, ftFixedWideChar:
         Data := WideString(PWideChar(Buffer));
       ftAutoInc, ftInteger:
-        Data := LongInt(Buffer^);
+        Data := Integer(Buffer^);
       ftLongWord:
-        Data := LongWord(Buffer^);
+        Data := Cardinal(Buffer^);
       ftShortint:
         Data := ShortInt(Buffer^);
       ftByte:

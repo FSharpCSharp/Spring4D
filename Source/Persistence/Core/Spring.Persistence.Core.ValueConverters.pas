@@ -42,6 +42,7 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+{$IFNDEF LINUX}
   TPictureToVariantConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -58,6 +59,7 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+{$ENDIF}
 
 implementation
 
@@ -67,13 +69,15 @@ uses
 {$ELSE}
   SysUtils,
 {$IFEND}
-{$IFNDEF FMX}
+{$IFDEF MSWINDOWS}
   GIFImg,
   Graphics,
   jpeg,
   pngimage,
 {$ELSE}
+  {$IFNDEF LINUX}
   FMX.Graphics,
+  {$ENDIF}
 {$ENDIF}
   Variants;
 
@@ -81,10 +85,12 @@ procedure RegisterConverters;
 begin
   TValueConverterFactory.RegisterConverter(TypeInfo(TStream), TypeInfo(Variant),
     TStreamToVariantConverter);
+{$IFNDEF LINUX}
   TValueConverterFactory.RegisterConverter(TypeInfo(TPicture), TypeInfo(Variant),
     TPictureToVariantConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TStream), TypeInfo(TPicture),
     TStreamToPictureConverter);
+{$ENDIF}
 end;
 
 {$REGION 'TStreamToVariantConverter'}
@@ -103,6 +109,7 @@ end;
 
 {$REGION 'TPictureToVariantConverter'}
 
+{$IFNDEF LINUX}
 function TPictureToVariantConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
@@ -117,12 +124,14 @@ begin
     stream.Free;
   end;
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TStreamToPictureConverter'}
 
+{$IFNDEF LINUX}
 function TStreamToPictureConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
@@ -140,10 +149,7 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$IFNDEF FMX}
+{$IFDEF MSWINDOWS}
 function FindGraphicClass(const Buffer; const BufferSize: Int64;
   out GraphicClass: TGraphicClass): Boolean; overload;
 const
@@ -193,7 +199,7 @@ begin
       picture.Assign(nil);
       Exit(True);
     end;
-{$IFNDEF FMX}
+{$IFDEF MSWINDOWS}
     if not FindGraphicClass(LStream.Memory^, LStream.Size, LGraphicClass) then
       Exit(False);
 {$ELSE}
@@ -210,6 +216,10 @@ begin
     LGraphic.Free;
   end;
 end;
+{$ENDIF}
+
+{$ENDREGION}
+
 
 initialization
   RegisterConverters;

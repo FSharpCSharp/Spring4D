@@ -1725,17 +1725,25 @@ end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_LongInt;
 begin
+{$IF Defined(LINUX64)}
+  MatchType(TypeInfo(LongInt), tkInt64, SizeOf(LongInt));
+{$ELSE}
   MatchType(TypeInfo(LongInt), tkInteger, SizeOf(LongInt));
+{$IFEND}
 end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_LongWord;
 begin
+{$IF Defined(LINUX64)}
+  MatchType(TypeInfo(LongWord), tkInt64, SizeOf(LongWord));
+{$ELSE}
   MatchType(TypeInfo(LongWord), tkInteger, SizeOf(LongWord));
+{$IFEND}
 end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_NativeInt;
 begin
-{$IF Defined(WIN64)}
+{$IF Defined(CPU64)}
   MatchType(TypeInfo(NativeInt), tkInt64, SizeOf(NativeInt));
 {$ELSE}
   MatchType(TypeInfo(NativeInt), tkInteger, SizeOf(NativeInt));
@@ -1744,7 +1752,7 @@ end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_NativeUInt;
 begin
-{$IF Defined(WIN64)}
+{$IF Defined(CPU64)}
   MatchType(TypeInfo(NativeUInt), tkInt64, SizeOf(NativeUInt));
 {$ELSE}
   MatchType(TypeInfo(NativeUInt), tkInteger, SizeOf(NativeUInt));

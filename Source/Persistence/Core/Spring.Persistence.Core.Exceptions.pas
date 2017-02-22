@@ -291,11 +291,13 @@ end;
 
 function TORMExceptionHandler.HandleException(const defaultMsg: string): Exception;
 
+{$IFNDEF DELPHIXTOKYO_UP}
 {$IFDEF AUTOREFCOUNT}
   function AcquireExceptionObject: Exception; // fixes RSP-13652
   begin
     Pointer(Result) := System.AcquireExceptionObject;
   end;
+{$ENDIF}
 {$ENDIF}
 
 var
@@ -306,7 +308,7 @@ begin
   if exc is EORMException then
     // Revive the exception object so it doesn't get destroyed when the except
     // block ends.
-    Exit(AcquireExceptionObject);
+    Exit(Exception(AcquireExceptionObject));
 
   if exc is Exception then
   begin
@@ -324,7 +326,7 @@ begin
     // that ORM-specific except blocks should not handle (this includes EAbort).
     // Revive the exception object so it doesn't get destroyed when the except
     // block ends.
-    Exit(AcquireExceptionObject);
+    Exit(Exception(AcquireExceptionObject));
 
   // New exception will acquire inner exception and thus will be raised as outer
   // but with standard `raise` keyword later without the need of calling

@@ -29,10 +29,14 @@ unit Spring.Persistence.Core.Graphics;
 interface
 
 uses
-{$IFNDEF FMX}
+{$IFDEF MSWINDOWS}
   Graphics
 {$ELSE}
+  {$IFNDEF LINUX}
   Fmx.Graphics
+  {$ELSE}
+  Classes
+  {$ENDIF}
 {$ENDIF}
   ;
 
@@ -40,16 +44,33 @@ type
 
 {$REGION 'Type overlays'}
 
-{$IFNDEF FMX}
+{$IFDEF MSWINDOWS}
   TBitmap = Graphics.TBitmap;
   TPicture = Graphics.TPicture;
   TGraphic = Graphics.TGraphic;
   TGraphicClass = Graphics.TGraphicClass;
 {$ELSE}
+  {$IFNDEF LINUX}
   TBitmap = Fmx.Graphics.TBitmap;
   TPicture = TBitmap;
   TGraphic = TBitmap;
   TGraphicClass = class of TBitmap;
+  {$ELSE}
+  // hack to compile code on Linux - non functional yet
+  TBitmap = class(TPersistent)
+  private
+    fHeight, fWidth: Integer;
+  public
+    procedure LoadFromFile(const fileName: string);
+
+    property Height: Integer read fHeight write fHeight;
+    property Width: Integer read fWidth write fWidth;
+  end;
+  TPicture = TBitmap;
+  TGraphic = TBitmap;
+  TGraphicClass = class of TBitmap;
+  {$ENDIF}
+
 {$ENDIF}
 
 {$ENDREGION}
@@ -57,7 +78,8 @@ type
 
 {$REGION 'Helpers'}
 
-{$IFDEF FMX}
+{$IFNDEF MSWINDOWS}
+type
   TPictureHelper = class helper for TPicture
   private
     function GetGraphic: TBitmap; inline;
@@ -74,10 +96,21 @@ implementation
 
 {$REGION 'TPictureHelper'}
 
-{$IFDEF FMX}
+{$IFNDEF MSWINDOWS}
 function TPictureHelper.GetGraphic: TBitmap;
 begin
   Result := Self;
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TBitmap'}
+
+{$IFDEF LINUX}
+procedure TBitmap.LoadFromFile(const fileName: string);
+begin
 end;
 {$ENDIF}
 

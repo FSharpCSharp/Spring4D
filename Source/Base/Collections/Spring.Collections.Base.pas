@@ -221,7 +221,7 @@ type
 
   TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
   private
-    fInitialThreadId: Cardinal;
+    fInitialThreadId: TThreadID;
   protected
     fState: Integer;
     fCurrent: T;

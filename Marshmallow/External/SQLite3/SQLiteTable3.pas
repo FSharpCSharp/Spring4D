@@ -861,7 +861,7 @@ type
     VType: TVarType;
     Reserved1, Reserved2, Reserved3: Word;
     DataSet: TSQLiteUniTable;
-    Reserved4: LongInt;
+    Reserved4: Pointer;
   end;
 
 var
@@ -1652,12 +1652,13 @@ begin
   EnsureInitialized;
 
   FConnected := False;
-  iResult := SQLITE_OK;
 
   case FEncoding of
     seUTF8: iResult := sqlite3_open_v2(PAnsiChar(UTF8Encode(FFileName)), Fdb,
       SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE or SQLITE_OPEN_URI, nil);
     seUTF16: iResult := SQLite3_Open16(PChar(FFileName), Fdb);
+  else
+    iResult := SQLITE_OK;
   end;
 
   if iResult <> SQLITE_OK then

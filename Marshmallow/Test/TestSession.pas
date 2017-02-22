@@ -14,7 +14,9 @@ uses
   Windows,
 {$ENDIF}
 {$IFDEF FMX}
+  {$IFNDEF LINUX}
   FMX.Graphics,
+  {$ENDIF}
 {$ENDIF}
   SQLiteTable3,
   Spring,
@@ -187,24 +189,6 @@ uses
 
 const
   SQL_GET_ALL_CUSTOMERS = 'SELECT * FROM ' + TBL_PEOPLE + ';';
-
-function GetPictureSize(const APicture: TPicture): Int64;
-var
-  LStream: TMemoryStream;
-begin
-  Result := 0;
-  if Assigned(APicture) then
-  begin
-    LStream := TMemoryStream.Create;
-    try
-      APicture.Graphic.SaveToStream(LStream);
-
-      Result := LStream.Size;
-    finally
-      LStream.Free;
-    end;
-  end;
-end;
 
 procedure CreateTables(const AConnection: TSQLiteDatabase = nil);
 var
@@ -734,7 +718,7 @@ begin
     CheckTrue(Assigned(LCustomer));
     CheckEquals(25, LCustomer.Age);
 
-    CheckTrue(LCustomer.Avatar.Graphic <> nil);
+    CheckNotNull(LCustomer.Avatar.Graphic);
   finally
     FreeAndNil(LCustomer);
   end;

@@ -4044,13 +4044,39 @@ begin
 end;
 
 function EqualsRec2Rec(const left, right: TValue): Boolean;
+
+  function RawEquals(const recordType: TRttiType): Boolean;
+  var
+    leftRec, rightRec: Pointer;
+    field: TRttiField;
+    leftValue, rightValue: TValue;
+  begin
+    if left.TypeInfo = right.TypeInfo then
+    begin
+      if IsManaged(left.TypeInfo) then
+      begin
+        leftRec := left.GetReferenceToRawData;
+        rightRec := right.GetReferenceToRawData;
+        for field in recordType.GetFields do
+        begin
+          leftValue := field.GetValue(leftRec);
+          rightValue := field.GetValue(rightRec);
+          if not leftValue.Equals(rightValue) then
+            Exit(False);
+        end;
+        Result := True;
+      end
+      else
+        Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize)
+    end
+    else
+      Result := False;
+  end;
+
 var
   recordType: TRttiType;
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
-  field: TRttiField;
-  leftRec, rightRec: Pointer;
-  leftValue, rightValue: TValue;
 begin
   if (left.TypeInfo = TypeInfo(TValue)) and (right.TypeInfo = TypeInfo(TValue)) then
     Exit(PValue(left.GetReferenceToRawData).Equals(
@@ -4066,26 +4092,7 @@ begin
       Exit(method.Invoke(nil, [left, right]).AsBoolean);
   end;
 
-  if left.TypeInfo = right.TypeInfo then
-  begin
-    if IsManaged(left.TypeInfo) then
-    begin
-      leftRec := left.GetReferenceToRawData;
-      rightRec := right.GetReferenceToRawData;
-      for field in recordType.GetFields do
-      begin
-        leftValue := field.GetValue(leftRec);
-        rightValue := field.GetValue(rightRec);
-        if not leftValue.Equals(rightValue) then
-          Exit(False);
-      end;
-      Result := True;
-    end
-    else
-      Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, left.DataSize)
-  end
-  else
-    Result := False;
+  Result := RawEquals(recordType);
 end;
 
 function EqualsDynArray2DynArray(const left, right: TValue): Boolean;
@@ -4554,7 +4561,7 @@ begin
         varShortInt: typeInfo := System.TypeInfo(TArray<ShortInt>);
         varByte: typeInfo := System.TypeInfo(TArray<Byte>);
         varWord: typeInfo := System.TypeInfo(TArray<Word>);
-        varLongWord: typeInfo := System.TypeInfo(TArray<LongWord>);
+        varLongWord: typeInfo := System.TypeInfo(TArray<Cardinal>);
         varInt64: typeInfo := System.TypeInfo(TArray<Int64>);
         varUInt64: typeInfo := System.TypeInfo(TArray<UInt64>);
         varUString:  typeInfo := System.TypeInfo(TArray<string>);
