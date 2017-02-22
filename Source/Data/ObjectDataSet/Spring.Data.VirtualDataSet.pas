@@ -124,7 +124,7 @@ type
 
     // Basic overrides
     function GetCanModify: Boolean; override;
-    function GetRecNo: Longint; override;
+    function GetRecNo: LongInt; override;
     function GetRecordCount: Integer; override;
     procedure SetFiltered(Value: Boolean); override;
 
@@ -1538,12 +1538,13 @@ end;
 
 procedure TCustomVirtualDataSet.TBlobStream.ReadBlobData;
 begin
+{$IFNDEF NEXTGEN}
 {$WARN SYMBOL_DEPRECATED OFF}
-//  {$IF CompilerVersion >= 24}
-//  fFieldData := fField.AsVariant;
-//  {$ELSE}
   fDataSet.GetFieldData(fField, @fFieldData, True);
-//  {$IFEND}
+{$WARN SYMBOL_DEPRECATED ON}
+{$ELSE}
+  raise ENotImplemented.Create('TBlobStream.ReadBlobData');
+{$ENDIF}
   if not VarIsNull(fFieldData) then
   begin
     if VarType(fFieldData) = varOleStr then
@@ -1568,7 +1569,7 @@ begin
 end;
 
 function TCustomVirtualDataSet.TBlobStream.Realloc(
-  var NewCapacity: Integer): Pointer;
+  var NewCapacity: LongInt): Pointer;
 
   procedure VarAlloc(var V: Variant; Field: TFieldType);
   var
@@ -1638,7 +1639,7 @@ begin
 end;
 
 function TCustomVirtualDataSet.TBlobStream.Write(const Buffer;
-  Count: Integer): LongInt;
+  Count: LongInt): LongInt;
 begin
   Result := inherited Write(Buffer, Count);
   fModified := True;
