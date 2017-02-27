@@ -519,6 +519,7 @@ type
     procedure TestInternalEventHandlersDetached;
     procedure TestValueChangedCalledProperly;
     procedure TestValuesOrdered;
+    procedure TestExtractValues;
   end;
 
   TTestBidiDictionary = class(TTestCase)
@@ -2874,6 +2875,23 @@ begin
   pair.Value := 'World';
   map.Add('Test', pair);
   CheckEquals(1, map.Count);
+end;
+
+procedure TTestMultiMap.TestExtractValues;
+var
+  map: IMultiMap<Integer,TObject>;
+  list: IList<TObject>;
+  obj: TObject;
+begin
+  map := TCollections.CreateMultiMap<Integer,TObject>([doOwnsValues]);
+  map.Add(1, TObject.Create);
+  list := map.ExtractValues(1);
+  CheckEquals(0, map.Count);
+  CheckEquals(1, list.Count);
+  map := nil;
+  obj := list.ExtractAt(0);
+  obj.Free;
+  list := nil;
 end;
 
 procedure TTestMultiMap.TestInternalEventHandlersDetached;

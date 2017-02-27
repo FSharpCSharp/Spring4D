@@ -1993,7 +1993,15 @@ type
 
     function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
 
-    function ExtractValues(const key: TKey): IReadOnlyList<TValue>;
+    /// <summary>
+    ///   Extracts all values for the given key from the multimap.
+    /// </summary>
+    /// <remarks>
+    ///   If the multimap has doOwnsValues set the items in the returned list
+    ///   are not being owned by the list but have to be freed manually or
+    ///   being passed to a collection that takes ownership.
+    /// </remarks>
+    function ExtractValues(const key: TKey): IList<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyList<TValue>): Boolean;
     property Items[const key: TKey]: IReadOnlyList<TValue> read GetItems; default;
   end;
