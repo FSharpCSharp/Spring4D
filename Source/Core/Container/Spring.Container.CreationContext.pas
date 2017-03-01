@@ -59,7 +59,8 @@ type
       out instance: TValue): Boolean;
     procedure LeaveResolution(const model: TComponentModel);
 
-    procedure AddArgument(const argument: TValue);
+    function AddArgument(const argument: TValue): Integer;
+    procedure RemoveTypedArgument(index: Integer);
     procedure AddPerResolve(const model: TComponentModel; const instance: TValue);
     function TryHandle(const injection: IInjection;
       out handled: IInjection): Boolean;
@@ -111,14 +112,14 @@ begin
 end;
 {$ENDIF}
 
-procedure TCreationContext.AddArgument(const argument: TValue);
+function TCreationContext.AddArgument(const argument: TValue): Integer;
 begin
   if argument.IsType<TTypedValue> then
-    fTypedArguments.Add(argument)
+    Result := fTypedArguments.Add(argument)
   else if argument.IsType<TNamedValue> then
-    fNamedArguments.Add(argument)
+    Result := fNamedArguments.Add(argument)
   else
-    fArguments.Add(argument);
+    Result := fArguments.Add(argument);
 end;
 
 procedure TCreationContext.AddPerResolve(const model: TComponentModel;
@@ -220,6 +221,11 @@ procedure TCreationContext.LeaveResolution(const model: TComponentModel);
 begin
   if fResolutionStack.Pop <> model then
     raise EResolveException.CreateRes(@SResolutionStackUnbalanced);
+end;
+
+procedure TCreationContext.RemoveTypedArgument(index: Integer);
+begin
+  fTypedArguments.Delete(index);
 end;
 
 function TCreationContext.Resolve(const context: ICreationContext;

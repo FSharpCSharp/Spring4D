@@ -319,6 +319,8 @@ type
     procedure RegisterTwoDecoratorsResolveReturnsLastDecorator;
     procedure RegisterTwoDecoratorsResolveWithParameterReturnsCorrectValue;
     procedure RegisterOneDecoratorInitializeIsCalled;
+    procedure RegisterTwoDecoratorsResolveLazyReturnsLastDecorator;
+    procedure RegisterTwoDecoratorsResolveArrayAllDecorated;
   end;
 
 implementation
@@ -2049,6 +2051,47 @@ begin
   CheckTrue(conditionCalled);
   CheckIs(service, TNameAgeComponent);
   CheckEquals(TNameAgeComponent.DefaultAge, service.Age);
+end;
+
+procedure TTestDecorators.RegisterTwoDecoratorsResolveArrayAllDecorated;
+var
+  services: TArray<IAgeService>;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator2>;
+
+  fContainer.RegisterType<IAgeService, TAgeService>('ageService');
+  fContainer.Build;
+
+  services := fContainer.Resolve<TArray<IAgeService>>;
+  CheckEquals(2, Length(services));
+  CheckIs(services[0], TAgeServiceDecorator2);
+  CheckIs(services[1], TAgeServiceDecorator2);
+end;
+
+procedure TTestDecorators.RegisterTwoDecoratorsResolveLazyReturnsLastDecorator;
+var
+  service, service2: IAgeService;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator2>;
+
+  fContainer.RegisterType<IAgeService, TAgeService>('ageService');
+  fContainer.Build;
+
+  service := fContainer.Resolve<IAgeService>('ageService');
+
+  CheckIs(service, TAgeServiceDecorator2);
+  service2 := (service as TAgeServiceDecorator2).AgeService;
+  CheckIs(service2, TAgeServiceDecorator);
+  service2 := (service2 as TAgeServiceDecorator).AgeService;
+  CheckIs(service2, TAgeService);
+  service2 := (service2 as TAgeService).AgeService;
+  CheckIs(service2, TAgeServiceDecorator2);
+  service2 := (service2 as TAgeServiceDecorator2).AgeService;
+  CheckIs(service2, TAgeServiceDecorator);
+  service2 := (service2 as TAgeServiceDecorator).AgeService;
+  CheckIs(service2, TNameAgeComponent);
 end;
 
 procedure TTestDecorators.RegisterTwoDecoratorsResolveReturnsLastDecorator;

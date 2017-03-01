@@ -703,6 +703,7 @@ function TDecoratorResolver.Resolve(const dependency: TDependencyModel;
 
 var
   decoratorModel: TComponentModel;
+  index: Integer;
 begin
   Result := decoratee;
   for decoratorModel in GetDecorators(dependency.TypeInfo, model) do
@@ -711,8 +712,13 @@ begin
     if Result.IsObject and (dependency.TypeInfo.Kind = tkInterface) then
       Result := ConvClass2Inf(Result.AsObject, dependency.TypeInfo);
   {$ENDIF}
-    context.AddArgument(TTypedValue.Create(Result, dependency.TypeInfo));
-    Result := decoratorModel.LifetimeManager.Resolve(context, decoratorModel);
+    // TODO: make this more explicit to just inject on the decorator constructor
+    index := context.AddArgument(TTypedValue.Create(Result, dependency.TypeInfo));
+    try
+      Result := decoratorModel.LifetimeManager.Resolve(context, decoratorModel);
+    finally
+      context.RemoveTypedArgument(index);
+    end;
   end;
 end;
 

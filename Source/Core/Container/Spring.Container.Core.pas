@@ -292,7 +292,8 @@ type
       out instance: TValue): Boolean;
     procedure LeaveResolution(const model: TComponentModel);
 
-    procedure AddArgument(const argument: TValue);
+    function AddArgument(const argument: TValue): Integer;
+    procedure RemoveTypedArgument(index: Integer);
     procedure AddPerResolve(const model: TComponentModel; const instance: TValue);
     function TryHandle(const injection: IInjection;
       out handled: IInjection): Boolean;
