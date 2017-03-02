@@ -715,7 +715,7 @@ begin
     // TODO: make this more explicit to just inject on the decorator constructor
     index := context.AddArgument(TTypedValue.Create(Result, dependency.TypeInfo));
     try
-      Result := decoratorModel.LifetimeManager.Resolve(context, decoratorModel);
+      Result := decoratorModel.LifetimeManager.Resolve(context, decoratorModel).Cast(dependency.TypeInfo);
     finally
       context.RemoveTypedArgument(index);
     end;
