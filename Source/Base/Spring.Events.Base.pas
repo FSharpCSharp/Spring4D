@@ -141,25 +141,11 @@ begin
   Result := E_NOINTERFACE;
 end;
 
-function Compare_Method(Inst: Pointer; const Left, Right: TMethodPointer): Integer;
-type
-  UIntPtr = NativeUInt;
-  TMethod = record
-    Code, Data: UIntPtr;
-  end;
-var
-  LMethod, RMethod: TMethod;
+function Compare_Method(inst: Pointer; const left, right: TMethodPointer): Integer;
 begin
-  LMethod := TMethod(Left);
-  RMethod := TMethod(Right);
-
-  if (LMethod.Data < RMethod.Data)
-    or ((LMethod.Data = RMethod.Data)
-    and (LMethod.Code < RMethod.Code)) then
+  if TMethod(left) < TMethod(right) then
     Result := -1
-  else if (LMethod.Data > RMethod.Data)
-    or ((LMethod.Data = RMethod.Data)
-    and (LMethod.Code > RMethod.Code)) then
+  else if TMethod(left) > TMethod(right) then
     Result := 1
   else
     Result := 0;

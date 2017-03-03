@@ -111,6 +111,21 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TMethodHelper'}
+
+{$IFNDEF DELPHIXE3_UP}
+  TMethodHelper = record helper for TMethod
+  public
+    class function &&op_Equality(const left, right: TMethod): Boolean; static; inline;
+    class function &&op_Inequality(const left, right: TMethod): Boolean; static; inline;
+    class function &&op_GreaterThan(const left, right: TMethod): Boolean; static; inline;
+    class function &&op_LessThan(const left, right: TMethod): Boolean; static; inline;
+  end;
+{$ENDIF}
+
+  {$ENDREGION}
+
+
   {$REGION 'TType'}
 
   TType = class
@@ -3041,6 +3056,35 @@ end;
 function TGuidHelper.ToString: string;
 begin
   Result := GuidToString(Self);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TMethodHelper'}
+
+{$IFNDEF DELPHIXE3_UP}
+class function TMethodHelper.&&op_Equality(const left, Right: TMethod): Boolean;
+begin
+  Result := (left.Data = right.Data) and (left.Code = right.Code);
+end;
+
+class function TMethodHelper.&&op_Inequality(const left, Right: TMethod): Boolean;
+begin
+  Result := (left.Data <> right.Data) or (left.Code <> right.Code);
+end;
+
+class function TMethodHelper.&&op_GreaterThan(const left, right: TMethod): Boolean;
+begin
+  Result := (UIntPtr(left.Data) > UIntPtr(right.Data))
+    or ((left.Data = right.Data) and (UIntPtr(left.Code) > UIntPtr(right.Code)));
+end;
+
+class function TMethodHelper.&&op_LessThan(const left, right: TMethod): Boolean;
+begin
+  Result := (UIntPtr(left.Data) < UIntPtr(right.Data))
+    or ((left.Data = right.Data) and (UIntPtr(left.Code) < UIntPtr(right.Code)));
 end;
 {$ENDIF}
 
