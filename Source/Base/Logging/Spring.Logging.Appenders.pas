@@ -64,13 +64,15 @@ type
   TTextLogAppender = class(TLogAppenderWithTimeStampFormat)
   public type
     PTextFile = ^TextFile;
+  strict private
+    fLock: TCriticalSection;
   protected
     fFile: PTextFile;
     procedure DoSend(const event: TLogEvent); override;
   public
 
     /// <summary>
-    ///   Make sure that the pointer doesn;t get out of scope!
+    ///   Make sure that the pointer doesn't get out of scope!
     /// </summary>
     constructor Create(output: PTextFile); overload;
 
@@ -78,6 +80,7 @@ type
     ///   Uses stderr
     /// </summary>
     constructor Create; overload;
+    destructor Destroy; override;
   end;
 
   {$ENDREGION}
@@ -228,6 +231,7 @@ constructor TTextLogAppender.Create(output: PTextFile);
 begin
   inherited Create;
   fFile := output;
+  fLock := TCriticalSection.Create;
 end;
 
 constructor TTextLogAppender.Create;
@@ -235,11 +239,22 @@ begin
   Create(@ErrOutput);
 end;
 
+destructor TTextLogAppender.Destroy;
+begin
+  fLock.Free;
+  inherited;
+end;
+
 procedure TTextLogAppender.DoSend(const event: TLogEvent);
 begin
-  Writeln(fFile^, FormatTimeStamp(event.TimeStamp), ': ',
-    LEVEL_FIXED[event.Level], ' ', FormatMsg(event));
-  Flush(fFile^);
+  fLock.Enter;
+  try
+    Writeln(fFile^, FormatTimeStamp(event.TimeStamp), ': ',
+      LEVEL_FIXED[event.Level], ' ', FormatMsg(event));
+    Flush(fFile^);
+  finally
+    fLock.Leave;
+  end;
 end;
 
 {$ENDREGION}
