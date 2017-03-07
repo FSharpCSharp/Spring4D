@@ -112,6 +112,13 @@ type
 {$IFDEF NEXTGEN}
   PAnsiChar = MarshaledAString;
   PPAnsiChar = ^PAnsiChar;
+  {$WARN SYMBOL_DEPRECATED OFF}
+{$ENDIF}
+{$IF NOT Declared(AnsiString)}
+  {$IF Declared(RawByteString)}
+  AnsiString = RawByteString;
+  {$ELSE}
+  {$DEFINE USE_CUSTOM_ANSISTRING}
   AnsiString = record
   private
     FBytes: TBytes;
@@ -120,9 +127,8 @@ type
     class operator Implicit(const s: AnsiString): string;
     class operator Explicit(const s: AnsiString): PAnsiChar;
   end;
-
-  {$WARN SYMBOL_DEPRECATED OFF}
-{$ENDIF}
+  {$IFEND}
+{$IFEND}
 const
   SQLITE_STATIC : TBindDestructor = TBindDestructor(System.Sqlite.SQLITE_STATIC);
   SQLITE_TRANSIENT : TBindDestructor = TBindDestructor(System.Sqlite.SQLITE_TRANSIENT);
@@ -3947,7 +3953,7 @@ end;
 
 { AnsiString }
 
-{$IF Defined(USE_SYSTEM_SQLITE) AND Defined(NEXTGEN)}
+{$IFDEF USE_CUSTOM_ANSISTRING}
 
 class operator AnsiString.Explicit(const s: AnsiString): PAnsiChar;
 begin
@@ -3971,7 +3977,7 @@ begin
   Len := Enc.GetByteCount(s);
   // Add trailing zero
   SetLength(Result.FBytes, Len + 1);
-  Enc.GetBytes(s, 0, Length(s), Result.FBytes, 0);
+  Enc.GetBytes(s, Low(string), Length(s), Result.FBytes, 0);
   Result.FBytes[Len] := 0;
 end;
 
@@ -3982,7 +3988,7 @@ begin
   else Result := TEncoding.ANSI.GetString(s.FBytes);
 end;
 
-{$IFEND}
+{$ENDIF}
 
 { ESQLiteException }
 
