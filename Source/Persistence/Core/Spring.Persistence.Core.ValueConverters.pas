@@ -42,7 +42,6 @@ type
       const parameter: TValue): TValue; override;
   end;
 
-{$IFNDEF LINUX}
   TPictureToVariantConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -59,7 +58,6 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
-{$ENDIF}
 
 implementation
 
@@ -85,12 +83,10 @@ procedure RegisterConverters;
 begin
   TValueConverterFactory.RegisterConverter(TypeInfo(TStream), TypeInfo(Variant),
     TStreamToVariantConverter);
-{$IFNDEF LINUX}
   TValueConverterFactory.RegisterConverter(TypeInfo(TPicture), TypeInfo(Variant),
     TPictureToVariantConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TStream), TypeInfo(TPicture),
     TStreamToPictureConverter);
-{$ENDIF}
 end;
 
 {$REGION 'TStreamToVariantConverter'}
@@ -109,7 +105,6 @@ end;
 
 {$REGION 'TPictureToVariantConverter'}
 
-{$IFNDEF LINUX}
 function TPictureToVariantConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
@@ -124,14 +119,12 @@ begin
     stream.Free;
   end;
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TStreamToPictureConverter'}
 
-{$IFNDEF LINUX}
 function TStreamToPictureConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
@@ -216,7 +209,6 @@ begin
     LGraphic.Free;
   end;
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
