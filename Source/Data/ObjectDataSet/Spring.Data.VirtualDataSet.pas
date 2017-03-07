@@ -774,7 +774,7 @@ var
         begin
           PData := VarArrayLock(Data);
           try
-            DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
+            DataConvert(Field, BytesOf(PData, VarArrayLength(Data, 1)), Buffer, True);
           finally
             VarArrayUnlock(Data);
           end;
@@ -1563,7 +1563,7 @@ begin
       end;
     end
     else
-      Size := VarArrayHighBound(fFieldData, 1) + 1;
+      Size := VarArrayLength(fFieldData, 1);
     fFieldData := Null;
   end;
 end;

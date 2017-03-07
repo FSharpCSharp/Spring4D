@@ -2973,7 +2973,7 @@ begin
         ['', 'Error']);
 
     Value.Position := 0;
-    Value.Read(par.valueptr^, par.blobsize);
+    Value.ReadBuffer(par.valueptr^, par.blobsize);
   end;
   fParams.Add(par);
 end;
@@ -3181,6 +3181,7 @@ var
   bStream: TMemoryStream;
   ptr: Pointer;
   iDim: Integer;
+  len: Integer;
 begin
   vType := VarType(Value);
   case vType of
@@ -3214,8 +3215,8 @@ begin
         iDim := VarArrayDimCount(Value);
         ptr := VarArrayLock(Value);
         try
-          bStream.WriteBuffer(ptr^, VarArrayHighBound(Value, iDim));
-
+          len := VarArrayHighBound(Value, iDim) - VarArrayLowBound(Value, iDim) + 1;
+          bStream.WriteBuffer(ptr^, len);
           SetParamBlobInternal(bStream, I, name);
         finally
           VarArrayUnlock(Value);

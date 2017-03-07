@@ -1568,8 +1568,7 @@ begin
     LStream := LResults.FieldByName[CUST_STREAM].AsBlob;
     CheckTrue(Assigned(LStream));
     try
-      CheckTrue(LStream.Size > 0);
-      CheckEquals(LCustomer.CustStream.Size, LStream.Size);
+      CheckEquals(LCustStream.Size, LStream.Size);
     finally
       LStream.Free;
     end;

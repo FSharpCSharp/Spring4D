@@ -2454,6 +2454,11 @@ function SameValue(const left, right: Variant): Boolean; overload;
 function VarIsNullOrEmpty(const value: Variant): Boolean; inline;
 
 /// <summary>
+///   Returns the length of the variant array for the specified dimension.
+/// </summary>
+function VarArrayLength(const value: Variant; dim: Integer): Integer;
+
+/// <summary>
 ///   Returns the field table for the given class that contains all fields that
 ///   have Default or Managed attribute annotations.
 /// </summary>
@@ -2477,6 +2482,7 @@ uses
   RTLConsts,
   StrUtils,
   SysConst,
+  VarUtils,
 {$IFDEF MSWINDOWS}
   Windows,
 {$ENDIF}
@@ -2845,8 +2851,15 @@ end;
 function StreamToVariant(const stream: TStream): Variant;
 var
   lock: Pointer;
+  size: Integer;
 begin
-  Result := VarArrayCreate([0, stream.Size], varByte);
+  if not Assigned(stream) then
+    Exit(Null);
+  size := stream.Size;
+  if size = 0 then
+    Exit(Null);
+  stream.Position := 0;
+  Result := VarArrayCreate([0, size - 1], varByte);
   lock := VarArrayLock(Result);
   try
     stream.ReadBuffer(lock^, stream.Size);
@@ -2976,6 +2989,17 @@ end;
 function VarIsNullOrEmpty(const value: Variant): Boolean;
 begin
   Result := FindVarData(value).VType in [varEmpty, varNull];
+end;
+
+function VarArrayLength(const value: Variant; dim: Integer): Integer;
+var
+  arrayRef: PVarArray;
+  lo, hi: Integer;
+begin
+  arrayRef := VarArrayAsPSafeArray(value);
+  VarResultCheck(SafeArrayGetLBound(arrayRef, dim, lo));
+  VarResultCheck(SafeArrayGetUBound(arrayRef, dim, hi));
+  Result := hi - lo + 1;
 end;
 
 function GetVirtualMethod(const classType: TClass; const index: Integer): Pointer;

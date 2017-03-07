@@ -95,7 +95,6 @@ var
   stream: TStream;
 begin
   stream := TStream(value.AsObject);
-  stream.Position := 0;
   Result := TValue.From<Variant>(StreamToVariant(stream));
 end;
 
