@@ -72,7 +72,7 @@ type
 
   TAttributeClass = class of TCustomAttribute;
 
-{$IFNDEF DELPHIXE_UP}
+{$IFDEF DELPHI2010}
   TThreadID = LongWord;
 
   PNativeInt = ^NativeInt;
@@ -1781,7 +1781,7 @@ type
 
   ENotSupportedException = SysUtils.ENotSupportedException;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   ENotImplementedException = SysUtils.ENotImplemented;
   EInvalidOperationException = SysUtils.EInvalidOpException;
   EArgumentNilException = SysUtils.EArgumentNilException;
@@ -2342,7 +2342,7 @@ type
 
   {$REGION 'Routines'}
 
-{$IFNDEF DELPHIXE_UP}
+{$IFDEF DELPHI2010}
 function SplitString(const s, delimiters: string): TStringDynArray;
 {$ENDIF}
 
@@ -2482,7 +2482,7 @@ uses
 {$ENDIF}
   Spring.Events,
   Spring.ResourceStrings,
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   Spring.ValueConverters,
 {$ENDIF}
   Spring.VirtualClass;
@@ -2490,7 +2490,7 @@ uses
 
 {$REGION 'Routines'}
 
-{$IFNDEF DELPHIXE_UP}
+{$IFDEF DELPHI2010}
 function SplitString(const s, delimiters: string): TStringDynArray;
 var
   splitCount: Integer;
@@ -4720,7 +4720,7 @@ var
   stream: TStream;
   persist: IStreamPersist;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   function TryConvertToVariant(out returnValue: Variant): Boolean;
   begin
     Result := TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value);
@@ -4761,7 +4761,7 @@ begin
     end;
     tkClass:
     begin
-    {$IFDEF DELPHIXE_UP}
+    {$IFNDEF DELPHI2010}
       if TryConvertToVariant(Result) then
         Exit;
     {$ENDIF}
@@ -4790,7 +4790,7 @@ begin
   else
     Exit(AsVariant);
   end;
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   TryConvertToVariant(Result);
 {$ENDIF}
 end;
@@ -5300,7 +5300,7 @@ begin
       {$ENDIF}
     end;
 
-    {$IFDEF DELPHIXE_UP}
+    {$IFNDEF DELPHI2010}
     Result := TValueConverter.Default.TryConvertTo(Self, targetTypeInfo, targetValue);
     {$ELSE}
     Result := False;

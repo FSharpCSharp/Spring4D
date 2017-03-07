@@ -32,7 +32,7 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   Spring.VirtualInterface,
 {$ENDIF}
   Spring.Container.Common,
@@ -54,7 +54,7 @@ type
     function GetOnChanged: ICollectionChangedEvent<TComponentModel>;
   protected
     procedure CheckIsNonGuidInterface(const serviceType: TRttiType);
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     function InternalResolveParams(const method: TRttiMethod;
       const args: TArray<TValue>; paramResolution: TParamResolution): TArray<TValue>;
     procedure InternalRegisterFactory(const model: TComponentModel;
@@ -70,7 +70,7 @@ type
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo;
       const serviceName: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     procedure RegisterFactory(const model: TComponentModel;
       paramResolution: TParamResolution = TParamResolution.ByName); overload;
     procedure RegisterFactory(const model: TComponentModel;
@@ -98,7 +98,7 @@ type
     fKernel: IKernel;
     fModel: TComponentModel;
     constructor Create(const kernel: IKernel; componentType: PTypeInfo);
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     procedure InterceptedBy(const interceptorRef: TInterceptorReference; where: TWhere); overload;
 {$ENDIF}
   public
@@ -139,7 +139,7 @@ type
     function AsDefault: IRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
     function AsFactory(const resolvedServiceName: string;
       paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
@@ -203,7 +203,7 @@ type
 
     function AsCustom<TLifetimeManagerType: class, constructor, ILifetimeManager>: TRegistration<T>;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<T>; overload;
     function AsFactory(const resolvedServiceName: string;
       paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<T>; overload;
@@ -353,7 +353,7 @@ begin
   fDefaultRegistrations.AddOrSetValue(serviceType, model);
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 type
   TVirtualInterfaceHack = class(TInterfacedObject)
   private
@@ -757,7 +757,7 @@ begin
   Result := Self;
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TRegistration.AsFactory(
   paramResolution: TParamResolution): IRegistration;
 begin
@@ -969,7 +969,7 @@ begin
   Result := AsDefault(TypeInfo(TServiceType));
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TRegistration<T>.AsFactory(paramResolution: TParamResolution): TRegistration<T>;
 begin
   fRegistration.AsFactory(paramResolution);

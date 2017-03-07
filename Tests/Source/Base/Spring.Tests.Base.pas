@@ -83,7 +83,7 @@ type
     procedure TearDown; override;
   published
     procedure TestFromVariantSQLTimestamp;
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     procedure TestFromVariantSQLTimestampOffset;
 {$ENDIF}
   end;
@@ -510,7 +510,7 @@ type
     fWideCharValue: WideChar;
     [Default('z')]
     fCharValue: Char;
-  {$IFDEF DELPHIXE_UP}
+  {$IFNDEF DELPHI2010}
     [Managed(TInterfacedObject)]
     fIntfValue: IInterface;
   {$ENDIF}
@@ -3013,7 +3013,7 @@ begin
   CheckEquals(dt, fDateTime.Value);
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 procedure TTestNullableDateTime.TestFromVariantSQLTimestampOffset;
 var
   dt: TDateTime;
@@ -3108,7 +3108,7 @@ begin
   {$ENDIF}
     CheckEquals('y', Char(obj.fWideCharValue));
     CheckEquals('z', Char(obj.fCharValue));
-  {$IFDEF DELPHIXE_UP}
+  {$IFNDEF DELPHI2010}
     CheckNotNull(obj.fIntfValue);
     CheckIs(obj.fIntfValue as TObject, TInterfacedObject);
   {$ENDIF}

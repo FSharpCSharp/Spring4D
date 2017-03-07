@@ -143,7 +143,7 @@ begin
   TType.TryGetInterfaceType(IUnknown, intfType); // Initialize Spring.TType interface map
   intfType := nil;
   TVirtualClasses.Default.GetVirtualClass(TInterfacedObject);
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   TTimeZone.Local.ID;
 {$ENDIF}
   StrToBool('True'); // Initialize StrToBool array cache

@@ -529,7 +529,7 @@ end;
 
 procedure TInterceptorInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 var
   attributes: TArray<InterceptorAttribute>;
   attribute: InterceptorAttribute;

@@ -355,7 +355,7 @@ begin
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   list := TCollections.CreateList<T>;
 {$ELSE}
   list := TList<T>.Create;

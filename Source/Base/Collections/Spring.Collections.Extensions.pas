@@ -758,7 +758,7 @@ type
 implementation
 
 uses
-{$IFNDEF DELPHIXE_UP}
+{$IFDEF DELPHI2010}
   Spring.Collections.Sets,
 {$ENDIF}
   Spring.ResourceStrings;
@@ -825,7 +825,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
 {$ENDIF}
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   Result := TCollections.CreateList<T>;
 {$ELSE}
   Result := TList<T>.Create;
@@ -1501,7 +1501,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     fSet := TCollections.CreateSet<T>(fComparer);
 {$ELSE}
     fSet := THashSet<T>.Create(fComparer);
@@ -1558,7 +1558,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     fSet := TCollections.CreateSet<TKey>(fComparer);
 {$ELSE}
     fSet := THashSet<TKey>.Create(fComparer);
@@ -1681,7 +1681,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     fSet := TCollections.CreateSet<T>(fComparer);
 {$ELSE}
     fSet := THashSet<T>.Create(fComparer);
@@ -1745,7 +1745,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     fSet := TCollections.CreateSet<T>(fComparer);
 {$ELSE}
     fSet := THashSet<T>.Create(fComparer);
@@ -1809,7 +1809,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     fSet := TCollections.CreateSet<T>(fComparer);
 {$ELSE}
     fSet := THashSet<T>.Create(fComparer);
@@ -2206,7 +2206,7 @@ constructor TLookup<TKey, TElement>.TGrouping.Create(const key: TKey);
 begin
   inherited Create;
   fKey := key;
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   fElements := TCollections.CreateList<TElement>;
 {$ELSE}
   fElements := TList<TElement>.Create;
@@ -3088,7 +3088,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     fResult := TCollections.CreateList<T>;
 {$ELSE}
     fResult := TList<T>.Create;

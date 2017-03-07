@@ -433,7 +433,7 @@ type
     function AsDefault: IRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
     function AsFactory(const resolvedServiceName: string;
       paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;

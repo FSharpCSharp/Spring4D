@@ -166,13 +166,13 @@ type
     function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     function Max: T; overload;
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     function Max(const selector: TFunc<T, Integer>): Integer; overload;
 {$ENDIF}
     function Max(const comparer: IComparer<T>): T; overload;
     function Max(const comparer: TComparison<T>): T; overload;
     function Min: T; overload;
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     function Min(const selector: TFunc<T, Integer>): Integer; overload;
 {$ENDIF}
     function Min(const comparer: IComparer<T>): T; overload;
@@ -184,7 +184,7 @@ type
 
     function Reversed: IEnumerable<T>; virtual;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     function Shuffled: IEnumerable<T>; virtual;
 {$ENDIF}
 
@@ -927,7 +927,7 @@ begin
   Result := Max(fComparer);
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TEnumerableBase<T>.Max(const selector: TFunc<T, Integer>): Integer;
 begin
   Result := TEnumerable.Max<T>(Self, selector);
@@ -967,7 +967,7 @@ begin
   Result := Min(fComparer);
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TEnumerableBase<T>.Min(const selector: TFunc<T, Integer>): Integer;
 begin
   Result := TEnumerable.Min<T>(Self, selector);
@@ -1032,7 +1032,7 @@ begin
   Result := TReversedIterator<T>.Create(Self);
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TEnumerableBase<T>.Shuffled: IEnumerable<T>;
 var
   items: TArray<T>;
@@ -1893,7 +1893,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   Result := TCollections.CreateList<T>;
 {$ELSE}
   Result := TList<T>.Create;

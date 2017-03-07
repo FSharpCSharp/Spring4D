@@ -213,7 +213,7 @@ type
     procedure TestStackPeekOrDefault;
     procedure TestStackTryPeek;
     procedure TestStackTryPop;
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     procedure TestStackTrimExcess;
 {$ENDIF}
   end;
@@ -296,7 +296,7 @@ type
     procedure TestQueuePeekOrDefault;
     procedure TestQueueTryDequeue;
     procedure TestQueueTryPeek;
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     procedure TestQueueTrimExcess;
 {$ENDIF}
   end;
@@ -1559,7 +1559,7 @@ begin
   CheckEquals(0, SUT.Count);
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 procedure TTestStackOfInteger.TestStackTrimExcess;
 var
   stack: TStack<Integer>;
@@ -1846,7 +1846,7 @@ begin
   CheckEquals(MaxItems, SUT.PeekOrDefault);
 end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 procedure TTestQueueOfInteger.TestQueueTrimExcess;
 var
   queue: TQueue<Integer>;

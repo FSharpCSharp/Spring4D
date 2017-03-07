@@ -246,7 +246,7 @@ type
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
   end;
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   TFoldedObjectList<T{: class}> = class(TObjectList<TObject>)
   protected
     function GetElementType: PTypeInfo; override;
@@ -269,7 +269,7 @@ type
 {$ENDIF}
 
   TObservableList<T: class> = class(
-    {$IFDEF DELPHIXE_UP}TFoldedObjectList<T>{$ELSE}TObjectList<T>{$ENDIF},
+    {$IFNDEF DELPHI2010}TFoldedObjectList<T>{$ELSE}TObjectList<T>{$ENDIF},
     INotifyPropertyChanged)
   private
     fOnPropertyChanged: IEvent<TPropertyChangedEvent>;
@@ -278,7 +278,7 @@ type
     procedure DoItemPropertyChanged(sender: TObject;
       const eventArgs: IPropertyChangedEventArgs);
     procedure DoPropertyChanged(const propertyName: string);
-    procedure Changed(const value: {$IFDEF DELPHIXE_UP}TObject{$ELSE}T{$ENDIF};
+    procedure Changed(const value: {$IFNDEF DELPHI2010}TObject{$ELSE}T{$ENDIF};
       action: TCollectionChangedAction); override;
   public
     constructor Create; override;
@@ -1330,7 +1330,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
   Result := TCollections.CreateList<T>;
 {$ELSE}
   Result := TList<T>.Create;
@@ -1372,7 +1372,7 @@ end;
 
 {$REGION 'TFoldedObjectList<T>'}
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TFoldedObjectList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
@@ -1384,7 +1384,7 @@ end;
 
 {$REGION 'TFoldedInterfaceList<T>'}
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TFoldedInterfaceList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
@@ -1396,7 +1396,7 @@ end;
 
 {$REGION 'TFoldedSortedObjectList<T>'}
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TFoldedSortedObjectList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
@@ -1408,7 +1408,7 @@ end;
 
 {$REGION 'TFoldedSortedInterfaceList<T>'}
 
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
 function TFoldedSortedInterfaceList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
@@ -1445,13 +1445,13 @@ begin
 end;
 
 procedure TObservableList<T>.Changed(
-  const value: {$IFDEF DELPHIXE_UP}TObject{$ELSE}T{$ENDIF};
+  const value: {$IFNDEF DELPHI2010}TObject{$ELSE}T{$ENDIF};
   action: TCollectionChangedAction);
 var
   notifyPropertyChanged: INotifyPropertyChanged;
   propertyChanged: IEvent<TPropertyChangedEvent>;
 begin
-  if Supports({$IFDEF DELPHIXE_UP}value{$ELSE}PObject(@value)^{$ENDIF},
+  if Supports({$IFNDEF DELPHI2010}value{$ELSE}PObject(@value)^{$ENDIF},
     INotifyPropertyChanged, notifyPropertyChanged) then
   begin
     propertyChanged := notifyPropertyChanged.OnPropertyChanged;

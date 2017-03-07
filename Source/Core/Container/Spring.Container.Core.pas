@@ -137,7 +137,7 @@ type
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo;
       const serviceName: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
-{$IFDEF DELPHIXE_UP}
+{$IFNDEF DELPHI2010}
     procedure RegisterFactory(const model: TComponentModel;
       paramResolution: TParamResolution = TParamResolution.ByName); overload;
     procedure RegisterFactory(const model: TComponentModel;
