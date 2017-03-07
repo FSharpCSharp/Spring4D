@@ -93,16 +93,15 @@ type
   protected
     type
       TBlobStream = class(TMemoryStream)
-      private
+      strict private
         fField: TBlobField;
         fDataSet: TCustomVirtualDataSet;
-        fBuffer: TRecordBuffer;
         fFieldNo: Integer;
         fModified: Boolean;
         fData: Variant;
         fFieldData: Variant;
-      protected
         procedure ReadBlobData;
+      protected
         function Realloc(var NewCapacity: LongInt): Pointer; override;
       public
         constructor Create(Field: TBlobField; Mode: TBlobStreamMode);
@@ -185,6 +184,7 @@ type
     procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag); override;
 
     function InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; virtual;
+    procedure SetFieldData(const field: TField; const buffer: Variant); overload;
 
     property FilterCache: IDictionary<string, Variant> read fFilterCache;
     property IndexList: TIndexList read fIndexList;
@@ -209,8 +209,8 @@ type
     function GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean; virtual;
     function GetFieldData(Field: TField; {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer): Boolean; override;
     function GetFieldData(Field: TField; {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
-    procedure SetFieldData(Field: TField; Buffer: TValueBuffer); override;
-    procedure SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean); override;
+    procedure SetFieldData(Field: TField; Buffer: TValueBuffer); overload; override;
+    procedure SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean); overload; override;
 
     /// <summary>
     ///   Represents current cursor index in the dataset.
@@ -1447,6 +1447,34 @@ begin
     DataEvent(deFieldChange, NativeInt(Field));
 end;
 
+procedure TCustomVirtualDataSet.SetFieldData(const field: TField;
+  const buffer: Variant);
+var
+  recBuf: TRecordBuffer;
+begin
+  if not (State in dsWriteModes) then
+    DatabaseError(SNotEditing, Self);
+
+  GetActiveRecBuf(recBuf);
+
+  if field.FieldNo > 0 then
+  begin
+    if ReadOnly and not(State in [dsSetKey, dsFilter]) then
+      DatabaseErrorFmt(SFieldReadOnly, [field.DisplayName]);
+
+    if not fModifiedFields.Contains(field) then
+    begin
+      PVariantList(fOldValueBuffer + SizeOf(TArrayRecInfo))[field.Index] := field.OldValue;
+      fModifiedFields.Add(field);
+    end;
+  end;
+
+  PVariantList(recBuf + SizeOf(TArrayRecInfo))[field.Index] := buffer;
+
+  if not (State in [dsCalcFields, dsInternalCalc, dsFilter, dsNewValue]) then
+    DataEvent(deFieldChange, NativeInt(field));
+end;
+
 procedure TCustomVirtualDataSet.SetFiltered(Value: Boolean);
 begin
   if Filtered <> Value then
@@ -1510,8 +1538,6 @@ begin
   fDataSet := fField.Dataset as TCustomVirtualDataSet;
   fFieldData := Null;
   fData := Null;
-  if not fDataSet.GetActiveRecBuf(fBuffer) then
-    Exit;
   if Mode <> bmRead then
   begin
     if fField.ReadOnly then
@@ -1528,23 +1554,21 @@ end;
 destructor TCustomVirtualDataSet.TBlobStream.Destroy;
 begin
   if fModified then
-  begin
-    fDataSet.SetFieldData(fField, TValueBuffer(@fData));
-    fField.Modified := True;
-    fDataSet.DataEvent(deFieldChange, NativeInt(fField));
-  end;
+    fDataSet.SetFieldData(fField, fData);
   inherited Destroy;
 end;
 
 procedure TCustomVirtualDataSet.TBlobStream.ReadBlobData;
+var
+  buffer: TBytes;
+  recBuf: TRecordBuffer;
 begin
-{$IFNDEF NEXTGEN}
-{$WARN SYMBOL_DEPRECATED OFF}
-  fDataSet.GetFieldData(fField, @fFieldData, True);
-{$WARN SYMBOL_DEPRECATED ON}
-{$ELSE}
-  raise ENotImplemented.Create('TBlobStream.ReadBlobData');
-{$ENDIF}
+  fFieldData := Null;
+  // Pass empty buffer here to not copy any data
+  // but ensure the record holds valid data.
+  if fDataSet.GetFieldData(fField, buffer, True) then
+    if fDataSet.GetActiveRecBuf(recBuf) then
+      fFieldData := PVariantList(recBuf + SizeOf(TArrayRecInfo))[fField.Index];
   if not VarIsNull(fFieldData) then
   begin
     if VarType(fFieldData) = varOleStr then

@@ -115,6 +115,12 @@ type
     property CustStream: TMemoryStream read GetCustStream write SetCustStream;
   end;
 
+  TCustomerWithStream = class(TCustomer)
+  public
+    [Column('CUSTSTREAM', [], 50, 0, 0, 'Customers stream')]
+    property CustStream;
+  end;
+
   [Entity]
   [Table('PERSONS')]
   TPerson = class
