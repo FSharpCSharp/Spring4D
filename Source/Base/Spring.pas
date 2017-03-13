@@ -1853,6 +1853,7 @@ type
     class function Add(var Target: Integer; Increment: Integer): Integer; overload; static;
     class function Add(var Target: Int64; Increment: Int64): Int64; overload; static;
     class function CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer; overload; static;
+    class function CompareExchange(var Target: Integer; Value: Integer; Comparand: Integer): Integer; overload; static;
     class function CompareExchange(var Target: TObject; Value: TObject; Comparand: TObject): TObject; overload; static; inline;
     class function CompareExchange<T: class>(var Target: T; Value: T; Comparand: T): T; overload; static; inline;
   end;
@@ -6912,6 +6913,13 @@ end;
 class function TInterlocked.CompareExchange(var Target: TObject; Value, Comparand: TObject): TObject;
 begin
   Result := TObject(CompareExchange(Pointer(Target), Pointer(Value), Pointer(Comparand)));
+end;
+
+class function TInterlocked.CompareExchange(var Target: Integer; Value, Comparand: Integer): Integer;
+asm
+  XCHG EAX,EDX
+  XCHG EAX,ECX
+  LOCK CMPXCHG [EDX],ECX
 end;
 
 class function TInterlocked.CompareExchange<T>(var Target: T; Value, Comparand: T): T;

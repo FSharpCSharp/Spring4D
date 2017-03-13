@@ -853,6 +853,64 @@ begin
   fEvent.Invoke(Self);
   CheckFalse(fAInvoked);
   CheckFalse(fBInvoked);
+
+  fEvent.Enabled := False;
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+
+  fEvent.Enabled := True;
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+
+  fEvent.Add(HandlerA);
+  fEvent.Enabled := False;
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+
+  fEvent.Enabled := True;
+  fEvent.Invoke(Self);
+  CheckTrue(fAInvoked);
+  CheckFalse(fBInvoked);
+
+  fAInvoked := False;
+  fEvent.Add(HandlerB);
+  fEvent.Enabled := False;
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+
+  fEvent.Enabled := True;
+  fEvent.Invoke(Self);
+  CheckTrue(fAInvoked);
+  CheckTrue(fBInvoked);
+
+  fAInvoked := False;
+  fBInvoked := False;
+  fEvent.Enabled := False;
+  fEvent.Remove(HandlerA);
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+
+  fEvent.Enabled := True;
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckTrue(fBInvoked);
+
+  fBInvoked := False;
+  fEvent.Enabled := False;
+  fEvent.Remove(HandlerB);
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+
+  fEvent.Enabled := True;
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
 end;
 
 procedure TTestMulticastEvent.TestIssue58;
