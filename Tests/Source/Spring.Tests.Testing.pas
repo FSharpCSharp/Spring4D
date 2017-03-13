@@ -39,6 +39,7 @@ type
   TestCaseAttribute = class(Spring.Testing.TestCaseAttribute)
   public
     constructor Create(x, y, expected: Integer); overload;
+    constructor Create(c: TClass); overload;
   end;
 
   TSelfTest = class(TTestCase)
@@ -58,6 +59,9 @@ type
     [TestCase(1, -2, -1)]
     [TestCase(-1, -2, -3)]
     function TestCustomAttribute(const x, y: Integer): Integer;
+
+    [TestCase(TSelfTest)]
+    procedure TestClass(c: TClass);
   end;
 
   TestData = class
@@ -107,6 +111,11 @@ uses
 
 {$REGION 'TSelfTest'}
 
+procedure TSelfTest.TestClass(c: TClass);
+begin
+  CheckEquals(Self.ClassType, c);
+end;
+
 function TSelfTest.TestCustomAttribute(const x, y: Integer): Integer;
 begin
   Result := x + y;
@@ -136,6 +145,11 @@ end;
 constructor TestCaseAttribute.Create(x, y, expected: Integer);
 begin
   fValues := TArray<TValue>.Create(x, y, expected);
+end;
+
+constructor TestCaseAttribute.Create(c: TClass);
+begin
+  fValues := TArray<TValue>.Create(c);
 end;
 
 {$ENDREGION}

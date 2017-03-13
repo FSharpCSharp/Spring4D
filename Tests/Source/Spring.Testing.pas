@@ -404,6 +404,8 @@ function TTestCase.GetName: string;
         Result := FormatArray(Self);
       tkChar, tkString, tkWChar, tkLString, tkWString, tkUString:
         Result := QuotedStr(value.ToString);
+      tkClassRef:
+        Result := value.AsClass.ClassName;
     else
       Result := value.ToString;
     end;
