@@ -4044,16 +4044,35 @@ end;
 
 function EqualsDynArray2DynArray(const left, right: TValue): Boolean;
 var
-  i: Integer;
+  len, i: Integer;
 begin
   if PPointer(left.GetReferenceToRawData)^ = PPointer(right.GetReferenceToRawData)^ then
     Exit(True);
-  if left.GetArrayLength <> right.GetArrayLength then
+  len := left.GetArrayLength;
+  if len <> right.GetArrayLength then
     Exit(False);
-  for i := 0 to left.GetArrayLength - 1 do
+  for i := 0 to len - 1 do
     if not left.GetArrayElement(i).Equals(right.GetArrayElement(i)) then
       Exit(False);
   Result := True;
+end;
+
+function EqualsSet2Set(const left, right: TValue): Boolean;
+var
+  size: Integer;
+begin
+  size := left.DataSize;
+  if size <> right.DataSize then
+    Exit(False);
+
+  case size of
+    1: Result := TValueData(left).FAsUByte = TValueData(right).FAsUByte;
+    2: Result := TValueData(left).FAsUWord = TValueData(right).FAsUWord;
+    3..4: Result := TValueData(left).FAsULong = TValueData(right).FAsULong;
+    5..8: Result := TValueData(left).FAsUInt64 = TValueData(right).FAsUInt64;
+  else
+    Result := CompareMem(left.GetReferenceToRawData, right.GetReferenceToRawData, size);
+  end;
 end;
 
 {$REGION 'Equals functions'}
@@ -4144,7 +4163,7 @@ const
       // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkString, tkSet, tkClass, tkMethod, tkWChar,
-      EqualsFail, EqualsInt2Int, EqualsFail, EqualsFail, EqualsFail,
+      EqualsFail, EqualsSet2Set, EqualsFail, EqualsFail, EqualsFail,
       // tkLString, tkWString, tkVariant, tkArray, tkRecord,
       EqualsFail, EqualsFail, EqualsFail, EqualsFail, EqualsFail,
       // tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef

@@ -425,6 +425,7 @@ type
     procedure Test_Equals_EnumToEnum_ValuesAreEqual_ReturnsTrue;
 
     procedure Test_Equals_SetToSet_ValuesAreEqual_ReturnsTrue;
+    procedure Test_Equals_SetToSet;
 
     procedure Test_Compare_IntToInt_ValuesAreEqual_ReturnsTrue;
 
@@ -462,6 +463,7 @@ type
     procedure GetNullableValue_ValueIsEmpty_ReturnsEmpty;
 
     procedure ImplicitOperators;
+
   end;
 
   TEnumeration = (teFirst, teSecond, teLast);
@@ -2562,6 +2564,36 @@ end;
 
 
 {$REGION 'TTestValueHelper'}
+
+procedure TTestValueHelper.Test_Equals_SetToSet;
+// Big sets and TValue was broken before
+// see https://quality.embarcadero.com/browse/RSP-13556
+{$IFDEF DELPHIXBERLIN_UP}
+var
+  byteSet: TByteSet;
+begin
+  byteSet := [0..255];
+  fSUT := TValue.From(byteSet);
+  fValue := TValue.From<TByteSet>([0..254]);
+  DoCheckEquals(False);
+  fValue := TValue.From<TByteSet>([0..255]);
+  DoCheckEquals(True);
+{$ELSE}
+begin
+{$ENDIF}
+
+  fSUT := TValue.From<TTestSet1>([x, y, z]);
+  fValue := TValue.From<TTestSet1>([x, z]);
+  DoCheckEquals(False);
+  fValue := TValue.From<TTestSet1>([x..z]);
+  DoCheckEquals(True);
+
+  fSUT := TValue.From<TTestSet2>([a, b, c]);
+  fValue := TValue.From<TTestSet2>([a, c]);
+  DoCheckEquals(False);
+  fValue := TValue.From<TTestSet2>([a..c]);
+  DoCheckEquals(True);
+end;
 
 procedure TTestValueHelper.ConvertStringToFloatFailsForInvalidString;
 var
