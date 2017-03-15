@@ -1620,8 +1620,8 @@ type
   ///   Provides lazy initialization routines.
   /// </summary>
   /// <remarks>
-  ///   The methods are using TInterlocked.CompareExchange to ensure
-  ///   thread-safety when initializing instances.
+  ///   The methods are using AtomicCmpExchange to ensure thread-safety when
+  ///   initializing instances.
   /// </remarks>
   TLazyInitializer = record
   public
@@ -1838,28 +1838,6 @@ type
     function DynArrElType: PPTypeInfo; inline;
 {$ENDIF}
   end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TInterlocked'}
-
-{$IFDEF DELPHI2010}
-  TInterlocked = class sealed
-    class function Increment(var Target: Integer): Integer; overload; static; inline;
-    class function Increment(var Target: Int64): Int64; overload; static; inline;
-    class function Decrement(var Target: Integer): Integer; overload; static; inline;
-    class function Decrement(var Target: Int64): Int64; overload; static; inline;
-    class function Add(var Target: Integer; Increment: Integer): Integer; overload; static;
-    class function Add(var Target: Int64; Increment: Int64): Int64; overload; static;
-    class function CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer; overload; static;
-    class function CompareExchange(var Target: Integer; Value: Integer; Comparand: Integer): Integer; overload; static;
-    class function CompareExchange(var Target: TObject; Value: TObject; Comparand: TObject): TObject; overload; static; inline;
-    class function CompareExchange<T: class>(var Target: T; Value: T; Comparand: T): T; overload; static; inline;
-  end;
-{$ELSE}
-  TInterlocked = SyncObjs.TInterlocked;
-{$ENDIF}
 
   {$ENDREGION}
 
@@ -2474,6 +2452,13 @@ function GetVirtualMethod(const classType: TClass; const index: Integer): Pointe
 
 function GetAbstractError: Pointer;
 
+{$IFNDEF DELPHIXE3_UP}
+function AtomicIncrement(var target: Integer): Integer;
+function AtomicDecrement(var target: Integer): Integer;
+function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer; overload;
+function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): TObject; overload;
+{$ENDIF}
+
   {$ENDREGION}
 
 
@@ -3022,6 +3007,62 @@ function GetAbstractError: Pointer;
 begin
   Result := PPointer(TAbstractObject)^
 end;
+
+{$IFNDEF DELPHIXE3_UP}
+function AtomicIncrement(var target: Integer): Integer;
+asm
+{$IFDEF CPUX86}
+  mov ecx,eax
+  mov eax,1
+  lock xadd [ecx],eax
+  inc eax
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov eax,1
+  lock xadd [rcx],eax
+  inc eax
+{$ENDIF}
+end;
+
+function AtomicDecrement(var target: Integer): Integer;
+asm
+{$IFDEF CPUX86}
+  mov ecx,eax
+  mov eax,-1
+  lock xadd [ecx],eax
+  dec eax
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov eax,-1
+  lock xadd [rcx],eax
+  dec eax
+{$ENDIF}
+end;
+
+function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer;
+asm
+{$IFDEF CPUX86}
+  xchg eax,ecx
+  lock cmpxchg [ecx],edx  
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov rax,r8
+  lock cmpxchg [rcx],edx
+{$ENDIF}
+end;
+
+function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): TObject;
+asm
+{$IFDEF CPUX86}
+  xchg eax,ecx
+  lock cmpxchg [ecx],edx
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov rax,r8
+  lock cmpxchg [rcx],edx
+{$ENDIF}
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -6453,7 +6494,7 @@ begin
   if target = nil then
   begin
     value := T.Create;
-    if TInterlocked.CompareExchange<T>(target, value, nil) <> nil then
+    if AtomicCmpExchange(PPointer(@target)^, PPointer(@value)^, nil) <> nil then
       value.Free;
   end;
   Result := target;
@@ -6473,10 +6514,10 @@ begin
       raise EInvalidOperationException.CreateRes(@SValueFactoryReturnedNil);
     case TType.Kind<T> of
       tkClass:
-        if TInterlocked.CompareExchange(PObject(@target)^, PObject(@value)^, TObject(nil)) <> nil then
+        if AtomicCmpExchange(PPointer(@target)^, PPointer(@value)^, nil) <> nil then
           PObject(@value)^.Free;
       tkInterface:
-        if TInterlocked.CompareExchange(PPointer(@target)^, PPointer(@value)^, nil) = nil then
+        if AtomicCmpExchange(PPointer(@target)^, PPointer(@value)^, nil) <> nil then
           value := Default(T);
     end;
   end;
@@ -6862,85 +6903,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInterlocked'}
-
-{$IFDEF DELPHI2010}
-class function TInterlocked.Add(var Target: Integer; Increment: Integer): Integer;
-asm
-  MOV  ECX,EDX
-  XCHG EAX,EDX
-  LOCK XADD [EDX],EAX
-  ADD  EAX,ECX
-end;
-
-class function TInterlocked.Add(var Target: Int64; Increment: Int64): Int64;
-asm
-  PUSH  EBX
-  PUSH  ESI
-  MOV   ESI,Target
-  MOV   EAX,DWORD PTR [ESI]
-  MOV   EDX,DWORD PTR [ESI+4]
-@@1:
-  MOV   EBX,EAX
-  MOV   ECX,EDX
-  ADD   EBX,LOW Increment
-  ADC   ECX,HIGH Increment
-  LOCK  CMPXCHG8B [ESI]
-  JNZ   @@1
-  ADD   EAX,LOW Increment
-  ADC   EDX,HIGH Increment
-  POP   ESI
-  POP   EBX
-end;
-
-class function TInterlocked.Decrement(var Target: Int64): Int64;
-begin
-  Result := Add(Target, -1);
-end;
-
-class function TInterlocked.Decrement(var Target: Integer): Integer;
-begin
-  Result := Add(Target, -1);
-end;
-
-class function TInterlocked.CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer;
-asm
-  XCHG EAX,EDX
-  XCHG EAX,ECX
-  LOCK CMPXCHG [EDX],ECX
-end;
-
-class function TInterlocked.CompareExchange(var Target: TObject; Value, Comparand: TObject): TObject;
-begin
-  Result := TObject(CompareExchange(Pointer(Target), Pointer(Value), Pointer(Comparand)));
-end;
-
-class function TInterlocked.CompareExchange(var Target: Integer; Value, Comparand: Integer): Integer;
-asm
-  XCHG EAX,EDX
-  XCHG EAX,ECX
-  LOCK CMPXCHG [EDX],ECX
-end;
-
-class function TInterlocked.CompareExchange<T>(var Target: T; Value, Comparand: T): T;
-begin
-  TObject(Pointer(@Result)^) := CompareExchange(TObject(Pointer(@Target)^), TObject(Pointer(@Value)^), TObject(Pointer(@Comparand)^));
-end;
-
-class function TInterlocked.Increment(var Target: Integer): Integer;
-begin
-  Result := Add(Target, 1);
-end;
-
-class function TInterlocked.Increment(var Target: Int64): Int64;
-begin
-  Result := Add(Target, 1);
-end;
-{$ENDIF}
-
-{$ENDREGION}
-
-
 {$REGION 'TEventArgs'}
 
 constructor TEventArgs.Create;
@@ -6993,7 +6955,7 @@ end;
 function TInterfacedCriticalSection._AddRef: Integer;
 begin
 {$IFNDEF AUTOREFCOUNT}
-  Result := TInterlocked.Increment(fRefCount);
+  Result := AtomicIncrement(fRefCount);
 {$ELSE}
   Result := __ObjAddRef;
 {$ENDIF}
@@ -7002,7 +6964,7 @@ end;
 function TInterfacedCriticalSection._Release: Integer;
 begin
 {$IFNDEF AUTOREFCOUNT}
-  Result := TInterlocked.Decrement(fRefCount);
+  Result := AtomicDecrement(fRefCount);
   if Result = 0 then
     Destroy;
 {$ELSE}
@@ -7046,7 +7008,7 @@ begin
   if not Assigned(fCriticalSection) then
   begin
     criticalSection := TInterfacedCriticalSection.Create;
-    if TInterlocked.CompareExchange(Pointer(fCriticalSection),
+    if AtomicCmpExchange(Pointer(fCriticalSection),
       Pointer(criticalSection), nil) = nil then
       Pointer(criticalSection) := nil;
   end;

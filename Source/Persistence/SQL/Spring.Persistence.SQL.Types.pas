@@ -305,7 +305,6 @@ implementation
 
 uses
   StrUtils,
-  SyncObjs,
   SysUtils,
   Spring,
   Spring.Persistence.Core.EntityCache,

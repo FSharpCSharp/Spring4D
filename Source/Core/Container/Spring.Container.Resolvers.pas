@@ -30,7 +30,6 @@ interface
 
 uses
   Rtti,
-  SyncObjs,
   SysUtils,
   Spring,
   Spring.Collections,

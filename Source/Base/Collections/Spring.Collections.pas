@@ -2712,7 +2712,6 @@ implementation
 
 uses
   Character,
-  SyncObjs,
 {$IFDEF DELPHIXE8_UP}
   System.Hash,
 {$ENDIF}

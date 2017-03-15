@@ -69,7 +69,6 @@ type
 implementation
 
 uses
-  SyncObjs,
   SysUtils,
   TypInfo,
   Spring.Container.Injection,
@@ -107,7 +106,7 @@ var
 begin
   for instance in fPerResolveInstances.Values do
     if instance.TryAsType<TInterfacedObject>(interfacedObject) and Assigned(interfacedObject) then
-      TInterlocked.Decrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
+      AtomicDecrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
   inherited Destroy;
 end;
 {$ENDIF}
@@ -132,7 +131,7 @@ begin
   fPerResolveInstances.Add(model, instance);
 {$IFNDEF AUTOREFCOUNT}
   if instance.TryAsType<TInterfacedObject>(interfacedObject) and Assigned(interfacedObject) then
-    TInterlocked.Increment(TInterfacedObjectAccess(interfacedObject).fRefCount);
+    AtomicIncrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
 {$ENDIF}
 end;
 

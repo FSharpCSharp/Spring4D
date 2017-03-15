@@ -222,7 +222,6 @@ implementation
 
 uses
   StrUtils,
-  SyncObjs,
   TypInfo,
   Variants,
   Spring,
@@ -363,7 +362,7 @@ end;
 
 function TDriverConnectionAdapter<T>.GenerateNewID: Integer;
 begin
-  TInterlocked.Increment(fTransationId);
+  AtomicIncrement(fTransationId);
   Result := fTransationId;
 end;
 

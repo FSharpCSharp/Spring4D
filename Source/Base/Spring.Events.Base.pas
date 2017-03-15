@@ -31,7 +31,6 @@ interface
 uses
   Classes,
   Generics.Collections,
-  SyncObjs,
 {$IFDEF MSWINDOWS}
   Windows,
 {$ENDIF}
@@ -212,7 +211,7 @@ begin
       else
         SetLength(fHandlers, i * 2);
     fHandlers[i] := handler;
-    TInterlocked.Increment(fCount);
+    AtomicIncrement(fCount);
     Notify(Self, handler, cnAdded);
   finally
     LockLeave;
@@ -239,7 +238,7 @@ var
   i: Integer;
 begin
   oldItem := fHandlers[index];
-  TInterlocked.Decrement(fCount);
+  AtomicDecrement(fCount);
   for i := index to Count - 1 do
     fHandlers[i] := fHandlers[i + 1];
   fHandlers[Count] := nil;
@@ -328,7 +327,7 @@ begin
   bitMask := Integer(value) shl 31;
   repeat
     oldCount := fCount;
-  until TInterlocked.CompareExchange(fCount, (oldCount or DisabledFlag) xor bitMask, oldCount) = oldCount;
+  until AtomicCmpExchange(fCount, (oldCount or DisabledFlag) xor bitMask, oldCount) = oldCount;
 end;
 
 procedure TEventBase.SetOnChanged(const value: TNotifyEvent);

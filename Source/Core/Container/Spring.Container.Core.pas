@@ -458,7 +458,6 @@ type
 implementation
 
 uses
-  SyncObjs,
   TypInfo,
   Spring.Container.ResourceStrings,
   Spring.Reflection;
@@ -647,12 +646,12 @@ end;
 
 function TValueHolder.TComponentHolder._AddRef: Integer;
 begin
-  Result := TInterlocked.Increment(fRefCount);
+  Result := AtomicIncrement(fRefCount);
 end;
 
 function TValueHolder.TComponentHolder._Release: Integer;
 begin
-  Result := TInterlocked.Decrement(fRefCount);
+  Result := AtomicDecrement(fRefCount);
   if Result = 0 then
     Destroy;
 end;
