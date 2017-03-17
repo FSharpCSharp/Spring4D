@@ -464,6 +464,7 @@ type
 
     procedure ImplicitOperators;
 
+    procedure NullableToString;
   end;
 
   TEnumeration = (teFirst, teSecond, teLast);
@@ -2885,6 +2886,14 @@ begin
   Check(fSUT.TypeInfo = TypeInfo(TDate));
   fSUT := TTime(Time);
   Check(fSUT.TypeInfo = TypeInfo(TTime));
+end;
+
+procedure TTestValueHelper.NullableToString;
+begin
+  fSUT := TValue.From(Nullable<Integer>(42));
+  CheckEqualsString('42', fSUT.ToString);
+  fSUT := TValue.From(Nullable<Integer>(Nullable.Null));
+  CheckEqualsString('(null)', fSUT.ToString);
 end;
 
 procedure TTestValueHelper.TearDown;

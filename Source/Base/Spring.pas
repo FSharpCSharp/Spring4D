@@ -591,7 +591,12 @@ type
     function ToObject: TObject;
 
     /// <summary>
-    ///   Converts stored value to the specified type
+    ///   Returns the string representation of the stored value.
+    /// </summary>
+    function ToString: string;
+
+    /// <summary>
+    ///   Converts stored value to the specified type.
     /// </summary>
     function ToType<T>: T;
 
@@ -4748,6 +4753,22 @@ begin
     Result := AsInterface as TObject
   else
     Result := AsObject;
+end;
+
+type
+  TValueHack = type TValue; // make an alias to access "inherited" ToString
+
+function TValueHelper.ToString: string;
+var
+  value: TValue;
+begin
+  if IsNullable(TypeInfo) then
+    if TryGetNullableValue(value) then
+      Result := value.ToString
+    else
+      Result := '(null)'
+  else
+    Result := TValueHack(Self).ToString;
 end;
 
 function TValueHelper.ToType<T>: T;
