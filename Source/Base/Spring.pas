@@ -868,7 +868,6 @@ type
     class operator Implicit(const value: IEvent<T>): Event<T>;
     class operator Implicit(var value: Event<T>): IEvent<T>;
     class operator Implicit(var value: Event<T>): T;
-    class operator Implicit(const value: T): Event<T>;
   end;
 
   INotifyEvent = IEvent<TNotifyEvent>;
@@ -6854,12 +6853,6 @@ end;
 class operator Event<T>.Implicit(var value: Event<T>): T;
 begin
   Result := value.Invoke;
-end;
-
-class operator Event<T>.Implicit(const value: T): Event<T>;
-begin
-  Result.Clear;
-  Result.Add(value);
 end;
 
 {$ENDREGION}
