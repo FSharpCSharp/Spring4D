@@ -53,7 +53,6 @@ uses
   Spring.Container;
 
 begin
-  CleanupGlobalContainer;
   RegisterTestCases;
   RunRegisteredTests;
   TestFramework.ClearRegistry;

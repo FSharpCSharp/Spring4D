@@ -52,7 +52,7 @@ type
 
   TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
   private
-    fInitialThreadId: Cardinal;
+    fInitialThreadId: TThreadId;
   protected
     fState: Integer;
     fCurrent: T;

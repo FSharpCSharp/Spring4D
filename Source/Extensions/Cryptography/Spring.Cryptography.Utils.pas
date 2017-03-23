@@ -61,7 +61,7 @@ begin
   Result := Result + (x and $000000FF00000000) shr 8;
   Result := Result + (x and $0000FF0000000000) shr 24;
   Result := Result + (x and $00FF000000000000) shr 40;
-  Result := Result + (x and $FF00000000000000) shr 56;
+  Result := Result + Int64((x and $FF00000000000000) shr 56);
 end;
 
 function Rol(x: UInt32; y: Byte): UInt32;
