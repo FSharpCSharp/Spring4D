@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,21 +22,24 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.ResourceStrings;
-
 {$I Spring.inc}
+
+unit Spring.Container.ResourceStrings;
 
 interface
 
 resourcestring
+  SContainerRequiresBuild = 'Container has changed registration information - Build required';
   SMissingGuid = 'Type is missing a guid: %s';
   SMissingInterface = 'Type does not support IInterface: %s';
   SIncompatibleTypes = 'Component type "%s" incompatible with service type "%s".';
-  SUnsupportedFactoryType = 'Type cannot be registered as factory: %s';
+  SUnsupportedFactoryType = 'Type does not contain RTTI: %s';
+  SUnsupportedFactoryMethod = 'Type contains incompatible method: %s, %s';
   SDuplicateServiceName = 'Duplicate service name found: %s';
   SServiceNotFound = 'Service not found: %s';
   SCircularDependencyDetected = 'Circular dependency detected on type: %s';
   SCannotResolveType = 'Cannot resolve type: %s';
+  SCannotResolveTypeNamed = 'Cannot resolve type: %s with name: %s';
   SResolutionStackUnbalanced = 'Resolution stack is unbalanced';
   SNoDefaultFound = 'No default found for type: %s';
   SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor of type: %s';
@@ -45,9 +48,9 @@ resourcestring
   SUnsatisfiedResolutionArgumentCount = 'Unsatisfied resolution argument count.';
   SUnresovableInjection = 'Unresovable injection on type: %s';
   SUnsatisfiedConstructor = 'Unsatisfied constructor on type: %s';
-  SMethodNotFound = 'Method not found: %s';
-  SPropertyNotFound = 'Method not found: %s';
-  SFieldNotFound = 'Field not found: %s';
+  SMethodNotFound = 'Method not found: %s.%s';
+  SPropertyNotFound = 'Property not found: %s.%s';
+  SFieldNotFound = 'Field not found: %s.%s';
   SInjectionTargetNeeded = 'Injection target needed.';
   SUnsatisfiedTarget = 'Unsatisfied target: %s';
   STypeNotFound = 'Type not found: %s';

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Adapters;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Adapters;
 
 interface
 
@@ -43,15 +43,15 @@ type
     function GetOnChanged: IEvent;
 
     procedure Add(const item: TValue);
-    procedure AddRange(const collection: array of TValue); overload;
+    procedure AddRange(const values: array of TValue); overload;
     procedure AddRange(const collection: IEnumerable); overload;
 
     function Remove(const item: TValue): Boolean;
-    procedure RemoveRange(const collection: array of TValue); overload;
+    procedure RemoveRange(const values: array of TValue); overload;
     procedure RemoveRange(const collection: IEnumerable); overload;
 
     function Extract(const item: TValue): TValue; overload;
-    procedure ExtractRange(const collection: array of TValue); overload;
+    procedure ExtractRange(const values: array of TValue); overload;
     procedure ExtractRange(const collection: IEnumerable); overload;
 
     procedure Clear;
@@ -76,7 +76,7 @@ type
     function Add(const item: TValue): Integer;
 
     procedure Insert(index: Integer; const item: TValue);
-    procedure InsertRange(index: Integer; const collection: array of TValue); overload;
+    procedure InsertRange(index: Integer; const values: array of TValue); overload;
     procedure InsertRange(index: Integer; const collection: IEnumerable); overload;
 
     procedure Delete(index: Integer);
@@ -146,6 +146,7 @@ type
     function Peek: TValue;
     function PeekOrDefault: TValue;
     function TryPeek(out item: TValue): Boolean;
+    function TryPop(out item: TValue): Boolean;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
@@ -163,6 +164,7 @@ type
     function Dequeue: TValue;
     function Peek: TValue;
     function PeekOrDefault: TValue;
+    function TryDequeue(out item: TValue): Boolean;
     function TryPeek(out item: TValue): Boolean;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
@@ -217,12 +219,12 @@ begin
   fSource.Add(item.AsType<T>);
 end;
 
-procedure TCollectionAdapter<T>.AddRange(const collection: array of TValue);
+procedure TCollectionAdapter<T>.AddRange(const values: array of TValue);
 var
-  item: TValue;
+  i: Integer;
 begin
-  for item in collection do
-    fSource.Add(item.AsType<T>);
+  for i := Low(values) to High(values) do
+    fSource.Add(values[i].AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.AddRange(const collection: IEnumerable);
@@ -243,12 +245,12 @@ begin
   Result := TValue.From<T>(fSource.Extract(item.AsType<T>));
 end;
 
-procedure TCollectionAdapter<T>.ExtractRange(const collection: array of TValue);
+procedure TCollectionAdapter<T>.ExtractRange(const values: array of TValue);
 var
-  item: TValue;
+  i: Integer;
 begin
-  for item in collection do
-    fSource.Extract(item.AsType<T>);
+  for i := Low(values) to High(values) do
+    fSource.Extract(values[i].AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.ExtractRange(const collection: IEnumerable);
@@ -287,13 +289,13 @@ end;
 function TCollectionAdapter<T>.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
-  if IsEqualGUID(IID, ICollection<T>) then
+  if IID = ICollection<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TCollectionAdapter<T>.Remove(const item: TValue): Boolean;
@@ -301,12 +303,12 @@ begin
   Result := fSource.Remove(item.AsType<T>);
 end;
 
-procedure TCollectionAdapter<T>.RemoveRange(const collection: array of TValue);
+procedure TCollectionAdapter<T>.RemoveRange(const values: array of TValue);
 var
-  item: TValue;
+  i: Integer;
 begin
-  for item in collection do
-    fSource.Remove(item.AsType<T>);
+  for i := Low(values) to High(values) do
+    fSource.Remove(values[i].AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.RemoveRange(
@@ -386,17 +388,17 @@ begin
 end;
 
 procedure TListAdapter<T>.InsertRange(index: Integer;
-  const collection: array of TValue);
+  const values: array of TValue);
 var
-  item: TValue;
+  i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
-  for item in collection do
+  for i := Low(values) to High(values) do
   begin
-    fSource.Insert(index, item.AsType<T>);
+    fSource.Insert(index, values[i].AsType<T>);
     Inc(index);
   end;
 end;
@@ -440,13 +442,13 @@ end;
 
 function TListAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IList<T>) then
+  if IID = IList<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 procedure TListAdapter<T>.Reverse;
@@ -549,13 +551,13 @@ end;
 function TDictionaryAdapter<TKey, T>.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IDictionary<TKey, T>) then
+  if IID = IDictionary<TKey, T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TDictionaryAdapter<TKey, T>.Remove(const key: TValue): Boolean;
@@ -616,13 +618,13 @@ end;
 
 function TStackAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IStack<T>) then
+  if IID = IStack<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TStackAdapter<T>.TryPeek(out item: TValue): Boolean;
@@ -631,7 +633,20 @@ var
 begin
   Result := fSource.TryPeek(value);
   if Result then
-    item := TValue.From<T>(value);
+    item := TValue.From<T>(value)
+  else
+    item := TValue.Empty;
+end;
+
+function TStackAdapter<T>.TryPop(out item: TValue): Boolean;
+var
+  value: T;
+begin
+  Result := fSource.TryPop(value);
+  if Result then
+    item := TValue.From<T>(value)
+  else
+    item := TValue.Empty;
 end;
 
 {$ENDREGION}
@@ -677,13 +692,24 @@ end;
 
 function TQueueAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, IQueue<T>) then
+  if IID = IQueue<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
+end;
+
+function TQueueAdapter<T>.TryDequeue(out item: TValue): Boolean;
+var
+  value: T;
+begin
+  Result := fSource.TryDequeue(value);
+  if Result then
+    item := TValue.From<T>(value)
+  else
+    item := TValue.Empty;
 end;
 
 function TQueueAdapter<T>.TryPeek(out item: TValue): Boolean;
@@ -692,7 +718,9 @@ var
 begin
   Result := fSource.TryPeek(value);
   if Result then
-    item := TValue.From<T>(value);
+    item := TValue.From<T>(value)
+  else
+    item := TValue.Empty;
 end;
 
 {$ENDREGION}
@@ -738,13 +766,13 @@ end;
 
 function THashSetAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IsEqualGUID(IID, ISet<T>) then
+  if IID = ISet<T> then
   begin
     IInterface(obj) := fSource;
     Result := 0;
   end
   else
-    Result := inherited;
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function THashSetAdapter<T>.SetEquals(const other: IEnumerable): Boolean;

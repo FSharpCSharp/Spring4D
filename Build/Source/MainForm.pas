@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -140,7 +140,7 @@ begin
       fBuildEngine.SelectedTasks.Add(task);
     end;
   end;
-  btnBuild.Enabled := not fBuildEngine.SelectedTasks.IsEmpty;
+  btnBuild.Enabled := fBuildEngine.SelectedTasks.Any;
 end;
 
 procedure TfrmMain.mniUncheckAllClick(Sender: TObject);

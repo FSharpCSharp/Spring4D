@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Common;
-
 {$I Spring.inc}
+
+unit Spring.Container.Common;
 
 interface
 
@@ -67,68 +67,104 @@ type
 
   {$REGION 'Lifetime Type & Attributes'}
 
-  ///	<summary>
-  ///	  Lifetime Type Enumeration.
-  ///	</summary>
-  ///	<seealso cref="SingletonAttribute" />
-  ///	<seealso cref="TransientAttribute" />
-  ///	<seealso cref="SingletonPerThreadAttribute" />
-  ///	<seealso cref="PooledAttribute" />
+  /// <summary>
+  ///   Lifetime Type Enumeration.
+  /// </summary>
+  /// <seealso cref="SingletonAttribute" />
+  /// <seealso cref="TransientAttribute" />
+  /// <seealso cref="SingletonPerThreadAttribute" />
+  /// <seealso cref="PooledAttribute" />
   TLifetimeType = (
-    ///	<summary>
-    ///	  Unknown lifetime type.
-    ///	</summary>
+    /// <summary>
+    ///   Unknown lifetime type.
+    /// </summary>
     Unknown,
 
-    ///	<summary>
-    ///	  Single instance.
-    ///	</summary>
+    /// <summary>
+    ///   Single instance.
+    /// </summary>
     Singleton,
 
-    ///	<summary>
-    ///	  Different instances.
-    ///	</summary>
+    /// <summary>
+    ///   Different instances.
+    /// </summary>
     Transient,
 
-    ///	<summary>
-    ///	  Every thread has a single instance.
-    ///	</summary>
+    /// <summary>
+    ///   Once per resolve operation.
+    /// </summary>
+    PerResolve,
+
+    /// <summary>
+    ///   Every thread has a single instance.
+    /// </summary>
     SingletonPerThread,
 
-    ///	<summary>
-    ///	  Instances are transient except that they are recyclable.
-    ///	</summary>
+    /// <summary>
+    ///   Instances are transient except that they are recyclable.
+    /// </summary>
     Pooled,
 
-    ///	<summary>
-    ///	  Customized lifetime type.
-    ///	</summary>
+    /// <summary>
+    ///   Customized lifetime type.
+    /// </summary>
     Custom
   );
 
-  ///	<summary>
-  ///	  Defines if type is using reference counting
-  ///	</summary>
+  /// <summary>
+  ///   Defines if type is using reference counting
+  /// </summary>
   TRefCounting = (
-    ///	<summary>
-    ///	  Container decides (Yes for TInterfacedObject descendants, No for others)
-    ///	</summary>
+    /// <summary>
+    ///   Container decides (Yes for TInterfacedObject descendants, No for
+    ///   others)
+    /// </summary>
     Unknown,
 
-    ///	<summary>
-    ///	  Type is using reference counting
-    ///	</summary>
+    /// <summary>
+    ///   Type is using reference counting
+    /// </summary>
     True,
 
-    ///	<summary>
-    ///	  Type is not using reference counting
-    ///	</summary>
+    /// <summary>
+    ///   Type is not using reference counting
+    /// </summary>
     False
   );
 
-  ///	<summary>
-  ///	  Represents an abstract lifetime attribute class base.
-  ///	</summary>
+  /// <summary>
+  ///   Defines the way an automatic factory resolves the parameters being
+  ///   passed.
+  /// </summary>
+  TParamResolution = (
+
+    /// <summary>
+    ///   Parameters are resolved by their name in the factory method
+    ///   declaration.
+    /// </summary>
+    ByName,
+
+    /// <summary>
+    ///   Parameters are resolved by their type in the factory method
+    ///   declaration.
+    /// </summary>
+    ByType,
+
+    /// <summary>
+    ///   Parameters are being passed as they were passed to the factory
+    ///   method.
+    /// </summary>
+    ByValue
+  );
+
+  TBaseAttribute = class(TCustomAttribute)
+  private
+    constructor Create;
+  end;
+
+  /// <summary>
+  ///   Represents an abstract lifetime attribute class base.
+  /// </summary>
   LifetimeAttributeBase = class abstract(TCustomAttribute)
   private
     fLifetimeType: TLifetimeType;
@@ -145,68 +181,67 @@ type
     property RefCounting: TRefCounting read fRefCounting;
   end;
 
-  ///	<summary>
-  ///	  Applies this attribute when a component shares the single instance.
-  ///	</summary>
-  ///	<remarks>
-  ///	  When this attribute is applied to a component, the shared instance will
-  ///	  be returned whenever get the implementation of a service.
-  ///	</remarks>
-  ///	<example>
-  ///	  <code lang="Delphi">
-  ///	[Singleton]
-  ///	TEmailSender = class(TInterfacedObject, IEmailSender)
-  ///	//...
-  ///	end;
-  ///	  </code>
-  ///	</example>
-  ///	<seealso cref="TransientAttribute" />
-  ///	<seealso cref="SingletonPerThreadAttribute" />
-  ///	<seealso cref="PooledAttribute" />
-  ///	<seealso cref="TLifetimeType" />
+  /// <summary>
+  ///   Applies this attribute when a component shares the single instance.
+  /// </summary>
+  /// <remarks>
+  ///   When this attribute is applied to a component, the shared instance will
+  ///   be returned whenever get the implementation of a service.
+  /// </remarks>
+  /// <example>
+  ///   <code lang="Delphi">[Singleton]
+  /// TEmailSender = class(TInterfacedObject, IEmailSender)
+  /// //...
+  /// end;
+  ///   </code>
+  /// </example>
+  /// <seealso cref="TransientAttribute" />
+  /// <seealso cref="SingletonPerThreadAttribute" />
+  /// <seealso cref="PooledAttribute" />
+  /// <seealso cref="TLifetimeType" />
   SingletonAttribute = class(SingletonAttributeBase)
   public
     constructor Create(refCounting: TRefCounting = TRefCounting.Unknown);
   end;
 
-  ///	<summary>
-  ///	  Represents that a new instance of the component will be created when
-  ///	  requested.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <note type="note">
-  ///	    This attribute is the default option.
-  ///	  </note>
-  ///	</remarks>
-  ///	<seealso cref="SingletonAttribute" />
-  ///	<seealso cref="SingletonPerThreadAttribute" />
-  ///	<seealso cref="PooledAttribute" />
-  ///	<seealso cref="TLifetimeType" />
+  /// <summary>
+  ///   Represents that a new instance of the component will be created when
+  ///   requested.
+  /// </summary>
+  /// <remarks>
+  ///   <note type="note">
+  ///     This attribute is the default option.
+  ///   </note>
+  /// </remarks>
+  /// <seealso cref="SingletonAttribute" />
+  /// <seealso cref="SingletonPerThreadAttribute" />
+  /// <seealso cref="PooledAttribute" />
+  /// <seealso cref="TLifetimeType" />
   TransientAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
   end;
 
-  ///	<summary>
-  ///	  Applies this attribute when a component shares the single instance per
-  ///	  thread.
-  ///	</summary>
-  ///	<seealso cref="SingletonAttribute" />
-  ///	<seealso cref="TransientAttribute" />
-  ///	<seealso cref="PooledAttribute" />
-  ///	<seealso cref="TLifetimeType" />
+  /// <summary>
+  ///   Applies this attribute when a component shares the single instance per
+  ///   thread.
+  /// </summary>
+  /// <seealso cref="SingletonAttribute" />
+  /// <seealso cref="TransientAttribute" />
+  /// <seealso cref="PooledAttribute" />
+  /// <seealso cref="TLifetimeType" />
   SingletonPerThreadAttribute = class(SingletonAttributeBase)
   public
     constructor Create(refCounting: TRefCounting = TRefCounting.Unknown);
   end;
 
-  ///	<summary>
-  ///	  Represents that the target component can be pooled.
-  ///	</summary>
-  ///	<seealso cref="SingletonAttribute" />
-  ///	<seealso cref="TransientAttribute" />
-  ///	<seealso cref="SingletonPerThreadAttribute" />
-  ///	<seealso cref="TLifetimeType" />
+  /// <summary>
+  ///   Represents that the target component can be pooled.
+  /// </summary>
+  /// <seealso cref="SingletonAttribute" />
+  /// <seealso cref="TransientAttribute" />
+  /// <seealso cref="SingletonPerThreadAttribute" />
+  /// <seealso cref="TLifetimeType" />
   PooledAttribute = class(LifetimeAttributeBase)
   private
     fMinPoolsize: Integer;
@@ -215,14 +250,14 @@ type
     constructor Create(minPoolSize, maxPoolSize: Integer);
     property MinPoolsize: Integer read fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize;
-  end {$IFDEF CPUARM}experimental{$ENDIF};
+  end;
 
-  ///	<summary>
-  ///	  Applies the <c>InjectAttribute</c> to injectable instance members of a
-  ///	  class. e.g. constructors, methods, properties and even fields. Also
-  ///	  works on parameters of a method.
-  ///	</summary>
-  ///	<seealso cref="ImplementsAttribute" />
+  /// <summary>
+  ///   Applies the <c>InjectAttribute</c> to injectable instance members of a
+  ///   class. e.g. constructors, methods, properties and even fields. Also
+  ///   works on parameters of a method.
+  /// </summary>
+  /// <seealso cref="ImplementsAttribute" />
   InjectAttribute = class(TCustomAttribute)
   private
     fServiceType: PTypeInfo;
@@ -235,40 +270,49 @@ type
     constructor Create(value: Int64); overload;
     constructor Create(value: Boolean); overload;
     constructor Create(serviceType: PTypeInfo); overload;
-    constructor Create(serviceType: PTypeInfo; const name: string); overload;
+    constructor Create(serviceType: PTypeInfo; const serviceName: string); overload;
     property ServiceType: PTypeInfo read fServiceType;
     property Value: TValue read fValue;
   end;
 
-  ///	<summary>
-  ///	  Applies this attribute to tell the IoC container which service is
-  ///	  implemented by the target component. In addition, a service name can be
-  ///	  specified.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <note type="note">
-  ///	    This attribute can be specified more than once.
-  ///	  </note>
-  ///	</remarks>
-  ///	<example>
-  ///	  <code lang="Delphi">
-  ///	[Implements(TypeInfo(IEmailSender))]
-  ///	TRegularEmailSender = class(TInterfacedObject, IEmailSender)
-  ///	end;
-  ///	[Implements(TypeInfo(IEmailSender), 'mock-email-sender')]
-  ///	TMockEmailSender = class(TInterfacedObject, IEmailSender)
-  ///	end;
-  ///	  </code>
-  ///	</example>
-  ///	<seealso cref="InjectAttribute" />
-  ImplementsAttribute = class(TCustomAttribute)
+  /// <summary>
+  ///   Applies this attribute to tell the IoC container which service is
+  ///   implemented by the target component. In addition, a service name can be
+  ///   specified.
+  /// </summary>
+  /// <remarks>
+  ///   <note type="note">
+  ///     This attribute can be specified more than once.
+  ///   </note>
+  /// </remarks>
+  /// <example>
+  ///   <code lang="Delphi">[Implements(TypeInfo(IEmailSender))]
+  /// TRegularEmailSender = class(TInterfacedObject, IEmailSender)
+  /// end;
+  /// [Implements(TypeInfo(IEmailSender), 'mock-email-sender')]
+  /// TMockEmailSender = class(TInterfacedObject, IEmailSender)
+  /// end;
+  ///   </code>
+  /// </example>
+  /// <seealso cref="InjectAttribute" />
+  ImplementsAttribute = class(TBaseAttribute)
   private
     fServiceType: PTypeInfo;
+    fServiceName: string;
+  public
+    constructor Create(serviceType: PTypeInfo; const serviceName: string = '');
+    property ServiceType: PTypeInfo read fServiceType;
+    property ServiceName: string read fServiceName;
+  end;
+
+  InterceptorAttribute = class(TBaseAttribute)
+  private
+    fInterceptorType: PTypeInfo;
     fName: string;
   public
-    constructor Create(serviceType: PTypeInfo); overload;
-    constructor Create(serviceType: PTypeInfo; const name: string); overload;
-    property ServiceType: PTypeInfo read fServiceType;
+    constructor Create(interceptorType: PTypeInfo); overload;
+    constructor Create(const name: string); overload;
+    property InterceptorType: PTypeInfo read fInterceptorType;
     property Name: string read fName;
   end;
 
@@ -277,64 +321,64 @@ type
 
   {$REGION 'Lifecycle Interfaces'}
 
-  ///	<summary>
-  ///	  Lifecycle interface. If a component implements this interface, the
-  ///	  dependency injection container will invoke the <c>Initialize</c> method
-  ///	  when initiating an instance of the component.
-  ///	</summary>
-  ///	<seealso cref="IStartable" />
-  ///	<seealso cref="IRecyclable" />
-  ///	<seealso cref="IDisposable" />
+  /// <summary>
+  ///   Lifecycle interface. If a component implements this interface, the
+  ///   dependency injection container will invoke the <c>Initialize</c> method
+  ///   when initiating an instance of the component.
+  /// </summary>
+  /// <seealso cref="IStartable" />
+  /// <seealso cref="IRecyclable" />
+  /// <seealso cref="IDisposable" />
   IInitializable = interface
     ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
 
-    ///	<summary>
-    ///	  Initializes the component.
-    ///	</summary>
+    /// <summary>
+    ///   Initializes the component.
+    /// </summary>
     procedure Initialize;
   end;
 
-  ///	<summary>
-  ///	  Lifecycle interface. Represents that the component can be started and
-  ///	  stopped.
-  ///	</summary>
-  ///	<seealso cref="IInitializable" />
-  ///	<seealso cref="IRecyclable" />
-  ///	<seealso cref="IDisposable" />
+  /// <summary>
+  ///   Lifecycle interface. Represents that the component can be started and
+  ///   stopped.
+  /// </summary>
+  /// <seealso cref="IInitializable" />
+  /// <seealso cref="IRecyclable" />
+  /// <seealso cref="IDisposable" />
   IStartable = interface
     ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
     procedure Start;
     procedure Stop;
   end;
 
-  ///	<summary>
-  ///	  Lifecycle interface. Only called for components that belongs to a pool
-  ///	  when the component comes back to the pool.
-  ///	</summary>
-  ///	<seealso cref="IInitializable" />
-  ///	<seealso cref="IStartable" />
-  ///	<seealso cref="IDisposable" />
+  /// <summary>
+  ///   Lifecycle interface. Only called for components that belongs to a pool
+  ///   when the component comes back to the pool.
+  /// </summary>
+  /// <seealso cref="IInitializable" />
+  /// <seealso cref="IStartable" />
+  /// <seealso cref="IDisposable" />
   IRecyclable = interface
     ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
     procedure Recycle;
   end;
 
-  ///	<summary>
-  ///	  Lifecycle interface. If the component implements this interface, all
-  ///	  resources will be deallocate by calling the <c>Dispose</c> method.
-  ///	</summary>
-  ///	<seealso cref="IInitializable" />
-  ///	<seealso cref="IStartable" />
-  ///	<seealso cref="IRecyclable" />
+  /// <summary>
+  ///   Lifecycle interface. If the component implements this interface, all
+  ///   resources will be deallocate by calling the <c>Dispose</c> method.
+  /// </summary>
+  /// <seealso cref="IInitializable" />
+  /// <seealso cref="IStartable" />
+  /// <seealso cref="IRecyclable" />
   IDisposable = interface
     ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
     procedure Dispose;
   end;
 
-  ///	<summary>
-  ///	  Lifecycle interface. Implement this interface on a class that does not
-  ///	  inherit from TInterfacedObject to make it compatible with pooling.
-  ///	</summary>
+  /// <summary>
+  ///   Lifecycle interface. Implement this interface on a class that does not
+  ///   inherit from TInterfacedObject to make it compatible with pooling.
+  /// </summary>
   IRefCounted = interface
     ['{8779F9E7-2311-44AB-94A6-6BADE93551FF}']
     function GetRefCount: Integer;
@@ -347,15 +391,18 @@ type
   {$REGION 'Common Container Interfaces'}
   TActivatorDelegate = reference to function: TValue;
 
+  TWhere = (First, Last);
+
   IRegistration = interface
     ['{94A80249-3C3D-4769-832A-274B1833DA70}']
     function Implements(serviceType: PTypeInfo): IRegistration; overload;
-    function Implements(serviceType: PTypeInfo; const name: string): IRegistration; overload;
+    function Implements(serviceType: PTypeInfo; const serviceName: string): IRegistration; overload;
 
     function DelegateTo(const delegate: TActivatorDelegate): IRegistration; overload;
 
     {$REGION 'Typed Injections'}
 
+    function InjectConstructor: IRegistration; overload;
     function InjectConstructor(const parameterTypes: array of PTypeInfo): IRegistration; overload;
     function InjectProperty(const propertyName: string): IRegistration; overload;
     function InjectMethod(const methodName: string): IRegistration; overload;
@@ -376,14 +423,25 @@ type
     function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
     function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
     function AsTransient: IRegistration;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
+    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration;
+
+    // TODO: refactor
+    function AsCustom(const lifetimeManager: IInterface): IRegistration;
+
+    function PerResolve: IRegistration;
 
     function AsDefault: IRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
-{$IFDEF DELPHIXE_UP}
-    function AsFactory: IRegistration; overload;
-    function AsFactory(const name: string): IRegistration; overload;
+{$IFNDEF DELPHI2010}
+    function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
+    function AsFactory(const resolvedServiceName: string;
+      paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
+
+    function InterceptedBy(interceptorType: PTypeInfo;
+      where: TWhere = TWhere.Last): IRegistration; overload;
+    function InterceptedBy(const name: string;
+      where: TWhere = TWhere.Last): IRegistration; overload;
 {$ENDIF}
   end;
 
@@ -391,7 +449,7 @@ type
     ['{B7F38CF7-872F-4B8E-9593-67ABFD351EF2}']
     function RegisterType(componentType: PTypeInfo): IRegistration; overload;
     function RegisterType(serviceType, componentType: PTypeInfo;
-      const name: string = ''): IRegistration; overload;
+      const serviceName: string = ''): IRegistration; overload;
 
     procedure Build;
   end;
@@ -402,6 +460,13 @@ implementation
 
 
 {$REGION 'Attributes'}
+
+{ TBaseAttribute }
+
+constructor TBaseAttribute.Create;
+begin
+  inherited Create;
+end;
 
 { LifetimeAttributeBase }
 
@@ -464,11 +529,11 @@ begin
   fServiceType := serviceType;
 end;
 
-constructor InjectAttribute.Create(serviceType: PTypeInfo; const name: string);
+constructor InjectAttribute.Create(serviceType: PTypeInfo; const serviceName: string);
 begin
   inherited Create;
   fServiceType := serviceType;
-  fValue := name;
+  fValue := serviceName;
 end;
 
 constructor InjectAttribute.Create(const value: string);
@@ -503,16 +568,25 @@ end;
 
 { ImplementsAttribute }
 
-constructor ImplementsAttribute.Create(serviceType: PTypeInfo);
-begin
-  Create(serviceType, '');
-end;
-
 constructor ImplementsAttribute.Create(serviceType: PTypeInfo;
-  const name: string);
+  const serviceName: string);
 begin
   inherited Create;
   fServiceType := serviceType;
+  fServiceName := serviceName;
+end;
+
+{ InterceptorAttribute }
+
+constructor InterceptorAttribute.Create(interceptorType: PTypeInfo);
+begin
+  inherited Create;
+  fInterceptorType := interceptorType;
+end;
+
+constructor InterceptorAttribute.Create(const name: string);
+begin
+  inherited Create;
   fName := name;
 end;
 

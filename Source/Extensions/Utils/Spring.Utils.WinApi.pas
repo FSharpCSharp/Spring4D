@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,18 +22,19 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<summary>
-///	  Declares some Windows API for the framework.
-///	</summary>
-unit Spring.Utils.WinAPI; // platform;
-
 {$I Spring.inc}
+
+/// <summary>
+///   Declares some Windows API for the framework.
+/// </summary>
+unit Spring.Utils.WinAPI; // platform;
 
 interface
 
 {$IFDEF MSWINDOWS}
 uses
-  Windows, WinSvc;
+  Windows,
+  WinSvc;
 
 const
   VER_NT_WORKSTATION       = $0000001;

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Extensions;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Extensions;
 
 interface
 
@@ -39,52 +39,44 @@ uses
   Spring.Collections.Lists;
 
 type
-  TEmptyEnumerable<T> = class(TEnumerableBase<T>);
-
-  TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
-  protected
-    function GetCurrentNonGeneric: TValue; virtual; abstract;
-    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
-  public
-    function MoveNext: Boolean; virtual;
-    procedure Reset; virtual;
-  end;
-
-  TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
+  TEmptyEnumerable<T> = class(TEnumerableBase<T>)
   private
-    fInitialThreadId: TThreadId;
-  protected
-    fState: Integer;
-    fCurrent: T;
-    const
-      STATE_INITIAL    = -2; // initial state, before GetEnumerator
-      STATE_FINISHED   = -1; // end of enumerator
-      STATE_ENUMERATOR = 0;  // before calling MoveNext
-      STATE_RUNNING    = 1;  // enumeration is running
-  protected
-    function Clone: TIterator<T>; virtual; abstract;
-    function GetCurrent: T;
-    function GetCurrentNonGeneric: TValue; override; final;
+    class var fInstance: IEnumerable<T>;
+    class function GetInstance: IEnumerable<T>; static;
+    constructor Create; reintroduce;
   public
-    constructor Create; override;
-    function GetEnumerator: IEnumerator<T>; override; final;
+    class destructor Destroy;
+    class property Instance: IEnumerable<T> read GetInstance;
   end;
 
-  TArrayIterator<T> = class(TIterator<T>)
+  TArrayIterator<T> = class(TIterator<T>, IReadOnlyList<T>)
   private
     fValues: TArray<T>;
     fIndex: Integer;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
   public
     constructor Create(const values: array of T); overload;
     constructor Create(const values: TArray<T>); overload;
     function Clone: TIterator<T>; override;
     function MoveNext: Boolean; override;
+
+    function GetRange(index, count: Integer): IList<T>;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function ToArray: TArray<T>; override;
   end;
 
-  ///	<summary>
-  ///	  The adapter implementation for
-  ///	  <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />.
-  ///	</summary>
+  /// <summary>
+  ///   The adapter implementation for <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />
+  ///    .
+  /// </summary>
   TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
   private
     type
@@ -102,10 +94,10 @@ type
     property Current: T read GetCurrent;
   end;
 
-  ///	<summary>
-  ///	  The adapter implementation for
-  ///	  <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />.
-  ///	</summary>
+  /// <summary>
+  ///   The adapter implementation for <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
+  ///    .
+  /// </summary>
   TEnumerableAdapter<T> = class(TEnumerableBase<T>)
   private
     type
@@ -117,9 +109,8 @@ type
     function GetEnumerator: IEnumerator<T>; override;
   end;
 
-  TWhereIterator<T> = class(TIterator<T>)
+  TWhereIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fPredicate: TPredicate<T>;
     fEnumerator: IEnumerator<T>;
   public
@@ -129,9 +120,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TWhereIndexIterator<T> = class(TIterator<T>)
+  TWhereIndexIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fPredicate: TFunc<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
     fIndex: Integer;
@@ -142,9 +132,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TSkipIterator<T> = class(TIterator<T>)
+  TSkipIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fCount: Integer;
     fEnumerator: IEnumerator<T>;
     fIndex: Integer;
@@ -154,9 +143,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TSkipWhileIterator<T> = class(TIterator<T>)
+  TSkipWhileIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fPredicate: TPredicate<T>;
     fEnumerator: IEnumerator<T>;
     fYielding: Boolean;
@@ -166,9 +154,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TSkipWhileIndexIterator<T> = class(TIterator<T>)
+  TSkipWhileIndexIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fPredicate: TFunc<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
     fIndex: Integer;
@@ -179,9 +166,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TTakeIterator<T> = class(TIterator<T>)
+  TTakeIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fCount: Integer;
     fEnumerator: IEnumerator<T>;
     fIndex: Integer;
@@ -191,9 +177,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TTakeWhileIterator<T> = class(TIterator<T>)
+  TTakeWhileIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fPredicate: TPredicate<T>;
     fEnumerator: IEnumerator<T>;
     fStopped: Boolean;
@@ -203,9 +188,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TTakeWhileIndexIterator<T> = class(TIterator<T>)
+  TTakeWhileIndexIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fPredicate: TFunc<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
     fIndex: Integer;
@@ -216,9 +200,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TConcatIterator<T> = class(TIterator<T>)
+  TConcatIterator<T> = class(TSourceIterator<T>)
   private
-    fFirst: IEnumerable<T>;
     fSecond: IEnumerable<T>;
     fEnumerator: IEnumerator<T>;
     fFlag: Boolean;
@@ -228,9 +211,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TReversedIterator<T> = class(TIterator<T>)
+  TReversedIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fBuffer: TArray<T>;
     fIndex: Integer;
   public
@@ -239,9 +221,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TDistinctIterator<T> = class(TIterator<T>)
+  TDistinctIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
     fSet: ISet<T>;
     fEnumerator: IEnumerator<T>;
@@ -251,7 +232,23 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TRangeIterator<T{: Integer}> = class(TIterator<T>)
+  TDistinctByIterator<T,TKey> = class(TSourceIterator<T>)
+  private
+    fKeySelector: TFunc<T, TKey>;
+    fComparer: IEqualityComparer<TKey>;
+    fSet: ISet<TKey>;
+    fEnumerator: IEnumerator<T>;
+  public
+    constructor Create(const source: IEnumerable<T>; const keySelector: TFunc<T, TKey>;
+      const comparer: IEqualityComparer<TKey>);
+    function Clone: TIterator<T>; override;
+    function MoveNext: Boolean; override;
+  end;
+
+{$IFDEF DELPHI2010}
+  TRangeIterator = Spring.Collections.Base.TRangeIterator;
+{$ELSE}
+  TRangeIterator = class(TIterator<Integer>)
   private
     fStart: Integer;
     fCount: Integer;
@@ -260,13 +257,15 @@ type
     function GetCount: Integer; override;
   public
     constructor Create(start, count: Integer);
-    function Clone: TIterator<T>; override;
+    function Clone: TIterator<Integer>; override;
     function MoveNext: Boolean; override;
-  end;
 
-  TExceptIterator<T> = class(TIterator<T>)
+    function ToArray: TArray<Integer>; override;
+  end;
+{$ENDIF}
+
+  TExceptIterator<T> = class(TSourceIterator<T>)
   private
-    fFirst: IEnumerable<T>;
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
     fSet: ISet<T>;
@@ -278,9 +277,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TIntersectIterator<T> = class(TIterator<T>)
+  TIntersectIterator<T> = class(TSourceIterator<T>)
   private
-    fFirst: IEnumerable<T>;
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
     fSet: ISet<T>;
@@ -292,9 +290,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TUnionIterator<T> = class(TIterator<T>)
+  TUnionIterator<T> = class(TSourceIterator<T>)
   private
-    fFirst: IEnumerable<T>;
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
     fSet: ISet<T>;
@@ -420,13 +417,8 @@ type
 
       TGroupings = class(TObjectList<TGrouping>)
       protected
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-        procedure Changed(const item: TObject;
-          action: TCollectionChangedAction); override;
-{$ELSE}
         procedure Changed(const item: TGrouping;
           action: TCollectionChangedAction); override;
-{$ENDIF}
       public
         constructor Create; override;
       end;
@@ -641,6 +633,7 @@ type
     fSource: IEnumerable<T>;
   protected
     function GetCount: Integer; override;
+    function GetElementType: PTypeInfo; override;
     function GetEnumerableSorter(
       const next: IEnumerableSorter<T>): IEnumerableSorter<T>; virtual; abstract;
   public
@@ -664,9 +657,8 @@ type
       descending: Boolean = False); overload;
   end;
 
-  TOrderedIterator<T> = class(TIterator<T>)
+  TOrderedIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fComparer: IComparer<T>;
     fValues: TArray<T>;
     fIndex: Integer;
@@ -692,9 +684,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TDefaultIfEmptyIterator<T> = class(TIterator<T>)
+  TDefaultIfEmptyIterator<T> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fDefaultValue: T;
     fEnumerator: IEnumerator<T>;
     fFoundAny: Boolean;
@@ -704,9 +695,8 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TExtremaByIterator<T, TKey> = class(TIterator<T>)
+  TExtremaByIterator<T, TKey> = class(TSourceIterator<T>)
   private
-    fSource: IEnumerable<T>;
     fKeySelector: TFunc<T, TKey>;
     fCompare: TFunc<TKey, TKey, Integer>;
     fResult: IList<T>;
@@ -740,7 +730,7 @@ type
   end;
 
   TRepeatIterator<T> = class(TIterator<T>)
-  public
+  private
     fElement: T;
     fCount: Integer;
     fIndex: Integer;
@@ -752,63 +742,45 @@ type
     function MoveNext: Boolean; override;
   end;
 
+  TAnonymousIterator<T> = class(TIterator<T>)
+  private
+    fCount: TFunc<Integer>;
+    fItems: TFunc<Integer, T>;
+    fIndex: Integer;
+  protected
+    function GetCount: Integer; override;
+  public
+    constructor Create(const count: TFunc<Integer>; const items: TFunc<Integer, T>);
+    function Clone: TIterator<T>; override;
+    function MoveNext: Boolean; override;
+  end;
+
 implementation
 
 uses
-  Classes,
+{$IFDEF DELPHI2010}
   Spring.Collections.Sets,
+{$ENDIF}
   Spring.ResourceStrings;
 
 
-{$REGION 'TIteratorBase<T>' }
+{$REGION 'TEmptyEnumerable<T>'}
 
-function TIteratorBase<T>.MoveNext: Boolean;
-begin
-  Result := False;
-end;
-
-procedure TIteratorBase<T>.Reset;
-begin
-  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TIterator<T>'}
-
-constructor TIterator<T>.Create;
+constructor TEmptyEnumerable<T>.Create;
 begin
   inherited Create;
-  fState := STATE_INITIAL;
-  fInitialThreadId := TThread.CurrentThread.ThreadID;
 end;
 
-function TIterator<T>.GetCurrent: T;
+class destructor TEmptyEnumerable<T>.Destroy;
 begin
-  Result := fCurrent;
+  fInstance := nil;
 end;
 
-function TIterator<T>.GetCurrentNonGeneric: TValue;
+class function TEmptyEnumerable<T>.GetInstance: IEnumerable<T>;
 begin
-  Result := TValue.From<T>(GetCurrent);
-end;
-
-function TIterator<T>.GetEnumerator: IEnumerator<T>;
-var
-  iterator: TIterator<T>;
-begin
-  if (fInitialThreadId = TThread.CurrentThread.ThreadID) and (fState = STATE_INITIAL) then
-  begin
-    fState := STATE_ENUMERATOR;
-    Result := Self;
-  end
-  else
-  begin
-    iterator := Clone;
-    iterator.fState := STATE_ENUMERATOR;
-    Result := iterator;
-  end;
+  if fInstance = nil then
+    fInstance := TEmptyEnumerable<T>.Create;
+  Result := fInstance;
 end;
 
 {$ENDREGION}
@@ -821,15 +793,82 @@ var
   i: Integer;
 begin
   inherited Create;
-  SetLength(fValues, Length(values));
-  for i := Low(values) to High(values) do
-    fValues[i] := values[i];
+  fValues := TArray.Copy<T>(values);
 end;
 
 constructor TArrayIterator<T>.Create(const values: TArray<T>);
 begin
   inherited Create;
   fValues := values;
+end;
+
+function TArrayIterator<T>.GetCount: Integer;
+begin
+  Result := Length(fValues);
+end;
+
+function TArrayIterator<T>.GetItem(index: Integer): T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+{$ENDIF}
+
+  Result := fValues[index];
+end;
+
+function TArrayIterator<T>.GetRange(index, count: Integer): IList<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Length(fValues)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
+{$ENDIF}
+
+{$IFNDEF DELPHI2010}
+  Result := TCollections.CreateList<T>;
+{$ELSE}
+  Result := TList<T>.Create;
+{$ENDIF}
+  Result.Count := count;
+  for i := 0 to count - 1 do
+  begin
+    Result[i] := fValues[index];
+    Inc(index);
+  end;
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, Count);
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, Count - index);
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T; index,
+  count: Integer): Integer;
+{$IFDEF DELPHI2010}
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(fValues)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
+{$ENDIF}
+
+  comparer := EqualityComparer;
+  for i := index to index + count - 1 do
+    if comparer.Equals(fValues[i], item) then
+      Exit(i);
+  Result := -1;
+{$ELSE}
+begin
+  Result := TArray.IndexOf<T>(fValues, item, index, count, EqualityComparer);
+{$ENDIF}
 end;
 
 function TArrayIterator<T>.Clone: TIterator<T>;
@@ -857,6 +896,12 @@ begin
     end;
     fState := STATE_FINISHED;
   end;
+end;
+
+function TArrayIterator<T>.ToArray: TArray<T>;
+begin
+  Result := fValues;
+  SetLength(Result, Length(Result));
 end;
 
 {$ENDREGION}
@@ -1337,13 +1382,13 @@ begin
 {$ENDIF}
 
   inherited Create;
-  fFirst := first;
+  fSource := first;
   fSecond := second;
 end;
 
 function TConcatIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TConcatIterator<T>.Create(fFirst, fSecond);
+  Result := TConcatIterator<T>.Create(fSource, fSecond);
 end;
 
 function TConcatIterator<T>.MoveNext: Boolean;
@@ -1352,7 +1397,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
-    fEnumerator := fFirst.GetEnumerator;
+    fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
   end;
 
@@ -1409,16 +1454,16 @@ begin
   if fState = STATE_ENUMERATOR then
   begin
     fBuffer := fSource.ToArray;
-    fIndex := High(fBuffer);
+    fIndex := Length(fBuffer);
     fState := STATE_RUNNING;
   end;
 
   if fState = STATE_RUNNING then
   begin
-    if (fIndex >= 0) and (fIndex <= Length(fBuffer)) then
+    if fIndex > 0 then
     begin
-      fCurrent := fBuffer[fIndex];
       Dec(fIndex);
+      fCurrent := fBuffer[fIndex];
       Exit(True);
     end;
     fState := STATE_FINISHED;
@@ -1456,7 +1501,11 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFNDEF DELPHI2010}
+    fSet := TCollections.CreateSet<T>(fComparer);
+{$ELSE}
     fSet := THashSet<T>.Create(fComparer);
+{$ENDIF}
     fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
   end;
@@ -1481,9 +1530,67 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TRangeIterator<T>'}
+{$REGION 'TDistinctByIterator<T, TKey>'}
 
-constructor TRangeIterator<T>.Create(start, count: Integer);
+constructor TDistinctByIterator<T, TKey>.Create(const source: IEnumerable<T>;
+  const keySelector: TFunc<T, TKey>; const comparer: IEqualityComparer<TKey>);
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(source), 'source');
+{$ENDIF}
+
+  inherited Create(source.Comparer);
+  fSource := source;
+  fKeySelector := keySelector;
+  fComparer := comparer;
+end;
+
+function TDistinctByIterator<T, TKey>.Clone: TIterator<T>;
+begin
+  Result := TDistinctByIterator<T, TKey>.Create(fSource, fKeySelector, fComparer);
+end;
+
+function TDistinctByIterator<T, TKey>.MoveNext: Boolean;
+var
+  current: T;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+{$IFNDEF DELPHI2010}
+    fSet := TCollections.CreateSet<TKey>(fComparer);
+{$ELSE}
+    fSet := THashSet<TKey>.Create(fComparer);
+{$ENDIF}
+    fEnumerator := fSource.GetEnumerator;
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    while fEnumerator.MoveNext do
+    begin
+      current := fEnumerator.Current;
+      if fSet.Add(fKeySelector(current)) then
+      begin
+        fCurrent := current;
+        Exit(True);
+      end;
+    end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
+    fSet := nil;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRangeIterator'}
+
+{$IFNDEF DELPHI2010}
+constructor TRangeIterator.Create(start, count: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(count >= 0, 'count');
@@ -1495,17 +1602,17 @@ begin
   fCount := count;
 end;
 
-function TRangeIterator<T>.Clone: TIterator<T>;
+function TRangeIterator.Clone: TIterator<Integer>;
 begin
-  Result := TRangeIterator<T>.Create(fStart, fCount);
+  Result := TRangeIterator.Create(fStart, fCount);
 end;
 
-function TRangeIterator<T>.GetCount: Integer;
+function TRangeIterator.GetCount: Integer;
 begin
   Result := fCount;
 end;
 
-function TRangeIterator<T>.MoveNext: Boolean;
+function TRangeIterator.MoveNext: Boolean;
 begin
   Result := False;
 
@@ -1519,13 +1626,23 @@ begin
   begin
     if fIndex < fCount then
     begin
-      PInteger(@fCurrent)^ := fStart + fIndex;
+      fCurrent := fStart + fIndex;
       Inc(fIndex);
       Exit(True);
     end;
     fState := STATE_FINISHED;
   end;
 end;
+
+function TRangeIterator.ToArray: TArray<Integer>;
+var
+  i: Integer;
+begin
+  SetLength(Result, fCount);
+  for i := 0 to fCount - 1 do
+    Result[i] := fStart + i;
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -1546,14 +1663,14 @@ begin
 {$ENDIF}
 
   inherited Create;
-  fFirst := first;
+  fSource := first;
   fSecond := second;
   fComparer := comparer;
 end;
 
 function TExceptIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TExceptIterator<T>.Create(fFirst, fSecond, fComparer);
+  Result := TExceptIterator<T>.Create(fSource, fSecond, fComparer);
 end;
 
 function TExceptIterator<T>.MoveNext: Boolean;
@@ -1564,9 +1681,13 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFNDEF DELPHI2010}
+    fSet := TCollections.CreateSet<T>(fComparer);
+{$ELSE}
     fSet := THashSet<T>.Create(fComparer);
+{$ENDIF}
     fSet.AddRange(fSecond);
-    fEnumerator := fFirst.GetEnumerator;
+    fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
   end;
 
@@ -1606,14 +1727,14 @@ begin
 {$ENDIF}
 
   inherited Create;
-  fFirst := first;
+  fSource := first;
   fSecond := second;
   fComparer := comparer;
 end;
 
 function TIntersectIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TIntersectIterator<T>.Create(fFirst, fSecond, fComparer);
+  Result := TIntersectIterator<T>.Create(fSource, fSecond, fComparer);
 end;
 
 function TIntersectIterator<T>.MoveNext: Boolean;
@@ -1624,9 +1745,13 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFNDEF DELPHI2010}
+    fSet := TCollections.CreateSet<T>(fComparer);
+{$ELSE}
     fSet := THashSet<T>.Create(fComparer);
+{$ENDIF}
     fSet.AddRange(fSecond);
-    fEnumerator := fFirst.GetEnumerator;
+    fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
   end;
 
@@ -1666,14 +1791,14 @@ begin
 {$ENDIF}
 
   inherited Create;
-  fFirst := first;
+  fSource := first;
   fSecond := second;
   fComparer := comparer;
 end;
 
 function TUnionIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TUnionIterator<T>.Create(fFirst, fSecond, fComparer);
+  Result := TUnionIterator<T>.Create(fSource, fSecond, fComparer);
 end;
 
 function TUnionIterator<T>.MoveNext: Boolean;
@@ -1684,8 +1809,12 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFNDEF DELPHI2010}
+    fSet := TCollections.CreateSet<T>(fComparer);
+{$ELSE}
     fSet := THashSet<T>.Create(fComparer);
-    fEnumerator := fFirst.GetEnumerator;
+{$ENDIF}
+    fEnumerator := fSource.GetEnumerator;
     fState := STATE_RUNNING;
   end;
 
@@ -2026,7 +2155,7 @@ end;
 destructor TLookup<TKey, TElement>.Destroy;
 begin
   fGroupingKeys.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TLookup<TKey, TElement>.Contains(const key: TKey): Boolean;
@@ -2065,7 +2194,7 @@ var
 begin
   Result := GetGrouping(key, False);
   if not Assigned(Result) then
-    Result := TEnumerableBase<TElement>.Create;
+    Result := TEmptyEnumerable<TElement>.Instance;
 end;
 
 {$ENDREGION}
@@ -2077,7 +2206,11 @@ constructor TLookup<TKey, TElement>.TGrouping.Create(const key: TKey);
 begin
   inherited Create;
   fKey := key;
+{$IFNDEF DELPHI2010}
+  fElements := TCollections.CreateList<TElement>;
+{$ELSE}
   fElements := TList<TElement>.Create;
+{$ENDIF}
 end;
 
 procedure TLookup<TKey, TElement>.TGrouping.Add(const item: TElement);
@@ -2107,18 +2240,14 @@ end;
 
 constructor TLookup<TKey, TElement>.TGroupings.Create;
 begin
-  inherited Create(False);
+  inherited Create;
+  OwnsObjects := False;
 end;
 
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TObject;
-  action: TCollectionChangedAction);
-{$ELSE}
 procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TGrouping;
   action: TCollectionChangedAction);
-{$ENDIF}
 begin
-  inherited;
+  inherited Changed(item, action);
   case action of
     caAdded: TGrouping(item)._AddRef;
     caRemoved: TGrouping(item)._Release;
@@ -2193,7 +2322,7 @@ end;
 destructor TJoinIterator<TOuter, TInner, TKey, TResult>.Destroy;
 begin
   fLookup.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TJoinIterator<TOuter, TInner, TKey, TResult>.Clone: TIterator<TResult>;
@@ -2287,7 +2416,7 @@ end;
 destructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Destroy;
 begin
   fLookup.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Clone: TIterator<TResult>;
@@ -2600,19 +2729,18 @@ function TEnumerableSorter<T>.Sort(var elements: TArray<T>;
   count: Integer): TIntegerDynArray;
 var
   index: Integer;
-  comparer: IComparer<Integer>;
-  return: array of Integer;
+  comparer: TComparison<Integer>;
 begin
   ComputeKeys(elements, count);
   SetLength(Result, count);
   for index := 0 to count - 1 do
     Result[index] := index;
-  comparer := TComparer<Integer>.Construct(
+  comparer :=
     function(const Left, Right: Integer): Integer
     begin
       Result := CompareKeys(Left, Right);
-    end);
-  TArray.Sort<Integer>(Result, comparer);
+    end;
+  TArray.Sort<Integer>(Result, IComparer<Integer>(PPointer(@comparer)^));
 end;
 
 {$ENDREGION}
@@ -2677,6 +2805,11 @@ end;
 function TOrderedEnumerable<T>.GetCount: Integer;
 begin
   Result := fSource.Count;
+end;
+
+function TOrderedEnumerable<T>.GetElementType: PTypeInfo;
+begin
+  Result := fSource.ElementType;
 end;
 
 function TOrderedEnumerable<T>.GetEnumerator: IEnumerator<T>;
@@ -2780,7 +2913,6 @@ begin
   fComparer := comparer;
   if not Assigned(fComparer) then
     fComparer := fSource.Comparer;
-  fIndex := -1;
 end;
 
 function TOrderedIterator<T>.Clone: TIterator<T>;
@@ -2794,6 +2926,7 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+    fIndex := -1;
     fValues := fSource.ToArray;
     TArray.Sort<T>(fValues, fComparer);
     fState := STATE_RUNNING;
@@ -2955,7 +3088,11 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
+{$IFNDEF DELPHI2010}
+    fResult := TCollections.CreateList<T>;
+{$ELSE}
     fResult := TList<T>.Create;
+{$ENDIF}
     fEnumerator := fSource.GetEnumerator;
     if not fEnumerator.MoveNext then
       raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
@@ -3125,6 +3262,7 @@ begin
   if fState = STATE_ENUMERATOR then
   begin
     fIndex := 0;
+    fState := STATE_RUNNING;
   end;
 
   if fState = STATE_RUNNING then
@@ -3135,6 +3273,51 @@ begin
       fCurrent := fElement;
       Result := True;
     end;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAnonymousIterator<T>'}
+
+constructor TAnonymousIterator<T>.Create(const count: TFunc<Integer>;
+  const items: TFunc<Integer, T>);
+begin
+  inherited Create;
+  fCount := count;
+  fItems := items;
+end;
+
+function TAnonymousIterator<T>.Clone: TIterator<T>;
+begin
+  Result := TAnonymousIterator<T>.Create(fCount, fItems);
+end;
+
+function TAnonymousIterator<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TAnonymousIterator<T>.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fIndex := -1;
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    if fIndex < fCount then
+    begin
+      Inc(fIndex);
+      fCurrent := fItems(fIndex);
+      Exit(True);
+    end;
+    fState := STATE_FINISHED;
   end;
 end;
 

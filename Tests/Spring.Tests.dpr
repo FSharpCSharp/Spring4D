@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -31,7 +31,7 @@ program Spring.Tests;
 uses
   Spring.TestBootstrap in 'Source\Spring.TestBootstrap.pas',
   TestFramework,
-  FinalBuilder.XMLTestRunner in 'Source\FinalBuilder.XMLTestRunner.pas',
+  Spring.Testing in 'Source\Spring.Testing.pas',
   Spring.TestRegistration in 'Source\Spring.TestRegistration.pas',
   Spring.TestRunner in 'Source\Spring.TestRunner.pas',
   Spring.TestUtils in 'Source\Spring.TestUtils.pas',
@@ -41,14 +41,24 @@ uses
   Spring.Tests.DesignPatterns in 'Source\Base\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in 'Source\Base\Spring.Tests.Helpers.pas',
   Spring.Tests.Reflection in 'Source\Base\Spring.Tests.Reflection.pas',
-  Spring.Tests.Reflection.ValueConverters in 'Source\Base\Spring.Tests.Reflection.ValueConverters.pas',
+  Spring.Tests.ValueConverters in 'Source\Base\Spring.Tests.ValueConverters.pas',
   Spring.Tests.SystemUtils in 'Source\Base\Spring.Tests.SystemUtils.pas',
+  Spring.Tests.Logging in 'Source\Base\Spring.Tests.Logging.pas',
+  Spring.Tests.Logging.Serializers in 'Source\Base\Spring.Tests.Logging.Serializers.pas',
+  Spring.Tests.Logging.Types in 'Source\Base\Spring.Tests.Logging.Types.pas',
   Spring.Tests.Container.Components in 'Source\Core\Spring.Tests.Container.Components.pas',
   Spring.Tests.Container.Interfaces in 'Source\Core\Spring.Tests.Container.Interfaces.pas',
   Spring.Tests.Container.LifetimeManager in 'Source\Core\Spring.Tests.Container.LifetimeManager.pas',
   Spring.Tests.Container in 'Source\Core\Spring.Tests.Container.pas',
+  Spring.Tests.Container.Logging in 'Source\Core\Spring.Tests.Container.Logging.pas',
+{$IFNDEF DELPHI2010}
+  Spring.Tests.Interception in 'Source\Core\Spring.Tests.Interception.pas',
+  Spring.Tests.Interception.Types in 'Source\Core\Spring.Tests.Interception.Types.pas',
+  Spring.Tests.Mocking in 'Source\Core\Spring.Tests.Mocking.pas',
+{$ENDIF}
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in 'Source\Extensions\Spring.Tests.Cryptography.pas',
+  Spring.Tests.Testing in 'Source\Spring.Tests.Testing.pas',
   Spring.Tests.Utils in 'Source\Extensions\Spring.Tests.Utils.pas',
   Spring.Container;
 

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,59 +22,28 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections.Lists;
-
 {$I Spring.inc}
+
+unit Spring.Collections.Lists;
 
 interface
 
 uses
   Classes,
-  Generics.Collections,
   Generics.Defaults,
+  SysUtils,
   Spring,
   Spring.Collections,
   Spring.Collections.Base;
 
 type
-
-{$IFNDEF DELPHIXE3_UP}
-  {$DEFINE SPRING_ARRAYMANAGERS}
-{$ENDIF}
-{$IFDEF DELPHIXE8_UP}
-  {$DEFINE SPRING_ARRAYMANAGERS}
-{$ENDIF}
-
-{$IFDEF SPRING_ARRAYMANAGERS}
-  TArrayManager<T> = class abstract
-    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
-    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
-    procedure Finalize(var AArray: array of T; Index, Count: Integer); overload; virtual; abstract;
-  end;
-
-  TMoveArrayManager<T> = class(TArrayManager<T>)
-    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
-    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
-    procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
-  end;
-
-  {$IFDEF WEAKREF}
-  TManualArrayManager<T> = class(TArrayManager<T>)
-  public
-    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
-    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
-    procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
-  end;
-  {$ENDIF}
-{$ENDIF}
-
-  ///	<summary>
-  ///	  Represents a strongly typed list of elements that can be accessed by
-  ///	  index. Provides methods to search, sort, and manipulate lists.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The type of elements in the list.
-  ///	</typeparam>
+  /// <summary>
+  ///   Represents a strongly typed list of elements that can be accessed by
+  ///   index. Provides methods to search, sort, and manipulate lists.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   The type of elements in the list.
+  /// </typeparam>
   TList<T> = class(TListBase<T>, IArrayAccess<T>)
   private
     type
@@ -92,18 +61,20 @@ type
         function MoveNext: Boolean; override;
         procedure Reset; override;
       end;
-      TArrayOfT = array of T; // Delphi 2010 compatibility
+      TArrayManager = TArrayManager<T>;
   private
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
-    fArrayManager: TArrayManager<T>;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
+    procedure DeleteAllInternal(const predicate: TPredicate<T>;
+      notification: TCollectionChangedAction);
     procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; override;
     function GetCount: Integer; override;
+    function GetIsEmpty: Boolean; override;
     function GetItem(index: Integer): T; override;
     function GetItems: TArray<T>;
     procedure SetCapacity(value: Integer); override;
@@ -111,12 +82,11 @@ type
     procedure SetItem(index: Integer; const value: T); override;
   {$ENDREGION}
 
-    function EnsureCapacity(value: Integer): Integer;
+    procedure EnsureCapacity(capacity: Integer); inline;
+    procedure Grow(capacity: Integer);
   public
-    constructor Create; override;
-    constructor Create(const collection: array of T); override;
+    constructor Create(const values: array of T); override;
     constructor Create(const collection: IEnumerable<T>); override;
-    destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
 
@@ -126,27 +96,33 @@ type
     function IndexOf(const item: T; index, count: Integer): Integer; override;
 
     procedure Insert(index: Integer; const item: T); override;
+    procedure InsertRange(index: Integer; const values: array of T); override;
+    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); override;
 
     procedure Delete(index: Integer); override;
     procedure DeleteRange(index, count: Integer); override;
 
+    procedure RemoveAll(const predicate: TPredicate<T>); override;
+
     function Extract(const item: T): T; override;
+    procedure ExtractAll(const predicate: TPredicate<T>); override;
+    function ExtractAt(index: Integer): T; override;
+
+    function GetRange(index, count: Integer): IList<T>; override;
 
     procedure Exchange(index1, index2: Integer); override;
     procedure Move(currentIndex, newIndex: Integer); override;
 
     procedure Reverse(index, count: Integer); override;
-    procedure Sort(const comparer: IComparer<T>); override;
+    procedure Sort(const comparer: IComparer<T>; index, count: Integer); override;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); override;
+    function MoveTo(const collection: ICollection<T>;
+      const predicate: TPredicate<T>): Integer; override;
     function ToArray: TArray<T>; override;
   end;
 
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-  TObjectList<T: class> = class(TList<TObject>, ICollectionOwnership, IObjectList)
-{$ELSE}
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
-{$ENDIF}
   private
     fOwnsObjects: Boolean;
   {$REGION 'Property Accessors'}
@@ -154,31 +130,13 @@ type
     procedure SetOwnsObjects(const value: Boolean);
   {$ENDREGION}
   protected
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-    function GetElementType: PTypeInfo; override;
-    procedure Changed(const item: TObject; action: TCollectionChangedAction); override;
-{$ELSE}
     procedure Changed(const item: T; action: TCollectionChangedAction); override;
-{$ENDIF}
   public
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
 
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
-  end;
-
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-  TInterfaceList<T: IInterface> = class(TList<IInterface>, IInterfaceList)
-{$ELSE}
-  TInterfaceList<T: IInterface> = class(TList<T>)
-{$ENDIF}
-  protected
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-    function GetElementType: PTypeInfo; override;
-{$ENDIF}
-  public
-    constructor Create(const comparer: IComparer<T>); overload;
   end;
 
   TSortedList<T> = class(TList<T>)
@@ -188,12 +146,32 @@ type
     function Add(const item: T): Integer; override;
     procedure Insert(index: Integer; const item: T); override;
 
+    procedure AddRange(const values: array of T); override;
+    procedure AddRange(const collection: IEnumerable<T>); override;
+
     function Contains(const value: T): Boolean; override;
     function IndexOf(const item: T; index, count: Integer): Integer; override;
     function LastIndexOf(const item: T; index, count: Integer): Integer; override;
 
     procedure Exchange(index1, index2: Integer); override;
     procedure Move(currentIndex, newIndex: Integer); override;
+  end;
+
+  TSortedObjectList<T: class> = class(TSortedList<T>, ICollectionOwnership)
+  private
+    fOwnsObjects: Boolean;
+  {$REGION 'Property Accessors'}
+    function GetOwnsObjects: Boolean;
+    procedure SetOwnsObjects(const value: Boolean);
+  {$ENDREGION}
+  protected
+    procedure Changed(const item: T; action: TCollectionChangedAction); override;
+  public
+    constructor Create; override;
+    constructor Create(ownsObjects: Boolean); overload;
+    constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
+
+    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
   TCollectionList<T: TCollectionItem> = class(TListBase<T>)
@@ -239,103 +217,100 @@ type
     procedure DeleteRange(index, count: Integer); override;
 
     function Extract(const item: T): T; override;
+    function ExtractAt(index: Integer): T; override;
 
     procedure Exchange(index1, index2: Integer); override;
     procedure Move(currentIndex, newIndex: Integer); override;
   end;
 
+  TAnonymousReadOnlyList<T> = class(TEnumerableBase<T>, IReadOnlyList<T>)
+  private
+    fCount: TFunc<Integer>;
+    fItems: TFunc<Integer, T>;
+    fIterator: IEnumerable<T>;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
+  public
+    constructor Create(const count: TFunc<Integer>;
+      const items: TFunc<Integer, T>;
+      const iterator: IEnumerable<T>{$IFDEF DELPHIXE3_UP} = nil{$ENDIF});
+
+    function GetEnumerator: IEnumerator<T>; override;
+
+    function GetRange(index, count: Integer): IList<T>;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+  end;
+
+{$IFNDEF DELPHI2010}
+  TFoldedObjectList<T{: class}> = class(TObjectList<TObject>)
+  protected
+    function GetElementType: PTypeInfo; override;
+  end;
+
+  TFoldedInterfaceList<T{: IInterface}> = class(TList<IInterface>)
+  protected
+    function GetElementType: PTypeInfo; override;
+  end;
+
+  TFoldedSortedObjectList<T{: class}> = class(TSortedObjectList<TObject>)
+  protected
+    function GetElementType: PTypeInfo; override;
+  end;
+
+  TFoldedSortedInterfaceList<T{: IInterface}> = class(TSortedList<IInterface>)
+  protected
+    function GetElementType: PTypeInfo; override;
+  end;
+{$ENDIF}
+
+  TObservableList<T: class> = class(
+    {$IFNDEF DELPHI2010}TFoldedObjectList<T>{$ELSE}TObjectList<T>{$ENDIF},
+    INotifyPropertyChanged)
+  private
+    fOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+    function GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+  protected
+    procedure DoItemPropertyChanged(sender: TObject;
+      const eventArgs: IPropertyChangedEventArgs);
+    procedure DoPropertyChanged(const propertyName: string);
+    procedure Changed(const value: {$IFNDEF DELPHI2010}TObject{$ELSE}T{$ENDIF};
+      action: TCollectionChangedAction); override;
+  public
+    constructor Create; override;
+
+    property OnPropertyChanged: IEvent<TPropertyChangedEvent> read GetOnPropertyChanged;
+  end;
+
 implementation
 
 uses
-  SysUtils,
-  Spring.ResourceStrings;
-
-
-{$REGION 'TMoveArrayManager<T>'}
-
-{$IFDEF SPRING_ARRAYMANAGERS}
-procedure TMoveArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
-begin
-  System.FillChar(AArray[Index], Count * SizeOf(T), 0);
-end;
-
-procedure TMoveArrayManager<T>.Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer);
-begin
-  System.Move(AArray[FromIndex], AArray[ToIndex], Count * SizeOf(T));
-end;
-
-procedure TMoveArrayManager<T>.Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer);
-begin
-  System.Move(FromArray[FromIndex], ToArray[ToIndex], Count * SizeOf(T));
-end;
+{$IFDEF DELPHIXE4}
+  Rtti, // suppress hint about inlining
 {$ENDIF}
-
-{$ENDREGION}
-
-
-{$REGION 'TManualArrayManager<T>'}
-
-{$IF Defined(SPRING_ARRAYMANAGERS) AND Defined(WEAKREF)}
-procedure TManualArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
-begin
-  System.Finalize(AArray[Index], Count);
-  System.FillChar(AArray[Index], Count * SizeOf(T), 0);
-end;
-
-procedure TManualArrayManager<T>.Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer);
-var
-  i: Integer;
-begin
-  if Count > 0 then
-    if FromIndex < ToIndex then
-      for i := Count - 1 downto 0 do
-        AArray[ToIndex + i] := AArray[FromIndex + i]
-    else if FromIndex > ToIndex then
-      for i := 0 to Count - 1 do
-        AArray[ToIndex + i] := AArray[FromIndex + i];
-end;
-
-procedure TManualArrayManager<T>.Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer);
-var
-  i: Integer;
-begin
-  if Count > 0 then
-    if FromIndex < ToIndex then
-      for i := Count - 1 downto 0 do
-        ToArray[ToIndex + i] := FromArray[FromIndex + i]
-    else if FromIndex > ToIndex then
-      for i := 0 to Count - 1 do
-        ToArray[ToIndex + i] := FromArray[FromIndex + i];
-end;
-{$IFEND}
-
-{$ENDREGION}
+  TypInfo,
+  Spring.Collections.Extensions,
+  Spring.Events,
+  Spring.ResourceStrings;
 
 
 {$REGION 'TList<T>'}
 
-constructor TList<T>.Create;
-begin
-  inherited Create;
-{$IFDEF WEAKREF}
-  if HasWeakRef then
-    fArrayManager := TManualArrayManager<T>.Create
-  else
-{$ENDIF}
-    fArrayManager := TMoveArrayManager<T>.Create;
-end;
-
-constructor TList<T>.Create(const collection: array of T);
+constructor TList<T>.Create(const values: array of T);
 var
   i: Integer;
 begin
   Create;
-  fCount := Length(collection);
+  fCount := Length(values);
   if fCount > 0 then
   begin
     SetLength(fItems, fCount);
-    for i := Low(collection) to High(collection) do
-      fItems[i] := collection[i];
+    for i := Low(values) to High(values) do
+      fItems[i] := values[i];
   end;
 end;
 
@@ -354,13 +329,7 @@ begin
     end;
   end
   else
-    inherited;
-end;
-
-destructor TList<T>.Destroy;
-begin
-  inherited Destroy;
-  fArrayManager.Free;
+    inherited Create(collection);
 end;
 
 function TList<T>.GetCount: Integer;
@@ -370,7 +339,19 @@ end;
 
 function TList<T>.GetEnumerator: IEnumerator<T>;
 begin
+{$IFNDEF DELPHI2010}
+  if TType.Kind<T> = tkClass then
+    IEnumerator<TObject>(Result) := TList<TObject>.TEnumerator.Create(TList<TObject>(Self))
+  else
+    Result := TEnumerator.Create(Self);
+{$ELSE}
   Result := TEnumerator.Create(Self);
+{$ENDIF}
+end;
+
+function TList<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
 end;
 
 function TList<T>.GetItem(index: Integer): T;
@@ -387,6 +368,51 @@ begin
   Result := fItems;
 end;
 
+function TList<T>.GetRange(index, count: Integer): IList<T>;
+var
+  list: TList<T>;
+{$IFNDEF DELPHIXE2_UP}
+  i: Integer;
+{$ENDIF}
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
+{$ENDIF}
+
+  list := TList<T>.Create;
+  list.fCount := count;
+{$IFDEF DELPHIXE2_UP}
+  list.fItems := Copy(fItems, index, count);
+{$ELSE}
+  // the compiler passes wrong typeinfo for the generated call
+  // to _DynArrayCopyRange up to XE
+  SetLength(list.fItems, count);
+  for i := 0 to count - 1 do
+  begin
+    list.fItems[i] := fItems[index];
+    Inc(index);
+  end;
+{$ENDIF}
+  Result := list;
+end;
+
+procedure TList<T>.Grow(capacity: Integer);
+var
+  newCapacity: Integer;
+begin
+  newCapacity := Length(fItems);
+  if newCapacity = 0 then
+    newCapacity := capacity
+  else
+    repeat
+      newCapacity := newCapacity * 2;
+      if newCapacity < 0 then
+        OutOfMemoryError;
+    until newCapacity >= capacity;
+  SetCapacity(newCapacity);
+end;
+
 {$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
 procedure TList<T>.IncreaseVersion;
 begin
@@ -395,13 +421,14 @@ end;
 {$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 function TList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+{$IFDEF DELPHI2010}
 var
   comparer: IEqualityComparer<T>;
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
   comparer := EqualityComparer;
@@ -409,6 +436,10 @@ begin
     if comparer.Equals(fItems[i], item) then
       Exit(i);
   Result := -1;
+{$ELSE}
+begin
+  Result := TArray.IndexOf<T>(fItems, item, index, count, EqualityComparer);
+{$ENDIF}
 end;
 
 procedure TList<T>.SetItem(index: Integer; const value: T);
@@ -436,14 +467,86 @@ begin
   EnsureCapacity(fCount + 1);
   if index <> fCount then
   begin
-    fArrayManager.Move(fItems, index, index + 1, fCount - index);
-    fArrayManager.Finalize(fItems, index, 1);
+    TArrayManager.Move(fItems, index, index + 1, fCount - index);
+    TArrayManager.Finalize(fItems, index, 1);
   end;
   fItems[index] := item;
   Inc(fCount);
   IncreaseVersion;
 
   Changed(item, caAdded);
+end;
+
+procedure TList<T>.InsertRange(index: Integer; const values: array of T);
+var
+  count: Integer;
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+{$ENDIF}
+
+  count := Length(values);
+  if count = 0 then
+    Exit;
+
+  EnsureCapacity(fCount + count);
+  if index <> fCount then
+  begin
+    TArrayManager.Move(fItems, index, index + count, fCount - index);
+    TArrayManager.Finalize(fItems, index, count);
+  end;
+
+  if not TType.IsManaged<T>{$IFDEF WEAKREF} and not TType.HasWeakRef<T>{$ENDIF} then
+    System.Move(values[0], fItems[index], count * SizeOf(T))
+  else
+    for i := Low(values) to High(values) do
+      fItems[index + i] := values[i];
+
+  Inc(fCount, count);
+  IncreaseVersion;
+
+  for i := Low(values) to High(values) do
+    Changed(values[i], caAdded);
+end;
+
+procedure TList<T>.InsertRange(index: Integer;
+  const collection: IEnumerable<T>);
+var
+  list: TList<T>;
+  i: Integer;
+begin
+  if collection.AsObject is TList<T> then
+  begin
+{$IFDEF SPRING_ENABLE_GUARD}
+    Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+{$ENDIF}
+
+    list := TList<T>(collection.AsObject);
+    if list.fCount = 0 then
+      Exit;
+
+    EnsureCapacity(fCount + list.fCount);
+    if index <> fCount then
+    begin
+      TArrayManager.Move(fItems, index, index + list.fCount, fCount - index);
+      TArrayManager.Finalize(fItems, index, list.fCount);
+    end;
+
+    if not TType.IsManaged<T>{$IFDEF WEAKREF} and not TType.HasWeakRef<T>{$ENDIF} then
+      System.Move(list.fItems[0], fItems[index], list.fCount * SizeOf(T))
+    else
+      for i := Low(list.fItems) to list.fCount - 1 do
+        fItems[index + i] := list.fItems[i];
+
+    Inc(fCount, list.fCount);
+    IncreaseVersion;
+
+    for i := 0 to list.fCount - 1 do
+      Changed(list.fItems[i], caAdded);
+  end
+  else
+    inherited InsertRange(index, collection);
 end;
 
 procedure TList<T>.DeleteInternal(index: Integer;
@@ -456,8 +559,8 @@ begin
   Dec(fCount);
   if index <> fCount then
   begin
-    fArrayManager.Move(fItems, index + 1, index, fCount - index);
-    fArrayManager.Finalize(fItems, fCount, 1);
+    TArrayManager.Move(fItems, index + 1, index, fCount - index);
+    TArrayManager.Finalize(fItems, fCount, 1);
   end;
   IncreaseVersion;
 
@@ -479,16 +582,16 @@ begin
     Exit;
 
   SetLength(oldItems, count);
-  fArrayManager.Move(fItems, oldItems, index, 0, count);
+  TArrayManager.Move(fItems, oldItems, index, 0, count);
 
   tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
-    fArrayManager.Move(fItems, index + count, index, tailCount);
-    fArrayManager.Finalize(fItems, fCount - count, count);
+    TArrayManager.Move(fItems, index + count, index, tailCount);
+    TArrayManager.Finalize(fItems, fCount - count, count);
   end
   else
-    fArrayManager.Finalize(fItems, index, count);
+    TArrayManager.Finalize(fItems, index, count);
 
   Dec(fCount, count);
   IncreaseVersion;
@@ -497,9 +600,9 @@ begin
     Changed(oldItems[i], caRemoved);
 end;
 
-procedure TList<T>.Sort(const comparer: IComparer<T>);
+procedure TList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
-  TArray.Sort<T>(fItems, comparer, 0, fCount);
+  TArray.Sort<T>(fItems, comparer, index, count);
   IncreaseVersion;
 
   Changed(Default(T), caReseted);
@@ -517,15 +620,39 @@ begin
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
-    fArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
+    TArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
   else
-    fArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
+    TArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
 
-  fArrayManager.Finalize(fItems, newIndex, 1);
+  TArrayManager.Finalize(fItems, newIndex, 1);
   fItems[newIndex] := temp;
   IncreaseVersion;
 
   Changed(temp, caMoved);
+end;
+
+function TList<T>.MoveTo(const collection: ICollection<T>;
+  const predicate: TPredicate<T>): Integer;
+var
+  i: Integer;
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  Result := 0;
+  i := 0;
+  while i < fCount do
+    if not Assigned(predicate) or predicate(fItems[i]) then
+    begin
+      item := fItems[i];
+      DeleteInternal(i, caExtracted);
+      collection.Add(item);
+      Inc(Result);
+    end
+    else
+      Inc(i);
 end;
 
 procedure TList<T>.Clear;
@@ -534,24 +661,12 @@ begin
   Capacity := 0;
 end;
 
-function TList<T>.EnsureCapacity(value: Integer): Integer;
-var
-  newCapacity: Integer;
+procedure TList<T>.EnsureCapacity(capacity: Integer);
 begin
-  newCapacity := Length(fItems);
-  if newCapacity >= value then
-    Exit(newCapacity);
-
-  if newCapacity = 0 then
-    newCapacity := value
-  else
-    repeat
-      newCapacity := newCapacity * 2;
-      if newCapacity < 0 then
-        OutOfMemoryError;
-    until newCapacity >= value;
-  Capacity := newCapacity;
-  Result := newCapacity;
+  if capacity > Length(fItems) then
+    Grow(capacity)
+  else if capacity < 0 then
+    OutOfMemoryError;
 end;
 
 procedure TList<T>.Exchange(index1, index2: Integer);
@@ -577,13 +692,18 @@ begin
   Result := Length(fItems);
 end;
 
+procedure TList<T>.RemoveAll(const predicate: TPredicate<T>);
+begin
+  DeleteAllInternal(predicate, caRemoved);
+end;
+
 procedure TList<T>.Reverse(index, count: Integer);
 var
   temp: T;
   index1, index2: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+  Guard.CheckRange(index >= 0, 'index');
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
@@ -604,8 +724,8 @@ end;
 
 procedure TList<T>.SetCapacity(value: Integer);
 begin
-  if value < Count then
-    DeleteRange(Count - value + 1, Count - value);
+  if value < fCount then
+    DeleteRange(value, fCount - value);
   SetLength(fItems, value);
 end;
 
@@ -631,6 +751,19 @@ begin
   DeleteInternal(index, caRemoved);
 end;
 
+procedure TList<T>.DeleteAllInternal(const predicate: TPredicate<T>;
+  notification: TCollectionChangedAction);
+var
+  index: Integer;
+begin
+  index := 0;
+  while index < fCount do
+    if predicate(fItems[index]) then
+      DeleteInternal(index, notification)
+    else
+      Inc(index);
+end;
+
 function TList<T>.Extract(const item: T): T;
 var
   index: Integer;
@@ -645,13 +778,28 @@ begin
   end;
 end;
 
+function TList<T>.ExtractAt(index: Integer): T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+{$ENDIF}
+
+  Result := fItems[index];
+  DeleteInternal(index, caExtracted);
+end;
+
+procedure TList<T>.ExtractAll(const predicate: TPredicate<T>);
+begin
+  DeleteAllInternal(predicate, caExtracted);
+end;
+
 function TList<T>.Contains(const value: T;
   const comparer: IEqualityComparer<T>): Boolean;
 var
-  index: Integer;
+  i: Integer;
 begin
-  for index := 0 to fCount - 1 do
-    if comparer.Equals(value, fItems[index]) then
+  for i := 0 to fCount - 1 do
+    if comparer.Equals(value, fItems[i]) then
       Exit(True);
   Result := False;
 end;
@@ -734,32 +882,33 @@ end;
 
 constructor TObjectList<T>.Create;
 begin
-  Create(True);
+  inherited Create;
+  fOwnsObjects := True;
 end;
 
 constructor TObjectList<T>.Create(ownsObjects: Boolean);
 begin
-  inherited Create;
+  Create;
   fOwnsObjects := ownsObjects;
 end;
 
 constructor TObjectList<T>.Create(const comparer: IComparer<T>;
   ownsObjects: Boolean);
 begin
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-  inherited Create(IComparer<TObject>(comparer));
-{$ELSE}
   inherited Create(comparer);
-{$ENDIF}
   fOwnsObjects := ownsObjects;
 end;
 
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-function TObjectList<T>.GetElementType: PTypeInfo;
+procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  Result := TypeInfo(T);
-end;
+  inherited Changed(item, action);
+  if OwnsObjects and (action = caRemoved) then
+{$IFNDEF AUTOREFCOUNT}
+    item.Free;
+{$ELSE}
+    item.DisposeOf;
 {$ENDIF}
+end;
 
 function TObjectList<T>.GetOwnsObjects: Boolean;
 begin
@@ -771,42 +920,6 @@ begin
   fOwnsObjects := value;
 end;
 
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-procedure TObjectList<T>.Changed(const item: TObject; action: TCollectionChangedAction);
-{$ELSE}
-procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
-{$ENDIF}
-begin
-  inherited Changed(item, action);
-  if OwnsObjects and (action = caRemoved) then
-{$IFNDEF AUTOREFCOUNT}
-    item.Free;
-{$ELSE}
-    item.DisposeOf;
-{$ENDIF}
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TInterfaceList<T>'}
-
-constructor TInterfaceList<T>.Create(const comparer: IComparer<T>);
-begin
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-  inherited Create(IComparer<IInterface>(comparer));
-{$ELSE}
-  inherited Create(comparer);
-{$ENDIF}
-end;
-
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-function TInterfaceList<T>.GetElementType: PTypeInfo;
-begin
-  Result := TypeInfo(T);
-end;
-{$ENDIF}
-
 {$ENDREGION}
 
 
@@ -814,15 +927,42 @@ end;
 
 function TSortedList<T>.Add(const item: T): Integer;
 begin
-  TArray.BinarySearch<T>(fItems, item, Result, Comparer, 0, Count);
+  Result := fCount;
+  if Result > 0 then
+  begin
+    // If the new item is smaller than the last one in the list ...
+    if fComparer.Compare(item, fItems[Result - 1]) < 0 then
+      // ... search for the correct insertion point
+      TArray.BinarySearch<T>(fItems, item, Result, fComparer, 0, fCount);
+  end;
   inherited Insert(Result, item);
+end;
+
+procedure TSortedList<T>.AddRange(const collection: IEnumerable<T>);
+var
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  for item in collection do
+    Add(item);
+end;
+
+procedure TSortedList<T>.AddRange(const values: array of T);
+var
+  i: Integer;
+begin
+  for i := Low(values) to High(values) do
+    Add(values[i]);
 end;
 
 function TSortedList<T>.Contains(const value: T): Boolean;
 var
   index: Integer;
 begin
-  Result := TArray.BinarySearch<T>(fItems, value, index, Comparer, 0, Count);
+  Result := TArray.BinarySearch<T>(fItems, value, index, fComparer, 0, fCount);
 end;
 
 procedure TSortedList<T>.Exchange(index1, index2: Integer);
@@ -833,11 +973,12 @@ end;
 function TSortedList<T>.IndexOf(const item: T; index, count: Integer): Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
-  TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count);
+  if not TArray.BinarySearch<T>(fItems, item, Result, fComparer, index, count) then
+    Result := -1;
 end;
 
 procedure TSortedList<T>.Insert(index: Integer; const item: T);
@@ -853,8 +994,9 @@ begin
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
 {$ENDIF}
 
-  inherited;
-//  TArray.BinarySearch<T>(fItems, item, Result, fComparer, index - count + 1, count);
+  if not TArray.BinarySearchUpperBound<T>(
+    fItems, item, Result, fComparer, index, count) then
+    Result := -1;
 end;
 
 procedure TSortedList<T>.Move(currentIndex, newIndex: Integer);
@@ -864,8 +1006,52 @@ end;
 
 procedure TSortedList<T>.SetItem(index: Integer; const value: T);
 begin
-  Delete(index);
-  Add(value);
+  raise EInvalidOperationException.Create('SetItem');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedObjectList<T>'}
+
+constructor TSortedObjectList<T>.Create;
+begin
+  Create(True);
+end;
+
+constructor TSortedObjectList<T>.Create(ownsObjects: Boolean);
+begin
+  inherited Create;
+  fOwnsObjects := ownsObjects;
+end;
+
+constructor TSortedObjectList<T>.Create(const comparer: IComparer<T>;
+  ownsObjects: Boolean);
+begin
+  inherited Create(comparer);
+  fOwnsObjects := ownsObjects;
+end;
+
+procedure TSortedObjectList<T>.Changed(const item: T;
+  action: TCollectionChangedAction);
+begin
+  inherited Changed(item, action);
+  if OwnsObjects and (action = caRemoved) then
+{$IFNDEF AUTOREFCOUNT}
+    item.Free;
+{$ELSE}
+    item.DisposeOf;
+{$ENDIF}
+end;
+
+function TSortedObjectList<T>.GetOwnsObjects: Boolean;
+begin
+  Result := fOwnsObjects;
+end;
+
+procedure TSortedObjectList<T>.SetOwnsObjects(const value: Boolean);
+begin
+  fOwnsObjects := value;
 end;
 
 {$ENDREGION}
@@ -884,7 +1070,7 @@ begin
   fCollection := collection;
 end;
 
-destructor TCollectionList<T>.Destroy;
+destructor TCollectionList<T>.Destroy; //FI:W504
 begin
   // not calling inherited because we don't want to call Clear
 end;
@@ -971,6 +1157,16 @@ begin
     Result := T(fCollection.Items[index]);
     DeleteInternal(index, caExtracted);
   end;
+end;
+
+function TCollectionList<T>.ExtractAt(index: Integer): T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+{$ENDIF}
+
+  Result := T(fCollection.Items[index]);
+  DeleteInternal(index, caExtracted);
 end;
 
 function TCollectionList<T>.GetCapacity: Integer;
@@ -1097,6 +1293,176 @@ begin
 
   fIndex := 0;
   fCurrent := Default(T);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAnonymousReadOnlyList<T>'}
+
+constructor TAnonymousReadOnlyList<T>.Create(const count: TFunc<Integer>;
+  const items: TFunc<Integer, T>; const iterator: IEnumerable<T>);
+begin
+  inherited Create;
+  fCount := count;
+  fItems := items;
+  fIterator := iterator;
+  if not Assigned(fIterator) then
+    fIterator := TAnonymousIterator<T>.Create(fCount, fItems);
+end;
+
+function TAnonymousReadOnlyList<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := fIterator.GetEnumerator;
+end;
+
+function TAnonymousReadOnlyList<T>.GetItem(index: Integer): T;
+begin
+  Result := fItems(index);
+end;
+
+function TAnonymousReadOnlyList<T>.GetRange(index, count: Integer): IList<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+{$IFNDEF DELPHI2010}
+  Result := TCollections.CreateList<T>;
+{$ELSE}
+  Result := TList<T>.Create;
+{$ENDIF}
+  Result.Count := count;
+  for i := 0 to count - 1 do
+  begin
+    Result[i] := fItems(index);
+    Inc(index);
+  end;
+end;
+
+function TAnonymousReadOnlyList<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, Count)
+end;
+
+function TAnonymousReadOnlyList<T>.IndexOf(const item: T;
+  index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, Count - index);
+end;
+
+function TAnonymousReadOnlyList<T>.IndexOf(const item: T; index,
+  count: Integer): Integer;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := EqualityComparer;
+  for i := index to index + count - 1 do
+    if comparer.Equals(fItems(i), item) then
+      Exit(i);
+  Result := -1;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedObjectList<T>'}
+
+{$IFNDEF DELPHI2010}
+function TFoldedObjectList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedInterfaceList<T>'}
+
+{$IFNDEF DELPHI2010}
+function TFoldedInterfaceList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedSortedObjectList<T>'}
+
+{$IFNDEF DELPHI2010}
+function TFoldedSortedObjectList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedSortedInterfaceList<T>'}
+
+{$IFNDEF DELPHI2010}
+function TFoldedSortedInterfaceList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TObservableList<T> }
+
+constructor TObservableList<T>.Create;
+begin
+  inherited Create;
+  fOnPropertyChanged := TPropertyChangedEventImpl.Create;
+end;
+
+procedure TObservableList<T>.DoItemPropertyChanged(sender: TObject;
+  const eventArgs: IPropertyChangedEventArgs);
+begin
+  inherited Changed(T(sender), caChanged);
+end;
+
+procedure TObservableList<T>.DoPropertyChanged(const propertyName: string);
+begin
+  if Assigned(fOnPropertyChanged) and fOnPropertyChanged.CanInvoke then
+    fOnPropertyChanged.Invoke(Self,
+      TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
+end;
+
+function TObservableList<T>.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+begin
+  Result := fOnPropertyChanged;
+end;
+
+procedure TObservableList<T>.Changed(
+  const value: {$IFNDEF DELPHI2010}TObject{$ELSE}T{$ENDIF};
+  action: TCollectionChangedAction);
+var
+  notifyPropertyChanged: INotifyPropertyChanged;
+  propertyChanged: IEvent<TPropertyChangedEvent>;
+begin
+  if Supports({$IFNDEF DELPHI2010}value{$ELSE}PObject(@value)^{$ENDIF},
+    INotifyPropertyChanged, notifyPropertyChanged) then
+  begin
+    propertyChanged := notifyPropertyChanged.OnPropertyChanged;
+    case Action of
+      caAdded: propertyChanged.Add(DoItemPropertyChanged);
+      caRemoved, caExtracted: propertyChanged.Remove(DoItemPropertyChanged);
+    end;
+  end;
+
+  inherited Changed(value, action);
+  DoPropertyChanged('Count');
 end;
 
 {$ENDREGION}

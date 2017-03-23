@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.ComponentActivator;
-
 {$I Spring.inc}
+
+unit Spring.Container.ComponentActivator;
 
 interface
 
@@ -34,16 +34,16 @@ uses
   Spring.Container.Core;
 
 type
-  ///	<summary>
-  ///	  Abstract ComponentActivator
-  ///	</summary>
+  /// <summary>
+  ///   Abstract ComponentActivator
+  /// </summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator)
   private
     fKernel: IKernel;
-    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fModel: TComponentModel;
   protected
-    procedure ExecuteInjections(var instance: TValue; context: ICreationContext); overload;
+    procedure ExecuteInjections(var instance: TValue; const context: ICreationContext); overload;
     procedure ExecuteInjections(const instance: TValue;
       const injections: IList<IInjection>; const context: ICreationContext); overload;
     property Kernel: IKernel read fKernel;
@@ -53,9 +53,9 @@ type
     function CreateInstance(const context: ICreationContext): TValue; overload; virtual; abstract;
   end;
 
-  ///	<summary>
-  ///	  Activates an instance by reflection.
-  ///	</summary>
+  /// <summary>
+  ///   Activates an instance by reflection.
+  /// </summary>
   TReflectionComponentActivator = class(TComponentActivatorBase)
   protected
     function SelectEligibleConstructor(
@@ -66,9 +66,9 @@ type
     function CreateInstance(const context: ICreationContext): TValue; override;
   end;
 
-  ///	<summary>
-  ///	  Activates an instance by a TActivatorDelegate delegate.
-  ///	</summary>
+  /// <summary>
+  ///   Activates an instance by a TActivatorDelegate delegate.
+  /// </summary>
   TDelegateComponentActivator = class(TComponentActivatorBase)
   public
     function CreateInstance(const context: ICreationContext): TValue; override;
@@ -79,10 +79,10 @@ implementation
 uses
   Rtti,
   SysUtils,
+  TypInfo,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
-  Spring.Reflection.Activator;
+  Spring.Reflection;
 
 
 {$REGION 'TComponentActivatorBase'}
@@ -98,8 +98,11 @@ begin
 end;
 
 procedure TComponentActivatorBase.ExecuteInjections(var instance: TValue;
-  context: ICreationContext);
+  const context: ICreationContext);
 begin
+  if Model.LifetimeType in [TLifetimeType.Singleton, TLifetimeType.PerResolve,
+    TLifetimeType.SingletonPerThread] then
+    context.AddPerResolve(Model, instance);
   try
     ExecuteInjections(instance, Model.FieldInjections, context);
     ExecuteInjections(instance, Model.PropertyInjections, context);
@@ -132,7 +135,7 @@ begin
   for injection in injections do
   begin
     arguments := Kernel.Resolver.Resolve(
-      context, Model, injection.Dependencies, injection.Arguments);
+      context, injection.Dependencies, injection.Arguments);
     injection.Inject(instance, arguments);
   end;
 end;
@@ -152,7 +155,7 @@ begin
   if injection = nil then
     raise EActivatorException.CreateResFmt(@SUnsatisfiedConstructor, [Model.ComponentTypeName]);
   arguments := Kernel.Resolver.Resolve(
-    context, Model, injection.Dependencies, injection.Arguments);
+    context, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(
     Model.ComponentType.AsInstance, injection.Target.AsMethod, arguments);
   ExecuteInjections(Result, context);
@@ -188,7 +191,7 @@ var
 begin
   Result := context.TryHandle(candidate, injection)
     and Kernel.Resolver.CanResolve(
-    context, Model, injection.Dependencies, injection.Arguments);
+    context, injection.Dependencies, injection.Arguments);
   if Result then
     winner := injection;
 end;

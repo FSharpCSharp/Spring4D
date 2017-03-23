@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.ActivatorExtension;
-
 {$I Spring.inc}
+
+unit Spring.Container.ActivatorExtension;
 
 interface
 
@@ -61,8 +61,7 @@ uses
   Spring.Collections,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Reflection,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TActivatorContainerExtension'}
@@ -109,13 +108,12 @@ begin
   targetType := nil;
 
   candidates := Model.ConstructorInjections.Ordered(
-    TComparer<IInjection>.Construct(
     function(const left, right: IInjection): Integer
     begin
       Result := right.Target.Parent.AncestorCount - left.Target.Parent.AncestorCount;
       if Result = 0 then
         Result := right.DependencyCount - left.DependencyCount;
-    end)).TakeWhile(
+    end).TakeWhile(
     function(const injection: IInjection): Boolean
     begin
       if maxCount = -1 then

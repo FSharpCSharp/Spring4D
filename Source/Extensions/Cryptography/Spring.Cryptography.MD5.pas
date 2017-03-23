@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Cryptography.MD5;
-
 {$I Spring.inc}
+
+unit Spring.Cryptography.MD5;
 
 interface
 
@@ -50,9 +50,9 @@ type
     Buffer  : TMD5Buffer;
   end;
 
-  ///	<summary>
-  ///	  MD5 Hash
-  ///	</summary>
+  /// <summary>
+  ///   MD5 Hash
+  /// </summary>
   TMD5 = class(THashAlgorithmBase, IMD5)
   private
     const fCHashSize = 16 * 8; // 256 bits

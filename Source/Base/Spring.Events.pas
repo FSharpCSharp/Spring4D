@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,30 +22,265 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Events;
-
 {$I Spring.inc}
+{.$DEFINE PUREPASCAL} // remove the dot to use the RTTI version on x86/x64
+
+unit Spring.Events;
 
 interface
 
 uses
   Classes,
   Generics.Collections,
+  Rtti,
   SysUtils,
   Spring,
   Spring.Events.Base,
   TypInfo;
 
 type
-  PMethod = ^TMethod;
+
+  {$REGION 'TEvent'}
+
+  TEvent = class(TEventBase{$IFNDEF PUREPASCAL}, TProc{$ENDIF})
+  private
+    fTypeInfo: PTypeInfo;
+  {$IFDEF PUREPASCAL}
+    fProxy: Pointer;
+  protected
+    procedure InternalInvokeMethod(UserData: Pointer;
+      const Args: TArray<TValue>; out Result: TValue); virtual;
+    procedure InternalInvokeDelegate(Method: TRttiMethod;
+      const Args: TArray<TValue>; out Result: TValue); virtual;
+  {$ELSE}
+    fInvocations: TObject;
+    procedure Invoke;
+  protected
+    procedure InternalInvoke(Params: Pointer; StackSize: Integer); virtual;
+  {$ENDIF}
+    procedure Notify(Sender: TObject; const Item: TMethodPointer;
+      Action: TCollectionNotification); override;
+  public
+    constructor Create(typeInfo: PTypeInfo);
+    destructor Destroy; override;
+  end;
+
+  {$ENDREGION}
 
 
-  {$REGION 'TMethodInvocations'}
+  {$REGION 'TEvent<T>'}
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
-  ///	<summary>
-  ///	  Internal Use.
-  ///	</summary>
+  TEvent<T> = class(TEvent, IEvent<T>)
+  private
+    function GetInvoke: T;
+  public
+    constructor Create;
+
+    procedure Add(handler: T); overload;
+    procedure Remove(handler: T); overload;
+  end;
+
+  IMulticastNotifyEvent = IEvent<TNotifyEvent>;
+
+  TMulticastNotifyEvent = TEvent<TNotifyEvent>;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TNotifyEventImpl'}
+
+  TNotifyEventImpl = class(TEventBase, INotifyEvent)
+  private
+    function GetInvoke: TNotifyEvent;
+    procedure Add(handler: TNotifyEvent);
+    procedure Remove(handler: TNotifyEvent);
+    procedure InternalInvoke(sender: TObject);
+  public
+    constructor Create;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TNotifyEventImpl<T>'}
+
+  TNotifyEventImpl<T> = class(TEventBase, INotifyEvent<T>)
+  private
+    function GetInvoke: TNotifyEvent<T>;
+    procedure Add(handler: TNotifyEvent<T>);
+    procedure Remove(handler: TNotifyEvent<T>);
+    procedure InternalInvoke(sender: TObject; const item: T);
+  public
+    constructor Create;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TPropertyChangedEventImpl'}
+
+  TPropertyChangedEventImpl = class(TEventBase, IPropertyChangedEvent)
+  private
+    function GetInvoke: TPropertyChangedEvent;
+    procedure Add(handler: TPropertyChangedEvent);
+    procedure Remove(handler: TPropertyChangedEvent);
+    procedure InternalInvoke(Sender: TObject;
+      const EventArgs: IPropertyChangedEventArgs);
+  public
+    constructor Create;
+  end;
+
+  {$ENDREGION}
+
+
+implementation
+
+uses
+{$IFDEF PUREPASCAL}
+  Spring.VirtualInterface,
+{$ENDIF}
+  Spring.ResourceStrings;
+
+
+{$REGION 'Proxy generators'}
+
+{$IFDEF PUREPASCAL}
+type
+  TRttiInvokableTypeHelper = class helper for TRttiInvokableType
+  public
+    function CreateImplementation(AUserData: Pointer;
+      const ACallback: TMethodImplementationCallback): TMethodImplementation;
+  end;
+
+  TMethodImplementationHelper = class helper for TMethodImplementation
+    function AsMethod: TMethod;
+  end;
+
+  // this classes is needed to access FParent
+  // it needs to have the exact same fields as System.Rtti.TRttiObject
+  TRttiObjectHack = class abstract
+  protected
+    FHandle: Pointer;
+    FRttiDataSize: Integer;
+    [Weak] FPackage: TRttiPackage;
+    [Weak] FParent: TRttiObject;
+  end;
+
+  // this class is needed to "override" private virtual methods
+  // it needs to have the exact same virtual methods as System.Rtti.TRttiMethod
+  TRttiMethodHack = class(TRttiMember)
+  protected
+    FInvokeInfo: TObject; //TMethodImplementation.TInvokeInfo
+    FType: TRttiInvokableType;
+    function GetMethodKind: TMethodKind; virtual; abstract;
+    function GetCallingConvention: TCallConv; virtual;
+    function GetReturnType: TRttiType; virtual;
+    function GetDispatchKind: TDispatchKind; virtual; abstract;
+    function GetHasExtendedInfo: Boolean; virtual; abstract;
+    function GetVirtualIndex: SmallInt; virtual; abstract;
+    function GetCodeAddress: Pointer; virtual; abstract;
+    function GetIsClassMethod: Boolean; virtual;
+    function GetIsStatic: Boolean; virtual;
+    function DispatchInvoke(Instance: TValue; const Args: array of TValue): TValue; virtual; abstract;
+  public
+    function GetParameters: TArray<TRttiParameter>; virtual;
+  end;
+
+  // this is the class used to create a TMethodImplementation for a
+  // TRttiInvokableType by passing in an instance of TRttiInvokableType
+  // and "overriding" its private virtual methods
+  TRttiInvokableMethod = class(TRttiMethod)
+  private
+    FType: TRttiInvokableType;
+    constructor Create(AType: TRttiInvokableType);
+  end;
+
+  // this class is needed to "override" the destructor of
+  // the TMethodImplementation instances that are created inside of
+  // TRttiMethod.CreateImplementation
+  TMethodImplementationHack = class(TMethodImplementation)
+  public
+    destructor Destroy; override;
+  end;
+
+function TRttiMethodHack.GetCallingConvention: TCallConv;
+begin
+  Result := FType.CallingConvention;
+end;
+
+function TRttiMethodHack.GetIsClassMethod: Boolean;
+begin
+  Result := False;
+end;
+
+function TRttiMethodHack.GetIsStatic: Boolean;
+begin
+  Result := FType is TRttiProcedureType;
+end;
+
+function TRttiMethodHack.GetParameters: TArray<TRttiParameter>;
+begin
+  Result := FType.GetParameters;
+end;
+
+function TRttiMethodHack.GetReturnType: TRttiType;
+begin
+  Result := FType.ReturnType;
+end;
+
+constructor TRttiInvokableMethod.Create(AType: TRttiInvokableType);
+var
+  ctx: TRttiContext;
+begin
+  inherited Create;
+  // GetInvokeInfo need the Parent property
+  TRttiObjectHack(Self).FParent := ctx.GetType(TObject);
+  FType := AType;
+  // change the type of this class to the class that has its private
+  // methods "overridden"
+  PPointer(Self)^ := TRttiMethodHack;
+end;
+
+destructor TMethodImplementationHack.Destroy;
+begin
+  if FInvokeInfo <> nil then
+    FInvokeInfo.Free;
+  inherited Destroy;
+end;
+
+function TRttiInvokableTypeHelper.CreateImplementation(AUserData: Pointer;
+  const ACallback: TMethodImplementationCallback): TMethodImplementation;
+var
+  m: TRttiMethod;
+begin
+  {$WARN CONSTRUCTING_ABSTRACT OFF}
+  m := TRttiInvokableMethod.Create(Self);
+  try
+    // there is no way to directly create a TMethodImplementation instance
+    // because it requires an instance of the private TInvokeInfo class to be
+    // passed which can only be produced by the private method GetInvokeInfo
+
+    // since TRttiInvokableMethod has the necessary private virtual methods
+    // "overridden" it will create the correct TMethodImplementation instance
+    // for the given TRttiInvokableType
+    Result := m.CreateImplementation(Self, ACallback);
+    // "override" the destructor so FInvokeMethod which is not owned by the
+    // TRttiInvokableMethod is properly destroyed at the end
+    PPointer(Result)^ := TMethodImplementationHack;
+  finally
+    m.Free;
+  end;
+end;
+
+function TMethodImplementationHelper.AsMethod: TMethod;
+begin
+  Result.Code := CodeAddress;
+  Result.Data := Self;
+end;
+
+{$ELSE}
+
+type
   TMethodInvocations = class
   private
     const
@@ -90,65 +325,7 @@ type
   public
     constructor Create(methodTypeData: PTypeData; methodInvokeEvent: TMethodInvokeEvent);
   end;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
-  {$ENDREGION}
-
-
-  {$REGION 'TEvent'}
-
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
-  TEvent = class(TEventBase, TProc)
-  private
-    fInvocations: TMethodInvocations;
-    fTypeInfo: PTypeInfo;
-    function Cast(const handler): TMethod;
-    procedure InternalInvoke(Params: Pointer; StackSize: Integer);
-    procedure Invoke;
-  protected
-    procedure Notify(Sender: TObject; const Item: TMethod;
-      Action: TCollectionNotification); override;
-  public
-    constructor Create(typeInfo: PTypeInfo);
-    destructor Destroy; override;
-  end;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
-
-  {$ENDREGION}
-
-
-  {$REGION 'TEvent<T>'}
-
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
-  TEvent<T> = class(TEvent, IEvent<T>)
-  private
-    function GetInvoke: T;
-  public
-    constructor Create;
-
-    procedure Add(handler: T); overload;
-    procedure Remove(handler: T); overload;
-    procedure ForEach(const action: TAction<T>);
-  end;
-
-  IMulticastNotifyEvent = IEvent<TNotifyEvent>;
-
-  TMulticastNotifyEvent = TEvent<TNotifyEvent>;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
-
-  {$ENDREGION}
-
-
-implementation
-
-uses
-  Rtti,
-  Spring.ResourceStrings;
-
-
-{$REGION 'TMethodInfo'}
-
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
 function AdditionalInfoOf(TypeData: PTypeData): Pointer;
 var
   P: PByte;
@@ -165,6 +342,66 @@ begin
     // Skip return type name and info
     Inc(P, P[0] + 1 + 4);
   Result := P;
+end;
+
+procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
+
+  procedure WriteByte(var Dest: PByte; b: Byte);
+  begin
+    Dest[0] := b;
+    Inc(Dest);
+  end;
+
+  procedure WritePackedShortString(var Dest: PByte; const s: string);
+{$IFNDEF NEXTGEN}
+  begin
+    PShortString(Dest)^ := ShortString(s);
+    Inc(Dest, Dest[0] + 1);
+  end;
+{$ELSE}
+  var
+    buffer: TBytes;
+  begin
+    buffer := TEncoding.ANSI.GetBytes(s);
+    if (Length(buffer) > 255) then SetLength(buffer, 255);
+    Dest^ := Length(buffer);
+    Inc(Dest);
+    Move(buffer[0], Dest^, Length(buffer));
+    Inc(Dest, Length(buffer));
+  end;
+{$ENDIF}
+
+  procedure WritePointer(var Dest: PByte; p: Pointer);
+  begin
+    PPointer(Dest)^ := p;
+    Inc(Dest, SizeOf(Pointer));
+  end;
+
+var
+  params: TArray<TRttiParameter>;
+  i: Integer;
+  p: PByte;
+begin
+  TypeData.MethodKind := Method.MethodKind;
+  params := Method.GetParameters;
+  TypeData.ParamCount := Length(params);
+  p := @TypeData.ParamList;
+  for i := Low(params) to High(params) do
+  begin
+    WriteByte(p, Byte(params[i].Flags));
+    WritePackedShortString(p, params[i].Name);
+    WritePackedShortString(p, params[i].ParamType.Name);
+  end;
+  if method.MethodKind = mkFunction then
+  begin
+    WritePackedShortString(p, method.ReturnType.Name);
+    WritePointer(p, method.ReturnType.Handle);
+  end;
+  WriteByte(p, Byte(method.CallingConvention));
+  for i := Low(params) to High(params) do
+  begin
+    WritePointer(p, Pointer(NativeInt(params[i].ParamType.Handle) - SizeOf(Pointer)));
+  end;
 end;
 
 procedure InvokeMethod(const Method: TMethod;
@@ -285,7 +522,7 @@ var
 begin
   P := AdditionalInfoOf(typeData);
   CallConvention := TCallConv(PByte(p)^);
-  ParamInfos := PParameterInfos(Cardinal(P) + 1);
+  ParamInfos := PParameterInfos(UIntPtr(P) + 1);
 
   StackSize := SizeOf(Pointer); // Self in stack
 {$IFNDEF CPUX64}
@@ -333,14 +570,7 @@ begin
     StackSize := 32;
 {$ENDIF}
 end;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
-{$ENDREGION}
-
-
-{$REGION 'TMethodInvocations'}
-
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
 constructor TMethodInvocations.Create(methodTypeData: PTypeData;
   methodInvokeEvent: TMethodInvokeEvent);
 begin
@@ -448,206 +678,310 @@ asm
         ADD     RSP, $28
 end;
 {$ENDIF}
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
+{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TEvent'}
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
-procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
-
-  procedure WriteByte(var Dest: PByte; b: Byte);
-  begin
-    Dest[0] := b;
-    Inc(Dest);
-  end;
-
-  procedure WritePackedShortString(var Dest: PByte; const s: string);
-{$IFNDEF NEXTGEN}
-  begin
-    PShortString(Dest)^ := ShortString(s);
-    Inc(Dest, Dest[0] + 1);
-  end;
-{$ELSE}
-  var
-    buffer: TBytes;
-  begin
-    buffer := TEncoding.ANSI.GetBytes(s);
-    if (Length(buffer) > 255) then SetLength(buffer, 255);
-    Dest^ := Length(buffer);
-    Inc(Dest);
-    Move(buffer[0], Dest^, Length(buffer));
-    Inc(Dest, Length(buffer));
-  end;
-{$ENDIF}
-
-  procedure WritePointer(var Dest: PByte; p: Pointer);
-  begin
-    PPointer(Dest)^ := p;
-    Inc(Dest, SizeOf(Pointer));
-  end;
-
-var
-  params: TArray<TRttiParameter>;
-  i: Integer;
-  p: PByte;
-begin
-  TypeData.MethodKind := Method.MethodKind;
-  params := Method.GetParameters;
-  TypeData.ParamCount := Length(params);
-  p := @TypeData.ParamList;
-  for i := Low(params) to High(params) do
-  begin
-    WriteByte(p, Byte(params[i].Flags));
-    WritePackedShortString(p, params[i].Name);
-    WritePackedShortString(p, params[i].ParamType.Name);
-  end;
-  if method.MethodKind = mkFunction then
-  begin
-    WritePackedShortString(p, method.ReturnType.Name);
-    WritePointer(p, method.ReturnType.Handle);
-  end;
-  WriteByte(p, Byte(method.CallingConvention));
-  for i := Low(params) to High(params) do
-  begin
-    WritePointer(p, Pointer(NativeInt(params[i].ParamType.Handle) - SizeOf(Pointer)));
-  end;
-end;
-
-procedure MethodReferenceToMethodPointer(const AMethodReference; const AMethodPointer);
-type
-  TVtable = array[0..3] of Pointer;
-  PVtable = ^TVtable;
-  PPVtable = ^PVtable;
-begin
-  // 3 is offset of Invoke, after QI, AddRef, Release
-  PMethod(@AMethodPointer).Code := PPVtable(AMethodReference)^^[3];
-  PMethod(@AMethodPointer).Data := Pointer(AMethodReference);
-end;
-
 constructor TEvent.Create(typeInfo: PTypeInfo);
 var
-  typeData: PTypeData;
-  ctx: TRttiContext;
   method: TRttiMethod;
+{$IFNDEF PUREPASCAL}
+  typeData: PTypeData;
+{$ENDIF}
 begin
-  //TODO: If Embt ever adds TRttiMethodType.CreateImplementation this could be done in pure pascal way
-
   fTypeInfo := typeInfo;
   if not Assigned(typeInfo) then
     raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
 
   inherited Create;
 
-  if typeInfo.Kind = tkMethod then
-  begin
-    typeData := GetTypeData(typeInfo);
-    fInvocations := TMethodInvocations.Create(typeData, InternalInvoke);
-  end
-  else if typeInfo.Kind = tkInterface then
-  begin
-    method := ctx.GetType(typeInfo).GetMethod('Invoke');
-    if not Assigned(method) then
-      raise EInvalidOperationException.CreateResFmt(@STypeParameterContainsNoRtti, [typeInfo.Name]);
-    New(typeData);
-    try
-      GetMethodTypeData(method, typeData);
+  case typeInfo.Kind of
+    tkMethod:
+    begin
+{$IFDEF PUREPASCAL}
+      TMethodImplementation(fProxy) := TRttiInvokableType(typeInfo.RttiType)
+        .CreateImplementation(nil, InternalInvokeMethod);
+{$IFDEF AUTOREFCOUNT}
+      // Release reference created by passing closure to InternalInvokeMethod (RSP-10176)
+      __ObjRelease;
+{$ENDIF}
+      TMethod(fInvoke) := TMethodImplementation(fProxy).AsMethod;
+{$ELSE}
+      typeData := typeInfo.TypeData;
       fInvocations := TMethodInvocations.Create(typeData, InternalInvoke);
-    finally
-      Dispose(typeData);
+      fInvoke := TMethodInvocations(fInvocations).InvokeEventHandlerStub;
+{$ENDIF}
     end;
-  end
+    tkInterface:
+    begin
+      method := typeInfo.RttiType.GetMethod('Invoke');
+      if not Assigned(method) then
+        raise EInvalidOperationException.CreateResFmt(@STypeParameterContainsNoRtti, [typeInfo.Name]);
+{$IFDEF PUREPASCAL}
+      TVirtualInterface.Create(typeInfo, InternalInvokeDelegate)
+        .QueryInterface(typeInfo.TypeData.Guid, fProxy);
+{$IFDEF AUTOREFCOUNT}
+      // Release reference held by TVirtualInterface.RawCallBack (bypass RSP-10177)
+      IInterface(fProxy)._Release;
+      // Release reference created by passing closure to InternalInvokeDelegate (RSP-10176)
+      __ObjRelease;
+{$ENDIF}
+{$ELSE}
+      New(typeData);
+      try
+        GetMethodTypeData(method, typeData);
+        fInvocations := TMethodInvocations.Create(typeData, InternalInvoke);
+        fInvoke := TMethodInvocations(fInvocations).InvokeEventHandlerStub;
+      finally
+        Dispose(typeData);
+      end;
+{$ENDIF}
+    end
   else
     raise EInvalidOperationException.CreateResFmt(@STypeParameterShouldBeMethod, [typeInfo.Name]);
-
-  fInvoke.Data := fInvocations;
-  fInvoke.Code := @TMethodInvocations.InvokeEventHandlerStub;
+  end;
 end;
 
 destructor TEvent.Destroy;
 begin
+{$IFDEF PUREPASCAL}
+  case fTypeInfo.Kind of
+    tkMethod: TMethodImplementation(fProxy).Free;
+    tkInterface: IInterface(fProxy) := nil;
+  end;
+{$ELSE}
   fInvocations.Free;
+{$ENDIF}
   inherited Destroy;
 end;
 
-function TEvent.Cast(const handler): TMethod;
+{$IFDEF PUREPASCAL}
+procedure TEvent.InternalInvokeMethod(UserData: Pointer;
+  const Args: TArray<TValue>; out Result: TValue);
+var
+  handler: TMethodPointer;
+  argsWithoutSelf: TArray<TValue>;
+  value: TValue;
 begin
-  if fTypeInfo.Kind = tkInterface then
-    MethodReferenceToMethodPointer(handler, Result)
-  else
-    Result := PMethod(@handler)^;
+  if CanInvoke then
+  begin
+    argsWithoutSelf := Copy(Args, 1);
+    for handler in Handlers do
+    begin
+      TValue.Make(@TMethod(handler), TRttiInvokableType(UserData).Handle, value);
+      TRttiInvokableType(UserData).Invoke(value, argsWithoutSelf);
+    end;
+  end;
 end;
 
+procedure TEvent.InternalInvokeDelegate(Method: TRttiMethod;
+  const Args: TArray<TValue>; out Result: TValue);
+var
+  handler: TMethodPointer;
+  argsWithoutSelf: TArray<TValue>;
+  value: TValue;
+begin
+  if CanInvoke then
+  begin
+    argsWithoutSelf := Copy(Args, 1);
+    for handler in Handlers do
+    begin
+      value := TValue.From<IInterface>(MethodPointerToMethodReference(handler));
+      method.Invoke(value, argsWithoutSelf);
+    end;
+  end;
+end;
+{$ELSE}
 procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
 var
-  handler: TMethod;
+  handler: TMethodPointer;
 begin
-  if Enabled then
+  if CanInvoke then
     for handler in Handlers do
-      InvokeMethod(handler, Params, StackSize);
+      InvokeMethod(TMethod(handler), Params, StackSize);
 end;
 
 procedure TEvent.Invoke;
 asm
 {$IFDEF CPUX64}
-  push [rcx].fInvoke.Code
-  mov rcx,[rcx].fInvoke.Data
+  push [rcx].fInvoke.TMethod.Code
+  mov rcx,[rcx].fInvoke.TMethod.Data
 {$ELSE}
-  push [eax].fInvoke.Code
-  mov eax,[eax].fInvoke.Data
+  push [eax].fInvoke.TMethod.Code
+  mov eax,[eax].fInvoke.TMethod.Data
 {$ENDIF}
 end;
+{$ENDIF}
 
-procedure TEvent.Notify(Sender: TObject; const Item: TMethod;
+procedure TEvent.Notify(Sender: TObject; const Item: TMethodPointer;
   Action: TCollectionNotification);
 begin
-  inherited;
+  inherited Notify(Sender, Item, Action);
   if fTypeInfo.Kind = tkInterface then
-  begin
     case Action of
-      cnAdded: IInterface(Item.Data)._AddRef;
-      cnRemoved: IInterface(Item.Data)._Release;
+      cnAdded: IInterface(TMethod(Item).Data)._AddRef;
+      cnRemoved: IInterface(TMethod(Item).Data)._Release;
     end;
-  end;
 end;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 
 
 {$REGION 'TEvent<T>'}
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
 constructor TEvent<T>.Create;
 begin
   inherited Create(TypeInfo(T));
 end;
 
-procedure TEvent<T>.ForEach(const action: TAction<T>);
-begin
-  inherited ForEach(TAction<TMethod>(action));
-end;
-
 procedure TEvent<T>.Add(handler: T);
 begin
-  inherited Add(Cast(handler));
+{$IFDEF DELPHI2010}
+  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
+{$ELSE}
+  if TType.Kind<T> = tkInterface then
+{$ENDIF}
+    inherited Add(MethodReferenceToMethodPointer(handler))
+  else
+    inherited Add(PMethodPointer(@handler)^);
 end;
 
 procedure TEvent<T>.Remove(handler: T);
 begin
-  inherited Remove(Cast(handler));
+{$IFDEF DELPHI2010}
+  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
+{$ELSE}
+  if TType.Kind<T> = tkInterface then
+{$ENDIF}
+    inherited Remove(MethodReferenceToMethodPointer(handler))
+  else
+    inherited Remove(PMethodPointer(@handler)^);
 end;
 
 function TEvent<T>.GetInvoke: T;
 begin
-  if fTypeInfo.Kind = tkInterface then
+{$IFDEF DELPHI2010}
+  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
+{$ELSE}
+  if TType.Kind<T> = tkInterface then
+{$ENDIF}
+{$IFDEF PUREPASCAL}
+    PInterface(@Result)^ := IInterface(fProxy)
+{$ELSE}
     TProc(PPointer(@Result)^) := Self
+{$ENDIF}
   else
-    PMethod(@Result)^ := fInvoke;
+    PMethodPointer(@Result)^ := fInvoke;
 end;
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
+
+{$ENDREGION}
+
+
+{$REGION 'TNotifyEventImpl'}
+
+constructor TNotifyEventImpl.Create;
+begin
+  inherited Create;
+  TNotifyEvent(fInvoke) := InternalInvoke;
+end;
+
+procedure TNotifyEventImpl.Add(handler: TNotifyEvent);
+begin
+  inherited Add(TMethodPointer(handler));
+end;
+
+function TNotifyEventImpl.GetInvoke: TNotifyEvent;
+begin
+  Result := TNotifyEvent(inherited Invoke);
+end;
+
+procedure TNotifyEventImpl.InternalInvoke(sender: TObject);
+var
+  handler: TMethodPointer;
+begin
+  if Enabled then
+    for handler in Handlers do
+      TNotifyEvent(handler)(sender);
+end;
+
+procedure TNotifyEventImpl.Remove(handler: TNotifyEvent);
+begin
+  inherited Remove(TMethodPointer(handler));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNotifyEventImpl<T>'}
+
+constructor TNotifyEventImpl<T>.Create;
+begin
+  inherited Create;
+  TNotifyEvent<T>(fInvoke) := InternalInvoke;
+end;
+
+procedure TNotifyEventImpl<T>.Add(handler: TNotifyEvent<T>);
+begin
+  inherited Add(TMethodPointer(handler));
+end;
+
+function TNotifyEventImpl<T>.GetInvoke: TNotifyEvent<T>;
+begin
+  Result := TNotifyEvent<T>(inherited Invoke);
+end;
+
+procedure TNotifyEventImpl<T>.InternalInvoke(sender: TObject; const item: T);
+var
+  handler: TMethodPointer;
+begin
+  if Enabled then
+    for handler in Handlers do
+      TNotifyEvent<T>(handler)(sender, item);
+end;
+
+procedure TNotifyEventImpl<T>.Remove(handler: TNotifyEvent<T>);
+begin
+  inherited Remove(TMethodPointer(handler));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPropertyChangedEventImpl'}
+
+constructor TPropertyChangedEventImpl.Create;
+begin
+  inherited Create;
+  TPropertyChangedEvent(fInvoke) := InternalInvoke;
+end;
+
+procedure TPropertyChangedEventImpl.Add(handler: TPropertyChangedEvent);
+begin
+  inherited Add(TMethodPointer(handler));
+end;
+
+function TPropertyChangedEventImpl.GetInvoke: TPropertyChangedEvent;
+begin
+  Result := TPropertyChangedEvent(inherited Invoke);
+end;
+
+procedure TPropertyChangedEventImpl.InternalInvoke(Sender: TObject;
+  const EventArgs: IPropertyChangedEventArgs);
+var
+  handler: TMethodPointer;
+begin
+  if Enabled then
+    for handler in Handlers do
+      TPropertyChangedEvent(handler)(Sender, EventArgs);
+end;
+
+procedure TPropertyChangedEventImpl.Remove(handler: TPropertyChangedEvent);
+begin
+  inherited Remove(TMethodPointer(handler));
+end;
 
 {$ENDREGION}
 

@@ -27,11 +27,11 @@
 			<DCC_Description>Spring4D Core package</DCC_Description>
 			<DllSuffix>.DelphiXE</DllSuffix>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-			<DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<GenPackage>true</GenPackage>
 			<GenDll>true</GenDll>
-			<DCC_DcuOutput>..\..\Library\DelphiXE\$(Config)</DCC_DcuOutput>
+			<DCC_DcuOutput>..\..\Library\DelphiXE\$(Platform)\$(Config)</DCC_DcuOutput>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 		</PropertyGroup>
@@ -55,22 +55,35 @@
 			<DCCReference Include="rtl.dcp"/>
 			<DCCReference Include="Spring.Base.dcp"/>
 			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
-			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ActivatorExtension.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.AutoMockExtension.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Common.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ComponentActivator.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Core.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.CreationContext.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.DecoratorExtension.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Extensions.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ProxyFactory.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.CustomProxy.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Configuration.Builder.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Container.pas"/>
+			<DCCReference Include="..\..\Source\Core\Mocking\Spring.Mocking.pas"/>
+			<DCCReference Include="..\..\Source\Core\Mocking\Spring.Mocking.Core.pas"/>
+			<DCCReference Include="..\..\Source\Core\Mocking\Spring.Mocking.Interceptor.pas"/>
+			<DCCReference Include="..\..\Source\Core\Mocking\Spring.Mocking.Matching.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -105,8 +118,8 @@
 						<VersionInfo Name="Special">False</VersionInfo>
 						<VersionInfo Name="Private">False</VersionInfo>
 						<VersionInfo Name="DLL">False</VersionInfo>
-						<VersionInfo Name="Locale">2052</VersionInfo>
-						<VersionInfo Name="CodePage">936</VersionInfo>
+						<VersionInfo Name="Locale">1033</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>

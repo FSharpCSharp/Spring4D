@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,12 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<summary>
-///	  Provides the internal utilities for Spring4D.
-///	</summary>
-unit Spring.SystemUtils;
+{$I Spring.inc}
 
-{$I 'Spring.inc'}
+/// <summary>
+///   Provides the internal utilities for Spring4D.
+/// </summary>
+unit Spring.SystemUtils;
 
 interface
 
@@ -38,9 +38,14 @@ uses
   TypInfo;
 
 type
-  ///	<summary>
-  ///	  Provides static methods to manipulate an enumeration type.
-  ///	</summary>
+  /// <summary>
+  ///   Provides static methods to manipulate an enumeration type.
+  /// </summary>
+  /// <remarks>
+  ///   This does only work for non enum types that have type info.
+  ///   Discontiguous enumerations and enumerations which don't start at zero
+  ///   don't have typeinfo. See: <see href="http://stackoverflow.com/questions/1420562/why-do-i-get-type-has-no-typeinfo-error-with-an-enum-type" />
+  /// </remarks>
   TEnum = class
   private
     class function GetEnumTypeInfo<T>: PTypeInfo; static;
@@ -63,67 +68,67 @@ type
     class function Parse<T>(const value: string): T; overload; static;
   end;
 
-  ///	<summary>
-  ///	  Provides static methods to manipulate an Variant type.
-  ///	</summary>
+  /// <summary>
+  ///   Provides static methods to manipulate an Variant type.
+  /// </summary>
   TVariant = class
   public
     class function IsNull(const value: Variant): Boolean; static;
   end;
 
-///	<summary>
-///	  Retrieves the byte length of a unicode string.
-///	</summary>
-///	<param name="s">
-///	  the unicode string.
-///	</param>
-///	<returns>
-///	  The byte length of the unicode string.
-///	</returns>
-///	<remarks>
-///	  Although there is already a routine <c>SysUtils.ByteLength(string)</c>
-///	  function, it only supports unicode strings and doesn't provide overloads
-///	  for WideStrings and AnsiStrings.
-///	</remarks>
-///	<seealso cref="GetByteLength(WideString)" />
-///	<seealso cref="GetByteLength(RawByteString)" />
+/// <summary>
+///   Retrieves the byte length of a unicode string.
+/// </summary>
+/// <param name="s">
+///   the unicode string.
+/// </param>
+/// <returns>
+///   The byte length of the unicode string.
+/// </returns>
+/// <remarks>
+///   Although there is already a routine <c>SysUtils.ByteLength(string)</c>
+///   function, it only supports unicode strings and doesn't provide overloads
+///   for WideStrings and AnsiStrings.
+/// </remarks>
+/// <seealso cref="GetByteLength(WideString)" />
+/// <seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: string): Integer; overload; inline;
 
 {$IFNDEF NEXTGEN}
-///	<summary>
-///	  Retrieves the byte length of a WideString.
-///	</summary>
-///	<param name="s">
-///	  A wide string.
-///	</param>
-///	<returns>
-///	  The byte length of the wide string.
-///	</returns>
-///	<seealso cref="GetByteLength(string)" />
-///	<seealso cref="GetByteLength(RawByteString)" />
+/// <summary>
+///   Retrieves the byte length of a WideString.
+/// </summary>
+/// <param name="s">
+///   A wide string.
+/// </param>
+/// <returns>
+///   The byte length of the wide string.
+/// </returns>
+/// <seealso cref="GetByteLength(string)" />
+/// <seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: WideString): Integer; overload; inline;
 
-///	<summary>
-///	  Retrieves the byte length of a <c>RawByteString</c> (AnsiString or
-///	  UTF8String).
-///	</summary>
-///	<returns>
-///	  The byte length of the raw byte string.
-///	</returns>
-///	<seealso cref="GetByteLength(string)" />
-///	<seealso cref="GetByteLength(WideString)" />
+/// <summary>
+///   Retrieves the byte length of a <c>RawByteString</c> (AnsiString or
+///   UTF8String).
+/// </summary>
+/// <returns>
+///   The byte length of the raw byte string.
+/// </returns>
+/// <seealso cref="GetByteLength(string)" />
+/// <seealso cref="GetByteLength(WideString)" />
 function GetByteLength(const s: RawByteString): Integer; overload; inline;
 {$ENDIF NEXTGEN}
 
 
-///	<summary>
-///	  Overloads. SplitString
-///	</summary>
-///	<remarks>
-///	  Each element of separator defines a separate delimiter character. If two
-///	  delimiters are adjacent, or a delimiter is found at the beginning or end
-///	  of the buffer, the corresponding array element contains Empty.
-///	</remarks>
+/// <summary>
+///   Overloads. SplitString
+/// </summary>
+/// <remarks>
+///   Each element of separator defines a separate delimiter character. If two
+///   delimiters are adjacent, or a delimiter is found at the beginning or end
+///   of the buffer, the corresponding array element contains Empty.
+/// </remarks>
 function SplitString(const buffer: string; const separators: TSysCharSet;
   removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
@@ -131,124 +136,62 @@ function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
 function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
   removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 
-///	<summary>
-///	  Returns a string array that contains the substrings in the buffer that
-///	  are delimited by null char (#0) and ends with an additional null char.
-///	</summary>
-///	<example>
-///	  <code lang="Delphi">
-///	procedure TestSplitNullTerminatedStrings;
-///	var
-///	  buffer: string;
-///	  strings: TStringDynArray;
-///	  s: string;
-///	begin
-///	  buffer := 'C:'#0'D:'#0'E:'#0#0;
-///	  strings := SplitString(PChar(buffer));
-///	  for s in strings do
-///	  begin
-///	    Writeln(s);
-///	  end;
-///	end;</code>
-///	</example>
+/// <summary>
+///   Returns a string array that contains the substrings in the buffer that
+///   are delimited by null char (#0) and ends with an additional null char.
+/// </summary>
+/// <example>
+///   <code lang="Delphi">procedure TestSplitNullTerminatedStrings;
+/// var
+///   buffer: string;
+///   strings: TStringDynArray;
+///   s: string;
+/// begin
+///   buffer := 'C:'#0'D:'#0'E:'#0#0;
+///   strings := SplitString(PChar(buffer));
+///   for s in strings do
+///   begin
+///     Writeln(s);
+///   end;
+/// end;</code>
+/// </example>
 function SplitString(const buffer: PChar): TStringDynArray; overload;
 
-///	<summary>
-///	  Returns a string array that contains the substrings in the buffer that
-///	  are delimited by null char (#0) and ends with an additional null char.
-///	</summary>
+/// <summary>
+///   Returns a string array that contains the substrings in the buffer that
+///   are delimited by null char (#0) and ends with an additional null char.
+/// </summary>
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
   deprecated 'Use the SplitString(PChar) function instead.';
 
-///	<summary>
-///	  Returns <c>True</c> if the type is a nullable type.
-///	</summary>
-function IsNullableType(typeInfo: PTypeInfo): Boolean;
-
-///	<summary>
-///	  Try getting the underlying type name of a nullable type.
-///	</summary>
-///	<remarks>
-///	  For instance, the underlying type name of the type
-///	  <c>Nullable&lt;System.Integer&gt;</c> is <c>System.Integer</c>.
-///	</remarks>
-function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
-
-///	<summary>
-///	  Try getting the underlying type info of a nullable type.
-///	</summary>
-function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
-
-///	<summary>
-///	  Try getting the underlying value of a nullable type.
-///	</summary>
-///	<param name="value">
-///	  the value
-///	</param>
-///	<param name="underlyingValue">
-///	  the underlying value.
-///	</param>
-///	<returns>
-///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has value.
-///	</returns>
-function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
-
-///	<summary>
-///	  Try setting the underlying value of a nullable type.
-///	</summary>
-///	<param name="value">
-///	  the value
-///	</param>
-///	<param name="underlyingValue">
-///	  the underlying value.
-///	</param>
-///	<returns>
-///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has value.
-///	</returns>
-function TrySetUnderlyingValue(const value: TValue; const underlyingValue: TValue): Boolean;
-
-///	<summary>
-///	  Uses this function to get an interface instance from a TValue.
-///	</summary>
-///	<remarks>
-///	  <note type="warning">
-///	    Rtti bugs: QC #82433 if
-///	    value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification) then
-///	  </note>
-///	</remarks>
-function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean; overload;
-
-///	<seealso cref="Spring|Nullable{T}" />
-function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; overload;
-
-///	<summary>
-///	  Try parsing a string to a datetime value based on the specified format.
-///	  Returns True if the input string matches the format.
-///	</summary>
-///	<param name="s">
-///	  the input string
-///	</param>
-///	<param name="format">
-///	  the format of datetime
-///	</param>
-///	<param name="value">
-///	  output datetime value
-///	</param>
-///	<returns>
-///	  Returns True if the input string can be parsed.
-///	</returns>
+/// <summary>
+///   Try parsing a string to a datetime value based on the specified format.
+///   Returns True if the input string matches the format.
+/// </summary>
+/// <param name="s">
+///   the input string
+/// </param>
+/// <param name="format">
+///   the format of datetime
+/// </param>
+/// <param name="value">
+///   output datetime value
+/// </param>
+/// <returns>
+///   Returns True if the input string can be parsed.
+/// </returns>
 function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 
-///	<summary>
-///	  Parses a string to a datetime value based on the specified format. An
-///	  EConvertError exception will be raised if failed to parse the string.
-///	</summary>
-///	<param name="s">
-///	  the date time string.
-///	</param>
-///	<param name="format">
-///	  the format of datetime.
-///	</param>
+/// <summary>
+///   Parses a string to a datetime value based on the specified format. An
+///   EConvertError exception will be raised if failed to parse the string.
+/// </summary>
+/// <param name="s">
+///   the date time string.
+/// </param>
+/// <param name="format">
+///   the format of datetime.
+/// </param>
 function ConvertStrToDateTime(const s, format: string): TDateTime;
 
 implementation
@@ -264,8 +207,8 @@ uses
 
 class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
 begin
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
   Result := TypeInfo(T);
-  Guard.CheckTypeKind(Result, tkEnumeration, 'T');
 end;
 
 class function TEnum.GetEnumTypeData<T>: PTypeData;
@@ -273,7 +216,7 @@ var
   typeInfo: PTypeInfo;
 begin
   typeInfo := TEnum.GetEnumTypeInfo<T>;
-  Result := GetTypeData(typeInfo);
+  Result := typeInfo.TypeData;
 end;
 
 class function TEnum.ConvertToInteger<T>(const value: T): Integer;
@@ -284,13 +227,11 @@ end;
 
 class function TEnum.IsValid<T>(const value: Integer): Boolean;
 var
-  typeInfo: PTypeInfo;
   data: PTypeData;
 begin
-  typeInfo := System.TypeInfo(T);
-  Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
 
-  data := GetTypeData(typeInfo);
+  data := GetTypeData(TypeInfo(T));
   Guard.CheckNotNull(data, 'data');
   Result := (value >= data.MinValue) and (value <= data.MaxValue);
 end;
@@ -484,6 +425,7 @@ begin
   Guard.CheckRange(len >= 0, 'len');
 
   if (buffer = nil) or (len = 0) then Exit;
+  Result := nil;
   head := buffer;
   tail := head + len - 1;
   p := head;
@@ -508,6 +450,7 @@ var
   entry: string;
 begin
   if (buffer = nil) or (buffer^ = #0) then Exit;
+  Result := nil;
   p := buffer;
   while p^ <> #0 do
   begin
@@ -521,148 +464,6 @@ end;
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
 begin
   Result := SplitString(buffer);
-end;
-
-function IsNullableType(typeInfo: PTypeInfo): Boolean;
-const
-  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
-begin
-  Result := Assigned(typeInfo) and (typeInfo.Kind = tkRecord)
-    and StartsText(PrefixString, GetTypeName(typeInfo));
-end;
-
-function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
-const
-  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
-  PrefixStringLength = Length(PrefixString);
-var
-  typeName: string;
-begin
-  Result := IsNullableType(typeInfo);
-  if Result then
-  begin
-    typeName := GetTypeName(typeInfo);
-    underlyingTypeName := Copy(typeName, PrefixStringLength + 1,
-      Length(typeName) - PrefixStringLength - 1);
-  end;
-end;
-
-function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
-var
-  context: TRttiContext;
-  rttiType: TRttiType;
-  valueField: TRttiField;
-begin
-  Result := IsNullableType(typeInfo);
-  if Result then
-  begin
-    rttiType := context.GetType(typeInfo);
-    valueField := rttiType.GetField('fValue');
-    Result := Assigned(valueField);
-    if Result then
-      underlyingTypeInfo := valueField.FieldType.Handle
-    else
-      underlyingTypeInfo := nil;
-  end;
-end;
-
-function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
-var
-  typeInfo: PTypeInfo;
-  context: TRttiContext;
-  rttiType: TRttiType;
-  hasValueField: TRttiField;
-  instance: Pointer;
-  valueField: TRttiField;
-begin
-  typeInfo := value.TypeInfo;
-  Result := IsNullableType(typeInfo);
-  if Result then
-  begin
-    rttiType := context.GetType(typeInfo);
-    hasValueField := rttiType.GetField('fHasValue');
-    if Assigned(hasValueField) then
-    begin
-      instance := value.GetReferenceToRawData;
-      Result := hasValueField.GetValue(instance).AsString <> '';
-      if Result then
-      begin
-        valueField := rttiType.GetField('fValue');
-        Result := Assigned(valueField);
-        if Result then
-          underlyingValue := valueField.GetValue(instance);
-      end;
-    end;
-  end;
-end;
-
-function TrySetUnderlyingValue(const value: TValue; const underlyingValue: TValue): Boolean;
-var
-  typeInfo: PTypeInfo;
-  context: TRttiContext;
-  rttiType: TRttiType;
-  hasValueField: TRttiField;
-  instance: Pointer;
-  valueField: TRttiField;
-begin
-  typeInfo := value.TypeInfo;
-  Result := IsNullableType(typeInfo);
-  if Result then
-  begin
-    rttiType := context.GetType(typeInfo);
-    valueField := rttiType.GetField('fValue');
-    if Assigned(valueField) then
-    begin
-      hasValueField := rttiType.GetField('fHasValue');
-      if Assigned(hasValueField) then
-      begin
-        instance := value.GetReferenceToRawData;
-        valueField.SetValue(instance, underlyingValue);
-        if underlyingValue.IsEmpty then
-          hasValueField.SetValue(instance, '')
-        else
-          hasValueField.SetValue(instance, '@');
-      end;
-    end;
-  end;
-end;
-
-function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
-var
-  localInterface: IInterface;
-begin
-  if instance.IsEmpty then Exit(False);
-  if instance.IsObject then
-  begin
-    Result := instance.AsObject.GetInterface(guid, intf);
-  end
-  else if instance.TryAsType<IInterface>(localInterface) then
-  begin
-    Result := localInterface.QueryInterface(guid, intf) = S_OK;
-  end
-  else
-  begin
-    Exit(False);
-  end;
-end;
-
-function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean;
-var
-  localInterface: IInterface;
-begin
-  if instance.IsEmpty then Exit(False);
-  if instance.IsObject then
-  begin
-    Result := Supports(instance.AsObject, guid);
-  end
-  else if instance.TryAsType<IInterface>(localInterface) then
-  begin
-    Result := Supports(localInterface, guid);
-  end
-  else
-  begin
-    Exit(False);
-  end;
 end;
 
 function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.CreationContext;
-
 {$I Spring.inc}
+
+unit Spring.Container.CreationContext;
 
 interface
 
@@ -40,23 +40,28 @@ type
     fResolutionStack: IStack<TComponentModel>;
     fModel: TComponentModel;
     fArguments: IList<TValue>;
+    fPerResolveInstances: IDictionary<TComponentModel, TValue>;
     fNamedArguments: IList<TNamedValue>;
     fTypedArguments: IList<TTypedValue>;
   public
     constructor Create(const model: TComponentModel;
       const arguments: array of TValue);
+{$IFNDEF AUTOREFCOUNT}
+    destructor Destroy; override;
+{$ENDIF}
 
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): Boolean;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): TValue;
+      const dependency: TDependencyModel; const argument: TValue): TValue;
 
-    procedure EnterResolution(const model: TComponentModel);
+    function EnterResolution(const model: TComponentModel;
+      out instance: TValue): Boolean;
     procedure LeaveResolution(const model: TComponentModel);
 
-    procedure AddArgument(const argument: TValue);
+    function AddArgument(const argument: TValue): Integer;
+    procedure RemoveTypedArgument(index: Integer);
+    procedure AddPerResolve(const model: TComponentModel; const instance: TValue);
     function TryHandle(const injection: IInjection;
       out handled: IInjection): Boolean;
   end;
@@ -65,10 +70,15 @@ implementation
 
 uses
   SysUtils,
+  TypInfo,
   Spring.Container.Injection,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
+{$IFNDEF AUTOREFCOUNT}
+type
+  TInterfacedObjectAccess = class(TInterfacedObject);
+{$ENDIF}
 
 {$REGION 'TCreationContext'}
 
@@ -85,21 +95,48 @@ begin
   fTypedArguments := TCollections.CreateList<TTypedValue>;
   for i := Low(arguments) to High(arguments) do
     AddArgument(arguments[i]);
+  fPerResolveInstances := TCollections.CreateDictionary<TComponentModel, TValue>;
 end;
 
-procedure TCreationContext.AddArgument(const argument: TValue);
+{$IFNDEF AUTOREFCOUNT}
+destructor TCreationContext.Destroy;
+var
+  instance: TValue;
+  interfacedObject: TInterfacedObject;
+begin
+  for instance in fPerResolveInstances.Values do
+    if instance.TryAsType<TInterfacedObject>(interfacedObject) and Assigned(interfacedObject) then
+      AtomicDecrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
+  inherited Destroy;
+end;
+{$ENDIF}
+
+function TCreationContext.AddArgument(const argument: TValue): Integer;
 begin
   if argument.IsType<TTypedValue> then
-    fTypedArguments.Add(argument)
+    Result := fTypedArguments.Add(argument)
   else if argument.IsType<TNamedValue> then
-    fNamedArguments.Add(argument)
+    Result := fNamedArguments.Add(argument)
   else
-    fArguments.Add(argument);
+    Result := fArguments.Add(argument);
+end;
+
+procedure TCreationContext.AddPerResolve(const model: TComponentModel;
+  const instance: TValue);
+{$IFNDEF AUTOREFCOUNT}
+var
+  interfacedObject: TInterfacedObject;
+{$ENDIF}
+begin
+  fPerResolveInstances.Add(model, instance);
+{$IFNDEF AUTOREFCOUNT}
+  if instance.TryAsType<TInterfacedObject>(interfacedObject) and Assigned(interfacedObject) then
+    AtomicIncrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
+{$ENDIF}
 end;
 
 function TCreationContext.CanResolve(const context: ICreationContext;
-  const model: TComponentModel; const dependency: TDependencyModel;
-  const argument: TValue): Boolean;
+  const dependency: TDependencyModel; const argument: TValue): Boolean;
 var
   i: Integer;
 begin
@@ -125,6 +162,10 @@ begin
   end;
 
   parameters := injection.Target.AsMethod.GetParameters;
+  // RTTI cannot handle open array parameters
+  for i := Low(parameters) to High(parameters) do
+    if pfArray in parameters[i].Flags then
+      Exit(False);
   if Length(parameters) = fArguments.Count then
   begin
     // arguments for ctor are provided and count is correct
@@ -134,7 +175,7 @@ begin
       else
         Exit(False); // argument and parameter types did not match
   end
-  else if not fArguments.IsEmpty then
+  else if fArguments.Any then
     Exit(False);
   for value in fNamedArguments do // check all named arguments
   begin
@@ -161,14 +202,18 @@ begin
     handled.Dependencies[i] := injection.Dependencies[i];
 end;
 
-procedure TCreationContext.EnterResolution(const model: TComponentModel);
+function TCreationContext.EnterResolution(const model: TComponentModel;
+  out instance: TValue): Boolean;
 begin
   if not Assigned(fModel) then // set the model if we don't know it yet
     fModel := model;
+  if fPerResolveInstances.TryGetValue(model, instance) then
+    Exit(False);
   if fResolutionStack.Contains(model) then
     raise ECircularDependencyException.CreateResFmt(
       @SCircularDependencyDetected, [model.ComponentTypeName]);
   fResolutionStack.Push(model);
+  Result := True;
 end;
 
 procedure TCreationContext.LeaveResolution(const model: TComponentModel);
@@ -177,9 +222,13 @@ begin
     raise EResolveException.CreateRes(@SResolutionStackUnbalanced);
 end;
 
+procedure TCreationContext.RemoveTypedArgument(index: Integer);
+begin
+  fTypedArguments.Delete(index);
+end;
+
 function TCreationContext.Resolve(const context: ICreationContext;
-  const model: TComponentModel; const dependency: TDependencyModel;
-  const argument: TValue): TValue;
+  const dependency: TDependencyModel; const argument: TValue): TValue;
 var
   i: Integer;
 begin

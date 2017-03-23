@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -32,6 +32,7 @@ uses
   TestFramework,
   Spring,
   Spring.Collections,
+  Spring.Container,
   Spring.Container.Common,
   Spring.Container.Core,
   Spring.Tests.Container.Interfaces;
@@ -95,7 +96,9 @@ type
 
   TRefCounted = class(TObject, IRefCounted)
   private
+{$IFNDEF AUTOREFCOUNT}
     fRefCount: Integer;
+{$ENDIF}
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
@@ -159,12 +162,23 @@ type
     const DefaultAge: Integer = 100;
   end;
 
+  TAgeService = class(TInterfacedObject, IAgeService)
+  private
+    fAgeService: Lazy<IAgeService>;
+    function GetAge: Integer;
+    function GetAgeService: IAgeService;
+  public
+    constructor Create(const ageService: Lazy<IAgeService>);
+    property AgeService: IAgeService read GetAgeService;
+  end;
+
   TAgeServiceDecorator = class(TInterfacedObject, IAgeService)
   private
     fAgeServive: IAgeService;
   public
     constructor Create(const ageService: IAgeService);
     function GetAge: Integer;
+    property AgeService: IAgeService read fAgeServive;
   end;
 
   TAgeServiceDecorator2 = class(TInterfacedObject, IAgeService)
@@ -173,6 +187,7 @@ type
   public
     constructor Create(const ageService: IAgeService);
     function GetAge: Integer;
+    property AgeService: IAgeService read fAgeServive;
   end;
 
   {$ENDREGION}
@@ -220,6 +235,24 @@ type
     procedure Recycle;
     property IsInitialized: Boolean read fIsInitialized;
     property IsRecycled: Boolean read fIsRecycled;
+  end;
+
+  TDisposableComponent = class(TInterfacedObject, IInitializable, IDisposable, IAnotherService)
+  private
+    fIsInitialized: Boolean;
+    fOnDispose: TProc;
+  public
+    procedure Initialize;
+    procedure Dispose;
+    property OnDispose: TProc read fOnDispose write fOnDispose;
+  end;
+
+  TAnotherServiceDecorator = class(TInterfacedObject, IAnotherService)
+  private
+    fAnotherService: IAnotherService;
+  public
+    constructor Create(const anotherService: IAnotherService);
+    property Service: IAnotherService read fAnotherService;
   end;
 
   {$ENDREGION}
@@ -386,24 +419,34 @@ type
 
   // IChicken <== TChicken --> IEgg <== TEgg --> IChicken
 
+  IEgg = interface;
+
   IChicken = interface
     ['{88C4F5E9-85B4-43D4-9265-0A9FAD099055}']
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
+    property Egg: IEgg read GetEgg write SetEgg;
   end;
 
   IEgg = interface
     ['{9BFC513F-635C-42CD-B29D-9E66D47882A6}']
+    function Chicken: IChicken;
   end;
 
   TChicken = class(TInterfacedObject, IChicken)
   private
     fEgg: IEgg;
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
   public
     constructor Create(const egg: IEgg);
+    property Egg: IEgg read GetEgg write SetEgg;
   end;
 
   TEgg = class(TInterfacedObject, IEgg)
   private
     fChicken: IChicken;
+    function Chicken: IChicken;
   public
     constructor Create(const chicken: IChicken);
   end;
@@ -411,6 +454,8 @@ type
   TCircularDependencyChicken = class(TInterfacedObject, IChicken)
   private
     fChicken: IChicken;
+    function GetEgg: IEgg;
+    procedure SetEgg(const egg: IEgg);
   public
     constructor Create(const chicken: IChicken);
   end;
@@ -513,7 +558,43 @@ type
   {$ENDREGION}
 
 
+  ISomeService = interface
+    ['{3DD10F1E-C064-47DB-B78E-F7EB9B643FB3}']
+  end;
+
+  TSomeService = class(TInterfacedObject, ISomeService);
+
+  ICommonInterface = interface
+    ['{0B64ADC9-A375-4614-96EA-2BF38E34FCD9}']
+  end;
+
+  ISomeFactory = interface
+    ['{8E32B7D2-49BC-4F85-9C2D-79295D9A0901}']
+    function CreateObject(const name: string): ICommonInterface;
+  end;
+
+  TSomeFactory = class(TInterfacedObject, ISomeFactory)
+  private
+    fContainer: TContainer;
+  public
+    constructor Create(const container: TContainer);
+    function CreateObject(const name: string): ICommonInterface;
+  end;
+
+  TTypeA = class(TInterfacedObject, ICommonInterface)
+  public
+    constructor Create(const someService: ISomeService);
+  end;
+
+  TTypeB = class(TInterfacedObject, ICommonInterface)
+  public
+    constructor Create(const someService: ISomeService);
+  end;
+
 implementation
+
+uses
+  StrUtils;
 
 { TNameService }
 
@@ -707,11 +788,30 @@ begin
   fChicken := chicken;
 end;
 
+function TCircularDependencyChicken.GetEgg: IEgg;
+begin
+  Result := nil;
+end;
+
+procedure TCircularDependencyChicken.SetEgg(const egg: IEgg);
+begin
+end;
+
 { TChicken }
 
 constructor TChicken.Create(const egg: IEgg);
 begin
   inherited Create;
+  fEgg := egg;
+end;
+
+function TChicken.GetEgg: IEgg;
+begin
+  Result := fEgg;
+end;
+
+procedure TChicken.SetEgg(const egg: IEgg);
+begin
   fEgg := egg;
 end;
 
@@ -721,6 +821,11 @@ constructor TEgg.Create(const chicken: IChicken);
 begin
   inherited Create;
   fChicken := chicken;
+end;
+
+function TEgg.Chicken: IChicken;
+begin
+  Result := fChicken
 end;
 
 { TNameAgeComponent }
@@ -833,16 +938,24 @@ end;
 
 function TRefCounted._AddRef: Integer;
 begin
+{$IFNDEF AUTOREFCOUNT}
   Inc(fRefCount);
   Result := fRefCount;
+{$ELSE}
+  Result := __ObjAddRef;
+{$ENDIF}
 end;
 
 function TRefCounted._Release: Integer;
 begin
+{$IFNDEF AUTOREFCOUNT}
   Dec(fRefCount);
   Result := fRefCount;
   if Result = 0 then
     Destroy;
+{$ELSE}
+  Result := __ObjRelease;
+{$ENDIF}
 end;
 
 { TCustomNameService }
@@ -870,6 +983,22 @@ procedure TRecyclableComponent.Recycle;
 begin
   fIsInitialized := False;
   fIsRecycled := True;
+end;
+
+{ TDisposableComponent }
+
+procedure TDisposableComponent.Dispose;
+begin
+  if Assigned(fOnDispose) then
+    fOnDispose;
+end;
+
+procedure TDisposableComponent.Initialize;
+begin
+  if not fIsInitialized then
+    fIsInitialized := True
+  else
+    raise Exception.Create('Initialize called twice');
 end;
 
 { TAgeServiceDecorator }
@@ -955,6 +1084,64 @@ begin
   inherited Create;;
   SetLength(fCollectionItems, 1);
   fCollectionItems[0] := collectionItem;
+end;
+
+{ TSomeFactory }
+
+constructor TSomeFactory.Create(const container: TContainer);
+begin
+  inherited Create;
+  fContainer := container;
+end;
+
+function TSomeFactory.CreateObject(const name: string): ICommonInterface;
+const
+  args: array[0..1] of string = ('A', 'B');
+begin
+  case IndexStr(name, args) of
+    0: Result := fContainer.Resolve<TTypeA>;
+    1: Result := fContainer.Resolve<TTypeB>;
+  else
+    raise ENotSupportedException.Create('');
+  end;
+end;
+
+{ TTypeA }
+
+constructor TTypeA.Create(const someService: ISomeService);
+begin
+end;
+
+{ TTypeB }
+
+constructor TTypeB.Create(const someService: ISomeService);
+begin
+end;
+
+{ TAnotherServiceDecorator }
+
+constructor TAnotherServiceDecorator.Create(
+  const anotherService: IAnotherService);
+begin
+  inherited Create;
+  fAnotherService := anotherService;
+end;
+
+{ TAgeService }
+
+constructor TAgeService.Create(const ageService: Lazy<IAgeService>);
+begin
+  fAgeService := ageService;
+end;
+
+function TAgeService.GetAge: Integer;
+begin
+  Result := fAgeService.Value.Age;
+end;
+
+function TAgeService.GetAgeService: IAgeService;
+begin
+  Result := fAgeService;
 end;
 
 end.

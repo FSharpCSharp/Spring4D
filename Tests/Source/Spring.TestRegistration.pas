@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -34,6 +34,7 @@ implementation
 
 uses
   TestFramework,
+  TestExtensions,
   Spring.TestUtils,
   Spring.Tests.Base,
   Spring.Tests.Collections,
@@ -42,9 +43,16 @@ uses
   Spring.Tests.DesignPatterns,
   Spring.Tests.Helpers,
   Spring.Tests.Reflection,
-  Spring.Tests.Reflection.ValueConverters,
+  Spring.Tests.ValueConverters,
+  Spring.Tests.Logging,
+  Spring.Tests.Logging.Serializers,
   Spring.Tests.Container,
   Spring.Tests.Container.LifetimeManager,
+  Spring.Tests.Container.Logging,
+{$IFNDEF DELPHI2010}
+  Spring.Tests.Interception,
+  Spring.Tests.Mocking,
+{$ENDIF}
   Spring.Tests.Pool,
   Spring.Tests.Utils,
   Spring.Tests.Cryptography;
@@ -54,26 +62,44 @@ begin
   RegisterTests('Spring.Base', [
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
     TTestNullableBoolean.Suite,
+    TTestNullableDateTime.Suite,
+    TTestNullableInt64.Suite,
     TTestGuard.Suite,
     TTestLazy.Suite,
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
     TTestMulticastEvent.Suite,
     TTestMulticastEventStackSize.Suite,
-{$ENDIF}
-    TTestSpringEventsMethods.Suite
+    TTestSpringEventsMethods.Suite,
+    TTestTuplesDouble.Suite,
+    TTestTuplesTriple.Suite,
+    TTestTuplesQuadruple.Suite,
+    TTestOwned.Suite,
+    TTestVector.Suite,
+    TTestValueHelper.Suite,
+    TArrayTest.Suite,
+    TWeakTest.Suite,
+    TTestVirtualClass.Suite
   ]);
+
+{$IFNDEF DELPHI2010}
+  RegisterTests('Spring.Base', [
+    TTestManagedObject.Suite
+  ]);
+{$ENDIF}
 
   RegisterTests('Spring.Base.Collections', [
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
     TTestIntegerList.Suite,
+    TTestSortedList.Suite,
     TTestStringIntegerDictionary.Suite,
     TTestEmptyStringIntegerDictionary.Suite,
     TTestEmptyStackOfStrings.Suite,
     TTestStackOfInteger.Suite,
+    TTestStackOfTBytes.Suite,
     TTestStackOfIntegerChangedEvent.Suite,
     TTestEmptyQueueOfInteger.Suite,
     TTestQueueOfInteger.Suite,
+    TTestQueueOfTBytes.Suite,
     TTestQueueOfIntegerChangedEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite,
     TTestLinkedList.Suite,
@@ -81,13 +107,18 @@ begin
     TTestInterfaceList.Suite,
     TTestCollectionList.Suite,
     TTestEnumerable.Suite,
-    TTestListAdapter.Suite
+    TTestListAdapter.Suite,
+    TTestMultiMap.Suite,
+    TTestBidiDictionary.Suite,
+    TTestObjectStack.Suite,
+    TTestObjectQueue.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [
     TTestWhere.Suite,
     TTestSelect.Suite,
     TTestRange.Suite,
+    TTestRepeated.Suite,
     TTestConcat.Suite,
     TTestSelectMany.Suite,
     TTestAny.Suite,
@@ -122,12 +153,12 @@ begin
   ]);
 
   RegisterTests('Spring.Base.Helpers', [
-    TTestGuidHelper.Suite,
     TTestRttiTypeHelper.Suite
   ]);
 
   RegisterTests('Spring.Base.Reflection', [
-    TTestType.Suite
+    TTestType.Suite,
+    TTestMethodHelper.Suite
   ]);
 
   RegisterTests('Spring.Base.Reflection.ValueConverters', [
@@ -147,6 +178,8 @@ begin
 {$ENDIF}
     TTestFromCurrency.Suite,
     TTestFromDateTime.Suite,
+    TTestFromDate.Suite,
+    TTestFromTime.Suite,
     TTestFromObject.Suite,
     TTestFromNullable.Suite,
     TTestFromInterface.Suite,
@@ -158,6 +191,20 @@ begin
     TTestTryConvertStrToDateTime.Suite,
     TTestSplitNullTerminatedStrings.Suite,
     TTestEnum.Suite
+  ]);
+
+  RegisterTests('Spring.Base.Logging', [
+    TTestLoggerController.Suite,
+    TTestLogger.Suite,
+    TTestLogAppenderBase.Suite,
+    TTestStreamLogAppender.Suite
+  ]);
+
+  RegisterTests('Spring.Base.Logging.Serializers', [
+    TTestSimpleTypeSerializer.Suite,
+    TTestReflectionTypeSerializer.Suite,
+    TTestInterfaceSerializer.Suite,
+    TTestArrayOfValueSerializer.Suite
   ]);
 
 //  RegisterTests('Spring.Base.Reflection.ValueExpression', [
@@ -179,10 +226,12 @@ begin
     TTestNamedInjectionsByAttribute.Suite,
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite,
+    TTestPerResolve.Suite,
     TTestImplementsAttribute.Suite,
     TTestRegisterInterfaces.Suite,
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
+    TTestCustomLifetimeManager.Suite,
     TTestRefCounting.Suite,
     TTestDefaultResolve.Suite,
     TTestInjectionByValue.Suite,
@@ -191,9 +240,31 @@ begin
     TTestRegisterInterfaceTypes.Suite,
     TTestLazyDependencies.Suite,
     TTestLazyDependenciesDetectRecursion.Suite,
-    TTestDecoratorExtension.Suite,
-    TTestManyDependencies.Suite
+    TTestManyDependencies.Suite,
+    TTestDecorators.Suite
   ]);
+
+  RegisterTests('Spring.Core.Logging', [
+    TTestLogInsideContainer.Suite,
+    TTestLogSubResolverAndConfiguration.Suite,
+    TTestLoggingConfiguration.Suite,
+    TTestLoggingConfigurationBuilder.Suite
+  ]);
+
+{$IFNDEF DELPHI2010}
+  RegisterTests('Spring.Interception', [
+    TFreezableTest.Suite,
+    TProxyTest.Suite,
+    TStorageTests.Suite,
+    TTestInterception.Suite,
+    TTestAutoMockingExtension.Suite,
+    TParameterMatchingTests.Suite,
+    ReceivedChecksForInputValueOfVarParams.Suite,
+    MockReturnsOtherMockInDynamicMode.Suite,
+    MockDynamicallySupportsOtherInterfaces.Suite,
+    MockSequenceTest.Suite
+  ]);
+{$ENDIF}
 
   RegisterTests('Spring.Extensions.Utils', [
     TTestVersion.Suite,

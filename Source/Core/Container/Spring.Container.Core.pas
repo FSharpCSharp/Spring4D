@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,17 +22,20 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Core;
-
 {$I Spring.inc}
+
+unit Spring.Container.Core;
 
 interface
 
 uses
+  Classes,
+  Generics.Collections,
   Rtti,
   SysUtils,
   Spring,
   Spring.Collections,
+  Spring.Logging,
   Spring.Container.Common,
   Spring.DesignPatterns;
 
@@ -41,6 +44,7 @@ type
   TComponentModel = class;
   IComponentBuilder = interface;
   IComponentRegistry = interface;
+  IDecoratorResolver = interface;
   IBuilderInspector = interface;
   ISubDependencyResolver = interface;
   IDependencyResolver = interface;
@@ -50,6 +54,7 @@ type
   IComponentActivator = interface;
   IContainerExtension = interface;
   ICreationContext = interface;
+  IProxyFactory = interface;
 
   TActivatorDelegate<T> = reference to function: T;
 
@@ -57,12 +62,14 @@ type
   private
     fTargetType: TRttiType;
     fTarget: TRttiNamedObject;
-    function GetTargetTypeInfo: PTypeInfo;
-    function GetTargetTypeName: string;
+    function GetParentType: TRttiType; inline;
+    function GetTargetTypeInfo: PTypeInfo; inline;
+    function GetTargetTypeName: string; inline;
   public
     constructor Create(const targetType: TRttiType;
       const target: TRttiNamedObject);
 
+    property ParentType: TRttiType read GetParentType;
     property TargetType: TRttiType read fTargetType;
     property Target: TRttiNamedObject read fTarget;
     property Name: string read GetTargetTypeName;
@@ -80,6 +87,10 @@ type
     function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
+    function GetProxyFactory: IProxyFactory;
+    function GetLogger: ILogger;
+    procedure SetLogger(const logger: ILogger);
+    function GetDecoratorResolver: IDecoratorResolver;
   {$ENDREGION}
     procedure AddExtension(const extension: IContainerExtension);
 
@@ -87,6 +98,9 @@ type
     property Injector: IDependencyInjector read GetInjector;
     property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
+    property ProxyFactory: IProxyFactory read GetProxyFactory;
+    property Logger: ILogger read GetLogger write SetLogger;
+    property DecoratorResolver: IDecoratorResolver read GetDecoratorResolver;
   end;
 
   IKernelInternal = interface
@@ -94,8 +108,8 @@ type
     function Resolve(serviceType: PTypeInfo): TValue; overload;
     function Resolve(serviceType: PTypeInfo;
       const arguments: array of TValue): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string;
+    function Resolve(const serviceName: string): TValue; overload;
+    function Resolve(const serviceName: string;
       const arguments: array of TValue): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
@@ -114,27 +128,48 @@ type
   /// </summary>
   IComponentRegistry = interface
     ['{CBCA1D0F-1244-4AB4-AB07-091053932166}']
+  {$REGION 'Property Accessors'}
+    function GetOnChanged: ICollectionChangedEvent<TComponentModel>;
+  {$ENDREGION}
+
     function RegisterComponent(componentType: PTypeInfo): TComponentModel;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
-    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo;
+      const serviceName: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
-{$IFDEF DELPHIXE_UP}
-    procedure RegisterFactory(const model: TComponentModel); overload;
-    procedure RegisterFactory(const model: TComponentModel; const name: string); overload;
+{$IFNDEF DELPHI2010}
+    procedure RegisterFactory(const model: TComponentModel;
+      paramResolution: TParamResolution = TParamResolution.ByName); overload;
+    procedure RegisterFactory(const model: TComponentModel;
+      const resolvedServiceName: string;
+      paramResolution: TParamResolution = TParamResolution.ByName); overload;
 {$ENDIF}
     procedure UnregisterAll;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasService(const serviceName: string): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
     function HasDefault(serviceType: PTypeInfo): Boolean;
 
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
-    function FindOne(const name: string): TComponentModel; overload;
+    function FindOne(const serviceName: string): TComponentModel; overload;
     function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
     function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
+
+    property OnChanged: ICollectionChangedEvent<TComponentModel> read GetOnChanged;
+  end;
+
+  IDecoratorResolver = interface
+    ['{AC84E128-1C52-465A-9B10-C79A58DD3BEA}']
+    procedure AddDecorator(decoratedType: PTypeInfo;
+      const decoratorModel: TComponentModel;
+      const condition: TPredicate<TComponentModel>);
+
+    function Resolve(const dependency: TDependencyModel;
+      const model: TComponentModel; const context: ICreationContext;
+      const decoratee: TValue): TValue;
   end;
 
   /// <summary>
@@ -142,6 +177,10 @@ type
   /// </summary>
   IComponentBuilder = interface
     ['{8309EBC7-9699-47CF-B177-4BC9B787EBE0}']
+  {$REGION 'Property Accessors'}
+    function GetOnBuild: INotifyEvent<TComponentModel>;
+  {$ENDREGION}
+
     // Inspectors (Policies)
     procedure AddInspector(const inspector: IBuilderInspector);
     procedure RemoveInspector(const inspector: IBuilderInspector);
@@ -149,6 +188,8 @@ type
     // Build
     procedure Build(const model: TComponentModel);
     procedure BuildAll;
+
+    property OnBuild: INotifyEvent<TComponentModel> read GetOnBuild;
   end;
 
   /// <summary>
@@ -164,13 +205,14 @@ type
   /// </summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
-    function Resolve(const context: ICreationContext): TValue;
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue;
     procedure Release(const instance: TValue);
   end;
 
-  ///	<summary>
-  ///	  Component Activator
-  ///	</summary>
+  /// <summary>
+  ///   Component Activator
+  /// </summary>
   IComponentActivator = interface
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
     function CreateInstance(const context: ICreationContext): TValue;
@@ -193,6 +235,7 @@ type
 
     procedure Initialize(const target: TRttiMember);
     procedure InitializeArguments(const arguments: array of TValue);
+    procedure InitializeDependencies(const parameterTypes: array of PTypeInfo);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
 
     property DependencyCount: Integer read GetDependencyCount;
@@ -232,11 +275,9 @@ type
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): Boolean;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependency: TDependencyModel;
-      const argument: TValue): TValue;
+      const dependency: TDependencyModel; const argument: TValue): TValue;
   end;
 
   /// <summary>
@@ -247,10 +288,13 @@ type
   /// </summary>
   ICreationContext = interface(ISubDependencyResolver)
     ['{0E788A94-AD9B-4951-85C1-40F877BB8A24}']
-    procedure EnterResolution(const model: TComponentModel);
+    function EnterResolution(const model: TComponentModel;
+      out instance: TValue): Boolean;
     procedure LeaveResolution(const model: TComponentModel);
 
-    procedure AddArgument(const argument: TValue);
+    function AddArgument(const argument: TValue): Integer;
+    procedure RemoveTypedArgument(index: Integer);
+    procedure AddPerResolve(const model: TComponentModel; const instance: TValue);
     function TryHandle(const injection: IInjection;
       out handled: IInjection): Boolean;
   end;
@@ -258,19 +302,49 @@ type
   IDependencyResolver = interface(ISubDependencyResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
     function CanResolve(const context: ICreationContext;
-      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): Boolean; overload;
     function Resolve(const context: ICreationContext;
-      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
-  ///	<summary>
-  ///	  TComponentModel
-  ///	</summary>
+  TInterceptorReference = record
+  private
+    fTypeInfo: PTypeInfo;
+    fName: string;
+  public
+    constructor Create(typeInfo: PTypeInfo); overload;
+    constructor Create(const name: string); overload;
+
+    class function ForType<T>: TInterceptorReference; static;
+
+    property TypeInfo: PTypeInfo read fTypeInfo;
+    property Name: string read fName;
+  end;
+
+  IModelInterceptorsSelector = interface
+    ['{118AE0DF-C257-4395-83AF-65F86AB12A2D}']
+    function HasInterceptors(const model: TComponentModel): Boolean;
+    function SelectInterceptors(const model: TComponentModel;
+      const interceptors: array of TInterceptorReference): TArray<TInterceptorReference>;
+  end;
+
+  IProxyFactory = interface
+    ['{4813914F-810D-451D-8AED-205C3F82C068}']
+    procedure AddInterceptorSelector(const selector: IModelInterceptorsSelector);
+
+    function CreateInstance(const context: ICreationContext;
+      const instance: TValue; const model: TComponentModel;
+      const constructorArguments: array of TValue): TValue;
+  end;
+
+  /// <summary>
+  ///   TComponentModel
+  /// </summary>
   TComponentModel = class
   private
     fComponentType: TRttiType;
@@ -286,6 +360,7 @@ type
     fMethodInjections: IInjectionList;
     fPropertyInjections: IInjectionList;
     fFieldInjections: IInjectionList;
+    fInterceptors: IList<TInterceptorReference>;
     function GetComponentTypeInfo: PTypeInfo;
     function GetComponentTypeName: string;
     procedure SetRefCounting(const value: TRefCounting);
@@ -294,7 +369,7 @@ type
 
     function HasService(serviceType: PTypeInfo): Boolean;
     function GetServiceName(serviceType: PTypeInfo): string;
-    function GetServiceType(const name: string): PTypeInfo;
+    function GetServiceType(const serviceName: string): PTypeInfo;
 
     property ComponentType: TRttiType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
@@ -313,12 +388,28 @@ type
     property MethodInjections: IInjectionList read fMethodInjections;
     property PropertyInjections: IInjectionList read fPropertyInjections;
     property FieldInjections: IInjectionList read fFieldInjections;
+
+    property Interceptors: IList<TInterceptorReference> read fInterceptors;
   end;
 
   TValueHolder = class(TInterfacedObject, TFunc<TValue>)
   private
-    fValue: TValue;
+    // DON'T CHANGE ORDER!!!
     fLifetimeWatcher: IInterface;
+    fValue: TValue;
+    type
+      TComponentHolder = class(TComponent, IInterface)
+      private
+        fRefCount: Integer;
+        fValue: PValue;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
+      protected
+        procedure Notification(Component: TComponent; Operation: TOperation); override;
+      public
+        constructor Create(value: PValue); reintroduce;
+        destructor Destroy; override;
+      end;
   public
     constructor Create(const value: TValue; refCounting: TRefCounting); overload;
     constructor Create(const value: TValue; const lifetimeWatcher: IInterface); overload;
@@ -367,10 +458,9 @@ type
 implementation
 
 uses
-  Generics.Collections,
   TypInfo,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TDependencyModel'}
@@ -380,6 +470,14 @@ constructor TDependencyModel.Create(const targetType: TRttiType;
 begin
   fTargetType := targetType;
   fTarget := target;
+end;
+
+function TDependencyModel.GetParentType: TRttiType;
+begin
+  if fTarget is TRttiParameter then
+    Result := fTarget.Parent.Parent as TRttiType
+  else
+    Result := fTarget.Parent as TRttiType;
 end;
 
 function TDependencyModel.GetTargetTypeInfo: PTypeInfo;
@@ -395,6 +493,28 @@ end;
 {$ENDREGION'}
 
 
+{$REGION 'TInterceptorReference'}
+
+constructor TInterceptorReference.Create(typeInfo: PTypeInfo);
+begin
+  fTypeInfo := typeInfo;
+  fName := '';
+end;
+
+constructor TInterceptorReference.Create(const name: string);
+begin
+  fTypeInfo := nil;
+  fName := name;
+end;
+
+class function TInterceptorReference.ForType<T>: TInterceptorReference;
+begin
+  Result := TInterceptorReference.Create(System.TypeInfo(T));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TComponentModel'}
 
 constructor TComponentModel.Create(const componentType: TRttiType);
@@ -406,6 +526,7 @@ begin
   fMethodInjections := TCollections.CreateInterfaceList<IInjection>;
   fPropertyInjections := TCollections.CreateInterfaceList<IInjection>;
   fFieldInjections := TCollections.CreateInterfaceList<IInjection>;
+  fInterceptors := TCollections.CreateList<TInterceptorReference>;
 end;
 
 function TComponentModel.GetComponentTypeInfo: PTypeInfo;
@@ -428,9 +549,9 @@ begin
     end).Key;
 end;
 
-function TComponentModel.GetServiceType(const name: string): PTypeInfo;
+function TComponentModel.GetServiceType(const serviceName: string): PTypeInfo;
 begin
-  Result := fServices[name];
+  Result := fServices[serviceName];
 end;
 
 function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;
@@ -454,6 +575,8 @@ end;
 constructor TValueHolder.Create(const value: TValue; refCounting: TRefCounting);
 var
   lifetimeWatcher: IInterface;
+  component: TComponent;
+  componentHolder: TComponentHolder;
 begin
   Guard.CheckNotNull(not value.IsEmpty, 'value');
 
@@ -464,7 +587,14 @@ begin
     if value.Kind = tkInterface then
       lifetimeWatcher := value.AsInterface
     else
-      lifetimeWatcher := nil;
+      if value.TryAsType<TComponent>(component) then
+      begin
+        componentHolder := TComponentHolder.Create(@fValue);
+        componentHolder.FreeNotification(component);
+        lifetimeWatcher := componentHolder;
+      end
+      else
+        lifetimeWatcher := nil;
   Create(value, lifetimeWatcher);
 end;
 
@@ -481,15 +611,57 @@ begin
 {$IFNDEF AUTOREFCOUNT}
   if not Assigned(fLifetimeWatcher) and fValue.IsObject then
     fValue.AsObject.Free;
-{$ELSE}
-  fValue := nil;
 {$ENDIF}
+  // explicitly set to nil to keep correct order
+  fLifetimeWatcher := nil;
+  fValue := nil;
   inherited Destroy;
 end;
 
 function TValueHolder.Invoke: TValue;
 begin
   Result := fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TValueHolder.TComponentHolder'}
+
+constructor TValueHolder.TComponentHolder.Create(value: PValue);
+begin
+  inherited Create(nil);
+  fValue := value;
+end;
+
+destructor TValueHolder.TComponentHolder.Destroy;
+begin
+{$IFNDEF AUTOREFCOUNT}
+  fValue^.AsObject.Free;
+{$ELSE}
+  fValue^.AsObject.DisposeOf;
+{$ENDIF}
+  inherited Destroy;
+end;
+
+function TValueHolder.TComponentHolder._AddRef: Integer;
+begin
+  Result := AtomicIncrement(fRefCount);
+end;
+
+function TValueHolder.TComponentHolder._Release: Integer;
+begin
+  Result := AtomicDecrement(fRefCount);
+  if Result = 0 then
+    Destroy;
+end;
+
+procedure TValueHolder.TComponentHolder.Notification(Component: TComponent;
+  Operation: TOperation);
+begin
+  inherited Notification(Component, Operation);
+  if Operation = opRemove then
+    fValue^ := nil;
 end;
 
 {$ENDREGION}
@@ -517,7 +689,7 @@ begin
   SetLength(dependencies, Length(params));
   for i := Low(dependencies) to High(dependencies) do
     dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
-  Result := fKernel.Resolver.CanResolve(nil, fModel, dependencies, fArguments);
+  Result := fKernel.Resolver.CanResolve(nil, dependencies, fArguments);
 end;
 
 {$ENDREGION}

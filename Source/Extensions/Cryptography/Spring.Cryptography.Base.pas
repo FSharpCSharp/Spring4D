@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,11 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Cryptography.Base;
 
 interface
 
-{$I Spring.inc}
 {$R-}
 
 uses
@@ -39,9 +40,9 @@ uses
 type
   PUInt32 = ^UInt32;
 
-  ///	<summary>
-  ///	  Abstract base class for hash algorithms.
-  ///	</summary>
+  /// <summary>
+  ///   Abstract base class for hash algorithms.
+  /// </summary>
   THashAlgorithmBase = class abstract(TInterfacedObject, IHashAlgorithm, IInterface)
   protected
     fHash: TBuffer;
@@ -68,9 +69,9 @@ type
   {TODO -oPaul -cGeneral : Refactoring: EncryptBlock/EncryptFinalBlock/Decrypt***}
   {TODO 5 -oPaul -cGeneral : BUG FIXES: TSymmetricAlgorithmBase.Encrypt/Decrypt(inputStream, outputStream)}
 
-  ///	<summary>
-  ///	  Abstract base class for symmetric algorithms.
-  ///	</summary>
+  /// <summary>
+  ///   Abstract base class for symmetric algorithms.
+  /// </summary>
   TSymmetricAlgorithmBase = class abstract(TInterfacedObject, ISymmetricAlgorithm)
   private
     fCipherMode: TCipherMode;
@@ -145,10 +146,12 @@ type
     property LegalKeySizes: ISizeCollection read GetLegalKeySizes;
   end;
 
-  ///	<summary>
-  ///	  TRandomNumberGenerator
-  ///	</summary>
+  /// <summary>
+  ///   TRandomNumberGenerator
+  /// </summary>
   TRandomNumberGenerator = class(TInterfacedObject, IRandomNumberGenerator)
+  private
+    class constructor Create;
   public
     procedure GetBytes(var data: TBytes);
     procedure GetNonZeroBytes(var data: TBytes);
@@ -164,6 +167,7 @@ uses
   Spring.Utils,
 {$ENDIF}
   Spring.ResourceStrings;
+
 
 {$REGION 'THashAlgorithmBase'}
 
@@ -208,10 +212,11 @@ end;
 
 function THashAlgorithmBase.ComputeHash(const inputStream: TStream): TBuffer;
 var
-  buffer: array[0..512-1] of Byte;
+  buffer: TBytes;
   count: Integer;
 begin
   Guard.CheckNotNull(inputStream, 'inputStream');
+  SetLength(buffer, 1024 * 1024);
   HashInit;
   count := inputStream.Read(buffer[0], Length(buffer));
   while count > 0 do
@@ -227,7 +232,7 @@ function THashAlgorithmBase.ComputeHashOfFile(const fileName: string): TBuffer;
 var
   stream: TStream;
 begin
-  stream := TFileStream.Create(fileName, fmOpenRead or fmShareExclusive);
+  stream := TFileStream.Create(fileName, fmOpenRead or fmShareDenyNone);
   try
     Result := ComputeHash(stream);
   finally
@@ -704,26 +709,25 @@ end;
 
 {$REGION 'TRandomNumberGenerator'}
 
+class constructor TRandomNumberGenerator.Create;
+begin
+  Randomize;
+end;
+
 procedure TRandomNumberGenerator.GetBytes(var data: TBytes);
 var
   i: Integer;
 begin
-  Randomize;
   for i := Low(data) to High(data) do
-  begin
     data[i] := RandomRange(0, $FF + 1);
-  end;
 end;
 
 procedure TRandomNumberGenerator.GetNonZeroBytes(var data: TBytes);
 var
   i: Integer;
 begin
-  Randomize;
   for i := Low(data) to High(data) do
-  begin
     data[i] := RandomRange(1, $FF + 1);
-  end;
 end;
 
 {$ENDREGION}

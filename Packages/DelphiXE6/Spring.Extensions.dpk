@@ -24,8 +24,8 @@ package Spring.Extensions;
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
 {$DEFINE DEBUG}
-{$DEFINE SPRING_NO_WARNING}
 {$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'Spring4D Extensions package'}
 {$LIBSUFFIX '.DelphiXE6'}
 {$RUNONLY}
 {$IMPLICITBUILD OFF}
@@ -43,9 +43,7 @@ contains
   Spring.Cryptography.SHA in '..\..\Source\Extensions\Cryptography\Spring.Cryptography.SHA.pas',
   Spring.Cryptography.Utils in '..\..\Source\Extensions\Cryptography\Spring.Cryptography.Utils.pas',
   Spring.Utils.IO in '..\..\Source\Extensions\Utils\Spring.Utils.IO.pas',
-{$ifdef MSWINDOWS}
   Spring.Utils.WinApi in '..\..\Source\Extensions\Utils\Spring.Utils.WinApi.pas',
-{$endif MSWINDOWS}
   Spring.Utils in '..\..\Source\Extensions\Utils\Spring.Utils.pas';
 
 end.

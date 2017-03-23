@@ -90,9 +90,9 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <SanitizedProjectName>Spring_Tests_DelphiXE8</SanitizedProjectName>
-        <DCC_Define>SPRING_ENABLE_GUARD;SPRING_NO_WARNING;TESTS;$(DCC_Define)</DCC_Define>
+        <DCC_Define>SPRING_ENABLE_GUARD;SPRING_NO_WARNING;TESTS;TESTINSIGHT;$(DCC_Define)</DCC_Define>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <DCC_UnitSearchPath>..\Source;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Interception;..\Source\Base\Logging;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Interception;..\Source\Core\Logging;..\Source\Core\Mocking;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;.\Source;.\Source\dUnit;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\Source;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Logging;..\Source\Base\Patterns;..\Source\Core\Container;..\Source\Core\Interception;..\Source\Core\Logging;..\Source\Core\Mocking;..\Source\Core\Services;..\Source\Extensions\Cryptography;..\Source\Extensions\Utils;.\Source;.\Source\dUnit;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
@@ -184,7 +184,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="Source\Spring.TestBootstrap.pas"/>
-        <DCCReference Include="Source\FinalBuilder.XMLTestRunner.pas"/>
+        <DCCReference Include="Source\Spring.Testing.pas"/>
         <DCCReference Include="Source\Spring.TestRegistration.pas"/>
         <DCCReference Include="Source\Spring.TestRunner.pas"/>
         <DCCReference Include="Source\Spring.TestUtils.pas"/>
@@ -194,14 +194,22 @@
         <DCCReference Include="Source\Base\Spring.Tests.DesignPatterns.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Helpers.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Reflection.pas"/>
-        <DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.ValueConverters.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.SystemUtils.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Logging.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Logging.Serializers.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Logging.Types.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.pas"/>
+        <DCCReference Include="Source\Core\Spring.Tests.Container.Logging.pas"/>
+        <DCCReference Include="Source\Core\Spring.Tests.Interception.pas"/>
+        <DCCReference Include="Source\Core\Spring.Tests.Interception.Types.pas"/>
+        <DCCReference Include="Source\Core\Spring.Tests.Mocking.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
+        <DCCReference Include="Source\Spring.Tests.Testing.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>
         <None Include="Spring.Tests.inc"/>
         <BuildConfiguration Include="Release">
@@ -274,15 +282,10 @@
                 <Source>
                     <Source Name="MainSource">Spring.Tests.dpr</Source>
                 </Source>
-                <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k220.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp220.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
-                </Excluded_Packages>
             </Delphi.Personality>
-            <Deployment Version="1">
-                <DeployFile LocalName="Bin\DelphiXE7\OSX32\Spring.Tests.rsm" Configuration="Debug" Class="DebugSymbols">
-                    <Platform Name="OSX32">
-                        <RemoteName>Spring.Tests.rsm</RemoteName>
+            <Deployment Version="2">
+                <DeployFile LocalName="$(BDS)\Redist\iossimulator\libPCRE.dylib" Class="DependencyModule">
+                    <Platform Name="iOSSimulator">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -291,10 +294,13 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">
+                <DeployFile LocalName="Bin\DelphiXE7\OSX32\Spring.Tests.rsm" Configuration="Debug" Class="DebugSymbols">
                     <Platform Name="OSX32">
+                        <RemoteName>Spring.Tests.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
+                </DeployFile>
+                <DeployFile LocalName="$(BDS)\Redist\iossim32\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="iOSSimulator">
                         <Overwrite>true</Overwrite>
                     </Platform>
@@ -304,7 +310,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="$(BDS)\Redist\iossim32\libcgunwind.1.0.dylib" Class="DependencyModule">
+                <DeployFile LocalName="$(BDS)\Redist\iossimulator\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="iOSSimulator">
                         <Overwrite>true</Overwrite>
                     </Platform>
@@ -629,12 +635,12 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
-                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <Platforms>

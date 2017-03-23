@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,27 +22,27 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<summary>
-///	  This namespace contains the following classical design patterns:
-///	  <list type="bullet">
-///	    <item>
-///	      <b>Factory Pattern</b>
-///	    </item>
-///	    <item>
-///	      <b><see cref="TSingleton">Singleton Pattern</see></b>
-///	    </item>
-///	    <item>
-///	      <b>Observer Pattern</b>
-///	    </item>
-///	    <item>
-///	      <b><see cref="ISpecification&lt;T&gt;">Specification Pattern</see></b>
-///	    </item>
-///	  </list>
-///	</summary>
-///	<preliminary />
-unit Spring.DesignPatterns;
-
 {$I Spring.inc}
+
+/// <summary>
+///   This namespace contains the following classical design patterns:
+///   <list type="bullet">
+///     <item>
+///       <b>Factory Pattern</b>
+///     </item>
+///     <item>
+///       <b><see cref="TSingleton">Singleton Pattern</see></b>
+///     </item>
+///     <item>
+///       <b>Observer Pattern</b>
+///     </item>
+///     <item>
+///       <b><see cref="ISpecification&lt;T&gt;">Specification Pattern</see></b>
+///     </item>
+///   </list>
+/// </summary>
+/// <preliminary />
+unit Spring.DesignPatterns;
 
 interface
 
@@ -58,49 +58,43 @@ type
 
   {$REGION 'Singleton Pattern'}
 
-  ///	<summary>
-  ///	  <para>
-  ///	    Provides a simple implementation of the <b>Singleton Pattern</b>. Use
-  ///	    this portal to get the shared instance of a certain class which must
-  ///	    have a default constructor.
-  ///	  </para>
-  ///	  <para>
-  ///	    It also keeps track of the lifetime of the instances and will free
-  ///	    them in reversed order.
-  ///	  </para>
-  ///	</summary>
-  ///	<remarks>
-  ///	  This class just demonstrates how to apply the classical Singleton
-  ///	  Pattern. It's recommended to use the Spring IoC container which is more
-  ///	  flexible.
-  ///	</remarks>
-  ///	<threadsafety static="true" />
+  /// <summary>
+  ///   <para>
+  ///     Provides a simple implementation of the <b>Singleton Pattern</b>.
+  ///     Use this portal to get the shared instance of a certain class which
+  ///     must have a default constructor.
+  ///   </para>
+  ///   <para>
+  ///     It also keeps track of the lifetime of the instances and will free
+  ///     them in reversed order.
+  ///   </para>
+  /// </summary>
+  /// <remarks>
+  ///   This class just demonstrates how to apply the classical Singleton
+  ///   Pattern. It's recommended to use the Spring IoC container which is more
+  ///   flexible.
+  /// </remarks>
+  /// <threadsafety static="true" />
   TSingleton = record
-  strict private
-    class var
-      fMappings: IDictionary<TClass, TObject>;
-
-      ///	<summary>
-      ///	  Tracks all instances of the singleton objects and free them in
-      ///	  reversed order.
-      ///	</summary>
-      fInstances: IList<TObject>;
-
-      fCriticalSection: TCriticalSection;
-
-    class constructor Create;
-  {$HINTS OFF}
-    class destructor Destroy;
-  {$HINTS ON}
-
+  strict private type
+    TSingleton<T: class> = record
+    private class var
+      fInstance: T;
+    public
+      class destructor Destroy;
+    end;
+  class var
+    fCriticalSection: TCriticalSection;
   public
+    class constructor Create;
+    class destructor Destroy;
 
-    ///	<summary>
-    ///	  Gets the shared instance of a class.
-    ///	</summary>
-    ///	<typeparam name="T">
-    ///	  The type of a class which must have a default constructor.
-    ///	</typeparam>
+    /// <summary>
+    ///   Gets the shared instance of a class.
+    /// </summary>
+    /// <typeparam name="T">
+    ///   The type of a class which must have a default constructor.
+    /// </typeparam>
     class function GetInstance<T: class, constructor>: T; static;
   end;
 
@@ -109,52 +103,30 @@ type
 
   {$REGION 'Observer Pattern'}
 
-  ///	<summary>
-  ///	  Represents an observable subject.
-  ///	</summary>
-  IObservable<T> = interface
-    procedure AddListener(const listener: T);
-    procedure RemoveListener(const listener: T);
-    procedure NotifyListeners(callback: TProc<T>);
+  /// <summary>
+  ///   Represents an observable subject.
+  /// </summary>
+  IObservable<T> = interface(IInvokable)
+    procedure Attach(const observer: T);
+    procedure Detach(const observer: T);
+    procedure Notify;
   end;
 
-  TListenerNotification = (
-    lnAdded,
-    lnRemoved
-  );
-
-  TObservable<T> = class(TInterfacedObject, IObservable<T>, IInterface)
+  TObservable<T> = class(TInterfacedObject, IObservable<T>)
   private
-    fListeners: IList<T>;
+    fLock: TMREWSync;
+    fObservers: IList<T>;
   protected
-    procedure Validate(const listener: T); virtual;
-    procedure DoListenerAdded(const listener: T); virtual;
-    procedure DoListenerRemoved(const listener: T); virtual;
-    procedure Notify(const listener: T; action: TListenerNotification); virtual;
-    function Contains(const listener: T): Boolean; virtual;
-    function GetListeners: IList<T>; virtual;
-    property Listeners: IList<T> read GetListeners;
-  public
-    destructor Destroy; override;
-    procedure AddListener(const listener: T); virtual;
-    procedure RemoveListener(const listener: T); virtual;
-    procedure NotifyListeners(callback: TProc<T>); virtual;
-  end;
-
-  TSynchronizedObservable<T> = class(TObservable<T>, IObservable<T>, IInterface)
-  protected
-    fListenersLock: IReadWriteSync;
-    function Contains(const listener: T): Boolean; override;
+    procedure DoNotify(const observer: T); virtual; abstract;
+    property Observers: IList<T> read fObservers;
   public
     constructor Create;
-    procedure AddListener(const listener: T); override;
-    procedure RemoveListener(const listener: T); override;
-    procedure NotifyListeners(callback: TProc<T>); override;
-  end;
+    destructor Destroy; override;
 
-//  TAsyncObservable<T> = class(TInterfacedObject, IObservable<T>, IInterface)
-//
-//  end;
+    procedure Attach(const observer: T);
+    procedure Detach(const observer: T);
+    procedure Notify;
+  end;
 
   {$ENDREGION}
 
@@ -166,17 +138,17 @@ type
 //    function IsSatisfiedBy(const obj: TValue): Boolean;
 //  end;
 
-  ///	<summary>
-  ///	  Defines the core methods of a specification interface.
-  ///	</summary>
-  ISpecification<T> = interface
+  /// <summary>
+  ///   Defines the core methods of a specification interface.
+  /// </summary>
+  ISpecification<T> = interface(IInvokable)
     function IsSatisfiedBy(const item: T): Boolean;
     // DO NOT ADD ANY METHODS HERE!!!
   end;
 
-  ///	<summary>
-  ///	  Provides the easy-going specification holder with operator overloads.
-  ///	</summary>
+  /// <summary>
+  ///   Provides the easy-going specification holder with operator overloads.
+  /// </summary>
   TSpecification<T> = record
   private
     fSpecification: ISpecification<T>;
@@ -184,18 +156,20 @@ type
     function IsSatisfiedBy(const item: T): Boolean;
 
     class operator Implicit(const specification: ISpecification<T>): TSpecification<T>;
+    class operator Implicit(const specification: TPredicate<T>): TSpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;
     class operator Explicit(const specification: ISpecification<T>): TSpecification<T>;
+    class operator Explicit(const specification: TPredicate<T>): TSpecification<T>;
     class operator Explicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator LogicalAnd(const left, right: TSpecification<T>): TSpecification<T>;
     class operator LogicalOr(const left, right: TSpecification<T>): TSpecification<T>;
     class operator LogicalNot(const value: TSpecification<T>): TSpecification<T>;
   end;
 
-  ///	<summary>
-  ///	  Provides the abstract base class for Specification.
-  ///	</summary>
+  /// <summary>
+  ///   Provides the abstract base class for Specification.
+  /// </summary>
   TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>)
   protected
     function TPredicate<T>.Invoke = IsSatisfiedBy;
@@ -251,7 +225,6 @@ type
     function GetCount: Integer;
   public
     constructor Create;
-    destructor Destroy; override;
     property Count: Integer read GetCount;
     procedure RegisterFactoryMethod(key: TKey; factoryMethod: TFactoryMethod<TBaseType>);
     procedure UnregisterFactoryMethod(key: TKey);
@@ -317,8 +290,6 @@ uses
 
 class constructor TSingleton.Create;
 begin
-  fMappings :=  TCollections.CreateDictionary<TClass, TObject>(4);
-  fInstances := TCollections.CreateObjectList<TObject>(True);
   fCriticalSection := TCriticalSection.Create;
 end;
 
@@ -329,17 +300,27 @@ end;
 
 class function TSingleton.GetInstance<T>: T;
 begin
-  fCriticalSection.Enter;
-  try
-    if not fMappings.TryGetValue(T, TObject(Result)) then
-    begin
-      Result := T.Create;
-      fMappings.AddOrSetValue(T, TObject(Result));
-      fInstances.Add(Result);
+  if not Assigned(TSingleton<T>.fInstance) then
+  begin
+    fCriticalSection.Enter;
+    try
+      if not Assigned(TSingleton<T>.fInstance) then
+        TSingleton<T>.fInstance := T.Create;
+    finally
+      fCriticalSection.Leave;
     end;
-  finally
-    fCriticalSection.Leave;
   end;
+  Result := TSingleton<T>.fInstance;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSingleton.TSingleton<T>'}
+
+class destructor TSingleton.TSingleton<T>.Destroy;
+begin
+  fInstance.Free;
 end;
 
 {$ENDREGION}
@@ -347,133 +328,50 @@ end;
 
 {$REGION 'TObservable<T>'}
 
+constructor TObservable<T>.Create;
+begin
+  inherited Create;
+  fLock := TMREWSync.Create;
+  fObservers := TCollections.CreateList<T>;
+end;
+
 destructor TObservable<T>.Destroy;
 begin
+  fObservers := nil;
+  fLock.Free;
   inherited Destroy;
 end;
 
-function TObservable<T>.Contains(const listener: T): Boolean;
+procedure TObservable<T>.Attach(const observer: T);
 begin
-  Result := Listeners.Contains(listener);
-end;
-
-procedure TObservable<T>.Validate(const listener: T);
-begin
-end;
-
-procedure TObservable<T>.DoListenerAdded(const listener: T);
-begin
-end;
-
-procedure TObservable<T>.DoListenerRemoved(const listener: T);
-begin
-end;
-
-procedure TObservable<T>.Notify(const listener: T;
-  action: TListenerNotification);
-begin
-  case action of
-    lnAdded:
-    begin
-      Listeners.Add(listener);
-      DoListenerAdded(listener);
-    end;
-    lnRemoved:
-    begin
-      Listeners.Remove(listener);
-      DoListenerRemoved(listener);
-    end;
+  fLock.BeginWrite;
+  try
+    fObservers.Add(observer);
+  finally
+    fLock.EndWrite;
   end;
 end;
 
-procedure TObservable<T>.AddListener(const listener: T);
+procedure TObservable<T>.Detach(const observer: T);
 begin
-  Validate(listener);
-  if not Contains(listener) then
-  begin
-    Notify(listener, lnAdded);
+  fLock.BeginWrite;
+  try
+    fObservers.Remove(observer);
+  finally
+    fLock.EndWrite;
   end;
 end;
 
-procedure TObservable<T>.RemoveListener(const listener: T);
-begin
-  Validate(listener);
-  if Contains(listener) then
-  begin
-    Notify(listener, lnRemoved);
-  end;
-end;
-
-procedure TObservable<T>.NotifyListeners(callback: TProc<T>);
+procedure TObservable<T>.Notify;
 var
-  listener: T;
+  observer: T;
 begin
-  Guard.CheckNotNull(Assigned(callback), 'callback');
-
-  for listener in Listeners do
-  begin
-    callback(listener);
-  end;
-end;
-
-function TObservable<T>.GetListeners: IList<T>;
-begin
-  if fListeners = nil then
-  begin
-    fListeners := TCollections.CreateList<T>;
-  end;
-  Result := fListeners;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSynchronizedObservable<T>'}
-
-constructor TSynchronizedObservable<T>.Create;
-begin
-  inherited Create;
-  fListenersLock := TMREWSync.Create;
-  fListeners := TCollections.CreateList<T>;
-end;
-
-procedure TSynchronizedObservable<T>.AddListener(const listener: T);
-begin
-  fListenersLock.BeginWrite;
+  fLock.BeginRead;
   try
-    inherited AddListener(listener);
+    for observer in fObservers.ToArray do
+      DoNotify(observer);
   finally
-    fListenersLock.EndWrite;
-  end;
-end;
-
-procedure TSynchronizedObservable<T>.RemoveListener(const listener: T);
-begin
-  fListenersLock.BeginWrite;
-  try
-    inherited RemoveListener(listener);
-  finally
-    fListenersLock.EndWrite;
-  end;
-end;
-
-procedure TSynchronizedObservable<T>.NotifyListeners(callback: TProc<T>);
-begin
-  fListenersLock.BeginRead;
-  try
-    inherited NotifyListeners(callback);
-  finally
-    fListenersLock.EndRead;
-  end;
-end;
-
-function TSynchronizedObservable<T>.Contains(const listener: T): Boolean;
-begin
-  fListenersLock.BeginRead;
-  try
-    Result := inherited Contains(listener);
-  finally
-    fListenersLock.EndRead;
+    fLock.EndRead;
   end;
 end;
 
@@ -494,6 +392,12 @@ begin
 end;
 
 class operator TSpecification<T>.Implicit(
+  const specification: TPredicate<T>): TSpecification<T>;
+begin
+  TPredicate<T>(Result.fSpecification) := specification;
+end;
+
+class operator TSpecification<T>.Implicit(
   const specification: TSpecification<T>): ISpecification<T>;
 begin
   Result := specification.fSpecification;
@@ -509,6 +413,12 @@ class operator TSpecification<T>.Explicit(
   const specification: ISpecification<T>): TSpecification<T>;
 begin
   Result.fSpecification := specification;
+end;
+
+class operator TSpecification<T>.Explicit(
+  const specification: TPredicate<T>): TSpecification<T>;
+begin
+  TPredicate<T>(Result.fSpecification) := specification;
 end;
 
 class operator TSpecification<T>.Explicit(
@@ -592,11 +502,6 @@ begin
   fFactoryMethods := TCollections.CreateDictionary<TKey, TFactoryMethod<TBaseType>>;
 end;
 
-destructor TFactory<TKey, TBaseType>.Destroy;
-begin
-  inherited;
-end;
-
 function TFactory<TKey, TBaseType>.GetCount: Integer;
 begin
   Result := fFactoryMethods.Count;
@@ -604,13 +509,11 @@ end;
 
 function TFactory<TKey, TBaseType>.GetInstance(key: TKey): TBaseType;
 var
-  factoryMethod : TFactoryMethod<TBaseType>;
+  factoryMethod: TFactoryMethod<TBaseType>;
 begin
-  if not IsRegistered(key) then
+  if not fFactoryMethods.TryGetValue(key, factoryMethod) or not Assigned(factoryMethod) then
     raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
-  factoryMethod := fFactoryMethods.Items[key];
-  if Assigned(factoryMethod) then
-    Result := factoryMethod;
+  Result := factoryMethod;
 end;
 
 function TFactory<TKey, TBaseType>.IsRegistered(key: TKey): boolean;
@@ -623,7 +526,6 @@ procedure TFactory<TKey, TBaseType>.RegisterFactoryMethod(key: TKey;
 begin
   if IsRegistered(key) then
     raise TFactoryMethodKeyAlreadyRegisteredException.Create('Factory already registered');
-
   fFactoryMethods.Add(key, factoryMethod);
 end;
 
@@ -631,7 +533,6 @@ procedure TFactory<TKey, TBaseType>.UnRegisterFactoryMethod(key: TKey);
 begin
   if not IsRegistered(key) then
     raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
-
   fFactoryMethods.Remove(key);
 end;
 
@@ -670,9 +571,7 @@ end;
 function TClassTypeRegistry<TValue>.GetValue(classType: TClass): TValue;
 begin
   if not TryGetValue(classType, Result) then
-  begin
     raise Exception.Create('Failed to get value');
-  end;
 end;
 
 function TClassTypeRegistry<TValue>.GetValues: IEnumerable<TValue>;

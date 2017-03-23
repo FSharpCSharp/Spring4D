@@ -81,7 +81,7 @@
         <AUP_READ_PHONE_STATE>true</AUP_READ_PHONE_STATE>
         <DCC_Define>SPRING_NO_WARNING;FMX;TESTINSIGHT;$(DCC_Define)</DCC_Define>
         <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDevelopmentRegion=en;CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleInfoDictionaryVersion=6.0;CFBundleVersion=1.0.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;LSRequiresIPhoneOS=true;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);UIDeviceFamily=iPhone &amp; iPad;CFBundleResourceSpecification=ResourceRules.plist</VerInfo_Keys>
-        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Base\Reflection;..\..\..\Source\Core\Container;..\..\..\Source\Core\Services;..\..\..\Source\Extensions\Utils;..\..\..\Source\Extensions\Cryptography;..\..\..\Source\Base\Logging;..\..\..\Source\Core\Logging;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Mocking;..\..\Source\dUnit;..\..\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Core\Container;..\..\..\Source\Core\Services;..\..\..\Source\Extensions\Utils;..\..\..\Source\Extensions\Cryptography;..\..\..\Source\Base\Logging;..\..\..\Source\Core\Logging;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Mocking;..\..\Source\dUnit;..\..\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <SanitizedProjectName>SpringTestsMobile</SanitizedProjectName>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <AUP_ACCESS_FINE_LOCATION>true</AUP_ACCESS_FINE_LOCATION>
@@ -290,7 +290,7 @@
         <DCCReference Include="..\..\Source\Base\Spring.Tests.DesignPatterns.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Helpers.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Reflection.pas"/>
-        <DCCReference Include="..\..\Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.Tests.ValueConverters.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.SystemUtils.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Logging.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Logging.Serializers.pas"/>
@@ -324,12 +324,6 @@
                 <Source>
                     <Source Name="MainSource">SpringTestsMobile.dpr</Source>
                 </Source>
-                <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k220.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp220.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k220.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp220.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
-                </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="1">
                 <DeployFile LocalName="$(BDS)\bin\Artwork\Android\FM_SplashImage_960x720.png" Configuration="Debug" Class="Android_SplashImage960">

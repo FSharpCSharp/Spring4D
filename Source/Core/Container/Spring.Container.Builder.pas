@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Builder;
-
 {$I Spring.inc}
+
+unit Spring.Container.Builder;
 
 interface
 
@@ -38,7 +38,9 @@ type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
   private
     fKernel: IKernel;
+    fOnBuild: INotifyEvent<TComponentModel>;
     fInspectors: IList<IBuilderInspector>;
+    function GetOnBuild: INotifyEvent<TComponentModel>;
   public
     constructor Create(const kernel: IKernel);
 
@@ -47,6 +49,8 @@ type
     procedure ClearInspectors;
     procedure Build(const model: TComponentModel);
     procedure BuildAll;
+
+    property OnBuild: INotifyEvent<TComponentModel> read GetOnBuild;
   end;
 
   TInspectorBase = class abstract(TInterfacedObject, IBuilderInspector)
@@ -108,16 +112,22 @@ type
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
+  TInterceptorInspector = class(TInspectorBase)
+  protected
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
+  end;
+
 implementation
 
 uses
+  Classes,
   TypInfo,
   Spring.Container.Common,
   Spring.Container.ComponentActivator,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
+  Spring.Events,
   Spring.Reflection;
 
 
@@ -129,6 +139,12 @@ begin
   inherited Create;
   fKernel := kernel;
   fInspectors := TCollections.CreateInterfaceList<IBuilderInspector>;
+  fOnBuild := TNotifyEventImpl<TComponentModel>.Create;
+end;
+
+function TComponentBuilder.GetOnBuild: INotifyEvent<TComponentModel>;
+begin
+  Result := fOnBuild;
 end;
 
 procedure TComponentBuilder.AddInspector(const inspector: IBuilderInspector);
@@ -154,6 +170,7 @@ var
 begin
   for inspector in fInspectors do
     inspector.ProcessModel(fKernel, model);
+  fOnBuild.Invoke(Self, model);
 end;
 
 procedure TComponentBuilder.BuildAll;
@@ -191,6 +208,7 @@ procedure TLifetimeInspector.DoProcessModel(const kernel: IKernel;
       nil,
       TSingletonLifetimeManager,
       TTransientLifetimeManager,
+      TTransientLifetimeManager,
       TSingletonPerThreadLifetimeManager,
       TPooledLifetimeManager,
       nil
@@ -207,7 +225,8 @@ var
 begin
   if Assigned(model.LifetimeManager) then
   begin
-    model.LifetimeType := TLifetimeType.Custom;
+    if model.LifetimeType = TLifetimeType.Unknown then
+      model.LifetimeType := TLifetimeType.Custom;
     Exit;
   end;
   if model.LifetimeType = TLifetimeType.Unknown then
@@ -217,13 +236,11 @@ begin
       model.LifetimeType := attribute.LifetimeType;
       if attribute is SingletonAttributeBase then
         model.RefCounting := SingletonAttributeBase(attribute).RefCounting;
-{$WARN SYMBOL_EXPERIMENTAL OFF}
       if attribute is PooledAttribute then
       begin
         model.MinPoolsize := PooledAttribute(attribute).MinPoolsize;
         model.MaxPoolsize := PooledAttribute(attribute).MaxPoolsize;
       end;
-{$WARN SYMBOL_EXPERIMENTAL ON}
     end
     else
       model.LifetimeType := TLifetimeType.Transient;
@@ -259,7 +276,7 @@ begin
       if TType.IsAssignable(attribute.ServiceType, targetType.Handle) then
       begin
         if attribute.ServiceType <> targetType.Handle then
-          targetType := TType.GetType(attribute.ServiceType);
+          targetType := attribute.ServiceType.RttiType;
         dependency := TDependencyModel.Create(targetType, target);
       end
       else
@@ -286,9 +303,9 @@ var
   arguments: TArray<TValue>;
   i: Integer;
 begin
-  if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
+  if model.ConstructorInjections.Any then Exit;  // TEMP
   predicate := TMethodFilters.IsConstructor
-    and not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
+    and not TMethodFilters.HasParameterFlags([pfVar, pfArray, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
   begin
     injection := kernel.Injector.InjectConstructor(model);
@@ -318,7 +335,7 @@ var
 begin
   condition := TMethodFilters.IsInstanceMethod
     and TMethodFilters.HasAttribute(InjectAttribute)
-    and not TMethodFilters.HasParameterFlags([pfOut, pfVar])
+    and not TMethodFilters.HasParameterFlags([pfVar, pfArray, pfOut])
     and not TMethodFilters.IsConstructor;
   for method in model.ComponentType.Methods.Where(condition) do
   begin
@@ -473,16 +490,21 @@ var
   services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
-  if not model.Services.IsEmpty then Exit;
+  if model.Services.Any then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
     kernel.Registry.RegisterService(model, model.ComponentTypeInfo)
   else
   begin
     attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
     for attribute in attributes do
-      kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.Name);
+      kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.ServiceName);
 
-    services := model.ComponentType.GetInterfaces;
+    services := model.ComponentType.GetInterfaces.Where(
+      function(const interfaceType: TRttiInterfaceType): Boolean
+      begin
+        Result := (interfaceType.Handle <> TypeInfo(IInterface))
+          and (interfaceType.Handle <> TypeInfo(IInterfaceComponentReference));
+      end);
     if Assigned(services) then
       for service in services do
         if Assigned(service.BaseType) and not model.HasService(service.Handle) then
@@ -495,9 +517,41 @@ begin
       and not model.HasService(model.ComponentTypeInfo) then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
 
-    if model.Services.IsEmpty then
+    if not model.Services.Any then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterceptorInspector' }
+
+procedure TInterceptorInspector.DoProcessModel(const kernel: IKernel;
+  const model: TComponentModel);
+{$IFNDEF DELPHI2010}
+var
+  attributes: TArray<InterceptorAttribute>;
+  attribute: InterceptorAttribute;
+  interceptorRef: TInterceptorReference;
+begin
+  attributes := model.ComponentType.GetCustomAttributes<InterceptorAttribute>;
+  for attribute in attributes do
+  begin
+    if Assigned(attribute.InterceptorType) then
+      interceptorRef := TInterceptorReference.Create(attribute.InterceptorType)
+    else
+      interceptorRef := TInterceptorReference.Create(attribute.Name);
+    if not model.Interceptors.Contains(interceptorRef,
+      function(const left, right: TInterceptorReference): Boolean
+      begin
+        Result := (left.TypeInfo = right.TypeInfo) and (left.Name = right.Name);
+      end) then
+      model.Interceptors.Add(interceptorRef);
+  end;
+{$ELSE}
+begin
+{$ENDIF}
 end;
 
 {$ENDREGION}

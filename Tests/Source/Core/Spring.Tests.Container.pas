@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -89,6 +89,7 @@ type
     procedure TestPooledRefCountedInterface;
     procedure TestInitializable;
     procedure TestRecyclable;
+    procedure TestDisposable;
 
     procedure TestIssue41_DifferentName;
     procedure TestIssue41_DifferentService;
@@ -98,6 +99,10 @@ type
     procedure TestIssue50;
 
     procedure TestResolveFuncWithTwoTypes;
+    procedure TestResolveUnknownClasses;
+
+    procedure TestResolveComponentDoesNotFallbackToTObject;
+    procedure TestResolveComponentDoesCallOverriddenConstructor;
   end;
 
   // Same Service, Different Implementations
@@ -138,6 +143,7 @@ type
     fExpectedString: string;
   protected
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestNameService;
     procedure TestIntegerArgument;
@@ -175,6 +181,7 @@ type
   protected
     procedure DoRegisterComponents; virtual;
     procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestConstructorInjection;
     procedure TestMethodInjection;
@@ -205,6 +212,11 @@ type
   published
     procedure TestResolveChicken;
     procedure TestResolveEgg;
+  end;
+
+  TTestPerResolve = class(TContainerTestCase)
+  published
+    procedure TestResolveCircularDependency;
   end;
 
   TTestImplementsAttribute = class(TContainerTestCase)
@@ -269,23 +281,19 @@ type
     procedure TestDependencyTypeIsRecord;
     procedure TestDependencyTypeIsInterface;
 {$ELSE}
-    {$MESSAGE WARN 'Test me again later'}
     // These tests fail due to some compiler/RTL problem, the circular
-    // dependency excpetion is raised but during re-raise in some finally block
+    // dependency exception is raised but during re-raise in some finally block
     // AV is raised instead. This is rare corner case not considered to be a
     // major issue.
 {$ENDIF}
+    procedure TestDependencyTypeIsSingletonAlreadyInstantiated;
+    procedure TestDependencyTypeIsSingletonNotYetInstantiated;
+    procedure TestResolveLazyOfSingletonCreatedLater;
   end;
 
   TTestLazyDependenciesDetectRecursion = class(TTestLazyDependencies)
   protected
     procedure PerformChecks; override;
-  end;
-
-  TTestDecoratorExtension = class(TContainerTestCase)
-  published
-    procedure TestResolveReturnsDecorator;
-    procedure TestResolveWithResolverOverride;
   end;
 
   TTestManyDependencies = class(TContainerTestCase)
@@ -302,13 +310,24 @@ type
     procedure TestResolveArrayOfLazy;
   end;
 
+  TTestDecorators = class(TContainerTestCase)
+  protected
+    procedure SetUp; override;
+  published
+    procedure RegisterOneDecoratorResolveReturnsDecorator;
+    procedure RegisterOneDecoratorWithFailingConditionResolvesWithoutDecorator;
+    procedure RegisterTwoDecoratorsResolveReturnsLastDecorator;
+    procedure RegisterTwoDecoratorsResolveWithParameterReturnsCorrectValue;
+    procedure RegisterOneDecoratorInitializeIsCalled;
+    procedure RegisterTwoDecoratorsResolveLazyReturnsLastDecorator;
+    procedure RegisterTwoDecoratorsResolveArrayAllDecorated;
+  end;
 
 implementation
 
 uses
   Spring.Collections,
   Spring.Container.Core,
-  Spring.Container.DecoratorExtension,
   Spring.Container.Resolvers,
   Spring.TestUtils;
 
@@ -492,7 +511,7 @@ procedure TTestSimpleContainer.TestIssue13;
 begin
   fContainer.RegisterType<TNameService>.Implements<INameService>.AsSingleton;
   fContainer.Build;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestSimpleContainer.TestAbstractClassService;
@@ -574,7 +593,11 @@ begin
   finally
 {$IFNDEF AUTOREFCOUNT}
     fContainer.Release(obj1);
-    fContainer.Release(obj2);
+    try
+      // might raise an exception because ClassType is nil with FastMM4 full debug
+      fContainer.Release(obj2);
+    except
+    end;
 {$ELSE}
     obj1 := nil;
     obj2 := nil;
@@ -662,10 +685,6 @@ var
   service1, service2, service3: INameService;
   count: Integer;
 begin
-{$IFDEF NEXTGEN}
-  {$MESSAGE WARN 'Fix me'}
-  Exit;  //Fails on nextgen, probably object is nil
-{$ENDIF}
   count := 0;
   fContainer.RegisterType<TNameService>
     .Implements<INameService>
@@ -698,10 +717,6 @@ var
   service1, service2, service3: INameService;
   count: Integer;
 begin
-{$IFDEF NEXTGEN}
-  {$MESSAGE WARN 'Fix me'}
-  Exit; //Fails on nextgen, probably object is nil
-{$ENDIF}
   count := 0;
   fContainer.RegisterType<TCustomNameService>
     .Implements<INameService>
@@ -732,26 +747,101 @@ end;
 procedure TTestSimpleContainer.TestRecyclable;
 var
   service1, service2: IAnotherService;
-  instance: TRecyclableComponent;
+  instance: Pointer;
 begin
-{$IFDEF NEXTGEN}
-  {$MESSAGE WARN 'Fix me'}
-  //Fails on nextgen
-  Exit;
-{$ENDIF}
   fContainer.RegisterType<TRecyclableComponent>.AsPooled(2, 2);
   fContainer.Build;
   service1 := fContainer.Resolve<IAnotherService>;
   service2 := fContainer.Resolve<IAnotherService>;
   CheckTrue(service2 is TRecyclableComponent, 'Unknown component');
   instance := TRecyclableComponent(service2); // remember second because the first will be returned again later
-  CheckTrue(instance.IsInitialized, 'IsInitialized');
-  CheckFalse(instance.IsRecycled, 'IsRecycled');
+  CheckTrue(TRecyclableComponent(instance).IsInitialized, 'IsInitialized');
+  CheckFalse(TRecyclableComponent(instance).IsRecycled, 'IsRecycled');
   service1 := nil;
   service2 := nil;
   service1 := fContainer.Resolve<IAnotherService>; // pool has no available and collects all unused
-  CheckFalse(instance.IsInitialized, 'IsInitialized');
-  CheckTrue(instance.IsRecycled, 'IsRecycled');
+  CheckFalse(TRecyclableComponent(instance).IsInitialized, 'IsInitialized');
+  CheckTrue(TRecyclableComponent(instance).IsRecycled, 'IsRecycled');
+end;
+
+procedure TTestSimpleContainer.TestDisposable;
+
+  // place in a separate call to generate finalization around returned
+  // TRegistration
+  procedure Register;
+  begin
+    fContainer.RegisterType<TDisposableComponent>.AsSingleton;
+  end;
+
+var
+  service: IAnotherService;
+  disposed: Boolean;
+  component: TDisposableComponent;
+begin
+  Register;
+  fContainer.Build;
+  service := fContainer.Resolve<IAnotherService>;
+  component:=(service as TDisposableComponent);
+  component.OnDispose :=
+    procedure
+    begin
+      disposed := True;
+    end;
+  service := nil;
+{$IFDEF AUTOREFCOUNT}
+  component := nil;
+{$ENDIF}
+  disposed := False;
+  FreeAndNil(fContainer);
+  CheckTrue(disposed);
+end;
+
+type
+  TTestComponent = class(TComponent);
+
+  TTestComponent2 = class(TComponent)
+  private
+    fConstructorCalled: Boolean;
+  public
+    constructor Create(owner: TComponent); override;
+  end;
+
+constructor TTestComponent2.Create(owner: TComponent);
+begin
+  inherited;
+  fConstructorCalled := True;
+end;
+
+procedure TTestSimpleContainer.TestResolveComponentDoesCallOverriddenConstructor;
+var
+  obj: TTestComponent2;
+begin
+  fContainer.RegisterType<TTestComponent2>;
+  fContainer.Build;
+  obj := fContainer.Resolve<TTestComponent2>;
+  try
+    CheckIs(obj, TTestComponent2);
+    CheckTrue(obj.fConstructorCalled);
+    CheckNull(obj.Owner);
+  finally
+    obj.Free;
+  end;
+end;
+
+procedure TTestSimpleContainer.TestResolveComponentDoesNotFallbackToTObject;
+var
+  obj: TComponent;
+begin
+  fContainer.RegisterType<TTestComponent>;
+  fContainer.Build;
+  obj := fContainer.Resolve<TTestComponent>;
+  try
+    CheckIs(obj, TTestComponent);
+    Check(obj.ComponentStyle = [csInheritable]);
+    CheckNull(obj.Owner);
+  finally
+    obj.Free;
+  end;
 end;
 
 procedure TTestSimpleContainer.TestResolveFuncWithTwoTypes;
@@ -764,6 +854,19 @@ begin
     begin
       fContainer.Resolve<TFunc<IAgeService, INameService>>;
     end);
+end;
+
+
+procedure TTestSimpleContainer.TestResolveUnknownClasses;
+var
+  factory: ISomeFactory;
+begin
+  fContainer.RegisterType<ISomeService, TSomeService>;
+  fContainer.RegisterType<ISomeFactory, TSomeFactory>;
+  fContainer.Build;
+
+  factory := fContainer.Resolve<ISomeFactory>;
+  Pass;
 end;
 
 procedure TTestSimpleContainer.TestInitializable;
@@ -922,6 +1025,9 @@ begin
 {$ENDIF}
   fNameService := nil;
 
+  fServices := Default(TArray<INameService>);
+  fServiceValues := Default(TArray<TValue>);
+
   inherited TearDown;
 end;
 
@@ -995,6 +1101,13 @@ begin
   CheckNotNull(fPrimitive.NameService, 'NameService should not be nil.');
   CheckTrue(fPrimitive.NameService is TNameService, 'Unexpected type.');
   CheckEquals(TNameService.NameString, fPrimitive.NameService.Name);
+end;
+
+procedure TTestActivatorDelegate.TearDown;
+begin
+  inherited;
+  fPrimitive := nil;
+  fExpectedString := '';
 end;
 
 procedure TTestActivatorDelegate.TestIntegerArgument;
@@ -1104,7 +1217,7 @@ var
 begin
   ExpectedException := ECircularDependencyException;
   chicken := fContainer.Resolve<IChicken>;
-  Check(true, 'This must pass');
+  Pass;
 end;
 
 {$ENDREGION}
@@ -1139,6 +1252,26 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestPerResolve'}
+
+procedure TTestPerResolve.TestResolveCircularDependency;
+var
+  chicken: IChicken;
+begin
+  fContainer.RegisterType<IChicken, TChicken>
+    .InjectConstructor
+    .PerResolve
+    .InjectProperty('Egg');
+  fContainer.RegisterType<IEgg, TEgg>;
+  fContainer.Build;
+  chicken := fContainer.Resolve<IChicken>;
+  CheckSame(chicken, chicken.Egg.Chicken);
+  chicken.Egg := nil;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TNamedInjectionsTestCase'}
 
 procedure TNamedInjectionsTestCase.DoRegisterComponents;
@@ -1157,6 +1290,12 @@ begin
   DoRegisterComponents;
   fContainer.Build;
   fExplorer := fContainer.Resolve<IInjectionExplorer>;
+end;
+
+procedure TNamedInjectionsTestCase.TearDown;
+begin
+  inherited;
+  fExplorer := nil;
 end;
 
 procedure TNamedInjectionsTestCase.TestConstructorInjection;
@@ -1447,7 +1586,7 @@ begin
 
   CheckEquals('test', fContainer.Resolve<INameService>('dynamic', ['test']).Name);
 
-  CheckEquals('test', fContainer.Resolve<INameService>([TNamedValue.From('name', 'test')]).Name);
+  CheckEquals('test', fContainer.Resolve<INameService>([TNamedValue.From('test', 'name')]).Name);
 end;
 
 procedure TTestResolverOverride.TestResolveWithClass;
@@ -1457,7 +1596,7 @@ begin
 
   CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([fDummy]).Name);
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From(fDummy, 'obj')]).Name);
 end;
 
 procedure TTestResolverOverride.TestResolveWithDependency;
@@ -1473,7 +1612,7 @@ begin
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 
-  service := fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]);
+  service := fContainer.Resolve<INameService>([TNamedValue.From(fDummy, 'obj')]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 end;
@@ -1491,7 +1630,7 @@ begin
   fDummy.Free;
   fDummy := TPersistent.Create;
 
-  service := fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]);
+  service := fContainer.Resolve<INameService>([TNamedValue.From(fDummy, 'obj')]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 end;
@@ -1503,7 +1642,7 @@ begin
 
   CheckEquals('test' + fDummy.ClassName, fContainer.Resolve<INameService>(['test', fDummy]).Name);
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From(fDummy, 'obj')]).Name);
 end;
 
 {$ENDREGION}
@@ -1644,6 +1783,87 @@ begin
 end;
 {$ENDIF}
 
+type
+  TTestWithLazySingletonBase = class
+  private
+    fA: INameService;
+    fB: Lazy<INameService>;
+  public
+    property A: INameService read fA;
+    property B: Lazy<INameService> read fB;
+  end;
+
+  TTestWithLazySingletonResolveFirst = class(TTestWithLazySingletonBase)
+  public
+    constructor Create(const a: INameService; const b: Lazy<INameService>);
+  end;
+
+  TTestWithLazySingletonResolveLast = class(TTestWithLazySingletonBase)
+  public
+    constructor Create(const b: Lazy<INameService>; const a: INameService);
+  end;
+
+constructor TTestWithLazySingletonResolveFirst.Create(const a: INameService;
+  const b: Lazy<INameService>);
+begin
+  fA := a;
+  fB := b;
+end;
+
+constructor TTestWithLazySingletonResolveLast.Create(
+  const b: Lazy<INameService>; const a: INameService);
+begin
+  fA := a;
+  fB := b;
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsSingletonAlreadyInstantiated;
+var
+  test: TTestWithLazySingletonResolveFirst;
+begin
+  fContainer.RegisterType<INameService, TNameService>.AsSingleton;
+  fContainer.RegisterType<TTestWithLazySingletonResolveFirst>;
+  fContainer.Build;
+
+  test := fContainer.Resolve<TTestWithLazySingletonResolveFirst>;
+  try
+    CheckSame(test.A, test.B.Value);
+  finally
+    test.Free;
+  end;
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsSingletonNotYetInstantiated;
+var
+  test: TTestWithLazySingletonResolveLast;
+begin
+  fContainer.RegisterType<INameService, TNameService>.AsSingleton;
+  fContainer.RegisterType<TTestWithLazySingletonResolveLast>;
+  fContainer.Build;
+
+  test := fContainer.Resolve<TTestWithLazySingletonResolveLast>;
+  try
+    CheckSame(test.A, test.B.Value);
+  finally
+    test.Free;
+  end;
+end;
+
+procedure TTestLazyDependencies.TestResolveLazyOfSingletonCreatedLater;
+var
+  x: Lazy<INameService>;
+  y: INameService;
+begin
+  fContainer.RegisterType<INameService, TNameService>.AsSingleton;
+  fContainer.Build;
+
+  x := fContainer.Resolve<Lazy<INameService>>;
+  CheckFalse(x.IsValueCreated);
+  CheckIs(x.Value, TNameService);
+  y := fContainer.Resolve<INameService>;
+  CheckSame(x.Value, y);
+end;
+
 {$ENDREGION}
 
 
@@ -1658,39 +1878,6 @@ begin
 
   ExpectedException := ECircularDependencyException;
   inherited;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestDecoratorExtension'}
-
-procedure TTestDecoratorExtension.TestResolveReturnsDecorator;
-var
-  service: IAgeService;
-begin
-  fContainer.AddExtension<TDecoratorContainerExtension>;
-  fContainer.RegisterType<TAgeServiceDecorator2>;
-  fContainer.RegisterType<TAgeServiceDecorator>;
-  fContainer.RegisterType<TNameAgeComponent>;
-  fContainer.Build;
-
-  service := fContainer.Resolve<IAgeService>;
-  CheckTrue(service is TAgeServiceDecorator2);
-end;
-
-procedure TTestDecoratorExtension.TestResolveWithResolverOverride;
-var
-  service: IAgeService;
-begin
-  fContainer.AddExtension<TDecoratorContainerExtension>;
-  fContainer.RegisterType<TAgeServiceDecorator>;
-  fContainer.RegisterType<TNameAgeComponent>;
-  fContainer.Build;
-
-  service := fContainer.Resolve<IAgeService>([TNamedValue.From('age', 21)]);
-  CheckTrue(service is TAgeServiceDecorator);
-  CheckEquals(21, service.Age);
 end;
 
 {$ENDREGION}
@@ -1769,7 +1956,7 @@ begin
   fContainer.RegisterType<ICollectionService, TCollectionServiceD>;
   fContainer.Build;
   service := fContainer.Resolve<ICollectionService>;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestManyDependencies.TestNoRecursion_TwoDifferentModelsWithSameComponentType;
@@ -1814,6 +2001,129 @@ begin
   CheckIs(services[2].Value, TCollectionItemC);
   service := fContainer.Resolve<Lazy<ICollectionItem>>;
   CheckIs(service.Value, TCollectionItemD);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDecorators'}
+
+procedure TTestDecorators.RegisterOneDecoratorInitializeIsCalled;
+var
+  service: IAnotherService;
+begin
+  fContainer.RegisterType<IAnotherService, TInitializableComponent>;
+  fContainer.RegisterDecorator<IAnotherService, TAnotherServiceDecorator>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAnotherService>;
+  CheckIs(service, TAnotherServiceDecorator);
+  service := (service as TAnotherServiceDecorator).Service;
+  CheckIs(service, TInitializableComponent);
+  Check((service as TInitializableComponent).IsInitialized);
+end;
+
+procedure TTestDecorators.RegisterOneDecoratorResolveReturnsDecorator;
+var
+  service: IAgeService;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAgeService>;
+  CheckIs(service, TAgeServiceDecorator);
+  CheckEquals(TNameAgeComponent.DefaultAge, service.Age);
+end;
+
+procedure TTestDecorators.RegisterOneDecoratorWithFailingConditionResolvesWithoutDecorator;
+var
+  service: IAgeService;
+  conditionCalled: Boolean;
+begin
+  conditionCalled := False;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>(
+    function(const m: TComponentModel): Boolean
+    begin
+      Result := False;
+      conditionCalled := True;
+    end);
+  CheckFalse(conditionCalled);
+  fContainer.Build;
+  service := fContainer.Resolve<IAgeService>;
+  CheckTrue(conditionCalled);
+  CheckIs(service, TNameAgeComponent);
+  CheckEquals(TNameAgeComponent.DefaultAge, service.Age);
+end;
+
+procedure TTestDecorators.RegisterTwoDecoratorsResolveArrayAllDecorated;
+var
+  services: TArray<IAgeService>;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator2>;
+
+  fContainer.RegisterType<IAgeService, TAgeService>('ageService');
+  fContainer.Build;
+
+  services := fContainer.Resolve<TArray<IAgeService>>;
+  CheckEquals(2, Length(services));
+  CheckIs(services[0], TAgeServiceDecorator2);
+  CheckIs(services[1], TAgeServiceDecorator2);
+end;
+
+procedure TTestDecorators.RegisterTwoDecoratorsResolveLazyReturnsLastDecorator;
+var
+  service, service2: IAgeService;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator2>;
+
+  fContainer.RegisterType<IAgeService, TAgeService>('ageService');
+  fContainer.Build;
+
+  service := fContainer.Resolve<IAgeService>('ageService');
+
+  CheckIs(service, TAgeServiceDecorator2);
+  service2 := (service as TAgeServiceDecorator2).AgeService;
+  CheckIs(service2, TAgeServiceDecorator);
+  service2 := (service2 as TAgeServiceDecorator).AgeService;
+  CheckIs(service2, TAgeService);
+  service2 := (service2 as TAgeService).AgeService;
+  CheckIs(service2, TAgeServiceDecorator2);
+  service2 := (service2 as TAgeServiceDecorator2).AgeService;
+  CheckIs(service2, TAgeServiceDecorator);
+  service2 := (service2 as TAgeServiceDecorator).AgeService;
+  CheckIs(service2, TNameAgeComponent);
+end;
+
+procedure TTestDecorators.RegisterTwoDecoratorsResolveReturnsLastDecorator;
+var
+  service: IAgeService;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator2>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAgeService>;
+  CheckIs(service, TAgeServiceDecorator2);
+  CheckEquals(TNameAgeComponent.DefaultAge, service.Age);
+end;
+
+procedure TTestDecorators.RegisterTwoDecoratorsResolveWithParameterReturnsCorrectValue;
+var
+  service: IAgeService;
+begin
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator>;
+  fContainer.RegisterDecorator<IAgeService, TAgeServiceDecorator2>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAgeService>([42]);
+  CheckIs(service, TAgeServiceDecorator2);
+  CheckEquals(42, service.Age);
+end;
+
+procedure TTestDecorators.SetUp;
+begin
+  inherited;
+
+  fContainer.RegisterType<TNameAgeComponent>;
+  fContainer.Build;
 end;
 
 {$ENDREGION}

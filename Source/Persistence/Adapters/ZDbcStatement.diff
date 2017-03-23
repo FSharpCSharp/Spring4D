@@ -1,0 +1,11 @@
+--- ZDbcStatement.pas
++++ ZDbcStatement.pas
+@@ -2521,6 +2521,8 @@
+ begin
+   if FCachedQuery <> nil then
+     FCachedQuery.Free;
++  if FExecStatement <> nil then
++    FExecStatement.Close;
+   inherited Destroy;
+ end;
+ 

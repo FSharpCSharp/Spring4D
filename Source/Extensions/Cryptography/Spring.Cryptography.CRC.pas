@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Cryptography.CRC;
-
 {$I Spring.inc}
+
+unit Spring.Cryptography.CRC;
 
 interface
 
@@ -36,9 +36,9 @@ uses
   Spring.Cryptography.Base;
 
 type
-  ///	<summary>
-  ///	  CRC16 Hash (CheckSum)
-  ///	</summary>
+  /// <summary>
+  ///   CRC16 Hash (CheckSum)
+  /// </summary>
   TCRC16 = class(THashAlgorithmBase, ICRC16)
   private
     const fCHashSize = 2 * 8;  // 16 bits
@@ -54,9 +54,9 @@ type
     property CrcValue: UInt16 read GetCrcValue;
   end;
 
-  ///	<summary>
-  ///	  CRC32 Hash (CheckSum)
-  ///	</summary>
+  /// <summary>
+  ///   CRC32 Hash (CheckSum)
+  /// </summary>
   TCRC32 = class(THashAlgorithmBase, ICRC32)
   private
     const fCHashSize = 4 * 8;  // 32 bits

@@ -27,6 +27,7 @@ type
   end;
 
   TEditorMonitor = class(TObservable<TEditUpdater>)
+    procedure DoNotify(const observer: TEditUpdater); override;
     destructor Destroy; override;
   end;
 
@@ -68,12 +69,17 @@ destructor TEditorMonitor.Destroy;
 var
   aEditUpdater: TEditUpdater;
 begin
-  for aEditUpdater in Listeners do
+  for aEditUpdater in Observers do
   begin
     aEditUpdater.Free;
   end;
 
   inherited;
+end;
+
+procedure TEditorMonitor.DoNotify(const observer: TEditUpdater);
+begin
+  observer.Update;
 end;
 
 end.

@@ -10,6 +10,7 @@ interface
     {$DEFINE DESKTOP}
   {$ENDIF}
 {$ENDIF}
+{$LEGACYIFEND ON}
 
 uses
   System.SysUtils,
@@ -266,7 +267,7 @@ begin
     StyleBook := StyleBookIOS7
   else
     StyleBook := StyleBookIOS6;
-{$ENDIF}
+{$IFEND}
 {$IFDEF DESKTOP}
   // There is some layouting differences on desktop
   LHeight := OverflowMenu.Height;

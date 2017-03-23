@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -33,6 +33,7 @@ uses
   SysUtils,
   TypInfo,
   Spring,
+  Spring.Container,
   Spring.Container.Core,
   Spring.Container.LifetimeManager;
 
@@ -41,7 +42,7 @@ type
   private
     fModel: TComponentModel;
   public
-    constructor Create(model: TComponentModel);
+    constructor Create(const model: TComponentModel);
     function CreateInstance: TValue; overload;
     function CreateInstance(const context: ICreationContext): TValue; overload;
     property Model: TComponentModel read fModel;
@@ -62,7 +63,6 @@ type
     function _Release: Integer; stdcall;
   end;
 
-//  [Ignore]
   TLifetimeManagerTestCase = class abstract(TTestCase)
   protected
     fContext: TRttiContext;
@@ -105,12 +105,23 @@ type
 
   end;
 
+  TTestCustomLifetimeManager = class(TTestCase)
+  private
+    fContainer: TContainer;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestRegistration;
+  end;
+
 implementation
 
 uses
   Spring.Container.Common;
 
-{ TLifetimeManagerTestCase }
+
+{$REGION 'TLifetimeManagerTestCase'}
 
 procedure TLifetimeManagerTestCase.SetUp;
 begin
@@ -129,7 +140,10 @@ begin
   inherited;
 end;
 
-{ TTestSingletonLifetimeManager }
+{$ENDREGION}
+
+
+{$REGION 'TTestSingletonLifetimeManager'}
 
 procedure TTestSingletonLifetimeManager.SetUp;
 begin
@@ -146,21 +160,28 @@ end;
 procedure TTestSingletonLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
+  value: TValue;
 begin
-  obj1 := fLifetimeManager.Resolve(nil).AsObject;
-  obj2 := fLifetimeManager.Resolve(nil).AsObject;
+  obj1 := fLifetimeManager.Resolve(nil, fModel).AsObject;
+  obj2 := fLifetimeManager.Resolve(nil, fModel).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
     CheckSame(obj1, obj2);
     CheckSame(fActivator.Model, fModel);
   finally
+    // Obtain the TValue before freeing the object so releasing the instance the
+    // second time won't fail
+    value := obj2;
     fLifetimeManager.Release(obj1);
-    fLifetimeManager.Release(obj2);
+    fLifetimeManager.Release(value);
   end;
 end;
 
-{ TTestTransientLifetimeManager }
+{$ENDREGION}
+
+
+{$REGION 'TTestTransientLifetimeManager'}
 
 procedure TTestTransientLifetimeManager.SetUp;
 begin
@@ -178,8 +199,8 @@ procedure TTestTransientLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.Resolve(nil).AsObject;
-  obj2 := fLifetimeManager.Resolve(nil).AsObject;
+  obj1 := fLifetimeManager.Resolve(nil, fModel).AsObject;
+  obj2 := fLifetimeManager.Resolve(nil, fModel).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -191,10 +212,12 @@ begin
   end;
 end;
 
-{ TMockComponentActivator }
+{$ENDREGION}
 
-constructor TMockActivator.Create(
-  model: TComponentModel);
+
+{$REGION 'TMockComponentActivator'}
+
+constructor TMockActivator.Create(const model: TComponentModel);
 begin
   inherited Create;
   fModel := model;
@@ -211,7 +234,10 @@ begin
   Result := CreateInstance;
 end;
 
-{ TMockComponent }
+{$ENDREGION}
+
+
+{$REGION 'TMockComponent'}
 
 function TMockComponent._AddRef: Integer;
 begin
@@ -228,8 +254,9 @@ begin
   Dec(fRefCount);
 {$IFNDEF AUTOREFCOUNT}
   Result := fRefCount;
-  if Result = 0 then begin
-    fFreed := true;
+  if Result = 0 then
+  begin
+    fFreed := True;
     Destroy;
   end;
 {$ELSE}
@@ -237,7 +264,10 @@ begin
 {$ENDIF}
 end;
 
-{ TTestRefCounting }
+{$ENDREGION}
+
+
+{$REGION 'TTestRefCounting'}
 
 procedure TTestRefCounting.SetUp;
 begin
@@ -267,9 +297,9 @@ var
 begin
   fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
 {$IFNDEF AUTOREFCOUNT}
-  TMockComponent.fFreed := false;
+  TMockComponent.fFreed := False;
 {$ENDIF}
-  val := fLifetimeManager.Resolve(nil);
+  val := fLifetimeManager.Resolve(nil, fModel);
   obj := val.AsObject;
 {$IFDEF AUTOREFCOUNT}
   val := val.Empty; //Clear the TValue so that it doesn't keep holding reference count to obj
@@ -292,5 +322,55 @@ begin
   obj := nil;
 {$ENDIF}
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestCustomLifetimeManager'}
+
+type
+  TCustomLifetimeManager = class(TInterfacedObject, ILifetimeManager)
+  public
+    procedure Release(const instance: TValue);
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue;
+  end;
+
+procedure TCustomLifetimeManager.Release(const instance: TValue);
+begin
+end;
+
+function TCustomLifetimeManager.Resolve(const context: ICreationContext;
+  const model: TComponentModel): TValue;
+begin
+  Result := TActivator.CreateInstance(model.ComponentType.AsInstance);
+end;
+
+procedure TTestCustomLifetimeManager.SetUp;
+begin
+  fContainer := TContainer.Create;
+end;
+
+procedure TTestCustomLifetimeManager.TearDown;
+begin
+  fContainer.Free;
+end;
+
+procedure TTestCustomLifetimeManager.TestRegistration;
+var
+  obj: TMockObject;
+begin
+  fContainer.RegisterType<TMockObject>.AsCustom<TCustomLifetimeManager>;
+  fContainer.Build;
+  obj := fContainer.Resolve<TMockObject>;
+  try
+    CheckNotNull(obj);
+  finally
+    obj.Free;
+  end;
+end;
+
+{$ENDREGION}
+
 
 end.

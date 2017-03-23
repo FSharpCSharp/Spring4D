@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.Injection;
-
 {$I Spring.inc}
+
+unit Spring.Container.Injection;
 
 interface
 
@@ -38,7 +38,7 @@ uses
 type
   TInjectionBase = class abstract(TInterfacedObject, IInjection)
   private
-    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fTarget: TRttiMember;
     fTargetName: string;
     fDependencies: TArray<TDependencyModel>;
@@ -53,7 +53,8 @@ type
     procedure Validate(const target: TRttiMember); virtual;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); virtual; abstract;
     procedure InitializeArguments(const arguments: array of TValue);
-    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); virtual; abstract;
+    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); overload; virtual; abstract;
+    procedure InitializeDependencies(const parameterTypes: array of PTypeInfo); overload;
   public
     constructor Create(const targetName: string = '');
     procedure Initialize(const target: TRttiMember);
@@ -124,7 +125,6 @@ implementation
 uses
   TypInfo,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
   Spring.Reflection,
   Spring.ResourceStrings;
 
@@ -161,6 +161,16 @@ end;
 procedure TInjectionBase.InitializeArguments(const arguments: array of TValue);
 begin
   fArguments := TArray.Copy<TValue>(arguments);
+end;
+
+procedure TInjectionBase.InitializeDependencies(
+  const parameterTypes: array of PTypeInfo);
+var
+  i: Integer;
+begin
+  for i := Low(parameterTypes) to High(parameterTypes) do
+    fDependencies[i] := TDependencyModel.Create(
+      parameterTypes[i].RttiType, fDependencies[i].Target);
 end;
 
 function TInjectionBase.GetArguments: TArray<TValue>;
@@ -308,7 +318,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInjector'}
+{$REGION 'TDependencyInjector'}
 
 function TDependencyInjector.InjectConstructor(const model: TComponentModel;
   const parameterTypes: array of PTypeInfo): IInjection;
@@ -324,6 +334,7 @@ begin
       @SUnsatisfiedConstructorParameters, [model.ComponentTypeName]);
   Result := TConstructorInjection.Create;
   Result.Initialize(method);
+  Result.InitializeDependencies(parameterTypes);
   model.ConstructorInjections.Add(Result);
 end;
 
@@ -335,7 +346,8 @@ var
 begin
   method := model.ComponentType.GetMethod(methodName);
   if not Assigned(method) then
-    raise ERegistrationException.CreateResFmt(@SMethodNotFound, [methodName]);
+    raise ERegistrationException.CreateResFmt(@SMethodNotFound,
+      [model.ComponentTypeName, methodName]);
   injectionExists := model.MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
   if not injectionExists then
@@ -363,6 +375,7 @@ begin
   if not injectionExists then
     Result := TMethodInjection.Create(methodName);
   Result.Initialize(method);
+  Result.InitializeDependencies(parameterTypes);
   if not injectionExists then
     model.MethodInjections.Add(Result);
 end;
@@ -375,7 +388,8 @@ var
 begin
   propertyMember := model.ComponentType.GetProperty(propertyName);
   if not Assigned(propertyMember) then
-    raise ERegistrationException.CreateResFmt(@SPropertyNotFound, [propertyName]);
+    raise ERegistrationException.CreateResFmt(@SPropertyNotFound,
+      [model.ComponentTypeName, propertyName]);
   injectionExists := model.PropertyInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(propertyMember));
   if not injectionExists then
@@ -393,7 +407,8 @@ var
 begin
   field := model.ComponentType.GetField(fieldName);
   if not Assigned(field) then
-    raise ERegistrationException.CreateResFmt(@SFieldNotFound, [fieldName]);
+    raise ERegistrationException.CreateResFmt(@SFieldNotFound,
+      [model.ComponentTypeName, fieldName]);
   injectionExists := model.FieldInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(field));
   if not injectionExists then
@@ -405,8 +420,15 @@ end;
 
 function TDependencyInjector.InjectConstructor(
   const model: TComponentModel): IInjection;
+var
+  predicate: TPredicate<TRttiMethod>;
+  method: TRttiMethod;
 begin
+  predicate := TMethodFilters.IsConstructor
+    and TMethodFilters.HasParameterTypes([]);
+  method := model.ComponentType.Methods.FirstOrDefault(predicate);
   Result := TConstructorInjection.Create;
+  Result.Initialize(method);
   model.ConstructorInjections.Add(Result);
 end;
 

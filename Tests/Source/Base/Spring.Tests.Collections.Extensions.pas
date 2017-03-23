@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -39,7 +39,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
-  Spring.Collections.Lists;
+  Spring.Collections.Lists,
+  Spring.TestUtils;
 
 type
   TThrowingEnumerable = class sealed(TEnumerableBase<Integer>)
@@ -52,10 +53,9 @@ type
     function GetEnumerator: IEnumerator<T>; override;
   end;
 
-  TTestCaseHelper = class helper for TTestCase
+  TTestCaseHelper = class helper(TAbstractTestHelper) for TTestCase
   protected
-    procedure CheckException(AExceptionClass: ExceptionClass; const AMethod: TProc; const msg: string = ''); overload;
-    procedure CheckExceptionDeferred(deferredFunction: TFunc<IEnumerable<Integer>, IEnumerable<Integer>>); overload;
+    procedure CheckExceptionDeferred(const deferredFunction: TFunc<IEnumerable<Integer>, IEnumerable<Integer>>);
   end;
 
   TTestWhere = class(TTestCase)
@@ -108,6 +108,17 @@ type
     procedure EmptyRange;
     procedure SingleValueOfMaxInt32;
     procedure EmptyRangeStartingAtMinInt32;
+  end;
+
+  TTestRepeated = class(TTestCase)
+  published
+    procedure NegativeCount;
+    procedure LargeButValidCount;
+
+    procedure ValidRepeated;
+    procedure EmptyRepeated;
+    procedure SingleValueOfMaxInt32;
+    procedure NilIsValidForRepeatedObject;
   end;
 
   TTestConcat = class(TTestCase)
@@ -721,29 +732,8 @@ end;
 
 { TTestCaseHelper }
 
-procedure TTestCaseHelper.CheckException(AExceptionClass: ExceptionClass;
-  const AMethod: TProc; const msg: string);
-begin
-  FCheckCalled := True;
-  try
-    AMethod();
-  except
-    on e: Exception do
-    begin
-      if not Assigned(AExceptionClass) then
-        raise
-      else if not e.ClassType.InheritsFrom(AExceptionClass) then
-        FailNotEquals(AExceptionClass.ClassName, e.ClassName, msg, ReturnAddress)
-      else
-        AExceptionClass := nil;
-    end;
-  end;
-  if Assigned(AExceptionClass) then
-    FailNotEquals(AExceptionClass.ClassName, '', msg, ReturnAddress);
-end;
-
 procedure TTestCaseHelper.CheckExceptionDeferred(
-  deferredFunction: TFunc<IEnumerable<Integer>, IEnumerable<Integer>>);
+  const deferredFunction: TFunc<IEnumerable<Integer>, IEnumerable<Integer>>);
 var
   source: TThrowingEnumerable;
   result: IEnumerable<Integer>;
@@ -1127,36 +1117,36 @@ begin
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TCollections.Range(MaxInt, 2);
+      TEnumerable.Range(MaxInt, 2);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TCollections.Range(2, MaxInt);
+      TEnumerable.Range(2, MaxInt);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TCollections.Range(MaxInt div 2, (MaxInt div 2) + 3);
+      TEnumerable.Range(MaxInt div 2, (MaxInt div 2) + 3);
     end);
 end;
 
 procedure TTestRange.EmptyRange;
 begin
-  CheckTrue(TCollections.Range(100, 0).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(100, 0).EqualsTo([]));
 end;
 
 procedure TTestRange.EmptyRangeStartingAtMinInt32;
 begin
-  CheckTrue(TCollections.Range(MinInt, 0).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(MinInt, 0).EqualsTo([]));
 end;
 
 procedure TTestRange.LargeButValidCount;
 begin
-  TCollections.Range(MaxInt, 1);
-  TCollections.Range(1, MaxInt);
-  TCollections.Range(MaxInt div 2, (MaxInt div 2) + 2);
-  FCheckCalled := True;
+  TEnumerable.Range(MaxInt, 1);
+  TEnumerable.Range(1, MaxInt);
+  TEnumerable.Range(MaxInt div 2, (MaxInt div 2) + 2);
+  Pass;
 end;
 
 procedure TTestRange.NegativeCount;
@@ -1164,23 +1154,72 @@ begin
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TCollections.Range(10, -1);
+      TEnumerable.Range(10, -1);
     end);
 end;
 
 procedure TTestRange.NegativeRange;
 begin
-  CheckTrue(TCollections.Range(-2, 5).EqualsTo([-2, -1, 0, 1, 2]));
+  CheckTrue(TEnumerable.Range(-2, 5).EqualsTo([-2, -1, 0, 1, 2]));
 end;
 
 procedure TTestRange.SingleValueOfMaxInt32;
 begin
-  CheckTrue(TCollections.Range(MaxInt, 1).EqualsTo([MaxInt]));
+  CheckTrue(TEnumerable.Range(MaxInt, 1).EqualsTo([MaxInt]));
 end;
 
 procedure TTestRange.ValidRange;
 begin
-  CheckTrue(TCollections.Range(5, 3).EqualsTo([5, 6, 7]));
+  CheckTrue(TEnumerable.Range(5, 3).EqualsTo([5, 6, 7]));
+end;
+
+{ TTestRepeated }
+
+procedure TTestRepeated.EmptyRepeated;
+var
+  obj: Managed<TObject>;
+begin
+  CheckTrue(TEnumerable.Repeated<Integer>(100, 0).EqualsTo([]));
+  obj := TObject.Create;
+  CheckTrue(TEnumerable.Repeated<TObject>(obj, 0).EqualsTo([]));
+end;
+
+procedure TTestRepeated.LargeButValidCount;
+const
+  TestCounts: array[0..2] of Integer = (1, MaxInt div 2 + 2, MaxInt);
+var
+  i: Integer;
+begin
+  for i in TestCounts do
+    CheckEquals(i, TEnumerable.Repeated<Integer>(1, i).Count);
+end;
+
+procedure TTestRepeated.NegativeCount;
+begin
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TEnumerable.Repeated<Integer>(10, -1);
+    end);
+end;
+
+procedure TTestRepeated.NilIsValidForRepeatedObject;
+begin
+  CheckTrue(TEnumerable.Repeated<TObject>(nil, 3).EqualsTo([nil, nil, nil]));
+end;
+
+procedure TTestRepeated.SingleValueOfMaxInt32;
+begin
+  CheckTrue(TEnumerable.Repeated<Integer>(MaxInt, 1).EqualsTo([MaxInt]));
+end;
+
+procedure TTestRepeated.ValidRepeated;
+var
+  obj: Managed<TObject>;
+begin
+  CheckTrue(TEnumerable.Repeated<Integer>(5, 3).EqualsTo([5, 5, 5]));
+  obj := TObject.Create;
+  CheckTrue(TEnumerable.Repeated<TObject>(obj, 3).EqualsTo([obj, obj, obj]));
 end;
 
 { TTestConcat }
@@ -3392,7 +3431,7 @@ begin
   second := TThrowingEnumerable.Create;
   query := TIntersectIterator<Integer>.Create(first, second);
   iterator := query.GetEnumerator;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestIntersect.SecondSequenceReadFullyOnFirstResultIteration;
@@ -3550,7 +3589,7 @@ begin
   second := TThrowingEnumerable.Create;
   query := TExceptIterator<Integer>.Create(first, second);
   iterator := query.GetEnumerator;
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestExcept.SecondSequenceReadFullyOnFirstResultIteration;
@@ -3796,7 +3835,7 @@ begin
     begin
       Result := x + y;
     end);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestJoin.InnerSequenceIsBuffered;
@@ -3946,7 +3985,7 @@ begin
     begin
       Result := x;
     end);
-  FCheckCalled := True;
+  Pass;
 end;
 
 function Join(const separator: string; const values: IEnumerable): string;
@@ -4171,7 +4210,7 @@ begin
     begin
       Result := x + y.Count;
     end);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestGroupJoin.SimpleGroupJoin;
@@ -4202,17 +4241,17 @@ end;
 
 procedure TTestTake.CountEqualToSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(5).EqualsTo([0, 1, 2, 3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(5).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
 procedure TTestTake.CountGreaterThanSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(100).EqualsTo([0, 1, 2, 3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(100).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
 procedure TTestTake.CountShorterThanSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(3).EqualsTo([0, 1, 2]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(3).EqualsTo([0, 1, 2]));
 end;
 
 procedure TTestTake.ExecutionIsDeferred;
@@ -4226,7 +4265,7 @@ end;
 
 procedure TTestTake.NegativeCount;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(-5).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(-5).EqualsTo([]));
 end;
 
 (*
@@ -4259,24 +4298,24 @@ end;
 
 procedure TTestTake.ZeroCount;
 begin
-  CheckTrue(TCollections.Range(0, 5).Take(0).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(0, 5).Take(0).EqualsTo([]));
 end;
 
 { TTestSkip }
 
 procedure TTestSkip.CountEqualToSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(5).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(5).EqualsTo([]));
 end;
 
 procedure TTestSkip.CountGreaterThanSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(100).EqualsTo([]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(100).EqualsTo([]));
 end;
 
 procedure TTestSkip.CountShorterThanSourceLength;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(3).EqualsTo([3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(3).EqualsTo([3, 4]));
 end;
 
 procedure TTestSkip.ExecutionIsDeferred;
@@ -4290,7 +4329,7 @@ end;
 
 procedure TTestSkip.NegativeCount;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(-5).EqualsTo([0, 1, 2, 3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(-5).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
 (*
@@ -4309,7 +4348,7 @@ end;
 
 procedure TTestSkip.ZeroCount;
 begin
-  CheckTrue(TCollections.Range(0, 5).Skip(0).EqualsTo([0, 1, 2, 3, 4]));
+  CheckTrue(TEnumerable.Range(0, 5).Skip(0).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
 { TTestTakeWhile }
@@ -4657,7 +4696,7 @@ begin
     begin
       Result := x;
     end);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestOrderBy.KeySelectorIsCalledExactlyOncePerElement;
@@ -4862,7 +4901,7 @@ begin
       Result := x;
     end,
     nil, True);
-  FCheckCalled := True;
+  Pass;
 end;
 
 procedure TTestOrderByDescending.NilComparerIsDefault;
@@ -5081,7 +5120,7 @@ procedure TTestReverse.ReversedRange;
 var
   query: IEnumerable<Integer>;
 begin
-  query := TCollections.Range(5, 5).Reversed;
+  query := TEnumerable.Range(5, 5).Reversed;
   CheckTrue(query.EqualsTo([9, 8, 7, 6, 5]));
 end;
 

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.ResourceStrings;
 
 interface
@@ -30,18 +32,23 @@ resourcestring
 
   {$REGION 'Spring'}
 
+  STypeConversionError         = '%s cannot be converted to %s';
   SNotSupportedException       = '%s is not supported.';
   SNotImplementedException     = '%s is not implemented.';
   SNotSupportedOperation       = 'Not supported operation.';
   SNoDelegateAssigned          = 'No delegate has been assigned.';
   SNotClassType                = '"%s" is not a class type.';
+  STypeNotSupported            = 'Type is not supported: %s';
+  SValueFactoryReturnedNil     = 'ValueFactory returned nil.';
 
   SArgumentOutOfRangeException = 'Specified argument was out of the range of valid values: %s';
   SArgumentNullException       = 'Specified argument cannot be nil: %s';
   SInvalidEnumArgument         = 'Invalid enum argument: %s';
+  SInvalidSetArgument          = 'Invalid set argument: %s';
   SUnexpectedTypeKindArgument  = 'Unexpected type kind %s for the argument %s.';
   SInvalidOperationBufferSizeShouldBeSame = 'Buffer size should be the same.';
   SInvalidArgumentFormat = 'Invalid format for argument "%s".';
+  SInvalidTypeCast             = 'Invalid cast: %s to %s.';
 
   SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
 
@@ -49,8 +56,8 @@ resourcestring
 
   SFileNotFoundException          = 'File not found: %s';
   SDirectoryNotFoundException     = 'Directory not found: %s';
-  SNullableTypeHasNoValue         = 'Invalid operation, Nullable type has no value.';
-  SCannotAssignPointerToNullable  = 'Cannot assigned non-null pointer to nullable type.';
+  SNullableHasNoValue             = 'Nullable must have a value.';
+  SValueDoesNotContainNullable    = 'Value does not contain a nullable value.';
   STypeNotRegistered              = '%s was not registered.';
   SServiceNotExists               = 'The service "%s" does not exist.';
   STimeoutException               = 'Timeout';
@@ -68,14 +75,14 @@ resourcestring
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
   SNotEnumeratedType   = 'Type "%s" is not enumerated type.';
   SIncorrectFormat     = 'Unable to convert %s.';
-  SInvalidDateTime     = '"%S" is not a valid date and time.';
+  SInvalidDateTime     = '"%s" is not a valid date and time.';
   SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
 
   SBadObjectInheritance = 'Argument %s of type %s does not inherit from type %s.';
 
   SUnknownDescription  = 'Unknown';
   SVersionDescription  = 'Version';
-//  SOSVersionStringFormat = '%S Version %s %s';
+//  SOSVersionStringFormat = '%s Version %s %s';
 
   SSizeStringFormat    = '%s %s';   // e.g. '20.5 MB'
 
@@ -123,6 +130,8 @@ resourcestring
 
   {$REGION 'Spring.Reflection'}
 
+  SNoConstructorFound = 'No constructor with matching signature found for type: %s';
+
   // Value Converters
   SCouldNotConvertValue = 'Could not convert value: %s to %s.';
   SEmptySourceTypeKind = 'Empty source TypeKind argument set.';
@@ -134,6 +143,21 @@ resourcestring
   SUnexpectedToken                = 'Unexpected expression part %s.';
   SInvalidExpressionSyntax        = 'Invalid expression syntax %s.';
   SCouldNotFindPath               = 'Could not find expression path %s.';
+
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Times'}
+
+  SNoMatchAny = 'anytime, but was %2:d times';
+  SNoMatchAtLeast = 'at least %0:d times, but was %2:d times';
+  SNoMatchAtLeastOnce = 'at least once, but was never';
+  SNoMatchAtMost = 'at most %1:d times, but was %2:d times';
+  SNoMatchAtMostOnce = 'at most once, but was %2:d times';
+  SNoMatchBetween = 'between %0:d and %1:d times, but was %2:d times';
+  SNoMatchExactly = 'exactly %0:d times, but was %2:d times';
+  SNoMatchNever = 'never, but was %2:d times';
+  SNoMatchOnce = 'once, but was %2:d times';
 
   {$ENDREGION}
 
@@ -152,7 +176,7 @@ resourcestring
 
   {$REGION 'Spring.Utils'}
 
-  SDriveNotReady              = 'Drive "%S" is not ready.';
+  SDriveNotReady              = 'Drive "%s" is not ready.';
 
   SUnknownDriveDescription    = 'Unknown Drive';
   SNoRootDirectoryDescription = 'No Root Directory';

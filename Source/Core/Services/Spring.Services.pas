@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,12 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<summary>
-///	  Defines the common interfaces for a service locator.
-///	</summary>
-unit Spring.Services;
-
 {$I Spring.inc}
+
+/// <summary>
+///   Defines the common interfaces for a service locator.
+/// </summary>
+unit Spring.Services;
 
 interface
 
@@ -91,34 +91,34 @@ type
 
   {$REGION 'Service locator'}
 
-  ///	<summary>
-  ///	  Defines an abstract interface to locate services.
-  ///	</summary>
+  /// <summary>
+  ///   Defines an abstract interface to locate services.
+  /// </summary>
   IServiceLocator = interface
     ['{E8C39055-6634-4428-B343-2FB0E75527BC}']
     function GetService(serviceType: PTypeInfo): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const serviceName: string): TValue; overload;
     function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const name: string; const args: array of TValue): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const serviceName: string; const args: array of TValue): TValue; overload;
 
     function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
   end;
 
   TServiceLocatorDelegate = reference to function: IServiceLocator;
 
-  ///	<summary>
-  ///	  Provides a portal to get and query an instance of a service. Use the
-  ///	  global <see cref="Spring.Services|ServiceLocator" /> method to get the
-  ///	  shared instance.
-  ///	</summary>
-  ///	<remarks>
-  ///	  You should use ServiceLocator to query a service insteading of directly
-  ///	  using Spring.Container namespace in your library. The namespace is
-  ///	  supposed to be used to register components in your bootstrap code.
-  ///	</remarks>
+  /// <summary>
+  ///   Provides a portal to get and query an instance of a service. Use the
+  ///   global <see cref="Spring.Services|ServiceLocator" /> method to get the
+  ///   shared instance.
+  /// </summary>
+  /// <remarks>
+  ///   You should use ServiceLocator to query a service insteading of directly
+  ///   using Spring.Container namespace in your library. The namespace is
+  ///   supposed to be used to register components in your bootstrap code.
+  /// </remarks>
   TServiceLocator = class sealed(TInterfaceBase, IServiceLocator)
   private
     fServiceLocatorProvider: TServiceLocatorDelegate;
@@ -134,34 +134,34 @@ type
     procedure Initialize(const provider: TServiceLocatorDelegate);
 
     function GetService<T>: T; overload;
-    function GetService<T>(const name: string): T; overload;
+    function GetService<T>(const serviceName: string): T; overload;
     function GetService<T>(const args: array of TValue): T; overload;
-    function GetService<T>(const name: string; const args: array of TValue): T; overload;
+    function GetService<T>(const serviceName: string; const args: array of TValue): T; overload;
     function GetService(serviceType: PTypeInfo): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const serviceName: string): TValue; overload;
     function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const name: string; const args: array of TValue): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const serviceName: string; const args: array of TValue): TValue; overload;
 
     function GetAllServices<TServiceType>: TArray<TServiceType>; overload;
     function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
 
     function TryGetService<T>(out service: T): Boolean; overload;
-    function TryGetService<T>(const name: string; out service: T): Boolean; overload;
+    function TryGetService<T>(const serviceName: string; out service: T): Boolean; overload;
   end;
 
   {$ENDREGION}
 
 
-///	<summary>
-///	  Gets the shared instance of <see cref="TServiceLocator" /> class.
-///	</summary>
-///	<remarks>
-///	  Since Delphi doesn't support generic methods for interfaces, the result
-///	  type is TServiceLocator instead of IServiceLocator.
-///	</remarks>
+/// <summary>
+///   Gets the shared instance of <see cref="TServiceLocator" /> class.
+/// </summary>
+/// <remarks>
+///   Since Delphi doesn't support generic methods for interfaces, the result
+///   type is TServiceLocator instead of IServiceLocator.
+/// </remarks>
 {$IFDEF AUTOREFCOUNT}[Result: Unsafe]{$ENDIF}
 function ServiceLocator: TServiceLocator; {$IFNDEF AUTOREFCOUNT}inline;{$ENDIF}
 
@@ -169,7 +169,6 @@ implementation
 
 uses
   SysUtils,
-  Spring.Helpers,
   Spring.ResourceStrings;
 
 function ServiceLocator: TServiceLocator;
@@ -213,9 +212,9 @@ begin
   Result := GetServiceLocator.GetService(serviceType);
 end;
 
-function TServiceLocator.GetService(serviceType: PTypeInfo; const name: string): TValue;
+function TServiceLocator.GetService(serviceType: PTypeInfo; const serviceName: string): TValue;
 begin
-  Result := GetServiceLocator.GetService(serviceType, name);
+  Result := GetServiceLocator.GetService(serviceType, serviceName);
 end;
 
 function TServiceLocator.GetService(serviceType: PTypeInfo;
@@ -224,10 +223,10 @@ begin
   Result := GetServiceLocator.GetService(serviceType, args);
 end;
 
-function TServiceLocator.GetService(serviceType: PTypeInfo; const name: string;
+function TServiceLocator.GetService(serviceType: PTypeInfo; const serviceName: string;
   const args: array of TValue): TValue;
 begin
-  Result := GetServiceLocator.GetService(serviceType, name, args);
+  Result := GetServiceLocator.GetService(serviceType, serviceName, args);
 end;
 
 function TServiceLocator.GetService<T>: T;
@@ -238,11 +237,11 @@ begin
   Result := value.AsType<T>;
 end;
 
-function TServiceLocator.GetService<T>(const name: string): T;
+function TServiceLocator.GetService<T>(const serviceName: string): T;
 var
   value: TValue;
 begin
-  value := GetServiceLocator.GetService(TypeInfo(T), name);
+  value := GetServiceLocator.GetService(TypeInfo(T), serviceName);
   Result := value.AsType<T>;
 end;
 
@@ -254,12 +253,12 @@ begin
   Result := value.AsType<T>;
 end;
 
-function TServiceLocator.GetService<T>(const name: string;
+function TServiceLocator.GetService<T>(const serviceName: string;
   const args: array of TValue): T;
 var
   value: TValue;
 begin
-  value := GetServiceLocator.GetService(TypeInfo(T), name, args);
+  value := GetServiceLocator.GetService(TypeInfo(T), serviceName, args);
   Result := value.AsType<T>;
 end;
 
@@ -288,9 +287,9 @@ begin
   Result := GetServiceLocator.HasService(serviceType);
 end;
 
-function TServiceLocator.HasService(serviceType: PTypeInfo; const name: string): Boolean;
+function TServiceLocator.HasService(serviceType: PTypeInfo; const serviceName: string): Boolean;
 begin
-  Result := GetServiceLocator.HasService(serviceType, name);
+  Result := GetServiceLocator.HasService(serviceType, serviceName);
 end;
 
 function TServiceLocator.TryGetService<T>(out service: T): Boolean;
@@ -302,11 +301,11 @@ begin
     service := Default(T);
 end;
 
-function TServiceLocator.TryGetService<T>(const name: string; out service: T): Boolean;
+function TServiceLocator.TryGetService<T>(const serviceName: string; out service: T): Boolean;
 begin
-  Result := GetServiceLocator.HasService(TypeInfo(T), name);
+  Result := GetServiceLocator.HasService(TypeInfo(T), serviceName);
   if Result then
-    service := GetService<T>(name)
+    service := GetService<T>(serviceName)
   else
     service := Default(T);
 end;

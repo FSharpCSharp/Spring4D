@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
+{$I Spring.inc}
+
 unit Spring.Cryptography.DES;
 
-{$I Spring.inc}
 {$R-}
 
 interface
@@ -37,9 +38,9 @@ uses
   Spring.ResourceStrings;
 
 type
-  ///	<summary>
-  ///	  Data Encryption Standard (DES)
-  ///	</summary>
+  /// <summary>
+  ///   Data Encryption Standard (DES)
+  /// </summary>
   TDES = class(TSymmetricAlgorithmBase, IDES)
   private
     const
@@ -52,9 +53,9 @@ type
     constructor Create;
   end;
 
-  ///	<summary>
-  ///	  Triple Data Encryption Standard Algorithm
-  ///	</summary>
+  /// <summary>
+  ///   Triple Data Encryption Standard Algorithm
+  /// </summary>
   TTripleDES = class(TSymmetricAlgorithmBase, ITripleDES)
   private
     const

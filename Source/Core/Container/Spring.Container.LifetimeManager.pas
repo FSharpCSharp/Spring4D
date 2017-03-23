@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2014 Spring4D Team                           }
+{           Copyright (c) 2009-2017 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Container.LifetimeManager;
-
 {$I Spring.inc}
+
+unit Spring.Container.LifetimeManager;
 
 interface
 
@@ -32,25 +32,21 @@ uses
   SysUtils,
   Spring,
   Spring.Collections,
+  Spring.Container.Common,
   Spring.Container.Core,
   Spring.Container.Pool;
 
 type
   TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager)
-  private
-    {$IFDEF WEAKREF}[Weak]{$ENDIF}
-    fModel: TComponentModel;
-    function GetActivator: IComponentActivator;
   protected
     procedure DoAfterConstruction(const instance: TValue); virtual;
     procedure DoBeforeDestruction(const instance: TValue); virtual;
   protected
     function TryGetInterfaceWithoutCopy(const instance: TValue; const IID: TGUID; out intf): Boolean;
-    property ComponentActivator: IComponentActivator read GetActivator;
-    property Model: TComponentModel read fModel;
   public
     constructor Create(const model: TComponentModel); virtual;
-    function Resolve(const context: ICreationContext): TValue; overload; virtual; abstract;
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue; overload; virtual; abstract;
     procedure Release(const instance: TValue); virtual; abstract;
   end;
 
@@ -61,13 +57,15 @@ type
     fInstance: TFunc<TValue>;
   public
     destructor Destroy; override;
-    function Resolve(const context: ICreationContext): TValue; override;
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
   TTransientLifetimeManager = class(TLifetimeManagerBase)
   public
-    function Resolve(const context: ICreationContext): TValue; override;
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
@@ -77,10 +75,13 @@ type
   protected
     procedure HandleValueChanged(sender: TObject; const item: TFunc<TValue>;
       action: TCollectionChangedAction);
-    function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
+    function CreateHolder(const instance: TValue;
+      refCounting: TRefCounting): TFunc<TValue>; virtual;
   public
     constructor Create(const model: TComponentModel); override;
-    function Resolve(const context: ICreationContext): TValue; override;
+    destructor Destroy; override;
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
@@ -89,7 +90,8 @@ type
     fPool: IObjectPool;
   public
     constructor Create(const model: TComponentModel); override;
-    function Resolve(const context: ICreationContext): TValue; override;
+    function Resolve(const context: ICreationContext;
+      const model: TComponentModel): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
@@ -99,18 +101,15 @@ uses
   Classes,
   Rtti,
   TypInfo,
-  Spring.Container.Common,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Reflection;
 
 
 {$REGION 'TLifetimeManagerBase'}
 
 constructor TLifetimeManagerBase.Create(const model: TComponentModel);
 begin
-  Guard.CheckNotNull(model, 'model');
   inherited Create;
-  fModel := model;
 end;
 
 function TLifetimeManagerBase.TryGetInterfaceWithoutCopy(const instance: TValue;
@@ -138,14 +137,12 @@ begin
   case instance.Kind of
     tkClass:
     begin
-      Result := GetInterface(instance.AsObject, IInitializable, intf);
+      Result := GetInterface(instance.AsObject, IID, intf);
       Result := Result or (GetInterface(instance.AsObject, IInterface, localIntf)
         and (IInterface(localIntf).QueryInterface(IID, intf) = S_OK));
     end;
     tkInterface:
-    begin
       Result := instance.AsInterface.QueryInterface(IID, intf) = S_OK;
-    end;
   else
     Result := False;
   end
@@ -156,9 +153,7 @@ var
   intf: Pointer;
 begin
   if TryGetInterfaceWithoutCopy(instance, IInitializable, intf) then
-  begin
     IInitializable(intf).Initialize;
-  end;
 end;
 
 procedure TLifetimeManagerBase.DoBeforeDestruction(const instance: TValue);
@@ -166,14 +161,7 @@ var
   intf: Pointer;
 begin
   if TryGetInterfaceWithoutCopy(instance, IDisposable, intf) then
-  begin
     IDisposable(intf).Dispose;
-  end;
-end;
-
-function TLifetimeManagerBase.GetActivator: IComponentActivator;
-begin
-  Result := fModel.ComponentActivator;
 end;
 
 {$ENDREGION}
@@ -187,25 +175,34 @@ begin
   inherited Destroy;
 end;
 
-function TSingletonLifetimeManager.Resolve(
-  const context: ICreationContext): TValue;
+function TSingletonLifetimeManager.Resolve(const context: ICreationContext;
+  const model: TComponentModel): TValue;
 var
   newInstance: TValue;
 begin
+  MonitorEnter(Self);
+  try
   if not Assigned(fInstance) then
   begin
-    newInstance := ComponentActivator.CreateInstance(context);
-    fInstance := TValueHolder.Create(newInstance, Model.RefCounting);
+    newInstance := model.ComponentActivator.CreateInstance(context);
+    fInstance := TValueHolder.Create(newInstance, model.RefCounting);
     DoAfterConstruction(fInstance);
+  end;
+  finally
+    MonitorExit(Self);
   end;
   Result := fInstance;
 end;
 
 procedure TSingletonLifetimeManager.Release(const instance: TValue);
+var
+  value: TValue;
 begin
   if Assigned(fInstance) then
   begin
-    DoBeforeDestruction(fInstance);
+    value := fInstance;
+    if not value.IsEmpty then
+      DoBeforeDestruction(value);
     fInstance := nil;
   end;
 end;
@@ -215,10 +212,10 @@ end;
 
 {$REGION 'TTransientLifetimeManager'}
 
-function TTransientLifetimeManager.Resolve(
-  const context: ICreationContext): TValue;
+function TTransientLifetimeManager.Resolve(const context: ICreationContext;
+  const model: TComponentModel): TValue;
 begin
-  Result := ComponentActivator.CreateInstance(context);
+  Result := model.ComponentActivator.CreateInstance(context);
   DoAfterConstruction(Result);
 end;
 
@@ -245,9 +242,16 @@ begin
 end;
 
 function TSingletonPerThreadLifetimeManager.CreateHolder(
-  const instance: TValue): TFunc<TValue>;
+  const instance: TValue; refCounting: TRefCounting): TFunc<TValue>;
 begin
-  Result := TValueHolder.Create(instance, Model.RefCounting);
+  Result := TValueHolder.Create(instance, refCounting);
+end;
+
+destructor TSingletonPerThreadLifetimeManager.Destroy;
+begin
+  // Needs to be freed prior our weakrefs get cleared
+  fInstances := nil;
+  inherited Destroy;
 end;
 
 procedure TSingletonPerThreadLifetimeManager.HandleValueChanged(sender: TObject;
@@ -260,7 +264,7 @@ begin
 end;
 
 function TSingletonPerThreadLifetimeManager.Resolve(
-  const context: ICreationContext): TValue;
+  const context: ICreationContext; const model: TComponentModel): TValue;
 var
   threadID: THandle;
   instance: TValue;
@@ -271,8 +275,8 @@ begin
   try
     if not fInstances.TryGetValue(threadID, holder) then
     begin
-      instance := ComponentActivator.CreateInstance(context);
-      holder := CreateHolder(instance);
+      instance := model.ComponentActivator.CreateInstance(context);
+      holder := CreateHolder(instance, model.RefCounting);
       fInstances.AddOrSetValue(threadID, holder);
       DoAfterConstruction(holder);
     end;
@@ -283,7 +287,7 @@ begin
 end;
 
 procedure TSingletonPerThreadLifetimeManager.Release(const instance: TValue);
-begin
+begin //FI:W519
 end;
 
 {$ENDREGION}
@@ -309,8 +313,8 @@ begin
     model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
 end;
 
-function TPooledLifetimeManager.Resolve(
-  const context: ICreationContext): TValue;
+function TPooledLifetimeManager.Resolve(const context: ICreationContext;
+  const model: TComponentModel): TValue;
 begin
   Result := fPool.GetInstance(context);
   DoAfterConstruction(Result);
