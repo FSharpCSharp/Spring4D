@@ -304,6 +304,7 @@ var
   i: Integer;
 begin
   if model.ConstructorInjections.Any then Exit;  // TEMP
+  if model.ComponentTypeInfo.Kind <> tkClass then Exit;
   predicate := TMethodFilters.IsConstructor
     and not TMethodFilters.HasParameterFlags([pfVar, pfArray, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
