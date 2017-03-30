@@ -7799,7 +7799,7 @@ end;
 class procedure TArray.Shuffle<T>(var values: array of T; index,
   count: Integer);
 var
-  i, n: Integer;
+  i: Integer;
   temp: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -7807,12 +7807,14 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
 {$ENDIF}
 
-  for i := index to index + count - 1 do
+  while count > 1 do
   begin
-    n := Random(index + count - i) + i;
-    temp := values[i];
-    values[i] := values[n];
-    values[n] := temp;
+    i := Random(count) + index;
+    Dec(count);
+    temp := values[index];
+    values[index] := values[i];
+    values[i] := temp;
+    Inc(index);
   end;
 end;
 
