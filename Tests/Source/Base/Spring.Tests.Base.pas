@@ -164,6 +164,7 @@ type
     procedure TestNotify;
     procedure TestNotifyDelegate;
     procedure TestRemove;
+    procedure TestClear;
 
     procedure TestClassProcedureHandler;
     procedure TestInstanceProcedureHandler;
@@ -822,6 +823,17 @@ begin
   e.Invoke(42);
   e.Remove(TEventHandler.HandleInt64Static);
   CheckTrue(TEventHandler.fClassHandlerInvoked);
+end;
+
+procedure TTestMulticastEvent.TestClear;
+var
+  e: Event<TNotifyEvent>;
+begin
+  e.Add(HandleChanged);
+  e.Clear;
+  e.Invoke(nil);
+  CheckEquals(0, fHandlerInvokeCount);
+  e.Clear;
 end;
 
 procedure TTestMulticastEvent.TestDelegate;

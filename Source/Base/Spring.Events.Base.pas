@@ -226,6 +226,7 @@ begin
   try
     for i := 0 to Count - 1 do
       Notify(Self, fHandlers[i], cnRemoved);
+    fCount := fCount and DisabledFlag;
     fHandlers := nil;
   finally
     LockLeave;
