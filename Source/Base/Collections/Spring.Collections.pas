@@ -692,10 +692,10 @@ type
 //    function Sum(const selector: TFunc<T, Int64>): Int64; overload;
 //    function Sum(const selector: TFunc<T, Double>): Double; overload;
 
-    ///	<summary>
-    ///	  Returns a specified number of contiguous elements from the start of a
-    ///	  sequence.
-    ///	</summary>
+    /// <summary>
+    ///   Returns a specified number of contiguous elements from the start of a
+    ///   sequence.
+    /// </summary>
     function Take(count: Integer): IEnumerable<T>;
 
     /// <summary>
@@ -1944,7 +1944,8 @@ type
 
     /// <summary>
     ///   Gets the key for a given value if a matching value exists in the
-    ///   dictionary; returns the given default value for <c>TKey</c> otherwise.
+    ///   dictionary; returns the given default value for <c>TKey</c>
+    ///   otherwise.
     /// </summary>
     function GetKeyOrDefault(const value: TValue; const defaultValue: TKey): TKey; overload;
 
@@ -2501,7 +2502,7 @@ type
   /// <summary>
   ///   Provides static methods to create an instance of various interfaced
   ///   generic collections such as <see cref="IList&lt;T&gt;" /> or <see cref="IDictionary&lt;TKey, TValue&gt;" />
-  ///   .
+  ///    .
   /// </summary>
   TCollections = class
   public
