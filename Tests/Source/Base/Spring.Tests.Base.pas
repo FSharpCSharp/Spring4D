@@ -165,6 +165,7 @@ type
     procedure TestNotifyDelegate;
     procedure TestRemove;
     procedure TestClear;
+    procedure TestAddNil;
 
     procedure TestClassProcedureHandler;
     procedure TestInstanceProcedureHandler;
@@ -813,6 +814,20 @@ procedure TTestMulticastEvent.HandlerSingle(const value: Single);
 begin
   CheckEquals(42, value);
   Inc(fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestAddNil;
+var
+  e: Event<TNotifyEvent>;
+  e2: Event<TProc<Integer, string>>;
+begin
+  e.Add(nil);
+  e.Invoke(nil);
+  CheckEquals(0, fHandlerInvokeCount);
+
+  e2.Add(nil);
+  e2.Invoke(0, '');
+  CheckEquals(0, fHandlerInvokeCount);
 end;
 
 procedure TTestMulticastEvent.TestClassProcedureHandler;

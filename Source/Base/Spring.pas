@@ -2823,6 +2823,8 @@ type
   PVtable = ^TVtable;
   PPVtable = ^PVtable;
 begin
+  if Pointer(methodRef) = nil then
+    Exit(nil);
   // 3 is offset of Invoke, after QI, AddRef, Release
   TMethod(Result).Code := PPVtable(methodRef)^^[3];
   TMethod(Result).Data := Pointer(methodRef);

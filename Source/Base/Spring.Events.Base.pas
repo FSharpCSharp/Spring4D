@@ -202,6 +202,8 @@ procedure TEventBase.Add(const handler: TMethodPointer);
 var
   i: Integer;
 begin
+  if not Assigned(handler) then
+    Exit;
   LockEnter;
   try
     i := Count;
