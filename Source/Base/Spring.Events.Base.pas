@@ -98,7 +98,6 @@ type
   {$REGION 'Implements IEvent<T>'}
     procedure Add(handler: T);
     procedure Remove(handler: T);
-    procedure ForEach(const action: TAction<T>);
   {$ENDREGION}
   end;
 
@@ -353,21 +352,6 @@ begin
     inherited Add(MethodReferenceToMethodPointer(handler))
   else
     inherited Add(PMethodPointer(@handler)^);
-end;
-
-procedure TEventBase<T>.ForEach(const action: TAction<T>);
-var
-  handler: TMethodPointer;
-begin
-  for handler in Handlers do
-{$IFDEF DELPHI2010}
-    if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
-{$ELSE}
-    if TType.Kind<T> = tkInterface then
-{$ENDIF}
-      TAction<IInterface>(action)(MethodPointerToMethodReference(handler))
-    else
-      TAction<TMethodPointer>(action)(handler);
 end;
 
 function TEventBase<T>.GetInvoke: T;
