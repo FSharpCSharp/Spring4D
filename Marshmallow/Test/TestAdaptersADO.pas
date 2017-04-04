@@ -272,6 +272,7 @@ procedure TADOConnectionAdapterTest.TestCreateStatement;
 var
   statement: IDBStatement;
 begin
+  fMockConnectionObject.Setup.Returns(30).When.Get_CommandTimeout;
   fAdapter.Connection.ConnectionObject := fMockConnectionObject;
 
   statement := fAdapter.CreateStatement;
