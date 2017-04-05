@@ -961,11 +961,6 @@ var
 begin
   expected := 0;
 
-  eventInt64 := Event<TEventInt64>.Create();
-  eventSingle := Event<TEventSingle>.Create();
-  eventDouble := Event<TEventDouble>.Create();
-  eventExtended := Event<TEventExtended>.Create();
-
   eventInt64.Add(HandlerInt64);
   eventSingle.Add(HandlerSingle);
   eventDouble.Add(HandlerDouble);
@@ -1340,7 +1335,6 @@ begin
 {$IFDEF LogConsole}
   LogEnter(expected, 'TestIssue60Double');
 {$ENDIF LogConsole}
-  eventDouble := Event<TEventDouble>.Create();
   eventDouble.Add(HandlerDouble);
   eventDouble.Invoke(42);
   Inc(expected);
@@ -1359,7 +1353,6 @@ begin
 {$IFDEF LogConsole}
   LogEnter(expected, 'TestIssue60DoubleAssignedConst');
 {$ENDIF LogConsole}
-  eventDouble := Event<TEventDouble>.Create();
   eventDouble.Add(HandlerDouble);
   eventDouble.Invoke(Double42);
   Inc(expected);
@@ -1378,7 +1371,6 @@ begin
 {$IFDEF LogConsole}
   LogEnter(expected, 'TestIssue60Extended');
 {$ENDIF LogConsole}
-  eventExtended := Event<TEventExtended>.Create();
   eventExtended.Add(HandlerExtended);
   eventExtended.Invoke(42);
   Inc(expected);
@@ -1397,7 +1389,6 @@ begin
 {$IFDEF LogConsole}
   LogEnter(expected, 'TestIssue60ExtendedAssignedConst');
 {$ENDIF LogConsole}
-  eventExtended := Event<TEventExtended>.Create();
   eventExtended.Add(HandlerExtended);
   eventExtended.Invoke(Extended42);
   Inc(expected);
@@ -1418,7 +1409,6 @@ begin
   Writeln('TTestMulticastEventStackSize.TestIssue60GuidAssignedConst');
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$ENDIF LogConsole}
-  eventExtended := Event<TEventGuid>.Create();
   eventExtended.Add(HandlerGuid);
   guid := GUID42;
   eventExtended.Invoke(guid); // pass variable to avoid AV during method interception
@@ -1439,7 +1429,6 @@ begin
   Writeln('TTestMulticastEventStackSize.TestIssue60Int64');
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$ENDIF LogConsole}
-  eventInt64 := Event<TEventInt64>.Create();
   eventInt64.Add(HandlerInt64);
   eventInt64.Invoke(42);
   Inc(expected);
@@ -1459,7 +1448,6 @@ begin
   Writeln('TTestMulticastEventStackSize.TestIssue60Int64AssignedConst');
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$ENDIF LogConsole}
-  eventInt64 := Event<TEventInt64>.Create();
   eventInt64.Add(HandlerInt64);
   eventInt64.Invoke(Int6442);
   Inc(expected);
@@ -1479,7 +1467,6 @@ begin
   Writeln('TTestMulticastEventStackSize.TestIssue60Single');
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$ENDIF LogConsole}
-  eventSingle := Event<TEventSingle>.Create();
   eventSingle.Add(HandlerSingle);
   eventSingle.Invoke(42);
   Inc(expected);
@@ -1499,7 +1486,6 @@ begin
   Writeln('TTestMulticastEventStackSize.TestIssue60SingleAssignedConst');
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$ENDIF LogConsole}
-  eventSingle := Event<TEventSingle>.Create();
   eventSingle.Add(HandlerSingle);
   eventSingle.Invoke(Single42);
   Inc(expected);

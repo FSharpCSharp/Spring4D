@@ -853,8 +853,6 @@ type
     procedure SetOnChanged(value: TNotifyEvent);
     procedure EnsureInitialized;
   public
-    class function Create: Event<T>; static;
-
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
     procedure RemoveAll(instance: Pointer);
@@ -6778,11 +6776,6 @@ end;
 
 
 {$REGION 'Event<T>'}
-
-class function Event<T>.Create: Event<T>;
-begin
-  Result := TEvent<T>.Create;
-end;
 
 procedure Event<T>.Add(const handler: T);
 begin
