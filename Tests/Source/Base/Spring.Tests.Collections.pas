@@ -374,6 +374,7 @@ type
     procedure TestSetOwnsObjects;
     procedure TestGetElementType;
     procedure TestExtractAt;
+    procedure TestGetRangeElementType;
   end;
 
   TTestInterfaceList = class(TTestCase)
@@ -2296,13 +2297,20 @@ end;
 
 procedure TTestObjectList.SetUp;
 begin
-  SUT := TObjectList<TPersistent>.Create as IList<TPersistent>;
+  SUT := TObjectList<TPersistent>.Create;
 end;
 
 procedure TTestObjectList.TearDown;
 begin
   inherited;
   SUT := nil;
+end;
+
+procedure TTestObjectList.TestGetRangeElementType;
+begin
+  SUT := TCollections.CreateObjectList<TPersistent>;
+  SUT.Add(TPersistent.Create);
+  CheckEquals(TPersistent, SUT.GetRange(0, 1).ElementType.TypeData.ClassType);
 end;
 
 procedure TTestObjectList.TestExtractAt;

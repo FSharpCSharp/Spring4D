@@ -249,21 +249,25 @@ type
 {$IFNDEF DELPHI2010}
   TFoldedObjectList<T{: class}> = class(TObjectList<TObject>)
   protected
+    class function CreateList: TListBase<TObject>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedInterfaceList<T{: IInterface}> = class(TList<IInterface>)
   protected
+    class function CreateList: TListBase<IInterface>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedSortedObjectList<T{: class}> = class(TSortedObjectList<TObject>)
   protected
+    class function CreateList: TListBase<TObject>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedSortedInterfaceList<T{: IInterface}> = class(TSortedList<IInterface>)
   protected
+    class function CreateList: TListBase<IInterface>; override;
     function GetElementType: PTypeInfo; override;
   end;
 {$ENDIF}
@@ -380,7 +384,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
-  list := TList<T>.Create;
+  list := TList<T>(CreateList);
   list.fCount := count;
 {$IFDEF DELPHIXE2_UP}
   list.fItems := Copy(fItems, index, count);
@@ -1373,6 +1377,11 @@ end;
 {$REGION 'TFoldedObjectList<T>'}
 
 {$IFNDEF DELPHI2010}
+class function TFoldedObjectList<T>.CreateList: TListBase<TObject>;
+begin
+  Result := TFoldedObjectList<T>.Create(False);
+end;
+
 function TFoldedObjectList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
@@ -1385,6 +1394,11 @@ end;
 {$REGION 'TFoldedInterfaceList<T>'}
 
 {$IFNDEF DELPHI2010}
+class function TFoldedInterfaceList<T>.CreateList: TListBase<IInterface>;
+begin
+  Result := TFoldedInterfaceList<T>.Create;
+end;
+
 function TFoldedInterfaceList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
@@ -1397,6 +1411,11 @@ end;
 {$REGION 'TFoldedSortedObjectList<T>'}
 
 {$IFNDEF DELPHI2010}
+class function TFoldedSortedObjectList<T>.CreateList: TListBase<TObject>;
+begin
+  Result := TFoldedObjectList<T>.Create(False);
+end;
+
 function TFoldedSortedObjectList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
@@ -1409,6 +1428,11 @@ end;
 {$REGION 'TFoldedSortedInterfaceList<T>'}
 
 {$IFNDEF DELPHI2010}
+class function TFoldedSortedInterfaceList<T>.CreateList: TListBase<IInterface>;
+begin
+  Result := TFoldedInterfaceList<T>.Create;
+end;
+
 function TFoldedSortedInterfaceList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);

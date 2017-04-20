@@ -421,6 +421,7 @@ type
     function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
     procedure AddInternal(const item: T); override;
+    class function CreateList: TListBase<T>; virtual;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
     function TryGetLast(out value: T): Boolean; override;
@@ -1829,6 +1830,11 @@ begin
     DeleteRange(0, Count);
 end;
 
+class function TListBase<T>.CreateList: TListBase<T>;
+begin
+  Result := TList<T>.Create;
+end;
+
 procedure TListBase<T>.DeleteRange(index, count: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1893,11 +1899,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 
-{$IFNDEF DELPHI2010}
-  Result := TCollections.CreateList<T>;
-{$ELSE}
-  Result := TList<T>.Create;
-{$ENDIF}
+  Result := CreateList;
   Result.Count := count;
   for i := 0 to count - 1 do
   begin
