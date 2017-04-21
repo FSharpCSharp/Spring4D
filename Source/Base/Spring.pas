@@ -305,6 +305,7 @@ type
     TManagedInterfaceField = class(TManagedObjectField)
     private
       fEntry: PInterfaceEntry;
+      function CreateInstance: Pointer;
     public
       constructor Create(offset: Integer; fieldType: PTypeInfo; cls: TClass;
         const factory: TFunc<PTypeInfo,Pointer>; entry: PInterfaceEntry);
@@ -3783,28 +3784,34 @@ begin
   fEntry := entry;
 end;
 
+function TInitTable.TManagedInterfaceField.CreateInstance: Pointer;
+var
+  obj: Pointer;
+begin
+  obj := fCtor(fCls);
+  if fEntry.IOffset <> 0 then
+  begin
+    Result := Pointer(PByte(obj) + fEntry.IOffset);
+    if Result <> nil then
+      IInterface(Result)._AddRef;
+  end
+  else
+  begin
+    Result := nil;
+    IInterface(Result) := InvokeImplGetter(obj, fEntry.ImplGetter);
+  end;
+end;
+
 procedure TInitTable.TManagedInterfaceField.FinalizeValue(instance: Pointer);
 begin
 end;
 
 procedure TInitTable.TManagedInterfaceField.InitializeValue(instance: Pointer);
 var
-  obj: Pointer;
   intf: Pointer;
 begin
   if Assigned(fCtor) then
-  begin
-    obj := fCtor(fCls);
-    intf := nil;
-    if fEntry.IOffset <> 0 then
-    begin
-      intf := Pointer(PByte(obj) + fEntry.IOffset);
-      if intf <> nil then
-        IInterface(intf)._AddRef;
-    end
-    else
-      IInterface(intf) := InvokeImplGetter(obj, fEntry.ImplGetter);
-  end
+    intf := CreateInstance
   else if Assigned(fFactory) then
     intf := fFactory(fFieldType)
   else

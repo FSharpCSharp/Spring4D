@@ -2707,6 +2707,12 @@ type
       const index, count: Integer); static; inline;
   end;
 
+{$IFNDEF DELPHI2010}
+  AutoInitAttribute = class(ManagedAttribute)
+    constructor Create(ownsObjects: Boolean = True);
+  end;
+{$ENDIF}
+
 function GetInstanceComparer: Pointer;
 
 implementation
@@ -2716,6 +2722,8 @@ uses
 {$IFDEF DELPHIXE8_UP}
   System.Hash,
 {$ENDIF}
+  Rtti,
+  TypInfo,
   Spring.Collections.Dictionaries,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
@@ -3750,6 +3758,42 @@ begin
 {$ENDIF}
     System.Move(fromItems[fromIndex], toItems[toIndex], count * SizeOf(T));
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'AutoInitAttribute'}
+
+{$IFNDEF DELPHI2010}
+
+function InitElementType(fieldType: PTypeInfo): PTypeInfo;
+begin
+  Assert(fieldType.Kind = tkInterface);
+  Assert(fieldType.TypeData.GUID = IList<TObject>);
+  Result := TRttiDynamicArrayType(fieldType.RttiType.GetMethod('ToArray').ReturnType)
+    .ElementType.Handle;
+  Assert(Result.Kind in [tkClass, tkInterface]);
+end;
+
+constructor AutoInitAttribute.Create(ownsObjects: Boolean);
+var
+  elementType: PTypeInfo;
+begin
+  elementType := nil;
+  inherited Create(
+    function(fieldType: PTypeInfo): Pointer
+    begin
+      if elementType = nil then
+        elementType := InitElementType(fieldType);
+
+      Result := nil;
+      case elementType.Kind of
+        tkClass: IList<TObject>(Result) := TFoldedObjectList.Create(elementType, ownsObjects);
+        tkInterface: IList<IInterface>(Result) := TFoldedInterfaceList.Create(elementType);
+      end;
+    end);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

@@ -41,6 +41,7 @@ uses
   TestFramework,
   Spring.TestUtils,
   Spring,
+  Spring.Collections,
   Spring.Events,
   Spring.Utils;
 
@@ -515,13 +516,14 @@ type
     fWideCharValue: WideChar;
     [Default('z')]
     fCharValue: Char;
-  {$IFNDEF DELPHI2010}
     [Managed(TInterfacedObject)]
     fIntfValue: IInterface;
-  {$ENDIF}
 
     fIntValue_Prop: Integer;
     fStrValue_Prop: string;
+
+    [AutoInit]
+    fList: IList<TPersistent>;
     procedure SetStrValue_Prop(const Value: string); virtual;
   public
     constructor Create;
@@ -3228,14 +3230,16 @@ begin
   {$ENDIF}
     CheckEquals('y', Char(obj.fWideCharValue));
     CheckEquals('z', Char(obj.fCharValue));
-  {$IFNDEF DELPHI2010}
+
     CheckNotNull(obj.fIntfValue);
     CheckIs(obj.fIntfValue as TObject, TInterfacedObject);
-  {$ENDIF}
 
     // check property initializations
     CheckEquals(43, obj.fIntValue_Prop);
     CheckEquals('hello', obj.fStrValue_Prop);
+
+    CheckNotNull(obj.fList);
+    Check(obj.fList.ElementType = TypeInfo(TPersistent));
   finally
     obj.Free;
   end;
