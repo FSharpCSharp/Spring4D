@@ -249,26 +249,46 @@ type
 {$IFNDEF DELPHI2010}
   TFoldedObjectList<T{: class}> = class(TObjectList<TObject>)
   protected
-    class function CreateList: TListBase<TObject>; override;
+    function CreateList: TListBase<TObject>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedInterfaceList<T{: IInterface}> = class(TList<IInterface>)
   protected
-    class function CreateList: TListBase<IInterface>; override;
+    function CreateList: TListBase<IInterface>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedSortedObjectList<T{: class}> = class(TSortedObjectList<TObject>)
   protected
-    class function CreateList: TListBase<TObject>; override;
+    function CreateList: TListBase<TObject>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedSortedInterfaceList<T{: IInterface}> = class(TSortedList<IInterface>)
   protected
-    class function CreateList: TListBase<IInterface>; override;
+    function CreateList: TListBase<IInterface>; override;
     function GetElementType: PTypeInfo; override;
+  end;
+
+  TFoldedObjectList = class(TObjectList<TObject>)
+  private
+    fElementType: PTypeInfo;
+  protected
+    function CreateList: TListBase<TObject>; override;
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(const elementType: PTypeInfo; ownsObjects: Boolean = True);
+  end;
+
+  TFoldedInterfaceList = class(TList<IInterface>)
+  private
+    fElementType: PTypeInfo;
+  protected
+    function CreateList: TListBase<IInterface>; override;
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(const elementType: PTypeInfo);
   end;
 {$ENDIF}
 
@@ -1377,7 +1397,7 @@ end;
 {$REGION 'TFoldedObjectList<T>'}
 
 {$IFNDEF DELPHI2010}
-class function TFoldedObjectList<T>.CreateList: TListBase<TObject>;
+function TFoldedObjectList<T>.CreateList: TListBase<TObject>;
 begin
   Result := TFoldedObjectList<T>.Create(False);
 end;
@@ -1394,7 +1414,7 @@ end;
 {$REGION 'TFoldedInterfaceList<T>'}
 
 {$IFNDEF DELPHI2010}
-class function TFoldedInterfaceList<T>.CreateList: TListBase<IInterface>;
+function TFoldedInterfaceList<T>.CreateList: TListBase<IInterface>;
 begin
   Result := TFoldedInterfaceList<T>.Create;
 end;
@@ -1411,7 +1431,7 @@ end;
 {$REGION 'TFoldedSortedObjectList<T>'}
 
 {$IFNDEF DELPHI2010}
-class function TFoldedSortedObjectList<T>.CreateList: TListBase<TObject>;
+function TFoldedSortedObjectList<T>.CreateList: TListBase<TObject>;
 begin
   Result := TFoldedObjectList<T>.Create(False);
 end;
@@ -1428,7 +1448,7 @@ end;
 {$REGION 'TFoldedSortedInterfaceList<T>'}
 
 {$IFNDEF DELPHI2010}
-class function TFoldedSortedInterfaceList<T>.CreateList: TListBase<IInterface>;
+function TFoldedSortedInterfaceList<T>.CreateList: TListBase<IInterface>;
 begin
   Result := TFoldedInterfaceList<T>.Create;
 end;
@@ -1436,6 +1456,53 @@ end;
 function TFoldedSortedInterfaceList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedObjectList'}
+
+{$IFNDEF DELPHI2010}
+constructor TFoldedObjectList.Create(const elementType: PTypeInfo;
+  ownsObjects: Boolean);
+begin
+  inherited Create(ownsObjects);
+  fElementType := elementType;
+end;
+
+function TFoldedObjectList.CreateList: TListBase<TObject>;
+begin
+  Result := TFoldedObjectList.Create(fElementType, False);
+end;
+
+function TFoldedObjectList.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedInterfaceList'}
+
+{$IFNDEF DELPHI2010}
+constructor TFoldedInterfaceList.Create(const elementType: PTypeInfo);
+begin
+  inherited Create;
+  fElementType := elementType;
+end;
+
+function TFoldedInterfaceList.CreateList: TListBase<IInterface>;
+begin
+  Result := TFoldedInterfaceList.Create(fElementType);
+end;
+
+function TFoldedInterfaceList.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
 end;
 {$ENDIF}
 

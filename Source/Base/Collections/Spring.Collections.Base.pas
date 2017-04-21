@@ -421,7 +421,7 @@ type
     function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
     procedure AddInternal(const item: T); override;
-    class function CreateList: TListBase<T>; virtual;
+    function CreateList: TListBase<T>; virtual;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
     function TryGetLast(out value: T): Boolean; override;
@@ -1830,7 +1830,7 @@ begin
     DeleteRange(0, Count);
 end;
 
-class function TListBase<T>.CreateList: TListBase<T>;
+function TListBase<T>.CreateList: TListBase<T>;
 begin
   Result := TList<T>.Create;
 end;
