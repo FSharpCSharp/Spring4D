@@ -230,15 +230,19 @@ type
   ///   supported when the interface type has a GUID.
   /// </remarks>
   ManagedAttribute = class(TBaseAttribute)
-  private
+  strict private
     fCreateInstance: Boolean;
     fInstanceClass: TClass;
+    fFactory: TFunc<PTypeInfo,Pointer>;
+  strict protected
+    constructor Create(const factory: TFunc<PTypeInfo,Pointer>); overload;
   public
     constructor Create(createInstance: Boolean = True); overload;
     constructor Create(instanceClass: TClass) overload;
 
     property CreateInstance: Boolean read fCreateInstance;
     property InstanceClass: TClass read fInstanceClass;
+    property Factory: TFunc<PTypeInfo,Pointer> read fFactory;
   end;
 
   {$ENDREGION}
@@ -257,10 +261,10 @@ type
     strict private type
       PT = ^T;
     var
-      fValue: T;
       fOffset: Integer;
+      fValue: T;
     public
-      constructor Create(const value: Variant; offset: Integer);
+      constructor Create(offset: Integer; const value: Variant);
       procedure InitializeValue(instance: Pointer); override;
     end;
 
@@ -271,10 +275,10 @@ type
       TSetter = procedure(const value: T) of object;
       TIndexedSetter = procedure(index: Integer; const value: T) of object;
     var
-      fValue: T;
       fPropInfo: PPropInfo;
+      fValue: T;
     public
-      constructor Create(const value: Variant; propInfo: PPropInfo);
+      constructor Create(propInfo: PPropInfo; const value: Variant);
       procedure InitializeValue(instance: Pointer); override;
     end;
 
@@ -287,10 +291,13 @@ type
     TManagedObjectField = class(TManagedField)
     private
       fOffset: Integer;
+      fFieldType: PTypeInfo;
       fCls: TClass;
       fCtor: TConstructor;
+      fFactory: TFunc<PTypeInfo,Pointer>;
     public
-      constructor Create(cls: TClass; offset: Integer);
+      constructor Create(offset: Integer; fieldType: PTypeInfo; cls: TClass;
+        const factory: TFunc<PTypeInfo,Pointer>);
       procedure InitializeValue(instance: Pointer); override;
       procedure FinalizeValue(instance: Pointer); override;
     end;
@@ -299,7 +306,8 @@ type
     private
       fEntry: PInterfaceEntry;
     public
-      constructor Create(cls: TClass; offset: Integer; entry: PInterfaceEntry);
+      constructor Create(offset: Integer; fieldType: PTypeInfo; cls: TClass;
+        const factory: TFunc<PTypeInfo,Pointer>; entry: PInterfaceEntry);
       procedure InitializeValue(instance: Pointer); override;
       procedure FinalizeValue(instance: Pointer); override;
     end;
@@ -330,8 +338,7 @@ type
       offset: Integer);
     procedure AddDefaultProperty(fieldType: PTypeInfo; const value: Variant;
       propInfo: PPropInfo);
-    procedure AddManagedField(fieldType: PTypeInfo; offset: Integer;
-      classType: TClass; createInstance: Boolean);
+    procedure AddManagedField(const field: TRttiField; const attribute: ManagedAttribute);
     class function GetCodePointer(instance: TObject; p: Pointer): Pointer; static; inline;
   public
     class constructor Create;
@@ -3302,6 +3309,12 @@ begin
   fInstanceClass := instanceClass;
 end;
 
+constructor ManagedAttribute.Create(const factory: TFunc<PTypeInfo,Pointer>);
+begin
+  Create(instanceClass);
+  fFactory := factory;
+end;
+
 {$ENDREGION}
 
 
@@ -3341,8 +3354,7 @@ begin
         AddDefaultField(f.FieldType.Handle, DefaultAttribute(a).Value, f.Offset)
       else if a is ManagedAttribute then
         if f.FieldType.TypeKind in [tkClass, tkInterface] then
-          AddManagedField(f.FieldType.Handle, f.Offset,
-            ManagedAttribute(a).InstanceClass, ManagedAttribute(a).CreateInstance);
+          AddManagedField(f, ManagedAttribute(a));
 
   for p in t.GetProperties do
     for a in p.GetAttributes do
@@ -3388,49 +3400,49 @@ begin
   case fieldType.Kind of
     tkInteger, tkEnumeration:
       case fieldType.TypeData.OrdType of
-        otSByte: defaultField := TDefaultField<ShortInt>.Create(value, offset);
-        otSWord: defaultField := TDefaultField<SmallInt>.Create(value, offset);
-        otSLong: defaultField := TDefaultField<Integer>.Create(value, offset);
-        otUByte: defaultField := TDefaultField<Byte>.Create(value, offset);
-        otUWord: defaultField := TDefaultField<Word>.Create(value, offset);
-        otULong: defaultField := TDefaultField<Cardinal>.Create(value, offset);
+        otSByte: defaultField := TDefaultField<ShortInt>.Create(offset, value);
+        otSWord: defaultField := TDefaultField<SmallInt>.Create(offset, value);
+        otSLong: defaultField := TDefaultField<Integer>.Create(offset, value);
+        otUByte: defaultField := TDefaultField<Byte>.Create(offset, value);
+        otUWord: defaultField := TDefaultField<Word>.Create(offset, value);
+        otULong: defaultField := TDefaultField<Cardinal>.Create(offset, value);
       end;
     {$IFNDEF NEXTGEN}
     tkChar:
-      defaultField  := TDefaultField<AnsiChar>.Create(value, offset);
+      defaultField  := TDefaultField<AnsiChar>.Create(offset, value);
     {$ENDIF}
     tkFloat:
       if (fieldType = TypeInfo(TDateTime)) and (VarType(value) = varUString) then
-        defaultField := TDefaultField<TDateTime>.Create(StrToDateTime(value, FormatSettings), offset)
+        defaultField := TDefaultField<TDateTime>.Create(offset, StrToDateTime(value, FormatSettings))
       else if (fieldType = TypeInfo(TDate)) and (VarType(value) = varUString) then
-        defaultField := TDefaultField<TDate>.Create(StrToDate(value, FormatSettings), offset)
+        defaultField := TDefaultField<TDate>.Create(offset, StrToDate(value, FormatSettings))
       else if (fieldType = TypeInfo(TTime)) and (VarType(value) = varUString) then
-        defaultField := TDefaultField<TTime>.Create(StrToTime(value, FormatSettings), offset)
+        defaultField := TDefaultField<TTime>.Create(offset, StrToTime(value, FormatSettings))
       else
         case FieldType.TypeData.FloatType of
-          ftSingle: defaultField := TDefaultField<Single>.Create(value, offset);
-          ftDouble: defaultField := TDefaultField<Double>.Create(value, offset);
-          ftExtended: defaultField := TDefaultField<Extended>.Create(value, offset);
-          ftComp: defaultField := TDefaultField<Comp>.Create(value, offset);
-          ftCurr: defaultField := TDefaultField<Currency>.Create(value, offset);
+          ftSingle: defaultField := TDefaultField<Single>.Create(offset, value);
+          ftDouble: defaultField := TDefaultField<Double>.Create(offset, value);
+          ftExtended: defaultField := TDefaultField<Extended>.Create(offset, value);
+          ftComp: defaultField := TDefaultField<Comp>.Create(offset, value);
+          ftCurr: defaultField := TDefaultField<Currency>.Create(offset, value);
         end;
     tkWChar:
-      defaultField := TDefaultField<Char>.Create(value, offset);
+      defaultField := TDefaultField<Char>.Create(offset, value);
     {$IFNDEF NEXTGEN}
     tkWString:
-      defaultField := TDefaultField<WideString>.Create(value, offset);
+      defaultField := TDefaultField<WideString>.Create(offset, value);
     {$ENDIF}
     tkVariant:
-      defaultField := TDefaultField<Variant>.Create(value, offset);
+      defaultField := TDefaultField<Variant>.Create(offset, value);
     tkInt64:
       if fieldType.TypeData.MinInt64Value > fieldType.TypeData.MaxInt64Value then
-        defaultField := TDefaultField<UInt64>.Create(value, offset)
+        defaultField := TDefaultField<UInt64>.Create(offset, value)
       else
-        defaultField := TDefaultField<Int64>.Create(value, offset);
+        defaultField := TDefaultField<Int64>.Create(offset, value);
     tkUString:
-      defaultField := TDefaultField<UnicodeString>.Create(value, offset);
+      defaultField := TDefaultField<UnicodeString>.Create(offset, value);
     tkClassRef, tkPointer:
-      defaultField := TDefaultField<Pointer>.Create(value, offset);
+      defaultField := TDefaultField<Pointer>.Create(offset, value);
   end;
   if defaultField <> nil then
   begin
@@ -3450,49 +3462,49 @@ begin
   case fieldType.Kind of
     tkInteger, tkEnumeration:
       case fieldType.TypeData.OrdType of
-        otSByte: defaultField := TDefaultProperty<ShortInt>.Create(value, propInfo);
-        otSWord: defaultField := TDefaultProperty<SmallInt>.Create(value, propInfo);
-        otSLong: defaultField := TDefaultProperty<Integer>.Create(value, propInfo);
-        otUByte: defaultField := TDefaultProperty<Byte>.Create(value, propInfo);
-        otUWord: defaultField := TDefaultProperty<Word>.Create(value, propInfo);
-        otULong: defaultField := TDefaultProperty<Cardinal>.Create(value, propInfo);
+        otSByte: defaultField := TDefaultProperty<ShortInt>.Create(propInfo, value);
+        otSWord: defaultField := TDefaultProperty<SmallInt>.Create(propInfo, value);
+        otSLong: defaultField := TDefaultProperty<Integer>.Create(propInfo, value);
+        otUByte: defaultField := TDefaultProperty<Byte>.Create(propInfo, value);
+        otUWord: defaultField := TDefaultProperty<Word>.Create(propInfo, value);
+        otULong: defaultField := TDefaultProperty<Cardinal>.Create(propInfo, value);
       end;
     {$IFNDEF NEXTGEN}
     tkChar:
-      defaultField  := TDefaultProperty<AnsiChar>.Create(value, propInfo);
+      defaultField  := TDefaultProperty<AnsiChar>.Create(propInfo, value);
     {$ENDIF}
     tkFloat:
       if (fieldType = TypeInfo(TDateTime)) and (VarType(value) = varUString) then
-        defaultField := TDefaultProperty<TDateTime>.Create(StrToDateTime(value, FormatSettings), propInfo)
+        defaultField := TDefaultProperty<TDateTime>.Create(propInfo, StrToDateTime(value, FormatSettings))
       else if (fieldType = TypeInfo(TDate)) and (VarType(value) = varUString) then
-        defaultField := TDefaultProperty<TDate>.Create(StrToDate(value, FormatSettings), propInfo)
+        defaultField := TDefaultProperty<TDate>.Create(propInfo, StrToDate(value, FormatSettings))
       else if (fieldType = TypeInfo(TTime)) and (VarType(value) = varUString) then
-        defaultField := TDefaultProperty<TTime>.Create(StrToTime(value, FormatSettings), propInfo)
+        defaultField := TDefaultProperty<TTime>.Create(propInfo, StrToTime(value, FormatSettings))
       else
         case fieldType.TypeData.FloatType of
-          ftSingle: defaultField := TDefaultProperty<Single>.Create(value, propInfo);
-          ftDouble: defaultField := TDefaultProperty<Double>.Create(value, propInfo);
-          ftExtended: defaultField := TDefaultProperty<Extended>.Create(value, propInfo);
-          ftComp: defaultField := TDefaultProperty<Comp>.Create(value, propInfo);
-          ftCurr: defaultField := TDefaultProperty<Currency>.Create(value, propInfo);
+          ftSingle: defaultField := TDefaultProperty<Single>.Create(propInfo, value);
+          ftDouble: defaultField := TDefaultProperty<Double>.Create(propInfo, value);
+          ftExtended: defaultField := TDefaultProperty<Extended>.Create(propInfo, value);
+          ftComp: defaultField := TDefaultProperty<Comp>.Create(propInfo, value);
+          ftCurr: defaultField := TDefaultProperty<Currency>.Create(propInfo, value);
         end;
     tkWChar:
-      defaultField := TDefaultProperty<Char>.Create(value, propInfo);
+      defaultField := TDefaultProperty<Char>.Create(propInfo, value);
     {$IFNDEF NEXTGEN}
     tkWString:
-      defaultField := TDefaultProperty<WideString>.Create(value, propInfo);
+      defaultField := TDefaultProperty<WideString>.Create(propInfo, value);
     {$ENDIF}
     tkVariant:
-      defaultField := TDefaultProperty<Variant>.Create(value, propInfo);
+      defaultField := TDefaultProperty<Variant>.Create(propInfo, value);
     tkInt64:
       if fieldType.TypeData.MinInt64Value > fieldType.TypeData.MaxInt64Value then
-        defaultField := TDefaultProperty<UInt64>.Create(value, propInfo)
+        defaultField := TDefaultProperty<UInt64>.Create(propInfo, value)
       else
-        defaultField := TDefaultProperty<Int64>.Create(value, propInfo);
+        defaultField := TDefaultProperty<Int64>.Create(propInfo, value);
     tkUString:
-      defaultField := TDefaultProperty<UnicodeString>.Create(value, propInfo);
+      defaultField := TDefaultProperty<UnicodeString>.Create(propInfo, value);
     tkClassRef, tkPointer:
-      defaultField := TDefaultProperty<Pointer>.Create(value, propInfo);
+      defaultField := TDefaultProperty<Pointer>.Create(propInfo, value);
   end;
   if defaultField <> nil then
   begin
@@ -3502,17 +3514,26 @@ begin
   end;
 end;
 
-procedure TInitTable.AddManagedField(fieldType: PTypeInfo; offset: Integer;
-  classType: TClass; createInstance: Boolean);
+procedure TInitTable.AddManagedField(const field: TRttiField;
+  const attribute: ManagedAttribute);
 
   function GetInterfaceEntry(cls: TClass; intf: PTypeInfo): PInterfaceEntry;
   var
+    intfGuid: TGUID;
     interfaceTable: PInterfaceTable;
     {$IFNDEF DELPHI2010}
     p: PPPTypeInfo;
     {$ENDIF}
     i: Integer;
   begin
+    {$IFDEF DELPHI2010}
+    // Delphi 2010 does not have the PPTypeInfo array
+    // after the TInterfaceEntry array in TInterfaceTable
+    // so only interfaces with a GUID can be used
+    if not (ifHasGuid in intf.TypeData.IntfFlags) then
+      Exit(nil);
+    {$ENDIF}
+    intfGuid := intf.TypeData.Guid;
     repeat
       interfaceTable := cls.GetInterfaceTable;
       if interfaceTable <> nil then
@@ -3527,10 +3548,9 @@ procedure TInitTable.AddManagedField(fieldType: PTypeInfo; offset: Integer;
           if p^^ = intf then
             Exit;
           Inc(p);
-          {$ELSE}
+          {$ENDIF}
           if Result.IID = intf.TypeData.Guid then
             Exit;
-          {$ENDIF}
         end;
       end;
       cls := cls.ClassParent;
@@ -3539,25 +3559,42 @@ procedure TInitTable.AddManagedField(fieldType: PTypeInfo; offset: Integer;
   end;
 
 var
+  fieldType: PTypeInfo;
+  offset: Integer;
+  createInstance: Boolean;
+  cls: TClass;
+  factory: TFunc<PTypeInfo,Pointer>;
   i: Integer;
   managedField: TManagedField;
+  entry: PInterfaceEntry;
 begin
+  fieldType := field.FieldType.Handle;
+  offset := field.Offset;
+  createInstance := attribute.CreateInstance;
+  cls := attribute.InstanceClass;
+  factory := attribute.Factory;
   managedField := nil;
   case fieldType.Kind of
     tkClass:
     begin
-      if not Assigned(classType) and createInstance then
-        classType := fieldType.TypeData.ClassType;
-      managedField := TManagedObjectField.Create(classType, offset)
+      if not Assigned(factory) and not Assigned(cls) and createInstance then
+        cls := fieldType.TypeData.ClassType;
+      managedField := TManagedObjectField.Create(offset, fieldType, cls, factory);
     end;
     tkInterface:
-      {$IFDEF DELPHI2010}
-      // Delphi 2010 does not have the PPTypeInfo array
-      // after the TInterfaceEntry array in TInterfaceTable
-      // so only interfaces with a GUID can be used
-      if ifHasGuid in fieldType.TypeData.IntfFlags then
-      {$ENDIF}
-      managedField := TManagedInterfaceField.Create(classType, offset, GetInterfaceEntry(classType, fieldType));
+    begin
+      if Assigned(cls) then
+      begin
+        entry := GetInterfaceEntry(cls, fieldType);
+        if entry = nil then
+          raise EInvalidOperationException.CreateFmt(
+            'class %s is not compatible with interface %s (field %s)', [
+            cls.ClassName, fieldType.TypeName, field.Name]);
+      end
+      else
+        entry := nil;
+      managedField := TManagedInterfaceField.Create(offset, fieldType, cls, factory, entry);
+    end;
   end;
   if managedField <> nil then
   begin
@@ -3625,11 +3662,11 @@ end;
 
 {$REGION 'TInitTable.TDefaultField<T>'}
 
-constructor TInitTable.TDefaultField<T>.Create(const value: Variant; offset: Integer);
+constructor TInitTable.TDefaultField<T>.Create(offset: Integer; const value: Variant);
 begin
   inherited Create;
-  fValue := TValue.FromVariant(value).AsType<T>; // TODO
   fOffset := offset;
+  fValue := TValue.FromVariant(value).AsType<T>; // TODO
 end;
 
 procedure TInitTable.TDefaultField<T>.InitializeValue(instance: Pointer);
@@ -3642,11 +3679,11 @@ end;
 
 {$REGION 'TInitTable.TDefaultProperty<T>'}
 
-constructor TInitTable.TDefaultProperty<T>.Create(const value: Variant; propInfo: PPropInfo);
+constructor TInitTable.TDefaultProperty<T>.Create(propInfo: PPropInfo; const value: Variant);
 begin
   inherited Create;
-  fValue := TValue.FromVariant(value).AsType<T>; // TODO
   fPropInfo := propInfo;
+  fValue := TValue.FromVariant(value).AsType<T>; // TODO
 end;
 
 class function TInitTable.GetCodePointer(instance: TObject; p: Pointer): Pointer;
@@ -3674,12 +3711,15 @@ end;
 
 {$REGION 'TInitTable.TManagedObjectField'}
 
-constructor TInitTable.TManagedObjectField.Create(cls: TClass; offset: Integer);
+constructor TInitTable.TManagedObjectField.Create(offset: Integer;
+  fieldType: PTypeInfo; cls: TClass; const factory: TFunc<PTypeInfo,Pointer>);
 begin
   inherited Create;
   fOffset := offset;
+  fFieldType := fieldType;
   fCls := cls;
-  if Assigned(cls) then
+  fFactory := factory;
+  if Assigned(cls) and not Assigned(factory) then
     fCtor := TActivator.FindConstructor(cls);
 end;
 
@@ -3691,7 +3731,9 @@ end;
 procedure TInitTable.TManagedObjectField.InitializeValue(instance: Pointer);
 begin
   if Assigned(fCtor) then
-    TObject(Pointer(PByte(instance) + fOffset)^) := TObject(fCtor(fCls));
+    TObject(Pointer(PByte(instance) + fOffset)^) := TObject(fCtor(fCls))
+  else if Assigned(fFactory) then
+    TObject(Pointer(PByte(instance) + fOffset)^) := fFactory(fFieldType);
 end;
 
 {$ENDREGION}
@@ -3733,11 +3775,12 @@ begin
   {$IFEND}
 end;
 
-constructor TInitTable.TManagedInterfaceField.Create(cls: TClass; offset: Integer;
+constructor TInitTable.TManagedInterfaceField.Create(offset: Integer;
+  fieldType: PTypeInfo; cls: TClass; const factory: TFunc<PTypeInfo,Pointer>;
   entry: PInterfaceEntry);
 begin
-  inherited Create(cls, offset);
-  fEntry := entry
+  inherited Create(offset, fieldType, cls, factory);
+  fEntry := entry;
 end;
 
 procedure TInitTable.TManagedInterfaceField.FinalizeValue(instance: Pointer);
@@ -3749,16 +3792,24 @@ var
   obj: Pointer;
   intf: Pointer;
 begin
-  obj := fCtor(fCls);
-  intf := nil;
-  if fEntry.IOffset <> 0 then
+  if Assigned(fCtor) then
   begin
-    intf := Pointer(PByte(obj) + fEntry.IOffset);
-    if intf <> nil then
-      IInterface(intf)._AddRef;
+    obj := fCtor(fCls);
+    intf := nil;
+    if fEntry.IOffset <> 0 then
+    begin
+      intf := Pointer(PByte(obj) + fEntry.IOffset);
+      if intf <> nil then
+        IInterface(intf)._AddRef;
+    end
+    else
+      IInterface(intf) := InvokeImplGetter(obj, fEntry.ImplGetter);
   end
+  else if Assigned(fFactory) then
+    intf := fFactory(fFieldType)
   else
-    IInterface(intf) := InvokeImplGetter(obj, fEntry.ImplGetter);
+    Exit;
+
   PPointer(PByte(instance) + fOffset)^ := intf;
 end;
 
