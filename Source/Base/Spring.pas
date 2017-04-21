@@ -252,23 +252,23 @@ type
 
   TInitTable = class
   strict private type
-    TDefaultField = class abstract
+    TInitializableField = class abstract
     public
       procedure InitializeValue(instance: Pointer); virtual; abstract;
     end;
 
-    TDefaultField<T> = class(TDefaultField)
+    TDefaultField<T> = class(TInitializableField)
     strict private type
       PT = ^T;
-    var
+    private
       fOffset: Integer;
       fValue: T;
     public
       constructor Create(offset: Integer; const value: Variant);
-      procedure InitializeValue(instance: Pointer); override;
+      procedure InitializeValue(instance: Pointer); override; final;
     end;
 
-    TDefaultProperty<T> = class(TDefaultField)
+    TDefaultProperty<T> = class(TInitializableField)
     strict private type
       TGetter = function: T of object;
       TIndexedGetter = function(index: Integer): T of object;
@@ -279,16 +279,15 @@ type
       fValue: T;
     public
       constructor Create(propInfo: PPropInfo; const value: Variant);
-      procedure InitializeValue(instance: Pointer); override;
+      procedure InitializeValue(instance: Pointer); override; final;
     end;
 
-    TManagedField = class abstract
+    TFinalizableField = class abstract(TInitializableField)
     public
-      procedure InitializeValue(instance: Pointer); virtual; abstract;
       procedure FinalizeValue(instance: Pointer); virtual; abstract;
     end;
 
-    TManagedObjectField = class(TManagedField)
+    TManagedObjectField = class(TFinalizableField)
     private
       fOffset: Integer;
       fFieldType: PTypeInfo;
@@ -326,8 +325,10 @@ type
   {$MESSAGE Fatal 'Unrecognized pointer size'}
   {$IFEND OTHER_PTR_SIZE}
   strict private
-    DefaultFields: TArray<TDefaultField>;
-    ManagedFields: TArray<TManagedField>;
+    DefaultFields: TArray<TInitializableField>;
+    ManagedFields: TArray<TFinalizableField>;
+    DefaultFieldCount: Integer;
+    ManagedFieldCount: Integer;
   private class var
 {$IFDEF USE_VMTAUTOTABLE}
     InitTables: TObjectList<TInitTable>;
@@ -2447,11 +2448,15 @@ function VarIsNullOrEmpty(const value: Variant): Boolean; inline;
 /// </summary>
 function VarArrayLength(const value: Variant; dim: Integer): Integer;
 
+{$IFDEF USE_VMTAUTOTABLE}
+function CreateFieldTable(classType: TClass): TInitTable;
+{$ENDIF}
+
 /// <summary>
 ///   Returns the field table for the given class that contains all fields that
 ///   have Default or Managed attribute annotations.
 /// </summary>
-function GetInitTable(ClassType: TClass): TInitTable;
+function GetInitTable(classType: TClass): TInitTable; {$IFDEF USE_VMTAUTOTABLE}inline;{$ENDIF}
 
 function GetVirtualMethod(const classType: TClass; const index: Integer): Pointer; inline;
 
@@ -3394,8 +3399,7 @@ end;
 procedure TInitTable.AddDefaultField(fieldType: PTypeInfo;
   const value: Variant; offset: Integer);
 var
-  i: Integer;
-  defaultField: TDefaultField;
+  defaultField: TInitializableField;
 begin
   defaultField := nil;
   case fieldType.Kind of
@@ -3447,17 +3451,16 @@ begin
   end;
   if defaultField <> nil then
   begin
-    i := Length(DefaultFields);
-    SetLength(DefaultFields, i + 1);
-    DefaultFields[i] := defaultField;
+    DefaultFieldCount := Length(DefaultFields) + 1;
+    SetLength(DefaultFields, DefaultFieldCount);
+    DefaultFields[DefaultFieldCount - 1] := defaultField;
   end;
 end;
 
 procedure TInitTable.AddDefaultProperty(fieldType: PTypeInfo;
   const value: Variant; propInfo: PPropInfo);
 var
-  i: Integer;
-  defaultField: TDefaultField;
+  defaultField: TInitializableField;
 begin
   defaultField := nil;
   case fieldType.Kind of
@@ -3509,9 +3512,9 @@ begin
   end;
   if defaultField <> nil then
   begin
-    i := Length(DefaultFields);
-    SetLength(DefaultFields, i + 1);
-    DefaultFields[i] := defaultField;
+    DefaultFieldCount := Length(DefaultFields) + 1;
+    SetLength(DefaultFields, DefaultFieldCount);
+    DefaultFields[DefaultFieldCount - 1] := defaultField;
   end;
 end;
 
@@ -3565,8 +3568,7 @@ var
   createInstance: Boolean;
   cls: TClass;
   factory: TFunc<PTypeInfo,Pointer>;
-  i: Integer;
-  managedField: TManagedField;
+  managedField: TFinalizableField;
   entry: PInterfaceEntry;
 begin
   fieldType := field.FieldType.Handle;
@@ -3599,38 +3601,38 @@ begin
   end;
   if managedField <> nil then
   begin
-    i := Length(ManagedFields);
-    SetLength(ManagedFields, i + 1);
-    ManagedFields[i] := managedField;
+    ManagedFieldCount := Length(ManagedFields) + 1;
+    SetLength(ManagedFields, ManagedFieldCount);
+    ManagedFields[ManagedFieldCount - 1] := managedField;
   end;
 end;
 
 {$IFDEF USE_VMTAUTOTABLE}
-function CreateFieldTable(ClassType: TClass): TInitTable;
+function CreateFieldTable(classType: TClass): TInitTable;
 var
   n: UINT_PTR;
 begin
-  Result := TInitTable.Create(ClassType);
+  Result := TInitTable.Create(classType);
   WriteProcessMemory(GetCurrentProcess,
-    Pointer(NativeInt(ClassType) + vmtAutoTable), @Result, SizeOf(Pointer), n);
+    Pointer(NativeInt(classType) + vmtAutoTable), @Result, SizeOf(Pointer), n);
   TInitTable.InitTables.Add(Result);
 end;
 {$ENDIF}
 
-function GetInitTable(ClassType: TClass): TInitTable;
+function GetInitTable(classType: TClass): TInitTable;
 {$IFDEF USE_VMTAUTOTABLE}
 begin
-  Result := PPointer(NativeInt(ClassType) + vmtAutoTable)^;
+  Result := PPointer(NativeInt(classType) + vmtAutoTable)^;
   if Result = nil then
-    Result := CreateFieldTable(ClassType);
+    Result := CreateFieldTable(classType);
 {$ELSE}
 begin
   TMonitor.Enter(TInitTable.InitTables);
   try
-    if not TInitTable.InitTables.TryGetValue(ClassType, Result) then
+    if not TInitTable.InitTables.TryGetValue(classType, Result) then
     begin
-      Result := TInitTable.Create(ClassType);
-      TInitTable.InitTables.Add(ClassType, Result);
+      Result := TInitTable.Create(classType);
+      TInitTable.InitTables.Add(classType, Result);
     end;
   finally
     TMonitor.Exit(TInitTable.InitTables);
@@ -3638,25 +3640,41 @@ begin
 {$ENDIF}
 end;
 
+{$IFDEF RANGECHECKS_ON}{$RANGECHECKS OFF}{$ENDIF}
 procedure TInitTable.InitInstance(instance: Pointer);
 var
+  f: ^TInitializableField;
   i: Integer;
 begin
-  for i := 0 to High(DefaultFields) do
-    DefaultFields[i].InitializeValue(instance);
-  for i := 0 to High(ManagedFields) do
-    ManagedFields[i].InitializeValue(instance);
+  f := @DefaultFields[0];
+  for i := 0 to DefaultFieldCount - 1 do
+  begin
+    f.InitializeValue(instance);
+    Inc(f);
+  end;
+  f := @ManagedFields[0];
+  for i := 0 to ManagedFieldCount - 1 do
+  begin
+    f.InitializeValue(instance);
+    Inc(f);
+  end;
 end;
 
 {$IFNDEF AUTOREFCOUNT}
 procedure TInitTable.CleanupInstance(instance: Pointer);
 var
+  f: ^TFinalizableField;
   i: Integer;
 begin
-  for i := 0 to High(ManagedFields) do
-    ManagedFields[i].FinalizeValue(instance);
+  f := @ManagedFields[0];
+  for i := 0 to ManagedFieldCount - 1 do
+  begin
+    f.FinalizeValue(instance);
+    Inc(f);
+  end;
 end;
 {$ENDIF}
+{$IFDEF RANGECHECKS_ON}{$RANGECHECKS ON}{$ENDIF}
 
 {$ENDREGION}
 
