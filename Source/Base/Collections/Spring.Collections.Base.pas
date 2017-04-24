@@ -54,6 +54,10 @@ type
 
   TEnumerableBase<T> = class abstract(TEnumerableBase)
   protected
+    class var
+      fEquals: function(const left, right: T): Boolean;
+      fEqualsLoaded: Boolean;
+  protected
     fComparer: IComparer<T>;
   {$REGION 'Property Accessors'}
     function GetComparer: IComparer<T>;
@@ -1013,11 +1017,29 @@ end;
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;
 var
   comparer: IEqualityComparer<T>;
+  method: TRttiMethod;
 begin
   if this = values then
     Result := True
   else
   begin
+    case TType.Kind<T> of
+      tkRecord:
+      begin
+        if not fEqualsLoaded then
+        begin
+          fEqualsLoaded := True;
+          method := GetEqualsOperator(TypeInfo(T));
+          if Assigned(method) then
+            fEquals := method.CodeAddress;
+        end;
+        if Assigned(fEquals) then
+        begin
+          comparer := TEqualityComparer<T>.Construct(fEquals, nil);
+          Exit;
+        end;
+      end;
+    end;
     comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
     Result := IEnumerable<T>(this).EqualsTo(values, comparer);
   end;
