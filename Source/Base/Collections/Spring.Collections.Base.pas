@@ -297,7 +297,7 @@ type
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
 
     function Extract(const item: T): T; virtual; abstract;
-    procedure ExtractAll(const predicate: TPredicate<T>); virtual;
+    function ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>; virtual;
     procedure ExtractRange(const values: array of T); overload; virtual;
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
@@ -1552,9 +1552,13 @@ begin
   end;
 end;
 
-procedure TCollectionBase<T>.ExtractAll(const predicate: TPredicate<T>);
+function TCollectionBase<T>.ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>;
+var
+  items: TArray<T>;
 begin
-  ExtractRange(Where(predicate).ToArray);
+  items := Where(predicate).ToArray;
+  ExtractRange(items);
+  Result := TArrayIterator<T>.Create(items);
 end;
 
 procedure TCollectionBase<T>.ExtractRange(const values: array of T);

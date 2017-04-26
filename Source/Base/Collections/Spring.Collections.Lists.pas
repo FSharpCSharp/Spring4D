@@ -67,8 +67,6 @@ type
     fCount: Integer;
     fVersion: Integer;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
-    procedure DeleteAllInternal(const predicate: TPredicate<T>;
-      notification: TCollectionChangedAction);
     procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
@@ -105,7 +103,7 @@ type
     procedure RemoveAll(const predicate: TPredicate<T>); override;
 
     function Extract(const item: T): T; override;
-    procedure ExtractAll(const predicate: TPredicate<T>); override;
+    function ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>; override;
     function ExtractAt(index: Integer): T; override;
 
     function GetRange(index, count: Integer): IList<T>; override;
@@ -717,8 +715,15 @@ begin
 end;
 
 procedure TList<T>.RemoveAll(const predicate: TPredicate<T>);
+var
+  index: Integer;
 begin
-  DeleteAllInternal(predicate, caRemoved);
+  index := 0;
+  while index < fCount do
+    if predicate(fItems[index]) then
+      DeleteInternal(index, caRemoved)
+    else
+      Inc(index);
 end;
 
 procedure TList<T>.Reverse(index, count: Integer);
@@ -775,19 +780,6 @@ begin
   DeleteInternal(index, caRemoved);
 end;
 
-procedure TList<T>.DeleteAllInternal(const predicate: TPredicate<T>;
-  notification: TCollectionChangedAction);
-var
-  index: Integer;
-begin
-  index := 0;
-  while index < fCount do
-    if predicate(fItems[index]) then
-      DeleteInternal(index, notification)
-    else
-      Inc(index);
-end;
-
 function TList<T>.Extract(const item: T): T;
 var
   index: Integer;
@@ -812,9 +804,23 @@ begin
   DeleteInternal(index, caExtracted);
 end;
 
-procedure TList<T>.ExtractAll(const predicate: TPredicate<T>);
+function TList<T>.ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>;
+var
+  index: Integer;
+  list: TListBase<T>;
 begin
-  DeleteAllInternal(predicate, caExtracted);
+  index := 0;
+  list := CreateList;
+  while index < fCount do
+    if predicate(fItems[index]) then
+    begin
+      list.Add(fItems[index]);
+      DeleteInternal(index, caExtracted);
+    end
+    else
+      Inc(index);
+  list.TrimExcess;
+  Result := list;
 end;
 
 function TList<T>.Contains(const value: T;

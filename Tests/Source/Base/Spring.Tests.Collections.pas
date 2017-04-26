@@ -535,7 +535,8 @@ uses
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
   StrUtils,
-  SysUtils;
+  SysUtils,
+  TypInfo;
 
 const
   MaxItems = 1000;
@@ -815,15 +816,20 @@ end;
 procedure TTestIntegerList.TestExtractAll_MultipleItemsInList_RemoveSome;
 var
   callCount: Integer;
+  items: IReadOnlyList<Integer>;
 begin
   callCount := 0;
   SUT.AddRange([1, 2, 3, 4, 5]);
-  SUT.RemoveAll(
+  items := SUT.ExtractAll(
     function(const i: Integer): Boolean
     begin
       Result := Odd(i);
       Inc(callCount);
     end);
+  CheckEquals(3, items.Count);
+  CheckEquals(1, items[0]);
+  CheckEquals(3, items[1]);
+  CheckEquals(5, items[2]);
   CheckEquals(5, callCount);
   CheckEquals(2, SUT.Count);
   CheckEquals(2, SUT[0]);
@@ -833,15 +839,18 @@ end;
 procedure TTestIntegerList.TestExtractAll_OneItemInList;
 var
   callCount: Integer;
+  items: IReadOnlyList<Integer>;
 begin
   callCount := 0;
   SUT.Add(1);
-  SUT.RemoveAll(
+  items := SUT.ExtractAll(
     function(const i: Integer): Boolean
     begin
       Result := True;
       Inc(callCount);
     end);
+  CheckEquals(1, items.Count);
+  CheckEquals(1, items[0]);
   CheckEquals(1, callCount);
   CheckEquals(0, SUT.Count);
 end;

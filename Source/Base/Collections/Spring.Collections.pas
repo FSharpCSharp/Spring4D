@@ -886,7 +886,7 @@ type
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
 
     function Extract(const item: T): T;
-    procedure ExtractAll(const predicate: TPredicate<T>);
+    function ExtractAll(const predicate: TPredicate<T>): IReadOnlyList<T>;
     procedure ExtractRange(const values: array of T); overload;
     procedure ExtractRange(const collection: IEnumerable<T>); overload;
 
