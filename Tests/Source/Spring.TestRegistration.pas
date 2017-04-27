@@ -72,7 +72,7 @@ begin
     TTestTuplesDouble.Suite,
     TTestTuplesTriple.Suite,
     TTestTuplesQuadruple.Suite,
-    TTestOwned.Suite,
+    TTestShared.Suite,
     TTestVector.Suite,
     TTestValueHelper.Suite,
     TArrayTest.Suite,

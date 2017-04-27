@@ -1665,7 +1665,55 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Weak Reference'}
+  {$REGION 'Shared smart pointer'}
+
+  IShared<T> = reference to function: T;
+
+  Shared<T> = record
+  strict private
+    fValue: T;
+    fFinalizer: IInterface;
+    class function GetNew: IShared<T>; static;
+  public
+    class operator Implicit(const value: T): Shared<T>;
+    class operator Implicit(const value: Shared<T>): T; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
+    property Value: T read fValue;
+
+    class property New: IShared<T> read GetNew;
+  end;
+
+  Shared = record
+  private type
+    TObjectFinalizer = class(TInterfacedObject, IShared<TObject>)
+    private
+      fValue: TObject;
+      function Invoke: TObject;
+    public
+      constructor Create(typeInfo: PTypeInfo); overload;
+      constructor Create(const value: TObject); overload;
+    {$IFNDEF AUTOREFCOUNT}
+      destructor Destroy; override;
+    {$ENDIF}
+    end;
+
+    TRecordFinalizer = class(TInterfacedObject, IShared<Pointer>)
+    private
+      fValue: Pointer;
+      fTypeInfo: PTypeInfo;
+      function Invoke: Pointer;
+    public
+      constructor Create(typeInfo: PTypeInfo); overload;
+      constructor Create(const value: Pointer; typeInfo: PTypeInfo); overload;
+      destructor Destroy; override;
+    end;
+  public
+    class function New<T>(const value: T): IShared<T>; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Weak smart pointer'}
 
   IWeakReference<T> = interface
   {$REGION 'Property Accessors'}
@@ -1691,8 +1739,9 @@ type
 
   TWeakReference<T> = class(TWeakReference, IWeakReference<T>)
   private
-    function GetTarget: T; inline;
+    function GetTarget: T;
     procedure SetTarget(const value: T);
+    constructor CreateInternal(const target: T; var ref: PPointer);
   public
     constructor Create(const target: T);
     destructor Destroy; override;
@@ -1702,19 +1751,22 @@ type
   end;
 
   Weak<T> = record
-  private
+  strict private
+    fTarget: PPointer;
     fReference: IWeakReference<T>;
-    function GetIsAlive: Boolean; inline;
-    function GetTarget: T; inline;
-    procedure SetTarget(const value: T); inline;
+    function GetIsAlive: Boolean;
+    function GetTarget: T;
+    procedure SetTarget(const value: T);
+    type PT = ^T;
   public
     constructor Create(const target: T);
 
-    class operator Implicit(const value: T): Weak<T>; overload; inline;
-    class operator Implicit(const value: Weak<T>): T; overload; inline;
+    class operator Implicit(const value: Shared<T>): Weak<T>;
+    class operator Implicit(const value: T): Weak<T>;
+    class operator Implicit(const value: Weak<T>): T;
 
-    class operator Equal(const left: Weak<T>; const right: T): Boolean; overload; inline;
-    class operator NotEqual(const left: Weak<T>; const right: T): Boolean; overload; inline;
+    class operator Equal(const left: Weak<T>; const right: T): Boolean; inline;
+    class operator NotEqual(const left: Weak<T>; const right: T): Boolean; inline;
 
     function TryGetTarget(out target: T): Boolean;
     property Target: T read GetTarget write SetTarget;
@@ -1915,38 +1967,6 @@ type
     ///   its destruction.
     /// </remarks>
     function ScopedLock: IInterface;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Smart pointer'}
-
-  IManaged<T> = reference to function: T;
-
-  TManaged<T> = class(TInterfacedObject, IManaged<T>)
-  private
-    fValue: T;
-    function Invoke: T; inline;
-  public
-    constructor Create; overload;
-    constructor Create(const value: T); overload;
-    destructor Destroy; override;
-  end;
-
-  Managed<T> = record
-  strict private
-    fValue: T;
-    fFinalizer: IInterface;
-  public
-    class operator Implicit(const value: T): Managed<T>;
-    class operator Implicit(const value: Managed<T>): T; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
-    property Value: T read fValue;
-  end;
-
-  Managed = record
-  public
-    class function New<T>(const value: T): IManaged<T>; static;
   end;
 
   {$ENDREGION}
@@ -2420,9 +2440,6 @@ function CompareValue(const left, right: TValue): Integer; overload;
 /// </summary>
 function TypesOf(const values: array of TValue): TArray<PTypeInfo>;
 
-procedure FinalizeValue(const value; typeInfo: PTypeInfo); inline;
-procedure FinalizeRecordPointer(const value; typeInfo: PTypeInfo); inline;
-
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
 
@@ -2808,24 +2825,6 @@ begin
   SetLength(Result, Length(values));
   for i := 0 to High(values) do
     Result[i] := values[i].TypeInfo;
-end;
-
-procedure FinalizeValue(const value; typeInfo: PTypeInfo);
-begin
-  case typeInfo.Kind of
-    tkClass: {$IFNDEF AUTOREFCOUNT}TObject(value).Free;{$ELSE}TObject(value).DisposeOf;{$ENDIF}
-    tkPointer: FinalizeRecordPointer(value, typeInfo);
-  end;
-end;
-
-procedure FinalizeRecordPointer(const value; typeInfo: PTypeInfo);
-var
-  recTypeInfo: PTypeInfo;
-begin
-  recTypeInfo := typeInfo.TypeData.RefType^;
-  FinalizeArray(Pointer(value), recTypeInfo, 1);
-  FillChar(Pointer(value)^, recTypeInfo.TypeData.RecSize, 0);
-  FreeMem(Pointer(value));
 end;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
@@ -6609,6 +6608,118 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'Shared<T>'}
+
+class operator Shared<T>.Implicit(const value: T): Shared<T>;
+begin
+  Result.fValue := value;
+  case TType.Kind<T> of
+{$IFNDEF AUTOREFCOUNT}
+    tkClass:
+      if PPointer(@value)^ = nil then
+        Result.fFinalizer := nil
+      else
+        Result.fFinalizer := Shared.TObjectFinalizer.Create(PObject(@value)^);
+{$ENDIF}
+    tkPointer:
+      if PPointer(@value)^ = nil then
+        Result.fFinalizer := nil
+      else
+        Result.fFinalizer := Shared.TRecordFinalizer.Create(PPointer(@value)^, TypeInfo(T));
+  end;
+end;
+
+class function Shared<T>.GetNew: IShared<T>;
+begin
+  case TType.Kind<T> of
+    tkClass: IShared<TObject>(Result) := Shared.TObjectFinalizer.Create(TypeInfo(T));
+    tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(TypeInfo(T));
+  end;
+end;
+
+class operator Shared<T>.Implicit(const value: Shared<T>): T;
+begin
+  Result := value.fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Shared'}
+
+class function Shared.New<T>(const value: T): IShared<T>;
+begin
+  case TType.Kind<T> of
+    tkClass: IShared<TObject>(Result) := Shared.TObjectFinalizer.Create(PObject(@value)^);
+    tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(PPointer(@value)^, TypeInfo(T));
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Shared.TObjectFinalizer'}
+
+constructor Shared.TObjectFinalizer.Create(typeInfo: PTypeInfo);
+begin
+  inherited Create;
+  fValue := TActivator.CreateInstance(typeInfo.TypeData.ClassType);
+end;
+
+constructor Shared.TObjectFinalizer.Create(const value: TObject);
+begin
+  inherited Create;
+  fValue := value;
+end;
+
+{$IFNDEF AUTOREFCOUNT}
+destructor Shared.TObjectFinalizer.Destroy;
+begin
+  fValue.Free;
+  inherited;
+end;
+{$ENDIF}
+
+function Shared.TObjectFinalizer.Invoke: TObject;
+begin
+  Result := fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Shared.TRecordFinalizer'}
+
+constructor Shared.TRecordFinalizer.Create(typeInfo: PTypeInfo);
+begin
+  inherited Create;
+  fTypeInfo := typeInfo.TypeData.RefType^;
+  fValue := AllocMem(GetTypeSize(fTypeInfo));
+end;
+
+constructor Shared.TRecordFinalizer.Create(const value: Pointer; typeInfo: PTypeInfo);
+begin
+  inherited Create;
+  fTypeInfo := typeInfo.TypeData.RefType^;
+  fValue := value;
+end;
+
+destructor Shared.TRecordFinalizer.Destroy;
+begin
+  FinalizeArray(fValue, fTypeInfo, 1);
+  FillChar(fValue^, fTypeInfo.TypeData.RecSize, 0);
+  FreeMem(fValue);
+  inherited;
+end;
+
+function Shared.TRecordFinalizer.Invoke: Pointer;
+begin
+  Result := fValue;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TWeakReferences'}
 
 type
@@ -6743,6 +6854,14 @@ begin
   SetTarget(target);
 end;
 
+constructor TWeakReference<T>.CreateInternal(const target: T;
+  var ref: PPointer);
+begin
+  inherited Create;
+  SetTarget(target);
+  ref := @fTarget;
+end;
+
 destructor TWeakReference<T>.Destroy;
 begin
   SetTarget(Default(T));
@@ -6791,18 +6910,18 @@ end;
 
 constructor Weak<T>.Create(const target: T);
 begin
-  fReference := TWeakReference<T>.Create(target);
+  fReference := TWeakReference<T>.CreateInternal(target, fTarget);
 end;
 
 function Weak<T>.GetIsAlive: Boolean;
 begin
-  Result := Assigned(fReference) and fReference.IsAlive;
+  Result := Assigned(fReference) and Assigned(fTarget^);
 end;
 
 function Weak<T>.GetTarget: T;
 begin
   if Assigned(fReference) then
-    Result := fReference.Target
+    Result := PT(fTarget)^
   else
     Result := Default(T);
 end;
@@ -6812,12 +6931,18 @@ begin
   if Assigned(fReference) then
     fReference.Target := value
   else
-    fReference := TWeakReference<T>.Create(value);
+    fReference := TWeakReference<T>.CreateInternal(value, fTarget);
 end;
 
 function Weak<T>.TryGetTarget(out target: T): Boolean;
 begin
-  Result := Assigned(fReference) and fReference.TryGetTarget(target);
+  Result := Assigned(fReference) and Assigned(fTarget^);
+  target := PT(fTarget)^;
+end;
+
+class operator Weak<T>.Implicit(const value: Shared<T>): Weak<T>;
+begin
+  Result.Target := value.Value;
 end;
 
 class operator Weak<T>.Implicit(const value: T): Weak<T>;
@@ -6834,7 +6959,7 @@ class operator Weak<T>.Equal(const left: Weak<T>;
   const right: T): Boolean;
 begin
   if Assigned(left.fReference) then
-    Result := PPointer(@right)^ = (left.fReference as TWeakReference).fTarget
+    Result := PPointer(@right)^ = left.fTarget^
   else
     Result := PPointer(@right)^ = nil;
 end;
@@ -6843,7 +6968,7 @@ class operator Weak<T>.NotEqual(const left: Weak<T>;
   const right: T): Boolean;
 begin
   if Assigned(left.fReference) then
-    Result := PPointer(@right)^ <> (left.fReference as TWeakReference).fTarget
+    Result := PPointer(@right)^ <> left.fTarget^
   else
     Result := PPointer(@right)^ <> nil;
 end;
@@ -7102,77 +7227,6 @@ function Lock.ScopedLock: IInterface;
 begin
   EnsureInitialized;
   Result := fCriticalSection.ScopedLock;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TManaged<T>'}
-
-constructor TManaged<T>.Create;
-begin
-  inherited Create;
-  case TType.Kind<T> of
-    tkClass: PObject(@fValue)^ := TActivator.CreateInstance(TypeInfo(T));
-    tkPointer: PPointer(@fValue)^ := AllocMem(GetTypeSize(GetTypeData(TypeInfo(T)).RefType^));
-  end;
-end;
-
-constructor TManaged<T>.Create(const value: T);
-begin
-  inherited Create;
-  fValue := value;
-end;
-
-destructor TManaged<T>.Destroy;
-begin
-  case TType.Kind<T> of
-{$IFNDEF AUTOREFCOUNT}
-    tkClass: PObject(@fValue).Free;
-{$ENDIF}
-    tkPointer: FinalizeRecordPointer(fValue, TypeInfo(T));
-  end;
-  inherited Destroy;
-end;
-
-function TManaged<T>.Invoke: T;
-begin
-  Result := fValue;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'Managed<T>'}
-
-class operator Managed<T>.Implicit(const value: T): Managed<T>;
-begin
-  Result.fValue := value;
-  case TType.Kind<T> of
-{$IFNDEF AUTOREFCOUNT}
-    tkClass,
-{$ENDIF}
-    tkPointer:
-      if PPointer(@value)^ = nil then
-        Result.fFinalizer := nil
-      else
-        Result.fFinalizer := TManaged<T>.Create(value);
-  end;
-end;
-
-class operator Managed<T>.Implicit(const value: Managed<T>): T;
-begin
-  Result := value.fValue;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'Managed'}
-
-class function Managed.New<T>(const value: T): IManaged<T>;
-begin
-  Result := TManaged<T>.Create(value);
 end;
 
 {$ENDREGION}

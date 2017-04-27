@@ -361,7 +361,7 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_EDatabaseError;
 var
-  exc, result: Managed<Exception>;
+  exc, result: Shared<Exception>;
 begin
   exc := EDatabaseError.Create('');
   result := SUT.GetAdapterException(exc, 'message');
@@ -372,7 +372,7 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_EOleSysError;
 var
-  exc, result: Managed<Exception>;
+  exc, result: Shared<Exception>;
 begin
   exc := EOleException.Create('', -1, '', '', 0);
   result := SUT.GetAdapterException(exc, 'message');
@@ -383,7 +383,7 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_ESafecallException;
 var
-  exc, result: Managed<Exception>;
+  exc, result: Shared<Exception>;
 begin
   exc := ESafecallException.Create('');
   result := SUT.GetAdapterException(exc, 'message');
@@ -394,7 +394,7 @@ end;
 
 procedure TADOExceptionHandlerTest.TestGetAdapterException_Others_Return_Nil;
 var
-  exc, result: Managed<Exception>;
+  exc, result: Shared<Exception>;
 begin
   exc := Exception.Create('');
   result := SUT.GetAdapterException(exc, '');
