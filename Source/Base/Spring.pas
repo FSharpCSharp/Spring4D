@@ -707,6 +707,31 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TRttiInvokableTypeHelper'}
+
+  {$IFDEF DELPHIXE2_UP}
+  TRttiInvokableTypeHelper = class helper for TRttiInvokableType
+  public
+    function CreateImplementation(AUserData: Pointer;
+      const ACallback: TMethodImplementationCallback): TMethodImplementation;
+  end;
+  {$ENDIF}
+
+  {$ENDREGION}
+
+
+  {$REGION 'TMethodImplementationHelper'}
+
+  {$IFNDEF DELPHI2010}
+  TMethodImplementationHelper = class helper for TMethodImplementation
+  public
+    function AsMethod: TMethod;
+  end;
+  {$ENDIF}
+
+  {$ENDREGION}
+
+
   {$REGION 'Procedure types'}
 
   /// <summary>
@@ -5665,6 +5690,156 @@ begin
     Result := Self.DispatchInvoke(Instance, Args);
 end;
 {$IFEND}
+
+{$ENDREGION}
+
+
+{$REGION 'TRttiInvokableTypeHelper'}
+
+{$IFDEF DELPHIXE2_UP}
+type
+  // this is the class used to create a TMethodImplementation for a
+  // TRttiInvokableType by passing in an instance of TRttiInvokableType
+  // and "overriding" its private virtual methods
+  TRttiInvokableMethod = class(TRttiMethod)
+  private
+    FType: TRttiInvokableType;
+    constructor Create(AType: TRttiInvokableType);
+  end;
+
+  // this classes is needed to access FParent
+  // it needs to have the exact same fields as System.Rtti.TRttiObject
+  TRttiObjectHack = class abstract
+  protected
+    FHandle: Pointer;
+    FRttiDataSize: Integer;
+    {$IFDEF WEAKINSTREF}[Weak]{$ENDIF}
+    FPackage: TRttiPackage;
+    {$IFDEF WEAKINSTREF}[Weak]{$ENDIF}
+    FParent: TRttiObject;
+  end;
+
+  // this class is needed to "override" private virtual methods
+  // it needs to have the exact same virtual methods as System.Rtti.TRttiMethod
+  TRttiInvokableMethodHack = class(TRttiMember)
+  protected
+    FInvokeInfo: TObject; //TMethodImplementation.TInvokeInfo
+    FType: TRttiInvokableType;
+    function GetMethodKind: TMethodKind; virtual; abstract;
+    function GetCallingConvention: TCallConv; virtual;
+    function GetReturnType: TRttiType; virtual;
+    function GetDispatchKind: TDispatchKind; virtual; abstract;
+    function GetHasExtendedInfo: Boolean; virtual; abstract;
+    function GetVirtualIndex: SmallInt; virtual; abstract;
+    function GetCodeAddress: Pointer; virtual; abstract;
+    function GetIsClassMethod: Boolean; virtual;
+    function GetIsStatic: Boolean; virtual;
+    function DispatchInvoke(Instance: TValue; const Args: array of TValue): TValue; virtual; abstract;
+  public
+    function GetParameters: TArray<TRttiParameter>; virtual;
+  end;
+
+  // this class is needed to "override" the destructor of
+  // the TMethodImplementation instances that are created inside of
+  // TRttiMethod.CreateImplementation
+  TMethodImplementationHack = class(TMethodImplementation)
+  {$IFDEF DELPHIXE2}
+  private
+    function FInvokeInfo: TObject; inline;
+  {$ENDIF}
+  public
+    destructor Destroy; override;
+  end;
+
+function TRttiInvokableMethodHack.GetCallingConvention: TCallConv;
+begin
+  Result := FType.CallingConvention;
+end;
+
+function TRttiInvokableMethodHack.GetIsClassMethod: Boolean;
+begin
+  Result := False;
+end;
+
+function TRttiInvokableMethodHack.GetIsStatic: Boolean;
+begin
+  Result := FType is TRttiProcedureType;
+end;
+
+function TRttiInvokableMethodHack.GetParameters: TArray<TRttiParameter>;
+begin
+  Result := FType.GetParameters;
+end;
+
+function TRttiInvokableMethodHack.GetReturnType: TRttiType;
+begin
+  Result := FType.ReturnType;
+end;
+
+{$IFDEF DELPHIXE2}
+function TMethodImplementationHack.FInvokeInfo: TObject;
+begin
+  Result := PPointer(PByte(Self) + SizeOf(Pointer) * 2)^;
+end;
+{$ENDIF}
+
+destructor TMethodImplementationHack.Destroy;
+begin
+  if FInvokeInfo <> nil then
+    FInvokeInfo.Free;
+  inherited Destroy;
+end;
+
+constructor TRttiInvokableMethod.Create(AType: TRttiInvokableType);
+var
+  ctx: TRttiContext;
+begin
+  inherited Create;
+  // GetInvokeInfo need the Parent property
+  TRttiObjectHack(Self).FParent := ctx.GetType(TObject);
+  FType := AType;
+  // change the type of this class to the class that has its private
+  // methods "overridden"
+  PPointer(Self)^ := TRttiInvokableMethodHack;
+end;
+
+function TRttiInvokableTypeHelper.CreateImplementation(AUserData: Pointer;
+  const ACallback: TMethodImplementationCallback): TMethodImplementation;
+var
+  m: TRttiMethod;
+begin
+  {$WARN CONSTRUCTING_ABSTRACT OFF}
+  m := TRttiInvokableMethod.Create(Self);
+  try
+    // there is no way to directly create a TMethodImplementation instance
+    // because it requires an instance of the private TInvokeInfo class to be
+    // passed which can only be produced by the private method GetInvokeInfo
+
+    // since TRttiInvokableMethod has the necessary private virtual methods
+    // "overridden" it will create the correct TMethodImplementation instance
+    // for the given TRttiInvokableType
+    Result := m.CreateImplementation(Self, ACallback);
+    // "override" the destructor so FInvokeMethod which is not owned by the
+    // TRttiInvokableMethod is properly destroyed at the end
+    PPointer(Result)^ := TMethodImplementationHack;
+  finally
+    m.Free;
+  end;
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TMethodImplementationHelper'}
+
+{$IFNDEF DELPHI2010}
+function TMethodImplementationHelper.AsMethod: TMethod;
+begin
+  Result.Code := CodeAddress;
+  Result.Data := Self;
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
