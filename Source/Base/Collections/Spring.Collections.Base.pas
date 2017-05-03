@@ -420,7 +420,7 @@ type
   {$REGION 'Implements IInterface'}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
-    procedure AddInternal(const item: T); override;
+    procedure AddInternal(const item: T); override; final;
     function CreateList: TListBase<T>; virtual;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
@@ -429,7 +429,7 @@ type
   public
     destructor Destroy; override;
 
-    function Add(const item: T): Integer; reintroduce; virtual;
+    function Add(const item: T): Integer; virtual;
     procedure AddRange(const values: array of T); override;
     procedure AddRange(const collection: IEnumerable<T>); override;
 
@@ -1516,7 +1516,7 @@ var
   i: Integer;
 begin
   for i := Low(values) to High(values) do
-    Add(values[i]);
+    AddInternal(values[i]);
 end;
 
 procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
@@ -1528,7 +1528,7 @@ begin
 {$ENDIF}
 
   for item in collection do
-    Add(item);
+    AddInternal(item);
 end;
 
 procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAction);
