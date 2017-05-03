@@ -67,6 +67,7 @@ type
     fCount: Integer;
     fVersion: Integer;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
+    procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
     procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
@@ -193,6 +194,7 @@ type
     fCollection: TCollection;
     fVersion: Integer;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
+    procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
     procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
@@ -208,6 +210,8 @@ type
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
+
+    procedure Clear; override;
 
     procedure Insert(index: Integer; const item: T); override;
 
@@ -598,6 +602,11 @@ begin
 end;
 
 procedure TList<T>.DeleteRange(index, count: Integer);
+begin
+  DeleteRangeInternal(index, count, False);
+end;
+
+procedure TList<T>.DeleteRangeInternal(index, count: Integer; doClear: Boolean);
 var
   oldItems: TArray<T>;
   tailCount,
@@ -625,6 +634,9 @@ begin
 
   Dec(fCount, count);
   IncreaseVersion;
+
+  if doClear then
+    Changed(Default(T), caReseted);
 
   for i := Low(oldItems) to High(oldItems) do
     Changed(oldItems[i], caRemoved);
@@ -687,7 +699,8 @@ end;
 
 procedure TList<T>.Clear;
 begin
-  inherited Clear;
+  if fCount > 0 then
+    DeleteRangeInternal(0, fCount, True);
   Capacity := 0;
 end;
 
@@ -1112,6 +1125,12 @@ begin
 end;
 {$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
+procedure TCollectionList<T>.Clear;
+begin
+  if fCollection.Count > 0 then
+    DeleteRangeInternal(0, fCollection.Count, True);
+end;
+
 procedure TCollectionList<T>.Delete(index: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1136,6 +1155,12 @@ begin
 end;
 
 procedure TCollectionList<T>.DeleteRange(index, count: Integer);
+begin
+  DeleteRangeInternal(index, count, False);
+end;
+
+procedure TCollectionList<T>.DeleteRangeInternal(index, count: Integer;
+  doClear: Boolean);
 var
   oldItems: array of T;
   i: Integer;
@@ -1156,6 +1181,9 @@ begin
     fCollection.Items[index].Collection := nil;
   end;
   IncreaseVersion;
+
+  if doClear then
+    Changed(Default(T), caReseted);
 
   for i := Low(oldItems) to High(oldItems) do
   begin
