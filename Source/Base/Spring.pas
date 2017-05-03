@@ -1194,27 +1194,27 @@ type
     /// <param name="msg">
     ///   The general error message.
     /// </param>
-    class procedure RaiseArgumentException(const msg: string); overload; static; inline;
+    class procedure RaiseArgumentException(const msg: string); overload; static;
 
     /// <summary>
     ///   Raises an <see cref="EFormatException" /> exception.
     /// </summary>
-    class procedure RaiseArgumentFormatException(const argumentName: string); overload; static; inline;
+    class procedure RaiseArgumentFormatException(const argumentName: string); overload; static;
 
     /// <summary>
     ///   Raises an <see cref="EArgumentNullException" /> exception.
     /// </summary>
-    class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
+    class procedure RaiseArgumentNullException(const argumentName: string); overload; static;
 
     /// <summary>
     ///   Raises an <see cref="EArgumentOutOfRangeException" /> exception.
     /// </summary>
-    class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
+    class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static;
 
     /// <summary>
     ///   Raises an <see cref="EInvalidEnumArgumentException" /> exception.
     /// </summary>
-    class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
+    class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static;
   end;
 
   TArgument = Guard deprecated 'Use Guard instead';
@@ -3671,13 +3671,13 @@ var
   i: Integer;
 begin
   f := @DefaultFields[0];
-  for i := 0 to DefaultFieldCount - 1 do
+  for i := 0 to DefaultFieldCount - 1 do //FI:W528
   begin
     f.InitializeValue(instance);
     Inc(f);
   end;
   f := @ManagedFields[0];
-  for i := 0 to ManagedFieldCount - 1 do
+  for i := 0 to ManagedFieldCount - 1 do //FI:W528
   begin
     f.InitializeValue(instance);
     Inc(f);
@@ -3691,7 +3691,7 @@ var
   i: Integer;
 begin
   f := @ManagedFields[0];
-  for i := 0 to ManagedFieldCount - 1 do
+  for i := 0 to ManagedFieldCount - 1 do //FI:W528
   begin
     f.FinalizeValue(instance);
     Inc(f);
@@ -3993,7 +3993,7 @@ begin
     RaiseConversionError(TypeInfo, System.TypeInfo(T));
 end;
 
-function EqualsFail(const left, right: TValue): Boolean;
+function EqualsFail(const left, right: TValue): Boolean; //FI:O804
 begin
   Result := False;
 end;
@@ -5051,7 +5051,7 @@ end;
 type
   TConvertFunc = function(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
 
-function ConvFail(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvFail(const source: TValue; target: PTypeInfo; out value: TValue): Boolean; //FI:O804
 begin
   Result := False;
 end;
@@ -5803,7 +5803,7 @@ begin
   PPointer(Self)^ := TRttiInvokableMethodHack;
 end;
 
-function TRttiInvokableTypeHelper.CreateImplementation(AUserData: Pointer;
+function TRttiInvokableTypeHelper.CreateImplementation(AUserData: Pointer; //FI:O804
   const ACallback: TMethodImplementationCallback): TMethodImplementation;
 var
   m: TRttiMethod;
@@ -5949,6 +5949,57 @@ end;
 
 {$REGION 'Guard'}
 
+class procedure Guard.RaiseArgumentException(const msg: string);
+begin
+  raise EArgumentException.Create(msg) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseArgumentNullException(const argumentName: string);
+begin
+  raise EArgumentNullException.CreateResFmt(
+    @SArgumentNullException, [argumentName]) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseArgumentOutOfRangeException(const argumentName: string);
+begin
+  raise EArgumentOutOfRangeException.CreateResFmt(
+    @SArgumentOutOfRangeException, [argumentName]) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseArgumentException(typeKind: TTypeKind; const argumentName: string);
+begin
+  raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+    [GetEnumName(TypeInfo(TTypeKind), Ord(typeKind)), argumentName]) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseArgumentFormatException(const argumentName: string);
+begin
+  raise EFormatException.CreateResFmt(
+    @SInvalidArgumentFormat, [argumentName]) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseInvalidEnumArgumentException(const argumentName: string);
+begin
+  raise EInvalidEnumArgumentException.CreateResFmt(
+    @SInvalidEnumArgument, [argumentName]) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseInvalidTypeCast(sourceType, targetType: PTypeInfo);
+begin
+  raise EInvalidCastException.CreateResFmt(@SInvalidTypeCast, [
+    sourceType.TypeName, targetType.TypeName]) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseNullableHasNoValue;
+begin
+  raise EInvalidOperationException.CreateRes(@SNullableHasNoValue) at ReturnAddress;
+end;
+
+class procedure Guard.RaiseNoDelegateAssigned;
+begin
+  raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned) at ReturnAddress;
+end;
+
 class procedure Guard.CheckIndex(length, index, indexBase: Integer);
 const
   IndexArgName = 'index';
@@ -5987,7 +6038,7 @@ class procedure Guard.CheckTypeKind(typeKind: TTypeKind;
   expectedTypeKind: TTypeKind; const argumentName: string);
 begin
   if typeKind <> expectedTypeKind then
-    RaiseArgumentException(typeKind, argumentName);
+    Guard.RaiseArgumentException(typeKind, argumentName);
 end;
 
 class procedure Guard.CheckTypeKind(typeKind: TTypeKind;
@@ -6242,65 +6293,6 @@ begin
     else
       Result := not Assigned(PPointer(@value)^);
 end;
-
-{$IFOPT O+}
-  {$DEFINE OPTIMIZATIONS_ON}
-  {$O-}
-{$ENDIF}
-class procedure Guard.RaiseArgumentException(const msg: string);
-begin
-  raise EArgumentException.Create(msg) at ReturnAddress;
-end;
-
-class procedure Guard.RaiseArgumentNullException(const argumentName: string);
-begin
-  raise EArgumentNullException.CreateResFmt(
-    @SArgumentNullException, [argumentName]) at ReturnAddress;
-end;
-
-class procedure Guard.RaiseArgumentOutOfRangeException(const argumentName: string);
-begin
-  raise EArgumentOutOfRangeException.CreateResFmt(
-    @SArgumentOutOfRangeException, [argumentName]) at ReturnAddress;
-end;
-
-class procedure Guard.RaiseArgumentException(typeKind: TTypeKind; const argumentName: string);
-begin
-  raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
-    [GetEnumName(TypeInfo(TTypeKind), Ord(typeKind)), argumentName]) at ReturnAddress;
-end;
-
-class procedure Guard.RaiseArgumentFormatException(const argumentName: string);
-begin
-  raise EFormatException.CreateResFmt(
-    @SInvalidArgumentFormat, [argumentName]) at ReturnAddress;
-end;
-
-class procedure Guard.RaiseInvalidEnumArgumentException(const argumentName: string);
-begin
-  raise EInvalidEnumArgumentException.CreateResFmt(
-    @SInvalidEnumArgument, [argumentName]) at ReturnAddress;
-end;
-
-class procedure Guard.RaiseInvalidTypeCast(sourceType, targetType: PTypeInfo);
-begin
-  raise EInvalidCastException.CreateResFmt(@SInvalidTypeCast, [
-    sourceType.TypeName, targetType.TypeName]) at ReturnAddress;
-end;
-
-class procedure Guard.RaiseNullableHasNoValue;
-begin
-  raise EInvalidOperationException.CreateRes(@SNullableHasNoValue) at ReturnAddress;
-end;
-
-class procedure Guard.RaiseNoDelegateAssigned;
-begin
-  raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned) at ReturnAddress;
-end;
-{$IFDEF OPTIMIZATIONS_ON}
-  {$UNDEF OPTIMIZATIONS_ON}
-  {$O+}
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -7006,7 +6998,7 @@ begin
   freeInstance(Self);
 end;
 
-procedure TWeakReference.RegisterWeakRef(address, instance: Pointer);
+procedure TWeakReference.RegisterWeakRef(address, instance: Pointer); //FI:O804
 begin
   TVirtualClasses.Default.Proxify(instance);
   GetClassData(TObject(instance).ClassType).FreeInstance := WeakRefFreeInstance;
@@ -8198,6 +8190,16 @@ begin
   fData := nil;
 end;
 
+function Vector<T>.IndexOf(const item: T): Integer;
+begin
+  case TType.Kind<T> of
+    tkInteger: Result := InternalIndexOfInt(PInteger(@item)^);
+    tkUString: Result := InternalIndexOfStr(PUnicodeString(@item)^);
+  else
+    Result := InternalIndexOf(item);
+  end;
+end;
+
 function Vector<T>.Contains(const item: T): Boolean;
 begin
   Result := IndexOf(item) > -1;
@@ -8400,16 +8402,6 @@ class operator Vector<T>.In(const left: TArray<T>;
   const right: Vector<T>): Boolean;
 begin
   Result := right.Contains(left);
-end;
-
-function Vector<T>.IndexOf(const item: T): Integer;
-begin
-  case TType.Kind<T> of
-    tkInteger: Result := InternalIndexOfInt(PInteger(@item)^);
-    tkUString: Result := InternalIndexOfStr(PUnicodeString(@item)^);
-  else
-    Result := InternalIndexOf(item);
-  end;
 end;
 
 procedure Vector<T>.Insert(index: Integer; const item: T);

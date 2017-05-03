@@ -362,7 +362,7 @@ type
   ISelectCommand = interface(IDBCommand)
     ['{8D6D2229-8626-43C3-AD0A-091E4CB91050}']
     function Select: IDBResultSet;
-    function SelectAll(entityClass: TClass): IDBResultSet;
+    function SelectAll: IDBResultSet;
   end;
 
   IDDLCommand = interface(IDBCommand)

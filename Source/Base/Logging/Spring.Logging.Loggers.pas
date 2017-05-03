@@ -237,17 +237,17 @@ begin
   Result := fLevels;
 end;
 
-function TLoggerBase.IsDebugEnabled: Boolean;
-begin
-  Result := IsEnabled(TLogLevel.Debug, LOG_ALL_EVENT_TYPES);
-end;
-
 function TLoggerBase.IsEnabled(level: TLogLevel; eventTypes: TLogEventTypes): Boolean;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckTrue(eventTypes <> [], 'eventTypes');
 {$ENDIF}
   Result := fEnabled and (level in fLevels) and (eventTypes * fEventTypes <> []);
+end;
+
+function TLoggerBase.IsDebugEnabled: Boolean;
+begin
+  Result := IsEnabled(TLogLevel.Debug, LOG_ALL_EVENT_TYPES);
 end;
 
 function TLoggerBase.IsErrorEnabled: Boolean;

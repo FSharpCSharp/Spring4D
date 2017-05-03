@@ -162,6 +162,13 @@ begin
   inherited Destroy;
 end;
 
+{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
+procedure TQueue<T>.IncreaseVersion;
+begin
+  Inc(fVersion);
+end;
+{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
+
 procedure TQueue<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
   if fOnChanged.CanInvoke then
@@ -243,13 +250,6 @@ begin
     OutOfMemoryError;
   SetCapacity(newCapacity);
 end;
-
-{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
-procedure TQueue<T>.IncreaseVersion;
-begin
-  Inc(fVersion);
-end;
-{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 function TQueue<T>.Peek: T;
 begin

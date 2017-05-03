@@ -354,6 +354,21 @@ begin
     inherited Create(collection);
 end;
 
+procedure TList<T>.EnsureCapacity(capacity: Integer);
+begin
+  if capacity > Length(fItems) then
+    Grow(capacity)
+  else if capacity < 0 then
+    OutOfMemoryError;
+end;
+
+{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
+procedure TList<T>.IncreaseVersion;
+begin
+  Inc(fVersion);
+end;
+{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
+
 function TList<T>.GetCount: Integer;
 begin
   Result := fCount;
@@ -434,13 +449,6 @@ begin
     until newCapacity >= capacity;
   SetCapacity(newCapacity);
 end;
-
-{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
-procedure TList<T>.IncreaseVersion;
-begin
-  Inc(fVersion);
-end;
-{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 function TList<T>.IndexOf(const item: T; index, count: Integer): Integer;
 {$IFDEF DELPHI2010}
@@ -681,14 +689,6 @@ procedure TList<T>.Clear;
 begin
   inherited Clear;
   Capacity := 0;
-end;
-
-procedure TList<T>.EnsureCapacity(capacity: Integer);
-begin
-  if capacity > Length(fItems) then
-    Grow(capacity)
-  else if capacity < 0 then
-    OutOfMemoryError;
 end;
 
 procedure TList<T>.Exchange(index1, index2: Integer);
@@ -1105,6 +1105,13 @@ begin
   // not calling inherited because we don't want to call Clear
 end;
 
+{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
+procedure TCollectionList<T>.IncreaseVersion;
+begin
+  Inc(fVersion);
+end;
+{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
+
 procedure TCollectionList<T>.Delete(index: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1227,13 +1234,6 @@ begin
 
   Result := T(fCollection.Items[index]);
 end;
-
-{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
-procedure TCollectionList<T>.IncreaseVersion;
-begin
-  Inc(fVersion);
-end;
-{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 procedure TCollectionList<T>.Insert(index: Integer; const item: T);
 begin

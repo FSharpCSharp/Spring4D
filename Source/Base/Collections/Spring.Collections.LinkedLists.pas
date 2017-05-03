@@ -137,6 +137,13 @@ begin
   inherited Destroy;
 end;
 
+{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
+procedure TLinkedList<T>.IncreaseVersion;
+begin
+  Inc(fVersion);
+end;
+{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
+
 procedure TLinkedList<T>.AddInternal(const item: T);
 begin
   AddLast(item);
@@ -371,13 +378,6 @@ function TLinkedList<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
   Result := fOnChanged;
 end;
-
-{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
-procedure TLinkedList<T>.IncreaseVersion;
-begin
-  Inc(fVersion);
-end;
-{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 procedure TLinkedList<T>.InternalInsertNodeBefore(
   const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>);

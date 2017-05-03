@@ -2736,22 +2736,22 @@ uses
 
 
 {$REGION 'Instance comparer'}
-function NopAddref(inst: Pointer): Integer; stdcall;
+function NopAddref(inst: Pointer): Integer; stdcall; //FI:O804
 begin
   Result := -1;
 end;
 
-function NopRelease(inst: Pointer): Integer; stdcall;
+function NopRelease(inst: Pointer): Integer; stdcall; //FI:O804
 begin
   Result := -1;
 end;
 
-function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall; //FI:O804
 begin
   Result := E_NOINTERFACE;
 end;
 
-function Compare_Instance(Inst: Pointer; const Left, Right: TObject): Integer;
+function Compare_Instance(Inst: Pointer; const Left, Right: TObject): Integer; //FI:O804
 var
   comparable: IComparable;
 begin

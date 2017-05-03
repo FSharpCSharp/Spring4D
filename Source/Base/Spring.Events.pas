@@ -198,7 +198,7 @@ var
 begin
   P := @TypeData^.ParamList;
   // Skip parameter names and types
-  for I := 1 to TypeData^.ParamCount do
+  for I := 1 to TypeData^.ParamCount do //FI:W528
   begin
     Inc(P, 1 + P[1] + 1);
     Inc(P, P[0] + 1 );

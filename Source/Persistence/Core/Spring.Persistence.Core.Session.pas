@@ -361,7 +361,7 @@ var
   results: IDBResultSet;
 begin
   selecter := GetSelectCommandExecutor(T);
-  results := selecter.SelectAll(T);
+  results := selecter.SelectAll;
   Result := TCollections.CreateObjectList<T>(True);
   MapEntitiesFromResultSet(results, Result as IObjectList, T);
 end;
