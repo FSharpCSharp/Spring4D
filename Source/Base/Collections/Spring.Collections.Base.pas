@@ -44,11 +44,13 @@ type
   private
     function GetCurrentNonGeneric: TValue; virtual; abstract;
     function IEnumerator.GetCurrent = GetCurrentNonGeneric;
+  {$IFDEF CPUX86}
+    function MoveNextInternal: Boolean;
+    function IEnumerator.MoveNext = MoveNextInternal;
+  {$ENDIF}
   public
     function MoveNext: Boolean; virtual;
     procedure Reset; virtual;
-
-    property Current: TValue read GetCurrentNonGeneric;
   end;
 
   /// <summary>
@@ -58,10 +60,13 @@ type
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
   private
     function GetCurrentNonGeneric: TValue; override; final;
+  {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+    function GetCurrentInternal: T;
+    function IEnumerator<T>.GetCurrent = GetCurrentInternal;
+    function IEnumerator<T>.MoveNext = MoveNextInternal;
+  {$ENDIF}{$ENDIF}
   protected
     function GetCurrent: T; virtual;
-  public
-    property Current: T read GetCurrent;
   end;
 
   /// <summary>
@@ -104,6 +109,10 @@ type
   private
     class var fEqualityComparer: IEqualityComparer<T>;
     function GetEnumeratorNonGeneric: IEnumerator; override; final;
+  {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+    function GetEnumeratorInternal: IEnumerator<T>;
+    function IEnumerable<T>.GetEnumerator = GetEnumeratorInternal;
+  {$ENDIF}{$ENDIF}
   protected
     fComparer: IComparer<T>;
   {$REGION 'Property Accessors'}
@@ -211,9 +220,13 @@ type
   end;
 
   TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
-  protected
+  private
     function GetCurrentNonGeneric: TValue; virtual; abstract;
     function IEnumerator.GetCurrent = GetCurrentNonGeneric;
+  {$IFDEF CPUX86}
+    function MoveNextInternal: Boolean;
+    function IEnumerator.MoveNext = MoveNextInternal;
+  {$ENDIF}
   public
     function MoveNext: Boolean; virtual;
     procedure Reset; virtual;
@@ -222,6 +235,10 @@ type
   TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
   private
     fInitialThreadId: TThreadID;
+    function GetCurrentNonGeneric: TValue; override; final;
+  {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+    function IEnumerator<T>.MoveNext = MoveNextInternal;
+  {$ENDIF}{$ENDIF}
   protected
     fState: Integer;
     fCurrent: T;
@@ -233,7 +250,6 @@ type
   protected
     function Clone: TIterator<T>; virtual; abstract;
     function GetCurrent: T;
-    function GetCurrentNonGeneric: TValue; override; final;
   public
     constructor Create; override;
     function GetEnumerator: IEnumerator<T>; override; final;
@@ -506,6 +522,13 @@ begin
   Result := False;
 end;
 
+{$IFDEF CPUX86}
+function TEnumeratorBase.MoveNextInternal: Boolean;
+begin
+  Result := MoveNext;
+end;
+{$ENDIF}
+
 procedure TEnumeratorBase.Reset;
 begin
   raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
@@ -520,6 +543,13 @@ function TEnumeratorBase<T>.GetCurrent: T;
 begin
   raise EInvalidOperationException.CreateRes(@SEnumEmpty);
 end;
+
+{$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+function TEnumeratorBase<T>.GetCurrentInternal: T;
+begin
+  Result := GetCurrent;
+end;
+{$ENDIF}{$ENDIF}
 
 function TEnumeratorBase<T>.GetCurrentNonGeneric: TValue;
 begin
@@ -841,6 +871,13 @@ function TEnumerableBase<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumeratorBase<T>.Create;
 end;
+
+{$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+function TEnumerableBase<T>.GetEnumeratorInternal: IEnumerator<T>;
+begin
+  Result := GetEnumerator;
+end;
+{$ENDIF}{$ENDIF}
 
 function TEnumerableBase<T>.GetEnumeratorNonGeneric: IEnumerator;
 begin
@@ -1368,6 +1405,13 @@ function TIteratorBase<T>.MoveNext: Boolean;
 begin
   Result := False;
 end;
+
+{$IFDEF CPUX86}
+function TIteratorBase<T>.MoveNextInternal: Boolean;
+begin
+  Result := MoveNext;
+end;
+{$ENDIF}
 
 procedure TIteratorBase<T>.Reset;
 begin
