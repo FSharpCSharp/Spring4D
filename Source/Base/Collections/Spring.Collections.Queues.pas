@@ -55,7 +55,6 @@ type
         constructor Create(const queue: TQueue<T>);
         destructor Destroy; override;
         function MoveNext: Boolean; override;
-        procedure Reset; override;
       end;
       TArrayManager = TArrayManager<T>;
   private
@@ -383,15 +382,6 @@ begin
   end
   else
     fCurrent := Default(T);
-end;
-
-procedure TQueue<T>.TEnumerator.Reset;
-begin
-  if fVersion <> fQueue.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-
-  fIndex := 0;
-  fCurrent := Default(T);
 end;
 
 {$ENDREGION}

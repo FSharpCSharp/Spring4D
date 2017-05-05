@@ -125,18 +125,6 @@ type
     function MoveNext: Boolean;
 
     /// <summary>
-    ///   Sets the enumerator to its initial position, which is before the
-    ///   first element in the collection.
-    /// </summary>
-    /// <exception cref="Spring|EInvalidOperationException">
-    ///   The collection was modified after the enumerator was created.
-    /// </exception>
-    /// <exception cref="Spring|ENotSupportedException">
-    ///   The Reset method is not supported.
-    /// </exception>
-    procedure Reset;
-
-    /// <summary>
     ///   Gets the current element in the collection.
     /// </summary>
     /// <value>

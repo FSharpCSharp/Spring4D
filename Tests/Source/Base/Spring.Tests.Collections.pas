@@ -122,8 +122,6 @@ type
     procedure TestExtractAll_MultipleItemsInList_RemoveSome;
 
     procedure TestEnumeratorMoveNext_VersionMismatch;
-    procedure TestEnumeratorReset;
-    procedure TestEnumeratorReset_VersionMismatch;
 
     procedure TestRemoveAll;
 
@@ -411,8 +409,6 @@ type
     procedure TestMove;
 
     procedure TestEnumeratorMoveNext_VersionMismatch;
-    procedure TestEnumeratorReset;
-    procedure TestEnumeratorReset_VersionMismatch;
   end;
 
   TTestEnumerable = class(TTestCase)
@@ -785,31 +781,6 @@ begin
   e := SUT.GetEnumerator;
   while e.MoveNext do
     SUT.Add(4);
-  ExpectedException := nil;
-end;
-
-procedure TTestIntegerList.TestEnumeratorReset;
-var
-  e: IEnumerator<Integer>;
-begin
-  SimpleFillList;
-  e := SUT.GetEnumerator;
-  while e.MoveNext do;
-  e.Reset;
-  CheckTrue(e.MoveNext);
-  CheckEquals(1, e.Current);
-end;
-
-procedure TTestIntegerList.TestEnumeratorReset_VersionMismatch;
-var
-  e: IEnumerator<Integer>;
-begin
-  SimpleFillList;
-  e := SUT.GetEnumerator;
-  while e.MoveNext do;
-  SUT.Add(4);
-  ExpectedException := EInvalidOperationException;
-  e.Reset;
   ExpectedException := nil;
 end;
 
@@ -2503,36 +2474,6 @@ begin
   e := SUT.GetEnumerator;
   while e.MoveNext do
     SUT.Add(TMyCollectionItem.Create(nil));
-  ExpectedException := nil;
-end;
-
-procedure TTestCollectionList.TestEnumeratorReset;
-var
-  item: TCollectionItem;
-  e: IEnumerator<TCollectionItem>;
-begin
-  item := TMyCollectionItem.Create(Coll);
-  TMyCollectionItem.Create(Coll);
-  TMyCollectionItem.Create(Coll);
-  e := SUT.GetEnumerator;
-  while e.MoveNext do;
-  e.Reset;
-  CheckTrue(e.MoveNext);
-  CheckSame(item, e.Current);
-end;
-
-procedure TTestCollectionList.TestEnumeratorReset_VersionMismatch;
-var
-  e: IEnumerator<TCollectionItem>;
-begin
-  TMyCollectionItem.Create(Coll);
-  TMyCollectionItem.Create(Coll);
-  TMyCollectionItem.Create(Coll);
-  e := SUT.GetEnumerator;
-  while e.MoveNext do;
-  SUT.Add(TMyCollectionItem.Create(nil));
-  ExpectedException := EInvalidOperationException;
-  e.Reset;
   ExpectedException := nil;
 end;
 

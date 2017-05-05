@@ -55,7 +55,6 @@ type
         constructor Create(const stack: TStack<T>);
         destructor Destroy; override;
         function MoveNext: Boolean; override;
-        procedure Reset; override;
       end;
   private
     fCount: Integer;
@@ -336,15 +335,6 @@ begin
   end
   else
     fCurrent := Default(T);
-end;
-
-procedure TStack<T>.TEnumerator.Reset;
-begin
-  if fVersion <> fStack.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-
-  fIndex := 0;
-  fCurrent := Default(T);
 end;
 
 {$ENDREGION}

@@ -59,7 +59,6 @@ type
         constructor Create(const list: TList<T>);
         destructor Destroy; override;
         function MoveNext: Boolean; override;
-        procedure Reset; override;
       end;
       TArrayManager = TArrayManager<T>;
   private
@@ -188,7 +187,6 @@ type
         constructor Create(const list: TCollectionList<T>);
         destructor Destroy; override;
         function MoveNext: Boolean; override;
-        procedure Reset; override;
       end;
   private
     fCollection: TCollection;
@@ -909,15 +907,6 @@ begin
   Result := fCurrent;
 end;
 
-procedure TList<T>.TEnumerator.Reset;
-begin
-  if fVersion <> fList.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-
-  fIndex := 0;
-  fCurrent := Default(T);
-end;
-
 {$ENDREGION}
 
 
@@ -1342,15 +1331,6 @@ end;
 function TCollectionList<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
-end;
-
-procedure TCollectionList<T>.TEnumerator.Reset;
-begin
-  if fVersion <> fList.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-
-  fIndex := 0;
-  fCurrent := Default(T);
 end;
 
 {$ENDREGION}

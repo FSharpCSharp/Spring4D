@@ -50,7 +50,6 @@ type
   {$ENDIF}
   public
     function MoveNext: Boolean; virtual;
-    procedure Reset; virtual;
   end;
 
   /// <summary>
@@ -229,7 +228,6 @@ type
   {$ENDIF}
   public
     function MoveNext: Boolean; virtual;
-    procedure Reset; virtual;
   end;
 
   TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
@@ -528,11 +526,6 @@ begin
   Result := MoveNext;
 end;
 {$ENDIF}
-
-procedure TEnumeratorBase.Reset;
-begin
-  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
-end;
 
 {$ENDREGION}
 
@@ -1412,11 +1405,6 @@ begin
   Result := MoveNext;
 end;
 {$ENDIF}
-
-procedure TIteratorBase<T>.Reset;
-begin
-  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
-end;
 
 {$ENDREGION}
 

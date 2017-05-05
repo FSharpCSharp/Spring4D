@@ -59,7 +59,6 @@ type
         constructor Create(const list: TLinkedList<T>);
         destructor Destroy; override;
         function MoveNext: Boolean; override;
-        procedure Reset; override;
       end;
   private
     // ARC notes: It is assumed that once a node enters some list it belongs to
@@ -540,15 +539,6 @@ begin
     fNode := fNode.Next;
     Result := True;
   end;
-end;
-
-procedure TLinkedList<T>.TEnumerator.Reset;
-begin
-  if fVersion <> fList.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-
-  fCurrent := Default(T);
-  fNode := fList.fHead;
 end;
 
 {$ENDREGION}
