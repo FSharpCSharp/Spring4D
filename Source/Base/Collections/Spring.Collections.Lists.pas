@@ -738,25 +738,13 @@ begin
 end;
 
 procedure TList<T>.Reverse(index, count: Integer);
-var
-  temp: T;
-  index1, index2: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(index >= 0, 'index');
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
-  index1 := index;
-  index2 := index + count - 1;
-  while index1 < index2 do
-  begin
-    temp := fItems[index1];
-    fItems[index1] := fItems[index2];
-    fItems[index2] := temp;
-    Inc(index1);
-    Dec(index2);
-  end;
+  TArray.Reverse<T>(fItems, index, count);
   IncreaseVersion;
 
   Changed(Default(T), caReseted);

@@ -2230,6 +2230,17 @@ type
       const comparer: IEqualityComparer<T>): Integer; overload; static;
 
     /// <summary>
+    ///   Reverses the elements in the entire array.
+    /// </summary>
+    class procedure Reverse<T>(var values: array of T); overload; static;
+
+    /// <summary>
+    ///   Reverses the elements in the specified range in the array.
+    /// </summary>
+    class procedure Reverse<T>(var values: array of T;
+      index, count: Integer); overload; static;
+
+    /// <summary>
     ///   Shuffles the elements in the array using the Fisher-Yates algorithm.
     /// </summary>
     class procedure Shuffle<T>(var values: array of T); overload; static;
@@ -8066,16 +8077,32 @@ begin
   Result := -1;
 end;
 
-class procedure TArray.Sort<T>(var values: array of T;
-  const comparison: TComparison<T>);
+class procedure TArray.Reverse<T>(var values: array of T);
 begin
-  Sort<T>(values, IComparer<T>(PPointer(@comparison)^));
+  Reverse<T>(values, 0, Length(values));
 end;
 
-class procedure TArray.Sort<T>(var values: array of T;
-  const comparison: TComparison<T>; index, count: Integer);
+class procedure TArray.Reverse<T>(var values: array of T; index,
+  count: Integer);
+var
+  temp: T;
+  index1, index2: Integer;
 begin
-  Sort<T>(values, IComparer<T>(PPointer(@comparison)^), index, count);
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
+{$ENDIF}
+
+  index1 := index;
+  index2 := index + count - 1;
+  while index1 < index2 do
+  begin
+    temp := values[index1];
+    values[index1] := values[index2];
+    values[index2] := temp;
+    Inc(index1);
+    Dec(index2);
+  end;
 end;
 
 class procedure TArray.Shuffle<T>(var values: array of T);
@@ -8108,6 +8135,18 @@ begin
     values[i] := temp;
     Inc(index);
   end;
+end;
+
+class procedure TArray.Sort<T>(var values: array of T;
+  const comparison: TComparison<T>);
+begin
+  Sort<T>(values, IComparer<T>(PPointer(@comparison)^));
+end;
+
+class procedure TArray.Sort<T>(var values: array of T;
+  const comparison: TComparison<T>; index, count: Integer);
+begin
+  Sort<T>(values, IComparer<T>(PPointer(@comparison)^), index, count);
 end;
 
 {$ENDREGION}
