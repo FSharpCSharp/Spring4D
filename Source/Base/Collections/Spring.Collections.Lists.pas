@@ -278,7 +278,8 @@ type
     function CreateList: TListBase<TObject>; override;
     function GetElementType: PTypeInfo; override;
   public
-    constructor Create(const elementType: PTypeInfo; ownsObjects: Boolean = True);
+    constructor Create(const elementType: PTypeInfo;
+      const comparer: IComparer<TObject>; ownsObjects: Boolean = True);
   end;
 
   TFoldedInterfaceList = class(TList<IInterface>)
@@ -288,7 +289,8 @@ type
     function CreateList: TListBase<IInterface>; override;
     function GetElementType: PTypeInfo; override;
   public
-    constructor Create(const elementType: PTypeInfo);
+    constructor Create(const elementType: PTypeInfo;
+      const comparer: IComparer<IInterface>);
   end;
 {$ENDIF}
 
@@ -1468,15 +1470,15 @@ end;
 
 {$IFNDEF DELPHI2010}
 constructor TFoldedObjectList.Create(const elementType: PTypeInfo;
-  ownsObjects: Boolean);
+  const comparer: IComparer<TObject>; ownsObjects: Boolean);
 begin
-  inherited Create(ownsObjects);
+  inherited Create(comparer, ownsObjects);
   fElementType := elementType;
 end;
 
 function TFoldedObjectList.CreateList: TListBase<TObject>;
 begin
-  Result := TFoldedObjectList.Create(fElementType, False);
+  Result := TFoldedObjectList.Create(fElementType, fComparer, False);
 end;
 
 function TFoldedObjectList.GetElementType: PTypeInfo;
@@ -1491,15 +1493,16 @@ end;
 {$REGION 'TFoldedInterfaceList'}
 
 {$IFNDEF DELPHI2010}
-constructor TFoldedInterfaceList.Create(const elementType: PTypeInfo);
+constructor TFoldedInterfaceList.Create(const elementType: PTypeInfo;
+  const comparer: IComparer<IInterface>);
 begin
-  inherited Create;
+  inherited Create(comparer);
   fElementType := elementType;
 end;
 
 function TFoldedInterfaceList.CreateList: TListBase<IInterface>;
 begin
-  Result := TFoldedInterfaceList.Create(fElementType);
+  Result := TFoldedInterfaceList.Create(fElementType, fComparer);
 end;
 
 function TFoldedInterfaceList.GetElementType: PTypeInfo;
