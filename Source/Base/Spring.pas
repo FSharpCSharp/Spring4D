@@ -1227,9 +1227,7 @@ type
   Nullable = record
   private
     const HasValue = 'True';
-    class function GetNull: Nullable; static; inline;
-  public
-    class property Null: Nullable read GetNull;
+    type Null = interface end;
   end;
 
   /// <summary>
@@ -1245,7 +1243,8 @@ type
     fValue: T;
     fHasValue: string;
     class var fComparer: IEqualityComparer<T>;
-    class function EqualsInternal(const left, right: T): Boolean; static;
+    class function EqualsComparer(const left, right: T): Boolean; static;
+    class function EqualsInternal(const left, right: T): Boolean; static; inline;
     function GetValue: T; inline;
     function GetHasValue: Boolean; inline;
   public
@@ -1333,8 +1332,8 @@ type
     /// </exception>
     property Value: T read GetValue;
 
-    class operator Implicit(const value: Nullable): Nullable<T>; inline;
-    class operator Implicit(const value: T): Nullable<T>; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
+    class operator Implicit(const value: Nullable.Null): Nullable<T>;
+    class operator Implicit(const value: T): Nullable<T>;
 
 {$IFDEF IMPLICIT_NULLABLE}
     class operator Implicit(const value: Nullable<T>): T; inline;
@@ -1351,9 +1350,14 @@ type
 {$ENDIF}
 
     class operator Explicit(const value: Variant): Nullable<T>;
+    class operator Explicit(const value: Nullable<T>): T; inline;
 
     class operator Equal(const left, right: Nullable<T>): Boolean; inline;
+    class operator Equal(const left: Nullable<T>; const right: Nullable.Null): Boolean; inline;
+    class operator Equal(const left: Nullable<T>; const right: T): Boolean; inline;
     class operator NotEqual(const left, right: Nullable<T>): Boolean; inline;
+    class operator NotEqual(const left: Nullable<T>; const right: Nullable.Null): Boolean; inline;
+    class operator NotEqual(const left: Nullable<T>; const right: T): Boolean; inline;
   end;
 
   TNullableString = Nullable<string>;
@@ -2494,7 +2498,7 @@ function SameValue(const left, right: Variant): Boolean; overload;
 /// <summary>
 ///   Determines whether a variant value is null or empty.
 /// </summary>
-function VarIsNullOrEmpty(const value: Variant): Boolean; inline;
+function VarIsNullOrEmpty(const value: Variant): Boolean;
 
 /// <summary>
 ///   Returns the length of the variant array for the specified dimension.
@@ -6308,15 +6312,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Nullable'}
-
-class function Nullable.GetNull: Nullable; //FI:W521
-begin //FI:W519
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'Nullable<T>'}
 
 constructor Nullable<T>.Create(const value: T);
@@ -6370,60 +6365,64 @@ begin
     Result := defaultValue;
 end;
 
+class function Nullable<T>.EqualsComparer(const left, right: T): Boolean;
+begin
+  if not Assigned(fComparer) then
+    fComparer := TEqualityComparer<T>.Default;
+  Result := fComparer.Equals(left, right);
+end;
+
+class function Nullable<T>.EqualsInternal(const left, right: T): Boolean;
+begin
+  case TType.Kind<T> of
+    tkInteger, tkEnumeration:
+    begin
+      case SizeOf(T) of
+        1: Result := PByte(@left)^ = PByte(@right)^;
+        2: Result := PWord(@left)^ = PWord(@right)^;
+        4: Result := PCardinal(@left)^ = PCardinal(@right)^;
+      end;
+    end;
+{$IFNDEF NEXTGEN}
+    tkChar: Result := PAnsiChar(@left)^ = PAnsiChar(@right)^;
+    tkString: Result := PShortString(@left)^ = PShortString(@right)^;
+    tkLString: Result := PAnsiString(@left)^ = PAnsiString(@right)^;
+    tkWString: Result := PWideString(@left)^ = PWideString(@right)^;
+{$ENDIF}
+    tkFloat:
+    begin
+      if TypeInfo(T) = TypeInfo(Single) then
+        Result := Math.SameValue(PSingle(@left)^, PSingle(@right)^)
+      else if TypeInfo(T) = TypeInfo(Double) then
+        Result := Math.SameValue(PDouble(@left)^, PDouble(@right)^)
+      else if TypeInfo(T) = TypeInfo(Extended) then
+        Result := Math.SameValue(PExtended(@left)^, PExtended(@right)^)
+      else if TypeInfo(T) = TypeInfo(TDateTime) then
+        Result := SameDateTime(PDateTime(@left)^, PDateTime(@right)^)
+      else
+        case GetTypeData(TypeInfo(T)).FloatType of
+          ftSingle: Result := Math.SameValue(PSingle(@left)^, PSingle(@right)^);
+          ftDouble: Result := Math.SameValue(PDouble(@left)^, PDouble(@right)^);
+          ftExtended: Result := Math.SameValue(PExtended(@left)^, PExtended(@right)^);
+          ftComp: Result := PComp(@left)^ = PComp(@right)^;
+          ftCurr: Result := PCurrency(@left)^ = PCurrency(@right)^;
+        end;
+    end;
+    tkWChar: Result := PWideChar(@left)^ = PWideChar(@right)^;
+    tkInt64: Result := PInt64(@left)^ = PInt64(@right)^;
+    tkUString: Result := PUnicodeString(@left)^ = PUnicodeString(@right)^;
+  else
+    Result := EqualsComparer(left, right);
+  end;
+end;
+
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
   if not HasValue then
     Exit(not other.HasValue);
   if not other.HasValue then
     Exit(False);
-
-  case TType.Kind<T> of
-    tkInteger, tkEnumeration:
-    begin
-      case SizeOf(T) of
-        1: Result := PByte(@fValue)^ = PByte(@other.fValue)^;
-        2: Result := PWord(@fValue)^ = PWord(@other.fValue)^;
-        4: Result := PCardinal(@fValue)^ = PCardinal(@other.fValue)^;
-      end;
-    end;
-{$IFNDEF NEXTGEN}
-    tkChar: Result := PAnsiChar(@fValue)^ = PAnsiChar(@other.fValue)^;
-    tkString: Result := PShortString(@fValue)^ = PShortString(@other.fValue)^;
-    tkLString: Result := PAnsiString(@fValue)^ = PAnsiString(@other.fValue)^;
-    tkWString: Result := PWideString(@fValue)^ = PWideString(@other.fValue)^;
-{$ENDIF}
-    tkFloat:
-    begin
-      if TypeInfo(T) = TypeInfo(Single) then
-        Result := Math.SameValue(PSingle(@fValue)^, PSingle(@other.fValue)^)
-      else if TypeInfo(T) = TypeInfo(Double) then
-        Result := Math.SameValue(PDouble(@fValue)^, PDouble(@other.fValue)^)
-      else if TypeInfo(T) = TypeInfo(Extended) then
-        Result := Math.SameValue(PExtended(@fValue)^, PExtended(@other.fValue)^)
-      else if TypeInfo(T) = TypeInfo(TDateTime) then
-        Result := SameDateTime(PDateTime(@fValue)^, PDateTime(@other.fValue)^)
-      else
-        case GetTypeData(TypeInfo(T)).FloatType of
-          ftSingle: Result := Math.SameValue(PSingle(@fValue)^, PSingle(@other.fValue)^);
-          ftDouble: Result := Math.SameValue(PDouble(@fValue)^, PDouble(@other.fValue)^);
-          ftExtended: Result := Math.SameValue(PExtended(@fValue)^, PExtended(@other.fValue)^);
-          ftComp: Result := PComp(@fValue)^ = PComp(@other.fValue)^;
-          ftCurr: Result := PCurrency(@fValue)^ = PCurrency(@other.fValue)^;
-        end;
-    end;
-    tkWChar: Result := PWideChar(@fValue)^ = PWideChar(@other.fValue)^;
-    tkInt64: Result := PInt64(@fValue)^ = PInt64(@other.fValue)^;
-    tkUString: Result := PUnicodeString(@fValue)^ = PUnicodeString(@other.fValue)^;
-  else
-    Result := EqualsInternal(fValue, other.fValue);
-  end;
-end;
-
-class function Nullable<T>.EqualsInternal(const left, right: T): Boolean;
-begin
-  if not Assigned(fComparer) then
-    fComparer := TEqualityComparer<T>.Default;
-  Result := fComparer.Equals(left, right);
+  Result := EqualsInternal(fValue, other.fValue);
 end;
 
 class operator Nullable<T>.Implicit(const value: T): Nullable<T>;
@@ -6485,9 +6484,15 @@ begin
     Result := Default(Nullable<T>);
 end;
 
-class operator Nullable<T>.Implicit(const value: Nullable): Nullable<T>;
+class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
 begin
-  Result := Default(Nullable<T>);
+  Result := value.Value;
+end;
+
+class operator Nullable<T>.Implicit(const value: Nullable.Null): Nullable<T>;
+begin
+  Result.fValue := Default(T);
+  Result.fHasValue := '';
 end;
 
 class operator Nullable<T>.Equal(const left, right: Nullable<T>): Boolean;
@@ -6495,9 +6500,37 @@ begin
   Result := left.Equals(right);
 end;
 
+class operator Nullable<T>.Equal(const left: Nullable<T>;
+  const right: T): Boolean;
+begin
+  if left.fHasValue = '' then
+    Exit(False);
+  Result := EqualsInternal(left.fValue, right);
+end;
+
+class operator Nullable<T>.Equal(const left: Nullable<T>;
+  const right: Nullable.Null): Boolean;
+begin
+  Result := left.fHasValue = '';
+end;
+
 class operator Nullable<T>.NotEqual(const left, right: Nullable<T>): Boolean;
 begin
   Result := not left.Equals(right);
+end;
+
+class operator Nullable<T>.NotEqual(const left: Nullable<T>;
+  const right: Nullable.Null): Boolean;
+begin
+  Result := left.fHasValue <> '';
+end;
+
+class operator Nullable<T>.NotEqual(const left: Nullable<T>;
+  const right: T): Boolean;
+begin
+  if left.fHasValue = '' then
+    Exit(True);
+  Result := not EqualsInternal(left.fValue, right);
 end;
 
 function Nullable<T>.ToString: string;

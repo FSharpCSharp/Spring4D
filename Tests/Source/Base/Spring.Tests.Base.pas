@@ -589,7 +589,7 @@ end;
 procedure TTestNullableInteger.TearDown;
 begin
   inherited;
-  fInteger := Nullable.Null;
+  fInteger := nil;
 end;
 
 procedure TTestNullableInteger.TestAssignFive;
@@ -616,7 +616,7 @@ var
   n: Nullable<Integer>;
 begin
   n := 5;
-  n := Nullable.Null;
+  n := nil;
   Check(not n.HasValue);
 end;
 
@@ -658,17 +658,19 @@ var
   dirtyValue: Nullable<Integer>;  { lives in stack }
 begin
   CheckFalse(dirtyValue.HasValue);
+  CheckTrue(dirtyValue = nil);
   dirtyValue := 5;
+  CheckTrue(dirtyValue <> nil);
 end;
 
 procedure TTestNullableInteger.TestNullableNull;
 begin
   fInteger := 42;
   CheckEquals(42, fInteger.Value);
-  fInteger := Nullable.Null;
+  fInteger := nil;
   Check(not fInteger.HasValue);
-  Check(fInteger = Nullable.Null);
-  CheckFalse(fInteger <> Nullable.Null);
+  Check(fInteger = nil);
+  CheckFalse(fInteger <> nil);
 end;
 
 procedure TTestNullableInteger.TestTryGetValue;
@@ -736,7 +738,7 @@ end;
 procedure TTestNullableBoolean.TearDown;
 begin
   inherited;
-  fBoolean := Nullable.Null;
+  fBoolean := nil;
 end;
 
 procedure TTestNullableBoolean.TestIssue55;
@@ -2973,7 +2975,7 @@ procedure TTestValueHelper.NullableToString;
 begin
   fSUT := TValue.From(Nullable<Integer>(42));
   CheckEqualsString('42', fSUT.ToString);
-  fSUT := TValue.From(Nullable<Integer>(Nullable.Null));
+  fSUT := TValue.From(Nullable<Integer>(nil));
   CheckEqualsString('(null)', fSUT.ToString);
 end;
 
@@ -3116,7 +3118,7 @@ end;
 
 procedure TTestNullableDateTime.TearDown;
 begin
-  fDateTime := Nullable.Null;
+  fDateTime := nil;
   inherited;
 end;
 
@@ -3165,7 +3167,7 @@ end;
 
 procedure TTestNullableInt64.TearDown;
 begin
-  fInt64 := Nullable.Null;
+  fInt64 := nil;
   inherited;
 end;
 
