@@ -2572,6 +2572,19 @@ type
   TEnumerable = class
   public
     /// <summary>
+    ///   Returns the elements of the specified sequence or the type
+    ///   parameter's default value in a singleton collection if the sequence
+    ///   is empty.
+    /// </summary>
+    class function DefaultIfEmpty<T>(const source: IEnumerable<T>): IEnumerable<T>; overload; static;
+
+    /// <summary>
+    ///   Returns the elements of the specified sequence or the specified value
+    ///   in a singleton collection if the sequence is empty.
+    /// </summary>
+    class function DefaultIfEmpty<T>(const source: IEnumerable<T>; const defaultValue: T): IEnumerable<T>; overload; static;
+
+    /// <summary>
     ///   Returns an empty <see cref="IEnumerable&lt;T&gt;" /> that has the
     ///   specified type argument.
     /// </summary>
@@ -3350,6 +3363,18 @@ end;
 
 
 {$REGION 'TEnumerable'}
+
+class function TEnumerable.DefaultIfEmpty<T>(
+  const source: IEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TDefaultIfEmptyIterator<T>.Create(source, Default(T));
+end;
+
+class function TEnumerable.DefaultIfEmpty<T>(const source: IEnumerable<T>;
+  const defaultValue: T): IEnumerable<T>;
+begin
+  Result := TDefaultIfEmptyIterator<T>.Create(source, defaultValue);
+end;
 
 class function TEnumerable.Distinct<T>(
   const source: IEnumerable<T>): IEnumerable<T>;
