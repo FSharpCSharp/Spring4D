@@ -2571,6 +2571,8 @@ type
 
   TEnumerable = class
   public
+    class function CombinePredicates<T>(const predicate1, predicate2: TPredicate<T>): TPredicate<T>; static;
+
     /// <summary>
     ///   Returns the elements of the specified sequence or the type
     ///   parameter's default value in a singleton collection if the sequence
@@ -3363,6 +3365,16 @@ end;
 
 
 {$REGION 'TEnumerable'}
+
+class function TEnumerable.CombinePredicates<T>(const predicate1,
+  predicate2: TPredicate<T>): TPredicate<T>;
+begin
+  Result :=
+    function(const x: T): Boolean
+    begin
+      Result := predicate1(x) and predicate2(x);
+    end;
+end;
 
 class function TEnumerable.DefaultIfEmpty<T>(
   const source: IEnumerable<T>): IEnumerable<T>;

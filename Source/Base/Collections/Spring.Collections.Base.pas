@@ -219,36 +219,32 @@ type
     function ToArray: TArray<T>; virtual;
   end;
 
-  TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
+  TIteratorBase<T> = class abstract(TEnumerableBase<T>, IEnumerator)
   private
-    function GetCurrentNonGeneric: TValue; virtual; abstract;
-    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
-  {$IFDEF CPUX86}
-    function MoveNextInternal: Boolean;
-    function IEnumerator.MoveNext = MoveNextInternal;
-  {$ENDIF}
-  public
-    function MoveNext: Boolean; virtual;
-  end;
-
-  TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
-  private
-    fInitialThreadId: TThreadID;
-    function GetCurrentNonGeneric: TValue; override; final;
-  {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
-    function IEnumerator<T>.MoveNext = MoveNextInternal;
-  {$ENDIF}{$ENDIF}
-  protected
-    fState: Integer;
     fCurrent: T;
+    fState: Integer;
     const
       STATE_INITIAL    = -2; // initial state, before GetEnumerator
       STATE_FINISHED   = -1; // end of enumerator
       STATE_ENUMERATOR = 0;  // before calling MoveNext
       STATE_RUNNING    = 1;  // enumeration is running
+    function GetCurrentNonGeneric: TValue; virtual; abstract;
+    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
+  protected
+    procedure Dispose; virtual;
+    procedure Start; virtual;
+    function TryMoveNext(var current: T): Boolean; virtual; abstract;
+  public
+    function MoveNext: Boolean;
+  end;
+
+  TIterator<T> = class abstract(TIteratorBase<T>, IEnumerator<T>)
+  private
+    fInitialThreadId: TThreadID;
+    function GetCurrentNonGeneric: TValue; override; final;
+    function GetCurrent: T;
   protected
     function Clone: TIterator<T>; virtual; abstract;
-    function GetCurrent: T;
   public
     constructor Create; override;
     function GetEnumerator: IEnumerator<T>; override; final;
@@ -261,11 +257,11 @@ type
     fCount: Integer;
     fIndex: Integer;
   protected
+    function Clone: TIterator<Integer>; override;
     function GetCount: Integer; override;
+    function TryMoveNext(var current: Integer): Boolean; override;
   public
     constructor Create(start, count: Integer);
-    function Clone: TIterator<Integer>; override;
-    function MoveNext: Boolean; override;
 
     function ToArray: TArray<Integer>; override;
   end;
@@ -1394,17 +1390,34 @@ end;
 
 {$REGION 'TIteratorBase<T>' }
 
+procedure TIteratorBase<T>.Dispose;
+begin
+  fCurrent := Default(T);
+  fState := STATE_FINISHED;
+end;
+
 function TIteratorBase<T>.MoveNext: Boolean;
 begin
+  case fState of
+    STATE_ENUMERATOR,
+    STATE_RUNNING:
+    begin
+      if fState = STATE_ENUMERATOR then
+        Start;
+
+      if TryMoveNext(fCurrent) then
+        Exit(True);
+
+      Dispose;
+    end;
+  end;
   Result := False;
 end;
 
-{$IFDEF CPUX86}
-function TIteratorBase<T>.MoveNextInternal: Boolean;
+procedure TIteratorBase<T>.Start;
 begin
-  Result := MoveNext;
+  fState := STATE_RUNNING;
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -1473,25 +1486,13 @@ begin
   Result := fCount;
 end;
 
-function TRangeIterator.MoveNext: Boolean;
+function TRangeIterator.TryMoveNext(var current: Integer): Boolean;
 begin
-  Result := False;
-
-  if fState = STATE_ENUMERATOR then
+  Result := fIndex < fCount;
+  if Result then
   begin
-    fIndex := 0;
-    fState := STATE_RUNNING;
-  end;
-
-  if fState = STATE_RUNNING then
-  begin
-    if fIndex < fCount then
-    begin
-      fCurrent := fStart + fIndex;
-      Inc(fIndex);
-      Exit(True);
-    end;
-    fState := STATE_FINISHED;
+    current := fStart + fIndex;
+    Inc(fIndex);
   end;
 end;
 
