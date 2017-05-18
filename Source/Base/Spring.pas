@@ -2526,6 +2526,8 @@ function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): I
 function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): TObject; overload;
 {$ENDIF}
 
+procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
+
   {$ENDREGION}
 
 
@@ -3114,6 +3116,13 @@ asm
 {$ENDIF}
 end;
 {$ENDIF}
+
+procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(i, n);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+end;
 
 {$ENDREGION}
 

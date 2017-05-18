@@ -67,7 +67,6 @@ type
     fVersion: Integer;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
-    procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; override;
@@ -193,7 +192,6 @@ type
     fVersion: Integer;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
-    procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; override;
@@ -366,13 +364,6 @@ begin
     OutOfMemoryError;
 end;
 
-{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
-procedure TList<T>.IncreaseVersion;
-begin
-  Inc(fVersion);
-end;
-{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
-
 function TList<T>.GetCount: Integer;
 begin
   Result := fCount;
@@ -485,8 +476,9 @@ begin
 {$ENDIF}
 
   oldItem := fItems[index];
+
+  IncUnchecked(fVersion);
   fItems[index] := value;
-  IncreaseVersion;
 
   Changed(oldItem, caRemoved);
   Changed(value, caAdded);
@@ -499,6 +491,8 @@ begin
 {$ENDIF}
 
   EnsureCapacity(fCount + 1);
+
+  IncUnchecked(fVersion);
   if index <> fCount then
   begin
     TArrayManager.Move(fItems, index, index + 1, fCount - index);
@@ -506,7 +500,6 @@ begin
   end;
   fItems[index] := item;
   Inc(fCount);
-  IncreaseVersion;
 
   Changed(item, caAdded);
 end;
@@ -525,6 +518,8 @@ begin
     Exit;
 
   EnsureCapacity(fCount + count);
+
+  IncUnchecked(fVersion);
   if index <> fCount then
   begin
     TArrayManager.Move(fItems, index, index + count, fCount - index);
@@ -538,7 +533,6 @@ begin
       fItems[index + i] := values[i];
 
   Inc(fCount, count);
-  IncreaseVersion;
 
   for i := Low(values) to High(values) do
     Changed(values[i], caAdded);
@@ -561,6 +555,8 @@ begin
       Exit;
 
     EnsureCapacity(fCount + list.fCount);
+
+    IncUnchecked(fVersion);
     if index <> fCount then
     begin
       TArrayManager.Move(fItems, index, index + list.fCount, fCount - index);
@@ -574,7 +570,6 @@ begin
         fItems[index + i] := list.fItems[i];
 
     Inc(fCount, list.fCount);
-    IncreaseVersion;
 
     for i := 0 to list.fCount - 1 do
       Changed(list.fItems[i], caAdded);
@@ -589,6 +584,8 @@ var
   oldItem: T;
 begin
   oldItem := fItems[index];
+
+  IncUnchecked(fVersion);
   fItems[index] := Default(T);
   Dec(fCount);
   if index <> fCount then
@@ -596,7 +593,6 @@ begin
     TArrayManager.Move(fItems, index + 1, index, fCount - index);
     TArrayManager.Finalize(fItems, fCount, 1);
   end;
-  IncreaseVersion;
 
   Changed(oldItem, notification);
 end;
@@ -623,6 +619,7 @@ begin
   SetLength(oldItems, count);
   TArrayManager.Move(fItems, oldItems, index, 0, count);
 
+  IncUnchecked(fVersion);
   tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
@@ -633,7 +630,6 @@ begin
     TArrayManager.Finalize(fItems, index, count);
 
   Dec(fCount, count);
-  IncreaseVersion;
 
   if doClear then
     Changed(Default(T), caReseted);
@@ -644,8 +640,8 @@ end;
 
 procedure TList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
+  IncUnchecked(fVersion);
   TArray.Sort<T>(fItems, comparer, index, count);
-  IncreaseVersion;
 
   Changed(Default(T), caReseted);
 end;
@@ -660,6 +656,8 @@ begin
 {$ENDIF}
 
   temp := fItems[currentIndex];
+
+  IncUnchecked(fVersion);
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
     TArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
@@ -668,7 +666,6 @@ begin
 
   TArrayManager.Finalize(fItems, newIndex, 1);
   fItems[newIndex] := temp;
-  IncreaseVersion;
 
   Changed(temp, caMoved);
 end;
@@ -714,9 +711,10 @@ begin
 {$ENDIF}
 
   temp := fItems[index1];
+
+  IncUnchecked(fVersion);
   fItems[index1] := fItems[index2];
   fItems[index2] := temp;
-  IncreaseVersion;
 
   Changed(fItems[index2], caMoved);
   Changed(fItems[index1], caMoved);
@@ -746,8 +744,8 @@ begin
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
+  IncUnchecked(fVersion);
   TArray.Reverse<T>(fItems, index, count);
-  IncreaseVersion;
 
   Changed(Default(T), caReseted);
 end;
@@ -1097,13 +1095,6 @@ begin
   // not calling inherited because we don't want to call Clear
 end;
 
-{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
-procedure TCollectionList<T>.IncreaseVersion;
-begin
-  Inc(fVersion);
-end;
-{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
-
 procedure TCollectionList<T>.Clear;
 begin
   if fCollection.Count > 0 then
@@ -1125,8 +1116,9 @@ var
   oldItem: T;
 begin
   oldItem := T(fCollection.Items[index]);
+
+  IncUnchecked(fVersion);
   oldItem.Collection := nil;
-  IncreaseVersion;
 
   Changed(oldItem, notification);
   if notification = caRemoved then
@@ -1154,12 +1146,12 @@ begin
 
   SetLength(oldItems, count);
 
+  IncUnchecked(fVersion);
   for i := count downto 1 do
   begin
     oldItems[count - i] := T(fCollection.Items[index]);
     fCollection.Items[index].Collection := nil;
   end;
-  IncreaseVersion;
 
   if doClear then
     Changed(Default(T), caReseted);
@@ -1181,9 +1173,10 @@ begin
 {$ENDIF}
 
   temp := T(fCollection.Items[index1]);
+
+  IncUnchecked(fVersion);
   fCollection.Items[index2].Index := index1;
   temp.Index := index2;
-  IncreaseVersion;
 
   Changed(fCollection.Items[index2], caMoved);
   Changed(fCollection.Items[index1], caMoved);
@@ -1248,9 +1241,9 @@ begin
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
+  IncUnchecked(fVersion);
   item.Collection := fCollection;
   item.Index := index;
-  IncreaseVersion;
 
   Changed(item, caAdded);
 end;
@@ -1262,8 +1255,8 @@ begin
   Guard.CheckRange((newIndex >= 0) and (newIndex < Count), 'newIndex');
 {$ENDIF}
 
+  IncUnchecked(fVersion);
   fCollection.Items[currentIndex].Index := newIndex;
-  IncreaseVersion;
 
   Changed(fCollection.Items[newIndex], caMoved);
 end;

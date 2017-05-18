@@ -73,7 +73,6 @@ type
     fCount: Integer;
     fVersion: Integer;
     function EnsureNode(const value: T): TLinkedListNode<T>;
-    procedure IncreaseVersion; inline;
     procedure InternalInsertNodeBefore(const node: TLinkedListNode<T>;
       const newNode: TLinkedListNode<T>);
     procedure InternalInsertNodeToEmptyList(const newNode: TLinkedListNode<T>);
@@ -135,13 +134,6 @@ begin
   Clear;
   inherited Destroy;
 end;
-
-{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
-procedure TLinkedList<T>.IncreaseVersion;
-begin
-  Inc(fVersion);
-end;
-{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 procedure TLinkedList<T>.AddInternal(const item: T);
 begin
@@ -233,6 +225,7 @@ begin
   SetLength(oldItems, fCount);
   i := 0;
 
+  IncUnchecked(fVersion);
   node1 := fHead;
   while Assigned(node1) do
   begin
@@ -262,7 +255,6 @@ begin
     node1.__ObjRelease;
 {$ENDIF}
   end;
-  IncreaseVersion;
 
   for i := Low(oldItems) to High(oldItems) do
     Changed(oldItems[i], caRemoved);
@@ -381,12 +373,12 @@ end;
 procedure TLinkedList<T>.InternalInsertNodeBefore(
   const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>);
 begin
+  IncUnchecked(fVersion);
   newNode.fList := Self;
   newNode.fNext := node;
   newNode.fPrev := node.fPrev;
   node.fPrev.fNext := newNode;
   node.fPrev := newNode;
-  IncreaseVersion;
   Inc(fCount);
   Changed(newNode.Value, caAdded);
 end;
@@ -394,11 +386,11 @@ end;
 procedure TLinkedList<T>.InternalInsertNodeToEmptyList(
   const newNode: TLinkedListNode<T>);
 begin
+  IncUnchecked(fVersion);
   newNode.fList := Self;
   newNode.fNext := newNode;
   newNode.fPrev := newNode;
   fHead := newNode;
-  IncreaseVersion;
   Inc(fCount);
   Changed(newNode.Value, caAdded);
 end;
@@ -407,6 +399,7 @@ procedure TLinkedList<T>.InternalRemoveNode(const node: TLinkedListNode<T>);
 var
   item: T;
 begin
+  IncUnchecked(fVersion);
   item := node.Value;
   if node.fNext = node then
     fHead := nil
@@ -419,7 +412,6 @@ begin
   end;
   InvalidateNode(node);
   Dec(fCount);
-  IncreaseVersion;
   Changed(item, caRemoved);
 end;
 
