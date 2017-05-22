@@ -104,20 +104,24 @@ type
   ///   Provides a default implementation for the <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
   ///    interface.
   /// </summary>
-  TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>)
+  TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>,
+    IEqualityComparer<T>)
   private
-    class var fEqualityComparer: IEqualityComparer<T>;
     function GetEnumeratorNonGeneric: IEnumerator; override; final;
   {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
     function GetEnumeratorInternal: IEnumerator<T>;
     function IEnumerable<T>.GetEnumerator = GetEnumeratorInternal;
   {$ENDIF}{$ENDIF}
+  {$REGION 'IEqualityComparer<T>'}
+    function GetHashCode(const value: T): Integer; reintroduce;
+  protected
+    function Equals(const left, right: T): Boolean; reintroduce;
+  {$ENDREGION}
   protected
     fComparer: IComparer<T>;
   {$REGION 'Property Accessors'}
     function GetComparer: IComparer<T>;
     function GetElementType: PTypeInfo; override;
-    class function GetEqualityComparer: IEqualityComparer<T>; static;
   {$ENDREGION}
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload; virtual;
@@ -128,13 +132,10 @@ type
     function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
 
     property Comparer: IComparer<T> read GetComparer;
-    class property EqualityComparer: IEqualityComparer<T> read GetEqualityComparer;
   public
     constructor Create; overload; virtual;
     constructor Create(const comparer: IComparer<T>); overload;
     constructor Create(const comparer: TComparison<T>); overload;
-
-    class destructor Destroy;
 
     function GetEnumerator: IEnumerator<T>; virtual;
 
@@ -628,11 +629,6 @@ begin
   Create(IComparer<T>(PPointer(@comparer)^));
 end;
 
-class destructor TEnumerableBase<T>.Destroy;
-begin
-  fEqualityComparer := nil;
-end;
-
 function TEnumerableBase<T>.Aggregate(const func: TFunc<T, T, T>): T;
 var
   enumerator: IEnumerator<T>;
@@ -690,7 +686,7 @@ end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
 begin
-  Result := Contains(value, EqualityComparer);
+  Result := Contains(value, Self);
 end;
 
 function TEnumerableBase<T>.Contains(const value: T;
@@ -736,17 +732,15 @@ end;
 
 function TEnumerableBase<T>.EqualsTo(const values: array of T): Boolean;
 var
-  comparer: IEqualityComparer<T>;
   e: IEnumerator<T>;
   i: Integer;
 begin
-  comparer := EqualityComparer;
   e := GetEnumerator;
   i := 0;
 
   while e.MoveNext do
   begin
-    if not ((i < Length(values)) and comparer.Equals(e.Current, values[i])) then
+    if not ((i < Length(values)) and Equals(e.Current, values[i])) then
       Exit(False);
     Inc(i);
   end;
@@ -755,7 +749,18 @@ end;
 
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>): Boolean;
 begin
-  Result := EqualsTo(collection, EqualityComparer);
+  Result := EqualsTo(collection, Self);
+end;
+
+function TEnumerableBase<T>.Equals(const left, right: T): Boolean;
+begin
+  if TType.Kind<T> = tkClass then
+    if PObject(@left)^ = nil then
+      Result := PObject(@right)^ = nil
+    else
+      Result := PObject(@left).Equals(PObject(@right)^)
+  else
+    Result := fComparer.Compare(left, right) = 0;
 end;
 
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>;
@@ -877,14 +882,9 @@ begin
   Result := GetEnumerator;
 end;
 
-class function TEnumerableBase<T>.GetEqualityComparer: IEqualityComparer<T>;
+function TEnumerableBase<T>.GetHashCode(const value: T): Integer;
 begin
-  if not Assigned(fEqualityComparer) then
-    if TType.Kind<T> = tkClass then
-      IEqualityComparer<TObject>(fEqualityComparer) := TEqualityComparer<TObject>.Default
-    else
-      fEqualityComparer := TEqualityComparer<T>.Default;
-  Result := fEqualityComparer;
+  raise ENotSupportedException.Create('GetHashCode');
 end;
 
 function TEnumerableBase<T>.Last: T;
@@ -1956,7 +1956,6 @@ end;
 
 function TListBase<T>.IndexOf(const item: T; index, count: Integer): Integer;
 var
-  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1964,9 +1963,8 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 
-  comparer := EqualityComparer;
   for i := index to index + count - 1 do
-    if comparer.Equals(Items[i], item) then
+    if Equals(Items[i], item) then
       Exit(i);
   Result := -1;
 end;
@@ -2057,7 +2055,6 @@ end;
 function TListBase<T>.LastIndexOf(const item: T; index,
   count: Integer): Integer;
 var
-  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -2065,9 +2062,8 @@ begin
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
 {$ENDIF}
 
-  comparer := EqualityComparer;
   for i := index downto index - count + 1 do
-    if comparer.Equals(Items[i], item) then
+    if Equals(Items[i], item) then
       Exit(i);
   Result := -1;
 end;

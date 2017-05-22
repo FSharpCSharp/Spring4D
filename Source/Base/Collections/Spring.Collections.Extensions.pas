@@ -852,7 +852,6 @@ function TArrayIterator<T>.IndexOf(const item: T; index,
   count: Integer): Integer;
 {$IFDEF DELPHI2010}
 var
-  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -860,14 +859,13 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
 {$ENDIF}
 
-  comparer := EqualityComparer;
   for i := index to index + count - 1 do
-    if comparer.Equals(fValues[i], item) then
+    if Equals(fValues[i], item) then
       Exit(i);
   Result := -1;
 {$ELSE}
 begin
-  Result := TArray.IndexOf<T>(fValues, item, index, count, EqualityComparer);
+  Result := TArray.IndexOf<T>(fValues, item, index, count, Self);
 {$ENDIF}
 end;
 

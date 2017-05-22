@@ -31,6 +31,7 @@ interface
 uses
   Classes,
   Generics.Collections,
+  Generics.Defaults,
   TestFramework,
   Spring.TestUtils,
   Spring,
@@ -129,6 +130,15 @@ type
 
     procedure TestExtractAt;
     procedure TestExtractRange;
+  end;
+
+  TTestStringList = class(TTestCase)
+  private
+    SUT: IList<string>;
+  protected
+    procedure TearDown; override;
+  published
+    procedure TestCaseInsensitive;
   end;
 
   TTestSortedList = class(TTestCase)
@@ -527,7 +537,6 @@ type
 implementation
 
 uses
-  Generics.Defaults,
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
   StrUtils,
@@ -1181,6 +1190,23 @@ begin
   SUT.Add(1);
   SUT.Add(2);
   SUT.Add(3);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestStringList'}
+
+procedure TTestStringList.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestStringList.TestCaseInsensitive;
+begin
+  SUT := TCollections.CreateList<string>(TStringComparer.OrdinalIgnoreCase());
+  SUT.AddRange(['AAA', 'BBB', 'CCC']);
+  CheckTrue(SUT.Contains('aaa'));
 end;
 
 {$ENDREGION}

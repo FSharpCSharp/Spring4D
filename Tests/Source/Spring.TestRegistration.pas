@@ -90,6 +90,7 @@ begin
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
     TTestIntegerList.Suite,
+    TTestStringList.Suite,
     TTestSortedList.Suite,
     TTestStringIntegerDictionary.Suite,
     TTestEmptyStringIntegerDictionary.Suite,
