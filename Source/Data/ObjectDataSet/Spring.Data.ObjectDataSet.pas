@@ -612,6 +612,7 @@ end;
 
 procedure TObjectDataSet.InternalRefresh;
 begin
+  inherited InternalRefresh;
   if Sorted then
     InternalSetSort(Sort);
 end;
