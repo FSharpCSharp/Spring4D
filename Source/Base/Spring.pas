@@ -7157,7 +7157,10 @@ end;
 function Weak<T>.TryGetTarget(out target: T): Boolean;
 begin
   Result := Assigned(fReference) and Assigned(fTarget^);
-  target := PT(fTarget)^;
+  if Result then
+    target := PT(fTarget)^
+  else
+    target := Default(T);
 end;
 
 class operator Weak<T>.Implicit(const value: Shared<T>): Weak<T>;

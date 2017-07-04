@@ -549,6 +549,7 @@ type
   TWeakTest = class(TTestCase)
   published
     procedure TestIsAlive;
+    procedure TestTryGetTarget;
   end;
 
   TTestVirtualClass = class(TTestCase)
@@ -3309,6 +3310,15 @@ begin
   CheckTrue(weak.IsAlive);
   intf := nil;
   CheckFalse(weak.IsAlive);
+end;
+
+procedure TWeakTest.TestTryGetTarget;
+var
+  weak: Weak<IInterface>;
+  intf: IInterface;
+begin
+  CheckFalse(weak.TryGetTarget(intf));
+  CheckNull(intf);
 end;
 
 {$ENDREGION}
