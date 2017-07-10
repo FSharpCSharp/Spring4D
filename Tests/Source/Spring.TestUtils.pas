@@ -62,21 +62,11 @@ type
     procedure TearDown; override;
   end;
 
-procedure ProcessTestResult(const ATestResult: TTestResult);
-
 implementation
 
 uses
   Math,
   StrUtils;
-
-
-procedure ProcessTestResult(const ATestResult: TTestResult);
-begin
-{$IFNDEF AUTOREFCOUNT}
-  ATestResult.Free;
-{$ENDIF}
-end;
 
 {$IFNDEF DELPHIXE2_UP}
 function ReturnAddress: Pointer; inline;

@@ -37,8 +37,7 @@ uses
   LeakCheck.Utils,
  {$ENDIF LEAKCHECK}
   System.StartUpCopy,
-  FMX.Forms,
-  FMXTestRunner;
+  FMX.Forms;
 {$ELSE FMX}
  {$IFDEF LEAKCHECK}
 uses
