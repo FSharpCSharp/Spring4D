@@ -42,9 +42,7 @@ type
     fTargetName: string;
     fDependencies: TArray<ITarget>;
     fArguments: TArray<TValue>;
-    function GetDependencyCount: Integer;
     function GetTarget: TRttiMember;
-    function GetHasTarget: Boolean;
     function GetTargetName: string;
     function GetArguments: TArray<TValue>;
     function GetDependencies: TArray<ITarget>;
@@ -59,10 +57,8 @@ type
     procedure Initialize(const target: TRttiMember);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
 
-    property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
     property TargetName: string read GetTargetName;
-    property HasTarget: Boolean read GetHasTarget;
     property Arguments: TArray<TValue> read GetArguments;
     property Dependencies: TArray<ITarget> read GetDependencies;
   end;
@@ -190,16 +186,6 @@ end;
 function TInjectionBase.GetTargetName: string;
 begin
   Result := fTargetName;
-end;
-
-function TInjectionBase.GetHasTarget: Boolean;
-begin
-  Result := Assigned(fTarget);
-end;
-
-function TInjectionBase.GetDependencyCount: Integer;
-begin
-  Result := Length(fDependencies);
 end;
 
 {$ENDREGION}

@@ -102,15 +102,15 @@ begin
     begin
       Result := right.Target.Parent.AncestorCount - left.Target.Parent.AncestorCount;
       if Result = 0 then
-        Result := right.DependencyCount - left.DependencyCount;
+        Result := Length(right.Dependencies) - Length(left.Dependencies);
     end).TakeWhile(
     function(const injection: IInjection): Boolean
     begin
       if maxCount = -1 then
-        maxCount := injection.DependencyCount;
+        maxCount := Length(injection.Dependencies);
       if targetType = nil then
         targetType := injection.Target.Parent;
-      Result := (injection.DependencyCount = maxCount)
+      Result := (Length(injection.Dependencies) = maxCount)
         and (targetType = injection.Target.Parent);
     end).Where(
     function(const injection: IInjection): Boolean

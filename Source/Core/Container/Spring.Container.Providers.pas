@@ -175,9 +175,9 @@ begin
       winner := candidate;
       Break;
     end;
-    if candidate.DependencyCount > maxCount then
+    if Length(candidate.Dependencies) > maxCount then
       if TryHandle(context, candidate, winner) then
-        maxCount := winner.DependencyCount;
+        maxCount := Length(winner.Dependencies);
   end;
   Result := winner;
 end;

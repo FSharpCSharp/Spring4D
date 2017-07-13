@@ -216,10 +216,8 @@ type
   IInjection = interface
     ['{864AAA38-4F93-4BB9-AD8A-B796FCD2EFE0}']
   {$REGION 'Property Accessors'}
-    function GetDependencyCount: Integer;
     function GetTarget: TRttiMember;
     function GetTargetName: string;
-    function GetHasTarget: Boolean;
     function GetArguments: TArray<TValue>;
     function GetDependencies: TArray<ITarget>;
   {$ENDREGION}
@@ -229,10 +227,8 @@ type
     procedure InitializeDependencies(const parameterTypes: array of PTypeInfo);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
 
-    property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
     property TargetName: string read GetTargetName;
-    property HasTarget: Boolean read GetHasTarget;
     property Arguments: TArray<TValue> read GetArguments;
     property Dependencies: TArray<ITarget> read GetDependencies;
   end;

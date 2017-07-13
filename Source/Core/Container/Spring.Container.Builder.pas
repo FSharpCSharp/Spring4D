@@ -415,7 +415,7 @@ begin
   fHasNoTargetCondition :=
     function(const value: IInjection): Boolean
     begin
-      Result := not value.HasTarget;
+      Result := value.Target = nil;
     end;
 end;
 
