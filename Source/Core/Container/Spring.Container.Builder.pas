@@ -296,7 +296,7 @@ begin
     and not TMethodFilters.HasParameterFlags([pfVar, pfArray, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
   begin
-    injection := kernel.Injector.InjectConstructor(model);
+    injection := kernel.InjectionBuilder.InjectConstructor(model);
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
@@ -329,7 +329,7 @@ begin
   begin
     if not model.MethodInjections.TryGetFirst(injection,
       TInjectionFilters.ContainsMember(method)) then
-      injection := kernel.Injector.InjectMethod(model, method.Name);
+      injection := kernel.InjectionBuilder.InjectMethod(model, method.Name);
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
@@ -358,7 +358,7 @@ begin
   begin
     if not model.PropertyInjections.TryGetFirst(injection,
       TInjectionFilters.ContainsMember(prop)) then
-      injection := kernel.Injector.InjectProperty(model, prop.Name);
+      injection := kernel.InjectionBuilder.InjectProperty(model, prop.Name);
     injection.Initialize(prop);
     HandleInjectAttribute(prop, injection.Dependencies[0], argument);
     injection.InitializeArguments([argument]);
@@ -383,7 +383,7 @@ begin
   begin
     if not model.FieldInjections.TryGetFirst(injection,
       TInjectionFilters.ContainsMember(field)) then
-      injection := kernel.Injector.InjectField(model, field.Name);
+      injection := kernel.InjectionBuilder.InjectField(model, field.Name);
     injection.Initialize(field);
     HandleInjectAttribute(field, injection.Dependencies[0], argument);
     injection.InitializeArguments([argument]);

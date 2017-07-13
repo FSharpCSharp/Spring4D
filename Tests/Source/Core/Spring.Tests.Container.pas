@@ -1871,7 +1871,7 @@ var
   model: TComponentModel;
 begin
   model := fContainer.Registry.FindOne('service');
-  fContainer.Injector.InjectField(model, 'fNameService', 'service');
+  fContainer.InjectionBuilder.InjectField(model, 'fNameService', 'service');
 
   ExpectedException := ECircularDependencyException;
   inherited;
