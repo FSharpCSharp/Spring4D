@@ -539,13 +539,11 @@ end;
 function TContainer.Resolve(serviceType: PTypeInfo;
   const arguments: array of TValue): TValue;
 var
-  componentModel: TComponentModel;
   context: IContext;
   request: IRequest;
 begin
   CheckBuildRequired;
-  componentModel := Registry.FindDefault(serviceType);
-  context := TContext.Create(componentModel, arguments);
+  context := TContext.Create(nil, arguments);
   request := TRequest.Create(serviceType, context, nil, nil);
   Result := Resolver.Resolve(request);
 end;

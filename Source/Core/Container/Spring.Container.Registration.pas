@@ -83,10 +83,9 @@ type
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const serviceName: string): Boolean; overload;
     function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
-    function HasDefault(serviceType: PTypeInfo): Boolean;
+
     function FindOne(const serviceName: string): TComponentModel; overload;
     function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
-    function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
@@ -419,8 +418,8 @@ begin
         serviceType.TypeName])
     else
     begin
-      Result := FindDefault(serviceType);
-      if not Assigned(Result) then
+      if not (fDefaultRegistrations.TryGetValue(serviceType, Result)
+        or fServiceTypeMappings[serviceType].TryGetSingle(Result)) then
         raise EResolveException.CreateResFmt(@SNoDefaultFound, [
           serviceType.TypeName]);
     end;
@@ -443,17 +442,6 @@ end;
 function TComponentRegistry.GetOnChanged: ICollectionChangedEvent<TComponentModel>;
 begin
   Result := fOnChanged;
-end;
-
-function TComponentRegistry.FindDefault(
-  serviceType: PTypeInfo): TComponentModel;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(serviceType, 'serviceType');
-{$ENDIF}
-
-  if not fDefaultRegistrations.TryGetValue(serviceType, Result) then
-    fServiceTypeMappings[serviceType].TryGetSingle(Result);
 end;
 
 function TComponentRegistry.FindAll: IEnumerable<TComponentModel>;
@@ -507,12 +495,6 @@ begin
 
   Result := fServiceNameMappings.TryGetValue(serviceName, model)
     and model.HasService(serviceType);
-end;
-
-function TComponentRegistry.HasDefault(serviceType: PTypeInfo): Boolean;
-begin
-  Result := fDefaultRegistrations.ContainsKey(serviceType)
-    or (fServiceTypeMappings[serviceType].Count = 1);
 end;
 
 {$ENDREGION}

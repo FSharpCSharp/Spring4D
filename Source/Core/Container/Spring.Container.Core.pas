@@ -133,11 +133,9 @@ type
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const serviceName: string): Boolean; overload;
     function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
-    function HasDefault(serviceType: PTypeInfo): Boolean;
 
     function FindOne(const serviceName: string): TComponentModel; overload;
     function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
-    function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
 
