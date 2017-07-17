@@ -164,8 +164,8 @@ var
   i: Integer;
 begin
   for i := Low(parameterTypes) to High(parameterTypes) do
-    fDependencies[i] := TTarget.Create(
-      parameterTypes[i].RttiType, fDependencies[i].Target);
+    fDependencies[i] := TTarget.Create(fDependencies[i].Target,
+      parameterTypes[i].RttiType);
 end;
 
 function TInjectionBase.GetArguments: TArray<TValue>;
@@ -209,7 +209,7 @@ begin
   params := Target.AsMethod.GetParameters;
   SetLength(dependencies, Length(params));
   for i := Low(params) to High(params) do
-    dependencies[i] := TTarget.Create(params[i].ParamType, params[i]);
+    dependencies[i] := TTarget.Create(params[i], params[i].ParamType);
 end;
 
 procedure TConstructorInjection.DoInject(const instance: TValue;
@@ -234,7 +234,7 @@ procedure TPropertyInjection.InitializeDependencies(
   out dependencies: TArray<ITarget>);
 begin
   SetLength(dependencies, 1);
-  dependencies[0] := TTarget.Create(Target.AsProperty.PropertyType, Target);
+  dependencies[0] := TTarget.Create(Target, Target.AsProperty.PropertyType);
 end;
 
 procedure TPropertyInjection.DoInject(const instance: TValue;
@@ -265,7 +265,7 @@ begin
   params := Target.AsMethod.GetParameters;
   SetLength(dependencies, Length(params));
   for i := Low(params) to High(params) do
-    dependencies[i] := TTarget.Create(params[i].ParamType, params[i]);
+    dependencies[i] := TTarget.Create(params[i], params[i].ParamType);
 end;
 
 procedure TMethodInjection.DoInject(const instance: TValue;
@@ -290,7 +290,7 @@ procedure TFieldInjection.InitializeDependencies(
   out dependencies: TArray<ITarget>);
 begin
   SetLength(dependencies, 1);
-  dependencies[0] := TTarget.Create(Target.AsField.FieldType, Target);
+  dependencies[0] := TTarget.Create(Target, Target.AsField.FieldType);
 end;
 
 procedure TFieldInjection.DoInject(const instance: TValue;
