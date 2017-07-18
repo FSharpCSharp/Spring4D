@@ -930,6 +930,7 @@ begin
       Exit(True);
     end;
   end;
+  Result := False;
 end;
 
 {$ENDREGION}
