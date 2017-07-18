@@ -88,12 +88,14 @@ begin
       if i > 0 then
         sqlBuilder.Append(', ').AppendLine;
 
-      sqlBuilder.AppendFormat('%0:s %1:s %2:s %3:s %4:s', [
+      sqlBuilder.AppendFormat('%0:s %1:s %2:s %3:s %4:s %5:s', [
         GetEscapedFieldName(field),
         GetSQLDataTypeName(field),
         IfThen(cpNotNull in field.Properties, 'NOT NULL', 'NULL'),
         IfThen(field.IsIdentity, 'AUTO_INCREMENT'),
-        IfThen(cpPrimaryKey in field.Properties, GetPrimaryKeyDefinition(field))]);
+        IfThen(cpPrimaryKey in field.Properties, GetPrimaryKeyDefinition(field)),
+        IfThen(Trim(field.Description) <> '', 'COMMENT ''' + field.Description + '''')
+      ]);
     end;
 
     sqlBuilder.AppendLine.Append(')');
