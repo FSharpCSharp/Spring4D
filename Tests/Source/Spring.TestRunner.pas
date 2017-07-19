@@ -192,7 +192,7 @@ begin
   TestInsight.DUnit.RunRegisteredTests;
   ReportMemoryLeaksOnShutdown := True;
 {$ELSE}
-  {$IFDEF XMLOUTPUT}
+  {$IFDEF MSWINDOWS}
   if ParamCount > 0 then
     OutputFile := ParamStr(1);
   VSoft.DUnit.XMLTestRunner.RunRegisteredTests(OutputFile){$IFNDEF AUTOREFCOUNT}.Free{$ENDIF};
