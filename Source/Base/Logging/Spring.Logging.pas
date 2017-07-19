@@ -214,7 +214,7 @@ type
 
   {$REGION 'ILoggerBase'}
 
-  ILoggerBase = interface
+  ILoggerBase = interface(IInvokable)
     ['{2CACEE4B-631D-4B31-970C-7B82F49311B4}']
     function GetEnabled: Boolean;
     function GetEventTypes: TLogEventTypes;
