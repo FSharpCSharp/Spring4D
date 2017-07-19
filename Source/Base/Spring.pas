@@ -3048,7 +3048,7 @@ end;
 
 function GetVirtualMethod(const classType: TClass; const index: Integer): Pointer;
 begin
-  Result := PPointer(UIntPtr(classType) + UIntPtr(index * SizeOf(Pointer)))^;
+  Result := PPointer(IntPtr(classType) + IntPtr(index * SizeOf(Pointer)))^;
 end;
 
 type
