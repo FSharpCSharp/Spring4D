@@ -105,6 +105,10 @@ type
     procedure TestResolveComponentDoesCallOverriddenConstructor;
 
     procedure TestRecordConstructorNotConsidered;
+
+{$IFDEF DELPHIXE_UP}
+    procedure TestClassContainsAbstractMethods;
+{$ENDIF}
   end;
 
   // Same Service, Different Implementations
@@ -331,7 +335,11 @@ uses
   Spring.Collections,
   Spring.Container.Core,
   Spring.Container.Resolvers,
-  Spring.TestUtils;
+  Spring.TestUtils,
+{$IFDEF DELPHIXE_UP}
+  Spring.Mocking,
+{$ENDIF}
+  Spring.Logging;
 
 type
   TObjectAccess = class(TObject);
@@ -577,6 +585,26 @@ begin
 {$ENDIF}
   end;
 end;
+
+type
+  TAbstractMethodsTest = class
+  public
+    procedure FooBar; virtual; abstract;
+  end;
+
+{$IFDEF DELPHIXE_UP}
+procedure TTestSimpleContainer.TestClassContainsAbstractMethods;
+var
+  logger: Mock<ILogger>;
+begin
+  fContainer.Kernel.Logger := logger;
+  fContainer.RegisterType<TAbstractMethodsTest>;
+  fContainer.Build;
+
+  logger.Received(1).Warn(Arg.IsAny<string>);
+  Pass;
+end;
+{$ENDIF}
 
 procedure TTestSimpleContainer.TestSingleton;
 var

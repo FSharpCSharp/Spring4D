@@ -30,6 +30,7 @@ interface
 
 uses
   Rtti,
+  SysUtils,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -113,6 +114,11 @@ type
   end;
 
   TInterceptorInspector = class(TInspectorBase)
+  protected
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
+  end;
+
+  TAbstractMethodInspector = class(TInspectorBase)
   protected
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
@@ -556,6 +562,22 @@ begin
 {$ELSE}
 begin
 {$ENDIF}
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAbstractMethodInspector'}
+
+procedure TAbstractMethodInspector.DoProcessModel(const kernel: IKernel;
+  const model: TComponentModel);
+begin
+  if model.ComponentType.IsClass and model.ComponentType.Methods.Any(
+    function(const method: TRttiMethod): Boolean
+    begin
+      Result := method.IsAbstract;
+    end) then
+    kernel.Logger.Warn(Format('component type %s contains abstract methods', [model.ComponentTypeName]));
 end;
 
 {$ENDREGION}

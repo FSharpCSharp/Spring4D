@@ -348,7 +348,8 @@ begin
     TPropertyInspector.Create,
     TMethodInspector.Create,
     TFieldInspector.Create,
-    TInterceptorInspector.Create
+    TInterceptorInspector.Create,
+    TAbstractMethodInspector.Create
   );
   for inspector in inspectors do
     fBuilder.AddInspector(inspector);
