@@ -574,6 +574,13 @@ type
     ///   Tries to convert the stored value. Returns false when the conversion
     ///   is not possible.
     /// </summary>
+    function TryConvert(targetTypeInfo: PTypeInfo; out targetValue: TValue;
+      const formatSettings: TFormatSettings): Boolean; overload;
+
+    /// <summary>
+    ///   Tries to convert the stored value. Returns false when the conversion
+    ///   is not possible.
+    /// </summary>
     function TryConvert<T>(out targetValue: T): Boolean; overload;
 
     /// <summary>
@@ -5073,53 +5080,61 @@ end;
 
 {$REGION 'Conversion functions'}
 type
-  TConvertFunc = function(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+  TConvertFunc = function(const source: TValue; target: PTypeInfo;
+    out value: TValue; const formatSettings: TFormatSettings): Boolean;
 
-function ConvFail(const source: TValue; target: PTypeInfo; out value: TValue): Boolean; //FI:O804
+function ConvFail(const source: TValue; target: PTypeInfo; out value: TValue;
+  const formatSettings: TFormatSettings): Boolean; //FI:O804
 begin
   Result := False;
 end;
 
-function ConvClass2Class(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvClass2Class(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := source.TryCast(target, value);
 end;
 
-function ConvClass2Enum(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvClass2Enum(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := target = TypeInfo(Boolean);
   if Result then
     value := source.AsObject <> nil;
 end;
 
-function ConvFloat2Ord(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvFloat2Ord(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := Frac(source.AsExtended) = 0;
   if Result then
     value := TValue.FromOrdinal(target, Trunc(source.AsExtended));
 end;
 
-function ConvFloat2Str(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvFloat2Str(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   temp: TValue;
 begin
   if source.TypeInfo = TypeInfo(TDate) then
-    temp := DateToStr(source.AsExtended)
+    temp := DateToStr(source.AsExtended, formatSettings)
   else if source.TypeInfo = TypeInfo(TDateTime) then
-    temp := DateTimeToStr(source.AsExtended)
+    temp := DateTimeToStr(source.AsExtended, formatSettings)
   else if source.TypeInfo = TypeInfo(TTime) then
-    temp := TimeToStr(source.AsExtended)
+    temp := TimeToStr(source.AsExtended, formatSettings)
   else
-    temp := FloatToStr(source.AsExtended);
+    temp := FloatToStr(source.AsExtended, formatSettings);
   Result := temp.TryCast(target, value);
 end;
 
-function ConvIntf2Class(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvIntf2Class(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
-  Result := ConvClass2Class(source.AsInterface as TObject, target, value);
+  Result := ConvClass2Class(source.AsInterface as TObject, target, value, formatSettings);
 end;
 
-function ConvIntf2Intf(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvIntf2Intf(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   intf: IInterface;
 begin
@@ -5130,13 +5145,15 @@ begin
     value := TValue.Empty;
 end;
 
-function ConvOrd2Float(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvOrd2Float(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   value := TValue.FromFloat(target, source.AsOrdinal);
   Result := True;
 end;
 
-function ConvOrd2Ord(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvOrd2Ord(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   i: Int64;
 begin
@@ -5148,7 +5165,8 @@ begin
   Result := True;
 end;
 
-function ConvOrd2Str(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvOrd2Str(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   temp: TValue;
 begin
@@ -5156,7 +5174,8 @@ begin
   Result := temp.TryCast(target, value);
 end;
 
-function ConvRec2Meth(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvRec2Meth(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   Result := source.TypeInfo = TypeInfo(TMethod);
   if Result then
@@ -5166,13 +5185,15 @@ begin
   end
 end;
 
-function ConvStr2Enum(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvStr2Enum(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 begin
   value := TValue.FromOrdinal(target, GetEnumValue(target, source.AsString));
   Result := True;
 end;
 
-function ConvStr2Float(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvStr2Float(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   s: string;
   d: TDateTime;
@@ -5181,30 +5202,31 @@ begin
   s := source.AsString;
   if target = TypeInfo(TDateTime) then
   begin
-    Result := TryStrToDateTime(s, d);
+    Result := TryStrToDateTime(s, d, formatSettings);
     if Result then
       value := TValue.From<TDateTime>(d);
   end else
   if target = TypeInfo(TDate) then
   begin
-    Result := TryStrToDate(s, d);
+    Result := TryStrToDate(s, d, formatSettings);
     if Result then
       value := TValue.From<TDate>(d);
   end else
   if target = TypeInfo(TTime) then
   begin
-    Result := TryStrToTime(s, d);
+    Result := TryStrToTime(s, d, formatSettings);
     if Result then
       value := TValue.From<TTime>(d);
   end else
   begin
-    Result := TryStrToFloat(s, f);
+    Result := TryStrToFloat(s, f, formatSettings);
     if Result then
       value := TValue.FromFloat(target, f);
   end;
 end;
 
-function ConvStr2Ord(const source: TValue; target: PTypeInfo; out value: TValue): Boolean;
+function ConvStr2Ord(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   i: Int64;
 begin
@@ -5468,6 +5490,15 @@ const
 function TValueHelper.TryConvert(targetTypeInfo: PTypeInfo;
   out targetValue: TValue): Boolean;
 var
+  formatSettings: TFormatSettings;
+begin
+  formatSettings := TFormatSettings.Create;
+  Result := TryConvert(targetTypeInfo, targetValue, formatSettings);
+end;
+
+function TValueHelper.TryConvert(targetTypeInfo: PTypeInfo;
+  out targetValue: TValue; const formatSettings: TFormatSettings): Boolean;
+var
   value: TValue;
 begin
   {$IFDEF DELPHI2010}
@@ -5491,7 +5522,7 @@ begin
     Exit(True);
   end;
 
-  Result := Conversions[Kind, targetTypeInfo.Kind](Self, targetTypeInfo, targetValue);
+  Result := Conversions[Kind, targetTypeInfo.Kind](Self, targetTypeInfo, targetValue, formatSettings);
   if not Result then
   begin
     if TryGetNullableValue(value) and value.TryCast(targetTypeInfo, targetValue) then
@@ -5537,7 +5568,7 @@ begin
     end;
 
     {$IFNDEF DELPHI2010}
-    Result := TValueConverter.Default.TryConvertTo(Self, targetTypeInfo, targetValue);
+    Result := TValueConverter.Default.TryConvertTo(Self, targetTypeInfo, targetValue, TValue.From(formatSettings));
     {$ELSE}
     Result := False;
     {$ENDIf}
