@@ -51,7 +51,7 @@ type
     [TestCase('foo')]
     procedure TestParams(const s1, s2: string);
 
-    [TestCase('foo;bar;foobar')]
+    [TestCase('foo,bar,foobar')]
     function TestResult(const s1, s2: string): string;
 
     [TestCase(1, 2, 3)]
@@ -62,6 +62,15 @@ type
 
     [TestCase(TSelfTest)]
     procedure TestClass(c: TClass);
+
+    [TestCase('2017-07-31')]
+    procedure TestDate(d: TDate);
+
+    [TestCase('13:34:50.444')]
+    procedure TestTime(t: TTime);
+
+    [TestCase('2017-07-31T13:34:50')]
+    procedure TestDateTime(dt: TDateTime);
   end;
 
   TestData = class
@@ -104,6 +113,7 @@ type
 implementation
 
 uses
+  DateUtils,
   Rtti,
   SysUtils,
   TypInfo;
@@ -121,6 +131,16 @@ begin
   Result := x + y;
 end;
 
+procedure TSelfTest.TestDate(d: TDate);
+begin
+  Check(SameDate(d, EncodeDate(2017, 7, 31)));
+end;
+
+procedure TSelfTest.TestDateTime(dt: TDateTime);
+begin
+  Check(SameDateTime(dt, EncodeDateTime(2017, 7, 31, 13, 34, 50, 0)));
+end;
+
 procedure TSelfTest.TestEnum(value: TTestEnum; ordValue: Integer);
 begin
   CheckEquals(ordValue, Ord(value));
@@ -135,6 +155,11 @@ end;
 function TSelfTest.TestResult(const s1, s2: string): string;
 begin
   Result := s1 + s2;
+end;
+
+procedure TSelfTest.TestTime(t: TTime);
+begin
+  Check(SameTime(t, EncodeTime(13, 34, 50, 444)));
 end;
 
 {$ENDREGION}
