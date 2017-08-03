@@ -108,6 +108,7 @@ type
     fTypes: TArray<TRttiType>;
   protected
     function Clone: TIterator<T>; override;
+    procedure Dispose; override;
     procedure Start; override;
     function TryMoveNext(var current: T): Boolean; override;
   end;
@@ -910,10 +911,14 @@ begin
   Result := TRttiTypeIterator<T>.Create;
 end;
 
+procedure TRttiTypeIterator<T>.Dispose;
+begin
+  fTypes := nil;
+end;
+
 procedure TRttiTypeIterator<T>.Start;
 begin
   fTypes := fContext.GetTypes;
-  inherited;
 end;
 
 function TRttiTypeIterator<T>.TryMoveNext(var current: T): Boolean;

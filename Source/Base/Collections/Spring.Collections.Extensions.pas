@@ -1127,7 +1127,6 @@ end;
 
 procedure TWhereIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1145,7 +1144,6 @@ end;
 procedure TWhereIterator<T>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$IFNDEF DELPHI2010}
@@ -1182,7 +1180,6 @@ end;
 
 procedure TWhereIndexIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1202,7 +1199,6 @@ procedure TWhereIndexIterator<T>.Start;
 begin
   fIndex := -1;
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1229,7 +1225,6 @@ end;
 
 procedure TSkipIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1246,7 +1241,6 @@ procedure TSkipIterator<T>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
   fIndex := fCount;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1274,7 +1268,6 @@ end;
 
 procedure TSkipWhileIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1294,7 +1287,6 @@ end;
 procedure TSkipWhileIterator<T>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1322,7 +1314,6 @@ end;
 
 procedure TSkipWhileIndexIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1344,7 +1335,6 @@ procedure TSkipWhileIndexIterator<T>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
   fIndex := -1;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1371,7 +1361,6 @@ end;
 
 procedure TTakeIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1388,7 +1377,6 @@ end;
 procedure TTakeIterator<T>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1411,7 +1399,6 @@ end;
 
 procedure TTakeWhileIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1433,7 +1420,6 @@ end;
 procedure TTakeWhileIterator<T>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1478,7 +1464,6 @@ procedure TTakeWhileIndexIterator<T>.Start;
 begin
   fIndex := -1;
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1505,7 +1490,6 @@ end;
 
 procedure TConcatIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1531,10 +1515,7 @@ end;
 procedure TConcatIterator<T>.Start;
 begin
   if not fFlag then
-  begin
-    fEnumerator := fSource.GetEnumerator;
-    inherited Start;
-  end
+    fEnumerator := fSource.GetEnumerator
   else
     fEnumerator := fSecond.GetEnumerator;
 end;
@@ -1561,7 +1542,6 @@ end;
 
 procedure TReversedIterator<T>.Dispose;
 begin
-  inherited;
   fBuffer := nil;
 end;
 
@@ -1579,7 +1559,6 @@ procedure TReversedIterator<T>.Start;
 begin
   fBuffer := fSource.ToArray;
   fIndex := Length(fBuffer);
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1606,7 +1585,6 @@ end;
 
 procedure TDistinctIterator<T>.Dispose;
 begin
-  inherited;
   fSet := nil;
   fEnumerator := nil;
 end;
@@ -1630,7 +1608,6 @@ begin
   fSet := THashSet<T>.Create(fComparer);
 {$ENDIF}
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1658,7 +1635,6 @@ end;
 
 procedure TDistinctByIterator<T, TKey>.Dispose;
 begin
-  inherited;
   fSet := nil;
   fEnumerator := nil;
 end;
@@ -1682,7 +1658,6 @@ begin
   fSet := THashSet<TKey>.Create(fComparer);
 {$ENDIF}
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1764,7 +1739,6 @@ end;
 
 procedure TExceptIterator<T>.Dispose;
 begin
-  inherited;
   fSet := nil;
   fEnumerator := nil;
 end;
@@ -1789,7 +1763,6 @@ begin
 {$ENDIF}
   fSet.AddRange(fSecond);
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1823,7 +1796,6 @@ end;
 
 procedure TIntersectIterator<T>.Dispose;
 begin
-  inherited;
   fSet := nil;
   fEnumerator := nil;
 end;
@@ -1848,7 +1820,6 @@ begin
 {$ENDIF}
   fSet.AddRange(fSecond);
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1882,7 +1853,6 @@ end;
 
 procedure TUnionIterator<T>.Dispose;
 begin
-  inherited;
   fSet := nil;
   fEnumerator := nil;
 end;
@@ -1917,7 +1887,6 @@ begin
     fSet := THashSet<T>.Create(fComparer);
 {$ENDIF}
     fEnumerator := fSource.GetEnumerator;
-    inherited Start;
   end
   else
     fEnumerator := fSecond.GetEnumerator;
@@ -1948,7 +1917,6 @@ end;
 
 procedure TSelectIterator<TSource, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -1962,7 +1930,6 @@ end;
 procedure TSelectIterator<TSource, TResult>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -1991,7 +1958,6 @@ end;
 
 procedure TSelectIndexIterator<TSource, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -2011,7 +1977,6 @@ end;
 procedure TSelectIndexIterator<TSource, TResult>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -2405,7 +2370,6 @@ end;
 
 procedure TJoinIterator<TOuter, TInner, TKey, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
   FreeAndNil(fLookup);
 end;
@@ -2442,7 +2406,6 @@ procedure TJoinIterator<TOuter, TInner, TKey, TResult>.Start;
 begin
   fLookup := TLookup<TKey, TInner>.CreateForJoin(fInner, fInnerKeySelector, fComparer);
   fEnumerator := fOuter.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -2498,7 +2461,6 @@ end;
 
 procedure TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -2518,7 +2480,6 @@ procedure TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Start;
 begin
   fLookup := TLookup<TKey, TInner>.CreateForJoin(fInner, fInnerKeySelector, fComparer);
   fEnumerator := fOuter.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -2547,7 +2508,6 @@ end;
 
 procedure TSelectManyIterator<TSource, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -2578,7 +2538,6 @@ begin
   begin
     fEnumerator := fSource.GetEnumerator;
     fFlag := True;
-    inherited Start;
   end
   else
   begin
@@ -2615,7 +2574,6 @@ end;
 
 procedure TSelectManyIndexIterator<TSource, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
   fEnumerator2 := nil;
 end;
@@ -2648,7 +2606,6 @@ begin
     fIndex := -1;
     fEnumerator := fSource.GetEnumerator;
     fFlag := True;
-    inherited Start;
   end
   else
   begin
@@ -2690,7 +2647,6 @@ end;
 
 procedure TSelectManyIterator<TSource, TCollection, TResult>.Dispose;
 begin
-  inherited;
   fItem := Default(TSource);
   fEnumerator2 := nil;
   fEnumerator := nil;
@@ -2725,7 +2681,6 @@ begin
   begin
     fEnumerator := fSource.GetEnumerator;
     fFlag := True;
-    inherited Start;
   end
   else
   begin
@@ -2766,7 +2721,6 @@ end;
 
 procedure TSelectManyIndexIterator<TSource, TCollection, TResult>.Dispose;
 begin
-  inherited;
   fItem := Default(TSource);
   fEnumerator2 := nil;
   fEnumerator := nil;
@@ -2802,7 +2756,6 @@ begin
     fIndex := -1;
     fEnumerator := fSource.GetEnumerator;
     fFlag := True;
-    inherited Start;
   end
   else
   begin
@@ -3016,7 +2969,6 @@ end;
 
 procedure TOrderedIterator<T>.Dispose;
 begin
-  inherited;
   fValues := nil;
 end;
 
@@ -3034,7 +2986,6 @@ procedure TOrderedIterator<T>.Start;
 begin
   fValues := fSource.ToArray;
   TArray.Sort<T>(fValues, fComparer);
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -3065,7 +3016,6 @@ end;
 
 procedure TZipIterator<TFirst, TSecond, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator2 := nil;
   fEnumerator1 := nil;
 end;
@@ -3081,7 +3031,6 @@ procedure TZipIterator<TFirst, TSecond, TResult>.Start;
 begin
   fEnumerator1 := fFirst.GetEnumerator;
   fEnumerator2 := fSecond.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -3108,7 +3057,6 @@ end;
 
 procedure TDefaultIfEmptyIterator<T>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -3133,7 +3081,6 @@ end;
 procedure TDefaultIfEmptyIterator<T>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -3163,7 +3110,6 @@ end;
 
 procedure TExtremaByIterator<T, TKey>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
   fResult := nil;
 end;
@@ -3211,7 +3157,6 @@ begin
   end;
 
   fEnumerator := fResult.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -3231,7 +3176,6 @@ end;
 
 procedure TCastIterator<T, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -3257,7 +3201,6 @@ end;
 procedure TCastIterator<T, TResult>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}
@@ -3277,7 +3220,6 @@ end;
 
 procedure TOfTypeIterator<T, TResult>.Dispose;
 begin
-  inherited;
   fEnumerator := nil;
 end;
 
@@ -3304,7 +3246,6 @@ end;
 procedure TOfTypeIterator<T, TResult>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-  inherited Start;
 end;
 
 {$ENDREGION}

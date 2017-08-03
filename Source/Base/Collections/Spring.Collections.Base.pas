@@ -1392,8 +1392,6 @@ end;
 
 procedure TIteratorBase<T>.Dispose;
 begin
-  fCurrent := Default(T);
-  fState := STATE_FINISHED;
 end;
 
 function TIteratorBase<T>.MoveNext: Boolean;
@@ -1403,12 +1401,17 @@ begin
     STATE_RUNNING:
     begin
       if fState = STATE_ENUMERATOR then
+      begin
         Start;
+        fState := STATE_RUNNING;
+      end;
 
       if TryMoveNext(fCurrent) then
         Exit(True);
 
       Dispose;
+      fCurrent := Default(T);
+      fState := STATE_FINISHED;
     end;
   end;
   Result := False;
@@ -1416,7 +1419,6 @@ end;
 
 procedure TIteratorBase<T>.Start;
 begin
-  fState := STATE_RUNNING;
 end;
 
 {$ENDREGION}

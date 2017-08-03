@@ -696,7 +696,6 @@ end;
 
 procedure TDictionary<TKey, TValue>.TOrderedEnumerable.Dispose;
 begin
-  inherited Dispose;
   fSortedKeys := nil;
 end;
 
@@ -718,7 +717,6 @@ begin
   fSortedKeys := fDictionary.Keys.ToArray;
 {$ENDIF}
   TArray.Sort<TKey>(fSortedKeys);
-  inherited Start;
 end;
 
 function TDictionary<TKey, TValue>.TOrderedEnumerable.TryMoveNext(var current: TGenericPair): Boolean;
