@@ -482,7 +482,10 @@ end;
 
 function TDependencyModel.GetTargetTypeInfo: PTypeInfo;
 begin
-  Result := fTargetType.Handle;
+  if Assigned(fTargetType) then
+    Result := fTargetType.Handle
+  else
+    Result := nil;
 end;
 
 function TDependencyModel.GetTargetTypeName: string;

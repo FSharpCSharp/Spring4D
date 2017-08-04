@@ -260,6 +260,9 @@ var
   serviceType: PTypeInfo;
   componentModel: TComponentModel;
 begin
+  if dependency.TypeInfo = nil then
+    Exit(True);
+
   if CanResolveFromContext(context, dependency, argument) then
     Exit(True);
 
@@ -296,6 +299,9 @@ var
   componentModel: TComponentModel;
   instance: TValue;
 begin
+  if dependency.TypeInfo = nil then
+    Exit(TValue.Empty);
+
   if CanResolveFromContext(context, dependency, argument) then
     Exit(context.Resolve(context, dependency, argument));
 
