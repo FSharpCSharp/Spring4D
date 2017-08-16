@@ -98,7 +98,7 @@ uses
 
 constructor TVirtualTimeSchedulerBase<TAbsolute, TRelative>.Create;
 begin
-  Create(Default(TAbsolute), TComparer<TAbsolute>.Default);
+  Create(System.Default(TAbsolute), TComparer<TAbsolute>.Default);
 end;
 
 constructor TVirtualTimeSchedulerBase<TAbsolute, TRelative>.Create(

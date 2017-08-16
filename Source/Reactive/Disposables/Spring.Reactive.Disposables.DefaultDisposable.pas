@@ -33,34 +33,50 @@ uses
   Spring.Reactive;
 
 type
-  // TODO consider handcrafted IMT in Disposable.Empty for less overhead
-  TDefaultDisposable = class(TInterfaceBase, IDisposable)
-  strict private class var
-    fInstance: TDefaultDisposable;
+  TDefaultDisposable = record
+  private
+    class function GetInstance: IDisposable; static;
   public
-    class constructor Create;
-    class destructor Destroy;
-    procedure Dispose;
-    class property Instance: TDefaultDisposable read fInstance;
+    class property Instance: IDisposable read GetInstance;
   end;
 
 implementation
 
+function DefaultDisposable_QueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+begin
+  Result := E_NOINTERFACE;
+end;
+
+function DefaultDisposable_AddRef(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function DefaultDisposable_Release(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+procedure DefaultDisposable_Dispose(inst: Pointer);
+begin
+end;
+
+const
+  DefaultDisposable_Vtable: array[0..3] of Pointer =
+  (
+    @DefaultDisposable_QueryInterface,
+    @DefaultDisposable_AddRef,
+    @DefaultDisposable_Release,
+    @DefaultDisposable_Dispose
+  );
+  DefaultDisposable_Instance: Pointer = @DefaultDisposable_Vtable;
+
 
 {$REGION 'TDefaultDisposable'}
 
-class constructor TDefaultDisposable.Create;
+class function TDefaultDisposable.GetInstance: IDisposable;
 begin
-  fInstance := TDefaultDisposable.Create;
-end;
-
-class destructor TDefaultDisposable.Destroy;
-begin
-  fInstance.Free;
-end;
-
-procedure TDefaultDisposable.Dispose;
-begin
+  Pointer(Result) := @DefaultDisposable_Instance;
 end;
 
 {$ENDREGION}

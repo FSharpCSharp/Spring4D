@@ -31,18 +31,14 @@ interface
 uses
   Spring,
   Spring.Reactive,
-  Spring.Reactive.Concurrency.LocalScheduler;
+  Spring.Reactive.Concurrency.LocalScheduler,
+  Spring.Reactive.Concurrency.Scheduler;
 
 type
-  TDefaultScheduler = class(TLocalScheduler, ISchedulerPeriodic)
+  TDefaultScheduler = class(TLocalScheduler, IDefaultScheduler)
   private
-    class var fInstance: ISchedulerPeriodic;
-
-    // TODO move to ConcurrencyAbstractionLayerImpl
-    class function StartTimer(const action: Action<TValue>; const state: TValue;
-      const dueTime: TTimeSpan): IDisposable; static;
-    class function QueueUserWorkItem(const action: Action<TValue>;
-      const state: TValue): IDisposable; static;
+    class var fInstance: IDefaultScheduler;
+    class var fCAL: IConcurrencyAbstractionLayer;
   public
     class constructor Create;
     class destructor Destroy;
@@ -59,7 +55,7 @@ type
     function SchedulePeriodic(const state: TValue; const period: TTimeSpan;
       const action: Func<TValue, TValue>): IDisposable; overload;
 
-    class property Instance: ISchedulerPeriodic read fInstance;
+    class property Instance: IDefaultScheduler read fInstance;
   end;
 
 implementation
@@ -71,6 +67,7 @@ uses
   Classes,
   Threading,
 {$ENDIF}
+  Spring.Reactive.Concurrency.ConcurrencyAbstractionLayer,
   Spring.Reactive.Disposables,
   Spring.Reactive.Internal.Stubs;
 
@@ -80,6 +77,7 @@ uses
 class constructor TDefaultScheduler.Create;
 begin
   fInstance := TDefaultScheduler.Create;
+  fCAL := TConcurrencyAbstractionLayer.Create; // TODO move this somewhere else to make it pluggable
 end;
 
 class destructor TDefaultScheduler.Destroy;
@@ -120,122 +118,6 @@ begin
     end);
 end;
 
-// TODO move into own unit
-type
-  TTimer = class(TDisposableObject)
-  private
-    fAction: Action<TValue>;
-    fState: TValue;
-    fTimer: TThread;
-    fEvent: TEvent;
-  public
-    constructor Create(const action: Action<TValue>; const state: TValue;
-      const dueTime: TTimeSpan);
-    destructor Destroy; override;
-    procedure Dispose; override;
-  end;
-
-  TPeriodicTimer = class(TDisposableObject)
-  private
-    fAction: Action;
-    fTimer: TThread;
-  public
-    constructor Create(const action: Action; const period: TTimeSpan);
-    destructor Destroy; override;
-    procedure Dispose; override;
-  end;
-
-{ TTimer }
-
-constructor TTimer.Create(const action: Action<TValue>; const state: TValue;
-  const dueTime: TTimeSpan);
-var
-  _dueTime: TTimeSpan;
-  caller: TThread;
-begin
-  inherited Create;
-  fAction := action;
-  fState := state;
-  _dueTime := dueTime;
-  fEvent := TEvent.Create(nil, True, False, '');
-  caller := TThread.CurrentThread;
-
-  // TODO: implement this using a timer - actions need to occur on the same thread that caused them
-  fTimer :=
-    TThread.CreateAnonymousThread(
-      procedure
-      begin
-        if fEvent.WaitFor(_dueTime) = wrTimeout then
-          if Assigned(fAction) then
-            TThread.Synchronize(caller, procedure begin fAction(fState); end);
-      end);
-  fTimer.FreeOnTerminate := False;
-  fTimer.Start;
-end;
-
-destructor TTimer.Destroy;
-begin
-  Dispose;
-  inherited;
-end;
-
-procedure TTimer.Dispose;
-begin
-  if Assigned(fEvent) then
-  begin
-    fEvent.SetEvent;
-    fAction := nil;//Stubs.Nop;
-//    fTimer.Terminate;
-    FreeAndNil(fTimer);
-    fEvent.Free;
-    fEvent := nil;
-  end;
-  inherited Dispose;
-end;
-
-{ TPeriodicTimer }
-
-constructor TPeriodicTimer.Create(const action: Action;
-  const period: TTimeSpan);
-var
-  _period: TTimeSpan;
-  caller: TThread;
-begin
-  inherited Create;
-  fAction := action;
-  _period := period;
-  caller := TThread.CurrentThread;
-  fTimer :=
-    TThread.CreateAnonymousThread(
-      procedure
-      begin
-        while Assigned(fAction) do
-        begin
-          TThread.Sleep(_period);
-          if Assigned(fAction) then
-            TThread.Synchronize(caller, procedure begin fAction(); end);
-        end;
-      end);
-  fTimer.FreeOnTerminate := False;
-  fTimer.Start;
-end;
-
-destructor TPeriodicTimer.Destroy;
-begin
-  Dispose;
-  inherited;
-end;
-
-procedure TPeriodicTimer.Dispose;
-begin
-  if Assigned(fTimer) then
-  begin
-    fAction := nil;//Stubs.Nop;
-    FreeAndNil(fTimer);
-  end;
-  inherited Dispose;
-end;
-
 function TDefaultScheduler.Schedule(const state: TValue;
   const action: Func<IScheduler, TValue, IDisposable>): IDisposable;
 var
@@ -248,7 +130,7 @@ begin
   _state := state;
   d := TSingleAssignmentDisposable.Create;
 
-  cancel := QueueUserWorkItem(
+  cancel := fCAL.QueueUserWorkItem(
     procedure(const _: TValue)
     begin
       if not d.IsDisposed then
@@ -276,7 +158,7 @@ begin
 
   d := TSingleAssignmentDisposable.Create;
 
-  cancel := StartTimer(
+  cancel := fCAL.StartTimer(
     procedure(const _: TValue)
     var
       res: IDisposable;
@@ -298,10 +180,13 @@ var
   state1: TValue;
   cancel: IDisposable;
 begin
+  Guard.CheckRange(period >= TTimeSpan.Zero, 'period');
+  Guard.CheckNotNull(Assigned(action), 'action');
+
   // guard
 
   state1 := state;
-  cancel := TPeriodicTimer.Create(
+  cancel := fCAL.StartPeriodicTimer(
     procedure
     begin
       state1 := action(state1);
@@ -313,35 +198,6 @@ begin
       cancel.Dispose;
     end);
 end;
-
-class function TDefaultScheduler.StartTimer(const action: Action<TValue>;
-  const state: TValue; const dueTime: TTimeSpan): IDisposable;
-begin
-  Result := TTimer.Create(action, state, Normalize(dueTime));
-end;
-
-class function TDefaultScheduler.QueueUserWorkItem(const action: Action<TValue>;
-  const state: TValue): IDisposable;
-var
-  _state: TValue;
-begin
-  _state := state;
-{$IFDEF DELPHIXE7_UP}
-  TThreadPool.Default.QueueWorkItem(
-    procedure
-    begin
-      action(_state);
-    end);
-{$ELSE}
-  TThread.CreateAnonymousThread(
-    procedure
-    begin
-      action(_state);
-    end).Start;
-{$ENDIF}
-  Result := Disposable.Empty;
-end;
-
 
 {$ENDREGION}
 

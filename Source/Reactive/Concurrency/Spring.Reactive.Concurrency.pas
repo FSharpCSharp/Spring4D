@@ -24,80 +24,18 @@
 
 {$I Spring.inc}
 
-unit Spring.Reactive.Disposables.BooleanDisposable;
+unit Spring.Reactive.Concurrency;
 
 interface
 
 uses
-  Spring.Reactive;
+  Spring,
+  Spring.Reactive,
+  Spring.Reactive.Concurrency.Scheduler;
 
 type
-  TBooleanDisposable = class(TInterfacedObject, IDisposable, ICancelable)
-  private
-    fIsDisposed: Boolean;
-    function GetIsDisposed: Boolean;
-    class function GetTrue: ICancelable; static;
-  public
-    procedure Dispose;
-    class property True: ICancelable read GetTrue;
-  end;
+  TScheduler = Spring.Reactive.Concurrency.Scheduler.TScheduler;
 
 implementation
-
-function BooleanDisposable_QueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
-begin
-  Result := E_NOINTERFACE;
-end;
-
-function BooleanDisposable_AddRef(inst: Pointer): Integer; stdcall;
-begin
-  Result := -1;
-end;
-
-function BooleanDisposable_Release(inst: Pointer): Integer; stdcall;
-begin
-  Result := -1;
-end;
-
-procedure BooleanDisposable_Dispose(inst: Pointer);
-begin
-end;
-
-function BooleanDisposable_GetIsDisposed(inst: Pointer): Boolean;
-begin
-  Result := True;
-end;
-
-const
-  BooleanDisposable_Vtable: array[0..4] of Pointer =
-  (
-    @BooleanDisposable_QueryInterface,
-    @BooleanDisposable_AddRef,
-    @BooleanDisposable_Release,
-    @BooleanDisposable_Dispose,
-    @BooleanDisposable_GetIsDisposed
-  );
-  BooleanDisposable_Instance: Pointer = @BooleanDisposable_Vtable;
-
-
-{$REGION 'TBooleanDisposable'}
-
-procedure TBooleanDisposable.Dispose;
-begin
-  fIsDisposed := System.True;
-end;
-
-function TBooleanDisposable.GetIsDisposed: Boolean;
-begin
-  Result := fIsDisposed;
-end;
-
-class function TBooleanDisposable.GetTrue: ICancelable;
-begin
-  Pointer(Result) := @BooleanDisposable_Instance;
-end;
-
-{$ENDREGION}
-
 
 end.

@@ -120,7 +120,9 @@
         <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.AnonymousObservable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.AnonymousObserver.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.AsyncLock.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ConcurrencyAbstractionLayer.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.CurrentThreadScheduler.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.DefaultScheduler.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ImmediateScheduler.pas"/>

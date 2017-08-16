@@ -33,13 +33,15 @@ uses
   Spring.Reactive;
 
 type
+  IDefaultScheduler = interface(ISchedulerPeriodic)
+  end;
+
   ICurrentThreadScheduler = interface(IScheduler)
     function GetScheduleRequired: Boolean;
     property ScheduleRequired: Boolean read GetScheduleRequired;
   end;
 
   IImmediateScheduler = interface(IScheduler)
-
   end;
 
   TScheduler = class(TInterfacedObject)
@@ -50,6 +52,7 @@ type
     class function GetCurrentThread: ICurrentThreadScheduler; static;
     class function GetImmediate: IImmediateScheduler; static;
     class function GetNow: TDateTime; static;
+    class function GetDefault: IDefaultScheduler; static;
 
     type
       TPair<T1,T2> = record
@@ -82,6 +85,7 @@ type
       const action: Action<TValue, Action<TValue, TTimeSpan>>): IDisposable; overload;
 
     class property CurrentThread: ICurrentThreadScheduler read GetCurrentThread;
+    class property Default: IDefaultScheduler read GetDefault;
     class property Immediate: IImmediateScheduler read GetImmediate;
     class property Now: TDateTime read GetNow;
   end;
@@ -91,6 +95,7 @@ implementation
 uses
   SysUtils,
   Spring.Reactive.Concurrency.CurrentThreadScheduler,
+  Spring.Reactive.Concurrency.DefaultScheduler,
   Spring.Reactive.Concurrency.ImmediateScheduler,
   Spring.Reactive.Disposables;
 
@@ -100,6 +105,11 @@ uses
 class function TScheduler.GetCurrentThread: ICurrentThreadScheduler;
 begin
   Result := TCurrentThreadScheduler.Instance;
+end;
+
+class function TScheduler.GetDefault: IDefaultScheduler;
+begin
+  Result := TDefaultScheduler.Instance;
 end;
 
 class function TScheduler.GetImmediate: IImmediateScheduler;
