@@ -242,6 +242,11 @@ type
       const onError: Action<Exception>;
       const onCompleted: Action): IDisposable; overload;
 
+    // "extension" methods - for concurrency (see Observable.Concurrency.cs)
+    function ObserveOn(const scheduler: IScheduler): IObservable<T>;
+    function SubscribeOn(const scheduler: IScheduler): IObservable<T>;
+    // TODO: consider overloads for some synchronization context like in C#?
+    // TODO: consider Synchronize method
 
     // "extension" methods for reducing
     function Distinct: IObservable<T>;

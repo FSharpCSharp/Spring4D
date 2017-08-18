@@ -37,6 +37,7 @@ uses
   Spring.Reactive.Disposables.CompositeDisposable,
   Spring.Reactive.Disposables.DefaultDisposable,
   Spring.Reactive.Disposables.RefCountDisposable,
+  Spring.Reactive.Disposables.ScheduledDisposable,
   Spring.Reactive.Disposables.SerialDisposable,
   Spring.Reactive.Disposables.SingleAssignmentDisposable,
   Spring.Reactive.Disposables.StableCompositeDisposable;
@@ -47,6 +48,7 @@ type
   TCompositeDisposable = Spring.Reactive.Disposables.CompositeDisposable.TCompositeDisposable;
   TDefaultDisposable = Spring.Reactive.Disposables.DefaultDisposable.TDefaultDisposable;
   TRefCountDisposable = Spring.Reactive.Disposables.RefCountDisposable.TRefCountDisposable;
+  TScheduledDisposable = Spring.Reactive.Disposables.ScheduledDisposable.TScheduledDisposable;
   TSerialDisposable = Spring.Reactive.Disposables.SerialDisposable.TSerialDisposable;
   TSingleAssignmentDisposable = Spring.Reactive.Disposables.SingleAssignmentDisposable.TSingleAssignmentDisposable;
   TStableCompositeDisposable = Spring.Reactive.Disposables.StableCompositeDisposable.TStableCompositeDisposable;

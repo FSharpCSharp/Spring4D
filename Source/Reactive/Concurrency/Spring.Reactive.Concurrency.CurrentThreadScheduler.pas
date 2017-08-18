@@ -65,6 +65,7 @@ type
 implementation
 
 uses
+  Spring.Reactive.Concurrency.ConcurrencyAbstractionLayer,
   Spring.Reactive.Concurrency.ScheduledItem,
   Spring.Reactive.Disposables;
 
@@ -80,9 +81,8 @@ end;
 
 class destructor TCurrentThreadScheduler.Destroy;
 begin
-  fClocks := nil;
-  fQueues := nil;
-  fInstance := nil;
+  // need to be shut down the thread pool to avoid trouble with any already finalized stuff
+  TConcurrencyAbstractionLayer.Shutdown;
 end;
 
 function TCurrentThreadScheduler.GetScheduleRequired: Boolean;

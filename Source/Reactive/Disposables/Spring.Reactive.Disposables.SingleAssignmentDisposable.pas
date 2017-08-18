@@ -48,8 +48,7 @@ type
 implementation
 
 uses
-  Spring.Reactive.Disposables.BooleanDisposable,
-  Spring.Reactive.Disposables.DefaultDisposable;
+  Spring.Reactive.Disposables;
 
 
 {$REGION 'TSingleAssignmentDisposable'}

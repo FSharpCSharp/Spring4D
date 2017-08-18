@@ -105,7 +105,7 @@ var
 begin
   scheduler := TTestScheduler.Create;
   lifetime := scheduler;
-  xs := scheduler.CreateHotObservable<Integer>([
+  xs := scheduler.CreateHotObservable([
     OnNext(70, 1),
     OnNext(110, 2),
     OnNext(220, 3),
@@ -213,7 +213,7 @@ begin
   scheduler := TTestScheduler.Create;
   lifetime := scheduler;
 
-  xs := scheduler.CreateHotObservable<Integer>([
+  xs := scheduler.CreateHotObservable([
     OnNext(70, 1),
     OnNext(110, 2),
     OnNext(220, 3),
@@ -323,7 +323,7 @@ begin
 
   ex := Exception.Create('');
 
-  xs := scheduler.CreateHotObservable<Integer>([
+  xs := scheduler.CreateHotObservable([
     OnNext(70, 1),
     OnNext(110, 2),
     OnNext(220, 3),
@@ -430,7 +430,7 @@ begin
   scheduler := TTestScheduler.Create;
   lifetime := scheduler;
 
-  xs := scheduler.CreateHotObservable<Integer>([
+  xs := scheduler.CreateHotObservable([
     OnCompleted<Integer>(630),
     OnNext(640, 9),
     OnCompleted<Integer>(650),
@@ -565,7 +565,7 @@ var
   subscription1,
   subscription2,
   subscription3: IDisposable;
-  ex: Exception;
+  ex: Shared<Exception>;
 begin
   scheduler := TTestScheduler.Create;
   lifetime := scheduler;
@@ -648,8 +648,6 @@ begin
     OnNext(450, 4),
     OnNext(550, 5)
   ]));
-
-  ex.Free;
 end;
 
 procedure SubjectTest.Subject_Create_ArgumentChecking;
@@ -686,7 +684,7 @@ var
   v: IObserver<Integer>;
   o: IObservable<Integer>;
   s: ISubject<Integer, Integer>;
-  e: Exception;
+  e: Shared<Exception>;
 begin
   _x := 0;
   _ex := nil;
@@ -731,12 +729,8 @@ begin
       s.OnError(nil)
     end);
   e := Exception.Create('');
-  try
-    s.OnError(e);
-    CheckSame(e, _ex);
-  finally
-    e.Free;
-  end;
+  s.OnError(e);
+  CheckSame(e, _ex);
 
   s.OnCompleted;
   CheckFalse(done);
@@ -752,7 +746,7 @@ var
   v: IObserver<Integer>;
   o: IObservable<Integer>;
   s: ISubject<Integer>;
-  e: Exception;
+  e: Shared<Exception>;
 begin
   _x := 0;
   _ex := nil;
@@ -797,12 +791,8 @@ begin
       s.OnError(nil)
     end);
   e := Exception.Create('');
-  try
-    s.OnError(e);
-    CheckSame(e, _ex);
-  finally
-    e.Free;
-  end;
+  s.OnError(e);
+  CheckSame(e, _ex);
 
   s.OnCompleted;
   CheckFalse(done);

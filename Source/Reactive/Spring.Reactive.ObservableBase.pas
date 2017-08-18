@@ -48,8 +48,13 @@ type
       const onCompleted: Action): IDisposable; overload;
     function Subscribe(const observer: IObserver<T>): IDisposable; overload; virtual;
     function SubscribeCore(const observer: IObserver<T>): IDisposable; virtual;
+
+    function ObserveOn(const scheduler: IScheduler): IObservable<T>;
+    function SubscribeOn(const scheduler: IScheduler): IObservable<T>;
+
     constructor Create;
   public
+    destructor Destroy; override;
     function All(const predicate: Predicate<T>): IObservable<Boolean>;
     function Any: IObservable<Boolean>; overload;
     function Any(const predicate: Predicate<T>): IObservable<Boolean>; overload;
@@ -77,6 +82,7 @@ implementation
 
 uses
   SyncObjs,
+  Spring.Reactive.AnonymousObservable,
   Spring.Reactive.AnonymousObserver,
   Spring.Reactive.Concurrency.CurrentThreadScheduler,
   Spring.Reactive.Concurrency.SchedulerDefaults,
@@ -96,7 +102,8 @@ uses
   Spring.Reactive.Observable.TakeWhile,
   Spring.Reactive.Observable.Throttle,
   Spring.Reactive.Observable.Where,
-  Spring.Reactive.Observable.Window;
+  Spring.Reactive.Observable.Window,
+  Spring.Reactive.Disposables;
 
 
 {$REGION 'TObservableBase<T>'}
@@ -113,7 +120,7 @@ begin
   // TODO TAutoDetachObserver<T>.Create(observer)
   if TCurrentThreadScheduler.IsScheduleRequired then
   begin
-    TCurrentThreadScheduler.Instance.Schedule(TValue.From(observer), ScheduledSubscribe);
+    Result := TCurrentThreadScheduler.Instance.Schedule(TValue.From(observer), ScheduledSubscribe);
   end
   else
   begin
@@ -125,6 +132,33 @@ function TObservableBase<T>.SubscribeCore(
   const observer: IObserver<T>): IDisposable;
 begin
   // abstract in .NET
+end;
+
+function TObservableBase<T>.SubscribeOn(
+  const scheduler: IScheduler): IObservable<T>;
+begin
+  Guard.CheckNotNull(scheduler, 'scheduler');
+
+  Result := TAnonymousObservable<T>.Create(
+    function(const observer: IObserver<T>): IDisposable
+    var
+      m: ISingleAssignmentDisposable;
+      d: ISerialDisposable;
+    begin
+      m := TSingleAssignmentDisposable.Create;
+      d := TSerialDisposable.Create;
+      d.Disposable := m;
+
+      Self._AddRef;
+      m.Disposable := scheduler.Schedule(
+        procedure
+        begin
+          d.Disposable := TScheduledDisposable.Create(scheduler, Subscribe(observer)); // TODO: check if SubscribeCore is the correct one
+          Self._Release;
+        end);
+
+      Result := d;
+    end);
 end;
 
 function TObservableBase<T>.ScheduledSubscribe(const _: IScheduler;
@@ -182,6 +216,12 @@ function TObservableBase<T>.Concat(
   const second: IObservable<T>): IObservable<T>;
 begin
   Result := TConcat<T>.Create([Self, second]);
+end;
+
+destructor TObservableBase<T>.Destroy;
+begin
+
+  inherited;
 end;
 
 function TObservableBase<T>.Distinct: IObservable<T>;
@@ -242,6 +282,12 @@ end;
 function TObservableBase<T>.IgnoreElements: IObservable<T>;
 begin
   Result := TIgnoreElements<T>.Create(Self);
+end;
+
+function TObservableBase<T>.ObserveOn(
+  const scheduler: IScheduler): IObservable<T>;
+begin
+  raise ENotImplementedException.Create('ObserveOn');
 end;
 
 function TObservableBase<T>.Sample(const interval: TTimeSpan): IObservable<T>;

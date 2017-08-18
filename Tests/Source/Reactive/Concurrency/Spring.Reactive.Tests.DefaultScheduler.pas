@@ -34,7 +34,8 @@ uses
 type
   DefaultSchedulerTest = class(TTestCase)
   published
-//    procedure Schedule_ArgumentChecking;
+    procedure Schedule_ArgumentChecking;
+    procedure Get_Now;
     procedure ScheduleAction;
     procedure ScheduleActionDue;
     procedure ScheduleActionCancel;
@@ -44,12 +45,29 @@ type
 implementation
 
 uses
+  DateUtils,
+  SysUtils,
   Utilities,
   Spring,
   Spring.Reactive,
-  Spring.Reactive.Concurrency.DefaultScheduler;
+  Spring.Reactive.Concurrency.DefaultScheduler,
+  Spring.TestUtils;
 
 { DefaultSchedulerTest }
+
+procedure DefaultSchedulerTest.Schedule_ArgumentChecking;
+begin
+  CheckException(EArgumentNilException, procedure begin TDefaultScheduler.Instance.Schedule(42, Func<IScheduler,TValue,IDisposable>(nil)) end);
+//  CheckException(EArgumentNilException, procedure begin TDefaultScheduler.Instance.Schedule(42, TDateTimeOffset.Now, Func<IScheduler,TValue,IDisposable>(nil)) end);
+  CheckException(EArgumentNilException, procedure begin TDefaultScheduler.Instance.Schedule(42, TTimeSpan.Zero, Func<IScheduler,TValue,IDisposable>(nil)) end);
+  CheckException(EArgumentNilException, procedure begin TDefaultScheduler.Instance.SchedulePeriodic(42, TTimeSpan.FromSeconds(1), nil) end);
+  CheckException(EArgumentOutOfRangeException, procedure begin TDefaultScheduler.Instance.SchedulePeriodic(42, TTimeSpan.FromSeconds(-1), function(const _: TValue): TValue begin Result := _ end) end);
+end;
+
+procedure DefaultSchedulerTest.Get_Now;
+begin
+  CheckTrue(SecondsBetween(TDefaultScheduler.Instance.Now, Now) < 1);
+end;
 
 procedure DefaultSchedulerTest.ScheduleAction;
 var

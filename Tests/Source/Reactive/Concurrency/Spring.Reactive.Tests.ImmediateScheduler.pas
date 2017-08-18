@@ -37,11 +37,12 @@ type
     procedure Immediate_Now;
     procedure Immediate_ScheduleAction;
     procedure Immediate_ScheduleActionError;
+    procedure Immediate_ArgumentChecking;
     procedure Immediate_Simple1;
 //    procedure Immediate_Simple2; // TODO: implement TDateTimeOffset overloads
     procedure Immediate_Simple3;
     procedure Immediate_Recursive1;
-//    procedure Immediate_Recursive2;
+//    procedure Immediate_Recursive2; // TODO: implement TDateTimeOffset overloads
     procedure Immediate_Recursive3;
     procedure Immediate_ArgumentChecking_More;
     procedure Immediate_ScheduleActionDue;
@@ -101,6 +102,13 @@ begin
     on e: Exception do
       CheckSame(e, ex);
   end;
+end;
+
+procedure ImmediateSchedulerTest.Immediate_ArgumentChecking;
+begin
+  CheckException(EArgumentNilException, procedure begin TScheduler.Immediate.Schedule(42, Func<IScheduler,TValue,IDisposable>(nil)) end);
+//  CheckException(EArgumentNilException, procedure begin TScheduler.Immediate.Schedule(42, TDateTimeOffset.Now, Func<IScheduler,TValue,IDisposable>(nil)) end);
+  CheckException(EArgumentNilException, procedure begin TScheduler.Immediate.Schedule(42, TTimeSpan.Zero, Func<IScheduler,TValue,IDisposable>(nil)) end);
 end;
 
 procedure ImmediateSchedulerTest.Immediate_Simple1;
@@ -260,6 +268,7 @@ begin
       id := TThread.CurrentThread.ThreadID;
       ran := True;
     end);
+  CheckEquals(TThread.Current.ThreadID, id);
   CheckTrue(ran);
   CheckTrue(sw.ElapsedMilliseconds > 180);
 end;

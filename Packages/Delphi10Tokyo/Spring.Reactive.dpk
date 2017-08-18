@@ -55,6 +55,7 @@ contains
   Spring.Reactive.Disposables.CompositeDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.CompositeDisposable.pas',
   Spring.Reactive.Disposables.DefaultDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.DefaultDisposable.pas',
   Spring.Reactive.Disposables.RefCountDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.RefCountDisposable.pas',
+  Spring.Reactive.Disposables.ScheduledDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.ScheduledDisposable.pas',
   Spring.Reactive.Disposables.SerialDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SerialDisposable.pas',
   Spring.Reactive.Disposables.SingleAssignmentDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SingleAssignmentDisposable.pas',
   Spring.Reactive.Disposables.StableCompositeDisposable in '..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.StableCompositeDisposable.pas',

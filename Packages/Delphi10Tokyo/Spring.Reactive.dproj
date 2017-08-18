@@ -138,6 +138,7 @@
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.CompositeDisposable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.DefaultDisposable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.RefCountDisposable.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.ScheduledDisposable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SerialDisposable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SingleAssignmentDisposable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.StableCompositeDisposable.pas"/>

@@ -52,8 +52,11 @@ type
       const created, subscribed, disposed: Int64): ITestableObserver<T>; overload;
     function Start<T>(const create: Func<IObservable<T>>): ITestableObserver<T>; overload;
 
-    function CreateHotObservable<T>(const messages: array of TRecorded<INotification<T>>): ITestableObservable<T>;
+//    function CreateHotObservable<T>(const messages: array of TRecorded<INotification<T>>): ITestableObservable<T>; overload;
     function CreateObserver<T>: ITestableObserver<T>;
+
+    // infered overload for Integer
+    function CreateHotObservable(const messages: array of TRecorded<INotification<Integer>>): ITestableObservable<Integer>; overload;
   end;
 
 implementation
@@ -143,11 +146,18 @@ begin
   Result := Start<T>(create, TReactiveTest.Created, TReactiveTest.Subscribed, TReactiveTest.Disposed);
 end;
 
-function TTestScheduler.CreateHotObservable<T>(
-  const messages: array of TRecorded<INotification<T>>): ITestableObservable<T>;
+//function TTestScheduler.CreateHotObservable<T>(
+//  const messages: array of TRecorded<INotification<T>>): ITestableObservable<T>;
+//begin
+//  Guard.CheckNotNull(Length(messages) > 0, 'messages');
+//  Result := THotObservable<T>.Create(Self, messages);
+//end;
+
+function TTestScheduler.CreateHotObservable(
+  const messages: array of TRecorded<INotification<Integer>>): ITestableObservable<Integer>;
 begin
   Guard.CheckNotNull(Length(messages) > 0, 'messages');
-  Result := THotObservable<T>.Create(Self, messages);
+  Result := THotObservable<Integer>.Create(Self, messages);
 end;
 
 function TTestScheduler.CreateObserver<T>: ITestableObserver<T>;

@@ -32,7 +32,8 @@ uses
   Spring.Testing,
   Spring.Reactive,
   Spring.Reactive.Notification,
-  Spring.Reactive.Testing.Recorded;
+  Spring.Reactive.Testing.Recorded,
+  Spring.Reactive.Testing.Subscription;
 
 type
   TReactiveTest = class(TTestCase)
@@ -44,6 +45,9 @@ type
     class function OnNext(const ticks: Int64; const value: Integer): TRecorded<INotification<Integer>>; overload; static; inline;
     class function OnCompleted<T>(const ticks: Int64): TRecorded<INotification<T>>; overload; static; inline;
     class function OnError<T>(const ticks: Int64; const error: Exception; freeException: Boolean = False): TRecorded<INotification<T>>; overload; static; inline;
+
+    class function Subscribe(const start: Int64): TSubscription; overload; static;
+    class function Subscribe(const start, stop: Int64): TSubscription; overload; static;
   end;
 
 implementation
@@ -73,6 +77,16 @@ class function TReactiveTest.OnError<T>(const ticks: Int64;
   const error: Exception; freeException: Boolean): TRecorded<INotification<T>>;
 begin
   Result := TRecorded<INotification<T>>.Create(ticks, TNotification.CreateOnError<T>(error, freeException));
+end;
+
+class function TReactiveTest.Subscribe(const start: Int64): TSubscription;
+begin
+  Result := TSubscription.Create(start);
+end;
+
+class function TReactiveTest.Subscribe(const start, stop: Int64): TSubscription;
+begin
+  Result := TSubscription.Create(start, stop);
 end;
 
 {$ENDREGION}

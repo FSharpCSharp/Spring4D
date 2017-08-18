@@ -29,14 +29,19 @@ unit Spring.Reactive.Concurrency.ConcurrencyAbstractionLayer;
 interface
 
 uses
+  System.Threading,
   Spring,
   Spring.Reactive;
 
 type
   TConcurrencyAbstractionLayer = class(TInterfacedObject, IConcurrencyAbstractionLayer)
   private
+    class var fThreadPool: TThreadPool;
     function Normalize(const dueTime: TTimeSpan): TTimeSpan;
   public
+    class constructor Create;
+    class procedure ShutDown;
+
     function StartTimer(const action: Action<TValue>; const state: TValue; const dueTime: TTimeSpan): IDisposable;
     function StartPeriodicTimer(const action: Action; const period: TTimeSpan): IDisposable;
     function QueueUserWorkItem(const action: Action<TValue>; const state: TValue): IDisposable;
@@ -49,8 +54,8 @@ type
 implementation
 
 uses
-  SyncObjs, SysUtils,
-  System.Threading,
+  SyncObjs,
+  SysUtils,
   Spring.Reactive.Disposables;
 
 // TODO move into own unit
@@ -124,6 +129,16 @@ end;
 
 {$REGION 'TConcurrencyAbstractionLayer'}
 
+class constructor TConcurrencyAbstractionLayer.Create;
+begin
+  fThreadPool := TThreadPool.Create;
+end;
+
+class procedure TConcurrencyAbstractionLayer.ShutDown;
+begin
+  fThreadPool.Free;
+end;
+
 function TConcurrencyAbstractionLayer.StartTimer(const action: Action<TValue>;
   const state: TValue; const dueTime: TTimeSpan): IDisposable;
 begin
@@ -143,7 +158,7 @@ var
 begin
   _state := state;
 {$IFDEF DELPHIXE7_UP}
-  TThreadPool.Default.QueueWorkItem(
+  fThreadPool.QueueWorkItem(
     procedure
     begin
       action(_state);

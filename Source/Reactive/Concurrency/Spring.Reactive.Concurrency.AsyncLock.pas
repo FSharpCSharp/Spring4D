@@ -42,6 +42,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    procedure Dispose;
+
     procedure Wait(const action: Action);
   end;
 
@@ -58,6 +60,12 @@ end;
 
 destructor TAsyncLock.Destroy;
 begin
+  Dispose;
+  inherited;
+end;
+
+procedure TAsyncLock.Dispose;
+begin
   MonitorEnter(fQueue.AsObject);
   try
     fQueue.Clear;
@@ -65,7 +73,6 @@ begin
   finally
     MonitorExit(fQueue.AsObject);
   end;
-  inherited;
 end;
 
 procedure TAsyncLock.Wait(const action: Action);

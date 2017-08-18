@@ -40,12 +40,20 @@ type
   published
     procedure Scheduler_ScheduleNonRecursive;
     procedure Scheduler_ScheduleRecursive;
-//    procedure Scheduler_ScheduleWithTimeNonRecursive;
-//    procedure Scheduler_ScheduleWithTimeRecursive;
+//    procedure Scheduler_ScheduleWithTimeNonRecursive; // TODO: implement TDateTimeOffset overloads
+//    procedure Scheduler_ScheduleWithTimeRecursive; // TODO: implement TDateTimeOffset overloads
     procedure Scheduler_ScheduleWithTimeSpanNonRecursive;
     procedure Scheduler_ScheduleWithTimeSpanRecursive;
+    procedure Scheduler_StateThreading;
   end;
 
+implementation
+
+uses
+  SysUtils,
+  Spring.Collections;
+
+type
   IMyScheduler = interface(IScheduler)
     function GetCheck: Action<Action<TValue>, TValue, TTimeSpan>;
     procedure SetCheck(const value: Action<Action<TValue>, TValue, TTimeSpan>);
@@ -77,12 +85,6 @@ type
     property Now: TDateTime read fNow;
     property Check: Action<Action<TValue>, TValue, TTimeSpan> read GetCheck write SetCheck;
   end;
-
-implementation
-
-uses
-  SysUtils,
-  Spring.Collections;
 
 
 {$REGION 'SchedulerTest'}
@@ -164,6 +166,22 @@ begin
   ms.Schedule(TTimeSpan.Zero, procedure(const a: Action<TTimeSpan>) begin Inc(i); if i < 10 then a(TTimeSpan.FromTicks(i)) end);
   CheckTrue(ms.WaitCycles = TEnumerable.Range(1, 9).Sum);
   CheckEquals(10, i);
+end;
+
+procedure SchedulerTest.Scheduler_StateThreading;
+var
+  list: IList<Integer>;
+begin
+  list := TCollections.CreateList<Integer>;
+  TScheduler.Immediate.Schedule(0,
+    procedure(const i: TValue; const a: Action<TValue>)
+    begin
+      list.Add(i.AsInteger);
+      if i.AsInteger < 9 then
+        a(i.AsInteger + 1);
+    end);
+
+  CheckTrue(list.EqualsTo(TEnumerable.Range(0, 10)));
 end;
 
 {$ENDREGION}

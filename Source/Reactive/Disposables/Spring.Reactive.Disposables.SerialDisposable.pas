@@ -42,6 +42,7 @@ type
     procedure SetDisposable(const value: IDisposable);
   public
     procedure Dispose;
+    property Disposable: IDisposable read GetDisposable write SetDisposable;
   end;
 
 implementation
