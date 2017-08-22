@@ -24,77 +24,61 @@
 
 {$I Spring.inc}
 
-unit Spring.Lambda;
+unit Spring.Reactive.Disposables.ScheduledDisposable;
 
 interface
 
 uses
-  Spring,
-  Spring.Collections;
+  Spring.Reactive;
 
 type
-  Lambda<T> = record
-  strict private
-    function GetCount: Func<IList<T>,Integer>;
+  TScheduledDisposable = class(TInterfacedObject, IDisposable, ICancelable)
+  private
+    fScheduler: IScheduler;
+    fDisposable: IDisposable;
+    function GetIsDisposed: Boolean;
+    procedure DisposeInner;
   public
-    class operator GreaterThanOrEqual(const left: Lambda<T>; const right: T): Predicate<T>;
-    class operator Equal(const left: Lambda<T>; const right: T): Predicate<T>;
-    class operator Multiply(const left: Lambda<T>; const right: T): Func<T,T>;
-
-    property Count: Func<IList<T>,Integer> read GetCount;
+    constructor Create(const scheduler: IScheduler; const disposable: IDisposable);
+    procedure Dispose;
   end;
 
 implementation
 
+uses
+  Spring,
+  Spring.Reactive.Disposables;
 
-{$REGION 'Lambda<T>'}
 
-class operator Lambda<T>.Equal(const left: Lambda<T>;
-  const right: T): Predicate<T>;
+{$REGION 'TScheduledDisposable'}
+
+constructor TScheduledDisposable.Create(const scheduler: IScheduler;
+  const disposable: IDisposable);
 begin
-  case TType.Kind<T> of
-    tkInteger:
-      Predicate<Integer>(Result) :=
-        function(const x: Integer): Boolean
-        begin
-          Result := x = PInteger(@right)^;
-        end;
-  end;
+  Guard.CheckNotNull(scheduler, 'scheduler');
+  Guard.CheckNotNull(disposable, 'disposable');
+
+  fScheduler := scheduler;
+  fDisposable := disposable;
 end;
 
-function Lambda<T>.GetCount: Func<IList<T>,Integer>;
+procedure TScheduledDisposable.Dispose;
 begin
-  Result :=
-    function(const x: IList<T>): Integer
-    begin
-      Result := x.Count;
-    end;
+  fScheduler.Schedule(DisposeInner);
 end;
 
-class operator Lambda<T>.GreaterThanOrEqual(const left: Lambda<T>;
-  const right: T): Predicate<T>;
+procedure TScheduledDisposable.DisposeInner;
+var
+  disposable: IDisposable;
 begin
-  case TType.Kind<T> of
-    tkInteger:
-      Predicate<Integer>(Result) :=
-        function(const x: Integer): Boolean
-        begin
-          Result := x >= PInteger(@right)^;
-        end;
-  end;
+  disposable := TInterlocked.Exchange<IDisposable>(fDisposable, TBooleanDisposable.True);
+  if disposable <> TBooleanDisposable.True then
+    disposable.Dispose;
 end;
 
-class operator Lambda<T>.Multiply(const left: Lambda<T>;
-  const right: T): Func<T, T>;
+function TScheduledDisposable.GetIsDisposed: Boolean;
 begin
-  case TType.Kind<T> of
-    tkInteger:
-      Func<Integer,Integer>(Result) :=
-        function(const x: Integer): Integer
-        begin
-          Result := x * PInteger(@right)^;
-        end;
-  end;
+  Result := fDisposable = TBooleanDisposable.True;
 end;
 
 {$ENDREGION}

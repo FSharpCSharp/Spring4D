@@ -61,6 +61,11 @@ type
     function Concat(const second: IObservable<T>): IObservable<T>;
     function Distinct: IObservable<T>;
     function DistinctUntilChanged: IObservable<T>;
+    function DoAction(const onNext: Action<T>): IObservable<T>; overload;
+    function DoAction(const onNext: Action<T>; const onCompleted: Action): IObservable<T>; overload;
+    function DoAction(const onNext: Action<T>; const onError: Action<Exception>): IObservable<T>; overload;
+    function DoAction(const onNext: Action<T>; const onError: Action<Exception>; const onCompleted: Action): IObservable<T>; overload;
+    function DoAction(const observer: IObserver<T>): IObservable<T>; overload;
     procedure ForEach(const onNext: Action<T>);
     function IgnoreElements: IObservable<T>;
     function Sample(const interval: TTimeSpan): IObservable<T>;
@@ -86,12 +91,14 @@ uses
   Spring.Reactive.AnonymousObserver,
   Spring.Reactive.Concurrency.CurrentThreadScheduler,
   Spring.Reactive.Concurrency.SchedulerDefaults,
+  Spring.Reactive.Concurrency.Synchronization.ObserveOn,
   Spring.Reactive.Internal.Stubs,
   Spring.Reactive.Observable.All,
   Spring.Reactive.Observable.Any,
   Spring.Reactive.Observable.Concat,
   Spring.Reactive.Observable.Distinct,
   Spring.Reactive.Observable.DistinctUntilChanged,
+  Spring.Reactive.Observable.DoAction,
   Spring.Reactive.Observable.IgnoreElements,
   Spring.Reactive.Observable.Sample,
   Spring.Reactive.Observable.Skip,
@@ -111,6 +118,11 @@ uses
 constructor TObservableBase<T>.Create;
 begin
   inherited Create;
+end;
+
+destructor TObservableBase<T>.Destroy;
+begin
+  inherited Destroy;
 end;
 
 function TObservableBase<T>.Subscribe(
@@ -218,12 +230,6 @@ begin
   Result := TConcat<T>.Create([Self, second]);
 end;
 
-destructor TObservableBase<T>.Destroy;
-begin
-
-  inherited;
-end;
-
 function TObservableBase<T>.Distinct: IObservable<T>;
 begin
   Result := TDistinct<T>.Create(Self);
@@ -232,6 +238,35 @@ end;
 function TObservableBase<T>.DistinctUntilChanged: IObservable<T>;
 begin
   Result := TDistinctUntilChanged<T>.Create(Self);
+end;
+
+function TObservableBase<T>.DoAction(const onNext: Action<T>): IObservable<T>;
+begin
+  Result := TDoAction<T>.TOnNext.Create(Self, onNext);
+end;
+
+function TObservableBase<T>.DoAction(const onNext: Action<T>;
+  const onCompleted: Action): IObservable<T>;
+begin
+  Result := DoAction(onNext, Stubs<Exception>.Ignore, onCompleted);
+end;
+
+function TObservableBase<T>.DoAction(const onNext: Action<T>;
+  const onError: Action<Exception>): IObservable<T>;
+begin
+  Result := DoAction(onNext, onError, Stubs.Nop);
+end;
+
+function TObservableBase<T>.DoAction(
+  const observer: IObserver<T>): IObservable<T>;
+begin
+  Result := TDoAction<T>.TObserver.Create(Self, observer);
+end;
+
+function TObservableBase<T>.DoAction(const onNext: Action<T>;
+  const onError: Action<Exception>; const onCompleted: Action): IObservable<T>;
+begin
+  Result := TDoAction<T>.TActions.Create(Self, onNext, onError, onCompleted);
 end;
 
 procedure TObservableBase<T>.ForEach(const onNext: Action<T>);
@@ -287,7 +322,7 @@ end;
 function TObservableBase<T>.ObserveOn(
   const scheduler: IScheduler): IObservable<T>;
 begin
-  raise ENotImplementedException.Create('ObserveOn');
+  Result := TObserveOn<T>.TScheduler.Create(Self, scheduler);
 end;
 
 function TObservableBase<T>.Sample(const interval: TTimeSpan): IObservable<T>;

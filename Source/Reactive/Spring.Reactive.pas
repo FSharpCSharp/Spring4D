@@ -273,6 +273,12 @@ type
     function All(const predicate: Predicate<T>): IObservable<Boolean>;
     function Any: IObservable<Boolean>; overload;
     function Any(const predicate: Predicate<T>): IObservable<Boolean>; overload;
+    function DoAction(const onNext: Action<T>): IObservable<T>; overload;
+    function DoAction(const onNext: Action<T>; const onCompleted: Action): IObservable<T>; overload;
+    function DoAction(const onNext: Action<T>; const onError: Action<Exception>): IObservable<T>; overload;
+    function DoAction(const onNext: Action<T>; const onError: Action<Exception>; const onCompleted: Action): IObservable<T>; overload;
+    function DoAction(const observer: IObserver<T>): IObservable<T>; overload;
+//    function DoFinally()
 
     // "extension" methods for aggregating
     function Concat(const second: IObservable<T>): IObservable<T>;

@@ -48,6 +48,7 @@ type
     function GetScheduleRequired: Boolean;
     class function GetIsScheduleRequired: Boolean; static;
     class property Time: TTimeSpan read GetTime;
+    class function GetInstance: ICurrentThreadScheduler; static;
     type
       TTrampoline = class
         class procedure Run(const queue: TSchedulerQueue<TTimeSpan>); static;
@@ -55,7 +56,7 @@ type
   public
     class constructor Create;
     class destructor Destroy;
-    class property Instance: ICurrentThreadScheduler read fInstance;
+    class property Instance: ICurrentThreadScheduler read GetInstance;
     class property IsScheduleRequired: Boolean read GetIsScheduleRequired;
   public
     function Schedule(const state: TValue; const dueTime: TTimeSpan;
@@ -74,7 +75,7 @@ uses
 
 class constructor TCurrentThreadScheduler.Create;
 begin
-  fInstance := TCurrentThreadScheduler.Create;
+//  fInstance := TCurrentThreadScheduler.Create;
   fClocks := TCollections.CreateDictionary<TThreadID, TStopwatch>;
   fQueues := TCollections.CreateDictionary<TThreadID, TSchedulerQueue<TTimeSpan>>([doOwnsValues]);
 end;
@@ -88,6 +89,13 @@ end;
 function TCurrentThreadScheduler.GetScheduleRequired: Boolean;
 begin
   Result := IsScheduleRequired;
+end;
+
+class function TCurrentThreadScheduler.GetInstance: ICurrentThreadScheduler;
+begin
+  if not Assigned(fInstance) then
+    fInstance := TCurrentThreadScheduler.Create;
+  Result := fInstance;
 end;
 
 class function TCurrentThreadScheduler.GetIsScheduleRequired: Boolean;
@@ -146,7 +154,7 @@ function TCurrentThreadScheduler.Schedule(const state: TValue;
   const action: Func<IScheduler, TValue, IDisposable>): IDisposable;
 var
   dt: TTimeSpan;
-  si: TScheduledItem<TTimeSpan, TValue>;
+  si: IScheduledItem<TTimeSpan, TValue>;
   queue: TSchedulerQueue<TTimeSpan>;
 begin
   dt := Time + Normalize(dueTime);
@@ -166,7 +174,7 @@ begin
   end
   else
     queue.Enqueue(si);
-  Result := Disposable.Create(si.Cancel);
+  Result := Disposable.Create(procedure begin si.Cancel end);
 end;
 
 {$ENDREGION}

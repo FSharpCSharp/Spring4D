@@ -49,6 +49,7 @@ type
       public
         constructor Create(const parent: TRange;
           const observer: IObserver<Integer>; const cancel: IDisposable);
+        destructor Destroy; override;
         function Run: IDisposable;
       end;
   protected
@@ -91,6 +92,13 @@ constructor TRange.TSink.Create(const parent: TRange;
 begin
   inherited Create(observer, cancel);
   fParent := parent;
+  fParent._AddRef;
+end;
+
+destructor TRange.TSink.Destroy;
+begin
+  fParent._Release;
+  inherited;
 end;
 
 procedure TRange.TSink.LoopRec(const state: TValue; const recurse: Action<TValue>);
@@ -108,11 +116,20 @@ begin
     fObserver.OnCompleted;
     Dispose;
   end;
-end;
+
+  end;
 
 function TRange.TSink.Run: IDisposable;
+var
+  guard: IInterface;
 begin
-  Result := fParent.fScheduler.Schedule(0, LoopRec);
+  guard := Self; // make sure that self is kept alive by capturing it
+  Result := fParent.fScheduler.Schedule(0,
+    procedure (const state: TValue; const recurse: Action<TValue>)
+    begin
+      if Assigned(guard) then
+        LoopRec(state, recurse);
+    end);
 end;
 
 {$ENDREGION}

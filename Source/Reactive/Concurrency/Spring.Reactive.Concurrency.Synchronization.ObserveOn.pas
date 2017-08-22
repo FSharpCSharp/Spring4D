@@ -24,77 +24,54 @@
 
 {$I Spring.inc}
 
-unit Spring.Lambda;
+unit Spring.Reactive.Concurrency.Synchronization.ObserveOn;
 
 interface
 
 uses
   Spring,
-  Spring.Collections;
+  Spring.Reactive,
+  Spring.Reactive.Internal.Producer;
 
 type
-  Lambda<T> = record
-  strict private
-    function GetCount: Func<IList<T>,Integer>;
-  public
-    class operator GreaterThanOrEqual(const left: Lambda<T>; const right: T): Predicate<T>;
-    class operator Equal(const left: Lambda<T>; const right: T): Predicate<T>;
-    class operator Multiply(const left: Lambda<T>; const right: T): Func<T,T>;
-
-    property Count: Func<IList<T>,Integer> read GetCount;
+  TObserveOn<TSource> = class
+  public type
+    TScheduler = class(TProducer<TSource>)
+    private
+      fSource: IObservable<TSource>;
+      fScheduler: IScheduler;
+    protected
+      function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
+        const setSink: Action<IDisposable>): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>; const scheduler: IScheduler);
+    end;
   end;
 
 implementation
 
+uses
+  Spring.Reactive.Internal.ScheduledObserver;
 
-{$REGION 'Lambda<T>'}
 
-class operator Lambda<T>.Equal(const left: Lambda<T>;
-  const right: T): Predicate<T>;
+{$REGION 'TObserveOn<TSource>.TScheduler'}
+
+constructor TObserveOn<TSource>.TScheduler.Create(
+  const source: IObservable<TSource>; const scheduler: IScheduler);
 begin
-  case TType.Kind<T> of
-    tkInteger:
-      Predicate<Integer>(Result) :=
-        function(const x: Integer): Boolean
-        begin
-          Result := x = PInteger(@right)^;
-        end;
-  end;
+  inherited Create;
+  fSource := source;
+  fScheduler := scheduler;
 end;
 
-function Lambda<T>.GetCount: Func<IList<T>,Integer>;
+function TObserveOn<TSource>.TScheduler.Run(const observer: IObserver<TSource>;
+  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
+var
+  sink: TObserveOnObserver<TSource>;
 begin
-  Result :=
-    function(const x: IList<T>): Integer
-    begin
-      Result := x.Count;
-    end;
-end;
-
-class operator Lambda<T>.GreaterThanOrEqual(const left: Lambda<T>;
-  const right: T): Predicate<T>;
-begin
-  case TType.Kind<T> of
-    tkInteger:
-      Predicate<Integer>(Result) :=
-        function(const x: Integer): Boolean
-        begin
-          Result := x >= PInteger(@right)^;
-        end;
-  end;
-end;
-
-class operator Lambda<T>.Multiply(const left: Lambda<T>;
-  const right: T): Func<T, T>;
-begin
-  case TType.Kind<T> of
-    tkInteger:
-      Func<Integer,Integer>(Result) :=
-        function(const x: Integer): Integer
-        begin
-          Result := x * PInteger(@right)^;
-        end;
-  end;
+  sink := TObserveOnObserver<TSource>.Create(fScheduler, observer, cancel);
+  setSink(sink);
+  Result := fSource.Subscribe(sink);
 end;
 
 {$ENDREGION}

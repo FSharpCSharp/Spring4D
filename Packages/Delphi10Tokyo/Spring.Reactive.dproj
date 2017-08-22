@@ -162,6 +162,7 @@
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Concat.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Distinct.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.DistinctUntilChanged.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.DoAction.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Empty.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.FromEvent.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.GroupBy.pas"/>
