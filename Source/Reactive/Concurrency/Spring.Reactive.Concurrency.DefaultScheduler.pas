@@ -35,7 +35,7 @@ uses
   Spring.Reactive.Concurrency.Scheduler;
 
 type
-  TDefaultScheduler = class(TLocalScheduler, IDefaultScheduler)
+  TDefaultScheduler = class(TLocalScheduler, IDefaultScheduler, ISchedulerPeriodic)
   private
     class var fInstance: IDefaultScheduler;
     class var fCAL: IConcurrencyAbstractionLayer;
@@ -87,34 +87,12 @@ end;
 
 function TDefaultScheduler.SchedulePeriodic(const period: TTimeSpan;
   const action: Action): IDisposable;
-var
-  _period: TTimeSpan;
-  isDisposed: Boolean;
 begin
-  _period := period;
-{$IFDEF DELPHIXE7_UP}
-  isDisposed := False;
-  TTask.Run(
-    procedure
+  Result := SchedulePeriodic(TValue.From<Spring.Action>(action), period,
+    function(const a: TValue): TValue
     begin
-      while not isDisposed do
-      begin
-        // naive impl without canceling
-        TThread.Sleep(_period);
-
-        if TThread.Current.Terminated then
-          Exit;
-
-        if not isDisposed then
-          TThread.Synchronize(nil, TThreadProcedure(action));
-      end;
-    end);
-{$ELSE}
-{$ENDIF}
-  Result := Disposable.Create(
-    procedure
-    begin
-      isDisposed := True;
+      a.AsType<Spring.Action>()();
+      Result := a;
     end);
 end;
 

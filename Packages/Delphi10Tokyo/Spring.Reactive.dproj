@@ -131,6 +131,7 @@
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.Scheduler.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerDefaults.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerQueue.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.Synchronization.ObserveOn.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.VirtualTimeScheduler.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.AnonymousDisposable.pas"/>
@@ -148,6 +149,7 @@
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Observers.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.PriorityQueue.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Producer.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.ScheduledObserver.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Sink.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Stubs.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.TailRecursiveSink.pas"/>

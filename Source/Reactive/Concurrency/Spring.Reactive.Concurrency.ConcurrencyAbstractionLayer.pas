@@ -55,14 +55,27 @@ implementation
 
 uses
   SyncObjs,
-  SysUtils,
   Spring.Reactive.Disposables;
 
-// TODO move into own unit
 type
-  TTimer = class(TDisposableObject)
+  IEvent = interface
+    function WaitFor(const Timeout: TTimeSpan): TWaitResult;
+    procedure SetEvent;
+    procedure ResetEvent;
+  end;
+
+  TInterfacedEvent = class(TInterfacedObject, IEvent)
   private
     fEvent: TEvent;
+    property Event: TEvent read fEvent implements IEvent;
+  public
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+  TTimer = class(TDisposableObject)
+  private
+    fEvent: IEvent;
   public
     constructor Create(const action: Action<TValue>; const state: TValue;
       const dueTime: TTimeSpan);
@@ -70,61 +83,93 @@ type
   end;
 
   TPeriodicTimer = class(TDisposableObject)
+  private
+    fEvent: IEvent;
   public
     constructor Create(const action: Action; const period: TTimeSpan);
+    procedure Dispose; override;
   end;
 
-{ TTimer }
+
+{$REGION 'TInterfacedEvent'}
+
+constructor TInterfacedEvent.Create;
+begin
+  inherited Create;
+  fEvent := TEvent.Create(nil, True, False, '');
+end;
+
+destructor TInterfacedEvent.Destroy;
+begin
+  fEvent.Free;
+  inherited Destroy;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTimer'}
 
 constructor TTimer.Create(const action: Action<TValue>; const state: TValue;
   const dueTime: TTimeSpan);
 var
   _dueTime: TTimeSpan;
   _state: TValue;
+  event: IEvent;
 begin
   inherited Create;
   _state := state;
   _dueTime := dueTime;
-  fEvent := TEvent.Create(nil, True, False, '');
+  event := TInterfacedEvent.Create;
+  fEvent := event;
 
-  // TODO: implement this using an abstraction (timer or PPL)
   TTask.Run(
     procedure
     begin
-      try
-        if not IsDisposed and (fEvent.WaitFor(_dueTime) = wrTimeout) then
-          action(_state);
-      finally
-        FreeAndNil(fEvent);
-      end;
+      if (event.WaitFor(_dueTime) = wrTimeout) // TODO: cancel this when application shuts down
+        and not TThread.Current.Terminated then
+        action(_state);
     end);
 end;
 
 procedure TTimer.Dispose;
 begin
   inherited Dispose;
-  FreeAndNil(fEvent);
+  fEvent.SetEvent;
 end;
 
-{ TPeriodicTimer }
+{$ENDREGION}
+
+
+{$REGION 'TPeriodicTimer'}
 
 constructor TPeriodicTimer.Create(const action: Action;
   const period: TTimeSpan);
 var
   _period: TTimeSpan;
+  event: IEvent;
 begin
   inherited Create;
   _period := period;
+  event := TInterfacedEvent.Create;
+  fEvent := event;
+
   TTask.Run(
     procedure
     begin
-      while not IsDisposed do
-      begin
-        TThread.Sleep(_period);
-        action;
-      end;
+      while (event.WaitFor(_period) = wrTimeout) // TODO: cancel this when application shuts down
+        and not TThread.Current.Terminated do
+        action();
     end);
 end;
+
+procedure TPeriodicTimer.Dispose;
+begin
+  inherited Dispose;
+  fEvent.SetEvent;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TConcurrencyAbstractionLayer'}

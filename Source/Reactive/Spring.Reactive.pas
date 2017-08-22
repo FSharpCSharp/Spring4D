@@ -337,7 +337,8 @@ type
 
     class function Empty<T>: IObservable<T>; static;
 
-    class function From<T>(const source: array of T): IObservable<T>; static;
+    class function From<T>(const source: array of T): IObservable<T>; overload; static;
+    class function From<T>(const source: IEnumerable<T>): IObservable<T>; overload; static;
 
 //    class function Generate<TState,TResult>(const initialState: TState;
 //      const condition: Func<TState, Boolean>;
@@ -594,6 +595,12 @@ end;
 class function TObservable.From<T>(const source: array of T): IObservable<T>;
 begin
   Result := Enumerable.ToObservable<T>(TEnumerable.From<T>(source));
+end;
+
+class function TObservable.From<T>(
+  const source: IEnumerable<T>): IObservable<T>;
+begin
+  Result := Enumerable.ToObservable<T>(source);
 end;
 
 {$IFDEF DELPHIXE2_UP}
