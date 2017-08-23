@@ -130,6 +130,7 @@ procedure TThrottle<T>.TSink.OnNext(const value: T);
 var
   currentId: UInt64;
   d: ISingleAssignmentDisposable;
+  guard: IInterface;
 begin
   currentId := 0;
   MonitorEnter(Self);
@@ -144,7 +145,13 @@ begin
 
   d := TSingleAssignmentDisposable.Create;
   fCancelable.Disposable := d;
-  d.Disposable := fParent.fScheduler.Schedule(currentId, fParent.fDueTime, Propagate);
+  guard := Self; // make sure that self is kept alive by capturing it
+  d.Disposable := fParent.fScheduler.Schedule(currentId, fParent.fDueTime,
+    function (const scheduler: IScheduler; const currentId: TValue): IDisposable
+    begin
+      if Assigned(guard) then
+        Result := Propagate(scheduler, currentId);
+    end);
 end;
 
 procedure TThrottle<T>.TSink.OnError(const error: Exception);
@@ -153,7 +160,7 @@ begin
 
   MonitorEnter(Self);
   try
-    fObserver.OnError(error);
+    Observer.OnError(error);
     Dispose;
 
     fHasValue := False;
@@ -170,9 +177,9 @@ begin
   MonitorEnter(Self);
   try
     if fHasValue then
-      fObserver.OnNext(fValue);
+      Observer.OnNext(fValue);
 
-    fObserver.OnCompleted;
+    Observer.OnCompleted;
     Dispose;
 
     fHasValue := False;
@@ -188,7 +195,7 @@ begin
   MonitorEnter(Self);
   try
     if fHasValue and (fId = currentId) then
-      fObserver.OnNext(fValue);
+      Observer.OnNext(fValue);
     fHasValue := False;
   finally
     MonitorExit(Self);

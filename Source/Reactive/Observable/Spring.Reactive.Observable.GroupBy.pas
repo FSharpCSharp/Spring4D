@@ -167,7 +167,7 @@ begin
   if fireNewMapEntry then
   begin
     group := TGroupedObservable<TKey, TElement>.Create(key, writer, fParent.fRefCountDisposable);
-    fObserver.OnNext(group);
+    Observer.OnNext(group);
   end;
 
   try
@@ -193,7 +193,7 @@ begin
   for w in fMap.Values do
     w.OnCompleted;
 
-  fObserver.OnCompleted;
+  Observer.OnCompleted;
   Dispose;
 end;
 
@@ -208,7 +208,7 @@ begin
   for w in fMap.Values do
     w.OnError(error);
 
-  fObserver.OnError(error);
+  Observer.OnError(error);
   Dispose;
 end;
 

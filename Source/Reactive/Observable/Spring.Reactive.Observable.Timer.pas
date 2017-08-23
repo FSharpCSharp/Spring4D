@@ -117,9 +117,9 @@ begin
     Result := (fParent.fScheduler as ISchedulerPeriodic).SchedulePeriodic(fPeriod,
     procedure
     begin
-      if Assigned(fObserver) then
+      if Assigned(Observer) then
       begin
-        fObserver.OnNext(count);
+        Observer.OnNext(count);
         Inc(count);
       end;
     end);

@@ -180,7 +180,7 @@ procedure TTakeUntil<TSource, TOther>.TSink.TSourceObserver.OnCompleted;
 begin
   MonitorEnter(fParent);
   try
-    fParent.fObserver.OnCompleted;
+    fParent.Observer.OnCompleted;
     fParent.Dispose;
   finally
     MonitorExit(fParent);
@@ -192,7 +192,7 @@ procedure TTakeUntil<TSource, TOther>.TSink.TSourceObserver.OnError(
 begin
   MonitorEnter(fParent);
   try
-    fParent.fObserver.OnError(error);
+    fParent.Observer.OnError(error);
     fParent.Dispose;
   finally
     MonitorExit(fParent);
@@ -203,12 +203,12 @@ procedure TTakeUntil<TSource, TOther>.TSink.TSourceObserver.OnNext(
   const value: TSource);
 begin
   if fOpen then
-    fParent.fObserver.OnNext(value)
+    fParent.Observer.OnNext(value)
   else
   begin
     MonitorEnter(fParent);
     try
-      fParent.fObserver.OnNext(value);
+      fParent.Observer.OnNext(value);
     finally
       MonitorExit(fParent);
     end;
@@ -256,7 +256,7 @@ procedure TTakeUntil<TSource, TOther>.TSink.TOtherObserver.OnError(
 begin
   MonitorEnter(fParent);
   try
-    fParent.fObserver.OnError(error);
+    fParent.Observer.OnError(error);
     fParent.Dispose;
   finally
     MonitorExit(fParent);
@@ -268,7 +268,7 @@ procedure TTakeUntil<TSource, TOther>.TSink.TOtherObserver.OnNext(
 begin
   MonitorEnter(fParent);
   try
-    fParent.fObserver.OnCompleted;
+    fParent.Observer.OnCompleted;
     fParent.Dispose;
   finally
     MonitorExit(fParent);

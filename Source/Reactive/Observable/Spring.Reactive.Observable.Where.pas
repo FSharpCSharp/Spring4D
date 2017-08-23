@@ -114,14 +114,14 @@ begin
   except
     on e: Exception do
     begin
-      fObserver.OnError(e);
+      Observer.OnError(e);
       Dispose;
       Exit;
     end;
   end;
 
   if shouldRun then
-    fObserver.OnNext(value);
+    Observer.OnNext(value);
 end;
 
 {$ENDREGION}

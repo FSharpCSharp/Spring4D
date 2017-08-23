@@ -108,12 +108,12 @@ begin
   i := state.AsInteger;
   if i < fParent.fCount then
   begin
-    fObserver.OnNext(fParent.fStart + i);
+    Observer.OnNext(fParent.fStart + i);
     recurse(i + 1);
   end
   else
   begin
-    fObserver.OnCompleted;
+    Observer.OnCompleted;
     Dispose;
   end;
 

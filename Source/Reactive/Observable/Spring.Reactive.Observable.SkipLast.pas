@@ -114,7 +114,7 @@ procedure TSkipLast<T>.TSink.OnNext(const value: T);
 begin
   fQueue.Enqueue(value);
   if fQueue.Count > fParent.fCount then
-    fObserver.OnNext(fQueue.Dequeue);
+    Observer.OnNext(fQueue.Dequeue);
 end;
 
 {$ENDREGION}

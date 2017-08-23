@@ -108,10 +108,10 @@ begin
   if fRemaining > 0 then
   begin
     Dec(fRemaining);
-    fObserver.OnNext(value);
+    Observer.OnNext(value);
     if fRemaining = 0 then
     begin
-      fObserver.OnCompleted;
+      Observer.OnCompleted;
       Dispose;
     end;
   end;

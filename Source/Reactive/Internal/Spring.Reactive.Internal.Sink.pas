@@ -34,11 +34,19 @@ uses
 
 type
   TSink<TSource> = class abstract(TDisposableObject)
-  protected
-    fObserver: IObserver<TSource>; // TODO: review making function to extend lifetime
+  private
+    fObserver: IObserver<TSource>;
     fCancel: IDisposable;
+    // getter functions are necessary to ensure the
+    // instance is alive during any calls made on it
+    function GetCancel: IDisposable;
+    function GetObserver: IObserver<TSource>;
+  protected
+    property Observer: IObserver<TSource> read GetObserver;
+    property Cancel: IDisposable read GetCancel;
   public
     constructor Create(const observer: IObserver<TSource>; const cancel: IDisposable);
+    destructor Destroy; override;
     procedure Dispose; override;
 
     procedure OnError(const error: Exception);
@@ -61,6 +69,12 @@ begin
   fCancel := cancel;
 end;
 
+destructor TSink<TSource>.Destroy;
+begin
+
+  inherited;
+end;
+
 procedure TSink<TSource>.Dispose;
 var
   cancel: IDisposable;
@@ -72,23 +86,25 @@ begin
     cancel.Dispose;
 end;
 
-procedure TSink<TSource>.OnCompleted;
-var
-  observer: IObserver<TSource>;
+function TSink<TSource>.GetCancel: IDisposable;
 begin
-  observer := fObserver;
-  observer.OnCompleted;
-  observer := nil;
+  Result := fCancel;
+end;
+
+function TSink<TSource>.GetObserver: IObserver<TSource>;
+begin
+  Result := fObserver;
+end;
+
+procedure TSink<TSource>.OnCompleted;
+begin
+  Observer.OnCompleted;
   Dispose;
 end;
 
 procedure TSink<TSource>.OnError(const error: Exception);
-var
-  observer: IObserver<TSource>;
 begin
-  observer := fObserver;
-  observer.OnError(error);
-  observer := nil;
+  Observer.OnError(error);
   Dispose;
 end;
 

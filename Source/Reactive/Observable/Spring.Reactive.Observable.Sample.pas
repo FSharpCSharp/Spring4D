@@ -128,7 +128,7 @@ procedure TSample<T>.TSink.OnError(const error: Exception);
 begin
   MonitorEnter(Self);
   try
-    fObserver.OnError(error);
+    Observer.OnError(error);
     Dispose;
   finally
     MonitorExit(Self);
@@ -165,12 +165,12 @@ begin
     if fHasValue then
     begin
       fHasValue := False;
-      fObserver.OnNext(fValue);
+      Observer.OnNext(fValue);
     end;
 
     if fAtEnd then
     begin
-      fObserver.OnCompleted;
+      Observer.OnCompleted;
       Dispose;
     end;
   finally

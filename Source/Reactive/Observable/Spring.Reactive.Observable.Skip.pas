@@ -106,7 +106,7 @@ end;
 procedure TSkip<T>.TSink.OnNext(const value: T);
 begin
   if fRemaining <= 0 then
-    fObserver.OnNext(value)
+    Observer.OnNext(value)
   else
     Dec(fRemaining);
 end;

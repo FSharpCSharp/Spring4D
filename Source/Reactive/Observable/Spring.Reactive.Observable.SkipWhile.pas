@@ -140,7 +140,7 @@ begin
     except
       on e: Exception do
       begin
-        fObserver.OnError(e);
+        Observer.OnError(e);
         Dispose;
         Exit;
       end;
@@ -148,7 +148,7 @@ begin
   end;
 
   if fRunning then
-    fObserver.OnNext(value);
+    Observer.OnNext(value);
 end;
 
 {$ENDREGION}
@@ -180,7 +180,7 @@ begin
     except
       on e: Exception do
       begin
-        fObserver.OnError(e);
+        Observer.OnError(e);
         Dispose;
         Exit;
       end;
@@ -188,7 +188,7 @@ begin
   end;
 
   if fRunning then
-    fObserver.OnNext(value);
+    Observer.OnNext(value);
 end;
 
 {$ENDREGION}

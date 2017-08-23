@@ -116,24 +116,24 @@ begin
   except
     on e: Exception do
     begin
-      fObserver.OnError(e);
+      Observer.OnError(e);
       Dispose;
       Exit;
     end;
   end;
 
-  fObserver.OnNext(result);
+  Observer.OnNext(result);
 end;
 
 procedure TSelect<TSource, TResult>.TSink.OnError(const error: Exception);
 begin
-  fObserver.OnError(error);
+  Observer.OnError(error);
   Dispose;
 end;
 
 procedure TSelect<TSource, TResult>.TSink.OnCompleted;
 begin
-  fObserver.OnCompleted;
+  Observer.OnCompleted;
   Dispose;
 end;
 

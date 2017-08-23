@@ -104,7 +104,7 @@ end;
 
 procedure TThrow<T>.TSink.Invoke;
 begin
-  fObserver.OnError(fParent.fError);
+  Observer.OnError(fParent.fError);
   Dispose;
 end;
 

@@ -35,45 +35,47 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TMerge<TSource> = class(TProducer<TSource>)
-  private
-    fSources: IObservable<IObservable<TSource>>;
+  TMerge<TSource> = class
+  public type
+    TObservables = class(TProducer<TSource>)
+    private
+      fSources: IObservable<IObservable<TSource>>;
 
-    type
-      TSink = class(TSink<TSource>, IObserver<IObservable<TSource>>)
-      private
-        fParent: TMerge<TSource>;
-        fIsStopped: Boolean;
-        fGroup: ICompositeDisposable;
-        fSourceSubscription: ISingleAssignmentDisposable;
+      type
+        TSink = class(TSink<TSource>, IObserver<IObservable<TSource>>)
+        private
+          fIsStopped: Boolean;
+          fGroup: ICompositeDisposable;
+          fSourceSubscription: ISingleAssignmentDisposable;
 
-        type
-          TIter = class(TDisposableObject, IObserver<TSource>)
-          private
-            fParent: TSink;
-            fDisposable: IDisposable;
-          public
-            constructor Create(const parent: TSink; const disposable: IDisposable);
-            destructor Destroy; override;
-            procedure Dispose; override;
-            procedure OnNext(const value: TSource);
-            procedure OnError(const error: Exception);
-            procedure OnCompleted;
-          end;
-      public
-        constructor Create(const parent: TMerge<TSource>;
-          const observer: IObserver<TSource>; const cancel: IDisposable);
-        destructor Destroy; override;
-        function Run: IDisposable;
-        procedure OnNext(const value: IObservable<TSource>);
-        procedure OnError(const error: Exception);
-        procedure OnCompleted;
-      end;
-  protected
-    function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
-  public
-    constructor Create(const sources: IObservable<IObservable<TSource>>);
+          type
+            TInnerObserver = class(TDisposableObject, IObserver<TSource>)
+            private
+              fParent: TSink;
+              fDisposable: IDisposable;
+            public
+              constructor Create(const parent: TSink; const disposable: IDisposable);
+              destructor Destroy; override;
+              procedure Dispose; override;
+              procedure OnNext(const value: TSource);
+              procedure OnError(const error: Exception);
+              procedure OnCompleted;
+            end;
+        public
+          constructor Create(const observer: IObserver<TSource>;
+            const cancel: IDisposable);
+          destructor Destroy; override;
+          function Run(const parent: TObservables): IDisposable;
+          procedure OnNext(const value: IObservable<TSource>);
+          procedure OnError(const error: Exception);
+          procedure OnCompleted;
+        end;
+    protected
+      function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
+        const setSink: Action<IDisposable>): IDisposable; override;
+    public
+      constructor Create(const sources: IObservable<IObservable<TSource>>);
+    end;
   end;
 
 implementation
@@ -82,84 +84,83 @@ uses
   Spring.Reactive.Disposables;
 
 
-{$REGION 'TMerge<TSource>'}
+{$REGION 'TMerge<TSource>.TObservables'}
 
-constructor TMerge<TSource>.Create(
+constructor TMerge<TSource>.TObservables.Create(
   const sources: IObservable<IObservable<TSource>>);
 begin
   inherited Create;
   fSources := sources;
 end;
 
-function TMerge<TSource>.Run(const observer: IObserver<TSource>;
+function TMerge<TSource>.TObservables.Run(const observer: IObserver<TSource>;
   const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
 var
   sink: TSink;
 begin
-  sink := TSink.Create(Self, observer, cancel);
+  sink := TSink.Create(observer, cancel);
   setSink(sink);
-  Result := sink.Run;
+  Result := sink.Run(Self);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TMerge<TSource>.TSink'}
+{$REGION 'TMerge<TSource>.TObservables.TSink'}
 
-constructor TMerge<TSource>.TSink.Create(const parent: TMerge<TSource>;
+constructor TMerge<TSource>.TObservables.TSink.Create(
   const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
 end;
 
-destructor TMerge<TSource>.TSink.Destroy;
+destructor TMerge<TSource>.TObservables.TSink.Destroy;
 begin
-  fParent._Release;
-  inherited;
+  inherited Destroy;
 end;
 
-function TMerge<TSource>.TSink.Run: IDisposable;
+function TMerge<TSource>.TObservables.TSink.Run(const parent: TObservables): IDisposable;
 begin
   fIsStopped := False;
   fGroup := TCompositeDisposable.Create([]);
 
   fSourceSubscription := TSingleAssignmentDisposable.Create;
   fGroup.Add(fSourceSubscription);
-  fSourceSubscription.Disposable := fParent.fSources.Subscribe(Self);
+  fSourceSubscription.Disposable := parent.fSources.Subscribe(Self);
 
   Result := fGroup;
 end;
 
-procedure TMerge<TSource>.TSink.OnNext(const value: IObservable<TSource>);
+procedure TMerge<TSource>.TObservables.TSink.OnNext(
+  const value: IObservable<TSource>);
 var
   innerSubscription: ISingleAssignmentDisposable;
 begin
   innerSubscription := TSingleAssignmentDisposable.Create;
   fGroup.Add(innerSubscription);
-  innerSubscription.Disposable := value.Subscribe(TIter.Create(Self, innerSubscription) as IObserver<TSource>)
+  innerSubscription.Disposable := value.Subscribe(TInnerObserver.Create(Self, innerSubscription) as IObserver<TSource>)
 end;
 
-procedure TMerge<TSource>.TSink.OnError(const error: Exception);
+procedure TMerge<TSource>.TObservables.TSink.OnError(
+  const error: Exception);
 begin
   MonitorEnter(Self);
   try
-    fObserver.OnError(error);
+    Observer.OnError(error);
     Dispose;
   finally
     MonitorExit(Self);
   end;
 end;
 
-procedure TMerge<TSource>.TSink.OnCompleted;
+procedure TMerge<TSource>.TObservables.TSink.OnCompleted;
 begin
   fIsStopped := True;
   if fGroup.Count = 1 then
   begin
     MonitorEnter(Self);
     try
-      fObserver.OnCompleted;
+      Observer.OnCompleted;
       Dispose;
     finally
       MonitorExit(Self);
@@ -172,10 +173,10 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMerge<TSource>.TSink.TIter'}
+{$REGION 'TMerge<TSource>.TObservables.TSink.TInnerObserver'}
 
-constructor TMerge<TSource>.TSink.TIter.Create(const parent: TSink;
-  const disposable: IDisposable);
+constructor TMerge<TSource>.TObservables.TSink.TInnerObserver.Create(
+  const parent: TSink; const disposable: IDisposable);
 begin
   inherited Create;
   fParent := parent;
@@ -183,61 +184,53 @@ begin
   fDisposable := disposable;
 end;
 
-destructor TMerge<TSource>.TSink.TIter.Destroy;
+destructor TMerge<TSource>.TObservables.TSink.TInnerObserver.Destroy;
 begin
-  fParent._Release;
+  Dispose;
   inherited;
 end;
 
-procedure TMerge<TSource>.TSink.TIter.Dispose;
+procedure TMerge<TSource>.TObservables.TSink.TInnerObserver.Dispose;
 begin
-//  if not IsDisposed then
-//  begin
-//    fParent._Release;
-//    fParent := nil;
-//    fDisposable := nil;
-//  end;
+  if not IsDisposed then
+  begin
+    fParent._Release;
+    fParent := nil;
+    fDisposable := nil;
+  end;
 
   inherited Dispose;
 end;
 
-procedure TMerge<TSource>.TSink.TIter.OnNext(const value: TSource);
+procedure TMerge<TSource>.TObservables.TSink.TInnerObserver.OnNext(const value: TSource);
 begin
   MonitorEnter(fParent);
   try
-    fParent.fObserver.OnNext(value);
+    fParent.Observer.OnNext(value);
   finally
     MonitorExit(fParent);
   end;
 end;
 
-procedure TMerge<TSource>.TSink.TIter.OnError(const error: Exception);
-var
-  observer: IObserver<TSource>;
+procedure TMerge<TSource>.TObservables.TSink.TInnerObserver.OnError(const error: Exception);
 begin
   MonitorEnter(fParent);
   try
-    observer := fParent.fObserver;
-    observer.OnError(error);
-    observer := nil;
+    fParent.Observer.OnError(error);
     fParent.Dispose;
   finally
     MonitorExit(fParent);
   end;
 end;
 
-procedure TMerge<TSource>.TSink.TIter.OnCompleted;
-var
-  observer: IObserver<TSource>;
+procedure TMerge<TSource>.TObservables.TSink.TInnerObserver.OnCompleted;
 begin
   fParent.fGroup.Remove(fDisposable);
   if fParent.fIsStopped and (fParent.fGroup.Count = 1) then
   begin
     MonitorEnter(fParent);
     try
-      observer := fParent.fObserver;
-      observer.OnCompleted;
-      observer := nil;
+      fParent.Observer.OnCompleted;
       fParent.Dispose;
     finally
       MonitorExit(fParent);

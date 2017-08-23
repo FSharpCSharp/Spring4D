@@ -44,6 +44,7 @@ contains
   Spring.Reactive.Concurrency.DefaultScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.DefaultScheduler.pas',
   Spring.Reactive.Concurrency.ImmediateScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ImmediateScheduler.pas',
   Spring.Reactive.Concurrency.LocalScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.LocalScheduler.pas',
+  Spring.Reactive.Concurrency.MainThreadScheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.MainThreadScheduler.pas',
   Spring.Reactive.Concurrency.ScheduledItem in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ScheduledItem.pas',
   Spring.Reactive.Concurrency.Scheduler in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.Scheduler.pas',
   Spring.Reactive.Concurrency.SchedulerDefaults in '..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerDefaults.pas',

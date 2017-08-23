@@ -24,83 +24,58 @@
 
 {$I Spring.inc}
 
-unit Spring.Reactive.Observable.Return;
+unit Spring.Reactive.Concurrency.MainThreadScheduler;
 
 interface
 
 uses
   Spring,
   Spring.Reactive,
-  Spring.Reactive.Internal.Producer,
-  Spring.Reactive.Internal.Sink;
+  Spring.Reactive.Concurrency.LocalScheduler;
 
 type
-  TReturn<T> = class(TProducer<T>)
+  TMainThreadScheduler = class(TLocalScheduler{, ISchedulerPeriodic})
   private
-    fValue: T;
-    fScheduler: IScheduler;
-
-    type
-      TSink = class(TSink<T>)
-      private
-        fParent: TReturn<T>;
-        procedure Invoke;
-      public
-        constructor Create(const parent: TReturn<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
-        function Run: IDisposable;
-      end;
-  protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    class var fInstance: IScheduler;
   public
-    constructor Create(const value: T; const scheduler: IScheduler);
+    class constructor Create;
+    class property Instance: IScheduler read fInstance;
+  public
+    function Schedule(const state: TValue;
+      const action: Func<IScheduler, TValue, IDisposable>): IDisposable; override;
   end;
 
 implementation
 
+uses
+  Spring.Reactive.Disposables;
 
-{$REGION 'TReturn<T>'}
 
-constructor TReturn<T>.Create(const value: T; const scheduler: IScheduler);
+{$REGION 'TMainThreadScheduler'}
+
+class constructor TMainThreadScheduler.Create;
 begin
-  inherited Create;
-  fValue := value;
-  fScheduler := scheduler;
+  fInstance := TMainThreadScheduler.Create;
 end;
 
-function TReturn<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
+function TMainThreadScheduler.Schedule(const state: TValue;
+  const action: Func<IScheduler, TValue, IDisposable>): IDisposable;
 var
-  sink: TSink;
+  _state: TValue;
+  d: ISingleAssignmentDisposable;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
-end;
+  Guard.CheckNotNull(Assigned(action), 'action');
 
-{$ENDREGION}
+  _state := state;
+  d := TSingleAssignmentDisposable.Create;
+  TThread.Queue(nil,
+    procedure
+    begin
+      if not d.IsDisposed then
+        d.Disposable := action(Self, _state);
+    end);
 
-
-{$REGION 'TReturn<T>.TSink'}
-
-constructor TReturn<T>.TSink.Create(const parent: TReturn<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
-begin
-  inherited Create(observer, cancel);
-  fParent := parent;
-end;
-
-procedure TReturn<T>.TSink.Invoke;
-begin
-  Observer.OnNext(fParent.fValue);
-  Observer.OnCompleted;
-  Dispose;
-end;
-
-function TReturn<T>.TSink.Run: IDisposable;
-begin
-  Result := fParent.fScheduler.Schedule(Invoke);
+  Result := d;
 end;
 
 {$ENDREGION}

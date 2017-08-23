@@ -144,7 +144,7 @@ begin
 //    _state.enumerator.Dispose;
     _state.enumerator := nil; // TODO: review
 
-    fObserver.OnError(ex);
+    Observer.OnError(ex);
     Dispose;
     Exit;
   end;
@@ -154,12 +154,12 @@ begin
 //    _state.enumerator.Dispose;
     _state.enumerator := nil; // TODO: review
 
-    fObserver.OnCompleted;
+    Observer.OnCompleted;
     Dispose;
     Exit;
   end;
 
-  fObserver.OnNext(current);
+  Observer.OnNext(current);
   recurse(state);
 end;
 
@@ -168,13 +168,14 @@ var
   e: IEnumerator<T>;
   flag: ICancelable;
   state: TState<T>;
+  guard: IInterface;
 begin
   try
     e := fParent.fSource.GetEnumerator;
   except
     on e: Exception do
     begin
-      fObserver.OnError(e);
+      Observer.OnError(e);
       Dispose;
       Result := Disposable.Empty;
     end;
@@ -183,7 +184,13 @@ begin
   flag := TBooleanDisposable.Create;
   state.flag := flag;
   state.enumerator := e;
-  fParent.fScheduler.Schedule(TValue.From(state), LoopRec);
+  guard := Self; // make sure that self is kept alive by capturing it
+  fParent.fScheduler.Schedule(TValue.From(state),
+    procedure (const state: TValue; const recurse: Action<TValue>)
+    begin
+      if Assigned(guard) then
+        LoopRec(state, recurse);
+    end);
   Result := flag;
 end;
 

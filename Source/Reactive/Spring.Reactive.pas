@@ -699,7 +699,7 @@ end;
 class function TObservable.Merge<T>(
   const sources: IObservable<IObservable<T>>): IObservable<T>;
 begin
-  Result := TMerge<T>.Create(sources);
+  Result := TMerge<T>.TObservables.Create(sources);
 end;
 
 class function TObservable.Never<T>: IObservable<T>;

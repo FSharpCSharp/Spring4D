@@ -88,7 +88,7 @@ end;
 
 procedure TAddRef<T>.TSink.OnNext(const value: T);
 begin
-  fObserver.OnNext(value);
+  Observer.OnNext(value);
 end;
 
 {$ENDREGION}

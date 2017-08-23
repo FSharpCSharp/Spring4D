@@ -22,7 +22,8 @@ implementation
 uses
   Spring.Collections,
   Spring.Lambda,
-  Spring.Reactive;
+  Spring.Reactive,
+  Spring.Reactive.Concurrency;
 
 procedure TForm1.FormCreate(Sender: TObject);
 type
@@ -59,23 +60,31 @@ begin
     singleClickStream := Where(x = 1);
   end;
 
-  multiClickStream.Subscribe(
+  multiClickStream
+    .ObserveOn(TScheduler.MainThread)
+    .Subscribe(
     procedure(const numClicks: Integer)
     begin
+      Assert(TThread.Current.ThreadID = MainThreadID);
       Caption := 'clicked x' + numClicks.ToString;
     end);
 
-  singleClickStream.Subscribe(
+  singleClickStream
+    .ObserveOn(TScheduler.MainThread)
+    .Subscribe(
     procedure(const _: Integer)
     begin
+      Assert(TThread.Current.ThreadID = MainThreadID);
       Caption := 'click';
     end);
 
   TObservable.Merge<Integer>([multiClickStream, singleClickStream])
     .Throttle(1000)
+    .ObserveOn(TScheduler.MainThread)
     .Subscribe(
     procedure(const _: Integer)
     begin
+      Assert(TThread.Current.ThreadID = MainThreadID);
       Caption := '';
     end);
 end;

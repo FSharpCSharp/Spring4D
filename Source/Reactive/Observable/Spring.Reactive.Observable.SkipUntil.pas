@@ -191,7 +191,7 @@ end;
 procedure TSkipUntil<TSource, TOther>.TSink.TSourceObserver.OnError(
   const error: Exception);
 begin
-  fParent.fObserver.OnError(error);
+  fParent.Observer.OnError(error);
   fParent.Dispose;
 end;
 
@@ -240,14 +240,14 @@ end;
 procedure TSkipUntil<TSource, TOther>.TSink.TOtherObserver.OnError(
   const error: Exception);
 begin
-  fParent.fObserver.OnError(error);
+  fParent.Observer.OnError(error);
   fParent.Dispose;
 end;
 
 procedure TSkipUntil<TSource, TOther>.TSink.TOtherObserver.OnNext(
   const value: TOther);
 begin
-  fSourceObserver.fObserver := fParent.fObserver;
+  fSourceObserver.fObserver := fParent.Observer;
   fSubscription.Dispose;
 end;
 

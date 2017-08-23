@@ -91,7 +91,7 @@ end;
 
 procedure TEmpty<T>.TSink.Invoke;
 begin
-  fObserver.OnCompleted;
+  Observer.OnCompleted;
   Dispose;
 end;
 

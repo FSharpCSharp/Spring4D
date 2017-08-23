@@ -125,12 +125,12 @@ procedure TTakeLast<T>.TSink.LoopRec(const recurse: Action);
 begin
   if fQueue.Count > 0 then
   begin
-    fObserver.OnNext(fQueue.Dequeue);
+    Observer.OnNext(fQueue.Dequeue);
     recurse;
   end
   else
   begin
-    fObserver.OnCompleted;
+    Observer.OnCompleted;
     Dispose;
   end;
 end;

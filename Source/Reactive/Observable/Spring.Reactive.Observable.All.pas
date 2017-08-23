@@ -102,8 +102,8 @@ end;
 
 procedure TAll<T>.TSink.OnCompleted;
 begin
-  fObserver.OnNext(True);
-  fObserver.OnCompleted;
+  Observer.OnNext(True);
+  Observer.OnCompleted;
   Dispose;
 end;
 
@@ -117,7 +117,7 @@ begin
   except
     on e: Exception do
     begin
-      fObserver.OnError(e);
+      Observer.OnError(e);
       Dispose;
       Exit;
     end;
@@ -125,8 +125,8 @@ begin
 
   if not res then
   begin
-    fObserver.OnNext(False);
-    fObserver.OnCompleted;
+    Observer.OnNext(False);
+    Observer.OnCompleted;
     Dispose;
   end;
 end;

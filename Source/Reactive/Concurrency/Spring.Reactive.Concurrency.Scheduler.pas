@@ -53,6 +53,7 @@ type
     class function GetImmediate: IImmediateScheduler; static;
     class function GetNow: TDateTime; static;
     class function GetDefault: IDefaultScheduler; static;
+    class function GetMainThread: IScheduler; static;
 
     type
       TPair<T1,T2> = record
@@ -87,6 +88,7 @@ type
     class property CurrentThread: ICurrentThreadScheduler read GetCurrentThread;
     class property Default: IDefaultScheduler read GetDefault;
     class property Immediate: IImmediateScheduler read GetImmediate;
+    class property MainThread: IScheduler read GetMainThread;
     class property Now: TDateTime read GetNow;
   end;
 
@@ -97,6 +99,7 @@ uses
   Spring.Reactive.Concurrency.CurrentThreadScheduler,
   Spring.Reactive.Concurrency.DefaultScheduler,
   Spring.Reactive.Concurrency.ImmediateScheduler,
+  Spring.Reactive.Concurrency.MainThreadScheduler,
   Spring.Reactive.Disposables;
 
 
@@ -115,6 +118,11 @@ end;
 class function TScheduler.GetImmediate: IImmediateScheduler;
 begin
   Result := TImmediateScheduler.Instance;
+end;
+
+class function TScheduler.GetMainThread: IScheduler;
+begin
+  Result := TMainThreadScheduler.Instance;
 end;
 
 function TScheduler.Schedule(const action: Action): IDisposable;

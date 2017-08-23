@@ -185,7 +185,7 @@ begin
   fRefCountDisposable := TRefCountDisposable.Create(fm);
 
   firstWindow := CreateWindow;
-  fObserver.OnNext(firstWindow);
+  Observer.OnNext(firstWindow);
   fm.Disposable := fParent.fSource.Subscribe(Self);
   Result := fRefCountDisposable;
 end;
@@ -219,7 +219,7 @@ begin
   if fn mod fParent.fSkip = 0 then
   begin
     newWindow := CreateWindow;
-    fObserver.OnNext(newWindow);
+    Observer.OnNext(newWindow);
   end;
 end;
 
@@ -257,7 +257,7 @@ begin
   MonitorEnter(Self);
   try
     fs.OnCompleted;
-    fObserver.OnCompleted;
+    Observer.OnCompleted;
     Dispose;
   finally
     MonitorExit(Self);
@@ -269,7 +269,7 @@ begin
   MonitorEnter(Self);
   try
     fs.OnError(error);
-    fObserver.OnError(error);
+    Observer.OnError(error);
     Dispose;
   finally
     MonitorExit(Self);
@@ -296,7 +296,7 @@ begin
 
       fs.OnCompleted;
       fs := TSubject<T>.Create;
-      fObserver.OnNext(TWindowObservable<T>.Create(fs, fRefCountDisposable));
+      Observer.OnNext(TWindowObservable<T>.Create(fs, fRefCountDisposable));
     end;
   finally
     MonitorExit(Self);
@@ -319,7 +319,7 @@ begin
   fRefCountDisposable := TRefCountDisposable.Create(groupDisposable);
 
   fs := TSubject<T>.Create;
-  fObserver.OnNext(TWindowObservable<T>.Create(fs, fRefCountDisposable));
+  Observer.OnNext(TWindowObservable<T>.Create(fs, fRefCountDisposable));
   CreateTimer(0);
 
   groupDisposable.Add(fParent.fSource.Subscribe(Self));
@@ -346,7 +346,7 @@ begin
 
     fs.OnCompleted;
     fs := TSubject<T>.Create;
-    fObserver.OnNext(TWindowObservable<T>.Create(fs, fRefCountDisposable));
+    Observer.OnNext(TWindowObservable<T>.Create(fs, fRefCountDisposable));
   finally
     MonitorExit(Self);
   end;

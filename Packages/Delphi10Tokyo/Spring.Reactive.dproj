@@ -127,6 +127,7 @@
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.DefaultScheduler.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ImmediateScheduler.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.LocalScheduler.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.MainThreadScheduler.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ScheduledItem.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.Scheduler.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerDefaults.pas"/>

@@ -110,15 +110,15 @@ end;
 
 procedure TAny<T>.TSink.OnCompleted;
 begin
-  fObserver.OnNext(False);
-  fObserver.OnCompleted;
+  Observer.OnNext(False);
+  Observer.OnCompleted;
   Dispose;
 end;
 
 procedure TAny<T>.TSink.OnNext(const value: T);
 begin
-  fObserver.OnNext(True);
-  fObserver.OnCompleted;
+  Observer.OnNext(True);
+  Observer.OnCompleted;
   Dispose;
 end;
 
@@ -143,8 +143,8 @@ end;
 
 procedure TAny<T>.TSinkPredicate.OnCompleted;
 begin
-  fObserver.OnNext(False);
-  fObserver.OnCompleted;
+  Observer.OnNext(False);
+  Observer.OnCompleted;
   Dispose;
 end;
 
@@ -158,7 +158,7 @@ begin
   except
     on e: Exception do
     begin
-      fObserver.OnError(e);
+      Observer.OnError(e);
       Dispose;
       Exit;
     end;
@@ -166,8 +166,8 @@ begin
 
   if res then
   begin
-    fObserver.OnNext(True);
-    fObserver.OnCompleted;
+    Observer.OnNext(True);
+    Observer.OnCompleted;
     Dispose;
   end;
 end;

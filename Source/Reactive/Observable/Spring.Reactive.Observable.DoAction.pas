@@ -156,24 +156,24 @@ begin
   except
     on ex: Exception do
     begin
-      fObserver.OnError(ex);
+      Observer.OnError(ex);
       Dispose;
       Exit;
     end;
   end;
 
-  fObserver.OnNext(value);
+  Observer.OnNext(value);
 end;
 
 procedure TDoAction<TSource>.TOnNext.TSink.OnError(const error: Exception);
 begin
-  fObserver.OnError(error);
+  Observer.OnError(error);
   Dispose;
 end;
 
 procedure TDoAction<TSource>.TOnNext.TSink.OnCompleted;
 begin
-  fObserver.OnCompleted;
+  Observer.OnCompleted;
   Dispose;
 end;
 
@@ -219,13 +219,13 @@ begin
   except
     on ex: Exception do
     begin
-      fObserver.OnError(ex);
+      Observer.OnError(ex);
       Dispose;
       Exit;
     end;
   end;
 
-  fObserver.OnNext(value);
+  Observer.OnNext(value);
 end;
 
 procedure TDoAction<TSource>.TObserver.TSink.OnError(const error: Exception);
@@ -235,13 +235,13 @@ begin
   except
     on ex: Exception do
     begin
-      fObserver.OnError(ex);
+      Observer.OnError(ex);
       Dispose;
       Exit;
     end;
   end;
 
-  fObserver.OnError(error);
+  Observer.OnError(error);
   Dispose;
 end;
 
@@ -252,13 +252,13 @@ begin
   except
     on ex: Exception do
     begin
-      fObserver.OnError(ex);
+      Observer.OnError(ex);
       Dispose;
       Exit;
     end;
   end;
 
-  fObserver.OnCompleted;
+  Observer.OnCompleted;
   Dispose;
 end;
 
@@ -314,13 +314,13 @@ begin
   except
     on ex: Exception do
     begin
-      fObserver.OnError(ex);
+      Observer.OnError(ex);
       Dispose;
       Exit;
     end;
   end;
 
-  fObserver.OnNext(value);
+  Observer.OnNext(value);
 end;
 
 procedure TDoAction<TSource>.TActions.TSink.OnError(const error: Exception);
@@ -330,13 +330,13 @@ begin
   except
     on ex: Exception do
     begin
-      fObserver.OnError(ex);
+      Observer.OnError(ex);
       Dispose;
       Exit;
     end;
   end;
 
-  fObserver.OnError(error);
+  Observer.OnError(error);
   Dispose;
 end;
 
@@ -347,13 +347,13 @@ begin
   except
     on ex: Exception do
     begin
-      fObserver.OnError(ex);
+      Observer.OnError(ex);
       Dispose;
       Exit;
     end;
   end;
 
-  fObserver.OnCompleted;
+  Observer.OnCompleted;
   Dispose;
 end;
 

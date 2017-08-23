@@ -278,7 +278,7 @@ begin
   begin
     s := fQueue.Dequeue;
     if s.Count > 0 then
-      fObserver.OnNext(s);
+      Observer.OnNext(s);
   end;
 
   Inc(fn);
@@ -291,7 +291,7 @@ begin
   while fQueue.Count > 0 do
     fQueue.Dequeue.Clear;
 
-  fObserver.OnError(error);
+  Observer.OnError(error);
   Dispose;
 end;
 
@@ -303,10 +303,10 @@ begin
   begin
     s := fQueue.Dequeue;
     if s.Count > 0 then
-      fObserver.OnNext(s);
+      Observer.OnNext(s);
   end;
 
-  fObserver.OnCompleted;
+  Observer.OnCompleted;
   Dispose;
 end;
 
@@ -346,7 +346,7 @@ procedure TBuffer<T>.TBufferTimeShift.Tick;
 begin
   MonitorEnter(Self);
   try
-    fObserver.OnNext(fList);
+    Observer.OnNext(fList);
     fList := TCollections.CreateList<T>;
   finally
     MonitorExit(Self);
@@ -369,7 +369,7 @@ begin
   try
     fList.Clear;
 
-    fObserver.OnError(error);
+    Observer.OnError(error);
     Dispose;
   finally
     MonitorExit(Self);
@@ -380,8 +380,8 @@ procedure TBuffer<T>.TBufferTimeShift.OnCompleted;
 begin
   MonitorEnter(Self);
   try
-    fObserver.OnNext(fList);
-    fObserver.OnCompleted;
+    Observer.OnNext(fList);
+    Observer.OnCompleted;
     Dispose;
   finally
     MonitorExit(Self);
@@ -480,7 +480,7 @@ begin
     begin
       MonitorEnter(Self);
       try
-        fObserver.OnError(e);
+        Observer.OnError(e);
         Dispose;
       finally
         MonitorExit(Self);
@@ -505,7 +505,7 @@ begin
   try
     res := fBuffer;
     fBuffer := TCollections.CreateList<TSource>;
-    fObserver.OnNext(res);
+    Observer.OnNext(res);
   finally
     MonitorExit(Self);
   end;
@@ -529,7 +529,7 @@ begin
   MonitorEnter(Self);
   try
     fBuffer.Clear;
-    fObserver.OnError(error);
+    Observer.OnError(error);
     Dispose;
   finally
     MonitorExit(Self);
@@ -540,8 +540,8 @@ procedure TBuffer<TSource, TBufferClosing>.TSink.OnCompleted;
 begin
   MonitorEnter(Self);
   try
-    fObserver.OnNext(fBuffer);
-    fObserver.OnCompleted;
+    Observer.OnNext(fBuffer);
+    Observer.OnCompleted;
     Dispose;
   finally
     MonitorExit(Self);
@@ -651,7 +651,7 @@ begin
   MonitorEnter(Self);
   try
     fBuffer.Clear;
-    fObserver.OnError(error);
+    Observer.OnError(error);
     Dispose;
   finally
     MonitorExit(Self);
@@ -662,8 +662,8 @@ procedure TBuffer<TSource, TBufferClosing>.TBeta.OnCompleted;
 begin
   MonitorEnter(Self);
   try
-    fObserver.OnNext(fBuffer);
-    fObserver.OnCompleted;
+    Observer.OnNext(fBuffer);
+    Observer.OnCompleted;
     Dispose;
   finally
     MonitorExit(Self);
@@ -698,7 +698,7 @@ begin
   try
     res := fParent.fBuffer;
     fParent.fBuffer := TCollections.CreateList<TSource>;
-    fParent.fObserver.OnNext(res);
+    fParent.Observer.OnNext(res);
   finally
     MonitorExit(fParent);
   end;
