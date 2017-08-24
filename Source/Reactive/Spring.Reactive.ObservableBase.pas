@@ -80,7 +80,7 @@ type
     function Throttle(const dueTime: TTimeSpan): IObservable<T>;
     function Where(const predicate: Predicate<T>): IObservable<T>;
 
-//    function _: IObservableExtensions<T>;
+    function _: IObservableExtensions;
   end;
 
 implementation
@@ -385,10 +385,10 @@ begin
   Result := TWhere<T>.Create(Self, predicate);
 end;
 
-//function TObservableBase<T>._: IObservableExtensions<T>;
-//begin
-//  Result := IObservableExtensions<T>(Self);
-//end;
+function TObservableBase<T>._: IObservableExtensions;
+begin
+  Result := IObservableExtensions(Self);
+end;
 
 {$ENDREGION}
 

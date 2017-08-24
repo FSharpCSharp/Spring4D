@@ -29,6 +29,7 @@ unit Spring.Reactive.Concurrency.ConcurrencyAbstractionLayer;
 interface
 
 uses
+  SyncObjs,
   System.Threading,
   Spring,
   Spring.Reactive;
@@ -37,6 +38,7 @@ type
   TConcurrencyAbstractionLayer = class(TInterfacedObject, IConcurrencyAbstractionLayer)
   private
     class var fThreadPool: TThreadPool;
+    class var fTerminated: TEvent;
     function Normalize(const dueTime: TTimeSpan): TTimeSpan;
   public
     class constructor Create;
@@ -54,119 +56,52 @@ type
 implementation
 
 uses
-  SyncObjs,
   Spring.Reactive.Disposables;
 
 type
-  IEvent = interface
+  IWaitHandle = interface(IDisposable)
     function WaitFor(const Timeout: TTimeSpan): TWaitResult;
-    procedure SetEvent;
-    procedure ResetEvent;
   end;
 
-  TInterfacedEvent = class(TInterfacedObject, IEvent)
+  TWaitHandle = class(TInterfacedObject, IWaitHandle, IDisposable)
   private
     fEvent: TEvent;
-    property Event: TEvent read fEvent implements IEvent;
+    function WaitFor(const Timeout: TTimeSpan): TWaitResult;
   public
     constructor Create;
     destructor Destroy; override;
-  end;
-
-  TTimer = class(TDisposableObject)
-  private
-    fEvent: IEvent;
-  public
-    constructor Create(const action: Action<TValue>; const state: TValue;
-      const dueTime: TTimeSpan);
-    procedure Dispose; override;
-  end;
-
-  TPeriodicTimer = class(TDisposableObject)
-  private
-    fEvent: IEvent;
-  public
-    constructor Create(const action: Action; const period: TTimeSpan);
-    procedure Dispose; override;
+    procedure Dispose;
   end;
 
 
-{$REGION 'TInterfacedEvent'}
+{$REGION 'TWaitHandle'}
 
-constructor TInterfacedEvent.Create;
+constructor TWaitHandle.Create;
 begin
   inherited Create;
   fEvent := TEvent.Create(nil, True, False, '');
 end;
 
-destructor TInterfacedEvent.Destroy;
+destructor TWaitHandle.Destroy;
 begin
   fEvent.Free;
   inherited Destroy;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TTimer'}
-
-constructor TTimer.Create(const action: Action<TValue>; const state: TValue;
-  const dueTime: TTimeSpan);
-var
-  _dueTime: TTimeSpan;
-  _state: TValue;
-  event: IEvent;
+procedure TWaitHandle.Dispose;
 begin
-  inherited Create;
-  _state := state;
-  _dueTime := dueTime;
-  event := TInterfacedEvent.Create;
-  fEvent := event;
-
-  TTask.Run(
-    procedure
-    begin
-      if (event.WaitFor(_dueTime) = wrTimeout) // TODO: cancel this when application shuts down
-        and not TThread.Current.Terminated then
-        action(_state);
-    end);
-end;
-
-procedure TTimer.Dispose;
-begin
-  inherited Dispose;
   fEvent.SetEvent;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TPeriodicTimer'}
-
-constructor TPeriodicTimer.Create(const action: Action;
-  const period: TTimeSpan);
+function TWaitHandle.WaitFor(const Timeout: TTimeSpan): TWaitResult;
 var
-  _period: TTimeSpan;
-  event: IEvent;
+  obj: THandleObject;
 begin
-  inherited Create;
-  _period := period;
-  event := TInterfacedEvent.Create;
-  fEvent := event;
-
-  TTask.Run(
-    procedure
-    begin
-      while (event.WaitFor(_period) = wrTimeout) // TODO: cancel this when application shuts down
-        and not TThread.Current.Terminated do
-        action();
-    end);
-end;
-
-procedure TPeriodicTimer.Dispose;
-begin
-  inherited Dispose;
-  fEvent.SetEvent;
+  Result := TEvent.WaitForMultiple(
+    [TConcurrencyAbstractionLayer.fTerminated, fEvent],
+    Trunc(Timeout.TotalMilliseconds),
+    False,
+    obj);
 end;
 
 {$ENDREGION}
@@ -177,23 +112,52 @@ end;
 class constructor TConcurrencyAbstractionLayer.Create;
 begin
   fThreadPool := TThreadPool.Create;
+  fTerminated := TEvent.Create;
 end;
 
 class procedure TConcurrencyAbstractionLayer.ShutDown;
 begin
+  fTerminated.SetEvent;
   fThreadPool.Free;
+  fTerminated.Free;
 end;
 
 function TConcurrencyAbstractionLayer.StartTimer(const action: Action<TValue>;
   const state: TValue; const dueTime: TTimeSpan): IDisposable;
+var
+  _dueTime: TTimeSpan;
+  _state: TValue;
+  cancel: IWaitHandle;
 begin
-  Result := TTimer.Create(action, state, Normalize(dueTime));
+  _state := state;
+  _dueTime := dueTime;
+
+  cancel := TWaitHandle.Create;
+  fThreadPool.QueueWorkItem(
+    procedure
+    begin
+      if cancel.WaitFor(_dueTime) = wrTimeout then
+        action(_state);
+    end);
+  Result := cancel;
 end;
 
 function TConcurrencyAbstractionLayer.StartPeriodicTimer(const action: Action;
   const period: TTimeSpan): IDisposable;
+var
+  _period: TTimeSpan;
+  cancel: IWaitHandle;
 begin
-  Result := TPeriodicTimer.Create(action, period);
+  _period := period;
+
+  cancel := TWaitHandle.Create;
+  fThreadPool.QueueWorkItem(
+    procedure
+    begin
+      while cancel.WaitFor(_period) = wrTimeout do
+        action();
+    end);
+  Result := cancel;
 end;
 
 function TConcurrencyAbstractionLayer.QueueUserWorkItem(

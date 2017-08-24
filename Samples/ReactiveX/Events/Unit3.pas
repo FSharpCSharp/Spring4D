@@ -42,15 +42,9 @@ var
 begin
   clickStream := TObservable.FromEventPattern<TMouseDownEventArgs>(Label1, 'OnMouseDown');
 
-//  with clickStream._
-//    .Buffer<TMouseDownEventArgs>(clickStream.Throttle(250))._
-//    .Select<Integer>(
-//    function(const x: IList<TMouseDownEventArgs>): Integer
-//    begin
-//      Result := x.Count;
-//    end) do
-  with TObservable.Select<IList<TMouseDownEventArgs>, Integer>(
-    TObservable.Buffer<TMouseDownEventArgs,TMouseDownEventArgs>(clickStream, clickStream.Throttle(250)),
+  with clickStream._
+    .Buffer<TMouseDownEventArgs, TMouseDownEventArgs>(clickStream.Throttle(250))._
+    .Select<IList<TMouseDownEventArgs>, Integer>(
     function(const x: IList<TMouseDownEventArgs>): Integer
     begin
       Result := x.Count;

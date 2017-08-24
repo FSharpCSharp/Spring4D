@@ -35,54 +35,75 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TTimer = class(TProducer<Integer>)
-  private
-    fDueTimeR: TTimeSpan;
-    fPeriod: TTimeSpan;
-    fScheduler: IScheduler;
+  TTimer = class
+  private type
+    TSingle = class(TProducer<Int64>)
+    private
+      fScheduler: IScheduler;
 
-    type
-      TSink = class(TSink<Integer>)
-      private
-        fParent: TTimer;
-        fPeriod: TTimeSpan;
-      public
-        constructor Create(const parent: TTimer;
-          const observer: IObserver<Integer>; const cancel: IDisposable);
-        destructor Destroy; override;
-        function Run: IDisposable;
-      end;
-  protected
-    function Run(const observer: IObserver<Integer>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
-  public
-    constructor Create(const dueTime, period: TTimeSpan; const scheduler: IScheduler);
+      type
+        TSink = class(TSink<Int64>)
+        private
+          procedure Invoke;
+        public
+          function Run(const parent: TSingle; const dueTime: TTimeSpan): IDisposable; overload;
+    //      function Run(const parent: TSingle; const dueTime: TDateTimeOffset): IDisposable; overload;
+        end;
+    public
+      constructor Create(const scheduler: IScheduler);
+    end;
+
+    TPeriodic = class(TProducer<Int64>)
+    private
+      fPeriod: TTimeSpan;
+      fScheduler: IScheduler;
+
+      type
+        TSink = class(TSink<Int64>)
+        private
+          fPeriod: TTimeSpan;
+          procedure InvokeStart;
+          function Tick(const count: Int64): Int64;
+        public
+          constructor Create(const period: TTimeSpan;
+            const observer: IObserver<Int64>; const cancel: IDisposable);
+          function Run(const parent: TPeriodic; const dueTime: TTimeSpan): IDisposable; overload;
+    //      function Run(const parent: TPeriodic; const dueTime: TDateTimeOffset): IDisposable; overload;
+        end;
+    public
+      constructor Create(const period: TTimeSpan; const scheduler: IScheduler);
+    end;
+  public type
+    TSingleRelative = class(TSingle)
+    private
+      fDueTime: TTimeSpan;
+    protected
+      function Run(const observer: IObserver<Int64>; const cancel: IDisposable;
+        const setSink: Action<IDisposable>): IDisposable; override;
+    public
+      constructor Create(const dueTime: TTimeSpan; const scheduler: IScheduler);
+    end;
+
+    TPeriodicRelative = class(TPeriodic)
+    private
+      fDueTime: TTimeSpan;
+    protected
+      function Run(const observer: IObserver<Int64>; const cancel: IDisposable;
+        const setSink: Action<IDisposable>): IDisposable; override;
+    public
+      constructor Create(const dueTime, period: TTimeSpan; const scheduler: IScheduler);
+    end;
   end;
 
 implementation
 
 
-{$REGION 'TTimer'}
+{$REGION 'TTimer.TSingle'}
 
-constructor TTimer.Create(const dueTime, period: TTimeSpan;
-  const scheduler: IScheduler);
+constructor TTimer.TSingle.Create(const scheduler: IScheduler);
 begin
   inherited Create;
-  fDueTimeR := dueTime;
-  fPeriod := period;
   fScheduler := scheduler;
-end;
-
-function TTimer.Run(const observer: IObserver<Integer>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
-begin
-  // TODO use nullable to support multiple ways
-
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
 end;
 
 {$ENDREGION}
@@ -90,40 +111,122 @@ end;
 
 {$REGION 'TTimer.TSink'}
 
-constructor TTimer.TSink.Create(const parent: TTimer;
-  const observer: IObserver<Integer>; const cancel: IDisposable);
+procedure TTimer.TSingle.TSink.Invoke;
 begin
-  inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
-  fPeriod := fParent.fPeriod;
+  Observer.OnNext(0);
+  Observer.OnCompleted;
+  Dispose;
 end;
 
-destructor TTimer.TSink.Destroy;
-begin
-  fParent._Release;
-  inherited;
-end;
-
-function TTimer.TSink.Run: IDisposable;
+function TTimer.TSingle.TSink.Run(const parent: TSingle; const dueTime: TTimeSpan): IDisposable;
 var
-  dueTime: TTimeSpan;
-  count: Integer;
+  guard: IInterface;
 begin
-  dueTime := fParent.fDueTimeR;
-  if dueTime = fPeriod then
-  begin
-    count := 0;
-    Result := (fParent.fScheduler as ISchedulerPeriodic).SchedulePeriodic(fPeriod,
+  guard := Self; // make sure that self is kept alive by capturing it
+  Result := parent.fScheduler.Schedule(dueTime,
     procedure
     begin
-      if Assigned(Observer) then
-      begin
-        Observer.OnNext(count);
-        Inc(count);
-      end;
+      if Assigned(guard) then
+        Invoke;
     end);
-  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTimer.TSingleRelative'}
+
+constructor TTimer.TSingleRelative.Create(const dueTime: TTimeSpan;
+  const scheduler: IScheduler);
+begin
+  inherited Create(scheduler);
+  fDueTime := dueTime;
+end;
+
+function TTimer.TSingleRelative.Run(const observer: IObserver<Int64>;
+  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
+var
+  sink: TSink;
+begin
+  sink := TSink.Create(observer, cancel);
+  setSink(sink);
+  Result := sink.Run(Self, fDueTime);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTimer.TPeriodic'}
+
+constructor TTimer.TPeriodic.Create(const period: TTimeSpan;
+  const scheduler: IScheduler);
+begin
+  inherited Create;
+  fPeriod := period;
+  fScheduler := scheduler;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTimer.TPeriodicRelative'}
+
+constructor TTimer.TPeriodicRelative.Create(const dueTime, period: TTimeSpan;
+  const scheduler: IScheduler);
+begin
+  inherited Create(period, scheduler);
+  fDueTime := dueTime;
+end;
+
+function TTimer.TPeriodicRelative.Run(const observer: IObserver<Int64>;
+  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
+var
+  sink: TSink;
+begin
+  sink := TSink.Create(fPeriod, observer, cancel);
+  setSink(sink);
+  Result := sink.Run(Self, fDueTime);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTimer.TPeriodic.TSink'}
+
+constructor TTimer.TPeriodic.TSink.Create(const period: TTimeSpan;
+  const observer: IObserver<Int64>; const cancel: IDisposable);
+begin
+  inherited Create(observer, cancel);
+  fPeriod := period;
+end;
+
+procedure TTimer.TPeriodic.TSink.InvokeStart;
+begin
+  // TODO: implement
+  raise ENotImplementedException.Create('InvokeStart');
+end;
+
+function TTimer.TPeriodic.TSink.Run(const parent: TPeriodic;
+  const dueTime: TTimeSpan): IDisposable;
+var
+  guard: IInterface;
+begin
+  guard := Self; // make sure that self is kept alive by capturing it
+  if dueTime = fPeriod then
+    Result := (parent.fScheduler as ISchedulerPeriodic).SchedulePeriodic(0, fPeriod,
+      function(const count: TValue): TValue
+      begin
+        if Assigned(guard) then
+          Result := Tick(count.AsInt64);
+      end)
+  else
+    Result := parent.fScheduler.Schedule(dueTime, InvokeStart);
+end;
+
+function TTimer.TPeriodic.TSink.Tick(const count: Int64): Int64;
+begin
+  Observer.OnNext(count);
+  Result := count + 1; // TODO: unchecked
 end;
 
 {$ENDREGION}

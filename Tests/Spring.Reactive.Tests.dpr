@@ -17,7 +17,8 @@ uses
   Spring.Reactive.Tests.Scheduler in 'Source\Reactive\Concurrency\Spring.Reactive.Tests.Scheduler.pas',
   Spring.Reactive.Tests.Subject in 'Source\Reactive\Subjects\Spring.Reactive.Tests.Subject.pas',
   Spring.Reactive.Tests.AsyncLock in 'Source\Reactive\Concurrency\Spring.Reactive.Tests.AsyncLock.pas',
-  Spring.Reactive.Tests.Aggregate in 'Source\Reactive\Observable\Spring.Reactive.Tests.Aggregate.pas';
+  Spring.Reactive.Tests.Aggregate in 'Source\Reactive\Observable\Spring.Reactive.Tests.Aggregate.pas',
+  Spring.Reactive.Tests.Multiple in 'Source\Reactive\Observable\Spring.Reactive.Tests.Multiple.pas';
 
 begin
   RunRegisteredTests;

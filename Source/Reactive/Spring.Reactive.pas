@@ -225,7 +225,18 @@ type
     procedure OnCompleted;
   end;
 
-//  IObservableExtensions<T> = class;
+  IObservable<T> = interface;
+
+  IObservableExtensions = record
+  private
+  {$HINTS OFF}
+    Self: Pointer;
+  {$HINTS ON}
+  public
+    function Buffer<TSource, TBufferBoundary>(const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>; overload;
+    function Select<TSource, TResult>(const selector: Func<TSource, TResult>): IObservable<TResult>; overload;
+    function TakeUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
+  end;
 
   IObservable<T> = interface(IDisposable)
     ['{E20F7E99-4952-47A3-8F02-8F37972C0E5D}']
@@ -288,8 +299,8 @@ type
 
     // TODO PPL overloads / cancellation token
 
-    // experimental - extension support - does not work, causes the compiler to hang
-//    function _: IObservableExtensions<T>;
+    // experimental - extension support
+    function _: IObservableExtensions;
   end;
 
   IGroupedObservable<TKey, TElement> = interface(IObservable<TElement>)
@@ -323,7 +334,8 @@ type
   end;
 
   TObservable = record
-    class function Timer(const dueTime, period: TTimeSpan; const scheduler: IScheduler): IObservable<Integer>; static;
+  private
+    class function Timer(const dueTime, period: TTimeSpan; const scheduler: IScheduler): IObservable<Int64>; static;
   public
     class function Buffer<T>(const source: IObservable<T>; count: Integer): IObservable<IList<T>>; overload; static;
     class function Buffer<T>(const source: IObservable<T>; count, skip: Integer): IObservable<IList<T>>; overload; static;
@@ -355,7 +367,7 @@ type
       const keySelector: Func<TSource, TKey>): IObservable<IGroupedObservable<TKey, TSource>>; static;
     // TODO overloads
 
-    class function Interval(const period: TTimeSpan): IObservable<Integer>; static;
+    class function Interval(const period: TTimeSpan): IObservable<Int64>; static;
 
     class function Merge<T>(const sources: array of IObservable<T>): IObservable<T>; overload; static;
     class function Merge<T>(const sources: IObservable<IObservable<T>>): IObservable<T>; overload; static;
@@ -394,12 +406,6 @@ type
 
   EObjectDisposedException = class(EInvalidOperationException); // TODO: move to Spring.pas
 
-//  IObservableExtensions<T> = class
-//  public
-//    function Buffer<TBufferBoundary>(const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<T>>; overload;
-//    function Select<TResult>(const selector: Func<T, TResult>): IObservable<TResult>; overload;
-//  end;
-
 type
   TEventWrapper<TArgs> = class(TComponent) // TODO: move into own unit once properly implemented
   private
@@ -416,6 +422,7 @@ uses
   Spring.Reactive.AnonymousObservable,
   Spring.Reactive.Concurrency.SchedulerDefaults,
   Spring.Reactive.Internal.Stubs,
+  Spring.Reactive.ObservableBase,
   Spring.Reactive.Observable.Buffer,
   Spring.Reactive.Observable.CombineLatest,
   Spring.Reactive.Observable.Empty,
@@ -434,19 +441,25 @@ uses
   Spring.Reactive.Subjects.Subject; // TODO: remove - implement this specifically
 
 
-{$REGION 'IObservableExtensions<T>'}
+{$REGION 'IObservableExtensions'}
 
-//function IObservableExtensions<T>.Buffer<TBufferBoundary>(
-//  const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<T>>;
-//begin
-//  Result := TBuffer<T, TBufferBoundary>.Create(TInterfacedObject(Self) as IObservable<T>, bufferBoundaries);
-//end;
+function IObservableExtensions.Buffer<TSource, TBufferBoundary>(
+  const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource, TBufferBoundary>.Create(TObject(Self) as TObservableBase<TSource>, bufferBoundaries);
+end;
 
-//function IObservableExtensions<T>.Select<TResult>(
-//  const selector: Func<T, TResult>): IObservable<TResult>;
-//begin
-//  Result := TSelect<T, TResult>.Create(TInterfacedObject(Self) as IObservable<T>, selector);
-//end;
+function IObservableExtensions.Select<TSource, TResult>(
+  const selector: Func<TSource, TResult>): IObservable<TResult>;
+begin
+  Result := TSelect<TSource, TResult>.Create(TObject(Self) as TObservableBase<TSource>, selector);
+end;
+
+function IObservableExtensions.TakeUntil<TSource, TOther>(
+  const other: IObservable<TOther>): IObservable<TSource>;
+begin
+  Result := TTakeUntil<TSource, TOther>.Create(TObject(Self) as TObservableBase<TSource>, other);
+end;
 
 {$ENDREGION}
 
@@ -685,7 +698,7 @@ begin
     function(const x: TSource): TSource begin Result := x; end, 0, TEqualityComparer<TKey>.Default);
 end;
 
-class function TObservable.Interval(const period: TTimeSpan): IObservable<Integer>;
+class function TObservable.Interval(const period: TTimeSpan): IObservable<Int64>;
 begin
   Result := Timer(period, period, SchedulerDefaults.TimeBasedOperations);
 end;
@@ -744,9 +757,9 @@ begin
 end;
 
 class function TObservable.Timer(const dueTime, period: TTimeSpan;
-  const scheduler: IScheduler): IObservable<Integer>;
+  const scheduler: IScheduler): IObservable<Int64>;
 begin
-  Result := TTimer.Create(dueTime, period, scheduler);
+  Result := TTimer.TPeriodicRelative.Create(dueTime, period, scheduler);
 end;
 
 class function TObservable.Window<T>(const source: IObservable<T>;

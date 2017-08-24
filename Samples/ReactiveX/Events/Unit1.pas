@@ -19,7 +19,8 @@ implementation
 {$R *.dfm}
 
 uses
-  Spring.Reactive;
+  Spring.Reactive,
+  Spring.Reactive.Concurrency;
 
 type
   TMouseMoveEventArgs = record
@@ -36,6 +37,7 @@ begin
       Result := ssCtrl in args.Shift;
     end)
     .Sample(100)
+    .ObserveOn(TScheduler.MainThread)
     .Subscribe(
     procedure(const args: TMouseMoveEventArgs)
     begin
