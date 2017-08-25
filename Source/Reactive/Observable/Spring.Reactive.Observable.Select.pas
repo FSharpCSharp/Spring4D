@@ -58,7 +58,6 @@ type
   public
     constructor Create(const source: IObservable<TSource>;
       const selector: Func<TSource, TResult>);
-
   end;
 
 implementation

@@ -446,7 +446,7 @@ uses
 function IObservableExtensions.Buffer<TSource, TBufferBoundary>(
   const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>;
 begin
-  Result := TBuffer<TSource, TBufferBoundary>.Create(TObject(Self) as TObservableBase<TSource>, bufferBoundaries);
+  Result := TBuffer<TSource, TBufferBoundary>.TBoundaries.Create(TObject(Self) as TObservableBase<TSource>, bufferBoundaries);
 end;
 
 function IObservableExtensions.Select<TSource, TResult>(
@@ -564,33 +564,33 @@ end;
 class function TObservable.Buffer<T>(const source: IObservable<T>;
   count: Integer): IObservable<IList<T>>;
 begin
-  Result := TBuffer<T>.Create(source, count, count);
+  Result := TBuffer<T>.TCount.Create(source, count, count);
 end;
 
 class function TObservable.Buffer<T>(const source: IObservable<T>; count,
   skip: Integer): IObservable<IList<T>>;
 begin
-  Result := TBuffer<T>.Create(source, count, skip);
+  Result := TBuffer<T>.TCount.Create(source, count, skip);
 end;
 
 class function TObservable.Buffer<T>(const source: IObservable<T>;
   const timeSpan: TTimeSpan): IObservable<IList<T>>;
 begin
-  Result := TBuffer<T>.Create(source, timeSpan, timeSpan, SchedulerDefaults.TimeBasedOperations);
+  Result := TBuffer<T>.TTimeHopping.Create(source, timeSpan, SchedulerDefaults.TimeBasedOperations);
 end;
 
 class function TObservable.Buffer<TSource, TBufferClosing>(
   const source: IObservable<TSource>;
   const bufferClosingSelector: Func<IObservable<TBufferClosing>>): IObservable<IList<TSource>>;
 begin
-  Result := TBuffer<TSource, TBufferClosing>.Create(source, bufferClosingSelector);
+  Result := TBuffer<TSource, TBufferClosing>.TSelector.Create(source, bufferClosingSelector);
 end;
 
 class function TObservable.Buffer<TSource, TBufferBoundary>(
   const source: IObservable<TSource>;
   const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>;
 begin
-  Result := TBuffer<TSource, TBufferBoundary>.Create(source, bufferBoundaries);
+  Result := TBuffer<TSource, TBufferBoundary>.TBoundaries.Create(source, bufferBoundaries);
 end;
 
 class function TObservable.CombineLatest<TFirst, TSecond, TResult>(

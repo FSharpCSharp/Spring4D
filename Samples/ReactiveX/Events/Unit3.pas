@@ -33,9 +33,10 @@ type
     Shift: TShiftState;
     X, Y: Integer;
   end;
-const
-  x: Lambda<Integer> = ();
 var
+  x: Lambda<Integer>;
+  args: Lambda<TMouseDownEventArgs>;
+
   clickStream: IObservable<TMouseDownEventArgs>;
   multiClickStream: IObservable<Integer>;
   singleClickStream: IObservable<Integer>;
@@ -44,11 +45,7 @@ begin
 
   with clickStream._
     .Buffer<TMouseDownEventArgs, TMouseDownEventArgs>(clickStream.Throttle(250))._
-    .Select<IList<TMouseDownEventArgs>, Integer>(
-    function(const x: IList<TMouseDownEventArgs>): Integer
-    begin
-      Result := x.Count;
-    end) do
+    .Select<IList<TMouseDownEventArgs>, Integer>(args.Count) do
   begin
     multiClickStream := Where(x >= 2);
     singleClickStream := Where(x = 1);
