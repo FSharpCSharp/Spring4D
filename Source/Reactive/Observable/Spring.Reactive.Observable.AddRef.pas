@@ -35,21 +35,22 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TAddRef<T> = class(TProducer<T>)
+  TAddRef<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
+    fSource: IObservable<TSource>;
     fRefCount: IRefCountDisposable;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       public
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const refCount: IRefCountDisposable);
+    constructor Create(const source: IObservable<TSource>; const refCount: IRefCountDisposable);
   end;
 
 implementation
@@ -58,9 +59,9 @@ uses
   Spring.Reactive.Disposables;
 
 
-{$REGION 'TAddRef<T>'}
+{$REGION 'TAddRef<TSource>'}
 
-constructor TAddRef<T>.Create(const source: IObservable<T>;
+constructor TAddRef<TSource>.Create(const source: IObservable<TSource>;
   const refCount: IRefCountDisposable);
 begin
   inherited Create;
@@ -68,25 +69,26 @@ begin
   fRefCount := refCount;
 end;
 
-function TAddRef<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
+function TAddRef<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 var
   d: ICancelable;
-  sink: TSink;
 begin
   d := TStableCompositeDisposable.Create(fRefCount.GetDisposable, cancel);
+  Result := TSink.Create(observer, d);
+end;
 
-  sink := TSink.Create(observer, d);
-  setSink(sink);
-  Result := fSource.Subscribe(sink);
+function TAddRef<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TAddRef<T>.TSink'}
+{$REGION 'TAddRef<TSource>.TSink'}
 
-procedure TAddRef<T>.TSink.OnNext(const value: T);
+procedure TAddRef<TSource>.TSink.OnNext(const value: TSource);
 begin
   Observer.OnNext(value);
 end;

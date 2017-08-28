@@ -35,23 +35,24 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TEmpty<T> = class(TProducer<T>)
+  TEmpty<TResult> = class(TProducer<TResult>)
   private
     fScheduler: IScheduler;
 
     type
-      TSink = class(TSink<T>)
+      TSink = class(TSink<TResult>)
       private
-        fParent: TEmpty<T>;
+        fParent: TEmpty<TResult>;
         procedure Invoke;
       public
-        constructor Create(const parent: TEmpty<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TEmpty<TResult>;
+          const observer: IObserver<TResult>; const cancel: IDisposable);
         function Run: IDisposable;
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TResult>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const scheduler: IScheduler);
   end;
@@ -59,43 +60,44 @@ type
 implementation
 
 
-{$REGION 'TEmpty<T>'}
+{$REGION 'TEmpty<TResult>'}
 
-constructor TEmpty<T>.Create(const scheduler: IScheduler);
+constructor TEmpty<TResult>.Create(const scheduler: IScheduler);
 begin
   inherited Create;
   fScheduler := scheduler;
 end;
 
-function TEmpty<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TEmpty<TResult>.CreateSink(const observer: IObserver<TResult>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TEmpty<TResult>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TEmpty<T>.TSink'}
+{$REGION 'TEmpty<TResult>.TSink'}
 
-constructor TEmpty<T>.TSink.Create(const parent: TEmpty<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TEmpty<TResult>.TSink.Create(const parent: TEmpty<TResult>;
+  const observer: IObserver<TResult>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
 end;
 
-procedure TEmpty<T>.TSink.Invoke;
+procedure TEmpty<TResult>.TSink.Invoke;
 begin
   Observer.OnCompleted;
   Dispose;
 end;
 
-function TEmpty<T>.TSink.Run: IDisposable;
+function TEmpty<TResult>.TSink.Run: IDisposable;
 begin
   Result := fParent.fScheduler.Schedule(Invoke);
 end;

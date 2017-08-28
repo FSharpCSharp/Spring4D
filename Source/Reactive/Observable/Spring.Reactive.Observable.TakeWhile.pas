@@ -35,81 +35,83 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TTakeWhile<T> = class(TProducer<T>)
+  TTakeWhile<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
-    fPredicate: Predicate<T>;
-    fPredicateIndex: Func<T, Integer, Boolean>;
+    fSource: IObservable<TSource>;
+    fPredicate: Predicate<TSource>;
+    fPredicateIndex: Func<TSource, Integer, Boolean>;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TTakeWhile<T>;
+        fParent: TTakeWhile<TSource>;
         fRunning: Boolean;
       public
-        constructor Create(const parent: TTakeWhile<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TTakeWhile<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
 
-      TSinkIndex = class(TSink<T>, IObserver<T>)
+      TSinkIndex = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TTakeWhile<T>;
+        fParent: TTakeWhile<TSource>;
         fRunning: Boolean;
         fIndex: Integer;
       public
-        constructor Create(const parent: TTakeWhile<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TTakeWhile<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const predicate: Predicate<T>); overload;
-    constructor Create(const source: IObservable<T>; const predicate: Func<T, Integer, Boolean>); overload;
+    constructor Create(const source: IObservable<TSource>; const predicate: Predicate<TSource>); overload;
+    constructor Create(const source: IObservable<TSource>; const predicate: Func<TSource, Integer, Boolean>); overload;
   end;
 
 implementation
 
 
-{$REGION 'TTakeWhile<T>'}
+{$REGION 'TTakeWhile<TSource>'}
 
-constructor TTakeWhile<T>.Create(const source: IObservable<T>;
-  const predicate: Predicate<T>);
+constructor TTakeWhile<TSource>.Create(const source: IObservable<TSource>;
+  const predicate: Predicate<TSource>);
 begin
   inherited Create;
   fSource := source;
   fPredicate := predicate;
 end;
 
-constructor TTakeWhile<T>.Create(const source: IObservable<T>;
-  const predicate: Func<T, Integer, Boolean>);
+constructor TTakeWhile<TSource>.Create(const source: IObservable<TSource>;
+  const predicate: Func<TSource, Integer, Boolean>);
 begin
   inherited Create;
   fSource := source;
   fPredicateIndex := predicate;
 end;
 
-function TTakeWhile<T>.Run(const observer: IObserver<T>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TTakeWhile<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TTakeWhile<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TTTakeWhileSkipWhile<T>.TSink'}
+{$REGION 'TTTakeWhileSkipWhile<TSource>.TSink'}
 
-constructor TTakeWhile<T>.TSink.Create(const parent: TTakeWhile<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TTakeWhile<TSource>.TSink.Create(const parent: TTakeWhile<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
@@ -117,13 +119,13 @@ begin
   fRunning := True;
 end;
 
-destructor TTakeWhile<T>.TSink.Destroy;
+destructor TTakeWhile<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TTakeWhile<T>.TSink.OnNext(const value: T);
+procedure TTakeWhile<TSource>.TSink.OnNext(const value: TSource);
 begin
   if fRunning then
   begin
@@ -151,23 +153,23 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTakeWhile<T>.TSinkIndex'}
+{$REGION 'TTakeWhile<TSource>.TSinkIndex'}
 
-constructor TTakeWhile<T>.TSinkIndex.Create(const parent: TTakeWhile<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TTakeWhile<TSource>.TSinkIndex.Create(const parent: TTakeWhile<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
 end;
 
-destructor TTakeWhile<T>.TSinkIndex.Destroy;
+destructor TTakeWhile<TSource>.TSinkIndex.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TTakeWhile<T>.TSinkIndex.OnNext(const value: T);
+procedure TTakeWhile<TSource>.TSinkIndex.OnNext(const value: TSource);
 begin
   if not fRunning then
   begin

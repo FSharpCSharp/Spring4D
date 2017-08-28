@@ -78,8 +78,9 @@ type
     private
       fDueTime: TTimeSpan;
     protected
-      function Run(const observer: IObserver<Int64>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<Int64>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const dueTime: TTimeSpan; const scheduler: IScheduler);
     end;
@@ -88,8 +89,9 @@ type
     private
       fDueTime: TTimeSpan;
     protected
-      function Run(const observer: IObserver<Int64>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<Int64>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const dueTime, period: TTimeSpan; const scheduler: IScheduler);
     end;
@@ -143,14 +145,15 @@ begin
   fDueTime := dueTime;
 end;
 
-function TTimer.TSingleRelative.Run(const observer: IObserver<Int64>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TTimer.TSingleRelative.CreateSink(const observer: IObserver<Int64>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(observer, cancel);
-  setSink(sink);
-  Result := sink.Run(Self, fDueTime);
+  Result := TSink.Create(observer, cancel);
+end;
+
+function TTimer.TSingleRelative.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self, fDueTime);
 end;
 
 {$ENDREGION}
@@ -178,14 +181,15 @@ begin
   fDueTime := dueTime;
 end;
 
-function TTimer.TPeriodicRelative.Run(const observer: IObserver<Int64>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TTimer.TPeriodicRelative.CreateSink(const observer: IObserver<Int64>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(fPeriod, observer, cancel);
-  setSink(sink);
-  Result := sink.Run(Self, fDueTime);
+  Result := TSink.Create(fPeriod, observer, cancel);
+end;
+
+function TTimer.TPeriodicRelative.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self, fDueTime);
 end;
 
 {$ENDREGION}

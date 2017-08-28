@@ -35,61 +35,62 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TSkip<T> = class(TProducer<T>)
+  TSkip<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
+    fSource: IObservable<TSource>;
     fCount: Integer;
 //    fDuration: TTimeSpan;
 //    fScheduler: IScheduler;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TSkip<T>;
+        fParent: TSkip<TSource>;
         fRemaining: Integer;
       public
-        constructor Create(const parent: TSkip<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TSkip<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; count: Integer);
+    constructor Create(const source: IObservable<TSource>; count: Integer);
   end;
 
 implementation
 
 
-{$REGION 'TSkip<T>'}
+{$REGION 'TSkip<TSource>'}
 
-constructor TSkip<T>.Create(const source: IObservable<T>; count: Integer);
+constructor TSkip<TSource>.Create(const source: IObservable<TSource>; count: Integer);
 begin
   inherited Create;
   fSource := source;
   fCount := count;
 end;
 
-function TSkip<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TSkip<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  // TODO implement SubscribeSafe
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TSkip<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TSkip<T>.TSink'}
+{$REGION 'TSkip<TSource>.TSink'}
 
-constructor TSkip<T>.TSink.Create(const parent: TSkip<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TSkip<TSource>.TSink.Create(const parent: TSkip<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
@@ -97,13 +98,13 @@ begin
   fRemaining := fParent.fCount;
 end;
 
-destructor TSkip<T>.TSink.Destroy;
+destructor TSkip<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TSkip<T>.TSink.OnNext(const value: T);
+procedure TSkip<TSource>.TSink.OnNext(const value: TSource);
 begin
   if fRemaining <= 0 then
     Observer.OnNext(value)

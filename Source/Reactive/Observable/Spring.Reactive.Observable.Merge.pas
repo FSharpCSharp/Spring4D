@@ -71,8 +71,9 @@ type
           procedure OnCompleted;
         end;
     protected
-      function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<TSource>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const sources: IObservable<IObservable<TSource>>);
     end;
@@ -93,14 +94,15 @@ begin
   fSources := sources;
 end;
 
-function TMerge<TSource>.TObservables.Run(const observer: IObserver<TSource>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TMerge<TSource>.TObservables.CreateSink(
+  const observer: IObserver<TSource>; const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(observer, cancel);
-  setSink(sink);
-  Result := sink.Run(Self);
+  Result := TSink.Create(observer, cancel);
+end;
+
+function TMerge<TSource>.TObservables.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self);
 end;
 
 {$ENDREGION}

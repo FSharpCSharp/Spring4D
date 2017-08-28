@@ -36,34 +36,35 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TTakeLast<T> = class(TProducer<T>)
+  TTakeLast<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
+    fSource: IObservable<TSource>;
     fCount: Integer;
 //    fDuration: TTimeSpan; // TODO implement interval
 //    fScheduler: IScheduler;
     fLoopScheduler: IScheduler;
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TTakeLast<T>;
-        fQueue: IQueue<T>;
+        fParent: TTakeLast<TSource>;
+        fQueue: IQueue<TSource>;
         fSubscription: ISingleAssignmentDisposable;
         fLoop: ISingleAssignmentDisposable;
         procedure LoopRec(const recurse: Action);
       public
-        constructor Create(const parent: TTakeLast<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TTakeLast<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
         function Run: IDisposable;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
         procedure OnCompleted;
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const count: Integer;
+    constructor Create(const source: IObservable<TSource>; const count: Integer;
       const loopScheduler: IScheduler);
   end;
 
@@ -73,9 +74,9 @@ uses
   Spring.Reactive.Disposables;
 
 
-{$REGION 'TTakeLast<T>'}
+{$REGION 'TTakeLast<TSource>'}
 
-constructor TTakeLast<T>.Create(const source: IObservable<T>;
+constructor TTakeLast<TSource>.Create(const source: IObservable<TSource>;
   const count: Integer; const loopScheduler: IScheduler);
 begin
   inherited Create;
@@ -84,44 +85,38 @@ begin
   fLoopScheduler := loopScheduler;
 end;
 
-function TTakeLast<T>.Run(const observer: IObserver<T>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TTakeLast<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-//  if not Assigned(fScheduler) then
-//  begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
-//  end
-//  else
-//  begin
-//
-//  end;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TTakeLast<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TTakeLast<T>.TSink'}
+{$REGION 'TTakeLast<TSource>.TSink'}
 
-constructor TTakeLast<T>.TSink.Create(const parent: TTakeLast<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TTakeLast<TSource>.TSink.Create(const parent: TTakeLast<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
-  fQueue := TCollections.CreateQueue<T>;
+  fQueue := TCollections.CreateQueue<TSource>;
 end;
 
-destructor TTakeLast<T>.TSink.Destroy;
+destructor TTakeLast<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TTakeLast<T>.TSink.LoopRec(const recurse: Action);
+procedure TTakeLast<TSource>.TSink.LoopRec(const recurse: Action);
 begin
   if fQueue.Count > 0 then
   begin
@@ -135,7 +130,7 @@ begin
   end;
 end;
 
-function TTakeLast<T>.TSink.Run: IDisposable;
+function TTakeLast<TSource>.TSink.Run: IDisposable;
 begin
   fSubscription := TSingleAssignmentDisposable.Create;
   fLoop := TSingleAssignmentDisposable.Create;
@@ -143,14 +138,14 @@ begin
   Result := TStableCompositeDisposable.Create(fSubscription, fLoop);
 end;
 
-procedure TTakeLast<T>.TSink.OnNext(const value: T);
+procedure TTakeLast<TSource>.TSink.OnNext(const value: TSource);
 begin
   fQueue.Enqueue(value);
   if fQueue.Count > fParent.fCount then
     fQueue.Dequeue;
 end;
 
-procedure TTakeLast<T>.TSink.OnCompleted;
+procedure TTakeLast<TSource>.TSink.OnCompleted;
 begin
   fSubscription.Dispose;
   fLoop.Disposable := fParent.fLoopScheduler.Schedule(LoopRec);

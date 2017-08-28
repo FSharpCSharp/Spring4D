@@ -49,12 +49,11 @@ type
           const observer: IObserver<TResult>; const cancel: IDisposable);
         destructor Destroy; override;
         procedure OnNext(const value: TSource);
-        procedure OnError(const error: Exception);
-        procedure OnCompleted;
       end;
   protected
-    function Run(const observer: IObserver<TResult>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TResult>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const source: IObservable<TSource>;
       const selector: Func<TSource, TResult>);
@@ -73,17 +72,15 @@ begin
   fSelector := selector;
 end;
 
-function TSelect<TSource, TResult>.Run(const observer: IObserver<TResult>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TSelect<TSource, TResult>.CreateSink(
+  const observer: IObserver<TResult>; const cancel: IDisposable): TObject;
 begin
-  if Assigned(fSelector) then
-  begin
-    sink := TSink.Create(Self, observer, cancel);
-    setSink(sink);
-    Result := fSource.Subscribe(sink);
-  end;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TSelect<TSource, TResult>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
@@ -122,18 +119,6 @@ begin
   end;
 
   Observer.OnNext(result);
-end;
-
-procedure TSelect<TSource, TResult>.TSink.OnError(const error: Exception);
-begin
-  Observer.OnError(error);
-  Dispose;
-end;
-
-procedure TSelect<TSource, TResult>.TSink.OnCompleted;
-begin
-  Observer.OnCompleted;
-  Dispose;
 end;
 
 {$ENDREGION}

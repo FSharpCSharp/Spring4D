@@ -35,36 +35,37 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TThrottle<T> = class(TProducer<T>)
+  TThrottle<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
+    fSource: IObservable<TSource>;
     fDueTime: TTimeSpan;
     fScheduler: IScheduler;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TThrottle<T>;
-        fValue: T;
+        fParent: TThrottle<TSource>;
+        fValue: TSource;
         fHasValue: Boolean;
         fCancelable: ISerialDisposable;
         fId: UInt64;
         function Propagate(const scheduler: IScheduler; const currentId: TValue): IDisposable;
       public
-        constructor Create(const parent: TThrottle<T>; const observer: IObserver<T>;
+        constructor Create(const parent: TThrottle<TSource>; const observer: IObserver<TSource>;
           const cancel: IDisposable);
         destructor Destroy; override;
         procedure Dispose; override;
         function Run: IDisposable;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
         procedure OnError(const error: Exception);
         procedure OnCompleted;
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const dueTime: TTimeSpan;
+    constructor Create(const source: IObservable<TSource>; const dueTime: TTimeSpan;
       const scheduler: IScheduler);
   end;
 
@@ -75,9 +76,9 @@ uses
   Spring.Reactive.Disposables;
 
 
-{$REGION 'TThrottle<T>}
+{$REGION 'TThrottle<TSource>}
 
-constructor TThrottle<T>.Create(const source: IObservable<T>;
+constructor TThrottle<TSource>.Create(const source: IObservable<TSource>;
   const dueTime: TTimeSpan; const scheduler: IScheduler);
 begin
   inherited Create;
@@ -86,36 +87,37 @@ begin
   fScheduler := scheduler;
 end;
 
-function TThrottle<T>.Run(const observer: IObserver<T>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TThrottle<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TThrottle<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TThrottle<T>.TSink'}
+{$REGION 'TThrottle<TSource>.TSink'}
 
-constructor TThrottle<T>.TSink.Create(const parent: TThrottle<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TThrottle<TSource>.TSink.Create(const parent: TThrottle<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
 end;
 
-destructor TThrottle<T>.TSink.Destroy;
+destructor TThrottle<TSource>.TSink.Destroy;
 begin
   Dispose;
   inherited;
 end;
 
-procedure TThrottle<T>.TSink.Dispose;
+procedure TThrottle<TSource>.TSink.Dispose;
 begin
   if not IsDisposed then
   begin
@@ -126,7 +128,7 @@ begin
   inherited Dispose;
 end;
 
-procedure TThrottle<T>.TSink.OnNext(const value: T);
+procedure TThrottle<TSource>.TSink.OnNext(const value: TSource);
 var
   currentId: UInt64;
   d: ISingleAssignmentDisposable;
@@ -154,7 +156,7 @@ begin
     end);
 end;
 
-procedure TThrottle<T>.TSink.OnError(const error: Exception);
+procedure TThrottle<TSource>.TSink.OnError(const error: Exception);
 begin
   fCancelable.Dispose;
 
@@ -170,7 +172,7 @@ begin
   end;
 end;
 
-procedure TThrottle<T>.TSink.OnCompleted;
+procedure TThrottle<TSource>.TSink.OnCompleted;
 begin
   fCancelable.Dispose;
 
@@ -189,7 +191,7 @@ begin
   end;
 end;
 
-function TThrottle<T>.TSink.Propagate(const scheduler: IScheduler;
+function TThrottle<TSource>.TSink.Propagate(const scheduler: IScheduler;
   const currentId: TValue): IDisposable;
 begin
   MonitorEnter(Self);
@@ -203,11 +205,11 @@ begin
   Result := Disposable.Empty;
 end;
 
-function TThrottle<T>.TSink.Run: IDisposable;
+function TThrottle<TSource>.TSink.Run: IDisposable;
 var
   subscription: IDisposable;
 begin
-  fValue := Default(T);
+  fValue := Default(TSource);
   fHasValue := False;
   fCancelable := TSerialDisposable.Create;
   fId := 0;

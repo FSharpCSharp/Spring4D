@@ -35,35 +35,36 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TSample<T> = class(TProducer<T>)
+  TSample<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
+    fSource: IObservable<TSource>;
     fInterval: TTimeSpan;
     fScheduler: IScheduler;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TSample<T>;
+        fParent: TSample<TSource>;
         fSourceSubscription: IDisposable;
         fHasValue: Boolean;
-        fValue: T;
+        fValue: TSource;
         fAtEnd: Boolean;
         procedure Tick;
       public
-        constructor Create(const parent: TSample<T>; const observer: IObserver<T>;
+        constructor Create(const parent: TSample<TSource>; const observer: IObserver<TSource>;
           const cancel: IDisposable);
         destructor Destroy; override;
         function Run: IDisposable;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
         procedure OnError(const error: Exception);
         procedure OnCompleted;
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const interval: TTimeSpan;
+    constructor Create(const source: IObservable<TSource>; const interval: TTimeSpan;
       const scheduler: IScheduler);
   end;
 
@@ -73,9 +74,9 @@ uses
   Spring.Reactive.Disposables;
 
 
-{$REGION 'TSample<T>'}
+{$REGION 'TSample<TSource>'}
 
-constructor TSample<T>.Create(const source: IObservable<T>;
+constructor TSample<TSource>.Create(const source: IObservable<TSource>;
   const interval: TTimeSpan; const scheduler: IScheduler);
 begin
   inherited Create;
@@ -84,36 +85,37 @@ begin
   fScheduler := scheduler;
 end;
 
-function TSample<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TSample<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TSample<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TSample<T>.TSink'}
+{$REGION 'TSample<TSource>.TSink'}
 
-constructor TSample<T>.TSink.Create(const parent: TSample<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TSample<TSource>.TSink.Create(const parent: TSample<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
 end;
 
-destructor TSample<T>.TSink.Destroy;
+destructor TSample<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TSample<T>.TSink.OnCompleted;
+procedure TSample<TSource>.TSink.OnCompleted;
 begin
   MonitorEnter(Self);
   try
@@ -124,7 +126,7 @@ begin
   end;
 end;
 
-procedure TSample<T>.TSink.OnError(const error: Exception);
+procedure TSample<TSource>.TSink.OnError(const error: Exception);
 begin
   MonitorEnter(Self);
   try
@@ -135,7 +137,7 @@ begin
   end;
 end;
 
-procedure TSample<T>.TSink.OnNext(const value: T);
+procedure TSample<TSource>.TSink.OnNext(const value: TSource);
 begin
   MonitorEnter(Self);
   try
@@ -146,7 +148,7 @@ begin
   end;
 end;
 
-function TSample<T>.TSink.Run: IDisposable;
+function TSample<TSource>.TSink.Run: IDisposable;
 var
   sourceSubscription: ISingleAssignmentDisposable;
   guard: IInterface;
@@ -165,7 +167,7 @@ begin
     end));
 end;
 
-procedure TSample<T>.TSink.Tick;
+procedure TSample<TSource>.TSink.Tick;
 begin
   MonitorEnter(Self);
   try

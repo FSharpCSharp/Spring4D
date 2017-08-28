@@ -50,12 +50,11 @@ type
           constructor Create(const onNext: Action<TSource>;
             const observer: IObserver<TSource>; const cancel: IDisposable);
           procedure OnNext(const value: TSource);
-          procedure OnError(const error: Exception);
-          procedure OnCompleted;
         end;
     protected
-      function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<TSource>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const source: IObservable<TSource>; const onNext: Action<TSource>);
     end;
@@ -77,8 +76,9 @@ type
           procedure OnCompleted;
         end;
     protected
-      function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<TSource>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const source: IObservable<TSource>; const observer: IObserver<TSource>);
     end;
@@ -103,8 +103,9 @@ type
           procedure OnCompleted;
         end;
     protected
-      function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<TSource>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const source: IObservable<TSource>;
         const onNext: Action<TSource>;
@@ -126,14 +127,15 @@ begin
   fOnNext := onNext;
 end;
 
-function TDoAction<TSource>.TOnNext.Run(const observer: IObserver<TSource>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TDoAction<TSource>.TOnNext.CreateSink(
+  const observer: IObserver<TSource>; const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(fOnNext, observer, cancel);
-  setSink(sink);
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(fOnNext, observer, cancel);
+end;
+
+function TDoAction<TSource>.TOnNext.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
@@ -165,18 +167,6 @@ begin
   Observer.OnNext(value);
 end;
 
-procedure TDoAction<TSource>.TOnNext.TSink.OnError(const error: Exception);
-begin
-  Observer.OnError(error);
-  Dispose;
-end;
-
-procedure TDoAction<TSource>.TOnNext.TSink.OnCompleted;
-begin
-  Observer.OnCompleted;
-  Dispose;
-end;
-
 {$ENDREGION}
 
 
@@ -190,14 +180,15 @@ begin
   fObserver := observer;
 end;
 
-function TDoAction<TSource>.TObserver.Run(const observer: IObserver<TSource>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TDoAction<TSource>.TObserver.CreateSink(
+  const observer: IObserver<TSource>; const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(fObserver, observer, cancel);
-  setSink(sink);
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(fObserver, observer, cancel);
+end;
+
+function TDoAction<TSource>.TObserver.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
@@ -278,14 +269,15 @@ begin
   fOnCompleted := onCompleted;
 end;
 
-function TDoAction<TSource>.TActions.Run(const observer: IObserver<TSource>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TDoAction<TSource>.TActions.CreateSink(
+  const observer: IObserver<TSource>; const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TDoAction<TSource>.TActions.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}

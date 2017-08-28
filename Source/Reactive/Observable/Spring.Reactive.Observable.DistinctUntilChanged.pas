@@ -36,76 +36,80 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TDistinctUntilChanged<T> = class(TProducer<T>)
+  TDistinctUntilChanged<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
-//    fKeySelector: Func<TSource,TKey>
-    fComparer: IEqualityComparer<T>;//TKey
+    fSource: IObservable<TSource>;
+//    fKeySelector: Func<TSource,TKey>;
+    fComparer: IEqualityComparer<TSource>;//TKey
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TDistinctUntilChanged<T>;
-        fCurrentKey: T;//TKey
+//        fKeySelector: Func<TSource,TKey>;
+        fComparer: IEqualityComparer<TSource>;//TKey
+        fCurrentKey: TSource;//TKey
         fHasCurrentKey: Boolean;
       public
-        constructor Create(const parent: TDistinctUntilChanged<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
-        procedure OnNext(const value: T);
+        constructor Create(const parent: TDistinctUntilChanged<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
     // TODO keySelector and comparer
-    constructor Create(const source: IObservable<T>);
+    constructor Create(const source: IObservable<TSource>);
   end;
 
 implementation
 
 
-{$REGION 'TDistinctUntilChanged<T>'}
+{$REGION 'TDistinctUntilChanged<TSource>'}
 
-constructor TDistinctUntilChanged<T>.Create(const source: IObservable<T>);
+constructor TDistinctUntilChanged<TSource>.Create(const source: IObservable<TSource>);
 begin
   inherited Create;
   fSource := source;
-  fComparer := TEqualityComparer<T>.Default;
+  fComparer := TEqualityComparer<TSource>.Default;
 end;
 
-function TDistinctUntilChanged<T>.Run(const observer: IObserver<T>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TDistinctUntilChanged<TSource>.CreateSink(
+  const observer: IObserver<TSource>; const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  // TODO implement SubscribeSafe
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TDistinctUntilChanged<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TDistinctUntilChanged<T>.TSink'}
+{$REGION 'TDistinctUntilChanged<TSource>.TSink'}
 
-constructor TDistinctUntilChanged<T>.TSink.Create(
-  const parent: TDistinctUntilChanged<T>; const observer: IObserver<T>;
+constructor TDistinctUntilChanged<TSource>.TSink.Create(
+  const parent: TDistinctUntilChanged<TSource>; const observer: IObserver<TSource>;
   const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
-  fParent := parent;
-  fCurrentKey := Default(T);
+//  fKeySelector := parent.fKeySelector;
+  fComparer := parent.fComparer;
+
+  fCurrentKey := Default(TSource);
   fHasCurrentKey := False;
 end;
 
-procedure TDistinctUntilChanged<T>.TSink.OnNext(const value: T);
+procedure TDistinctUntilChanged<TSource>.TSink.OnNext(const value: TSource);
 var
   comparerEquals: Boolean;
 begin
   if fHasCurrentKey then
   try
-    comparerEquals := fParent.fComparer.Equals(fCurrentKey, value);
+    comparerEquals := fComparer.Equals(fCurrentKey, value);
   except
     on e: Exception do
     begin

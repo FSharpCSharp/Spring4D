@@ -62,8 +62,9 @@ type
           procedure OnCompleted;
         end;
     protected
-      function Run(const observer: IObserver<IList<TSource>>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<IList<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const source: IObservable<TSource>; count, skip: Integer);
     end;
@@ -122,8 +123,9 @@ type
           procedure OnCompleted;
         end;
     protected
-      function Run(const observer: IObserver<IList<TSource>>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<IList<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const source: IObservable<TSource>;
         const timeSpan: TTimeSpan; const scheduler: IScheduler);
@@ -168,9 +170,9 @@ type
           procedure OnCompleted;
         end;
     protected
-      function Run(const observer: IObserver<IList<TSource>>;
-        const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<IList<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const source: IObservable<TSource>;
         const bufferClosingSelector: Func<IObservable<TBufferClosing>>);
@@ -204,9 +206,9 @@ type
           procedure OnCompleted;
         end;
     protected
-      function Run(const observer: IObserver<IList<TSource>>;
-        const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<IList<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const source: IObservable<TSource>;
         const bufferBoundaries: IObservable<TBufferClosing>);
@@ -230,14 +232,15 @@ begin
   fSkip := skip;
 end;
 
-function TBuffer<TSource>.TCount.Run(const observer: IObserver<IList<TSource>>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TBuffer<TSource>.TCount.CreateSink(
+  const observer: IObserver<IList<TSource>>; const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run(fSource);
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TBuffer<TSource>.TCount.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(fSource);
 end;
 
 {$ENDREGION}
@@ -415,15 +418,15 @@ begin
   fScheduler := scheduler;
 end;
 
-function TBuffer<TSource>.TTimeHopping.Run(
-  const observer: IObserver<IList<TSource>>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TBuffer<TSource>.TTimeHopping.CreateSink(
+  const observer: IObserver<Ilist<TSource>>; const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(observer, cancel);
-  setSink(sink);
-  Result := sink.Run(Self);
+  Result := TSink.Create(observer, cancel);
+end;
+
+function TBuffer<TSource>.TTimeHopping.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self);
 end;
 
 {$ENDREGION}
@@ -505,15 +508,17 @@ begin
   fBufferClosingSelector := bufferClosingSelector;
 end;
 
-function TBuffer<TSource, TBufferClosing>.TSelector.Run(
-  const observer: IObserver<IList<TSource>>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TBuffer<TSource, TBufferClosing>.TSelector.CreateSink(
+  const observer: IObserver<IList<TSource>>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run(fSource);
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TBuffer<TSource, TBufferClosing>.TSelector.Run(
+  const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(fSource);
 end;
 
 {$ENDREGION}
@@ -676,15 +681,17 @@ begin
   fBufferBoundaries := bufferBoundaries;
 end;
 
-function TBuffer<TSource, TBufferClosing>.TBoundaries.Run(
-  const observer: IObserver<IList<TSource>>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TBuffer<TSource, TBufferClosing>.TBoundaries.CreateSink(
+  const observer: IObserver<IList<TSource>>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(observer, cancel);
-  setSink(sink);
-  Result := sink.Run(Self);
+  Result := TSink.Create(observer, cancel);
+end;
+
+function TBuffer<TSource, TBufferClosing>.TBoundaries.Run(
+  const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self);
 end;
 
 {$ENDREGION}

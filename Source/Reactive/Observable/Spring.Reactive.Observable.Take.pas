@@ -35,61 +35,62 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TTake<T> = class(TProducer<T>)
+  TTake<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
+    fSource: IObservable<TSource>;
     fCount: Integer;
 //    fDuration: TTimeSpan;
 //    fScheduler: IScheduler;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TTake<T>;
+        fParent: TTake<TSource>;
         fRemaining: Integer;
       public
-        constructor Create(const parent: TTake<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TTake<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; count: Integer);
+    constructor Create(const source: IObservable<TSource>; count: Integer);
   end;
 
 implementation
 
 
-{$REGION 'TTake<T>'}
+{$REGION 'TTake<TSource>'}
 
-constructor TTake<T>.Create(const source: IObservable<T>; count: Integer);
+constructor TTake<TSource>.Create(const source: IObservable<TSource>; count: Integer);
 begin
   inherited Create;
   fSource := source;
   fCount := count;
 end;
 
-function TTake<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TTake<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  // TODO implement SubscribeSafe
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TTake<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TTake<T>.TSink'}
+{$REGION 'TTake<TSource>.TSink'}
 
-constructor TTake<T>.TSink.Create(const parent: TTake<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TTake<TSource>.TSink.Create(const parent: TTake<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
@@ -97,13 +98,13 @@ begin
   fRemaining := fParent.fCount;
 end;
 
-destructor TTake<T>.TSink.Destroy;
+destructor TTake<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TTake<T>.TSink.OnNext(const value: T);
+procedure TTake<TSource>.TSink.OnNext(const value: TSource);
 begin
   if fRemaining > 0 then
   begin

@@ -53,8 +53,9 @@ type
         function Run: IDisposable;
       end;
   protected
-    function Run(const observer: IObserver<Integer>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<Integer>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(start, count: Integer; const scheduler: IScheduler);
   end;
@@ -72,14 +73,15 @@ begin
   fScheduler := scheduler;
 end;
 
-function TRange.Run(const observer: IObserver<Integer>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TRange.CreateSink(const observer: IObserver<Integer>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TRange.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}

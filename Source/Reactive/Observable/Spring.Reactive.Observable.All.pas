@@ -35,85 +35,72 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TAll<T> = class(TProducer<Boolean>)
+  TAll<TSource> = class(TProducer<Boolean>)
   private
-    fSource: IObservable<T>;
-    fPredicate: Predicate<T>;
+    fSource: IObservable<TSource>;
+    fPredicate: Predicate<TSource>;
 
     type
-      TSink = class(TSink<Boolean>, IObserver<T>)
+      TSink = class(TSink<Boolean>, IObserver<TSource>)
       private
-        fParent: TAll<T>;
+        fPredicate: Predicate<TSource>;
       public
-        constructor Create(const parent: TAll<T>;
+        constructor Create(const predicate: Predicate<TSource>;
           const observer: IObserver<Boolean>; const cancel: IDisposable);
-        destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
         procedure OnCompleted;
       end;
   protected
-    function Run(const observer: IObserver<Boolean>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<Boolean>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const predicate: Predicate<T>);
+    constructor Create(const source: IObservable<TSource>; const predicate: Predicate<TSource>);
   end;
 
 implementation
 
 
-{$REGION 'TAll<T>'}
+{$REGION 'TAll<TSource>'}
 
-constructor TAll<T>.Create(const source: IObservable<T>;
-  const predicate: Predicate<T>);
+constructor TAll<TSource>.Create(const source: IObservable<TSource>;
+  const predicate: Predicate<TSource>);
 begin
   inherited Create;
   fSource := source;
   fPredicate := predicate;
 end;
 
-function TAll<T>.Run(const observer: IObserver<Boolean>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TAll<TSource>.CreateSink(const observer: IObserver<Boolean>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(fPredicate, observer, cancel);
+end;
+
+function TAll<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TAll<T>.TSink'}
+{$REGION 'TAll<TSource>.TSink'}
 
-constructor TAll<T>.TSink.Create(const parent: TAll<T>;
+constructor TAll<TSource>.TSink.Create(const predicate: Predicate<TSource>;
   const observer: IObserver<Boolean>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
+  fPredicate := predicate;
 end;
 
-destructor TAll<T>.TSink.Destroy;
-begin
-  fParent._Release;
-  inherited;
-end;
-
-procedure TAll<T>.TSink.OnCompleted;
-begin
-  Observer.OnNext(True);
-  Observer.OnCompleted;
-  Dispose;
-end;
-
-procedure TAll<T>.TSink.OnNext(const value: T);
+procedure TAll<TSource>.TSink.OnNext(const value: TSource);
 var
   res: Boolean;
 begin
   res := False;
   try
-    res := fParent.fPredicate(value);
+    res := fPredicate(value);
   except
     on e: Exception do
     begin
@@ -129,6 +116,13 @@ begin
     Observer.OnCompleted;
     Dispose;
   end;
+end;
+
+procedure TAll<TSource>.TSink.OnCompleted;
+begin
+  Observer.OnNext(True);
+  Observer.OnCompleted;
+  Dispose;
 end;
 
 {$ENDREGION}

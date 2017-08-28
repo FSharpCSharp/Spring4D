@@ -46,24 +46,28 @@ type
     fComparer: IEqualityComparer<TKey>;
     fGroupDisposable: ICompositeDisposable;
     fRefCountDisposable: IRefCountDisposable;
+
     type
       TSink = class(TSink<IGroupedObservable<TKey, TElement>>, IObserver<TSource>)
       private
-        fParent: TGroupBy<TSource, TKey, TElement>;
+        fKeySelector: Func<TSource, TKey>;
+        fElementSelector: Func<TSource, TElement>;
         fMap: IDictionary<TKey, ISubject<TElement>>;
+        fRefCountDisposable: IRefCountDisposable;
         fNull: ISubject<TElement>;
       public
         constructor Create(const parent: TGroupBy<TSource, TKey, TElement>;
           const observer: IObserver<IGroupedObservable<TKey, TElement>>;
           const cancel: IDisposable);
-        destructor Destroy; override;
+        function Run(const source: IObservable<TSource>): IDisposable;
         procedure OnNext(const value: TSource);
         procedure OnError(const error: Exception);
         procedure OnCompleted;
       end;
   protected
-    function Run(const observer: IObserver<IGroupedObservable<TKey, TElement>>;
-      const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<IGroupedObservable<TKey, TElement>>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const source: IObservable<TSource>;
       const keySelector: Func<TSource, TKey>;
@@ -94,18 +98,16 @@ begin
   fComparer := comparer;
 end;
 
-function TGroupBy<TSource, TKey, TElement>.Run(
+function TGroupBy<TSource, TKey, TElement>.CreateSink(
   const observer: IObserver<IGroupedObservable<TKey, TElement>>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+  const cancel: IDisposable): TObject;
 begin
-  fGroupDisposable := TCompositeDisposable.Create([]);
-  fRefCountDisposable := TRefCountDisposable.Create(fGroupDisposable);
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  fGroupDisposable.Add(fSource.Subscribe(sink));
-  Result := fRefCountDisposable;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TGroupBy<TSource, TKey, TElement>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(fSource);
 end;
 
 {$ENDREGION}
@@ -119,15 +121,20 @@ constructor TGroupBy<TSource, TKey, TElement>.TSink.Create(
   const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
-  fMap := TCollections.CreateDictionary<TKey, ISubject<TElement>>(fParent.fCapacity, fParent.fComparer);
+  fKeySelector := parent.fKeySelector;
+  fElementSelector := parent.fElementSelector;
+  fMap := TCollections.CreateDictionary<TKey, ISubject<TElement>>(parent.fCapacity, parent.fComparer);
 end;
 
-destructor TGroupBy<TSource, TKey, TElement>.TSink.Destroy;
+function TGroupBy<TSource, TKey, TElement>.TSink.Run(
+  const source: IObservable<TSource>): IDisposable;
+var
+  sourceSubscription: ISingleAssignmentDisposable;
 begin
-  fParent._Release;
-  inherited;
+  sourceSubscription := TSingleAssignmentDisposable.Create;
+  fRefCountDisposable := TRefCountDisposable.Create(sourceSubscription);
+  sourceSubscription.Disposable := source.Subscribe(Self);
+  Result := fRefCountDisposable;
 end;
 
 procedure TGroupBy<TSource, TKey, TElement>.TSink.OnNext(const value: TSource);
@@ -139,7 +146,7 @@ var
   element: TElement;
 begin
   try
-    key := fParent.fKeySelector(value);
+    key := fKeySelector(value);
   except
     on e: Exception do
     begin
@@ -166,12 +173,12 @@ begin
 
   if fireNewMapEntry then
   begin
-    group := TGroupedObservable<TKey, TElement>.Create(key, writer, fParent.fRefCountDisposable);
+    group := TGroupedObservable<TKey, TElement>.Create(key, writer, fRefCountDisposable);
     Observer.OnNext(group);
   end;
 
   try
-    element := fParent.fElementSelector(value)
+    element := fElementSelector(value)
   except
     on e: Exception do
     begin

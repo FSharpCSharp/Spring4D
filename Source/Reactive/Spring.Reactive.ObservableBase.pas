@@ -215,13 +215,13 @@ end;
 
 function TObservableBase<T>.Any: IObservable<Boolean>;
 begin
-  Result := TAny<T>.Create(Self);
+  Result := TAny<T>.TCount.Create(Self);
 end;
 
 function TObservableBase<T>.Any(
   const predicate: Predicate<T>): IObservable<Boolean>;
 begin
-  Result := TAny<T>.Create(Self, predicate);
+  Result := TAny<T>.TPredicate.Create(Self, predicate);
 end;
 
 function TObservableBase<T>.Concat(

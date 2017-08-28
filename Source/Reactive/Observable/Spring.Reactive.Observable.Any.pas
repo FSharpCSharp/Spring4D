@@ -35,126 +35,136 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TAny<T> = class(TProducer<Boolean>)
-  private
-    fSource: IObservable<T>;
-    fPredicate: Predicate<T>;
+  TAny<TSource> = class
+  public type
+    TCount = class(TProducer<Boolean>)
+    private
+      fSource: IObservable<TSource>;
 
-    type
-      TSink = class(TSink<Boolean>, IObserver<T>)
-      public
-        procedure OnNext(const value: T);
-        procedure OnCompleted;
-      end;
+      type
+        TSink = class(TSink<Boolean>, IObserver<TSource>)
+        public
+          procedure OnNext(const value: TSource);
+          procedure OnCompleted;
+        end;
+    protected
+      function CreateSink(const observer: IObserver<Boolean>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>);
+    end;
 
-      TSinkPredicate = class(TSink<Boolean>, IObserver<T>)
-      private
-        fParent: TAny<T>;
-      public
-        constructor Create(const parent: TAny<T>;
-          const observer: IObserver<Boolean>; const cancel: IDisposable);
-        destructor Destroy; override;
-        procedure OnNext(const value: T);
-        procedure OnCompleted;
-      end;
-  protected
-    function Run(const observer: IObserver<Boolean>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
-  public
-    constructor Create(const source: IObservable<T>); overload;
-    constructor Create(const source: IObservable<T>; const predicate: Predicate<T>); overload;
+    TPredicate = class(TProducer<Boolean>)
+    private
+      fSource: IObservable<TSource>;
+      fPredicate: Predicate<TSource>;
+
+      type
+        TSink = class(TSink<Boolean>, IObserver<TSource>)
+        private
+          fPredicate: Predicate<TSource>;
+        public
+          constructor Create(const predicate: Predicate<TSource>;
+            const observer: IObserver<Boolean>; const cancel: IDisposable);
+          procedure OnNext(const value: TSource);
+          procedure OnCompleted;
+        end;
+    protected
+      function CreateSink(const observer: IObserver<Boolean>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>;
+        const predicate: Predicate<TSource>); overload;
+    end;
   end;
 
 implementation
 
 
-{$REGION 'TAny<T>'}
+{$REGION 'TAny<TSource>.TCount'}
 
-constructor TAny<T>.Create(const source: IObservable<T>);
+constructor TAny<TSource>.TCount.Create(const source: IObservable<TSource>);
 begin
   inherited Create;
   fSource := source;
 end;
 
-constructor TAny<T>.Create(const source: IObservable<T>;
-  const predicate: Predicate<T>);
+function TAny<TSource>.TCount.CreateSink(const observer: IObserver<Boolean>;
+  const cancel: IDisposable): TObject;
 begin
-  inherited Create;
-  fSource := source;
-  fPredicate := predicate;
+  Result := TSink.Create(observer, cancel);
 end;
 
-function TAny<T>.Run(const observer: IObserver<Boolean>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: IObserver<T>;
+function TAny<TSource>.TCount.Run(const sink: TObject): IDisposable;
 begin
-  if Assigned(fPredicate) then
-  begin
-    sink := TSinkPredicate.Create(Self, observer, cancel);
-    setSink(sink);
-    Result := fSource.Subscribe(sink);
-  end
-  else
-  begin
-    sink := TSink.Create(observer, cancel);
-    setSink(sink);
-    Result := fSource.Subscribe(sink);
-  end;
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TAny<T>.TSink'}
+{$REGION 'TAny<TSource>.TCount.TSink'}
 
-procedure TAny<T>.TSink.OnCompleted;
-begin
-  Observer.OnNext(False);
-  Observer.OnCompleted;
-  Dispose;
-end;
-
-procedure TAny<T>.TSink.OnNext(const value: T);
+procedure TAny<TSource>.TCount.TSink.OnNext(const value: TSource);
 begin
   Observer.OnNext(True);
   Observer.OnCompleted;
   Dispose;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TAny<T>.TSinkPredicate'}
-
-constructor TAny<T>.TSinkPredicate.Create(const parent: TAny<T>;
-  const observer: IObserver<Boolean>; const cancel: IDisposable);
-begin
-  inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
-end;
-
-destructor TAny<T>.TSinkPredicate.Destroy;
-begin
-  fParent._Release;
-  inherited;
-end;
-
-procedure TAny<T>.TSinkPredicate.OnCompleted;
+procedure TAny<TSource>.TCount.TSink.OnCompleted;
 begin
   Observer.OnNext(False);
   Observer.OnCompleted;
   Dispose;
 end;
 
-procedure TAny<T>.TSinkPredicate.OnNext(const value: T);
+{$ENDREGION}
+
+
+{$REGION 'TAny<TSource>.TPredicate'}
+
+constructor TAny<TSource>.TPredicate.Create(const source: IObservable<TSource>;
+  const predicate: Predicate<TSource>);
+begin
+  inherited Create;
+  fSource := source;
+  fPredicate := predicate;
+end;
+
+function TAny<TSource>.TPredicate.CreateSink(const observer: IObserver<Boolean>;
+  const cancel: IDisposable): TObject;
+begin
+  Result := TSink.Create(fPredicate, observer, cancel);
+end;
+
+function TAny<TSource>.TPredicate.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAny<TSource>.TPredicate.TSink'}
+
+constructor TAny<TSource>.TPredicate.TSink.Create(
+  const predicate: Predicate<TSource>; const observer: IObserver<Boolean>;
+  const cancel: IDisposable);
+begin
+  inherited Create(observer, cancel);
+  fPredicate := predicate;
+end;
+
+procedure TAny<TSource>.TPredicate.TSink.OnNext(const value: TSource);
 var
   res: Boolean;
 begin
   res := False;
   try
-    res := fParent.fPredicate(value);
+    res := fPredicate(value);
   except
     on e: Exception do
     begin
@@ -170,6 +180,13 @@ begin
     Observer.OnCompleted;
     Dispose;
   end;
+end;
+
+procedure TAny<TSource>.TPredicate.TSink.OnCompleted;
+begin
+  Observer.OnNext(False);
+  Observer.OnCompleted;
+  Dispose;
 end;
 
 {$ENDREGION}

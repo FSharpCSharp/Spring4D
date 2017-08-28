@@ -42,10 +42,13 @@ type
 
     type
       TSink = class(TConcatSink<TSource>)
+      public
+        procedure OnNext(const value: TSource); override;
       end;
   protected
-    function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const sources: array of IObservable<TSource>);
   end;
@@ -61,14 +64,25 @@ begin
   fSources := TArray.Copy<IObservable<TSource>>(sources);
 end;
 
-function TConcat<TSource>.Run(const observer: IObserver<TSource>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TConcat<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(observer, cancel);
-  setSink(sink);
-  Result := sink.Run(fSources);
+  Result := TSink.Create(observer, cancel);
+end;
+
+function TConcat<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(fSources);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TConcat<TSource>.TSink'}
+
+procedure TConcat<TSource>.TSink.OnNext(const value: TSource);
+begin
+  Observer.OnNext(value);
 end;
 
 {$ENDREGION}

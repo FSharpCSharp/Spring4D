@@ -35,103 +35,96 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TSkipWhile<T> = class(TProducer<T>)
+  TSkipWhile<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
-    fPredicate: Predicate<T>;
-    fPredicateIndex: Func<T, Integer, Boolean>;
+    fSource: IObservable<TSource>;
+    fPredicate: Predicate<TSource>;
+    fPredicateIndex: Func<TSource, Integer, Boolean>;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TSkipWhile<T>;
+        fParent: TSkipWhile<TSource>;
         fRunning: Boolean;
       public
-        constructor Create(const parent: TSkipWhile<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TSkipWhile<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
 
-      TSinkIndex = class(TSink<T>, IObserver<T>)
+      TSinkIndex = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TSkipWhile<T>;
+        fParent: TSkipWhile<TSource>;
         fRunning: Boolean;
         fIndex: Integer;
       public
-        constructor Create(const parent: TSkipWhile<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TSkipWhile<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const predicate: Predicate<T>); overload;
-    constructor Create(const source: IObservable<T>; const predicate: Func<T, Integer, Boolean>); overload;
+    constructor Create(const source: IObservable<TSource>; const predicate: Predicate<TSource>); overload;
+    constructor Create(const source: IObservable<TSource>; const predicate: Func<TSource, Integer, Boolean>); overload;
   end;
 
 implementation
 
 
-{$REGION 'TSkipWhile<T>'}
+{$REGION 'TSkipWhile<TSource>'}
 
-constructor TSkipWhile<T>.Create(const source: IObservable<T>;
-  const predicate: Predicate<T>);
+constructor TSkipWhile<TSource>.Create(const source: IObservable<TSource>;
+  const predicate: Predicate<TSource>);
 begin
   inherited Create;
   fSource := source;
   fPredicate := predicate;
 end;
 
-constructor TSkipWhile<T>.Create(const source: IObservable<T>;
-  const predicate: Func<T, Integer, Boolean>);
+constructor TSkipWhile<TSource>.Create(const source: IObservable<TSource>;
+  const predicate: Func<TSource, Integer, Boolean>);
 begin
   inherited Create;
   fSource := source;
   fPredicateIndex := predicate;
 end;
 
-function TSkipWhile<T>.Run(const observer: IObserver<T>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: IObserver<T>;
+function TSkipWhile<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  if Assigned(fPredicate) then
-  begin
-    sink := TSink.Create(Self, observer, cancel);
-    setSink(sink);
-    Result := fSource.Subscribe(sink);
-  end
-  else
-  begin
-    sink := TSinkIndex.Create(Self, observer, cancel);
-    setSink(sink);
-    Result := fSource.Subscribe(sink);
-  end;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TSkipWhile<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TSkipWhile<T>.TSink'}
+{$REGION 'TSkipWhile<TSource>.TSink'}
 
-constructor TSkipWhile<T>.TSink.Create(const parent: TSkipWhile<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TSkipWhile<TSource>.TSink.Create(const parent: TSkipWhile<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
 end;
 
-destructor TSkipWhile<T>.TSink.Destroy;
+destructor TSkipWhile<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TSkipWhile<T>.TSink.OnNext(const value: T);
+procedure TSkipWhile<TSource>.TSink.OnNext(const value: TSource);
 begin
   if not fRunning then
   begin
@@ -154,23 +147,23 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TSkipWhile<T>.TSinkIndex'}
+{$REGION 'TSkipWhile<TSource>.TSinkIndex'}
 
-constructor TSkipWhile<T>.TSinkIndex.Create(const parent: TSkipWhile<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TSkipWhile<TSource>.TSinkIndex.Create(const parent: TSkipWhile<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
 end;
 
-destructor TSkipWhile<T>.TSinkIndex.Destroy;
+destructor TSkipWhile<TSource>.TSinkIndex.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TSkipWhile<T>.TSinkIndex.OnNext(const value: T);
+procedure TSkipWhile<TSource>.TSinkIndex.OnNext(const value: TSource);
 begin
   if not fRunning then
   begin

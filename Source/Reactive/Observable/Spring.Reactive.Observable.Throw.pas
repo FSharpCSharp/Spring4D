@@ -35,24 +35,25 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TThrow<T> = class(TProducer<T>)
+  TThrow<TSource> = class(TProducer<TSource>)
   private
     fError: Exception;
     fScheduler: IScheduler;
 
     type
-      TSink = class(TSink<T>)
+      TSink = class(TSink<TSource>)
       private
-        fParent: TThrow<T>;
+        fParent: TThrow<TSource>;
         procedure Invoke;
       public
-        constructor Create(const parent: TThrow<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TThrow<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         function Run: IDisposable;
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const error: Exception; const scheduler: IScheduler);
     procedure Dispose; override;
@@ -64,9 +65,9 @@ uses
   SysUtils;
 
 
-{$REGION 'TThrow<T>'}
+{$REGION 'TThrow<TSource>'}
 
-constructor TThrow<T>.Create(const error: Exception;
+constructor TThrow<TSource>.Create(const error: Exception;
   const scheduler: IScheduler);
 begin
   inherited Create;
@@ -74,41 +75,42 @@ begin
   fScheduler := scheduler;
 end;
 
-procedure TThrow<T>.Dispose;
+procedure TThrow<TSource>.Dispose;
 begin
   FreeAndNil(fError);
   inherited;
 end;
 
-function TThrow<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TThrow<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TThrow<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TThrow<T>.TSink'}
+{$REGION 'TThrow<TSource>.TSink'}
 
-constructor TThrow<T>.TSink.Create(const parent: TThrow<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TThrow<TSource>.TSink.Create(const parent: TThrow<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
 end;
 
-procedure TThrow<T>.TSink.Invoke;
+procedure TThrow<TSource>.TSink.Invoke;
 begin
   Observer.OnError(fParent.fError);
   Dispose;
 end;
 
-function TThrow<T>.TSink.Run: IDisposable;
+function TThrow<TSource>.TSink.Run: IDisposable;
 begin
   Result := fParent.fScheduler.Schedule(Invoke);
 end;

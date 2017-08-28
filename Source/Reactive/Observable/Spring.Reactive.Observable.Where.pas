@@ -35,76 +35,74 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TWhere<T> = class(TProducer<T>)
+  TWhere<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
-    fPredicate: Predicate<T>;
+    fSource: IObservable<TSource>;
+    fPredicate: Predicate<TSource>;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TWhere<T>;
+        fParent: TWhere<TSource>;
       public
-        constructor Create(const parent: TWhere<T>; const observer: IObserver<T>;
+        constructor Create(const parent: TWhere<TSource>; const observer: IObserver<TSource>;
           const cancel: IDisposable);
         destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const predicate: Predicate<T>);
+    constructor Create(const source: IObservable<TSource>; const predicate: Predicate<TSource>);
   end;
 
 
 implementation
 
 
-{$REGION 'TWhere<T>'}
+{$REGION 'TWhere<TSource>'}
 
-constructor TWhere<T>.Create(const source: IObservable<T>;
-  const predicate: Predicate<T>);
+constructor TWhere<TSource>.Create(const source: IObservable<TSource>;
+  const predicate: Predicate<TSource>);
 begin
   inherited Create;
   fSource := source;
   fPredicate := predicate;
 end;
 
-function TWhere<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TWhere<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  if Assigned(fPredicate) then
-  begin
-    sink := TSink.Create(Self, observer, cancel);
-    setSink(sink);
-    // TODO implement SubscribeSafe
-    Result := fSource.Subscribe(sink);
-  end;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TWhere<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TWhere<T>.TSink'}
+{$REGION 'TWhere<TSource>.TSink'}
 
-constructor TWhere<T>.TSink.Create(const parent: TWhere<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TWhere<TSource>.TSink.Create(const parent: TWhere<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
 end;
 
-destructor TWhere<T>.TSink.Destroy;
+destructor TWhere<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TWhere<T>.TSink.OnNext(const value: T);
+procedure TWhere<TSource>.TSink.OnNext(const value: TSource);
 var
   shouldRun: Boolean;
 begin

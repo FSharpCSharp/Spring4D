@@ -41,8 +41,9 @@ type
       fSource: IObservable<TSource>;
       fScheduler: IScheduler;
     protected
-      function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
-        const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<TSource>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
     public
       constructor Create(const source: IObservable<TSource>; const scheduler: IScheduler);
     end;
@@ -64,14 +65,15 @@ begin
   fScheduler := scheduler;
 end;
 
-function TObserveOn<TSource>.TScheduler.Run(const observer: IObserver<TSource>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TObserveOnObserver<TSource>;
+function TObserveOn<TSource>.TScheduler.CreateSink(
+  const observer: IObserver<TSource>; const cancel: IDisposable): TObject;
 begin
-  sink := TObserveOnObserver<TSource>.Create(fScheduler, observer, cancel);
-  setSink(sink);
-  Result := fSource.Subscribe(sink);
+  Result := TObserveOnObserver<TSource>.Create(fScheduler, observer, cancel);
+end;
+
+function TObserveOn<TSource>.TScheduler.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TObserveOnObserver<TSource>(sink));
 end;
 
 {$ENDREGION}

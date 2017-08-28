@@ -36,33 +36,34 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TToObservable<T> = class(TProducer<T>)
+  TToObservable<TSource> = class(TProducer<TSource>)
   private
-    fSource: IEnumerable<T>;
+    fSource: IEnumerable<TSource>;
     fScheduler: IScheduler;
 
     type
-      TSink = class(TSink<T>)
+      TSink = class(TSink<TSource>)
       private
-        fParent: TToObservable<T>;
+        fParent: TToObservable<TSource>;
         procedure LoopRec(const state: TValue; const recurse: Action<TValue>);
       public
-        constructor Create(const parent: TToObservable<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TToObservable<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
         function Run: IDisposable;
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IEnumerable<T>; const scheduler: IScheduler);
+    constructor Create(const source: IEnumerable<TSource>; const scheduler: IScheduler);
   end;
 
-  TState<T> = record
+  TState<TSource> = record
   public
     flag: ICancelable;
-    enumerator: IEnumerator<T>;
+    enumerator: IEnumerator<TSource>;
   end;
 
 implementation
@@ -71,9 +72,9 @@ uses
   Spring.Reactive.Disposables;
 
 
-{$REGION 'TToObservable<T>'}
+{$REGION 'TToObservable<TSource>'}
 
-constructor TToObservable<T>.Create(const source: IEnumerable<T>;
+constructor TToObservable<TSource>.Create(const source: IEnumerable<TSource>;
   const scheduler: IScheduler);
 begin
   inherited Create;
@@ -81,47 +82,48 @@ begin
   fScheduler := scheduler;
 end;
 
-function TToObservable<T>.Run(const observer: IObserver<T>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TToObservable<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TToObservable<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TToObservable<T>.TSink'}
+{$REGION 'TToObservable<TSource>.TSink'}
 
-constructor TToObservable<T>.TSink.Create(const parent: TToObservable<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TToObservable<TSource>.TSink.Create(const parent: TToObservable<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
 end;
 
-destructor TToObservable<T>.TSink.Destroy;
+destructor TToObservable<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TToObservable<T>.TSink.LoopRec(const state: TValue;
+procedure TToObservable<TSource>.TSink.LoopRec(const state: TValue;
   const recurse: Action<TValue>);
 var
   hasNext: Boolean;
   ex: Exception;
-  current: T;
-  _state: TState<T>;
+  current: TSource;
+  _state: TState<TSource>;
 begin
   hasNext := False;
   ex := nil;
-  current := Default(T);
-  _state := state.AsType<TState<T>>;
+  current := Default(TSource);
+  _state := state.AsType<TState<TSource>>;
 
   if _state.flag.IsDisposed then
   begin
@@ -163,11 +165,11 @@ begin
   recurse(state);
 end;
 
-function TToObservable<T>.TSink.Run: IDisposable;
+function TToObservable<TSource>.TSink.Run: IDisposable;
 var
-  e: IEnumerator<T>;
+  e: IEnumerator<TSource>;
   flag: ICancelable;
-  state: TState<T>;
+  state: TState<TSource>;
   guard: IInterface;
 begin
   try

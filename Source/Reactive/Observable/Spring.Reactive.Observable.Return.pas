@@ -35,70 +35,72 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TReturn<T> = class(TProducer<T>)
+  TReturn<TSource> = class(TProducer<TSource>)
   private
-    fValue: T;
+    fValue: TSource;
     fScheduler: IScheduler;
 
     type
-      TSink = class(TSink<T>)
+      TSink = class(TSink<TSource>)
       private
-        fParent: TReturn<T>;
+        fParent: TReturn<TSource>;
         procedure Invoke;
       public
-        constructor Create(const parent: TReturn<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TReturn<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         function Run: IDisposable;
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const value: T; const scheduler: IScheduler);
+    constructor Create(const value: TSource; const scheduler: IScheduler);
   end;
 
 implementation
 
 
-{$REGION 'TReturn<T>'}
+{$REGION 'TReturn<TSource>'}
 
-constructor TReturn<T>.Create(const value: T; const scheduler: IScheduler);
+constructor TReturn<TSource>.Create(const value: TSource; const scheduler: IScheduler);
 begin
   inherited Create;
   fValue := value;
   fScheduler := scheduler;
 end;
 
-function TReturn<T>.Run(const observer: IObserver<T>; const cancel: IDisposable;
-  const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TReturn<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TReturn<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TReturn<T>.TSink'}
+{$REGION 'TReturn<TSource>.TSink'}
 
-constructor TReturn<T>.TSink.Create(const parent: TReturn<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TReturn<TSource>.TSink.Create(const parent: TReturn<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
 end;
 
-procedure TReturn<T>.TSink.Invoke;
+procedure TReturn<TSource>.TSink.Invoke;
 begin
   Observer.OnNext(fParent.fValue);
   Observer.OnCompleted;
   Dispose;
 end;
 
-function TReturn<T>.TSink.Run: IDisposable;
+function TReturn<TSource>.TSink.Run: IDisposable;
 begin
   Result := fParent.fScheduler.Schedule(Invoke);
 end;

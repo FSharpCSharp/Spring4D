@@ -84,8 +84,9 @@ type
         function Run: IDisposable;
       end;
   protected
-    function Run(const observer: IObserver<TSource>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const source: IObservable<TSource>;
       const other: IObservable<TOther>);
@@ -108,14 +109,15 @@ begin
   fOther := other;
 end;
 
-function TSkipUntil<TSource, TOther>.Run(const observer: IObserver<TSource>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TSkipUntil<TSource, TOther>.CreateSink(
+  const observer: IObserver<TSource>; const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := sink.Run;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TSkipUntil<TSource, TOther>.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run;
 end;
 
 {$ENDREGION}

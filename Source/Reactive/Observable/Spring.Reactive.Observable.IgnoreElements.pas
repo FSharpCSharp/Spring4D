@@ -35,50 +35,51 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TIgnoreElements<T> = class(TProducer<T>)
+  TIgnoreElements<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
+    fSource: IObservable<TSource>;
 
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       public
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+      function CreateSink(const observer: IObserver<TSource>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>);
+    constructor Create(const source: IObservable<TSource>);
   end;
 
 implementation
 
 
-{$REGION 'TIgnoreElements<T>'}
+{$REGION 'TIgnoreElements<TSource>'}
 
-constructor TIgnoreElements<T>.Create(const source: IObservable<T>);
+constructor TIgnoreElements<TSource>.Create(const source: IObservable<TSource>);
 begin
   inherited Create;
   fSource := source;
 end;
 
-function TIgnoreElements<T>.Run(const observer: IObserver<T>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: TSink;
+function TIgnoreElements<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-  sink := TSink.Create(observer, cancel);
-  setSink(sink);
-  // TODO implement SubscribeSafe
-  Result := fSource.Subscribe(sink);
+  Result := TSink.Create(observer, cancel);
+end;
+
+function TIgnoreElements<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TIgnoreElements<T>.TSink'}
+{$REGION 'TIgnoreElements<TSource>.TSink'}
 
-procedure TIgnoreElements<T>.TSink.OnNext(const value: T);
+procedure TIgnoreElements<TSource>.TSink.OnNext(const value: TSource);
 begin
 end;
 

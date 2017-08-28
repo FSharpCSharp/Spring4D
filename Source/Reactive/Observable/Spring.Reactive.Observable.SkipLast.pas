@@ -36,36 +36,37 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TSkipLast<T> = class(TProducer<T>)
+  TSkipLast<TSource> = class(TProducer<TSource>)
   private
-    fSource: IObservable<T>;
+    fSource: IObservable<TSource>;
     fCount: Integer;
 //    fDuration: TTimeSpan; // TODO implement interval
 //    fScheduler: IScheduler;
     type
-      TSink = class(TSink<T>, IObserver<T>)
+      TSink = class(TSink<TSource>, IObserver<TSource>)
       private
-        fParent: TSkipLast<T>;
-        fQueue: IQueue<T>;
+        fParent: TSkipLast<TSource>;
+        fQueue: IQueue<TSource>;
       public
-        constructor Create(const parent: TSkipLast<T>;
-          const observer: IObserver<T>; const cancel: IDisposable);
+        constructor Create(const parent: TSkipLast<TSource>;
+          const observer: IObserver<TSource>; const cancel: IDisposable);
         destructor Destroy; override;
-        procedure OnNext(const value: T);
+        procedure OnNext(const value: TSource);
       end;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; override;
+    function CreateSink(const observer: IObserver<TSource>;
+      const cancel: IDisposable): TObject; override;
+    function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const source: IObservable<T>; const count: Integer);
+    constructor Create(const source: IObservable<TSource>; const count: Integer);
   end;
 
 implementation
 
 
-{$REGION 'TSkipLast<T>'}
+{$REGION 'TSkipLast<TSource>'}
 
-constructor TSkipLast<T>.Create(const source: IObservable<T>;
+constructor TSkipLast<TSource>.Create(const source: IObservable<TSource>;
   const count: Integer);
 begin
   inherited Create;
@@ -73,44 +74,38 @@ begin
   fCount := count;
 end;
 
-function TSkipLast<T>.Run(const observer: IObserver<T>;
-  const cancel: IDisposable; const setSink: Action<IDisposable>): IDisposable;
-var
-  sink: IObserver<T>;
+function TSkipLast<TSource>.CreateSink(const observer: IObserver<TSource>;
+  const cancel: IDisposable): TObject;
 begin
-//  if not Assigned(fScheduler) then
-//  begin
-  sink := TSink.Create(Self, observer, cancel);
-  setSink(sink);
-  Result := fSource.Subscribe(sink);
-//  end
-//  else
-//  begin
-//
-//  end;
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TSkipLast<TSource>.Run(const sink: TObject): IDisposable;
+begin
+  Result := fSource.Subscribe(TSink(sink));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TSkipLast<T>.TSink'}
+{$REGION 'TSkipLast<TSource>.TSink'}
 
-constructor TSkipLast<T>.TSink.Create(const parent: TSkipLast<T>;
-  const observer: IObserver<T>; const cancel: IDisposable);
+constructor TSkipLast<TSource>.TSink.Create(const parent: TSkipLast<TSource>;
+  const observer: IObserver<TSource>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
   fParent := parent;
   fParent._AddRef;
-  fQueue := TCollections.CreateQueue<T>;
+  fQueue := TCollections.CreateQueue<TSource>;
 end;
 
-destructor TSkipLast<T>.TSink.Destroy;
+destructor TSkipLast<TSource>.TSink.Destroy;
 begin
   fParent._Release;
   inherited;
 end;
 
-procedure TSkipLast<T>.TSink.OnNext(const value: T);
+procedure TSkipLast<TSource>.TSink.OnNext(const value: TSource);
 begin
   fQueue.Enqueue(value);
   if fQueue.Count > fParent.fCount then

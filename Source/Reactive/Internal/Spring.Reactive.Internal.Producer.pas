@@ -34,24 +34,50 @@ uses
   Spring.Reactive.ObservableBase;
 
 type
-  TProducer<T> = class(TObservableBase<T>)
+  TBasicProducer<TSource> = class(TObservableBase<TSource>)
   private type
     PState = ^TState;
     TState = record
-      sink: ISingleAssignmentDisposable;
       subscription: ISingleAssignmentDisposable;
-      observer: IObserver<T>;
-      procedure Assign(const s: IDisposable);
+      observer: IObserver<TSource>;
+    end;
+  private
+    function RunInternal(const _: IScheduler; const state: TValue): IDisposable;
+  strict protected
+    constructor Create; // hide default constructor
+  protected
+    function Run(const observer: IObserver<TSource>): IDisposable; virtual; abstract;
+  public
+    function Subscribe(const observer: IObserver<TSource>): IDisposable; override;
+    function SubscribeRaw(const observer: IObserver<TSource>{; enableSafeguard: Boolean}): IDisposable;
+  end;
+
+  TProducer<TSource> = class(TObservableBase<TSource>)
+  private type
+    PState = ^TState;
+    TState = record
+      sink: TObject;
+      inner: ISingleAssignmentDisposable;
     end;
   strict protected
     constructor Create; // hide default constructor
     function RunInternal(const _: IScheduler; const state: TValue): IDisposable; overload;
   protected
-    function Run(const observer: IObserver<T>; const cancel: IDisposable;
-      const setSink: Action<IDisposable>): IDisposable; overload; virtual; abstract;
+    function CreateSink(const observer: IObserver<TSource>; const cancel: IDisposable): TObject; virtual; abstract;
+    function Run(const sink: TObject): IDisposable; virtual; abstract;
   public
-    function Subscribe(const observer: IObserver<T>): IDisposable; override;
-    function SubscribeRaw(const observer: IObserver<T>; enableSafeguard: Boolean): IDisposable;
+    function Subscribe(const observer: IObserver<TSource>): IDisposable; override;
+    function SubscribeRaw(const observer: IObserver<TSource>; enableSafeguard: Boolean): IDisposable;
+  end;
+
+  TSubscriptionDisposable = class(TInterfacedObject, IDisposable, ICancelable)
+  private
+    Sink: IDisposable;
+    Inner: ISingleAssignmentDisposable;
+    function GetIsDisposed: Boolean;
+  public
+    constructor Create;
+    procedure Dispose;
   end;
 
 implementation
@@ -61,14 +87,61 @@ uses
   Spring.Reactive.Disposables;
 
 
-{$REGION 'TProducer<T>'}
+{$REGION 'TBasicProducer<TSource>'}
 
-constructor TProducer<T>.Create;
+constructor TBasicProducer<TSource>.Create;
 begin
   inherited Create;
 end;
 
-function TProducer<T>.Subscribe(const observer: IObserver<T>): IDisposable;
+function TBasicProducer<TSource>.Subscribe(
+  const observer: IObserver<TSource>): IDisposable;
+begin
+  Guard.CheckNotNull(observer, 'observer');
+
+  Result := SubscribeRaw(observer{, True});
+end;
+
+function TBasicProducer<TSource>.SubscribeRaw(const observer: IObserver<TSource>): IDisposable;
+var
+  subscription: ISingleAssignmentDisposable;
+  state: TState;
+begin
+  subscription := TSingleAssignmentDisposable.Create;
+
+  if TCurrentThreadScheduler.IsScheduleRequired then
+  begin
+    state.subscription := subscription;
+    state.observer := observer;
+    TCurrentThreadScheduler.Instance.Schedule(TValue.From(state), RunInternal);
+  end
+  else
+    subscription.Disposable := Run(observer);
+
+  Result := subscription;
+end;
+
+function TBasicProducer<TSource>.RunInternal(const _: IScheduler;
+  const state: TValue): IDisposable;
+var
+  x: PState;
+begin
+  x := PState(state.GetReferenceToRawData);
+  x.subscription.Disposable := Run(x.observer);
+  Result := Disposable.Empty;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TProducer<TSource>'}
+
+constructor TProducer<TSource>.Create;
+begin
+  inherited Create;
+end;
+
+function TProducer<TSource>.Subscribe(const observer: IObserver<TSource>): IDisposable;
 var
   sink: ISingleAssignmentDisposable;
   subscription: ISingleAssignmentDisposable;
@@ -78,47 +151,66 @@ begin
   Result := SubscribeRaw(observer, True);
 end;
 
-function TProducer<T>.SubscribeRaw(const observer: IObserver<T>;
+function TProducer<TSource>.SubscribeRaw(const observer: IObserver<TSource>;
   enableSafeguard: Boolean): IDisposable;
 var
+  subscription: TSubscriptionDisposable;
+  sink: TObject;
   state: TState;
-  d: ICancelable;
 begin
-  state.observer := observer;
-  state.sink := TSingleAssignmentDisposable.Create;
-  state.subscription := TSingleAssignmentDisposable.Create;
-
-  d := TStableCompositeDisposable.Create(state.sink, state.subscription);
+  subscription := TSubscriptionDisposable.Create;
 
 //  if enableSafeguard then
-//    state.observer := TSafeObserver<T>.Create(state.observer, d);
+//    observer := TSafeObserver<TSource>.Create(observer, subscription);
+
+  sink := CreateSink(observer, subscription.Inner);
+
+  subscription.Sink := TInterfacedObject(sink) as IDisposable;
 
   if TCurrentThreadScheduler.IsScheduleRequired then
-    TCurrentThreadScheduler.Instance.Schedule(TValue.From(state), RunInternal)
+  begin
+    state.sink := sink;
+    state.inner := subscription.Inner;
+    TCurrentThreadScheduler.Instance.Schedule(TValue.From(state), RunInternal);
+  end
   else
-    state.subscription.Disposable := Run(state.observer, state.subscription, state.Assign);
+    subscription.Inner.Disposable := Run(sink);
 
-  Result := d;
+  Result := subscription;
 end;
 
-function TProducer<T>.RunInternal(const _: IScheduler; const state: TValue): IDisposable;
+function TProducer<TSource>.RunInternal(const _: IScheduler; const state: TValue): IDisposable;
 var
   x: TState;
 begin
   x := PState(state.GetReferenceToRawData)^;
-//  x := state.AsType<TState>();
-  x.subscription.Disposable := Run(x.observer, x.subscription, x.Assign);
+  x.inner.Disposable := Run(x.sink);
   Result := Disposable.Empty;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TProducer<T>.TState'}
+{$REGION 'TSubscriptionDisposable'}
 
-procedure TProducer<T>.TState.Assign(const s: IDisposable);
+constructor TSubscriptionDisposable.Create;
 begin
-  sink.Disposable := s;
+  Inner := TSingleAssignmentDisposable.Create;
+end;
+
+procedure TSubscriptionDisposable.Dispose;
+var
+  old: IDisposable;
+begin
+  old := TInterlocked.Exchange<IDisposable>(Sink, nil);
+  if Assigned(old) then
+    old.Dispose;
+  Inner.Dispose;
+end;
+
+function TSubscriptionDisposable.GetIsDisposed: Boolean;
+begin
+  Result := Sink = nil;
 end;
 
 {$ENDREGION}
