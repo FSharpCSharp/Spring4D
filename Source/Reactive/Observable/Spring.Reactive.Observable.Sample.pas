@@ -149,13 +149,20 @@ end;
 function TSample<T>.TSink.Run: IDisposable;
 var
   sourceSubscription: ISingleAssignmentDisposable;
+  guard: IInterface;
 begin
   sourceSubscription := TSingleAssignmentDisposable.Create;
   fSourceSubscription := sourceSubscription;
   sourceSubscription.Disposable := fParent.fSource.Subscribe(Self);
+  guard := Self;
   Result := TStableCompositeDisposable.Create(
     sourceSubscription,
-    (fParent.fScheduler as ISchedulerPeriodic).SchedulePeriodic(fParent.fInterval, Tick));
+    (fParent.fScheduler as ISchedulerPeriodic).SchedulePeriodic(fParent.fInterval,
+    procedure
+    begin
+      if Assigned(guard) then
+        Tick;
+    end));
 end;
 
 procedure TSample<T>.TSink.Tick;

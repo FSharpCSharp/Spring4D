@@ -82,7 +82,11 @@ end;
 
 class destructor TDefaultScheduler.Destroy;
 begin
+  fCal := nil;
   fInstance := nil;
+
+  // need to be shut down the thread pool to avoid trouble with any already finalized stuff
+  TConcurrencyAbstractionLayer.Shutdown;
 end;
 
 function TDefaultScheduler.SchedulePeriodic(const period: TTimeSpan;

@@ -55,7 +55,6 @@ type
       end;
   public
     class constructor Create;
-    class destructor Destroy;
     class property Instance: ICurrentThreadScheduler read GetInstance;
     class property IsScheduleRequired: Boolean read GetIsScheduleRequired;
   public
@@ -66,7 +65,6 @@ type
 implementation
 
 uses
-  Spring.Reactive.Concurrency.ConcurrencyAbstractionLayer,
   Spring.Reactive.Concurrency.ScheduledItem,
   Spring.Reactive.Disposables;
 
@@ -78,12 +76,6 @@ begin
 //  fInstance := TCurrentThreadScheduler.Create;
   fClocks := TCollections.CreateDictionary<TThreadID, TStopwatch>;
   fQueues := TCollections.CreateDictionary<TThreadID, TSchedulerQueue<TTimeSpan>>([doOwnsValues]);
-end;
-
-class destructor TCurrentThreadScheduler.Destroy;
-begin
-  // need to be shut down the thread pool to avoid trouble with any already finalized stuff
-  TConcurrencyAbstractionLayer.Shutdown;
 end;
 
 function TCurrentThreadScheduler.GetScheduleRequired: Boolean;
