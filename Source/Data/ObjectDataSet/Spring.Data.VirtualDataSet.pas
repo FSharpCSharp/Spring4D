@@ -123,7 +123,7 @@ type
 
     // Basic overrides
     function GetCanModify: Boolean; override;
-    function GetRecNo: {$IFDEF DELPHIX_TOKYO_UP}Integer{$ELSE}LongInt{$ENDIF}; override;
+    function GetRecNo: Integer; override;
     function GetRecordCount: Integer; override;
     procedure SetFiltered(Value: Boolean); override;
 
@@ -956,7 +956,7 @@ begin
     Result := PArrayRecInfo(recBuf).Index;
 end;
 
-function TCustomVirtualDataSet.GetRecNo: {$IFDEF DELPHIX_TOKYO_UP}Integer{$ELSE}LongInt{$ENDIF};
+function TCustomVirtualDataSet.GetRecNo: Integer;
 var
   recBuf: TRecordBuffer;
 begin
