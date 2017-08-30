@@ -234,6 +234,7 @@ type
   {$HINTS ON}
   public
     function Buffer<TSource, TBufferBoundary>(const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>; overload;
+    function CombineLatest<TSource1, TSource2, TResult>(const second: IObservable<TSource2>; const resultSelector: Func<TSource1, TSource2, TResult>): IObservable<TResult>; overload;
     function Select<TSource, TResult>(const selector: Func<TSource, TResult>): IObservable<TResult>; overload;
     function TakeUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
   end;
@@ -447,6 +448,14 @@ function IObservableExtensions.Buffer<TSource, TBufferBoundary>(
   const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>;
 begin
   Result := TBuffer<TSource, TBufferBoundary>.TBoundaries.Create(TObject(Self) as TObservableBase<TSource>, bufferBoundaries);
+end;
+
+function IObservableExtensions.CombineLatest<TSource1, TSource2, TResult>(
+  const second: IObservable<TSource2>;
+  const resultSelector: Func<TSource1, TSource2, TResult>): IObservable<TResult>;
+begin
+  Result := TCombineLatest<TSource1, TSource2, TResult>.Create(
+    TObject(Self) as TObservableBase<TSource1>, second, resultSelector);
 end;
 
 function IObservableExtensions.Select<TSource, TResult>(
