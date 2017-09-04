@@ -103,8 +103,8 @@ end;
 function TDBParam.ToVariant(dataType: TFieldType): Variant;
 begin
   case dataType of
-    ftVarBytes: Result := fValue.ConvertTo<TArray<Byte>>;
-    ftGuid: Result := fValue.ConvertTo<string>;
+    ftVarBytes: Result := fValue.ToType<TArray<Byte>>;
+    ftGuid: Result := fValue.ToType<string>;
   else
     Result := ToVariant;
   end;

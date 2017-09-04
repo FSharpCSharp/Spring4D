@@ -2685,7 +2685,7 @@ var
   f: Double;
 begin
   fSUT := 'foo';
-  CheckFalse(fSUT.TryConvert<Double>(f));
+  CheckFalse(fSUT.TryToType<Double>(f));
 end;
 
 procedure TTestValueHelper.ConvertStringToIntegerFailsForInvalidString;
@@ -2693,7 +2693,7 @@ var
   i: Integer;
 begin
   fSUT := 'foo';
-  CheckFalse(fSUT.TryConvert<Integer>(i));
+  CheckFalse(fSUT.TryToType<Integer>(i));
 end;
 
 procedure TTestValueHelper.DoCheckCompare(expected: Integer);

@@ -683,7 +683,7 @@ begin
         raise EORMColumnNotFound.CreateResFmt(@SColumnNotFound, [columnData.ColumnName]);
       end;
       value := TValue.FromVariant(fieldValue);
-      value := value.ConvertTo(columnData.Member.MemberType.Handle);
+      value := value.Convert(columnData.Member.MemberType.Handle);
       entity.SetValue(columnData.Member, value);
     end;
   end;

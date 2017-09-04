@@ -182,7 +182,7 @@ procedure TEntityWrapper.SetValue(const member: TRttiMember; const value: TValue
 
 begin
   try
-    member.SetValue(fEntity, value.ConvertTo(member.MemberType.Handle));
+    member.SetValue(fEntity, value.Convert(member.MemberType.Handle));
   except
     on E: EInvalidCast do
       RaiseInvalidConversion;

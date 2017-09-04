@@ -496,14 +496,26 @@ type
     function CompareTo(const value: TValue): Integer;
 
     /// <summary>
-    ///   Comverts the stored value to another type.
+    ///   Converts the stored value to another type.
     /// </summary>
-    function ConvertTo<T>: T; overload;
+    function Convert<T>: TValue; overload;
 
     /// <summary>
-    ///   Comverts the stored value to another type.
+    ///   Converts the stored value to another type using the specified format
+    ///   settings.
     /// </summary>
-    function ConvertTo(targetType: PTypeInfo): TValue; overload;
+    function Convert<T>(const formatSettings: TFormatSettings): TValue; overload;
+
+    /// <summary>
+    ///   Converts the stored value to another type.
+    /// </summary>
+    function Convert(targetType: PTypeInfo): TValue; overload;
+
+    /// <summary>
+    ///   Converts the stored value to another type using the specified format
+    ///   settings.
+    /// </summary>
+    function Convert(targetType: PTypeInfo; const formatSettings: TFormatSettings): TValue; overload;
 
     /// <summary>
     ///   Checks for equality with another TValue.
@@ -568,20 +580,14 @@ type
     ///   Tries to convert the stored value. Returns false when the conversion
     ///   is not possible.
     /// </summary>
-    function TryConvert(targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean; overload;
+    function TryConvert(targetType: PTypeInfo; out targetValue: TValue): Boolean; overload;
 
     /// <summary>
-    ///   Tries to convert the stored value. Returns false when the conversion
-    ///   is not possible.
+    ///   Tries to convert the stored value using the specified format
+    ///   settings. Returns false when the conversion is not possible.
     /// </summary>
-    function TryConvert(targetTypeInfo: PTypeInfo; out targetValue: TValue;
+    function TryConvert(targetType: PTypeInfo; out targetValue: TValue;
       const formatSettings: TFormatSettings): Boolean; overload;
-
-    /// <summary>
-    ///   Tries to convert the stored value. Returns false when the conversion
-    ///   is not possible.
-    /// </summary>
-    function TryConvert<T>(out targetValue: T): Boolean; overload;
 
     /// <summary>
     ///   Tries to get the stored value of a nullable. Returns false when the
@@ -602,6 +608,13 @@ type
     function TryToType<T>(out targetValue: T): Boolean; overload;
 
     /// <summary>
+    ///   Tries to convert the stored value using the specified format
+    ///   settings. Returns false when the conversion is not possible.
+    /// </summary>
+    function TryToType<T>(out targetValue: T;
+      const formatSettings: TFormatSettings): Boolean; overload;
+
+    /// <summary>
     ///   Returns the stored value as TObject.
     /// </summary>
     function ToObject: TObject;
@@ -614,7 +627,13 @@ type
     /// <summary>
     ///   Converts stored value to the specified type.
     /// </summary>
-    function ToType<T>: T;
+    function ToType<T>: T; overload;
+
+    /// <summary>
+    ///   Converts stored value to the specified type using the specified
+    ///   format settings.
+    /// </summary>
+    function ToType<T>(const formatSettings: TFormatSettings): T; overload;
 
     /// <summary>
     ///   Returns the stored value as Variant.
@@ -4012,17 +4031,33 @@ begin
   Result := CompareValue(Self, value);
 end;
 
-function TValueHelper.ConvertTo(targetType: PTypeInfo): TValue;
+function TValueHelper.Convert(targetType: PTypeInfo): TValue;
 begin
   if not TryConvert(targetType, Result) then
     RaiseConversionError(TypeInfo, targetType);
 end;
 
-function TValueHelper.ConvertTo<T>: T;
+function TValueHelper.Convert(targetType: PTypeInfo;
+  const formatSettings: TFormatSettings): TValue;
 begin
-  if not TryConvert<T>(Result) then
+  if not TryConvert(targetType, Result, formatSettings) then
+    RaiseConversionError(TypeInfo, targetType);
+end;
+
+function TValueHelper.Convert<T>: TValue;
+begin
+  if not TryConvert(System.TypeInfo(T), Result) then
     RaiseConversionError(TypeInfo, System.TypeInfo(T));
 end;
+
+function TValueHelper.Convert<T>(const formatSettings: TFormatSettings): TValue;
+begin
+  if not TryConvert(System.TypeInfo(T), Result, formatSettings) then
+    RaiseConversionError(TypeInfo, System.TypeInfo(T));
+end;
+
+
+{$REGION 'Equals functions'}
 
 function EqualsFail(const left, right: TValue): Boolean; //FI:O804
 begin
@@ -4259,7 +4294,6 @@ begin
   end;
 end;
 
-{$REGION 'Equals functions'}
 type
   TEqualsFunc = function(const left, right: TValue): Boolean;
 const
@@ -4552,6 +4586,7 @@ const
     )
   );
 {$ENDREGION}
+
 
 function TValueHelper.Equals(const value: TValue): Boolean;
 begin
@@ -4953,7 +4988,13 @@ end;
 function TValueHelper.ToType<T>: T;
 begin
   if not TryToType<T>(Result) then
-    Guard.RaiseInvalidTypeCast(TypeInfo, System.TypeInfo(T));
+    RaiseConversionError(TypeInfo, System.TypeInfo(T));
+end;
+
+function TValueHelper.ToType<T>(const formatSettings: TFormatSettings): T;
+begin
+  if not TryToType<T>(Result, formatSettings) then
+    RaiseConversionError(TypeInfo, System.TypeInfo(T));
 end;
 
 function TValueHelper.ToVariant: Variant;
@@ -5487,53 +5528,53 @@ const
 {$ENDREGION}
 
 
-function TValueHelper.TryConvert(targetTypeInfo: PTypeInfo;
+function TValueHelper.TryConvert(targetType: PTypeInfo;
   out targetValue: TValue): Boolean;
 var
   formatSettings: TFormatSettings;
 begin
   formatSettings := TFormatSettings.Create;
-  Result := TryConvert(targetTypeInfo, targetValue, formatSettings);
+  Result := TryConvert(targetType, targetValue, formatSettings);
 end;
 
-function TValueHelper.TryConvert(targetTypeInfo: PTypeInfo;
+function TValueHelper.TryConvert(targetType: PTypeInfo;
   out targetValue: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   value: TValue;
 begin
   {$IFDEF DELPHI2010}
   // Fix for TValue.Cast not converting TValue.Empty to any type
-  if (TypeInfo = nil) and (targetTypeInfo <> nil) then
+  if (TypeInfo = nil) and (targetType <> nil) then
   begin
-    TValue.Make(nil, targetTypeInfo, targetValue);
+    TValue.Make(nil, targetType, targetValue);
     Exit(True);
   end;
   {$ENDIF}
 
-  if (TypeInfo = nil) or (targetTypeInfo = nil) then
+  if (TypeInfo = nil) or (targetType = nil) then
   begin
     targetValue := EmptyValue;
     Exit(True);
   end;
 
-  if TypeInfo = targetTypeInfo then
+  if TypeInfo = targetType then
   begin
     targetValue := Self;
     Exit(True);
   end;
 
-  Result := Conversions[Kind, targetTypeInfo.Kind](Self, targetTypeInfo, targetValue, formatSettings);
+  Result := Conversions[Kind, targetType.Kind](Self, targetType, targetValue, formatSettings);
   if not Result then
   begin
-    if TryGetNullableValue(value) and value.TryCast(targetTypeInfo, targetValue) then
+    if TryGetNullableValue(value) and value.TryCast(targetType, targetValue) then
       Exit(True);
 
-    if TryGetLazyValue(value) and value.TryCast(targetTypeInfo, targetValue) then
+    if TryGetLazyValue(value) and value.TryCast(targetType, targetValue) then
       Exit(True);
 
-    if IsNullable(targetTypeInfo) and TryConvert(GetUnderlyingType(targetTypeInfo), value) then
+    if IsNullable(targetType) and TryConvert(GetUnderlyingType(targetType), value) then
     begin
-      TValue.Make(nil, targetTypeInfo, targetValue);
+      TValue.Make(nil, targetType, targetValue);
       targetValue.SetNullableValue(value);
       Exit(True);
     end;
@@ -5541,15 +5582,15 @@ begin
     case Kind of
       tkRecord:
         if TypeInfo = System.TypeInfo(TValue) then
-          Exit(AsType<TValue>.TryConvert(targetTypeInfo, targetValue));
+          Exit(AsType<TValue>.TryConvert(targetType, targetValue));
       {$IFDEF DELPHI2010}
       // workaround for bug in RTTI.pas (fixed in XE)
       tkUnknown:
       begin
-        case targetTypeInfo.Kind of
+        case targetType.Kind of
           tkInteger, tkEnumeration, tkChar, tkWChar, tkInt64:
           begin
-            targetValue := TValue.FromOrdinal(targetTypeInfo, 0);
+            targetValue := TValue.FromOrdinal(targetType, 0);
             Exit(True);
           end;
           tkFloat:
@@ -5568,20 +5609,11 @@ begin
     end;
 
     {$IFNDEF DELPHI2010}
-    Result := TValueConverter.Default.TryConvertTo(Self, targetTypeInfo, targetValue, TValue.From(formatSettings));
+    Result := TValueConverter.Default.TryConvertTo(Self, targetType, targetValue, TValue.From(formatSettings));
     {$ELSE}
     Result := False;
     {$ENDIf}
   end;
-end;
-
-function TValueHelper.TryConvert<T>(out targetValue: T): Boolean;
-var
-  value: TValue;
-begin
-  Result := TryConvert(System.TypeInfo(T), value);
-  if Result then
-    targetValue := value.AsType<T>;
 end;
 
 function TValueHelper.TryGetLazyValue(out value: TValue): Boolean;
@@ -5630,6 +5662,26 @@ var
   value: TValue;
 begin
   Result := TryConvert(System.TypeInfo(T), value);
+  if Result then
+  begin
+    // avoid extra overhead of value.AsType<T>
+    // since we know value contains the exact type of T
+    // use the same code as the private TValue.Get<T> method
+    if TValueData(value).FTypeInfo = nil then
+    begin
+      FillChar(Pointer(@targetValue)^, SizeOf(T), 0);
+      Exit;
+    end;
+    value.ExtractRawData(@targetValue);
+  end;
+end;
+
+function TValueHelper.TryToType<T>(out targetValue: T;
+  const formatSettings: TFormatSettings): Boolean;
+var
+  value: TValue;
+begin
+  Result := TryConvert(System.TypeInfo(T), value, formatSettings);
   if Result then
   begin
     // avoid extra overhead of value.AsType<T>

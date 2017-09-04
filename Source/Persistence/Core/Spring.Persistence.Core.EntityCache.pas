@@ -303,7 +303,7 @@ end;
 function TEntityData.GetPrimaryKeyValueAsString(
   const instance: TObject): string;
 begin
-  Result := fPrimaryKeyColumn.Member.GetValue(instance).ConvertTo<string>;
+  Result := fPrimaryKeyColumn.Member.GetValue(instance).ToType<string>;
 end;
 
 function TEntityData.GetRelations(const entity: TObject;
