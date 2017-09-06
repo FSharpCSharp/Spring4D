@@ -125,7 +125,7 @@ end;
 
 function TScheduledItem<TAbsolute>.CompareTo(const other: TObject): Integer;
 begin
-  Result := fComparer.Compare(DueTime, TScheduledItem<TAbsolute>(other).DueTime)
+  Result := fComparer.Compare(DueTime, TScheduledItem<TAbsolute>(other).DueTime);
 end;
 
 {$ENDREGION}
@@ -148,8 +148,23 @@ constructor TScheduledItem<TAbsolute, TValue>.Create(
   const scheduler: IScheduler; const state: TValue;
   const action: Func<IScheduler, TValue, IDisposable>;
   const dueTime: TAbsolute);
+var
+  comparer: IComparer<TAbsolute>;
 begin
-  Create(scheduler, state, action, dueTime, TComparer<TAbsolute>.Default);
+  if TypeInfo(TAbsolute) = TypeInfo(TTimeSpan) then
+    TComparison<TTimeSpan>(comparer) :=
+      function(const left, right: TTimeSpan): Integer
+      begin
+        if left.Ticks < right.Ticks then
+          Result := -1
+        else if left.Ticks > right.Ticks then
+          Result := 1
+        else
+          Result := 0;
+      end
+  else
+    comparer := TComparer<TAbsolute>.Default;
+  Create(scheduler, state, action, dueTime, comparer);
 end;
 
 function TScheduledItem<TAbsolute, TValue>.InvokeCore: IDisposable;

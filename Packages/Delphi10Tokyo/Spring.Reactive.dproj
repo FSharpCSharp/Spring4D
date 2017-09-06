@@ -188,6 +188,7 @@
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throttle.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Where.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Window.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Zip.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.ObservableBase.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.ObserverBase.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.AsyncSubject.pas"/>

@@ -237,6 +237,7 @@ type
     function CombineLatest<TSource1, TSource2, TResult>(const second: IObservable<TSource2>; const resultSelector: Func<TSource1, TSource2, TResult>): IObservable<TResult>; overload;
     function Select<TSource, TResult>(const selector: Func<TSource, TResult>): IObservable<TResult>; overload;
     function TakeUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
+    function Zip<TFirst, TSecond, TResult>(const second: IObservable<TSecond>; const resultSelector: Func<TFirst, TSecond, TResult>): IObservable<TResult>; overload;
   end;
 
   IObservable<T> = interface(IDisposable)
@@ -416,6 +417,8 @@ type
     property RemoveHandler: Action read fRemoveHandler write fRemoveHandler;
   end;
 
+function Lock(const instance: TObject): IInterface;
+
 implementation
 
 uses
@@ -439,6 +442,7 @@ uses
   Spring.Reactive.Observable.Timer,
   Spring.Reactive.Observable.ToObservable,
   Spring.Reactive.Observable.Window,
+  Spring.Reactive.Observable.Zip,
   Spring.Reactive.Subjects.Subject; // TODO: remove - implement this specifically
 
 
@@ -461,13 +465,22 @@ end;
 function IObservableExtensions.Select<TSource, TResult>(
   const selector: Func<TSource, TResult>): IObservable<TResult>;
 begin
-  Result := TSelect<TSource, TResult>.Create(TObject(Self) as TObservableBase<TSource>, selector);
+  Result := TSelect<TSource, TResult>.TSelector.Create(
+    TObject(Self) as TObservableBase<TSource>, selector);
 end;
 
 function IObservableExtensions.TakeUntil<TSource, TOther>(
   const other: IObservable<TOther>): IObservable<TSource>;
 begin
   Result := TTakeUntil<TSource, TOther>.Create(TObject(Self) as TObservableBase<TSource>, other);
+end;
+
+function IObservableExtensions.Zip<TFirst, TSecond, TResult>(
+  const second: IObservable<TSecond>;
+  const resultSelector: Func<TFirst, TSecond, TResult>): IObservable<TResult>;
+begin
+  Result := TZip<TFirst, TSecond, TResult>.TObservable.Create(
+    TObject(Self) as TObservableBase<TFirst>, second, resultSelector);
 end;
 
 {$ENDREGION}
@@ -743,7 +756,7 @@ class function TObservable.Select<TSource, TResult>(
   const source: IObservable<TSource>;
   const selector: Func<TSource, TResult>): IObservable<TResult>;
 begin
-  Result := TSelect<TSource, TResult>.Create(source, selector);
+  Result := TSelect<TSource, TResult>.TSelector.Create(source, selector);
 end;
 
 class function TObservable.SkipUntil<TSource, TOther>(
@@ -813,6 +826,38 @@ begin
     fRemoveHandler := nil;
   end;
   inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'interfaced lock'}
+
+type
+  TInterfacedMonitor = class(TInterfacedObject)
+  private
+    fInstance: TObject;
+  public
+    constructor Create(const instance: TObject);
+    destructor Destroy; override;
+  end;
+
+constructor TInterfacedMonitor.Create(const instance: TObject);
+begin
+  inherited Create;
+  fInstance := instance;
+  MonitorEnter(fInstance);
+end;
+
+destructor TInterfacedMonitor.Destroy;
+begin
+  MonitorExit(fInstance);
+  inherited Destroy;
+end;
+
+function Lock(const instance: TObject): IInterface;
+begin
+  Result := TInterfacedMonitor.Create(instance);
 end;
 
 {$ENDREGION}

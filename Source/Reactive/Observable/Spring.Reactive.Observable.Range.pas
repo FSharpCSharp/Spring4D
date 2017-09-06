@@ -44,13 +44,13 @@ type
     type
       TSink = class(TSink<Integer>)
       private
-        fParent: TRange;
+        fStart: Integer;
+        fCount: Integer;
         procedure LoopRec(const state: TValue; const recurse: Action<TValue>);
       public
         constructor Create(const parent: TRange;
           const observer: IObserver<Integer>; const cancel: IDisposable);
-        destructor Destroy; override;
-        function Run: IDisposable;
+        function Run(const scheduler: IScheduler): IDisposable;
       end;
   protected
     function CreateSink(const observer: IObserver<Integer>;
@@ -81,7 +81,7 @@ end;
 
 function TRange.Run(const sink: TObject): IDisposable;
 begin
-  Result := TSink(sink).Run;
+  Result := TSink(sink).Run(fScheduler);
 end;
 
 {$ENDREGION}
@@ -93,14 +93,8 @@ constructor TRange.TSink.Create(const parent: TRange;
   const observer: IObserver<Integer>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
-end;
-
-destructor TRange.TSink.Destroy;
-begin
-  fParent._Release;
-  inherited;
+  fStart := parent.fStart;
+  fCount := parent.fCount;
 end;
 
 procedure TRange.TSink.LoopRec(const state: TValue; const recurse: Action<TValue>);
@@ -108,9 +102,9 @@ var
   i: Integer;
 begin
   i := state.AsInteger;
-  if i < fParent.fCount then
+  if i < fCount then
   begin
-    Observer.OnNext(fParent.fStart + i);
+    Observer.OnNext(fStart + i);
     recurse(i + 1);
   end
   else
@@ -118,15 +112,14 @@ begin
     Observer.OnCompleted;
     Dispose;
   end;
+end;
 
-  end;
-
-function TRange.TSink.Run: IDisposable;
+function TRange.TSink.Run(const scheduler: IScheduler): IDisposable;
 var
   guard: IInterface;
 begin
   guard := Self; // make sure that self is kept alive by capturing it
-  Result := fParent.fScheduler.Schedule(0,
+  Result := scheduler.Schedule(0,
     procedure (const state: TValue; const recurse: Action<TValue>)
     begin
       if Assigned(guard) then

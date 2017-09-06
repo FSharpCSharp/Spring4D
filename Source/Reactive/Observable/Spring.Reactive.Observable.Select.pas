@@ -35,50 +35,52 @@ uses
   Spring.Reactive.Internal.Sink;
 
 type
-  TSelect<TSource, TResult> = class(TProducer<TResult>)
-  private
-    fSource: IObservable<TSource>;
-    fSelector: Func<TSource,TResult>;
+  TSelect<TSource, TResult> = class
+  public type
+    TSelector = class(TProducer<TResult>)
+    private
+      fSource: IObservable<TSource>;
+      fSelector: Func<TSource,TResult>;
 
-    type
-      TSink = class(TSink<TResult>, IObserver<TSource>)
-      private
-        fParent: TSelect<TSource, TResult>;
-      public
-        constructor Create(const parent: TSelect<TSource, TResult>;
-          const observer: IObserver<TResult>; const cancel: IDisposable);
-        destructor Destroy; override;
-        procedure OnNext(const value: TSource);
-      end;
-  protected
-    function CreateSink(const observer: IObserver<TResult>;
-      const cancel: IDisposable): TObject; override;
-    function Run(const sink: TObject): IDisposable; override;
-  public
-    constructor Create(const source: IObservable<TSource>;
-      const selector: Func<TSource, TResult>);
+      type
+        TSink = class(TSink<TResult>, IObserver<TSource>)
+        private
+          fSelector: Func<TSource,TResult>;
+        public
+          constructor Create(const selector: Func<TSource,TResult>;
+            const observer: IObserver<TResult>; const cancel: IDisposable);
+          procedure OnNext(const value: TSource);
+        end;
+    protected
+      function CreateSink(const observer: IObserver<TResult>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>;
+        const selector: Func<TSource, TResult>);
+    end;
   end;
 
 implementation
 
 
-{$REGION 'TSelect<TSource, TResult>'}
+{$REGION 'TSelect<TSource, TResult>.TSelector'}
 
-constructor TSelect<TSource, TResult>.Create(const source: IObservable<TSource>;
-  const selector: Func<TSource, TResult>);
+constructor TSelect<TSource, TResult>.TSelector.Create(
+  const source: IObservable<TSource>; const selector: Func<TSource, TResult>);
 begin
   inherited Create;
   fSource := source;
   fSelector := selector;
 end;
 
-function TSelect<TSource, TResult>.CreateSink(
+function TSelect<TSource, TResult>.TSelector.CreateSink(
   const observer: IObserver<TResult>; const cancel: IDisposable): TObject;
 begin
-  Result := TSink.Create(Self, observer, cancel);
+  Result := TSink.Create(fSelector, observer, cancel);
 end;
 
-function TSelect<TSource, TResult>.Run(const sink: TObject): IDisposable;
+function TSelect<TSource, TResult>.TSelector.Run(const sink: TObject): IDisposable;
 begin
   Result := fSource.Subscribe(TSink(sink));
 end;
@@ -86,29 +88,22 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TSelect<TSource, TResult>.TSink'}
+{$REGION 'TSelect<TSource, TResult>.TSelector.TSink'}
 
-constructor TSelect<TSource, TResult>.TSink.Create(
-  const parent: TSelect<TSource, TResult>; const observer: IObserver<TResult>;
+constructor TSelect<TSource, TResult>.TSelector.TSink.Create(
+  const selector: Func<TSource,TResult>; const observer: IObserver<TResult>;
   const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
+  fSelector := selector;
 end;
 
-destructor TSelect<TSource, TResult>.TSink.Destroy;
-begin
-  fParent._Release;
-  inherited;
-end;
-
-procedure TSelect<TSource, TResult>.TSink.OnNext(const value: TSource);
+procedure TSelect<TSource, TResult>.TSelector.TSink.OnNext(const value: TSource);
 var
   result: TResult;
 begin
   try
-    result := fParent.fSelector(value);
+    result := fSelector(value);
   except
     on e: Exception do
     begin

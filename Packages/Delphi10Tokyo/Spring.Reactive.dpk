@@ -105,6 +105,7 @@ contains
   Spring.Reactive.Observable.Throttle in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throttle.pas',
   Spring.Reactive.Observable.Where in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Where.pas',
   Spring.Reactive.Observable.Window in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Window.pas',
+  Spring.Reactive.Observable.Zip in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Zip.pas',
   Spring.Reactive.ObservableBase in '..\..\Source\Reactive\Spring.Reactive.ObservableBase.pas',
   Spring.Reactive.ObserverBase in '..\..\Source\Reactive\Spring.Reactive.ObserverBase.pas',
   Spring.Reactive.Subjects.AsyncSubject in '..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.AsyncSubject.pas',

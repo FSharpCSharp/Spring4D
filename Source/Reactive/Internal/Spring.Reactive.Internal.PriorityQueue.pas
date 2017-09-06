@@ -71,7 +71,7 @@ var
   comparable: IComparable;
 begin
   Assert(Supports(left, IComparable, comparable));
-  Result := comparable.CompareTo(right as TObject)
+  Result := comparable.CompareTo(right as TObject);
 end;
 
 
