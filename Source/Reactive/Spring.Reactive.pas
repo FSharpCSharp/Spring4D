@@ -233,10 +233,30 @@ type
     Self: Pointer;
   {$HINTS ON}
   public
+    function Buffer<TSource>(const count: Integer): IObservable<IList<TSource>>; overload;
+    function Buffer<TSource>(const count, skip: Integer): IObservable<IList<TSource>>; overload;
+    function Buffer<TSource>(const timeSpan: TTimeSpan): IObservable<IList<TSource>>; overload;
+//    function Buffer<TSource>(const timeSpan, timeShift: TTimeSpan): IObservable<IList<TSource>>; overload;
+//    function Buffer<TSource>(const timeSpan, timeShift: TTimeSpan; const scheduler: IScheduler): IObservable<IList<TSource>>; overload;
+    function Buffer<TSource>(const timeSpan: TTimeSpan; const scheduler: IScheduler): IObservable<IList<TSource>>; overload;
+//    function Buffer<TSource>(const timeSpan: TTimeSpan; const count: Integer): IObservable<IList<TSource>>; overload;
+//    function Buffer<TSource>(const timeSpan: TTimeSpan; const count: Integer; const scheduler: IScheduler): IObservable<IList<TSource>>; overload;
+
+    function Buffer<TSource, TBufferClosing>(const bufferClosingSelector: Func<IObservable<TBufferClosing>>): IObservable<IList<TSource>>; overload;
     function Buffer<TSource, TBufferBoundary>(const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>; overload;
+//    function Buffer<TSource, TBufferOpening, TBufferClosing>(const bufferOpenings: IObservable<TBufferOpening>; const bufferClosingSelector: Func<TBufferOpening, IObservable<TBufferClosing>>); overload;
+
     function CombineLatest<TSource1, TSource2, TResult>(const second: IObservable<TSource2>; const resultSelector: Func<TSource1, TSource2, TResult>): IObservable<TResult>; overload;
+
+    function Merge<TSource>: IObservable<TSource>;
+
     function Select<TSource, TResult>(const selector: Func<TSource, TResult>): IObservable<TResult>; overload;
     function TakeUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
+
+    function Window<TSource>(const count: Integer): IObservable<IObservable<TSource>>; overload;
+    function Window<TSource>(const count, skip: Integer): IObservable<IObservable<TSource>>; overload;
+//    function Window<TSource>(const timeSpan: TTimeSpan): IObservable<IObservable<TSource>>; overload;
+
     function Zip<TFirst, TSecond, TResult>(const second: IObservable<TSecond>; const resultSelector: Func<TFirst, TSecond, TResult>): IObservable<TResult>; overload;
   end;
 
@@ -295,7 +315,7 @@ type
 
     // "extension" methods for aggregating
     function Concat(const second: IObservable<T>): IObservable<T>;
-
+//    function Merge(const second: IObservable<T>): IObservable<T>;
 
     procedure ForEach(const onNext: Action<T>);
 
@@ -448,10 +468,46 @@ uses
 
 {$REGION 'IObservableExtensions'}
 
+function IObservableExtensions.Buffer<TSource>(
+  const count: Integer): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource>.TCount.Create(
+    TObject(Self) as TObservableBase<TSource>, count, count);
+end;
+
+function IObservableExtensions.Buffer<TSource>(const count,
+  skip: Integer): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource>.TCount.Create(
+    TObject(Self) as TObservableBase<TSource>, count, skip);
+end;
+
+function IObservableExtensions.Buffer<TSource>(
+  const timeSpan: TTimeSpan): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource>.TTimeHopping.Create(
+    TObject(Self) as TObservableBase<TSource>, timeSpan, SchedulerDefaults.TimeBasedOperations);
+end;
+
+function IObservableExtensions.Buffer<TSource>(const timeSpan: TTimeSpan;
+  const scheduler: IScheduler): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource>.TTimeHopping.Create(
+    TObject(Self) as TObservableBase<TSource>, timeSpan, scheduler);
+end;
+
+function IObservableExtensions.Buffer<TSource, TBufferClosing>(
+  const bufferClosingSelector: Func<IObservable<TBufferClosing>>): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource, TBufferClosing>.TSelector.Create(
+    TObject(Self) as TObservableBase<TSource>, bufferClosingSelector);
+end;
+
 function IObservableExtensions.Buffer<TSource, TBufferBoundary>(
   const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>;
 begin
-  Result := TBuffer<TSource, TBufferBoundary>.TBoundaries.Create(TObject(Self) as TObservableBase<TSource>, bufferBoundaries);
+  Result := TBuffer<TSource, TBufferBoundary>.TBoundaries.Create(
+    TObject(Self) as TObservableBase<TSource>, bufferBoundaries);
 end;
 
 function IObservableExtensions.CombineLatest<TSource1, TSource2, TResult>(
@@ -460,6 +516,12 @@ function IObservableExtensions.CombineLatest<TSource1, TSource2, TResult>(
 begin
   Result := TCombineLatest<TSource1, TSource2, TResult>.Create(
     TObject(Self) as TObservableBase<TSource1>, second, resultSelector);
+end;
+
+function IObservableExtensions.Merge<TSource>: IObservable<TSource>;
+begin
+  Result := TMerge<TSource>.TObservables.Create(
+    TObject(Self) as TObservableBase<IObservable<TSource>>);
 end;
 
 function IObservableExtensions.Select<TSource, TResult>(
@@ -473,6 +535,20 @@ function IObservableExtensions.TakeUntil<TSource, TOther>(
   const other: IObservable<TOther>): IObservable<TSource>;
 begin
   Result := TTakeUntil<TSource, TOther>.Create(TObject(Self) as TObservableBase<TSource>, other);
+end;
+
+function IObservableExtensions.Window<TSource>(
+  const count: Integer): IObservable<IObservable<TSource>>;
+begin
+  Result := TWindow<TSource>.TCount.Create(
+    TObject(Self) as TObservableBase<TSource>, count, count);
+end;
+
+function IObservableExtensions.Window<TSource>(const count,
+  skip: Integer): IObservable<IObservable<TSource>>;
+begin
+  Result := TWindow<TSource>.TCount.Create(
+    TObject(Self) as TObservableBase<TSource>, count, skip);
 end;
 
 function IObservableExtensions.Zip<TFirst, TSecond, TResult>(
@@ -787,7 +863,7 @@ end;
 class function TObservable.Window<T>(const source: IObservable<T>;
   count: Integer): IObservable<IObservable<T>>;
 begin
-  Result := TWindow<T>.Create(source, count, count);
+  Result := TWindow<T>.TCount.Create(source, count, count);
 end;
 
 {$ENDREGION}

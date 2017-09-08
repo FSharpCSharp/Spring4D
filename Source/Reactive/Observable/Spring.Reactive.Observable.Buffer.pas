@@ -252,6 +252,7 @@ constructor TBuffer<TSource>.TCount.TSink.Create(const parent: TCount;
   const observer: IObserver<IList<TSource>>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
+  fQueue := TCollections.CreateQueue<IList<TSource>>;
   fCount := parent.fCount;
   fSkip := parent.fSkip;
 end;

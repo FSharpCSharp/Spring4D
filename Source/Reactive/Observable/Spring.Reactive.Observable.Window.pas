@@ -37,61 +37,54 @@ uses
   Spring.Reactive.Observable.AddRef;
 
 type
-  TWindow<TSource> = class(TProducer<IObservable<TSource>>)
-  private
-    fSource: IObservable<TSource>;
-    fCount: Integer;
-    fSkip: Integer;
-    fTimeSpan: TTimeSpan;
-    fScheduler: IScheduler;
+  TWindow<TSource> = class
+  public type
+    TCount = class(TProducer<IObservable<TSource>>)
+    private
+      fSource: IObservable<TSource>;
+      fCount: Integer;
+      fSkip: Integer;
 
-    type
-      TSinkBase = class(TSink<IObservable<TSource>>)
-      public
-        function Run: IDisposable; virtual; abstract;
-      end;
+      type
+        TSink = class(TSink<IObservable<TSource>>, IObserver<TSource>)
+        private
+          fQueue: IQueue<ISubject<TSource>>;
+          fm: ISingleAssignmentDisposable;
+          fRefCountDisposable: IRefCountDisposable;
+          fCount: Integer;
+          fSkip: Integer;
+          fn: Integer;
+          function CreateWindow: IObservable<TSource>;
+        public
+          constructor Create(const parent: TCount;
+            const observer: IObserver<IObservable<TSource>>; const cancel: IDisposable);
+          function Run(const source: IObservable<TSource>): IDisposable;
+          procedure OnNext(const value: TSource);
+          procedure OnError(const error: Exception);
+          procedure OnCompleted;
+        end;
+    protected
+      function CreateSink(const observer: IObserver<IObservable<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>; const count, skip: Integer);
+    end;
 
-      TSink = class(TSinkBase, IObserver<TSource>)
-      private
-        fParent: TWindow<TSource>;
-        fQueue: IQueue<ISubject<TSource>>;
-        fn: Integer;
-        fm: ISingleAssignmentDisposable;
-        fRefCountDisposable: IRefCountDisposable;
-        function CreateWindow: IObservable<TSource>;
-      public
-        constructor Create(const parent: TWindow<TSource>;
-          const observer: IObserver<IObservable<TSource>>; const cancel: IDisposable);
-        destructor Destroy; override;
-        function Run: IDisposable; override;
-        procedure OnNext(const value: TSource);
-      end;
-
-      TBoundedWindowImpl = class(TSinkBase, IObserver<TSource>)
-      private
-        fParent: TWindow<TSource>;
-        fs: ISubject<TSource>;
-        fn: Integer;
-        fWindowId: Integer;
-        fTimerD: ISerialDisposable;
-        fRefCountDisposable: IRefCountDisposable;
-        procedure CreateTimer(id: Integer);
-        function Tick(const scheduler: IScheduler; const id: TValue): IDisposable;
-      public
-        constructor Create(const parent: TWindow<TSource>;
-          const observer: IObserver<IObservable<TSource>>; const cancel: IDisposable);
-        destructor Destroy; override;
-        function Run: IDisposable; override;
-        procedure OnNext(const value: TSource);
-        procedure OnError(const error: Exception);
-        procedure OnCompleted;
-      end;
-  protected
-    function CreateSink(const observer: IObserver<IObservable<TSource>>;
-      const cancel: IDisposable): TObject; override;
-    function Run(const sink: TObject): IDisposable; override;
-  public
-    constructor Create(const source: IObservable<TSource>; const count, skip: Integer);
+//    TTimeSliding = class(TProducer<IObservable<TSource>>)
+//    private
+//      fSource: IObservable<TSource>;
+//      fTimeSpan: TTimeSpan;
+//      fTimeShift: TTimeSpan;
+//      fScheduler: IScheduler;
+//    end;
+//
+//    TTimeHopping = class(TProducer<IObservable<TSource>>)
+//    private
+//      fSource: IObservable<TSource>;
+//      fTimeSpan: TTimeSpan;
+//      fScheduler: IScheduler;
+//    end;
   end;
 
   TWindowObservable<TSource> = class(TAddRef<TSource>)
@@ -105,9 +98,9 @@ uses
   Spring.Reactive.Subjects.Subject;
 
 
-{$REGION 'TWindow<TSource>'}
+{$REGION 'TWindow<TSource>.TCount'}
 
-constructor TWindow<TSource>.Create(const source: IObservable<TSource>; const count,
+constructor TWindow<TSource>.TCount.Create(const source: IObservable<TSource>; const count,
   skip: Integer);
 begin
   inherited Create;
@@ -116,56 +109,47 @@ begin
   fSkip := skip;
 end;
 
-function TWindow<TSource>.CreateSink(
+function TWindow<TSource>.TCount.CreateSink(
   const observer: IObserver<IObservable<TSource>>;
   const cancel: IDisposable): TObject;
 begin
-  if fScheduler = nil then
-    Result := TSink.Create(Self, observer, cancel)
-  else if fCount > 0 then
-    Result := TBoundedWindowImpl.Create(Self, observer, cancel);
+  Result := TSink.Create(Self, observer, cancel)
 end;
 
-function TWindow<TSource>.Run(const sink: TObject): IDisposable;
+function TWindow<TSource>.TCount.Run(const sink: TObject): IDisposable;
 begin
-  Result := TSink(sink).Run;
+  Result := TSink(sink).Run(fSource);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TWindow<TSource>.TSink'}
+{$REGION 'TWindow<TSource>.TCount.TSink'}
 
-constructor TWindow<TSource>.TSink.Create(const parent: TWindow<TSource>;
+constructor TWindow<TSource>.TCount.TSink.Create(const parent: TCount;
   const observer: IObserver<IObservable<TSource>>; const cancel: IDisposable);
 begin
   inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
-end;
-
-destructor TWindow<TSource>.TSink.Destroy;
-begin
-  fParent._Release;
-  inherited;
-end;
-
-function TWindow<TSource>.TSink.Run: IDisposable;
-var
-  firstWindow: IObservable<TSource>;
-begin
   fQueue := TCollections.CreateQueue<ISubject<TSource>>;
-  fn := 0;
   fm := TSingleAssignmentDisposable.Create;
   fRefCountDisposable := TRefCountDisposable.Create(fm);
 
+  fCount := parent.fCount;
+  fSkip := parent.fSkip;
+end;
+
+function TWindow<TSource>.TCount.TSink.Run(const source: IObservable<TSource>): IDisposable;
+var
+  firstWindow: IObservable<TSource>;
+begin
+  fn := 0;
   firstWindow := CreateWindow;
   Observer.OnNext(firstWindow);
-  fm.Disposable := fParent.fSource.Subscribe(Self);
+  fm.Disposable := source.Subscribe(Self);
   Result := fRefCountDisposable;
 end;
 
-function TWindow<TSource>.TSink.CreateWindow: IObservable<TSource>;
+function TWindow<TSource>.TCount.TSink.CreateWindow: IObservable<TSource>;
 var
   s: ISubject<TSource>;
 begin
@@ -174,7 +158,7 @@ begin
   Result := TWindowObservable<TSource>.Create(s, fRefCountDisposable);
 end;
 
-procedure TWindow<TSource>.TSink.OnNext(const value: TSource);
+procedure TWindow<TSource>.TCount.TSink.OnNext(const value: TSource);
 var
   s: ISubject<TSource>;
   c: Integer;
@@ -183,151 +167,37 @@ begin
   for s in fQueue do
     s.OnNext(value);
 
-  c := fn - fParent.fCount + 1;
-  if (c >= 0) and (c mod fParent.fSkip = 0) then
+  c := fn - fCount + 1;
+  if (c >= 0) and (c mod fSkip = 0) then
   begin
     s := fQueue.Dequeue;
     s.OnCompleted;
   end;
 
   Inc(fn);
-  if fn mod fParent.fSkip = 0 then
+  if fn mod fSkip = 0 then
   begin
     newWindow := CreateWindow;
     Observer.OnNext(newWindow);
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TWindow<TSource>.TBoundedWindowImpl'}
-
-constructor TWindow<TSource>.TBoundedWindowImpl.Create(const parent: TWindow<TSource>;
-  const observer: IObserver<IObservable<TSource>>; const cancel: IDisposable);
+procedure TWindow<TSource>.TCount.TSink.OnError(const error: Exception);
 begin
-  inherited Create(observer, cancel);
-  fParent := parent;
-  fParent._AddRef;
+  while fQueue.Count > 0 do
+    fQueue.Dequeue.OnError(error);
+
+  Observer.OnError(error);
+  Dispose;
 end;
 
-procedure TWindow<TSource>.TBoundedWindowImpl.CreateTimer(id: Integer);
-var
-  m: TSingleAssignmentDisposable;
+procedure TWindow<TSource>.TCount.TSink.OnCompleted;
 begin
-  m := TSingleAssignmentDisposable.Create;
-  fTimerD.Disposable := m;
+  while fQueue.Count > 0 do
+    fQueue.Dequeue.OnCompleted;
 
-  m.Disposable := fParent.fScheduler.Schedule(id, fParent.fTimeSpan, Tick);
-end;
-
-destructor TWindow<TSource>.TBoundedWindowImpl.Destroy;
-begin
-  fParent._Release;
-  inherited;
-end;
-
-procedure TWindow<TSource>.TBoundedWindowImpl.OnCompleted;
-begin
-  MonitorEnter(Self);
-  try
-    fs.OnCompleted;
-    Observer.OnCompleted;
-    Dispose;
-  finally
-    MonitorExit(Self);
-  end;
-end;
-
-procedure TWindow<TSource>.TBoundedWindowImpl.OnError(const error: Exception);
-begin
-  MonitorEnter(Self);
-  try
-    fs.OnError(error);
-    Observer.OnError(error);
-    Dispose;
-  finally
-    MonitorExit(Self);
-  end;
-end;
-
-procedure TWindow<TSource>.TBoundedWindowImpl.OnNext(const value: TSource);
-var
-  newWindow: Boolean;
-  newId: Integer;
-begin
-  newWindow := False;
-  newId := 0;
-  MonitorEnter(Self);
-  try
-    fs.OnNext(value);
-    Inc(fn);
-    if fn = fParent.fCount then
-    begin
-      newWindow := True;
-      fn := 0;
-      Inc(fWindowId);
-      newId := fWindowId;
-
-      fs.OnCompleted;
-      fs := TSubject<TSource>.Create;
-      Observer.OnNext(TWindowObservable<TSource>.Create(fs, fRefCountDisposable));
-    end;
-  finally
-    MonitorExit(Self);
-  end;
-
-  if newWindow then
-    CreateTimer(newId);
-end;
-
-function TWindow<TSource>.TBoundedWindowImpl.Run: IDisposable;
-var
-  groupDisposable: TCompositeDisposable;
-begin
-  fs := nil;
-  fn := 0;
-  fWindowId := 0;
-
-  fTimerD := TSerialDisposable.Create;
-  groupDisposable := TCompositeDisposable.Create([fTimerD]);
-  fRefCountDisposable := TRefCountDisposable.Create(groupDisposable);
-
-  fs := TSubject<TSource>.Create;
-  Observer.OnNext(TWindowObservable<TSource>.Create(fs, fRefCountDisposable));
-  CreateTimer(0);
-
-  groupDisposable.Add(fParent.fSource.Subscribe(Self));
-
-  Result := fRefCountDisposable;
-end;
-
-function TWindow<TSource>.TBoundedWindowImpl.Tick(const scheduler: IScheduler;
-  const id: TValue): IDisposable;
-var
-  d: IDisposable;
-  newId: Integer;
-begin
-  d := Disposable.Empty;
-  newId := 0;
-  MonitorEnter(Self);
-  try
-    if id <> fWindowId then
-      Exit(d);
-
-    fn := 0;
-    Inc(fWindowId);
-    newId := fWindowId;
-
-    fs.OnCompleted;
-    fs := TSubject<TSource>.Create;
-    Observer.OnNext(TWindowObservable<TSource>.Create(fs, fRefCountDisposable));
-  finally
-    MonitorExit(Self);
-  end;
-
-  CreateTimer(newId);
-  Result := d;
+  Observer.OnCompleted;
+  Dispose;
 end;
 
 {$ENDREGION}
