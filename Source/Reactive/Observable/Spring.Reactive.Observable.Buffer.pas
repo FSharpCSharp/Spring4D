@@ -69,41 +69,48 @@ type
       constructor Create(const source: IObservable<TSource>; count, skip: Integer);
     end;
 
-//    TTimeSliding = class(TProducer<IList<TSource>>)
-//    private
-//      fSource: IObservable<TSource>;
-//      fTimeSpan: TTimeSpan;
-//      fTimeShift: TTimeSpan;
-//      fScheduler: IScheduler;
-//
-//      type
-//        TSink = class(TSink<IList<TSource>>, IObserver<TSource>)
-//        private
-//          fTimeShift: TTimeSpan;
-//          fScheduler: IScheduler;
-//          fQueue: IQueue<IList<TSource>>;
-//          fTimerD: ISerialDisposable;
-//          fTotalTime: TTimeSpan;
-//          fNextShift: TTimeSpan;
-//          fNextSpan: TTimeSpan;
-//        private
-//          procedure CreateWindow;
-//          procedure CreateTimer;
-//        public
-//          constructor Create(const parent: TTimeSliding;
-//            const observer: IObserver<IList<TSource>>; const cancel: IDisposable);
-//          function Run(const parent: TTimeSliding): IDisposable;
-//          procedure OnNext(const value: TSource);
-//          procedure OnError(const error: Exception);
-//          procedure OnCompleted;
-//        end;
-//    protected
-//      function Run(const observer: IObserver<IList<TSource>>; const cancel: IDisposable;
-//        const setSink: Action<IDisposable>): IDisposable; override;
-//    public
-//      constructor Create(const source: IObservable<TSource>;
-//        const timeSpan, timeShift: TTimeSpan; const scheduler: IScheduler);
-//    end;
+    TTimeSliding = class(TProducer<IList<TSource>>)
+    private
+      fSource: IObservable<TSource>;
+      fTimeSpan: TTimeSpan;
+      fTimeShift: TTimeSpan;
+      fScheduler: IScheduler;
+
+      type
+        TSink = class(TSink<IList<TSource>>, IObserver<TSource>)
+        private
+          fTimeShift: TTimeSpan;
+          fScheduler: IScheduler;
+          fQueue: IQueue<IList<TSource>>;
+          fTimerD: ISerialDisposable;
+          fTotalTime: TTimeSpan;
+          fNextShift: TTimeSpan;
+          fNextSpan: TTimeSpan;
+
+          type
+            TState = record
+              isSpan, isShift: Boolean;
+            end;
+        private
+          procedure CreateWindow;
+          procedure CreateTimer;
+          function Tick(const scheduler: IScheduler; const state: TValue): IDisposable;
+        public
+          constructor Create(const parent: TTimeSliding;
+            const observer: IObserver<IList<TSource>>; const cancel: IDisposable);
+          function Run(const parent: TTimeSliding): IDisposable;
+          procedure OnNext(const value: TSource);
+          procedure OnError(const error: Exception);
+          procedure OnCompleted;
+        end;
+    protected
+      function CreateSink(const observer: IObserver<IList<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>;
+        const timeSpan, timeShift: TTimeSpan; const scheduler: IScheduler);
+    end;
 
     TTimeHopping = class(TProducer<IList<TSource>>)
     private
@@ -129,6 +136,42 @@ type
     public
       constructor Create(const source: IObservable<TSource>;
         const timeSpan: TTimeSpan; const scheduler: IScheduler);
+    end;
+
+    TFerry = class(TProducer<IList<TSource>>)
+    private
+      fSource: IObservable<TSource>;
+      fCount: Integer;
+      fTimeSpan: TTimeSpan;
+      fScheduler: IScheduler;
+
+      type
+        TSink = class(TSink<IList<TSource>>, IObserver<TSource>)
+        private
+          fCount: Integer;
+          fTimeSpan: TTimeSpan;
+          fScheduler: IScheduler;
+          fTimerD: ISerialDisposable;
+          fs: IList<TSource>;
+          fn: Integer;
+          fWindowId: Integer;
+          procedure CreateTimer(const id: Integer);
+          function Tick(const scheduler: IScheduler; const id: TValue): IDisposable;
+        public
+          constructor Create(const parent: TFerry;
+            const observer: IObserver<IList<TSource>>; const cancel: IDisposable);
+          function Run(const parent: TFerry): IDisposable;
+          procedure OnNext(const value: TSource);
+          procedure OnError(const error: Exception);
+          procedure OnCompleted;
+        end;
+    protected
+      function CreateSink(const observer: IObserver<IList<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>;
+        const timeSpan: TTimeSpan; const count: Integer; const scheduler: IScheduler);
     end;
   end;
 
@@ -324,85 +367,168 @@ end;
 
 {$REGION 'TBuffer<TSource>.TTimeSliding'}
 
-//constructor TBuffer<TSource>.TTimeSliding.Create(
-//  const source: IObservable<TSource>; const timeSpan, timeShift: TTimeSpan;
-//  const scheduler: IScheduler);
-//begin
-//  inherited Create;
-//  fSource := source;
-//  fTimeSpan := timeSpan;
-//  fTimeShift := timeShift;
-//  fScheduler := scheduler;
-//end;
-//
-//function TBuffer<TSource>.TTimeSliding.Run(
-//  const observer: IObserver<IList<TSource>>; const cancel: IDisposable;
-//  const setSink: Action<IDisposable>): IDisposable;
-//var
-//  sink: TSink;
-//begin
-//  sink := TSink.Create(Self, observer, cancel);
-//  setSink(sink);
-//  Result := sink.Run(Self);
-//end;
+constructor TBuffer<TSource>.TTimeSliding.Create(
+  const source: IObservable<TSource>; const timeSpan, timeShift: TTimeSpan;
+  const scheduler: IScheduler);
+begin
+  inherited Create;
+  fSource := source;
+  fTimeSpan := timeSpan;
+  fTimeShift := timeShift;
+  fScheduler := scheduler;
+end;
+
+function TBuffer<TSource>.TTimeSliding.CreateSink(
+  const observer: IObserver<IList<TSource>>;
+  const cancel: IDisposable): TObject;
+begin
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TBuffer<TSource>.TTimeSliding.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self)
+end;
 
 {$ENDREGION}
 
 
 {$REGION 'TBuffer<TSource>.TTimeSliding.TSink'}
 
-//constructor TBuffer<TSource>.TTimeSliding.TSink.Create(
-//  const parent: TTimeSliding; const observer: IObserver<IList<TSource>>;
-//  const cancel: IDisposable);
-//begin
-//  inherited Create(observer, cancel);
-//  fTimeShift := parent.fTimeShift;
-//  fScheduler := parent.fScheduler;
-//end;
-//
-//function TBuffer<TSource>.TTimeSliding.TSink.Run(
-//  const parent: TTimeSliding): IDisposable;
-//var
-//  subscription: IDisposable;
-//begin
-//  fTotalTime := TTimeSpan.Zero;
-//  fNextShift := parent.fTimeShift;
-//  fNextSpan := parent.fTimeSpan;
-//
-//  CreateWindow;
-//  CreateTimer;
-//
-//  subscription := parent.fSource.Subscribe(Self);
-//  Result := TStableCompositeDisposable.Create(fTimerD, subscription);
-//end;
-//
-//procedure TBuffer<TSource>.TTimeSliding.TSink.CreateWindow;
-//var
-//  s: IList<TSource>;
-//begin
-//  s := TCollections.CreateList<TSource>;
-//  fQueue.Enqueue(s);
-//end;
-//
-//procedure TBuffer<TSource>.TTimeSliding.TSink.CreateTimer;
-//begin
-//
-//end;
-//
-//procedure TBuffer<TSource>.TTimeSliding.TSink.OnNext(const value: TSource);
-//begin
-//
-//end;
-//
-//procedure TBuffer<TSource>.TTimeSliding.TSink.OnError(const error: Exception);
-//begin
-//
-//end;
-//
-//procedure TBuffer<TSource>.TTimeSliding.TSink.OnCompleted;
-//begin
-//
-//end;
+constructor TBuffer<TSource>.TTimeSliding.TSink.Create(
+  const parent: TTimeSliding; const observer: IObserver<IList<TSource>>;
+  const cancel: IDisposable);
+begin
+  inherited Create(observer, cancel);
+  fTimeShift := parent.fTimeShift;
+  fScheduler := parent.fScheduler;
+
+  fQueue := TCollections.CreateQueue<IList<TSource>>;
+  fTimerD := TSerialDisposable.Create;
+end;
+
+function TBuffer<TSource>.TTimeSliding.TSink.Run(
+  const parent: TTimeSliding): IDisposable;
+var
+  subscription: IDisposable;
+begin
+  fTotalTime := TTimeSpan.Zero;
+  fNextShift := parent.fTimeShift;
+  fNextSpan := parent.fTimeSpan;
+
+  CreateWindow;
+  CreateTimer;
+
+  subscription := parent.fSource.Subscribe(Self);
+  Result := TStableCompositeDisposable.Create(fTimerD, subscription);
+end;
+
+procedure TBuffer<TSource>.TTimeSliding.TSink.CreateWindow;
+var
+  s: IList<TSource>;
+begin
+  s := TCollections.CreateList<TSource>;
+  fQueue.Enqueue(s);
+end;
+
+procedure TBuffer<TSource>.TTimeSliding.TSink.CreateTimer;
+var
+  m: ISingleAssignmentDisposable;
+  isSpan: Boolean;
+  isShift: Boolean;
+  newTotalTime: TTimeSpan;
+  ts: TTimeSpan;
+  state: TState;
+begin
+  m := TSingleAssignmentDisposable.Create;
+  fTimerD.Disposable := m;
+
+  isSpan := False;
+  isShift := False;
+  if fNextSpan = fNextShift then
+  begin
+    isSpan := True;
+    isShift := True;
+  end
+  else if fNextSpan < fNextShift then
+    isSpan := True
+  else
+    isShift := True;
+
+  if isSpan then
+    newTotalTime := fNextSpan
+  else
+    newTotalTime := fNextShift;
+  ts := newTotalTime - fTotalTime;
+  fTotalTime := newTotalTime;
+
+  if isSpan then
+    fNextSpan := fNextSpan + fTimeShift;
+  if isShift then
+    fNextShift := fNextShift + fTimeShift;
+
+  state.isSpan := isSpan;
+  state.isShift := isShift;
+  m.Disposable := fScheduler.Schedule(TValue.From(state), ts, Tick);
+end;
+
+function TBuffer<TSource>.TTimeSliding.TSink.Tick(const scheduler: IScheduler;
+  const state: TValue): IDisposable;
+var
+  _state: TState;
+  s: IList<TSource>;
+begin
+  _state := state.AsType<TState>;
+  MonitorEnter(Self);
+  try
+    if _state.isSpan then
+    begin
+      s := fQueue.Dequeue;
+      Observer.OnNext(s);
+    end;
+
+    if _state.isShift then
+      CreateWindow;
+  finally
+    MonitorExit(Self);
+  end;
+
+  CreateTimer;
+
+  Result := Disposable.Empty;
+end;
+
+procedure TBuffer<TSource>.TTimeSliding.TSink.OnNext(const value: TSource);
+var
+  s: IList<TSource>;
+begin
+  Lock(Self);
+
+  for s in fQueue do
+    s.Add(value);
+end;
+
+procedure TBuffer<TSource>.TTimeSliding.TSink.OnError(const error: Exception);
+begin
+  Lock(Self);
+
+  while fQueue.Count > 0 do
+    fQueue.Dequeue.Clear;
+
+  Observer.OnError(error);
+  Dispose;
+end;
+
+procedure TBuffer<TSource>.TTimeSliding.TSink.OnCompleted;
+begin
+  Lock(Self);
+
+  while fQueue.Count > 0 do
+    Observer.OnNext(fQueue.Dequeue);
+
+  Observer.OnCompleted;
+  Dispose;
+end;
 
 {$ENDREGION}
 
@@ -793,6 +919,145 @@ end;
 procedure TBuffer<TSource, TBufferClosing>.TBoundaries.TSink.TBufferClosingObserver.OnCompleted;
 begin
   fParent.OnCompleted;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBuffer<TSource>.TFerry'}
+
+constructor TBuffer<TSource>.TFerry.Create(const source: IObservable<TSource>;
+  const timeSpan: TTimeSpan; const count: Integer; const scheduler: IScheduler);
+begin
+  inherited Create;
+  fSource := source;
+  fTimeSpan := timeSpan;
+  fCount := count;
+  fScheduler := scheduler;
+end;
+
+function TBuffer<TSource>.TFerry.CreateSink(
+  const observer: IObserver<IList<TSource>>;
+  const cancel: IDisposable): TObject;
+begin
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TBuffer<TSource>.TFerry.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBuffer<TSource>.TFerry.TSink'}
+
+constructor TBuffer<TSource>.TFerry.TSink.Create(const parent: TFerry;
+  const observer: IObserver<IList<TSource>>; const cancel: IDisposable);
+begin
+  inherited Create(observer, cancel);
+  fCount := parent.fCount;
+  fTimeSpan := parent.fTimeSpan;
+  fScheduler := parent.fScheduler;
+  fTimerD := TSerialDisposable.Create;
+end;
+
+function TBuffer<TSource>.TFerry.TSink.Run(const parent: TFerry): IDisposable;
+var
+  subscription: IDisposable;
+begin
+  fs := TCollections.CreateList<TSource>;
+  fn := 0;
+  fWindowId := 0;
+
+  CreateTimer(0);
+
+  subscription := parent.fSource.Subscribe(Self);
+
+  Result := TStableCompositeDisposable.Create(ftimerD, subscription);
+end;
+
+procedure TBuffer<TSource>.TFerry.TSink.CreateTimer(const id: Integer);
+var
+  m: ISingleAssignmentDisposable;
+begin
+  m := TSingleAssignmentDisposable.Create;
+  fTimerD.Disposable := m;
+  m.Disposable := fScheduler.Schedule(id, fTimeSpan, Tick);
+end;
+
+function TBuffer<TSource>.TFerry.TSink.Tick(const scheduler: IScheduler;
+  const id: TValue): IDisposable;
+var
+  newId: Integer;
+  res: IList<TSource>;
+begin
+  Result := Disposable.Empty;
+
+  newId := 0;
+  Lock(Self);
+
+  if id <> fWindowId then
+    Exit;
+
+  fn := 0;
+  Inc(fWindowId);
+  newId := fWindowId;
+
+  res := fs;
+  fs := TCollections.CreateList<TSource>;
+  Observer.OnNext(res);
+
+  CreateTimer(newId);
+end;
+
+procedure TBuffer<TSource>.TFerry.TSink.OnNext(const value: TSource);
+var
+  newWindow: Boolean;
+  newId: Integer;
+  res: IList<TSource>;
+begin
+  newWindow := False;
+  newId := 0;
+
+  Lock(Self);
+
+  fs.Add(value);
+
+  Inc(fn);
+  if fn = fCount then
+  begin
+    newWindow := True;
+    fn := 0;
+    Inc(fWindowId);
+    newId := fWindowId;
+
+    res := fs;
+    fs := TCollections.CreateList<TSource>;
+    Observer.OnNext(res);
+  end;
+
+  if newWindow then
+    CreateTimer(newId);
+end;
+
+procedure TBuffer<TSource>.TFerry.TSink.OnError(const error: Exception);
+begin
+  Lock(Self);
+
+  fs.Clear;
+  Observer.OnError(error);
+  Dispose;
+end;
+
+procedure TBuffer<TSource>.TFerry.TSink.OnCompleted;
+begin
+  Lock(Self);
+
+  Observer.OnNext(fs);
+  Observer.OnCompleted;
+  Dispose;
 end;
 
 {$ENDREGION}

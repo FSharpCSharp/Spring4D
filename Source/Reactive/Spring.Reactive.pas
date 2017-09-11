@@ -235,16 +235,19 @@ type
   public
     function Buffer<TSource>(const count: Integer): IObservable<IList<TSource>>; overload;
     function Buffer<TSource>(const count, skip: Integer): IObservable<IList<TSource>>; overload;
+
     function Buffer<TSource>(const timeSpan: TTimeSpan): IObservable<IList<TSource>>; overload;
-//    function Buffer<TSource>(const timeSpan, timeShift: TTimeSpan): IObservable<IList<TSource>>; overload;
-//    function Buffer<TSource>(const timeSpan, timeShift: TTimeSpan; const scheduler: IScheduler): IObservable<IList<TSource>>; overload;
     function Buffer<TSource>(const timeSpan: TTimeSpan; const scheduler: IScheduler): IObservable<IList<TSource>>; overload;
-//    function Buffer<TSource>(const timeSpan: TTimeSpan; const count: Integer): IObservable<IList<TSource>>; overload;
-//    function Buffer<TSource>(const timeSpan: TTimeSpan; const count: Integer; const scheduler: IScheduler): IObservable<IList<TSource>>; overload;
+
+    function Buffer<TSource>(const timeSpan, timeShift: TTimeSpan): IObservable<IList<TSource>>; overload;
+    function Buffer<TSource>(const timeSpan, timeShift: TTimeSpan; const scheduler: IScheduler): IObservable<IList<TSource>>; overload;
+
+    function Buffer<TSource>(const timeSpan: TTimeSpan; const count: Integer): IObservable<IList<TSource>>; overload;
+    function Buffer<TSource>(const timeSpan: TTimeSpan; const count: Integer; const scheduler: IScheduler): IObservable<IList<TSource>>; overload;
 
     function Buffer<TSource, TBufferClosing>(const bufferClosingSelector: Func<IObservable<TBufferClosing>>): IObservable<IList<TSource>>; overload;
     function Buffer<TSource, TBufferBoundary>(const bufferBoundaries: IObservable<TBufferBoundary>): IObservable<IList<TSource>>; overload;
-//    function Buffer<TSource, TBufferOpening, TBufferClosing>(const bufferOpenings: IObservable<TBufferOpening>; const bufferClosingSelector: Func<TBufferOpening, IObservable<TBufferClosing>>); overload;
+//    function Buffer<TSource, TBufferOpening, TBufferClosing>(const bufferOpenings: IObservable<TBufferOpening>; const bufferClosingSelector: Func<TBufferOpening, IObservable<TBufferClosing>>): IObservable<IList<TSource>>; overload;
 
     function CombineLatest<TSource1, TSource2, TResult>(const second: IObservable<TSource2>; const resultSelector: Func<TSource1, TSource2, TResult>): IObservable<TResult>; overload;
 
@@ -486,7 +489,8 @@ function IObservableExtensions.Buffer<TSource>(
   const timeSpan: TTimeSpan): IObservable<IList<TSource>>;
 begin
   Result := TBuffer<TSource>.TTimeHopping.Create(
-    TObject(Self) as TObservableBase<TSource>, timeSpan, SchedulerDefaults.TimeBasedOperations);
+    TObject(Self) as TObservableBase<TSource>, timeSpan,
+    SchedulerDefaults.TimeBasedOperations);
 end;
 
 function IObservableExtensions.Buffer<TSource>(const timeSpan: TTimeSpan;
@@ -494,6 +498,37 @@ function IObservableExtensions.Buffer<TSource>(const timeSpan: TTimeSpan;
 begin
   Result := TBuffer<TSource>.TTimeHopping.Create(
     TObject(Self) as TObservableBase<TSource>, timeSpan, scheduler);
+end;
+
+function IObservableExtensions.Buffer<TSource>(const timeSpan,
+  timeShift: TTimeSpan): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource>.TTimeSliding.Create(
+    TObject(Self) as TObservableBase<TSource>, timeSpan, timeShift,
+    SchedulerDefaults.TimeBasedOperations);
+end;
+
+function IObservableExtensions.Buffer<TSource>(const timeSpan,
+  timeShift: TTimeSpan;
+  const scheduler: IScheduler): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource>.TTimeSliding.Create(
+    TObject(Self) as TObservableBase<TSource>, timeSpan, timeShift, scheduler);
+end;
+
+function IObservableExtensions.Buffer<TSource>(const timeSpan: TTimeSpan;
+  const count: Integer): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource>.TFerry.Create(
+    TObject(Self) as TObservableBase<TSource>, timeSpan, count,
+    SchedulerDefaults.TimeBasedOperations);
+end;
+
+function IObservableExtensions.Buffer<TSource>(const timeSpan: TTimeSpan;
+  const count: Integer; const scheduler: IScheduler): IObservable<IList<TSource>>;
+begin
+  Result := TBuffer<TSource>.TFerry.Create(
+    TObject(Self) as TObservableBase<TSource>, timeSpan, count, scheduler);
 end;
 
 function IObservableExtensions.Buffer<TSource, TBufferClosing>(
@@ -509,6 +544,14 @@ begin
   Result := TBuffer<TSource, TBufferBoundary>.TBoundaries.Create(
     TObject(Self) as TObservableBase<TSource>, bufferBoundaries);
 end;
+
+//function IObservableExtensions.Buffer<TSource, TBufferOpening, TBufferClosing>(
+//  const bufferOpenings: IObservable<TBufferOpening>;
+//  const bufferClosingSelector: Func<TBufferOpening, IObservable<TBufferClosing>>): IObservable<IList<TSource>>;
+//begin
+//  Result := Window<TSource, TBufferOpening, TBufferClosing>(
+//    bufferOpenings, bufferClosingSelector).SelectMany(ToList);
+//end;
 
 function IObservableExtensions.CombineLatest<TSource1, TSource2, TResult>(
   const second: IObservable<TSource2>;
