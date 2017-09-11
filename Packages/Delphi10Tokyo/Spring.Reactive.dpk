@@ -74,6 +74,7 @@ contains
   Spring.Reactive.Notification in '..\..\Source\Reactive\Spring.Reactive.Notification.pas',
   Spring.Reactive.Observable.AddRef in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.AddRef.pas',
   Spring.Reactive.Observable.All in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.All.pas',
+  Spring.Reactive.Observable.Amb in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Amb.pas',
   Spring.Reactive.Observable.Any in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Any.pas',
   Spring.Reactive.Observable.Buffer in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Buffer.pas',
   Spring.Reactive.Observable.CombineLatest in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.CombineLatest.pas',

@@ -56,6 +56,7 @@ type
   public
     destructor Destroy; override;
     function All(const predicate: Predicate<T>): IObservable<Boolean>;
+    function Amb(const second: IObservable<T>): IObservable<T>;
     function Any: IObservable<Boolean>; overload;
     function Any(const predicate: Predicate<T>): IObservable<Boolean>; overload;
     function Concat(const second: IObservable<T>): IObservable<T>;
@@ -94,6 +95,7 @@ uses
   Spring.Reactive.Concurrency.Synchronization.ObserveOn,
   Spring.Reactive.Internal.Stubs,
   Spring.Reactive.Observable.All,
+  Spring.Reactive.Observable.Amb,
   Spring.Reactive.Observable.Any,
   Spring.Reactive.Observable.Concat,
   Spring.Reactive.Observable.Distinct,
@@ -211,6 +213,11 @@ function TObservableBase<T>.All(
   const predicate: Predicate<T>): IObservable<Boolean>;
 begin
   Result := TAll<T>.Create(Self, predicate);
+end;
+
+function TObservableBase<T>.Amb(const second: IObservable<T>): IObservable<T>;
+begin
+  Result := TAmb<T>.Create(Self, second);
 end;
 
 function TObservableBase<T>.Any: IObservable<Boolean>;

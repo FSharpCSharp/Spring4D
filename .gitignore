@@ -7,6 +7,7 @@
 *.skincfg
 *.stat
 *.tvsconfig
+.vscode/
 __history/
 __recovery/
 

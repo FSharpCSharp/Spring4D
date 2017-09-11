@@ -227,6 +227,11 @@ type
 
   IObservable<T> = interface;
 
+  IConcatenatable<TSource> = interface
+    ['{CEA25C13-1109-4EB1-8BFD-8CD825601AFA}']
+    function GetSources: TArray<IObservable<TSource>>;
+  end;
+
   IObservableExtensions = record
   private
   {$HINTS OFF}
@@ -251,7 +256,8 @@ type
 
     function CombineLatest<TSource1, TSource2, TResult>(const second: IObservable<TSource2>; const resultSelector: Func<TSource1, TSource2, TResult>): IObservable<TResult>; overload;
 
-    function Merge<TSource>: IObservable<TSource>;
+    function Merge<TSource>: IObservable<TSource>; overload;
+    function Merge<TSource>(const second: IObservable<TSource>): IObservable<TSource>; overload;
 
     function Select<TSource, TResult>(const selector: Func<TSource, TResult>): IObservable<TResult>; overload;
     function TakeUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
@@ -316,7 +322,8 @@ type
     function DoAction(const observer: IObserver<T>): IObservable<T>; overload;
 //    function DoFinally()
 
-    // "extension" methods for aggregating
+    // "extension" methods for combining (QueryLanguage.Multiple.cs)
+    function Amb(const second: IObservable<T>): IObservable<T>;
     function Concat(const second: IObservable<T>): IObservable<T>;
 //    function Merge(const second: IObservable<T>): IObservable<T>;
 
@@ -380,9 +387,6 @@ type
 
     class function Empty<T>: IObservable<T>; static;
 
-    class function From<T>(const source: array of T): IObservable<T>; overload; static;
-    class function From<T>(const source: IEnumerable<T>): IObservable<T>; overload; static;
-
 //    class function Generate<TState,TResult>(const initialState: TState;
 //      const condition: Func<TState, Boolean>;
 //      const iterate: Func<TState, TState>;
@@ -414,19 +418,23 @@ type
 
     class function Window<T>(const source: IObservable<T>; count: Integer): IObservable<IObservable<T>>; static;
 
+
+    // "extension" methods for conversion (QueryLanguage.Conversion.cs)
+    class function From<T>(const source: array of T): IObservable<T>; overload; static;
+    class function From<T>(const source: array of T; const scheduler: IScheduler): IObservable<T>; overload; static;
+    class function From<T>(const source: IEnumerable<T>): IObservable<T>; overload; static;
+    class function From<T>(const source: IEnumerable<T>; const scheduler: IScheduler): IObservable<T>; overload; static;
+
+    class function Subscribe<T>(const source: IEnumerable<T>; const observer: IObserver<T>): IDisposable; overload; static;
+    class function Subscribe<T>(const source: IEnumerable<T>; const observer: IObserver<T>; const scheduler: IScheduler): IDisposable; overload; static;
+
+
     // TODO Timer
 
     // events
   {$IFDEF DELPHIXE2_UP}
     class function FromEventPattern<T>(const target: TComponent; const eventName: string): IObservable<T>; static;
   {$ENDIF}
-  end;
-
-  Enumerable = record
-  public
-    class function Subscribe<T>(const source: IEnumerable<T>; const observer: IObserver<T>): IDisposable; static;
-    class function ToObservable<T>(const source: array of T): IObservable<T>; overload; static;
-    class function ToObservable<T>(const source: IEnumerable<T>): IObservable<T>; overload; static;
   end;
 
   EObjectDisposedException = class(EInvalidOperationException); // TODO: move to Spring.pas
@@ -565,6 +573,16 @@ function IObservableExtensions.Merge<TSource>: IObservable<TSource>;
 begin
   Result := TMerge<TSource>.TObservables.Create(
     TObject(Self) as TObservableBase<IObservable<TSource>>);
+end;
+
+function IObservableExtensions.Merge<TSource>(
+  const second: IObservable<TSource>): IObservable<TSource>;
+var
+  source: IEnumerable<IObservable<TSource>>;
+begin
+//  source := TEnumerable.From<IObservable<TSource>>([
+//    TObject(Self) as TObservableBase<IObservable<TSource>> as IObservable<TSource>, second]);
+//  Result := TMerge<TSource>.TObservables.Create(TToObservable<TSource>.Create(source))
 end;
 
 function IObservableExtensions.Select<TSource, TResult>(
@@ -754,13 +772,24 @@ end;
 
 class function TObservable.From<T>(const source: array of T): IObservable<T>;
 begin
-  Result := Enumerable.ToObservable<T>(TEnumerable.From<T>(source));
+  Result := TToObservable<T>.Create(TEnumerable.From<T>(source), SchedulerDefaults.Iteration);
 end;
 
-class function TObservable.From<T>(
-  const source: IEnumerable<T>): IObservable<T>;
+class function TObservable.From<T>(const source: array of T;
+  const scheduler: IScheduler): IObservable<T>;
 begin
-  Result := Enumerable.ToObservable<T>(source);
+  Result := TToObservable<T>.Create(TEnumerable.From<T>(source), scheduler);
+end;
+
+class function TObservable.From<T>(const source: IEnumerable<T>): IObservable<T>;
+begin
+  Result := TToObservable<T>.Create(source, SchedulerDefaults.Iteration);
+end;
+
+class function TObservable.From<T>(const source: IEnumerable<T>;
+  const scheduler: IScheduler): IObservable<T>;
+begin
+  Result := TToObservable<T>.Create(source, scheduler);
 end;
 
 {$IFDEF DELPHIXE2_UP}
@@ -847,7 +876,7 @@ end;
 class function TObservable.Merge<T>(
   const sources: array of IObservable<T>): IObservable<T>;
 begin
-  Result := Merge<T>(Enumerable.ToObservable<IObservable<T>>(sources));
+  Result := Merge<T>(From<IObservable<T>>(sources));
 end;
 
 class function TObservable.Merge<T>(
@@ -885,6 +914,18 @@ begin
   Result := TSkipUntil<TSource, TOther>.Create(source, other);
 end;
 
+class function TObservable.Subscribe<T>(const source: IEnumerable<T>;
+  const observer: IObserver<T>): IDisposable;
+begin
+  Result := TToObservable<T>.Create(source, SchedulerDefaults.Iteration).Subscribe(observer);
+end;
+
+class function TObservable.Subscribe<T>(const source: IEnumerable<T>;
+  const observer: IObserver<T>; const scheduler: IScheduler): IDisposable;
+begin
+  Result := TToObservable<T>.Create(source, scheduler).Subscribe(observer);
+end;
+
 class function TObservable.TakeUntil<TSource, TOther>(
   const source: IObservable<TSource>;
   const other: IObservable<TOther>): IObservable<TSource>;
@@ -907,29 +948,6 @@ class function TObservable.Window<T>(const source: IObservable<T>;
   count: Integer): IObservable<IObservable<T>>;
 begin
   Result := TWindow<T>.TCount.Create(source, count, count);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'Enumerable'}
-
-class function Enumerable.Subscribe<T>(const source: IEnumerable<T>;
-  const observer: IObserver<T>): IDisposable;
-begin
-  Result := TToObservable<T>.Create(source, SchedulerDefaults.Iteration).Subscribe(observer);
-end;
-
-class function Enumerable.ToObservable<T>(
-  const source: array of T): IObservable<T>;
-begin
-  Result := TToObservable<T>.Create(TEnumerable.From<T>(source), SchedulerDefaults.Iteration);
-end;
-
-class function Enumerable.ToObservable<T>(
-  const source: IEnumerable<T>): IObservable<T>;
-begin
-  Result := TToObservable<T>.Create(source, SchedulerDefaults.Iteration);
 end;
 
 {$ENDREGION}

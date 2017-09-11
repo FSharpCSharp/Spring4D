@@ -157,6 +157,7 @@
         <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.Notification.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.AddRef.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.All.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Amb.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Any.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Buffer.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.CombineLatest.pas"/>

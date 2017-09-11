@@ -30,10 +30,15 @@ interface
 
 uses
   Spring,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Reactive;
 
 type
-  TAsyncLock = class
+  IAsyncLock = interface(IDisposable)
+    procedure Wait(const action: Action);
+  end;
+
+  TAsyncLock = class(TInterfacedObject, IAsyncLock)
   private
     fQueue: IQueue<Action>;
     fIsAquired: Boolean;

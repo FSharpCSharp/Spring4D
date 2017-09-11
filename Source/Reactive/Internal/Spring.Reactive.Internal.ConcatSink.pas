@@ -34,8 +34,37 @@ uses
 
 type
   TConcatSink<TSource> = class(TTailRecursiveSink<TSource>)
+  protected
+    function Extract(const source: IObservable<TSource>): TArray<IObservable<TSource>>; override;
+  public
+    procedure OnCompleted; override;
   end;
 
 implementation
+
+uses
+  SysUtils;
+
+
+{$REGION 'TConcatSink<TSource>'}
+
+function TConcatSink<TSource>.Extract(
+  const source: IObservable<TSource>): TArray<IObservable<TSource>>;
+var
+  c: IConcatenatable<TSource>;
+begin
+  if Supports(source, IConcatenatable<TSource>, c) then
+    Result := c.GetSources
+  else
+    Result := nil;
+end;
+
+procedure TConcatSink<TSource>.OnCompleted;
+begin
+  fRecurse;
+end;
+
+{$ENDREGION}
+
 
 end.

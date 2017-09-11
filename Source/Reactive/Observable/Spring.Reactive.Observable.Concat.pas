@@ -36,7 +36,7 @@ uses
   Spring.Reactive.Internal.Producer;
 
 type
-  TConcat<TSource> = class(TProducer<TSource>)
+  TConcat<TSource> = class(TProducer<TSource>, IConcatenatable<TSource>)
   private
     fSources: TArray<IObservable<TSource>>;
 
@@ -51,6 +51,7 @@ type
     function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const sources: array of IObservable<TSource>);
+    function GetSources: TArray<IObservable<TSource>>;
   end;
 
 implementation
@@ -73,6 +74,11 @@ end;
 function TConcat<TSource>.Run(const sink: TObject): IDisposable;
 begin
   Result := TSink(sink).Run(fSources);
+end;
+
+function TConcat<TSource>.GetSources: TArray<IObservable<TSource>>;
+begin
+  Result := fSources;
 end;
 
 {$ENDREGION}
