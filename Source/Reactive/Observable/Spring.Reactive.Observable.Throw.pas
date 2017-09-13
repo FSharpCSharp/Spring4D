@@ -56,7 +56,7 @@ type
     function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const error: Exception; const scheduler: IScheduler);
-    procedure Dispose; override;
+    destructor Destroy; override;
   end;
 
 implementation
@@ -75,16 +75,16 @@ begin
   fScheduler := scheduler;
 end;
 
-procedure TThrow<TSource>.Dispose;
-begin
-  FreeAndNil(fError);
-  inherited;
-end;
-
 function TThrow<TSource>.CreateSink(const observer: IObserver<TSource>;
   const cancel: IDisposable): TObject;
 begin
   Result := TSink.Create(Self, observer, cancel);
+end;
+
+destructor TThrow<TSource>.Destroy;
+begin
+  FreeAndNil(fError);
+  inherited;
 end;
 
 function TThrow<TSource>.Run(const sink: TObject): IDisposable;

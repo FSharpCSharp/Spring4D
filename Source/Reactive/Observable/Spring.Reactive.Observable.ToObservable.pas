@@ -43,9 +43,14 @@ type
 
     type
       TSink = class(TSink<TSource>)
+      private type
+        TState = record
+          flag: ICancelable;
+          enumerator: IEnumerator<TSource>;
+        end;
       private
         fParent: TToObservable<TSource>;
-        procedure LoopRec(const state: TValue; const recurse: Action<TValue>);
+        procedure LoopRec(const state: TState; const recurse: Action<TValue>);
       public
         constructor Create(const parent: TToObservable<TSource>;
           const observer: IObserver<TSource>; const cancel: IDisposable);
@@ -58,12 +63,6 @@ type
     function Run(const sink: TObject): IDisposable; override;
   public
     constructor Create(const source: IEnumerable<TSource>; const scheduler: IScheduler);
-  end;
-
-  TState<TSource> = record
-  public
-    flag: ICancelable;
-    enumerator: IEnumerator<TSource>;
   end;
 
 implementation
@@ -112,30 +111,29 @@ begin
   inherited;
 end;
 
-procedure TToObservable<TSource>.TSink.LoopRec(const state: TValue;
+procedure TToObservable<TSource>.TSink.LoopRec(const state: TState;
   const recurse: Action<TValue>);
 var
   hasNext: Boolean;
   ex: Exception;
   current: TSource;
-  _state: TState<TSource>;
 begin
   hasNext := False;
   ex := nil;
   current := Default(TSource);
-  _state := state.AsType<TState<TSource>>;
 
-  if _state.flag.IsDisposed then
+  if state.flag.IsDisposed then
   begin
-//    _state.enumerator.Dispose;
-    _state.enumerator := nil; //TODO: review
+    // TODO: review
+//    state.enumerator.Dispose;
+//    state.enumerator := nil;
     Exit;
   end;
 
   try
-    hasNext := _state.enumerator.MoveNext;
+    hasNext := state.enumerator.MoveNext;
     if hasNext then
-      current := _state.enumerator.Current;
+      current := state.enumerator.Current;
   except
     on e: Exception do
       ex := Exception(AcquireExceptionObject);
@@ -143,8 +141,9 @@ begin
 
   if Assigned(ex) then
   begin
-//    _state.enumerator.Dispose;
-    _state.enumerator := nil; // TODO: review
+    // TODO: review
+//    state.enumerator.Dispose;
+//    state.enumerator := nil;
 
     Observer.OnError(ex);
     Dispose;
@@ -153,8 +152,9 @@ begin
 
   if not hasNext then
   begin
-//    _state.enumerator.Dispose;
-    _state.enumerator := nil; // TODO: review
+    // TODO: review
+//    state.enumerator.Dispose;
+//    state.enumerator := nil;
 
     Observer.OnCompleted;
     Dispose;
@@ -162,14 +162,14 @@ begin
   end;
 
   Observer.OnNext(current);
-  recurse(state);
+  recurse(TValue.From(state));
 end;
 
 function TToObservable<TSource>.TSink.Run: IDisposable;
 var
   e: IEnumerator<TSource>;
   flag: ICancelable;
-  state: TState<TSource>;
+  state: TState;
   guard: IInterface;
 begin
   try
@@ -191,7 +191,7 @@ begin
     procedure (const state: TValue; const recurse: Action<TValue>)
     begin
       if Assigned(guard) then
-        LoopRec(state, recurse);
+        LoopRec(state.AsType<TState>, recurse);
     end);
   Result := flag;
 end;
@@ -200,4 +200,3 @@ end;
 
 
 end.
-

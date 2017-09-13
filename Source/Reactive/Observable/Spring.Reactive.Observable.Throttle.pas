@@ -49,7 +49,7 @@ type
         fHasValue: Boolean;
         fCancelable: ISerialDisposable;
         fId: UInt64;
-        function Propagate(const scheduler: IScheduler; const currentId: TValue): IDisposable;
+        function Propagate(const scheduler: IScheduler; const currentId: UInt64): IDisposable;
       public
         constructor Create(const parent: TThrottle<TSource>; const observer: IObserver<TSource>;
           const cancel: IDisposable);
@@ -152,7 +152,7 @@ begin
     function (const scheduler: IScheduler; const currentId: TValue): IDisposable
     begin
       if Assigned(guard) then
-        Result := Propagate(scheduler, currentId);
+        Result := Propagate(scheduler, currentId.AsUInt64);
     end);
 end;
 
@@ -192,7 +192,7 @@ begin
 end;
 
 function TThrottle<TSource>.TSink.Propagate(const scheduler: IScheduler;
-  const currentId: TValue): IDisposable;
+  const currentId: UInt64): IDisposable;
 begin
   MonitorEnter(Self);
   try

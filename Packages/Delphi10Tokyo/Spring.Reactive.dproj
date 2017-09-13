@@ -145,6 +145,7 @@
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SingleAssignmentDisposable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.StableCompositeDisposable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.GroupedObservable.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.AnonymousEnumerable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.AutoDetachObserver.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.ConcatSink.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Observers.pas"/>
@@ -167,6 +168,7 @@
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.DoAction.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Empty.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.FromEvent.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.GetEnumerator.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.GroupBy.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.IgnoreElements.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Merge.pas"/>
@@ -194,6 +196,7 @@
         <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.ObserverBase.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.AsyncSubject.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.BehaviorSubject.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.ConnectableObservable.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.ReplaySubject.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.Subject.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.SubjectBase.pas"/>

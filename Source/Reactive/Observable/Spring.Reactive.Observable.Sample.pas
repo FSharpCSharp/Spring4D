@@ -156,7 +156,7 @@ begin
   sourceSubscription := TSingleAssignmentDisposable.Create;
   fSourceSubscription := sourceSubscription;
   sourceSubscription.Disposable := fParent.fSource.Subscribe(Self);
-  guard := Self;
+  guard := Self; // make sure that self is kept alive by capturing it
   Result := TStableCompositeDisposable.Create(
     sourceSubscription,
     (fParent.fScheduler as ISchedulerPeriodic).SchedulePeriodic(fParent.fInterval,

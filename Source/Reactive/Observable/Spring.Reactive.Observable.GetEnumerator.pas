@@ -24,22 +24,18 @@
 
 {$I Spring.inc}
 
-unit Spring.Reactive.Subjects.SubjectBase;
+unit Spring.Reactive.Observable.GetEnumerator;
 
 interface
 
 uses
-  Spring.Reactive,
-  Spring.Reactive.ObservableBase;
+  Spring.Collections.Base,
+  Spring.Reactive;
 
-type
-  TSubjectBase<T> = class(TObservableBase<T>, ISubject<T>, IObserver<T>)
-  public
-    procedure Dispose; virtual; abstract;
-    procedure OnNext(const value: T); virtual; abstract;
-    procedure OnError(const error: Exception); virtual; abstract;
-    procedure OnCompleted; virtual; abstract;
-  end;
+//type
+//  TGetEnumerator<TSource> = class(TEnumeratorBase<TSource>, IObserver<TSource>)
+//  public
+//  end;
 
 implementation
 

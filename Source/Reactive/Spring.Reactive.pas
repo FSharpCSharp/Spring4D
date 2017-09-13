@@ -226,6 +226,7 @@ type
   end;
 
   IObservable<T> = interface;
+  IConnectableObservable<T> = interface;
 
   IConcatenatable<TSource> = interface
     ['{CEA25C13-1109-4EB1-8BFD-8CD825601AFA}']
@@ -269,7 +270,7 @@ type
     function Zip<TFirst, TSecond, TResult>(const second: IObservable<TSecond>; const resultSelector: Func<TFirst, TSecond, TResult>): IObservable<TResult>; overload;
   end;
 
-  IObservable<T> = interface(IDisposable)
+  IObservable<T> = interface
     ['{E20F7E99-4952-47A3-8F02-8F37972C0E5D}']
     function Subscribe(const observer: IObserver<T>): IDisposable; overload;
 
@@ -312,15 +313,23 @@ type
     function Where(const predicate: Predicate<T>): IObservable<T>;
 
     // "extension" methods for inspecting
-    function All(const predicate: Predicate<T>): IObservable<Boolean>;
-    function Any: IObservable<Boolean>; overload;
-    function Any(const predicate: Predicate<T>): IObservable<Boolean>; overload;
     function DoAction(const onNext: Action<T>): IObservable<T>; overload;
     function DoAction(const onNext: Action<T>; const onCompleted: Action): IObservable<T>; overload;
     function DoAction(const onNext: Action<T>; const onError: Action<Exception>): IObservable<T>; overload;
     function DoAction(const onNext: Action<T>; const onError: Action<Exception>; const onCompleted: Action): IObservable<T>; overload;
     function DoAction(const observer: IObserver<T>): IObservable<T>; overload;
 //    function DoFinally()
+
+    // "extension" methods for aggregating (QueryLanguage.Aggregates.cs)
+    function All(const predicate: Predicate<T>): IObservable<Boolean>;
+    function Any: IObservable<Boolean>; overload;
+    function Any(const predicate: Predicate<T>): IObservable<Boolean>; overload;
+
+    // "extension" methods (QueryLanguage.Binding.cs)
+    function Publish: IConnectableObservable<T>;
+
+    // "extension" methods (QueryLanguage.Blocking.cs)
+//    function GetEnumerator: IEnumerator<T>;
 
     // "extension" methods for combining (QueryLanguage.Multiple.cs)
     function Amb(const second: IObservable<T>): IObservable<T>;
@@ -335,21 +344,27 @@ type
     function _: IObservableExtensions;
   end;
 
+  IConnectableObservable<T> = interface(IObservable<T>)
+    ['{D4373125-4462-43E1-BABE-6E74CD3E8235}']
+    function Connect: IDisposable;
+  end;
+
   IGroupedObservable<TKey, TElement> = interface(IObservable<TElement>)
     ['{C521C380-692D-49BE-9E3F-9E6037C2D066}']
     function GetKey: TKey;
     property Key: TKey read GetKey;
   end;
 
-  ISubject<T> = interface(IObservable<T>)
-    procedure OnNext(const value: T);
+  ISubject<TSource, TResult> = interface(IObservable<TResult>{, IObserver<TSource>})
+    // from IObserver<TSource>
+    procedure Dispose;
+    procedure OnNext(const value: TSource);
     procedure OnError(const error: Exception);
     procedure OnCompleted;
   end;
 
-  ISubject<TSource, TResult> = interface(IObservable<TResult>{, IObserver<TSource>})
-    // from IObserver<TSource>
-    procedure OnNext(const value: TSource);
+  ISubject<T> = interface(ISubject<T, T>)
+    procedure OnNext(const value: T);
     procedure OnError(const error: Exception);
     procedure OnCompleted;
   end;
@@ -449,6 +464,18 @@ type
   end;
 
 function Lock(const instance: TObject): IInterface;
+
+type
+  GC = record
+  private
+    class var items: IList<Pointer>;
+  public
+    class constructor Create;
+    class destructor Destroy;
+
+    class procedure Add(const item: IDisposable); static;
+    class procedure Remove(const item: IDisposable); static;
+  end;
 
 implementation
 
@@ -840,7 +867,7 @@ begin
     procedure
     begin
       obs.OnCompleted;
-      obs.Dispose;
+//      obs.Dispose;
 
       event.SetValue(target, nil);
       FreeAndNil(m.Data);
@@ -968,7 +995,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'interfaced lock'}
+{$REGION 'Interfaced Lock'}
 
 type
   TInterfacedMonitor = class(TInterfacedObject)
@@ -995,6 +1022,37 @@ end;
 function Lock(const instance: TObject): IInterface;
 begin
   Result := TInterfacedMonitor.Create(instance);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Garbage Collector'}
+
+class constructor GC.Create;
+begin
+  items := TCollections.CreateList<Pointer>;
+end;
+
+class destructor GC.Destroy;
+begin
+  while items.Count > 0 do
+    IDisposable(items.ExtractAt(items.Count - 1)).Dispose;
+end;
+
+class procedure GC.Add(const item: IDisposable);
+begin
+  Lock(items.AsObject);
+  items.Add(Pointer(item));
+end;
+
+class procedure GC.Remove(const item: IDisposable);
+begin
+  if Assigned(items) then
+  begin
+    Lock(items.AsObject);
+    items.Remove(Pointer(item));
+  end;
 end;
 
 {$ENDREGION}

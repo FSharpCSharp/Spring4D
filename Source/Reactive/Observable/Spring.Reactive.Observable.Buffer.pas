@@ -94,7 +94,7 @@ type
         private
           procedure CreateWindow;
           procedure CreateTimer;
-          function Tick(const scheduler: IScheduler; const state: TValue): IDisposable;
+          function Tick(const scheduler: IScheduler; const state: TState): IDisposable;
         public
           constructor Create(const parent: TTimeSliding;
             const observer: IObserver<IList<TSource>>; const cancel: IDisposable);
@@ -156,7 +156,7 @@ type
           fn: Integer;
           fWindowId: Integer;
           procedure CreateTimer(const id: Integer);
-          function Tick(const scheduler: IScheduler; const id: TValue): IDisposable;
+          function Tick(const scheduler: IScheduler; const id: Integer): IDisposable;
         public
           constructor Create(const parent: TFerry;
             const observer: IObserver<IList<TSource>>; const cancel: IDisposable);
@@ -439,6 +439,7 @@ var
   newTotalTime: TTimeSpan;
   ts: TTimeSpan;
   state: TState;
+  guard: IInterface;
 begin
   m := TSingleAssignmentDisposable.Create;
   fTimerD.Disposable := m;
@@ -469,25 +470,29 @@ begin
 
   state.isSpan := isSpan;
   state.isShift := isShift;
-  m.Disposable := fScheduler.Schedule(TValue.From(state), ts, Tick);
+  guard := Self; // make sure that self is kept alive by capturing it
+  m.Disposable := fScheduler.Schedule(TValue.From(state), ts,
+    function (const scheduler: IScheduler; const state: TValue): IDisposable
+    begin
+      if Assigned(guard) then
+        Tick(scheduler, state.AsType<TState>);
+    end);
 end;
 
 function TBuffer<TSource>.TTimeSliding.TSink.Tick(const scheduler: IScheduler;
-  const state: TValue): IDisposable;
+  const state: TState): IDisposable;
 var
-  _state: TState;
   s: IList<TSource>;
 begin
-  _state := state.AsType<TState>;
   MonitorEnter(Self);
   try
-    if _state.isSpan then
+    if state.isSpan then
     begin
       s := fQueue.Dequeue;
       Observer.OnNext(s);
     end;
 
-    if _state.isShift then
+    if state.isShift then
       CreateWindow;
   finally
     MonitorExit(Self);
@@ -981,14 +986,21 @@ end;
 procedure TBuffer<TSource>.TFerry.TSink.CreateTimer(const id: Integer);
 var
   m: ISingleAssignmentDisposable;
+  guard: IInterface;
 begin
   m := TSingleAssignmentDisposable.Create;
   fTimerD.Disposable := m;
-  m.Disposable := fScheduler.Schedule(id, fTimeSpan, Tick);
+  guard := Self; // make sure that self is kept alive by capturing it
+  m.Disposable := fScheduler.Schedule(id, fTimeSpan,
+    function (const scheduler: IScheduler; const id: TValue): IDisposable
+    begin
+      if Assigned(guard) then
+        Result := Tick(scheduler, id.AsInteger);
+    end);
 end;
 
 function TBuffer<TSource>.TFerry.TSink.Tick(const scheduler: IScheduler;
-  const id: TValue): IDisposable;
+  const id: Integer): IDisposable;
 var
   newId: Integer;
   res: IList<TSource>;

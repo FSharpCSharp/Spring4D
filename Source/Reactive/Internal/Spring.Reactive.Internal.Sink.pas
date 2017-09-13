@@ -46,6 +46,7 @@ type
     property Cancel: IDisposable read GetCancel;
   public
     constructor Create(const observer: IObserver<TSource>; const cancel: IDisposable);
+    destructor Destroy; override;
     procedure Dispose; override;
 
     procedure OnError(const error: Exception);
@@ -66,6 +67,15 @@ begin
   inherited Create;
   fObserver := observer;
   fCancel := cancel;
+
+  GC.Add(Self);
+end;
+
+destructor TSink<TSource>.Destroy;
+begin
+  GC.Remove(Self);
+
+  inherited;
 end;
 
 procedure TSink<TSource>.Dispose;

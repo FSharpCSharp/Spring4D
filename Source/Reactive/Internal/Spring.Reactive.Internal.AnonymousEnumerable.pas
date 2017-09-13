@@ -24,23 +24,42 @@
 
 {$I Spring.inc}
 
-unit Spring.Reactive.Subjects.SubjectBase;
+unit Spring.Reactive.Internal.AnonymousEnumerable;
 
 interface
 
 uses
-  Spring.Reactive,
-  Spring.Reactive.ObservableBase;
+  Spring,
+  Spring.Collections,
+  Spring.Collections.Base;
 
 type
-  TSubjectBase<T> = class(TObservableBase<T>, ISubject<T>, IObserver<T>)
+  TAnonymousEnumerable<T> = class(TEnumerableBase<T>)
+  private
+    fGetEnumerator: Func<IEnumerator<T>>;
   public
-    procedure Dispose; virtual; abstract;
-    procedure OnNext(const value: T); virtual; abstract;
-    procedure OnError(const error: Exception); virtual; abstract;
-    procedure OnCompleted; virtual; abstract;
+    constructor Create(const getEnumerator: Func<IEnumerator<T>>);
+    function GetEnumerator: IEnumerator<T>; override;
   end;
 
 implementation
+
+
+{$REGION 'TAnonymousEnumerable<T>'}
+
+constructor TAnonymousEnumerable<T>.Create(
+  const getEnumerator: Func<IEnumerator<T>>);
+begin
+  inherited Create;
+  fGetEnumerator := getEnumerator;
+end;
+
+function TAnonymousEnumerable<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := fGetEnumerator;
+end;
+
+{$ENDREGION}
+
 
 end.

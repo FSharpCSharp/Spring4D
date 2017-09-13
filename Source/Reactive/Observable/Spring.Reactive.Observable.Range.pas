@@ -46,7 +46,7 @@ type
       private
         fStart: Integer;
         fCount: Integer;
-        procedure LoopRec(const state: TValue; const recurse: Action<TValue>);
+        procedure LoopRec(const i: Integer; const recurse: Action<TValue>);
       public
         constructor Create(const parent: TRange;
           const observer: IObserver<Integer>; const cancel: IDisposable);
@@ -97,11 +97,8 @@ begin
   fCount := parent.fCount;
 end;
 
-procedure TRange.TSink.LoopRec(const state: TValue; const recurse: Action<TValue>);
-var
-  i: Integer;
+procedure TRange.TSink.LoopRec(const i: Integer; const recurse: Action<TValue>);
 begin
-  i := state.AsInteger;
   if i < fCount then
   begin
     Observer.OnNext(fStart + i);
@@ -123,7 +120,7 @@ begin
     procedure (const state: TValue; const recurse: Action<TValue>)
     begin
       if Assigned(guard) then
-        LoopRec(state, recurse);
+        LoopRec(state.AsInteger, recurse);
     end);
 end;
 

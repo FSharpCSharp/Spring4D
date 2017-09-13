@@ -57,7 +57,8 @@ type
   strict private
     class function GetEmpty: IDisposable; static;
   public
-    class function Create(const dispose: Action): IDisposable; static;
+    class function Create(const dispose: Action): IDisposable; overload; static;
+    class function Create(const dispose: IDisposable): IDisposable; overload; static;
     class property Empty: IDisposable read GetEmpty;
   end;
 
@@ -69,6 +70,15 @@ implementation
 class function Disposable.Create(const dispose: Action): IDisposable;
 begin
   Result := TAnonymousDisposable.Create(dispose);
+end;
+
+class function Disposable.Create(const dispose: IDisposable): IDisposable;
+begin
+  Result := TAnonymousDisposable.Create(
+    procedure
+    begin
+      dispose.Dispose;
+    end);
 end;
 
 class function Disposable.GetEmpty: IDisposable;

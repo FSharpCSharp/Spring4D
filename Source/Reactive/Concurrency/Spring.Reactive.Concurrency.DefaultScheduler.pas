@@ -174,11 +174,7 @@ begin
       state1 := action(state1);
     end, period);
 
-  Result := Disposable.Create(
-    procedure
-    begin
-      cancel.Dispose;
-    end);
+  Result := Disposable.Create(cancel);
 end;
 
 {$ENDREGION}

@@ -30,10 +30,11 @@ interface
 
 uses
   Spring,
+  Spring.Collections,
   Spring.Reactive;
 
 type
-  TObservableBase<T> = class(TDisposableObject, IObservable<T>)
+  TObservableBase<T> = class(TinterfacedObject, IObservable<T>)
   private
     function ScheduledSubscribe(const _: IScheduler; const autoDetachObserver: TValue): IDisposable;
   protected
@@ -68,7 +69,9 @@ type
     function DoAction(const onNext: Action<T>; const onError: Action<Exception>; const onCompleted: Action): IObservable<T>; overload;
     function DoAction(const observer: IObserver<T>): IObservable<T>; overload;
     procedure ForEach(const onNext: Action<T>);
+//    function GetEnumerator: IEnumerator<T>;
     function IgnoreElements: IObservable<T>;
+    function Publish: IConnectableObservable<T>;
     function Sample(const interval: TTimeSpan): IObservable<T>;
     function Skip(count: Integer): IObservable<T>;
     function SkipLast(count: Integer): IObservable<T>;
@@ -112,6 +115,8 @@ uses
   Spring.Reactive.Observable.Throttle,
   Spring.Reactive.Observable.Where,
   Spring.Reactive.Observable.Window,
+  Spring.Reactive.Subjects.ConnectableObservable,
+  Spring.Reactive.Subjects.Subject,
   Spring.Reactive.Disposables;
 
 
@@ -321,6 +326,11 @@ begin
     raise ex;
 end;
 
+//function TObservableBase<T>.GetEnumerator: IEnumerator<T>;
+//begin
+//  Result := TGetEnumerator<T>.Create.Run(source);
+//end;
+
 function TObservableBase<T>.IgnoreElements: IObservable<T>;
 begin
   Result := TIgnoreElements<T>.Create(Self);
@@ -330,6 +340,11 @@ function TObservableBase<T>.ObserveOn(
   const scheduler: IScheduler): IObservable<T>;
 begin
   Result := TObserveOn<T>.TScheduler.Create(Self, scheduler);
+end;
+
+function TObservableBase<T>.Publish: IConnectableObservable<T>;
+begin
+  Result := TConnectableObservable<T,T>.Create(Self, TSubject<T>.Create as ISubject<T>);
 end;
 
 function TObservableBase<T>.Sample(const interval: TTimeSpan): IObservable<T>;

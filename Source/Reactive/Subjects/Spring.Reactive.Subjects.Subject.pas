@@ -71,6 +71,7 @@ type
     public
       constructor Create(const observer: IObserver<TSource>;
         const observable: IObservable<TResult>);
+      procedure Dispose;
 
       procedure OnNext(const value: TSource);
       procedure OnError(const error: Exception);
@@ -284,6 +285,10 @@ begin
   inherited Create;
   fObserver := observer;
   fObservable := observable;
+end;
+
+procedure TSubject.TAnonymousSubject<TSource, TResult>.Dispose;
+begin
 end;
 
 procedure TSubject.TAnonymousSubject<TSource, TResult>.OnCompleted;

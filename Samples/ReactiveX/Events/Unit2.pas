@@ -28,10 +28,8 @@ type
     Edit1: TEdit;
     ProgressBar1: TProgressBar;
     procedure FormCreate(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
   private
     { Private declarations }
-    sub: IDisposable;
   public
     { Public declarations }
   end;
@@ -55,7 +53,6 @@ type
     procedure StepIt();
     property Position: Integer read GetPositoon write SetPosition;
   end;
-
 
 { TProgressBarHelper }
 
@@ -97,13 +94,14 @@ begin
     procedure (const args: TNotifyEventArgs)
     begin
       ProgressBar1.Position := 0;
-      sub := TObservable.Interval(10).Take(100)._.TakeUntil<Int64,TNotifyEventArgs>(textChange)
+      TObservable.Interval(10).Take(100)._.TakeUntil<Int64,TNotifyEventArgs>(textChange)
         .ObserveOn(TScheduler.MainThread)
         .Subscribe(
           procedure(const i: Int64)
           begin
             ProgressBar1.StepIt;
-          end);
+          end,
+          procedure begin Beep end);
     end);
 
   textChange
@@ -122,11 +120,6 @@ procedure TEdit.Change;
 begin
   inherited Change;
   if Assigned(FOnTextChange) then FOnTextChange(Self, Text);
-end;
-
-procedure TForm1.FormDestroy(Sender: TObject);
-begin
-  if Assigned(sub) then sub.Dispose;
 end;
 
 end.

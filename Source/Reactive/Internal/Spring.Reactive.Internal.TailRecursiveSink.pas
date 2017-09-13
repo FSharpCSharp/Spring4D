@@ -47,6 +47,8 @@ type
     procedure MoveNext;
     function TryGetEnumerator(const sources: TArray<IObservable<TSource>>;
       out e: IEnumerator<IObservable<TSource>>): Boolean;
+
+    function DisposableCreate: IDisposable;
   protected
     fRecurse: Action;
     function Extract(const source: IObservable<TSource>): TArray<IObservable<TSource>>; virtual; abstract;
@@ -120,11 +122,16 @@ begin
     end);
 
   Result := TStableCompositeDisposable.Create([
-    fSubscription, cancelable, Disposable.Create(
+    fSubscription, cancelable, DisposableCreate]);
+end;
+
+function TTailRecursiveSink<TSource>.DisposableCreate: IDisposable;
+begin
+  Result := Disposable.Create(
     procedure
     begin
       fGate.Wait(Dispose);
-    end)]);
+    end);
 end;
 
 procedure TTailRecursiveSink<TSource>.MoveNext;
