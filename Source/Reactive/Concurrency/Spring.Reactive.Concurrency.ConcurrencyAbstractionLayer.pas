@@ -40,6 +40,21 @@ type
     class var fThreadPool: TThreadPool;
     class var fTerminated: TEvent;
     function Normalize(const dueTime: TTimeSpan): TTimeSpan;
+
+    type
+      IWaitHandle = interface(IDisposable)
+        function WaitFor(const Timeout: TTimeSpan): TWaitResult;
+      end;
+
+      TWaitHandle = class(TInterfacedObject, IWaitHandle, IDisposable)
+      private
+        fEvent: TEvent;
+        function WaitFor(const Timeout: TTimeSpan): TWaitResult;
+      public
+        constructor Create;
+        destructor Destroy; override;
+        procedure Dispose;
+      end;
   public
     class constructor Create;
     class procedure ShutDown;
@@ -57,54 +72,6 @@ implementation
 
 uses
   Spring.Reactive.Disposables;
-
-type
-  IWaitHandle = interface(IDisposable)
-    function WaitFor(const Timeout: TTimeSpan): TWaitResult;
-  end;
-
-  TWaitHandle = class(TInterfacedObject, IWaitHandle, IDisposable)
-  private
-    fEvent: TEvent;
-    function WaitFor(const Timeout: TTimeSpan): TWaitResult;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Dispose;
-  end;
-
-
-{$REGION 'TWaitHandle'}
-
-constructor TWaitHandle.Create;
-begin
-  inherited Create;
-  fEvent := TEvent.Create(nil, True, False, '');
-end;
-
-destructor TWaitHandle.Destroy;
-begin
-  fEvent.Free;
-  inherited Destroy;
-end;
-
-procedure TWaitHandle.Dispose;
-begin
-  fEvent.SetEvent;
-end;
-
-function TWaitHandle.WaitFor(const Timeout: TTimeSpan): TWaitResult;
-var
-  obj: THandleObject;
-begin
-  Result := TEvent.WaitForMultiple(
-    [TConcurrencyAbstractionLayer.fTerminated, fEvent],
-    Trunc(Timeout.TotalMilliseconds),
-    False,
-    obj);
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TConcurrencyAbstractionLayer'}
@@ -210,6 +177,45 @@ begin
     Result := TTimeSpan.Zero
   else
     Result := dueTime;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TConcurrencyAbstractionLayer.TWaitHandle'}
+
+constructor TConcurrencyAbstractionLayer.TWaitHandle.Create;
+begin
+  inherited Create;
+  fEvent := TEvent.Create(nil, True, False, '');
+end;
+
+destructor TConcurrencyAbstractionLayer.TWaitHandle.Destroy;
+begin
+  fEvent.Free;
+  inherited Destroy;
+end;
+
+procedure TConcurrencyAbstractionLayer.TWaitHandle.Dispose;
+begin
+  fEvent.SetEvent;
+end;
+
+function TConcurrencyAbstractionLayer.TWaitHandle.WaitFor(
+  const Timeout: TTimeSpan): TWaitResult;
+{$IFDEF MSWINDOWS}
+var
+  obj: THandleObject;
+begin
+  Result := TEvent.WaitForMultiple(
+    [TConcurrencyAbstractionLayer.fTerminated, fEvent],
+    Trunc(Timeout.TotalMilliseconds),
+    False,
+    obj);
+{$ELSE}
+begin
+  Result := fEvent.WaitFor(Trunc(Timeout.TotalMilliseconds));
+{$ENDIF}
 end;
 
 {$ENDREGION}
