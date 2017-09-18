@@ -371,8 +371,8 @@ type
 
   TInterlocked = SyncObjs.TInterlocked;
   TInterlockedHelper = class helper for TInterlocked // TODO: move to Spring.pas
-    class function CompareExchange<T: IInterface>(var Target: T; const Value, Comparand: T): T; overload;
-    class function Exchange<T: IInterface>(var Target: T; const Value: T): T; overload;
+    class function CompareExchange<T: IInterface>(var Target: T; const Value, Comparand: T): T; overload; static;
+    class function Exchange<T: IInterface>(var Target: T; const Value: T): T; overload; static;
   end;
 
   TArrayHelper = class helper for TArray // TODO: move to Spring.pas
@@ -691,7 +691,7 @@ class function TInterlockedHelper.CompareExchange<T>(var Target: T;
   const Value, Comparand: T): T;
 begin
   Result := Default(T);
-  PPointer(@Result)^ := inherited CompareExchange(PPointer(@Target)^, PPointer(@Value)^, PPointer(@Comparand)^);
+  PPointer(@Result)^ := CompareExchange(PPointer(@Target)^, PPointer(@Value)^, PPointer(@Comparand)^);
   if PPointer(@Result)^ = PPointer(@Comparand)^ then
   begin
     if Assigned(Value) then
@@ -706,7 +706,7 @@ class function TInterlockedHelper.Exchange<T>(var Target: T;
   const Value: T): T;
 begin
   Result := Default(T);
-  PPointer(@Result)^ := inherited Exchange(PPointer(@Target)^, PPointer(@Value)^);
+  PPointer(@Result)^ := Exchange(PPointer(@Target)^, PPointer(@Value)^);
   if Assigned(Value) then
     Value._AddRef;
 end;

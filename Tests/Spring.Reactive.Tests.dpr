@@ -1,7 +1,18 @@
 program Spring.Reactive.Tests;
 
 uses
-  Spring.TestRunner,
+{$IFDEF LEAKCHECK}
+  LeakCheck,
+  LeakCheck.Utils,
+  LeakCheck.Cycle,
+  LeakCheck.DUnit,
+  LeakCheck.DUnitCycle,
+  TestFramework,
+  Classes,
+  Rtti,
+  Threading,
+{$ENDIF}
+  TestInsight.DUnit,
   Utilities in 'Utilities.pas',
   Spring.Reactive.Testing in 'Source\Reactive\Testing\Spring.Reactive.Testing.pas',
   Spring.Reactive.Testing.HotObservable in 'Source\Reactive\Testing\Spring.Reactive.Testing.HotObservable.pas',
@@ -20,7 +31,45 @@ uses
   Spring.Reactive.Tests.Aggregate in 'Source\Reactive\Observable\Spring.Reactive.Tests.Aggregate.pas',
   Spring.Reactive.Tests.Multiple in 'Source\Reactive\Observable\Spring.Reactive.Tests.Multiple.pas';
 
+function IgnoreQueueWorkerThread(const Instance: TObject; ClassType: TClass): Boolean;
+var
+  ctx: TRttiContext;
+  obj: TObject;
 begin
+  Result := ClassType.ClassName = 'TThreadPool.TQueueWorkerThread';
+  if Result then
+  begin
+    obj := ctx.GetType(ClassType).GetField('FRunningEvent').GetValue(Instance).AsObject;
+    RegisterExpectedMemoryLeak(obj);
+    RegisterExpectedMemoryLeak(ctx.GetType(obj.ClassType).GetField('FLock').GetValue(obj).AsObject);
+
+    obj := ctx.GetType(ClassType).GetField('FWorkQueue').GetValue(Instance).AsObject;
+    RegisterExpectedMemoryLeak(obj);
+    RegisterExpectedMemoryLeak(ctx.GetType(obj.ClassType).GetField('FForeignLock').GetValue(obj).AsObject);
+  end;
+end;
+
+procedure InitLeakCheck;
+begin
+{$IFDEF LEAKCHECK}
+  MemLeakMonitorClass := TLeakCheckGraphMonitor;
+
+  TTask.Run(procedure begin end);
+  TThread.CurrentThread;
+
+  TLeakCheck.IgnoredLeakTypes := [tkUnknown, tkUnicodeString];
+  TLeakCheck.InstanceIgnoredProc := IgnoreMultipleObjects;
+  AddIgnoreObjectProc([
+    IgnoreRttiObjects,
+    IgnoreAnonymousMethodPointers,
+    IgnoreCustomAttributes,
+    IgnoreQueueWorkerThread
+  ]);
+{$ENDIF}
+end;
+
+begin
+  InitLeakCheck;
   RunRegisteredTests;
   ReportMemoryLeaksOnShutdown := True;
 end.

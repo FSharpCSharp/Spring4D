@@ -82,6 +82,7 @@ end;
 
 procedure ObservableAggregateTest.TearDown;
 begin
+  scheduler := nil;
   lifetime := nil;
 end;
 

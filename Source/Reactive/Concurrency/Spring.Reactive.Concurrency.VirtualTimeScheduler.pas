@@ -74,6 +74,7 @@ type
   private
     fQueue: TSchedulerQueue<TAbsolute>;
     class function Invoke(const scheduler: IScheduler; const action: TValue): IDisposable; static;
+    class function DisposableCreate(const item: IScheduledItem<TAbsolute>): IDisposable; static;
   protected
     function GetNext: IScheduledItem<TAbsolute>; override;
   public
@@ -278,11 +279,18 @@ begin
   Result := nil;
 end;
 
+class function TVirtualTimeScheduler<TAbsolute, TRelative>.DisposableCreate(
+  const item: IScheduledItem<TAbsolute>): IDisposable;
+begin
+  Result := Disposable.Create(procedure begin item.Cancel; end);
+end;
+
 function TVirtualTimeScheduler<TAbsolute, TRelative>.ScheduleAbsolute(
   const state: TValue; const dueTime: TAbsolute;
   const action: Func<IScheduler, TValue, IDisposable>): IDisposable;
 var
-  [Unsafe]si: IScheduledItem<TAbsolute>;
+  si: IScheduledItem<TAbsolute>;
+  siWeak: Pointer;
   run: Func<IScheduler, TValue, IDisposable>;
 begin
   Guard.CheckNotNull(Assigned(action), 'action');
@@ -292,7 +300,7 @@ begin
     begin
       MonitorEnter(fQueue);
       try
-        fQueue.Remove(si);
+        fQueue.Remove(IScheduledItem<TAbsolute>(siWeak));
       finally
         MonitorExit(fQueue);
       end;
@@ -301,6 +309,7 @@ begin
     end;
 
   si := TScheduledItem<TAbsolute, TValue>.Create(Self, state, run, dueTime, Comparer);
+  siWeak := si;
 
   MonitorEnter(fQueue);
   try
@@ -309,7 +318,7 @@ begin
     MonitorExit(fQueue);
   end;
 
-  Result := Disposable.Create(procedure begin si.Cancel end);
+  Result := DisposableCreate(si);
 end;
 
 function TVirtualTimeScheduler<TAbsolute, TRelative>.ScheduleRelative(

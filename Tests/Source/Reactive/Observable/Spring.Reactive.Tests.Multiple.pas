@@ -62,6 +62,12 @@ begin
   lifetime := scheduler;
 end;
 
+procedure ObservableMultipleTest.TearDown;
+begin
+  scheduler := nil;
+  lifetime := nil;
+end;
+
 procedure ObservableMultipleTest.TakeUntil_Preempt_SomeData_Next;
 var
   l, r: ITestableObservable<Integer>;
@@ -101,11 +107,6 @@ begin
   Check(r.Subscriptions.EqualsTo([
     Subscribe(200, 225)
   ]));
-end;
-
-procedure ObservableMultipleTest.TearDown;
-begin
-  lifetime := nil;
 end;
 
 initialization
