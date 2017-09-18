@@ -404,7 +404,7 @@ function TTestCase.GetName: string;
           NativeInt(LInterface), StripUnitName(value.TypeInfo.TypeName)]);
       end;
       tkArray, tkDynArray:
-        Result := FormatArray(Self);
+        Result := FormatArray(value);
       tkChar, tkString, tkWChar, tkLString, tkWString, tkUString:
         Result := QuotedStr(value.ToString);
       tkClassRef:

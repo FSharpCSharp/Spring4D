@@ -5276,6 +5276,69 @@ begin
     value := TValue.FromOrdinal(target, i);
 end;
 
+function ConvStr2DynArray(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+var
+  s: string;
+  values: TStringDynArray;
+  i: Integer;
+  p: Pointer;
+  res, v1, v2: TValue;
+  elType: PTypeInfo;
+begin
+  s := source.AsString;
+  if StartsStr('[', s) and EndsStr(']', s) then
+    s := Copy(s, 2, Length(s) - 2);
+  values := SplitString(s, ',');
+  i := Length(values);
+  p := nil;
+  DynArraySetLength(p, target, 1, @i);
+  TValue.MakeWithoutCopy(@p, target, res);
+  elType := target.TypeData.DynArrElType^;
+  for i := 0 to High(values) do
+  begin
+    v1 := TValue.From(values[i]);
+    if not v1.TryConvert(elType, v2) then
+      Exit(False);
+    res.SetArrayElement(i, v2);
+  end;
+  value := res;
+  Result := True;
+end;
+
+function ConvStr2Array(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+var
+  s: string;
+  values: TStringDynArray;
+  arrData: TArrayTypeData;
+  elType: PTypeInfo;
+  i: Integer;
+  res, v1, v2: TValue;
+begin
+  s := source.AsString;
+  if StartsStr('[', s) and EndsStr(']', s) then
+    s := Copy(s, 2, Length(s) - 2);
+  values := SplitString(s, ',');
+
+  // todo: support multi dim arrays - assume one dim for now
+  arrData := GetTypeData(target).ArrayData;
+  elType := arrData.ElType^;
+  if Length(values) <> arrData.ElCount then
+    Exit(False);
+
+  TValue.Make(nil, target, res);
+  for i := 0 to arrData.ElCount - 1 do
+  begin
+    v1 := TValue.From(values[i]);
+    if not v1.TryConvert(elType, v2) then
+      Exit(False);
+    res.SetArrayElement(i, v2);
+  end;
+  value := res;
+  Result := True;
+end;
+
 {$ENDREGION}
 
 
@@ -5487,7 +5550,7 @@ const
       // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
       ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
       // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
-      ConvFail, ConvFail, ConvFail, ConvFail, ConvStr2Ord, ConvFail,
+      ConvFail, ConvStr2Array, ConvFail, ConvFail, ConvStr2Ord, ConvStr2DynArray,
       // tkUString, tkClassRef, tkPointer, tkProcedure
       ConvFail, ConvFail, ConvFail, ConvFail
     ),
