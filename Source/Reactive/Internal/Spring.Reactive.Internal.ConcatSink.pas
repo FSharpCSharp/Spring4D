@@ -29,13 +29,14 @@ unit Spring.Reactive.Internal.ConcatSink;
 interface
 
 uses
+  Spring.Collections,
   Spring.Reactive,
   Spring.Reactive.Internal.TailRecursiveSink;
 
 type
   TConcatSink<TSource> = class(TTailRecursiveSink<TSource>)
   protected
-    function Extract(const source: IObservable<TSource>): TArray<IObservable<TSource>>; override;
+    function Extract(const source: IObservable<TSource>): IEnumerable<IObservable<TSource>>; override;
   public
     procedure OnCompleted; override;
   end;
@@ -49,7 +50,7 @@ uses
 {$REGION 'TConcatSink<TSource>'}
 
 function TConcatSink<TSource>.Extract(
-  const source: IObservable<TSource>): TArray<IObservable<TSource>>;
+  const source: IObservable<TSource>): IEnumerable<IObservable<TSource>>;
 var
   c: IConcatenatable<TSource>;
 begin

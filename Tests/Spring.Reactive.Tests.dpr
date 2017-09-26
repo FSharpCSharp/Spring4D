@@ -31,6 +31,7 @@ uses
   Spring.Reactive.Tests.Aggregate in 'Source\Reactive\Observable\Spring.Reactive.Tests.Aggregate.pas',
   Spring.Reactive.Tests.Multiple in 'Source\Reactive\Observable\Spring.Reactive.Tests.Multiple.pas';
 
+{$IFDEF LEAKCHECK}
 function IgnoreQueueWorkerThread(const Instance: TObject; ClassType: TClass): Boolean;
 var
   ctx: TRttiContext;
@@ -48,6 +49,7 @@ begin
     RegisterExpectedMemoryLeak(ctx.GetType(obj.ClassType).GetField('FForeignLock').GetValue(obj).AsObject);
   end;
 end;
+{$ENDIF}
 
 procedure InitLeakCheck;
 begin

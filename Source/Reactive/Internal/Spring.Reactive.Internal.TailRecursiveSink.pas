@@ -45,18 +45,18 @@ type
     fStack: IStack<IEnumerator<IObservable<TSource>>>;
     fLength: IStack<Integer>;
     procedure MoveNext;
-    function TryGetEnumerator(const sources: TArray<IObservable<TSource>>;
-      out e: IEnumerator<IObservable<TSource>>): Boolean;
+    function TryGetEnumerator(const sources: IEnumerable<IObservable<TSource>>;
+      out enumerator: IEnumerator<IObservable<TSource>>): Boolean;
 
     function DisposableCreate: IDisposable;
   protected
     fRecurse: Action;
-    function Extract(const source: IObservable<TSource>): TArray<IObservable<TSource>>; virtual; abstract;
+    function Extract(const source: IObservable<TSource>): IEnumerable<IObservable<TSource>>; virtual; abstract;
     procedure Done; virtual;
     function Fail(const error: Exception): Boolean; virtual;
   public
     procedure Dispose; override;
-    function Run(const sources: TArray<IObservable<TSource>>): IDisposable;
+    function Run(const sources: IEnumerable<IObservable<TSource>>): IDisposable;
     procedure OnNext(const value: TSource); virtual; abstract;
     procedure OnCompleted; virtual; abstract;
   end;
@@ -97,7 +97,7 @@ begin
 end;
 
 function TTailRecursiveSink<TSource>.Run(
-  const sources: TArray<IObservable<TSource>>): IDisposable;
+  const sources: IEnumerable<IObservable<TSource>>): IDisposable;
 var
   e: IEnumerator<IObservable<TSource>>;
   cancelable: IDisposable;
@@ -112,7 +112,7 @@ begin
     Exit(Disposable.Empty);
 
   fStack.Push(e);
-  fLength.Push(Length(sources));
+  fLength.Push(sources.Count);
 
   cancelable := SchedulerDefaults.TailRecursion.Schedule(
     procedure(const _self: Action)
@@ -142,7 +142,7 @@ var
   l: Integer;
   current: IObservable<TSource>;
   r: Integer;
-  nextSeq: TArray<IObservable<TSource>>;
+  nextSeq: IEnumerable<IObservable<TSource>>;
   nextEnumerator: IEnumerator<IObservable<TSource>>;
   d: ISingleAssignmentDisposable;
 begin
@@ -210,7 +210,7 @@ begin
           Exit;
 
         fStack.Push(nextEnumerator);
-        fLength.Push(Length(nextSeq));
+        fLength.Push(nextSeq.Count);
 
         hasNext := False;
       end;
@@ -229,11 +229,22 @@ begin
 end;
 
 function TTailRecursiveSink<TSource>.TryGetEnumerator(
-  const sources: TArray<IObservable<TSource>>;
-  out e: IEnumerator<IObservable<TSource>>): Boolean;
+  const sources: IEnumerable<IObservable<TSource>>;
+  out enumerator: IEnumerator<IObservable<TSource>>): Boolean;
 begin
-  e := TArrayEnumerator<IObservable<TSource>>.Create(sources);
-  Result := True;
+  try
+    enumerator := sources.GetEnumerator;
+    Result := True;
+  except
+    on e: Exception do
+    begin
+      Observer.OnError(e);
+      Dispose;
+
+      enumerator := nil;
+      Result := False
+    end;
+  end;
 end;
 
 procedure TTailRecursiveSink<TSource>.Done;

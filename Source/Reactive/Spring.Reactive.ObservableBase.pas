@@ -239,7 +239,8 @@ end;
 function TObservableBase<T>.Concat(
   const second: IObservable<T>): IObservable<T>;
 begin
-  Result := TConcat<T>.Create([Self, second]);
+  Result := TConcat<T>.Create(TEnumerable.From<IObservable<T>>(
+    TArray<IObservable<T>>.Create(Self, second)));
 end;
 
 function TObservableBase<T>.Distinct: IObservable<T>;

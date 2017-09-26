@@ -38,7 +38,7 @@ uses
 type
   TConcat<TSource> = class(TProducer<TSource>, IConcatenatable<TSource>)
   private
-    fSources: TArray<IObservable<TSource>>;
+    fSources: IEnumerable<IObservable<TSource>>;
 
     type
       TSink = class(TConcatSink<TSource>)
@@ -50,8 +50,8 @@ type
       const cancel: IDisposable): TObject; override;
     function Run(const sink: TObject): IDisposable; override;
   public
-    constructor Create(const sources: array of IObservable<TSource>);
-    function GetSources: TArray<IObservable<TSource>>;
+    constructor Create(const sources: IEnumerable<IObservable<TSource>>);
+    function GetSources: IEnumerable<IObservable<TSource>>;
   end;
 
 implementation
@@ -60,9 +60,9 @@ implementation
 {$REGION 'TConcat<TSource>'}
 
 constructor TConcat<TSource>.Create(
-  const sources: array of IObservable<TSource>);
+  const sources: IEnumerable<IObservable<TSource>>);
 begin
-  fSources := TArray.Copy<IObservable<TSource>>(sources);
+  fSources := sources
 end;
 
 function TConcat<TSource>.CreateSink(const observer: IObserver<TSource>;
@@ -76,7 +76,7 @@ begin
   Result := TSink(sink).Run(fSources);
 end;
 
-function TConcat<TSource>.GetSources: TArray<IObservable<TSource>>;
+function TConcat<TSource>.GetSources: IEnumerable<IObservable<TSource>>;
 begin
   Result := fSources;
 end;
