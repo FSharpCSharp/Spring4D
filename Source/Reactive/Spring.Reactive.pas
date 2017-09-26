@@ -230,7 +230,7 @@ type
 
   IConcatenatable<TSource> = interface
     ['{CEA25C13-1109-4EB1-8BFD-8CD825601AFA}']
-    function GetSources: TArray<IObservable<TSource>>;
+    function GetSources: IEnumerable<IObservable<TSource>>;
   end;
 
   IObservableExtensions = record
@@ -261,6 +261,9 @@ type
     function Merge<TSource>(const second: IObservable<TSource>): IObservable<TSource>; overload;
 
     function Select<TSource, TResult>(const selector: Func<TSource, TResult>): IObservable<TResult>; overload;
+
+    function SkipUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
+
     function TakeUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
 
     function Window<TSource>(const count: Integer): IObservable<IObservable<TSource>>; overload;
@@ -335,6 +338,12 @@ type
     function Amb(const second: IObservable<T>): IObservable<T>;
     function Concat(const second: IObservable<T>): IObservable<T>;
 //    function Merge(const second: IObservable<T>): IObservable<T>;
+    function SkipUntil(const other: IObservable<T>): IObservable<T>;
+    function TakeUntil(const other: IObservable<T>): IObservable<T>;
+
+    // "extension" methods (QueryLanguage.Single.cs)
+    function Repeated: IObservable<T>; overload;
+    function Repeated(repeatCount: Integer): IObservable<T>; overload;
 
     procedure ForEach(const onNext: Action<T>);
 
@@ -617,6 +626,12 @@ function IObservableExtensions.Select<TSource, TResult>(
 begin
   Result := TSelect<TSource, TResult>.TSelector.Create(
     TObject(Self) as TObservableBase<TSource>, selector);
+end;
+
+function IObservableExtensions.SkipUntil<TSource, TOther>(
+  const other: IObservable<TOther>): IObservable<TSource>;
+begin
+  Result := TSkipUntil<TSource, TOther>.Create(TObject(Self) as TObservableBase<TSource>, other);
 end;
 
 function IObservableExtensions.TakeUntil<TSource, TOther>(

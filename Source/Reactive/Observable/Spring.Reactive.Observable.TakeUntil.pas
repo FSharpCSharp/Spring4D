@@ -180,24 +180,34 @@ end;
 
 procedure TTakeUntil<TSource, TOther>.TSink.TSourceObserver.OnCompleted;
 begin
-  MonitorEnter(fParent);
+  _AddRef;
   try
-    fParent.Observer.OnCompleted;
-    fParent.Dispose;
+    MonitorEnter(fParent);
+    try
+      fParent.Observer.OnCompleted;
+      fParent.Dispose;
+    finally
+      MonitorExit(fParent);
+    end;
   finally
-    MonitorExit(fParent);
+    _Release;
   end;
 end;
 
 procedure TTakeUntil<TSource, TOther>.TSink.TSourceObserver.OnError(
   const error: Exception);
 begin
-  MonitorEnter(fParent);
+  _AddRef;
   try
-    fParent.Observer.OnError(error);
-    fParent.Dispose;
+    MonitorEnter(fParent);
+    try
+      fParent.Observer.OnError(error);
+      fParent.Dispose;
+    finally
+      MonitorExit(fParent);
+    end;
   finally
-    MonitorExit(fParent);
+    _Release;
   end;
 end;
 
@@ -256,24 +266,34 @@ end;
 procedure TTakeUntil<TSource, TOther>.TSink.TOtherObserver.OnError(
   const error: Exception);
 begin
-  MonitorEnter(fParent);
+  _AddRef;
   try
-    fParent.Observer.OnError(error);
-    fParent.Dispose;
+    MonitorEnter(fParent);
+    try
+      fParent.Observer.OnError(error);
+      fParent.Dispose;
+    finally
+      MonitorExit(fParent);
+    end;
   finally
-    MonitorExit(fParent);
+    _Release;
   end;
 end;
 
 procedure TTakeUntil<TSource, TOther>.TSink.TOtherObserver.OnNext(
   const value: TOther);
 begin
-  MonitorEnter(fParent);
+  _AddRef;
   try
-    fParent.Observer.OnCompleted;
-    fParent.Dispose;
+    MonitorEnter(fParent);
+    try
+      fParent.Observer.OnCompleted;
+      fParent.Dispose;
+    finally
+      MonitorExit(fParent);
+    end;
   finally
-    MonitorExit(fParent);
+    _Release;
   end;
 end;
 

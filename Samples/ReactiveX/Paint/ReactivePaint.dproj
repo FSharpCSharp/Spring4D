@@ -1,36 +1,16 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{7F2E7A03-15F0-4651-B3B0-67CCB2495D30}</ProjectGuid>
-        <MainSource>Spring.ReactiveExtensions.dpk</MainSource>
+        <ProjectGuid>{0D14D493-7305-4E23-ADD4-A4F7FA28DF64}</ProjectGuid>
         <ProjectVersion>18.2</ProjectVersion>
-        <FrameworkType>None</FrameworkType>
+        <FrameworkType>VCL</FrameworkType>
+        <MainSource>ReactivePaint.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>131</TargetedPlatforms>
-        <AppType>Package</AppType>
+        <TargetedPlatforms>1</TargetedPlatforms>
+        <AppType>Application</AppType>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Android' and '$(Base)'=='true') or '$(Base_Android)'!=''">
-        <Base_Android>true</Base_Android>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='iOSDevice32' and '$(Base)'=='true') or '$(Base_iOSDevice32)'!=''">
-        <Base_iOSDevice32>true</Base_iOSDevice32>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='iOSDevice64' and '$(Base)'=='true') or '$(Base_iOSDevice64)'!=''">
-        <Base_iOSDevice64>true</Base_iOSDevice64>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='iOSSimulator' and '$(Base)'=='true') or '$(Base_iOSSimulator)'!=''">
-        <Base_iOSSimulator>true</Base_iOSSimulator>
-        <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
@@ -48,12 +28,6 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Linux64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Linux64)'!=''">
-        <Cfg_1_Linux64>true</Cfg_1_Linux64>
-        <CfgParent>Cfg_1</CfgParent>
-        <Cfg_1>true</Cfg_1>
-        <Base>true</Base>
-    </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
         <Cfg_1_Win32>true</Cfg_1_Win32>
         <CfgParent>Cfg_1</CfgParent>
@@ -65,51 +39,38 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <DCC_DcuOutput>..\..\Library\Delphi10Tokyo\$(Platform)\$(Config)</DCC_DcuOutput>
+        <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_E>false</DCC_E>
         <DCC_N>false</DCC_N>
         <DCC_S>false</DCC_S>
         <DCC_F>false</DCC_F>
         <DCC_K>false</DCC_K>
-        <GenDll>true</GenDll>
-        <GenPackage>true</GenPackage>
-        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Locale>1031</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <DCC_Description>Spring4D Reactive package</DCC_Description>
-        <RuntimeOnlyPackage>true</RuntimeOnlyPackage>
-        <DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-        <DllSuffix>.Delphi10Tokyo</DllSuffix>
-        <SanitizedProjectName>Spring_ReactiveExtensions</SanitizedProjectName>
-        <DCC_UnitSearchPath>..\..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_Android)'!=''">
-        <DCC_CBuilderOutput>None</DCC_CBuilderOutput>
-        <EnabledSysJars>android-support-v4.dex.jar;cloud-messaging.dex.jar;fmx.dex.jar;google-analytics-v2.dex.jar;google-play-billing.dex.jar;google-play-licensing.dex.jar;google-play-services.dex.jar</EnabledSysJars>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_iOSDevice32)'!=''">
-        <DCC_CBuilderOutput>None</DCC_CBuilderOutput>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_iOSDevice64)'!=''">
-        <DCC_CBuilderOutput>None</DCC_CBuilderOutput>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_iOSSimulator)'!=''">
-        <DCC_CBuilderOutput>None</DCC_CBuilderOutput>
+        <DCC_UsePackage>RESTBackendComponents;CloudService;soaprtl;soapmidas;RESTComponents;emsclientfiredac;DataSnapFireDAC;FireDACIBDriver;emsclient;FireDACCommon;soapserver;FireDACCommonDriver;inet;FireDAC;FireDACSqliteDriver;$(DCC_UsePackage)</DCC_UsePackage>
+        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
+        <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
+        <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
+        <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
+        <SanitizedProjectName>ReactivePaint</SanitizedProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <DCC_UsePackage>DBXSqliteDriver;dxPSPrVwRibbonRS25;dxRibbonCustomizationFormRS25;DBXDb2Driver;dxSkinOffice2007PinkRS25;dxSkinMcSkinRS25;vclactnband;vclFireDAC;cxExportRS25;dxSpreadSheetInplaceRichEditRS25;dxHttpIndyRequestRS25;tethering;dxPScxCommonRS25;FireDACADSDriver;cxPivotGridOLAPRS25;FireDACMSSQLDriver;cxSchedulerGridRS25;vcltouch;dxSkinDarkRoomRS25;dxSkinDarkSideRS25;vcldb;svn;dxGaugeControlRS25;cxLibraryRS25;acQueryBuilderD25;dxSkinOffice2007SilverRS25;dxSkinBlackRS25;dxSkinOffice2007BlueRS25;dxSkinscxSchedulerPainterRS25;acQueryBuilderDsgnD25;acQueryBuilderFireDACD25;dxSkinOffice2007BlackRS25;FireDACDBXDriver;dxSkinVS2010RS25;vclx;dxSkinFoggyRS25;dxSkinSevenRS25;dxSpreadSheetConditionalFormattingDialogsRS25;dxSkinSpringTimeRS25;dxTileControlRS25;dxMapControlRS25;dxPDFViewerRS25;dxDockingRS25;VCLRESTComponents;dxSkinsdxNavBarPainterRS25;cxPageControlRS25;dxSkinLilianRS25;dxPSLnksRS25;dxWizardControlRS25;dxRichEditControlRS25;vclie;bindengine;dxFireDACServerModeRS25;FireDACMySQLDriver;dxSkinOffice2013LightGrayRS25;dxSkinMetropolisRS25;DataSnapClient;dxPSdxPDFViewerLnkRS25;dxSkinOffice2016DarkRS25;bindcompdbx;dxSkinBlueprintRS25;dxSkinStardustRS25;DBXSybaseASEDriver;IndyIPServer;dxPSdxLCLnkRS25;IndySystem;dxSkinOffice2007GreenRS25;dsnapcon;dxLayoutControlRS25;dxPSRichEditControlLnkRS25;FireDACMSAccDriver;fmxFireDAC;FireDACInfxDriver;vclimg;dxdbtrRS25;dxPScxTLLnkRS25;emshosting;dxSpreadSheetRS25;dxSkinVisualStudio2013LightRS25;DBXOdbcDriver;FireDACTDataDriver;FMXTee;cxGridRS25;dxSkinTheAsphaltWorldRS25;DbxCommonDriver;dxPScxSchedulerLnkRS25;dxorgcRS25;dxSkinHighContrastRS25;xmlrtl;DataSnapNativeClient;fmxobj;dxPScxGridLnkRS25;rtl;DbxClientDriver;DBXSybaseASADriver;dxPSCoreRS25;dxmdsRS25;dxSkinOffice2016ColorfulRS25;appanalytics;IndyIPClient;bindcompvcl;dxSkinscxPCPainterRS25;dxThemeRS25;TeeUI;VclSmp;FireDACODBCDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;acQueryBuilderDsgnFireDACD25;FireDACMongoDBDriver;cxVerticalGridRS25;dxtrmdRS25;dxADOServerModeRS25;dxSkinPumpkinRS25;DataSnapServerMidas;dxCoreRS25;dxSkinValentineRS25;dxRichEditControlCoreRS25;DBXInterBaseDriver;cxSchedulerTreeBrowserRS25;dxSkinOffice2010BlueRS25;svnui;dxPSTeeChartRS25;dxSkinMoneyTwinsRS25;dxSkinSilverRS25;DBXMSSQLDriver;dxPSdxFCLnkRS25;dxRichEditCoreRS25;DatasnapConnectorsFreePascal;acQueryBuilderADOD25;dxSkinOffice2013WhiteRS25;bindcompfmx;DBXOracleDriver;inetdb;dxOfficeCoreRS25;FmxTeeUI;emsedge;fmx;fmxdae;dxSkinBlueRS25;dxBarDBNavRS25;dxTabbedMDIRS25;dxPScxPivotGridLnkRS25;dxSkinDevExpressDarkStyleRS25;dbexpress;IndyCore;dxFlowChartRS25;dxSkinsdxDLPainterRS25;dxRichEditDocumentModelRS25;dsnap;DataSnapCommon;dxBarRS25;dxPSDBTeeChartRS25;dxSkinLiquidSkyRS25;dxdborRS25;DataSnapConnectors;dxPScxExtCommonRS25;cxPivotGridRS25;dxPSdxSpreadSheetLnkRS25;dxSpreadSheetReportDesignerRS25;dxNavBarRS25;cxSchedulerRibbonStyleEventEditorRS25;dxSkinCoffeeRS25;FireDACOracleDriver;DBXMySQLDriver;DBXFirebirdDriver;FireDACCommonODBC;dxSkinOffice2010SilverRS25;cxTreeListRS25;dxSkinsdxBarPainterRS25;IndyIPCommon;dxSkinLondonLiquidSkyRS25;vcl;dxPScxVGridLnkRS25;dxBarExtItemsRS25;dxSkinsCoreRS25;dxComnRS25;FireDACDb2Driver;dxSkinWhiteprintRS25;dxPSdxDBTVLnkRS25;dxSkinVisualStudio2013BlueRS25;dxSkinGlassOceansRS25;dxSkinMetropolisDarkRS25;dxSkinOffice2013DarkGrayRS25;dxSkinSharpPlusRS25;TeeDB;dxSkinCaramelRS25;dxServerModeRS25;dxPScxPCProdRS25;FireDACPgDriver;dxSkiniMaginaryRS25;FireDACASADriver;cxEditorsRS25;Tee;DataSnapServer;dxPsPrVwAdvRS25;vclwinx;FireDACDSDriver;dxSkinSevenClassicRS25;cxDataRS25;dxRichEditInplaceRS25;cxTreeListdxBarPopupMenuRS25;CustomIPTransport;vcldsnap;dxPSdxOCLnkRS25;dxSkinSharpRS25;bindcomp;DBXInformixDriver;dxSkinVisualStudio2013DarkRS25;cxSchedulerRS25;dxBarExtDBItemsRS25;cxPivotGridChartRS25;dxSkinOffice2010BlackRS25;dxDBXServerModeRS25;dxSkinDevExpressStyleRS25;dxGDIPlusRS25;dxPSdxGaugeControlLnkRS25;dxSkinsdxRibbonPainterRS25;dbxcds;adortl;dxPSdxDBOCLnkRS25;acQueryBuilderDsgnADOD25;dxRibbonRS25;dsnapxml;dxSpellCheckerRS25;dbrtl;inetdbxpress;IndyProtocols;dxSkinSummer2008RS25;dxPSdxMapControlLnkRS25;dxSkinXmas2008BlueRS25;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
-        <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Locale>1033</VerInfo_Locale>
+        <DCC_UsePackage>DBXSqliteDriver;dxPSPrVwRibbonRS25;dxRibbonCustomizationFormRS25;DBXDb2Driver;dxSkinOffice2007PinkRS25;dxSkinMcSkinRS25;vclactnband;vclFireDAC;cxExportRS25;dxSpreadSheetInplaceRichEditRS25;dxHttpIndyRequestRS25;tethering;dxPScxCommonRS25;FireDACADSDriver;cxPivotGridOLAPRS25;FireDACMSSQLDriver;cxSchedulerGridRS25;vcltouch;dxSkinDarkRoomRS25;dxSkinDarkSideRS25;vcldb;dxGaugeControlRS25;cxLibraryRS25;acQueryBuilderD25;dxSkinOffice2007SilverRS25;dxSkinBlackRS25;dxSkinOffice2007BlueRS25;dxSkinscxSchedulerPainterRS25;acQueryBuilderDsgnD25;acQueryBuilderFireDACD25;dxSkinOffice2007BlackRS25;FireDACDBXDriver;dxSkinVS2010RS25;vclx;dxSkinFoggyRS25;dxSkinSevenRS25;dxSpreadSheetConditionalFormattingDialogsRS25;dxSkinSpringTimeRS25;dxTileControlRS25;dxMapControlRS25;dxPDFViewerRS25;dxDockingRS25;VCLRESTComponents;dxSkinsdxNavBarPainterRS25;cxPageControlRS25;dxSkinLilianRS25;dxPSLnksRS25;dxWizardControlRS25;dxRichEditControlRS25;vclie;bindengine;dxFireDACServerModeRS25;FireDACMySQLDriver;dxSkinOffice2013LightGrayRS25;dxSkinMetropolisRS25;DataSnapClient;dxPSdxPDFViewerLnkRS25;dxSkinOffice2016DarkRS25;bindcompdbx;dxSkinBlueprintRS25;dxSkinStardustRS25;DBXSybaseASEDriver;IndyIPServer;dxPSdxLCLnkRS25;IndySystem;dxSkinOffice2007GreenRS25;dsnapcon;dxLayoutControlRS25;dxPSRichEditControlLnkRS25;FireDACMSAccDriver;fmxFireDAC;FireDACInfxDriver;vclimg;dxdbtrRS25;dxPScxTLLnkRS25;emshosting;dxSpreadSheetRS25;dxSkinVisualStudio2013LightRS25;DBXOdbcDriver;FireDACTDataDriver;FMXTee;cxGridRS25;dxSkinTheAsphaltWorldRS25;DbxCommonDriver;dxPScxSchedulerLnkRS25;dxorgcRS25;dxSkinHighContrastRS25;xmlrtl;DataSnapNativeClient;fmxobj;dxPScxGridLnkRS25;rtl;DbxClientDriver;DBXSybaseASADriver;dxPSCoreRS25;dxmdsRS25;dxSkinOffice2016ColorfulRS25;appanalytics;IndyIPClient;bindcompvcl;dxSkinscxPCPainterRS25;dxThemeRS25;TeeUI;VclSmp;FireDACODBCDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;acQueryBuilderDsgnFireDACD25;FireDACMongoDBDriver;cxVerticalGridRS25;dxtrmdRS25;dxADOServerModeRS25;dxSkinPumpkinRS25;DataSnapServerMidas;dxCoreRS25;dxSkinValentineRS25;dxRichEditControlCoreRS25;DBXInterBaseDriver;cxSchedulerTreeBrowserRS25;dxSkinOffice2010BlueRS25;dxPSTeeChartRS25;dxSkinMoneyTwinsRS25;dxSkinSilverRS25;DBXMSSQLDriver;dxPSdxFCLnkRS25;dxRichEditCoreRS25;DatasnapConnectorsFreePascal;acQueryBuilderADOD25;dxSkinOffice2013WhiteRS25;bindcompfmx;DBXOracleDriver;inetdb;dxOfficeCoreRS25;FmxTeeUI;emsedge;fmx;fmxdae;dxSkinBlueRS25;dxBarDBNavRS25;dxTabbedMDIRS25;dxPScxPivotGridLnkRS25;dxSkinDevExpressDarkStyleRS25;dbexpress;IndyCore;dxFlowChartRS25;dxSkinsdxDLPainterRS25;dxRichEditDocumentModelRS25;dsnap;DataSnapCommon;dxBarRS25;dxPSDBTeeChartRS25;dxSkinLiquidSkyRS25;dxdborRS25;DataSnapConnectors;dxPScxExtCommonRS25;cxPivotGridRS25;dxPSdxSpreadSheetLnkRS25;dxSpreadSheetReportDesignerRS25;dxNavBarRS25;cxSchedulerRibbonStyleEventEditorRS25;dxSkinCoffeeRS25;FireDACOracleDriver;DBXMySQLDriver;DBXFirebirdDriver;FireDACCommonODBC;dxSkinOffice2010SilverRS25;cxTreeListRS25;dxSkinsdxBarPainterRS25;IndyIPCommon;dxSkinLondonLiquidSkyRS25;vcl;dxPScxVGridLnkRS25;dxBarExtItemsRS25;dxSkinsCoreRS25;dxComnRS25;FireDACDb2Driver;dxSkinWhiteprintRS25;dxPSdxDBTVLnkRS25;dxSkinVisualStudio2013BlueRS25;dxSkinGlassOceansRS25;dxSkinMetropolisDarkRS25;dxSkinOffice2013DarkGrayRS25;dxSkinSharpPlusRS25;TeeDB;dxSkinCaramelRS25;dxServerModeRS25;dxPScxPCProdRS25;FireDACPgDriver;dxSkiniMaginaryRS25;FireDACASADriver;cxEditorsRS25;Tee;DataSnapServer;dxPsPrVwAdvRS25;vclwinx;FireDACDSDriver;dxSkinSevenClassicRS25;cxDataRS25;dxRichEditInplaceRS25;cxTreeListdxBarPopupMenuRS25;CustomIPTransport;vcldsnap;dxPSdxOCLnkRS25;dxSkinSharpRS25;bindcomp;DBXInformixDriver;dxSkinVisualStudio2013DarkRS25;cxSchedulerRS25;dxBarExtDBItemsRS25;cxPivotGridChartRS25;dxSkinOffice2010BlackRS25;dxDBXServerModeRS25;dxSkinDevExpressStyleRS25;dxGDIPlusRS25;dxPSdxGaugeControlLnkRS25;dxSkinsdxRibbonPainterRS25;dbxcds;adortl;dxPSdxDBOCLnkRS25;acQueryBuilderDsgnADOD25;dxRibbonRS25;dsnapxml;dxSpellCheckerRS25;dbrtl;inetdbxpress;IndyProtocols;dxSkinSummer2008RS25;dxPSdxMapControlLnkRS25;dxSkinXmas2008BlueRS25;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -119,13 +80,10 @@
         <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1_Linux64)'!=''">
-        <Debugger_Launcher>/usr/bin/xterm -e &quot;%debuggee%&quot;</Debugger_Launcher>
-    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Locale>1033</VerInfo_Locale>
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <AppEnableHighDPI>true</AppEnableHighDPI>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -133,96 +91,18 @@
         <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
         <DCC_DebugInformation>0</DCC_DebugInformation>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <AppEnableHighDPI>true</AppEnableHighDPI>
+    </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Spring.Base.dcp"/>
-        <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.AnonymousObservable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.AnonymousObserver.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.AsyncLock.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ConcurrencyAbstractionLayer.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.CurrentThreadScheduler.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.DefaultScheduler.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ImmediateScheduler.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.LocalScheduler.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.MainThreadScheduler.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.ScheduledItem.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.Scheduler.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerDefaults.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.SchedulerQueue.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.Synchronization.ObserveOn.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Concurrency\Spring.Reactive.Concurrency.VirtualTimeScheduler.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.AnonymousDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.BooleanDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.CompositeDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.DefaultDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.RefCountDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.ScheduledDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SerialDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.SingleAssignmentDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Disposables\Spring.Reactive.Disposables.StableCompositeDisposable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.GroupedObservable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.AnonymousEnumerable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.AutoDetachObserver.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.ConcatSink.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Helpers.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Observers.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.PriorityQueue.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Producer.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.ScheduledObserver.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Sink.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Stubs.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Internal\Spring.Reactive.Internal.TailRecursiveSink.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.Notification.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.AddRef.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.All.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Amb.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Any.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Buffer.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.CombineLatest.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Concat.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Distinct.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.DistinctUntilChanged.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.DoAction.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Empty.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.FromEvent.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.GetEnumerator.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.GroupBy.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.IgnoreElements.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Merge.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Never.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Range.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Return.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Sample.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Select.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Skip.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipLast.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipUntil.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipWhile.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Take.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeLast.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeUntil.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeWhile.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throw.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Timer.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.ToObservable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throttle.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Where.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Window.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Zip.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.ObservableBase.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.ObserverBase.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.AsyncSubject.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.BehaviorSubject.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.ConnectableObservable.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.ReplaySubject.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.Subject.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Subjects\Spring.Reactive.Subjects.SubjectBase.pas"/>
-        <DCCReference Include="..\..\Source\Reactive\Spring.Reactive.TimeInterval.pas"/>
+        <DCCReference Include="..\MouseEvents\Unit1.pas">
+            <Form>Form104</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -237,46 +117,26 @@
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Delphi.Personality.12</Borland.Personality>
-        <Borland.ProjectType>Package</Borland.ProjectType>
+        <Borland.ProjectType>Application</Borland.ProjectType>
         <BorlandProject>
             <Delphi.Personality>
-                <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k250.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp250.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
-                </Excluded_Packages>
                 <Source>
-                    <Source Name="MainSource">Spring.ReactiveExtensions.dpk</Source>
+                    <Source Name="MainSource">ReactivePaint.dpr</Source>
                 </Source>
             </Delphi.Personality>
             <Deployment Version="3">
-                <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">
-                    <Platform Name="OSX32">
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="$(BDS)\Redist\iossimulator\libcgunwind.1.0.dylib" Class="DependencyModule">
-                    <Platform Name="iOSSimulator">
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="$(BDS)\Redist\iossimulator\libPCRE.dylib" Class="DependencyModule">
-                    <Platform Name="iOSSimulator">
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="$(BDS)\Redist\osx32\libcgsqlite3.dylib" Class="DependencyModule">
-                    <Platform Name="OSX32">
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="..\..\..\..\..\..\..\..\Public\Documents\Embarcadero\Studio\19.0\Bpl\Spring.ReactiveExtensions.Delphi10Tokyo.bpl" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="Win32\Debug\ReactivePaint.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
-                        <RemoteName>Spring_ReactiveExtensions.bpl</RemoteName>
+                        <RemoteName>ReactivePaint.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
+                    <Platform Name="iOSSimulator">
+                        <Operation>1</Operation>
+                    </Platform>
                     <Platform Name="OSX32">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="Win32">
@@ -391,6 +251,7 @@
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="OSX32">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="Win32">
@@ -399,6 +260,7 @@
                 </DeployClass>
                 <DeployClass Name="DependencyFramework">
                     <Platform Name="OSX32">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
                         <Operation>1</Operation>
                         <Extensions>.framework</Extensions>
                     </Platform>
@@ -407,7 +269,20 @@
                     </Platform>
                 </DeployClass>
                 <DeployClass Name="DependencyModule">
+                    <Platform Name="iOSDevice32">
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                    <Platform Name="iOSDevice64">
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
                     <Platform Name="OSX32">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
                         <Operation>1</Operation>
                         <Extensions>.dylib</Extensions>
                     </Platform>
@@ -430,6 +305,7 @@
                         <Extensions>.dylib</Extensions>
                     </Platform>
                     <Platform Name="OSX32">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
                         <Operation>1</Operation>
                         <Extensions>.dylib</Extensions>
                     </Platform>
@@ -452,6 +328,7 @@
                         <Operation>0</Operation>
                     </Platform>
                     <Platform Name="OSX32">
+                        <RemoteDir>Contents\Resources\StartUp\</RemoteDir>
                         <Operation>0</Operation>
                     </Platform>
                     <Platform Name="Win32">
@@ -550,9 +427,35 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Name="ProjectiOSDeviceResourceRules"/>
-                <DeployClass Name="ProjectiOSEntitlements"/>
-                <DeployClass Name="ProjectiOSInfoPList"/>
+                <DeployClass Name="ProjectiOSDeviceResourceRules">
+                    <Platform Name="iOSDevice32">
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSDevice64">
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectiOSEntitlements">
+                    <Platform Name="iOSDevice32">
+                        <RemoteDir>..\</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectiOSInfoPList">
+                    <Platform Name="iOSDevice32">
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSDevice64">
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
                 <DeployClass Name="ProjectiOSResource">
                     <Platform Name="iOSDevice32">
                         <Operation>1</Operation>
@@ -564,8 +467,18 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Name="ProjectOSXEntitlements"/>
-                <DeployClass Name="ProjectOSXInfoPList"/>
+                <DeployClass Name="ProjectOSXEntitlements">
+                    <Platform Name="OSX32">
+                        <RemoteDir>..\</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectOSXInfoPList">
+                    <Platform Name="OSX32">
+                        <RemoteDir>Contents</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
                 <DeployClass Name="ProjectOSXResource">
                     <Platform Name="OSX32">
                         <RemoteDir>Contents\Resources</RemoteDir>
@@ -590,6 +503,7 @@
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="OSX32">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="Win32">
@@ -629,19 +543,13 @@
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Linux64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
-                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <Platforms>
-                <Platform value="Android">False</Platform>
-                <Platform value="iOSDevice32">False</Platform>
-                <Platform value="iOSDevice64">False</Platform>
-                <Platform value="iOSSimulator">False</Platform>
-                <Platform value="Linux64">True</Platform>
-                <Platform value="OSX32">False</Platform>
                 <Platform value="Win32">True</Platform>
-                <Platform value="Win64">True</Platform>
+                <Platform value="Win64">False</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>

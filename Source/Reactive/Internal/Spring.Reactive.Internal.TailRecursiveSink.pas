@@ -43,7 +43,7 @@ type
     fSubscription: ISerialDisposable;
     fGate: IAsyncLock;
     fStack: IStack<IEnumerator<IObservable<TSource>>>;
-    fLength: IStack<Integer>;
+    fLength: IStack<Nullable<Integer>>;
     procedure MoveNext;
     function TryGetEnumerator(const sources: IEnumerable<IObservable<TSource>>;
       out enumerator: IEnumerator<IObservable<TSource>>): Boolean;
@@ -76,7 +76,8 @@ implementation
 
 uses
   Spring.Reactive.Concurrency.SchedulerDefaults,
-  Spring.Reactive.Disposables;
+  Spring.Reactive.Disposables,
+  Spring.Reactive.Internal.Helpers;
 
 
 {$REGION 'TTailRecursiveSink<TSource>'}
@@ -106,13 +107,13 @@ begin
   fSubscription := TSerialDisposable.Create;
   fGate := TAsyncLock.Create;
   fStack := TCollections.CreateStack<IEnumerator<IObservable<TSource>>>;
-  fLength := TCollections.CreateStack<Integer>;
+  fLength := TCollections.CreateStack<Nullable<Integer>>;
   e := nil;
   if not TryGetEnumerator(sources, e) then
     Exit(Disposable.Empty);
 
   fStack.Push(e);
-  fLength.Push(sources.Count);
+  fLength.Push(Helpers.GetLength<IObservable<TSource>>(sources));
 
   cancelable := SchedulerDefaults.TailRecursion.Schedule(
     procedure(const _self: Action)
@@ -139,9 +140,9 @@ var
   hasNext: Boolean;
   next: IObservable<TSource>;
   e: IEnumerator<IObservable<TSource>>;
-  l: Integer;
+  l: Nullable<Integer>;
   current: IObservable<TSource>;
-  r: Integer;
+  r: Nullable<Integer>;
   nextSeq: IEnumerable<IObservable<TSource>>;
   nextEnumerator: IEnumerator<IObservable<TSource>>;
   d: ISingleAssignmentDisposable;
@@ -181,7 +182,10 @@ begin
     end
     else
     begin
-      r := l - 1;
+      if l.HasValue then
+        r := l.Value - 1
+      else
+        r := nil;
       fLength.Pop;
       fLength.Push(r);
 
@@ -210,7 +214,7 @@ begin
           Exit;
 
         fStack.Push(nextEnumerator);
-        fLength.Push(nextSeq.Count);
+        fLength.Push(Helpers.GetLength<IObservable<TSource>>(nextSeq));
 
         hasNext := False;
       end;

@@ -31,9 +31,20 @@ interface
 uses
   Spring,
   Spring.Collections,
+  Spring.Collections.Base,
   Spring.Reactive;
 
 type
+  TInfiniteIterator<T> = class(TIterator<T>)
+  private
+    fValue: T;
+  protected
+    function Clone: TIterator<T>; override;
+    function TryMoveNext(var current: T): Boolean; override;
+  public
+    constructor Create(const value: T);
+  end;
+
   TObservableBase<T> = class(TinterfacedObject, IObservable<T>)
   private
     function ScheduledSubscribe(const _: IScheduler; const autoDetachObserver: TValue): IDisposable;
@@ -72,13 +83,17 @@ type
 //    function GetEnumerator: IEnumerator<T>;
     function IgnoreElements: IObservable<T>;
     function Publish: IConnectableObservable<T>;
+    function Repeated: IObservable<T>; overload;
+    function Repeated(repeatCount: Integer): IObservable<T>; overload;
     function Sample(const interval: TTimeSpan): IObservable<T>;
     function Skip(count: Integer): IObservable<T>;
     function SkipLast(count: Integer): IObservable<T>;
+    function SkipUntil(const other: IObservable<T>): IObservable<T>;
     function SkipWhile(const predicate: Predicate<T>): IObservable<T>; overload;
     function SkipWhile(const predicate: Func<T, Integer, Boolean>): IObservable<T>; overload;
     function Take(count: Integer): IObservable<T>;
     function TakeLast(count: Integer): IObservable<T>;
+    function TakeUntil(const other: IObservable<T>): IObservable<T>;
     function TakeWhile(const predicate: Predicate<T>): IObservable<T>; overload;
     function TakeWhile(const predicate: Func<T, Integer, Boolean>): IObservable<T>; overload;
     function Throttle(const dueTime: TTimeSpan): IObservable<T>;
@@ -108,9 +123,11 @@ uses
   Spring.Reactive.Observable.Sample,
   Spring.Reactive.Observable.Skip,
   Spring.Reactive.Observable.SkipLast,
+  Spring.Reactive.Observable.SkipUntil,
   Spring.Reactive.Observable.SkipWhile,
   Spring.Reactive.Observable.Take,
   Spring.Reactive.Observable.TakeLast,
+  Spring.Reactive.Observable.TakeUntil,
   Spring.Reactive.Observable.TakeWhile,
   Spring.Reactive.Observable.Throttle,
   Spring.Reactive.Observable.Where,
@@ -348,6 +365,16 @@ begin
   Result := TConnectableObservable<T,T>.Create(Self, TSubject<T>.Create as ISubject<T>);
 end;
 
+function TObservableBase<T>.Repeated: IObservable<T>;
+begin
+  Result := TConcat<T>.Create(TInfiniteIterator<IObservable<T>>.Create(Self));
+end;
+
+function TObservableBase<T>.Repeated(repeatCount: Integer): IObservable<T>;
+begin
+  Result := TConcat<T>.Create(TEnumerable.Repeated<IObservable<T>>(Self, repeatCount));
+end;
+
 function TObservableBase<T>.Sample(const interval: TTimeSpan): IObservable<T>;
 begin
   Result := TSample<T>.Create(Self, interval, SchedulerDefaults.TimeBasedOperations);
@@ -361,6 +388,12 @@ end;
 function TObservableBase<T>.SkipLast(count: Integer): IObservable<T>;
 begin
   Result := TSkipLast<T>.Create(Self, count);
+end;
+
+function TObservableBase<T>.SkipUntil(
+  const other: IObservable<T>): IObservable<T>;
+begin
+  Result := TSkipUntil<T,T>.Create(Self, other);
 end;
 
 function TObservableBase<T>.SkipWhile(
@@ -383,6 +416,12 @@ end;
 function TObservableBase<T>.TakeLast(count: Integer): IObservable<T>;
 begin
   Result := TTakeLast<T>.Create(Self, count, SchedulerDefaults.Iteration);
+end;
+
+function TObservableBase<T>.TakeUntil(
+  const other: IObservable<T>): IObservable<T>;
+begin
+  Result := TTakeUntil<T,T>.Create(Self, other);
 end;
 
 function TObservableBase<T>.TakeWhile(
@@ -411,6 +450,28 @@ end;
 function TObservableBase<T>._: IObservableExtensions;
 begin
   Result := IObservableExtensions(Self);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInfiniteIterator<T>'}
+
+constructor TInfiniteIterator<T>.Create(const value: T);
+begin
+  inherited Create;
+  fValue := value;
+end;
+
+function TInfiniteIterator<T>.Clone: TIterator<T>;
+begin
+  Result := TInfiniteIterator<T>.Create(fValue);
+end;
+
+function TInfiniteIterator<T>.TryMoveNext(var current: T): Boolean;
+begin
+  current := fValue;
+  Result := True;
 end;
 
 {$ENDREGION}

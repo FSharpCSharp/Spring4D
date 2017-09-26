@@ -65,6 +65,7 @@ contains
   Spring.Reactive.Internal.AnonymousEnumerable in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.AnonymousEnumerable.pas',
   Spring.Reactive.Internal.AutoDetachObserver in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.AutoDetachObserver.pas',
   Spring.Reactive.Internal.ConcatSink in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.ConcatSink.pas',
+  Spring.Reactive.Internal.Helpers in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Helpers.pas',
   Spring.Reactive.Internal.Observers in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Observers.pas',
   Spring.Reactive.Internal.PriorityQueue in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.PriorityQueue.pas',
   Spring.Reactive.Internal.Producer in '..\..\Source\Reactive\Internal\Spring.Reactive.Internal.Producer.pas',
