@@ -72,6 +72,11 @@ type
     function Schedule(const state: TValue; const dueTime: TDateTime;
       const action: Func<IScheduler, TValue, IDisposable>): IDisposable; overload; virtual; abstract;
 
+    // extension methods from Scheduler.Services.Emulation.cs
+//    function SchedulePeriodic(const period: TTimeSpan; const action: Action): IDisposable; overload;
+//    function SchedulePeriodic(const state: TValue; const period: TTimeSpan; const action: Action<TValue>): IDisposable; overload;
+//    function SchedulePeriodic(const state: TValue; const period: TTimeSpan; const action: Func<TValue, TValue>): IDisposable; overload;
+
     // extension methods from Scheduler.Simple.cs
     function Schedule(const action: Action): IDisposable; overload;
     function Schedule(const dueTime: TTimeSpan; const action: Action): IDisposable; overload;
@@ -271,6 +276,21 @@ begin
   Result := Schedule(TValue.From(pair), dueTime, InvokeRec2);
 //  return scheduler.Schedule(new Pair<TState, Action<TState, Action<TState, TimeSpan>>> { First = state, Second = action }, dueTime, InvokeRec2);
 end;
+
+//function TScheduler.SchedulePeriodic(const period: TTimeSpan;
+//  const action: Action): IDisposable;
+//begin
+//end;
+//
+//function TScheduler.SchedulePeriodic(const state: TValue;
+//  const period: TTimeSpan; const action: Action<TValue>): IDisposable;
+//begin
+//end;
+//
+//function TScheduler.SchedulePeriodic(const state: TValue;
+//  const period: TTimeSpan; const action: Func<TValue, TValue>): IDisposable;
+//begin
+//end;
 
 class function TScheduler.InvokeRec2(const scheduler: IScheduler;
   const pair: TValue): IDisposable;

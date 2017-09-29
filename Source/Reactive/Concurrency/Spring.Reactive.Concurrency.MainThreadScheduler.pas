@@ -37,11 +37,15 @@ type
   TMainThreadScheduler = class(TLocalScheduler{, ISchedulerPeriodic})
   private
     class var fInstance: IScheduler;
+    function ScheduleSlow(const state: TValue; const dueTime: TTimeSpan;
+      const action: Func<IScheduler, TValue, IDisposable>): IDisposable;
   public
     class constructor Create;
     class property Instance: IScheduler read fInstance;
-  public
+
     function Schedule(const state: TValue;
+      const action: Func<IScheduler, TValue, IDisposable>): IDisposable; override;
+    function Schedule(const state: TValue; const dueTime: TTimeSpan;
       const action: Func<IScheduler, TValue, IDisposable>): IDisposable; override;
   end;
 
@@ -76,6 +80,28 @@ begin
     end);
 
   Result := d;
+end;
+
+function TMainThreadScheduler.Schedule(const state: TValue;
+  const dueTime: TTimeSpan;
+  const action: Func<IScheduler, TValue, IDisposable>): IDisposable;
+var
+  dt: TTimeSpan;
+begin
+  Guard.CheckNotNull(Assigned(action), 'action');
+
+  dt := Normalize(dueTime);
+  if dt.Ticks = 0 then
+    Result := Schedule(state, action)
+  else
+    Result := ScheduleSlow(state, dt, action);
+end;
+
+function TMainThreadScheduler.ScheduleSlow(const state: TValue;
+  const dueTime: TTimeSpan;
+  const action: Func<IScheduler, TValue, IDisposable>): IDisposable;
+begin
+  raise ENotImplementedException.Create('ScheduleSlow');
 end;
 
 {$ENDREGION}

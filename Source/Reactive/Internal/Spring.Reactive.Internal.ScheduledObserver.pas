@@ -50,6 +50,7 @@ type
     fState: Integer;
 
     fQueue: TThreadedQueue<T>;
+    fQueueSize: Integer;
     fFailed: Boolean;
     fError: Exception;
     fCompleted: Boolean;
@@ -83,6 +84,7 @@ type
   public
     constructor Create(const scheduler: IScheduler; const observer: IObserver<T>;
       const cancel: IDisposable);
+    procedure Dispose; override;
   end;
 
 implementation
@@ -103,7 +105,8 @@ constructor TScheduledObserver<T>.Create(const scheduler: IScheduler;
   const observer: IObserver<T>);
 begin
   inherited Create;
-  fQueue := TThreadedQueue<T>.Create(10, INFINITE, 0);
+  fQueue := TThreadedQueue<T>.Create(10, 10, 0);
+  fQueueSize := 10;
   fDisposable := TSerialDisposable.Create;
 
   fScheduler := scheduler;
@@ -167,8 +170,14 @@ begin
 end;
 
 procedure TScheduledObserver<T>.OnNextCore(const value: T);
+var
+  queueSize: Integer;
 begin
-  fQueue.PushItem(value);
+  while (fQueue.PushItem(value, queueSize) = wrTimeout) and (queueSize = fQueueSize) do
+  begin
+    fQueue.Grow(10);
+    Inc(fQueueSize, 10);
+  end;
 end;
 
 procedure TScheduledObserver<T>.Run(const state: TValue;
@@ -249,6 +258,16 @@ constructor TObserveOnObserver<T>.Create(const scheduler: IScheduler;
 begin
   inherited Create(scheduler, observer);
   fCancel := cancel;
+end;
+
+procedure TObserveOnObserver<T>.Dispose;
+var
+  cancel: IDisposable;
+begin
+  inherited Dispose;
+  cancel := TInterlocked.Exchange<IDisposable>(fCancel, nil);
+  if Assigned(cancel) then
+    cancel.Dispose;
 end;
 
 procedure TObserveOnObserver<T>.OnNextCore(const value: T);

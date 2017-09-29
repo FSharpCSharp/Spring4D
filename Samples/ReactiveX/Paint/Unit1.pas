@@ -53,6 +53,7 @@ var
   mouseDrags: IObservable<TMouseMoveEventArgs>;
   mouseDblClicks: IObservable<TNotifyEventArgs>;
 begin
+  ReportMemoryLeaksOnShutdown := True;
   Canvas.Pen.Width := 5;
   Canvas.Pen.Color := clBlue;
 
@@ -67,7 +68,7 @@ begin
     .Repeated;
 
   mouseDowns
-    .SubscribeOn(TScheduler.MainThread)
+    .ObserveOn(TScheduler.MainThread)
     .Subscribe(
     procedure(const event: TMouseEventArgs)
     begin
@@ -75,7 +76,7 @@ begin
     end);
 
   mouseDrags
-    .SubscribeOn(TScheduler.MainThread)
+    .ObserveOn(TScheduler.MainThread)
     .Subscribe(
     procedure(const event: TMouseMoveEventArgs)
     begin
@@ -83,7 +84,7 @@ begin
     end);
 
   mouseDblClicks
-    .SubscribeOn(TScheduler.MainThread)
+    .ObserveOn(TScheduler.MainThread)
     .Subscribe(
     procedure(const event: TNotifyEventArgs)
     begin

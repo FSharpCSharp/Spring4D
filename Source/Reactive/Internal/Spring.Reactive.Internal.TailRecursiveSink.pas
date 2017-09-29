@@ -61,17 +61,6 @@ type
     procedure OnCompleted; virtual; abstract;
   end;
 
-  TArrayEnumerator<T> = class(TEnumeratorBase<T>)
-  private
-    fSource: TArray<T>;
-    fIndex: Integer;
-  protected
-    function GetCurrent: T; override;
-  public
-    constructor Create(const source: TArray<T>);
-    function MoveNext: Boolean; override;
-  end;
-
 implementation
 
 uses
@@ -95,6 +84,8 @@ begin
   end;
 
   fIsDisposed := True;
+
+  inherited Dispose;
 end;
 
 function TTailRecursiveSink<TSource>.Run(
@@ -263,30 +254,6 @@ begin
   Dispose;
 
   Result := True;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TArrayEnumerator<T>' }
-
-constructor TArrayEnumerator<T>.Create(const source: TArray<T>);
-begin
-  inherited Create;
-  fSource := source;
-  fIndex := -1;
-end;
-
-function TArrayEnumerator<T>.GetCurrent: T;
-begin
-  Result := fSource[fIndex];
-end;
-
-function TArrayEnumerator<T>.MoveNext: Boolean;
-begin
-  Result := fIndex < High(fSource);
-  if Result then
-    Inc(fIndex);
 end;
 
 {$ENDREGION}

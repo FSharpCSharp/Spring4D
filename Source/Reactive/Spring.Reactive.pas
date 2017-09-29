@@ -197,6 +197,11 @@ type
       const action: Func<IScheduler, TValue, IDisposable>): IDisposable; overload;
     property Now: TDateTime read GetNow;
 
+    // extension methods from Scheduler.Services.Emulation.cs
+//    function SchedulePeriodic(const period: TTimeSpan; const action: Action): IDisposable; overload;
+//    function SchedulePeriodic(const state: TValue; const period: TTimeSpan; const action: Action<TValue>): IDisposable; overload;
+//    function SchedulePeriodic(const state: TValue; const period: TTimeSpan; const action: Func<TValue, TValue>): IDisposable; overload;
+
     // extension methods from Scheduler.Simple.cs
     function Schedule(const action: Action): IDisposable; overload;
     function Schedule(const dueTime: TTimeSpan; const action: Action): IDisposable; overload;
@@ -464,11 +469,11 @@ type
   EObjectDisposedException = class(EInvalidOperationException); // TODO: move to Spring.pas
 
 type
-  TEventWrapper<TArgs> = class(TComponent) // TODO: move into own unit once properly implemented
+  TEventWrapper = class(TComponent) // TODO: move into own unit once properly implemented
   private
     fRemoveHandler: Action;
   public
-    destructor Destroy; override;
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     property RemoveHandler: Action read fRemoveHandler write fRemoveHandler;
   end;
 
@@ -848,7 +853,7 @@ var
   handler: TValue;
 
   obs: ISubject<T>;
-  wrapper: TEventWrapper<T>;
+  wrapper: TEventWrapper;
 begin
   event := TType.GetType(target.ClassInfo).GetProperty(eventName);
   args := (event.PropertyType as TRttiInvokableType).GetParameters;
@@ -877,7 +882,7 @@ begin
 
   obs := TSubject<T>.Create;
 
-  wrapper := TEventWrapper<T>.Create(target);
+  wrapper := TEventWrapper.Create(target);
   wrapper.RemoveHandler :=
     procedure
     begin
@@ -995,11 +1000,12 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TEventWrapper<TArgs>'}
+{$REGION 'TEventWrapper'}
 
-destructor TEventWrapper<TArgs>.Destroy;
+procedure TEventWrapper.Notification(AComponent: TComponent;
+  Operation: TOperation);
 begin
-  if Assigned(fRemoveHandler) then
+  if Assigned(fRemoveHandler) and (Operation = opRemove) and (csDestroying in ComponentState) then
   begin
     fRemoveHandler;
     fRemoveHandler := nil;

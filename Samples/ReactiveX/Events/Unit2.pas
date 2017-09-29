@@ -47,16 +47,16 @@ uses
 type
   TProgressBarHelper = class helper for TProgressBar
   private
-    function GetPositoon: Integer;
+    function GetPosition: Integer;
     procedure SetPosition(const Value: Integer);
   public
     procedure StepIt();
-    property Position: Integer read GetPositoon write SetPosition;
+    property Position: Integer read GetPosition write SetPosition;
   end;
 
 { TProgressBarHelper }
 
-function TProgressBarHelper.GetPositoon: Integer;
+function TProgressBarHelper.GetPosition: Integer;
 begin
   Result := inherited Position;
 end;

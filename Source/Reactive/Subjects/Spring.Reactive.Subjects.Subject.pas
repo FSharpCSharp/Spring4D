@@ -38,7 +38,12 @@ type
   TSubject<T> = class(TSubjectBase<T>, IDisposable)
   private
     fObserver: IObserver<T>;
+    // getter function is necessary to ensure the
+    // instance is alive during any calls made on it
+    function GetObserver: IObserver<T>;
     procedure Unsubscribe(const observer: IObserver<T>);
+  protected
+    property Observer: IObserver<T> read GetObserver;
   public
     constructor Create;
     procedure Dispose; override;
@@ -68,6 +73,11 @@ type
     private
       fObserver: IObserver<TSource>;
       fObservable: IObservable<TResult>;
+      // getter function is necessary to ensure the
+      // instance is alive during any calls made on it
+      function GetObserver: IObserver<TSource>;
+    protected
+      property Observer: IObserver<TSource> read GetObserver;
     public
       constructor Create(const observer: IObserver<TSource>;
         const observable: IObservable<TResult>);
@@ -110,6 +120,11 @@ begin
   fObserver := TDisposedObserver<T>.Instance;
 end;
 
+function TSubject<T>.GetObserver: IObserver<T>;
+begin
+  Result := fObserver;
+end;
+
 procedure TSubject<T>.OnCompleted;
 var
   oldObserver, newObserver: IObserver<T>;
@@ -144,7 +159,7 @@ end;
 
 procedure TSubject<T>.OnNext(const value: T);
 begin
-  fObserver.OnNext(value);
+  Observer.OnNext(value);
 end;
 
 function TSubject<T>.Subscribe(const observer: IObserver<T>): IDisposable;
@@ -291,22 +306,27 @@ procedure TSubject.TAnonymousSubject<TSource, TResult>.Dispose;
 begin
 end;
 
+function TSubject.TAnonymousSubject<TSource, TResult>.GetObserver: IObserver<TSource>;
+begin
+  Result := fObserver;
+end;
+
 procedure TSubject.TAnonymousSubject<TSource, TResult>.OnCompleted;
 begin
-  fObserver.OnCompleted;
+  Observer.OnCompleted;
 end;
 
 procedure TSubject.TAnonymousSubject<TSource, TResult>.OnError(
   const error: Exception);
 begin
   Guard.CheckNotNull(error, 'error');
-  fObserver.OnError(error);
+  Observer.OnError(error);
 end;
 
 procedure TSubject.TAnonymousSubject<TSource, TResult>.OnNext(
   const value: TSource);
 begin
-  fObserver.OnNext(value);
+  Observer.OnNext(value);
 end;
 
 function TSubject.TAnonymousSubject<TSource, TResult>.Subscribe(
