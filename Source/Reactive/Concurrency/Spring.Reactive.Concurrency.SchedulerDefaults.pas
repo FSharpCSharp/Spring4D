@@ -38,6 +38,7 @@ type
     class var fTailRecursion: IScheduler;
     class var fIteration: IScheduler;
     class var fTimeBasedOperations: IScheduler;
+    class var fAsyncConversions: IScheduler;
   public
     class constructor Create;
     class destructor Destroy;
@@ -46,6 +47,7 @@ type
     class property TailRecursion: IScheduler read fTailRecursion;
     class property Iteration: IScheduler read fIteration;
     class property TimeBasedOperations: IScheduler read fTimeBasedOperations;
+    class property AsyncConversions: IScheduler read fAsyncConversions;
   end;
 
 implementation
@@ -64,6 +66,7 @@ begin
   fTailRecursion := TImmediateScheduler.Instance;
   fIteration := TCurrentThreadScheduler.Instance;
   fTimeBasedOperations := TDefaultScheduler.Instance;
+  fAsyncConversions := TDefaultScheduler.Instance;
 end;
 
 class destructor SchedulerDefaults.Destroy;
@@ -72,6 +75,7 @@ begin
   fTailRecursion := nil;
   fIteration := nil;
   fTimeBasedOperations := nil;
+  fAsyncConversions := nil;
 end;
 
 {$ENDREGION}

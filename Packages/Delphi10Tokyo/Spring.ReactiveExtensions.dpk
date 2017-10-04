@@ -107,6 +107,7 @@ contains
   Spring.Reactive.Observable.Timer in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Timer.pas',
   Spring.Reactive.Observable.ToObservable in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.ToObservable.pas',
   Spring.Reactive.Observable.Throttle in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Throttle.pas',
+  Spring.Reactive.Observable.Timeout in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Timeout.pas',
   Spring.Reactive.Observable.Where in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Where.pas',
   Spring.Reactive.Observable.Window in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Window.pas',
   Spring.Reactive.Observable.Zip in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Zip.pas',

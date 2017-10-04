@@ -2,7 +2,7 @@ program ReactivePaint;
 
 uses
   Vcl.Forms,
-  Unit1 in '..\MouseEvents\Unit1.pas' {Form104};
+  Unit1 in 'Unit1.pas' {Form104};
 
 {$R *.res}
 

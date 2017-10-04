@@ -83,7 +83,7 @@ end;
 
 destructor TThrow<TSource>.Destroy;
 begin
-  FreeAndNil(fError);
+  fError.Free;
   inherited;
 end;
 
@@ -106,7 +106,7 @@ end;
 
 procedure TThrow<TSource>.TSink.Invoke;
 begin
-  Observer.OnError(fParent.fError);
+  Observer.OnError(TInterlocked.Exchange<Exception>(fParent.fError, nil));
   Dispose;
 end;
 

@@ -47,6 +47,7 @@ type
 
   TObservableBase<T> = class(TinterfacedObject, IObservable<T>)
   private
+    function LastOrDefaultInternal(raiseOnEmpty: Boolean): T;
     function ScheduledSubscribe(const _: IScheduler; const autoDetachObserver: TValue): IDisposable;
   protected
     function Subscribe: IDisposable; overload;
@@ -99,6 +100,15 @@ type
     function Throttle(const dueTime: TTimeSpan): IObservable<T>;
     function Where(const predicate: Predicate<T>): IObservable<T>;
 
+    // "extension" methods (QueryLanguage.Blocking.cs)
+    function Wait: T;
+
+    // "extension" methods (QueryLanguage.Time.cs)
+    function Timeout(const dueTime: TTimeSpan): IObservable<T>; overload;
+    function Timeout(const dueTime: TTimeSpan; const scheduler: IScheduler): IObservable<T>; overload;
+    function Timeout(const dueTime: TTimeSpan; const other: IObservable<T>): IObservable<T>; overload;
+    function Timeout(const dueTime: TTimeSpan; const other: IObservable<T>; const scheduler: IScheduler): IObservable<T>; overload;
+
     function _: IObservableExtensions;
   end;
 
@@ -130,6 +140,7 @@ uses
   Spring.Reactive.Observable.TakeUntil,
   Spring.Reactive.Observable.TakeWhile,
   Spring.Reactive.Observable.Throttle,
+  Spring.Reactive.Observable.Timeout,
   Spring.Reactive.Observable.Where,
   Spring.Reactive.Observable.Window,
   Spring.Reactive.Subjects.ConnectableObservable,
@@ -354,6 +365,50 @@ begin
   Result := TIgnoreElements<T>.Create(Self);
 end;
 
+function TObservableBase<T>.LastOrDefaultInternal(raiseOnEmpty: Boolean): T;
+var
+  value: T;
+  seenValue: Boolean;
+  ex: Exception;
+  evt: TEvent;
+  using: IDisposable;
+begin
+  value := Default(T);
+  seenValue := False;
+  evt := TEvent.Create(nil, False, False, '');
+
+  using := Subscribe(
+    procedure(const v: T)
+    begin
+      seenValue := True;
+      value := v;
+    end,
+    procedure(const e: Exception)
+    begin
+      ex := e;
+      evt.SetEvent;
+    end,
+    procedure
+    begin
+      evt.SetEvent;
+    end);
+  try
+    evt.WaitFor;
+  finally
+    evt.Free;
+    using.Dispose;
+    using := nil;
+  end;
+
+  if Assigned(ex) then
+    raise ex;
+
+  if raiseOnEmpty and not seenValue then
+    raise EInvalidOperationException.Create('Source sequence doesn''t contain any elements.');
+
+  Result := value;
+end;
+
 function TObservableBase<T>.ObserveOn(
   const scheduler: IScheduler): IObservable<T>;
 begin
@@ -439,6 +494,34 @@ end;
 function TObservableBase<T>.Throttle(const dueTime: TTimeSpan): IObservable<T>;
 begin
   Result := TThrottle<T>.Create(Self, dueTime, SchedulerDefaults.TimeBasedOperations);
+end;
+
+function TObservableBase<T>.Timeout(const dueTime: TTimeSpan): IObservable<T>;
+begin
+  Result := TTimeout<T>.TRelative.Create(Self, dueTime, TObservable.Throw<T>(ETimeoutException.Create('')), SchedulerDefaults.TimeBasedOperations);
+end;
+
+function TObservableBase<T>.Timeout(const dueTime: TTimeSpan;
+  const scheduler: IScheduler): IObservable<T>;
+begin
+  Result := TTimeout<T>.TRelative.Create(Self, dueTime, TObservable.Throw<T>(ETimeoutException.Create('')), scheduler);
+end;
+
+function TObservableBase<T>.Timeout(const dueTime: TTimeSpan;
+  const other: IObservable<T>): IObservable<T>;
+begin
+  Result := TTimeout<T>.TRelative.Create(Self, dueTime, other, SchedulerDefaults.TimeBasedOperations);
+end;
+
+function TObservableBase<T>.Timeout(const dueTime: TTimeSpan;
+  const other: IObservable<T>; const scheduler: IScheduler): IObservable<T>;
+begin
+  Result := TTimeout<T>.TRelative.Create(Self, dueTime, other, scheduler);
+end;
+
+function TObservableBase<T>.Wait: T;
+begin
+  Result := LastOrDefaultInternal(True);
 end;
 
 function TObservableBase<T>.Where(

@@ -338,6 +338,7 @@ type
 
     // "extension" methods (QueryLanguage.Blocking.cs)
 //    function GetEnumerator: IEnumerator<T>;
+    function Wait: T;
 
     // "extension" methods for combining (QueryLanguage.Multiple.cs)
     function Amb(const second: IObservable<T>): IObservable<T>;
@@ -349,6 +350,13 @@ type
     // "extension" methods (QueryLanguage.Single.cs)
     function Repeated: IObservable<T>; overload;
     function Repeated(repeatCount: Integer): IObservable<T>; overload;
+
+    // "extension" methods (QueryLanguage.Time.cs)
+    function Timeout(const dueTime: TTimeSpan): IObservable<T>; overload;
+    function Timeout(const dueTime: TTimeSpan; const scheduler: IScheduler): IObservable<T>; overload;
+    function Timeout(const dueTime: TTimeSpan; const other: IObservable<T>): IObservable<T>; overload;
+    function Timeout(const dueTime: TTimeSpan; const other: IObservable<T>; const scheduler: IScheduler): IObservable<T>; overload;
+
 
     procedure ForEach(const onNext: Action<T>);
 
@@ -448,6 +456,12 @@ type
     class function Window<T>(const source: IObservable<T>; count: Integer): IObservable<IObservable<T>>; static;
 
 
+    // "extension" methods (QueryLanguage.Async.cs)
+    class function Start<TResult>(const func: Func<TResult>): IObservable<TResult>; overload; static;
+
+    class function ToAsync<TResult>(const func: Func<TResult>): Func<IObservable<TResult>>; overload; static;
+    class function ToAsync<TResult>(const func: Func<TResult>; const scheduler: IScheduler): Func<IObservable<TResult>>; overload; static;
+
     // "extension" methods for conversion (QueryLanguage.Conversion.cs)
     class function From<T>(const source: array of T): IObservable<T>; overload; static;
     class function From<T>(const source: array of T; const scheduler: IScheduler): IObservable<T>; overload; static;
@@ -467,6 +481,7 @@ type
   end;
 
   EObjectDisposedException = class(EInvalidOperationException); // TODO: move to Spring.pas
+  ETimeoutException = class(Exception);
 
 type
   TEventWrapper = class(TComponent) // TODO: move into own unit once properly implemented
@@ -515,6 +530,7 @@ uses
   Spring.Reactive.Observable.ToObservable,
   Spring.Reactive.Observable.Window,
   Spring.Reactive.Observable.Zip,
+  Spring.Reactive.Subjects.AsyncSubject,
   Spring.Reactive.Subjects.Subject; // TODO: remove - implement this specifically
 
 
@@ -961,6 +977,12 @@ begin
   Result := TSkipUntil<TSource, TOther>.Create(source, other);
 end;
 
+class function TObservable.Start<TResult>(
+  const func: Func<TResult>): IObservable<TResult>;
+begin
+  Result := ToAsync<TResult>(func)();
+end;
+
 class function TObservable.Subscribe<T>(const source: IEnumerable<T>;
   const observer: IObserver<T>): IDisposable;
 begin
@@ -989,6 +1011,43 @@ class function TObservable.Timer(const dueTime, period: TTimeSpan;
   const scheduler: IScheduler): IObservable<Int64>;
 begin
   Result := TTimer.TPeriodicRelative.Create(dueTime, period, scheduler);
+end;
+
+class function TObservable.ToAsync<TResult>(
+  const func: Func<TResult>): Func<IObservable<TResult>>;
+begin
+  Result := ToAsync<TResult>(func, SchedulerDefaults.AsyncConversions);
+end;
+
+class function TObservable.ToAsync<TResult>(const func: Func<TResult>;
+  const scheduler: IScheduler): Func<IObservable<TResult>>;
+begin
+  Result :=
+    function: IObservable<TResult>
+    var
+      subject: ISubject<TResult>;
+    begin
+      subject := TAsyncSubject<TResult>.Create;
+      scheduler.Schedule(
+        procedure
+        var
+          result: TResult;
+        begin
+          result := Default(TResult);
+          try
+            result := func();
+          except
+            on e: Exception do
+            begin
+              subject.OnError(e);
+              Exit;
+            end;
+          end;
+          subject.OnNext(result);
+          subject.OnCompleted;
+        end);
+      Result := subject;
+    end;
 end;
 
 class function TObservable.Window<T>(const source: IObservable<T>;

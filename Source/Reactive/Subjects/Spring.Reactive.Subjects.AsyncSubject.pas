@@ -37,11 +37,15 @@ type
   TAsyncSubject<T> = class(TSubjectBase<T>)
   private
     fObservers: TArray<IObserver<T>>;
+    fIsDisposed: Boolean;
     fIsStopped: Boolean;
     fValue: T;
     fHasValue: Boolean;
     fError: Exception;
+    procedure CheckDisposed;
   public
+    procedure Dispose; override;
+
     procedure OnNext(const value: T); override;
     procedure OnError(const error: Exception); override;
     procedure OnCompleted; override;
@@ -55,6 +59,7 @@ type
         fObserver: IObserver<T>;
       public
         constructor Create(const subject: TAsyncSubject<T>; const observer: IObserver<T>);
+        destructor Destroy; override;
 
         procedure Dispose; override;
       end;
@@ -68,6 +73,21 @@ uses
 
 {$REGION 'TAsyncSubject<T>'}
 
+procedure TAsyncSubject<T>.Dispose;
+begin
+  MonitorEnter(Self);
+  try
+    Lock(Self);
+
+    fIsDisposed := True;
+    fObservers := nil;
+    fError := nil;
+    fValue := Default(T);
+  finally
+    MonitorExit(Self);
+  end;
+end;
+
 procedure TAsyncSubject<T>.OnCompleted;
 var
   observers: TArray<IObserver<T>>;
@@ -75,13 +95,20 @@ var
   hasValue: Boolean;
   observer: IObserver<T>;
 begin
-  if not fIsStopped then
-  begin
-    observers := fObservers;
-    fObservers := nil;
-    fIsStopped := True;
-    value := fValue;
-    hasValue := fHasValue;
+  MonitorEnter(Self);
+  try
+    CheckDisposed;
+
+    if not fIsStopped then
+    begin
+      observers := fObservers;
+      fObservers := nil;
+      fIsStopped := True;
+      value := fValue;
+      hasValue := fHasValue;
+    end;
+  finally
+    MonitorExit(Self);
   end;
 
   if hasValue then
@@ -100,12 +127,21 @@ var
   observers: TArray<IObserver<T>>;
   observer: IObserver<T>;
 begin
-  if not fIsStopped then
-  begin
-    observers := fObservers;
-    fObservers := nil;
-    fIsStopped := True;
-    fError := error;
+  Guard.CheckNotNull(error, 'error');
+
+  MonitorEnter(Self);
+  try
+    CheckDisposed;
+
+    if not fIsStopped then
+    begin
+      observers := fObservers;
+      fObservers := nil;
+      fIsStopped := True;
+      fError := error;
+    end;
+  finally
+    MonitorExit(Self);
   end;
 
   for observer in observers do
@@ -114,11 +150,24 @@ end;
 
 procedure TAsyncSubject<T>.OnNext(const value: T);
 begin
-  if not fIsStopped then
-  begin
-    fValue := value;
-    fHasValue := True;
+  MonitorEnter(Self);
+  try
+    CheckDisposed;
+
+    if not fIsStopped then
+    begin
+      fValue := value;
+      fHasValue := True;
+    end;
+  finally
+    MonitorExit(Self);
   end;
+end;
+
+procedure TAsyncSubject<T>.CheckDisposed;
+begin
+  if fIsDisposed then
+    raise EObjectDisposedException.Create('');
 end;
 
 function TAsyncSubject<T>.Subscribe(const observer: IObserver<T>): IDisposable;
@@ -131,17 +180,22 @@ begin
   value := Default(T);
   hasValue := False;
 
-  // lock {
-  if not fIsStopped then
-  begin
-    fObservers := TArray.Add<IObserver<T>>(fObservers, observer);
-    Exit(TSubscription.Create(Self, observer));
-  end;
+  MonitorEnter(Self);
+  try
+    CheckDisposed;
 
-  error := fError;
-  hasValue := fHasValue;
-  value := fValue;
-  // }
+    if not fIsStopped then
+    begin
+      fObservers := TArray.Add<IObserver<T>>(fObservers, observer);
+      Exit(TSubscription.Create(Self, observer));
+    end;
+
+    error := fError;
+    hasValue := fHasValue;
+    value := fValue;
+  finally
+    MonitorExit(Self);
+  end;
 
   if Assigned(error) then
     observer.OnError(error)
@@ -169,15 +223,25 @@ begin
   fObserver := observer;
 end;
 
+destructor TAsyncSubject<T>.TSubscription.Destroy;
+begin
+  fSubject._Release;
+  inherited;
+end;
+
 procedure TAsyncSubject<T>.TSubscription.Dispose;
 begin
   if Assigned(fObserver) then
-  begin // lock
-    if Assigned(fObserver) then
-    begin
-      fSubject.fObservers := TArray.Remove<IObserver<T>>(fSubject.fObservers, fObserver);
-      fSubject._Release;
-      fObserver := nil;
+  begin
+    MonitorEnter(fSubject);
+    try
+      if not fSubject.fIsDisposed and Assigned(fObserver) then
+      begin
+        fSubject.fObservers := TArray.Remove<IObserver<T>>(fSubject.fObservers, fObserver);
+        fObserver := nil;
+      end;
+    finally
+      MonitorExit(fSubject);
     end;
   end;
 end;

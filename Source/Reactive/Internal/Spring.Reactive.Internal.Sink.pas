@@ -41,6 +41,20 @@ type
     // instance is alive during any calls made on it
     function GetCancel: IDisposable;
     function GetObserver: IObserver<TSource>;
+
+    type
+      TSink = class(TInterfacedObject, IObserver<TSource>)
+      private
+        fForward: TSink<TSource>;
+      public
+        constructor Create(const sink: TSink<TSource>);
+        destructor Destroy; override;
+        procedure Dispose;
+
+        procedure OnNext(const value: TSource);
+        procedure OnError(const error: Exception);
+        procedure OnCompleted;
+      end;
   protected
     property Observer: IObserver<TSource> read GetObserver;
     property Cancel: IDisposable read GetCancel;
@@ -48,6 +62,8 @@ type
     constructor Create(const observer: IObserver<TSource>; const cancel: IDisposable);
     destructor Destroy; override;
     procedure Dispose; override;
+
+    function GetForwarder: IObserver<TSource>;
 
     procedure OnError(const error: Exception);
     procedure OnCompleted;
@@ -89,6 +105,11 @@ begin
     cancel.Dispose;
 end;
 
+function TSink<TSource>.GetForwarder: IObserver<TSource>;
+begin
+  Result := TSink.Create(Self);
+end;
+
 function TSink<TSource>.GetCancel: IDisposable;
 begin
   Result := fCancel;
@@ -109,6 +130,45 @@ procedure TSink<TSource>.OnCompleted;
 begin
   Observer.OnCompleted;
   Dispose;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSink<TSource>.TSink'}
+
+constructor TSink<TSource>.TSink.Create(const sink: TSink<TSource>);
+begin
+  inherited Create;
+  fForward := sink;
+  fForward._AddRef;
+end;
+
+destructor TSink<TSource>.TSink.Destroy;
+begin
+  fForward._Release;
+  inherited;
+end;
+
+procedure TSink<TSource>.TSink.Dispose;
+begin
+end;
+
+procedure TSink<TSource>.TSink.OnNext(const value: TSource);
+begin
+  fForward.Observer.OnNext(value);
+end;
+
+procedure TSink<TSource>.TSink.OnError(const error: Exception);
+begin
+  fForward.Observer.OnError(error);
+  fForward.Dispose;
+end;
+
+procedure TSink<TSource>.TSink.OnCompleted;
+begin
+  fForward.Observer.OnCompleted;
+  fForward.Dispose;
 end;
 
 {$ENDREGION}
