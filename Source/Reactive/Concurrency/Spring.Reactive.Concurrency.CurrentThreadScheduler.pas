@@ -29,6 +29,7 @@ unit Spring.Reactive.Concurrency.CurrentThreadScheduler;
 interface
 
 uses
+  SyncObjs,
   Spring,
   Spring.Collections,
   Spring.Reactive,
@@ -42,6 +43,7 @@ type
     class var fInstance: ICurrentThreadScheduler;
     class var fClocks: IDictionary<TThreadID, TStopwatch>;
     class var fQueues: IDictionary<TThreadID, TSchedulerQueue<TTimeSpan>>;
+    class var fLock: TCriticalSection;
     class function GetQueue: TSchedulerQueue<TTimeSpan>; static;
     class procedure SetQueue(const newQueue: TSchedulerQueue<TTimeSpan>); static;
     class function GetTime: TTimeSpan; static;
@@ -55,6 +57,7 @@ type
       end;
   public
     class constructor Create;
+    class destructor Destroy;
     class property Instance: ICurrentThreadScheduler read GetInstance;
     class property IsScheduleRequired: Boolean read GetIsScheduleRequired;
   public
@@ -73,9 +76,14 @@ uses
 
 class constructor TCurrentThreadScheduler.Create;
 begin
-//  fInstance := TCurrentThreadScheduler.Create;
   fClocks := TCollections.CreateDictionary<TThreadID, TStopwatch>;
   fQueues := TCollections.CreateDictionary<TThreadID, TSchedulerQueue<TTimeSpan>>([doOwnsValues]);
+  fLock := TCriticalSection.Create;
+end;
+
+class destructor TCurrentThreadScheduler.Destroy;
+begin
+  fLock.Free;
 end;
 
 function TCurrentThreadScheduler.GetScheduleRequired: Boolean;
@@ -97,11 +105,11 @@ end;
 
 class function TCurrentThreadScheduler.GetQueue: TSchedulerQueue<TTimeSpan>;
 begin
-  MonitorEnter(fQueues.AsObject);
+  fLock.Enter;
   try
     fQueues.TryGetValue(TThread.CurrentThread.ThreadID, Result);
   finally
-    MonitorExit(fQueues.AsObject);
+    fLock.Leave;
   end;
 end;
 
@@ -110,7 +118,7 @@ class procedure TCurrentThreadScheduler.SetQueue(
 var
   currentThreadId: TThreadID;
 begin
-  MonitorEnter(fQueues.AsObject);
+  fLock.Enter;
   try
     currentThreadId := TThread.CurrentThread.ThreadID;
     if newQueue = nil then
@@ -118,7 +126,7 @@ begin
     else
       fQueues[currentThreadId] := newQueue;
   finally
-    MonitorExit(fQueues.AsObject);
+    fLock.Leave;
   end;
 end;
 
@@ -127,7 +135,7 @@ var
   currentThreadId: TThreadID;
   clock: TStopwatch;
 begin
-  MonitorEnter(fClocks.AsObject);
+  fLock.Enter;
   try
     currentThreadId := TThread.CurrentThread.ThreadID;
     if not fClocks.TryGetValue(currentThreadId, clock) then
@@ -137,7 +145,7 @@ begin
     end;
     Result := clock.Elapsed;
   finally
-    MonitorExit(fClocks.AsObject);
+    fLock.Leave;
   end;
 end;
 
@@ -166,7 +174,7 @@ begin
   end
   else
     queue.Enqueue(si);
-  Result := Disposable.Create(procedure begin si.Cancel end);
+  Result := Disposable.Create(si);
 end;
 
 {$ENDREGION}

@@ -29,6 +29,7 @@ unit Spring.Reactive.Disposables.CompositeDisposable;
 interface
 
 uses
+  SyncObjs,
   Spring.Collections,
   Spring.Reactive;
 
@@ -36,7 +37,7 @@ type
   TCompositeDisposable = class(TInterfacedObject,
     IDisposable, ICancelable, ICompositeDisposable)
   private
-    fGate: TObject;
+    fGate: TCriticalSection;
     fDisposed: Boolean;
     fDisposables: IList<IDisposable>;
     function GetIsDisposed: Boolean;
@@ -58,7 +59,7 @@ constructor TCompositeDisposable.Create(
   const disposables: array of IDisposable);
 begin
   inherited Create;
-  fGate := TObject.Create;
+  fGate := TCriticalSection.Create;
   fDisposables := TCollections.CreateInterfaceList<IDisposable>(disposables);
 end;
 
@@ -66,7 +67,7 @@ procedure TCompositeDisposable.Add(const item: IDisposable);
 var
   shouldDispose: Boolean;
 begin
-  MonitorEnter(fGate);
+  fGate.Enter;
   try
     shouldDispose := fDisposed;
     if not fDisposed then
@@ -75,7 +76,7 @@ begin
 //      Inc(fCount);
     end;
   finally
-    MonitorExit(fGate);
+    fGate.Leave;
   end;
   if shouldDispose then
     item.Dispose;
@@ -93,7 +94,7 @@ var
   currentDisposables: TArray<IDisposable>;
   d: IDisposable;
 begin
-  MonitorEnter(fGate);
+  fGate.Enter;
   try
     if not fDisposed then
     begin
@@ -102,7 +103,7 @@ begin
       fDisposables.Clear;
     end;
   finally
-    MonitorExit(fGate);
+    fGate.Leave;
   end;
 
   for d in currentDisposables do
@@ -125,7 +126,7 @@ var
   i: Integer;
 begin
   shouldDispose := False;
-  MonitorEnter(fGate);
+  fGate.Enter;
   try
     if not fDisposed then
     begin
@@ -138,7 +139,7 @@ begin
       end;
     end;
   finally
-    MonitorExit(fGate);
+    fGate.Leave;
   end;
   if shouldDispose then
     item.Dispose;

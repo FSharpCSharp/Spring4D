@@ -83,6 +83,7 @@ type
 implementation
 
 uses
+  Rtti,
   Spring.Reactive.Concurrency.CurrentThreadScheduler,
   Spring.Reactive.Disposables;
 
@@ -181,9 +182,9 @@ end;
 
 function TProducer<TSource>.RunInternal(const _: IScheduler; const state: TValue): IDisposable;
 var
-  x: TState;
+  x: PState;
 begin
-  x := PState(state.GetReferenceToRawData)^;
+  x := PState(state.GetReferenceToRawData);
   x.inner.Disposable := Run(x.sink);
   Result := Disposable.Empty;
 end;

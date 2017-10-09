@@ -343,7 +343,7 @@ type
     // "extension" methods for combining (QueryLanguage.Multiple.cs)
     function Amb(const second: IObservable<T>): IObservable<T>;
     function Concat(const second: IObservable<T>): IObservable<T>;
-//    function Merge(const second: IObservable<T>): IObservable<T>;
+//    function Merge(const second: IObservable<T>): IObservable<T>; // not possible to implement here because of IObservable<IObservable<T>>
     function SkipUntil(const other: IObservable<T>): IObservable<T>;
     function TakeUntil(const other: IObservable<T>): IObservable<T>;
 
@@ -440,7 +440,8 @@ type
 
     class function Never<T>: IObservable<T>; static;
 
-    class function Range(start, count: Integer): IObservable<Integer>; static;
+    class function Range(start, count: Integer): IObservable<Integer>; overload; static;
+    class function Range(start, count: Integer; const scheduler: IScheduler): IObservable<Integer>; overload; static;
 
     class function Return<T>(const value: T): IObservable<T>; static;
 
@@ -492,12 +493,27 @@ type
     property RemoveHandler: Action read fRemoveHandler write fRemoveHandler;
   end;
 
+  ICriticalSection = interface
+    procedure Enter;
+    procedure Leave;
+  end;
+
+  TInterfacedCriticalSection = class(TInterfacedObject, ICriticalSection)
+  private
+    fCriticalSection: TCriticalSection;
+    property CriticalSection: TCriticalSection read fCriticalSection implements ICriticalSection;
+  public
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
 function Lock(const instance: TObject): IInterface;
 
 type
   GC = record
   private
     class var items: IList<Pointer>;
+    class var lock: TCriticalSection;
   public
     class constructor Create;
     class destructor Destroy;
@@ -634,12 +650,9 @@ end;
 
 function IObservableExtensions.Merge<TSource>(
   const second: IObservable<TSource>): IObservable<TSource>;
-var
-  source: IEnumerable<IObservable<TSource>>;
 begin
-//  source := TEnumerable.From<IObservable<TSource>>([
-//    TObject(Self) as TObservableBase<IObservable<TSource>> as IObservable<TSource>, second]);
-//  Result := TMerge<TSource>.TObservables.Create(TToObservable<TSource>.Create(source))
+  Result := TMerge<TSource>.TObservables.Create(
+    TObservable.From<IObservable<TSource>>([TObject(Self) as TObservableBase<TSource>, second], SchedulerDefaults.ConstantTimeOperations));
 end;
 
 function IObservableExtensions.Select<TSource, TResult>(
@@ -958,6 +971,12 @@ begin
   Result := TRange.Create(start, count, SchedulerDefaults.Iteration);
 end;
 
+class function TObservable.Range(start, count: Integer;
+  const scheduler: IScheduler): IObservable<Integer>;
+begin
+  Result := TRange.Create(start, count, scheduler);
+end;
+
 class function TObservable.Return<T>(const value: T): IObservable<T>;
 begin
   Result := TReturn<T>.Create(value, SchedulerDefaults.ConstantTimeOperations);
@@ -1104,6 +1123,18 @@ begin
   Result := TInterfacedMonitor.Create(instance);
 end;
 
+constructor TInterfacedCriticalSection.Create;
+begin
+  inherited Create;
+  fCriticalSection := TCriticalSection.Create;
+end;
+
+destructor TInterfacedCriticalSection.Destroy;
+begin
+  fCriticalSection.Free;
+  inherited;
+end;
+
 {$ENDREGION}
 
 
@@ -1112,26 +1143,36 @@ end;
 class constructor GC.Create;
 begin
   items := TCollections.CreateList<Pointer>;
+  lock := TCriticalSection.Create;
 end;
 
 class destructor GC.Destroy;
 begin
   while items.Count > 0 do
     IDisposable(items.ExtractAt(items.Count - 1)).Dispose;
+  lock.Free;
 end;
 
 class procedure GC.Add(const item: IDisposable);
 begin
-  Lock(items.AsObject);
-  items.Add(Pointer(item));
+  lock.Enter;
+  try
+    items.Add(Pointer(item));
+  finally
+    lock.Leave;
+  end;
 end;
 
 class procedure GC.Remove(const item: IDisposable);
 begin
   if Assigned(items) then
   begin
-    Lock(items.AsObject);
-    items.Remove(Pointer(item));
+    lock.Enter;
+    try
+      items.Remove(Pointer(item));
+    finally
+      lock.Leave
+    end;
   end;
 end;
 

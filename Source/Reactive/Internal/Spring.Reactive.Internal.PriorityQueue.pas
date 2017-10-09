@@ -44,6 +44,7 @@ type
     procedure Percolate(index: Integer);
     procedure Heapify(index: Integer = 0);
     procedure RemoveAt(index: Integer);
+    procedure Swap(x, y: Integer);
   public
     constructor Create(capacity: Integer = 16);
     property Count: Integer read fSize;
@@ -107,7 +108,6 @@ var
   left: Integer;
   right: Integer;
   first: Integer;
-  temp: TIndexedItem;
 begin
   if (index >= fSize) or (index < 0) then
     Exit;
@@ -122,9 +122,7 @@ begin
     first := right;
   if first <> index then
   begin
-    temp := fItems[index];
-    fItems[index] := fItems[first];
-    fItems[first] := temp;
+    Swap(index, first);
     Heapify(first);
   end;
 end;
@@ -144,7 +142,6 @@ end;
 procedure TPriorityQueue<T>.Percolate(index: Integer);
 var
   parent: Integer;
-  temp: TIndexedItem;
 begin
   if (index >= fSize) or (index < 0) then
     Exit;
@@ -154,9 +151,7 @@ begin
 
   if IsHigherPriority(index, parent) then
   begin
-    temp := fItems[index];
-    fItems[index] := fItems[parent];
-    fItems[parent] := temp;
+    Swap(index, parent);
     Percolate(parent);
   end;
 end;
@@ -179,11 +174,25 @@ end;
 procedure TPriorityQueue<T>.RemoveAt(index: Integer);
 begin
   Dec(fSize);
-  fItems[index] := fItems[fSize];
-  fItems[fSize] := Default(TIndexedItem);
+  fItems[index].Value := fItems[fSize].Value;
+  fItems[index].Id := fItems[fSize].Id;
+  fItems[fSize].Value := Default(T);
+  fItems[fSize].Id := 0;
   Heapify;
   if fSize < (Length(fItems) div 4) then
     SetLength(fItems, Length(fItems) div 2);
+end;
+
+procedure TPriorityQueue<T>.Swap(x, y: Integer);
+var
+  tempValue: T;
+  tempId: Integer;
+begin
+  tempValue := fItems[x].Value;
+  tempId := fItems[x].Id;
+  fItems[x] := fItems[y];
+  fItems[y].Value := tempValue;
+  fItems[y].Id := tempId;
 end;
 
 {$ENDREGION}

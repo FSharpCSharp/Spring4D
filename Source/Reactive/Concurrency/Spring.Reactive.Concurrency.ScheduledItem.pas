@@ -34,7 +34,7 @@ uses
   Spring.Reactive;
 
 type
-  IScheduledItem<TAbsolute> = interface
+  IScheduledItem<TAbsolute> = interface(IDisposable)
     function GetDueTime: TAbsolute;
     function GetIsCanceled: Boolean;
 
@@ -48,7 +48,26 @@ type
   IScheduledItem<TAbsolute, TValue> = interface(IScheduledItem<TAbsolute>)
   end;
 
-  TScheduledItem<TAbsolute> = class abstract(TInterfacedObject, IScheduledItem<TAbsolute>, IComparable)
+  TScheduledItem = class abstract(TInterfacedObject)
+  private
+    class function NopAddRef(inst: Pointer): Integer; stdcall; static;
+    class function NopQueryInterface(inst: Pointer; const IID: TGUID;
+      out Obj): HResult; stdcall; static;
+    class function NopRelease(inst: Pointer): Integer; stdcall; static;
+    class function CompareTimeSpan(inst: Pointer; const left,
+      right: TTimeSpan): Integer; static;
+    const
+      TimeSpanComparer_Vtable: array[0..3] of Pointer =
+      (
+        @TScheduledItem.NopQueryInterface,
+        @TScheduledItem.NopAddRef,
+        @TScheduledItem.NopRelease,
+        @TScheduledItem.CompareTimeSpan
+      );
+      TimeSpanComparer_Instance: Pointer = @TScheduledItem.TimeSpanComparer_Vtable;
+  end;
+
+  TScheduledItem<TAbsolute> = class abstract(TScheduledItem, IScheduledItem<TAbsolute>, IComparable, IDisposable)
   private
     fDisposable: ISingleAssignmentDisposable;
     fDueTime: TAbsolute;
@@ -58,6 +77,7 @@ type
   strict protected
     constructor Create(const dueTime: TAbsolute; const comparer: IComparer<TAbsolute>);
     function InvokeCore: IDisposable; virtual; abstract;
+    procedure Dispose;
   public
     procedure Cancel;
     procedure Invoke;
@@ -88,7 +108,33 @@ type
 implementation
 
 uses
+  Rtti,
   Spring.Reactive.Disposables;
+
+class function TScheduledItem.NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+begin
+  Result := E_NOINTERFACE;
+end;
+
+class function TScheduledItem.NopAddRef(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+class function TScheduledItem.NopRelease(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+class function TScheduledItem.CompareTimeSpan(inst: Pointer; const left, right: TTimeSpan): Integer;
+begin
+  if left.Ticks < right.Ticks then
+    Result := -1
+  else if left.Ticks > right.Ticks then
+    Result := 1
+  else
+    Result := 0;
+end;
 
 
 {$REGION 'TScheduledItem<TAbsolute>'}
@@ -100,6 +146,11 @@ begin
   fDisposable := TSingleAssignmentDisposable.Create;
   fDueTime := dueTime;
   fComparer := comparer;
+end;
+
+procedure TScheduledItem<TAbsolute>.Dispose;
+begin
+  Cancel;
 end;
 
 procedure TScheduledItem<TAbsolute>.Cancel;
@@ -148,23 +199,11 @@ constructor TScheduledItem<TAbsolute, TValue>.Create(
   const scheduler: IScheduler; const state: TValue;
   const action: Func<IScheduler, TValue, IDisposable>;
   const dueTime: TAbsolute);
-var
-  comparer: IComparer<TAbsolute>;
 begin
   if TypeInfo(TAbsolute) = TypeInfo(TTimeSpan) then
-    TComparison<TTimeSpan>(comparer) :=
-      function(const left, right: TTimeSpan): Integer
-      begin
-        if left.Ticks < right.Ticks then
-          Result := -1
-        else if left.Ticks > right.Ticks then
-          Result := 1
-        else
-          Result := 0;
-      end
+    Create(scheduler, state, action, dueTime, IComparer<TAbsolute>(@TimeSpanComparer_Instance))
   else
-    comparer := TComparer<TAbsolute>.Default;
-  Create(scheduler, state, action, dueTime, comparer);
+    Create(scheduler, state, action, dueTime, TComparer<TAbsolute>.Default);
 end;
 
 function TScheduledItem<TAbsolute, TValue>.InvokeCore: IDisposable;

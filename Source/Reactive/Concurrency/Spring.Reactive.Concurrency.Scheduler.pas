@@ -184,7 +184,7 @@ end;
 class function TScheduler.InvokeRec1(const scheduler: IScheduler; const pair: TValue): IDisposable;
 var
   group: ICompositeDisposable;
-  gate: IInterface;
+  gate: ICriticalSection;
   _pair: TPair<TValue,Action<TValue, Action<TValue>>>;
   state: TValue;
   action: Action<TValue, Action<TValue>>;
@@ -192,7 +192,7 @@ var
   _recursiveAction: Pointer;
 begin
   group := TCompositeDisposable.Create([]);
-  gate := TInterfacedObject.Create; // TODO: review
+  gate := TInterfacedCriticalSection.Create; // TODO: review
   _pair := pair.AsType<TPair<TValue,Action<TValue, Action<TValue>>>>;
   state := _pair.First;
   action := _pair.Second;
@@ -213,21 +213,21 @@ begin
           d := scheduler.Schedule(state2,
             function(const scheduler1: IScheduler; const state3: TValue): IDisposable
             begin
-              MonitorEnter(gate as TObject);
+              gate.Enter;
               try
                 if isAdded then
                   group.Remove(d)
                 else
                   isDone := True;
               finally
-                MonitorExit(gate as TObject);
+                gate.Leave;
               end;
 
               Action<TValue>(_recursiveAction)(state3); // recursiveAction(state3);
               Result := Disposable.Empty;
             end);
 
-          MonitorEnter(gate as TObject);
+          gate.Enter;
           try
             if not isDone then
             begin
@@ -235,7 +235,7 @@ begin
               isAdded := True;
             end;
           finally
-            MonitorExit(gate as TObject);
+            gate.Leave;
           end;
         end);
     end;
@@ -297,7 +297,7 @@ class function TScheduler.InvokeRec2(const scheduler: IScheduler;
 var
   _pair: TPair<TValue, Action<TValue, Action<TValue, TTimeSpan>>>;
   group: ICompositeDisposable;
-  gate: IInterface;
+  gate: ICriticalSection;
   state: TValue;
   action: Action<TValue, Action<TValue, TTimeSpan>>;
   recursiveAction: Action<TValue>;
@@ -305,7 +305,7 @@ var
 begin
   _pair := pair.AsType<TPair<TValue, Action<TValue, Action<TValue, TTimeSpan>>>>;
   group := TCompositeDisposable.Create([]); // TODO: capacity overload?
-  gate := TInterfacedObject.Create; // TODO: review
+  gate := TInterfacedCriticalSection.Create; // TODO: review
   state := _pair.First;
   action := _pair.Second;
 
@@ -322,20 +322,20 @@ begin
           d := scheduler.Schedule(state2, dueTime1,
             function(const scheduler: IScheduler; const state3: TValue): IDisposable
             begin
-              MonitorEnter(gate as TObject);
+              gate.Enter;
               try
                 if isAdded then
                   group.Remove(d)
                 else
                   isDone := True;
               finally
-                MonitorExit(gate as TObject);
+                gate.Leave;
               end;
               Action<TValue>(_recursiveAction)(state3);
               Result := Disposable.Empty;
             end);
 
-          MonitorEnter(gate as TObject);
+          gate.Enter;
           try
             if not isDone then
             begin
@@ -343,7 +343,7 @@ begin
               isAdded := True;
             end;
           finally
-            MonitorExit(gate as TObject);
+            gate.Leave;
           end;
         end);
     end;

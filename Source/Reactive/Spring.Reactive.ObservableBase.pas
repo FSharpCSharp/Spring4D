@@ -69,10 +69,8 @@ type
   public
     destructor Destroy; override;
     function All(const predicate: Predicate<T>): IObservable<Boolean>;
-    function Amb(const second: IObservable<T>): IObservable<T>;
     function Any: IObservable<Boolean>; overload;
     function Any(const predicate: Predicate<T>): IObservable<Boolean>; overload;
-    function Concat(const second: IObservable<T>): IObservable<T>;
     function Distinct: IObservable<T>;
     function DistinctUntilChanged: IObservable<T>;
     function DoAction(const onNext: Action<T>): IObservable<T>; overload;
@@ -89,12 +87,10 @@ type
     function Sample(const interval: TTimeSpan): IObservable<T>;
     function Skip(count: Integer): IObservable<T>;
     function SkipLast(count: Integer): IObservable<T>;
-    function SkipUntil(const other: IObservable<T>): IObservable<T>;
     function SkipWhile(const predicate: Predicate<T>): IObservable<T>; overload;
     function SkipWhile(const predicate: Func<T, Integer, Boolean>): IObservable<T>; overload;
     function Take(count: Integer): IObservable<T>;
     function TakeLast(count: Integer): IObservable<T>;
-    function TakeUntil(const other: IObservable<T>): IObservable<T>;
     function TakeWhile(const predicate: Predicate<T>): IObservable<T>; overload;
     function TakeWhile(const predicate: Func<T, Integer, Boolean>): IObservable<T>; overload;
     function Throttle(const dueTime: TTimeSpan): IObservable<T>;
@@ -102,6 +98,13 @@ type
 
     // "extension" methods (QueryLanguage.Blocking.cs)
     function Wait: T;
+
+    // "extension" methods (QueryLanguage.Multiple.cs)
+    function Amb(const second: IObservable<T>): IObservable<T>;
+    function Concat(const second: IObservable<T>): IObservable<T>;
+//    function Merge(const second: IObservable<T>): IObservable<T>; // not possible to implement here because of IObservable<IObservable<T>>
+    function SkipUntil(const other: IObservable<T>): IObservable<T>;
+    function TakeUntil(const other: IObservable<T>): IObservable<T>;
 
     // "extension" methods (QueryLanguage.Time.cs)
     function Timeout(const dueTime: TTimeSpan): IObservable<T>; overload;
