@@ -29,7 +29,6 @@ unit Spring.Collections.Events;
 interface
 
 uses
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Events.Base;
