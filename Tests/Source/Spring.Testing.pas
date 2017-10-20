@@ -45,7 +45,7 @@ type
     function GetValue(index: Integer): TValue;
   protected
     fValues: TArray<TValue>;
-    constructor Create(const values: string; const delimiter: Char = DefaultDelimiter);
+    constructor Create(const values: string; const delimiter: string = DefaultDelimiter);
     property Values[index: Integer]: TValue read GetValue;
   end;
 
@@ -62,7 +62,7 @@ type
   /// </summary>
   TestCaseAttribute = class(TTestingAttribute)
   public
-    constructor Create(const values: string; const delimiter: Char = DefaultDelimiter);
+    constructor Create(const values: string; const delimiter: string = DefaultDelimiter);
   end;
 
   TestCaseSourceAttribute = class(TBaseAttribute)
@@ -233,7 +233,7 @@ end;
 
 {$REGION 'TTestingAttribute'}
 
-constructor TTestingAttribute.Create(const values: string; const delimiter: Char);
+constructor TTestingAttribute.Create(const values: string; const delimiter: string);
 var
   tempValues: TStringDynArray;
   i: Integer;
@@ -258,7 +258,7 @@ end;
 
 {$REGION 'TestCaseAttribute'}
 
-constructor TestCaseAttribute.Create(const values: string; const delimiter: Char);
+constructor TestCaseAttribute.Create(const values: string; const delimiter: string);
 begin
   inherited Create(values, delimiter);
 end;
