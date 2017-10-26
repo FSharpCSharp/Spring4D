@@ -156,7 +156,7 @@ var
   parameter: TValue;
 begin
   parameter := request.Parameter;
-  if not parameter.IsEmpty and parameter.IsString then
+  if parameter.IsString then
     Result := not Kernel.Registry.HasService(request.Service, parameter.AsString)
       and (request.Service <> parameter.TypeInfo)
   else
@@ -222,7 +222,6 @@ end;
 function TDependencyResolver.CanResolve(const request: IRequest): Boolean;
 var
   argument: TValue;
-  kind: TTypeKind;
   serviceName: string;
   serviceType: PTypeInfo;
   componentModel: TComponentModel;
@@ -241,23 +240,19 @@ begin
     Result := Kernel.Registry.HasService(request.Service)
   else if CanResolveFromArgument(request) then
     Result := True
-  else if argument.TryAsType(TypeInfo(TTypeKind), kind) and (kind = tkDynArray) then
-    Result := Kernel.Registry.HasService(request.Service)
-  else
+  else if argument.IsString then
   begin
-    Result := argument.IsString;
+    serviceName := argument.AsString;
+    componentModel := Kernel.Registry.FindOne(serviceName);
+    Result := Assigned(componentModel);
     if Result then
     begin
-      serviceName := argument.AsString;
-      componentModel := Kernel.Registry.FindOne(serviceName);
-      Result := Assigned(componentModel);
-      if Result then
-      begin
-        serviceType := componentModel.Services[serviceName];
-        Result := IsAssignableFrom(request.Service, serviceType);
-      end;
+      serviceType := componentModel.Services[serviceName];
+      Result := IsAssignableFrom(request.Service, serviceType);
     end;
-  end;
+  end
+  else
+    Result := False;
 end;
 
 function TDependencyResolver.Resolve(const request: IRequest): TValue;
@@ -493,7 +488,7 @@ begin
   if Result then
   begin
     serviceType := request.Service.TypeData.DynArrElType^;
-    newRequest := TRequest.Create(serviceType, request.Context, request.Target, TValue.From(tkDynArray));
+    newRequest := TRequest.Create(serviceType, request.Context, request.Target, TValue.Empty);
     Result := Kernel.Resolver.CanResolve(newRequest);
   end;
 end;
@@ -533,7 +528,7 @@ begin
     targetType := GetElementType(targetType.Handle).RttiType;
     if not targetType.IsClassOrInterface then
       Exit(False);
-    newRequest := TRequest.Create(targetType.Handle, request.Context, request.Target, TValue.From(tkDynArray));
+    newRequest := TRequest.Create(targetType.Handle, request.Context, request.Target, TValue.Empty);
     Result := Kernel.Resolver.CanResolve(newRequest);
   end;
 end;
