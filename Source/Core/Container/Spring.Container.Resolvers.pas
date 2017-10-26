@@ -323,8 +323,6 @@ var
 begin
   argument := request.Parameter;
   Result := Assigned(argument.TypeInfo) and argument.IsType(request.Service);
-  if not Result and (argument.Kind in [tkInteger, tkFloat, tkInt64]) then
-    Result := argument.Kind = request.Service.Kind;
   if Result and argument.IsString then
     Result := not Kernel.Registry.HasService(request.Service, argument.AsString);
 end;
