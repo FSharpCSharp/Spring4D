@@ -18,25 +18,22 @@ uses
 
 procedure RegisterServices(const container: TContainer);
 begin
-  container.RegisterType<TMainForm>
-    .Implements<TMainForm>
-    .AsSingleton
-    .DelegateTo(
-      function: TMainForm
-      begin
-        // This forces form creation to be synchronous.
-        // May or may not be called on certain platforms already by the FMX framework.
-        // Android will call this prior sending the message but iOS won't.
-        // May be called multiple times with no harm done.
-        Application.RealCreateForms;
-        Application.CreateForm(TMainForm, Result);
-        // Create instance and assign MainForm
-        // (would otherwise be done by Application.CreateMainForm)
-        Application.MainForm := Result;
-        // And make it visible  as this may not be set in the designer and
-        // no window would be displayed
-        Application.MainForm.Visible := True;
-      end);
+  container.RegisterType<TMainForm, TMainForm>(
+    function: TMainForm
+    begin
+      // This forces form creation to be synchronous.
+      // May or may not be called on certain platforms already by the FMX framework.
+      // Android will call this prior sending the message but iOS won't.
+      // May be called multiple times with no harm done.
+      Application.RealCreateForms;
+      Application.CreateForm(TMainForm, Result);
+      // Create instance and assign MainForm
+      // (would otherwise be done by Application.CreateMainForm)
+      Application.MainForm := Result;
+      // And make it visible  as this may not be set in the designer and
+      // no window would be displayed
+      Application.MainForm.Visible := True;
+    end).AsSingleton;
   container.Build;
 end;
 

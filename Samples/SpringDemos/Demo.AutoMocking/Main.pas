@@ -99,7 +99,7 @@ begin
   end;
 
   commandChannel.Received(3).Send2(Self);
-  commandChannel.ReceivedWithAnyArgs(3).Send2(nil);
+  commandChannel.Received(3).Send2(Arg.IsAny<TObject>);
 
   // example two
   numbers := TCollections.CreateList<Integer>([1, 2, 3]);
@@ -109,7 +109,7 @@ begin
   parser := factory.Create(',');
   Assert(factory.Create(',').Parse('an expression').EqualsTo([1, 2, 3]));
 
-  Mock.From(parser).ReceivedWithAnyArgs(1).Parse('');
+  Mock.From(parser).Received(1).Parse(Arg.IsAny<string>);
 end;
 
 procedure TMainForm.btnMockRegistrationClick(Sender: TObject);
@@ -119,7 +119,7 @@ var
 begin
   container := TContainer.Create;
   try
-    container.RegisterType<ICommandChannel>.DelegateTo(
+    container.RegisterType<ICommandChannel>(
       function: ICommandChannel
       begin
         Result := Mock<ICommandChannel>.Create;

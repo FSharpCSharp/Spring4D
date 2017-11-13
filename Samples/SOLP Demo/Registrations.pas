@@ -25,7 +25,7 @@ begin
 
   container.RegisterType<TObject, TCustomersViewModel>('customersViewModel').AsSingleton;
 
-  container.RegisterType<TCustomersView, TCustomersView>.DelegateTo(
+  container.RegisterType<TCustomersView, TCustomersView>(
     function: TCustomersView
     begin
       Application.CreateForm(TCustomersView, Result);
