@@ -33,24 +33,49 @@ begin
   fCommand := command;
 end;
 
+type
+  TAdapterFactory<TService, TAdapter> = reference to function(const service: TService): TAdapter;
+  TContainerHelper = class helper for TContainer
+  public
+    procedure RegisterAdapter<TService, TAdapter>; overload;
+    procedure RegisterAdapter<TService, TAdapter>(const delegate: TAdapterFactory<TService, TAdapter>); overload;
+  end;
+
+{ TContainerHelper }
+
+procedure TContainerHelper.RegisterAdapter<TService, TAdapter>;
+begin
+  RegisterType<TAdapter>;
+  RegisterAdapter<TService, TAdapter>(
+    function(const service: TService): TAdapter
+    begin
+      Result := Resolve<TAdapter>(TValue.From(service));
+    end);
+end;
+
+procedure TContainerHelper.RegisterAdapter<TService, TAdapter>(
+  const delegate: TAdapterFactory<TService, TAdapter>);
+begin
+  RegisterType<TArray<TAdapter>>(
+    function: TArray<TAdapter>
+    var
+      services: TArray<TService>;
+      i: Integer;
+    begin
+      services := ResolveAll<TService>;
+      SetLength(Result, Length(services));
+      for i := 0 to High(services) do
+        Result[i] := delegate(services[i]);
+    end);
+end;
+
 procedure Main;
 var
   buttons: TArray<TToolButton>;
 begin
   GlobalContainer.RegisterType<ICommand,TSaveCommand>('save');
   GlobalContainer.RegisterType<ICommand,TOpenCommand>('open');
-  GlobalContainer.RegisterType<TToolButton>;
-  GlobalContainer.RegisterType<TArray<TToolButton>>(
-    function: TArray<TToolButton>
-    var
-      commands: TArray<ICommand>;
-      i: Integer;
-    begin
-      commands := GlobalContainer.ResolveAll<ICommand>;
-      SetLength(Result, Length(commands));
-      for i := 0 to High(commands) do
-        Result[i] := GlobalContainer.Resolve<TToolButton>([TValue.From(commands[i])]);
-    end);
+  GlobalContainer.RegisterAdapter<ICommand, TToolButton>;
   GlobalContainer.Build;
 
   buttons := GlobalContainer.Resolve<TArray<TToolButton>>;
