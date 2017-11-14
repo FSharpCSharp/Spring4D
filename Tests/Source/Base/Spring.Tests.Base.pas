@@ -462,6 +462,7 @@ type
     procedure TryToType_ConvertStrToInt;
     procedure TryToType_ConvertStringToNullableString;
     procedure TryToType_ConvertIntegerToNullableEnum;
+    procedure TryToType_ConvertInvalidStringToBoolean;
 
     procedure GetNullableValue_ValueIsEmpty_ReturnsEmpty;
 
@@ -3092,6 +3093,14 @@ begin
   fSUT := 42;
   CheckTrue(fSUT.TryToType<string>(value));
   CheckEquals('42', value);
+end;
+
+procedure TTestValueHelper.TryToType_ConvertInvalidStringToBoolean;
+var
+  value: Boolean;
+begin
+  fSUT := 'bad';
+  CheckFalse(fSUT.TryToType<Boolean>(value));
 end;
 
 procedure TTestValueHelper.TryToType_ConvertStringToNullableString;

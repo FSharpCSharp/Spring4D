@@ -5289,9 +5289,13 @@ end;
 
 function ConvStr2Enum(const source: TValue; target: PTypeInfo;
   out value: TValue; const formatSettings: TFormatSettings): Boolean;
+var
+  temp: Integer;
 begin
-  value := TValue.FromOrdinal(target, GetEnumValue(target, source.AsString));
-  Result := True;
+  temp := GetEnumValue(target, source.AsString);
+  Result := (temp >= 0) or (target.TypeData.MinValue < 0);
+  if Result then
+    value := TValue.FromOrdinal(target, temp);
 end;
 
 function ConvStr2Float(const source: TValue; target: PTypeInfo;
