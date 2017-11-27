@@ -870,8 +870,10 @@ type
     function GetInvoke: TMethodPointer;
     function GetEnabled: Boolean;
     function GetOnChanged: TNotifyEvent;
+    function GetUseFreeNotification: Boolean;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
+    procedure SetUseFreeNotification(const value: Boolean);
   {$ENDREGION}
 
     procedure Add(const handler: TMethodPointer);
@@ -902,6 +904,13 @@ type
 
     property Invoke: TMethodPointer read GetInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+
+    /// <summary>
+    ///   Specifies if the event internally tracks if the event handlers are
+    ///   implemented by a TComponent descendant and automatically unsubscribes
+    ///   those when the implementing component is being destroyed.
+    /// </summary>
+    property UseFreeNotification: Boolean read GetUseFreeNotification write SetUseFreeNotification;
   end;
 
   /// <summary>
@@ -939,8 +948,10 @@ type
     function GetEnabled: Boolean;
     function GetInvoke: T;
     function GetOnChanged: TNotifyEvent;
+    function GetUseFreeNotification: Boolean;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(value: TNotifyEvent);
+    procedure SetUseFreeNotification(const value: Boolean);
     procedure EnsureInitialized;
   public
     procedure Add(const handler: T);
@@ -952,6 +963,13 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+
+    /// <summary>
+    ///   Specifies if the event internally tracks if the event handlers are
+    ///   implemented by a TComponent descendant and automatically unsubscribes
+    ///   those when the implementing component is being destroyed.
+    /// </summary>
+    property UseFreeNotification: Boolean read GetUseFreeNotification write SetUseFreeNotification;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
     class operator Implicit(var value: Event<T>): IEvent<T>;
@@ -7688,6 +7706,11 @@ begin
   Result := fInstance.OnChanged;
 end;
 
+function Event<T>.GetUseFreeNotification: Boolean;
+begin
+  Result := not Assigned(fInstance) or fInstance.UseFreeNotification;
+end;
+
 procedure Event<T>.Remove(const handler: T);
 begin
   if Assigned(fInstance) then
@@ -7710,6 +7733,12 @@ procedure Event<T>.SetOnChanged(value: TNotifyEvent);
 begin
   EnsureInitialized;
   fInstance.OnChanged := value;
+end;
+
+procedure Event<T>.SetUseFreeNotification(const value: Boolean);
+begin
+  EnsureInitialized;
+  fInstance.UseFreeNotification := value;
 end;
 
 class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;

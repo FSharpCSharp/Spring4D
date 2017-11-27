@@ -170,6 +170,8 @@ type
 
     procedure TestClassProcedureHandler;
     procedure TestInstanceProcedureHandler;
+
+    procedure TestSetUseFreeNotification;
   end;
 
   TEventHandler = class
@@ -1082,6 +1084,22 @@ begin
   fEvent.Remove(HandlerB);
   fEvent.Invoke(nil);
   Check(fAInvoked);
+end;
+
+procedure TTestMulticastEvent.TestSetUseFreeNotification;
+begin
+  CheckTrue(fEvent.UseFreeNotification);
+  fEvent.UseFreeNotification := False;
+  CheckFalse(fEvent.UseFreeNotification);
+  fEvent.UseFreeNotification := False;
+  CheckFalse(fEvent.UseFreeNotification);
+
+  fEvent.Add(HandlerA);
+
+  fEvent.UseFreeNotification := True;
+  CheckTrue(fEvent.UseFreeNotification);
+  fEvent.UseFreeNotification := True;
+  CheckTrue(fEvent.UseFreeNotification);
 end;
 
 procedure TEventHandler.HandleInt64(const value: Int64);
