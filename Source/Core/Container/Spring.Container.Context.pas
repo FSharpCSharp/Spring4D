@@ -228,7 +228,7 @@ begin
         Exit
       else
         raise ECircularDependencyException.CreateResFmt(
-          @SCircularDependencyDetected, [model.ComponentTypeName]);
+          @SCircularDependencyDetected, [model.ComponentType.DefaultName]);
     fResolutionStack.Push(model);
     Result := True;
   finally

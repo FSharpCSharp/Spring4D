@@ -396,8 +396,6 @@ type
     fPropertyInjections: IInjectionList;
     fFieldInjections: IInjectionList;
     fInterceptors: IList<TInterceptorReference>;
-    function GetComponentTypeInfo: PTypeInfo;
-    function GetComponentTypeName: string;
     procedure SetRefCounting(const value: TRefCounting);
   public
     constructor Create(const componentType: TRttiType);
@@ -409,8 +407,6 @@ type
     property Kernel: TKernel read fKernel write fKernel;
 
     property ComponentType: TRttiType read fComponentType;
-    property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
-    property ComponentTypeName: string read GetComponentTypeName;
     property Services: IDictionary<string, PTypeInfo> read fServices;
     property MinPoolsize: Integer read fMinPoolsize write fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize write fMaxPoolsize;
@@ -599,16 +595,6 @@ begin
   fPropertyInjections := TCollections.CreateInterfaceList<IInjection>;
   fFieldInjections := TCollections.CreateInterfaceList<IInjection>;
   fInterceptors := TCollections.CreateList<TInterceptorReference>;
-end;
-
-function TComponentModel.GetComponentTypeInfo: PTypeInfo;
-begin
-  Result := fComponentType.Handle;
-end;
-
-function TComponentModel.GetComponentTypeName: string;
-begin
-  Result := fComponentType.DefaultName;
 end;
 
 function TComponentModel.GetServiceName(serviceType: PTypeInfo): string;

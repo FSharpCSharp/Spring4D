@@ -129,7 +129,7 @@ begin
         raise
       else
         Exception.RaiseOuterException(EResolveException.CreateResFmt(
-          @SCannotResolveType, [Model.ComponentTypeName]));
+          @SCannotResolveType, [Model.ComponentType.DefaultName]));
     end;
   end;
 end;
@@ -207,7 +207,7 @@ var
 begin
   injection := Kernel.ConstructorSelector.Find(context, Model);
   if injection = nil then
-    raise EActivatorException.CreateResFmt(@SUnsatisfiedConstructor, [Model.ComponentTypeName]);
+    raise EActivatorException.CreateResFmt(@SUnsatisfiedConstructor, [Model.ComponentType.DefaultName]);
   arguments := Kernel.Resolver.Resolve(
     context, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(

@@ -316,7 +316,7 @@ begin
   method := model.ComponentType.Methods.FirstOrDefault(predicate);
   if not Assigned(method) then
     raise ERegistrationException.CreateResFmt(
-      @SUnsatisfiedConstructorParameters, [model.ComponentTypeName]);
+      @SUnsatisfiedConstructorParameters, [model.ComponentType.DefaultName]);
   Result := TConstructorInjection.Create;
   Result.Initialize(method);
   Result.InitializeDependencies(parameterTypes);
@@ -332,7 +332,7 @@ begin
   method := model.ComponentType.GetMethod(methodName);
   if not Assigned(method) then
     raise ERegistrationException.CreateResFmt(@SMethodNotFound,
-      [model.ComponentTypeName, methodName]);
+      [model.ComponentType.DefaultName, methodName]);
   injectionExists := model.MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
   if not injectionExists then
@@ -374,7 +374,7 @@ begin
   propertyMember := model.ComponentType.GetProperty(propertyName);
   if not Assigned(propertyMember) then
     raise ERegistrationException.CreateResFmt(@SPropertyNotFound,
-      [model.ComponentTypeName, propertyName]);
+      [model.ComponentType.DefaultName, propertyName]);
   injectionExists := model.PropertyInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(propertyMember));
   if not injectionExists then
@@ -393,7 +393,7 @@ begin
   field := model.ComponentType.GetField(fieldName);
   if not Assigned(field) then
     raise ERegistrationException.CreateResFmt(@SFieldNotFound,
-      [model.ComponentTypeName, fieldName]);
+      [model.ComponentType.DefaultName, fieldName]);
   injectionExists := model.FieldInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(field));
   if not injectionExists then

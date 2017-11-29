@@ -307,13 +307,13 @@ begin
 
   if methods = nil then
     raise ERegistrationException.CreateResFmt(@SUnsupportedFactoryType, [
-      model.ComponentTypeName]);
+      model.ComponentType.DefaultName]);
 
   for method in methods do
     if not Assigned(method.ReturnType)
       or method.Parameters.Any(TParameterFilters.HasFlags([pfOut])) then
       raise ERegistrationException.CreateResFmt(@SUnsupportedFactoryMethod, [
-        model.ComponentTypeName, method.ToString]);
+        model.ComponentType.DefaultName, method.ToString]);
 
   maxVirtualIndex := 2;
   for method in methods do
@@ -327,13 +327,13 @@ begin
         factory: TVirtualInterface;
         intf: IInterface;
       begin
-        factory := TVirtualInterface.Create(model.ComponentTypeInfo, invokeEvent);
-        if IsMethodReference(model.ComponentTypeInfo) then
+        factory := TVirtualInterface.Create(model.ComponentType.Handle, invokeEvent);
+        if IsMethodReference(model.ComponentType.Handle) then
           if maxVirtualIndex > 3 then
             TVirtualInterfaceHack(factory).VTable[3] :=
               TVirtualInterfaceHack(factory).VTable[maxVirtualIndex];
-        factory.QueryInterface(model.ComponentTypeInfo.TypeData.Guid, intf);
-        TValue.Make(@intf, model.ComponentTypeInfo, Result);
+        factory.QueryInterface(model.ComponentType.AsInterface.GUID, intf);
+        TValue.Make(@intf, model.ComponentType.Handle, Result);
       end);
 end;
 

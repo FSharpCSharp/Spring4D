@@ -724,7 +724,7 @@ end;
 function TMyInterceptorSelector.HasInterceptors(
   const model: TComponentModel): Boolean;
 begin
-  Result := model.ComponentTypeInfo.TypeName = 'TService';
+  Result := model.ComponentType.Name = 'TService';
 end;
 
 function TMyInterceptorSelector.SelectInterceptors(const model: TComponentModel;
