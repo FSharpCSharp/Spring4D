@@ -3,6 +3,7 @@ program DynamicAbstractFactory;
 {$APPTYPE CONSOLE}
 
 uses
+  Spring.Collections,
   Spring.Container;
 
 type
@@ -15,6 +16,11 @@ type
     ['{F632D1FB-9C34-48FD-BD72-6BBC436D1B47}']
     function Create: IOrderShipper; overload;
     function Create(const name: string): IOrderShipper; overload;
+  end;
+
+  IOrderShipperListFactory = interface(IInvokable)
+    ['{E5A4BC4D-68F2-41AA-A60F-B5884C268094}']
+    function Create: IList<IOrderShipper>;
   end;
 
   TOrderShipper = class(TInterfacedObject, IOrderShipper)
@@ -47,11 +53,14 @@ procedure Main;
 var
   factory: IOrderShipperFactory;
   service: IOrderShipper;
+  services: IList<IOrderShipper>;
 begin
   ReportMemoryLeaksOnShutdown := True;
 
-  GlobalContainer.RegisterType<IOrderShipper, TOrderShipper>;
-  GlobalContainer.RegisterType<IOrderShipperFactory>.AsFactory;
+  GlobalContainer.RegisterType<IOrderShipper, TOrderShipper>('default').AsDefault;
+  GlobalContainer.RegisterType<IOrderShipper, TOrderShipper>('test').InjectConstructor(['test']);
+  GlobalContainer.RegisterFactory<IOrderShipperFactory>;
+  GlobalContainer.RegisterFactory<IOrderShipperListFactory>;
   GlobalContainer.Build;
 
   factory := GlobalContainer.Resolve<IOrderShipperFactory>;
@@ -60,6 +69,10 @@ begin
 
   service := factory.Create('test');
   service.Ship;
+
+  services := GlobalContainer.Resolve<IOrderShipperListFactory>.Create;
+  for service in services do
+    service.Ship;
 end;
 
 begin
