@@ -2429,6 +2429,8 @@ type
     procedure Remove(const items: TArray<T>); overload; inline;
 
     function Contains(const item: T): Boolean; overload; inline;
+    function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload;
+    function Contains(const item: T; const comparer: TEqualityComparison<T>): Boolean; overload;
     function Contains(const items: array of T): Boolean; overload;
     function Contains(const items: TArray<T>): Boolean; overload;
     function IndexOf(const item: T): Integer; inline;
@@ -8778,6 +8780,28 @@ end;
 function Vector<T>.Contains(const item: T): Boolean;
 begin
   Result := IndexOf(item) > -1;
+end;
+
+function Vector<T>.Contains(const item: T;
+  const comparer: IEqualityComparer<T>): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to High(fData) do
+    if comparer.Equals(fData[i], item) then
+      Exit(True);
+  Result := False;
+end;
+
+function Vector<T>.Contains(const item: T;
+  const comparer: TEqualityComparison<T>): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to High(fData) do
+    if comparer(fData[i], item) then
+      Exit(True);
+  Result := False;
 end;
 
 function Vector<T>.Contains(const items: array of T): Boolean;
