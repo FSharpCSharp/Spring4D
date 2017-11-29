@@ -100,8 +100,9 @@ type
     constructor CreateInternal(ownsStream: Boolean;
       const encoding: TEncoding);
     procedure SetStream(const stream: TStream);
-  protected
     procedure DoSend(const event: TLogEvent); override;
+    function FormatBuffer(const event: TLogEvent): TBytes; virtual;
+    property Encoding: TEncoding read fEncoding;
   public
     constructor Create(const stream: TStream; ownsStream: Boolean = True;
       const encoding: TEncoding = nil);
@@ -299,14 +300,19 @@ procedure TStreamLogAppender.DoSend(const event: TLogEvent);
 var
   buffer: TBytes;
 begin
-  buffer := fEncoding.GetBytes(FormatTimeStamp(event.TimeStamp) + ': ' +
-    LEVEL_FIXED[event.Level] + ' ' + FormatMsg(event) + sLineBreak);
+  buffer := FormatBuffer(event);
   fLock.Enter;
   try
     fStream.WriteBuffer(buffer[0], Length(buffer));
   finally
     fLock.Leave;
   end;
+end;
+
+function TStreamLogAppender.FormatBuffer(const event: TLogEvent): TBytes;
+begin
+  Result := fEncoding.GetBytes(FormatTimeStamp(event.TimeStamp) + ': ' +
+    LEVEL_FIXED[event.Level] + ' ' + FormatMsg(event) + sLineBreak);
 end;
 
 procedure TStreamLogAppender.SetStream(const stream: TStream);
