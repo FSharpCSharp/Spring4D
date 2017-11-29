@@ -396,11 +396,7 @@ end;
 
 procedure TEventBase<T>.Add(handler: T);
 begin
-{$IFDEF DELPHI2010}
-  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
-{$ELSE}
   if TType.Kind<T> = tkInterface then
-{$ENDIF}
     inherited Add(MethodReferenceToMethodPointer(handler))
   else
     inherited Add(PMethodPointer(@handler)^);
@@ -408,11 +404,7 @@ end;
 
 function TEventBase<T>.GetInvoke: T;
 begin
-{$IFDEF DELPHI2010}
-  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
-{$ELSE}
   if TType.Kind<T> = tkInterface then
-{$ENDIF}
     IInterface(PPointer(@Result)^) := MethodPointerToMethodReference(inherited Invoke)
   else
     PMethodPointer(@Result)^ := inherited Invoke;
@@ -420,11 +412,7 @@ end;
 
 procedure TEventBase<T>.Remove(handler: T);
 begin
-{$IFDEF DELPHI2010}
-  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
-{$ELSE}
   if TType.Kind<T> = tkInterface then
-{$ENDIF}
     inherited Remove(MethodReferenceToMethodPointer(handler))
   else
     inherited Remove(PMethodPointer(@handler)^);

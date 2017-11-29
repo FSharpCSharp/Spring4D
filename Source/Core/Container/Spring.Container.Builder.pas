@@ -539,7 +539,6 @@ end;
 
 procedure TInterceptorInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
-{$IFNDEF DELPHI2010}
 var
   attributes: TArray<InterceptorAttribute>;
   attribute: InterceptorAttribute;
@@ -559,9 +558,6 @@ begin
       end) then
       model.Interceptors.Add(interceptorRef);
   end;
-{$ELSE}
-begin
-{$ENDIF}
 end;
 
 {$ENDREGION}

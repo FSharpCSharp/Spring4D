@@ -704,11 +704,7 @@ end;
 
 procedure TEvent<T>.Add(handler: T);
 begin
-{$IFDEF DELPHI2010}
-  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
-{$ELSE}
   if TType.Kind<T> = tkInterface then
-{$ENDIF}
     inherited Add(MethodReferenceToMethodPointer(handler))
   else
     inherited Add(PMethodPointer(@handler)^);
@@ -716,11 +712,7 @@ end;
 
 procedure TEvent<T>.Remove(handler: T);
 begin
-{$IFDEF DELPHI2010}
-  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
-{$ELSE}
   if TType.Kind<T> = tkInterface then
-{$ENDIF}
     inherited Remove(MethodReferenceToMethodPointer(handler))
   else
     inherited Remove(PMethodPointer(@handler)^);
@@ -728,11 +720,7 @@ end;
 
 function TEvent<T>.GetInvoke: T;
 begin
-{$IFDEF DELPHI2010}
-  if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
-{$ELSE}
   if TType.Kind<T> = tkInterface then
-{$ENDIF}
 {$IFDEF PUREPASCAL}
     PInterface(@Result)^ := IInterface(fProxy)
 {$ELSE}

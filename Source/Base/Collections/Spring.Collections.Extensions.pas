@@ -138,9 +138,7 @@ type
     constructor Create(const source: IEnumerable<T>;
       const predicate: TPredicate<T>);
 
-{$IFNDEF DELPHI2010}
     function Where(const predicate: TPredicate<T>): IEnumerable<T>; override;
-{$ENDIF}
   end;
 
   TWhereIndexIterator<T> = class(TSourceIterator<T>)
@@ -299,9 +297,6 @@ type
       const comparer: IEqualityComparer<TKey>);
   end;
 
-{$IFDEF DELPHI2010}
-  TRangeIterator = Spring.Collections.Base.TRangeIterator;
-{$ELSE}
   TRangeIterator = class(TIterator<Integer>)
   private
     fStart: Integer;
@@ -316,7 +311,6 @@ type
 
     function ToArray: TArray<Integer>; override;
   end;
-{$ENDIF}
 
   TExceptIterator<T> = class(TSourceIterator<T>)
   private
@@ -862,9 +856,6 @@ type
 implementation
 
 uses
-{$IFDEF DELPHI2010}
-  Spring.Collections.Sets,
-{$ENDIF}
   Spring.ResourceStrings;
 
 
@@ -979,11 +970,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
 {$ENDIF}
 
-{$IFNDEF DELPHI2010}
   Result := TCollections.CreateList<T>;
-{$ELSE}
-  Result := TList<T>.Create;
-{$ENDIF}
   Result.Count := count;
   for i := 0 to count - 1 do
   begin
@@ -1004,23 +991,8 @@ end;
 
 function TArrayIterator<T>.IndexOf(const item: T; index,
   count: Integer): Integer;
-{$IFDEF DELPHI2010}
-var
-  i: Integer;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Length(fValues)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
-{$ENDIF}
-
-  for i := index to index + count - 1 do
-    if Equals(fValues[i], item) then
-      Exit(i);
-  Result := -1;
-{$ELSE}
 begin
   Result := TArray.IndexOf<T>(fValues, item, index, count, Self);
-{$ENDIF}
 end;
 
 function TArrayIterator<T>.Clone: TIterator<T>;
@@ -1146,14 +1118,12 @@ begin
   fEnumerator := fSource.GetEnumerator;
 end;
 
-{$IFNDEF DELPHI2010}
 function TWhereIterator<T>.Where(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
   Result := TWhereIterator<T>.Create(fSource,
     TEnumerable.CombinePredicates<T>(fPredicate, predicate));
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -1602,11 +1572,7 @@ end;
 
 procedure TDistinctIterator<T>.Start;
 begin
-{$IFNDEF DELPHI2010}
   fSet := TCollections.CreateSet<T>(fComparer);
-{$ELSE}
-  fSet := THashSet<T>.Create(fComparer);
-{$ENDIF}
   fEnumerator := fSource.GetEnumerator;
 end;
 
@@ -1652,11 +1618,7 @@ end;
 
 procedure TDistinctByIterator<T, TKey>.Start;
 begin
-{$IFNDEF DELPHI2010}
   fSet := TCollections.CreateSet<TKey>(fComparer);
-{$ELSE}
-  fSet := THashSet<TKey>.Create(fComparer);
-{$ENDIF}
   fEnumerator := fSource.GetEnumerator;
 end;
 
@@ -1665,7 +1627,6 @@ end;
 
 {$REGION 'TRangeIterator'}
 
-{$IFNDEF DELPHI2010}
 constructor TRangeIterator.Create(start, count: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1706,7 +1667,6 @@ begin
   for i := 0 to fCount - 1 do
     Result[i] := fStart + i;
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -1756,11 +1716,7 @@ end;
 
 procedure TExceptIterator<T>.Start;
 begin
-{$IFNDEF DELPHI2010}
   fSet := TCollections.CreateSet<T>(fComparer);
-{$ELSE}
-  fSet := THashSet<T>.Create(fComparer);
-{$ENDIF}
   fSet.AddRange(fSecond);
   fEnumerator := fSource.GetEnumerator;
 end;
@@ -1813,11 +1769,7 @@ end;
 
 procedure TIntersectIterator<T>.Start;
 begin
-{$IFNDEF DELPHI2010}
   fSet := TCollections.CreateSet<T>(fComparer);
-{$ELSE}
-  fSet := THashSet<T>.Create(fComparer);
-{$ENDIF}
   fSet.AddRange(fSecond);
   fEnumerator := fSource.GetEnumerator;
 end;
@@ -1881,11 +1833,7 @@ procedure TUnionIterator<T>.Start;
 begin
   if not fFlag then
   begin
-{$IFNDEF DELPHI2010}
     fSet := TCollections.CreateSet<T>(fComparer);
-{$ELSE}
-    fSet := THashSet<T>.Create(fComparer);
-{$ENDIF}
     fEnumerator := fSource.GetEnumerator;
   end
   else
@@ -2243,11 +2191,7 @@ constructor TLookup<TKey, TElement>.TGrouping.Create(const key: TKey);
 begin
   inherited Create;
   fKey := key;
-{$IFNDEF DELPHI2010}
   fElements := TCollections.CreateList<TElement>;
-{$ELSE}
-  fElements := TList<TElement>.Create;
-{$ENDIF}
 end;
 
 procedure TLookup<TKey, TElement>.TGrouping.Add(const item: TElement);
@@ -3128,11 +3072,7 @@ var
   key: TKey;
   compareResult: Integer;
 begin
-{$IFNDEF DELPHI2010}
   fResult := TCollections.CreateList<T>;
-{$ELSE}
-  fResult := TList<T>.Create;
-{$ENDIF}
   fEnumerator := fSource.GetEnumerator;
   if not fEnumerator.MoveNext then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);

@@ -217,13 +217,8 @@ end;
 
 procedure TTestSimpleTypeSerializer.TestFloat;
 begin
-{$IFDEF DELPHI2010}
-  CheckValue('3' + DecimalSeparator + '14',
-    TValue.From<Double>(3.14), tkFloat);
-{$ELSE}
   CheckValue('3' + FormatSettings.DecimalSeparator + '14',
     TValue.From<Double>(3.14), tkFloat);
-{$ENDIF}
 end;
 
 procedure TTestSimpleTypeSerializer.TestInt64;
@@ -563,11 +558,7 @@ begin
       '5'#$A +
       '  Disposed = False' +
 {$ELSE}
-{$IFDEF DELPHI2010}
-      '5' +
-{$ELSE}
       '3' +
-{$ENDIF}
 {$ENDIF}
       ')';
   values := nil;

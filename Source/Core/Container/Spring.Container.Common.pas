@@ -433,7 +433,6 @@ type
     function AsDefault: IRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
-{$IFNDEF DELPHI2010}
     function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
     function AsFactory(const resolvedServiceName: string;
       paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
@@ -442,7 +441,6 @@ type
       where: TWhere = TWhere.Last): IRegistration; overload;
     function InterceptedBy(const name: string;
       where: TWhere = TWhere.Last): IRegistration; overload;
-{$ENDIF}
   end;
 
   IContainer = interface

@@ -125,8 +125,6 @@ type
     class var GlobalInstance: TServiceLocator;
     function GetServiceLocator: IServiceLocator;
     procedure RaiseNotInitialized;
-    type
-      TValueArray = array of TValue;
   protected
     class constructor Create;
     class destructor Destroy;
@@ -275,11 +273,7 @@ begin
   services := GetServiceLocator.GetAllServices(TypeInfo(TServiceType));
   SetLength(Result, Length(services));
   for i := Low(Result) to High(Result) do
-  begin
-    // accessing TArray<TValue> directly causes an internal error URW1111 in Delphi 2010 (see QC #77575)
-    // the hardcast prevents it but does not cause any differences in compiled code
-    Result[i] := TValueArray(services)[i].AsType<TServiceType>;
-  end;
+    Result[i] := services[i].AsType<TServiceType>;
 end;
 
 function TServiceLocator.HasService(serviceType: PTypeInfo): Boolean;

@@ -32,10 +32,8 @@ uses
   Generics.Collections,
   Generics.Defaults,
   Spring.Collections,
-{$IFNDEF DELPHI2010}
-  Spring.Collections.Trees,
-{$ENDIF}
-  Spring.Collections.Base;
+  Spring.Collections.Base,
+  Spring.Collections.Trees;
 
 type
   /// <summary>
@@ -113,7 +111,6 @@ type
   {$ENDREGION}
   end;
 
-{$IFNDEF DELPHI2010}
   TSortedSet<T> = class(TSetBase<T>, ISet<T>)
   private
     fTree: IRedBlackTree<T>;
@@ -136,7 +133,6 @@ type
 
     function Contains(const item: T): Boolean; override;
   end;
-{$ENDIF}
 
 implementation
 
@@ -169,11 +165,7 @@ begin
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-{$IFNDEF DELPHI2010}
   list := TCollections.CreateList<T>;
-{$ELSE}
-  list := TList<T>.Create;
-{$ENDIF}
   for item in Self do
     if not other.Contains(item) then
       list.Add(item);
@@ -413,7 +405,6 @@ end;
 
 {$REGION 'TSortedSet<T>'}
 
-{$IFNDEF DELPHI2010}
 constructor TSortedSet<T>.Create;
 var
   // use variable to pass nil because of codegen bug in XE2 and XE3 in x64
@@ -495,7 +486,6 @@ begin
   if Result then
     Changed(item, caRemoved);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 

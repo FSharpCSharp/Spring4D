@@ -37,10 +37,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.LinkedLists,
-{$IFNDEF DELPHI2010}
-  Spring.Collections.Trees,
-{$ENDIF}
-  Spring.Collections.Lists;
+  Spring.Collections.Lists,
+  Spring.Collections.Trees;
 
 type
   TTestEmptyHashSet = class(TTestCase)
@@ -224,9 +222,7 @@ type
     procedure TestStackPeekOrDefault;
     procedure TestStackTryPeek;
     procedure TestStackTryPop;
-{$IFNDEF DELPHI2010}
     procedure TestStackTrimExcess;
-{$ENDIF}
   end;
 
   TTestStackOfTBytes = class(TTestCase)
@@ -285,9 +281,7 @@ type
     procedure TestQueuePeekOrDefault;
     procedure TestQueueTryDequeue;
     procedure TestQueueTryPeek;
-{$IFNDEF DELPHI2010}
     procedure TestQueueTrimExcess;
-{$ENDIF}
   end;
 
   TTestQueueOfTBytes = class(TTestCase)
@@ -559,7 +553,6 @@ type
     procedure TestToArray;
   end;
 
-{$IFNDEF DELPHI2010}
   TTestEmptyIntegerStringMap = class(TTestCase)
   private
     SUT: IMap<Integer, string>;
@@ -616,7 +609,6 @@ type
 
     procedure TestInsert;
   end;
-{$ENDIF}
 
 implementation
 
@@ -1651,7 +1643,6 @@ begin
   CheckEquals(0, SUT.Count);
 end;
 
-{$IFNDEF DELPHI2010}
 procedure TTestStackOfInteger.TestStackTrimExcess;
 var
   stack: TStack<Integer>;
@@ -1663,7 +1654,6 @@ begin
   stack.TrimExcess;
   CheckEquals(0, stack.Capacity);
 end;
-{$ENDIF}
 
 procedure TTestStackOfInteger.TestStackTryPeek;
 var
@@ -1938,7 +1928,6 @@ begin
   CheckEquals(MaxItems, SUT.PeekOrDefault);
 end;
 
-{$IFNDEF DELPHI2010}
 procedure TTestQueueOfInteger.TestQueueTrimExcess;
 var
   queue: TQueue<Integer>;
@@ -1950,7 +1939,6 @@ begin
   queue.TrimExcess;
   CheckEquals(0, queue.Capacity);
 end;
-{$ENDIF}
 
 procedure TTestQueueOfInteger.TestQueueTryDequeue;
 var
@@ -3339,7 +3327,6 @@ end;
 
 {$REGION 'TTestEmptyIntegerStringMap'}
 
-{$IFNDEF DELPHI2010}
 procedure TTestEmptyIntegerStringMap.SetUp;
 begin
   SUT := TCollections.CreateSortedDictionary<Integer, string>;
@@ -3384,14 +3371,12 @@ begin
   query := SUT.Values.Skip(1);
   CheckNotNull(query);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TTestIntegerStringMap'}
 
-{$IFNDEF DELPHI2010}
 procedure TTestIntegerStringMap.SetUp;
 var
   i, n: Integer;
@@ -3712,14 +3697,12 @@ begin
   end;
   Check(i = NumItems+1);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TTestRedBlackTree'}
 
-{$IFNDEF DELPHI2010}
 procedure TTestRedBlackTree.FuzzyTesting;
 
   function ArrayToString(const values: TArray<Integer>): string;
@@ -3875,7 +3858,6 @@ begin
   CheckEquals(92, arr[8]);
   CheckEquals(98, arr[9]);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 

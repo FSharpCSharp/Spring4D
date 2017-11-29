@@ -175,15 +175,11 @@ type
     function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     function Max: T; overload;
-{$IFNDEF DELPHI2010}
     function Max(const selector: TFunc<T, Integer>): Integer; overload;
-{$ENDIF}
     function Max(const comparer: IComparer<T>): T; overload;
     function Max(const comparer: TComparison<T>): T; overload;
     function Min: T; overload;
-{$IFNDEF DELPHI2010}
     function Min(const selector: TFunc<T, Integer>): Integer; overload;
-{$ENDIF}
     function Min(const comparer: IComparer<T>): T; overload;
     function Min(const comparer: TComparison<T>): T; overload;
 
@@ -193,9 +189,7 @@ type
 
     function Reversed: IEnumerable<T>; virtual;
 
-{$IFNDEF DELPHI2010}
     function Shuffled: IEnumerable<T>; virtual;
-{$ENDIF}
 
     function Single: T; overload; virtual;
     function Single(const predicate: TPredicate<T>): T; overload;
@@ -249,23 +243,6 @@ type
     constructor Create; override;
     function GetEnumerator: IEnumerator<T>; override; final;
   end;
-
-{$IFDEF DELPHI2010}
-  TRangeIterator = class(TIterator<Integer>)
-  private
-    fStart: Integer;
-    fCount: Integer;
-    fIndex: Integer;
-  protected
-    function Clone: TIterator<Integer>; override;
-    function GetCount: Integer; override;
-    function TryMoveNext(var current: Integer): Boolean; override;
-  public
-    constructor Create(start, count: Integer);
-
-    function ToArray: TArray<Integer>; override;
-  end;
-{$ENDIF}
 
   TSourceIterator<T> = class(TIterator<T>)
   protected
@@ -954,12 +931,10 @@ begin
   Result := Max(fComparer);
 end;
 
-{$IFNDEF DELPHI2010}
 function TEnumerableBase<T>.Max(const selector: TFunc<T, Integer>): Integer;
 begin
   Result := TEnumerable.Max<T>(Self, selector);
 end;
-{$ENDIF}
 
 function TEnumerableBase<T>.Max(const comparer: IComparer<T>): T;
 var
@@ -994,12 +969,10 @@ begin
   Result := Min(fComparer);
 end;
 
-{$IFNDEF DELPHI2010}
 function TEnumerableBase<T>.Min(const selector: TFunc<T, Integer>): Integer;
 begin
   Result := TEnumerable.Min<T>(Self, selector);
 end;
-{$ENDIF}
 
 function TEnumerableBase<T>.Min(const comparer: IComparer<T>): T;
 var
@@ -1059,7 +1032,6 @@ begin
   Result := TReversedIterator<T>.Create(Self);
 end;
 
-{$IFNDEF DELPHI2010}
 function TEnumerableBase<T>.Shuffled: IEnumerable<T>;
 var
   items: TArray<T>;
@@ -1068,7 +1040,6 @@ begin
   TArray.Shuffle<T>(items);
   Result := TArrayIterator<T>.Create(items);
 end;
-{$ENDIF}
 
 function TEnumerableBase<T>.Single: T;
 var
@@ -1459,54 +1430,6 @@ begin
     Result := iterator;
   end;
 end;
-
-{$ENDREGION}
-
-
-{$REGION 'TRangeIterator'}
-
-{$IFDEF DELPHI2010}
-constructor TRangeIterator.Create(start, count: Integer);
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(count >= 0, 'count');
-  Guard.CheckRange(Int64(start) + Int64(count) - 1 <= Int64(MaxInt), 'count');
-{$ENDIF}
-
-  inherited Create;
-  fStart := start;
-  fCount := count;
-end;
-
-function TRangeIterator.Clone: TIterator<Integer>;
-begin
-  Result := TRangeIterator.Create(fStart, fCount);
-end;
-
-function TRangeIterator.GetCount: Integer;
-begin
-  Result := fCount;
-end;
-
-function TRangeIterator.TryMoveNext(var current: Integer): Boolean;
-begin
-  Result := fIndex < fCount;
-  if Result then
-  begin
-    current := fStart + fIndex;
-    Inc(fIndex);
-  end;
-end;
-
-function TRangeIterator.ToArray: TArray<Integer>;
-var
-  i: Integer;
-begin
-  SetLength(Result, fCount);
-  for i := 0 to fCount - 1 do
-    Result[i] := fStart + i;
-end;
-{$ENDIF}
 
 {$ENDREGION}
 

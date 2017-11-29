@@ -49,10 +49,8 @@ uses
   Spring.Tests.Container,
   Spring.Tests.Container.LifetimeManager,
   Spring.Tests.Container.Logging,
-{$IFNDEF DELPHI2010}
   Spring.Tests.Interception,
   Spring.Tests.Mocking,
-{$ENDIF}
   Spring.Tests.Pool,
   Spring.Tests.Testing,
   Spring.Tests.Utils,
@@ -82,11 +80,9 @@ begin
     TTestEnum.Suite
   ]);
 
-{$IFNDEF DELPHI2010}
   RegisterTests('Spring.Base', [
     TTestManagedObject.Suite
   ]);
-{$ENDIF}
 
   RegisterTests('Spring.Base.Collections', [
     TTestEmptyHashSet.Suite,
@@ -115,12 +111,10 @@ begin
     TTestBidiDictionary.Suite,
     TTestObjectStack.Suite,
     TTestObjectQueue.Suite,
-    TTestOrderedDictionary.Suite
-  {$IFNDEF DELPHI2010},
+    TTestOrderedDictionary.Suite,
     TTestEmptyIntegerStringMap.Suite,
     TTestIntegerStringMap.Suite,
     TTestRedBlackTree.Suite
-  {$ENDIF}
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [
@@ -256,7 +250,6 @@ begin
     TTestLoggingConfigurationBuilder.Suite
   ]);
 
-{$IFNDEF DELPHI2010}
   RegisterTests('Spring.Interception', [
     TFreezableTest.Suite,
     TProxyTest.Suite,
@@ -269,7 +262,6 @@ begin
     MockDynamicallySupportsOtherInterfaces.Suite,
     MockSequenceTest.Suite
   ]);
-{$ENDIF}
 
   RegisterTests('Spring.Extensions.Utils', [
     TTestVersion.Suite,
@@ -295,9 +287,7 @@ begin
 
   RegisterTests('Spring.Testing', [
     TSelfTest.Suite,
-  {$IFNDEF DELPHI2010}
     TDataDrivenTest.Suite,
-  {$ENDIF}
     TSuiteSetUpTearDownTest.Suite
   ]);
 end;

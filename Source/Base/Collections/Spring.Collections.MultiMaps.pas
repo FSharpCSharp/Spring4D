@@ -197,11 +197,7 @@ begin
   fValueComparer := valueComparer;
   inherited Create;
   fDictionary := CreateDictionary(keyComparer);
-{$IFNDEF DELPHI2010}
   fEmpty := TCollections.CreateList<TValue>;
-{$ELSE}
-  fEmpty := TList<TValue>.Create;
-{$ENDIF}
   fValues := TValueCollection.Create(Self);
 end;
 
@@ -495,11 +491,7 @@ end;
 function TMultiMap<TKey, TValue>.CreateCollection(
   const comparer: IComparer<TValue>): IList<TValue>;
 begin
-{$IFNDEF DELPHI2010}
   Result := TCollections.CreateList<TValue>(comparer);
-{$ELSE}
-  Result := TList<TValue>.Create(comparer);
-{$ENDIF}
 end;
 
 function TMultiMap<TKey, TValue>.CreateDictionary(

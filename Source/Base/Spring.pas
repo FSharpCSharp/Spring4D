@@ -72,41 +72,12 @@ type
 
   TAttributeClass = class of TCustomAttribute;
 
-{$IFDEF DELPHI2010}
-  TThreadID = LongWord;
-
-  PNativeInt = ^NativeInt;
-  PNativeUInt = ^NativeUInt;
-{$ENDIF}
-
 {$IFNDEF DELPHIXE2_UP}
   IntPtr = NativeInt;
   UIntPtr = NativeUInt;
 {$ENDIF}
 
   PObject = ^TObject;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TGuidHelper'}
-
-{$IFDEF DELPHI2010}
-  TGuidHelper = record helper for TGUID
-  public
-    class function Create(const B: TBytes): TGUID; overload; static;
-    class function Create(const S: string): TGUID; overload; static;
-    class function Create(A: Integer; B: SmallInt; C: SmallInt; const D: TBytes): TGUID; overload; static;
-
-    class function &&op_Equality(const left, right: TGUID): Boolean; static;
-    class function &&op_Inequality(const left, right: TGUID): Boolean; static; inline;
-    class function Empty: TGuid; static;
-    class function NewGuid: TGuid; static;
-
-    function ToByteArray: TBytes;
-    function ToString: string;
-  end;
-{$ENDIF}
 
   {$ENDREGION}
 
@@ -255,10 +226,6 @@ type
   ///   fields inside of classes that inherit from TManagedObject or are using
   ///   the mechanism provided by TInitTable.
   /// </summary>
-  /// <remarks>
-  ///   Because of limited RTTI in Delphi 2010 interface fields are only
-  ///   supported when the interface type has a GUID.
-  /// </remarks>
   ManagedAttribute = class(TBaseAttribute)
   strict private
     fCreateInstance: Boolean;
@@ -499,10 +466,6 @@ type
 
     function AsPointer: Pointer;
 
-{$IFDEF DELPHI2010}
-    function AsString: string;
-{$ENDIF}
-
     /// <summary>
     ///   Casts the currently stored value to another type.
     /// </summary>
@@ -595,11 +558,6 @@ type
     ///   Checks whether the stored value is a <c>Variant</c>.
     /// </summary>
     function IsVariant: Boolean;
-
-{$IFDEF DELPHI2010}
-    function IsType<T>: Boolean; overload;
-    function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
-{$ENDIF}
 
     /// <summary>
     ///   Sets the stored value of a nullable.
@@ -778,12 +736,10 @@ type
 
   {$REGION 'TMethodImplementationHelper'}
 
-  {$IFNDEF DELPHI2010}
   TMethodImplementationHelper = class helper for TMethodImplementation
   public
     function AsMethod: TMethod;
   end;
-  {$ENDIF}
 
   {$ENDREGION}
 
@@ -1947,15 +1903,9 @@ type
 
   ENotSupportedException = SysUtils.ENotSupportedException;
 
-{$IFNDEF DELPHI2010}
   ENotImplementedException = SysUtils.ENotImplemented;
   EInvalidOperationException = SysUtils.EInvalidOpException;
   EArgumentNilException = SysUtils.EArgumentNilException;
-{$ELSE}
-  ENotImplementedException = class(Exception);
-  EInvalidOperationException = class(Exception);
-  EArgumentNilException = class(EArgumentException);
-{$ENDIF}
 
   EInvalidCastException = SysUtils.EInvalidCast;
 
@@ -2428,11 +2378,7 @@ type
 
   {$REGION 'Vector<T>'}
 
-{$IFDEF DELPHI2010}
-  TArrayEnumerator<T> = class
-{$ELSE}
   TArrayEnumerator<T> = record
-{$ENDIF}
   private
     fItems: TArray<T>;
     fIndex: Integer;
@@ -2530,27 +2476,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TFormatSettingsHelper'}
-
-{$IFDEF DELPHI2010}
-  TFormatSettingsHelper = record helper for TFormatSettings
-  public
-    /// <summary>
-    ///   Creates a TFormatSettings record with current default values provided
-    ///   by the operating system.
-    /// </summary>
-    class function Create: TFormatSettings; static; inline;
-  end;
-{$ENDIF}
-
-  {$ENDREGION}
-
-
   {$REGION 'Routines'}
-
-{$IFDEF DELPHI2010}
-function SplitString(const s, delimiters: string): TStringDynArray;
-{$ENDIF}
 
 {$IFNDEF DELPHIXE2_UP}
 function ReturnAddress: Pointer;
@@ -2711,45 +2637,11 @@ uses
 {$ENDIF}
   Spring.Events,
   Spring.ResourceStrings,
-{$IFNDEF DELPHI2010}
   Spring.ValueConverters,
-{$ENDIF}
   Spring.VirtualClass;
 
 
 {$REGION 'Routines'}
-
-{$IFDEF DELPHI2010}
-function SplitString(const s, delimiters: string): TStringDynArray;
-var
-  splitCount: Integer;
-  startIndex: Integer;
-  foundIndex: Integer;
-  i: Integer;
-begin
-  Result := nil;
-
-  if s <> '' then
-  begin
-    splitCount := 0;
-    for i := 1 to Length(s) do
-      if IsDelimiter(delimiters, s, i) then
-        Inc(splitCount);
-
-    SetLength(Result, splitCount + 1);
-
-    startIndex := 1;
-    for i := 0 to splitCount - 1 do
-    begin
-      foundIndex := FindDelimiter(delimiters, s, startIndex);
-      Result[i] := Copy(s, startIndex, foundIndex - startIndex);
-      startIndex := foundIndex + 1;
-    end;
-
-    Result[splitCount] := Copy(s, startIndex, Length(s) - startIndex + 1);
-  end;
-end;
-{$ENDIF}
 
 {$IFNDEF DELPHIXE2_UP}
 function ReturnAddress: Pointer;
@@ -3339,72 +3231,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TGuidHelper'}
-
-{$IFDEF DELPHI2010}
-class function TGuidHelper.Create(const B: TBytes): TGUID;
-begin
-  if Length(B) <> 16 then
-    raise EArgumentException.CreateResFmt(@SInvalidGuidArray, [16]);
-  Move(B[0], Result, SizeOf(Result));
-end;
-
-class function TGuidHelper.Create(const S: string): TGUID;
-begin
-  Result := StringToGUID(S);
-end;
-
-class function TGuidHelper.Create(A: Integer; B, C: SmallInt;
-  const D: TBytes): TGUID;
-begin
-  if Length(D) <> 16 then
-    raise EArgumentException.CreateResFmt(@SInvalidGuidArray, [8]);
-  Result.D1 := LongWord(A);
-  Result.D2 := Word(B);
-  Result.D3 := Word(C);
-  Move(D[0], Result.D4, SizeOf(Result.D4));
-end;
-
-class function TGuidHelper.Empty: TGuid;
-begin
-  FillChar(Result, SizeOf(Result), 0);
-end;
-
-class function TGuidHelper.NewGuid: TGuid;
-begin
-  if CreateGUID(Result) <> S_OK then
-    RaiseLastOSError;
-end;
-
-class function TGuidHelper.&&op_Equality(const left, right: TGUID): Boolean;
-var
-  a, b: PIntegerArray;
-begin
-  a := PIntegerArray(@left);
-  b := PIntegerArray(@right);
-  Result := (a^[0] = b^[0]) and (a^[1] = b^[1]) and (a^[2] = b^[2]) and (a^[3] = b^[3]);
-end;
-
-class function TGuidHelper.&&op_Inequality(const left, right: TGUID): Boolean;
-begin
-  Result := not (left = right);
-end;
-
-function TGuidHelper.ToByteArray: TBytes;
-begin
-  SetLength(Result, 16);
-  Move(D1, Result[0], SizeOf(Self));
-end;
-
-function TGuidHelper.ToString: string;
-begin
-  Result := GuidToString(Self);
-end;
-{$ENDIF}
-
-{$ENDREGION}
-
-
 {$REGION 'TMethodHelper'}
 
 {$IFNDEF DELPHIXE3_UP}
@@ -3914,34 +3740,21 @@ procedure TInitTable.AddManagedField(const field: TRttiField;
   var
     intfGuid: TGUID;
     interfaceTable: PInterfaceTable;
-    {$IFNDEF DELPHI2010}
     p: PPPTypeInfo;
-    {$ENDIF}
     i: Integer;
   begin
-    {$IFDEF DELPHI2010}
-    // Delphi 2010 does not have the PPTypeInfo array
-    // after the TInterfaceEntry array in TInterfaceTable
-    // so only interfaces with a GUID can be used
-    if not (ifHasGuid in intf.TypeData.IntfFlags) then
-      Exit(nil);
-    {$ENDIF}
     intfGuid := intf.TypeData.Guid;
     repeat
       interfaceTable := cls.GetInterfaceTable;
       if interfaceTable <> nil then
       begin
-        {$IFNDEF DELPHI2010}
         p := @interfaceTable.Entries[interfaceTable.EntryCount];
-        {$ENDIF}
         for i := 0 to interfaceTable.EntryCount - 1 do
         begin
           Result := @interfaceTable.Entries[i];
-          {$IFNDEF DELPHI2010}
           if p^^ = intf then
             Exit;
           Inc(p);
-          {$ENDIF}
           if Result.IID = intf.TypeData.Guid then
             Exit;
         end;
@@ -4284,13 +4097,8 @@ begin
     FAsMethod.Code := nil;
     FAsMethod.Data := nil;
 {$IFEND}
-{$IFDEF DELPHI2010}
-    FHeapData := nil;
-    Pointer(FHeapData) := Nop_Instance;
-{$ELSE}
     FValueData := nil;
     Pointer(FValueData) := Nop_Instance;
-{$ENDIF}
   end;
 end;
 
@@ -4298,11 +4106,7 @@ function TValueHelper.AsPointer: Pointer;
 begin
   case Kind of
     tkPointer:
-{$IFDEF DELPHI2010}
-      Result := Pointer(TValueData(Self).FAsSLong);
-{$ELSE}
       Result := TValueData(Self).FAsPointer;
-{$ENDIF}
     tkClass:
       Result := AsObject;
     tkInterface:
@@ -4313,19 +4117,8 @@ begin
   end;
 end;
 
-{$IFDEF DELPHI2010}
-function TValueHelper.AsString: string;
-begin
-  Result := AsType<string>;
-end;
-{$ENDIF}
-
 function TValueHelper.AsType<T>: T;
 begin
-{$IFDEF DELPHI2010}
-  if IsEmpty then
-    Exit(Default(T));
-{$ENDIF}
   if not TryAsInterface(System.TypeInfo(T), Result) then
   if not TryAsType<T>(Result) then
     Guard.RaiseInvalidTypeCast(TypeInfo, System.TypeInfo(T));
@@ -5124,11 +4917,7 @@ end;
 {$IFNDEF DELPHIXE8_UP}
 function TValueHelper.GetTypeKind: TTypeKind;
 begin
-{$IFDEF DELPHI2010}
-  if (TValueData(Self).FTypeInfo = nil) or (TValueData(Self).FHeapData = nil) then
-{$ELSE}
   if (TValueData(Self).FTypeInfo = nil) or (TValueData(Self).FValueData = nil) then
-{$ENDIF}
     Result := tkUnknown
   else
     Result := TValueData(Self).FTypeInfo.Kind;
@@ -5168,20 +4957,6 @@ const
 begin
   Result := Kind in StringKinds;
 end;
-
-{$IFDEF DELPHI2010}
-function TValueHelper.IsType(ATypeInfo: PTypeInfo): Boolean;
-var
-  unused: TValue;
-begin
-  Result := IsEmpty or TryCast(ATypeInfo, unused);
-end;
-
-function TValueHelper.IsType<T>: Boolean;
-begin
-  Result := IsType(System.TypeInfo(T));
-end;
-{$ENDIF}
 
 function TValueHelper.IsVariant: Boolean;
 begin
@@ -5319,7 +5094,6 @@ var
   stream: TStream;
   persist: IStreamPersist;
 
-{$IFNDEF DELPHI2010}
   function TryConvertToVariant(out returnValue: Variant): Boolean;
   begin
     Result := TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value);
@@ -5328,7 +5102,6 @@ var
     else
       returnValue := Null;
   end;
-{$ENDIF}
 
 begin
   Result := Null;
@@ -5362,10 +5135,8 @@ begin
     end;
     tkClass:
     begin
-    {$IFNDEF DELPHI2010}
       if TryConvertToVariant(Result) then
         Exit;
-    {$ENDIF}
 
       obj := AsObject;
       if obj is TStream then
@@ -5391,9 +5162,7 @@ begin
   else
     Exit(AsVariant);
   end;
-{$IFNDEF DELPHI2010}
   TryConvertToVariant(Result);
-{$ENDIF}
 end;
 
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
@@ -5926,15 +5695,6 @@ function TValueHelper.TryConvert(targetType: PTypeInfo;
 var
   value: TValue;
 begin
-  {$IFDEF DELPHI2010}
-  // Fix for TValue.Cast not converting TValue.Empty to any type
-  if (TypeInfo = nil) and (targetType <> nil) then
-  begin
-    TValue.Make(nil, targetType, targetValue);
-    Exit(True);
-  end;
-  {$ENDIF}
-
   if (TypeInfo = nil) or (targetType = nil) then
   begin
     targetValue := EmptyValue;
@@ -5967,36 +5727,9 @@ begin
       tkRecord:
         if TypeInfo = System.TypeInfo(TValue) then
           Exit(AsType<TValue>.TryConvert(targetType, targetValue));
-      {$IFDEF DELPHI2010}
-      // workaround for bug in RTTI.pas (fixed in XE)
-      tkUnknown:
-      begin
-        case targetType.Kind of
-          tkInteger, tkEnumeration, tkChar, tkWChar, tkInt64:
-          begin
-            targetValue := TValue.FromOrdinal(targetType, 0);
-            Exit(True);
-          end;
-          tkFloat:
-          begin
-            targetValue := TValue.From<Extended>(0);
-            Exit(True);
-          end;
-          tkUString:
-          begin
-            targetValue := '';
-            Exit(True);
-          end;
-        end;
-      end;
-      {$ENDIF}
     end;
 
-    {$IFNDEF DELPHI2010}
     Result := TValueConverter.Default.TryConvertTo(Self, targetType, targetValue, TValue.From(formatSettings));
-    {$ELSE}
-    Result := False;
-    {$ENDIf}
   end;
 end;
 
@@ -6324,13 +6057,11 @@ end;
 
 {$REGION 'TMethodImplementationHelper'}
 
-{$IFNDEF DELPHI2010}
 function TMethodImplementationHelper.AsMethod: TMethod;
 begin
   Result.Code := CodeAddress;
   Result.Data := Self;
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -9297,12 +9028,8 @@ end;
 
 function Vector<T>.GetEnumerator: TArrayEnumerator<T>;
 begin
-{$IFDEF DELPHI2010}
-  Result := TArrayEnumerator<T>.Create(fData);
-{$ELSE}
   Result.fItems := fData;
   Result.fIndex := -1;
-{$ENDIF}
 end;
 
 function Vector<T>.GetFirst: T;
@@ -9604,25 +9331,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFormatSettingsHelper'}
-
-{$IFDEF DELPHI2010}
-class function TFormatSettingsHelper.Create: TFormatSettings;
-begin
-  GetLocaleFormatSettings(LOCALE_SYSTEM_DEFAULT, Result);
-end;
-{$ENDIF}
-
-{$ENDREGION}
-
-
 procedure Init;
 begin
-{$IFDEF DELPHI2010}
-  Nop_Instance := Pointer(TValueData(TValue.Empty).FHeapData);
-{$ELSE}
   Nop_Instance := Pointer(TValueData(TValue.Empty).FValueData);
-{$ENDIF}
 end;
 
 initialization

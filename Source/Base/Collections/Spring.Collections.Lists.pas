@@ -244,7 +244,6 @@ type
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
   end;
 
-{$IFNDEF DELPHI2010}
   TFoldedObjectList<T{: class}> = class(TObjectList<TObject>)
   protected
     function CreateList: TListBase<TObject>; override;
@@ -290,11 +289,8 @@ type
     constructor Create(const elementType: PTypeInfo;
       const comparer: IComparer<IInterface>);
   end;
-{$ENDIF}
 
-  TObservableList<T: class> = class(
-    {$IFNDEF DELPHI2010}TFoldedObjectList<T>{$ELSE}TObjectList<T>{$ENDIF},
-    INotifyPropertyChanged)
+  TObservableList<T: class> = class(TFoldedObjectList<T>, INotifyPropertyChanged)
   private
     fOnPropertyChanged: IEvent<TPropertyChangedEvent>;
     function GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
@@ -302,8 +298,7 @@ type
     procedure DoItemPropertyChanged(sender: TObject;
       const eventArgs: IPropertyChangedEventArgs);
     procedure DoPropertyChanged(const propertyName: string);
-    procedure Changed(const value: {$IFNDEF DELPHI2010}TObject{$ELSE}T{$ENDIF};
-      action: TCollectionChangedAction); override;
+    procedure Changed(const value: TObject; action: TCollectionChangedAction); override;
   public
     constructor Create; override;
 
@@ -379,14 +374,10 @@ end;
 
 function TList<T>.GetEnumerator: IEnumerator<T>;
 begin
-{$IFNDEF DELPHI2010}
   if TType.Kind<T> = tkClass then
     IEnumerator<TObject>(Result) := TList<TObject>.TEnumerator.Create(TList<TObject>(Self))
   else
     Result := TEnumerator.Create(Self);
-{$ELSE}
-  Result := TEnumerator.Create(Self);
-{$ENDIF}
 end;
 
 function TList<T>.GetIsEmpty: Boolean;
@@ -454,23 +445,8 @@ begin
 end;
 
 function TList<T>.IndexOf(const item: T; index, count: Integer): Integer;
-{$IFDEF DELPHI2010}
-var
-  i: Integer;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
-  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
-{$ENDIF}
-
-  for i := index to index + count - 1 do
-    if Equals(fItems[i], item) then
-      Exit(i);
-  Result := -1;
-{$ELSE}
 begin
   Result := TArray.IndexOf<T>(fItems, item, index, count, Self);
-{$ENDIF}
 end;
 
 procedure TList<T>.SetItem(index: Integer; const value: T);
@@ -1357,11 +1333,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 
-{$IFNDEF DELPHI2010}
   Result := TCollections.CreateList<T>;
-{$ELSE}
-  Result := TList<T>.Create;
-{$ENDIF}
   Result.Count := count;
   for i := 0 to count - 1 do
   begin
@@ -1397,7 +1369,6 @@ end;
 
 {$REGION 'TFoldedObjectList<T>'}
 
-{$IFNDEF DELPHI2010}
 function TFoldedObjectList<T>.CreateList: TListBase<TObject>;
 begin
   Result := TFoldedObjectList<T>.Create(False);
@@ -1407,14 +1378,12 @@ function TFoldedObjectList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TFoldedInterfaceList<T>'}
 
-{$IFNDEF DELPHI2010}
 function TFoldedInterfaceList<T>.CreateList: TListBase<IInterface>;
 begin
   Result := TFoldedInterfaceList<T>.Create;
@@ -1424,14 +1393,12 @@ function TFoldedInterfaceList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TFoldedSortedObjectList<T>'}
 
-{$IFNDEF DELPHI2010}
 function TFoldedSortedObjectList<T>.CreateList: TListBase<TObject>;
 begin
   Result := TFoldedObjectList<T>.Create(False);
@@ -1441,14 +1408,12 @@ function TFoldedSortedObjectList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TFoldedSortedInterfaceList<T>'}
 
-{$IFNDEF DELPHI2010}
 function TFoldedSortedInterfaceList<T>.CreateList: TListBase<IInterface>;
 begin
   Result := TFoldedInterfaceList<T>.Create;
@@ -1458,14 +1423,12 @@ function TFoldedSortedInterfaceList<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TFoldedObjectList'}
 
-{$IFNDEF DELPHI2010}
 constructor TFoldedObjectList.Create(const elementType: PTypeInfo;
   const comparer: IComparer<TObject>; ownsObjects: Boolean);
 begin
@@ -1482,14 +1445,12 @@ function TFoldedObjectList.GetElementType: PTypeInfo;
 begin
   Result := fElementType;
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TFoldedInterfaceList'}
 
-{$IFNDEF DELPHI2010}
 constructor TFoldedInterfaceList.Create(const elementType: PTypeInfo;
   const comparer: IComparer<IInterface>);
 begin
@@ -1506,7 +1467,6 @@ function TFoldedInterfaceList.GetElementType: PTypeInfo;
 begin
   Result := fElementType;
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -1537,15 +1497,13 @@ begin
   Result := fOnPropertyChanged;
 end;
 
-procedure TObservableList<T>.Changed(
-  const value: {$IFNDEF DELPHI2010}TObject{$ELSE}T{$ENDIF};
+procedure TObservableList<T>.Changed(const value: TObject;
   action: TCollectionChangedAction);
 var
   notifyPropertyChanged: INotifyPropertyChanged;
   propertyChanged: IEvent<TPropertyChangedEvent>;
 begin
-  if Supports({$IFNDEF DELPHI2010}value{$ELSE}PObject(@value)^{$ENDIF},
-    INotifyPropertyChanged, notifyPropertyChanged) then
+  if Supports(value, INotifyPropertyChanged, notifyPropertyChanged) then
   begin
     propertyChanged := notifyPropertyChanged.OnPropertyChanged;
     case Action of

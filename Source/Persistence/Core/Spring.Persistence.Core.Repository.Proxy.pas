@@ -28,10 +28,6 @@ unit Spring.Persistence.Core.Repository.Proxy;
 
 interface
 
-{$IFDEF DELPHI2010}
-  {$MESSAGE FATAL 'Proxy repository only supported on XE or higher'}
-{$ENDIF}
-
 uses
   Rtti,
   TypInfo,

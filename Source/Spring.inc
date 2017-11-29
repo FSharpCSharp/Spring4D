@@ -127,8 +127,8 @@
 // It does not affect the binary size or generated code
 {$DEFINITIONINFO ON}
 
-{$IFNDEF DELPHI2010_UP}
-  {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}
+{$IFNDEF DELPHIXE_UP}
+  {$MESSAGE ERROR 'This framework requires Delphi XE or higher.'}
 {$ENDIF}
 
 {$IFNDEF NEXTGEN}

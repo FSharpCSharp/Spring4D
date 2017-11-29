@@ -84,9 +84,7 @@ type
     procedure TearDown; override;
   published
     procedure TestFromVariantSQLTimestamp;
-{$IFNDEF DELPHI2010}
     procedure TestFromVariantSQLTimestampOffset;
-{$ENDIF}
   end;
 
   TTestNullableInt64 = class(TTestCase)
@@ -477,7 +475,6 @@ type
 
   TEnumeration = (teFirst, teSecond, teLast);
 
-{$IFNDEF DELPHI2010}
   TTestManagedObject = class(TTestCase)
   published
     procedure TestInitialization;
@@ -540,7 +537,6 @@ type
     [Default('hello')]
     property StrValue: string read fStrValue_Prop write SetStrValue_Prop;
   end;
-{$ENDIF}
 
   TArrayTest = class(TTestCase)
   published
@@ -3197,7 +3193,6 @@ begin
   CheckEquals(dt, fDateTime.Value);
 end;
 
-{$IFNDEF DELPHI2010}
 procedure TTestNullableDateTime.TestFromVariantSQLTimestampOffset;
 var
   dt: TDateTime;
@@ -3218,7 +3213,6 @@ begin
 {$ENDIF}
   CheckEquals(dt, fDateTime.Value);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -3249,7 +3243,6 @@ end;
 
 {$REGION 'TTestManagedObject'}
 
-{$IFNDEF DELPHI2010}
 constructor TTestObject.Create;
 begin
   // no inherited here for testing (initialization is done within NewInstance)
@@ -3306,7 +3299,6 @@ begin
     obj.Free;
   end;
 end;
-{$ENDIF}
 
 {$ENDREGION}
 

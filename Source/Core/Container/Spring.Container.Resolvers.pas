@@ -695,17 +695,6 @@ end;
 function TDecoratorResolver.Resolve(const dependency: TDependencyModel;
   const model: TComponentModel; const context: ICreationContext;
   const decoratee: TValue): TValue;
-
-{$IFDEF DELPHI2010}
-  function ConvClass2Inf(const obj: TObject; targetType: PTypeInfo): TValue;
-  var
-    intf: Pointer;
-  begin
-    if obj.GetInterface(targetType.TypeData.Guid, intf) then
-      TValue.MakeWithoutCopy(@intf, targetType, Result);
-  end;
-{$ENDIF}
-
 var
   decoratorModel: TComponentModel;
   index: Integer;
@@ -713,10 +702,6 @@ begin
   Result := decoratee;
   for decoratorModel in GetDecorators(dependency.TypeInfo, model) do
   begin
-  {$IFDEF DELPHI2010}
-    if Result.IsObject and (dependency.TypeInfo.Kind = tkInterface) then
-      Result := ConvClass2Inf(Result.AsObject, dependency.TypeInfo);
-  {$ENDIF}
     // TODO: make this more explicit to just inject on the decorator constructor
     index := context.AddArgument(TTypedValue.Create(Result, dependency.TypeInfo));
     try

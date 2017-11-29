@@ -135,9 +135,7 @@ begin
   TType.TryGetInterfaceType(IUnknown, intfType); // Initialize Spring.TType interface map
   intfType := nil;
   TVirtualClasses.Default.GetVirtualClass(TInterfacedObject);
-{$IFNDEF DELPHI2010}
   TTimeZone.Local.ID;
-{$ENDIF}
   StrToBool('True'); // Initialize StrToBool array cache
 {$IFDEF DELPHIXE5_UP}
   TEncoding.ANSI;

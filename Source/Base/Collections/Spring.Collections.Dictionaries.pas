@@ -34,10 +34,8 @@ uses
   Generics.Defaults,
   Spring,
   Spring.Collections,
-{$IFNDEF DELPHI2010}
-  Spring.Collections.Trees,
-{$ENDIF}
-  Spring.Collections.Base;
+  Spring.Collections.Base,
+  Spring.Collections.Trees;
 
 type
   TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
@@ -109,13 +107,6 @@ type
         destructor Destroy; override;
         function Clone: TIterator<TKeyValuePair>; override;
       end;
-
-{$IFDEF DELPHI2010}
-      TKeyCollectionHelper = class(TRTLDictionary.TKeyCollection)
-      public
-        function ToArray: TArray<TKey>;
-      end;
-{$ENDIF}
   {$ENDREGION}
   private
     fDictionary: TRTLDictionary;
@@ -382,7 +373,6 @@ type
   {$ENDREGION}
   end;
 
-{$IFNDEF DELPHI2010}
   TSortedDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IDictionary<TKey, TValue>,
     IReadOnlyDictionary<TKey, TValue>)
   private
@@ -450,7 +440,6 @@ type
       function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
     {$ENDREGION}
   end;
-{$ENDIF}
 
 implementation
 
@@ -607,22 +596,8 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.ToArray: TArray<TKeyValuePair>;
-{$IFDEF DELPHI2010}
-var
-  pair: TKeyValuePair;
-  index: Integer;
-begin
-  SetLength(Result, fDictionary.Count);
-  index := 0;
-  for pair in fDictionary do
-  begin
-    Result[index] := pair;
-    Inc(index);
-  end;
-{$ELSE}
 begin
   Result := fDictionary.ToArray;
-{$ENDIF}
 end;
 
 function TDictionary<TKey, TValue>.GetCount: Integer;
@@ -907,11 +882,7 @@ end;
 
 procedure TDictionary<TKey, TValue>.TOrderedEnumerable.Start;
 begin
-{$IFDEF DELPHI2010}
-  fSortedKeys := TKeyCollectionHelper(fDictionary.Keys).ToArray;
-{$ELSE}
   fSortedKeys := fDictionary.Keys.ToArray;
-{$ENDIF}
   TArray.Sort<TKey>(fSortedKeys);
 end;
 
@@ -926,27 +897,6 @@ begin
   end;
   Result := False;
 end;
-
-{$ENDREGION}
-
-
-{$REGION 'TDictionary<TKey, TValue>.TKeyCollectionHelper'}
-
-{$IFDEF DELPHI2010}
-function TDictionary<TKey, TValue>.TKeyCollectionHelper.ToArray: TArray<TKey>;
-var
-  item: TKey;
-  i: Integer;
-begin
-  SetLength(Result, Count);
-  i := 0;
-  for item in Self do
-  begin
-    Result[i] := item;
-    Inc(i);
-  end;
-end;
-{$ENDIF}
 
 {$ENDREGION}
 
@@ -1480,7 +1430,6 @@ end;
 
 {$REGION 'TSortedDictionary<TKey, TValue>'}
 
-{$IFNDEF DELPHI2010}
 constructor TSortedDictionary<TKey, TValue>.Create;
 begin
   Create(nil, nil);
@@ -1499,13 +1448,8 @@ begin
     fValueComparer := TComparer<TValue>.Default;
   fTree := TRedBlackTree<TKey,TValue>.Create(keyComparer);
 
-{$IFDEF DELPHI2010}
-  fKeys := Spring.Collections.Lists.TList<TKey>.Create;
-  fValues := Spring.Collections.Lists.TList<TValue>.Create;
-{$ELSE}
   fKeys := TCollections.CreateList<TKey>;
   fValues := TCollections.CreateList<TValue>;
-{$ENDIF}
 end;
 
 destructor TSortedDictionary<TKey, TValue>.Destroy;
@@ -1758,7 +1702,6 @@ function TSortedDictionary<TKey, TValue>.TryGetValue(const key: TKey;
 begin
   Result := fTree.Find(key, value);
 end;
-{$ENDIF}
 
 {$ENDREGION}
 

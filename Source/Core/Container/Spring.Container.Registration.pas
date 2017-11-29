@@ -32,9 +32,7 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-{$IFNDEF DELPHI2010}
   Spring.VirtualInterface,
-{$ENDIF}
   Spring.Container.Common,
   Spring.Container.Core;
 
@@ -54,12 +52,10 @@ type
     function GetOnChanged: ICollectionChangedEvent<TComponentModel>;
   protected
     procedure CheckIsNonGuidInterface(const serviceType: TRttiType);
-{$IFNDEF DELPHI2010}
     function InternalResolveParams(const method: TRttiMethod;
       const args: TArray<TValue>; paramResolution: TParamResolution): TArray<TValue>;
     procedure InternalRegisterFactory(const model: TComponentModel;
       const invokeEvent: TVirtualInterfaceInvokeEvent);
-{$ENDIF}
     procedure RegisterUnnamed(const model: TComponentModel; serviceType: PTypeInfo);
     procedure Validate(const componentType, serviceType: TRttiType; var serviceName: string);
   public
@@ -70,13 +66,13 @@ type
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo;
       const serviceName: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
-{$IFNDEF DELPHI2010}
+
     procedure RegisterFactory(const model: TComponentModel;
       paramResolution: TParamResolution = TParamResolution.ByName); overload;
     procedure RegisterFactory(const model: TComponentModel;
       const resolvedServiceName: string;
       paramResolution: TParamResolution = TParamResolution.ByName); overload;
-{$ENDIF}
+
     procedure UnregisterAll;
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const serviceName: string): Boolean; overload;
@@ -98,9 +94,7 @@ type
     fKernel: IKernel;
     fModel: TComponentModel;
     constructor Create(const kernel: IKernel; componentType: PTypeInfo);
-{$IFNDEF DELPHI2010}
     procedure InterceptedBy(const interceptorRef: TInterceptorReference; where: TWhere); overload;
-{$ENDIF}
   public
     function Implements(serviceType: PTypeInfo): IRegistration; overload;
     function Implements(serviceType: PTypeInfo; const serviceName: string): IRegistration; overload;
@@ -139,7 +133,6 @@ type
     function AsDefault: IRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
 
-{$IFNDEF DELPHI2010}
     function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
     function AsFactory(const resolvedServiceName: string;
       paramResolution: TParamResolution = TParamResolution.ByName): IRegistration; overload;
@@ -148,7 +141,6 @@ type
       where: TWhere = TWhere.Last): IRegistration; overload;
     function InterceptedBy(const name: string;
       where: TWhere = TWhere.Last): IRegistration; overload;
-{$ENDIF}
   end;
 
   /// <summary>
@@ -157,9 +149,6 @@ type
   TRegistration<T> = record
   private
     fRegistration: IRegistration;
-    // prevent some bug with wrong reference counting in
-    // records containing only one field of an interface type
-    {$IFDEF DELPHI2010}{$HINTS OFF}fDummy: Pointer;{$ENDIF}
     constructor Create(const kernel: IKernel);
     function GetModel: TComponentModel;
   public
@@ -203,7 +192,6 @@ type
 
     function AsCustom<TLifetimeManagerType: class, constructor, ILifetimeManager>: TRegistration<T>;
 
-{$IFNDEF DELPHI2010}
     function AsFactory(paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<T>; overload;
     function AsFactory(const resolvedServiceName: string;
       paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<T>; overload;
@@ -214,7 +202,6 @@ type
       where: TWhere = TWhere.Last): TRegistration<T>; overload;
     function InterceptedBy<TInterceptorType>(
       where: TWhere = TWhere.Last): TRegistration<T>; overload;
-{$ENDIF}
 
     property Model: TComponentModel read GetModel;
   end;
@@ -352,7 +339,6 @@ begin
   fDefaultRegistrations.AddOrSetValue(serviceType, model);
 end;
 
-{$IFNDEF DELPHI2010}
 type
   TVirtualInterfaceHack = class(TInterfacedObject)
   private
@@ -463,7 +449,6 @@ begin
 
   InternalRegisterFactory(model, invokeEvent);
 end;
-{$ENDIF}
 
 function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
@@ -756,7 +741,6 @@ begin
   Result := Self;
 end;
 
-{$IFNDEF DELPHI2010}
 function TRegistration.AsFactory(
   paramResolution: TParamResolution): IRegistration;
 begin
@@ -794,7 +778,6 @@ begin
   InterceptedBy(TInterceptorReference.Create(name), where);
   Result := Self;
 end;
-{$ENDIF}
 
 function TRegistration.PerResolve: IRegistration;
 begin
@@ -968,7 +951,6 @@ begin
   Result := AsDefault(TypeInfo(TServiceType));
 end;
 
-{$IFNDEF DELPHI2010}
 function TRegistration<T>.AsFactory(paramResolution: TParamResolution): TRegistration<T>;
 begin
   fRegistration.AsFactory(paramResolution);
@@ -1002,8 +984,6 @@ begin
   fRegistration.InterceptedBy(TypeInfo(TInterceptorType), where);
   Result := Self;
 end;
-
-{$ENDIF}
 
 function TRegistration<T>.PerResolve: TRegistration<T>;
 begin

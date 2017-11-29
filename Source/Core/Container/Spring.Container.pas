@@ -92,7 +92,6 @@ type
     function RegisterDecorator<TService; TDecorator: TService>(
       const condition: TPredicate<TComponentModel>): TRegistration<TDecorator>; overload;
 
-{$IFNDEF DELPHI2010}
     function RegisterFactory<TFactoryType: IInterface>(
       paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
     function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
@@ -100,7 +99,6 @@ type
     function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
       const resolvedServiceName: string;
       paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
-{$ENDIF}
 
     function RegisterInstance<TServiceType>(const instance: TServiceType;
       const serviceName: string = ''): TRegistration<TServiceType>; overload;
@@ -196,9 +194,7 @@ uses
   Spring.Container.ComponentActivator,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
-{$IFNDEF DELPHI2010}
   Spring.Container.ProxyFactory,
-{$ENDIF}
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
   Spring.Logging.NullLogger,
@@ -209,46 +205,6 @@ function GlobalContainer: TContainer;
 begin
   Result := TContainer.GlobalInstance;
 end;
-
-
-{$REGION 'TProxyFactory'}
-
-{$IFDEF DELPHI2010}
-type
-  /// <summary>
-  ///   Dummy class for Delphi2010
-  /// </summary>
-  TProxyFactory = class(TInterfacedObject, IProxyFactory)
-  public
-    constructor Create(const kernel: IKernel);
-
-    procedure AddInterceptorSelector( 
-      const selector: IModelInterceptorsSelector);
-
-    function CreateInstance(const context: ICreationContext;
-      const instance: TValue; const model: TComponentModel;
-      const constructorArguments: array of TValue): TValue;
-  end;
-
-constructor TProxyFactory.Create(const kernel: IKernel);
-begin
-  inherited Create;
-end;
-
-procedure TProxyFactory.AddInterceptorSelector(
-  const selector: IModelInterceptorsSelector);
-begin
-end;
-
-function TProxyFactory.CreateInstance(const context: ICreationContext;
-  const instance: TValue; const model: TComponentModel;
-  const constructorArguments: array of TValue): TValue;
-begin
-  Result := instance;
-end;
-{$ENDIF}
-
-{$ENDREGION}
 
 
 {$REGION 'TContainer'}
@@ -419,7 +375,6 @@ begin
   fDecoratorResolver.AddDecorator(TypeInfo(TService), Result.Model, condition);
 end;
 
-{$IFNDEF DELPHI2010}
 function TContainer.RegisterFactory<TFactoryType>(
   paramResolution: TParamResolution): TRegistration<TFactoryType>;
 begin
@@ -442,7 +397,6 @@ begin
   Result := RegisterType<TFactoryType>(serviceName);
   Result := Result.AsFactory(resolvedServiceName, paramResolution);
 end;
-{$ENDIF}
 
 function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
   const serviceName: string): TRegistration<TServiceType>;
