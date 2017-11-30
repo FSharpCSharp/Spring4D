@@ -2227,7 +2227,21 @@ type
     /// <summary>
     ///   Copies an open array to a dynamic array.
     /// </summary>
-    class function Copy<T>(const values: array of T): TArray<T>; static;
+    class function Copy<T>(const values: array of T): TArray<T>; overload; static;
+
+    /// <summary>
+    ///   Copies the specified count of elements from the source array to the
+    ///   target array.
+    /// </summary>
+    class procedure Copy<T>(const source: array of T;
+      var target: array of T; count: NativeInt); overload; static;
+
+    /// <summary>
+    ///   Copies the specified count of elements from the specified position in
+    ///   the source array to the specified position in the target array.
+    /// </summary>
+    class procedure Copy<T>(const source: array of T; var target: array of T;
+      sourceIndex, targetIndex, count: NativeInt); overload; static;
 
     /// <summary>
     ///   Executes the specified action for each item in the specified array.
@@ -8300,6 +8314,34 @@ begin
   SetLength(Result, Length(values));
   for i := Low(values) to High(values) do
     Result[i] := values[i];
+end;
+
+class procedure TArray.Copy<T>(const source: array of T;
+  var target: array of T; count: NativeInt);
+begin
+  Copy<T>(source, target, 0, 0, count);
+end;
+
+class procedure TArray.Copy<T>(const source: array of T;
+  var target: array of T; sourceIndex, targetIndex, count: NativeInt);
+var
+  sourceLength, targetLength: NativeInt;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  sourceLength := Length(source);
+  targetLength := Length(target);
+  Guard.CheckRange((sourceIndex >= 0) and (sourceIndex <= sourceLength), 'sourceIndex');
+  Guard.CheckRange((targetIndex >= 0) and (targetIndex <= targetLength), 'targetIndex');
+  Guard.CheckRange((count >= 0)
+    and (count <= sourceLength - sourceIndex)
+    and (count <= targetLength - targetIndex), 'count');
+  if Pointer(@source[0]) = Pointer(@target[0]) then
+    raise EArgumentException.CreateRes(@SArraysIdentical);
+{$ENDIF}
+  if TType.IsManaged<T> then
+    System.CopyArray(Pointer(@target[targetIndex]), Pointer(@source[sourceIndex]), TypeInfo(T), count)
+  else
+    System.Move(Pointer(@source[sourceIndex])^, Pointer(@target[targetIndex])^, count * SizeOf(T));
 end;
 
 class procedure TArray.ForEach<T>(const values: array of T;

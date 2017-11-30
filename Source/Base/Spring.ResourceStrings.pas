@@ -93,6 +93,8 @@ resourcestring
   SGBDescription       = 'GB';
   STBDescription       = 'TB';
 
+  SArraysIdentical = 'Source and target array must not be identical';
+
   {$ENDREGION}
 
 
