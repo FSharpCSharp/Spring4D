@@ -140,7 +140,7 @@ type
     class function Kind<T>: TTypeKind; inline; static;
 
     class function GetType<T>: TRttiType; overload; static; inline;
-    class function GetType(typeInfo: Pointer): TRttiType; overload; static; inline;
+    class function GetType(typeInfo: PTypeInfo): TRttiType; overload; static;
     class function GetType(classType: TClass): TRttiInstanceType; overload; static; inline;
 
     class property Context: TRttiContext read fContext;
@@ -3323,7 +3323,7 @@ begin
   fContext.Free;
 end;
 
-class function TType.GetType(typeInfo: Pointer): TRttiType;
+class function TType.GetType(typeInfo: PTypeInfo): TRttiType;
 begin
   Result := fContext.GetType(typeInfo);
 end;
