@@ -1449,7 +1449,7 @@ type
   /// <summary>
   ///   Provides support for lazy initialization.
   /// </summary>
-  ILazy = interface
+  ILazy = interface(IInvokable)
     ['{40223BA9-0C66-49E7-AA33-BDAEF9F506D6}']
   {$REGION 'Property Accessors'}
     function GetIsValueCreated: Boolean;
@@ -1600,7 +1600,7 @@ type
   /// </typeparam>
   Lazy<T> = record
   private
-    fLazy: ILazy<T>;
+    fLazy: ILazy<T>; // DO NOT ADD ANY OTHER FIELDS !!!
     function GetIsAssigned: Boolean;
     function GetIsValueCreated: Boolean;
     function GetValue: T; inline;
@@ -2397,7 +2397,7 @@ type
 
   Vector<T> = record
   private
-    fData: TArray<T>; // DO NOT ADD ANY OTHER MEMBERS !!!
+    fData: TArray<T>; // DO NOT ADD ANY OTHER FIELDS !!!
     function GetCount: Integer; inline;
     function GetFirst: T; inline;
     function GetItem(index: Integer): T; inline;
@@ -2544,6 +2544,11 @@ function GetUnderlyingType(typeInfo: PTypeInfo): PTypeInfo;
 ///   Returns the <see cref="TLazyKind" /> of the typeInfo.
 /// </summary>
 function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+
+/// <summary>
+///   Returns the underlying type of the lazy type.
+/// </summary>
+function GetLazyType(typeInfo: PTypeInfo): PTypeInfo;
 
 /// <summary>
 ///   Returns the underlying type name of the lazy type.
@@ -2843,6 +2848,55 @@ begin
   end
   else
     Result := '';
+end;
+
+function GetLazyType(typeInfo: PTypeInfo): PTypeInfo;
+
+  function GetLazyTypeUnsafe(typeInfo: PTypeInfo): PTypeInfo;
+  var
+    typeName: string;
+    rttiType: TrttiType;
+  begin
+    typeName := GetGenericTypeParameters(typeInfo.TypeName)[0];
+    rttiType := TType.Context.FindType(typeName);
+    if Assigned(rttiType) then
+      Result := rttiType.Handle
+    else
+    begin
+      for rttiType in TType.Context.GetTypes do
+        if rttiType.IsPublicType and (rttiType.QualifiedName = typeName) then
+          Exit(rttiType.Handle);
+      raise EInvalidOperationException.CreateResFmt(@STypeInfoNotFound, [typeName]);
+    end;
+  end;
+
+var
+  lazyKind: TLazyKind;
+  method: TRttiMethod;
+begin
+  lazyKind := GetLazyKind(typeInfo);
+  case lazyKind of
+    lkFunc:
+    begin
+      method := TType.GetType(typeInfo).GetMethod('Invoke');
+      if Assigned(method) then
+        Result := method.ReturnType.Handle
+      else
+        Result := GetLazyTypeUnsafe(typeInfo);
+    end;
+    lkRecord, lkInterface:
+    begin
+      if lazyKind = lkRecord then
+        typeInfo := PManagedField(PByte(@typeInfo.TypeData.ManagedFldCount) + SizeOf(Integer)).TypeRef^;
+      method := TType.GetType(typeInfo).GetMethod('GetValue');
+      if Assigned(method) then
+        Result := method.ReturnType.Handle
+      else
+        Result := nil; // must not happen - ILazy<T> has methodinfo
+    end;
+  else
+    Result := nil;
+  end;
 end;
 
 function IsLazyType(typeInfo: PTypeInfo): Boolean;
