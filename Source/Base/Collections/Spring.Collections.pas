@@ -2655,7 +2655,9 @@ type
       const keySelector: TFunc<T, TKey>; const elementSelector: TFunc<T, TElement>;
       const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload; static;
 
-    class function Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>; static;
+    class function Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>; overload; static;
+    class function Union<T>(const first, second: IEnumerable<T>;
+      const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -3534,6 +3536,11 @@ begin
     begin
       Result := x
     end);
+end;
+
+class function TEnumerable.Union<T>(const first, second: IEnumerable<T>; const comparer: IEqualityComparer<T>): IEnumerable<T>;
+begin
+  Result := TUnionIterator<T>.Create(first, second, comparer);
 end;
 
 class function TEnumerable.Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>;
