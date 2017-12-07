@@ -549,6 +549,8 @@ begin
       field := Fields.FindField(prop.Name);
       if Assigned(field) and (field.FieldKind = fkData) then
       begin
+        if not prop.IsWritable then
+          field.ReadOnly := True;
         fProperties.Add(prop);
         Continue;
       end;
