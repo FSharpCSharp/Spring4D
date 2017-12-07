@@ -54,6 +54,7 @@ type
     fItemTypeInfo: PTypeInfo;
     fIndexFields: TArray<TIndexFieldInfo>;
     fProperties: IList<TRttiProperty>;
+    fDisabledFields: ISet<TField>;
     fSort: string;
     fSorted: Boolean;
     fColumnAttributeClass: TAttributeClass;
@@ -241,6 +242,7 @@ constructor TObjectDataSet.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   fProperties := TCollections.CreateList<TRttiProperty>;
+  fDisabledFields := TCollections.CreateSet<TField>;
   fFilterParser := TExprParser.Create;
   fFilterParser.OnGetVariable := ParserGetVariableValue;
   fFilterParser.OnExecuteFunction := ParserGetFunctionValue;
@@ -549,11 +551,12 @@ begin
       field := Fields.FindField(prop.Name);
       if Assigned(field) and (field.FieldKind = fkData) then
       begin
+        fProperties.Add(prop);
         if not prop.IsWritable then
           field.ReadOnly := True;
-        fProperties.Add(prop);
         Continue;
       end;
+      Exit;
     end;
 
     if Assigned(fColumnAttributeClass) then
@@ -593,7 +596,12 @@ begin
     Result := prop.GetValue(obj).ToVariant
   else
     if field.FieldKind = fkData then
-      raise EObjectDataSetException.CreateFmt(SPropertyNotFound, [field.FieldName]);
+      if fDisabledFields.Add(field) then
+      begin
+        field.ReadOnly := True;
+        field.Visible := False;
+        raise EObjectDataSetException.CreateFmt(SPropertyNotFound, [field.FieldName]);
+      end;
 end;
 
 procedure TObjectDataSet.InternalInitFieldDefs;
