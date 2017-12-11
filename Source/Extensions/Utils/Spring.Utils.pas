@@ -1176,16 +1176,6 @@ begin
   Result := propInfo <> nil;
 end;
 
-function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
-begin
-  Result := TryConvertStrToDateTime(s, format, value);
-end;
-
-function ParseDateTime(const s, format: string): TDateTime;
-begin
-  Result := ConvertStrToDateTime(s, format);
-end;
-
 procedure Lock(obj: TObject; const proc: TProc);
 begin
   Guard.CheckNotNull(obj, 'obj');
