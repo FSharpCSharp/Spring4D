@@ -68,14 +68,6 @@ type
     class function Parse<T>(const value: string): T; overload; static;
   end;
 
-  /// <summary>
-  ///   Provides static methods to manipulate an Variant type.
-  /// </summary>
-  TVariant = class
-  public
-    class function IsNull(const value: Variant): Boolean; static;
-  end;
-
 /// <summary>
 ///   Retrieves the byte length of a unicode string.
 /// </summary>
@@ -359,16 +351,6 @@ class function TEnum.Parse<T>(const value: string): T;
 begin
   if not TEnum.TryParse<T>(value, Result) then
     raise EFormatException.CreateResFmt(@SIncorrectFormat, [value]);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TVariant'}
-
-class function TVariant.IsNull(const value: Variant): Boolean;
-begin
-  Result := VarIsNull(value);
 end;
 
 {$ENDREGION}
