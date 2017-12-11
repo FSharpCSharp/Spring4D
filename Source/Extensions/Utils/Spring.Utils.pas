@@ -47,11 +47,10 @@ uses
   Spring.Utils.WinAPI,
 {$ENDIF MSWINDOWS}
   Spring,
-  Spring.SystemUtils,
   Spring.Collections;
 
 type
-  TEnum = Spring.SystemUtils.TEnum;
+  TEnum = Spring.TEnum deprecated 'Use Spring.TEnum instead';
 
 
   {$REGION 'TVersion'}
@@ -1052,7 +1051,8 @@ uses
   System.IOUtils,
 {$ENDIF POSIX}
   Math,
-  Spring.ResourceStrings;
+  Spring.ResourceStrings,
+  Spring.SystemUtils;
 
 {$IFDEF MSWINDOWS}
 const

@@ -560,6 +560,20 @@ type
     procedure TestIntegrity;
   end;
 
+  TTestEnum = class(TTestCase)
+  published
+    procedure TestGetNameByEnum;
+    procedure TestGetNames;
+    procedure TestGetNameByInteger;
+    procedure TestGetValueByEnum;
+    procedure TestGetValueByName;
+    procedure TestIsValid;
+    procedure TestTryParse;
+    procedure TestParse;
+    procedure TestParseIntegerException;
+    procedure TestParseStringException;
+  end;
+
 implementation
 
 uses
@@ -3397,6 +3411,143 @@ begin
   Check(@data.Destroy = @TObject.Destroy);
   Check(data.VirtualMethods[0] = @TIntegrityCheckObject.VirtualMethod0);
   Check(data.VirtualMethods[1] = @TIntegrityCheckObject.VirtualMethod1);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestEnum'}
+
+procedure TTestEnum.TestGetNameByEnum;
+var
+  expectedName: string;
+  actualName: string;
+  item: TSeekOrigin;
+  pInfo: PTypeInfo;
+begin
+  pInfo := TypeInfo(TSeekOrigin);
+  for item := Low(TSeekOrigin) to High(TSeekOrigin) do
+  begin
+    expectedName := GetEnumName(pInfo, Integer(item));
+    actualName := TEnum.GetName<TSeekOrigin>(item);
+    CheckEquals(expectedName, actualName);
+  end;
+end;
+
+procedure TTestEnum.TestGetNameByInteger;
+var
+  expectedName: string;
+  actualName: string;
+  item: TSeekOrigin;
+  pInfo: PTypeInfo;
+begin
+  pInfo := TypeInfo(TSeekOrigin);
+  for item := Low(TSeekOrigin) to High(TSeekOrigin) do
+  begin
+    expectedName := GetEnumName(pInfo, Integer(item));
+    actualName := TEnum.GetName<TSeekOrigin>(Integer(item));
+    CheckEquals(expectedName, actualName);
+  end;
+end;
+
+procedure TTestEnum.TestGetNames;
+var
+  expectedName: string;
+  actualName: string;
+  item: TSeekOrigin;
+  pInfo: PTypeInfo;
+  names: TStringDynArray;
+begin
+  pInfo := TypeInfo(TSeekOrigin);
+  names := TEnum.GetNames<TSeekOrigin>;
+  for item := Low(TSeekOrigin) to High(TSeekOrigin) do
+  begin
+    expectedName := GetEnumName(pInfo, Ord(item));
+    actualName := names[Ord(item)];
+    CheckEquals(expectedName, actualName);
+  end;
+end;
+
+procedure TTestEnum.TestGetValueByEnum;
+var
+  expectedValue: Integer;
+  actualValue: Integer;
+  item: TSeekOrigin;
+begin
+  for item := Low(TSeekOrigin) to High(TSeekOrigin) do
+  begin
+    expectedValue := Integer(item);
+    actualValue := TEnum.GetValue<TSeekOrigin>(item);
+    CheckEquals(expectedValue, actualValue);
+  end;
+end;
+
+procedure TTestEnum.TestGetValueByName;
+var
+  expectedValue: Integer;
+  actualValue: Integer;
+  item: TSeekOrigin;
+  name: string;
+begin
+  for item := Low(TSeekOrigin) to High(TSeekOrigin) do
+  begin
+    expectedValue := Integer(item);
+    name := GetEnumName(TypeInfo(TSeekOrigin), expectedValue);
+    actualValue := TEnum.GetValue<TSeekOrigin>(name);
+    CheckEquals(expectedValue, actualValue);
+  end;
+end;
+
+procedure TTestEnum.TestIsValid;
+var
+  item: TSeekOrigin;
+begin
+  for item := Low(TSeekOrigin) to High(TSeekOrigin) do
+  begin
+    Check(TEnum.IsValid<TSeekOrigin>(item));
+    Check(TEnum.IsValid<TSeekOrigin>(Integer(item)));
+  end;
+  CheckFalse(TEnum.IsValid<TSeekOrigin>(Integer(Low(TSeekOrigin)) - 1));
+  CheckFalse(TEnum.IsValid<TSeekOrigin>(Integer(High(TSeekOrigin)) + 1));
+end;
+
+procedure TTestEnum.TestParse;
+var
+  item: TSeekOrigin;
+  actual: TSeekOrigin;
+begin
+  for item := Low(TSeekOrigin) to High(TSeekOrigin) do
+  begin
+    actual := TEnum.Parse<TSeekOrigin>(Integer(item));
+    CheckEquals(Integer(item), Integer(actual));
+    actual := TEnum.Parse<TSeekOrigin>(GetEnumName(TypeInfo(TSeekOrigin), Integer(item)));
+    CheckEquals(Integer(item), Integer(actual));
+  end;
+end;
+
+procedure TTestEnum.TestTryParse;
+var
+  item: TSeekOrigin;
+begin
+  Check(TEnum.TryParse<TSeekOrigin>(Integer(soBeginning), item));
+  CheckEquals(Integer(soBeginning), Integer(item));
+  Check(TEnum.TryParse<TSeekOrigin>('soBeginning', item));
+  CheckEquals(Integer(soBeginning), Integer(item));
+
+  CheckFalse(TEnum.TryParse<TSeekOrigin>(Integer(Low(TSeekOrigin)) - 1, item));
+  CheckFalse(TEnum.TryParse<TSeekOrigin>('dummy', item));
+end;
+
+procedure TTestEnum.TestParseIntegerException;
+begin
+  ExpectedException := EFormatException;
+  TEnum.Parse<TSeekOrigin>(Integer(Low(TSeekOrigin))-1);
+end;
+
+procedure TTestEnum.TestParseStringException;
+begin
+  ExpectedException := EFormatException;
+  TEnum.Parse<TSeekOrigin>('dummy');
 end;
 
 {$ENDREGION}

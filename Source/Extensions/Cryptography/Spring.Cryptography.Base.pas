@@ -162,9 +162,6 @@ implementation
 
 uses
   Math,
-{$IFNDEF NEXTGEN}
-  Spring.Utils,
-{$ENDIF}
   Spring.ResourceStrings;
 
 

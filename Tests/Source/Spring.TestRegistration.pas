@@ -77,7 +77,8 @@ begin
     TTestValueHelper.Suite,
     TArrayTest.Suite,
     TWeakTest.Suite,
-    TTestVirtualClass.Suite
+    TTestVirtualClass.Suite,
+    TTestEnum.Suite
   ]);
 
 {$IFNDEF DELPHI2010}
@@ -190,8 +191,7 @@ begin
   RegisterTests('Spring.Base.SystemUtils', [
     TTestSplitString.Suite,
     TTestTryStrToDateTimeFmt.Suite,
-    TTestSplitNullTerminatedStrings.Suite,
-    TTestEnum.Suite
+    TTestSplitNullTerminatedStrings.Suite
   ]);
 
   RegisterTests('Spring.Base.Logging', [

@@ -149,6 +149,36 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TEnum'}
+
+  /// <summary>
+  ///   Provides static methods to manipulate an enumeration type.
+  /// </summary>
+  /// <remarks>
+  ///   This does only work for enum types that have type info. Discontiguous
+  ///   enumerations and enumerations which don't start at zero have no type
+  ///   info. See: <see href="http://stackoverflow.com/questions/1420562/why-do-i-get-type-has-no-typeinfo-error-with-an-enum-type" />
+  /// </remarks>
+  TEnum = class
+  public
+    class function ToInteger<T>(const value: T): Integer; static; inline;
+    class function IsValid<T>(const value: Integer): Boolean; overload; static;
+    class function IsValid<T>(const value: T): Boolean; overload; static;
+    class function GetName<T>(const value: Integer): string; overload; static;
+    class function GetName<T>(const value: T): string; overload; static;
+    class function GetNames<T>: TStringDynArray; static;
+    class function GetValue<T>(const value: string): Integer; overload; static;
+    class function GetValue<T>(const value: T): Integer; overload; static;
+    class function GetValues<T>: TIntegerDynArray; static;
+    class function TryParse<T>(const value: Integer; out enum: T): Boolean; overload; static;
+    class function TryParse<T>(const value: string; out enum: T): Boolean; overload; static;
+    class function Parse<T>(const value: Integer): T; overload; static;
+    class function Parse<T>(const value: string): T; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TActivator'}
 
   IObjectActivator = interface
@@ -3448,6 +3478,135 @@ begin
     Exit(tkUnknown);
   Result := typeInfo.Kind;
 {$ENDIF}
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnum'}
+
+class function TEnum.ToInteger<T>(const value: T): Integer;
+begin
+  case SizeOf(T) of
+    1: Result := PByte(@value)^;
+    2: Result := PWord(@value)^;
+    4: Result := PInteger(@value)^;
+  end;
+end;
+
+class function TEnum.IsValid<T>(const value: Integer): Boolean;
+var
+  data: PTypeData;
+begin
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
+  data := GetTypeData(TypeInfo(T));
+  Result := (value >= data.MinValue) and (value <= data.MaxValue);
+end;
+
+class function TEnum.IsValid<T>(const value: T): Boolean;
+var
+  intValue: Integer;
+begin
+  intValue := ToInteger<T>(value);
+  Result := IsValid<T>(intValue);
+end;
+
+class function TEnum.GetName<T>(const value: Integer): string;
+begin
+  Guard.CheckEnum<T>(value, 'value');
+  Result := GetEnumName(TypeInfo(T), value);
+end;
+
+class function TEnum.GetName<T>(const value: T): string;
+var
+  intValue: Integer;
+begin
+  intValue := ToInteger<T>(value);
+  Result := GetName<T>(intValue);
+end;
+
+class function TEnum.GetNames<T>: TStringDynArray;
+var
+  typeData: PTypeData;
+{$IFDEF NEXTGEN}
+  p: TTypeInfoFieldAccessor;
+{$ELSE}
+  p: PShortString;
+{$ENDIF}
+  i: Integer;
+begin
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
+  typeData := GetTypeData(TypeInfo(T));
+  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+{$IFDEF NEXTGEN}
+  p := typedata^.NameListFld;
+{$ELSE}
+  p := @typedata.NameList;
+{$ENDIF}
+  for i := Low(Result) to High(Result) do
+  begin
+{$IFDEF NEXTGEN}
+    Result[i] := p.ToString;
+    p.SetData(p.Tail);
+{$ELSE}
+    Result[i] := UTF8ToString(p^);
+    Inc(PByte(p), Length(p^) + 1);
+{$ENDIF}
+  end;
+end;
+
+class function TEnum.GetValue<T>(const value: string): Integer;
+var
+  temp: T;
+begin
+  temp := Parse<T>(value);
+  Result := ToInteger<T>(temp);
+end;
+
+class function TEnum.GetValue<T>(const value: T): Integer;
+begin
+  Guard.CheckEnum<T>(value, 'value');
+  Result := ToInteger<T>(value);
+end;
+
+class function TEnum.GetValues<T>: TIntegerDynArray;
+var
+  typeData: PTypeData;
+  i: Integer;
+begin
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
+  typeData := GetTypeData(TypeInfo(T));
+  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+  for i := Low(Result) to High(Result) do
+    Result[i] := i;
+end;
+
+class function TEnum.TryParse<T>(const value: Integer; out enum: T): Boolean;
+begin
+  Result := IsValid<T>(value);
+  if Result then
+    Move(value, enum, SizeOf(T));
+end;
+
+class function TEnum.TryParse<T>(const value: string; out enum: T): Boolean;
+var
+  intValue: Integer;
+begin
+  Guard.CheckTypeKind<T>(tkEnumeration, 'T');
+  intValue := GetEnumValue(TypeInfo(T), value);
+  Result := TryParse<T>(intValue, enum);
+end;
+
+class function TEnum.Parse<T>(const value: Integer): T;
+begin
+  if not TryParse<T>(value, Result) then
+    raise EFormatException.CreateResFmt(@SIncorrectFormat, [IntToStr(value)]);
+end;
+
+class function TEnum.Parse<T>(const value: string): T;
+begin
+  if not TryParse<T>(value, Result) then
+    raise EFormatException.CreateResFmt(@SIncorrectFormat, [value]);
 end;
 
 {$ENDREGION}
