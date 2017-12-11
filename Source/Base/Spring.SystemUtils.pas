@@ -32,7 +32,6 @@ unit Spring.SystemUtils;
 interface
 
 uses
-  Rtti,
   SysUtils,
   Types,
   TypInfo;
@@ -171,10 +170,9 @@ implementation
 
 uses
   DateUtils,
-  StrUtils,
-  Variants,
   Spring,
   Spring.ResourceStrings;
+
 
 {$REGION 'TEnum'}
 
