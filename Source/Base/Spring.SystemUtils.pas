@@ -43,55 +43,36 @@ type
 /// <summary>
 ///   Retrieves the byte length of a unicode string.
 /// </summary>
-/// <param name="s">
-///   the unicode string.
-/// </param>
-/// <returns>
-///   The byte length of the unicode string.
-/// </returns>
 /// <remarks>
 ///   Although there is already a routine <c>SysUtils.ByteLength(string)</c>
 ///   function, it only supports unicode strings and doesn't provide overloads
 ///   for WideStrings and AnsiStrings.
 /// </remarks>
-/// <seealso cref="GetByteLength(WideString)" />
-/// <seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: string): Integer; overload; inline;
 
 {$IFNDEF NEXTGEN}
 /// <summary>
 ///   Retrieves the byte length of a WideString.
 /// </summary>
-/// <param name="s">
-///   A wide string.
-/// </param>
-/// <returns>
-///   The byte length of the wide string.
-/// </returns>
-/// <seealso cref="GetByteLength(string)" />
-/// <seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: WideString): Integer; overload; inline;
 
 /// <summary>
 ///   Retrieves the byte length of a <c>RawByteString</c> (AnsiString or
 ///   UTF8String).
 /// </summary>
-/// <returns>
-///   The byte length of the raw byte string.
-/// </returns>
-/// <seealso cref="GetByteLength(string)" />
-/// <seealso cref="GetByteLength(WideString)" />
 function GetByteLength(const s: RawByteString): Integer; overload; inline;
 {$ENDIF NEXTGEN}
 
 
 /// <summary>
-///   Overloads. SplitString
+///   Splits a string into different parts delimited by the specified delimiter
+///   characters.
 /// </summary>
 /// <remarks>
 ///   Each element of separator defines a separate delimiter character. If two
 ///   delimiters are adjacent, or a delimiter is found at the beginning or end
-///   of the buffer, the corresponding array element contains Empty.
+///   of the buffer, the corresponding array element contains an additional
+///   empty string is removeEmptyEntries is not True
 /// </remarks>
 function SplitString(const buffer: string; const separators: TSysCharSet;
   removeEmptyEntries: Boolean = False): TStringDynArray; overload;
@@ -114,19 +95,10 @@ function SplitString(const buffer: PChar; len: Integer; const separators: TSysCh
 ///   buffer := 'C:'#0'D:'#0'E:'#0#0;
 ///   strings := SplitString(PChar(buffer));
 ///   for s in strings do
-///   begin
 ///     Writeln(s);
-///   end;
 /// end;</code>
 /// </example>
 function SplitString(const buffer: PChar): TStringDynArray; overload;
-
-/// <summary>
-///   Returns a string array that contains the substrings in the buffer that
-///   are delimited by null char (#0) and ends with an additional null char.
-/// </summary>
-function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
-  deprecated 'Use the SplitString(PChar) function instead.';
 
 /// <summary>
 ///   Converts a string to a TDateTime value using the specified format, with a
@@ -177,10 +149,6 @@ end;
 
 function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
   removeEmptyEntries: Boolean): TStringDynArray;
-var
-  head: PChar;
-  tail: PChar;
-  p: PChar;
 
   procedure AppendEntry(buffer: PChar; len: Integer; var strings: TStringDynArray);
   var
@@ -193,11 +161,15 @@ var
       strings[High(strings)] := entry;
     end;
   end;
+
+var
+  head, tail, p: PChar;
 begin
   Guard.CheckRange(len >= 0, 'len');
 
-  if (buffer = nil) or (len = 0) then Exit;
   Result := nil;
+  if (buffer = nil) or (len = 0) then
+    Exit;
   head := buffer;
   tail := head + len - 1;
   p := head;
@@ -209,9 +181,7 @@ begin
       head := StrNextChar(p);
     end;
     if p = tail then
-    begin
       AppendEntry(head, p - head + 1, Result);
-    end;
     p := StrNextChar(p);
   end;
 end;
@@ -219,23 +189,31 @@ end;
 function SplitString(const buffer: PChar): TStringDynArray;
 var
   p: PChar;
-  entry: string;
+  i: Integer;
 begin
-  if (buffer = nil) or (buffer^ = #0) then Exit;
   Result := nil;
+  if buffer = nil then
+    Exit;
+  i := 0;
   p := buffer;
   while p^ <> #0 do
   begin
-    entry := p;
-    SetLength(Result, Length(Result) + 1);
-    Result[High(Result)] := entry;
-    Inc(p, Length(entry) + 1);  // Jump to the next entry
+    p := StrEnd(P);
+    Inc(p);
+    Inc(i);
   end;
-end;
-
-function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
-begin
-  Result := SplitString(buffer);
+  if i = 0 then
+    Exit;
+  SetLength(Result, i);
+  i := 0;
+  p := buffer;
+  while p^ <> #0 do
+  begin
+    Result[i] := p;
+    p := StrEnd(P);
+    Inc(p);
+    Inc(i);
+  end;
 end;
 
 function TryStrToDateTimeFmt(const s, format: string; out value: TDateTime): Boolean;
