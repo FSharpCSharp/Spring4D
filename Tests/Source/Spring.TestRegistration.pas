@@ -189,7 +189,7 @@ begin
 
   RegisterTests('Spring.Base.SystemUtils', [
     TTestSplitString.Suite,
-    TTestTryConvertStrToDateTime.Suite,
+    TTestTryStrToDateTimeFmt.Suite,
     TTestSplitNullTerminatedStrings.Suite,
     TTestEnum.Suite
   ]);

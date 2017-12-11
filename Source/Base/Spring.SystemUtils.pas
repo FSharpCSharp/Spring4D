@@ -157,34 +157,15 @@ function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
   deprecated 'Use the SplitString(PChar) function instead.';
 
 /// <summary>
-///   Try parsing a string to a datetime value based on the specified format.
-///   Returns True if the input string matches the format.
+///   Converts a string to a TDateTime value using the specified format, with a
+///   Boolean success code.
 /// </summary>
-/// <param name="s">
-///   the input string
-/// </param>
-/// <param name="format">
-///   the format of datetime
-/// </param>
-/// <param name="value">
-///   output datetime value
-/// </param>
-/// <returns>
-///   Returns True if the input string can be parsed.
-/// </returns>
-function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
+function TryStrToDateTimeFmt(const s, format: string; out value: TDateTime): Boolean;
 
 /// <summary>
-///   Parses a string to a datetime value based on the specified format. An
-///   EConvertError exception will be raised if failed to parse the string.
+///   Converts a string to a TDateTime value using the specified format.
 /// </summary>
-/// <param name="s">
-///   the date time string.
-/// </param>
-/// <param name="format">
-///   the format of datetime.
-/// </param>
-function ConvertStrToDateTime(const s, format: string): TDateTime;
+function StrToDateTimeFmt(const s, format: string): TDateTime;
 
 implementation
 
@@ -448,7 +429,7 @@ begin
   Result := SplitString(buffer);
 end;
 
-function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
+function TryStrToDateTimeFmt(const s, format: string; out value: TDateTime): Boolean;
 var
   localString: string;
   stringFormat: string;
@@ -461,14 +442,11 @@ var
   begin
     position := Pos(element, stringFormat);
     if position > 0 then
-    begin
-      Result := StrToInt(Copy(localString, position, Length(element)));
-    end
+      Result := StrToInt(Copy(localString, position, Length(element)))
     else
-    begin
       Result := defaultValue;
-    end;
   end;
+
 begin
   localString := Trim(s);
   stringFormat := UpperCase(format);
@@ -480,9 +458,7 @@ begin
     begin
       year := ExtractElementDef('YY', 1899);
       if year < 1899 then
-      begin
         Inc(year, (YearOf(Today) div 100) * 100);
-      end;
     end;
     month := ExtractElementDef('MM', 12);
     day := ExtractElementDef('DD', 30);
@@ -496,12 +472,10 @@ begin
   end;
 end;
 
-function ConvertStrToDateTime(const s, format: string): TDateTime;
+function StrToDateTimeFmt(const s, format: string): TDateTime;
 begin
-  if not TryConvertStrToDateTime(s, format, Result) then
-  begin
+  if not TryStrToDateTimeFmt(s, format, Result) then
     raise EConvertError.CreateResFmt(@SInvalidDateTime, [s]);
-  end;
 end;
 
 end.
