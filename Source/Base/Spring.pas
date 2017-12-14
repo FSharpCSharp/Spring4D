@@ -2395,6 +2395,15 @@ type
     property Current: T read GetCurrent;
   end;
 
+  VectorHelper = record
+  private
+    class function InternalIndexOfInt8(const data: Pointer; const item: ShortInt): Integer; static;
+    class function InternalIndexOfInt16(const data: Pointer; const item: SmallInt): Integer; static;
+    class function InternalIndexOfInt32(const data: Pointer; const item: Integer): Integer; static;
+    class function InternalIndexOfInt64(const data: Pointer; const item: Int64): Integer; static;
+    class function InternalIndexOfStr(const data: Pointer; const item: string): Integer; static;
+  end;
+
   Vector<T> = record
   private
     fData: TArray<T>; // DO NOT ADD ANY OTHER FIELDS !!!
@@ -2407,8 +2416,6 @@ type
     procedure InternalInsert(index: Integer; const items: array of T);
     function InternalEquals(const items: array of T): Boolean;
     function InternalIndexOf(const item: T): Integer;
-    function InternalIndexOfInt(const item: Integer): Integer;
-    function InternalIndexOfStr(const item: string): Integer;
   public
     class operator Implicit(const value: TArray<T>): Vector<T>; inline;
     class operator Implicit(const value: Vector<T>): TArray<T>; inline;
@@ -8788,6 +8795,51 @@ end;
 
 {$REGION 'Vector<T>'}
 
+class function VectorHelper.InternalIndexOfInt8(const data: Pointer;
+  const item: ShortInt): Integer;
+begin
+  for Result := 0 to High(TArray<ShortInt>(data)) do
+    if TArray<ShortInt>(data)[Result] = item then
+      Exit;
+  Result := -1;
+end;
+
+class function VectorHelper.InternalIndexOfInt16(const data: Pointer;
+  const item: SmallInt): Integer;
+begin
+  for Result := 0 to High(TArray<SmallInt>(data)) do
+    if TArray<SmallInt>(data)[Result] = item then
+      Exit;
+  Result := -1;
+end;
+
+class function VectorHelper.InternalIndexOfInt32(const data:Pointer;
+  const item: Integer): Integer;
+begin
+  for Result := 0 to High(TArray<Integer>(data)) do
+    if TArray<Integer>(data)[Result] = item then
+      Exit;
+  Result := -1;
+end;
+
+class function VectorHelper.InternalIndexOfInt64(const data: Pointer;
+  const item: Int64): Integer;
+begin
+  for Result := 0 to High(TArray<Int64>(data)) do
+    if TArray<Int64>(data)[Result] = item then
+      Exit;
+  Result := -1;
+end;
+
+class function VectorHelper.InternalIndexOfStr(const data: Pointer;
+  const item: string): Integer;
+begin
+  for Result := 0 to High(TArray<string>(data)) do
+    if TArray<string>(data)[Result] = item then
+      Exit;
+  Result := -1;
+end;
+
 class operator Vector<T>.Add(const left, right: Vector<T>): Vector<T>;
 begin
   Result := left;
@@ -8866,8 +8918,14 @@ end;
 function Vector<T>.IndexOf(const item: T): Integer;
 begin
   case TType.Kind<T> of
-    tkInteger: Result := InternalIndexOfInt(PInteger(@item)^);
-    tkUString: Result := InternalIndexOfStr(PUnicodeString(@item)^);
+    tkInteger:
+      case SizeOf(T) of
+        1: Result := VectorHelper.InternalIndexOfInt8(fData, PShortInt(@item)^);
+        2: Result := VectorHelper.InternalIndexOfInt16(fData, PSmallInt(@item)^);
+        4: Result := VectorHelper.InternalIndexOfInt32(fData, PInteger(@item)^);
+      end;
+    tkInt64: Result := VectorHelper.InternalIndexOfInt64(fData, PInt64(@item)^);
+    tkUString: Result := VectorHelper.InternalIndexOfStr(fData, PUnicodeString(@item)^);
   else
     Result := InternalIndexOf(item);
   end;
@@ -9161,22 +9219,6 @@ begin
   comparer := TEqualityComparer<T>.Default;
   for Result := 0 to High(fData) do
     if comparer.Equals(fData[Result], item) then
-      Exit;
-  Result := -1;
-end;
-
-function Vector<T>.InternalIndexOfInt(const item: Integer): Integer;
-begin
-  for Result := 0 to High(fData) do
-    if PInteger(@fData[Result])^ = item then
-      Exit;
-  Result := -1;
-end;
-
-function Vector<T>.InternalIndexOfStr(const item: string): Integer;
-begin
-  for Result := 0 to High(fData) do
-    if PUnicodeString(@fData[Result])^ = item then
       Exit;
   Result := -1;
 end;

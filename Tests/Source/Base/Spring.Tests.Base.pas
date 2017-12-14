@@ -390,6 +390,8 @@ type
     procedure ClassOperatorIn_ItemNotInArray_False;
     procedure ClassOperatorIn_ArrayInArray_True;
     procedure ClassOperatorIn_ArrayNotInArray_False;
+    procedure ClassOperatorIn_Int8;
+    procedure ClassOperatorIn_Int64;
 
     procedure IndexOf_ItemInArray;
     procedure Delete_Start;
@@ -2493,6 +2495,22 @@ begin
   arr.Add([1, 2, 3, 4, 5]);
   arr2.Add([1, 2, 3, 6]);
   CheckFalse(arr2 in arr);
+end;
+
+procedure TTestVector.ClassOperatorIn_Int64;
+var
+  arr: Vector<Int64>;
+begin
+  arr.Add([1, 2, 3, 4, 5]);
+  CheckTrue(3 in arr);
+end;
+
+procedure TTestVector.ClassOperatorIn_Int8;
+var
+  arr: Vector<Byte>;
+begin
+  arr.Add([251, 252, 253, 254, 255]);
+  CheckTrue(253 in arr);
 end;
 
 procedure TTestVector.ClassOperatorIn_ItemInArray_True;
