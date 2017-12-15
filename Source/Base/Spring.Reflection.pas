@@ -185,6 +185,12 @@ type
   public
 
     /// <summary>
+    ///   Returns all attributes specified on the type and if specified also of
+    ///   its ancestor types (for classes and interfaces).
+    /// </summary>
+    function GetAttributes(inherit: Boolean = False): TArray<TCustomAttribute>;
+
+    /// <summary>
     ///   Returns all constructors
     /// </summary>
     function GetConstructors: TArray<TRttiMethod>;
@@ -1025,6 +1031,51 @@ end;
 
 
 {$REGION 'TRttiTypeHelper'}
+
+type
+  TRttiTypeHack = class(TRttiObject)
+    function GetAttributes: TArray<TCustomAttribute>; override;
+  end;
+
+function TRttiTypeHack.GetAttributes: TArray<TCustomAttribute>;
+begin
+  Result := inherited;
+end;
+
+function TRttiTypeHelper.GetAttributes(
+  inherit: Boolean): TArray<TCustomAttribute>;
+var
+  flat: TArray<TArray<TCustomAttribute>>;
+  t: TRttiType;
+  depth: Integer;
+begin
+  if inherit then
+  begin
+    t := Self;
+    depth := 0;
+    while t <> nil do
+    begin
+      Inc(depth);
+      t := t.BaseType;
+    end;
+  end
+  else
+    depth := 1;
+
+  SetLength(flat, depth);
+  t := Self;
+  depth := 0;
+  while t <> nil do
+  begin
+    flat[depth] := TRttiTypeHack(t).GetAttributes;
+    if not inherit then
+      Break;
+    Inc(depth);
+    t := t.BaseType;
+  end;
+
+  Result := TArray.Concat<TCustomAttribute>(flat);
+end;
 
 function TRttiTypeHelper.GetConstructors: TArray<TRttiMethod>;
 var
