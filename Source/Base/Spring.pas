@@ -5343,6 +5343,8 @@ begin
         or (TypeInfo = System.TypeInfo(TDate))
         or (TypeInfo = System.TypeInfo(TTime)) then
         Exit(AsType<TDateTime>)
+      else if TypeInfo = System.TypeInfo(Currency) then
+        Exit(AsCurrency)
       else
         Exit(AsExtended);
     tkRecord:
