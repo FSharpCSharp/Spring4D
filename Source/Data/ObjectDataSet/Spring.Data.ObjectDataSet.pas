@@ -217,11 +217,13 @@ type
 implementation
 
 uses
+  FmtBcd,
   StrUtils,
   SysUtils,
   TypInfo,
   Variants,
   Spring.Data.ExpressionParser.Functions,
+  Spring.Data.ValueConverters,
   Spring.Reflection;
 
 resourcestring
@@ -447,7 +449,7 @@ begin
       if VarIsNull(fieldValue) then
         prop.SetValue(newItem, TValue.Empty)
       else
-        if TValue.FromVariant(fieldValue).TryConvert(prop.PropertyType.Handle, value) then
+        if TValue.From<Variant>(fieldValue).TryConvert(prop.PropertyType.Handle, value) then
           prop.SetValue(newItem, value);
     end;
   end;
@@ -784,6 +786,8 @@ var
           fieldType := ftGuid;
           len := 38;
         end
+        else if typeInfo = System.TypeInfo(TBcd) then
+          fieldType := ftFMTBcd
         else if IsNullable(typeInfo) then
           DoGetFieldType(GetUnderlyingType(typeInfo));
       tkInt64:

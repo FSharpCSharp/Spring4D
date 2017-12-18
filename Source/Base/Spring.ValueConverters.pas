@@ -711,6 +711,21 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TVariantToGUIDConverter}
+
+  /// <summary>
+  ///   Provides conversion routine between Variant and TGUID
+  /// </summary>
+  TVariantToGUIDConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TValueConverterFactory'}
 
   /// <summary>
@@ -794,6 +809,7 @@ uses
   Math,
   StrUtils,
   SysUtils,
+  Variants,
   Spring,
   Spring.ResourceStrings,
   Spring.SystemUtils;
@@ -1725,6 +1741,25 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TVariantToGUIDConverter'}
+
+function TVariantToGUIDConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  v: Variant;
+begin
+  v := value.AsVariant;
+  case VarType(v) of
+    varString, varUString:
+      Result := TValue.From<TGUID>(TGUID.Create(string(v)));
+  else
+    raise EInvalidOperationException.Create('unsupported vartype');
+  end;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TValueConverterFactory'}
 
 class constructor TValueConverterFactory.Create;
@@ -1910,6 +1945,8 @@ begin
 
   RegisterConverter(TypeInfo(TGUID), [tkString, tkUString, tkLString, tkWString], TGUIDToStringConverter);
   RegisterConverter(TypeInfo(Nullable<TGUID>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
+
+  RegisterConverter(TypeInfo(Variant), TypeInfo(TGUID), TVariantToGUIDConverter);
 end;
 
 class destructor TValueConverterFactory.Destroy;

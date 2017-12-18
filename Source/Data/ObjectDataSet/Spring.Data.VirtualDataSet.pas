@@ -698,7 +698,10 @@ var
       end;
       ftFixedWideChar, ftWideString:
       begin
-        TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal);
+        if tagVariant(Data).vt = VT_BSTR then
+          TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal)
+        else
+          TempBuff := TEncoding.Unicode.GetBytes(string(Data));
         SetLength(TempBuff, Length(TempBuff) + SizeOf(Char));
         TempBuff[Length(TempBuff) - 2] := 0;
         TempBuff[Length(TempBuff) - 1] := 0;
@@ -801,7 +804,10 @@ var
       end;
       ftFixedWideChar, ftWideString:
       begin
-        TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal);
+        if tagVariant(Data).vt = VT_BSTR then
+          TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal)
+        else
+          TempBuff := TEncoding.Unicode.GetBytes(string(Data));
         SetLength(TempBuff, Length(TempBuff) + SizeOf(Char));
         TempBuff[Length(TempBuff) - 2] := 0;
         TempBuff[Length(TempBuff) - 1] := 0;

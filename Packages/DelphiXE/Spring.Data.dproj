@@ -57,6 +57,7 @@
 			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ExpressionParser.Functions.pas"/>
 			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.IndexList.pas"/>
 			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.pas"/>
+			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ValueConverters.pas"/>
 			<DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.VirtualDataSet.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
