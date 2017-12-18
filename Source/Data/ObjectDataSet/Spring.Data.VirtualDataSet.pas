@@ -455,8 +455,8 @@ end;
 
 destructor TCustomVirtualDataSet.Destroy;
 begin
-  fIndexList.Free;
   inherited Destroy;
+  fIndexList.Free;
 end;
 
 function TCustomVirtualDataSet.AllocRecordBuffer: TRecordBuffer;
