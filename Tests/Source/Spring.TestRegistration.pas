@@ -116,6 +116,11 @@ begin
     TTestObjectStack.Suite,
     TTestObjectQueue.Suite,
     TTestOrderedDictionary.Suite
+  {$IFNDEF DELPHI2010},
+    TTestEmptyIntegerStringMap.Suite,
+    TTestIntegerStringMap.Suite,
+    TTestRedBlackTree.Suite
+  {$ENDIF}
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [

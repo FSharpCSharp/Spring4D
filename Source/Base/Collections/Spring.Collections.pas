@@ -2600,6 +2600,18 @@ type
     class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
     class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
+
+  {$IFNDEF DELPHI2010}
+    class function CreateSortedSet<T>: ISet<T>; overload; static;
+    class function CreateSortedSet<T>(const comparer: IComparer<T>): ISet<T>; overload; static;
+    class function CreateSortedSet<T>(const values: array of T): ISet<T>; overload; static;
+    class function CreateSortedSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
+
+    class function CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(const KeyComparer : IComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(const ValueComparer: IComparer<TValue>): IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(const KeyComparer : IComparer<TKey>; const ValueComparer: IComparer<TValue>): IDictionary<TKey, TValue>; overload; static;
+  {$ENDIF}
   end;
 
   TEnumerable = class
@@ -3429,6 +3441,53 @@ begin
 {$ENDIF}
   Result.AddRange(values);
 end;
+
+{$IFNDEF DELPHI2010}
+class function TCollections.CreateSortedSet<T>: ISet<T>;
+begin
+  Result := TSortedSet<T>.Create;
+end;
+
+class function TCollections.CreateSortedSet<T>(
+  const comparer: IComparer<T>): ISet<T>;
+begin
+  Result := TSortedSet<T>.Create(comparer);
+end;
+
+class function TCollections.CreateSortedSet<T>(const values: array of T): ISet<T>;
+begin
+  Result := TSortedSet<T>.Create(values);
+end;
+
+class function TCollections.CreateSortedSet<T>(const values: IEnumerable<T>): ISet<T>;
+begin
+  Result := TSortedSet<T>.Create(values);
+end;
+
+class function TCollections.CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
+begin
+  Result := TSortedDictionary<TKey, TValue>.Create;
+end;
+
+class function TCollections.CreateSortedDictionary<TKey, TValue>(
+  const keyComparer : IComparer<TKey>): IDictionary<TKey, TValue>;
+begin
+  Result := TSortedDictionary<TKey, TValue>.Create(keyComparer, nil);
+end;
+
+class function TCollections.CreateSortedDictionary<TKey, TValue>(
+  const valueComparer: IComparer<TValue>): IDictionary<TKey, TValue>;
+begin
+  Result := TSortedDictionary<TKey, TValue>.Create(nil, valueComparer);
+end;
+
+class function TCollections.CreateSortedDictionary<TKey, TValue>(
+  const keyComparer : IComparer<TKey>;
+  const valueComparer: IComparer<TValue>): IDictionary<TKey, TValue>;
+begin
+  Result := TSortedDictionary<TKey, TValue>.Create(keyComparer, valueComparer);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

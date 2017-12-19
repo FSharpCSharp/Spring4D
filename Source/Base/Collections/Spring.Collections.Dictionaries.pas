@@ -34,6 +34,9 @@ uses
   Generics.Defaults,
   Spring,
   Spring.Collections,
+{$IFNDEF DELPHI2010}
+  Spring.Collections.Trees,
+{$ENDIF}
   Spring.Collections.Base;
 
 type
@@ -375,11 +378,82 @@ type
   {$ENDREGION}
   end;
 
+{$IFNDEF DELPHI2010}
+  TSortedDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IDictionary<TKey, TValue>,
+    IReadOnlyDictionary<TKey, TValue>)
+  private
+    {$REGION 'Private types'}
+    type
+      TKeyValue = Generics.Collections.TPair<TKey, TValue>;
+      PNode = TRedBlackTreeNodeHelper<TKey, TValue>.PNode;
+    {$ENDREGION}
+  private
+    fTree: IRedBlackTree<TKey,TValue>;
+    fKeyComparer: IComparer<TKey>;
+    fValueComparer: IComparer<TValue>;
+    fKeyValueComparerByKey: IComparer<TKeyValue>;
+    fKeys: IList<TKey>;
+    fValues: IList<TValue>;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+    function GetItem(const key: TKey): TValue; virtual;
+    function GetKeys: IReadOnlyCollection<TKey>; override;
+    function GetValues: IReadOnlyCollection<TValue>; override;
+    procedure SetItem(const key: TKey; const value: TValue); virtual;
+  {$ENDREGION}
+  public
+    constructor Create; override;
+    constructor Create(const keyComparer: IComparer<TKey>; const valueComparer: IComparer<TValue>); overload;
+    destructor Destroy; override;
+
+    {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
+      function GetEnumerator: IEnumerator<TKeyValue>; override;
+      function Contains(const value: TKeyValue;
+        const comparer: IEqualityComparer<TKeyValue>): Boolean; override;
+      function Ordered: IEnumerable<TKeyValue>; override;
+      function ToArray: TArray<TKeyValue>; override;
+    {$ENDREGION}
+
+    {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
+      procedure Clear; override;
+    {$ENDREGION}
+
+    {$REGION 'Implements IMap<TKey, TValue>'}
+      procedure Add(const key: TKey; const value: TValue); overload; override;
+      function Remove(const key: TKey): Boolean; overload; override;
+      function Remove(const key: TKey; const value: TValue): Boolean; override;
+      function Extract(const key: TKey; const value: TValue): TKeyValue; overload; override;
+      function Contains(const key: TKey; const value: TValue): Boolean; override;
+      function ContainsKey(const key: TKey): Boolean; override;
+      function ContainsValue(const value: TValue): Boolean; override;
+      property Keys: IReadOnlyCollection<TKey> read GetKeys;
+      property Values: IReadOnlyCollection<TValue> read GetValues;
+    {$ENDREGION}
+
+    {$REGION 'Implements IDictionary<TKey, TValue>'}
+      procedure AddOrSetValue(const key: TKey; const value: TValue);
+      function Extract(const key: TKey): TValue; reintroduce; overload;
+      function ExtractPair(const key: TKey): TKeyValue; reintroduce; overload;
+      function TryGetValue(const key: TKey; out value: TValue): Boolean;
+      function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+
+      property Items[const key: TKey]: TValue read GetItem write SetItem; default;
+    {$ENDREGION}
+
+    {$REGION 'Implements IReadOnlyDictionary<TKey, TValue>'}
+      function GetValueOrDefault(const key: TKey): TValue; overload;
+      function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
+    {$ENDREGION}
+  end;
+{$ENDIF}
+
 implementation
 
 uses
   RTLConsts,
   SysUtils,
+  Types,
   Spring.Collections.Extensions,
   Spring.Collections.Lists;
 
@@ -1389,6 +1463,291 @@ begin
   Inc(fIndex);
   Result := fIndex < fSource.Count;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedDictionary<TKey, TValue>'}
+
+{$IFNDEF DELPHI2010}
+constructor TSortedDictionary<TKey, TValue>.Create;
+begin
+  Create(nil, nil);
+end;
+
+constructor TSortedDictionary<TKey, TValue>.Create(
+  const keyComparer: IComparer<TKey>; const valueComparer: IComparer<TValue>);
+begin
+  inherited Create;
+
+  fKeyComparer := keyComparer;
+  if not Assigned(fkeyComparer) then
+    fKeyComparer := TComparer<TKey>.Default;
+  fValueComparer := valueComparer;
+  if not Assigned(fValueComparer) then
+    fValueComparer := TComparer<TValue>.Default;
+  fTree := TRedBlackTree<TKey,TValue>.Create(keyComparer);
+
+{$IFDEF DELPHI2010}
+  fKeys := Spring.Collections.Lists.TList<TKey>.Create;
+  fValues := Spring.Collections.Lists.TList<TValue>.Create;
+{$ELSE}
+  fKeys := TCollections.CreateList<TKey>;
+  fValues := TCollections.CreateList<TValue>;
+{$ENDIF}
+end;
+
+destructor TSortedDictionary<TKey, TValue>.Destroy;
+begin
+  Clear;
+  inherited;
+end;
+
+procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey; const value: TValue);
+begin
+  if not fTree.Add(key, value) then
+    raise EListError.CreateRes(@SGenericDuplicateItem);
+  KeyChanged(key, caAdded);
+  ValueChanged(value, caAdded);
+end;
+
+procedure TSortedDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
+  const value: TValue);
+var
+  node: PNode;
+begin
+  node := fTree.FindNode(key);
+  if Assigned(node) then
+  begin
+    ValueChanged(node.Value, caRemoved);
+    node.Value := value;
+    ValueChanged(value, caAdded);
+  end
+  else
+  begin
+    fTree.Add(key, value);
+    KeyChanged(key, caAdded);
+    ValueChanged(value, caAdded);
+  end;
+end;
+
+function TSortedDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+begin
+  Result := Self;
+end;
+
+procedure TSortedDictionary<TKey, TValue>.Clear;
+var
+  node: PBinaryTreeNode;
+begin
+  node := fTree.Root.LeftMost;
+  while Assigned(node) do
+  begin
+    KeyChanged(PNode(node).Key, caRemoved);
+    ValueChanged(PNode(node).Value, caRemoved);
+    node := node.Next;
+  end;
+
+  fTree.Clear;
+end;
+
+function TSortedDictionary<TKey, TValue>.Contains(const value: TKeyValue;
+  const comparer: IEqualityComparer<TKeyValue>): Boolean;
+var
+  found: TValue;
+begin
+  Result := fTree.Find(value.Key, found)
+    and comparer.Equals(value, TKeyValue.Create(value.Key, found));
+end;
+
+function TSortedDictionary<TKey, TValue>.Contains(const key: TKey;
+  const value: TValue): Boolean;
+var
+  found: TValue;
+begin
+  Result := fTree.Find(key, found)
+    and (fValueComparer.Compare(value, found) = EqualsValue);
+end;
+
+function TSortedDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
+begin
+  Result := fTree.Exists(key);
+end;
+
+function TSortedDictionary<TKey, TValue>.ContainsValue(const value: TValue): Boolean;
+var
+  found: TKeyValue;
+begin
+  for found in fTree do
+    if fValueComparer.Compare(value, found.Value) = EqualsValue then
+      Exit(True);
+  Result := False;
+end;
+
+function TSortedDictionary<TKey, TValue>.Extract(const key: TKey;
+  const value: TValue): TKeyValue;
+var
+  node: PNode;
+begin
+  node := fTree.FindNode(key);
+  if Assigned(node)
+    and (fValueComparer.Compare(value, node.Value) = EqualsValue) then
+  begin
+    Result.Key := node.Key;
+    Result.Value := node.Value;
+    fTree.DeleteNode(node);
+    KeyChanged(Result.Key, caExtracted);
+    ValueChanged(Result.Value, caExtracted);
+  end
+  else
+    Result := Default(TKeyValue);
+end;
+
+function TSortedDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
+var
+  node: PNode;
+begin
+  node := fTree.FindNode(key);
+  if Assigned(node) then
+  begin
+    Result := node.Value;
+    fTree.DeleteNode(node);
+    KeyChanged(key, caExtracted);
+    ValueChanged(Result, caExtracted);
+  end
+  else
+    Result := Default(TValue);
+end;
+
+function TSortedDictionary<TKey, TValue>.ExtractPair(const key: TKey): TKeyValue;
+var
+  node: PNode;
+begin
+  node := fTree.FindNode(key);
+  if Assigned(node) then
+  begin
+    Result.Key := node.Key;
+    Result.Value := node.Value;
+    fTree.DeleteNode(node);
+    KeyChanged(Result.Key, caExtracted);
+    ValueChanged(Result.Value, caExtracted);
+  end
+  else
+    Result := Default(TKeyValue);
+end;
+
+function TSortedDictionary<TKey, TValue>.GetCount: Integer;
+begin
+  Result := fTree.Count;
+end;
+
+function TSortedDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValue>;
+begin
+  Result := fTree.GetEnumerator;
+end;
+
+function TSortedDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
+begin
+  if not TryGetValue(key, Result) then
+    Result := Default(TValue);
+end;
+
+function TSortedDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
+var
+  item: TKeyValue;
+begin
+  // TODO: implement this properly to always provide up to date information
+  fKeys.Clear;
+  for item in Self do
+    fKeys.Add(item.Key);
+  Result := fKeys.AsReadOnlyList;
+end;
+
+function TSortedDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey): TValue;
+begin
+  if not fTree.Find(key, Result) then
+    Result := Default(TValue);
+end;
+
+function TSortedDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey;
+  const defaultValue: TValue): TValue;
+begin
+  if not fTree.Find(key, Result) then
+    Result := defaultValue;
+end;
+
+function TSortedDictionary<TKey, TValue>.GetValues: IReadOnlyCollection<TValue>;
+var
+  item: TKeyValue;
+begin
+  // TODO: implement this properly to always provide up to date information
+  fValues.Clear;
+  for item in Self do
+    fValues.Add(item.Value);
+  Result := fValues.AsReadOnlyList;
+end;
+
+function TSortedDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
+var
+  node: PNode;
+begin
+  node := fTree.FindNode(key);
+  Result := Assigned(node);
+  if Result then
+  begin
+    KeyChanged(node.Key, caRemoved);
+    ValueChanged(node.Value, caRemoved);
+    fTree.DeleteNode(node);
+  end;
+end;
+
+function TSortedDictionary<TKey, TValue>.Remove(const key: TKey;
+  const value: TValue): Boolean;
+var
+  node: PNode;
+begin
+  node := fTree.FindNode(key);
+  Result := Assigned(node)
+    and (fValueComparer.Compare(value, node.Value) = EqualsValue);
+  if Result then
+  begin
+    KeyChanged(node.Key, caRemoved);
+    ValueChanged(node.Value, caRemoved);
+    fTree.DeleteNode(node);
+  end;
+end;
+
+procedure TSortedDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
+begin
+  AddOrSetValue(key, value);
+end;
+
+function TSortedDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValue>;
+begin
+  Result := TOrderedIterator<TKeyValue>.Create(Self, fKeyValueComparerByKey);
+end;
+
+function TSortedDictionary<TKey, TValue>.ToArray: TArray<TKeyValue>;
+var
+  i: Integer;
+  item: TKeyValue;
+begin
+  // TODO: consider adding ToArray to IBinaryTree
+  SetLength(Result, Count);
+  i := 0;
+  for item in Self do
+  begin
+    Result[i] := item;
+    Inc(i);
+  end;
+end;
+
+function TSortedDictionary<TKey, TValue>.TryGetValue(const key: TKey;
+  out value: TValue): Boolean;
+begin
+  Result := fTree.Find(key, value);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

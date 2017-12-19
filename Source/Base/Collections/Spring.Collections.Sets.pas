@@ -32,6 +32,9 @@ uses
   Generics.Collections,
   Generics.Defaults,
   Spring.Collections,
+{$IFNDEF DELPHI2010}
+  Spring.Collections.Trees,
+{$ENDIF}
   Spring.Collections.Base;
 
 type
@@ -105,6 +108,30 @@ type
     function IndexOf(const key: T): Integer;
   {$ENDREGION}
   end;
+{$IFNDEF DELPHI2010}
+  TSortedSet<T> = class(TSetBase<T>, ISet<T>)
+  private
+    fTree: IRedBlackTree<T>;
+    type
+      PNode = TRedBlackTreeNodeHelper<T>.PNode;
+  protected
+    class function CreateSet: ISet<T>; override;
+    procedure AddInternal(const item: T); override;
+    function GetCount: Integer; override;
+  public
+    constructor Create; overload; override;
+    constructor Create(const comparer: IComparer<T>); overload;
+
+    function GetEnumerator: IEnumerator<T>; override;
+
+    function Add(const item: T): Boolean;
+    function Remove(const item: T): Boolean; override;
+    function Extract(const item: T): T; override;
+    procedure Clear; override;
+
+    function Contains(const item: T): Boolean; override;
+  end;
+{$ENDIF}
 
 implementation
 
@@ -368,6 +395,95 @@ function TOrderedSet<T>.ToArray: TArray<T>;
 begin
   Result := fKeys.ToArray;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedSet<T>'}
+
+{$IFNDEF DELPHI2010}
+constructor TSortedSet<T>.Create;
+var
+  // use variable to pass nil because of codegen bug in XE2 and XE3 in x64
+  comparer: IComparer<T>;
+begin
+  Create(comparer);
+end;
+
+constructor TSortedSet<T>.Create(const comparer: IComparer<T>);
+begin
+  inherited Create;
+  fTree := TRedBlackTree<T>.Create(comparer);
+end;
+
+class function TSortedSet<T>.CreateSet: ISet<T>;
+begin
+  Result := TSortedSet<T>.Create;
+end;
+
+function TSortedSet<T>.Add(const item: T): Boolean;
+begin
+  Result := fTree.Add(item);
+  if Result then
+    Changed(item, caAdded);
+end;
+
+procedure TSortedSet<T>.AddInternal(const item: T);
+begin
+  fTree.Add(item);
+  Changed(item, caAdded);
+end;
+
+procedure TSortedSet<T>.Clear;
+var
+  node: PBinaryTreeNode;
+begin
+  node := fTree.Root.LeftMost;
+  while Assigned(node) do
+  begin
+    Changed(PNode(node).Key, caRemoved);
+    node := node.Next;
+  end;
+
+  fTree.Clear;
+end;
+
+function TSortedSet<T>.Contains(const item: T): Boolean;
+begin
+  Result := Assigned(fTree.FindNode(item));
+end;
+
+function TSortedSet<T>.Extract(const item: T): T;
+var
+  node: PNode;
+begin
+  node := fTree.FindNode(item);
+  if Assigned(node) then
+  begin
+    Result := node.Key;
+    Changed(Result, caExtracted);
+  end
+  else
+    Result := Default(T);
+end;
+
+function TSortedSet<T>.GetCount: Integer;
+begin
+  Result := fTree.Count;
+end;
+
+function TSortedSet<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := fTree.GetEnumerator;
+end;
+
+function TSortedSet<T>.Remove(const item: T): Boolean;
+begin
+  Result := fTree.Delete(item);
+  if Result then
+    Changed(item, caRemoved);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
