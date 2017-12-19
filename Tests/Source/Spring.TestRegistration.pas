@@ -54,6 +54,7 @@ uses
   Spring.Tests.Mocking,
 {$ENDIF}
   Spring.Tests.Pool,
+  Spring.Tests.Testing,
   Spring.Tests.Utils,
   Spring.Tests.Cryptography;
 
@@ -208,10 +209,6 @@ begin
     TTestArrayOfValueSerializer.Suite
   ]);
 
-//  RegisterTests('Spring.Base.Reflection.ValueExpression', [
-//    TTestValueExpression.Suite
-//  ]);
-
   RegisterTests('Spring.Core.Container', [
 {$IFDEF AUTOREFCOUNT}
     TTestGlobalContainer.Suite,
@@ -273,9 +270,6 @@ begin
   ]);
 
   RegisterTests('Spring.Extensions.Cryptography', [
-//    TTestBuffer.Suite,
-//    TTestEmptyBuffer.Suite,
-//    TTestFiveByteBuffer.Suite,
     TTestCRC16.Suite,
     TTestCRC32.Suite,
     TTestMD5.Suite,
@@ -292,18 +286,13 @@ begin
     TTestTripleDES.Suite
   ]);
 
-// Stefan Glienke - 2011/11/20:
-// removed configuration and logging tests because they break other tests in Delphi 2010
-// due to some bug in Rtti.TRttiPackage.MakeTypeLookupTable
-// see https://forums.embarcadero.com/thread.jspa?threadID=54471
-//
-//  RegisterTests('Spring.Core.Configuration', [
-//    TTestConfiguration.Suite
-//  ]);
-//
-//  RegisterTests('Spring.Core.Logging', [
-//     TTestLoggingConfig.Suite
-//  ]);
+  RegisterTests('Spring.Testing', [
+    TSelfTest.Suite,
+  {$IFNDEF DELPHI2010}
+    TDataDrivenTest.Suite,
+  {$ENDIF}
+    TSuiteSetUpTearDownTest.Suite
+  ]);
 end;
 
 end.

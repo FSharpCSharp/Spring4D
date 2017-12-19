@@ -33,8 +33,7 @@ uses
   Spring.Testing;
 
 type
-  TTestEnum = (zero, one, two, three);
-
+  TTestNumber = (zero, one, two, three);
 
   TestCaseAttribute = class(Spring.Testing.TestCaseAttribute)
   public
@@ -45,8 +44,8 @@ type
   TSelfTest = class(TTestCase)
     [Sequential]
     procedure TestEnum(
-      [Values]value: TTestEnum;
-      [Range(Ord(Low(TTestEnum)), Ord(High(TTestEnum)))]ordValue: Integer);
+      [Values]value: TTestNumber;
+      [Range(Ord(Low(TTestNumber)), Ord(High(TTestNumber)))]ordValue: Integer);
 
     [TestCase('foo')]
     procedure TestParams(const s1, s2: string);
@@ -141,7 +140,7 @@ begin
   Check(SameDateTime(dt, EncodeDateTime(2017, 7, 31, 13, 34, 50, 0)));
 end;
 
-procedure TSelfTest.TestEnum(value: TTestEnum; ordValue: Integer);
+procedure TSelfTest.TestEnum(value: TTestNumber; ordValue: Integer);
 begin
   CheckEquals(ordValue, Ord(value));
 end;
@@ -280,12 +279,5 @@ end;
 
 {$ENDREGION}
 
-
-initialization
-  TSelfTest.Register('Spring.Testing');
-{$IFNDEF DELPHI2010}
-  TDataDrivenTest.Register('Spring.Testing');
-{$ENDIF}
-  TSuiteSetUpTearDownTest.Register('Spring.Testing');
 
 end.
