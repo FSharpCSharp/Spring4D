@@ -556,9 +556,8 @@ begin
         fProperties.Add(prop);
         if not prop.IsWritable then
           field.ReadOnly := True;
-        Continue;
       end;
-      Exit;
+      Continue;
     end;
 
     if Assigned(fColumnAttributeClass) then
