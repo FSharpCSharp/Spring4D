@@ -106,6 +106,7 @@ implementation
 
 uses
   DB,
+  Spring,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.ResourceStrings,
   Spring.Persistence.SQL.Generators.SQLite3,
@@ -210,9 +211,9 @@ procedure TSQLiteStatementAdapter.SetParam(const param: TDBParam);
 
 begin
   case param.ParamType of
-    ftDate: Statement.SetParamDate(param.Name, param.Value.AsType<TDate>);
-    ftTime: Statement.SetParamTime(param.Name, param.Value.AsType<TTime>);
-    ftDateTime: Statement.SetParamDateTime(param.Name, param.Value.AsType<TDateTime>);
+    ftDate: Statement.SetParamDate(param.Name, param.Value.ToType<TDate>);
+    ftTime: Statement.SetParamTime(param.Name, param.Value.ToType<TTime>);
+    ftDateTime: Statement.SetParamDateTime(param.Name, param.Value.ToType<TDateTime>);
   else
     SetVariant;
   end;
