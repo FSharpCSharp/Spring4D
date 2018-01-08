@@ -104,10 +104,15 @@ type
     function ToArray: TArray<T>; override;
   {$ENDREGION}
 
+  {$REGION 'Implements ICollection<T>'}
+    procedure Clear; override;
+  {$ENDREGION}
+
   {$REGION 'Implements IOrderedSet<T>'}
     function IndexOf(const key: T): Integer;
   {$ENDREGION}
   end;
+
 {$IFNDEF DELPHI2010}
   TSortedSet<T> = class(TSetBase<T>, ISet<T>)
   private
@@ -367,9 +372,16 @@ begin
   fKeys := TKeyList<T>.Create(comparer);
 end;
 
+procedure TOrderedSet<T>.Clear;
+begin
+  fKeys.Clear;
+  inherited Clear;
+end;
+
 procedure TOrderedSet<T>.Changed(const item: T;
   action: TCollectionChangedAction);
 begin
+  inherited Changed(item, action);
   case action of
     caAdded: fKeys.Add(item);
     caRemoved, caExtracted: fKeys.Remove(item);
