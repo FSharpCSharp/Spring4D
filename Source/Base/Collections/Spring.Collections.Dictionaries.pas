@@ -373,6 +373,10 @@ type
     function ToArray: TArray<TKeyValuePair>; override;
   {$ENDREGION}
 
+  {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
+    procedure Clear; override;
+  {$ENDREGION}
+
   {$REGION 'Implements IOrderedDictionary<TPair<TKey, TList>>'}
     function IndexOf(const key: TKey): Integer;
   {$ENDREGION}
@@ -1229,6 +1233,12 @@ begin
   fKeys := TKeyList<TKey>.Create(comparer);
 end;
 
+procedure TOrderedDictionary<TKey, TValue>.Clear;
+begin
+  fKeys.Clear;
+  inherited Clear;
+end;
+
 function TOrderedDictionary<TKey, TValue>.CreateKeyCollection: TKeyCollectionBase;
 begin
   Result := TKeyCollection.Create(Self);
@@ -1263,6 +1273,7 @@ end;
 procedure TOrderedDictionary<TKey, TValue>.KeyChanged(const item: TKey;
   action: TCollectionChangedAction);
 begin
+  inherited KeyChanged(item, action);
   case action of
     caAdded: fKeys.Add(item);
     caRemoved, caExtracted: fKeys.Remove(item);
