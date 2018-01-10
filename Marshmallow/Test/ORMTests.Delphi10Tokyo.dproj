@@ -107,6 +107,7 @@
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.UIB.pas"/>
+        <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.UniDAC.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Zeos.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
         <DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>

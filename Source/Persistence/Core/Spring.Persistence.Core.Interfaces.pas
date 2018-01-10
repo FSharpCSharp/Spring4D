@@ -53,6 +53,7 @@ const
   dtZeos    = 'DRIVER_TYPE_ZEOS';
   dtMongo   = 'DRIVER_TYPE_MONGO';
   dtFireDAC = 'DRIVER_TYPE_FIREDAC';
+  dtUniDAC  = 'DRIVER_TYPE_UNIDAC';
 
 type
   TDBDriverType = type string;
