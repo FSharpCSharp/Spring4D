@@ -246,8 +246,7 @@ var
 begin
   entityData := TEntityCache.Get(entity.ClassType);
 
-  columnValue := entityData.PrimaryKeyColumn.Member.GetValue(entity);
-  id := columnValue.ToString;
+  id := entityData.GetPrimaryKeyValueAsString(entity);
   if id = '' then
     Exit;
 

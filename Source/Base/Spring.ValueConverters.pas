@@ -726,6 +726,36 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TByteArrayToGUIDConverter}
+
+  /// <summary>
+  ///   Provides conversion routine between TArray<Byte> and TGUID
+  /// </summary>
+  TByteArrayToGUIDConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TGUIDToByteArrayConverter}
+
+  /// <summary>
+  ///   Provides conversion routine between TGUID and TArray<Byte>
+  /// </summary>
+  TGUIDToByteArrayConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TValueConverterFactory'}
 
   /// <summary>
@@ -809,6 +839,7 @@ uses
   Math,
   StrUtils,
   SysUtils,
+  Types,
   Variants,
   Spring,
   Spring.ResourceStrings,
@@ -1760,6 +1791,28 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TByteArrayToGUIDConverter'}
+
+function TByteArrayToGUIDConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<TGUID>(TGUID.Create(value.AsType<TArray<Byte>>, TEndian.Big));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TGUIDToByteArrayConverter'}
+
+function TGUIDToByteArrayConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<TArray<Byte>>(value.AsType<TGUID>.ToByteArray(TEndian.Big));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TValueConverterFactory'}
 
 class constructor TValueConverterFactory.Create;
@@ -1947,6 +2000,9 @@ begin
   RegisterConverter(TypeInfo(Nullable<TGUID>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
   RegisterConverter(TypeInfo(Variant), TypeInfo(TGUID), TVariantToGUIDConverter);
+
+  RegisterConverter(TypeInfo(TArray<Byte>), TypeInfo(TGUID), TByteArrayToGUIDConverter);
+  RegisterConverter(TypeInfo(TGUID), TypeInfo(TArray<Byte>), TGUIDToByteArrayConverter);
 end;
 
 class destructor TValueConverterFactory.Destroy;
