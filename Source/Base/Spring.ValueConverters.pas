@@ -860,6 +860,23 @@ begin
     [sourceType.TypeName, targetType.TypeName]);
 end;
 
+function BytesToGuidBigEndian(const bytes: TBytes): TGUID;
+begin
+  Result.D1 := (Swap(Word(PGUID(bytes).D1)) shl 16) or Swap(Word(PGUID(bytes).D1 shr 16));
+  Result.D2 := Swap(PGUID(bytes).D2);
+  Result.D3 := Swap(PGUID(bytes).D3);
+  Result.D4 := PGUID(bytes).D4;
+end;
+
+function GuidToBytesBigEndian(const guid: TGUID): TBytes;
+begin
+  SetLength(Result, 16);
+  PGUID(Result).D1 := (Swap(Word(guid.D1)) shl 16) or Swap(Word(guid.D1 shr 16));
+  PGUID(Result).D2 := Swap(guid.D2);
+  PGUID(Result).D3 := Swap(guid.D3);
+  PGUID(Result).D4 := guid.D4;
+end;
+
 
 {$REGION 'DefaultConverter'}
 
@@ -1796,7 +1813,7 @@ end;
 function TByteArrayToGUIDConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := TValue.From<TGUID>(TGUID.Create(value.AsType<TArray<Byte>>, TEndian.Big));
+  Result := TValue.From<TGUID>(BytesToGuidBigEndian(value.AsType<TBytes>));
 end;
 
 {$ENDREGION}
@@ -1807,7 +1824,7 @@ end;
 function TGUIDToByteArrayConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := TValue.From<TArray<Byte>>(value.AsType<TGUID>.ToByteArray(TEndian.Big));
+  Result := TValue.From<TBytes>(GuidToBytesBigEndian(value.AsType<TGUID>));
 end;
 
 {$ENDREGION}
@@ -2001,8 +2018,8 @@ begin
 
   RegisterConverter(TypeInfo(Variant), TypeInfo(TGUID), TVariantToGUIDConverter);
 
-  RegisterConverter(TypeInfo(TArray<Byte>), TypeInfo(TGUID), TByteArrayToGUIDConverter);
-  RegisterConverter(TypeInfo(TGUID), TypeInfo(TArray<Byte>), TGUIDToByteArrayConverter);
+  RegisterConverter(TypeInfo(TBytes), TypeInfo(TGUID), TByteArrayToGUIDConverter);
+  RegisterConverter(TypeInfo(TGUID), TypeInfo(TBytes), TGUIDToByteArrayConverter);
 end;
 
 class destructor TValueConverterFactory.Destroy;
