@@ -50,6 +50,7 @@ type
   public
     function GetQueryLanguage: TQueryLanguage; override;
     function GenerateCreateSequence(const command: TCreateSequenceCommand): string; override;
+    function GenerateCreateTable(const command: TCreateTableCommand): IList<string>; override;
     function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(const sequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const sql: string; limit, offset: Integer): string; override;
@@ -121,9 +122,27 @@ var
   sequence: SequenceAttribute;
 begin
   sequence := command.Sequence;
-  Result := Format('CREATE SEQUENCE %0:s;', [sequence.SequenceName]);
   if command.SequenceExists then
-    Result := Format('DROP SEQUENCE %0:s;', [sequence.SequenceName]) + sLineBreak + Result;
+    Result := Format('ALTER SEQUENCE %0:s RESTART WITH 0;', [sequence.SequenceName])
+  else
+    Result := Format('CREATE SEQUENCE %0:s;', [sequence.SequenceName]);
+end;
+
+function TFirebirdSQLGenerator.GenerateCreateTable(
+  const command: TCreateTableCommand): IList<string>;
+begin
+  Result := TCollections.CreateList<string>;
+
+  // Firebird currently does not support create table as select or similar
+  // to enable keeping existing data this would require some more effort like
+  // loading the DDL from the database and create a backup table and then
+  // transfer data back into the new table
+
+  // currently the table will just be dropped without preserving any existing data!
+  if command.TableExists then
+    Result.Add(Format('DROP TABLE %0:s;', [command.Table.Name]));
+
+  Result.Add(DoGenerateCreateTable(command.Table.Name, command.Columns));
 end;
 
 function TFirebirdSQLGenerator.GenerateGetLastInsertId(
