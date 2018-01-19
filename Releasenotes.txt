@@ -44,6 +44,10 @@ Fixed bugs:
 - fixed wrong conversion of string to enum
 - set field to ReadOnly if property is not writable (#276)
 - fixed AV when destroying TObjectDataSet while not in browse state (#278)
+- use ToType instead of AsType to use custom type conversion (fixes #279)
+- fixed setting date/time/datetime parameters in sqlite when they are null
+- fixed problems with multithreading and DI container resolve
+- fixed transaction problem in UIB adapters when creating database (#280)
 
 
 Improvements: 
@@ -79,6 +83,7 @@ Improvements:
 - added GetLazyType function to not rely on type name string parsing
 - added UseFreeNotification property on events to optionally disable TComponent tracking and automatic unsubscription when the component is being destroyed (#274)
 - added support for TBcd fields in objects when displaying in TObjectDataSet (#272)
+- added support for TBytes to TGUID conversion
 
 
 Release 1.1 - 12.09.2014
