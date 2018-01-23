@@ -451,6 +451,14 @@ type
     constructor Create(const chicken: IChicken);
   end;
 
+  TEggLazyChicken = class(TInterfacedObject, IEgg)
+  private
+    fChicken: Lazy<IChicken>;
+    function Chicken: IChicken;
+  public
+    constructor Create(const chicken: Lazy<IChicken>);
+  end;
+
   TCircularDependencyChicken = class(TInterfacedObject, IChicken)
   private
     fChicken: IChicken;
@@ -1142,6 +1150,20 @@ end;
 function TAgeService.GetAgeService: IAgeService;
 begin
   Result := fAgeService;
+end;
+
+{ TEggLazyChicken }
+
+constructor TEggLazyChicken.Create(const chicken: Lazy<IChicken>);
+begin
+  inherited Create;
+  fChicken := chicken;
+//  fChicken.Value;
+end;
+
+function TEggLazyChicken.Chicken: IChicken;
+begin
+  Result := fChicken;
 end;
 
 end.

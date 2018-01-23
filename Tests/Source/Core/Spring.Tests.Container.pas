@@ -220,6 +220,11 @@ type
     procedure TestResolveEgg;
   end;
 
+  TTestCircularReferenceLazySingleton = class(TContainerTestCase)
+  published
+    procedure TestResolveLazySingleton;
+  end;
+
   TTestPerResolve = class(TContainerTestCase)
   published
     procedure TestResolveCircularDependency;
@@ -1288,6 +1293,24 @@ var
 begin
   ExpectedException := ECircularDependencyException;
   egg := fContainer.Resolve<IEgg>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestCircularReferenceLazySingleton'}
+
+procedure TTestCircularReferenceLazySingleton.TestResolveLazySingleton;
+var
+  chicken: IChicken;
+begin
+  fContainer.RegisterType<TChicken>.AsSingleton;
+  fContainer.RegisterType<TEggLazyChicken>;
+  fContainer.Build;
+
+  chicken := fContainer.Resolve<IChicken>;
+  CheckSame(chicken, chicken.Egg.Chicken);
+  chicken.Egg := nil;
 end;
 
 {$ENDREGION}

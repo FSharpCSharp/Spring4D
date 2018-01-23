@@ -182,12 +182,12 @@ var
 begin
   MonitorEnter(Self);
   try
-  if not Assigned(fInstance) then
-  begin
-    newInstance := model.ComponentActivator.CreateInstance(context);
-    fInstance := TValueHolder.Create(newInstance, model.RefCounting);
-    DoAfterConstruction(fInstance);
-  end;
+    if not Assigned(fInstance) then
+    begin
+      newInstance := model.ComponentActivator.CreateInstance(context);
+      fInstance := TValueHolder.Create(newInstance, model.RefCounting);
+      DoAfterConstruction(fInstance);
+    end;
   finally
     MonitorExit(Self);
   end;

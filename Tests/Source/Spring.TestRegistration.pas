@@ -230,6 +230,7 @@ begin
     TTestNamedInjectionsByAttribute.Suite,
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite,
+    TTestCircularReferenceLazySingleton.Suite,
     TTestPerResolve.Suite,
     TTestImplementsAttribute.Suite,
     TTestRegisterInterfaces.Suite,

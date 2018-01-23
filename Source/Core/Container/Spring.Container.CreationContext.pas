@@ -72,6 +72,7 @@ implementation
 
 uses
   TypInfo,
+  Spring.Container.Common,
   Spring.Container.Injection,
   Spring.Container.ResourceStrings,
   Spring.Reflection;
@@ -235,8 +236,12 @@ begin
     if fPerResolveInstances.TryGetValue(model, instance) then
       Exit;
     if fResolutionStack.Contains(model) then
-      raise ECircularDependencyException.CreateResFmt(
-        @SCircularDependencyDetected, [model.ComponentTypeName]);
+      if model.LifetimeType in [TLifetimeType.Singleton,
+        TLifetimeType.PerResolve, TLifetimeType.SingletonPerThread] then
+        Exit
+      else
+        raise ECircularDependencyException.CreateResFmt(
+          @SCircularDependencyDetected, [model.ComponentTypeName]);
     fResolutionStack.Push(model);
     Result := True;
   finally
