@@ -37,9 +37,7 @@ uses
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.SQL.Generators.Ansi,
-  Spring.Persistence.SQL.Params,
-  Spring.Persistence.Mapping.Attributes;
+  Spring.Persistence.SQL.Params;
 
 type
   EADOAdapterException = class(EORMAdapterException);
@@ -88,14 +86,6 @@ type
   public
     procedure Commit; override;
     procedure Rollback; override;
-  end;
-
-  /// <summary>
-  ///   Represent ADO SQL generator.
-  /// </summary>
-  TADOSQLGenerator = class(TAnsiSQLGenerator)
-  public
-    function GenerateGetLastInsertId(const identityColumn: ColumnAttribute): string; override;
   end;
 
   TADOExceptionHandler = class(TORMExceptionHandler)
@@ -301,17 +291,6 @@ begin
   except
     raise HandleException;
   end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TADOSQLGenerator'}
-
-function TADOSQLGenerator.GenerateGetLastInsertId(
-  const identityColumn: ColumnAttribute): string;
-begin
-  Result := '';
 end;
 
 {$ENDREGION}
