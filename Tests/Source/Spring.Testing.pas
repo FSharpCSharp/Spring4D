@@ -371,6 +371,22 @@ function TTestCase.GetName: string;
       Result := Result + ']';
     end;
 
+    function FormatRecord(const value: TValue): string;
+    var
+      i: Integer;
+      fields: TArray<TRttiField>;
+    begin
+      Result := '(';
+      fields := value.TypeInfo.RttiType.GetFields;
+      for i := 0 to High(fields) do
+      begin
+        if i > 0 then
+          Result := Result + '; ';
+        Result := Result + fields[i].Name +': ' + FormatValue(fields[i].GetValue(value));
+      end;
+      Result := Result + ')';
+    end;
+
     function StripUnitName(const s: string): string;
     begin
       Result := ReplaceText(s, 'System.', '');
@@ -409,6 +425,8 @@ function TTestCase.GetName: string;
         Result := QuotedStr(value.ToString);
       tkClassRef:
         Result := value.AsClass.ClassName;
+      tkRecord:
+        Result := FormatRecord(value);
     else
       Result := value.ToString;
     end;
