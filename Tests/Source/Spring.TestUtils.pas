@@ -95,7 +95,7 @@ procedure TAbstractTestHelper.CheckEqualsString(const expected, actual: string; 
   begin
     if (msg <> '') and not EndsText(sLineBreak, msg) then
       msg := msg + sLineBreak;
-    msg :=
+    msg := msg +
       'Strings differ at position ' + IntToStr(index) + sLineBreak +
       'Expected: ' + ReplaceStr(Copy(expected, Max(1, index - ContextCharCount), ContextCharCount * 2), sLineBreak, '  ') + sLineBreak +
       'But was:  ' + ReplaceStr(Copy(actual, Max(1, index - ContextCharCount), ContextCharCount * 2), sLineBreak, '  ') + sLineBreak +
