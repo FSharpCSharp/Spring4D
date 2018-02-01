@@ -21,6 +21,7 @@ Breaking changes:
 - renamed TValueHelper.TryConvert to TryToType
 - renamed ConvertStrToDateTime and TryConvertStrToDateTime to StrToDateTimeFmt and TryStrToDateTimeFmt
 - moved TEnum from Spring.SystemUtils to Spring
+- fixed typo in TVersion (Revision instead of Reversion)
 
 
 Fixed bugs:
@@ -48,6 +49,9 @@ Fixed bugs:
 - fixed setting date/time/datetime parameters in sqlite when they are null
 - fixed problems with multithreading and DI container resolve
 - fixed transaction problem in UIB adapters when creating database (#280)
+- fixed wrong circular dependency exception when injecting lazy dependency on a singleton that was not yet finished to be constructed
+- fixed CheckEqualsString to not ignore passed msg
+- fixed TAbstractMethodInspector to properly warn on registered classes with abstract methods
 
 
 Improvements: 
@@ -84,6 +88,8 @@ Improvements:
 - added UseFreeNotification property on events to optionally disable TComponent tracking and automatic unsubscription when the component is being destroyed (#274)
 - added support for TBcd fields in objects when displaying in TObjectDataSet (#272)
 - added support for TBytes to TGUID conversion
+- added record to string for displaying in test signature
+- added Except and Intersect to TEnumerable
 
 
 Release 1.1 - 12.09.2014

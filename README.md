@@ -12,17 +12,17 @@ Just run the Build.exe and select the Delphi versions you want to install Spring
 
 Current version
 ---------------
-1.2 (2017-07-07)
+1.2.1 (2018-02-02)
 
 Known issues
 ------------
 * Some warnings when compiling for mobile compilers.
 * The deployment of the unit test project might fail for mobile compilers (iOS ARM and Android).
-* Some unit tests for the TObjectDataSet are failing.
+* Compilation on some older versions for iOS and Android might fail due to compiler bugs.
 
 Please support us
 -----------------
 [![btn_donate_LG.gif](https://bitbucket.org/repo/jxX7Lj/images/1283204942-btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KG4H9QT3MSDN8)
 
 
-Copyright (c) 2009 - 2017 Spring4D Team
+Copyright (c) 2009 - 2018 Spring4D Team
