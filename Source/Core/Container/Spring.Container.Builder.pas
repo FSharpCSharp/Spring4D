@@ -571,12 +571,39 @@ end;
 
 procedure TAbstractMethodInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
+
+  function HasVirtualAbstractMethod(const rttiType: TRttiType): Boolean;
+  var
+    virtualMethods: IEnumerable<TRttiMethod>;
+    virtualMethodsGrouped: IEnumerable<IGrouping<SmallInt,TRttiMethod>>;
+  begin
+    virtualMethods := rttiType.Methods.Where(
+      function(const method: TRttiMethod): Boolean
+      begin
+        Result := (method.DispatchKind = dkVtable) and (method.VirtualIndex >= 0);
+      end);
+    virtualMethodsGrouped := TEnumerable.GroupBy<TRttiMethod,SmallInt>(
+      virtualMethods,
+      function(method: TRttiMethod): SmallInt
+      begin
+        Result := method.VirtualIndex;
+      end);
+    virtualMethods := TEnumerable.Select<IGrouping<SmallInt,TRttiMethod>, TRttiMethod>(
+      virtualMethodsGrouped,
+      function(group: IGrouping<SmallInt,TRttiMethod>): TRttiMethod
+      begin
+        Result := group.First;
+      end);
+    Result := virtualMethods.Any(
+      function(const method: TRttiMethod): Boolean
+      begin
+        Result := method.IsAbstract;
+      end);
+  end;
+
 begin
-  if model.ComponentType.IsClass and model.ComponentType.Methods.Any(
-    function(const method: TRttiMethod): Boolean
-    begin
-      Result := method.IsAbstract;
-    end) then
+  if model.ComponentType.IsClass
+    and HasVirtualAbstractMethod(model.ComponentType) then
     kernel.Logger.Warn(Format('component type %s contains abstract methods', [model.ComponentTypeName]));
 end;
 

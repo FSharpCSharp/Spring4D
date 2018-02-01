@@ -141,7 +141,7 @@ type
 
     class function GetType<T>: TRttiType; overload; static; inline;
     class function GetType(typeInfo: PTypeInfo): TRttiType; overload; static;
-    class function GetType(classType: TClass): TRttiInstanceType; overload; static; inline;
+    class function GetType(classType: TClass): TRttiInstanceType; overload; static;
 
     class property Context: TRttiContext read fContext;
   end;
