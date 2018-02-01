@@ -26,6 +26,10 @@
 {$IFDEF DELPHIXE4_UP}
   {$ZEROBASEDSTRINGS OFF}
 {$ENDIF}
+{$IFNDEF DELPHIX_TOKYO_UP}{$IFDEF ANDROID}
+  // Android compilers up to 10.1 have some issue - trying some workaround
+  {$DEFINE ANDROID_COMPILER_ISSUE}
+{$ENDIF}{$ENDIF}
 
 unit Spring.Reflection;
 
@@ -39,6 +43,9 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
+{$IFDEF ANDROID_COMPILER_ISSUE}
+  Spring.Collections.Extensions,
+{$ENDIF}
   Spring.DesignPatterns;
 
 type
@@ -658,6 +665,23 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TArrayIterator'}
+
+{$IFDEF ANDROID_COMPILER_ISSUE}
+type
+  TArrayIterator = class(Spring.Collections.Extensions.TArrayIterator<TObject>)
+  private
+    fElementType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(const values: TArray<TObject>; elementClass: TClass);
+  end;
+{$ENDIF}
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv;
@@ -746,6 +770,24 @@ begin
   else
     ArgDest := ArgSrc.Cast(Par.ParamType.Handle);
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayIterator'}
+
+{$IFDEF ANDROID_COMPILER_ISSUE}
+constructor TArrayIterator.Create(const values: TArray<TObject>; elementClass: TClass);
+begin
+  inherited Create(values);
+  fElementType := elementClass.ClassInfo;
+end;
+
+function TArrayIterator.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -1095,22 +1137,42 @@ end;
 
 function TRttiTypeHelper.GetConstructorsInternal: IReadOnlyList<TRttiMethod>;
 begin
+{$IFDEF ANDROID_COMPILER_ISSUE}
+  IReadOnlyList<TObject>(Result) := TArrayIterator.Create(
+    TArray<TObject>(GetConstructors), TRttiMethod);
+{$ELSE}
   Result := TEnumerable.From<TRttiMethod>(GetConstructors);
+{$ENDIF}
 end;
 
 function TRttiTypeHelper.GetMethodsInternal: IReadOnlyList<TRttiMethod>;
 begin
+{$IFDEF ANDROID_COMPILER_ISSUE}
+  IReadOnlyList<TObject>(Result) := TArrayIterator.Create(
+    TArray<TObject>(GetMethods), TRttiMethod);
+{$ELSE}
   Result := TEnumerable.From<TRttiMethod>(GetMethods);
+{$ENDIF}
 end;
 
 function TRttiTypeHelper.GetPropertiesInternal: IReadOnlyList<TRttiProperty>;
 begin
+{$IFDEF ANDROID_COMPILER_ISSUE}
+  IReadOnlyList<TObject>(Result) := TArrayIterator.Create(
+    TArray<TObject>(GetProperties), TRttiProperty);
+{$ELSE}
   Result := TEnumerable.From<TRttiProperty>(GetProperties);
+{$ENDIF}
 end;
 
 function TRttiTypeHelper.GetFieldsInternal: IReadOnlyList<TRttiField>;
 begin
+{$IFDEF ANDROID_COMPILER_ISSUE}
+  IReadOnlyList<TObject>(Result) := TArrayIterator.Create(
+    TArray<TObject>(GetFields), TRttiField);
+{$ELSE}
   Result := TEnumerable.From<TRttiField>(GetFields);
+{$ENDIF}
 end;
 
 function TRttiTypeHelper.GetDefaultName: string;
