@@ -36,7 +36,9 @@ uses
   LeakCheck,
   LeakCheck.Utils,
  {$ENDIF LEAKCHECK}
+ {$IFDEF DELPHIXE4_UP}
   System.StartUpCopy,
+  {$ENDIF}
   FMX.Forms;
 {$ELSE FMX}
  {$IFDEF LEAKCHECK}

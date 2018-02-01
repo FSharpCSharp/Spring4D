@@ -125,6 +125,10 @@ type
 
   {$REGION 'TRttiObjectHelper'}
 
+  TRttiTypeHack = class(TRttiObject)
+    function GetAttributes: TArray<TCustomAttribute>; override;
+  end;
+
   TRttiObjectHelper = class helper for TRttiObject
   public
     function GetCustomAttributes(attributeClass: TAttributeClass;
@@ -1073,11 +1077,6 @@ end;
 
 
 {$REGION 'TRttiTypeHelper'}
-
-type
-  TRttiTypeHack = class(TRttiObject)
-    function GetAttributes: TArray<TCustomAttribute>; override;
-  end;
 
 function TRttiTypeHack.GetAttributes: TArray<TCustomAttribute>;
 begin

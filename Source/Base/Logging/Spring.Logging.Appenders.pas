@@ -32,9 +32,9 @@ uses
   Classes,
   SyncObjs,
   SysUtils,
-{$IFDEF FMX}
+{$IFDEF FMX}{$IFDEF DELPHIXE4_UP}
   FMX.Platform,
-{$ENDIF}
+{$ENDIF}{$ENDIF}
   Spring.Logging,
   Spring.Logging.Appenders.Base;
 
@@ -139,7 +139,7 @@ type
 
   {$REGION 'TFMXLogAppender'}
 
-{$IFDEF FMX}
+{$IFDEF FMX}{$IFDEF DELPHIXE4_UP}
   TFMXLogAppender = class(TLogAppenderWithTimeStampFormat)
   private
     fService: IFMXLoggingService;
@@ -148,7 +148,7 @@ type
   public
     constructor Create;
   end;
-{$ENDIF}
+{$ENDIF}{$ENDIF}
 
   {$ENDREGION}
 
@@ -187,7 +187,11 @@ type
   {$IFDEF ANDROID}
     TDefaultLogAppender = TAndroidLogAppender;
   {$ELSE !ANDROID}
-    TDefaultLogAppender = TFMXLogAppender;
+    {$IFDEF DELPHIXE4_UP}
+      TDefaultLogAppender = TFMXLogAppender;
+	{$ELSE}
+      TDefaultLogAppender = TTextLogAppender;
+	{$ENDIF}
   {$ENDIF ANDROID}
  {$ELSE !FMX}
     TDefaultLogAppender = TTextLogAppender;
@@ -366,7 +370,7 @@ end;
 
 {$REGION 'TFMXLogAppender'}
 
-{$IFDEF FMX}
+{$IFDEF FMX}{$IFDEF DELPHIXE4_UP}
 constructor TFMXLogAppender.Create;
 begin
   fService := TPlatformServices.Current.GetPlatformService(
@@ -378,7 +382,7 @@ begin
   fService.Log(FormatTimeStamp(event.TimeStamp) + ': ' + LEVEL[event.Level] + ' ' +
     FormatMsg(event), []);
 end;
-{$ENDIF}
+{$ENDIF}{$ENDIF}
 
 {$ENDREGION}
 

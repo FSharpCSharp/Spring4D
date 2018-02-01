@@ -30,7 +30,11 @@ interface
 
 uses
 {$IFDEF FMX}
+  {$IFDEF DELPHIXE5_UP}
   Fmx.Graphics
+  {$ELSE}
+  Fmx.Types
+  {$ENDIF}
 {$ELSE}
   {$IFDEF MSWINDOWS}
   {$IFDEF HAS_UNITSCOPE}
@@ -50,7 +54,11 @@ type
 {$REGION 'Type overlays'}
 
 {$IFDEF FMX}
+  {$IFDEF DELPHIXE5_UP}
   TBitmap = Fmx.Graphics.TBitmap;
+  {$ELSE}
+  TBitmap = Fmx.Types.TBitmap;
+  {$ENDIF}
   TPicture = TBitmap;
   TGraphic = TBitmap;
   TGraphicClass = class of TBitmap;
