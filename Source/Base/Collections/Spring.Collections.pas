@@ -2691,6 +2691,10 @@ type
       const keySelector: TFunc<T, TKey>;
       const comparer: IEqualityComparer<TKey>): IEnumerable<T>; overload; static;
 
+    class function &Except<T>(const first, second: IEnumerable<T>): IEnumerable<T>; overload; static;
+    class function &Except<T>(const first, second: IEnumerable<T>;
+      const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
+
     class function GroupBy<T, TKey>(const source: IEnumerable<T>;
       const keySelector: TFunc<T, TKey>): IEnumerable<IGrouping<TKey,T>>; overload; static;
     class function GroupBy<T, TKey, TElement>(const source: IEnumerable<T>;
@@ -2699,6 +2703,10 @@ type
     class function GroupBy<T, TKey, TElement, TResult>(const source: IEnumerable<T>;
       const keySelector: TFunc<T, TKey>; const elementSelector: TFunc<T, TElement>;
       const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>): IEnumerable<TResult>; overload; static;
+
+    class function Intersect<T>(const first, second: IEnumerable<T>): IEnumerable<T>; overload; static;
+    class function Intersect<T>(const first, second: IEnumerable<T>;
+      const comparer: IEqualityComparer<T>): IEnumerable<T>; overload; static;
 
     class function Union<T>(const first, second: IEnumerable<T>): IEnumerable<T>; overload; static;
     class function Union<T>(const first, second: IEnumerable<T>;
@@ -3546,6 +3554,18 @@ begin
   Result := TEmptyEnumerable<T>.Instance;
 end;
 
+class function TEnumerable.&Except<T>(const first,
+  second: IEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TExceptIterator<T>.Create(first, second);
+end;
+
+class function TEnumerable.&Except<T>(const first, second: IEnumerable<T>;
+  const comparer: IEqualityComparer<T>): IEnumerable<T>;
+begin
+  Result := TExceptIterator<T>.Create(first, second, comparer);
+end;
+
 class function TEnumerable.From<T>(const source: array of T): IReadOnlyList<T>;
 begin
   Result := TArrayIterator<T>.Create(source);
@@ -3584,6 +3604,18 @@ class function TEnumerable.GroupBy<T, TKey, TElement, TResult>(
 begin
   Result := TGroupedEnumerable<T, TKey, TElement, TResult>.Create(
     source, keySelector, elementSelector, resultSelector);
+end;
+
+class function TEnumerable.Intersect<T>(const first,
+  second: IEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TIntersectIterator<T>.Create(first, second);
+end;
+
+class function TEnumerable.Intersect<T>(const first, second: IEnumerable<T>;
+  const comparer: IEqualityComparer<T>): IEnumerable<T>;
+begin
+  Result := TIntersectIterator<T>.Create(first, second, comparer);
 end;
 
 class function TEnumerable.Max<T>(const source: IEnumerable<T>;
