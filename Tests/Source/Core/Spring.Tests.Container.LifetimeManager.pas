@@ -54,7 +54,7 @@ type
   TMockComponent = class(TComponent, IInterface)
 {$IFNDEF AUTOREFCOUNT}
   private class var
-    fFreed : Boolean;
+    fFreed: Boolean;
 {$ENDIF}
   private
     fRefCount: Integer;

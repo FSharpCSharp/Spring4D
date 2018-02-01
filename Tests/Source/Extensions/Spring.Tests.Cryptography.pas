@@ -48,8 +48,7 @@ type
   protected
     const
       fCData: UnicodeString = 'Delphi Spring Framework';  // fCDefaultDataString
-      fBytesAbc : array[0..2] of Byte = (Byte('a'), Byte('b'), Byte('c'));
-
+      fBytesAbc: array[0..2] of Byte = (Byte('a'), Byte('b'), Byte('c'));
   protected
     fActual: TBuffer;
     fExpected: TBuffer;

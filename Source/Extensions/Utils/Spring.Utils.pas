@@ -1856,10 +1856,10 @@ end;
 {$IFDEF MSWINDOWS}
 class function TEnvironment.GetFolderPath(const folder: TSpecialFolder): string;
 var
-  pidl : PItemIDList;
+  pidl: PItemIDList;
   buffer: array[0..MAX_PATH-1] of Char;
 //  returnCode: HRESULT;
-  hToken : THandle;
+  hToken: THandle;
 begin
   if TryGetAccessToken(hToken) then
   try

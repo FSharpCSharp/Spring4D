@@ -39,16 +39,19 @@ uses
 
 type
   {$REGION 'TLoggingContainerHelper'}
+
   TLoggingContainerHelper = record
-    class procedure RegisterAllAppenders(const container : TContainer); static;
-    class procedure RegisterLogging(const container : TContainer); static;
+    class procedure RegisterAllAppenders(const container: TContainer); static;
+    class procedure RegisterLogging(const container: TContainer); static;
     class procedure RegisterLoggingWithConfiguration(
-      const container : TContainer); static;
+      const container: TContainer); static;
   end;
+
   {$ENDREGION}
 
 
   {$REGION 'TLoggerResolver'}
+
   /// <summary>
   ///   Subresolver that will inject proper logger defined by the
   ///   configuration. In order to use this resolver make sure to register <c>
@@ -78,6 +81,7 @@ type
       const dependency: TDependencyModel;
       const argument: TValue): TValue; override;
   end;
+
   {$ENDREGION}
 
 

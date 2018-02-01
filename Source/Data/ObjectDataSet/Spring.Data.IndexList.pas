@@ -195,7 +195,7 @@ end;
 procedure TIndexList.InsertionSort(startIndex: Integer;
   const comparer: TComparison);
 var
-  i, j : Integer;
+  i, j: Integer;
   temp: TObject;
 begin
   startIndex := startIndex - 1;

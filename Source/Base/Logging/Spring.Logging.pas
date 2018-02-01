@@ -185,8 +185,8 @@ type
       const msg: string; const classType: TClass); overload;
     constructor Create(level: TLogLevel; eventType: TLogEventType;
       const msg: string; const classType: TClass; const data: TValue); overload;
-    {constructor Create(level : TLogLevel; const msg : string;
-      color : TColor = clDefault; fontStyle : TFontStyles = []; )}
+    {constructor Create(level: TLogLevel; const msg: string;
+      color: TColor = clDefault; fontStyle: TFontStyles = []; )}
 
     function SetException(const e: Exception): TLogEvent;
     function SetColor(color: TColor): TLogEvent;

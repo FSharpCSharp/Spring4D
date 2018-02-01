@@ -448,7 +448,7 @@ type
     class function IsConstructor: TSpecification<T>;
     class function IsInstanceMethod: TSpecification<T>;
     class function IsClassMethod: TSpecification<T>;
-    class function IsMethodKind(const kinds : TMethodKinds): TSpecification<T>;
+    class function IsMethodKind(const kinds: TMethodKinds): TSpecification<T>;
     class function IsInvokable: TSpecification<T>;
   end;
 
@@ -464,8 +464,8 @@ type
   TFieldFilters = class(TFiltersBase<TRttiField>);
   TTypeFilters = class(TFiltersNamed<TRttiType>)
   public
-    class function IsClass : TSpecification<TRttiType>;
-    class function IsInterface : TSpecification<TRttiType>;
+    class function IsClass: TSpecification<TRttiType>;
+    class function IsInterface: TSpecification<TRttiType>;
   end;
   TParameterFilters = class(TFiltersNamed<TRttiParameter>)
   public

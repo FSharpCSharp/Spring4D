@@ -646,11 +646,12 @@ const
   GuidString = '{AAEE5928-F8C7-405C-A85B-F9D863EED75F}';
 
 {$IFDEF HAS_UNIT_SYSTEM_UITYPES}
-function ColorToRGB(i : TColor) : Longint;
+function ColorToRGB(i: TColor): LongInt;
 begin
-  if (Assigned(TColors.ColorToRGB)) then
+  if Assigned(TColors.ColorToRGB) then
     Result := TColors.ColorToRGB(i)
-  else Result := i;
+  else
+    Result := i;
 end;
 {$ENDIF}
 

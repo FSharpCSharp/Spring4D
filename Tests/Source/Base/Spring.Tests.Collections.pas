@@ -3497,7 +3497,7 @@ end;
 
 procedure TTestIntegerStringMap.TestToArray;
 var
-  i : Integer;
+  i: Integer;
   items: TArray<TPair<Integer, string>>;
 begin
   items := SUT.ToArray;
@@ -3515,7 +3515,7 @@ procedure TTestIntegerStringMap.TestOrdered;
 var
   items: IEnumerable<TPair<Integer, string>>;
   i: Integer;
-  item : TPair<Integer, string>;
+  item: TPair<Integer, string>;
 begin
   items := SUT.Ordered;
   Check(Assigned(items));

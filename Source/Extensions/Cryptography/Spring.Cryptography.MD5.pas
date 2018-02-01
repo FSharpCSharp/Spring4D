@@ -45,9 +45,9 @@ type
   TMD5Buffer = array[0..63] of Byte;
 
   TMD5Context = record
-    State   : TMD5State;
-    Count   : TMD5Count;
-    Buffer  : TMD5Buffer;
+    State: TMD5State;
+    Count: TMD5Count;
+    Buffer: TMD5Buffer;
   end;
 
   /// <summary>
