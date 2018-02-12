@@ -86,11 +86,10 @@ type
   private
     fDictionary: TDictionary<TKey, IList<TValue>>;
     fCount: Integer;
-    fEmpty: IList<TValue>;
     fValues: TValueCollection;
+    fValueComparer: IComparer<TValue>;
     function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
   protected
-    fValueComparer: IComparer<TValue>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
     function GetItems(const key: TKey): IReadOnlyList<TValue>;
@@ -170,10 +169,8 @@ implementation
 uses
   Classes,
   RTLConsts,
-  SysUtils,
   TypInfo,
   Spring,
-  Spring.Collections.Lists,
   Spring.ResourceStrings;
 
 
@@ -194,11 +191,10 @@ constructor TMultiMapBase<TKey, TValue>.Create(
   const keyComparer: IEqualityComparer<TKey>;
   const valueComparer: IComparer<TValue>);
 begin
-  fValueComparer := valueComparer;
   inherited Create;
   fDictionary := CreateDictionary(keyComparer);
-  fEmpty := TCollections.CreateList<TValue>;
   fValues := TValueCollection.Create(Self);
+  fValueComparer := valueComparer;
 end;
 
 destructor TMultiMapBase<TKey, TValue>.Destroy;
@@ -326,9 +322,10 @@ function TMultiMapBase<TKey, TValue>.GetItems(
 var
   list: IList<TValue>;
 begin
-  if not fDictionary.TryGetValue(key, list) then
-    list := fEmpty;
-  Result := list as IReadOnlyList<TValue>;
+  if fDictionary.TryGetValue(key, list) then
+    Result := list.AsReadOnlyList
+  else
+    Result := TEnumerable.Empty<TValue>;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
