@@ -1285,43 +1285,46 @@ function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
-  Result := False;
   enumerator := GetEnumerator;
   if enumerator.MoveNext then
   begin
     value := enumerator.Current;
-    Result := True;
+    Exit(True);
   end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
-  Result := False;
   for item in Self do
-  begin
     if predicate(item) then
     begin
       value := item;
       Exit(True);
     end;
-  end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
+  item: T;
 begin
-  Result := False;
   enumerator := GetEnumerator;
   if enumerator.MoveNext then
   begin
     repeat
-      value := enumerator.Current;
+      item := enumerator.Current;
     until not enumerator.MoveNext;
-    Result := True;
+    value := item;
+    Exit(True);
   end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
@@ -1337,6 +1340,8 @@ begin
       Result := True;
     end;
   end;
+  if not Result then
+    value := Default(T);
 end;
 
 function TEnumerableBase<T>.TryGetSingle(out value: T): Boolean;
@@ -1344,7 +1349,6 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-  Result := False;
   enumerator := GetEnumerator;
   if enumerator.MoveNext then
   begin
@@ -1352,9 +1356,11 @@ begin
     if not enumerator.MoveNext then
     begin
       value := item;
-      Result := True;
+      Exit(True);
     end;
   end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetSingle(out value: T;
@@ -1368,11 +1374,16 @@ begin
     if predicate(item) then
     begin
       if Result then
-        Exit(False);
+      begin
+        Result := False;
+        Break;
+      end;
       value := item;
       Result := True;
     end;
   end;
+  if not Result then
+    value := Default(T);
 end;
 
 function TEnumerableBase<T>.Where(
@@ -2157,21 +2168,27 @@ function TListBase<T>.TryGetFirst(out value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    value := Items[0];
+    value := Items[0]
+  else
+    value := Default(T);
 end;
 
 function TListBase<T>.TryGetLast(out value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    value := Items[Count - 1];
+    value := Items[Count - 1]
+  else
+    value := Default(T);
 end;
 
 function TListBase<T>.TryGetSingle(out value: T): Boolean;
 begin
   Result := Count = 1;
   if Result then
-    value := Items[0];
+    value := Items[0]
+  else
+    value := Default(T);
 end;
 
 {$ENDREGION}
