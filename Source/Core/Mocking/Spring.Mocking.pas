@@ -57,10 +57,12 @@ type
   private
     fInvocation: IInvocation;
     fCallCount: Integer;
+  {$REGION 'Property Accessors'}
     function GetArg(index: Integer): TValue;
     function GetCallCount: Integer;
     function GetMethod: TRttiMethod;
     procedure SetArg(index: Integer; const value: TValue);
+  {$ENDREGION}
   public
     constructor Create(const invocation: IInvocation; callCount: Integer);
     property Args[index: Integer]: TValue read GetArg write SetArg; default;
@@ -92,8 +94,10 @@ type
 
   IMock = interface(IInvokable)
     ['{7D386664-22CF-4555-B03E-61319C39BC12}']
+  {$REGION 'Property Accessors'}
     function GetInstance: TValue;
     function GetTypeInfo: PTypeInfo;
+  {$ENDREGION}
 
     procedure Reset;
 
@@ -195,12 +199,14 @@ type
     // because it does not fit in a register
     fDummy: Pointer;
   {$HINTS ON}
-    procedure EnsureInitialized; inline;
+  {$REGION 'Property Accessors'}
     function GetInstance: T;
     function GetBehavior: TMockBehavior;
     function GetCallBase: Boolean;
     procedure SetBehavior(const value: TMockBehavior);
     procedure SetCallBase(const value: Boolean);
+  {$ENDREGION}
+    procedure EnsureInitialized; inline;
   public
     class function Create(
       behavior: TMockBehavior = DefaultMockBehavior): Mock<T>; overload; static;
@@ -245,8 +251,10 @@ type
     // because it does not fit in a register
     fDummy: Pointer;
   {$HINTS ON}
-    procedure EnsureInitialized;
+  {$REGION 'Property Accessors'}
     function GetCompleted: Boolean;
+  {$ENDREGION}
+    procedure EnsureInitialized;
   public
     class operator Implicit(const value: MockSequence): IMockSequence;
 
