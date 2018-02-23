@@ -484,6 +484,7 @@ type
     class function &&op_Implicit(value: TDateTime): TValue; overload; static; inline;
     class function &&op_Implicit(value: TDate): TValue; overload; static; inline;
     class function &&op_Implicit(value: TTime): TValue; overload; static; inline;
+    class function &&op_Implicit(const value: TGUID): TValue; overload; static;
 
     class function From(buffer: Pointer; typeInfo: PTypeInfo): TValue; overload; static;
     class function From(instance: TObject; classType: TClass): TValue; overload; static;
@@ -2577,6 +2578,8 @@ procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); over
 function GetQualifiedClassName(AInstance: TObject): string; overload; inline;
 function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHIXE2_UP}inline;{$ENDIF}
 
+function FormatValue(const value: TValue): string;
+
 /// <summary>
 ///   Determines whether an instance of <c>leftType</c> can be assigned from an
 ///   instance of <c>rightType</c>.
@@ -2779,6 +2782,100 @@ procedure CheckArgumentNotNull(value: Pointer; const argumentName: string);
 begin
   if not Assigned(value) then
     Guard.RaiseArgumentNullException(argumentName);
+end;
+
+function FormatValue(const value: TValue): string;
+
+  function FormatArray(const value: TValue): string;
+  var
+    i: Integer;
+  begin
+    Result := '[';
+    for i := 0 to value.GetArrayLength - 1 do
+    begin
+      if i > 0 then
+        Result := Result + ', ';
+      Result := Result + FormatValue(value.GetArrayElement(i));
+    end;
+    Result := Result + ']';
+  end;
+
+  function FormatRecord(const value: TValue): string;
+  var
+    method: TRttiMethod;
+    i: Integer;
+    fields: TArray<TRttiField>;
+  begin
+    // handle TGUID explicitly
+    if value.TypeInfo = TypeInfo(TGUID) then
+      Exit(value.AsType<TGUID>.ToString);
+
+    // use function ToString: string when available
+    for method in value.TypeInfo.RttiType.GetMethods do
+      if SameText(method.Name, 'ToString')
+        and (method.MethodKind = mkFunction)
+        and (Length(method.GetParameters) = 0)
+        and (method.ReturnType.TypeKind = tkUString) then
+        Exit(method.Invoke(value, []).AsString);
+
+    // write fields otherwise
+    Result := '(';
+    fields := value.TypeInfo.RttiType.GetFields;
+    for i := 0 to High(fields) do
+    begin
+      if i > 0 then
+        Result := Result + '; ';
+      Result := Result + fields[i].Name +': ';
+      if Assigned(fields[i].FieldType) then
+        Result := Result + FormatValue(fields[i].GetValue(value.GetReferenceToRawData))
+      else
+        Result := Result + '(unknown)';
+    end;
+    Result := Result + ')';
+  end;
+
+  function StripUnitName(const s: string): string;
+  begin
+    Result := ReplaceText(s, 'System.', '');
+  end;
+
+var
+  intf: IInterface;
+  obj: TObject;
+begin
+  case value.Kind of
+    tkFloat:
+      if value.TypeInfo = TypeInfo(TDateTime) then
+        Result := DateTimeToStr(value.AsType<TDateTime>)
+      else if value.TypeInfo = TypeInfo(TDate) then
+        Result := DateToStr(value.AsType<TDate>)
+      else if value.TypeInfo = TypeInfo(TTime) then
+        Result := TimeToStr(value.AsType<TTime>)
+      else
+        Result := value.ToString;
+    tkClass:
+    begin
+      obj := value.AsObject;
+      Result := Format('%s($%x)', [StripUnitName(obj.ClassName), NativeInt(obj)]);
+    end;
+    tkInterface:
+    begin
+      intf := value.AsInterface;
+      obj := intf as TObject;
+      Result := Format('%s($%x) as %s', [StripUnitName(obj.ClassName),
+        NativeInt(intf), StripUnitName(value.TypeInfo.TypeName)]);
+    end;
+    tkArray, tkDynArray:
+      Result := FormatArray(value);
+    tkChar, tkString, tkWChar, tkLString, tkWString, tkUString:
+      Result := QuotedStr(value.ToString);
+    tkClassRef:
+      Result := value.AsClass.ClassName;
+    tkRecord:
+      Result := FormatRecord(value);
+  else
+    Result := value.ToString;
+  end;
 end;
 
 function GetQualifiedClassName(AInstance: TObject): string;
@@ -5242,6 +5339,11 @@ class function TValueHelper.&&op_Implicit(value: TDateTime): TValue;
 begin
   Result.Init(System.TypeInfo(TDateTime));
   TValueData(Result).FAsDouble := value;
+end;
+
+class function TValueHelper.&&op_Implicit(const value: TGUID): TValue;
+begin
+  Result := TValue.From(value);
 end;
 
 class function TValueHelper.&&op_Inequality(const left, right: TValue): Boolean;
