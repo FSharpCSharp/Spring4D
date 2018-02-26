@@ -957,7 +957,7 @@ begin
   if Result > 0 then
   begin
     // If the new item is smaller than the last one in the list ...
-    if fComparer.Compare(item, fItems[Result - 1]) < 0 then
+    if fComparer.Compare(fItems[Result - 1], item) > 0 then
       // ... search for the correct insertion point
       TArray.BinarySearch<T>(fItems, item, Result, fComparer, 0, fCount);
   end;

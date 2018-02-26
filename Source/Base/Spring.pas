@@ -8520,7 +8520,7 @@ begin
   while left <= right do
   begin
     i := left + (right - left) shr 1;
-    c := comparer.Compare(values[i], Item);
+    c := comparer.Compare(values[i], item);
     if c < 0 then
       left := i + 1
     else
@@ -8917,7 +8917,7 @@ begin
     child := i * 2;
     if (child < count) and (comparer.Compare(values[left + child - 1], values[left + child]) < 0) then
       Inc(child);
-    if not comparer.Compare(temp, values[left + child - 1]) < 0 then
+    if comparer.Compare(temp, values[left + child - 1]) >= 0 then
       Break;
     values[left + i - 1] := values[left + child - 1];
     i := child;
@@ -8950,7 +8950,7 @@ begin
   begin
     j := i;
     temp := values[i];
-    while (j > left) and (comparer.Compare(temp, values[j - 1]) < 0) do
+    while (j > left) and (comparer.Compare(values[j - 1], temp) > 0) do
     begin
       values[j] := values[j - 1];
       Dec(j);
