@@ -80,7 +80,7 @@ uses
 constructor TDBParam.Create(const name: string; const value: TValue);
 begin
   inherited Create;
-  fName := AnsiUpperCase(name);
+  fName := name;
   if not StartsStr(':', fName) then
     fName := ':' + fName;
   fValue := value;

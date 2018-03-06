@@ -44,15 +44,14 @@ type
   private
     fTable: TSQLTable;
     fEntity: TObject;
-    fParameterNames: IDictionary<string,Integer>;
+    fParameterCount: Integer;
   protected
     procedure SetCommandFieldsFromColumns(
       const columns: IList<ColumnAttribute>); virtual; abstract;
   public
     constructor Create(const table: TSQLTable); virtual;
 
-    function GetAndIncParameterName(const fieldName: string): string; virtual;
-    function GetExistingParameterName(const fieldName: string): string; virtual;
+    function GetAndIncParameterName(const fieldName: string): string;
 
     property Entity: TObject read fEntity write fEntity;
     property Table: TSQLTable read fTable;
@@ -497,32 +496,12 @@ constructor TDMLCommand.Create(const table: TSQLTable);
 begin
   inherited Create;
   fTable := table;
-  fParameterNames := TCollections.CreateDictionary<string,Integer>;
 end;
 
 function TDMLCommand.GetAndIncParameterName(const fieldName: string): string;
-var
-  index: Integer;
-  upperCaseFieldName: string;
 begin
-  upperCaseFieldName := AnsiUpperCase(fieldName);
-  if fParameterNames.TryGetValue(upperCaseFieldName, index) then
-    Inc(index)
-  else
-    index := 1;
-  fParameterNames.AddOrSetValue(upperCaseFieldName, index);
-  Result := Format(':%s%d', [upperCaseFieldName, index]);
-end;
-
-function TDMLCommand.GetExistingParameterName(const fieldName: string): string;
-var
-  index: Integer;
-  upperCaseFieldName: string;
-begin
-  upperCaseFieldName := AnsiUpperCase(fieldName);
-  if not fParameterNames.TryGetValue(upperCaseFieldName, index) then
-    index := 1;
-  Result := Format(':%s%d', [upperCaseFieldName, index]);
+  Result := ':p' + IntToStr(fParameterCount);
+  Inc(fParameterCount);
 end;
 
 {$ENDREGION}

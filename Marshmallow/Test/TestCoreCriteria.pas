@@ -111,8 +111,8 @@ var
   generator: ISQLGenerator;
 const
   expected =
-    '(t0."FIRST_NAME" = :FIRST_NAME1 OR t0."FIRST_NAME" = :FIRST_NAME2) AND ' +
-    '(t0."LAST_NAME" = :LAST_NAME1 OR t0."LAST_NAME" = :LAST_NAME2)';
+    '(t0."FIRST_NAME" = :p0 OR t0."FIRST_NAME" = :p1) AND ' +
+    '(t0."LAST_NAME" = :p2 OR t0."LAST_NAME" = :p3)';
 begin
   command := TSelectCommand.Create(TPerson);
   try
@@ -158,7 +158,7 @@ var
   command: TSelectCommand;
   generator: ISQLGenerator;
 const
-  expected = 't0."RESOURCE_NAME" = :RESOURCE_NAME1';
+  expected = 't0."RESOURCE_NAME" = :p0';
 begin
   criteria := FSession.CreateCriteria<TResource>;
 
