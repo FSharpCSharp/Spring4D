@@ -71,20 +71,79 @@ type
       constructor Create(const source: IObservable<TSource>; const count, skip: Integer);
     end;
 
-//    TTimeSliding = class(TProducer<IObservable<TSource>>)
-//    private
-//      fSource: IObservable<TSource>;
-//      fTimeSpan: TTimeSpan;
-//      fTimeShift: TTimeSpan;
-//      fScheduler: IScheduler;
-//    end;
-//
-//    TTimeHopping = class(TProducer<IObservable<TSource>>)
-//    private
-//      fSource: IObservable<TSource>;
-//      fTimeSpan: TTimeSpan;
-//      fScheduler: IScheduler;
-//    end;
+    TTimeSliding = class(TProducer<IObservable<TSource>>)
+    private
+      fSource: IObservable<TSource>;
+      fTimeSpan: TTimeSpan;
+      fTimeShift: TTimeSpan;
+      fScheduler: IScheduler;
+
+      type
+        TSink = class(TSink<IObservable<TSource>>, IObserver<TSource>)
+        private
+          fQueue: IQueue<ISubject<TSource>>;
+          fTimerD: ISerialDisposable;
+          fScheduler: IScheduler;
+          fTimeShift: TTimeSpan;
+          fRefCountDisposable: IRefCountDisposable;
+          fTotalTime: TTimeSpan;
+          fNextShift: TTimeSpan;
+          fNextSpan: TTimeSpan;
+
+          type
+            TState = record
+              isSpan, isShift: Boolean
+            end;
+        private
+          procedure CreateWindow;
+          procedure CreateTimer;
+          function Tick(const scheduler: IScheduler; const state: TState): IDisposable;
+        public
+          constructor Create(const parent: TTimeSliding;
+            const observer: IObserver<IObservable<TSource>>;
+            const cancel: IDisposable);
+          function Run(const parent: TTimeSliding): IDisposable;
+          procedure OnNext(const value: TSource);
+          procedure OnError(const error: Exception);
+          procedure OnCompleted;
+        end;
+    protected
+      function CreateSink(const observer: IObserver<IObservable<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>;
+        const timeSpan: TTimeSpan; const timeShift: TTimeSpan;
+        const scheduler: IScheduler);
+    end;
+
+    TTimeHopping = class(TProducer<IObservable<TSource>>)
+    private
+      fSource: IObservable<TSource>;
+      fTimeSpan: TTimeSpan;
+      fScheduler: IScheduler;
+
+      type
+        TSink = class(TSink<IObservable<TSource>>, IObserver<TSource>)
+        private
+          fSubject: ISubject<TSource>;
+          fRefCountDisposable: IRefCountDisposable;
+          procedure Tick;
+          procedure CreateWindow;
+        public
+          function Run(const parent: TTimeHopping): IDisposable;
+          procedure OnNext(const value: TSource);
+          procedure OnError(const error: Exception);
+          procedure OnCompleted;
+        end;
+    protected
+      function CreateSink(const observer: IObserver<IObservable<TSource>>;
+        const cancel: IDisposable): TObject; override;
+      function Run(const sink: TObject): IDisposable; override;
+    public
+      constructor Create(const source: IObservable<TSource>;
+      const timeSpan: TTimeSpan; const scheduler: IScheduler);
+    end;
   end;
 
   TWindowObservable<TSource> = class(TAddRef<TSource>)
@@ -198,6 +257,299 @@ begin
 
   Observer.OnCompleted;
   Dispose;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWindow<TSource>.TTimeSliding'}
+
+constructor TWindow<TSource>.TTimeSliding.Create(
+  const source: IObservable<TSource>; const timeSpan, timeShift: TTimeSpan;
+  const scheduler: IScheduler);
+begin
+  inherited Create;
+  fSource := source;
+  fTimeSpan := timeSpan;
+  fTimeShift := timeShift;
+  fScheduler := scheduler;
+end;
+
+function TWindow<TSource>.TTimeSliding.CreateSink(
+  const observer: IObserver<IObservable<TSource>>;
+  const cancel: IDisposable): TObject;
+begin
+  Result := TSink.Create(Self, observer, cancel);
+end;
+
+function TWindow<TSource>.TTimeSliding.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWindow<TSource>.TTimeSliding.TSink'}
+
+constructor TWindow<TSource>.TTimeSliding.TSink.Create(
+  const parent: TTimeSliding; const observer: IObserver<IObservable<TSource>>;
+  const cancel: IDisposable);
+begin
+  inherited Create(observer, cancel);
+  fScheduler := parent.fScheduler;
+  fTimeShift := parent.fTimeShift;
+
+  fQueue := TCollections.CreateQueue<ISubject<TSource>>;
+  fTimerD := TSerialDisposable.Create;
+end;
+
+function TWindow<TSource>.TTimeSliding.TSink.Run(
+  const parent: TTimeSliding): IDisposable;
+var
+  groupDisposable: ICompositeDisposable;
+begin
+  fTotalTime := TTimeSpan.Zero;
+  fNextShift := parent.fTimeShift;
+  fNextSpan := parent.fTimeSpan;
+
+  groupDisposable := TCompositeDisposable.Create([fTimerD]);
+  fRefCountDisposable := TRefCountDisposable.Create(groupDisposable);
+
+  CreateWindow;
+  CreateTimer;
+
+  groupDisposable.Add(parent.fSource.Subscribe(Self));
+
+  Result := fRefCountDisposable;
+end;
+
+procedure TWindow<TSource>.TTimeSliding.TSink.CreateWindow;
+var
+  s: ISubject<TSource>;
+begin
+  s := TSubject<TSource>.Create;
+  fQueue.Enqueue(s);
+  Observer.OnNext(TWindowObservable<TSource>.Create(s, fRefCountDisposable) as IObservable<TSource>);
+end;
+
+procedure TWindow<TSource>.TTimeSliding.TSink.CreateTimer;
+var
+  m: ISingleAssignmentDisposable;
+  isSpan: Boolean;
+  isShift: Boolean;
+  newTotalTime: TTimeSpan;
+  ts: TTimeSpan;
+  state: TState;
+  guard: IInterface;
+begin
+  m := TSingleAssignmentDisposable.Create;
+  fTimerD.Disposable := m;
+
+  isSpan := False;
+  isShift := False;
+  if fNextSpan = fNextShift then
+  begin
+    isSpan := True;
+    isShift := True;
+  end
+  else if fNextSpan < fNextShift then
+    isSpan := True
+  else
+    isShift := True;
+
+  if isSpan then
+    newTotalTime := fNextSpan
+  else
+    newTotalTime := fNextShift;
+  ts := newTotalTime - fTotalTime;
+  fTotalTime := newTotalTime;
+
+  if isSpan then
+    fNextSpan := fNextSpan + fTimeShift;
+  if isShift then
+    fNextShift := fNextShift + fTimeShift;
+
+  state.isSpan := isSpan;
+  state.isShift := isShift;
+  guard := Self; // make sure that self is kept alive by capturing it
+  m.Disposable := fScheduler.Schedule(TValue.From(state), ts,
+    function (const scheduler: IScheduler; const state: TValue): IDisposable
+    begin
+      if Assigned(guard) then
+        Tick(scheduler, state.AsType<TState>);
+    end);
+end;
+
+function TWindow<TSource>.TTimeSliding.TSink.Tick(const scheduler: IScheduler;
+  const state: TState): IDisposable;
+var
+  s: ISubject<TSource>;
+begin
+  MonitorEnter(Self);
+  try
+    if state.isSpan then
+    begin
+      s := fQueue.Dequeue;
+      s.OnCompleted;
+      s := nil;
+    end;
+
+    if state.isShift then
+      CreateWindow;
+  finally
+    MonitorExit(Self);
+  end;
+
+  CreateTimer;
+
+  Result := Disposable.Empty;
+end;
+
+procedure TWindow<TSource>.TTimeSliding.TSink.OnNext(const value: TSource);
+var
+  s: ISubject<TSource>;
+begin
+  MonitorEnter(Self);
+  try
+    for s in fQueue do
+      s.OnNext(value);
+  finally
+    MonitorExit(Self);
+  end;
+end;
+
+procedure TWindow<TSource>.TTimeSliding.TSink.OnError(const error: Exception);
+var
+  s: ISubject<TSource>;
+begin
+  MonitorEnter(Self);
+  try
+    for s in fQueue do
+      s.OnError(error);
+
+    Observer.OnError(error);
+    Dispose;
+  finally
+    MonitorExit(Self);
+  end;
+end;
+
+procedure TWindow<TSource>.TTimeSliding.TSink.OnCompleted;
+var
+  s: ISubject<TSource>;
+begin
+  MonitorEnter(Self);
+  try
+    for s in fQueue do
+      s.OnCompleted;
+
+    Observer.OnCompleted;
+    Dispose;
+  finally
+    MonitorExit(Self);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWindow<TSource>.TTimeHopping'}
+
+constructor TWindow<TSource>.TTimeHopping.Create(
+  const source: IObservable<TSource>; const timeSpan: TTimeSpan;
+  const scheduler: IScheduler);
+begin
+  inherited Create;
+  fSource := source;
+  fTimeSpan := timeSpan;
+  fScheduler := scheduler;
+end;
+
+function TWindow<TSource>.TTimeHopping.CreateSink(
+  const observer: IObserver<IObservable<TSource>>;
+  const cancel: IDisposable): TObject;
+begin
+  Result := TSink.Create(observer, cancel);
+end;
+
+function TWindow<TSource>.TTimeHopping.Run(const sink: TObject): IDisposable;
+begin
+  Result := TSink(sink).Run(Self);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWindow<TSource>.TTimeHopping.TSink'}
+
+function TWindow<TSource>.TTimeHopping.TSink.Run(
+  const parent: TTimeHopping): IDisposable;
+var
+  groupDisposable: ICompositeDisposable;
+begin
+  groupDisposable := TCompositeDisposable.Create([]);
+  fRefCountDisposable := TRefCountDisposable.Create(groupDisposable);
+
+  CreateWindow;
+
+  groupDisposable.Add((parent.fScheduler as ISchedulerPeriodic).SchedulePeriodic(parent.fTimeSpan, Tick));
+  groupDisposable.Add(parent.fSource.Subscribe(Self));
+
+  Result := fRefCountDisposable;
+end;
+
+procedure TWindow<TSource>.TTimeHopping.TSink.Tick;
+begin
+  MonitorEnter(Self);
+  try
+    fSubject.OnCompleted;
+    CreateWindow;
+  finally
+    MonitorExit(Self);
+  end;
+end;
+
+procedure TWindow<TSource>.TTimeHopping.TSink.CreateWindow;
+begin
+  fSubject := TSubject<TSource>.Create;
+  Observer.OnNext(TWindowObservable<TSource>.Create(fSubject, fRefCountDisposable) as IObservable<TSource>);
+end;
+
+procedure TWindow<TSource>.TTimeHopping.TSink.OnNext(const value: TSource);
+begin
+  MonitorEnter(Self);
+  try
+    fSubject.OnNext(value);
+  finally
+    MonitorExit(Self);
+  end;
+end;
+
+procedure TWindow<TSource>.TTimeHopping.TSink.OnError(const error: Exception);
+begin
+  MonitorEnter(Self);
+  try
+    fSubject.OnError(error);
+
+    Observer.OnError(error);
+    Dispose;
+  finally
+    MonitorExit(Self);
+  end;
+end;
+
+procedure TWindow<TSource>.TTimeHopping.TSink.OnCompleted;
+begin
+  MonitorEnter(Self);
+  try
+    fSubject.OnCompleted;
+
+    Observer.OnCompleted;
+    Dispose;
+  finally
+    MonitorExit(Self);
+  end;
 end;
 
 {$ENDREGION}

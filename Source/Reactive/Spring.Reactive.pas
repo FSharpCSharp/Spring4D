@@ -231,6 +231,7 @@ type
   end;
 
   IObservable<T> = interface;
+  IGroupedObservable<TKey, TElement> = interface;
   IConnectableObservable<T> = interface;
 
   IConcatenatable<TSource> = interface
@@ -262,6 +263,8 @@ type
 
     function CombineLatest<TSource1, TSource2, TResult>(const second: IObservable<TSource2>; const resultSelector: Func<TSource1, TSource2, TResult>): IObservable<TResult>; overload;
 
+    function GroupBy<TSource, TKey>(const keySelector: Func<TSource, TKey>): IObservable<IGroupedObservable<TKey, TSource>>; overload;
+
     function Merge<TSource>: IObservable<TSource>; overload;
     function Merge<TSource>(const second: IObservable<TSource>): IObservable<TSource>; overload;
 
@@ -275,7 +278,8 @@ type
 
     function Window<TSource>(const count: Integer): IObservable<IObservable<TSource>>; overload;
     function Window<TSource>(const count, skip: Integer): IObservable<IObservable<TSource>>; overload;
-//    function Window<TSource>(const timeSpan: TTimeSpan): IObservable<IObservable<TSource>>; overload;
+    function Window<TSource>(const timeSpan: TTimeSpan): IObservable<IObservable<TSource>>; overload;
+    function Window<TSource>(const timeSpan, timeShift: TTimeSpan): IObservable<IObservable<TSource>>; overload;
 
     function Zip<TFirst, TSecond, TResult>(const second: IObservable<TSecond>; const resultSelector: Func<TFirst, TSecond, TResult>): IObservable<TResult>; overload;
   end;
@@ -647,6 +651,14 @@ begin
     TObject(Self) as TObservableBase<TSource1>, second, resultSelector);
 end;
 
+function IObservableExtensions.GroupBy<TSource, TKey>(
+  const keySelector: Func<TSource, TKey>): IObservable<IGroupedObservable<TKey, TSource>>;
+begin
+  Result := TGroupBy<TSource, TKey, TSource>.Create(
+    TObject(Self) as TObservableBase<TSource>, keySelector,
+    function(const x: TSource): TSource begin Result := x; end, 0, TEqualityComparer<TKey>.Default);
+end;
+
 function IObservableExtensions.Merge<TSource>: IObservable<TSource>;
 begin
   Result := TMerge<TSource>.TObservables.Create(
@@ -696,6 +708,22 @@ function IObservableExtensions.Window<TSource>(const count,
 begin
   Result := TWindow<TSource>.TCount.Create(
     TObject(Self) as TObservableBase<TSource>, count, skip);
+end;
+
+function IObservableExtensions.Window<TSource>(
+  const timeSpan: TTimeSpan): IObservable<IObservable<TSource>>;
+begin
+  Result := TWindow<TSource>.TTimeHopping.Create(
+    TObject(Self) as TObservableBase<TSource>, timeSpan,
+    SchedulerDefaults.TimeBasedOperations);
+end;
+
+function IObservableExtensions.Window<TSource>(const timeSpan,
+  timeShift: TTimeSpan): IObservable<IObservable<TSource>>;
+begin
+  Result := TWindow<TSource>.TTimeSliding.Create(
+    TObject(Self) as TObservableBase<TSource>, timeSpan, timeShift,
+    SchedulerDefaults.TimeBasedOperations);
 end;
 
 function IObservableExtensions.Zip<TFirst, TSecond, TResult>(
