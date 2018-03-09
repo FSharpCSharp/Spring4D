@@ -55,6 +55,8 @@ type
     constructor Create(bufferSize: Integer = InfiniteBufferSize); overload;
     constructor Create(const window: TTimeSpan); overload;
 
+    procedure Dispose; override;
+
     procedure OnNext(const value: T); override;
     procedure OnError(const error: Exception); override;
     procedure OnCompleted; override;
@@ -97,6 +99,10 @@ end;
 constructor TReplaySubject<T>.Create(const window: TTimeSpan);
 begin
   Create(InfiniteBufferSize, window);
+end;
+
+procedure TReplaySubject<T>.Dispose;
+begin
 end;
 
 procedure TReplaySubject<T>.Next(const value: T);
