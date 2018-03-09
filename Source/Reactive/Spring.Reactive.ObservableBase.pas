@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2017 Spring4D Team                           }
+{           Copyright (c) 2009-2018 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -45,7 +45,7 @@ type
     constructor Create(const value: T);
   end;
 
-  TObservableBase<T> = class(TinterfacedObject, IObservable<T>)
+  TObservableBase<T> = class(TInterfacedObject, IObservable<T>)
   private
     function LastOrDefaultInternal(raiseOnEmpty: Boolean): T;
     function ScheduledSubscribe(const _: IScheduler; const autoDetachObserver: TValue): IDisposable;
