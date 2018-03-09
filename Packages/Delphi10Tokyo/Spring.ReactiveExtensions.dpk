@@ -99,6 +99,7 @@ contains
   Spring.Reactive.Observable.SkipLast in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipLast.pas',
   Spring.Reactive.Observable.SkipUntil in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipUntil.pas',
   Spring.Reactive.Observable.SkipWhile in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipWhile.pas',
+  Spring.Reactive.Observable.Switch in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Switch.pas',
   Spring.Reactive.Observable.Take in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Take.pas',
   Spring.Reactive.Observable.TakeLast in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeLast.pas',
   Spring.Reactive.Observable.TakeUntil in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeUntil.pas',

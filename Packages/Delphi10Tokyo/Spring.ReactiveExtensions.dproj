@@ -2,7 +2,7 @@
     <PropertyGroup>
         <ProjectGuid>{7F2E7A03-15F0-4651-B3B0-67CCB2495D30}</ProjectGuid>
         <MainSource>Spring.ReactiveExtensions.dpk</MainSource>
-        <ProjectVersion>18.2</ProjectVersion>
+        <ProjectVersion>18.3</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
@@ -203,6 +203,7 @@
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipLast.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipUntil.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipWhile.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Switch.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Take.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeLast.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.TakeUntil.pas"/>

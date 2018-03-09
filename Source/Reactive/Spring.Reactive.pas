@@ -269,6 +269,8 @@ type
 
     function SkipUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
 
+    function Switch<TSource>: IObservable<TSource>; overload;
+
     function TakeUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
 
     function Window<TSource>(const count: Integer): IObservable<IObservable<TSource>>; overload;
@@ -450,6 +452,8 @@ type
 
     class function SkipUntil<TSource, TOther>(const source: IObservable<TSource>; const other: IObservable<TOther>): IObservable<TSource>; static;
 
+    class function Switch<TSource>(const sources: IObservable<IObservable<TSource>>): IObservable<TSource>; static;
+
     class function TakeUntil<TSource, TOther>(const source: IObservable<TSource>; const other: IObservable<TOther>): IObservable<TSource>; static;
 
     class function Throw<T>(const error: Exception): IObservable<T>; static;
@@ -540,6 +544,7 @@ uses
   Spring.Reactive.Observable.Return,
   Spring.Reactive.Observable.Select,
   Spring.Reactive.Observable.SkipUntil,
+  Spring.Reactive.Observable.Switch,
   Spring.Reactive.Observable.TakeUntil,
   Spring.Reactive.Observable.Throw,
   Spring.Reactive.Observable.Timer,
@@ -666,6 +671,11 @@ function IObservableExtensions.SkipUntil<TSource, TOther>(
   const other: IObservable<TOther>): IObservable<TSource>;
 begin
   Result := TSkipUntil<TSource, TOther>.Create(TObject(Self) as TObservableBase<TSource>, other);
+end;
+
+function IObservableExtensions.Switch<TSource>: IObservable<TSource>;
+begin
+  Result := TSwitch<TSource>.Create(TInterfacedObject(Self) as IObservable<IObservable<TSource>>)
 end;
 
 function IObservableExtensions.TakeUntil<TSource, TOther>(
@@ -1012,6 +1022,12 @@ class function TObservable.Subscribe<T>(const source: IEnumerable<T>;
   const observer: IObserver<T>; const scheduler: IScheduler): IDisposable;
 begin
   Result := TToObservable<T>.Create(source, scheduler).Subscribe(observer);
+end;
+
+class function TObservable.Switch<TSource>(
+  const sources: IObservable<IObservable<TSource>>): IObservable<TSource>;
+begin
+  Result := TSwitch<TSource>.Create(sources);
 end;
 
 class function TObservable.TakeUntil<TSource, TOther>(
