@@ -84,6 +84,7 @@ type
     function Publish: IConnectableObservable<T>;
     function Repeated: IObservable<T>; overload;
     function Repeated(repeatCount: Integer): IObservable<T>; overload;
+    function Replay: IConnectableObservable<T>;
     function Sample(const interval: TTimeSpan): IObservable<T>;
     function Skip(count: Integer): IObservable<T>;
     function SkipLast(count: Integer): IObservable<T>;
@@ -132,6 +133,7 @@ uses
   Spring.Reactive.Concurrency.CurrentThreadScheduler,
   Spring.Reactive.Concurrency.SchedulerDefaults,
   Spring.Reactive.Concurrency.Synchronization.ObserveOn,
+  Spring.Reactive.Disposables,
   Spring.Reactive.Internal.Stubs,
   Spring.Reactive.Observable.All,
   Spring.Reactive.Observable.Amb,
@@ -155,8 +157,8 @@ uses
   Spring.Reactive.Observable.Where,
   Spring.Reactive.Observable.Window,
   Spring.Reactive.Subjects.ConnectableObservable,
-  Spring.Reactive.Subjects.Subject,
-  Spring.Reactive.Disposables;
+  Spring.Reactive.Subjects.ReplaySubject,
+  Spring.Reactive.Subjects.Subject;
 
 
 {$REGION 'TObservableBase<T>'}
@@ -439,6 +441,11 @@ end;
 function TObservableBase<T>.Repeated(repeatCount: Integer): IObservable<T>;
 begin
   Result := TConcat<T>.Create(TEnumerable.Repeated<IObservable<T>>(Self, repeatCount));
+end;
+
+function TObservableBase<T>.Replay: IConnectableObservable<T>;
+begin
+  Result := TConnectableObservable<T,T>.Create(Self, TReplaySubject<T>.Create as ISubject<T>);
 end;
 
 function TObservableBase<T>.Sample(const interval: TTimeSpan): IObservable<T>;

@@ -17,10 +17,12 @@ uses
   Example7 in 'Example7.pas',
   Test1 in 'Test1.pas',
   Test2 in 'Test2.pas',
+  Spring,
   Spring.Collections,
   Spring.Console,
   Spring.Reactive,
-  Spring.Reactive.Concurrency.DefaultScheduler;
+  Spring.Reactive.Concurrency.DefaultScheduler,
+  Spring.Reactive.Concurrency;
 
 procedure WriteLine(const value: Integer); overload;
 begin
@@ -45,6 +47,8 @@ var
   work: Action<Action>;
   token: IDisposable;
 
+  windows: IObservable<IGroupedObservable<Integer,Int64>>;
+  id: Integer;
 begin
 //  Observable.Interval(TTimeSpan.FromMilliseconds(150))
 //    .Sample(TTimeSpan.FromSeconds(1))
@@ -52,10 +56,40 @@ begin
 //
 //  Readln;
 
-  Enumerable.ToObservable<Integer>(TEnumerable.Range(1, 100)).Subscribe(
-    WriteLine);
-  Readln;
+//  TObservable.From<Integer>(TEnumerable.Range(1, 100)).Subscribe(WriteLine);
+//  Readln;
 
+  windows := TObservable.From<Int64>([0, 1, 3, 2, 4, 6, 5, 7, 9, 8]).
+    _.GroupBy<Int64,Integer>(
+      function(const x: Int64): Integer
+      begin
+        Result := x div 3;
+      end);
+
+//  id := 0;
+//  windows.Subscribe(
+//    procedure(const o: IGroupedObservable<Integer,Int64>)
+//    var
+//      windowId: Integer;
+//    begin
+//      windowId := id;
+//      Inc(id);
+//      Writeln('new window ', windowId);
+//      o.Subscribe(procedure(const _: Int64) begin end,
+//        procedure
+//        begin
+//          Writeln('complete ', windowId);
+//        end);
+//    end);
+
+  windows.
+    _.Switch<Int64>.
+    Subscribe(
+    procedure(const i: Int64)
+    begin
+      Writeln(i)
+    end);
+  Readln;
 
 //  Example1.Main;
 //  Example2.Main;

@@ -74,12 +74,19 @@ uses
   Spring.Reactive.Disposables;
 
 
+procedure InitWorkerThreads(const threadPool: TThreadPool);
+begin
+  threadPool.QueueWorkItem(procedure begin end);
+end;
+
 {$REGION 'TConcurrencyAbstractionLayer'}
 
 class constructor TConcurrencyAbstractionLayer.Create;
 begin
   fThreadPool := TThreadPool.Create;
   fTerminated := TEvent.Create;
+
+  InitWorkerThreads(fThreadPool);
 end;
 
 class procedure TConcurrencyAbstractionLayer.ShutDown;

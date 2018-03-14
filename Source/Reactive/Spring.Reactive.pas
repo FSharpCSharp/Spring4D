@@ -341,6 +341,7 @@ type
 
     // "extension" methods (QueryLanguage.Binding.cs)
     function Publish: IConnectableObservable<T>;
+    function Replay: IConnectableObservable<T>;
 
     // "extension" methods (QueryLanguage.Blocking.cs)
 //    function GetEnumerator: IEnumerator<T>;

@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{2ACDBDA7-C49B-42FB-AB68-1D8692BDFE0B}</ProjectGuid>
-        <ProjectVersion>18.2</ProjectVersion>
+        <ProjectVersion>18.4</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <MainSource>Spring.Reactive.Tests.dpr</MainSource>
         <Base>True</Base>
