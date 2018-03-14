@@ -106,6 +106,14 @@ type
     function SkipUntil(const other: IObservable<T>): IObservable<T>;
     function TakeUntil(const other: IObservable<T>): IObservable<T>;
 
+    // "extension" methods (QueryLanguage.Single.cs)
+    function StartWith(const value: T): IObservable<T>; overload;
+    function StartWith(const values: array of T): IObservable<T>; overload;
+    function StartWith(const values: IEnumerable<T>): IObservable<T>; overload;
+    function StartWith(const value: T; const scheduler: IScheduler): IObservable<T>; overload;
+    function StartWith(const values: array of T; const scheduler: IScheduler): IObservable<T>; overload;
+    function StartWith(const values: IEnumerable<T>; const scheduler: IScheduler): IObservable<T>; overload;
+
     // "extension" methods (QueryLanguage.Time.cs)
     function Timeout(const dueTime: TTimeSpan): IObservable<T>; overload;
     function Timeout(const dueTime: TTimeSpan; const scheduler: IScheduler): IObservable<T>; overload;
@@ -464,6 +472,40 @@ function TObservableBase<T>.SkipWhile(
   const predicate: Func<T, Integer, Boolean>): IObservable<T>;
 begin
   Result := TSkipWhile<T>.Create(Self, predicate);
+end;
+
+function TObservableBase<T>.StartWith(const value: T): IObservable<T>;
+begin
+  Result := StartWith(TEnumerable.From<T>([value]), SchedulerDefaults.ConstantTimeOperations);
+end;
+
+function TObservableBase<T>.StartWith(const values: array of T): IObservable<T>;
+begin
+  Result := StartWith(TEnumerable.From<T>(values), SchedulerDefaults.ConstantTimeOperations);
+end;
+
+function TObservableBase<T>.StartWith(
+  const values: IEnumerable<T>): IObservable<T>;
+begin
+  Result := StartWith(values, SchedulerDefaults.ConstantTimeOperations);
+end;
+
+function TObservableBase<T>.StartWith(const value: T;
+  const scheduler: IScheduler): IObservable<T>;
+begin
+  Result := StartWith(TEnumerable.From<T>([value]), scheduler);
+end;
+
+function TObservableBase<T>.StartWith(const values: array of T;
+  const scheduler: IScheduler): IObservable<T>;
+begin
+  Result := StartWith(TEnumerable.From<T>(values), scheduler);
+end;
+
+function TObservableBase<T>.StartWith(const values: IEnumerable<T>;
+  const scheduler: IScheduler): IObservable<T>;
+begin
+  Result := TObservable.From<T>(values, scheduler).Concat(Self);
 end;
 
 function TObservableBase<T>.Take(count: Integer): IObservable<T>;

@@ -356,6 +356,12 @@ type
     // "extension" methods (QueryLanguage.Single.cs)
     function Repeated: IObservable<T>; overload;
     function Repeated(repeatCount: Integer): IObservable<T>; overload;
+    function StartWith(const value: T): IObservable<T>; overload;
+    function StartWith(const values: array of T): IObservable<T> ; overload;
+    function StartWith(const values: IEnumerable<T>): IObservable<T>; overload;
+    function StartWith(const value: T; const scheduler: IScheduler): IObservable<T>; overload;
+    function StartWith(const values: array of T; const scheduler: IScheduler): IObservable<T>; overload;
+    function StartWith(const values: IEnumerable<T>; const scheduler: IScheduler): IObservable<T>; overload;
 
     // "extension" methods (QueryLanguage.Time.cs)
     function Timeout(const dueTime: TTimeSpan): IObservable<T>; overload;
