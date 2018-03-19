@@ -5762,6 +5762,21 @@ begin
   Result := True;
 end;
 
+function ConvVariant2Enum(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+var
+  v: Variant;
+  temp: TValue;
+begin
+  // workaround for RSP-20160
+  v := source.AsVariant;
+  if TVarData(v).VType <> varBoolean then
+    Exit(False);
+
+  temp := TValue.From<Boolean>(TVarData(v).VBoolean);
+  Result := temp.TryCast(target, value);
+end;
+
 {$ENDREGION}
 
 
@@ -5903,7 +5918,7 @@ const
     // tkVariant
     (
       // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
-      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      ConvFail, ConvFail, ConvFail, ConvVariant2Enum, ConvFail, ConvFail,
       // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
       ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
       // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
