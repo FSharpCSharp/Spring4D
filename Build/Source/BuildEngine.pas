@@ -127,6 +127,7 @@ type
     fModifyDelphiRegistrySettings: Boolean;
     fOnlyShowInstalledVersions: Boolean;
     fPauseAfterEachStep: Boolean;
+    fRunSilent: Boolean;
     fRunTests: Boolean;
     fRunTestsAsConsole: Boolean;
     fSelectedTasks: IList<TBuildTask>;
@@ -143,6 +144,7 @@ type
     property OnlyShowInstalledVersions: Boolean
       read fOnlyShowInstalledVersions write fOnlyShowInstalledVersions;
     property PauseAfterEachStep: Boolean read FPauseAfterEachStep write FPauseAfterEachStep;
+    property RunSilent: Boolean read fRunSilent write fRunSilent;
     property RunTests: Boolean read fRunTests write fRunTests;
     property RunTestsAsConsole: Boolean read fRunTestsAsConsole write fRunTestsAsConsole;
     property SelectedTasks: IList<TBuildTask> read fSelectedTasks;
@@ -585,6 +587,11 @@ begin
   startupInfo := Default(TStartupInfo);
   processInfo := Default(TProcessInformation);
   startupInfo.cb := SizeOf(startupInfo);
+  if fRunSilent then
+  begin
+    startupInfo.dwFlags := STARTF_USESHOWWINDOW;
+    startupInfo.wShowWindow := SW_HIDE;
+  end;
   localCommandLine := commandLine;
   UniqueString(localCommandLine);
   if workingDir <> '' then
@@ -755,6 +762,7 @@ begin
         IncludeTrailingPathDelimiter(fSourceBaseDir) + fSourcePaths[i]);
     selectedTasks.DelimitedText := iniFile.ReadString('Globals', 'SelectedTasks', '');
     fPauseAfterEachStep := iniFile.ReadBool('Globals', 'PauseAfterEachStep', False);
+    fRunSilent := iniFile.ReadBool('Globals', 'RunSilent', False);
     fRunTests := iniFile.ReadBool('Globals', 'RunTests', False);
     fRunTestsAsConsole := iniFile.ReadBool('Globals', 'RunTestsAsConsole', False);
     fModifyDelphiRegistrySettings := iniFile.ReadBool('Globals', 'ModifyDelphiRegistrySettings', False);
@@ -820,6 +828,7 @@ begin
     iniFile.WriteString('Globals', 'Config', config);
     iniFile.WriteString('Globals', 'SelectedTasks', selectedTasks.DelimitedText);
     iniFile.WriteBool('Globals', 'PauseAfterEachStep', fPauseAfterEachStep);
+    iniFile.WriteBool('Globals', 'RunSilent', fRunSilent);
     iniFile.WriteBool('Globals', 'RunTests', fRunTests);
     iniFile.WriteBool('Globals', 'RunTestsAsConsole', fRunTestsAsConsole);
     iniFile.WriteBool('Globals', 'ModifyDelphiRegistrySettings', fModifyDelphiRegistrySettings);
