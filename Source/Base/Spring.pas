@@ -2199,7 +2199,7 @@ type
     ///   default comparer.
     /// </summary>
     class function BinarySearch<T>(const values: array of T; const item: T;
-      out foundIndex: Integer): Boolean; overload; static; static;
+      out foundIndex: Integer): Boolean; overload; static;
 
     /// <summary>
     ///   Searches a range of elements in a sorted array for the given value,
@@ -2259,7 +2259,7 @@ type
     ///   algorithm returning the index for the last found value.
     /// </summary>
     class function BinarySearchUpperBound<T>(const values: array of T;
-      const item: T; out foundIndex: Integer): Boolean; overload; static; static;
+      const item: T; out foundIndex: Integer): Boolean; overload; static;
 
     /// <summary>
     ///   Concatenates an array of arrays to one array
