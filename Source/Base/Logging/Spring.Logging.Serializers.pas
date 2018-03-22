@@ -43,7 +43,7 @@ type
 
   TSerializerBase = class abstract(TLogEventConverterBase, ITypeSerializer)
   strict protected
-    class function ValueToStr(const value: TValue): string; inline; static;
+    class function ValueToStr(const value: TValue): string; static; inline;
     function CanHandleEvent(const event: TLogEvent): Boolean; override;
     function Execute(const controller: ILoggerController;
       const event: TLogEvent): string; override;

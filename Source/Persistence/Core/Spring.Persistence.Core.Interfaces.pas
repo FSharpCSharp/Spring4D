@@ -87,7 +87,7 @@ type
     QueryOperation: TDMLCommandType;
     TableName: string;
   public
-    class function GetQueryType(const query: Variant): TQueryType; inline; static;
+    class function GetQueryType(const query: Variant): TQueryType; static; inline;
   end;
 
   /// <summary>

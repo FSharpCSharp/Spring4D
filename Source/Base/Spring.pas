@@ -106,9 +106,9 @@ type
     class constructor Create;
     class destructor Destroy;
 
-    class function HasWeakRef<T>: Boolean; inline; static;
-    class function IsManaged<T>: Boolean; inline; static;
-    class function Kind<T>: TTypeKind; inline; static;
+    class function HasWeakRef<T>: Boolean; static; inline;
+    class function IsManaged<T>: Boolean; static; inline;
+    class function Kind<T>: TTypeKind; static; inline;
 
     class function GetType<T>: TRttiType; overload; static; inline;
     class function GetType(typeInfo: PTypeInfo): TRttiType; overload; static;
