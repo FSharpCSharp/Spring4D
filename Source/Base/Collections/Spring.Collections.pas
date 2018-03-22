@@ -2737,7 +2737,7 @@ type
     function AsList<T: TCollectionItem>: IList<T>; overload;
   end;
 
-  TArrayManager<T> = class abstract
+  TArrayManager<T> = class
 {$IFDEF WEAKREF}
   private
   {$IFDEF DELPHIXE7_UP}
@@ -2752,7 +2752,7 @@ type
   public
     class procedure Move(var items: TArray<T>;
       const fromIndex, toIndex, count: Integer); overload; static; inline;
-    class procedure Move(var fromItems, toItems: TArray<T>;
+    class procedure Move(const fromItems: TArray<T>; var toItems: TArray<T>;
       const fromIndex, toIndex, count: Integer); overload; static; inline;
     class procedure Finalize(var items: TArray<T>;
       const index, count: Integer); static; inline;
@@ -3801,8 +3801,8 @@ begin
     System.Move(items[fromIndex], items[toIndex], count * SizeOf(T));
 end;
 
-class procedure TArrayManager<T>.Move(var fromItems, toItems: TArray<T>;
-  const fromIndex, toIndex, count: Integer);
+class procedure TArrayManager<T>.Move(const fromItems: TArray<T>;
+  var toItems: TArray<T>; const fromIndex, toIndex, count: Integer);
 {$IFDEF WEAKREF}
 var
   i: Integer;
