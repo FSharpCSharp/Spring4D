@@ -373,44 +373,44 @@ type
     constructor Create(const keyComparer: IComparer<TKey>; const valueComparer: IComparer<TValue>); overload;
     destructor Destroy; override;
 
-    {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
-      function GetEnumerator: IEnumerator<TKeyValue>; override;
-      function Contains(const value: TKeyValue;
-        const comparer: IEqualityComparer<TKeyValue>): Boolean; override;
-      function Ordered: IEnumerable<TKeyValue>; override;
-      function ToArray: TArray<TKeyValue>; override;
-    {$ENDREGION}
+  {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
+    function GetEnumerator: IEnumerator<TKeyValue>; override;
+    function Contains(const value: TKeyValue;
+      const comparer: IEqualityComparer<TKeyValue>): Boolean; override;
+    function Ordered: IEnumerable<TKeyValue>; override;
+    function ToArray: TArray<TKeyValue>; override;
+  {$ENDREGION}
 
-    {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
-      procedure Clear; override;
-    {$ENDREGION}
+  {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
+    procedure Clear; override;
+  {$ENDREGION}
 
-    {$REGION 'Implements IMap<TKey, TValue>'}
-      procedure Add(const key: TKey; const value: TValue); overload; override;
-      function Remove(const key: TKey): Boolean; overload; override;
-      function Remove(const key: TKey; const value: TValue): Boolean; override;
-      function Extract(const key: TKey; const value: TValue): TKeyValue; overload; override;
-      function Contains(const key: TKey; const value: TValue): Boolean; override;
-      function ContainsKey(const key: TKey): Boolean; override;
-      function ContainsValue(const value: TValue): Boolean; override;
-      property Keys: IReadOnlyCollection<TKey> read GetKeys;
-      property Values: IReadOnlyCollection<TValue> read GetValues;
-    {$ENDREGION}
+  {$REGION 'Implements IMap<TKey, TValue>'}
+    procedure Add(const key: TKey; const value: TValue); overload; override;
+    function Remove(const key: TKey): Boolean; overload; override;
+    function Remove(const key: TKey; const value: TValue): Boolean; override;
+    function Extract(const key: TKey; const value: TValue): TKeyValue; overload; override;
+    function Contains(const key: TKey; const value: TValue): Boolean; override;
+    function ContainsKey(const key: TKey): Boolean; override;
+    function ContainsValue(const value: TValue): Boolean; override;
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+    property Values: IReadOnlyCollection<TValue> read GetValues;
+  {$ENDREGION}
 
-    {$REGION 'Implements IDictionary<TKey, TValue>'}
-      procedure AddOrSetValue(const key: TKey; const value: TValue);
-      function Extract(const key: TKey): TValue; reintroduce; overload;
-      function ExtractPair(const key: TKey): TKeyValue; reintroduce; overload;
-      function TryGetValue(const key: TKey; out value: TValue): Boolean;
-      function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+  {$REGION 'Implements IDictionary<TKey, TValue>'}
+    procedure AddOrSetValue(const key: TKey; const value: TValue);
+    function Extract(const key: TKey): TValue; reintroduce; overload;
+    function ExtractPair(const key: TKey): TKeyValue; reintroduce; overload;
+    function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
-      property Items[const key: TKey]: TValue read GetItem write SetItem; default;
-    {$ENDREGION}
+    property Items[const key: TKey]: TValue read GetItem write SetItem; default;
+  {$ENDREGION}
 
-    {$REGION 'Implements IReadOnlyDictionary<TKey, TValue>'}
-      function GetValueOrDefault(const key: TKey): TValue; overload;
-      function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
-    {$ENDREGION}
+  {$REGION 'Implements IReadOnlyDictionary<TKey, TValue>'}
+    function GetValueOrDefault(const key: TKey): TValue; overload;
+    function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
+  {$ENDREGION}
   end;
 
 implementation

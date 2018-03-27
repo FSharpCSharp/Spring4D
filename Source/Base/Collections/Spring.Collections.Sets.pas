@@ -135,10 +135,10 @@ type
 
     function Contains(const item: T): Boolean; override;
 
-    {$REGION 'Implements IOrderedSet<T>'}
+  {$REGION 'Implements IOrderedSet<T>'}
     function GetItem(index: Integer): T;
     function IndexOf(const item: T): Integer;
-    {$ENDREGION}
+  {$ENDREGION}
   end;
 
   TSortedSet<T> = class(TSetBase<T>, ISet<T>)
