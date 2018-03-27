@@ -2561,14 +2561,6 @@ type
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer): IOrderedDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>; overload; static;
 
-    class function CreateOrderedDictionary<TKey, TValue>: IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateOrderedDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>; overload; static;
-
-    class function CreateOrderedSet<T>: IOrderedSet<T>; overload; static;
-    class function CreateOrderedSet<T>(const comparer: IEqualityComparer<T>): IOrderedSet<T>; overload; static;
-    class function CreateOrderedSet<T>(const values: array of T): ISet<T>; overload; static;
-    class function CreateOrderedSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
-
     class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
     class function CreateMultiMap<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
     class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
@@ -3032,40 +3024,6 @@ class function TCollections.CreateDictionary<TKey, TValue>(
   const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>;
 begin
   Result := TObjectDictionary<TKey, TValue>.Create(ownerships, comparer);
-end;
-
-class function TCollections.CreateOrderedDictionary<TKey, TValue>: IOrderedDictionary<TKey, TValue>;
-begin
-  Result := CreateDictionary<TKey, TValue>;
-end;
-
-class function TCollections.CreateOrderedDictionary<TKey, TValue>(
-  const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>;
-begin
-  Result := CreateDictionary<TKey, TValue>(comparer);
-end;
-
-class function TCollections.CreateOrderedSet<T>: IOrderedSet<T>;
-begin
-  Result := CreateSet<T>;
-end;
-
-class function TCollections.CreateOrderedSet<T>(
-  const comparer: IEqualityComparer<T>): IOrderedSet<T>;
-begin
-  Result := CreateSet<T>(comparer);
-end;
-
-class function TCollections.CreateOrderedSet<T>(
-  const values: array of T): ISet<T>;
-begin
-  Result := CreateSet<T>(values);
-end;
-
-class function TCollections.CreateOrderedSet<T>(
-  const values: IEnumerable<T>): ISet<T>;
-begin
-  Result := CreateSet<T>(values);
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>;
