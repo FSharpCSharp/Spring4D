@@ -458,6 +458,10 @@ end;
 constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
   const comparer: IEqualityComparer<TKey>);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange(capacity >= 0, 'capacity');
+{$ENDIF}
+
   inherited Create;
   fKeys := TKeyCollection.Create(Self);
   fValues := TValueCollection.Create(Self);
@@ -1191,7 +1195,7 @@ constructor TObjectDictionary<TKey, TValue>.Create(
   ownerships: TDictionaryOwnerships; capacity: Integer;
   const comparer: IEqualityComparer<TKey>);
 begin
-  inherited Create(capacity, Comparer);
+  inherited Create(capacity, comparer);
 
   if doOwnsKeys in Ownerships then
     if (TypeInfo(TKey) = nil) or (PTypeInfo(TypeInfo(TKey)).Kind <> tkClass) then

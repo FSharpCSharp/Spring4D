@@ -2978,14 +2978,13 @@ end;
 
 class function TCollections.CreateDictionary<TKey, TValue>: IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey,TValue>(0, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey,TValue>(0, nil);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   capacity: Integer): IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(
-    capacity, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(capacity, nil);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
@@ -2997,33 +2996,27 @@ end;
 class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
   const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(capacity >= 0, 'capacity');
-{$ENDIF}
-
   Result := TDictionary<TKey, TValue>.Create(capacity, comparer);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(
-    ownerships, 0, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(ownerships, 0, nil);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships;
   capacity: Integer): IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(
-    ownerships, capacity, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(ownerships, capacity, nil);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships; capacity: Integer;
   const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TObjectDictionary<TKey, TValue>.Create(ownerships, comparer);
+  Result := TObjectDictionary<TKey, TValue>.Create(ownerships, capacity, comparer);
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>;
