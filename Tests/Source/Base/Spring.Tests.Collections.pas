@@ -78,6 +78,17 @@ type
     procedure TestExtract;
   end;
 
+  TTestOrderedHashSet = class(TTestCase)
+  private
+    SUT: IOrderedSet<Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestGetItemByIndex;
+    procedure TestIndexOf;
+  end;
+
   TTestIntegerList = class(TTestCase)
   private
     SUT: IList<Integer>;
@@ -547,6 +558,7 @@ type
     procedure TestValuesToArray;
     procedure TestGetEnumerator;
     procedure TestGetItemByIndex;
+    procedure TestIndexOf;
     procedure TestAddOrSetValue;
     procedure TestRemove;
     procedure TestExtractPair;
@@ -784,6 +796,67 @@ begin
   list.AddRange([3, 2, 1]);
   CheckTrue(fSet1.SetEquals(list));
   CheckFalse(fSet2.SetEquals(list));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestOrderedHashSet'}
+
+procedure TTestOrderedHashSet.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSet<Integer>;
+end;
+
+procedure TTestOrderedHashSet.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestOrderedHashSet.TestGetItemByIndex;
+var
+  i: Integer;
+begin
+  SUT.Add(1);
+  SUT.Add(2);
+  SUT.Add(3);
+  SUT.Add(4);
+
+  for i := 0 to SUT.Count - 1 do
+    CheckEquals(i + 1, SUT.Items[i]);
+
+  // remove and re-add, ensures that item array is compacted
+  SUT.Remove(2);
+  SUT.Add(2);
+  CheckEquals(1, SUT.Items[0]);
+  CheckEquals(2, SUT.Items[3]);
+  CheckEquals(3, SUT.Items[1]);
+  CheckEquals(4, SUT.Items[2]);
+end;
+
+procedure TTestOrderedHashSet.TestIndexOf;
+var
+  i: Integer;
+begin
+  SUT.Add(1);
+  SUT.Add(2);
+  SUT.Add(3);
+  SUT.Add(4);
+
+  for i := 0 to SUT.Count - 1 do
+    CheckEquals(i, SUT.IndexOf(i + 1));
+
+  // remove and re-add, ensures that item array is compacted
+  SUT.Remove(2);
+  SUT.Add(2);
+  CheckEquals(-1, SUT.IndexOf(0));
+  CheckEquals(0, SUT.IndexOf(1));
+  CheckEquals(1, SUT.IndexOf(3));
+  CheckEquals(2, SUT.IndexOf(4));
+  CheckEquals(3, SUT.IndexOf(2));
+  CheckEquals(-1, SUT.IndexOf(5));
 end;
 
 {$ENDREGION}
@@ -1444,9 +1517,9 @@ var
   pairs: TArray<TPair<string, Integer>>;
 begin
   SUT.Clear;
-  SUT.Add('1', 1);
-  SUT.Add('2', 2);
   SUT.Add('3', 3);
+  SUT.Add('2', 2);
+  SUT.Add('1', 1);
 
   pairs := SUT.Ordered.ToArray;
   CheckEquals(3, Length(pairs));
@@ -3126,7 +3199,7 @@ end;
 
 procedure TTestOrderedDictionary.SetUp;
 begin
-  SUT := TOrderedDictionary<Integer,string>.Create;
+  SUT := TDictionary<Integer,string>.Create;
 end;
 
 procedure TTestOrderedDictionary.TearDown;
@@ -3216,6 +3289,37 @@ begin
 
   for i := 0 to SUT.Count - 1 do
     CheckEquals(i + 1, SUT.Items[i].Key);
+
+  // remove and re-add, ensures that item array is compacted
+  SUT.Remove(2);
+  SUT.Add(2, 'b');
+  CheckEquals(1, SUT.Items[0].Key);
+  CheckEquals(2, SUT.Items[3].Key);
+  CheckEquals(3, SUT.Items[1].Key);
+  CheckEquals(4, SUT.Items[2].Key);
+end;
+
+procedure TTestOrderedDictionary.TestIndexOf;
+var
+  i: Integer;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  for i := 0 to SUT.Count - 1 do
+    CheckEquals(i, SUT.IndexOf(i + 1));
+
+  // remove and re-add, ensures that item array is compacted
+  SUT.Remove(2);
+  SUT.Add(2, 'b');
+  CheckEquals(-1, SUT.IndexOf(0));
+  CheckEquals(0, SUT.IndexOf(1));
+  CheckEquals(1, SUT.IndexOf(3));
+  CheckEquals(2, SUT.IndexOf(4));
+  CheckEquals(3, SUT.IndexOf(2));
+  CheckEquals(-1, SUT.IndexOf(5));
 end;
 
 procedure TTestOrderedDictionary.TestKeysGetEnumerator;

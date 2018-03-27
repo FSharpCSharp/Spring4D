@@ -2648,6 +2648,10 @@ procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
 
 procedure SwapPtr(var left, right); inline;
 
+function IsPowerOf2(value: Integer): Boolean;
+
+function NextPowerOf2(value: Integer): Integer;
+
   {$ENDREGION}
 
 
@@ -3258,6 +3262,18 @@ begin
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
   Inc(i, n);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+end;
+
+function IsPowerOf2(value: Integer): Boolean;
+begin
+  Result := (value > 0) and (value and (value - 1) = 0);
+end;
+
+function NextPowerOf2(value: Integer): Integer;
+begin
+  Result := 1;
+  while Result <= value do
+    Result := Result shl 1;
 end;
 
 {$ENDREGION}

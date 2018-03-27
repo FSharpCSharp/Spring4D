@@ -87,6 +87,7 @@ begin
   RegisterTests('Spring.Base.Collections', [
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
+    TTestOrderedHashSet.Suite,
     TTestIntegerList.Suite,
     TTestStringList.Suite,
     TTestSortedList.Suite,
