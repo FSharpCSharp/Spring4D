@@ -344,7 +344,7 @@ type
     IReadOnlyMap<TKey, T>)
   private
     type
-      TGenericPair = Generics.Collections.TPair<TKey, T>;
+      TKeyValuePair = Generics.Collections.TPair<TKey, T>;
   private
     fOnKeyChanged: ICollectionChangedEvent<TKey>;
     fOnValueChanged: ICollectionChangedEvent<T>;
@@ -357,7 +357,7 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    procedure AddInternal(const item: TGenericPair); override; final;
+    procedure AddInternal(const item: TKeyValuePair); override; final;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); virtual;
     procedure ValueChanged(const item: T; action: TCollectionChangedAction); virtual;
   public
@@ -365,14 +365,14 @@ type
 
     procedure Add(const key: TKey; const value: T); reintroduce; overload; virtual; abstract;
 
-    function Remove(const item: TGenericPair): Boolean; overload; override; final;
+    function Remove(const item: TKeyValuePair): Boolean; overload; override; final;
     function Remove(const key: TKey): Boolean; reintroduce; overload; virtual; abstract;
     function Remove(const key: TKey; const value: T): Boolean; reintroduce; overload; virtual; abstract;
 
-    function Extract(const item: TGenericPair): TGenericPair; overload; override; final;
-    function Extract(const key: TKey; const value: T): TGenericPair; reintroduce; overload; virtual; abstract;
+    function Extract(const item: TKeyValuePair): TKeyValuePair; overload; override; final;
+    function Extract(const key: TKey; const value: T): TKeyValuePair; reintroduce; overload; virtual; abstract;
 
-    function Contains(const item: TGenericPair): Boolean; overload; override; final;
+    function Contains(const item: TKeyValuePair): Boolean; overload; override; final;
     function Contains(const key: TKey; const value: T): Boolean; overload; virtual; abstract;
     function ContainsKey(const key: TKey): Boolean; virtual; abstract;
     function ContainsValue(const value: T): Boolean; virtual; abstract;
@@ -1690,17 +1690,17 @@ begin
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-procedure TMapBase<TKey, T>.AddInternal(const item: TGenericPair);
+procedure TMapBase<TKey, T>.AddInternal(const item: TKeyValuePair);
 begin
   Add(item.Key, item.Value);
 end;
 
-function TMapBase<TKey, T>.Contains(const item: TGenericPair): Boolean;
+function TMapBase<TKey, T>.Contains(const item: TKeyValuePair): Boolean;
 begin
   Result := Contains(item.Key, item.Value);
 end;
 
-function TMapBase<TKey, T>.Extract(const item: TGenericPair): TGenericPair;
+function TMapBase<TKey, T>.Extract(const item: TKeyValuePair): TKeyValuePair;
 begin
   Result := Extract(item.Key, item.Value);
 end;
@@ -1732,7 +1732,7 @@ begin
     fOnKeyChanged.Invoke(Self, item, action)
 end;
 
-function TMapBase<TKey, T>.Remove(const item: TGenericPair): Boolean;
+function TMapBase<TKey, T>.Remove(const item: TKeyValuePair): Boolean;
 begin
   Result := Remove(item.Key, item.Value);
 end;

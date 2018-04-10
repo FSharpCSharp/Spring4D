@@ -348,7 +348,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TKeyValue = Generics.Collections.TPair<TKey, TValue>;
+      TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
       PNode = TRedBlackTreeNodeHelper<TKey, TValue>.PNode;
 
       TKeyCollection = class(TContainedReadOnlyCollection<TKey>)
@@ -421,7 +421,7 @@ type
     fTree: IRedBlackTree<TKey,TValue>;
     fKeyComparer: IComparer<TKey>;
     fValueComparer: IComparer<TValue>;
-    fKeyValueComparerByKey: IComparer<TKeyValue>;
+    fKeyValueComparerByKey: IComparer<TKeyValuePair>;
     fVersion: Integer;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
@@ -441,11 +441,11 @@ type
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
-    function GetEnumerator: IEnumerator<TKeyValue>; override;
-    function Contains(const value: TKeyValue;
-      const comparer: IEqualityComparer<TKeyValue>): Boolean; override;
-    function Ordered: IEnumerable<TKeyValue>; override;
-    function ToArray: TArray<TKeyValue>; override;
+    function GetEnumerator: IEnumerator<TKeyValuePair>; override;
+    function Contains(const value: TKeyValuePair;
+      const comparer: IEqualityComparer<TKeyValuePair>): Boolean; override;
+    function Ordered: IEnumerable<TKeyValuePair>; override;
+    function ToArray: TArray<TKeyValuePair>; override;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -456,7 +456,7 @@ type
     procedure Add(const key: TKey; const value: TValue); overload; override;
     function Remove(const key: TKey): Boolean; overload; override;
     function Remove(const key: TKey; const value: TValue): Boolean; override;
-    function Extract(const key: TKey; const value: TValue): TKeyValue; overload; override;
+    function Extract(const key: TKey; const value: TValue): TKeyValuePair; overload; override;
     function Contains(const key: TKey; const value: TValue): Boolean; override;
     function ContainsKey(const key: TKey): Boolean; override;
     function ContainsValue(const value: TValue): Boolean; override;
@@ -467,7 +467,7 @@ type
   {$REGION 'Implements IDictionary<TKey, TValue>'}
     procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; reintroduce; overload;
-    function ExtractPair(const key: TKey): TKeyValue; reintroduce; overload;
+    function ExtractPair(const key: TKey): TKeyValuePair; reintroduce; overload;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
@@ -1707,13 +1707,13 @@ begin
   fTree.Clear;
 end;
 
-function TSortedDictionary<TKey, TValue>.Contains(const value: TKeyValue;
-  const comparer: IEqualityComparer<TKeyValue>): Boolean;
+function TSortedDictionary<TKey, TValue>.Contains(const value: TKeyValuePair;
+  const comparer: IEqualityComparer<TKeyValuePair>): Boolean;
 var
   found: TValue;
 begin
   Result := fTree.Find(value.Key, found)
-    and comparer.Equals(value, TKeyValue.Create(value.Key, found));
+    and comparer.Equals(value, TKeyValuePair.Create(value.Key, found));
 end;
 
 function TSortedDictionary<TKey, TValue>.Contains(const key: TKey;
@@ -1732,7 +1732,7 @@ end;
 
 function TSortedDictionary<TKey, TValue>.ContainsValue(const value: TValue): Boolean;
 var
-  found: TKeyValue;
+  found: TKeyValuePair;
 begin
   for found in fTree do
     if fValueComparer.Compare(value, found.Value) = EqualsValue then
@@ -1754,7 +1754,7 @@ begin
 end;
 
 function TSortedDictionary<TKey, TValue>.Extract(const key: TKey;
-  const value: TValue): TKeyValue;
+  const value: TValue): TKeyValuePair;
 var
   node: PNode;
 begin
@@ -1793,7 +1793,7 @@ begin
     Result := Default(TValue);
 end;
 
-function TSortedDictionary<TKey, TValue>.ExtractPair(const key: TKey): TKeyValue;
+function TSortedDictionary<TKey, TValue>.ExtractPair(const key: TKey): TKeyValuePair;
 var
   node: PNode;
 begin
@@ -1819,7 +1819,7 @@ begin
   Result := fTree.Count;
 end;
 
-function TSortedDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValue>;
+function TSortedDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
   Result := fTree.GetEnumerator;
 end;
@@ -1890,12 +1890,12 @@ begin
   AddOrSetValue(key, value);
 end;
 
-function TSortedDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValue>;
+function TSortedDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValuePair>;
 begin
-  Result := TOrderedIterator<TKeyValue>.Create(Self, fKeyValueComparerByKey);
+  Result := TOrderedIterator<TKeyValuePair>.Create(Self, fKeyValueComparerByKey);
 end;
 
-function TSortedDictionary<TKey, TValue>.ToArray: TArray<TKeyValue>;
+function TSortedDictionary<TKey, TValue>.ToArray: TArray<TKeyValuePair>;
 var
   i: Integer;
   node: PNode;
