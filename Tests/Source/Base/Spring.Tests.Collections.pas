@@ -565,6 +565,27 @@ type
     procedure TestToArray;
   end;
 
+  TTestSortedDictionary = class(TTestCase)
+  private
+    SUT: IDictionary<Integer,string>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+
+    procedure CheckCount(expected: Integer);
+  published
+    procedure TestAddKeyValue;
+    procedure TestKeysGetEnumerator;
+    procedure TestKeysToArray;
+    procedure TestValuesGetEnumerator;
+    procedure TestValuesToArray;
+    procedure TestGetEnumerator;
+    procedure TestAddOrSetValue;
+    procedure TestRemove;
+    procedure TestExtractPair;
+    procedure TestToArray;
+  end;
+
   TTestEmptyIntegerStringMap = class(TTestCase)
   private
     SUT: IMap<Integer, string>;
@@ -3325,15 +3346,28 @@ end;
 procedure TTestOrderedDictionary.TestKeysGetEnumerator;
 var
   i, key: Integer;
+  keys: IReadOnlyCollection<Integer>;
 begin
   SUT.Add(1, 'a');
   SUT.Add(2, 'b');
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
 
+  keys := SUT.Keys;
+  SUT := nil;
+
   i := 0;
-  for key in SUT.Keys do
+  for key in keys do
   begin
+    Inc(i);
+    CheckEquals(i, key);
+  end;
+  CheckEquals(4, i);
+
+  i := 0;
+  for key in keys do
+  begin
+    keys := nil;
     Inc(i);
     CheckEquals(i, key);
   end;
@@ -3348,12 +3382,15 @@ begin
   SUT.Add(2, 'b');
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
+  SUT.Remove(3);
+  SUT.Add(5, 'e');
+
   keys := SUT.Keys.ToArray;
   CheckEquals(4, Length(keys));
   CheckEquals(1, keys[0]);
   CheckEquals(2, keys[1]);
-  CheckEquals(3, keys[2]);
-  CheckEquals(4, keys[3]);
+  CheckEquals(4, keys[2]);
+  CheckEquals(5, keys[3]);
 end;
 
 procedure TTestOrderedDictionary.TestRemove;
@@ -3362,6 +3399,7 @@ begin
   SUT.Add(2, 'b');
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
+
   CheckTrue(SUT.Remove(3));
   CheckCount(3);
   CheckFalse(SUT.Remove(4, 'e'));
@@ -3378,6 +3416,7 @@ begin
   SUT.Add(2, 'b');
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
+
   items := SUT.ToArray;
   CheckEquals(4, Length(items));
   CheckEquals(1, items[0].Key);
@@ -3401,6 +3440,7 @@ begin
   SUT.Add(2, 'b');
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
+
   i := 0;
   for value in SUT.Values do
   begin
@@ -3418,12 +3458,223 @@ begin
   SUT.Add(2, 'b');
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
+  SUT.Remove(3);
+  SUT.Add(5, 'e');
+
   values := SUT.Values.ToArray;
   CheckEquals(4, Length(values));
   CheckEquals('a', values[0]);
   CheckEquals('b', values[1]);
-  CheckEquals('c', values[2]);
-  CheckEquals('d', values[3]);
+  CheckEquals('d', values[2]);
+  CheckEquals('e', values[3]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedDictionary'}
+
+procedure TTestSortedDictionary.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedDictionary<Integer,string>;
+end;
+
+procedure TTestSortedDictionary.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestSortedDictionary.CheckCount(expected: Integer);
+begin
+  CheckEquals(expected, SUT.Count, 'Count');
+  CheckEquals(expected, SUT.Keys.Count, 'Keys.Count');
+  CheckEquals(expected, SUT.Values.Count, 'Values.Count');
+end;
+
+procedure TTestSortedDictionary.TestAddKeyValue;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  CheckCount(4);
+end;
+
+procedure TTestSortedDictionary.TestAddOrSetValue;
+var
+  values: TArray<string>;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+  SUT.AddOrSetValue(2, 'e');
+
+  CheckCount(4);
+
+  values := SUT.Values.ToArray;
+  CheckEquals(values[0], 'a');
+  CheckEquals(values[1], 'e');
+  CheckEquals(values[2], 'c');
+  CheckEquals(values[3], 'd');
+end;
+
+procedure TTestSortedDictionary.TestExtractPair;
+var
+  pair: TPair<Integer,string>;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  pair := SUT.ExtractPair(5);
+  CheckEquals(5, pair.Key);
+  CheckEquals('', pair.Value);
+  CheckCount(4);
+  pair := SUT.ExtractPair(4);
+  CheckEquals(4, pair.Key);
+  CheckEquals('d', pair.Value);
+  CheckCount(3);
+  pair := SUT.Extract(3, 'c');
+  CheckEquals(3, pair.Key);
+  CheckEquals('c', pair.Value);
+  CheckCount(2);
+end;
+
+procedure TTestSortedDictionary.TestGetEnumerator;
+var
+  pair: TPair<Integer,string>;
+  i: Integer;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  i := 0;
+  for pair in SUT do
+  begin
+    Inc(i);
+    CheckEquals(i, pair.Key);
+  end;
+  CheckEquals(4, i);
+end;
+
+procedure TTestSortedDictionary.TestKeysGetEnumerator;
+var
+  i, key: Integer;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  i := 0;
+  for key in SUT.Keys do
+  begin
+    Inc(i);
+    CheckEquals(i, key);
+  end;
+  CheckEquals(4, i);
+end;
+
+procedure TTestSortedDictionary.TestKeysToArray;
+var
+  keys: TArray<Integer>;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+  SUT.Remove(3);
+  SUT.Add(5, 'e');
+
+  keys := SUT.Keys.ToArray;
+  CheckEquals(4, Length(keys));
+  CheckEquals(1, keys[0]);
+  CheckEquals(2, keys[1]);
+  CheckEquals(4, keys[2]);
+  CheckEquals(5, keys[3]);
+end;
+
+procedure TTestSortedDictionary.TestRemove;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  CheckTrue(SUT.Remove(3));
+  CheckCount(3);
+  CheckFalse(SUT.Remove(4, 'e'));
+  CheckCount(3);
+  CheckTrue(SUT.Remove(4, 'd'));
+  CheckCount(2);
+end;
+
+procedure TTestSortedDictionary.TestToArray;
+var
+  items: TArray<TPair<Integer, string>>;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  items := SUT.ToArray;
+  CheckEquals(4, Length(items));
+  CheckEquals(1, items[0].Key);
+  CheckEquals(2, items[1].Key);
+  CheckEquals(3, items[2].Key);
+  CheckEquals(4, items[3].Key);
+  CheckEquals('a', items[0].Value);
+  CheckEquals('b', items[1].Value);
+  CheckEquals('c', items[2].Value);
+  CheckEquals('d', items[3].Value);
+end;
+
+procedure TTestSortedDictionary.TestValuesGetEnumerator;
+const
+  Values: array[1..4] of string = ('a', 'b', 'c', 'd');
+var
+  i: Integer;
+  value: string;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  i := 0;
+  for value in SUT.Values do
+  begin
+    Inc(i);
+    CheckEquals(Values[i], value);
+  end;
+  CheckEquals(4, i);
+end;
+
+procedure TTestSortedDictionary.TestValuesToArray;
+var
+  values: TArray<string>;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+  SUT.Remove(3);
+  SUT.Add(5, 'e');
+
+  values := SUT.Values.ToArray;
+  CheckEquals(4, Length(values));
+  CheckEquals('a', values[0]);
+  CheckEquals('b', values[1]);
+  CheckEquals('d', values[2]);
+  CheckEquals('e', values[3]);
 end;
 
 {$ENDREGION}

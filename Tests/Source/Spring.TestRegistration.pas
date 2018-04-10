@@ -113,6 +113,7 @@ begin
     TTestObjectStack.Suite,
     TTestObjectQueue.Suite,
     TTestOrderedDictionary.Suite,
+    TTestSortedDictionary.Suite,
     TTestEmptyIntegerStringMap.Suite,
     TTestIntegerStringMap.Suite,
     TTestRedBlackTree.Suite

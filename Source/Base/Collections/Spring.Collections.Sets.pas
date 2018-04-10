@@ -354,7 +354,7 @@ end;
 procedure THashSet<T>.Rehash(newCapacity: Integer);
 var
   bucketIndex, itemIndex: Integer;
-  sourceItemIndex, destItemIndex: Integer;
+  sourceItemIndex, targetItemIndex: Integer;
 begin
   if newCapacity > 0 then
     newCapacity := NextPowerOf2(newCapacity - 1);
@@ -374,15 +374,15 @@ begin
   // compact the items array, if necessary
   if fItemCount > fCount then
   begin
-    destItemIndex := 0;
+    targetItemIndex := 0;
     for sourceItemIndex := 0 to fItemCount - 1 do
       if not fItems[sourceItemIndex].Removed then
       begin
-        if destItemIndex < sourceItemIndex then
-          TArrayManager<TItem>.Move(fItems, sourceItemIndex, destItemIndex, 1);
-        Inc(destItemIndex);
+        if targetItemIndex < sourceItemIndex then
+          TArrayManager<TItem>.Move(fItems, sourceItemIndex, targetItemIndex, 1);
+        Inc(targetItemIndex);
       end;
-    TArrayManager<TItem>.Finalize(fItems, destItemIndex, fItemCount - fCount);
+    TArrayManager<TItem>.Finalize(fItems, targetItemIndex, fItemCount - fCount);
   end;
 
   // resize the items array, safe now that we have compacted it

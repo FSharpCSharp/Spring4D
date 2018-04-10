@@ -80,7 +80,7 @@ type
     ['{06E837A5-29B7-4F33-AC5C-46BC82F00D15}']
     function Add(const key: T): Boolean;
     function Delete(const key: T): Boolean;
-    function Exists(const ley: T): Boolean;
+    function Exists(const key: T): Boolean;
     function Find(const key: T; out value: T): Boolean;
     procedure Clear;
 
@@ -210,13 +210,13 @@ type
     type
       TEnumerator = class(TEnumeratorBase<T>)
       private
-        fTree: TRedBlackTree;
+        fTree: TBinaryTree;
         fCurrentNode: PBinaryTreeNode;
         fFinished: Boolean;
       protected
         function GetCurrent: T; override;
       public
-        constructor Create(const tree: TRedBlackTree);
+        constructor Create(const tree: TBinaryTree);
         function MoveNext: Boolean; override;
       end;
       PNode = TRedBlackTreeNodeHelper<T>.PNode;
@@ -253,13 +253,13 @@ type
     type
       TEnumerator = class(TEnumeratorBase<TPair<TKey,TValue>>)
       private
-        fTree: TRedBlackTree;
+        fTree: TBinaryTree;
         fCurrentNode: PBinaryTreeNode;
         fFinished: Boolean;
       protected
         function GetCurrent: TPair<TKey,TValue>; override;
       public
-        constructor Create(const tree: TRedBlackTree);
+        constructor Create(const tree: TBinaryTree);
         function MoveNext: Boolean; override;
       end;
       PNode = TRedBlackTreeNodeHelper<TKey,TValue>.PNode;
@@ -895,7 +895,7 @@ end;
 {$REGION 'TRedBlackTree<T>.TEnumerator'}
 
 constructor TRedBlackTree<T>.TEnumerator.Create(
-  const tree: TRedBlackTree);
+  const tree: TBinaryTree);
 begin
   inherited Create;
   fTree := tree;
@@ -1157,7 +1157,7 @@ end;
 {$REGION 'TRedBlackTree<TKey, TValue>.TEnumerator'}
 
 constructor TRedBlackTree<TKey, TValue>.TEnumerator.Create(
-  const tree: TRedBlackTree);
+  const tree: TBinaryTree);
 begin
   inherited Create;
   fTree := tree;
