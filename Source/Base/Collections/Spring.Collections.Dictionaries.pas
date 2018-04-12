@@ -57,6 +57,7 @@ type
     type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
       TItem = TDictionaryItem<TKey, TValue>;
+      PItem = ^TItem;
 
       TEnumerator = class(TEnumeratorBase<TKeyValuePair>)
       private
@@ -181,8 +182,8 @@ type
     procedure DoAdd(hashCode, bucketIndex, itemIndex: Integer;
       const key: TKey; const value: TValue);
     procedure DoSetValue(itemIndex: Integer; const value: TValue);
-    function DoRemove(const key: TKey; bucketIndex, itemIndex: Integer;
-      action: TCollectionChangedAction): TValue;
+    procedure DoRemove(bucketIndex, itemIndex: Integer;
+      action: TCollectionChangedAction);
     function DoMoveNext(var itemIndex: Integer;
       iteratorVersion: Integer): Boolean;
   protected
@@ -252,13 +253,14 @@ type
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
   public
-    constructor Create(ownerships: TDictionaryOwnerships; capacity: Integer;
-      const comparer: IEqualityComparer<TKey>); overload;
-    constructor Create(ownerships: TDictionaryOwnerships;
-      capacity: Integer); overload;
-    constructor Create(ownerships: TDictionaryOwnerships;
-      const comparer: IEqualityComparer<TKey>); overload;
     constructor Create(ownerships: TDictionaryOwnerships); overload;
+    constructor Create(capacity: Integer;
+      ownerships: TDictionaryOwnerships); overload;
+    constructor Create(const comparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships); overload;
+    constructor Create(capacity: Integer;
+      const comparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships); overload;
   end;
 
   TContainedDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
@@ -283,8 +285,8 @@ type
     type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
   private
-    fValuesByKey: IDictionary<TKey, TValue>;
-    fKeysByValue: IDictionary<TValue, TKey>;
+    fValuesByKey: TContainedDictionary<TKey, TValue>;
+    fKeysByValue: TContainedDictionary<TValue, TKey>;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
@@ -301,6 +303,7 @@ type
     constructor Create; overload; override;
     constructor Create(const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>); overload;
+    destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TKeyValuePair>; override;
@@ -695,16 +698,14 @@ end;
 procedure TDictionary<TKey, TValue>.DoSetValue(itemIndex: Integer;
   const value: TValue);
 var
-  oldValue: TValue;
   item: TKeyValuePair;
 begin
-  oldValue := fItems[itemIndex].Value;
+  item.Key := fItems[itemIndex].Key;
+  item.Value := fItems[itemIndex].Value;
 
   IncUnchecked(fVersion);
   fItems[itemIndex].Value := value;
 
-  item.Key := fItems[itemIndex].Key;
-  item.Value := oldValue;
   Changed(item, caRemoved);
   ValueChanged(item.Value, caRemoved);
   item.Value := value;
@@ -712,13 +713,13 @@ begin
   ValueChanged(item.Value, caAdded);
 end;
 
-function TDictionary<TKey, TValue>.DoRemove(const key: TKey;
-  bucketIndex, itemIndex: Integer;
-  action: TCollectionChangedAction): TValue;
+procedure TDictionary<TKey, TValue>.DoRemove(bucketIndex, itemIndex: Integer;
+  action: TCollectionChangedAction);
 var
   item: TKeyValuePair;
 begin
-  Result := fItems[itemIndex].Value;
+  item.Key := fItems[itemIndex].Key;
+  item.Value := fItems[itemIndex].Value;
 
   IncUnchecked(fVersion);
   fBuckets[bucketIndex] := UsedBucket;
@@ -727,8 +728,6 @@ begin
   fItems[itemIndex].HashCode := fItems[itemIndex].HashCode or TItem.RemovedFlag;
   Dec(fCount);
 
-  item.Key := key;
-  item.Value := Result;
   Changed(item, action);
   KeyChanged(item.Key, action);
   ValueChanged(item.Value, action);
@@ -790,28 +789,6 @@ begin
   Result := TryGetValue(value.Key, pair.Value);
   if Result then
     Result := comparer.Equals(pair, value);
-end;
-
-function TDictionary<TKey, TValue>.Extract(const key: TKey;
-  const value: TValue): TKeyValuePair;
-var
-  found: Boolean;
-  foundValue: TValue;
-  comparer: IEqualityComparer<TValue>;
-begin
-  found := TryGetValue(key, foundValue);
-  if found then
-  begin
-    comparer := TEqualityComparer<TValue>.Default;
-    found := comparer.Equals(foundValue, value);
-    if found then
-      Result := ExtractPair(key);
-  end;
-  if not found then
-  begin
-    Result.Key := key;
-    Result.Value := Default(TValue);
-  end;
 end;
 
 function TDictionary<TKey, TValue>.ToArray: TArray<TKeyValuePair>;
@@ -907,16 +884,45 @@ begin
   Result := ExtractPair(key).Value;
 end;
 
+function TDictionary<TKey, TValue>.Extract(const key: TKey;
+  const value: TValue): TKeyValuePair;
+var
+  bucketIndex, itemIndex: Integer;
+  foundItem: PItem;
+  comparer: IEqualityComparer<TValue>;
+begin
+  if Find(key, Hash(key), bucketIndex, itemIndex) then
+  begin
+    foundItem := @fItems[itemIndex];
+    comparer := TEqualityComparer<TValue>.Default;
+    if comparer.Equals(foundItem.Value, Value) then
+    begin
+      Result.Key := foundItem.Key;
+      Result.Value := foundItem.Value;
+      DoRemove(bucketIndex, itemIndex, caExtracted);
+      Exit;
+    end;
+  end;
+  Result.Key := key;
+  Result.Value := Default (TValue);
+end;
+
 function TDictionary<TKey, TValue>.ExtractPair(
   const key: TKey): TKeyValuePair;
 var
   bucketIndex, itemIndex: Integer;
 begin
-  Result.Key := key;
   if Find(key, Hash(key), bucketIndex, itemIndex) then
-    Result.Value := DoRemove(key, bucketIndex, itemIndex, caExtracted)
+  begin
+    Result.Key := fItems[itemIndex].Key;
+    Result.Value := fItems[itemIndex].Value;
+    DoRemove(bucketIndex, itemIndex, caExtracted);
+  end
   else
+  begin
+    Result.Key := key;
     Result.Value := Default(TValue);
+  end;
 end;
 
 function TDictionary<TKey, TValue>.TryGetValue(const key: TKey;
@@ -937,7 +943,7 @@ var
 begin
   Result := Find(key, Hash(key), bucketIndex, itemIndex);
   if Result then
-    DoRemove(key, bucketIndex, itemIndex, caRemoved);
+    DoRemove(bucketIndex, itemIndex, caRemoved);
 end;
 
 function TDictionary<TKey, TValue>.Remove(const key: TKey;
@@ -952,7 +958,7 @@ begin
     comparer := TEqualityComparer<TValue>.Default;
     Result := comparer.Equals(fItems[itemIndex].value, value);
     if Result then
-      DoRemove(key, bucketIndex, itemIndex, caRemoved);
+      DoRemove(bucketIndex, itemIndex, caRemoved);
   end;
 end;
 
@@ -1099,7 +1105,7 @@ end;
 destructor TDictionary<TKey, TValue>.TKeyEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
+  inherited Destroy;
 end;
 
 function TDictionary<TKey, TValue>.TKeyEnumerator.GetCurrent: TKey;
@@ -1171,7 +1177,7 @@ end;
 destructor TDictionary<TKey, TValue>.TValueEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
+  inherited Destroy;
 end;
 
 function TDictionary<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;
@@ -1268,38 +1274,37 @@ end;
 {$REGION 'TObjectDictionary<TKey, TValue>'}
 
 constructor TObjectDictionary<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships; capacity: Integer;
-  const comparer: IEqualityComparer<TKey>);
+  ownerships: TDictionaryOwnerships);
 begin
-  inherited Create(capacity, comparer);
+  Create(0, nil, ownerships);
+end;
 
-  if doOwnsKeys in Ownerships then
+constructor TObjectDictionary<TKey, TValue>.Create(capacity: Integer;
+  ownerships: TDictionaryOwnerships);
+begin
+  Create(capacity, nil, ownerships);
+end;
+
+constructor TObjectDictionary<TKey, TValue>.Create(
+  const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships);
+begin
+  Create(0, comparer, ownerships);
+end;
+
+constructor TObjectDictionary<TKey, TValue>.Create(capacity: Integer;
+  const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships);
+begin
+  if doOwnsKeys in ownerships then
     if TType.Kind<TKey> <> tkClass then
       raise EInvalidCast.CreateRes(@SInvalidCast);
 
-  if doOwnsValues in Ownerships then
+  if doOwnsValues in ownerships then
     if TType.Kind<TValue> <> tkClass then
       raise EInvalidCast.CreateRes(@SInvalidCast);
 
+  inherited Create(capacity, comparer);
+
   fOwnerships := ownerships;
-end;
-
-constructor TObjectDictionary<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships; capacity: Integer);
-begin
-  Create(ownerships, capacity, nil);
-end;
-
-constructor TObjectDictionary<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships; const comparer: IEqualityComparer<TKey>);
-begin
-  Create(ownerships, 0, comparer);
-end;
-
-constructor TObjectDictionary<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(ownerships, 0, nil);
 end;
 
 procedure TObjectDictionary<TKey, TValue>.KeyChanged(const item: TKey;
@@ -1368,8 +1373,16 @@ constructor TBidiDictionary<TKey, TValue>.Create(
   const valueComparer: IEqualityComparer<TValue>);
 begin
   inherited Create;
-  fKeysByValue := TDictionary<TValue, TKey>.Create(valueComparer);
-  fValuesByKey := TDictionary<TKey, TValue>.Create(keyComparer);
+  fKeysByValue := TContainedDictionary<TValue, TKey>.Create(Self, valueComparer);
+  fValuesByKey := TContainedDictionary<TKey, TValue>.Create(Self, keyComparer);
+end;
+
+destructor TBidiDictionary<TKey, TValue>.Destroy;
+begin
+  Clear;
+  fKeysByValue.Free;
+  fValuesByKey.Free;
+  inherited Destroy;
 end;
 
 procedure TBidiDictionary<TKey, TValue>.Add(const key: TKey;
@@ -1461,6 +1474,8 @@ begin
   begin
     fKeysByValue.Extract(Result);
     fValuesByKey.Extract(key);
+
+    // notify
   end
   else
     Result := Default(TValue);
@@ -1502,7 +1517,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
 begin
-  Result := fValuesByKey.Keys;
+  Result := fValuesByKey.fKeys;
 end;
 
 function TBidiDictionary<TKey, TValue>.GetValue(const key: TKey): TValue;
@@ -1526,7 +1541,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.GetValues: IReadOnlyCollection<TValue>;
 begin
-  Result := fKeysByValue.Keys;
+  Result := fKeysByValue.fKeys;
 end;
 
 function TBidiDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
@@ -1545,6 +1560,8 @@ begin
   begin
     fValuesByKey.Remove(key);
     fKeysByValue.Remove(value);
+
+    // notify
   end;
 end;
 
@@ -1652,7 +1669,7 @@ begin
   Clear;
   fKeys.Free;
   fValues.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey; const value: TValue);
@@ -1979,7 +1996,7 @@ end;
 destructor TSortedDictionary<TKey, TValue>.TKeyEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
+  inherited Destroy;
 end;
 
 function TSortedDictionary<TKey, TValue>.TKeyEnumerator.GetCurrent: TKey;
@@ -2053,7 +2070,7 @@ end;
 destructor TSortedDictionary<TKey, TValue>.TValueEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
+  inherited Destroy;
 end;
 
 function TSortedDictionary<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;

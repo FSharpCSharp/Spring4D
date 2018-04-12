@@ -111,7 +111,7 @@ type
     function Hash(const item: T): Integer; inline;
     procedure DoAdd(hashCode, bucketIndex, itemIndex: Integer;
       const item: T);
-    procedure DoRemove(const item: T; bucketIndex, itemIndex: Integer;
+    procedure DoRemove(bucketIndex, itemIndex: Integer;
       action: TCollectionChangedAction);
   protected
     class function CreateSet: ISet<T>; override;
@@ -477,10 +477,13 @@ begin
   Changed(item, caAdded);
 end;
 
-procedure THashSet<T>.DoRemove(const item: T;
-  bucketIndex, itemIndex: Integer;
+procedure THashSet<T>.DoRemove(bucketIndex, itemIndex: Integer;
   action: TCollectionChangedAction);
+var
+  item: T;
 begin
+  item := fItems[itemIndex].Item;
+
   IncUnchecked(fVersion);
   fBuckets[bucketIndex] := UsedBucket;
   fItems[itemIndex].Item := Default(T);
@@ -543,8 +546,8 @@ var
 begin
   if Find(item, Hash(item), bucketIndex, itemIndex) then
   begin
-    Result := item;
-    DoRemove(item, bucketIndex, itemIndex, caExtracted)
+    Result := fItems[itemIndex].Item;
+    DoRemove(bucketIndex, itemIndex, caExtracted)
   end
   else
     Result := Default(T);
@@ -566,7 +569,7 @@ var
 begin
   Result := Find(item, Hash(item), bucketIndex, itemIndex);
   if Result then
-    DoRemove(item, bucketIndex, itemIndex, caRemoved);
+    DoRemove(bucketIndex, itemIndex, caRemoved);
 end;
 
 function THashSet<T>.GetItem(index: Integer): T;

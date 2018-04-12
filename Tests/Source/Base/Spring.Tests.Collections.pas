@@ -516,8 +516,14 @@ type
   end;
 
   TTestBidiDictionary = class(TTestCase)
+  private
+    SUT: IBidiDictionary<Integer,string>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure AddDictionary;
+    procedure TestKeysEnumerate;
   end;
 
   TTestObjectStack = class(TTestCase)
@@ -3102,19 +3108,54 @@ end;
 
 {$REGION 'TTestBidiDictionary'}
 
+procedure TTestBidiDictionary.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateBidiDictionary<Integer,string>;
+end;
+
+procedure TTestBidiDictionary.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
 procedure TTestBidiDictionary.AddDictionary;
 var
   dict: IDictionary<Integer,string>;
-  bidi: IBidiDictionary<Integer,string>;
 begin
   dict := TCollections.CreateDictionary<Integer,string>;
-  dict.Add(1,'a');
-  dict.Add(2,'b');
-  dict.Add(3,'c');
-  dict.Add(4,'d');
-  bidi := TCollections.CreateBidiDictionary<Integer,string>;
-  bidi.AddRange(dict);
-  CheckTrue(bidi.EqualsTo(dict));
+  dict.Add(1, 'a');
+  dict.Add(2, 'b');
+  dict.Add(3, 'c');
+  dict.Add(4, 'd');
+  SUT.AddRange(dict);
+  CheckTrue(SUT.EqualsTo(dict));
+end;
+
+procedure TTestBidiDictionary.TestKeysEnumerate;
+var
+  keys: TArray<Integer>;
+  e: IEnumerator<Integer>;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  keys := SUT.Keys.ToArray;
+  CheckEquals(keys[0], 1);
+  CheckEquals(keys[1], 2);
+  CheckEquals(keys[2], 3);
+  CheckEquals(keys[3], 4);
+
+  e := SUT.Keys.GetEnumerator;
+  SUT := nil;
+  e.MoveNext;
+  e.MoveNext;
+  e.MoveNext;
+  CheckTrue(e.MoveNext);
+  CheckFalse(e.MoveNext);
 end;
 
 {$ENDREGION}

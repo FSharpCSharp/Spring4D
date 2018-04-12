@@ -3016,7 +3016,7 @@ class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships; capacity: Integer;
   const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TObjectDictionary<TKey, TValue>.Create(ownerships, capacity, comparer);
+  Result := TObjectDictionary<TKey, TValue>.Create(capacity, comparer, ownerships);
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>;
