@@ -107,9 +107,9 @@ type
     fCount: Integer;
 
   {$REGION 'Property Accessors'}
-    function GetCount: Integer;
+    function GetCount: Integer; inline;
     function GetHeight: Integer;
-    function GetRoot: PBinaryTreeNode;
+    function GetRoot: PBinaryTreeNode; inline;
   {$ENDREGION}
 
     function GetBucketIndex(index: NativeUInt): TBucketIndex;
@@ -245,6 +245,9 @@ type
     function Exists(const key: T): Boolean;
     function Find(const key: T; out value: T): Boolean;
   {$ENDREGION}
+
+    property Count: Integer read GetCount;
+    property Root: PBinaryTreeNode read GetRoot;
   end;
 
   TRedBlackTree<TKey, TValue> = class(TRedBlackTree,

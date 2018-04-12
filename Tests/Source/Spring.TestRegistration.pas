@@ -116,7 +116,8 @@ begin
     TTestSortedDictionary.Suite,
     TTestEmptyIntegerStringMap.Suite,
     TTestIntegerStringMap.Suite,
-    TTestRedBlackTree.Suite
+    TTestRedBlackTree.Suite,
+    TTestSortedSet.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [

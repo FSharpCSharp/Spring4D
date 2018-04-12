@@ -409,7 +409,7 @@ type
       end;
   {$ENDREGION}
   private
-    fTree: IRedBlackTree<TKey,TValue>;
+    fTree: TRedBlackTree<TKey,TValue>;
     fKeyComparer: IComparer<TKey>;
     fValueComparer: IComparer<TValue>;
     fKeyValueComparerByKey: IComparer<TKeyValuePair>;
@@ -1631,6 +1631,7 @@ end;
 destructor TSortedDictionary<TKey, TValue>.Destroy;
 begin
   Clear;
+  fTree.Free;
   fKeys.Free;
   fValues.Free;
   inherited Destroy;

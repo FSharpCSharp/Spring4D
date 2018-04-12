@@ -114,9 +114,12 @@ type
     procedure DoRemove(bucketIndex, itemIndex: Integer;
       action: TCollectionChangedAction);
   protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
     class function CreateSet: ISet<T>; override;
     procedure AddInternal(const item: T); override;
-    function GetCount: Integer; override;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
@@ -134,25 +137,24 @@ type
     procedure Clear; override;
 
     function Contains(const item: T): Boolean; override;
-
-  {$REGION 'Implements IOrderedSet<T>'}
-    function GetItem(index: Integer): T;
     function IndexOf(const item: T): Integer;
-  {$ENDREGION}
   end;
 
   TSortedSet<T> = class(TSetBase<T>, ISet<T>)
   private
-    fTree: IRedBlackTree<T>;
+    fTree: TRedBlackTree<T>;
     type
       PNode = TRedBlackTreeNodeHelper<T>.PNode;
   protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+  {$ENDREGION}
     class function CreateSet: ISet<T>; override;
     procedure AddInternal(const item: T); override;
-    function GetCount: Integer; override;
   public
     constructor Create; overload; override;
     constructor Create(const comparer: IComparer<T>); overload;
+    destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
 
@@ -645,6 +647,13 @@ begin
   Result := TSortedSet<T>.Create;
 end;
 
+destructor TSortedSet<T>.Destroy;
+begin
+  Clear;
+  fTree.Free;
+  inherited Destroy;
+end;
+
 function TSortedSet<T>.Add(const item: T): Boolean;
 begin
   Result := fTree.Add(item);
@@ -662,11 +671,14 @@ procedure TSortedSet<T>.Clear;
 var
   node: PBinaryTreeNode;
 begin
-  node := fTree.Root.LeftMost;
-  while Assigned(node) do
+  if fOnChanged.CanInvoke then // optimization: if no notification needs to be send the entire tree traversal won't be done
   begin
-    Changed(PNode(node).Key, caRemoved);
-    node := node.Next;
+    node := fTree.Root.LeftMost;
+    while Assigned(node) do
+    begin
+      Changed(PNode(node).Key, caRemoved);
+      node := node.Next;
+    end;
   end;
 
   fTree.Clear;

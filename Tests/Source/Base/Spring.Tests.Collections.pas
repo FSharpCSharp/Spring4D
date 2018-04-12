@@ -592,6 +592,20 @@ type
     procedure TestToArray;
   end;
 
+  TTestSortedSet = class(TTestCase)
+  private
+    SUT: ISet<string>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+
+    procedure CheckCount(expected: Integer);
+  published
+    procedure TestAdd;
+    procedure TestRemove;
+    procedure TestToArray;
+  end;
+
   TTestEmptyIntegerStringMap = class(TTestCase)
   private
     SUT: IMap<Integer, string>;
@@ -4253,6 +4267,67 @@ begin
   CheckEquals(56, arr[7]);
   CheckEquals(92, arr[8]);
   CheckEquals(98, arr[9]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedSet'}
+
+procedure TTestSortedSet.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedSet<string>;
+end;
+
+procedure TTestSortedSet.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestSortedSet.CheckCount(expected: Integer);
+begin
+  CheckEquals(expected, SUT.Count, 'Count');
+end;
+
+procedure TTestSortedSet.TestAdd;
+begin
+  SUT.Add('c');
+  SUT.Add('a');
+  SUT.Add('b');
+  SUT.Add('d');
+
+  CheckCount(4);
+end;
+
+procedure TTestSortedSet.TestRemove;
+begin
+  SUT.Add('c');
+  SUT.Add('a');
+  SUT.Add('b');
+  SUT.Add('d');
+  SUT.Remove('b');
+
+  CheckCount(3);
+end;
+
+procedure TTestSortedSet.TestToArray;
+var
+  values: TArray<string>;
+begin
+  SUT.Add('c');
+  SUT.Add('a');
+  SUT.Add('b');
+  SUT.Add('d');
+
+  values := SUT.ToArray;
+
+  CheckEquals(4, Length(values));
+  CheckEquals('a', values[0]);
+  CheckEquals('b', values[1]);
+  CheckEquals('c', values[2]);
+  CheckEquals('d', values[3]);
 end;
 
 {$ENDREGION}
