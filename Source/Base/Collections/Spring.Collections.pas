@@ -2496,14 +2496,6 @@ type
     property Items: TArray<T> read GetItems;
   end;
 
-  /// <summary>
-  ///   Defines the ownership style of an instance.
-  /// </summary>
-  TOwnershipType = (
-    otReference,
-    otOwned
-  );
-
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
 
   /// <summary>
@@ -2553,13 +2545,10 @@ type
 
     class function CreateObservableList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
 
-    class function CreateDictionary<TKey, TValue>: IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(capacity: Integer): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(capacity: Integer; const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(capacity: Integer; ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(capacity: Integer; const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
 
     class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
     class function CreateMultiMap<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
@@ -2976,47 +2965,31 @@ begin
   IList<TObject>(Result) := TObservableList<T>.Create(ownsObjects);
 end;
 
-class function TCollections.CreateDictionary<TKey, TValue>: IOrderedDictionary<TKey, TValue>;
-begin
-  Result := TCollections.CreateDictionary<TKey,TValue>(0, nil);
-end;
-
-class function TCollections.CreateDictionary<TKey, TValue>(
-  capacity: Integer): IOrderedDictionary<TKey, TValue>;
-begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(capacity, nil);
-end;
-
-class function TCollections.CreateDictionary<TKey, TValue>(
-  const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>;
-begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(0, comparer);
-end;
-
-class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
-  const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>;
-begin
-  Result := TDictionary<TKey, TValue>.Create(capacity, comparer);
-end;
-
 class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(ownerships, 0, nil);
+  Result := TDictionary<TKey, TValue>.Create(ownerships);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
-  ownerships: TDictionaryOwnerships;
-  capacity: Integer): IOrderedDictionary<TKey, TValue>;
+  capacity: Integer;
+  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TCollections.CreateDictionary<TKey, TValue>(ownerships, capacity, nil);
+  Result := TDictionary<TKey, TValue>.Create(capacity, ownerships);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
-  ownerships: TDictionaryOwnerships; capacity: Integer;
-  const comparer: IEqualityComparer<TKey>): IOrderedDictionary<TKey, TValue>;
+  const comparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
 begin
-  Result := TObjectDictionary<TKey, TValue>.Create(capacity, comparer, ownerships);
+  Result := TDictionary<TKey, TValue>.Create(comparer, ownerships);
+end;
+
+class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
+  const comparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
+begin
+  Result := TDictionary<TKey, TValue>.Create(capacity, comparer, ownerships);
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>;

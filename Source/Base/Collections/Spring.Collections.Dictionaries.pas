@@ -173,6 +173,7 @@ type
     fVersion: Integer;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
+    fOwnerships: TDictionaryOwnerships;
     procedure SetCapacity(value: Integer);
     procedure Rehash(newCapacity: Integer);
     function Grow: Boolean;
@@ -194,12 +195,16 @@ type
     function GetValues: IReadOnlyCollection<TValue>; override;
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
+    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
+    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
   public
     constructor Create; overload; override;
-    constructor Create(capacity: Integer); overload;
-    constructor Create(const comparer: IEqualityComparer<TKey>); overload;
-    constructor Create(capacity: Integer;
-      const comparer: IEqualityComparer<TKey>); overload;
+    constructor Create(ownerships: TDictionaryOwnerships); overload;
+    constructor Create(capacity: Integer; ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(const comparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(capacity: Integer; const comparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships = []); overload;
 
     destructor Destroy; override;
 
@@ -244,23 +249,6 @@ type
     function IndexOf(const key: TKey): Integer;
     function IOrderedDictionary<TKey, TValue>.GetItem = GetItemByIndex;
   {$ENDREGION}
-  end;
-
-  TObjectDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
-  private
-    fOwnerships: TDictionaryOwnerships;
-  protected
-    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
-    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
-  public
-    constructor Create(ownerships: TDictionaryOwnerships); overload;
-    constructor Create(capacity: Integer;
-      ownerships: TDictionaryOwnerships); overload;
-    constructor Create(const comparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships); overload;
-    constructor Create(capacity: Integer;
-      const comparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships); overload;
   end;
 
   TContainedDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
@@ -514,25 +502,40 @@ begin
   Create(0, nil);
 end;
 
-constructor TDictionary<TKey, TValue>.Create(capacity: Integer);
+constructor TDictionary<TKey, TValue>.Create(ownerships: TDictionaryOwnerships);
 begin
-  Create(capacity, nil);
-end;
-
-constructor TDictionary<TKey, TValue>.Create(
-  const comparer: IEqualityComparer<TKey>);
-begin
-  Create(0, comparer);
+  Create(0, nil, ownerships);
 end;
 
 constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
-  const comparer: IEqualityComparer<TKey>);
+  ownerships: TDictionaryOwnerships);
+begin
+  Create(capacity, nil, ownerships);
+end;
+
+constructor TDictionary<TKey, TValue>.Create(
+  const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships);
+begin
+  Create(0, comparer, ownerships);
+end;
+
+constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
+  const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(capacity >= 0, 'capacity');
 {$ENDIF}
 
+  if doOwnsKeys in ownerships then
+    if TType.Kind<TKey> <> tkClass then
+      raise EInvalidCast.CreateRes(@SInvalidCast);
+
+  if doOwnsValues in ownerships then
+    if TType.Kind<TValue> <> tkClass then
+      raise EInvalidCast.CreateRes(@SInvalidCast);
+
   inherited Create;
+  fOwnerships := ownerships;
   fKeys := TKeyCollection.Create(Self);
   fValues := TValueCollection.Create(Self);
   if Assigned(comparer) then
@@ -548,6 +551,30 @@ begin
   fKeys.Free;
   fValues.Free;
   inherited Destroy;
+end;
+
+procedure TDictionary<TKey, TValue>.KeyChanged(const item: TKey;
+  action: TCollectionChangedAction);
+begin
+  inherited KeyChanged(item, action);
+  if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
+{$IFNDEF AUTOREFCOUNT}
+    PObject(@item).Free;
+{$ELSE}
+    PObject(@item).DisposeOf;
+{$ENDIF}
+end;
+
+procedure TDictionary<TKey, TValue>.ValueChanged(const item: TValue;
+  action: TCollectionChangedAction);
+begin
+  inherited ValueChanged(item, action);
+  if (action = caRemoved) and (doOwnsValues in fOwnerships) then
+{$IFNDEF AUTOREFCOUNT}
+    PObject(@item).Free;
+{$ELSE}
+    PObject(@item).DisposeOf;
+{$ENDIF}
 end;
 
 procedure TDictionary<TKey, TValue>.SetCapacity(value: Integer);
@@ -1266,69 +1293,6 @@ begin
     Exit(True);
   end;
   Result := False;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TObjectDictionary<TKey, TValue>'}
-
-constructor TObjectDictionary<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(0, nil, ownerships);
-end;
-
-constructor TObjectDictionary<TKey, TValue>.Create(capacity: Integer;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(capacity, nil, ownerships);
-end;
-
-constructor TObjectDictionary<TKey, TValue>.Create(
-  const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships);
-begin
-  Create(0, comparer, ownerships);
-end;
-
-constructor TObjectDictionary<TKey, TValue>.Create(capacity: Integer;
-  const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships);
-begin
-  if doOwnsKeys in ownerships then
-    if TType.Kind<TKey> <> tkClass then
-      raise EInvalidCast.CreateRes(@SInvalidCast);
-
-  if doOwnsValues in ownerships then
-    if TType.Kind<TValue> <> tkClass then
-      raise EInvalidCast.CreateRes(@SInvalidCast);
-
-  inherited Create(capacity, comparer);
-
-  fOwnerships := ownerships;
-end;
-
-procedure TObjectDictionary<TKey, TValue>.KeyChanged(const item: TKey;
-  action: TCollectionChangedAction);
-begin
-  inherited KeyChanged(item, action);
-  if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
-end;
-
-procedure TObjectDictionary<TKey, TValue>.ValueChanged(const item: TValue;
-  action: TCollectionChangedAction);
-begin
-  inherited ValueChanged(item, action);
-  if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
 end;
 
 {$ENDREGION}

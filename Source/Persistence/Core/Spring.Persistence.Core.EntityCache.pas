@@ -452,7 +452,7 @@ end;
 class constructor TEntityCache.Create;
 begin
   fLock := TInterfacedCriticalSection.Create;
-  fEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
+  fEntities := TCollections.CreateDictionary<TClass,TEntityData>(100, [doOwnsValues]);
 end;
 
 class function TEntityCache.Get(entityClass: TClass): TEntityData;
