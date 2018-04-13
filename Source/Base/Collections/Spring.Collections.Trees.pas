@@ -31,20 +31,26 @@ interface
 uses
   Generics.Collections,
   Generics.Defaults,
+  Spring,
   Spring.Collections,
   Spring.Collections.Base;
+
+const
+  ColorMask = IntPtr(1);
+  PointerMask = not ColorMask;
 
 type
   TNodeColor = (Black, Red);
 
   TBucketIndex = record
-    Row, Pos: NativeUInt;
+    Row, Pos: Cardinal;
   end;
 
   PBinaryTreeNode = ^TBinaryTreeNode;
   TBinaryTreeNode = record
   strict private
-    fLeft, fParent, fRight: PBinaryTreeNode;
+    fParent, fLeft, fRight: PBinaryTreeNode;
+    function GetParent: PBinaryTreeNode; inline;
     function GetLeftMost: PBinaryTreeNode;
     function GetRightMost: PBinaryTreeNode;
     function GetNext: PBinaryTreeNode;
@@ -52,7 +58,7 @@ type
     function GetHeight: Integer;
   public
     property Left: PBinaryTreeNode read fLeft;
-    property Parent: PBinaryTreeNode read fParent;
+    property Parent: PBinaryTreeNode read GetParent;
     property Right: PBinaryTreeNode read fRight;
 
     property LeftMost: PBinaryTreeNode read GetLeftMost;
@@ -120,16 +126,22 @@ type
     type
       PRedBlackTreeNode = ^TRedBlackTreeNode;
       TRedBlackTreeNode = record
-      private
-        fLeft, fParent, fRight: PRedBlackTreeNode;
-        fColor: TNodeColor;
+      strict private
+        fParent: PRedBlackTreeNode;
+        function GetColor: TNodeColor; inline;
         function GetIsBlack: Boolean; inline;
+        function GetParent: PRedBlackTreeNode; inline;
+        procedure SetColor(const value: TNodeColor); inline;
         procedure SetLeft(const value: PRedBlackTreeNode);
-        procedure SetParent(const value: PRedBlackTreeNode);
+        procedure SetParent(const value: PRedBlackTreeNode); inline;
         procedure SetRight(const value: PRedBlackTreeNode);
+        procedure ClearParent;
+      private
+        fLeft, fRight: PRedBlackTreeNode;
+        property Color: TNodeColor read GetColor write SetColor;
       public
         property Left: PRedBlackTreeNode read fLeft write SetLeft;
-        property Parent: PRedBlackTreeNode read fParent write SetParent;
+        property Parent: PRedBlackTreeNode read GetParent write SetParent;
         property Right: PRedBlackTreeNode read fRight write SetRight;
         property IsBlack: Boolean read GetIsBlack;
       end;
@@ -154,29 +166,33 @@ type
   PRedBlackTreeNode = TRedBlackTree.PRedBlackTreeNode;
 
   TRedBlackTreeNode<T> = record
+  strict private
+    function GetColor: TNodeColor; inline;
+    function GetParent: PRedBlackTreeNode; inline;
   private
-    fLeft, fParent, fRight: PRedBlackTreeNode;
-    fColor: TNodeColor;
+    fParent, fLeft, fRight: PRedBlackTreeNode;
     fKey: T;
   public
     property Left: PRedBlackTreeNode read fLeft;
-    property Parent: PRedBlackTreeNode read fParent;
+    property Parent: PRedBlackTreeNode read GetParent;
     property Right: PRedBlackTreeNode read fRight;
-    property Color: TNodeColor read fColor;
+    property Color: TNodeColor read GetColor;
     property Key: T read fKey;
   end;
 
   TRedBlackTreeNode<TKey, TValue> = record
+  strict private
+    function GetColor: TNodeColor; inline;
+    function GetParent: PRedBlackTreeNode; inline;
   private
-    fLeft, fParent, fRight: PRedBlackTreeNode;
-    fColor: TNodeColor;
+    fParent, fLeft, fRight: PRedBlackTreeNode;
     fKey: TKey;
     fValue: TValue;
   public
     property Left: PRedBlackTreeNode read fLeft;
-    property Parent: PRedBlackTreeNode read fParent;
+    property Parent: PRedBlackTreeNode read GetParent;
     property Right: PRedBlackTreeNode read fRight;
-    property Color: TNodeColor read fColor;
+    property Color: TNodeColor read GetColor;
     property Key: TKey read fKey;
     property Value: TValue read fValue write fValue;
   end;
@@ -293,6 +309,9 @@ type
     function Exists(const key: TKey): Boolean;
     function Find(const key: TKey; out foundValue: TValue): Boolean;
   {$ENDREGION}
+
+    property Count: Integer read GetCount;
+    property Root: PBinaryTreeNode read GetRoot;
   end;
 
   TTest = TRedBlackTree<Integer,string>;
@@ -303,10 +322,15 @@ uses
   Math;
 
 const
-  DefaultBucketSize = 64;
+  BucketSize = 64;
 
 
 {$REGION 'TBinaryTreeNode'}
+
+function TBinaryTreeNode.GetParent: PBinaryTreeNode;
+begin
+  IntPtr(Result) := IntPtr(fParent) and PointerMask;
+end;
 
 function TBinaryTreeNode.GetHeight: Integer;
 begin
@@ -367,34 +391,89 @@ end;
 
 {$REGION 'TRedBlackTree.TRedBlackTreeNode'}
 
+procedure TRedBlackTree.TRedBlackTreeNode.ClearParent;
+var
+  parent: PRedBlackTreeNode;
+begin
+  parent := GetParent;
+  if Assigned(parent) then
+    if parent.fLeft = @Self then
+      parent.fLeft := nil
+    else if parent.fRight = @Self then
+      parent.fRight := nil;
+  fParent := nil;
+end;
+
+function TRedBlackTree.TRedBlackTreeNode.GetColor: TNodeColor;
+begin
+  Result := TNodeColor(IntPtr(fParent) and ColorMask);
+end;
+
 function TRedBlackTree.TRedBlackTreeNode.GetIsBlack: Boolean;
 begin
-  Result := (@Self = nil) or (fColor = Black);
+  Result := (@Self = nil) or not Odd(IntPtr(fParent));
+end;
+
+function TRedBlackTree.TRedBlackTreeNode.GetParent: PRedBlackTreeNode;
+begin
+  IntPtr(Result) := IntPtr(fParent) and PointerMask;
+end;
+
+procedure TRedBlackTree.TRedBlackTreeNode.SetColor(const value: TNodeColor);
+begin
+  IntPtr(fParent) := IntPtr(fParent) and PointerMask or Byte(value);
+end;
+
+procedure TRedBlackTree.TRedBlackTreeNode.SetParent(const value: PRedBlackTreeNode);
+begin
+  if Assigned(value) then
+    IntPtr(fParent) := IntPtr(value) or Byte(Color)
+  else
+    ClearParent;
 end;
 
 procedure TRedBlackTree.TRedBlackTreeNode.SetLeft(const value: PRedBlackTreeNode);
 begin
   fLeft := value;
   if Assigned(value) then
-    value.fParent := @Self;
-end;
-
-procedure TRedBlackTree.TRedBlackTreeNode.SetParent(const value: PRedBlackTreeNode);
-begin
-  Assert(not Assigned(value));
-  if Assigned(fParent) then
-    if fParent.fLeft = @Self then
-      fParent.fLeft := nil
-    else if fParent.fRight = @Self then
-      fParent.fRight := nil;
-  fParent := nil;
+    value.Parent := @Self;
 end;
 
 procedure TRedBlackTree.TRedBlackTreeNode.SetRight(const value: PRedBlackTreeNode);
 begin
   fRight := value;
   if Assigned(value) then
-    value.fParent := @Self;
+    value.Parent := @Self;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRedBlackTreeNode<T>'}
+
+function TRedBlackTreeNode<T>.GetColor: TNodeColor;
+begin
+  Result := TNodeColor(IntPtr(fParent) and ColorMask);
+end;
+
+function TRedBlackTreeNode<T>.GetParent: PRedBlackTreeNode;
+begin
+  IntPtr(Result) := IntPtr(fParent) and PointerMask;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRedBlackTreeNode<TKey, TValue>'}
+
+function TRedBlackTreeNode<TKey, TValue>.GetColor: TNodeColor;
+begin
+  Result := TNodeColor(IntPtr(fParent) and ColorMask);
+end;
+
+function TRedBlackTreeNode<TKey, TValue>.GetParent: PRedBlackTreeNode;
+begin
+  IntPtr(Result) := IntPtr(fParent) and PointerMask;
 end;
 
 {$ENDREGION}
@@ -404,8 +483,8 @@ end;
 
 function TBinaryTree.GetBucketIndex(index: NativeUInt): TBucketIndex;
 begin
-  Result.Row := index div NativeUInt(DefaultBucketSize);
-  Result.Pos := index mod NativeUInt(DefaultBucketSize);
+  Result.Row := index div BucketSize;
+  Result.Pos := index mod BucketSize;
 end;
 
 function TBinaryTree.GetCount: Integer;
@@ -493,8 +572,8 @@ begin
       // case 1: sibling is red
       if not sibling.IsBlack then
       begin
-        sibling.fColor := Black;
-        node.Parent.fColor := Red;
+        sibling.Color := Black;
+        node.Parent.Color := Red;
         RotateLeft(node.Parent);
         sibling := node.Parent.Right;
       end;
@@ -502,23 +581,23 @@ begin
       // case 2: both of siblings children are black
       if sibling.Left.IsBlack and sibling.Right.IsBlack then
       begin
-        sibling.fColor := Red;
+        sibling.Color := Red;
         node := node.Parent;
       end else
       begin
         // case 3: siblings right child is black
         if sibling.Right.IsBlack then
         begin
-          sibling.Left.fColor := Black;
-          sibling.fColor := Red;
+          sibling.Left.Color := Black;
+          sibling.Color := Red;
           RotateRight(sibling);
           sibling := node.Parent.Right;
         end;
 
         // case 4: siblings right child is red
-        sibling.fColor := node.Parent.fColor;
-        node.Parent.fColor := Black;
-        sibling.Right.fColor := Black;
+        sibling.Color := node.Parent.Color;
+        node.Parent.Color := Black;
+        sibling.Right.Color := Black;
         RotateLeft(node.Parent);
         node := fRoot;
       end;
@@ -530,8 +609,8 @@ begin
       // case 1: sibling is red
       if not sibling.IsBlack then
       begin
-        sibling.fColor := Black;
-        node.Parent.fColor := Red;
+        sibling.Color := Black;
+        node.Parent.Color := Red;
         RotateRight(node.Parent);
         sibling := node.Parent.Left;
       end;
@@ -539,40 +618,43 @@ begin
       // case 2: both of siblings children are black
       if sibling.Right.IsBlack and sibling.Left.IsBlack then
       begin
-        sibling.fColor := Red;
+        sibling.Color := Red;
         node := node.Parent;
       end else
       begin
         // case 3: siblings left child is black
         if sibling.Left.IsBlack then
         begin
-          sibling.Right.fColor := Black;
-          sibling.fColor := Red;
+          sibling.Right.Color := Black;
+          sibling.Color := Red;
           RotateLeft(sibling);
           sibling := node.Parent.Left;
         end;
 
         // case 4: siblings left child is red
-        sibling.fColor := node.Parent.fColor;
-        node.Parent.fColor := Black;
-        sibling.Left.fColor := Black;
+        sibling.Color := node.Parent.Color;
+        node.Parent.Color := Black;
+        sibling.Left.Color := Black;
         RotateRight(node.Parent);
         node := fRoot;
       end;
     end;
   end;
 
-  node.fColor := Black;
+  node.Color := Black;
 end;
 
 procedure TRedBlackTree.FixupAfterInsert(node: PRedBlackTreeNode);
 var
   uncle: PRedBlackTreeNode;
 begin
-  node.fColor := Red;
+  node.Color := Red;
 
-  while Assigned(node) and (node <> fRoot) and not node.Parent.IsBlack do
+  while Assigned(node) and (node <> fRoot) do
   begin
+    if node.Parent.IsBlack then
+      Break;
+
     // if nodes parent is the left child of its parent
     if node.Parent = node.Parent.Parent.Left then
     begin
@@ -581,9 +663,9 @@ begin
       // case 1: uncle is red
       if not uncle.IsBlack then
       begin
-        node.Parent.fColor := Black;
-        uncle.fColor := Black;
-        node.Parent.Parent.fColor := Red;
+        node.Parent.Color := Black;
+        uncle.Color := Black;
+        node.Parent.Parent.Color := Red;
         node := node.Parent.Parent;
       end else
       // case 2: uncle is black and node is a right child
@@ -594,8 +676,8 @@ begin
       end else
       // case 3: uncle is black and node is a left child
       begin
-        node.Parent.fColor := Black;
-        node.Parent.Parent.fColor := Red;
+        node.Parent.Color := Black;
+        node.Parent.Parent.Color := Red;
         RotateRight(node.Parent.Parent);
       end;
     end else
@@ -606,9 +688,9 @@ begin
       // case 1: uncle is red
       if not uncle.IsBlack then
       begin
-        node.Parent.fColor := Black;
-        uncle.fColor := Black;
-        node.Parent.Parent.fColor := Red;
+        node.Parent.Color := Black;
+        uncle.Color := Black;
+        node.Parent.Parent.Color := Red;
         node := node.Parent.Parent;
       end else
       // case 2: uncle is black and node is a left child
@@ -619,14 +701,14 @@ begin
       end else
       // case 3: uncle is black and node is right child
       begin
-        node.Parent.fColor := Black;
-        node.Parent.Parent.fColor := Red;
+        node.Parent.Color := Black;
+        node.Parent.Parent.Color := Red;
         RotateLeft(node.Parent.Parent);
       end
     end
   end;
 
-  PRedBlackTreeNode(fRoot).fColor := Black;
+  PRedBlackTreeNode(fRoot).Color := Black;
 end;
 
 procedure TRedBlackTree.InsertLeft(node, newNode: PRedBlackTreeNode);
@@ -729,15 +811,15 @@ begin
     begin
       node^ := lastNode^;
       if Assigned(node.fLeft) then
-        node.fLeft.fParent := PRedBlackTreeNode(node);
+        node.fLeft.Parent := PRedBlackTreeNode(node);
       if Assigned(node.fRight) then
-        node.fRight.fParent := PRedBlackTreeNode(node);
-      if Assigned(node.fParent) then
+        node.fRight.Parent := PRedBlackTreeNode(node);
+      if Assigned(node.Parent) then
       begin
-        if node.fParent.fLeft = PRedBlackTreeNode(lastNode) then
-          node.fParent.fLeft := PRedBlackTreeNode(node)
-        else if node.fParent.fRight = PRedBlackTreeNode(lastNode) then
-          node.fParent.fRight := PRedBlackTreeNode(node)
+        if node.Parent.fLeft = PRedBlackTreeNode(lastNode) then
+          node.Parent.fLeft := PRedBlackTreeNode(node)
+        else if node.Parent.fRight = PRedBlackTreeNode(lastNode) then
+          node.Parent.fRight := PRedBlackTreeNode(node)
       end
       else
         fRoot := PRedBlackTreeNode(node);
@@ -749,7 +831,6 @@ begin
   node.fLeft := nil;
   node.fParent := nil;
   node.fRight := nil;
-  node.fColor := Black;
   node.fKey := Default(T);
 end;
 
@@ -874,7 +955,7 @@ var
 begin
   index := GetBucketIndex(fCount);
   SetLength(fStorage, index.Row + 1);
-  SetLength(fStorage[index.Row], DefaultBucketSize);
+  SetLength(fStorage[index.Row], BucketSize);
 end;
 
 function TRedBlackTree<T>.ToArray: TArray<T>;
@@ -968,15 +1049,15 @@ begin
     begin
       node^ := lastNode^;
       if Assigned(node.fLeft) then
-        node.fLeft.fParent := PRedBlackTreeNode(node);
+        node.fLeft.Parent := PRedBlackTreeNode(node);
       if Assigned(node.fRight) then
-        node.fRight.fParent := PRedBlackTreeNode(node);
-      if Assigned(node.fParent) then
+        node.fRight.Parent := PRedBlackTreeNode(node);
+      if Assigned(node.Parent) then
       begin
-        if node.fParent.fLeft = PRedBlackTreeNode(lastNode) then
-          node.fParent.fLeft := PRedBlackTreeNode(node)
-        else if node.fParent.fRight = PRedBlackTreeNode(lastNode) then
-          node.fParent.fRight := PRedBlackTreeNode(node)
+        if node.Parent.fLeft = PRedBlackTreeNode(lastNode) then
+          node.Parent.fLeft := PRedBlackTreeNode(node)
+        else if node.Parent.fRight = PRedBlackTreeNode(lastNode) then
+          node.Parent.fRight := PRedBlackTreeNode(node)
       end
       else
         fRoot := PRedBlackTreeNode(node);
@@ -988,7 +1069,6 @@ begin
   node.fLeft := nil;
   node.fParent := nil;
   node.fRight := nil;
-  node.fColor := Black;
   node.fKey := Default(TKey);
   node.fValue := Default(TValue);
 end;
@@ -1091,7 +1171,7 @@ var
 begin
   index := GetBucketIndex(fCount);
   SetLength(fStorage, index.Row + 1);
-  SetLength(fStorage[index.Row], DefaultBucketSize);
+  SetLength(fStorage[index.Row], BucketSize);
 end;
 
 function TRedBlackTree<TKey, TValue>.InternalAdd(const key: TKey;
