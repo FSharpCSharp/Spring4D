@@ -43,7 +43,7 @@ type
   TNodeColor = (Black, Red);
 
   TBucketIndex = record
-    Row, Pos: Cardinal;
+    Row, Pos: Integer;
   end;
 
   PBinaryTreeNode = ^TBinaryTreeNode;
@@ -118,7 +118,7 @@ type
     function GetRoot: PBinaryTreeNode; inline;
   {$ENDREGION}
 
-    function GetBucketIndex(index: NativeUInt): TBucketIndex;
+    function GetBucketIndex(index: Integer): TBucketIndex;
   end;
 
   TRedBlackTree = class abstract(TBinaryTree)
@@ -481,7 +481,7 @@ end;
 
 {$REGION 'TBinaryTree'}
 
-function TBinaryTree.GetBucketIndex(index: NativeUInt): TBucketIndex;
+function TBinaryTree.GetBucketIndex(index: Integer): TBucketIndex;
 begin
   Result.Row := index div BucketSize;
   Result.Pos := index mod BucketSize;
