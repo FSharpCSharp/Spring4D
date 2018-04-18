@@ -2652,6 +2652,19 @@ type
     class function SelectMany<T, TResult>(const source: IEnumerable<T>;
       const selector: Func<T, IEnumerable<TResult>>): IEnumerable<TResult>; overload; static;
 
+    class function ToDictionary<TSource, TKey>(const source: IEnumerable<TSource>;
+      const keySelector: Func<TSource, TKey>): IDictionary<TKey, TSource>; overload; static;
+    class function ToDictionary<TSource, TKey>(const source: IEnumerable<TSource>;
+      const keySelector: Func<TSource, TKey>;
+      const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TSource>; overload; static;
+    class function ToDictionary<TSource, TKey, TElement>(const source: IEnumerable<TSource>;
+      const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>): IDictionary<TKey, TElement>; overload; static;
+    class function ToDictionary<TSource, TKey, TElement>(const source: IEnumerable<TSource>;
+      const keySelector: Func<TSource, TKey>;
+      const elementSelector: Func<TSource, TElement>;
+      const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TElement>; overload; static;
+
     class function ToLookup<T, TKey>(const source: IEnumerable<T>;
       const keySelector: Func<T, TKey>): ILookup<TKey, T>; overload; static;
 
@@ -2710,6 +2723,15 @@ type
   TInstanceComparer<T> = class
   public
     class function Default: IComparer<T>; inline;
+  end;
+
+  TIdentityFunction<T> = record
+  private class var
+    fInstance: Func<T, T>;
+  public
+    class constructor Create;
+    class destructor Destroy;
+    class property Instance: Func<T, T> read fInstance;
   end;
 
   TCollectionHelper = class helper for TCollection
@@ -3485,6 +3507,45 @@ begin
   Result := TSelectManyIterator<T, TResult>.Create(source, selector);
 end;
 
+class function TEnumerable.ToDictionary<TSource, TKey>(
+  const source: IEnumerable<TSource>;
+  const keySelector: Func<TSource, TKey>): IDictionary<TKey, TSource>;
+begin
+  Result := ToDictionary<TSource, TKey, TSource>(source, keySelector,
+    TIdentityFunction<TSource>.Instance, nil);
+end;
+
+class function TEnumerable.ToDictionary<TSource, TKey>(
+  const source: IEnumerable<TSource>; const keySelector: Func<TSource, TKey>;
+  const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TSource>;
+begin
+  Result := ToDictionary<TSource, TKey, TSource>(source, keySelector,
+    TIdentityFunction<TSource>.Instance, comparer);
+end;
+
+class function TEnumerable.ToDictionary<TSource, TKey, TElement>(
+  const source: IEnumerable<TSource>; const keySelector: Func<TSource, TKey>;
+  const elementSelector: Func<TSource, TElement>): IDictionary<TKey, TElement>;
+begin
+  Result := ToDictionary<TSource, TKey, TElement>(source, keySelector,
+    elementSelector, nil);
+end;
+
+class function TEnumerable.ToDictionary<TSource, TKey, TElement>(
+  const source: IEnumerable<TSource>; const keySelector: Func<TSource, TKey>;
+  const elementSelector: Func<TSource, TElement>;
+  const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TElement>;
+var
+  item: TSource;
+begin
+  Guard.CheckNotNull(Assigned(source), 'source');
+  Guard.CheckNotNull(Assigned(keySelector), 'keySelector');
+  Guard.CheckNotNull(Assigned(elementSelector), 'elementSelector');
+  Result := TCollections.CreateDictionary<TKey, TElement>(comparer);
+  for item in source do
+    Result.Add(keySelector(item), elementSelector(item));
+end;
+
 class function TEnumerable.ToLookup<T, TKey>(const source: IEnumerable<T>;
   const keySelector: Func<T, TKey>): ILookup<TKey, T>;
 begin
@@ -3779,6 +3840,25 @@ begin
         tkInterface: IList<IInterface>(Result) := TFoldedInterfaceList.Create(elementType, nil);
       end;
     end);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIdentityFunction<T>'}
+
+class constructor TIdentityFunction<T>.Create;
+begin
+  fInstance :=
+    function(const x: T): T
+    begin
+      Result := x
+    end;
+end;
+
+class destructor TIdentityFunction<T>.Destroy;
+begin
+  fInstance := nil;
 end;
 
 {$ENDREGION}
