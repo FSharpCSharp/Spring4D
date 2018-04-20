@@ -1747,7 +1747,7 @@ type
     ///   <b>True</b> if the IMap&lt;TKey, TValue&gt; contains a pair with the
     ///   specified key and value; otherwise <b>False</b>.
     /// </returns>
-    function Contains(const key: TKey; const value: TValue): Boolean;
+    function Contains(const key: TKey; const value: TValue): Boolean; overload;
 
     /// <summary>
     ///   Determines whether the IMap&lt;TKey, TValue&gt; contains an element
