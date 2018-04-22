@@ -2029,7 +2029,9 @@ type
   IStack<T> = interface(IEnumerable<T>)
     ['{5BD7BDD3-0198-4727-B97C-658BF194FF63}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetOnChanged: ICollectionChangedEvent<T>;
+    procedure SetCapacity(value: Integer);
   {$ENDREGION}
 
     /// <summary>
@@ -2047,32 +2049,30 @@ type
     procedure Push(const item: T);
 
     /// <summary>
-    ///   Removes and returns the element at the top of the stack.
+    ///   Removes the element at the top of the stack.
     /// </summary>
     /// <returns>
-    ///   The element removed from the top of the stack.
+    ///   The element that was removed.
     /// </returns>
     /// <remarks>
     ///   This will return nil to prevent a dangling reference if the stack has
-    ///   ownership over the instances. <br />
+    ///   ownership over the instances.
     /// </remarks>
     function Pop: T;
 
     /// <summary>
-    ///   Removes and returns the element at the top of the stack without
-    ///   considering ownership.
+    ///   Removes and returns the element at the top of the stack. If the
+    ///   stack has ownership over the instances, then ownership of the
+    ///   returned element is transferred to the caller.
     /// </summary>
     /// <returns>
-    ///   The element removed from the top of the stack.
+    ///   The element that was removed.
     /// </returns>
     function Extract: T;
 
     /// <summary>
     ///   Returns the element at the top of the stack without removing it.
     /// </summary>
-    /// <returns>
-    ///   The element at the top of the stack.
-    /// </returns>
     function Peek: T;
 
     /// <summary>
@@ -2082,16 +2082,21 @@ type
     function PeekOrDefault: T;
 
     /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
+
+    /// <summary>
     ///   Attempts to return an element from the top of the stack without
     ///   removing it.
     /// </summary>
     /// <param name="item">
-    ///   The element at the top of the stack if the operation was successful, <b>
-    ///   Default(T)</b> otherwise.
+    ///   The element at the top of the stack if the operation was
+    ///   successful; <b>Default(T)</b> otherwise.
     /// </param>
     /// <returns>
-    ///   <b>True</b> if an element was returned from the top of the stack;
-    ///   otherwise, <b>False</b>.
+    ///   <b>True</b> if an element was returned; otherwise, <b>False</b>.
     /// </returns>
     function TryPeek(out item: T): Boolean;
 
@@ -2099,29 +2104,30 @@ type
     ///   Attempts to remove and return the element at the top of the stack.
     /// </summary>
     /// <param name="item">
-    ///   The element that was removed if the operation was successful, <b>
-    ///   Default(T)</b> otherwise.
+    ///   The element that was removed if the operation was successful and
+    ///   the stack does not have ownership of the instances; <b>Default(T)</b>
+    ///   otherwise.
     /// </param>
     /// <returns>
-    ///   <b>True</b> if an element was removed and returned from the top of
-    ///   the stack; otherwise, <b>False</b>.
+    ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
     function TryPop(out item: T): Boolean;
 
     /// <summary>
-    ///   Attempts to remove and return the element at the top of the stack
-    ///   without considering ownership. <br />
+    ///   Attempts to remove and return the element at the top of the stack.
+    ///   If the stack has ownership over the instances, then ownership of
+    ///   the returned element is transferred to the caller.
     /// </summary>
     /// <param name="item">
-    ///   The element that was removed if the operation was successful, <b>
+    ///   The element that was removed if the operation was successful; <b>
     ///   Default(T)</b> otherwise.
     /// </param>
     /// <returns>
-    ///   <b>True</b> if an element was removed and returned from the top of
-    ///   the stack; otherwise, <b>False</b>.
+    ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
     function TryExtract(out item: T): Boolean;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -2150,7 +2156,9 @@ type
   IQueue<T> = interface(IEnumerable<T>)
     ['{D305A076-3F19-497C-94E3-6BD1C7A30F3F}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetOnChanged: ICollectionChangedEvent<T>;
+    procedure SetCapacity(value: Integer);
   {$ENDREGION}
 
     /// <summary>
@@ -2168,10 +2176,10 @@ type
     procedure Enqueue(const item: T);
 
     /// <summary>
-    ///   Removes and returns the element at the beginning of the queue.
+    ///   Removes the element at the beginning of the queue.
     /// </summary>
     /// <returns>
-    ///   The element that is removed from the beginning of the queue.
+    ///   The element that was removed.
     /// </returns>
     /// <remarks>
     ///   This will return nil to prevent a dangling reference if the queue has
@@ -2180,11 +2188,12 @@ type
     function Dequeue: T;
 
     /// <summary>
-    ///   Removes and returns the element at the beginning of the queue without
-    ///   considering ownership.
+    ///   Removes and returns the element at the beginning of the queue. If the
+    ///   queue has ownership over the instances, then ownership of the
+    ///   returned element is transferred to the caller.
     /// </summary>
     /// <returns>
-    ///   The element that is removed from the beginning of the queue.
+    ///   The element that was removed.
     /// </returns>
     function Extract: T;
 
@@ -2192,9 +2201,6 @@ type
     ///   Returns the element at the beginning of the queue without removing
     ///   it.
     /// </summary>
-    /// <returns>
-    ///   The element at the beginning of the queue.
-    /// </returns>
     function Peek: T;
 
     /// <summary>
@@ -2204,30 +2210,36 @@ type
     function PeekOrDefault: T;
 
     /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
+
+    /// <summary>
     ///   Attempts to remove and return the element at the beginning of the
     ///   queue.
     /// </summary>
     /// <param name="item">
-    ///   The element that was removed if the operation was successful, <b>
-    ///   Default(T)</b> otherwise.
+    ///   The element that was removed if the operation was successful and
+    ///   the queue does not have ownership of the instances; <b>Default(T)</b>
+    ///   otherwise.
     /// </param>
     /// <returns>
-    ///   <b>True</b> if an element was removed and returned from the beginning
-    ///   of the queue; otherwise, <b>False</b>.
+    ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
     function TryDequeue(out item: T): Boolean;
 
     /// <summary>
     ///   Attempts to remove and return the element at the beginning of the
-    ///   queue without considering ownership.
+    ///   queue. If the queue has ownership over the instances, then ownership
+    ///   of the returned element is transferred to the caller.
     /// </summary>
     /// <param name="item">
-    ///   The element that was removed if the operation was successful, <b>
+    ///   The element that was removed if the operation was successful; <b>
     ///   Default(T)</b> otherwise.
     /// </param>
     /// <returns>
-    ///   <b>True</b> if an element was removed and returned from the beginning
-    ///   of the queue; otherwise, <b>False</b>.
+    ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
     function TryExtract(out item: T): Boolean;
 
@@ -2237,14 +2249,161 @@ type
     /// </summary>
     /// <param name="item">
     ///   The element at the beginning of the queue if the operation was
-    ///   successful, <b>Default(T)</b> otherwise.
+    ///   successful; <b>Default(T)</b> otherwise.
     /// </param>
     /// <returns>
-    ///   <b>True</b> if an element was returned from the beginning of the
-    ///   queue; otherwise, <b>False</b>.
+    ///   <b>True</b> if an element was returned; otherwise, <b>False</b>.
     /// </returns>
     function TryPeek(out item: T): Boolean;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+  end;
+
+  /// <summary>
+  ///   Represents a double-ended queue.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   Specifies the type of elements in the deque.
+  /// </typeparam>
+  IDeque<T> = interface(IEnumerable<T>)
+    ['{852D8B1A-8587-4C7E-85DA-41F255887153}']
+  {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
+    function GetOnChanged: ICollectionChangedEvent<T>;
+    procedure SetCapacity(value: Integer);
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Removes all elements from the deque.
+    /// </summary>
+    procedure Clear;
+
+    /// <summary>
+    ///   Adds an element to the front of the deque.
+    /// </summary>
+    /// <param name="item">
+    ///   The element to add to the deque. The value can be <b>nil</b> for
+    ///   reference types.
+    /// </param>
+    procedure AddFirst(const item: T);
+
+    /// <summary>
+    ///   Adds an element to the back of the deque.
+    /// </summary>
+    /// <param name="item">
+    ///   The element to add to the deque. The value can be <b>nil</b> for
+    ///   reference types.
+    /// </param>
+    procedure AddLast(const item: T);
+
+    /// <summary>
+    ///   Removes the element at the front of the deque.
+    /// </summary>
+    /// <returns>
+    ///   The element that was removed.
+    /// </returns>
+    /// <remarks>
+    ///   This will return nil to prevent a dangling reference if the deque has
+    ///   ownership over the instances.
+    /// </remarks>
+    function RemoveFirst: T;
+
+    /// <summary>
+    ///   Removes the element at the back of the deque.
+    /// </summary>
+    /// <returns>
+    ///   The element that was removed.
+    /// </returns>
+    /// <remarks>
+    ///   This will return nil to prevent a dangling reference if the deque has
+    ///   ownership over the instances.
+    /// </remarks>
+    function RemoveLast: T;
+
+    /// <summary>
+    ///   Removes and returns the element at the front of the deque. If the
+    ///   deque has ownership over the instances, then ownership of the
+    ///   returned element is transferred to the caller.
+    /// </summary>
+    /// <returns>
+    ///   The element that was removed.
+    /// </returns>
+    function ExtractFirst: T;
+
+    /// <summary>
+    ///   Removes and returns the element at the back of the deque. If the
+    ///   deque has ownership over the instances, then ownership of the
+    ///   returned element is transferred to the caller.
+    /// </summary>
+    /// <returns>
+    ///   The element that was removed.
+    /// </returns>
+    function ExtractLast: T;
+
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the front of the
+    ///   deque.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful and
+    ///   the deque does not have ownership of the instances; <b>Default(T)</b>
+    ///   otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
+    /// </returns>
+    function TryRemoveFirst(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the back of the
+    ///   deque.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful and
+    ///   the deque does not have ownership of the instances; <b>Default(T)</b>
+    ///   otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
+    /// </returns>
+    function TryRemoveLast(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the front of the
+    ///   deque. If the deque has ownership over the instances, then ownership
+    ///   of the returned element is transferred to the caller.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful; <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
+    /// </returns>
+    function TryExtractFirst(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to remove and return the element at the back of the
+    ///   deque. If the deque has ownership over the instances, then ownership
+    ///   of the returned element is transferred to the caller.
+    /// </summary>
+    /// <param name="item">
+    ///   The element that was removed if the operation was successful; <b>
+    ///   Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
+    /// </returns>
+    function TryExtractLast(out item: T): Boolean;
+
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -2569,6 +2728,11 @@ type
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload; static;
     class function CreateQueue<T>(const values: array of T): IQueue<T>; overload; static;
     class function CreateQueue<T>(const values: IEnumerable<T>): IQueue<T>; overload; static;
+
+    class function CreateDeque<T>: IDeque<T>; overload; static;
+    class function CreateDeque<T: class>(ownsObjects: Boolean): IDeque<T>; overload; static;
+    class function CreateDeque<T>(const values: array of T): IDeque<T>; overload; static;
+    class function CreateDeque<T>(const values: IEnumerable<T>): IDeque<T>; overload; static;
 
     class function CreateSet<T>: IOrderedSet<T>; overload; static;
     class function CreateSet<T>(capacity: Integer): IOrderedSet<T>; overload; static;
@@ -3073,23 +3237,44 @@ end;
 
 class function TCollections.CreateQueue<T>: IQueue<T>;
 begin
-  Result := TQueue<T>.Create;
+  Result := TDeque<T>.Create;
 end;
 
 class function TCollections.CreateQueue<T>(ownsObjects: Boolean): IQueue<T>;
 begin
-  Result := TObjectQueue<T>.Create(ownsObjects);
+  Result := TObjectDeque<T>.Create(ownsObjects);
 end;
 
 class function TCollections.CreateQueue<T>(const values: array of T): IQueue<T>;
 begin
-  Result := TQueue<T>.Create(values);
+  Result := TDeque<T>.Create(values);
 end;
 
 class function TCollections.CreateQueue<T>(
   const values: IEnumerable<T>): IQueue<T>;
 begin
-  Result := TQueue<T>.Create(values);
+  Result := TDeque<T>.Create(values);
+end;
+
+class function TCollections.CreateDeque<T>: IDeque<T>;
+begin
+  Result := TDeque<T>.Create;
+end;
+
+class function TCollections.CreateDeque<T>(ownsObjects: Boolean): IDeque<T>;
+begin
+  Result := TObjectDeque<T>.Create(ownsObjects);
+end;
+
+class function TCollections.CreateDeque<T>(const values: array of T): IDeque<T>;
+begin
+  Result := TDeque<T>.Create(values);
+end;
+
+class function TCollections.CreateDeque<T>(
+  const values: IEnumerable<T>): IDeque<T>;
+begin
+  Result := TDeque<T>.Create(values);
 end;
 
 class function TCollections.CreateSet<T>: IOrderedSet<T>;

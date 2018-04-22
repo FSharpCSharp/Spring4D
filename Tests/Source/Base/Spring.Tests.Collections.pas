@@ -277,6 +277,21 @@ type
     procedure TestDequeueRaisesException;
   end;
 
+  TTestEmptyDequeOfInteger = class(TTestCase)
+  private
+    SUT: IDeque<Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestEmptyDequeIsEmpty;
+    procedure TestClearOnEmptyDeque;
+    procedure TestFirstRaisesException;
+    procedure TestLastRaisesException;
+    procedure TestRemoveFirstRaisesException;
+    procedure TestRemoveLastRaisesException;
+  end;
+
   TTestQueueOfInteger = class(TTestCase)
   private
     SUT: IQueue<Integer>;
@@ -295,6 +310,33 @@ type
     procedure TestQueueTrimExcess;
   end;
 
+  TTestDequeOfInteger = class(TTestCase)
+  private
+    SUT: IDeque<Integer>;
+    procedure FillDequeFirst;  // Will test AddFirst
+    procedure FillDequeLast;  // Will test AddLast
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestDequeCreate;
+    procedure TestDequeClear;
+    procedure TestDequeFirst;
+    procedure TestDequeFirstOrDefault;
+    procedure TestDequeGrowth;
+    procedure TestDequeLast;
+    procedure TestDequeLastOrDefault;
+    procedure TestDequeRemoveFirst;
+    procedure TestDequeRemoveLast;
+    procedure TestDequeSingle;
+    procedure TestDequeSingleOrDefault;
+    procedure TestDequeTrimExcess;
+    procedure TestDequeTryGetFirst;
+    procedure TestDequeTryGetLast;
+    procedure TestDequeTryRemoveFirst;
+    procedure TestDequeTryRemoveLast;
+  end;
+
   TTestQueueOfTBytes = class(TTestCase)
   private
     SUT: IQueue<TBytes>;
@@ -308,6 +350,24 @@ type
   TTestQueueOfIntegerChangedEvent = class(TTestCase)
   private
     SUT: IQueue<Integer>;
+    fAInvoked, fBInvoked: Boolean;
+    fAItem, fBItem: Integer;
+    fAAction, fBAction: TCollectionChangedAction;
+    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
+    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestEmpty;
+    procedure TestOneHandler;
+    procedure TestTwoHandlers;
+    procedure TestNonGenericChangedEvent;
+  end;
+
+  TTestDequeOfIntegerChangedEvent = class(TTestCase)
+  private
+    SUT: IDeque<Integer>;
     fAInvoked, fBInvoked: Boolean;
     fAItem, fBItem: Integer;
     fAAction, fBAction: TCollectionChangedAction;
@@ -546,6 +606,19 @@ type
   published
     procedure DequeueDestroysItemAndReturnsNil;
     procedure ExtractDoesNotDestroysItemButReturnsIt;
+  end;
+
+  TTestObjectDeque = class(TTestCase)
+  private
+    SUT: IDeque<TObject>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure RemoveFirstDestroysItemAndReturnsNil;
+    procedure RemoveLastDestroysItemAndReturnsNil;
+    procedure ExtractFirstDoesNotDestroysItemButReturnsIt;
+    procedure ExtractLastDoesNotDestroysItemButReturnsIt;
   end;
 
   TTestOrderedDictionary = class(TTestCase)
@@ -1758,15 +1831,12 @@ begin
 end;
 
 procedure TTestStackOfInteger.TestStackTrimExcess;
-var
-  stack: TStack<Integer>;
 begin
-  stack := SUT as TStack<Integer>;
-  CheckEquals(0, stack.Capacity);
-  stack.Capacity := MaxItems;
-  CheckEquals(MaxItems, stack.Capacity);
-  stack.TrimExcess;
-  CheckEquals(0, stack.Capacity);
+  CheckEquals(0, SUT.Capacity);
+  SUT.Capacity := MaxItems;
+  CheckEquals(MaxItems, SUT.Capacity);
+  SUT.TrimExcess;
+  CheckEquals(0, SUT.Capacity);
 end;
 
 procedure TTestStackOfInteger.TestStackTryPeek;
@@ -1962,12 +2032,61 @@ end;
 
 procedure TTestEmptyQueueOfInteger.TestPeekRaisesException;
 begin
-  CheckException(EListError, procedure begin SUT.Peek end, 'EListError was not raised on Peek call with empty Queue');
+  CheckException(EInvalidOpException, procedure begin SUT.Peek end, 'EListError was not raised on Peek call with empty Queue');
 end;
 
 procedure TTestEmptyQueueOfInteger.TestDequeueRaisesException;
 begin
-  CheckException(EListError, procedure begin SUT.Dequeue end, 'EListError was not raised on Peek call with empty Queue');
+  CheckException(EInvalidOpException, procedure begin SUT.Dequeue end, 'EListError was not raised on Peek call with empty Queue');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestEmptyDequeOfInteger'}
+
+procedure TTestEmptyDequeOfInteger.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateDeque<Integer>
+end;
+
+procedure TTestEmptyDequeOfInteger.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestEmptyDequeOfInteger.TestClearOnEmptyDeque;
+begin
+  CheckEquals(0, SUT.Count, 'Deque not empty before call to clear');
+  SUT.Clear;
+  CheckEquals(0, SUT.Count, 'Deque not empty after call to clear');
+end;
+
+procedure TTestEmptyDequeOfInteger.TestEmptyDequeIsEmpty;
+begin
+  CheckEquals(0, SUT.Count);
+end;
+
+procedure TTestEmptyDequeOfInteger.TestFirstRaisesException;
+begin
+  CheckException(EInvalidOperationException, procedure begin SUT.First end, 'EInvalidOperationException was not raised on First call with empty Deque');
+end;
+
+procedure TTestEmptyDequeOfInteger.TestLastRaisesException;
+begin
+  CheckException(EInvalidOperationException, procedure begin SUT.Last end, 'EInvalidOperationException was not raised on Last call with empty Deque');
+end;
+
+procedure TTestEmptyDequeOfInteger.TestRemoveFirstRaisesException;
+begin
+  CheckException(EInvalidOperationException, procedure begin SUT.RemoveFirst end, 'EInvalidOperationException was not raised on RemoveFirst call with empty Deque');
+end;
+
+procedure TTestEmptyDequeOfInteger.TestRemoveLastRaisesException;
+begin
+  CheckException(EInvalidOperationException, procedure begin SUT.RemoveLast end, 'EInvalidOperationException was not raised on RemoveLast call with empty Deque');
 end;
 
 {$ENDREGION}
@@ -1980,7 +2099,7 @@ var
   i: Integer;
 begin
   Check(SUT <> nil);
-  for i := 0 to MaxItems - 1  do
+  for i := 0 to MaxItems - 1 do
     SUT.Enqueue(i);
   CheckEquals(MaxItems, SUT.Count, 'Call to FillQueue did not properly fill the queue');
 end;
@@ -2008,9 +2127,9 @@ procedure TTestQueueOfInteger.TestQueueCreate;
 const
   values: array[0..9] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 begin
-  SUT := TQueue<Integer>.Create(values);
+  SUT := TDeque<Integer>.Create(values);
   CheckTrue(SUT.EqualsTo(values));
-  SUT := TQueue<Integer>.Create(TEnumerable.Range(0, 10));
+  SUT := TDeque<Integer>.Create(TEnumerable.Range(0, 10));
   CheckTrue(SUT.EqualsTo(values));
 end;
 
@@ -2029,7 +2148,7 @@ procedure TTestQueueOfInteger.TestQueuePeek;
 begin
   FillQueue;
   CheckEquals(0, SUT.Peek);
-  ExpectedException := EListError;
+  ExpectedException := EInvalidOpException;
   SUT.Clear;
   SUT.Peek;
   ExpectedException := nil;
@@ -2043,15 +2162,12 @@ begin
 end;
 
 procedure TTestQueueOfInteger.TestQueueTrimExcess;
-var
-  queue: TQueue<Integer>;
 begin
-  queue := SUT as TQueue<Integer>;
-  CheckEquals(0, queue.Capacity);
-  queue.Capacity := MaxItems;
-  CheckEquals(MaxItems, queue.Capacity);
-  queue.TrimExcess;
-  CheckEquals(0, queue.Capacity);
+  CheckEquals(0, SUT.Capacity);
+  SUT.Capacity := MaxItems;
+  CheckEquals(MaxItems, SUT.Capacity);
+  SUT.TrimExcess;
+  CheckEquals(0, SUT.Capacity);
 end;
 
 procedure TTestQueueOfInteger.TestQueueTryDequeue;
@@ -2086,11 +2202,312 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestDequeOfInteger'}
+
+procedure TTestDequeOfInteger.FillDequeFirst;
+var
+  i: Integer;
+begin
+  Check(SUT <> nil);
+  for i := 0 to MaxItems - 1 do
+    SUT.AddFirst(i);
+  CheckEquals(MaxItems, SUT.Count, 'Call to FillDequeFirst did not properly fill the deque');
+end;
+
+procedure TTestDequeOfInteger.FillDequeLast;
+var
+  i: Integer;
+begin
+  Check(SUT <> nil);
+  for i := 0 to MaxItems - 1 do
+    SUT.AddLast(i);
+  CheckEquals(MaxItems, SUT.Count, 'Call to FillDequeLast did not properly fill the deque');
+end;
+
+procedure TTestDequeOfInteger.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateDeque<Integer>;
+end;
+
+procedure TTestDequeOfInteger.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestDequeOfInteger.TestDequeCreate;
+const
+  values: array[0..9] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+begin
+  SUT := TDeque<Integer>.Create(values);
+  CheckTrue(SUT.EqualsTo(values));
+  SUT := TDeque<Integer>.Create(TEnumerable.Range(0, 10));
+  CheckTrue(SUT.EqualsTo(values));
+end;
+
+procedure TTestDequeOfInteger.TestDequeClear;
+begin
+  FillDequeFirst;
+  SUT.Clear;
+  CheckEquals(0, SUT.Count, 'Clear call failed to empty the deque');
+
+  FillDequeLast;
+  SUT.Clear;
+  CheckEquals(0, SUT.Count, 'Clear call failed to empty the deque');
+end;
+
+procedure TTestDequeOfInteger.TestDequeFirst;
+begin
+  FillDequeLast;
+  CheckEquals(0, SUT.First);
+  ExpectedException := EInvalidOpException;
+  SUT.Clear;
+  SUT.First;
+  ExpectedException := nil;
+end;
+
+procedure TTestDequeOfInteger.TestDequeFirstOrDefault;
+begin
+  CheckEquals(0, SUT.FirstOrDefault);
+  SUT.AddLast(MaxItems);
+  CheckEquals(MaxItems, SUT.FirstOrDefault);
+end;
+
+procedure TTestDequeOfInteger.TestDequeGrowth;
+var
+  i, value, expected: Integer;
+begin
+  value := 0;
+
+  for i := 0 to MaxItems - 1 do
+  begin
+    SUT.AddFirst(value);
+    SUT.AddFirst(value + 1);
+    expected := value + 1;
+    CheckEquals(expected, SUT.RemoveFirst);
+    Inc(value, 2);
+  end;
+
+  for i := 0 to MaxItems - 1 do
+  begin
+    SUT.AddLast(value);
+    SUT.AddLast(value + 1);
+    expected := value + 1;
+    CheckEquals(expected, SUT.RemoveLast);
+    Inc(value, 2);
+  end;
+
+  expected := value - 2;
+  for i := 0 to MaxItems - 1 do
+  begin
+    SUT.AddFirst(value);
+    SUT.AddFirst(value + 1);
+    CheckEquals(expected, SUT.RemoveLast);
+    Dec(expected, 2);
+    Inc(value, 2);
+  end;
+
+  expected := value - 1;
+  for i := 0 to MaxItems - 1 do
+  begin
+    SUT.AddLast(value);
+    SUT.AddLast(value + 1);
+    CheckEquals(expected, SUT.RemoveFirst);
+    Dec(expected);
+    Inc(value, 2);
+  end;
+
+  SUT.Clear;
+  for i := 0 to 31 do
+    SUT.AddLast(i);
+  expected := 0;
+  while SUT.Count > 0 do
+  begin
+    CheckEquals(expected, SUT.RemoveFirst);
+    Inc(expected);
+    SUT.TrimExcess;
+  end;
+
+  SUT.Clear;
+  for i := 0 to 31 do
+    SUT.AddFirst(i);
+  expected := 0;
+  while SUT.Count > 0 do
+  begin
+    CheckEquals(expected, SUT.RemoveLast);
+    Inc(expected);
+    SUT.TrimExcess;
+  end;
+
+  SUT.Clear;
+  SUT.AddLast(0);
+  SUT.AddLast(1);
+  SUT.AddLast(2);
+  SUT.AddLast(3);
+  CheckEquals(0, SUT.RemoveFirst);
+  CheckEquals(1, SUT.RemoveFirst);
+  SUT.AddLast(0);
+  SUT.TrimExcess;
+end;
+
+procedure TTestDequeOfInteger.TestDequeLast;
+begin
+  FillDequeFirst;
+  CheckEquals(0, SUT.Last);
+  ExpectedException := EInvalidOpException;
+  SUT.Clear;
+  SUT.Last;
+  ExpectedException := nil;
+end;
+
+procedure TTestDequeOfInteger.TestDequeLastOrDefault;
+begin
+  CheckEquals(0, SUT.LastOrDefault);
+  SUT.AddFirst(MaxItems);
+  CheckEquals(MaxItems, SUT.LastOrDefault);
+end;
+
+procedure TTestDequeOfInteger.TestDequeRemoveFirst;
+var
+  i: Integer;
+begin
+  FillDequeFirst;
+  for i := 1 to MaxItems do
+    SUT.RemoveFirst;
+
+  CheckEquals(0, SUT.Count, 'RemoveFirst did not remove all the items');
+end;
+
+procedure TTestDequeOfInteger.TestDequeRemoveLast;
+var
+  i: Integer;
+begin
+  FillDequeLast;
+  for i := 1 to MaxItems do
+    SUT.RemoveLast;
+
+  CheckEquals(0, SUT.Count, 'RemoveLast did not remove all the items');
+end;
+
+procedure TTestDequeOfInteger.TestDequeSingle;
+begin
+  CheckException(EInvalidOperationException,
+    procedure
+    begin
+      SUT.Single;
+    end);
+  SUT.AddFirst(-1);
+  CheckEquals(-1, SUT.Single);
+  SUT.AddFirst(-2);
+  CheckException(EInvalidOperationException,
+    procedure
+    begin
+      SUT.Single;
+    end);
+end;
+
+procedure TTestDequeOfInteger.TestDequeSingleOrDefault;
+begin
+  CheckEquals(Default(Integer), SUT.SingleOrDefault);
+  CheckEquals(42, SUT.SingleOrDefault(42));
+  SUT.AddFirst(-1);
+  CheckEquals(-1, SUT.SingleOrDefault);
+  CheckEquals(-1, SUT.SingleOrDefault(42));
+  SUT.AddFirst(-2);
+  CheckException(EInvalidOperationException,
+    procedure
+    begin
+      SUT.SingleOrDefault;
+    end);
+  CheckException(EInvalidOperationException,
+    procedure
+    begin
+      SUT.SingleOrDefault(42);
+    end);
+end;
+
+procedure TTestDequeOfInteger.TestDequeTrimExcess;
+begin
+  CheckEquals(0, SUT.Capacity);
+  SUT.Capacity := MaxItems;
+  CheckEquals(MaxItems, SUT.Capacity);
+  SUT.TrimExcess;
+  CheckEquals(0, SUT.Capacity);
+end;
+
+procedure TTestDequeOfInteger.TestDequeTryGetFirst;
+var
+  value: Integer;
+begin
+  SUT.AddLast(1);
+  SUT.AddLast(2);
+  SUT.AddLast(3);
+  CheckTrue(SUT.TryGetFirst(value));
+  CheckEquals(1, value);
+  SUT.Clear;
+  CheckFalse(SUT.TryGetFirst(value));
+  CheckEquals(Default(Integer), value);
+end;
+
+procedure TTestDequeOfInteger.TestDequeTryGetLast;
+var
+  value: Integer;
+begin
+  SUT.AddFirst(1);
+  SUT.AddFirst(2);
+  SUT.AddFirst(3);
+  CheckTrue(SUT.TryGetLast(value));
+  CheckEquals(1, value);
+  SUT.Clear;
+  CheckFalse(SUT.TryGetLast(value));
+  CheckEquals(Default(Integer), value);
+end;
+
+procedure TTestDequeOfInteger.TestDequeTryRemoveFirst;
+var
+  i, value: Integer;
+begin
+  CheckFalse(SUT.TryRemoveFirst(value));
+  CheckEquals(0, value);
+  for i := 1 to MaxItems do
+    SUT.AddLast(i);
+  for i := 1 to MaxItems do
+  begin
+    CheckTrue(SUT.TryRemoveFirst(value));
+    CheckEquals(i, value);
+  end;
+  CheckFalse(SUT.TryRemoveFirst(value));
+  CheckEquals(0, value);
+  CheckTrue(SUT.IsEmpty);
+end;
+
+procedure TTestDequeOfInteger.TestDequeTryRemoveLast;
+var
+  i, value: Integer;
+begin
+  CheckFalse(SUT.TryRemoveLast(value));
+  CheckEquals(0, value);
+  for i := 1 to MaxItems do
+    SUT.AddFirst(i);
+  for i := 1 to MaxItems do
+  begin
+    CheckTrue(SUT.TryRemoveLast(value));
+    CheckEquals(i, value);
+  end;
+  CheckFalse(SUT.TryRemoveLast(value));
+  CheckEquals(0, value);
+  CheckTrue(SUT.IsEmpty);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TTestQueueOfTBytes'}
 
 procedure TTestQueueOfTBytes.SetUp;
 begin
-  SUT := TQueue<TBytes>.Create;
+  SUT := TDeque<TBytes>.Create;
 end;
 
 procedure TTestQueueOfTBytes.TearDown;
@@ -2210,6 +2627,153 @@ begin
   event.Add(TMethodPointer(method));
 
   SUT.Enqueue(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDequeOfIntegerChangedEvent'}
+
+procedure TTestDequeOfIntegerChangedEvent.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateDeque<Integer>;
+end;
+
+procedure TTestDequeOfIntegerChangedEvent.TearDown;
+begin
+  inherited;
+  SUT := nil;
+  fAInvoked := False;
+  fBInvoked := False;
+end;
+
+procedure TTestDequeOfIntegerChangedEvent.HandlerA(Sender: TObject;
+  const Item: Integer; Action: TCollectionChangedAction);
+begin
+  fAItem := Item;
+  fAAction := Action;
+  fAInvoked := True;
+end;
+
+procedure TTestDequeOfIntegerChangedEvent.HandlerB(Sender: TObject;
+  const Item: Integer; Action: TCollectionChangedAction);
+begin
+  fBitem := Item;
+  fBAction := Action;
+  fBInvoked := True;
+end;
+
+procedure TTestDequeOfIntegerChangedEvent.TestEmpty;
+begin
+  SUT.AddFirst(0);
+
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+
+  SUT.AddLast(0);
+
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+end;
+
+procedure TTestDequeOfIntegerChangedEvent.TestOneHandler;
+begin
+  SUT.OnChanged.Add(HandlerA);
+
+  SUT.AddFirst(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+
+  CheckFalse(fBInvoked, 'handler B not registered as callback');
+
+  SUT.RemoveFirst;
+
+  CheckTrue(fAAction = caRemoved, 'different collection notifications');
+
+  SUT.AddLast(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+
+  CheckFalse(fBInvoked, 'handler B not registered as callback');
+
+  SUT.RemoveLast;
+
+  CheckTrue(fAAction = caRemoved, 'different collection notifications');
+
+  SUT.OnChanged.Remove(HandlerA);
+end;
+
+procedure TTestDequeOfIntegerChangedEvent.TestTwoHandlers;
+begin
+  SUT.OnChanged.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerB);
+
+  SUT.AddFirst(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+  CheckTrue(fBInvoked, 'handler B not invoked');
+  CheckTrue(fBAction = caAdded, 'handler B: different collection notifications');
+  CheckEquals(0, fBItem, 'handler B: different item');
+
+  SUT.RemoveFirst;
+
+  CheckTrue(fAAction = caRemoved, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+  CheckTrue(fBAction = caRemoved, 'handler B: different collection notifications');
+  CheckEquals(0, fBItem, 'handler B: different item');
+
+  SUT.AddLast(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+  CheckTrue(fBInvoked, 'handler B not invoked');
+  CheckTrue(fBAction = caAdded, 'handler B: different collection notifications');
+  CheckEquals(0, fBItem, 'handler B: different item');
+
+  SUT.RemoveLast;
+
+  CheckTrue(fAAction = caRemoved, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+  CheckTrue(fBAction = caRemoved, 'handler B: different collection notifications');
+  CheckEquals(0, fBItem, 'handler B: different item');
+
+  SUT.OnChanged.Remove(HandlerA);
+  SUT.OnChanged.Remove(HandlerB);
+end;
+
+procedure TTestDequeOfIntegerChangedEvent.TestNonGenericChangedEvent;
+var
+  event: IEvent;
+  method: TMethod;
+begin
+  event := SUT.OnChanged;
+
+  CheckTrue(event.Enabled);
+
+  method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
+  method.Data := Pointer(Self);
+
+  event.Add(TMethodPointer(method));
+
+  SUT.AddFirst(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+
+  SUT.AddLast(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
   CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
@@ -3252,10 +3816,75 @@ end;
 procedure TTestObjectQueue.SetUp;
 begin
   inherited;
-  SUT := TObjectQueue<TObject>.Create;
+  SUT := TObjectDeque<TObject>.Create;
 end;
 
 procedure TTestObjectQueue.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestObjectDeque'}
+
+procedure TTestObjectDeque.RemoveFirstDestroysItemAndReturnsNil;
+begin
+  SUT.AddFirst(TObject.Create);
+  CheckNull(SUT.RemoveFirst);
+end;
+
+procedure TTestObjectDeque.RemoveLastDestroysItemAndReturnsNil;
+begin
+  SUT.AddLast(TObject.Create);
+  CheckNull(SUT.RemoveLast);
+end;
+
+procedure TTestObjectDeque.ExtractFirstDoesNotDestroysItemButReturnsIt;
+var
+  obj1, obj2, obj: TObject;
+begin
+  obj1 := TObject.Create;
+  obj2 := TObject.Create;
+
+  SUT.AddLast(obj1);
+  SUT.AddLast(obj2);
+  CheckSame(obj1, SUT.ExtractFirst);
+  CheckTrue(SUT.TryExtractFirst(obj));
+  CheckSame(obj2, obj);
+  CheckFalse(SUT.TryExtractFirst(obj));
+
+  obj2.Free;
+  obj1.Free;
+end;
+
+procedure TTestObjectDeque.ExtractLastDoesNotDestroysItemButReturnsIt;
+var
+  obj1, obj2, obj: TObject;
+begin
+  obj1 := TObject.Create;
+  obj2 := TObject.Create;
+
+  SUT.AddFirst(obj1);
+  SUT.AddFirst(obj2);
+  CheckSame(obj1, SUT.ExtractLast);
+  CheckTrue(SUT.TryExtractLast(obj));
+  CheckSame(obj2, obj);
+  CheckFalse(SUT.TryExtractLast(obj));
+
+  obj2.Free;
+  obj1.Free;
+end;
+
+procedure TTestObjectDeque.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateDeque<TObject>(True);
+end;
+
+procedure TTestObjectDeque.TearDown;
 begin
   SUT := nil;
   inherited;

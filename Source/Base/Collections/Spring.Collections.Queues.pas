@@ -34,47 +34,53 @@ uses
   Spring.Collections.Base;
 
 type
+  TDequeEnd = (deFront, deBack);
+
   /// <summary>
-  ///   Represents a first-in, first-out (FIFO) collection of items.
+  ///   Represents a double-ended queue.
   /// </summary>
   /// <typeparam name="T">
-  ///   Specifies the type of elements in the queue.
+  ///   Specifies the type of elements in the collection.
   /// </typeparam>
-  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>, INotifyCollectionChanged<T>)
+  TDeque<T> = class(TEnumerableBase<T>, IQueue<T>, IDeque<T>, INotifyCollectionChanged<T>)
   private
     type
       TEnumerator = class(TEnumeratorBase<T>)
       private
-        fQueue: TQueue<T>;
+        fDeque: TDeque<T>;
         fIndex: Integer;
         fVersion: Integer;
         fCurrent: T;
       protected
         function GetCurrent: T; override;
       public
-        constructor Create(const queue: TQueue<T>);
+        constructor Create(const deque: TDeque<T>);
         destructor Destroy; override;
         function MoveNext: Boolean; override;
       end;
+
       TArrayManager = TArrayManager<T>;
   private
-    fHead: Integer;
-    fTail: Integer;
-    fCount: Integer;
     fItems: TArray<T>;
+    fCount: Integer;
     fVersion: Integer;
+    fFront: Integer;
     fOnChanged: ICollectionChangedEvent<T>;
+    function GetBack: Integer; inline;
+    property Back: Integer read GetBack;
+    property Front: Integer read fFront;
     procedure Grow;
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetOnChanged: ICollectionChangedEvent<T>;
-    procedure SetCapacity(const value: Integer);
+    procedure SetCapacity(value: Integer);
   {$ENDREGION}
 
     procedure Changed(const item: T; action: TCollectionChangedAction);
-    function DequeueInternal(notification: TCollectionChangedAction): T; virtual;
+    procedure AddInternal(const item: T; dequeEnd: TDequeEnd);
+    procedure RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction); virtual;
   public
     constructor Create; overload; override;
     constructor Create(const values: array of T); overload;
@@ -84,14 +90,33 @@ type
     function GetEnumerator: IEnumerator<T>; override;
 
     procedure Clear;
-    procedure Enqueue(const item: T);
-    function Dequeue: T;
-    function Extract: T;
-    function Peek: T;
-    function PeekOrDefault: T;
-    function TryDequeue(out item: T): Boolean;
-    function TryExtract(out item: T): Boolean;
-    function TryPeek(out item: T): Boolean;
+    procedure AddFirst(const item: T);
+    procedure AddLast(const item: T);
+    function RemoveFirst: T;
+    function RemoveLast: T;
+    function ExtractFirst: T;
+    function ExtractLast: T;
+    function TryRemoveFirst(out item: T): Boolean;
+    function TryRemoveLast(out item: T): Boolean;
+    function TryExtractFirst(out item: T): Boolean;
+    function TryExtractLast(out item: T): Boolean;
+    function First: T; overload; override;
+    function Last: T; overload; override;
+    function FirstOrDefault(const defaultValue: T): T; overload; override;
+    function LastOrDefault(const defaultValue: T): T; overload; override;
+    function Single: T; overload; override;
+    function SingleOrDefault(const defaultValue: T): T; overload; override;
+    function TryGetFirst(out value: T): Boolean; override;
+    function TryGetLast(out value: T): Boolean; override;
+
+    procedure IQueue<T>.Enqueue = AddLast;
+    function IQueue<T>.Dequeue = RemoveFirst;
+    function IQueue<T>.Extract = ExtractFirst;
+    function IQueue<T>.Peek = First;
+    function IQueue<T>.PeekOrDefault = FirstOrDefault;
+    function IQueue<T>.TryDequeue = TryRemoveFirst;
+    function IQueue<T>.TryExtract = TryExtractFirst;
+    function IQueue<T>.TryPeek = TryGetFirst;
 
     procedure TrimExcess;
 
@@ -99,7 +124,7 @@ type
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
-  TObjectQueue<T: class> = class(TQueue<T>, ICollectionOwnership)
+  TObjectDeque<T: class> = class(TDeque<T>, ICollectionOwnership)
   private
     fOwnsObjects: Boolean;
   {$REGION 'Property Accessors'}
@@ -107,7 +132,7 @@ type
     procedure SetOwnsObjects(const value: Boolean);
   {$ENDREGION}
   protected
-    function DequeueInternal(notification: TCollectionChangedAction): T; override;
+    procedure RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction); override;
   public
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
@@ -128,111 +153,137 @@ uses
   Spring.ResourceStrings;
 
 
-{$REGION 'TQueue<T>'}
+{$REGION 'TDeque<T>'}
 
-constructor TQueue<T>.Create;
+constructor TDeque<T>.Create;
 begin
   inherited Create;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-constructor TQueue<T>.Create(const values: array of T);
+constructor TDeque<T>.Create(const values: array of T);
 var
   i: Integer;
 begin
   Create;
+  SetCapacity(Length(values));
   for i := Low(values) to High(values) do
-    Enqueue(values[i]);
+    AddInternal(values[i], deBack);
 end;
 
-constructor TQueue<T>.Create(const collection: IEnumerable<T>);
+constructor TDeque<T>.Create(const collection: IEnumerable<T>);
 var
   item: T;
 begin
   Create;
   for item in collection do
-    Enqueue(item);
+    AddInternal(item, deBack);
 end;
 
-destructor TQueue<T>.Destroy;
+destructor TDeque<T>.Destroy;
 begin
   Clear;
   inherited Destroy;
 end;
 
-procedure TQueue<T>.Changed(const item: T; action: TCollectionChangedAction);
+function TDeque<T>.GetBack: Integer;
 begin
-  if fOnChanged.CanInvoke then
-    fOnChanged.Invoke(Self, item, action);
+  Result := fFront + fCount - 1;
+  if Result > High(fItems) then
+    Dec(Result, Length(fItems));
 end;
 
-procedure TQueue<T>.Clear;
-begin
-  while fCount > 0 do
-    Dequeue;
-  fHead := 0;
-  fTail := 0;
-  fCount := 0;
-end;
-
-function TQueue<T>.Dequeue: T;
-begin
-  Result := DequeueInternal(caRemoved);
-end;
-
-function TQueue<T>.DequeueInternal(notification: TCollectionChangedAction): T;
-begin
-  if fCount = 0 then
-    raise EListError.CreateRes(@SUnbalancedOperation);
-  Result := fItems[fTail];
-
-  IncUnchecked(fVersion);
-  fItems[fTail] := Default(T);
-  fTail := (fTail + 1) mod Length(fItems);
-  Dec(fCount);
-
-  Changed(Result, notification);
-end;
-
-procedure TQueue<T>.Enqueue(const item: T);
+procedure TDeque<T>.AddInternal(const item: T; dequeEnd: TDequeEnd);
 begin
   if fCount = Length(fItems) then
     Grow;
 
   IncUnchecked(fVersion);
-  fItems[fHead] := item;
-  fHead := (fHead + 1) mod Length(fItems);
   Inc(fCount);
+  case dequeEnd of
+    deFront:
+    begin
+      Dec(fFront);
+      if fFront = -1 then
+        fFront := High(fItems);
+      fItems[Front] := item;
+    end;
+    deBack: fItems[Back] := item;
+  end;
 
   Changed(item, caAdded);
 end;
 
-function TQueue<T>.Extract: T;
+procedure TDeque<T>.AddFirst(const item: T);
 begin
-  Result := DequeueInternal(caExtracted);
+  AddInternal(item, deFront);
 end;
 
-function TQueue<T>.GetCapacity: Integer;
+procedure TDeque<T>.AddLast(const item: T);
+begin
+  AddInternal(item, deBack);
+end;
+
+procedure TDeque<T>.Changed(const item: T; action: TCollectionChangedAction);
+begin
+  if fOnChanged.CanInvoke then
+    fOnChanged.Invoke(Self, item, action);
+end;
+
+procedure TDeque<T>.Clear;
+var
+  item: T;
+begin
+  while fCount > 0 do
+    RemoveInternal(item, deFront, caRemoved);
+end;
+
+function TDeque<T>.ExtractFirst: T;
+begin
+  RemoveInternal(Result, deFront, caExtracted);
+end;
+
+function TDeque<T>.ExtractLast: T;
+begin
+  RemoveInternal(Result, deBack, caExtracted);
+end;
+
+function TDeque<T>.First: T;
+begin
+  if fCount = 0 then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := fItems[Front];
+end;
+
+function TDeque<T>.FirstOrDefault(const defaultValue: T): T;
+begin
+  if fCount = 0 then
+    Result := defaultValue
+  else
+    Result := fItems[Front];
+end;
+
+function TDeque<T>.GetCapacity: Integer;
 begin
   Result := Length(fItems);
 end;
 
-function TQueue<T>.GetCount: Integer;
+function TDeque<T>.GetCount: Integer;
 begin
   Result := fCount;
 end;
 
-function TQueue<T>.GetEnumerator: IEnumerator<T>;
+function TDeque<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self);
 end;
 
-function TQueue<T>.GetOnChanged: ICollectionChangedEvent<T>;
+function TDeque<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
   Result := fOnChanged;
 end;
 
-procedure TQueue<T>.Grow;
+procedure TDeque<T>.Grow;
 var
   newCapacity: Integer;
 begin
@@ -244,95 +295,173 @@ begin
   SetCapacity(newCapacity);
 end;
 
-function TQueue<T>.Peek: T;
+function TDeque<T>.Last: T;
 begin
   if fCount = 0 then
-    raise EListError.CreateRes(@SUnbalancedOperation);
-  Result := fItems[fTail];
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := fItems[Back];
 end;
 
-function TQueue<T>.PeekOrDefault: T;
+function TDeque<T>.LastOrDefault(const defaultValue: T): T;
 begin
   if fCount = 0 then
-    Result := Default(T)
+    Result := defaultValue
   else
-    Result := fItems[fTail];
+    Result := fItems[Back];
 end;
 
-procedure TQueue<T>.SetCapacity(const value: Integer);
-var
-  tailCount, offset: Integer;
+procedure TDeque<T>.RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction);
 begin
+  if fCount = 0 then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+
+  IncUnchecked(fVersion);
+  case dequeEnd of
+    deFront:
+    begin
+      item := fItems[Front];
+      fItems[Front] := Default(T);
+      Inc(fFront);
+      if fFront = Length(fItems) then
+        fFront := 0;
+    end;
+    deBack:
+    begin
+      item := fItems[Back];
+      fItems[Back] := Default(T);
+    end;
+  end;
+  Dec(fCount);
+
+  Changed(item, notification);
+end;
+
+function TDeque<T>.RemoveFirst: T;
+begin
+  RemoveInternal(Result, deFront, caRemoved);
+end;
+
+function TDeque<T>.RemoveLast: T;
+begin
+  RemoveInternal(Result, deBack, caRemoved);
+end;
+
+procedure TDeque<T>.SetCapacity(value: Integer);
+var
+  wrapped: Boolean;
+  offset, oldCapacity: Integer;
+begin
+  Guard.CheckRange(value >= fCount, 'capacity');
+
   offset := value - Length(fItems);
   if offset = 0 then
     Exit;
 
-  if (fHead < fTail) or ((fHead = fTail) and (fCount > 0)) then
-    tailCount := Length(fItems) - fTail
-  else
-    tailCount := 0;
+  if fCount = 0 then
+  begin
+    fFront := 0;
+    SetLength(fItems, value);
+    Exit;
+  end;
 
+  wrapped := Back < Front;
+  oldCapacity := Length(fItems);
   if offset > 0 then
     SetLength(fItems, value);
-  if tailCount > 0 then
+  if wrapped then
   begin
-    TArrayManager.Move(fItems, fItems, fTail, fTail + offset, tailCount);
+    TArrayManager.Move(fItems, fItems, Front, Front + offset, oldCapacity - Front);
     if offset > 0 then
-      TArrayManager.Finalize(fItems, fTail, offset)
+      TArrayManager.Finalize(fItems, Front, offset)
     else
-      if offset < 0 then
-        TArrayManager.Finalize(fItems, fCount, -offset);
-    Inc(fTail, offset);
+      TArrayManager.Finalize(fItems, fCount, -offset);
+    Inc(fFront, offset);
   end
-  else
-    if fTail > 0 then
-    begin
-      if fCount > 0 then
-      begin
-        TArrayManager.Move(fItems, fItems, fTail, 0, fCount);
-        TArrayManager.Finalize(fItems, fCount, fTail);
-      end;
-      Dec(fHead, fTail);
-      fTail := 0;
-    end;
-  if offset < 0 then
+  else if Front + fCount > value then
   begin
+    TArrayManager.Move(fItems, fItems, Front, 0, fCount);
+    TArrayManager.Finalize(fItems, fCount, Front);
+    fFront := 0;
+  end;
+  if offset < 0 then
     SetLength(fItems, value);
-    if value = 0 then
-      fHead := 0
-    else
-      fHead := fHead mod Length(fItems);
+end;
+
+function TDeque<T>.Single: T;
+begin
+  case fCount of
+    0: raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    1: Result := fItems[Front];
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
   end;
 end;
 
-procedure TQueue<T>.TrimExcess;
+function TDeque<T>.SingleOrDefault(const defaultValue: T): T;
+begin
+  case fCount of
+    0: Result := defaultValue;
+    1: Result := fItems[Front];
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+  end;
+end;
+
+procedure TDeque<T>.TrimExcess;
 begin
   SetCapacity(fCount);
 end;
 
-function TQueue<T>.TryDequeue(out item: T): Boolean;
+function TDeque<T>.TryExtractFirst(out item: T): Boolean;
 begin
   Result := fCount > 0;
   if Result then
-    item := Dequeue
+    RemoveInternal(item, deFront, caExtracted)
   else
     item := Default(T);
 end;
 
-function TQueue<T>.TryExtract(out item: T): Boolean;
+function TDeque<T>.TryExtractLast(out item: T): Boolean;
 begin
   Result := fCount > 0;
   if Result then
-    item := Extract
+    RemoveInternal(item, deBack, caExtracted)
   else
     item := Default(T);
 end;
 
-function TQueue<T>.TryPeek(out item: T): Boolean;
+function TDeque<T>.TryGetFirst(out value: T): Boolean;
 begin
   Result := fCount > 0;
   if Result then
-    item := Peek
+    value := fItems[Front]
+  else
+    value := Default(T);
+end;
+
+function TDeque<T>.TryGetLast(out value: T): Boolean;
+begin
+  Result := fCount > 0;
+  if Result then
+    value := fItems[Back]
+  else
+    value := Default(T);
+end;
+
+function TDeque<T>.TryRemoveFirst(out item: T): Boolean;
+begin
+  Result := fCount > 0;
+  if Result then
+    RemoveInternal(item, deFront, caRemoved)
+  else
+    item := Default(T);
+end;
+
+function TDeque<T>.TryRemoveLast(out item: T): Boolean;
+begin
+  Result := fCount > 0;
+  if Result then
+    RemoveInternal(item, deBack, caRemoved)
   else
     item := Default(T);
 end;
@@ -340,37 +469,37 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TQueue<T>.TEnumerator'}
+{$REGION 'TDeque<T>.TEnumerator'}
 
-constructor TQueue<T>.TEnumerator.Create(const queue: TQueue<T>);
+constructor TDeque<T>.TEnumerator.Create(const deque: TDeque<T>);
 begin
   inherited Create;
-  fQueue := queue;
-  fQueue._AddRef;
-  fVersion := fQueue.fVersion;
+  fDeque := deque;
+  fDeque._AddRef;
+  fVersion := fDeque.fVersion;
 end;
 
-destructor TQueue<T>.TEnumerator.Destroy;
+destructor TDeque<T>.TEnumerator.Destroy;
 begin
-  fQueue._Release;
+  fDeque._Release;
   inherited Destroy;
 end;
 
-function TQueue<T>.TEnumerator.GetCurrent: T;
+function TDeque<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
 end;
 
-function TQueue<T>.TEnumerator.MoveNext: Boolean;
+function TDeque<T>.TEnumerator.MoveNext: Boolean;
 begin
   Result := False;
 
-  if fVersion <> fQueue.fVersion then
+  if fVersion <> fDeque.fVersion then
     raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
 
-  if fIndex < fQueue.fCount then
+  if fIndex < fDeque.fCount then
   begin
-    fCurrent := fQueue.fItems[(fQueue.fTail + fIndex) mod Length(fQueue.fItems)];
+    fCurrent := fDeque.fItems[(fDeque.fFront + fIndex) mod Length(fDeque.fItems)];
     Inc(fIndex);
     Result := True;
   end
@@ -381,48 +510,47 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TObjectQueue<T>'}
+{$REGION 'TObjectDeque<T>'}
 
-constructor TObjectQueue<T>.Create;
+constructor TObjectDeque<T>.Create;
 begin
   inherited Create;
   fOwnsObjects := True;
 end;
 
-constructor TObjectQueue<T>.Create(ownsObjects: Boolean);
+constructor TObjectDeque<T>.Create(ownsObjects: Boolean);
 begin
   inherited Create;
   fOwnsObjects := ownsObjects;
 end;
 
-constructor TObjectQueue<T>.Create(const comparer: IComparer<T>;
+constructor TObjectDeque<T>.Create(const comparer: IComparer<T>;
   ownsObjects: Boolean);
 begin
   inherited Create(comparer);
   fOwnsObjects := ownsObjects;
 end;
 
-function TObjectQueue<T>.DequeueInternal(
-  notification: TCollectionChangedAction): T;
+procedure TObjectDeque<T>.RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction);
 begin
-  Result := inherited DequeueInternal(notification);
+  inherited RemoveInternal(item, dequeEnd, notification);
   if fOwnsObjects and (notification = caRemoved) then
   begin
 {$IFNDEF AUTOREFCOUNT}
-    Result.Free;
+    item.Free;
 {$ELSE}
-    Result.DisposeOf;
+    item.DisposeOf;
 {$ENDIF}
-    Result := nil;
+    item := nil;
   end;
 end;
 
-function TObjectQueue<T>.GetOwnsObjects: Boolean;
+function TObjectDeque<T>.GetOwnsObjects: Boolean;
 begin
   Result := fOwnsObjects;
 end;
 
-procedure TObjectQueue<T>.SetOwnsObjects(const value: Boolean);
+procedure TObjectDeque<T>.SetOwnsObjects(const value: Boolean);
 begin
   fOwnsObjects := value;
 end;

@@ -57,8 +57,8 @@ type
         function MoveNext: Boolean; override;
       end;
   private
-    fCount: Integer;
     fItems: TArray<T>;
+    fCount: Integer;
     fVersion: Integer;
     fOnChanged: ICollectionChangedEvent<T>;
     procedure Grow;
@@ -67,7 +67,7 @@ type
     function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetOnChanged: ICollectionChangedEvent<T>;
-    procedure SetCapacity(const value: Integer);
+    procedure SetCapacity(value: Integer);
   {$ENDREGION}
 
     procedure Changed(const item: T; action: TCollectionChangedAction);
@@ -251,10 +251,10 @@ begin
   Changed(item, caAdded);
 end;
 
-procedure TStack<T>.SetCapacity(const value: Integer);
+procedure TStack<T>.SetCapacity(value: Integer);
 begin
-  if value < fCount then
-    raise EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRange);
+  Guard.CheckRange(value >= fCount, 'capacity');
+
   SetLength(fItems, value);
 end;
 
