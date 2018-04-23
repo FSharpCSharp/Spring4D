@@ -1810,8 +1810,19 @@ type
       constructor Create(const value: Pointer; typeInfo: PTypeInfo); overload;
       destructor Destroy; override;
     end;
+
+    THandleFinalizer<T> = class(TInterfacedObject, IShared<T>)
+    private
+      fValue: T;
+      fFinalizer: TAction<T>;
+      function Invoke: T;
+    public
+      constructor Create(const value: T; finalizer: TAction<T>);
+      destructor Destroy; override;
+    end;
   public
     class function New<T>(const value: T): IShared<T>; overload; static;
+    class function New<T>(const value: T; const finalizer: TAction<T>): IShared<T>; overload; static;
   end;
 
   {$ENDREGION}
@@ -7459,6 +7470,12 @@ begin
   end;
 end;
 
+class function Shared.New<T>(const value: T;
+  const finalizer: TAction<T>): IShared<T>;
+begin
+  Result := THandleFinalizer<T>.Create(value, finalizer);
+end;
+
 {$ENDREGION}
 
 
@@ -7517,6 +7534,30 @@ begin
 end;
 
 function Shared.TRecordFinalizer.Invoke: Pointer;
+begin
+  Result := fValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Shared.THandleFinalizer<T>'}
+
+constructor Shared.THandleFinalizer<T>.Create(const value: T;
+  finalizer: TAction<T>);
+begin
+  inherited Create;
+  fValue := value;
+  fFinalizer := finalizer;
+end;
+
+destructor Shared.THandleFinalizer<T>.Destroy;
+begin
+  fFinalizer(fValue);
+  inherited;
+end;
+
+function Shared.THandleFinalizer<T>.Invoke: T;
 begin
   Result := fValue;
 end;
