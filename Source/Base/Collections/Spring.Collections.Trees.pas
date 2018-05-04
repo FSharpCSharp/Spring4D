@@ -329,7 +329,7 @@ const
 
 function TBinaryTreeNode.GetParent: PBinaryTreeNode;
 begin
-  IntPtr(Result) := IntPtr(fParent) and PointerMask;
+  Result := Pointer(IntPtr(fParent) and PointerMask);
 end;
 
 function TBinaryTreeNode.GetHeight: Integer;
@@ -416,7 +416,7 @@ end;
 
 function TRedBlackTree.TRedBlackTreeNode.GetParent: PRedBlackTreeNode;
 begin
-  IntPtr(Result) := IntPtr(fParent) and PointerMask;
+  Result := Pointer(IntPtr(fParent) and PointerMask);
 end;
 
 procedure TRedBlackTree.TRedBlackTreeNode.SetColor(const value: TNodeColor);
