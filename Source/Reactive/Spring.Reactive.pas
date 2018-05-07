@@ -270,6 +270,8 @@ type
 
     function Select<TSource, TResult>(const selector: Func<TSource, TResult>): IObservable<TResult>; overload;
 
+    function SelectMany<TSource, TResult>(const selector: Func<TSource, IObservable<TResult>>): IObservable<TResult>; overload;
+
     function SkipUntil<TSource, TOther>(const other: IObservable<TOther>): IObservable<TSource>; overload;
 
     function Switch<TSource>: IObservable<TSource>; overload;
@@ -372,6 +374,8 @@ type
 
 
     procedure ForEach(const onNext: Action<T>);
+
+    function SequenceEqual(const second: IEnumerable<T>): IObservable<Boolean>; overload;
 
     // TODO PPL overloads / cancellation token
 
@@ -554,6 +558,7 @@ uses
   Spring.Reactive.Observable.Range,
   Spring.Reactive.Observable.Return,
   Spring.Reactive.Observable.Select,
+  Spring.Reactive.Observable.SelectMany,
   Spring.Reactive.Observable.SkipUntil,
   Spring.Reactive.Observable.Switch,
   Spring.Reactive.Observable.TakeUntil,
@@ -683,6 +688,13 @@ function IObservableExtensions.Select<TSource, TResult>(
   const selector: Func<TSource, TResult>): IObservable<TResult>;
 begin
   Result := TSelect<TSource, TResult>.TSelector.Create(
+    TObject(Self) as TObservableBase<TSource>, selector);
+end;
+
+function IObservableExtensions.SelectMany<TSource, TResult>(
+  const selector: Func<TSource, IObservable<TResult>>): IObservable<TResult>;
+begin
+  Result := TSelectMany<TSource, TResult>.TObservableSelector.Create(
     TObject(Self) as TObservableBase<TSource>, selector);
 end;
 

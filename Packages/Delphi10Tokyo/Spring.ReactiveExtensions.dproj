@@ -101,15 +101,10 @@
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -124,8 +119,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -199,6 +192,8 @@
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Return.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Sample.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Select.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SelectMany.pas"/>
+        <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SequenceEqual.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Skip.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipLast.pas"/>
         <DCCReference Include="..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipUntil.pas"/>
@@ -268,7 +263,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\..\..\..\..\..\..\..\Public\Documents\Embarcadero\Studio\19.0\Bpl\Spring.ReactiveExtensions.Delphi10Tokyo.bpl" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="C:\Users\Public\Documents\Embarcadero\Studio\19.0\Bpl\Spring.ReactiveExtensions.Delphi10Tokyo.bpl" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>Spring_ReactiveExtensions.bpl</RemoteName>
                         <Overwrite>true</Overwrite>

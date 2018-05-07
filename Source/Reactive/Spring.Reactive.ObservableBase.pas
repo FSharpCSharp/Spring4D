@@ -97,6 +97,9 @@ type
     function Throttle(const dueTime: TTimeSpan): IObservable<T>;
     function Where(const predicate: Predicate<T>): IObservable<T>;
 
+    // "extension" methods (QueryLanguage.Aggregates.cs)
+    function SequenceEqual(const second: IEnumerable<T>): IObservable<Boolean>; overload;
+
     // "extension" methods (QueryLanguage.Blocking.cs)
     function Wait: T;
 
@@ -127,6 +130,7 @@ type
 implementation
 
 uses
+  Generics.Defaults,
   SyncObjs,
   Spring.Reactive.AnonymousObservable,
   Spring.Reactive.AnonymousObserver,
@@ -144,6 +148,7 @@ uses
   Spring.Reactive.Observable.DoAction,
   Spring.Reactive.Observable.IgnoreElements,
   Spring.Reactive.Observable.Sample,
+  Spring.Reactive.Observable.SequenceEqual,
   Spring.Reactive.Observable.Skip,
   Spring.Reactive.Observable.SkipLast,
   Spring.Reactive.Observable.SkipUntil,
@@ -225,6 +230,12 @@ function TObservableBase<T>.ScheduledSubscribe(const _: IScheduler;
   const autoDetachObserver: TValue): IDisposable;
 begin
   Result := SubscribeCore(autoDetachObserver.AsType<IObserver<T>>);
+end;
+
+function TObservableBase<T>.SequenceEqual(
+  const second: IEnumerable<T>): IObservable<Boolean>;
+begin
+  Result := TSequenceEqual<T>.TEnumerable.Create(Self, second, TEqualityComparer<T>.Default);
 end;
 
 function TObservableBase<T>.Subscribe: IDisposable;

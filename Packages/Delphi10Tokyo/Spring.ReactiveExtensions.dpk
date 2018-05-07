@@ -95,6 +95,8 @@ contains
   Spring.Reactive.Observable.Return in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Return.pas',
   Spring.Reactive.Observable.Sample in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Sample.pas',
   Spring.Reactive.Observable.Select in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Select.pas',
+  Spring.Reactive.Observable.SelectMany in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SelectMany.pas',
+  Spring.Reactive.Observable.SequenceEqual in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SequenceEqual.pas',
   Spring.Reactive.Observable.Skip in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.Skip.pas',
   Spring.Reactive.Observable.SkipLast in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipLast.pas',
   Spring.Reactive.Observable.SkipUntil in '..\..\Source\Reactive\Observable\Spring.Reactive.Observable.SkipUntil.pas',
