@@ -167,10 +167,11 @@ type
     fCapacity: Integer;
     fCount: Integer;
     fItemCount: Integer;
+    fVersion: Integer;
     fBucketIndexMask: Integer;
     fBucketHashCodeMask: Integer;
-    fEqualityComparer: IEqualityComparer<TKey>;
-    fVersion: Integer;
+    fKeyComparer: IEqualityComparer<TKey>;
+    fValueComparer: IEqualityComparer<TValue>;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
     fOwnerships: TDictionaryOwnerships;
@@ -201,9 +202,15 @@ type
     constructor Create; overload; override;
     constructor Create(ownerships: TDictionaryOwnerships); overload;
     constructor Create(capacity: Integer; ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(const comparer: IEqualityComparer<TKey>;
+    constructor Create(const keyComparer: IEqualityComparer<TKey>;
       ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(capacity: Integer; const comparer: IEqualityComparer<TKey>;
+    constructor Create(const keyComparer: IEqualityComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(capacity: Integer; const keyComparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(capacity: Integer; const keyComparer: IEqualityComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>;
       ownerships: TDictionaryOwnerships = []); overload;
 
     destructor Destroy; override;
@@ -499,28 +506,46 @@ end;
 
 constructor TDictionary<TKey, TValue>.Create;
 begin
-  Create(0, nil);
+  Create(0, nil, nil);
 end;
 
 constructor TDictionary<TKey, TValue>.Create(ownerships: TDictionaryOwnerships);
 begin
-  Create(0, nil, ownerships);
+  Create(0, nil, nil, ownerships);
 end;
 
 constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
   ownerships: TDictionaryOwnerships);
 begin
-  Create(capacity, nil, ownerships);
+  Create(capacity, nil, nil, ownerships);
 end;
 
 constructor TDictionary<TKey, TValue>.Create(
-  const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships);
+  const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships);
 begin
-  Create(0, comparer, ownerships);
+  Create(0, keyComparer, nil, ownerships);
+end;
+
+constructor TDictionary<TKey, TValue>.Create(
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships);
+begin
+  Create(0, keyComparer, valueComparer, ownerships);
 end;
 
 constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
-  const comparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships);
+  const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships);
+begin
+  Create(capacity, keyComparer, nil, ownerships);
+end;
+
+constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(capacity >= 0, 'capacity');
@@ -538,10 +563,14 @@ begin
   fOwnerships := ownerships;
   fKeys := TKeyCollection.Create(Self);
   fValues := TValueCollection.Create(Self);
-  if Assigned(comparer) then
-    fEqualityComparer := comparer
+  if Assigned(keyComparer) then
+    fKeyComparer := keyComparer
   else
-    fEqualityComparer := TEqualityComparer<TKey>.Default;
+    fKeyComparer := TEqualityComparer<TKey>.Default;
+  if Assigned(valueComparer) then
+    fValueComparer := valueComparer
+  else
+    fValueComparer := TEqualityComparer<TValue>.Default;
   SetCapacity(capacity);
 end;
 
@@ -689,7 +718,7 @@ begin
       and (bucketValue and fBucketHashCodeMask = hashCode and fBucketHashCodeMask) then
     begin
       itemIndex := bucketValue and fBucketIndexMask;
-      if fEqualityComparer.Equals(fItems[itemIndex].Key, key) then
+      if fKeyComparer.Equals(fItems[itemIndex].Key, key) then
         Exit(True);
     end;
 
@@ -699,7 +728,7 @@ end;
 
 function TDictionary<TKey, TValue>.Hash(const key: TKey): Integer;
 begin
-  Result := fEqualityComparer.GetHashCode(key) and not TItem.RemovedFlag;
+  Result := fKeyComparer.GetHashCode(key) and not TItem.RemovedFlag;
 end;
 
 procedure TDictionary<TKey, TValue>.DoAdd(hashCode, bucketIndex, itemIndex: Integer;
@@ -889,19 +918,17 @@ var
   item: TValue;
 begin
   Result := TryGetValue(key, item)
-    and TEqualityComparer<TValue>.Default.Equals(item, value);
+    and fValueComparer.Equals(item, value);
 end;
 
 function TDictionary<TKey, TValue>.ContainsValue(
   const value: TValue): Boolean;
 var
   itemIndex: Integer;
-  comparer: IEqualityComparer<TValue>;
 begin
-  comparer := TEqualityComparer<TValue>.Default;
   for itemIndex := 0 to fItemCount - 1 do
     if not fItems[itemIndex].Removed then
-      if comparer.Equals(fItems[itemIndex].Value, value) then
+      if fValueComparer.Equals(fItems[itemIndex].Value, value) then
         Exit(True);
   Result := False;
 end;
@@ -916,13 +943,11 @@ function TDictionary<TKey, TValue>.Extract(const key: TKey;
 var
   bucketIndex, itemIndex: Integer;
   foundItem: PItem;
-  comparer: IEqualityComparer<TValue>;
 begin
   if Find(key, Hash(key), bucketIndex, itemIndex) then
   begin
     foundItem := @fItems[itemIndex];
-    comparer := TEqualityComparer<TValue>.Default;
-    if comparer.Equals(foundItem.Value, Value) then
+    if fValueComparer.Equals(foundItem.Value, Value) then
     begin
       Result.Key := foundItem.Key;
       Result.Value := foundItem.Value;
@@ -931,7 +956,7 @@ begin
     end;
   end;
   Result.Key := key;
-  Result.Value := Default (TValue);
+  Result.Value := Default(TValue);
 end;
 
 function TDictionary<TKey, TValue>.ExtractPair(
@@ -977,13 +1002,11 @@ function TDictionary<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
   bucketIndex, itemIndex: Integer;
-  comparer: IEqualityComparer<TValue>;
 begin
   Result := Find(key, Hash(key), bucketIndex, itemIndex);
   if Result then
   begin
-    comparer := TEqualityComparer<TValue>.Default;
-    Result := comparer.Equals(fItems[itemIndex].value, value);
+    Result := fValueComparer.Equals(fItems[itemIndex].value, value);
     if Result then
       DoRemove(bucketIndex, itemIndex, caRemoved);
   end;

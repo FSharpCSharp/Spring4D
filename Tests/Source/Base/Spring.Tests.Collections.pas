@@ -204,6 +204,19 @@ type
     procedure TestOrdered_Issue179;
   end;
 
+  TTestDictionaryValueComparer = class(TTestCase)
+  private
+    SUT: IDictionary<string, Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestContains;
+    procedure TestContainsValue;
+    procedure TestExtract;
+    procedure TestRemove;
+  end;
+
   TTestEmptyStackofStrings = class(TTestCase)
   private
     SUT: IStack<string>;
@@ -1672,6 +1685,82 @@ begin
   // trigger the destruction of the dictionary as this was the
   // last reference keeping it alive
   e := nil;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDictionaryValueComparer'}
+
+procedure TTestDictionaryValueComparer.SetUp;
+var
+  valueComparer: IEqualityComparer<Integer>;
+begin
+  inherited;
+  valueComparer := TEqualityComparer<Integer>.Construct(
+    function(const left, right: Integer): Boolean
+    begin
+      Result := left = -right;
+    end,
+    function(const value: Integer): Integer
+    begin
+      Result := value;
+    end);
+  SUT := TCollections.CreateDictionary<string, Integer>(nil, valueComparer);
+  SUT.Add('one', 1);
+  SUT.Add('two', 2);
+  SUT.Add('three', 3);
+end;
+
+procedure TTestDictionaryValueComparer.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestDictionaryValueComparer.TestContains;
+begin
+  CheckTrue(SUT.Contains('one', -1));
+  CheckFalse(SUT.Contains('two', -1));
+  CheckFalse(SUT.Contains('one', 1));
+end;
+
+procedure TTestDictionaryValueComparer.TestContainsValue;
+var
+  value: Integer;
+begin
+  for value := -5 to 5 do begin
+    CheckEquals((value >= -3) and (value <= -1), SUT.ContainsValue(value));
+  end;
+end;
+
+procedure TTestDictionaryValueComparer.TestExtract;
+var
+  pair: TPair<string, Integer>;
+begin
+  pair := SUT.Extract('two', 2);
+  CheckEquals(pair.Key, 'two');
+  CheckEquals(pair.Value, Default(Integer));
+
+  pair := SUT.Extract('two', -2);
+  CheckEquals(pair.Key, 'two');
+  CheckEquals(pair.Value, 2);
+
+  pair := SUT.Extract('three', 3);
+  CheckEquals(pair.Key, 'three');
+  CheckEquals(pair.Value, Default(Integer));
+
+  pair := SUT.Extract('three', -3);
+  CheckEquals(pair.Key, 'three');
+  CheckEquals(pair.Value, 3);
+end;
+
+procedure TTestDictionaryValueComparer.TestRemove;
+begin
+  CheckFalse(SUT.Remove('two', 2));
+  CheckTrue(SUT.Remove('two', -2));
+  CheckFalse(SUT.Remove('three', 3));
+  CheckTrue(SUT.Remove('three', -3));
 end;
 
 {$ENDREGION}

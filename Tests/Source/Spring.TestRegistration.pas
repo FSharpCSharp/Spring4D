@@ -93,6 +93,7 @@ begin
     TTestSortedList.Suite,
     TTestStringIntegerDictionary.Suite,
     TTestEmptyStringIntegerDictionary.Suite,
+    TTestDictionaryValueComparer.Suite,
     TTestEmptyStackOfStrings.Suite,
     TTestStackOfInteger.Suite,
     TTestStackOfTBytes.Suite,
