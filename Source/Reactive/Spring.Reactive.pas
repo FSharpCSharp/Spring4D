@@ -420,8 +420,6 @@ type
   end;
 
   TObservable = record
-  private
-    class function Timer(const dueTime, period: TTimeSpan; const scheduler: IScheduler): IObservable<Int64>; static;
   public
     class function Buffer<T>(const source: IObservable<T>; count: Integer): IObservable<IList<T>>; overload; static;
     class function Buffer<T>(const source: IObservable<T>; count, skip: Integer): IObservable<IList<T>>; overload; static;
@@ -450,7 +448,8 @@ type
       const keySelector: Func<TSource, TKey>): IObservable<IGroupedObservable<TKey, TSource>>; static;
     // TODO overloads
 
-    class function Interval(const period: TTimeSpan): IObservable<Int64>; static;
+    class function Interval(const period: TTimeSpan): IObservable<Int64>; overload; static;
+    class function Interval(const period: TTimeSpan; const scheduler: IScheduler): IObservable<Int64>; overload; static;
 
     class function Merge<T>(const sources: array of IObservable<T>): IObservable<T>; overload; static;
     class function Merge<T>(const sources: IObservable<IObservable<T>>): IObservable<T>; overload; static;
@@ -491,8 +490,11 @@ type
     class function Subscribe<T>(const source: IEnumerable<T>; const observer: IObserver<T>): IDisposable; overload; static;
     class function Subscribe<T>(const source: IEnumerable<T>; const observer: IObserver<T>; const scheduler: IScheduler): IDisposable; overload; static;
 
-
-    // TODO Timer
+    // "extension" methods from QueryLanguage.Time.cs
+    class function Timer(const dueTime: TTimeSpan): IObservable<Int64>; overload; static;
+    class function Timer(const dueTime: TTimeSpan; const scheduler: IScheduler): IObservable<Int64>; overload; static;
+    class function Timer(const dueTime, period: TTimeSpan): IObservable<Int64>; overload; static;
+    class function Timer(const dueTime, period: TTimeSpan; const scheduler: IScheduler): IObservable<Int64>; overload; static;
 
     // events
   {$IFDEF DELPHIXE2_UP}
@@ -1006,6 +1008,12 @@ begin
   Result := Timer(period, period, SchedulerDefaults.TimeBasedOperations);
 end;
 
+class function TObservable.Interval(const period: TTimeSpan;
+  const scheduler: IScheduler): IObservable<Int64>;
+begin
+  Result := Timer(period, period, scheduler);
+end;
+
 class function TObservable.Merge<T>(
   const sources: array of IObservable<T>): IObservable<T>;
 begin
@@ -1087,6 +1095,23 @@ end;
 class function TObservable.Throw<T>(const error: Exception): IObservable<T>;
 begin
   Result := TThrow<T>.Create(error, SchedulerDefaults.ConstantTimeOperations);
+end;
+
+class function TObservable.Timer(const dueTime: TTimeSpan): IObservable<Int64>;
+begin
+  Result := Timer(dueTime, SchedulerDefaults.TimeBasedOperations);
+end;
+
+class function TObservable.Timer(const dueTime: TTimeSpan;
+  const scheduler: IScheduler): IObservable<Int64>;
+begin
+  Result := TTimer.TSingleRelative.Create(dueTime, scheduler);
+end;
+
+class function TObservable.Timer(const dueTime,
+  period: TTimeSpan): IObservable<Int64>;
+begin
+  Result := Timer(dueTime, period, SchedulerDefaults.TimeBasedOperations);
 end;
 
 class function TObservable.Timer(const dueTime, period: TTimeSpan;

@@ -62,8 +62,12 @@ type
         TSink = class(TSink<Int64>)
         private
           fPeriod: TTimeSpan;
-          procedure InvokeStart;
+          fPendingTickCount: Integer;
+          fPeriodic: IDisposable;
+          function InvokeStart(const scheduler: IScheduler; const state: TValue): IDisposable;
           function Tick(const count: Int64): Int64;
+          function Tock(const count: Int64): Int64;
+          procedure CatchUp(const count: TValue; const recurse: Action<TValue>);
         public
           constructor Create(const period: TTimeSpan;
             const observer: IObserver<Int64>; const cancel: IDisposable);
@@ -98,6 +102,9 @@ type
   end;
 
 implementation
+
+uses
+  Spring.Reactive.Disposables;
 
 
 {$REGION 'TTimer.TSingle'}
@@ -181,10 +188,48 @@ begin
   fPeriod := period;
 end;
 
-procedure TTimer.TPeriodic.TSink.InvokeStart;
+function TTimer.TPeriodic.TSink.InvokeStart(const scheduler: IScheduler;
+  const state: TValue): IDisposable;
+var
+  guard: IInterface;
+  d, c: ISingleAssignmentDisposable;
 begin
-  // TODO: implement
-  raise ENotImplementedException.Create('InvokeStart');
+  fPendingTickCount := 1;
+  d := TSingleAssignmentDisposable.Create;
+  fPeriodic := d;
+
+  guard := Self; // make sure that self is kept alive by capturing it
+  d.Disposable := (scheduler as ISchedulerPeriodic).SchedulePeriodic(
+    Int64(1), fPeriod,
+    function (const count: TValue): TValue
+    begin
+      if Assigned(guard) then
+        Result := Tock(count.AsInt64);
+    end);
+
+  try
+    Observer.OnNext(0);
+  except
+    on e: Exception do
+    begin
+      d.Dispose;
+      raise e;
+    end;
+  end;
+
+  if AtomicDecrement(fPendingTickCount) > 0 then
+  begin
+    c := TSingleAssignmentDisposable.Create;
+    c.Disposable := scheduler.Schedule(Int64(1),
+      procedure(const count: TValue; const recurse: Action<TValue>)
+      begin
+        if Assigned(Self) then
+          CatchUp(count, recurse);
+      end);
+    Exit(TStableCompositeDisposable.Create(d, c));
+  end;
+
+  Result := d;
 end;
 
 function TTimer.TPeriodic.TSink.Run(const parent: TPeriodic;
@@ -201,11 +246,11 @@ begin
           Result := Tick(count.AsInt64);
       end)
   else
-    Result := parent.fScheduler.Schedule(dueTime,
-      procedure
+    Result := parent.fScheduler.Schedule(TValue.Empty, dueTime,
+      function(const scheduler: IScheduler; const state: TValue): IDisposable
       begin
         if Assigned(guard) then
-          InvokeStart;
+          Result := InvokeStart(scheduler, state);
       end);
 end;
 
@@ -213,6 +258,34 @@ function TTimer.TPeriodic.TSink.Tick(const count: Int64): Int64;
 begin
   Observer.OnNext(count);
   Result := count + 1; // TODO: unchecked
+end;
+
+function TTimer.TPeriodic.TSink.Tock(const count: Int64): Int64;
+begin
+  if AtomicIncrement(fPendingTickCount) = 1 then
+  begin
+    Observer.OnNext(count);
+    AtomicDecrement(fPendingTickCount);
+  end;
+
+  Result := count + 1; // TODO: unchecked
+end;
+
+procedure TTimer.TPeriodic.TSink.CatchUp(const count: TValue;
+  const recurse: Action<TValue>);
+begin
+  try
+    Observer.OnNext(count.AsInt64);
+  except
+    on e: Exception do
+    begin
+      fPeriodic.Dispose;
+      raise e;
+    end;
+  end;
+
+  if AtomicDecrement(fPendingTickCount) > 0 then
+    recurse(count.AsInt64 + 1);
 end;
 
 {$ENDREGION}
