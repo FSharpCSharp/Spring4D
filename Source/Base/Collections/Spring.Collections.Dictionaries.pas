@@ -242,9 +242,9 @@ type
   {$REGION 'Implements IDictionary<TKey, TValue>'}
     procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; overload;
-    function ExtractPair(const key: TKey): TKeyValuePair;
     function GetValueOrDefault(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
+    function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
@@ -323,19 +323,21 @@ type
   {$REGION 'Implements IDictionary<TKey, TValue>'}
     procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; reintroduce; overload;
-    function ExtractPair(const key: TKey): TKeyValuePair; reintroduce; overload;
+    function TryExtract(const key: TKey; out value: TValue): Boolean;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
   {$ENDREGION}
 
   {$REGION 'Implements IBidiDictionary<TKey, TValue>'}
     function ExtractKey(const value: TValue): TKey;
-    function ExtractValue(const key: TKey): TValue;
+    function IBidiDictionary<TKey, TValue>.ExtractValue = Extract;
     function GetKeyOrDefault(const value: TValue): TKey; overload;
     function GetKeyOrDefault(const value: TValue; const defaultValue: TKey): TKey; overload;
     function GetValueOrDefault(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
     function RemoveKey(const key: TKey): Boolean;
     function RemoveValue(const value: TValue): Boolean;
+    function TryExtractKey(const value: TValue; out key: TKey): Boolean;
+    function IBidiDictionary<TKey, TValue>.TryExtractValue = TryExtract;
     function TryGetKey(const value: TValue; out key: TKey): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
   {$ENDREGION}
@@ -465,7 +467,7 @@ type
   {$REGION 'Implements IDictionary<TKey, TValue>'}
     procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; reintroduce; overload;
-    function ExtractPair(const key: TKey): TKeyValuePair; reintroduce; overload;
+    function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
@@ -935,7 +937,7 @@ end;
 
 function TDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
 begin
-  Result := ExtractPair(key).Value;
+  TryExtract(key, Result);
 end;
 
 function TDictionary<TKey, TValue>.Extract(const key: TKey;
@@ -955,26 +957,22 @@ begin
       Exit;
     end;
   end;
-  Result.Key := key;
-  Result.Value := Default(TValue);
+  Result := Default(TKeyValuePair);
 end;
 
-function TDictionary<TKey, TValue>.ExtractPair(
-  const key: TKey): TKeyValuePair;
+function TDictionary<TKey, TValue>.TryExtract(const key: TKey;
+  out value: TValue): Boolean;
 var
   bucketIndex, itemIndex: Integer;
 begin
-  if Find(key, Hash(key), bucketIndex, itemIndex) then
+  Result := Find(key, Hash(key), bucketIndex, itemIndex);
+  if Result then
   begin
-    Result.Key := fItems[itemIndex].Key;
-    Result.Value := fItems[itemIndex].Value;
+    value := fItems[itemIndex].Value;
     DoRemove(bucketIndex, itemIndex, caExtracted);
   end
   else
-  begin
-    Result.Key := key;
-    Result.Value := Default(TValue);
-  end;
+    value := Default(TValue);
 end;
 
 function TDictionary<TKey, TValue>.TryGetValue(const key: TKey;
@@ -1417,7 +1415,7 @@ var
   item: TValue;
 begin
   Result := fValuesByKey.TryGetValue(key, item)
-    and TEqualityComparer<TValue>.Default.Equals(value, item);
+    and fKeysByValue.fKeyComparer.Equals(value, item);
 end;
 
 function TBidiDictionary<TKey, TValue>.ContainsValue(
@@ -1428,24 +1426,14 @@ end;
 
 function TBidiDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
 begin
-  Result := ExtractValue(key);
+  if not TryExtract(key, Result) then
+    Result := Default(TValue);
 end;
 
 function TBidiDictionary<TKey, TValue>.ExtractKey(const value: TValue): TKey;
 begin
-  if fKeysByValue.TryGetValue(value, Result) then
-  begin
-    fKeysByValue.Extract(value);
-    fValuesByKey.Extract(Result);
-  end
-  else
+  if not TryExtractKey(value, Result) then
     Result := Default(TKey);
-end;
-
-function TBidiDictionary<TKey, TValue>.ExtractPair(
-  const key: TKey): TKeyValuePair;
-begin
-  raise ENotImplementedException.Create('ExtractPair');
 end;
 
 function TBidiDictionary<TKey, TValue>.Extract(const key: TKey;
@@ -1453,19 +1441,6 @@ function TBidiDictionary<TKey, TValue>.Extract(const key: TKey;
 begin
   Result := fValuesByKey.Extract(key, value);
   fKeysByValue.Extract(value, key);
-end;
-
-function TBidiDictionary<TKey, TValue>.ExtractValue(const key: TKey): TValue;
-begin
-  if fValuesByKey.TryGetValue(key, Result) then
-  begin
-    fKeysByValue.Extract(Result);
-    fValuesByKey.Extract(key);
-
-    // notify
-  end
-  else
-    Result := Default(TValue);
 end;
 
 function TBidiDictionary<TKey, TValue>.GetCount: Integer;
@@ -1542,7 +1517,7 @@ var
   item: TValue;
 begin
   Result := fValuesByKey.TryGetValue(key, item)
-    and TEqualityComparer<TValue>.Default.Equals(value, item);
+    and fKeysByValue.fKeyComparer.Equals(value, item);
   if Result then
   begin
     fValuesByKey.Remove(key);
@@ -1612,6 +1587,22 @@ begin
   fValuesByKey[key] := value;
 end;
 
+function TBidiDictionary<TKey, TValue>.TryExtract(const key: TKey;
+  out value: TValue): Boolean;
+begin
+  Result := fValuesByKey.TryExtract(key, value);
+  if Result then
+    fKeysByValue.Extract(value);
+end;
+
+function TBidiDictionary<TKey, TValue>.TryExtractKey(const value: TValue;
+  out key: TKey): Boolean;
+begin
+  Result := fKeysByValue.TryExtract(value, key);
+  if Result then
+    fValuesByKey.Extract(key);
+end;
+
 function TBidiDictionary<TKey, TValue>.TryGetKey(const value: TValue;
   out key: TKey): Boolean;
 begin
@@ -1643,10 +1634,13 @@ begin
   fValues := TValueCollection.Create(Self);
 
   fKeyComparer := keyComparer;
-  if not Assigned(fkeyComparer) then
+  if Assigned(keyComparer) then
+    fKeyComparer := keyComparer
+  else
     fKeyComparer := TComparer<TKey>.Default;
-  fValueComparer := valueComparer;
-  if not Assigned(fValueComparer) then
+  if Assigned(fValueComparer) then
+    fValueComparer := valueComparer
+  else
     fValueComparer := TComparer<TValue>.Default;
   fTree := TRedBlackTree<TKey,TValue>.Create(keyComparer);
 end;
@@ -1782,41 +1776,8 @@ begin
 end;
 
 function TSortedDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
-var
-  node: PNode;
 begin
-  node := fTree.FindNode(key);
-  if Assigned(node) then
-  begin
-    Result := node.Value;
-    IncUnchecked(fVersion);
-    fTree.DeleteNode(node);
-    KeyChanged(key, caExtracted);
-    ValueChanged(Result, caExtracted);
-  end
-  else
-    Result := Default(TValue);
-end;
-
-function TSortedDictionary<TKey, TValue>.ExtractPair(const key: TKey): TKeyValuePair;
-var
-  node: PNode;
-begin
-  node := fTree.FindNode(key);
-  if Assigned(node) then
-  begin
-    Result.Key := node.Key;
-    Result.Value := node.Value;
-    IncUnchecked(fVersion);
-    fTree.DeleteNode(node);
-    KeyChanged(Result.Key, caExtracted);
-    ValueChanged(Result.Value, caExtracted);
-  end
-  else
-  begin
-    Result.Key := key;
-    Result.Value := Default(TValue);
-  end;
+  TryExtract(key, Result);
 end;
 
 function TSortedDictionary<TKey, TValue>.GetCount: Integer;
@@ -1915,6 +1876,24 @@ begin
     node := PNode(PBinaryTreeNode(node).Next);
     Inc(i);
   end;
+end;
+
+function TSortedDictionary<TKey, TValue>.TryExtract(const key: TKey; out value: TValue): Boolean;
+var
+  node: PNode;
+begin
+  node := fTree.FindNode(key);
+  Result := Assigned(node);
+  if Result then
+  begin
+    value := node.Value;
+    IncUnchecked(fVersion);
+    fTree.DeleteNode(node);
+    KeyChanged(key, caExtracted);
+    ValueChanged(value, caExtracted);
+  end
+  else
+    value := Default(TValue);
 end;
 
 function TSortedDictionary<TKey, TValue>.TryGetValue(const key: TKey;

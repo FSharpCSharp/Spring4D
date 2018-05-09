@@ -341,7 +341,7 @@ type
     ///   The zero-based index of the element to retrieve.
     /// </param>
     /// <returns>
-    ///   <b>Default</b>(<i>T</i>) if the index is outside the bounds of the
+    ///   <b>Default(T)</b> if the index is outside the bounds of the
     ///   source sequence; otherwise, the element at the specified position in
     ///   the source sequence.
     /// </returns>
@@ -408,7 +408,7 @@ type
     ///   sequence contains no elements.
     /// </summary>
     /// <returns>
-    ///   <b>Default</b>(<i>T</i>) if source is empty; otherwise, the first
+    ///   <b>Default(T)</b> if source is empty; otherwise, the first
     ///   element in source.
     /// </returns>
     function FirstOrDefault: T; overload;
@@ -434,7 +434,7 @@ type
     ///   A function to test each element for a condition.
     /// </param>
     /// <returns>
-    ///   <b>Default</b>(<i>T</i>) if source is empty or if no element passes
+    ///   <b>Default(T)</b> if source is empty or if no element passes
     ///   the test specified by predicate; otherwise, the first element in
     ///   source that passes the test specified by predicate.
     /// </returns>
@@ -488,7 +488,7 @@ type
     ///   sequence contains no elements.
     /// </summary>
     /// <returns>
-    ///   <b>Default</b>(<i>T</i>) if the source sequence is empty; otherwise,
+    ///   <b>Default(T)</b> if the source sequence is empty; otherwise,
     ///   the last element in the IEnumerable&lt;T&gt;.
     /// </returns>
     function LastOrDefault: T; overload;
@@ -514,7 +514,7 @@ type
     ///   A function to test each element for a condition.
     /// </param>
     /// <returns>
-    ///   <b>Default</b>(<i>T</i>) if the sequence is empty or if no elements
+    ///   <b>Default(T)</b> if the sequence is empty or if no elements
     ///   pass the test in the predicate function; otherwise, the last element
     ///   that passes the test in the predicate function.
     /// </returns>
@@ -1522,11 +1522,10 @@ type
 
     function Remove(const key: TValue): Boolean; overload;
 
-    function ExtractPair(const key: TValue): TPair<TValue, TValue>;
-
     function ContainsKey(const key: TValue): Boolean;
     function ContainsValue(const value: TValue): Boolean;
 
+    function TryExtract(const key: TValue; out value: TValue): Boolean;
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
     function AsReadOnlyDictionary: IReadOnlyDictionary;
@@ -1647,7 +1646,7 @@ type
     /// <param name="value">
     ///   When this method returns, the value associated with the specified
     ///   key, if the key is found; otherwise, the default value for the type
-    ///   of the value parameter. This parameter is passed uninitialized.
+    ///   of the value parameter.
     /// </param>
     /// <returns>
     ///   <b>True</b> if the object that implements IDictionary&lt;TKey,
@@ -1834,19 +1833,6 @@ type
     function Extract(const key: TKey): TValue; overload;
 
     /// <summary>
-    ///   Removes the value for a specified key without triggering lifetime
-    ///   management for objects.
-    /// </summary>
-    /// <param name="key">
-    ///   The key whose value to remove.
-    /// </param>
-    /// <returns>
-    ///   The removed pair for the specified key if it existed; <b>default</b>
-    ///   otherwise.
-    /// </returns>
-    function ExtractPair(const key: TKey): TPair<TKey, TValue>; overload;
-
-    /// <summary>
     ///   Gets the value for a given key if a matching key exists in the
     ///   dictionary; returns the default value otherwise.
     /// </summary>
@@ -1859,20 +1845,33 @@ type
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
 
     /// <summary>
+    ///   Attempts to get and remove the value associated with the specified
+    ///   key, without triggering lifetime management for objects.
+    /// </summary>
+    /// <param name="key">
+    ///   The key whose value to get.
+    /// </param>
+    /// <param name="value">
+    ///   The value associated with the specified key, if the key is found;
+    ///   otherwise, <b>Default(TValue)</b>.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the key is found; <b>False</b> otherwise.
+    /// </returns>
+    function TryExtract(const key: TKey; out value: TValue): Boolean;
+
+    /// <summary>
     ///   Gets the value associated with the specified key.
     /// </summary>
     /// <param name="key">
     ///   The key whose value to get.
     /// </param>
     /// <param name="value">
-    ///   When this method returns, the value associated with the specified
-    ///   key, if the key is found; otherwise, the default value for the type
-    ///   of the value parameter. This parameter is passed uninitialized.
+    ///   The value associated with the specified key, if the key is found;
+    ///   otherwise, <b>Default(TValue)</b>.
     /// </param>
     /// <returns>
-    ///   <b>True</b> if the object that implements IDictionary&lt;TKey,
-    ///   TValue&gt; contains an element with the specified key; otherwise, <b>
-    ///   False</b>.
+    ///   <b>True</b> if the key is found; <b>False</b> otherwise.
     /// </returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
@@ -1964,6 +1963,38 @@ type
     ///   <b>True</b> if the key was found; otherwise, <b>False</b>.
     /// </returns>
     function TryGetKey(const value: TValue; out key: TKey): Boolean;
+
+    /// <summary>
+    ///   Attempts to get and remove the key associated with the specified
+    ///   value, without triggering lifetime management for objects.
+    /// </summary>
+    /// <param name="value">
+    ///   The value whose key to get.
+    /// </param>
+    /// <param name="key">
+    ///   The key associated with the specified value, if the value is found;
+    ///   otherwise, <b>Default(TKey)</b>.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the value is found; <b>False</b> otherwise.
+    /// </returns>
+    function TryExtractKey(const value: TValue; out key: TKey): Boolean;
+
+    /// <summary>
+    ///   Attempts to get and remove the value associated with the specified
+    ///   key, without triggering lifetime management for objects.
+    /// </summary>
+    /// <param name="key">
+    ///   The key whose value to get.
+    /// </param>
+    /// <param name="value">
+    ///   The value associated with the specified key, if the key is found;
+    ///   otherwise, <b>Default(TValue)</b>.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the key is found; <b>False</b> otherwise.
+    /// </returns>
+    function TryExtractValue(const key: TKey; out value: TValue): Boolean;
 
     property Key[const value: TValue]: TKey read GetKey write SetKey;
     property Value[const key: TKey]: TValue read GetValue write SetValue; default;

@@ -119,12 +119,12 @@ type
     procedure Add(const key, value: TValue);
     procedure AddOrSetValue(const key, value: TValue);
 
-    function ExtractPair(const key: TValue): TPair<TValue, TValue>;
     function Remove(const key: TValue): Boolean;
 
     function ContainsKey(const key: TValue): Boolean;
     function ContainsValue(const value: TValue): Boolean;
 
+    function TryExtract(const key: TValue; out value: TValue): Boolean;
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
     function AsReadOnlyDictionary: IReadOnlyDictionary;
@@ -493,15 +493,6 @@ begin
   fSource := source;
 end;
 
-function TDictionaryAdapter<TKey, T>.ExtractPair(
-  const key: TValue): TPair<TValue, TValue>;
-var
-  pair: TPair<TKey, T>;
-begin
-  pair := fSource.ExtractPair(key.AsType<TKey>);
-  Result := TPair<TValue, TValue>.Create(TValue.From<TKey>(pair.Key), TValue.From<T>(pair.Value));
-end;
-
 procedure TDictionaryAdapter<TKey, T>.Add(const key, value: TValue);
 begin
   fSource.Add(key.AsType<TKey>, value.AsType<T>);
@@ -563,6 +554,14 @@ end;
 function TDictionaryAdapter<TKey, T>.Remove(const key: TValue): Boolean;
 begin
   Result := fSource.Remove(key.AsType<TKey>);
+end;
+
+function TDictionaryAdapter<TKey, T>.TryExtract(const key: TValue; out value: TValue): Boolean;
+var
+  item: T;
+begin
+  Result := fSource.TryExtract(key.AsType<TKey>, item);
+  value := TValue.From<T>(item);
 end;
 
 function TDictionaryAdapter<TKey, T>.TryGetValue(const key: TValue;

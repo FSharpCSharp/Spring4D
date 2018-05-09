@@ -298,11 +298,10 @@ end;
 function TMultiMapBase<TKey, TValue>.ExtractValues(
   const key: TKey): IList<TValue>;
 begin
-  if not fDictionary.TryGetValue(key, Result) then
+  if not fDictionary.TryExtract(key, Result) then
     raise EListError.CreateRes(@SGenericItemNotFound);
 
   Dec(fCount, Result.Count);
-  fDictionary.Extract(key);
 end;
 
 function TMultiMapBase<TKey, TValue>.GetCount: Integer;
