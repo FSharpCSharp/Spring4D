@@ -44,12 +44,7 @@ type
   TEntityMap = class(TInterfacedObject, IEntityMap)
   private
     fCriticalSection: ICriticalSection;
-    {$IFDEF NEXTGEN}
-    // not using IDictionary here because of nextgen compiler issue
-    fEntityValues: TDictionary<TEntityMapKey, TEntityMapValue>;
-    {$ELSE}
     fEntityValues: IDictionary<TEntityMapKey, TEntityMapValue>;
-    {$ENDIF}
   protected
     function GetEntityKey(const instance: TObject): TEntityMapKey; overload;
     function GetEntityKey(const className, id: string): TEntityMapKey; overload;
@@ -57,7 +52,7 @@ type
 
     procedure PutEntity(const entity: TObject);
 
-    procedure FinalizeItem(const item: TPair<TEntityMapKey, TEntityMapValue>);
+    procedure FinalizeItem(const item: TEntityMapValue);
   public
     constructor Create;
     destructor Destroy; override;
@@ -87,11 +82,7 @@ constructor TEntityMap.Create;
 begin
   inherited Create;
   fCriticalSection := TInterfacedCriticalSection.Create;
-  {$IFDEF NEXTGEN}
-  fEntityValues := TDictionary<TEntityMapKey,TEntityMapValue>.Create;
-  {$ELSE}
   fEntityValues := TCollections.CreateDictionary<TEntityMapKey,TEntityMapValue>;
-  {$ENDIF}
 end;
 
 destructor TEntityMap.Destroy;
@@ -100,13 +91,12 @@ begin
   inherited Destroy;
 end;
 
-procedure TEntityMap.FinalizeItem(
-  const item: TPair<TEntityMapKey, TEntityMapValue>);
+procedure TEntityMap.FinalizeItem(const item: TEntityMapValue);
 var
   pair: TPair<Pointer, TValue>;
   value: TValue;
 begin
-  for pair in Item.Value do
+  for pair in item do
   begin
     value := pair.Value;
     value.Free;
@@ -124,7 +114,7 @@ var
   pair: TPair<TEntityMapKey,TEntityMapValue>;
 begin
   for pair in fEntityValues do
-    FinalizeItem(pair);
+    FinalizeItem(pair.Value);
   fEntityValues.Clear;
 end;
 
@@ -238,7 +228,7 @@ var
   columnValue: TValue;
   values: TEntityMapValue;
   i: Integer;
-  pair: TPair<TEntityMapKey,TEntityMapValue>;
+  item: TEntityMapValue;
   key: string;
   id: string;
 
@@ -264,11 +254,11 @@ begin
   key := GetEntityKey(entity.ClassName, id);
   fCriticalSection.Enter;
   try
-    pair := fEntityValues.ExtractPair(key);
+    item := fEntityValues.Extract(key);
     fEntityValues.Add(key, values);
   finally
     fCriticalSection.Leave;
-    FinalizeItem(pair);
+    FinalizeItem(item);
   end;
 end;
 
@@ -276,16 +266,16 @@ procedure TEntityMap.Remove(const instance: TObject);
 var
   id: string;
   entityData: TEntityData;
-  pair: TPair<TEntityMapKey,TEntityMapValue>;
+  item: TEntityMapValue;
 begin
   entityData := TEntityCache.Get(instance.ClassType);
   id := entityData.GetPrimaryKeyValueAsString(instance);
   fCriticalSection.Enter;
   try
-    pair := fEntityValues.ExtractPair(GetEntityKey(instance.ClassName, id));
+    item := fEntityValues.Extract(GetEntityKey(instance.ClassName, id));
   finally
     fCriticalSection.Leave;
-    FinalizeItem(pair);
+    FinalizeItem(item);
   end;
 end;
 

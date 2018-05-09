@@ -200,6 +200,8 @@ type
     procedure TestDictionaryContainsKey;
     procedure TestMapAdd;
     procedure TestMapRemove;
+    procedure TestCollectionExtract;
+    procedure TestMapExtract;
     procedure TestOrdered;
     procedure TestOrdered_Issue179;
   end;
@@ -653,7 +655,8 @@ type
     procedure TestIndexOf;
     procedure TestAddOrSetValue;
     procedure TestRemove;
-    procedure TestExtractPair;
+    procedure TestExtract;
+    procedure TestTryExtract;
     procedure TestToArray;
   end;
 
@@ -674,7 +677,8 @@ type
     procedure TestGetEnumerator;
     procedure TestAddOrSetValue;
     procedure TestRemove;
-    procedure TestExtractPair;
+    procedure TestExtract;
+    procedure TestTryExtract;
     procedure TestToArray;
   end;
 
@@ -726,7 +730,6 @@ type
     procedure TestAddValue;
     procedure TestAddOrSetValue;
     procedure TestExtract;
-    procedure TestExtractPair;
     procedure TestRemoveKey;
     procedure TestGetValueOrDefault;
     procedure TestTryGetValue;
@@ -1639,6 +1642,38 @@ begin
   CheckFalse(SUT.ContainsKey('one'), 'TestMapRemove: Values does contain "one"');
 end;
 
+procedure TTestStringIntegerDictionary.TestCollectionExtract;
+var
+  pair: TPair<string, Integer>;
+begin
+  pair := (SUT as ICollection<TPair<string, Integer>>).Extract(TPair<string, Integer>.Create('one', 2));
+  CheckEquals(3, SUT.Count);
+  CheckEquals(Default(string), pair.Key);
+  CheckEquals(Default(Integer), pair.Value);
+
+  pair := (SUT as ICollection<TPair<string, Integer>>).Extract(TPair<string, Integer>.Create('one', 1));
+  CheckEquals(2, SUT.Count);
+  CheckEquals('one', pair.Key);
+  CheckEquals(1, pair.Value);
+  CheckFalse(SUT.ContainsKey('one'), 'TestMapExtract: Values does contain "one"');
+end;
+
+procedure TTestStringIntegerDictionary.TestMapExtract;
+var
+  pair: TPair<string, Integer>;
+begin
+  pair := (SUT as IMap<string, Integer>).Extract('one', 2);
+  CheckEquals(3, SUT.Count);
+  CheckEquals(Default(string), pair.Key);
+  CheckEquals(Default(Integer), pair.Value);
+
+  pair := (SUT as IMap<string, Integer>).Extract('one', 1);
+  CheckEquals(2, SUT.Count);
+  CheckEquals('one', pair.Key);
+  CheckEquals(1, pair.Value);
+  CheckFalse(SUT.ContainsKey('one'), 'TestMapExtract: Values does contain "one"');
+end;
+
 procedure TTestStringIntegerDictionary.TestOrdered;
 var
   pairs: TArray<TPair<string, Integer>>;
@@ -1739,7 +1774,7 @@ var
   pair: TPair<string, Integer>;
 begin
   pair := SUT.Extract('two', 2);
-  CheckEquals(pair.Key, 'two');
+  CheckEquals(pair.Key, Default(string));
   CheckEquals(pair.Value, Default(Integer));
 
   pair := SUT.Extract('two', -2);
@@ -1747,7 +1782,7 @@ begin
   CheckEquals(pair.Value, 2);
 
   pair := SUT.Extract('three', 3);
-  CheckEquals(pair.Key, 'three');
+  CheckEquals(pair.Key, Default(string));
   CheckEquals(pair.Value, Default(Integer));
 
   pair := SUT.Extract('three', -3);
@@ -4030,29 +4065,6 @@ begin
   CheckEquals(values[3], 'd');
 end;
 
-procedure TTestOrderedDictionary.TestExtractPair;
-var
-  pair: TPair<Integer,string>;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  pair := SUT.ExtractPair(5);
-  CheckEquals(5, pair.Key);
-  CheckEquals('', pair.Value);
-  CheckCount(4);
-  pair := SUT.ExtractPair(4);
-  CheckEquals(4, pair.Key);
-  CheckEquals('d', pair.Value);
-  CheckCount(3);
-  pair := SUT.Extract(3, 'c');
-  CheckEquals(3, pair.Key);
-  CheckEquals('c', pair.Value);
-  CheckCount(2);
-end;
-
 procedure TTestOrderedDictionary.TestGetEnumerator;
 var
   pair: TPair<Integer,string>;
@@ -4181,6 +4193,41 @@ begin
   CheckCount(2);
 end;
 
+procedure TTestOrderedDictionary.TestExtract;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  CheckEquals('', SUT.Extract(5));
+  CheckCount(4);
+  CheckEquals('d', SUT.Extract(4));
+  CheckCount(3);
+  CheckEquals('c', SUT.Extract(3));
+  CheckCount(2);
+end;
+
+procedure TTestOrderedDictionary.TestTryExtract;
+var
+  value: string;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  CheckFalse(SUT.TryExtract(5, value));
+  CheckEquals(Default(string), value);
+  CheckCount(4);
+  CheckTrue(SUT.TryExtract(4, value));
+  CheckEquals('d', value);
+  CheckCount(3);
+  CheckTrue(SUT.TryExtract(3, value));
+  CheckEquals('c', value);
+  CheckCount(2);
+end;
+
 procedure TTestOrderedDictionary.TestToArray;
 var
   items: TArray<TPair<Integer, string>>;
@@ -4295,29 +4342,6 @@ begin
   CheckEquals(values[3], 'd');
 end;
 
-procedure TTestSortedDictionary.TestExtractPair;
-var
-  pair: TPair<Integer,string>;
-begin
-  SUT.Add(3, 'c');
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(4, 'd');
-
-  pair := SUT.ExtractPair(5);
-  CheckEquals(5, pair.Key);
-  CheckEquals('', pair.Value);
-  CheckCount(4);
-  pair := SUT.ExtractPair(4);
-  CheckEquals(4, pair.Key);
-  CheckEquals('d', pair.Value);
-  CheckCount(3);
-  pair := SUT.Extract(3, 'c');
-  CheckEquals(3, pair.Key);
-  CheckEquals('c', pair.Value);
-  CheckCount(2);
-end;
-
 procedure TTestSortedDictionary.TestGetEnumerator;
 var
   pair: TPair<Integer,string>;
@@ -4386,6 +4410,41 @@ begin
   CheckFalse(SUT.Remove(4, 'e'));
   CheckCount(3);
   CheckTrue(SUT.Remove(4, 'd'));
+  CheckCount(2);
+end;
+
+procedure TTestSortedDictionary.TestExtract;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  CheckEquals('', SUT.Extract(5));
+  CheckCount(4);
+  CheckEquals('d', SUT.Extract(4));
+  CheckCount(3);
+  CheckEquals('c', SUT.Extract(3));
+  CheckCount(2);
+end;
+
+procedure TTestSortedDictionary.TestTryExtract;
+var
+  value: string;
+begin
+  SUT.Add(3, 'c');
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+
+  CheckFalse(SUT.TryExtract(5, value));
+  CheckEquals(Default(string), value);
+  CheckCount(4);
+  CheckTrue(SUT.TryExtract(4, value));
+  CheckEquals('d', value);
+  CheckCount(3);
+  CheckTrue(SUT.TryExtract(3, value));
+  CheckEquals('c', value);
   CheckCount(2);
 end;
 
@@ -4696,28 +4755,6 @@ begin
   Check(SUT.Count = NumItems-2);
 
   Check(SUT.Extract(NumItems div 2) = IntToStr(NumItems div 2));
-  Check(SUT.Count = NumItems-3);
-end;
-
-procedure TTestIntegerStringMap.TestExtractPair;
-var
-  item: TPair<Integer, string>;
-begin
-  Check(SUT.Count = NumItems);
-
-  item := SUT.ExtractPair(0);
-  Check(item.Key = 0);
-  Check(item.Value = '0');
-  Check(SUT.Count = NumItems-1); // Extract removes an item
-
-  item := SUT.ExtractPair(NumItems-1);
-  Check(item.Key = NumItems-1);
-  Check(item.Value = IntToStr(NumItems-1));
-  Check(SUT.Count = NumItems-2);
-
-  item := SUT.ExtractPair(NumItems div 2);
-  Check(item.Key = NumItems div 2);
-  Check(item.Value = IntToStr(NumItems div 2));
   Check(SUT.Count = NumItems-3);
 end;
 
