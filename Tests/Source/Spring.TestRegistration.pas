@@ -187,6 +187,13 @@ begin
     TTestTreeMultiMapChangedEvent.Suite
   ]);
 
+  RegisterTests('Spring.Base.Collections.MultiSets', [
+    TTestHashMultiSet.Suite,
+    TTestTreeMultiSet.Suite,
+    TTestHashMultiSetChangedEvent.Suite,
+    TTestTreeMultiSetChangedEvent.Suite
+  ]);
+
   RegisterTests('Spring.Base.DesignPatterns', [
     TTestSingleton.Suite
   ]);

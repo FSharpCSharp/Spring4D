@@ -2447,6 +2447,115 @@ type
     property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
+  IReadOnlyMultiSet<T> = interface(IReadOnlyCollection<T>)
+    ['{7ECC0F3E-B73C-4821-82ED-FD84E0F81856}']
+  {$REGION 'Property Accessors'}
+    function GetElements: IReadOnlyCollection<T>;
+    function GetEntries: IReadOnlyCollection<TPair<T,Integer>>;
+    function GetItem(const item: T): Integer;
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Returns the collection of distinct elements contained in this
+    ///   multiset.
+    /// </summary>
+    property Elements: IReadOnlyCollection<T> read GetElements;
+
+    /// <summary>
+    ///   Returns a view of the contents of this multiset, each providing an
+    ///   element of the multiset and the count of that element. This
+    ///   collection contains exactly one entry for each distinct element in
+    ///   the multiset (thus it always has the same size as Elements).
+    /// </summary>
+    property Entries: IReadOnlyCollection<TPair<T,Integer>> read GetEntries;
+
+    /// <summary>
+    ///   Returns the number of occurrences of an element in this multiset (the
+    ///   count of the element).
+    /// </summary>
+    property Items[const item: T]: Integer read GetItem; default;
+  end;
+
+  IMultiSet<T> = interface(ICollection<T>)
+    ['{CC7C2115-EED6-4FDE-9AE6-44C253514B2F}']
+  {$REGION 'Property Accessors'}
+    function GetElements: IReadOnlyCollection<T>;
+    function GetEntries: IReadOnlyCollection<TPair<T,Integer>>;
+    function GetItem(const item: T): Integer;
+    procedure SetItem(const item: T; count: Integer);
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Adds a number of occurrences of an element to the multiset.
+    /// </summary>
+    /// <param name="item">
+    ///   The element to add occurrences of
+    /// </param>
+    /// <param name="count">
+    ///   The number of occurrences of the element to add
+    /// </param>
+    /// <returns>
+    ///   The count of the element before the operation, zero if the element
+    ///   was not in the multiset.
+    /// </returns>
+    /// <exception cref="EInvalidArgumentException">
+    ///   If count is negative
+    /// </exception>
+    function Add(const item: T; count: Integer): Integer; overload;
+
+    /// <summary>
+    ///   Removes a number of occurrences of an element from the multiset. If
+    ///   the multiset contains fewer than this number of occurrences to begin
+    ///   with, all occurrences will be removed.
+    /// </summary>
+    /// <param name="item">
+    ///   The element to remove occurrences of
+    /// </param>
+    /// <param name="count">
+    ///   The count of occurrences of the element to remove
+    /// </param>
+    /// <returns>
+    ///   The count of the element before the operation, zero if the element
+    ///   was not in the multiset.
+    /// </returns>
+    /// <exception cref="EInvalidArgumentException">
+    ///   If count is negative
+    /// </exception>
+    function Remove(const item: T; count: Integer): Integer; overload;
+
+    /// <summary>
+    ///   Determines whether the current multiset and the specified collection
+    ///   contain the same number of elements.
+    /// </summary>
+    function SetEquals(const other: IEnumerable<T>): Boolean;
+
+    /// <summary>
+    ///   Returns a read-only view on the multiset that is ordered by the
+    ///   occurences of its items starting with the highest occurence.
+    /// </summary>
+    function OrderedByCount: IReadOnlyMultiSet<T>;
+
+    /// <summary>
+    ///   Returns the collection of distinct elements contained in this
+    ///   multiset.
+    /// </summary>
+    property Elements: IReadOnlyCollection<T> read GetElements;
+
+    /// <summary>
+    ///   Returns a view of the contents of this multiset, each providing an
+    ///   element of the multiset and the count of that element. This
+    ///   collection contains exactly one entry for each distinct element in
+    ///   the multiset (thus it always has the same size as Elements).
+    /// </summary>
+    property Entries: IReadOnlyCollection<TPair<T,Integer>> read GetEntries;
+
+    /// <summary>
+    ///   Returns or sets the number of occurrences of an element in this
+    ///   multiset (the count of the element).
+    /// </summary>
+    property Items[const item: T]: Integer read GetItem write SetItem; default;
+  end;
+
   /// <summary>
   ///   Represents a collection of elements that have a common key.
   /// </summary>
@@ -2922,10 +3031,20 @@ type
     class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
 
+    class function CreateMultiSet<T>: IMultiSet<T>; overload; static;
+    class function CreateMultiSet<T>(const comparer: IEqualityComparer<T>): IMultiSet<T>; overload; static;
+    class function CreateMultiSet<T>(const values: array of T): IMultiSet<T>; overload; static;
+    class function CreateMultiSet<T>(const values: IEnumerable<T>): IMultiSet<T>; overload; static;
+
     class function CreateSortedSet<T>: ISet<T>; overload; static;
     class function CreateSortedSet<T>(const comparer: IComparer<T>): ISet<T>; overload; static;
     class function CreateSortedSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSortedSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
+
+    class function CreateSortedMultiSet<T>: IMultiSet<T>; overload; static;
+    class function CreateSortedMultiSet<T>(const comparer: IComparer<T>): IMultiSet<T>; overload; static;
+    class function CreateSortedMultiSet<T>(const values: array of T): IMultiSet<T>; overload; static;
+    class function CreateSortedMultiSet<T>(const values: IEnumerable<T>): IMultiSet<T>; overload; static;
 
     class function CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateSortedDictionary<TKey, TValue>(const keyComparer: IComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
@@ -3132,6 +3251,7 @@ uses
   Spring.Collections.Lists,
   Spring.Collections.LinkedLists,
   Spring.Collections.MultiMaps,
+  Spring.Collections.MultiSets,
   Spring.Collections.Queues,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
@@ -5020,8 +5140,30 @@ begin
   Result := TTreeMultiMap<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
 end;
 
-class function TCollections.CreateBidiDictionary<TKey, TValue>(
-  ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
+class function TCollections.CreateMultiSet<T>: IMultiSet<T>;
+begin
+  Result := THashMultiSet<T>.Create;
+end;
+
+class function TCollections.CreateMultiSet<T>(
+  const comparer: IEqualityComparer<T>): IMultiSet<T>;
+begin
+  Result := THashMultiSet<T>.Create(comparer);
+end;
+
+class function TCollections.CreateMultiSet<T>(const values: array of T): IMultiSet<T>;
+begin
+  Result := THashMultiSet<T>.Create;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateMultiSet<T>(const values: IEnumerable<T>): IMultiSet<T>;
+begin
+  Result := THashMultiSet<T>.Create;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateBidiDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
 begin
   Result := TBidiDictionary<TKey, TValue>.Create(ownerships);
 end;
@@ -5478,6 +5620,31 @@ class function TCollections.CreateSortedDictionary<TKey, TValue>(
   const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>;
 begin
   Result := TSortedDictionary<TKey, TValue>.Create(keyComparer, valueComparer);
+end;
+
+class function TCollections.CreateSortedMultiSet<T>: IMultiSet<T>;
+begin
+  Result := TTreeMultiSet<T>.Create;
+end;
+
+class function TCollections.CreateSortedMultiSet<T>(
+  const comparer: IComparer<T>): IMultiSet<T>;
+begin
+  Result := TTreeMultiSet<T>.Create(comparer);
+end;
+
+class function TCollections.CreateSortedMultiSet<T>(
+  const values: IEnumerable<T>): IMultiSet<T>;
+begin
+  Result := TTreeMultiSet<T>.Create;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateSortedMultiSet<T>(
+  const values: array of T): IMultiSet<T>;
+begin
+  Result := TTreeMultiSet<T>.Create;
+  Result.AddRange(values);
 end;
 
 {$ENDREGION}

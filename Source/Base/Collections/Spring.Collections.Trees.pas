@@ -496,6 +496,7 @@ type
     procedure TrimExcess;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
+    property Comparer: IComparer<TKey> read fComparer;
     property Count: Integer read GetCount;
     property Root: PNode read GetRoot;
   end;

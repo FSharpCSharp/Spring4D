@@ -40,6 +40,26 @@ uses
   Spring.Collections.Trees;
 
 type
+  TTestCollectionChangedEventBase = class(TTestCase)
+  protected
+    type
+      TEvent<T> = record
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        sender: TObject;
+        item: T;
+        action: TCollectionChangedAction;
+      end;
+  protected
+    fChangedEvents: IList<TEvent<Integer>>;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    Sender: TObject;
+    procedure Changed(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
+    procedure CheckChanged(index: Integer; item: Integer; action: TCollectionChangedAction);
+
+    procedure SetUp; override;
+    procedure TearDown; override;
+  end;
+
   TTestMapChangedEventBase = class(TTestCase)
   protected
     type
@@ -624,6 +644,40 @@ type
     procedure TestToArray;
   end;
 
+  TTestMultiSetBase = class(TTestCase)
+  private
+    procedure CheckCount(expected: Integer);
+  protected
+    SUT: IMultiSet<string>;
+    procedure TearDown; override;
+    function IsSorted: Boolean; virtual;
+  published
+    procedure TestAdd;
+    procedure TestRemove;
+
+    procedure TestOrderedByCount;
+    procedure TestSetEquals;
+  end;
+
+  TTestHashMultiSet = class(TTestMultiSetBase)
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestElements;
+    procedure TestEntries;
+    procedure TestToArray;
+  end;
+
+  TTestTreeMultiSet = class(TTestMultiSetBase)
+  protected
+    procedure SetUp; override;
+    function IsSorted: Boolean; override;
+  published
+    procedure TestElements;
+    procedure TestEntries;
+    procedure TestToArray;
+  end;
+
   TTestRedBlackTreeInteger = class(TTestCase)
   private
     SUT: IBinaryTree<Integer>;
@@ -670,6 +724,19 @@ type
     procedure TestRemove;
   end;
 
+  TTestMultiSetChangedEventBase = class(TTestCollectionChangedEventBase)
+  private
+    procedure AddEventHandlers;
+  protected
+    SUT: IMultiSet<Integer>;
+    procedure TearDown; override;
+  published
+    procedure TestAdd;
+    procedure TestClear;
+    procedure TestDestroy;
+    procedure TestRemove;
+  end;
+
   TTestListMultiMapChangedEvent = class(TTestMultiMapChangedEventBase)
   protected
     procedure SetUp; override;
@@ -685,10 +752,21 @@ type
     procedure SetUp; override;
   end;
 
+  TTestHashMultiSetChangedEvent = class(TTestMultiSetChangedEventBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestTreeMultiSetChangedEvent = class(TTestMultiSetChangedEventBase)
+  protected
+    procedure SetUp; override;
+  end;
+
 implementation
 
 uses
   Spring.Collections.MultiMaps,
+  Spring.Collections.MultiSets,
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
   StrUtils,
@@ -697,10 +775,48 @@ uses
 
 type
   TListMultiMap = TListMultiMap<Integer,Integer>;
+  THashMultiSet = THashMultiSet<string>;
+  TTreeMultiSet = TTreeMultiSet<string>;
 
 const
   MaxItems = 1000;
   ListCountLimit = 1000;//0000;
+
+
+{$REGION 'TTestCollectionChangedEventBase'}
+
+procedure TTestCollectionChangedEventBase.SetUp;
+begin
+  inherited;
+  fChangedEvents := TCollections.CreateList<TEvent<Integer>>;
+end;
+
+procedure TTestCollectionChangedEventBase.TearDown;
+begin
+  fChangedEvents := nil;
+  inherited;
+end;
+
+procedure TTestCollectionChangedEventBase.Changed(Sender: TObject;
+  const Item: Integer; Action: TCollectionChangedAction);
+var
+  event: TEvent<Integer>;
+begin
+  event.sender := Sender;
+  event.item := Item;
+  event.action := Action;
+  fChangedEvents.Add(event);
+end;
+
+procedure TTestCollectionChangedEventBase.CheckChanged(index, item: Integer;
+  action: TCollectionChangedAction);
+begin
+  Check(Sender = fChangedEvents[index].sender);
+  Check(item = fChangedEvents[index].item);
+  Check(action = fChangedEvents[index].action);
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TTestMapChangedEventBase'}
@@ -4479,5 +4595,286 @@ begin
   SUT := TCollections.CreateTreeMultiMap<Integer,string>;
   Sender := SUT.AsObject;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestMultiSetBase'}
+
+procedure TTestMultiSetBase.CheckCount(expected: Integer);
+begin
+  CheckEquals(expected, SUT.Count, 'Count');
+end;
+
+function TTestMultiSetBase.IsSorted: Boolean;
+begin
+  Result := False;
+end;
+
+procedure TTestMultiSetBase.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestMultiSetBase.TestAdd;
+begin
+  CheckTrue(SUT.Add('a'));
+  CheckCount(1);
+  CheckTrue(SUT.Add('b'));
+  CheckCount(2);
+  CheckEquals(1, SUT.Add('a', 2));
+  CheckCount(4);
+  CheckEquals(3, SUT['a']);
+end;
+
+procedure TTestMultiSetBase.TestOrderedByCount;
+var
+  orderedByCount: IReadOnlyMultiSet<string>;
+begin
+  SUT.AddRange(['a', 'c', 'b', 'b', 'a', 'b']);
+  orderedByCount := SUT.OrderedByCount;
+
+  Check(orderedByCount.Elements.EqualsTo(['b', 'a', 'c']));
+end;
+
+procedure TTestMultiSetBase.TestRemove;
+begin
+  SUT.Add('a', 3);
+  SUT.Add('b');
+
+  CheckTrue(SUT.Remove('a'));
+  CheckCount(3);
+  CheckEquals(2, SUT.Remove('a', 1));
+  CheckCount(2);
+  CheckFalse(SUT.Remove('c'));
+  CheckEquals(0, SUT.Remove('c', 2));
+  CheckEquals(1, SUT.Remove('b', 2));
+  CheckCount(1);
+end;
+
+procedure TTestMultiSetBase.TestSetEquals;
+begin
+  SUT.AddRange(['b', 'c', 'a', 'b', 'a', 'b']);
+  CheckTrue(SUT.SetEquals(TEnumerable.From<string>(['b', 'b', 'c', 'a', 'a', 'b'])));
+  CheckFalse(SUT.SetEquals(TEnumerable.From<string>(['b', 'b', 'c', 'a', 'a', 'b', 'a'])));
+  CheckFalse(SUT.SetEquals(TEnumerable.From<string>(['b', 'b', 'c', 'a', 'a', 'b', 'd'])));
+  CheckFalse(SUT.SetEquals(TEnumerable.From<string>(['a', 'b', 'c'])));
+  CheckFalse(SUT.SetEquals(TEnumerable.From<string>(['a', 'b', 'c'])));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestMultiSet'}
+
+procedure TTestHashMultiSet.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateMultiSet<string>;
+end;
+
+procedure TTestHashMultiSet.TestElements;
+var
+  elements: IReadOnlyCollection<string>;
+begin
+  SUT.AddRange(['b', 'c', 'a', 'b']);
+  elements := SUT.Elements;
+  CheckTrue(elements.EqualsTo(['b', 'c', 'a']));
+  SUT.Add('d');
+  CheckTrue(elements.Contains('d'));
+end;
+
+procedure TTestHashMultiSet.TestEntries;
+var
+  entries: TArray<TPair<string,Integer>>;
+begin
+  SUT.AddRange(['b', 'c', 'a', 'b', 'a', 'b']);
+  entries := SUT.Entries.ToArray;
+  CheckEquals(3, Length(entries));
+  CheckEquals('b', entries[0].Key);
+  CheckEquals('c', entries[1].Key);
+  CheckEquals('a', entries[2].Key);
+  CheckEquals(3, entries[0].Value);
+  CheckEquals(1, entries[1].Value);
+  CheckEquals(2, entries[2].Value);
+end;
+
+procedure TTestHashMultiSet.TestToArray;
+var
+  items: TArray<string>;
+begin
+  SUT.AddRange(['a', 'b', 'a', 'a']);
+
+  items := SUT.ToArray;
+  CheckEquals(4, Length(items));
+  CheckEquals('a', items[0]);
+  CheckEquals('a', items[1]);
+  CheckEquals('a', items[2]);
+  CheckEquals('b', items[3]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedMultiSet'}
+
+function TTestTreeMultiSet.IsSorted: Boolean;
+begin
+  Result := True;
+end;
+
+procedure TTestTreeMultiSet.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedMultiSet<string>;
+end;
+
+procedure TTestTreeMultiSet.TestElements;
+var
+  elements: IReadOnlyCollection<string>;
+begin
+  SUT.AddRange(['b', 'c', 'a', 'b']);
+  elements := SUT.Elements;
+  CheckTrue(elements.EqualsTo(['a', 'b', 'c']));
+
+  SUT.Add('d');
+  CheckTrue(elements.Contains('d'));
+end;
+
+procedure TTestTreeMultiSet.TestEntries;
+var
+  entries: TArray<TPair<string,Integer>>;
+begin
+  SUT.AddRange(['b', 'c', 'a', 'b', 'a', 'b']);
+  entries := SUT.Entries.ToArray;
+  CheckEquals(3, Length(entries));
+  CheckEquals('a', entries[0].Key);
+  CheckEquals('b', entries[1].Key);
+  CheckEquals('c', entries[2].Key);
+  CheckEquals(2, entries[0].Value);
+  CheckEquals(3, entries[1].Value);
+  CheckEquals(1, entries[2].Value);
+end;
+
+procedure TTestTreeMultiSet.TestToArray;
+var
+  items: TArray<string>;
+begin
+  SUT.AddRange(['b', 'c', 'a', 'a']);
+
+  items := SUT.ToArray;
+  CheckEquals(4, Length(items));
+  CheckEquals('a', items[0]);
+  CheckEquals('a', items[1]);
+  CheckEquals('b', items[2]);
+  CheckEquals('c', items[3]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestMultiSetChangedEventBase'}
+
+procedure TTestMultiSetChangedEventBase.AddEventHandlers;
+begin
+  SUT.OnChanged.Add(Changed);
+end;
+
+procedure TTestMultiSetChangedEventBase.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestMultiSetChangedEventBase.TestAdd;
+begin
+  AddEventHandlers;
+  SUT.Add(1);
+  SUT.Add(2);
+  SUT.Add(3, 2);
+
+  CheckEquals(4, fChangedEvents.Count);
+  CheckChanged(0, 1, caAdded);
+  CheckChanged(1, 2, caAdded);
+  CheckChanged(2, 3, caAdded);
+  CheckChanged(3, 3, caAdded);
+end;
+
+procedure TTestMultiSetChangedEventBase.TestClear;
+begin
+  SUT.Add(1);
+  SUT.Add(2);
+  SUT.Add(3, 2);
+  AddEventHandlers;
+  SUT.Clear;
+
+  CheckEquals(4, fChangedEvents.Count);
+  CheckChanged(0, 1, caRemoved);
+  CheckChanged(1, 2, caRemoved);
+  CheckChanged(2, 3, caRemoved);
+  CheckChanged(3, 3, caRemoved);
+end;
+
+procedure TTestMultiSetChangedEventBase.TestDestroy;
+begin
+  SUT.Add(1);
+  SUT.Add(2);
+  SUT.Add(3, 2);
+  AddEventHandlers;
+  SUT := nil;
+
+  CheckEquals(4, fChangedEvents.Count);
+  CheckChanged(0, 1, caRemoved);
+  CheckChanged(1, 2, caRemoved);
+  CheckChanged(2, 3, caRemoved);
+  CheckChanged(3, 3, caRemoved);
+end;
+
+procedure TTestMultiSetChangedEventBase.TestRemove;
+begin
+  SUT.Add(1);
+  SUT.Add(2);
+  SUT.Add(3, 2);
+  AddEventHandlers;
+  Check(SUT.Remove(3));
+  Check(not SUT.Remove(4));
+  Check(SUT.Remove(2));
+  Check(SUT.Remove(1));
+  Check(SUT.Remove(3));
+
+  CheckEquals(4, fChangedEvents.Count);
+  CheckChanged(0, 3, caRemoved);
+  CheckChanged(1, 2, caRemoved);
+  CheckChanged(2, 1, caRemoved);
+  CheckChanged(3, 3, caRemoved);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestHashMultiSetChangedEvent'}
+
+procedure TTestHashMultiSetChangedEvent.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateMultiSet<Integer>;
+  Sender := SUT.AsObject;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTreeMultiSetChangedEvent'}
+
+procedure TTestTreeMultiSetChangedEvent.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedMultiSet<Integer>;
+  Sender := SUT.AsObject;
+end;
+
+{$ENDREGION}
+
 
 end.

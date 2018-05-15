@@ -44,7 +44,7 @@ type
   /// </summary>
   TSetBase<T> = class abstract(TCollectionBase<T>)
   protected
-    class function CreateSet: ISet<T>; virtual; abstract;
+    function CreateSet: ISet<T>; virtual; abstract;
   public
     procedure ExceptWith(const other: IEnumerable<T>);
     procedure IntersectWith(const other: IEnumerable<T>);
@@ -101,7 +101,7 @@ type
     class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
     procedure ClearInternal;
   protected
-    class function CreateSet: ISet<T>; override;
+    function CreateSet: ISet<T>; override;
     function TryGetElementAt(out item: T; index: Integer): Boolean; override;
     property Capacity: Integer read GetCapacity;
   public
@@ -160,7 +160,7 @@ type
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
   protected
-    class function CreateSet: ISet<T>; override;
+    function CreateSet: ISet<T>; override;
   public
     constructor Create; overload; override;
     constructor Create(const comparer: IComparer<T>); overload;
@@ -350,7 +350,6 @@ end;
 constructor THashSet<T>.Create(capacity: Integer; const comparer: IEqualityComparer<T>);
 begin
   inherited Create;
-
   if Assigned(comparer) then
     fKeyComparer := comparer
   else
@@ -367,9 +366,9 @@ begin
   inherited Destroy;
 end;
 
-class function THashSet<T>.CreateSet: ISet<T>;
+function THashSet<T>.CreateSet: ISet<T>;
 begin
-  Result := THashSet<T>.Create;
+  Result := THashSet<T>.Create(fKeyComparer);
 end;
 
 procedure THashSet<T>.SetCapacity(value: Integer);
@@ -568,9 +567,9 @@ begin
   fTree := TRedBlackTree<T>.Create(comparer);
 end;
 
-class function TSortedSet<T>.CreateSet: ISet<T>;
+function TSortedSet<T>.CreateSet: ISet<T>;
 begin
-  Result := TSortedSet<T>.Create;
+  Result := TSortedSet<T>.Create(Comparer);
 end;
 
 destructor TSortedSet<T>.Destroy;

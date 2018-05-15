@@ -46,6 +46,7 @@ contains
   Spring.Collections.Lists in '..\..\Source\Base\Collections\Spring.Collections.Lists.pas',
   Spring.Collections.LinkedLists in '..\..\Source\Base\Collections\Spring.Collections.LinkedLists.pas',
   Spring.Collections.MultiMaps in '..\..\Source\Base\Collections\Spring.Collections.MultiMaps.pas',
+  Spring.Collections.MultiSets in '..\..\Source\Base\Collections\Spring.Collections.MultiSets.pas',
   Spring.Collections.Queues in '..\..\Source\Base\Collections\Spring.Collections.Queues.pas',
   Spring.Collections.Sets in '..\..\Source\Base\Collections\Spring.Collections.Sets.pas',
   Spring.Collections.Stacks in '..\..\Source\Base\Collections\Spring.Collections.Stacks.pas',
