@@ -1802,7 +1802,9 @@ type
   IDictionary<TKey, TValue> = interface(IMap<TKey, TValue>)
     ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetItem(const key: TKey): TValue;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
 
@@ -1876,6 +1878,12 @@ type
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
+
+    /// <summary>
     ///   Returns the dictionary as read-only dictionary.
     /// </summary>
     /// <remarks>
@@ -1883,6 +1891,11 @@ type
     ///   as IReadOnlyDictionary&lt;TKey, TValue&gt;.
     /// </remarks>
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+
+    /// <summary>
+    ///   Gets or sets the size of the internal storage.
+    /// </summary>
+    property Capacity: Integer read GetCapacity write SetCapacity;
 
     /// <summary>
     ///   Gets or sets the element with the specified key.
@@ -2458,6 +2471,10 @@ type
   /// </typeparam>
   ISet<T> = interface(ICollection<T>)
     ['{DC0B211F-E9FD-41D6-BEE0-FCB9F79327AB}']
+  {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
+    procedure SetCapacity(value: Integer);
+  {$ENDREGION}
 
     /// <summary>
     ///   Adds an element to the current set and returns a value to indicate if
@@ -2471,6 +2488,12 @@ type
     ///   element is already in the set.
     /// </returns>
     function Add(const item: T): Boolean;
+
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
 
     /// <summary>
     ///   Removes all elements in the specified collection from the current
@@ -2570,6 +2593,11 @@ type
     ///   <i>other</i> is <b>nil</b>.
     /// </exception>
     function Overlaps(const other: IEnumerable<T>): Boolean;
+
+    /// <summary>
+    ///   Gets or sets the size of the internal storage.
+    /// </summary>
+    property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
   IOrderedSet<T> = interface(ISet<T>)

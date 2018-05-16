@@ -175,7 +175,6 @@ type
     fKeys: TKeyCollection;
     fValues: TValueCollection;
     fOwnerships: TDictionaryOwnerships;
-    procedure SetCapacity(value: Integer);
     procedure Rehash(newCapacity: Integer);
     function Grow: Boolean;
     function Find(const key: TKey; hashCode: Integer;
@@ -190,10 +189,12 @@ type
       iteratorVersion: Integer): Boolean;
   protected
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetItem(const key: TKey): TValue;
     function GetKeys: IReadOnlyCollection<TKey>; override;
     function GetValues: IReadOnlyCollection<TValue>; override;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
@@ -246,6 +247,7 @@ type
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    procedure TrimExcess;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
@@ -284,12 +286,14 @@ type
     fKeysByValue: TContainedDictionary<TValue, TKey>;
   protected
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetItem(const key: TKey): TValue; inline;
     function GetKey(const value: TValue): TKey;
     function GetKeys: IReadOnlyCollection<TKey>; override;
     function GetValue(const key: TKey): TValue;
     function GetValues: IReadOnlyCollection<TValue>; override;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue); inline;
     procedure SetKey(const value: TValue; const key: TKey);
     procedure SetValue(const key: TKey; const value: TValue);
@@ -324,6 +328,7 @@ type
     procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; reintroduce; overload;
     function TryExtract(const key: TKey; out value: TValue): Boolean;
+    procedure TrimExcess;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
   {$ENDREGION}
 
@@ -429,10 +434,12 @@ type
       iteratorVersion: Integer): Boolean;
   protected
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetItem(const key: TKey): TValue;
     function GetKeys: IReadOnlyCollection<TKey>; override;
     function GetValues: IReadOnlyCollection<TValue>; override;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
   public
@@ -469,6 +476,7 @@ type
     function Extract(const key: TKey): TValue; reintroduce; overload;
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    procedure TrimExcess;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
@@ -608,10 +616,17 @@ begin
 {$ENDIF}
 end;
 
+function TDictionary<TKey, TValue>.GetCapacity: Integer;
+begin
+  Result := fCapacity;
+end;
+
 procedure TDictionary<TKey, TValue>.SetCapacity(value: Integer);
 var
   newCapacity: Integer;
 begin
+  Guard.CheckRange(value >= fCount, 'capacity');
+
   if value = 0 then
     newCapacity := 0
   else
@@ -958,6 +973,11 @@ begin
     end;
   end;
   Result := Default(TKeyValuePair);
+end;
+
+procedure TDictionary<TKey, TValue>.TrimExcess;
+begin
+  SetCapacity(fCount);
 end;
 
 function TDictionary<TKey, TValue>.TryExtract(const key: TKey;
@@ -1443,9 +1463,14 @@ begin
   fKeysByValue.Extract(value, key);
 end;
 
+function TBidiDictionary<TKey, TValue>.GetCapacity: Integer;
+begin
+  Result := fValuesByKey.fCapacity;
+end;
+
 function TBidiDictionary<TKey, TValue>.GetCount: Integer;
 begin
-  Result := fValuesByKey.Count;
+  Result := fValuesByKey.fCount;
 end;
 
 function TBidiDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
@@ -1555,6 +1580,12 @@ begin
   end;
 end;
 
+procedure TBidiDictionary<TKey, TValue>.SetCapacity(value: Integer);
+begin
+  fValuesByKey.SetCapacity(value);
+  fKeysByValue.SetCapacity(value);
+end;
+
 procedure TBidiDictionary<TKey, TValue>.SetItem(const key: TKey;
   const value: TValue);
 begin
@@ -1585,6 +1616,12 @@ begin
     fKeysByValue.Remove(oldValue);
   fKeysByValue.Add(value, key);
   fValuesByKey[key] := value;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TrimExcess;
+begin
+  fValuesByKey.TrimExcess;
+  fKeysByValue.TrimExcess;
 end;
 
 function TBidiDictionary<TKey, TValue>.TryExtract(const key: TKey;
@@ -1784,6 +1821,11 @@ begin
   TryExtract(key, Result);
 end;
 
+function TSortedDictionary<TKey, TValue>.GetCapacity: Integer;
+begin
+  Result := fTree.Capacity;
+end;
+
 function TSortedDictionary<TKey, TValue>.GetCount: Integer;
 begin
   Result := fTree.Count;
@@ -1855,6 +1897,11 @@ begin
   end;
 end;
 
+procedure TSortedDictionary<TKey, TValue>.SetCapacity(value: Integer);
+begin
+  fTree.Capacity := value;
+end;
+
 procedure TSortedDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
 begin
   AddOrSetValue(key, value);
@@ -1880,6 +1927,11 @@ begin
     node := node.Next;
     Inc(i);
   end;
+end;
+
+procedure TSortedDictionary<TKey, TValue>.TrimExcess;
+begin
+  fTree.TrimExcess;
 end;
 
 function TSortedDictionary<TKey, TValue>.TryExtract(const key: TKey; out value: TValue): Boolean;
