@@ -682,17 +682,25 @@ type
     procedure TestToArray;
   end;
 
-  TTestSortedSet = class(TTestCase)
-  private
-    SUT: ISet<string>;
+  TTestSet = class(TTestCase)
   protected
+    SUT: ISet<string>;
     procedure SetUp; override;
     procedure TearDown; override;
-
     procedure CheckCount(expected: Integer);
   published
+    procedure TestEnumeratorMoveNext_VersionMismatch;
+    procedure TestEnumeratorKeepsSourceAlive;
+
     procedure TestAdd;
     procedure TestRemove;
+    procedure TestExtract;
+  end;
+
+  TTestSortedSet = class(TTestSet)
+  protected
+    procedure SetUp; override;
+  published
     procedure TestToArray;
   end;
 
@@ -4297,7 +4305,7 @@ end;
 procedure TTestSortedDictionary.SetUp;
 begin
   inherited;
-  SUT := TCollections.CreateSortedDictionary<Integer,string>;
+  SUT := TSortedDictionary<Integer,string>.Create;
 end;
 
 procedure TTestSortedDictionary.TearDown;
@@ -5027,26 +5035,24 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestSortedSet'}
+{$REGION 'TTestSet'}
 
-procedure TTestSortedSet.SetUp;
+procedure TTestSet.SetUp;
 begin
-  inherited;
-  SUT := TCollections.CreateSortedSet<string>;
+  SUT := TCollections.CreateSet<string>;
 end;
 
-procedure TTestSortedSet.TearDown;
+procedure TTestSet.TearDown;
 begin
   SUT := nil;
-  inherited;
 end;
 
-procedure TTestSortedSet.CheckCount(expected: Integer);
+procedure TTestSet.CheckCount(expected: Integer);
 begin
   CheckEquals(expected, SUT.Count, 'Count');
 end;
 
-procedure TTestSortedSet.TestAdd;
+procedure TTestSet.TestAdd;
 begin
   SUT.Add('c');
   SUT.Add('a');
@@ -5056,7 +5062,7 @@ begin
   CheckCount(4);
 end;
 
-procedure TTestSortedSet.TestRemove;
+procedure TTestSet.TestRemove;
 begin
   SUT.Add('c');
   SUT.Add('a');
@@ -5065,6 +5071,49 @@ begin
   SUT.Remove('b');
 
   CheckCount(3);
+end;
+
+procedure TTestSet.TestExtract;
+begin
+  SUT.Add('c');
+  SUT.Add('a');
+  SUT.Add('b');
+  SUT.Add('d');
+  CheckEquals('b', SUT.Extract('b'));
+
+  CheckCount(3);
+end;
+
+procedure TTestSet.TestEnumeratorKeepsSourceAlive;
+var
+  e: IEnumerator<string>;
+begin
+  SUT.Add('a');
+  e := SUT.GetEnumerator;
+  SUT := nil;
+  CheckTrue(e.MoveNext);
+end;
+
+procedure TTestSet.TestEnumeratorMoveNext_VersionMismatch;
+var
+  e: IEnumerator<string>;
+begin
+  e := SUT.GetEnumerator;
+
+  ExpectedException := EInvalidOperationException;
+  SUT.Add('a');
+  e.MoveNext;
+  ExpectedException := nil;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedSet'}
+
+procedure TTestSortedSet.SetUp;
+begin
+  SUT := TCollections.CreateSortedSet<string>;
 end;
 
 procedure TTestSortedSet.TestToArray;

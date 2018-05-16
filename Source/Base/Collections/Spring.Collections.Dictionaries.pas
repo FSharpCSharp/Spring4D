@@ -349,7 +349,7 @@ type
   {$REGION 'Nested Types'}
     type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
-      PNode = TRedBlackTreeNodeHelper<TKey, TValue>.PNode;
+      PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
       TKeyCollection = class(TContainedReadOnlyCollection<TKey>)
       private
@@ -1691,15 +1691,15 @@ end;
 
 procedure TSortedDictionary<TKey, TValue>.Clear;
 var
-  node: PBinaryTreeNode;
+  node: PNode;
 begin
   IncUnchecked(fVersion);
 
   node := fTree.Root.LeftMost;
   while Assigned(node) do
   begin
-    KeyChanged(PNode(node).Key, caRemoved);
-    ValueChanged(PNode(node).Value, caRemoved);
+    KeyChanged(node.Key, caRemoved);
+    ValueChanged(node.Value, caRemoved);
     node := node.Next;
   end;
 
@@ -1742,12 +1742,16 @@ end;
 function TSortedDictionary<TKey, TValue>.DoMoveNext(var currentNode: PNode;
   var finished: Boolean; iteratorVersion: Integer): Boolean;
 begin
+  if iteratorVersion <> fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
   if (fTree.Count = 0) or finished then
     Exit(False);
+
   if not Assigned(currentNode) then
-    currentNode := PNode(fTree.Root.LeftMost)
+    currentNode := fTree.Root.LeftMost
   else
-    currentNode := PNode(PBinaryTreeNode(currentNode).Next);
+    currentNode := currentNode.Next;
   Result := Assigned(currentNode);
   finished := not Result;
 end;
@@ -1868,12 +1872,12 @@ var
 begin
   SetLength(Result, fTree.Count);
   i := 0;
-  node := PNode(fTree.Root.LeftMost);
+  node := fTree.Root.LeftMost;
   while Assigned(node) do
   begin
     Result[i].Key := node.Key;
     Result[i].Value := node.Value;
-    node := PNode(PBinaryTreeNode(node).Next);
+    node := node.Next;
     Inc(i);
   end;
 end;
@@ -1937,11 +1941,11 @@ var
 begin
   SetLength(Result, fDictionary.fTree.Count);
   i := 0;
-  node := PNode(fDictionary.fTree.Root.LeftMost);
+  node := fDictionary.fTree.Root.LeftMost;
   while Assigned(node) do
   begin
     Result[i] := node.Key;
-    node := PNode(PBinaryTreeNode(node).Next);
+    node := node.Next;
     Inc(i);
   end;
 end;
@@ -2011,11 +2015,11 @@ var
 begin
   SetLength(Result, fDictionary.fTree.Count);
   i := 0;
-  node := PNode(fDictionary.fTree.Root.LeftMost);
+  node := fDictionary.fTree.Root.LeftMost;
   while Assigned(node) do
   begin
     Result[i] := node.Value;
-    node := PNode(PBinaryTreeNode(node).Next);
+    node := node.Next;
     Inc(i);
   end;
 end;

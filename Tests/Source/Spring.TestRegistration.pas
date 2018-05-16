@@ -122,6 +122,7 @@ begin
     TTestEmptyIntegerStringMap.Suite,
     TTestIntegerStringMap.Suite,
     TTestRedBlackTree.Suite,
+    TTestSet.Suite,
     TTestSortedSet.Suite
   ]);
 

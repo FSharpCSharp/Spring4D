@@ -84,6 +84,7 @@ type
         function GetCurrent: T; override;
       public
         constructor Create(const source: THashSet<T>);
+        destructor Destroy; override;
         function MoveNext: Boolean; override;
       end;
   {$ENDREGION}
@@ -138,13 +139,32 @@ type
 
     function Contains(const item: T): Boolean; override;
     function IndexOf(const item: T): Integer;
+    function ToArray: TArray<T>; override;
   end;
 
   TSortedSet<T> = class(TSetBase<T>, ISet<T>)
   private
-    fTree: TRedBlackTree<T>;
+  {$REGION 'Nested Types'}
     type
-      PNode = TRedBlackTreeNodeHelper<T>.PNode;
+      PNode = TNodes<T>.PRedBlackTreeNode;
+      TEnumerator = class(TEnumeratorBase<T>)
+      private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TSortedSet<T>;
+        fVersion: Integer;
+        fCurrent: PNode;
+        fFinished: Boolean;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(const source: TSortedSet<T>);
+        destructor Destroy; override;
+        function MoveNext: Boolean; override;
+      end;
+  {$ENDREGION}
+  private
+    fTree: TRedBlackTree<T>;
+    fVersion: Integer;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
@@ -164,6 +184,7 @@ type
     procedure Clear; override;
 
     function Contains(const item: T): Boolean; override;
+    function ToArray: TArray<T>; override;
   end;
 
 implementation
@@ -591,6 +612,20 @@ begin
     Result := -1;
 end;
 
+function THashSet<T>.ToArray: TArray<T>;
+var
+  sourceIndex, targetIndex: Integer;
+begin
+  SetLength(Result, fCount);
+  targetIndex := 0;
+  for sourceIndex := 0 to fItemCount - 1 do
+    if not fItems[sourceIndex].Removed then
+    begin
+      Result[targetIndex] := fItems[sourceIndex].Item;
+      Inc(targetIndex);
+    end;
+end;
+
 {$ENDREGION}
 
 
@@ -600,8 +635,15 @@ constructor THashSet<T>.TEnumerator.Create(const source: THashSet<T>);
 begin
   inherited Create;
   fSource := source;
+  fSource._AddRef;
   fItemIndex := -1;
   fVersion := fSource.fVersion;
+end;
+
+destructor THashSet<T>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
 end;
 
 function THashSet<T>.TEnumerator.GetCurrent: T;
@@ -656,6 +698,7 @@ end;
 
 function TSortedSet<T>.Add(const item: T): Boolean;
 begin
+  IncUnchecked(fVersion);
   Result := fTree.Add(item);
   if Result then
     Changed(item, caAdded);
@@ -663,23 +706,22 @@ end;
 
 procedure TSortedSet<T>.AddInternal(const item: T);
 begin
+  IncUnchecked(fVersion);
   fTree.Add(item);
   Changed(item, caAdded);
 end;
 
 procedure TSortedSet<T>.Clear;
 var
-  node: PBinaryTreeNode;
+  node: PNode;
 begin
+  if fTree.Count = 0 then
+    Exit;
+
+  IncUnchecked(fVersion);
   if fOnChanged.CanInvoke then // optimization: if no notification needs to be send the entire tree traversal won't be done
-  begin
-    node := fTree.Root.LeftMost;
-    while Assigned(node) do
-    begin
+    for node in fTree.Root^ do
       Changed(PNode(node).Key, caRemoved);
-      node := node.Next;
-    end;
-  end;
 
   fTree.Clear;
 end;
@@ -697,6 +739,8 @@ begin
   if Assigned(node) then
   begin
     Result := node.Key;
+    IncUnchecked(fVersion);
+    fTree.DeleteNode(node);
     Changed(Result, caExtracted);
   end
   else
@@ -710,14 +754,77 @@ end;
 
 function TSortedSet<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := fTree.GetEnumerator;
+  Result := TEnumerator.Create(Self);
 end;
 
 function TSortedSet<T>.Remove(const item: T): Boolean;
+var
+  node: PNode;
 begin
-  Result := fTree.Delete(item);
+  node := fTree.FindNode(item);
+  Result := Assigned(node);
   if Result then
+  begin
+    IncUnchecked(fVersion);
+    fTree.DeleteNode(node);
     Changed(item, caRemoved);
+  end;
+end;
+
+function TSortedSet<T>.ToArray: TArray<T>;
+var
+  i: Integer;
+  node: PNode;
+begin
+  SetLength(Result, fTree.Count);
+  i := 0;
+  node := fTree.Root.LeftMost;
+  while Assigned(node) do
+  begin
+    Result[i] := node.Key;
+    node := node.Next;
+    Inc(i);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedSet<T>.TEnumerator'}
+
+constructor TSortedSet<T>.TEnumerator.Create(const source: TSortedSet<T>);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
+end;
+
+destructor TSortedSet<T>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
+end;
+
+function TSortedSet<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fCurrent.Key;
+end;
+
+function TSortedSet<T>.TEnumerator.MoveNext: Boolean;
+begin
+  if fVersion <> fSource.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  if fFinished then
+    Exit(False);
+  if not Assigned(fCurrent) then
+    fCurrent := fSource.fTree.Root.LeftMost
+  else
+    fCurrent := fCurrent.Next;
+  Result := Assigned(fCurrent);
+  if not Result then
+    fFinished := True;
 end;
 
 {$ENDREGION}
