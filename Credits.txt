@@ -15,6 +15,7 @@ Commiters
 * Nick Hodges (Nick)
 * Jeroen Wiert Pluimers (Jeroen)
 * Linas Naginionis (Linas)
+* David Heffernan
 
 Contributors
 * Ryan Huang

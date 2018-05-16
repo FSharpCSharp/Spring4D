@@ -38,6 +38,7 @@ uses
   Spring.TestUtils,
   Spring.Tests.Base,
   Spring.Tests.Collections,
+  Spring.Tests.Collections.Dictionaries,
   Spring.Tests.Collections.Extensions,
   Spring.Tests.SystemUtils,
   Spring.Tests.DesignPatterns,
@@ -91,9 +92,6 @@ begin
     TTestIntegerList.Suite,
     TTestStringList.Suite,
     TTestSortedList.Suite,
-    TTestStringIntegerDictionary.Suite,
-    TTestEmptyStringIntegerDictionary.Suite,
-    TTestDictionaryValueComparer.Suite,
     TTestEmptyStackOfStrings.Suite,
     TTestStackOfInteger.Suite,
     TTestStackOfTBytes.Suite,
@@ -113,17 +111,34 @@ begin
     TTestEnumerable.Suite,
     TTestListAdapter.Suite,
     TTestMultiMap.Suite,
-    TTestBidiDictionary.Suite,
     TTestObjectStack.Suite,
     TTestObjectQueue.Suite,
     TTestObjectDeque.Suite,
-    TTestOrderedDictionary.Suite,
-    TTestSortedDictionary.Suite,
-    TTestEmptyIntegerStringMap.Suite,
-    TTestIntegerStringMap.Suite,
     TTestRedBlackTree.Suite,
     TTestSet.Suite,
     TTestSortedSet.Suite
+  ]);
+
+  RegisterTests('Spring.Base.Collections.Dictionaries', [
+    TTestBidiDictionary.Suite,
+    TTestBidiDictionaryChangedEvent.Suite,
+    TTestBidiDictionaryChangedEventInverse.Suite,
+    TTestBidiDictionaryInverse.Suite,
+    TTestBidiDictionaryInverseKeyComparer.Suite,
+    TTestBidiDictionaryInverseOwnership.Suite,
+    TTestBidiDictionaryInverseValueComparer.Suite,
+    TTestBidiDictionaryKeyComparer.Suite,
+    TTestBidiDictionaryOwnership.Suite,
+    TTestBidiDictionaryValueComparer.Suite,
+    TTestDictionary.Suite,
+    TTestDictionaryChangedEvent.Suite,
+    TTestDictionaryCreationExceptions.Suite,
+    TTestDictionaryKeyComparer.Suite,
+    TTestDictionaryOwnership.Suite,
+    TTestDictionaryValueComparer.Suite,
+    TTestOrderedDictionary.Suite,
+    TTestSortedDictionary.Suite,
+    TTestSortedDictionaryChangedEvent.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [

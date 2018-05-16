@@ -104,7 +104,6 @@ type
     fBucketHashCodeMask: Integer;
     fEqualityComparer: IEqualityComparer<T>;
     fVersion: Integer;
-    procedure SetCapacity(value: Integer);
     procedure Rehash(newCapacity: Integer);
     function Grow: Boolean;
     function Find(const item: T; hashCode: Integer;
@@ -116,8 +115,10 @@ type
       action: TCollectionChangedAction);
   protected
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetItem(index: Integer): T;
+    procedure SetCapacity(value: Integer);
   {$ENDREGION}
     class function CreateSet: ISet<T>; override;
     procedure AddInternal(const item: T); override;
@@ -136,6 +137,7 @@ type
     function Remove(const item: T): Boolean; override;
     function Extract(const item: T): T; override;
     procedure Clear; override;
+    procedure TrimExcess;
 
     function Contains(const item: T): Boolean; override;
     function IndexOf(const item: T): Integer;
@@ -167,7 +169,9 @@ type
     fVersion: Integer;
   protected
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetCount: Integer; override;
+    procedure SetCapacity(value: Integer);
   {$ENDREGION}
     class function CreateSet: ISet<T>; override;
     procedure AddInternal(const item: T); override;
@@ -182,6 +186,7 @@ type
     function Remove(const item: T): Boolean; override;
     function Extract(const item: T): T; override;
     procedure Clear; override;
+    procedure TrimExcess;
 
     function Contains(const item: T): Boolean; override;
     function ToArray: TArray<T>; override;
@@ -366,12 +371,19 @@ procedure THashSet<T>.SetCapacity(value: Integer);
 var
   newCapacity: Integer;
 begin
+  Guard.CheckRange(value >= fCount, 'capacity');
+
   if value = 0 then
     newCapacity := 0
   else
     newCapacity := Math.Max(MinCapacity, value);
   if newCapacity <> fCapacity then
     Rehash(newCapacity);
+end;
+
+procedure THashSet<T>.TrimExcess;
+begin
+  SetCapacity(fCount);
 end;
 
 procedure THashSet<T>.Rehash(newCapacity: Integer);
@@ -581,6 +593,11 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
+function THashSet<T>.GetCapacity: Integer;
+begin
+  Result := fCapacity;
+end;
+
 function THashSet<T>.GetCount: Integer;
 begin
   Result := fCount;
@@ -747,6 +764,11 @@ begin
     Result := Default(T);
 end;
 
+function TSortedSet<T>.GetCapacity: Integer;
+begin
+  Result := fTree.Capacity;
+end;
+
 function TSortedSet<T>.GetCount: Integer;
 begin
   Result := fTree.Count;
@@ -825,6 +847,16 @@ begin
   Result := Assigned(fCurrent);
   if not Result then
     fFinished := True;
+end;
+
+procedure TSortedSet<T>.SetCapacity(value: Integer);
+begin
+  fTree.Capacity := value;
+end;
+
+procedure TSortedSet<T>.TrimExcess;
+begin
+  fTree.TrimExcess;
 end;
 
 {$ENDREGION}

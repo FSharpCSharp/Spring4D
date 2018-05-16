@@ -1802,7 +1802,9 @@ type
   IDictionary<TKey, TValue> = interface(IMap<TKey, TValue>)
     ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetItem(const key: TKey): TValue;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
 
@@ -1876,6 +1878,12 @@ type
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
+
+    /// <summary>
     ///   Returns the dictionary as read-only dictionary.
     /// </summary>
     /// <remarks>
@@ -1883,6 +1891,11 @@ type
     ///   as IReadOnlyDictionary&lt;TKey, TValue&gt;.
     /// </remarks>
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+
+    /// <summary>
+    ///   Gets or sets the size of the internal storage.
+    /// </summary>
+    property Capacity: Integer read GetCapacity write SetCapacity;
 
     /// <summary>
     ///   Gets or sets the element with the specified key.
@@ -1913,91 +1926,14 @@ type
   IBidiDictionary<TKey, TValue> = interface(IDictionary<TKey, TValue>)//IMap<TKey, TValue>)
     ['{DA8F1C48-B4F4-4487-ADAD-AF15596DD53C}']
   {$REGION 'Property Accessors'}
-    function GetKey(const value: TValue): TKey;
-    function GetValue(const key: TKey): TValue;
-    procedure SetKey(const value: TValue; const key: TKey);
-    procedure SetValue(const key: TKey; const value: TValue);
+    function GetInverse: IBidiDictionary<TValue, TKey>;
   {$ENDREGION}
 
     /// <summary>
-    ///   Remove the key that is currently mapped to the specified value
-    ///   without triggering lifetime management for objects.
+    ///   Returns the inverse view of this bidirectional dictionary which maps
+    ///   each of its values to its associated key.
     /// </summary>
-    function ExtractKey(const value: TValue): TKey;
-
-    /// <summary>
-    ///   Remove the value that is currently mapped to the specified key
-    ///   without triggering lifetime management for objects.
-    /// </summary>
-    function ExtractValue(const key: TKey): TValue;
-
-    /// <summary>
-    ///   Gets the key for a given value if a matching value exists in the
-    ///   dictionary; returns the default value for <c>TKey</c> otherwise.
-    /// </summary>
-    function GetKeyOrDefault(const value: TValue): TKey; overload;
-
-    /// <summary>
-    ///   Gets the key for a given value if a matching value exists in the
-    ///   dictionary; returns the given default value for <c>TKey</c>
-    ///   otherwise.
-    /// </summary>
-    function GetKeyOrDefault(const value: TValue; const defaultValue: TKey): TKey; overload;
-
-    /// <summary>
-    ///   Remove the key/value pair that is currently mapped to the specified
-    ///   key.
-    /// </summary>
-    function RemoveKey(const key: TKey): Boolean;
-
-    /// <summary>
-    ///   Remove the key/value pair that is currently mapped to the specified
-    ///   value.
-    /// </summary>
-    function RemoveValue(const value: TValue): Boolean;
-
-    /// <summary>
-    ///   Gets the key associated with the specified key.
-    /// </summary>
-    /// <returns>
-    ///   <b>True</b> if the key was found; otherwise, <b>False</b>.
-    /// </returns>
-    function TryGetKey(const value: TValue; out key: TKey): Boolean;
-
-    /// <summary>
-    ///   Attempts to get and remove the key associated with the specified
-    ///   value, without triggering lifetime management for objects.
-    /// </summary>
-    /// <param name="value">
-    ///   The value whose key to get.
-    /// </param>
-    /// <param name="key">
-    ///   The key associated with the specified value, if the value is found;
-    ///   otherwise, <b>Default(TKey)</b>.
-    /// </param>
-    /// <returns>
-    ///   <b>True</b> if the value is found; <b>False</b> otherwise.
-    /// </returns>
-    function TryExtractKey(const value: TValue; out key: TKey): Boolean;
-
-    /// <summary>
-    ///   Attempts to get and remove the value associated with the specified
-    ///   key, without triggering lifetime management for objects.
-    /// </summary>
-    /// <param name="key">
-    ///   The key whose value to get.
-    /// </param>
-    /// <param name="value">
-    ///   The value associated with the specified key, if the key is found;
-    ///   otherwise, <b>Default(TValue)</b>.
-    /// </param>
-    /// <returns>
-    ///   <b>True</b> if the key is found; <b>False</b> otherwise.
-    /// </returns>
-    function TryExtractValue(const key: TKey; out value: TValue): Boolean;
-
-    property Key[const value: TValue]: TKey read GetKey write SetKey;
-    property Value[const key: TKey]: TValue read GetValue write SetValue; default;
+    property Inverse: IBidiDictionary<TValue, TKey> read GetInverse;
   end;
 
   IReadOnlyMultiMap<TKey, TValue> = interface(IReadOnlyMap<TKey, TValue>)
@@ -2458,6 +2394,10 @@ type
   /// </typeparam>
   ISet<T> = interface(ICollection<T>)
     ['{DC0B211F-E9FD-41D6-BEE0-FCB9F79327AB}']
+  {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
+    procedure SetCapacity(value: Integer);
+  {$ENDREGION}
 
     /// <summary>
     ///   Adds an element to the current set and returns a value to indicate if
@@ -2471,6 +2411,12 @@ type
     ///   element is already in the set.
     /// </returns>
     function Add(const item: T): Boolean;
+
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
 
     /// <summary>
     ///   Removes all elements in the specified collection from the current
@@ -2570,6 +2516,11 @@ type
     ///   <i>other</i> is <b>nil</b>.
     /// </exception>
     function Overlaps(const other: IEnumerable<T>): Boolean;
+
+    /// <summary>
+    ///   Gets or sets the size of the internal storage.
+    /// </summary>
+    property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
   IOrderedSet<T> = interface(ISet<T>)
@@ -2748,9 +2699,12 @@ type
     class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships;
       const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
 
-    class function CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>; overload; static;
+    class function CreateBidiDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
+    class function CreateBidiDictionary<TKey, TValue>(capacity: Integer; ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
     class function CreateBidiDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>;
-      const valueComparer: IEqualityComparer<TValue>): IBidiDictionary<TKey, TValue>; overload; static;
+      const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
+    class function CreateBidiDictionary<TKey, TValue>(capacity: Integer; const keyComparer: IEqualityComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
 
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
@@ -3251,16 +3205,32 @@ begin
   Result := TObjectMultiMap<TKey, TValue>.Create(ownerships, comparer);
 end;
 
-class function TCollections.CreateBidiDictionary<TKey, TValue>: IBidiDictionary<TKey, TValue>;
+class function TCollections.CreateBidiDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
 begin
-  Result := TBidiDictionary<TKey, TValue>.Create;
+  Result := TBidiDictionary<TKey, TValue>.Create(ownerships);
+end;
+
+class function TCollections.CreateBidiDictionary<TKey, TValue>(capacity: Integer;
+  ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
+begin
+  Result := TBidiDictionary<TKey, TValue>.Create(capacity, ownerships);
 end;
 
 class function TCollections.CreateBidiDictionary<TKey, TValue>(
   const keyComparer: IEqualityComparer<TKey>;
-  const valueComparer: IEqualityComparer<TValue>): IBidiDictionary<TKey, TValue>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
 begin
-  Result := TBidiDictionary<TKey, TValue>.Create(keyComparer, valueComparer);
+  Result := TBidiDictionary<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
+end;
+
+class function TCollections.CreateBidiDictionary<TKey, TValue>(
+  capacity: Integer;
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
+begin
+  Result := TBidiDictionary<TKey, TValue>.Create(capacity, keyComparer, valueComparer, ownerships);
 end;
 
 class function TCollections.CreateStack<T>: IStack<T>;
