@@ -144,7 +144,7 @@ type
   private
     fTree: TRedBlackTree<T>;
     type
-      PNode = TRedBlackTreeNodeHelper<T>.PNode;
+      PNode = TNodes<T>.PRedBlackTreeNode;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;

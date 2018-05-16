@@ -349,7 +349,7 @@ type
   {$REGION 'Nested Types'}
     type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
-      PNode = TRedBlackTreeNodeHelper<TKey, TValue>.PNode;
+      PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
       TKeyCollection = class(TContainedReadOnlyCollection<TKey>)
       private
