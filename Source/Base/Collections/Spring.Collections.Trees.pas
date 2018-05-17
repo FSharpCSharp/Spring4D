@@ -42,8 +42,18 @@ const
 type
   TNodeColor = (Black, Red);
 
-  TBucketIndex = record
-    Row, Pos: Integer;
+  TBlockAllocatedArray<T: record> = record
+  strict private type
+    PT = ^T;
+  strict private
+    fItems: TArray<TArray<T>>;
+    function GetItem(index: Integer): PT; inline;
+    function GetCapacity: Integer;
+    procedure SetCapacity(const value: Integer);
+  public
+    procedure Grow;
+    property Capacity: Integer read GetCapacity write SetCapacity;
+    property Items[index: Integer]: PT read GetItem; default;
   end;
 
   TTraverseMode = (tmInOrder, tmPreOrder, tmPostOrder);
@@ -107,7 +117,6 @@ type
     function GetRoot: PNode; inline;
   {$ENDREGION}
 
-    function GetBucketIndex(index: Integer): TBucketIndex;
     property Root: PNode read GetRoot;
   end;
 
@@ -396,13 +405,14 @@ type
     TNode = TNodes<T>.TRedBlackTreeNode;
     PNode = TNodes<T>.PRedBlackTreeNode;
   private
-    fStorage: TArray<TArray<TNode>>;
-    procedure Grow;
+    fStorage: TBlockAllocatedArray<TNode>;
+    function GetCapacity: Integer;
+    procedure SetCapacity(value: Integer);
     procedure DestroyNode(node: PNode);
-    function GetRoot: PNode; overload;
+    function GetRoot: TNodes<T>.PRedBlackTreeNode; overload;
   protected
     fComparer: IComparer<T>;
-    function CreateNode(const key: T): PRedBlackTreeNode;
+    function CreateNode(const key: T): PNode;
     function FindNode(const key: T): PNode;
     procedure DeleteNode(node: PNode);
     procedure FreeNode(node: Pointer); override;
@@ -422,7 +432,11 @@ type
     function Find(const key: T; out value: T): Boolean;
   {$ENDREGION}
 
+    procedure TrimExcess;
+
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount;
+    property Root: PNode read GetRoot;
   end;
 
   TRedBlackTree<TKey, TValue> = class(TRedBlackTree,
@@ -440,14 +454,15 @@ type
     TNode = TNodes<TKey, TValue>.TRedBlackTreeNode;
     PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
   private
-    fStorage: TArray<TArray<TNode>>;
+    fStorage: TBlockAllocatedArray<TNode>;
     function InternalAdd(const key: TKey; const value: TValue; allowReplace: Boolean): Boolean;
-    procedure Grow;
+    function GetCapacity: Integer;
+    procedure SetCapacity(value: Integer);
     procedure DestroyNode(node: PNode);
     function GetRoot: PNode; overload;
   protected
     fComparer: IComparer<TKey>;
-    function CreateNode(const key: TKey; const value: TValue): PRedBlackTreeNode;
+    function CreateNode(const key: TKey; const value: TValue): PNode;
     function FindNode(const key: TKey): PNode;
     procedure DeleteNode(node: PNode);
     procedure FreeNode(node: Pointer); override;
@@ -468,8 +483,11 @@ type
     function Find(const key: TKey; out foundValue: TValue): Boolean;
   {$ENDREGION}
 
+    procedure TrimExcess;
+
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount;
-    property Root: PBinaryTreeNode read GetRoot;
+    property Root: PNode read GetRoot;
   end;
 
   TTest = TRedBlackTree<Integer,string>;
@@ -483,13 +501,48 @@ const
   BucketSize = 64;
 
 
-{$REGION 'TBinaryTree'}
+{$REGION 'TBlockAllocatedArray<T>'}
 
-function TBinaryTree.GetBucketIndex(index: Integer): TBucketIndex;
+function TBlockAllocatedArray<T>.GetCapacity: Integer;
 begin
-  Result.Row := index div BucketSize;
-  Result.Pos := index mod BucketSize;
+  Result := Length(fItems) * BucketSize;
 end;
+
+function TBlockAllocatedArray<T>.GetItem(index: Integer): PT;
+var
+  row, col: Integer;
+begin
+  row := index div BucketSize;
+  col := index mod BucketSize;
+  Result := @fItems[row, col];
+end;
+
+procedure TBlockAllocatedArray<T>.Grow;
+begin
+  SetLength(fItems, Length(fItems) + 1);
+  SetLength(fItems[High(fItems)], BucketSize);
+end;
+
+procedure TBlockAllocatedArray<T>.SetCapacity(const value: Integer);
+var
+  oldLength: Integer;
+  row, col: Integer;
+  i: Integer;
+begin
+  oldLength := Length(fItems);
+  row := value div BucketSize;
+  col := value mod BucketSize;
+  if col > 0 then
+    Inc(row);
+  SetLength(fItems, row);
+  for i := oldLength to High(fItems) do
+    SetLength(fItems[i], BucketSize);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBinaryTree'}
 
 function TBinaryTree.GetCount: Integer;
 begin
@@ -703,9 +756,9 @@ begin
   fCount := 0;
 end;
 
-procedure TRedBlackTree.Delete(node: PRedBlackTreeNode);
+procedure TRedBlackTree.Delete(node: PNode);
 var
-  child: PRedBlackTreeNode;
+  child: PNode;
 begin
   try
     if Assigned(node.Left) then
@@ -742,9 +795,9 @@ begin
   end;
 end;
 
-procedure TRedBlackTree.FixupAfterDelete(node: PRedBlackTreeNode);
+procedure TRedBlackTree.FixupAfterDelete(node: PNode);
 var
-  sibling: PRedBlackTreeNode;
+  sibling: PNode;
 begin
   while (node <> fRoot) and node.IsBlack do
   begin
@@ -828,9 +881,9 @@ begin
   node.Color := Black;
 end;
 
-procedure TRedBlackTree.FixupAfterInsert(node: PRedBlackTreeNode);
+procedure TRedBlackTree.FixupAfterInsert(node: PNode);
 var
-  uncle: PRedBlackTreeNode;
+  uncle: PNode;
 begin
   node.Color := Red;
 
@@ -892,24 +945,24 @@ begin
     end
   end;
 
-  PRedBlackTreeNode(fRoot).Color := Black;
+  PNode(fRoot).Color := Black;
 end;
 
-procedure TRedBlackTree.InsertLeft(node, newNode: PRedBlackTreeNode);
+procedure TRedBlackTree.InsertLeft(node, newNode: PNode);
 begin
   Assert(not Assigned(node.Left));
   node.Left := newNode;
   FixupAfterInsert(newNode);
 end;
 
-procedure TRedBlackTree.InsertRight(node, newNode: PRedBlackTreeNode);
+procedure TRedBlackTree.InsertRight(node, newNode: PNode);
 begin
   Assert(not Assigned(node.Right));
   node.Right := newNode;
   FixupAfterInsert(newNode);
 end;
 
-procedure TRedBlackTree.RotateLeft(node: PRedBlackTreeNode);
+procedure TRedBlackTree.RotateLeft(node: PNode);
 var
   right: PRedBlackTreeNode;
 begin
@@ -926,7 +979,7 @@ begin
   right.Left := node;
 end;
 
-procedure TRedBlackTree.RotateRight(node: PRedBlackTreeNode);
+procedure TRedBlackTree.RotateRight(node: PNode);
 var
   left: PRedBlackTreeNode;
 begin
@@ -1295,28 +1348,23 @@ begin
     fComparer := TComparer<T>.Default;
 end;
 
-function TRedBlackTree<T>.CreateNode(const key: T): PRedBlackTreeNode;
-var
-  index: TBucketIndex;
+function TRedBlackTree<T>.CreateNode(const key: T): PNode;
 begin
-  index := GetBucketIndex(fCount);
-  if index.Pos = 0 then
-    Grow;
+  if fCount = fStorage.Capacity then
+    fStorage.Grow;
 
-  Result := @fStorage[index.Row, index.Pos];
-  PNode(Result).fKey := key;
+  Result := PNode(fStorage[fCount]);
+  Result.fKey := key;
   Inc(fCount);
 end;
 
 procedure TRedBlackTree<T>.DestroyNode(node: PNode);
 var
-  index: TBucketIndex;
   lastNode: PNode;
 begin
   if fCount > 1 then
   begin
-    index := GetBucketIndex(fCount - 1);
-    lastNode := @fStorage[index.Row, index.Pos];
+    lastNode := PNode(fStorage[fCount - 1]);
 
     if lastNode <> node then
     begin
@@ -1371,7 +1419,7 @@ begin
         node := node.Right
       else
       begin
-        InsertRight(node, CreateNode(key));
+        InsertRight(node, PRedBlackTreeNode(CreateNode(key)));
         Exit(True);
       end
     else if compareResult < 0 then
@@ -1379,7 +1427,7 @@ begin
         node := node.Left
       else
       begin
-        InsertLeft(node, CreateNode(key));
+        InsertLeft(node, PRedBlackTreeNode(CreateNode(key)));
         Exit(True);
       end
     else
@@ -1390,7 +1438,7 @@ end;
 procedure TRedBlackTree<T>.Clear;
 begin
   inherited Clear;
-  SetLength(fStorage, 0);
+  fStorage.Capacity := 0;
 end;
 
 function TRedBlackTree<T>.Delete(const key: T): Boolean;
@@ -1455,6 +1503,11 @@ begin
   end;
 end;
 
+function TRedBlackTree<T>.GetCapacity: Integer;
+begin
+  Result := fStorage.Capacity;
+end;
+
 function TRedBlackTree<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self);
@@ -1465,13 +1518,9 @@ begin
   Result := fRoot;
 end;
 
-procedure TRedBlackTree<T>.Grow;
-var
-  index: TBucketIndex;
+procedure TRedBlackTree<T>.SetCapacity(value: Integer);
 begin
-  index := GetBucketIndex(fCount);
-  SetLength(fStorage, index.Row + 1);
-  SetLength(fStorage[index.Row], BucketSize);
+
 end;
 
 function TRedBlackTree<T>.ToArray: TArray<T>;
@@ -1487,6 +1536,11 @@ begin
     Result[i] := PNode(node).Key;
     node := node.Next;
   end;
+end;
+
+procedure TRedBlackTree<T>.TrimExcess;
+begin
+  SetCapacity(fCount);
 end;
 
 {$ENDREGION}
@@ -1530,29 +1584,24 @@ begin
 end;
 
 function TRedBlackTree<TKey, TValue>.CreateNode(const key: TKey;
-  const value: TValue): PRedBlackTreeNode;
-var
-  index: TBucketIndex;
+  const value: TValue): PNode;
 begin
-  index := GetBucketIndex(fCount);
-  if index.Pos = 0 then
-    Grow;
+  if fCount = fStorage.Capacity then
+    fStorage.Grow;
 
-  Result := @fStorage[index.Row, index.Pos];
-  PNode(Result).fKey := key;
-  PNode(Result).fValue := value;
+  Result := PNode(fStorage[fCount]);
+  Result.fKey := key;
+  Result.fValue := value;
   Inc(fCount);
 end;
 
 procedure TRedBlackTree<TKey, TValue>.DestroyNode(node: PNode);
 var
-  index: TBucketIndex;
   lastNode: PNode;
 begin
   if fCount > 1 then
   begin
-    index := GetBucketIndex(fCount - 1);
-    lastNode := @fStorage[index.Row, index.Pos];
+    lastNode := PNode(fStorage[fCount - 1]);
 
     if lastNode <> node then
     begin
@@ -1602,7 +1651,7 @@ end;
 procedure TRedBlackTree<TKey, TValue>.Clear;
 begin
   inherited Clear;
-  SetLength(fStorage, 0);
+  fStorage.Capacity := 0;
 end;
 
 function TRedBlackTree<TKey, TValue>.Delete(const key: TKey): Boolean;
@@ -1669,6 +1718,11 @@ begin
   end;
 end;
 
+function TRedBlackTree<TKey, TValue>.GetCapacity: Integer;
+begin
+  Result := fStorage.Capacity;
+end;
+
 function TRedBlackTree<TKey, TValue>.GetEnumerator: IEnumerator<TPair<TKey, TValue>>;
 begin
   Result := TEnumerator.Create(Self);
@@ -1677,15 +1731,6 @@ end;
 function TRedBlackTree<TKey, TValue>.GetRoot: PNode;
 begin
   Result := fRoot;
-end;
-
-procedure TRedBlackTree<TKey, TValue>.Grow;
-var
-  index: TBucketIndex;
-begin
-  index := GetBucketIndex(fCount);
-  SetLength(fStorage, index.Row + 1);
-  SetLength(fStorage[index.Row], BucketSize);
 end;
 
 function TRedBlackTree<TKey, TValue>.InternalAdd(const key: TKey;
@@ -1710,7 +1755,7 @@ begin
         node := node.Right
       else
       begin
-        InsertRight(node, CreateNode(key, value));
+        InsertRight(node, PRedBlackTreeNode(CreateNode(key, value)));
         Exit(True);
       end
     else if compareResult < 0 then
@@ -1718,7 +1763,7 @@ begin
         node := node.Left
       else
       begin
-        InsertLeft(node, CreateNode(key, value));
+        InsertLeft(node, PRedBlackTreeNode(CreateNode(key, value)));
         Exit(True);
       end
     else
@@ -1730,6 +1775,13 @@ begin
       else
         Exit(False);
   end;
+end;
+
+procedure TRedBlackTree<TKey, TValue>.SetCapacity(value: Integer);
+begin
+  Guard.CheckRange(value >= fCount, 'capacity');
+
+  fStorage.Capacity := value;
 end;
 
 function TRedBlackTree<TKey, TValue>.ToArray: TArray<TPair<TKey, TValue>>;
@@ -1746,6 +1798,11 @@ begin
     Result[i].Value := PNode(node).Value;
     node := node.Next;
   end;
+end;
+
+procedure TRedBlackTree<TKey, TValue>.TrimExcess;
+begin
+  SetCapacity(fCount);
 end;
 
 {$ENDREGION}

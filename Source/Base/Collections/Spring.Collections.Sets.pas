@@ -669,17 +669,11 @@ end;
 
 procedure TSortedSet<T>.Clear;
 var
-  node: PBinaryTreeNode;
+  node: PNode;
 begin
   if fOnChanged.CanInvoke then // optimization: if no notification needs to be send the entire tree traversal won't be done
-  begin
-    node := fTree.Root.LeftMost;
-    while Assigned(node) do
-    begin
+    for node in fTree.Root^ do
       Changed(PNode(node).Key, caRemoved);
-      node := node.Next;
-    end;
-  end;
 
   fTree.Clear;
 end;
