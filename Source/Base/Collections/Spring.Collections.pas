@@ -1933,6 +1933,19 @@ type
   {$ENDREGION}
 
     /// <summary>
+    ///   Adds an element with the provided value and key to the
+    ///   dictionary. If the value already exists in the dictionary
+    ///   the provided key for the specified value is set.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to use as the value of the element to add or set.
+    /// </param>
+    /// <param name="key">
+    ///   The value to use as the key of the element to add or set.
+    /// </param>
+    procedure AddOrSetKey(const value: TValue; const key: TKey);
+
+    /// <summary>
     ///   Remove the key that is currently mapped to the specified value
     ///   without triggering lifetime management for objects.
     /// </summary>
@@ -1955,7 +1968,7 @@ type
     ///   dictionary; returns the given default value for <c>TKey</c>
     ///   otherwise.
     /// </summary>
-    function GetKeyOrDefault(const value: TValue; const defaultValue: TKey): TKey; overload;
+    function GetKeyOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
 
     /// <summary>
     ///   Remove the key/value pair that is currently mapped to the specified
