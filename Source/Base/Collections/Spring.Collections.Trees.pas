@@ -46,23 +46,34 @@ type
     Row, Pos: Integer;
   end;
 
+  TTraverseMode = (tmInOrder, tmPreOrder, tmPostOrder);
+
   TBinaryTree = class abstract(TInterfacedObject)
   private type
     PNode = ^TNode;
 
-    TTraverseMode = (tmInOrder, tmPreOrder, tmPostOrder);
     TEnumerator = record
     private
       fRoot: PNode;
-      fCurrent: PNode;
       fMode: TTraverseMode;
+      fCurrent: PNode;
+    strict private
       function MoveNextInOrder: Boolean;
       function MoveNextPreOrder: Boolean;
       function MoveNextPostOrder: Boolean;
     public
-      function GetEnumerator: TEnumerator;
+      constructor Create(const root: PNode; mode: TTraverseMode);
       function MoveNext: Boolean; inline;
       property Current: PNode read fCurrent;
+    end;
+
+    TEnumerable = class
+    private
+      fRoot: PNode;
+      fMode: TTraverseMode;
+    public
+      constructor Create(const root: PNode; mode: TTraverseMode);
+      function GetEnumerator: TEnumerator;
     end;
 
     TNode = record
@@ -144,30 +155,6 @@ type
   PBinaryTreeNode = TBinaryTree.PNode;
   PRedBlackTreeNode = TRedBlackTree.PNode;
 
-  TRedBlackTreeNodeEnumeratorPreOrder<T> = record
-  private
-    fRoot: PBinaryTreeNode;
-    fCurrent: PBinaryTreeNode;
-    function GetCurrent: T;
-  public
-    function GetEnumerator: TRedBlackTreeNodeEnumeratorPreOrder<T>;
-
-    function MoveNext: Boolean;
-    property Current: T read GetCurrent;
-  end;
-
-  TRedBlackTreeNodeEnumeratorPostOrder<T> = record
-  private
-    fRoot: PBinaryTreeNode;
-    fCurrent: PBinaryTreeNode;
-    function GetCurrent: T;
-  public
-    function GetEnumerator: TRedBlackTreeNodeEnumeratorPostOrder<T>;
-
-    function MoveNext: Boolean;
-    property Current: T read GetCurrent;
-  end;
-
   TNodes<T> = record
   strict private type
     PNode = ^TNode;
@@ -177,9 +164,18 @@ type
       fEnumerator: TBinaryTree.TEnumerator;
       function GetCurrent: T; inline;
     public
-      function GetEnumerator: TKeyEnumerator; inline;
+      constructor Create(const root: PNode; mode: TTraverseMode);
       function MoveNext: Boolean; inline;
       property Current: T read GetCurrent;
+    end;
+
+    TKeyEnumerable = record
+    private
+      fRoot: PNode;
+      fMode: TTraverseMode;
+    public
+      constructor Create(const root: PNode; mode: TTraverseMode);
+      function GetEnumerator: TKeyEnumerator; inline;
     end;
 
     TEnumerator = record
@@ -187,11 +183,20 @@ type
       fEnumerator: TBinaryTree.TEnumerator;
       function GetCurrent: PNode; inline;
     public
-      function Keys: TKeyEnumerator;
-
-      function GetEnumerator: TEnumerator; inline;
+      constructor Create(const root: PNode; mode: TTraverseMode);
       function MoveNext: Boolean; inline;
       property Current: PNode read GetCurrent;
+    end;
+
+    TEnumerable = record
+    private
+      fRoot: PNode;
+      fMode: TTraverseMode;
+      function GetKeys: TKeyEnumerable; inline;
+    public
+      constructor Create(const root: PNode; mode: TTraverseMode);
+      function GetEnumerator: TEnumerator; inline;
+      property Keys: TKeyEnumerable read GetKeys;
     end;
 
     TNode = record
@@ -202,16 +207,19 @@ type
       fParent, fLeft, fRight: PNode;
       fKey: T;
       procedure SetParent(const value: PNode); inline;
+      function GetEnumerable(mode: TTraverseMode): TEnumerable; inline;
     public
       function GetEnumerator: TEnumerator; inline;
-      function PreOrder: TEnumerator; inline;
-      function PostOrder: TEnumerator; inline;
 
       property Left: PNode read fLeft;
       property Parent: PNode read GetParent;
       property Right: PNode read fRight;
       property Color: TNodeColor read GetColor;
       property Key: T read fKey;
+
+      property InOrder: TEnumerable index tmInOrder read GetEnumerable;
+      property PreOrder: TEnumerable index tmPreOrder read GetEnumerable;
+      property PostOrder: TEnumerable index tmPostOrder read GetEnumerable;
     end;
   public type
     TRedBlackTreeNode = TNode;
@@ -227,9 +235,18 @@ type
       fEnumerator: TBinaryTree.TEnumerator;
       function GetCurrent: TKey; inline;
     public
-      function GetEnumerator: TKeyEnumerator; inline;
+      constructor Create(const root: PNode; mode: TTraverseMode);
       function MoveNext: Boolean; inline;
       property Current: TKey read GetCurrent;
+    end;
+
+    TKeyEnumerable = record
+    private
+      fRoot: PNode;
+      fMode: TTraverseMode;
+    public
+      constructor Create(const root: PNode; mode: TTraverseMode);
+      function GetEnumerator: TKeyEnumerator; inline;
     end;
 
     TValueEnumerator = record
@@ -237,9 +254,18 @@ type
       fEnumerator: TBinaryTree.TEnumerator;
       function GetCurrent: TValue; inline;
     public
-      function GetEnumerator: TValueEnumerator; inline;
+      constructor Create(const root: PNode; mode: TTraverseMode);
       function MoveNext: Boolean; inline;
       property Current: TValue read GetCurrent;
+    end;
+
+    TValueEnumerable = record
+    private
+      fRoot: PNode;
+      fMode: TTraverseMode;
+    public
+      constructor Create(const root: PNode; mode: TTraverseMode);
+      function GetEnumerator: TValueEnumerator; inline;
     end;
 
     TEnumerator = record
@@ -247,12 +273,22 @@ type
       fEnumerator: TBinaryTree.TEnumerator;
       function GetCurrent: PNode; inline;
     public
-      function Keys: TKeyEnumerator;
-      function Values: TValueEnumerator;
-
-      function GetEnumerator: TEnumerator; inline;
+      constructor Create(const root: PNode; mode: TTraverseMode);
       function MoveNext: Boolean; inline;
       property Current: PNode read GetCurrent;
+    end;
+
+    TEnumerable = record
+    private
+      fRoot: PNode;
+      fMode: TTraverseMode;
+      function GetKeys: TKeyEnumerable; inline;
+      function GetValues: TValueEnumerable; inline;
+    public
+      constructor Create(const root: PNode; mode: TTraverseMode);
+      function GetEnumerator: TEnumerator; inline;
+      property Keys: TKeyEnumerable read GetKeys;
+      property Values: TValueEnumerable read GetValues;
     end;
 
     TNode = record
@@ -264,10 +300,9 @@ type
       fKey: TKey;
       fValue: TValue;
       procedure SetParent(const value: PNode); inline;
+      function GetEnumerable(mode: TTraverseMode): TEnumerable; inline;
     public
       function GetEnumerator: TEnumerator; inline;
-      function PreOrder: TEnumerator; inline;
-      function PostOrder: TEnumerator; inline;
 
       property Left: PNode read fLeft;
       property Parent: PNode read GetParent;
@@ -275,6 +310,10 @@ type
       property Color: TNodeColor read GetColor;
       property Key: TKey read fKey;
       property Value: TValue read fValue write fValue;
+
+      property InOrder: TEnumerable index tmInOrder read GetEnumerable;
+      property PreOrder: TEnumerable index tmPreOrder read GetEnumerable;
+      property PostOrder: TEnumerable index tmPostOrder read GetEnumerable;
     end;
   public type
     TRedBlackTreeNode = TNode;
@@ -347,9 +386,7 @@ type
   private type
     TEnumerator = class(TEnumeratorBase<T>)
     private
-      fTree: TBinaryTree;
-      fCurrentNode: PBinaryTreeNode;
-      fFinished: Boolean;
+      fEnumerator: TBinaryTree.TEnumerator;
     protected
       function GetCurrent: T; override;
     public
@@ -393,9 +430,7 @@ type
   private type
     TEnumerator = class(TEnumeratorBase<TPair<TKey,TValue>>)
     private
-      fTree: TBinaryTree;
-      fCurrentNode: PBinaryTreeNode;
-      fFinished: Boolean;
+      fEnumerator: TBinaryTree.TEnumerator;
     protected
       function GetCurrent: TPair<TKey,TValue>; override;
     public
@@ -446,6 +481,32 @@ uses
 
 const
   BucketSize = 64;
+
+
+{$REGION 'TBinaryTree'}
+
+function TBinaryTree.GetBucketIndex(index: Integer): TBucketIndex;
+begin
+  Result.Row := index div BucketSize;
+  Result.Pos := index mod BucketSize;
+end;
+
+function TBinaryTree.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TBinaryTree.GetHeight: Integer;
+begin
+  Result := PBinaryTreeNode(fRoot).Height;
+end;
+
+function TBinaryTree.GetRoot: PBinaryTreeNode;
+begin
+  Result := fRoot;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TBinaryTree.TNode'}
@@ -514,11 +575,12 @@ end;
 
 {$REGION 'TBinaryTree.TEnumerator'}
 
-function TBinaryTree.TEnumerator.GetEnumerator: TEnumerator;
+constructor TBinaryTree.TEnumerator.Create(const root: PNode;
+  mode: TTraverseMode);
 begin
-  Result.fRoot := fRoot;
-  Result.fCurrent := nil;
-  Result.fMode := fMode;
+  fRoot := root;
+  fCurrent := nil;
+  fMode := mode;
 end;
 
 function TBinaryTree.TEnumerator.MoveNext: Boolean;
@@ -534,7 +596,14 @@ end;
 
 function TBinaryTree.TEnumerator.MoveNextInOrder: Boolean;
 begin
-  Result := False;
+  if not Assigned(fCurrent) then
+    fCurrent := fRoot.LeftMost
+  else
+    fCurrent := fCurrent.Next;
+
+  Result := Assigned(fCurrent);
+  if not Result then
+    fRoot := nil;
 end;
 
 function TBinaryTree.TEnumerator.MoveNextPreOrder: Boolean;
@@ -603,240 +672,18 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TRedBlackTree.TNode'}
+{$REGION 'TBinaryTree.TEnumerable'}
 
-procedure TRedBlackTree.TNode.ClearParent;
-var
-  parent: PNode;
+constructor TBinaryTree.TEnumerable.Create(const root: PNode;
+  mode: TTraverseMode);
 begin
-  parent := GetParent;
-  if Assigned(parent) then
-    if parent.fLeft = @Self then
-      parent.fLeft := nil
-    else if parent.fRight = @Self then
-      parent.fRight := nil;
-  fParent := nil;
+  fRoot := root;
+  fMode := mode;
 end;
 
-function TRedBlackTree.TNode.GetColor: TNodeColor;
+function TBinaryTree.TEnumerable.GetEnumerator: TEnumerator;
 begin
-  Result := TNodeColor(IntPtr(fParent) and ColorMask);
-end;
-
-function TRedBlackTree.TNode.GetIsBlack: Boolean;
-begin
-  Result := (@Self = nil) or not Odd(IntPtr(fParent));
-end;
-
-function TRedBlackTree.TNode.GetParent: PNode;
-begin
-  Result := Pointer(IntPtr(fParent) and PointerMask);
-end;
-
-procedure TRedBlackTree.TNode.SetColor(const value: TNodeColor);
-begin
-  IntPtr(fParent) := IntPtr(fParent) and PointerMask or Byte(value);
-end;
-
-procedure TRedBlackTree.TNode.SetParent(const value: PNode);
-begin
-  if Assigned(value) then
-    IntPtr(fParent) := IntPtr(value) or Byte(Color)
-  else
-    ClearParent;
-end;
-
-procedure TRedBlackTree.TNode.SetLeft(const value: PNode);
-begin
-  fLeft := value;
-  if Assigned(value) then
-    value.SetParent(@Self);
-end;
-
-procedure TRedBlackTree.TNode.SetRight(const value: PNode);
-begin
-  fRight := value;
-  if Assigned(value) then
-    value.SetParent(@Self);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TNodes<T>.TNode'}
-
-function TNodes<T>.TNode.GetColor: TNodeColor;
-begin
-  Result := TNodeColor(IntPtr(fParent) and ColorMask);
-end;
-
-function TNodes<T>.TNode.GetEnumerator: TEnumerator;
-begin
-  Result.fEnumerator.fRoot := @Self;
-  Result.fEnumerator.fCurrent := nil;
-  Result.fEnumerator.fMode := tmInOrder;
-end;
-
-function TNodes<T>.TNode.GetParent: PNode;
-begin
-  IntPtr(Result) := IntPtr(fParent) and PointerMask;
-end;
-
-function TNodes<T>.TNode.PreOrder: TEnumerator;
-begin
-  Result.fEnumerator.fRoot := @Self;
-  Result.fEnumerator.fCurrent := nil;
-  Result.fEnumerator.fMode := tmPreOrder;
-end;
-
-function TNodes<T>.TNode.PostOrder: TEnumerator;
-begin
-  Result.fEnumerator.fRoot := @Self;
-  Result.fEnumerator.fCurrent := nil;
-  Result.fEnumerator.fMode := tmPostOrder;
-end;
-
-procedure TNodes<T>.TNode.SetParent(
-  const value: PNode);
-begin
-  PRedBlackTreeNode(@Self).SetParent(PRedBlackTreeNode(value));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TNodes<TKey, TValue>.TNode'}
-
-function TNodes<TKey, TValue>.TNode.GetColor: TNodeColor;
-begin
-  Result := TNodeColor(IntPtr(fParent) and ColorMask);
-end;
-
-function TNodes<TKey, TValue>.TNode.GetEnumerator: TEnumerator;
-begin
-  Result.fEnumerator.fRoot := @Self;
-  Result.fEnumerator.fCurrent := nil;
-  Result.fEnumerator.fMode := tmInOrder;
-end;
-
-function TNodes<TKey, TValue>.TNode.GetParent: PNode;
-begin
-  IntPtr(Result) := IntPtr(fParent) and PointerMask;
-end;
-
-function TNodes<TKey, TValue>.TNode.PreOrder: TEnumerator;
-begin
-  Result.fEnumerator.fRoot := @Self;
-  Result.fEnumerator.fCurrent := nil;
-  Result.fEnumerator.fMode := tmPreOrder;
-end;
-
-function TNodes<TKey, TValue>.TNode.PostOrder: TEnumerator;
-begin
-  Result.fEnumerator.fRoot := @Self;
-  Result.fEnumerator.fCurrent := nil;
-  Result.fEnumerator.fMode := tmPostOrder;
-end;
-
-procedure TNodes<TKey, TValue>.TNode.SetParent(const value: PNode);
-begin
-  PRedBlackTreeNode(@Self).SetParent(PRedBlackTreeNode(value));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TRedBlackTreeNodeEnumeratorPreOrder<T>'}
-
-function TRedBlackTreeNodeEnumeratorPreOrder<T>.GetCurrent: T;
-begin
-  Result := TNodes<T>.PRedBlackTreeNode(fCurrent).Key;
-end;
-
-function TRedBlackTreeNodeEnumeratorPreOrder<T>.GetEnumerator: TRedBlackTreeNodeEnumeratorPreOrder<T>;
-begin
-  Result.fRoot := fRoot;
-  Result.fCurrent := nil;
-end;
-
-function TRedBlackTreeNodeEnumeratorPreOrder<T>.MoveNext: Boolean;
-begin
-
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TRedBlackTreeNodeEnumeratorPostOrder<T>'}
-
-function TRedBlackTreeNodeEnumeratorPostOrder<T>.GetCurrent: T;
-begin
-  Result := TNodes<T>.PRedBlackTreeNode(fCurrent).Key;
-end;
-
-function TRedBlackTreeNodeEnumeratorPostOrder<T>.GetEnumerator: TRedBlackTreeNodeEnumeratorPostOrder<T>;
-begin
-  Result.fRoot := fRoot;
-  Result.fCurrent := nil;
-end;
-
-function TRedBlackTreeNodeEnumeratorPostOrder<T>.MoveNext: Boolean;
-var
-  sibling: PBinaryTreeNode;
-begin
-  if not Assigned(fCurrent) then
-    fCurrent := fRoot
-  else if Assigned(fCurrent.Parent) then // walk up ...
-  begin
-    sibling := fCurrent.Parent.Right;
-    if Assigned(sibling) and (sibling <> fCurrent) then // ... and down right
-      fCurrent := sibling
-    else
-    begin
-      fCurrent := fCurrent.Parent;
-      Exit(True);
-    end;
-  end
-  else
-    fCurrent := nil;
-
-  while Assigned(fCurrent) do // walk down to leftmost leaf
-    if Assigned(fCurrent.Left) then
-      fCurrent := fCurrent.Left
-    else if Assigned(fCurrent.Right) then
-      fCurrent := fCurrent.Right
-    else
-      Break;
-
-  Result := Assigned(fCurrent);
-  if not Result then
-    fRoot := nil;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TBinaryTree'}
-
-function TBinaryTree.GetBucketIndex(index: Integer): TBucketIndex;
-begin
-  Result.Row := index div BucketSize;
-  Result.Pos := index mod BucketSize;
-end;
-
-function TBinaryTree.GetCount: Integer;
-begin
-  Result := fCount;
-end;
-
-function TBinaryTree.GetHeight: Integer;
-begin
-  Result := PBinaryTreeNode(fRoot).Height;
-end;
-
-function TBinaryTree.GetRoot: PBinaryTreeNode;
-begin
-  Result := fRoot;
+  Result := TEnumerator.Create(fRoot, fMode);
 end;
 
 {$ENDREGION}
@@ -1106,6 +953,333 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TRedBlackTree.TNode'}
+
+procedure TRedBlackTree.TNode.ClearParent;
+var
+  parent: PNode;
+begin
+  parent := GetParent;
+  if Assigned(parent) then
+    if parent.fLeft = @Self then
+      parent.fLeft := nil
+    else if parent.fRight = @Self then
+      parent.fRight := nil;
+  fParent := nil;
+end;
+
+function TRedBlackTree.TNode.GetColor: TNodeColor;
+begin
+  Result := TNodeColor(IntPtr(fParent) and ColorMask);
+end;
+
+function TRedBlackTree.TNode.GetIsBlack: Boolean;
+begin
+  Result := (@Self = nil) or not Odd(IntPtr(fParent));
+end;
+
+function TRedBlackTree.TNode.GetParent: PNode;
+begin
+  Result := Pointer(IntPtr(fParent) and PointerMask);
+end;
+
+procedure TRedBlackTree.TNode.SetColor(const value: TNodeColor);
+begin
+  IntPtr(fParent) := IntPtr(fParent) and PointerMask or Byte(value);
+end;
+
+procedure TRedBlackTree.TNode.SetParent(const value: PNode);
+begin
+  if Assigned(value) then
+    IntPtr(fParent) := IntPtr(value) or Byte(Color)
+  else
+    ClearParent;
+end;
+
+procedure TRedBlackTree.TNode.SetLeft(const value: PNode);
+begin
+  fLeft := value;
+  if Assigned(value) then
+    value.SetParent(@Self);
+end;
+
+procedure TRedBlackTree.TNode.SetRight(const value: PNode);
+begin
+  fRight := value;
+  if Assigned(value) then
+    value.SetParent(@Self);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<T>.TNode'}
+
+function TNodes<T>.TNode.GetColor: TNodeColor;
+begin
+  Result := TNodeColor(IntPtr(fParent) and ColorMask);
+end;
+
+function TNodes<T>.TNode.GetEnumerable(mode: TTraverseMode): TEnumerable;
+begin
+  Result := TEnumerable.Create(@Self, mode);
+end;
+
+function TNodes<T>.TNode.GetEnumerator: TEnumerator;
+begin
+  Result := TEnumerator.Create(@Self, tmInOrder);
+end;
+
+function TNodes<T>.TNode.GetParent: PNode;
+begin
+  IntPtr(Result) := IntPtr(fParent) and PointerMask;
+end;
+
+procedure TNodes<T>.TNode.SetParent(
+  const value: PNode);
+begin
+  PRedBlackTreeNode(@Self).SetParent(PRedBlackTreeNode(value));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<T>.TKeyEnumerator'}
+
+constructor TNodes<T>.TKeyEnumerator.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fEnumerator := TBinaryTree.TEnumerator.Create(Pointer(root), mode);
+end;
+
+function TNodes<T>.TKeyEnumerator.GetCurrent: T;
+begin
+  Result := PNode(fEnumerator.fCurrent).Key;
+end;
+
+function TNodes<T>.TKeyEnumerator.MoveNext: Boolean;
+begin
+  Result := fEnumerator.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<T>.TKeyEnumerable'}
+
+constructor TNodes<T>.TKeyEnumerable.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fRoot := root;
+  fMode := mode;
+end;
+
+function TNodes<T>.TKeyEnumerable.GetEnumerator: TKeyEnumerator;
+begin
+  Result := TKeyEnumerator.Create(fRoot, fMode);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<T>.TEnumerator'}
+
+constructor TNodes<T>.TEnumerator.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fEnumerator := TBinaryTree.TEnumerator.Create(Pointer(root), mode);
+end;
+
+function TNodes<T>.TEnumerator.GetCurrent: PNode;
+begin
+  Result := PNode(fEnumerator.fCurrent);
+end;
+
+function TNodes<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fEnumerator.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<T>.TEnumerable'}
+
+constructor TNodes<T>.TEnumerable.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fRoot := root;
+  fMode := mode;
+end;
+
+function TNodes<T>.TEnumerable.GetEnumerator: TEnumerator;
+begin
+  Result := TEnumerator.Create(fRoot, fMode);
+end;
+
+function TNodes<T>.TEnumerable.GetKeys: TKeyEnumerable;
+begin
+  Result := TKeyEnumerable.Create(fRoot, fMode);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<TKey, TValue>.TNode'}
+
+function TNodes<TKey, TValue>.TNode.GetColor: TNodeColor;
+begin
+  Result := TNodeColor(IntPtr(fParent) and ColorMask);
+end;
+
+function TNodes<TKey, TValue>.TNode.GetEnumerable(
+  mode: TTraverseMode): TEnumerable;
+begin
+  Result := TEnumerable.Create(@Self, mode);
+end;
+
+function TNodes<TKey, TValue>.TNode.GetEnumerator: TEnumerator;
+begin
+  Result := TEnumerator.Create(@Self, tmInOrder);
+end;
+
+function TNodes<TKey, TValue>.TNode.GetParent: PNode;
+begin
+  IntPtr(Result) := IntPtr(fParent) and PointerMask;
+end;
+
+procedure TNodes<TKey, TValue>.TNode.SetParent(const value: PNode);
+begin
+  PRedBlackTreeNode(@Self).SetParent(PRedBlackTreeNode(value));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<TKey, TValue>.TKeyEnumerator'}
+
+constructor TNodes<TKey, TValue>.TKeyEnumerator.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fEnumerator := TBinaryTree.TEnumerator.Create(Pointer(root), mode);
+end;
+
+function TNodes<TKey, TValue>.TKeyEnumerator.GetCurrent: TKey;
+begin
+  Result := PNode(fEnumerator.fCurrent).Key;
+end;
+
+function TNodes<TKey, TValue>.TKeyEnumerator.MoveNext: Boolean;
+begin
+  Result := fEnumerator.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<TKey, TValue>.TKeyEnumerable'}
+
+constructor TNodes<TKey, TValue>.TKeyEnumerable.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fRoot := root;
+  fMode := mode;
+end;
+
+function TNodes<TKey, TValue>.TKeyEnumerable.GetEnumerator: TKeyEnumerator;
+begin
+  Result := TKeyEnumerator.Create(fRoot, fMode);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<TKey, TValue>.TValueEnumerator'}
+
+constructor TNodes<TKey, TValue>.TValueEnumerator.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fEnumerator := TBinaryTree.TEnumerator.Create(Pointer(root), mode);
+end;
+
+function TNodes<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;
+begin
+  Result := PNode(fEnumerator.fCurrent).Value;
+end;
+
+function TNodes<TKey, TValue>.TValueEnumerator.MoveNext: Boolean;
+begin
+  Result := fEnumerator.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<TKey, TValue>.TValueEnumerable'}
+
+constructor TNodes<TKey, TValue>.TValueEnumerable.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fRoot := root;
+  fMode := mode;
+end;
+
+function TNodes<TKey, TValue>.TValueEnumerable.GetEnumerator: TValueEnumerator;
+begin
+  Result := TValueEnumerator.Create(fRoot, fMode);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<TKey, TValue>.TEnumerator'}
+
+constructor TNodes<TKey, TValue>.TEnumerator.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fEnumerator := TBinaryTree.TEnumerator.Create(Pointer(root), mode);
+end;
+
+function TNodes<TKey, TValue>.TEnumerator.GetCurrent: PNode;
+begin
+  Result := PNode(fEnumerator.fCurrent);
+end;
+
+function TNodes<TKey, TValue>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fEnumerator.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNodes<TKey, TValue>.TEnumerable'}
+
+constructor TNodes<TKey, TValue>.TEnumerable.Create(const root: PNode;
+  mode: TTraverseMode);
+begin
+  fRoot := root;
+  fMode := mode;
+end;
+
+function TNodes<TKey, TValue>.TEnumerable.GetEnumerator: TEnumerator;
+begin
+  Result := TEnumerator.Create(fRoot, fMode);
+end;
+
+function TNodes<TKey, TValue>.TEnumerable.GetKeys: TKeyEnumerable;
+begin
+  Result := TKeyEnumerable.Create(fRoot, fMode);
+end;
+
+function TNodes<TKey, TValue>.TEnumerable.GetValues: TValueEnumerable;
+begin
+  Result := TValueEnumerable.Create(fRoot, fMode);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TRedBlackTree<T>'}
 
 constructor TRedBlackTree<T>.Create;
@@ -1324,24 +1498,17 @@ constructor TRedBlackTree<T>.TEnumerator.Create(
   const tree: TBinaryTree);
 begin
   inherited Create;
-  fTree := tree;
+  fEnumerator := TBinaryTree.TEnumerator.Create(tree.fRoot, tmInOrder);
 end;
 
 function TRedBlackTree<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := PNode(fCurrentNode).Key;
+  Result := PNode(fEnumerator.fCurrent).Key;
 end;
 
 function TRedBlackTree<T>.TEnumerator.MoveNext: Boolean;
 begin
-  if (fTree.fCount = 0) or fFinished then
-    Exit(False);
-  if not Assigned(fCurrentNode) then
-    fCurrentNode := PBinaryTreeNode(fTree.fRoot).LeftMost
-  else
-    fCurrentNode := fCurrentNode.Next;
-  Result := Assigned(fCurrentNode);
-  fFinished := not Result;
+  Result := fEnumerator.MoveNext;
 end;
 
 {$ENDREGION}
@@ -1590,128 +1757,21 @@ constructor TRedBlackTree<TKey, TValue>.TEnumerator.Create(
   const tree: TBinaryTree);
 begin
   inherited Create;
-  fTree := tree;
+  fEnumerator := TBinaryTree.TEnumerator.Create(tree.fRoot, tmInOrder);
 end;
 
 function TRedBlackTree<TKey, TValue>.TEnumerator.GetCurrent: TPair<TKey, TValue>;
 begin
-  Result.Key := PNode(fCurrentNode).Key;
-  Result.Value := PNode(fCurrentNode).Value;
+  Result.Key := PNode(fEnumerator.fCurrent).Key;
+  Result.Value := PNode(fEnumerator.fCurrent).Value;
 end;
 
 function TRedBlackTree<TKey, TValue>.TEnumerator.MoveNext: Boolean;
 begin
-  if (fTree.fCount = 0) or fFinished then
-    Exit(False);
-  if not Assigned(fCurrentNode) then
-    fCurrentNode := PBinaryTreeNode(fTree.fRoot).LeftMost
-  else
-    fCurrentNode := fCurrentNode.Next;
-  Result := Assigned(fCurrentNode);
-  fFinished := not Result;
+  Result := fEnumerator.MoveNext;
 end;
 
 {$ENDREGION}
 
-
-{ TNodes<T>.TEnumerator }
-
-function TNodes<T>.TEnumerator.GetCurrent: PNode;
-begin
-  Result := PNode(fEnumerator.fCurrent);
-end;
-
-function TNodes<T>.TEnumerator.GetEnumerator: TEnumerator;
-begin
-  Result := Self;
-end;
-
-function TNodes<T>.TEnumerator.Keys: TKeyEnumerator;
-begin
-  Result.fEnumerator := fEnumerator;
-end;
-
-function TNodes<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := fEnumerator.MoveNext;
-end;
-
-{ TNodes<T>.TKeyEnumerator }
-
-function TNodes<T>.TKeyEnumerator.GetCurrent: T;
-begin
-  Result := PNode(fEnumerator.fCurrent).Key;
-end;
-
-function TNodes<T>.TKeyEnumerator.GetEnumerator: TKeyEnumerator;
-begin
-  Result := Self;
-end;
-
-function TNodes<T>.TKeyEnumerator.MoveNext: Boolean;
-begin
-  Result := fEnumerator.MoveNext;
-end;
-
-{ TNodes<TKey, TValue>.TEnumerator }
-
-function TNodes<TKey, TValue>.TEnumerator.GetCurrent: PNode;
-begin
-  Result := PNode(fEnumerator.fCurrent);
-end;
-
-function TNodes<TKey, TValue>.TEnumerator.GetEnumerator: TEnumerator;
-begin
-  Result := Self;
-end;
-
-function TNodes<TKey, TValue>.TEnumerator.Keys: TKeyEnumerator;
-begin
-  Result.fEnumerator := fEnumerator;
-end;
-
-function TNodes<TKey, TValue>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := fEnumerator.MoveNext;
-end;
-
-function TNodes<TKey, TValue>.TEnumerator.Values: TValueEnumerator;
-begin
-  Result.fEnumerator := fEnumerator;
-end;
-
-{ TNodes<TKey, TValue>.TKeyEnumerator }
-
-function TNodes<TKey, TValue>.TKeyEnumerator.GetCurrent: TKey;
-begin
-  Result := PNode(fEnumerator.fCurrent).Key;
-end;
-
-function TNodes<TKey, TValue>.TKeyEnumerator.GetEnumerator: TKeyEnumerator;
-begin
-  Result := Self;
-end;
-
-function TNodes<TKey, TValue>.TKeyEnumerator.MoveNext: Boolean;
-begin
-  Result := fEnumerator.MoveNext;
-end;
-
-{ TNodes<TKey, TValue>.TValueEnumerator }
-
-function TNodes<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;
-begin
-  Result := PNode(fEnumerator.fCurrent).Value;
-end;
-
-function TNodes<TKey, TValue>.TValueEnumerator.GetEnumerator: TValueEnumerator;
-begin
-  Result := Self;
-end;
-
-function TNodes<TKey, TValue>.TValueEnumerator.MoveNext: Boolean;
-begin
-  Result := fEnumerator.MoveNext;
-end;
 
 end.
