@@ -598,6 +598,8 @@ type
     procedure TearDown; override;
   published
     procedure AddDictionary;
+    procedure TestAddOrSetKey;
+    procedure TestAddOrSetValue;
     procedure TestKeysEnumerate;
   end;
 
@@ -3841,6 +3843,26 @@ begin
   dict.Add(4, 'd');
   SUT.AddRange(dict);
   CheckTrue(SUT.EqualsTo(dict));
+end;
+
+procedure TTestBidiDictionary.TestAddOrSetKey;
+begin
+  SUT.AddOrSetKey('a', 1);
+  CheckException(EInvalidOperationException, procedure begin SUT.AddOrSetKey('b', 1) end, 'EInvalidOperationException was not raised');
+  SUT.AddOrSetKey('a', 1);
+  CheckEquals(1, SUT.Count);
+  SUT.AddOrSetKey('a', 2);
+  CheckEquals(1, SUT.Count);
+end;
+
+procedure TTestBidiDictionary.TestAddOrSetValue;
+begin
+  SUT.AddOrSetValue(1, 'a');
+  CheckException(EInvalidOperationException, procedure begin SUT.AddOrSetValue(2, 'a') end, 'EInvalidOperationException was not raised');
+  SUT.AddOrSetValue(1, 'a');
+  CheckEquals(1, SUT.Count);
+  SUT.AddOrSetValue(1, 'b');
+  CheckEquals(1, SUT.Count);
 end;
 
 procedure TTestBidiDictionary.TestKeysEnumerate;
