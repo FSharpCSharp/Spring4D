@@ -1359,7 +1359,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TIteratorBase<T>' }
+{$REGION 'TIteratorBase<T>'}
 
 procedure TIteratorBase<T>.Dispose;
 begin

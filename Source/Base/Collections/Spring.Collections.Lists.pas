@@ -1059,7 +1059,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TCollectionList<T>' }
+{$REGION 'TCollectionList<T>'}
 
 constructor TCollectionList<T>.Create(const collection: TCollection);
 begin

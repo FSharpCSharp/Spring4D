@@ -314,7 +314,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'THashSetItem<T>' }
+{$REGION 'THashSetItem<T>'}
 
 function THashSetItem<T>.Removed: Boolean;
 begin
@@ -629,7 +629,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'THashSet<T>.TEnumerator' }
+{$REGION 'THashSet<T>.TEnumerator'}
 
 constructor THashSet<T>.TEnumerator.Create(const source: THashSet<T>);
 begin
@@ -665,7 +665,7 @@ begin
   Result := False;
 end;
 
-{$ENDREGION }
+{$ENDREGION}
 
 
 {$REGION 'TSortedSet<T>'}

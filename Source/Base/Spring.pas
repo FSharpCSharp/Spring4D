@@ -9357,7 +9357,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TArrayEnumerator<T>' }
+{$REGION 'TArrayEnumerator<T>'}
 
 constructor TArrayEnumerator<T>.Create(const items: TArray<T>);
 begin

@@ -494,7 +494,7 @@ uses
   Spring.ResourceStrings;
 
 
-{$REGION 'TDictionaryItem<TKey, TValue>' }
+{$REGION 'TDictionaryItem<TKey, TValue>'}
 
 function TDictionaryItem<TKey, TValue>.Removed: Boolean;
 begin
@@ -1072,7 +1072,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDictionary<TKey, TValue>.TEnumerator' }
+{$REGION 'TDictionary<TKey, TValue>.TEnumerator'}
 
 constructor TDictionary<TKey, TValue>.TEnumerator.Create(
   const source: TDictionary<TKey, TValue>);
@@ -1138,7 +1138,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDictionary<TKey, TValue>.TKeyEnumerator' }
+{$REGION 'TDictionary<TKey, TValue>.TKeyEnumerator'}
 
 constructor TDictionary<TKey, TValue>.TKeyEnumerator.Create(
   const source: TDictionary<TKey, TValue>);

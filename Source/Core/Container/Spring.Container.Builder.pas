@@ -535,7 +535,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInterceptorInspector' }
+{$REGION 'TInterceptorInspector'}
 
 procedure TInterceptorInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);

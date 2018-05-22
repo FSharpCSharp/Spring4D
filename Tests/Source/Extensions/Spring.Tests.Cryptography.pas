@@ -784,7 +784,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestPaddingModeIsZeros' }
+{$REGION 'TTestPaddingModeIsZeros'}
 
 procedure TTestPaddingModeIsZeros.SetUp;
 begin
