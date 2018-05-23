@@ -603,6 +603,7 @@ type
     procedure TestAddOrSetValueOrder;
     procedure TestRemove;
     procedure TestKeysEnumerate;
+    procedure TestOrdered;
   end;
 
   TTestBidiDictionary = class(TTestBidiDictionaryBase)
@@ -3966,6 +3967,29 @@ begin
   CheckFalse(e.MoveNext);
 end;
 
+
+procedure TTestBidiDictionaryBase.TestOrdered;
+var
+  items: TArray<TPair<Integer,string>>;
+  itemsInversed: TArray<TPair<string,Integer>>;
+begin
+  SUT.Add(3, 'b');
+  SUT.Add(1, 'd');
+  SUT.Add(4, 'a');
+  SUT.Add(2, 'c');
+
+  items := SUT.Ordered.ToArray;
+  CheckEquals(1, items[0].Key);
+  CheckEquals(2, items[1].Key);
+  CheckEquals(3, items[2].Key);
+  CheckEquals(4, items[3].Key);
+
+  itemsInversed := SUT.Inverse.Ordered.ToArray;
+  CheckEquals('a', itemsInversed[0].Key);
+  CheckEquals('b', itemsInversed[1].Key);
+  CheckEquals('c', itemsInversed[2].Key);
+  CheckEquals('d', itemsInversed[3].Key);
+end;
 
 procedure TTestBidiDictionaryBase.TestRemove;
 begin

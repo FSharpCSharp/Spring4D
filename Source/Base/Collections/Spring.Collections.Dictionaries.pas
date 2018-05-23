@@ -303,7 +303,6 @@ type
         IBidiDictionary<TValue, TKey>)
       private type
       {$REGION 'Nested Types'}
-
         TEnumerator = class(TEnumeratorBase<TValueKeyPair>)
         private
           {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -316,6 +315,26 @@ type
           constructor Create(const source: TBidiDictionary<TKey, TValue>);
           destructor Destroy; override;
           function MoveNext: Boolean; override;
+        end;
+
+        TOrderedEnumerable = class(TIterator<TValueKeyPair>)
+        private
+          {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+          fSource: TBidiDictionary<TKey, TValue>;
+          fSortedItemIndices: TArray<Integer>;
+          fIndex: Integer;
+          fVersion: Integer;
+        protected
+        {$REGION 'Property Accessors'}
+          function GetCount: Integer; override;
+        {$ENDREGION}
+          procedure Dispose; override;
+          procedure Start; override;
+          function TryMoveNext(var current: TValueKeyPair): Boolean; override;
+        public
+          constructor Create(const source: TBidiDictionary<TKey, TValue>);
+          destructor Destroy; override;
+          function Clone: TIterator<TValueKeyPair>; override;
         end;
       {$ENDREGION}
       private
@@ -345,7 +364,7 @@ type
         function GetEnumerator: IEnumerator<TValueKeyPair>; override;
         function Contains(const value: TValueKeyPair;
           const comparer: IEqualityComparer<TValueKeyPair>): Boolean; override;
-//        function Ordered: IEnumerable<TKeyValuePair>; override;
+        function Ordered: IEnumerable<TValueKeyPair>; override;
         function ToArray: TArray<TValueKeyPair>; override;
       {$ENDREGION}
 
@@ -458,6 +477,7 @@ type
 
       TOrderedEnumerable = class(TIterator<TKeyValuePair>)
       private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
         fSortedItemIndices: TArray<Integer>;
         fIndex: Integer;
@@ -1537,7 +1557,6 @@ begin
   fIndex := 0;
   fVersion := fSource.fVersion;
 
-  comparer := TComparer<TKey>.Default;
   SetLength(fSortedItemIndices, fSource.Count);
   targetIndex := 0;
   for sourceIndex := 0 to fSource.fItemCount - 1 do
@@ -1547,6 +1566,7 @@ begin
       Inc(targetIndex);
     end;
 
+  comparer := TComparer<TKey>.Default;
   TArray.Sort<Integer>(fSortedItemIndices,
     function(const left, right: Integer): Integer
     begin
@@ -2528,6 +2548,11 @@ begin
   Result := fSource.KeyType;
 end;
 
+function TBidiDictionary<TKey, TValue>.TInverse.Ordered: IEnumerable<TValueKeyPair>;
+begin
+  Result := TOrderedEnumerable.Create(fSource);
+end;
+
 function TBidiDictionary<TKey, TValue>.TInverse.Remove(
   const value: TValue): Boolean;
 var
@@ -2651,6 +2676,80 @@ end;
 function TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.MoveNext: Boolean;
 begin
   Result := fSource.DoMoveNext(fItemIndex, fVersion);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable'}
+
+constructor TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Create(
+  const source: TBidiDictionary<TKey, TValue>);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+end;
+
+destructor TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Destroy;
+begin
+  fSource._Release;
+  inherited Destroy;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Dispose;
+begin
+  fSortedItemIndices := nil;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Clone: TIterator<TValueKeyPair>;
+begin
+  Result := TOrderedEnumerable.Create(fSource);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.GetCount: Integer;
+begin
+  Result := fSource.Count;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Start;
+var
+  sourceIndex, targetIndex: Integer;
+  comparer: IComparer<TValue>;
+begin
+  fIndex := 0;
+  fVersion := fSource.fVersion;
+
+  SetLength(fSortedItemIndices, fSource.Count);
+  targetIndex := 0;
+  for sourceIndex := 0 to fSource.fItemCount - 1 do
+    if not fSource.fItems[sourceIndex].Removed then
+    begin
+      fSortedItemIndices[targetIndex] := sourceIndex;
+      Inc(targetIndex);
+    end;
+
+  comparer := TComparer<TValue>.Default;
+  TArray.Sort<Integer>(fSortedItemIndices,
+    function(const left, right: Integer): Integer
+    begin
+      Result := comparer.Compare(fSource.fItems[left].Value, fSource.fItems[right].Value);
+    end);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.TryMoveNext(var current: TValueKeyPair): Boolean;
+begin
+  if fVersion <> fSource.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  if fIndex < Length(fSortedItemIndices) then
+  begin
+    current.Key := fSource.fItems[fSortedItemIndices[fIndex]].Value;
+    current.Value := fSource.fItems[fSortedItemIndices[fIndex]].Key;
+    Inc(fIndex);
+    Exit(True);
+  end;
+  Result := False;
 end;
 
 {$ENDREGION}
@@ -2839,16 +2938,12 @@ constructor TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Create(
 begin
   inherited Create;
   fSource := source;
-{$IFNDEF AUTOREFCOUNT}
   fSource._AddRef;
-{$ENDIF}
 end;
 
 destructor TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Destroy;
 begin
-{$IFNDEF AUTOREFCOUNT}
   fSource._Release;
-{$ENDIF}
   inherited Destroy;
 end;
 
