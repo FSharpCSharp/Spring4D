@@ -1879,6 +1879,7 @@ var
   oldKey: TKey;
   oldKeyHashCode: Integer;
   oldKeyBucketIndex, oldKeyItemIndex, keyBucketIndex: Integer;
+  item: TKeyValuePair;
 begin
   value := fItems[itemIndex].Value;
   valueHashCode := fItems[itemIndex].ValueHashCode;
@@ -1909,7 +1910,12 @@ begin
 
   Inc(fItemCount);
 
+  item.Key := oldKey;
+  item.Value := value;
+  Changed(item, caRemoved);
   KeyChanged(oldKey, caRemoved);
+  item.Key := key;
+  Changed(item, caAdded);
   KeyChanged(key, caAdded);
 end;
 
@@ -1921,6 +1927,7 @@ var
   oldValue: TValue;
   oldValueHashCode: Integer;
   oldValueBucketIndex, oldValueItemIndex, valueBucketIndex: Integer;
+  item: TKeyValuePair;
 begin
   key := fItems[itemIndex].Key;
   keyHashCode := fItems[itemIndex].KeyHashCode;
@@ -1951,7 +1958,12 @@ begin
 
   Inc(fItemCount);
 
+  item.Key := key;
+  item.Value := oldValue;
+  Changed(item, caRemoved);
   ValueChanged(oldValue, caRemoved);
+  item.Value := value;
+  Changed(item, caAdded);
   ValueChanged(value, caAdded);
 end;
 
