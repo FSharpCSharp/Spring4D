@@ -294,8 +294,88 @@ type
   {$REGION 'Nested Types'}
     type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
+      TValueKeyPair = Generics.Collections.TPair<TValue, TKey>;
       TItem = TBidiDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
+
+      TInverse = class(TContainedCollectionBase<TValueKeyPair>,
+        IReadOnlyDictionary<TValue, TKey>, IDictionary<TValue, TKey>,
+        IBidiDictionary<TValue, TKey>)
+      private type
+      {$REGION 'Nested Types'}
+
+        TEnumerator = class(TEnumeratorBase<TValueKeyPair>)
+        private
+          {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+          fSource: TBidiDictionary<TKey, TValue>;
+          fItemIndex: Integer;
+          fVersion: Integer;
+        protected
+          function GetCurrent: TValueKeyPair; override;
+        public
+          constructor Create(const source: TBidiDictionary<TKey, TValue>);
+          destructor Destroy; override;
+          function MoveNext: Boolean; override;
+        end;
+      {$ENDREGION}
+      private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TBidiDictionary<TKey, TValue>;
+      protected
+      {$REGION 'Property Accessors'}
+        function GetCapacity: Integer;
+        function GetCount: Integer; override;
+        function GetInverse: IBidiDictionary<TKey, TValue>;
+        function GetItem(const value: TValue): TKey;
+        function GetKeys: IReadOnlyCollection<TValue>;
+        function GetKeyType: PTypeInfo;
+        function GetOnKeyChanged: ICollectionChangedEvent<TValue>;
+        function GetOnValueChanged: ICollectionChangedEvent<TKey>;
+        function GetValues: IReadOnlyCollection<TKey>;
+        function GetValueType: PTypeInfo;
+        procedure SetCapacity(value: Integer);
+        procedure SetItem(const value: TValue; const key: TKey);
+      {$ENDREGION}
+        procedure AddInternal(const item: TValueKeyPair); override;
+      public
+        constructor Create(const source: TBidiDictionary<TKey, TValue>);
+
+      {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
+        function GetEnumerator: IEnumerator<TValueKeyPair>; override;
+        function Contains(const value: TValueKeyPair;
+          const comparer: IEqualityComparer<TValueKeyPair>): Boolean; override;
+//        function Ordered: IEnumerable<TKeyValuePair>; override;
+        function ToArray: TArray<TValueKeyPair>; override;
+      {$ENDREGION}
+
+      {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
+        procedure Clear; override;
+        function Extract(const item: TValueKeyPair): TValueKeyPair; overload; override;
+      {$ENDREGION}
+
+      {$REGION 'Implements IMap<TValue, TKey>'}
+        procedure Add(const value: TValue; const key: TKey);
+        function Remove(const value: TValue): Boolean; reintroduce; overload;
+        function Remove(const value: TValue; const key: TKey): Boolean; reintroduce; overload;
+        function Extract(const value: TValue; const key: TKey): TValueKeyPair; reintroduce; overload;
+        function Contains(const value: TValue; const key: TKey): Boolean; overload;
+        function ContainsKey(const value: TValue): Boolean;
+        function ContainsValue(const key: TKey): Boolean;
+        property Keys: IReadOnlyCollection<TValue> read GetKeys;
+        property Values: IReadOnlyCollection<TKey> read GetValues;
+      {$ENDREGION}
+
+      {$REGION 'Implements IDictionary<TValue, TKey>'}
+        procedure AddOrSetValue(const value: TValue; const key: TKey);
+        function Extract(const value: TValue): TKey; reintroduce; overload;
+        function GetValueOrDefault(const value: TValue): TKey; overload;
+        function GetValueOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
+        function TryExtract(const value: TValue; out key: TKey): Boolean;
+        function TryGetValue(const value: TValue; out key: TKey): Boolean;
+        procedure TrimExcess;
+        function AsReadOnlyDictionary: IReadOnlyDictionary<TValue, TKey>;
+      {$ENDREGION}
+      end;
 
       TEnumerator = class(TEnumeratorBase<TKeyValuePair>)
       private
@@ -307,6 +387,7 @@ type
         function GetCurrent: TKeyValuePair; override;
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
+        destructor Destroy; override;
         function MoveNext: Boolean; override;
       end;
 
@@ -413,6 +494,7 @@ type
     fValueComparer: IEqualityComparer<TValue>;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
+    fInverse: TInverse;
     fOwnerships: TDictionaryOwnerships;
     procedure Rehash(newCapacity: Integer);
     function Grow: Boolean;
@@ -432,19 +514,18 @@ type
       const value: TValue);
     function DoMoveNext(var itemIndex: Integer;
       iteratorVersion: Integer): Boolean;
+
+    procedure AddOrSetKey(const value: TValue; const key: TKey);
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer; override;
+    function GetInverse: IBidiDictionary<TValue, TKey>;
     function GetItem(const key: TKey): TValue;
-    function GetKey(const value: TValue): TKey;
-    function IBidiDictionary<TKey, TValue>.GetValue = GetItem;
     function GetKeys: IReadOnlyCollection<TKey>; override;
     function GetValues: IReadOnlyCollection<TValue>; override;
     procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
-    procedure SetKey(const value: TValue; const key: TKey);
-    procedure IBidiDictionary<TKey, TValue>.SetValue = SetItem;
   {$ENDREGION}
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
@@ -462,7 +543,6 @@ type
     constructor Create(capacity: Integer; const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>;
       ownerships: TDictionaryOwnerships = []); overload;
-
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
@@ -500,19 +580,6 @@ type
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
-  {$ENDREGION}
-
-  {$REGION 'Implements IBidiDictionary<TKey, TValue>'}
-    procedure AddOrSetKey(const value: TValue; const key: TKey);
-    function ExtractKey(const value: TValue): TKey;
-    function IBidiDictionary<TKey, TValue>.ExtractValue = Extract;
-    function GetKeyOrDefault(const value: TValue): TKey; overload;
-    function GetKeyOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
-    function RemoveKey(const key: TKey): Boolean;
-    function RemoveValue(const value: TValue): Boolean;
-    function TryExtractKey(const value: TValue; out key: TKey): Boolean;
-    function IBidiDictionary<TKey, TValue>.TryExtractValue = TryExtract;
-    function TryGetKey(const value: TValue; out key: TKey): Boolean;
   {$ENDREGION}
   end;
 
@@ -932,8 +999,8 @@ begin
   item.Key := key;
   item.Value := value;
   Changed(item, caAdded);
-  KeyChanged(item.key, caAdded);
-  ValueChanged(item.value, caAdded);
+  KeyChanged(item.Key, caAdded);
+  ValueChanged(item.Value, caAdded);
 end;
 
 procedure TDictionary<TKey, TValue>.DoSetValue(itemIndex: Integer;
@@ -1192,7 +1259,7 @@ begin
   Result := Find(key, Hash(key), bucketIndex, itemIndex);
   if Result then
   begin
-    Result := fValueComparer.Equals(fItems[itemIndex].value, value);
+    Result := fValueComparer.Equals(fItems[itemIndex].Value, value);
     if Result then
       DoRemove(bucketIndex, itemIndex, caRemoved);
   end;
@@ -1274,7 +1341,7 @@ end;
 function TDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
   Result.Key := fSource.fItems[fItemIndex].Key;
-  Result.Value := fSource.fItems[fItemIndex].value;
+  Result.Value := fSource.fItems[fItemIndex].Value;
 end;
 
 function TDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
@@ -1613,12 +1680,14 @@ begin
     fValueComparer := valueComparer
   else
     fValueComparer := TEqualityComparer<TValue>.Default;
+  fInverse := TInverse.Create(Self);
   SetCapacity(capacity);
 end;
 
 destructor TBidiDictionary<TKey, TValue>.Destroy;
 begin
   Clear;
+  fInverse.Free;
   fKeys.Free;
   fValues.Free;
   inherited Destroy;
@@ -1845,8 +1914,8 @@ begin
   item.Key := key;
   item.Value := value;
   Changed(item, caAdded);
-  KeyChanged(item.key, caAdded);
-  ValueChanged(item.value, caAdded);
+  KeyChanged(item.Key, caAdded);
+  ValueChanged(item.Value, caAdded);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.DoRemove(keyBucketIndex, valueBucketIndex,
@@ -1874,22 +1943,18 @@ end;
 procedure TBidiDictionary<TKey, TValue>.DoSetKey(valueBucketIndex, itemIndex,
   keyHashCode: Integer; const key: TKey);
 var
-  value: TValue;
-  valueHashCode: Integer;
-  oldKey: TKey;
-  oldKeyHashCode: Integer;
-  oldKeyBucketIndex, oldKeyItemIndex, keyBucketIndex: Integer;
   item: TKeyValuePair;
+  oldKeyHashCode, valueHashCode, oldKeyBucketIndex, oldKeyItemIndex, keyBucketIndex: Integer;
 begin
-  value := fItems[itemIndex].Value;
-  valueHashCode := fItems[itemIndex].ValueHashCode;
-  oldKey := fItems[itemIndex].Key;
+  item.Key := fItems[itemIndex].Key;
+  item.Value := fItems[itemIndex].Value;
   oldKeyHashCode := fItems[itemIndex].KeyHashCode;
+  valueHashCode := fItems[itemIndex].ValueHashCode;
 
   IncUnchecked(fVersion);
   if Grow then
-    FindValue(value, valueHashCode, valueBucketIndex, itemIndex);
-  FindKey(oldKey, oldKeyHashCode, oldKeyBucketIndex, oldKeyItemIndex);
+    FindValue(item.Value, valueHashCode, valueBucketIndex, itemIndex);
+  FindKey(item.Key, oldKeyHashCode, oldKeyBucketIndex, oldKeyItemIndex);
   Assert(oldKeyItemIndex = itemIndex);
   fValueBuckets[oldKeyBucketIndex] := UsedBucket;
   FindKey(key, keyHashCode, keyBucketIndex, itemIndex);
@@ -1906,14 +1971,12 @@ begin
   fItems[oldKeyItemIndex].KeyHashCode := keyHashCode;
   Assert(fItems[oldKeyItemIndex].ValueHashCode = valueHashCode);
   fItems[oldKeyItemIndex].Key := key;
-  Assert(fValueComparer.Equals(fItems[oldKeyItemIndex].Value, value));
+  Assert(fValueComparer.Equals(fItems[oldKeyItemIndex].Value, item.Value));
 
   Inc(fItemCount);
 
-  item.Key := oldKey;
-  item.Value := value;
   Changed(item, caRemoved);
-  KeyChanged(oldKey, caRemoved);
+  KeyChanged(item.Key, caRemoved);
   item.Key := key;
   Changed(item, caAdded);
   KeyChanged(key, caAdded);
@@ -1922,22 +1985,18 @@ end;
 procedure TBidiDictionary<TKey, TValue>.DoSetValue(keyBucketIndex, itemIndex,
   valueHashCode: Integer; const value: TValue);
 var
-  key: TKey;
-  keyHashCode: Integer;
-  oldValue: TValue;
-  oldValueHashCode: Integer;
-  oldValueBucketIndex, oldValueItemIndex, valueBucketIndex: Integer;
   item: TKeyValuePair;
+  keyHashCode, oldValueHashCode, oldValueBucketIndex, oldValueItemIndex, valueBucketIndex: Integer;
 begin
-  key := fItems[itemIndex].Key;
+  item.Key := fItems[itemIndex].Key;
+  item.Value := fItems[itemIndex].Value;
   keyHashCode := fItems[itemIndex].KeyHashCode;
-  oldValue := fItems[itemIndex].Value;
   oldValueHashCode := fItems[itemIndex].ValueHashCode;
 
   IncUnchecked(fVersion);
   if Grow then
-    FindKey(key, keyHashCode, keyBucketIndex, itemIndex);
-  FindValue(oldValue, oldValueHashCode, oldValueBucketIndex, oldValueItemIndex);
+    FindKey(item.Key, keyHashCode, keyBucketIndex, itemIndex);
+  FindValue(item.Value, oldValueHashCode, oldValueBucketIndex, oldValueItemIndex);
   Assert(oldValueItemIndex = itemIndex);
   fValueBuckets[oldValueBucketIndex] := UsedBucket;
   FindValue(value, valueHashCode, valueBucketIndex, itemIndex);
@@ -1953,15 +2012,13 @@ begin
 
   Assert(fItems[oldValueItemIndex].KeyHashCode = keyHashCode);
   fItems[oldValueItemIndex].ValueHashCode := valueHashCode;
-  Assert(fKeyComparer.Equals(fItems[oldValueItemIndex].Key, key));
+  Assert(fKeyComparer.Equals(fItems[oldValueItemIndex].Key, item.Key));
   fItems[oldValueItemIndex].Value := value;
 
   Inc(fItemCount);
 
-  item.Key := key;
-  item.Value := oldValue;
   Changed(item, caRemoved);
-  ValueChanged(oldValue, caRemoved);
+  ValueChanged(item.Value, caRemoved);
   item.Value := value;
   Changed(item, caAdded);
   ValueChanged(value, caAdded);
@@ -2021,9 +2078,7 @@ var
   pair: TKeyValuePair;
 begin
   pair.Key := value.Key;
-  Result := TryGetValue(value.Key, pair.Value);
-  if Result then
-    Result := comparer.Equals(pair, value);
+  Result := TryGetValue(value.Key, pair.Value) and comparer.Equals(pair, value);
 end;
 
 function TBidiDictionary<TKey, TValue>.ToArray: TArray<TKeyValuePair>;
@@ -2122,7 +2177,7 @@ begin
     DoSetKey(valueBucketIndex, valueItemIndex, keyHashCode, key)
   else
   begin
-    // neither value not key found, this is an add operation
+    // neither value nor key found, this is an add operation
     if Grow then
     begin
       // rehash invalidates the indices
@@ -2139,28 +2194,27 @@ begin
   Result := Self;
 end;
 
-function TBidiDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
-var
-  keyBucketIndex, itemIndex: Integer;
-begin
-  Result := FindKey(key, KeyHash(key), keyBucketIndex, itemIndex);
-end;
-
 function TBidiDictionary<TKey, TValue>.Contains(const key: TKey;
   const value: TValue): Boolean;
 var
   item: TValue;
 begin
-  Result := TryGetValue(key, item)
-    and fValueComparer.Equals(item, value);
+  Result := TryGetValue(key, item) and fValueComparer.Equals(item, value);
+end;
+
+function TBidiDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
+var
+  bucketIndex, itemIndex: Integer;
+begin
+  Result := FindKey(key, KeyHash(key), bucketIndex, itemIndex);
 end;
 
 function TBidiDictionary<TKey, TValue>.ContainsValue(
   const value: TValue): Boolean;
 var
-  valueBucketIndex, itemIndex: Integer;
+  bucketIndex, itemIndex: Integer;
 begin
-  Result := FindValue(value, ValueHash(value), valueBucketIndex, itemIndex);
+  Result := FindValue(value, ValueHash(value), bucketIndex, itemIndex);
 end;
 
 function TBidiDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
@@ -2168,20 +2222,15 @@ begin
   TryExtract(key, Result);
 end;
 
-function TBidiDictionary<TKey, TValue>.ExtractKey(const value: TValue): TKey;
-begin
-  TryExtractKey(value, Result);
-end;
-
 function TBidiDictionary<TKey, TValue>.Extract(const key: TKey;
   const value: TValue): TKeyValuePair;
 var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
   foundItem: PItem;
 begin
   if FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex)
-  and FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex)
-  and (keyItemIndex = valueItemIndex) then
+    and FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex)
+    and (keyItemIndex = valueItemIndex) then
   begin
     foundItem := @fItems[keyItemIndex];
     Result.Key := foundItem.Key;
@@ -2201,7 +2250,7 @@ end;
 function TBidiDictionary<TKey, TValue>.TryExtract(const key: TKey;
   out value: TValue): Boolean;
 var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
   Result := FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex);
   if Result then
@@ -2215,48 +2264,21 @@ begin
     value := Default(TValue);
 end;
 
-function TBidiDictionary<TKey, TValue>.TryExtractKey(const value: TValue; out key: TKey): Boolean;
-var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
-begin
-  Result := FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex);
-  if Result then
-  begin
-    key := fItems[valueItemIndex].Key;
-    FindKey(key, fItems[valueItemIndex].KeyHashCode, keyBucketIndex, keyItemIndex);
-    Assert(keyItemIndex = valueItemIndex);
-    DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caExtracted);
-  end
-  else
-    key := Default(TKey);
-end;
-
 function TBidiDictionary<TKey, TValue>.TryGetValue(const key: TKey;
   out value: TValue): Boolean;
 var
-  keyBucketIndex, keyItemIndex: Integer;
+  bucketIndex, itemIndex: Integer;
 begin
-  Result := FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex);
+  Result := FindKey(key, KeyHash(key), bucketIndex, itemIndex);
   if Result then
-    value := fItems[keyItemIndex].Value
+    value := fItems[itemIndex].Value
   else
     value := Default(TValue);
 end;
 
-function TBidiDictionary<TKey, TValue>.TryGetKey(const value: TValue; out key: TKey): Boolean;
-var
-  valueBucketIndex, valueItemIndex: Integer;
-begin
-  Result := FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex);
-  if Result then
-    key := fItems[valueItemIndex].Key
-  else
-    key := Default(TKey);
-end;
-
 function TBidiDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
 var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
   Result := FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex);
   if Result then
@@ -2267,33 +2289,15 @@ begin
   end;
 end;
 
-function TBidiDictionary<TKey, TValue>.RemoveKey(const key: TKey): Boolean;
-begin
-  Result := Remove(key);
-end;
-
-function TBidiDictionary<TKey, TValue>.RemoveValue(const value: TValue): Boolean;
-var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
-begin
-  Result := FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex);
-  if Result then
-  begin
-    FindKey(fItems[valueItemIndex].Key, fItems[valueItemIndex].KeyHashCode, keyBucketIndex, keyItemIndex);
-    Assert(keyItemIndex = valueItemIndex);
-    DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caRemoved);
-  end;
-end;
-
 function TBidiDictionary<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
   Result := FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex);
   if Result then
   begin
-    Result := fValueComparer.Equals(fItems[keyItemIndex].value, value);
+    Result := fValueComparer.Equals(fItems[keyItemIndex].Value, value);
     if Result then
     begin
       FindValue(value, fItems[keyItemIndex].ValueHashCode, valueBucketIndex, valueItemIndex);
@@ -2301,6 +2305,11 @@ begin
       DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caRemoved);
     end;
   end;
+end;
+
+function TBidiDictionary<TKey, TValue>.GetInverse: IBidiDictionary<TValue, TKey>;
+begin
+  Result := fInverse;
 end;
 
 function TBidiDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
@@ -2320,17 +2329,6 @@ begin
     Result := defaultValue;
 end;
 
-function TBidiDictionary<TKey, TValue>.GetKeyOrDefault(const value: TValue): TKey;
-begin
-  TryGetKey(value, Result);
-end;
-
-function TBidiDictionary<TKey, TValue>.GetKeyOrDefault(const value: TValue; const defaultKey: TKey): TKey;
-begin
-  if not TryGetKey(value, Result) then
-    Result := defaultKey;
-end;
-
 function TBidiDictionary<TKey, TValue>.GetValues: IReadOnlyCollection<TValue>;
 begin
   Result := fValues;
@@ -2345,15 +2343,6 @@ begin
   Result := fItems[keyItemIndex].Value;
 end;
 
-function TBidiDictionary<TKey, TValue>.GetKey(const value: TValue): TKey;
-var
-  valueBucketIndex, valueItemIndex: Integer;
-begin
-  if not FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex) then
-    raise EListError.CreateRes(@SGenericItemNotFound);
-  Result := fItems[valueItemIndex].Key;
-end;
-
 function TBidiDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValuePair>;
 begin
   Result := TOrderedEnumerable.Create(Self);
@@ -2364,9 +2353,292 @@ begin
   AddOrSetValue(key, value);
 end;
 
-procedure TBidiDictionary<TKey, TValue>.SetKey(const value: TValue; const key: TKey);
+{$ENDREGION}
+
+
+{$REGION 'TBidiDictionary<TKey, TValue>.TInverse'}
+
+constructor TBidiDictionary<TKey, TValue>.TInverse.Create(
+  const source: TBidiDictionary<TKey, TValue>);
 begin
-  AddOrSetKey(value, key);
+  inherited Create(source);
+  fSource := source;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.Add(const value: TValue;
+  const key: TKey);
+begin
+  fSource.Add(key, value);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.AddInternal(
+  const item: TValueKeyPair);
+begin
+  Add(item.Key, item.Value);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.AddOrSetValue(
+  const value: TValue; const key: TKey);
+begin
+  fSource.AddOrSetKey(value, key);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.AsReadOnlyDictionary: IReadOnlyDictionary<TValue, TKey>;
+begin
+  Result := Self;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.Clear;
+begin
+  fSource.Clear;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.Contains(const value: TValue;
+  const key: TKey): Boolean;
+begin
+  Result := fSource.Contains(key, value);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.Contains(
+  const value: TValueKeyPair;
+  const comparer: IEqualityComparer<TValueKeyPair>): Boolean;
+var
+  pair: TValueKeyPair;
+begin
+  pair.Key := value.Key;
+  Result := TryGetValue(value.Key, pair.Value) and comparer.Equals(pair, value);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.ContainsKey(
+  const value: TValue): Boolean;
+begin
+  Result := fSource.ContainsValue(value);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.ContainsValue(
+  const key: TKey): Boolean;
+begin
+  Result := fSource.ContainsKey(key);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.Extract(
+  const item: TValueKeyPair): TValueKeyPair;
+begin
+  Result := Extract(item.Key, item.Value);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.Extract(
+  const value: TValue): TKey;
+begin
+  TryExtract(value, Result);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.Extract(const value: TValue;
+  const key: TKey): TValueKeyPair;
+var
+  pair: TKeyValuePair;
+begin
+  pair := fSource.Extract(key, value);
+  Result.Key := pair.Value;
+  Result.Value := pair.Key;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetCapacity: Integer;
+begin
+  Result := fSource.fCapacity;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetCount: Integer;
+begin
+  Result := fSource.fCount;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetEnumerator: IEnumerator<TValueKeyPair>;
+begin
+  Result := TEnumerator.Create(fSource);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetInverse: IBidiDictionary<TKey, TValue>;
+begin
+  Result := fSource;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetItem(
+  const value: TValue): TKey;
+var
+  valueBucketIndex, valueItemIndex: Integer;
+begin
+  if not fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex) then
+    raise EListError.CreateRes(@SGenericItemNotFound);
+  Result := fSource.fItems[valueItemIndex].Key;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetKeys: IReadOnlyCollection<TValue>;
+begin
+  Result := fSource.fValues;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetKeyType: PTypeInfo;
+begin
+  Result := fSource.ValueType;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetOnKeyChanged: ICollectionChangedEvent<TValue>;
+begin
+  Result := fSource.OnValueChanged;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetOnValueChanged: ICollectionChangedEvent<TKey>;
+begin
+  Result := fSource.OnKeyChanged;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetValueOrDefault(
+  const value: TValue): TKey;
+begin
+  TryGetValue(value, Result);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetValueOrDefault(
+  const value: TValue; const defaultKey: TKey): TKey;
+begin
+  if not TryGetValue(value, Result) then
+    Result := defaultKey;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetValues: IReadOnlyCollection<TKey>;
+begin
+  Result := fSource.fKeys;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.GetValueType: PTypeInfo;
+begin
+  Result := fSource.KeyType;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.Remove(
+  const value: TValue): Boolean;
+var
+  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+begin
+  Result := fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex);
+  if Result then
+  begin
+    fSource.FindKey(fSource.fItems[valueItemIndex].Key,
+      fSource.fItems[valueItemIndex].KeyHashCode, keyBucketIndex, keyItemIndex);
+    Assert(keyItemIndex = valueItemIndex);
+    fSource.DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caRemoved);
+  end;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.Remove(const value: TValue;
+  const key: TKey): Boolean;
+var
+  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+begin
+  Result := fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex);
+  if Result then
+  begin
+    Result := fSource.fKeyComparer.Equals(fSource.fItems[valueItemIndex].Key, key);
+    if Result then
+    begin
+      fSource.FindKey(key, fSource.fItems[valueItemIndex].KeyHashCode, keyBucketIndex, keyItemIndex);
+      Assert(keyItemIndex = valueItemIndex);
+      fSource.DoRemove(valueBucketIndex, keyBucketIndex, keyItemIndex, caRemoved);
+    end;
+  end;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.SetCapacity(value: Integer);
+begin
+  fSource.SetCapacity(value);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.SetItem(const value: TValue;
+  const key: TKey);
+begin
+  fSource.AddOrSetKey(value, key);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.ToArray: TArray<TValueKeyPair>;
+var
+  sourceIndex, targetIndex: Integer;
+begin
+  SetLength(Result, fSource.fCount);
+  targetIndex := 0;
+  for sourceIndex := 0 to fSource.fItemCount - 1 do
+    if not fSource.fItems[sourceIndex].Removed then
+    begin
+      Result[targetIndex].Key := fSource.fItems[sourceIndex].Value;
+      Result[targetIndex].Value := fSource.fItems[sourceIndex].Key;
+      Inc(targetIndex);
+    end;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.TrimExcess;
+begin
+  fSource.TrimExcess;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TryExtract(const value: TValue;
+  out key: TKey): Boolean;
+var
+  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+begin
+  Result := fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex);
+  if Result then
+  begin
+    key := fSource.fItems[valueItemIndex].Key;
+    fSource.FindKey(key, fSource.fItems[valueItemIndex].KeyHashCode, keyBucketIndex, keyItemIndex);
+    Assert(keyItemIndex = valueItemIndex);
+    fSource.DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caExtracted);
+  end
+  else
+    key := Default(TKey);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TryGetValue(const value: TValue;
+  out key: TKey): Boolean;
+var
+  bucketIndex, itemIndex: Integer;
+begin
+  Result := fSource.FindValue(value, fSource.ValueHash(value), bucketIndex, itemIndex);
+  if Result then
+    key := fSource.fItems[itemIndex].Key
+  else
+    key := Default(TKey);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBidiDictionary<TKey, TValue>.TInverse.TEnumerator'}
+
+constructor TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.Create(
+  const source: TBidiDictionary<TKey, TValue>);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fItemIndex := -1;
+  fVersion := fSource.fVersion;
+end;
+
+destructor TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.GetCurrent: TValueKeyPair;
+begin
+  Result.Key := fSource.fItems[fItemIndex].Value;
+  Result.Value := fSource.fItems[fItemIndex].Key;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fSource.DoMoveNext(fItemIndex, fVersion);
 end;
 
 {$ENDREGION}
@@ -2379,14 +2651,21 @@ constructor TBidiDictionary<TKey, TValue>.TEnumerator.Create(
 begin
   inherited Create;
   fSource := source;
+  fSource._AddRef;
   fItemIndex := -1;
   fVersion := fSource.fVersion;
+end;
+
+destructor TBidiDictionary<TKey, TValue>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
 end;
 
 function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
   Result.Key := fSource.fItems[fItemIndex].Key;
-  Result.Value := fSource.fItems[fItemIndex].value;
+  Result.Value := fSource.fItems[fItemIndex].Value;
 end;
 
 function TBidiDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;

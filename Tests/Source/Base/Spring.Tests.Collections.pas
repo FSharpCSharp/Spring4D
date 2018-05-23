@@ -593,16 +593,24 @@ type
   TTestBidiDictionary = class(TTestCase)
   private
     SUT: IBidiDictionary<Integer,string>;
+    Inverse: IBidiDictionary<string,Integer>;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
+
+    procedure FillTestData;
   published
     procedure AddDictionary;
-    procedure TestAddOrSetKey;
-    procedure TestAddOrSetKeyOrder;
     procedure TestAddOrSetValue;
     procedure TestAddOrSetValueOrder;
+    procedure TestRemove;
     procedure TestKeysEnumerate;
+
+    procedure Test_AddOrSetValue_MultipleTimes;
+
+    procedure Test_Inverse_AddOrSetValue;
+    procedure Test_Inverse_Enumerate;
+    procedure Test_Inverse_KeysEnumerate;
   end;
 
   TTestBidiDictionaryOwnership = class(TTestCase)
@@ -3828,14 +3836,24 @@ end;
 
 {$REGION 'TTestBidiDictionary'}
 
+procedure TTestBidiDictionary.FillTestData;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(3, 'c');
+  SUT.Add(2, 'b');
+  SUT.Add(4, 'd');
+end;
+
 procedure TTestBidiDictionary.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateBidiDictionary<Integer,string>;
+  Inverse := SUT.Inverse;
 end;
 
 procedure TTestBidiDictionary.TearDown;
 begin
+  Inverse := nil;
   SUT := nil;
   inherited;
 end;
@@ -3853,22 +3871,70 @@ begin
   CheckTrue(SUT.EqualsTo(dict));
 end;
 
-procedure TTestBidiDictionary.TestAddOrSetKey;
+procedure TTestBidiDictionary.Test_AddOrSetValue_MultipleTimes;
+var
+  c: Char;
 begin
-  SUT.AddOrSetKey('a', 1);
-  CheckException(EInvalidOperationException, procedure begin SUT.AddOrSetKey('b', 1) end, 'EInvalidOperationException was not raised');
-  SUT.AddOrSetKey('a', 1);
-  CheckEquals(1, SUT.Count);
-  SUT.AddOrSetKey('a', 2);
-  CheckEquals(1, SUT.Count);
+  FillTestData;
+  for c in ['e'..'i'] do
+  begin
+    SUT[3] := c;
+    CheckEquals(3, SUT.Inverse[c]);
+  end;
+  SUT[3] := 'c';
+  CheckEquals(3, SUT.Inverse['c']);
+
+  SUT.Remove(2);
+  SUT.Add(2, 'b');
+
+  Check(SUT.Keys.EqualsTo([1, 3, 4, 2]));
 end;
 
-procedure TTestBidiDictionary.TestAddOrSetKeyOrder;
+procedure TTestBidiDictionary.Test_Inverse_AddOrSetValue;
 begin
-  SUT.AddOrSetKey('a', 1);
-  SUT.AddOrSetKey('b', 2);
-  SUT.AddOrSetKey('a', 3);
-  Check(SUT.Values.EqualsTo(['a', 'b']));
+  Inverse.AddOrSetValue('a', 1);
+  CheckException(EInvalidOperationException, procedure begin Inverse.AddOrSetValue('b', 1) end, 'EInvalidOperationException was not raised');
+  Inverse.AddOrSetValue('a', 1);
+  CheckEquals(1, Inverse.Count);
+  Inverse.AddOrSetValue('a', 2);
+  CheckEquals(1, Inverse.Count);
+end;
+
+procedure TTestBidiDictionary.Test_Inverse_Enumerate;
+var
+  item: TPair<string,Integer>;
+  items: TArray<TPair<string,Integer>>;
+  i: Integer;
+begin
+  FillTestData;
+  SetLength(items, Inverse.Count);
+  i := 0;
+  for item in Inverse do
+  begin
+    items[i] := item;
+    Inc(i);
+  end;
+  CheckEquals('a', items[0].Key);
+  CheckEquals(1, items[0].Value);
+  CheckEquals('c', items[1].Key);
+  CheckEquals(3, items[1].Value);
+  CheckEquals('b', items[2].Key);
+  CheckEquals(2, items[2].Value);
+  CheckEquals('d', items[3].Key);
+  CheckEquals(4, items[3].Value);
+end;
+
+procedure TTestBidiDictionary.Test_Inverse_KeysEnumerate;
+var
+  keys: TArray<string>;
+begin
+  FillTestData;
+
+  keys := Inverse.Keys.ToArray;
+  CheckEquals('a', keys[0]);
+  CheckEquals('c', keys[1]);
+  CheckEquals('b', keys[2]);
+  CheckEquals('d', keys[3]);
 end;
 
 procedure TTestBidiDictionary.TestAddOrSetValue;
@@ -3909,6 +3975,17 @@ begin
   CheckFalse(e.MoveNext);
 end;
 
+procedure TTestBidiDictionary.TestRemove;
+begin
+  FillTestData;
+
+  CheckTrue(SUT.Remove(2));
+  CheckTrue(SUT.Inverse.Remove('c'));
+  CheckTrue(SUT.Remove(1));
+  CheckTrue(SUT.Inverse.Remove('d'));
+  CheckEquals(0, SUT.Count);
+end;
+
 {$ENDREGION}
 
 
@@ -3919,13 +3996,13 @@ var
   SUT: IBidiDictionary<TObject, Integer>;
 begin
   SUT := TCollections.CreateBidiDictionary<TObject, Integer>([doOwnsKeys]);
-  SUT.AddOrSetKey(0, TObject.Create);
-  SUT.AddOrSetKey(1, TObject.Create);
-  SUT.AddOrSetKey(2, TObject.Create);
-  SUT.AddOrSetKey(3, TObject.Create);
-  SUT.ExtractKey(1).Free;
-  SUT.RemoveValue(2);
-  SUT.RemoveValue(2);
+  SUT.Add(TObject.Create, 0);
+  SUT.Add(TObject.Create, 1);
+  SUT.Add(TObject.Create, 2);
+  SUT.Add(TObject.Create, 3);
+  SUT.Inverse.Extract(1).Free;
+  SUT.Inverse.Remove(2);
+  SUT.Inverse.Remove(2);
   SUT.Clear;
   Pass;
 end;
@@ -3935,13 +4012,13 @@ var
   SUT: IBidiDictionary<Integer, TObject>;
 begin
   SUT := TCollections.CreateBidiDictionary<Integer, TObject>([doOwnsValues]);
-  SUT.AddOrSetValue(0, TObject.Create);
-  SUT.AddOrSetValue(1, TObject.Create);
-  SUT.AddOrSetValue(2, TObject.Create);
-  SUT.AddOrSetValue(3, TObject.Create);
-  SUT.ExtractValue(1).Free;
-  SUT.RemoveKey(2);
-  SUT.RemoveKey(2);
+  SUT.Add(0, TObject.Create);
+  SUT.Add(1, TObject.Create);
+  SUT.Add(2, TObject.Create);
+  SUT.Add(3, TObject.Create);
+  SUT.Extract(1).Free;
+  SUT.Remove(2);
+  SUT.Remove(2);
   SUT.Clear;
   Pass;
 end;
