@@ -2191,7 +2191,8 @@ function TBidiDictionary<TKey, TValue>.TryExtract(const key: TKey;
 var
   keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
 begin
-  if FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex) then
+  Result := FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex);
+  if Result then
   begin
     value := fItems[keyItemIndex].Value;
     FindValue(value, fItems[keyItemIndex].ValueHashCode, valueBucketIndex, valueItemIndex);
@@ -2206,7 +2207,8 @@ function TBidiDictionary<TKey, TValue>.TryExtractKey(const value: TValue; out ke
 var
   keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
 begin
-  if FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex) then
+  Result := FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex);
+  if Result then
   begin
     key := fItems[valueItemIndex].Key;
     FindKey(key, fItems[valueItemIndex].KeyHashCode, keyBucketIndex, keyItemIndex);
@@ -2222,7 +2224,8 @@ function TBidiDictionary<TKey, TValue>.TryGetValue(const key: TKey;
 var
   keyBucketIndex, keyItemIndex: Integer;
 begin
-  if FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex) then
+  Result := FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex);
+  if Result then
     value := fItems[keyItemIndex].Value
   else
     value := Default(TValue);
@@ -2232,7 +2235,8 @@ function TBidiDictionary<TKey, TValue>.TryGetKey(const value: TValue; out key: T
 var
   valueBucketIndex, valueItemIndex: Integer;
 begin
-  if FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex) then
+  Result := FindValue(value, ValueHash(value), valueBucketIndex, valueItemIndex);
+  if Result then
     key := fItems[valueItemIndex].Key
   else
     key := Default(TKey);
