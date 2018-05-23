@@ -599,7 +599,9 @@ type
   published
     procedure AddDictionary;
     procedure TestAddOrSetKey;
+    procedure TestAddOrSetKeyOrder;
     procedure TestAddOrSetValue;
+    procedure TestAddOrSetValueOrder;
     procedure TestKeysEnumerate;
   end;
 
@@ -3855,6 +3857,14 @@ begin
   CheckEquals(1, SUT.Count);
 end;
 
+procedure TTestBidiDictionary.TestAddOrSetKeyOrder;
+begin
+  SUT.AddOrSetKey('a', 1);
+  SUT.AddOrSetKey('b', 2);
+  SUT.AddOrSetKey('a', 3);
+  Check(SUT.Values.EqualsTo(['a', 'b']));
+end;
+
 procedure TTestBidiDictionary.TestAddOrSetValue;
 begin
   SUT.AddOrSetValue(1, 'a');
@@ -3865,9 +3875,16 @@ begin
   CheckEquals(1, SUT.Count);
 end;
 
+procedure TTestBidiDictionary.TestAddOrSetValueOrder;
+begin
+  SUT.AddOrSetValue(1, 'a');
+  SUT.AddOrSetValue(2, 'b');
+  SUT.AddOrSetValue(1, 'c');
+  Check(SUT.Keys.EqualsTo([1, 2]));
+end;
+
 procedure TTestBidiDictionary.TestKeysEnumerate;
 var
-  keys: TArray<Integer>;
   e: IEnumerator<Integer>;
 begin
   SUT.Add(1, 'a');
@@ -3875,11 +3892,7 @@ begin
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
 
-  keys := SUT.Keys.ToArray;
-  CheckEquals(keys[0], 1);
-  CheckEquals(keys[1], 2);
-  CheckEquals(keys[2], 3);
-  CheckEquals(keys[3], 4);
+  Check(SUT.Keys.EqualsTo([1, 2, 3, 4]));
 
   e := SUT.Keys.GetEnumerator;
   SUT := nil;

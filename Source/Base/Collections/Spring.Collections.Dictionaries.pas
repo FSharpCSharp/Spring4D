@@ -966,7 +966,7 @@ begin
   fBuckets[bucketIndex] := UsedBucket;
   fItems[itemIndex].Key := Default(TKey);
   fItems[itemIndex].Value := Default(TValue);
-  fItems[itemIndex].HashCode := fItems[itemIndex].HashCode or TItem.RemovedFlag;
+  fItems[itemIndex].HashCode := TItem.RemovedFlag;
   Dec(fCount);
 
   Changed(item, action);
@@ -1862,8 +1862,8 @@ begin
   fValueBuckets[valueBucketIndex] := UsedBucket;
   fItems[itemIndex].Key := Default(TKey);
   fItems[itemIndex].Value := Default(TValue);
-  fItems[itemIndex].KeyHashCode := fItems[itemIndex].KeyHashCode or TItem.RemovedFlag;
-  fItems[itemIndex].ValueHashCode := fItems[itemIndex].ValueHashCode or TItem.RemovedFlag;
+  fItems[itemIndex].KeyHashCode := TItem.RemovedFlag;
+  fItems[itemIndex].ValueHashCode := TItem.RemovedFlag;
   Dec(fCount);
 
   Changed(item, action);
@@ -1886,26 +1886,27 @@ begin
   oldKeyHashCode := fItems[itemIndex].KeyHashCode;
 
   IncUnchecked(fVersion);
+  if Grow then
+    FindValue(value, valueHashCode, valueBucketIndex, itemIndex);
   FindKey(oldKey, oldKeyHashCode, oldKeyBucketIndex, oldKeyItemIndex);
   Assert(oldKeyItemIndex = itemIndex);
-  fKeyBuckets[oldKeyItemIndex] := UsedBucket;
-  fValueBuckets[valueBucketIndex] := UsedBucket;
-  fItems[itemIndex].Key := Default(TKey);
-  fItems[itemIndex].Value := Default(TValue);
-  fItems[itemIndex].KeyHashCode := fItems[itemIndex].KeyHashCode or TItem.RemovedFlag;
-  fItems[itemIndex].ValueHashCode := fItems[itemIndex].ValueHashCode or TItem.RemovedFlag;
-
-  Grow;
+  fValueBuckets[oldKeyBucketIndex] := UsedBucket;
   FindKey(key, keyHashCode, keyBucketIndex, itemIndex);
   Assert(itemIndex = fItemCount);
-  FindValue(value, valueHashCode, valueBucketIndex, itemIndex);
-  Assert(itemIndex = fItemCount);
-  fKeyBuckets[keyBucketIndex] := itemIndex or (keyHashCode and fBucketHashCodeMask);
-  fValueBuckets[valueBucketIndex] := itemIndex or (valueHashCode and fBucketHashCodeMask);
-  fItems[itemIndex].KeyHashCode := keyHashCode;
-  fItems[itemIndex].ValueHashCode := valueHashCode;
-  fItems[itemIndex].Key := key;
-  fItems[itemIndex].Value := value;
+
+  fKeyBuckets[keyBucketIndex] := oldKeyItemIndex or (keyHashCode and fBucketHashCodeMask);
+  fValueBuckets[valueBucketIndex] := oldKeyItemIndex or (valueHashCode and fBucketHashCodeMask);
+
+  fItems[itemIndex].Key := Default(TKey);
+  fItems[itemIndex].Value := Default(TValue);
+  fItems[itemIndex].KeyHashCode := TItem.RemovedFlag;
+  fItems[itemIndex].ValueHashCode := TItem.RemovedFlag;
+
+  fItems[oldKeyItemIndex].KeyHashCode := keyHashCode;
+  Assert(fItems[oldKeyItemIndex].ValueHashCode = valueHashCode);
+  fItems[oldKeyItemIndex].Key := key;
+  Assert(fValueComparer.Equals(fItems[oldKeyItemIndex].Value, value));
+
   Inc(fItemCount);
 
   KeyChanged(oldKey, caRemoved);
@@ -1927,26 +1928,27 @@ begin
   oldValueHashCode := fItems[itemIndex].ValueHashCode;
 
   IncUnchecked(fVersion);
+  if Grow then
+    FindKey(key, keyHashCode, keyBucketIndex, itemIndex);
   FindValue(oldValue, oldValueHashCode, oldValueBucketIndex, oldValueItemIndex);
   Assert(oldValueItemIndex = itemIndex);
-  fKeyBuckets[keyBucketIndex] := UsedBucket;
   fValueBuckets[oldValueBucketIndex] := UsedBucket;
-  fItems[itemIndex].Key := Default(TKey);
-  fItems[itemIndex].Value := Default(TValue);
-  fItems[itemIndex].KeyHashCode := fItems[itemIndex].KeyHashCode or TItem.RemovedFlag;
-  fItems[itemIndex].ValueHashCode := fItems[itemIndex].ValueHashCode or TItem.RemovedFlag;
-
-  Grow;
-  FindKey(key, keyHashCode, keyBucketIndex, itemIndex);
-  Assert(itemIndex = fItemCount);
   FindValue(value, valueHashCode, valueBucketIndex, itemIndex);
   Assert(itemIndex = fItemCount);
-  fKeyBuckets[keyBucketIndex] := itemIndex or (keyHashCode and fBucketHashCodeMask);
-  fValueBuckets[valueBucketIndex] := itemIndex or (valueHashCode and fBucketHashCodeMask);
-  fItems[itemIndex].KeyHashCode := keyHashCode;
-  fItems[itemIndex].ValueHashCode := valueHashCode;
-  fItems[itemIndex].Key := key;
-  fItems[itemIndex].Value := value;
+
+  fKeyBuckets[keyBucketIndex] := oldValueItemIndex or (keyHashCode and fBucketHashCodeMask);
+  fValueBuckets[valueBucketIndex] := oldValueItemIndex or (valueHashCode and fBucketHashCodeMask);
+
+  fItems[itemIndex].Key := Default(TKey);
+  fItems[itemIndex].Value := Default(TValue);
+  fItems[itemIndex].KeyHashCode := TItem.RemovedFlag;
+  fItems[itemIndex].ValueHashCode := TItem.RemovedFlag;
+
+  Assert(fItems[oldValueItemIndex].KeyHashCode = keyHashCode);
+  fItems[oldValueItemIndex].ValueHashCode := valueHashCode;
+  Assert(fKeyComparer.Equals(fItems[oldValueItemIndex].Key, key));
+  fItems[oldValueItemIndex].Value := value;
+
   Inc(fItemCount);
 
   ValueChanged(oldValue, caRemoved);
