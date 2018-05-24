@@ -337,6 +337,7 @@ type
         procedure SetItem(const value: TValue; const key: TKey);
       {$ENDREGION}
         procedure AddInternal(const item: TValueKeyPair); override;
+        procedure Changed(const item: TValueKeyPair; action: TCollectionChangedAction); override;
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
@@ -527,6 +528,7 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
+    procedure Changed(const item: TPair<TKey, TValue>; action: TCollectionChangedAction); override;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
   public
@@ -1094,9 +1096,8 @@ var
   pair: TKeyValuePair;
 begin
   pair.Key := value.Key;
-  Result := TryGetValue(value.Key, pair.Value);
-  if Result then
-    Result := comparer.Equals(pair, value);
+  Result := TryGetValue(value.Key, pair.Value)
+    and comparer.Equals(pair, value);
 end;
 
 function TDictionary<TKey, TValue>.ToArray: TArray<TKeyValuePair>;
@@ -1256,13 +1257,10 @@ function TDictionary<TKey, TValue>.Remove(const key: TKey;
 var
   bucketIndex, itemIndex: Integer;
 begin
-  Result := Find(key, Hash(key), bucketIndex, itemIndex);
+  Result := Find(key, Hash(key), bucketIndex, itemIndex)
+    and fValueComparer.Equals(fItems[itemIndex].Value, value);
   if Result then
-  begin
-    Result := fValueComparer.Equals(fItems[itemIndex].Value, value);
-    if Result then
-      DoRemove(bucketIndex, itemIndex, caRemoved);
-  end;
+    DoRemove(bucketIndex, itemIndex, caRemoved);
 end;
 
 function TDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
@@ -1691,6 +1689,17 @@ begin
   fKeys.Free;
   fValues.Free;
   inherited Destroy;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.Changed(const item: TPair<TKey, TValue>;
+  action: TCollectionChangedAction);
+var
+  inverseItem: TValueKeyPair;
+begin
+  inherited Changed(item, action);
+  inverseItem.Key := item.Value;
+  inverseItem.Value := item.Key;
+  fInverse.Changed(inverseItem, action);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.KeyChanged(const item: TKey;
@@ -2294,16 +2303,13 @@ function TBidiDictionary<TKey, TValue>.Remove(const key: TKey;
 var
   keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
-  Result := FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex);
+  Result := FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex)
+    and fValueComparer.Equals(fItems[keyItemIndex].Value, value);
   if Result then
   begin
-    Result := fValueComparer.Equals(fItems[keyItemIndex].Value, value);
-    if Result then
-    begin
-      FindValue(value, fItems[keyItemIndex].ValueHashCode, valueBucketIndex, valueItemIndex);
-      Assert(keyItemIndex = valueItemIndex);
-      DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caRemoved);
-    end;
+    FindValue(value, fItems[keyItemIndex].ValueHashCode, valueBucketIndex, valueItemIndex);
+    Assert(keyItemIndex = valueItemIndex);
+    DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caRemoved);
   end;
 end;
 
@@ -2386,6 +2392,12 @@ end;
 function TBidiDictionary<TKey, TValue>.TInverse.AsReadOnlyDictionary: IReadOnlyDictionary<TValue, TKey>;
 begin
   Result := Self;
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.Changed(const item: TValueKeyPair; action: TCollectionChangedAction);
+begin
+  if fOnChanged.CanInvoke then
+    fOnChanged.Invoke(fSource, item, action);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.TInverse.Clear;
@@ -2627,7 +2639,7 @@ end;
 destructor TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
+  inherited Destroy;
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.GetCurrent: TValueKeyPair;
@@ -2659,7 +2671,7 @@ end;
 destructor TBidiDictionary<TKey, TValue>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
+  inherited Destroy;
 end;
 
 function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;

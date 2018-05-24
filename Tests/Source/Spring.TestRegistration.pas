@@ -115,6 +115,7 @@ begin
     TTestMultiMap.Suite,
     TTestBidiDictionary.Suite,
     TTestBidiDictionaryOwnership.Suite,
+    TTestBidiDictionaryChangedEvent.Suite,
     TTestObjectStack.Suite,
     TTestObjectQueue.Suite,
     TTestObjectDeque.Suite,
