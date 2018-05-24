@@ -605,6 +605,12 @@ type
     procedure TestKeysEnumerate;
   end;
 
+  TTestBidiDictionaryOwnership = class(TTestCase)
+  published
+    procedure TestKeys;
+    procedure TestValues;
+  end;
+
   TTestObjectStack = class(TTestCase)
   private
     SUT: IStack<TObject>;
@@ -3901,6 +3907,43 @@ begin
   e.MoveNext;
   CheckTrue(e.MoveNext);
   CheckFalse(e.MoveNext);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryOwnership'}
+
+procedure TTestBidiDictionaryOwnership.TestKeys;
+var
+  SUT: IBidiDictionary<TObject, Integer>;
+begin
+  SUT := TCollections.CreateBidiDictionary<TObject, Integer>([doOwnsKeys]);
+  SUT.AddOrSetKey(0, TObject.Create);
+  SUT.AddOrSetKey(1, TObject.Create);
+  SUT.AddOrSetKey(2, TObject.Create);
+  SUT.AddOrSetKey(3, TObject.Create);
+  SUT.ExtractKey(1).Free;
+  SUT.RemoveValue(2);
+  SUT.RemoveValue(2);
+  SUT.Clear;
+  Pass;
+end;
+
+procedure TTestBidiDictionaryOwnership.TestValues;
+var
+  SUT: IBidiDictionary<Integer, TObject>;
+begin
+  SUT := TCollections.CreateBidiDictionary<Integer, TObject>([doOwnsValues]);
+  SUT.AddOrSetValue(0, TObject.Create);
+  SUT.AddOrSetValue(1, TObject.Create);
+  SUT.AddOrSetValue(2, TObject.Create);
+  SUT.AddOrSetValue(3, TObject.Create);
+  SUT.ExtractValue(1).Free;
+  SUT.RemoveKey(2);
+  SUT.RemoveKey(2);
+  SUT.Clear;
+  Pass;
 end;
 
 {$ENDREGION}
