@@ -590,27 +590,29 @@ type
     procedure TestExtractValues;
   end;
 
-  TTestBidiDictionary = class(TTestCase)
+  TTestBidiDictionaryBase = class(TTestCase)
   private
-    SUT: IBidiDictionary<Integer,string>;
-    Inverse: IBidiDictionary<string,Integer>;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-
     procedure FillTestData;
+  protected
+    SUT: IBidiDictionary<Integer, string>;
+    procedure TearDown; override;
   published
-    procedure AddDictionary;
+    procedure TestAddDictionary;
     procedure TestAddOrSetValue;
+    procedure TestAddOrSetValueMultipleTimes;
     procedure TestAddOrSetValueOrder;
     procedure TestRemove;
     procedure TestKeysEnumerate;
+  end;
 
-    procedure Test_AddOrSetValue_MultipleTimes;
+  TTestBidiDictionary = class(TTestBidiDictionaryBase)
+  protected
+    procedure SetUp; override;
+  end;
 
-    procedure Test_Inverse_AddOrSetValue;
-    procedure Test_Inverse_Enumerate;
-    procedure Test_Inverse_KeysEnumerate;
+  TTestBidiDictionaryInverse = class(TTestBidiDictionaryBase)
+  protected
+    procedure SetUp; override;
   end;
 
   TTestBidiDictionaryOwnership = class(TTestCase)
@@ -619,52 +621,51 @@ type
     procedure TestValues;
   end;
 
-  TTestBidiDictionaryChangedEvent = class(TTestCase)
+  TTestBidiDictionaryChangedEventBase = class(TTestCase)
   private
     type
       TEvent<T> = record
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         sender: TObject;
         item: T;
         action: TCollectionChangedAction;
       end;
-      TKeyValuePair = Generics.Collections.TPair<Integer, Integer>;
+      TKeyValuePair = Generics.Collections.TPair<Integer, string>;
   private
     fChangedEvents: IList<TEvent<TKeyValuePair>>;
     fKeyChangedEvents: IList<TEvent<Integer>>;
-    fValueChangedEvents: IList<TEvent<Integer>>;
+    fValueChangedEvents: IList<TEvent<string>>;
     procedure Changed(Sender: TObject; const Item: TKeyValuePair; Action: TCollectionChangedAction);
     procedure KeyChanged(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
-    procedure ValueChanged(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
-    function CreateSUT: IBidiDictionary<Integer, Integer>;
-    procedure AddEventHandlers(const SUT: IBidiDictionary<Integer, Integer>);
-    procedure CheckChanged(index: Integer; sender: TObject; key, value: Integer; action: TCollectionChangedAction);
-    procedure CheckKeyChanged(index: Integer; sender: TObject; key: Integer; action: TCollectionChangedAction);
-    procedure CheckValueChanged(index: Integer; sender: TObject; value: Integer; action: TCollectionChangedAction);
-  private
-    procedure TestAddInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-    procedure TestClearInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-    procedure TestExtractInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-    procedure TestRemoveInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-    procedure TestSetItemInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-    procedure TestTryExtractInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
+    procedure ValueChanged(Sender: TObject; const Item: string; Action: TCollectionChangedAction);
+    procedure AddEventHandlers;
+    procedure CheckChanged(index: Integer; key: Integer; const value: string; action: TCollectionChangedAction);
+    procedure CheckKeyChanged(index: Integer; key: Integer; action: TCollectionChangedAction);
+    procedure CheckValueChanged(index: Integer; const value: string; action: TCollectionChangedAction);
   protected
+    SUT: IBidiDictionary<Integer, string>;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    Sender: TObject;
     procedure SetUp; override;
     procedure TearDown; override;
   published
     procedure TestAdd;
-    procedure TestAddInverse;
     procedure TestClear;
-    procedure TestClearInverse;
     procedure TestDestroy;
-    procedure TestDestroyInverse;
     procedure TestExtract;
-    procedure TestExtractInverse;
     procedure TestRemove;
-    procedure TestRemoveInverse;
     procedure TestSetItem;
-    procedure TestSetItemInverse;
     procedure TestTryExtract;
-    procedure TestTryExtractInverse;
+  end;
+
+  TTestBidiDictionaryChangedEvent = class(TTestBidiDictionaryChangedEventBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestBidiDictionaryChangedEventInverse = class(TTestBidiDictionaryChangedEventBase)
+  protected
+    procedure SetUp; override;
   end;
 
   TTestObjectStack = class(TTestCase)
@@ -3882,9 +3883,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestBidiDictionary'}
+{$REGION 'TTestBidiDictionaryBase'}
 
-procedure TTestBidiDictionary.FillTestData;
+procedure TTestBidiDictionaryBase.FillTestData;
 begin
   SUT.Add(1, 'a');
   SUT.Add(3, 'c');
@@ -3892,34 +3893,33 @@ begin
   SUT.Add(4, 'd');
 end;
 
-procedure TTestBidiDictionary.SetUp;
+procedure TTestBidiDictionaryBase.TearDown;
 begin
-  inherited;
-  SUT := TCollections.CreateBidiDictionary<Integer,string>;
-  Inverse := SUT.Inverse;
-end;
-
-procedure TTestBidiDictionary.TearDown;
-begin
-  Inverse := nil;
   SUT := nil;
   inherited;
 end;
 
-procedure TTestBidiDictionary.AddDictionary;
+procedure TTestBidiDictionaryBase.TestAddDictionary;
 var
   dict: IDictionary<Integer,string>;
 begin
+  FillTestData;
   dict := TCollections.CreateDictionary<Integer,string>;
-  dict.Add(1, 'a');
-  dict.Add(2, 'b');
-  dict.Add(3, 'c');
-  dict.Add(4, 'd');
-  SUT.AddRange(dict);
-  CheckTrue(SUT.EqualsTo(dict));
+  dict.AddRange(SUT);
+  CheckTrue(dict.EqualsTo(SUT));
 end;
 
-procedure TTestBidiDictionary.Test_AddOrSetValue_MultipleTimes;
+procedure TTestBidiDictionaryBase.TestAddOrSetValue;
+begin
+  SUT.AddOrSetValue(1, 'a');
+  CheckException(EInvalidOperationException, procedure begin SUT.AddOrSetValue(2, 'a') end, 'EInvalidOperationException was not raised');
+  SUT.AddOrSetValue(1, 'a');
+  CheckEquals(1, SUT.Count);
+  SUT.AddOrSetValue(1, 'b');
+  CheckEquals(1, SUT.Count);
+end;
+
+procedure TTestBidiDictionaryBase.TestAddOrSetValueMultipleTimes;
 var
   c: Char;
 begin
@@ -3938,64 +3938,7 @@ begin
   Check(SUT.Keys.EqualsTo([1, 3, 4, 2]));
 end;
 
-procedure TTestBidiDictionary.Test_Inverse_AddOrSetValue;
-begin
-  Inverse.AddOrSetValue('a', 1);
-  CheckException(EInvalidOperationException, procedure begin Inverse.AddOrSetValue('b', 1) end, 'EInvalidOperationException was not raised');
-  Inverse.AddOrSetValue('a', 1);
-  CheckEquals(1, Inverse.Count);
-  Inverse.AddOrSetValue('a', 2);
-  CheckEquals(1, Inverse.Count);
-end;
-
-procedure TTestBidiDictionary.Test_Inverse_Enumerate;
-var
-  item: TPair<string,Integer>;
-  items: TArray<TPair<string,Integer>>;
-  i: Integer;
-begin
-  FillTestData;
-  SetLength(items, Inverse.Count);
-  i := 0;
-  for item in Inverse do
-  begin
-    items[i] := item;
-    Inc(i);
-  end;
-  CheckEquals('a', items[0].Key);
-  CheckEquals(1, items[0].Value);
-  CheckEquals('c', items[1].Key);
-  CheckEquals(3, items[1].Value);
-  CheckEquals('b', items[2].Key);
-  CheckEquals(2, items[2].Value);
-  CheckEquals('d', items[3].Key);
-  CheckEquals(4, items[3].Value);
-end;
-
-procedure TTestBidiDictionary.Test_Inverse_KeysEnumerate;
-var
-  keys: TArray<string>;
-begin
-  FillTestData;
-
-  keys := Inverse.Keys.ToArray;
-  CheckEquals('a', keys[0]);
-  CheckEquals('c', keys[1]);
-  CheckEquals('b', keys[2]);
-  CheckEquals('d', keys[3]);
-end;
-
-procedure TTestBidiDictionary.TestAddOrSetValue;
-begin
-  SUT.AddOrSetValue(1, 'a');
-  CheckException(EInvalidOperationException, procedure begin SUT.AddOrSetValue(2, 'a') end, 'EInvalidOperationException was not raised');
-  SUT.AddOrSetValue(1, 'a');
-  CheckEquals(1, SUT.Count);
-  SUT.AddOrSetValue(1, 'b');
-  CheckEquals(1, SUT.Count);
-end;
-
-procedure TTestBidiDictionary.TestAddOrSetValueOrder;
+procedure TTestBidiDictionaryBase.TestAddOrSetValueOrder;
 begin
   SUT.AddOrSetValue(1, 'a');
   SUT.AddOrSetValue(2, 'b');
@@ -4003,7 +3946,7 @@ begin
   Check(SUT.Keys.EqualsTo([1, 2]));
 end;
 
-procedure TTestBidiDictionary.TestKeysEnumerate;
+procedure TTestBidiDictionaryBase.TestKeysEnumerate;
 var
   e: IEnumerator<Integer>;
 begin
@@ -4023,7 +3966,8 @@ begin
   CheckFalse(e.MoveNext);
 end;
 
-procedure TTestBidiDictionary.TestRemove;
+
+procedure TTestBidiDictionaryBase.TestRemove;
 begin
   FillTestData;
 
@@ -4032,6 +3976,28 @@ begin
   CheckTrue(SUT.Remove(1));
   CheckTrue(SUT.Inverse.Remove('d'));
   CheckEquals(0, SUT.Count);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionary'}
+
+procedure TTestBidiDictionary.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateBidiDictionary<Integer, string>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryInverse'}
+
+procedure TTestBidiDictionaryInverse.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateBidiDictionary<string, Integer>.Inverse;
 end;
 
 {$ENDREGION}
@@ -4074,25 +4040,26 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestBidiDictionaryChangedEvent'}
+{$REGION 'TTestBidiDictionaryChangedEventBase'}
 
-procedure TTestBidiDictionaryChangedEvent.SetUp;
+procedure TTestBidiDictionaryChangedEventBase.SetUp;
 begin
   inherited;
   fChangedEvents := TCollections.CreateList<TEvent<TKeyValuePair>>;
   fKeyChangedEvents := TCollections.CreateList<TEvent<Integer>>;
-  fValueChangedEvents := TCollections.CreateList<TEvent<Integer>>;
+  fValueChangedEvents := TCollections.CreateList<TEvent<string>>;
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TearDown;
+procedure TTestBidiDictionaryChangedEventBase.TearDown;
 begin
+  SUT := nil;
   fValueChangedEvents := nil;
   fKeyChangedEvents := nil;
   fChangedEvents := nil;
   inherited;
 end;
 
-procedure TTestBidiDictionaryChangedEvent.Changed(Sender: TObject;
+procedure TTestBidiDictionaryChangedEventBase.Changed(Sender: TObject;
   const Item: TKeyValuePair; Action: TCollectionChangedAction);
 var
   event: TEvent<TKeyValuePair>;
@@ -4103,7 +4070,7 @@ begin
   fChangedEvents.Add(event);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.KeyChanged(Sender: TObject;
+procedure TTestBidiDictionaryChangedEventBase.KeyChanged(Sender: TObject;
   const Item: Integer; Action: TCollectionChangedAction);
 var
   event: TEvent<Integer>;
@@ -4114,10 +4081,10 @@ begin
   fKeyChangedEvents.Add(event);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.ValueChanged(Sender: TObject;
-  const Item: Integer; Action: TCollectionChangedAction);
+procedure TTestBidiDictionaryChangedEventBase.ValueChanged(Sender: TObject;
+  const Item: string; Action: TCollectionChangedAction);
 var
-  event: TEvent<Integer>;
+  event: TEvent<string>;
 begin
   event.sender := Sender;
   event.item := Item;
@@ -4125,329 +4092,216 @@ begin
   fValueChangedEvents.Add(event);
 end;
 
-function TTestBidiDictionaryChangedEvent.CreateSUT: IBidiDictionary<Integer, Integer>;
-begin
-  Result := TCollections.CreateBidiDictionary<Integer, Integer>;
-end;
-
-procedure TTestBidiDictionaryChangedEvent.AddEventHandlers(const SUT: IBidiDictionary<Integer, Integer>);
+procedure TTestBidiDictionaryChangedEventBase.AddEventHandlers;
 begin
   SUT.OnChanged.Add(Changed);
   SUT.OnKeyChanged.Add(KeyChanged);
   SUT.OnValueChanged.Add(ValueChanged);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.CheckChanged(index: Integer; sender: TObject; key, value: Integer; action: TCollectionChangedAction);
+procedure TTestBidiDictionaryChangedEventBase.CheckChanged(index: Integer; key: Integer; const value: string; action: TCollectionChangedAction);
 begin
-  Check(sender = fChangedEvents[index].sender);
+  Check(Sender = fChangedEvents[index].sender);
   Check(key = fChangedEvents[index].item.Key);
   Check(value = fChangedEvents[index].item.Value);
   Check(action = fChangedEvents[index].action);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.CheckKeyChanged(index: Integer; sender: TObject; key: Integer; action: TCollectionChangedAction);
+procedure TTestBidiDictionaryChangedEventBase.CheckKeyChanged(index: Integer; key: Integer; action: TCollectionChangedAction);
 begin
-  Check(sender = fKeyChangedEvents[index].sender);
+  Check(Sender = fKeyChangedEvents[index].sender);
   Check(key = fKeyChangedEvents[index].item);
   Check(action = fKeyChangedEvents[index].action);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.CheckValueChanged(index: Integer; sender: TObject; value: Integer; action: TCollectionChangedAction);
+procedure TTestBidiDictionaryChangedEventBase.CheckValueChanged(index: Integer; const value: string; action: TCollectionChangedAction);
 begin
-  Check(sender = fValueChangedEvents[index].sender);
+  Check(Sender = fValueChangedEvents[index].sender);
   Check(value = fValueChangedEvents[index].item);
   Check(action = fValueChangedEvents[index].action);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestAddInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
+procedure TTestBidiDictionaryChangedEventBase.TestAdd;
 begin
-  AddEventHandlers(SUT);
-  SUT.Add(1, 11);
-  SUT.Add(2, 12);
-  SUT.AddOrSetValue(2, 13);
+  AddEventHandlers;
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.AddOrSetValue(2, 'c');
 
   CheckEquals(4, fChangedEvents.Count);
-  CheckChanged(0, sender, 1, 11, caAdded);
-  CheckChanged(1, sender, 2, 12, caAdded);
-  CheckChanged(2, sender, 2, 12, caRemoved);
-  CheckChanged(3, sender, 2, 13, caAdded);
+  CheckChanged(0, 1, 'a', caAdded);
+  CheckChanged(1, 2, 'b', caAdded);
+  CheckChanged(2, 2, 'b', caRemoved);
+  CheckChanged(3, 2, 'c', caAdded);
 
   CheckEquals(2, fKeyChangedEvents.Count);
-  CheckKeyChanged(0, sender, 1, caAdded);
-  CheckKeyChanged(1, sender, 2, caAdded);
+  CheckKeyChanged(0, 1, caAdded);
+  CheckKeyChanged(1, 2, caAdded);
 
   CheckEquals(4, fValueChangedEvents.Count);
-  CheckValueChanged(0, sender, 11, caAdded);
-  CheckValueChanged(1, sender, 12, caAdded);
-  CheckValueChanged(2, sender, 12, caRemoved);
-  CheckValueChanged(3, sender, 13, caAdded);
+  CheckValueChanged(0, 'a', caAdded);
+  CheckValueChanged(1, 'b', caAdded);
+  CheckValueChanged(2, 'b', caRemoved);
+  CheckValueChanged(3, 'c', caAdded);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestAdd;
-var
-  dict: IBidiDictionary<Integer, Integer>;
+procedure TTestBidiDictionaryChangedEventBase.TestClear;
 begin
-  dict := CreateSUT;
-  TestAddInternal(dict, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestAddInverse;
-var
-  dict: IBidiDictionary<Integer, Integer>;
-begin
-  dict := CreateSUT;
-  TestAddInternal(dict.Inverse, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestClearInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-begin
-  SUT.Add(1, 11);
-  SUT.Add(2, 12);
-  AddEventHandlers(SUT);
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  AddEventHandlers;
   SUT.Clear;
 
   CheckEquals(2, fChangedEvents.Count);
-  CheckChanged(0, sender, 1, 11, caRemoved);
-  CheckChanged(1, sender, 2, 12, caRemoved);
+  CheckChanged(0, 1, 'a', caRemoved);
+  CheckChanged(1, 2, 'b', caRemoved);
 
   CheckEquals(2, fKeyChangedEvents.Count);
-  CheckKeyChanged(0, sender, 1, caRemoved);
-  CheckKeyChanged(1, sender, 2, caRemoved);
+  CheckKeyChanged(0, 1, caRemoved);
+  CheckKeyChanged(1, 2, caRemoved);
 
   CheckEquals(2, fValueChangedEvents.Count);
-  CheckValueChanged(0, sender, 11, caRemoved);
-  CheckValueChanged(1, sender, 12, caRemoved);
+  CheckValueChanged(0, 'a', caRemoved);
+  CheckValueChanged(1, 'b', caRemoved);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestClear;
-var
-  dict: IBidiDictionary<Integer, Integer>;
+procedure TTestBidiDictionaryChangedEventBase.TestDestroy;
 begin
-  dict := CreateSUT;
-  TestClearInternal(dict, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestClearInverse;
-var
-  dict: IBidiDictionary<Integer, Integer>;
-begin
-  dict := CreateSUT;
-  TestClearInternal(dict.Inverse, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestDestroy;
-var
-  dict: IBidiDictionary<Integer, Integer>;
-  sender: TObject;
-  SUT: IBidiDictionary<Integer, Integer>;
-begin
-  dict := CreateSUT;
-  sender := dict.AsObject;
-  SUT := dict;
-  SUT.Add(1, 11);
-  SUT.Add(2, 12);
-  AddEventHandlers(SUT);
-  dict := nil;
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  AddEventHandlers;
   SUT := nil;
 
   CheckEquals(2, fChangedEvents.Count);
-  CheckChanged(0, sender, 1, 11, caRemoved);
-  CheckChanged(1, sender, 2, 12, caRemoved);
+  CheckChanged(0, 1, 'a', caRemoved);
+  CheckChanged(1, 2, 'b', caRemoved);
 
   CheckEquals(2, fKeyChangedEvents.Count);
-  CheckKeyChanged(0, sender, 1, caRemoved);
-  CheckKeyChanged(1, sender, 2, caRemoved);
+  CheckKeyChanged(0, 1, caRemoved);
+  CheckKeyChanged(1, 2, caRemoved);
 
   CheckEquals(2, fValueChangedEvents.Count);
-  CheckValueChanged(0, sender, 11, caRemoved);
-  CheckValueChanged(1, sender, 12, caRemoved);
+  CheckValueChanged(0, 'a', caRemoved);
+  CheckValueChanged(1, 'b', caRemoved);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestDestroyInverse;
-var
-  dict: IBidiDictionary<Integer, Integer>;
-  sender: TObject;
-  SUT: IBidiDictionary<Integer, Integer>;
+procedure TTestBidiDictionaryChangedEventBase.TestExtract;
 begin
-  dict := CreateSUT;
-  sender := dict.AsObject;
-  SUT := dict.Inverse;
-  SUT.Add(1, 11);
-  SUT.Add(2, 12);
-  AddEventHandlers(SUT);
-  dict := nil;
-  SUT := nil;
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  AddEventHandlers;
+  CheckEquals('c', SUT.Extract(3));
+  CheckEquals('a', SUT.Extract(1));
+  CheckEquals('', SUT.Extract(1));
 
   CheckEquals(2, fChangedEvents.Count);
-  CheckChanged(0, sender, 1, 11, caRemoved);
-  CheckChanged(1, sender, 2, 12, caRemoved);
+  CheckChanged(0, 3, 'c', caExtracted);
+  CheckChanged(1, 1, 'a', caExtracted);
 
   CheckEquals(2, fKeyChangedEvents.Count);
-  CheckKeyChanged(0, sender, 1, caRemoved);
-  CheckKeyChanged(1, sender, 2, caRemoved);
+  CheckKeyChanged(0, 3, caExtracted);
+  CheckKeyChanged(1, 1, caExtracted);
 
   CheckEquals(2, fValueChangedEvents.Count);
-  CheckValueChanged(0, sender, 11, caRemoved);
-  CheckValueChanged(1, sender, 12, caRemoved);
+  CheckValueChanged(0, 'c', caExtracted);
+  CheckValueChanged(1, 'a', caExtracted);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestExtractInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
+procedure TTestBidiDictionaryChangedEventBase.TestRemove;
 begin
-  SUT.Add(1, 11);
-  SUT.Add(2, 12);
-  SUT.Add(3, 13);
-  SUT.Add(4, 14);
-  AddEventHandlers(SUT);
-  CheckEquals(13, SUT.Extract(3));
-  CheckEquals(11, SUT.Extract(1));
-  CheckEquals(0, SUT.Extract(1));
-
-  CheckEquals(2, fChangedEvents.Count);
-  CheckChanged(0, sender, 3, 13, caExtracted);
-  CheckChanged(1, sender, 1, 11, caExtracted);
-
-  CheckEquals(2, fKeyChangedEvents.Count);
-  CheckKeyChanged(0, sender, 3, caExtracted);
-  CheckKeyChanged(1, sender, 1, caExtracted);
-
-  CheckEquals(2, fValueChangedEvents.Count);
-  CheckValueChanged(0, sender, 13, caExtracted);
-  CheckValueChanged(1, sender, 11, caExtracted);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestExtract;
-var
-  dict: IBidiDictionary<Integer, Integer>;
-begin
-  dict := CreateSUT;
-  TestExtractInternal(dict, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestExtractInverse;
-var
-  dict: IBidiDictionary<Integer, Integer>;
-begin
-  dict := CreateSUT;
-  TestExtractInternal(dict.Inverse, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestRemoveInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-begin
-  SUT.Add(1, 11);
-  SUT.Add(2, 12);
-  SUT.Add(3, 13);
-  SUT.Add(4, 14);
-  AddEventHandlers(SUT);
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  AddEventHandlers;
   Check(SUT.Remove(3));
   Check(SUT.Remove(1));
   Check(not SUT.Remove(1));
 
   CheckEquals(2, fChangedEvents.Count);
-  CheckChanged(0, sender, 3, 13, caRemoved);
-  CheckChanged(1, sender, 1, 11, caRemoved);
+  CheckChanged(0, 3, 'c', caRemoved);
+  CheckChanged(1, 1, 'a', caRemoved);
 
   CheckEquals(2, fKeyChangedEvents.Count);
-  CheckKeyChanged(0, sender, 3, caRemoved);
-  CheckKeyChanged(1, sender, 1, caRemoved);
+  CheckKeyChanged(0, 3, caRemoved);
+  CheckKeyChanged(1, 1, caRemoved);
 
   CheckEquals(2, fValueChangedEvents.Count);
-  CheckValueChanged(0, sender, 13, caRemoved);
-  CheckValueChanged(1, sender, 11, caRemoved);
+  CheckValueChanged(0, 'c', caRemoved);
+  CheckValueChanged(1, 'a', caRemoved);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestRemove;
-var
-  dict: IBidiDictionary<Integer, Integer>;
+procedure TTestBidiDictionaryChangedEventBase.TestSetItem;
 begin
-  dict := CreateSUT;
-  TestRemoveInternal(dict, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestRemoveInverse;
-var
-  dict: IBidiDictionary<Integer, Integer>;
-begin
-  dict := CreateSUT;
-  TestRemoveInternal(dict.Inverse, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestSetItemInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-begin
-  SUT.Add(1, 11);
-  SUT.Add(2, 12);
-  AddEventHandlers(SUT);
-  SUT[2] := 13;
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  AddEventHandlers;
+  SUT[2] := 'c';
 
   CheckEquals(2, fChangedEvents.Count);
-  CheckChanged(0, sender, 2, 12, caRemoved);
-  CheckChanged(1, sender, 2, 13, caAdded);
+  CheckChanged(0, 2, 'b', caRemoved);
+  CheckChanged(1, 2, 'c', caAdded);
 
   CheckEquals(0, fKeyChangedEvents.Count);
 
   CheckEquals(2, fValueChangedEvents.Count);
-  CheckValueChanged(0, sender, 12, caRemoved);
-  CheckValueChanged(1, sender, 13, caAdded);
+  CheckValueChanged(0, 'b', caRemoved);
+  CheckValueChanged(1, 'c', caAdded);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestSetItem;
+procedure TTestBidiDictionaryChangedEventBase.TestTryExtract;
 var
-  dict: IBidiDictionary<Integer, Integer>;
+  value: string;
 begin
-  dict := CreateSUT;
-  TestSetItemInternal(dict, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestSetItemInverse;
-var
-  dict: IBidiDictionary<Integer, Integer>;
-begin
-  dict := CreateSUT;
-  TestSetItemInternal(dict.Inverse, dict.AsObject);
-end;
-
-procedure TTestBidiDictionaryChangedEvent.TestTryExtractInternal(const SUT: IBidiDictionary<Integer, Integer>; sender: TObject);
-var
-  value: Integer;
-begin
-  SUT.Add(1, 11);
-  SUT.Add(2, 12);
-  SUT.Add(3, 13);
-  SUT.Add(4, 14);
-  AddEventHandlers(SUT);
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  AddEventHandlers;
   Check(SUT.TryExtract(3, value));
-  CheckEquals(13, value);
+  CheckEquals('c', value);
   Check(SUT.TryExtract(1, value));
-  CheckEquals(11, value);
+  CheckEquals('a', value);
   Check(not SUT.TryExtract(1, value));
-  CheckEquals(0, value);
+  CheckEquals('', value);
 
   CheckEquals(2, fChangedEvents.Count);
-  CheckChanged(0, sender, 3, 13, caExtracted);
-  CheckChanged(1, sender, 1, 11, caExtracted);
+  CheckChanged(0, 3, 'c', caExtracted);
+  CheckChanged(1, 1, 'a', caExtracted);
 
   CheckEquals(2, fKeyChangedEvents.Count);
-  CheckKeyChanged(0, sender, 3, caExtracted);
-  CheckKeyChanged(1, sender, 1, caExtracted);
+  CheckKeyChanged(0, 3, caExtracted);
+  CheckKeyChanged(1, 1, caExtracted);
 
   CheckEquals(2, fValueChangedEvents.Count);
-  CheckValueChanged(0, sender, 13, caExtracted);
-  CheckValueChanged(1, sender, 11, caExtracted);
+  CheckValueChanged(0, 'c', caExtracted);
+  CheckValueChanged(1, 'a', caExtracted);
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestTryExtract;
-var
-  dict: IBidiDictionary<Integer, Integer>;
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryChangedEvent'}
+
+procedure TTestBidiDictionaryChangedEvent.Setup;
 begin
-  dict := CreateSUT;
-  TestTryExtractInternal(dict, dict.AsObject);
+  inherited;
+  SUT := TCollections.CreateBidiDictionary<Integer, string>;
+  Sender := SUT.AsObject;
 end;
 
-procedure TTestBidiDictionaryChangedEvent.TestTryExtractInverse;
-var
-  dict: IBidiDictionary<Integer, Integer>;
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryChangedEventInverse'}
+
+procedure TTestBidiDictionaryChangedEventInverse.Setup;
 begin
-  dict := CreateSUT;
-  TestTryExtractInternal(dict.Inverse, dict.AsObject);
+  inherited;
+  SUT := TCollections.CreateBidiDictionary<string, Integer>.Inverse;
+  Sender := SUT.Inverse.AsObject;
 end;
 
 {$ENDREGION}
