@@ -116,6 +116,8 @@ begin
     TTestBidiDictionary.Suite,
     TTestBidiDictionaryInverse.Suite,
     TTestBidiDictionaryOwnership.Suite,
+    TTestDictionaryChangedEvent.Suite,
+    TTestSortedDictionaryChangedEvent.Suite,
     TTestBidiDictionaryChangedEvent.Suite,
     TTestBidiDictionaryChangedEventInverse.Suite,
     TTestObjectStack.Suite,

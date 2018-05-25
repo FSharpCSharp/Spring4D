@@ -622,7 +622,7 @@ type
     procedure TestValues;
   end;
 
-  TTestBidiDictionaryChangedEventBase = class(TTestCase)
+  TTestDictionaryChangedEventBase = class(TTestCase)
   private
     type
       TEvent<T> = record
@@ -644,7 +644,7 @@ type
     procedure CheckKeyChanged(index: Integer; key: Integer; action: TCollectionChangedAction);
     procedure CheckValueChanged(index: Integer; const value: string; action: TCollectionChangedAction);
   protected
-    SUT: IBidiDictionary<Integer, string>;
+    SUT: IDictionary<Integer, string>;
     {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     Sender: TObject;
     procedure SetUp; override;
@@ -659,12 +659,22 @@ type
     procedure TestTryExtract;
   end;
 
-  TTestBidiDictionaryChangedEvent = class(TTestBidiDictionaryChangedEventBase)
+  TTestDictionaryChangedEvent = class(TTestDictionaryChangedEventBase)
   protected
     procedure SetUp; override;
   end;
 
-  TTestBidiDictionaryChangedEventInverse = class(TTestBidiDictionaryChangedEventBase)
+  TTestSortedDictionaryChangedEvent = class(TTestDictionaryChangedEventBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestBidiDictionaryChangedEvent = class(TTestDictionaryChangedEventBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestBidiDictionaryChangedEventInverse = class(TTestDictionaryChangedEventBase)
   protected
     procedure SetUp; override;
   end;
@@ -4064,9 +4074,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestBidiDictionaryChangedEventBase'}
+{$REGION 'TTestDictionaryChangedEventBase'}
 
-procedure TTestBidiDictionaryChangedEventBase.SetUp;
+procedure TTestDictionaryChangedEventBase.SetUp;
 begin
   inherited;
   fChangedEvents := TCollections.CreateList<TEvent<TKeyValuePair>>;
@@ -4074,7 +4084,7 @@ begin
   fValueChangedEvents := TCollections.CreateList<TEvent<string>>;
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.TearDown;
+procedure TTestDictionaryChangedEventBase.TearDown;
 begin
   SUT := nil;
   fValueChangedEvents := nil;
@@ -4083,7 +4093,7 @@ begin
   inherited;
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.Changed(Sender: TObject;
+procedure TTestDictionaryChangedEventBase.Changed(Sender: TObject;
   const Item: TKeyValuePair; Action: TCollectionChangedAction);
 var
   event: TEvent<TKeyValuePair>;
@@ -4094,7 +4104,7 @@ begin
   fChangedEvents.Add(event);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.KeyChanged(Sender: TObject;
+procedure TTestDictionaryChangedEventBase.KeyChanged(Sender: TObject;
   const Item: Integer; Action: TCollectionChangedAction);
 var
   event: TEvent<Integer>;
@@ -4105,7 +4115,7 @@ begin
   fKeyChangedEvents.Add(event);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.ValueChanged(Sender: TObject;
+procedure TTestDictionaryChangedEventBase.ValueChanged(Sender: TObject;
   const Item: string; Action: TCollectionChangedAction);
 var
   event: TEvent<string>;
@@ -4116,14 +4126,14 @@ begin
   fValueChangedEvents.Add(event);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.AddEventHandlers;
+procedure TTestDictionaryChangedEventBase.AddEventHandlers;
 begin
   SUT.OnChanged.Add(Changed);
   SUT.OnKeyChanged.Add(KeyChanged);
   SUT.OnValueChanged.Add(ValueChanged);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.CheckChanged(index: Integer; key: Integer; const value: string; action: TCollectionChangedAction);
+procedure TTestDictionaryChangedEventBase.CheckChanged(index: Integer; key: Integer; const value: string; action: TCollectionChangedAction);
 begin
   Check(Sender = fChangedEvents[index].sender);
   Check(key = fChangedEvents[index].item.Key);
@@ -4131,21 +4141,21 @@ begin
   Check(action = fChangedEvents[index].action);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.CheckKeyChanged(index: Integer; key: Integer; action: TCollectionChangedAction);
+procedure TTestDictionaryChangedEventBase.CheckKeyChanged(index: Integer; key: Integer; action: TCollectionChangedAction);
 begin
   Check(Sender = fKeyChangedEvents[index].sender);
   Check(key = fKeyChangedEvents[index].item);
   Check(action = fKeyChangedEvents[index].action);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.CheckValueChanged(index: Integer; const value: string; action: TCollectionChangedAction);
+procedure TTestDictionaryChangedEventBase.CheckValueChanged(index: Integer; const value: string; action: TCollectionChangedAction);
 begin
   Check(Sender = fValueChangedEvents[index].sender);
   Check(value = fValueChangedEvents[index].item);
   Check(action = fValueChangedEvents[index].action);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.TestAdd;
+procedure TTestDictionaryChangedEventBase.TestAdd;
 begin
   AddEventHandlers;
   SUT.Add(1, 'a');
@@ -4169,7 +4179,7 @@ begin
   CheckValueChanged(3, 'c', caAdded);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.TestClear;
+procedure TTestDictionaryChangedEventBase.TestClear;
 begin
   SUT.Add(1, 'a');
   SUT.Add(2, 'b');
@@ -4189,7 +4199,7 @@ begin
   CheckValueChanged(1, 'b', caRemoved);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.TestDestroy;
+procedure TTestDictionaryChangedEventBase.TestDestroy;
 begin
   SUT.Add(1, 'a');
   SUT.Add(2, 'b');
@@ -4209,7 +4219,7 @@ begin
   CheckValueChanged(1, 'b', caRemoved);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.TestExtract;
+procedure TTestDictionaryChangedEventBase.TestExtract;
 begin
   SUT.Add(1, 'a');
   SUT.Add(2, 'b');
@@ -4233,7 +4243,7 @@ begin
   CheckValueChanged(1, 'a', caExtracted);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.TestRemove;
+procedure TTestDictionaryChangedEventBase.TestRemove;
 begin
   SUT.Add(1, 'a');
   SUT.Add(2, 'b');
@@ -4257,7 +4267,7 @@ begin
   CheckValueChanged(1, 'a', caRemoved);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.TestSetItem;
+procedure TTestDictionaryChangedEventBase.TestSetItem;
 begin
   SUT.Add(1, 'a');
   SUT.Add(2, 'b');
@@ -4275,7 +4285,7 @@ begin
   CheckValueChanged(1, 'c', caAdded);
 end;
 
-procedure TTestBidiDictionaryChangedEventBase.TestTryExtract;
+procedure TTestDictionaryChangedEventBase.TestTryExtract;
 var
   value: string;
 begin
@@ -4307,6 +4317,30 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestDictionaryChangedEvent'}
+
+procedure TTestDictionaryChangedEvent.Setup;
+begin
+  inherited;
+  SUT := TCollections.CreateDictionary<Integer, string>;
+  Sender := SUT.AsObject;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSortedDictionaryChangedEvent'}
+
+procedure TTestSortedDictionaryChangedEvent.Setup;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedDictionary<Integer, string>;
+  Sender := SUT.AsObject;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TTestBidiDictionaryChangedEvent'}
 
 procedure TTestBidiDictionaryChangedEvent.Setup;
@@ -4322,10 +4356,13 @@ end;
 {$REGION 'TTestBidiDictionaryChangedEventInverse'}
 
 procedure TTestBidiDictionaryChangedEventInverse.Setup;
+var
+  dict: IBidiDictionary<Integer, string>;
 begin
   inherited;
-  SUT := TCollections.CreateBidiDictionary<string, Integer>.Inverse;
-  Sender := SUT.Inverse.AsObject;
+  dict := TCollections.CreateBidiDictionary<string, Integer>.Inverse;
+  SUT := dict;
+  Sender := dict.Inverse.AsObject;
 end;
 
 {$ENDREGION}
