@@ -171,20 +171,6 @@ type
     procedure TestReturnsMinusOneWhenNotFound;
   end;
 
-  TTestEmptyStringIntegerDictionary = class(TTestCase)
-  private
-    SUT: IDictionary<string, Integer>;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure TestDictionaryIsInitializedEmpty;
-    procedure TestDictionaryKeysAreEmpty;
-    procedure TestDictionaryValuesAreEmpty;
-    procedure TestDictionaryContainsReturnsFalse;
-    procedure TestDictionaryValuesReferenceCounting;
-  end;
-
   TTestStringIntegerDictionary = class(TTestCase)
   private
     SUT: IDictionary<string, Integer>;
@@ -206,10 +192,40 @@ type
     procedure TestOrdered_Issue179;
   end;
 
-  TTestDictionaryValueComparer = class(TTestCase)
+  TTestDictionaryKeyComparerBase = class(TTestCase)
+  private
+    SUT: IDictionary<Integer, string>;
+  protected
+    class function CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>; virtual; abstract;
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestContains;
+    procedure TestContainsKey;
+    procedure TestExtract;
+    procedure TestRemove;
+  end;
+
+  TTestDictionaryKeyComparer = class(TTestDictionaryKeyComparerBase)
+  protected
+    class function CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>; override;
+  end;
+
+  TTestBidiDictionaryKeyComparer = class(TTestDictionaryKeyComparerBase)
+  protected
+    class function CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>; override;
+  end;
+
+  TTestBidiDictionaryInverseKeyComparer = class(TTestDictionaryKeyComparerBase)
+  protected
+    class function CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>; override;
+  end;
+
+  TTestDictionaryValueComparerBase = class(TTestCase)
   private
     SUT: IDictionary<string, Integer>;
   protected
+    class function CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>; virtual; abstract;
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -217,6 +233,21 @@ type
     procedure TestContainsValue;
     procedure TestExtract;
     procedure TestRemove;
+  end;
+
+  TTestDictionaryValueComparer = class(TTestDictionaryValueComparerBase)
+  protected
+    class function CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>; override;
+  end;
+
+  TTestBidiDictionaryValueComparer = class(TTestDictionaryValueComparerBase)
+  protected
+    class function CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>; override;
+  end;
+
+  TTestBidiDictionaryInverseValueComparer = class(TTestDictionaryValueComparerBase)
+  protected
+    class function CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>; override;
   end;
 
   TTestEmptyStackofStrings = class(TTestCase)
@@ -571,7 +602,7 @@ type
 
   TTestMultiMap = class(TTestCase)
   private
-    SUT: IMultiMap<Integer,Integer>;
+    SUT: IMultiMap<Integer, Integer>;
     ValueAddedCount, ValueRemovedCount: Integer;
   protected
     procedure SetUp; override;
@@ -588,32 +619,6 @@ type
     procedure TestValueChangedCalledProperly;
     procedure TestValuesOrdered;
     procedure TestExtractValues;
-  end;
-
-  TTestBidiDictionaryBase = class(TTestCase)
-  private
-    procedure FillTestData;
-  protected
-    SUT: IBidiDictionary<Integer, string>;
-    procedure TearDown; override;
-  published
-    procedure TestAddDictionary;
-    procedure TestAddOrSetValue;
-    procedure TestAddOrSetValueMultipleTimes;
-    procedure TestAddOrSetValueOrder;
-    procedure TestRemove;
-    procedure TestKeysEnumerate;
-    procedure TestOrdered;
-  end;
-
-  TTestBidiDictionary = class(TTestBidiDictionaryBase)
-  protected
-    procedure SetUp; override;
-  end;
-
-  TTestBidiDictionaryInverse = class(TTestBidiDictionaryBase)
-  protected
-    procedure SetUp; override;
   end;
 
   TTestBidiDictionaryOwnership = class(TTestCase)
@@ -714,38 +719,76 @@ type
     procedure ExtractLastDoesNotDestroysItemButReturnsIt;
   end;
 
+  TTestDictionaryBase = class(TTestCase)
+  private
+    procedure CheckCount(expected: Integer);
+  protected
+    SUT: IDictionary<Integer, string>;
+    procedure TearDown; override;
+    procedure FillTestData;
+  published
+    procedure TestAddDictionary;
+    procedure TestAddKeyValue;
+    procedure TestAddOrSetValue;
+    procedure TestAddOrSetValueOrder;
+    procedure TestExtract;
+    procedure TestGetEnumerator;
+    procedure TestIsInitializedEmpty;
+    procedure TestKeysEnumerate;
+    procedure TestKeysGetEnumerator;
+    procedure TestKeysReferenceCounting;
+    procedure TestKeysToArray;
+    procedure TestOrdered;
+    procedure TestRemove;
+    procedure TestTryExtract;
+    procedure TestToArray;
+    procedure TestValuesEnumerate;
+    procedure TestValuesGetEnumerator;
+    procedure TestValuesReferenceCounting;
+    procedure TestValuesToArray;
+  end;
+
+  TTestDictionary = class(TTestDictionaryBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestBidiDictionaryBase = class(TTestDictionaryBase)
+  protected
+    SUTinverse: IBidiDictionary<string, Integer>;
+  published
+    procedure TestAddOrSetValueBidi;
+    procedure TestAddOrSetValueBidiMultipleTimes;
+  end;
+
+  TTestBidiDictionary = class(TTestBidiDictionaryBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestBidiDictionaryInverse = class(TTestBidiDictionaryBase)
+  protected
+    procedure SetUp; override;
+  end;
+
   TTestOrderedDictionary = class(TTestCase)
   private
-    SUT: IOrderedDictionary<Integer,string>;
+    SUT: IOrderedDictionary<Integer, string>;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
-
-    procedure CheckCount(expected: Integer);
   published
-    procedure TestAddKeyValue;
-    procedure TestKeysGetEnumerator;
-    procedure TestKeysToArray;
-    procedure TestValuesGetEnumerator;
-    procedure TestValuesToArray;
-    procedure TestGetEnumerator;
     procedure TestGetItemByIndex;
     procedure TestIndexOf;
-    procedure TestAddOrSetValue;
-    procedure TestRemove;
-    procedure TestExtract;
-    procedure TestTryExtract;
-    procedure TestToArray;
   end;
 
   TTestSortedDictionary = class(TTestCase)
   private
-    SUT: IDictionary<Integer,string>;
+    SUT: IDictionary<Integer, string>;
+    procedure CheckCount(expected: Integer);
   protected
     procedure SetUp; override;
     procedure TearDown; override;
-
-    procedure CheckCount(expected: Integer);
   published
     procedure TestAddKeyValue;
     procedure TestKeysGetEnumerator;
@@ -1779,8 +1822,8 @@ end;
 
 procedure TTestStringIntegerDictionary.TestOrdered_Issue179;
 var
-  o: IEnumerable<TPair<string,Integer>>;
-  e: IEnumerator<TPair<string,Integer>>;
+  o: IEnumerable<TPair<string, Integer>>;
+  e: IEnumerator<TPair<string, Integer>>;
   i: Integer;
 begin
   // this test is making sure that .Ordered is properly reference counted
@@ -1811,9 +1854,115 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestDictionaryValueComparer'}
+{$REGION 'TTestDictionaryKeyComparerBase'}
 
-procedure TTestDictionaryValueComparer.SetUp;
+procedure TTestDictionaryKeyComparerBase.SetUp;
+var
+  keyComparer: IEqualityComparer<Integer>;
+begin
+  inherited;
+  keyComparer := TEqualityComparer<Integer>.Construct(
+    function(const left, right: Integer): Boolean
+    begin
+      Result := left = -right;
+    end,
+    function(const Key: Integer): Integer
+    begin
+      Result := Abs(Key);
+    end);
+  SUT := CreateSUT(keyComparer);
+  SUT.Add(1, 'one');
+  SUT.Add(2, 'two');
+  SUT.Add(3, 'three');
+end;
+
+procedure TTestDictionaryKeyComparerBase.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestDictionaryKeyComparerBase.TestContains;
+begin
+  CheckTrue(SUT.Contains(-1, 'one'));
+  CheckFalse(SUT.Contains(-1, 'two'));
+  CheckFalse(SUT.Contains(1, 'one'));
+end;
+
+procedure TTestDictionaryKeyComparerBase.TestContainsKey;
+var
+  Key: Integer;
+begin
+  for Key := -5 to 5 do begin
+    CheckEquals((Key >= -3) and (Key <= -1), SUT.ContainsKey(Key));
+  end;
+end;
+
+procedure TTestDictionaryKeyComparerBase.TestExtract;
+var
+  pair: TPair<Integer, string>;
+begin
+  pair := SUT.Extract(2, 'two');
+  CheckEquals(pair.Key, Default(Integer));
+  CheckEquals(pair.Value, Default(string));
+
+  pair := SUT.Extract(-2, 'two');
+  CheckEquals(pair.Key, 2);
+  CheckEquals(pair.Value, 'two');
+
+  pair := SUT.Extract(3, 'three');
+  CheckEquals(pair.Key, Default(Integer));
+  CheckEquals(pair.Value, Default(string));
+
+  pair := SUT.Extract(-3, 'three');
+  CheckEquals(pair.Key, 3);
+  CheckEquals(pair.Value, 'three');
+end;
+
+procedure TTestDictionaryKeyComparerBase.TestRemove;
+begin
+  CheckFalse(SUT.Remove(2, 'two'));
+  CheckTrue(SUT.Remove(-2, 'two'));
+  CheckFalse(SUT.Remove(3, 'three'));
+  CheckTrue(SUT.Remove(-3, 'three'));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDictionaryKeyComparer'}
+
+class function TTestDictionaryKeyComparer.CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>;
+begin
+  Result := TCollections.CreateDictionary<Integer, string>(keyComparer, nil);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryKeyComparer'}
+
+class function TTestBidiDictionaryKeyComparer.CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>;
+begin
+  Result := TCollections.CreateBidiDictionary<Integer, string>(keyComparer, nil);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryInverseKeyComparer'}
+
+class function TTestBidiDictionaryInverseKeyComparer.CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>;
+begin
+  Result := TCollections.CreateBidiDictionary<string, Integer>(nil, keyComparer).Inverse;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDictionaryValueComparerBase'}
+
+procedure TTestDictionaryValueComparerBase.SetUp;
 var
   valueComparer: IEqualityComparer<Integer>;
 begin
@@ -1825,28 +1974,28 @@ begin
     end,
     function(const value: Integer): Integer
     begin
-      Result := value;
+      Result := Abs(value);
     end);
-  SUT := TCollections.CreateDictionary<string, Integer>(nil, valueComparer);
+  SUT := CreateSUT(valueComparer);
   SUT.Add('one', 1);
   SUT.Add('two', 2);
   SUT.Add('three', 3);
 end;
 
-procedure TTestDictionaryValueComparer.TearDown;
+procedure TTestDictionaryValueComparerBase.TearDown;
 begin
   inherited;
   SUT := nil;
 end;
 
-procedure TTestDictionaryValueComparer.TestContains;
+procedure TTestDictionaryValueComparerBase.TestContains;
 begin
   CheckTrue(SUT.Contains('one', -1));
   CheckFalse(SUT.Contains('two', -1));
   CheckFalse(SUT.Contains('one', 1));
 end;
 
-procedure TTestDictionaryValueComparer.TestContainsValue;
+procedure TTestDictionaryValueComparerBase.TestContainsValue;
 var
   value: Integer;
 begin
@@ -1855,7 +2004,7 @@ begin
   end;
 end;
 
-procedure TTestDictionaryValueComparer.TestExtract;
+procedure TTestDictionaryValueComparerBase.TestExtract;
 var
   pair: TPair<string, Integer>;
 begin
@@ -1876,7 +2025,7 @@ begin
   CheckEquals(pair.Value, 3);
 end;
 
-procedure TTestDictionaryValueComparer.TestRemove;
+procedure TTestDictionaryValueComparerBase.TestRemove;
 begin
   CheckFalse(SUT.Remove('two', 2));
   CheckTrue(SUT.Remove('two', -2));
@@ -1887,53 +2036,31 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestEmptyStringIntegerDictionary'}
+{$REGION 'TTestDictionaryValueComparer'}
 
-procedure TTestEmptyStringIntegerDictionary.SetUp;
+class function TTestDictionaryValueComparer.CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>;
 begin
-  inherited;
-  SUT := TCollections.CreateDictionary<string, Integer>;
+  Result := TCollections.CreateDictionary<string, Integer>(nil, valueComparer);
 end;
 
-procedure TTestEmptyStringIntegerDictionary.TearDown;
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryValueComparer'}
+
+class function TTestBidiDictionaryValueComparer.CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>;
 begin
-  inherited;
-  SUT := nil;
+  Result := TCollections.CreateBidiDictionary<string, Integer>(nil, valueComparer);
 end;
 
-procedure TTestEmptyStringIntegerDictionary.TestDictionaryContainsReturnsFalse;
-begin
-  CheckFalse(SUT.ContainsKey('blah'));
-  CheckFalse(SUT.ContainsValue(42));
-end;
+{$ENDREGION}
 
-procedure TTestEmptyStringIntegerDictionary.TestDictionaryIsInitializedEmpty;
-begin
-  CheckEquals(0, SUT.Count);
-end;
 
-procedure TTestEmptyStringIntegerDictionary.TestDictionaryKeysAreEmpty;
-var
-  Result: IReadOnlyCollection<string>;
-begin
-  Result := SUT.Keys;
-  CheckEquals(0, Result.Count);
-end;
+{$REGION 'TTestBidiDictionaryInverseValueComparer'}
 
-procedure TTestEmptyStringIntegerDictionary.TestDictionaryValuesAreEmpty;
-var
-  Result: IReadOnlyCollection<Integer>;
+class function TTestBidiDictionaryInverseValueComparer.CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>;
 begin
-  Result := SUT.Values;
-  CheckEquals(0, Result.Count);
-end;
-
-procedure TTestEmptyStringIntegerDictionary.TestDictionaryValuesReferenceCounting;
-var
-  query: IEnumerable<Integer>;
-begin
-  query := SUT.Values.Skip(1);
-  CheckNotNull(query);
+  Result := TCollections.CreateBidiDictionary<Integer, string>(valueComparer, nil).Inverse;
 end;
 
 {$ENDREGION}
@@ -3793,7 +3920,7 @@ end;
 
 procedure TTestMultiMap.SetUp;
 begin
-  SUT := TCollections.CreateMultiMap<Integer,Integer>;
+  SUT := TCollections.CreateMultiMap<Integer, Integer>;
   ValueAddedCount := 0;
   ValueRemovedCount := 0;
 end;
@@ -3805,17 +3932,17 @@ end;
 
 procedure TTestMultiMap.TestAddPair;
 begin
-  SUT.Add(TPair<Integer,Integer>.Create(1,1));
+  SUT.Add(TPair<Integer, Integer>.Create(1,1));
   CheckEquals(1, SUT.Count);
   CheckEquals(1, SUT[1].First);
 end;
 
 procedure TTestMultiMap.TestAddStringPair;
 var
-  map: IMultiMap<string,TPair<string,string>>;
-  pair: TPair<string,string>;
+  map: IMultiMap<string,TPair<string, string>>;
+  pair: TPair<string, string>;
 begin
-  map := TCollections.CreateMultiMap<string,TPair<string,string>>;
+  map := TCollections.CreateMultiMap<string, TPair<string, string>>;
   pair.Key := 'Hello';
   pair.Value := 'World';
   map.Add('Test', pair);
@@ -3824,11 +3951,11 @@ end;
 
 procedure TTestMultiMap.TestExtractValues;
 var
-  map: IMultiMap<Integer,TObject>;
+  map: IMultiMap<Integer, TObject>;
   list: IList<TObject>;
   obj: TObject;
 begin
-  map := TCollections.CreateMultiMap<Integer,TObject>([doOwnsValues]);
+  map := TCollections.CreateMultiMap<Integer, TObject>([doOwnsValues]);
   map.Add(1, TObject.Create);
   list := map.ExtractValues(1);
   CheckEquals(0, map.Count);
@@ -3889,149 +4016,6 @@ begin
     caAdded: Inc(ValueAddedCount);
     caRemoved: Inc(ValueRemovedCount);
   end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestBidiDictionaryBase'}
-
-procedure TTestBidiDictionaryBase.FillTestData;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(3, 'c');
-  SUT.Add(2, 'b');
-  SUT.Add(4, 'd');
-end;
-
-procedure TTestBidiDictionaryBase.TearDown;
-begin
-  SUT := nil;
-  inherited;
-end;
-
-procedure TTestBidiDictionaryBase.TestAddDictionary;
-var
-  dict: IDictionary<Integer,string>;
-begin
-  FillTestData;
-  dict := TCollections.CreateDictionary<Integer,string>;
-  dict.AddRange(SUT);
-  CheckTrue(dict.EqualsTo(SUT));
-end;
-
-procedure TTestBidiDictionaryBase.TestAddOrSetValue;
-begin
-  SUT.AddOrSetValue(1, 'a');
-  CheckException(EInvalidOperationException, procedure begin SUT.AddOrSetValue(2, 'a') end, 'EInvalidOperationException was not raised');
-  SUT.AddOrSetValue(1, 'a');
-  CheckEquals(1, SUT.Count);
-  SUT.AddOrSetValue(1, 'b');
-  CheckEquals(1, SUT.Count);
-end;
-
-procedure TTestBidiDictionaryBase.TestAddOrSetValueMultipleTimes;
-var
-  c: Char;
-begin
-  FillTestData;
-  for c in ['e'..'i'] do
-  begin
-    SUT[3] := c;
-    CheckEquals(3, SUT.Inverse[c]);
-  end;
-  SUT[3] := 'c';
-  CheckEquals(3, SUT.Inverse['c']);
-
-  SUT.Remove(2);
-  SUT.Add(2, 'b');
-
-  Check(SUT.Keys.EqualsTo([1, 3, 4, 2]));
-end;
-
-procedure TTestBidiDictionaryBase.TestAddOrSetValueOrder;
-begin
-  SUT.AddOrSetValue(1, 'a');
-  SUT.AddOrSetValue(2, 'b');
-  SUT.AddOrSetValue(1, 'c');
-  Check(SUT.Keys.EqualsTo([1, 2]));
-end;
-
-procedure TTestBidiDictionaryBase.TestKeysEnumerate;
-var
-  e: IEnumerator<Integer>;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  Check(SUT.Keys.EqualsTo([1, 2, 3, 4]));
-
-  e := SUT.Keys.GetEnumerator;
-  SUT := nil;
-  e.MoveNext;
-  e.MoveNext;
-  e.MoveNext;
-  CheckTrue(e.MoveNext);
-  CheckFalse(e.MoveNext);
-end;
-
-
-procedure TTestBidiDictionaryBase.TestOrdered;
-var
-  items: TArray<TPair<Integer,string>>;
-  itemsInversed: TArray<TPair<string,Integer>>;
-begin
-  SUT.Add(3, 'b');
-  SUT.Add(1, 'd');
-  SUT.Add(4, 'a');
-  SUT.Add(2, 'c');
-
-  items := SUT.Ordered.ToArray;
-  CheckEquals(1, items[0].Key);
-  CheckEquals(2, items[1].Key);
-  CheckEquals(3, items[2].Key);
-  CheckEquals(4, items[3].Key);
-
-  itemsInversed := SUT.Inverse.Ordered.ToArray;
-  CheckEquals('a', itemsInversed[0].Key);
-  CheckEquals('b', itemsInversed[1].Key);
-  CheckEquals('c', itemsInversed[2].Key);
-  CheckEquals('d', itemsInversed[3].Key);
-end;
-
-procedure TTestBidiDictionaryBase.TestRemove;
-begin
-  FillTestData;
-
-  CheckTrue(SUT.Remove(2));
-  CheckTrue(SUT.Inverse.Remove('c'));
-  CheckTrue(SUT.Remove(1));
-  CheckTrue(SUT.Inverse.Remove('d'));
-  CheckEquals(0, SUT.Count);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestBidiDictionary'}
-
-procedure TTestBidiDictionary.SetUp;
-begin
-  inherited;
-  SUT := TCollections.CreateBidiDictionary<Integer, string>;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestBidiDictionaryInverse'}
-
-procedure TTestBidiDictionaryInverse.SetUp;
-begin
-  inherited;
-  SUT := TCollections.CreateBidiDictionary<string, Integer>.Inverse;
 end;
 
 {$ENDREGION}
@@ -4528,43 +4512,51 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestOrderedDictionary'}
+{$REGION 'TTestDictionaryBase'}
 
-procedure TTestOrderedDictionary.CheckCount(expected: Integer);
+procedure TTestDictionaryBase.CheckCount(expected: Integer);
 begin
   CheckEquals(expected, SUT.Count, 'Count');
   CheckEquals(expected, SUT.Keys.Count, 'Keys.Count');
   CheckEquals(expected, SUT.Values.Count, 'Values.Count');
 end;
 
-procedure TTestOrderedDictionary.SetUp;
+procedure TTestDictionaryBase.FillTestData;
 begin
-  SUT := TDictionary<Integer,string>.Create;
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
 end;
 
-procedure TTestOrderedDictionary.TearDown;
+procedure TTestDictionaryBase.TearDown;
 begin
   SUT := nil;
 end;
 
-procedure TTestOrderedDictionary.TestAddKeyValue;
+procedure TTestDictionaryBase.TestAddDictionary;
+var
+  dict: IDictionary<Integer, string>;
 begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
+  FillTestData;
+
+  dict := TCollections.CreateDictionary<Integer, string>;
+  dict.AddRange(SUT);
+  CheckTrue(dict.EqualsTo(SUT));
+end;
+
+procedure TTestDictionaryBase.TestAddKeyValue;
+begin
+  FillTestData;
 
   CheckCount(4);
 end;
 
-procedure TTestOrderedDictionary.TestAddOrSetValue;
+procedure TTestDictionaryBase.TestAddOrSetValue;
 var
   values: TArray<string>;
 begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
+  FillTestData;
   SUT.AddOrSetValue(2, 'e');
 
   CheckCount(4);
@@ -4576,15 +4568,32 @@ begin
   CheckEquals(values[3], 'd');
 end;
 
-procedure TTestOrderedDictionary.TestGetEnumerator;
+procedure TTestDictionaryBase.TestAddOrSetValueOrder;
+begin
+  SUT.AddOrSetValue(1, 'a');
+  SUT.AddOrSetValue(2, 'b');
+  SUT.AddOrSetValue(1, 'c');
+  Check(SUT.Keys.EqualsTo([1, 2]));
+end;
+
+procedure TTestDictionaryBase.TestExtract;
+begin
+  FillTestData;
+
+  CheckEquals('', SUT.Extract(5));
+  CheckCount(4);
+  CheckEquals('d', SUT.Extract(4));
+  CheckCount(3);
+  CheckEquals('c', SUT.Extract(3));
+  CheckCount(2);
+end;
+
+procedure TTestDictionaryBase.TestGetEnumerator;
 var
-  pair: TPair<Integer,string>;
+  pair: TPair<Integer, string>;
   i: Integer;
 begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
+  FillTestData;
 
   i := 0;
   for pair in SUT do
@@ -4593,6 +4602,303 @@ begin
     CheckEquals(i, pair.Key);
   end;
   CheckEquals(4, i);
+end;
+
+procedure TTestDictionaryBase.TestIsInitializedEmpty;
+begin
+  CheckEquals(0, SUT.Count);
+  CheckEquals(0, SUT.Keys.Count);
+  CheckEquals(0, SUT.Values.Count);
+end;
+
+procedure TTestDictionaryBase.TestKeysEnumerate;
+var
+  e: IEnumerator<Integer>;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  Check(SUT.Keys.EqualsTo([1, 2, 3, 4]));
+
+  e := SUT.Keys.GetEnumerator;
+  SUT := nil;
+  e.MoveNext;
+  e.MoveNext;
+  e.MoveNext;
+  CheckTrue(e.MoveNext);
+  CheckFalse(e.MoveNext);
+end;
+
+procedure TTestDictionaryBase.TestKeysGetEnumerator;
+var
+  i, key: Integer;
+  keys: IReadOnlyCollection<Integer>;
+begin
+  FillTestData;
+
+  keys := SUT.Keys;
+  SUT := nil;
+
+  i := 0;
+  for key in keys do
+  begin
+    Inc(i);
+    CheckEquals(i, key);
+  end;
+  CheckEquals(4, i);
+
+  i := 0;
+  for key in keys do
+  begin
+    keys := nil;
+    Inc(i);
+    CheckEquals(i, key);
+  end;
+  CheckEquals(4, i);
+end;
+
+procedure TTestDictionaryBase.TestKeysReferenceCounting;
+var
+  query: IEnumerable<Integer>;
+begin
+  query := SUT.Keys.Skip(1);
+  CheckNotNull(query);
+end;
+
+procedure TTestDictionaryBase.TestKeysToArray;
+var
+  keys: TArray<Integer>;
+begin
+  FillTestData;
+  SUT.Remove(3);
+  SUT.Add(5, 'e');
+
+  keys := SUT.Keys.ToArray;
+  CheckEquals(4, Length(keys));
+  CheckEquals(1, keys[0]);
+  CheckEquals(2, keys[1]);
+  CheckEquals(4, keys[2]);
+  CheckEquals(5, keys[3]);
+end;
+
+procedure TTestDictionaryBase.TestOrdered;
+var
+  items: TArray<TPair<Integer, string>>;
+begin
+  SUT.Add(3, 'b');
+  SUT.Add(1, 'd');
+  SUT.Add(4, 'a');
+  SUT.Add(2, 'c');
+
+  items := SUT.Ordered.ToArray;
+  CheckEquals(1, items[0].Key);
+  CheckEquals(2, items[1].Key);
+  CheckEquals(3, items[2].Key);
+  CheckEquals(4, items[3].Key);
+end;
+
+procedure TTestDictionaryBase.TestRemove;
+begin
+  FillTestData;
+
+  CheckTrue(SUT.Remove(3));
+  CheckCount(3);
+  CheckFalse(SUT.Remove(4, 'e'));
+  CheckCount(3);
+  CheckTrue(SUT.Remove(4, 'd'));
+  CheckCount(2);
+  CheckTrue(SUT.ContainsKey(1));
+  CheckTrue(SUT.ContainsKey(2));
+  CheckTrue(SUT.ContainsValue('a'));
+  CheckTrue(SUT.ContainsValue('b'));
+end;
+
+procedure TTestDictionaryBase.TestTryExtract;
+var
+  value: string;
+begin
+  FillTestData;
+
+  CheckFalse(SUT.TryExtract(5, value));
+  CheckEquals(Default(string), value);
+  CheckCount(4);
+  CheckTrue(SUT.TryExtract(4, value));
+  CheckEquals('d', value);
+  CheckCount(3);
+  CheckTrue(SUT.TryExtract(3, value));
+  CheckEquals('c', value);
+  CheckCount(2);
+end;
+
+procedure TTestDictionaryBase.TestToArray;
+var
+  items: TArray<TPair<Integer, string>>;
+begin
+  FillTestData;
+
+  items := SUT.ToArray;
+  CheckEquals(4, Length(items));
+  CheckEquals(1, items[0].Key);
+  CheckEquals(2, items[1].Key);
+  CheckEquals(3, items[2].Key);
+  CheckEquals(4, items[3].Key);
+  CheckEquals('a', items[0].Value);
+  CheckEquals('b', items[1].Value);
+  CheckEquals('c', items[2].Value);
+  CheckEquals('d', items[3].Value);
+end;
+
+procedure TTestDictionaryBase.TestValuesEnumerate;
+var
+  e: IEnumerator<string>;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+
+  Check(SUT.Values.EqualsTo(['a', 'b', 'c', 'd']));
+
+  e := SUT.Values.GetEnumerator;
+  SUT := nil;
+  e.MoveNext;
+  e.MoveNext;
+  e.MoveNext;
+  CheckTrue(e.MoveNext);
+  CheckFalse(e.MoveNext);
+end;
+
+procedure TTestDictionaryBase.TestValuesGetEnumerator;
+var
+  i: Integer;
+  value: string;
+begin
+  FillTestData;
+
+  i := 0;
+  for value in SUT.Values do
+  begin
+    CheckEquals(Chr(ord('a') + i), value);
+    Inc(i);
+  end;
+  CheckEquals(4, i);
+end;
+
+procedure TTestDictionaryBase.TestValuesReferenceCounting;
+var
+  query: IEnumerable<string>;
+begin
+  query := SUT.Values.Skip(1);
+  CheckNotNull(query);
+end;
+
+procedure TTestDictionaryBase.TestValuesToArray;
+var
+  values: TArray<string>;
+begin
+  FillTestData;
+  SUT.Remove(3);
+  SUT.Add(5, 'e');
+
+  values := SUT.Values.ToArray;
+  CheckEquals(4, Length(values));
+  CheckEquals('a', values[0]);
+  CheckEquals('b', values[1]);
+  CheckEquals('d', values[2]);
+  CheckEquals('e', values[3]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDictionary'}
+
+procedure TTestDictionary.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateDictionary<Integer, string>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryBase'}
+
+procedure TTestBidiDictionaryBase.TestAddOrSetValueBidi;
+begin
+  SUT.AddOrSetValue(1, 'a');
+  CheckException(EInvalidOperationException, procedure begin SUT.AddOrSetValue(2, 'a') end, 'EInvalidOperationException was not raised');
+  SUT.AddOrSetValue(1, 'a');
+  CheckEquals(1, SUT.Count);
+  SUT.AddOrSetValue(1, 'b');
+  CheckEquals(1, SUT.Count);
+end;
+
+procedure TTestBidiDictionaryBase.TestAddOrSetValueBidiMultipleTimes;
+var
+  c: Char;
+begin
+  FillTestData;
+
+  for c in ['e'..'i'] do
+  begin
+    SUT[3] := c;
+    CheckEquals(3, SUTinverse[c]);
+  end;
+  SUT[3] := 'c';
+  CheckEquals(3, SUTinverse['c']);
+
+  SUT.Remove(2);
+  SUT.Add(2, 'b');
+
+  Check(SUT.Keys.EqualsTo([1, 3, 4, 2]));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionary'}
+
+procedure TTestBidiDictionary.SetUp;
+var
+  dict: IBidiDictionary<Integer, string>;
+begin
+  inherited;
+  dict := TCollections.CreateBidiDictionary<Integer, string>;
+  SUT := dict;
+  SUTinverse := dict.Inverse;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBidiDictionaryInverse'}
+
+procedure TTestBidiDictionaryInverse.SetUp;
+var
+  dict: IBidiDictionary<string, Integer>;
+begin
+  inherited;
+  dict := TCollections.CreateBidiDictionary<string, Integer>;
+  SUT := dict.Inverse;
+  SUTinverse := dict;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestOrderedDictionary'}
+
+procedure TTestOrderedDictionary.SetUp;
+begin
+  SUT := TCollections.CreateDictionary<Integer, string>;
+end;
+
+procedure TTestOrderedDictionary.TearDown;
+begin
+  SUT := nil;
 end;
 
 procedure TTestOrderedDictionary.TestGetItemByIndex;
@@ -4639,167 +4945,6 @@ begin
   CheckEquals(-1, SUT.IndexOf(5));
 end;
 
-procedure TTestOrderedDictionary.TestKeysGetEnumerator;
-var
-  i, key: Integer;
-  keys: IReadOnlyCollection<Integer>;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  keys := SUT.Keys;
-  SUT := nil;
-
-  i := 0;
-  for key in keys do
-  begin
-    Inc(i);
-    CheckEquals(i, key);
-  end;
-  CheckEquals(4, i);
-
-  i := 0;
-  for key in keys do
-  begin
-    keys := nil;
-    Inc(i);
-    CheckEquals(i, key);
-  end;
-  CheckEquals(4, i);
-end;
-
-procedure TTestOrderedDictionary.TestKeysToArray;
-var
-  keys: TArray<Integer>;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-  SUT.Remove(3);
-  SUT.Add(5, 'e');
-
-  keys := SUT.Keys.ToArray;
-  CheckEquals(4, Length(keys));
-  CheckEquals(1, keys[0]);
-  CheckEquals(2, keys[1]);
-  CheckEquals(4, keys[2]);
-  CheckEquals(5, keys[3]);
-end;
-
-procedure TTestOrderedDictionary.TestRemove;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  CheckTrue(SUT.Remove(3));
-  CheckCount(3);
-  CheckFalse(SUT.Remove(4, 'e'));
-  CheckCount(3);
-  CheckTrue(SUT.Remove(4, 'd'));
-  CheckCount(2);
-end;
-
-procedure TTestOrderedDictionary.TestExtract;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  CheckEquals('', SUT.Extract(5));
-  CheckCount(4);
-  CheckEquals('d', SUT.Extract(4));
-  CheckCount(3);
-  CheckEquals('c', SUT.Extract(3));
-  CheckCount(2);
-end;
-
-procedure TTestOrderedDictionary.TestTryExtract;
-var
-  value: string;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  CheckFalse(SUT.TryExtract(5, value));
-  CheckEquals(Default(string), value);
-  CheckCount(4);
-  CheckTrue(SUT.TryExtract(4, value));
-  CheckEquals('d', value);
-  CheckCount(3);
-  CheckTrue(SUT.TryExtract(3, value));
-  CheckEquals('c', value);
-  CheckCount(2);
-end;
-
-procedure TTestOrderedDictionary.TestToArray;
-var
-  items: TArray<TPair<Integer, string>>;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  items := SUT.ToArray;
-  CheckEquals(4, Length(items));
-  CheckEquals(1, items[0].Key);
-  CheckEquals(2, items[1].Key);
-  CheckEquals(3, items[2].Key);
-  CheckEquals(4, items[3].Key);
-  CheckEquals('a', items[0].Value);
-  CheckEquals('b', items[1].Value);
-  CheckEquals('c', items[2].Value);
-  CheckEquals('d', items[3].Value);
-end;
-
-procedure TTestOrderedDictionary.TestValuesGetEnumerator;
-const
-  Values: array[1..4] of string = ('a', 'b', 'c', 'd');
-var
-  i: Integer;
-  value: string;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  i := 0;
-  for value in SUT.Values do
-  begin
-    Inc(i);
-    CheckEquals(Values[i], value);
-  end;
-  CheckEquals(4, i);
-end;
-
-procedure TTestOrderedDictionary.TestValuesToArray;
-var
-  values: TArray<string>;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-  SUT.Remove(3);
-  SUT.Add(5, 'e');
-
-  values := SUT.Values.ToArray;
-  CheckEquals(4, Length(values));
-  CheckEquals('a', values[0]);
-  CheckEquals('b', values[1]);
-  CheckEquals('d', values[2]);
-  CheckEquals('e', values[3]);
-end;
-
 {$ENDREGION}
 
 
@@ -4808,7 +4953,7 @@ end;
 procedure TTestSortedDictionary.SetUp;
 begin
   inherited;
-  SUT := TSortedDictionary<Integer,string>.Create;
+  SUT := TCollections.CreateSortedDictionary<Integer, string>;
 end;
 
 procedure TTestSortedDictionary.TearDown;
@@ -4855,7 +5000,7 @@ end;
 
 procedure TTestSortedDictionary.TestGetEnumerator;
 var
-  pair: TPair<Integer,string>;
+  pair: TPair<Integer, string>;
   i: Integer;
 begin
   SUT.Add(3, 'c');
