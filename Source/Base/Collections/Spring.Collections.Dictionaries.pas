@@ -2556,7 +2556,7 @@ end;
 function TBidiDictionary<TKey, TValue>.TInverse.Remove(
   const value: TValue): Boolean;
 var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
   Result := fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex);
   if Result then
@@ -2571,18 +2571,15 @@ end;
 function TBidiDictionary<TKey, TValue>.TInverse.Remove(const value: TValue;
   const key: TKey): Boolean;
 var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
-  Result := fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex);
+  Result := fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex)
+    and fSource.fKeyComparer.Equals(fSource.fItems[valueItemIndex].Key, key);
   if Result then
   begin
-    Result := fSource.fKeyComparer.Equals(fSource.fItems[valueItemIndex].Key, key);
-    if Result then
-    begin
-      fSource.FindKey(key, fSource.fItems[valueItemIndex].KeyHashCode, keyBucketIndex, keyItemIndex);
-      Assert(keyItemIndex = valueItemIndex);
-      fSource.DoRemove(valueBucketIndex, keyBucketIndex, keyItemIndex, caRemoved);
-    end;
+    fSource.FindKey(key, fSource.fItems[valueItemIndex].KeyHashCode, keyBucketIndex, keyItemIndex);
+    Assert(keyItemIndex = valueItemIndex);
+    fSource.DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caRemoved);
   end;
 end;
 
@@ -2620,7 +2617,7 @@ end;
 function TBidiDictionary<TKey, TValue>.TInverse.TryExtract(const value: TValue;
   out key: TKey): Boolean;
 var
-  keyBucketIndex, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
   Result := fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex);
   if Result then
