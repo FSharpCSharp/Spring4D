@@ -85,20 +85,6 @@ type
     procedure TestIndexedSet;
   end;
 
-  TTestEmptyIntegerStringDictionary = class(TTestCase)
-  private
-    SUT: IMap<Integer, string>;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure TestMapIsInitializedEmpty;
-    procedure TestMapKeysAreEmpty;
-    procedure TestMapValuesAreEmpty;
-    procedure TestMapContainsReturnsFalse;
-    procedure TestMapValuesReferenceCounting;
-  end;
-
   TTestDictionaryKeyComparerBase = class(TTestCase)
   private
     SUT: IDictionary<Integer, string>;
@@ -794,56 +780,6 @@ begin
     Inc(i);
   end;
   Check(i = NumItems+1);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestEmptyIntegerStringMap'}
-
-procedure TTestEmptyIntegerStringDictionary.SetUp;
-begin
-  SUT := TCollections.CreateSortedDictionary<Integer, string>;
-end;
-
-procedure TTestEmptyIntegerStringDictionary.TearDown;
-begin
-  SUT := nil;
-end;
-
-procedure TTestEmptyIntegerStringDictionary.TestMapIsInitializedEmpty;
-begin
-  Check(SUT.Count = 0);
-end;
-
-procedure TTestEmptyIntegerStringDictionary.TestMapKeysAreEmpty;
-var
-  keys: IReadOnlyCollection<Integer>;
-begin
-  keys := SUT.Keys;
-  CheckEquals(0, keys.Count);
-end;
-
-procedure TTestEmptyIntegerStringDictionary.TestMapValuesAreEmpty;
-var
-  values: IReadOnlyCollection<string>;
-begin
-  values := SUT.Values;
-  CheckEquals(0, values.Count);
-end;
-
-procedure TTestEmptyIntegerStringDictionary.TestMapContainsReturnsFalse;
-begin
-  CheckFalse(SUT.ContainsKey(42));
-  CheckFalse(SUT.ContainsValue('42'));
-end;
-
-procedure TTestEmptyIntegerStringDictionary.TestMapValuesReferenceCounting;
-var
-  query: IEnumerable<string>;
-begin
-  query := SUT.Values.Skip(1);
-  CheckNotNull(query);
 end;
 
 {$ENDREGION}
