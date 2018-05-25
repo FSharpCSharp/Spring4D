@@ -4249,22 +4249,28 @@ begin
   SUT.Add(2, 'b');
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
+  SUT.Add(5, 'e');
   AddEventHandlers;
   Check(SUT.Remove(3));
+  Check(not SUT.Remove(4, 'a'));
+  Check(SUT.Remove(4, 'd'));
   Check(SUT.Remove(1));
   Check(not SUT.Remove(1));
 
-  CheckEquals(2, fChangedEvents.Count);
+  CheckEquals(3, fChangedEvents.Count);
   CheckChanged(0, 3, 'c', caRemoved);
-  CheckChanged(1, 1, 'a', caRemoved);
+  CheckChanged(1, 4, 'd', caRemoved);
+  CheckChanged(2, 1, 'a', caRemoved);
 
-  CheckEquals(2, fKeyChangedEvents.Count);
+  CheckEquals(3, fKeyChangedEvents.Count);
   CheckKeyChanged(0, 3, caRemoved);
-  CheckKeyChanged(1, 1, caRemoved);
+  CheckKeyChanged(1, 4, caRemoved);
+  CheckKeyChanged(2, 1, caRemoved);
 
-  CheckEquals(2, fValueChangedEvents.Count);
+  CheckEquals(3, fValueChangedEvents.Count);
   CheckValueChanged(0, 'c', caRemoved);
-  CheckValueChanged(1, 'a', caRemoved);
+  CheckValueChanged(1, 'd', caRemoved);
+  CheckValueChanged(2, 'a', caRemoved);
 end;
 
 procedure TTestDictionaryChangedEventBase.TestSetItem;
