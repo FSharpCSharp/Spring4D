@@ -1147,7 +1147,7 @@ var
 begin
   hashCode := Hash(key);
   if Find(key, hashCode, bucketIndex, itemIndex) then
-    raise EListError.CreateRes(@SGenericDuplicateItem);
+    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem);
   if Grow then
     // rehash invalidates the indices
     Find(key, hashCode, bucketIndex, itemIndex);
@@ -1310,7 +1310,7 @@ var
   bucketIndex, itemIndex: Integer;
 begin
   if not Find(key, Hash(key), bucketIndex, itemIndex) then
-    raise EListError.CreateRes(@SGenericItemNotFound);
+    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
   Result := fItems[itemIndex].Value;
 end;
 
@@ -2137,10 +2137,10 @@ var
 begin
   keyHashCode := KeyHash(key);
   if FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex) then
-    raise EListError.CreateRes(@SGenericDuplicateItem);
+    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem);
   valueHashCode := ValueHash(value);
   if FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex) then
-    raise EListError.CreateRes(@SGenericDuplicateItem);
+    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem);
   if Grow then
   begin
     // rehash invalidates the indices
@@ -2365,7 +2365,7 @@ var
   keyBucketIndex, keyItemIndex: Integer;
 begin
   if not FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex) then
-    raise EListError.CreateRes(@SGenericItemNotFound);
+    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
   Result := fItems[keyItemIndex].Value;
 end;
 
@@ -2501,7 +2501,7 @@ var
   valueBucketIndex, valueItemIndex: Integer;
 begin
   if not fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex) then
-    raise EListError.CreateRes(@SGenericItemNotFound);
+    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
   Result := fSource.fItems[valueItemIndex].Key;
 end;
 
@@ -3043,7 +3043,7 @@ var
   item: TKeyValuePair;
 begin
   if not fTree.Add(key, value) then
-    raise EListError.CreateRes(@SGenericDuplicateItem);
+    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem);
   IncUnchecked(fVersion);
   item.Key := key;
   item.Value := value;

@@ -328,7 +328,6 @@ type
 implementation
 
 uses
-  Classes, // TODO: remove once EListError is replaced with new exception
   SysUtils;
 
 
@@ -644,17 +643,17 @@ begin
   Check(SUT.Count = NumItems+1);
 
   // Add should raise an exception when the item already exists
-  CheckException(EListError,
+  CheckException(EInvalidOperationException,
     procedure
     begin
       SUT.Add(NumItems, IntToStr(NumItems));
     end);
-  CheckException(EListError,
+  CheckException(EInvalidOperationException,
     procedure
     begin
       SUT.Add(0, IntToStr(0));
     end);
-  CheckException(EListError,
+  CheckException(EInvalidOperationException,
     procedure
     begin
       SUT.Add(NumItems div 2, IntToStr(NumItems div 2));

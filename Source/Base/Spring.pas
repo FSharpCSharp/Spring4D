@@ -1936,6 +1936,7 @@ type
 
   ENotImplementedException = SysUtils.ENotImplemented;
   EInvalidOperationException = SysUtils.EInvalidOpException;
+  EKeyNotFoundException = SysUtils.EArgumentException;
   EArgumentNilException = SysUtils.EArgumentNilException;
 
   EInvalidCastException = SysUtils.EInvalidCast;
