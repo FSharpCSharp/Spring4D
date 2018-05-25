@@ -118,6 +118,7 @@
         <DCCReference Include="Source\Spring.TestUtils.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Base.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Collections.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Collections.Dictionaries.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Collections.Extensions.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.DesignPatterns.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Helpers.pas"/>

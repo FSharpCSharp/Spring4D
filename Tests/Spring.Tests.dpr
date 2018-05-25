@@ -37,6 +37,7 @@ uses
   Spring.TestUtils in 'Source\Spring.TestUtils.pas',
   Spring.Tests.Base in 'Source\Base\Spring.Tests.Base.pas',
   Spring.Tests.Collections in 'Source\Base\Spring.Tests.Collections.pas',
+  Spring.Tests.Collections.Dictionaries in 'Source\Base\Spring.Tests.Collections.Dictionaries.pas',
   Spring.Tests.Collections.Extensions in 'Source\Base\Spring.Tests.Collections.Extensions.pas',
   Spring.Tests.DesignPatterns in 'Source\Base\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in 'Source\Base\Spring.Tests.Helpers.pas',
