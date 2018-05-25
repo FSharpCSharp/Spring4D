@@ -3042,10 +3042,15 @@ begin
 end;
 
 procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey; const value: TValue);
+var
+  item: TKeyValuePair;
 begin
   if not fTree.Add(key, value) then
     raise EListError.CreateRes(@SGenericDuplicateItem);
   IncUnchecked(fVersion);
+  item.Key := key;
+  item.Value := value;
+  Changed(item, caAdded);
   KeyChanged(key, caAdded);
   ValueChanged(value, caAdded);
 end;
@@ -3054,18 +3059,27 @@ procedure TSortedDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
   const value: TValue);
 var
   node: PNode;
+  item: TKeyValuePair;
 begin
   IncUnchecked(fVersion);
   node := fTree.FindNode(key);
   if Assigned(node) then
   begin
+    item.Key := key;
+    item.Value := node.Value;
+    Changed(item, caRemoved);
     ValueChanged(node.Value, caRemoved);
     node.Value := value;
+    item.Value := value;
+    Changed(item, caAdded);
     ValueChanged(value, caAdded);
   end
   else
   begin
     fTree.Add(key, value);
+    item.Key := key;
+    item.Value := value;
+    Changed(item, caAdded);
     KeyChanged(key, caAdded);
     ValueChanged(value, caAdded);
   end;
@@ -3079,12 +3093,16 @@ end;
 procedure TSortedDictionary<TKey, TValue>.Clear;
 var
   node: PNode;
+  item: TKeyValuePair;
 begin
   IncUnchecked(fVersion);
 
   node := fTree.Root.LeftMost;
   while Assigned(node) do
   begin
+    item.Key := node.Key;
+    item.Value := node.Value;
+    Changed(item, caRemoved);
     KeyChanged(node.Key, caRemoved);
     ValueChanged(node.Value, caRemoved);
     node := node.Next;
@@ -3156,6 +3174,7 @@ begin
     Result.Value := node.Value;
     IncUnchecked(fVersion);
     fTree.DeleteNode(node);
+    Changed(Result, caExtracted);
     KeyChanged(Result.Key, caExtracted);
     ValueChanged(Result.Value, caExtracted);
   end
@@ -3218,12 +3237,16 @@ end;
 function TSortedDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
 var
   node: PNode;
+  item: TKeyValuePair;
 begin
   node := fTree.FindNode(key);
   Result := Assigned(node);
   if Result then
   begin
     IncUnchecked(fVersion);
+    item.Key := node.Key;
+    item.Value := node.Value;
+    Changed(item, caRemoved);
     KeyChanged(node.Key, caRemoved);
     ValueChanged(node.Value, caRemoved);
     fTree.DeleteNode(node);
@@ -3234,6 +3257,7 @@ function TSortedDictionary<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
   node: PNode;
+  item: TKeyValuePair;
 begin
   node := fTree.FindNode(key);
   Result := Assigned(node)
@@ -3241,6 +3265,9 @@ begin
   if Result then
   begin
     IncUnchecked(fVersion);
+    item.Key := node.Key;
+    item.Value := Node.Value;
+    Changed(item, caRemoved);
     KeyChanged(node.Key, caRemoved);
     ValueChanged(node.Value, caRemoved);
     fTree.DeleteNode(node);
@@ -3287,6 +3314,7 @@ end;
 function TSortedDictionary<TKey, TValue>.TryExtract(const key: TKey; out value: TValue): Boolean;
 var
   node: PNode;
+  item: TKeyValuePair;
 begin
   node := fTree.FindNode(key);
   Result := Assigned(node);
@@ -3295,6 +3323,9 @@ begin
     value := node.Value;
     IncUnchecked(fVersion);
     fTree.DeleteNode(node);
+    item.Key := key;
+    item.Value := value;
+    Changed(item, caExtracted);
     KeyChanged(key, caExtracted);
     ValueChanged(value, caExtracted);
   end
