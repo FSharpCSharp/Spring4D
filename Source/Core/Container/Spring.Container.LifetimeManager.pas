@@ -277,7 +277,7 @@ begin
     begin
       instance := model.ComponentActivator.CreateInstance(context);
       holder := CreateHolder(instance, model.RefCounting);
-      fInstances.AddOrSetValue(threadID, holder);
+      fInstances[threadID] := holder;
       DoAfterConstruction(holder);
     end;
   finally

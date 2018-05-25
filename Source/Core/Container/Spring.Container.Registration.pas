@@ -336,7 +336,7 @@ begin
   if not model.HasService(serviceType) then
     raise ERegistrationException.CreateResFmt(@SServiceNotFound, [
       serviceType.TypeName]);
-  fDefaultRegistrations.AddOrSetValue(serviceType, model);
+  fDefaultRegistrations[serviceType] := model;
 end;
 
 type

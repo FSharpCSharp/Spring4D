@@ -105,8 +105,6 @@ type
   published
     procedure TestAddDictionary;
     procedure TestAddKeyValue;
-    procedure TestAddOrSetValue;
-    procedure TestAddOrSetValueOrder;
     procedure TestCollectionExtract;
     procedure TestContains;
     procedure TestContainsKey;
@@ -129,6 +127,8 @@ type
     procedure TestOrdered;
     procedure TestOrdered_Issue179;
     procedure TestRemove;
+    procedure TestSetItem;
+    procedure TestSetItemOrder;
     procedure TestTryExtract;
     procedure TestToArray;
     procedure TestValuesContains;
@@ -148,8 +148,8 @@ type
     SUTinverse: IBidiDictionary<string, Integer>;
     procedure TearDown; override;
   published
-    procedure TestAddOrSetValueBidi;
-    procedure TestAddOrSetValueBidiMultipleTimes;
+    procedure TestSetItemBidi;
+    procedure TestSetItemBidiMultipleTimes;
   end;
 
   TTestBidiDictionary = class(TTestBidiDictionaryBase)
@@ -556,30 +556,6 @@ begin
   CheckException(EArgumentException, procedure begin SUT.Add(1, 'e') end);
 end;
 
-procedure TTestDictionaryBase.TestAddOrSetValue;
-var
-  values: TArray<string>;
-begin
-  FillTestData;
-  SUT.AddOrSetValue(2, 'e');
-
-  CheckCount(4);
-
-  values := SUT.Values.ToArray;
-  CheckEquals(values[0], 'a');
-  CheckEquals(values[1], 'e');
-  CheckEquals(values[2], 'c');
-  CheckEquals(values[3], 'd');
-end;
-
-procedure TTestDictionaryBase.TestAddOrSetValueOrder;
-begin
-  SUT.AddOrSetValue(1, 'a');
-  SUT.AddOrSetValue(2, 'b');
-  SUT.AddOrSetValue(1, 'c');
-  Check(SUT.Keys.EqualsTo([1, 2]));
-end;
-
 procedure TTestDictionaryBase.TestCollectionExtract;
 var
   pair: TPair<Integer, string>;
@@ -927,6 +903,30 @@ begin
   CheckTrue(SUT.ContainsValue('b'));
 end;
 
+procedure TTestDictionaryBase.TestSetItem;
+var
+  values: TArray<string>;
+begin
+  FillTestData;
+  SUT[2] := 'e';
+
+  CheckCount(4);
+
+  values := SUT.Values.ToArray;
+  CheckEquals(values[0], 'a');
+  CheckEquals(values[1], 'e');
+  CheckEquals(values[2], 'c');
+  CheckEquals(values[3], 'd');
+end;
+
+procedure TTestDictionaryBase.TestSetItemOrder;
+begin
+  SUT[1] := 'a';
+  SUT[2] := 'b';
+  SUT[1] := 'c';
+  Check(SUT.Keys.EqualsTo([1, 2]));
+end;
+
 procedure TTestDictionaryBase.TestTryExtract;
 var
   value: string;
@@ -1054,17 +1054,17 @@ begin
   inherited;
 end;
 
-procedure TTestBidiDictionaryBase.TestAddOrSetValueBidi;
+procedure TTestBidiDictionaryBase.TestSetItemBidi;
 begin
-  SUT.AddOrSetValue(1, 'a');
-  CheckException(EArgumentException, procedure begin SUT.AddOrSetValue(2, 'a') end);
-  SUT.AddOrSetValue(1, 'a');
+  SUT[1] := 'a';
+  CheckException(EArgumentException, procedure begin SUT[2] := 'a' end);
+  SUT[1] := 'a';
   CheckEquals(1, SUT.Count);
-  SUT.AddOrSetValue(1, 'b');
+  SUT[1] := 'b';
   CheckEquals(1, SUT.Count);
 end;
 
-procedure TTestBidiDictionaryBase.TestAddOrSetValueBidiMultipleTimes;
+procedure TTestBidiDictionaryBase.TestSetItemBidiMultipleTimes;
 var
   c: Char;
 begin
@@ -1206,16 +1206,12 @@ end;
 
 procedure TTestSortedDictionary.TestAddOrSetValue;
 begin
-  // AddOrSet should never raise an exception when there's a duplicate already,
-  // but should simply overwrite it.
-
   CheckCount(NumItems);
-  SUT.AddOrSetValue(NumItems, IntToStr(NumItems));
+  SUT[NumItems] := IntToStr(NumItems);
   CheckEquals(IntToStr(NumItems), SUT.Items[NumItems]);
   CheckCount(NumItems + 1);
 
-  // Add again
-  SUT.AddOrSetValue(NumItems, 'test');
+  SUT[NumItems] := 'test';
   CheckEquals('test', SUT.Items[NumItems]);
 end;
 
@@ -1752,7 +1748,7 @@ begin
   AddEventHandlers;
   SUT.Add(1, 'a');
   SUT.Add(2, 'b');
-  SUT.AddOrSetValue(2, 'c');
+  SUT[2] := 'c';
 
   CheckEquals(4, fChangedEvents.Count);
   CheckChanged(0, 1, 'a', caAdded);

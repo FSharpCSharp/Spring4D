@@ -111,13 +111,16 @@ type
   private
     fSource: IDictionary<TKey, T>;
 
+    function GetCapacity: Integer;
+    function GetItem(const key: TValue): TValue;
     function GetKeyType: PTypeInfo;
     function GetOnKeyChanged: IEvent;
     function GetOnValueChanged: IEvent;
     function GetValueType: PTypeInfo;
+    procedure SetCapacity(value: Integer);
+    procedure SetItem(const key: TValue; const value: TValue);
 
     procedure Add(const key, value: TValue);
-    procedure AddOrSetValue(const key, value: TValue);
 
     function Remove(const key: TValue): Boolean;
 
@@ -498,11 +501,6 @@ begin
   fSource.Add(key.AsType<TKey>, value.AsType<T>);
 end;
 
-procedure TDictionaryAdapter<TKey, T>.AddOrSetValue(const key, value: TValue);
-begin
-  fSource.AddOrSetValue(key.AsType<TKey>, value.AsType<T>);
-end;
-
 function TDictionaryAdapter<TKey, T>.AsReadOnlyDictionary: IReadOnlyDictionary;
 begin
   Result := Self;
@@ -517,6 +515,19 @@ function TDictionaryAdapter<TKey, T>.ContainsValue(
   const value: TValue): Boolean;
 begin
   Result := fSource.ContainsValue(value.AsType<T>);
+end;
+
+function TDictionaryAdapter<TKey, T>.GetCapacity: Integer;
+begin
+  Result := fSource.Capacity;
+end;
+
+function TDictionaryAdapter<TKey, T>.GetItem(const key: TValue): TValue;
+var
+  item: T;
+begin
+  item := fSource.GetItem(key.AsType<TKey>);
+  Result := TValue.From<T>(item);
 end;
 
 function TDictionaryAdapter<TKey, T>.GetKeyType: PTypeInfo;
@@ -554,6 +565,16 @@ end;
 function TDictionaryAdapter<TKey, T>.Remove(const key: TValue): Boolean;
 begin
   Result := fSource.Remove(key.AsType<TKey>);
+end;
+
+procedure TDictionaryAdapter<TKey, T>.SetCapacity(value: Integer);
+begin
+  fSource.Capacity := value;
+end;
+
+procedure TDictionaryAdapter<TKey, T>.SetItem(const key, value: TValue);
+begin
+  fSource[key.AsType<TKey>] := value.AsType<T>;
 end;
 
 function TDictionaryAdapter<TKey, T>.TryExtract(const key: TValue; out value: TValue): Boolean;

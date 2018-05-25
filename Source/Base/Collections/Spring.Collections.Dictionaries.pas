@@ -241,7 +241,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
-    procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
@@ -387,7 +386,6 @@ type
       {$ENDREGION}
 
       {$REGION 'Implements IDictionary<TValue, TKey>'}
-        procedure AddOrSetValue(const value: TValue; const key: TKey);
         function Extract(const value: TValue): TKey; reintroduce; overload;
         function GetValueOrDefault(const value: TValue): TKey; overload;
         function GetValueOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
@@ -593,7 +591,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
-    procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
@@ -730,7 +727,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
-    procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; reintroduce; overload;
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
@@ -1155,25 +1151,6 @@ begin
   DoAdd(hashCode, bucketIndex, itemIndex, key, value);
 end;
 
-procedure TDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
-  const value: TValue);
-var
-  bucketIndex, itemIndex, hashCode: Integer;
-begin
-  hashCode := Hash(key);
-  if Find(key, hashCode, bucketIndex, itemIndex) then
-    // modify existing value
-    DoSetValue(itemIndex, value)
-  else
-  begin
-    // add new value
-    if Grow then
-      // rehash invalidates the indices
-      Find(key, hashCode, bucketIndex, itemIndex);
-    DoAdd(hashCode, bucketIndex, itemIndex, key, value);
-  end;
-end;
-
 function TDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
@@ -1321,8 +1298,21 @@ begin
 end;
 
 procedure TDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
+var
+  bucketIndex, itemIndex, hashCode: Integer;
 begin
-  AddOrSetValue(key, value);
+  hashCode := Hash(key);
+  if Find(key, hashCode, bucketIndex, itemIndex) then
+    // modify existing value
+    DoSetValue(itemIndex, value)
+  else
+  begin
+    // add new value
+    if Grow then
+      // rehash invalidates the indices
+      Find(key, hashCode, bucketIndex, itemIndex);
+    DoAdd(hashCode, bucketIndex, itemIndex, key, value);
+  end;
 end;
 
 function TDictionary<TKey, TValue>.GetItemByIndex(index: Integer): TKeyValuePair;
@@ -2152,40 +2142,6 @@ begin
   DoAdd(keyhashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, key, value);
 end;
 
-procedure TBidiDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
-  const value: TValue);
-var
-  keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
-  keyFound, valueFound: Boolean;
-begin
-  keyHashCode := KeyHash(key);
-  keyFound := FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
-  valueHashCode := ValueHash(value);
-  valueFound := FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
-
-  if valueFound then
-  begin
-    if keyFound and (keyItemIndex = valueItemIndex) then
-      Exit; // this key/value pair are already mapped to each other
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
-  end
-  else if keyFound then
-    // key found, but value not found, this is a replace value operation
-    DoSetValue(keyBucketIndex, keyItemIndex, valueHashCode, value)
-  else
-  begin
-    // neither key nor value found, this is an add operation
-    if Grow then
-    begin
-      // rehash invalidates the indices
-      FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
-      FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
-    end;
-    Assert(keyItemIndex = valueItemIndex);
-    DoAdd(keyhashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, key, value);
-  end;
-end;
-
 procedure TBidiDictionary<TKey, TValue>.AddOrSetKey(const value: TValue; const key: TKey);
 var
   keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
@@ -2376,8 +2332,36 @@ begin
 end;
 
 procedure TBidiDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
+var
+  keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyFound, valueFound: Boolean;
 begin
-  AddOrSetValue(key, value);
+  keyHashCode := KeyHash(key);
+  keyFound := FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
+  valueHashCode := ValueHash(value);
+  valueFound := FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
+
+  if valueFound then
+  begin
+    if keyFound and (keyItemIndex = valueItemIndex) then
+      Exit; // this key/value pair are already mapped to each other
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem)
+  end
+  else if keyFound then
+    // key found, but value not found, this is a replace value operation
+    DoSetValue(keyBucketIndex, keyItemIndex, valueHashCode, value)
+  else
+  begin
+    // neither key nor value found, this is an add operation
+    if Grow then
+    begin
+      // rehash invalidates the indices
+      FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
+      FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
+    end;
+    Assert(keyItemIndex = valueItemIndex);
+    DoAdd(keyhashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, key, value);
+  end;
 end;
 
 {$ENDREGION}
@@ -2402,12 +2386,6 @@ procedure TBidiDictionary<TKey, TValue>.TInverse.AddInternal(
   const item: TValueKeyPair);
 begin
   Add(item.Key, item.Value);
-end;
-
-procedure TBidiDictionary<TKey, TValue>.TInverse.AddOrSetValue(
-  const value: TValue; const key: TKey);
-begin
-  fSource.AddOrSetKey(value, key);
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.AsReadOnlyDictionary: IReadOnlyDictionary<TValue, TKey>;
@@ -3059,36 +3037,6 @@ begin
   ValueChanged(value, caAdded);
 end;
 
-procedure TSortedDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
-  const value: TValue);
-var
-  node: PNode;
-  item: TKeyValuePair;
-begin
-  IncUnchecked(fVersion);
-  node := fTree.FindNode(key);
-  if Assigned(node) then
-  begin
-    item.Key := key;
-    item.Value := node.Value;
-    Changed(item, caRemoved);
-    ValueChanged(node.Value, caRemoved);
-    node.Value := value;
-    item.Value := value;
-    Changed(item, caAdded);
-    ValueChanged(value, caAdded);
-  end
-  else
-  begin
-    fTree.Add(key, value);
-    item.Key := key;
-    item.Value := value;
-    Changed(item, caAdded);
-    KeyChanged(key, caAdded);
-    ValueChanged(value, caAdded);
-  end;
-end;
-
 function TSortedDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
@@ -3284,8 +3232,32 @@ begin
 end;
 
 procedure TSortedDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
+var
+  node: PNode;
+  item: TKeyValuePair;
 begin
-  AddOrSetValue(key, value);
+  IncUnchecked(fVersion);
+  node := fTree.FindNode(key);
+  if Assigned(node) then
+  begin
+    item.Key := key;
+    item.Value := node.Value;
+    Changed(item, caRemoved);
+    ValueChanged(node.Value, caRemoved);
+    node.Value := value;
+    item.Value := value;
+    Changed(item, caAdded);
+    ValueChanged(value, caAdded);
+  end
+  else
+  begin
+    fTree.Add(key, value);
+    item.Key := key;
+    item.Value := value;
+    Changed(item, caAdded);
+    KeyChanged(key, caAdded);
+    ValueChanged(value, caAdded);
+  end;
 end;
 
 function TSortedDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValuePair>;

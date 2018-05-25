@@ -1511,14 +1511,17 @@ type
   IDictionary = interface(ICollection)
     ['{9AC642EE-F236-421D-8546-DCA0D8D53791}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
+    function GetItem(const key: TValue): TValue;
     function GetOnKeyChanged: IEvent;
     function GetOnValueChanged: IEvent;
     function GetKeyType: PTypeInfo;
     function GetValueType: PTypeInfo;
+    procedure SetCapacity(value: Integer);
+    procedure SetItem(const key: TValue; const value: TValue);
   {$ENDREGION}
 
     procedure Add(const key, value: TValue);
-    procedure AddOrSetValue(const key, value: TValue);
 
     function Remove(const key: TValue): Boolean; overload;
 
@@ -1530,6 +1533,7 @@ type
 
     function AsReadOnlyDictionary: IReadOnlyDictionary;
 
+    property Items[const key: TValue]: TValue read GetItem write SetItem; default;
     property OnKeyChanged: IEvent read GetOnKeyChanged;
     property OnValueChanged: IEvent read GetOnValueChanged;
     property KeyType: PTypeInfo read GetKeyType;
@@ -1809,19 +1813,6 @@ type
   {$ENDREGION}
 
     /// <summary>
-    ///   Adds an element with the provided key and value to the
-    ///   IDictionary&lt;TKey,TValue&gt;. If it already exists in the
-    ///   dictionary the provided value for the specified key is set.
-    /// </summary>
-    /// <param name="key">
-    ///   The value to use as the key of the element to add or set.
-    /// </param>
-    /// <param name="value">
-    ///   The value to use as the value of the element to add or set.
-    /// </param>
-    procedure AddOrSetValue(const key: TKey; const value: TValue);
-
-    /// <summary>
     ///   Removes the value for a specified key without triggering lifetime
     ///   management for objects.
     /// </summary>
@@ -1898,14 +1889,20 @@ type
     property Capacity: Integer read GetCapacity write SetCapacity;
 
     /// <summary>
-    ///   Gets or sets the element with the specified key.
+    ///   Gets or sets the value associated with the specified key.
     /// </summary>
     /// <param name="key">
-    ///   The key of the element to get or set.
+    ///   The key of the value to get or set.
     /// </param>
     /// <value>
-    ///   The element with the specified key.
+    ///   The value associated with the specified key. If the specified key is
+    ///   not found, a get operation throws an EKeyNotFoundException, and a set
+    ///   operation creates a new element with the specified key.
     /// </value>
+    /// <exception cref="EKeyNotFoundException">
+    ///   The property is retrieved and <i>key</i> does not exist in the
+    ///   collection.
+    /// </exception>
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
   end;
 

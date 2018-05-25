@@ -274,7 +274,7 @@ end;
 procedure TProxyRepository<T, TID>.RegisterMethod(
   const methodSignature: string; const methodRef: TMethodReference);
 begin
-  fDefaultMethods.AddOrSetValue(methodSignature, methodRef);
+  fDefaultMethods[methodSignature] := methodRef;
 end;
 
 {$ENDREGION}

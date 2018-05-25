@@ -353,7 +353,7 @@ end;
 
 procedure TClassTypeRegistry<TValue>.Register(classType: TClass; const value: TValue);
 begin
-  fLookup.AddOrSetValue(classType, value);
+  fLookup[classType] := value;
 end;
 
 procedure TClassTypeRegistry<TValue>.Unregister(classType: TClass);

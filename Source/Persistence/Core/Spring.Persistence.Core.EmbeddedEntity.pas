@@ -134,7 +134,7 @@ end;
 procedure TEmbeddedObjectEntity.AddValue(const fieldName: string;
   const value: Variant);
 begin
-  fValues.AddOrSetValue(GetKey(fieldName), value);
+  fValues[GetKey(fieldName)] := value;
   fIndexedValues.Add(GetKey(fieldName));
 end;
 

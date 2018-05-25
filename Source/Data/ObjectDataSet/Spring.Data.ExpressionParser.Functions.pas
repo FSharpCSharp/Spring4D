@@ -85,7 +85,7 @@ end;
 class procedure TFilterFunctions.RegisterFunction(const name: string;
   const func: TGetValueFunc);
 begin
-  fFunctions.AddOrSetValue(name, func);
+  fFunctions[name] := func;
 end;
 
 class function TFilterFunctions.TryGetFunction(const name: string;

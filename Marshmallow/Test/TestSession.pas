@@ -343,7 +343,7 @@ begin
       if not cache.TryGetValue(arg, Result) then
       begin
         Result := func(arg);
-        cache.AddOrSetValue(arg, Result);
+        cache[arg] := Result;
       end;
     end;
 end;
