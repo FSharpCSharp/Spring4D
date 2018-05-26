@@ -120,7 +120,6 @@ begin
   ]);
 
   RegisterTests('Spring.Base.Collections.Dictionaries', [
-    TTestStringIntegerDictionary.Suite,
     TTestIntegerStringDictionary.Suite,
     TTestDictionaryKeyComparer.Suite,
     TTestBidiDictionaryKeyComparer.Suite,

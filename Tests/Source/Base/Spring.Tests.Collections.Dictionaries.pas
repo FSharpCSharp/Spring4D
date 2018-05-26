@@ -37,23 +37,6 @@ uses
   Spring.Collections;
 
 type
-  TTestStringIntegerDictionary = class(TTestCase)
-  private
-    SUT: IDictionary<string, Integer>;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure TestDictionaryCountWithAdd;
-    procedure TestDictionarySimpleValues;
-    procedure TestDictionaryKeys;
-    procedure TestDictionaryValues;
-    procedure TestDictionaryContainsValue;
-    procedure TestDictionaryContainsKey;
-    procedure TestCollectionExtract;
-    procedure TestMapExtract;
-  end;
-
   TTestIntegerStringDictionary = class(TTestCase)
   private
     SUT: IDictionary<Integer, string>;
@@ -151,20 +134,27 @@ type
     procedure TestAddKeyValue;
     procedure TestAddOrSetValue;
     procedure TestAddOrSetValueOrder;
+    procedure TestCollectionExtract;
+    procedure TestContainsKey;
+    procedure TestContainsValue;
     procedure TestExtract;
     procedure TestGetEnumerator;
+    procedure TestGetItem;
     procedure TestIsInitializedEmpty;
+    procedure TestKeysContains;
     procedure TestKeysEnumerate;
     procedure TestKeysGetEnumerator;
     procedure TestKeysReferenceCounting;
     procedure TestKeysToArray;
     procedure TestMapAdd;
+    procedure TestMapExtract;
     procedure TestMapRemove;
     procedure TestOrdered;
     procedure TestOrdered_Issue179;
     procedure TestRemove;
     procedure TestTryExtract;
     procedure TestToArray;
+    procedure TestValuesContains;
     procedure TestValuesEnumerate;
     procedure TestValuesGetEnumerator;
     procedure TestValuesReferenceCounting;
@@ -314,110 +304,6 @@ implementation
 
 uses
   SysUtils;
-
-
-{$REGION 'TTestStringIntegerDictionary'}
-
-procedure TTestStringIntegerDictionary.SetUp;
-begin
-  inherited;
-  SUT := TCollections.CreateDictionary<string, Integer>;
-  SUT.Add('one', 1);
-  SUT.Add('two', 2);
-  SUT.Add('three', 3);
-end;
-
-procedure TTestStringIntegerDictionary.TearDown;
-begin
-  inherited;
-  SUT := nil;
-end;
-
-procedure TTestStringIntegerDictionary.TestDictionaryContainsKey;
-begin
-  CheckTrue(SUT.ContainsKey('one'), '"one" not found by ContainsKey');
-  CheckTrue(SUT.ContainsKey('two'), '"two" not found by ContainsKey');
-  CheckTrue(SUT.ContainsKey('three'), '"three" not found by ContainsKey');
-end;
-
-procedure TTestStringIntegerDictionary.TestDictionaryContainsValue;
-begin
-  CheckTrue(SUT.ContainsValue(1), '1 not found by ContainsValue');
-  CheckTrue(SUT.ContainsValue(2), '2 not found by ContainsValue');
-  CheckTrue(SUT.ContainsValue(3), '3 not found by ContainsValue');
-end;
-
-procedure TTestStringIntegerDictionary.TestDictionaryCountWithAdd;
-begin
-  CheckEquals(3, SUT.Count, 'TestDictionaryCountWithAdd: Count is not correct');
-end;
-
-procedure TTestStringIntegerDictionary.TestDictionaryKeys;
-var
-  Result: IReadOnlyCollection<string>;
-begin
-  Result := SUT.Keys;
-  CheckEquals(3, Result.Count, 'TestDictionaryKeys: Keys call returns wrong count');
-
-  CheckTrue(Result.Contains('one'), 'TestDictionaryKeys: Keys doesn''t contain "one"');
-  CheckTrue(Result.Contains('two'), 'TestDictionaryKeys: Keys doesn''t contain "two"');
-  CheckTrue(Result.Contains('three'), 'TestDictionaryKeys: Keys doesn''t contain "three"');
-end;
-
-procedure TTestStringIntegerDictionary.TestDictionarySimpleValues;
-begin
-  CheckEquals(3, SUT.Count, 'TestDictionarySimpleValues: Count is not correct');
-
-  CheckEquals(1, SUT['one']);
-  CheckEquals(2, SUT['two']);
-  CheckEquals(3, SUT['three']);
-end;
-
-procedure TTestStringIntegerDictionary.TestDictionaryValues;
-var
-  Result: IReadOnlyCollection<Integer>;
-begin
-  Result := SUT.Values;
-  CheckEquals(3, Result.Count, 'TestDictionaryKeys: Values call returns wrong count');
-
-  CheckTrue(Result.Contains(1), 'TestDictionaryKeys: Values doesn''t contain "one"');
-  CheckTrue(Result.Contains(2), 'TestDictionaryKeys: Values doesn''t contain "two"');
-  CheckTrue(Result.Contains(3), 'TestDictionaryKeys: Values doesn''t contain "three"');
-end;
-
-procedure TTestStringIntegerDictionary.TestCollectionExtract;
-var
-  pair: TPair<string, Integer>;
-begin
-  pair := (SUT as ICollection<TPair<string, Integer>>).Extract(TPair<string, Integer>.Create('one', 2));
-  CheckEquals(3, SUT.Count);
-  CheckEquals(Default(string), pair.Key);
-  CheckEquals(Default(Integer), pair.Value);
-
-  pair := (SUT as ICollection<TPair<string, Integer>>).Extract(TPair<string, Integer>.Create('one', 1));
-  CheckEquals(2, SUT.Count);
-  CheckEquals('one', pair.Key);
-  CheckEquals(1, pair.Value);
-  CheckFalse(SUT.ContainsKey('one'), 'TestMapExtract: Values does contain "one"');
-end;
-
-procedure TTestStringIntegerDictionary.TestMapExtract;
-var
-  pair: TPair<string, Integer>;
-begin
-  pair := (SUT as IMap<string, Integer>).Extract('one', 2);
-  CheckEquals(3, SUT.Count);
-  CheckEquals(Default(string), pair.Key);
-  CheckEquals(Default(Integer), pair.Value);
-
-  pair := (SUT as IMap<string, Integer>).Extract('one', 1);
-  CheckEquals(2, SUT.Count);
-  CheckEquals('one', pair.Key);
-  CheckEquals(1, pair.Value);
-  CheckFalse(SUT.ContainsKey('one'), 'TestMapExtract: Values does contain "one"');
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TTestIntegerStringMap'}
@@ -1000,6 +886,52 @@ begin
   Check(SUT.Keys.EqualsTo([1, 2]));
 end;
 
+procedure TTestDictionaryBase.TestCollectionExtract;
+var
+  pair: TPair<Integer, string>;
+begin
+  FillTestData;
+
+  CheckEquals(4, SUT.Count);
+  pair := (SUT as ICollection<TPair<Integer, string>>).Extract(TPair<Integer, string>.Create(2, 'a'));
+  CheckEquals(4, SUT.Count);
+  CheckEquals(Default(Integer), pair.Key);
+  CheckEquals(Default(string), pair.Value);
+
+  pair := (SUT as ICollection<TPair<Integer, string>>).Extract(TPair<Integer, string>.Create(1, 'a'));
+  CheckEquals(3, SUT.Count);
+  CheckEquals(1, pair.Key);
+  CheckEquals('a', pair.Value);
+  Check(not SUT.ContainsKey(1));
+  Check(not SUT.ContainsValue('a'));
+end;
+
+
+procedure TTestDictionaryBase.TestContainsKey;
+begin
+  FillTestData;
+
+  Check(not SUT.ContainsKey(0));
+  Check(SUT.ContainsKey(1));
+  Check(SUT.ContainsKey(2));
+  Check(SUT.ContainsKey(3));
+  Check(SUT.ContainsKey(4));
+  Check(not SUT.ContainsKey(5));
+end;
+
+procedure TTestDictionaryBase.TestContainsValue;
+begin
+  FillTestData;
+
+  Check(not SUT.ContainsValue(''));
+  Check(not SUT.ContainsValue('aa'));
+  Check(SUT.ContainsValue('a'));
+  Check(SUT.ContainsValue('b'));
+  Check(SUT.ContainsValue('c'));
+  Check(SUT.ContainsValue('d'));
+  Check(not SUT.ContainsValue('e'));
+end;
+
 procedure TTestDictionaryBase.TestExtract;
 begin
   FillTestData;
@@ -1028,6 +960,18 @@ begin
   CheckEquals(4, i);
 end;
 
+procedure TTestDictionaryBase.TestGetItem;
+begin
+  FillTestData;
+
+  CheckException(EKeyNotFoundException, procedure begin SUT[0] end);
+  CheckEquals('a', SUT[1]);
+  CheckEquals('b', SUT[2]);
+  CheckEquals('c', SUT[3]);
+  CheckEquals('d', SUT[4]);
+  CheckException(EKeyNotFoundException, procedure begin SUT[5] end);
+end;
+
 procedure TTestDictionaryBase.TestIsInitializedEmpty;
 begin
   CheckEquals(0, SUT.Count);
@@ -1035,14 +979,23 @@ begin
   CheckEquals(0, SUT.Values.Count);
 end;
 
+procedure TTestDictionaryBase.TestKeysContains;
+begin
+  FillTestData;
+
+  Check(not SUT.Keys.Contains(0));
+  Check(SUT.Keys.Contains(1));
+  Check(SUT.Keys.Contains(2));
+  Check(SUT.Keys.Contains(3));
+  Check(SUT.Keys.Contains(4));
+  Check(not SUT.Keys.Contains(5));
+end;
+
 procedure TTestDictionaryBase.TestKeysEnumerate;
 var
   e: IEnumerator<Integer>;
 begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
+  FillTestData;
 
   Check(SUT.Keys.EqualsTo([1, 2, 3, 4]));
 
@@ -1113,6 +1066,27 @@ begin
 
   (SUT as IMap<Integer, string>).Add(10, 'ten'); //check if correctly overriden (not abstract)
   CheckEquals('ten', SUT[10]);
+end;
+
+procedure TTestDictionaryBase.TestMapExtract;
+var
+  pair: TPair<Integer, string>;
+begin
+  FillTestData;
+
+  CheckEquals(4, SUT.Count);
+  Check(SUT.ContainsKey(2));
+  pair := (SUT as IMap<Integer, string>).Extract(2, 'a');
+  CheckEquals(4, SUT.Count);
+  CheckEquals(Default(Integer), pair.Key);
+  CheckEquals(Default(string), pair.Value);
+
+  pair := (SUT as IMap<Integer, string>).Extract(1, 'a');
+  CheckEquals(3, SUT.Count);
+  CheckEquals(1, pair.Key);
+  CheckEquals('a', pair.Value);
+  Check(not SUT.ContainsKey(1));
+  Check(not SUT.ContainsValue('a'));
 end;
 
 procedure TTestDictionaryBase.TestMapRemove;
@@ -1224,14 +1198,24 @@ begin
   CheckEquals('d', items[3].Value);
 end;
 
+procedure TTestDictionaryBase.TestValuesContains;
+begin
+  FillTestData;
+
+  Check(not SUT.Values.Contains(''));
+  Check(not SUT.Values.Contains('aa'));
+  Check(SUT.Values.Contains('a'));
+  Check(SUT.Values.Contains('b'));
+  Check(SUT.Values.Contains('c'));
+  Check(SUT.Values.Contains('d'));
+  Check(not SUT.Values.Contains('e'));
+end;
+
 procedure TTestDictionaryBase.TestValuesEnumerate;
 var
   e: IEnumerator<string>;
 begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
+  FillTestData;
 
   Check(SUT.Values.EqualsTo(['a', 'b', 'c', 'd']));
 
