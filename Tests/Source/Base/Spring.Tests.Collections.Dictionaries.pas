@@ -50,8 +50,6 @@ type
     procedure TestDictionaryValues;
     procedure TestDictionaryContainsValue;
     procedure TestDictionaryContainsKey;
-    procedure TestMapAdd;
-    procedure TestMapRemove;
     procedure TestCollectionExtract;
     procedure TestMapExtract;
   end;
@@ -160,6 +158,8 @@ type
     procedure TestKeysGetEnumerator;
     procedure TestKeysReferenceCounting;
     procedure TestKeysToArray;
+    procedure TestMapAdd;
+    procedure TestMapRemove;
     procedure TestOrdered;
     procedure TestOrdered_Issue179;
     procedure TestRemove;
@@ -383,18 +383,6 @@ begin
   CheckTrue(Result.Contains(1), 'TestDictionaryKeys: Values doesn''t contain "one"');
   CheckTrue(Result.Contains(2), 'TestDictionaryKeys: Values doesn''t contain "two"');
   CheckTrue(Result.Contains(3), 'TestDictionaryKeys: Values doesn''t contain "three"');
-end;
-
-procedure TTestStringIntegerDictionary.TestMapAdd;
-begin
-  (SUT as IMap<string, Integer>).Add('ten', 10); //check if correctly overriden (not abstract)
-  CheckEquals(10, SUT['ten']);
-end;
-
-procedure TTestStringIntegerDictionary.TestMapRemove;
-begin
-  (SUT as IMap<string, Integer>).Remove('one');
-  CheckFalse(SUT.ContainsKey('one'), 'TestMapRemove: Values does contain "one"');
 end;
 
 procedure TTestStringIntegerDictionary.TestCollectionExtract;
@@ -1117,6 +1105,23 @@ begin
   CheckEquals(2, keys[1]);
   CheckEquals(4, keys[2]);
   CheckEquals(5, keys[3]);
+end;
+
+procedure TTestDictionaryBase.TestMapAdd;
+begin
+  FillTestData;
+
+  (SUT as IMap<Integer, string>).Add(10, 'ten'); //check if correctly overriden (not abstract)
+  CheckEquals('ten', SUT[10]);
+end;
+
+procedure TTestDictionaryBase.TestMapRemove;
+begin
+  FillTestData;
+
+  Check(SUT.ContainsKey(1));
+  Check((SUT as IMap<Integer, string>).Remove(1));
+  Check(not SUT.ContainsKey(1));
 end;
 
 procedure TTestDictionaryBase.TestOrdered;

@@ -299,8 +299,8 @@ type
       PItem = ^TItem;
 
       TInverse = class(TContainedCollectionBase<TValueKeyPair>,
-        IReadOnlyDictionary<TValue, TKey>, IDictionary<TValue, TKey>,
-        IBidiDictionary<TValue, TKey>)
+        IReadOnlyDictionary<TValue, TKey>, IMap<TValue, TKey>,
+        IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
       private type
       {$REGION 'Nested Types'}
         TEnumerator = class(TEnumeratorBase<TValueKeyPair>)
