@@ -267,7 +267,8 @@ type
   {$ENDREGION}
   public
     constructor Create(const controller: IInterface;
-      const comparer: IEqualityComparer<TKey>);
+      const keyComparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships);
     property Controller: IInterface read GetController;
   end;
 
@@ -833,11 +834,11 @@ begin
 
   if doOwnsKeys in ownerships then
     if TType.Kind<TKey> <> tkClass then
-      raise Error.NoClassType(KeyType);
+      raise Error.NoClassType(TypeInfo(TKey));
 
   if doOwnsValues in ownerships then
     if TType.Kind<TValue> <> tkClass then
-      raise Error.NoClassType(ValueType);
+      raise Error.NoClassType(TypeInfo(TValue));
 
   inherited Create;
   fOwnerships := ownerships;
@@ -1622,9 +1623,10 @@ end;
 {$REGION 'TContainedDictionary<TKey, TValue>'}
 
 constructor TContainedDictionary<TKey, TValue>.Create(
-  const controller: IInterface; const comparer: IEqualityComparer<TKey>);
+  const controller: IInterface; const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships);
 begin
-  inherited Create(comparer);
+  inherited Create(keyComparer, ownerships);
   fController := Pointer(controller);
 end;
 

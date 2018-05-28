@@ -536,8 +536,8 @@ end;
 function TComponentRegistry.FindAll(
   serviceType: PTypeInfo): IEnumerable<TComponentModel>;
 var
-  models: IReadOnlyList<TComponentModel>;
-  unnamedModels: IReadOnlyList<TComponentModel>;
+  models: IReadOnlyCollection<TComponentModel>;
+  unnamedModels: IReadOnlyCollection<TComponentModel>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(serviceType, 'serviceType');

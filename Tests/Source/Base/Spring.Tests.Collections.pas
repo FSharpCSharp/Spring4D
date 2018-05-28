@@ -3310,23 +3310,23 @@ end;
 procedure TTestMultiMap.TestExtractValues;
 var
   map: IMultiMap<Integer, TObject>;
-  list: IList<TObject>;
+  values: ICollection<TObject>;
   obj: TObject;
 begin
   map := TCollections.CreateMultiMap<Integer, TObject>([doOwnsValues]);
   map.Add(1, TObject.Create);
-  list := map.ExtractValues(1);
+  values := map.ExtractValues(1);
   CheckEquals(0, map.Count);
-  CheckEquals(1, list.Count);
+  CheckEquals(1, values.Count);
   map := nil;
-  obj := list.ExtractAt(0);
+  obj := values.First;
+  values := nil;
   obj.Free;
-  list := nil;
 end;
 
 procedure TTestMultiMap.TestInternalEventHandlersDetached;
 var
-  items: IReadOnlyList<Integer>;
+  items: IReadOnlyCollection<Integer>;
 begin
   SUT.Add(1, 1);
   items := SUT[1];
