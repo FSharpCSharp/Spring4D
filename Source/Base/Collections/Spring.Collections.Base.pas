@@ -392,13 +392,9 @@ type
   ///   Provides an abstract implementation for the <see cref="Spring.Collections|IList&lt;T&gt;" />
   ///    interface.
   /// </summary>
-  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>, IList)
+  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>)
   private
-    function AsList: IList;
     function AsReadOnlyList: IReadOnlyList<T>;
-  {$HINTS OFF}
-    property List: IList read AsList implements IList;
-  {$HINTS ON}
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; virtual; abstract;
@@ -484,7 +480,6 @@ uses
   RTLConsts,
   Rtti,
   TypInfo,
-  Spring.Collections.Adapters,
   Spring.Collections.Events,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
@@ -1794,11 +1789,6 @@ end;
 procedure TListBase<T>.AddRange(const collection: IEnumerable<T>);
 begin
   InsertRange(Count, collection);
-end;
-
-function TListBase<T>.AsList: IList;
-begin
-  Result := TListAdapter<T>.Create(Self);
 end;
 
 function TListBase<T>.AsReadOnlyList: IReadOnlyList<T>;

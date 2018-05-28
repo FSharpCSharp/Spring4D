@@ -52,38 +52,7 @@ const
   caChanged = Spring.caChanged;
 
 type
-  {$REGION 'Forward definitions'}
-  IEnumerator = interface;
-  IEnumerable = interface;
-  IReadOnlyCollection = interface;
-  ICollection = interface;
-  IReadOnlyList = interface;
-  IList = interface;
-  IReadOnlyDictionary = interface;
-  IDictionary = interface;
-  IStack = interface;
-  IQueue = interface;
-  ISet = interface;
-
-  IEnumerator<T> = interface;
-  IEnumerable<T> = interface;
-  IReadOnlyCollection<T> = interface;
-  ICollection<T> = interface;
-  IReadOnlyList<T> = interface;
-  IList<T> = interface;
-  ILinkedList<T> = interface;
-  IReadOnlyDictionary<TKey, TValue> = interface;
-  IDictionary<TKey, TValue> = interface;
-  IStack<T> = interface;
-  IQueue<T> = interface;
-  ISet<T> = interface;
-
-  IObjectList = interface;
-  IInterfaceList = interface;
-
-  IGrouping<TKey, TElement> = interface;
-  ILookup<TKey, TElement> = interface;
-  {$ENDREGION}
+  TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
 
   TCollectionChangedAction = Spring.TCollectionChangedAction;
 
@@ -744,41 +713,14 @@ type
     property Comparer: IComparer<T> read GetComparer;
   end;
 
-  IReadOnlyCollection = interface(IEnumerable)
-    ['{4DE35086-06DC-4F99-AE63-BCF4ADB2828D}']
-  end;
-
-  ICollection = interface(IEnumerable)
-    ['{AC8A0302-C530-46A0-83FC-D88302ECCE3D}']
-  {$REGION 'Property Accessors'}
-    function GetIsReadOnly: Boolean;
-    function GetOnChanged: IEvent;
-  {$ENDREGION}
-
-    procedure Add(const item: TValue);
-    procedure AddRange(const values: array of TValue); overload;
-    procedure AddRange(const collection: IEnumerable); overload;
-
-    procedure Clear;
-
-    function Remove(const item: TValue): Boolean;
-    procedure RemoveRange(const values: array of TValue); overload;
-    procedure RemoveRange(const collection: IEnumerable); overload;
-
-    function Extract(const item: TValue): TValue;
-    procedure ExtractRange(const values: array of TValue); overload;
-    procedure ExtractRange(const collection: IEnumerable); overload;
-
-    property IsReadOnly: Boolean read GetIsReadOnly;
-    property OnChanged: IEvent read GetOnChanged;
-  end;
-
   /// <summary>
   ///   Represents a strongly-typed, read-only collection of elements.
   /// </summary>
   IReadOnlyCollection<T> = interface(IEnumerable<T>)
     ['{E1368FD5-02AE-4481-A9DC-96329DFF606C}']
   end;
+
+  IReadOnlyList<T> = interface;
 
   /// <summary>
   ///   Defines methods to manipulate generic collections.
@@ -888,59 +830,7 @@ type
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
-  IReadOnlyList = interface(IReadOnlyCollection)
-    ['{3DFEBF5A-8BF2-4152-A105-BECF01AFB60F}']
-  {$REGION 'Property Accessors'}
-    function GetItem(index: Integer): TValue;
-  {$ENDREGION}
-
-    function IndexOf(const item: TValue): Integer; overload;
-    function IndexOf(const item: TValue; index: Integer): Integer; overload;
-    function IndexOf(const item: TValue; index, count: Integer): Integer; overload;
-
-    property Item[index: Integer]: TValue read GetItem; default;
-  end;
-
-  IList = interface(ICollection)
-    ['{43FF6143-3B87-4298-B48C-2ABB9353BF68}']
-  {$REGION 'Property Accessors'}
-    function GetCapacity: Integer;
-    function GetItem(index: Integer): TValue;
-    procedure SetCapacity(value: Integer);
-    procedure SetItem(index: Integer; const item: TValue);
-  {$ENDREGION}
-
-    function Add(const item: TValue): Integer;
-
-    procedure Insert(index: Integer; const item: TValue);
-    procedure InsertRange(index: Integer; const values: array of TValue); overload;
-    procedure InsertRange(index: Integer; const collection: IEnumerable); overload;
-
-    procedure Delete(index: Integer);
-    procedure DeleteRange(index, count: Integer);
-
-    procedure Exchange(index1, index2: Integer);
-    procedure Move(currentIndex, newIndex: Integer);
-
-    procedure Reverse; overload;
-    procedure Reverse(index, count: Integer); overload;
-
-    procedure Sort;
-
-    function IndexOf(const item: TValue): Integer; overload;
-    function IndexOf(const item: TValue; index: Integer): Integer; overload;
-    function IndexOf(const item: TValue; index, count: Integer): Integer; overload;
-
-    function LastIndexOf(const item: TValue): Integer; overload;
-    function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
-    function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
-
-    function AsReadOnlyList: IReadOnlyList;
-    procedure TrimExcess;
-
-    property Capacity: Integer read GetCapacity write SetCapacity;
-    property Items[index: Integer]: TValue read GetItem write SetItem; default;
-  end;
+  IList<T> = interface;
 
   /// <summary>
   ///   Represents a read-only collection of elements that can be accessed by
@@ -1101,7 +991,6 @@ type
     function LastIndexOf(const item: T; index: Integer): Integer; overload;
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
-    function AsList: IList;
 
     /// <summary>
     ///   Returns the list as read-only list.
@@ -1111,6 +1000,11 @@ type
     ///   as IReadOnlyList&lt;T&gt;.
     /// </remarks>
     function AsReadOnlyList: IReadOnlyList<T>;
+
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
     procedure TrimExcess;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
@@ -1127,6 +1021,8 @@ type
     ['{B6BF9A6E-797C-4982-8D0D-B935E43D917E}']
     // DO NOT ADD ANY METHODS HERE!!!
   end;
+
+  ILinkedList<T> = interface;
 
   /// <summary>
   ///   Represents a node in a <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />
@@ -1493,53 +1389,6 @@ type
 //    property Value: TValue read fValue;
 //  end;
 
-  IReadOnlyDictionary = interface(IReadOnlyCollection)
-    ['{D963ED30-C16F-488B-9BC6-1292DD57B295}']
-  {$REGION 'Property Accessors'}
-    function GetKeyType: PTypeInfo;
-    function GetValueType: PTypeInfo;
-  {$ENDREGION}
-
-    function ContainsKey(const key: TValue): Boolean;
-    function ContainsValue(const value: TValue): Boolean;
-    function TryGetValue(const key: TValue; out value: TValue): Boolean;
-
-    property KeyType: PTypeInfo read GetKeyType;
-    property ValueType: PTypeInfo read GetValueType;
-  end;
-
-  IDictionary = interface(ICollection)
-    ['{9AC642EE-F236-421D-8546-DCA0D8D53791}']
-  {$REGION 'Property Accessors'}
-    function GetCapacity: Integer;
-    function GetItem(const key: TValue): TValue;
-    function GetOnKeyChanged: IEvent;
-    function GetOnValueChanged: IEvent;
-    function GetKeyType: PTypeInfo;
-    function GetValueType: PTypeInfo;
-    procedure SetCapacity(value: Integer);
-    procedure SetItem(const key: TValue; const value: TValue);
-  {$ENDREGION}
-
-    procedure Add(const key, value: TValue);
-
-    function Remove(const key: TValue): Boolean; overload;
-
-    function ContainsKey(const key: TValue): Boolean;
-    function ContainsValue(const value: TValue): Boolean;
-
-    function TryExtract(const key: TValue; out value: TValue): Boolean;
-    function TryGetValue(const key: TValue; out value: TValue): Boolean;
-
-    function AsReadOnlyDictionary: IReadOnlyDictionary;
-
-    property Items[const key: TValue]: TValue read GetItem write SetItem; default;
-    property OnKeyChanged: IEvent read GetOnKeyChanged;
-    property OnValueChanged: IEvent read GetOnValueChanged;
-    property KeyType: PTypeInfo read GetKeyType;
-    property ValueType: PTypeInfo read GetValueType;
-  end;
-
   IReadOnlyMap<TKey, TValue> = interface(IReadOnlyCollection<TPair<TKey, TValue>>)
     ['{1FBECEB8-582E-4108-BB44-F21A06FE425B}']
   {$REGION 'Property Accessors'}
@@ -1883,12 +1732,6 @@ type
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     /// <summary>
-    ///   Resize the internal storage so that it is the same size as the
-    ///   collection.
-    /// </summary>
-    procedure TrimExcess;
-
-    /// <summary>
     ///   Returns the dictionary as read-only dictionary.
     /// </summary>
     /// <remarks>
@@ -1896,6 +1739,12 @@ type
     ///   as IReadOnlyDictionary&lt;TKey, TValue&gt;.
     /// </remarks>
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
 
     /// <summary>
     ///   Gets or sets the size of the internal storage.
@@ -1966,8 +1815,6 @@ type
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
     procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;
 
-    function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
-
     /// <summary>
     ///   Extracts all values for the given key from the multimap.
     /// </summary>
@@ -1978,23 +1825,17 @@ type
     /// </remarks>
     function ExtractValues(const key: TKey): IList<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyList<TValue>): Boolean;
+
+    /// <summary>
+    ///   Returns the multimap as read-only multimap.
+    /// </summary>
+    /// <remarks>
+    ///   This method will not perform a copy but will return the same instance
+    ///   as IReadOnlyMultiMap&lt;TKey, TValue&gt;.
+    /// </remarks>
+    function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey, TValue>;
+
     property Items[const key: TKey]: IReadOnlyList<TValue> read GetItems; default;
-  end;
-
-  IStack = interface(IEnumerable)
-    ['{82F7B40F-3B32-417F-8001-51458BCE553A}']
-  {$REGION 'Property Accessors'}
-    function GetOnChanged: IEvent;
-  {$ENDREGION}
-
-    procedure Clear;
-    procedure Push(const item: TValue);
-    function Pop: TValue;
-    function Peek: TValue;
-    function PeekOrDefault: TValue;
-    function TryPeek(out item: TValue): Boolean;
-    function TryPop(out item: TValue): Boolean;
-    property OnChanged: IEvent read GetOnChanged;
   end;
 
   /// <summary>
@@ -2060,12 +1901,6 @@ type
     function PeekOrDefault: T;
 
     /// <summary>
-    ///   Resize the internal storage so that it is the same size as the
-    ///   collection.
-    /// </summary>
-    procedure TrimExcess;
-
-    /// <summary>
     ///   Attempts to return an element from the top of the stack without
     ///   removing it.
     /// </summary>
@@ -2105,24 +1940,14 @@ type
     /// </returns>
     function TryExtract(out item: T): Boolean;
 
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
+
     property Capacity: Integer read GetCapacity write SetCapacity;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
-  end;
-
-  IQueue = interface(IEnumerable)
-    ['{B3377E32-ADA1-414F-8762-1EA0E4FEF794}']
-  {$REGION 'Property Accessors'}
-    function GetOnChanged: IEvent;
-  {$ENDREGION}
-
-    procedure Clear;
-    procedure Enqueue(const item: TValue);
-    function Dequeue: TValue;
-    function Peek: TValue;
-    function PeekOrDefault: TValue;
-    function TryDequeue(out item: TValue): Boolean;
-    function TryPeek(out item: TValue): Boolean;
-    property OnChanged: IEvent read GetOnChanged;
   end;
 
   /// <summary>
@@ -2188,12 +2013,6 @@ type
     function PeekOrDefault: T;
 
     /// <summary>
-    ///   Resize the internal storage so that it is the same size as the
-    ///   collection.
-    /// </summary>
-    procedure TrimExcess;
-
-    /// <summary>
     ///   Attempts to remove and return the element at the beginning of the
     ///   queue.
     /// </summary>
@@ -2233,6 +2052,12 @@ type
     ///   <b>True</b> if an element was returned; otherwise, <b>False</b>.
     /// </returns>
     function TryPeek(out item: T): Boolean;
+
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -2320,12 +2145,6 @@ type
     function ExtractLast: T;
 
     /// <summary>
-    ///   Resize the internal storage so that it is the same size as the
-    ///   collection.
-    /// </summary>
-    procedure TrimExcess;
-
-    /// <summary>
     ///   Attempts to remove and return the element at the front of the
     ///   deque.
     /// </summary>
@@ -2381,20 +2200,14 @@ type
     /// </returns>
     function TryExtractLast(out item: T): Boolean;
 
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
+
     property Capacity: Integer read GetCapacity write SetCapacity;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
-  end;
-
-  ISet = interface(ICollection)
-    ['{D83ED568-A7C8-4142-BA0F-5A273AF1AA07}']
-    function Add(const item: TValue): Boolean;
-    procedure ExceptWith(const other: IEnumerable);
-    procedure IntersectWith(const other: IEnumerable);
-    procedure UnionWith(const other: IEnumerable);
-    function IsSubsetOf(const other: IEnumerable): Boolean;
-    function IsSupersetOf(const other: IEnumerable): Boolean;
-    function SetEquals(const other: IEnumerable): Boolean;
-    function Overlaps(const other: IEnumerable): Boolean;
   end;
 
   /// <summary>
@@ -2422,12 +2235,6 @@ type
     ///   element is already in the set.
     /// </returns>
     function Add(const item: T): Boolean;
-
-    /// <summary>
-    ///   Resize the internal storage so that it is the same size as the
-    ///   collection.
-    /// </summary>
-    procedure TrimExcess;
 
     /// <summary>
     ///   Removes all elements in the specified collection from the current
@@ -2527,6 +2334,12 @@ type
     ///   <i>other</i> is <b>nil</b>.
     /// </exception>
     function Overlaps(const other: IEnumerable<T>): Boolean;
+
+    /// <summary>
+    ///   Resize the internal storage so that it is the same size as the
+    ///   collection.
+    /// </summary>
+    procedure TrimExcess;
 
     /// <summary>
     ///   Gets or sets the size of the internal storage.
@@ -2647,8 +2460,6 @@ type
 
     property Items: TArray<T> read GetItems;
   end;
-
-  TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
 
   /// <summary>
   ///   Provides static methods to create an instance of various interfaced

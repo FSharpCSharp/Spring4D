@@ -32,6 +32,7 @@ uses
   Generics.Collections,
   Spring,
   Spring.Collections,
+  Spring.Collections.Adapters.Interfaces,
   Spring.Collections.Base;
 
 type

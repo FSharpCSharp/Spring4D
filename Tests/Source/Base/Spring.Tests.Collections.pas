@@ -36,6 +36,7 @@ uses
   Spring.TestUtils,
   Spring,
   Spring.Collections,
+  Spring.Collections.Adapters.Interfaces,
   Spring.Collections.LinkedLists,
   Spring.Collections.Lists,
   Spring.Collections.Trees;
@@ -617,6 +618,7 @@ type
 implementation
 
 uses
+  Spring.Collections.Adapters,
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
   StrUtils,
@@ -3043,7 +3045,7 @@ end;
 procedure TTestListAdapter.SetUp;
 begin
   InternalList := TCollections.CreateList<Integer>([1, 2, 3]);
-  SUT := InternalList.AsList;
+  SUT := TListAdapter<Integer>.Create(InternalList);
 end;
 
 procedure TTestListAdapter.TearDown;

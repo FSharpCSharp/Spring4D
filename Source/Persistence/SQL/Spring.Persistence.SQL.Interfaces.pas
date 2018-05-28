@@ -59,11 +59,6 @@ const
 type
   TQueryLanguage = type string;
 
-  ICommandExecutionListener = interface
-    ['{590E86C8-0B05-4BFE-9B26-3A9A4D0510BF}']
-    procedure ExecutingCommand(const command: string; const list: IList);
-  end;
-
   ISQLGenerator = interface
     ['{8F46D275-50E4-4DE8-9E56-7D6599935E32}']
     function GetQueryLanguage: TQueryLanguage;
