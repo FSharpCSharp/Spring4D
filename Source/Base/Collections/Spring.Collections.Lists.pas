@@ -88,6 +88,8 @@ type
     function TryGetFirst(out value: T): Boolean;
     function TryGetLast(out value: T): Boolean;
     function TryGetSingle(out value: T): Boolean;
+
+    property Count: Integer read fCount;
   public
     constructor Create(const values: array of T); overload;
     constructor Create(const values: IEnumerable<T>); overload;

@@ -125,6 +125,7 @@ type
   {$ENDREGION}
     class function CreateSet: ISet<T>; override;
     function TryGetElementAt(out item: T; index: Integer): Boolean; override;
+    property Count: Integer read fCount;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;

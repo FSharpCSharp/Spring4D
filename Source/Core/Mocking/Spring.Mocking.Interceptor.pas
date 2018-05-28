@@ -312,7 +312,7 @@ end;
 
 procedure TMockInterceptor.InterceptAssert(const invocation: IInvocation);
 var
-  arguments: IReadOnlyList<TArray<TValue>>;
+  arguments: IReadOnlyCollection<TArray<TValue>>;
   callCount: Integer;
 begin
   try

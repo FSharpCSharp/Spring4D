@@ -77,7 +77,7 @@ type
   IEnumerator = interface(IInvokable)
     ['{A2AD52DC-FA9F-4121-9B54-5C427DA5E62C}']
   {$REGION 'Property Accessors'}
-    function GetCurrent: TValue;
+    function GetCurrent: Spring.TValue;
   {$ENDREGION}
 
     /// <summary>
@@ -99,7 +99,7 @@ type
     /// <value>
     ///   The current element in the collection.
     /// </value>
-    property Current: TValue read GetCurrent;
+    property Current: Spring.TValue read GetCurrent;
   end;
 
   /// <summary>
@@ -1840,17 +1840,23 @@ type
   IReadOnlyMultiMap<TKey, TValue> = interface(IReadOnlyMap<TKey, TValue>)
     ['{5411F9EC-5A56-4F40-890A-089A08AE795F}']
   {$REGION 'Property Accessors'}
-    function GetItems(const key: TKey): IReadOnlyList<TValue>;
+    function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
 
-    function TryGetValues(const key: TKey; out values: IReadOnlyList<TValue>): Boolean;
-    property Items[const key: TKey]: IReadOnlyList<TValue> read GetItems; default;
+    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
+    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
+  end;
+
+  TMultiMapEntry<TKey, TValue> = record
+    Key: TKey;
+    Values: IReadOnlyCollection<TValue>;
   end;
 
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
     ['{8598095E-92A7-4FCC-9F78-8EE7653B8B49}']
   {$REGION 'Property Accessors'}
-    function GetItems(const key: TKey): IReadOnlyList<TValue>;
+    function GetEntries: IReadOnlyCollection<TMultiMapEntry<TKey, TValue>>;
+    function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
 
     /// <summary>
@@ -1879,8 +1885,8 @@ type
     ///   are not being owned by the list but have to be freed manually or
     ///   being passed to a collection that takes ownership.
     /// </remarks>
-    function ExtractValues(const key: TKey): IList<TValue>;
-    function TryGetValues(const key: TKey; out values: IReadOnlyList<TValue>): Boolean;
+    function ExtractValues(const key: TKey): ICollection<TValue>;
+    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
 
     /// <summary>
     ///   Returns the multimap as read-only multimap.
@@ -1891,7 +1897,8 @@ type
     /// </remarks>
     function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey, TValue>;
 
-    property Items[const key: TKey]: IReadOnlyList<TValue> read GetItems; default;
+    property Entries: IReadOnlyCollection<TMultiMapEntry<TKey, TValue>> read GetEntries;
+    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
   /// <summary>
@@ -2535,11 +2542,16 @@ type
     class function CreateDictionary<TKey, TValue>(capacity: Integer; const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(capacity: Integer; const keyComparer: IEqualityComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
 
-    class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
-    class function CreateMultiMap<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
-    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
-    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships;
-      const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+
+    class function CreateHashMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateHashMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateHashMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+
+    class function CreateTreeMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateTreeMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateTreeMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; const valueComparer: IComparer<TValue>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
 
     class function CreateBidiDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
     class function CreateBidiDictionary<TKey, TValue>(capacity: Integer; ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
@@ -3023,31 +3035,63 @@ begin
   Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, valueComparer, ownerships);
 end;
 
-class function TCollections.CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>;
-begin
-  Result := TMultiMap<TKey, TValue>.Create;
-end;
-
-class function TCollections.CreateMultiMap<TKey, TValue>(
-  const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>;
-begin
-  Result := TMultiMap<TKey, TValue>.Create(comparer);
-end;
-
 class function TCollections.CreateMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
-  Result := TMultiMap<TKey, TValue>.Create(ownerships);
+  Result := TListMultiMap<TKey, TValue>.Create(ownerships);
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>(
-  ownerships: TDictionaryOwnerships;
-  const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>;
+  const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
-  Result := TMultiMap<TKey, TValue>.Create(ownerships, comparer);
+  Result := TListMultiMap<TKey, TValue>.Create(keyComparer, ownerships);
 end;
 
-class function TCollections.CreateBidiDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
+class function TCollections.CreateHashMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := THashMultiMap<TKey, TValue>.Create(ownerships);
+end;
+
+class function TCollections.CreateHashMultiMap<TKey, TValue>(
+  const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := THashMultiMap<TKey, TValue>.Create(keyComparer, ownerships);
+end;
+
+class function TCollections.CreateHashMultiMap<TKey, TValue>(
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := THashMultiMap<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
+end;
+
+class function TCollections.CreateTreeMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TTreeMultiMap<TKey, TValue>.Create(ownerships);
+end;
+
+class function TCollections.CreateTreeMultiMap<TKey, TValue>(
+  const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TTreeMultiMap<TKey, TValue>.Create(keyComparer, ownerships);
+end;
+
+class function TCollections.CreateTreeMultiMap<TKey, TValue>(
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TTreeMultiMap<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
+end;
+
+class function TCollections.CreateBidiDictionary<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
 begin
   Result := TBidiDictionary<TKey, TValue>.Create(ownerships);
 end;

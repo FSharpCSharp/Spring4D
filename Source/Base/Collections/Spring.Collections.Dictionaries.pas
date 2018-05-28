@@ -273,7 +273,8 @@ type
   {$ENDREGION}
   public
     constructor Create(const controller: IInterface;
-      const comparer: IEqualityComparer<TKey>);
+      const keyComparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships);
     property Controller: IInterface read GetController;
   end;
 
@@ -1669,9 +1670,10 @@ end;
 {$REGION 'TContainedDictionary<TKey, TValue>'}
 
 constructor TContainedDictionary<TKey, TValue>.Create(
-  const controller: IInterface; const comparer: IEqualityComparer<TKey>);
+  const controller: IInterface; const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships);
 begin
-  inherited Create(comparer);
+  inherited Create(keyComparer, ownerships);
   fController := Pointer(controller);
 end;
 
