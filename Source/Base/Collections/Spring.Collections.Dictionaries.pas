@@ -1147,7 +1147,7 @@ var
 begin
   hashCode := Hash(key);
   if Find(key, hashCode, bucketIndex, itemIndex) then
-    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem);
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
   if Grow then
     // rehash invalidates the indices
     Find(key, hashCode, bucketIndex, itemIndex);
@@ -2137,10 +2137,10 @@ var
 begin
   keyHashCode := KeyHash(key);
   if FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex) then
-    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem);
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
   valueHashCode := ValueHash(value);
   if FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex) then
-    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem);
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
   if Grow then
   begin
     // rehash invalidates the indices
@@ -2166,7 +2166,7 @@ begin
   begin
     if keyFound and (keyItemIndex = valueItemIndex) then
       Exit; // this key/value pair are already mapped to each other
-    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem)
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
   end
   else if keyFound then
     // key found, but value not found, this is a replace value operation
@@ -2199,7 +2199,7 @@ begin
   begin
     if valueFound and (keyItemIndex = valueItemIndex) then
       Exit; // this key/value pair are already mapped to each other
-    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem)
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem)
   end
   else if valueFound then
     // value found, but key not found, this is a replace value operation
@@ -3043,7 +3043,7 @@ var
   item: TKeyValuePair;
 begin
   if not fTree.Add(key, value) then
-    raise EInvalidOperationException.CreateRes(@SGenericDuplicateItem);
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
   IncUnchecked(fVersion);
   item.Key := key;
   item.Value := value;

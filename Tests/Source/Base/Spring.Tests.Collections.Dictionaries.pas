@@ -454,17 +454,17 @@ begin
   Check(SUT.Count = NumItems+1);
 
   // Add should raise an exception when the item already exists
-  CheckException(EInvalidOperationException,
+  CheckException(EArgumentException,
     procedure
     begin
       SUT.Add(NumItems, IntToStr(NumItems));
     end);
-  CheckException(EInvalidOperationException,
+  CheckException(EArgumentException,
     procedure
     begin
       SUT.Add(0, IntToStr(0));
     end);
-  CheckException(EInvalidOperationException,
+  CheckException(EArgumentException,
     procedure
     begin
       SUT.Add(NumItems div 2, IntToStr(NumItems div 2));
@@ -1287,7 +1287,7 @@ end;
 procedure TTestBidiDictionaryBase.TestAddOrSetValueBidi;
 begin
   SUT.AddOrSetValue(1, 'a');
-  CheckException(EInvalidOperationException, procedure begin SUT.AddOrSetValue(2, 'a') end, 'EInvalidOperationException was not raised');
+  CheckException(EArgumentException, procedure begin SUT.AddOrSetValue(2, 'a') end);
   SUT.AddOrSetValue(1, 'a');
   CheckEquals(1, SUT.Count);
   SUT.AddOrSetValue(1, 'b');
