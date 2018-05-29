@@ -146,6 +146,7 @@ type
   TTestBidiDictionaryBase = class(TTestDictionaryBase)
   protected
     SUTinverse: IBidiDictionary<string, Integer>;
+    procedure TearDown; override;
   published
     procedure TestAddOrSetValueBidi;
     procedure TestAddOrSetValueBidiMultipleTimes;
@@ -1047,6 +1048,12 @@ end;
 
 {$REGION 'TTestBidiDictionaryBase'}
 
+procedure TTestBidiDictionaryBase.TearDown;
+begin
+  SUTinverse := nil;
+  inherited;
+end;
+
 procedure TTestBidiDictionaryBase.TestAddOrSetValueBidi;
 begin
   SUT.AddOrSetValue(1, 'a');
@@ -1591,7 +1598,6 @@ begin
     SUT.Add(keys[index], index);
   SUT.Extract(keys[1], 1).Key.Free;
   Check(SUT.Remove(keys[2]));
-  Check(not SUT.Remove(keys[2]));
   SUT.Clear;
   Pass;
 end;
