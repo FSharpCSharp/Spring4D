@@ -171,10 +171,8 @@ end;
 
 class procedure TConnectionFactory.RegisterConnection<T>(const key: TDBDriverType);
 begin
-  if fRegistered.ContainsKey(key) then
+  if not fRegistered.TryAdd(key, TClass(T)) then
     raise EORMConnectionAlreadyRegistered.Create('Connection already registered');
-
-  fRegistered.Add(key, TClass(T));
 end;
 
 class procedure TConnectionFactory.SetConnectionConnected(

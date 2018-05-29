@@ -375,9 +375,8 @@ end;
 procedure TAbstractSession.RegisterNonGenericRowMapper(entityClass: TClass;
   const rowMapper: IRowMapper);
 begin
-  if fRowMappers.ContainsKey(entityClass) then
+  if not fRowMappers.TryAdd(entityClass, rowMapper) then
     raise EORMRowMapperAlreadyRegistered.CreateFmt('Row Mapper already registered for type: %s', [entityClass.ClassName]);
-  fRowMappers.Add(entityClass, rowMapper);
 end;
 
 function TAbstractSession.ResolveLazyInterface(const id: TValue;

@@ -935,9 +935,8 @@ begin
       begin
         fInterfaceTypes := TCollections.CreateDictionary<TGuid, TRttiInterfaceType>;
         for item in Context.GetTypes do
-          if item.IsInterface and TRttiInterfaceType(item).HasGuid
-            and not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then
-            fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
+          if item.IsInterface and TRttiInterfaceType(item).HasGuid then
+            fInterfaceTypes.TryAdd(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
       end;
     finally
       fSection.Leave;

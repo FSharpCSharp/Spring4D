@@ -199,6 +199,7 @@ type
   {$ENDREGION}
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
+    function TryAddInternal(const key: TKey; const value: TValue): Boolean; override;
   public
     constructor Create; overload; override;
     constructor Create(ownerships: TDictionaryOwnerships); overload;
@@ -229,7 +230,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
-    procedure Add(const key: TKey; const value: TValue); override;
     function Remove(const key: TKey): Boolean; override;
     function Remove(const key: TKey; const value: TValue): Boolean; override;
     function Extract(const key: TKey; const value: TValue): TKeyValuePair; override;
@@ -375,6 +375,7 @@ type
 
       {$REGION 'Implements IMap<TValue, TKey>'}
         procedure Add(const value: TValue; const key: TKey);
+        function TryAdd(const value: TValue; const key: TKey): Boolean;
         function Remove(const value: TValue): Boolean; reintroduce; overload;
         function Remove(const value: TValue; const key: TKey): Boolean; reintroduce; overload;
         function Extract(const value: TValue; const key: TKey): TValueKeyPair; reintroduce; overload;
@@ -550,6 +551,7 @@ type
     procedure Changed(const item: TPair<TKey, TValue>; action: TCollectionChangedAction); override;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
+    function TryAddInternal(const key: TKey; const value: TValue): Boolean; override;
   public
     constructor Create; overload; override;
     constructor Create(ownerships: TDictionaryOwnerships); overload;
@@ -579,7 +581,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
-    procedure Add(const key: TKey; const value: TValue); override;
     function Remove(const key: TKey): Boolean; override;
     function Remove(const key: TKey; const value: TValue): Boolean; override;
     function Extract(const key: TKey; const value: TValue): TKeyValuePair; override;
@@ -697,6 +698,7 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
+    function TryAddInternal(const key: TKey; const value: TValue): Boolean; override;
   public
     constructor Create; override;
     constructor Create(const keyComparer: IComparer<TKey>; const valueComparer: IComparer<TValue>); overload;
@@ -715,7 +717,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
-    procedure Add(const key: TKey; const value: TValue); overload; override;
     function Remove(const key: TKey): Boolean; overload; override;
     function Remove(const key: TKey; const value: TValue): Boolean; override;
     function Extract(const key: TKey; const value: TValue): TKeyValuePair; overload; override;
@@ -1137,20 +1138,6 @@ begin
   Result := fCount;
 end;
 
-procedure TDictionary<TKey, TValue>.Add(const key: TKey;
-  const value: TValue);
-var
-  bucketIndex, itemIndex, hashCode: Integer;
-begin
-  hashCode := Hash(key);
-  if Find(key, hashCode, bucketIndex, itemIndex) then
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
-  if Grow then
-    // rehash invalidates the indices
-    Find(key, hashCode, bucketIndex, itemIndex);
-  DoAdd(hashCode, bucketIndex, itemIndex, key, value);
-end;
-
 function TDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
@@ -1212,6 +1199,21 @@ end;
 procedure TDictionary<TKey, TValue>.TrimExcess;
 begin
   SetCapacity(fCount);
+end;
+
+function TDictionary<TKey, TValue>.TryAddInternal(const key: TKey;
+  const value: TValue): Boolean;
+var
+  bucketIndex, itemIndex, hashCode: Integer;
+begin
+  hashCode := Hash(key);
+  if Find(key, hashCode, bucketIndex, itemIndex) then
+    Exit(False);
+  if Grow then
+    // rehash invalidates the indices
+    Find(key, hashCode, bucketIndex, itemIndex);
+  DoAdd(hashCode, bucketIndex, itemIndex, key, value);
+  Result := True;
 end;
 
 function TDictionary<TKey, TValue>.TryExtract(const key: TKey;
@@ -2121,27 +2123,6 @@ begin
   Result := fCount;
 end;
 
-procedure TBidiDictionary<TKey, TValue>.Add(const key: TKey;
-  const value: TValue);
-var
-  keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
-begin
-  keyHashCode := KeyHash(key);
-  if FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex) then
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
-  valueHashCode := ValueHash(value);
-  if FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex) then
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
-  if Grow then
-  begin
-    // rehash invalidates the indices
-    FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
-    FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
-  end;
-  Assert(keyItemIndex = valueItemIndex);
-  DoAdd(keyhashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, key, value);
-end;
-
 procedure TBidiDictionary<TKey, TValue>.AddOrSetKey(const value: TValue; const key: TKey);
 var
   keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
@@ -2231,6 +2212,28 @@ end;
 procedure TBidiDictionary<TKey, TValue>.TrimExcess;
 begin
   SetCapacity(fCount);
+end;
+
+function TBidiDictionary<TKey, TValue>.TryAddInternal(const key: TKey;
+  const value: TValue): Boolean;
+var
+  keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+begin
+  keyHashCode := KeyHash(key);
+  if FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex) then
+    Exit(False);
+  valueHashCode := ValueHash(value);
+  if FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex) then
+    Exit(False);
+  if Grow then
+  begin
+    // rehash invalidates the indices
+    FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
+    FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
+  end;
+  Assert(keyItemIndex = valueItemIndex);
+  DoAdd(keyhashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, key, value);
+  Result := True;
 end;
 
 function TBidiDictionary<TKey, TValue>.TryExtract(const key: TKey;
@@ -2379,7 +2382,7 @@ end;
 procedure TBidiDictionary<TKey, TValue>.TInverse.Add(const value: TValue;
   const key: TKey);
 begin
-  fSource.Add(key, value);
+  fSource.AddInternal(key, value);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.TInverse.AddInternal(
@@ -2597,6 +2600,12 @@ end;
 procedure TBidiDictionary<TKey, TValue>.TInverse.TrimExcess;
 begin
   fSource.TrimExcess;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TryAdd(const value: TValue;
+  const key: TKey): Boolean;
+begin
+  Result := fSource.TryAddInternal(key, value);
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.TryExtract(const value: TValue;
@@ -3023,20 +3032,6 @@ begin
   inherited Destroy;
 end;
 
-procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey; const value: TValue);
-var
-  item: TKeyValuePair;
-begin
-  if not fTree.Add(key, value) then
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
-  IncUnchecked(fVersion);
-  item.Key := key;
-  item.Value := value;
-  Changed(item, caAdded);
-  KeyChanged(key, caAdded);
-  ValueChanged(value, caAdded);
-end;
-
 function TSortedDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
@@ -3285,6 +3280,22 @@ end;
 procedure TSortedDictionary<TKey, TValue>.TrimExcess;
 begin
   fTree.TrimExcess;
+end;
+
+function TSortedDictionary<TKey, TValue>.TryAddInternal(const key: TKey;
+  const value: TValue): Boolean;
+var
+  item: TKeyValuePair;
+begin
+  if not fTree.Add(key, value) then
+    Exit(False);
+  IncUnchecked(fVersion);
+  item.Key := key;
+  item.Value := value;
+  Changed(item, caAdded);
+  KeyChanged(key, caAdded);
+  ValueChanged(value, caAdded);
+  Result := True;
 end;
 
 function TSortedDictionary<TKey, TValue>.TryExtract(const key: TKey; out value: TValue): Boolean;

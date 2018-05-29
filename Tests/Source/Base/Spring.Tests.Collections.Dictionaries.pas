@@ -129,6 +129,7 @@ type
     procedure TestRemove;
     procedure TestSetItem;
     procedure TestSetItemOrder;
+    procedure TestTryAdd;
     procedure TestTryExtract;
     procedure TestToArray;
     procedure TestValuesContains;
@@ -267,6 +268,7 @@ type
     procedure TestExtract;
     procedure TestRemove;
     procedure TestSetItem;
+    procedure TestTryAdd;
     procedure TestTryExtract;
   end;
 
@@ -925,6 +927,16 @@ begin
   SUT[2] := 'b';
   SUT[1] := 'c';
   Check(SUT.Keys.EqualsTo([1, 2]));
+end;
+
+procedure TTestDictionaryBase.TestTryAdd;
+begin
+  FillTestData;
+
+  CheckTrue(SUT.TryAdd(5, 'e'));
+  CheckCount(5);
+  CheckFalse(SUT.TryAdd(1, 'e'));
+  CheckCount(5);
 end;
 
 procedure TTestDictionaryBase.TestTryExtract;
@@ -1877,6 +1889,30 @@ begin
   CheckEquals(2, fValueChangedEvents.Count);
   CheckValueChanged(0, 'b', caRemoved);
   CheckValueChanged(1, 'c', caAdded);
+end;
+
+procedure TTestDictionaryChangedEventBase.TestTryAdd;
+begin
+  AddEventHandlers;
+  SUT.TryAdd(1, 'a');
+  SUT.TryAdd(2, 'b');
+  SUT[2] := 'c';
+
+  CheckEquals(4, fChangedEvents.Count);
+  CheckChanged(0, 1, 'a', caAdded);
+  CheckChanged(1, 2, 'b', caAdded);
+  CheckChanged(2, 2, 'b', caRemoved);
+  CheckChanged(3, 2, 'c', caAdded);
+
+  CheckEquals(2, fKeyChangedEvents.Count);
+  CheckKeyChanged(0, 1, caAdded);
+  CheckKeyChanged(1, 2, caAdded);
+
+  CheckEquals(4, fValueChangedEvents.Count);
+  CheckValueChanged(0, 'a', caAdded);
+  CheckValueChanged(1, 'b', caAdded);
+  CheckValueChanged(2, 'b', caRemoved);
+  CheckValueChanged(3, 'c', caAdded);
 end;
 
 procedure TTestDictionaryChangedEventBase.TestTryExtract;

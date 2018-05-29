@@ -98,6 +98,7 @@ type
   {$ENDREGION}
     function CreateCollection(const comparer: IComparer<TValue>): IList<TValue>; virtual; abstract;
     function CreateDictionary(const comparer: IEqualityComparer<TKey>): TDictionary<TKey, IList<TValue>>; virtual; abstract;
+    function TryAddInternal(const key: TKey; const value: TValue): Boolean; override;
   public
     constructor Create; override;
     constructor Create(const keyComparer: IEqualityComparer<TKey>); overload;
@@ -116,7 +117,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
-    procedure Add(const key: TKey; const value: TValue); override;
     function Remove(const key: TKey): Boolean; reintroduce; overload;
     function Remove(const key: TKey; const value: TValue): Boolean; overload; override;
     function Extract(const key: TKey; const value: TValue): TKeyValuePair; override;
@@ -202,20 +202,6 @@ begin
   fValues.Free;
   fDictionary.Free;
   inherited Destroy;
-end;
-
-procedure TMultiMapBase<TKey, TValue>.Add(const key: TKey; const value: TValue);
-var
-  list: IList<TValue>;
-begin
-  if not fDictionary.TryGetValue(key, list) then
-  begin
-    list := CreateCollection(fValueComparer);
-    fDictionary[key] := list;
-  end;
-
-  list.Add(value);
-  Inc(fCount);
 end;
 
 procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;
@@ -359,6 +345,22 @@ begin
     Dec(fCount, list.Count);
     fDictionary.Remove(key);
   end;
+end;
+
+function TMultiMapBase<TKey, TValue>.TryAddInternal(const key: TKey;
+  const value: TValue): Boolean;
+var
+  list: IList<TValue>;
+begin
+  if not fDictionary.TryGetValue(key, list) then
+  begin
+    list := CreateCollection(fValueComparer);
+    fDictionary[key] := list;
+  end;
+
+  list.Add(value);
+  Inc(fCount);
+  Result := True;
 end;
 
 function TMultiMapBase<TKey, TValue>.TryGetValues(const key: TKey;

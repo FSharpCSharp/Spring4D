@@ -1699,6 +1699,20 @@ type
     procedure Add(const key: TKey; const value: TValue); overload;
 
     /// <summary>
+    ///   Attempts to add the specified key and value to the map.
+    /// </summary>
+    /// <param name="key">
+    ///   The key of the element to add.
+    /// </param>
+    /// <param name="value">
+    ///   The value of the element to add.
+    /// </param>
+    /// <returns>
+    ///   True if the key/value pair was added to the map.
+    /// </returns>
+    function TryAdd(const key: TKey; const value: TValue): Boolean;
+
+    /// <summary>
     ///   Removes the element with the specified key from the IMap&lt;TKey,
     ///   TValue&gt;.
     /// </summary>

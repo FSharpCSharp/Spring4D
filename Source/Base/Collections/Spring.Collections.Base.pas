@@ -357,13 +357,16 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    procedure AddInternal(const item: TKeyValuePair); override; final;
+    procedure AddInternal(const item: TKeyValuePair); overload; override; final;
+    procedure AddInternal(const key: TKey; const value: T); reintroduce; overload; virtual;
+    function TryAddInternal(const key: TKey; const value: T): Boolean; virtual; abstract;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); virtual;
     procedure ValueChanged(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
 
-    procedure Add(const key: TKey; const value: T); reintroduce; overload; virtual; abstract;
+    procedure Add(const key: TKey; const value: T);
+    function TryAdd(const key: TKey; const value: T): Boolean;
 
     function Remove(const item: TKeyValuePair): Boolean; overload; override; final;
     function Remove(const key: TKey): Boolean; reintroduce; overload; virtual; abstract;
@@ -478,6 +481,7 @@ implementation
 
 uses
   Classes,
+  RTLConsts,
   Rtti,
   TypInfo,
   Spring.Collections.Adapters,
@@ -1690,9 +1694,20 @@ begin
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
+procedure TMapBase<TKey, T>.Add(const key: TKey; const value: T);
+begin
+  AddInternal(key, value);
+end;
+
 procedure TMapBase<TKey, T>.AddInternal(const item: TKeyValuePair);
 begin
-  Add(item.Key, item.Value);
+  AddInternal(item.Key, item.Value);
+end;
+
+procedure TMapBase<TKey, T>.AddInternal(const key: TKey; const value: T);
+begin
+  if not TryAddInternal(key, value) then
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
 end;
 
 function TMapBase<TKey, T>.Contains(const item: TKeyValuePair): Boolean;
@@ -1735,6 +1750,11 @@ end;
 function TMapBase<TKey, T>.Remove(const item: TKeyValuePair): Boolean;
 begin
   Result := Remove(item.Key, item.Value);
+end;
+
+function TMapBase<TKey, T>.TryAdd(const key: TKey; const value: T): Boolean;
+begin
+  Result := TryAddInternal(key, value);
 end;
 
 procedure TMapBase<TKey, T>.ValueChanged(const item: T;
