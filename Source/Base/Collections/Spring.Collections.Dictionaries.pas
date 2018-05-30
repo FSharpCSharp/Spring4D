@@ -3176,10 +3176,7 @@ begin
     ValueChanged(Result.Value, caExtracted);
   end
   else
-  begin
-    Result.Key := key;
-    Result.Value := Default(TValue);
-  end;
+    Result := Default(TKeyValuePair);
 end;
 
 function TSortedDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
