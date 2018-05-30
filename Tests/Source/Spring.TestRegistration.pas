@@ -136,7 +136,6 @@ begin
     TTestDictionaryKeyComparer.Suite,
     TTestDictionaryOwnership.Suite,
     TTestDictionaryValueComparer.Suite,
-    TTestOrderedDictionary.Suite,
     TTestSortedDictionary.Suite,
     TTestSortedDictionaryChangedEvent.Suite
   ]);

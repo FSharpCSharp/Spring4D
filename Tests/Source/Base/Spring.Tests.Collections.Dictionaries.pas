@@ -114,7 +114,9 @@ type
     procedure TestExtract;
     procedure TestGetEnumerator;
     procedure TestGetItem;
+    procedure TestGetItemByIndex;
     procedure TestGetValueOrDefault;
+    procedure TestIndexOf;
     procedure TestIsInitializedEmpty;
     procedure TestKeysContains;
     procedure TestKeysEnumerate;
@@ -163,17 +165,6 @@ type
     procedure SetUp; override;
   end;
 
-  TTestOrderedDictionary = class(TTestCase)
-  private
-    SUT: IOrderedDictionary<Integer, string>;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure TestGetItemByIndex;
-    procedure TestIndexOf;
-  end;
-
   TTestSortedDictionary = class(TTestCase)
   private
     SUT: IDictionary<Integer, string>;
@@ -200,6 +191,7 @@ type
     procedure TestRemove;
     procedure TestSetItem;
     procedure TestToArray;
+    procedure TestTryAdd;
     procedure TestTryGetValue;
     procedure TestTryExtract;
     procedure TestValues;
@@ -704,6 +696,31 @@ begin
   CheckException(EKeyNotFoundException, procedure begin SUT[5] end);
 end;
 
+procedure TTestDictionaryBase.TestGetItemByIndex;
+var
+  orderedDict: IOrderedDictionary<Integer, string>;
+  i: Integer;
+begin
+  if not Supports(SUT, IOrderedDictionary<Integer, string>, orderedDict) then
+  begin
+    Pass;
+    Exit;
+  end;
+
+  FillTestData;
+
+  for i := 0 to orderedDict.Count - 1 do
+    CheckEquals(i + 1, orderedDict.Items[i].Key);
+
+  // remove and re-add, ensures that item array is compacted
+  orderedDict.Remove(2);
+  orderedDict.Add(2, 'b');
+  CheckEquals(1, orderedDict.Items[0].Key);
+  CheckEquals(2, orderedDict.Items[3].Key);
+  CheckEquals(3, orderedDict.Items[1].Key);
+  CheckEquals(4, orderedDict.Items[2].Key);
+end;
+
 procedure TTestDictionaryBase.TestGetValueOrDefault;
 begin
   FillTestData;
@@ -712,6 +729,33 @@ begin
   CheckEquals('foo', SUT.GetValueOrDefault(0, 'foo'));
   CheckEquals('a', SUT.GetValueOrDefault(1));
   CheckEquals('a', SUT.GetValueOrDefault(1, 'foo'));
+end;
+
+procedure TTestDictionaryBase.TestIndexOf;
+var
+  orderedDict: IOrderedDictionary<Integer, string>;
+  i: Integer;
+begin
+  if not Supports(SUT, IOrderedDictionary<Integer, string>, orderedDict) then
+  begin
+    Pass;
+    Exit;
+  end;
+
+  FillTestData;
+
+  for i := 0 to orderedDict.Count - 1 do
+    CheckEquals(i, orderedDict.IndexOf(i + 1));
+
+  // remove and re-add, ensures that item array is compacted
+  orderedDict.Remove(2);
+  orderedDict.Add(2, 'b');
+  CheckEquals(-1, orderedDict.IndexOf(0));
+  CheckEquals(0, orderedDict.IndexOf(1));
+  CheckEquals(1, orderedDict.IndexOf(3));
+  CheckEquals(2, orderedDict.IndexOf(4));
+  CheckEquals(3, orderedDict.IndexOf(2));
+  CheckEquals(-1, orderedDict.IndexOf(5));
 end;
 
 procedure TTestDictionaryBase.TestIsInitializedEmpty;
@@ -1129,65 +1173,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestOrderedDictionary'}
-
-procedure TTestOrderedDictionary.SetUp;
-begin
-  SUT := TCollections.CreateDictionary<Integer, string>;
-end;
-
-procedure TTestOrderedDictionary.TearDown;
-begin
-  SUT := nil;
-end;
-
-procedure TTestOrderedDictionary.TestGetItemByIndex;
-var
-  i: Integer;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  for i := 0 to SUT.Count - 1 do
-    CheckEquals(i + 1, SUT.Items[i].Key);
-
-  // remove and re-add, ensures that item array is compacted
-  SUT.Remove(2);
-  SUT.Add(2, 'b');
-  CheckEquals(1, SUT.Items[0].Key);
-  CheckEquals(2, SUT.Items[3].Key);
-  CheckEquals(3, SUT.Items[1].Key);
-  CheckEquals(4, SUT.Items[2].Key);
-end;
-
-procedure TTestOrderedDictionary.TestIndexOf;
-var
-  i: Integer;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  for i := 0 to SUT.Count - 1 do
-    CheckEquals(i, SUT.IndexOf(i + 1));
-
-  // remove and re-add, ensures that item array is compacted
-  SUT.Remove(2);
-  SUT.Add(2, 'b');
-  CheckEquals(-1, SUT.IndexOf(0));
-  CheckEquals(0, SUT.IndexOf(1));
-  CheckEquals(1, SUT.IndexOf(3));
-  CheckEquals(2, SUT.IndexOf(4));
-  CheckEquals(3, SUT.IndexOf(2));
-  CheckEquals(-1, SUT.IndexOf(5));
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TTestSortedDictionary'}
 
 procedure TTestSortedDictionary.SetUp;
@@ -1504,6 +1489,15 @@ begin
     CheckEquals(i, items[i].Key);
     CheckEquals(IntToStr(i), items[i].Value);
   end;
+end;
+
+procedure TTestSortedDictionary.TestTryAdd;
+begin
+  CheckCount(NumItems);
+  CheckTrue(SUT.TryAdd(NumItems, 'foo'));
+  CheckCount(NumItems + 1);
+  CheckFalse(SUT.TryAdd(NumItems, 'bar'));
+  CheckCount(NumItems + 1);
 end;
 
 procedure TTestSortedDictionary.TestTryExtract;

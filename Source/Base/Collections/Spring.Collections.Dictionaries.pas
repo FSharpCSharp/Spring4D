@@ -288,7 +288,7 @@ type
 
   TBidiDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
     IReadOnlyDictionary<TKey, TValue>, IDictionary<TKey, TValue>,
-    IBidiDictionary<TKey, TValue>)
+    IOrderedDictionary<TKey, TValue>, IBidiDictionary<TKey, TValue>)
   protected
   {$REGION 'Nested Types'}
     type
@@ -299,7 +299,8 @@ type
 
       TInverse = class(TContainedCollectionBase<TValueKeyPair>,
         IReadOnlyDictionary<TValue, TKey>, IMap<TValue, TKey>,
-        IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
+        IDictionary<TValue, TKey>, IOrderedDictionary<TValue, TKey>,
+        IBidiDictionary<TValue, TKey>)
       private type
       {$REGION 'Nested Types'}
         TEnumerator = class(TEnumeratorBase<TValueKeyPair>)
@@ -394,6 +395,12 @@ type
         function TryGetValue(const value: TValue; out key: TKey): Boolean;
         procedure TrimExcess;
         function AsReadOnlyDictionary: IReadOnlyDictionary<TValue, TKey>;
+      {$ENDREGION}
+
+      {$REGION 'Implements IOrderedDictionary<TKey, TValue>'}
+        function GetItemByIndex(index: Integer): TValueKeyPair;
+        function IndexOf(const value: TValue): Integer;
+        function IOrderedDictionary<TValue, TKey>.GetItem = GetItemByIndex;
       {$ENDREGION}
       end;
 
@@ -601,6 +608,12 @@ type
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
+  {$ENDREGION}
+
+  {$REGION 'Implements IOrderedDictionary<TKey, TValue>'}
+    function GetItemByIndex(index: Integer): TKeyValuePair;
+    function IndexOf(const key: TKey): Integer;
+    function IOrderedDictionary<TKey, TValue>.GetItem = GetItemByIndex;
   {$ENDREGION}
   end;
 
@@ -1838,6 +1851,16 @@ begin
   Rehash(newCapacity);
 end;
 
+function TBidiDictionary<TKey, TValue>.IndexOf(const key: TKey): Integer;
+var
+  bucketIndex: Integer;
+begin
+  if fCount <> fItemCount then
+    Rehash(fCapacity);
+  if not FindKey(key, KeyHash(key), bucketIndex, Result) then
+    Result := -1;
+end;
+
 function TBidiDictionary<TKey, TValue>.FindKey(const key: TKey; hashCode: Integer;
   out bucketIndex, itemIndex: Integer): Boolean;
 var
@@ -2329,6 +2352,14 @@ begin
   Result := fItems[keyItemIndex].Value;
 end;
 
+function TBidiDictionary<TKey, TValue>.GetItemByIndex(index: Integer): TKeyValuePair;
+begin
+  if fCount <> fItemCount then
+    Rehash(fCapacity);
+  Result.Key := fItems[index].Key;
+  Result.Value := fItems[index].Value;
+end;
+
 function TBidiDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValuePair>;
 begin
   Result := TOrderedEnumerable.Create(Self);
@@ -2493,6 +2524,15 @@ begin
   Result := fSource.fItems[valueItemIndex].Key;
 end;
 
+function TBidiDictionary<TKey, TValue>.TInverse.GetItemByIndex(index: Integer): TValueKeyPair;
+var
+  pair: TKeyValuePair;
+begin
+  pair := fSource.GetItemByIndex(index);
+  Result.Key := pair.Value;
+  Result.Value := pair.Key;
+end;
+
 function TBidiDictionary<TKey, TValue>.TInverse.GetKeys: IReadOnlyCollection<TValue>;
 begin
   Result := fSource.fValues;
@@ -2534,6 +2574,16 @@ end;
 function TBidiDictionary<TKey, TValue>.TInverse.GetValueType: PTypeInfo;
 begin
   Result := fSource.KeyType;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.IndexOf(const value: TValue): Integer;
+var
+  bucketIndex: Integer;
+begin
+  if fSource.fCount <> fSource.fItemCount then
+    fSource.Rehash(fSource.fCapacity);
+  if not fSource.FindValue(value, fSource.ValueHash(value), bucketIndex, Result) then
+    Result := -1;
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.Ordered: IEnumerable<TValueKeyPair>;
