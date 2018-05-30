@@ -146,6 +146,11 @@ type
     procedure SetUp; override;
   end;
 
+  TTestSortedDictionary = class(TTestDictionaryBase)
+  protected
+    procedure SetUp; override;
+  end;
+
   TTestBidiDictionaryBase = class(TTestDictionaryBase)
   protected
     SUTinverse: IBidiDictionary<string, Integer>;
@@ -165,7 +170,7 @@ type
     procedure SetUp; override;
   end;
 
-  TTestSortedDictionary = class(TTestCase)
+  TTestSortedDictionaryTreeStress = class(TTestCase)
   private
     SUT: IDictionary<Integer, string>;
     const NumItems = 100;
@@ -191,7 +196,6 @@ type
     procedure TestRemove;
     procedure TestSetItem;
     procedure TestToArray;
-    procedure TestTryAdd;
     procedure TestTryGetValue;
     procedure TestTryExtract;
     procedure TestValues;
@@ -1102,6 +1106,17 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestSortedDictionary'}
+
+procedure TTestSortedDictionary.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedDictionary<Integer, string>;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TTestBidiDictionaryBase'}
 
 procedure TTestBidiDictionaryBase.TearDown;
@@ -1173,9 +1188,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestSortedDictionary'}
+{$REGION 'TTestSortedDictionaryTreeStress'}
 
-procedure TTestSortedDictionary.SetUp;
+procedure TTestSortedDictionaryTreeStress.SetUp;
 var
   i, n: Integer;
 begin
@@ -1189,19 +1204,19 @@ begin
     SUT.Add(i, IntToStr(i));
 end;
 
-procedure TTestSortedDictionary.TearDown;
+procedure TTestSortedDictionaryTreeStress.TearDown;
 begin
   SUT := nil;
 end;
 
-procedure TTestSortedDictionary.CheckCount(expected: Integer);
+procedure TTestSortedDictionaryTreeStress.CheckCount(expected: Integer);
 begin
   CheckEquals(expected, SUT.Count, 'Count');
   CheckEquals(expected, SUT.Keys.Count, 'Keys.Count');
   CheckEquals(expected, SUT.Values.Count, 'Values.Count');
 end;
 
-procedure TTestSortedDictionary.TestAddOrSetValue;
+procedure TTestSortedDictionaryTreeStress.TestAddOrSetValue;
 begin
   CheckCount(NumItems);
   SUT[NumItems] := IntToStr(NumItems);
@@ -1212,7 +1227,7 @@ begin
   CheckEquals('test', SUT.Items[NumItems]);
 end;
 
-procedure TTestSortedDictionary.TestAddValue;
+procedure TTestSortedDictionaryTreeStress.TestAddValue;
 begin
   SUT.Add(NumItems, IntToStr(NumItems));
   CheckEquals(IntToStr(NumItems), SUT.Items[NumItems]);
@@ -1239,7 +1254,7 @@ begin
   CheckCount(NumItems + 1);
 end;
 
-procedure TTestSortedDictionary.TestContainsKey;
+procedure TTestSortedDictionaryTreeStress.TestContainsKey;
 var
   i: Integer;
 begin
@@ -1253,7 +1268,7 @@ begin
   Check(not SUT.ContainsKey(MaxInt));
 end;
 
-procedure TTestSortedDictionary.TestContainsValue;
+procedure TTestSortedDictionaryTreeStress.TestContainsValue;
 var
   i: Integer;
 begin
@@ -1267,12 +1282,12 @@ begin
   Check(not SUT.ContainsValue(''));
 end;
 
-procedure TTestSortedDictionary.TestCount;
+procedure TTestSortedDictionaryTreeStress.TestCount;
 begin
   CheckCount(NumItems);
 end;
 
-procedure TTestSortedDictionary.TestEnumeration;
+procedure TTestSortedDictionaryTreeStress.TestEnumeration;
 var
   i: Integer;
   item: TPair<Integer, string>;
@@ -1288,7 +1303,7 @@ begin
   CheckEquals(NumItems, i);
 end;
 
-procedure TTestSortedDictionary.TestExtract;
+procedure TTestSortedDictionaryTreeStress.TestExtract;
 begin
   CheckCount(NumItems);
 
@@ -1311,7 +1326,7 @@ begin
   CheckCount(NumItems - 3);
 end;
 
-procedure TTestSortedDictionary.TestGetItem;
+procedure TTestSortedDictionaryTreeStress.TestGetItem;
 begin
   CheckEquals('0', SUT[0]);
   CheckEquals(IntToStr(NumItems div 2), SUT[NumItems div 2]);
@@ -1322,7 +1337,7 @@ begin
   CheckEquals('', SUT[-500]);
 end;
 
-procedure TTestSortedDictionary.TestGetValueOrDefault;
+procedure TTestSortedDictionaryTreeStress.TestGetValueOrDefault;
 begin
   // An item that exists
   CheckEquals('0', (SUT as IReadOnlyDictionary<Integer, string>).GetValueOrDefault(0, 'test'));
@@ -1330,7 +1345,7 @@ begin
   CheckEquals('test', (SUT as IReadOnlyDictionary<Integer, string>).GetValueOrDefault(NumItems*2, 'test'));
 end;
 
-procedure TTestSortedDictionary.TestKeys;
+procedure TTestSortedDictionaryTreeStress.TestKeys;
 var
   keys: IReadOnlyCollection<Integer>;
   i: Integer;
@@ -1341,7 +1356,7 @@ begin
     Check(Keys.Contains(i));
 end;
 
-procedure TTestSortedDictionary.TestKeysEnumeration;
+procedure TTestSortedDictionaryTreeStress.TestKeysEnumeration;
 var
   i: Integer;
   key: Integer;
@@ -1356,7 +1371,7 @@ begin
   CheckEquals(NumItems, i);
 end;
 
-procedure TTestSortedDictionary.TestKeysToArray;
+procedure TTestSortedDictionaryTreeStress.TestKeysToArray;
 var
   i: Integer;
   keys: TArray<Integer>;
@@ -1369,7 +1384,7 @@ begin
     CheckEquals(i, keys[i]);
 end;
 
-procedure TTestSortedDictionary.TestMapSimpleValues;
+procedure TTestSortedDictionaryTreeStress.TestMapSimpleValues;
 var
   i: Integer;
 begin
@@ -1382,7 +1397,7 @@ begin
   Check(not SUT.ContainsKey(NumItems));
 end;
 
-procedure TTestSortedDictionary.TestOrdered;
+procedure TTestSortedDictionaryTreeStress.TestOrdered;
 var
   items: IEnumerable<TPair<Integer, string>>;
   i: Integer;
@@ -1402,7 +1417,7 @@ begin
   Check(i = NumItems);
 end;
 
-procedure TTestSortedDictionary.TestRemove;
+procedure TTestSortedDictionaryTreeStress.TestRemove;
 begin
   CheckCount(NumItems);
 
@@ -1423,7 +1438,7 @@ begin
   CheckCount(NumItems-3); // Count unchanged
 end;
 
-procedure TTestSortedDictionary.TestSetItem;
+procedure TTestSortedDictionaryTreeStress.TestSetItem;
 var
   item: TPair<Integer, string>;
   i: Integer;
@@ -1475,7 +1490,7 @@ begin
   CheckEquals(NumItems + 1, i);
 end;
 
-procedure TTestSortedDictionary.TestToArray;
+procedure TTestSortedDictionaryTreeStress.TestToArray;
 var
   i: Integer;
   items: TArray<TPair<Integer, string>>;
@@ -1491,16 +1506,7 @@ begin
   end;
 end;
 
-procedure TTestSortedDictionary.TestTryAdd;
-begin
-  CheckCount(NumItems);
-  CheckTrue(SUT.TryAdd(NumItems, 'foo'));
-  CheckCount(NumItems + 1);
-  CheckFalse(SUT.TryAdd(NumItems, 'bar'));
-  CheckCount(NumItems + 1);
-end;
-
-procedure TTestSortedDictionary.TestTryExtract;
+procedure TTestSortedDictionaryTreeStress.TestTryExtract;
 var
   value: string;
 begin
@@ -1531,7 +1537,7 @@ begin
   CheckCount(NumItems - 3);
 end;
 
-procedure TTestSortedDictionary.TestTryGetValue;
+procedure TTestSortedDictionaryTreeStress.TestTryGetValue;
 var
   value: string;
 begin
@@ -1544,7 +1550,7 @@ begin
   Check(not SUT.TryGetValue(NumItems * 2, value));
 end;
 
-procedure TTestSortedDictionary.TestValues;
+procedure TTestSortedDictionaryTreeStress.TestValues;
 var
   values: IReadOnlyCollection<string>;
   i: Integer;
@@ -1555,7 +1561,7 @@ begin
     Check(Values.Contains(IntToStr(i)));
 end;
 
-procedure TTestSortedDictionary.TestValuesEnumeration;
+procedure TTestSortedDictionaryTreeStress.TestValuesEnumeration;
 var
   i: Integer;
   value: string;
@@ -1570,7 +1576,7 @@ begin
   CheckEquals(NumItems, i);
 end;
 
-procedure TTestSortedDictionary.TestValuesToArray;
+procedure TTestSortedDictionaryTreeStress.TestValuesToArray;
 var
   i: Integer;
   values: TArray<string>;

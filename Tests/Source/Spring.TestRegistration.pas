@@ -137,6 +137,7 @@ begin
     TTestDictionaryOwnership.Suite,
     TTestDictionaryValueComparer.Suite,
     TTestSortedDictionary.Suite,
+    TTestSortedDictionaryTreeStress.Suite,
     TTestSortedDictionaryChangedEvent.Suite
   ]);
 
