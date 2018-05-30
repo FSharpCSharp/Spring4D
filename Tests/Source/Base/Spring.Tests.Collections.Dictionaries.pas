@@ -114,9 +114,7 @@ type
     procedure TestExtract;
     procedure TestGetEnumerator;
     procedure TestGetItem;
-    procedure TestGetItemByIndex;
     procedure TestGetValueOrDefault;
-    procedure TestIndexOf;
     procedure TestIsInitializedEmpty;
     procedure TestKeysContains;
     procedure TestKeysEnumerate;
@@ -700,31 +698,6 @@ begin
   CheckException(EKeyNotFoundException, procedure begin SUT[5] end);
 end;
 
-procedure TTestDictionaryBase.TestGetItemByIndex;
-var
-  orderedDict: IOrderedDictionary<Integer, string>;
-  i: Integer;
-begin
-  if not Supports(SUT, IOrderedDictionary<Integer, string>, orderedDict) then
-  begin
-    Pass;
-    Exit;
-  end;
-
-  FillTestData;
-
-  for i := 0 to orderedDict.Count - 1 do
-    CheckEquals(i + 1, orderedDict.Items[i].Key);
-
-  // remove and re-add, ensures that item array is compacted
-  orderedDict.Remove(2);
-  orderedDict.Add(2, 'b');
-  CheckEquals(1, orderedDict.Items[0].Key);
-  CheckEquals(2, orderedDict.Items[3].Key);
-  CheckEquals(3, orderedDict.Items[1].Key);
-  CheckEquals(4, orderedDict.Items[2].Key);
-end;
-
 procedure TTestDictionaryBase.TestGetValueOrDefault;
 begin
   FillTestData;
@@ -733,33 +706,6 @@ begin
   CheckEquals('foo', SUT.GetValueOrDefault(0, 'foo'));
   CheckEquals('a', SUT.GetValueOrDefault(1));
   CheckEquals('a', SUT.GetValueOrDefault(1, 'foo'));
-end;
-
-procedure TTestDictionaryBase.TestIndexOf;
-var
-  orderedDict: IOrderedDictionary<Integer, string>;
-  i: Integer;
-begin
-  if not Supports(SUT, IOrderedDictionary<Integer, string>, orderedDict) then
-  begin
-    Pass;
-    Exit;
-  end;
-
-  FillTestData;
-
-  for i := 0 to orderedDict.Count - 1 do
-    CheckEquals(i, orderedDict.IndexOf(i + 1));
-
-  // remove and re-add, ensures that item array is compacted
-  orderedDict.Remove(2);
-  orderedDict.Add(2, 'b');
-  CheckEquals(-1, orderedDict.IndexOf(0));
-  CheckEquals(0, orderedDict.IndexOf(1));
-  CheckEquals(1, orderedDict.IndexOf(3));
-  CheckEquals(2, orderedDict.IndexOf(4));
-  CheckEquals(3, orderedDict.IndexOf(2));
-  CheckEquals(-1, orderedDict.IndexOf(5));
 end;
 
 procedure TTestDictionaryBase.TestIsInitializedEmpty;

@@ -68,7 +68,7 @@ type
   /// <typeparam name="T">
   ///   The type of elements in the hash set.
   /// </typeparam>
-  THashSet<T> = class(TSetBase<T>, ISet<T>, IOrderedSet<T>)
+  THashSet<T> = class(TSetBase<T>, ISet<T>)
   private
   {$REGION 'Nested Types'}
     type
@@ -140,7 +140,6 @@ type
     procedure TrimExcess;
 
     function Contains(const item: T): Boolean; override;
-    function IndexOf(const item: T): Integer;
     function ToArray: TArray<T>; override;
   end;
 
@@ -617,16 +616,6 @@ begin
   if fCount <> fItemCount then
     Rehash(fCapacity);
   Result := fItems[index].Item;
-end;
-
-function THashSet<T>.IndexOf(const item: T): Integer;
-var
-  bucketIndex: Integer;
-begin
-  if fCount <> fItemCount then
-    Rehash(fCapacity);
-  if not Find(item, Hash(item), bucketIndex, Result) then
-    Result := -1;
 end;
 
 function THashSet<T>.ToArray: TArray<T>;
