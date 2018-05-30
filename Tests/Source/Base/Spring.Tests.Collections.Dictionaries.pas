@@ -1331,10 +1331,9 @@ begin
   CheckEquals('0', SUT[0]);
   CheckEquals(IntToStr(NumItems div 2), SUT[NumItems div 2]);
 
-  // Get returns the default value when the item doesn't exist
-  CheckEquals('', SUT[NumItems * 10]);
-  CheckEquals('', SUT[MaxInt]);
-  CheckEquals('', SUT[-500]);
+  CheckException(EKeyNotFoundException, procedure begin SUT[NumItems * 10] end);
+  CheckException(EKeyNotFoundException, procedure begin SUT[MaxInt] end);
+  CheckException(EKeyNotFoundException, procedure begin SUT[-1] end);
 end;
 
 procedure TTestSortedDictionaryTreeStress.TestGetValueOrDefault;

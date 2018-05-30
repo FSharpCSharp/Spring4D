@@ -3202,7 +3202,7 @@ end;
 function TSortedDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
 begin
   if not TryGetValue(key, Result) then
-    Result := Default(TValue);
+    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
 end;
 
 function TSortedDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
