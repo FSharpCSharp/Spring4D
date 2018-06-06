@@ -804,8 +804,12 @@ begin
 end;
 
 function TEnumerableBase<T>.FirstOrDefault: T;
+var
+  defaultItem: T;
 begin
-  Result := FirstOrDefault(Default(T));
+  // workaround for RSP-20683
+  defaultItem := Default(T);
+  Result := FirstOrDefault(defaultItem);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const defaultValue: T): T;
@@ -820,8 +824,12 @@ begin
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>): T;
+var
+  defaultItem: T;
 begin
-  Result := FirstOrDefault(predicate, Default(T));
+  // workaround for RSP-20683
+  defaultItem := Default(T);
+  Result := FirstOrDefault(predicate, defaultItem);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>;
@@ -916,8 +924,12 @@ begin
 end;
 
 function TEnumerableBase<T>.LastOrDefault: T;
+var
+  defaultItem: T;
 begin
-  Result := LastOrDefault(Default(T));
+  // workaround for RSP-20683
+  defaultItem := Default(T);
+  Result := LastOrDefault(defaultItem);
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
@@ -930,8 +942,12 @@ begin
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>): T;
+var
+  defaultItem: T;
 begin
-  Result := LastOrDefault(predicate, Default(T));
+  // workaround for RSP-20683
+  defaultItem := Default(T);
+  Result := LastOrDefault(predicate, defaultItem);
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>;
@@ -1111,8 +1127,12 @@ begin
 end;
 
 function TEnumerableBase<T>.SingleOrDefault: T;
+var
+  defaultItem: T;
 begin
-  Result := SingleOrDefault(Default(T));
+  // workaround for RSP-20683
+  defaultItem := Default(T);
+  Result := SingleOrDefault(defaultItem);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const defaultValue: T): T;
@@ -1130,8 +1150,12 @@ begin
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>): T;
+var
+  defaultItem: T;
 begin
-  Result := SingleOrDefault(predicate, Default(T));
+  // workaround for RSP-20683
+  defaultItem := Default(T);
+  Result := SingleOrDefault(predicate, defaultItem);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>;
