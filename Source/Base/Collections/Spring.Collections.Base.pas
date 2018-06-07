@@ -1147,7 +1147,7 @@ begin
 
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
-    Exit(Default(T));
+    Exit(defaultValue);
   found := False;
   repeat
     item := enumerator.Current;
