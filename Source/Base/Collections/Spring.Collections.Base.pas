@@ -158,19 +158,19 @@ type
     function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
-    function First: T; overload; virtual;
+    function First: T; overload;
     function First(const predicate: Predicate<T>): T; overload;
     function FirstOrDefault: T; overload;
-    function FirstOrDefault(const defaultValue: T): T; overload; virtual;
+    function FirstOrDefault(const defaultValue: T): T; overload;
     function FirstOrDefault(const predicate: Predicate<T>): T; overload;
     function FirstOrDefault(const predicate: Predicate<T>; const defaultValue: T): T; overload;
 
     procedure ForEach(const action: Action<T>); overload;
 
-    function Last: T; overload; virtual;
+    function Last: T; overload;
     function Last(const predicate: Predicate<T>): T; overload;
     function LastOrDefault: T; overload;
-    function LastOrDefault(const defaultValue: T): T; overload; virtual;
+    function LastOrDefault(const defaultValue: T): T; overload;
     function LastOrDefault(const predicate: Predicate<T>): T; overload;
     function LastOrDefault(const predicate: Predicate<T>; const defaultValue: T): T; overload;
 
@@ -424,12 +424,6 @@ type
 
     procedure Clear; override;
 
-    function First: T; overload; override;
-    function FirstOrDefault(const defaultValue: T): T; overload; override;
-
-    function Last: T; overload; override;
-    function LastOrDefault(const defaultValue: T): T; overload; override;
-
     function Single: T; overload; override;
     function SingleOrDefault(const defaultValue: T): T; overload; override;
 
@@ -626,10 +620,10 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := True;
   for item in Self do
     if not predicate(item) then
       Exit(False);
+  Result := True;
 end;
 
 function TEnumerableBase<T>.Any(const predicate: Predicate<T>): Boolean;
@@ -640,10 +634,10 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := False;
   for item in Self do
     if predicate(item) then
       Exit(True);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.Concat(
@@ -755,64 +749,40 @@ begin
 end;
 
 function TEnumerableBase<T>.First: T;
-var
-  enumerator: IEnumerator<T>;
 begin
-  enumerator := GetEnumerator;
-  if enumerator.MoveNext then
-    Result := enumerator.Current
-  else
+  if not TryGetFirst(Result) then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
 function TEnumerableBase<T>.First(const predicate: Predicate<T>): T;
-var
-  item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
-
-  for item in Self do
-    if predicate(item) then
-      Exit(item);
-  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+  if not TryGetFirst(Result, predicate) then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault: T;
 begin
-  Result := FirstOrDefault(Default(T));
+  if not TryGetFirst(Result) then
+    Result := Default(T);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const defaultValue: T): T;
-var
-  enumerator: IEnumerator<T>;
 begin
-  enumerator := GetEnumerator;
-  if enumerator.MoveNext then
-    Result := enumerator.Current
-  else
+  if not TryGetFirst(Result) then
     Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: Predicate<T>): T;
 begin
-  Result := FirstOrDefault(predicate, Default(T));
+  if not TryGetFirst(Result, predicate) then
+    Result := Default(T);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
-var
-  item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
-
-  for item in Self do
-    if predicate(item) then
-      Exit(item);
-  Result := defaultValue;
+  if not TryGetFirst(Result, predicate) then
+    Result := defaultValue;
 end;
 
 procedure TEnumerableBase<T>.ForEach(const action: Action<T>);
@@ -860,69 +830,40 @@ begin
 end;
 
 function TEnumerableBase<T>.Last: T;
-var
-  enumerator: IEnumerator<T>;
 begin
-  enumerator := GetEnumerator;
-  if not enumerator.MoveNext then
+  if not TryGetLast(Result) then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-  repeat
-    Result := enumerator.Current;
-  until not enumerator.MoveNext;
 end;
 
 function TEnumerableBase<T>.Last(const predicate: Predicate<T>): T;
-var
-  found: Boolean;
-  item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
-
-  found := False;
-  for item in Self do
-    if predicate(item) then
-    begin
-      Result := item;
-      found := True;
-    end;
-  if not found then
+  if not TryGetLast(Result, predicate) then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
 
 function TEnumerableBase<T>.LastOrDefault: T;
 begin
-  Result := LastOrDefault(Default(T));
-end;
-
-function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
-var
-  item: T;
-begin
-  Result := defaultValue;
-  for item in Self do
-    Result := item;
+  if not TryGetLast(Result) then
+    Result := Default(T);
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>): T;
 begin
-  Result := LastOrDefault(predicate, Default(T));
+  if not TryGetLast(Result, predicate) then
+    Result := Default(T);
+end;
+
+function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
+begin
+  if not TryGetLast(Result) then
+    Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
-var
-  item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
-
-  Result := defaultValue;
-  for item in Self do
-    if predicate(item) then
-      Result := item;
+  if not TryGetLast(Result) then
+    Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.Max: T;
@@ -937,25 +878,23 @@ end;
 
 function TEnumerableBase<T>.Max(const comparer: IComparer<T>): T;
 var
-  hasValue: Boolean;
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  hasValue := False;
-  for item in Self do
-    if not hasValue then
-    begin
-      Result := item;
-      hasValue := True;
-    end
-    else
-      if comparer.Compare(item, Result) > 0 then
-        Result := item;
-  if not hasValue then
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := enumerator.Current;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
+    if comparer.Compare(item, Result) > 0 then
+      Result := item;
+  end;
 end;
 
 function TEnumerableBase<T>.Max(const comparer: TComparison<T>): T;
@@ -975,25 +914,23 @@ end;
 
 function TEnumerableBase<T>.Min(const comparer: IComparer<T>): T;
 var
-  hasValue: Boolean;
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  hasValue := False;
-  for item in Self do
-    if not hasValue then
-    begin
-      Result := item;
-      hasValue := True;
-    end
-    else
-      if comparer.Compare(item, Result) < 0 then
-        Result := item;
-  if not hasValue then
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := enumerator.Current;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
+    if comparer.Compare(item, Result) < 0 then
+      Result := item;
+  end;
 end;
 
 function TEnumerableBase<T>.Min(const comparer: TComparison<T>): T;
@@ -1055,29 +992,24 @@ end;
 function TEnumerableBase<T>.Single(const predicate: Predicate<T>): T;
 var
   enumerator: IEnumerator<T>;
-  found: Boolean;
-  item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
   enumerator := GetEnumerator;
-  if not enumerator.MoveNext then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-  found := False;
-  repeat
-    item := enumerator.Current;
-    if predicate(item) then
+  while enumerator.MoveNext do
+  begin
+    Result := enumerator.Current;
+    if predicate(Result) then
     begin
-      if found then
-        raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
-      Result := item;
-      found := True;
+      while enumerator.MoveNext do
+        if predicate(enumerator.Current) then
+          raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+      Exit;
     end;
-  until not enumerator.MoveNext;
-  if not found then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+  end;
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault: T;
@@ -1089,14 +1021,12 @@ function TEnumerableBase<T>.SingleOrDefault(const defaultValue: T): T;
 var
   enumerator: IEnumerator<T>;
 begin
-  Result := defaultValue;
   enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+    Exit(defaultValue);
+  Result := enumerator.Current;
   if enumerator.MoveNext then
-  begin
-    Result := enumerator.Current;
-    if enumerator.MoveNext then
-      raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
-  end;
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>): T;
@@ -1108,29 +1038,24 @@ function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
 var
   enumerator: IEnumerator<T>;
-  found: Boolean;
-  item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
   enumerator := GetEnumerator;
-  if not enumerator.MoveNext then
-    Exit(Default(T));
-  found := False;
-  repeat
-    item := enumerator.Current;
-    if predicate(item) then
+  while enumerator.MoveNext do
+  begin
+    Result := enumerator.Current;
+    if predicate(Result) then
     begin
-      if found then
-        raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
-      Result := item;
-      found := True;
+      while enumerator.MoveNext do
+        if predicate(enumerator.Current) then
+          raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+      Exit;
     end;
-  until not enumerator.MoveNext;
-  if not found then
-    Result := defaultValue;
+  end;
+  Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
@@ -1235,15 +1160,16 @@ end;
 function TEnumerableBase<T>.TryGetElementAt(out value: T;
   index: Integer): Boolean;
 var
-  item: T;
+  enumerator: IEnumerator<T>;
 begin
   if index < 0 then
     Exit(False);
-  for item in Self do
+  enumerator := GetEnumerator;
+  while enumerator.MoveNext do
   begin
     if index = 0 then
     begin
-      value := item;
+      value := enumerator.Current;
       Exit(True);
     end;
     Dec(index);
@@ -1255,49 +1181,58 @@ function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
-  Result := False;
   enumerator := GetEnumerator;
   if enumerator.MoveNext then
   begin
     value := enumerator.Current;
-    Result := True;
+    Exit(True);
   end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetFirst(out value: T; const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
-  Result := False;
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
+
   for item in Self do
-  begin
     if predicate(item) then
     begin
       value := item;
       Exit(True);
     end;
-  end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
-  Result := False;
   enumerator := GetEnumerator;
   if enumerator.MoveNext then
   begin
     repeat
       value := enumerator.Current;
     until not enumerator.MoveNext;
-    Result := True;
+    Exit(True);
   end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetLast(out value: T; const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
+
   Result := False;
   for item in Self do
   begin
@@ -1334,7 +1269,6 @@ var
 begin
   Result := False;
   for item in Self do
-  begin
     if predicate(item) then
     begin
       if Result then
@@ -1342,7 +1276,6 @@ begin
       value := item;
       Result := True;
     end;
-  end;
 end;
 
 function TEnumerableBase<T>.Where(
@@ -1841,22 +1774,6 @@ begin
   end;
 end;
 
-function TListBase<T>.First: T;
-begin
-  if Count > 0 then
-    Result := Items[0]
-  else
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-end;
-
-function TListBase<T>.FirstOrDefault(const defaultValue: T): T;
-begin
-  if Count > 0 then
-    Result := Items[0]
-  else
-    Result := defaultValue;
-end;
-
 function TListBase<T>.GetCount: Integer;
 begin
   Result := inherited GetCount;
@@ -1935,27 +1852,6 @@ begin
     Insert(index, item);
     Inc(index);
   end;
-end;
-
-function TListBase<T>.Last: T;
-var
-  count: Integer;
-begin
-  count := Self.Count;
-  if count = 0 then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-  Result := Items[count - 1];
-end;
-
-function TListBase<T>.LastOrDefault(const defaultValue: T): T;
-var
-  count: Integer;
-begin
-  count := Self.Count;
-  if count = 0 then
-    Result := defaultValue
-  else
-    Result := Items[count - 1];
 end;
 
 function TListBase<T>.QueryInterface(const IID: TGUID; out Obj): HResult;

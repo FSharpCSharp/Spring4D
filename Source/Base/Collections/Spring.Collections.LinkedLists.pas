@@ -90,6 +90,8 @@ type
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
     procedure AddInternal(const item: T); override;
+    function TryGetFirst(out value: T): Boolean; override;
+    function TryGetLast(out value: T): Boolean; override;
   public
     destructor Destroy; override;
 
@@ -110,9 +112,6 @@ type
 
     function Find(const value: T): TLinkedListNode<T>;
     function FindLast(const value: T): TLinkedListNode<T>;
-
-    function First: T; override;
-    function Last: T; override;
 
     function Remove(const item: T): Boolean; overload; override;
     procedure Remove(const node: TLinkedListNode<T>); reintroduce; overload;
@@ -330,14 +329,6 @@ begin
   end;
 end;
 
-function TLinkedList<T>.First: T;
-begin
-  if Assigned(fHead) then
-    Result := fHead.fItem
-  else
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-end;
-
 function TLinkedList<T>.GetCount: Integer;
 begin
   Result := fCount;
@@ -420,14 +411,6 @@ begin
   fFirstFree := node;
 end;
 
-function TLinkedList<T>.Last: T;
-begin
-  if Assigned(fHead) then
-    Result := fHead.fPrev.fItem
-  else
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-end;
-
 procedure TLinkedList<T>.Remove(const node: TLinkedListNode<T>);
 begin
   ValidateNode(node);
@@ -456,6 +439,20 @@ begin
   Result := Assigned(node);
   if Result then
     InternalRemoveNode(node);
+end;
+
+function TLinkedList<T>.TryGetFirst(out value: T): Boolean;
+begin
+  Result := Assigned(fHead);
+  if Result then
+    value := fHead.fItem;
+end;
+
+function TLinkedList<T>.TryGetLast(out value: T): Boolean;
+begin
+  Result := Assigned(fHead);
+  if Result then
+    value := fHead.fPrev.fItem;
 end;
 
 procedure TLinkedList<T>.ValidateNewNode(const node: TLinkedListNode<T>);

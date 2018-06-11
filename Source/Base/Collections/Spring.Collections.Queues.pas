@@ -100,10 +100,6 @@ type
     function TryRemoveLast(out item: T): Boolean;
     function TryExtractFirst(out item: T): Boolean;
     function TryExtractLast(out item: T): Boolean;
-    function First: T; overload; override;
-    function Last: T; overload; override;
-    function FirstOrDefault(const defaultValue: T): T; overload; override;
-    function LastOrDefault(const defaultValue: T): T; overload; override;
     function Single: T; overload; override;
     function SingleOrDefault(const defaultValue: T): T; overload; override;
     function TryGetFirst(out value: T): Boolean; override;
@@ -248,21 +244,6 @@ begin
   RemoveInternal(Result, deBack, caExtracted);
 end;
 
-function TDeque<T>.First: T;
-begin
-  if fCount = 0 then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-  Result := fItems[Front];
-end;
-
-function TDeque<T>.FirstOrDefault(const defaultValue: T): T;
-begin
-  if fCount = 0 then
-    Result := defaultValue
-  else
-    Result := fItems[Front];
-end;
-
 function TDeque<T>.GetCapacity: Integer;
 begin
   Result := Length(fItems);
@@ -293,21 +274,6 @@ begin
   else if newCapacity < 0 then
     OutOfMemoryError;
   SetCapacity(newCapacity);
-end;
-
-function TDeque<T>.Last: T;
-begin
-  if fCount = 0 then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-  Result := fItems[Back];
-end;
-
-function TDeque<T>.LastOrDefault(const defaultValue: T): T;
-begin
-  if fCount = 0 then
-    Result := defaultValue
-  else
-    Result := fItems[Back];
 end;
 
 procedure TDeque<T>.RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction);
