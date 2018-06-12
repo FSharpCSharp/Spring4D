@@ -184,12 +184,12 @@ type
     function Min(const comparer: TComparison<T>): T; overload;
 
     function Ordered: IEnumerable<T>; overload; virtual;
-    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload; virtual;
+    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
     function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload;
 
-    function Reversed: IEnumerable<T>; virtual;
+    function Reversed: IEnumerable<T>;
 
-    function Shuffled: IEnumerable<T>; virtual;
+    function Shuffled: IEnumerable<T>;
 
     function Single: T; overload; virtual;
     function Single(const predicate: Predicate<T>): T; overload;
