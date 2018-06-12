@@ -762,6 +762,8 @@ begin
 end;
 
 function TEnumerableBase<T>.FirstOrDefault: T;
+var
+  defaultItem: T;
 begin
   if not TryGetFirst(Result) then
     Result := Default(T);
@@ -848,16 +850,16 @@ begin
     Result := Default(T);
 end;
 
-function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>): T;
-begin
-  if not TryGetLast(Result, predicate) then
-    Result := Default(T);
-end;
-
 function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
 begin
   if not TryGetLast(Result) then
     Result := defaultValue;
+end;
+
+function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>): T;
+begin
+  if not TryGetLast(Result, predicate) then
+    Result := Default(T);
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>;
@@ -1249,6 +1251,8 @@ begin
       Result := True;
     end;
   end;
+  if not Result then
+    value := Default(T);
 end;
 
 function TEnumerableBase<T>.TryGetSingle(out value: T): Boolean;
@@ -1256,7 +1260,6 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-  Result := False;
   enumerator := GetEnumerator;
   if enumerator.MoveNext then
   begin
@@ -1264,9 +1267,11 @@ begin
     if not enumerator.MoveNext then
     begin
       value := item;
-      Result := True;
+      Exit(True);
     end;
   end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetSingle(out value: T;
@@ -1279,7 +1284,10 @@ begin
     if predicate(item) then
     begin
       if Result then
+      begin
+        value := Default(T);
         Exit(False);
+      end;
       value := item;
       Result := True;
     end;
@@ -2001,21 +2009,27 @@ function TListBase<T>.TryGetFirst(out value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    value := Items[0];
+    value := Items[0]
+  else
+    value := Default(T);
 end;
 
 function TListBase<T>.TryGetLast(out value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    value := Items[Count - 1];
+    value := Items[Count - 1]
+  else
+    value := Default(T);
 end;
 
 function TListBase<T>.TryGetSingle(out value: T): Boolean;
 begin
   Result := Count = 1;
   if Result then
-    value := Items[0];
+    value := Items[0]
+  else
+    value := Default(T);
 end;
 
 {$ENDREGION}
