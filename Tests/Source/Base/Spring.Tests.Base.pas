@@ -468,7 +468,9 @@ type
     procedure TryToType_ConvertIntegerToNullableEnum;
     procedure TryToType_ConvertInvalidStringToBoolean;
     procedure TryToType_ConvertVariantToBoolean;
+{$IFNDEF DELPHI2010}
     procedure TryToType_ConvertVariantToString;
+{$ENDIF}
 
     procedure GetNullableValue_ValueIsEmpty_ReturnsEmpty;
 
@@ -2431,7 +2433,7 @@ var
 begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
-  p := Shared.New(t);
+  p := Shared.New<TTestClass>(t);
 {$IFDEF AUTOREFCOUNT}
   t := nil;
 {$ENDIF}
@@ -3186,6 +3188,7 @@ begin
   CheckTrue(not fSUT.TryToType<TTypeKind>(value3));
 end;
 
+{$IFNDEF DELPHI2010}
 procedure TTestValueHelper.TryToType_ConvertVariantToString;
 var
   value: string;
@@ -3194,6 +3197,7 @@ begin
   CheckTrue(fSUT.TryToType<string>(value));
   CheckTrue(value = 'foo');
 end;
+{$ENDIF}
 
 {$ENDREGION}
 

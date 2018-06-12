@@ -5777,15 +5777,39 @@ function ConvVariant2Enum(const source: TValue; target: PTypeInfo;
   out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   v: Variant;
+{$IFNDEF DELPHI2010}
   temp: TValue;
+{$ENDIF}
 begin
   // workaround for RSP-20160
   v := source.AsVariant;
   if TVarData(v).VType <> varBoolean then
     Exit(False);
 
+{$IFDEF DELPHI2010}
+  if target = TypeInfo(Boolean) then
+  begin
+    value := TValue.From<Boolean>(TVarData(v).VBoolean);
+    Result := True;
+  end else if target = TypeInfo(LongBool) then
+  begin
+    value := TValue.From<LongBool>(TVarData(v).VBoolean);
+    Result := True;
+  end else if target = TypeInfo(WordBool) then
+  begin
+    value := TValue.From<WordBool>(TVarData(v).VBoolean);
+    Result := True;
+  end else if target = TypeInfo(ByteBool) then
+  begin
+    value := TValue.From<ByteBool>(TVarData(v).VBoolean);
+    Result := True;
+  end
+  else
+    Result := False;
+{$ELSE}
   temp := TValue.From<Boolean>(TVarData(v).VBoolean);
   Result := temp.TryCast(target, value);
+{$ENDIF}
 end;
 
 {$ENDREGION}
