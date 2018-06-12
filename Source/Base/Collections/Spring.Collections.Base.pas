@@ -268,6 +268,7 @@ type
   {$ENDREGION}
     procedure AddInternal(const item: T); virtual; abstract;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
+    procedure Reset;
   public
     constructor Create; override;
     constructor Create(const values: array of T); overload; virtual;
@@ -1013,8 +1014,11 @@ begin
 end;
 
 function TEnumerableBase<T>.SingleOrDefault: T;
+var
+  defaultValue: T;
 begin
-  Result := SingleOrDefault(Default(T));
+  defaultValue := Default(T);
+  Result := SingleOrDefault(defaultValue);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const defaultValue: T): T;
@@ -1030,8 +1034,11 @@ begin
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>): T;
+var
+  defaultValue: T;
 begin
-  Result := SingleOrDefault(predicate, Default(T));
+  defaultValue := Default(T);
+  Result := SingleOrDefault(predicate, defaultValue);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>;
@@ -1530,6 +1537,14 @@ begin
 
   for item in collection do
     Remove(item);
+end;
+
+procedure TCollectionBase<T>.Reset;
+var
+  defaultValue: T;
+begin
+  defaultValue := Default(T);
+  Changed(defaultValue, caReseted);
 end;
 
 {$ENDREGION}

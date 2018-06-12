@@ -614,7 +614,7 @@ begin
   Dec(fCount, count);
 
   if doClear then
-    Changed(Default(T), caReseted);
+    Reset;
 
   for i := Low(oldItems) to High(oldItems) do
     Changed(oldItems[i], caRemoved);
@@ -625,7 +625,7 @@ begin
   IncUnchecked(fVersion);
   TArray.Sort<T>(fItems, comparer, index, count);
 
-  Changed(Default(T), caReseted);
+  Reset;
 end;
 
 procedure TList<T>.Move(currentIndex, newIndex: Integer);
@@ -729,7 +729,7 @@ begin
   IncUnchecked(fVersion);
   TArray.Reverse<T>(fItems, index, count);
 
-  Changed(Default(T), caReseted);
+  Reset;
 end;
 
 procedure TList<T>.SetCapacity(value: Integer);
@@ -1136,7 +1136,7 @@ begin
   end;
 
   if doClear then
-    Changed(Default(T), caReseted);
+    Reset;
 
   for i := Low(oldItems) to High(oldItems) do
   begin

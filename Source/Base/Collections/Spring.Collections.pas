@@ -3361,8 +3361,11 @@ end;
 
 class function TEnumerable.DefaultIfEmpty<T>(
   const source: IEnumerable<T>): IEnumerable<T>;
+var
+  defaultValue: T;
 begin
-  Result := TDefaultIfEmptyIterator<T>.Create(source, Default(T));
+  defaultValue := Default(T);
+  Result := TDefaultIfEmptyIterator<T>.Create(source, defaultValue);
 end;
 
 class function TEnumerable.DefaultIfEmpty<T>(const source: IEnumerable<T>;
