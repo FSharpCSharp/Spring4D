@@ -29,21 +29,12 @@ unit Spring.Persistence.Adapters.FireDAC;
 interface
 
 uses
-  DB,
-  FireDAC.DApt,
   FireDAC.Comp.Client,
-  FireDAC.Stan.Async,
-  FireDAC.Stan.Def,
-  FireDAC.Stan.Option,
-  FireDAC.Stan.Param,
-  FireDAC.Stan.Error,
   SysUtils,
   Spring.Collections,
   Spring.Persistence.Core.Base,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Interfaces,
-  Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Params;
 
 type
@@ -99,8 +90,13 @@ type
 implementation
 
 uses
-  StrUtils,
-  Variants,
+  DB,
+  FireDAC.DApt,
+  FireDAC.Stan.Async,
+  FireDAC.Stan.Def,
+  FireDAC.Stan.Error,
+  FireDAC.Stan.Option,
+  FireDAC.Stan.Param,
   Spring.Persistence.Core.ConnectionFactory,
   Spring.Persistence.Core.ResourceStrings;
 
@@ -205,8 +201,7 @@ begin
       transaction := TFDTransaction.Create(nil);
       transaction.Connection := Connection;
       transaction.StartTransaction;
-      Result := TFireDACTransactionAdapter.Create(transaction, ExceptionHandler,
-        True);
+      Result := TFireDACTransactionAdapter.Create(transaction, ExceptionHandler, True);
     end
     else
       raise EFireDACAdapterException.Create('Transaction already started, and EnableNested transaction is false');
@@ -332,15 +327,15 @@ function TFireDACExceptionHandler.GetAdapterException(const exc: Exception;
 begin
   if exc is EFDDBEngineException then
     with EFDDBEngineException(exc) do
-  begin
-    case Kind of
-      ekUKViolated,
-      ekFKViolated :
-        Result := EORMConstraintException.Create(defaultMsg, ErrorCode);
+    begin
+      case Kind of
+        ekUKViolated,
+        ekFKViolated :
+          Result := EORMConstraintException.Create(defaultMsg, ErrorCode);
       else
         Result := EFireDACAdapterException.Create(defaultMsg, ErrorCode);
-    end;
-  end
+      end;
+    end
   else if exc is EDatabaseError then
     Result := EFireDACAdapterException.Create(defaultMsg)
   else
