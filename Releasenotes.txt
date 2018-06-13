@@ -1,4 +1,34 @@
-Release 1.2.1 - tba
+Release 1.2.2
+
+New feature:
+
+- added Shared.New overload to specify custom finalizer
+
+
+Breaking changes:
+
+- return TEnumerable.Empty for non existing keys in multimap
+
+
+Fixed bugs:
+
+- destruction of TOrderedSet slow (#285)
+- TryGetFirst, TryGetLast and TryGetSingle don't set out value to Default(T) when returning False (#286)
+- Using TGUID in test case causes exception (#287)
+- TObjectDataset does not use manually created fields (#289)
+- TValue holding Variant with a Boolean cannot be converted to Boolean (#290)
+- Exception during Event<T>.Invoke are causing app crash on Win64 (#292)
+- missing overload on Contains method in IMap is causing inherited Contains method to be hidden
+- TEnumerableBase<T>.SingleOrDefault was returning Default(T) rather than defaultValue in the case there were no items
+- Exception when using IList<T> where T is a method pointer (#294)
+
+
+Improvements:
+
+- added item of TSortedList<T>.Add is passed as right to comparer like TArray.BinarySearch does it
+
+
+Release 1.2.1 - 02.02.2018
 
 New features:
 
