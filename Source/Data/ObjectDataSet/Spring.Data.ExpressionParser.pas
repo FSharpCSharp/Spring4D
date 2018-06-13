@@ -326,6 +326,17 @@ begin
     Inc(Idx);
     CToken := tkNA;
 
+    if (C = '/') and (Str[Idx] = '*') then
+    begin
+      Inc(Idx);
+      while (Idx < Len) and not((Str[Idx] = '*') and (Str[Idx + 1] = '/')) do
+      begin
+        Inc(Idx);
+      end;
+      Inc(Idx, 2);
+      continue;
+    end;
+
     case C of
       '(': CToken := tkLParen;
       ')': CToken := tkRParen;
