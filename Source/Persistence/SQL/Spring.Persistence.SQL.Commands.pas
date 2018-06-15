@@ -77,17 +77,17 @@ type
     fOrderByFields: IList<TSQLOrderByField>;
     fPrimaryKeyColumn: ColumnAttribute;
     fForeignColumn: ForeignJoinColumnAttribute;
-    fTables: IList<TSQLTable>;
+    fTables: IDictionary<string, TSQLTable>;
     fOwnTable: Boolean;
   protected
     procedure InternalSetAssociations(entityClass: TClass;
-      const baseTable: TSQLTable; var index: Integer);
+      const baseTable: TSQLTable; var index: Integer; parent: string = '');
   public
     constructor Create(const table: TSQLTable); overload; override;
     constructor Create(entityClass: TClass); reintroduce; overload;
     destructor Destroy; override;
 
-    function FindTable(entityClass: TClass): TSQLTable;
+    function FindTable(entityClass: TClass; const memberPath: string = ''): TSQLTable;
     function FindCorrespondingTable(const table: TSQLTable): TSQLTable;
     procedure SetAssociations(entityClass: TClass); overload;
     procedure SetCommandFieldsFromColumns(const columns: IList<ColumnAttribute>); override;
@@ -101,7 +101,6 @@ type
     property OrderByFields: IList<TSQLOrderByField> read fOrderByFields;
     property PrimaryKeyColumn: ColumnAttribute read fPrimaryKeyColumn write fPrimaryKeyColumn;
     property ForeignColumn: ForeignJoinColumnAttribute read fForeignColumn write fForeignColumn;
-    property Tables: IList<TSQLTable> read fTables;
   end;
 
   /// <summary>
@@ -206,6 +205,7 @@ uses
   SysUtils,
   TypInfo,
   Spring,
+  Spring.Persistence.Core.Exceptions,
   Spring.Reflection;
 
 
@@ -218,7 +218,7 @@ begin
   fJoins := TCollections.CreateObjectList<TSQLJoin>;
   fGroupByFields := TCollections.CreateObjectList<TSQLGroupByField>;
   fOrderByFields := TCollections.CreateObjectList<TSQLOrderByField>;
-  fTables := TCollections.CreateObjectList<TSQLTable>(True);
+  fTables := TCollections.CreateDictionary<string, TSQLTable>(TStringComparer.OrdinalIgnoreCase, [doOwnsValues]);
   fForeignColumn := nil;
 end;
 
@@ -251,29 +251,35 @@ begin
   if table = nil then
     Exit;
 
-  for currentTable in fTables do
-    if SameText(currentTable.NameWithoutSchema, table.NameWithoutSchema) then
+  for currentTable in fTables.Values do
+    if AnsiSameText(currentTable.NameWithoutSchema, table.NameWithoutSchema) then
       Exit(currentTable);
 end;
 
-function TSelectCommand.FindTable(entityClass: TClass): TSQLTable;
+function TSelectCommand.FindTable(entityClass: TClass; const memberPath: string = ''): TSQLTable;
 var
   tableName: string;
   currentTable: TSQLTable;
 begin
-  if entityClass = nil then
+  if not Assigned(entityClass) and (memberPath = '') then
     Exit(fTable);
 
-  tableName := TEntityCache.Get(entityClass).EntityTable.TableName;
+  // Look up the table based on the memberpath if provided
+  if memberPath <> '' then
+    if fTables.TryGetValue(memberPath, Result) then
+      Exit
+    else
+      raise EORMInvalidArguments.Create('Invalid argument - memberPath: ' + memberPath);
 
-  for currentTable in fTables do
-    if SameText(currentTable.NameWithoutSchema, tableName) then
+  tableName := TEntityCache.Get(entityClass).EntityTable.TableName;
+  for currentTable in fTables.Values do
+    if AnsiSameText(currentTable.NameWithoutSchema, tableName) then
       Exit(currentTable);
   Result := fTable;
 end;
 
 procedure TSelectCommand.InternalSetAssociations(entityClass: TClass;
-  const baseTable: TSQLTable; var index: Integer);
+  const baseTable: TSQLTable; var index: Integer; parent: string);
 var
   manyToOneColumn: ManyToOneAttribute;
   memberType: TRttiType;
@@ -283,6 +289,9 @@ var
   selectField: TSQLSelectField;
   join: TSQLJoin;
 begin
+  if parent <> '' then
+    parent := parent + '.';
+
   for manyToOneColumn in TEntityCache.Get(entityClass).ManyToOneColumns do
   begin
     memberType := manyToOneColumn.Member.MemberType;
@@ -293,7 +302,9 @@ begin
     Inc(index);
     table := TSQLTable.Create(index);
     table.SetFromAttribute(entityData.EntityTable);
-    fTables.Add(table);
+
+    // Store the table with fully qualified path
+    fTables.Add(parent + manyToOneColumn.Member.Name, table);
     for column in entityData.Columns do
     begin
       selectField := TSQLSelectField.Create(column.ColumnName, table, True);
@@ -306,8 +317,8 @@ begin
       TSQLField.Create(manyToOneColumn.MappedByColumn.ColumnName, baseTable)));
     fJoins.Add(join);
 
-    // support associates having associates themselves.
-    InternalSetAssociations(memberType.AsInstance.MetaclassType, table, index);
+    // support associates having associates themselves. Pass in the parent member plus the current member name as the path
+    InternalSetAssociations(memberType.AsInstance.MetaclassType, table, index, parent + manyToOneColumn.Member.Name);
   end;
 end;
 

@@ -57,7 +57,7 @@
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;Data.Win;System.Win;Web.Win;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <DCC_Define>_CONSOLE_TESTRUNNER;USE_SPRING;ORM_TESTS;_PERFORMANCE_TESTS;_GUI_TESTS;TESTINSIGHT;$(DCC_Define)</DCC_Define>
-        <DCC_UnitSearchPath>..\..\Source\;..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Core\Interception;..\..\Source\Core\Mocking;..\..\Tests;..\..\Tests\Source;..\External\MongoDB;..\External\SQLite3;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\Source\;..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Patterns;..\..\Source\Core\Interception;..\..\Source\Core\Mocking;..\..\Tests;..\..\Tests\Source;..\External\MongoDB;..\External\SQLite3;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_ImageBase>00400000</DCC_ImageBase>
         <DCC_DcuOutput>.\$(Config)\$(Platform)\DCU</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Config)\$(Platform)</DCC_ExeOutput>
@@ -152,6 +152,7 @@
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ExpressionParser.Functions.pas"/>
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.IndexList.pas"/>
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.pas"/>
+        <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.ValueConverters.pas"/>
         <DCCReference Include="..\..\Source\Data\ObjectDataSet\Spring.Data.VirtualDataSet.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.pas"/>
         <DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Abstract.pas"/>

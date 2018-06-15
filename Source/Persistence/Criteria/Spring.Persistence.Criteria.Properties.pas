@@ -42,6 +42,7 @@ type
   private
     fPropertyName: string;
     fEntityClass: TClass;
+    fMemberPath: string;
   protected
     function Eq(const value: TValue): ICriterion;
     function NotEq(const value: TValue): ICriterion;
@@ -78,10 +79,12 @@ type
     function GetPropertyName: string;
     procedure SetEntityClass(value: TClass);
     procedure SetPropertyName(const value: string);
+    function GetMemberPath: string;
   public
-    constructor Create(const propertyName: string; entityClass: TClass = nil);
+    constructor Create(const propertyName: string; entityClass: TClass = nil; const memberPath: string = '');
 
     property EntityClass: TClass read GetEntityClass;
+    property MemberPath: string read GetMemberPath;
     property PropertyName: string read GetPropertyName write SetPropertyName;
   end;
 
@@ -90,7 +93,7 @@ type
   /// </summary>
   TProperty<T: class> = class(TProperty)
   public
-    constructor Create(const propertyName: string);
+    constructor Create(const propertyName: string; const memberPath: string = '');
   end;
 
   /// <summary>
@@ -114,7 +117,7 @@ type
   private
     fProp: IProperty;
   public
-    constructor Create(const propertyName: string; const entityClass: TClass = nil);
+    constructor Create(const propertyName: string; const entityClass: TClass = nil; const memberPath: string = '');
 
     class operator Equal(const left, right: Prop): TExpr; overload;
     class operator Equal(const left: Prop; const right: Variant): TExpr; overload;
@@ -165,10 +168,11 @@ uses
 
 {$REGION 'TProperty'}
 
-constructor TProperty.Create(const propertyName: string; entityClass: TClass);
+constructor TProperty.Create(const propertyName: string; entityClass: TClass; const memberPath: string);
 begin
   inherited Create;
   fPropertyName := propertyName;
+  fMemberPath := memberPath;
   fEntityClass := entityClass;
 end;
 
@@ -182,6 +186,7 @@ function TProperty.Between(const low, high: TValue): ICriterion;
 begin
   Result := Restrictions.Between(PropertyName, low, high);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.Desc: IOrderBy;
@@ -194,6 +199,7 @@ function TProperty.Eq(const value: TValue): ICriterion;
 begin
   Result := Restrictions.Eq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.EqProperty(const otherPropertyName: string): ICriterion;
@@ -202,6 +208,7 @@ begin
     PropertyName, otherPropertyName, woEqual,
     TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.EqProperty(const other: IProperty): ICriterion;
@@ -211,6 +218,7 @@ begin
     TSQLTable.CreateFromClass(fEntityClass),
     TSQLTable.CreateFromClass(other.EntityClass));
   Result.SetEntityClass(EntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.GeProperty(const otherPropertyName: string): ICriterion;
@@ -219,6 +227,7 @@ begin
     PropertyName, otherPropertyName, woMoreOrEqual,
     TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.GeProperty(const other: IProperty): ICriterion;
@@ -228,17 +237,24 @@ begin
     TSQLTable.CreateFromClass(fEntityClass),
     TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.GEq(const value: TValue): ICriterion;
 begin
   Result := Restrictions.GEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.GetEntityClass: TClass;
 begin
   Result := fEntityClass;
+end;
+
+function TProperty.GetMemberPath: string;
+begin
+  Result := fMemberPath;
 end;
 
 function TProperty.GetPropertyName: string;
@@ -250,6 +266,7 @@ function TProperty.Gt(const value: TValue): ICriterion;
 begin
   Result := Restrictions.Gt(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.GtProperty(const other: IProperty): ICriterion;
@@ -259,6 +276,7 @@ begin
     TSQLTable.CreateFromClass(fEntityClass),
     TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.GtProperty(const otherPropertyName: string): ICriterion;
@@ -267,30 +285,35 @@ begin
     PropertyName, otherPropertyName, woMore,
     TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.&In(const value: TArray<Integer>): ICriterion;
 begin
   Result := Restrictions.In<Integer>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.&In(const value: TArray<string>; ignoreCase: Boolean): ICriterion;
 begin
   Result := Restrictions.In<string>(fPropertyName, value, ignoreCase);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.IsNotNull: ICriterion;
 begin
   Result := Restrictions.IsNotNull(fPropertyName);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.IsNull: ICriterion;
 begin
   Result := Restrictions.IsNull(fPropertyName);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.LeProperty(const other: IProperty): ICriterion;
@@ -300,6 +323,7 @@ begin
     TSQLTable.CreateFromClass(fEntityClass),
     TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.LeProperty(const otherPropertyName: string): ICriterion;
@@ -308,12 +332,14 @@ begin
     PropertyName, otherPropertyName, woLessOrEqual,
     TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.LEq(const value: TValue): ICriterion;
 begin
   Result := Restrictions.LEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.Like(const value: string; matchMode: TMatchMode;
@@ -321,12 +347,14 @@ function TProperty.Like(const value: string; matchMode: TMatchMode;
 begin
   Result := Restrictions.Like(fPropertyName, value, matchMode, ignoreCase);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.Lt(const value: TValue): ICriterion;
 begin
   Result := Restrictions.Lt(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.LtProperty(const otherPropertyName: string): ICriterion;
@@ -335,6 +363,7 @@ begin
     PropertyName, otherPropertyName, woLess,
     TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.LtProperty(const other: IProperty): ICriterion;
@@ -344,6 +373,7 @@ begin
     TSQLTable.CreateFromClass(fEntityClass),
     TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.NeProperty(const other: IProperty): ICriterion;
@@ -353,6 +383,7 @@ begin
     TSQLTable.CreateFromClass(fEntityClass),
     TSQLTable.CreateFromClass(other.GetEntityClass));
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.NeProperty(const otherPropertyName: string): ICriterion;
@@ -361,24 +392,28 @@ begin
     PropertyName, otherPropertyName, woNotEqual,
     TSQLTable.CreateFromClass(fEntityClass), nil);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.NotEq(const value: TValue): ICriterion;
 begin
   Result := Restrictions.NotEq(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.NotIn(const value: TArray<Integer>): ICriterion;
 begin
   Result := Restrictions.NotIn<Integer>(fPropertyName, value);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.NotIn(const value: TArray<string>; ignoreCase: Boolean): ICriterion;
 begin
   Result := Restrictions.NotIn<string>(fPropertyName, value, ignoreCase);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 function TProperty.NotLike(const value: string; matchMode: TMatchMode;
@@ -386,6 +421,7 @@ function TProperty.NotLike(const value: string; matchMode: TMatchMode;
 begin
   Result := Restrictions.NotLike(fPropertyName, value, matchMode, ignoreCase);
   Result.SetEntityClass(GetEntityClass);
+  Result.SetMemberPath(GetMemberPath);
 end;
 
 procedure TProperty.SetEntityClass(value: TClass);
@@ -403,9 +439,9 @@ end;
 
 {$REGION 'TProperty<T>'}
 
-constructor TProperty<T>.Create(const propertyName: string);
+constructor TProperty<T>.Create(const propertyName: string; const memberPath: string = '');
 begin
-  inherited Create(propertyName, T);
+  inherited Create(propertyName, T, memberPath);
 end;
 
 {$ENDREGION}
@@ -413,9 +449,9 @@ end;
 
 {$REGION 'Prop'}
 
-constructor Prop.Create(const propertyName: string; const entityClass: TClass);
+constructor Prop.Create(const propertyName: string; const entityClass: TClass; const memberPath: string);
 begin
-  fProp := TProperty.Create(propertyName, entityClass);
+  fProp := TProperty.Create(propertyName, entityClass, memberPath);
 end;
 
 class operator Prop.Equal(const left, right: Prop): TExpr;

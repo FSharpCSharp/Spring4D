@@ -85,10 +85,13 @@ type
     ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
     function GetEntityClass: TClass;
     procedure SetEntityClass(value: TClass);
+    function GetMemberPath: string;
+    procedure SetMemberPath(const value: string);
     function ToSqlString(const params: IList<TDBParam>;
       const command: TWhereCommand; const generator: ISQLGenerator;
       addToCommand: Boolean): string;
     property EntityClass: TClass read GetEntityClass write SetEntityClass;
+    property MemberPath: string read GetMemberPath write SetMemberPath;
   end;
 
   IJunction = interface(ICriterion)
@@ -202,12 +205,14 @@ type
     function LtProperty(const otherPropertyName: string): ICriterion; overload;
 
     function GetEntityClass: TClass;
+    function GetMemberPath: string;
     function GetPropertyName: string;
 
     function Asc: IOrderBy;
     function Desc: IOrderBy;
 
     property EntityClass: TClass read GetEntityClass;
+    property MemberPath: string read GetMemberPath;
     property PropertyName: string read GetPropertyName;
   end;
 

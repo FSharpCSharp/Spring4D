@@ -47,7 +47,8 @@ type
   public
     procedure SetUp; override;
     procedure TearDown; override;
-
+    procedure SetupForMemberPathTests;
+    procedure TearDownForMemberPathTests;
     class procedure InsertProducts(iCount: Integer);
   published
     procedure First;
@@ -98,6 +99,11 @@ type
     procedure When_Trying_To_Register_RowMapper_Again_For_The_Same_Type_Throw_Exception;
     procedure Can_Use_RowMapper_With_Unannotated_Entity;
     procedure Memoizer_Cache_Constructors;
+
+    procedure When_Two_ManyToOne_Instances_Of_Same_Associate;
+    procedure When_Two_ManyToOne_Instances_Of_Same_Associate_Using_TProperty_T;
+    procedure When_Two_ManyToOne_Instances_Of_Same_Associate_level2;
+    procedure When_Two_ManyToOne_Instances_Of_Same_Associate_level2_wrong_member_path;
   end;
 
   TDetachedSessionTest = class(TTestCase)
@@ -374,6 +380,19 @@ type
     Result.Name := resultSet.GetFieldValue('PRODNAME');
     Result.Price := resultSet.GetFieldValue('PRODPRICE');
   end;
+
+procedure TSessionTest.SetupForMemberPathTests;
+begin
+  CreateTestTables(fConnection, [TControllerAssociate, TRemoteConnection, TSubsidiaryAssociate2]);
+
+  TestDB.ExecSQL('INSERT OR IGNORE INTO SUBSIDIARY (SID, SBS_NAME, SBS_NO) VALUES (1, ''United States'', 1)');
+  TestDB.ExecSQL('INSERT OR IGNORE INTO SUBSIDIARY (SID, SBS_NAME, SBS_NO) VALUES (2, ''Canada'', 2)');
+
+  TestDB.ExecSQL('INSERT OR IGNORE INTO CONTROLLER (SID, CONTROLLER_NAME, SBS_SID, HOST_ADDRESS) VALUES (10, ''Uptown'', 1, ''sac-uptown1'')');
+  TestDB.ExecSQL('INSERT OR IGNORE INTO CONTROLLER (SID, CONTROLLER_NAME, SBS_SID, HOST_ADDRESS) VALUES (20, ''Downtown'', 2, ''sac-downtown1'')');
+
+  TestDB.ExecSQL('INSERT OR IGNORE INTO REMOTE_CONNECTION (SID, LOCAL_CONTROLLER_SID, REMOTE_CONTROLLER_SID) VALUES (100, 10, 20)');
+end;
 
 procedure TSessionTest.Can_Use_RowMapper_With_Unannotated_Entity;
 var
@@ -1578,6 +1597,13 @@ begin
   FConnection := nil;
 end;
 
+procedure TSessionTest.TearDownForMemberPathTests;
+begin
+  ClearTable(TBL_CONTROLLER);
+  ClearTable(TBL_SUBSIDIARY);
+  ClearTable(TBL_REMOTE_CONNECTION);
+end;
+
 procedure TSessionTest.TestExecutionListener(const command: string;
   const params: IEnumerable<TDBParam>);
 var
@@ -1872,6 +1898,102 @@ begin
     EORMRowMapperAlreadyRegistered,
     procedure begin FSession.RegisterRowMapper<TCustomer>(TCustomerRowMapper.Create); end
     , 'Registering multiple RowMappers for the same type is not allowed');
+end;
+
+procedure TSessionTest.When_Two_ManyToOne_Instances_Of_Same_Associate;
+var
+  criteria: ICriteria<TRemoteConnection>;
+  prop: IProperty;
+  result: IList<TRemoteConnection>;
+begin
+  SetupForMemberPathTests;
+  try
+    criteria := FSession.CreateCriteria<TRemoteConnection>;
+    prop := TProperty.Create('HOST_ADDRESS', TControllerAssociate, 'FLocalControllerAssociate');
+    //will work for first associate (LocalController)
+    criteria.Add(prop.eq('sac-uptown1'));
+    result := criteria.ToList;
+    CheckTrue(result.Count > 0);
+
+    //Should also work for second associate (remoteController) If proper member path is provided
+    criteria.Clear;
+    prop := TProperty.Create('HOST_ADDRESS', TControllerAssociate, 'FRemoteControllerAssociate');
+    criteria.Add(prop.eq('sac-downtown1'));
+    result := criteria.ToList;
+    CheckTrue(result.Count > 0);
+  finally
+    TearDownForMemberPathTests;
+  end;
+end;
+
+procedure TSessionTest.When_Two_ManyToOne_Instances_Of_Same_Associate_level2;
+var
+  criteria: ICriteria<TRemoteConnection>;
+  prop: IProperty;
+  result: IList<TRemoteConnection>;
+begin
+  SetupForMemberPathTests;
+  try
+    criteria := FSession.CreateCriteria<TRemoteConnection>;
+    prop := TProperty.Create('SBS_NO', TSubsidiaryAssociate2, 'FLocalControllerAssociate.FSubsidiaryAssociate');
+    criteria.Add(prop.eq(1));
+    result := criteria.ToList;
+    CheckTrue(result.Count > 0);
+
+    //should also work for Remote Controller Associate
+    criteria.Clear;
+    prop := TProperty.Create('SBS_NO', TSubsidiaryAssociate2, 'FRemoteControllerAssociate.FSubsidiaryAssociate');
+    criteria.Add(prop.eq(2));
+    result := criteria.ToList;
+    CheckTrue(result.Count > 0);
+  finally
+    TearDownForMemberPathTests;
+  end;
+end;
+
+procedure TSessionTest.When_Two_ManyToOne_Instances_Of_Same_Associate_level2_wrong_member_path;
+var
+  criteria: ICriteria<TRemoteConnection>;
+  prop: IProperty;
+  result: IList<TRemoteConnection>;
+begin
+  SetupForMemberPathTests;
+  ExpectedException := EORMInvalidArguments;
+  try
+    criteria := FSession.CreateCriteria<TRemoteConnection>;
+    prop := TProperty.Create('SBS_NO', TSubsidiaryAssociate2, 'FLocalControllerAssociate.FWrongArgument');
+    criteria.Add(prop.eq(1));
+    result := criteria.ToList;
+    StopExpectingException('Should not succeed if an invalid argument is specified');
+  finally
+    TearDownForMemberPathTests;
+  end;
+end;
+
+procedure TSessionTest.When_Two_ManyToOne_Instances_Of_Same_Associate_Using_TProperty_T;
+var
+  criteria: ICriteria<TRemoteConnection>;
+  prop: IProperty;
+  result: IList<TRemoteConnection>;
+begin
+  SetupForMemberPathTests;
+  try
+    criteria := FSession.CreateCriteria<TRemoteConnection>;
+    prop := TProperty<TControllerAssociate>.Create('HOST_ADDRESS', 'FLocalControllerAssociate');
+    //will work for first associate (LocalController)
+    criteria.Add(prop.eq('sac-uptown1'));
+    result := criteria.ToList;
+    CheckTrue(result.Count > 0);
+
+    //Should also work for second associate (remoteController) If proper member path is provided
+    criteria.Clear;
+    prop := TProperty<TControllerAssociate>.Create('HOST_ADDRESS', 'FRemoteControllerAssociate');
+    criteria.Add(prop.eq('sac-downtown1'));
+    result := criteria.ToList;
+    CheckTrue(result.Count > 0);
+  finally
+    TearDownForMemberPathTests;
+  end;
 end;
 
 procedure TSessionTest.When_UnannotatedEntity_FindOne_ThrowException;

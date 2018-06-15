@@ -77,6 +77,7 @@ uses
   Spring.Data.ExpressionParser.Functions in '..\..\Source\Data\ObjectDataSet\Spring.Data.ExpressionParser.Functions.pas',
   Spring.Data.IndexList in '..\..\Source\Data\ObjectDataSet\Spring.Data.IndexList.pas',
   Spring.Data.ObjectDataSet in '..\..\Source\Data\ObjectDataSet\Spring.Data.ObjectDataSet.pas',
+  Spring.Data.ValueConverters in '..\..\Source\Data\ObjectDataSet\Spring.Data.ValueConverters.pas',
   Spring.Data.VirtualDataSet in '..\..\Source\Data\ObjectDataSet\Spring.Data.VirtualDataSet.pas',
   Spring.Persistence.SQL.Commands in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.pas',
   Spring.Persistence.SQL.Commands.Abstract in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Abstract.pas',
