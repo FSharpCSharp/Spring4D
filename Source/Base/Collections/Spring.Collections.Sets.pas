@@ -118,6 +118,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer; override;
+    function GetIsEmpty: Boolean; override;
     function GetItem(index: Integer): T;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
@@ -610,6 +611,11 @@ end;
 function THashSet<T>.GetCount: Integer;
 begin
   Result := fCount;
+end;
+
+function THashSet<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
 end;
 
 function THashSet<T>.GetItem(index: Integer): T;

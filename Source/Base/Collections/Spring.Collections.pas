@@ -2554,6 +2554,10 @@ type
     class function CreateHashMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
     class function CreateHashMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
 
+    class function CreateTreeMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateTreeMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+    class function CreateTreeMultiMap<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; const valueComparer: IComparer<TValue>; ownerships: TDictionaryOwnerships = []): IMultiMap<TKey, TValue>; overload; static;
+
     class function CreateBidiDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
     class function CreateBidiDictionary<TKey, TValue>(capacity: Integer; ownerships: TDictionaryOwnerships = []): IBidiDictionary<TKey, TValue>; overload; static;
     class function CreateBidiDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>;
@@ -3068,6 +3072,27 @@ class function TCollections.CreateHashMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
   Result := THashMultiMap<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
+end;
+
+class function TCollections.CreateTreeMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TTreeMultiMap<TKey, TValue>.Create(ownerships);
+end;
+
+class function TCollections.CreateTreeMultiMap<TKey, TValue>(
+  const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TTreeMultiMap<TKey, TValue>.Create(keyComparer, ownerships);
+end;
+
+class function TCollections.CreateTreeMultiMap<TKey, TValue>(
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IComparer<TValue>;
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TTreeMultiMap<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
 end;
 
 class function TCollections.CreateBidiDictionary<TKey, TValue>(

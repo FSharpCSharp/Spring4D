@@ -515,7 +515,7 @@ type
     procedure TestListSort;
   end;
 
-  TTestMultiMap = class(TTestCase)
+  TTestMultiMapBase = class(TTestCase)
   private
     SUT: IMultiMap<Integer, Integer>;
     ValueAddedCount, ValueRemovedCount: Integer;
@@ -534,6 +534,28 @@ type
     procedure TestValueChangedCalledProperly;
     procedure TestValuesOrdered;
     procedure TestExtractValues;
+
+    procedure WrappedCollection;
+  end;
+
+  TTestListMultiMap = class(TTestMultiMapBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestSetMultiMapBase = class(TTestMultiMapBase)
+  published
+    procedure AddDuplicates;
+  end;
+
+  TTestHashMultiMap = class(TTestSetMultiMapBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestTreeMultiMap = class(TTestSetMultiMapBase)
+  protected
+    procedure SetUp; override;
   end;
 
   TTestObjectStack = class(TTestCase)
@@ -3276,26 +3298,25 @@ end;
 
 {$REGION 'TTestMultiMap'}
 
-procedure TTestMultiMap.SetUp;
+procedure TTestMultiMapBase.SetUp;
 begin
-  SUT := TCollections.CreateMultiMap<Integer, Integer>;
   ValueAddedCount := 0;
   ValueRemovedCount := 0;
 end;
 
-procedure TTestMultiMap.TearDown;
+procedure TTestMultiMapBase.TearDown;
 begin
   SUT := nil;
 end;
 
-procedure TTestMultiMap.TestAddPair;
+procedure TTestMultiMapBase.TestAddPair;
 begin
   (SUT as ICollection<TPair<Integer, Integer>>).Add(TPair<Integer, Integer>.Create(1,1));
   CheckEquals(1, SUT.Count);
   CheckEquals(1, SUT[1].First);
 end;
 
-procedure TTestMultiMap.TestAddStringPair;
+procedure TTestMultiMapBase.TestAddStringPair;
 var
   map: IMultiMap<string,TPair<string, string>>;
   pair: TPair<string, string>;
@@ -3307,7 +3328,7 @@ begin
   CheckEquals(1, map.Count);
 end;
 
-procedure TTestMultiMap.TestExtractValues;
+procedure TTestMultiMapBase.TestExtractValues;
 var
   map: IMultiMap<Integer, TObject>;
   values: ICollection<TObject>;
@@ -3324,7 +3345,7 @@ begin
   obj.Free;
 end;
 
-procedure TTestMultiMap.TestInternalEventHandlersDetached;
+procedure TTestMultiMapBase.TestInternalEventHandlersDetached;
 var
   items: IReadOnlyCollection<Integer>;
 begin
@@ -3338,7 +3359,7 @@ begin
   items := nil;
 end;
 
-procedure TTestMultiMap.TestValueChangedCalledProperly;
+procedure TTestMultiMapBase.TestValueChangedCalledProperly;
 begin
   SUT.OnValueChanged.Add(ValueChanged);
   SUT.Add(1, 1);
@@ -3353,7 +3374,7 @@ begin
   CheckEquals(3, ValueRemovedCount);
 end;
 
-procedure TTestMultiMap.TestValuesOrdered;
+procedure TTestMultiMapBase.TestValuesOrdered;
 begin
   SUT.Add(1, 1);
   SUT.Add(1, 2);
@@ -3367,13 +3388,95 @@ begin
   CheckTrue(SUT.Values.Ordered.EqualsTo([1, 2, 3, 4, 5, 6, 7, 8]));
 end;
 
-procedure TTestMultiMap.ValueChanged(Sender: TObject; const Item: Integer;
+procedure TTestMultiMapBase.ValueChanged(Sender: TObject; const Item: Integer;
   Action: TCollectionChangedAction);
 begin
   case Action of
     caAdded: Inc(ValueAddedCount);
     caRemoved: Inc(ValueRemovedCount);
   end;
+end;
+
+procedure TTestMultiMapBase.WrappedCollection;
+var
+  values: IReadOnlyCollection<Integer>;
+begin
+  values := SUT[1];
+  CheckEquals(0, values.Count);
+  SUT.Add(1, 1);
+  CheckEquals(1, values.Count);
+  SUT.Add(1, 2);
+  CheckEquals(2, values.Count);
+  SUT.Remove(1, 2);
+  CheckEquals(1, values.Count);
+  SUT.Remove(1);
+  SUT.Add(1, 1);
+  SUT.Add(1, 2);
+  CheckEquals(2, values.Count);
+  SUT.ExtractValues(1);
+  CheckEquals(0, values.Count);
+  SUT.Add(1, 1);
+  CheckEquals(1, values.Count);
+
+  SUT.Clear;
+  CheckEquals(0, values.Count);
+  SUT.Add(1, 1);
+  Check(values.EqualsTo([1]));
+
+
+  SUT := nil;
+  CheckEquals(0, values.Count);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestListMultiMap'}
+
+procedure TTestListMultiMap.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateMultiMap<Integer,Integer>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestSetMultiMapBase'}
+
+procedure TTestSetMultiMapBase.AddDuplicates;
+begin
+  SUT.Add(1, 1);
+  SUT.Add(1, 2);
+  CheckEquals(2, SUT.Count);
+  CheckEquals(2, SUT[1].Count);
+  CheckFalse(SUT.Add(1, 1));
+  CheckEquals(2, SUT.Count);
+  CheckEquals(2, SUT[1].Count);
+
+  CheckFalse(SUT.TryAdd(1, 1));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestHashMultiMap'}
+
+procedure TTestHashMultiMap.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateHashMultiMap<Integer,Integer>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTreeMultiMap'}
+
+procedure TTestTreeMultiMap.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateTreeMultiMap<Integer,Integer>;
 end;
 
 {$ENDREGION}
