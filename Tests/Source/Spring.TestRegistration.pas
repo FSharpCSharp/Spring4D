@@ -113,7 +113,8 @@ begin
     TTestObjectStack.Suite,
     TTestObjectQueue.Suite,
     TTestObjectDeque.Suite,
-    TTestRedBlackTree.Suite,
+    TTestRedBlackTreeInteger.Suite,
+    TTestRedBlackTreeIntegerString.Suite,
     TTestSet.Suite,
     TTestSortedSet.Suite
   ]);

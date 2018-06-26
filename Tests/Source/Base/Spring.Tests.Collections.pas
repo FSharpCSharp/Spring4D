@@ -593,19 +593,36 @@ type
     procedure TestToArray;
   end;
 
-  TTestRedBlackTree = class(TTestCase)
+  TTestRedBlackTreeInteger = class(TTestCase)
   private
     SUT: IBinaryTree<Integer>;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestDuplicates;
     procedure TestDelete;
-
-    procedure FuzzyTesting;
-
+    procedure TestDuplicates;
     procedure TestInsert;
+    procedure FuzzyTesting;
+  end;
+
+  TTestRedBlackTreeIntegerString = class(TTestCase)
+  private
+    type
+      TKeyValuePair = TPair<Integer, string>;
+  private
+    SUT: IBinaryTree<Integer, string>;
+    function Add(key: Integer): Boolean;
+    procedure CheckKeyValuePair(expectedKey: Integer; const pair: TKeyValuePair; const msg: string = '');
+    procedure CheckKeyValuePairs(const expectedKeys: IEnumerable<Integer>; const msg: string = '');
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestDelete;
+    procedure TestDuplicates;
+    procedure TestInsert;
+    procedure FuzzyTesting;
   end;
 
 implementation
@@ -3516,92 +3533,21 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestRedBlackTree'}
+{$REGION 'TTestRedBlackTreeInteger'}
 
-procedure TTestRedBlackTree.FuzzyTesting;
-
-  function ArrayToString(const values: TArray<Integer>): string;
-  var
-    i: Integer;
-  begin
-    Result := '[';
-    for i := 0 to Length(values) - 1 do
-    begin
-      if i > 0 then
-        Result := Result + ', ';
-      Result := Result + IntToStr(values[i]);
-    end;
-    Result := Result + ']';
-  end;
-
-  procedure Test(const input: TArray<Integer>);
-  var
-    i, n: Integer;
-    output, inputSorted: TArray<Integer>;
-    inputString: string;
-  begin
-    for i in input do
-      SUT.Add(i);
-    output := SUT.ToArray;
-
-    inputString := ArrayToString(input);
-
-    CheckEquals(Length(input), Length(output), inputString);
-
-    inputSorted := Copy(input);
-    TArray.Sort<Integer>(inputSorted);
-
-    for n := 0 to High(output) do
-      CheckEquals(inputSorted[n], output[n], inputString);
-
-    for i := 0 to Length(input) - 1 do
-    begin
-      CheckTrue(SUT.Delete(input[i]));
-      output := SUT.ToArray;
-
-      inputSorted := Copy(input, i + 1);
-      TArray.Sort<Integer>(inputSorted);
-      for n := 0 to High(output) do
-        CheckEquals(inputSorted[n], output[n], inputString);
-    end;
-  end;
-
-const
-  COUNT = 1000;
-  MAX_INPUT_LENGHT = 100;
-  MAX_VALUE = 1000;
-var
-  i, n: Integer;
-  input: TArray<Integer>;
-  inputLen: Integer;
-begin
-  Randomize;
-
-  for n := 1 to COUNT do
-  begin
-    SUT := TRedBlackTree<Integer>.Create;
-    inputLen := Random(MAX_INPUT_LENGHT) + 1;
-    SetLength(input, inputLen);
-    for i := 0 to inputLen - 1 do
-      input[i] := Random(MAX_VALUE) + 1;
-    input := TEnumerable.Distinct<Integer>(TEnumerable.From<Integer>(input)).ToArray;
-    Test(input);
-  end;
-end;
-
-procedure TTestRedBlackTree.SetUp;
+procedure TTestRedBlackTreeInteger.SetUp;
 begin
   SUT := TRedBlackTree<Integer>.Create;
 end;
 
-procedure TTestRedBlackTree.TearDown;
+procedure TTestRedBlackTreeInteger.TearDown;
 begin
   SUT := nil;
 end;
 
-procedure TTestRedBlackTree.TestDelete;
+procedure TTestRedBlackTreeInteger.TestDelete;
 var
-  arr: TArray<Integer>;
+  expected: IList<Integer>;
 begin
   SUT.Add(4);
   SUT.Add(2);
@@ -3610,19 +3556,39 @@ begin
   SUT.Add(3);
   SUT.Add(5);
   SUT.Add(7);
+  expected := TCollections.CreateList<Integer>([1, 2, 3, 4, 5, 6, 7]);
+  Check(expected.EqualsTo(SUT.ToArray));
 
   SUT.Delete(4);
-  arr := SUT.ToArray;
-  CheckEquals(6, Length(arr));
-  CheckEquals(1, arr[0]);
-  CheckEquals(2, arr[1]);
-  CheckEquals(3, arr[2]);
-  CheckEquals(5, arr[3]);
-  CheckEquals(6, arr[4]);
-  CheckEquals(7, arr[5]);
+  expected.Remove(4);
+  Check(expected.EqualsTo(SUT.ToArray));
+
+  SUT.Delete(7);
+  expected.Remove(7);
+  Check(expected.EqualsTo(SUT.ToArray));
+
+  SUT.Delete(2);
+  expected.Remove(2);
+  Check(expected.EqualsTo(SUT.ToArray));
+
+  SUT.Delete(1);
+  expected.Remove(1);
+  Check(expected.EqualsTo(SUT.ToArray));
+
+  SUT.Delete(6);
+  expected.Remove(6);
+  Check(expected.EqualsTo(SUT.ToArray));
+
+  SUT.Delete(3);
+  expected.Remove(3);
+  Check(expected.EqualsTo(SUT.ToArray));
+
+  SUT.Delete(5);
+  expected.Remove(5);
+  Check(expected.EqualsTo(SUT.ToArray));
 end;
 
-procedure TTestRedBlackTree.TestDuplicates;
+procedure TTestRedBlackTreeInteger.TestDuplicates;
 begin
   CheckTrue(SUT.Add(1));
   CheckFalse(SUT.Add(1));
@@ -3632,7 +3598,7 @@ begin
   CheckEquals(3, SUT.Count);
 end;
 
-procedure TTestRedBlackTree.TestInsert;
+procedure TTestRedBlackTreeInteger.TestInsert;
 var
   arr: TArray<Integer>;
 begin
@@ -3672,6 +3638,285 @@ begin
   CheckEquals(56, arr[7]);
   CheckEquals(92, arr[8]);
   CheckEquals(98, arr[9]);
+end;
+
+procedure TTestRedBlackTreeInteger.FuzzyTesting;
+
+  function ArrayToString(const values: TArray<Integer>): string;
+  var
+    i: Integer;
+  begin
+    Result := '[';
+    for i := 0 to Length(values) - 1 do
+    begin
+      if i > 0 then
+        Result := Result + ', ';
+      Result := Result + IntToStr(values[i]);
+    end;
+    Result := Result + ']';
+  end;
+
+  procedure Test(const input: TArray<Integer>);
+  var
+    i: Integer;
+    inputSortedArray: TArray<Integer>;
+    inputSorted: ISet<Integer>;
+    inputString: string;
+  begin
+    inputString := ArrayToString(input);
+
+    for i in input do
+      SUT.Add(i);
+    CheckEquals(Length(input), SUT.Count, inputString);
+
+    inputSortedArray := Copy(input);
+    TArray.Sort<Integer>(inputSortedArray);
+    inputSorted := TCollections.CreateSet<Integer>(inputSortedArray);
+    Check(inputSorted.EqualsTo(SUT.ToArray));
+
+    for i := inputSorted.Min - 10 to inputSorted.Max + 10 do
+    begin
+      CheckEquals(inputSorted.Contains(i), SUT.Exists(i));
+    end;
+
+    for i := 0 to Length(input) - 1 do
+    begin
+      CheckTrue(SUT.Delete(input[i]));
+
+      inputSortedArray := Copy(input, i + 1);
+      TArray.Sort<Integer>(inputSortedArray);
+      inputSorted := TCollections.CreateSet<Integer>(inputSortedArray);
+      Check(inputSorted.EqualsTo(SUT.ToArray));
+    end;
+  end;
+
+const
+  COUNT = 1000;
+  MAX_INPUT_LENGHT = 100;
+  MAX_VALUE = 1000;
+var
+  i, n: Integer;
+  input: TArray<Integer>;
+  inputLen: Integer;
+begin
+  Randomize;
+
+  for n := 1 to COUNT do
+  begin
+    SUT := TRedBlackTree<Integer>.Create;
+    inputLen := Random(MAX_INPUT_LENGHT) + 1;
+    SetLength(input, inputLen);
+    for i := 0 to inputLen - 1 do
+      input[i] := Random(MAX_VALUE) + 1;
+    input := TEnumerable.Distinct<Integer>(TEnumerable.From<Integer>(input)).ToArray;
+    Test(input);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestRedBlackTreeIntegerString'}
+
+procedure TTestRedBlackTreeIntegerString.SetUp;
+begin
+  SUT := TRedBlackTree<Integer, string>.Create;
+end;
+
+procedure TTestRedBlackTreeIntegerString.TearDown;
+begin
+  SUT := nil;
+end;
+
+function TTestRedBlackTreeIntegerString.Add(key: Integer): Boolean;
+begin
+  Result := SUT.Add(key, IntToStr(key));
+end;
+
+procedure TTestRedBlackTreeIntegerString.CheckKeyValuePair(expectedKey: Integer; const pair: TKeyValuePair; const msg: string);
+begin
+  CheckEquals(expectedKey, pair.Key, msg);
+  CheckEquals(IntToStr(expectedKey), pair.Value, msg);
+end;
+
+procedure TTestRedBlackTreeIntegerString.CheckKeyValuePairs(const expectedKeys: IEnumerable<Integer>; const msg: string);
+var
+  i: Integer;
+  pairs: TArray<TKeyValuePair>;
+begin
+  pairs := SUT.ToArray;
+  CheckEquals(expectedKeys.Count, Length(pairs), msg);
+  for i := 0 to expectedKeys.Count - 1 do
+    CheckKeyValuePair(expectedKeys.ElementAt(i), pairs[i], msg);
+end;
+
+procedure TTestRedBlackTreeIntegerString.TestDelete;
+var
+  expected: IList<Integer>;
+begin
+  Add(4);
+  Add(2);
+  Add(6);
+  Add(1);
+  Add(3);
+  Add(5);
+  Add(7);
+
+  expected := TCollections.CreateList<Integer>([1, 2, 3, 4, 5, 6, 7]);
+  CheckKeyValuePairs(expected);
+
+  SUT.Delete(4);
+  expected.Remove(4);
+  CheckKeyValuePairs(expected);
+
+  SUT.Delete(7);
+  expected.Remove(7);
+  CheckKeyValuePairs(expected);
+
+  SUT.Delete(2);
+  expected.Remove(2);
+  CheckKeyValuePairs(expected);
+
+  SUT.Delete(1);
+  expected.Remove(1);
+  CheckKeyValuePairs(expected);
+
+  SUT.Delete(6);
+  expected.Remove(6);
+  CheckKeyValuePairs(expected);
+
+  SUT.Delete(3);
+  expected.Remove(3);
+  CheckKeyValuePairs(expected);
+
+  SUT.Delete(5);
+  expected.Remove(5);
+  CheckKeyValuePairs(expected);
+end;
+
+procedure TTestRedBlackTreeIntegerString.TestDuplicates;
+begin
+  CheckTrue(Add(1));
+  CheckFalse(Add(1));
+  CheckTrue(Add(2));
+  CheckTrue(Add(3));
+  CheckFalse(Add(1));
+  CheckEquals(3, SUT.Count);
+end;
+
+procedure TTestRedBlackTreeIntegerString.TestInsert;
+var
+  arr: TArray<TKeyValuePair>;
+begin
+  Add(2);
+  Add(1);
+  Add(3);
+  Add(4);
+  Add(5);
+  arr := SUT.ToArray;
+  CheckEquals(5, Length(arr));
+  CheckKeyValuePair(1, arr[0]);
+  CheckKeyValuePair(2, arr[1]);
+  CheckKeyValuePair(3, arr[2]);
+  CheckKeyValuePair(4, arr[3]);
+  CheckKeyValuePair(5, arr[4]);
+
+  SUT.Clear;
+  Add(26);
+  Add(56);
+  Add(34);
+  Add(98);
+  Add(21);
+  Add(14);
+  Add(28);
+  Add(92);
+  Add(12);
+  Add(45);
+  arr := SUT.ToArray;
+  CheckEquals(10, Length(arr));
+  CheckKeyValuePair(12, arr[0]);
+  CheckKeyValuePair(14, arr[1]);
+  CheckKeyValuePair(21, arr[2]);
+  CheckKeyValuePair(26, arr[3]);
+  CheckKeyValuePair(28, arr[4]);
+  CheckKeyValuePair(34, arr[5]);
+  CheckKeyValuePair(45, arr[6]);
+  CheckKeyValuePair(56, arr[7]);
+  CheckKeyValuePair(92, arr[8]);
+  CheckKeyValuePair(98, arr[9]);
+end;
+
+procedure TTestRedBlackTreeIntegerString.FuzzyTesting;
+
+  function ArrayToString(const values: TArray<Integer>): string;
+  var
+    i: Integer;
+  begin
+    Result := '[';
+    for i := 0 to Length(values) - 1 do
+    begin
+      if i > 0 then
+        Result := Result + ', ';
+      Result := Result + IntToStr(values[i]);
+    end;
+    Result := Result + ']';
+  end;
+
+  procedure Test(const input: TArray<Integer>);
+  var
+    i: Integer;
+    inputSortedArray: TArray<Integer>;
+    inputSorted: ISet<Integer>;
+    inputString: string;
+  begin
+    inputString := ArrayToString(input);
+
+    for i in input do
+      Add(i);
+    CheckEquals(Length(input), SUT.Count, inputString);
+
+    inputSortedArray := Copy(input);
+    TArray.Sort<Integer>(inputSortedArray);
+    inputSorted := TCollections.CreateSet<Integer>(inputSortedArray);
+    CheckKeyValuePairs(inputSorted, inputString);
+
+    for i := inputSorted.Min - 10 to inputSorted.Max + 10 do
+    begin
+      CheckEquals(inputSorted.Contains(i), SUT.Exists(i));
+    end;
+
+    for i := 0 to Length(input) - 1 do
+    begin
+      CheckTrue(SUT.Delete(input[i]));
+
+      inputSortedArray := Copy(input, i + 1);
+      TArray.Sort<Integer>(inputSortedArray);
+      inputSorted := TCollections.CreateSet<Integer>(inputSortedArray);
+      CheckKeyValuePairs(inputSorted, inputString);
+    end;
+  end;
+
+const
+  COUNT = 1000;
+  MAX_INPUT_LENGHT = 100;
+  MAX_VALUE = 1000;
+var
+  i, n: Integer;
+  input: TArray<Integer>;
+  inputLen: Integer;
+begin
+  Randomize;
+
+  for n := 1 to COUNT do
+  begin
+    SUT := TRedBlackTree<Integer, string>.Create;
+    inputLen := Random(MAX_INPUT_LENGHT) + 1;
+    SetLength(input, inputLen);
+    for i := 0 to inputLen - 1 do
+      input[i] := Random(MAX_VALUE) + 1;
+    input := TEnumerable.Distinct<Integer>(TEnumerable.From<Integer>(input)).ToArray;
+    Test(input);
+  end;
 end;
 
 {$ENDREGION}
