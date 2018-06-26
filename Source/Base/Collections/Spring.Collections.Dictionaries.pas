@@ -605,6 +605,21 @@ type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
       PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
+      TEnumerator = class(TEnumeratorBase<TKeyValuePair>)
+      private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TSortedDictionary<TKey, TValue>;
+        fCurrentNode: PNode;
+        fFinished: Boolean;
+        fVersion: Integer;
+      protected
+        function GetCurrent: TKeyValuePair; override;
+      public
+        constructor Create(const source: TSortedDictionary<TKey, TValue>);
+        destructor Destroy; override;
+        function MoveNext: Boolean; override;
+      end;
+
       TKeyCollection = class(TContainedReadOnlyCollection<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -3089,8 +3104,7 @@ var
   node: PNode;
 begin
   node := fTree.FindNode(key);
-  if Assigned(node)
-    and (fValueComparer.Compare(value, node.Value) = EqualsValue) then
+  if Assigned(node) and (fValueComparer.Compare(value, node.Value) = EqualsValue) then
   begin
     Result.Key := node.Key;
     Result.Value := node.Value;
@@ -3101,10 +3115,7 @@ begin
     ValueChanged(Result.Value, caExtracted);
   end
   else
-  begin
-    Result.Key := key;
-    Result.Value := Default(TValue);
-  end;
+    Result := Default(TKeyValuePair);
 end;
 
 function TSortedDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
@@ -3124,13 +3135,13 @@ end;
 
 function TSortedDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
-  Result := fTree.GetEnumerator;
+  Result := TEnumerator.Create(Self);
 end;
 
 function TSortedDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
 begin
   if not TryGetValue(key, Result) then
-    Result := Default(TValue);
+    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
 end;
 
 function TSortedDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
@@ -3299,6 +3310,37 @@ function TSortedDictionary<TKey, TValue>.TryGetValue(const key: TKey;
   out value: TValue): Boolean;
 begin
   Result := fTree.Find(key, value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedDictionary<TKey, TValue>.TEnumerator'}
+
+constructor TSortedDictionary<TKey, TValue>.TEnumerator.Create(
+  const source: TSortedDictionary<TKey, TValue>);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
+end;
+
+destructor TSortedDictionary<TKey, TValue>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited Destroy;
+end;
+
+function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
+begin
+  Result.Key := fCurrentNode.Key;
+  Result.Value := fCurrentNode.Value;
+end;
+
+function TSortedDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fSource.DoMoveNext(fCurrentNode, fFinished, fVersion);
 end;
 
 {$ENDREGION}
