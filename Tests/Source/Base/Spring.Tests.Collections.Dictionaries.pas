@@ -101,6 +101,7 @@ type
   protected
     SUT: IDictionary<Integer, string>;
     procedure TearDown; override;
+    function IsSorted: Boolean; virtual;
     procedure FillTestData;
   published
     procedure TestAddDictionary;
@@ -144,6 +145,12 @@ type
     procedure SetUp; override;
   end;
 
+  TTestSortedDictionary = class(TTestDictionaryBase)
+  protected
+    procedure SetUp; override;
+    function IsSorted: Boolean; override;
+  end;
+
   TTestBidiDictionaryBase = class(TTestDictionaryBase)
   protected
     SUTinverse: IBidiDictionary<string, Integer>;
@@ -161,50 +168,6 @@ type
   TTestBidiDictionaryInverse = class(TTestBidiDictionaryBase)
   protected
     procedure SetUp; override;
-  end;
-
-  TTestOrderedDictionary = class(TTestCase)
-  private
-    SUT: IOrderedDictionary<Integer, string>;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure TestGetItemByIndex;
-    procedure TestIndexOf;
-  end;
-
-  TTestSortedDictionary = class(TTestCase)
-  private
-    SUT: IDictionary<Integer, string>;
-    const NumItems = 100;
-    procedure CheckCount(expected: Integer);
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure TestAddOrSetValue;
-    procedure TestAddValue;
-    procedure TestContainsKey;
-    procedure TestContainsValue;
-    procedure TestCount;
-    procedure TestEnumeration;
-    procedure TestExtract;
-    procedure TestGetItem;
-    procedure TestGetValueOrDefault;
-    procedure TestKeys;
-    procedure TestKeysEnumeration;
-    procedure TestKeysToArray;
-    procedure TestMapSimpleValues;
-    procedure TestOrdered;
-    procedure TestRemove;
-    procedure TestSetItem;
-    procedure TestToArray;
-    procedure TestTryGetValue;
-    procedure TestTryExtract;
-    procedure TestValues;
-    procedure TestValuesEnumeration;
-    procedure TestValuesToArray;
   end;
 
   TTestDictionaryOwnershipBase = class(TTestCase)
@@ -532,6 +495,11 @@ begin
   SUT.Add(2, 'b');
   SUT.Add(3, 'c');
   SUT.Add(4, 'd');
+end;
+
+function TTestDictionaryBase.IsSorted: Boolean;
+begin
+  Result := False;
 end;
 
 procedure TTestDictionaryBase.TearDown;
@@ -1058,6 +1026,22 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestSortedDictionary'}
+
+function TTestSortedDictionary.IsSorted: Boolean;
+begin
+  Result := True;
+end;
+
+procedure TTestSortedDictionary.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateSortedDictionary<Integer, string>;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TTestBidiDictionaryBase'}
 
 procedure TTestBidiDictionaryBase.TearDown;
@@ -1124,469 +1108,6 @@ begin
   dict := TCollections.CreateBidiDictionary<string, Integer>;
   SUT := dict.Inverse;
   SUTinverse := dict;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestOrderedDictionary'}
-
-procedure TTestOrderedDictionary.SetUp;
-begin
-  SUT := TCollections.CreateDictionary<Integer, string>;
-end;
-
-procedure TTestOrderedDictionary.TearDown;
-begin
-  SUT := nil;
-end;
-
-procedure TTestOrderedDictionary.TestGetItemByIndex;
-var
-  i: Integer;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  for i := 0 to SUT.Count - 1 do
-    CheckEquals(i + 1, SUT.Items[i].Key);
-
-  // remove and re-add, ensures that item array is compacted
-  SUT.Remove(2);
-  SUT.Add(2, 'b');
-  CheckEquals(1, SUT.Items[0].Key);
-  CheckEquals(2, SUT.Items[3].Key);
-  CheckEquals(3, SUT.Items[1].Key);
-  CheckEquals(4, SUT.Items[2].Key);
-end;
-
-procedure TTestOrderedDictionary.TestIndexOf;
-var
-  i: Integer;
-begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
-
-  for i := 0 to SUT.Count - 1 do
-    CheckEquals(i, SUT.IndexOf(i + 1));
-
-  // remove and re-add, ensures that item array is compacted
-  SUT.Remove(2);
-  SUT.Add(2, 'b');
-  CheckEquals(-1, SUT.IndexOf(0));
-  CheckEquals(0, SUT.IndexOf(1));
-  CheckEquals(1, SUT.IndexOf(3));
-  CheckEquals(2, SUT.IndexOf(4));
-  CheckEquals(3, SUT.IndexOf(2));
-  CheckEquals(-1, SUT.IndexOf(5));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestSortedDictionary'}
-
-procedure TTestSortedDictionary.SetUp;
-var
-  i, n: Integer;
-begin
-  SUT := TCollections.CreateSortedDictionary<Integer, string>;
-  // Add a reasonable number of items to the map, adding in an order that might
-  // cause a mismatched tree if the backing red-black tree had balancing errors.
-  n := Round(NumItems * 0.667);
-  for i := n to Pred(NumItems) do
-    SUT.Add(i, IntToStr(i));
-  for i := 0 to Pred(n) do
-    SUT.Add(i, IntToStr(i));
-end;
-
-procedure TTestSortedDictionary.TearDown;
-begin
-  SUT := nil;
-end;
-
-procedure TTestSortedDictionary.CheckCount(expected: Integer);
-begin
-  CheckEquals(expected, SUT.Count, 'Count');
-  CheckEquals(expected, SUT.Keys.Count, 'Keys.Count');
-  CheckEquals(expected, SUT.Values.Count, 'Values.Count');
-end;
-
-procedure TTestSortedDictionary.TestAddOrSetValue;
-begin
-  CheckCount(NumItems);
-  SUT[NumItems] := IntToStr(NumItems);
-  CheckEquals(IntToStr(NumItems), SUT.Items[NumItems]);
-  CheckCount(NumItems + 1);
-
-  SUT[NumItems] := 'test';
-  CheckEquals('test', SUT.Items[NumItems]);
-end;
-
-procedure TTestSortedDictionary.TestAddValue;
-begin
-  SUT.Add(NumItems, IntToStr(NumItems));
-  CheckEquals(IntToStr(NumItems), SUT.Items[NumItems]);
-  CheckCount(NumItems+1);
-
-  // Add should raise an exception when the item already exists
-  CheckException(EArgumentException,
-    procedure
-    begin
-      SUT.Add(NumItems, IntToStr(NumItems));
-    end);
-  CheckException(EArgumentException,
-    procedure
-    begin
-      SUT.Add(0, IntToStr(0));
-    end);
-  CheckException(EArgumentException,
-    procedure
-    begin
-      SUT.Add(NumItems div 2, IntToStr(NumItems div 2));
-    end);
-
-  // Check it didn't actually add anything in the failure items above
-  CheckCount(NumItems + 1);
-end;
-
-procedure TTestSortedDictionary.TestContainsKey;
-var
-  i: Integer;
-begin
-  // Check it contains each value it should
-  for i := 0 to Pred(NumItems) do
-    Check(SUT.ContainsKey(i));
-
-  // And check it does not contain other keys
-  Check(not SUT.ContainsKey(-1));
-  Check(not SUT.ContainsKey(NumItems));
-  Check(not SUT.ContainsKey(MaxInt));
-end;
-
-procedure TTestSortedDictionary.TestContainsValue;
-var
-  i: Integer;
-begin
-  // Check it contains each value it should
-  for i := 0 to Pred(NumItems) do
-    Check(SUT.ContainsValue(IntToStr(i)));
-
-  // And check it does not contain other values
-  Check(not SUT.ContainsValue('-1'));
-  Check(not SUT.ContainsValue('test'));
-  Check(not SUT.ContainsValue(''));
-end;
-
-procedure TTestSortedDictionary.TestCount;
-begin
-  CheckCount(NumItems);
-end;
-
-procedure TTestSortedDictionary.TestEnumeration;
-var
-  i: Integer;
-  item: TPair<Integer, string>;
-begin
-  // Check it enumerates each item, and in the expected order
-  i := 0;
-  for item in SUT do
-  begin
-    CheckEquals(i, item.Key);
-    CheckEquals(IntToStr(i), item.Value);
-    Inc(i);
-  end;
-  CheckEquals(NumItems, i);
-end;
-
-procedure TTestSortedDictionary.TestExtract;
-begin
-  CheckCount(NumItems);
-
-  CheckEquals('0', SUT.Extract(0));
-  CheckCount(NumItems - 1);
-
-  CheckEquals('', SUT.Extract(0));
-  CheckCount(NumItems - 1);
-
-  CheckEquals(IntToStr(NumItems - 1), SUT.Extract(NumItems - 1));
-  CheckCount(NumItems - 2);
-
-  CheckEquals('', SUT.Extract(NumItems - 1));
-  CheckCount(NumItems - 2);
-
-  CheckEquals(IntToStr(NumItems div 2), SUT.Extract(NumItems div 2));
-  CheckCount(NumItems - 3);
-
-  CheckEquals('', SUT.Extract(NumItems div 2));
-  CheckCount(NumItems - 3);
-end;
-
-procedure TTestSortedDictionary.TestGetItem;
-begin
-  CheckEquals('0', SUT[0]);
-  CheckEquals(IntToStr(NumItems div 2), SUT[NumItems div 2]);
-
-  // Get returns the default value when the item doesn't exist
-  CheckEquals('', SUT[NumItems * 10]);
-  CheckEquals('', SUT[MaxInt]);
-  CheckEquals('', SUT[-500]);
-end;
-
-procedure TTestSortedDictionary.TestGetValueOrDefault;
-begin
-  // An item that exists
-  CheckEquals('0', (SUT as IReadOnlyDictionary<Integer, string>).GetValueOrDefault(0, 'test'));
-  // An item that does not exist
-  CheckEquals('test', (SUT as IReadOnlyDictionary<Integer, string>).GetValueOrDefault(NumItems*2, 'test'));
-end;
-
-procedure TTestSortedDictionary.TestKeys;
-var
-  keys: IReadOnlyCollection<Integer>;
-  i: Integer;
-begin
-  keys := SUT.Keys;
-  CheckCount(NumItems);
-  for i := 0 to Pred(NumItems) do
-    Check(Keys.Contains(i));
-end;
-
-procedure TTestSortedDictionary.TestKeysEnumeration;
-var
-  i: Integer;
-  key: Integer;
-begin
-  // Check it enumerates each item, and in the expected order
-  i := 0;
-  for key in SUT.Keys do
-  begin
-    CheckEquals(i, key);
-    Inc(i);
-  end;
-  CheckEquals(NumItems, i);
-end;
-
-procedure TTestSortedDictionary.TestKeysToArray;
-var
-  i: Integer;
-  keys: TArray<Integer>;
-begin
-  keys := SUT.Keys.ToArray;
-  Check(Assigned(keys));
-  CheckEquals(NumItems, Length(keys));
-
-  for i := Low(keys) to High(keys) do
-    CheckEquals(i, keys[i]);
-end;
-
-procedure TTestSortedDictionary.TestMapSimpleValues;
-var
-  i: Integer;
-begin
-  // Check all items are in the map
-  CheckCount(NumItems);
-  for i := 0 to Pred(NumItems) do
-    CheckEquals(IntToStr(i), SUT[i]);
-  // Check a couple of others are not there
-  Check(not SUT.ContainsKey(-1));
-  Check(not SUT.ContainsKey(NumItems));
-end;
-
-procedure TTestSortedDictionary.TestOrdered;
-var
-  items: IEnumerable<TPair<Integer, string>>;
-  i: Integer;
-  item: TPair<Integer, string>;
-begin
-  items := SUT.Ordered;
-  Check(Assigned(items));
-
-  // Check it enumerates each item, and in the expected order
-  i := 0;
-  for item in SUT do
-  begin
-    CheckEquals(i, item.Key);
-    CheckEquals(IntToStr(i), item.Value);
-    Inc(i);
-  end;
-  Check(i = NumItems);
-end;
-
-procedure TTestSortedDictionary.TestRemove;
-begin
-  CheckCount(NumItems);
-
-  Check(SUT.Remove(0));
-  CheckCount(NumItems-1);
-
-  Check(SUT.Remove(NumItems-1));
-  CheckCount(NumItems-2);
-
-  Check(SUT.Remove(NumItems div 2));
-  CheckCount(NumItems-3);
-
-  // But Remove should fail for items that are not present
-  Check(not SUT.Remove(NumItems div 2)); // Already removed
-  CheckCount(NumItems-3); // Count unchanged
-
-  Check(not SUT.Remove(NumItems * 2)); // Never added
-  CheckCount(NumItems-3); // Count unchanged
-end;
-
-procedure TTestSortedDictionary.TestSetItem;
-var
-  item: TPair<Integer, string>;
-  i: Integer;
-begin
-  // Set overwrites existing items without an error
-  CheckEquals('0', SUT[0]);
-  SUT[0] := 'hello';
-  CheckEquals('hello', SUT[0]);
-
-  // Use .Items explicitly (it should be the default property)
-  CheckEquals(IntToStr(NumItems div 2), SUT.Items[NumItems div 2]);
-  SUT.Items[NumItems div 2] := 'hello again';
-  CheckEquals('hello again', SUT.Items[NumItems div 2]);
-
-  // And adds new items
-  Check(not SUT.ContainsKey(10000));
-  SUT[10000] := 'large number';
-  CheckCount(NumItems + 1);
-  Check(SUT.ContainsKey(10000));
-  CheckEquals('large number', SUT.Items[10000]);
-
-  // And check that all the other items are untouched
-  i := 0;
-  for item in SUT do
-  begin
-    // The items changed or added above
-    if i = 0 then
-    begin
-      CheckEquals(0, item.Key);
-      CheckEquals('hello', item.Value);
-    end else if i = NumItems div 2 then
-    begin
-      CheckEquals(NumItems div 2, item.Key);
-      CheckEquals('hello again', item.Value);
-    end else if i = NumItems then
-    begin
-      // The last item should be the large number added above
-      CheckEquals(NumItems, i);
-      CheckEquals(10000, item.Key);
-      CheckEquals('large number', item.Value);
-    end else
-    begin
-      // All other items in the map should not have been affected by the above
-      CheckEquals(i, item.Key);
-      CheckEquals(IntToStr(i), item.Value);
-    end;
-    Inc(i);
-  end;
-  CheckEquals(NumItems + 1, i);
-end;
-
-procedure TTestSortedDictionary.TestToArray;
-var
-  i: Integer;
-  items: TArray<TPair<Integer, string>>;
-begin
-  items := SUT.ToArray;
-  Check(Assigned(items));
-  CheckEquals(NumItems, Length(items));
-
-  for i := Low(items) to High(items) do
-  begin
-    CheckEquals(i, items[i].Key);
-    CheckEquals(IntToStr(i), items[i].Value);
-  end;
-end;
-
-procedure TTestSortedDictionary.TestTryExtract;
-var
-  value: string;
-begin
-  CheckCount(NumItems);
-
-  Check(SUT.TryExtract(0, value));
-  CheckEquals('0', value);
-  CheckCount(NumItems - 1);
-
-  Check(not SUT.TryExtract(0, value));
-  CheckEquals('', value);
-  CheckCount(NumItems - 1);
-
-  Check(SUT.TryExtract(NumItems - 1, value));
-  CheckEquals(IntToStr(NumItems - 1), value);
-  CheckCount(NumItems - 2);
-
-  Check(not SUT.TryExtract(NumItems - 1, value));
-  CheckEquals('', value);
-  CheckCount(NumItems - 2);
-
-  Check(SUT.TryExtract(NumItems div 2, value));
-  CheckEquals(IntToStr(NumItems div 2), value);
-  CheckCount(NumItems - 3);
-
-  Check(not SUT.TryExtract(NumItems div 2, value));
-  CheckEquals('', value);
-  CheckCount(NumItems - 3);
-end;
-
-procedure TTestSortedDictionary.TestTryGetValue;
-var
-  value: string;
-begin
-  // An item that exists
-  Check(SUT.TryGetValue(0, value));
-  CheckEquals('0', value);
-
-  // An item that does not exist
-  value := 'blah';
-  Check(not SUT.TryGetValue(NumItems * 2, value));
-end;
-
-procedure TTestSortedDictionary.TestValues;
-var
-  values: IReadOnlyCollection<string>;
-  i: Integer;
-begin
-  Values := SUT.Values;
-  CheckCount(NumItems);
-  for i := 0 to Pred(NumItems) do
-    Check(Values.Contains(IntToStr(i)));
-end;
-
-procedure TTestSortedDictionary.TestValuesEnumeration;
-var
-  i: Integer;
-  value: string;
-begin
-  // Check it enumerates each item, and in the expected order
-  i := 0;
-  for value in SUT.Values do
-  begin
-    CheckEquals(IntToStr(i), value);
-    Inc(i);
-  end;
-  CheckEquals(NumItems, i);
-end;
-
-procedure TTestSortedDictionary.TestValuesToArray;
-var
-  i: Integer;
-  values: TArray<string>;
-begin
-  values := SUT.values.ToArray;
-  Check(Assigned(values));
-  CheckEquals(NumItems, Length(values));
-
-  for i := Low(values) to High(values) do
-    CheckEquals(IntToStr(i), values[i]);
 end;
 
 {$ENDREGION}

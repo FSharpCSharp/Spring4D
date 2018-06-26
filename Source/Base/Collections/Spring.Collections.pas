@@ -1769,21 +1769,7 @@ type
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
   end;
 
-  /// <summary>
-  ///   Represents a generic dictionary that preserves insertion order.
-  /// </summary>
-  IOrderedDictionary<TKey, TValue> = interface(IDictionary<TKey, TValue>)
-    ['{299B7DFB-5104-488E-B299-0622D0B4D605}']
-  {$REGION 'Property Accessors'}
-    function GetItem(index: Integer): TPair<TKey, TValue>;
-  {$ENDREGION}
-
-    function IndexOf(const key: TKey): Integer;
-
-    property Items[index: Integer]: TPair<TKey, TValue> read GetItem;
-  end;
-
-  IBidiDictionary<TKey, TValue> = interface(IDictionary<TKey, TValue>)//IMap<TKey, TValue>)
+  IBidiDictionary<TKey, TValue> = interface(IDictionary<TKey, TValue>)
     ['{DA8F1C48-B4F4-4487-ADAD-AF15596DD53C}']
   {$REGION 'Property Accessors'}
     function GetInverse: IBidiDictionary<TValue, TKey>;
@@ -2347,17 +2333,6 @@ type
     property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
-  IOrderedSet<T> = interface(ISet<T>)
-    ['{3547BF38-902F-49BA-8BB1-215E6754891D}']
-  {$REGION 'Property Accessors'}
-    function GetItem(index: Integer): T;
-  {$ENDREGION}
-
-    function IndexOf(const item: T): Integer;
-
-    property Items[index: Integer]: T read GetItem;
-  end;
-
   /// <summary>
   ///   Represents a collection of elements that have a common key.
   /// </summary>
@@ -2508,12 +2483,12 @@ type
 
     class function CreateObservableList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
 
-    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(capacity: Integer; ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(capacity: Integer; const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
-    class function CreateDictionary<TKey, TValue>(capacity: Integer; const keyComparer: IEqualityComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IOrderedDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(capacity: Integer; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(const keyComparer: IEqualityComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(capacity: Integer; const keyComparer: IEqualityComparer<TKey>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
+    class function CreateDictionary<TKey, TValue>(capacity: Integer; const keyComparer: IEqualityComparer<TKey>; const valueComparer: IEqualityComparer<TValue>; ownerships: TDictionaryOwnerships = []): IDictionary<TKey, TValue>; overload; static;
 
     class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
     class function CreateMultiMap<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>; overload; static;
@@ -2543,12 +2518,12 @@ type
     class function CreateDeque<T>(const values: array of T): IDeque<T>; overload; static;
     class function CreateDeque<T>(const values: IEnumerable<T>): IDeque<T>; overload; static;
 
-    class function CreateSet<T>: IOrderedSet<T>; overload; static;
-    class function CreateSet<T>(capacity: Integer): IOrderedSet<T>; overload; static;
-    class function CreateSet<T>(const comparer: IEqualityComparer<T>): IOrderedSet<T>; overload; static;
-    class function CreateSet<T>(capacity: Integer; const comparer: IEqualityComparer<T>): IOrderedSet<T>; overload; static;
-    class function CreateSet<T>(const values: array of T): IOrderedSet<T>; overload; static;
-    class function CreateSet<T>(const values: IEnumerable<T>): IOrderedSet<T>; overload; static;
+    class function CreateSet<T>: ISet<T>; overload; static;
+    class function CreateSet<T>(capacity: Integer): ISet<T>; overload; static;
+    class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
+    class function CreateSet<T>(capacity: Integer; const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
+    class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
+    class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
 
     class function CreateSortedSet<T>: ISet<T>; overload; static;
     class function CreateSortedSet<T>(const comparer: IComparer<T>): ISet<T>; overload; static;
@@ -2961,21 +2936,21 @@ begin
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
-  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
   Result := TDictionary<TKey, TValue>.Create(ownerships);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   capacity: Integer;
-  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
   Result := TDictionary<TKey, TValue>.Create(capacity, ownerships);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   const keyComparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
   Result := TDictionary<TKey, TValue>.Create(keyComparer, ownerships);
 end;
@@ -2983,14 +2958,14 @@ end;
 class function TCollections.CreateDictionary<TKey, TValue>(
   const keyComparer: IEqualityComparer<TKey>;
   const valueComparer: IEqualityComparer<TValue>;
-  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
   Result := TDictionary<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
   const keyComparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
   Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, ownerships);
 end;
@@ -2998,7 +2973,7 @@ end;
 class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
   const keyComparer: IEqualityComparer<TKey>;
   const valueComparer: IEqualityComparer<TValue>;
-  ownerships: TDictionaryOwnerships): IOrderedDictionary<TKey, TValue>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
   Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, valueComparer, ownerships);
 end;
@@ -3118,34 +3093,34 @@ begin
   Result := TDeque<T>.Create(values);
 end;
 
-class function TCollections.CreateSet<T>: IOrderedSet<T>;
+class function TCollections.CreateSet<T>: ISet<T>;
 begin
   Result := THashSet<T>.Create;
 end;
 
-class function TCollections.CreateSet<T>(capacity: Integer): IOrderedSet<T>;
+class function TCollections.CreateSet<T>(capacity: Integer): ISet<T>;
 begin
   Result := THashSet<T>.Create(capacity);
 end;
 
 class function TCollections.CreateSet<T>(
-  const comparer: IEqualityComparer<T>): IOrderedSet<T>;
+  const comparer: IEqualityComparer<T>): ISet<T>;
 begin
   Result := THashSet<T>.Create(comparer);
 end;
 
 class function TCollections.CreateSet<T>(capacity: Integer;
-  const comparer: IEqualityComparer<T>): IOrderedSet<T>;
+  const comparer: IEqualityComparer<T>): ISet<T>;
 begin
   Result := THashSet<T>.Create(capacity, comparer);
 end;
 
-class function TCollections.CreateSet<T>(const values: array of T): IOrderedSet<T>;
+class function TCollections.CreateSet<T>(const values: array of T): ISet<T>;
 begin
   Result := THashSet<T>.Create(values);
 end;
 
-class function TCollections.CreateSet<T>(const values: IEnumerable<T>): IOrderedSet<T>;
+class function TCollections.CreateSet<T>(const values: IEnumerable<T>): ISet<T>;
 begin
   Result := THashSet<T>.Create(values);
 end;

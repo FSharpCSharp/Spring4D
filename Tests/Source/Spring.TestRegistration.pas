@@ -88,7 +88,6 @@ begin
   RegisterTests('Spring.Base.Collections', [
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
-    TTestOrderedHashSet.Suite,
     TTestIntegerList.Suite,
     TTestStringList.Suite,
     TTestSortedList.Suite,
@@ -136,7 +135,6 @@ begin
     TTestDictionaryKeyComparer.Suite,
     TTestDictionaryOwnership.Suite,
     TTestDictionaryValueComparer.Suite,
-    TTestOrderedDictionary.Suite,
     TTestSortedDictionary.Suite,
     TTestSortedDictionaryChangedEvent.Suite
   ]);

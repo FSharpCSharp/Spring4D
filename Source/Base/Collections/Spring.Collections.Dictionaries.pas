@@ -50,8 +50,7 @@ type
   end;
 
   TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
-    IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
-    IOrderedDictionary<TKey, TValue>)
+    IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>)
   protected
   {$REGION 'Nested Types'}
     type
@@ -251,12 +250,6 @@ type
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
   {$ENDREGION}
-
-  {$REGION 'Implements IOrderedDictionary<TKey, TValue>'}
-    function GetItemByIndex(index: Integer): TKeyValuePair;
-    function IndexOf(const key: TKey): Integer;
-    function IOrderedDictionary<TKey, TValue>.GetItem = GetItemByIndex;
-  {$ENDREGION}
   end;
 
   TContainedDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
@@ -287,7 +280,7 @@ type
   end;
 
   TBidiDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
-    IReadOnlyDictionary<TKey, TValue>, IDictionary<TKey, TValue>,
+    IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
     IBidiDictionary<TKey, TValue>)
   protected
   {$REGION 'Nested Types'}
@@ -297,9 +290,9 @@ type
       TItem = TBidiDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
-      TInverse = class(TContainedCollectionBase<TValueKeyPair>,
-        IReadOnlyDictionary<TValue, TKey>, IMap<TValue, TKey>,
-        IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
+      TInverse = class(TContainedCollectionBase<TValueKeyPair>, IMap<TValue, TKey>,
+        IDictionary<TValue, TKey>, IReadOnlyDictionary<TValue, TKey>,
+        IBidiDictionary<TValue, TKey>)
       private type
       {$REGION 'Nested Types'}
         TEnumerator = class(TEnumeratorBase<TValueKeyPair>)
@@ -1315,24 +1308,6 @@ begin
       Find(key, hashCode, bucketIndex, itemIndex);
     DoAdd(hashCode, bucketIndex, itemIndex, key, value);
   end;
-end;
-
-function TDictionary<TKey, TValue>.GetItemByIndex(index: Integer): TKeyValuePair;
-begin
-  if fCount <> fItemCount then
-    Rehash(fCapacity);
-  Result.Key := fItems[index].Key;
-  Result.Value := fItems[index].Value;
-end;
-
-function TDictionary<TKey, TValue>.IndexOf(const key: TKey): Integer;
-var
-  bucketIndex: Integer;
-begin
-  if fCount <> fItemCount then
-    Rehash(fCapacity);
-  if not Find(key, Hash(key), bucketIndex, Result) then
-    Result := -1;
 end;
 
 {$ENDREGION}
