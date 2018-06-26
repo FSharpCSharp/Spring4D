@@ -86,6 +86,7 @@ type
         function GetEnumerator: IEnumerator<TKey>; override;
         function Contains(const value: TKey): Boolean; override;
         function ToArray: TArray<TKey>; override;
+        function TryGetElementAt(out key: TKey; index: Integer): Boolean; override;
       {$ENDREGION}
       end;
 
@@ -118,6 +119,7 @@ type
         function GetEnumerator: IEnumerator<TValue>; override;
         function Contains(const value: TValue): Boolean; override;
         function ToArray: TArray<TValue>; override;
+        function TryGetElementAt(out value: TValue; index: Integer): Boolean; override;
       {$ENDREGION}
       end;
 
@@ -175,6 +177,7 @@ type
     fValues: TValueCollection;
     fOwnerships: TDictionaryOwnerships;
     procedure Rehash(newCapacity: Integer);
+    procedure EnsureCompact;
     function Grow: Boolean;
     function Find(const key: TKey; hashCode: Integer;
       out bucketIndex, itemIndex: Integer): Boolean;
@@ -222,6 +225,7 @@ type
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; override;
     function Ordered: IEnumerable<TKeyValuePair>; override;
     function ToArray: TArray<TKeyValuePair>; override;
+    function TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean; override;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -359,6 +363,7 @@ type
           const comparer: IEqualityComparer<TValueKeyPair>): Boolean; override;
         function Ordered: IEnumerable<TValueKeyPair>; override;
         function ToArray: TArray<TValueKeyPair>; override;
+        function TryGetElementAt(out item: TValueKeyPair; index: Integer): Boolean; override;
       {$ENDREGION}
 
       {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -419,6 +424,7 @@ type
         function GetEnumerator: IEnumerator<TKey>; override;
         function Contains(const value: TKey): Boolean; override;
         function ToArray: TArray<TKey>; override;
+        function TryGetElementAt(out key: TKey; index: Integer): Boolean; override;
       {$ENDREGION}
       end;
 
@@ -451,6 +457,7 @@ type
         function GetEnumerator: IEnumerator<TValue>; override;
         function Contains(const value: TValue): Boolean; override;
         function ToArray: TArray<TValue>; override;
+        function TryGetElementAt(out value: TValue; index: Integer): Boolean; override;
       {$ENDREGION}
       end;
 
@@ -511,6 +518,7 @@ type
     fInverse: TInverse;
     fOwnerships: TDictionaryOwnerships;
     procedure Rehash(newCapacity: Integer);
+    procedure EnsureCompact;
     function Grow: Boolean;
     function FindKey(const key: TKey; hashCode: Integer;
       out bucketIndex, itemIndex: Integer): Boolean;
@@ -1179,6 +1187,12 @@ begin
   Result := False;
 end;
 
+procedure TDictionary<TKey, TValue>.EnsureCompact;
+begin
+  if fCount <> fItemCount then
+    Rehash(fCapacity);
+end;
+
 function TDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
 begin
   TryExtract(key, Result);
@@ -1237,6 +1251,17 @@ begin
   end
   else
     value := Default(TValue);
+end;
+
+function TDictionary<TKey, TValue>.TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean;
+begin
+  Result := InRange(index, 0, fCount - 1);
+  if Result then
+  begin
+    EnsureCompact;
+    item.Key := fItems[index].Key;
+    item.Value := fItems[index].Value;
+  end;
 end;
 
 function TDictionary<TKey, TValue>.TryGetValue(const key: TKey;
@@ -1391,6 +1416,16 @@ begin
     end;
 end;
 
+function TDictionary<TKey, TValue>.TKeyCollection.TryGetElementAt(out key: TKey; index: Integer): Boolean;
+begin
+  Result := InRange(index, 0, fDictionary.fCount - 1);
+  if Result then
+  begin
+    fDictionary.EnsureCompact;
+    key := fDictionary.fItems[index].Key;
+  end;
+end;
+
 {$ENDREGION}
 
 
@@ -1461,6 +1496,16 @@ begin
       Result[targetIndex] := fDictionary.fItems[sourceIndex].Value;
       Inc(targetIndex);
     end;
+end;
+
+function TDictionary<TKey, TValue>.TValueCollection.TryGetElementAt(out value: TValue; index: Integer): Boolean;
+begin
+  Result := InRange(index, 0, fDictionary.fCount - 1);
+  if Result then
+  begin
+    fDictionary.EnsureCompact;
+    value := fDictionary.fItems[index].Value;
+  end;
 end;
 
 {$ENDREGION}
@@ -2174,6 +2219,12 @@ begin
   Result := FindValue(value, ValueHash(value), bucketIndex, itemIndex);
 end;
 
+procedure TBidiDictionary<TKey, TValue>.EnsureCompact;
+begin
+  if fCount <> fItemCount then
+    Rehash(fCapacity);
+end;
+
 function TBidiDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
 begin
   TryExtract(key, Result);
@@ -2615,6 +2666,18 @@ begin
     key := Default(TKey);
 end;
 
+function TBidiDictionary<TKey, TValue>.TInverse.TryGetElementAt(out item: TValueKeyPair; index: Integer): Boolean;
+var
+  pair: TKeyValuePair;
+begin
+  Result := fSource.TryGetElementAt(pair, index);
+  if Result then
+  begin
+   item.Key := pair.Value;
+   item.Value := pair.Key;
+ end;
+end;
+
 function TBidiDictionary<TKey, TValue>.TInverse.TryGetValue(const value: TValue;
   out key: TKey): Boolean;
 var
@@ -2806,6 +2869,16 @@ begin
     end;
 end;
 
+function TBidiDictionary<TKey, TValue>.TKeyCollection.TryGetElementAt(out key: TKey; index: Integer): Boolean;
+begin
+  Result := InRange(index, 0, fDictionary.fCount - 1);
+  if Result then
+  begin
+    fDictionary.EnsureCompact;
+    key := fDictionary.fItems[index].Key;
+  end;
+end;
+
 {$ENDREGION}
 
 
@@ -2876,6 +2949,16 @@ begin
       Result[targetIndex] := fDictionary.fItems[sourceIndex].Value;
       Inc(targetIndex);
     end;
+end;
+
+function TBidiDictionary<TKey, TValue>.TValueCollection.TryGetElementAt(out value: TValue; index: Integer): Boolean;
+begin
+  Result := InRange(index, 0, fDictionary.fCount - 1);
+  if Result then
+  begin
+    fDictionary.EnsureCompact;
+    value := fDictionary.fItems[index].Value;
+  end;
 end;
 
 {$ENDREGION}

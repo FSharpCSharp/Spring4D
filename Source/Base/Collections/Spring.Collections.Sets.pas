@@ -105,6 +105,7 @@ type
     fEqualityComparer: IEqualityComparer<T>;
     fVersion: Integer;
     procedure Rehash(newCapacity: Integer);
+    procedure EnsureCompact;
     function Grow: Boolean;
     function Find(const item: T; hashCode: Integer;
       out bucketIndex, itemIndex: Integer): Boolean;
@@ -131,6 +132,7 @@ type
 
     destructor Destroy; override;
 
+    function TryGetElementAt(out item: T; index: Integer): Boolean; override;
     function GetEnumerator: IEnumerator<T>; override;
 
     function Add(const item: T): Boolean;
@@ -385,6 +387,16 @@ begin
   SetCapacity(fCount);
 end;
 
+function THashSet<T>.TryGetElementAt(out item: T; index: Integer): Boolean;
+begin
+  Result := InRange(index, 0, fCount - 1);
+  if Result then
+  begin
+    EnsureCompact;
+    item := fItems[index].Item;
+  end;
+end;
+
 procedure THashSet<T>.Rehash(newCapacity: Integer);
 var
   bucketIndex, itemIndex: Integer;
@@ -572,6 +584,12 @@ var
   bucketIndex, itemIndex: Integer;
 begin
   Result := Find(item, Hash(item), bucketIndex, itemIndex);
+end;
+
+procedure THashSet<T>.EnsureCompact;
+begin
+  if fCount <> fItemCount then
+    Rehash(fCapacity);
 end;
 
 function THashSet<T>.Extract(const item: T): T;

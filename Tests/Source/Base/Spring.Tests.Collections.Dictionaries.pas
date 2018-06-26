@@ -110,6 +110,7 @@ type
     procedure TestContains;
     procedure TestContainsKey;
     procedure TestContainsValue;
+    procedure TestElementAt;
     procedure TestEnumerableContains;
     procedure TestEnumeratorVersion;
     procedure TestExtract;
@@ -118,7 +119,9 @@ type
     procedure TestGetValueOrDefault;
     procedure TestIsInitializedEmpty;
     procedure TestKeysContains;
+    procedure TestKeysElementAt;
     procedure TestKeysEnumerate;
+    procedure TestKeysEnumeratorVersion;
     procedure TestKeysGetEnumerator;
     procedure TestKeysReferenceCounting;
     procedure TestKeysToArray;
@@ -134,7 +137,9 @@ type
     procedure TestTryExtract;
     procedure TestToArray;
     procedure TestValuesContains;
+    procedure TestValuesElementAt;
     procedure TestValuesEnumerate;
+    procedure TestValuesEnumeratorVersion;
     procedure TestValuesGetEnumerator;
     procedure TestValuesReferenceCounting;
     procedure TestValuesToArray;
@@ -584,6 +589,38 @@ begin
   Check(not SUT.ContainsValue('e'));
 end;
 
+procedure TTestDictionaryBase.TestElementAt;
+var
+  i: Integer;
+begin
+  FillTestData;
+
+  if IsSorted then
+  begin
+    for i := 0 to SUT.Count - 1 do
+      CheckEquals(i + 1, SUT.ElementAt(i).Key);
+
+    // remove and re-add, because this dict is sorted, the order must not change
+    SUT.Remove(2);
+    SUT.Add(2, 'b');
+    for i := 0 to SUT.Count - 1 do
+      CheckEquals(i + 1, SUT.ElementAt(i).Key);
+  end
+  else
+  begin
+    for i := 0 to SUT.Count - 1 do
+      CheckEquals(i + 1, SUT.ElementAt(i).Key);
+
+    // remove and re-add, ensure that we exercise code which compacts the item array
+    SUT.Remove(2);
+    SUT.Add(2, 'b');
+    CheckEquals(1, SUT.ElementAt(0).Key);
+    CheckEquals(2, SUT.ElementAt(3).Key);
+    CheckEquals(3, SUT.ElementAt(1).Key);
+    CheckEquals(4, SUT.ElementAt(2).Key);
+  end;
+end;
+
 procedure TTestDictionaryBase.TestEnumerableContains;
 var
   enumerable: IEnumerable<TPair<Integer, string>>;
@@ -701,6 +738,38 @@ begin
   Check(not SUT.Keys.Contains(5));
 end;
 
+procedure TTestDictionaryBase.TestKeysElementAt;
+var
+  i: Integer;
+begin
+  FillTestData;
+
+  if IsSorted then
+  begin
+    for i := 0 to SUT.Keys.Count - 1 do
+      CheckEquals(i + 1, SUT.Keys.ElementAt(i));
+
+    // remove and re-add, because this dict is sorted, the order must not change
+    SUT.Remove(2);
+    SUT.Add(2, 'b');
+    for i := 0 to SUT.Keys.Count - 1 do
+      CheckEquals(i + 1, SUT.Keys.ElementAt(i));
+  end
+  else
+  begin
+    for i := 0 to SUT.Keys.Count - 1 do
+      CheckEquals(i + 1, SUT.Keys.ElementAt(i));
+
+    // remove and re-add, ensure that we exercise code which compacts the item array
+    SUT.Remove(2);
+    SUT.Add(2, 'b');
+    CheckEquals(1, SUT.Keys.ElementAt(0));
+    CheckEquals(2, SUT.Keys.ElementAt(3));
+    CheckEquals(3, SUT.Keys.ElementAt(1));
+    CheckEquals(4, SUT.Keys.ElementAt(2));
+  end;
+end;
+
 procedure TTestDictionaryBase.TestKeysEnumerate;
 var
   e: IEnumerator<Integer>;
@@ -716,6 +785,38 @@ begin
   e.MoveNext;
   CheckTrue(e.MoveNext);
   CheckFalse(e.MoveNext);
+end;
+
+procedure TTestDictionaryBase.TestKeysEnumeratorVersion;
+var
+  e: IEnumerator<Integer>;
+begin
+  FillTestData;
+
+  e := SUT.Keys.GetEnumerator;
+  e.MoveNext;
+  SUT.Remove(1);
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+
+  e := SUT.Keys.GetEnumerator;
+  e.MoveNext;
+  SUT.Add(1, 'a');
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+
+  e := SUT.Keys.GetEnumerator;
+  e.MoveNext;
+  SUT.Extract(2);
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+
+  e := SUT.Keys.GetEnumerator;
+  e.MoveNext;
+  SUT[3] := 'foo';
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+
+  e := SUT.Keys.GetEnumerator;
+  e.MoveNext;
+  SUT.Clear;
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
 end;
 
 procedure TTestDictionaryBase.TestKeysGetEnumerator;
@@ -955,6 +1056,38 @@ begin
   Check(not SUT.Values.Contains('e'));
 end;
 
+procedure TTestDictionaryBase.TestValuesElementAt;
+var
+  i: Integer;
+begin
+  FillTestData;
+
+  if IsSorted then
+  begin
+    for i := 0 to SUT.Count - 1 do
+      CheckEquals(Chr(Ord('a') + i), SUT.Values.ElementAt(i));
+
+    // remove and re-add, because this dict is sorted, the order must not change
+    SUT.Remove(2);
+    SUT.Add(2, 'b');
+    for i := 0 to SUT.Count - 1 do
+      CheckEquals(Chr(Ord('a') + i), SUT.Values.ElementAt(i));
+  end
+  else
+  begin
+    for i := 0 to SUT.Count - 1 do
+      CheckEquals(Chr(Ord('a') + i), SUT.Values.ElementAt(i));
+
+    // remove and re-add, ensures that item array is compacted
+    SUT.Remove(2);
+    SUT.Add(2, 'b');
+    CheckEquals('a', SUT.Values.ElementAt(0));
+    CheckEquals('b', SUT.Values.ElementAt(3));
+    CheckEquals('c', SUT.Values.ElementAt(1));
+    CheckEquals('d', SUT.Values.ElementAt(2));
+  end;
+end;
+
 procedure TTestDictionaryBase.TestValuesEnumerate;
 var
   e: IEnumerator<string>;
@@ -970,6 +1103,38 @@ begin
   e.MoveNext;
   CheckTrue(e.MoveNext);
   CheckFalse(e.MoveNext);
+end;
+
+procedure TTestDictionaryBase.TestValuesEnumeratorVersion;
+var
+  e: IEnumerator<string>;
+begin
+  FillTestData;
+
+  e := SUT.Values.GetEnumerator;
+  e.MoveNext;
+  SUT.Remove(1);
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+
+  e := SUT.Values.GetEnumerator;
+  e.MoveNext;
+  SUT.Add(1, 'a');
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+
+  e := SUT.Values.GetEnumerator;
+  e.MoveNext;
+  SUT.Extract(2);
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+
+  e := SUT.Values.GetEnumerator;
+  e.MoveNext;
+  SUT[3] := 'foo';
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+
+  e := SUT.Values.GetEnumerator;
+  e.MoveNext;
+  SUT.Clear;
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
 end;
 
 procedure TTestDictionaryBase.TestValuesGetEnumerator;
