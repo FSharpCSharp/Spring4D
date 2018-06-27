@@ -496,10 +496,20 @@ end;
 
 procedure TTestDictionaryBase.FillTestData;
 begin
-  SUT.Add(1, 'a');
-  SUT.Add(2, 'b');
-  SUT.Add(3, 'c');
-  SUT.Add(4, 'd');
+  if IsSorted then
+  begin
+    SUT.Add(3, 'c');
+    SUT.Add(1, 'a');
+    SUT.Add(4, 'd');
+    SUT.Add(2, 'b');
+  end
+  else
+  begin
+    SUT.Add(1, 'a');
+    SUT.Add(2, 'b');
+    SUT.Add(3, 'c');
+    SUT.Add(4, 'd');
+  end;
 end;
 
 function TTestDictionaryBase.IsSorted: Boolean;
@@ -510,6 +520,7 @@ end;
 procedure TTestDictionaryBase.TearDown;
 begin
   SUT := nil;
+  inherited;
 end;
 
 procedure TTestDictionaryBase.TestAddDictionary;
