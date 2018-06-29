@@ -351,7 +351,8 @@ type
         procedure SetCapacity(value: Integer);
         procedure SetItem(const value: TValue; const key: TKey);
       {$ENDREGION}
-        procedure AddInternal(const item: TValueKeyPair); override;
+        function AddInternal(const item: TValueKeyPair): Boolean; override;
+        function RemoveInternal(const item: TValueKeyPair): Boolean; override;
         procedure Changed(const item: TValueKeyPair; action: TCollectionChangedAction); override;
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
@@ -374,8 +375,8 @@ type
       {$REGION 'Implements IMap<TValue, TKey>'}
         procedure Add(const value: TValue; const key: TKey);
         function TryAdd(const value: TValue; const key: TKey): Boolean;
-        function Remove(const value: TValue): Boolean; reintroduce; overload;
-        function Remove(const value: TValue; const key: TKey): Boolean; reintroduce; overload;
+        function Remove(const value: TValue): Boolean; overload;
+        function Remove(const value: TValue; const key: TKey): Boolean; overload;
         function Extract(const value: TValue; const key: TKey): TValueKeyPair; reintroduce; overload;
         function Contains(const value: TValue; const key: TKey): Boolean; overload;
         function ContainsKey(const value: TValue): Boolean;
@@ -2426,10 +2427,9 @@ begin
   fSource.AddInternal(key, value);
 end;
 
-procedure TBidiDictionary<TKey, TValue>.TInverse.AddInternal(
-  const item: TValueKeyPair);
+function TBidiDictionary<TKey, TValue>.TInverse.AddInternal(const item: TValueKeyPair): Boolean;
 begin
-  Add(item.Key, item.Value);
+  Result := fSource.TryAddInternal(item.Value, item.Key);
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.AsReadOnlyDictionary: IReadOnlyDictionary<TValue, TKey>;
@@ -2610,6 +2610,12 @@ begin
     Assert(keyItemIndex = valueItemIndex);
     fSource.DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caRemoved);
   end;
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.RemoveInternal(
+  const item: TValueKeyPair): Boolean;
+begin
+  Result := Remove(item.Key, item.Value);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.TInverse.SetCapacity(value: Integer);

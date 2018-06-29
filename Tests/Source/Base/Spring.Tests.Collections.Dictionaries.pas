@@ -106,7 +106,9 @@ type
   published
     procedure TestAddDictionary;
     procedure TestAddKeyValue;
+    procedure TestCollectionAdd;
     procedure TestCollectionExtract;
+    procedure TestCollectionRemove;
     procedure TestContains;
     procedure TestContainsKey;
     procedure TestContainsValue;
@@ -542,6 +544,24 @@ begin
   CheckException(EArgumentException, procedure begin SUT.Add(1, 'e') end);
 end;
 
+procedure TTestDictionaryBase.TestCollectionAdd;
+var
+  pair: TPair<Integer, string>;
+  coll: ICollection<TPair<Integer,string>>;
+begin
+  coll := SUT as ICollection<TPair<Integer, string>>;
+
+  pair.Key := 1;
+  pair.Value := 'a';
+  Check(coll.Add(pair));
+  Check(not coll.Add(pair));
+  pair.Value := 'b';
+  Check(not coll.Add(pair));
+  pair.Key := 2;
+  Check(coll.Add(pair));
+  CheckEquals(2, coll.Count);
+end;
+
 procedure TTestDictionaryBase.TestCollectionExtract;
 var
   pair: TPair<Integer, string>;
@@ -560,6 +580,26 @@ begin
   CheckEquals('a', pair.Value);
   Check(not SUT.ContainsKey(1));
   Check(not SUT.ContainsValue('a'));
+end;
+
+procedure TTestDictionaryBase.TestCollectionRemove;
+var
+  pair: TPair<Integer, string>;
+  coll: ICollection<TPair<Integer,string>>;
+begin
+  FillTestData;
+
+  coll := SUT as ICollection<TPair<Integer, string>>;
+
+  pair.Key := 1;
+  pair.Value := 'a';
+  Check(coll.Remove(pair));
+  Check(not coll.Remove(pair));
+  pair.Value := 'b';
+  Check(not coll.Remove(pair));
+  pair.Key := 2;
+  Check(coll.Remove(pair));
+  CheckEquals(2, coll.Count);
 end;
 
 procedure TTestDictionaryBase.TestContains;

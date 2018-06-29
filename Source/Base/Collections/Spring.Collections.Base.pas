@@ -266,7 +266,8 @@ type
     function GetIsReadOnly: Boolean; virtual;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
-    procedure AddInternal(const item: T); virtual; abstract;
+    function AddInternal(const item: T): Boolean; virtual; abstract;
+    function RemoveInternal(const item: T): Boolean; virtual; abstract;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     procedure Reset;
   public
@@ -274,13 +275,13 @@ type
     constructor Create(const values: array of T); overload; virtual;
     constructor Create(const collection: IEnumerable<T>); overload; virtual;
 
-    procedure Add(const item: T);
+    function Add(const item: T): Boolean;
     procedure AddRange(const values: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
 
     procedure Clear; virtual; abstract;
 
-    function Remove(const item: T): Boolean; virtual; abstract;
+    function Remove(const item: T): Boolean;
     procedure RemoveAll(const predicate: Predicate<T>); virtual;
     procedure RemoveRange(const values: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
@@ -358,9 +359,10 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    procedure AddInternal(const item: TKeyValuePair); overload; override; final;
+    function AddInternal(const item: TKeyValuePair): Boolean; overload; override; final;
     procedure AddInternal(const key: TKey; const value: T); reintroduce; overload; virtual;
     function TryAddInternal(const key: TKey; const value: T): Boolean; virtual; abstract;
+    function RemoveInternal(const item: TKeyValuePair): Boolean; override; final;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); virtual;
     procedure ValueChanged(const item: T; action: TCollectionChangedAction); virtual;
   public
@@ -369,9 +371,8 @@ type
     procedure Add(const key: TKey; const value: T);
     function TryAdd(const key: TKey; const value: T): Boolean;
 
-    function Remove(const item: TKeyValuePair): Boolean; overload; override; final;
-    function Remove(const key: TKey): Boolean; reintroduce; overload; virtual; abstract;
-    function Remove(const key: TKey; const value: T): Boolean; reintroduce; overload; virtual; abstract;
+    function Remove(const key: TKey): Boolean; overload; virtual; abstract;
+    function Remove(const key: TKey; const value: T): Boolean; overload; virtual; abstract;
 
     function Extract(const item: TKeyValuePair): TKeyValuePair; overload; override; final;
     function Extract(const key: TKey; const value: T): TKeyValuePair; reintroduce; overload; virtual; abstract;
@@ -408,7 +409,8 @@ type
   {$REGION 'Implements IInterface'}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
-    procedure AddInternal(const item: T); override; final;
+    function AddInternal(const item: T): Boolean; override; final;
+    function RemoveInternal(const item: T): Boolean; override; final;
     function CreateList: TListBase<T>; virtual;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
@@ -417,11 +419,9 @@ type
   public
     destructor Destroy; override;
 
-    function Add(const item: T): Integer; virtual;
+    function Add(const item: T): Integer; virtual; // TODO: virtual needed?
     procedure AddRange(const values: array of T); override;
     procedure AddRange(const collection: IEnumerable<T>); override;
-
-    function Remove(const item: T): Boolean; override;
 
     procedure Clear; override;
 
@@ -1411,9 +1411,9 @@ begin
   AddRange(collection);
 end;
 
-procedure TCollectionBase<T>.Add(const item: T);
+function TCollectionBase<T>.Add(const item: T): Boolean;
 begin
-  AddInternal(item);
+  Result := AddInternal(item);
 end;
 
 procedure TCollectionBase<T>.AddRange(const values: array of T);
@@ -1520,6 +1520,11 @@ begin
       collection.Add(values[i]);
       Inc(Result);
     end;
+end;
+
+function TCollectionBase<T>.Remove(const item: T): Boolean;
+begin
+  Result := RemoveInternal(item);
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const values: array of T);
@@ -1650,9 +1655,9 @@ begin
   AddInternal(key, value);
 end;
 
-procedure TMapBase<TKey, T>.AddInternal(const item: TKeyValuePair);
+function TMapBase<TKey, T>.AddInternal(const item: TKeyValuePair): Boolean;
 begin
-  AddInternal(item.Key, item.Value);
+  Result := TryAddInternal(item.Key, item.Value);
 end;
 
 procedure TMapBase<TKey, T>.AddInternal(const key: TKey; const value: T);
@@ -1698,7 +1703,7 @@ begin
     fOnKeyChanged.Invoke(Self, item, action)
 end;
 
-function TMapBase<TKey, T>.Remove(const item: TKeyValuePair): Boolean;
+function TMapBase<TKey, T>.RemoveInternal(const item: TKeyValuePair): Boolean;
 begin
   Result := Remove(item.Key, item.Value);
 end;
@@ -1732,9 +1737,10 @@ begin
   Insert(Result, item);
 end;
 
-procedure TListBase<T>.AddInternal(const item: T);
+function TListBase<T>.AddInternal(const item: T): Boolean;
 begin
   Add(item);
+  Result := True;
 end;
 
 procedure TListBase<T>.AddRange(const values: array of T);
@@ -1923,7 +1929,7 @@ begin
   Result := -1;
 end;
 
-function TListBase<T>.Remove(const item: T): Boolean;
+function TListBase<T>.RemoveInternal(const item: T): Boolean;
 var
   index: Integer;
 begin

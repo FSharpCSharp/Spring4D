@@ -110,8 +110,7 @@ type
     function Find(const item: T; hashCode: Integer;
       out bucketIndex, itemIndex: Integer): Boolean;
     function Hash(const item: T): Integer; inline;
-    procedure DoAdd(hashCode, bucketIndex, itemIndex: Integer;
-      const item: T);
+    procedure DoAdd(hashCode, bucketIndex, itemIndex: Integer; const item: T);
     procedure DoRemove(bucketIndex, itemIndex: Integer;
       action: TCollectionChangedAction);
   protected
@@ -122,7 +121,8 @@ type
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
     class function CreateSet: ISet<T>; override;
-    procedure AddInternal(const item: T); override;
+    function AddInternal(const item: T): Boolean; override;
+    function RemoveInternal(const item: T): Boolean; override;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
@@ -135,8 +135,6 @@ type
     function TryGetElementAt(out item: T; index: Integer): Boolean; override;
     function GetEnumerator: IEnumerator<T>; override;
 
-    function Add(const item: T): Boolean;
-    function Remove(const item: T): Boolean; override;
     function Extract(const item: T): T; override;
     procedure Clear; override;
     procedure TrimExcess;
@@ -175,7 +173,8 @@ type
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
     class function CreateSet: ISet<T>; override;
-    procedure AddInternal(const item: T); override;
+    function AddInternal(const item: T): Boolean; override;
+    function RemoveInternal(const item: T): Boolean; override;
   public
     constructor Create; overload; override;
     constructor Create(const comparer: IComparer<T>); overload;
@@ -183,8 +182,6 @@ type
 
     function GetEnumerator: IEnumerator<T>; override;
 
-    function Add(const item: T): Boolean;
-    function Remove(const item: T): Boolean; override;
     function Extract(const item: T): T; override;
     procedure Clear; override;
     procedure TrimExcess;
@@ -510,8 +507,7 @@ begin
   Result := fEqualityComparer.GetHashCode(item) and not TItem.RemovedFlag;
 end;
 
-procedure THashSet<T>.DoAdd(hashCode, bucketIndex, itemIndex: Integer;
-  const item: T);
+procedure THashSet<T>.DoAdd(hashCode, bucketIndex, itemIndex: Integer; const item: T);
 begin
   IncUnchecked(fVersion);
   fBuckets[bucketIndex] := itemIndex or (hashCode and fBucketHashCodeMask);
@@ -539,7 +535,7 @@ begin
   Changed(item, action);
 end;
 
-function THashSet<T>.Add(const item: T): Boolean;
+function THashSet<T>.AddInternal(const item: T): Boolean;
 var
   bucketIndex, itemIndex, hashCode: Integer;
 begin
@@ -552,11 +548,6 @@ begin
       Find(item, hashCode, bucketIndex, itemIndex);
     DoAdd(hashCode, bucketIndex, itemIndex, item);
   end;
-end;
-
-procedure THashSet<T>.AddInternal(const item: T);
-begin
-  Add(item);
 end;
 
 procedure THashSet<T>.Clear;
@@ -620,20 +611,20 @@ begin
   Result := fCount;
 end;
 
-function THashSet<T>.Remove(const item: T): Boolean;
+function THashSet<T>.GetItem(index: Integer): T;
+begin
+  if fCount <> fItemCount then
+    Rehash(fCapacity);
+  Result := fItems[index].Item;
+end;
+
+function THashSet<T>.RemoveInternal(const item: T): Boolean;
 var
   bucketIndex, itemIndex: Integer;
 begin
   Result := Find(item, Hash(item), bucketIndex, itemIndex);
   if Result then
     DoRemove(bucketIndex, itemIndex, caRemoved);
-end;
-
-function THashSet<T>.GetItem(index: Integer): T;
-begin
-  if fCount <> fItemCount then
-    Rehash(fCapacity);
-  Result := fItems[index].Item;
 end;
 
 function THashSet<T>.ToArray: TArray<T>;
@@ -720,19 +711,12 @@ begin
   inherited Destroy;
 end;
 
-function TSortedSet<T>.Add(const item: T): Boolean;
+function TSortedSet<T>.AddInternal(const item: T): Boolean;
 begin
   IncUnchecked(fVersion);
   Result := fTree.Add(item);
   if Result then
     Changed(item, caAdded);
-end;
-
-procedure TSortedSet<T>.AddInternal(const item: T);
-begin
-  IncUnchecked(fVersion);
-  fTree.Add(item);
-  Changed(item, caAdded);
 end;
 
 procedure TSortedSet<T>.Clear;
@@ -786,7 +770,7 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
-function TSortedSet<T>.Remove(const item: T): Boolean;
+function TSortedSet<T>.RemoveInternal(const item: T): Boolean;
 var
   node: PNode;
 begin

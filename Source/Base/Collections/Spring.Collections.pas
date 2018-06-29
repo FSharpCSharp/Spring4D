@@ -736,12 +736,15 @@ type
   {$ENDREGION}
 
     /// <summary>
-    ///   Adds an item to the ICollection&lt;T&gt;.
+    ///   Adds an item to the collection.
     /// </summary>
     /// <param name="item">
-    ///   The element to add to the ICollection&lt;T&gt;.
+    ///   The element to add to the collection
     /// </param>
-    procedure Add(const item: T);
+    /// <returns>
+    ///   True if the collection was modified, False otherwise.
+    /// </returns>
+    function Add(const item: T): Boolean;
     procedure AddRange(const values: array of T); overload;
     procedure AddRange(const collection: IEnumerable<T>); overload;
 
@@ -2208,19 +2211,6 @@ type
     function GetCapacity: Integer;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-
-    /// <summary>
-    ///   Adds an element to the current set and returns a value to indicate if
-    ///   the element was successfully added.
-    /// </summary>
-    /// <param name="item">
-    ///   The element to add to the set.
-    /// </param>
-    /// <returns>
-    ///   <b>True</b> if the element is added to the set; <b>False</b> if the
-    ///   element is already in the set.
-    /// </returns>
-    function Add(const item: T): Boolean;
 
     /// <summary>
     ///   Removes all elements in the specified collection from the current

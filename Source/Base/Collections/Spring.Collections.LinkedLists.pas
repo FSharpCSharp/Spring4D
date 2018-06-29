@@ -89,7 +89,8 @@ type
     function GetLast: TLinkedListNode<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
-    procedure AddInternal(const item: T); override;
+    function AddInternal(const item: T): Boolean; override;
+    function RemoveInternal(const item: T): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
     function TryGetLast(out value: T): Boolean; override;
   public
@@ -113,7 +114,6 @@ type
     function Find(const value: T): TLinkedListNode<T>;
     function FindLast(const value: T): TLinkedListNode<T>;
 
-    function Remove(const item: T): Boolean; overload; override;
     procedure Remove(const node: TLinkedListNode<T>); reintroduce; overload;
     procedure RemoveFirst;
     procedure RemoveLast;
@@ -134,9 +134,10 @@ begin
   inherited Destroy;
 end;
 
-procedure TLinkedList<T>.AddInternal(const item: T);
+function TLinkedList<T>.AddInternal(const item: T): Boolean;
 begin
   AddLast(item);
+  Result := True;
 end;
 
 procedure TLinkedList<T>.AddAfter(const node, newNode: TLinkedListNode<T>);
@@ -431,7 +432,7 @@ begin
   InternalRemoveNode(fHead.fPrev);
 end;
 
-function TLinkedList<T>.Remove(const item: T): Boolean;
+function TLinkedList<T>.RemoveInternal(const item: T): Boolean;
 var
   node: TLinkedListNode<T>;
 begin
