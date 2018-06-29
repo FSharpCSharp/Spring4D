@@ -2424,7 +2424,7 @@ end;
 procedure TBidiDictionary<TKey, TValue>.TInverse.Add(const value: TValue;
   const key: TKey);
 begin
-  fSource.AddInternal(key, value);
+  fSource.Add(key, value);
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.AddInternal(const item: TValueKeyPair): Boolean;

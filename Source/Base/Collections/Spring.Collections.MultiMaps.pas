@@ -128,6 +128,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMultiMap<TKey, TValue>'}
+    function Add(const key: TKey; const value: TValue): Boolean;
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
     procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;
     function ExtractValues(const key: TKey): IList<TValue>;
@@ -202,6 +203,12 @@ begin
   fValues.Free;
   fDictionary.Free;
   inherited Destroy;
+end;
+
+function TMultiMapBase<TKey, TValue>.Add(const key: TKey;
+  const value: TValue): Boolean;
+begin
+  Result := TryAddInternal(key, value);
 end;
 
 procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;

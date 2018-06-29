@@ -1548,7 +1548,7 @@ type
     /// <param name="value">
     ///   The value to use as the value of the element to add.
     /// </param>
-    procedure Add(const key: TKey; const value: TValue); overload;
+    procedure Add(const key: TKey; const value: TValue);
 
     /// <summary>
     ///   Attempts to add the specified key and value to the map.
@@ -1800,6 +1800,21 @@ type
   {$REGION 'Property Accessors'}
     function GetItems(const key: TKey): IReadOnlyList<TValue>;
   {$ENDREGION}
+
+    /// <summary>
+    ///   Adds an element with the provided key and value to the map and
+    ///   returns if the underlying map was modified.
+    /// </summary>
+    /// <param name="key">
+    ///   The value to use as the key of the element to add.
+    /// </param>
+    /// <param name="value">
+    ///   The value to use as the value of the element to add.
+    /// </param>
+    /// <returns>
+    ///   True if the map was modified, False otherwise.
+    /// </returns>
+    function Add(const key: TKey; const value: TValue): Boolean;
 
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
     procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;

@@ -359,8 +359,7 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    function AddInternal(const item: TKeyValuePair): Boolean; overload; override; final;
-    procedure AddInternal(const key: TKey; const value: T); reintroduce; overload; virtual;
+    function AddInternal(const item: TKeyValuePair): Boolean; override; final;
     function TryAddInternal(const key: TKey; const value: T): Boolean; virtual; abstract;
     function RemoveInternal(const item: TKeyValuePair): Boolean; override; final;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); virtual;
@@ -1652,18 +1651,13 @@ end;
 
 procedure TMapBase<TKey, T>.Add(const key: TKey; const value: T);
 begin
-  AddInternal(key, value);
+  if not TryAddInternal(key, value) then
+    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
 end;
 
 function TMapBase<TKey, T>.AddInternal(const item: TKeyValuePair): Boolean;
 begin
   Result := TryAddInternal(item.Key, item.Value);
-end;
-
-procedure TMapBase<TKey, T>.AddInternal(const key: TKey; const value: T);
-begin
-  if not TryAddInternal(key, value) then
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
 end;
 
 function TMapBase<TKey, T>.Contains(const item: TKeyValuePair): Boolean;

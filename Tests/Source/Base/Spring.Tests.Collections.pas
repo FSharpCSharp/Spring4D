@@ -3290,7 +3290,7 @@ end;
 
 procedure TTestMultiMap.TestAddPair;
 begin
-  SUT.Add(TPair<Integer, Integer>.Create(1,1));
+  (SUT as ICollection<TPair<Integer, Integer>>).Add(TPair<Integer, Integer>.Create(1,1));
   CheckEquals(1, SUT.Count);
   CheckEquals(1, SUT[1].First);
 end;
