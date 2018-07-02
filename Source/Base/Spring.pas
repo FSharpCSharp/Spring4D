@@ -1817,45 +1817,29 @@ type
 
   {$REGION 'Weak smart pointer'}
 
-  IWeakReference<T> = interface
-  {$REGION 'Property Accessors'}
-    function GetIsAlive: Boolean;
-    function GetTarget: T;
-    procedure SetTarget(const value: T);
-  {$ENDREGION}
-    function TryGetTarget(out target: T): Boolean;
-    property IsAlive: Boolean read GetIsAlive;
-    property Target: T read GetTarget write SetTarget;
-  end;
-
   TWeakReference = class abstract(TInterfacedObject)
   private
     fTarget: Pointer;
-  protected
-    function GetIsAlive: Boolean; inline;
-    procedure RegisterWeakRef(address: Pointer; instance: Pointer);
-    procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
-  public
-    property IsAlive: Boolean read GetIsAlive;
-  end;
-
-  TWeakReference<T> = class(TWeakReference, IWeakReference<T>)
-  private
-    function GetTarget: T;
-    procedure SetTarget(const value: T);
-    constructor CreateInternal(const target: T; var ref: PPointer);
-  public
-    constructor Create(const target: T);
-    destructor Destroy; override;
-
-    function TryGetTarget(out target: T): Boolean;
-    property Target: T read GetTarget write SetTarget;
+    class procedure RegisterWeakRef(address: Pointer; instance: Pointer); static;
+    class procedure UnregisterWeakRef(address: Pointer; instance: Pointer); static;
   end;
 
   Weak<T> = record
+  strict private type
+    IWeakReference = interface
+      procedure SetTarget(const value: T);
+    end;
+
+    TWeakReference = class(TWeakReference, IWeakReference)
+    private
+      procedure SetTarget(const value: T);
+      constructor Create(const target: T; var ref: PPointer);
+    public
+      destructor Destroy; override;
+    end;
   strict private
     fTarget: PPointer;
-    fReference: IWeakReference<T>;
+    fReference: IWeakReference;
     function GetIsAlive: Boolean;
     function GetTarget: T;
     procedure SetTarget(const value: T);
@@ -7348,46 +7332,28 @@ end;
 {$REGION 'TWeakReferences'}
 
 type
-  TWeakReferences = class
+  TWeakReferences = record
   strict private
     fLock: TCriticalSection;
     fWeakReferences: TDictionary<Pointer, TList>;
-    class var fDefault: TWeakReferences;
-  protected
-    class property Default: TWeakReferences read fDefault;
   public
-    constructor Create;
-    destructor Destroy; override;
-
-    class constructor Create;
-    class destructor Destroy;
+    procedure Initialize;
+    procedure Finalize;
 
     procedure RegisterWeakRef(address: Pointer; instance: Pointer);
     procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
   end;
 
-constructor TWeakReferences.Create;
+procedure TWeakReferences.Initialize;
 begin
-  inherited Create;
   fLock := TCriticalSection.Create;
   fWeakReferences := TObjectDictionary<Pointer, TList>.Create([doOwnsValues]);
 end;
 
-destructor TWeakReferences.Destroy;
+procedure TWeakReferences.Finalize;
 begin
   fWeakReferences.Free;
   fLock.Free;
-  inherited Destroy;
-end;
-
-class constructor TWeakReferences.Create;
-begin
-  fDefault := TWeakReferences.Create;
-end;
-
-class destructor TWeakReferences.Destroy;
-begin
-  fDefault.Free;
 end;
 
 procedure TWeakReferences.RegisterWeakRef(address, instance: Pointer);
@@ -7434,6 +7400,9 @@ begin
   end;
 end;
 
+var
+  WeakRefInstances: TWeakReferences;
+
 {$ENDREGION}
 
 
@@ -7442,90 +7411,25 @@ end;
 type
   TVirtualClasses = class(Spring.VirtualClass.TVirtualClasses);
 
-function TWeakReference.GetIsAlive: Boolean;
-begin
-  Result := Assigned(fTarget);
-end;
-
 procedure WeakRefFreeInstance(const Self: TObject);
 var
   freeInstance: TFreeInstance;
 begin
   freeInstance := GetClassData(Self.ClassParent).FreeInstance;
-  TWeakReferences.Default.UnregisterWeakRef(nil, Self);
+  WeakRefInstances.UnregisterWeakRef(nil, Self);
   freeInstance(Self);
 end;
 
-procedure TWeakReference.RegisterWeakRef(address, instance: Pointer); //FI:O804
+class procedure TWeakReference.RegisterWeakRef(address, instance: Pointer);
 begin
   TVirtualClasses.Default.Proxify(instance);
   GetClassData(TObject(instance).ClassType).FreeInstance := WeakRefFreeInstance;
-  TWeakReferences.Default.RegisterWeakRef(@fTarget, instance);
+  WeakRefInstances.RegisterWeakRef(address, instance);
 end;
 
-procedure TWeakReference.UnregisterWeakRef(address, instance: Pointer);
+class procedure TWeakReference.UnregisterWeakRef(address, instance: Pointer);
 begin
-  TWeakReferences.Default.UnregisterWeakRef(address, instance);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TWeakReference<T>'}
-
-constructor TWeakReference<T>.Create(const target: T);
-begin
-  inherited Create;
-  SetTarget(target);
-end;
-
-constructor TWeakReference<T>.CreateInternal(const target: T;
-  var ref: PPointer);
-begin
-  inherited Create;
-  SetTarget(target);
-  ref := @fTarget;
-end;
-
-destructor TWeakReference<T>.Destroy;
-begin
-  SetTarget(Default(T));
-  inherited Destroy;
-end;
-
-function TWeakReference<T>.GetTarget: T;
-begin
-  if IsAlive then
-    case PTypeInfo(TypeInfo(T)).Kind of
-      tkClass: PObject(@Result)^ := TObject(fTarget);
-      tkInterface: PInterface(@Result)^ := IInterface(fTarget)
-    end
-  else
-    Result := Default(T);
-end;
-
-procedure TWeakReference<T>.SetTarget(const value: T);
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := System.TypeInfo(T);
-  if Assigned(fTarget) then
-    case typeInfo.Kind of
-      tkClass: UnregisterWeakRef(@fTarget, fTarget);
-      tkInterface: UnregisterWeakRef(@fTarget, IInterface(fTarget) as TObject);
-    end;
-  fTarget := PPointer(@value)^;
-  if Assigned(fTarget) then
-    case typeInfo.Kind of
-      tkClass: RegisterWeakRef(@fTarget, fTarget);
-      tkInterface: RegisterWeakRef(@fTarget, IInterface(fTarget) as TObject);
-    end;
-end;
-
-function TWeakReference<T>.TryGetTarget(out target: T): Boolean;
-begin
-  target := GetTarget;
-  Result := IsAlive;
+  WeakRefInstances.UnregisterWeakRef(address, instance);
 end;
 
 {$ENDREGION}
@@ -7535,7 +7439,7 @@ end;
 
 constructor Weak<T>.Create(const target: T);
 begin
-  fReference := TWeakReference<T>.CreateInternal(target, fTarget);
+  fReference := TWeakReference.Create(target, fTarget);
 end;
 
 function Weak<T>.GetIsAlive: Boolean;
@@ -7554,9 +7458,9 @@ end;
 procedure Weak<T>.SetTarget(const value: T);
 begin
   if Assigned(fReference) then
-    fReference.Target := value
+    fReference.SetTarget(value)
   else
-    fReference := TWeakReference<T>.CreateInternal(value, fTarget);
+    fReference := TWeakReference.Create(value, fTarget);
 end;
 
 function Weak<T>.TryGetTarget(out target: T): Boolean;
@@ -7602,6 +7506,39 @@ begin
 end;
 
 {$ENDREGION}
+
+{$REGION 'Weak<T>.TWeakReference'}
+
+constructor Weak<T>.TWeakReference.Create(const target: T; var ref: PPointer);
+begin
+  inherited Create;
+  SetTarget(target);
+  ref := @fTarget;
+end;
+
+destructor Weak<T>.TWeakReference.Destroy;
+begin
+  SetTarget(Default(T));
+  inherited Destroy;
+end;
+
+procedure Weak<T>.TWeakReference.SetTarget(const value: T);
+begin
+  if Assigned(fTarget) then
+    case TType.Kind<T> of
+      tkClass: UnregisterWeakRef(@fTarget, fTarget);
+      tkInterface: UnregisterWeakRef(@fTarget, IInterface(fTarget) as TObject);
+    end;
+  fTarget := PPointer(@value)^;
+  if Assigned(fTarget) then
+    case TType.Kind<T> of
+      tkClass: RegisterWeakRef(@fTarget, fTarget);
+      tkInterface: RegisterWeakRef(@fTarget, IInterface(fTarget) as TObject);
+    end;
+end;
+
+{$ENDREGION}
+
 
 
 {$REGION 'Event<T>'}
@@ -9545,10 +9482,12 @@ end;
 
 initialization
   Init;
+  WeakRefInstances.Initialize;
 
 finalization
   // make sure this properly gets freed because it appears
   // the class destructor is not running all the time
   TType.fContext.Free;
+  WeakRefInstances.Finalize;
 
 end.
