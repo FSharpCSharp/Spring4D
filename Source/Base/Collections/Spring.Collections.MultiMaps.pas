@@ -43,27 +43,34 @@ type
   {$REGION 'Nested Types'}
     type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
+      TMultiMapEntry = TMultiMapEntry<TKey, TValue>;
 
       TEnumerator = class(TEnumeratorBase<TKeyValuePair>)
       private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TMultiMapBase<TKey, TValue>;
+        fVersion: Integer;
         fDictionaryEnumerator: IEnumerator<TPair<TKey, ICollection<TValue>>>;
         fCollectionEnumerator: IEnumerator<TValue>;
       protected
         function GetCurrent: TKeyValuePair; override;
       public
         constructor Create(const source: TMultiMapBase<TKey, TValue>);
+        destructor Destroy; override;
         function MoveNext: Boolean; override;
       end;
 
       TValueEnumerator = class(TEnumeratorBase<TValue>)
       private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TMultiMapBase<TKey, TValue>;
+        fVersion: Integer;
         fSourceEnumerator: IEnumerator<TKeyValuePair>;
       protected
         function GetCurrent: TValue; override;
       public
         constructor Create(const source: TMultiMapBase<TKey, TValue>);
+        destructor Destroy; override;
         function MoveNext: Boolean; override;
       end;
 
@@ -83,6 +90,32 @@ type
         function Contains(const value: TValue;
           const comparer: IEqualityComparer<TValue>): Boolean; override;
         function ToArray: TArray<TValue>; override;
+      {$ENDREGION}
+      end;
+
+      TEntryEnumerator = class(TEnumeratorBase<TMultiMapEntry>)
+      private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TMultiMapBase<TKey, TValue>;
+        fEnumerator: IEnumerator<TPair<TKey, ICollection<TValue>>>;
+        fVersion: Integer;
+      protected
+        function GetCurrent: TMultiMapEntry; override;
+      public
+        constructor Create(const source: TMultiMapBase<TKey, TValue>);
+        destructor Destroy; override;
+        function MoveNext: Boolean; override;
+      end;
+
+      TEntryCollection = class(TContainedReadOnlyCollection<TMultiMapEntry>)
+      private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TMultiMapBase<TKey, TValue>;
+      public
+        constructor Create(const source: TMultiMapBase<TKey, TValue>);
+
+      {$REGION 'Implements IEnumerable<TMultiMapEntry>'}
+        function GetEnumerator: IEnumerator<TMultiMapEntry>; override;
       {$ENDREGION}
       end;
 
@@ -107,8 +140,10 @@ type
   private
     fDictionary: TDictionary<TKey, ICollection<TValue>>;
     fValues: TValueCollection;
+    fEntries: TEntryCollection;
     fOwnerships: TDictionaryOwnerships;
     fCount: Integer;
+    fVersion: Integer;
     function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
     procedure DoKeyChanged(Sender: TObject; const Item: TKey;
       Action: TCollectionChangedAction);
@@ -116,6 +151,7 @@ type
       Action: TCollectionChangedAction);
     procedure DoValuesChanged(Sender: TObject; const Item: ICollection<TValue>;
       Action: TCollectionChangedAction);
+    function GetEntries: IReadOnlyCollection<TMultiMapEntry>;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
@@ -230,11 +266,13 @@ begin
   inherited Create;
   fDictionary := CreateDictionary(keyComparer, ownerships - [doOwnsValues]);
   fValues := TValueCollection.Create(Self);
+  fEntries := TEntryCollection.Create(Self);
   fOwnerships := ownerships;
 end;
 
 destructor TMultiMapBase<TKey, TValue>.Destroy;
 begin
+  fEntries.Free;
   fValues.Free;
   fDictionary.Free;
   inherited Destroy;
@@ -275,6 +313,7 @@ end;
 
 procedure TMultiMapBase<TKey, TValue>.Clear;
 begin
+  IncUnchecked(fVersion);
   fDictionary.Clear;
   fCount := 0;
 end;
@@ -356,7 +395,10 @@ var
 begin
   Result.Key := key;
   if fDictionary.TryGetValue(key, values) then
-    Result.Value := values.Extract(value)
+  begin
+    IncUnchecked(fVersion);
+    Result.Value := values.Extract(value);
+  end
   else
     Result.Value := Default(TValue);
 end;
@@ -369,6 +411,7 @@ begin
   if not fDictionary.TryExtract(key, values) then
     raise Error.KeyNotFound;
 
+  IncUnchecked(fVersion);
   Result := TCollections.CreateList<TValue>;
   values.MoveTo(Result);
 end;
@@ -376,6 +419,11 @@ end;
 function TMultiMapBase<TKey, TValue>.GetCount: Integer;
 begin
   Result := fCount;
+end;
+
+function TMultiMapBase<TKey, TValue>.GetEntries: IReadOnlyCollection<TMultiMapEntry>;
+begin
+  Result := fEntries;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
@@ -421,8 +469,12 @@ var
   values: ICollection<TValue>;
 begin
   Result := fDictionary.TryGetValue(key, values) and values.Remove(value);
-  if Result and not values.Any then
-    fDictionary.Remove(key);
+  if Result then
+  begin
+    IncUnchecked(fVersion);
+    if not values.Any then
+      fDictionary.Remove(key);
+  end;
 end;
 
 function TMultiMapBase<TKey, TValue>.Remove(const key: TKey): Boolean;
@@ -432,6 +484,7 @@ begin
   Result := fDictionary.TryGetValue(key, values);
   if Result then
   begin
+    IncUnchecked(fVersion);
     values.Clear;
     fDictionary.Remove(key);
   end;
@@ -448,6 +501,7 @@ begin
     fDictionary[key] := values;
   end;
 
+  IncUnchecked(fVersion);
   Result := values.Add(value);
 end;
 
@@ -483,6 +537,14 @@ constructor TMultiMapBase<TKey, TValue>.TEnumerator.Create(
 begin
   inherited Create;
   fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
+end;
+
+destructor TMultiMapBase<TKey, TValue>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
 end;
 
 function TMultiMapBase<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
@@ -500,6 +562,9 @@ function TMultiMapBase<TKey, TValue>.TEnumerator.MoveNext: Boolean;
 begin
   if not Assigned(fDictionaryEnumerator) then
     fDictionaryEnumerator := fSource.fDictionary.GetEnumerator;
+
+  if fVersion <> fSource.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
 
   repeat
     if Assigned(fCollectionEnumerator) and fCollectionEnumerator.MoveNext then
@@ -523,6 +588,14 @@ constructor TMultiMapBase<TKey, TValue>.TValueEnumerator.Create(
 begin
   inherited Create;
   fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
+end;
+
+destructor TMultiMapBase<TKey, TValue>.TValueEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
 end;
 
 function TMultiMapBase<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;
@@ -534,6 +607,10 @@ function TMultiMapBase<TKey, TValue>.TValueEnumerator.MoveNext: Boolean;
 begin
   if not Assigned(fSourceEnumerator) then
     fSourceEnumerator := fSource.GetEnumerator;
+
+  if fVersion <> fSource.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
   Result := fSourceEnumerator.MoveNext;
 end;
 
@@ -577,6 +654,63 @@ begin
     list.CopyTo(Result, i);
     Inc(i, list.Count);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMultiMapBase<TKey, TValue>.TEntryEnumerator'}
+
+constructor TMultiMapBase<TKey, TValue>.TEntryEnumerator.Create(
+  const source: TMultiMapBase<TKey, TValue>);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
+end;
+
+destructor TMultiMapBase<TKey, TValue>.TEntryEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
+end;
+
+function TMultiMapBase<TKey, TValue>.TEntryEnumerator.GetCurrent: TMultiMapEntry;
+var
+  current: TPair<TKey, ICollection<TValue>>;
+begin
+  current := fEnumerator.Current;
+  Result.Key := current.Key;
+  Result.Values := current.Value as IReadOnlyCollection<TValue>;
+end;
+
+function TMultiMapBase<TKey, TValue>.TEntryEnumerator.MoveNext: Boolean;
+begin
+  if fVersion <> fSource.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  if not Assigned(fEnumerator) then
+    fEnumerator := fSource.fDictionary.GetEnumerator;
+
+  Result := fEnumerator.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMultiMapBase<TKey, TValue>.TEntryCollection'}
+
+constructor TMultiMapBase<TKey, TValue>.TEntryCollection.Create(
+  const source: TMultiMapBase<TKey, TValue>);
+begin
+  inherited Create(source);
+  fSource := source;
+end;
+
+function TMultiMapBase<TKey, TValue>.TEntryCollection.GetEnumerator: IEnumerator<TMultiMapEntry>;
+begin
+  Result := TEntryEnumerator.Create(fSource);
 end;
 
 {$ENDREGION}

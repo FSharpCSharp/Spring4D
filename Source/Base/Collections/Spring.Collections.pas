@@ -77,7 +77,7 @@ type
   IEnumerator = interface(IInvokable)
     ['{A2AD52DC-FA9F-4121-9B54-5C427DA5E62C}']
   {$REGION 'Property Accessors'}
-    function GetCurrent: TValue;
+    function GetCurrent: Spring.TValue;
   {$ENDREGION}
 
     /// <summary>
@@ -99,7 +99,7 @@ type
     /// <value>
     ///   The current element in the collection.
     /// </value>
-    property Current: TValue read GetCurrent;
+    property Current: Spring.TValue read GetCurrent;
   end;
 
   /// <summary>
@@ -1847,9 +1847,15 @@ type
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
+  TMultiMapEntry<TKey, TValue> = record
+    Key: TKey;
+    Values: IReadOnlyCollection<TValue>;
+  end;
+
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
     ['{8598095E-92A7-4FCC-9F78-8EE7653B8B49}']
   {$REGION 'Property Accessors'}
+    function GetEntries: IReadOnlyCollection<TMultiMapEntry<TKey, TValue>>;
     function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
 
@@ -1891,6 +1897,7 @@ type
     /// </remarks>
     function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey, TValue>;
 
+    property Entries: IReadOnlyCollection<TMultiMapEntry<TKey, TValue>> read GetEntries;
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
