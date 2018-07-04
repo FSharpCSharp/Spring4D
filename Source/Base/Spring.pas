@@ -2805,7 +2805,7 @@ function FormatValue(const value: TValue): string;
     for i := 0 to value.GetArrayLength - 1 do
     begin
       if i > 0 then
-        Result := Result + ', ';
+        Result := Result + ',';
       Result := Result + FormatValue(value.GetArrayElement(i));
     end;
     Result := Result + ']';
@@ -5731,7 +5731,7 @@ begin
   elType := target.TypeData.DynArrElType^;
   for i := 0 to High(values) do
   begin
-    v1 := TValue.From(values[i]);
+    v1 := TValue.From(Trim(values[i]));
     if not v1.TryConvert(elType, v2) then
       Exit(False);
     res.SetArrayElement(i, v2);
@@ -5764,7 +5764,7 @@ begin
   TValue.Make(nil, target, res);
   for i := 0 to arrData.ElCount - 1 do
   begin
-    v1 := TValue.From(values[i]);
+    v1 := TValue.From(Trim(values[i]));
     if not v1.TryConvert(elType, v2) then
       Exit(False);
     res.SetArrayElement(i, v2);
