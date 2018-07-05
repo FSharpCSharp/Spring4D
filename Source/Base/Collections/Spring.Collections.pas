@@ -108,11 +108,24 @@ type
   /// <typeparam name="T">
   ///   The type of objects to enumerate.
   /// </typeparam>
-  IEnumerator<T> = interface(IEnumerator)
+  IEnumerator<T> = interface(IInvokable)
     ['{E6525A22-15EF-46EB-8A68-8CB202DA7D67}']
   {$REGION 'Property Accessors'}
     function GetCurrent: T;
   {$ENDREGION}
+
+    /// <summary>
+    ///   Advances the enumerator to the next element of the collection.
+    /// </summary>
+    /// <returns>
+    ///   <b>True</b> if the enumerator was successfully advanced to the next
+    ///   element; <b>False</b> if the enumerator has passed the end of the
+    ///   collection.
+    /// </returns>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   The collection was modified after the enumerator was created.
+    /// </exception>
+    function MoveNext: Boolean;
 
     /// <summary>
     ///   Gets the current element in the collection.
@@ -189,8 +202,22 @@ type
   /// <seealso href="http://msdn.microsoft.com/en-us/magazine/cc700332.aspx">
   ///   The LINQ Enumerable Class
   /// </seealso>
-  IEnumerable<T> = interface(IEnumerable)
+  IEnumerable<T> = interface(IInvokable)
     ['{A6B46D30-5B0F-495F-B7EC-46FBC5A75D24}']
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetElementType: PTypeInfo;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Returns the reference to this instance.
+    /// </summary>
+    /// <returns>
+    ///   The <see cref="TObject" /> instance behind this IEnumerable
+    ///   reference.
+    /// </returns>
+    function AsObject: TObject;
 
     /// <summary>
     ///   Returns the specified comparer for this instance.
@@ -711,6 +738,31 @@ type
     ///   the default comparer.
     /// </summary>
     property Comparer: IComparer<T> read GetComparer;
+
+    /// <summary>
+    ///   Returns the number of elements in a sequence.
+    /// </summary>
+    /// <value>
+    ///   The number of elements in the sequence.
+    /// </value>
+    property Count: Integer read GetCount;
+
+    /// <summary>
+    ///   Returns the type of the elements in the sequence.
+    /// </summary>
+    /// <value>
+    ///   The type of the elements in the sequence.
+    /// </value>
+    property ElementType: PTypeInfo read GetElementType;
+
+    /// <summary>
+    ///   Determines whether the sequence contains no elements.
+    /// </summary>
+    /// <value>
+    ///   <b>True</b> if the source sequence contains no elements; otherwise, <b>
+    ///   False</b>.
+    /// </value>
+    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   /// <summary>

@@ -4021,7 +4021,7 @@ begin
     end,
     function(const key: Integer; const values: IEnumerable<string>): string
     begin
-      Result := IntToStr(key) + ':' + Join(';', values);
+      Result := IntToStr(key) + ':' + Join(';', values as IEnumerable);
     end);
   CheckTrue(groups.EqualsTo(['3:abc;def', '5:hello;there', '4:four']));
 end;
@@ -4072,7 +4072,7 @@ begin
     end,
     function(const key: Integer; const values: IEnumerable<Char>): string
     begin
-      Result := IntToStr(key) + ':' + Join(';', values);
+      Result := IntToStr(key) + ':' + Join(';', values as IEnumerable);
     end);
   CheckTrue(groups.EqualsTo(['3:a;d', '5:h;t', '4:f']));
 end;
@@ -4159,7 +4159,7 @@ begin
     end,
     function(const outerElement: string; const innerElements: IEnumerable<string>): string
     begin
-      Result := outerElement + ':' + Join(';', innerElements);
+      Result := outerElement + ':' + Join(';', innerElements as IEnumerable);
     end,
     TStringComparer.OrdinalIgnoreCase);
   CheckTrue(query.EqualsTo(['ABCxxx:000abc;333AbC', 'abcyyy:000abc;333AbC', 'defzzz:', 'ghizzz:111gHi']));
@@ -4184,7 +4184,7 @@ begin
     end,
     function(const outerElement: Integer; const innerElement: IEnumerable<string>): string
     begin
-      Result := IntToStr(outerElement) + ':' + Join(';', innerElement);
+      Result := IntToStr(outerElement) + ':' + Join(';', innerElement as IEnumerable);
     end);
   CheckTrue(query.EqualsTo(['5:tiger', '3:bee;cat;dog', '7:giraffe', '4:']));
 end;
@@ -4232,7 +4232,7 @@ begin
     end,
     function(const outerElement: string; const innerElements: IEnumerable<string>): string
     begin
-      Result := outerElement + ':' + Join(';', innerElements);
+      Result := outerElement + ':' + Join(';', innerElements as IEnumerable);
     end);
   CheckTrue(query.EqualsTo(['first:offer', 'second:essence;psalm', 'third:']))
 end;

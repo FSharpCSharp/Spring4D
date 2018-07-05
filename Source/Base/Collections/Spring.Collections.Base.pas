@@ -49,7 +49,7 @@ type
     function IEnumerator.MoveNext = MoveNextInternal;
   {$ENDIF}
   public
-    function MoveNext: Boolean; virtual;
+    function MoveNext: Boolean; virtual; abstract;
   end;
 
   /// <summary>
@@ -59,11 +59,12 @@ type
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
   private
     function GetCurrentNonGeneric: TValue; override; final;
-  {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+  {$IFDEF CPUX86}
     function GetCurrentInternal: T;
+    function MoveNextInternal: Boolean;
     function IEnumerator<T>.GetCurrent = GetCurrentInternal;
     function IEnumerator<T>.MoveNext = MoveNextInternal;
-  {$ENDIF}{$ENDIF}
+  {$ENDIF}
   protected
     function GetCurrent: T; virtual; abstract;
   end;
@@ -93,7 +94,6 @@ type
     function AsObject: TObject;
 
     function Any: Boolean;
-    function GetEnumerator: IEnumerator;
 
     property Count: Integer read GetCount;
     property ElementType: PTypeInfo read GetElementType;
@@ -108,10 +108,10 @@ type
     IEqualityComparer<T>)
   private
     function GetEnumeratorNonGeneric: IEnumerator; override; final;
-  {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+  {$IFDEF CPUX86}
     function GetEnumeratorInternal: IEnumerator<T>;
     function IEnumerable<T>.GetEnumerator = GetEnumeratorInternal;
-  {$ENDIF}{$ENDIF}
+  {$ENDIF}
   {$REGION 'IEqualityComparer<T>'}
     function GetHashCode(const value: T): Integer; reintroduce;
   protected
@@ -418,7 +418,7 @@ type
   public
     destructor Destroy; override;
 
-    function Add(const item: T): Integer; virtual; // TODO: virtual needed?
+    function Add(const item: T): Integer; virtual;
     procedure AddRange(const values: array of T); override;
     procedure AddRange(const collection: IEnumerable<T>); override;
 
@@ -494,11 +494,6 @@ uses
 
 {$REGION 'TEnumeratorBase'}
 
-function TEnumeratorBase.MoveNext: Boolean;
-begin
-  Result := False;
-end;
-
 {$IFDEF CPUX86}
 function TEnumeratorBase.MoveNextInternal: Boolean;
 begin
@@ -511,12 +506,17 @@ end;
 
 {$REGION 'TEnumeratorBase<T>'}
 
-{$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+{$IFDEF CPUX86}
 function TEnumeratorBase<T>.GetCurrentInternal: T;
 begin
   Result := GetCurrent;
 end;
-{$ENDIF}{$ENDIF}
+
+function TEnumeratorBase<T>.MoveNextInternal: Boolean;
+begin
+  Result := MoveNext;
+end;
+{$ENDIF}
 
 function TEnumeratorBase<T>.GetCurrentNonGeneric: TValue;
 begin
@@ -543,21 +543,16 @@ var
   enumerator: IEnumerator;
 begin
   Result := 0;
-  enumerator := GetEnumerator;
+  enumerator := GetEnumeratorNonGeneric;
   while enumerator.MoveNext do
     Inc(Result);
-end;
-
-function TEnumerableBase.GetEnumerator: IEnumerator;
-begin
-  Result := GetEnumeratorNonGeneric;
 end;
 
 function TEnumerableBase.GetIsEmpty: Boolean;
 var
   enumerator: IEnumerator;
 begin
-  enumerator := GetEnumerator;
+  enumerator := GetEnumeratorNonGeneric;
   Result := not enumerator.MoveNext;
 end;
 
@@ -816,16 +811,16 @@ begin
   Result := TypeInfo(T);
 end;
 
-{$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
+{$IFDEF CPUX86}
 function TEnumerableBase<T>.GetEnumeratorInternal: IEnumerator<T>;
 begin
   Result := GetEnumerator;
 end;
-{$ENDIF}{$ENDIF}
+{$ENDIF}
 
 function TEnumerableBase<T>.GetEnumeratorNonGeneric: IEnumerator;
 begin
-  Result := GetEnumerator;
+  Result := GetEnumerator as IEnumerator;
 end;
 
 function TEnumerableBase<T>.GetHashCode(const value: T): Integer;

@@ -80,6 +80,7 @@ type
         fSource: THashSet<T>;
         fItemIndex: Integer;
         fVersion: Integer;
+        fCurrent: T;
       protected
         function GetCurrent: T; override;
       public
@@ -663,7 +664,7 @@ end;
 
 function THashSet<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fSource.fItems[fItemIndex].Item;
+  Result := fCurrent;
 end;
 
 function THashSet<T>.TEnumerator.MoveNext: Boolean;
@@ -675,8 +676,12 @@ begin
   begin
     Inc(fItemIndex);
     if not fSource.fItems[fItemIndex].Removed then
+    begin
+      fCurrent := fSource.fItems[fItemIndex].Item;
       Exit(True);
+    end;
   end;
+  fCurrent := Default(T);
   Result := False;
 end;
 

@@ -855,26 +855,24 @@ begin
   inherited Destroy;
 end;
 
-function TList<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := False;
-
-  if fVersion <> fList.fVersion then
-    raise Error.EnumFailedVersion;
-
-  if fIndex < fList.fCount then
-  begin
-    fCurrent := fList.fItems[fIndex];
-    Inc(fIndex);
-    Result := True;
-  end
-  else
-    fCurrent := Default(T);
-end;
-
 function TList<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
+end;
+
+function TList<T>.TEnumerator.MoveNext: Boolean;
+begin
+  if fVersion <> fList.fVersion then
+    raise Error.EnumFailedVersion;
+
+  Result := fIndex < fList.fCount;
+  if Result then
+  begin
+    fCurrent := fList.fItems[fIndex];
+    Inc(fIndex);
+  end
+  else
+    fCurrent := Default(T);
 end;
 
 {$ENDREGION}
@@ -1276,26 +1274,24 @@ begin
   inherited Destroy;
 end;
 
-function TCollectionList<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := False;
-
-  if fVersion <> fList.fVersion then
-    raise Error.EnumFailedVersion;
-
-  if fIndex < fList.Count then
-  begin
-    fCurrent := fList.Items[fIndex];
-    Inc(fIndex);
-    Result := True;
-  end
-  else
-    fCurrent := Default(T);
-end;
-
 function TCollectionList<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
+end;
+
+function TCollectionList<T>.TEnumerator.MoveNext: Boolean;
+begin
+  if fVersion <> fList.fVersion then
+    raise Error.EnumFailedVersion;
+
+  Result := fIndex < fList.Count;
+  if Result then
+  begin
+    fCurrent := fList.Items[fIndex];
+    Inc(fIndex);
+  end
+  else
+    fCurrent := Default(T);
 end;
 
 {$ENDREGION}

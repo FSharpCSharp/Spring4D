@@ -3069,7 +3069,7 @@ end;
 
 procedure TTestListAdapter.TestListAddRangeIEnumerable;
 begin
-  SUT.AddRange(TEnumerable.Range(4, 2));
+  SUT.AddRange(TEnumerable.Range(4, 2) as IEnumerable);
   CheckTrue(InternalList.EqualsTo([1, 2, 3, 4, 5]));
 end;
 
@@ -3127,7 +3127,7 @@ end;
 
 procedure TTestListAdapter.TestListExtractRangeIEnumerable;
 begin
-  SUT.ExtractRange(TEnumerable.Range(1, 2));
+  SUT.ExtractRange(TEnumerable.Range(1, 2) as IEnumerable);
   CheckTrue(InternalList.EqualsTo([3]));
 end;
 
@@ -3196,7 +3196,7 @@ end;
 
 procedure TTestListAdapter.TestListInsertRangeIEnumerable;
 begin
-  SUT.InsertRange(0, TEnumerable.Range(3, 2));
+  SUT.InsertRange(0, TEnumerable.Range(3, 2) as IEnumerable);
   CheckTrue(InternalList.EqualsTo([3, 4, 1, 2, 3]));
 end;
 
@@ -3242,7 +3242,7 @@ end;
 
 procedure TTestListAdapter.TestListRemoveRangeIEnumerable;
 begin
-  SUT.RemoveRange(TEnumerable.Range(1, 2));
+  SUT.RemoveRange(TEnumerable.Range(1, 2) as IEnumerable);
   CheckTrue(InternalList.EqualsTo([3]));
 end;
 
