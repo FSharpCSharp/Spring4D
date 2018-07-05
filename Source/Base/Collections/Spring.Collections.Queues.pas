@@ -141,7 +141,6 @@ implementation
 
 uses
   Classes,
-  RTLConsts,
   SysUtils,
   TypInfo,
   Spring,
@@ -279,7 +278,7 @@ end;
 procedure TDeque<T>.RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction);
 begin
   if fCount = 0 then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    raise Error.NoElements;
 
   IncUnchecked(fVersion);
   case dequeEnd of
@@ -356,10 +355,10 @@ end;
 function TDeque<T>.Single: T;
 begin
   case fCount of
-    0: raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    0: raise Error.NoElements;
     1: Result := fItems[Front];
   else
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+    raise Error.MoreThanOneElement;
   end;
 end;
 
@@ -369,7 +368,7 @@ begin
     0: Result := defaultValue;
     1: Result := fItems[Front];
   else
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+    raise Error.MoreThanOneElement;
   end;
 end;
 
@@ -458,16 +457,14 @@ end;
 
 function TDeque<T>.TEnumerator.MoveNext: Boolean;
 begin
-  Result := False;
-
   if fVersion <> fDeque.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
-  if fIndex < fDeque.fCount then
+  Result := fIndex < fDeque.fCount;
+  if Result then
   begin
     fCurrent := fDeque.fItems[(fDeque.fFront + fIndex) mod Length(fDeque.fItems)];
     Inc(fIndex);
-    Result := True;
   end
   else
     fCurrent := Default(T);

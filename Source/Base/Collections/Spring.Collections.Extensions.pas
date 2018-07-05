@@ -39,11 +39,18 @@ uses
   Spring.Collections.Lists;
 
 type
-  TEmptyEnumerable<T> = class(TEnumerableBase<T>, IReadOnlyList<T>)
+  TEmptyEnumerableBase<T> = class(TEnumerableBase<T>, IEnumerator)
+  public
+    function GetCurrent: TValue;
+    function MoveNext: Boolean;
+  end;
+
+  TEmptyEnumerable<T> = class(TEmptyEnumerableBase<T>, IReadOnlyList<T>, IEnumerator<T>)
   private
     class var fInstance: IReadOnlyList<T>;
     class function GetInstance: IReadOnlyList<T>; static;
     constructor Create; reintroduce;
+    function GetCurrent: T;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
@@ -51,6 +58,8 @@ type
   {$ENDREGION}
   public
     class destructor Destroy;
+
+    function GetEnumerator: IEnumerator<T>; override;
 
     function GetRange(index, count: Integer): IList<T>;
 
@@ -859,6 +868,21 @@ uses
   Spring.ResourceStrings;
 
 
+{$REGION 'TEmptyEnumerableBase<T>'}
+
+function TEmptyEnumerableBase<T>.GetCurrent: TValue;
+begin
+  raise EInvalidOperationException.CreateRes(@SEnumEmpty);
+end;
+
+function TEmptyEnumerableBase<T>.MoveNext: Boolean;
+begin
+  Result := False;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TEmptyEnumerable<T>'}
 
 constructor TEmptyEnumerable<T>.Create;
@@ -874,6 +898,16 @@ end;
 function TEmptyEnumerable<T>.GetCount: Integer;
 begin
   Result := 0;
+end;
+
+function TEmptyEnumerable<T>.GetCurrent: T;
+begin
+  raise EInvalidOperationException.CreateRes(@SEnumEmpty);
+end;
+
+function TEmptyEnumerable<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := Self;
 end;
 
 class function TEmptyEnumerable<T>.GetInstance: IReadOnlyList<T>;
@@ -3075,7 +3109,7 @@ begin
   fResult := TCollections.CreateList<T>;
   fEnumerator := fSource.GetEnumerator;
   if not fEnumerator.MoveNext then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    raise Error.NoElements;
 
   current := fEnumerator.Current;
   resultKey := fKeySelector(current);

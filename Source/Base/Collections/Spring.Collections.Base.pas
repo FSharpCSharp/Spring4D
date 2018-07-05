@@ -65,7 +65,7 @@ type
     function IEnumerator<T>.MoveNext = MoveNextInternal;
   {$ENDIF}{$ENDIF}
   protected
-    function GetCurrent: T; virtual;
+    function GetCurrent: T; virtual; abstract;
   end;
 
   /// <summary>
@@ -137,7 +137,7 @@ type
     constructor Create(const comparer: IComparer<T>); overload;
     constructor Create(const comparer: TComparison<T>); overload;
 
-    function GetEnumerator: IEnumerator<T>; virtual;
+    function GetEnumerator: IEnumerator<T>; virtual; abstract;
 
     function Aggregate(const func: Func<T, T, T>): T;
 
@@ -467,11 +467,23 @@ type
     property Items[index: Integer]: T read GetItem write SetItem; default;
   end;
 
+  Error = record
+    class function ArgumentOutOfRange(const s: string): Exception; static;
+    class function DuplicateKey: Exception; static;
+    class function EnumFailedVersion: Exception; static;
+    class function KeyNotFound: Exception; static;
+    class function MoreThanOneElement: Exception; static;
+    class function MoreThanOneMatch: Exception; static;
+    class function NoClassType(t: PTypeInfo): Exception; static;
+    class function NoElements: Exception; static;
+    class function NoMatch: Exception; static;
+    class function NotSupported: Exception; static;
+  end;
+
 implementation
 
 uses
   Classes,
-  RTLConsts,
   Rtti,
   TypInfo,
   Spring.Collections.Events,
@@ -498,11 +510,6 @@ end;
 
 
 {$REGION 'TEnumeratorBase<T>'}
-
-function TEnumeratorBase<T>.GetCurrent: T;
-begin
-  raise EInvalidOperationException.CreateRes(@SEnumEmpty);
-end;
 
 {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
 function TEnumeratorBase<T>.GetCurrentInternal: T;
@@ -606,7 +613,7 @@ begin
 
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    raise Error.NoElements;
   Result := enumerator.Current;
   while enumerator.MoveNext do
     Result := func(Result, enumerator.Current);
@@ -680,7 +687,7 @@ end;
 function TEnumerableBase<T>.ElementAt(index: Integer): T;
 begin
   if not TryGetElementAt(Result, index) then
-    raise EArgumentOutOfRangeException.Create('index');
+    raise Error.ArgumentOutOfRange('index');
 end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer): T;
@@ -751,13 +758,13 @@ end;
 function TEnumerableBase<T>.First: T;
 begin
   if not TryGetFirst(Result) then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    raise Error.NoElements;
 end;
 
 function TEnumerableBase<T>.First(const predicate: Predicate<T>): T;
 begin
   if not TryGetFirst(Result, predicate) then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+    raise Error.NoMatch;
 end;
 
 function TEnumerableBase<T>.FirstOrDefault: T;
@@ -809,11 +816,6 @@ begin
   Result := TypeInfo(T);
 end;
 
-function TEnumerableBase<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TEnumeratorBase<T>.Create;
-end;
-
 {$IFDEF DELPHIXE3_UP}{$IFDEF CPUX86}
 function TEnumerableBase<T>.GetEnumeratorInternal: IEnumerator<T>;
 begin
@@ -828,19 +830,19 @@ end;
 
 function TEnumerableBase<T>.GetHashCode(const value: T): Integer;
 begin
-  raise ENotSupportedException.Create('GetHashCode');
+  raise Error.NotSupported;
 end;
 
 function TEnumerableBase<T>.Last: T;
 begin
   if not TryGetLast(Result) then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    raise Error.NoElements;
 end;
 
 function TEnumerableBase<T>.Last(const predicate: Predicate<T>): T;
 begin
   if not TryGetLast(Result, predicate) then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+    raise Error.NoMatch;
 end;
 
 function TEnumerableBase<T>.LastOrDefault: T;
@@ -889,7 +891,7 @@ begin
 
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    raise Error.NoElements;
   Result := enumerator.Current;
   while enumerator.MoveNext do
   begin
@@ -925,7 +927,7 @@ begin
 
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    raise Error.NoElements;
   Result := enumerator.Current;
   while enumerator.MoveNext do
   begin
@@ -985,10 +987,10 @@ var
 begin
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    raise Error.NoElements;
   Result := enumerator.Current;
   if enumerator.MoveNext then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+    raise Error.MoreThanOneElement;
 end;
 
 function TEnumerableBase<T>.Single(const predicate: Predicate<T>): T;
@@ -1007,11 +1009,11 @@ begin
     begin
       while enumerator.MoveNext do
         if predicate(enumerator.Current) then
-          raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+          raise Error.MoreThanOneMatch;
       Exit;
     end;
   end;
-  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+  raise Error.NoMatch;
 end;
 
 function TEnumerableBase<T>.SingleOrDefault: T;
@@ -1031,7 +1033,7 @@ begin
     Exit(defaultValue);
   Result := enumerator.Current;
   if enumerator.MoveNext then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+    raise Error.MoreThanOneElement;
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>): T;
@@ -1059,7 +1061,7 @@ begin
     begin
       while enumerator.MoveNext do
         if predicate(enumerator.Current) then
-          raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+          raise Error.MoreThanOneMatch;
       Exit;
     end;
   end;
@@ -1652,7 +1654,7 @@ end;
 procedure TMapBase<TKey, T>.Add(const key: TKey; const value: T);
 begin
   if not TryAddInternal(key, value) then
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem);
+    raise Error.DuplicateKey;
 end;
 
 function TMapBase<TKey, T>.AddInternal(const item: TKeyValuePair): Boolean;
@@ -1940,16 +1942,16 @@ end;
 
 procedure TListBase<T>.SetCount(count: Integer);
 begin
-  raise ENotSupportedException.Create('SetCount');
+  raise Error.NotSupported;
 end;
 
 function TListBase<T>.Single: T;
 begin
   case Count of
-    0: raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    0: raise Error.NoElements;
     1: Result := Items[0];
   else
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+    raise Error.MoreThanOneElement;
   end;
 end;
 
@@ -1959,7 +1961,7 @@ begin
     0: Result := defaultValue;
     1: Result := Items[0];
   else
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+    raise Error.MoreThanOneElement;
   end;
 end;
 
@@ -2030,6 +2032,61 @@ begin
     value := Items[0]
   else
     value := Default(T);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Error'}
+
+class function Error.ArgumentOutOfRange(const s: string): Exception;
+begin
+  Result := EArgumentOutOfRangeException.CreateResFmt(@SArgument_ParamName, [s]);
+end;
+
+class function Error.DuplicateKey: Exception;
+begin
+  Result := EArgumentException.CreateRes(@SArgument_DuplicateKey);
+end;
+
+class function Error.EnumFailedVersion: Exception;
+begin
+  Result := EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+end;
+
+class function Error.KeyNotFound: Exception;
+begin
+  Result := EKeyNotFoundException.CreateRes(@SArgument_KeyNotFound);
+end;
+
+class function Error.MoreThanOneElement: Exception;
+begin
+  Result := EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+end;
+
+class function Error.MoreThanOneMatch: Exception;
+begin
+  Result := EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+end;
+
+class function Error.NoClassType(t: PTypeInfo): Exception;
+begin
+  Result := EInvalidCast.CreateResFmt(@SNotClassType, [t.TypeName]);
+end;
+
+class function Error.NoElements: Exception;
+begin
+  Result := EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+end;
+
+class function Error.NoMatch: Exception;
+begin
+  Result := EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+end;
+
+class function Error.NotSupported: Exception;
+begin
+  Result := ENotSupportedException.Create('');
 end;
 
 {$ENDREGION}

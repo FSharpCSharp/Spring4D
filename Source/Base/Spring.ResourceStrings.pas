@@ -50,6 +50,9 @@ resourcestring
   SInvalidOperationBufferSizeShouldBeSame = 'Buffer size should be the same.';
   SInvalidArgumentFormat = 'Invalid format for argument "%s".';
   SInvalidTypeCast             = 'Invalid cast: %s to %s.';
+  SArgument_ParamName          = 'Parameter name: %s';
+  SArgument_DuplicateKey       = 'An item with the same key has already been added.';
+  SArgument_KeyNotFound        = 'The given key was not present in the dictionary.';
 
   SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
 

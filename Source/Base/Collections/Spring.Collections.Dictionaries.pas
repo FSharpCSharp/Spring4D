@@ -763,12 +763,10 @@ type
 implementation
 
 uses
-  RTLConsts,
-  SysConst,
+  Math,
   SysUtils,
   Types,
   TypInfo,
-  Math,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
   Spring.ResourceStrings;
@@ -835,11 +833,11 @@ begin
 
   if doOwnsKeys in ownerships then
     if TType.Kind<TKey> <> tkClass then
-      raise EInvalidCast.CreateRes(@SInvalidCast);
+      raise Error.NoClassType(KeyType);
 
   if doOwnsValues in ownerships then
     if TType.Kind<TValue> <> tkClass then
-      raise EInvalidCast.CreateRes(@SInvalidCast);
+      raise Error.NoClassType(ValueType);
 
   inherited Create;
   fOwnerships := ownerships;
@@ -1082,7 +1080,7 @@ function TDictionary<TKey, TValue>.DoMoveNext(var itemIndex: Integer;
   iteratorVersion: Integer): Boolean;
 begin
   if iteratorVersion <> fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   while itemIndex < fItemCount - 1 do
   begin
@@ -1324,7 +1322,7 @@ var
   bucketIndex, itemIndex: Integer;
 begin
   if not Find(key, Hash(key), bucketIndex, itemIndex) then
-    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
+    raise Error.KeyNotFound;
   Result := fItems[itemIndex].Value;
 end;
 
@@ -1606,7 +1604,7 @@ end;
 function TDictionary<TKey, TValue>.TOrderedEnumerable.TryMoveNext(var current: TKeyValuePair): Boolean;
 begin
   if fVersion <> fSource.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   if fIndex < Length(fSortedItemIndices) then
   begin
@@ -1709,11 +1707,11 @@ begin
 
   if doOwnsKeys in ownerships then
     if TType.Kind<TKey> <> tkClass then
-      raise EInvalidCast.CreateRes(@SInvalidCast);
+      raise Error.NoClassType(KeyType);
 
   if doOwnsValues in ownerships then
     if TType.Kind<TValue> <> tkClass then
-      raise EInvalidCast.CreateRes(@SInvalidCast);
+      raise Error.NoClassType(ValueType);
 
   inherited Create;
   fOwnerships := ownerships;
@@ -2086,7 +2084,7 @@ function TBidiDictionary<TKey, TValue>.DoMoveNext(var itemIndex: Integer;
   iteratorVersion: Integer): Boolean;
 begin
   if iteratorVersion <> fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   while itemIndex < fItemCount - 1 do
   begin
@@ -2173,7 +2171,7 @@ begin
   begin
     if valueFound and (keyItemIndex = valueItemIndex) then
       Exit; // this key/value pair are already mapped to each other
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem)
+    raise Error.DuplicateKey;
   end
   else if valueFound then
     // value found, but key not found, this is a replace value operation
@@ -2367,7 +2365,7 @@ var
   keyBucketIndex, keyItemIndex: Integer;
 begin
   if not FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex) then
-    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
+    raise Error.KeyNotFound;
   Result := fItems[keyItemIndex].Value;
 end;
 
@@ -2390,7 +2388,7 @@ begin
   begin
     if keyFound and (keyItemIndex = valueItemIndex) then
       Exit; // this key/value pair are already mapped to each other
-    raise EArgumentException.CreateRes(@SGenericDuplicateItem)
+    raise Error.DuplicateKey;
   end
   else if keyFound then
     // key found, but value not found, this is a replace value operation
@@ -2530,7 +2528,7 @@ var
   valueBucketIndex, valueItemIndex: Integer;
 begin
   if not fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex) then
-    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
+    raise Error.KeyNotFound;
   Result := fSource.fItems[valueItemIndex].Key;
 end;
 
@@ -2790,7 +2788,7 @@ end;
 function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.TryMoveNext(var current: TValueKeyPair): Boolean;
 begin
   if fVersion <> fSource.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   if fIndex < Length(fSortedItemIndices) then
   begin
@@ -3060,7 +3058,7 @@ end;
 function TBidiDictionary<TKey, TValue>.TOrderedEnumerable.TryMoveNext(var current: TKeyValuePair): Boolean;
 begin
   if fVersion <> fSource.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   if fIndex < Length(fSortedItemIndices) then
   begin
@@ -3174,7 +3172,7 @@ function TSortedDictionary<TKey, TValue>.DoMoveNext(var currentNode: PNode;
   var finished: Boolean; iteratorVersion: Integer): Boolean;
 begin
   if iteratorVersion <> fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   if (fTree.Count = 0) or finished then
     Exit(False);
@@ -3230,7 +3228,7 @@ end;
 function TSortedDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
 begin
   if not TryGetValue(key, Result) then
-    raise EKeyNotFoundException.CreateRes(@SGenericItemNotFound);
+    raise Error.KeyNotFound;
 end;
 
 function TSortedDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;

@@ -669,7 +669,7 @@ end;
 function THashSet<T>.TEnumerator.MoveNext: Boolean;
 begin
   if fVersion <> fSource.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   while fItemIndex < fSource.fItemCount - 1 do
   begin
@@ -827,7 +827,7 @@ end;
 function TSortedSet<T>.TEnumerator.MoveNext: Boolean;
 begin
   if fVersion <> fSource.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   if fFinished then
     Exit(False);

@@ -169,7 +169,6 @@ implementation
 
 uses
   Classes,
-  RTLConsts,
   TypInfo,
   Spring,
   Spring.ResourceStrings;
@@ -292,7 +291,7 @@ function TMultiMapBase<TKey, TValue>.ExtractValues(
   const key: TKey): IList<TValue>;
 begin
   if not fDictionary.TryExtract(key, Result) then
-    raise EListError.CreateRes(@SGenericItemNotFound);
+    raise Error.KeyNotFound;
 
   Dec(fCount, Result.Count);
 end;

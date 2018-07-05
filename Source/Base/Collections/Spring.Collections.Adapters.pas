@@ -155,6 +155,7 @@ type
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IStack<T>);
+    function GetEnumerator: IEnumerator<T>; override;
   end;
 
   TQueueAdapter<T> = class(TEnumerableBase<T>, IQueue)
@@ -174,6 +175,7 @@ type
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IQueue<T>);
+    function GetEnumerator: IEnumerator<T>; override;
   end;
 
   THashSetAdapter<T> = class(TCollectionAdapter<T>, ISet)
@@ -612,6 +614,11 @@ begin
   fSource.Clear;
 end;
 
+function TStackAdapter<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := fSource.GetEnumerator;
+end;
+
 function TStackAdapter<T>.GetOnChanged: IEvent;
 begin
   Result := fSource.OnChanged;
@@ -694,6 +701,11 @@ end;
 procedure TQueueAdapter<T>.Enqueue(const item: TValue);
 begin
   fSource.Enqueue(item.AsType<T>);
+end;
+
+function TQueueAdapter<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := fSource.GetEnumerator;
 end;
 
 function TQueueAdapter<T>.GetOnChanged: IEvent;

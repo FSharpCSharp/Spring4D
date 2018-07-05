@@ -860,7 +860,7 @@ begin
   Result := False;
 
   if fVersion <> fList.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   if fIndex < fList.fCount then
   begin
@@ -969,7 +969,7 @@ end;
 
 procedure TSortedList<T>.Exchange(index1, index2: Integer);
 begin
-  raise EInvalidOperationException.Create('Exchange');
+  raise Error.NotSupported;
 end;
 
 function TSortedList<T>.IndexOf(const item: T; index, count: Integer): Integer;
@@ -985,7 +985,7 @@ end;
 
 procedure TSortedList<T>.Insert(index: Integer; const item: T);
 begin
-  raise EInvalidOperationException.Create('Insert');
+  raise Error.NotSupported;
 end;
 
 function TSortedList<T>.LastIndexOf(const item: T; index,
@@ -1003,12 +1003,12 @@ end;
 
 procedure TSortedList<T>.Move(currentIndex, newIndex: Integer);
 begin
-  raise EInvalidOperationException.Create('Move');
+  raise Error.NotSupported;
 end;
 
 procedure TSortedList<T>.SetItem(index: Integer; const value: T);
 begin
-  raise EInvalidOperationException.Create('SetItem');
+  raise Error.NotSupported;
 end;
 
 {$ENDREGION}
@@ -1281,7 +1281,7 @@ begin
   Result := False;
 
   if fVersion <> fList.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+    raise Error.EnumFailedVersion;
 
   if fIndex < fList.Count then
   begin
