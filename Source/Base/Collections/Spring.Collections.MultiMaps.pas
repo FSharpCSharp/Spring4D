@@ -136,6 +136,21 @@ type
         function GetEnumerator: IEnumerator<TValue>; override;
         function ToArray: TArray<TValue>; override;
       end;
+
+      TWrappedEnumerator = class(TEnumeratorBase<TValue>)
+      private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TWrappedCollection;
+        fDelegate: IEnumerator<TValue>;
+        fOriginal: ICollection<TValue>;
+        procedure ValidateEnumerator;
+      protected
+        function GetCurrent: TValue; override;
+      public
+        constructor Create(const source: TWrappedCollection);
+        destructor Destroy; override;
+        function MoveNext: Boolean; override;
+      end;
   {$ENDREGION}
   private
     fDictionary: TDictionary<TKey, ICollection<TValue>>;
@@ -753,13 +768,53 @@ end;
 function TMultiMapBase<TKey, TValue>.TWrappedCollection.GetEnumerator: IEnumerator<TValue>;
 begin
   RefreshIfEmpty;
-  Result := fDelegate.GetEnumerator; // TODO: implement TWrappedEnumerator
+  Result := TWrappedEnumerator.Create(Self);
 end;
 
 function TMultiMapBase<TKey, TValue>.TWrappedCollection.ToArray: TArray<TValue>;
 begin
   RefreshIfEmpty;
   Result := fDelegate.ToArray;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMultiMapBase<TKey, TValue>.TWrappedEnumerator'}
+
+constructor TMultiMapBase<TKey, TValue>.TWrappedEnumerator.Create(
+  const source: TWrappedCollection);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fOriginal := fSource.fDelegate;
+  fDelegate := fSource.fDelegate.GetEnumerator;
+end;
+
+destructor TMultiMapBase<TKey, TValue>.TWrappedEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
+end;
+
+function TMultiMapBase<TKey, TValue>.TWrappedEnumerator.GetCurrent: TValue;
+begin
+  ValidateEnumerator;
+  Result := fDelegate.Current;
+end;
+
+function TMultiMapBase<TKey, TValue>.TWrappedEnumerator.MoveNext: Boolean;
+begin
+  ValidateEnumerator;
+  Result := fDelegate.MoveNext;
+end;
+
+procedure TMultiMapBase<TKey, TValue>.TWrappedEnumerator.ValidateEnumerator;
+begin
+  fSource.RefreshIfEmpty;
+  if fSource.fDelegate <> fOriginal then
+    raise Error.EnumFailedVersion;
 end;
 
 {$ENDREGION}

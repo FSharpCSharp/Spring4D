@@ -518,12 +518,14 @@ type
   TTestMultiMapBase = class(TTestCase)
   private
     SUT: IMultiMap<Integer, Integer>;
-    ValueAddedCount, ValueRemovedCount: Integer;
+    ValueAddedCount, ValueRemovedCount, ValueExtractedCount: Integer;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
 
     procedure ValueChanged(Sender: TObject; const Item: Integer;
+      Action: TCollectionChangedAction);
+    procedure ValueChangedObj(Sender: TObject; const Item: TObject;
       Action: TCollectionChangedAction);
   published
     procedure TestAddPair;
@@ -536,6 +538,7 @@ type
     procedure TestExtractValues;
 
     procedure WrappedCollection;
+    procedure WrappedCollectionEnumerator;
   end;
 
   TTestListMultiMap = class(TTestMultiMapBase)
@@ -651,11 +654,15 @@ implementation
 
 uses
   Spring.Collections.Adapters,
+  Spring.Collections.MultiMaps,
   Spring.Collections.Queues,
   Spring.Collections.Stacks,
   StrUtils,
   SysUtils,
   TypInfo;
+
+type
+  TListMultiMap = TListMultiMap<Integer,Integer>;
 
 const
   MaxItems = 1000;
@@ -3302,6 +3309,7 @@ procedure TTestMultiMapBase.SetUp;
 begin
   ValueAddedCount := 0;
   ValueRemovedCount := 0;
+  ValueExtractedCount := 0;
 end;
 
 procedure TTestMultiMapBase.TearDown;
@@ -3331,17 +3339,23 @@ end;
 procedure TTestMultiMapBase.TestExtractValues;
 var
   map: IMultiMap<Integer, TObject>;
-  values: ICollection<TObject>;
+  values: IReadOnlyCollection<TObject>;
+  extractedValues: ICollection<TObject>;
   obj: TObject;
 begin
   map := TCollections.CreateMultiMap<Integer, TObject>([doOwnsValues]);
+  map.OnValueChanged.Add(ValueChangedObj);
   map.Add(1, TObject.Create);
-  values := map.ExtractValues(1);
+  values := map[1];
+  CheckEquals(1, ValueAddedCount);
+  extractedValues := map.ExtractValues(1);
+  CheckEquals(1, ValueExtractedCount);
   CheckEquals(0, map.Count);
-  CheckEquals(1, values.Count);
+  CheckEquals(1, extractedValues.Count);
+  CheckEquals(0, values.Count);
   map := nil;
-  obj := values.First;
-  values := nil;
+  obj := extractedValues.First;
+  extractedValues := nil;
   obj.Free;
 end;
 
@@ -3397,6 +3411,16 @@ begin
   end;
 end;
 
+procedure TTestMultiMapBase.ValueChangedObj(Sender: TObject;
+  const Item: TObject; Action: TCollectionChangedAction);
+begin
+  case Action of
+    caAdded: Inc(ValueAddedCount);
+    caRemoved: Inc(ValueRemovedCount);
+    caExtracted: Inc(ValueExtractedCount);
+  end;
+end;
+
 procedure TTestMultiMapBase.WrappedCollection;
 var
   values: IReadOnlyCollection<Integer>;
@@ -3426,6 +3450,39 @@ begin
 
   SUT := nil;
   CheckEquals(0, values.Count);
+end;
+
+procedure TTestMultiMapBase.WrappedCollectionEnumerator;
+var
+  values: IReadOnlyCollection<Integer>;
+  e: IEnumerator<Integer>;
+begin
+  values := SUT[1];
+  SUT.Add(1, 1);
+
+  CheckException(EInvalidOperationException,
+    procedure
+    var
+      i: Integer;
+    begin
+      for i in SUT[1] do
+      begin
+        SUT.Remove(1);
+        SUT.Add(1, 1);
+      end;
+    end);
+
+  e := values.GetEnumerator;
+  CheckTrue(e.MoveNext);
+  SUT.Add(1, 2);
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+  e := values.GetEnumerator;
+  SUT.Remove(1);
+  CheckException(EInvalidOperationException, procedure begin e.MoveNext end);
+  e := values.GetEnumerator;
+  CheckFalse(e.MoveNext);
+  SUT := nil;
+  CheckFalse(e.MoveNext);
 end;
 
 {$ENDREGION}
