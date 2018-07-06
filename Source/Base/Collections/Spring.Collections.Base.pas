@@ -1876,22 +1876,15 @@ end;
 
 function TListBase<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  if IID = IObjectList then
-  begin
-    if ElementType.Kind = tkClass then
-      Result := inherited QueryInterface(IList<TObject>, Obj)
-    else
-      Result := E_NOINTERFACE;
-  end else
-  if IID = IInterfaceList then
-  begin
-    if ElementType.Kind = tkInterface then
-      Result := inherited QueryInterface(IList<IInterface>, Obj)
-    else
-      Result := E_NOINTERFACE;
-  end
-  else
-    Result := inherited QueryInterface(IID, Obj);
+  case TType.Kind<T> of
+    tkClass:
+      if IID = IObjectList then
+        Exit(inherited QueryInterface(IList<TObject>, Obj));
+    tkInterface:
+      if IID = IInterfaceList then
+        Exit(inherited QueryInterface(IList<IInterface>, Obj));
+  end;
+  Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TListBase<T>.LastIndexOf(const item: T): Integer;
