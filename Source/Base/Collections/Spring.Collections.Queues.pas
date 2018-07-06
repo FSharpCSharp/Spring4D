@@ -47,6 +47,7 @@ type
     type
       TEnumerator = class(TEnumeratorBase<T>)
       private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fDeque: TDeque<T>;
         fIndex: Integer;
         fVersion: Integer;

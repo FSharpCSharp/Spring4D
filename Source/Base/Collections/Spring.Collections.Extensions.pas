@@ -929,11 +929,7 @@ begin
   Guard.CheckRange(count = 0, 'count');
 {$ENDIF}
 
-{$IFDEF DELPHIXE_UP}
   Result := TCollections.CreateList<T>;
-{$ELSE}
-  Result := TList<T>.Create;
-{$ENDIF}
 end;
 
 function TEmptyEnumerable<T>.IndexOf(const item: T): Integer;
