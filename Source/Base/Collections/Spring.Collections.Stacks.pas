@@ -31,7 +31,8 @@ interface
 uses
   Generics.Defaults,
   Spring.Collections,
-  Spring.Collections.Base;
+  Spring.Collections.Base,
+  Spring.Collections.Events;
 
 type
   /// <summary>
@@ -40,36 +41,39 @@ type
   /// <typeparam name="T">
   ///   Specifies the type of elements in the stack.
   /// </typeparam>
-  TStack<T> = class(TEnumerableBase<T>, IStack<T>, INotifyCollectionChanged<T>)
+  TStack<T> = class(TEnumerableBase<T>, INotifyCollectionChanged<T>,
+    IEnumerable<T>, {ICollection<T>, IReadOnlyCollection<T>, }IStack<T>)
   private
+  {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TEnumeratorBase<T>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
       private
-        fStack: TStack<T>;
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TStack<T>;
         fIndex: Integer;
         fVersion: Integer;
         fCurrent: T;
-      protected
-        function GetCurrent: T; override;
+        function GetCurrent: T;
       public
-        constructor Create(const stack: TStack<T>);
+        constructor Create(const source: TStack<T>);
         destructor Destroy; override;
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
+  {$ENDREGION}
   private
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
-    fOnChanged: ICollectionChangedEvent<T>;
+    fOnChanged: TCollectionChangedEventImpl<T>;
     procedure Grow;
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
-    function GetCount: Integer; override;
+    function GetCount: Integer; 
+    function GetIsEmpty: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-
     procedure Changed(const item: T; action: TCollectionChangedAction);
     function PopInternal(notification: TCollectionChangedAction): T; virtual;
   public
@@ -78,8 +82,11 @@ type
     constructor Create(const collection: IEnumerable<T>); overload;
     destructor Destroy; override;
 
-    function GetEnumerator: IEnumerator<T>; override;
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
+  {$ENDREGION}
 
+  {$REGION 'Implements IStack<T>'}
     procedure Clear;
     procedure Push(const item: T);
     function Pop: T;
@@ -91,9 +98,7 @@ type
     function TryPop(out item: T): Boolean;
 
     procedure TrimExcess;
-
-    property Capacity: Integer read GetCapacity write SetCapacity;
-    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+  {$ENDREGION}
   end;
 
   TObjectStack<T: class> = class(TStack<T>, ICollectionOwnership)
@@ -109,8 +114,6 @@ type
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
-
-    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
 implementation
@@ -120,7 +123,7 @@ uses
   RTLConsts,
   SysUtils,
   Spring,
-  Spring.Collections.Events,
+  Spring.Events.Base,
   Spring.ResourceStrings;
 
 
@@ -153,6 +156,7 @@ end;
 destructor TStack<T>.Destroy;
 begin
   Clear;
+  fOnChanged.Free;
   inherited Destroy;
 end;
 
@@ -177,6 +181,11 @@ end;
 function TStack<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self);
+end;
+
+function TStack<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
 end;
 
 function TStack<T>.GetCapacity: Integer;
@@ -295,17 +304,17 @@ end;
 
 {$REGION 'TStack<T>.TEnumerator'}
 
-constructor TStack<T>.TEnumerator.Create(const stack: TStack<T>);
+constructor TStack<T>.TEnumerator.Create(const source: TStack<T>);
 begin
   inherited Create;
-  fStack := stack;
-  fStack._AddRef;
-  fVersion := fStack.fVersion;
+  fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
 end;
 
 destructor TStack<T>.TEnumerator.Destroy;
 begin
-  fStack._Release;
+  fSource._Release;
   inherited Destroy;
 end;
 
@@ -318,12 +327,12 @@ function TStack<T>.TEnumerator.MoveNext: Boolean;
 begin
   Result := False;
 
-  if fVersion <> fStack.fVersion then
+  if fVersion <> fSource.fVersion then
     raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
 
-  if fIndex < fStack.fCount then
+  if fIndex < fSource.fCount then
   begin
-    fCurrent := fStack.fItems[fIndex];
+    fCurrent := fSource.fItems[fIndex];
     Inc(fIndex);
     Result := True;
   end

@@ -31,7 +31,8 @@ interface
 uses
   Generics.Defaults,
   Spring.Collections,
-  Spring.Collections.Base;
+  Spring.Collections.Base,
+  Spring.Collections.Events;
 
 type
   TDequeEnd = (deFront, deBack);
@@ -42,43 +43,44 @@ type
   /// <typeparam name="T">
   ///   Specifies the type of elements in the collection.
   /// </typeparam>
-  TDeque<T> = class(TEnumerableBase<T>, IQueue<T>, IDeque<T>, INotifyCollectionChanged<T>)
+  TDeque<T> = class(TEnumerableBase<T>, INotifyCollectionChanged<T>,
+    IEnumerable<T>, {ICollection<T>, IReadOnlyCollection<T>, }IQueue<T>, IDeque<T>)
   private
+  {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TEnumeratorBase<T>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fDeque: TDeque<T>;
+        fSource: TDeque<T>;
         fIndex: Integer;
         fVersion: Integer;
         fCurrent: T;
-      protected
-        function GetCurrent: T; override;
+        function GetCurrent: T;
       public
         constructor Create(const deque: TDeque<T>);
         destructor Destroy; override;
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
-
       TArrayManager = TArrayManager<T>;
+  {$ENDREGION}
   private
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
     fFront: Integer;
-    fOnChanged: ICollectionChangedEvent<T>;
-    function GetBack: Integer; inline;
-    property Back: Integer read GetBack;
-    property Front: Integer read fFront;
-    procedure Grow;
-  protected
+    fOnChanged: TCollectionChangedEventImpl<T>;
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
-    function GetCount: Integer; override;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-
+    function GetBack: Integer; inline;
+    procedure Grow;
+    property Back: Integer read GetBack;
+    property Front: Integer read fFront;
+  protected
     procedure Changed(const item: T; action: TCollectionChangedAction);
     procedure AddInternal(const item: T; dequeEnd: TDequeEnd);
     procedure RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction); virtual;
@@ -88,24 +90,35 @@ type
     constructor Create(const collection: IEnumerable<T>); overload;
     destructor Destroy; override;
 
-    function GetEnumerator: IEnumerator<T>; override;
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
 
+    function Single: T;
+    function SingleOrDefault(const defaultValue: T): T;
+    function TryGetFirst(out value: T): Boolean;
+    function TryGetLast(out value: T): Boolean;
+  {$ENDREGION}
+
+  {$REGION 'Implements IDeque<T>'}
     procedure Clear;
+
     procedure AddFirst(const item: T);
     procedure AddLast(const item: T);
+
     function RemoveFirst: T;
     function RemoveLast: T;
     function ExtractFirst: T;
     function ExtractLast: T;
+
     function TryRemoveFirst(out item: T): Boolean;
     function TryRemoveLast(out item: T): Boolean;
     function TryExtractFirst(out item: T): Boolean;
     function TryExtractLast(out item: T): Boolean;
-    function Single: T; overload; override;
-    function SingleOrDefault(const defaultValue: T): T; overload; override;
-    function TryGetFirst(out value: T): Boolean; override;
-    function TryGetLast(out value: T): Boolean; override;
 
+    procedure TrimExcess;
+  {$ENDREGION}
+
+  {$REGION 'Implements IQueue<T>'}
     procedure IQueue<T>.Enqueue = AddLast;
     function IQueue<T>.Dequeue = RemoveFirst;
     function IQueue<T>.Extract = ExtractFirst;
@@ -114,11 +127,7 @@ type
     function IQueue<T>.TryDequeue = TryRemoveFirst;
     function IQueue<T>.TryExtract = TryExtractFirst;
     function IQueue<T>.TryPeek = TryGetFirst;
-
-    procedure TrimExcess;
-
-    property Capacity: Integer read GetCapacity write SetCapacity;
-    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+  {$ENDREGION}
   end;
 
   TObjectDeque<T: class> = class(TDeque<T>, ICollectionOwnership)
@@ -134,8 +143,6 @@ type
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
-
-    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
 implementation
@@ -145,7 +152,7 @@ uses
   SysUtils,
   TypInfo,
   Spring,
-  Spring.Collections.Events,
+  Spring.Events.Base,
   Spring.ResourceStrings;
 
 
@@ -179,6 +186,7 @@ end;
 destructor TDeque<T>.Destroy;
 begin
   Clear;
+  fOnChanged.Free;
   inherited Destroy;
 end;
 
@@ -257,6 +265,11 @@ end;
 function TDeque<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self);
+end;
+
+function TDeque<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
 end;
 
 function TDeque<T>.GetOnChanged: ICollectionChangedEvent<T>;
@@ -440,14 +453,14 @@ end;
 constructor TDeque<T>.TEnumerator.Create(const deque: TDeque<T>);
 begin
   inherited Create;
-  fDeque := deque;
-  fDeque._AddRef;
-  fVersion := fDeque.fVersion;
+  fSource := deque;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
 end;
 
 destructor TDeque<T>.TEnumerator.Destroy;
 begin
-  fDeque._Release;
+  fSource._Release;
   inherited Destroy;
 end;
 
@@ -458,13 +471,13 @@ end;
 
 function TDeque<T>.TEnumerator.MoveNext: Boolean;
 begin
-  if fVersion <> fDeque.fVersion then
+  if fVersion <> fSource.fVersion then
     raise Error.EnumFailedVersion;
 
-  Result := fIndex < fDeque.fCount;
+  Result := fIndex < fSource.fCount;
   if Result then
   begin
-    fCurrent := fDeque.fItems[(fDeque.fFront + fIndex) mod Length(fDeque.fItems)];
+    fCurrent := fSource.fItems[(fSource.fFront + fIndex) mod Length(fSource.fItems)];
     Inc(fIndex);
   end
   else

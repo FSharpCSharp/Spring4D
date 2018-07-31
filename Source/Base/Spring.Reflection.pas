@@ -108,7 +108,7 @@ type
 
   {$REGION 'TRttiTypeIterator<T>'}
 
-  TRttiTypeIterator<T: TRttiType> = class(TIterator<T>)
+  TRttiTypeIterator<T: TRttiType> = class(TIterator<T>, IEnumerable<T>)
   private
     fContext: TRttiContext;
     fIndex: Integer;

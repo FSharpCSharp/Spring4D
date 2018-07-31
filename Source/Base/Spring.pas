@@ -8521,7 +8521,7 @@ class function TArray.LastIndexOf<T>(const values: array of T;
   const item: T): Integer;
 begin
   Result := LastIndexOf<T>(values, item,
-    0, Length(values), TEqualityComparer<T>.Default);
+    High(values), Length(values), TEqualityComparer<T>.Default);
 end;
 
 class function TArray.LastIndexOf<T>(const values: array of T; const item: T;
@@ -8545,10 +8545,10 @@ var
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
+  Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
 {$ENDIF}
 
-  for i := index + count - 1 downto index do
+  for i := index downto index - count do
     if comparer.Equals(values[i], item) then
       Exit(i);
   Result := -1;

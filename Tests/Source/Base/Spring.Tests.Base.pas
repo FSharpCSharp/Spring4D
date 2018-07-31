@@ -3369,7 +3369,7 @@ var
   index: Integer;
 begin
   values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
-  index := TArray.LastIndexOf<Integer>(values, 5, 0, 6);
+  index := TArray.LastIndexOf<Integer>(values, 5, 5, 6);
   CheckEquals(5, index);
 end;
 

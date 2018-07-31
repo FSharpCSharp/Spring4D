@@ -44,80 +44,117 @@ type
   /// <typeparam name="T">
   ///   The type of elements in the list.
   /// </typeparam>
-  TList<T> = class(TListBase<T>, IArrayAccess<T>)
+  TAbstractArrayList<T> = class(TListBase<T>)
   private
+  {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TEnumeratorBase<T>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
       private
-        fList: TList<T>;
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TAbstractArrayList<T>;
         fIndex: Integer;
         fVersion: Integer;
         fCurrent: T;
-      protected
-        function GetCurrent: T; override;
+        function GetCurrent: T;
       public
-        constructor Create(const list: TList<T>);
+        constructor Create(const source: TAbstractArrayList<T>);
         destructor Destroy; override;
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
       TArrayManager = TArrayManager<T>;
+  {$ENDREGION}
   private
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+    procedure InsertRangeInternal(index, count: Integer; const values: array of T);
   protected
   {$REGION 'Property Accessors'}
-    function GetCapacity: Integer; override;
-    function GetCount: Integer; override;
-    function GetIsEmpty: Boolean; override;
-    function GetItem(index: Integer): T; override;
+    function GetCapacity: Integer;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    function GetItem(index: Integer): T;
     function GetItems: TArray<T>;
-    procedure SetCapacity(value: Integer); override;
-    procedure SetCount(value: Integer); override;
-    procedure SetItem(index: Integer; const value: T); override;
+    procedure SetCapacity(value: Integer);
+    procedure SetCount(value: Integer);
+    procedure SetItem(index: Integer; const value: T);
   {$ENDREGION}
-
     procedure EnsureCapacity(capacity: Integer); inline;
     procedure Grow(capacity: Integer);
+
+    function TryGetElementAt(out value: T; index: Integer): Boolean; override;
+    function TryGetFirst(out value: T): Boolean;
+    function TryGetLast(out value: T): Boolean;
+    function TryGetSingle(out value: T): Boolean;
   public
-    constructor Create(const values: array of T); override;
-    constructor Create(const collection: IEnumerable<T>); override;
+    constructor Create(const values: array of T); overload;
+    constructor Create(const collection: IEnumerable<T>); overload;
+    destructor Destroy; override;
 
-    function GetEnumerator: IEnumerator<T>; override;
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
 
-    procedure Clear; override;
+    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean;
 
-    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean; override;
-    function IndexOf(const item: T; index, count: Integer): Integer; override;
+    function Single: T;
+    function SingleOrDefault(const defaultValue: T): T;
 
-    procedure Insert(index: Integer; const item: T); override;
-    procedure InsertRange(index: Integer; const values: array of T); override;
-    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); override;
+    function ToArray: TArray<T>;
+  {$ENDREGION}
 
-    procedure Delete(index: Integer); override;
-    procedure DeleteRange(index, count: Integer); override;
+  {$REGION 'Implements ICollection<T>'}
+    procedure AddRange(const values: array of T); overload;
+    procedure AddRange(const collection: IEnumerable<T>); overload;
 
-    procedure RemoveAll(const predicate: Predicate<T>); override;
+    procedure RemoveAll(const predicate: Predicate<T>);
 
-    function Extract(const item: T): T; override;
-    function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>; override;
-    function ExtractAt(index: Integer): T; override;
+    function Extract(const item: T): T;
+    function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
 
-    function GetRange(index, count: Integer): IList<T>; override;
+    procedure Clear;
 
-    procedure Exchange(index1, index2: Integer); override;
-    procedure Move(currentIndex, newIndex: Integer); override;
+    procedure CopyTo(var values: TArray<T>; index: Integer);
+    function MoveTo(const collection: ICollection<T>): Integer; overload;
+    function MoveTo(const collection: ICollection<T>; const predicate: Predicate<T>): Integer; overload;
+  {$ENDREGION}
 
-    procedure Reverse(index, count: Integer); override;
-    procedure Sort(const comparer: IComparer<T>; index, count: Integer); override;
+  {$REGION 'Implements IList<T>'}
+    function Add(const item: T): Integer; overload;
 
-    procedure CopyTo(var values: TArray<T>; index: Integer); override;
-    function MoveTo(const collection: ICollection<T>; 
-      const predicate: Predicate<T>): Integer; override;
-    function ToArray: TArray<T>; override;
+    procedure Insert(index: Integer; const item: T);
+    procedure InsertRange(index: Integer; const values: array of T); overload;
+    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
+
+    procedure Delete(index: Integer);
+    procedure DeleteRange(index, count: Integer);
+
+    function ExtractAt(index: Integer): T;
+    function ExtractRange(index, count: Integer): TArray<T>;
+
+    function GetRange(index, count: Integer): IList<T>;
+
+    procedure Exchange(index1, index2: Integer);
+    procedure Move(currentIndex, newIndex: Integer);
+
+    procedure Reverse(index, count: Integer); overload;
+    procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function AsReadOnlyList: IReadOnlyList<T>;
+
+    procedure TrimExcess;
+  {$ENDREGION}
   end;
+
+  TList<T> = class(TAbstractArrayList<T>, IEnumerable<T>, ICollection<T>,
+    IReadOnlyCollection<T>, IList<T>, IReadOnlyList<T>, IArrayAccess<T>);
 
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
   private
@@ -132,26 +169,39 @@ type
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
-
-    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
-  TSortedList<T> = class(TList<T>)
-  protected
-    procedure SetItem(index: Integer; const value: T); override;
+  TSortedList<T> = class(TAbstractArrayList<T>, IEnumerable<T>, ICollection<T>,
+    IReadOnlyCollection<T>, IList<T>, IReadOnlyList<T>, IArrayAccess<T>)
+  private
+    procedure SetItem(index: Integer; const value: T);
+    function AsReadOnlyList: IReadOnlyList<T>;
   public
-    function Add(const item: T): Integer; override;
-    procedure Insert(index: Integer; const item: T); override;
+  {$REGION 'Implements IEnumerable<T>'}
+    function Contains(const value: T): Boolean;
+  {$ENDREGION}
 
-    procedure AddRange(const values: array of T); override;
-    procedure AddRange(const collection: IEnumerable<T>); override;
+  {$REGION 'Implements ICollection<T>'}
+    procedure AddRange(const values: array of T); overload;
+    procedure AddRange(const collection: IEnumerable<T>); overload;
+  {$ENDREGION}
 
-    function Contains(const value: T): Boolean; override;
-    function IndexOf(const item: T; index, count: Integer): Integer; override;
-    function LastIndexOf(const item: T; index, count: Integer): Integer; override;
+  {$REGION 'Implements IList<T>'}
+    function Add(const item: T): Integer; overload;
+    procedure Insert(index: Integer; const item: T);
 
-    procedure Exchange(index1, index2: Integer); override;
-    procedure Move(currentIndex, newIndex: Integer); override;
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    procedure Exchange(index1, index2: Integer);
+    procedure Move(currentIndex, newIndex: Integer);
+
+    procedure Reverse(index, count: Integer); overload;
+    procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
+  {$ENDREGION}
   end;
 
   TSortedObjectList<T: class> = class(TSortedList<T>, ICollectionOwnership)
@@ -167,104 +217,138 @@ type
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
-
-    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
-  TCollectionList<T: TCollectionItem> = class(TListBase<T>)
+  TCollectionList<T: TCollectionItem> = class(TListBase<T>, IEnumerable<T>,
+    ICollection<T>, IReadOnlyCollection<T>, IList<T>, IReadOnlyList<T>)
   private
+  {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TEnumeratorBase<T>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
       private
-        fList: TCollectionList<T>;
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TCollectionList<T>;
         fIndex: Integer;
         fVersion: Integer;
         fCurrent: T;
-      protected
-        function GetCurrent: T; override;
+        function GetCurrent: T;
       public
         constructor Create(const list: TCollectionList<T>);
         destructor Destroy; override;
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
+  {$ENDREGION}
   private
     fCollection: TCollection;
     fVersion: Integer;
-    procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
-    procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
-  protected
   {$REGION 'Property Accessors'}
-    function GetCapacity: Integer; override;
-    function GetCount: Integer; override;
-    function GetElementType: PTypeInfo; override;
-    function GetItem(index: Integer): T; override;
-    procedure SetCapacity(value: Integer); override;
-    procedure SetItem(index: Integer; const value: T); override;
+    function GetCapacity: Integer;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    function GetItem(index: Integer): T;
+    procedure SetCapacity(value: Integer);
+    procedure SetCount(value: Integer);
+    procedure SetItem(index: Integer; const value: T);
   {$ENDREGION}
+    procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+    function AsReadOnlyList: IReadOnlyList<T>;
+  protected
+    function GetElementType: PTypeInfo; override;
   public
     constructor Create(const collection: TCollection);
-    destructor Destroy; override;
 
-    function GetEnumerator: IEnumerator<T>; override;
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
 
-    procedure Clear; override;
+    function ToArray: TArray<T>;
+  {$ENDREGION}
 
-    procedure Insert(index: Integer; const item: T); override;
+  {$REGION 'Implements ICollections<T>'}
+    function Extract(const item: T): T;
 
-    procedure Delete(index: Integer); override;
-    procedure DeleteRange(index, count: Integer); override;
+    procedure Clear;
+  {$ENDREGION}
 
-    function Extract(const item: T): T; override;
-    function ExtractAt(index: Integer): T; override;
+  {$REGION 'Implements IList<T>'}
+    function Add(const item: T): Integer; overload;
 
-    procedure Exchange(index1, index2: Integer); override;
-    procedure Move(currentIndex, newIndex: Integer); override;
+    procedure Insert(index: Integer; const item: T);
+    procedure InsertRange(index: Integer; const values: array of T); overload;
+    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
+
+    procedure Delete(index: Integer);
+    procedure DeleteRange(index, count: Integer);
+
+    function ExtractAt(index: Integer): T;
+    function ExtractRange(index, count: Integer): TArray<T>;
+
+    function GetRange(index, count: Integer): IList<T>;
+
+    procedure Exchange(index1, index2: Integer);
+    procedure Move(currentIndex, newIndex: Integer);
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    procedure Reverse(index, count: Integer); overload;
+    procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
+
+    procedure TrimExcess;
+  {$ENDREGION}
   end;
 
-  TAnonymousReadOnlyList<T> = class(TEnumerableBase<T>, IReadOnlyList<T>)
+  TAnonymousReadOnlyList<T> = class(TEnumerableBase<T>, IReadOnlyCollection<T>,
+    IReadOnlyList<T>)
   private
     fCount: Func<Integer>;
     fItems: Func<Integer, T>;
     fIterator: IEnumerable<T>;
-  protected
   {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
-    constructor Create(const count: Func<Integer>;
-      const items: Func<Integer, T>;
+    constructor Create(const count: Func<Integer>; const items: Func<Integer, T>;
       const iterator: IEnumerable<T>{$IFDEF DELPHIXE3_UP} = nil{$ENDIF});
 
-    function GetEnumerator: IEnumerator<T>; override;
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
+  {$ENDREGION}
 
+  {$REGION 'Implements IList<T>'}
     function GetRange(index, count: Integer): IList<T>;
 
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
+  {$ENDREGION}
   end;
 
   TFoldedObjectList<T{: class}> = class(TObjectList<TObject>)
   protected
-    function CreateList: TListBase<TObject>; override;
+    function CreateList: IList<TObject>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedInterfaceList<T{: IInterface}> = class(TList<IInterface>)
   protected
-    function CreateList: TListBase<IInterface>; override;
+    function CreateList: IList<IInterface>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedSortedObjectList<T{: class}> = class(TSortedObjectList<TObject>)
   protected
-    function CreateList: TListBase<TObject>; override;
+    function CreateList: IList<TObject>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
   TFoldedSortedInterfaceList<T{: IInterface}> = class(TSortedList<IInterface>)
   protected
-    function CreateList: TListBase<IInterface>; override;
+    function CreateList: IList<IInterface>; override;
     function GetElementType: PTypeInfo; override;
   end;
 
@@ -272,7 +356,7 @@ type
   private
     fElementType: PTypeInfo;
   protected
-    function CreateList: TListBase<TObject>; override;
+    function CreateList: IList<TObject>; override;
     function GetElementType: PTypeInfo; override;
   public
     constructor Create(const elementType: PTypeInfo;
@@ -283,7 +367,7 @@ type
   private
     fElementType: PTypeInfo;
   protected
-    function CreateList: TListBase<IInterface>; override;
+    function CreateList: IList<IInterface>; override;
     function GetElementType: PTypeInfo; override;
   public
     constructor Create(const elementType: PTypeInfo;
@@ -305,14 +389,6 @@ type
     property OnPropertyChanged: IEvent<TPropertyChangedEvent> read GetOnPropertyChanged;
   end;
 
-  TKeyList<TKey> = class(TList<TKey>)
-  private
-    fComparer: IEqualityComparer<TKey>;
-  public
-    constructor Create(const comparer: IEqualityComparer<TKey>);
-    function IndexOf(const item: TKey; index, count: Integer): Integer; override;
-  end;
-
 implementation
 
 uses
@@ -322,12 +398,13 @@ uses
   TypInfo,
   Spring.Collections.Extensions,
   Spring.Events,
+  Spring.Events.Base,
   Spring.ResourceStrings;
 
 
-{$REGION 'TList<T>'}
+{$REGION 'TAbstractArrayList<T>'}
 
-constructor TList<T>.Create(const values: array of T);
+constructor TAbstractArrayList<T>.Create(const values: array of T);
 var
   i: Integer;
 begin
@@ -341,13 +418,13 @@ begin
   end;
 end;
 
-constructor TList<T>.Create(const collection: IEnumerable<T>);
+constructor TAbstractArrayList<T>.Create(const collection: IEnumerable<T>);
 var
   c: ICollection<T>;
 begin
+  Create;
   if Supports(collection, ICollection<T>, c) then
   begin
-    Create;
     fCount := c.Count;
     if fCount > 0 then
     begin
@@ -356,10 +433,39 @@ begin
     end;
   end
   else
-    inherited Create(collection);
+    IList<T>(this).AddRange(collection);
 end;
 
-procedure TList<T>.EnsureCapacity(capacity: Integer);
+destructor TAbstractArrayList<T>.Destroy;
+begin
+  Clear;
+  inherited;
+end;
+
+function TAbstractArrayList<T>.Add(const item: T): Integer;
+begin
+  if fCount = Length(fItems) then
+    Grow(fCount + 1);
+
+  IncUnchecked(fVersion);
+  fItems[fCount] := item;
+  Result := fCount;
+  Inc(fCount);
+
+  Changed(item, caAdded);
+end;
+
+procedure TAbstractArrayList<T>.AddRange(const values: array of T);
+begin
+  InsertRange(fCount, values);
+end;
+
+procedure TAbstractArrayList<T>.AddRange(const collection: IEnumerable<T>);
+begin
+  InsertRange(fCount, collection);
+end;
+
+procedure TAbstractArrayList<T>.EnsureCapacity(capacity: Integer);
 begin
   if capacity > Length(fItems) then
     Grow(capacity)
@@ -367,12 +473,12 @@ begin
     OutOfMemoryError;
 end;
 
-function TList<T>.GetCount: Integer;
+function TAbstractArrayList<T>.GetCount: Integer;
 begin
   Result := fCount;
 end;
 
-function TList<T>.GetEnumerator: IEnumerator<T>;
+function TAbstractArrayList<T>.GetEnumerator: IEnumerator<T>;
 begin
   if TType.Kind<T> = tkClass then
     IEnumerator<TObject>(Result) := TList<TObject>.TEnumerator.Create(TList<TObject>(Self))
@@ -380,12 +486,12 @@ begin
     Result := TEnumerator.Create(Self);
 end;
 
-function TList<T>.GetIsEmpty: Boolean;
+function TAbstractArrayList<T>.GetIsEmpty: Boolean;
 begin
   Result := fCount = 0;
 end;
 
-function TList<T>.GetItem(index: Integer): T;
+function TAbstractArrayList<T>.GetItem(index: Integer): T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
@@ -394,12 +500,12 @@ begin
   Result := fItems[index];
 end;
 
-function TList<T>.GetItems: TArray<T>;
+function TAbstractArrayList<T>.GetItems: TArray<T>;
 begin
   Result := fItems;
 end;
 
-function TList<T>.GetRange(index, count: Integer): IList<T>;
+function TAbstractArrayList<T>.GetRange(index, count: Integer): IList<T>;
 var
   list: TList<T>;
 {$IFNDEF DELPHIXE2_UP}
@@ -411,7 +517,8 @@ begin
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
-  list := TList<T>(CreateList);
+  Result := CreateList;
+  list := TList<T>(Result.AsObject);
   list.fCount := count;
 {$IFDEF DELPHIXE2_UP}
   list.fItems := Copy(fItems, index, count);
@@ -425,10 +532,9 @@ begin
     Inc(index);
   end;
 {$ENDIF}
-  Result := list;
 end;
 
-procedure TList<T>.Grow(capacity: Integer);
+procedure TAbstractArrayList<T>.Grow(capacity: Integer);
 var
   newCapacity: Integer;
 begin
@@ -444,12 +550,46 @@ begin
   SetCapacity(newCapacity);
 end;
 
-function TList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+function TAbstractArrayList<T>.IndexOf(const item: T): Integer;
+var
+  i: Integer;
 begin
-  Result := TArray.IndexOf<T>(fItems, item, index, count, Self);
+  for i := 0 to fCount - 1 do
+    if Equals(fItems[i], item) then
+      Exit(i);
+  Result := -1;
 end;
 
-procedure TList<T>.SetItem(index: Integer; const value: T);
+function TAbstractArrayList<T>.IndexOf(const item: T; index: Integer): Integer;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+{$ENDIF}
+
+  for i := index to fCount - 1 do
+    if Equals(fItems[i], item) then
+      Exit(i);
+  Result := -1;
+end;
+
+function TAbstractArrayList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
+{$ENDIF}
+
+  for i := index to index + count - 1 do
+    if Equals(fItems[i], item) then
+      Exit(i);
+  Result := -1;
+end;
+
+procedure TAbstractArrayList<T>.SetItem(index: Integer; const value: T);
 var
   oldItem: T;
 begin
@@ -466,7 +606,27 @@ begin
   Changed(value, caAdded);
 end;
 
-procedure TList<T>.Insert(index: Integer; const item: T);
+function TAbstractArrayList<T>.Single: T;
+begin
+  case fCount of
+    0: raise Error.NoElements;
+    1: Result := fItems[0];
+  else
+    raise Error.MoreThanOneElement;
+  end;
+end;
+
+function TAbstractArrayList<T>.SingleOrDefault(const defaultValue: T): T;
+begin
+  case fCount of
+    0: Result := defaultValue;
+    1: Result := fItems[0];
+  else
+    raise Error.MoreThanOneElement;
+  end;
+end;
+
+procedure TAbstractArrayList<T>.Insert(index: Integer; const item: T);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
@@ -486,7 +646,7 @@ begin
   Changed(item, caAdded);
 end;
 
-procedure TList<T>.InsertRange(index: Integer; const values: array of T);
+procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: array of T);
 var
   count: Integer;
   i: Integer;
@@ -499,6 +659,42 @@ begin
   if count = 0 then
     Exit;
 
+  InsertRangeInternal(index, count, values);
+end;
+
+procedure TAbstractArrayList<T>.InsertRange(index: Integer;
+  const collection: IEnumerable<T>);
+var
+  list: TList<T>;
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+{$ENDIF}
+
+  TObject(list) := collection.AsObject;
+  if TObject(list) is TList<T> then
+  begin
+    if list.fCount = 0 then
+      Exit;
+
+    InsertRangeInternal(index, list.fCount, list.fItems);
+  end
+  else
+  begin
+    for item in collection do
+    begin
+      Insert(index, item);
+      Inc(index);
+    end;
+  end;
+end;
+
+procedure TAbstractArrayList<T>.InsertRangeInternal(index, count: Integer;
+  const values: array of T);
+var
+  i: Integer;
+begin
   EnsureCapacity(fCount + count);
 
   IncUnchecked(fVersion);
@@ -511,56 +707,21 @@ begin
   if not TType.IsManaged<T>{$IFDEF WEAKREF} and not TType.HasWeakRef<T>{$ENDIF} then
     System.Move(values[0], fItems[index], count * SizeOf(T))
   else
-    for i := Low(values) to High(values) do
+    for i := Low(values) to count - 1 do
       fItems[index + i] := values[i];
 
   Inc(fCount, count);
 
-  for i := Low(values) to High(values) do
+  for i := Low(values) to count - 1 do
     Changed(values[i], caAdded);
 end;
 
-procedure TList<T>.InsertRange(index: Integer;
-  const collection: IEnumerable<T>);
-var
-  list: TList<T>;
-  i: Integer;
+function TAbstractArrayList<T>.LastIndexOf(const item: T; index, count: Integer): Integer;
 begin
-  if collection.AsObject is TList<T> then
-  begin
-{$IFDEF SPRING_ENABLE_GUARD}
-    Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
-{$ENDIF}
-
-    list := TList<T>(collection.AsObject);
-    if list.fCount = 0 then
-      Exit;
-
-    EnsureCapacity(fCount + list.fCount);
-
-    IncUnchecked(fVersion);
-    if index <> fCount then
-    begin
-      TArrayManager.Move(fItems, index, index + list.fCount, fCount - index);
-      TArrayManager.Finalize(fItems, index, list.fCount);
-    end;
-
-    if not TType.IsManaged<T>{$IFDEF WEAKREF} and not TType.HasWeakRef<T>{$ENDIF} then
-      System.Move(list.fItems[0], fItems[index], list.fCount * SizeOf(T))
-    else
-      for i := Low(list.fItems) to list.fCount - 1 do
-        fItems[index + i] := list.fItems[i];
-
-    Inc(fCount, list.fCount);
-
-    for i := 0 to list.fCount - 1 do
-      Changed(list.fItems[i], caAdded);
-  end
-  else
-    inherited InsertRange(index, collection);
+  Result := TArray.LastIndexOf<T>(fItems, item, index, count);
 end;
 
-procedure TList<T>.DeleteInternal(index: Integer;
+procedure TAbstractArrayList<T>.DeleteInternal(index: Integer;
   notification: TCollectionChangedAction);
 var
   oldItem: T;
@@ -579,16 +740,7 @@ begin
   Changed(oldItem, notification);
 end;
 
-procedure TList<T>.DeleteRange(index, count: Integer);
-begin
-  DeleteRangeInternal(index, count, False);
-end;
-
-procedure TList<T>.DeleteRangeInternal(index, count: Integer; doClear: Boolean);
-var
-  oldItems: TArray<T>;
-  tailCount,
-  i: Integer;
+procedure TAbstractArrayList<T>.DeleteRange(index, count: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
@@ -598,6 +750,15 @@ begin
   if count = 0 then
     Exit;
 
+  DeleteRangeInternal(index, count, False);
+end;
+
+procedure TAbstractArrayList<T>.DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+var
+  oldItems: TArray<T>;
+  tailCount,
+  i: Integer;
+begin
   SetLength(oldItems, count);
   TArrayManager.Move(fItems, oldItems, index, 0, count);
 
@@ -620,7 +781,7 @@ begin
     Changed(oldItems[i], caRemoved);
 end;
 
-procedure TList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
+procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
   IncUnchecked(fVersion);
   TArray.Sort<T>(fItems, comparer, index, count);
@@ -628,7 +789,7 @@ begin
   Reset;
 end;
 
-procedure TList<T>.Move(currentIndex, newIndex: Integer);
+procedure TAbstractArrayList<T>.Move(currentIndex, newIndex: Integer);
 var
   temp: T;
 begin
@@ -652,7 +813,12 @@ begin
   Changed(temp, caMoved);
 end;
 
-function TList<T>.MoveTo(const collection: ICollection<T>;
+function TAbstractArrayList<T>.MoveTo(const collection: ICollection<T>): Integer;
+begin
+  Result := MoveTo(collection, nil);
+end;
+
+function TAbstractArrayList<T>.MoveTo(const collection: ICollection<T>;
   const predicate: Predicate<T>): Integer;
 var
   i: Integer;
@@ -676,14 +842,19 @@ begin
       Inc(i);
 end;
 
-procedure TList<T>.Clear;
+function TAbstractArrayList<T>.AsReadOnlyList: IReadOnlyList<T>;
+begin
+  Result := Self as IReadOnlyList<T>;
+end;
+
+procedure TAbstractArrayList<T>.Clear;
 begin
   if fCount > 0 then
     DeleteRangeInternal(0, fCount, True);
-  Capacity := 0;
+  SetCapacity(0);
 end;
 
-procedure TList<T>.Exchange(index1, index2: Integer);
+procedure TAbstractArrayList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
@@ -702,12 +873,12 @@ begin
   Changed(fItems[index1], caMoved);
 end;
 
-function TList<T>.GetCapacity: Integer;
+function TAbstractArrayList<T>.GetCapacity: Integer;
 begin
   Result := Length(fItems);
 end;
 
-procedure TList<T>.RemoveAll(const predicate: Predicate<T>);
+procedure TAbstractArrayList<T>.RemoveAll(const predicate: Predicate<T>);
 var
   index: Integer;
 begin
@@ -719,12 +890,15 @@ begin
       Inc(index);
 end;
 
-procedure TList<T>.Reverse(index, count: Integer);
+procedure TAbstractArrayList<T>.Reverse(index, count: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(index >= 0, 'index');
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
+
+  if count = 0 then
+    Exit;
 
   IncUnchecked(fVersion);
   TArray.Reverse<T>(fItems, index, count);
@@ -732,27 +906,27 @@ begin
   Reset;
 end;
 
-procedure TList<T>.SetCapacity(value: Integer);
+procedure TAbstractArrayList<T>.SetCapacity(value: Integer);
 begin
   if value < fCount then
     DeleteRange(value, fCount - value);
   SetLength(fItems, value);
 end;
 
-procedure TList<T>.SetCount(value: Integer);
+procedure TAbstractArrayList<T>.SetCount(value: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(value >= 0, 'count');
 {$ENDIF}
 
-  if value > Capacity then
+  if value > Length(fItems) then
     SetCapacity(value);
   if value < fCount then
     DeleteRange(value, fCount - value);
   fCount := value;
 end;
 
-procedure TList<T>.Delete(index: Integer);
+procedure TAbstractArrayList<T>.Delete(index: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
@@ -761,7 +935,7 @@ begin
   DeleteInternal(index, caRemoved);
 end;
 
-function TList<T>.Extract(const item: T): T;
+function TAbstractArrayList<T>.Extract(const item: T): T;
 var
   index: Integer;
 begin
@@ -775,7 +949,7 @@ begin
   end;
 end;
 
-function TList<T>.ExtractAt(index: Integer): T;
+function TAbstractArrayList<T>.ExtractAt(index: Integer): T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
@@ -785,10 +959,10 @@ begin
   DeleteInternal(index, caExtracted);
 end;
 
-function TList<T>.ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
+function TAbstractArrayList<T>.ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
 var
   index: Integer;
-  list: TListBase<T>;
+  list: IList<T>;
 begin
   index := 0;
   list := CreateList;
@@ -801,10 +975,41 @@ begin
     else
       Inc(index);
   list.TrimExcess;
-  Result := list;
+  Result := list.AsReadOnlyList;
 end;
 
-function TList<T>.Contains(const value: T;
+function TAbstractArrayList<T>.ExtractRange(index, count: Integer): TArray<T>;
+var
+  tailCount, i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
+{$ENDIF}
+
+  if count = 0 then
+    Exit;
+
+  SetLength(Result, count);
+  TArrayManager.Move(fItems, Result, index, 0, count);
+
+  IncUnchecked(fVersion);
+  tailCount := fCount - (index + count);
+  if tailCount > 0 then
+  begin
+    TArrayManager.Move(fItems, index + count, index, tailCount);
+    TArrayManager.Finalize(fItems, fCount - count, count);
+  end
+  else
+    TArrayManager.Finalize(fItems, index, count);
+
+  Dec(fCount, count);
+
+  for i := Low(Result) to High(Result) do
+    Changed(Result[i], caRemoved);
+end;
+
+function TAbstractArrayList<T>.Contains(const value: T;
   const comparer: IEqualityComparer<T>): Boolean;
 var
   i: Integer;
@@ -815,7 +1020,7 @@ begin
   Result := False;
 end;
 
-procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
+procedure TAbstractArrayList<T>.CopyTo(var values: TArray<T>; index: Integer);
 var
   i: Integer;
 begin
@@ -830,45 +1035,85 @@ begin
   end;
 end;
 
-function TList<T>.ToArray: TArray<T>;
+function TAbstractArrayList<T>.ToArray: TArray<T>;
 begin
   Result := fItems;
   SetLength(Result, fCount);
 end;
 
+procedure TAbstractArrayList<T>.TrimExcess;
+begin
+  SetCapacity(fCount);
+end;
+
+function TAbstractArrayList<T>.TryGetElementAt(out value: T; index: Integer): Boolean;
+begin
+  Result := (index >= 0) and (index < fCount);
+  if Result then
+    value := fItems[index];
+end;
+
+function TAbstractArrayList<T>.TryGetFirst(out value: T): Boolean;
+begin
+  Result := fCount > 0;
+  if Result then
+    value := fItems[0]
+  else
+    value := Default(T);
+end;
+
+function TAbstractArrayList<T>.TryGetLast(out value: T): Boolean;
+begin
+  Result := fCount > 0;
+  if Result then
+    value := fItems[fCount - 1]
+  else
+    value := Default(T);
+end;
+
+function TAbstractArrayList<T>.TryGetSingle(out value: T): Boolean;
+begin
+  Result := fCount = 1;
+  if Result then
+    value := fItems[0]
+  else
+    value := Default(T);
+end;
+
 {$ENDREGION}
 
 
-{$REGION 'TList<T>.TEnumerator'}
+{$REGION 'TAbstractArrayList<T>.TEnumerator'}
 
-constructor TList<T>.TEnumerator.Create(const list: TList<T>);
+constructor TAbstractArrayList<T>.TEnumerator.Create(
+  const source: TAbstractArrayList<T>);
 begin
   inherited Create;
-  fList := list;
-  fList._AddRef;
-  fVersion := fList.fVersion;
+  fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
 end;
 
-destructor TList<T>.TEnumerator.Destroy;
+destructor TAbstractArrayList<T>.TEnumerator.Destroy;
 begin
-  fList._Release;
+  fSource._Release;
   inherited Destroy;
 end;
 
-function TList<T>.TEnumerator.GetCurrent: T;
+function TAbstractArrayList<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
 end;
 
-function TList<T>.TEnumerator.MoveNext: Boolean;
+function TAbstractArrayList<T>.TEnumerator.MoveNext: Boolean;
 begin
-  if fVersion <> fList.fVersion then
+  if fVersion <> fSource.fVersion then
     raise Error.EnumFailedVersion;
 
-  Result := fIndex < fList.fCount;
+  Result := fIndex < fSource.fCount;
   if Result then
   begin
-    fCurrent := fList.fItems[fIndex];
+    fCurrent := fSource.fItems[fIndex];
     Inc(fIndex);
   end
   else
@@ -902,7 +1147,7 @@ end;
 procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
   inherited Changed(item, action);
-  if OwnsObjects and (action = caRemoved) then
+  if fOwnsObjects and (action = caRemoved) then
 {$IFNDEF AUTOREFCOUNT}
     item.Free;
 {$ELSE}
@@ -931,9 +1176,9 @@ begin
   if Result > 0 then
   begin
     // If the new item is smaller than the last one in the list ...
-    if fComparer.Compare(fItems[Result - 1], item) > 0 then
+    if Comparer.Compare(fItems[Result - 1], item) > 0 then
       // ... search for the correct insertion point
-      TArray.BinarySearch<T>(fItems, item, Result, fComparer, 0, fCount);
+      TArray.BinarySearch<T>(fItems, item, Result, Comparer, 0, fCount);
   end;
   inherited Insert(Result, item);
 end;
@@ -958,16 +1203,37 @@ begin
     Add(values[i]);
 end;
 
+function TSortedList<T>.AsReadOnlyList: IReadOnlyList<T>;
+begin
+  Result := Self;
+end;
+
 function TSortedList<T>.Contains(const value: T): Boolean;
 var
   index: Integer;
 begin
-  Result := TArray.BinarySearch<T>(fItems, value, index, fComparer, 0, fCount);
+  Result := TArray.BinarySearch<T>(fItems, value, index, Comparer, 0, fCount);
 end;
 
 procedure TSortedList<T>.Exchange(index1, index2: Integer);
 begin
   raise Error.NotSupported;
+end;
+
+function TSortedList<T>.IndexOf(const item: T): Integer;
+begin
+  if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, 0, fCount) then
+    Result := -1;
+end;
+
+function TSortedList<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+{$ENDIF}
+
+  if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, fCount - index) then
+    Result := -1;
 end;
 
 function TSortedList<T>.IndexOf(const item: T; index, count: Integer): Integer;
@@ -977,7 +1243,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
-  if not TArray.BinarySearch<T>(fItems, item, Result, fComparer, index, count) then
+  if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count) then
     Result := -1;
 end;
 
@@ -990,12 +1256,12 @@ function TSortedList<T>.LastIndexOf(const item: T; index,
   count: Integer): Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
 {$ENDIF}
 
   if not TArray.BinarySearchUpperBound<T>(
-    fItems, item, Result, fComparer, index, count) then
+    fItems, item, Result, Comparer, index, count) then
     Result := -1;
 end;
 
@@ -1004,9 +1270,18 @@ begin
   raise Error.NotSupported;
 end;
 
+procedure TSortedList<T>.Reverse(index, count: Integer);
+begin
+  raise Error.NotSupported;
+end;
+
 procedure TSortedList<T>.SetItem(index: Integer; const value: T);
 begin
   raise Error.NotSupported;
+end;
+
+procedure TSortedList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
+begin
 end;
 
 {$ENDREGION}
@@ -1036,7 +1311,7 @@ procedure TSortedObjectList<T>.Changed(const item: T;
   action: TCollectionChangedAction);
 begin
   inherited Changed(item, action);
-  if OwnsObjects and (action = caRemoved) then
+  if (action = caRemoved) and fOwnsObjects then
 {$IFNDEF AUTOREFCOUNT}
     item.Free;
 {$ELSE}
@@ -1070,9 +1345,18 @@ begin
   fCollection := collection;
 end;
 
-destructor TCollectionList<T>.Destroy; //FI:W504
+function TCollectionList<T>.Add(const item: T): Integer;
 begin
-  // not calling inherited because we don't want to call Clear
+  IncUnchecked(fVersion);
+  item.Collection := fCollection;
+  Result := item.Index;
+
+  Changed(item, caAdded);
+end;
+
+function TCollectionList<T>.AsReadOnlyList: IReadOnlyList<T>;
+begin
+  Result := Self;
 end;
 
 procedure TCollectionList<T>.Clear;
@@ -1082,27 +1366,20 @@ begin
 end;
 
 procedure TCollectionList<T>.Delete(index: Integer);
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
-{$ENDIF}
-
-  DeleteInternal(index, caRemoved);
-end;
-
-procedure TCollectionList<T>.DeleteInternal(index: Integer;
-  notification: TCollectionChangedAction);
 var
   oldItem: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
+{$ENDIF}
+
   oldItem := T(fCollection.Items[index]);
 
   IncUnchecked(fVersion);
   oldItem.Collection := nil;
 
-  Changed(oldItem, notification);
-  if notification = caRemoved then
-    oldItem.Free;
+  Changed(oldItem, caRemoved);
+  oldItem.Free;
 end;
 
 procedure TCollectionList<T>.DeleteRange(index, count: Integer);
@@ -1117,8 +1394,8 @@ var
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCollection.Count - index), 'count');
 {$ENDIF}
 
   if count = 0 then
@@ -1148,8 +1425,8 @@ var
   temp: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
-  Guard.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
+  Guard.CheckRange((index1 >= 0) and (index1 < fCollection.Count), 'index1');
+  Guard.CheckRange((index2 >= 0) and (index2 < fCollection.Count), 'index2');
 {$ENDIF}
 
   temp := T(fCollection.Items[index1]);
@@ -1170,20 +1447,41 @@ begin
   if index < 0 then
     Result := Default(T)
   else
-  begin
-    Result := T(fCollection.Items[index]);
-    DeleteInternal(index, caExtracted);
-  end;
+    Result := ExtractAt(index);
 end;
 
 function TCollectionList<T>.ExtractAt(index: Integer): T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
 {$ENDIF}
 
   Result := T(fCollection.Items[index]);
-  DeleteInternal(index, caExtracted);
+
+  IncUnchecked(fVersion);
+  Result.Collection := nil;
+
+  Changed(Result, caExtracted);
+end;
+
+function TCollectionList<T>.ExtractRange(index, count: Integer): TArray<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCollection.Count - index), 'count');
+{$ENDIF}
+
+  SetLength(Result, count);
+  i := 0;
+
+  while count > 0 do
+  begin
+    Result[i] := ExtractAt(index);
+    Inc(i);
+    Dec(count);
+  end;
 end;
 
 function TCollectionList<T>.GetCapacity: Integer;
@@ -1206,19 +1504,68 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
+function TCollectionList<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCollection.Count = 0;
+end;
+
 function TCollectionList<T>.GetItem(index: Integer): T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
 {$ENDIF}
 
   Result := T(fCollection.Items[index]);
 end;
 
+function TCollectionList<T>.GetRange(index, count: Integer): IList<T>;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCollection.Count - index), 'count');
+{$ENDIF}
+
+  Result := CreateList;
+  Result.Count := count;
+  for i := 0 to count - 1 do
+  begin
+    Result[i] := T(fCollection.Items[index]);
+    Inc(index);
+  end;
+end;
+
+function TCollectionList<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, fCollection.Count);
+end;
+
+function TCollectionList<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, fCollection.Count - index);
+end;
+
+function TCollectionList<T>.IndexOf(const item: T; index,
+  count: Integer): Integer;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCollection.Count - index), 'count');
+{$ENDIF}
+
+  for i := index to index + count - 1 do
+    if Equals(T(fCollection.Items[i]), item) then
+      Exit(i);
+  Result := -1;
+end;
+
 procedure TCollectionList<T>.Insert(index: Integer; const item: T);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
 {$ENDIF}
 
   IncUnchecked(fVersion);
@@ -1228,11 +1575,60 @@ begin
   Changed(item, caAdded);
 end;
 
+procedure TCollectionList<T>.InsertRange(index: Integer;
+  const values: array of T);
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
+{$ENDIF}
+
+  for i := Low(values) to High(values) do
+  begin
+    Insert(index, values[i]);
+    Inc(index);
+  end;
+end;
+
+procedure TCollectionList<T>.InsertRange(index: Integer;
+  const collection: IEnumerable<T>);
+var
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  for item in collection do
+  begin
+    Insert(index, item);
+    Inc(index);
+  end;
+end;
+
+function TCollectionList<T>.LastIndexOf(const item: T; index,
+  count: Integer): Integer;
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
+{$ENDIF}
+
+  for i := index downto index - count + 1 do
+    if Equals(T(fCollection.Items[i]), item) then
+      Exit(i);
+  Result := -1;
+end;
+
 procedure TCollectionList<T>.Move(currentIndex, newIndex: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((currentIndex >= 0) and (currentIndex < Count), 'currentIndex');
-  Guard.CheckRange((newIndex >= 0) and (newIndex < Count), 'newIndex');
+  Guard.CheckRange((currentIndex >= 0) and (currentIndex < fCollection.Count), 'currentIndex');
+  Guard.CheckRange((newIndex >= 0) and (newIndex < fCollection.Count), 'newIndex');
 {$ENDIF}
 
   IncUnchecked(fVersion);
@@ -1241,18 +1637,47 @@ begin
   Changed(fCollection.Items[newIndex], caMoved);
 end;
 
+procedure TCollectionList<T>.Reverse(index, count: Integer);
+begin
+  raise Error.NotSupported;
+end;
+
 procedure TCollectionList<T>.SetCapacity(value: Integer);
 begin
   fCollection.Capacity := value;
 end;
 
+procedure TCollectionList<T>.SetCount(value: Integer);
+begin
+  raise Error.NotSupported;
+end;
+
 procedure TCollectionList<T>.SetItem(index: Integer; const value: T);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
 {$ENDIF}
 
   fCollection.Items[index] := value;
+end;
+
+procedure TCollectionList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
+begin
+  raise Error.NotSupported;
+end;
+
+function TCollectionList<T>.ToArray: TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, fCollection.Count);
+  for i := 0 to Length(Result) - 1 do
+    Result[i] := T(fCollection.Items[i]);
+end;
+
+procedure TCollectionList<T>.TrimExcess;
+begin
+  fCollection.Capacity := fCollection.Count;
 end;
 
 {$ENDREGION}
@@ -1263,14 +1688,14 @@ end;
 constructor TCollectionList<T>.TEnumerator.Create(const list: TCollectionList<T>);
 begin
   inherited Create;
-  fList := list;
-  fList._AddRef;
-  fVersion := fList.fVersion;
+  fSource := list;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
 end;
 
 destructor TCollectionList<T>.TEnumerator.Destroy;
 begin
-  fList._Release;
+  fSource._Release;
   inherited Destroy;
 end;
 
@@ -1281,13 +1706,13 @@ end;
 
 function TCollectionList<T>.TEnumerator.MoveNext: Boolean;
 begin
-  if fVersion <> fList.fVersion then
+  if fVersion <> fSource.fVersion then
     raise Error.EnumFailedVersion;
 
-  Result := fIndex < fList.Count;
+  Result := fIndex < fSource.fCollection.Count;
   if Result then
   begin
-    fCurrent := fList.Items[fIndex];
+    fCurrent := T(fSource.fCollection.Items[fIndex]);
     Inc(fIndex);
   end
   else
@@ -1310,9 +1735,19 @@ begin
     fIterator := TAnonymousIterator<T>.Create(fCount, fItems);
 end;
 
+function TAnonymousReadOnlyList<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
 function TAnonymousReadOnlyList<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := fIterator.GetEnumerator;
+end;
+
+function TAnonymousReadOnlyList<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
 end;
 
 function TAnonymousReadOnlyList<T>.GetItem(index: Integer): T;
@@ -1325,8 +1760,8 @@ var
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
 
   Result := TCollections.CreateList<T>;
@@ -1340,13 +1775,13 @@ end;
 
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T): Integer;
 begin
-  Result := IndexOf(item, 0, Count)
+  Result := IndexOf(item, 0, fCount)
 end;
 
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T;
   index: Integer): Integer;
 begin
-  Result := IndexOf(item, index, Count - index);
+  Result := IndexOf(item, index, fCount - index);
 end;
 
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T; index,
@@ -1365,7 +1800,7 @@ end;
 
 {$REGION 'TFoldedObjectList<T>'}
 
-function TFoldedObjectList<T>.CreateList: TListBase<TObject>;
+function TFoldedObjectList<T>.CreateList: IList<TObject>;
 begin
   Result := TFoldedObjectList<T>.Create(False);
 end;
@@ -1380,7 +1815,7 @@ end;
 
 {$REGION 'TFoldedInterfaceList<T>'}
 
-function TFoldedInterfaceList<T>.CreateList: TListBase<IInterface>;
+function TFoldedInterfaceList<T>.CreateList: IList<IInterface>;
 begin
   Result := TFoldedInterfaceList<T>.Create;
 end;
@@ -1395,7 +1830,7 @@ end;
 
 {$REGION 'TFoldedSortedObjectList<T>'}
 
-function TFoldedSortedObjectList<T>.CreateList: TListBase<TObject>;
+function TFoldedSortedObjectList<T>.CreateList: IList<TObject>;
 begin
   Result := TFoldedObjectList<T>.Create(False);
 end;
@@ -1410,7 +1845,7 @@ end;
 
 {$REGION 'TFoldedSortedInterfaceList<T>'}
 
-function TFoldedSortedInterfaceList<T>.CreateList: TListBase<IInterface>;
+function TFoldedSortedInterfaceList<T>.CreateList: IList<IInterface>;
 begin
   Result := TFoldedInterfaceList<T>.Create;
 end;
@@ -1432,9 +1867,9 @@ begin
   fElementType := elementType;
 end;
 
-function TFoldedObjectList.CreateList: TListBase<TObject>;
+function TFoldedObjectList.CreateList: IList<TObject>;
 begin
-  Result := TFoldedObjectList.Create(fElementType, fComparer, False);
+  Result := TFoldedObjectList.Create(fElementType, Comparer, False);
 end;
 
 function TFoldedObjectList.GetElementType: PTypeInfo;
@@ -1454,9 +1889,9 @@ begin
   fElementType := elementType;
 end;
 
-function TFoldedInterfaceList.CreateList: TListBase<IInterface>;
+function TFoldedInterfaceList.CreateList: IList<IInterface>;
 begin
-  Result := TFoldedInterfaceList.Create(fElementType, fComparer);
+  Result := TFoldedInterfaceList.Create(fElementType, Comparer);
 end;
 
 function TFoldedInterfaceList.GetElementType: PTypeInfo;
@@ -1510,25 +1945,6 @@ begin
 
   inherited Changed(value, action);
   DoPropertyChanged('Count');
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TKeyList<TKey>'}
-
-constructor TKeyList<TKey>.Create(const comparer: IEqualityComparer<TKey>);
-begin
-  inherited Create;
-  fComparer := comparer;
-  if fComparer = nil then
-    fComparer := TEqualityComparer<TKey>.Default;
-end;
-
-function TKeyList<TKey>.IndexOf(const item: TKey; index,
-  count: Integer): Integer;
-begin
-  Result := TArray.IndexOf<TKey>(fItems, item, index, count, fComparer);
 end;
 
 {$ENDREGION}

@@ -32,6 +32,7 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
+  Spring.Collections.Events,
   Spring.VirtualInterface,
   Spring.Container.Common,
   Spring.Container.Core;
@@ -48,7 +49,7 @@ type
     fUnnamedRegistrations: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceTypeMappings: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
-    fOnChanged: ICollectionChangedEvent<TComponentModel>;
+    fOnChanged: TCollectionChangedEventImpl<TComponentModel>;
     function GetOnChanged: ICollectionChangedEvent<TComponentModel>;
   protected
     procedure CheckIsNonGuidInterface(const serviceType: TRttiType);
@@ -60,6 +61,7 @@ type
     procedure Validate(const componentType, serviceType: TRttiType; var serviceName: string);
   public
     constructor Create(const kernel: IKernel);
+    destructor Destroy; override;
 
     function RegisterComponent(componentTypeInfo: PTypeInfo): TComponentModel;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
@@ -231,7 +233,6 @@ implementation
 uses
   SysUtils,
   TypInfo,
-  Spring.Collections.Events,
   Spring.Collections.Lists,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
@@ -259,6 +260,12 @@ begin
   fServiceTypeMappings.OnValueChanged.Add(fOnChanged.Invoke);
   fServiceNameMappings := TCollections.CreateDictionary<string, TComponentModel>;
   fServiceNameMappings.OnValueChanged.Add(fOnChanged.Invoke);
+end;
+
+destructor TComponentRegistry.Destroy;
+begin
+  fOnChanged.Free;
+  inherited;
 end;
 
 procedure TComponentRegistry.CheckIsNonGuidInterface(const serviceType: TRttiType);

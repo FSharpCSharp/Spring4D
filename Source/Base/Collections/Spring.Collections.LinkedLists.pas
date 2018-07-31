@@ -42,11 +42,11 @@ type
   /// <typeparam name="T">
   ///   Specifies the element type of the linked list.
   /// </typeparam>
-  TLinkedList<T> = class(TCollectionBase<T>, ILinkedList<T>,
-    INotifyCollectionChanged<T>)
+  TLinkedList<T> = class(TCollectionBase<T>, IEnumerable<T>, ICollection<T>,
+    IReadOnlyCollection<T>, ILinkedList<T>)
   private
     type
-      TEnumerator = class(TEnumeratorBase<T>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
       private
         fList: TLinkedList<T>;
         fVersion: Integer;
@@ -54,11 +54,11 @@ type
         fNode: TLinkedListNode<T>;
         fCurrent: T;
       protected
-        function GetCurrent: T; override;
+        function GetCurrent: T;
       public
         constructor Create(const list: TLinkedList<T>);
         destructor Destroy; override;
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
   private
     // ARC notes: It is assumed that once a node enters some list it belongs to
@@ -84,19 +84,21 @@ type
     {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fHead: TLinkedListNode<T>;
   {$REGION 'Property Accessors'}
-    function GetCount: Integer; override;
+    function GetCount: Integer; 
     function GetFirst: TLinkedListNode<T>;
     function GetLast: TLinkedListNode<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
-    function AddInternal(const item: T): Boolean; override;
-    function RemoveInternal(const item: T): Boolean; override;
-    function TryGetFirst(out value: T): Boolean; override;
-    function TryGetLast(out value: T): Boolean; override;
+    function TryGetFirst(out value: T): Boolean;
+    function TryGetLast(out value: T): Boolean;
   public
     destructor Destroy; override;
 
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
+
+    function Add(const item: T): Boolean;
+    function Remove(const item: T): Boolean; overload;
+    function Extract(const item: T): T;
 
     procedure AddAfter(const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>); overload;
     function AddAfter(const node: TLinkedListNode<T>; const value: T): TLinkedListNode<T>; overload;
@@ -107,14 +109,12 @@ type
     procedure AddLast(const node: TLinkedListNode<T>); overload;
     function AddLast(const value: T): TLinkedListNode<T>; overload;
 
-    procedure Clear; override;
-
-    function Extract(const item: T): T; override;
+    procedure Clear;
 
     function Find(const value: T): TLinkedListNode<T>;
     function FindLast(const value: T): TLinkedListNode<T>;
 
-    procedure Remove(const node: TLinkedListNode<T>); reintroduce; overload;
+    procedure Remove(const node: TLinkedListNode<T>); overload;
     procedure RemoveFirst;
     procedure RemoveLast;
   end;
@@ -134,7 +134,7 @@ begin
   inherited Destroy;
 end;
 
-function TLinkedList<T>.AddInternal(const item: T): Boolean;
+function TLinkedList<T>.Add(const item: T): Boolean;
 begin
   AddLast(item);
   Result := True;
@@ -432,7 +432,7 @@ begin
   InternalRemoveNode(fHead.fPrev);
 end;
 
-function TLinkedList<T>.RemoveInternal(const item: T): Boolean;
+function TLinkedList<T>.Remove(const item: T): Boolean;
 var
   node: TLinkedListNode<T>;
 begin

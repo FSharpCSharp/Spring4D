@@ -45,21 +45,22 @@ type
     function MoveNext: Boolean;
   end;
 
-  TEmptyEnumerable<T> = class(TEmptyEnumerableBase<T>, IReadOnlyList<T>, IEnumerator<T>)
+  TEmptyEnumerable<T> = class(TEmptyEnumerableBase<T>, IEnumerator<T>,
+    IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
     class var fInstance: IReadOnlyList<T>;
     class function GetInstance: IReadOnlyList<T>; static;
     constructor Create; reintroduce;
     function GetCurrent: T;
-  protected
   {$REGION 'Property Accessors'}
-    function GetCount: Integer; override;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
     class destructor Destroy;
 
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
 
     function GetRange(index, count: Integer): IList<T>;
 
@@ -67,21 +68,22 @@ type
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
 
-    function ToArray: TArray<T>; override;
+    function ToArray: TArray<T>;
 
     class property Instance: IReadOnlyList<T> read GetInstance;
   end;
 
-  TArrayIterator<T> = class(TIterator<T>, IReadOnlyList<T>, IArrayAccess<T>)
+  TArrayIterator<T> = class(TIterator<T>, IEnumerable<T>, IReadOnlyList<T>, IArrayAccess<T>, IEqualityComparer<T>)
   private
     fValues: TArray<T>;
     fIndex: Integer;
-  protected
   {$REGION 'Property Accessors'}
-    function GetCount: Integer; override;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
     function GetItem(index: Integer): T;
     function GetItems: TArray<T>;
   {$ENDREGION}
+  protected
     function Clone: TIterator<T>; override;
     function TryMoveNext(var current: T): Boolean; override;
   public
@@ -94,14 +96,14 @@ type
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
 
-    function ToArray: TArray<T>; override;
+    function ToArray: TArray<T>;
   end;
 
   /// <summary>
   ///   The adapter implementation for <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />
   ///    .
   /// </summary>
-  TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
+  TEnumeratorAdapter<T> = class(TInterfacedObject, IEnumerator<T>)
   private
     type
       TGenericEnumerable = Generics.Collections.TEnumerable<T>;
@@ -111,11 +113,11 @@ type
     fEnumerator: TGenericEnumerator;
     procedure Start;
   protected
-    function GetCurrent: T; override;
+    function GetCurrent: T;
   public
     constructor Create(const source: TGenericEnumerable);
     destructor Destroy; override;
-    function MoveNext: Boolean; override;
+    function MoveNext: Boolean;
     property Current: T read GetCurrent;
   end;
 
@@ -123,7 +125,7 @@ type
   ///   The adapter implementation for <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
   ///    .
   /// </summary>
-  TEnumerableAdapter<T> = class(TEnumerableBase<T>)
+  TEnumerableAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>)
   private
     type
       TGenericEnumerable = Generics.Collections.TEnumerable<T>;
@@ -131,10 +133,10 @@ type
     fSource: TGenericEnumerable;
   public
     constructor Create(const source: TGenericEnumerable);
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
   end;
 
-  TWhereIterator<T> = class(TSourceIterator<T>)
+  TWhereIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fPredicate: Predicate<T>;
     fEnumerator: IEnumerator<T>;
@@ -147,10 +149,10 @@ type
     constructor Create(const source: IEnumerable<T>;
       const predicate: Predicate<T>);
 
-    function Where(const predicate: Predicate<T>): IEnumerable<T>; override;
+    function Where(const predicate: Predicate<T>): IEnumerable<T>;
   end;
 
-  TWhereIndexIterator<T> = class(TSourceIterator<T>)
+  TWhereIndexIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fPredicate: Func<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
@@ -165,7 +167,7 @@ type
       const predicate: Func<T, Integer, Boolean>);
   end;
 
-  TSkipIterator<T> = class(TSourceIterator<T>)
+  TSkipIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fCount: Integer;
     fEnumerator: IEnumerator<T>;
@@ -179,7 +181,7 @@ type
     constructor Create(const source: IEnumerable<T>; count: Integer);
   end;
 
-  TSkipWhileIterator<T> = class(TSourceIterator<T>)
+  TSkipWhileIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fPredicate: Predicate<T>;
     fEnumerator: IEnumerator<T>;
@@ -193,7 +195,7 @@ type
     constructor Create(const source: IEnumerable<T>; const predicate: Predicate<T>);
   end;
 
-  TSkipWhileIndexIterator<T> = class(TSourceIterator<T>)
+  TSkipWhileIndexIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fPredicate: Func<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
@@ -208,7 +210,7 @@ type
     constructor Create(const source: IEnumerable<T>; const predicate: Func<T, Integer, Boolean>);
   end;
 
-  TTakeIterator<T> = class(TSourceIterator<T>)
+  TTakeIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fCount: Integer;
     fEnumerator: IEnumerator<T>;
@@ -222,7 +224,7 @@ type
     constructor Create(const source: IEnumerable<T>; count: Integer);
   end;
 
-  TTakeWhileIterator<T> = class(TSourceIterator<T>)
+  TTakeWhileIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fPredicate: Predicate<T>;
     fEnumerator: IEnumerator<T>;
@@ -235,7 +237,7 @@ type
     constructor Create(const source: IEnumerable<T>; const predicate: Predicate<T>);
   end;
 
-  TTakeWhileIndexIterator<T> = class(TSourceIterator<T>)
+  TTakeWhileIndexIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fPredicate: Func<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
@@ -249,7 +251,7 @@ type
     constructor Create(const source: IEnumerable<T>; const predicate: Func<T, Integer, Boolean>);
   end;
 
-  TConcatIterator<T> = class(TSourceIterator<T>)
+  TConcatIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fSecond: IEnumerable<T>;
     fEnumerator: IEnumerator<T>;
@@ -263,7 +265,7 @@ type
     constructor Create(const first, second: IEnumerable<T>);
   end;
 
-  TReversedIterator<T> = class(TSourceIterator<T>)
+  TReversedIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fBuffer: TArray<T>;
     fIndex: Integer;
@@ -276,7 +278,7 @@ type
     constructor Create(const source: IEnumerable<T>);
   end;
 
-  TDistinctIterator<T> = class(TSourceIterator<T>)
+  TDistinctIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fComparer: IEqualityComparer<T>;
     fSet: ISet<T>;
@@ -290,7 +292,7 @@ type
     constructor Create(const source: IEnumerable<T>; const comparer: IEqualityComparer<T>);
   end;
 
-  TDistinctByIterator<T,TKey> = class(TSourceIterator<T>)
+  TDistinctByIterator<T,TKey> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fKeySelector: Func<T, TKey>;
     fComparer: IEqualityComparer<TKey>;
@@ -306,22 +308,25 @@ type
       const comparer: IEqualityComparer<TKey>);
   end;
 
-  TRangeIterator = class(TIterator<Integer>)
+  TRangeIterator = class(TIterator<Integer>, IEnumerable<Integer>)
   private
     fStart: Integer;
     fCount: Integer;
     fIndex: Integer;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
   protected
     function Clone: TIterator<Integer>; override;
-    function GetCount: Integer; override;
     function TryMoveNext(var current: Integer): Boolean; override;
   public
     constructor Create(start, count: Integer);
 
-    function ToArray: TArray<Integer>; override;
+    function ToArray: TArray<Integer>;
   end;
 
-  TExceptIterator<T> = class(TSourceIterator<T>)
+  TExceptIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
@@ -337,7 +342,7 @@ type
     constructor Create(const first, second: IEnumerable<T>; const comparer: IEqualityComparer<T>); overload;
   end;
 
-  TIntersectIterator<T> = class(TSourceIterator<T>)
+  TIntersectIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
@@ -353,7 +358,7 @@ type
     constructor Create(const first, second: IEnumerable<T>; const comparer: IEqualityComparer<T>); overload;
   end;
 
-  TUnionIterator<T> = class(TSourceIterator<T>)
+  TUnionIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
@@ -370,7 +375,7 @@ type
     constructor Create(const first, second: IEnumerable<T>; const comparer: IEqualityComparer<T>); overload;
   end;
 
-  TSelectIterator<TSource, TResult> = class(TIterator<TResult>)
+  TSelectIterator<TSource, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fSelector: Func<TSource, TResult>;
@@ -385,7 +390,7 @@ type
       const selector: Func<TSource, TResult>);
   end;
 
-  TSelectIndexIterator<TSource, TResult> = class(TIterator<TResult>)
+  TSelectIndexIterator<TSource, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fSelector: Func<TSource, Integer, TResult>;
@@ -401,10 +406,11 @@ type
       const selector: Func<TSource, Integer, TResult>);
   end;
 
-  TGroupedEnumerable<TSource, TKey, TElement> = class(TEnumerableBase<IGrouping<TKey, TElement>>)
+  TGroupedEnumerable<TSource, TKey, TElement> = class(
+    TEnumerableBase<IGrouping<TKey, TElement>>, IEnumerable<IGrouping<TKey, TElement>>)
   private
     type
-      TEnumerator = class(TEnumeratorBase<IGrouping<TKey, TElement>>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<IGrouping<TKey, TElement>>)
       private
         fSource: IEnumerable<TSource>;
         fKeySelector: Func<TSource, TKey>;
@@ -414,13 +420,13 @@ type
         fEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
         procedure Start;
       protected
-        function GetCurrent: IGrouping<TKey, TElement>; override;
+        function GetCurrent: IGrouping<TKey, TElement>;
       public
         constructor Create(const source: IEnumerable<TSource>;
           const keySelector: Func<TSource, TKey>;
           const elementSelector: Func<TSource, TElement>;
           const comparer: IEqualityComparer<TKey>);
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
   private
     fSource: IEnumerable<TSource>;
@@ -435,22 +441,23 @@ type
       const keySelector: Func<TSource, TKey>;
       const elementSelector: Func<TSource, TElement>;
       const comparer: IEqualityComparer<TKey>); overload;
-    function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>; override;
+    function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
   end;
 
-  TGroupedEnumerable<TSource, TKey, TElement, TResult> = class(TEnumerableBase<TResult>)
+  TGroupedEnumerable<TSource, TKey, TElement, TResult> = class(
+    TEnumerableBase<TResult>, IEnumerable<TResult>)
   private
     type
-      TEnumerator = class(TEnumeratorBase<TResult>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<TResult>)
       private
         fSource: IEnumerator<IGrouping<TKey, TElement>>;
         fResultSelector: Func<TKey, Ienumerable<TElement>, TResult>;
       protected
-        function GetCurrent: TResult; override;
+        function GetCurrent: TResult;
       public
         constructor Create(const source: IEnumerator<IGrouping<TKey, TElement>>;
           const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>);
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
   private
     fSource: IEnumerable<TSource>;
@@ -468,23 +475,26 @@ type
       const elementSelector: Func<TSource, TElement>;
       const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>;
       const comparer: IEqualityComparer<TKey>); overload;
-    function GetEnumerator: IEnumerator<TResult>; override;
+    function GetEnumerator: IEnumerator<TResult>;
   end;
 
-  TLookup<TKey, TElement> = class(TEnumerableBase<IGrouping<TKey, TElement>>, ILookup<TKey, TElement>)
+  TLookup<TKey, TElement> = class(TEnumerableBase<IGrouping<TKey, TElement>>,
+    IEnumerable<IGrouping<TKey, TElement>>, ILookup<TKey, TElement>)
   private
     type
-      TGrouping = class(TEnumerableBase<TElement>, IGrouping<TKey, TElement>)
+      TGrouping = class(TEnumerableBase<TElement>, IEnumerable<TElement>, IGrouping<TKey, TElement>)
       private
         fKey: TKey;
         fElements: IList<TElement>;
+      {$REGION 'Property Accessors'}
+        function GetCount: Integer;
+        function GetIsEmpty: Boolean;
         function GetKey: TKey;
+      {$ENDREGION}
         procedure Add(const item: TElement);
-      protected
-        function GetCount: Integer; override;
       public
         constructor Create(const key: TKey);
-        function GetEnumerator: IEnumerator<TElement>; override;
+        function GetEnumerator: IEnumerator<TElement>;
         property Key: TKey read GetKey;
       end;
 
@@ -493,28 +503,30 @@ type
         procedure Changed(const item: TGrouping;
           action: TCollectionChangedAction); override;
       public
-        constructor Create; override;
+        constructor Create; reintroduce;
       end;
 
-      TEnumerator = class(TEnumeratorBase<IGrouping<TKey, TElement>>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<IGrouping<TKey, TElement>>)
       private
         fSource: IList<TGrouping>;
         fIndex: Integer;
         fLookup: IInterface;
       protected
-        function GetCurrent: IGrouping<TKey, TElement>; override;
+        function GetCurrent: IGrouping<TKey, TElement>;
       public
         constructor Create(const source: TLookup<TKey, TElement>);
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
   private
     fComparer: IEqualityComparer<TKey>;
     fGroupings: IList<TGrouping>;
     fGroupingKeys: TDictionary<TKey, TGrouping>;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
     function GetGrouping(const key: TKey; create: Boolean): TGrouping;
+    function GetIsEmpty: Boolean;
     function GetItem(const key: TKey): IEnumerable<TElement>;
-  protected
-    function GetCount: Integer; override;
+  {$ENDREGION}
   public
     constructor Create; reintroduce; overload;
     constructor Create(const comparer: IEqualityComparer<TKey>); overload;
@@ -530,12 +542,12 @@ type
       const comparer: IEqualityComparer<TKey>): TLookup<TKey, TElement>; static;
     destructor Destroy; override;
 
-    function Contains(const key: TKey): Boolean;
-    function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>; override;
+    function Contains(const key: TKey): Boolean; overload;
+    function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
     property Item[const key: TKey]: IEnumerable<TElement> read GetItem; default;
   end;
 
-  TJoinIterator<TOuter, TInner, TKey, TResult> = class(TIterator<TResult>)
+  TJoinIterator<TOuter, TInner, TKey, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fOuter: IEnumerable<TOuter>;
     fInner: IEnumerable<TInner>;
@@ -568,7 +580,7 @@ type
     destructor Destroy; override;
   end;
 
-  TGroupJoinIterator<TOuter, TInner, TKey, TResult> = class(TIterator<TResult>)
+  TGroupJoinIterator<TOuter, TInner, TKey, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fOuter: IEnumerable<TOuter>;
     fInner: IEnumerable<TInner>;
@@ -598,7 +610,7 @@ type
     destructor Destroy; override;
   end;
 
-  TSelectManyIterator<TSource, TResult> = class(TIterator<TResult>)
+  TSelectManyIterator<TSource, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fSelector: Func<TSource, IEnumerable<TResult>>;
@@ -615,7 +627,7 @@ type
       const selector: Func<TSource, IEnumerable<TResult>>);
   end;
 
-  TSelectManyIndexIterator<TSource, TResult> = class(TIterator<TResult>)
+  TSelectManyIndexIterator<TSource, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fSelector: Func<TSource, Integer, IEnumerable<TResult>>;
@@ -633,7 +645,7 @@ type
       const selector: Func<TSource, Integer, IEnumerable<TResult>>);
   end;
 
-  TSelectManyIterator<TSource, TCollection, TResult> = class(TIterator<TResult>)
+  TSelectManyIterator<TSource, TCollection, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fCollectionSelector: Func<TSource, IEnumerable<TCollection>>;
@@ -653,7 +665,7 @@ type
       const resultSelector: Func<TSource, TCollection, TResult>);
   end;
 
-  TSelectManyIndexIterator<TSource, TCollection, TResult> = class(TIterator<TResult>)
+  TSelectManyIndexIterator<TSource, TCollection, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fCollectionSelector: Func<TSource, Integer, IEnumerable<TCollection>>;
@@ -703,30 +715,33 @@ type
       const next: IEnumerableSorter<TElement>);
   end;
 
-  TOrderedEnumerable<T> = class(TEnumerableBase<T>)
+  TOrderedEnumerable<T> = class(TEnumerableBase<T>, IEnumerable<T>)
   private
     type
-      TEnumerator = class(TEnumeratorBase<T>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
       private
         fBuffer: TArray<T>;
         fMap: TIntegerDynArray;
         fIndex: Integer;
       protected
-        function GetCurrent: T; override;
+        function GetCurrent: T;
       public
         constructor Create(const source: IEnumerable<T>;
           const sorter: IEnumerableSorter<T>);
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
   private
     fSource: IEnumerable<T>;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
   protected
-    function GetCount: Integer; override;
     function GetElementType: PTypeInfo; override;
     function GetEnumerableSorter(
       const next: IEnumerableSorter<T>): IEnumerableSorter<T>; virtual; abstract;
   public
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
   end;
 
   TOrderedEnumerable<TElement, TKey> = class(TOrderedEnumerable<TElement>)
@@ -746,7 +761,7 @@ type
       descending: Boolean = False); overload;
   end;
 
-  TOrderedIterator<T> = class(TSourceIterator<T>)
+  TOrderedIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fComparer: IComparer<T>;
     fValues: TArray<T>;
@@ -761,7 +776,7 @@ type
       const comparer: IComparer<T>);// descending: Boolean);
   end;
 
-  TZipIterator<TFirst, TSecond, TResult> = class(TIterator<TResult>)
+  TZipIterator<TFirst, TSecond, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fFirst: IEnumerable<TFirst>;
     fSecond: IEnumerable<TSecond>;
@@ -779,7 +794,7 @@ type
       const resultSelector: Func<TFirst, TSecond, TResult>);
   end;
 
-  TDefaultIfEmptyIterator<T> = class(TSourceIterator<T>)
+  TDefaultIfEmptyIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fDefaultValue: T;
     fEnumerator: IEnumerator<T>;
@@ -793,7 +808,7 @@ type
     constructor Create(const source: IEnumerable<T>; const defaultValue: T);
   end;
 
-  TExtremaByIterator<T, TKey> = class(TSourceIterator<T>)
+  TExtremaByIterator<T, TKey> = class(TSourceIterator<T>, IEnumerable<T>)
   private
     fKeySelector: Func<T, TKey>;
     fCompare: Func<TKey, TKey, Integer>;
@@ -810,7 +825,7 @@ type
       const compare: Func<TKey, TKey, Integer>);
   end;
 
-  TCastIterator<T, TResult> = class(TIterator<TResult>)
+  TCastIterator<T, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fSource: IEnumerable<T>;
     fEnumerator: IEnumerator<T>;
@@ -823,7 +838,7 @@ type
     constructor Create(const source: IEnumerable<T>);
   end;
 
-  TOfTypeIterator<T, TResult> = class(TIterator<TResult>)
+  TOfTypeIterator<T, TResult> = class(TIterator<TResult>, IEnumerable<TResult>)
   private
     fSource: IEnumerable<T>;
     fEnumerator: IEnumerator<T>;
@@ -836,27 +851,33 @@ type
     constructor Create(const source: IEnumerable<T>);
   end;
 
-  TRepeatIterator<T> = class(TIterator<T>)
+  TRepeatIterator<T> = class(TIterator<T>, IEnumerable<T>)
   private
     fElement: T;
     fCount: Integer;
     fIndex: Integer;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
   protected
     function Clone: TIterator<T>; override;
-    function GetCount: Integer; override;
     function TryMoveNext(var current: T): Boolean; override;
   public
     constructor Create(const element: T; count: Integer);
   end;
 
-  TAnonymousIterator<T> = class(TIterator<T>)
+  TAnonymousIterator<T> = class(TIterator<T>, IEnumerable<T>)
   private
     fCount: Func<Integer>;
     fItems: Func<Integer, T>;
     fIndex: Integer;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
   protected
     function Clone: TIterator<T>; override;
-    function GetCount: Integer; override;
     function TryMoveNext(var current: T): Boolean; override;
   public
     constructor Create(const count: Func<Integer>; const items: Func<Integer, T>);
@@ -917,9 +938,14 @@ begin
   Result := fInstance;
 end;
 
+function TEmptyEnumerable<T>.GetIsEmpty: Boolean;
+begin
+  Result := True;
+end;
+
 function TEmptyEnumerable<T>.GetItem(index: Integer): T;
 begin
-  Guard.RaiseArgumentOutOfRangeException('index');
+  raise Error.ArgumentOutOfRange('index');
 end;
 
 function TEmptyEnumerable<T>.GetRange(index, count: Integer): IList<T>;
@@ -977,10 +1003,15 @@ begin
   Result := Length(fValues);
 end;
 
+function TArrayIterator<T>.GetIsEmpty: Boolean;
+begin
+  Result := fValues = nil;
+end;
+
 function TArrayIterator<T>.GetItem(index: Integer): T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < Length(fValues)), 'index');
 {$ENDIF}
 
   Result := fValues[index];
@@ -1011,12 +1042,12 @@ end;
 
 function TArrayIterator<T>.IndexOf(const item: T): Integer;
 begin
-  Result := IndexOf(item, 0, Count);
+  Result := IndexOf(item, 0, Length(fValues));
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
 begin
-  Result := IndexOf(item, index, Count - index);
+  Result := IndexOf(item, index, Length(fValues) - index);
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T; index,
@@ -1679,6 +1710,11 @@ begin
   Result := fCount;
 end;
 
+function TRangeIterator.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
+end;
+
 function TRangeIterator.TryMoveNext(var current: Integer): Boolean;
 begin
   Result := fIndex < fCount;
@@ -2202,6 +2238,11 @@ begin
   end;
 end;
 
+function TLookup<TKey, TElement>.GetIsEmpty: Boolean;
+begin
+  Result := fGroupings.IsEmpty;
+end;
+
 function TLookup<TKey, TElement>.GetItem(
   const key: TKey): IEnumerable<TElement>;
 var
@@ -2239,6 +2280,11 @@ begin
   Result := fElements.GetEnumerator;
 end;
 
+function TLookup<TKey, TElement>.TGrouping.GetIsEmpty: Boolean;
+begin
+  Result := fElements.IsEmpty;
+end;
+
 function TLookup<TKey, TElement>.TGrouping.GetKey: TKey;
 begin
   Result := fKey;
@@ -2251,8 +2297,7 @@ end;
 
 constructor TLookup<TKey, TElement>.TGroupings.Create;
 begin
-  inherited Create;
-  OwnsObjects := False;
+  inherited Create(False);
 end;
 
 procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TGrouping;
@@ -2364,7 +2409,7 @@ begin
       fIndex := 0;
     end;
 
-    if fIndex < fGrouping.Count then
+    if fIndex < fGrouping.fElements.Count then
     begin
       current := fResultSelector(item, fGrouping.fElements[fIndex]);
       Inc(fIndex);
@@ -2838,6 +2883,11 @@ begin
   Result := TEnumerator.Create(fSource, GetEnumerableSorter(nil));
 end;
 
+function TOrderedEnumerable<T>.GetIsEmpty: Boolean;
+begin
+  Result := fSource.IsEmpty;
+end;
+
 {$ENDREGION}
 
 
@@ -3244,6 +3294,11 @@ begin
   Result := fCount;
 end;
 
+function TRepeatIterator<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
+end;
+
 function TRepeatIterator<T>.TryMoveNext(var current: T): Boolean;
 begin
   Result := fIndex < fCount;
@@ -3276,9 +3331,14 @@ begin
   Result := fCount;
 end;
 
+function TAnonymousIterator<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
+end;
+
 function TAnonymousIterator<T>.TryMoveNext(var current: T): Boolean;
 begin
-  Result :=  fIndex < fCount;
+  Result := fIndex < fCount;
   if Result then
   begin
     current := fItems(fIndex);

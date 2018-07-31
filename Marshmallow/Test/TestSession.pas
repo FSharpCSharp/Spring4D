@@ -635,7 +635,7 @@ var
   sSql: string;
 begin
   sSql := 'SELECT * FROM ' + TBL_PEOPLE;
-  LCollection := TCollections.CreateList<TCustomer>(True);
+  LCollection := TCollections.CreateObjectList<TCustomer>(True);
 
   FSession.FetchFromCustomQuery(sSql, nil, LCollection as IObjectList, TCustomer);
   CheckEquals(0, LCollection.Count);
@@ -1123,7 +1123,7 @@ var
   i: Integer;
   LTran: IDBTransaction;
 begin
-  customers := TCollections.CreateList<TCustomer>(True);
+  customers := TCollections.CreateObjectList<TCustomer>(True);
   for i := 1 to 100 do
   begin
     LCustomer := TCustomer.Create;

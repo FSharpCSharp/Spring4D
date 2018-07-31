@@ -159,6 +159,7 @@ type
     // Will actually test Add as well
     procedure TestAddRange_Sorted;
     procedure TestAddRange_NotSorted;
+    procedure SetItemRaisesNotSupported;
 
     procedure TestReturnsMinusOneWhenNotFound;
   end;
@@ -809,13 +810,13 @@ end;
 procedure TTestIntegerList.GetCapacity;
 begin
   SimpleFillList;
-  CheckEquals(4, TList<Integer>(SUT).Capacity);
+  CheckEquals(4, SUT.Capacity);
 end;
 
 procedure TTestIntegerList.SetCapacity;
 begin
   SimpleFillList;
-  TList<Integer>(SUT).Capacity := 2;
+  SUT.Capacity := 2;
   CheckTrue(SUT.EqualsTo([1, 2]));
 end;
 
@@ -992,10 +993,10 @@ end;
 type
   TIntegerList = class(TList<Integer>)
   public
-    procedure Clear; override;
+    destructor Destroy; override;
   end;
 
-procedure TIntegerList.Clear;
+destructor TIntegerList.Destroy;
 var
   i: Integer;
 begin
@@ -1056,7 +1057,7 @@ procedure TTestIntegerList.TestListCountWithAdd;
 var
   i: Integer;
 begin
-  (SUT as TList<Integer>).Capacity := ListCountLimit;
+  SUT.Capacity := ListCountLimit;
   for i := 1 to ListCountLimit do
   begin
     SUT.Add(i);
@@ -1330,6 +1331,12 @@ begin
   CheckEquals(Length(SortedPrimes), SUT.Count);
   for i := 0 to High(SortedPrimes) do
     CheckEquals(SortedPrimes[i], SUT[i]);
+end;
+
+procedure TTestSortedList.SetItemRaisesNotSupported;
+begin
+  SUT.Add(1);
+  CheckException(ENotSupportedException, procedure begin SUT[0] := 1 end);
 end;
 
 procedure TTestSortedList.SetUp;
@@ -2775,10 +2782,13 @@ begin
 end;
 
 procedure TTestObjectList.TestSetOwnsObjects;
+var
+  list: ICollectionOwnership;
 begin
-  CheckTrue(TObjectList<TPersistent>(SUT).OwnsObjects);
-  TObjectList<TPersistent>(SUT).OwnsObjects := False;
-  CheckFalse(TObjectList<TPersistent>(SUT).OwnsObjects);
+  list := SUT as ICollectionOwnership;
+  CheckTrue(list.OwnsObjects);
+  list.OwnsObjects := False;
+  CheckFalse(list.OwnsObjects);
 end;
 
 {$ENDREGION}
@@ -3675,9 +3685,7 @@ procedure TTestRedBlackTreeInteger.FuzzyTesting;
     Check(inputSorted.EqualsTo(SUT.ToArray));
 
     for i := inputSorted.Min - 10 to inputSorted.Max + 10 do
-    begin
       CheckEquals(inputSorted.Contains(i), SUT.Exists(i));
-    end;
 
     for i := 0 to Length(input) - 1 do
     begin

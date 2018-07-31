@@ -37,12 +37,15 @@ type
   TCollectionChangedEventImpl<T> = class(TEventBase, ICollectionChangedEvent<T>)
   private
     function GetInvoke: TCollectionChangedEvent<T>;
-    procedure Add(handler: TCollectionChangedEvent<T>);
-    procedure Remove(handler: TCollectionChangedEvent<T>);
-    procedure InternalInvoke(Sender: TObject; const Item: T;
-      Action: TCollectionChangedAction);
   public
     constructor Create;
+{$IFNDEF AUTOREFCOUNT}
+    procedure Free;
+{$ENDIF}
+    procedure Add(handler: TCollectionChangedEvent<T>); inline;
+    procedure Remove(handler: TCollectionChangedEvent<T>); inline;
+    procedure Invoke(Sender: TObject; const Item: T;
+      Action: TCollectionChangedAction);
   end;
 
 implementation
@@ -53,8 +56,19 @@ implementation
 constructor TCollectionChangedEventImpl<T>.Create;
 begin
   inherited Create;
-  TCollectionChangedEvent<T>(fInvoke) := InternalInvoke;
+  TCollectionChangedEvent<T>(fInvoke) := Invoke;
+{$IFNDEF AUTOREFCOUNT}
+  _AddRef;
+{$ENDIF}
 end;
+
+{$IFNDEF AUTOREFCOUNT}
+procedure TCollectionChangedEventImpl<T>.Free;
+begin
+  if Assigned(Self) then
+    _Release;
+end;
+{$ENDIF}
 
 procedure TCollectionChangedEventImpl<T>.Add(
   handler: TCollectionChangedEvent<T>);
@@ -67,7 +81,7 @@ begin
   Result := TCollectionChangedEvent<T>(inherited Invoke);
 end;
 
-procedure TCollectionChangedEventImpl<T>.InternalInvoke(Sender: TObject;
+procedure TCollectionChangedEventImpl<T>.Invoke(Sender: TObject;
   const Item: T; Action: TCollectionChangedAction);
 var
   handler: TMethodPointer;

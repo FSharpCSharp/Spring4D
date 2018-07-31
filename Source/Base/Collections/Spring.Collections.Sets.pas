@@ -68,13 +68,14 @@ type
   /// <typeparam name="T">
   ///   The type of elements in the hash set.
   /// </typeparam>
-  THashSet<T> = class(TSetBase<T>, ISet<T>)
+  THashSet<T> = class(TSetBase<T>, INotifyCollectionChanged<T>, IEnumerable<T>,
+    ICollection<T>, IReadOnlyCollection<T>, ISet<T>)
   private
   {$REGION 'Nested Types'}
     type
       TItem = THashSetItem<T>;
 
-      TEnumerator = class(TEnumeratorBase<T>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: THashSet<T>;
@@ -82,11 +83,11 @@ type
         fVersion: Integer;
         fCurrent: T;
       protected
-        function GetCurrent: T; override;
+        function GetCurrent: T;
       public
         constructor Create(const source: THashSet<T>);
         destructor Destroy; override;
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
   {$ENDREGION}
   private
@@ -117,39 +118,47 @@ type
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
-    function GetCount: Integer; override;
+    function GetCount: Integer; 
+    function GetIsEmpty: Boolean;
     function GetItem(index: Integer): T;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
     class function CreateSet: ISet<T>; override;
-    function AddInternal(const item: T): Boolean; override;
-    function RemoveInternal(const item: T): Boolean; override;
+    function TryGetElementAt(out item: T; index: Integer): Boolean; override;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
     constructor Create(const comparer: IEqualityComparer<T>); overload;
     constructor Create(capacity: Integer;
       const comparer: IEqualityComparer<T>); overload;
-
     destructor Destroy; override;
 
-    function TryGetElementAt(out item: T; index: Integer): Boolean; override;
-    function GetEnumerator: IEnumerator<T>; override;
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
+    function Contains(const item: T): Boolean;
+    function ToArray: TArray<T>;
+  {$ENDREGION}
 
-    function Extract(const item: T): T; override;
-    procedure Clear; override;
+  {$REGION 'Implements ICollection<T>'}
+    function Add(const item: T): Boolean;
+    function Remove(const item: T): Boolean;
+    function Extract(const item: T): T;
+
+    procedure Clear;
+  {$ENDREGION}
+
+  {$REGION 'Implements ISet<T>'}
     procedure TrimExcess;
-
-    function Contains(const item: T): Boolean; override;
-    function ToArray: TArray<T>; override;
+  {$ENDREGION}
   end;
 
-  TSortedSet<T> = class(TSetBase<T>, ISet<T>)
+  TSortedSet<T> = class(TSetBase<T>, INotifyCollectionChanged<T>, IEnumerable<T>,
+    ICollection<T>, IReadOnlyCollection<T>, ISet<T>)
   private
   {$REGION 'Nested Types'}
     type
       PNode = TNodes<T>.PRedBlackTreeNode;
-      TEnumerator = class(TEnumeratorBase<T>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedSet<T>;
@@ -157,11 +166,11 @@ type
         fCurrent: PNode;
         fFinished: Boolean;
       protected
-        function GetCurrent: T; override;
+        function GetCurrent: T;
       public
         constructor Create(const source: TSortedSet<T>);
         destructor Destroy; override;
-        function MoveNext: Boolean; override;
+        function MoveNext: Boolean;
       end;
   {$ENDREGION}
   private
@@ -170,25 +179,31 @@ type
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
-    function GetCount: Integer; override;
+    function GetCount: Integer; 
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
     class function CreateSet: ISet<T>; override;
-    function AddInternal(const item: T): Boolean; override;
-    function RemoveInternal(const item: T): Boolean; override;
   public
     constructor Create; overload; override;
     constructor Create(const comparer: IComparer<T>); overload;
     destructor Destroy; override;
 
-    function GetEnumerator: IEnumerator<T>; override;
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
+    function Contains(const item: T): Boolean;
+    function ToArray: TArray<T>;
+  {$ENDREGION}
 
-    function Extract(const item: T): T; override;
-    procedure Clear; override;
+  {$REGION 'Implements ICollection<T>'}
+    function Add(const item: T): Boolean;
+    function Remove(const item: T): Boolean;
+    function Extract(const item: T): T;
+    procedure Clear;
+  {$ENDREGION}
+
+  {$REGION 'Implements ISet<T>'}
     procedure TrimExcess;
-
-    function Contains(const item: T): Boolean; override;
-    function ToArray: TArray<T>; override;
+  {$ENDREGION}
   end;
 
 implementation
@@ -198,6 +213,7 @@ uses
   Spring,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
+  Spring.Events.Base,
   Spring.ResourceStrings;
 
 
@@ -212,7 +228,7 @@ begin
 {$ENDIF}
 
   for item in other do
-    Remove(item);
+    ICollection<T>(this).Remove(item);
 end;
 
 procedure TSetBase<T>.IntersectWith(const other: IEnumerable<T>);
@@ -225,12 +241,12 @@ begin
 {$ENDIF}
 
   list := TCollections.CreateList<T>;
-  for item in Self do
+  for item in this do
     if not other.Contains(item) then
       list.Add(item);
 
   for item in list do
-    Remove(item);
+    ICollection<T>(this).Remove(item);
 end;
 
 function TSetBase<T>.IsSubsetOf(const other: IEnumerable<T>): Boolean;
@@ -241,7 +257,7 @@ begin
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-  for item in Self do
+  for item in this do
     if not other.Contains(item) then
       Exit(False);
 
@@ -296,7 +312,7 @@ begin
       Exit(False);
   end;
 
-  for item in Self do
+  for item in this do
     if not localSet.Contains(item) then
       Exit(False);
 
@@ -312,7 +328,7 @@ begin
 {$ENDIF}
 
   for item in other do
-    Add(item);
+    ICollection<T>(this).Add(item);
 end;
 
 {$ENDREGION}
@@ -536,7 +552,7 @@ begin
   Changed(item, action);
 end;
 
-function THashSet<T>.AddInternal(const item: T): Boolean;
+function THashSet<T>.Add(const item: T): Boolean;
 var
   bucketIndex, itemIndex, hashCode: Integer;
 begin
@@ -612,6 +628,11 @@ begin
   Result := fCount;
 end;
 
+function THashSet<T>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
+end;
+
 function THashSet<T>.GetItem(index: Integer): T;
 begin
   if fCount <> fItemCount then
@@ -619,7 +640,7 @@ begin
   Result := fItems[index].Item;
 end;
 
-function THashSet<T>.RemoveInternal(const item: T): Boolean;
+function THashSet<T>.Remove(const item: T): Boolean;
 var
   bucketIndex, itemIndex: Integer;
 begin
@@ -716,7 +737,7 @@ begin
   inherited Destroy;
 end;
 
-function TSortedSet<T>.AddInternal(const item: T): Boolean;
+function TSortedSet<T>.Add(const item: T): Boolean;
 begin
   IncUnchecked(fVersion);
   Result := fTree.Add(item);
@@ -775,7 +796,7 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
-function TSortedSet<T>.RemoveInternal(const item: T): Boolean;
+function TSortedSet<T>.Remove(const item: T): Boolean;
 var
   node: PNode;
 begin

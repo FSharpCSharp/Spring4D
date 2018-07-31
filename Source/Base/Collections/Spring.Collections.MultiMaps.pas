@@ -36,69 +36,72 @@ uses
   Spring.Collections.Dictionaries;
 
 type
-  TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>,
-    IMultiMap<TKey, TValue>, IReadOnlyMultiMap<TKey, TValue>)
+  TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>)
   private
+  {$REGION 'Nested Types'}
     type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
 
-      TEnumerator = class(TEnumeratorBase<TKeyValuePair>)
+      TEnumerator = class(TInterfacedObject, IEnumerator<TKeyValuePair>)
       private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TMultiMapBase<TKey, TValue>;
         fDictionaryEnumerator: IEnumerator<TPair<TKey, IList<TValue>>>;
         fCollectionEnumerator: IEnumerator<TValue>;
-      protected
-        function GetCurrent: TKeyValuePair; override;
+        function GetCurrent: TKeyValuePair;
       public
         constructor Create(const source: TMultiMapBase<TKey, TValue>);
-        function MoveNext: Boolean; override;
+        destructor Destroy; override;
+        function MoveNext: Boolean;
       end;
 
-      TValueEnumerator = class(TEnumeratorBase<TValue>)
-      private
-        fSource: TMultiMapBase<TKey, TValue>;
-        fSourceEnumerator: IEnumerator<TKeyValuePair>;
-      protected
-        function GetCurrent: TValue; override;
-      public
-        constructor Create(const source: TMultiMapBase<TKey, TValue>);
-        function MoveNext: Boolean; override;
-      end;
-
-      TValueCollection = class(TContainedReadOnlyCollection<TValue>)
+      TValueEnumerator = class(TInterfacedObject, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fOwner: TMultiMapBase<TKey, TValue>;
-      protected
+        fSource: TMultiMapBase<TKey, TValue>;
+        fSourceEnumerator: IEnumerator<TKeyValuePair>;
+        function GetCurrent: TValue;
+      public
+        constructor Create(const source: TMultiMapBase<TKey, TValue>);
+        destructor Destroy; override;
+        function MoveNext: Boolean;
+      end;
+
+      TValueCollection = class(TContainedReadOnlyCollection<TValue>,
+        IEnumerable<TValue>, IReadOnlyCollection<TValue>)
+      private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TMultiMapBase<TKey, TValue>;
       {$REGION 'Property Accessors'}
-        function GetCount: Integer; override;
+        function GetCount: Integer;
+        function GetIsEmpty: Boolean;
       {$ENDREGION}
       public
-        constructor Create(const owner: TMultiMapBase<TKey, TValue>);
+        constructor Create(const source: TMultiMapBase<TKey, TValue>);
 
       {$REGION 'Implements IEnumerable<TValue>'}
-        function GetEnumerator: IEnumerator<TValue>; override;
+        function GetEnumerator: IEnumerator<TValue>;
         function Contains(const value: TValue;
-          const comparer: IEqualityComparer<TValue>): Boolean; override;
-        function ToArray: TArray<TValue>; override;
+          const comparer: IEqualityComparer<TValue>): Boolean;
+        function ToArray: TArray<TValue>;
       {$ENDREGION}
       end;
+  {$ENDREGION}
   private
     fDictionary: TDictionary<TKey, IList<TValue>>;
     fCount: Integer;
     fValues: TValueCollection;
     fValueComparer: IComparer<TValue>;
-    function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
   protected
   {$REGION 'Property Accessors'}
-    function GetCount: Integer; override;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
     function GetItems(const key: TKey): IReadOnlyList<TValue>;
-    function GetKeys: IReadOnlyCollection<TKey>; override;
-    function GetValues: IReadOnlyCollection<TValue>; override;
+    function GetKeys: IReadOnlyCollection<TKey>;
+    function GetValues: IReadOnlyCollection<TValue>;
   {$ENDREGION}
     function CreateCollection(const comparer: IComparer<TValue>): IList<TValue>; virtual; abstract;
     function CreateDictionary(const comparer: IEqualityComparer<TKey>): TDictionary<TKey, IList<TValue>>; virtual; abstract;
-    function TryAddInternal(const key: TKey; const value: TValue): Boolean; override;
   public
     constructor Create; override;
     constructor Create(const keyComparer: IEqualityComparer<TKey>); overload;
@@ -107,28 +110,29 @@ type
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
-    function GetEnumerator: IEnumerator<TKeyValuePair>; override;
+    function GetEnumerator: IEnumerator<TKeyValuePair>;
     function Contains(const value: TKeyValuePair;
-      const comparer: IEqualityComparer<TKeyValuePair>): Boolean; override;
+      const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
-    procedure Clear; override;
+    procedure Clear;
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
-    function Remove(const key: TKey): Boolean; reintroduce; overload;
-    function Remove(const key: TKey; const value: TValue): Boolean; overload; override;
-    function Extract(const key: TKey; const value: TValue): TKeyValuePair; override;
-    function Contains(const key: TKey; const value: TValue): Boolean; override;
-    function ContainsKey(const key: TKey): Boolean; override;
-    function ContainsValue(const value: TValue): Boolean; override;
+    function TryAdd(const key: TKey; const value: TValue): Boolean;
+    function Remove(const key: TKey): Boolean; overload;
+    function Remove(const key: TKey; const value: TValue): Boolean; overload;
+    function Extract(const key: TKey; const value: TValue): TKeyValuePair; overload;
+    function Contains(const key: TKey; const value: TValue): Boolean; overload;
+    function ContainsKey(const key: TKey): Boolean;
+    function ContainsValue(const value: TValue): Boolean;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
     property Values: IReadOnlyCollection<TValue> read GetValues;
   {$ENDREGION}
 
   {$REGION 'Implements IMultiMap<TKey, TValue>'}
-    function Add(const key: TKey; const value: TValue): Boolean;
+    function Add(const key: TKey; const value: TValue): Boolean; overload;
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
     procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;
     function ExtractValues(const key: TKey): IList<TValue>;
@@ -137,8 +141,14 @@ type
   {$ENDREGION}
   end;
 
-  TMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>)
+  TMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>,
+    IEnumerable<TPair<TKey, TValue>>,
+    ICollection<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
+    IMap<TKey, TValue>, IReadOnlyMap<TKey, TValue>,
+    IMultiMap<TKey, TValue>, IReadOnlyMultiMap<TKey, TValue>)
   private
+    fOwnerships: TDictionaryOwnerships;
+    function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey,TValue>;
     procedure DoKeyChanged(Sender: TObject; const Item: TKey;
       Action: TCollectionChangedAction);
     procedure DoValueChanged(Sender: TObject; const Item: TValue;
@@ -148,14 +158,6 @@ type
   protected
     function CreateCollection(const comparer: IComparer<TValue>): IList<TValue>; override;
     function CreateDictionary(const comparer: IEqualityComparer<TKey>): TDictionary<TKey, IList<TValue>>; override;
-  end;
-
-  TObjectMultiMap<TKey, TValue> = class(TMultiMap<TKey, TValue>)
-  private
-    fOwnerships: TDictionaryOwnerships;
-  protected
-    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
-    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
   public
     constructor Create(ownerships: TDictionaryOwnerships); overload;
     constructor Create(ownerships: TDictionaryOwnerships;
@@ -171,6 +173,7 @@ uses
   Classes,
   TypInfo,
   Spring,
+  Spring.Events.Base,
   Spring.ResourceStrings;
 
 
@@ -207,7 +210,7 @@ end;
 function TMultiMapBase<TKey, TValue>.Add(const key: TKey;
   const value: TValue): Boolean;
 begin
-  Result := TryAddInternal(key, value);
+  Result := TryAdd(key, value);
 end;
 
 procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;
@@ -230,11 +233,6 @@ begin
 
   for item in collection do
     Add(key, item);
-end;
-
-function TMultiMapBase<TKey, TValue>.AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey, TValue>;
-begin
-  Result := Self;
 end;
 
 procedure TMultiMapBase<TKey, TValue>.Clear;
@@ -306,6 +304,11 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
+function TMultiMapBase<TKey, TValue>.GetIsEmpty: Boolean;
+begin
+  Result := fCount = 0;
+end;
+
 function TMultiMapBase<TKey, TValue>.GetItems(
   const key: TKey): IReadOnlyList<TValue>;
 var
@@ -353,7 +356,7 @@ begin
   end;
 end;
 
-function TMultiMapBase<TKey, TValue>.TryAddInternal(const key: TKey;
+function TMultiMapBase<TKey, TValue>.TryAdd(const key: TKey;
   const value: TValue): Boolean;
 var
   list: IList<TValue>;
@@ -389,6 +392,13 @@ constructor TMultiMapBase<TKey, TValue>.TEnumerator.Create(
 begin
   inherited Create;
   fSource := source;
+  fSource._AddRef;
+end;
+
+destructor TMultiMapBase<TKey, TValue>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
 end;
 
 function TMultiMapBase<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
@@ -429,6 +439,13 @@ constructor TMultiMapBase<TKey, TValue>.TValueEnumerator.Create(
 begin
   inherited Create;
   fSource := source;
+  fSource._AddRef;
+end;
+
+destructor TMultiMapBase<TKey, TValue>.TValueEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
 end;
 
 function TMultiMapBase<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;
@@ -449,26 +466,31 @@ end;
 {$REGION 'TMultiMapBase<TKey, TValue>.TValueCollection'}
 
 constructor TMultiMapBase<TKey, TValue>.TValueCollection.Create(
-  const owner: TMultiMapBase<TKey, TValue>);
+  const source: TMultiMapBase<TKey, TValue>);
 begin
-  inherited Create(owner);
-  fOwner := owner;
+  inherited Create(source);
+  fSource := source;
 end;
 
 function TMultiMapBase<TKey, TValue>.TValueCollection.Contains(const value: TValue;
   const comparer: IEqualityComparer<TValue>): Boolean;
 begin
-  Result := fOwner.ContainsValue(value);
+  Result := fSource.ContainsValue(value);
 end;
 
 function TMultiMapBase<TKey, TValue>.TValueCollection.GetCount: Integer;
 begin
-  Result := fOwner.Count;
+  Result := fSource.fCount;
 end;
 
 function TMultiMapBase<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
-  Result := TValueEnumerator.Create(fOwner);
+  Result := TValueEnumerator.Create(fSource);
+end;
+
+function TMultiMapBase<TKey, TValue>.TValueCollection.GetIsEmpty: Boolean;
+begin
+  Result := fSource.fCount = 0;
 end;
 
 function TMultiMapBase<TKey, TValue>.TValueCollection.ToArray: TArray<TValue>;
@@ -476,9 +498,9 @@ var
   list: ICollection<TValue>;
   i: Integer;
 begin
-  SetLength(Result, fOwner.Count);
+  SetLength(Result, fSource.fCount);
   i := 0;
-  for list in fOwner.fDictionary.Values do
+  for list in fSource.fDictionary.Values do
   begin
     list.CopyTo(Result, i);
     Inc(i, list.Count);
@@ -490,30 +512,84 @@ end;
 
 {$REGION 'TMultiMap<TKey, TValue>'}
 
+constructor TMultiMap<TKey, TValue>.Create(ownerships: TDictionaryOwnerships);
+begin
+  Create(ownerships, nil, nil);
+end;
+
+constructor TMultiMap<TKey, TValue>.Create(ownerships: TDictionaryOwnerships;
+  const keyComparer: IEqualityComparer<TKey>);
+begin
+  Create(ownerships, keyComparer, nil);
+end;
+
+constructor TMultiMap<TKey, TValue>.Create(ownerships: TDictionaryOwnerships;
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IComparer<TValue>);
+begin
+  if doOwnsKeys in ownerships then
+    if TType.Kind<TKey> <> tkClass then
+      raise Error.NoClassType(KeyType);
+
+  if doOwnsValues in ownerships then
+    if TType.Kind<TValue> <> tkClass then
+      raise Error.NoClassType(ValueType);
+
+  inherited Create(keyComparer, valueComparer);
+  fOwnerships := ownerships;
+end;
+
 function TMultiMap<TKey, TValue>.CreateCollection(
   const comparer: IComparer<TValue>): IList<TValue>;
 begin
   Result := TCollections.CreateList<TValue>(comparer);
 end;
 
+function TMultiMap<TKey, TValue>.AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey, TValue>;
+begin
+  Result := Self;
+end;
+
 function TMultiMap<TKey, TValue>.CreateDictionary(
   const comparer: IEqualityComparer<TKey>): TDictionary<TKey, IList<TValue>>;
 begin
   Result := TContainedDictionary<TKey, IList<TValue>>.Create(Self, comparer);
-  Result.OnKeyChanged.Add(DoKeyChanged);
-  Result.OnValueChanged.Add(DoValuesChanged);
+  Result.fOnKeyChanged.Add(DoKeyChanged);
+  Result.fOnValueChanged.Add(DoValuesChanged);
 end;
 
 procedure TMultiMap<TKey, TValue>.DoKeyChanged(Sender: TObject;
   const Item: TKey; Action: TCollectionChangedAction);
 begin
-  KeyChanged(Item, Action);
+  if fOnKeyChanged.CanInvoke then
+    fOnKeyChanged.Invoke(Self, item, action);
+
+{$IFDEF DELPHIXE7_UP}
+  if TType.Kind<TKey> = tkClass then
+{$ENDIF}
+  if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
+{$IFNDEF AUTOREFCOUNT}
+    PObject(@item).Free;
+{$ELSE}
+    PObject(@item).DisposeOf;
+{$ENDIF}
 end;
 
 procedure TMultiMap<TKey, TValue>.DoValueChanged(Sender: TObject;
   const Item: TValue; Action: TCollectionChangedAction);
 begin
-  ValueChanged(Item, Action);
+  if fOnValueChanged.CanInvoke then
+    fOnValueChanged.Invoke(Self, item, action);
+
+{$IFDEF DELPHIXE7_UP}
+  if TType.Kind<TValue> = tkClass then
+{$ENDIF}
+  if (action = caRemoved) and (doOwnsValues in fOwnerships) then
+{$IFNDEF AUTOREFCOUNT}
+    PObject(@item).Free;
+{$ELSE}
+    PObject(@item).DisposeOf;
+{$ENDIF}
 end;
 
 procedure TMultiMap<TKey, TValue>.DoValuesChanged(Sender: TObject;
@@ -528,59 +604,6 @@ begin
     end;
     caExtracted: Item.OnChanged.Remove(DoValueChanged);
   end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TObjectMultiMap<TKey, TValue>'}
-
-constructor TObjectMultiMap<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(ownerships, nil, nil);
-end;
-
-constructor TObjectMultiMap<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships; const keyComparer: IEqualityComparer<TKey>);
-begin
-  Create(ownerships, keyComparer, nil);
-end;
-
-constructor TObjectMultiMap<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships; const keyComparer: IEqualityComparer<TKey>;
-  const valueComparer: IComparer<TValue>);
-begin
-  if (doOwnsKeys in ownerships) and (KeyType.Kind <> tkClass) then
-    raise ENotSupportedException.CreateResFmt(@SNotClassType, [KeyType.TypeName]);
-  if (doOwnsValues in ownerships) and (ValueType.Kind <> tkClass) then
-    raise ENotSupportedException.CreateResFmt(@SNotClassType, [ValueType.TypeName]);
-  inherited Create(keyComparer, valueComparer);
-  fOwnerships := ownerships;
-end;
-
-procedure TObjectMultiMap<TKey, TValue>.KeyChanged(const item: TKey;
-  action: TCollectionChangedAction);
-begin
-  inherited KeyChanged(item, action);
-  if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
-end;
-
-procedure TObjectMultiMap<TKey, TValue>.ValueChanged(const item: TValue;
-  action: TCollectionChangedAction);
-begin
-  inherited ValueChanged(item, action);
-  if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
 end;
 
 {$ENDREGION}

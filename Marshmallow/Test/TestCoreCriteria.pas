@@ -132,7 +132,7 @@ begin
     andJunction.Add(orJunction1);
     andJunction.Add(orJunction2);
 
-    params := TCollections.CreateList<TDBParam>(True);
+    params := TCollections.CreateObjectList<TDBParam>(True);
     param := TDBParam.Create('FIRST_NAME', '');
     params.Add(Param);
     param := TDBParam.Create('FIRST_NAME', '');
@@ -169,7 +169,7 @@ begin
   command := TSelectCommand.Create(TResource);
   try
     generator := TSQLGeneratorRegister.GetGenerator(qlOracle);
-    params := TCollections.CreateList<TDBParam>(True);
+    params := TCollections.CreateObjectList<TDBParam>(True);
 
     sqlWhere := (criteria as TCriteria<TResource>).Criterions[0].ToSqlString(params, command, generator, False);
 

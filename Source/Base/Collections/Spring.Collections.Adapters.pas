@@ -36,7 +36,7 @@ uses
   Spring.Collections.Base;
 
 type
-  TCollectionAdapter<T> = class(TEnumerableBase<T>, ICollection)
+  TCollectionAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>, ICollection)
   private
     fSource: ICollection<T>;
 
@@ -57,12 +57,15 @@ type
 
     procedure Clear;
   protected
-    function GetCount: Integer; override;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
     function GetElementType: PTypeInfo; override;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: ICollection<T>);
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
   end;
 
   TListAdapter<T> = class(TCollectionAdapter<T>, IList, IReadOnlyList)
@@ -138,7 +141,7 @@ type
     constructor Create(const source: IDictionary<TKey, T>);
   end;
 
-  TStackAdapter<T> = class(TEnumerableBase<T>, IStack)
+  TStackAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>, IStack)
   private
     fSource: IStack<T>;
 
@@ -152,13 +155,18 @@ type
     function TryPeek(out item: TValue): Boolean;
     function TryPop(out item: TValue): Boolean;
   protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetElementType: PTypeInfo; override;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IStack<T>);
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
   end;
 
-  TQueueAdapter<T> = class(TEnumerableBase<T>, IQueue)
+  TQueueAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>, IQueue)
   private
     fSource: IQueue<T>;
 
@@ -172,10 +180,15 @@ type
     function TryDequeue(out item: TValue): Boolean;
     function TryPeek(out item: TValue): Boolean;
   protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetElementType: PTypeInfo; override;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IQueue<T>);
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
   end;
 
   THashSetAdapter<T> = class(TCollectionAdapter<T>, ISet)
@@ -280,6 +293,11 @@ end;
 function TCollectionAdapter<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := fSource.GetEnumerator;
+end;
+
+function TCollectionAdapter<T>.GetIsEmpty: Boolean;
+begin
+  Result := fSource.IsEmpty;
 end;
 
 function TCollectionAdapter<T>.GetIsReadOnly: Boolean;
@@ -399,7 +417,7 @@ var
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= fSource.Count), 'index');
 {$ENDIF}
 
   for i := Low(values) to High(values) do
@@ -415,7 +433,7 @@ var
   item: TValue;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= fSource.Count), 'index');
 {$ENDIF}
 
   for item in collection do
@@ -614,9 +632,24 @@ begin
   fSource.Clear;
 end;
 
+function TStackAdapter<T>.GetCount: Integer;
+begin
+  Result := fSource.Count;
+end;
+
+function TStackAdapter<T>.GetElementType: PTypeInfo;
+begin
+  Result := fSource.ElementType;
+end;
+
 function TStackAdapter<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := fSource.GetEnumerator;
+end;
+
+function TStackAdapter<T>.GetIsEmpty: Boolean;
+begin
+  Result := fSource.IsEmpty;
 end;
 
 function TStackAdapter<T>.GetOnChanged: IEvent;
@@ -703,9 +736,24 @@ begin
   fSource.Enqueue(item.AsType<T>);
 end;
 
+function TQueueAdapter<T>.GetCount: Integer;
+begin
+  Result := fSource.Count;
+end;
+
+function TQueueAdapter<T>.GetElementType: PTypeInfo;
+begin
+  Result := fSource.ElementType;
+end;
+
 function TQueueAdapter<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := fSource.GetEnumerator;
+end;
+
+function TQueueAdapter<T>.GetIsEmpty: Boolean;
+begin
+  Result := fSource.IsEmpty;
 end;
 
 function TQueueAdapter<T>.GetOnChanged: IEvent;

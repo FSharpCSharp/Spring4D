@@ -1706,9 +1706,9 @@ type
     /// </value>
     property Values: IReadOnlyCollection<TValue> read GetValues;
 
-    property KeyType: PTypeInfo read GetKeyType;
     property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
     property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
+    property KeyType: PTypeInfo read GetKeyType;
     property ValueType: PTypeInfo read GetValueType;
   end;
 
@@ -2459,18 +2459,6 @@ type
     property Item[const key: TKey]: IEnumerable<TElement> read GetItem; default;
   end;
 
-  /// <summary>
-  ///   Internal interface. Reserved for future use.
-  /// </summary>
-  IElementType = interface
-    ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
-  {$REGION 'Property Accessors'}
-    function GetElementType: PTypeInfo;
-  {$ENDREGION}
-
-    property ElementType: PTypeInfo read GetElementType;
-  end;
-
   ICollectionOwnership = interface
     ['{6D028EAF-3D14-4362-898C-BFAD1110547F}']
   {$REGION 'Property Accessors'}
@@ -2505,9 +2493,9 @@ type
     class function CreateList<T>(const comparer: TComparison<T>): IList<T>; overload; static;
     class function CreateList<T>(const values: array of T): IList<T>; overload; static;
     class function CreateList<T>(const values: IEnumerable<T>): IList<T>; overload; static;
-    class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static;
-    class function CreateList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean): IList<T>; overload; static;
-    class function CreateList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean): IList<T>; overload; static;
+    class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static; deprecated 'Use CreateObjectList instead';
+    class function CreateList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean): IList<T>; overload; static; deprecated 'Use CreateObjectList instead';
+    class function CreateList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean): IList<T>; overload; static; deprecated 'Use CreateObjectList instead';
     class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(const comparer: TComparison<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
@@ -3049,14 +3037,14 @@ end;
 class function TCollections.CreateMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
-  Result := TObjectMultiMap<TKey, TValue>.Create(ownerships);
+  Result := TMultiMap<TKey, TValue>.Create(ownerships);
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships;
   const comparer: IEqualityComparer<TKey>): IMultiMap<TKey, TValue>;
 begin
-  Result := TObjectMultiMap<TKey, TValue>.Create(ownerships, comparer);
+  Result := TMultiMap<TKey, TValue>.Create(ownerships, comparer);
 end;
 
 class function TCollections.CreateBidiDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IBidiDictionary<TKey, TValue>;
@@ -3174,12 +3162,14 @@ end;
 
 class function TCollections.CreateSet<T>(const values: array of T): ISet<T>;
 begin
-  Result := THashSet<T>.Create(values);
+  Result := THashSet<T>.Create;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateSet<T>(const values: IEnumerable<T>): ISet<T>;
 begin
-  Result := THashSet<T>.Create(values);
+  Result := THashSet<T>.Create;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateSortedList<T>: IList<T>;
@@ -3344,12 +3334,14 @@ end;
 
 class function TCollections.CreateSortedSet<T>(const values: array of T): ISet<T>;
 begin
-  Result := TSortedSet<T>.Create(values);
+  Result := TSortedSet<T>.Create;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateSortedSet<T>(const values: IEnumerable<T>): ISet<T>;
 begin
-  Result := TSortedSet<T>.Create(values);
+  Result := TSortedSet<T>.Create;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>;

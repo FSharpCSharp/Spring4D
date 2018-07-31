@@ -43,14 +43,14 @@ uses
   Spring.TestUtils;
 
 type
-  TThrowingEnumerable = class sealed(TEnumerableBase<Integer>)
+  TThrowingEnumerable = class sealed(TEnumerableBase<Integer>, IEnumerable<Integer>)
   public
-    function GetEnumerator: IEnumerator<Integer>; override;
+    function GetEnumerator: IEnumerator<Integer>;
   end;
 
-  TNonEnumerableList<T> = class(TList<T>)
+  TNonEnumerableList<T> = class(TAbstractArrayList<T>, IEnumerable<T>, ICollection<T>, IList<T>)
   public
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
   end;
 
   TTestCaseHelper = class helper(TAbstractTestHelper) for TTestCase
