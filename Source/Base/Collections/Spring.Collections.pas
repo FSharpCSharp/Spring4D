@@ -370,13 +370,13 @@ type
     ///   Determines whether two sequences are equal by comparing the elements
     ///   by using the default equality comparer for their type.
     /// </summary>
-    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
+    function EqualsTo(const values: IEnumerable<T>): Boolean; overload;
 
     /// <summary>
     ///   Determines whether two sequences are equal by comparing their
     ///   elements by using a specified <c>IEqualityComparer&lt;T&gt;.</c>
     /// </summary>
-    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
+    function EqualsTo(const values: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
     /// <summary>
     ///   Returns the first element of a sequence.
@@ -798,7 +798,7 @@ type
     /// </returns>
     function Add(const item: T): Boolean;
     procedure AddRange(const values: array of T); overload;
-    procedure AddRange(const collection: IEnumerable<T>); overload;
+    procedure AddRange(const values: IEnumerable<T>); overload;
 
     /// <summary>
     ///   Removes all items from the ICollection&lt;T&gt;.
@@ -862,12 +862,12 @@ type
     function Remove(const item: T): Boolean;
     procedure RemoveAll(const predicate: Predicate<T>);
     procedure RemoveRange(const values: array of T); overload;
-    procedure RemoveRange(const collection: IEnumerable<T>); overload;
+    procedure RemoveRange(const values: IEnumerable<T>); overload;
 
     function Extract(const item: T): T;
     function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
     procedure ExtractRange(const values: array of T); overload;
-    procedure ExtractRange(const collection: IEnumerable<T>); overload;
+    procedure ExtractRange(const values: IEnumerable<T>); overload;
 
     /// <summary>
     ///   Gets a value indicating whether the ICollection&lt;T&gt; is
@@ -969,7 +969,7 @@ type
     /// </param>
     procedure Insert(index: Integer; const item: T);
     procedure InsertRange(index: Integer; const values: array of T); overload;
-    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
+    procedure InsertRange(index: Integer; const values: IEnumerable<T>); overload;
 
     /// <summary>
     ///   Removes the item at the specified index.
@@ -1869,7 +1869,7 @@ type
     function Add(const key: TKey; const value: TValue): Boolean;
 
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
-    procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;
+    procedure AddRange(const key: TKey; const values: IEnumerable<TValue>); overload;
 
     /// <summary>
     ///   Extracts all values for the given key from the multimap.

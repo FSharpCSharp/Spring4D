@@ -45,15 +45,15 @@ type
 
     procedure Add(const item: TValue);
     procedure AddRange(const values: array of TValue); overload;
-    procedure AddRange(const collection: IEnumerable); overload;
+    procedure AddRange(const values: IEnumerable); overload;
 
     function Remove(const item: TValue): Boolean;
     procedure RemoveRange(const values: array of TValue); overload;
-    procedure RemoveRange(const collection: IEnumerable); overload;
+    procedure RemoveRange(const values: IEnumerable); overload;
 
     function Extract(const item: TValue): TValue; overload;
     procedure ExtractRange(const values: array of TValue); overload;
-    procedure ExtractRange(const collection: IEnumerable); overload;
+    procedure ExtractRange(const values: IEnumerable); overload;
 
     procedure Clear;
   protected
@@ -81,7 +81,7 @@ type
 
     procedure Insert(index: Integer; const item: TValue);
     procedure InsertRange(index: Integer; const values: array of TValue); overload;
-    procedure InsertRange(index: Integer; const collection: IEnumerable); overload;
+    procedure InsertRange(index: Integer; const values: IEnumerable); overload;
 
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
@@ -246,11 +246,11 @@ begin
     fSource.Add(values[i].AsType<T>);
 end;
 
-procedure TCollectionAdapter<T>.AddRange(const collection: IEnumerable);
+procedure TCollectionAdapter<T>.AddRange(const values: IEnumerable);
 var
   item: TValue;
 begin
-  for item in collection do
+  for item in values do
     fSource.Add(item.AsType<T>);
 end;
 
@@ -272,11 +272,11 @@ begin
     fSource.Extract(values[i].AsType<T>);
 end;
 
-procedure TCollectionAdapter<T>.ExtractRange(const collection: IEnumerable);
+procedure TCollectionAdapter<T>.ExtractRange(const values: IEnumerable);
 var
   item: TValue;
 begin
-  for item in collection do
+  for item in values do
     fSource.Extract(item.AsType<T>);
 end;
 
@@ -336,11 +336,11 @@ begin
 end;
 
 procedure TCollectionAdapter<T>.RemoveRange(
-  const collection: IEnumerable);
+  const values: IEnumerable);
 var
   item: TValue;
 begin
-  for item in collection do
+  for item in values do
     fSource.Remove(item.AsType<T>);
 end;
 
@@ -428,7 +428,7 @@ begin
 end;
 
 procedure TListAdapter<T>.InsertRange(index: Integer;
-  const collection: IEnumerable);
+  const values: IEnumerable);
 var
   item: TValue;
 begin
@@ -436,7 +436,7 @@ begin
   Guard.CheckRange((index >= 0) and (index <= fSource.Count), 'index');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
   begin
     fSource.Insert(index, item.AsType<T>);
     Inc(index);

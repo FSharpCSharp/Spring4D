@@ -56,17 +56,17 @@ type
 
     procedure Add(const item: TValue);
     procedure AddRange(const values: array of TValue); overload;
-    procedure AddRange(const collection: IEnumerable); overload;
+    procedure AddRange(const values: IEnumerable); overload;
 
     procedure Clear;
 
     function Remove(const item: TValue): Boolean;
     procedure RemoveRange(const values: array of TValue); overload;
-    procedure RemoveRange(const collection: IEnumerable); overload;
+    procedure RemoveRange(const values: IEnumerable); overload;
 
     function Extract(const item: TValue): TValue;
     procedure ExtractRange(const values: array of TValue); overload;
-    procedure ExtractRange(const collection: IEnumerable); overload;
+    procedure ExtractRange(const values: IEnumerable); overload;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
     property OnChanged: IEvent read GetOnChanged;
@@ -98,7 +98,7 @@ type
 
     procedure Insert(index: Integer; const item: TValue);
     procedure InsertRange(index: Integer; const values: array of TValue); overload;
-    procedure InsertRange(index: Integer; const collection: IEnumerable); overload;
+    procedure InsertRange(index: Integer; const values: IEnumerable); overload;
 
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);

@@ -136,8 +136,8 @@ type
     function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
 
     function EqualsTo(const values: array of T): Boolean; overload;
-    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
-    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
+    function EqualsTo(const values: IEnumerable<T>): Boolean; overload;
+    function EqualsTo(const values: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
     function First: T; overload;
     function First(const predicate: Predicate<T>): T; overload;
@@ -246,15 +246,15 @@ type
     destructor Destroy; override;
 
     procedure AddRange(const values: array of T); overload;
-    procedure AddRange(const collection: IEnumerable<T>); overload;
+    procedure AddRange(const values: IEnumerable<T>); overload;
 
     procedure RemoveAll(const predicate: Predicate<T>);
     procedure RemoveRange(const values: array of T); overload;
-    procedure RemoveRange(const collection: IEnumerable<T>); overload;
+    procedure RemoveRange(const values: IEnumerable<T>); overload;
 
     function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
     procedure ExtractRange(const values: array of T); overload;
-    procedure ExtractRange(const collection: IEnumerable<T>); overload;
+    procedure ExtractRange(const values: IEnumerable<T>); overload;
 
     procedure CopyTo(var values: TArray<T>; index: Integer);
     function MoveTo(const collection: ICollection<T>): Integer; overload;
@@ -616,23 +616,23 @@ begin
   Result := i = Length(values);
 end;
 
-function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>): Boolean;
+function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;
 begin
-  Result := this.EqualsTo(collection, Self);
+  Result := this.EqualsTo(values, Self);
 end;
 
-function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>;
+function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>;
   const comparer: IEqualityComparer<T>): Boolean;
 var
   e1, e2: IEnumerator<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(values), 'values');
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
   e1 := this.GetEnumerator;
-  e2 := collection.GetEnumerator;
+  e2 := values.GetEnumerator;
 
   while e1.MoveNext do
     if not (e2.MoveNext and comparer.Equals(e1.Current, e2.Current)) then
@@ -1338,15 +1338,15 @@ begin
     ICollection<T>(this).Add(values[i]);
 end;
 
-procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
+procedure TCollectionBase<T>.AddRange(const values: IEnumerable<T>);
 var
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
     ICollection<T>(this).Add(item);
 end;
 
@@ -1388,15 +1388,15 @@ begin
     ICollection<T>(this).Extract(values[i]);
 end;
 
-procedure TCollectionBase<T>.ExtractRange(const collection: IEnumerable<T>);
+procedure TCollectionBase<T>.ExtractRange(const values: IEnumerable<T>);
 var
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
     ICollection<T>(this).Extract(item);
 end;
 
@@ -1449,15 +1449,15 @@ begin
   RemoveRange(this.Where(predicate).ToArray);
 end;
 
-procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
+procedure TCollectionBase<T>.RemoveRange(const values: IEnumerable<T>);
 var
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
     ICollection<T>(this).Remove(item);
 end;
 

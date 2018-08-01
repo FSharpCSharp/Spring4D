@@ -90,7 +90,7 @@ type
     function TryGetSingle(out value: T): Boolean;
   public
     constructor Create(const values: array of T); overload;
-    constructor Create(const collection: IEnumerable<T>); overload;
+    constructor Create(const values: IEnumerable<T>); overload;
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -106,7 +106,7 @@ type
 
   {$REGION 'Implements ICollection<T>'}
     procedure AddRange(const values: array of T); overload;
-    procedure AddRange(const collection: IEnumerable<T>); overload;
+    procedure AddRange(const values: IEnumerable<T>); overload;
 
     procedure RemoveAll(const predicate: Predicate<T>);
 
@@ -125,7 +125,7 @@ type
 
     procedure Insert(index: Integer; const item: T);
     procedure InsertRange(index: Integer; const values: array of T); overload;
-    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
+    procedure InsertRange(index: Integer; const values: IEnumerable<T>); overload;
 
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
@@ -183,7 +183,7 @@ type
 
   {$REGION 'Implements ICollection<T>'}
     procedure AddRange(const values: array of T); overload;
-    procedure AddRange(const collection: IEnumerable<T>); overload;
+    procedure AddRange(const values: IEnumerable<T>); overload;
   {$ENDREGION}
 
   {$REGION 'Implements IList<T>'}
@@ -274,7 +274,7 @@ type
 
     procedure Insert(index: Integer; const item: T);
     procedure InsertRange(index: Integer; const values: array of T); overload;
-    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
+    procedure InsertRange(index: Integer; const values: IEnumerable<T>); overload;
 
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
@@ -418,22 +418,22 @@ begin
   end;
 end;
 
-constructor TAbstractArrayList<T>.Create(const collection: IEnumerable<T>);
+constructor TAbstractArrayList<T>.Create(const values: IEnumerable<T>);
 var
-  c: ICollection<T>;
+  collection: ICollection<T>;
 begin
   Create;
-  if Supports(collection, ICollection<T>, c) then
+  if Supports(values, ICollection<T>, collection) then
   begin
-    fCount := c.Count;
+    fCount := collection.Count;
     if fCount > 0 then
     begin
       SetLength(fItems, fCount);
-      c.CopyTo(fItems, 0);
+      collection.CopyTo(fItems, 0);
     end;
   end
   else
-    IList<T>(this).AddRange(collection);
+    IList<T>(this).AddRange(values);
 end;
 
 destructor TAbstractArrayList<T>.Destroy;
@@ -460,9 +460,9 @@ begin
   InsertRange(fCount, values);
 end;
 
-procedure TAbstractArrayList<T>.AddRange(const collection: IEnumerable<T>);
+procedure TAbstractArrayList<T>.AddRange(const values: IEnumerable<T>);
 begin
-  InsertRange(fCount, collection);
+  InsertRange(fCount, values);
 end;
 
 procedure TAbstractArrayList<T>.EnsureCapacity(capacity: Integer);
@@ -663,7 +663,7 @@ begin
 end;
 
 procedure TAbstractArrayList<T>.InsertRange(index: Integer;
-  const collection: IEnumerable<T>);
+  const values: IEnumerable<T>);
 var
   list: TList<T>;
   item: T;
@@ -672,7 +672,7 @@ begin
   Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
 {$ENDIF}
 
-  TObject(list) := collection.AsObject;
+  TObject(list) := values.AsObject;
   if TObject(list) is TList<T> then
   begin
     if list.fCount = 0 then
@@ -682,7 +682,7 @@ begin
   end
   else
   begin
-    for item in collection do
+    for item in values do
     begin
       Insert(index, item);
       Inc(index);
@@ -1183,15 +1183,15 @@ begin
   inherited Insert(Result, item);
 end;
 
-procedure TSortedList<T>.AddRange(const collection: IEnumerable<T>);
+procedure TSortedList<T>.AddRange(const values: IEnumerable<T>);
 var
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
     Add(item);
 end;
 
@@ -1592,16 +1592,16 @@ begin
 end;
 
 procedure TCollectionList<T>.InsertRange(index: Integer;
-  const collection: IEnumerable<T>);
+  const values: IEnumerable<T>);
 var
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
   begin
     Insert(index, item);
     Inc(index);

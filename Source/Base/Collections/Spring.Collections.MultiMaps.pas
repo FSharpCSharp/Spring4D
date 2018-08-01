@@ -134,7 +134,7 @@ type
   {$REGION 'Implements IMultiMap<TKey, TValue>'}
     function Add(const key: TKey; const value: TValue): Boolean; overload;
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
-    procedure AddRange(const key: TKey; const collection: IEnumerable<TValue>); overload;
+    procedure AddRange(const key: TKey; const values: IEnumerable<TValue>); overload;
     function ExtractValues(const key: TKey): IList<TValue>;
     function TryGetValues(const key: TKey; out values: IReadOnlyList<TValue>): Boolean;
     property Items[const key: TKey]: IReadOnlyList<TValue> read GetItems; default;
@@ -223,15 +223,15 @@ begin
 end;
 
 procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;
-  const collection: IEnumerable<TValue>);
+  const values: IEnumerable<TValue>);
 var
   item: TValue;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in collection do
+  for item in values do
     Add(key, item);
 end;
 
@@ -495,15 +495,15 @@ end;
 
 function TMultiMapBase<TKey, TValue>.TValueCollection.ToArray: TArray<TValue>;
 var
-  list: ICollection<TValue>;
+  values: ICollection<TValue>;
   i: Integer;
 begin
   SetLength(Result, fSource.fCount);
   i := 0;
-  for list in fSource.fDictionary.Values do
+  for values in fSource.fDictionary.Values do
   begin
-    list.CopyTo(Result, i);
-    Inc(i, list.Count);
+    values.CopyTo(Result, i);
+    Inc(i, values.Count);
   end;
 end;
 

@@ -79,7 +79,7 @@ type
   public
     constructor Create; overload; override;
     constructor Create(const values: array of T); overload;
-    constructor Create(const collection: IEnumerable<T>); overload;
+    constructor Create(const values: IEnumerable<T>); overload;
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -144,12 +144,12 @@ begin
     Push(values[i]);
 end;
 
-constructor TStack<T>.Create(const collection: IEnumerable<T>);
+constructor TStack<T>.Create(const values: IEnumerable<T>);
 var
   item: T;
 begin
   Create;
-  for item in collection do
+  for item in values do
     Push(item);
 end;
 
