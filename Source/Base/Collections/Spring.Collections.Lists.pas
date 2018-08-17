@@ -961,6 +961,11 @@ begin
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) = tkClass then
+    TTimSort.Sort(fItems, IComparer<Pointer>(comparer), index, count)
+  else
+  {$ENDIF}
   TArray.Sort<T>(fItems, comparer, index, count);
 
   Reset;
