@@ -584,6 +584,14 @@ type
 
     procedure TestLastIndexOf;
     procedure TestLastIndexOfSubRange;
+
+    procedure TestStableSortOrdering;
+    procedure TestStableSortStability;
+    procedure TestStableSortSubrangeSort;
+    procedure TestStableSortOrderedInput;
+    procedure TestStableSortLongRuns;
+    procedure TestStableSortManagedTypes;
+    procedure TestTimSortArrayIndexOutOfBoundsBugFix;
   end;
 
   TWeakTest = class(TTestCase)
@@ -3509,6 +3517,298 @@ begin
   values := TArray<Integer>.Create(1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9);
   index := TArray.LastIndexOf<Integer>(values, 5, 5, 6);
   CheckEquals(5, index);
+end;
+
+procedure TArrayTest.TestStableSortOrdering;
+
+  procedure CheckArraysEqual(const values1, values2: array of Integer);
+  var
+    i: Integer;
+  begin
+    CheckEquals(Length(values1), Length(values2));
+    for i := 0 to High(values1) do
+      CheckEquals(values1[i], values2[i]);
+  end;
+
+var
+  i, j: Integer;
+  values1, values2: TArray<Integer>;
+begin
+  for i := 0 to 100 do
+  begin
+    SetLength(values1, i);
+    for j := 0 to i - 1 do
+      values1[j] := j;
+    values2 := Copy(values1);
+    for j := 0 to i do
+    begin
+      TArray.Shuffle<Integer>(values1);
+      TArray.StableSort<Integer>(values1);
+      CheckArraysEqual(values1, values2);
+    end;
+  end;
+end;
+
+procedure TArrayTest.TestStableSortStability;
+
+type
+  TRec = record
+    Value: Integer;
+    Index: Integer;
+  end;
+
+var
+  i, j, k: Integer;
+  values: TArray<TRec>;
+  comparison: TComparison<TRec>;
+begin
+  comparison :=
+    function(const Left, Right: TRec): Integer
+    begin
+      if Left.Value < Right.Value then
+        Result := -1
+      else if Left.Value > Right.Value then
+        Result := 1
+      else
+        Result := 0;
+    end;
+
+  for i := 0 to 100 do
+  begin
+    SetLength(values, i);
+    for j := 0 to i - 1 do
+      values[j].Value := j div (1 + i div 7);
+    for j := 0 to i do
+    begin
+      TArray.Shuffle<TRec>(values);
+      for k := 0 to i - 1 do
+        values[k].Index := k;
+      TArray.StableSort<TRec>(values, comparison);
+      for k := 1 to i - 1 do
+      begin
+        CheckTrue(values[k - 1].Value <= values[k].Value);
+        if values[k - 1].Value = values[k].Value then
+          CheckTrue(values[k - 1].Index < values[k].Index);
+      end;
+    end;
+  end;
+end;
+
+procedure TArrayTest.TestStableSortSubrangeSort;
+
+  procedure CheckSubRange(values: TArray<Integer>; index, count: Integer);
+  var
+    i: Integer;
+    originalValues, subRange: TArray<Integer>;
+  begin
+    TArray.Shuffle<Integer>(values);
+    originalValues := Copy(values);
+    TArray.StableSort<Integer>(values, index, count);
+    subRange := Copy(originalValues, index, count);
+    TArray.Sort<Integer>(subRange); // may as well mix this up and use Sort since test does not require stability
+    for i := Low(values) to High(values) do
+    begin
+      if (i >= index) and (i < index + count) then
+        CheckTrue(values[i] = subRange[i - index])
+      else
+        CheckTrue(values[i] = originalValues[i]);
+    end;
+  end;
+
+var
+  i: Integer;
+  values: TArray<Integer>;
+begin
+  SetLength(values, 10000);
+  for i := Low(values) to High(values) do
+    values[i] := i div 3;
+
+  for i := 0 to 250 do
+  begin
+    CheckSubRange(Values, 0, i);
+    CheckSubRange(Values, 1, i);
+    CheckSubRange(Values, 25, i);
+    CheckSubRange(Values, 8000, i);
+    CheckSubRange(Values, Length(Values) - i, i);
+  end;
+end;
+
+procedure TArrayTest.TestStableSortOrderedInput;
+var
+  i, j: Integer;
+  values: TArray<Integer>;
+begin
+  for i := 0 to 1000 do
+  begin
+    SetLength(values, i);
+    for j := Low(values) to High(values) do
+      values[j] := j;
+    TArray.StableSort<Integer>(values);
+    for j := Low(values) + 1 to High(values) do
+      CheckTrue(values[j - 1] < values[j]);
+
+    TArray.Reverse<Integer>(values);
+    TArray.StableSort<Integer>(values);
+    for j := Low(values) + 1 to High(values) do
+      CheckTrue(values[j - 1] < values[j]);
+  end;
+end;
+
+procedure TArrayTest.TestStableSortLongRuns;
+var
+  i: Integer;
+  values: TArray<Integer>;
+begin
+  SetLength(values, 100000);
+  for i := Low(values) to High(values) do
+    values[i] := i;
+  for i := 1 to 5 do
+    TArray.Swap<Integer>(values[Random(Length(values))], values[Random(Length(values))]);
+  TArray.StableSort<Integer>(values);
+  for i := Low(values) + 1 to High(values) do
+    CheckTrue(values[i - 1] < values[i]);
+end;
+
+procedure TArrayTest.TestStableSortManagedTypes;
+var
+  i, j: Integer;
+  values1, values2: TArray<string>;
+begin
+  for i := 0 to 1000 do
+  begin
+    SetLength(values1, i);
+    for j := 0 to i - 1 do
+      values1[j] := IntToStr(j);
+    TArray.Shuffle<string>(values1);
+    values2 := Copy(values1);
+    TArray.StableSort<string>(values1);
+    TArray.Sort<string>(values2);
+    for j := 0 to i - 1 do
+      CheckEquals(values1[j], values2[j]);
+  end;
+end;
+
+procedure TArrayTest.TestTimSortArrayIndexOutOfBoundsBugFix;
+// see https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8072909
+// this test is only useful if the TimSort code is compiled with range checking enabled
+
+const
+  MIN_MERGE = 32;
+  len = 67108864;
+
+  function MinRunLength(n: Integer): Integer;
+  var
+    r: Integer;
+  begin
+    Assert(n >= 0);
+    r := 0; // becomes 1 if any 1 bits are shifted off
+    while n >= MIN_MERGE do
+    begin
+      r := r or (n and 1);
+      n := n shr 1;
+    end;
+    Result := n + r;
+  end;
+
+  (* Adds a sequence x_1, ..., x_n of run lengths to <code>runs</code> such that:
+     1. X = x_1 + ... + x_n
+     2. x_j >= minRun for all j
+     3. x_1 + ... + x_{j-2}  <  x_j  <  x_1 + ... + x_{j-1} for all j
+     These conditions guarantee that TimSort merges all x_j's one by one
+     (resulting in X) using only merges on the second-to-last element.
+     @param X  The sum of the sequence that should be added to runs. *)
+  procedure GenerateJDKWrongElem(runs: IList<Int64>; minRun: Integer; X: Int64);
+  var
+    newTotal: Int64;
+  begin
+    while X >= 2 * minRun + 1 do
+    begin
+      //Default strategy
+      newTotal := X div 2 + 1;
+
+      //Specialized strategies
+      if (3 * minRun + 3 <= X) and (X <= 4 * minRun + 1) then
+        // add x_1=MIN+1, x_2=MIN, x_3=X-newTotal  to runs
+        newTotal := 2 * minRun + 1
+      else if (5 * minRun + 5 <= X) and (X <= 6 * minRun + 5) then
+        // add x_1=MIN+1, x_2=MIN, x_3=MIN+2, x_4=X-newTotal  to runs
+        newTotal := 3 * minRun + 3
+      else if (8 * minRun + 9 <= X) and (X <= 10 * minRun + 9) then
+        // add x_1=MIN+1, x_2=MIN, x_3=MIN+2, x_4=2MIN+2, x_5=X-newTotal  to runs
+        newTotal := 5 * minRun + 5
+      else if (13 * minRun + 15 <= X) and (X <= 16 * minRun + 17) then
+        // add x_1=MIN+1, x_2=MIN, x_3=MIN+2, x_4=2MIN+2, x_5=3MIN+4, x_6=X-newTotal  to runs
+        newTotal := 8 * minRun + 9;
+      runs.Insert(0, X - newTotal);
+      X := newTotal;
+    end;
+    runs.Insert(0, X);
+  end;
+
+  (* Fills <code>runs</code> with a sequence of run lengths of the form
+     Y_n     x_{n,1}   x_{n,2}   ... x_{n,l_n}
+     Y_{n-1} x_{n-1,1} x_{n-1,2} ... x_{n-1,l_{n-1}}
+     ...
+     Y_1     x_{1,1}   x_{1,2}   ... x_{1,l_1}
+     The Y_i's are chosen to satisfy the invariant throughout execution,
+     but the x_{i,j}'s are merged (by TimSort.mergeCollapse)
+     into an X_i that violates the invariant.
+     @param X  The sum of all run lengths that will be added to runs. *)
+  procedure RunsJDKWorstCase(runs: IList<Int64>; minRun: Integer);
+  var
+    runningTotal, Y, X: Int64;
+  begin
+    runningTotal := 0;
+    Y := minRun + 4;
+    X := minRun;
+    while runningTotal + Y + X <= len do
+    begin
+      Inc(runningTotal, X + Y);
+      GenerateJDKWrongElem(runs, minRun, X);
+      runs.Insert(0, Y);
+
+      // X_{i+1} = Y_i + x_{i,1} + 1, since runs.get(1) = x_{i,1}
+      X := Y + runs[1] + 1;
+
+      // Y_{i+1} = X_{i+1} + Y_i + 1
+      Inc(Y, X + 1);
+    end;
+
+    if runningTotal + X <= len then
+    begin
+      Inc(runningTotal, X);
+      GenerateJDKWrongElem(runs, minRun, X);
+    end;
+
+    runs.Add(len - runningTotal);
+  end;
+
+  function CreateArray(runs: IList<Int64>): TArray<Int64>;
+  var
+    endRun: Integer;
+    runLen: Int64;
+  begin
+    SetLength(Result, len);
+    endRun := -1;
+    for runLen in runs do
+    begin
+      Inc(endRun, runLen);
+      Result[endRun] := 1;
+    end;
+    Result[len - 1] := 0;
+  end;
+
+var
+  minRun: Integer;
+  runs: IList<Int64>;
+  values: TArray<Int64>;
+begin
+  minRun := MinRunLength(len);
+  runs := TCollections.CreateList<Int64>;
+  RunsJDKWorstCase(runs, minRun);
+  values := CreateArray(runs);
+  TArray.StableSort<Int64>(values);
+  Pass;
 end;
 
 {$ENDREGION}
