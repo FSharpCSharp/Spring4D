@@ -317,6 +317,8 @@ type
 
     function Contains(const item: TKeyValuePair): Boolean; overload;
 
+    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
+    property OnValueChanged: ICollectionChangedEvent<T> read GetOnValueChanged;
     property KeyType: PTypeInfo read GetKeyType;
     property ValueType: PTypeInfo read GetValueType;
   end;

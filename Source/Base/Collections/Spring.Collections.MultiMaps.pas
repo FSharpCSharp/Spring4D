@@ -380,8 +380,8 @@ function TMultiMapBase<TKey, TValue>.CreateDictionary(
   ownerships: TDictionaryOwnerships): TDictionary<TKey, ICollection<TValue>>;
 begin
   Result := TContainedDictionary<TKey, ICollection<TValue>>.Create(Self, comparer, ownerships);
-  Result.fOnKeyChanged.Add(DoKeyChanged);
-  Result.fOnValueChanged.Add(DoValuesChanged);
+  Result.OnKeyChanged.Add(DoKeyChanged);
+  Result.OnValueChanged.Add(DoValuesChanged);
 end;
 
 procedure TMultiMapBase<TKey, TValue>.DoKeyChanged(sender: TObject;
