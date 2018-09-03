@@ -298,6 +298,9 @@ type
 {$ENDIF}
     procedure Test_GetTypeSize_Word;
     procedure Test_GetTypeSize_WordBool;
+{$IF Declared(tkMRecord)}
+    procedure Test_GetTypeSize_ManagedRecord;
+{$IFEND}
   end;
 
   TTestTuplesDouble = class(TTestCase)
@@ -1950,6 +1953,15 @@ procedure TTestSpringEventsMethods.Test_GetTypeSize_WordBool;
 begin
   MatchType(TypeInfo(WordBool), tkEnumeration, SizeOf(WordBool)); // not tkInteger !!
 end;
+
+{$IF Declared(tkMRecord)}
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ManagedRecord;
+begin
+  Exclude(fRemainingTypeKinds, tkMRecord);
+  Include(fTestedTypeKinds, tkMRecord);
+  Pass;
+end;
+{$IFEND}
 
 {$ENDREGION}
 

@@ -210,7 +210,8 @@ uses
 {$IFDEF ANDROID}
   Androidapi.Log,
 {$ENDIF}
-  Spring;
+  Spring,
+  Spring.Logging.ResourceStrings;
 
 
 {$REGION 'TLogAppenderWithTimeStampFormat'}
