@@ -7,6 +7,7 @@ del /f /q /s *.~*
 del /f /q /s *.ficfg
 del /f /q /s *.local
 del /f /q /s *.identcache
+del /f /q /s *.orig
 del /f /q /s *.stat
 del /f /q /s *.tvsconfig
 

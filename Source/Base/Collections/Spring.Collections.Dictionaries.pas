@@ -542,7 +542,7 @@ procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
 begin
   if Assigned(fOnKeyNotify) then
     fOnKeyNotify(Sender, Item, Action);
-  KeyChanged(Item, TCollectionChangedAction(action));
+  KeyChanged(Item, CollectionNotificationMapping[action]);
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
@@ -550,7 +550,7 @@ procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
 begin
   if Assigned(fOnValueNotify) then
     fOnValueNotify(Sender, Item, Action);
-  ValueChanged(Item, TCollectionChangedAction(Action));
+  ValueChanged(Item, CollectionNotificationMapping[action]);
 end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
