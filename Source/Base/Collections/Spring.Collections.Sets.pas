@@ -92,14 +92,13 @@ type
   {$ENDREGION}
   private
     const
-      MinCapacity = 8;
+      MinCapacity = 6; // 75% load factor leads to min bucket count of 8
       BucketSentinelFlag = Integer($80000000); // note: the same as RemovedFlag
       EmptyBucket = -1; // must be negative, note choice of BucketSentinelFlag
       UsedBucket  = -2; // likewise
   private
     fBuckets: TArray<Integer>;
     fItems: TArray<TItem>;
-    fCapacity: Integer;
     fCount: Integer;
     fItemCount: Integer;
     fBucketIndexMask: Integer;
@@ -108,7 +107,7 @@ type
     fVersion: Integer;
     procedure Rehash(newCapacity: Integer);
     procedure EnsureCompact;
-    function Grow: Boolean;
+    procedure Grow;
     function Find(const item: T; hashCode: Integer;
       out bucketIndex, itemIndex: Integer): Boolean;
     function Hash(const item: T): Integer; inline;
@@ -117,7 +116,7 @@ type
       action: TCollectionChangedAction);
   protected
   {$REGION 'Property Accessors'}
-    function GetCapacity: Integer;
+    function GetCapacity: Integer; inline;
     function GetCount: Integer; 
     function GetIsEmpty: Boolean;
     function GetItem(index: Integer): T;
@@ -126,6 +125,7 @@ type
     class function CreateSet: ISet<T>; override;
     function TryGetElementAt(out item: T; index: Integer): Boolean; override;
     property Count: Integer read fCount;
+    property Capacity: Integer read GetCapacity;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
@@ -393,7 +393,7 @@ begin
     newCapacity := 0
   else
     newCapacity := Math.Max(MinCapacity, value);
-  if newCapacity <> fCapacity then
+  if newCapacity <> Capacity then
     Rehash(newCapacity);
 end;
 
@@ -414,14 +414,11 @@ end;
 
 procedure THashSet<T>.Rehash(newCapacity: Integer);
 var
+  newBucketCount: Integer;
   bucketIndex, itemIndex: Integer;
   sourceItemIndex, targetItemIndex: Integer;
 begin
-  if newCapacity > 0 then
-    newCapacity := NextPowerOf2(newCapacity - 1);
-
-  fCapacity := newCapacity;
-  if fCapacity = 0 then
+  if newCapacity = 0 then
   begin
     Assert(fCount = 0);
     Assert(fItemCount = 0);
@@ -430,7 +427,11 @@ begin
     Exit;
   end;
 
+  Assert(newCapacity >= fCount);
+
   IncUnchecked(fVersion);
+
+  newBucketCount := NextPowerOf2(newCapacity * 4 div 3 - 1); // 75% load factor
 
   // compact the items array, if necessary
   if fItemCount > fCount then
@@ -447,15 +448,15 @@ begin
   end;
 
   // resize the items array, safe now that we have compacted it
-  SetLength(fItems, (fCapacity * 3) div 4); // max load factor of 0.75
-  Assert(Length(fItems) >= fCount);
+  SetLength(fItems, newBucketCount * 3 div 4);
+  Assert(Capacity >= fCount);
 
   // repopulate the bucket array
-  Assert(IsPowerOf2(fCapacity));
-  fBucketIndexMask := fCapacity - 1;
+  Assert(IsPowerOf2(newBucketCount));
+  fBucketIndexMask := newBucketCount - 1;
   fBucketHashCodeMask := not fBucketIndexMask and not BucketSentinelFlag;
-  SetLength(fBuckets, fCapacity);
-  for bucketIndex := 0 to fCapacity - 1 do
+  SetLength(fBuckets, newBucketCount);
+  for bucketIndex := 0 to newBucketCount - 1 do
     fBuckets[bucketIndex] := EmptyBucket;
   fItemCount := 0;
   while fItemCount < fCount do
@@ -467,21 +468,16 @@ begin
   end;
 end;
 
-function THashSet<T>.Grow: Boolean;
+procedure THashSet<T>.Grow;
 var
   newCapacity: Integer;
 begin
-  Result := fItemCount >= Length(fItems);
-  if not Result then
-    Exit;
-
-  if fCapacity = 0 then
+  newCapacity := Capacity;
+  if newCapacity = 0 then
     newCapacity := MinCapacity
-  else if 2 * fCount >= fCapacity then
+  else if 2 * fCount >= Length(fBuckets) then
     // only grow if load factor is greater than 0.5
-    newCapacity := fCapacity * 2
-  else
-    newCapacity := fCapacity;
+    newCapacity := newCapacity * 2;
   Rehash(newCapacity);
 end;
 
@@ -490,7 +486,7 @@ function THashSet<T>.Find(const item: T; hashCode: Integer;
 var
   bucketValue: Integer;
 begin
-  if fCapacity = 0 then
+  if Capacity = 0 then
   begin
     bucketIndex := EmptyBucket;
     itemIndex := -1;
@@ -561,9 +557,12 @@ begin
   Result := not Find(item, hashCode, bucketIndex, itemIndex);
   if Result then
   begin
-    if Grow then
+    if fItemCount = Capacity then
+    begin
+      Grow;
       // rehash invalidates the indices
       Find(item, hashCode, bucketIndex, itemIndex);
+    end;
     DoAdd(hashCode, bucketIndex, itemIndex, item);
   end;
 end;
@@ -598,7 +597,7 @@ end;
 procedure THashSet<T>.EnsureCompact;
 begin
   if fCount <> fItemCount then
-    Rehash(fCapacity);
+    Rehash(Capacity);
 end;
 
 function THashSet<T>.Extract(const item: T): T;
@@ -621,7 +620,7 @@ end;
 
 function THashSet<T>.GetCapacity: Integer;
 begin
-  Result := fCapacity;
+  Result := Length(fItems);
 end;
 
 function THashSet<T>.GetCount: Integer;
@@ -636,8 +635,7 @@ end;
 
 function THashSet<T>.GetItem(index: Integer): T;
 begin
-  if fCount <> fItemCount then
-    Rehash(fCapacity);
+  EnsureCompact;
   Result := fItems[index].Item;
 end;
 

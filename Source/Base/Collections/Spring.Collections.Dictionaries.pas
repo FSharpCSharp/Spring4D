@@ -163,14 +163,13 @@ type
   {$ENDREGION}
   private
     const
-      MinCapacity = 8;
+      MinCapacity = 6; // 75% load factor leads to min bucket count of 8
       BucketSentinelFlag = Integer($80000000); // note: the same as RemovedFlag
       EmptyBucket = -1; // must be negative, note choice of BucketSentinelFlag
       UsedBucket  = -2; // likewise
   private
     fBuckets: TArray<Integer>;
     fItems: TArray<TItem>;
-    fCapacity: Integer;
     fCount: Integer;
     fItemCount: Integer;
     fVersion: Integer;
@@ -183,7 +182,7 @@ type
     fOwnerships: TDictionaryOwnerships;
     procedure Rehash(newCapacity: Integer);
     procedure EnsureCompact;
-    function Grow: Boolean;
+    procedure Grow;
     function Find(const key: TKey; hashCode: Integer;
       out bucketIndex, itemIndex: Integer): Boolean;
     function Hash(const key: TKey): Integer; inline;
@@ -196,7 +195,7 @@ type
       iteratorVersion: Integer): Boolean;
   protected
   {$REGION 'Property Accessors'}
-    function GetCapacity: Integer;
+    function GetCapacity: Integer; inline;
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
     function GetItem(const key: TKey): TValue;
@@ -207,6 +206,7 @@ type
   {$ENDREGION}
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
+    property Capacity: Integer read GetCapacity;
   public
     constructor Create; overload; override;
     constructor Create(ownerships: TDictionaryOwnerships); overload;
@@ -512,7 +512,7 @@ type
   {$ENDREGION}
   private
     const
-      MinCapacity = 8;
+      MinCapacity = 6; // 75% load factor leads to min bucket count of 8
       BucketSentinelFlag = Integer($80000000); // note: the same as RemovedFlag
       EmptyBucket = -1; // must be negative, note choice of BucketSentinelFlag
       UsedBucket  = -2; // likewise
@@ -520,7 +520,6 @@ type
     fKeyBuckets: TArray<Integer>;
     fValueBuckets: TArray<Integer>;
     fItems: TArray<TItem>;
-    fCapacity: Integer;
     fCount: Integer;
     fItemCount: Integer;
     fVersion: Integer;
@@ -534,7 +533,7 @@ type
     fOwnerships: TDictionaryOwnerships;
     procedure Rehash(newCapacity: Integer);
     procedure EnsureCompact;
-    function Grow: Boolean;
+    procedure Grow;
     function FindKey(const key: TKey; hashCode: Integer;
       out bucketIndex, itemIndex: Integer): Boolean;
     function FindValue(const value: TValue; hashCode: Integer;
@@ -555,7 +554,7 @@ type
     procedure AddOrSetKey(const value: TValue; const key: TKey);
   protected
   {$REGION 'Property Accessors'}
-    function GetCapacity: Integer;
+    function GetCapacity: Integer; inline;
     function GetCount: Integer;
     function GetInverse: IBidiDictionary<TValue, TKey>;
     function GetIsEmpty: Boolean;
@@ -568,6 +567,7 @@ type
     procedure Changed(const item: TPair<TKey, TValue>; action: TCollectionChangedAction); override;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction);
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction);
+    property Capacity: Integer read GetCapacity;
   public
     constructor Create; overload; override;
     constructor Create(ownerships: TDictionaryOwnerships); overload;
@@ -916,7 +916,7 @@ end;
 
 function TDictionary<TKey, TValue>.GetCapacity: Integer;
 begin
-  Result := fCapacity;
+  Result := Length(fItems);
 end;
 
 procedure TDictionary<TKey, TValue>.SetCapacity(value: Integer);
@@ -929,20 +929,17 @@ begin
     newCapacity := 0
   else
     newCapacity := Math.Max(MinCapacity, value);
-  if newCapacity <> fCapacity then
+  if newCapacity <> Capacity then
     Rehash(newCapacity);
 end;
 
 procedure TDictionary<TKey, TValue>.Rehash(newCapacity: Integer);
 var
+  newBucketCount: Integer;
   bucketIndex, itemIndex: Integer;
   sourceItemIndex, targetItemIndex: Integer;
 begin
-  if newCapacity > 0 then
-    newCapacity := NextPowerOf2(newCapacity - 1);
-
-  fCapacity := newCapacity;
-  if fCapacity = 0 then
+  if newCapacity = 0 then
   begin
     Assert(fCount = 0);
     Assert(fItemCount = 0);
@@ -951,7 +948,11 @@ begin
     Exit;
   end;
 
+  Assert(newCapacity >= fCount);
+
   IncUnchecked(fVersion);
+
+  newBucketCount := NextPowerOf2(newCapacity * 4 div 3 - 1); // 75% load factor
 
   // compact the items array, if necessary
   if fItemCount > fCount then
@@ -968,15 +969,15 @@ begin
   end;
 
   // resize the items array, safe now that we have compacted it
-  SetLength(fItems, (fCapacity * 3) div 4); // max load factor of 0.75
-  Assert(Length(fItems) >= fCount);
+  SetLength(fItems, newBucketCount * 3 div 4);
+  Assert(Capacity >= fCount);
 
   // repopulate the bucket array
-  Assert(IsPowerOf2(fCapacity));
-  fBucketIndexMask := fCapacity - 1;
+  Assert(IsPowerOf2(newBucketCount));
+  fBucketIndexMask := newBucketCount - 1;
   fBucketHashCodeMask := not fBucketIndexMask and not BucketSentinelFlag;
-  SetLength(fBuckets, fCapacity);
-  for bucketIndex := 0 to fCapacity - 1 do
+  SetLength(fBuckets, newBucketCount);
+  for bucketIndex := 0 to newBucketCount - 1 do
     fBuckets[bucketIndex] := EmptyBucket;
   fItemCount := 0;
   while fItemCount < fCount do
@@ -988,21 +989,16 @@ begin
   end;
 end;
 
-function TDictionary<TKey, TValue>.Grow: Boolean;
+procedure TDictionary<TKey, TValue>.Grow;
 var
   newCapacity: Integer;
 begin
-  Result := fItemCount >= Length(fItems);
-  if not Result then
-    Exit;
-
-  if fCapacity = 0 then
+  newCapacity := Capacity;
+  if newCapacity = 0 then
     newCapacity := MinCapacity
-  else if 2 * fCount >= fCapacity then
+  else if 2 * fCount >= Length(fBuckets) then
     // only grow if load factor is greater than 0.5
-    newCapacity := fCapacity * 2
-  else
-    newCapacity := fCapacity;
+    newCapacity := newCapacity * 2;
   Rehash(newCapacity);
 end;
 
@@ -1011,7 +1007,7 @@ function TDictionary<TKey, TValue>.Find(const key: TKey; hashCode: Integer;
 var
   bucketValue: Integer;
 begin
-  if fCapacity = 0 then
+  if Capacity = 0 then
   begin
     bucketIndex := EmptyBucket;
     itemIndex := -1;
@@ -1222,7 +1218,7 @@ end;
 procedure TDictionary<TKey, TValue>.EnsureCompact;
 begin
   if fCount <> fItemCount then
-    Rehash(fCapacity);
+    Rehash(Capacity);
 end;
 
 function TDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
@@ -1263,9 +1259,12 @@ begin
   hashCode := Hash(key);
   if Find(key, hashCode, bucketIndex, itemIndex) then
     Exit(False);
-  if Grow then
+  if fItemCount = Capacity then
+  begin
+    Grow;
     // rehash invalidates the indices
     Find(key, hashCode, bucketIndex, itemIndex);
+  end;
   DoAdd(hashCode, bucketIndex, itemIndex, key, value);
   Result := True;
 end;
@@ -1375,9 +1374,12 @@ begin
   else
   begin
     // add new value
-    if Grow then
+    if fItemCount = Capacity then
+    begin
+      Grow;
       // rehash invalidates the indices
       Find(key, hashCode, bucketIndex, itemIndex);
+    end;
     DoAdd(hashCode, bucketIndex, itemIndex, key, value);
   end;
 end;
@@ -1832,7 +1834,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.GetCapacity: Integer;
 begin
-  Result := fCapacity;
+  Result := Length(fItems);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.SetCapacity(value: Integer);
@@ -1843,20 +1845,17 @@ begin
     newCapacity := 0
   else
     newCapacity := Math.Max(MinCapacity, value);
-  if newCapacity <> fCapacity then
+  if newCapacity <> Capacity then
     Rehash(newCapacity);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.Rehash(newCapacity: Integer);
 var
+  newBucketCount: Integer;
   bucketIndex, itemIndex: Integer;
   sourceItemIndex, targetItemIndex: Integer;
 begin
-  if newCapacity > 0 then
-    newCapacity := NextPowerOf2(newCapacity - 1);
-
-  fCapacity := newCapacity;
-  if fCapacity = 0 then
+  if newCapacity = 0 then
   begin
     Assert(fCount = 0);
     Assert(fItemCount = 0);
@@ -1866,7 +1865,11 @@ begin
     Exit;
   end;
 
+  Assert(newCapacity >= fCount);
+
   IncUnchecked(fVersion);
+
+  newBucketCount := NextPowerOf2(newCapacity * 4 div 3 - 1); // 75% load factor
 
   // compact the items array, if necessary
   if fItemCount > fCount then
@@ -1883,18 +1886,18 @@ begin
   end;
 
   // resize the items array, safe now that we have compacted it
-  SetLength(fItems, (fCapacity * 3) div 4); // max load factor of 0.75
-  Assert(Length(fItems) >= fCount);
+  SetLength(fItems, newBucketCount * 3 div 4);
+  Assert(Capacity >= fCount);
 
   // repopulate the bucket array
-  Assert(IsPowerOf2(fCapacity));
-  fBucketIndexMask := fCapacity - 1;
+  Assert(IsPowerOf2(newBucketCount));
+  fBucketIndexMask := newBucketCount - 1;
   fBucketHashCodeMask := not fBucketIndexMask and not BucketSentinelFlag;
-  SetLength(fKeyBuckets, fCapacity);
-  SetLength(fValueBuckets, fCapacity);
-  for bucketIndex := 0 to fCapacity - 1 do
+  SetLength(fKeyBuckets, newBucketCount);
+  for bucketIndex := 0 to newBucketCount - 1 do
     fKeyBuckets[bucketIndex] := EmptyBucket;
-  for bucketIndex := 0 to fCapacity - 1 do
+  SetLength(fValueBuckets, newBucketCount);
+  for bucketIndex := 0 to newBucketCount - 1 do
     fValueBuckets[bucketIndex] := EmptyBucket;
   fItemCount := 0;
   while fItemCount < fCount do
@@ -1911,21 +1914,16 @@ begin
   end;
 end;
 
-function TBidiDictionary<TKey, TValue>.Grow: Boolean;
+procedure TBidiDictionary<TKey, TValue>.Grow;
 var
   newCapacity: Integer;
 begin
-  Result := fItemCount >= Length(fItems);
-  if not Result then
-    Exit;
-
-  if fCapacity = 0 then
+  newCapacity := Capacity;
+  if newCapacity = 0 then
     newCapacity := MinCapacity
-  else if 2 * fCount >= fCapacity then
+  else if 2 * fCount >= Length(fKeyBuckets) then
     // only grow if load factor is greater than 0.5
-    newCapacity := fCapacity * 2
-  else
-    newCapacity := fCapacity;
+    newCapacity := newCapacity * 2;
   Rehash(newCapacity);
 end;
 
@@ -1934,7 +1932,7 @@ function TBidiDictionary<TKey, TValue>.FindKey(const key: TKey; hashCode: Intege
 var
   bucketValue: Integer;
 begin
-  if fCapacity = 0 then
+  if Capacity = 0 then
   begin
     bucketIndex := EmptyBucket;
     itemIndex := -1;
@@ -1969,7 +1967,7 @@ function TBidiDictionary<TKey, TValue>.FindValue(const value: TValue; hashCode: 
 var
   bucketValue: Integer;
 begin
-  if fCapacity = 0 then
+  if Capacity = 0 then
   begin
     bucketIndex := EmptyBucket;
     itemIndex := -1;
@@ -2065,8 +2063,11 @@ begin
   valueHashCode := fItems[itemIndex].ValueHashCode;
 
   IncUnchecked(fVersion);
-  if Grow then
+  if fItemCount = Capacity then
+  begin
+    Grow;
     FindValue(item.Value, valueHashCode, valueBucketIndex, itemIndex);
+  end;
   FindKey(item.Key, oldKeyHashCode, oldKeyBucketIndex, oldKeyItemIndex);
   Assert(oldKeyItemIndex = itemIndex);
   fValueBuckets[oldKeyBucketIndex] := UsedBucket;
@@ -2107,8 +2108,11 @@ begin
   oldValueHashCode := fItems[itemIndex].ValueHashCode;
 
   IncUnchecked(fVersion);
-  if Grow then
+  if fItemCount = Capacity then
+  begin
+    Grow;
     FindKey(item.Key, keyHashCode, keyBucketIndex, itemIndex);
+  end;
   FindValue(item.Value, oldValueHashCode, oldValueBucketIndex, oldValueItemIndex);
   Assert(oldValueItemIndex = itemIndex);
   fValueBuckets[oldValueBucketIndex] := UsedBucket;
@@ -2236,8 +2240,9 @@ begin
   else
   begin
     // neither value nor key found, this is an add operation
-    if Grow then
+    if fItemCount = Capacity then
     begin
+      Grow;
       // rehash invalidates the indices
       FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
       FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
@@ -2278,7 +2283,7 @@ end;
 procedure TBidiDictionary<TKey, TValue>.EnsureCompact;
 begin
   if fCount <> fItemCount then
-    Rehash(fCapacity);
+    Rehash(Capacity);
 end;
 
 function TBidiDictionary<TKey, TValue>.Extract(const key: TKey): TValue;
@@ -2322,8 +2327,9 @@ begin
   valueHashCode := ValueHash(value);
   if FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex) then
     Exit(False);
-  if Grow then
+  if fItemCount = Capacity then
   begin
+    Grow;
     // rehash invalidates the indices
     FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
     FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
@@ -2458,8 +2464,9 @@ begin
   else
   begin
     // neither key nor value found, this is an add operation
-    if Grow then
+    if fItemCount = Capacity then
     begin
+      Grow;
       // rehash invalidates the indices
       FindKey(key, keyHashCode, keyBucketIndex, keyItemIndex);
       FindValue(value, valueHashCode, valueBucketIndex, valueItemIndex);
@@ -2566,7 +2573,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetCapacity: Integer;
 begin
-  Result := fSource.fCapacity;
+  Result := fSource.Capacity;
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetCount: Integer;
