@@ -393,11 +393,7 @@ begin
   if TType.Kind<TKey> = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
+    FreeObject(item);
 end;
 
 procedure TMultiMapBase<TKey, TValue>.DoValueChanged(sender: TObject;
@@ -413,11 +409,7 @@ begin
   if TType.Kind<TValue> = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
+    FreeObject(item);
 end;
 
 procedure TMultiMapBase<TKey, TValue>.DoValuesChanged(sender: TObject;

@@ -69,11 +69,11 @@ type
     procedure HandleNotification(component: TComponent; operation: TOperation);
     procedure LockEnter; inline;
     procedure LockLeave; inline;
-    property Count: Integer read GetCount;
   protected
     fInvoke: TMethodPointer;
     procedure Notify(sender: TObject; const item: TMethodPointer;
       action: TCollectionNotification); virtual;
+    property Count: Integer read GetCount;
     property Handlers: TArray<TMethodPointer> read GetHandlers;
   public
     constructor Create;
@@ -345,6 +345,9 @@ begin
   repeat
     oldCount := fCount;
   until AtomicCmpExchange(fCount, (oldCount or DisabledFlag) xor bitMask, oldCount) = oldCount;
+
+  if Assigned(fOnChanged) then
+    fOnChanged(Self);
 end;
 
 procedure TEventBase.SetOnChanged(const value: TNotifyEvent);

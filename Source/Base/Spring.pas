@@ -2651,6 +2651,12 @@ function IsPowerOf2(value: Integer): Boolean;
 
 function NextPowerOf2(value: Integer): Integer;
 
+// copy from System.pas to make it possible to inline
+function DynArrayLength(const A: Pointer): NativeInt; inline;
+function DynArrayHigh(const A: Pointer): NativeInt; inline;
+
+procedure FreeObject(const item); inline;
+
   {$ENDREGION}
 
 
@@ -3367,6 +3373,27 @@ begin
   Result := 1;
   while Result <= value do
     Result := Result shl 1;
+end;
+
+{$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+{$IFOPT R+}{$DEFINE RANGECHECKS_ON}{$R-}{$ENDIF}
+function DynArrayLength(const A: Pointer): NativeInt;
+begin
+  Result := NativeInt(A);
+  if Result <> 0 then
+    Result := PNativeInt(PByte(Result) - SizeOf(NativeInt))^;
+end;
+
+function DynArrayHigh(const A: Pointer): NativeInt;
+begin
+  Result := DynArrayLength(A) - 1;
+end;
+{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+{$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
+procedure FreeObject(const item);
+begin
+  TObject(item).{$IFNDEF AUTOREFCOUNT}Free{$ELSE}DisposeOf{$ENDIF};
 end;
 
 {$ENDREGION}

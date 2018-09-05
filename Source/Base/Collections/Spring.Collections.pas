@@ -951,6 +951,7 @@ type
     function GetCapacity: Integer;
     function GetCount: Integer;
     function GetItem(index: Integer): T;
+    function GetOwnsObjects: Boolean;
     procedure SetCapacity(value: Integer);
     procedure SetCount(value: Integer);
     procedure SetItem(index: Integer; const item: T);
@@ -1065,6 +1066,7 @@ type
     property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount write SetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
+    property OwnsObjects: Boolean read GetOwnsObjects;
   end;
 
   IObjectList = interface(IList<TObject>)

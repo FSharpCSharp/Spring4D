@@ -1336,12 +1336,14 @@ var
   SUT: IDictionary<TObject, Integer>;
   index: Integer;
   keys: TArray<TObject>;
+  obj: TObject;
 begin
   SUT := CreateOwnedKeysDict;
   keys := TArray<TObject>.Create(TObject.Create, TObject.Create, TObject.Create, TObject.Create);
   for index := 0 to 3 do
     SUT.Add(keys[index], index);
-  SUT.Extract(keys[1], 1).Key.Free;
+  obj := SUT.Extract(keys[1], 1).Key;
+  obj.Free;
   Check(SUT.Remove(keys[2]));
   SUT.Clear;
   Pass;
@@ -1350,13 +1352,15 @@ end;
 procedure TTestDictionaryOwnershipBase.TestValues;
 var
   SUT: IBidiDictionary<Integer, TObject>;
+  obj: TObject;
 begin
   SUT := TCollections.CreateBidiDictionary<Integer, TObject>([doOwnsValues]);
   SUT.Add(0, TObject.Create);
   SUT.Add(1, TObject.Create);
   SUT.Add(2, TObject.Create);
   SUT.Add(3, TObject.Create);
-  SUT.Extract(1).Free;
+  obj := SUT.Extract(1);
+  obj.Free;
   SUT.Remove(2);
   SUT.Remove(2);
   SUT.Clear;

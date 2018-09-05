@@ -110,7 +110,6 @@ type
     procedure TestQueryInterface;
     procedure TestIssue67;
     procedure TestCopyTo;
-    procedure TestArrayAccess;
     procedure TestIssue53;
 
     procedure GetCapacity;
@@ -407,10 +406,11 @@ type
   published
     procedure TestQueryInterface;
     procedure TestObjectListCreate;
-    procedure TestSetOwnsObjects;
     procedure TestGetElementType;
     procedure TestExtractAt;
     procedure TestGetRangeElementType;
+    procedure TestIndexOf;
+    procedure TestExtractRange;
   end;
 
   TTestInterfaceList = class(TTestCase)
@@ -870,22 +870,6 @@ begin
   Pass;
 end;
 
-procedure TTestIntegerList.TestArrayAccess;
-var
-  arrayAccess: IArrayAccess<Integer>;
-  values: TArray<Integer>;
-begin
-  SimpleFillList;
-  arrayAccess := SUT as IArrayAccess<Integer>;
-  values := arrayAccess.Items;
-  CheckEquals(4, Length(values));
-  CheckEquals(3, arrayAccess.Count);
-  CheckEquals(SUT[0], values[0]);
-  CheckEquals(SUT[1], values[1]);
-  CheckEquals(SUT[2], values[2]);
-  values[1] := 4;
-  CheckEquals(SUT[1], values[1]);
-end;
 
 procedure TTestIntegerList.TestCopyTo;
 var
@@ -2749,6 +2733,17 @@ end;
 
 {$REGION 'TTestObjectList'}
 
+type
+  TTestNotEqual = class(TPersistent)
+  public
+    function Equals(Obj: TObject): Boolean; override;
+  end;
+
+function TTestNotEqual.Equals(Obj: TObject): Boolean;
+begin
+  Result := False;
+end;
+
 procedure TTestObjectList.SetUp;
 begin
   SUT := TObjectList<TPersistent>.Create;
@@ -2767,6 +2762,16 @@ begin
   CheckEquals(TPersistent, SUT.GetRange(0, 1).ElementType.TypeData.ClassType);
 end;
 
+procedure TTestObjectList.TestIndexOf;
+var
+  obj: TPersistent;
+begin
+  obj := TTestNotEqual.Create;
+  SUT.Add(obj);
+  CheckEquals(-1, SUT.IndexOf(obj));
+  CheckFalse(SUT.Contains(obj));
+end;
+
 procedure TTestObjectList.TestExtractAt;
 var
   obj1, obj2, obj3: TPersistent;
@@ -2778,6 +2783,20 @@ begin
   CheckEquals(1, SUT.Count);
   CheckSame(obj2, obj3);
   obj3.Free;
+end;
+
+procedure TTestObjectList.TestExtractRange;
+var
+  obj1, obj2: TPersistent;
+  objs: TArray<TPersistent>;
+begin
+  obj1 := TPersistent.Create;
+  obj2 := TPersistent.Create;
+  SUT.AddRange([obj1, obj2]);
+  objs := SUT.ExtractRange(0, 2);
+  objs[0].Free;
+  objs[1].Free;
+  Pass;
 end;
 
 procedure TTestObjectList.TestGetElementType;
@@ -2810,15 +2829,6 @@ begin
   CheckTrue(list.ElementType = TPersistent.ClassInfo);
 end;
 
-procedure TTestObjectList.TestSetOwnsObjects;
-var
-  list: ICollectionOwnership;
-begin
-  list := SUT as ICollectionOwnership;
-  CheckTrue(list.OwnsObjects);
-  list.OwnsObjects := False;
-  CheckFalse(list.OwnsObjects);
-end;
 
 {$ENDREGION}
 
@@ -3478,7 +3488,7 @@ begin
       for i in SUT[1] do
       begin
         SUT.Remove(1);
-        SUT.Add(1, 1);
+        SUT.Add(1, i);
       end;
     end);
 

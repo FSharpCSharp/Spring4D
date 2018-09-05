@@ -486,7 +486,7 @@ function THashSet<T>.Find(const item: T; hashCode: Integer;
 var
   bucketValue: Integer;
 begin
-  if Capacity = 0 then
+  if fItems = nil then
   begin
     bucketIndex := EmptyBucket;
     itemIndex := -1;
@@ -620,7 +620,7 @@ end;
 
 function THashSet<T>.GetCapacity: Integer;
 begin
-  Result := Length(fItems);
+  Result := DynArrayLength(fItems);
 end;
 
 function THashSet<T>.GetCount: Integer;
@@ -752,7 +752,7 @@ begin
     Exit;
 
   IncUnchecked(fVersion);
-  if fOnChanged.CanInvoke then // optimization: if no notification needs to be send the entire tree traversal won't be done
+  if Assigned(OnChanged) and OnChanged.CanInvoke then // optimization: if no notification needs to be send the entire tree traversal won't be done
     for node in fTree.Root^ do
       Changed(PNode(node).Key, caRemoved);
 

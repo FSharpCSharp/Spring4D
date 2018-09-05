@@ -84,15 +84,19 @@ end;
 procedure TCollectionChangedEventImpl<T>.Invoke(Sender: TObject;
   const Item: T; Action: TCollectionChangedAction);
 var
-  handler: TMethodPointer;
+  handlers: TArray<TMethodPointer>;
+  i: Integer;
 begin
   // If you get exception at this location on NextGen and the handler is nil
   // it is highly possible that the owner of the collection already released
   // its weak references. To fix this, free the collection prior to freeing
   // the object owning it (even if you're using interfaces).
   if Enabled then
-    for handler in Handlers do
-      TCollectionChangedEvent<T>(handler)(Sender, Item, Action);
+  begin
+    handlers := Self.Handlers;
+    for i := 0 to DynArrayHigh(handlers) do
+      TCollectionChangedEvent<T>(handlers[i])(Sender, Item, Action);
+  end;
 end;
 
 procedure TCollectionChangedEventImpl<T>.Remove(

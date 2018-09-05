@@ -143,6 +143,7 @@ type
 
       TOrderedEnumerable = class(TIterator<TKeyValuePair>, IEnumerable<TKeyValuePair>)
       private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
         fSortedItemIndices: TArray<Integer>;
         fIndex: Integer;
@@ -891,11 +892,7 @@ begin
   if TType.Kind<TKey> = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
+    FreeObject(item);
 end;
 
 procedure TDictionary<TKey, TValue>.ValueChanged(const item: TValue;
@@ -907,16 +904,12 @@ begin
   if TType.Kind<TValue> = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
+    FreeObject(item);
 end;
 
 function TDictionary<TKey, TValue>.GetCapacity: Integer;
 begin
-  Result := Length(fItems);
+  Result := DynArrayLength(fItems);
 end;
 
 procedure TDictionary<TKey, TValue>.SetCapacity(value: Integer);
@@ -1007,7 +1000,7 @@ function TDictionary<TKey, TValue>.Find(const key: TKey; hashCode: Integer;
 var
   bucketValue: Integer;
 begin
-  if Capacity = 0 then
+  if fItems = nil then
   begin
     bucketIndex := EmptyBucket;
     itemIndex := -1;
@@ -1044,10 +1037,10 @@ end;
 
 procedure TDictionary<TKey, TValue>.DoAdd(hashCode, bucketIndex, itemIndex: Integer;
   const key: TKey; const value: TValue);
-var
-  item: TKeyValuePair;
 begin
-  IncUnchecked(fVersion);
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fBuckets[bucketIndex] := itemIndex or (hashCode and fBucketHashCodeMask);
   fItems[itemIndex].HashCode := hashCode;
   fItems[itemIndex].Key := key;
@@ -1055,9 +1048,8 @@ begin
   Inc(fCount);
   Inc(fItemCount);
 
-  item.Key := key;
-  item.Value := value;
-  Changed(item, caAdded);
+  if Assigned(Notify) then
+    DoNotify(key, value, caAdded);
   KeyChanged(key, caAdded);
   ValueChanged(value, caAdded);
 end;
@@ -1065,28 +1057,29 @@ end;
 procedure TDictionary<TKey, TValue>.DoSetValue(itemIndex: Integer;
   const value: TValue);
 var
-  item: TKeyValuePair;
+  oldValue: TValue;
 begin
-  item.Key := fItems[itemIndex].Key;
-  item.Value := fItems[itemIndex].Value;
+  oldValue := fItems[itemIndex].Value;
 
   IncUnchecked(fVersion);
   fItems[itemIndex].Value := value;
 
-  Changed(item, caRemoved);
-  ValueChanged(item.Value, caRemoved);
-  item.Value := value;
-  Changed(item, caAdded);
-  ValueChanged(item.Value, caAdded);
+  if Assigned(Notify) then
+    DoNotify(fItems[itemIndex].Key, oldValue, caRemoved);
+  ValueChanged(oldValue, caRemoved);
+  if Assigned(Notify) then
+    DoNotify(fItems[itemIndex].Key, value, caAdded);
+  ValueChanged(value, caAdded);
 end;
 
 procedure TDictionary<TKey, TValue>.DoRemove(bucketIndex, itemIndex: Integer;
   action: TCollectionChangedAction);
 var
-  item: TKeyValuePair;
+  oldKey: TKey;
+  oldValue: TValue;
 begin
-  item.Key := fItems[itemIndex].Key;
-  item.Value := fItems[itemIndex].Value;
+  oldKey := fItems[itemIndex].Key;
+  oldValue := fItems[itemIndex].Value;
 
   IncUnchecked(fVersion);
   fBuckets[bucketIndex] := UsedBucket;
@@ -1095,9 +1088,10 @@ begin
   fItems[itemIndex].HashCode := TItem.RemovedFlag;
   Dec(fCount);
 
-  Changed(item, action);
-  KeyChanged(item.Key, action);
-  ValueChanged(item.Value, action);
+  if Assigned(Notify) then
+    DoNotify(oldKey, oldValue, action);
+  KeyChanged(oldKey, action);
+  ValueChanged(oldValue, action);
 end;
 
 function TDictionary<TKey, TValue>.DoMoveNext(var itemIndex: Integer;
@@ -1124,7 +1118,6 @@ procedure TDictionary<TKey, TValue>.Clear;
 var
   oldItemIndex, oldItemCount: Integer;
   oldItems: TArray<TItem>;
-  item: TKeyValuePair;
 begin
   oldItemCount := fItemCount;
   oldItems := fItems;
@@ -1139,11 +1132,10 @@ begin
   for oldItemIndex := 0 to oldItemCount - 1 do
     if not oldItems[oldItemIndex].Removed then
     begin
-      item.Key := oldItems[oldItemIndex].Key;
-      item.Value := oldItems[oldItemIndex].Value;
-      Changed(item, caRemoved);
-      KeyChanged(item.Key, caRemoved);
-      ValueChanged(item.Value, caRemoved);
+      if Assigned(Notify) then
+        DoNotify(oldItems[oldItemIndex].Key, oldItems[oldItemIndex].Value, caRemoved);
+      KeyChanged(oldItems[oldItemIndex].Key, caRemoved);
+      ValueChanged(oldItems[oldItemIndex].Value, caRemoved);
     end;
 end;
 
@@ -1593,16 +1585,12 @@ constructor TDictionary<TKey, TValue>.TOrderedEnumerable.Create(
 begin
   inherited Create;
   fSource := source;
-{$IFNDEF AUTOREFCOUNT}
   fSource._AddRef;
-{$ENDIF}
 end;
 
 destructor TDictionary<TKey, TValue>.TOrderedEnumerable.Destroy;
 begin
-{$IFNDEF AUTOREFCOUNT}
   fSource._Release;
-{$ENDIF}
   inherited Destroy;
 end;
 
@@ -1809,11 +1797,7 @@ begin
   if TType.Kind<TKey> = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
+    FreeObject(item);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.ValueChanged(const item: TValue;
@@ -1825,16 +1809,12 @@ begin
   if TType.Kind<TValue> = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
-{$IFNDEF AUTOREFCOUNT}
-    PObject(@item).Free;
-{$ELSE}
-    PObject(@item).DisposeOf;
-{$ENDIF}
+    FreeObject(item);
 end;
 
 function TBidiDictionary<TKey, TValue>.GetCapacity: Integer;
 begin
-  Result := Length(fItems);
+  Result := DynArrayLength(fItems);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.SetCapacity(value: Integer);
@@ -1932,7 +1912,7 @@ function TBidiDictionary<TKey, TValue>.FindKey(const key: TKey; hashCode: Intege
 var
   bucketValue: Integer;
 begin
-  if Capacity = 0 then
+  if fItems = nil then
   begin
     bucketIndex := EmptyBucket;
     itemIndex := -1;
@@ -1967,7 +1947,7 @@ function TBidiDictionary<TKey, TValue>.FindValue(const value: TValue; hashCode: 
 var
   bucketValue: Integer;
 begin
-  if Capacity = 0 then
+  if fItems = nil then
   begin
     bucketIndex := EmptyBucket;
     itemIndex := -1;
@@ -2009,8 +1989,6 @@ end;
 
 procedure TBidiDictionary<TKey, TValue>.DoAdd(keyhashCode, keyBucketIndex, valueHashCode,
   valueBucketIndex, itemIndex: Integer; const key: TKey; const value: TValue);
-var
-  item: TKeyValuePair;
 begin
   IncUnchecked(fVersion);
   fKeyBuckets[keyBucketIndex] := itemIndex or (keyHashCode and fBucketHashCodeMask);
@@ -2022,20 +2000,20 @@ begin
   Inc(fCount);
   Inc(fItemCount);
 
-  item.Key := key;
-  item.Value := value;
-  Changed(item, caAdded);
-  KeyChanged(item.Key, caAdded);
-  ValueChanged(item.Value, caAdded);
+  if Assigned(Notify) then
+    DoNotify(key, value, caAdded);
+  KeyChanged(key, caAdded);
+  ValueChanged(value, caAdded);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.DoRemove(keyBucketIndex, valueBucketIndex,
   itemIndex: Integer; action: TCollectionChangedAction);
 var
-  item: TKeyValuePair;
+  oldKey: TKey;
+  oldValue: TValue;
 begin
-  item.Key := fItems[itemIndex].Key;
-  item.Value := fItems[itemIndex].Value;
+  oldKey := fItems[itemIndex].Key;
+  oldValue := fItems[itemIndex].Value;
 
   IncUnchecked(fVersion);
   fKeyBuckets[keyBucketIndex] := UsedBucket;
@@ -2046,19 +2024,21 @@ begin
   fItems[itemIndex].ValueHashCode := TItem.RemovedFlag;
   Dec(fCount);
 
-  Changed(item, action);
-  KeyChanged(item.Key, action);
-  ValueChanged(item.Value, action);
+  if Assigned(Notify) then
+    DoNotify(oldKey, oldValue, action);
+  KeyChanged(oldKey, action);
+  ValueChanged(oldValue, action);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.DoSetKey(valueBucketIndex, itemIndex,
   keyHashCode: Integer; const key: TKey);
 var
-  item: TKeyValuePair;
+  oldKey: TKey;
+  oldValue: TValue;
   oldKeyHashCode, valueHashCode, oldKeyBucketIndex, oldKeyItemIndex, keyBucketIndex: Integer;
 begin
-  item.Key := fItems[itemIndex].Key;
-  item.Value := fItems[itemIndex].Value;
+  oldKey := fItems[itemIndex].Key;
+  oldValue := fItems[itemIndex].Value;
   oldKeyHashCode := fItems[itemIndex].KeyHashCode;
   valueHashCode := fItems[itemIndex].ValueHashCode;
 
@@ -2066,9 +2046,9 @@ begin
   if fItemCount = Capacity then
   begin
     Grow;
-    FindValue(item.Value, valueHashCode, valueBucketIndex, itemIndex);
+    FindValue(oldValue, valueHashCode, valueBucketIndex, itemIndex);
   end;
-  FindKey(item.Key, oldKeyHashCode, oldKeyBucketIndex, oldKeyItemIndex);
+  FindKey(oldKey, oldKeyHashCode, oldKeyBucketIndex, oldKeyItemIndex);
   Assert(oldKeyItemIndex = itemIndex);
   fValueBuckets[oldKeyBucketIndex] := UsedBucket;
   FindKey(key, keyHashCode, keyBucketIndex, itemIndex);
@@ -2085,25 +2065,27 @@ begin
   fItems[oldKeyItemIndex].KeyHashCode := keyHashCode;
   Assert(fItems[oldKeyItemIndex].ValueHashCode = valueHashCode);
   fItems[oldKeyItemIndex].Key := key;
-  Assert(fValueComparer.Equals(fItems[oldKeyItemIndex].Value, item.Value));
+  Assert(fValueComparer.Equals(fItems[oldKeyItemIndex].Value, oldValue));
 
   Inc(fItemCount);
 
-  Changed(item, caRemoved);
-  KeyChanged(item.Key, caRemoved);
-  item.Key := key;
-  Changed(item, caAdded);
+  if Assigned(Notify) then
+    DoNotify(oldKey, oldValue, caRemoved);
+  KeyChanged(oldKey, caRemoved);
+  if Assigned(Notify) then
+    DoNotify(key, oldValue, caAdded);
   KeyChanged(key, caAdded);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.DoSetValue(keyBucketIndex, itemIndex,
   valueHashCode: Integer; const value: TValue);
 var
-  item: TKeyValuePair;
+  oldKey: TKey;
+  oldValue: TValue;
   keyHashCode, oldValueHashCode, oldValueBucketIndex, oldValueItemIndex, valueBucketIndex: Integer;
 begin
-  item.Key := fItems[itemIndex].Key;
-  item.Value := fItems[itemIndex].Value;
+  oldKey := fItems[itemIndex].Key;
+  oldValue := fItems[itemIndex].Value;
   keyHashCode := fItems[itemIndex].KeyHashCode;
   oldValueHashCode := fItems[itemIndex].ValueHashCode;
 
@@ -2111,9 +2093,9 @@ begin
   if fItemCount = Capacity then
   begin
     Grow;
-    FindKey(item.Key, keyHashCode, keyBucketIndex, itemIndex);
+    FindKey(oldKey, keyHashCode, keyBucketIndex, itemIndex);
   end;
-  FindValue(item.Value, oldValueHashCode, oldValueBucketIndex, oldValueItemIndex);
+  FindValue(oldValue, oldValueHashCode, oldValueBucketIndex, oldValueItemIndex);
   Assert(oldValueItemIndex = itemIndex);
   fValueBuckets[oldValueBucketIndex] := UsedBucket;
   FindValue(value, valueHashCode, valueBucketIndex, itemIndex);
@@ -2129,15 +2111,16 @@ begin
 
   Assert(fItems[oldValueItemIndex].KeyHashCode = keyHashCode);
   fItems[oldValueItemIndex].ValueHashCode := valueHashCode;
-  Assert(fKeyComparer.Equals(fItems[oldValueItemIndex].Key, item.Key));
+  Assert(fKeyComparer.Equals(fItems[oldValueItemIndex].Key, oldKey));
   fItems[oldValueItemIndex].Value := value;
 
   Inc(fItemCount);
 
-  Changed(item, caRemoved);
-  ValueChanged(item.Value, caRemoved);
-  item.Value := value;
-  Changed(item, caAdded);
+  if Assigned(Notify) then
+    DoNotify(oldKey, oldValue, caRemoved);
+  ValueChanged(oldValue, caRemoved);
+  if Assigned(Notify) then
+    DoNotify(oldKey, value, caAdded);
   ValueChanged(value, caAdded);
 end;
 
@@ -2165,7 +2148,6 @@ procedure TBidiDictionary<TKey, TValue>.Clear;
 var
   oldItemIndex, oldItemCount: Integer;
   oldItems: TArray<TItem>;
-  item: TKeyValuePair;
 begin
   oldItemCount := fItemCount;
   oldItems := fItems;
@@ -2181,11 +2163,10 @@ begin
   for oldItemIndex := 0 to oldItemCount - 1 do
     if not oldItems[oldItemIndex].Removed then
     begin
-      item.Key := oldItems[oldItemIndex].Key;
-      item.Value := oldItems[oldItemIndex].Value;
-      Changed(item, caRemoved);
-      KeyChanged(item.Key, caRemoved);
-      ValueChanged(item.Value, caRemoved);
+      if Assigned(Notify) then
+        DoNotify(oldItems[oldItemIndex].Key, oldItems[oldItemIndex].Value, caRemoved);
+      KeyChanged(oldItems[oldItemIndex].Key, caRemoved);
+      ValueChanged(oldItems[oldItemIndex].Value, caRemoved);
     end;
 end;
 
@@ -2506,8 +2487,8 @@ end;
 
 procedure TBidiDictionary<TKey, TValue>.TInverse.Changed(const item: TValueKeyPair; action: TCollectionChangedAction);
 begin
-  if fOnChanged.CanInvoke then
-    fOnChanged.Invoke(fSource, item, action);
+  if Assigned(OnChanged) and OnChanged.CanInvoke then
+    OnChanged.Invoke(fSource, item, action);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.TInverse.Clear;
@@ -3211,16 +3192,14 @@ end;
 procedure TSortedDictionary<TKey, TValue>.Clear;
 var
   node: PNode;
-  item: TKeyValuePair;
 begin
   IncUnchecked(fVersion);
 
   node := fTree.Root.LeftMost;
   while Assigned(node) do
   begin
-    item.Key := node.Key;
-    item.Value := node.Value;
-    Changed(item, caRemoved);
+    if Assigned(Notify) then
+      DoNotify(node.Key, node.Value, caRemoved);
     KeyChanged(node.Key, caRemoved);
     ValueChanged(node.Value, caRemoved);
     node := node.Next;
@@ -3356,16 +3335,14 @@ end;
 function TSortedDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
 var
   node: PNode;
-  item: TKeyValuePair;
 begin
   node := fTree.FindNode(key);
   Result := Assigned(node);
   if Result then
   begin
     IncUnchecked(fVersion);
-    item.Key := node.Key;
-    item.Value := node.Value;
-    Changed(item, caRemoved);
+    if Assigned(Notify) then
+      DoNotify(node.Key, node.Value, caRemoved);
     KeyChanged(node.Key, caRemoved);
     ValueChanged(node.Value, caRemoved);
     fTree.DeleteNode(node);
@@ -3376,7 +3353,6 @@ function TSortedDictionary<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
   node: PNode;
-  item: TKeyValuePair;
 begin
   node := fTree.FindNode(key);
   Result := Assigned(node)
@@ -3384,9 +3360,8 @@ begin
   if Result then
   begin
     IncUnchecked(fVersion);
-    item.Key := node.Key;
-    item.Value := Node.Value;
-    Changed(item, caRemoved);
+    if Assigned(Notify) then
+      DoNotify(node.Key, node.Value, caRemoved);
     KeyChanged(node.Key, caRemoved);
     ValueChanged(node.Value, caRemoved);
     fTree.DeleteNode(node);
@@ -3401,27 +3376,24 @@ end;
 procedure TSortedDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
 var
   node: PNode;
-  item: TKeyValuePair;
 begin
   IncUnchecked(fVersion);
   node := fTree.FindNode(key);
   if Assigned(node) then
   begin
-    item.Key := key;
-    item.Value := node.Value;
-    Changed(item, caRemoved);
+    if Assigned(Notify) then
+      DoNotify(key, node.Value, caRemoved);
     ValueChanged(node.Value, caRemoved);
     node.Value := value;
-    item.Value := value;
-    Changed(item, caAdded);
+    if Assigned(Notify) then
+      DoNotify(key, value, caAdded);
     ValueChanged(value, caAdded);
   end
   else
   begin
     fTree.Add(key, value);
-    item.Key := key;
-    item.Value := value;
-    Changed(item, caAdded);
+    if Assigned(Notify) then
+      DoNotify(key, value, caAdded);
     KeyChanged(key, caAdded);
     ValueChanged(value, caAdded);
   end;
@@ -3456,15 +3428,12 @@ end;
 
 function TSortedDictionary<TKey, TValue>.TryAdd(const key: TKey;
   const value: TValue): Boolean;
-var
-  item: TKeyValuePair;
 begin
   if not fTree.Add(key, value) then
     Exit(False);
   IncUnchecked(fVersion);
-  item.Key := key;
-  item.Value := value;
-  Changed(item, caAdded);
+  if Assigned(Notify) then
+    DoNotify(key, value, caAdded);
   KeyChanged(key, caAdded);
   ValueChanged(value, caAdded);
   Result := True;
@@ -3473,7 +3442,6 @@ end;
 function TSortedDictionary<TKey, TValue>.TryExtract(const key: TKey; out value: TValue): Boolean;
 var
   node: PNode;
-  item: TKeyValuePair;
 begin
   node := fTree.FindNode(key);
   Result := Assigned(node);
@@ -3482,9 +3450,8 @@ begin
     value := node.Value;
     IncUnchecked(fVersion);
     fTree.DeleteNode(node);
-    item.Key := key;
-    item.Value := value;
-    Changed(item, caExtracted);
+    if Assigned(Notify) then
+      DoNotify(key, value, caExtracted);
     KeyChanged(key, caExtracted);
     ValueChanged(value, caExtracted);
   end

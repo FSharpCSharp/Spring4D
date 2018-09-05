@@ -73,7 +73,7 @@ type
     class property Instance: IReadOnlyList<T> read GetInstance;
   end;
 
-  TArrayIterator<T> = class(TIterator<T>, IEnumerable<T>, IReadOnlyList<T>, IArrayAccess<T>, IEqualityComparer<T>)
+  TArrayIterator<T> = class(TIterator<T>, IEnumerable<T>, IReadOnlyList<T>)
   private
     fValues: TArray<T>;
     fIndex: Integer;
@@ -81,7 +81,6 @@ type
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
     function GetItem(index: Integer): T;
-    function GetItems: TArray<T>;
   {$ENDREGION}
   protected
     function Clone: TIterator<T>; override;
@@ -1017,11 +1016,6 @@ begin
   Result := fValues[index];
 end;
 
-function TArrayIterator<T>.GetItems: TArray<T>;
-begin
-  Result := fValues;
-end;
-
 function TArrayIterator<T>.GetRange(index, count: Integer): IList<T>;
 var
   i: Integer;
@@ -1053,7 +1047,8 @@ end;
 function TArrayIterator<T>.IndexOf(const item: T; index,
   count: Integer): Integer;
 begin
-  Result := TArray.IndexOf<T>(fValues, item, index, count, Self);
+  Result := TArray.IndexOf<T>(fValues, item, index, count,
+    TEqualityComparerWrapper<T>.Construct(Self));
 end;
 
 function TArrayIterator<T>.Clone: TIterator<T>;

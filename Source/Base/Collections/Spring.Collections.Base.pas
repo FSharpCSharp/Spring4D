@@ -72,7 +72,7 @@ type
   ///   Provides a default implementation for the <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
   ///    interface.
   /// </summary>
-  TEnumerableBase<T> = class abstract(TAbstractEnumerable, IEnumerable, IEqualityComparer<T>)
+  TEnumerableBase<T> = class abstract(TAbstractEnumerable, IEnumerable)
   private type
     TEnumerator = class(TInterfacedObject, IEnumerator)
     private
@@ -99,9 +99,10 @@ type
     function GetCount: Integer;
     function GetElementType: PTypeInfo; virtual;
     function GetIsEmpty: Boolean;
+    function GetUseComparer: Boolean; {$IFNDEF DELPHIXE7_UP}inline;{$ENDIF}
   {$ENDREGION}
   {$REGION 'Implements IEqualityComparer<T>'}
-    function GetHashCode(const value: T): Integer; reintroduce;
+    function GetHashCode(const value: T): Integer; reintroduce; inline;
     function Equals(const left, right: T): Boolean; reintroduce; inline;
   {$ENDREGION}
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
@@ -112,6 +113,7 @@ type
     function TryGetSingle(out value: T): Boolean; overload;
     function TryGetSingle(out value: T; const predicate: Predicate<T>): Boolean; overload;
     property Comparer: IComparer<T> read fComparer;
+    property UseComparer: Boolean read GetUseComparer;
   public
     constructor Create; overload; virtual;
     constructor Create(const comparer: IComparer<T>); overload;
@@ -194,6 +196,18 @@ type
     function ToArray: TArray<T>;
   end;
 
+  TEqualityComparerWrapper<T> = class(TInterfacedObject, IEqualityComparer<T>)
+  private
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fEnumerable: TEnumerableBase<T>;
+    constructor Create(const enumerable: TEnumerableBase<T>);
+  public
+    class function Construct(const enumerable: TEnumerableBase<T>): IEqualityComparer<T>; static;
+    destructor Destroy; override;
+    function Equals(const left, right: T): Boolean; reintroduce;
+    function GetHashCode(const value: T): Integer; reintroduce;
+  end;
+
   TIterator<T> = class abstract(TEnumerableBase<T>, IEnumerator, IEnumerator<T>)
   private
     fCurrent: T;
@@ -232,15 +246,24 @@ type
   ///   The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns <c>
   ///   False</c> by default.
   /// </remarks>
-  TCollectionBase<T> = class abstract(TEnumerableBase<T>, INotifyCollectionChanged<T>)
-  protected
+  TCollectionBase<T> = class abstract(TEnumerableBase<T>)
+  private type
+    TNotify = procedure(Self: TObject; const item: T; action: TCollectionChangedAction);
+  private
     fOnChanged: TCollectionChangedEventImpl<T>;
+    fNotify: TNotify;
+    procedure InitializeEvent;
+    procedure UpdateNotify(Sender: TObject);
+  protected
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
+    procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
     procedure Reset;
+    property OnChanged: TCollectionChangedEventImpl<T> read fOnChanged;
+    property Notify: TNotify read fNotify;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -302,6 +325,7 @@ type
     function GetKeyType: PTypeInfo; inline;
     function GetValueType: PTypeInfo; inline;
   {$ENDREGION}
+    procedure DoNotify(const key: TKey; const value: T; action: TCollectionChangedAction);
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: T; action: TCollectionChangedAction); inline;
   public
@@ -366,6 +390,10 @@ type
     class function NoMatch: Exception; static;
     class function NotSupported: Exception; static;
   end;
+
+const
+  CountMask = Integer($7FFFFFFF);
+  BitMask: array[Boolean] of Integer = (0, not CountMask);
 
 implementation
 
@@ -546,7 +574,7 @@ end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
 begin
-  Result := this.Contains(value, Self);
+  Result := this.Contains(value, TEqualityComparerWrapper<T>.Construct(Self));
 end;
 
 function TEnumerableBase<T>.Contains(const value: T;
@@ -598,7 +626,21 @@ begin
     else
       Result := PObject(@left).Equals(PObject(@right)^)
   else
-    Result := fComparer.Compare(left, right) = 0;
+    if UseComparer then
+      Result := fComparer.Compare(left, right) = 0
+{$IFDEF DELPHIXE7_UP}
+    else
+      case TType.Kind<T> of
+        tkUString: Result := PString(@left)^ = PString(@right)^
+      else
+        case SizeOf(T) of
+          1: Result := PByte(@left)^ = PByte(@right)^;
+          2: Result := PWord(@left)^ = PWord(@right)^;
+          4: Result := PCardinal(@left)^ = PCardinal(@right)^;
+          8: Result := PUInt64(@left)^ = PUInt64(@right)^;
+        end;
+      end;
+{$ENDIF}
 end;
 
 function TEnumerableBase<T>.EqualsTo(const values: array of T): Boolean;
@@ -620,7 +662,7 @@ end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;
 begin
-  Result := this.EqualsTo(values, Self);
+  Result := this.EqualsTo(values, TEqualityComparerWrapper<T>.Construct(Self));
 end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>;
@@ -739,6 +781,21 @@ end;
 function TEnumerableBase<T>.GetIsEmptyNonGeneric: Boolean;
 begin
   Result := this.IsEmpty;
+end;
+
+function TEnumerableBase<T>.GetUseComparer: Boolean;
+{$IFDEF DELPHIXE7_UP}
+const
+  FastComparableTypes = [tkUnknown, tkInteger, tkChar, tkEnumeration, tkSet,
+                         tkClass, tkMethod, tkWChar, tkInterface, tkInt64,
+                         tkUString, tkClassRef, tkPointer, tkProcedure];
+begin
+  Result := not ((TType.Kind<T> in FastComparableTypes) and (SizeOf(T) in [1, 2, 4, 8])
+    and ((fComparer = nil) or (Pointer(fComparer) = _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)))));
+{$ELSE}
+begin
+  Result := True;
+{$ENDIF}
 end;
 
 function TEnumerableBase<T>.Last: T;
@@ -1215,6 +1272,41 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TWrappedEqualityComparer<T>'}
+
+constructor TEqualityComparerWrapper<T>.Create(
+  const enumerable: TEnumerableBase<T>);
+begin
+  inherited Create;
+  fEnumerable := enumerable;
+  fEnumerable._AddRef;
+end;
+
+destructor TEqualityComparerWrapper<T>.Destroy;
+begin
+  fEnumerable._Release;
+  inherited;
+end;
+
+function TEqualityComparerWrapper<T>.Equals(const left, right: T): Boolean;
+begin
+  Result := fEnumerable.Equals(left, right);
+end;
+
+function TEqualityComparerWrapper<T>.GetHashCode(const value: T): Integer;
+begin
+  Result := fEnumerable.GetHashCode(value);
+end;
+
+class function TEqualityComparerWrapper<T>.Construct(
+  const enumerable: TEnumerableBase<T>): IEqualityComparer<T>;
+begin
+  Result := TEqualityComparerWrapper<T>.Create(enumerable);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TEnumerableBase<T>.TEnumerator'}
 
 constructor TEnumerableBase<T>.TEnumerator.Create(const source: IEnumerator<T>);
@@ -1321,15 +1413,41 @@ end;
 constructor TCollectionBase<T>.Create;
 begin
   inherited Create;
-  fOnChanged := TCollectionChangedEventImpl<T>.Create;
-
   Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(ICollection<T>).IOffset);
+  UpdateNotify(Self);
 end;
 
 destructor TCollectionBase<T>.Destroy;
 begin
   fOnChanged.Free;
-  inherited;
+  inherited Destroy;
+end;
+
+procedure TCollectionBase<T>.InitializeEvent;
+var
+  onChanged: TCollectionChangedEventImpl<T>;
+begin
+  if not Assigned(fOnChanged) then
+  begin
+    onChanged := TCollectionChangedEventImpl<T>.Create;
+    onChanged.OnChanged := UpdateNotify;
+    if AtomicCmpExchange(Pointer(fOnChanged), Pointer(onChanged), nil) <> nil then
+      onChanged.Free
+    else
+    begin
+{$IFDEF AUTOREFCOUNT}
+      onChanged.__ObjAddRef;
+{$ENDIF AUTOREFCOUNT}
+      UpdateNotify(Self);
+    end;
+  end;
+end;
+
+procedure TCollectionBase<T>.DoNotify(const item: T;
+  action: TCollectionChangedAction);
+begin
+  if Assigned(Notify) then
+    Notify(Self, item, action);
 end;
 
 procedure TCollectionBase<T>.AddRange(const values: array of T);
@@ -1354,7 +1472,7 @@ end;
 
 procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  if fOnChanged.CanInvoke then
+  if Assigned(fOnChanged) and fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item, action);
 end;
 
@@ -1409,6 +1527,7 @@ end;
 
 function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
+  InitializeEvent;
   Result := fOnChanged;
 end;
 
@@ -1436,6 +1555,18 @@ begin
       collection.Add(values[i]);
       Inc(Result);
     end;
+end;
+
+procedure TCollectionBase<T>.UpdateNotify(Sender: TObject);
+var
+  event: procedure(const item: T; action: TCollectionChangedAction) of object;
+begin
+  event := Changed;
+  if (Assigned(fOnChanged) and fOnChanged.CanInvoke)
+    or (TMethod(event).Code <> @TCollectionBase<T>.Changed) then
+    fNotify := TMethod(event).Code
+  else
+    fNotify := nil;
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const values: array of T);
@@ -1467,8 +1598,11 @@ procedure TCollectionBase<T>.Reset;
 var
   defaultValue: T;
 begin
-  defaultValue := Default(T);
-  Changed(defaultValue, caReseted);
+  if Assigned(Notify) then
+  begin
+    defaultValue := Default(T);
+    Notify(Self, defaultValue, caReseted);
+  end;
 end;
 
 {$ENDREGION}
@@ -1537,6 +1671,16 @@ begin
   fOnValueChanged.Free;
   fOnKeyChanged.Free;
   inherited;
+end;
+
+procedure TMapBase<TKey, T>.DoNotify(const key: TKey; const value: T;
+  action: TCollectionChangedAction);
+var
+  pair: TKeyValuePair;
+begin
+  pair.Key := key;
+  pair.Value := value;
+  Notify(Self, pair, action);
 end;
 
 function TMapBase<TKey, T>.Add(const item: TKeyValuePair): Boolean;

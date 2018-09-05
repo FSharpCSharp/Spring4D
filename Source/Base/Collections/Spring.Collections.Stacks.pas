@@ -69,13 +69,16 @@ type
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
-    function GetCount: Integer; 
+    function GetCount: Integer; inline;
     function GetIsEmpty: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
+    function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-    procedure Changed(const item: T; action: TCollectionChangedAction);
-    function PopInternal(notification: TCollectionChangedAction): T; virtual;
+    procedure Changed(const item: T; action: TCollectionChangedAction); inline;
+    procedure PopInternal(var item: T; notification: TCollectionChangedAction); inline;
+    property Count: Integer read GetCount;
+    property OwnsObjects: Boolean read GetOwnsObjects;
   public
     constructor Create; overload; override;
     constructor Create(const values: array of T); overload;
@@ -101,15 +104,11 @@ type
   {$ENDREGION}
   end;
 
-  TObjectStack<T: class> = class(TStack<T>, ICollectionOwnership)
+  TObjectStack<T: class> = class(TStack<T>)
   private
-    fOwnsObjects: Boolean;
   {$REGION 'Property Accessors'}
-    function GetOwnsObjects: Boolean;
     procedure SetOwnsObjects(const value: Boolean);
   {$ENDREGION}
-  protected
-    function PopInternal(notification: TCollectionChangedAction): T; override;
   public
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
@@ -166,16 +165,21 @@ begin
     fOnChanged.Invoke(Self, item, action);
 end;
 
-procedure TStack<T>.Clear;
+function TStack<T>.GetCount: Integer;
 begin
-  while fCount > 0 do
-    Pop;
-  SetLength(fItems, 0);
+  Result := fCount and CountMask;
 end;
 
-function TStack<T>.Extract: T;
+function TStack<T>.GetOwnsObjects: Boolean;
 begin
-  Result := PopInternal(caExtracted);
+  Result := fCount < 0;
+end;
+
+procedure TStack<T>.Clear;
+begin
+  while Count > 0 do
+    Pop;
+  SetLength(fItems, 0);
 end;
 
 function TStack<T>.GetEnumerator: IEnumerator<T>;
@@ -185,17 +189,12 @@ end;
 
 function TStack<T>.GetIsEmpty: Boolean;
 begin
-  Result := fCount = 0;
+  Result := Count = 0;
 end;
 
 function TStack<T>.GetCapacity: Integer;
 begin
   Result := Length(fItems);
-end;
-
-function TStack<T>.GetCount: Integer;
-begin
-  Result := fCount;
 end;
 
 function TStack<T>.GetOnChanged: ICollectionChangedEvent<T>;
@@ -217,44 +216,28 @@ end;
 
 function TStack<T>.Peek: T;
 begin
-  if fCount = 0 then
+  if Count = 0 then
     raise EListError.CreateRes(@SUnbalancedOperation);
-  Result := fItems[fCount - 1];
+  Result := fItems[Count - 1];
 end;
 
 function TStack<T>.PeekOrDefault: T;
 begin
-  if fCount = 0 then
+  if Count = 0 then
     Result := Default(T)
   else
-    Result := fItems[fCount - 1];
-end;
-
-function TStack<T>.Pop: T;
-begin
-  Result := PopInternal(caRemoved);
-end;
-
-function TStack<T>.PopInternal(notification: TCollectionChangedAction): T;
-begin
-  if fCount = 0 then
-    raise EListError.CreateRes(@SUnbalancedOperation);
-
-  IncUnchecked(fVersion);
-  Dec(fCount);
-  Result := fItems[fCount];
-  fItems[fCount] := Default(T);
-
-  Changed(Result, notification);
+    Result := fItems[Count - 1];
 end;
 
 procedure TStack<T>.Push(const item: T);
 begin
-  if fCount = Length(fItems) then
+  if Count = DynArrayLength(fItems) then
     Grow;
 
-  IncUnchecked(fVersion);
-  fItems[fCount] := item;
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fItems[Count] := item;
   Inc(fCount);
 
   Changed(item, caAdded);
@@ -262,19 +245,19 @@ end;
 
 procedure TStack<T>.SetCapacity(value: Integer);
 begin
-  Guard.CheckRange(value >= fCount, 'capacity');
+  Guard.CheckRange(value >= Count, 'capacity');
 
   SetLength(fItems, value);
 end;
 
 procedure TStack<T>.TrimExcess;
 begin
-  SetLength(fItems, fCount);
+  SetLength(fItems, Count);
 end;
 
 function TStack<T>.TryExtract(out item: T): Boolean;
 begin
-  Result := fCount > 0;
+  Result := Count > 0;
   if Result then
     item := Extract
   else
@@ -283,7 +266,7 @@ end;
 
 function TStack<T>.TryPeek(out item: T): Boolean;
 begin
-  Result := fCount > 0;
+  Result := Count > 0;
   if Result then
     item := Peek
   else
@@ -292,11 +275,45 @@ end;
 
 function TStack<T>.TryPop(out item: T): Boolean;
 begin
-  Result := fCount > 0;
+  Result := Count > 0;
   if Result then
     item := Pop
   else
     item := Default(T);
+end;
+
+procedure TStack<T>.PopInternal(var item: T; notification: TCollectionChangedAction);
+begin
+  if Count = 0 then
+    raise EListError.CreateRes(@SUnbalancedOperation);
+
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Dec(fCount);
+  item := fItems[Count];
+  fItems[Count] := Default(T);
+
+  Changed(item, notification);
+
+{$IFDEF DELPHIXE7_UP}
+  if TType.Kind<T> = tkClass then
+{$ENDIF}
+  if OwnsObjects and (notification = caRemoved) then
+  begin
+    FreeObject(item);
+    item := Default(T);
+  end;
+end;
+
+function TStack<T>.Extract: T;
+begin
+  PopInternal(Result, caExtracted);
+end;
+
+function TStack<T>.Pop: T;
+begin
+  PopInternal(Result, caRemoved);
 end;
 
 {$ENDREGION}
@@ -330,7 +347,7 @@ begin
   if fVersion <> fSource.fVersion then
     raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
 
-  if fIndex < fSource.fCount then
+  if fIndex < fSource.Count then
   begin
     fCurrent := fSource.fItems[fIndex];
     Inc(fIndex);
@@ -348,44 +365,25 @@ end;
 constructor TObjectStack<T>.Create;
 begin
   inherited Create;
-  fOwnsObjects := True;
+  SetOwnsObjects(True);
 end;
 
 constructor TObjectStack<T>.Create(ownsObjects: Boolean);
 begin
   inherited Create;
-  fOwnsObjects := ownsObjects;
+  SetOwnsObjects(ownsObjects);
 end;
 
 constructor TObjectStack<T>.Create(const comparer: IComparer<T>;
   ownsObjects: Boolean);
 begin
   inherited Create(comparer);
-  fOwnsObjects := ownsObjects;
-end;
-
-function TObjectStack<T>.GetOwnsObjects: Boolean;
-begin
-  Result := fOwnsObjects;
-end;
-
-function TObjectStack<T>.PopInternal(notification: TCollectionChangedAction): T;
-begin
-  Result := inherited PopInternal(notification);
-  if fOwnsObjects and (notification = caRemoved) then
-  begin
-{$IFNDEF AUTOREFCOUNT}
-    Result.Free;
-{$ELSE}
-    Result.DisposeOf;
-{$ENDIF}
-    Result := nil;
-  end;
+  SetOwnsObjects(ownsObjects);
 end;
 
 procedure TObjectStack<T>.SetOwnsObjects(const value: Boolean);
 begin
-  fOwnsObjects := value;
+  fCount := (fCount and CountMask) or BitMask[value];
 end;
 
 {$ENDREGION}

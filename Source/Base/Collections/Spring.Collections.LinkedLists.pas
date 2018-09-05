@@ -87,7 +87,6 @@ type
     function GetCount: Integer; 
     function GetFirst: TLinkedListNode<T>;
     function GetLast: TLinkedListNode<T>;
-    function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
     function TryGetFirst(out value: T): Boolean;
     function TryGetLast(out value: T): Boolean;
@@ -351,11 +350,6 @@ begin
     Result := fHead.fPrev
   else
     Result := nil;
-end;
-
-function TLinkedList<T>.GetOnChanged: ICollectionChangedEvent<T>;
-begin
-  Result := fOnChanged;
 end;
 
 procedure TLinkedList<T>.InternalInsertNodeBefore(
