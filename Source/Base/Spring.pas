@@ -458,6 +458,8 @@ type
   {$REGION 'TValueHelper'}
 
   TValueHelper = record helper for TValue
+  private class var
+    ConvertSettings: TFormatSettings;
   private
     procedure Init(typeInfo: Pointer);
 {$IFNDEF DELPHIXE8_UP}
@@ -675,6 +677,15 @@ type
     ///   If the stored value is an object it will get destroyed/disposed.
     /// </summary>
     procedure Free;
+
+    /// <summary>
+    ///   Update the internal TFormatSettings record.
+    /// </summary>
+    /// <remarks>
+    ///   This is not thread-safe and should only be used if the settings of
+    ///   the operating system have been changed.
+    /// </remarks>
+    class procedure UpdateFormatSettings; static;
 
     /// <summary>
     ///   Specifies the type kind of the stored value.
@@ -6066,11 +6077,8 @@ const
 
 function TValueHelper.TryConvert(targetType: PTypeInfo;
   out targetValue: TValue): Boolean;
-var
-  formatSettings: TFormatSettings;
 begin
-  formatSettings := TFormatSettings.Create;
-  Result := TryConvert(targetType, targetValue, formatSettings);
+  Result := TryConvert(targetType, targetValue, ConvertSettings);
 end;
 
 function TValueHelper.TryConvert(targetType: PTypeInfo;
@@ -6230,6 +6238,11 @@ begin
     end;
     value.ExtractRawData(@targetValue);
   end;
+end;
+
+class procedure TValueHelper.UpdateFormatSettings;
+begin
+  ConvertSettings := TFormatSettings.Create;
 end;
 
 {$ENDREGION}
@@ -9805,6 +9818,8 @@ begin
 {$ELSE}
   Nop_Instance := Pointer(TValueData(TValue.Empty).FValueData);
 {$ENDIF}
+
+  TValue.UpdateFormatSettings;
 end;
 
 initialization
