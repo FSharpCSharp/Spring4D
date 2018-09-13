@@ -395,6 +395,13 @@ const
   CountMask = Integer($7FFFFFFF);
   BitMask: array[Boolean] of Integer = (0, not CountMask);
 
+  // use the MSB of the HashCode to note removed items
+  RemovedFlag        = Integer($80000000);
+  MinCapacity        = 6; // 75% load factor leads to min bucket count of 8
+  BucketSentinelFlag = RemovedFlag; // note: the same as RemovedFlag
+  EmptyBucket        = -1; // must be negative, note choice of BucketSentinelFlag
+  UsedBucket         = -2; // likewise
+
 implementation
 
 uses

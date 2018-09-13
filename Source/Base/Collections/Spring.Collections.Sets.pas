@@ -53,9 +53,6 @@ type
   end;
 
   THashSetItem<T> = record
-  private
-    // use the MSB of the HashCode to note removed items
-    const RemovedFlag = Integer($80000000);
   public
     HashCode: Integer;
     Item: T;
@@ -69,7 +66,7 @@ type
   ///   The type of elements in the hash set.
   /// </typeparam>
   THashSet<T> = class(TSetBase<T>, INotifyCollectionChanged<T>, IEnumerable<T>,
-    ICollection<T>, IReadOnlyCollection<T>, ISet<T>)
+    ICollection<T>, ISet<T>, IReadOnlyCollection<T>)
   private
   {$REGION 'Nested Types'}
     type
@@ -91,12 +88,6 @@ type
       end;
   {$ENDREGION}
   private
-    const
-      MinCapacity = 6; // 75% load factor leads to min bucket count of 8
-      BucketSentinelFlag = Integer($80000000); // note: the same as RemovedFlag
-      EmptyBucket = -1; // must be negative, note choice of BucketSentinelFlag
-      UsedBucket  = -2; // likewise
-  private
     fBuckets: TArray<Integer>;
     fItems: TArray<TItem>;
     fCount: Integer;
@@ -105,6 +96,12 @@ type
     fBucketHashCodeMask: Integer;
     fEqualityComparer: IEqualityComparer<T>;
     fVersion: Integer;
+  {$REGION 'Property Accessors'}
+    function GetCapacity: Integer; inline;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    procedure SetCapacity(value: Integer);
+  {$ENDREGION}
     procedure Rehash(newCapacity: Integer);
     procedure EnsureCompact;
     procedure Grow;
@@ -115,13 +112,6 @@ type
     procedure DoRemove(bucketIndex, itemIndex: Integer;
       action: TCollectionChangedAction);
   protected
-  {$REGION 'Property Accessors'}
-    function GetCapacity: Integer; inline;
-    function GetCount: Integer; 
-    function GetIsEmpty: Boolean;
-    function GetItem(index: Integer): T;
-    procedure SetCapacity(value: Integer);
-  {$ENDREGION}
     class function CreateSet: ISet<T>; override;
     function TryGetElementAt(out item: T; index: Integer): Boolean; override;
     property Count: Integer read fCount;
@@ -177,12 +167,12 @@ type
   private
     fTree: TRedBlackTree<T>;
     fVersion: Integer;
-  protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
-    function GetCount: Integer; 
+    function GetCount: Integer;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
+  protected
     class function CreateSet: ISet<T>; override;
   public
     constructor Create; overload; override;
@@ -518,7 +508,7 @@ end;
 
 function THashSet<T>.Hash(const item: T): Integer;
 begin
-  Result := fEqualityComparer.GetHashCode(item) and not TItem.RemovedFlag;
+  Result := fEqualityComparer.GetHashCode(item) and not RemovedFlag;
 end;
 
 procedure THashSet<T>.DoAdd(hashCode, bucketIndex, itemIndex: Integer; const item: T);
@@ -543,7 +533,7 @@ begin
   IncUnchecked(fVersion);
   fBuckets[bucketIndex] := UsedBucket;
   fItems[itemIndex].Item := Default(T);
-  fItems[itemIndex].HashCode := fItems[itemIndex].HashCode or TItem.RemovedFlag;
+  fItems[itemIndex].HashCode := fItems[itemIndex].HashCode or RemovedFlag;
   Dec(fCount);
 
   Changed(item, action);
@@ -631,12 +621,6 @@ end;
 function THashSet<T>.GetIsEmpty: Boolean;
 begin
   Result := fCount = 0;
-end;
-
-function THashSet<T>.GetItem(index: Integer): T;
-begin
-  EnsureCompact;
-  Result := fItems[index].Item;
 end;
 
 function THashSet<T>.Remove(const item: T): Boolean;

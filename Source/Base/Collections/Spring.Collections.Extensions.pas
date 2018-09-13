@@ -110,19 +110,17 @@ type
   private
     fSource: TGenericEnumerable;
     fEnumerator: TGenericEnumerator;
-    procedure Start;
-  protected
     function GetCurrent: T;
+    procedure Start;
   public
     constructor Create(const source: TGenericEnumerable);
     destructor Destroy; override;
     function MoveNext: Boolean;
-    property Current: T read GetCurrent;
   end;
 
   /// <summary>
   ///   The adapter implementation for <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
-  ///    .
+  ///   .
   /// </summary>
   TEnumerableAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>)
   private

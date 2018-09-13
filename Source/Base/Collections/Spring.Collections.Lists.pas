@@ -68,7 +68,7 @@ type
     fCount: Integer;
     fVersion: Integer;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction); inline;
-    procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+    procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean); inline;
     procedure InsertRangeInternal(index, count: Integer; const values: array of T);
   protected
   {$REGION 'Property Accessors'}
@@ -563,7 +563,7 @@ end;
 
 function TAbstractArrayList<T>.GetOwnsObjects: Boolean;
 begin
-  Result := fCount < 0;
+  Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
 end;
 
 function TAbstractArrayList<T>.Add(const item: T): Integer;
@@ -744,12 +744,12 @@ begin
   if Assigned(Notify) then
   begin
     Notify(Self, oldItem, caRemoved);
-    if {$IFDEF DELPHIXE7_UP}(TType.Kind<T> = tkClass) and {$ENDIF}OwnsObjects then
+    if OwnsObjects then
       FreeObject(oldItem);
     Notify(Self, value, caAdded);
   end
   else
-    if {$IFDEF DELPHIXE7_UP}(TType.Kind<T> = tkClass) and {$ENDIF}OwnsObjects then
+    if OwnsObjects then
       FreeObject(oldItem);
 end;
 
@@ -893,22 +893,16 @@ begin
 
   if Assigned(Notify) then
     Notify(Self, oldItem, notification);
-  if {$IFDEF DELPHIXE7_UP}(TType.Kind<T> = tkClass) and {$ENDIF}OwnsObjects then
-    if (notification = caRemoved) then
+  if OwnsObjects then
+    if notification = caRemoved then
       FreeObject(oldItem);
 end;
 
-procedure TAbstractArrayList<T>.DeleteRange(index, count: Integer);
+procedure TAbstractArrayList<T>.Clear;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
-{$ENDIF}
-
-  if count = 0 then
-    Exit;
-
-  DeleteRangeInternal(index, count, False);
+  if Count > 0 then
+    DeleteRangeInternal(0, Count, True);
+  SetCapacity(0);
 end;
 
 procedure TAbstractArrayList<T>.DeleteRangeInternal(index, count: Integer; doClear: Boolean);
@@ -917,8 +911,11 @@ var
   tailCount,
   i: Integer;
 begin
-  SetLength(oldItems, count);
-  TArrayManager.Move(fItems, oldItems, index, 0, count);
+  if Assigned(Notify) or OwnsObjects then
+  begin
+    SetLength(oldItems, count);
+    TArrayManager.Move(fItems, oldItems, index, 0, count);
+  end;
 
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
   Inc(fVersion);
@@ -938,7 +935,7 @@ begin
     Reset;
 
   if Assigned(Notify) then
-    if {$IFDEF DELPHIXE7_UP}(TType.Kind<T> = tkClass) and {$ENDIF}OwnsObjects then
+    if OwnsObjects then
       for i := Low(oldItems) to DynArrayHigh(oldItems) do
       begin
         Notify(Self, oldItems[i], caRemoved);
@@ -948,9 +945,20 @@ begin
       for i := Low(oldItems) to DynArrayHigh(oldItems) do
         Notify(Self, oldItems[i], caRemoved)
   else
-    if {$IFDEF DELPHIXE7_UP}(TType.Kind<T> = tkClass) and {$ENDIF}OwnsObjects then
+    if OwnsObjects then
       for i := Low(oldItems) to DynArrayHigh(oldItems) do
         FreeObject(oldItems[i]);
+end;
+
+procedure TAbstractArrayList<T>.DeleteRange(index, count: Integer);
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+  if count > 0 then
+    DeleteRangeInternal(index, count, False);
 end;
 
 procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
@@ -1021,13 +1029,6 @@ end;
 function TAbstractArrayList<T>.AsReadOnlyList: IReadOnlyList<T>;
 begin
   Result := Self as IReadOnlyList<T>;
-end;
-
-procedure TAbstractArrayList<T>.Clear;
-begin
-  if Count > 0 then
-    DeleteRangeInternal(0, Count, True);
-  SetCapacity(0);
 end;
 
 procedure TAbstractArrayList<T>.Exchange(index1, index2: Integer);

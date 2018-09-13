@@ -65,8 +65,6 @@ type
     fCount: Integer;
     fVersion: Integer;
     fOnChanged: TCollectionChangedEventImpl<T>;
-    procedure Grow;
-  protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer; inline;
@@ -75,6 +73,8 @@ type
     function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
+    procedure Grow;
+  protected
     procedure Changed(const item: T; action: TCollectionChangedAction); inline;
     procedure PopInternal(var item: T; notification: TCollectionChangedAction); inline;
     property Count: Integer read GetCount;
@@ -172,7 +172,7 @@ end;
 
 function TStack<T>.GetOwnsObjects: Boolean;
 begin
-  Result := fCount < 0;
+  Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
 end;
 
 procedure TStack<T>.Clear;
@@ -296,9 +296,6 @@ begin
 
   Changed(item, notification);
 
-{$IFDEF DELPHIXE7_UP}
-  if TType.Kind<T> = tkClass then
-{$ENDIF}
   if OwnsObjects and (notification = caRemoved) then
   begin
     FreeObject(item);

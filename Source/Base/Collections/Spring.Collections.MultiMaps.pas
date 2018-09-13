@@ -123,9 +123,8 @@ type
         fMap: Weak<TDictionary<TKey, ICollection<TValue>>>;
         fKey: TKey;
         fDelegate: ICollection<TValue>;
-        procedure RefreshIfEmpty;
-      protected
         function GetCount: Integer;
+        procedure RefreshIfEmpty;
       public
         constructor Create(const key: TKey;
           const map: TDictionary<TKey, ICollection<TValue>>;

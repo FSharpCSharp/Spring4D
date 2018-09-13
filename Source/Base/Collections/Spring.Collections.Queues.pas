@@ -204,7 +204,7 @@ end;
 
 function TDeque<T>.GetOwnsObjects: Boolean;
 begin
-  Result := fCount < 0;
+  Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
 end;
 
 function TDeque<T>.GetBack: Integer;
@@ -463,9 +463,6 @@ begin
 
   Changed(item, notification);
 
-{$IFDEF DELPHIXE7_UP}
-  if TType.Kind<T> = tkClass then
-{$ENDIF}
   if OwnsObjects and (notification = caRemoved) then
   begin
     FreeObject(item);

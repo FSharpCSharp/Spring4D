@@ -40,9 +40,6 @@ uses
 
 type
   TDictionaryItem<TKey, TValue> = record
-  private
-    // use the MSB of the HashCode to note removed items
-    const RemovedFlag = Integer($80000000);
   public
     HashCode: Integer;
     Key: TKey;
@@ -51,9 +48,9 @@ type
   end;
 
   TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IEnumerable<TPair<TKey, TValue>>,
-    ICollection<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
-    IMap<TKey, TValue>, IReadOnlyMap<TKey, TValue>,
-    IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>)
+    ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IDictionary<TKey, TValue>,
+    IReadOnlyCollection<TPair<TKey, TValue>>, IReadOnlyMap<TKey, TValue>,
+    IReadOnlyDictionary<TKey, TValue>)
   protected
   {$REGION 'Nested Types'}
     type
@@ -78,7 +75,6 @@ type
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
-      protected
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
@@ -112,7 +108,6 @@ type
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
-      protected
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
@@ -148,26 +143,20 @@ type
         fSortedItemIndices: TArray<Integer>;
         fIndex: Integer;
         fVersion: Integer;
-      protected
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
       {$ENDREGION}
+      protected
+        function Clone: TIterator<TKeyValuePair>; override;
         procedure Dispose; override;
         procedure Start; override;
         function TryMoveNext(var current: TKeyValuePair): Boolean; override;
       public
         constructor Create(const source: TDictionary<TKey, TValue>);
         destructor Destroy; override;
-        function Clone: TIterator<TKeyValuePair>; override;
       end;
   {$ENDREGION}
-  private
-    const
-      MinCapacity = 6; // 75% load factor leads to min bucket count of 8
-      BucketSentinelFlag = Integer($80000000); // note: the same as RemovedFlag
-      EmptyBucket = -1; // must be negative, note choice of BucketSentinelFlag
-      UsedBucket  = -2; // likewise
   private
     fBuckets: TArray<Integer>;
     fItems: TArray<TItem>;
@@ -181,6 +170,16 @@ type
     fKeys: TKeyCollection;
     fValues: TValueCollection;
     fOwnerships: TDictionaryOwnerships;
+  {$REGION 'Property Accessors'}
+    function GetCapacity: Integer; inline;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    function GetItem(const key: TKey): TValue;
+    function GetKeys: IReadOnlyCollection<TKey>;
+    function GetValues: IReadOnlyCollection<TValue>;
+    procedure SetCapacity(value: Integer);
+    procedure SetItem(const key: TKey; const value: TValue);
+  {$ENDREGION}
     procedure Rehash(newCapacity: Integer);
     procedure EnsureCompact;
     procedure Grow;
@@ -195,16 +194,6 @@ type
     function DoMoveNext(var itemIndex: Integer;
       iteratorVersion: Integer): Boolean;
   protected
-  {$REGION 'Property Accessors'}
-    function GetCapacity: Integer; inline;
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-    function GetItem(const key: TKey): TValue;
-    function GetKeys: IReadOnlyCollection<TKey>;
-    function GetValues: IReadOnlyCollection<TValue>;
-    procedure SetCapacity(value: Integer);
-    procedure SetItem(const key: TKey; const value: TValue);
-  {$ENDREGION}
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
     property Capacity: Integer read GetCapacity;
@@ -280,9 +269,6 @@ type
   end;
 
   TBidiDictionaryItem<TKey, TValue> = record
-  private
-    // use the MSB of the HashCode to note removed items
-    const RemovedFlag = Integer($80000000);
   public
     KeyHashCode: Integer;
     ValueHashCode: Integer;
@@ -292,11 +278,10 @@ type
   end;
 
   TBidiDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
-    IEnumerable<TPair<TKey, TValue>>,
-    ICollection<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
-    IMap<TKey, TValue>, IReadOnlyMap<TKey, TValue>,
-    IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
-    IBidiDictionary<TKey, TValue>)
+    IEnumerable<TPair<TKey, TValue>>, ICollection<TPair<TKey, TValue>>,
+    IMap<TKey, TValue>, IDictionary<TKey, TValue>, IBidiDictionary<TKey, TValue>,
+    IReadOnlyCollection<TPair<TKey, TValue>>, IReadOnlyMap<TKey, TValue>,
+    IReadOnlyDictionary<TKey, TValue>)
   protected
   {$REGION 'Nested Types'}
     type
@@ -333,24 +318,23 @@ type
           fSortedItemIndices: TArray<Integer>;
           fIndex: Integer;
           fVersion: Integer;
-        protected
         {$REGION 'Property Accessors'}
           function GetCount: Integer;
           function GetIsEmpty: Boolean;
         {$ENDREGION}
+        protected
+          function Clone: TIterator<TValueKeyPair>; override;
           procedure Dispose; override;
           procedure Start; override;
           function TryMoveNext(var current: TValueKeyPair): Boolean; override;
         public
           constructor Create(const source: TBidiDictionary<TKey, TValue>);
           destructor Destroy; override;
-          function Clone: TIterator<TValueKeyPair>; override;
         end;
       {$ENDREGION}
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
-      protected
       {$REGION 'Property Accessors'}
         function GetCapacity: Integer;
         function GetCount: Integer;
@@ -366,6 +350,7 @@ type
         procedure SetCapacity(value: Integer);
         procedure SetItem(const value: TValue; const key: TKey);
       {$ENDREGION}
+      protected
         procedure Changed(const item: TValueKeyPair; action: TCollectionChangedAction); override;
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
@@ -428,7 +413,6 @@ type
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
-      protected
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
@@ -461,7 +445,6 @@ type
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
-      protected
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
@@ -497,26 +480,20 @@ type
         fSortedItemIndices: TArray<Integer>;
         fIndex: Integer;
         fVersion: Integer;
-      protected
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
       {$ENDREGION}
+      protected
+        function Clone: TIterator<TKeyValuePair>; override;
         procedure Dispose; override;
         procedure Start; override;
         function TryMoveNext(var current: TKeyValuePair): Boolean; override;
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
         destructor Destroy; override;
-        function Clone: TIterator<TKeyValuePair>; override;
       end;
   {$ENDREGION}
-  private
-    const
-      MinCapacity = 6; // 75% load factor leads to min bucket count of 8
-      BucketSentinelFlag = Integer($80000000); // note: the same as RemovedFlag
-      EmptyBucket = -1; // must be negative, note choice of BucketSentinelFlag
-      UsedBucket  = -2; // likewise
   private
     fKeyBuckets: TArray<Integer>;
     fValueBuckets: TArray<Integer>;
@@ -532,6 +509,17 @@ type
     fValues: TValueCollection;
     fInverse: TInverse;
     fOwnerships: TDictionaryOwnerships;
+  {$REGION 'Property Accessors'}
+    function GetCapacity: Integer; inline;
+    function GetCount: Integer;
+    function GetInverse: IBidiDictionary<TValue, TKey>;
+    function GetIsEmpty: Boolean;
+    function GetItem(const key: TKey): TValue;
+    function GetKeys: IReadOnlyCollection<TKey>;
+    function GetValues: IReadOnlyCollection<TValue>;
+    procedure SetCapacity(value: Integer);
+    procedure SetItem(const key: TKey; const value: TValue);
+  {$ENDREGION}
     procedure Rehash(newCapacity: Integer);
     procedure EnsureCompact;
     procedure Grow;
@@ -554,17 +542,6 @@ type
 
     procedure AddOrSetKey(const value: TValue; const key: TKey);
   protected
-  {$REGION 'Property Accessors'}
-    function GetCapacity: Integer; inline;
-    function GetCount: Integer;
-    function GetInverse: IBidiDictionary<TValue, TKey>;
-    function GetIsEmpty: Boolean;
-    function GetItem(const key: TKey): TValue;
-    function GetKeys: IReadOnlyCollection<TKey>;
-    function GetValues: IReadOnlyCollection<TValue>;
-    procedure SetCapacity(value: Integer);
-    procedure SetItem(const key: TKey; const value: TValue);
-  {$ENDREGION}
     procedure Changed(const item: TPair<TKey, TValue>; action: TCollectionChangedAction); override;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction);
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction);
@@ -623,10 +600,10 @@ type
   end;
 
   TSortedDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
-    IEnumerable<TPair<TKey, TValue>>,
-    ICollection<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
-    IMap<TKey, TValue>, IReadOnlyMap<TKey, TValue>,
-    IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>)
+    IEnumerable<TPair<TKey, TValue>>, ICollection<TPair<TKey, TValue>>,
+    IMap<TKey, TValue>, IDictionary<TKey, TValue>,
+    IReadOnlyCollection<TPair<TKey, TValue>>, IReadOnlyMap<TKey, TValue>,
+    IReadOnlyDictionary<TKey, TValue>)
   private
   {$REGION 'Nested Types'}
     type
@@ -652,7 +629,6 @@ type
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
-      protected
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
@@ -686,7 +662,6 @@ type
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
-      protected
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
@@ -723,9 +698,6 @@ type
     fVersion: Integer;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
-    function DoMoveNext(var currentNode: PNode; var finished: Boolean;
-      iteratorVersion: Integer): Boolean;
-  protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer;
@@ -736,6 +708,8 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
+    function DoMoveNext(var currentNode: PNode; var finished: Boolean;
+      iteratorVersion: Integer): Boolean;
   public
     constructor Create; override;
     constructor Create(const keyComparer: IComparer<TKey>; const valueComparer: IComparer<TValue>); overload;
@@ -1032,7 +1006,7 @@ end;
 
 function TDictionary<TKey, TValue>.Hash(const key: TKey): Integer;
 begin
-  Result := fKeyComparer.GetHashCode(key) and not TItem.RemovedFlag;
+  Result := fKeyComparer.GetHashCode(key) and not RemovedFlag;
 end;
 
 procedure TDictionary<TKey, TValue>.DoAdd(hashCode, bucketIndex, itemIndex: Integer;
@@ -1085,7 +1059,7 @@ begin
   fBuckets[bucketIndex] := UsedBucket;
   fItems[itemIndex].Key := Default(TKey);
   fItems[itemIndex].Value := Default(TValue);
-  fItems[itemIndex].HashCode := TItem.RemovedFlag;
+  fItems[itemIndex].HashCode := RemovedFlag;
   Dec(fCount);
 
   if Assigned(Notify) then
@@ -1979,12 +1953,12 @@ end;
 
 function TBidiDictionary<TKey, TValue>.KeyHash(const key: TKey): Integer;
 begin
-  Result := fKeyComparer.GetHashCode(key) and not TItem.RemovedFlag;
+  Result := fKeyComparer.GetHashCode(key) and not RemovedFlag;
 end;
 
 function TBidiDictionary<TKey, TValue>.ValueHash(const value: TValue): Integer;
 begin
-  Result := fValueComparer.GetHashCode(value) and not TItem.RemovedFlag;
+  Result := fValueComparer.GetHashCode(value) and not RemovedFlag;
 end;
 
 procedure TBidiDictionary<TKey, TValue>.DoAdd(keyhashCode, keyBucketIndex, valueHashCode,
@@ -2020,8 +1994,8 @@ begin
   fValueBuckets[valueBucketIndex] := UsedBucket;
   fItems[itemIndex].Key := Default(TKey);
   fItems[itemIndex].Value := Default(TValue);
-  fItems[itemIndex].KeyHashCode := TItem.RemovedFlag;
-  fItems[itemIndex].ValueHashCode := TItem.RemovedFlag;
+  fItems[itemIndex].KeyHashCode := RemovedFlag;
+  fItems[itemIndex].ValueHashCode := RemovedFlag;
   Dec(fCount);
 
   if Assigned(Notify) then
@@ -2059,8 +2033,8 @@ begin
 
   fItems[itemIndex].Key := Default(TKey);
   fItems[itemIndex].Value := Default(TValue);
-  fItems[itemIndex].KeyHashCode := TItem.RemovedFlag;
-  fItems[itemIndex].ValueHashCode := TItem.RemovedFlag;
+  fItems[itemIndex].KeyHashCode := RemovedFlag;
+  fItems[itemIndex].ValueHashCode := RemovedFlag;
 
   fItems[oldKeyItemIndex].KeyHashCode := keyHashCode;
   Assert(fItems[oldKeyItemIndex].ValueHashCode = valueHashCode);
@@ -2106,8 +2080,8 @@ begin
 
   fItems[itemIndex].Key := Default(TKey);
   fItems[itemIndex].Value := Default(TValue);
-  fItems[itemIndex].KeyHashCode := TItem.RemovedFlag;
-  fItems[itemIndex].ValueHashCode := TItem.RemovedFlag;
+  fItems[itemIndex].KeyHashCode := RemovedFlag;
+  fItems[itemIndex].ValueHashCode := RemovedFlag;
 
   Assert(fItems[oldValueItemIndex].KeyHashCode = keyHashCode);
   fItems[oldValueItemIndex].ValueHashCode := valueHashCode;
