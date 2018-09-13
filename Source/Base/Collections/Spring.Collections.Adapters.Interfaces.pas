@@ -119,7 +119,7 @@ type
     function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
-    function AsReadOnlyList: IReadOnlyList;
+    function AsReadOnly: IReadOnlyList;
     procedure TrimExcess;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
@@ -164,7 +164,7 @@ type
     function TryExtract(const key: TValue; out value: TValue): Boolean;
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
-    function AsReadOnlyDictionary: IReadOnlyDictionary;
+    function AsReadOnly: IReadOnlyDictionary;
 
     property OnKeyChanged: IEvent read GetOnKeyChanged;
     property OnValueChanged: IEvent read GetOnValueChanged;

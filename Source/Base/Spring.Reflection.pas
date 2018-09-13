@@ -1317,7 +1317,7 @@ begin
       end;
       classType := classType.ClassParent;
     end;
-    Result := list.AsReadOnlyList;
+    Result := list.AsReadOnly;
   end
   else
   if IsInterface then
@@ -1332,7 +1332,7 @@ begin
         list.Add(intfType);
       intfType := intfType.BaseType;
     end;
-    Result := list.AsReadOnlyList;
+    Result := list.AsReadOnly;
   end
   else
     Result := TEnumerable.Empty<TRttiInterfaceType>;

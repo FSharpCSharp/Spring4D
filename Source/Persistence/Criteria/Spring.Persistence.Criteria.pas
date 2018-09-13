@@ -124,7 +124,7 @@ end;
 
 function TCriteria<T>.GetCriterions: IReadOnlyList<ICriterion>;
 begin
-  Result := fCriterions.AsReadOnlyList;
+  Result := fCriterions.AsReadOnly;
 end;
 
 function TCriteria<T>.OrderBy(const orderBy: IOrderBy): ICriteria<T>;

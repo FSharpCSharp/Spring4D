@@ -404,10 +404,9 @@ type
 
   TRedBlackTree<T> = class(TRedBlackTree, IBinaryTree<T>, IRedBlackTree<T>)
   private type
-    TEnumerator = class(TInterfacedObject, IEnumerator<T>)
+    TEnumerator = class(TRefCountedObject, IEnumerator<T>)
     private
       fEnumerator: TBinaryTree.TEnumerator;
-    protected
       function GetCurrent: T;
     public
       constructor Create(const tree: TBinaryTree);
@@ -453,10 +452,9 @@ type
   TRedBlackTree<TKey, TValue> = class(TRedBlackTree,
     IBinaryTree<TKey, TValue>, IRedBlackTree<TKey, TValue>)
   private type
-    TEnumerator = class(TInterfacedObject, IEnumerator<TPair<TKey,TValue>>)
+    TEnumerator = class(TRefCountedObject, IEnumerator<TPair<TKey,TValue>>)
     private
       fEnumerator: TBinaryTree.TEnumerator;
-    protected
       function GetCurrent: TPair<TKey,TValue>;
     public
       constructor Create(const tree: TBinaryTree);

@@ -36,10 +36,23 @@ uses
   Spring.Collections.Base;
 
 type
-  TCollectionAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>, ICollection)
+  TEnumerableAdapter<T> = class(TRefCountedObject, IEnumerable)
   private
-    fSource: ICollection<T>;
+    fSource: IEnumerable<T>;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetElementType: PTypeInfo;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
+  protected
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override;
+  public
+    constructor Create(const source: IEnumerable<T>);
+    function GetEnumerator: IEnumerator;
+  end;
 
+  TCollectionAdapter<T> = class(TEnumerableAdapter<T>, ICollection)
+  private
     function GetIsReadOnly: Boolean;
     function GetOnChanged: IEvent;
 
@@ -57,21 +70,13 @@ type
 
     procedure Clear;
   protected
-  {$REGION 'Property Accessors'}
-    function GetCount: Integer;
-    function GetElementType: PTypeInfo; override;
-    function GetIsEmpty: Boolean;
-  {$ENDREGION}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: ICollection<T>);
-    function GetEnumerator: IEnumerator<T>;
   end;
 
-  TListAdapter<T> = class(TCollectionAdapter<T>, IList, IReadOnlyList)
+  TListAdapter<T> = class(TCollectionAdapter<T>, IReadOnlyList, IList)
   private
-    fSource: IList<T>;
-
     function GetCapacity: Integer;
     function GetItem(index: Integer): TValue;
     procedure SetCapacity(value: Integer);
@@ -102,7 +107,7 @@ type
     function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
-    function AsReadOnlyList: IReadOnlyList;
+    function AsReadOnly: IReadOnlyList;
     procedure TrimExcess;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
@@ -111,10 +116,8 @@ type
   end;
 
   TDictionaryAdapter<TKey, T> = class(TCollectionAdapter<TPair<TKey, T>>,
-    IDictionary, IReadOnlyDictionary)
+    IReadOnlyDictionary, IDictionary)
   private
-    fSource: IDictionary<TKey, T>;
-
     function GetCapacity: Integer;
     function GetItem(const key: TValue): TValue;
     function GetKeyType: PTypeInfo;
@@ -134,17 +137,15 @@ type
     function TryExtract(const key: TValue; out value: TValue): Boolean;
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
-    function AsReadOnlyDictionary: IReadOnlyDictionary;
+    function AsReadOnly: IReadOnlyDictionary;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IDictionary<TKey, T>);
   end;
 
-  TStackAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>, IStack)
+  TStackAdapter<T> = class(TEnumerableAdapter<T>, IStack)
   private
-    fSource: IStack<T>;
-
     function GetOnChanged: IEvent;
 
     procedure Clear;
@@ -155,21 +156,13 @@ type
     function TryPeek(out item: TValue): Boolean;
     function TryPop(out item: TValue): Boolean;
   protected
-  {$REGION 'Property Accessors'}
-    function GetCount: Integer;
-    function GetElementType: PTypeInfo; override;
-    function GetIsEmpty: Boolean;
-  {$ENDREGION}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IStack<T>);
-    function GetEnumerator: IEnumerator<T>;
   end;
 
-  TQueueAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>, IQueue)
+  TQueueAdapter<T> = class(TEnumerableAdapter<T>, IQueue)
   private
-    fSource: IQueue<T>;
-
     function GetOnChanged: IEvent;
 
     procedure Clear;
@@ -180,21 +173,13 @@ type
     function TryDequeue(out item: TValue): Boolean;
     function TryPeek(out item: TValue): Boolean;
   protected
-  {$REGION 'Property Accessors'}
-    function GetCount: Integer;
-    function GetElementType: PTypeInfo; override;
-    function GetIsEmpty: Boolean;
-  {$ENDREGION}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IQueue<T>);
-    function GetEnumerator: IEnumerator<T>;
   end;
 
   THashSetAdapter<T> = class(TCollectionAdapter<T>, ISet)
   private
-    fSource: ISet<T>;
-
     function Add(const item: TValue): Boolean;
     procedure ExceptWith(const other: IEnumerable);
     procedure IntersectWith(const other: IEnumerable);
@@ -225,17 +210,59 @@ uses
   SysUtils;
 
 
-{$REGION 'TCollectionAdapter<T>'}
+{$REGION 'TEnumerableAdapter<T>'}
 
-constructor TCollectionAdapter<T>.Create(const source: ICollection<T>);
+constructor TEnumerableAdapter<T>.Create(const source: IEnumerable<T>);
 begin
   inherited Create;
   fSource := source;
 end;
 
+function TEnumerableAdapter<T>.GetCount: Integer;
+begin
+  Result := fSource.Count;
+end;
+
+function TEnumerableAdapter<T>.GetElementType: PTypeInfo;
+begin
+  Result := fSource.ElementType;
+end;
+
+function TEnumerableAdapter<T>.GetEnumerator: IEnumerator;
+begin
+  Result := TEnumeratorWrapper<T>.Create(fSource.GetEnumerator);
+end;
+
+function TEnumerableAdapter<T>.GetIsEmpty: Boolean;
+begin
+  Result := fSource.IsEmpty;
+end;
+
+function TEnumerableAdapter<T>.QueryInterface(const IID: TGUID;
+  out Obj): HResult;
+begin
+  if IID = IEnumerable<T> then
+  begin
+    IInterface(obj) := fSource;
+    Result := 0;
+  end
+  else
+    Result := inherited QueryInterface(IID, Obj);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCollectionAdapter<T>'}
+
+constructor TCollectionAdapter<T>.Create(const source: ICollection<T>);
+begin
+  inherited Create(source);
+end;
+
 procedure TCollectionAdapter<T>.Add(const item: TValue);
 begin
-  fSource.Add(item.AsType<T>);
+  ICollection<T>(fSource).Add(item.AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.AddRange(const values: array of TValue);
@@ -243,7 +270,7 @@ var
   i: Integer;
 begin
   for i := Low(values) to High(values) do
-    fSource.Add(values[i].AsType<T>);
+    ICollection<T>(fSource).Add(values[i].AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.AddRange(const values: IEnumerable);
@@ -251,17 +278,17 @@ var
   item: TValue;
 begin
   for item in values do
-    fSource.Add(item.AsType<T>);
+    ICollection<T>(fSource).Add(item.AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.Clear;
 begin
-  fSource.Clear;
+  ICollection<T>(fSource).Clear;
 end;
 
 function TCollectionAdapter<T>.Extract(const item: TValue): TValue;
 begin
-  Result := TValue.From<T>(fSource.Extract(item.AsType<T>));
+  Result := TValue.From<T>(ICollection<T>(fSource).Extract(item.AsType<T>));
 end;
 
 procedure TCollectionAdapter<T>.ExtractRange(const values: array of TValue);
@@ -269,7 +296,7 @@ var
   i: Integer;
 begin
   for i := Low(values) to High(values) do
-    fSource.Extract(values[i].AsType<T>);
+    ICollection<T>(fSource).Extract(values[i].AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.ExtractRange(const values: IEnumerable);
@@ -277,37 +304,17 @@ var
   item: TValue;
 begin
   for item in values do
-    fSource.Extract(item.AsType<T>);
-end;
-
-function TCollectionAdapter<T>.GetCount: Integer;
-begin
-  Result := fSource.Count;
-end;
-
-function TCollectionAdapter<T>.GetElementType: PTypeInfo;
-begin
-  Result := fSource.GetElementType;
-end;
-
-function TCollectionAdapter<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := fSource.GetEnumerator;
-end;
-
-function TCollectionAdapter<T>.GetIsEmpty: Boolean;
-begin
-  Result := fSource.IsEmpty;
+    ICollection<T>(fSource).Extract(item.AsType<T>);
 end;
 
 function TCollectionAdapter<T>.GetIsReadOnly: Boolean;
 begin
-  Result := fSource.IsReadOnly;
+  Result := ICollection<T>(fSource).IsReadOnly;
 end;
 
 function TCollectionAdapter<T>.GetOnChanged: IEvent;
 begin
-  Result := fSource.OnChanged;
+  Result := ICollection<T>(fSource).OnChanged;
 end;
 
 function TCollectionAdapter<T>.QueryInterface(const IID: TGUID;
@@ -324,7 +331,7 @@ end;
 
 function TCollectionAdapter<T>.Remove(const item: TValue): Boolean;
 begin
-  Result := fSource.Remove(item.AsType<T>);
+  Result := ICollection<T>(fSource).Remove(item.AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.RemoveRange(const values: array of TValue);
@@ -332,7 +339,7 @@ var
   i: Integer;
 begin
   for i := Low(values) to High(values) do
-    fSource.Remove(values[i].AsType<T>);
+    ICollection<T>(fSource).Remove(values[i].AsType<T>);
 end;
 
 procedure TCollectionAdapter<T>.RemoveRange(
@@ -341,7 +348,7 @@ var
   item: TValue;
 begin
   for item in values do
-    fSource.Remove(item.AsType<T>);
+    ICollection<T>(fSource).Remove(item.AsType<T>);
 end;
 
 {$ENDREGION}
@@ -352,63 +359,62 @@ end;
 constructor TListAdapter<T>.Create(const source: IList<T>);
 begin
   inherited Create(source);
-  fSource := source;
 end;
 
 function TListAdapter<T>.Add(const item: TValue): Integer;
 begin
-  Result := fSource.Add(item.AsType<T>);
+  Result := IList<T>(fSource).Add(item.AsType<T>);
 end;
 
-function TListAdapter<T>.AsReadOnlyList: IReadOnlyList;
+function TListAdapter<T>.AsReadOnly: IReadOnlyList;
 begin
   Result := Self;
 end;
 
 procedure TListAdapter<T>.Delete(index: Integer);
 begin
-  fSource.Delete(index);
+  IList<T>(fSource).Delete(index);
 end;
 
 procedure TListAdapter<T>.DeleteRange(index, count: Integer);
 begin
-  fSource.DeleteRange(index, count);
+  IList<T>(fSource).DeleteRange(index, count);
 end;
 
 procedure TListAdapter<T>.Exchange(index1, index2: Integer);
 begin
-  fSource.Exchange(index1, index2);
+  IList<T>(fSource).Exchange(index1, index2);
 end;
 
 function TListAdapter<T>.GetCapacity: Integer;
 begin
-  Result := fSource.Capacity;
+  Result := IList<T>(fSource).Capacity;
 end;
 
 function TListAdapter<T>.GetItem(index: Integer): TValue;
 begin
-  Result := TValue.From<T>(fSource[index]);
+  Result := TValue.From<T>(IList<T>(fSource)[index]);
 end;
 
 function TListAdapter<T>.IndexOf(const item: TValue): Integer;
 begin
-  Result := fSource.IndexOf(item.AsType<T>);
+  Result := IList<T>(fSource).IndexOf(item.AsType<T>);
 end;
 
 function TListAdapter<T>.IndexOf(const item: TValue; index: Integer): Integer;
 begin
-  Result := fSource.IndexOf(item.AsType<T>, index);
+  Result := IList<T>(fSource).IndexOf(item.AsType<T>, index);
 end;
 
 function TListAdapter<T>.IndexOf(const item: TValue; index,
   count: Integer): Integer;
 begin
-  Result := fSource.IndexOf(item.AsType<T>, index, count);
+  Result := IList<T>(fSource).IndexOf(item.AsType<T>, index, count);
 end;
 
 procedure TListAdapter<T>.Insert(index: Integer; const item: TValue);
 begin
-  fSource.Insert(index, item.AsType<T>);
+  IList<T>(fSource).Insert(index, item.AsType<T>);
 end;
 
 procedure TListAdapter<T>.InsertRange(index: Integer;
@@ -422,7 +428,7 @@ begin
 
   for i := Low(values) to High(values) do
   begin
-    fSource.Insert(index, values[i].AsType<T>);
+    IList<T>(fSource).Insert(index, values[i].AsType<T>);
     Inc(index);
   end;
 end;
@@ -438,30 +444,30 @@ begin
 
   for item in values do
   begin
-    fSource.Insert(index, item.AsType<T>);
+    IList<T>(fSource).Insert(index, item.AsType<T>);
     Inc(index);
   end;
 end;
 
 function TListAdapter<T>.LastIndexOf(const item: TValue): Integer;
 begin
-  Result := fSource.LastIndexOf(item.AsType<T>);
+  Result := IList<T>(fSource).LastIndexOf(item.AsType<T>);
 end;
 
 function TListAdapter<T>.LastIndexOf(const item: TValue; index: Integer): Integer;
 begin
-  Result := fSource.LastIndexOf(item.AsType<T>, index);
+  Result := IList<T>(fSource).LastIndexOf(item.AsType<T>, index);
 end;
 
 function TListAdapter<T>.LastIndexOf(const item: TValue; index,
   count: Integer): Integer;
 begin
-  Result := fSource.LastIndexOf(item.AsType<T>, index, count);
+  Result := IList<T>(fSource).LastIndexOf(item.AsType<T>, index, count);
 end;
 
 procedure TListAdapter<T>.Move(currentIndex, newIndex: Integer);
 begin
-  fSource.Move(currentIndex, newIndex);
+  IList<T>(fSource).Move(currentIndex, newIndex);
 end;
 
 function TListAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
@@ -477,32 +483,32 @@ end;
 
 procedure TListAdapter<T>.Reverse;
 begin
-  fSource.Reverse;
+  IList<T>(fSource).Reverse;
 end;
 
 procedure TListAdapter<T>.Reverse(index, count: Integer);
 begin
-  fSource.Reverse(index, count);
+  IList<T>(fSource).Reverse(index, count);
 end;
 
 procedure TListAdapter<T>.SetCapacity(value: Integer);
 begin
-  fSource.Capacity := value;
+  IList<T>(fSource).Capacity := value;
 end;
 
 procedure TListAdapter<T>.SetItem(index: Integer; const item: TValue);
 begin
-  fSource[index] := item.AsType<T>;
+  IList<T>(fSource)[index] := item.AsType<T>;
 end;
 
 procedure TListAdapter<T>.Sort;
 begin
-  fSource.Sort;
+  IList<T>(fSource).Sort;
 end;
 
 procedure TListAdapter<T>.TrimExcess;
 begin
-  fSource.TrimExcess;
+  IList<T>(fSource).TrimExcess;
 end;
 
 {$ENDREGION}
@@ -514,61 +520,60 @@ constructor TDictionaryAdapter<TKey, T>.Create(
   const source: IDictionary<TKey, T>);
 begin
   inherited Create(source);
-  fSource := source;
 end;
 
 procedure TDictionaryAdapter<TKey, T>.Add(const key, value: TValue);
 begin
-  fSource.Add(key.AsType<TKey>, value.AsType<T>);
+  IDictionary<TKey, T>(fSource).Add(key.AsType<TKey>, value.AsType<T>);
 end;
 
-function TDictionaryAdapter<TKey, T>.AsReadOnlyDictionary: IReadOnlyDictionary;
+function TDictionaryAdapter<TKey, T>.AsReadOnly: IReadOnlyDictionary;
 begin
   Result := Self;
 end;
 
 function TDictionaryAdapter<TKey, T>.ContainsKey(const key: TValue): Boolean;
 begin
-  Result := fSource.ContainsKey(key.AsType<TKey>);
+  Result := IDictionary<TKey, T>(fSource).ContainsKey(key.AsType<TKey>);
 end;
 
 function TDictionaryAdapter<TKey, T>.ContainsValue(
   const value: TValue): Boolean;
 begin
-  Result := fSource.ContainsValue(value.AsType<T>);
+  Result := IDictionary<TKey, T>(fSource).ContainsValue(value.AsType<T>);
 end;
 
 function TDictionaryAdapter<TKey, T>.GetCapacity: Integer;
 begin
-  Result := fSource.Capacity;
+  Result := IDictionary<TKey, T>(fSource).Capacity;
 end;
 
 function TDictionaryAdapter<TKey, T>.GetItem(const key: TValue): TValue;
 var
   item: T;
 begin
-  item := fSource.GetItem(key.AsType<TKey>);
+  item := IDictionary<TKey, T>(fSource).GetItem(key.AsType<TKey>);
   Result := TValue.From<T>(item);
 end;
 
 function TDictionaryAdapter<TKey, T>.GetKeyType: PTypeInfo;
 begin
-  Result := fSource.KeyType;
+  Result := IDictionary<TKey, T>(fSource).KeyType;
 end;
 
 function TDictionaryAdapter<TKey, T>.GetOnKeyChanged: IEvent;
 begin
-  Result := fSource.OnKeyChanged;
+  Result := IDictionary<TKey, T>(fSource).OnKeyChanged;
 end;
 
 function TDictionaryAdapter<TKey, T>.GetOnValueChanged: IEvent;
 begin
-  Result := fSource.OnValueChanged;
+  Result := IDictionary<TKey, T>(fSource).OnValueChanged;
 end;
 
 function TDictionaryAdapter<TKey, T>.GetValueType: PTypeInfo;
 begin
-  Result := fSource.ValueType;
+  Result := IDictionary<TKey, T>(fSource).ValueType;
 end;
 
 function TDictionaryAdapter<TKey, T>.QueryInterface(const IID: TGUID;
@@ -585,24 +590,24 @@ end;
 
 function TDictionaryAdapter<TKey, T>.Remove(const key: TValue): Boolean;
 begin
-  Result := fSource.Remove(key.AsType<TKey>);
+  Result := IDictionary<TKey, T>(fSource).Remove(key.AsType<TKey>);
 end;
 
 procedure TDictionaryAdapter<TKey, T>.SetCapacity(value: Integer);
 begin
-  fSource.Capacity := value;
+  IDictionary<TKey, T>(fSource).Capacity := value;
 end;
 
 procedure TDictionaryAdapter<TKey, T>.SetItem(const key, value: TValue);
 begin
-  fSource[key.AsType<TKey>] := value.AsType<T>;
+  IDictionary<TKey, T>(fSource)[key.AsType<TKey>] := value.AsType<T>;
 end;
 
 function TDictionaryAdapter<TKey, T>.TryExtract(const key: TValue; out value: TValue): Boolean;
 var
   item: T;
 begin
-  Result := fSource.TryExtract(key.AsType<TKey>, item);
+  Result := IDictionary<TKey, T>(fSource).TryExtract(key.AsType<TKey>, item);
   value := TValue.From<T>(item);
 end;
 
@@ -611,7 +616,7 @@ function TDictionaryAdapter<TKey, T>.TryGetValue(const key: TValue;
 var
   item: T;
 begin
-  Result := fSource.TryGetValue(key.AsType<TKey>, item);
+  Result := IDictionary<TKey, T>(fSource).TryGetValue(key.AsType<TKey>, item);
   if Result then
     value := TValue.From<T>(item);
 end;
@@ -623,58 +628,37 @@ end;
 
 constructor TStackAdapter<T>.Create(const source: IStack<T>);
 begin
-  inherited Create;
-  fSource := source;
+  inherited Create(source);
 end;
 
 procedure TStackAdapter<T>.Clear;
 begin
-  fSource.Clear;
-end;
-
-function TStackAdapter<T>.GetCount: Integer;
-begin
-  Result := fSource.Count;
-end;
-
-function TStackAdapter<T>.GetElementType: PTypeInfo;
-begin
-  Result := fSource.ElementType;
-end;
-
-function TStackAdapter<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := fSource.GetEnumerator;
-end;
-
-function TStackAdapter<T>.GetIsEmpty: Boolean;
-begin
-  Result := fSource.IsEmpty;
+  IStack<T>(fSource).Clear;
 end;
 
 function TStackAdapter<T>.GetOnChanged: IEvent;
 begin
-  Result := fSource.OnChanged;
+  Result := IStack<T>(fSource).OnChanged;
 end;
 
 function TStackAdapter<T>.Peek: TValue;
 begin
-  Result := TValue.From<T>(fSource.Peek);
+  Result := TValue.From<T>(IStack<T>(fSource).Peek);
 end;
 
 function TStackAdapter<T>.PeekOrDefault: TValue;
 begin
-  Result := TValue.From<T>(fSource.PeekOrDefault);
+  Result := TValue.From<T>(IStack<T>(fSource).PeekOrDefault);
 end;
 
 function TStackAdapter<T>.Pop: TValue;
 begin
-  Result := TValue.From<T>(fSource.Pop);
+  Result := TValue.From<T>(IStack<T>(fSource).Pop);
 end;
 
 procedure TStackAdapter<T>.Push(const item: TValue);
 begin
-  fSource.Push(item.AsType<T>);
+  IStack<T>(fSource).Push(item.AsType<T>);
 end;
 
 function TStackAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
@@ -692,7 +676,7 @@ function TStackAdapter<T>.TryPeek(out item: TValue): Boolean;
 var
   value: T;
 begin
-  Result := fSource.TryPeek(value);
+  Result := IStack<T>(fSource).TryPeek(value);
   if Result then
     item := TValue.From<T>(value)
   else
@@ -703,7 +687,7 @@ function TStackAdapter<T>.TryPop(out item: TValue): Boolean;
 var
   value: T;
 begin
-  Result := fSource.TryPop(value);
+  Result := IStack<T>(fSource).TryPop(value);
   if Result then
     item := TValue.From<T>(value)
   else
@@ -717,58 +701,37 @@ end;
 
 constructor TQueueAdapter<T>.Create(const source: IQueue<T>);
 begin
-  inherited Create;
-  fSource := source;
+  inherited Create(source);
 end;
 
 procedure TQueueAdapter<T>.Clear;
 begin
-  fSource.Clear;
+  IQueue<T>(fSource).Clear;
 end;
 
 function TQueueAdapter<T>.Dequeue: TValue;
 begin
-  Result := TValue.From<T>(fSource.Dequeue);
+  Result := TValue.From<T>(IQueue<T>(fSource).Dequeue);
 end;
 
 procedure TQueueAdapter<T>.Enqueue(const item: TValue);
 begin
-  fSource.Enqueue(item.AsType<T>);
-end;
-
-function TQueueAdapter<T>.GetCount: Integer;
-begin
-  Result := fSource.Count;
-end;
-
-function TQueueAdapter<T>.GetElementType: PTypeInfo;
-begin
-  Result := fSource.ElementType;
-end;
-
-function TQueueAdapter<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := fSource.GetEnumerator;
-end;
-
-function TQueueAdapter<T>.GetIsEmpty: Boolean;
-begin
-  Result := fSource.IsEmpty;
+  IQueue<T>(fSource).Enqueue(item.AsType<T>);
 end;
 
 function TQueueAdapter<T>.GetOnChanged: IEvent;
 begin
-  Result := fSource.OnChanged;
+  Result := IQueue<T>(fSource).OnChanged;
 end;
 
 function TQueueAdapter<T>.Peek: TValue;
 begin
-  Result := TValue.From<T>(fSource.Peek);
+  Result := TValue.From<T>(IQueue<T>(fSource).Peek);
 end;
 
 function TQueueAdapter<T>.PeekOrDefault: TValue;
 begin
-  Result := TValue.From<T>(fSource.PeekOrDefault);
+  Result := TValue.From<T>(IQueue<T>(fSource).PeekOrDefault);
 end;
 
 function TQueueAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
@@ -786,7 +749,7 @@ function TQueueAdapter<T>.TryDequeue(out item: TValue): Boolean;
 var
   value: T;
 begin
-  Result := fSource.TryDequeue(value);
+  Result := IQueue<T>(fSource).TryDequeue(value);
   if Result then
     item := TValue.From<T>(value)
   else
@@ -797,7 +760,7 @@ function TQueueAdapter<T>.TryPeek(out item: TValue): Boolean;
 var
   value: T;
 begin
-  Result := fSource.TryPeek(value);
+  Result := IQueue<T>(fSource).TryPeek(value);
   if Result then
     item := TValue.From<T>(value)
   else
@@ -812,37 +775,36 @@ end;
 constructor THashSetAdapter<T>.Create(const source: ISet<T>);
 begin
   inherited Create(source);
-  fSource := source;
 end;
 
 function THashSetAdapter<T>.Add(const item: TValue): Boolean;
 begin
-  Result := fSource.Add(item.AsType<T>);
+  Result := ISet<T>(fSource).Add(item.AsType<T>);
 end;
 
 procedure THashSetAdapter<T>.ExceptWith(const other: IEnumerable);
 begin
-  fSource.ExceptWith(IEnumerable<T>(other));
+  ISet<T>(fSource).ExceptWith(other as IEnumerable<T>);
 end;
 
 procedure THashSetAdapter<T>.IntersectWith(const other: IEnumerable);
 begin
-  fSource.IntersectWith(IEnumerable<T>(other));
+  ISet<T>(fSource).IntersectWith(other as IEnumerable<T>);
 end;
 
 function THashSetAdapter<T>.IsSubsetOf(const other: IEnumerable): Boolean;
 begin
-  Result := fSource.IsSubsetOf(IEnumerable<T>(other));
+  Result := ISet<T>(fSource).IsSubsetOf(other as IEnumerable<T>);
 end;
 
 function THashSetAdapter<T>.IsSupersetOf(const other: IEnumerable): Boolean;
 begin
-  Result := fSource.IsSupersetOf(IEnumerable<T>(other));
+  Result := ISet<T>(fSource).IsSupersetOf(other as IEnumerable<T>);
 end;
 
 function THashSetAdapter<T>.Overlaps(const other: IEnumerable): Boolean;
 begin
-  Result := fSource.Overlaps(IEnumerable<T>(other));
+  Result := ISet<T>(fSource).Overlaps(other as IEnumerable<T>);
 end;
 
 function THashSetAdapter<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
@@ -858,12 +820,12 @@ end;
 
 function THashSetAdapter<T>.SetEquals(const other: IEnumerable): Boolean;
 begin
-  Result := fSource.SetEquals(IEnumerable<T>(other));
+  Result := ISet<T>(fSource).SetEquals(other as IEnumerable<T>);
 end;
 
 procedure THashSetAdapter<T>.UnionWith(const other: IEnumerable);
 begin
-  fSource.UnionWith(IEnumerable<T>(other));
+  ISet<T>(fSource).UnionWith(other as IEnumerable<T>);
 end;
 
 {$ENDREGION}

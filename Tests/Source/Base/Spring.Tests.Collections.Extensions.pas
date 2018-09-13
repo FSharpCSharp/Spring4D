@@ -48,7 +48,10 @@ type
     function GetEnumerator: IEnumerator<Integer>;
   end;
 
-  TNonEnumerableList<T> = class(TAbstractArrayList<T>, IEnumerable<T>, ICollection<T>, IList<T>)
+  TNonEnumerableList<T> = class(TAbstractArrayList<T>, IEnumerable<T>,
+    IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
+  protected
+    function AsReadOnly: IReadOnlyList<T>;
   public
     function GetEnumerator: IEnumerator<T>;
   end;
@@ -724,6 +727,11 @@ begin
 end;
 
 { TNonEnumerableList<T> }
+
+function TNonEnumerableList<T>.AsReadOnly: IReadOnlyList<T>;
+begin
+  Result := Self;
+end;
 
 function TNonEnumerableList<T>.GetEnumerator: IEnumerator<T>;
 begin

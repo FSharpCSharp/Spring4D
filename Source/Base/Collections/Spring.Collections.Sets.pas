@@ -65,21 +65,20 @@ type
   /// <typeparam name="T">
   ///   The type of elements in the hash set.
   /// </typeparam>
-  THashSet<T> = class(TSetBase<T>, INotifyCollectionChanged<T>, IEnumerable<T>,
-    ICollection<T>, ISet<T>, IReadOnlyCollection<T>)
+  THashSet<T> = class(TSetBase<T>, IEnumerable<T>,
+    IReadOnlyCollection<T>, ICollection<T>, ISet<T>)
   private
   {$REGION 'Nested Types'}
     type
       TItem = THashSetItem<T>;
 
-      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: THashSet<T>;
         fItemIndex: Integer;
         fVersion: Integer;
         fCurrent: T;
-      protected
         function GetCurrent: T;
       public
         constructor Create(const source: THashSet<T>);
@@ -126,7 +125,7 @@ type
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
-    function Contains(const item: T): Boolean;
+    function Contains(const item: T): Boolean; overload;
     function ToArray: TArray<T>;
   {$ENDREGION}
 
@@ -143,20 +142,19 @@ type
   {$ENDREGION}
   end;
 
-  TSortedSet<T> = class(TSetBase<T>, INotifyCollectionChanged<T>, IEnumerable<T>,
-    ICollection<T>, IReadOnlyCollection<T>, ISet<T>)
+  TSortedSet<T> = class(TSetBase<T>, IEnumerable<T>,
+    IReadOnlyCollection<T>, ICollection<T>, ISet<T>)
   private
   {$REGION 'Nested Types'}
     type
       PNode = TNodes<T>.PRedBlackTreeNode;
-      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedSet<T>;
         fVersion: Integer;
         fCurrent: PNode;
         fFinished: Boolean;
-      protected
         function GetCurrent: T;
       public
         constructor Create(const source: TSortedSet<T>);
@@ -181,7 +179,7 @@ type
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
-    function Contains(const item: T): Boolean;
+    function Contains(const item: T): Boolean; overload;
     function ToArray: TArray<T>;
   {$ENDREGION}
 

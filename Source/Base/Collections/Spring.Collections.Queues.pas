@@ -30,6 +30,7 @@ interface
 
 uses
   Generics.Defaults,
+  Spring,
   Spring.Collections,
   Spring.Collections.Base,
   Spring.Collections.Events;
@@ -43,12 +44,11 @@ type
   /// <typeparam name="T">
   ///   Specifies the type of elements in the collection.
   /// </typeparam>
-  TDeque<T> = class(TEnumerableBase<T>, INotifyCollectionChanged<T>,
-    IEnumerable<T>, {ICollection<T>, IReadOnlyCollection<T>, }IQueue<T>, IDeque<T>)
+  TDeque<T> = class(TEnumerableBase<T>, IEnumerable<T>, IQueue<T>, IDeque<T>)
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDeque<T>;
@@ -70,6 +70,7 @@ type
     fFront: Integer;
     fOnChanged: TCollectionChangedEventImpl<T>;
   {$REGION 'Property Accessors'}
+    function GetBack: Integer; inline;
     function GetCapacity: Integer;
     function GetCount: Integer; inline;
     function GetIsEmpty: Boolean;
@@ -77,14 +78,13 @@ type
     function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-    function GetBack: Integer; inline;
     procedure Grow;
+    procedure AddInternal(const item: T; dequeEnd: TDequeEnd); inline;
+    procedure RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction); inline;
     property Back: Integer read GetBack;
     property Front: Integer read fFront;
   protected
-    procedure Changed(const item: T; action: TCollectionChangedAction); inline;
-    procedure AddInternal(const item: T; dequeEnd: TDequeEnd); inline;
-    procedure RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction); inline;
+    procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
     property Count: Integer read GetCount;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
@@ -96,12 +96,12 @@ type
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
 
-    function First: T;
-    function FirstOrDefault: T;
-    function Single: T;
-    function SingleOrDefault(const defaultValue: T): T;
-    function TryGetFirst(out value: T): Boolean;
-    function TryGetLast(out value: T): Boolean;
+    function First: T; overload;
+    function FirstOrDefault: T; overload;
+    function Single: T; overload;
+    function SingleOrDefault(const defaultValue: T): T; overload;
+    function TryGetFirst(out value: T): Boolean; overload;
+    function TryGetLast(out value: T): Boolean; overload;
   {$ENDREGION}
 
   {$REGION 'Implements IDeque<T>'}
@@ -152,7 +152,6 @@ uses
   Classes,
   SysUtils,
   TypInfo,
-  Spring,
   Spring.Events.Base,
   Spring.ResourceStrings;
 
@@ -191,7 +190,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TDeque<T>.Changed(const item: T; action: TCollectionChangedAction);
+procedure TDeque<T>.DoNotify(const item: T; action: TCollectionChangedAction);
 begin
   if fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item, action);
@@ -237,7 +236,7 @@ begin
     deBack: fItems[Back] := item;
   end;
 
-  Changed(item, caAdded);
+  DoNotify(item, caAdded);
 end;
 
 procedure TDeque<T>.AddFirst(const item: T);
@@ -461,7 +460,7 @@ begin
   end;
   Dec(fCount);
 
-  Changed(item, notification);
+  DoNotify(item, notification);
 
   if OwnsObjects and (notification = caRemoved) then
   begin

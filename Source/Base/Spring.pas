@@ -2404,6 +2404,44 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TArrayManager<T>}
+
+  TArrayManager<T> = class
+  private
+  {$IFDEF DELPHIXE7_UP}
+    {$IFDEF WEAKREF}
+    class function GetHasWeakRef: Boolean; static; inline;
+    {$ENDIF}
+    class function GetIsManaged: Boolean; static; inline;
+  {$ELSE}
+    {$IFDEF WEAKREF}
+    class var fHasWeakRef: Boolean;
+    {$ENDIF}
+    class var fIsManaged: Boolean;
+    class constructor Create;
+  {$ENDIF}
+  public
+    class procedure Move(var items: TArray<T>;
+      const fromIndex, toIndex, count: Integer); overload; static; inline;
+    class procedure Move(const fromItems: TArray<T>; var toItems: TArray<T>;
+      const fromIndex, toIndex, count: Integer); overload; static; inline;
+    class procedure Finalize(var items: TArray<T>;
+      const index, count: Integer); static; inline;
+
+    class procedure MoveSlow(var items: TArray<T>;
+      const fromIndex, toIndex, count: Integer); overload; static; inline;
+
+    {$IFDEF WEAKREF}
+    class property HasWeakRef: Boolean read {$IFDEF DELPHIXE7_UP}GetHasWeakRef{$ELSE}fHasWeakRef{$ENDIF};
+    {$ELSE}
+    const HasWeakRef = False;
+    {$ENDIF}
+    class property IsManaged: Boolean read {$IFDEF DELPHIXE7_UP}GetIsManaged{$ELSE}fIsManaged{$ENDIF};
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Vector<T>'}
 
   TArrayEnumerator<T> = record
@@ -7534,6 +7572,7 @@ end;
 
 {$ENDREGION}
 
+
 {$REGION 'Weak<T>.TWeakReference'}
 
 constructor Weak<T>.TWeakReference.Create(const target: T; var ref: PPointer);
@@ -7565,7 +7604,6 @@ begin
 end;
 
 {$ENDREGION}
-
 
 
 {$REGION 'Event<T>'}
@@ -8665,7 +8703,7 @@ class procedure TArray.Swap<T>(var left, right: T);
 var
   temp: T;
 begin
-{$IFDEF DELPHIXE7_UP} // XE7 and higher
+{$IFDEF DELPHIXE7_UP}
   case GetTypeKind(T) of
 {$IFDEF AUTOREFCOUNT}
     tkClass,
@@ -8880,6 +8918,103 @@ begin
     Exit;
   IntroSort<T>(values, IComparer<T>(PPointer(@comparison)^),
     index, index + count - 1, GetDepthLimit(count));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayManager<T>'}
+
+{$IFNDEF DELPHIXE7_UP}
+class constructor TArrayManager<T>.Create;
+begin
+{$IFDEF WEAKREF}
+  fHasWeakRef := TType.HasWeakRef<T>;
+{$ENDIF}
+  fIsManaged := TType.IsManaged<T>;
+end;
+{$ELSE}
+{$IFDEF WEAKREF}
+class function TArrayManager<T>.GetHasWeakRef: Boolean;
+begin
+  Result := System.HasWeakRef(T);
+end;
+{$ENDIF}
+
+class function TArrayManager<T>.GetIsManaged: Boolean;
+begin
+  Result := System.IsManagedType(T);
+end;
+{$ENDIF}
+
+class procedure TArrayManager<T>.Finalize(var items: TArray<T>;
+  const index, count: Integer);
+begin
+{$IFDEF WEAKREF}
+  if HasWeakRef then
+    System.Finalize(items[index], count);
+{$ENDIF}
+  System.FillChar(items[index], count * SizeOf(T), 0)
+end;
+
+class procedure TArrayManager<T>.Move(var items: TArray<T>;
+  const fromIndex, toIndex, count: Integer);
+{$IFDEF WEAKREF}
+var
+  i: Integer;
+begin
+  if HasWeakRef then
+  begin
+    if count > 0 then
+      if fromIndex < toIndex then
+        for i := count - 1 downto 0 do
+          items[toIndex + i] := items[fromIndex + i]
+      else if fromIndex > toIndex then
+        for i := 0 to Count - 1 do
+          items[toIndex + i] := items[fromIndex + i];
+  end
+  else
+{$ELSE}
+begin
+{$ENDIF}
+    System.Move(items[fromIndex], items[toIndex], count * SizeOf(T));
+end;
+
+class procedure TArrayManager<T>.Move(const fromItems: TArray<T>;
+  var toItems: TArray<T>; const fromIndex, toIndex, count: Integer);
+{$IFDEF WEAKREF}
+var
+  i: Integer;
+begin
+  if HasWeakRef then
+  begin
+    if count > 0 then
+      if fromIndex < toIndex then
+        for i := count - 1 downto 0 do
+          toItems[toIndex + i] := fromItems[fromIndex + i]
+      else if fromIndex > toIndex then
+        for i := 0 to count - 1 do
+          toItems[toIndex + i] := fromItems[fromIndex + i];
+  end
+  else
+{$ELSE}
+begin
+{$ENDIF}
+    System.Move(fromItems[fromIndex], toItems[toIndex], count * SizeOf(T));
+end;
+
+class procedure TArrayManager<T>.MoveSlow(var items: TArray<T>;
+  const fromIndex, toIndex, count: Integer);
+var
+  i: Integer;
+begin
+  if count > 0 then
+    if fromIndex < toIndex then
+      for i := count - 1 downto 0 do
+        items[toIndex + i] := items[fromIndex + i]
+    else if fromIndex > toIndex then
+      for i := 0 to count - 1 do
+        items[toIndex + i] := items[fromIndex + i];
 end;
 
 {$ENDREGION}

@@ -98,6 +98,7 @@ type
     procedure TestListInsertRangeIEnumerableWithExtraCapacity;
     procedure TestListSimpleDelete;
     procedure TestListMultipleDelete;
+    procedure TestListRemoveAll;
     procedure TestListSimpleExchange;
     procedure TestListReverse;
     procedure TestListReverseEmpty;
@@ -139,9 +140,14 @@ type
   private
     SUT: IList<string>;
   protected
+    procedure SetUp; override;
     procedure TearDown; override;
+    procedure FillList;
   published
     procedure TestCaseInsensitive;
+    procedure TestAdd;
+    procedure TestDelete;
+    procedure TestExtractRange;
   end;
 
   TTestSortedList = class(TTestCase)
@@ -416,6 +422,7 @@ type
   TTestInterfaceList = class(TTestCase)
   private
     SUT: IList<IInvokable>;
+    procedure FillList;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -423,6 +430,8 @@ type
     procedure TestInterfaceListCreate;
     procedure TestGetElementType;
     procedure TestCopyTo;
+    procedure TestDelete;
+    procedure TestDeleteRangeFront;
   end;
 
   TMyCollectionItem = class(TCollectionItem);
@@ -471,7 +480,7 @@ type
     procedure TestListAddRangeArray;
     procedure TestListAddRangeIEnumerable;
 
-    procedure TestListAsReadOnlyList;
+    procedure TestListAsReadOnly;
 
     procedure TestListClear;
 
@@ -1045,6 +1054,7 @@ end;
 
 procedure TTestIntegerList.TestLastIndexOf;
 begin
+  CheckEquals(-1, SUT.IndexOf(1));
   SUT.Add(1);
   SUT.Add(1);
   SUT.Add(1);
@@ -1087,6 +1097,25 @@ begin
     SUT.Insert(0, i);
     CheckEquals(i, SUT.Count);
   end;
+end;
+
+procedure TTestIntegerList.TestListRemoveAll;
+begin
+  SUT.AddRange(TEnumerable.Range(1, 9));
+  CheckEquals(8, SUT.RemoveAll(function(const x: Integer): Boolean begin Result := x <> 4 end));
+  CheckTrue(SUT.EqualsTo([4]));
+
+  SUT.Clear;
+
+  SUT.AddRange(TEnumerable.Range(1, 9));
+  CheckEquals(1, SUT.RemoveAll(function(const x: Integer): Boolean begin Result := x = 4 end));
+  CheckTrue(SUT.EqualsTo([1, 2, 3, 5, 6, 7, 8, 9]));
+
+  SUT.Clear;
+
+  SUT.AddRange(TEnumerable.Range(1, 9));
+  CheckEquals(7, SUT.RemoveAll(function(const x: Integer): Boolean begin Result := (x <> 4) and (x <> 9) end));
+  CheckTrue(SUT.EqualsTo([4, 9]));
 end;
 
 procedure TTestIntegerList.TestListSimpleDelete;
@@ -1197,6 +1226,7 @@ procedure TTestIntegerList.TestListIndexOf;
 var
   i: Integer;
 begin
+  CheckEquals(-1, SUT.IndexOf(1));
   for i := 0 to ListCountLimit - 1 do
     SUT.Add(i);
   CheckEquals(ListCountLimit, SUT.Count, 'TestLimitIndexOf: List count not correct after adding items.');
@@ -1320,9 +1350,33 @@ end;
 
 {$REGION 'TTestStringList'}
 
+procedure TTestStringList.FillList;
+var
+  i: Integer;
+begin
+  for i := 0 to 9 do
+    SUT.Add(IntToStr(i));
+end;
+
+procedure TTestStringList.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateList<string>;
+end;
+
 procedure TTestStringList.TearDown;
 begin
   SUT := nil;
+end;
+
+procedure TTestStringList.TestAdd;
+var
+  i: Integer;
+begin
+  FillList;
+  CheckEquals(10, SUT.Count);
+  for i := 0 to 9 do
+    CheckEquals(IntToStr(i), SUT[i]);
 end;
 
 procedure TTestStringList.TestCaseInsensitive;
@@ -1330,6 +1384,47 @@ begin
   SUT := TCollections.CreateList<string>(TStringComparer.OrdinalIgnoreCase());
   SUT.AddRange(['AAA', 'BBB', 'CCC']);
   CheckTrue(SUT.Contains('aaa'));
+end;
+
+procedure TTestStringList.TestDelete;
+var
+  i: Integer;
+begin
+  FillList;
+
+  // delete last
+  SUT.Delete(9);
+  CheckEquals(9, SUT.Count);
+  for i := 0 to 8 do
+    CheckEquals(IntToStr(i), SUT[i]);
+
+  // delete one before last
+  SUT.Delete(7);
+  CheckEquals(8, SUT.Count);
+  for i := 0 to 6 do
+    CheckEquals(IntToStr(i), SUT[i]);
+  CheckEquals('8', SUT[7]);
+
+  // delete first
+  SUT.Delete(0);
+  CheckEquals(7, SUT.Count);
+  for i := 0 to 5 do
+    CheckEquals(IntToStr(i + 1), SUT[i]);
+  CheckEquals('8', SUT[6]);
+
+end;
+
+procedure TTestStringList.TestExtractRange;
+var
+  values: TArray<string>;
+begin
+  FillList;
+  values := SUT.ExtractRange(0, 3);
+  CheckEquals(7, SUT.Count);
+  CheckEquals(3, Length(values));
+  CheckEquals('0', values[0]);
+  CheckEquals('1', values[1]);
+  CheckEquals('2', values[2]);
 end;
 
 {$ENDREGION}
@@ -2806,7 +2901,7 @@ end;
 
 procedure TTestObjectList.TestObjectListCreate;
 begin
-  SUT := TObjectList<TPersistent>.Create(nil) as IList<TPersistent>;
+  SUT := TObjectList<TPersistent>.Create(nil);
   CheckNotNull(SUT.Comparer);
 end;
 
@@ -2835,13 +2930,21 @@ end;
 
 {$REGION 'TTestInterfaceList'}
 
+type
+  TInvokable = class(TInterfacedObject, IInvokable);
+
+procedure TTestInterfaceList.FillList;
+var
+  i: Integer;
+begin
+  for i := 1 to 4 do
+    SUT.Add(IInvokable(TInvokable.Create));
+end;
+
 procedure TTestInterfaceList.SetUp;
 begin
   SUT := TCollections.CreateList<IInvokable>;
 end;
-
-type
-  TInvokable = class(TInterfacedObject, IInvokable);
 
 procedure TTestInterfaceList.TearDown;
 begin
@@ -2861,6 +2964,27 @@ begin
   CheckEquals(MaxItems, Length(values));
   CheckSame(SUT.First, values[0]);
   CheckSame(SUT.Last, values[MaxItems-1]);
+end;
+
+procedure TTestInterfaceList.TestDelete;
+begin
+  FillList;
+  SUT.Delete(3);
+  SUT.Delete(1);
+  Pass;
+end;
+
+procedure TTestInterfaceList.TestDeleteRangeFront;
+var
+  i: Integer;
+begin
+  FillList;
+  for i := 1 to 2 do
+    SUT.DeleteRange(0, 2);
+  for i := 1 to 4 do
+    SUT.Add(IInvokable(TInvokable.Create));
+  SUT.Clear;
+  Pass;
 end;
 
 procedure TTestInterfaceList.TestGetElementType;
@@ -3122,12 +3246,12 @@ begin
   CheckTrue(InternalList.EqualsTo([1, 2, 3, 4, 5]));
 end;
 
-procedure TTestListAdapter.TestListAsReadOnlyList;
+procedure TTestListAdapter.TestListAsReadOnly;
 var
   readOnlyList: IReadOnlyList;
   i: Integer;
 begin
-  readOnlyList := SUT.AsReadOnlyList;
+  readOnlyList := SUT.AsReadOnly;
   for i := 0 to readOnlyList.Count - 1 do
     CheckEquals(i + 1, readOnlyList[i].AsInteger);
 end;
@@ -3274,7 +3398,6 @@ begin
   collection := SUT as ICollection<Integer>;
   CheckSame(InternalList, collection);
   enumerable := SUT as IEnumerable<Integer>;
-  CheckSame(enumerable as TObject, SUT as TObject);
 end;
 
 procedure TTestListAdapter.TestListRemove;

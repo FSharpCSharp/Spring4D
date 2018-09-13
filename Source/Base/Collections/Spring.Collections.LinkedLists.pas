@@ -42,18 +42,17 @@ type
   /// <typeparam name="T">
   ///   Specifies the element type of the linked list.
   /// </typeparam>
-  TLinkedList<T> = class(TCollectionBase<T>, IEnumerable<T>, ICollection<T>,
-    IReadOnlyCollection<T>, ILinkedList<T>)
+  TLinkedList<T> = class(TCollectionBase<T>, IEnumerable<T>,
+    ICollection<T>, IReadOnlyCollection<T>, ILinkedList<T>)
   private
     type
-      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         fList: TLinkedList<T>;
         fVersion: Integer;
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fNode: TLinkedListNode<T>;
         fCurrent: T;
-      protected
         function GetCurrent: T;
       public
         constructor Create(const list: TLinkedList<T>);
@@ -88,8 +87,8 @@ type
     function GetFirst: TLinkedListNode<T>;
     function GetLast: TLinkedListNode<T>;
   {$ENDREGION}
-    function TryGetFirst(out value: T): Boolean;
-    function TryGetLast(out value: T): Boolean;
+    function TryGetFirst(out value: T): Boolean; overload;
+    function TryGetLast(out value: T): Boolean; overload;
   public
     destructor Destroy; override;
 
@@ -440,14 +439,18 @@ function TLinkedList<T>.TryGetFirst(out value: T): Boolean;
 begin
   Result := Assigned(fHead);
   if Result then
-    value := fHead.fItem;
+    value := fHead.fItem
+  else
+    value := Default(T);
 end;
 
 function TLinkedList<T>.TryGetLast(out value: T): Boolean;
 begin
   Result := Assigned(fHead);
   if Result then
-    value := fHead.fPrev.fItem;
+    value := fHead.fPrev.fItem
+  else
+    value := Default(T);
 end;
 
 procedure TLinkedList<T>.ValidateNewNode(const node: TLinkedListNode<T>);

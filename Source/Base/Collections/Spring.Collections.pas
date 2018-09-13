@@ -220,14 +220,6 @@ type
     function AsObject: TObject;
 
     /// <summary>
-    ///   Returns the specified comparer for this instance.
-    /// </summary>
-    /// <returns>
-    ///   Returns the specified IComparer&lt;T&gt; for this instance.
-    /// </returns>
-    function GetComparer: IComparer<T>;
-
-    /// <summary>
     ///   Returns an enumerator that iterates through the collection.
     /// </summary>
     /// <returns>
@@ -235,6 +227,14 @@ type
     ///   through the collection.
     /// </returns>
     function GetEnumerator: IEnumerator<T>;
+
+    /// <summary>
+    ///   Returns the specified comparer for this instance.
+    /// </summary>
+    /// <returns>
+    ///   Returns the specified IComparer&lt;T&gt; for this instance.
+    /// </returns>
+    function GetComparer: IComparer<T>;
 
     /// <summary>
     ///   Applies an accumulator function over a sequence.
@@ -770,6 +770,19 @@ type
   /// </summary>
   IReadOnlyCollection<T> = interface(IEnumerable<T>)
     ['{E1368FD5-02AE-4481-A9DC-96329DFF606C}']
+
+    /// <summary>
+    ///   Copies the elements of the collection to an array, starting at a
+    ///   particular array index.
+    /// </summary>
+    /// <param name="values">
+    ///   The one-dimensional array that is the destination of the elements
+    ///   copied from the collection. The array must have zero-based indexing.
+    /// </param>
+    /// <param name="index">
+    ///   The zero-based index in array at which copying begins.
+    /// </param>
+    procedure CopyTo(var values: TArray<T>; index: Integer);
   end;
 
   IReadOnlyList<T> = interface;
@@ -806,13 +819,12 @@ type
     procedure Clear;
 
     /// <summary>
-    ///   Copies the elements of the ICollection&lt;T&gt; to an array, starting
-    ///   at a particular array index.
+    ///   Copies the elements of the collection to an array, starting at a
+    ///   particular array index.
     /// </summary>
     /// <param name="values">
     ///   The one-dimensional array that is the destination of the elements
-    ///   copied from ICollection&lt;T&gt;. The array must have zero-based
-    ///   indexing.
+    ///   copied from the collection. The array must have zero-based indexing.
     /// </param>
     /// <param name="index">
     ///   The zero-based index in array at which copying begins.
@@ -860,9 +872,21 @@ type
     ///   ICollection&lt;T&gt;.
     /// </returns>
     function Remove(const item: T): Boolean;
-    procedure RemoveAll(const predicate: Predicate<T>);
-    procedure RemoveRange(const values: array of T); overload;
-    procedure RemoveRange(const values: IEnumerable<T>); overload;
+
+    /// <summary>
+    ///   Removes all the elements that match the conditions defined by the
+    ///   specified predicate.
+    /// </summary>
+    /// <param name="predicate">
+    ///   The predicate that defines the conditions of the elements to remove.
+    /// </param>
+    /// <returns>
+    ///   The number of elements removed from the collection.
+    /// </returns>
+    function RemoveAll(const predicate: Predicate<T>): Integer;
+
+    function RemoveRange(const values: array of T): Integer; overload;
+    function RemoveRange(const values: IEnumerable<T>): Integer; overload;
 
     function Extract(const item: T): T;
     function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
@@ -1055,7 +1079,7 @@ type
     ///   This method will not perform a copy but will return the same instance
     ///   as IReadOnlyList&lt;T&gt;.
     /// </remarks>
-    function AsReadOnlyList: IReadOnlyList<T>;
+    function AsReadOnly: IReadOnlyList<T>;
 
     /// <summary>
     ///   Resize the internal storage so that it is the same size as the
@@ -1795,7 +1819,7 @@ type
     ///   This method will not perform a copy but will return the same instance
     ///   as IReadOnlyDictionary&lt;TKey, TValue&gt;.
     /// </remarks>
-    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
     /// <summary>
     ///   Resize the internal storage so that it is the same size as the
@@ -1897,7 +1921,7 @@ type
     ///   This method will not perform a copy but will return the same instance
     ///   as IReadOnlyMultiMap&lt;TKey, TValue&gt;.
     /// </remarks>
-    function AsReadOnlyMultiMap: IReadOnlyMultiMap<TKey, TValue>;
+    function AsReadOnly: IReadOnlyMultiMap<TKey, TValue>;
 
     property Entries: IReadOnlyCollection<TMultiMapEntry<TKey, TValue>> read GetEntries;
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
@@ -2649,7 +2673,7 @@ type
       const keySelector: Func<T,TKey>;
       const comparer: IComparer<TKey>): IEnumerable<T>; overload; static;
 
-    class function Range(start, count: Integer): IEnumerable<Integer>; static;
+    class function Range(start, count: Integer): IReadOnlyList<Integer>; static;
 
     class function Repeated<T>(const element: T; count: Integer): IEnumerable<T>; static;
 
@@ -2745,27 +2769,6 @@ type
   public
     function AsList: IList<TCollectionItem>; overload;
     function AsList<T: TCollectionItem>: IList<T>; overload;
-  end;
-
-  TArrayManager<T> = class
-{$IFDEF WEAKREF}
-  private
-  {$IFDEF DELPHIXE7_UP}
-    class function GetHasWeakRef: Boolean; static; inline;
-    class property HasWeakRef: Boolean read GetHasWeakRef;
-  {$ELSE}
-    class var fHasWeakRef: Boolean;
-    class property HasWeakRef: Boolean read fHasWeakRef;
-    class constructor Create;
-  {$ENDIF}
-{$ENDIF}
-  public
-    class procedure Move(var items: TArray<T>;
-      const fromIndex, toIndex, count: Integer); overload; static; inline;
-    class procedure Move(const fromItems: TArray<T>; var toItems: TArray<T>;
-      const fromIndex, toIndex, count: Integer); overload; static; inline;
-    class procedure Finalize(var items: TArray<T>;
-      const index, count: Integer); static; inline;
   end;
 
   AutoInitAttribute = class(ManagedAttribute)
@@ -3221,7 +3224,7 @@ end;
 class function TCollections.CreateSortedList<T>: IList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
-  case TType.Kind<T> of
+  case GetTypeKind(T) of
     tkClass: IList<TObject>(Result) := TFoldedSortedObjectList<T>.Create(False);
     tkInterface: IList<IInterface>(Result) := TFoldedSortedInterfaceList<T>.Create;
   else
@@ -3236,7 +3239,7 @@ class function TCollections.CreateSortedList<T>(
   const comparer: IComparer<T>): IList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
-  case TType.Kind<T> of
+  case GetTypeKind(T) of
     tkClass: IList<TObject>(Result) :=
       TFoldedSortedObjectList<T>.Create(IComparer<TObject>(comparer), False);
     tkInterface: IList<IInterface>(Result) :=
@@ -3253,7 +3256,7 @@ class function TCollections.CreateSortedList<T>(
   const comparer: TComparison<T>): IList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
-  case TType.Kind<T> of
+  case GetTypeKind(T) of
     tkClass: IList<TObject>(Result) :=
       TFoldedSortedObjectList<T>.Create(IComparer<TObject>(PPointer(@comparer)^), False);
     tkInterface: IList<IInterface>(Result) :=
@@ -3583,7 +3586,7 @@ begin
   Result := TOrderedEnumerable<T,TKey>.Create(source, keySelector, comparer, True);
 end;
 
-class function TEnumerable.Range(start, count: Integer): IEnumerable<Integer>;
+class function TEnumerable.Range(start, count: Integer): IReadOnlyList<Integer>;
 begin
   Result := TRangeIterator.Create(start, count);
 end;
@@ -3831,81 +3834,6 @@ end;
 function TCollectionHelper.AsList<T>: IList<T>;
 begin
   Result := TCollectionList<T>.Create(Self);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TArrayManager<T>'}
-
-{$IFDEF WEAKREF}
-{$IFNDEF DELPHIXE7_UP}
-class constructor TArrayManager<T>.Create;
-begin
-  fHasWeakRef := TType.HasWeakRef<T>;
-end;
-{$ELSE}
-class function TArrayManager<T>.GetHasWeakRef: Boolean;
-begin
-  Result := System.HasWeakRef(T);
-end;
-{$ENDIF}
-{$ENDIF}
-
-class procedure TArrayManager<T>.Finalize(var items: TArray<T>;
-  const index, count: Integer);
-begin
-{$IFDEF WEAKREF}
-  if HasWeakRef then
-    System.Finalize(items[index], count);
-{$ENDIF}
-  System.FillChar(items[index], count * SizeOf(T), 0);
-end;
-
-class procedure TArrayManager<T>.Move(var items: TArray<T>;
-  const fromIndex, toIndex, count: Integer);
-{$IFDEF WEAKREF}
-var
-  i: Integer;
-begin
-  if HasWeakRef then
-  begin
-    if count > 0 then
-      if fromIndex < toIndex then
-        for i := count - 1 downto 0 do
-          items[toIndex + i] := items[fromIndex + i]
-      else if fromIndex > toIndex then
-        for i := 0 to Count - 1 do
-          items[toIndex + i] := items[fromIndex + i];
-  end
-  else
-{$ELSE}
-begin
-{$ENDIF}
-    System.Move(items[fromIndex], items[toIndex], count * SizeOf(T));
-end;
-
-class procedure TArrayManager<T>.Move(const fromItems: TArray<T>;
-  var toItems: TArray<T>; const fromIndex, toIndex, count: Integer);
-{$IFDEF WEAKREF}
-var
-  i: Integer;
-begin
-  if HasWeakRef then
-  begin
-    if count > 0 then
-      if fromIndex < toIndex then
-        for i := count - 1 downto 0 do
-          toItems[toIndex + i] := fromItems[fromIndex + i]
-      else if fromIndex > toIndex then
-        for i := 0 to count - 1 do
-          toItems[toIndex + i] := fromItems[fromIndex + i];
-  end
-  else
-{$ELSE}
-begin
-{$ENDIF}
-    System.Move(fromItems[fromIndex], toItems[toIndex], count * SizeOf(T));
 end;
 
 {$ENDREGION}

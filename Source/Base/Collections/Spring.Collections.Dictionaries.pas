@@ -47,10 +47,10 @@ type
     function Removed: Boolean; inline;
   end;
 
-  TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IEnumerable<TPair<TKey, TValue>>,
-    ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IDictionary<TKey, TValue>,
-    IReadOnlyCollection<TPair<TKey, TValue>>, IReadOnlyMap<TKey, TValue>,
-    IReadOnlyDictionary<TKey, TValue>)
+  TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
+    IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
+    IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
+    ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IDictionary<TKey, TValue>)
   protected
   {$REGION 'Nested Types'}
     type
@@ -58,7 +58,7 @@ type
       TItem = TDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
-      TEnumerator = class(TInterfacedObject, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<TKeyValuePair>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
@@ -84,13 +84,13 @@ type
 
       {$REGION 'Implements IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>;
-        function Contains(const value: TKey): Boolean;
+        function Contains(const value: TKey): Boolean; overload;
         function ToArray: TArray<TKey>;
         function TryGetElementAt(out key: TKey; index: Integer): Boolean; override;
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TInterfacedObject, IEnumerator<TKey>)
+      TKeyEnumerator = class(TRefCountedObject, IEnumerator<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
@@ -117,13 +117,13 @@ type
 
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>;
-        function Contains(const value: TValue): Boolean;
+        function Contains(const value: TValue): Boolean; overload;
         function ToArray: TArray<TValue>;
         function TryGetElementAt(out value: TValue; index: Integer): Boolean; override;
       {$ENDREGION}
       end;
 
-      TValueEnumerator = class(TInterfacedObject, IEnumerator<TValue>)
+      TValueEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
@@ -218,7 +218,7 @@ type
     function GetEnumerator: IEnumerator<TKeyValuePair>;
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
-    function Ordered: IEnumerable<TKeyValuePair>;
+    function Ordered: IEnumerable<TKeyValuePair>; overload;
     function ToArray: TArray<TKeyValuePair>;
     function TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean; override;
   {$ENDREGION}
@@ -246,7 +246,7 @@ type
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     procedure TrimExcess;
-    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
   {$ENDREGION}
@@ -254,18 +254,16 @@ type
 
   TContainedDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
   private
-    fController: Pointer;
-    function GetController: IInterface;
-  protected
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fController: TRefCountedObject;
+  public
+    constructor Create(const controller: TRefCountedObject;
+      const keyComparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships);
   {$REGION 'Implements IInterface'}
     function _AddRef: Integer; override;
     function _Release: Integer; override;
   {$ENDREGION}
-  public
-    constructor Create(const controller: IInterface;
-      const keyComparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships);
-    property Controller: IInterface read GetController;
   end;
 
   TBidiDictionaryItem<TKey, TValue> = record
@@ -278,10 +276,10 @@ type
   end;
 
   TBidiDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
-    IEnumerable<TPair<TKey, TValue>>, ICollection<TPair<TKey, TValue>>,
-    IMap<TKey, TValue>, IDictionary<TKey, TValue>, IBidiDictionary<TKey, TValue>,
-    IReadOnlyCollection<TPair<TKey, TValue>>, IReadOnlyMap<TKey, TValue>,
-    IReadOnlyDictionary<TKey, TValue>)
+    IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
+    IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
+    ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>,
+    IDictionary<TKey, TValue>, IBidiDictionary<TKey, TValue>)
   protected
   {$REGION 'Nested Types'}
     type
@@ -291,14 +289,13 @@ type
       PItem = ^TItem;
 
       TInverse = class(TContainedCollectionBase<TValueKeyPair>,
-        IEnumerable<TValueKeyPair>,
-        ICollection<TValueKeyPair>, IReadOnlyCollection<TValueKeyPair>,
-        IMap<TValue, TKey>, IReadOnlyMap<TValue, TKey>,
-        IDictionary<TValue, TKey>, IReadOnlyDictionary<TValue, TKey>,
-        IBidiDictionary<TValue, TKey>)
+        IEnumerable<TValueKeyPair>, IReadOnlyCollection<TValueKeyPair>,
+        IReadOnlyMap<TValue, TKey>, IReadOnlyDictionary<TValue, TKey>,
+        ICollection<TValueKeyPair>, IMap<TValue, TKey>,
+        IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
       private type
       {$REGION 'Nested Types'}
-        TEnumerator = class(TInterfacedObject, IEnumerator<TValueKeyPair>)
+        TEnumerator = class(TRefCountedObject, IEnumerator<TValueKeyPair>)
         private
           {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
           fSource: TBidiDictionary<TKey, TValue>;
@@ -360,7 +357,7 @@ type
         function Contains(const value: TValueKeyPair): Boolean; overload;
         function Contains(const value: TValueKeyPair;
           const comparer: IEqualityComparer<TValueKeyPair>): Boolean; overload;
-        function Ordered: IEnumerable<TValueKeyPair>;
+        function Ordered: IEnumerable<TValueKeyPair>; overload;
         function ToArray: TArray<TValueKeyPair>;
         function TryGetElementAt(out item: TValueKeyPair; index: Integer): Boolean; override;
       {$ENDREGION}
@@ -392,11 +389,11 @@ type
         function TryExtract(const value: TValue; out key: TKey): Boolean;
         function TryGetValue(const value: TValue; out key: TKey): Boolean;
         procedure TrimExcess;
-        function AsReadOnlyDictionary: IReadOnlyDictionary<TValue, TKey>;
+        function AsReadOnly: IReadOnlyDictionary<TValue, TKey>;
       {$ENDREGION}
       end;
 
-      TEnumerator = class(TInterfacedObject, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<TKeyValuePair>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -409,7 +406,8 @@ type
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = class(TContainedReadOnlyCollection<TKey>, IEnumerable<TKey>, IReadOnlyCollection<TKey>)
+      TKeyCollection = class(TContainedReadOnlyCollection<TKey>,
+        IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -422,13 +420,13 @@ type
 
       {$REGION 'Implements IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>;
-        function Contains(const value: TKey): Boolean;
+        function Contains(const value: TKey): Boolean; overload;
         function ToArray: TArray<TKey>;
         function TryGetElementAt(out key: TKey; index: Integer): Boolean; override;
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TInterfacedObject, IEnumerator<TKey>)
+      TKeyEnumerator = class(TRefCountedObject, IEnumerator<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -441,7 +439,8 @@ type
         function MoveNext: Boolean;
       end;
 
-      TValueCollection = class(TContainedReadOnlyCollection<TValue>, IEnumerable<TValue>, IReadOnlyCollection<TValue>)
+      TValueCollection = class(TContainedReadOnlyCollection<TValue>,
+        IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -454,13 +453,13 @@ type
 
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>;
-        function Contains(const value: TValue): Boolean;
+        function Contains(const value: TValue): Boolean; overload;
         function ToArray: TArray<TValue>;
         function TryGetElementAt(out value: TValue; index: Integer): Boolean; override;
       {$ENDREGION}
       end;
 
-      TValueEnumerator = class(TInterfacedObject, IEnumerator<TValue>)
+      TValueEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -566,7 +565,7 @@ type
     function GetEnumerator: IEnumerator<TKeyValuePair>;
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
-    function Ordered: IEnumerable<TKeyValuePair>;
+    function Ordered: IEnumerable<TKeyValuePair>; overload;
     function ToArray: TArray<TKeyValuePair>;
   {$ENDREGION}
 
@@ -593,24 +592,23 @@ type
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     procedure TrimExcess;
-    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
   {$ENDREGION}
   end;
 
   TSortedDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
-    IEnumerable<TPair<TKey, TValue>>, ICollection<TPair<TKey, TValue>>,
-    IMap<TKey, TValue>, IDictionary<TKey, TValue>,
-    IReadOnlyCollection<TPair<TKey, TValue>>, IReadOnlyMap<TKey, TValue>,
-    IReadOnlyDictionary<TKey, TValue>)
+    IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
+    IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
+    ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IDictionary<TKey, TValue>)
   private
   {$REGION 'Nested Types'}
     type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
       PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
-      TEnumerator = class(TInterfacedObject, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<TKeyValuePair>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
@@ -638,12 +636,12 @@ type
 
       {$REGION 'Implements IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>;
-        function Contains(const value: TKey): Boolean;
+        function Contains(const value: TKey): Boolean; overload;
         function ToArray: TArray<TKey>;
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TInterfacedObject, IEnumerator<TKey>)
+      TKeyEnumerator = class(TRefCountedObject, IEnumerator<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
@@ -671,12 +669,12 @@ type
 
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>;
-        function Contains(const value: TValue): Boolean;
+        function Contains(const value: TValue): Boolean; overload;
         function ToArray: TArray<TValue>;
       {$ENDREGION}
       end;
 
-      TValueEnumerator = class(TInterfacedObject, IEnumerator<TValue>)
+      TValueEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
@@ -719,7 +717,7 @@ type
     function GetEnumerator: IEnumerator<TKeyValuePair>;
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
-    function Ordered: IEnumerable<TKeyValuePair>;
+    function Ordered: IEnumerable<TKeyValuePair>; overload;
     function ToArray: TArray<TKeyValuePair>;
   {$ENDREGION}
 
@@ -744,7 +742,7 @@ type
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     procedure TrimExcess;
-    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
   {$ENDREGION}
@@ -863,7 +861,7 @@ begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
 {$IFDEF DELPHIXE7_UP}
-  if TType.Kind<TKey> = tkClass then
+  if GetTypeKind(TKey) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
     FreeObject(item);
@@ -875,7 +873,7 @@ begin
   if fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, item, action);
 {$IFDEF DELPHIXE7_UP}
-  if TType.Kind<TValue> = tkClass then
+  if GetTypeKind(TValue) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
     FreeObject(item);
@@ -1148,7 +1146,7 @@ begin
   Result := fCount = 0;
 end;
 
-function TDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+function TDictionary<TKey, TValue>.AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
 end;
@@ -1634,26 +1632,21 @@ end;
 {$REGION 'TContainedDictionary<TKey, TValue>'}
 
 constructor TContainedDictionary<TKey, TValue>.Create(
-  const controller: IInterface; const keyComparer: IEqualityComparer<TKey>;
+  const controller: TRefCountedObject; const keyComparer: IEqualityComparer<TKey>;
   ownerships: TDictionaryOwnerships);
 begin
   inherited Create(keyComparer, ownerships);
-  fController := Pointer(controller);
-end;
-
-function TContainedDictionary<TKey, TValue>.GetController: IInterface;
-begin
-  Result := IInterface(fController);
+  fController := controller;
 end;
 
 function TContainedDictionary<TKey, TValue>._AddRef: Integer;
 begin
-  Result := IInterface(FController)._AddRef;
+  Result := fController._AddRef;
 end;
 
 function TContainedDictionary<TKey, TValue>._Release: Integer;
 begin
-  Result := IInterface(FController)._Release;
+  Result := fController._Release;
 end;
 
 {$ENDREGION}
@@ -1768,7 +1761,7 @@ begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
 {$IFDEF DELPHIXE7_UP}
-  if TType.Kind<TKey> = tkClass then
+  if GetTypeKind(TKey) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
     FreeObject(item);
@@ -1780,7 +1773,7 @@ begin
   if fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, item, action);
 {$IFDEF DELPHIXE7_UP}
-  if TType.Kind<TValue> = tkClass then
+  if GetTypeKind(TValue) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
     FreeObject(item);
@@ -2207,7 +2200,7 @@ begin
   end;
 end;
 
-function TBidiDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+function TBidiDictionary<TKey, TValue>.AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
 end;
@@ -2454,7 +2447,7 @@ begin
   Result := fSource.TryAdd(item.Value, item.Key);
 end;
 
-function TBidiDictionary<TKey, TValue>.TInverse.AsReadOnlyDictionary: IReadOnlyDictionary<TValue, TKey>;
+function TBidiDictionary<TKey, TValue>.TInverse.AsReadOnly: IReadOnlyDictionary<TValue, TKey>;
 begin
   Result := Self;
 end;
@@ -3158,7 +3151,7 @@ begin
   inherited Destroy;
 end;
 
-function TSortedDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
+function TSortedDictionary<TKey, TValue>.AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
 end;

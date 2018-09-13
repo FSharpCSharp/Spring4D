@@ -41,12 +41,11 @@ type
   /// <typeparam name="T">
   ///   Specifies the type of elements in the stack.
   /// </typeparam>
-  TStack<T> = class(TEnumerableBase<T>, INotifyCollectionChanged<T>,
-    IEnumerable<T>, {ICollection<T>, IReadOnlyCollection<T>, }IStack<T>)
+  TStack<T> = class(TEnumerableBase<T>, IEnumerable<T>, IStack<T>)
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TInterfacedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TStack<T>;
@@ -74,9 +73,9 @@ type
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
     procedure Grow;
-  protected
-    procedure Changed(const item: T; action: TCollectionChangedAction); inline;
     procedure PopInternal(var item: T; notification: TCollectionChangedAction); inline;
+  protected
+    procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
     property Count: Integer read GetCount;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
@@ -159,7 +158,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TStack<T>.Changed(const item: T; action: TCollectionChangedAction);
+procedure TStack<T>.DoNotify(const item: T; action: TCollectionChangedAction);
 begin
   if fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item, action);
@@ -240,7 +239,7 @@ begin
   fItems[Count] := item;
   Inc(fCount);
 
-  Changed(item, caAdded);
+  DoNotify(item, caAdded);
 end;
 
 procedure TStack<T>.SetCapacity(value: Integer);
@@ -294,7 +293,7 @@ begin
   item := fItems[Count];
   fItems[Count] := Default(T);
 
-  Changed(item, notification);
+  DoNotify(item, notification);
 
   if OwnsObjects and (notification = caRemoved) then
   begin

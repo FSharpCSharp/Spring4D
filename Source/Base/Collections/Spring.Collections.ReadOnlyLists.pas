@@ -44,7 +44,6 @@ type
         fList: TAbstractReadOnlyList<T>;
         fIndex: Integer;
         fCurrent: T;
-      protected
         function GetCurrent: T; override;
       public
         constructor Create(const list: TAbstractReadOnlyList<T>);
