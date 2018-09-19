@@ -37,6 +37,7 @@ uses
 
 type
   TDequeEnd = (deFront, deBack);
+  TDequeKind = (dkUnbounded, dkBounded, dkEvicting);
 
   /// <summary>
   ///   Represents a double-ended queue.
@@ -64,13 +65,14 @@ type
       TArrayManager = TArrayManager<T>;
   {$ENDREGION}
   private
+    fOnChanged: TCollectionChangedEventImpl<T>;
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
     fFront: Integer;
-    fOnChanged: TCollectionChangedEventImpl<T>;
+    fBack: Integer;
+    fKind: TDequeKind;
   {$REGION 'Property Accessors'}
-    function GetBack: Integer; inline;
     function GetCapacity: Integer;
     function GetCount: Integer; inline;
     function GetIsEmpty: Boolean;
@@ -79,18 +81,17 @@ type
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
     procedure Grow;
-    procedure AddInternal(const item: T; dequeEnd: TDequeEnd); inline;
-    procedure RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction); inline;
-    property Back: Integer read GetBack;
-    property Front: Integer read fFront;
+    procedure DeleteFirst(action: TCollectionChangedAction);
+    procedure DeleteLast(action: TCollectionChangedAction);
   protected
     procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
     property Count: Integer read GetCount;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
-    constructor Create; overload; override;
+    constructor Create; override;
     constructor Create(const values: array of T); overload;
     constructor Create(const values: IEnumerable<T>); overload;
+    constructor Create(capacity: Integer; kind: TDequeKind); overload;
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -107,8 +108,8 @@ type
   {$REGION 'Implements IDeque<T>'}
     procedure Clear;
 
-    procedure AddFirst(const item: T);
-    procedure AddLast(const item: T);
+    function AddFirst(const item: T): Boolean;
+    function AddLast(const item: T): Boolean;
 
     function RemoveFirst: T;
     function RemoveLast: T;
@@ -124,7 +125,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IQueue<T>'}
-    procedure IQueue<T>.Enqueue = AddLast;
+    function IQueue<T>.Enqueue = AddLast;
     function IQueue<T>.Dequeue = RemoveFirst;
     function IQueue<T>.Extract = ExtractFirst;
     function IQueue<T>.Peek = First;
@@ -144,6 +145,7 @@ type
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
+    constructor Create(capacity: Integer; kind: TDequeKind; ownsObjects: Boolean = True); overload;
   end;
 
 implementation
@@ -171,7 +173,7 @@ begin
   Create;
   SetCapacity(Length(values));
   for i := Low(values) to High(values) do
-    AddInternal(values[i], deBack);
+    AddLast(values[i]);
 end;
 
 constructor TDeque<T>.Create(const values: IEnumerable<T>);
@@ -180,7 +182,14 @@ var
 begin
   Create;
   for item in values do
-    AddInternal(item, deBack);
+    AddLast(item);
+end;
+
+constructor TDeque<T>.Create(capacity: Integer; kind: TDequeKind);
+begin
+  Create;
+  SetCapacity(capacity);
+  fKind := kind;
 end;
 
 destructor TDeque<T>.Destroy;
@@ -196,9 +205,48 @@ begin
     fOnChanged.Invoke(Self, item, action);
 end;
 
+procedure TDeque<T>.DeleteFirst(action: TCollectionChangedAction);
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Dec(fCount);
+
+  DoNotify(fItems[fFront], action);
+  if OwnsObjects and (action = caRemoved) then
+    FreeObject(fItems[fFront]);
+  fItems[fFront] := Default(T);
+  if fFront < DynArrayHigh(fItems) then
+    Inc(fFront)
+  else
+    fFront := 0;
+end;
+
+procedure TDeque<T>.DeleteLast(action: TCollectionChangedAction);
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Dec(fCount);
+
+  DoNotify(fItems[fBack], action);
+  if OwnsObjects and (action = caRemoved) then
+    FreeObject(fItems[fBack]);
+  fItems[fBack] := Default(T);
+  if fBack > 0 then
+    Dec(fBack)
+  else
+    fBack := DynArrayHigh(fItems);
+end;
+
 function TDeque<T>.GetCount: Integer;
 begin
   Result := fCount and CountMask;
+end;
+
+function TDeque<T>.GetOnChanged: ICollectionChangedEvent<T>;
+begin
+  Result := fOnChanged;
 end;
 
 function TDeque<T>.GetOwnsObjects: Boolean;
@@ -206,65 +254,78 @@ begin
   Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
 end;
 
-function TDeque<T>.GetBack: Integer;
-var
-  len: Integer;
-begin
-  Result := fFront + Count - 1;
-  len := DynArrayLength(fItems);
-  if Result >= len then
-    Dec(Result, len);
-end;
-
-procedure TDeque<T>.AddInternal(const item: T; dequeEnd: TDequeEnd);
+function TDeque<T>.AddFirst(const item: T): Boolean;
 begin
   if Count = DynArrayLength(fItems) then
-    Grow;
+    case fKind of
+      dkUnbounded: Grow;
+      dkBounded: Exit(False);
+      dkEvicting: DeleteLast(caRemoved);
+    end;
+  Result := True;
 
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount);
-  case dequeEnd of
-    deFront:
-    begin
-      Dec(fFront);
-      if fFront = -1 then
-        fFront := DynArrayHigh(fItems);
-      fItems[Front] := item;
-    end;
-    deBack: fItems[Back] := item;
-  end;
+  if fFront > 0 then
+    Dec(fFront)
+  else
+    fFront := DynArrayHigh(fItems);
+  fItems[fFront] := item;
 
   DoNotify(item, caAdded);
 end;
 
-procedure TDeque<T>.AddFirst(const item: T);
+function TDeque<T>.AddLast(const item: T): Boolean;
 begin
-  AddInternal(item, deFront);
-end;
+  if Count = DynArrayLength(fItems) then
+    case fKind of
+      dkUnbounded: Grow;
+      dkBounded: Exit(False);
+      dkEvicting: DeleteFirst(caRemoved);
+    end;
+  Result := True;
 
-procedure TDeque<T>.AddLast(const item: T);
-begin
-  AddInternal(item, deBack);
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Inc(fCount);
+  if fBack < DynArrayHigh(fItems) then
+    Inc(fBack)
+  else
+    fBack := 0;
+  fItems[fBack] := item;
+
+  DoNotify(item, caAdded);
 end;
 
 procedure TDeque<T>.Clear;
-var
-  item: T;
 begin
   while Count > 0 do
-    RemoveInternal(item, deFront, caRemoved);
+    DeleteFirst(caRemoved);
 end;
 
 function TDeque<T>.ExtractFirst: T;
 begin
-  RemoveInternal(Result, deFront, caExtracted);
+  if Count > 0 then
+  begin
+    Result := fItems[fFront];
+    DeleteFirst(caExtracted);
+  end
+  else
+    raise Error.NoElements;
 end;
 
 function TDeque<T>.ExtractLast: T;
 begin
-  RemoveInternal(Result, deBack, caExtracted);
+  if Count > 0 then
+  begin
+    Result := fItems[fBack];
+    DeleteLast(caExtracted);
+  end
+  else
+    raise Error.NoElements;
 end;
 
 function TDeque<T>.First: T;
@@ -298,11 +359,6 @@ begin
   Result := Count = 0;
 end;
 
-function TDeque<T>.GetOnChanged: ICollectionChangedEvent<T>;
-begin
-  Result := fOnChanged;
-end;
-
 procedure TDeque<T>.Grow;
 var
   newCapacity: Integer;
@@ -318,7 +374,7 @@ end;
 procedure TDeque<T>.SetCapacity(value: Integer);
 var
   wrapped: Boolean;
-  offset, oldCapacity: Integer;
+  offset, oldCapacity, itemCount: Integer;
 begin
   Guard.CheckRange(value >= Count, 'capacity');
 
@@ -326,31 +382,37 @@ begin
   if offset = 0 then
     Exit;
 
-  if Count = 0 then
+  itemCount := Count;
+  if itemCount = 0 then
   begin
     fFront := 0;
+    fBack := value - 1;
     SetLength(fItems, value);
     Exit;
   end;
 
-  wrapped := Back < Front;
+  wrapped := fBack < fFront;
   oldCapacity := Length(fItems);
   if offset > 0 then
     SetLength(fItems, value);
   if wrapped then
   begin
-    TArrayManager.Move(fItems, fItems, Front, Front + offset, oldCapacity - Front);
+    TArrayManager.Move(fItems, fItems, fFront, fFront + offset, oldCapacity - fFront);
     if offset > 0 then
-      TArrayManager.Finalize(fItems, Front, offset)
+      TArrayManager.Finalize(fItems, fFront, offset)
     else
-      TArrayManager.Finalize(fItems, Count, -offset);
+      TArrayManager.Finalize(fItems, itemCount, -offset);
     Inc(fFront, offset);
   end
-  else if Front + Count > value then
+  else
   begin
-    TArrayManager.Move(fItems, fItems, Front, 0, Count);
-    TArrayManager.Finalize(fItems, Count, Front);
-    fFront := 0;
+    if fFront + itemCount > value then
+    begin
+      TArrayManager.Move(fItems, fItems, fFront, 0, itemCount);
+      TArrayManager.Finalize(fItems, itemCount, fFront);
+      fFront := 0;
+    end;
+    fBack := itemCount - 1;
   end;
   if offset < 0 then
     SetLength(fItems, value);
@@ -360,7 +422,7 @@ function TDeque<T>.Single: T;
 begin
   case Count of
     0: raise Error.NoElements;
-    1: Result := fItems[Front];
+    1: Result := fItems[fFront];
   else
     raise Error.MoreThanOneElement;
   end;
@@ -370,7 +432,7 @@ function TDeque<T>.SingleOrDefault(const defaultValue: T): T;
 begin
   case Count of
     0: Result := defaultValue;
-    1: Result := fItems[Front];
+    1: Result := fItems[fFront];
   else
     raise Error.MoreThanOneElement;
   end;
@@ -385,7 +447,10 @@ function TDeque<T>.TryExtractFirst(out item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    RemoveInternal(item, deFront, caExtracted)
+  begin
+    item := fItems[fFront];
+    DeleteFirst(caExtracted);
+  end
   else
     item := Default(T);
 end;
@@ -394,7 +459,10 @@ function TDeque<T>.TryExtractLast(out item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    RemoveInternal(item, deBack, caExtracted)
+  begin
+    item := fItems[fBack];
+    DeleteLast(caExtracted);
+  end
   else
     item := Default(T);
 end;
@@ -403,7 +471,7 @@ function TDeque<T>.TryGetFirst(out value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    value := fItems[Front]
+    value := fItems[fFront]
   else
     value := Default(T);
 end;
@@ -412,7 +480,7 @@ function TDeque<T>.TryGetLast(out value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    value := fItems[Back]
+    value := fItems[fBack]
   else
     value := Default(T);
 end;
@@ -421,7 +489,13 @@ function TDeque<T>.TryRemoveFirst(out item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    RemoveInternal(item, deFront, caRemoved)
+  begin
+    if OwnsObjects then
+      item := Default(T)
+    else
+      item := fItems[fFront];
+    DeleteFirst(caRemoved);
+  end
   else
     item := Default(T);
 end;
@@ -430,53 +504,43 @@ function TDeque<T>.TryRemoveLast(out item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    RemoveInternal(item, deBack, caRemoved)
+  begin
+    if OwnsObjects then
+      item := Default(T)
+    else
+      item := fItems[fBack];
+    DeleteLast(caRemoved);
+  end
   else
     item := Default(T);
 end;
 
-procedure TDeque<T>.RemoveInternal(var item: T; dequeEnd: TDequeEnd; notification: TCollectionChangedAction);
-begin
-  if Count = 0 then
-    raise Error.NoElements;
-
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  case dequeEnd of
-    deFront:
-    begin
-      item := fItems[Front];
-      fItems[Front] := Default(T);
-      Inc(fFront);
-      if fFront = DynArrayLength(fItems) then
-        fFront := 0;
-    end;
-    deBack:
-    begin
-      item := fItems[Back];
-      fItems[Back] := Default(T);
-    end;
-  end;
-  Dec(fCount);
-
-  DoNotify(item, notification);
-
-  if OwnsObjects and (notification = caRemoved) then
-  begin
-    FreeObject(item);
-    item := Default(T);
-  end;
-end;
-
 function TDeque<T>.RemoveFirst: T;
 begin
-  RemoveInternal(Result, deFront, caRemoved);
+  if Count > 0 then
+  begin
+    if OwnsObjects then
+      Result := Default(T)
+    else
+      Result := fItems[fFront];
+    DeleteFirst(caRemoved);
+  end
+  else
+    raise Error.NoElements;
 end;
 
 function TDeque<T>.RemoveLast: T;
 begin
-  RemoveInternal(Result, deBack, caRemoved);
+  if Count > 0 then
+  begin
+    if OwnsObjects then
+      Result := Default(T)
+    else
+      Result := fItems[fBack];
+    DeleteLast(caRemoved);
+  end
+  else
+    raise Error.NoElements;
 end;
 
 {$ENDREGION}
@@ -539,6 +603,13 @@ constructor TObjectDeque<T>.Create(const comparer: IComparer<T>;
   ownsObjects: Boolean);
 begin
   inherited Create(comparer);
+  SetOwnsObjects(ownsObjects);
+end;
+
+constructor TObjectDeque<T>.Create(capacity: Integer; kind: TDequeKind;
+  ownsObjects: Boolean);
+begin
+  inherited Create(capacity, kind);
   SetOwnsObjects(ownsObjects);
 end;
 

@@ -302,6 +302,26 @@ type
     procedure TestDequeTryRemoveLast;
   end;
 
+  TTestBoundedDeque = class(TTestCase)
+  private
+    SUT: IDeque<Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestAdd;
+  end;
+
+  TTestEvictingDeque = class(TTestCase)
+  private
+    SUT: IDeque<Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestAdd;
+  end;
+
   TTestQueueOfTBytes = class(TTestCase)
   private
     SUT: IQueue<TBytes>;
@@ -2274,6 +2294,64 @@ begin
   CheckFalse(SUT.TryRemoveLast(value));
   CheckEquals(0, value);
   CheckTrue(SUT.IsEmpty);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBoundedDeque'}
+
+procedure TTestBoundedDeque.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateBoundedDeque<Integer>(4);
+end;
+
+procedure TTestBoundedDeque.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestBoundedDeque.TestAdd;
+var
+  i: Integer;
+begin
+  for i := 1 to 4 do
+    CheckTrue(SUT.AddLast(i));
+  CheckFalse(SUT.AddLast(5));
+  CheckEquals(4, SUT.Count);
+  CheckEquals(1, SUT.RemoveFirst);
+  CheckTrue(SUT.AddLast(5));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestEvictingDeque'}
+
+procedure TTestEvictingDeque.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateEvictingDeque<Integer>(4);
+end;
+
+procedure TTestEvictingDeque.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestEvictingDeque.TestAdd;
+var
+  i: Integer;
+begin
+  for i := 1 to 4 do
+    CheckTrue(SUT.AddLast(i));
+  CheckTrue(SUT.AddLast(5));
+  CheckEquals(4, SUT.Count);
+  CheckEquals(2, SUT.RemoveFirst);
+  CheckTrue(SUT.AddLast(5));
 end;
 
 {$ENDREGION}

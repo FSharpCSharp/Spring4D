@@ -60,10 +60,10 @@ type
       end;
   {$ENDREGION}
   private
+    fOnChanged: TCollectionChangedEventImpl<T>;
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
-    fOnChanged: TCollectionChangedEventImpl<T>;
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer; inline;
@@ -79,7 +79,7 @@ type
     property Count: Integer read GetCount;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
-    constructor Create; overload; override;
+    constructor Create; override;
     constructor Create(const values: array of T); overload;
     constructor Create(const values: IEnumerable<T>); overload;
     destructor Destroy; override;
@@ -92,7 +92,7 @@ type
     procedure Clear;
     procedure Push(const item: T);
     function Pop: T;
-    function Extract: T;
+    function Extract: T; overload;
     function Peek: T;
     function PeekOrDefault: T;
     function TryExtract(out item: T): Boolean;
@@ -169,6 +169,11 @@ begin
   Result := fCount and CountMask;
 end;
 
+function TStack<T>.GetOnChanged: ICollectionChangedEvent<T>;
+begin
+  Result := fOnChanged;
+end;
+
 function TStack<T>.GetOwnsObjects: Boolean;
 begin
   Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
@@ -194,11 +199,6 @@ end;
 function TStack<T>.GetCapacity: Integer;
 begin
   Result := Length(fItems);
-end;
-
-function TStack<T>.GetOnChanged: ICollectionChangedEvent<T>;
-begin
-  Result := fOnChanged;
 end;
 
 procedure TStack<T>.Grow;
@@ -294,7 +294,6 @@ begin
   fItems[Count] := Default(T);
 
   DoNotify(item, notification);
-
   if OwnsObjects and (notification = caRemoved) then
   begin
     FreeObject(item);

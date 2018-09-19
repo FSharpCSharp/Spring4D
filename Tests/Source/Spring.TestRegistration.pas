@@ -99,6 +99,8 @@ begin
     TTestEmptyDequeOfInteger.Suite,
     TTestQueueOfInteger.Suite,
     TTestDequeOfInteger.Suite,
+    TTestBoundedDeque.Suite,
+    TTestEvictingDeque.Suite,
     TTestQueueOfTBytes.Suite,
     TTestQueueOfIntegerChangedEvent.Suite,
     TTestDequeOfIntegerChangedEvent.Suite,
