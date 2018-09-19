@@ -199,6 +199,8 @@ type
     procedure TestStackTryPeek;
     procedure TestStackTryPop;
     procedure TestStackTrimExcess;
+
+    procedure TestBoundedStack;
   end;
 
   TTestStackOfTBytes = class(TTestCase)
@@ -300,6 +302,26 @@ type
     procedure TestDequeTryGetLast;
     procedure TestDequeTryRemoveFirst;
     procedure TestDequeTryRemoveLast;
+  end;
+
+  TTestBoundedDeque = class(TTestCase)
+  private
+    SUT: IDeque<Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestAdd;
+  end;
+
+  TTestEvictingDeque = class(TTestCase)
+  private
+    SUT: IDeque<Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestAdd;
   end;
 
   TTestQueueOfTBytes = class(TTestCase)
@@ -1521,8 +1543,8 @@ end;
 
 procedure TTestEmptyStackofStrings.TestEmptyPopPeek;
 begin
-  CheckException(EListError, procedure begin SUT.Pop end, 'EListError not raised');
-  CheckException(EListError, procedure begin SUT.Peek end, 'EListError not raised');
+  CheckException(EInvalidOpException, procedure begin SUT.Pop end, 'EListError not raised');
+  CheckException(EInvalidOpException, procedure begin SUT.Peek end, 'EListError not raised');
 end;
 
 procedure TTestEmptyStackofStrings.TestStackInitializesEmpty;
@@ -1554,6 +1576,19 @@ procedure TTestStackOfInteger.TearDown;
 begin
   inherited;
   SUT := nil;
+end;
+
+procedure TTestStackOfInteger.TestBoundedStack;
+var
+  i: Integer;
+begin
+  SUT := TCollections.CreateBoundedStack<Integer>(10);
+  for i := 1 to 10 do
+    CheckTrue(SUT.Push(i));
+  CheckFalse(SUT.Push(11));
+  CheckEquals(10, SUT.Pop);
+  CheckTrue(SUT.Push(11));
+  CheckEquals(10, SUT.Count);
 end;
 
 procedure TTestStackOfInteger.TestStackClear;
@@ -1903,9 +1938,9 @@ procedure TTestQueueOfInteger.TestQueueCreate;
 const
   values: array[0..9] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 begin
-  SUT := TDeque<Integer>.Create(values);
+  SUT := TQueue<Integer>.Create(values);
   CheckTrue(SUT.EqualsTo(values));
-  SUT := TDeque<Integer>.Create(TEnumerable.Range(0, 10));
+  SUT := TQueue<Integer>.Create(TEnumerable.Range(0, 10));
   CheckTrue(SUT.EqualsTo(values));
 end;
 
@@ -2279,11 +2314,69 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestBoundedDeque'}
+
+procedure TTestBoundedDeque.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateBoundedDeque<Integer>(4);
+end;
+
+procedure TTestBoundedDeque.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestBoundedDeque.TestAdd;
+var
+  i: Integer;
+begin
+  for i := 1 to 4 do
+    CheckTrue(SUT.AddLast(i));
+  CheckFalse(SUT.AddLast(5));
+  CheckEquals(4, SUT.Count);
+  CheckEquals(1, SUT.RemoveFirst);
+  CheckTrue(SUT.AddLast(5));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestEvictingDeque'}
+
+procedure TTestEvictingDeque.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateEvictingDeque<Integer>(4);
+end;
+
+procedure TTestEvictingDeque.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestEvictingDeque.TestAdd;
+var
+  i: Integer;
+begin
+  for i := 1 to 4 do
+    CheckTrue(SUT.AddLast(i));
+  CheckTrue(SUT.AddLast(5));
+  CheckEquals(4, SUT.Count);
+  CheckEquals(2, SUT.RemoveFirst);
+  CheckTrue(SUT.AddLast(5));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TTestQueueOfTBytes'}
 
 procedure TTestQueueOfTBytes.SetUp;
 begin
-  SUT := TDeque<TBytes>.Create;
+  SUT := TQueue<TBytes>.Create;
 end;
 
 procedure TTestQueueOfTBytes.TearDown;
@@ -3759,7 +3852,7 @@ end;
 procedure TTestObjectQueue.SetUp;
 begin
   inherited;
-  SUT := TObjectDeque<TObject>.Create;
+  SUT := TQueue<TObject>.Create(True);
 end;
 
 procedure TTestObjectQueue.TearDown;

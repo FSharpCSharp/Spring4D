@@ -41,47 +41,47 @@ type
   /// <typeparam name="T">
   ///   Specifies the type of elements in the stack.
   /// </typeparam>
-  TStack<T> = class(TEnumerableBase<T>, IEnumerable<T>, IStack<T>)
+  TAbstractStack<T> = class(TEnumerableBase<T>)
   private
   {$REGION 'Nested Types'}
     type
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TStack<T>;
+        fSource: TAbstractStack<T>;
         fIndex: Integer;
         fVersion: Integer;
         fCurrent: T;
         function GetCurrent: T;
       public
-        constructor Create(const source: TStack<T>);
+        constructor Create(const source: TAbstractStack<T>);
         destructor Destroy; override;
         function MoveNext: Boolean;
       end;
   {$ENDREGION}
   private
+    fOnChanged: TCollectionChangedEventImpl<T>;
     fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
-    fOnChanged: TCollectionChangedEventImpl<T>;
+  protected
   {$REGION 'Property Accessors'}
-    function GetCapacity: Integer;
+    function GetCapacity: Integer; inline;
     function GetCount: Integer; inline;
     function GetIsEmpty: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
     function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-    procedure Grow;
-    procedure PopInternal(var item: T; notification: TCollectionChangedAction); inline;
-  protected
     procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
+    procedure PopInternal(var item: T; notification: TCollectionChangedAction); inline;
+    procedure PushInternal(const item: T); inline;
+    property Capacity: Integer read GetCapacity;
     property Count: Integer read GetCount;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
-    constructor Create; overload; override;
+    constructor Create; override;
     constructor Create(const values: array of T); overload;
-    constructor Create(const values: IEnumerable<T>); overload;
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -89,18 +89,32 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IStack<T>'}
-    procedure Clear;
-    procedure Push(const item: T);
     function Pop: T;
     function Extract: T;
     function Peek: T;
     function PeekOrDefault: T;
+    function TryPop(out item: T): Boolean;
     function TryExtract(out item: T): Boolean;
     function TryPeek(out item: T): Boolean;
-    function TryPop(out item: T): Boolean;
 
+    procedure Clear;
     procedure TrimExcess;
   {$ENDREGION}
+  end;
+
+  TStack<T> = class(TAbstractStack<T>, IEnumerable<T>, IStack<T>)
+  private
+    procedure Grow;
+  public
+    constructor Create(const values: IEnumerable<T>); overload;
+    procedure Clear;
+    function Push(const item: T): Boolean;
+  end;
+
+  TBoundedStack<T> = class(TAbstractStack<T>, IEnumerable<T>, IStack<T>)
+  public
+    constructor Create(capacity: Integer);
+    function Push(const item: T): Boolean;
   end;
 
   TObjectStack<T: class> = class(TStack<T>)
@@ -125,22 +139,252 @@ uses
   Spring.ResourceStrings;
 
 
-{$REGION 'TStack<T>'}
+{$REGION 'TAbstractStack<T>'}
 
-constructor TStack<T>.Create;
+constructor TAbstractStack<T>.Create;
 begin
   inherited Create;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
+
+  Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IStack<T>).IOffset);
 end;
 
-constructor TStack<T>.Create(const values: array of T);
+constructor TAbstractStack<T>.Create(const values: array of T);
 var
-  i: Integer;
+  count, i: Integer;
 begin
   Create;
-  for i := Low(values) to High(values) do
-    Push(values[i]);
+  fCount := Length(values);
+  if fCount > 0 then
+  begin
+    SetLength(fItems, fCount);
+    for i := Low(values) to High(values) do
+      fItems[i] := values[i];
+  end;
 end;
+
+destructor TAbstractStack<T>.Destroy;
+begin
+  IStack<T>(this).Clear;
+  fOnChanged.Free;
+  inherited Destroy;
+end;
+
+procedure TAbstractStack<T>.DoNotify(const item: T; action: TCollectionChangedAction);
+begin
+  if fOnChanged.CanInvoke then
+    fOnChanged.Invoke(Self, item, action);
+end;
+
+function TAbstractStack<T>.GetCapacity: Integer;
+begin
+  Result := DynArrayLength(fItems);
+end;
+
+function TAbstractStack<T>.GetCount: Integer;
+begin
+  Result := fCount and CountMask;
+end;
+
+function TAbstractStack<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(Self);
+end;
+
+function TAbstractStack<T>.GetIsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+function TAbstractStack<T>.GetOnChanged: ICollectionChangedEvent<T>;
+begin
+  Result := fOnChanged;
+end;
+
+function TAbstractStack<T>.GetOwnsObjects: Boolean;
+begin
+  Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
+end;
+
+procedure TAbstractStack<T>.Clear;
+var
+  stackCount, i: Integer;
+begin
+  stackCount := Count;
+  if stackCount > 0 then
+  begin
+    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    Dec(fCount, stackCount);
+
+    if fOnChanged.CanInvoke then
+      if OwnsObjects then
+        for i := stackCount - 1 downto 0 do
+        begin
+          fOnChanged.Invoke(Self, fItems[i], caRemoved);
+          FreeObject(fItems[i]);
+        end
+      else
+        for i := stackCount - 1 downto 0 do
+          fOnChanged.Invoke(Self, fItems[i], caRemoved)
+    else
+      if OwnsObjects then
+        for i := stackCount - 1 downto 0 do
+          FreeObject(fItems[i]);
+
+    if TType.IsManaged<T> then
+      System.FinalizeArray(@fItems[0], TypeInfo(T), stackCount)
+    else
+      System.FillChar(fItems[0], SizeOf(T) * stackCount, 0);
+  end;
+end;
+
+procedure TAbstractStack<T>.PopInternal(var item: T; notification: TCollectionChangedAction);
+var
+  stackCount: Integer;
+begin
+  stackCount := Count;
+  if stackCount = 0 then
+    raise Error.NoElements;
+
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Dec(fCount);
+  item := fItems[stackCount - 1];
+  fItems[stackCount - 1] := Default(T);
+
+  DoNotify(item, notification);
+  if OwnsObjects and (notification = caRemoved) then
+  begin
+    FreeObject(item);
+    item := Default(T);
+  end;
+end;
+
+procedure TAbstractStack<T>.PushInternal(const item: T);
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fItems[Count] := item;
+  Inc(fCount);
+
+  DoNotify(item, caAdded);
+end;
+
+function TAbstractStack<T>.Pop: T;
+begin
+  PopInternal(Result, caRemoved);
+end;
+
+function TAbstractStack<T>.Extract: T;
+begin
+  PopInternal(Result, caExtracted);
+end;
+
+function TAbstractStack<T>.Peek: T;
+begin
+  if Count > 0 then
+    Result := fItems[Count - 1]
+  else
+    raise Error.NoElements;
+end;
+
+function TAbstractStack<T>.PeekOrDefault: T;
+begin
+  if Count > 0 then
+    Result := fItems[Count - 1]
+  else
+    Result := Default(T);
+end;
+
+procedure TAbstractStack<T>.SetCapacity(value: Integer);
+begin
+  Guard.CheckRange(value >= Count, 'capacity');
+
+  SetLength(fItems, value);
+end;
+
+procedure TAbstractStack<T>.TrimExcess;
+begin
+  SetLength(fItems, Count);
+end;
+
+function TAbstractStack<T>.TryPop(out item: T): Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+    PopInternal(item, caRemoved)
+  else
+    item := Default(T);
+end;
+
+function TAbstractStack<T>.TryExtract(out item: T): Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+    PopInternal(item, caExtracted)
+  else
+    item := Default(T);
+end;
+
+function TAbstractStack<T>.TryPeek(out item: T): Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+    item := fItems[Count - 1]
+  else
+    item := Default(T);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAbstractStack<T>.TEnumerator'}
+
+constructor TAbstractStack<T>.TEnumerator.Create(const source: TAbstractStack<T>);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
+end;
+
+destructor TAbstractStack<T>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited Destroy;
+end;
+
+function TAbstractStack<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+function TAbstractStack<T>.TEnumerator.MoveNext: Boolean;
+begin
+  if fVersion <> fSource.fVersion then
+    raise Error.EnumFailedVersion;
+
+  if fIndex < fSource.Count then
+  begin
+    fCurrent := fSource.fItems[fIndex];
+    Inc(fIndex);
+    Result := True;
+  end
+  else
+  begin
+    fCurrent := Default(T);
+    Result := False;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStack<T>'}
 
 constructor TStack<T>.Create(const values: IEnumerable<T>);
 var
@@ -151,54 +395,10 @@ begin
     Push(item);
 end;
 
-destructor TStack<T>.Destroy;
-begin
-  Clear;
-  fOnChanged.Free;
-  inherited Destroy;
-end;
-
-procedure TStack<T>.DoNotify(const item: T; action: TCollectionChangedAction);
-begin
-  if fOnChanged.CanInvoke then
-    fOnChanged.Invoke(Self, item, action);
-end;
-
-function TStack<T>.GetCount: Integer;
-begin
-  Result := fCount and CountMask;
-end;
-
-function TStack<T>.GetOwnsObjects: Boolean;
-begin
-  Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
-end;
-
 procedure TStack<T>.Clear;
 begin
-  while Count > 0 do
-    Pop;
+  inherited Clear;
   SetLength(fItems, 0);
-end;
-
-function TStack<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TEnumerator.Create(Self);
-end;
-
-function TStack<T>.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-function TStack<T>.GetCapacity: Integer;
-begin
-  Result := Length(fItems);
-end;
-
-function TStack<T>.GetOnChanged: ICollectionChangedEvent<T>;
-begin
-  Result := fOnChanged;
 end;
 
 procedure TStack<T>.Grow;
@@ -213,144 +413,12 @@ begin
   SetLength(fItems, newCapacity);
 end;
 
-function TStack<T>.Peek: T;
+function TStack<T>.Push(const item: T): Boolean;
 begin
-  if Count = 0 then
-    raise EListError.CreateRes(@SUnbalancedOperation);
-  Result := fItems[Count - 1];
-end;
-
-function TStack<T>.PeekOrDefault: T;
-begin
-  if Count = 0 then
-    Result := Default(T)
-  else
-    Result := fItems[Count - 1];
-end;
-
-procedure TStack<T>.Push(const item: T);
-begin
-  if Count = DynArrayLength(fItems) then
+  if Count = Capacity then
     Grow;
-
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  fItems[Count] := item;
-  Inc(fCount);
-
-  DoNotify(item, caAdded);
-end;
-
-procedure TStack<T>.SetCapacity(value: Integer);
-begin
-  Guard.CheckRange(value >= Count, 'capacity');
-
-  SetLength(fItems, value);
-end;
-
-procedure TStack<T>.TrimExcess;
-begin
-  SetLength(fItems, Count);
-end;
-
-function TStack<T>.TryExtract(out item: T): Boolean;
-begin
-  Result := Count > 0;
-  if Result then
-    item := Extract
-  else
-    item := Default(T);
-end;
-
-function TStack<T>.TryPeek(out item: T): Boolean;
-begin
-  Result := Count > 0;
-  if Result then
-    item := Peek
-  else
-    item := Default(T);
-end;
-
-function TStack<T>.TryPop(out item: T): Boolean;
-begin
-  Result := Count > 0;
-  if Result then
-    item := Pop
-  else
-    item := Default(T);
-end;
-
-procedure TStack<T>.PopInternal(var item: T; notification: TCollectionChangedAction);
-begin
-  if Count = 0 then
-    raise EListError.CreateRes(@SUnbalancedOperation);
-
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  Dec(fCount);
-  item := fItems[Count];
-  fItems[Count] := Default(T);
-
-  DoNotify(item, notification);
-
-  if OwnsObjects and (notification = caRemoved) then
-  begin
-    FreeObject(item);
-    item := Default(T);
-  end;
-end;
-
-function TStack<T>.Extract: T;
-begin
-  PopInternal(Result, caExtracted);
-end;
-
-function TStack<T>.Pop: T;
-begin
-  PopInternal(Result, caRemoved);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TStack<T>.TEnumerator'}
-
-constructor TStack<T>.TEnumerator.Create(const source: TStack<T>);
-begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TStack<T>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TStack<T>.TEnumerator.GetCurrent: T;
-begin
-  Result := fCurrent;
-end;
-
-function TStack<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := False;
-
-  if fVersion <> fSource.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-
-  if fIndex < fSource.Count then
-  begin
-    fCurrent := fSource.fItems[fIndex];
-    Inc(fIndex);
-    Result := True;
-  end
-  else
-    fCurrent := Default(T);
+  PushInternal(item);
+  Result := True;
 end;
 
 {$ENDREGION}
@@ -380,6 +448,25 @@ end;
 procedure TObjectStack<T>.SetOwnsObjects(const value: Boolean);
 begin
   fCount := (fCount and CountMask) or BitMask[value];
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBoundedStack<T>'}
+
+constructor TBoundedStack<T>.Create(capacity: Integer);
+begin
+  inherited Create;
+  SetCapacity(capacity);
+end;
+
+function TBoundedStack<T>.Push(const item: T): Boolean;
+begin
+  if Count = Capacity then
+    Exit(False);
+  PushInternal(item);
+  Result := True;
 end;
 
 {$ENDREGION}

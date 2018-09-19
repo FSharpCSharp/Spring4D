@@ -1510,7 +1510,7 @@ type
 
     /// <summary>
     ///   Determines whether the map contains an element with the specified
-    ///   value. <br />
+    ///   value.
     /// </summary>
     /// <param name="value">
     ///   The value to locate in the map.
@@ -1949,13 +1949,16 @@ type
     procedure Clear;
 
     /// <summary>
-    ///   Inserts an element at the top of the stack.
+    ///   Adds an element at the top of the stack.
     /// </summary>
     /// <param name="item">
     ///   The element to push onto the stack. The value can be <b>nil</b> for
     ///   reference types.
     /// </param>
-    procedure Push(const item: T);
+    /// <returns>
+    ///   True if the element was added, False otherwise.
+    /// </returns>
+    function Push(const item: T): Boolean;
 
     /// <summary>
     ///   Removes the element at the top of the stack.
@@ -1991,19 +1994,6 @@ type
     function PeekOrDefault: T;
 
     /// <summary>
-    ///   Attempts to return an element from the top of the stack without
-    ///   removing it.
-    /// </summary>
-    /// <param name="item">
-    ///   The element at the top of the stack if the operation was
-    ///   successful; <b>Default(T)</b> otherwise.
-    /// </param>
-    /// <returns>
-    ///   <b>True</b> if an element was returned; otherwise, <b>False</b>.
-    /// </returns>
-    function TryPeek(out item: T): Boolean;
-
-    /// <summary>
     ///   Attempts to remove and return the element at the top of the stack.
     /// </summary>
     /// <param name="item">
@@ -2029,6 +2019,19 @@ type
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
     function TryExtract(out item: T): Boolean;
+
+    /// <summary>
+    ///   Attempts to return an element from the top of the stack without
+    ///   removing it.
+    /// </summary>
+    /// <param name="item">
+    ///   The element at the top of the stack if the operation was
+    ///   successful; <b>Default(T)</b> otherwise.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if an element was returned; otherwise, <b>False</b>.
+    /// </returns>
+    function TryPeek(out item: T): Boolean;
 
     /// <summary>
     ///   Resize the internal storage so that it is the same size as the
@@ -2066,7 +2069,10 @@ type
     ///   The element to add to the queue. The value can be <b>nil</b> for
     ///   reference types.
     /// </param>
-    procedure Enqueue(const item: T);
+    /// <returns>
+    ///   True if the element was added, False otherwise.
+    /// </returns>
+    function Enqueue(const item: T): Boolean;
 
     /// <summary>
     ///   Removes the element at the beginning of the queue.
@@ -2179,7 +2185,10 @@ type
     ///   The element to add to the deque. The value can be <b>nil</b> for
     ///   reference types.
     /// </param>
-    procedure AddFirst(const item: T);
+    /// <returns>
+    ///   True if the element was added, False otherwise.
+    /// </returns>
+    function AddFirst(const item: T): Boolean;
 
     /// <summary>
     ///   Adds an element to the back of the deque.
@@ -2188,7 +2197,10 @@ type
     ///   The element to add to the deque. The value can be <b>nil</b> for
     ///   reference types.
     /// </param>
-    procedure AddLast(const item: T);
+    /// <returns>
+    ///   True if the element was added, False otherwise.
+    /// </returns>
+    function AddLast(const item: T): Boolean;
 
     /// <summary>
     ///   Removes the element at the front of the deque.
@@ -2582,15 +2594,30 @@ type
     class function CreateStack<T>(const values: array of T): IStack<T>; overload; static;
     class function CreateStack<T>(const values: IEnumerable<T>): IStack<T>; overload; static;
 
+    class function CreateBoundedStack<T>(size: Integer): IStack<T>; overload; static;
+    class function CreateBoundedStack<T: class>(size: Integer; ownsObjects: Boolean): IStack<T>; overload; static;
+
     class function CreateQueue<T>: IQueue<T>; overload; static;
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload; static;
     class function CreateQueue<T>(const values: array of T): IQueue<T>; overload; static;
     class function CreateQueue<T>(const values: IEnumerable<T>): IQueue<T>; overload; static;
 
+    class function CreateBoundedQueue<T>(size: Integer): IQueue<T>; overload; static;
+    class function CreateBoundedQueue<T: class>(size: Integer; ownsObjects: Boolean): IQueue<T>; overload; static;
+
+    class function CreateEvictingQueue<T>(size: Integer): IQueue<T>; overload; static;
+    class function CreateEvictingQueue<T: class>(size: Integer; ownsObjects: Boolean): IQueue<T>; overload; static;
+
     class function CreateDeque<T>: IDeque<T>; overload; static;
     class function CreateDeque<T: class>(ownsObjects: Boolean): IDeque<T>; overload; static;
     class function CreateDeque<T>(const values: array of T): IDeque<T>; overload; static;
     class function CreateDeque<T>(const values: IEnumerable<T>): IDeque<T>; overload; static;
+
+    class function CreateBoundedDeque<T>(size: Integer): IDeque<T>; overload; static;
+    class function CreateBoundedDeque<T: class>(size: Integer; ownsObjects: Boolean): IDeque<T>; overload; static;
+
+    class function CreateEvictingDeque<T>(size: Integer): IDeque<T>; overload; static;
+    class function CreateEvictingDeque<T: class>(size: Integer; ownsObjects: Boolean): IDeque<T>; overload; static;
 
     class function CreateSet<T>: ISet<T>; overload; static;
     class function CreateSet<T>(capacity: Integer): ISet<T>; overload; static;
@@ -3136,25 +3163,57 @@ begin
   Result := TStack<T>.Create(values);
 end;
 
+class function TCollections.CreateBoundedStack<T>(size: Integer): IStack<T>;
+begin
+  Result := TBoundedStack<T>.Create(size);
+end;
+
+class function TCollections.CreateBoundedStack<T>(size: Integer;
+  ownsObjects: Boolean): IStack<T>;
+begin
+  Result := TBoundedStack<T>.Create(size);
+end;
+
 class function TCollections.CreateQueue<T>: IQueue<T>;
 begin
-  Result := TDeque<T>.Create;
+  Result := TQueue<T>.Create;
 end;
 
 class function TCollections.CreateQueue<T>(ownsObjects: Boolean): IQueue<T>;
 begin
-  Result := TObjectDeque<T>.Create(ownsObjects);
+  Result := TQueue<T>.Create(ownsObjects);
 end;
 
 class function TCollections.CreateQueue<T>(const values: array of T): IQueue<T>;
 begin
-  Result := TDeque<T>.Create(values);
+  Result := TQueue<T>.Create(values);
 end;
 
-class function TCollections.CreateQueue<T>(
-  const values: IEnumerable<T>): IQueue<T>;
+class function TCollections.CreateQueue<T>(const values: IEnumerable<T>): IQueue<T>;
 begin
-  Result := TDeque<T>.Create(values);
+  Result := TQueue<T>.Create(values);
+end;
+
+class function TCollections.CreateBoundedQueue<T>(size: Integer): IQueue<T>;
+begin
+  Result := TBoundedQueue<T>.Create(size);
+end;
+
+class function TCollections.CreateBoundedQueue<T>(size: Integer;
+  ownsObjects: Boolean): IQueue<T>;
+begin
+  Result := TBoundedQueue<T>.Create(size, ownsObjects);
+end;
+
+class function TCollections.CreateEvictingQueue<T>(size: Integer): IQueue<T>;
+begin
+  Result := TEvictingQueue<T>.Create(size);
+end;
+
+class function TCollections.CreateEvictingQueue<T>(size: Integer;
+  ownsObjects: Boolean): IQueue<T>;
+begin
+  Result := TEvictingQueue<T>.Create(size, ownsObjects);
 end;
 
 class function TCollections.CreateDeque<T>: IDeque<T>;
@@ -3164,7 +3223,7 @@ end;
 
 class function TCollections.CreateDeque<T>(ownsObjects: Boolean): IDeque<T>;
 begin
-  Result := TObjectDeque<T>.Create(ownsObjects);
+  Result := TDeque<T>.Create(ownsObjects);
 end;
 
 class function TCollections.CreateDeque<T>(const values: array of T): IDeque<T>;
@@ -3172,10 +3231,31 @@ begin
   Result := TDeque<T>.Create(values);
 end;
 
-class function TCollections.CreateDeque<T>(
-  const values: IEnumerable<T>): IDeque<T>;
+class function TCollections.CreateDeque<T>(const values: IEnumerable<T>): IDeque<T>;
 begin
   Result := TDeque<T>.Create(values);
+end;
+
+class function TCollections.CreateBoundedDeque<T>(size: Integer): IDeque<T>;
+begin
+  Result := TBoundedDeque<T>.Create(size);
+end;
+
+class function TCollections.CreateBoundedDeque<T>(size: Integer;
+  ownsObjects: Boolean): IDeque<T>;
+begin
+  Result := TBoundedDeque<T>.Create(size, ownsObjects);
+end;
+
+class function TCollections.CreateEvictingDeque<T>(size: Integer): IDeque<T>;
+begin
+  Result := TEvictingDeque<T>.Create(size);
+end;
+
+class function TCollections.CreateEvictingDeque<T>(size: Integer;
+  ownsObjects: Boolean): IDeque<T>;
+begin
+  Result := TEvictingDeque<T>.Create(size, ownsObjects);
 end;
 
 class function TCollections.CreateSet<T>: ISet<T>;

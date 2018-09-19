@@ -319,6 +319,76 @@ type
   {$ENDREGION}
   end;
 
+  TCircularArrayBuffer<T> = class(TEnumerableBase<T>)
+  private
+  {$REGION 'Nested Types'}
+    type
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+      private
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fSource: TCircularArrayBuffer<T>;
+        fIndex: Integer;
+        fVersion: Integer;
+        fCurrent: T;
+        function GetCurrent: T;
+      public
+        constructor Create(const source: TCircularArrayBuffer<T>);
+        destructor Destroy; override;
+        function MoveNext: Boolean;
+      end;
+      ItemType = TArrayManager<T>;
+  {$ENDREGION}
+  strict private
+    fOnChanged: TCollectionChangedEventImpl<T>;
+    fItems: TArray<T>;
+    fCount: Integer;
+    fVersion: Integer;
+    fHead: Integer;
+    fTail: Integer;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetCapacity: Integer; inline;
+    function GetCount: Integer; inline;
+    function GetIsEmpty: Boolean;
+    function GetOnChanged: ICollectionChangedEvent<T>;
+    function GetOwnsObjects: Boolean; inline;
+    procedure SetCapacity(value: Integer);
+    procedure SetOwnsObjects(value: Boolean);
+  {$ENDREGION}
+
+    procedure AddToHead(const item: T); inline;
+    procedure AddToTail(const item: T); inline;
+    procedure DeleteFromHead(action: TCollectionChangedAction); inline;
+    procedure DeleteFromTail(action: TCollectionChangedAction); inline;
+
+    procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
+    property Capacity: Integer read GetCapacity;
+    property Count: Integer read GetCount;
+    property Items: TArray<T> read fItems;
+    property Head: Integer read fHead;
+    property Tail: Integer read fTail;
+    property OwnsObjects: Boolean read GetOwnsObjects;
+  public
+    constructor Create; override;
+    constructor Create(capacity: Integer; ownsObjects: Boolean = False); overload;
+    constructor Create(ownsObjects: Boolean); overload;
+    destructor Destroy; override;
+
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
+
+    function First: T; overload;
+    function FirstOrDefault: T; overload;
+    function Single: T; overload;
+    function SingleOrDefault(const defaultValue: T): T; overload;
+    function TryGetFirst(out value: T): Boolean; overload;
+    function TryGetLast(out value: T): Boolean; overload;
+  {$ENDREGION}
+
+    procedure Clear;
+    procedure TrimExcess;
+  end;
+
   TMapBase<TKey, T> = class abstract(TCollectionBase<TPair<TKey, T>>)
   private
     type
@@ -1841,6 +1911,291 @@ end;
 function TContainedReadOnlyCollection<T>._Release: Integer;
 begin
   Result := fController._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCircularArrayBuffer<T>'}
+
+constructor TCircularArrayBuffer<T>.Create;
+begin
+  inherited Create;
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+constructor TCircularArrayBuffer<T>.Create(capacity: Integer; ownsObjects: Boolean);
+begin
+  Create;
+  SetCapacity(capacity);
+  SetOwnsObjects(ownsObjects);
+end;
+
+constructor TCircularArrayBuffer<T>.Create(ownsObjects: Boolean);
+begin
+  Create;
+  SetOwnsObjects(ownsObjects);
+end;
+
+destructor TCircularArrayBuffer<T>.Destroy;
+begin
+  Clear;
+  fOnChanged.Free;
+  inherited Destroy;
+end;
+
+procedure TCircularArrayBuffer<T>.Clear;
+var
+  i: Integer;
+begin
+  for i := Count downto 1 do
+    DeleteFromHead(caRemoved);
+end;
+
+procedure TCircularArrayBuffer<T>.DoNotify(const item: T;
+  action: TCollectionChangedAction);
+begin
+  if fOnChanged.CanInvoke then
+    fOnChanged.Invoke(Self, item, action);
+end;
+
+function TCircularArrayBuffer<T>.GetCapacity: Integer;
+begin
+  Result := DynArrayLength(fItems);
+end;
+
+function TCircularArrayBuffer<T>.GetCount: Integer;
+begin
+  Result := fCount and CountMask;
+end;
+
+function TCircularArrayBuffer<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(Self);
+end;
+
+function TCircularArrayBuffer<T>.GetIsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+function TCircularArrayBuffer<T>.GetOnChanged: ICollectionChangedEvent<T>;
+begin
+  Result := fOnChanged;
+end;
+
+function TCircularArrayBuffer<T>.GetOwnsObjects: Boolean;
+begin
+  Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
+end;
+
+procedure TCircularArrayBuffer<T>.AddToHead(const item: T);
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Inc(fCount);
+  if fHead > 0 then
+    Dec(fHead)
+  else
+    fHead := DynArrayHigh(fItems);
+  fItems[fHead] := item;
+  DoNotify(item, caAdded);
+end;
+
+procedure TCircularArrayBuffer<T>.AddToTail(const item: T);
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Inc(fCount);
+  if fTail < DynArrayHigh(fItems) then
+    Inc(fTail)
+  else
+    fTail := 0;
+  fItems[fTail] := item;
+  DoNotify(item, caAdded);
+end;
+
+procedure TCircularArrayBuffer<T>.DeleteFromHead(action: TCollectionChangedAction);
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Dec(fCount);
+  DoNotify(fItems[fHead], action);
+  if OwnsObjects and (action = caRemoved) then
+    FreeObject(fItems[fHead]);
+  fItems[fHead] := Default(T);
+  if fHead < DynArrayHigh(fItems) then
+    Inc(fHead)
+  else
+    fHead := 0;
+end;
+
+procedure TCircularArrayBuffer<T>.DeleteFromTail(action: TCollectionChangedAction);
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Dec(fCount);
+  DoNotify(fItems[fTail], action);
+  if OwnsObjects and (action = caRemoved) then
+    FreeObject(fItems[fTail]);
+  fItems[fTail] := Default(T);
+  if fTail > 0 then
+    Dec(fTail)
+  else
+    fTail := DynArrayHigh(fItems);
+end;
+
+function TCircularArrayBuffer<T>.First: T;
+begin
+  if Count > 0 then
+    Result := fItems[fHead]
+  else
+    raise Error.NoElements;
+end;
+
+function TCircularArrayBuffer<T>.FirstOrDefault: T;
+begin
+  if Count > 0 then
+    Result := fItems[fHead]
+  else
+    Result := Default(T);
+end;
+
+function TCircularArrayBuffer<T>.Single: T;
+begin
+  case Count of
+    0: raise Error.NoElements;
+    1: Result := fItems[fHead];
+  else
+    raise Error.MoreThanOneElement;
+  end;
+end;
+
+function TCircularArrayBuffer<T>.SingleOrDefault(const defaultValue: T): T;
+begin
+  case Count of
+    0: Result := defaultValue;
+    1: Result := fItems[fHead];
+  else
+    raise Error.MoreThanOneElement;
+  end;
+end;
+
+procedure TCircularArrayBuffer<T>.TrimExcess;
+begin
+  SetCapacity(Count);
+end;
+
+function TCircularArrayBuffer<T>.TryGetFirst(out value: T): Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+    value := fItems[fHead]
+  else
+    value := Default(T);
+end;
+
+function TCircularArrayBuffer<T>.TryGetLast(out value: T): Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+    value := fItems[fTail]
+  else
+    value := Default(T);
+end;
+
+procedure TCircularArrayBuffer<T>.SetCapacity(value: Integer);
+var
+  offset, oldCapacity, itemCount: Integer;
+begin
+  Guard.CheckRange(value >= Count, 'capacity');
+
+  offset := value - Length(fItems);
+  if offset = 0 then
+    Exit;
+
+  itemCount := Count;
+  if itemCount = 0 then
+  begin
+    fHead := 0;
+    fTail := value - 1;
+    SetLength(fItems, value);
+    Exit;
+  end;
+
+  oldCapacity := Length(fItems);
+  if offset > 0 then
+    SetLength(fItems, value);
+  if fTail < fHead then
+  begin
+    ItemType.Move(fItems, fItems, fHead, fHead + offset, oldCapacity - fHead);
+    if offset > 0 then
+      ItemType.Finalize(fItems, fHead, offset)
+    else
+      ItemType.Finalize(fItems, itemCount, -offset);
+    Inc(fHead, offset);
+  end
+  else
+  begin
+    if fHead + itemCount > value then
+    begin
+      ItemType.Move(fItems, fItems, fHead, 0, itemCount);
+      ItemType.Finalize(fItems, itemCount, fHead);
+      fHead := 0;
+    end;
+    fTail := itemCount - 1;
+  end;
+  if offset < 0 then
+    SetLength(fItems, value);
+end;
+
+procedure TCircularArrayBuffer<T>.SetOwnsObjects(value: Boolean);
+begin
+  fCount := (fCount and CountMask) or BitMask[value];
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCircularArrayBuffer<T>.TEnumerator'}
+
+constructor TCircularArrayBuffer<T>.TEnumerator.Create(
+  const source: TCircularArrayBuffer<T>);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fVersion;
+end;
+
+destructor TCircularArrayBuffer<T>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited Destroy;
+end;
+
+function TCircularArrayBuffer<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+function TCircularArrayBuffer<T>.TEnumerator.MoveNext: Boolean;
+begin
+  if fVersion <> fSource.fVersion then
+    raise Error.EnumFailedVersion;
+
+  Result := fIndex < fSource.Count;
+  if Result then
+  begin
+    fCurrent := fSource.fItems[(fSource.fHead + fIndex) mod DynArrayLength(fSource.fItems)];
+    Inc(fIndex);
+  end
+  else
+    fCurrent := Default(T);
 end;
 
 {$ENDREGION}
