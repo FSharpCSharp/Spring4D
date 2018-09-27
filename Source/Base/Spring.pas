@@ -5721,13 +5721,21 @@ begin
     value := TValue.FromOrdinal(target, i);
 end;
 
+procedure MakeDynArray(typeInfo: PTypeInfo; count: NativeInt; var result: TValue);
+var
+  p: Pointer;
+begin
+  p := nil;
+  DynArraySetLength(p, typeInfo, 1, @count);
+  TValue.MakeWithoutCopy(@p, typeInfo, result);
+end;
+
 function ConvStr2DynArray(const source: TValue; target: PTypeInfo;
   out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   s: string;
   values: TStringDynArray;
   i: Integer;
-  p: Pointer;
   res, v1, v2: TValue;
   elType: PTypeInfo;
 begin
@@ -5735,10 +5743,7 @@ begin
   if StartsStr('[', s) and EndsStr(']', s) then
     s := Copy(s, 2, Length(s) - 2);
   values := SplitString(s, ',');
-  i := Length(values);
-  p := nil;
-  DynArraySetLength(p, target, 1, @i);
-  TValue.MakeWithoutCopy(@p, target, res);
+  MakeDynArray(target, Length(values), res);
   elType := target.TypeData.DynArrElType^;
   for i := 0 to High(values) do
   begin
@@ -5821,6 +5826,29 @@ begin
   temp := TValue.From<Boolean>(TVarData(v).VBoolean);
   Result := temp.TryCast(target, value);
 {$ENDIF}
+end;
+
+function ConvDynArray2DynArray(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+var
+  len, i: Integer;
+  res, v1, v2: TValue;
+  elType: PTypeInfo;
+begin
+  len := source.GetArrayLength;
+  MakeDynArray(target, len, res);
+
+  elType := target.TypeData.DynArrElType^;
+  for i := 0 to len - 1 do
+  begin
+    v1 := source.GetArrayElement(i);
+    if not v1.TryConvert(elType, v2) then
+      Exit(False);
+    res.SetArrayElement(i, v2);
+  end;
+
+  value := res;
+  Result := True;
 end;
 
 {$ENDREGION}
@@ -6023,7 +6051,7 @@ const
       // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
       ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
       // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
-      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvDynArray2DynArray,
       // tkUString, tkClassRef, tkPointer, tkProcedure
       ConvFail, ConvFail, ConvFail, ConvFail
     ),
