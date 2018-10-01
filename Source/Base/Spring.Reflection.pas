@@ -1292,7 +1292,7 @@ var
   list: IList<TRttiInterfaceType>;
   classType: TClass;
   table: PInterfaceTable;
-  entry: TInterfaceEntry;
+  p: PPPTypeInfo;
   intfType: TRttiInterfaceType;
   i: Integer;
 begin
@@ -1306,13 +1306,12 @@ begin
       table := classType.GetInterfaceTable;
       if Assigned(table) then
       begin
+        p := @table.Entries[table.EntryCount];
         for i := 0 to table.EntryCount - 1 do
         begin
-          entry := table.Entries[i];
-          if (entry.IID <> EmptyGuid)
-            and TType.TryGetInterfaceType(entry.IID, intfType)
-            and guids.Add(entry.IID) then
-            list.Add(intfType);
+          intfType := TType.GetType(p^^).AsInterface;
+          list.Add(intfType);
+          Inc(p);
         end;
       end;
       classType := classType.ClassParent;

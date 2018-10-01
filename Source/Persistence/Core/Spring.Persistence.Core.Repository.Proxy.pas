@@ -161,7 +161,7 @@ begin
       tkClass, tkClassRef, tkPointer:
       begin
         items := fRepository.Query(GetQueryTextFromMethod(Method), Args);
-        (items as ICollectionOwnership).OwnsObjects := False;
+        items.OwnsObjects := False;
         Result := TValue.From<T>(items.FirstOrDefault);
       end;
       tkInterface:

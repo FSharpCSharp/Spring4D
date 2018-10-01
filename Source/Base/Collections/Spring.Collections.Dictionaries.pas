@@ -691,7 +691,7 @@ type
   private
     fTree: TRedBlackTree<TKey,TValue>;
     fKeyComparer: IComparer<TKey>;
-    fValueComparer: IComparer<TValue>;
+    fValueComparer: IEqualityComparer<TValue>;
     fKeyValueComparerByKey: IComparer<TKeyValuePair>;
     fVersion: Integer;
     fKeys: TKeyCollection;
@@ -710,7 +710,7 @@ type
       iteratorVersion: Integer): Boolean;
   public
     constructor Create; override;
-    constructor Create(const keyComparer: IComparer<TKey>; const valueComparer: IComparer<TValue>); overload;
+    constructor Create(const keyComparer: IComparer<TKey>; const valueComparer: IEqualityComparer<TValue>); overload;
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
@@ -3123,7 +3123,8 @@ begin
 end;
 
 constructor TSortedDictionary<TKey, TValue>.Create(
-  const keyComparer: IComparer<TKey>; const valueComparer: IComparer<TValue>);
+  const keyComparer: IComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>);
 begin
   inherited Create;
 
@@ -3135,10 +3136,10 @@ begin
     fKeyComparer := keyComparer
   else
     fKeyComparer := TComparer<TKey>.Default;
-  if Assigned(fValueComparer) then
+  if Assigned(valueComparer) then
     fValueComparer := valueComparer
   else
-    fValueComparer := TComparer<TValue>.Default;
+    fValueComparer := TEqualityComparer<TValue>.Default;
   fTree := TRedBlackTree<TKey,TValue>.Create(keyComparer);
 end;
 
@@ -3189,8 +3190,7 @@ function TSortedDictionary<TKey, TValue>.Contains(const key: TKey;
 var
   found: TValue;
 begin
-  Result := fTree.Find(key, found)
-    and (fValueComparer.Compare(value, found) = EqualsValue);
+  Result := fTree.Find(key, found) and fValueComparer.Equals(value, found);
 end;
 
 function TSortedDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
@@ -3203,7 +3203,7 @@ var
   found: TKeyValuePair;
 begin
   for found in fTree do
-    if fValueComparer.Compare(value, found.Value) = EqualsValue then
+    if fValueComparer.Equals(value, found.Value) then
       Exit(True);
   Result := False;
 end;
@@ -3231,7 +3231,7 @@ var
   node: PNode;
 begin
   node := fTree.FindNode(key);
-  if Assigned(node) and (fValueComparer.Compare(value, node.Value) = EqualsValue) then
+  if Assigned(node) and fValueComparer.Equals(value, node.Value) then
   begin
     Result.Key := node.Key;
     Result.Value := node.Value;
@@ -3322,8 +3322,7 @@ var
   node: PNode;
 begin
   node := fTree.FindNode(key);
-  Result := Assigned(node)
-    and (fValueComparer.Compare(value, node.Value) = EqualsValue);
+  Result := Assigned(node) and fValueComparer.Equals(value, node.Value);
   if Result then
   begin
     IncUnchecked(fVersion);

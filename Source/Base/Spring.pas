@@ -425,6 +425,8 @@ type
   {$REGION 'TValueHelper'}
 
   TValueHelper = record helper for TValue
+  private class var
+    ConvertSettings: TFormatSettings;
   private
     procedure Init(typeInfo: Pointer);
 {$IFNDEF DELPHIXE8_UP}
@@ -633,6 +635,15 @@ type
     ///   If the stored value is an object it will get destroyed/disposed.
     /// </summary>
     procedure Free;
+
+    /// <summary>
+    ///   Update the internal TFormatSettings record.
+    /// </summary>
+    /// <remarks>
+    ///   This is not thread-safe and should only be used if the settings of
+    ///   the operating system have been changed.
+    /// </remarks>
+    class procedure UpdateFormatSettings; static;
 
     /// <summary>
     ///   Specifies the type kind of the stored value.
@@ -2761,7 +2772,7 @@ function FormatValue(const value: TValue): string;
     for i := 0 to value.GetArrayLength - 1 do
     begin
       if i > 0 then
-        Result := Result + ', ';
+        Result := Result + ',';
       Result := Result + FormatValue(value.GetArrayElement(i));
     end;
     Result := Result + ']';
@@ -5577,13 +5588,21 @@ begin
     value := TValue.FromOrdinal(target, i);
 end;
 
+procedure MakeDynArray(typeInfo: PTypeInfo; count: NativeInt; var result: TValue);
+var
+  p: Pointer;
+begin
+  p := nil;
+  DynArraySetLength(p, typeInfo, 1, @count);
+  TValue.MakeWithoutCopy(@p, typeInfo, result);
+end;
+
 function ConvStr2DynArray(const source: TValue; target: PTypeInfo;
   out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
   s: string;
   values: TStringDynArray;
   i: Integer;
-  p: Pointer;
   res, v1, v2: TValue;
   elType: PTypeInfo;
 begin
@@ -5591,14 +5610,11 @@ begin
   if StartsStr('[', s) and EndsStr(']', s) then
     s := Copy(s, 2, Length(s) - 2);
   values := SplitString(s, ',');
-  i := Length(values);
-  p := nil;
-  DynArraySetLength(p, target, 1, @i);
-  TValue.MakeWithoutCopy(@p, target, res);
+  MakeDynArray(target, Length(values), res);
   elType := target.TypeData.DynArrElType^;
   for i := 0 to High(values) do
   begin
-    v1 := TValue.From(values[i]);
+    v1 := TValue.From(Trim(values[i]));
     if not v1.TryConvert(elType, v2) then
       Exit(False);
     res.SetArrayElement(i, v2);
@@ -5631,7 +5647,7 @@ begin
   TValue.Make(nil, target, res);
   for i := 0 to arrData.ElCount - 1 do
   begin
-    v1 := TValue.From(values[i]);
+    v1 := TValue.From(Trim(values[i]));
     if not v1.TryConvert(elType, v2) then
       Exit(False);
     res.SetArrayElement(i, v2);
@@ -5653,6 +5669,29 @@ begin
 
   temp := TValue.From<Boolean>(TVarData(v).VBoolean);
   Result := temp.TryCast(target, value);
+end;
+
+function ConvDynArray2DynArray(const source: TValue; target: PTypeInfo;
+  out value: TValue; const formatSettings: TFormatSettings): Boolean;
+var
+  len, i: Integer;
+  res, v1, v2: TValue;
+  elType: PTypeInfo;
+begin
+  len := source.GetArrayLength;
+  MakeDynArray(target, len, res);
+
+  elType := target.TypeData.DynArrElType^;
+  for i := 0 to len - 1 do
+  begin
+    v1 := source.GetArrayElement(i);
+    if not v1.TryConvert(elType, v2) then
+      Exit(False);
+    res.SetArrayElement(i, v2);
+  end;
+
+  value := res;
+  Result := True;
 end;
 
 {$ENDREGION}
@@ -5855,7 +5894,7 @@ const
       // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
       ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
       // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
-      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvDynArray2DynArray,
       // tkUString, tkClassRef, tkPointer, tkProcedure
       ConvFail, ConvFail, ConvFail, ConvFail
     ),
@@ -5909,11 +5948,8 @@ const
 
 function TValueHelper.TryConvert(targetType: PTypeInfo;
   out targetValue: TValue): Boolean;
-var
-  formatSettings: TFormatSettings;
 begin
-  formatSettings := TFormatSettings.Create;
-  Result := TryConvert(targetType, targetValue, formatSettings);
+  Result := TryConvert(targetType, targetValue, ConvertSettings);
 end;
 
 function TValueHelper.TryConvert(targetType: PTypeInfo;
@@ -6037,6 +6073,11 @@ begin
     end;
     value.ExtractRawData(@targetValue);
   end;
+end;
+
+class procedure TValueHelper.UpdateFormatSettings;
+begin
+  ConvertSettings := TFormatSettings.Create;
 end;
 
 {$ENDREGION}
@@ -9640,6 +9681,8 @@ end;
 procedure Init;
 begin
   Nop_Instance := Pointer(TValueData(TValue.Empty).FValueData);
+
+  TValue.UpdateFormatSettings;
 end;
 
 initialization

@@ -467,6 +467,8 @@ type
     procedure TryToType_ConvertInvalidStringToBoolean;
     procedure TryToType_ConvertVariantToBoolean;
     procedure TryToType_ConvertVariantToString;
+    procedure TryToType_ConvertStringToIntegerArray;
+    procedure TryToType_ConvertStringArrayToIntegerArray;
 
     procedure GetNullableValue_ValueIsEmpty_ReturnsEmpty;
 
@@ -2430,7 +2432,7 @@ var
 begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
-  p := Shared.New(t);
+  p := Shared.New<TTestClass>(t);
 {$IFDEF AUTOREFCOUNT}
   t := nil;
 {$ENDIF}
@@ -3152,6 +3154,34 @@ var
 begin
   fSUT := 'bad';
   CheckFalse(fSUT.TryToType<Boolean>(value));
+end;
+
+procedure TTestValueHelper.TryToType_ConvertStringArrayToIntegerArray;
+var
+  strs: TArray<string>;
+  ints: TArray<Integer>;
+begin
+  strs := TArray<string>.Create('1', '2', '3');
+  fSUT := TValue.From(strs);
+  CheckTrue(fSUT.TryToType<TArray<Integer>>(ints));
+  CheckEquals(3, Length(ints));
+  CheckEquals(1, ints[0]);
+  CheckEquals(2, ints[1]);
+  CheckEquals(3, ints[2]);
+end;
+
+procedure TTestValueHelper.TryToType_ConvertStringToIntegerArray;
+var
+  str: string;
+  ints: TArray<Integer>;
+begin
+  str := '1,2,3';
+  fSUT := TValue.From(str);
+  CheckTrue(fSUT.TryToType<TArray<Integer>>(ints));
+  CheckEquals(3, Length(ints));
+  CheckEquals(1, ints[0]);
+  CheckEquals(2, ints[1]);
+  CheckEquals(3, ints[2]);
 end;
 
 procedure TTestValueHelper.TryToType_ConvertStringToNullableString;

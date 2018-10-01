@@ -979,6 +979,7 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetCount(value: Integer);
     procedure SetItem(index: Integer; const item: T);
+    procedure SetOwnsObjects(value: Boolean);
   {$ENDREGION}
 
     function Add(const item: T): Integer;
@@ -1090,7 +1091,7 @@ type
     property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount write SetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property OwnsObjects: Boolean read GetOwnsObjects;
+    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
   IObjectList = interface(IList<TObject>)
@@ -2492,16 +2493,6 @@ type
     property Item[const key: TKey]: IEnumerable<TElement> read GetItem; default;
   end;
 
-  ICollectionOwnership = interface
-    ['{6D028EAF-3D14-4362-898C-BFAD1110547F}']
-  {$REGION 'Property Accessors'}
-      function GetOwnsObjects: Boolean;
-      procedure SetOwnsObjects(const value: Boolean);
-  {$ENDREGION}
-
-    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
-  end;
-
   /// <summary>
   ///   Provides direct access to an array that is used for internal storage.
   /// </summary>
@@ -2615,8 +2606,8 @@ type
 
     class function CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateSortedDictionary<TKey, TValue>(const keyComparer: IComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
-    class function CreateSortedDictionary<TKey, TValue>(const valueComparer: IComparer<TValue>): IDictionary<TKey, TValue>; overload; static;
-    class function CreateSortedDictionary<TKey, TValue>(const keyComparer: IComparer<TKey>; const ValueComparer: IComparer<TValue>): IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>; overload; static;
+    class function CreateSortedDictionary<TKey, TValue>(const keyComparer: IComparer<TKey>; const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>; overload; static;
   end;
 
   TEnumerable = class
@@ -3405,14 +3396,14 @@ begin
 end;
 
 class function TCollections.CreateSortedDictionary<TKey, TValue>(
-  const valueComparer: IComparer<TValue>): IDictionary<TKey, TValue>;
+  const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>;
 begin
   Result := TSortedDictionary<TKey, TValue>.Create(nil, valueComparer);
 end;
 
 class function TCollections.CreateSortedDictionary<TKey, TValue>(
   const keyComparer: IComparer<TKey>;
-  const valueComparer: IComparer<TValue>): IDictionary<TKey, TValue>;
+  const valueComparer: IEqualityComparer<TValue>): IDictionary<TKey, TValue>;
 begin
   Result := TSortedDictionary<TKey, TValue>.Create(keyComparer, valueComparer);
 end;

@@ -634,7 +634,6 @@ end;
 procedure TObjectDataSet.InternalSetSort(const value: string; index: Integer);
 var
   pos: Integer;
-  ownership: ICollectionOwnership;
   ownsObjects: Boolean;
   changed: Boolean;
 begin
@@ -652,18 +651,17 @@ begin
 
   if fSorted then
   begin
-    ownsObjects := Supports(fDataList, ICollectionOwnership, ownership)
-      and ownership.OwnsObjects;
+    ownsObjects := fDataList.OwnsObjects;
     try
       if ownsObjects then
-        ownership.OwnsObjects := False;
+        fDataList.OwnsObjects := False;
       if changed then
         IndexList.MergeSort(CompareRecords)
       else
         IndexList.InsertionSort(index, CompareRecords);
     finally
       if ownsObjects then
-        ownership.OwnsObjects := True;
+        fDataList.OwnsObjects := True;
 
       SetCurrent(pos);
     end;

@@ -83,6 +83,7 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetCount(value: Integer);
     procedure SetItem(index: Integer; const value: T);
+    procedure SetOwnsObjects(value: Boolean);
   {$ENDREGION}
 
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
@@ -160,12 +161,6 @@ type
   end;
 
   TObjectList<T: class> = class(TList<T>)
-  private
-  {$REGION 'Property Accessors'}
-    procedure SetOwnsObjects(const value: Boolean);
-  {$ENDREGION}
-  protected
-    property OwnsObjects: Boolean read GetOwnsObjects;
   public
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
@@ -206,10 +201,6 @@ type
   end;
 
   TSortedObjectList<T: class> = class(TSortedList<T>)
-  private
-  {$REGION 'Property Accessors'}
-    procedure SetOwnsObjects(const value: Boolean);
-  {$ENDREGION}
   public
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
@@ -247,6 +238,7 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetCount(value: Integer);
     procedure SetItem(index: Integer; const value: T);
+    procedure SetOwnsObjects(value: Boolean);
   {$ENDREGION}
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
     function AsReadOnly: IReadOnlyList<T>;
@@ -603,6 +595,12 @@ begin
       FreeObject(oldItem);
 end;
 
+procedure TAbstractArrayList<T>.SetOwnsObjects(value: Boolean);
+begin
+  if TType.Kind<T> = tkClass then
+    fCount := (fCount and CountMask) or BitMask[value];
+end;
+
 function TAbstractArrayList<T>.Single: T;
 begin
   case Count of
@@ -681,7 +679,7 @@ var
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
 {$ENDIF}
 
   if Supports(values, IReadOnlyCollection<T>, collection) then
@@ -1373,11 +1371,6 @@ begin
   SetOwnsObjects(ownsObjects);
 end;
 
-procedure TObjectList<T>.SetOwnsObjects(const value: Boolean);
-begin
-  fCount := (fCount and CountMask) or BitMask[value];
-end;
-
 {$ENDREGION}
 
 
@@ -1518,11 +1511,6 @@ constructor TSortedObjectList<T>.Create(const comparer: IComparer<T>;
 begin
   inherited Create(comparer);
   SetOwnsObjects(ownsObjects);
-end;
-
-procedure TSortedObjectList<T>.SetOwnsObjects(const value: Boolean);
-begin
-  fCount := (fCount and CountMask) or BitMask[value];
 end;
 
 {$ENDREGION}
@@ -1882,6 +1870,10 @@ begin
 {$ENDIF}
 
   fCollection.Items[index] := value;
+end;
+
+procedure TCollectionList<T>.SetOwnsObjects(value: Boolean);
+begin
 end;
 
 procedure TCollectionList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
