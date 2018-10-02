@@ -43,14 +43,12 @@ type
   ///   Base class for multicast event implementation
   /// </summary>
   TEventBase = class(TInterfacedObject, IEvent)
-  strict private
+  strict protected
     fHandlers: TArray<TMethodPointer>;
     fCount: Integer;
     fNotificationHandler: TNotificationHandler;
     fOnChanged: TNotifyEvent;
-  {$IFDEF MSWINDOWS}
-    fLock: TRTLCriticalSection;
-  {$ENDIF MSWINDOWS}
+    fLock: {$IFDEF MSWINDOWS}PRTLCriticalSection{$ELSE}TObject{$ENDIF};
     const DisabledFlag = Integer($80000000);
   {$REGION 'Property Accessors'}
     function GetCanInvoke: Boolean; inline;
@@ -59,9 +57,11 @@ type
     function GetHandlers: TArray<TMethodPointer>;
     function GetInvoke: TMethodPointer; inline;
     function GetOnChanged: TNotifyEvent;
+    function GetThreadSafe: Boolean; inline;
     function GetUseFreeNotification: Boolean; inline;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
+    procedure SetThreadSafe(const value: Boolean);
     procedure SetUseFreeNotification(const value: Boolean);
   {$ENDREGION}
     procedure Delete(index: Integer);
@@ -76,7 +76,7 @@ type
     property Count: Integer read GetCount;
     property Handlers: TArray<TMethodPointer> read GetHandlers;
   public
-    constructor Create;
+    constructor Create(const threadSafe: Boolean = True);
     destructor Destroy; override;
 
   {$REGION 'Implements IEvent'}
@@ -90,6 +90,7 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: TMethodPointer read GetInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+    property ThreadSafe: Boolean read GetThreadSafe write SetThreadSafe;
     property UseFreeNotification: Boolean read GetUseFreeNotification write SetUseFreeNotification;
   end;
 
@@ -136,15 +137,20 @@ begin
   Result := IsValidObj(p) and (TObject(p) is cls);
 end;
 
-
 {$REGION 'TEventBase'}
 
-constructor TEventBase.Create;
+constructor TEventBase.Create(const threadSafe: Boolean);
 begin
   inherited Create;
-{$IFDEF MSWINDOWS}
-  InitializeCriticalSection(fLock);
-{$ENDIF}
+  if threadSafe then
+  begin
+  {$IFDEF MSWINDOWS}
+    New(fLock);
+    InitializeCriticalSection(fLock^);
+  {$ELSE}
+    fLock := TObject.Create;
+  {$ENDIF}
+  end;
 end;
 
 destructor TEventBase.Destroy;
@@ -154,7 +160,13 @@ begin
   NativeInt(fNotificationHandler) := 0;
   Clear;
 {$IFDEF MSWINDOWS}
-  DeleteCriticalSection(fLock);
+  if Assigned(fLock) then
+  begin
+    DeleteCriticalSection(fLock^);
+    Dispose(fLock);
+  end;
+{$ELSE}
+  fLock.Free;
 {$ENDIF}
   inherited Destroy;
 end;
@@ -193,6 +205,11 @@ begin
   Result := fOnChanged;
 end;
 
+function TEventBase.GetThreadSafe: Boolean;
+begin
+  Result := Assigned(Pointer(fLock));
+end;
+
 function TEventBase.GetUseFreeNotification: Boolean;
 begin
   Result := NativeInt(fNotificationHandler) <> 1;
@@ -200,19 +217,21 @@ end;
 
 procedure TEventBase.LockEnter;
 begin
+  if Assigned(fLock) then
 {$IFDEF MSWINDOWS}
-  EnterCriticalSection(fLock);
+    EnterCriticalSection(fLock^);
 {$ELSE}
-  TMonitor.Enter(Self);
+    TMonitor.Enter(fLock);
 {$ENDIF}
 end;
 
 procedure TEventBase.LockLeave;
 begin
+  if Assigned(fLock) then
 {$IFDEF MSWINDOWS}
-  LeaveCriticalSection(fLock);
+    LeaveCriticalSection(fLock^);
 {$ELSE}
-  TMonitor.Exit(Self);
+    TMonitor.Exit(fLock);
 {$ENDIF}
 end;
 
@@ -353,6 +372,30 @@ end;
 procedure TEventBase.SetOnChanged(const value: TNotifyEvent);
 begin
   fOnChanged := value;
+end;
+
+procedure TEventBase.SetThreadSafe(const value: Boolean);
+begin
+  if value <> Assigned(fLock) then
+    if Assigned(fLock) then
+    begin
+    {$IFDEF MSWINDOWS}
+      DeleteCriticalSection(fLock^);
+      Dispose(fLock);
+    {$ELSE}
+      fLock.Free;
+    {$ENDIF}
+      fLock := nil;
+    end
+    else
+    begin
+    {$IFDEF MSWINDOWS}
+      New(fLock);
+      InitializeCriticalSection(fLock^);
+    {$ELSE}
+      fLock := TObject.Create;
+    {$ENDIF}
+    end;
 end;
 
 procedure TEventBase.SetUseFreeNotification(const value: Boolean);

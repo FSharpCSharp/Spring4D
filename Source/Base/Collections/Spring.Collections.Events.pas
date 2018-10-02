@@ -37,6 +37,8 @@ type
   TCollectionChangedEventImpl<T> = class(TEventBase, ICollectionChangedEvent<T>)
   private
     function GetInvoke: TCollectionChangedEvent<T>;
+    procedure InvokeSafe(Sender: TObject; const Item: T;
+      Action: TCollectionChangedAction);
   public
     constructor Create;
 {$IFNDEF AUTOREFCOUNT}
@@ -44,8 +46,7 @@ type
 {$ENDIF}
     procedure Add(handler: TCollectionChangedEvent<T>); inline;
     procedure Remove(handler: TCollectionChangedEvent<T>); inline;
-    procedure Invoke(Sender: TObject; const Item: T;
-      Action: TCollectionChangedAction);
+    procedure Invoke(Sender: TObject; const Item: T; Action: TCollectionChangedAction);
   end;
 
 implementation
@@ -84,19 +85,29 @@ end;
 procedure TCollectionChangedEventImpl<T>.Invoke(Sender: TObject;
   const Item: T; Action: TCollectionChangedAction);
 var
-  handlers: TArray<TMethodPointer>;
   i: Integer;
 begin
   // If you get exception at this location on NextGen and the handler is nil
   // it is highly possible that the owner of the collection already released
   // its weak references. To fix this, free the collection prior to freeing
   // the object owning it (even if you're using interfaces).
-  if Enabled then
-  begin
-    handlers := Self.Handlers;
-    for i := 0 to DynArrayHigh(handlers) do
-      TCollectionChangedEvent<T>(handlers[i])(Sender, Item, Action);
-  end;
+  if CanInvoke then
+    if ThreadSafe then
+      InvokeSafe(Sender, Item, Action)
+    else
+      for i := 0 to Count - 1 do
+        TCollectionChangedEvent<T>(fHandlers[i])(Sender, Item, Action);
+end;
+
+procedure TCollectionChangedEventImpl<T>.InvokeSafe(Sender: TObject;
+  const Item: T; Action: TCollectionChangedAction);
+var
+  handlers: TArray<TMethodPointer>;
+  i: Integer;
+begin
+  handlers := Self.Handlers;
+  for i := 0 to Count - 1 do
+    TCollectionChangedEvent<T>(handlers[i])(Sender, Item, Action);
 end;
 
 procedure TCollectionChangedEventImpl<T>.Remove(

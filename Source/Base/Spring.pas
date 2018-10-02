@@ -869,9 +869,11 @@ type
     function GetInvoke: TMethodPointer;
     function GetEnabled: Boolean;
     function GetOnChanged: TNotifyEvent;
+    function GetThreadSafe: Boolean;
     function GetUseFreeNotification: Boolean;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
+    procedure SetThreadSafe(const value: Boolean);
     procedure SetUseFreeNotification(const value: Boolean);
   {$ENDREGION}
 
@@ -903,6 +905,16 @@ type
 
     property Invoke: TMethodPointer read GetInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+
+    /// <summary>
+    ///   Specifies if the event internally uses a critical section to
+    ///   protected add/remove and invoke calls when executed from different
+    ///   threads. The default is True and can be specified when creating new
+    ///   events or by setting this property. Turning this off can boost
+    ///   performance when it is ensured that operations are not happening from
+    ///   multiple threads.
+    /// </summary>
+    property ThreadSafe: Boolean read GetThreadSafe write SetThreadSafe;
 
     /// <summary>
     ///   Specifies if the event internally tracks if the event handlers are
@@ -947,9 +959,11 @@ type
     function GetEnabled: Boolean;
     function GetInvoke: T;
     function GetOnChanged: TNotifyEvent;
+    function GetThreadSafe: Boolean;
     function GetUseFreeNotification: Boolean;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(value: TNotifyEvent);
+    procedure SetThreadSafe(const value: Boolean);
     procedure SetUseFreeNotification(const value: Boolean);
     procedure EnsureInitialized;
   public
@@ -962,6 +976,16 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
+
+    /// <summary>
+    ///   Specifies if the event internally uses a critical section to
+    ///   protected add/remove and invoke calls when executed from different
+    ///   threads. The default is True and can be specified when creating new
+    ///   events or by setting this property. Turning this off can boost
+    ///   performance when it is ensured that operations are not happening from
+    ///   multiple threads.
+    /// </summary>
+    property ThreadSafe: Boolean read GetThreadSafe write SetThreadSafe;
 
     /// <summary>
     ///   Specifies if the event internally tracks if the event handlers are
@@ -7689,6 +7713,11 @@ begin
   Result := fInstance.OnChanged;
 end;
 
+function Event<T>.GetThreadSafe: Boolean;
+begin
+  Result := not Assigned(fInstance) or fInstance.ThreadSafe;
+end;
+
 function Event<T>.GetUseFreeNotification: Boolean;
 begin
   Result := not Assigned(fInstance) or fInstance.UseFreeNotification;
@@ -7716,6 +7745,12 @@ procedure Event<T>.SetOnChanged(value: TNotifyEvent);
 begin
   EnsureInitialized;
   fInstance.OnChanged := value;
+end;
+
+procedure Event<T>.SetThreadSafe(const value: Boolean);
+begin
+  EnsureInitialized;
+  fInstance.ThreadSafe := value;
 end;
 
 procedure Event<T>.SetUseFreeNotification(const value: Boolean);
