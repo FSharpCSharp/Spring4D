@@ -1243,7 +1243,7 @@ end;
 
 function Enumerable<TSource>.Any: Boolean;
 var
-  enumerator: IEnumerator;
+  enumerator: IEnumerator<TSource>;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
 
@@ -2124,7 +2124,7 @@ begin
 
   Result := 0;
   for item in source do
-    Result := Result.Value + selector(item).GetValueOrDefault;
+    Result := System.Single(Result.Value + selector(item).GetValueOrDefault);
 end;
 
 function Enumerable<TSource>.Sum(const selector: Func<TSource, Double>): Double;
@@ -2149,7 +2149,7 @@ begin
 
   Result := 0;
   for item in source do
-    Result := Result.Value + selector(item).GetValueOrDefault;
+    Result := System.Double(Result.Value + selector(item).GetValueOrDefault);
 end;
 
 function Enumerable<TSource>.Take(count: Integer): IEnumerable<TSource>;
