@@ -104,6 +104,7 @@ type
   ///   Represents an observable subject.
   /// </summary>
   IObservable<T> = interface(IInvokable)
+    ['{A5B3E22A-8F64-492D-8FB3-0BFE4406283C}']
     procedure Attach(const observer: T);
     procedure Detach(const observer: T);
     procedure Notify;
