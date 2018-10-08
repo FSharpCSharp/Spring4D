@@ -64,6 +64,9 @@ begin
     TTestNullableBoolean.Suite,
     TTestNullableDateTime.Suite,
     TTestNullableInt64.Suite,
+{$IFDEF DELPHIXE5_UP}
+    TTestNullableCustomRecord.Suite,
+{$ENDIF}
     TTestGuard.Suite,
     TTestLazy.Suite,
     TTestMulticastEvent.Suite,

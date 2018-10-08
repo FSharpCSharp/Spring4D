@@ -1339,9 +1339,12 @@ type
   private
     fValue: T;
     fHasValue: string;
-    class var fComparer: IEqualityComparer<T>;
+    class var
+      fComparer: IEqualityComparer<T>;
+      fEquals: function(const left, right: T): Boolean;
     class function EqualsComparer(const left, right: T): Boolean; static;
     class function EqualsInternal(const left, right: T): Boolean; static; inline;
+    class procedure InitEquals; static;
     function GetValue: T; inline;
     function GetHasValue: Boolean; inline;
   public
@@ -2730,6 +2733,8 @@ function DynArrayHigh(const A: Pointer): NativeInt; inline;
 
 procedure FreeObject(const item); inline;
 
+function GetEqualsOperator(const typeInfo: PTypeInfo): TRttiMethod;
+
   {$ENDREGION}
 
 
@@ -3467,6 +3472,32 @@ end;
 procedure FreeObject(const item);
 begin
   TObject(item).{$IFNDEF AUTOREFCOUNT}Free{$ELSE}DisposeOf{$ENDIF};
+end;
+
+function GetEqualsOperator(const typeInfo: PTypeInfo): TRttiMethod;
+const
+  EqualsOperatorName = '&op_Equality';
+var
+  method: TRttiMethod;
+  parameters: TArray<TRttiParameter>;
+  typeSize: Integer;
+begin
+  for method in TType.GetType(typeInfo).GetMethods(EqualsOperatorName) do
+  begin
+    if method.MethodKind <> mkOperatorOverload then
+      Continue;
+    if method.CallingConvention <> ccReg then
+      Continue;
+    parameters := method.GetParameters;
+    typeSize := GetTypeSize(typeInfo);
+    if (Length(parameters) = 2)
+      and (parameters[0].ParamType.Handle = typeInfo) and (parameters[1].ParamType.Handle = typeInfo)
+      and (pfConst in parameters[0].Flags) and (pfConst in parameters[1].Flags)
+      and ((typeSize <= SizeOf(Pointer)) xor (pfReference in parameters[0].Flags))
+      and ((typeSize <= SizeOf(Pointer)) xor (pfReference in parameters[1].Flags)) then
+      Exit(method);
+  end;
+  Result := nil;
 end;
 
 {$ENDREGION}
@@ -4589,25 +4620,17 @@ function EqualsRec2Rec(const left, right: TValue): Boolean;
   end;
 
 var
-  recordType: TRttiType;
   method: TRttiMethod;
-  parameters: TArray<TRttiParameter>;
 begin
   if (left.TypeInfo = TypeInfo(TValue)) and (right.TypeInfo = TypeInfo(TValue)) then
     Exit(PValue(left.GetReferenceToRawData).Equals(
       PValue(right.GetReferenceToRawData)^));
 
-  recordType := left.TypeInfo.RttiType;
-  for method in recordType.GetMethods('&op_Equality') do
-  begin
-    parameters := method.GetParameters;
-    if (Length(parameters) = 2)
-      and (parameters[0].ParamType.Handle = left.TypeInfo)
-      and (parameters[1].ParamType.Handle = right.TypeInfo) then
-      Exit(method.Invoke(nil, [left, right]).AsBoolean);
-  end;
-
-  Result := RawEquals(recordType);
+  method := GetEqualsOperator(left.TypeInfo);
+  if Assigned(method) then
+    Result := method.Invoke(nil, [left, right]).AsBoolean
+  else
+    Result := RawEquals(left.TypeInfo.RttiType);
 end;
 
 function EqualsDynArray2DynArray(const left, right: TValue): Boolean;
@@ -6863,10 +6886,22 @@ begin
     Result := defaultValue;
 end;
 
+class procedure Nullable<T>.InitEquals;
+var
+  method: TRttiMethod;
+begin
+  method := GetEqualsOperator(TypeInfo(T));
+  if Assigned(method) then
+    fEquals := method.CodeAddress;
+  if not Assigned(fEquals) then
+  begin
+    fComparer := TEqualityComparer<T>.Default;
+    fEquals := Nullable<T>.EqualsComparer;
+  end;
+end;
+
 class function Nullable<T>.EqualsComparer(const left, right: T): Boolean;
 begin
-  if not Assigned(fComparer) then
-    fComparer := TEqualityComparer<T>.Default;
   Result := fComparer.Equals(left, right);
 end;
 
@@ -6910,7 +6945,9 @@ begin
     tkInt64: Result := PInt64(@left)^ = PInt64(@right)^;
     tkUString: Result := PUnicodeString(@left)^ = PUnicodeString(@right)^;
   else
-    Result := EqualsComparer(left, right);
+    if not Assigned(fEquals) then
+      InitEquals;
+    Result := fEquals(left, right)
   end;
 end;
 

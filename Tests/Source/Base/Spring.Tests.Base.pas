@@ -96,6 +96,17 @@ type
     procedure TestFromVariantFmtBcd;
   end;
 
+  TCustomRecord = record
+    x, y: Byte;
+    constructor Create(x, y: Integer);
+    class operator Equal(const left, right: TCustomRecord): Boolean;
+  end;
+
+  TTestNullableCustomRecord = class(TTestCase)
+  published
+    procedure TestEqualsUsingOperatorOverload;
+  end;
+
   TTestGuard = class(TTestCase)
   published
     procedure TestIsNullReference;
@@ -772,6 +783,39 @@ begin
   v := fBoolean.ToVariant;
 {$ENDIF}
   CheckTrue(v);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCustomRecord'}
+
+constructor TCustomRecord.Create(x, y: Integer);
+begin
+  Self.x := x;
+  Self.y := y;
+end;
+
+class operator TCustomRecord.Equal(const left, right: TCustomRecord): Boolean;
+begin
+  Result := (left.x = right.y) and (left.y = right.x);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestNullableCustomRecord'}
+
+procedure TTestNullableCustomRecord.TestEqualsUsingOperatorOverload;
+var
+  x, y: Nullable<TCustomRecord>;
+begin
+  x := TCustomRecord.Create(1, 2);
+  y := TCustomRecord.Create(1, 2);
+  CheckFalse(x = y);
+
+  y := TCustomRecord.Create(2, 1);
+  CheckTrue(x = y);
 end;
 
 {$ENDREGION}
