@@ -584,6 +584,8 @@
   HAS_UNIT_VCL_THEMES            Unit Vcl.Themes is available (D16+)
   HAS_UNIT_UXTHEME               Unit (Vcl.)UxTheme is available (D7+)
   HAS_EXCEPTION_STACKTRACE       Exception class has the StackTrace propery (D12+)
+  SUPPORTS_LEGACYIFEND           Compiler supports the LEGACYIFEND directive (D17+)
+  DEPRECATED_TCHARACTER          TCharacter is deprecated and replaced by a record helper on Char (D18+)
 
 
 - Compiler Settings
@@ -629,7 +631,7 @@
 
 {$IFDEF BORLAND}
   {$IFDEF LINUX}
-    {$IFDEF CPUX86}
+    {$IFDEF VER140} // Only under Delphi 6, LINUX implies Kylix
       {$DEFINE KYLIX}
     {$ENDIF}
   {$ENDIF LINUX}
@@ -1045,7 +1047,6 @@
         {$DEFINE BCB25}
       {$ELSE}
         {$DEFINE DELPHI25}
-        {$DEFINE DELPHIX_TOKYO} // synonym to DELPHI25
         {$DEFINE DELPHICOMPILER25}
       {$ENDIF BCB}
       {$DEFINE RTL320_UP}
@@ -1683,6 +1684,10 @@
   {$DEFINE USE_64BIT_TYPES}
 {$ENDIF COMPILER16_UP}
 
+{$IFDEF COMPILER17_UP}
+  {$DEFINE SUPPORTS_LEGACYIFEND}
+{$ENDIF COMPILER17_UP}
+
 {$IFDEF RTL130_UP}
   {$DEFINE HAS_UNIT_CONTNRS}
 {$ENDIF RTL130_UP}
@@ -1740,6 +1745,7 @@
 
 {$IFDEF RTL250_UP}
   {$DEFINE DEPRECATED_SYSUTILS_ANSISTRINGS}
+  {$DEFINE DEPRECATED_TCHARACTER}
 {$ENDIF RTL250_UP}
 
 {$IFDEF RTL270_UP}
