@@ -91,7 +91,9 @@ type
     function TryGetLast(out value: T): Boolean; overload;
     function TryGetSingle(out value: T): Boolean; overload;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount;
+    property Items[index: Integer]: T read GetItem write SetItem; default;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
     constructor Create(const values: array of T); overload;
