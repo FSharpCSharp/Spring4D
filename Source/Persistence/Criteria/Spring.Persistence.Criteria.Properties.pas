@@ -43,6 +43,9 @@ type
     fPropertyName: string;
     fEntityClass: TClass;
     fMemberPath: string;
+    function GetEntityClass: TClass;
+    function GetMemberPath: string;
+    function GetPropertyName: string;
   protected
     function Eq(const value: TValue): ICriterion;
     function NotEq(const value: TValue): ICriterion;
@@ -74,18 +77,8 @@ type
     function LeProperty(const otherPropertyName: string): ICriterion; overload;
     function LtProperty(const other: IProperty): ICriterion; overload;
     function LtProperty(const otherPropertyName: string): ICriterion; overload;
-
-    function GetEntityClass: TClass;
-    function GetPropertyName: string;
-    procedure SetEntityClass(value: TClass);
-    procedure SetPropertyName(const value: string);
-    function GetMemberPath: string;
   public
     constructor Create(const propertyName: string; entityClass: TClass = nil; const memberPath: string = '');
-
-    property EntityClass: TClass read GetEntityClass;
-    property MemberPath: string read GetMemberPath;
-    property PropertyName: string read GetPropertyName write SetPropertyName;
   end;
 
   /// <summary>
@@ -179,72 +172,74 @@ end;
 function TProperty.Asc: IOrderBy;
 begin
   Result := TOrderBy.Asc(fPropertyName);
-  Result.SetEntityClass(GetEntityClass);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.Between(const low, high: TValue): ICriterion;
 begin
-  Result := Restrictions.Between(PropertyName, low, high);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result := Restrictions.Between(fPropertyName, low, high);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.Desc: IOrderBy;
 begin
   Result := TOrderBy.Desc(fPropertyName);
-  Result.SetEntityClass(GetEntityClass);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.Eq(const value: TValue): ICriterion;
 begin
   Result := Restrictions.Eq(fPropertyName, value);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.EqProperty(const otherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, otherPropertyName, woEqual,
+    fPropertyName, otherPropertyName, woEqual,
     TSQLTable.CreateFromClass(fEntityClass), nil);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.EqProperty(const other: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, other.PropertyName, woEqual,
+    fPropertyName, other.PropertyName, woEqual,
     TSQLTable.CreateFromClass(fEntityClass),
     TSQLTable.CreateFromClass(other.EntityClass));
-  Result.SetEntityClass(EntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.GeProperty(const otherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, otherPropertyName, woMoreOrEqual,
+    fPropertyName, otherPropertyName, woMoreOrEqual,
     TSQLTable.CreateFromClass(fEntityClass), nil);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.GeProperty(const other: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, other.GetPropertyName, woMoreOrEqual,
+    fPropertyName, other.PropertyName, woMoreOrEqual,
     TSQLTable.CreateFromClass(fEntityClass),
-    TSQLTable.CreateFromClass(other.GetEntityClass));
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+    TSQLTable.CreateFromClass(other.EntityClass));
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.GEq(const value: TValue): ICriterion;
 begin
   Result := Restrictions.GEq(fPropertyName, value);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.GetEntityClass: TClass;
@@ -265,173 +260,163 @@ end;
 function TProperty.Gt(const value: TValue): ICriterion;
 begin
   Result := Restrictions.Gt(fPropertyName, value);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.GtProperty(const other: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, other.GetPropertyName, woMore,
+    fPropertyName, other.PropertyName, woMore,
     TSQLTable.CreateFromClass(fEntityClass),
-    TSQLTable.CreateFromClass(other.GetEntityClass));
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+    TSQLTable.CreateFromClass(other.EntityClass));
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.GtProperty(const otherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, otherPropertyName, woMore,
+    fPropertyName, otherPropertyName, woMore,
     TSQLTable.CreateFromClass(fEntityClass), nil);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.&In(const value: TArray<Integer>): ICriterion;
 begin
   Result := Restrictions.In<Integer>(fPropertyName, value);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.&In(const value: TArray<string>; ignoreCase: Boolean): ICriterion;
 begin
   Result := Restrictions.In<string>(fPropertyName, value, ignoreCase);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.IsNotNull: ICriterion;
 begin
   Result := Restrictions.IsNotNull(fPropertyName);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.IsNull: ICriterion;
 begin
   Result := Restrictions.IsNull(fPropertyName);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.LeProperty(const other: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, other.GetPropertyName, woLessOrEqual,
+    fPropertyName, other.PropertyName, woLessOrEqual,
     TSQLTable.CreateFromClass(fEntityClass),
-    TSQLTable.CreateFromClass(other.GetEntityClass));
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+    TSQLTable.CreateFromClass(other.EntityClass));
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.LeProperty(const otherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, otherPropertyName, woLessOrEqual,
+    fPropertyName, otherPropertyName, woLessOrEqual,
     TSQLTable.CreateFromClass(fEntityClass), nil);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.LEq(const value: TValue): ICriterion;
 begin
   Result := Restrictions.LEq(fPropertyName, value);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.Like(const value: string; matchMode: TMatchMode;
   ignoreCase: Boolean): ICriterion;
 begin
   Result := Restrictions.Like(fPropertyName, value, matchMode, ignoreCase);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.Lt(const value: TValue): ICriterion;
 begin
   Result := Restrictions.Lt(fPropertyName, value);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.LtProperty(const otherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, otherPropertyName, woLess,
+    fPropertyName, otherPropertyName, woLess,
     TSQLTable.CreateFromClass(fEntityClass), nil);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.LtProperty(const other: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, other.GetPropertyName, woLess,
+    fPropertyName, other.PropertyName, woLess,
     TSQLTable.CreateFromClass(fEntityClass),
-    TSQLTable.CreateFromClass(other.GetEntityClass));
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+    TSQLTable.CreateFromClass(other.EntityClass));
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.NeProperty(const other: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, other.GetPropertyName, woNotEqual,
+    fPropertyName, other.PropertyName, woNotEqual,
     TSQLTable.CreateFromClass(fEntityClass),
-    TSQLTable.CreateFromClass(other.GetEntityClass));
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+    TSQLTable.CreateFromClass(other.EntityClass));
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.NeProperty(const otherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(
-    PropertyName, otherPropertyName, woNotEqual,
+    fPropertyName, otherPropertyName, woNotEqual,
     TSQLTable.CreateFromClass(fEntityClass), nil);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.NotEq(const value: TValue): ICriterion;
 begin
   Result := Restrictions.NotEq(fPropertyName, value);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.NotIn(const value: TArray<Integer>): ICriterion;
 begin
   Result := Restrictions.NotIn<Integer>(fPropertyName, value);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.NotIn(const value: TArray<string>; ignoreCase: Boolean): ICriterion;
 begin
   Result := Restrictions.NotIn<string>(fPropertyName, value, ignoreCase);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 function TProperty.NotLike(const value: string; matchMode: TMatchMode;
   ignoreCase: Boolean): ICriterion;
 begin
   Result := Restrictions.NotLike(fPropertyName, value, matchMode, ignoreCase);
-  Result.SetEntityClass(GetEntityClass);
-  Result.SetMemberPath(GetMemberPath);
-end;
-
-procedure TProperty.SetEntityClass(value: TClass);
-begin
-  fEntityClass := value;
-end;
-
-procedure TProperty.SetPropertyName(const Value: string);
-begin
-  fPropertyName := Value;
+  Result.EntityClass := fEntityClass;
+  Result.MemberPath := fMemberPath;
 end;
 
 {$ENDREGION}
