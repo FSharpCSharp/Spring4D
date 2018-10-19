@@ -58,7 +58,7 @@ type
       TItem = TDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
@@ -90,7 +90,7 @@ type
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TRefCountedObject, IEnumerator<TKey>)
+      TKeyEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
@@ -123,7 +123,7 @@ type
       {$ENDREGION}
       end;
 
-      TValueEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
+      TValueEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
@@ -295,7 +295,7 @@ type
         IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
       private type
       {$REGION 'Nested Types'}
-        TEnumerator = class(TRefCountedObject, IEnumerator<TValueKeyPair>)
+        TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValueKeyPair>)
         private
           {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
           fSource: TBidiDictionary<TKey, TValue>;
@@ -393,7 +393,7 @@ type
       {$ENDREGION}
       end;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -426,7 +426,7 @@ type
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TRefCountedObject, IEnumerator<TKey>)
+      TKeyEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -459,7 +459,7 @@ type
       {$ENDREGION}
       end;
 
-      TValueEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
+      TValueEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -608,7 +608,7 @@ type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
       PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
@@ -641,7 +641,7 @@ type
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TRefCountedObject, IEnumerator<TKey>)
+      TKeyEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
@@ -674,7 +674,7 @@ type
       {$ENDREGION}
       end;
 
-      TValueEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
+      TValueEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;

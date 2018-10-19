@@ -65,14 +65,14 @@ type
   /// <typeparam name="T">
   ///   The type of elements in the hash set.
   /// </typeparam>
-  THashSet<T> = class(TSetBase<T>, IEnumerable<T>,
+  THashSet<T> = class(TSetBase<T>, IInterface, IEnumerable<T>,
     IReadOnlyCollection<T>, ICollection<T>, ISet<T>)
   private
   {$REGION 'Nested Types'}
     type
       TItem = THashSetItem<T>;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: THashSet<T>;
@@ -142,13 +142,13 @@ type
   {$ENDREGION}
   end;
 
-  TSortedSet<T> = class(TSetBase<T>, IEnumerable<T>,
+  TSortedSet<T> = class(TSetBase<T>, IInterface, IEnumerable<T>,
     IReadOnlyCollection<T>, ICollection<T>, ISet<T>)
   private
   {$REGION 'Nested Types'}
     type
       PNode = TNodes<T>.PRedBlackTreeNode;
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedSet<T>;

@@ -43,12 +43,12 @@ uses
   Spring.TestUtils;
 
 type
-  TThrowingEnumerable = class sealed(TEnumerableBase<Integer>, IEnumerable<Integer>)
+  TThrowingEnumerable = class sealed(TEnumerableBase<Integer>, IInterface, IEnumerable<Integer>)
   public
     function GetEnumerator: IEnumerator<Integer>;
   end;
 
-  TNonEnumerableList<T> = class(TAbstractArrayList<T>, IEnumerable<T>,
+  TNonEnumerableList<T> = class(TAbstractArrayList<T>, IInterface, IEnumerable<T>,
     IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
   protected
     function AsReadOnly: IReadOnlyList<T>;

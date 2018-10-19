@@ -216,7 +216,7 @@ type
     function GetHashCode(const value: T): Integer; reintroduce;
   end;
 
-  TIterator<T> = class abstract(TEnumerableBase<T>, IEnumerator<T>)
+  TIterator<T> = class abstract(TEnumerableBase<T>, IInterface, IEnumerator<T>)
   private
     fCurrent: T;
     fInitialThreadId: TThreadID;
@@ -323,7 +323,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TCircularArrayBuffer<T>;
@@ -2316,7 +2316,7 @@ begin
       if IID = IInterfaceList then
         Exit(inherited QueryInterface(IList<IInterface>, Obj));
   end;
-  Result := inherited QueryInterface(IID, Obj);
+    Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TListBase<T>.Add(const item: T): Boolean;

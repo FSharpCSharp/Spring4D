@@ -44,7 +44,7 @@ type
       TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
       TMultiMapEntry = TMultiMapEntry<TKey, TValue>;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TMultiMapBase<TKey, TValue>;
@@ -58,7 +58,7 @@ type
         function MoveNext: Boolean;
       end;
 
-      TValueEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
+      TValueEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TMultiMapBase<TKey, TValue>;
@@ -91,7 +91,7 @@ type
       {$ENDREGION}
       end;
 
-      TEntryEnumerator = class(TRefCountedObject, IEnumerator<TMultiMapEntry>)
+      TEntryEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TMultiMapEntry>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TMultiMapBase<TKey, TValue>;
@@ -135,7 +135,7 @@ type
         function ToArray: TArray<TValue>;
       end;
 
-      TWrappedEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
+      TWrappedEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TWrappedCollection;

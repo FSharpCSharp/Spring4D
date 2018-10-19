@@ -39,8 +39,8 @@ uses
   Spring.Collections.Lists;
 
 type
-  TEmptyEnumerable<T> = class(TEnumerableBase<T>, IEnumerator<T>, IEnumerable<T>,
-    IReadOnlyCollection<T>, IReadOnlyList<T>)
+  TEmptyEnumerable<T> = class(TEnumerableBase<T>, IInterface, IEnumerator<T>,
+    IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
     class var fInstance: IReadOnlyList<T>;
     class function GetInstance: IReadOnlyList<T>; static;
@@ -110,7 +110,7 @@ type
   ///   The adapter implementation for <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />
   ///    .
   /// </summary>
-  TEnumeratorAdapter<T> = class(TRefCountedObject, IEnumerator<T>)
+  TEnumeratorAdapter<T> = class(TRefCountedObject, IInterface, IEnumerator<T>)
   private
     type
       TGenericEnumerable = Generics.Collections.TEnumerable<T>;
@@ -130,7 +130,7 @@ type
   ///   The adapter implementation for <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
   ///   .
   /// </summary>
-  TEnumerableAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>)
+  TEnumerableAdapter<T> = class(TEnumerableBase<T>, IInterface, IEnumerable<T>)
   private
     type
       TGenericEnumerable = Generics.Collections.TEnumerable<T>;
@@ -430,7 +430,7 @@ type
     IEnumerable<IGrouping<TKey, TElement>>)
   private
     type
-      TEnumerator = class(TRefCountedObject, IEnumerator<IGrouping<TKey, TElement>>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<IGrouping<TKey, TElement>>)
       private
         fSource: IEnumerable<TSource>;
         fKeySelector: Func<TSource, TKey>;
@@ -464,13 +464,13 @@ type
   end;
 
   TGroupedEnumerable<TSource, TKey, TElement, TResult> = class(
-    TEnumerableBase<TResult>, IEnumerable<TResult>)
+    TEnumerableBase<TResult>, IInterface, IEnumerable<TResult>)
   private
     type
-      TEnumerator = class(TRefCountedObject, IEnumerator<TResult>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TResult>)
       private
         fSource: IEnumerator<IGrouping<TKey, TElement>>;
-        fResultSelector: Func<TKey, Ienumerable<TElement>, TResult>;
+        fResultSelector: Func<TKey, IEnumerable<TElement>, TResult>;
         function GetCurrent: TResult;
       public
         constructor Create(const source: IEnumerator<IGrouping<TKey, TElement>>;
@@ -525,7 +525,7 @@ type
         constructor Create; reintroduce;
       end;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<IGrouping<TKey, TElement>>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<IGrouping<TKey, TElement>>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TLookup<TKey, TElement>;
@@ -737,7 +737,7 @@ type
   TOrderedEnumerable<T> = class(TEnumerableBase<T>, IEnumerable<T>)
   private
     type
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
       private
         fBuffer: TArray<T>;
         fMap: TIntegerDynArray;

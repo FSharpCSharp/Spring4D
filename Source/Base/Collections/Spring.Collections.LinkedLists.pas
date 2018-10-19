@@ -42,11 +42,11 @@ type
   /// <typeparam name="T">
   ///   Specifies the element type of the linked list.
   /// </typeparam>
-  TLinkedList<T> = class(TCollectionBase<T>, IEnumerable<T>,
+  TLinkedList<T> = class(TCollectionBase<T>, IInterface, IEnumerable<T>,
     ICollection<T>, IReadOnlyCollection<T>, ILinkedList<T>)
   private
     type
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
       private
         fList: TLinkedList<T>;
         fVersion: Integer;
