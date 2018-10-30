@@ -1788,27 +1788,32 @@ type
   strict private
     fValue: T;
     fFinalizer: IInterface;
-    class function GetNew: IShared<T>; static;
+    class function GetMake: IShared<T>; static;
   public
-    class operator Implicit(const value: T): Shared<T>;
+    class operator Implicit(const value: IShared<T>): Shared<T>;
+    class operator Implicit(const value: Shared<T>): IShared<T>;
     class operator Implicit(const value: Shared<T>): T; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
+    class operator Implicit(const value: T): Shared<T>;
     property Value: T read fValue;
 
-    class property New: IShared<T> read GetNew;
+    class property Make: IShared<T> read GetMake;
   end;
 
   Shared = record
   private type
-    TObjectFinalizer = class(TInterfacedObject, IShared<TObject>)
+    PObjectFinalizer = ^TObjectFinalizer;
+    TObjectFinalizer = record
     private
-      fValue: TObject;
+      Vtable: Pointer;
+      RefCount: Integer;
+      Value: TObject;
+      function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
       function Invoke: TObject;
     public
-      constructor Create(typeInfo: PTypeInfo); overload;
-      constructor Create(const value: TObject); overload;
-    {$IFNDEF AUTOREFCOUNT}
-      destructor Destroy; override;
-    {$ENDIF}
+      class function Create(typeInfo: PTypeInfo): PObjectFinalizer; overload; static;
+      class function Create(const value: TObject): PObjectFinalizer; overload; static;
     end;
 
     TRecordFinalizer = class(TInterfacedObject, IShared<Pointer>)
@@ -1831,9 +1836,20 @@ type
       constructor Create(const value: T; finalizer: TAction<T>);
       destructor Destroy; override;
     end;
+
+  const
+    ObjectFinalizerVtable: array[0..3] of Pointer =
+    (
+      @TObjectFinalizer.QueryInterface,
+      @TObjectFinalizer._AddRef,
+      @TObjectFinalizer._Release,
+      @TObjectFinalizer.Invoke
+    );
+  private
+    class procedure Make(const value: TObject; var result: PObjectFinalizer); overload; static; inline;
   public
-    class function New<T>(const value: T): IShared<T>; overload; static;
-    class function New<T>(const value: T; const finalizer: TAction<T>): IShared<T>; overload; static;
+    class function Make<T>(const value: T): IShared<T>; overload; static;
+    class function Make<T>(const value: T; const finalizer: TAction<T>): IShared<T>; overload; static;
   end;
 
   {$ENDREGION}
@@ -7490,6 +7506,30 @@ end;
 
 {$REGION 'Shared<T>'}
 
+class function Shared<T>.GetMake: IShared<T>;
+begin
+  case TType.Kind<T> of
+    tkClass: IShared<TObject>(Result) := IShared<TObject>(Shared.TObjectFinalizer.Create(TypeInfo(T)));
+    tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(TypeInfo(T));
+  end;
+end;
+
+class operator Shared<T>.Implicit(const value: IShared<T>): Shared<T>;
+begin
+  Result.fValue := value();
+  IShared<T>(Result.fFinalizer) := value;
+end;
+
+class operator Shared<T>.Implicit(const value: Shared<T>): IShared<T>;
+begin
+  Result := IShared<T>(value.fFinalizer);
+end;
+
+class operator Shared<T>.Implicit(const value: Shared<T>): T;
+begin
+  Result := value.fValue;
+end;
+
 class operator Shared<T>.Implicit(const value: T): Shared<T>;
 begin
   Result.fValue := value;
@@ -7499,7 +7539,7 @@ begin
       if PPointer(@value)^ = nil then
         Result.fFinalizer := nil
       else
-        Result.fFinalizer := Shared.TObjectFinalizer.Create(PObject(@value)^);
+        Result.fFinalizer := IInterface(Shared.TObjectFinalizer.Create(PObject(@value)^));
 {$ENDIF}
     tkPointer:
       if PPointer(@value)^ = nil then
@@ -7509,33 +7549,33 @@ begin
   end;
 end;
 
-class function Shared<T>.GetNew: IShared<T>;
-begin
-  case TType.Kind<T> of
-    tkClass: IShared<TObject>(Result) := Shared.TObjectFinalizer.Create(TypeInfo(T));
-    tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(TypeInfo(T));
-  end;
-end;
-
-class operator Shared<T>.Implicit(const value: Shared<T>): T;
-begin
-  Result := value.fValue;
-end;
-
 {$ENDREGION}
 
 
 {$REGION 'Shared'}
 
-class function Shared.New<T>(const value: T): IShared<T>;
+class procedure Shared.Make(const value: TObject; var result: PObjectFinalizer);
+begin
+  if Assigned(result) and (AtomicDecrement(result.RefCount) = 0) then
+    result.Value.Free
+  else
+  begin
+    GetMem(result, SizeOf(TObjectFinalizer));
+    result.Vtable := @Shared.ObjectFinalizerVtable;
+  end;
+  result.RefCount := 1;
+  result.Value := value;
+end;
+
+class function Shared.Make<T>(const value: T): IShared<T>;
 begin
   case TType.Kind<T> of
-    tkClass: IShared<TObject>(Result) := Shared.TObjectFinalizer.Create(PObject(@value)^);
+    tkClass: Make(PObject(@value)^, PObjectFinalizer(Result));
     tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(PPointer(@value)^, TypeInfo(T));
   end;
 end;
 
-class function Shared.New<T>(const value: T;
+class function Shared.Make<T>(const value: T;
   const finalizer: TAction<T>): IShared<T>;
 begin
   Result := THandleFinalizer<T>.Create(value, finalizer);
@@ -7546,29 +7586,43 @@ end;
 
 {$REGION 'Shared.TObjectFinalizer'}
 
-constructor Shared.TObjectFinalizer.Create(typeInfo: PTypeInfo);
+class function Shared.TObjectFinalizer.Create(const value: TObject): PObjectFinalizer;
 begin
-  inherited Create;
-  fValue := TActivator.CreateInstance(typeInfo.TypeData.ClassType);
+  GetMem(Result, SizeOf(TObjectFinalizer));
+  Result.Vtable := @Shared.ObjectFinalizerVtable;
+  Result.RefCount := 0;
+  Result.Value := value;
 end;
 
-constructor Shared.TObjectFinalizer.Create(const value: TObject);
+class function Shared.TObjectFinalizer.Create(
+  typeInfo: PTypeInfo): PObjectFinalizer;
 begin
-  inherited Create;
-  fValue := value;
+  Result := Create(TActivator.CreateInstance(typeInfo.TypeData.ClassType));
 end;
 
-{$IFNDEF AUTOREFCOUNT}
-destructor Shared.TObjectFinalizer.Destroy;
+function Shared.TObjectFinalizer.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  fValue.Free;
-  inherited;
+  Result := E_NOINTERFACE;
 end;
-{$ENDIF}
+
+function Shared.TObjectFinalizer._AddRef: Integer;
+begin
+  Result := AtomicIncrement(RefCount);
+end;
+
+function Shared.TObjectFinalizer._Release: Integer;
+begin
+  Result := AtomicDecrement(RefCount);
+  if Result = 0 then
+  begin
+    Value.Free;
+    FreeMem(@Self);
+  end;
+end;
 
 function Shared.TObjectFinalizer.Invoke: TObject;
 begin
-  Result := fValue;
+  Result := Value;
 end;
 
 {$ENDREGION}

@@ -2406,7 +2406,7 @@ procedure TTestShared.TestInterfaceType_Instance_Gets_Created;
 var
   p: IShared<TTestClass>;
 begin
-  p := Shared<TTestClass>.New;
+  p := Shared<TTestClass>.Make;
   CheckTrue(p.CreateCalled);
 end;
 
@@ -2416,7 +2416,7 @@ var
   t: TTestClass;
   destroyCalled: Boolean;
 begin
-  p := Shared<TTestClass>.New;
+  p := Shared<TTestClass>.Make;
   t := p;
   t.DestroyCalled := @destroyCalled;
 {$IFDEF AUTOREFCOUNT}
@@ -2435,7 +2435,7 @@ var
 begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
-  p := Shared.New<TTestClass>(t);
+  p := Shared.Make<TTestClass>(t);
 {$IFDEF AUTOREFCOUNT}
   t := nil;
 {$ENDIF}
@@ -2493,7 +2493,7 @@ procedure TTestShared.TestRecordType_Manage_Typed_Pointer;
 var
   p: IShared<PMyRecord>;
 begin
-  p := Shared<PMyRecord>.New;
+  p := Shared<PMyRecord>.Make;
   p.x := 11;
   p.y := 22;
   p.s := 'Hello World';
