@@ -8,6 +8,7 @@ New feature:
 Breaking changes:
 
 - return TEnumerable.Empty for non existing keys in multimap
+- renamed Shared.New to Shared.Make
 
 
 Fixed bugs:
@@ -21,11 +22,17 @@ Fixed bugs:
 - missing overload on Contains method in IMap is causing inherited Contains method to be hidden
 - TEnumerableBase<T>.SingleOrDefault was returning Default(T) rather than defaultValue in the case there were no items
 - Exception when using IList<T> where T is a method pointer (#294)
+- fixed issue in TValue conversion string to array when string contained spaces
+- fixed bug in SHA512 (#303)
 
 
 Improvements:
 
 - added item of TSortedList<T>.Add is passed as right to comparer like TArray.BinarySearch does it
+- allow mock to use conversion for results instead of being strictly typesafe
+- added nested transaction support for FireDAC (#298)
+- improved TValue.TryConvert to avoid calling TFormatSettings.Create every time (#302)
+- added TValue conversion for dynamic arrays
 
 
 Release 1.2.1 - 02.02.2018
