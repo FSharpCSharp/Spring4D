@@ -177,6 +177,9 @@ type
 
 implementation
 
+uses
+  Spring.Logging.ResourceStrings;
+
 
 {$REGION 'Internal test classes and helpers'}
 

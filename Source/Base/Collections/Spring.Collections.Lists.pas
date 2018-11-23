@@ -967,6 +967,9 @@ begin
   Guard.CheckRange((newIndex >= 0) and (newIndex < Count), 'newIndex');
 {$ENDIF}
 
+  if currentIndex = newIndex then
+    Exit;
+
   temp := fItems[currentIndex];
 
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
