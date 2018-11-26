@@ -1797,6 +1797,7 @@ type
     property Value: T read fValue;
 
     class property Make: IShared<T> read GetMake;
+    class function New: IShared<T>; static; deprecated 'use Shared<T>.Make';
   end;
 
   Shared = record
@@ -1850,6 +1851,9 @@ type
   public
     class function Make<T>(const value: T): IShared<T>; overload; static;
     class function Make<T>(const value: T; const finalizer: TAction<T>): IShared<T>; overload; static;
+
+    class function New<T>(const value: T): IShared<T>; overload; static; deprecated 'use Shared.Make';
+    class function New<T>(const value: T; const finalizer: TAction<T>): IShared<T>; overload; static; deprecated 'use Shared.Make';
   end;
 
   {$ENDREGION}
@@ -7577,6 +7581,11 @@ begin
   end;
 end;
 
+class function Shared<T>.New: IShared<T>;
+begin
+  Result := GetMake();
+end;
+
 {$ENDREGION}
 
 
@@ -7607,6 +7616,17 @@ class function Shared.Make<T>(const value: T;
   const finalizer: TAction<T>): IShared<T>;
 begin
   Result := THandleFinalizer<T>.Create(value, finalizer);
+end;
+
+class function Shared.New<T>(const value: T): IShared<T>;
+begin
+  Result := Make<T>(value);
+end;
+
+class function Shared.New<T>(const value: T;
+  const finalizer: TAction<T>): IShared<T>;
+begin
+  Result := Make<T>(value, finalizer);
 end;
 
 {$ENDREGION}
