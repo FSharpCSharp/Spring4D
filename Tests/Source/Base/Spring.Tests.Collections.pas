@@ -2106,9 +2106,9 @@ procedure TTestDequeOfInteger.TestDequeGrowth;
 var
   i, value, expected: Integer;
 begin
-  value := 0;
+  value := 1;
 
-  for i := 0 to MaxItems - 1 do
+  for i := 1 to MaxItems do
   begin
     SUT.AddFirst(value);
     SUT.AddFirst(value + 1);
@@ -2117,7 +2117,7 @@ begin
     Inc(value, 2);
   end;
 
-  for i := 0 to MaxItems - 1 do
+  for i := 1 to MaxItems do
   begin
     SUT.AddLast(value);
     SUT.AddLast(value + 1);
@@ -2127,7 +2127,7 @@ begin
   end;
 
   expected := value - 2;
-  for i := 0 to MaxItems - 1 do
+  for i := 1 to MaxItems do
   begin
     SUT.AddFirst(value);
     SUT.AddFirst(value + 1);

@@ -336,14 +336,17 @@ type
         function MoveNext: Boolean;
       end;
       ItemType = TArrayManager<T>;
+      PT = ^T;
   {$ENDREGION}
   strict private
     fOnChanged: TCollectionChangedEventImpl<T>;
     fItems: TArray<T>;
+    fCapacity: Integer;
     fCount: Integer;
     fVersion: Integer;
     fHead: Integer;
     fTail: Integer;
+    function GetTail: PT; inline;
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
@@ -365,7 +368,7 @@ type
     property Count: Integer read GetCount;
     property Items: TArray<T> read fItems;
     property Head: Integer read fHead;
-    property Tail: Integer read fTail;
+    property Tail: PT read GetTail;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
     constructor Create; override;
@@ -1960,7 +1963,7 @@ end;
 
 function TCircularArrayBuffer<T>.GetCapacity: Integer;
 begin
-  Result := DynArrayLength(fItems);
+  Result := fCapacity;
 end;
 
 function TCircularArrayBuffer<T>.GetCount: Integer;
@@ -1988,64 +1991,98 @@ begin
   Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
 end;
 
+function TCircularArrayBuffer<T>.GetTail: PT;
+var
+  index: Integer;
+begin
+  index := fTail;
+  if index > 0 then
+    Result := @fItems[index - 1]
+  else
+    Result := @fItems[fCapacity - 1];
+end;
+
 procedure TCircularArrayBuffer<T>.AddToHead(const item: T);
+var
+  index: Integer;
 begin
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount);
-  if fHead > 0 then
-    Dec(fHead)
-  else
-    fHead := DynArrayHigh(fItems);
-  fItems[fHead] := item;
+
+  index := fHead;
+  if index = 0 then
+    index := fCapacity;
+  Dec(index);
+  fItems[index] := item;
+  fHead := index;
+
   DoNotify(item, caAdded);
 end;
 
 procedure TCircularArrayBuffer<T>.AddToTail(const item: T);
+var
+  index: Integer;
 begin
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount);
-  if fTail < DynArrayHigh(fItems) then
-    Inc(fTail)
-  else
-    fTail := 0;
-  fItems[fTail] := item;
+
+  index := fTail;
+  fItems[index] := item;
+  Inc(index);
+  if index = fCapacity then
+    index := 0;
+  fTail := index;
   DoNotify(item, caAdded);
 end;
 
 procedure TCircularArrayBuffer<T>.DeleteFromHead(action: TCollectionChangedAction);
+var
+  index: Integer;
+  item: PT;
 begin
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Dec(fCount);
-  DoNotify(fItems[fHead], action);
+
+  index := fHead;
+  item := @fItems[index];
+  Inc(index);
+  if index = fCapacity then
+    index := 0;
+  fHead := index;
+
+  DoNotify(item^, action);
   if OwnsObjects and (action = caRemoved) then
-    FreeObject(fItems[fHead]);
-  fItems[fHead] := Default(T);
-  if fHead < DynArrayHigh(fItems) then
-    Inc(fHead)
-  else
-    fHead := 0;
+    FreeObject(item^);
+  item^ := Default(T);
 end;
 
 procedure TCircularArrayBuffer<T>.DeleteFromTail(action: TCollectionChangedAction);
+var
+  index: Integer;
+  item: PT;
 begin
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Dec(fCount);
-  DoNotify(fItems[fTail], action);
+
+  index := fTail;
+  if index = 0 then
+    index := fCapacity;
+  Dec(index);
+  item := @fItems[index];
+  fTail := index;
+
+  DoNotify(item^, action);
   if OwnsObjects and (action = caRemoved) then
-    FreeObject(fItems[fTail]);
-  fItems[fTail] := Default(T);
-  if fTail > 0 then
-    Dec(fTail)
-  else
-    fTail := DynArrayHigh(fItems);
+    FreeObject(item^);
+  item^ := Default(T);
 end;
 
 function TCircularArrayBuffer<T>.First: T;
@@ -2102,7 +2139,7 @@ function TCircularArrayBuffer<T>.TryGetLast(out value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
-    value := fItems[fTail]
+    value := Tail^
   else
     value := Default(T);
 end;
@@ -2121,15 +2158,19 @@ begin
   if itemCount = 0 then
   begin
     fHead := 0;
-    fTail := value - 1;
+    fTail := 0;
+    fCapacity := value;
     SetLength(fItems, value);
     Exit;
   end;
 
   oldCapacity := Length(fItems);
   if offset > 0 then
+  begin
+    fCapacity := value;
     SetLength(fItems, value);
-  if fTail < fHead then
+  end;
+  if fTail <= fHead then
   begin
     ItemType.Move(fItems, fItems, fHead, fHead + offset, oldCapacity - fHead);
     if offset > 0 then
@@ -2146,10 +2187,13 @@ begin
       ItemType.Finalize(fItems, itemCount, fHead);
       fHead := 0;
     end;
-    fTail := itemCount - 1;
+    fTail := itemCount;
   end;
   if offset < 0 then
+  begin
+    fCapacity := value;
     SetLength(fItems, value);
+  end;
 end;
 
 procedure TCircularArrayBuffer<T>.SetOwnsObjects(value: Boolean);
@@ -2190,7 +2234,7 @@ begin
   Result := fIndex < fSource.Count;
   if Result then
   begin
-    fCurrent := fSource.fItems[(fSource.fHead + fIndex) mod DynArrayLength(fSource.fItems)];
+    fCurrent := fSource.fItems[(fSource.fHead + fIndex) mod fSource.fCapacity];
     Inc(fIndex);
   end
   else

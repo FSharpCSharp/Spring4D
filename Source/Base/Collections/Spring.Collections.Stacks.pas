@@ -62,6 +62,7 @@ type
   private
     fOnChanged: TCollectionChangedEventImpl<T>;
     fItems: TArray<T>;
+    fCapacity: Integer;
     fCount: Integer;
     fVersion: Integer;
   protected
@@ -157,6 +158,7 @@ begin
   fCount := Length(values);
   if fCount > 0 then
   begin
+    fCapacity := fCount;
     SetLength(fItems, fCount);
     for i := Low(values) to High(values) do
       fItems[i] := values[i];
@@ -178,7 +180,7 @@ end;
 
 function TAbstractStack<T>.GetCapacity: Integer;
 begin
-  Result := DynArrayLength(fItems);
+  Result := fCapacity;
 end;
 
 function TAbstractStack<T>.GetCount: Integer;
@@ -243,24 +245,28 @@ end;
 procedure TAbstractStack<T>.PopInternal(var item: T; notification: TCollectionChangedAction);
 var
   stackCount: Integer;
+  stackItem: ^T;
 begin
   stackCount := Count;
-  if stackCount = 0 then
-    raise Error.NoElements;
-
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  Dec(fCount);
-  item := fItems[stackCount - 1];
-  fItems[stackCount - 1] := Default(T);
-
-  DoNotify(item, notification);
-  if OwnsObjects and (notification = caRemoved) then
+  if stackCount > 0 then
   begin
-    FreeObject(item);
-    item := Default(T);
-  end;
+    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    Dec(fCount);
+    stackItem := @fItems[stackCount - 1];
+    item := stackItem^;
+    stackItem^ := Default(T);
+
+    DoNotify(item, notification);
+    if OwnsObjects and (notification = caRemoved) then
+    begin
+      FreeObject(item);
+      item := Default(T);
+    end;
+  end
+  else
+    raise Error.NoElements;
 end;
 
 procedure TAbstractStack<T>.PushInternal(const item: T);
@@ -304,12 +310,14 @@ procedure TAbstractStack<T>.SetCapacity(value: Integer);
 begin
   Guard.CheckRange(value >= Count, 'capacity');
 
+  fCapacity := value;
   SetLength(fItems, value);
 end;
 
 procedure TAbstractStack<T>.TrimExcess;
 begin
-  SetLength(fItems, Count);
+  fCapacity := Count;
+  SetLength(fItems, fCapacity);
 end;
 
 function TAbstractStack<T>.TryPop(out item: T): Boolean;
@@ -398,19 +406,8 @@ end;
 procedure TStack<T>.Clear;
 begin
   inherited Clear;
+  fCapacity := 0;
   SetLength(fItems, 0);
-end;
-
-procedure TStack<T>.Grow;
-var
-  newCapacity: Integer;
-begin
-  newCapacity := Length(fItems) * 2;
-  if newCapacity = 0 then
-    newCapacity := 4
-  else if newCapacity < 0 then
-    OutOfMemoryError;
-  SetLength(fItems, newCapacity);
 end;
 
 function TStack<T>.Push(const item: T): Boolean;
@@ -419,6 +416,12 @@ begin
     Grow;
   PushInternal(item);
   Result := True;
+end;
+
+procedure TStack<T>.Grow;
+begin
+  fCapacity := GrowCapacity(fCapacity);
+  SetLength(fItems, fCapacity);
 end;
 
 {$ENDREGION}

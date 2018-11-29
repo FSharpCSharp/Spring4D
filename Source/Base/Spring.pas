@@ -2751,6 +2751,9 @@ procedure FreeObject(const item); inline;
 
 function GetEqualsOperator(const typeInfo: PTypeInfo): TRttiMethod;
 
+function GrowCapacity(oldCapacity: Integer): Integer; overload; inline;
+function GrowCapacity(oldCapacity, newCount: Integer): Integer; overload;
+
   {$ENDREGION}
 
 
@@ -3514,6 +3517,39 @@ begin
       Exit(method);
   end;
   Result := nil;
+end;
+
+function GrowCapacity(oldCapacity: Integer): Integer;
+begin
+  if oldCapacity = 0 then
+    Result := 4
+  else
+  begin
+    if oldCapacity < 1024 then
+      Result := oldCapacity * 2
+    else
+    begin
+      Result := oldCapacity + oldCapacity div 2;
+      if Result < 0 then
+        OutOfMemoryError;
+    end;
+  end;
+end;
+
+function GrowCapacity(oldCapacity, newCount: Integer): Integer;
+begin
+  Result := oldCapacity;
+  repeat
+    if Result >= 1024 then
+      Result := Result + Result div 2
+    else
+      if Result >= 4 then
+        Result := Result * 2
+      else
+        Result := 4;
+    if Result < 0 then
+      OutOfMemoryError;
+  until Result >= newCount;
 end;
 
 {$ENDREGION}

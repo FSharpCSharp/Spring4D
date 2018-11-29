@@ -264,15 +264,8 @@ begin
 end;
 
 procedure TQueue<T>.Grow;
-var
-  newCapacity: Integer;
 begin
-  newCapacity := Capacity * 2;
-  if newCapacity = 0 then
-    newCapacity := 4
-  else if newCapacity < 0 then
-    OutOfMemoryError;
-  SetCapacity(newCapacity);
+  SetCapacity(GrowCapacity(Capacity));
 end;
 
 {$ENDREGION}
@@ -282,10 +275,13 @@ end;
 
 function TBoundedQueue<T>.Enqueue(const item: T): Boolean;
 begin
-  if Count = Capacity then
-    Exit(False);
-  AddToTail(item);
-  Result := True;
+  if Count <> Capacity then
+  begin
+    AddToTail(item);
+    Result := True;
+  end
+  else
+    Result := False;
 end;
 
 {$ENDREGION}
@@ -327,7 +323,7 @@ begin
     if OwnsObjects then
       Result := Default(T)
     else
-      Result := Items[Tail];
+      Result := Tail^;
     DeleteFromTail(caRemoved);
   end
   else
@@ -349,7 +345,7 @@ function TAbstractDeque<T>.ExtractLast: T;
 begin
   if Count > 0 then
   begin
-    Result := Items[Tail];
+    Result := Tail^;
     DeleteFromTail(caExtracted);
   end
   else
@@ -379,7 +375,7 @@ begin
     if OwnsObjects then
       item := Default(T)
     else
-      item := Items[Tail];
+      item := Tail^;
     DeleteFromTail(caRemoved);
   end
   else
@@ -403,7 +399,7 @@ begin
   Result := Count > 0;
   if Result then
   begin
-    item := Items[Tail];
+    item := Tail^;
     DeleteFromTail(caExtracted);
   end
   else
@@ -451,15 +447,8 @@ begin
 end;
 
 procedure TDeque<T>.Grow;
-var
-  newCapacity: Integer;
 begin
-  newCapacity := Capacity * 2;
-  if newCapacity = 0 then
-    newCapacity := 4
-  else if newCapacity < 0 then
-    OutOfMemoryError;
-  SetCapacity(newCapacity);
+  SetCapacity(GrowCapacity(Capacity));
 end;
 
 {$ENDREGION}

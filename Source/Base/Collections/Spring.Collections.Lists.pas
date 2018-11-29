@@ -62,16 +62,24 @@ type
         function MoveNext: Boolean;
       end;
       ItemType = TArrayManager<T>;
+      {$POINTERMATH ON}
+      PT = ^T;
+      {$POINTERMATH OFF}
   {$ENDREGION}
   private
     fItems: TArray<T>;
+    fCapacity: Integer;
     fCount: Integer;
     fVersion: Integer;
-    procedure Grow(capacity: Integer);
+    procedure Grow; overload;
+    {$IFNDEF DELPHIXE8_UP}{$HINTS OFF}{$ENDIF}
+    procedure Grow(capacity: Integer); overload;
+    {$IFNDEF DELPHIXE8_UP}{$HINTS ON}{$ENDIF}
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction); inline;
     function DeleteAllInternal(const match: Predicate<T>;
       notification: TCollectionChangedAction; const list: IList<T>): Integer;
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+    function InsertInternal(index: Integer; const item: T): Integer;
     procedure InsertRangeInternal(index, count: Integer; const values: array of T);
   protected
   {$REGION 'Property Accessors'}
@@ -437,7 +445,7 @@ end;
 
 function TAbstractArrayList<T>.GetCapacity: Integer;
 begin
-  Result := DynArrayLength(fItems);
+  Result := fCapacity;
 end;
 
 function TAbstractArrayList<T>.GetCount: Integer;
@@ -453,16 +461,16 @@ end;
 function TAbstractArrayList<T>.Add(const item: T): Integer;
 begin
   Result := Count;
-  if Result = DynArrayLength(fItems) then
-    Grow(Result + 1);
-
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  fItems[Result] := item;
-  Inc(fCount);
-
-  DoNotify(item, caAdded);
+  if (Result <> fCapacity) and not Assigned(Notify) then
+  begin
+    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    Inc(fCount);
+    fItems[Result] := item;
+  end
+  else
+    Result := InsertInternal(Result, item);
 end;
 
 procedure TAbstractArrayList<T>.AddRange(const values: array of T);
@@ -517,6 +525,7 @@ begin
 {$ELSE}
   // the compiler passes wrong typeinfo for the generated call
   // to _DynArrayCopyRange up to XE
+  list.fCapacity := count;
   SetLength(list.fItems, count);
   for i := 0 to count - 1 do
   begin
@@ -526,20 +535,16 @@ begin
 {$ENDIF}
 end;
 
-procedure TAbstractArrayList<T>.Grow(capacity: Integer);
-var
-  newCapacity: Integer;
+procedure TAbstractArrayList<T>.Grow;
 begin
-  newCapacity := DynArrayLength(fItems);
-  if newCapacity = 0 then
-    newCapacity := capacity
-  else
-    repeat
-      newCapacity := newCapacity * 2;
-      if newCapacity < 0 then
-        OutOfMemoryError;
-    until newCapacity >= capacity;
-  SetCapacity(newCapacity);
+  fCapacity := GrowCapacity(fCapacity);
+  SetLength(fItems, fCapacity);
+end;
+
+procedure TAbstractArrayList<T>.Grow(capacity: Integer);
+begin
+  fCapacity := GrowCapacity(fCapacity, capacity);
+  SetLength(fItems, fCapacity);
 end;
 
 function TAbstractArrayList<T>.IndexOf(const item: T; index, count: Integer): Integer;
@@ -624,38 +629,58 @@ begin
 end;
 
 procedure TAbstractArrayList<T>.Insert(index: Integer; const item: T);
+begin
+  InsertInternal(index, item);
+end;
+
+function TAbstractArrayList<T>.InsertInternal(index: Integer;
+  const item: T): Integer;
 var
   listCount: Integer;
+  arrayItem: PT;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
+  Result := index;
   listCount := Count;
-  if listCount = DynArrayLength(fItems) then
-    Grow(listCount + 1);
+  repeat
+    if listCount <> fCapacity then
+    begin
+      {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+      Inc(fVersion);
+      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+      Inc(fCount);
+      if index <> listCount then
+      begin
+        if ItemType.HasWeakRef then
+          ItemType.MoveSlow(fItems, index, index + 1, listCount - index)
+        else
+        begin
+          listCount := (listCount - index) * SizeOf(T);
+          arrayItem := @fItems[index];
+          System.Move(arrayItem^, (arrayItem + 1)^, listCount);
+          if ItemType.IsManaged then
+            if SizeOf(T) = SizeOf(Pointer) then
+              PPointer(arrayItem)^ := nil
+            else
+              System.FillChar(arrayItem^, SizeOf(T), 0);
+        end;
+        index := Result;
+      end;
+      fItems[index] := item;
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  if index <> listCount then
-  begin
-    if ItemType.HasWeakRef then
-      ItemType.MoveSlow(fItems, index, index + 1, listCount - index)
+      DoNotify(item, caAdded);
+      Exit;
+    end
     else
     begin
-      System.Move(fItems[index], fItems[index + 1], SizeOf(T) * (listCount - index));
-      if ItemType.IsManaged then
-        if SizeOf(T) = SizeOf(Pointer) then
-          PPointer(@fItems[listCount])^ := nil
-        else
-          System.FillChar(fItems[listCount], SizeOf(T), 0);
+      Grow;
+      listCount := Count;
+      index := Result;
     end;
-  end;
-  fItems[index] := item;
-  Inc(fCount);
-
-  DoNotify(item, caAdded);
+  until False;
 end;
 
 procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: array of T);
@@ -690,7 +715,7 @@ begin
     listCount := Self.Count;
     if count > 0 then
     begin
-      if listCount + count > DynArrayLength(fItems) then
+      if listCount + count > fCapacity then
         Grow(listCount + count);
 
       {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
@@ -747,7 +772,7 @@ var
   listCount, i: Integer;
 begin
   listCount := Self.Count;
-  if listCount + count > DynArrayLength(fItems) then
+  if listCount + count > fCapacity then
     Grow(listCount + count);
 
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
@@ -809,8 +834,9 @@ end;
 procedure TAbstractArrayList<T>.DeleteInternal(index: Integer;
   notification: TCollectionChangedAction);
 var
-  oldItem: T;
   listCount: Integer;
+  arrayItem: PT;
+  oldItem: T;
 begin
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
   Inc(fVersion);
@@ -818,7 +844,8 @@ begin
   Dec(fCount);
   listCount := Count;
 
-  oldItem := fItems[index];
+  arrayItem := @fItems[index];
+  oldItem := arrayItem^;
   if index <> listCount then
   begin
     if ItemType.HasWeakRef then
@@ -826,15 +853,16 @@ begin
     else
     begin
       if ItemType.IsManaged then
-        fItems[index] := Default(T);
-      System.Move(fItems[index + 1], fItems[index], SizeOf(T) * (listCount - index));
+        arrayItem^ := Default(T);
+      System.Move((arrayItem + 1)^, arrayItem^, SizeOf(T) * (listCount - index));
+      arrayItem := @fItems[listCount];
       if ItemType.IsManaged then
         if SizeOf(T) = SizeOf(Pointer) then
-          PPointer(@fItems[listCount])^ := nil
+          PPointer(arrayItem)^ := nil
         else
-          System.FillChar(fItems[listCount], SizeOf(T), 0)
+          System.FillChar(arrayItem^, SizeOf(T), 0)
       else
-        fItems[listCount] := Default(T);
+        arrayItem^ := Default(T);
     end;
   end
   else
@@ -864,6 +892,7 @@ begin
       Dec(fCount, listCount);
     end;
   end;
+  fCapacity := 0;
   SetLength(fItems, 0);
 end;
 
@@ -1074,7 +1103,8 @@ procedure TAbstractArrayList<T>.SetCapacity(value: Integer);
 begin
   if value < Count then
     DeleteRange(value, Count - value);
-  SetLength(fItems, value);
+  fCapacity := value;
+  SetLength(fItems, value)
 end;
 
 procedure TAbstractArrayList<T>.SetCount(value: Integer);
@@ -1083,7 +1113,7 @@ begin
   Guard.CheckRange(value >= 0, 'count');
 {$ENDIF}
 
-  if value > DynArrayLength(fItems) then
+  if value > fCapacity then
     SetCapacity(value);
   if value < Count then
     DeleteRange(value, Count - value);
@@ -1891,7 +1921,7 @@ var
   i: Integer;
 begin
   SetLength(Result, fCollection.Count);
-  for i := 0 to DynArrayLength(Result) - 1 do
+  for i := 0 to fCollection.Count - 1 do
     Result[i] := T(fCollection.Items[i]);
 end;
 
