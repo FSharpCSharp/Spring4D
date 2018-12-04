@@ -30,7 +30,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
   Generics.Defaults,
   Spring,
   Spring.Collections,
@@ -54,7 +53,7 @@ type
   protected
   {$REGION 'Nested Types'}
     type
-      TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
+      TKeyValuePair = TPair<TKey, TValue>;
       TItem = TDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
@@ -283,8 +282,8 @@ type
   protected
   {$REGION 'Nested Types'}
     type
-      TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
-      TValueKeyPair = Generics.Collections.TPair<TValue, TKey>;
+      TKeyValuePair = TPair<TKey, TValue>;
+      TValueKeyPair = TPair<TValue, TKey>;
       TItem = TBidiDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
@@ -605,7 +604,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
+      TKeyValuePair = TPair<TKey, TValue>;
       PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
       TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)

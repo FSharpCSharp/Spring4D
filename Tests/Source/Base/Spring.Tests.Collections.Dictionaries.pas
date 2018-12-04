@@ -29,7 +29,6 @@ unit Spring.Tests.Collections.Dictionaries;
 interface
 
 uses
-  Generics.Collections,
   Generics.Defaults,
   TestFramework,
   Spring.TestUtils,
@@ -213,7 +212,7 @@ type
         item: T;
         action: TCollectionChangedAction;
       end;
-      TKeyValuePair = Generics.Collections.TPair<Integer, string>;
+      TKeyValuePair = TPair<Integer, string>;
   private
     fChangedEvents: IList<TEvent<TKeyValuePair>>;
     fKeyChangedEvents: IList<TEvent<Integer>>;

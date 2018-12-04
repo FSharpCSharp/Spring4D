@@ -29,7 +29,6 @@ unit Spring.Collections.Trees;
 interface
 
 uses
-  Generics.Collections,
   Generics.Defaults,
   Spring,
   Spring.Collections,

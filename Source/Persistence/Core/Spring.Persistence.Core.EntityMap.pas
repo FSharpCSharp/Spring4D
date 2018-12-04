@@ -29,7 +29,6 @@ unit Spring.Persistence.Core.EntityMap;
 interface
 
 uses
-  Generics.Collections,
   Rtti,
   Spring,
   Spring.Collections,

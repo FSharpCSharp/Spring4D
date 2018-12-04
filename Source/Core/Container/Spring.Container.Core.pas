@@ -30,7 +30,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
   Rtti,
   SysUtils,
   Spring,

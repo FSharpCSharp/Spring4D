@@ -29,7 +29,6 @@ unit Spring.Collections.Adapters;
 interface
 
 uses
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Collections.Adapters.Interfaces,

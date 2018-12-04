@@ -29,7 +29,6 @@ unit Spring.Collections.MultiMaps;
 interface
 
 uses
-  Generics.Collections,
   Generics.Defaults,
   Spring,
   Spring.Collections,
@@ -41,7 +40,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TKeyValuePair = Generics.Collections.TPair<TKey, TValue>;
+      TKeyValuePair = TPair<TKey, TValue>;
       TMultiMapEntry = TMultiMapEntry<TKey, TValue>;
 
       TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)

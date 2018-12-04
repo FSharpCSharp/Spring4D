@@ -29,7 +29,6 @@ unit Spring.Collections.Base;
 interface
 
 uses
-  Generics.Collections,
   Generics.Defaults,
   SysUtils,
   TypInfo,
@@ -392,7 +391,7 @@ type
   TMapBase<TKey, T> = class abstract(TCollectionBase<TPair<TKey, T>>)
   private
     type
-      TKeyValuePair = Generics.Collections.TPair<TKey, T>;
+      TKeyValuePair = TPair<TKey, T>;
   protected
     fOnKeyChanged: TCollectionChangedEventImpl<TKey>;
     fOnValueChanged: TCollectionChangedEventImpl<T>;

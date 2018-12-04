@@ -56,7 +56,6 @@ type
 implementation
 
 uses
-  Generics.Collections,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.SQL.Commands.Delete;

@@ -103,7 +103,6 @@ type
 implementation
 
 uses
-  Generics.Collections,
   SysUtils,
   TypInfo,
   Spring,

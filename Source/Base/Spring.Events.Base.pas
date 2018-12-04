@@ -30,7 +30,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
 {$IFDEF MSWINDOWS}
   Windows,
 {$ENDIF}
@@ -43,6 +42,8 @@ type
   ///   Base class for multicast event implementation
   /// </summary>
   TEventBase = class(TInterfacedObject, IEvent)
+  public type
+    TCollectionNotification = (cnAdded, cnRemoved, cnExtracted);
   strict protected
     fHandlers: TArray<TMethodPointer>;
     fCount: Integer;

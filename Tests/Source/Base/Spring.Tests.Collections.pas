@@ -30,7 +30,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
   Generics.Defaults,
   TestFramework,
   Spring.TestUtils,

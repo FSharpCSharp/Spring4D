@@ -31,7 +31,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
   Rtti,
   SysUtils,
   Spring,
@@ -59,7 +58,7 @@ type
     procedure InternalInvoke(Params: Pointer; StackSize: Integer); virtual;
   {$ENDIF}
     procedure Notify(Sender: TObject; const Item: TMethodPointer;
-      Action: TCollectionNotification); override;
+      Action: TEventBase.TCollectionNotification); override;
   public
     constructor Create(typeInfo: PTypeInfo);
     destructor Destroy; override;
@@ -678,7 +677,7 @@ end;
 {$ENDIF}
 
 procedure TEvent.Notify(Sender: TObject; const Item: TMethodPointer;
-  Action: TCollectionNotification);
+  Action: TEventBase.TCollectionNotification);
 begin
   inherited Notify(Sender, Item, Action);
   if fTypeInfo.Kind = tkInterface then

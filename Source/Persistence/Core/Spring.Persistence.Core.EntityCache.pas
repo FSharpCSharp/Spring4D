@@ -123,7 +123,6 @@ type
 implementation
 
 uses
-  Generics.Collections,
   SysUtils,
   Rtti,
   Spring.Persistence.Core.Exceptions,

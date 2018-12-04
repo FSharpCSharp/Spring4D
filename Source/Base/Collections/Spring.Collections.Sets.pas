@@ -29,7 +29,6 @@ unit Spring.Collections.Sets;
 interface
 
 uses
-  Generics.Collections,
   Generics.Defaults,
   Spring.Collections,
   Spring.Collections.Base,

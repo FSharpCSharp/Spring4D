@@ -59,6 +59,15 @@ type
   TCollectionChangedEvent<T> = procedure(Sender: TObject; const Item: T;
     Action: TCollectionChangedAction) of object;
 
+  TPair<TKey, TValue> = record
+    Key: TKey;
+    Value: TValue;
+    constructor Create(const key: TKey; const value: TValue);
+
+    class operator Implicit(const value: TPair<TKey, TValue>): Generics.Collections.TPair<TKey, TValue>;
+    class operator Implicit(const value: Generics.Collections.TPair<TKey, TValue>): TPair<TKey, TValue>;
+  end;
+
   ICollectionChangedEvent<T> = interface(IEvent<TCollectionChangedEvent<T>>)
   end;
 
@@ -2860,6 +2869,31 @@ function GetInstanceComparer: Pointer;
 begin
   Result := @InstanceComparer;
 end;
+{$ENDREGION}
+
+
+{$REGION 'TPair<TKey, TValue>'}
+
+constructor TPair<TKey, TValue>.Create(const key: TKey; const value: TValue);
+begin
+  Self.Key := key;
+  Self.Value := value;
+end;
+
+class operator TPair<TKey, TValue>.Implicit(
+  const value: TPair<TKey, TValue>): Generics.Collections.TPair<TKey, TValue>;
+begin
+  Result.Key := value.Key;
+  Result.Value := value.Value;
+end;
+
+class operator TPair<TKey, TValue>.Implicit(
+  const value: Generics.Collections.TPair<TKey, TValue>): TPair<TKey, TValue>;
+begin
+  Result.Key := value.Key;
+  Result.Value := value.Value;
+end;
+
 {$ENDREGION}
 
 
