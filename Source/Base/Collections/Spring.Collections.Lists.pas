@@ -36,6 +36,8 @@ uses
   Spring.Collections,
   Spring.Collections.Base;
 
+{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   /// <summary>
   ///   Represents a strongly typed list of elements that can be accessed by

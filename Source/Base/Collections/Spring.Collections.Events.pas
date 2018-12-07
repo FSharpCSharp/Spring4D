@@ -33,6 +33,8 @@ uses
   Spring.Collections,
   Spring.Events.Base;
 
+{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   TCollectionChangedEventImpl<T> = class(TEventBase, ICollectionChangedEvent<T>)
   private

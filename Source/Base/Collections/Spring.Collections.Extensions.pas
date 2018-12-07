@@ -38,6 +38,8 @@ uses
   Spring.Collections.Base,
   Spring.Collections.Lists;
 
+{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   TEmptyEnumerable<T> = class(TEnumerableBase<T>, IInterface, IEnumerator<T>,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
@@ -62,8 +64,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyList<T>'}
-    function GetRange(index, count: Integer): IList<T>;
-
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
@@ -96,8 +96,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyList<T>'}
-    function GetRange(index, count: Integer): IList<T>;
-
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
@@ -247,9 +245,9 @@ type
     fPredicate: Func<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
     fIndex: Integer;
-    fStopped: Boolean;
   protected
     function Clone: TIterator<T>; override;
+    procedure Dispose; override;
     procedure Start; override;
     function TryMoveNext(var current: T): Boolean; override;
   public
@@ -335,8 +333,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyList<Integer>'}
-    function GetRange(index, count: Integer): IList<Integer>;
-
     function IndexOf(const item: Integer): Integer; overload;
     function IndexOf(const item: Integer; index: Integer): Integer; overload;
     function IndexOf(const item: Integer; index, count: Integer): Integer; overload;
@@ -957,16 +953,6 @@ begin
   raise Error.ArgumentOutOfRange('index');
 end;
 
-function TEmptyEnumerable<T>.GetRange(index, count: Integer): IList<T>;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(index = 0, 'index');
-  Guard.CheckRange(count = 0, 'count');
-{$ENDIF}
-
-  Result := TCollections.CreateList<T>;
-end;
-
 function TEmptyEnumerable<T>.MoveNext: Boolean;
 begin
   Result := False;
@@ -1041,24 +1027,6 @@ begin
 {$ENDIF}
 
   Result := fValues[index];
-end;
-
-function TArrayIterator<T>.GetRange(index, count: Integer): IList<T>;
-var
-  i: Integer;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Length(fValues)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(fValues) - index), 'count');
-{$ENDIF}
-
-  Result := TCollections.CreateList<T>;
-  Result.Count := count;
-  for i := 0 to count - 1 do
-  begin
-    Result[i] := fValues[index];
-    Inc(index);
-  end;
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T): Integer;
@@ -1450,14 +1418,14 @@ begin
   fPredicate := predicate;
 end;
 
-procedure TTakeWhileIterator<T>.Dispose;
-begin
-  fEnumerator := nil;
-end;
-
 function TTakeWhileIterator<T>.Clone: TIterator<T>;
 begin
   Result := TTakeWhileIterator<T>.Create(fSource, fPredicate);
+end;
+
+procedure TTakeWhileIterator<T>.Dispose;
+begin
+  fEnumerator := nil;
 end;
 
 function TTakeWhileIterator<T>.TryMoveNext(var current: T): Boolean;
@@ -1499,18 +1467,20 @@ begin
   Result := TTakeWhileIndexIterator<T>.Create(fSource, fPredicate);
 end;
 
+procedure TTakeWhileIndexIterator<T>.Dispose;
+begin
+  fEnumerator := nil;
+end;
+
 function TTakeWhileIndexIterator<T>.TryMoveNext(var current: T): Boolean;
 begin
-  while not fStopped and fEnumerator.MoveNext do
+  Result := fEnumerator.MoveNext;
+  if Result then
   begin
     current := fEnumerator.Current;
     Inc(fIndex);
-    if fPredicate(current, findex) then
-      Exit(True)
-    else
-      fStopped := True;
+    Result := fPredicate(current, findex);
   end;
-  Result := False;
 end;
 
 procedure TTakeWhileIndexIterator<T>.Start;
@@ -1755,25 +1725,6 @@ begin
 {$ENDIF}
 
   Result := fStart + index;
-end;
-
-function TRangeIterator.GetRange(index, count: Integer): IList<Integer>;
-var
-  i: Integer;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
-  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
-{$ENDIF}
-
-  Result := TCollections.CreateList<Integer>;
-  Result.Count := count;
-  Inc(index, fStart);
-  for i := 0 to count - 1 do
-  begin
-    Result[i] := index;
-    Inc(index);
-  end;
 end;
 
 function TRangeIterator.IndexOf(const item: Integer): Integer;

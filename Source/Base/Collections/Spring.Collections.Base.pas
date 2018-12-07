@@ -36,6 +36,8 @@ uses
   Spring.Collections,
   Spring.Collections.Events;
 
+{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   /// <summary>
   ///   Provides an abstract implementation for any interface implementing
@@ -401,8 +403,8 @@ type
   {$REGION 'Property Accessors'}
     function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
     function GetOnValueChanged: ICollectionChangedEvent<T>;
-    function GetKeyType: PTypeInfo; inline;
-    function GetValueType: PTypeInfo; inline;
+    function GetKeyType: PTypeInfo; virtual;
+    function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
     procedure DoNotify(const key: TKey; const value: T; action: TCollectionChangedAction);
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
@@ -1049,8 +1051,20 @@ begin
 end;
 
 function TEnumerableBase<T>.Max(const selector: Func<T, Integer>): Integer;
+var
+  enumerator: IEnumerator<T>;
+  item: Integer;
 begin
-  Result := TEnumerable.Max<T>(this, selector);
+  enumerator := this.GetEnumerator;
+  if not enumerator.MoveNext then
+    raise Error.NoElements;
+  Result := selector(enumerator.Current);
+  while enumerator.MoveNext do
+  begin
+    item := selector(enumerator.Current);
+    if item > Result then
+      Result := item;
+  end;
 end;
 
 function TEnumerableBase<T>.Max(const comparer: IComparer<T>): T;
@@ -1085,8 +1099,20 @@ begin
 end;
 
 function TEnumerableBase<T>.Min(const selector: Func<T, Integer>): Integer;
+var
+  enumerator: IEnumerator<T>;
+  item: Integer;
 begin
-  Result := TEnumerable.Min<T>(this, selector);
+  enumerator := this.GetEnumerator;
+  if not enumerator.MoveNext then
+    raise Error.NoElements;
+  Result := selector(enumerator.Current);
+  while enumerator.MoveNext do
+  begin
+    item := selector(enumerator.Current);
+    if item < Result then
+      Result := item;
+  end;
 end;
 
 function TEnumerableBase<T>.Min(const comparer: IComparer<T>): T;

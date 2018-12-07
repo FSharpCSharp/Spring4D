@@ -34,6 +34,8 @@ uses
   Spring.Collections.Base,
   Spring.Collections.Trees;
 
+{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   /// <summary>
   ///   The abstract base class for all set implementations.

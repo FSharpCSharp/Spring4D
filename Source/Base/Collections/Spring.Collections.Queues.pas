@@ -35,6 +35,8 @@ uses
   Spring.Collections.Base,
   Spring.Collections.Events;
 
+{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   TAbstractQueue<T> = class abstract(TCircularArrayBuffer<T>)
   public

@@ -34,6 +34,8 @@ uses
   Spring.Collections.Base,
   Spring.Collections.Events;
 
+{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   /// <summary>
   ///   Represents a last-in, first-out (LIFO) collection of items.

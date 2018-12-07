@@ -37,6 +37,8 @@ uses
   Spring.Collections.Trees,
   Spring.Events.Base;
 
+{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   TDictionaryItem<TKey, TValue> = record
   public
@@ -78,6 +80,8 @@ type
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
       {$ENDREGION}
+      protected
+        function GetElementType: PTypeInfo; override;
       public
         constructor Create(const source: TDictionary<TKey, TValue>);
 
@@ -111,6 +115,8 @@ type
         function GetCount: Integer;
         function GetIsEmpty: Boolean;
       {$ENDREGION}
+      protected
+        function GetElementType: PTypeInfo; override;
       public
         constructor Create(const source: TDictionary<TKey, TValue>);
 
@@ -1394,6 +1400,11 @@ begin
   Result := fSource.fCount;
 end;
 
+function TDictionary<TKey, TValue>.TKeyCollection.GetElementType: PTypeInfo;
+begin
+  Result := fSource.KeyType;
+end;
+
 function TDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
 begin
   Result := TKeyEnumerator.Create(fSource);
@@ -1481,6 +1492,11 @@ begin
   Result := fSource.fCount;
 end;
 
+function TDictionary<TKey, TValue>.TValueCollection.GetElementType: PTypeInfo;
+begin
+  Result := fSource.ValueType;
+end;
+
 function TDictionary<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
   Result := TValueEnumerator.Create(fSource);
@@ -1565,14 +1581,14 @@ begin
   inherited Destroy;
 end;
 
-procedure TDictionary<TKey, TValue>.TOrderedEnumerable.Dispose;
-begin
-  fSortedItemIndices := nil;
-end;
-
 function TDictionary<TKey, TValue>.TOrderedEnumerable.Clone: TIterator<TKeyValuePair>;
 begin
   Result := TOrderedEnumerable.Create(fSource);
+end;
+
+procedure TDictionary<TKey, TValue>.TOrderedEnumerable.Dispose;
+begin
+  fSortedItemIndices := nil;
 end;
 
 function TDictionary<TKey, TValue>.TOrderedEnumerable.GetCount: Integer;
@@ -2766,14 +2782,14 @@ begin
   inherited Destroy;
 end;
 
-procedure TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Dispose;
-begin
-  fSortedItemIndices := nil;
-end;
-
 function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Clone: TIterator<TValueKeyPair>;
 begin
   Result := TOrderedEnumerable.Create(fSource);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Dispose;
+begin
+  fSortedItemIndices := nil;
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.GetCount: Integer;
@@ -3051,14 +3067,14 @@ begin
   inherited Destroy;
 end;
 
-procedure TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Dispose;
-begin
-  fSortedItemIndices := nil;
-end;
-
 function TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Clone: TIterator<TKeyValuePair>;
 begin
   Result := TOrderedEnumerable.Create(fSource);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Dispose;
+begin
+  fSortedItemIndices := nil;
 end;
 
 function TBidiDictionary<TKey, TValue>.TOrderedEnumerable.GetCount: Integer;
