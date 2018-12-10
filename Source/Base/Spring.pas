@@ -1875,6 +1875,7 @@ type
   private
     class procedure Make(const value: TObject; var result: PObjectFinalizer); overload; static; inline;
   public
+    class function Make<T: class, constructor>: IShared<T>; overload; static;
     class function Make<T>(const value: T): IShared<T>; overload; static;
     class function Make<T>(const value: T; const finalizer: Action<T>): IShared<T>; overload; static;
   end;
@@ -7639,6 +7640,11 @@ begin
   end;
   result.RefCount := 1;
   result.Value := value;
+end;
+
+class function Shared.Make<T>: IShared<T>;
+begin
+  Make(T.Create, PObjectFinalizer(Result));
 end;
 
 class function Shared.Make<T>(const value: T): IShared<T>;
