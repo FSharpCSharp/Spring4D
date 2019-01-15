@@ -496,6 +496,27 @@ type
   TTestManagedObject = class(TTestCase)
   published
     procedure TestInitialization;
+    procedure TestDefaultOverride;
+  end;
+
+  TTestObjectBase = class(TManagedObject)
+  protected
+    [Default(42)]
+    fIntValue: Integer;
+  end;
+
+  TTestObjectDerivedA = class(TTestObjectBase)
+  public
+    [Default(45)]
+    property IntValueB: Integer read fIntValue;
+    [Default(43)]
+    property IntValue: Integer read fIntValue;
+  end;
+
+  TTestObjectDerivedB = class(TTestObjectDerivedA)
+  public
+    [Default(44)]
+    property IntValue;
   end;
 
   TTestObject = class(TManagedObject)
@@ -3370,6 +3391,32 @@ end;
 procedure TTestObject.SetStrValue_Prop(const Value: string);
 begin
   fStrValue_Prop := Value;
+end;
+
+procedure TTestManagedObject.TestDefaultOverride;
+var
+  obj: TTestObjectBase;
+begin
+  obj := TTestObjectBase.Create;
+  try
+    CheckEquals(42, obj.fIntValue);
+  finally
+    obj.Free;
+  end;
+
+  obj := TTestObjectDerivedA.Create;
+  try
+    CheckEquals(43, obj.fIntValue);
+  finally
+    obj.Free;
+  end;
+
+  obj := TTestObjectDerivedB.Create;
+  try
+    CheckEquals(44, obj.fIntValue);
+  finally
+    obj.Free;
+  end;
 end;
 
 procedure TTestManagedObject.TestInitialization;

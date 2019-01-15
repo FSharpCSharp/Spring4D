@@ -3887,41 +3887,55 @@ end;
 constructor TInitTable.Create(classType: TClass);
 var
   t: TRttiType;
+  types: TArray<TRttiType>;
+  i: Integer;
   f: TRttiField;
   p: TRttiProperty;
   a: TCustomAttribute;
   setter: Pointer;
 begin
   t := TType.GetType(classType);
-  for f in t.GetFields do
-    for a in f.GetAttributes do
-      if a is DefaultAttribute then
-        AddDefaultField(f.FieldType.Handle, DefaultAttribute(a).Value, f.Offset)
-      else if a is ManagedAttribute then
-        if f.FieldType.TypeKind in [tkClass, tkInterface] then
-          AddManagedField(f, ManagedAttribute(a));
 
-  for p in t.GetProperties do
-    for a in p.GetAttributes do
-      if a is DefaultAttribute then
-      begin
-        if p.IsWritable then
-          setter := TRttiInstanceProperty(p).PropInfo.SetProc
-        else
+  repeat
+    SetLength(types, Length(types) + 1);
+    types[High(types)] := t;
+    t := t.BaseType;
+  until t.Handle = TObject.ClassInfo;
+
+  for i := High(types) downto 0 do
+  begin
+    t := types[i];
+
+    for f in t.GetDeclaredFields do
+      for a in f.GetAttributes do
+        if a is DefaultAttribute then
+          AddDefaultField(f.FieldType.Handle, DefaultAttribute(a).Value, f.Offset)
+        else if a is ManagedAttribute then
+          if f.FieldType.TypeKind in [tkClass, tkInterface] then
+            AddManagedField(f, ManagedAttribute(a));
+
+    for p in t.GetDeclaredProperties do
+      for a in p.GetAttributes do
+        if a is DefaultAttribute then
         begin
-          // if the property is read-only but backed by a field it can be initialized
-          setter := TRttiInstanceProperty(p).PropInfo.GetProc;
-          if IntPtr(setter) and PROPSLOT_MASK <> PROPSLOT_FIELD then
-            raise EInvalidOperationException.Create('Property not writable'); // TODO
-        end;
+          if p.IsWritable then
+            setter := TRttiInstanceProperty(p).PropInfo.SetProc
+          else
+          begin
+            // if the property is read-only but backed by a field it can be initialized
+            setter := TRttiInstanceProperty(p).PropInfo.GetProc;
+            if IntPtr(setter) and PROPSLOT_MASK <> PROPSLOT_FIELD then
+              raise EInvalidOperationException.Create('Property not writable'); // TODO
+          end;
 
-        if IntPtr(setter) and PROPSLOT_MASK = PROPSLOT_FIELD then
-          AddDefaultField(p.PropertyType.Handle, DefaultAttribute(a).Value,
-            IntPtr(setter) and not PROPSLOT_MASK)
-        else
-          AddDefaultProperty(p.PropertyType.Handle, DefaultAttribute(a).Value,
-            TRttiInstanceProperty(p).PropInfo);
-      end;
+          if IntPtr(setter) and PROPSLOT_MASK = PROPSLOT_FIELD then
+            AddDefaultField(p.PropertyType.Handle, DefaultAttribute(a).Value,
+              IntPtr(setter) and not PROPSLOT_MASK)
+          else
+            AddDefaultProperty(p.PropertyType.Handle, DefaultAttribute(a).Value,
+              TRttiInstanceProperty(p).PropInfo);
+        end;
+  end;
 end;
 
 destructor TInitTable.Destroy;
@@ -5209,7 +5223,7 @@ begin
     vtVariant: Result := TValue.FromVariant(value.VVariant^);
     vtInterface: Result := TValue.From<IInterface>(IInterface(value.VInterface));
 {$IF Declared(WideString)}
-    vtWideString: Result := string(value.VWideString);
+    vtWideString: Result := WideString(value.VWideString);
 {$IFEND}
     vtInt64: Result := value.VInt64^;
     vtUnicodeString: Result := string(value.VUnicodeString);
