@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2018 Spring4D Team                           }
+{           Copyright (c) 2009-2019 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -127,7 +127,9 @@ begin
     IgnoreEmptyEnumerable,
     IgnoreAnonymousMethodPointers,
     IgnoreCustomAttributes,
-    IgnoreTimeZoneCache
+    IgnoreTimeZoneCache,
+    TIgnore<TInitTable>.Any,
+    TIgnore<TInitTable>.AnyNestedClasses
   ]);
   // Initialize few things so they dont't leak in the tests
   TThread.CurrentThread;
@@ -145,9 +147,7 @@ begin
   TEncoding.UTF7;
   TEncoding.UTF8;
   TEncoding.Unicode;
-{$IFNDEF ORM_TESTS}
-  GetInitTable(TTestObject);
-{$ELSE}
+{$IFDEF ORM_TESTS}
   // Initialize global Entity cache
   for lType in TType.Context.GetTypes do
     if lType.IsClass and lType.HasCustomAttribute(TableAttribute, True) then
