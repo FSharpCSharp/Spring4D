@@ -3499,7 +3499,6 @@ const
 var
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
-  typeSize: Integer;
 begin
   for method in TType.GetType(typeInfo).GetMethods(EqualsOperatorName) do
   begin
@@ -3508,13 +3507,10 @@ begin
     if method.CallingConvention <> ccReg then
       Continue;
     parameters := method.GetParameters;
-    typeSize := GetTypeSize(typeInfo);
     if (Length(parameters) = 2)
       and (parameters[0].ParamType.Handle = typeInfo) and (parameters[1].ParamType.Handle = typeInfo)
-      and (pfConst in parameters[0].Flags) and (pfConst in parameters[1].Flags)
-      and ((typeSize <= SizeOf(Pointer)) xor (pfReference in parameters[0].Flags))
-      and ((typeSize <= SizeOf(Pointer)) xor (pfReference in parameters[1].Flags)) then
-      Exit(method);
+      and (pfConst in parameters[0].Flags) and (pfConst in parameters[1].Flags) then
+     Exit(method);
   end;
   Result := nil;
 end;
