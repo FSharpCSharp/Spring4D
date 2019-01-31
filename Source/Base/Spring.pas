@@ -5437,6 +5437,7 @@ function TValueHelper.ToVariant: Variant;
 var
   value: TValue;
   obj: TObject;
+  arr: Pointer;
   stream: TStream;
   persist: IStreamPersist;
 
@@ -5505,6 +5506,12 @@ begin
     end;
     tkInterface:
       Exit(AsInterface);
+    tkDynArray:
+    begin
+      arr := Pointer(GetReferenceToRawData^);
+      DynArrayToVariant(Result, arr, TypeInfo);
+      Exit;
+    end;
   else
     Exit(AsVariant);
   end;
