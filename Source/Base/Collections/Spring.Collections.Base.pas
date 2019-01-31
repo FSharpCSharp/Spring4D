@@ -220,7 +220,7 @@ type
   TIterator<T> = class abstract(TEnumerableBase<T>, IInterface, IEnumerator<T>)
   private
     fCurrent: T;
-    fInitialThreadId: TThreadID;
+    fThreadId: TThreadID;
     fState: Integer;
     const
       STATE_INITIAL    = -2; // initial state, before GetEnumerator
@@ -239,7 +239,7 @@ type
     function MoveNext: Boolean;
   end;
 
-  TSourceIterator<T> = class abstract(TIterator<T>)
+  TSourceIterator<T> = class abstract(TIterator<T>, IEnumerable<T>)
   protected
     fSource: IEnumerable<T>;
     function GetElementType: PTypeInfo; override;
@@ -501,8 +501,12 @@ const
 implementation
 
 uses
-  Classes,
-  Rtti,
+{$IFDEF MSWINDOWS}
+  Windows,
+{$ENDIF}
+{$IFDEF POSIX}
+  Posix.Pthread,
+{$ENDIF}
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
   Spring.Events.Base,
@@ -1300,7 +1304,7 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := TSkipWhileIndexIterator<T>.Create(this, predicate);
+  Result := TSkipWhileIterator<T>.Create(this, predicate);
 end;
 
 function TEnumerableBase<T>.Sum: T;
@@ -1342,7 +1346,7 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := TTakeWhileIndexIterator<T>.Create(this, predicate);
+  Result := TTakeWhileIterator<T>.Create(this, predicate);
 end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
@@ -1624,7 +1628,7 @@ constructor TIterator<T>.Create;
 begin
   inherited Create;
   fState := STATE_INITIAL;
-  fInitialThreadId := TThread.CurrentThread.ThreadID;
+  fThreadId := GetCurrentThreadId;
 end;
 
 procedure TIterator<T>.Dispose;
@@ -1638,19 +1642,14 @@ end;
 
 function TIterator<T>.GetEnumerator: IEnumerator<T>;
 var
-  iterator: TIterator<T>;
+  enumerator: TIterator<T>;
 begin
-  if (fInitialThreadId = TThread.CurrentThread.ThreadID) and (fState = STATE_INITIAL) then
-  begin
-    fState := STATE_ENUMERATOR;
-    Result := Self;
-  end
+  if (fState = STATE_INITIAL) and (fThreadId = GetCurrentThreadId) then
+    enumerator := Self
   else
-  begin
-    iterator := Clone;
-    iterator.fState := STATE_ENUMERATOR;
-    Result := iterator;
-  end;
+    enumerator := Clone;
+  enumerator.fState := STATE_ENUMERATOR;
+  Result := enumerator;
 end;
 
 function TIterator<T>.MoveNext: Boolean;

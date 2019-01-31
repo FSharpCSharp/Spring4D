@@ -139,7 +139,7 @@ type
     function GetEnumerator: IEnumerator<T>;
   end;
 
-  TWhereIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TWhereIterator<T> = class(TSourceIterator<T>)
   private
     fPredicate: Predicate<T>;
     fEnumerator: IEnumerator<T>;
@@ -151,11 +151,9 @@ type
   public
     constructor Create(const source: IEnumerable<T>;
       const predicate: Predicate<T>);
-
-    function Where(const predicate: Predicate<T>): IEnumerable<T>;
   end;
 
-  TWhereIndexIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TWhereIndexIterator<T> = class(TSourceIterator<T>)
   private
     fPredicate: Func<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
@@ -170,7 +168,7 @@ type
       const predicate: Func<T, Integer, Boolean>);
   end;
 
-  TSkipIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TSkipIterator<T> = class(TSourceIterator<T>)
   private
     fCount: Integer;
     fEnumerator: IEnumerator<T>;
@@ -184,23 +182,10 @@ type
     constructor Create(const source: IEnumerable<T>; count: Integer);
   end;
 
-  TSkipWhileIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TSkipWhileIterator<T> = class(TSourceIterator<T>)
   private
     fPredicate: Predicate<T>;
-    fEnumerator: IEnumerator<T>;
-    fYielding: Boolean;
-  protected
-    function Clone: TIterator<T>; override;
-    procedure Dispose; override;
-    procedure Start; override;
-    function TryMoveNext(var current: T): Boolean; override;
-  public
-    constructor Create(const source: IEnumerable<T>; const predicate: Predicate<T>);
-  end;
-
-  TSkipWhileIndexIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
-  private
-    fPredicate: Func<T, Integer, Boolean>;
+    fPredicateIndex: Func<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
     fIndex: Integer;
     fYielding: Boolean;
@@ -210,10 +195,11 @@ type
     procedure Start; override;
     function TryMoveNext(var current: T): Boolean; override;
   public
-    constructor Create(const source: IEnumerable<T>; const predicate: Func<T, Integer, Boolean>);
+    constructor Create(const source: IEnumerable<T>; const predicate: Predicate<T>); overload;
+    constructor Create(const source: IEnumerable<T>; const predicate: Func<T, Integer, Boolean>); overload;
   end;
 
-  TTakeIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TTakeIterator<T> = class(TSourceIterator<T>)
   private
     fCount: Integer;
     fEnumerator: IEnumerator<T>;
@@ -227,22 +213,10 @@ type
     constructor Create(const source: IEnumerable<T>; count: Integer);
   end;
 
-  TTakeWhileIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TTakeWhileIterator<T> = class(TSourceIterator<T>)
   private
     fPredicate: Predicate<T>;
-    fEnumerator: IEnumerator<T>;
-  protected
-    function Clone: TIterator<T>; override;
-    procedure Dispose; override;
-    procedure Start; override;
-    function TryMoveNext(var current: T): Boolean; override;
-  public
-    constructor Create(const source: IEnumerable<T>; const predicate: Predicate<T>);
-  end;
-
-  TTakeWhileIndexIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
-  private
-    fPredicate: Func<T, Integer, Boolean>;
+    fPredicateIndex: Func<T, Integer, Boolean>;
     fEnumerator: IEnumerator<T>;
     fIndex: Integer;
   protected
@@ -251,10 +225,11 @@ type
     procedure Start; override;
     function TryMoveNext(var current: T): Boolean; override;
   public
-    constructor Create(const source: IEnumerable<T>; const predicate: Func<T, Integer, Boolean>);
+    constructor Create(const source: IEnumerable<T>; const predicate: Predicate<T>); overload;
+    constructor Create(const source: IEnumerable<T>; const predicate: Func<T, Integer, Boolean>); overload;
   end;
 
-  TConcatIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TConcatIterator<T> = class(TSourceIterator<T>)
   private
     fSecond: IEnumerable<T>;
     fEnumerator: IEnumerator<T>;
@@ -268,7 +243,7 @@ type
     constructor Create(const first, second: IEnumerable<T>);
   end;
 
-  TReversedIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TReversedIterator<T> = class(TSourceIterator<T>)
   private
     fBuffer: TArray<T>;
     fIndex: Integer;
@@ -281,7 +256,7 @@ type
     constructor Create(const source: IEnumerable<T>);
   end;
 
-  TDistinctIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TDistinctIterator<T> = class(TSourceIterator<T>)
   private
     fComparer: IEqualityComparer<T>;
     fSet: ISet<T>;
@@ -295,7 +270,7 @@ type
     constructor Create(const source: IEnumerable<T>; const comparer: IEqualityComparer<T>);
   end;
 
-  TDistinctByIterator<T,TKey> = class(TSourceIterator<T>, IEnumerable<T>)
+  TDistinctByIterator<T,TKey> = class(TSourceIterator<T>)
   private
     fKeySelector: Func<T, TKey>;
     fComparer: IEqualityComparer<TKey>;
@@ -341,7 +316,7 @@ type
     function ToArray: TArray<Integer>;
   end;
 
-  TExceptIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TExceptIterator<T> = class(TSourceIterator<T>)
   private
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
@@ -357,7 +332,7 @@ type
     constructor Create(const first, second: IEnumerable<T>; const comparer: IEqualityComparer<T>); overload;
   end;
 
-  TIntersectIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TIntersectIterator<T> = class(TSourceIterator<T>)
   private
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
@@ -373,7 +348,7 @@ type
     constructor Create(const first, second: IEnumerable<T>; const comparer: IEqualityComparer<T>); overload;
   end;
 
-  TUnionIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TUnionIterator<T> = class(TSourceIterator<T>)
   private
     fSecond: IEnumerable<T>;
     fComparer: IEqualityComparer<T>;
@@ -775,7 +750,7 @@ type
       descending: Boolean = False); overload;
   end;
 
-  TOrderedIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TOrderedIterator<T> = class(TSourceIterator<T>)
   private
     fComparer: IComparer<T>;
     fValues: TArray<T>;
@@ -808,7 +783,7 @@ type
       const resultSelector: Func<TFirst, TSecond, TResult>);
   end;
 
-  TDefaultIfEmptyIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+  TDefaultIfEmptyIterator<T> = class(TSourceIterator<T>)
   private
     fDefaultValue: T;
     fEnumerator: IEnumerator<T>;
@@ -822,7 +797,7 @@ type
     constructor Create(const source: IEnumerable<T>; const defaultValue: T);
   end;
 
-  TExtremaByIterator<T, TKey> = class(TSourceIterator<T>, IEnumerable<T>)
+  TExtremaByIterator<T, TKey> = class(TSourceIterator<T>)
   private
     fKeySelector: Func<T, TKey>;
     fCompare: Func<TKey, TKey, Integer>;
@@ -1169,13 +1144,6 @@ begin
   fEnumerator := fSource.GetEnumerator;
 end;
 
-function TWhereIterator<T>.Where(
-  const predicate: Predicate<T>): IEnumerable<T>;
-begin
-  Result := TWhereIterator<T>.Create(fSource,
-    TEnumerable.CombinePredicates<T>(fPredicate, predicate));
-end;
-
 {$ENDREGION}
 
 
@@ -1282,9 +1250,25 @@ begin
   fPredicate := predicate;
 end;
 
+constructor TSkipWhileIterator<T>.Create(const source: IEnumerable<T>;
+  const predicate: Func<T, Integer, Boolean>);
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(source), 'source');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
+
+  inherited Create(source.Comparer);
+  fSource := source;
+  fPredicateIndex := predicate;
+end;
+
 function TSkipWhileIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TSkipWhileIterator<T>.Create(fSource, fPredicate);
+  if Assigned(fPredicate) then
+    Result := TSkipWhileIterator<T>.Create(fSource, fPredicate)
+  else
+    Result := TSkipWhileIterator<T>.Create(fSource, fPredicateIndex);
 end;
 
 procedure TSkipWhileIterator<T>.Dispose;
@@ -1297,8 +1281,18 @@ begin
   while fEnumerator.MoveNext do
   begin
     current := fEnumerator.Current;
-    if not fYielding and not fPredicate(current) then
-      fYielding := True;
+
+    if not fYielding then
+      if Assigned(fPredicate) then
+      begin
+        if not fPredicate(current) then
+          fYielding := True;
+      end
+      else
+        if not fPredicateIndex(current, fIndex) then
+          fYielding := True;
+
+    Inc(fIndex);
     if fYielding then
       Exit(True);
   end;
@@ -1308,54 +1302,6 @@ end;
 procedure TSkipWhileIterator<T>.Start;
 begin
   fEnumerator := fSource.GetEnumerator;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSkipWhileIndexIterator<T>'}
-
-constructor TSkipWhileIndexIterator<T>.Create(const source: IEnumerable<T>;
-  const predicate: Func<T, Integer, Boolean>);
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(source), 'source');
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
-
-  inherited Create(source.Comparer);
-  fSource := source;
-  fPredicate := predicate;
-end;
-
-function TSkipWhileIndexIterator<T>.Clone: TIterator<T>;
-begin
-  Result := TSkipWhileIndexIterator<T>.Create(fSource, fPredicate);
-end;
-
-procedure TSkipWhileIndexIterator<T>.Dispose;
-begin
-  fEnumerator := nil;
-end;
-
-function TSkipWhileIndexIterator<T>.TryMoveNext(var current: T): Boolean;
-begin
-  while fEnumerator.MoveNext do
-  begin
-    current := fEnumerator.Current;
-    Inc(fIndex);
-    if not fYielding and not fPredicate(current, fIndex) then
-      fYielding := True;
-    if fYielding then
-      Exit(True);
-  end;
-  Result := False;
-end;
-
-procedure TSkipWhileIndexIterator<T>.Start;
-begin
-  fEnumerator := fSource.GetEnumerator;
-  fIndex := -1;
 end;
 
 {$ENDREGION}
@@ -1418,9 +1364,26 @@ begin
   fPredicate := predicate;
 end;
 
+constructor TTakeWhileIterator<T>.Create(
+  const source: IEnumerable<T>;
+  const predicate: Func<T, Integer, Boolean>);
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(source), 'source');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
+
+  inherited Create(source.Comparer);
+  fSource := source;
+  fPredicateIndex := predicate;
+end;
+
 function TTakeWhileIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TTakeWhileIterator<T>.Create(fSource, fPredicate);
+  if Assigned(fPredicate) then
+    Result := TTakeWhileIterator<T>.Create(fSource, fPredicate)
+  else
+    Result := TTakeWhileIterator<T>.Create(fSource, fPredicateIndex);
 end;
 
 procedure TTakeWhileIterator<T>.Dispose;
@@ -1434,58 +1397,16 @@ begin
   if Result then
   begin
     current := fEnumerator.Current;
-    Result := fPredicate(current);
+    if Assigned(fPredicate) then
+      Result := fPredicate(current)
+    else
+      Result := fPredicateIndex(current, fIndex);
+    Inc(fIndex);
   end;
 end;
 
 procedure TTakeWhileIterator<T>.Start;
 begin
-  fEnumerator := fSource.GetEnumerator;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTakeWhileIndexIterator<T>'}
-
-constructor TTakeWhileIndexIterator<T>.Create(
-  const source: IEnumerable<T>;
-  const predicate: Func<T, Integer, Boolean>);
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(source), 'source');
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
-
-  inherited Create(source.Comparer);
-  fSource := source;
-  fPredicate := predicate;
-end;
-
-function TTakeWhileIndexIterator<T>.Clone: TIterator<T>;
-begin
-  Result := TTakeWhileIndexIterator<T>.Create(fSource, fPredicate);
-end;
-
-procedure TTakeWhileIndexIterator<T>.Dispose;
-begin
-  fEnumerator := nil;
-end;
-
-function TTakeWhileIndexIterator<T>.TryMoveNext(var current: T): Boolean;
-begin
-  Result := fEnumerator.MoveNext;
-  if Result then
-  begin
-    current := fEnumerator.Current;
-    Inc(fIndex);
-    Result := fPredicate(current, findex);
-  end;
-end;
-
-procedure TTakeWhileIndexIterator<T>.Start;
-begin
-  fIndex := -1;
   fEnumerator := fSource.GetEnumerator;
 end;
 
