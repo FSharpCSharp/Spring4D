@@ -5434,14 +5434,10 @@ begin
 end;
 
 function TValueHelper.ToVariant: Variant;
-var
-  value: TValue;
-  obj: TObject;
-  arr: Pointer;
-  stream: TStream;
-  persist: IStreamPersist;
 
-  function TryConvertToVariant(out returnValue: Variant): Boolean;
+  function TryConvertToVariant(var returnValue: Variant): Boolean;
+  var
+    value: TValue;
   begin
     Result := TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value);
     if Result then
@@ -5450,6 +5446,63 @@ var
       returnValue := Null;
   end;
 
+  function TryConvertStreamToVariant(var returnValue: Variant): Boolean;
+  var
+    obj: TObject;
+    stream: TStream;
+    persist: IStreamPersist;
+  begin
+    obj := AsObject;
+    if obj is TStream then
+    begin
+      stream := TStream(obj);
+      stream.Position := 0;
+      returnValue := StreamToVariant(stream);
+      Result := True;
+    end
+    else if Supports(obj, IStreamPersist, persist) then
+    begin
+      stream := TMemoryStream.Create;
+      try
+        persist.SaveToStream(stream);
+        stream.Position := 0;
+        returnValue := StreamToVariant(stream);
+        Result := True;
+      finally
+        stream.Free;
+      end;
+    end
+    else
+      Result := False;
+  end;
+
+  function TryConvertRecordToVariant(var returnValue: Variant): Boolean;
+  var
+    value: TValue;
+  begin
+    if IsNullable(TypeInfo) and TryGetNullableValue(value) then
+    begin
+      returnValue := value.ToVariant;
+      Exit(True);
+    end;
+
+    if IsLazyType(TypeInfo) and TryGetLazyValue(value) then
+    begin
+      returnValue := value.ToVariant;
+      Exit(True);
+    end;
+
+    if TypeInfo = System.TypeInfo(TGUID) then
+    begin
+      returnValue := AsType<TGUID>.ToString;
+      Exit(True);
+    end;
+
+    Result := False;
+  end;
+
+var
+  arr: PPointer;
 begin
   Result := Null;
   case Kind of
@@ -5468,50 +5521,20 @@ begin
       else
         Exit(AsExtended);
     tkRecord:
-    begin
-      if IsNullable(TypeInfo) then
-        if TryGetNullableValue(value) then
-          Exit(value.ToVariant);
-
-      if IsLazyType(TypeInfo) then
-        if TryGetLazyValue(value) then
-          Exit(value.ToVariant);
-
-      if TypeInfo = System.TypeInfo(TGUID) then
-        Exit(AsType<TGUID>.ToString);
-    end;
-    tkClass:
-    begin
-      if TryConvertToVariant(Result) then
+      if TryConvertRecordToVariant(Result) then
         Exit;
-
-      obj := AsObject;
-      if obj is TStream then
-      begin
-        stream := TStream(obj);
-        stream.Position := 0;
-        Exit(StreamToVariant(stream));
-      end
-      else if Supports(obj, IStreamPersist, persist) then
-      begin
-        stream := TMemoryStream.Create;
-        try
-          persist.SaveToStream(stream);
-          stream.Position := 0;
-          Exit(StreamToVariant(stream));
-        finally
-          stream.Free;
-        end;
-      end;
-    end;
+    tkClass:
+      if TryConvertToVariant(Result)
+        or TryConvertStreamToVariant(Result) then
+        Exit;
     tkInterface:
       Exit(AsInterface);
     tkDynArray:
     begin
-      arr := Pointer(GetReferenceToRawData^);
-      DynArrayToVariant(Result, arr, TypeInfo);
+      arr := GetReferenceToRawData;
+      DynArrayToVariant(Result, arr^, TypeInfo);
       Exit;
-    end;
+    end
   else
     Exit(AsVariant);
   end;
