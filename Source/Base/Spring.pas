@@ -2262,12 +2262,11 @@ type
           INITIAL_TMP_STORAGE_LENGTH = 256;
       private
         fItems: P;
-        fCount: Integer;
         fComparer: IComparer<T>;
         fMinGallop: Integer;
         fTmp: TArray<T>;
-        fTmpBase: Integer;
-        fStackSize: Integer;
+        fMaxTmpLen: Integer;
+        fStackLen: Integer;
         fRunBase: TArray<Integer>;
         fRunLen: TArray<Integer>;
       private
@@ -2285,7 +2284,7 @@ type
         class function GallopRight(const key: T; items: P; const comparer: IComparer<T>; base, len, hint: Integer): Integer;
         procedure MergeLo(base1, len1, base2, len2: Integer);
         procedure MergeHi(base1, len1, base2, len2: Integer);
-        function EnsureCapacity(minCapacity: Integer): P;
+        function EnsureTmpCapacity(minCapacity: Integer): P;
       public
         class procedure Sort(var items: array of T; const comparer: IComparer<T>; lo, hi, start: Integer); static;
       end;
@@ -8910,16 +8909,15 @@ var
 begin
   inherited Create;
   fItems := items;
-  fCount := count;
   fComparer := comparer;
   fMinGallop := MIN_GALLOP;
 
-  if fCount < 2 * INITIAL_TMP_STORAGE_LENGTH then
-    tmpLen := fCount shr 1
+  if count < 2 * INITIAL_TMP_STORAGE_LENGTH then
+    tmpLen := count shr 1
   else
     tmpLen := INITIAL_TMP_STORAGE_LENGTH;
   SetLength(fTmp, tmpLen);
-  fTmpBase := 0;
+  fMaxTmpLen := count shr 1;
 
   (* Allocate runs-to-be-merged stack (which cannot be expanded).  The stack length requirements
      are described in listsorttxt.  The C version always uses the same stack length (85), but this
@@ -8931,11 +8929,11 @@ begin
      scenario. More explanations are given in section 4 of
      http://envisage-project.eu/wp-content/uploads/2015/02/sorting.pdf *)
 
-  if fCount < 120 then
+  if count < 120 then
     stackLen := 5
-  else if fCount < 1542 then
+  else if count < 1542 then
     stackLen := 10
-  else if fCount < 119151 then
+  else if count < 119151 then
     stackLen := 24
   else
     stackLen := 49;
@@ -9056,18 +9054,18 @@ end;
 
 procedure TArray.TTimSort<T>.PushRun(runBase, runLen: Integer);
 begin
-  fRunBase[fStackSize] := runBase;
-  fRunLen[fStackSize] := runLen;
-  Inc(fStackSize);
+  fRunBase[fStackLen] := runBase;
+  fRunLen[fStackLen] := runLen;
+  Inc(fStackLen);
 end;
 
 procedure TArray.TTimSort<T>.MergeCollapse;
 var
   n: Integer;
 begin
-  while fStackSize > 1 do
+  while fStackLen > 1 do
   begin
-    n := fStackSize - 2;
+    n := fStackLen - 2;
     if (n > 0) and (fRunLen[n - 1] <= fRunLen[n] + fRunLen[n + 1]) then
     begin
       if fRunLen[n - 1] < fRunLen[n + 1] then
@@ -9085,9 +9083,9 @@ procedure TArray.TTimSort<T>.MergeForceCollapse;
 var
   n: Integer;
 begin
-  while fStackSize > 1 do
+  while fStackLen > 1 do
   begin
-    n := fStackSize - 2;
+    n := fStackLen - 2;
     if (n > 0) and (fRunLen[n - 1] < fRunLen[n + 1]) then
       Dec(n);
     MergeAt(n);
@@ -9098,9 +9096,9 @@ procedure TArray.TTimSort<T>.MergeAt(i: Integer);
 var
   base1, len1, base2, len2, k: Integer;
 begin
-  Assert(fStackSize >= 2);
+  Assert(fStackLen >= 2);
   Assert(i >= 0);
-  Assert((i = fStackSize - 2) or (i = fStackSize - 3));
+  Assert((i = fStackLen - 2) or (i = fStackLen - 3));
 
   base1 := fRunBase[i];
   len1 := fRunLen[i];
@@ -9113,12 +9111,12 @@ begin
   (* Record the length of the combined runs; if i is the 3rd-last run now, also slide over the
      last run (which isn't involved in this merge).  The current run (i+1) goes away in any case. *)
   fRunLen[i] := len1 + len2;
-  if i = fStackSize - 3 then
+  if i = fStackLen - 3 then
   begin
     fRunBase[i + 1] := fRunBase[i + 2];
     fRunLen[i + 1] := fRunLen[i + 2];
   end;
-  Dec(fStackSize);
+  Dec(fStackLen);
 
   (* Find where the first element of run2 goes in run1. Prior elements in run1 can be ignored
      because they're already in place. *)
@@ -9284,8 +9282,7 @@ label
   endOfOuterLoop;
 var
   items, tmp: P;
-  cursor1, cursor2, dest, minGallop, count1, count2: Integer;
-  comparer: IComparer<T>;
+  cursor1, cursor2, dest, count1, count2: Integer;
 begin
   Assert(len1 > 0);
   Assert(len2 > 0);
@@ -9293,8 +9290,8 @@ begin
 
   // copy first run into temp array
   items := fItems;
-  tmp := EnsureCapacity(len1);
-  cursor1 := fTmpBase; // indexes into tmp
+  tmp := EnsureTmpCapacity(len1);
+  cursor1 := 0; // indexes into tmp
   cursor2 := base2; // indexes into items
   dest := base1; // indexes into items
   CopyArray(items, tmp, base1, cursor1, len1);
@@ -9316,8 +9313,6 @@ begin
     Exit;
   end;
 
-  comparer := fComparer;
-  minGallop := fMinGallop;
   while True do
   begin
     count1 := 0; // number of times in a row that first run won
@@ -9327,7 +9322,7 @@ begin
     repeat
       Assert(len1 > 1);
       Assert(len2 > 0);
-      if comparer.Compare(items[cursor2], tmp[cursor1]) < 0 then
+      if fComparer.Compare(items[cursor2], tmp[cursor1]) < 0 then
       begin
         items[dest] := items[cursor2];
         Inc(dest);
@@ -9349,7 +9344,7 @@ begin
         if len1 = 1 then
           goto endOfOuterLoop;
       end;
-    until (count1 or count2) >= minGallop;
+    until (count1 or count2) >= fMinGallop;
 
     (* One run is winning so consistently that galloping may be a huge win. So
        try that, and continue galloping until (if ever) neither run appears to
@@ -9357,7 +9352,7 @@ begin
     repeat
       Assert(len1 > 1);
       Assert(len2 > 0);
-      count1 := GallopRight(items[cursor2], tmp, comparer, cursor1, len1, 0);
+      count1 := GallopRight(items[cursor2], tmp, fComparer, cursor1, len1, 0);
       if count1 <> 0 then
       begin
         CopyArray(tmp, items, cursor1, dest, count1);
@@ -9374,7 +9369,7 @@ begin
       if len2 = 0 then
         goto endOfOuterLoop;
 
-      count2 := gallopLeft(tmp[cursor1], items, comparer, cursor2, len2, 0);
+      count2 := gallopLeft(tmp[cursor1], items, fComparer, cursor2, len2, 0);
       if count2 <> 0 then
       begin
         CopyArray(items, items, cursor2, dest, count2);
@@ -9390,14 +9385,14 @@ begin
       Dec(len1);
       if len1 = 1 then
         goto endOfOuterLoop;
-      Dec(minGallop);
+      Dec(fMinGallop);
     until (count1 < MIN_GALLOP) and (count2 < MIN_GALLOP);
-    if minGallop < 0 then
-      minGallop := 0;
-    Inc(minGallop, 2); // penalize for leaving gallop mode
+    if fMinGallop < 0 then
+      fMinGallop := 0;
+    Inc(fMinGallop, 2); // penalize for leaving gallop mode
   end;
 endOfOuterLoop:
-  fMinGallop := Math.Max(1, minGallop); // write back to field
+  fMinGallop := Math.Max(1, fMinGallop);
 
   if len1 = 1 then
   begin
@@ -9420,8 +9415,7 @@ label
   endOfOuterLoop;
 var
   items, tmp: P;
-  tmpBase, cursor1, cursor2, dest, minGallop, count1, count2: Integer;
-  comparer: IComparer<T>;
+  cursor1, cursor2, dest, count1, count2: Integer;
 begin
   Assert(len1 > 0);
   Assert(len2 > 0);
@@ -9429,11 +9423,10 @@ begin
 
   // copy second run into temp array
   items := fItems;
-  tmp := EnsureCapacity(len2);
-  tmpBase := fTmpBase;
-  CopyArray(items, tmp, base2, tmpBase, len2);
+  tmp := EnsureTmpCapacity(len2);
+  CopyArray(items, tmp, base2, 0, len2);
   cursor1 := base1 + len1 - 1; // indexes into items
-  cursor2 := tmpBase + len2 - 1; // indexes into tmp
+  cursor2 := len2 - 1; // indexes into tmp
   dest := base2 + len2 - 1; // indexes into items
 
   // move last element of first run and deal with degenerate cases
@@ -9443,7 +9436,7 @@ begin
   Dec(len1);
   if len1 = 0 then
   begin
-    CopyArray(tmp, items, tmpBase, dest - (len2 - 1), len2);
+    CopyArray(tmp, items, 0, dest - (len2 - 1), len2);
     Exit;
   end;
   if len2 = 1 then
@@ -9455,8 +9448,6 @@ begin
     Exit;
   end;
 
-  comparer := fComparer;
-  minGallop := fMinGallop;
   while True do
   begin
     count1 := 0; // number of times in a row that first run won
@@ -9466,7 +9457,7 @@ begin
     repeat
       Assert(len1 > 0);
       Assert(len2 > 1);
-      if comparer.Compare(tmp[cursor2], items[cursor1]) < 0 then
+      if fComparer.Compare(tmp[cursor2], items[cursor1]) < 0 then
       begin
         items[dest] := items[cursor1];
         Dec(dest);
@@ -9488,7 +9479,7 @@ begin
         if len2 = 1 then
           goto endOfOuterLoop;
       end;
-    until (count1 or count2) >= minGallop;
+    until (count1 or count2) >= fMinGallop;
 
     (* One run is winning so consistently that galloping may be a huge win.
        So try that, and continue galloping until (if ever) neither run
@@ -9496,7 +9487,7 @@ begin
     repeat
       Assert(len1 > 0);
       Assert(len2 > 1);
-      count1 := len1 - GallopRight(tmp[cursor2], items, comparer, base1, len1, len1 - 1);
+      count1 := len1 - GallopRight(tmp[cursor2], items, fComparer, base1, len1, len1 - 1);
       if count1 <> 0 then
       begin
         Dec(dest, count1);
@@ -9513,7 +9504,7 @@ begin
       if len2 = 1 then
         goto endOfOuterLoop;
 
-      count2 := len2 - GallopLeft(items[cursor1], tmp, comparer, tmpBase, len2, len2 - 1);
+      count2 := len2 - GallopLeft(items[cursor1], tmp, fComparer, 0, len2, len2 - 1);
       if count2 <> 0 then
       begin
         Dec(dest, count2);
@@ -9529,14 +9520,14 @@ begin
       Dec(len1);
       if len1 = 0 then
         goto endOfOuterLoop;
-      Dec(minGallop);
+      Dec(fMinGallop);
     until (count1 < MIN_GALLOP) and (count2 < MIN_GALLOP);
-    if minGallop < 0 then
-      minGallop := 0;
-    Inc(minGallop, 2); // penalize for leaving gallop mode
+    if fMinGallop < 0 then
+      fMinGallop := 0;
+    Inc(fMinGallop, 2); // penalize for leaving gallop mode
   end;
 endOfOuterLoop:
-  fMinGallop := Math.Max(1, minGallop); // write back to field
+  fMinGallop := Math.Max(1, fMinGallop);
 
   if len2 = 1 then
   begin
@@ -9552,32 +9543,31 @@ endOfOuterLoop:
   begin
     Assert(len1 = 0);
     Assert(len2 > 0);
-    CopyArray(tmp, items, tmpBase, dest - (len2 - 1), len2);
+    CopyArray(tmp, items, 0, dest - (len2 - 1), len2);
   end;
 end;
 
-function TArray.TTimSort<T>.EnsureCapacity(minCapacity: Integer): P;
+function TArray.TTimSort<T>.EnsureTmpCapacity(minCapacity: Integer): P;
 var
-  newSize: Integer;
+  newLen: Integer;
 begin
   if Length(fTmp) < minCapacity then
   begin
     // compute smallest power of 2 > minCapacity
-    newSize := minCapacity;
-    newSize := newSize or (newSize shr 1);
-    newSize := newSize or (newSize shr 2);
-    newSize := newSize or (newSize shr 4);
-    newSize := newSize or (newSize shr 8);
-    newSize := newSize or (newSize shr 16);
-    Inc(newSize);
+    newLen := minCapacity;
+    newLen := newLen or (newLen shr 1);
+    newLen := newLen or (newLen shr 2);
+    newLen := newLen or (newLen shr 4);
+    newLen := newLen or (newLen shr 8);
+    newLen := newLen or (newLen shr 16);
+    Inc(newLen);
 
-    if newSize < 0 then // not bloody likely!
-      newSize := minCapacity
+    if newLen < 0 then // not bloody likely!
+      newLen := minCapacity
     else
-      newSize := Math.Min(newSize, fCount shr 1);
+      newLen := Math.Min(newLen, fMaxTmpLen);
 
-    SetLength(fTmp, newSize);
-    fTmpBase := 0;
+    SetLength(fTmp, newLen);
   end;
   Result := @fTmp[0];
 end;
@@ -9595,7 +9585,7 @@ begin
 
   nRemaining := hi - lo;
   if nRemaining < 2 then
-    Exit; // arrays of size 0 and 1 are always sorted
+    Exit; // arrays of length 0 and 1 are always sorted
 
   // if array is small, do a "mini-TimSort" with no merges
   if nRemaining < MIN_MERGE then
@@ -9643,7 +9633,7 @@ begin
     // Merge all remaining runs to complete sort
     Assert(lo = hi);
     ts.MergeForceCollapse;
-    Assert(ts.fStackSize = 1);
+    Assert(ts.fStackLen = 1);
   finally
     ts.Free;
   end;
