@@ -38,7 +38,7 @@ uses
   Spring.Collections.Base,
   Spring.Collections.Lists;
 
-{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
   TEmptyEnumerable<T> = class(TEnumerableBase<T>, IInterface, IEnumerator<T>,

@@ -36,7 +36,7 @@ uses
   Spring.Collections,
   Spring.Collections.Events;
 
-{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
   /// <summary>

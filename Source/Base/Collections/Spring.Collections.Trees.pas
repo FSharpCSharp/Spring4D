@@ -34,7 +34,7 @@ uses
   Spring.Collections,
   Spring.Collections.Base;
 
-{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 const
   ColorMask = IntPtr(1);

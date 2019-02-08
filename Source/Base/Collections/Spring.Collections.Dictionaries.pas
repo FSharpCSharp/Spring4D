@@ -37,7 +37,7 @@ uses
   Spring.Collections.Trees,
   Spring.Events.Base;
 
-{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
   TDictionaryItem<TKey, TValue> = record

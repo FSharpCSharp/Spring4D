@@ -34,7 +34,7 @@ uses
   Spring.Collections.Base,
   Spring.Collections.Trees;
 
-{$IFDEF DELPHIXE5_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
   /// <summary>
