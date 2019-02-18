@@ -711,34 +711,27 @@ begin
   Result := TBuffer.Create(bytes);
 end;
 
-class function TBuffer.ConvertToHexString(const buffer: Pointer;
-  count: Integer): string;
-{$IFNDEF NEXTGEN}
-begin
-  SetLength(Result, count * 2);
-  Classes.BinToHex(buffer, PChar(Result), count);
-end;
-{$ELSE}
+{$IFDEF NEXTGEN}
+procedure BinToHex(Buffer: PByte; Text: PChar; BufSize: Integer); overload;
+const
+  Convert: array[0..15] of Char = '0123456789ABCDEF';
 var
-  buff: TBytes;
-  text: TBytes;
-  i: Integer;
+  I: Integer;
 begin
-  if (count = 0) then
+  for I := 0 to BufSize - 1 do
   begin
-    SetLength(Result, 0);
-    Exit;
+    Text[0] := Convert[Byte(Buffer[I]) shr 4];
+    Text[1] := Convert[Byte(Buffer[I]) and $F];
+    Inc(Text, 2);
   end;
-
-  SetLength(buff, count);
-  Move(buffer^, buff[0], count);
-  SetLength(text, count * 2);
-  Classes.BinToHex(text, 0, buff, 0, count);
-  SetLength(Result, count * 2);
-  for i := 1 to Length(Result) do
-    Result[i]:=Char(text[i - 1]);
 end;
 {$ENDIF}
+
+class function TBuffer.ConvertToHexString(const buffer: Pointer; count: Integer): string;
+begin
+  SetLength(Result, count * 2);
+  BinToHex(buffer, PChar(Result), count);
+end;
 
 class function TBuffer.ConvertToHexString(const buffer: Pointer; count: Integer;
   const prefix, delimiter: string): string;
