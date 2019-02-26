@@ -384,7 +384,7 @@ class function TArg.IsEqual<T>(const value: T): T;
 var
   comparer: IEqualityComparer<T>;
 begin
-  comparer := TEqualityComparer<T>.Default;
+  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
     begin
@@ -430,7 +430,7 @@ class function TArg.IsInRange<T>(const lowValue, highValue: T;
 var
   comparer: IComparer<T>;
 begin
-  comparer := TComparer<T>.Default;
+  comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
     var

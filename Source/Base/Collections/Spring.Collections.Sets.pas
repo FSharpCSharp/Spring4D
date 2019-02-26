@@ -357,7 +357,7 @@ begin
   if Assigned(comparer) then
     fEqualityComparer := comparer
   else
-    fEqualityComparer := TEqualityComparer<T>.Default;
+    fEqualityComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
   SetCapacity(capacity);
 end;
 

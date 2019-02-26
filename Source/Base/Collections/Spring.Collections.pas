@@ -40,9 +40,6 @@ uses
   Spring;
 
 const
-  doOwnsKeys = Generics.Collections.doOwnsKeys;
-  doOwnsValues = Generics.Collections.doOwnsValues;
-
   caAdded = Spring.caAdded;
   caRemoved = Spring.caRemoved;
   caExtracted = Spring.caExtracted;
@@ -52,7 +49,7 @@ const
   caChanged = Spring.caChanged;
 
 type
-  TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
+  TDictionaryOwnerships = set of (doOwnsKeys, doOwnsValues);
 
   TCollectionChangedAction = Spring.TCollectionChangedAction;
 
@@ -63,9 +60,6 @@ type
     Key: TKey;
     Value: TValue;
     constructor Create(const key: TKey; const value: TValue);
-
-    class operator Implicit(const value: TPair<TKey, TValue>): Generics.Collections.TPair<TKey, TValue>;
-    class operator Implicit(const value: Generics.Collections.TPair<TKey, TValue>): TPair<TKey, TValue>;
   end;
 
   ICollectionChangedEvent<T> = interface(IEvent<TCollectionChangedEvent<T>>)
@@ -2860,20 +2854,6 @@ constructor TPair<TKey, TValue>.Create(const key: TKey; const value: TValue);
 begin
   Self.Key := key;
   Self.Value := value;
-end;
-
-class operator TPair<TKey, TValue>.Implicit(
-  const value: TPair<TKey, TValue>): Generics.Collections.TPair<TKey, TValue>;
-begin
-  Result.Key := value.Key;
-  Result.Value := value.Value;
-end;
-
-class operator TPair<TKey, TValue>.Implicit(
-  const value: Generics.Collections.TPair<TKey, TValue>): TPair<TKey, TValue>;
-begin
-  Result.Key := value.Key;
-  Result.Value := value.Value;
 end;
 
 {$ENDREGION}

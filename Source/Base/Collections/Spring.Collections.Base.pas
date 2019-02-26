@@ -636,7 +636,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TAbstractEnumerable'}
+{$REGION 'TRefCountedObject'}
 
 function TRefCountedObject.AsObject: TObject;
 begin
@@ -719,7 +719,7 @@ begin
   if TType.Kind<T> = tkClass then
     fComparer := IComparer<T>(GetInstanceComparer)
   else
-    fComparer := TComparer<T>.Default;
+    fComparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
 
   Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<T>).IOffset);
 end;
@@ -813,8 +813,11 @@ begin
 end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
 begin
-  Result := this.Contains(value, TEqualityComparerWrapper<T>.Construct(Self));
+  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  Result := IEnumerable<T>(this).Contains(value, comparer);
 end;
 
 function TEnumerableBase<T>.Contains(const value: T;
@@ -910,8 +913,16 @@ begin
 end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;
+var
+  comparer: IEqualityComparer<T>;
 begin
-  Result := (this = values) or this.EqualsTo(values, TEqualityComparerWrapper<T>.Construct(Self));
+  if this = values then
+    Result := True
+  else
+  begin
+    comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+    Result := IEnumerable<T>(this).EqualsTo(values, comparer);
+  end;
 end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>;

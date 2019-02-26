@@ -41,11 +41,10 @@ uses
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
-  TEmptyEnumerable<T> = class(TEnumerableBase<T>, IInterface, IEnumerator<T>,
+  TEmptyEnumerable<T> = class sealed(TEnumerableBase<T>, IInterface, IEnumerator<T>,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
-    class var fInstance: IReadOnlyList<T>;
-    class function GetInstance: IReadOnlyList<T>; static;
+    class var fInstance: TEmptyEnumerable<T>;
     constructor Create; reintroduce;
     function GetCurrent: T;
   {$REGION 'Property Accessors'}
@@ -54,10 +53,24 @@ type
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
+    class constructor Create;
     class destructor Destroy;
 
-    function GetEnumerator: IEnumerator<T>;
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; reintroduce; stdcall;
+    function _Release: Integer; reintroduce; stdcall;
+  {$ENDREGION}
+
+  {$REGION 'Implements IEnumerator<T>'}
     function MoveNext: Boolean;
+  {$ENDREGION}
+
+  {$REGION 'Implements IEnumerable<T>'}
+    function GetEnumerator: IEnumerator<T>;
+    function Skip(count: Integer): IEnumerable<T>; overload;
+    function Take(count: Integer): IEnumerable<T>; overload;
+    function ToArray: TArray<T>;
+  {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyCollection<T>'}
     procedure CopyTo(var values: TArray<T>; index: Integer);
@@ -69,9 +82,7 @@ type
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
   {$ENDREGION}
 
-    function ToArray: TArray<T>;
-
-    class property Instance: IReadOnlyList<T> read GetInstance;
+    class property Instance: TEmptyEnumerable<T> read fInstance;
   end;
 
   TArrayIterator<T> = class(TIterator<T>, IEnumerable<T>,
@@ -887,8 +898,14 @@ begin
   inherited Create;
 end;
 
+class constructor TEmptyEnumerable<T>.Create;
+begin
+  fInstance := TEmptyEnumerable<T>.Create;
+end;
+
 class destructor TEmptyEnumerable<T>.Destroy;
 begin
+  fInstance.Free;
   fInstance := nil;
 end;
 
@@ -909,13 +926,6 @@ end;
 function TEmptyEnumerable<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := Self;
-end;
-
-class function TEmptyEnumerable<T>.GetInstance: IReadOnlyList<T>;
-begin
-  if fInstance = nil then
-    fInstance := TEmptyEnumerable<T>.Create;
-  Result := fInstance;
 end;
 
 function TEmptyEnumerable<T>.GetIsEmpty: Boolean;
@@ -949,9 +959,29 @@ begin
   Result := -1;
 end;
 
+function TEmptyEnumerable<T>.Skip(count: Integer): IEnumerable<T>;
+begin
+  Result := Self;
+end;
+
+function TEmptyEnumerable<T>.Take(count: Integer): IEnumerable<T>;
+begin
+  Result := Self;
+end;
+
 function TEmptyEnumerable<T>.ToArray: TArray<T>;
 begin
   Result := nil;
+end;
+
+function TEmptyEnumerable<T>._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TEmptyEnumerable<T>._Release: Integer;
+begin
+  Result := -1;
 end;
 
 {$ENDREGION}
@@ -1014,11 +1044,12 @@ begin
   Result := IndexOf(item, index, Length(fValues) - index);
 end;
 
-function TArrayIterator<T>.IndexOf(const item: T; index,
-  count: Integer): Integer;
+function TArrayIterator<T>.IndexOf(const item: T; index, count: Integer): Integer;
+var
+  comparer: IEqualityComparer<T>;
 begin
-  Result := TArray.IndexOf<T>(fValues, item, index, count,
-    TEqualityComparerWrapper<T>.Construct(Self));
+  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  Result := TArray.IndexOf<T>(fValues, item, index, count, comparer);
 end;
 
 function TArrayIterator<T>.Clone: TIterator<T>;
@@ -1965,7 +1996,7 @@ constructor TGroupedEnumerable<TSource, TKey, TElement>.Create(
   const source: IEnumerable<TSource>; const keySelector: Func<TSource, TKey>;
   const elementSelector: Func<TSource, TElement>);
 begin
-  Create(source, keySelector, elementSelector, TEqualityComparer<TKey>.Default);
+  Create(source, keySelector, elementSelector, nil);
 end;
 
 constructor TGroupedEnumerable<TSource, TKey, TElement>.Create(
@@ -1985,7 +2016,7 @@ begin
   fElementSelector := elementSelector;
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := TEqualityComparer<TKey>.Default;
+    fComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
 end;
 
 function TGroupedEnumerable<TSource, TKey, TElement>.GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
@@ -2040,8 +2071,7 @@ constructor TGroupedEnumerable<TSource, TKey, TElement, TResult>.Create(
   const elementSelector: Func<TSource, TElement>;
   const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>);
 begin
-  Create(source, keySelector, elementSelector, resultSelector,
-    TEqualityComparer<TKey>.Default);
+  Create(source, keySelector, elementSelector, resultSelector, nil);
 end;
 
 constructor TGroupedEnumerable<TSource, TKey, TElement, TResult>.Create(
@@ -2063,7 +2093,7 @@ begin
   fElementSelector := elementSelector;
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := TEqualityComparer<TKey>.Default;
+    fComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
   fResultSelector := resultSelector;
 end;
 
@@ -2109,7 +2139,7 @@ end;
 
 constructor TLookup<TKey, TElement>.Create;
 begin
-  Create(TEqualityComparer<TKey>.Default);
+  Create(nil);
 end;
 
 constructor TLookup<TKey, TElement>.Create(const comparer: IEqualityComparer<TKey>);
@@ -2117,7 +2147,7 @@ begin
   inherited Create;
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := TEqualityComparer<TKey>.Default;
+    fComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
   fGroupings := TGroupings.Create;
   fGroupingKeys := TDictionary<TKey, TGrouping>.Create(fComparer);
 end;
@@ -2126,7 +2156,7 @@ class function TLookup<TKey, TElement>.Create<TSource>(
   const source: IEnumerable<TSource>; const keySelector: Func<TSource, TKey>;
   const elementSelector: Func<TSource, TElement>): TLookup<TKey, TElement>;
 begin
-  Result := Create<TSource>(source, keySelector, elementSelector, TEqualityComparer<TKey>.Default);
+  Result := Create<TSource>(source, keySelector, elementSelector, nil);
 end;
 
 class function TLookup<TKey, TElement>.Create<TSource>(
@@ -2316,8 +2346,7 @@ constructor TJoinIterator<TOuter, TInner, TKey, TResult>.Create(
   const innerKeySelector: Func<TInner, TKey>;
   const resultSelector: Func<TOuter, TInner, TResult>);
 begin
-  Create(outer, inner, outerKeySelector, innerKeySelector, resultSelector,
-    TEqualityComparer<TKey>.Default);
+  Create(outer, inner, outerKeySelector, innerKeySelector, resultSelector, nil);
 end;
 
 constructor TJoinIterator<TOuter, TInner, TKey, TResult>.Create(
@@ -2407,8 +2436,7 @@ constructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Create(
   const innerKeySelector: Func<TInner, TKey>;
   const resultSelector: Func<TOuter, IEnumerable<TInner>, TResult>);
 begin
-  Create(outer, inner, outerKeySelector, innerKeySelector, resultSelector,
-    TEqualityComparer<TKey>.Default);
+  Create(outer, inner, outerKeySelector, innerKeySelector, resultSelector, nil);
 end;
 
 constructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Create(
@@ -2795,7 +2823,7 @@ begin
   fKeySelector := keySelector;
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := TComparer<TKey>.Default;
+    fComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
   fDescending := descending;
   fNext := next;
 end;
@@ -2897,7 +2925,7 @@ constructor TOrderedEnumerable<TElement, TKey>.Create(
   const source: IEnumerable<TElement>;
   const keySelector: Func<TElement, TKey>);
 begin
-  Create(source, keySelector, TComparer<TKey>.Default);
+  Create(source, keySelector, nil);
 end;
 
 constructor TOrderedEnumerable<TElement, TKey>.Create(
@@ -2923,7 +2951,7 @@ begin
   fKeySelector := keySelector;
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := TComparer<TKey>.Default;
+    fComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
   fDescending := descending;
 end;
 

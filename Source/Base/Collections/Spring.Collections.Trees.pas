@@ -1376,7 +1376,7 @@ begin
   inherited Create;
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := TComparer<T>.Default;
+    fComparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
 end;
 
 function TRedBlackTree<T>.CreateNode(const key: T): PNode;
@@ -1611,7 +1611,7 @@ begin
   inherited Create;
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := TComparer<TKey>.Default;
+    fComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
 end;
 
 function TRedBlackTree<TKey, TValue>.CreateNode(const key: TKey;

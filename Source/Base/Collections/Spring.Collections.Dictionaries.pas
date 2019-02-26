@@ -844,11 +844,11 @@ begin
   if Assigned(keyComparer) then
     fKeyComparer := keyComparer
   else
-    fKeyComparer := TEqualityComparer<TKey>.Default;
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
   if Assigned(valueComparer) then
     fValueComparer := valueComparer
   else
-    fValueComparer := TEqualityComparer<TValue>.Default;
+    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TValue), SizeOf(TValue)));
   SetCapacity(capacity);
 end;
 
@@ -1618,7 +1618,7 @@ begin
       Inc(targetIndex);
     end;
 
-  comparer := TComparer<TKey>.Default;
+  comparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
   TArray.Sort<Integer>(fSortedItemIndices,
     function(const left, right: Integer): Integer
     begin
@@ -1741,11 +1741,11 @@ begin
   if Assigned(keyComparer) then
     fKeyComparer := keyComparer
   else
-    fKeyComparer := TEqualityComparer<TKey>.Default;
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
   if Assigned(valueComparer) then
     fValueComparer := valueComparer
   else
-    fValueComparer := TEqualityComparer<TValue>.Default;
+    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TValue), SizeOf(TValue)));
   fInverse := TInverse.Create(Self);
   SetCapacity(capacity);
 end;
@@ -2819,7 +2819,7 @@ begin
       Inc(targetIndex);
     end;
 
-  comparer := TComparer<TValue>.Default;
+  comparer := IComparer<TValue>(_LookupVtableInfo(giComparer, TypeInfo(TValue), SizeOf(TValue)));
   TArray.Sort<Integer>(fSortedItemIndices,
     function(const left, right: Integer): Integer
     begin
@@ -3095,7 +3095,7 @@ begin
   fIndex := 0;
   fVersion := fSource.fVersion;
 
-  comparer := TComparer<TKey>.Default;
+  comparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
   SetLength(fSortedItemIndices, fSource.fCount);
   targetIndex := 0;
   for sourceIndex := 0 to fSource.fItemCount - 1 do
@@ -3150,11 +3150,11 @@ begin
   if Assigned(keyComparer) then
     fKeyComparer := keyComparer
   else
-    fKeyComparer := TComparer<TKey>.Default;
+    fKeyComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
   if Assigned(valueComparer) then
     fValueComparer := valueComparer
   else
-    fValueComparer := TEqualityComparer<TValue>.Default;
+    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TValue), SizeOf(TValue)));
   fTree := TRedBlackTree<TKey,TValue>.Create(keyComparer);
 end;
 
