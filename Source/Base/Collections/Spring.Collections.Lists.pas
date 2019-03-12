@@ -83,6 +83,7 @@ type
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
     function InsertInternal(index: Integer; const item: T): Integer;
     procedure InsertRangeInternal(index, count: Integer; const values: array of T);
+    procedure SetItemInternal(index: Integer; const value: T);
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
@@ -578,13 +579,29 @@ begin
 end;
 
 procedure TAbstractArrayList<T>.SetItem(index: Integer; const value: T);
-var
-  oldItem: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Count), 'index');
 {$ENDIF}
 
+  if not Assigned(Notify) then
+  begin
+    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
+    if OwnsObjects then
+      FreeObject(fItems[index]);
+    fItems[index] := value;
+  end
+  else
+    SetItemInternal(index, value);
+end;
+
+procedure TAbstractArrayList<T>.SetItemInternal(index: Integer; const value: T);
+var
+  oldItem: T;
+begin
   oldItem := fItems[index];
 
   {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
@@ -592,16 +609,10 @@ begin
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fItems[index] := value;
 
-  if Assigned(Notify) then
-  begin
-    Notify(Self, oldItem, caRemoved);
-    if OwnsObjects then
-      FreeObject(oldItem);
-    Notify(Self, value, caAdded);
-  end
-  else
-    if OwnsObjects then
-      FreeObject(oldItem);
+  Notify(Self, oldItem, caRemoved);
+  if OwnsObjects then
+    FreeObject(oldItem);
+  Notify(Self, value, caAdded);
 end;
 
 procedure TAbstractArrayList<T>.SetOwnsObjects(value: Boolean);
