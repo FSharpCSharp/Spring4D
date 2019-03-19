@@ -72,6 +72,7 @@ implementation
 
 uses
   Classes,
+  TypInfo,
   Spring.Reflection;
 
 
@@ -191,6 +192,10 @@ procedure TEntityMap.PutEntity(const entity: TObject);
 
     for field in TType.GetType(source.ClassInfo).GetFields do
     begin
+      // ignore pointer types - they cannot be copied
+      if Field.FieldType.TypeKind = tkPointer then
+        Continue;
+
       if field.FieldType.IsInstance then
       begin
         sourceObject := field.GetValue(source).AsObject;
