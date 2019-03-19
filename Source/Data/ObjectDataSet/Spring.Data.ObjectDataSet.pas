@@ -543,34 +543,39 @@ begin
   if AItemTypeInfo = nil then
     Exit;
 
-  fProperties.Clear;
+  DisableControls;
+  try
+    fProperties.Clear;
 
-  itemType := TType.GetType(AItemTypeInfo);
-  for prop in itemType.GetProperties do
-  begin
-    if not (prop.Visibility in [mvPublic, mvPublished]) then
-      Continue;
-
-    if Fields.Count > 0 then
+    itemType := TType.GetType(AItemTypeInfo);
+    for prop in itemType.GetProperties do
     begin
-      field := Fields.FindField(prop.Name);
-      if Assigned(field) and (field.FieldKind = fkData) then
+      if not (prop.Visibility in [mvPublic, mvPublished]) then
+        Continue;
+
+      if Fields.Count > 0 then
       begin
-        fProperties.Add(prop);
-        if not prop.IsWritable then
-          field.ReadOnly := True;
+        field := Fields.FindField(prop.Name);
+        if Assigned(field) and (field.FieldKind = fkData) then
+        begin
+          fProperties.Add(prop);
+          if not prop.IsWritable then
+            field.ReadOnly := True;
+        end;
+        Continue;
       end;
-      Continue;
-    end;
 
-    if Assigned(fColumnAttributeClass) then
-    begin
-      if prop.HasCustomAttribute(fColumnAttributeClass) then
-        fProperties.Add(prop);
-    end
-    else
-      if prop.Visibility = mvPublished then
-        fProperties.Add(prop);
+      if Assigned(fColumnAttributeClass) then
+      begin
+        if prop.HasCustomAttribute(fColumnAttributeClass) then
+          fProperties.Add(prop);
+      end
+      else
+        if prop.Visibility = mvPublished then
+          fProperties.Add(prop);
+    end;
+  finally
+    EnableControls;
   end;
 end;
 
