@@ -568,6 +568,7 @@ type
 
     procedure TestInternalEventHandlersDetached;
     procedure TestValueChangedCalledProperly;
+    procedure TestValues; virtual;
     procedure TestValuesOrdered;
     procedure TestExtractValues;
 
@@ -593,6 +594,8 @@ type
   TTestTreeMultiMap = class(TTestSetMultiMapBase)
   protected
     procedure SetUp; override;
+  published
+    procedure TestValues; override;
   end;
 
   TTestObjectStack = class(TTestCase)
@@ -941,7 +944,7 @@ end;
 procedure TTestIntegerList.TestExtractAll_MultipleItemsInList_RemoveSome;
 var
   callCount: Integer;
-  items: IReadOnlyList<Integer>;
+  items: TArray<Integer>;
 begin
   callCount := 0;
   SUT.AddRange([1, 2, 3, 4, 5]);
@@ -951,7 +954,7 @@ begin
       Result := Odd(i);
       Inc(callCount);
     end);
-  CheckEquals(3, items.Count);
+  CheckEquals(3, Length(items));
   CheckEquals(1, items[0]);
   CheckEquals(3, items[1]);
   CheckEquals(5, items[2]);
@@ -964,7 +967,7 @@ end;
 procedure TTestIntegerList.TestExtractAll_OneItemInList;
 var
   callCount: Integer;
-  items: IReadOnlyList<Integer>;
+  items: TArray<Integer>;
 begin
   callCount := 0;
   SUT.Add(1);
@@ -974,7 +977,7 @@ begin
       Result := True;
       Inc(callCount);
     end);
-  CheckEquals(1, items.Count);
+  CheckEquals(1, Length(items));
   CheckEquals(1, items[0]);
   CheckEquals(1, callCount);
   CheckEquals(0, SUT.Count);
@@ -3641,16 +3644,30 @@ begin
   CheckEquals(3, ValueRemovedCount);
 end;
 
+procedure TTestMultiMapBase.TestValues;
+begin
+  SUT.Add(1, 2);
+  SUT.Add(1, 7);
+  SUT.Add(2, 8);
+  SUT.Add(2, 5);
+  SUT.Add(3, 4);
+  SUT.Add(3, 1);
+  SUT.Add(4, 6);
+  SUT.Add(4, 3);
+
+  CheckTrue(SUT.Values.EqualsTo([2, 7, 8, 5, 4, 1, 6, 3]));
+end;
+
 procedure TTestMultiMapBase.TestValuesOrdered;
 begin
-  SUT.Add(1, 1);
   SUT.Add(1, 2);
-  SUT.Add(2, 3);
-  SUT.Add(2, 4);
-  SUT.Add(3, 5);
-  SUT.Add(3, 6);
-  SUT.Add(4, 7);
-  SUT.Add(4, 8);
+  SUT.Add(1, 7);
+  SUT.Add(2, 8);
+  SUT.Add(2, 5);
+  SUT.Add(3, 4);
+  SUT.Add(3, 1);
+  SUT.Add(4, 6);
+  SUT.Add(4, 3);
 
   CheckTrue(SUT.Values.Ordered.EqualsTo([1, 2, 3, 4, 5, 6, 7, 8]));
 end;
@@ -3787,6 +3804,21 @@ procedure TTestTreeMultiMap.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateTreeMultiMap<Integer,Integer>;
+end;
+
+procedure TTestTreeMultiMap.TestValues;
+begin
+  SUT.Add(1, 2);
+  SUT.Add(1, 7);
+  SUT.Add(2, 8);
+  SUT.Add(2, 5);
+  SUT.Add(3, 4);
+  SUT.Add(3, 1);
+  SUT.Add(4, 6);
+  SUT.Add(4, 3);
+
+  // items in each value collection are sorted due to them being rbtrees
+  CheckTrue(SUT.Values.EqualsTo([2, 7, 5, 8, 1, 4, 3, 6]));
 end;
 
 {$ENDREGION}

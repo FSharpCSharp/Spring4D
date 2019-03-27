@@ -30,6 +30,7 @@ interface
 
 uses
   Generics.Defaults,
+  Spring,
   Spring.Collections,
   Spring.Collections.Base,
   Spring.Collections.Events;
@@ -137,7 +138,6 @@ uses
   Classes,
   RTLConsts,
   SysUtils,
-  Spring,
   Spring.Events.Base,
   Spring.ResourceStrings;
 

@@ -29,7 +29,6 @@ unit Spring.Collections.Dictionaries;
 interface
 
 uses
-  Classes,
   Generics.Defaults,
   Spring,
   Spring.Collections,
@@ -59,19 +58,25 @@ type
       TItem = TDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IInterface,
+        IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TDictionary<TKey, TValue>;
         fItemIndex: Integer;
         fVersion: Integer;
         function GetCurrent: TKeyValuePair;
+        function GetCurrentKey: TKey;
+        function GetCurrentValue: TValue;
+        function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
+        function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
       public
         constructor Create(const source: TDictionary<TKey, TValue>);
+        destructor Destroy; override;
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = class(TContainedReadOnlyCollection<TKey>,
+      TKeyCollection = class(TEnumerableBase<TKey>, IInterface,
         IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -85,6 +90,11 @@ type
       public
         constructor Create(const source: TDictionary<TKey, TValue>);
 
+      {$REGION 'Implements IInterface'}
+        function _AddRef: Integer; override;
+        function _Release: Integer; override;
+      {$ENDREGION}
+
       {$REGION 'Implements IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>;
         function Contains(const value: TKey): Boolean; overload;
@@ -93,20 +103,7 @@ type
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKey>)
-      private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TDictionary<TKey, TValue>;
-        fItemIndex: Integer;
-        fVersion: Integer;
-        function GetCurrent: TKey;
-      public
-        constructor Create(const source: TDictionary<TKey, TValue>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
-
-      TValueCollection = class(TContainedReadOnlyCollection<TValue>,
+      TValueCollection = class(TEnumerableBase<TValue>, IInterface,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -120,6 +117,11 @@ type
       public
         constructor Create(const source: TDictionary<TKey, TValue>);
 
+      {$REGION 'Implements IInterface'}
+        function _AddRef: Integer; override;
+        function _Release: Integer; override;
+      {$ENDREGION}
+
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>;
         function Contains(const value: TValue): Boolean; overload;
@@ -128,39 +130,7 @@ type
       {$ENDREGION}
       end;
 
-      TValueEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
-      private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TDictionary<TKey, TValue>;
-        fItemIndex: Integer;
-        fVersion: Integer;
-        function GetCurrent: TValue;
-      public
-        constructor Create(const source: TDictionary<TKey, TValue>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
-
-      TOrderedEnumerable = class(TIterator<TKeyValuePair>, IEnumerable<TKeyValuePair>)
-      private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TDictionary<TKey, TValue>;
-        fSortedItemIndices: TArray<Integer>;
-        fIndex: Integer;
-        fVersion: Integer;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      protected
-        function Clone: TIterator<TKeyValuePair>; override;
-        procedure Dispose; override;
-        procedure Start; override;
-        function TryMoveNext(var current: TKeyValuePair): Boolean; override;
-      public
-        constructor Create(const source: TDictionary<TKey, TValue>);
-        destructor Destroy; override;
-      end;
+      TComparer = TPairByKeyComparer<TKey,TValue>;
   {$ENDREGION}
   private
     fBuckets: TArray<Integer>;
@@ -223,7 +193,6 @@ type
     function GetEnumerator: IEnumerator<TKeyValuePair>;
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
-    function Ordered: IEnumerable<TKeyValuePair>; overload;
     function ToArray: TArray<TKeyValuePair>;
     function TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean; override;
   {$ENDREGION}
@@ -293,47 +262,11 @@ type
       TItem = TBidiDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
-      TInverse = class(TContainedCollectionBase<TValueKeyPair>,
+      TInverse = class(TCollectionBase<TValueKeyPair>, IInterface,
         IEnumerable<TValueKeyPair>, IReadOnlyCollection<TValueKeyPair>,
         IReadOnlyMap<TValue, TKey>, IReadOnlyDictionary<TValue, TKey>,
         ICollection<TValueKeyPair>, IMap<TValue, TKey>,
         IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
-      private type
-      {$REGION 'Nested Types'}
-        TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValueKeyPair>)
-        private
-          {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-          fSource: TBidiDictionary<TKey, TValue>;
-          fItemIndex: Integer;
-          fVersion: Integer;
-          function GetCurrent: TValueKeyPair;
-        public
-          constructor Create(const source: TBidiDictionary<TKey, TValue>);
-          destructor Destroy; override;
-          function MoveNext: Boolean;
-        end;
-
-        TOrderedEnumerable = class(TIterator<TValueKeyPair>, IEnumerable<TValueKeyPair>)
-        private
-          {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-          fSource: TBidiDictionary<TKey, TValue>;
-          fSortedItemIndices: TArray<Integer>;
-          fIndex: Integer;
-          fVersion: Integer;
-        {$REGION 'Property Accessors'}
-          function GetCount: Integer;
-          function GetIsEmpty: Boolean;
-        {$ENDREGION}
-        protected
-          function Clone: TIterator<TValueKeyPair>; override;
-          procedure Dispose; override;
-          procedure Start; override;
-          function TryMoveNext(var current: TValueKeyPair): Boolean; override;
-        public
-          constructor Create(const source: TBidiDictionary<TKey, TValue>);
-          destructor Destroy; override;
-        end;
-      {$ENDREGION}
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
@@ -357,12 +290,16 @@ type
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
+      {$REGION 'Implements IInterface'}
+        function _AddRef: Integer; override;
+        function _Release: Integer; override;
+      {$ENDREGION}
+
       {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
         function GetEnumerator: IEnumerator<TValueKeyPair>;
         function Contains(const value: TValueKeyPair): Boolean; overload;
         function Contains(const value: TValueKeyPair;
           const comparer: IEqualityComparer<TValueKeyPair>): Boolean; overload;
-        function Ordered: IEnumerable<TValueKeyPair>; overload;
         function ToArray: TArray<TValueKeyPair>;
         function TryGetElementAt(out item: TValueKeyPair; index: Integer): Boolean; override;
       {$ENDREGION}
@@ -398,20 +335,28 @@ type
       {$ENDREGION}
       end;
 
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IInterface,
+        IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>,
+        IEnumerator<TValueKeyPair>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
         fItemIndex: Integer;
         fVersion: Integer;
         function GetCurrent: TKeyValuePair;
+        function GetCurrentInverse: TValueKeyPair;
+        function GetCurrentKey: TKey;
+        function GetCurrentValue: TValue;
+        function IEnumerator<TValueKeyPair>.GetCurrent = GetCurrentInverse;
+        function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
+        function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
         destructor Destroy; override;
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = class(TContainedReadOnlyCollection<TKey>,
+      TKeyCollection = class(TEnumerableBase<TKey>, IInterface,
         IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -423,6 +368,11 @@ type
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
+      {$REGION 'Implements IInterface'}
+        function _AddRef: Integer; override;
+        function _Release: Integer; override;
+      {$ENDREGION}
+
       {$REGION 'Implements IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>;
         function Contains(const value: TKey): Boolean; overload;
@@ -431,20 +381,7 @@ type
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKey>)
-      private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TBidiDictionary<TKey, TValue>;
-        fItemIndex: Integer;
-        fVersion: Integer;
-        function GetCurrent: TKey;
-      public
-        constructor Create(const source: TBidiDictionary<TKey, TValue>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
-
-      TValueCollection = class(TContainedReadOnlyCollection<TValue>,
+      TValueCollection = class(TEnumerableBase<TValue>, IInterface,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -456,46 +393,17 @@ type
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
+      {$REGION 'Implements IInterface'}
+        function _AddRef: Integer; override;
+        function _Release: Integer; override;
+      {$ENDREGION}
+
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>;
         function Contains(const value: TValue): Boolean; overload;
         function ToArray: TArray<TValue>;
         function TryGetElementAt(out value: TValue; index: Integer): Boolean; override;
       {$ENDREGION}
-      end;
-
-      TValueEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
-      private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TBidiDictionary<TKey, TValue>;
-        fItemIndex: Integer;
-        fVersion: Integer;
-        function GetCurrent: TValue;
-      public
-        constructor Create(const source: TBidiDictionary<TKey, TValue>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
-
-      TOrderedEnumerable = class(TIterator<TKeyValuePair>, IEnumerable<TKeyValuePair>)
-      private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TBidiDictionary<TKey, TValue>;
-        fSortedItemIndices: TArray<Integer>;
-        fIndex: Integer;
-        fVersion: Integer;
-      {$REGION 'Property Accessors'}
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
-      {$ENDREGION}
-      protected
-        function Clone: TIterator<TKeyValuePair>; override;
-        procedure Dispose; override;
-        procedure Start; override;
-        function TryMoveNext(var current: TKeyValuePair): Boolean; override;
-      public
-        constructor Create(const source: TBidiDictionary<TKey, TValue>);
-        destructor Destroy; override;
       end;
   {$ENDREGION}
   private
@@ -570,7 +478,6 @@ type
     function GetEnumerator: IEnumerator<TKeyValuePair>;
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
-    function Ordered: IEnumerable<TKeyValuePair>; overload;
     function ToArray: TArray<TKeyValuePair>;
   {$ENDREGION}
 
@@ -613,7 +520,8 @@ type
       TKeyValuePair = TPair<TKey, TValue>;
       PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TRefCountedObject, IInterface,
+        IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
@@ -621,13 +529,17 @@ type
         fFinished: Boolean;
         fVersion: Integer;
         function GetCurrent: TKeyValuePair;
+        function GetCurrentKey: TKey;
+        function GetCurrentValue: TValue;
+        function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
+        function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
       public
         constructor Create(const source: TSortedDictionary<TKey, TValue>);
         destructor Destroy; override;
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = class(TContainedReadOnlyCollection<TKey>,
+      TKeyCollection = class(TEnumerableBase<TKey>, IInterface,
         IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -639,6 +551,11 @@ type
       public
         constructor Create(const source: TSortedDictionary<TKey, TValue>);
 
+      {$REGION 'Implements IInterface'}
+        function _AddRef: Integer; override;
+        function _Release: Integer; override;
+      {$ENDREGION}
+
       {$REGION 'Implements IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>;
         function Contains(const value: TKey): Boolean; overload;
@@ -646,21 +563,7 @@ type
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TKey>)
-      private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TSortedDictionary<TKey, TValue>;
-        fCurrentNode: PNode;
-        fFinished: Boolean;
-        fVersion: Integer;
-        function GetCurrent: TKey;
-      public
-        constructor Create(const source: TSortedDictionary<TKey, TValue>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
-
-      TValueCollection = class(TContainedReadOnlyCollection<TValue>,
+      TValueCollection = class(TEnumerableBase<TValue>, IInterface,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -670,7 +573,12 @@ type
         function GetIsEmpty: Boolean;
       {$ENDREGION}
       public
-        constructor Create(const dictionary: TSortedDictionary<TKey, TValue>);
+        constructor Create(const source: TSortedDictionary<TKey, TValue>);
+
+      {$REGION 'Implements IInterface'}
+        function _AddRef: Integer; override;
+        function _Release: Integer; override;
+      {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>;
@@ -679,25 +587,12 @@ type
       {$ENDREGION}
       end;
 
-      TValueEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
-      private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TSortedDictionary<TKey, TValue>;
-        fCurrentNode: PNode;
-        fFinished: Boolean;
-        fVersion: Integer;
-        function GetCurrent: TValue;
-      public
-        constructor Create(const source: TSortedDictionary<TKey, TValue>);
-        destructor Destroy; override;
-        function MoveNext: Boolean;
-      end;
+      TComparer = TPairByKeyComparer<TKey, TValue>;
   {$ENDREGION}
   private
     fTree: TRedBlackTree<TKey,TValue>;
     fKeyComparer: IComparer<TKey>;
     fValueComparer: IEqualityComparer<TValue>;
-    fKeyValueComparerByKey: IComparer<TKeyValuePair>;
     fVersion: Integer;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
@@ -722,7 +617,6 @@ type
     function GetEnumerator: IEnumerator<TKeyValuePair>;
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
-    function Ordered: IEnumerable<TKeyValuePair>; overload;
     function ToArray: TArray<TKeyValuePair>;
   {$ENDREGION}
 
@@ -765,8 +659,6 @@ uses
   SysUtils,
   Types,
   TypInfo,
-  Spring.Collections.Extensions,
-  Spring.Collections.Lists,
   Spring.ResourceStrings;
 
 
@@ -837,7 +729,8 @@ begin
     if TType.Kind<TValue> <> tkClass then
       raise Error.NoClassType(ValueType);
 
-  inherited Create;
+  inherited Create();
+  fComparer := TComparer.Create(nil);
   fOwnerships := ownerships;
   fKeys := TKeyCollection.Create(Self);
   fValues := TValueCollection.Create(Self);
@@ -1088,7 +981,7 @@ end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
-  Result := TEnumerator.Create(self);
+  Result := TEnumerator.Create(Self);
 end;
 
 procedure TDictionary<TKey, TValue>.Clear;
@@ -1327,11 +1220,6 @@ begin
   Result := fItems[itemIndex].Value;
 end;
 
-function TDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValuePair>;
-begin
-  Result := TOrderedEnumerable.Create(Self);
-end;
-
 procedure TDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
 var
   bucketIndex, itemIndex, hashCode: Integer;
@@ -1363,14 +1251,31 @@ constructor TDictionary<TKey, TValue>.TEnumerator.Create(
 begin
   inherited Create;
   fSource := source;
+  fSource._AddRef;
   fItemIndex := -1;
   fVersion := fSource.fVersion;
+end;
+
+destructor TDictionary<TKey, TValue>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
 end;
 
 function TDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
   Result.Key := fSource.fItems[fItemIndex].Key;
   Result.Value := fSource.fItems[fItemIndex].Value;
+end;
+
+function TDictionary<TKey, TValue>.TEnumerator.GetCurrentKey: TKey;
+begin
+  Result := fSource.fItems[fItemIndex].Key;
+end;
+
+function TDictionary<TKey, TValue>.TEnumerator.GetCurrentValue: TValue;
+begin
+  Result := fSource.fItems[fItemIndex].Value;
 end;
 
 function TDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
@@ -1386,7 +1291,7 @@ end;
 constructor TDictionary<TKey, TValue>.TKeyCollection.Create(
   const source: TDictionary<TKey, TValue>);
 begin
-  inherited Create(source);
+  inherited Create;
   fSource := source;
 end;
 
@@ -1407,7 +1312,7 @@ end;
 
 function TDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
 begin
-  Result := TKeyEnumerator.Create(fSource);
+  Result := TEnumerator.Create(fSource);
 end;
 
 function TDictionary<TKey, TValue>.TKeyCollection.GetIsEmpty: Boolean;
@@ -1439,35 +1344,14 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TDictionary<TKey, TValue>.TKeyEnumerator'}
-
-constructor TDictionary<TKey, TValue>.TKeyEnumerator.Create(
-  const source: TDictionary<TKey, TValue>);
+function TDictionary<TKey, TValue>.TKeyCollection._AddRef: Integer;
 begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fItemIndex := -1;
-  fVersion := fSource.fVersion;
+  Result := fSource._AddRef;
 end;
 
-destructor TDictionary<TKey, TValue>.TKeyEnumerator.Destroy;
+function TDictionary<TKey, TValue>.TKeyCollection._Release: Integer;
 begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TDictionary<TKey, TValue>.TKeyEnumerator.GetCurrent: TKey;
-begin
-  Result := fSource.fItems[fItemIndex].Key;
-end;
-
-function TDictionary<TKey, TValue>.TKeyEnumerator.MoveNext: Boolean;
-begin
-  Result := fSource.DoMoveNext(fItemIndex, fVersion);
+  Result := fSource._Release;
 end;
 
 {$ENDREGION}
@@ -1478,7 +1362,7 @@ end;
 constructor TDictionary<TKey, TValue>.TValueCollection.Create(
   const source: TDictionary<TKey, TValue>);
 begin
-  inherited Create(source);
+  inherited Create;
   fSource := source;
 end;
 
@@ -1499,7 +1383,7 @@ end;
 
 function TDictionary<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
-  Result := TValueEnumerator.Create(fSource);
+  Result := TEnumerator.Create(fSource);
 end;
 
 function TDictionary<TKey, TValue>.TValueCollection.GetIsEmpty: Boolean;
@@ -1531,114 +1415,14 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TDictionary<TKey, TValue>.TValueEnumerator'}
-
-constructor TDictionary<TKey, TValue>.TValueEnumerator.Create(
-  const source: TDictionary<TKey, TValue>);
+function TDictionary<TKey, TValue>.TValueCollection._AddRef: Integer;
 begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fItemIndex := -1;
-  fVersion := fSource.fVersion;
+  Result := fSource._AddRef;
 end;
 
-destructor TDictionary<TKey, TValue>.TValueEnumerator.Destroy;
+function TDictionary<TKey, TValue>.TValueCollection._Release: Integer;
 begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TDictionary<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;
-begin
-  Result := fSource.fItems[fItemIndex].Value;
-end;
-
-function TDictionary<TKey, TValue>.TValueEnumerator.MoveNext: Boolean;
-begin
-  Result := fSource.DoMoveNext(fItemIndex, fVersion);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TDictionary<TKey, TValue>.TOrderedEnumerable'}
-
-constructor TDictionary<TKey, TValue>.TOrderedEnumerable.Create(
-  const source: TDictionary<TKey, TValue>);
-begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-end;
-
-destructor TDictionary<TKey, TValue>.TOrderedEnumerable.Destroy;
-begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TDictionary<TKey, TValue>.TOrderedEnumerable.Clone: TIterator<TKeyValuePair>;
-begin
-  Result := TOrderedEnumerable.Create(fSource);
-end;
-
-procedure TDictionary<TKey, TValue>.TOrderedEnumerable.Dispose;
-begin
-  fSortedItemIndices := nil;
-end;
-
-function TDictionary<TKey, TValue>.TOrderedEnumerable.GetCount: Integer;
-begin
-  Result := fSource.fCount;
-end;
-
-function TDictionary<TKey, TValue>.TOrderedEnumerable.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fCount = 0;
-end;
-
-procedure TDictionary<TKey, TValue>.TOrderedEnumerable.Start;
-var
-  sourceIndex, targetIndex: Integer;
-  comparer: IComparer<TKey>;
-begin
-  fIndex := 0;
-  fVersion := fSource.fVersion;
-
-  SetLength(fSortedItemIndices, fSource.fCount);
-  targetIndex := 0;
-  for sourceIndex := 0 to fSource.fItemCount - 1 do
-    if not fSource.fItems[sourceIndex].Removed then
-    begin
-      fSortedItemIndices[targetIndex] := sourceIndex;
-      Inc(targetIndex);
-    end;
-
-  comparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
-  TArray.Sort<Integer>(fSortedItemIndices,
-    function(const left, right: Integer): Integer
-    begin
-      Result := comparer.Compare(fSource.fItems[left].Key, fSource.fItems[right].Key);
-    end);
-end;
-
-function TDictionary<TKey, TValue>.TOrderedEnumerable.TryMoveNext(var current: TKeyValuePair): Boolean;
-begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  if fIndex < Length(fSortedItemIndices) then
-  begin
-    current.Key := fSource.fItems[fSortedItemIndices[fIndex]].Key;
-    current.Value := fSource.fItems[fSortedItemIndices[fIndex]].Value;
-    Inc(fIndex);
-    Exit(True);
-  end;
-  Result := False;
+  Result := fSource._Release;
 end;
 
 {$ENDREGION}
@@ -2270,7 +2054,6 @@ begin
     DoRemove(keyBucketIndex, valueBucketIndex, keyItemIndex, caExtracted);
     Exit;
   end;
-
   Result := Default(TKeyValuePair);
 end;
 
@@ -2400,11 +2183,6 @@ begin
   Result := fItems[keyItemIndex].Value;
 end;
 
-function TBidiDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValuePair>;
-begin
-  Result := TOrderedEnumerable.Create(Self);
-end;
-
 procedure TBidiDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
 var
   keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
@@ -2447,7 +2225,7 @@ end;
 constructor TBidiDictionary<TKey, TValue>.TInverse.Create(
   const source: TBidiDictionary<TKey, TValue>);
 begin
-  inherited Create(source);
+  inherited Create;
   fSource := source;
 end;
 
@@ -2612,11 +2390,6 @@ begin
   Result := fSource.KeyType;
 end;
 
-function TBidiDictionary<TKey, TValue>.TInverse.Ordered: IEnumerable<TValueKeyPair>;
-begin
-  Result := TOrderedEnumerable.Create(fSource);
-end;
-
 function TBidiDictionary<TKey, TValue>.TInverse.Remove(
   const value: TValue): Boolean;
 var
@@ -2731,115 +2504,14 @@ begin
     key := Default(TKey);
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TBidiDictionary<TKey, TValue>.TInverse.TEnumerator'}
-
-constructor TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.Create(
-  const source: TBidiDictionary<TKey, TValue>);
+function TBidiDictionary<TKey, TValue>.TInverse._AddRef: Integer;
 begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fItemIndex := -1;
-  fVersion := fSource.fVersion;
+  Result := fSource._AddRef;
 end;
 
-destructor TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.Destroy;
+function TBidiDictionary<TKey, TValue>.TInverse._Release: Integer;
 begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.GetCurrent: TValueKeyPair;
-begin
-  Result.Key := fSource.fItems[fItemIndex].Value;
-  Result.Value := fSource.fItems[fItemIndex].Key;
-end;
-
-function TBidiDictionary<TKey, TValue>.TInverse.TEnumerator.MoveNext: Boolean;
-begin
-  Result := fSource.DoMoveNext(fItemIndex, fVersion);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable'}
-
-constructor TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Create(
-  const source: TBidiDictionary<TKey, TValue>);
-begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-end;
-
-destructor TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Destroy;
-begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Clone: TIterator<TValueKeyPair>;
-begin
-  Result := TOrderedEnumerable.Create(fSource);
-end;
-
-procedure TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Dispose;
-begin
-  fSortedItemIndices := nil;
-end;
-
-function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.GetCount: Integer;
-begin
-  Result := fSource.fCount;
-end;
-
-function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fCount = 0;
-end;
-
-procedure TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.Start;
-var
-  sourceIndex, targetIndex: Integer;
-  comparer: IComparer<TValue>;
-begin
-  fIndex := 0;
-  fVersion := fSource.fVersion;
-
-  SetLength(fSortedItemIndices, fSource.fCount);
-  targetIndex := 0;
-  for sourceIndex := 0 to fSource.fItemCount - 1 do
-    if not fSource.fItems[sourceIndex].Removed then
-    begin
-      fSortedItemIndices[targetIndex] := sourceIndex;
-      Inc(targetIndex);
-    end;
-
-  comparer := IComparer<TValue>(_LookupVtableInfo(giComparer, TypeInfo(TValue), SizeOf(TValue)));
-  TArray.Sort<Integer>(fSortedItemIndices,
-    function(const left, right: Integer): Integer
-    begin
-      Result := comparer.Compare(fSource.fItems[left].Value, fSource.fItems[right].Value);
-    end);
-end;
-
-function TBidiDictionary<TKey, TValue>.TInverse.TOrderedEnumerable.TryMoveNext(var current: TValueKeyPair): Boolean;
-begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  if fIndex < Length(fSortedItemIndices) then
-  begin
-    current.Key := fSource.fItems[fSortedItemIndices[fIndex]].Value;
-    current.Value := fSource.fItems[fSortedItemIndices[fIndex]].Key;
-    Inc(fIndex);
-    Exit(True);
-  end;
-  Result := False;
+  Result := fSource._Release;
 end;
 
 {$ENDREGION}
@@ -2869,6 +2541,22 @@ begin
   Result.Value := fSource.fItems[fItemIndex].Value;
 end;
 
+function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrentInverse: TValueKeyPair;
+begin
+  Result.Key := fSource.fItems[fItemIndex].Value;
+  Result.Value := fSource.fItems[fItemIndex].Key;
+end;
+
+function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrentKey: TKey;
+begin
+  Result := fSource.fItems[fItemIndex].Key;
+end;
+
+function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrentValue: TValue;
+begin
+  Result := fSource.fItems[fItemIndex].Value;
+end;
+
 function TBidiDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
 begin
   Result := fSource.DoMoveNext(fItemIndex, fVersion);
@@ -2882,7 +2570,7 @@ end;
 constructor TBidiDictionary<TKey, TValue>.TKeyCollection.Create(
   const source: TBidiDictionary<TKey, TValue>);
 begin
-  inherited Create(source);
+  inherited Create;
   fSource := source;
 end;
 
@@ -2898,7 +2586,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
 begin
-  Result := TKeyEnumerator.Create(fSource);
+  Result := TEnumerator.Create(fSource);
 end;
 
 function TBidiDictionary<TKey, TValue>.TKeyCollection.GetIsEmpty: Boolean;
@@ -2930,35 +2618,14 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TBidiDictionary<TKey, TValue>.TKeyEnumerator' }
-
-constructor TBidiDictionary<TKey, TValue>.TKeyEnumerator.Create(
-  const source: TBidiDictionary<TKey, TValue>);
+function TBidiDictionary<TKey, TValue>.TKeyCollection._AddRef: Integer;
 begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fItemIndex := -1;
-  fVersion := fSource.fVersion;
+  Result := fSource._AddRef;
 end;
 
-destructor TBidiDictionary<TKey, TValue>.TKeyEnumerator.Destroy;
+function TBidiDictionary<TKey, TValue>.TKeyCollection._Release: Integer;
 begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TBidiDictionary<TKey, TValue>.TKeyEnumerator.GetCurrent: TKey;
-begin
-  Result := fSource.fItems[fItemIndex].Key;
-end;
-
-function TBidiDictionary<TKey, TValue>.TKeyEnumerator.MoveNext: Boolean;
-begin
-  Result := fSource.DoMoveNext(fItemIndex, fVersion);
+  Result := fSource._Release;
 end;
 
 {$ENDREGION}
@@ -2969,7 +2636,7 @@ end;
 constructor TBidiDictionary<TKey, TValue>.TValueCollection.Create(
   const source: TBidiDictionary<TKey, TValue>);
 begin
-  inherited Create(source);
+  inherited Create;
   fSource := source;
 end;
 
@@ -2985,7 +2652,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
-  Result := TValueEnumerator.Create(fSource);
+  Result := TEnumerator.Create(fSource);
 end;
 
 function TBidiDictionary<TKey, TValue>.TValueCollection.GetIsEmpty: Boolean;
@@ -3017,114 +2684,14 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TBidiDictionary<TKey, TValue>.TValueEnumerator'}
-
-constructor TBidiDictionary<TKey, TValue>.TValueEnumerator.Create(
-  const source: TBidiDictionary<TKey, TValue>);
+function TBidiDictionary<TKey, TValue>.TValueCollection._AddRef: Integer;
 begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fItemIndex := -1;
-  fVersion := fSource.fVersion;
+  Result := fSource._AddRef;
 end;
 
-destructor TBidiDictionary<TKey, TValue>.TValueEnumerator.Destroy;
+function TBidiDictionary<TKey, TValue>.TValueCollection._Release: Integer;
 begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TBidiDictionary<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;
-begin
-  Result := fSource.fItems[fItemIndex].Value;
-end;
-
-function TBidiDictionary<TKey, TValue>.TValueEnumerator.MoveNext: Boolean;
-begin
-  Result := fSource.DoMoveNext(fItemIndex, fVersion);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TBidiDictionary<TKey, TValue>.TOrderedEnumerable'}
-
-constructor TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Create(
-  const source: TBidiDictionary<TKey, TValue>);
-begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-end;
-
-destructor TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Destroy;
-begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Clone: TIterator<TKeyValuePair>;
-begin
-  Result := TOrderedEnumerable.Create(fSource);
-end;
-
-procedure TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Dispose;
-begin
-  fSortedItemIndices := nil;
-end;
-
-function TBidiDictionary<TKey, TValue>.TOrderedEnumerable.GetCount: Integer;
-begin
-  Result := fSource.fCount;
-end;
-
-function TBidiDictionary<TKey, TValue>.TOrderedEnumerable.GetIsEmpty: Boolean;
-begin
-  Result := fSource.fCount = 0;
-end;
-
-procedure TBidiDictionary<TKey, TValue>.TOrderedEnumerable.Start;
-var
-  sourceIndex, targetIndex: Integer;
-  comparer: IComparer<TKey>;
-begin
-  fIndex := 0;
-  fVersion := fSource.fVersion;
-
-  comparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
-  SetLength(fSortedItemIndices, fSource.fCount);
-  targetIndex := 0;
-  for sourceIndex := 0 to fSource.fItemCount - 1 do
-    if not fSource.fItems[sourceIndex].Removed then
-    begin
-      fSortedItemIndices[targetIndex] := sourceIndex;
-      Inc(targetIndex);
-    end;
-
-  TArray.Sort<Integer>(fSortedItemIndices,
-    function(const left, right: Integer): Integer
-    begin
-      Result := comparer.Compare(fSource.fItems[left].Key, fSource.fItems[right].Key);
-    end);
-end;
-
-function TBidiDictionary<TKey, TValue>.TOrderedEnumerable.TryMoveNext(var current: TKeyValuePair): Boolean;
-begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  if fIndex < Length(fSortedItemIndices) then
-  begin
-    current.Key := fSource.fItems[fSortedItemIndices[fIndex]].Key;
-    current.Value := fSource.fItems[fSortedItemIndices[fIndex]].Value;
-    Inc(fIndex);
-    Exit(True);
-  end;
-  Result := False;
+  Result := fSource._Release;
 end;
 
 {$ENDREGION}
@@ -3151,6 +2718,7 @@ begin
     fKeyComparer := keyComparer
   else
     fKeyComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
+  fComparer := TComparer.Create(nil);
   if Assigned(valueComparer) then
     fValueComparer := valueComparer
   else
@@ -3380,11 +2948,6 @@ begin
   end;
 end;
 
-function TSortedDictionary<TKey, TValue>.Ordered: IEnumerable<TKeyValuePair>;
-begin
-  Result := TOrderedIterator<TKeyValuePair>.Create(this, fKeyValueComparerByKey);
-end;
-
 function TSortedDictionary<TKey, TValue>.ToArray: TArray<TKeyValuePair>;
 var
   i: Integer;
@@ -3472,6 +3035,16 @@ begin
   Result.Value := fCurrentNode.Value;
 end;
 
+function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrentKey: TKey;
+begin
+  Result := fCurrentNode.Key;
+end;
+
+function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrentValue: TValue;
+begin
+  Result := fCurrentNode.Value;
+end;
+
 function TSortedDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
 begin
   Result := fSource.DoMoveNext(fCurrentNode, fFinished, fVersion);
@@ -3485,7 +3058,7 @@ end;
 constructor TSortedDictionary<TKey, TValue>.TKeyCollection.Create(
   const source: TSortedDictionary<TKey, TValue>);
 begin
-  inherited Create(source);
+  inherited Create;
   fSource := source;
 end;
 
@@ -3502,7 +3075,7 @@ end;
 
 function TSortedDictionary<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
 begin
-  Result := TKeyEnumerator.Create(fSource);
+  Result := TEnumerator.Create(fSource);
 end;
 
 function TSortedDictionary<TKey, TValue>.TKeyCollection.GetIsEmpty: Boolean;
@@ -3526,34 +3099,14 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TSortedDictionary<TKey, TValue>.TKeyEnumerator'}
-
-constructor TSortedDictionary<TKey, TValue>.TKeyEnumerator.Create(
-  const source: TSortedDictionary<TKey, TValue>);
+function TSortedDictionary<TKey, TValue>.TKeyCollection._AddRef: Integer;
 begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
+  Result := fSource._AddRef;
 end;
 
-destructor TSortedDictionary<TKey, TValue>.TKeyEnumerator.Destroy;
+function TSortedDictionary<TKey, TValue>.TKeyCollection._Release: Integer;
 begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyEnumerator.GetCurrent: TKey;
-begin
-  Result := fCurrentNode.Key;
-end;
-
-function TSortedDictionary<TKey, TValue>.TKeyEnumerator.MoveNext: Boolean;
-begin
-  Result := fSource.DoMoveNext(fCurrentNode, fFinished, fVersion);
+  Result := fSource._Release;
 end;
 
 {$ENDREGION}
@@ -3562,10 +3115,10 @@ end;
 {$REGION 'TSortedDictionary<TKey, TValue>.TValueCollection'}
 
 constructor TSortedDictionary<TKey, TValue>.TValueCollection.Create(
-  const dictionary: TSortedDictionary<TKey, TValue>);
+  const source: TSortedDictionary<TKey, TValue>);
 begin
-  inherited Create(dictionary);
-  fSource := dictionary;
+  inherited Create;
+  fSource := source;
 end;
 
 function TSortedDictionary<TKey, TValue>.TValueCollection.Contains(
@@ -3581,7 +3134,7 @@ end;
 
 function TSortedDictionary<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
 begin
-  Result := TValueEnumerator.Create(fSource);
+  Result := TEnumerator.Create(fSource);
 end;
 
 function TSortedDictionary<TKey, TValue>.TValueCollection.GetIsEmpty: Boolean;
@@ -3605,34 +3158,14 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TSortedDictionary<TKey, TValue>.TValueEnumerator'}
-
-constructor TSortedDictionary<TKey, TValue>.TValueEnumerator.Create(
-  const source: TSortedDictionary<TKey, TValue>);
+function TSortedDictionary<TKey, TValue>.TValueCollection._AddRef: Integer;
 begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
+  Result := fSource._AddRef;
 end;
 
-destructor TSortedDictionary<TKey, TValue>.TValueEnumerator.Destroy;
+function TSortedDictionary<TKey, TValue>.TValueCollection._Release: Integer;
 begin
-  fSource._Release;
-  inherited Destroy;
-end;
-
-function TSortedDictionary<TKey, TValue>.TValueEnumerator.GetCurrent: TValue;
-begin
-  Result := fCurrentNode.Value;
-end;
-
-function TSortedDictionary<TKey, TValue>.TValueEnumerator.MoveNext: Boolean;
-begin
-  Result := fSource.DoMoveNext(fCurrentNode, fFinished, fVersion);
+  Result := fSource._Release;
 end;
 
 {$ENDREGION}

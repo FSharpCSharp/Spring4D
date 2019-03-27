@@ -571,17 +571,15 @@ const
     'IList<>', 'IReadOnlyList<>', 'ICollection<>', 'IEnumerable<>');
 var
   targetType: TRttiType;
-  method: TRttiMethod;
   dependencyModel: TDependencyModel;
 begin
   targetType := dependency.TargetType;
   Result := inherited CanResolve(context, dependency, argument)
     and targetType.IsGenericType
-    and MatchText(targetType.GetGenericTypeDefinition, SupportedTypes)
-    and targetType.TryGetMethod('ToArray', method);
+    and MatchText(targetType.GetGenericTypeDefinition, SupportedTypes);
   if Result then
   begin
-    targetType := method.ReturnType.AsDynamicArray.ElementType;
+    targetType := GetElementType(targetType.Handle).RttiType;
     dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
     Result := targetType.IsClassOrInterface
       and Kernel.Resolver.CanResolve(context, dependencyModel, TValue.From(tkDynArray));
@@ -591,13 +589,12 @@ end;
 function TListResolver.Resolve(const context: ICreationContext;
   const dependency: TDependencyModel; const argument: TValue): TValue;
 var
-  arrayType: TRttiType;
-  itemType: TRttiType;
+  itemType, arrayType: TRttiType;
   dependencyModel: TDependencyModel;
   values: TValue;
 begin
-  arrayType := dependency.TargetType.GetMethod('ToArray').ReturnType;
-  itemType := arrayType.AsDynamicArray.ElementType;
+  itemType := GetElementType(dependency.TargetType.Handle).RttiType;
+  arrayType := TType.FindType('System.TArray<' + itemType.DefaultName + '>');
   dependencyModel := TDependencyModel.Create(arrayType, dependency.Target);
   values := Kernel.Resolver.Resolve(context, dependencyModel, argument);
   case itemType.TypeKind of

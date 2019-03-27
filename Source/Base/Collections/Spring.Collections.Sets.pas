@@ -30,6 +30,7 @@ interface
 
 uses
   Generics.Defaults,
+  Spring,
   Spring.Collections,
   Spring.Collections.Base,
   Spring.Collections.Trees;
@@ -200,9 +201,6 @@ implementation
 
 uses
   Math,
-  Spring,
-  Spring.Collections.Extensions,
-  Spring.Collections.Lists,
   Spring.Events.Base,
   Spring.ResourceStrings;
 

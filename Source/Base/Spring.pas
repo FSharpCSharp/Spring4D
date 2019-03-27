@@ -1161,27 +1161,40 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TInterfacedObjectEx'}
-
+  {$REGION 'TRefCountedObject'}
   /// <summary>
-  ///   Provides an improved implementation for TInterfacedObject that was
-  ///   introduced in Delphi XE7 for earlier versions. It makes sure that
-  ///   reference counting during destruction does not call the destructor
-  ///   recursively by using the highest bit in the FRefCount field to mark the
-  ///   instance as currently being destroyed.
+  ///   Provides an abstract implementation for any interface implementing
+  ///   class without already implementing IInterface to avoid unnecessary
+  ///   waste of instance space for its VMT. If you inherit from this class you
+  ///   implement an interface that is not IInterface and thus would just waste
+  ///   this space.
   /// </summary>
-  {$IF not defined(DELPHIXE7_UP) and not defined(AUTOREFCOUNT)}
-  TInterfacedObjectEx = class(TInterfacedObject)
-  private
-    const objDestroyingFlag = Integer($80000000);
+  TRefCountedObject = class abstract
+{$IFNDEF AUTOREFCOUNT}
+  private const
+    objDestroyingFlag = Integer($80000000);
     function GetRefCount: Integer; inline;
+{$ENDIF}
+  protected
+{$IFNDEF AUTOREFCOUNT}
+{$IF Declared(VolatileAttribute)}
+    [Volatile]
+{$IFEND}
+    fRefCount: Integer;
+    class procedure __MarkDestroying(const obj); static; inline;
+{$ENDIF}
+    function QueryInterface(const IID: TGUID; out obj): HResult; virtual; stdcall;
+    function AsObject: TObject;
   public
+    function _AddRef: Integer; virtual; stdcall;
+    function _Release: Integer; virtual; stdcall;
+{$IFNDEF AUTOREFCOUNT}
+    procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
+    class function NewInstance: TObject; override;
     property RefCount: Integer read GetRefCount;
+{$ENDIF}
   end;
-  {$ELSE}
-  TInterfacedObjectEx = TInterfacedObject;
-  {$IFEND}
 
   {$ENDREGION}
 
@@ -2203,7 +2216,6 @@ type
     class procedure HeapSort<T>(var values: array of T; const comparer: IComparer<T>; left, right: Integer); static;
 
     class function QuickSortPartition<T>(var values: array of T; const comparer: IComparer<T>; left, right: Integer): Integer; static;
-
     class procedure IntroSort<T>(var values: array of T; const comparer: IComparer<T>; left, right, depthLimit: Integer); static;
   public
 
@@ -2753,6 +2765,15 @@ function GetEqualsOperator(const typeInfo: PTypeInfo): TRttiMethod;
 
 function GrowCapacity(oldCapacity: Integer): Integer; overload; inline;
 function GrowCapacity(oldCapacity, newCount: Integer): Integer; overload;
+
+{$IFNDEF DELPHIX_BERLIN_UP}
+procedure CopyRecord(Dest, Source, TypeInfo: Pointer);
+procedure FinalizeRecord(P: Pointer; TypeInfo: Pointer);
+{$ENDIF}
+
+function NopAddref(inst: Pointer): Integer; stdcall;
+function NopRelease(inst: Pointer): Integer; stdcall;
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
 
   {$ENDREGION}
 
@@ -3546,6 +3567,33 @@ begin
     if Result < 0 then
       OutOfMemoryError;
   until Result >= newCount;
+end;
+
+{$IFNDEF DELPHIX_BERLIN_UP}
+procedure CopyRecord(Dest, Source, TypeInfo: Pointer);
+asm
+  jmp System.@CopyRecord
+end;
+
+procedure FinalizeRecord(P: Pointer; TypeInfo: Pointer);
+asm
+  jmp System.@FinalizeRecord
+end;
+{$ENDIF}
+
+function NopAddref(inst: Pointer): Integer; stdcall; //FI:O804
+begin
+  Result := -1;
+end;
+
+function NopRelease(inst: Pointer): Integer; stdcall; //FI:O804
+begin
+  Result := -1;
+end;
+
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall; //FI:O804
+begin
+  Result := E_NOINTERFACE;
 end;
 
 {$ENDREGION}
@@ -6585,20 +6633,76 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInterfacedObjectEx'}
+{$REGION 'TRefCountedObject'}
 
-{$IF not defined(DELPHIXE7_UP) and not defined(AUTOREFCOUNT)}
-procedure TInterfacedObjectEx.BeforeDestruction;
+function TRefCountedObject.AsObject: TObject;
 begin
-  inherited BeforeDestruction;
-  FRefCount := objDestroyingFlag;
+  Result := Self;
 end;
 
-function TInterfacedObjectEx.GetRefCount: Integer;
+{$IFNDEF AUTOREFCOUNT}
+function TRefCountedObject.GetRefCount: Integer;
 begin
-  Result := FRefCount and not objDestroyingFlag;
+  Result := fRefCount and not objDestroyingFlag;
 end;
-{$IFEND}
+
+class procedure TRefCountedObject.__MarkDestroying(const obj);
+var
+  refCount: Integer;
+begin
+  repeat
+    refCount := TRefCountedObject(obj).fRefCount;
+  until AtomicCmpExchange(TRefCountedObject(obj).fRefCount, refCount or objDestroyingFlag, refCount) = refCount;
+end;
+
+procedure TRefCountedObject.AfterConstruction;
+begin
+  AtomicDecrement(fRefCount);
+end;
+
+procedure TRefCountedObject.BeforeDestruction;
+begin
+  if RefCount <> 0 then
+    System.Error(reInvalidPtr);
+end;
+
+class function TRefCountedObject.NewInstance: TObject;
+begin
+  Result := inherited NewInstance;
+  TRefCountedObject(Result).fRefCount := 1;
+end;
+{$ENDIF AUTOREFCOUNT}
+
+function TRefCountedObject.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TRefCountedObject._AddRef: Integer;
+begin
+{$IFNDEF AUTOREFCOUNT}
+  Result := AtomicIncrement(fRefCount);
+{$ELSE}
+  Result := __ObjAddRef;
+{$ENDIF}
+end;
+
+function TRefCountedObject._Release: Integer;
+begin
+{$IFNDEF AUTOREFCOUNT}
+  Result := AtomicDecrement(fRefCount);
+  if Result = 0 then
+  begin
+    __MarkDestroying(Self);
+    Destroy;
+  end;
+{$ELSE}
+  Result := __ObjRelease;
+{$ENDIF}
+end;
 
 {$ENDREGION}
 

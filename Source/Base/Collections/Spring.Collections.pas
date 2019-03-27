@@ -34,7 +34,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
   Generics.Defaults,
   SysUtils,
   Spring;
@@ -111,7 +110,7 @@ type
   /// <typeparam name="T">
   ///   The type of objects to enumerate.
   /// </typeparam>
-  IEnumerator<T> = interface(IInvokable)
+  IEnumerator<T> = interface
     ['{E6525A22-15EF-46EB-8A68-8CB202DA7D67}']
   {$REGION 'Property Accessors'}
     function GetCurrent: T;
@@ -205,7 +204,7 @@ type
   /// <seealso href="http://msdn.microsoft.com/en-us/magazine/cc700332.aspx">
   ///   The LINQ Enumerable Class
   /// </seealso>
-  IEnumerable<T> = interface(IInvokable)
+  IEnumerable<T> = interface
     ['{A6B46D30-5B0F-495F-B7EC-46FBC5A75D24}']
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
@@ -288,7 +287,7 @@ type
     ///   An IEnumerable&lt;T&gt; that contains the concatenated elements of
     ///   the two input sequences.
     /// </returns>
-    function Concat(const second: IEnumerable<T>): IEnumerable<T>; overload;
+    function Concat(const second: IEnumerable<T>): IEnumerable<T>;
 
     /// <summary>
     ///   Determines whether a sequence contains a specified element by using
@@ -668,7 +667,7 @@ type
     /// <summary>
     ///   Computes the sum of the sequence.
     /// </summary>
-    function Sum: T; overload;
+    function Sum: T;
 //    function Sum(const selector: Func<T, Integer>): Integer; overload;
 //    function Sum(const selector: Func<T, Int64>): Int64; overload;
 //    function Sum(const selector: Func<T, Double>): Double; overload;
@@ -892,7 +891,7 @@ type
     function RemoveRange(const values: IEnumerable<T>): Integer; overload;
 
     function Extract(const item: T): T;
-    function ExtractAll(const predicate: Predicate<T>): IReadOnlyList<T>;
+    function ExtractAll(const predicate: Predicate<T>): TArray<T>;
     procedure ExtractRange(const values: array of T); overload;
     procedure ExtractRange(const values: IEnumerable<T>); overload;
 
@@ -1859,15 +1858,9 @@ type
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
-  TMultiMapEntry<TKey, TValue> = record
-    Key: TKey;
-    Values: IReadOnlyCollection<TValue>;
-  end;
-
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
     ['{8598095E-92A7-4FCC-9F78-8EE7653B8B49}']
   {$REGION 'Property Accessors'}
-    function GetEntries: IReadOnlyCollection<TMultiMapEntry<TKey, TValue>>;
     function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
 
@@ -1909,7 +1902,6 @@ type
     /// </remarks>
     function AsReadOnly: IReadOnlyMultiMap<TKey, TValue>;
 
-    property Entries: IReadOnlyCollection<TMultiMapEntry<TKey, TValue>> read GetEntries;
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
@@ -2655,7 +2647,6 @@ type
 
     class function From<T>(const source: array of T): IReadOnlyList<T>; overload; static;
     class function From<T>(const source: TArray<T>): IReadOnlyList<T>; overload; static;
-    class function From<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
 
     class function Min<T>(const source: IEnumerable<T>;
       const selector: Func<T, Integer>): Integer; overload; static;
@@ -2754,9 +2745,21 @@ type
     class function OrdinalIgnoreCase: TStringComparer;
   end;
 
-  TInstanceComparer<T> = class
+  TInstanceComparer<T> = record
   public
-    class function Default: IComparer<T>; inline;
+    class function Default: IComparer<T>; static; inline;
+  end;
+
+  TKeyComparer<TKey> = class abstract(TRefCountedObject)
+  private
+    fKeyComparer: IComparer<TKey>;
+  public
+    constructor Create(const keyComparer: IComparer<TKey>);
+  end;
+
+  TPairByKeyComparer<TKey,TValue> = class(TKeyComparer<TKey>, IComparer<TPair<TKey,TValue>>)
+  private
+    function Compare(const left, right: TPair<TKey,TValue>): Integer;
   end;
 
   TIdentityFunction<T> = record
@@ -2779,6 +2782,7 @@ type
   end;
 
 function GetInstanceComparer: Pointer;
+function GetElementType(typeInfo: PTypeInfo): PTypeInfo;
 
 implementation
 
@@ -2789,6 +2793,7 @@ uses
 {$ENDIF}
   Rtti,
   TypInfo,
+  Spring.Collections.Base,
   Spring.Collections.Dictionaries,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
@@ -2800,21 +2805,30 @@ uses
   Spring.ResourceStrings;
 
 
+function GetElementType(typeInfo: PTypeInfo): PTypeInfo;
+var
+  typeParams: TArray<string>;
+  qualifiedName: string;
+  item: TRttiType;
+begin
+  typeParams := GetGenericTypeParameters(typeInfo.TypeName);
+  if Length(typeParams) <> 1 then
+    Exit(nil);
+
+  qualifiedName := typeParams[0];
+  item := TType.Context.FindType(qualifiedName);
+  if Assigned(item) then
+    Result := item.Handle
+  else
+  begin
+    for item in TType.Context.GetTypes do
+      if SameText(item.Name, qualifiedName) then
+        Exit(item.Handle);
+    Result := nil;
+  end;
+end;
+
 {$REGION 'Instance comparer'}
-function NopAddref(inst: Pointer): Integer; stdcall; //FI:O804
-begin
-  Result := -1;
-end;
-
-function NopRelease(inst: Pointer): Integer; stdcall; //FI:O804
-begin
-  Result := -1;
-end;
-
-function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall; //FI:O804
-begin
-  Result := E_NOINTERFACE;
-end;
 
 function Compare_Instance(Inst: Pointer; const Left, Right: TObject): Integer; //FI:O804
 var
@@ -2845,6 +2859,7 @@ function GetInstanceComparer: Pointer;
 begin
   Result := @InstanceComparer;
 end;
+
 {$ENDREGION}
 
 
@@ -3566,12 +3581,6 @@ begin
   Result := TArrayIterator<T>.Create(source);
 end;
 
-class function TEnumerable.From<T>(
-  const source: TEnumerable<T>): IEnumerable<T>;
-begin
-  Result := TEnumerableAdapter<T>.Create(source);
-end;
-
 class function TEnumerable.GroupBy<T, TKey>(const source: IEnumerable<T>;
   const keySelector: Func<T, TKey>): IEnumerable<IGrouping<TKey, T>>;
 begin
@@ -3847,6 +3856,30 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TKeyComparer<TKey>'}
+
+constructor TKeyComparer<TKey>.Create(const keyComparer: IComparer<TKey>);
+begin
+  if keyComparer = nil then
+    fKeyComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)))
+  else
+    fKeyComparer := keyComparer;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPairByKeyComparer<TKey,TValue>'}
+
+function TPairByKeyComparer<TKey,TValue>.Compare(
+  const left, right: TPair<TKey, TValue>): Integer;
+begin
+  Result := fKeyComparer.Compare(left.Key, right.Key);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TLinkedListNode<T>'}
 
 constructor TLinkedListNode<T>.Create(const value: T);
@@ -3912,8 +3945,7 @@ function InitElementType(fieldType: PTypeInfo): PTypeInfo;
 begin
   Assert(fieldType.Kind = tkInterface);
   Assert(fieldType.TypeData.GUID = IList<TObject>);
-  Result := TRttiDynamicArrayType(fieldType.RttiType.GetMethod('ToArray').ReturnType)
-    .ElementType.Handle;
+  Result := GetElementType(fieldType);
   Assert(Result.Kind in [tkClass, tkInterface]);
 end;
 

@@ -79,7 +79,7 @@ type
     {$IFNDEF DELPHIXE8_UP}{$HINTS ON}{$ENDIF}
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction); inline;
     function DeleteAllInternal(const match: Predicate<T>;
-      notification: TCollectionChangedAction; const list: IList<T>): Integer;
+      notification: TCollectionChangedAction; items: TArray<T>): Integer;
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
     function InsertInternal(index: Integer; const item: T): Integer;
     procedure InsertRangeInternal(index, count: Integer; const values: array of T);
@@ -130,7 +130,7 @@ type
     function RemoveAll(const match: Predicate<T>): Integer;
 
     function Extract(const item: T): T;
-    function ExtractAll(const match: Predicate<T>): IReadOnlyList<T>;
+    function ExtractAll(const match: Predicate<T>): TArray<T>;
 
     procedure Clear;
 
@@ -1143,9 +1143,9 @@ begin
 end;
 
 function TAbstractArrayList<T>.DeleteAllInternal(const match: Predicate<T>;
-  notification: TCollectionChangedAction; const list: IList<T>): Integer;
+  notification: TCollectionChangedAction; items: TArray<T>): Integer;
 var
-  itemCount, freeIndex, current: Integer;
+  itemCount, freeIndex, current, i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(match), 'match');
@@ -1153,6 +1153,7 @@ begin
 
   itemCount := Self.Count;
   freeIndex := 0;
+  i := 0;
 
   // Find the first item that needs to be removed
   while (freeIndex < itemCount) and not match(fItems[freeIndex]) do
@@ -1167,7 +1168,10 @@ begin
   if Assigned(Notify) then
     Notify(Self, fItems[freeIndex], notification);
   if notification = caExtracted then
-    list.Add(fItems[freeIndex])
+  begin
+    items[i] := fItems[freeIndex];
+    Inc(i);
+  end
   else if OwnsObjects then
     FreeObject(fItems[freeIndex]);
 
@@ -1180,7 +1184,10 @@ begin
       if Assigned(Notify) then
         Notify(Self, fItems[current], notification);
       if notification = caExtracted then
-        list.Add(fItems[current])
+      begin
+        items[i] := fItems[current];
+        Inc(i);
+      end
       else if OwnsObjects then
         FreeObject(fItems[current]);
       Inc(current);
@@ -1225,16 +1232,14 @@ begin
   DeleteInternal(index, caExtracted);
 end;
 
-function TAbstractArrayList<T>.ExtractAll(const match: Predicate<T>): IReadOnlyList<T>;
+function TAbstractArrayList<T>.ExtractAll(const match: Predicate<T>): TArray<T>;
 var
-  list: IList<T>;
+  count: Integer;
 begin
-  list := CreateList;
-  DeleteAllInternal(match, caExtracted, list);
-  list.TrimExcess;
-  Result := list.AsReadOnly;
+  SetLength(Result, fCount);
+  count := DeleteAllInternal(match, caExtracted, Result);
+  SetLength(Result, count);
 end;
-
 
 function TAbstractArrayList<T>.ExtractRange(index, count: Integer): TArray<T>;
 var

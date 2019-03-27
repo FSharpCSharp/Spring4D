@@ -29,13 +29,23 @@ unit Spring.Collections.Adapters;
 interface
 
 uses
+  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Collections.Adapters.Interfaces,
   Spring.Collections.Base;
 
 type
-  TEnumerableAdapter<T> = class(TRefCountedObject, IEnumerable)
+  TBaseAdapter<T> = class(TRefCountedObject, IEnumerable)
+  private type
+    TEnumerator = class(TRefCountedObject, IInterface, IEnumerator)
+    private
+      fEnumerator: IEnumerator<T>;
+      function GetCurrent: TValue;
+    public
+      constructor Create(const enumerator: IEnumerator<T>);
+      function MoveNext: Boolean;
+    end;
   private
     fSource: IEnumerable<T>;
   {$REGION 'Property Accessors'}
@@ -50,7 +60,7 @@ type
     function GetEnumerator: IEnumerator;
   end;
 
-  TCollectionAdapter<T> = class(TEnumerableAdapter<T>, ICollection)
+  TCollectionAdapter<T> = class(TBaseAdapter<T>, ICollection)
   private
     function GetIsReadOnly: Boolean;
     function GetOnChanged: IEvent;
@@ -143,7 +153,7 @@ type
     constructor Create(const source: IDictionary<TKey, T>);
   end;
 
-  TStackAdapter<T> = class(TEnumerableAdapter<T>, IStack)
+  TStackAdapter<T> = class(TBaseAdapter<T>, IStack)
   private
     function GetOnChanged: IEvent;
 
@@ -160,7 +170,7 @@ type
     constructor Create(const source: IStack<T>);
   end;
 
-  TQueueAdapter<T> = class(TEnumerableAdapter<T>, IQueue)
+  TQueueAdapter<T> = class(TBaseAdapter<T>, IQueue)
   private
     function GetOnChanged: IEvent;
 
@@ -193,6 +203,31 @@ type
     constructor Create(const source: ISet<T>);
   end;
 
+  TEnumeratorAdapter<T> = class(TRefCountedObject, IInterface, IEnumerator<T>)
+  private type
+    TRTLEnumerator = Generics.Collections.TEnumerator<T>;
+  private
+    fSource: TRTLEnumerator;
+    fOwnsObject: Boolean;
+    function GetCurrent: T;
+  public
+    constructor Create(const source: TRTLEnumerator; ownsObject: Boolean = True);
+    destructor Destroy; override;
+    function MoveNext: Boolean;
+  end;
+
+  TEnumerableAdapter<T> = class(TEnumerableBase<T>, IInterface, IEnumerable<T>)
+  private type
+    TRTLEnumerable = Generics.Collections.TEnumerable<T>;
+  private
+    fSource: TRTLEnumerable;
+    fOwnsObject: Boolean;
+  public
+    constructor Create(const source: TRTLEnumerable; ownsObject: Boolean = True);
+    destructor Destroy; override;
+    function GetEnumerator: IEnumerator<T>;
+  end;
+
   TAdapters = class
   public
     class function CreateCollection<T>(const source: ICollection<T>): ICollection;
@@ -201,6 +236,8 @@ type
     class function CreateStack<T>(const source: IStack<T>): IStack;
     class function CreateQueue<T>(const source: IQueue<T>): IQueue;
     class function CreateSet<T>(const source: ISet<T>): ISet;
+
+    class function From<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
   end;
 
 implementation
@@ -209,35 +246,35 @@ uses
   SysUtils;
 
 
-{$REGION 'TEnumerableAdapter<T>'}
+{$REGION 'TBaseAdapter<T>'}
 
-constructor TEnumerableAdapter<T>.Create(const source: IEnumerable<T>);
+constructor TBaseAdapter<T>.Create(const source: IEnumerable<T>);
 begin
   inherited Create;
   fSource := source;
 end;
 
-function TEnumerableAdapter<T>.GetCount: Integer;
+function TBaseAdapter<T>.GetCount: Integer;
 begin
   Result := fSource.Count;
 end;
 
-function TEnumerableAdapter<T>.GetElementType: PTypeInfo;
+function TBaseAdapter<T>.GetElementType: PTypeInfo;
 begin
   Result := fSource.ElementType;
 end;
 
-function TEnumerableAdapter<T>.GetEnumerator: IEnumerator;
+function TBaseAdapter<T>.GetEnumerator: IEnumerator;
 begin
-  Result := TEnumeratorWrapper<T>.Create(fSource.GetEnumerator);
+  Result := TEnumerator.Create(fSource.GetEnumerator);
 end;
 
-function TEnumerableAdapter<T>.GetIsEmpty: Boolean;
+function TBaseAdapter<T>.GetIsEmpty: Boolean;
 begin
   Result := fSource.IsEmpty;
 end;
 
-function TEnumerableAdapter<T>.QueryInterface(const IID: TGUID;
+function TBaseAdapter<T>.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
   if IID = IEnumerable<T> then
@@ -247,6 +284,31 @@ begin
   end
   else
     Result := inherited QueryInterface(IID, Obj);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBaseAdapter<T>.TEnumerator'}
+
+constructor TBaseAdapter<T>.TEnumerator.Create(
+  const enumerator: IEnumerator<T>);
+begin
+  inherited Create;
+  fEnumerator := enumerator;
+end;
+
+function TBaseAdapter<T>.TEnumerator.GetCurrent: TValue;
+var
+  current: T;
+begin
+  current := fEnumerator.Current;
+  Result := TValue.From(@current, TypeInfo(T));
+end;
+
+function TBaseAdapter<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fEnumerator.MoveNext;
 end;
 
 {$ENDREGION}
@@ -829,6 +891,68 @@ end;
 
 {$ENDREGION}
 
+{$REGION 'TEnumeratorAdapter<T>'}
+
+constructor TEnumeratorAdapter<T>.Create(const source: TRTLEnumerator;
+  ownsObject: Boolean);
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(source), 'source');
+{$ENDIF}
+
+  inherited Create;
+  fSource := source;
+  fOwnsObject := ownsObject;
+end;
+
+destructor TEnumeratorAdapter<T>.Destroy;
+begin
+  if fOwnsObject then
+    fSource.Free;
+  inherited Destroy;
+end;
+
+function TEnumeratorAdapter<T>.GetCurrent: T;
+begin
+  Result := fSource.Current;
+end;
+
+function TEnumeratorAdapter<T>.MoveNext: Boolean;
+begin
+  Result := fSource.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableAdapter<T>'}
+
+constructor TEnumerableAdapter<T>.Create(const source: TRTLEnumerable;
+  ownsObject: Boolean);
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(source), 'source');
+{$ENDIF}
+
+  inherited Create;
+  fSource := source;
+  fOwnsObject := ownsObject;
+end;
+
+destructor TEnumerableAdapter<T>.Destroy;
+begin
+  if fOwnsObject then
+    fSource.Free;
+  inherited Destroy;
+end;
+
+function TEnumerableAdapter<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumeratorAdapter<T>.Create(fSource.GetEnumerator);
+end;
+
+{$ENDREGION}
+
 
 {$REGION 'TAdapters'}
 
@@ -862,6 +986,11 @@ end;
 class function TAdapters.CreateStack<T>(const source: IStack<T>): IStack;
 begin
   Result := TStackAdapter<T>.Create(source);
+end;
+
+class function TAdapters.From<T>(const source: TEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TEnumerableAdapter<T>.Create(source);
 end;
 
 {$ENDREGION}

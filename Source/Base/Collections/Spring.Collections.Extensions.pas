@@ -29,7 +29,6 @@ unit Spring.Collections.Extensions;
 interface
 
 uses
-  Generics.Collections,
   Generics.Defaults,
   SysUtils,
   Types,
@@ -83,71 +82,6 @@ type
   {$ENDREGION}
 
     class property Instance: TEmptyEnumerable<T> read fInstance;
-  end;
-
-  TArrayIterator<T> = class(TIterator<T>, IEnumerable<T>,
-    IReadOnlyCollection<T>, IReadOnlyList<T>)
-  private
-    fValues: TArray<T>;
-    fIndex: Integer;
-  {$REGION 'Property Accessors'}
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-    function GetItem(index: Integer): T;
-  {$ENDREGION}
-  protected
-    function Clone: TIterator<T>; override;
-    function TryMoveNext(var current: T): Boolean; override;
-  public
-    constructor Create(const values: array of T); overload;
-    constructor Create(const values: TArray<T>); overload;
-
-  {$REGION 'Implements IReadOnlyCollection<T>'}
-    procedure CopyTo(var values: TArray<T>; index: Integer);
-  {$ENDREGION}
-
-  {$REGION 'Implements IReadOnlyList<T>'}
-    function IndexOf(const item: T): Integer; overload;
-    function IndexOf(const item: T; index: Integer): Integer; overload;
-    function IndexOf(const item: T; index, count: Integer): Integer; overload;
-  {$ENDREGION}
-
-    function ToArray: TArray<T>;
-  end;
-
-  /// <summary>
-  ///   The adapter implementation for <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />
-  ///    .
-  /// </summary>
-  TEnumeratorAdapter<T> = class(TRefCountedObject, IInterface, IEnumerator<T>)
-  private
-    type
-      TGenericEnumerable = Generics.Collections.TEnumerable<T>;
-      TGenericEnumerator = Generics.Collections.TEnumerator<T>;
-  private
-    fSource: TGenericEnumerable;
-    fEnumerator: TGenericEnumerator;
-    function GetCurrent: T;
-    procedure Start;
-  public
-    constructor Create(const source: TGenericEnumerable);
-    destructor Destroy; override;
-    function MoveNext: Boolean;
-  end;
-
-  /// <summary>
-  ///   The adapter implementation for <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
-  ///   .
-  /// </summary>
-  TEnumerableAdapter<T> = class(TEnumerableBase<T>, IInterface, IEnumerable<T>)
-  private
-    type
-      TGenericEnumerable = Generics.Collections.TEnumerable<T>;
-  private
-    fSource: TGenericEnumerable;
-  public
-    constructor Create(const source: TGenericEnumerable);
-    function GetEnumerator: IEnumerator<T>;
   end;
 
   TWhereIterator<T> = class(TSourceIterator<T>)
@@ -521,7 +455,7 @@ type
   private
     fComparer: IEqualityComparer<TKey>;
     fGroupings: IList<TGrouping>;
-    fGroupingKeys: TDictionary<TKey, TGrouping>;
+    fGroupingKeys: IDictionary<TKey, TGrouping>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetGrouping(const key: TKey; create: Boolean): TGrouping;
@@ -541,7 +475,6 @@ type
     class function CreateForJoin(const source: IEnumerable<TElement>;
       const keySelector: Func<TElement, TKey>;
       const comparer: IEqualityComparer<TKey>): TLookup<TKey, TElement>; static;
-    destructor Destroy; override;
 
     function Contains(const key: TKey): Boolean; overload;
     function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
@@ -982,153 +915,6 @@ end;
 function TEmptyEnumerable<T>._Release: Integer;
 begin
   Result := -1;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TArrayIterator<T>'}
-
-constructor TArrayIterator<T>.Create(const values: array of T);
-var
-  i: Integer;
-begin
-  inherited Create;
-  fValues := TArray.Copy<T>(values);
-end;
-
-constructor TArrayIterator<T>.Create(const values: TArray<T>);
-begin
-  inherited Create;
-  fValues := values;
-end;
-
-procedure TArrayIterator<T>.CopyTo(var values: TArray<T>; index: Integer);
-var
-  count: Integer;
-begin
-  count := Length(fValues);
-  if count > 0 then
-    if TType.IsManaged<T> then
-      System.CopyArray(@values[index], @fValues[0], TypeInfo(T), count)
-    else
-      System.Move(fValues[0], values[index], SizeOf(T) * count);
-end;
-
-function TArrayIterator<T>.GetCount: Integer;
-begin
-  Result := Length(fValues);
-end;
-
-function TArrayIterator<T>.GetIsEmpty: Boolean;
-begin
-  Result := fValues = nil;
-end;
-
-function TArrayIterator<T>.GetItem(index: Integer): T;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Length(fValues)), 'index');
-{$ENDIF}
-
-  Result := fValues[index];
-end;
-
-function TArrayIterator<T>.IndexOf(const item: T): Integer;
-begin
-  Result := IndexOf(item, 0, Length(fValues));
-end;
-
-function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
-begin
-  Result := IndexOf(item, index, Length(fValues) - index);
-end;
-
-function TArrayIterator<T>.IndexOf(const item: T; index, count: Integer): Integer;
-var
-  comparer: IEqualityComparer<T>;
-begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  Result := TArray.IndexOf<T>(fValues, item, index, count, comparer);
-end;
-
-function TArrayIterator<T>.Clone: TIterator<T>;
-begin
-  Result := TArrayIterator<T>.Create(fValues);
-end;
-
-function TArrayIterator<T>.TryMoveNext(var current: T): Boolean;
-begin
-  Result := fIndex < Length(fValues);
-  if Result then
-  begin
-    current := fValues[fIndex];
-    Inc(fIndex);
-  end;
-end;
-
-function TArrayIterator<T>.ToArray: TArray<T>;
-begin
-  Result := fValues;
-  SetLength(Result, Length(Result));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEnumeratorAdapter<T>'}
-
-constructor TEnumeratorAdapter<T>.Create(const source: TGenericEnumerable);
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(source), 'source');
-{$ENDIF}
-
-  inherited Create;
-  fSource := source;
-end;
-
-destructor TEnumeratorAdapter<T>.Destroy;
-begin
-  fEnumerator.Free;
-  inherited Destroy;
-end;
-
-function TEnumeratorAdapter<T>.GetCurrent: T;
-begin
-  Result := fEnumerator.Current;
-end;
-
-function TEnumeratorAdapter<T>.MoveNext: Boolean;
-begin
-  if not Assigned(fEnumerator) then
-    Start;
-  Result := fEnumerator.MoveNext;
-end;
-
-procedure TEnumeratorAdapter<T>.Start;
-begin
-  fEnumerator := fSource.GetEnumerator;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEnumerableAdapter<T>'}
-
-constructor TEnumerableAdapter<T>.Create(const source: TGenericEnumerable);
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(source), 'source');
-{$ENDIF}
-
-  inherited Create;
-  fSource := source;
-end;
-
-function TEnumerableAdapter<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TEnumeratorAdapter<T>.Create(fSource);
 end;
 
 {$ENDREGION}
@@ -2149,7 +1935,7 @@ begin
   if not Assigned(fComparer) then
     fComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
   fGroupings := TGroupings.Create;
-  fGroupingKeys := TDictionary<TKey, TGrouping>.Create(fComparer);
+  fGroupingKeys := TCollections.CreateDictionary<TKey, TGrouping>(fComparer);
 end;
 
 class function TLookup<TKey, TElement>.Create<TSource>(
@@ -2194,12 +1980,6 @@ begin
     FreeAndNil(Result);
     raise;
   end;
-end;
-
-destructor TLookup<TKey, TElement>.Destroy;
-begin
-  fGroupingKeys.Free;
-  inherited Destroy;
 end;
 
 function TLookup<TKey, TElement>.Contains(const key: TKey): Boolean;
@@ -3210,7 +2990,7 @@ begin
   if Result then
   begin
     item := fEnumerator.Current;
-    value := TValue.From<T>(item);
+    value := TValue.From(@item, TypeInfo(T));
     current := value.AsType<TResult>;
   end;
 end;
@@ -3253,7 +3033,7 @@ begin
   while fEnumerator.MoveNext do
   begin
     item := fEnumerator.Current;
-    value := TValue.From<T>(item);
+    value := TValue.From(@item, TypeInfo(T));
     if value.TryAsType<TResult>(current) then
       Exit(True);
   end;

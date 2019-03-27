@@ -883,10 +883,6 @@ end;
 type
   TDefaultConverter = class
   private
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo): TValue;
     function ConvertToParam(const value: TValue;
@@ -902,9 +898,9 @@ type
   private const
     Vtable: array[0..6] of Pointer =
     (
-      @TDefaultConverter.QueryInterface,
-      @TDefaultConverter._AddRef,
-      @TDefaultConverter._Release,
+      @NopQueryInterface,
+      @NopAddref,
+      @NopRelease,
       @TDefaultConverter.ConvertTo,
       @TDefaultConverter.ConvertToParam,
       @TDefaultConverter.TryConvertTo,
@@ -912,21 +908,6 @@ type
     );
     Instance: Pointer = @TDefaultConverter.Vtable;
   end;
-
-function TDefaultConverter.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  Result := E_NOINTERFACE;
-end;
-
-function TDefaultConverter._AddRef: Integer;
-begin
-  Result := -1;
-end;
-
-function TDefaultConverter._Release: Integer;
-begin
-  Result := -1;
-end;
 
 function TDefaultConverter.ConvertToParam(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
