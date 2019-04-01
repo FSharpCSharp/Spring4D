@@ -222,7 +222,7 @@ type
     class function GetCurrent(const enumerator: IEnumerator): TValue; static;
   end;
 
-  TEnumerableIterator = class abstract(TRefCountedObject)
+  TIterator = class abstract(TRefCountedObject)
   private type
     TEnumeratorState = (Initial, Started, Finished);
   private
@@ -236,14 +236,15 @@ type
     function MoveNext: Boolean;
   end;
 
-  TEnumerableIteratorBase<T> = class abstract(TEnumerableBase<T>)
+  TIteratorBase<T> = class abstract(TEnumerableBase<T>)
   private type
-    TEnumerator = class(TEnumerableIterator, IInterface, IEnumerator<T>)
+    TEnumerator = class(TIterator, IInterface, IEnumerator<T>)
     private
       function GetCurrent: T;
     end;
-  private
+  protected
     fIterator: TIteratorRec<T>;
+    function GetElementType: PTypeInfo; override;
   public
     constructor Create(const source: IEnumerable<T>;
       count: Integer; predicate: Pointer;
@@ -251,15 +252,16 @@ type
     function GetEnumerator: IEnumerator<T>;
   end;
 
-  TEnumerableIterator<T> = class sealed(TEnumerableIteratorBase<T>, IInterface, IEnumerable<T>);
+  TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IInterface, IEnumerable<T>);
 
-  TArrayIterator<T> = class sealed(TEnumerableIteratorBase<T>, IInterface,
+  TArrayIterator<T> = class(TIteratorBase<T>, IInterface,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
-    function GetItem(index: Integer): T;
-
+  {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
   public
     constructor Create(const source: TArray<T>); overload;
     constructor Create(const source: array of T); overload;
@@ -277,6 +279,26 @@ type
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
   {$ENDREGION}
+  end;
+
+  TObjectArrayIterator = class(TArrayIterator<TObject>)
+  private
+    fElementType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(const source: TArray<TObject>; elementType: PTypeInfo);
+    constructor CreateFromArray(source: PPointer; count: Integer; elementType: PTypeInfo);
+  end;
+
+  TInterfaceArrayIterator = class(TArrayIterator<IInterface>)
+  private
+    fElementType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(const source: TArray<IInterface>; elementType: PTypeInfo);
+    constructor CreateFromArray(source: PPointer; count: Integer; elementType: PTypeInfo);
   end;
 
   TIterator<T> = class abstract(TEnumerableBase<T>, IInterface, IEnumerator<T>)
@@ -2417,9 +2439,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TEnumerableIterator<T>'}
+{$REGION 'TIteratorBase<T>'}
 
-constructor TEnumerableIteratorBase<T>.Create(const source: IEnumerable<T>;
+constructor TIteratorBase<T>.Create(const source: IEnumerable<T>;
   count: Integer; predicate: Pointer; moveNext: TMoveNextFunc; start: TStartProc);
 begin
   inherited Create(source.Comparer);
@@ -2431,7 +2453,12 @@ begin
   fIterator.Predicate := IInterface(predicate);
 end;
 
-function TEnumerableIteratorBase<T>.GetEnumerator: IEnumerator<T>;
+function TIteratorBase<T>.GetElementType: PTypeInfo;
+begin
+  Result := fIterator.Source.ElementType;
+end;
+
+function TIteratorBase<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self, @fIterator);
 end;
@@ -2525,7 +2552,7 @@ end;
 
 {$REGION 'TEnumerableIterator'}
 
-constructor TEnumerableIterator.Create(source: TRefCountedObject; iterator: PIteratorRec);
+constructor TIterator.Create(source: TRefCountedObject; iterator: PIteratorRec);
 begin
   inherited Create;
   fSource := source;
@@ -2533,7 +2560,7 @@ begin
   fIterator := iterator.Clone;
 end;
 
-destructor TEnumerableIterator.Destroy;
+destructor TIterator.Destroy;
 begin
   fIterator.Finalize;
   FreeMem(fIterator);
@@ -2541,7 +2568,7 @@ begin
   inherited;
 end;
 
-function TEnumerableIterator.MoveNext: Boolean;
+function TIterator.MoveNext: Boolean;
 begin
   case fState of
     Initial, Started:
@@ -2563,7 +2590,7 @@ begin
   Result := False;
 end;
 
-procedure TEnumerableIterator.Start;
+procedure TIterator.Start;
 var
   startProc: TStartProc;
 begin
@@ -2577,7 +2604,7 @@ end;
 
 {$REGION 'TEnumerableIterator<T>.TEnumerator'}
 
-function TEnumerableIteratorBase<T>.TEnumerator.GetCurrent: T;
+function TIteratorBase<T>.TEnumerator.GetCurrent: T;
 type
   TIteratorRec = TIteratorRec<T>;
   PIteratorRec = ^TIteratorRec;
@@ -2765,6 +2792,72 @@ begin
       Exit(True);
   end;
   Result := False;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TObjectArrayIterator'}
+
+constructor TObjectArrayIterator.Create(const source: TArray<TObject>;
+  elementType: PTypeInfo);
+begin
+  inherited Create(source);
+  fElementType := elementType;
+end;
+
+constructor TObjectArrayIterator.CreateFromArray(source: PPointer;
+  count: Integer; elementType: PTypeInfo);
+begin
+  inherited Create;
+  fElementType := elementType;
+  fIterator.MoveNext := @TIteratorRec<TObject>.Ordered;
+  fIterator.TypeInfo := TypeInfo(TIteratorRec<TObject>);
+  if count > 0 then
+  begin
+    SetLength(fIterator.Items, count);
+{$IFDEF AUTOREFCOUNT}
+    System.CopyArray(@fIterator.Items[0], source, TypeInfo(TObject), count)
+{$ELSE}
+    System.Move(source^, fIterator.Items[0], count * SizeOf(TObject));
+{$ENDIF}
+  end;
+end;
+
+function TObjectArrayIterator.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterfaceArrayIterator'}
+
+constructor TInterfaceArrayIterator.Create(const source: TArray<IInterface>;
+  elementType: PTypeInfo);
+begin
+  inherited Create(source);
+  fElementType := elementType;
+end;
+
+constructor TInterfaceArrayIterator.CreateFromArray(source: PPointer;
+  count: Integer; elementType: PTypeInfo);
+begin
+  inherited Create;
+  fElementType := elementType;
+  fIterator.MoveNext := @TIteratorRec<IInterface>.Ordered;
+  fIterator.TypeInfo := TypeInfo(TIteratorRec<IInterface>);
+  if count > 0 then
+  begin
+    SetLength(fIterator.Items, count);
+    System.CopyArray(@fIterator.Items[0], source, TypeInfo(IInterface), count)
+  end;
+end;
+
+function TInterfaceArrayIterator.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
 end;
 
 {$ENDREGION}

@@ -222,19 +222,28 @@ end;
 procedure TSetBase<T>.IntersectWith(const other: IEnumerable<T>);
 var
   item: T;
-  list: IList<T>;
+  items: TArray<T>;
+  i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-  list := TCollections.CreateList<T>;
-  for item in this do
-    if not other.Contains(item) then
-      list.Add(item);
-
-  for item in list do
-    ICollection<T>(this).Remove(item);
+  if not other.IsEmpty then
+  begin
+    SetLength(items, this.Count);
+    i := 0;
+    for item in other do
+      if this.Contains(item) then
+      begin
+        items[i] := item;
+        Inc(i);
+        ICollection<T>(this).Remove(item);
+      end;
+    SetLength(items, i);
+  end;
+  ICollection<T>(this).Clear;
+  ICollection<T>(this).AddRange(items);
 end;
 
 function TSetBase<T>.IsSubsetOf(const other: IEnumerable<T>): Boolean;
@@ -261,7 +270,7 @@ begin
 {$ENDIF}
 
   for item in other do
-    if not Contains(item) then
+    if not this.Contains(item) then
       Exit(False);
 
   Result := True;
@@ -276,7 +285,7 @@ begin
 {$ENDIF}
 
   for item in other do
-    if Contains(item) then
+    if this.Contains(item) then
       Exit(True);
 
   Result := False;
@@ -296,7 +305,7 @@ begin
   for item in other do
   begin
     localSet.Add(item);
-    if not Contains(item) then
+    if not this.Contains(item) then
       Exit(False);
   end;
 

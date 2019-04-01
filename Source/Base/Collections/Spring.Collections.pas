@@ -3573,12 +3573,30 @@ end;
 
 class function TEnumerable.From<T>(const source: array of T): IReadOnlyList<T>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(T) of
+    tkClass: IReadOnlyList<TObject>(Result) := TObjectArrayIterator.CreateFromArray(@source, Length(source), TypeInfo(T));
+    tkInterface: IReadOnlyList<IInterface>(Result) := TInterfaceArrayIterator.CreateFromArray(@source, Length(source), TypeInfo(T));
+  else
+    Result := TArrayIterator<T>.Create(source);
+  end;
+{$ELSE}
   Result := TArrayIterator<T>.Create(source);
+{$ENDIF}
 end;
 
 class function TEnumerable.From<T>(const source: TArray<T>): IReadOnlyList<T>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(T) of
+    tkClass: IReadOnlyList<TObject>(Result) := TObjectArrayIterator.Create(TArray<TObject>(source), TypeInfo(T));
+    tkInterface: IReadOnlyList<IInterface>(Result) := TInterfaceArrayIterator.Create(TArray<IInterface>(source), TypeInfo(T));
+  else
+    Result := TArrayIterator<T>.Create(source);
+  end;
+{$ELSE}
   Result := TArrayIterator<T>.Create(source);
+{$ENDIF}
 end;
 
 class function TEnumerable.GroupBy<T, TKey>(const source: IEnumerable<T>;

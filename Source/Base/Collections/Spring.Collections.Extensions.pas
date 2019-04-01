@@ -231,22 +231,32 @@ type
       const comparer: IEqualityComparer<TKey>);
   end;
 
-  TRangeIterator = class(TIterator<Integer>, IEnumerable<Integer>,
-    IReadOnlyCollection<Integer>, IReadOnlyList<Integer>)
+  TRangeIterator = class(TEnumerableBase<Integer>, IInterface,
+    IEnumerable<Integer>, IReadOnlyCollection<Integer>, IReadOnlyList<Integer>)
+  private type
+    TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<Integer>)
+    private
+      fCurrent, fCount: Integer;
+      fStarted: Boolean;
+      function GetCurrent: Integer;
+    public
+      constructor Create(start, count: Integer);
+      function MoveNext: Boolean;
+    end;
   private
-    fStart: Integer;
-    fCount: Integer;
-    fIndex: Integer;
+    fStart, fCount: Integer;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
     function GetItem(index: Integer): Integer;
   {$ENDREGION}
-  protected
-    function Clone: TIterator<Integer>; override;
-    function TryMoveNext(var current: Integer): Boolean; override;
   public
     constructor Create(start, count: Integer);
+
+  {$REGION 'Implements IEnumerable<Integer>'}
+    function GetEnumerator: IEnumerator<Integer>;
+    function ToArray: TArray<Integer>;
+  {$ENDREGION}
 
   {$REGION 'Implements IReadOnlyCollection<Integer>'}
     procedure CopyTo(var values: TArray<Integer>; index: Integer);
@@ -257,8 +267,6 @@ type
     function IndexOf(const item: Integer; index: Integer): Integer; overload;
     function IndexOf(const item: Integer; index, count: Integer): Integer; overload;
   {$ENDREGION}
-
-    function ToArray: TArray<Integer>;
   end;
 
   TExceptIterator<T> = class(TSourceIterator<T>)
@@ -1430,11 +1438,6 @@ begin
   fCount := count;
 end;
 
-function TRangeIterator.Clone: TIterator<Integer>;
-begin
-  Result := TRangeIterator.Create(fStart, fCount);
-end;
-
 procedure TRangeIterator.CopyTo(var values: TArray<Integer>; index: Integer);
 var
   i: Integer;
@@ -1449,6 +1452,11 @@ end;
 function TRangeIterator.GetCount: Integer;
 begin
   Result := fCount;
+end;
+
+function TRangeIterator.GetEnumerator: IEnumerator<Integer>;
+begin
+  Result := TEnumerator.Create(fStart, fCount);
 end;
 
 function TRangeIterator.GetIsEmpty: Boolean;
@@ -1495,16 +1503,6 @@ begin
     Result := -1;
 end;
 
-function TRangeIterator.TryMoveNext(var current: Integer): Boolean;
-begin
-  Result := fIndex < fCount;
-  if Result then
-  begin
-    current := fStart + fIndex;
-    Inc(fIndex);
-  end;
-end;
-
 function TRangeIterator.ToArray: TArray<Integer>;
 var
   i: Integer;
@@ -1512,6 +1510,36 @@ begin
   SetLength(Result, fCount);
   for i := 0 to fCount - 1 do
     Result[i] := fStart + i;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRangeIterator.TEnumerator'}
+
+constructor TRangeIterator.TEnumerator.Create(start, count: Integer);
+begin
+  inherited Create;
+  fCurrent := start;
+  fCount := count;
+end;
+
+function TRangeIterator.TEnumerator.GetCurrent: Integer;
+begin
+  Result := fCurrent;
+end;
+
+function TRangeIterator.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fCount > 0;
+  if Result then
+  begin
+    Dec(fCount);
+    if fStarted then
+      Inc(fCurrent)
+    else
+      fStarted := True;
+  end;
 end;
 
 {$ENDREGION}
