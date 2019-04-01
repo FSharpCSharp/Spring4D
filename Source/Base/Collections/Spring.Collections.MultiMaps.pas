@@ -89,14 +89,14 @@ type
       TWrappedCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
-        fMap: Weak<TDictionary<TKey, ICollection<TValue>>>;
+        fMap: Weak<IDictionary<TKey, ICollection<TValue>>>;
         fKey: TKey;
         fDelegate: ICollection<TValue>;
         function GetCount: Integer;
         procedure RefreshIfEmpty;
       public
         constructor Create(const key: TKey;
-          const map: TDictionary<TKey, ICollection<TValue>>;
+          const map: IDictionary<TKey, ICollection<TValue>>;
           const delegate: ICollection<TValue>);
         function Contains(const value: TValue;
           const comparer: IEqualityComparer<TValue>): Boolean; overload;
@@ -119,7 +119,7 @@ type
       end;
   {$ENDREGION}
   private
-    fDictionary: TDictionary<TKey, ICollection<TValue>>;
+    fDictionary: IDictionary<TKey, ICollection<TValue>>;
     fValues: TValueCollection;
     fOwnerships: TDictionaryOwnerships;
     fCount: Integer;
@@ -140,7 +140,7 @@ type
   {$ENDREGION}
     function CreateCollection: ICollection<TValue>; virtual; abstract;
     function CreateDictionary(const comparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships): TDictionary<TKey, ICollection<TValue>>;
+      ownerships: TDictionaryOwnerships): IDictionary<TKey, ICollection<TValue>>;
   public
     constructor Create; override;
     constructor Create(ownerships: TDictionaryOwnerships); overload;
@@ -262,7 +262,6 @@ end;
 destructor TMultiMapBase<TKey, TValue>.Destroy;
 begin
   fValues.Free;
-  fDictionary.Free;
   inherited Destroy;
 end;
 
@@ -335,9 +334,9 @@ end;
 
 function TMultiMapBase<TKey, TValue>.CreateDictionary(
   const comparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships): TDictionary<TKey, ICollection<TValue>>;
+  ownerships: TDictionaryOwnerships): IDictionary<TKey, ICollection<TValue>>;
 begin
-  Result := TContainedDictionary<TKey, ICollection<TValue>>.Create(Self, comparer, ownerships);
+  Result := TCollections.CreateDictionary<TKey, ICollection<TValue>>(comparer, ownerships);
   Result.OnKeyChanged.Add(DoKeyChanged);
   Result.OnValueChanged.Add(DoValuesChanged);
 end;
@@ -617,7 +616,7 @@ end;
 {$REGION 'TMultiMapBase<TKey, TValue>.TWrappedCollection'}
 
 constructor TMultiMapBase<TKey, TValue>.TWrappedCollection.Create(
-  const key: TKey; const map: TDictionary<TKey, ICollection<TValue>>;
+  const key: TKey; const map: IDictionary<TKey, ICollection<TValue>>;
   const delegate: ICollection<TValue>);
 begin
   inherited Create;

@@ -39,18 +39,28 @@ uses
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
-  TEnumerableBase<T> = class abstract(TRefCountedObject)
+  TEnumerableBase = class abstract(TRefCountedObject)
+  protected
+    this: IInterface;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    function QueryInterface(const IID: TGUID; out obj): HResult; override;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    function Any: Boolean; overload;
+  end;
+
+  TEnumerableBase<T> = class abstract(TEnumerableBase)
   protected
     fComparer: IComparer<T>;
-    this: IEnumerable<T>;
   {$REGION 'Property Accessors'}
     function GetComparer: IComparer<T>;
-    function GetCount: Integer;
     function GetElementType: PTypeInfo; virtual;
-    function GetIsEmpty: Boolean;
   {$ENDREGION}
-    function QueryInterface(const IID: TGUID; out obj): HResult; override;
     function Equals(const left, right: T): Boolean; reintroduce; inline;
+    function QueryInterface(const IID: TGUID; out obj): HResult; override;
     procedure CopyTo(var values: TArray<T>; index: Integer);
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload;
@@ -65,13 +75,11 @@ type
     constructor Create; overload; virtual;
     constructor Create(const comparer: IComparer<T>); overload;
     constructor Create(const comparer: TComparison<T>); overload;
-    destructor Destroy; override;
 
     function Aggregate(const func: Func<T, T, T>): T;
 
     function All(const predicate: Predicate<T>): Boolean;
 
-    function Any: Boolean; overload;
     function Any(const predicate: Predicate<T>): Boolean; overload;
 
     function Concat(const second: IEnumerable<T>): IEnumerable<T>;
@@ -132,7 +140,7 @@ type
     function SkipWhile(const predicate: Predicate<T>): IEnumerable<T>; overload;
     function SkipWhile(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
 
-    function Sum: T; overload;
+    function Sum: T;
 
     function Take(count: Integer): IEnumerable<T>;
     function TakeWhile(const predicate: Predicate<T>): IEnumerable<T>; overload;
@@ -687,6 +695,59 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TEnumerableBase'}
+
+function TEnumerableBase.Any: Boolean;
+begin
+  Result := not IEnumerable(this).IsEmpty;
+end;
+
+constructor TEnumerableBase.Create;
+begin
+  inherited Create;
+
+  // child classes must not implement IInterface but IEnumerable<T>
+  Assert(not Assigned(GetInterfaceEntry(IInterface)), ClassName);
+  Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<Integer>).IOffset);
+end;
+
+destructor TEnumerableBase.Destroy;
+begin
+  Pointer(this) := nil;
+  inherited Destroy;
+end;
+
+function TEnumerableBase.GetCount: Integer;
+var
+  enumerator: IEnumerator;
+begin
+  Result := 0;
+  enumerator := IEnumerable(this).GetEnumerator;
+  while enumerator.MoveNext do
+    Inc(Result);
+end;
+
+function TEnumerableBase.GetIsEmpty: Boolean;
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := IEnumerable(this).GetEnumerator;
+  Result := not enumerator.MoveNext;
+end;
+
+function TEnumerableBase.QueryInterface(const IID: TGUID; out obj): HResult;
+begin
+  if IID = IInterface then
+  begin
+    IInterface(obj) := this;
+    Result := S_OK;
+  end else
+    Result := inherited QueryInterface(IID, obj);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TEnumerableBase<T>'}
 
 constructor TEnumerableBase<T>.Create;
@@ -696,10 +757,6 @@ begin
     fComparer := IComparer<T>(GetInstanceComparer)
   else
     fComparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-
-  // child classes must not implement IInterface but IEnumerable<T>
-  Assert(not Assigned(GetInterfaceEntry(IInterface)), ClassName);
-  Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<T>).IOffset);
 end;
 
 constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);
@@ -712,12 +769,6 @@ end;
 constructor TEnumerableBase<T>.Create(const comparer: TComparison<T>);
 begin
   Create(IComparer<T>(PPointer(@comparer)^));
-end;
-
-destructor TEnumerableBase<T>.Destroy;
-begin
-  Pointer(this) := nil;
-  inherited Destroy;
 end;
 
 function TEnumerableBase<T>.UseComparer(typeKind: TTypeKind): Boolean;
@@ -739,7 +790,7 @@ begin
   Guard.CheckNotNull(Assigned(func), 'func');
 {$ENDIF}
 
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     raise Error.NoElements;
   Result := enumerator.Current;
@@ -755,15 +806,10 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  for item in this do
+  for item in IEnumerable<T>(this) do
     if not predicate(item) then
       Exit(False);
   Result := True;
-end;
-
-function TEnumerableBase<T>.Any: Boolean;
-begin
-  Result := not this.IsEmpty;
 end;
 
 function TEnumerableBase<T>.Any(const predicate: Predicate<T>): Boolean;
@@ -774,7 +820,7 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  for item in this do
+  for item in IEnumerable<T>(this) do
     if predicate(item) then
       Exit(True);
   Result := False;
@@ -787,8 +833,8 @@ begin
   Guard.CheckNotNull(Assigned(second), 'second');
 {$ENDIF}
 
-  Result := TEnumerableIterator<T>.Create(this, 0, Pointer(second),
-    @TIteratorRec<T>.Concat, @TIteratorRec.GetEnumerator);
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    0, Pointer(second), @TIteratorRec<T>.Concat, @TIteratorRec.GetEnumerator);
 end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
@@ -809,7 +855,7 @@ begin
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  for item in this do
+  for item in IEnumerable<T>(this) do
     if comparer.Equals(value, item) then
       Exit(True);
   Result := False;
@@ -818,14 +864,14 @@ end;
 function TEnumerableBase<T>.Contains(const value: T;
   const comparer: TEqualityComparison<T>): Boolean;
 begin
-  Result := this.Contains(value, IEqualityComparer<T>(PPointer(@comparer)^));
+  Result := IEnumerable<T>(this).Contains(value, IEqualityComparer<T>(PPointer(@comparer)^));
 end;
 
 procedure TEnumerableBase<T>.CopyTo(var values: TArray<T>; index: Integer);
 var
   enumerator: IEnumerator<T>;
 begin
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
   begin
     values[index] := enumerator.Current;
@@ -879,7 +925,7 @@ var
   e: IEnumerator<T>;
   i: Integer;
 begin
-  e := this.GetEnumerator;
+  e := IEnumerable<T>(this).GetEnumerator;
   i := 0;
 
   while e.MoveNext do
@@ -914,7 +960,7 @@ begin
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  e1 := this.GetEnumerator;
+  e1 := IEnumerable<T>(this).GetEnumerator;
   e2 := values.GetEnumerator;
 
   while e1.MoveNext do
@@ -925,13 +971,13 @@ end;
 
 function TEnumerableBase<T>.First: T;
 begin
-  if not this.TryGetFirst(Result) then
+  if not IEnumerable<T>(this).TryGetFirst(Result) then
     raise Error.NoElements;
 end;
 
 function TEnumerableBase<T>.First(const predicate: Predicate<T>): T;
 begin
-  if not this.TryGetFirst(Result, predicate) then
+  if not IEnumerable<T>(this).TryGetFirst(Result, predicate) then
     raise Error.NoMatch;
 end;
 
@@ -939,26 +985,26 @@ function TEnumerableBase<T>.FirstOrDefault: T;
 var
   defaultItem: T;
 begin
-  if not this.TryGetFirst(Result) then
+  if not IEnumerable<T>(this).TryGetFirst(Result) then
     Result := Default(T);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const defaultValue: T): T;
 begin
-  if not this.TryGetFirst(Result) then
+  if not IEnumerable<T>(this).TryGetFirst(Result) then
     Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: Predicate<T>): T;
 begin
-  if not this.TryGetFirst(Result, predicate) then
+  if not IEnumerable<T>(this).TryGetFirst(Result, predicate) then
     Result := Default(T);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
 begin
-  if not this.TryGetFirst(Result, predicate) then
+  if not IEnumerable<T>(this).TryGetFirst(Result, predicate) then
     Result := defaultValue;
 end;
 
@@ -970,7 +1016,7 @@ begin
   Guard.CheckNotNull(Assigned(action), 'action');
 {$ENDIF}
 
-  for item in this do
+  for item in IEnumerable<T>(this) do
     action(item);
 end;
 
@@ -979,63 +1025,45 @@ begin
   Result := fComparer;
 end;
 
-function TEnumerableBase<T>.GetCount: Integer;
-var
-  enumerator: IEnumerator<T>;
-begin
-  Result := 0;
-  enumerator := this.GetEnumerator;
-  while enumerator.MoveNext do
-    Inc(Result);
-end;
-
 function TEnumerableBase<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
 end;
 
-function TEnumerableBase<T>.GetIsEmpty: Boolean;
-var
-  enumerator: IEnumerator<T>;
-begin
-  enumerator := this.GetEnumerator;
-  Result := not enumerator.MoveNext;
-end;
-
 function TEnumerableBase<T>.Last: T;
 begin
-  if not this.TryGetLast(Result) then
+  if not IEnumerable<T>(this).TryGetLast(Result) then
     raise Error.NoElements;
 end;
 
 function TEnumerableBase<T>.Last(const predicate: Predicate<T>): T;
 begin
-  if not this.TryGetLast(Result, predicate) then
+  if not IEnumerable<T>(this).TryGetLast(Result, predicate) then
     raise Error.NoMatch;
 end;
 
 function TEnumerableBase<T>.LastOrDefault: T;
 begin
-  if not this.TryGetLast(Result) then
+  if not IEnumerable<T>(this).TryGetLast(Result) then
     Result := Default(T);
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
 begin
-  if not this.TryGetLast(Result) then
+  if not IEnumerable<T>(this).TryGetLast(Result) then
     Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>): T;
 begin
-  if not this.TryGetLast(Result, predicate) then
+  if not IEnumerable<T>(this).TryGetLast(Result, predicate) then
     Result := Default(T);
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
 begin
-  if not this.TryGetLast(Result) then
+  if not IEnumerable<T>(this).TryGetLast(Result) then
     Result := defaultValue;
 end;
 
@@ -1049,7 +1077,7 @@ var
   enumerator: IEnumerator<T>;
   item: Integer;
 begin
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     raise Error.NoElements;
   Result := selector(enumerator.Current);
@@ -1070,7 +1098,7 @@ begin
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     raise Error.NoElements;
   Result := enumerator.Current;
@@ -1097,7 +1125,7 @@ var
   enumerator: IEnumerator<T>;
   item: Integer;
 begin
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     raise Error.NoElements;
   Result := selector(enumerator.Current);
@@ -1118,7 +1146,7 @@ begin
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     raise Error.NoElements;
   Result := enumerator.Current;
@@ -1132,12 +1160,13 @@ end;
 
 function TEnumerableBase<T>.Min(const comparer: TComparison<T>): T;
 begin
-  Result := this.Min(IComparer<T>(PPointer(@comparer)^));
+  Result := IEnumerable<T>(this).Min(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
 begin
-  Result := TEnumerableIterator<T>.Create(this, TIteratorRec.Ordered, Pointer(fComparer),
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    TIteratorRec.Ordered, Pointer(fComparer),
     @TIteratorRec<T>.Ordered, @TIteratorRec<T>.ToArray);
 end;
 
@@ -1148,7 +1177,8 @@ begin
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  Result := TEnumerableIterator<T>.Create(this, TIteratorRec.Ordered, Pointer(comparer),
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    TIteratorRec.Ordered, Pointer(comparer),
     @TIteratorRec<T>.Ordered, @TIteratorRec<T>.ToArray);
 end;
 
@@ -1164,28 +1194,25 @@ end;
 
 function TEnumerableBase<T>.QueryInterface(const IID: TGUID; out obj): HResult;
 begin
-  if IID = IInterface then
-  begin
-    IInterface(obj) := this;
-    Result := S_OK;
-  end else if IID = IEnumerable then
+  if IID = IEnumerable then
   begin
     IEnumerable(obj) := TEnumerableWrapper.Create(IEnumerable(this), TIteratorRec<T>.GetCurrent);
     Result := S_OK;
-  end
-  else
+  end else
     Result := inherited QueryInterface(IID, obj);
 end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 begin
-  Result := TEnumerableIterator<T>.Create(this, TIteratorRec.Reversed, nil,
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    TIteratorRec.Reversed, nil,
     @TIteratorRec<T>.Reversed, @TIteratorRec<T>.ToArray);
 end;
 
 function TEnumerableBase<T>.Shuffled: IEnumerable<T>;
 begin
-  Result := TEnumerableIterator<T>.Create(this, TIteratorRec.Shuffled, nil,
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    TIteratorRec.Shuffled, nil,
     @TIteratorRec<T>.Ordered, @TIteratorRec<T>.ToArray);
 end;
 
@@ -1193,7 +1220,7 @@ function TEnumerableBase<T>.Single: T;
 var
   enumerator: IEnumerator<T>;
 begin
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     raise Error.NoElements;
   Result := enumerator.Current;
@@ -1209,7 +1236,7 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
   begin
     Result := enumerator.Current;
@@ -1229,14 +1256,14 @@ var
   defaultValue: T;
 begin
   defaultValue := Default(T);
-  Result := this.SingleOrDefault(defaultValue);
+  Result := IEnumerable<T>(this).SingleOrDefault(defaultValue);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const defaultValue: T): T;
 var
   enumerator: IEnumerator<T>;
 begin
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
     Exit(defaultValue);
   Result := enumerator.Current;
@@ -1249,7 +1276,7 @@ var
   defaultValue: T;
 begin
   defaultValue := Default(T);
-  Result := this.SingleOrDefault(predicate, defaultValue);
+  Result := IEnumerable<T>(this).SingleOrDefault(predicate, defaultValue);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>;
@@ -1261,7 +1288,7 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
   begin
     Result := enumerator.Current;
@@ -1278,8 +1305,8 @@ end;
 
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
 begin
-  Result := TEnumerableIterator<T>.Create(this, count, nil,
-    @TIteratorRec<T>.Skip, @TIteratorRec.GetEnumerator);
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    count, nil, @TIteratorRec<T>.Skip, @TIteratorRec.GetEnumerator);
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -1289,8 +1316,8 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := TEnumerableIterator<T>.Create(this, 0, PPointer(@predicate)^,
-    @TIteratorRec<T>.SkipWhile, @TIteratorRec.GetEnumerator);
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    0, PPointer(@predicate)^, @TIteratorRec<T>.SkipWhile, @TIteratorRec.GetEnumerator);
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -1300,8 +1327,8 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := TEnumerableIterator<T>.Create(this, 0, PPointer(@predicate)^,
-    @TIteratorRec<T>.SkipWhileIndex, @TIteratorRec.GetEnumerator);
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    0, PPointer(@predicate)^, @TIteratorRec<T>.SkipWhileIndex, @TIteratorRec.GetEnumerator);
 end;
 
 function TEnumerableBase<T>.Sum: T;
@@ -1309,7 +1336,7 @@ var
   item: T;
 begin
   Result := Default(T);
-  for item in this do
+  for item in IEnumerable<T>(this) do
     case TType.Kind<T> of
       tkInteger: PInteger(@Result)^ := PInteger(@Result)^ + PInteger(@item)^;
       tkInt64: PInt64(@Result)^ := PInt64(@Result)^ + PInt64(@item)^;
@@ -1323,8 +1350,8 @@ end;
 
 function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
 begin
-  Result := TEnumerableIterator<T>.Create(this, count, nil,
-    @TIteratorRec<T>.Take, @TIteratorRec.GetEnumerator);
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    count, nil, @TIteratorRec<T>.Take, @TIteratorRec.GetEnumerator);
 end;
 
 function TEnumerableBase<T>.TakeWhile(
@@ -1334,8 +1361,8 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := TEnumerableIterator<T>.Create(this, 0, PPointer(@predicate)^,
-    @TIteratorRec<T>.TakeWhile, @TIteratorRec.GetEnumerator);
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    0, PPointer(@predicate)^, @TIteratorRec<T>.TakeWhile, @TIteratorRec.GetEnumerator);
 end;
 
 function TEnumerableBase<T>.TakeWhile(
@@ -1345,8 +1372,8 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := TEnumerableIterator<T>.Create(this, 0, PPointer(@predicate)^,
-    @TIteratorRec<T>.TakeWhileIndex, @TIteratorRec.GetEnumerator);
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    0, PPointer(@predicate)^, @TIteratorRec<T>.TakeWhileIndex, @TIteratorRec.GetEnumerator);
 end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
@@ -1368,7 +1395,7 @@ begin
   else
   begin
     count := 0;
-    for item in this do
+    for item in IEnumerable<T>(this) do
     begin
       if Result = nil then
         SetLength(Result, 4)
@@ -1388,7 +1415,7 @@ var
 begin
   if index < 0 then
     Exit(False);
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
   begin
     if index = 0 then
@@ -1405,7 +1432,7 @@ function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if enumerator.MoveNext then
   begin
     value := enumerator.Current;
@@ -1423,7 +1450,7 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  for item in this do
+  for item in IEnumerable<T>(this) do
     if predicate(item) then
     begin
       value := item;
@@ -1437,7 +1464,7 @@ function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if enumerator.MoveNext then
   begin
     repeat
@@ -1458,7 +1485,7 @@ begin
 {$ENDIF}
 
   Result := False;
-  for item in this do
+  for item in IEnumerable<T>(this) do
   begin
     if predicate(item) then
     begin
@@ -1475,7 +1502,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-  enumerator := this.GetEnumerator;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
   if enumerator.MoveNext then
   begin
     item := enumerator.Current;
@@ -1494,8 +1521,12 @@ function TEnumerableBase<T>.TryGetSingle(out value: T;
 var
   item: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
+
   Result := False;
-  for item in this do
+  for item in IEnumerable<T>(this) do
     if predicate(item) then
     begin
       if Result then
@@ -1514,8 +1545,8 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  Result := TEnumerableIterator<T>.Create(this, 0, PPointer(@predicate)^,
-    @TIteratorRec<T>.Where, @TIteratorRec.GetEnumerator);
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    0, PPointer(@predicate)^, @TIteratorRec<T>.Where, @TIteratorRec.GetEnumerator);
 end;
 
 {$ENDREGION}
@@ -1725,10 +1756,10 @@ var
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(Length(values), index, this.Count);
+  Guard.CheckRange(Length(values), index, IEnumerable<T>(this).Count);
 {$ENDIF}
 
-  for item in this do
+  for item in IEnumerable<T>(this) do
   begin
     values[index] := item;
     Inc(index);
@@ -1737,7 +1768,7 @@ end;
 
 function TCollectionBase<T>.ExtractAll(const match: Predicate<T>): TArray<T>;
 begin
-  Result := this.Where(match).ToArray;
+  Result := IEnumerable<T>(this).Where(match).ToArray;
   ExtractRange(Result);
 end;
 
@@ -1812,7 +1843,7 @@ end;
 
 function TCollectionBase<T>.RemoveAll(const match: Predicate<T>): Integer;
 begin
-  Result := RemoveRange(this.Where(match).ToArray);
+  Result := RemoveRange(IEnumerable<T>(this).Where(match).ToArray);
 end;
 
 function TCollectionBase<T>.RemoveRange(const values: array of T): Integer;
@@ -2307,7 +2338,7 @@ function TListBase<T>.IndexOf(const item: T): Integer;
 var
   count: Integer;
 begin
-  count := this.Count;
+  count := IEnumerable<T>(this).Count;
   if count > 0 then
     Result := IList<T>(this).IndexOf(item, 0, count)
   else
@@ -2318,7 +2349,7 @@ function TListBase<T>.IndexOf(const item: T; index: Integer): Integer;
 var
   count: Integer;
 begin
-  count := this.Count;
+  count := IEnumerable<T>(this).Count;
   if count > 0 then
     Result := IList<T>(this).IndexOf(item, index, count - index)
   else
@@ -2329,7 +2360,7 @@ function TListBase<T>.LastIndexOf(const item: T): Integer;
 var
   count: Integer;
 begin
-  count := this.Count;
+  count := IEnumerable<T>(this).Count;
   if count > 0 then
     Result := IList<T>(this).LastIndexOf(item, count - 1, count)
   else
@@ -2340,7 +2371,7 @@ function TListBase<T>.LastIndexOf(const item: T; index: Integer): Integer;
 var
   count: Integer;
 begin
-  count := this.Count;
+  count := IEnumerable<T>(this).Count;
   if count > 0 then
     Result := IList<T>(this).LastIndexOf(item, index, index + 1)
   else
@@ -2359,22 +2390,22 @@ end;
 
 procedure TListBase<T>.Reverse;
 begin
-  IList<T>(this).Reverse(0, this.Count);
+  IList<T>(this).Reverse(0, IEnumerable<T>(this).Count);
 end;
 
 procedure TListBase<T>.Sort;
 begin
-  IList<T>(this).Sort(fComparer, 0, this.Count);
+  IList<T>(this).Sort(fComparer, 0, IEnumerable<T>(this).Count);
 end;
 
 procedure TListBase<T>.Sort(const comparer: IComparer<T>);
 begin
-  IList<T>(this).Sort(comparer, 0, this.Count);
+  IList<T>(this).Sort(comparer, 0, IEnumerable<T>(this).Count);
 end;
 
 procedure TListBase<T>.Sort(const comparer: TComparison<T>);
 begin
-  IList<T>(this).Sort(IComparer<T>(PPointer(@comparer)^), 0, this.Count);
+  IList<T>(this).Sort(IComparer<T>(PPointer(@comparer)^), 0, IEnumerable<T>(this).Count);
 end;
 
 procedure TListBase<T>.Sort(const comparer: TComparison<T>; index, count: Integer);

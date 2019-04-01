@@ -231,10 +231,10 @@ begin
 
   if not other.IsEmpty then
   begin
-    SetLength(items, this.Count);
+    SetLength(items, IEnumerable<T>(this).Count);
     i := 0;
     for item in other do
-      if this.Contains(item) then
+      if IEnumerable<T>(this).Contains(item) then
       begin
         items[i] := item;
         Inc(i);
@@ -254,7 +254,7 @@ begin
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-  for item in this do
+  for item in IEnumerable<T>(this) do
     if not other.Contains(item) then
       Exit(False);
 
@@ -270,7 +270,7 @@ begin
 {$ENDIF}
 
   for item in other do
-    if not this.Contains(item) then
+    if not IEnumerable<T>(this).Contains(item) then
       Exit(False);
 
   Result := True;
@@ -285,7 +285,7 @@ begin
 {$ENDIF}
 
   for item in other do
-    if this.Contains(item) then
+    if IEnumerable<T>(this).Contains(item) then
       Exit(True);
 
   Result := False;
@@ -305,11 +305,11 @@ begin
   for item in other do
   begin
     localSet.Add(item);
-    if not this.Contains(item) then
+    if not IEnumerable<T>(this).Contains(item) then
       Exit(False);
   end;
 
-  for item in this do
+  for item in IEnumerable<T>(this) do
     if not localSet.Contains(item) then
       Exit(False);
 
