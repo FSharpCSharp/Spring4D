@@ -38,7 +38,7 @@ uses
 type
   TBaseAdapter<T> = class(TRefCountedObject, IEnumerable)
   private type
-    TEnumerator = class(TRefCountedObject, IInterface, IEnumerator)
+    TEnumerator = class(TRefCountedObject, IEnumerator)
     private
       fEnumerator: IEnumerator<T>;
       function GetCurrent: TValue;
@@ -203,7 +203,7 @@ type
     constructor Create(const source: ISet<T>);
   end;
 
-  TEnumeratorAdapter<T> = class(TRefCountedObject, IInterface, IEnumerator<T>)
+  TEnumeratorAdapter<T> = class(TRefCountedObject, IEnumerator<T>)
   private type
     TRTLEnumerator = Generics.Collections.TEnumerator<T>;
   private
@@ -216,7 +216,7 @@ type
     function MoveNext: Boolean;
   end;
 
-  TEnumerableAdapter<T> = class(TEnumerableBase<T>, IInterface, IEnumerable<T>)
+  TEnumerableAdapter<T> = class(TEnumerableBase<T>, IEnumerable<T>)
   private type
     TRTLEnumerable = Generics.Collections.TEnumerable<T>;
   private

@@ -58,7 +58,7 @@ type
       TItem = TDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
-      TEnumerator = class(TRefCountedObject, IInterface,
+      TEnumerator = class(TRefCountedObject, 
         IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -76,7 +76,7 @@ type
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = class(TEnumerableBase<TKey>, IInterface,
+      TKeyCollection = class(TEnumerableBase<TKey>,
         IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -103,7 +103,7 @@ type
       {$ENDREGION}
       end;
 
-      TValueCollection = class(TEnumerableBase<TValue>, IInterface,
+      TValueCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -226,20 +226,6 @@ type
   {$ENDREGION}
   end;
 
-  TContainedDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
-  private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-    fController: TRefCountedObject;
-  public
-    constructor Create(const controller: TRefCountedObject;
-      const keyComparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships);
-  {$REGION 'Implements IInterface'}
-    function _AddRef: Integer; override;
-    function _Release: Integer; override;
-  {$ENDREGION}
-  end;
-
   TBidiDictionaryItem<TKey, TValue> = record
   public
     KeyHashCode: Integer;
@@ -262,7 +248,7 @@ type
       TItem = TBidiDictionaryItem<TKey, TValue>;
       PItem = ^TItem;
 
-      TInverse = class(TCollectionBase<TValueKeyPair>, IInterface,
+      TInverse = class(TCollectionBase<TValueKeyPair>,
         IEnumerable<TValueKeyPair>, IReadOnlyCollection<TValueKeyPair>,
         IReadOnlyMap<TValue, TKey>, IReadOnlyDictionary<TValue, TKey>,
         ICollection<TValueKeyPair>, IMap<TValue, TKey>,
@@ -335,7 +321,7 @@ type
       {$ENDREGION}
       end;
 
-      TEnumerator = class(TRefCountedObject, IInterface,
+      TEnumerator = class(TRefCountedObject, 
         IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>,
         IEnumerator<TValueKeyPair>)
       private
@@ -356,7 +342,7 @@ type
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = class(TEnumerableBase<TKey>, IInterface,
+      TKeyCollection = class(TEnumerableBase<TKey>,
         IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -381,7 +367,7 @@ type
       {$ENDREGION}
       end;
 
-      TValueCollection = class(TEnumerableBase<TValue>, IInterface,
+      TValueCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -520,7 +506,7 @@ type
       TKeyValuePair = TPair<TKey, TValue>;
       PNode = TNodes<TKey, TValue>.PRedBlackTreeNode;
 
-      TEnumerator = class(TRefCountedObject, IInterface,
+      TEnumerator = class(TRefCountedObject,
         IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -539,7 +525,7 @@ type
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = class(TEnumerableBase<TKey>, IInterface,
+      TKeyCollection = class(TEnumerableBase<TKey>,
         IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -563,7 +549,7 @@ type
       {$ENDREGION}
       end;
 
-      TValueCollection = class(TEnumerableBase<TValue>, IInterface,
+      TValueCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -1405,7 +1391,8 @@ begin
     end;
 end;
 
-function TDictionary<TKey, TValue>.TValueCollection.TryGetElementAt(out value: TValue; index: Integer): Boolean;
+function TDictionary<TKey, TValue>.TValueCollection.TryGetElementAt(
+  out value: TValue; index: Integer): Boolean;
 begin
   Result := InRange(index, 0, fSource.fCount - 1);
   if Result then
@@ -1423,29 +1410,6 @@ end;
 function TDictionary<TKey, TValue>.TValueCollection._Release: Integer;
 begin
   Result := fSource._Release;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TContainedDictionary<TKey, TValue>'}
-
-constructor TContainedDictionary<TKey, TValue>.Create(
-  const controller: TRefCountedObject; const keyComparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships);
-begin
-  inherited Create(keyComparer, ownerships);
-  fController := controller;
-end;
-
-function TContainedDictionary<TKey, TValue>._AddRef: Integer;
-begin
-  Result := fController._AddRef;
-end;
-
-function TContainedDictionary<TKey, TValue>._Release: Integer;
-begin
-  Result := fController._Release;
 end;
 
 {$ENDREGION}
@@ -2245,7 +2209,8 @@ begin
   Result := Self;
 end;
 
-procedure TBidiDictionary<TKey, TValue>.TInverse.Changed(const item: TValueKeyPair; action: TCollectionChangedAction);
+procedure TBidiDictionary<TKey, TValue>.TInverse.Changed(
+  const item: TValueKeyPair; action: TCollectionChangedAction);
 begin
   if Assigned(OnChanged) and OnChanged.CanInvoke then
     OnChanged.Invoke(fSource, item, action);
@@ -2480,7 +2445,8 @@ begin
     key := Default(TKey);
 end;
 
-function TBidiDictionary<TKey, TValue>.TInverse.TryGetElementAt(out item: TValueKeyPair; index: Integer): Boolean;
+function TBidiDictionary<TKey, TValue>.TInverse.TryGetElementAt(
+  out item: TValueKeyPair; index: Integer): Boolean;
 var
   pair: TKeyValuePair;
 begin
@@ -2608,7 +2574,8 @@ begin
     end;
 end;
 
-function TBidiDictionary<TKey, TValue>.TKeyCollection.TryGetElementAt(out key: TKey; index: Integer): Boolean;
+function TBidiDictionary<TKey, TValue>.TKeyCollection.TryGetElementAt(
+  out key: TKey; index: Integer): Boolean;
 begin
   Result := InRange(index, 0, fSource.fCount - 1);
   if Result then
@@ -2674,7 +2641,8 @@ begin
     end;
 end;
 
-function TBidiDictionary<TKey, TValue>.TValueCollection.TryGetElementAt(out value: TValue; index: Integer): Boolean;
+function TBidiDictionary<TKey, TValue>.TValueCollection.TryGetElementAt(
+  out value: TValue; index: Integer): Boolean;
 begin
   Result := InRange(index, 0, fSource.fCount - 1);
   if Result then

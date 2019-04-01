@@ -40,7 +40,7 @@ uses
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
-  TEmptyEnumerable<T> = class sealed(TEnumerableBase<T>, IInterface, IEnumerator<T>,
+  TEmptyEnumerable<T> = class sealed(TEnumerableBase<T>, IEnumerator<T>,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
     class var fInstance: TEmptyEnumerable<T>;
@@ -231,10 +231,10 @@ type
       const comparer: IEqualityComparer<TKey>);
   end;
 
-  TRangeIterator = class(TEnumerableBase<Integer>, IInterface,
+  TRangeIterator = class(TEnumerableBase<Integer>,
     IEnumerable<Integer>, IReadOnlyCollection<Integer>, IReadOnlyList<Integer>)
   private type
-    TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<Integer>)
+    TEnumerator = class(TRefCountedObject, IEnumerator<Integer>)
     private
       fCurrent, fCount: Integer;
       fStarted: Boolean;
@@ -354,7 +354,7 @@ type
     IEnumerable<IGrouping<TKey, TElement>>)
   private
     type
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<IGrouping<TKey, TElement>>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<IGrouping<TKey, TElement>>)
       private
         fSource: IEnumerable<TSource>;
         fKeySelector: Func<TSource, TKey>;
@@ -388,10 +388,10 @@ type
   end;
 
   TGroupedEnumerable<TSource, TKey, TElement, TResult> = class(
-    TEnumerableBase<TResult>, IInterface, IEnumerable<TResult>)
+    TEnumerableBase<TResult>, IEnumerable<TResult>)
   private
     type
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TResult>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<TResult>)
       private
         fSource: IEnumerator<IGrouping<TKey, TElement>>;
         fResultSelector: Func<TKey, IEnumerable<TElement>, TResult>;
@@ -449,7 +449,7 @@ type
         constructor Create; reintroduce;
       end;
 
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<IGrouping<TKey, TElement>>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<IGrouping<TKey, TElement>>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TLookup<TKey, TElement>;
@@ -660,7 +660,7 @@ type
   TOrderedEnumerable<T> = class(TEnumerableBase<T>, IEnumerable<T>)
   private
     type
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         fBuffer: TArray<T>;
         fMap: TIntegerDynArray;

@@ -39,10 +39,6 @@ uses
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
-  /// <summary>
-  ///   Provides a default implementation for the <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />
-  ///    interface.
-  /// </summary>
   TEnumerableBase<T> = class abstract(TRefCountedObject)
   protected
     fComparer: IComparer<T>;
@@ -238,7 +234,7 @@ type
 
   TIteratorBase<T> = class abstract(TEnumerableBase<T>)
   private type
-    TEnumerator = class(TIterator, IInterface, IEnumerator<T>)
+    TEnumerator = class(TIterator, IEnumerator<T>)
     private
       function GetCurrent: T;
     end;
@@ -252,9 +248,9 @@ type
     function GetEnumerator: IEnumerator<T>;
   end;
 
-  TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IInterface, IEnumerable<T>);
+  TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IEnumerable<T>);
 
-  TArrayIterator<T> = class(TIteratorBase<T>, IInterface,
+  TArrayIterator<T> = class(TIteratorBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
   {$REGION 'Property Accessors'}
@@ -301,7 +297,7 @@ type
     constructor CreateFromArray(source: PPointer; count: Integer; elementType: PTypeInfo);
   end;
 
-  TIterator<T> = class abstract(TEnumerableBase<T>, IInterface, IEnumerator<T>)
+  TIterator<T> = class abstract(TEnumerableBase<T>, IEnumerator<T>)
   private
     fCurrent: T;
     fThreadId: TThreadID;
@@ -380,7 +376,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TCircularArrayBuffer<T>;
@@ -695,13 +691,14 @@ end;
 
 constructor TEnumerableBase<T>.Create;
 begin
-//  Assert(Assigned(GetInterfaceEntry(IInterface)), ClassName + ' does not implement IInterface');
   inherited Create;
   if TType.Kind<T> = tkClass then
     fComparer := IComparer<T>(GetInstanceComparer)
   else
     fComparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
 
+  // child classes must not implement IInterface but IEnumerable<T>
+  Assert(not Assigned(GetInterfaceEntry(IInterface)), ClassName);
   Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<T>).IOffset);
 end;
 
@@ -1167,7 +1164,11 @@ end;
 
 function TEnumerableBase<T>.QueryInterface(const IID: TGUID; out obj): HResult;
 begin
-  if IID = IEnumerable then
+  if IID = IInterface then
+  begin
+    IInterface(obj) := this;
+    Result := S_OK;
+  end else if IID = IEnumerable then
   begin
     IEnumerable(obj) := TEnumerableWrapper.Create(IEnumerable(this), TIteratorRec<T>.GetCurrent);
     Result := S_OK;

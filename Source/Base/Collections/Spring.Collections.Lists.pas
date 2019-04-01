@@ -50,7 +50,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TAbstractArrayList<T>;
@@ -167,7 +167,7 @@ type
   {$ENDREGION}
   end;
 
-  TList<T> = class(TAbstractArrayList<T>, IInterface, IEnumerable<T>,
+  TList<T> = class(TAbstractArrayList<T>, IEnumerable<T>,
     IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
   protected
     function AsReadOnly: IReadOnlyList<T>;
@@ -180,7 +180,7 @@ type
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
   end;
 
-  TSortedList<T> = class(TAbstractArrayList<T>, IInterface, IEnumerable<T>,
+  TSortedList<T> = class(TAbstractArrayList<T>, IEnumerable<T>,
     IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
   private
     procedure SetItem(index: Integer; const value: T);
@@ -225,7 +225,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TCollectionList<T>;

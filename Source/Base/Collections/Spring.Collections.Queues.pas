@@ -55,7 +55,7 @@ type
   ///   Represents a first-in, first-out collection of items which grows
   ///   automatically.
   /// </summary>
-  TQueue<T> = class(TAbstractQueue<T>, IInterface, IEnumerable<T>, IQueue<T>)
+  TQueue<T> = class(TAbstractQueue<T>, IEnumerable<T>, IQueue<T>)
   private
     procedure Grow;
   public
@@ -71,7 +71,7 @@ type
   ///   Represents a first-in, first-out collection of items which has a fixed
   ///   size and prevents adding items when full.
   /// </summary>
-  TBoundedQueue<T> = class(TAbstractQueue<T>, IInterface, IEnumerable<T>, IQueue<T>)
+  TBoundedQueue<T> = class(TAbstractQueue<T>, IEnumerable<T>, IQueue<T>)
   public
   {$REGION 'Implements IQueue<T>'}
     function Enqueue(const item: T): Boolean;
@@ -82,7 +82,7 @@ type
   ///   Represents a first-in, first-out collection of items which has a fixed
   ///   size and removes the oldest item when full.
   /// </summary>
-  TEvictingQueue<T> = class(TAbstractQueue<T>, IInterface, IEnumerable<T>, IQueue<T>)
+  TEvictingQueue<T> = class(TAbstractQueue<T>, IEnumerable<T>, IQueue<T>)
   public
   {$REGION 'Implements IQueue<T>'}
     function Enqueue(const item: T): Boolean;
@@ -107,7 +107,7 @@ type
   /// <summary>
   ///   Represents a double-ended queue of items which grows automatically.
   /// </summary>
-  TDeque<T> = class(TAbstractDeque<T>, IInterface, IEnumerable<T>, IDeque<T>)
+  TDeque<T> = class(TAbstractDeque<T>, IEnumerable<T>, IDeque<T>)
   private
     procedure Grow;
   public
@@ -124,7 +124,7 @@ type
   ///   Represents a double-ended queue of items which has a fixed size and
   ///   prevents adding items when full.
   /// </summary>
-  TBoundedDeque<T> = class(TAbstractDeque<T>, IInterface, IEnumerable<T>, IDeque<T>)
+  TBoundedDeque<T> = class(TAbstractDeque<T>, IEnumerable<T>, IDeque<T>)
   public
   {$REGION 'Implements IDeque<T>'}
     function AddFirst(const item: T): Boolean;
@@ -136,7 +136,7 @@ type
   ///   Represents a double-ended queue of items which has a fixed size and
   ///   and removes items from the opposite end when full.
   /// </summary>
-  TEvictingDeque<T> = class(TAbstractDeque<T>, IInterface, IEnumerable<T>, IDeque<T>)
+  TEvictingDeque<T> = class(TAbstractDeque<T>, IEnumerable<T>, IDeque<T>)
   public
   {$REGION 'Implements IDeque<T>'}
     function AddFirst(const item: T): Boolean;

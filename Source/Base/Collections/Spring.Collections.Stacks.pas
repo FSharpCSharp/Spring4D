@@ -48,7 +48,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TRefCountedObject, IInterface, IEnumerator<T>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TAbstractStack<T>;
@@ -106,7 +106,7 @@ type
   {$ENDREGION}
   end;
 
-  TStack<T> = class(TAbstractStack<T>, IInterface, IEnumerable<T>, IStack<T>)
+  TStack<T> = class(TAbstractStack<T>, IEnumerable<T>, IStack<T>)
   private
     procedure Grow;
   public
@@ -115,7 +115,7 @@ type
     function Push(const item: T): Boolean;
   end;
 
-  TBoundedStack<T> = class(TAbstractStack<T>, IInterface, IEnumerable<T>, IStack<T>)
+  TBoundedStack<T> = class(TAbstractStack<T>, IEnumerable<T>, IStack<T>)
   public
     constructor Create(capacity: Integer);
     function Push(const item: T): Boolean;

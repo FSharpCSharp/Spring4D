@@ -44,7 +44,7 @@ type
     type
       TKeyValuePair = TPair<TKey, TValue>;
 
-      TEnumerator = class(TRefCountedObject, IInterface,
+      TEnumerator = class(TRefCountedObject,
         IEnumerator<TKeyValuePair>, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -61,7 +61,7 @@ type
         function MoveNext: Boolean;
       end;
 
-      TValueCollection = class(TEnumerableBase<TValue>, IInterface,
+      TValueCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -104,7 +104,7 @@ type
         function ToArray: TArray<TValue>;
       end;
 
-      TWrappedEnumerator = class(TRefCountedObject, IInterface, IEnumerator<TValue>)
+      TWrappedEnumerator = class(TRefCountedObject, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TWrappedCollection;
