@@ -176,7 +176,7 @@ type
   end;
 
   TMoveNextFunc = function(self: Pointer): Boolean;
-  TStartProc = procedure(self: Pointer);
+  TStartProc = function(self: Pointer): Boolean;
   PIteratorRec = ^TIteratorRec;
   TIteratorRec = record
     MoveNext: TMoveNextFunc;
@@ -186,11 +186,14 @@ type
     Start: TStartProc;
 
     Predicate: IInterface;
+    Items: Pointer;
+    Count: Integer;
 
     function Clone: PIteratorRec;
     procedure Finalize;
 
-    procedure GetEnumerator;
+    function GetEnumerator: Boolean;
+    function GetEnumeratorAndSkip: Boolean;
     procedure GetSecondEnumerator;
   const
     Ordered = -1;
@@ -1306,7 +1309,7 @@ end;
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    count, nil, @TIteratorRec<T>.Skip, @TIteratorRec.GetEnumerator);
+    count, nil, @TIteratorRec<T>.Skip, @TIteratorRec.GetEnumeratorAndSkip);
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -2602,23 +2605,21 @@ end;
 
 function TIterator.MoveNext: Boolean;
 begin
-  case fState of
-    Initial, Started:
+  repeat
+    if fState = Started then
     begin
-      if fState = Initial then
-      begin
-        Start;
-        fState := Started;
-      end;
-
-      Result := fIterator.MoveNext(fIterator);
-      if Result then
-        Exit;
-
-      fIterator.Finalize;
+      if fIterator.MoveNext(fIterator) then
+        Exit(True);
       fState := Finished;
     end;
-  end;
+    if fState = Initial then
+    begin
+      fState := Started;
+      Start;
+    end;
+  until fState = Finished;
+
+  fIterator.Finalize;
   Result := False;
 end;
 
@@ -2628,7 +2629,8 @@ var
 begin
   startProc := fIterator.Start;
   if Assigned(startProc) then
-    startProc(fIterator);
+    if not startProc(fIterator) then
+      fState := Finished;
 end;
 
 {$ENDREGION}
@@ -2660,9 +2662,18 @@ begin
   FinalizeRecord(@Self, TypeInfo);
 end;
 
-procedure TIteratorRec.GetEnumerator;
+function TIteratorRec.GetEnumerator: Boolean;
 begin
   Enumerator := Source.GetEnumerator;
+  Result := True;
+end;
+
+function TIteratorRec.GetEnumeratorAndSkip: Boolean;
+begin
+  Enumerator := Source.GetEnumerator;
+  while (Count > 0) and Enumerator.MoveNext do
+    Dec(Count);
+  Result := Count <= 0;
 end;
 
 procedure TIteratorRec.GetSecondEnumerator;
@@ -2724,11 +2735,13 @@ end;
 
 function TIteratorRec<T>.Skip: Boolean;
 begin
-  while (Count > 0) and Enumerator.MoveNext do
-    Dec(Count);
-  Result := Enumerator.MoveNext;
-  if Result then
+  if Enumerator.MoveNext then
+  begin
     Current := Enumerator.Current;
+    Result := True;
+  end
+  else
+    Result := False;
 end;
 
 function TIteratorRec<T>.SkipWhile: Boolean;
@@ -2767,12 +2780,14 @@ end;
 
 function TIteratorRec<T>.Take: Boolean;
 begin
-  Result := (Count > 0) and Enumerator.MoveNext;
-  if Result then
-  begin
-    Current := Enumerator.Current;
-    Dec(Count);
-  end;
+  if Count > 0 then
+    if Enumerator.MoveNext then
+    begin
+      Current := Enumerator.Current;
+      Dec(Count);
+      Exit(True);
+    end;
+  Result := False;
 end;
 
 function TIteratorRec<T>.TakeWhile: Boolean;

@@ -1376,18 +1376,26 @@ begin
 end;
 
 function TAbstractArrayList<T>.TEnumerator.MoveNext: Boolean;
+var
+  source: TAbstractArrayList<T>;
 begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  Result := fIndex < fSource.Count;
-  if Result then
+  source := fSource;
+  if fVersion = source.fVersion then
   begin
-    fCurrent := fSource.fItems[fIndex];
-    Inc(fIndex);
+    if fIndex < source.Count then
+    begin
+      fCurrent := source.fItems[fIndex];
+      Inc(fIndex);
+      Exit(True);
+    end
+    else
+    begin
+      fCurrent := Default(T);
+      Exit(False);
+    end;
   end
   else
-    fCurrent := Default(T);
+    raise Error.EnumFailedVersion;
 end;
 
 {$ENDREGION}
