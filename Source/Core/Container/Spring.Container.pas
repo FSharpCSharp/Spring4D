@@ -39,78 +39,78 @@ uses
   Spring.Logging,
   Spring.Services;
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   /// <summary>
   ///   Represents a Dependency Injection Container.
   /// </summary>
-  TContainer = class(TInterfaceBase, IKernel, IKernelInternal, IContainer)
+  TContainer = class(TKernel, IKernelInternal)
   private
-    fRegistry: IComponentRegistry;
-    fBuilder: IComponentBuilder;
-    fInjector: IDependencyInjector;
-    fRegistrationManager: TRegistrationManager;
-    fResolver: IDependencyResolver;
-    fProxyFactory: IProxyFactory;
-    fExtensions: IList<IContainerExtension>;
-    fLogger: ILogger;
     fChangedModels: ISet<TComponentModel>;
-    fDecoratorResolver: IDecoratorResolver;
     procedure CheckBuildRequired;
     procedure HandleBuild(Sender: TObject; const model: TComponentModel);
     procedure HandleRegistryChanged(Sender: TObject;
       const model: TComponentModel; action: TCollectionChangedAction);
+
+    procedure ResolveInternal(var result; serviceType: PTypeInfo);
+    function RegisterInstanceInternal(serviceType: PTypeInfo; const instance;
+      const serviceName: string): TRegistration;
+
+    class function MakeActivatorDelegate<T>(const delegate: TActivatorDelegate<T>): TActivatorDelegate; overload; static;
+  {$IFDEF DELPHIXE7_UP}
+    class function MakeActivatorDelegateObj(const delegate: IInterface; typeInfo: Pointer): TActivatorDelegate; static;
+    class function MakeActivatorDelegateIntf(const delegate: IInterface; typeInfo: Pointer): TActivatorDelegate; static;
+  {$ENDIF}
+    class function MakeActivatorDelegate(const instance: TValue): TActivatorDelegate; overload; static;
+    class function MakeActivatorDelegate(const instance; instanceType: PTypeInfo): TActivatorDelegate; overload; static;
+
     class var GlobalInstance: TContainer;
-    function GetKernel: IKernel;
-    type
-      TValueArray = array of TValue;
+    type TValueArray = array of TValue;
   protected
     class constructor Create;
     class destructor Destroy;
-  {$REGION 'Implements IKernel'}
-    function GetBuilder: IComponentBuilder; inline;
-    function GetInjector: IDependencyInjector; inline;
-    function GetRegistry: IComponentRegistry; inline;
-    function GetResolver: IDependencyResolver; inline;
-    function GetLogger: ILogger; inline;
-    function GetProxyFactory: IProxyFactory; inline;
-    procedure SetLogger(const logger: ILogger);
-    function GetDecoratorResolver: IDecoratorResolver; inline;
-  {$ENDREGION}
     procedure InitializeInspectors; virtual;
-    property Builder: IComponentBuilder read GetBuilder;
-    property Injector: IDependencyInjector read GetInjector;
-    property Registry: IComponentRegistry read GetRegistry;
-    property Resolver: IDependencyResolver read GetResolver;
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure AddExtension(const extension: IContainerExtension); overload;
     procedure AddExtension<T: IContainerExtension, constructor>; overload;
 
-    function RegisterDecorator<TService; TDecorator: TService>: TRegistration<TDecorator>; overload;
+    function RegisterDecorator<TService; TDecorator: TService>: TRegistration; overload; inline;
     function RegisterDecorator<TService; TDecorator: TService>(
-      const condition: Predicate<TComponentModel>): TRegistration<TDecorator>; overload;
+      const condition: Predicate<TComponentModel>): TRegistration; overload; inline;
 
     function RegisterFactory<TFactoryType: IInterface>(
-      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
+      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration; overload;
     function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
-      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
+      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration; overload;
     function RegisterFactory<TFactoryType: IInterface>(const serviceName: string;
       const resolvedServiceName: string;
-      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration<TFactoryType>; overload;
+      paramResolution: TParamResolution = TParamResolution.ByName): TRegistration; overload;
 
     function RegisterInstance<TServiceType>(const instance: TServiceType;
-      const serviceName: string = ''): TRegistration<TServiceType>; overload;
+      const serviceName: string = ''): TRegistration; overload; inline;
+    function RegisterInstance(serviceType: PTypeInfo; const instance: TValue;
+      const serviceName: string = ''): TRegistration; overload;
 
-    function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
-    function RegisterType(componentType: PTypeInfo): IRegistration; overload;
+    function RegisterType<TComponentType>: TRegistration; overload; inline;
+    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
     function RegisterType<TServiceType>(
-      const serviceName: string): TRegistration<TServiceType>; overload;
+      const serviceName: string): TRegistration; overload; inline;
     function RegisterType<TServiceType, TComponentType>(
-      const serviceName: string = ''): TRegistration<TComponentType>; overload;
+      const serviceName: string = ''): TRegistration; overload; inline;
     function RegisterType(serviceType, componentType: PTypeInfo;
-      const serviceName: string = ''): IRegistration; overload;
+      const serviceName: string = ''): TRegistration; overload;
+
+    function RegisterType<TComponentType>(
+      const delegate: TActivatorDelegate<TComponentType>): TRegistration; overload; inline;
+    function RegisterType<TServiceType>(
+      const delegate: TActivatorDelegate<TServiceType>;
+      const serviceName: string): TRegistration; overload; inline;
+    function RegisterType<TServiceType, TComponentType>(
+      const delegate: TActivatorDelegate<TComponentType>;
+      const serviceName: string = ''): TRegistration; overload; inline;
 
     procedure Build;
 
@@ -137,9 +137,6 @@ type
     // Dangerous since the instance should be cleared by this function but
     // passing as var is not possible here
 {$ENDIF}
-
-    property Kernel: IKernel read GetKernel;
-    property Logger: ILogger read GetLogger write SetLogger;
   end;
 
   /// <summary>
@@ -191,15 +188,9 @@ uses
   TypInfo,
   Spring.Container.Builder,
   Spring.Container.CreationContext,
-  Spring.Container.ComponentActivator,
-  Spring.Container.Injection,
-  Spring.Container.LifetimeManager,
-  Spring.Container.ProxyFactory,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
-  Spring.Logging.NullLogger,
   Spring.Reflection;
-
 
 function GlobalContainer: TContainer;
 begin
@@ -229,51 +220,22 @@ constructor TContainer.Create;
 begin
   inherited Create;
   fChangedModels := TCollections.CreateSet<TComponentModel>;
-  fLogger := TNullLogger.GlobalInstance;
-  fRegistry := TComponentRegistry.Create(Self);
-  fRegistry.OnChanged.Add(HandleRegistryChanged);
-  fBuilder := TComponentBuilder.Create(Self);
-  fBuilder.OnBuild.Add(HandleBuild);
-  fInjector := TDependencyInjector.Create;
-  fRegistrationManager := TRegistrationManager.Create(Self);
-  fResolver := TDependencyResolver.Create(Self);
-  fProxyFactory := TProxyFactory.Create(Self);
-  fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
-  fDecoratorResolver := TDecoratorResolver.Create;
+  Registry.OnChanged.Add(HandleRegistryChanged);
+  Builder.OnBuild.Add(HandleBuild);
   InitializeInspectors;
 
-  fResolver.AddSubResolver(TLazyResolver.Create(Self));
-  fResolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
-  fResolver.AddSubResolver(TListResolver.Create(Self));
-  fResolver.AddSubResolver(TComponentOwnerResolver.Create(Self));
+  Resolver.AddSubResolver(TLazyResolver.Create(Self));
+  Resolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
+  Resolver.AddSubResolver(TCollectionResolver.Create(Self));
+  Resolver.AddSubResolver(TComponentOwnerResolver.Create(Self));
 end;
 
 destructor TContainer.Destroy;
 begin
   fChangedModels.Clear;
-  fRegistrationManager.Free;
-  fBuilder.ClearInspectors;
-  fRegistry.UnregisterAll;
-
-  // Since many of these object hold Self as a field, it is better (and on
-  // Android required) to release these interfaces here rather than in
-  // CleanupInstance (which on android produces a lots of AVs probably due
-  // to calling virtual __ObjRelease on almost destroyed object)
-  fExtensions := nil;
-  fProxyFactory := nil;
-  fResolver := nil;
-  fInjector := nil;
-  fBuilder := nil;
-  fRegistry := nil;
-
+  Builder.ClearInspectors;
+  Registry.UnregisterAll;
   inherited Destroy;
-end;
-
-procedure TContainer.AddExtension(const extension: IContainerExtension);
-begin
-  fExtensions.Add(extension);
-  extension.InitializeExtension(Self);
-  extension.Initialize;
 end;
 
 procedure TContainer.AddExtension<T>;
@@ -286,7 +248,7 @@ end;
 
 procedure TContainer.Build;
 begin
-  fBuilder.BuildAll;
+  Builder.BuildAll;
   fChangedModels.Clear;
 end;
 
@@ -308,48 +270,75 @@ begin
     TAbstractMethodInspector.Create
   );
   for inspector in inspectors do
-    fBuilder.AddInspector(inspector);
+    Builder.AddInspector(inspector);
 end;
 
-function TContainer.GetBuilder: IComponentBuilder;
+class function TContainer.MakeActivatorDelegate(
+  const instance: TValue): TActivatorDelegate;
+var
+  value: TValue;
 begin
-  Result := fBuilder;
+  value := instance;
+  Result :=
+    function: TValue
+    begin
+      Result := value;
+    end;
 end;
 
-function TContainer.GetDecoratorResolver: IDecoratorResolver;
+class function TContainer.MakeActivatorDelegate(const instance;
+  instanceType: PTypeInfo): TActivatorDelegate;
+var
+  value: TValue;
 begin
-  Result := fDecoratorResolver;
+  TValue.Make(@instance, instanceType, value);
+  Result :=
+    function: TValue
+    begin
+      Result := value;
+    end;
 end;
 
-function TContainer.GetRegistry: IComponentRegistry;
+class function TContainer.MakeActivatorDelegate<T>(
+  const delegate: TActivatorDelegate<T>): TActivatorDelegate;
 begin
-  Result := fRegistry;
+  Result :=
+    function: TValue
+    var
+      instance: T;
+    begin
+      instance := delegate();
+      Result := TValue.From(@instance, TypeInfo(T));
+    end;
 end;
 
-function TContainer.GetInjector: IDependencyInjector;
+{$IFDEF DELPHIXE7_UP}
+class function TContainer.MakeActivatorDelegateIntf(
+  const delegate: IInterface; typeInfo: Pointer): TActivatorDelegate;
 begin
-  Result := fInjector;
+  Result :=
+    function: TValue
+    var
+      instance: IInterface;
+    begin
+      instance := TActivatorDelegate<IInterface>(delegate)();
+      Result := TValue.From(@instance, typeInfo);
+    end;
 end;
 
-function TContainer.GetKernel: IKernel;
+class function TContainer.MakeActivatorDelegateObj(
+  const delegate: IInterface; typeInfo: Pointer): TActivatorDelegate;
 begin
-  Result := Self;
+  Result :=
+    function: TValue
+    var
+      instance: TObject;
+    begin
+      instance := TActivatorDelegate<TObject>(delegate)();
+      Result := TValue.From(@instance, typeInfo);
+    end;
 end;
-
-function TContainer.GetLogger: ILogger;
-begin
-  Result := fLogger;
-end;
-
-function TContainer.GetProxyFactory: IProxyFactory;
-begin
-  Result := fProxyFactory;
-end;
-
-function TContainer.GetResolver: IDependencyResolver;
-begin
-  Result := fResolver;
-end;
+{$ENDIF}
 
 procedure TContainer.HandleBuild(Sender: TObject; const model: TComponentModel);
 begin
@@ -362,91 +351,143 @@ begin
   fChangedModels.Add(model);
 end;
 
-function TContainer.RegisterDecorator<TService, TDecorator>: TRegistration<TDecorator>;
+function TContainer.RegisterType(componentType: PTypeInfo): TRegistration;
 begin
-  Result := RegisterType<TDecorator,TDecorator>;
-  fDecoratorResolver.AddDecorator(TypeInfo(TService), Result.Model, nil);
+  Result := TRegistration(Registry.RegisterComponent(componentType));
+end;
+
+function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
+  const serviceName: string): TRegistration;
+begin
+  Result := RegisterType(componentType);
+  Result.Implements(serviceType, serviceName);
+end;
+
+function TContainer.RegisterDecorator<TService, TDecorator>: TRegistration;
+begin
+  Result := RegisterType(TypeInfo(TDecorator), TypeInfo(TDecorator));
+  DecoratorResolver.AddDecorator(TypeInfo(TService), Result.Model, nil);
 end;
 
 function TContainer.RegisterDecorator<TService, TDecorator>(
-  const condition: Predicate<TComponentModel>): TRegistration<TDecorator>;
+  const condition: Predicate<TComponentModel>): TRegistration;
 begin
-  Result := RegisterType<TDecorator,TDecorator>;
-  fDecoratorResolver.AddDecorator(TypeInfo(TService), Result.Model, condition);
+  Result := RegisterType(TypeInfo(TDecorator), TypeInfo(TDecorator));
+  DecoratorResolver.AddDecorator(TypeInfo(TService), Result.Model, condition);
 end;
 
 function TContainer.RegisterFactory<TFactoryType>(
-  paramResolution: TParamResolution): TRegistration<TFactoryType>;
+  paramResolution: TParamResolution): TRegistration;
 begin
-  Result := RegisterType<TFactoryType>('');
+  Result := RegisterType(TypeInfo(TFactoryType), TypeInfo(TFactoryType));
   Result := Result.AsFactory(paramResolution);
 end;
 
 function TContainer.RegisterFactory<TFactoryType>(
   const serviceName: string;
-  paramResolution: TParamResolution): TRegistration<TFactoryType>;
+  paramResolution: TParamResolution): TRegistration;
 begin
-  Result := RegisterType<TFactoryType>(serviceName);
+  Result := RegisterType(TypeInfo(TFactoryType), TypeInfo(TFactoryType), serviceName);
   Result := Result.AsFactory(paramResolution);
 end;
 
 function TContainer.RegisterFactory<TFactoryType>(const serviceName,
   resolvedServiceName: string;
-  paramResolution: TParamResolution): TRegistration<TFactoryType>;
+  paramResolution: TParamResolution): TRegistration;
 begin
-  Result := RegisterType<TFactoryType>(serviceName);
+  Result := RegisterType(TypeInfo(TFactoryType), TypeInfo(TFactoryType), serviceName);
   Result := Result.AsFactory(resolvedServiceName, paramResolution);
 end;
 
-function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
-  const serviceName: string): TRegistration<TServiceType>;
+function TContainer.RegisterInstanceInternal(serviceType: PTypeInfo;
+  const instance; const serviceName: string): TRegistration;
 begin
-  Result := fRegistrationManager.RegisterType<TServiceType>;
-  Result := Result.DelegateTo(
-    function: TServiceType
-    begin
-      Result := instance;
-    end);
-  Result := Result.Implements<TServiceType>(serviceName);
+  Result := RegisterType(serviceType, serviceType, serviceName);
+  Result.Model.ActivatorDelegate := MakeActivatorDelegate(instance, serviceType);
 end;
 
-function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;
+function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
+  const serviceName: string): TRegistration;
 begin
-  Result := fRegistrationManager.RegisterType<TComponentType>;
+  Result := RegisterInstanceInternal(TypeInfo(TServiceType), instance, serviceName);
+end;
+
+function TContainer.RegisterInstance(serviceType: PTypeInfo;
+  const instance: TValue; const serviceName: string): TRegistration;
+begin
+  Result := RegisterType(serviceType, serviceType, serviceName);
+  Result.Model.ActivatorDelegate := MakeActivatorDelegate(instance);
+end;
+
+function TContainer.RegisterType<TComponentType>: TRegistration;
+begin
+  Result := RegisterType(TypeInfo(TComponentType));
 end;
 
 function TContainer.RegisterType<TServiceType>(
-  const serviceName: string): TRegistration<TServiceType>;
+  const serviceName: string): TRegistration;
 begin
-  Result := fRegistrationManager.RegisterType<TServiceType>;
-  Result := Result.Implements<TServiceType>(serviceName);
+  Result := RegisterType(TypeInfo(TServiceType), TypeInfo(TServiceType), serviceName);
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
-  const serviceName: string): TRegistration<TComponentType>;
+  const serviceName: string): TRegistration;
 begin
-  Result := fRegistrationManager.RegisterType<TComponentType>;
-  Result := Result.Implements<TServiceType>(serviceName);
+  Result := RegisterType(TypeInfo(TServiceType), TypeInfo(TComponentType), serviceName);
 end;
 
-function TContainer.RegisterType(componentType: PTypeInfo): IRegistration;
+function TContainer.RegisterType<TComponentType>(
+  const delegate: TActivatorDelegate<TComponentType>): TRegistration;
 begin
-  Result := fRegistrationManager.RegisterType(componentType);
+  Result := RegisterType(TypeInfo(TComponentType));
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TComponentType) of
+    tkClass: Result.Model.ActivatorDelegate := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TComponentType));
+    tkInterface: Result.Model.ActivatorDelegate := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TComponentType));
+  else{$ELSE}begin{$ENDIF}
+    Result.Model.ActivatorDelegate := MakeActivatorDelegate<TComponentType>(delegate);
+  end;
 end;
 
-function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
-  const serviceName: string): IRegistration;
+function TContainer.RegisterType<TServiceType>(
+  const delegate: TActivatorDelegate<TServiceType>;
+  const serviceName: string): TRegistration;
 begin
-  Result := fRegistrationManager.RegisterType(componentType);
-  Result := Result.Implements(serviceType, serviceName);
+  Result := RegisterType(TypeInfo(TServiceType), TypeInfo(TServiceType), serviceName);
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TServiceType) of
+    tkClass: Result.Model.ActivatorDelegate := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TServiceType));
+    tkInterface: Result.Model.ActivatorDelegate := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TServiceType));
+  else{$ELSE}begin{$ENDIF}
+    Result.Model.ActivatorDelegate := MakeActivatorDelegate<TServiceType>(delegate);
+  end;
 end;
 
-function TContainer.Resolve<T>: T;
+function TContainer.RegisterType<TServiceType, TComponentType>(
+  const delegate: TActivatorDelegate<TComponentType>;
+  const serviceName: string): TRegistration;
+begin
+  Result := RegisterType(TypeInfo(TServiceType), TypeInfo(TComponentType), serviceName);
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TComponentType) of
+    tkClass: Result.Model.ActivatorDelegate := MakeActivatorDelegateObj(PInterface(@delegate)^, TypeInfo(TComponentType));
+    tkInterface: Result.Model.ActivatorDelegate := MakeActivatorDelegateIntf(PInterface(@delegate)^, TypeInfo(TComponentType));
+  else{$ELSE}begin{$ENDIF}
+    Result.Model.ActivatorDelegate := MakeActivatorDelegate<TComponentType>(delegate);
+  end;
+end;
+
+procedure TContainer.ResolveInternal(var result; serviceType: PTypeInfo);
 var
   value: TValue;
 begin
-  value := Resolve(TypeInfo(T), []);
-  Result := value.AsType<T>;
+  value := Resolve(serviceType, []);
+  value.ExtractRawData(@Result);
+end;
+
+function TContainer.Resolve<T>: T;
+begin
+  ResolveInternal(Result, TypeInfo(T));
 end;
 
 function TContainer.Resolve<T>(const arguments: array of TValue): T;
@@ -487,10 +528,10 @@ var
   targetType: TRttiType;
 begin
   CheckBuildRequired;
-  componentModel := fRegistry.FindDefault(serviceType);
+  componentModel := Registry.FindDefault(serviceType);
   context := TCreationContext.Create(componentModel, arguments);
   targetType := serviceType.RttiType;
-  Result := fResolver.Resolve(
+  Result := Resolver.Resolve(
     context, TDependencyModel.Create(targetType, nil), nil);
 end;
 
@@ -508,13 +549,13 @@ var
   targetType: TRttiType;
 begin
   CheckBuildRequired;
-  componentModel := fRegistry.FindOne(serviceName);
+  componentModel := Registry.FindOne(serviceName);
   if not Assigned(componentModel) then
     raise EResolveException.CreateResFmt(@SServiceNotFound, [serviceName]);
   context := TCreationContext.Create(componentModel, arguments);
   serviceType := componentModel.GetServiceType(serviceName);
   targetType := serviceType.RttiType;
-  Result := fResolver.Resolve(
+  Result := Resolver.Resolve(
     context, TDependencyModel.Create(targetType, nil), serviceName);
 end;
 
@@ -542,13 +583,13 @@ begin
   // TODO: remove dependency on lazy type
   if IsLazyType(serviceType) then
     serviceType := GetLazyType(serviceType);
-  models := fRegistry.FindAll(serviceType).ToArray;
+  models := Registry.FindAll(serviceType).ToArray;
   SetLength(Result, Length(models));
   for i := Low(models) to High(models) do
   begin
     context := TCreationContext.Create(models[i], []);
     serviceName := models[i].GetServiceName(serviceType);
-    Result[i] := fResolver.Resolve(
+    Result[i] := Resolver.Resolve(
       context, TDependencyModel.Create(targetType, nil), serviceName);
   end;
 end;
@@ -560,7 +601,7 @@ var
 begin
   Guard.CheckNotNull(instance, 'instance');
 
-  model := fRegistry.FindOne(instance.ClassInfo);
+  model := Registry.FindOne(instance.ClassInfo);
   if model = nil then
     raise EContainerException.CreateResFmt(@STypeNotFound, [instance.ClassName]);
   model.LifetimeManager.Release(instance);
@@ -572,14 +613,6 @@ begin
   {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
 {$ENDIF}
-
-procedure TContainer.SetLogger(const logger: ILogger);
-begin
-  if Assigned(logger) then
-    fLogger := logger
-  else
-    fLogger := TNullLogger.GlobalInstance;
-end;
 
 {$ENDREGION}
 

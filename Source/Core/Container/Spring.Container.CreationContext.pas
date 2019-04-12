@@ -125,7 +125,7 @@ begin
     else
       Result := fArguments.Add(argument);
   finally
-    fLock.EndWrite
+    fLock.EndWrite;
   end;
 end;
 
@@ -254,7 +254,7 @@ procedure TCreationContext.LeaveResolution(const model: TComponentModel);
 begin
   try
     if fResolutionStack.Pop <> model then
-    raise EResolveException.CreateRes(@SResolutionStackUnbalanced);
+      raise EResolveException.CreateRes(@SResolutionStackUnbalanced);
   finally
     fLock.EndWrite;
   end;

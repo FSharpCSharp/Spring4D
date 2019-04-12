@@ -692,7 +692,7 @@ procedure TTestInterception.TestByRegistrationOfInterface;
 var
   service: IService;
 begin
-  fContainer.RegisterType<IService>.DelegateTo(
+  fContainer.RegisterType<IService>(
     function: IService
     begin
       Result := TService.Create;
@@ -708,7 +708,7 @@ procedure TTestInterception.TestByRegistrationWithSelector;
 var
   service: IService;
 begin
-  fContainer.Kernel.ProxyFactory.AddInterceptorSelector(
+  fContainer.ProxyFactory.AddInterceptorSelector(
     TMyInterceptorSelector.Create as IModelInterceptorsSelector);
   fContainer.RegisterType<TService>;
   fContainer.Build;

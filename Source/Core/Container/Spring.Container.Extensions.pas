@@ -37,7 +37,8 @@ type
   /// </summary>
   TContainerExtension = class(TInterfacedObject, IContainerExtension)
   private
-    fKernel: IKernel;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fKernel: TKernel;
   protected
     /// <summary>
     ///   Initial the container with this extension's functionality.
@@ -52,16 +53,16 @@ type
     ///   The container calls this method when the extension is added.
     /// </summary>
     /// <param name="kernel">
-    ///   An <see cref="IKernel" /> instance that gives the extension access to
+    ///   An <see cref="TKernel" /> instance that gives the extension access to
     ///   the internals of the container.
     /// </param>
-    procedure InitializeExtension(const kernel: IKernel);
+    procedure InitializeExtension(const kernel: TKernel);
 
     /// <summary>
-    ///   The IKernel instance used to manipulate the inner state of the
+    ///   The TKernel instance used to manipulate the inner state of the
     ///   container.
     /// </summary>
-    property Kernel: IKernel read fKernel;
+    property Kernel: TKernel read fKernel;
   end;
 
 implementation
@@ -69,8 +70,7 @@ implementation
 
 {$REGION 'TContainerExtension'}
 
-procedure TContainerExtension.InitializeExtension(
-  const kernel: IKernel);
+procedure TContainerExtension.InitializeExtension(const kernel: TKernel);
 begin
   fKernel := kernel;
 end;
