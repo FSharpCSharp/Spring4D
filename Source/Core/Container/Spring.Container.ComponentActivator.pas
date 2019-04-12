@@ -39,17 +39,18 @@ type
   /// </summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator)
   private
-    fKernel: IKernel;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fKernel: TKernel;
     {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fModel: TComponentModel;
   protected
     procedure ExecuteInjections(var instance: TValue; const context: ICreationContext); overload;
     procedure ExecuteInjections(const instance: TValue;
       const injections: IList<IInjection>; const context: ICreationContext); overload;
-    property Kernel: IKernel read fKernel;
+    property Kernel: TKernel read fKernel;
     property Model: TComponentModel read fModel;
   public
-    constructor Create(const kernel: IKernel; const model: TComponentModel);
+    constructor Create(const kernel: TKernel; const model: TComponentModel);
     function CreateInstance(const context: ICreationContext): TValue; overload; virtual; abstract;
   end;
 
@@ -87,7 +88,7 @@ uses
 
 {$REGION 'TComponentActivatorBase'}
 
-constructor TComponentActivatorBase.Create(const kernel: IKernel;
+constructor TComponentActivatorBase.Create(const kernel: TKernel;
   const model: TComponentModel);
 begin
   Guard.CheckNotNull(kernel, 'kernel');

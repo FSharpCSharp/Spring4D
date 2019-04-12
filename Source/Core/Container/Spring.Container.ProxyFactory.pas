@@ -37,13 +37,14 @@ uses
 type
   TProxyFactory = class(TInterfacedObject, IProxyFactory)
   private
-    fKernel: IKernel;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fKernel: TKernel;
     fSelectors: IList<IModelInterceptorsSelector>;
   protected
     function GetInterceptorsFor(const model: TComponentModel): TArray<TInterceptorReference>;
     function ObtainInterceptors(const model: TComponentModel): TArray<IInterceptor>;
   public
-    constructor Create(const kernel: IKernel);
+    constructor Create(const kernel: TKernel);
 
     procedure AddInterceptorSelector(const selector: IModelInterceptorsSelector);
 
@@ -61,7 +62,7 @@ uses
 
 {$REGION 'TProxyFactory'}
 
-constructor TProxyFactory.Create(const kernel: IKernel);
+constructor TProxyFactory.Create(const kernel: TKernel);
 begin
   inherited Create;
   fKernel := kernel;

@@ -75,32 +75,7 @@ type
     property TypeInfo: PTypeInfo read GetTargetTypeInfo;
   end;
 
-  /// <summary>
-  ///   The <c>IKernel</c> interface exposes all the functionality the
-  ///   container implements.
-  /// </summary>
-  IKernel = interface
-    ['{9E90EADB-A720-4394-A5E0-5DF0550C1E92}']
-  {$REGION 'Property Accessors'}
-    function GetBuilder: IComponentBuilder;
-    function GetInjector: IDependencyInjector;
-    function GetRegistry: IComponentRegistry;
-    function GetResolver: IDependencyResolver;
-    function GetProxyFactory: IProxyFactory;
-    function GetLogger: ILogger;
-    procedure SetLogger(const logger: ILogger);
-    function GetDecoratorResolver: IDecoratorResolver;
-  {$ENDREGION}
-    procedure AddExtension(const extension: IContainerExtension);
-
-    property Builder: IComponentBuilder read GetBuilder;
-    property Injector: IDependencyInjector read GetInjector;
-    property Registry: IComponentRegistry read GetRegistry;
-    property Resolver: IDependencyResolver read GetResolver;
-    property ProxyFactory: IProxyFactory read GetProxyFactory;
-    property Logger: ILogger read GetLogger write SetLogger;
-    property DecoratorResolver: IDecoratorResolver read GetDecoratorResolver;
-  end;
+  TKernel = class;
 
   IKernelInternal = interface
     ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
@@ -119,7 +94,7 @@ type
   IContainerExtension = interface
     ['{E78748FB-D75C-447C-B984-9782A8F26C20}']
     procedure Initialize;
-    procedure InitializeExtension(const kernel: IKernel);
+    procedure InitializeExtension(const kernel: TKernel);
   end;
 
   /// <summary>
@@ -132,9 +107,8 @@ type
   {$ENDREGION}
 
     function RegisterComponent(componentType: PTypeInfo): TComponentModel;
-    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo;
-      const serviceName: string); overload;
+      const serviceName: string = '');
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
 
     procedure RegisterFactory(const model: TComponentModel;
@@ -196,7 +170,7 @@ type
   /// </summary>
   IBuilderInspector = interface
     ['{3E2F36D1-2C0D-4D6A-91B3-49B09BD31318}']
-    procedure ProcessModel(const kernel: IKernel; const model: TComponentModel);
+    procedure ProcessModel(const kernel: TKernel; const model: TComponentModel);
   end;
 
   /// <summary>
@@ -341,11 +315,38 @@ type
       const constructorArguments: array of TValue): TValue;
   end;
 
+  TKernel = class(TInterfaceBase)
+  private
+    fRegistry: IComponentRegistry;
+    fBuilder: IComponentBuilder;
+    fInjector: IDependencyInjector;
+    fResolver: IDependencyResolver;
+    fProxyFactory: IProxyFactory;
+    fExtensions: IList<IContainerExtension>;
+    fLogger: ILogger;
+    fDecoratorResolver: IDecoratorResolver;
+    procedure SetLogger(const logger: ILogger);
+  public
+    constructor Create;
+
+    procedure AddExtension(const extension: IContainerExtension);
+
+    property Builder: IComponentBuilder read fBuilder;
+    property Injector: IDependencyInjector read fInjector;
+    property Registry: IComponentRegistry read fRegistry;
+    property Resolver: IDependencyResolver read fResolver;
+    property Logger: ILogger read fLogger write SetLogger;
+    property ProxyFactory: IProxyFactory read fProxyFactory;
+    property DecoratorResolver: IDecoratorResolver read fDecoratorResolver;
+  end;
+
   /// <summary>
   ///   TComponentModel
   /// </summary>
   TComponentModel = class
   private
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fKernel: TKernel;
     fComponentType: TRttiType;
     fLifetimeType: TLifetimeType;
     fLifetimeManager: ILifetimeManager;
@@ -369,6 +370,8 @@ type
     function HasService(serviceType: PTypeInfo): Boolean;
     function GetServiceName(serviceType: PTypeInfo): string;
     function GetServiceType(const serviceName: string): PTypeInfo;
+
+    property Kernel: TKernel read fKernel write fKernel;
 
     property ComponentType: TRttiType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
@@ -429,11 +432,12 @@ type
 
   TInjectableMethodFilter = class(TSpecification<TRttiMethod>)
   private
-    fKernel: IKernel;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fKernel: TKernel;
     fModel: TComponentModel;
     fArguments: TArray<TValue>;
   public
-    constructor Create(const kernel: IKernel; const model: TComponentModel;
+    constructor Create(const kernel: TKernel; const model: TComponentModel;
       const arguments: TArray<TValue>);
     function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
   end;
@@ -449,7 +453,7 @@ type
   TInjectionFilters = class
   public
     class function ContainsMember(const member: TRttiMember): Specification<IInjection>;
-    class function IsInjectableMethod(const kernel: IKernel;
+    class function IsInjectableMethod(const kernel: TKernel;
       const model: TComponentModel;
       const arguments: TArray<TValue>): Specification<TRttiMethod>;
   end;
@@ -458,7 +462,15 @@ implementation
 
 uses
   TypInfo,
+  Spring.Container.Builder,
+  Spring.Container.ComponentActivator,
+  Spring.Container.Injection,
+  Spring.Container.LifetimeManager,
+  Spring.Container.ProxyFactory,
+  Spring.Container.Registration,
+  Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
+  Spring.Logging.NullLogger,
   Spring.Reflection;
 
 
@@ -512,6 +524,39 @@ end;
 class function TInterceptorReference.ForType<T>: TInterceptorReference;
 begin
   Result := TInterceptorReference.Create(System.TypeInfo(T));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TKernel'}
+
+constructor TKernel.Create;
+begin
+  inherited Create;
+  fLogger := TNullLogger.GlobalInstance;
+  fRegistry := TComponentRegistry.Create(Self);
+  fBuilder := TComponentBuilder.Create(Self);
+  fInjector := TDependencyInjector.Create;
+  fResolver := TDependencyResolver.Create(Self);
+  fProxyFactory := TProxyFactory.Create(Self);
+  fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
+  fDecoratorResolver := TDecoratorResolver.Create;
+end;
+
+procedure TKernel.AddExtension(const extension: IContainerExtension);
+begin
+  fExtensions.Add(extension);
+  extension.InitializeExtension(Self);
+  extension.Initialize;
+end;
+
+procedure TKernel.SetLogger(const logger: ILogger);
+begin
+  if Assigned(logger) then
+    fLogger := logger
+  else
+    fLogger := TNullLogger.GlobalInstance;
 end;
 
 {$ENDREGION}
@@ -671,7 +716,7 @@ end;
 
 {$REGION 'TInjectableMethodFilter'}
 
-constructor TInjectableMethodFilter.Create(const kernel: IKernel;
+constructor TInjectableMethodFilter.Create(const kernel: TKernel;
   const model: TComponentModel; const arguments: TArray<TValue>);
 begin
   inherited Create;
@@ -722,7 +767,7 @@ begin
   Result := TContainsMemberFilter.Create(member);
 end;
 
-class function TInjectionFilters.IsInjectableMethod(const kernel: IKernel;
+class function TInjectionFilters.IsInjectableMethod(const kernel: TKernel;
   const model: TComponentModel;
   const arguments: TArray<TValue>): Specification<TRttiMethod>;
 begin
