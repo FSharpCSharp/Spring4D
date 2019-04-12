@@ -38,11 +38,12 @@ uses
 type
   TSubDependencyResolverBase = class abstract(TInterfacedObject, ISubDependencyResolver)
   private
-    fKernel: IKernel;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fKernel: TKernel;
   protected
-    property Kernel: IKernel read fKernel;
+    property Kernel: TKernel read fKernel;
   public
-    constructor Create(const kernel: IKernel);
+    constructor Create(const kernel: TKernel);
 
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel;
@@ -66,7 +67,7 @@ type
       const model: TComponentModel; const dependency: TDependencyModel;
       const instance: TValue): TValue;
   public
-    constructor Create(const kernel: IKernel);
+    constructor Create(const kernel: TKernel);
 
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel;
@@ -127,7 +128,7 @@ type
   private
     fVirtualIndex: SmallInt;
   public
-    constructor Create(const kernel: IKernel);
+    constructor Create(const kernel: TKernel);
 
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel;
@@ -173,7 +174,7 @@ uses
 
 {$REGION 'TSubDependencyResolverBase'}
 
-constructor TSubDependencyResolverBase.Create(const kernel: IKernel);
+constructor TSubDependencyResolverBase.Create(const kernel: TKernel);
 begin
 {$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(kernel, 'kernel');
@@ -199,7 +200,7 @@ end;
 
 {$REGION 'TDependencyResolver'}
 
-constructor TDependencyResolver.Create(const kernel: IKernel);
+constructor TDependencyResolver.Create(const kernel: TKernel);
 begin
   inherited Create(kernel);
   fSubResolvers := TCollections.CreateInterfaceList<ISubDependencyResolver>;
@@ -624,7 +625,7 @@ end;
 
 {$REGION 'TComponentOwnerResolver'}
 
-constructor TComponentOwnerResolver.Create(const kernel: IKernel);
+constructor TComponentOwnerResolver.Create(const kernel: TKernel);
 begin
   inherited Create(kernel);
   fVirtualIndex := TType.GetType(TComponent).Constructors.First.VirtualIndex;

@@ -53,12 +53,13 @@ uses
 type
   TAutoMockResolver = class(TInterfacedObject, ISubDependencyResolver)
   private
-    fKernel: IKernel;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fKernel: TKernel;
     procedure EnsureMockRegistered(const mockedType: TRttiType);
     class function TryGetMockedType(const targetType: TRttiType;
       out mockedType: TRttiType): Boolean; static;
   public
-    constructor Create(const kernel: IKernel);
+    constructor Create(const kernel: TKernel);
 
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel; const argument: TValue): Boolean;
@@ -80,7 +81,7 @@ end;
 
 {$REGION 'TAutoMockResolver'}
 
-constructor TAutoMockResolver.Create(const kernel: IKernel);
+constructor TAutoMockResolver.Create(const kernel: TKernel);
 begin
   inherited Create;
   fKernel := kernel;

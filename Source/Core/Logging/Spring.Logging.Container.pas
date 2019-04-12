@@ -113,8 +113,8 @@ end;
 class procedure TLoggingContainerHelper.RegisterLoggingWithConfiguration(
   const container: TContainer);
 begin
-  container.Kernel.Resolver.AddSubResolver(
-    TLoggerResolver.Create(container.Kernel));
+  container.Resolver.AddSubResolver(
+    TLoggerResolver.Create(container));
   container.RegisterType<TLoggingConfiguration>
     .Implements<TLoggingConfiguration>
     .AsSingleton;

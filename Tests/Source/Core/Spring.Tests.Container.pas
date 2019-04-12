@@ -278,6 +278,7 @@ type
     procedure TestOneServiceAsSingleton;
     procedure TestOneServiceAsSingletonPerThread;
     procedure TestTwoRegistrations;
+    procedure TestRegisterInstance;
   end;
 
   TTestLazyDependencies = class(TContainerTestCase)
@@ -602,7 +603,7 @@ procedure TTestSimpleContainer.TestClassContainsAbstractMethods;
 var
   logger: Mock<ILogger>;
 begin
-  fContainer.Kernel.Logger := logger;
+  fContainer.Logger := logger;
   fContainer.RegisterType<TAbstractMethodsTest>;
   fContainer.Build;
 
@@ -721,14 +722,13 @@ var
   count: Integer;
 begin
   count := 0;
-  fContainer.RegisterType<TNameService>
+  fContainer.RegisterType<TNameService>(
+    function: TNameService
+    begin
+      Result := TNameService.Create;
+      Inc(count);
+    end)
     .Implements<INameService>
-    .DelegateTo(
-      function: TNameService
-      begin
-        Result := TNameService.Create;
-        Inc(count);
-      end)
     .AsPooled(2, 2);
   fContainer.Build;
   CheckEquals(0, count); // pool did not create any instances yet
@@ -753,14 +753,13 @@ var
   count: Integer;
 begin
   count := 0;
-  fContainer.RegisterType<TCustomNameService>
+  fContainer.RegisterType<TCustomNameService>(
+    function: TCustomNameService
+    begin
+      Result := TCustomNameService.Create;
+      Inc(count);
+    end)
     .Implements<INameService>
-    .DelegateTo(
-      function: TCustomNameService
-      begin
-        Result := TCustomNameService.Create;
-        Inc(count);
-      end)
     .AsPooled(2, 2);
   fContainer.Build;
   CheckEquals(0, count); // pool did not create any instances yet
@@ -781,7 +780,7 @@ end;
 
 procedure TTestSimpleContainer.TestRecordConstructorNotConsidered;
 begin
-  fContainer.RegisterType<Lazy<INameService>>.DelegateTo(
+  fContainer.RegisterType<Lazy<INameService>>(
     function: Lazy<INameService>
     begin
     end);
@@ -944,18 +943,18 @@ procedure TTestSimpleContainer.TestIssue41_DifferentName;
 var
   service: INameService;
 begin
-  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('first').DelegateTo(
+  fContainer.RegisterType<TDynamicNameService>(
     function: TDynamicNameService
     begin
       Result := TDynamicNameService.Create('first');
-    end
-    );
-  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('second').DelegateTo(
+    end)
+    .Implements<INameService>('first');
+  fContainer.RegisterType<TDynamicNameService>(
     function: TDynamicNameService
     begin
       Result := TDynamicNameService.Create('second');
-    end
-    );
+    end)
+    .Implements<INameService>('second');
   fContainer.Build;
 
   service := fContainer.Resolve<INameService>('second');
@@ -970,18 +969,18 @@ var
   service: INameService;
   anotherService: IAnotherNameService;
 begin
-   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>.DelegateTo(
+   fContainer.RegisterType<TDynamicNameService>(
     function: TDynamicNameService
     begin
       Result := TDynamicNameService.Create('first');
-    end
-    );
-  fContainer.RegisterType<TDynamicNameService>.Implements<IAnotherNameService>.DelegateTo(
+    end)
+     .Implements<INameService>;
+  fContainer.RegisterType<TDynamicNameService>(
     function: TDynamicNameService
     begin
       Result := TDynamicNameService.Create('second');
-    end
-    );
+    end)
+    .Implements<IAnotherNameService>;
   fContainer.Build;
 
   anotherService := fContainer.Resolve<IAnotherNameService>;
@@ -1000,12 +999,13 @@ begin
     .InjectField('fAgeService').InjectField('fAgeService')
     .InjectProperty('AgeService').InjectProperty('AgeService')
     .InjectMethod('Init').InjectMethod('Init');
-  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>.DelegateTo(
+  fContainer.RegisterType<TNameAgeComponent>(
     function: TNameAgeComponent
     begin
       Result := TNameAgeComponent.Create;
       Inc(count);
-    end);
+    end)
+    .Implements<IAgeService>;
   fContainer.Build;
   fContainer.Build;
 
@@ -1020,17 +1020,19 @@ var
   count: Integer;
   obj: TNameServiceWithAggregation;
 begin
-  fContainer.RegisterType<TNameServiceWithAggregation>.Implements<INameService>.DelegateTo(
+  fContainer.RegisterType<TNameServiceWithAggregation>(
     function: TNameServiceWithAggregation
     begin
       Result := TNameServiceWithAggregation.Create;
-    end);
-  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>.DelegateTo(
+    end)
+    .Implements<INameService>;
+  fContainer.RegisterType<TNameAgeComponent>(
     function: TNameAgeComponent
     begin
       Result := TNameAgeComponent.Create;
       Inc(count);
-    end);
+    end)
+    .Implements<IAgeService>;
   fContainer.Build;
 
   count := 0;
@@ -1124,18 +1126,15 @@ begin
   fContainer.RegisterType<TNameService>
     .Implements<INameService>
     .AsSingleton;
-  fContainer.RegisterType<TPrimitiveComponent>
-    .Implements<IPrimitive>
-    .DelegateTo(
-      function: TPrimitiveComponent
-      begin
-        Result := TPrimitiveComponent.Create(
-          fContainer.Resolve<INameService>,
-          fExpectedInteger,
-          fExpectedString
-        );
-      end
-    );
+  fContainer.RegisterType<TPrimitiveComponent>(
+    function: TPrimitiveComponent
+    begin
+      Result := TPrimitiveComponent.Create(
+        fContainer.Resolve<INameService>,
+        fExpectedInteger,
+        fExpectedString);
+    end)
+    .Implements<IPrimitive>;
   fContainer.Build;
   fPrimitive := fContainer.Resolve<IPrimitive>;
   CheckNotNull(fPrimitive, 'fPrimitive should not be nil.');
@@ -1716,7 +1715,7 @@ end;
 
 procedure TTestRegisterInterfaceTypes.TestOneService;
 begin
-  fContainer.RegisterType<INameService>.DelegateTo(
+  fContainer.RegisterType<INameService>(
     function: INameService
     begin
       Result := TDynamicNameService.Create('test');
@@ -1731,7 +1730,7 @@ var
   count: Integer;
 begin
   count := 0;
-  fContainer.RegisterType<INameService>.DelegateTo(
+  fContainer.RegisterType<INameService>(
     function: INameService
     begin
       Result := TDynamicNameService.Create('test');
@@ -1749,7 +1748,7 @@ var
   count: Integer;
 begin
   count := 0;
-  fContainer.RegisterType<INameService>.DelegateTo(
+  fContainer.RegisterType<INameService>(
     function: INameService
     begin
       Result := TDynamicNameService.Create('test');
@@ -1762,18 +1761,26 @@ begin
   CheckEquals(1, count);
 end;
 
+procedure TTestRegisterInterfaceTypes.TestRegisterInstance;
+begin
+  fContainer.RegisterInstance<INameService>(TDynamicNameService.Create('service1'));
+  fContainer.Build;
+
+  CheckEquals('service1', fContainer.Resolve<INameService>.Name);
+end;
+
 procedure TTestRegisterInterfaceTypes.TestTwoRegistrations;
 begin
-  fContainer.RegisterType<INameService, INameService>('service1').DelegateTo(
+  fContainer.RegisterType<INameService, INameService>(
     function: INameService
     begin
       Result := TDynamicNameService.Create('service1');
-    end);
-  fContainer.RegisterType<INameService, INameService>('service2').DelegateTo(
+    end, 'service1');
+  fContainer.RegisterType<INameService, INameService>(
     function: INameService
     begin
       Result := TDynamicNameService.Create('service2');
-    end);
+    end, 'service2');
   fContainer.Build;
 
   CheckEquals('service1', fContainer.Resolve<INameService>('service1').Name);
@@ -1782,7 +1789,7 @@ end;
 
 procedure TTestRegisterInterfaceTypes.TestTwoServices;
 begin
-  fContainer.RegisterType<INameService, INameService>.DelegateTo(
+  fContainer.RegisterType<INameService, INameService>(
     function: INameService
     begin
       Result := TDynamicNameService.Create('test');
@@ -1813,12 +1820,12 @@ procedure TTestLazyDependencies.SetUp;
 begin
   inherited;
 
-  fContainer.RegisterType<INameService>.Implements<INameService>('lazy').DelegateTo(
+  fContainer.RegisterType<INameService>(
     function: INameService
     begin
       Result := TNameService.Create;
       fCalled := True;
-    end);
+    end, 'lazy');
 end;
 
 procedure TTestLazyDependencies.TestDependencyTypeIsFunc;
@@ -1937,8 +1944,8 @@ procedure TTestLazyDependenciesDetectRecursion.PerformChecks;
 var
   model: TComponentModel;
 begin
-  model := fContainer.Kernel.Registry.FindOne('service');
-  fContainer.Kernel.Injector.InjectField(model, 'fNameService', 'service');
+  model := fContainer.Registry.FindOne('service');
+  fContainer.Injector.InjectField(model, 'fNameService', 'service');
 
   ExpectedException := ECircularDependencyException;
   inherited;
@@ -2027,12 +2034,11 @@ procedure TTestManyDependencies.TestNoRecursion_TwoDifferentModelsWithSameCompon
 var
   service: ICollectionItem;
 begin
-  fContainer.RegisterType<ICollectionItem, TCollectionItemD>('d')
-  .DelegateTo(
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>(
     function: TCollectionItemD
     begin
       Result := TCollectionItemD.Create(nil);
-    end);
+    end, 'd');
   fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
   fContainer.Build;
   service := fContainer.Resolve<ICollectionItem>;

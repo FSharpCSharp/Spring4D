@@ -207,8 +207,8 @@ end;
 procedure TTestLogSubResolverAndConfiguration.SetUp;
 begin
   inherited;
-  fContainer.Kernel.Resolver.AddSubResolver(
-    TLoggerResolver.Create(fContainer.Kernel));
+  fContainer.Resolver.AddSubResolver(
+    TLoggerResolver.Create(fContainer));
   fContainer.RegisterType<ILoggerController, TLoggerController>.AsSingleton;
   fContainer.RegisterType<TLoggingConfiguration>
     .Implements<TLoggingConfiguration>.AsSingleton;
