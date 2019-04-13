@@ -1871,20 +1871,19 @@ type
       function _AddRef: Integer; stdcall;
       function _Release: Integer; stdcall;
       function Invoke: TObject;
-    public
-      class function Create(typeInfo: PTypeInfo): PObjectFinalizer; overload; static;
-      class function Create(const value: TObject): PObjectFinalizer; overload; static;
     end;
 
-    TRecordFinalizer = class(TInterfacedObject, IShared<Pointer>)
+    PRecordFinalizer = ^TRecordFinalizer;
+    TRecordFinalizer = record
     private
-      fValue: Pointer;
-      fTypeInfo: PTypeInfo;
+      Vtable: Pointer;
+      RefCount: Integer;
+      Value: Pointer;
+      TypeInfo: PTypeInfo;
+      function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+      function _AddRef: Integer; stdcall;
+      function _Release: Integer; stdcall;
       function Invoke: Pointer;
-    public
-      constructor Create(typeInfo: PTypeInfo); overload;
-      constructor Create(const value: Pointer; typeInfo: PTypeInfo); overload;
-      destructor Destroy; override;
     end;
 
     THandleFinalizer<T> = class(TInterfacedObject, IShared<T>)
@@ -1905,8 +1904,17 @@ type
       @TObjectFinalizer._Release,
       @TObjectFinalizer.Invoke
     );
+    RecordFinalizerVtable: array[0..3] of Pointer =
+    (
+      @TRecordFinalizer.QueryInterface,
+      @TRecordFinalizer._AddRef,
+      @TRecordFinalizer._Release,
+      @TRecordFinalizer.Invoke
+    );
   private
-    class procedure Make(const value: TObject; var result: PObjectFinalizer); overload; static; inline;
+    class procedure Make(const value: TObject; var result); overload; static;
+    class procedure Make(const value: Pointer; typeInfo: PTypeInfo; var result); overload; static;
+    class procedure Make(typeInfo: PTypeInfo; var result); overload; static;
   public
     class function Make<T: class, constructor>: IShared<T>; overload; static;
     class function Make<T>(const value: T): IShared<T>; overload; static;
@@ -7664,8 +7672,7 @@ end;
 class function Shared<T>.GetMake: IShared<T>;
 begin
   case TType.Kind<T> of
-    tkClass: IShared<TObject>(Result) := IShared<TObject>(Shared.TObjectFinalizer.Create(TypeInfo(T)));
-    tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(TypeInfo(T));
+    tkClass, tkPointer: Shared.Make(TypeInfo(T), Result);
   end;
 end;
 
@@ -7690,17 +7697,9 @@ begin
   Result.fValue := value;
   case TType.Kind<T> of
 {$IFNDEF AUTOREFCOUNT}
-    tkClass:
-      if PPointer(@value)^ = nil then
-        Result.fFinalizer := nil
-      else
-        Result.fFinalizer := IInterface(Shared.TObjectFinalizer.Create(PObject(@value)^));
+    tkClass: Shared.Make(PObject(@Result.fValue)^, Result.fFinalizer);
 {$ENDIF}
-    tkPointer:
-      if PPointer(@value)^ = nil then
-        Result.fFinalizer := nil
-      else
-        Result.fFinalizer := Shared.TRecordFinalizer.Create(PPointer(@value)^, TypeInfo(T));
+    tkPointer: Shared.Make(PPointer(@Result.fValue)^, TypeInfo(T), Result.fFinalizer);
   end;
 end;
 
@@ -7709,29 +7708,64 @@ end;
 
 {$REGION 'Shared'}
 
-class procedure Shared.Make(const value: TObject; var result: PObjectFinalizer);
+class procedure Shared.Make(const value: TObject; var result);
 begin
-  if Assigned(result) and (AtomicDecrement(result.RefCount) = 0) then
-    result.Value.Free
+  if Assigned(Pointer(result))
+    and (AtomicDecrement(PObjectFinalizer(result).RefCount) = 0) then
+    PObjectFinalizer(result).Value.Free
   else
   begin
-    GetMem(result, SizeOf(TObjectFinalizer));
-    result.Vtable := @Shared.ObjectFinalizerVtable;
+    GetMem(Pointer(result), SizeOf(TObjectFinalizer));
+    PObjectFinalizer(result).Vtable := @Shared.ObjectFinalizerVtable;
   end;
-  result.RefCount := 1;
-  result.Value := value;
+  PObjectFinalizer(result).RefCount := 1;
+  PObjectFinalizer(result).Value := value;
+end;
+
+class procedure Shared.Make(const value: Pointer; typeInfo: PTypeInfo; var result);
+begin
+  typeInfo := typeInfo.TypeData.RefType^;
+  if Assigned(Pointer(result))
+    and (AtomicDecrement(PRecordFinalizer(result).RefCount) = 0) then
+  begin
+    FinalizeArray(PRecordFinalizer(result).Value, typeInfo, 1);
+    FillChar(PRecordFinalizer(result).Value^, typeInfo.TypeData.RecSize, 0);
+    FreeMem(PRecordFinalizer(result).Value);
+  end
+  else
+  begin
+    GetMem(Pointer(result), SizeOf(TRecordFinalizer));
+    PRecordFinalizer(result).Vtable := @Shared.RecordFinalizerVtable;
+  end;
+  PRecordFinalizer(result).RefCount := 1;
+  PRecordFinalizer(result).Value := value;
+  PRecordFinalizer(result).TypeInfo := typeInfo;
+end;
+
+class procedure Shared.Make(typeInfo: PTypeInfo; var result);
+
+  function AllocRecord(typeInfo: PTypeInfo): Pointer;
+  begin
+    Result := AllocMem(typeInfo.TypeData.RefType^.TypeData.RecSize);
+  end;
+
+begin
+  if typeInfo.Kind = tkClass then
+    Make(TActivator.CreateInstance(typeInfo), result)
+  else if typeInfo.Kind = tkPointer then
+    Make(AllocRecord(typeInfo), typeInfo, result);
 end;
 
 class function Shared.Make<T>: IShared<T>;
 begin
-  Make(T.Create, PObjectFinalizer(Result));
+  Make(T.Create, Result);
 end;
 
 class function Shared.Make<T>(const value: T): IShared<T>;
 begin
   case TType.Kind<T> of
-    tkClass: Make(PObject(@value)^, PObjectFinalizer(Result));
-    tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(PPointer(@value)^, TypeInfo(T));
+    tkClass: Make(PObject(@value)^, Result);
+    tkPointer: Make(PPointer(@value)^, TypeInfo(T), Result);
   end;
 end;
 
@@ -7745,20 +7779,6 @@ end;
 
 
 {$REGION 'Shared.TObjectFinalizer'}
-
-class function Shared.TObjectFinalizer.Create(const value: TObject): PObjectFinalizer;
-begin
-  GetMem(Result, SizeOf(TObjectFinalizer));
-  Result.Vtable := @Shared.ObjectFinalizerVtable;
-  Result.RefCount := 0;
-  Result.Value := value;
-end;
-
-class function Shared.TObjectFinalizer.Create(
-  typeInfo: PTypeInfo): PObjectFinalizer;
-begin
-  Result := Create(TActivator.CreateInstance(typeInfo.TypeData.ClassType));
-end;
 
 function Shared.TObjectFinalizer.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
@@ -7790,31 +7810,31 @@ end;
 
 {$REGION 'Shared.TRecordFinalizer'}
 
-constructor Shared.TRecordFinalizer.Create(typeInfo: PTypeInfo);
+function Shared.TRecordFinalizer.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  inherited Create;
-  fTypeInfo := typeInfo.TypeData.RefType^;
-  fValue := AllocMem(GetTypeSize(fTypeInfo));
+  Result := E_NOINTERFACE;
 end;
 
-constructor Shared.TRecordFinalizer.Create(const value: Pointer; typeInfo: PTypeInfo);
+function Shared.TRecordFinalizer._AddRef: Integer;
 begin
-  inherited Create;
-  fTypeInfo := typeInfo.TypeData.RefType^;
-  fValue := value;
+  Result := AtomicIncrement(RefCount);
 end;
 
-destructor Shared.TRecordFinalizer.Destroy;
+function Shared.TRecordFinalizer._Release: Integer;
 begin
-  FinalizeArray(fValue, fTypeInfo, 1);
-  FillChar(fValue^, fTypeInfo.TypeData.RecSize, 0);
-  FreeMem(fValue);
-  inherited;
+  Result := AtomicDecrement(RefCount);
+  if Result = 0 then
+  begin
+    FinalizeArray(Value, TypeInfo, 1);
+    FillChar(Value^, TypeInfo.TypeData.RecSize, 0);
+    FreeMem(Value);
+    FreeMem(@Self);
+  end;
 end;
 
 function Shared.TRecordFinalizer.Invoke: Pointer;
 begin
-  Result := fValue;
+  Result := Value;
 end;
 
 {$ENDREGION}
