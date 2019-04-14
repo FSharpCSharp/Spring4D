@@ -1612,20 +1612,15 @@ type
   /// <summary>
   ///   The base class of the lazy initialization type.
   /// </summary>
-  TLazy = class(TInterfacedObject, ILazy)
+  TLazy = class(TRefCountedObject)
   private
-    fLock: TCriticalSection;
-    fIsValueCreated: Boolean;
-    fOwnsObjects: Boolean;
+    fValueFactory: IInterface;
+    fOwnsObject: Boolean;
+  protected
   {$REGION 'Property Accessors'}
     function GetIsValueCreated: Boolean;
-    function GetValueNonGeneric: TValue; virtual; abstract;
-    function ILazy.GetValue = GetValueNonGeneric;
   {$ENDREGION}
   public
-    constructor Create;
-    destructor Destroy; override;
-
     /// <summary>
     ///   Gets a value that indicates whether a value has been created for this
     ///   <see cref="TLazy&lt;T&gt;" /> instance.
@@ -1643,15 +1638,14 @@ type
   /// <typeparam name="T">
   ///   The type of object that is being lazily initialized.
   /// </typeparam>
-  TLazy<T> = class(TLazy, ILazy<T>, Func<T>)
+  TLazy<T> = class(TLazy, ILazy, ILazy<T>, Func<T>)
   private
-    fValueFactory: Func<T>;
     fValue: T;
     procedure InitializeValue;
   {$REGION 'Property Accessors'}
-    function GetValue: T;
-    function GetValueNonGeneric: TValue; override; final;
-    function Func<T>.Invoke = GetValue;
+    function GetValue: TValue;
+    function Invoke: T;
+    function ILazy<T>.GetValue = Invoke;
   {$ENDREGION}
   public
     /// <summary>
@@ -1702,7 +1696,7 @@ type
     ///   The lazily initialized value of the current <see cref="TLazy&lt;T&gt;" />
     ///    instance.
     /// </value>
-    property Value: T read GetValue;
+    property Value: T read Invoke;
   end;
 
   /// <summary>
@@ -7464,21 +7458,9 @@ end;
 
 {$REGION 'TLazy'}
 
-constructor TLazy.Create;
-begin
-  inherited Create;
-  fLock := TCriticalSection.Create;
-end;
-
-destructor TLazy.Destroy;
-begin
-  fLock.Free;
-  inherited Destroy;
-end;
-
 function TLazy.GetIsValueCreated: Boolean;
 begin
-  Result := fIsValueCreated;
+  Result := fValueFactory = nil;
 end;
 
 {$ENDREGION}
@@ -7497,7 +7479,7 @@ begin
   ctor := TActivator.FindConstructor(classType);
 
   inherited Create;
-  fValueFactory :=
+  Func<T>(fValueFactory) :=
     function: T
     begin
       PObject(@Result)^ := ctor(classType);
@@ -7509,53 +7491,50 @@ begin
   Guard.CheckNotNull(Assigned(valueFactory), 'valueFactory');
 
   inherited Create;
-  fOwnsObjects := ownsObject;
-  fValueFactory := valueFactory;
+  fOwnsObject := ownsObject;
+  Func<T>(fValueFactory) := valueFactory;
 end;
 
 constructor TLazy<T>.CreateFrom(const value: T; ownsObject: Boolean);
 begin
   inherited Create;
   fValue := value;
-  fIsValueCreated := True;
-  fOwnsObjects := ownsObject;
+  fOwnsObject := ownsObject;
 end;
 
 destructor TLazy<T>.Destroy;
 begin
   inherited Destroy;
-  if TType.Kind<T> = tkClass then
 {$IFNDEF AUTOREFCOUNT}
-    if fOwnsObjects then
+  if TType.Kind<T> = tkClass then
+    if fOwnsObject then
       FreeAndNil(fValue);
 {$ENDIF}
 end;
 
 procedure TLazy<T>.InitializeValue;
+var
+  valueFactory: Pointer;
 begin
-  fLock.Enter;
+  valueFactory := AtomicExchange(Pointer(fValueFactory), nil);
+  if valueFactory <> nil then
   try
-    if fIsValueCreated then
-      Exit;
-
-    fValue := fValueFactory();
-    fValueFactory := nil;
-    fIsValueCreated := True;
+    fValue := Func<T>(valueFactory)();
   finally
-    fLock.Leave;
+    IInterface(valueFactory)._Release;
   end;
 end;
 
-function TLazy<T>.GetValue: T;
+function TLazy<T>.Invoke: T;
 begin
-  if not fIsValueCreated then
+  if fValueFactory <> nil then
     InitializeValue;
   Result := fValue;
 end;
 
-function TLazy<T>.GetValueNonGeneric: TValue;
+function TLazy<T>.GetValue: TValue;
 begin
-  if not fIsValueCreated then
+  if fValueFactory <> nil then
     InitializeValue;
   Result := TValue.From(@fValue, TypeInfo(T));
 end;
