@@ -568,6 +568,64 @@ type
   {$ENDREGION}
   end;
 
+  TFoldedStringObjectDictionary = class(TDictionary<string, TObject>)
+  private
+    fValueType: PTypeInfo;
+  protected
+    function GetValueType: PTypeInfo; override;
+  public
+    constructor Create(valueType: PTypeInfo;
+      ownerships: TDictionaryOwnerships); overload;
+    constructor Create(valueType: PTypeInfo;
+      capacity: Integer;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(valueType: PTypeInfo;
+      const keyComparer: IEqualityComparer<string>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(valueType: PTypeInfo;
+      const keyComparer: IEqualityComparer<string>;
+      const valueComparer: IEqualityComparer<TObject>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(valueType: PTypeInfo;
+      capacity: Integer;
+      const keyComparer: IEqualityComparer<string>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(valueType: PTypeInfo;
+      capacity: Integer;
+      const keyComparer: IEqualityComparer<string>;
+      const valueComparer: IEqualityComparer<TObject>;
+      ownerships: TDictionaryOwnerships = []); overload;
+  end;
+
+  TFoldedStringInterfaceDictionary = class(TDictionary<string, IInterface>)
+  private
+    fValueType: PTypeInfo;
+  protected
+    function GetValueType: PTypeInfo; override;
+  public
+    constructor Create(valueType: PTypeInfo;
+      ownerships: TDictionaryOwnerships); overload;
+    constructor Create(valueType: PTypeInfo;
+      capacity: Integer;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(valueType: PTypeInfo;
+      const keyComparer: IEqualityComparer<string>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(valueType: PTypeInfo;
+      const keyComparer: IEqualityComparer<string>;
+      const valueComparer: IEqualityComparer<IInterface>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(valueType: PTypeInfo;
+      capacity: Integer;
+      const keyComparer: IEqualityComparer<string>;
+      ownerships: TDictionaryOwnerships = []); overload;
+    constructor Create(valueType: PTypeInfo;
+      capacity: Integer;
+      const keyComparer: IEqualityComparer<string>;
+      const valueComparer: IEqualityComparer<IInterface>;
+      ownerships: TDictionaryOwnerships = []); overload;
+  end;
+
 implementation
 
 uses
@@ -2795,6 +2853,122 @@ end;
 function TSortedDictionary<TKey, TValue>.TValueCollection._Release: Integer;
 begin
   Result := fSource._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedStringObjectDictionary'}
+
+constructor TFoldedStringObjectDictionary.Create(valueType: PTypeInfo;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(ownerships);
+end;
+
+constructor TFoldedStringObjectDictionary.Create(valueType: PTypeInfo;
+  capacity: Integer; ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(capacity, ownerships);
+end;
+
+constructor TFoldedStringObjectDictionary.Create(valueType: PTypeInfo;
+  const keyComparer: IEqualityComparer<string>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(keyComparer, ownerships);
+end;
+
+constructor TFoldedStringObjectDictionary.Create(valueType: PTypeInfo;
+  const keyComparer: IEqualityComparer<string>;
+  const valueComparer: IEqualityComparer<TObject>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(capacity, keyComparer, ownerships);
+end;
+
+constructor TFoldedStringObjectDictionary.Create(valueType: PTypeInfo;
+  capacity: Integer; const keyComparer: IEqualityComparer<string>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(capacity, keyComparer, ownerships);
+end;
+
+constructor TFoldedStringObjectDictionary.Create(valueType: PTypeInfo;
+  capacity: Integer; const keyComparer: IEqualityComparer<string>;
+  const valueComparer: IEqualityComparer<TObject>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(capacity, keyComparer, valueComparer, ownerships);
+end;
+
+function TFoldedStringObjectDictionary.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedStringInterfaceDictionary'}
+
+constructor TFoldedStringInterfaceDictionary.Create(valueType: PTypeInfo;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(ownerships);
+end;
+
+constructor TFoldedStringInterfaceDictionary.Create(valueType: PTypeInfo;
+  capacity: Integer; ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(capacity, ownerships);
+end;
+
+constructor TFoldedStringInterfaceDictionary.Create(valueType: PTypeInfo;
+  const keyComparer: IEqualityComparer<string>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(keyComparer, ownerships);
+end;
+
+constructor TFoldedStringInterfaceDictionary.Create(valueType: PTypeInfo;
+  const keyComparer: IEqualityComparer<string>;
+  const valueComparer: IEqualityComparer<IInterface>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(capacity, keyComparer, ownerships);
+end;
+
+constructor TFoldedStringInterfaceDictionary.Create(valueType: PTypeInfo;
+  capacity: Integer; const keyComparer: IEqualityComparer<string>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(capacity, keyComparer, ownerships);
+end;
+
+constructor TFoldedStringInterfaceDictionary.Create(valueType: PTypeInfo;
+  capacity: Integer; const keyComparer: IEqualityComparer<string>;
+  const valueComparer: IEqualityComparer<IInterface>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(capacity, keyComparer, valueComparer, ownerships);
+end;
+
+function TFoldedStringInterfaceDictionary.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
 end;
 
 {$ENDREGION}

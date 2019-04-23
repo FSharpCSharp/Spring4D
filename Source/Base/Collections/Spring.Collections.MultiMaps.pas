@@ -235,6 +235,34 @@ type
       ownerships: TDictionaryOwnerships = []); overload;
   end;
 
+  TFoldedStringObjectListMultiMap = class(TListMultiMap<string, TObject>)
+  private
+    fValueType: PTypeInfo;
+  protected
+    function GetValueType: PTypeInfo; override;
+  public
+    constructor Create(valueType: PTypeInfo); overload;
+    constructor Create(valueType: PTypeInfo;
+      ownerships: TDictionaryOwnerships); overload;
+    constructor Create(valueType: PTypeInfo;
+      const keyComparer: IEqualityComparer<string>;
+      ownerships: TDictionaryOwnerships = []); overload;
+  end;
+
+  TFoldedStringInterfaceListMultiMap = class(TListMultiMap<string, IInterface>)
+  private
+    fValueType: PTypeInfo;
+  protected
+    function GetValueType: PTypeInfo; override;
+  public
+    constructor Create(valueType: PTypeInfo); overload;
+    constructor Create(valueType: PTypeInfo;
+      ownerships: TDictionaryOwnerships); overload;
+    constructor Create(valueType: PTypeInfo;
+      const keyComparer: IEqualityComparer<string>;
+      ownerships: TDictionaryOwnerships = []); overload;
+  end;
+
 implementation
 
 uses
@@ -907,6 +935,68 @@ end;
 function TTreeMultiMap<TKey, TValue>.AsReadOnly: IReadOnlyMultiMap<TKey, TValue>;
 begin
   Result := Self;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedStringObjectListMultiMap'}
+
+constructor TFoldedStringObjectListMultiMap.Create(valueType: PTypeInfo);
+begin
+  fValueType := valueType;
+  inherited Create;
+end;
+
+constructor TFoldedStringObjectListMultiMap.Create(valueType: PTypeInfo;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(ownerships);
+end;
+
+constructor TFoldedStringObjectListMultiMap.Create(valueType: PTypeInfo;
+  const keyComparer: IEqualityComparer<string>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(keyComparer, ownerships);
+end;
+
+function TFoldedStringObjectListMultiMap.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedStringInterfaceListMultiMap'}
+
+constructor TFoldedStringInterfaceListMultiMap.Create(valueType: PTypeInfo);
+begin
+  fValueType := valueType;
+  inherited Create;
+end;
+
+constructor TFoldedStringInterfaceListMultiMap.Create(valueType: PTypeInfo;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(ownerships);
+end;
+
+constructor TFoldedStringInterfaceListMultiMap.Create(valueType: PTypeInfo;
+  const keyComparer: IEqualityComparer<string>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fValueType := valueType;
+  inherited Create(keyComparer, ownerships);
+end;
+
+function TFoldedStringInterfaceListMultiMap.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
 end;
 
 {$ENDREGION}

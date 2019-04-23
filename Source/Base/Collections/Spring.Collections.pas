@@ -3030,21 +3030,74 @@ end;
 class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TKey) of
+    tkUString:
+      case GetTypeKind(TValue) of
+        tkClass:
+          IDictionary<string, TObject>(Result) := TFoldedStringObjectDictionary.Create(
+            TypeInfo(TValue), ownerships);
+        tkInterface:
+          IDictionary<string, IInterface>(Result) := TFoldedStringInterfaceDictionary.Create(
+            TypeInfo(TValue), ownerships);
+      else
+        Result := TDictionary<TKey, TValue>.Create(ownerships);
+      end;
+  else
+    Result := TDictionary<TKey, TValue>.Create(ownerships);
+  end;
+{$ELSE}
   Result := TDictionary<TKey, TValue>.Create(ownerships);
+{$ENDIF}
 end;
 
-class function TCollections.CreateDictionary<TKey, TValue>(
-  capacity: Integer;
+class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TKey) of
+    tkUString:
+      case GetTypeKind(TValue) of
+        tkClass:
+          IDictionary<string, TObject>(Result) := TFoldedStringObjectDictionary.Create(
+            TypeInfo(TValue), capacity, ownerships);
+        tkInterface:
+          IDictionary<string, IInterface>(Result) := TFoldedStringInterfaceDictionary.Create(
+            TypeInfo(TValue), capacity, ownerships);
+      else
+        Result := TDictionary<TKey, TValue>.Create(capacity, ownerships);
+      end;
+  else
+    Result := TDictionary<TKey, TValue>.Create(capacity, ownerships);
+  end;
+{$ELSE}
   Result := TDictionary<TKey, TValue>.Create(capacity, ownerships);
+{$ENDIF}
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   const keyComparer: IEqualityComparer<TKey>;
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TKey) of
+    tkUString:
+      case GetTypeKind(TValue) of
+        tkClass:
+          IDictionary<string, TObject>(Result) := TFoldedStringObjectDictionary.Create(
+            TypeInfo(TValue), IEqualityComparer<string>(keyComparer), ownerships);
+        tkInterface:
+          IDictionary<string, IInterface>(Result) := TFoldedStringInterfaceDictionary.Create(
+            TypeInfo(TValue), IEqualityComparer<string>(keyComparer), ownerships);
+      else
+        Result := TDictionary<TKey, TValue>.Create(keyComparer, ownerships);
+      end;
+  else
+    Result := TDictionary<TKey, TValue>.Create(keyComparer, ownerships);
+  end;
+{$ELSE}
   Result := TDictionary<TKey, TValue>.Create(keyComparer, ownerships);
+{$ENDIF}
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
@@ -3052,14 +3105,52 @@ class function TCollections.CreateDictionary<TKey, TValue>(
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TKey) of
+    tkUString:
+      case GetTypeKind(TValue) of
+        tkClass:
+          IDictionary<string, TObject>(Result) := TFoldedStringObjectDictionary.Create(
+            TypeInfo(TValue), IEqualityComparer<string>(keyComparer),
+            IEqualityComparer<TObject>(valueComparer), ownerships);
+        tkInterface:
+          IDictionary<string, IInterface>(Result) := TFoldedStringInterfaceDictionary.Create(
+            TypeInfo(TValue), IEqualityComparer<string>(keyComparer),
+            IEqualityComparer<IInterface>(valueComparer), ownerships);
+      else
+        Result := TDictionary<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
+      end;
+  else
+    Result := TDictionary<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
+  end;
+{$ELSE}
   Result := TDictionary<TKey, TValue>.Create(keyComparer, valueComparer, ownerships);
+{$ENDIF}
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
   const keyComparer: IEqualityComparer<TKey>;
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TKey) of
+    tkUString:
+      case GetTypeKind(TValue) of
+        tkClass:
+          IDictionary<string, TObject>(Result) := TFoldedStringObjectDictionary.Create(
+            TypeInfo(TValue), capacity, IEqualityComparer<string>(keyComparer), ownerships);
+        tkInterface:
+          IDictionary<string, IInterface>(Result) := TFoldedStringInterfaceDictionary.Create(
+            TypeInfo(TValue), capacity, IEqualityComparer<string>(keyComparer), ownerships);
+      else
+        Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, ownerships);
+      end;
+  else
+    Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, ownerships);
+  end;
+{$ELSE}
   Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, ownerships);
+{$ENDIF}
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
@@ -3067,20 +3158,76 @@ class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TKey) of
+    tkUString:
+      case GetTypeKind(TValue) of
+        tkClass:
+          IDictionary<string, TObject>(Result) := TFoldedStringObjectDictionary.Create(
+            TypeInfo(TValue), capacity, IEqualityComparer<string>(keyComparer),
+            IEqualityComparer<TObject>(valueComparer), ownerships);
+        tkInterface:
+          IDictionary<string, IInterface>(Result) := TFoldedStringInterfaceDictionary.Create(
+            TypeInfo(TValue), capacity, IEqualityComparer<string>(keyComparer),
+            IEqualityComparer<IInterface>(valueComparer), ownerships);
+      else
+        Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, valueComparer, ownerships);
+      end;
+  else
+    Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, valueComparer, ownerships);
+  end;
+{$ELSE}
   Result := TDictionary<TKey, TValue>.Create(capacity, keyComparer, valueComparer, ownerships);
+{$ENDIF}
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TKey) of
+    tkUString:
+      case GetTypeKind(TValue) of
+        tkClass:
+          IMultiMap<string, TObject>(Result) := TFoldedStringObjectListMultiMap.Create(
+            TypeInfo(TValue), ownerships);
+        tkInterface:
+          IMultiMap<string, IInterface>(Result) := TFoldedStringInterfaceListMultiMap.Create(
+            TypeInfo(TValue), ownerships);
+      else
+        Result := TListMultiMap<TKey, TValue>.Create(ownerships);
+      end;
+  else
+    Result := TListMultiMap<TKey, TValue>.Create(ownerships);
+  end;
+{$ELSE}
   Result := TListMultiMap<TKey, TValue>.Create(ownerships);
+{$ENDIF}
 end;
 
 class function TCollections.CreateMultiMap<TKey, TValue>(
   const keyComparer: IEqualityComparer<TKey>;
   ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
 begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(TKey) of
+    tkUString:
+      case GetTypeKind(TValue) of
+        tkClass:
+          IMultiMap<string, TObject>(Result) := TFoldedStringObjectListMultiMap.Create(
+            TypeInfo(TValue), IEqualityComparer<string>(keyComparer), ownerships);
+        tkInterface:
+          IMultiMap<string, IInterface>(Result) := TFoldedStringInterfaceListMultiMap.Create(
+            TypeInfo(TValue), IEqualityComparer<string>(keyComparer), ownerships);
+      else
+        Result := TListMultiMap<TKey, TValue>.Create(keyComparer, ownerships);
+      end;
+  else
+    Result := TListMultiMap<TKey, TValue>.Create(keyComparer, ownerships);
+  end;
+{$ELSE}
   Result := TListMultiMap<TKey, TValue>.Create(keyComparer, ownerships);
+{$ENDIF}
 end;
 
 class function TCollections.CreateHashMultiMap<TKey, TValue>(
