@@ -34,7 +34,8 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.Collections.Events;
+  Spring.Collections.Events,
+  Spring.Collections.HashTable;
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
@@ -382,6 +383,54 @@ type
       const match: Predicate<T>): Integer; overload;
   end;
 
+  TInnerCollection<T> = class(TEnumerableBase<T>,
+    IEnumerable<T>, IReadOnlyCollection<T>)
+  private type
+  {$REGION 'Nested Types'}
+    PT = ^T;
+    TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+    private
+      {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+      fSource: TInnerCollection<T>;
+      fIndex: Integer;
+      fVersion: Integer;
+      fCurrent: T;
+      function GetCurrent: T;
+    public
+      constructor Create(const source: TInnerCollection<T>);
+      destructor Destroy; override;
+      function MoveNext: Boolean;
+    end;
+  {$ENDREGION}
+  private
+    fSource: TRefCountedObject;
+    fHashTable: PHashTable;
+    fElementType: PTypeInfo;
+    fComparer: IEqualityComparer<T>;
+    fOffset: Integer;
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
+  protected
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(const source: TRefCountedObject; hashTable: PHashTable;
+      elementType: PTypeInfo; const comparer: IEqualityComparer<T>; offset: Integer);
+
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
+  {$ENDREGION}
+
+  {$REGION 'Implements IEnumerable<T>'}
+    function Contains(const value: T): Boolean; overload;
+    function GetEnumerator: IEnumerator<T>;
+    function ToArray: TArray<T>;
+    function TryGetElementAt(out value: T; index: Integer): Boolean; override;
+  {$ENDREGION}
+  end;
+
   TCircularArrayBuffer<T> = class(TEnumerableBase<T>)
   private
   {$REGION 'Nested Types'}
@@ -563,6 +612,7 @@ const
 implementation
 
 uses
+  Math,
 {$IFDEF MSWINDOWS}
   Windows,
 {$ENDIF}
@@ -1871,6 +1921,155 @@ begin
     defaultValue := Default(T);
     Notify(Self, defaultValue, caReseted);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInnerCollection<T>'}
+
+constructor TInnerCollection<T>.Create(const source: TRefCountedObject;
+  hashTable: PHashTable; elementType: PTypeInfo;
+  const comparer: IEqualityComparer<T>; offset: Integer);
+begin
+  inherited Create;
+  fSource := source;
+  fHashTable := hashTable;
+  fElementType := elementType;
+  fComparer := comparer;
+  fOffset := THashTable.KeyOffset + offset;
+end;
+
+function TInnerCollection<T>.Contains(const value: T): Boolean;
+var
+  entry: THashTableEntry;
+begin
+  if fOffset = THashTable.KeyOffset then // means this is for the key
+  begin
+    entry.HashCode := fComparer.GetHashCode(value);
+    Result := fHashTable.Find(value, entry);
+  end
+  else
+    Result := inherited Contains(value, fComparer);
+end;
+
+function TInnerCollection<T>.GetCount: Integer;
+begin
+  Result := fHashTable.Count;
+end;
+
+function TInnerCollection<T>.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
+end;
+
+function TInnerCollection<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(Self);
+end;
+
+function TInnerCollection<T>.GetIsEmpty: Boolean;
+begin
+  Result := fHashTable.Count = 0;
+end;
+
+function TInnerCollection<T>.ToArray: TArray<T>;
+var
+  hashTable: PHashTable;
+  item: PByte;
+  itemCount, itemSize, targetIndex, offset: Integer;
+begin
+  offset := fOffset;
+  hashTable := fHashTable;
+  SetLength(Result, hashTable.Count);
+  item := hashTable.Items;
+  itemCount := hashTable.ItemCount;
+  itemSize := hashTable.ItemSize;
+  targetIndex := 0;
+  while itemCount > 0 do
+  begin
+    if PInteger(item)^ >= 0 then
+    begin
+      Result[targetIndex] := PT(item + offset)^;
+      Inc(targetIndex);
+    end;
+    Inc(item, itemSize);
+    Dec(itemCount);
+  end;
+end;
+
+function TInnerCollection<T>.TryGetElementAt(out value: T;
+  index: Integer): Boolean;
+begin
+  Result := InRange(index, 0, fHashTable.Count - 1);
+  if Result then
+  begin
+    fHashTable.EnsureCompact;
+    value := PT(PByte(fHashTable.Items) + fHashTable.ItemSize * index + fOffset)^;
+  end;
+end;
+
+function TInnerCollection<T>._AddRef: Integer;
+begin
+  Result := fSource._AddRef;
+end;
+
+function TInnerCollection<T>._Release: Integer;
+begin
+  Result := fSource._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInnerCollection<T>.TEnumerator'}
+
+constructor TInnerCollection<T>.TEnumerator.Create(
+  const source: TInnerCollection<T>);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fVersion := fSource.fHashTable.Version;
+end;
+
+destructor TInnerCollection<T>.TEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
+end;
+
+function TInnerCollection<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+function TInnerCollection<T>.TEnumerator.MoveNext: Boolean;
+var
+  hashTable: PHashTable;
+  item: PByte;
+begin
+  hashTable := fSource.fHashTable;
+
+  if fVersion = hashTable.Version then
+  begin
+    while True do
+    begin
+      if fIndex >= hashTable.ItemCount then
+        Break;
+
+      item := PByte(hashTable.Items) + fIndex * hashTable.ItemSize;
+      Inc(fIndex);
+      if PInteger(item)^ < 0 then
+        Continue;
+
+      fCurrent := PT(item + fSource.fOffset)^;
+      Exit(True);
+    end;
+    Exit(False);
+  end
+  else
+    raise Error.EnumFailedVersion;
 end;
 
 {$ENDREGION}

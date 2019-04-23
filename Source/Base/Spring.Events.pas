@@ -91,11 +91,12 @@ type
   TNotifyEventImpl = class(TEventBase, INotifyEvent)
   private
     function GetInvoke: TNotifyEvent;
-    procedure Add(handler: TNotifyEvent);
-    procedure Remove(handler: TNotifyEvent);
     procedure InternalInvoke(sender: TObject);
   public
     constructor Create;
+    procedure Add(handler: TNotifyEvent);
+    procedure Remove(handler: TNotifyEvent);
+    property Invoke: TNotifyEvent read GetInvoke;
   end;
 
   {$ENDREGION}

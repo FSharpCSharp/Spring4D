@@ -41,6 +41,33 @@ uses
   Spring.Collections.Trees;
 
 type
+  TTestMapChangedEventBase = class(TTestCase)
+  protected
+    type
+      TEvent<T> = record
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        sender: TObject;
+        item: T;
+        action: TCollectionChangedAction;
+      end;
+      TKeyValuePair = TPair<Integer, string>;
+  protected
+    fChangedEvents: IList<TEvent<TKeyValuePair>>;
+    fKeyChangedEvents: IList<TEvent<Integer>>;
+    fValueChangedEvents: IList<TEvent<string>>;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    Sender: TObject;
+    procedure Changed(Sender: TObject; const Item: TKeyValuePair; Action: TCollectionChangedAction);
+    procedure KeyChanged(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
+    procedure ValueChanged(Sender: TObject; const Item: string; Action: TCollectionChangedAction);
+    procedure CheckChanged(index: Integer; key: Integer; const value: string; action: TCollectionChangedAction);
+    procedure CheckKeyChanged(index: Integer; key: Integer; action: TCollectionChangedAction);
+    procedure CheckValueChanged(index: Integer; const value: string; action: TCollectionChangedAction);
+
+    procedure SetUp; override;
+    procedure TearDown; override;
+  end;
+
   TTestEmptyHashSet = class(TTestCase)
   private
     fSet: ISet<Integer>;
@@ -566,6 +593,8 @@ type
 
     procedure TestAddStringPair;
 
+    procedure TestContains;
+
     procedure TestInternalEventHandlersDetached;
     procedure TestValueChangedCalledProperly;
     procedure TestValues; virtual;
@@ -687,6 +716,35 @@ type
     procedure FuzzyTesting;
   end;
 
+  TTestMultiMapChangedEventBase = class(TTestMapChangedEventBase)
+  private
+    procedure AddEventHandlers;
+  protected
+    SUT: IMultiMap<Integer, string>;
+    procedure TearDown; override;
+  published
+    procedure TestAdd;
+    procedure TestClear;
+    procedure TestDestroy;
+    procedure TestExtract;
+    procedure TestRemove;
+  end;
+
+  TTestListMultiMapChangedEvent = class(TTestMultiMapChangedEventBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestHashMultiMapChangedEvent = class(TTestMultiMapChangedEventBase)
+  protected
+    procedure SetUp; override;
+  end;
+
+  TTestTreeMultiMapChangedEvent = class(TTestMultiMapChangedEventBase)
+  protected
+    procedure SetUp; override;
+  end;
+
 implementation
 
 uses
@@ -704,6 +762,85 @@ type
 const
   MaxItems = 1000;
   ListCountLimit = 1000;//0000;
+
+
+{$REGION 'TTestMapChangedEventBase'}
+
+procedure TTestMapChangedEventBase.SetUp;
+begin
+  inherited;
+  fChangedEvents := TCollections.CreateList<TEvent<TKeyValuePair>>;
+  fKeyChangedEvents := TCollections.CreateList<TEvent<Integer>>;
+  fValueChangedEvents := TCollections.CreateList<TEvent<string>>;
+end;
+
+procedure TTestMapChangedEventBase.TearDown;
+begin
+  fValueChangedEvents := nil;
+  fKeyChangedEvents := nil;
+  fChangedEvents := nil;
+  inherited;
+end;
+
+procedure TTestMapChangedEventBase.Changed(Sender: TObject;
+  const Item: TKeyValuePair; Action: TCollectionChangedAction);
+var
+  event: TEvent<TKeyValuePair>;
+begin
+  event.sender := Sender;
+  event.item := Item;
+  event.action := Action;
+  fChangedEvents.Add(event);
+end;
+
+procedure TTestMapChangedEventBase.CheckChanged(index, key: Integer;
+  const value: string; action: TCollectionChangedAction);
+begin
+  Check(Sender = fChangedEvents[index].sender);
+  Check(key = fChangedEvents[index].item.Key);
+  Check(value = fChangedEvents[index].item.Value);
+  Check(action = fChangedEvents[index].action);
+end;
+
+procedure TTestMapChangedEventBase.CheckKeyChanged(index, key: Integer;
+  action: TCollectionChangedAction);
+begin
+  Check(Sender = fKeyChangedEvents[index].sender);
+  Check(key = fKeyChangedEvents[index].item);
+  Check(action = fKeyChangedEvents[index].action);
+end;
+
+procedure TTestMapChangedEventBase.CheckValueChanged(index: Integer;
+  const value: string; action: TCollectionChangedAction);
+begin
+  Check(Sender = fValueChangedEvents[index].sender);
+  Check(value = fValueChangedEvents[index].item);
+  Check(action = fValueChangedEvents[index].action);
+end;
+
+procedure TTestMapChangedEventBase.KeyChanged(Sender: TObject;
+  const Item: Integer; Action: TCollectionChangedAction);
+var
+  event: TEvent<Integer>;
+begin
+  event.sender := Sender;
+  event.item := Item;
+  event.action := Action;
+  fKeyChangedEvents.Add(event);
+end;
+
+procedure TTestMapChangedEventBase.ValueChanged(Sender: TObject;
+  const Item: string; Action: TCollectionChangedAction);
+var
+  event: TEvent<string>;
+begin
+  event.sender := Sender;
+  event.item := Item;
+  event.action := Action;
+  fValueChangedEvents.Add(event);
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TTestEmptyHashSet'}
@@ -3592,6 +3729,18 @@ begin
   CheckEquals(1, map.Count);
 end;
 
+procedure TTestMultiMapBase.TestContains;
+begin
+  SUT.Add(1, 1);
+  SUT.Add(1, 2);
+  SUT.Add(2, 3);
+
+  CheckTrue(SUT.ContainsKey(1));
+  CheckFalse(SUT.ContainsKey(3));
+  CheckTrue(SUT.Contains(1, 1));
+  CheckFalse(SUT.Contains(1, 3));
+end;
+
 procedure TTestMultiMapBase.TestExtractValues;
 var
   map: IMultiMap<Integer, TObject>;
@@ -3604,7 +3753,7 @@ begin
   map.Add(1, TObject.Create);
   values := map[1];
   CheckEquals(1, ValueAddedCount);
-  extractedValues := map.ExtractValues(1);
+  extractedValues := map.Extract(1);
   CheckEquals(1, ValueExtractedCount);
   CheckEquals(0, map.Count);
   CheckEquals(1, extractedValues.Count);
@@ -3707,7 +3856,7 @@ begin
   SUT.Add(1, 1);
   SUT.Add(1, 2);
   CheckEquals(2, values.Count);
-  SUT.ExtractValues(1);
+  SUT.Extract(1);
   CheckEquals(0, values.Count);
   SUT.Add(1, 1);
   CheckEquals(1, values.Count);
@@ -4466,5 +4615,169 @@ end;
 
 {$ENDREGION}
 
+
+{ TTestMultiMapChangedEventBase }
+
+procedure TTestMultiMapChangedEventBase.AddEventHandlers;
+begin
+  SUT.OnChanged.Add(Changed);
+  SUT.OnKeyChanged.Add(KeyChanged);
+  SUT.OnValueChanged.Add(ValueChanged);
+end;
+
+procedure TTestMultiMapChangedEventBase.TearDown;
+begin
+  SUT := nil;
+  inherited;
+end;
+
+procedure TTestMultiMapChangedEventBase.TestAdd;
+begin
+  AddEventHandlers;
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(2, 'c');
+
+  CheckEquals(3, fChangedEvents.Count);
+  CheckChanged(0, 1, 'a', caAdded);
+  CheckChanged(1, 2, 'b', caAdded);
+  CheckChanged(2, 2, 'c', caAdded);
+
+  CheckEquals(2, fKeyChangedEvents.Count);
+  CheckKeyChanged(0, 1, caAdded);
+  CheckKeyChanged(1, 2, caAdded);
+
+  CheckEquals(3, fValueChangedEvents.Count);
+  CheckValueChanged(0, 'a', caAdded);
+  CheckValueChanged(1, 'b', caAdded);
+  CheckValueChanged(2, 'c', caAdded);
+end;
+
+procedure TTestMultiMapChangedEventBase.TestClear;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(2, 'c');
+  AddEventHandlers;
+  SUT.Clear;
+
+  CheckEquals(3, fChangedEvents.Count);
+  CheckChanged(0, 1, 'a', caRemoved);
+  CheckChanged(1, 2, 'b', caRemoved);
+  CheckChanged(2, 2, 'c', caRemoved);
+
+  CheckEquals(2, fKeyChangedEvents.Count);
+  CheckKeyChanged(0, 1, caRemoved);
+  CheckKeyChanged(1, 2, caRemoved);
+
+  CheckEquals(3, fValueChangedEvents.Count);
+  CheckValueChanged(0, 'a', caRemoved);
+  CheckValueChanged(1, 'b', caRemoved);
+  CheckValueChanged(2, 'c', caRemoved);
+end;
+
+procedure TTestMultiMapChangedEventBase.TestDestroy;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(2, 'c');
+  AddEventHandlers;
+  SUT := nil;
+
+  CheckEquals(3, fChangedEvents.Count);
+  CheckChanged(0, 1, 'a', caRemoved);
+  CheckChanged(1, 2, 'b', caRemoved);
+  CheckChanged(2, 2, 'c', caRemoved);
+
+  CheckEquals(2, fKeyChangedEvents.Count);
+  CheckKeyChanged(0, 1, caRemoved);
+  CheckKeyChanged(1, 2, caRemoved);
+
+  CheckEquals(3, fValueChangedEvents.Count);
+  CheckValueChanged(0, 'a', caRemoved);
+  CheckValueChanged(1, 'b', caRemoved);
+  CheckValueChanged(2, 'c', caRemoved);
+end;
+
+procedure TTestMultiMapChangedEventBase.TestExtract;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  AddEventHandlers;
+  CheckEquals('c', SUT.Extract(3).First);
+  CheckEquals('a', SUT.Extract(1).First);
+  CheckNull(SUT.Extract(1));
+
+  CheckEquals(2, fChangedEvents.Count);
+  CheckChanged(0, 3, 'c', caExtracted);
+  CheckChanged(1, 1, 'a', caExtracted);
+
+  CheckEquals(2, fKeyChangedEvents.Count);
+  CheckKeyChanged(0, 3, caExtracted);
+  CheckKeyChanged(1, 1, caExtracted);
+
+  CheckEquals(2, fValueChangedEvents.Count);
+  CheckValueChanged(0, 'c', caExtracted);
+  CheckValueChanged(1, 'a', caExtracted);
+end;
+
+procedure TTestMultiMapChangedEventBase.TestRemove;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  SUT.Add(5, 'e');
+  AddEventHandlers;
+  Check(SUT.Remove(3));
+  Check(not SUT.Remove(4, 'a'));
+  Check(SUT.Remove(4, 'd'));
+  Check(SUT.Remove(1));
+  Check(not SUT.Remove(1));
+
+  CheckEquals(3, fChangedEvents.Count);
+  CheckChanged(0, 3, 'c', caRemoved);
+  CheckChanged(1, 4, 'd', caRemoved);
+  CheckChanged(2, 1, 'a', caRemoved);
+
+  CheckEquals(3, fKeyChangedEvents.Count);
+  CheckKeyChanged(0, 3, caRemoved);
+  CheckKeyChanged(1, 4, caRemoved);
+  CheckKeyChanged(2, 1, caRemoved);
+
+  CheckEquals(3, fValueChangedEvents.Count);
+  CheckValueChanged(0, 'c', caRemoved);
+  CheckValueChanged(1, 'd', caRemoved);
+  CheckValueChanged(2, 'a', caRemoved);
+end;
+
+{ TTestListMultiMapChangedEvent }
+
+procedure TTestListMultiMapChangedEvent.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateMultiMap<Integer,string>;
+  Sender := SUT.AsObject;
+end;
+
+{ TTestHashMultiMapChangedEvent }
+
+procedure TTestHashMultiMapChangedEvent.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateHashMultiMap<Integer,string>;
+  Sender := SUT.AsObject;
+end;
+
+{ TTestTreeMultiMapChangedEvent }
+
+procedure TTestTreeMultiMapChangedEvent.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateTreeMultiMap<Integer,string>;
+  Sender := SUT.AsObject;
+end;
 
 end.

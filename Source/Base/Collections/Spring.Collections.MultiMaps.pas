@@ -33,25 +33,38 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
-  Spring.Collections.Dictionaries;
+  Spring.Collections.HashTable,
+  Spring.Events,
+  Spring.Events.Base;
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
 type
+  TMultiMapItem<TKey, TValue> = packed record
+  public
+    HashCode: Integer;
+    Key: TKey;
+    Values: ICollection<TValue>;
+  end;
+
   TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>)
   private
   {$REGION 'Nested Types'}
     type
       TKeyValuePair = TPair<TKey, TValue>;
+      TItem = TMultiMapItem<TKey, TValue>;
+      TItems = TArray<TItem>;
+      PItem = ^TItem;
 
       TEnumerator = class(TRefCountedObject,
         IEnumerator<TKeyValuePair>, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TMultiMapBase<TKey, TValue>;
+        fIndex: Integer;
         fVersion: Integer;
-        fDictionaryEnumerator: IEnumerator<TPair<TKey, ICollection<TValue>>>;
-        fCollectionEnumerator: IEnumerator<TValue>;
+        fEnumerator: IEnumerator<TValue>;
+        fCurrent: TKeyValuePair;
         function GetCurrent: TKeyValuePair;
         function GetCurrentValue: TValue;
         function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
@@ -60,6 +73,8 @@ type
         destructor Destroy; override;
         function MoveNext: Boolean;
       end;
+
+      TKeyCollection = TInnerCollection<TKey>;
 
       TValueCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
@@ -89,15 +104,18 @@ type
       TWrappedCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
-        fMap: Weak<IDictionary<TKey, ICollection<TValue>>>;
+        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+        fMap: TMultiMapBase<TKey, TValue>;
         fKey: TKey;
         fDelegate: ICollection<TValue>;
         function GetCount: Integer;
         procedure RefreshIfEmpty;
+        procedure HandleDestroy(Sender: TObject);
       public
         constructor Create(const key: TKey;
-          const map: IDictionary<TKey, ICollection<TValue>>;
+          const map: TMultiMapBase<TKey, TValue>;
           const delegate: ICollection<TValue>);
+        destructor Destroy; override;
         function Contains(const value: TValue;
           const comparer: IEqualityComparer<TValue>): Boolean; overload;
         function GetEnumerator: IEnumerator<TValue>;
@@ -119,17 +137,16 @@ type
       end;
   {$ENDREGION}
   private
-    fDictionary: IDictionary<TKey, ICollection<TValue>>;
+    fHashTable: THashTable;
+    fKeyComparer: IEqualityComparer<TKey>;
+    fKeys: TKeyCollection;
     fValues: TValueCollection;
-    fOwnerships: TDictionaryOwnerships;
     fCount: Integer;
-    fVersion: Integer;
-    procedure DoKeyChanged(sender: TObject; const item: TKey;
-      action: TCollectionChangedAction);
+    fOwnerships: TDictionaryOwnerships;
+    fOnDestroy: TNotifyEventImpl;
     procedure DoValueChanged(sender: TObject; const item: TValue;
       action: TCollectionChangedAction);
-    procedure DoValuesChanged(sender: TObject; const item: ICollection<TValue>;
-      action: TCollectionChangedAction);
+    class function CompareKey(Self: Pointer; const left, right): Boolean; static;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
@@ -139,8 +156,10 @@ type
     function GetValues: IReadOnlyCollection<TValue>;
   {$ENDREGION}
     function CreateCollection: ICollection<TValue>; virtual; abstract;
-    function CreateDictionary(const comparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships): IDictionary<TKey, ICollection<TValue>>;
+    procedure DoRemove(const entry: THashTableEntry;
+      action: TCollectionChangedAction; const extractTarget: ICollection<TValue>);
+    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
+    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
   public
     constructor Create; override;
     constructor Create(ownerships: TDictionaryOwnerships); overload;
@@ -150,8 +169,6 @@ type
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TKeyValuePair>;
-    function Contains(const value: TKeyValuePair;
-      const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -174,9 +191,8 @@ type
     function Add(const key: TKey; const value: TValue): Boolean; overload;
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
     procedure AddRange(const key: TKey; const values: IEnumerable<TValue>); overload;
-    function ExtractValues(const key: TKey): ICollection<TValue>;
+    function Extract(const key: TKey): ICollection<TValue>; overload;
     function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
-    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   {$ENDREGION}
   end;
 
@@ -224,7 +240,6 @@ implementation
 uses
   Classes,
   TypInfo,
-  Spring.Events.Base,
   Spring.ResourceStrings;
 
 
@@ -254,15 +269,58 @@ begin
       raise Error.NoClassType(TypeInfo(TValueType));
 
   inherited Create;
-  fDictionary := CreateDictionary(keyComparer, ownerships - [doOwnsValues]);
-  fValues := TValueCollection.Create(Self);
   fOwnerships := ownerships;
+  if Assigned(keyComparer) then
+    fKeyComparer := keyComparer
+  else
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
+
+  fKeys := TKeyCollection.Create(Self, @fHashTable, KeyType, fKeyComparer, 0);
+  fValues := TValueCollection.Create(Self);
+
+  fHashTable := THashTable.Create(TypeInfo(TItems), CompareKey);
+
+  fOnDestroy := TNotifyEventImpl.Create;
 end;
 
 destructor TMultiMapBase<TKey, TValue>.Destroy;
 begin
+  fOnDestroy.Invoke(Self);
+  fOnDestroy.Free;
+  Clear;
+  fKeys.Free;
   fValues.Free;
   inherited Destroy;
+end;
+
+class function TMultiMapBase<TKey, TValue>.CompareKey(Self: Pointer; const left,
+  right): Boolean;
+begin
+  Result := IEqualityComparer<TKey>(PPointer(PByte(Self) + SizeOf(THashTable))^).Equals(TKey(left), TKey(right));
+end;
+
+procedure TMultiMapBase<TKey, TValue>.KeyChanged(const item: TKey;
+  action: TCollectionChangedAction);
+begin
+  if fOnKeyChanged.CanInvoke then
+    fOnKeyChanged.Invoke(Self, item, action);
+{$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TKey) = tkClass then
+{$ENDIF}
+  if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
+    FreeObject(item);
+end;
+
+procedure TMultiMapBase<TKey, TValue>.ValueChanged(const item: TValue;
+  action: TCollectionChangedAction);
+begin
+  if fOnValueChanged.CanInvoke then
+    fOnValueChanged.Invoke(Self, item, action);
+{$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(TValue) = tkClass then
+{$ENDIF}
+  if (action = caRemoved) and (doOwnsValues in fOwnerships) then
+    FreeObject(item);
 end;
 
 function TMultiMapBase<TKey, TValue>.Add(const key: TKey;
@@ -294,63 +352,87 @@ begin
 end;
 
 procedure TMultiMapBase<TKey, TValue>.Clear;
-begin
-  IncUnchecked(fVersion);
-  fDictionary.Clear;
-  fCount := 0;
-end;
-
-function TMultiMapBase<TKey, TValue>.Contains(const value: TKeyValuePair;
-  const comparer: IEqualityComparer<TKeyValuePair>): Boolean;
 var
-  values: ICollection<TValue>;
+  oldItemCount, i: Integer;
+  oldItems: TArray<TItem>;
+  oldValue: TValue;
 begin
-  Result := fDictionary.TryGetValue(value.key, values)
-    and values.Contains(value.Value);
+  oldItems := TItems(fHashTable.Items);
+  oldItemCount := fHashTable.ItemCount;
+
+  fHashTable.Clear;
+
+  for i := 0 to oldItemCount - 1 do
+    if oldItems[i].HashCode >= 0 then
+    begin
+      oldItems[i].Values.OnChanged.Remove(DoValueChanged);
+      for oldValue in oldItems[i].Values do
+      begin
+        if Assigned(Notify) then
+          DoNotify(oldItems[i].Key, oldValue, caRemoved);
+        ValueChanged(oldValue, caRemoved);
+      end;
+      oldItems[i].Values.Clear;
+      oldItems[i].Values := nil;
+      KeyChanged(oldItems[i].Key, caRemoved);
+    end;
+  fCount := 0;
 end;
 
 function TMultiMapBase<TKey, TValue>.Contains(const key: TKey;
   const value: TValue): Boolean;
 var
-  values: ICollection<TValue>;
+  entry: THashTableEntry;
 begin
-  Result := fDictionary.TryGetValue(key, values) and values.Contains(value);
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  if fHashTable.Find(key, entry) then
+    Result := TItems(fHashTable.Items)[entry.ItemIndex].Values.Contains(value)
+  else
+    Result := False;
 end;
 
 function TMultiMapBase<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
+var
+  entry: THashTableEntry;
 begin
-  Result := fDictionary.ContainsKey(key);
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  Result := fHashTable.Find(key, entry);
 end;
 
 function TMultiMapBase<TKey, TValue>.ContainsValue(const value: TValue): Boolean;
 var
-  values: ICollection<TValue>;
+  i: Integer;
 begin
-  for values in fDictionary.Values do
-    if values.Contains(value) then
-      Exit(True);
+  for i := 0 to fHashTable.ItemCount - 1 do
+    if TItems(fHashTable.Items)[i].HashCode >= 0 then
+      if TItems(fHashTable.Items)[i].Values.Contains(value) then
+        Exit(True);
   Result := False;
 end;
 
-function TMultiMapBase<TKey, TValue>.CreateDictionary(
-  const comparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships): IDictionary<TKey, ICollection<TValue>>;
+procedure TMultiMapBase<TKey, TValue>.DoRemove(const entry: THashTableEntry;
+  action: TCollectionChangedAction; const extractTarget: ICollection<TValue>);
+var
+  item: PItem;
+  value: TValue;
 begin
-  Result := TCollections.CreateDictionary<TKey, ICollection<TValue>>(comparer, ownerships);
-  Result.OnKeyChanged.Add(DoKeyChanged);
-  Result.OnValueChanged.Add(DoValuesChanged);
-end;
-
-procedure TMultiMapBase<TKey, TValue>.DoKeyChanged(sender: TObject;
-  const item: TKey; action: TCollectionChangedAction);
-begin
-  if fOnKeyChanged.CanInvoke then
-    fOnKeyChanged.Invoke(Self, item, action);
-{$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(TKey) = tkClass then
-{$ENDIF}
-  if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
-    FreeObject(item);
+  item := fHashTable.Delete(entry);
+  item.Values.OnChanged.Remove(DoValueChanged);
+  for value in item.Values do
+  begin
+    Dec(fCount);
+    if Assigned(Notify) then
+      DoNotify(item.Key, value, action);
+    ValueChanged(value, action);
+  end;
+  if action = caRemoved then
+    item.Values.Clear
+  else
+    item.Values.MoveTo(extractTarget);
+  KeyChanged(item.Key, action);
+  item.HashCode := RemovedFlag;
+  item.Key := Default(TKey);
+  item.Values := nil;
 end;
 
 procedure TMultiMapBase<TKey, TValue>.DoValueChanged(sender: TObject;
@@ -369,45 +451,41 @@ begin
     FreeObject(item);
 end;
 
-procedure TMultiMapBase<TKey, TValue>.DoValuesChanged(sender: TObject;
-  const item: ICollection<TValue>; action: TCollectionChangedAction);
-begin
-  case Action of
-    caAdded: item.OnChanged.Add(DoValueChanged);
-    caRemoved:
-    begin
-      item.Clear;
-      item.OnChanged.Remove(DoValueChanged);
-    end;
-  end;
-end;
-
 function TMultiMapBase<TKey, TValue>.Extract(const key: TKey;
   const value: TValue): TKeyValuePair;
 var
-  values: ICollection<TValue>;
+  entry: THashTableEntry;
+  item: PItem;
+  count: Integer;
 begin
   Result.Key := key;
-  if fDictionary.TryGetValue(key, values) then
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  if fHashTable.Find(key, entry) then
   begin
-    IncUnchecked(fVersion);
-    Result.Value := values.Extract(value);
+    item := @TItems(fHashTable.Items)[entry.ItemIndex];
+    count := item.Values.Count;
+    Result.Value := item.Values.Extract(value);
+    if item.Values.Count < count then
+    begin
+      if Assigned(Notify) then
+        DoNotify(key, value, caExtracted);
+      KeyChanged(item.Key, caExtracted);
+    end;
   end
   else
     Result.Value := Default(TValue);
 end;
 
-function TMultiMapBase<TKey, TValue>.ExtractValues(
-  const key: TKey): ICollection<TValue>;
+function TMultiMapBase<TKey, TValue>.Extract(const key: TKey): ICollection<TValue>;
 var
-  values: ICollection<TValue>;
+  entry: THashTableEntry;
 begin
-  if not fDictionary.TryExtract(key, values) then
-    raise Error.KeyNotFound;
-
-  IncUnchecked(fVersion);
-  Result := TCollections.CreateList<TValue>;
-  values.MoveTo(Result);
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  if fHashTable.Find(key, entry) then
+  begin
+    Result := CreateCollection;
+    DoRemove(entry, caExtracted, Result);
+  end;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetCount: Integer;
@@ -428,16 +506,18 @@ end;
 function TMultiMapBase<TKey, TValue>.GetItems(
   const key: TKey): IReadOnlyCollection<TValue>;
 var
-  items: ICollection<TValue>;
+  entry: THashTableEntry;
 begin
-  if not fDictionary.TryGetValue(key, items) then
-    items := CreateCollection;
-  Result := TWrappedCollection.Create(key, fDictionary, items);
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  if fHashTable.Find(key, entry) then
+    Result := TItems(fHashTable.Items)[entry.ItemIndex].Values as IReadOnlyCollection<TValue>
+  else
+    Result := TWrappedCollection.Create(key, Self, CreateCollection);
 end;
 
 function TMultiMapBase<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
 begin
-  Result := fDictionary.Keys;
+  Result := fKeys;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetValues: IReadOnlyCollection<TValue>;
@@ -448,53 +528,74 @@ end;
 function TMultiMapBase<TKey, TValue>.Remove(const key: TKey;
   const value: TValue): Boolean;
 var
-  values: ICollection<TValue>;
+  entry: THashTableEntry;
+  item: PItem;
 begin
-  Result := fDictionary.TryGetValue(key, values) and values.Remove(value);
-  if Result then
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  if fHashTable.Find(key, entry) then
   begin
-    IncUnchecked(fVersion);
-    if not values.Any then
-      fDictionary.Remove(key);
+    item := @TItems(fHashTable.Items)[entry.ItemIndex];
+    if item.Values.Remove(value) then
+    begin
+      if Assigned(Notify) then
+        DoNotify(key, value, caRemoved);
+      if not item.Values.Any then
+        DoRemove(entry, caRemoved, nil);
+      Exit(True);
+    end;
   end;
+  Result := False;
 end;
 
 function TMultiMapBase<TKey, TValue>.Remove(const key: TKey): Boolean;
 var
-  values: ICollection<TValue>;
+  entry: THashTableEntry;
 begin
-  Result := fDictionary.TryGetValue(key, values);
-  if Result then
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  if fHashTable.Find(key, entry) then
   begin
-    IncUnchecked(fVersion);
-    values.Clear;
-    fDictionary.Remove(key);
-  end;
+    DoRemove(entry, caRemoved, nil);
+    Result := True;
+  end
+  else
+    Result := False;
 end;
 
 function TMultiMapBase<TKey, TValue>.TryAdd(const key: TKey;
   const value: TValue): Boolean;
 var
-  values: ICollection<TValue>;
+  entry: PItem;
+  isExisting: Boolean;
 begin
-  if not fDictionary.TryGetValue(key, values) then
+  entry := fHashTable.AddOrSet(key, fKeyComparer.GetHashCode(key), isExisting);
+
+  if not isExisting then
   begin
-    values := CreateCollection;
-    fDictionary[key] := values;
+    entry.Key := key;
+    entry.Values := CreateCollection;
+    entry.Values.OnChanged.Add(DoValueChanged);
+    KeyChanged(key, caAdded);
   end;
 
-  IncUnchecked(fVersion);
-  Result := values.Add(value);
+  Result := entry.Values.Add(value);
+  if Result then
+    if Assigned(Notify) then
+      DoNotify(key, value, caAdded);
 end;
 
 function TMultiMapBase<TKey, TValue>.TryGetValues(const key: TKey;
   out values: IReadOnlyCollection<TValue>): Boolean;
 var
-  items: ICollection<TValue>;
+  entry: THashTableEntry;
 begin
-  Result := fDictionary.TryGetValue(key, items);
-  if Result then
-    values := items as IReadOnlyCollection<TValue>;
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  if fHashTable.Find(key, entry) then
+  begin
+    values := TItems(fHashTable.Items)[entry.ItemIndex].Values as IReadOnlyCollection<TValue>;
+    Result := True;
+  end
+  else
+    Result := False;
 end;
 
 {$ENDREGION}
@@ -508,7 +609,7 @@ begin
   inherited Create;
   fSource := source;
   fSource._AddRef;
-  fVersion := fSource.fVersion;
+  fVersion := fSource.fHashTable.Version;
 end;
 
 destructor TMultiMapBase<TKey, TValue>.TEnumerator.Destroy;
@@ -519,38 +620,66 @@ end;
 
 function TMultiMapBase<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(fDictionaryEnumerator, 'dictionaryEnumerator');
-  Guard.CheckNotNull(fCollectionEnumerator, 'collectionEnumerator');
-{$ENDIF}
-
-  Result.Key := fDictionaryEnumerator.Current.Key;
-  Result.Value := fCollectionEnumerator.Current;
+  Result := fCurrent;
 end;
 
 function TMultiMapBase<TKey, TValue>.TEnumerator.GetCurrentValue: TValue;
 begin
-  Result := fCollectionEnumerator.Current;
+  Result := fCurrent.Value;
 end;
 
 function TMultiMapBase<TKey, TValue>.TEnumerator.MoveNext: Boolean;
+var
+  hashTable: PHashTable;
+  item: PItem;
 begin
-  if not Assigned(fDictionaryEnumerator) then
-    fDictionaryEnumerator := fSource.fDictionary.GetEnumerator;
+  hashTable := @fSource.fHashTable;
 
-  if fVersion <> fSource.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-
-  repeat
-    if Assigned(fCollectionEnumerator) and fCollectionEnumerator.MoveNext then
-      Exit(True)
-    else
+  if fVersion = hashTable.Version then
+  begin
+    while True do
     begin
-      Result := fDictionaryEnumerator.MoveNext;
-      if Result then
-        fCollectionEnumerator := fDictionaryEnumerator.Current.Value.GetEnumerator;
+      if Assigned(fEnumerator) then
+        if fEnumerator.MoveNext then
+        begin
+          fCurrent.Value := fEnumerator.Current;
+          Exit(True);
+        end
+        else
+          fEnumerator := nil;
+
+      if fIndex >= hashTable.ItemCount then
+        Break;
+
+      item := @TItems(hashTable.Items)[fIndex];
+      Inc(fIndex);
+      if item.HashCode < 0 then
+        Continue;
+
+      fCurrent.Key := item.Key;
+      fEnumerator := item.Values.GetEnumerator;
     end;
-  until not Result;
+    Exit(False);
+  end
+  else
+    raise Error.EnumFailedVersion;
+
+//  if not Assigned(fDictionaryEnumerator) then
+//    fDictionaryEnumerator := fSource.fDictionary.GetEnumerator;
+//
+//  if fVersion <> fSource.fVersion then
+//    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+//
+//  repeat
+//    if Assigned(fCollectionEnumerator) and fCollectionEnumerator.MoveNext then
+//      Exit(True)
+//    else
+//    begin
+//      Result := fDictionaryEnumerator.MoveNext;
+//      if Result then
+//        fCollectionEnumerator := fDictionaryEnumerator.Current.Value.GetEnumerator;
+//    end;
+//  until not Result;
 end;
 
 {$ENDREGION}
@@ -588,15 +717,20 @@ end;
 
 function TMultiMapBase<TKey, TValue>.TValueCollection.ToArray: TArray<TValue>;
 var
-  i: Integer;
-  values: ICollection<TValue>;
+  i, index: Integer;
+  item: PItem;
 begin
   SetLength(Result, fSource.fCount);
-  i := 0;
-  for values in fSource.fDictionary.Values do
+  index := 0;
+  item := PItem(fSource.fHashTable.Items);
+  for i := 1 to fSource.fHashTable.ItemCount do
   begin
-    values.CopyTo(Result, i);
-    Inc(i, values.Count);
+    if item.HashCode <> RemovedFlag then
+    begin
+      item.Values.CopyTo(Result, index);
+      Inc(index, item.Values.Count);
+    end;
+    Inc(item);
   end;
 end;
 
@@ -616,13 +750,21 @@ end;
 {$REGION 'TMultiMapBase<TKey, TValue>.TWrappedCollection'}
 
 constructor TMultiMapBase<TKey, TValue>.TWrappedCollection.Create(
-  const key: TKey; const map: IDictionary<TKey, ICollection<TValue>>;
+  const key: TKey; const map: TMultiMapBase<TKey, TValue>;
   const delegate: ICollection<TValue>);
 begin
   inherited Create;
   fKey := key;
   fMap := map;
   fDelegate := delegate;
+  fMap.fOnDestroy.Add(HandleDestroy);
+end;
+
+destructor TMultiMapBase<TKey, TValue>.TWrappedCollection.Destroy;
+begin
+  if Assigned(fMap) then
+    fMap.fOnDestroy.Remove(HandleDestroy);
+  inherited Destroy;
 end;
 
 function TMultiMapBase<TKey, TValue>.TWrappedCollection.Contains(
@@ -634,11 +776,11 @@ end;
 
 procedure TMultiMapBase<TKey, TValue>.TWrappedCollection.RefreshIfEmpty;
 var
-  newDelegate: ICollection<TValue>;
+  newDelegate: IReadOnlyCollection<TValue>;
 begin
-  if fDelegate.IsEmpty and fMap.IsAlive then
-    if fMap.Target.TryGetValue(fKey, newDelegate) then
-      fDelegate := newDelegate;
+  if fDelegate.IsEmpty and Assigned(fMap) then
+    if fMap.TryGetValues(fKey, newDelegate) then
+      fDelegate := newDelegate as ICollection<TValue>;
 end;
 
 function TMultiMapBase<TKey, TValue>.TWrappedCollection.GetCount: Integer;
@@ -651,6 +793,12 @@ function TMultiMapBase<TKey, TValue>.TWrappedCollection.GetEnumerator: IEnumerat
 begin
   RefreshIfEmpty;
   Result := TWrappedEnumerator.Create(Self);
+end;
+
+procedure TMultiMapBase<TKey, TValue>.TWrappedCollection.HandleDestroy(
+  Sender: TObject);
+begin
+  fMap := nil;
 end;
 
 function TMultiMapBase<TKey, TValue>.TWrappedCollection.ToArray: TArray<TValue>;
