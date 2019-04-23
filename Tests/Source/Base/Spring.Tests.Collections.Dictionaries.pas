@@ -33,7 +33,8 @@ uses
   TestFramework,
   Spring.TestUtils,
   Spring,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Tests.Collections;
 
 type
   TTestDictionaryKeyComparerBase = class(TTestCase)
@@ -203,32 +204,11 @@ type
     class function CreateOwnedValuesDict: IDictionary<Integer, TObject>; override;
   end;
 
-  TTestDictionaryChangedEventBase = class(TTestCase)
+  TTestDictionaryChangedEventBase = class(TTestMapChangedEventBase)
   private
-    type
-      TEvent<T> = record
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        sender: TObject;
-        item: T;
-        action: TCollectionChangedAction;
-      end;
-      TKeyValuePair = TPair<Integer, string>;
-  private
-    fChangedEvents: IList<TEvent<TKeyValuePair>>;
-    fKeyChangedEvents: IList<TEvent<Integer>>;
-    fValueChangedEvents: IList<TEvent<string>>;
-    procedure Changed(Sender: TObject; const Item: TKeyValuePair; Action: TCollectionChangedAction);
-    procedure KeyChanged(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
-    procedure ValueChanged(Sender: TObject; const Item: string; Action: TCollectionChangedAction);
     procedure AddEventHandlers;
-    procedure CheckChanged(index: Integer; key: Integer; const value: string; action: TCollectionChangedAction);
-    procedure CheckKeyChanged(index: Integer; key: Integer; action: TCollectionChangedAction);
-    procedure CheckValueChanged(index: Integer; const value: string; action: TCollectionChangedAction);
   protected
     SUT: IDictionary<Integer, string>;
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-    Sender: TObject;
-    procedure SetUp; override;
     procedure TearDown; override;
   published
     procedure TestAdd;
@@ -1416,54 +1396,10 @@ end;
 
 {$REGION 'TTestDictionaryChangedEventBase'}
 
-procedure TTestDictionaryChangedEventBase.SetUp;
-begin
-  inherited;
-  fChangedEvents := TCollections.CreateList<TEvent<TKeyValuePair>>;
-  fKeyChangedEvents := TCollections.CreateList<TEvent<Integer>>;
-  fValueChangedEvents := TCollections.CreateList<TEvent<string>>;
-end;
-
 procedure TTestDictionaryChangedEventBase.TearDown;
 begin
   SUT := nil;
-  fValueChangedEvents := nil;
-  fKeyChangedEvents := nil;
-  fChangedEvents := nil;
   inherited;
-end;
-
-procedure TTestDictionaryChangedEventBase.Changed(Sender: TObject;
-  const Item: TKeyValuePair; Action: TCollectionChangedAction);
-var
-  event: TEvent<TKeyValuePair>;
-begin
-  event.sender := Sender;
-  event.item := Item;
-  event.action := Action;
-  fChangedEvents.Add(event);
-end;
-
-procedure TTestDictionaryChangedEventBase.KeyChanged(Sender: TObject;
-  const Item: Integer; Action: TCollectionChangedAction);
-var
-  event: TEvent<Integer>;
-begin
-  event.sender := Sender;
-  event.item := Item;
-  event.action := Action;
-  fKeyChangedEvents.Add(event);
-end;
-
-procedure TTestDictionaryChangedEventBase.ValueChanged(Sender: TObject;
-  const Item: string; Action: TCollectionChangedAction);
-var
-  event: TEvent<string>;
-begin
-  event.sender := Sender;
-  event.item := Item;
-  event.action := Action;
-  fValueChangedEvents.Add(event);
 end;
 
 procedure TTestDictionaryChangedEventBase.AddEventHandlers;
@@ -1471,28 +1407,6 @@ begin
   SUT.OnChanged.Add(Changed);
   SUT.OnKeyChanged.Add(KeyChanged);
   SUT.OnValueChanged.Add(ValueChanged);
-end;
-
-procedure TTestDictionaryChangedEventBase.CheckChanged(index: Integer; key: Integer; const value: string; action: TCollectionChangedAction);
-begin
-  Check(Sender = fChangedEvents[index].sender);
-  Check(key = fChangedEvents[index].item.Key);
-  Check(value = fChangedEvents[index].item.Value);
-  Check(action = fChangedEvents[index].action);
-end;
-
-procedure TTestDictionaryChangedEventBase.CheckKeyChanged(index: Integer; key: Integer; action: TCollectionChangedAction);
-begin
-  Check(Sender = fKeyChangedEvents[index].sender);
-  Check(key = fKeyChangedEvents[index].item);
-  Check(action = fKeyChangedEvents[index].action);
-end;
-
-procedure TTestDictionaryChangedEventBase.CheckValueChanged(index: Integer; const value: string; action: TCollectionChangedAction);
-begin
-  Check(Sender = fValueChangedEvents[index].sender);
-  Check(value = fValueChangedEvents[index].item);
-  Check(action = fValueChangedEvents[index].action);
 end;
 
 procedure TTestDictionaryChangedEventBase.TestAdd;

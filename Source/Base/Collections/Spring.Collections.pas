@@ -1902,7 +1902,8 @@ type
     ///   are not being owned by the list but have to be freed manually or
     ///   being passed to a collection that takes ownership.
     /// </remarks>
-    function ExtractValues(const key: TKey): ICollection<TValue>;
+    function Extract(const key: TKey): ICollection<TValue>; overload;
+
     function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
 
     /// <summary>

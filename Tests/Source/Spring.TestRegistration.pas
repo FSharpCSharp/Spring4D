@@ -181,6 +181,12 @@ begin
     TTestMaxBy.Suite
   ]);
 
+  RegisterTests('Spring.Base.Collections.MultiMaps', [
+    TTestListMultiMapChangedEvent.Suite,
+    TTestHashMultiMapChangedEvent.Suite,
+    TTestTreeMultiMapChangedEvent.Suite
+  ]);
+
   RegisterTests('Spring.Base.DesignPatterns', [
     TTestSingleton.Suite
   ]);

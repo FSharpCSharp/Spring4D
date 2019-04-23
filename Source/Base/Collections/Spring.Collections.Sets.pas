@@ -33,6 +33,7 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
+  Spring.Collections.HashTable,
   Spring.Collections.Trees;
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
@@ -54,11 +55,10 @@ type
     function Overlaps(const other: IEnumerable<T>): Boolean;
   end;
 
-  THashSetItem<T> = record
+  THashSetItem<T> = packed record
   public
     HashCode: Integer;
     Item: T;
-    function Removed: Boolean; inline;
   end;
 
   /// <summary>
@@ -73,6 +73,7 @@ type
   {$REGION 'Nested Types'}
     type
       TItem = THashSetItem<T>;
+      TItems = TArray<TItem>;
 
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
@@ -89,33 +90,19 @@ type
       end;
   {$ENDREGION}
   private
-    fBuckets: TArray<Integer>;
-    fItems: TArray<TItem>;
-    fCount: Integer;
-    fItemCount: Integer;
-    fBucketIndexMask: Integer;
-    fBucketHashCodeMask: Integer;
-    fEqualityComparer: IEqualityComparer<T>;
-    fVersion: Integer;
+    fHashTable: THashTable;
+    fKeyComparer: IEqualityComparer<T>;
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-    procedure Rehash(newCapacity: Integer);
-    procedure EnsureCompact;
-    procedure Grow;
-    function Find(const item: T; hashCode: Integer;
-      out bucketIndex, itemIndex: Integer): Boolean;
-    function Hash(const item: T): Integer; inline;
-    procedure DoAdd(hashCode, bucketIndex, itemIndex: Integer; const item: T);
-    procedure DoRemove(bucketIndex, itemIndex: Integer;
-      action: TCollectionChangedAction);
+    class function CompareKey(Self: Pointer; const left, right): Boolean; static;
+    procedure ClearInternal;
   protected
     class function CreateSet: ISet<T>; override;
     function TryGetElementAt(out item: T; index: Integer): Boolean; override;
-    property Count: Integer read fCount;
     property Capacity: Integer read GetCapacity;
   public
     constructor Create; overload; override;
@@ -201,6 +188,7 @@ implementation
 
 uses
   Math,
+  TypInfo,
   Spring.Events.Base,
   Spring.ResourceStrings;
 
@@ -331,16 +319,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'THashSetItem<T>'}
-
-function THashSetItem<T>.Removed: Boolean;
-begin
-  Result := HashCode and RemovedFlag <> 0;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'THashSet<T>'}
 
 constructor THashSet<T>.Create;
@@ -361,10 +339,14 @@ end;
 constructor THashSet<T>.Create(capacity: Integer; const comparer: IEqualityComparer<T>);
 begin
   inherited Create;
+
   if Assigned(comparer) then
-    fEqualityComparer := comparer
+    fKeyComparer := comparer
   else
-    fEqualityComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+    fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+
+  fHashTable := THashTable.Create(TypeInfo(TItems), CompareKey);
+
   SetCapacity(capacity);
 end;
 
@@ -380,230 +362,84 @@ begin
 end;
 
 procedure THashSet<T>.SetCapacity(value: Integer);
-var
-  newCapacity: Integer;
 begin
-  Guard.CheckRange(value >= fCount, 'capacity');
-
-  if value = 0 then
-    newCapacity := 0
-  else
-    newCapacity := Math.Max(MinCapacity, value);
-  if newCapacity <> Capacity then
-    Rehash(newCapacity);
+  fHashTable.Capacity := value;
 end;
 
 procedure THashSet<T>.TrimExcess;
 begin
-  SetCapacity(fCount);
+  fHashTable.Capacity := fHashTable.Count;
 end;
 
 function THashSet<T>.TryGetElementAt(out item: T; index: Integer): Boolean;
 begin
-  Result := InRange(index, 0, fCount - 1);
+  Result := InRange(index, 0, fHashTable.Count - 1);
   if Result then
   begin
-    EnsureCompact;
-    item := fItems[index].Item;
+    fHashTable.EnsureCompact;
+    item := TItems(fHashTable.Items)[index].Item;
   end;
-end;
-
-procedure THashSet<T>.Rehash(newCapacity: Integer);
-var
-  newBucketCount: Integer;
-  bucketIndex, itemIndex: Integer;
-  sourceItemIndex, targetItemIndex: Integer;
-begin
-  if newCapacity = 0 then
-  begin
-    Assert(fCount = 0);
-    Assert(fItemCount = 0);
-    Assert(not Assigned(fBuckets));
-    Assert(not Assigned(fItems));
-    Exit;
-  end;
-
-  Assert(newCapacity >= fCount);
-
-  IncUnchecked(fVersion);
-
-  newBucketCount := NextPowerOf2(newCapacity * 4 div 3 - 1); // 75% load factor
-
-  // compact the items array, if necessary
-  if fItemCount > fCount then
-  begin
-    targetItemIndex := 0;
-    for sourceItemIndex := 0 to fItemCount - 1 do
-      if not fItems[sourceItemIndex].Removed then
-      begin
-        if targetItemIndex < sourceItemIndex then
-          TArrayManager<TItem>.Move(fItems, sourceItemIndex, targetItemIndex, 1);
-        Inc(targetItemIndex);
-      end;
-    TArrayManager<TItem>.Finalize(fItems, targetItemIndex, fItemCount - fCount);
-  end;
-
-  // resize the items array, safe now that we have compacted it
-  SetLength(fItems, newBucketCount * 3 div 4);
-  Assert(Capacity >= fCount);
-
-  // repopulate the bucket array
-  Assert(IsPowerOf2(newBucketCount));
-  fBucketIndexMask := newBucketCount - 1;
-  fBucketHashCodeMask := not fBucketIndexMask and not BucketSentinelFlag;
-  SetLength(fBuckets, newBucketCount);
-  for bucketIndex := 0 to newBucketCount - 1 do
-    fBuckets[bucketIndex] := EmptyBucket;
-  fItemCount := 0;
-  while fItemCount < fCount do
-  begin
-    Find(fItems[fItemCount].Item, fItems[fItemCount].HashCode, bucketIndex, itemIndex);
-    Assert(itemIndex = fItemCount);
-    fBuckets[bucketIndex] := itemIndex or (fItems[itemIndex].HashCode and fBucketHashCodeMask);
-    Inc(fItemCount);
-  end;
-end;
-
-procedure THashSet<T>.Grow;
-var
-  newCapacity: Integer;
-begin
-  newCapacity := Capacity;
-  if newCapacity = 0 then
-    newCapacity := MinCapacity
-  else if 2 * fCount >= Length(fBuckets) then
-    // only grow if load factor is greater than 0.5
-    newCapacity := newCapacity * 2;
-  Rehash(newCapacity);
-end;
-
-function THashSet<T>.Find(const item: T; hashCode: Integer;
-  out bucketIndex, itemIndex: Integer): Boolean;
-var
-  bucketValue: Integer;
-begin
-  if fItems = nil then
-  begin
-    bucketIndex := EmptyBucket;
-    itemIndex := -1;
-    Exit(False);
-  end;
-
-  bucketIndex := hashCode and fBucketIndexMask;
-  while True do
-  begin
-    bucketValue := fBuckets[bucketIndex];
-
-    if bucketValue = EmptyBucket then
-    begin
-      itemIndex := fItemCount;
-      Exit(False);
-    end;
-
-    if (bucketValue <> UsedBucket)
-      and (bucketValue and fBucketHashCodeMask = hashCode and fBucketHashCodeMask) then
-    begin
-      itemIndex := bucketValue and fBucketIndexMask;
-      if fEqualityComparer.Equals(fItems[itemIndex].Item, item) then
-        Exit(True);
-    end;
-
-    bucketIndex := (bucketIndex + 1) and fBucketIndexMask;
-  end;
-end;
-
-function THashSet<T>.Hash(const item: T): Integer;
-begin
-  Result := fEqualityComparer.GetHashCode(item) and not RemovedFlag;
-end;
-
-procedure THashSet<T>.DoAdd(hashCode, bucketIndex, itemIndex: Integer; const item: T);
-begin
-  IncUnchecked(fVersion);
-  fBuckets[bucketIndex] := itemIndex or (hashCode and fBucketHashCodeMask);
-  fItems[itemIndex].HashCode := hashCode;
-  fItems[itemIndex].Item := item;
-  Inc(fCount);
-  Inc(fItemCount);
-
-  Changed(item, caAdded);
-end;
-
-procedure THashSet<T>.DoRemove(bucketIndex, itemIndex: Integer;
-  action: TCollectionChangedAction);
-var
-  item: T;
-begin
-  item := fItems[itemIndex].Item;
-
-  IncUnchecked(fVersion);
-  fBuckets[bucketIndex] := UsedBucket;
-  fItems[itemIndex].Item := Default(T);
-  fItems[itemIndex].HashCode := fItems[itemIndex].HashCode or RemovedFlag;
-  Dec(fCount);
-
-  Changed(item, action);
 end;
 
 function THashSet<T>.Add(const item: T): Boolean;
 var
-  bucketIndex, itemIndex, hashCode: Integer;
+  entry: ^TItem;
 begin
-  hashCode := Hash(item);
-  Result := not Find(item, hashCode, bucketIndex, itemIndex);
+  entry := fHashTable.Add(item, fKeyComparer.GetHashCode(item));
+  Result := Assigned(entry);
   if Result then
   begin
-    if fItemCount = Capacity then
-    begin
-      Grow;
-      // rehash invalidates the indices
-      Find(item, hashCode, bucketIndex, itemIndex);
-    end;
-    DoAdd(hashCode, bucketIndex, itemIndex, item);
+    entry.Item := item;
+    Changed(item, caAdded);
   end;
 end;
 
 procedure THashSet<T>.Clear;
+begin
+  if not Assigned(Notify) then
+    fHashTable.Clear
+  else
+    ClearInternal;
+end;
+
+procedure THashSet<T>.ClearInternal;
 var
   oldItemIndex, oldItemCount: Integer;
   oldItems: TArray<TItem>;
 begin
-  oldItemCount := fItemCount;
-  oldItems := fItems;
+  oldItemCount := fHashTable.ItemCount;
+  oldItems := TItems(fHashTable.Items);
 
-  IncUnchecked(fVersion);
-  fCount := 0;
-  fItemCount := 0;
-  fBuckets := nil;
-  fItems := nil;
-  SetCapacity(0);
+  fHashTable.Clear;
 
   for oldItemIndex := 0 to oldItemCount - 1 do
-    if not oldItems[oldItemIndex].Removed then
+    if oldItems[oldItemIndex].HashCode >= 0 then
       Changed(oldItems[oldItemIndex].Item, caRemoved);
+end;
+
+class function THashSet<T>.CompareKey(Self: Pointer; const left, right): Boolean;
+begin
+  Result := IEqualityComparer<T>(PPointer(PByte(Self) + SizeOf(THashTable))^).Equals(T(left), T(right));
 end;
 
 function THashSet<T>.Contains(const item: T): Boolean;
 var
-  bucketIndex, itemIndex: Integer;
+  entry: THashTableEntry;
 begin
-  Result := Find(item, Hash(item), bucketIndex, itemIndex);
-end;
-
-procedure THashSet<T>.EnsureCompact;
-begin
-  if fCount <> fItemCount then
-    Rehash(Capacity);
+  entry.HashCode := fKeyComparer.GetHashCode(item);
+  Result := fHashTable.Find(item, entry);
 end;
 
 function THashSet<T>.Extract(const item: T): T;
 var
-  bucketIndex, itemIndex: Integer;
+  entry: ^TItem;
 begin
-  if Find(item, Hash(item), bucketIndex, itemIndex) then
+  entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
+  if Assigned(entry) then
   begin
-    Result := fItems[itemIndex].Item;
-    DoRemove(bucketIndex, itemIndex, caExtracted)
+    Changed(entry.Item, caExtracted);
+    Result := entry.Item;
+    entry.Item := Default(T);
   end
   else
     Result := Default(T);
@@ -616,38 +452,42 @@ end;
 
 function THashSet<T>.GetCapacity: Integer;
 begin
-  Result := DynArrayLength(fItems);
+  Result := fHashTable.Capacity;
 end;
 
 function THashSet<T>.GetCount: Integer;
 begin
-  Result := fCount;
+  Result := fHashTable.Count;
 end;
 
 function THashSet<T>.GetIsEmpty: Boolean;
 begin
-  Result := fCount = 0;
+  Result := fHashTable.Count = 0;
 end;
 
 function THashSet<T>.Remove(const item: T): Boolean;
 var
-  bucketIndex, itemIndex: Integer;
+  entry: ^TItem;
 begin
-  Result := Find(item, Hash(item), bucketIndex, itemIndex);
+  entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
+  Result := Assigned(entry);
   if Result then
-    DoRemove(bucketIndex, itemIndex, caRemoved);
+  begin
+    Changed(entry.Item, caRemoved);
+    entry.Item := Default(T);
+  end;
 end;
 
 function THashSet<T>.ToArray: TArray<T>;
 var
   sourceIndex, targetIndex: Integer;
 begin
-  SetLength(Result, fCount);
+  SetLength(Result, fHashTable.Count);
   targetIndex := 0;
-  for sourceIndex := 0 to fItemCount - 1 do
-    if not fItems[sourceIndex].Removed then
+  for sourceIndex := 0 to fHashTable.ItemCount - 1 do
+    if TItems(fHashTable.Items)[sourceIndex].HashCode >= 0 then
     begin
-      Result[targetIndex] := fItems[sourceIndex].Item;
+      Result[targetIndex] := TItems(fHashTable.Items)[sourceIndex].Item;
       Inc(targetIndex);
     end;
 end;
@@ -663,7 +503,7 @@ begin
   fSource := source;
   fSource._AddRef;
   fItemIndex := -1;
-  fVersion := fSource.fVersion;
+  fVersion := fSource.fHashTable.Version;
 end;
 
 destructor THashSet<T>.TEnumerator.Destroy;
@@ -678,16 +518,19 @@ begin
 end;
 
 function THashSet<T>.TEnumerator.MoveNext: Boolean;
+var
+  hashTable: ^THashTable;
 begin
-  if fVersion <> fSource.fVersion then
+  hashTable := @fSource.fHashTable;
+  if fVersion <> hashTable.Version then
     raise Error.EnumFailedVersion;
 
-  while fItemIndex < fSource.fItemCount - 1 do
+  while fItemIndex < hashTable.ItemCount - 1 do
   begin
     Inc(fItemIndex);
-    if not fSource.fItems[fItemIndex].Removed then
+    if TItems(hashTable.Items)[fItemIndex].HashCode >= 0 then
     begin
-      fCurrent := fSource.fItems[fItemIndex].Item;
+      fCurrent := TItems(hashTable.Items)[fItemIndex].Item;
       Exit(True);
     end;
   end;
