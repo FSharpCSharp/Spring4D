@@ -35,6 +35,8 @@ uses
   Spring,
   Spring.Collections;
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   /// <summary>
   ///   Provides an abstract implementation for the <see cref="Spring.Collections|IEnumerator" />

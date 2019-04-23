@@ -37,6 +37,8 @@ uses
 {$ENDIF}
   Spring.Collections.Base;
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   /// <summary>
   ///   The abstract base class for all set implementations.

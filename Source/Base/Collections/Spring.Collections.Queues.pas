@@ -33,6 +33,8 @@ uses
   Spring.Collections,
   Spring.Collections.Base;
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   /// <summary>
   ///   Represents a first-in, first-out (FIFO) collection of items.

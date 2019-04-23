@@ -39,6 +39,8 @@ uses
 {$ENDIF}
   Spring.Collections.Base;
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
     IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>)

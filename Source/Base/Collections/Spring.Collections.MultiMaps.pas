@@ -35,6 +35,8 @@ uses
   Spring.Collections.Base,
   Spring.Collections.Dictionaries;
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
   TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>,
     IMultiMap<TKey, TValue>, IReadOnlyMultiMap<TKey, TValue>)
