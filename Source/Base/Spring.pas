@@ -3488,11 +3488,25 @@ begin
 end;
 
 function NextPowerOf2(value: Integer): Integer;
+{$IFDEF MSWINDOWS}
+asm
+  cmp value, 0
+  jle @negative
+  bsr ecx, value
+  add ecx, 1
+  mov eax, 1
+  shl eax, cl
+  ret
+@negative:
+  mov eax, 1
+end;
+{$ELSE}
 begin
   Result := 1;
   while Result <= value do
     Result := Result shl 1;
 end;
+{$ENDIF}
 
 {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
 {$IFOPT R+}{$DEFINE RANGECHECKS_ON}{$R-}{$ENDIF}

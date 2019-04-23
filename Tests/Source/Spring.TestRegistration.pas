@@ -81,7 +81,8 @@ begin
     TArrayTest.Suite,
     TWeakTest.Suite,
     TTestVirtualClass.Suite,
-    TTestEnum.Suite
+    TTestEnum.Suite,
+    TTestBaseRoutines.Suite
   ]);
 
   RegisterTests('Spring.Base', [

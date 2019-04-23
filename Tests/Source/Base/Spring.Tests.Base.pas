@@ -611,6 +611,11 @@ type
     procedure TestParseStringException;
   end;
 
+  TTestBaseRoutines = class(TTestCase)
+  published
+    procedure TestNextPowerOf2;
+  end;
+
 implementation
 
 uses
@@ -3718,6 +3723,34 @@ procedure TTestEnum.TestParseStringException;
 begin
   ExpectedException := EFormatException;
   TEnum.Parse<TSeekOrigin>('dummy');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBaseRoutines'}
+
+procedure TTestBaseRoutines.TestNextPowerOf2;
+
+  procedure TestRange(Low, High, Power: Integer);
+  var
+    i: Integer;
+  begin
+    for i := Low to High do
+      CheckEquals(Power, NextPowerOf2(i), Format('NextPowerOf2(%d) did not return %d', [i, Power]));
+  end;
+
+const
+  Pow_2_30 = 1 shl 30;
+begin
+  TestRange(-50,  0,  1);
+  TestRange(  1,  1,  2);
+  TestRange(  2,  3,  4);
+  TestRange(  4,  7,  8);
+  TestRange(  8, 15, 16);
+  TestRange( 16, 31, 32);
+
+  TestRange(Pow_2_30 - 50, Pow_2_30 - 1, Pow_2_30);
 end;
 
 {$ENDREGION}
