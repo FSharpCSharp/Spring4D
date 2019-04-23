@@ -213,7 +213,7 @@ type
     Count: Integer;
     Current: T;
 
-    procedure ToArray;
+    function ToArray: Boolean;
 
     function Concat: Boolean;
     function Ordered: Boolean;
@@ -2585,7 +2585,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TEnumerableIterator'}
+{$REGION 'TIterator'}
 
 constructor TIterator.Create(source: TRefCountedObject; iterator: PIteratorRec);
 begin
@@ -2636,7 +2636,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TEnumerableIterator<T>.TEnumerator'}
+{$REGION 'TIteratorBase<T>.TEnumerator'}
 
 function TIteratorBase<T>.TEnumerator.GetCurrent: T;
 type
@@ -2811,7 +2811,7 @@ begin
   end;
 end;
 
-procedure TIteratorRec<T>.ToArray;
+function TIteratorRec<T>.ToArray: Boolean;
 begin
   Items := Source.ToArray;
   case Count of // using Count as flag to determine how to treat the array
@@ -2828,6 +2828,7 @@ begin
       Count := 0;
     end;
   end;
+  Result := True;
 end;
 
 function TIteratorRec<T>.Where: Boolean;
