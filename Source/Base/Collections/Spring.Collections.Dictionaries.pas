@@ -47,7 +47,7 @@ type
     function Removed: Boolean; inline;
   end;
 
-  TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
+  TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IInterface,
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IDictionary<TKey, TValue>)
@@ -235,7 +235,7 @@ type
     function Removed: Boolean; inline;
   end;
 
-  TBidiDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
+  TBidiDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IInterface,
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>,
@@ -496,7 +496,7 @@ type
   {$ENDREGION}
   end;
 
-  TSortedDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
+  TSortedDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IInterface,
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IDictionary<TKey, TValue>)

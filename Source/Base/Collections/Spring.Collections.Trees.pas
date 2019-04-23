@@ -59,7 +59,7 @@ type
 
   TTraverseMode = (tmInOrder, tmPreOrder, tmPostOrder);
 
-  TBinaryTree = class abstract(TInterfacedObject)
+  TBinaryTree = class abstract(TRefCountedObject)
   private type
     PNode = ^TNode;
 
@@ -403,7 +403,7 @@ type
     procedure DeleteNode(node: TNodes<TKey, TValue>.PRedBlackTreeNode);
   end;
 
-  TRedBlackTree<T> = class(TRedBlackTree, IBinaryTree<T>, IRedBlackTree<T>)
+  TRedBlackTree<T> = class(TRedBlackTree, IInterface, IBinaryTree<T>, IRedBlackTree<T>)
   private type
     TEnumerator = class(TRefCountedObject, IEnumerator<T>)
     private
@@ -450,7 +450,7 @@ type
     property Root: PNode read GetRoot;
   end;
 
-  TRedBlackTree<TKey, TValue> = class(TRedBlackTree,
+  TRedBlackTree<TKey, TValue> = class(TRedBlackTree, IInterface,
     IBinaryTree<TKey, TValue>, IRedBlackTree<TKey, TValue>)
   private type
     TEnumerator = class(TRefCountedObject, IEnumerator<TPair<TKey,TValue>>)

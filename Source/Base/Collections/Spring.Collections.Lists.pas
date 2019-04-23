@@ -167,7 +167,7 @@ type
   {$ENDREGION}
   end;
 
-  TList<T> = class(TAbstractArrayList<T>, IEnumerable<T>,
+  TList<T> = class(TAbstractArrayList<T>, IInterface, IEnumerable<T>,
     IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
   protected
     function AsReadOnly: IReadOnlyList<T>;
@@ -180,7 +180,7 @@ type
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
   end;
 
-  TSortedList<T> = class(TAbstractArrayList<T>, IEnumerable<T>,
+  TSortedList<T> = class(TAbstractArrayList<T>, IInterface, IEnumerable<T>,
     IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
   private
     procedure SetItem(index: Integer; const value: T);
@@ -220,7 +220,7 @@ type
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
   end;
 
-  TCollectionList<T: TCollectionItem> = class(TListBase<T>,
+  TCollectionList<T: TCollectionItem> = class(TListBase<T>, IInterface,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
   private
   {$REGION 'Nested Types'}
@@ -303,8 +303,8 @@ type
   {$ENDREGION}
   end;
 
-  TAnonymousReadOnlyList<T> = class(TEnumerableBase<T>, IReadOnlyCollection<T>,
-    IReadOnlyList<T>)
+  TAnonymousReadOnlyList<T> = class(TEnumerableBase<T>, IInterface,
+    IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
     fCount: Func<Integer>;
     fItems: Func<Integer, T>;

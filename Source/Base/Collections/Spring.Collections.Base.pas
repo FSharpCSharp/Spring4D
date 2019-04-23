@@ -44,7 +44,6 @@ type
     this: IInterface;
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
-    function QueryInterface(const IID: TGUID; out obj): HResult; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -259,7 +258,7 @@ type
     function GetEnumerator: IEnumerator<T>;
   end;
 
-  TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IEnumerable<T>);
+  TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IInterface, IEnumerable<T>);
 
   TArrayIterator<T> = class(TIteratorBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
@@ -709,8 +708,8 @@ constructor TEnumerableBase.Create;
 begin
   inherited Create;
 
-  // child classes must not implement IInterface but IEnumerable<T>
-  Assert(not Assigned(GetInterfaceEntry(IInterface)), ClassName);
+  // child classes must implement IEnumerable<T>
+  // can use any specialization as they all have the same GUID
   Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<Integer>).IOffset);
 end;
 
@@ -736,16 +735,6 @@ var
 begin
   enumerator := IEnumerable(this).GetEnumerator;
   Result := not enumerator.MoveNext;
-end;
-
-function TEnumerableBase.QueryInterface(const IID: TGUID; out obj): HResult;
-begin
-  if IID = IInterface then
-  begin
-    IInterface(obj) := this;
-    Result := S_OK;
-  end else
-    Result := inherited QueryInterface(IID, obj);
 end;
 
 {$ENDREGION}

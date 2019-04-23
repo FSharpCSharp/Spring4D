@@ -67,7 +67,7 @@ type
   /// <typeparam name="T">
   ///   The type of elements in the hash set.
   /// </typeparam>
-  THashSet<T> = class(TSetBase<T>, IEnumerable<T>,
+  THashSet<T> = class(TSetBase<T>, IInterface, IEnumerable<T>,
     IReadOnlyCollection<T>, ICollection<T>, ISet<T>)
   private
   {$REGION 'Nested Types'}

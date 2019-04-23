@@ -180,7 +180,7 @@ type
   {$ENDREGION}
   end;
 
-  TListMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>,
+  TListMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>, IInterface,
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyMultiMap<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IMultiMap<TKey, TValue>)
@@ -189,7 +189,7 @@ type
     function AsReadOnly: IReadOnlyMultiMap<TKey, TValue>;
   end;
 
-  THashMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>,
+  THashMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>, IInterface,
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyMultiMap<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IMultiMap<TKey, TValue>)
@@ -204,7 +204,7 @@ type
       ownerships: TDictionaryOwnerships = []); overload;
   end;
 
-  TTreeMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>,
+  TTreeMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>, IInterface,
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyMultiMap<TKey, TValue>,
     ICollection<TPair<TKey, TValue>>, IMap<TKey, TValue>, IMultiMap<TKey, TValue>)
