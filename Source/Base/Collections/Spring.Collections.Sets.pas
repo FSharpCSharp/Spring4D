@@ -728,7 +728,9 @@ end;
 
 function TSortedSet<T>.Add(const item: T): Boolean;
 begin
-  IncUnchecked(fVersion);
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
   Result := fTree.Add(item);
   if Result then
     Changed(item, caAdded);
@@ -741,7 +743,9 @@ begin
   if fTree.Count = 0 then
     Exit;
 
-  IncUnchecked(fVersion);
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
   if Assigned(OnChanged) and OnChanged.CanInvoke then // optimization: if no notification needs to be send the entire tree traversal won't be done
     for node in fTree.Root^ do
       Changed(PNode(node).Key, caRemoved);
@@ -762,7 +766,9 @@ begin
   if Assigned(node) then
   begin
     Result := node.Key;
-    IncUnchecked(fVersion);
+    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
     fTree.DeleteNode(node);
     Changed(Result, caExtracted);
   end
@@ -793,7 +799,9 @@ begin
   Result := Assigned(node);
   if Result then
   begin
-    IncUnchecked(fVersion);
+    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
     fTree.DeleteNode(node);
     Changed(item, caRemoved);
   end;

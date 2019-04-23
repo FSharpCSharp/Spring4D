@@ -217,9 +217,9 @@ begin
   stackCount := Count;
   if stackCount > 0 then
   begin
-    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
     Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
     Dec(fCount, stackCount);
 
     if fOnChanged.CanInvoke then
@@ -252,9 +252,9 @@ begin
   stackCount := Count;
   if stackCount > 0 then
   begin
-    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
     Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
     Dec(fCount);
     stackItem := @fItems[stackCount - 1];
     item := stackItem^;
@@ -273,9 +273,9 @@ end;
 
 procedure TAbstractStack<T>.PushInternal(const item: T);
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
   fItems[Count] := item;
   Inc(fCount);
 

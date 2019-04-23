@@ -3477,9 +3477,9 @@ end;
 
 procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
   Inc(i, n);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
 end;
 
 function IsPowerOf2(value: Integer): Boolean;
@@ -3508,7 +3508,7 @@ begin
 end;
 {$ENDIF}
 
-{$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+{$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
 {$IFOPT R+}{$DEFINE RANGECHECKS_ON}{$R-}{$ENDIF}
 function DynArrayLength(const A: Pointer): NativeInt;
 begin
@@ -3522,7 +3522,7 @@ begin
   Result := DynArrayLength(A) - 1;
 end;
 {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
-{$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+{$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
 
 procedure FreeObject(const item);
 begin
