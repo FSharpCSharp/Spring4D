@@ -2764,7 +2764,7 @@ procedure FreeObject(const item); inline;
 
 function GetEqualsOperator(const typeInfo: PTypeInfo): TRttiMethod;
 
-function GrowCapacity(oldCapacity: Integer): Integer; overload; inline;
+function GrowCapacity(oldCapacity: Integer): Integer; overload;
 function GrowCapacity(oldCapacity, newCount: Integer): Integer; overload;
 
 {$IFNDEF DELPHIX_BERLIN_UP}

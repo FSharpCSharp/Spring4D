@@ -79,7 +79,7 @@ type
     {$IFNDEF DELPHIXE8_UP}{$HINTS ON}{$ENDIF}
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction); inline;
     function DeleteAllInternal(const match: Predicate<T>;
-      notification: TCollectionChangedAction; items: TArray<T>): Integer;
+      notification: TCollectionChangedAction; const items: TArray<T>): Integer;
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
     function InsertInternal(index: Integer; const item: T): Integer;
     procedure InsertRangeInternal(index, count: Integer; const values: array of T);
@@ -656,44 +656,37 @@ begin
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
-  Result := index;
   listCount := Count;
-  repeat
-    if listCount <> fCapacity then
-    begin
-      {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
-      Inc(fVersion);
-      {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
-      Inc(fCount);
-      if index <> listCount then
-      begin
-        if ItemType.HasWeakRef then
-          ItemType.MoveSlow(fItems, index, index + 1, listCount - index)
-        else
-        begin
-          listCount := (listCount - index) * SizeOf(T);
-          arrayItem := @fItems[index];
-          System.Move(arrayItem^, (arrayItem + 1)^, listCount);
-          if ItemType.IsManaged then
-            if SizeOf(T) = SizeOf(Pointer) then
-              PPointer(arrayItem)^ := nil
-            else
-              System.FillChar(arrayItem^, SizeOf(T), 0);
-        end;
-        index := Result;
-      end;
-      fItems[index] := item;
+  if listCount = fCapacity then
+  begin
+    Grow;
+    listCount := Count;
+  end;
 
-      DoNotify(item, caAdded);
-      Exit;
-    end
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  Inc(fCount);
+  if index <> listCount then
+  begin
+    if ItemType.HasWeakRef then
+      ItemType.MoveSlow(fItems, index, index + 1, listCount - index)
     else
     begin
-      Grow;
-      listCount := Count;
-      index := Result;
+      listCount := (listCount - index) * SizeOf(T);
+      arrayItem := @fItems[index];
+      System.Move(arrayItem^, (arrayItem + 1)^, listCount);
+      if ItemType.IsManaged then
+        if SizeOf(T) = SizeOf(Pointer) then
+          PPointer(arrayItem)^ := nil
+        else
+          System.FillChar(arrayItem^, SizeOf(T), 0);
     end;
-  until False;
+  end;
+  fItems[index] := item;
+
+  DoNotify(item, caAdded);
+  Result := index;
 end;
 
 procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: array of T);
@@ -1117,7 +1110,7 @@ begin
   if value < Count then
     DeleteRange(value, Count - value);
   fCapacity := value;
-  SetLength(fItems, value)
+  SetLength(fItems, value);
 end;
 
 procedure TAbstractArrayList<T>.SetCount(value: Integer);
@@ -1143,69 +1136,52 @@ begin
 end;
 
 function TAbstractArrayList<T>.DeleteAllInternal(const match: Predicate<T>;
-  notification: TCollectionChangedAction; items: TArray<T>): Integer;
+  notification: TCollectionChangedAction; const items: TArray<T>): Integer;
 var
-  itemCount, freeIndex, current, i: Integer;
+  listCount, freeIndex, current, i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(match), 'match');
 {$ENDIF}
 
-  itemCount := Self.Count;
+  listCount := Self.Count;
   freeIndex := 0;
+  current := 0;
   i := 0;
-
-  // Find the first item that needs to be removed
-  while (freeIndex < itemCount) and not match(fItems[freeIndex]) do
-    Inc(freeIndex);
-  if freeIndex >= itemCount then
-    Exit(0);
-
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-
-  if Assigned(Notify) then
-    Notify(Self, fItems[freeIndex], notification);
-  if notification = caExtracted then
+  while current < listCount do
   begin
-    items[i] := fItems[freeIndex];
-    Inc(i);
-  end
-  else if OwnsObjects then
-    FreeObject(fItems[freeIndex]);
-
-  current := freeIndex + 1;
-  while current < itemCount do
-  begin
-    // Find the first item that needs to be kept
-    while (current < itemCount) and match(fItems[current]) do
+    // Find the next item that needs to be kept
+    while (current < listCount) and match(fItems[current]) do
     begin
+      if i = 0 then
+        {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+        Inc(fVersion);
+        {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+
       if Assigned(Notify) then
         Notify(Self, fItems[current], notification);
       if notification = caExtracted then
-      begin
-        items[i] := fItems[current];
-        Inc(i);
-      end
+        TArray<T>(PPointer(@items)^)[i] := fItems[current]
       else if OwnsObjects then
         FreeObject(fItems[current]);
       Inc(current);
+      Inc(i);
     end;
 
-    if current < itemCount then
+    if current < listCount then
     begin
       fItems[freeIndex] := fItems[current];
       Inc(freeIndex);
       Inc(current);
     end;
   end;
-  if ItemType.IsManaged then
-    FinalizeArray(@fItems[freeIndex], TypeInfo(T), itemCount - freeIndex)
-  else
-    System.FillChar(fItems[freeIndex], SizeOf(T) * (itemCount - freeIndex), 0);
-  Result := itemCount - freeIndex;
-  Dec(fCount, itemCount - freeIndex);
+  Result := listCount - freeIndex;
+  if Result > 0 then
+    if ItemType.IsManaged then
+      FinalizeArray(@fItems[freeIndex], TypeInfo(T), Result)
+    else
+      System.FillChar(fItems[freeIndex], SizeOf(T) * Result, 0);
+  Dec(fCount, Result);
 end;
 
 function TAbstractArrayList<T>.Extract(const item: T): T;
@@ -1236,7 +1212,7 @@ function TAbstractArrayList<T>.ExtractAll(const match: Predicate<T>): TArray<T>;
 var
   count: Integer;
 begin
-  SetLength(Result, fCount);
+  SetLength(Result, Self.Count);
   count := DeleteAllInternal(match, caExtracted, Result);
   SetLength(Result, count);
 end;
