@@ -2244,50 +2244,62 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TTimSort'}
+
+  TTimSort = record
+  private
+    type
+      TCompareFunc = function(self: Pointer; const left, right): Integer;
+      TMergeFunc = procedure(self: Pointer; base1, len1, base2, len2: Integer);
+  private
+    const
+      MIN_MERGE = 32;
+      MIN_GALLOP = 7;
+      INITIAL_TMP_STORAGE_LENGTH = 256;
+  private
+    fItems: Pointer;
+    fArrayTypeInfo: PTypeInfo;
+    fItemSize: Integer;
+    fComparer: Pointer;
+    fCompare: TCompareFunc;
+    fMergeLo: TMergeFunc;
+    fMergeHi: TMergeFunc;
+    fMinGallop: Integer;
+    fTmp: Pointer;                // TArray<T>
+    fMaxTmpLen: Integer;
+    fStackLen: Integer;
+    fRunBase: TArray<Integer>;
+    fRunLen: TArray<Integer>;
+  private
+    procedure Initialize(items, comparer: Pointer; const compare: TCompareFunc; mergeLo, mergeHi: TMergeFunc;
+      arrayTypeInfo: PTypeInfo; itemSize: Integer);
+    procedure Finalize;
+    procedure Allocate(count: Integer);
+    function at(items: Pointer; index: Integer): Pointer; inline;
+    function CompareImpl<T>(const left, right): Integer;
+    class procedure CopyArrayImpl<T>(source, target: Pointer; sourceIndex, targetIndex, count: Integer); static;
+    procedure BinarySortImpl<T>(lo, hi, start: Integer);
+    function CountRunAndMakeAscendingImpl<T>(lo, hi: Integer): Integer;
+    class function MinRunLength(n: Integer): Integer; static;
+    procedure PushRun(runBase, runLen: Integer);
+    procedure MergeCollapse;
+    procedure MergeForceCollapse;
+    procedure MergeAt(i: Integer);
+    function GallopLeft(key: Pointer; items: Pointer; base, len, hint: Integer): Integer;
+    function GallopRight(key: Pointer; items: Pointer; base, len, hint: Integer): Integer;
+    procedure MergeLoImpl<T>(base1, len1, base2, len2: Integer);
+    procedure MergeHiImpl<T>(base1, len1, base2, len2: Integer);
+    function EnsureTmpCapacity(minCapacity: Integer): Pointer;
+  public
+    class procedure Sort<T>(var items: array of T; const comparer: IComparer<T>; lo, hi, start: Integer); static;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TArray'}
 
   TArray = class
-  private
-    type
-      TTimSort<T> = class
-      private
-        type
-        {$POINTERMATH ON}
-          P = ^T;
-        {$POINTERMATH OFF}
-      private
-        const
-          MIN_MERGE = 32;
-          MIN_GALLOP = 7;
-          INITIAL_TMP_STORAGE_LENGTH = 256;
-      private
-        fItems: P;
-        fComparer: IComparer<T>;
-        fMinGallop: Integer;
-        fTmp: TArray<T>;
-        fMaxTmpLen: Integer;
-        fStackLen: Integer;
-        fRunBase: TArray<Integer>;
-        fRunLen: TArray<Integer>;
-      private
-        constructor Create(items: P; count: Integer; const comparer: IComparer<T>);
-        class procedure CopyArray(source, target: P; sourceIndex, targetIndex, count: Integer); static;
-        class procedure ReverseArray(items: P; lo, hi: Integer); static;
-        class procedure BinarySort(items: P; const comparer: IComparer<T>; lo, hi, start: Integer); static;
-        class function CountRunAndMakeAscending(items: P; const comparer: IComparer<T>; lo, hi: Integer): Integer; static;
-        class function MinRunLength(n: Integer): Integer; static;
-        procedure PushRun(runBase, runLen: Integer);
-        procedure MergeCollapse;
-        procedure MergeForceCollapse;
-        procedure MergeAt(i: Integer);
-        class function GallopLeft(const key: T; items: P; const comparer: IComparer<T>; base, len, hint: Integer): Integer;
-        class function GallopRight(const key: T; items: P; const comparer: IComparer<T>; base, len, hint: Integer): Integer;
-        procedure MergeLo(base1, len1, base2, len2: Integer);
-        procedure MergeHi(base1, len1, base2, len2: Integer);
-        function EnsureTmpCapacity(minCapacity: Integer): P;
-      public
-        class procedure Sort(var items: array of T; const comparer: IComparer<T>; lo, hi, start: Integer); static;
-      end;
   private
     const IntrosortSizeThreshold = 16;
     class function GetDepthLimit(count: Integer): Integer; static;
@@ -8900,23 +8912,37 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TArray.TTimSort<T>'}
+{$REGION 'TTimSort'}
 
-constructor TArray.TTimSort<T>.Create(items: P; count: Integer; const comparer: IComparer<T>);
-var
-  tmpLen: Integer;
-  stackLen: Integer;
+procedure TTimSort.Initialize(items, comparer: Pointer; const compare: TCompareFunc; mergeLo, mergeHi: TMergeFunc;
+  arrayTypeInfo: PTypeInfo; itemSize: Integer);
 begin
-  inherited Create;
+  Self := Default(TTimSort);
   fItems := items;
   fComparer := comparer;
+  fCompare := compare;
+  fMergeLo := mergeLo;
+  fMergeHi := mergeHi;
+  fArrayTypeInfo := arrayTypeInfo;
+  fItemSize := itemSize;
   fMinGallop := MIN_GALLOP;
+end;
 
+procedure TTimSort.Finalize;
+begin
+  DynArrayClear(fTmp, fArrayTypeInfo);
+end;
+
+procedure TTimSort.Allocate(count: Integer);
+var
+  tmpLen: NativeInt;
+  stackLen: Integer;
+begin
   if count < 2 * INITIAL_TMP_STORAGE_LENGTH then
     tmpLen := count shr 1
   else
     tmpLen := INITIAL_TMP_STORAGE_LENGTH;
-  SetLength(fTmp, tmpLen);
+  DynArraySetLength(fTmp, fArrayTypeInfo, 1, @tmpLen);
   fMaxTmpLen := count shr 1;
 
   (* Allocate runs-to-be-merged stack (which cannot be expanded).  The stack length requirements
@@ -8941,41 +8967,44 @@ begin
   SetLength(fRunLen, stackLen);
 end;
 
-class procedure TArray.TTimSort<T>.CopyArray(source, target: P; sourceIndex, targetIndex, count: Integer);
+function TTimSort.at(items: Pointer; index: Integer): Pointer;
+begin
+  Result := PByte(items) + index * fItemSize;
+end;
+
+function TTimSort.CompareImpl<T>(const left, right): Integer;
+begin
+  Result := IComparer<T>(fComparer).Compare(T(left), T(right));
+end;
+
+class procedure TTimSort.CopyArrayImpl<T>(source, target: Pointer; sourceIndex, targetIndex, count: Integer);
 var
   i: Integer;
 begin
   if TType.IsManaged<T> then
-  begin
     if (source = target) and (sourceIndex < targetIndex) then
       for i := count - 1 downto 0 do
-        target[targetIndex + i] := source[sourceIndex + i]
+        T(Pointer(PByte(target) + (targetIndex + i) * SizeOf(T))^) := T(Pointer(PByte(source) + (sourceIndex + i) * SizeOf(T))^)
     else
       for i := 0 to count - 1 do
-        target[targetIndex + i] := source[sourceIndex + i];
-  end
+        T(Pointer(PByte(target) + (targetIndex + i) * SizeOf(T))^) := T(Pointer(PByte(source) + (sourceIndex + i) * SizeOf(T))^)
   else
-    System.Move(source[sourceIndex], target[targetIndex], count * SizeOf(T));
+    System.Move(Pointer(PByte(source) + sourceIndex * SizeOf(T))^, Pointer(PByte(target) + targetIndex * SizeOf(T))^, count * SizeOf(T));
 end;
 
-class procedure TArray.TTimSort<T>.ReverseArray(items: P; lo, hi: Integer);
-begin
-  Dec(hi);
-  while lo < hi do
-  begin
-    TArray.Swap<T>(items[lo], items[hi]);
-    Inc(lo);
-    Dec(hi);
-  end;
-end;
-
-class procedure TArray.TTimSort<T>.BinarySort(items: P; const comparer: IComparer<T>; lo, hi, start: Integer);
+procedure TTimSort.BinarySortImpl<T>(lo, hi, start: Integer);
+type
+  {$POINTERMATH ON}
+  P = ^T;
+  {$POINTERMATH OFF}
 var
+  items: P;
   pivot: T;
   left, right, mid: Integer;
 begin
   Assert(lo <= start);
   Assert(start <= hi);
+  items := fItems;
   if start = lo then
     Inc(start);
   while start < hi do
@@ -8992,7 +9021,7 @@ begin
     while left < right do
     begin
       mid := (left + right) shr 1;
-      if comparer.Compare(pivot, items[mid]) < 0 then
+      if IComparer<T>(fComparer).Compare(pivot, items[mid]) < 0 then
         right := mid
       else
         left := mid + 1;
@@ -9003,16 +9032,21 @@ begin
        [left, start), so pivot belongs at left.  Note that if there are elements
        equal to pivot, left points to the first slot after them -- that's why
        this sort is stable. Slide elements over to make room for pivot. *)
-    CopyArray(items, items, left, left + 1, start - left);
+    CopyArrayImpl<T>(fItems, fItems, left, left + 1, start - left);
     items[left] := pivot;
 
     Inc(start);
   end;
 end;
 
-class function TArray.TTimSort<T>.CountRunAndMakeAscending(items: P; const comparer: IComparer<T>; lo, hi: Integer): Integer;
+function TTimSort.CountRunAndMakeAscendingImpl<T>(lo, hi: Integer): Integer;
+type
+  {$POINTERMATH ON}
+  P = ^T;
+  {$POINTERMATH OFF}
 var
-  runHi: Integer;
+  items: P;
+  runHi, tmpLo, tmpHi: Integer;
   compareResult: Integer;
 begin
   Assert(lo < hi);
@@ -9021,24 +9055,34 @@ begin
     Exit(1);
 
   // find end of run, and reverse range if descending
-  compareResult := comparer.Compare(items[runHi], items[lo]);
+  items := fItems;
+  compareResult := IComparer<T>(fComparer).Compare(items[runHi], items[lo]);
   Inc(RunHi);
   if compareResult < 0 then
   begin
     // descending
-    while (runHi < hi) and (comparer.Compare(items[runHi], items[runHi - 1]) < 0) do
+    while (runHi < hi) and (IComparer<T>(fComparer).Compare(items[runHi], items[runHi - 1]) < 0) do
       Inc(runHi);
-    ReverseArray(items, lo, runHi);
+
+    // reverse the array
+    tmpLo := lo;
+    tmpHi := runHi - 1;
+    while tmpLo < tmpHi do
+    begin
+      TArray.Swap<T>(items[tmpLo], items[tmpHi]);
+      Inc(tmpLo);
+      Dec(tmpHi);
+    end;
   end
   else
     // ascending
-    while (runHi < hi) and (comparer.Compare(items[runHi], items[runHi - 1]) >= 0) do
+    while (runHi < hi) and (IComparer<T>(fComparer).Compare(items[runHi], items[runHi - 1]) >= 0) do
       Inc(runHi);
 
   Result := runHi - lo;
 end;
 
-class function TArray.TTimSort<T>.MinRunLength(n: Integer): Integer;
+class function TTimSort.MinRunLength(n: Integer): Integer;
 var
   r: Integer;
 begin
@@ -9052,14 +9096,14 @@ begin
   Result := n + r;
 end;
 
-procedure TArray.TTimSort<T>.PushRun(runBase, runLen: Integer);
+procedure TTimSort.PushRun(runBase, runLen: Integer);
 begin
   fRunBase[fStackLen] := runBase;
   fRunLen[fStackLen] := runLen;
   Inc(fStackLen);
 end;
 
-procedure TArray.TTimSort<T>.MergeCollapse;
+procedure TTimSort.MergeCollapse;
 var
   n: Integer;
 begin
@@ -9079,7 +9123,7 @@ begin
   end;
 end;
 
-procedure TArray.TTimSort<T>.MergeForceCollapse;
+procedure TTimSort.MergeForceCollapse;
 var
   n: Integer;
 begin
@@ -9092,7 +9136,7 @@ begin
   end;
 end;
 
-procedure TArray.TTimSort<T>.MergeAt(i: Integer);
+procedure TTimSort.MergeAt(i: Integer);
 var
   base1, len1, base2, len2, k: Integer;
 begin
@@ -9120,7 +9164,7 @@ begin
 
   (* Find where the first element of run2 goes in run1. Prior elements in run1 can be ignored
      because they're already in place. *)
-  k := GallopRight(fItems[base2], fItems, fComparer, base1, len1, 0);
+  k := GallopRight(at(fItems, base2), fItems, base1, len1, 0);
   Assert(k >= 0);
   Inc(base1, k);
   Dec(len1, k);
@@ -9129,19 +9173,19 @@ begin
 
   (* Find where the last element of run1 goes in run2. Subsequent elements in run2 can be
      ignored because they're already in place. *)
-  len2 := GallopLeft(fItems[base1 + len1 - 1], fItems, fComparer, base2, len2, len2 - 1);
+  len2 := GallopLeft(at(fItems, base1 + len1 - 1), fItems, base2, len2, len2 - 1);
   Assert(len2 >= 0);
   if len2 = 0 then
     Exit;
 
   // merge remaining runs, using tmp array with min(len1, len2) elements
   if len1 <= len2 then
-    MergeLo(base1, len1, base2, len2)
+    fMergeLo(@self, base1, len1, base2, len2)
   else
-    MergeHi(base1, len1, base2, len2);
+    fMergeHi(@self, base1, len1, base2, len2);
 end;
 
-class function TArray.TTimSort<T>.GallopLeft(const key: T; items: P; const comparer: IComparer<T>; base, len, hint: Integer): Integer;
+function TTimSort.GallopLeft(key: Pointer; items: Pointer; base, len, hint: Integer): Integer;
 var
   lastOfs, ofs, maxOfs, tmp, m: Integer;
 begin
@@ -9151,11 +9195,11 @@ begin
 
   lastOfs := 0;
   ofs := 1;
-  if comparer.Compare(key, items[base + hint]) > 0 then
+  if fCompare(@self, key^, at(items, base + hint)^) > 0 then
   begin
     // gallop right until items[base+hint+lastOfs] < key <= items[base+hint+ofs]
     maxOfs := len - hint;
-    while (ofs < maxOfs) and (comparer.Compare(key, items[base + hint + ofs]) > 0) do
+    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, base + hint + ofs)^) > 0) do
     begin
       lastOfs := ofs;
       ofs := (ofs shl 1) + 1;
@@ -9174,7 +9218,7 @@ begin
   begin
     // Gallop left until items[base+hint-ofs] < key <= items[base+hint-lastOfs]
     maxOfs := hint + 1;
-    while (ofs < maxOfs) and (comparer.Compare(key, items[base + hint - ofs]) <= 0) do
+    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, base + hint - ofs)^) <= 0) do
     begin
       lastOfs := ofs;
       ofs := (ofs shl 1) + 1;
@@ -9200,7 +9244,7 @@ begin
   while lastOfs < ofs do
   begin
     m := lastOfs + ((ofs - lastOfs) shr 1);
-    if comparer.Compare(key, items[base + m]) > 0 then
+    if fCompare(@self, key^, at(items, base + m)^) > 0 then
       lastOfs := m + 1 // item[base + m] < key
     else
       ofs := m; // key <= items[base + m]
@@ -9209,7 +9253,7 @@ begin
   Result := ofs;
 end;
 
-class function TArray.TTimSort<T>.GallopRight(const key: T; items: P; const comparer: IComparer<T>; base, len, hint: Integer): Integer;
+function TTimSort.GallopRight(key: Pointer; items: Pointer; base, len, hint: Integer): Integer;
 var
   lastOfs, ofs, maxOfs, tmp, m: Integer;
 begin
@@ -9219,11 +9263,11 @@ begin
 
   ofs := 1;
   lastOfs := 0;
-  if comparer.Compare(key, items[base + hint]) < 0 then
+  if fCompare(@self, key^, at(items, base + hint)^) < 0 then
   begin
     // gallop left until items[b+hint - ofs] <= key < items[b+hint - lastOfs]
     maxOfs := hint + 1;
-    while (ofs < maxOfs) and (comparer.Compare(key, items[base + hint - ofs]) < 0) do
+    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, base + hint - ofs)^) < 0) do
     begin
       lastOfs := ofs;
       ofs := (ofs shl 1) + 1;
@@ -9243,7 +9287,7 @@ begin
   begin
     // gallop right until items[b+hint + lastOfs] <= key < items[b+hint + ofs]
     maxOfs := len - hint;
-    while (ofs < maxOfs) and (comparer.Compare(key, items[base + hint + ofs]) >= 0) do
+    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, base + hint + ofs)^) >= 0) do
     begin
       lastOfs := ofs;
       ofs := (ofs shl 1) + 1;
@@ -9268,7 +9312,7 @@ begin
   while lastOfs < ofs do
   begin
     m := lastOfs + ((ofs - lastOfs) shr 1);
-    if comparer.Compare(key, items[base + m]) < 0 then
+    if fCompare(@self, key^, at(items, base + m)^) < 0 then
       ofs := m // key < items[b + m]
     else
       lastOfs := m + 1; // items[b + m] <= key
@@ -9277,9 +9321,13 @@ begin
   Result := ofs;
 end;
 
-procedure TArray.TTimSort<T>.MergeLo(base1, len1, base2, len2: Integer);
+procedure TTimSort.MergeLoImpl<T>(base1, len1, base2, len2: Integer);
 label
   endOfOuterLoop;
+type
+  {$POINTERMATH ON}
+  P = ^T;
+  {$POINTERMATH OFF}
 var
   items, tmp: P;
   cursor1, cursor2, dest, count1, count2: Integer;
@@ -9294,7 +9342,7 @@ begin
   cursor1 := 0; // indexes into tmp
   cursor2 := base2; // indexes into items
   dest := base1; // indexes into items
-  CopyArray(items, tmp, base1, cursor1, len1);
+  CopyArrayImpl<T>(items, tmp, base1, cursor1, len1);
 
   // move first element of second run and deal with degenerate cases
   items[dest] := items[cursor2];
@@ -9303,12 +9351,12 @@ begin
   Dec(len2);
   if len2 = 0 then
   begin
-    CopyArray(tmp, items, cursor1, dest, len1);
+    CopyArrayImpl<T>(tmp, items, cursor1, dest, len1);
     Exit;
   end;
   if len1 = 1 then
   begin
-    CopyArray(items, items, cursor2, dest, len2);
+    CopyArrayImpl<T>(items, items, cursor2, dest, len2);
     items[dest + len2] := tmp[cursor1]; // last element of run 1 to end of merge
     Exit;
   end;
@@ -9322,7 +9370,7 @@ begin
     repeat
       Assert(len1 > 1);
       Assert(len2 > 0);
-      if fComparer.Compare(items[cursor2], tmp[cursor1]) < 0 then
+      if IComparer<T>(fComparer).Compare(items[cursor2], tmp[cursor1]) < 0 then
       begin
         items[dest] := items[cursor2];
         Inc(dest);
@@ -9352,10 +9400,10 @@ begin
     repeat
       Assert(len1 > 1);
       Assert(len2 > 0);
-      count1 := GallopRight(items[cursor2], tmp, fComparer, cursor1, len1, 0);
+      count1 := GallopRight(@items[cursor2], tmp, cursor1, len1, 0);
       if count1 <> 0 then
       begin
-        CopyArray(tmp, items, cursor1, dest, count1);
+        CopyArrayImpl<T>(tmp, items, cursor1, dest, count1);
         Inc(dest, count1);
         Inc(cursor1, count1);
         Dec(len1, count1);
@@ -9369,10 +9417,10 @@ begin
       if len2 = 0 then
         goto endOfOuterLoop;
 
-      count2 := gallopLeft(tmp[cursor1], items, fComparer, cursor2, len2, 0);
+      count2 := gallopLeft(@tmp[cursor1], items, cursor2, len2, 0);
       if count2 <> 0 then
       begin
-        CopyArray(items, items, cursor2, dest, count2);
+        CopyArrayImpl<T>(items, items, cursor2, dest, count2);
         Inc(dest, count2);
         Inc(cursor2, count2);
         Dec(len2, count2);
@@ -9397,7 +9445,7 @@ endOfOuterLoop:
   if len1 = 1 then
   begin
     Assert(len2 > 0);
-    CopyArray(items, items, cursor2, dest, len2);
+    CopyArrayImpl<T>(items, items, cursor2, dest, len2);
     items[dest + len2] := tmp[cursor1]; // last element of run 1 to end of merge
   end
   else if len1 = 0 then
@@ -9406,13 +9454,17 @@ endOfOuterLoop:
   begin
     Assert(len2 = 0);
     Assert(len1 > 1);
-    CopyArray(tmp, items, cursor1, dest, len1);
+    CopyArrayImpl<T>(tmp, items, cursor1, dest, len1);
   end;
 end;
 
-procedure TArray.TTimSort<T>.MergeHi(base1, len1, base2, len2: Integer);
+procedure TTimSort.MergeHiImpl<T>(base1, len1, base2, len2: Integer);
 label
   endOfOuterLoop;
+type
+  {$POINTERMATH ON}
+  P = ^T;
+  {$POINTERMATH OFF}
 var
   items, tmp: P;
   cursor1, cursor2, dest, count1, count2: Integer;
@@ -9424,7 +9476,7 @@ begin
   // copy second run into temp array
   items := fItems;
   tmp := EnsureTmpCapacity(len2);
-  CopyArray(items, tmp, base2, 0, len2);
+  CopyArrayImpl<T>(items, tmp, base2, 0, len2);
   cursor1 := base1 + len1 - 1; // indexes into items
   cursor2 := len2 - 1; // indexes into tmp
   dest := base2 + len2 - 1; // indexes into items
@@ -9436,14 +9488,14 @@ begin
   Dec(len1);
   if len1 = 0 then
   begin
-    CopyArray(tmp, items, 0, dest - (len2 - 1), len2);
+    CopyArrayImpl<T>(tmp, items, 0, dest - (len2 - 1), len2);
     Exit;
   end;
   if len2 = 1 then
   begin
     Dec(dest, len1);
     Dec(cursor1, len1);
-    CopyArray(items, items, cursor1 + 1, dest + 1, len1);
+    CopyArrayImpl<T>(items, items, cursor1 + 1, dest + 1, len1);
     items[dest] := tmp[cursor2];
     Exit;
   end;
@@ -9457,7 +9509,7 @@ begin
     repeat
       Assert(len1 > 0);
       Assert(len2 > 1);
-      if fComparer.Compare(tmp[cursor2], items[cursor1]) < 0 then
+      if IComparer<T>(fComparer).Compare(tmp[cursor2], items[cursor1]) < 0 then
       begin
         items[dest] := items[cursor1];
         Dec(dest);
@@ -9487,13 +9539,13 @@ begin
     repeat
       Assert(len1 > 0);
       Assert(len2 > 1);
-      count1 := len1 - GallopRight(tmp[cursor2], items, fComparer, base1, len1, len1 - 1);
+      count1 := len1 - GallopRight(@tmp[cursor2], items, base1, len1, len1 - 1);
       if count1 <> 0 then
       begin
         Dec(dest, count1);
         Dec(cursor1, count1);
         Dec(len1, count1);
-        CopyArray(items, items, cursor1 + 1, dest + 1, count1);
+        CopyArrayImpl<T>(items, items, cursor1 + 1, dest + 1, count1);
         if len1 = 0 then
           goto endOfOuterLoop;
       end;
@@ -9504,13 +9556,13 @@ begin
       if len2 = 1 then
         goto endOfOuterLoop;
 
-      count2 := len2 - GallopLeft(items[cursor1], tmp, fComparer, 0, len2, len2 - 1);
+      count2 := len2 - GallopLeft(@items[cursor1], tmp, 0, len2, len2 - 1);
       if count2 <> 0 then
       begin
         Dec(dest, count2);
         Dec(cursor2, count2);
         Dec(len2, count2);
-        CopyArray(tmp, items, cursor2 + 1, dest + 1, count2);
+        CopyArrayImpl<T>(tmp, items, cursor2 + 1, dest + 1, count2);
         if len2 <= 1 then // len2 == 1 || len2 == 0
           goto endOfOuterLoop;
       end;
@@ -9534,7 +9586,7 @@ endOfOuterLoop:
     Assert(len1 > 0);
     Dec(dest, len1);
     Dec(cursor1, len1);
-    CopyArray(items, items, cursor1 + 1, dest + 1, len1);
+    CopyArrayImpl<T>(items, items, cursor1 + 1, dest + 1, len1);
     items[dest] := tmp[cursor2]; // move first element of run2 to front of merge
   end
   else if len2 = 0 then
@@ -9543,81 +9595,72 @@ endOfOuterLoop:
   begin
     Assert(len1 = 0);
     Assert(len2 > 0);
-    CopyArray(tmp, items, 0, dest - (len2 - 1), len2);
+    CopyArrayImpl<T>(tmp, items, 0, dest - (len2 - 1), len2);
   end;
 end;
 
-function TArray.TTimSort<T>.EnsureTmpCapacity(minCapacity: Integer): P;
+function TTimSort.EnsureTmpCapacity(minCapacity: Integer): Pointer;
 var
-  newLen: Integer;
+  newLen: NativeInt;
 begin
-  if Length(fTmp) < minCapacity then
+  if DynArrayLength(fTmp) < minCapacity then
   begin
     // compute smallest power of 2 > minCapacity
-    newLen := minCapacity;
-    newLen := newLen or (newLen shr 1);
-    newLen := newLen or (newLen shr 2);
-    newLen := newLen or (newLen shr 4);
-    newLen := newLen or (newLen shr 8);
-    newLen := newLen or (newLen shr 16);
-    Inc(newLen);
+    newLen := NextPowerOf2(minCapacity);
+    if fMaxTmpLen < newLen then
+      newLen := fMaxTmpLen;
 
-    if newLen < 0 then // not bloody likely!
-      newLen := minCapacity
-    else
-      newLen := Math.Min(newLen, fMaxTmpLen);
-
-    SetLength(fTmp, newLen);
+    DynArraySetLength(fTmp, fArrayTypeInfo, 1, @newLen);
   end;
-  Result := @fTmp[0];
+  Result := Pointer(fTmp);
 end;
 
-class procedure TArray.TTimSort<T>.Sort(var items: array of T; const comparer: IComparer<T>; lo, hi, start: Integer);
+class procedure TTimSort.Sort<T>(var items: array of T; const comparer: IComparer<T>; lo, hi, start: Integer);
 var
   nRemaining: Integer;
   initRunLen, minRun, runLen: Integer;
   force: Integer;
-  ts: TTimSort<T>;
+  ts: TTimSort;
 begin
   Assert(lo >= 0);
   Assert(lo <= hi);
-  Assert(hi <= Length(items));
 
   nRemaining := hi - lo;
   if nRemaining < 2 then
     Exit; // arrays of length 0 and 1 are always sorted
 
-  // if array is small, do a "mini-TimSort" with no merges
-  if nRemaining < MIN_MERGE then
-  begin
-    initRunLen := CountRunAndMakeAscending(@items[0], comparer, lo, hi);
-    BinarySort(@items[0], comparer, lo, hi, lo + initRunLen);
-    Exit;
-  end;
-
-  // if the array is ordered then we can bail out without instantiating the state object
-  runLen := CountRunAndMakeAscending(@items[0], comparer, lo, hi);
-  if runLen = nRemaining then
-    Exit;
-
-  (* March over the array once, left to right, finding natural runs, extending short
-     natural runs to minRun elements, and merging runs to maintain stack invariant. *)
-  ts := nil;
+  ts.Initialize(@items[0], Pointer(comparer), @TTimSort.CompareImpl<T>, @TTimSort.MergeLoImpl<T>,
+    @TTimSort.MergeHiImpl<T>, TypeInfo(TArray<T>), SizeOf(T));
   try
+    // if array is small, do a "mini-TimSort" with no merges
+    if nRemaining < MIN_MERGE then
+    begin
+      initRunLen := ts.CountRunAndMakeAscendingImpl<T>(lo, hi);
+      ts.BinarySortImpl<T>(lo, hi, lo + initRunLen);
+      Exit;
+    end;
+
+    // if the array is ordered then we can bail out without instantiating the state object
+    runLen := ts.CountRunAndMakeAscendingImpl<T>(lo, hi);
+    if runLen = nRemaining then
+      Exit;
+
+    (* March over the array once, left to right, finding natural runs, extending short
+       natural runs to minRun elements, and merging runs to maintain stack invariant. *)
     minRun := MinRunLength(nRemaining);
     repeat
       // identify next run
-      if Assigned(ts) then
-        runLen := CountRunAndMakeAscending(@items[0], comparer, lo, hi)
+      if Assigned(ts.fTmp) then
+        runLen := ts.CountRunAndMakeAscendingImpl<T>(lo, hi)
       else
-        ts := TTimSort<T>.Create(@items[0], hi - lo, comparer);
+        ts.Allocate(hi - lo);
         // skip call to CountRunAndMakeAscending, we did it before the loop started
 
       // if run is short, extend to min(minRun, nRemaining)
       if runLen < minRun then
       begin
         force := Math.Min(nRemaining, minRun);
-        BinarySort(@items[0], comparer, lo, lo + force, lo + runLen);
+        ts.BinarySortImpl<T>(lo, lo + force, lo + runLen);
         runLen := force;
       end;
 
@@ -9635,7 +9678,7 @@ begin
     ts.MergeForceCollapse;
     Assert(ts.fStackLen = 1);
   finally
-    ts.Free;
+    ts.Finalize;
   end;
 end;
 
@@ -10070,23 +10113,29 @@ begin
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T);
+var
+  comparer: IComparer<T>;
 begin
-  TTimSort<T>.Sort(values, TComparer<T>.Default, 0, Length(values), 0);
+  comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
+  TTimSort.Sort<T>(values, comparer, 0, Length(values), 0);
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T; index, count: Integer);
+var
+  comparer: IComparer<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
   Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
 {$ENDIF}
 
-  TTimSort<T>.Sort(values, TComparer<T>.Default, index, index + count, index);
+  comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
+  TTimSort.Sort<T>(values, comparer, index, index + count, index);
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T; const comparer: IComparer<T>);
 begin
-  TTimSort<T>.Sort(values, comparer, 0, Length(values), 0);
+  TTimSort.Sort<T>(values, comparer, 0, Length(values), 0);
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T;
@@ -10098,13 +10147,13 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
 {$ENDIF}
 
-  TTimSort<T>.Sort(values, comparer, index, index + count, index);
+  TTimSort.Sort<T>(values, comparer, index, index + count, index);
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T;
   const comparison: TComparison<T>);
 begin
-  TTimSort<T>.Sort(values, IComparer<T>(PPointer(@comparison)^), 0, Length(values), 0);
+  TTimSort.Sort<T>(values, IComparer<T>(PPointer(@comparison)^), 0, Length(values), 0);
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T;
@@ -10116,7 +10165,7 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
 {$ENDIF}
 
-  TTimSort<T>.Sort(values, IComparer<T>(PPointer(@comparison)^), index, index + count, index);
+  TTimSort.Sort<T>(values, IComparer<T>(PPointer(@comparison)^), index, index + count, index);
 end;
 
 class procedure TArray.DownHeap<T>(var values: array of T;
