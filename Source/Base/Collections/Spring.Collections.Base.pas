@@ -174,30 +174,34 @@ type
     function GetEnumerator: IEnumerator;
   end;
 
+  TIteratorKind = (
+    Concat, Ordered, Reversed, Shuffled,
+    Skip, SkipWhile, SkipWhileIndex,
+    Take, TakeWhile, TakeWhileIndex,
+    Where);
   TMoveNextFunc = function(self: Pointer): Boolean;
-  TStartProc = function(self: Pointer): Boolean;
+  TStartFunc = function(self: Pointer): Boolean;
   PIteratorRec = ^TIteratorRec;
   TIteratorRec = record
     MoveNext: TMoveNextFunc;
     Source: IEnumerable;
     Enumerator: IEnumerator;
     TypeInfo: PTypeInfo;
-    Start: TStartProc;
+    Start: TStartFunc;
 
     Predicate: IInterface;
     Items: Pointer;
     Count: Integer;
+    Kind: TIteratorKind;
 
     function Clone: PIteratorRec;
     procedure Finalize;
 
+    function TryGetCount(out count: Integer): Boolean;
+
     function GetEnumerator: Boolean;
     function GetEnumeratorAndSkip: Boolean;
     procedure GetSecondEnumerator;
-  const
-    Ordered = -1;
-    Reversed = -2;
-    Shuffled = -3;
   end;
 
   TIteratorRec<T> = record
@@ -205,11 +209,12 @@ type
     Source: IEnumerable<T>;
     Enumerator: IEnumerator<T>;
     TypeInfo: PTypeInfo;
-    Start: TStartProc;
+    Start: TStartFunc;
 
     Predicate: IInterface;
     Items: TArray<T>;
     Count: Integer;
+    Kind: TIteratorKind;
     Current: T;
 
     function ToArray: Boolean;
@@ -253,12 +258,14 @@ type
     function GetElementType: PTypeInfo; override;
   public
     constructor Create(const source: IEnumerable<T>;
-      count: Integer; predicate: Pointer;
-      moveNext: TMoveNextFunc; start: TStartProc); overload;
+      count: Integer; predicate: Pointer; kind: TIteratorKind); overload;
     function GetEnumerator: IEnumerator<T>;
   end;
 
-  TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IInterface, IEnumerable<T>);
+  TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IInterface, IEnumerable<T>)
+  private
+    function GetCount: Integer;
+  end;
 
   TArrayIterator<T> = class(TIteratorBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
@@ -330,9 +337,13 @@ type
   end;
 
   TSourceIterator<T> = class abstract(TIterator<T>, IEnumerable<T>)
-  protected
+  strict private
     fSource: IEnumerable<T>;
+  protected
     function GetElementType: PTypeInfo; override;
+    property Source: IEnumerable<T> read fSource;
+  public
+    constructor Create(const source: IEnumerable<T>);
   end;
 
   /// <summary>
@@ -563,6 +574,7 @@ const
 implementation
 
 uses
+  Math,
 {$IFDEF MSWINDOWS}
   Windows,
 {$ENDIF}
@@ -826,7 +838,7 @@ begin
 {$ENDIF}
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, Pointer(second), @TIteratorRec<T>.Concat, @TIteratorRec.GetEnumerator);
+    0, Pointer(second), TIteratorKind.Concat);
 end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
@@ -1158,8 +1170,7 @@ end;
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    TIteratorRec.Ordered, Pointer(fComparer),
-    @TIteratorRec<T>.Ordered, @TIteratorRec<T>.ToArray);
+    0, Pointer(fComparer), TIteratorKind.Ordered);
 end;
 
 function TEnumerableBase<T>.Ordered(
@@ -1170,8 +1181,7 @@ begin
 {$ENDIF}
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    TIteratorRec.Ordered, Pointer(comparer),
-    @TIteratorRec<T>.Ordered, @TIteratorRec<T>.ToArray);
+    0, Pointer(comparer), TIteratorKind.Ordered);
 end;
 
 function TEnumerableBase<T>.Ordered(
@@ -1197,15 +1207,13 @@ end;
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    TIteratorRec.Reversed, nil,
-    @TIteratorRec<T>.Reversed, @TIteratorRec<T>.ToArray);
+    0, nil, TIteratorKind.Reversed);
 end;
 
 function TEnumerableBase<T>.Shuffled: IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    TIteratorRec.Shuffled, nil,
-    @TIteratorRec<T>.Ordered, @TIteratorRec<T>.ToArray);
+    0, nil, TIteratorKind.Shuffled);
 end;
 
 function TEnumerableBase<T>.Single: T;
@@ -1298,7 +1306,7 @@ end;
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    count, nil, @TIteratorRec<T>.Skip, @TIteratorRec.GetEnumeratorAndSkip);
+    count, nil, TIteratorKind.Skip);
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -1309,7 +1317,7 @@ begin
 {$ENDIF}
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, @TIteratorRec<T>.SkipWhile, @TIteratorRec.GetEnumerator);
+    0, PPointer(@predicate)^, TIteratorKind.SkipWhile);
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -1320,7 +1328,7 @@ begin
 {$ENDIF}
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, @TIteratorRec<T>.SkipWhileIndex, @TIteratorRec.GetEnumerator);
+    0, PPointer(@predicate)^, TIteratorKind.SkipWhileIndex);
 end;
 
 function TEnumerableBase<T>.Sum: T;
@@ -1343,7 +1351,7 @@ end;
 function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    count, nil, @TIteratorRec<T>.Take, @TIteratorRec.GetEnumerator);
+    count, nil, TIteratorKind.Take);
 end;
 
 function TEnumerableBase<T>.TakeWhile(
@@ -1354,7 +1362,7 @@ begin
 {$ENDIF}
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, @TIteratorRec<T>.TakeWhile, @TIteratorRec.GetEnumerator);
+    0, PPointer(@predicate)^, TIteratorKind.TakeWhile);
 end;
 
 function TEnumerableBase<T>.TakeWhile(
@@ -1365,7 +1373,7 @@ begin
 {$ENDIF}
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, @TIteratorRec<T>.TakeWhileIndex, @TIteratorRec.GetEnumerator);
+    0, PPointer(@predicate)^, TIteratorKind.TakeWhileIndex);
 end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
@@ -1538,7 +1546,7 @@ begin
 {$ENDIF}
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, @TIteratorRec<T>.Where, @TIteratorRec.GetEnumerator);
+    0, PPointer(@predicate)^, TIteratorKind.Where);
 end;
 
 {$ENDREGION}
@@ -1666,6 +1674,12 @@ end;
 
 
 {$REGION 'TSourceIterator<T>'}
+
+constructor TSourceIterator<T>.Create(const source: IEnumerable<T>);
+begin
+  fSource := source;
+  inherited Create(fSource.Comparer);
+end;
 
 function TSourceIterator<T>.GetElementType: PTypeInfo;
 begin
@@ -2466,25 +2480,74 @@ end;
 {$REGION 'TIteratorBase<T>'}
 
 constructor TIteratorBase<T>.Create(const source: IEnumerable<T>;
-  count: Integer; predicate: Pointer; moveNext: TMoveNextFunc; start: TStartProc);
+  count: Integer; predicate: Pointer; kind: TIteratorKind);
+var
+  MoveNextFuncs: array[TIteratorKind] of Pointer;
+  StartFuncs: array[TIteratorKind] of Pointer;
 begin
-  inherited Create(source.Comparer);
-  fIterator.MoveNext := moveNext;
   fIterator.Source := source;
+  inherited Create(source.Comparer);
   fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
-  fIterator.Start := start;
   fIterator.Count := count;
   fIterator.Predicate := IInterface(predicate);
+  fIterator.Kind := kind;
+
+  MoveNextFuncs[TIteratorKind.Concat] := @TIteratorRec<T>.Concat;
+  MoveNextFuncs[TIteratorKind.Ordered] := @TIteratorRec<T>.Ordered;
+  MoveNextFuncs[TIteratorKind.Reversed] := @TIteratorRec<T>.Reversed;
+  MoveNextFuncs[TIteratorKind.Shuffled] := @TIteratorRec<T>.Ordered;
+
+  MoveNextFuncs[TIteratorKind.Skip] := @TIteratorRec<T>.Skip;
+  MoveNextFuncs[TIteratorKind.SkipWhile] := @TIteratorRec<T>.SkipWhile;
+  MoveNextFuncs[TIteratorKind.SkipWhileIndex] := @TIteratorRec<T>.SkipWhileIndex;
+
+  MoveNextFuncs[TIteratorKind.Take] := @TIteratorRec<T>.Take;
+  MoveNextFuncs[TIteratorKind.TakeWhile] := @TIteratorRec<T>.TakeWhile;
+  MoveNextFuncs[TIteratorKind.TakeWhileIndex] := @TIteratorRec<T>.TakeWhileIndex;
+
+  MoveNextFuncs[TIteratorKind.Where] := @TIteratorRec<T>.Where;
+
+  StartFuncs[TIteratorKind.Concat] := @TIteratorRec.GetEnumerator;
+  StartFuncs[TIteratorKind.Ordered] := @TIteratorRec<T>.ToArray;
+  StartFuncs[TIteratorKind.Reversed] := @TIteratorRec<T>.ToArray;
+  StartFuncs[TIteratorKind.Shuffled] := @TIteratorRec<T>.ToArray;
+
+  StartFuncs[TIteratorKind.Skip] := @TIteratorRec.GetEnumeratorAndSkip;
+  StartFuncs[TIteratorKind.SkipWhile] := @TIteratorRec.GetEnumerator;
+  StartFuncs[TIteratorKind.SkipWhileIndex] := @TIteratorRec.GetEnumerator;
+
+  StartFuncs[TIteratorKind.Take] := @TIteratorRec.GetEnumerator;
+  StartFuncs[TIteratorKind.TakeWhile] := @TIteratorRec.GetEnumerator;
+  StartFuncs[TIteratorKind.TakeWhileIndex] := @TIteratorRec.GetEnumerator;
+
+  StartFuncs[TIteratorKind.Where] := @TIteratorRec.GetEnumerator;
+
+  fIterator.MoveNext := MoveNextFuncs[kind];
+  fIterator.Start := StartFuncs[kind];
 end;
 
 function TIteratorBase<T>.GetElementType: PTypeInfo;
 begin
-  Result := fIterator.Source.ElementType;
+  if Assigned(fIterator.Source) then
+    Result := fIterator.Source.ElementType
+  else
+    Result := inherited GetElementType;
 end;
 
 function TIteratorBase<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self, @fIterator);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableIterator<T>'}
+
+function TEnumerableIterator<T>.GetCount: Integer;
+begin
+  if not PIteratorRec(@fIterator).TryGetCount(Result) then
+    Result := inherited GetCount;
 end;
 
 {$ENDREGION}
@@ -2614,7 +2677,7 @@ end;
 
 procedure TIterator.Start;
 var
-  startProc: TStartProc;
+  startProc: TStartFunc;
 begin
   startProc := fIterator.Start;
   if Assigned(startProc) then
@@ -2649,6 +2712,21 @@ end;
 procedure TIteratorRec.Finalize;
 begin
   FinalizeRecord(@Self, TypeInfo);
+end;
+
+function TIteratorRec.TryGetCount(out count: Integer): Boolean;
+begin
+  Result := True;
+  case Kind of
+    TIteratorKind.Concat:
+      count := Source.Count + IEnumerable(Predicate).Count;
+    TIteratorKind.Skip:
+      count := Math.Max(0, Source.Count - Self.Count);
+    TIteratorKind.Take:
+      count := Math.Min(Self.Count, Source.Count);
+  else
+    Result := False;
+  end;
 end;
 
 function TIteratorRec.GetEnumerator: Boolean;
@@ -2803,19 +2881,13 @@ end;
 function TIteratorRec<T>.ToArray: Boolean;
 begin
   Items := Source.ToArray;
-  case Count of // using Count as flag to determine how to treat the array
-    TIteratorRec.Ordered:
-    begin
+  case Kind of
+    TIteratorKind.Ordered:
       TArray.Sort<T>(Items, IComparer<T>(Predicate));
-      Count := 0;
-    end;
-    TIteratorRec.Reversed:
+    TIteratorKind.Reversed:
       Count := Length(Items);
-    TIteratorRec.Shuffled:
-    begin
+    TIteratorKind.Shuffled:
       TArray.Shuffle<T>(Items);
-      Count := 0;
-    end;
   end;
   Result := True;
 end;

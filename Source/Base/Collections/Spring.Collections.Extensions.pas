@@ -250,11 +250,15 @@ type
     function GetIsEmpty: Boolean;
     function GetItem(index: Integer): Integer;
   {$ENDREGION}
+  protected
+    function TryGetElementAt(out value: Integer; index: Integer): Boolean; override;
   public
     constructor Create(start, count: Integer);
 
   {$REGION 'Implements IEnumerable<Integer>'}
     function GetEnumerator: IEnumerator<Integer>;
+    function Skip(count: Integer): IEnumerable<Integer>;
+    function Take(count: Integer): IEnumerable<Integer>;
     function ToArray: TArray<Integer>;
   {$ENDREGION}
 
@@ -938,14 +942,13 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fPredicate := predicate;
 end;
 
 function TWhereIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TWhereIterator<T>.Create(fSource, fPredicate);
+  Result := TWhereIterator<T>.Create(Source, fPredicate);
 end;
 
 procedure TWhereIterator<T>.Dispose;
@@ -966,7 +969,7 @@ end;
 
 procedure TWhereIterator<T>.Start;
 begin
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -982,14 +985,13 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fPredicate := predicate;
 end;
 
 function TWhereIndexIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TWhereIndexIterator<T>.Create(fSource, fPredicate);
+  Result := TWhereIndexIterator<T>.Create(Source, fPredicate);
 end;
 
 procedure TWhereIndexIterator<T>.Dispose;
@@ -1012,7 +1014,7 @@ end;
 procedure TWhereIndexIterator<T>.Start;
 begin
   fIndex := -1;
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -1027,14 +1029,13 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fCount := count;
 end;
 
 function TSkipIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TSkipIterator<T>.Create(fSource, fCount);
+  Result := TSkipIterator<T>.Create(Source, fCount);
 end;
 
 procedure TSkipIterator<T>.Dispose;
@@ -1053,7 +1054,7 @@ end;
 
 procedure TSkipIterator<T>.Start;
 begin
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
   fIndex := fCount;
 end;
 
@@ -1070,8 +1071,7 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fPredicate := predicate;
 end;
 
@@ -1083,17 +1083,16 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fPredicateIndex := predicate;
 end;
 
 function TSkipWhileIterator<T>.Clone: TIterator<T>;
 begin
   if Assigned(fPredicate) then
-    Result := TSkipWhileIterator<T>.Create(fSource, fPredicate)
+    Result := TSkipWhileIterator<T>.Create(Source, fPredicate)
   else
-    Result := TSkipWhileIterator<T>.Create(fSource, fPredicateIndex);
+    Result := TSkipWhileIterator<T>.Create(Source, fPredicateIndex);
 end;
 
 procedure TSkipWhileIterator<T>.Dispose;
@@ -1126,7 +1125,7 @@ end;
 
 procedure TSkipWhileIterator<T>.Start;
 begin
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -1141,14 +1140,13 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fCount := count;
 end;
 
 function TTakeIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TTakeIterator<T>.Create(fSource, fCount);
+  Result := TTakeIterator<T>.Create(Source, fCount);
 end;
 
 procedure TTakeIterator<T>.Dispose;
@@ -1168,7 +1166,7 @@ end;
 
 procedure TTakeIterator<T>.Start;
 begin
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -1184,8 +1182,7 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fPredicate := predicate;
 end;
 
@@ -1198,17 +1195,16 @@ begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fPredicateIndex := predicate;
 end;
 
 function TTakeWhileIterator<T>.Clone: TIterator<T>;
 begin
   if Assigned(fPredicate) then
-    Result := TTakeWhileIterator<T>.Create(fSource, fPredicate)
+    Result := TTakeWhileIterator<T>.Create(Source, fPredicate)
   else
-    Result := TTakeWhileIterator<T>.Create(fSource, fPredicateIndex);
+    Result := TTakeWhileIterator<T>.Create(Source, fPredicateIndex);
 end;
 
 procedure TTakeWhileIterator<T>.Dispose;
@@ -1232,7 +1228,7 @@ end;
 
 procedure TTakeWhileIterator<T>.Start;
 begin
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -1247,14 +1243,13 @@ begin
   Guard.CheckNotNull(Assigned(second), 'second');
 {$ENDIF}
 
-  inherited Create;
-  fSource := first;
+  inherited Create(first);
   fSecond := second;
 end;
 
 function TConcatIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TConcatIterator<T>.Create(fSource, fSecond);
+  Result := TConcatIterator<T>.Create(Source, fSecond);
 end;
 
 procedure TConcatIterator<T>.Dispose;
@@ -1284,7 +1279,7 @@ end;
 procedure TConcatIterator<T>.Start;
 begin
   if not fFlag then
-    fEnumerator := fSource.GetEnumerator
+    fEnumerator := Source.GetEnumerator
   else
     fEnumerator := fSecond.GetEnumerator;
 end;
@@ -1300,13 +1295,12 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
 end;
 
 function TReversedIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TReversedIterator<T>.Create(fSource);
+  Result := TReversedIterator<T>.Create(Source);
 end;
 
 procedure TReversedIterator<T>.Dispose;
@@ -1326,7 +1320,7 @@ end;
 
 procedure TReversedIterator<T>.Start;
 begin
-  fBuffer := fSource.ToArray;
+  fBuffer := Source.ToArray;
   fIndex := Length(fBuffer);
 end;
 
@@ -1342,14 +1336,13 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fComparer := comparer;
 end;
 
 function TDistinctIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TDistinctIterator<T>.Create(fSource, fComparer);
+  Result := TDistinctIterator<T>.Create(Source, fComparer);
 end;
 
 procedure TDistinctIterator<T>.Dispose;
@@ -1372,7 +1365,7 @@ end;
 procedure TDistinctIterator<T>.Start;
 begin
   fSet := TCollections.CreateSet<T>(fComparer);
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -1387,15 +1380,14 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create(source.Comparer);
-  fSource := source;
+  inherited Create(source);
   fKeySelector := keySelector;
   fComparer := comparer;
 end;
 
 function TDistinctByIterator<T, TKey>.Clone: TIterator<T>;
 begin
-  Result := TDistinctByIterator<T, TKey>.Create(fSource, fKeySelector, fComparer);
+  Result := TDistinctByIterator<T, TKey>.Create(Source, fKeySelector, fComparer);
 end;
 
 procedure TDistinctByIterator<T, TKey>.Dispose;
@@ -1418,7 +1410,7 @@ end;
 procedure TDistinctByIterator<T, TKey>.Start;
 begin
   fSet := TCollections.CreateSet<TKey>(fComparer);
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -1503,6 +1495,26 @@ begin
     Result := -1;
 end;
 
+function TRangeIterator.Skip(count: Integer): IEnumerable<Integer>;
+begin
+  if count < 0 then
+    count := 0;
+  if count >= fCount then
+    Result := TEnumerable.Empty<Integer>
+  else
+    Result := TRangeIterator.Create(fStart + count, fCount - count);
+end;
+
+function TRangeIterator.Take(count: Integer): IEnumerable<Integer>;
+begin
+  if count <= 0 then
+    Result := TEnumerable.Empty<Integer>
+  else if count >= fCount then
+    Result := IEnumerable<Integer>(this)
+  else
+    Result := TRangeIterator.Create(fStart, count);
+end;
+
 function TRangeIterator.ToArray: TArray<Integer>;
 var
   i: Integer;
@@ -1510,6 +1522,20 @@ begin
   SetLength(Result, fCount);
   for i := 0 to fCount - 1 do
     Result[i] := fStart + i;
+end;
+
+function TRangeIterator.TryGetElementAt(out value: Integer; index: Integer): Boolean;
+begin
+  if Cardinal(index) < Cardinal(fCount) then
+  begin
+    Result := True;
+    value := fStart + index;
+  end
+  else
+  begin
+    Result := False;
+    value := 0;
+  end;
 end;
 
 {$ENDREGION}
@@ -1560,15 +1586,14 @@ begin
   Guard.CheckNotNull(Assigned(second), 'second');
 {$ENDIF}
 
-  inherited Create;
-  fSource := first;
+  inherited Create(first);
   fSecond := second;
   fComparer := comparer;
 end;
 
 function TExceptIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TExceptIterator<T>.Create(fSource, fSecond, fComparer);
+  Result := TExceptIterator<T>.Create(Source, fSecond, fComparer);
 end;
 
 procedure TExceptIterator<T>.Dispose;
@@ -1592,7 +1617,7 @@ procedure TExceptIterator<T>.Start;
 begin
   fSet := TCollections.CreateSet<T>(fComparer);
   fSet.AddRange(fSecond);
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -1613,15 +1638,14 @@ begin
   Guard.CheckNotNull(Assigned(second), 'second');
 {$ENDIF}
 
-  inherited Create;
-  fSource := first;
+  inherited Create(first);
   fSecond := second;
   fComparer := comparer;
 end;
 
 function TIntersectIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TIntersectIterator<T>.Create(fSource, fSecond, fComparer);
+  Result := TIntersectIterator<T>.Create(Source, fSecond, fComparer);
 end;
 
 procedure TIntersectIterator<T>.Dispose;
@@ -1645,7 +1669,7 @@ procedure TIntersectIterator<T>.Start;
 begin
   fSet := TCollections.CreateSet<T>(fComparer);
   fSet.AddRange(fSecond);
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -1666,15 +1690,14 @@ begin
   Guard.CheckNotNull(Assigned(second), 'second');
 {$ENDIF}
 
-  inherited Create;
-  fSource := first;
+  inherited Create(first);
   fSecond := second;
   fComparer := comparer;
 end;
 
 function TUnionIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TUnionIterator<T>.Create(fSource, fSecond, fComparer);
+  Result := TUnionIterator<T>.Create(Source, fSecond, fComparer);
 end;
 
 procedure TUnionIterator<T>.Dispose;
@@ -1708,7 +1731,7 @@ begin
   if not fFlag then
   begin
     fSet := TCollections.CreateSet<T>(fComparer);
-    fEnumerator := fSource.GetEnumerator;
+    fEnumerator := Source.GetEnumerator;
   end
   else
     fEnumerator := fSecond.GetEnumerator;
@@ -2747,7 +2770,6 @@ begin
   Guard.CheckNotNull(Assigned(keySelector), 'keySelector');
 {$ENDIF}
 
-  inherited Create;
   obj := source.AsObject;
   if obj is TOrderedEnumerable<TElement> then
   begin
@@ -2756,6 +2778,7 @@ begin
   end
   else
     fSource := source;
+  inherited Create;
   fKeySelector := keySelector;
   fComparer := comparer;
   if not Assigned(fComparer) then
@@ -2784,16 +2807,15 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create;
-  fSource := source;
+  inherited Create(source);
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := fSource.Comparer;
+    fComparer := Source.Comparer;
 end;
 
 function TOrderedIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TOrderedIterator<T>.Create(fSource, fComparer);
+  Result := TOrderedIterator<T>.Create(Source, fComparer);
 end;
 
 procedure TOrderedIterator<T>.Dispose;
@@ -2813,7 +2835,7 @@ end;
 
 procedure TOrderedIterator<T>.Start;
 begin
-  fValues := fSource.ToArray;
+  fValues := Source.ToArray;
   TArray.Sort<T>(fValues, fComparer);
 end;
 
@@ -2874,14 +2896,13 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create;
-  fSource := source;
+  inherited Create(source);
   fDefaultValue := defaultValue;
 end;
 
 function TDefaultIfEmptyIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TDefaultIfEmptyIterator<T>.Create(fSource, fDefaultValue);
+  Result := TDefaultIfEmptyIterator<T>.Create(Source, fDefaultValue);
 end;
 
 procedure TDefaultIfEmptyIterator<T>.Dispose;
@@ -2909,7 +2930,7 @@ end;
 
 procedure TDefaultIfEmptyIterator<T>.Start;
 begin
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
 end;
 
 {$ENDREGION}
@@ -2926,15 +2947,14 @@ begin
   Guard.CheckNotNull(Assigned(compare), 'compare');
 {$ENDIF}
 
-  inherited Create;
-  fSource := source;
+  inherited Create(source);
   fKeySelector := keySelector;
   fCompare := compare;
 end;
 
 function TExtremaByIterator<T, TKey>.Clone: TIterator<T>;
 begin
-  Result := TExtremaByIterator<T, TKey>.Create(fSource, fkeySelector, fCompare);
+  Result := TExtremaByIterator<T, TKey>.Create(Source, fkeySelector, fCompare);
 end;
 
 procedure TExtremaByIterator<T, TKey>.Dispose;
@@ -2958,7 +2978,7 @@ var
   compareResult: Integer;
 begin
   fResult := TCollections.CreateList<T>;
-  fEnumerator := fSource.GetEnumerator;
+  fEnumerator := Source.GetEnumerator;
   if not fEnumerator.MoveNext then
     raise Error.NoElements;
 
