@@ -2246,6 +2246,7 @@ type
 
   {$REGION 'TTimSort'}
 
+{$IFDEF DELPHIXE7_UP}
   TTimSort = record
   private
     type
@@ -2271,8 +2272,8 @@ type
     fRunBase: TArray<Integer>;
     fRunLen: TArray<Integer>;
   private
-    procedure Initialize(items, comparer: Pointer; const compare: TCompareFunc; mergeLo, mergeHi: TMergeFunc;
-      arrayTypeInfo: PTypeInfo; itemSize: Integer);
+    procedure Initialize(items, comparer: Pointer; const compare: TCompareFunc; 
+      mergeLo, mergeHi: TMergeFunc; arrayTypeInfo: PTypeInfo; itemSize: Integer);
     procedure Finalize;
     procedure Allocate(count: Integer);
     function at(items: Pointer; index: Integer): Pointer; inline;
@@ -2293,6 +2294,7 @@ type
   public
     class procedure Sort<T>(var items: array of T; const comparer: IComparer<T>; lo, hi, start: Integer); static;
   end;
+  {$ENDIF}
 
   {$ENDREGION}
 
@@ -2562,6 +2564,7 @@ type
     class procedure Sort<T>(var values: array of T;
       const comparison: TComparison<T>; index, count: Integer); overload; static;
 
+{$IFDEF DELPHIXE7_UP}
     /// <summary>
     ///   Sorts the elements in an array using the default comparer.
     /// </summary>
@@ -2596,7 +2599,7 @@ type
     /// </summary>
     class procedure StableSort<T>(var values: array of T;
       const comparison: TComparison<T>; index, count: Integer); overload; static;
-
+{$ENDIF}
     /// <summary>
     ///   Swaps the values of the specified variables.
     /// </summary>
@@ -3667,7 +3670,7 @@ end;
 {$ELSE}
 begin
   Result := 1;
-  while Result <= value do
+  while (Result <= value) and (Result > 0) do
     Result := Result shl 1;
 end;
 {$ENDIF}
@@ -8914,8 +8917,9 @@ end;
 
 {$REGION 'TTimSort'}
 
-procedure TTimSort.Initialize(items, comparer: Pointer; const compare: TCompareFunc; mergeLo, mergeHi: TMergeFunc;
-  arrayTypeInfo: PTypeInfo; itemSize: Integer);
+{$IFDEF DELPHIXE7_UP}
+procedure TTimSort.Initialize(items, comparer: Pointer; const compare: TCompareFunc;
+  mergeLo, mergeHi: TMergeFunc; arrayTypeInfo: PTypeInfo; itemSize: Integer);
 begin
   Self := Default(TTimSort);
   fItems := items;
@@ -9078,9 +9082,9 @@ begin
 
   // find end of run, and reverse range if descending
   items := fItems;
-  compareResult := IComparer<T>(fComparer).Compare(items[runHi], items[lo]);
+  compareResult := IComparer<T>(fComparer).Compare(items[lo], items[runHi]);
   Inc(RunHi);
-  if compareResult < 0 then
+  if compareResult > 0 then
   begin
     // descending
     while (runHi < hi) and (IComparer<T>(fComparer).Compare(items[runHi], items[runHi - 1]) < 0) do
@@ -9477,7 +9481,8 @@ begin
     Inc(fMinGallop, 2); // penalize for leaving gallop mode
   end;
 endOfOuterLoop:
-  fMinGallop := Math.Max(1, fMinGallop);
+  if fMinGallop = 0 then
+    fMinGallop := 1;
 
   if len1 = 1 then
   begin
@@ -9519,13 +9524,13 @@ begin
   // copy second run into temp array
   items := fItems;
   tmp := EnsureTmpCapacity(len2);
+  cursor1 := base1 + len1 - 1; // indexes into items
+  cursor2 := len2 - 1; // indexes into tmp
+  dest := base2 + len2 - 1; // indexes into items
   if TType.IsManaged<T> then
     CopyArray<T>(items[base2], tmp[0], len2)
   else
     System.Move(items[base2], tmp[0], len2 * SizeOf(T));
-  cursor1 := base1 + len1 - 1; // indexes into items
-  cursor2 := len2 - 1; // indexes into tmp
-  dest := base2 + len2 - 1; // indexes into items
 
   // move last element of first run and deal with degenerate cases
   items[dest] := items[cursor1];
@@ -9637,7 +9642,8 @@ begin
     Inc(fMinGallop, 2); // penalize for leaving gallop mode
   end;
 endOfOuterLoop:
-  fMinGallop := Math.Max(1, fMinGallop);
+  if fMinGallop = 0 then
+    fMinGallop := 1;
 
   if len2 = 1 then
   begin
@@ -9673,7 +9679,6 @@ begin
     newLen := NextPowerOf2(minCapacity);
     if fMaxTmpLen < newLen then
       newLen := fMaxTmpLen;
-
     DynArraySetLength(fTmp, fArrayTypeInfo, 1, @newLen);
   end;
   Result := Pointer(fTmp);
@@ -9685,6 +9690,8 @@ var
   initRunLen, minRun, runLen: Integer;
   force: Integer;
   ts: TTimSort;
+  compare: function (const left, right): Integer of object;
+  mergeLo, mergeHi: procedure(base1, len1, base2, len2: Integer) of object;
 begin
   Assert(lo >= 0);
   Assert(lo <= hi);
@@ -9693,8 +9700,11 @@ begin
   if nRemaining < 2 then
     Exit; // arrays of length 0 and 1 are always sorted
 
-  ts.Initialize(@items[0], Pointer(comparer), @TTimSort.CompareImpl<T>, @TTimSort.MergeLoImpl<T>,
-    @TTimSort.MergeHiImpl<T>, TypeInfo(TArray<T>), SizeOf(T));
+  compare := ts.CompareImpl<T>;
+  mergeLo := ts.MergeLoImpl<T>;
+  mergeHi := ts.MergeHiImpl<T>;
+  ts.Initialize(@items[0], Pointer(comparer), TMethod(compare).Code,
+    TMethod(mergeLo).Code, TMethod(mergeHi).Code, TypeInfo(TArray<T>), SizeOf(T));
   try
     // if array is small, do a "mini-TimSort" with no merges
     if nRemaining < MIN_MERGE then
@@ -9723,7 +9733,10 @@ begin
       // if run is short, extend to min(minRun, nRemaining)
       if runLen < minRun then
       begin
-        force := Math.Min(nRemaining, minRun);
+        if nRemaining < minRun then
+          force := nRemaining
+        else
+          force := minRun;
         ts.BinarySortImpl<T>(lo, lo + force, lo + runLen);
         runLen := force;
       end;
@@ -9745,6 +9758,7 @@ begin
     ts.Finalize;
   end;
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -10176,6 +10190,7 @@ begin
     Swap<T>(mid, right);
 end;
 
+{$IFDEF DELPHIXE7_UP}
 class procedure TArray.StableSort<T>(var values: array of T);
 var
   comparer: IComparer<T>;
@@ -10231,6 +10246,7 @@ begin
 
   TTimSort.Sort<T>(values, IComparer<T>(PPointer(@comparison)^), index, index + count, index);
 end;
+{$ENDIF}
 
 class procedure TArray.DownHeap<T>(var values: array of T;
   const comparer: IComparer<T>; left, count, i: Integer);

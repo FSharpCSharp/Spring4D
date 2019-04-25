@@ -585,6 +585,7 @@ type
     procedure TestLastIndexOf;
     procedure TestLastIndexOfSubRange;
 
+{$IFDEF DELPHIXE7_UP}
     procedure TestStableSortOrdering;
     procedure TestStableSortStability;
     procedure TestStableSortSubrangeSort;
@@ -595,6 +596,7 @@ type
     procedure TestStableSortUnmanagedRecord;
     procedure TestStableSortManagedRecord;
     procedure TestTimSortArrayIndexOutOfBoundsBugFix;
+{$ENDIF}
   end;
 
   TWeakTest = class(TTestCase)
@@ -3522,6 +3524,7 @@ begin
   CheckEquals(5, index);
 end;
 
+{$IFDEF DELPHIXE7_UP}
 procedure TArrayTest.TestStableSortOrdering;
 
   procedure CheckArraysEqual(const values1, values2: array of Integer);
@@ -3724,7 +3727,7 @@ end;
 procedure TArrayTest.TestStableSortUnmanagedRecord;
 
 type
-  TRec = record
+  TUnmanagedRec = record
     HashCode: Integer;
     Value: Integer;
     DoubleValue: Double;
@@ -3733,11 +3736,11 @@ type
 
 var
   i, j: Integer;
-  values: TArray<TRec>;
-  comparison: TComparison<TRec>;
+  values: TArray<TUnmanagedRec>;
+  comparison: TComparison<TUnmanagedRec>;
 begin
   comparison :=
-    function(const left, right: TRec): Integer
+    function(const left, right: TUnmanagedRec): Integer
     begin
       Result := Round(left.DoubleValue - right.DoubleValue);
     end;
@@ -3753,8 +3756,8 @@ begin
       PDouble(@values[j].Stuff[0])^ := 2 * j;
       PDouble(@values[j].Stuff[8])^ := -3 * j;
     end;
-    TArray.Shuffle<TRec>(values);
-    TArray.StableSort<TRec>(values, comparison);
+    TArray.Shuffle<TUnmanagedRec>(values);
+    TArray.StableSort<TUnmanagedRec>(values, comparison);
     for j := 0 to i - 1 do
     begin
       CheckEquals(BobJenkinsHash(j, SizeOf(j), 666), values[j].HashCode);
@@ -3769,7 +3772,7 @@ end;
 procedure TArrayTest.TestStableSortManagedRecord;
 
 type
-  TRec = record
+  TManagedRec = record
     HashCode: Integer;
     Value: Integer;
     DoubleValue: Double;
@@ -3779,11 +3782,11 @@ type
 
 var
   i, j: Integer;
-  values: TArray<TRec>;
-  comparison: TComparison<TRec>;
+  values: TArray<TManagedRec>;
+  comparison: TComparison<TManagedRec>;
 begin
   comparison :=
-    function(const left, right: TRec): Integer
+    function(const left, right: TManagedRec): Integer
     begin
       Result := Round(left.DoubleValue - right.DoubleValue);
     end;
@@ -3800,8 +3803,8 @@ begin
       PDouble(@values[j].Stuff[8])^ := -3 * j;
       values[j].Text := FloatToStr(6 * j + 2);
     end;
-    TArray.Shuffle<TRec>(values);
-    TArray.StableSort<TRec>(values, comparison);
+    TArray.Shuffle<TManagedRec>(values);
+    TArray.StableSort<TManagedRec>(values, comparison);
     for j := 0 to i - 1 do
     begin
       CheckEquals(BobJenkinsHash(j, SizeOf(j), 666), values[j].HashCode);
@@ -3936,6 +3939,7 @@ begin
   TArray.StableSort<Int64>(values);
   Pass;
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -4177,9 +4181,12 @@ begin
   TestRange( 16, 31, 32);
 
   TestRange(Pow_2_30 - 50, Pow_2_30 - 1, Pow_2_30);
+  TestRange(High(Integer) div 2 + 1, High(Integer) div 2 + 2, Integer($80000000));
+  TestRange(High(Integer) - 1, High(Integer), Integer($80000000));
 end;
 
 {$ENDREGION}
 
 
 end.
+
