@@ -590,7 +590,10 @@ type
     procedure TestStableSortSubrangeSort;
     procedure TestStableSortOrderedInput;
     procedure TestStableSortLongRuns;
-    procedure TestStableSortManagedTypes;
+    procedure TestStableSortString;
+    procedure TestStableSortInterface;
+    procedure TestStableSortUnmanagedRecord;
+    procedure TestStableSortManagedRecord;
     procedure TestTimSortArrayIndexOutOfBoundsBugFix;
   end;
 
@@ -3669,7 +3672,7 @@ begin
     CheckTrue(values[i - 1] < values[i]);
 end;
 
-procedure TArrayTest.TestStableSortManagedTypes;
+procedure TArrayTest.TestStableSortString;
 var
   i, j: Integer;
   values1, values2: TArray<string>;
@@ -3685,6 +3688,129 @@ begin
     TArray.Sort<string>(values2);
     for j := 0 to i - 1 do
       CheckEquals(values1[j], values2[j]);
+  end;
+end;
+
+procedure TArrayTest.TestStableSortInterface;
+
+  function MakeIntWrapper(i: Integer): TFunc<Integer>;
+  begin
+    Result := function: Integer begin Result := i; end;
+  end;
+
+var
+  i, j: Integer;
+  values: TArray<TFunc<Integer>>;
+  comparison: TComparison<TFunc<Integer>>;
+begin
+  comparison :=
+    function(const left, right: TFunc<Integer>): Integer
+    begin
+      Result := left() - right();
+    end;
+
+  for i := 0 to 1000 do
+  begin
+    SetLength(values, i);
+    for j := 0 to i - 1 do
+      values[j] := MakeIntWrapper(j);
+    TArray.Shuffle<TFunc<Integer>>(values);
+    TArray.StableSort<TFunc<Integer>>(values, comparison);
+    for j := 0 to i - 1 do
+      CheckEquals(j, values[j]());
+  end;
+end;
+
+procedure TArrayTest.TestStableSortUnmanagedRecord;
+
+type
+  TRec = record
+    HashCode: Integer;
+    Value: Integer;
+    DoubleValue: Double;
+    Stuff: array [0..15] of Byte;
+  end;
+
+var
+  i, j: Integer;
+  values: TArray<TRec>;
+  comparison: TComparison<TRec>;
+begin
+  comparison :=
+    function(const left, right: TRec): Integer
+    begin
+      Result := Round(left.DoubleValue - right.DoubleValue);
+    end;
+
+  for i := 0 to 1000 do
+  begin
+    SetLength(values, i);
+    for j := 0 to i - 1 do
+    begin
+      values[j].HashCode := BobJenkinsHash(j, SizeOf(j), 666);
+      values[j].Value := j;
+      values[j].DoubleValue :=j;
+      PDouble(@values[j].Stuff[0])^ := 2 * j;
+      PDouble(@values[j].Stuff[8])^ := -3 * j;
+    end;
+    TArray.Shuffle<TRec>(values);
+    TArray.StableSort<TRec>(values, comparison);
+    for j := 0 to i - 1 do
+    begin
+      CheckEquals(BobJenkinsHash(j, SizeOf(j), 666), values[j].HashCode);
+      CheckEquals(j, values[j].Value);
+      CheckEquals(j, values[j].DoubleValue);
+      CheckEquals(2 * j, PDouble(@values[j].Stuff[0])^);
+      CheckEquals(-3 * j, PDouble(@values[j].Stuff[8])^);
+    end;
+  end;
+end;
+
+procedure TArrayTest.TestStableSortManagedRecord;
+
+type
+  TRec = record
+    HashCode: Integer;
+    Value: Integer;
+    DoubleValue: Double;
+    Stuff: array [0..15] of Byte;
+    Text: string;
+  end;
+
+var
+  i, j: Integer;
+  values: TArray<TRec>;
+  comparison: TComparison<TRec>;
+begin
+  comparison :=
+    function(const left, right: TRec): Integer
+    begin
+      Result := Round(left.DoubleValue - right.DoubleValue);
+    end;
+
+  for i := 0 to 1000 do
+  begin
+    SetLength(values, i);
+    for j := 0 to i - 1 do
+    begin
+      values[j].HashCode := BobJenkinsHash(j, SizeOf(j), 666);
+      values[j].Value := j;
+      values[j].DoubleValue :=j;
+      PDouble(@values[j].Stuff[0])^ := 2 * j;
+      PDouble(@values[j].Stuff[8])^ := -3 * j;
+      values[j].Text := FloatToStr(6 * j + 2);
+    end;
+    TArray.Shuffle<TRec>(values);
+    TArray.StableSort<TRec>(values, comparison);
+    for j := 0 to i - 1 do
+    begin
+      CheckEquals(BobJenkinsHash(j, SizeOf(j), 666), values[j].HashCode);
+      CheckEquals(j, values[j].Value);
+      CheckEquals(j, values[j].DoubleValue);
+      CheckEquals(2 * j, PDouble(@values[j].Stuff[0])^);
+      CheckEquals(-3 * j, PDouble(@values[j].Stuff[8])^);
+      CheckEquals(FloatToStr(6 * j + 2), values[j].Text);
+    end;
   end;
 end;
 
