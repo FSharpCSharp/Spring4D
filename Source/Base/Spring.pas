@@ -424,9 +424,14 @@ type
 
   {$REGION 'TValueHelper'}
 
+  TValueConverterCallback = function (const value: TValue;
+    const targetTypeInfo: PTypeInfo; out targetValue: TValue;
+    const parameter: TValue): Boolean;
+
   TValueHelper = record helper for TValue
   private class var
     ConvertSettings: TFormatSettings;
+    fValueConverterCallback: TValueConverterCallback;
   private
     procedure Init(typeInfo: Pointer);
 {$IFNDEF DELPHIXE8_UP}
@@ -660,6 +665,9 @@ type
     ///   Returns the TRttiType of the stored value.
     /// </summary>
     property ValueType: TRttiType read GetValueType;
+
+    class property ValueConverterCallback: TValueConverterCallback
+      read fValueConverterCallback write fValueConverterCallback;
   end;
 
   {$ENDREGION}
@@ -2796,7 +2804,6 @@ uses
 {$ENDIF}
   Spring.Events,
   Spring.ResourceStrings,
-  Spring.ValueConverters,
   Spring.VirtualClass;
 
 
@@ -5502,7 +5509,9 @@ function TValueHelper.ToVariant: Variant;
   var
     value: TValue;
   begin
-    Result := TValueConverter.Default.TryConvertTo(Self, System.TypeInfo(Variant), value);
+    Result := Assigned(fValueConverterCallback)
+      and fValueConverterCallback(Self, System.TypeInfo(Variant), value, EmptyValue);
+
     if Result then
       returnValue := value.AsVariant
     else
@@ -6221,7 +6230,16 @@ begin
           Exit(AsType<TValue>.TryConvert(targetType, targetValue));
     end;
 
-    Result := TValueConverter.Default.TryConvertTo(Self, targetType, targetValue, TValue.From(formatSettings));
+{$IFNDEF DELPHIXE2_UP}
+    // workaround for wrong TValue.TryCast for string to float (it calls ConvStr2Str by mistake)
+    if not ((Kind in [tkString, tkLString, tkWString, tkUString])
+      and (targetType.Kind = tkFloat)) then
+{$ENDIF}
+    if TryCast(targetType, targetValue) then
+      Exit(True);
+
+    Result := Assigned(fValueConverterCallback)
+      and fValueConverterCallback(Self, targetType, targetValue, TValue.From(formatSettings));
   end;
 end;
 

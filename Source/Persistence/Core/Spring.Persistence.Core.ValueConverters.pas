@@ -100,6 +100,17 @@ begin
     TStreamToPictureConverter);
 end;
 
+function TryConvertTo(const value: TValue; const targetTypeInfo: PTypeInfo;
+  out targetValue: TValue; const parameter: TValue): Boolean;
+begin
+  Result := TValueConverter.Default.TryConvertTo(value, targetTypeInfo, targetValue, parameter);
+end;
+
+procedure InitConverters;
+begin
+  TValue.ValueConverterCallback := TryConvertTo;
+end;
+
 
 {$REGION 'TStreamToVariantConverter'}
 
@@ -231,5 +242,6 @@ end;
 
 initialization
   RegisterConverters;
+  InitConverters;
 
 end.
