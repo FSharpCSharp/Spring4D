@@ -62,8 +62,7 @@ implementation
 
 uses
   SysUtils,
-  Spring,
-  Spring.Collections.Extensions;
+  Spring;
 
 procedure TEnumerationDemoForm.Button1Click(Sender: TObject);
 var
@@ -86,7 +85,6 @@ begin
     begin
       Result :=  Pair.Key mod 2 = 0;
     end;
-  // Same as TWhereEnumerable<TIntegerStringPair>.Create(List, Predicate);
   enumerable := List.Where(predicate);
 
   for pair in enumerable do
@@ -100,7 +98,6 @@ var
 begin
   Clear;
   // Skip the first seven
-  // The below is basically the same as TSkipEnumerable<TIntegerStringPair>.Create(List, 7);
   enumerable := List.Skip(7);
 
   for pair in enumerable do
@@ -120,7 +117,6 @@ begin
       Result :=  Pair.Key < 5;
     end;
 
-  // Same as TSkipWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
   enumerable := List.SkipWhile(predicate);
   for pair in enumerable do
     AddToMemo(pair.Value);
@@ -133,7 +129,6 @@ var
 begin
   Clear;
   // Only "take" the first seven
-  // Same as TTakeEnumerable<TIntegerStringPair>.Create(List, 7);
   enumerable := List.Take(7);
 
   for pair in enumerable do
@@ -153,7 +148,6 @@ begin
       Result := Pair.Key < 5;
     end;
 
-  // Same as TTakeWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
   // "Takes" the items from the enumeration as long as the Pair.Key is less than
   // five.  Once it isn't less than five, it stops and nothing else is returned.
   enumerable := List.TakeWhile(predicate);
@@ -170,7 +164,6 @@ begin
   Clear;
   tempList := CreateAnotherList;
 
-  // Same as TConcatEnumerable<TIntegerStringPair>.Create(List, TempList);
   enumerable := List.Concat(tempList);
 
   for pair in enumerable do

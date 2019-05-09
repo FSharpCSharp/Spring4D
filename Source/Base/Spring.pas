@@ -572,6 +572,8 @@ type
     /// </summary>
     procedure SetNullableValue(const value: TValue);
 
+    function TryAsType(typeInfo: PTypeInfo; out target): Boolean; overload;
+
     /// <summary>
     ///   Tries to convert the stored value. Returns false when the conversion
     ///   is not possible.
@@ -1222,7 +1224,6 @@ type
     class procedure RaiseArgumentException(typeKind: TTypeKind; const argumentName: string); overload; static;
     class procedure RaiseNullableHasNoValue; static;
     class procedure RaiseNoDelegateAssigned; static;
-    class procedure RaiseInvalidTypeCast(sourceType, targetType: PTypeInfo); static;
   public
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string = ''); static; inline;
@@ -1333,6 +1334,8 @@ type
     ///   Raises an <see cref="EInvalidEnumArgumentException" /> exception.
     /// </summary>
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static;
+
+    class procedure RaiseInvalidTypeCast(sourceType, targetType: PTypeInfo); static;
   end;
 
   TArgument = Guard deprecated 'Use Guard instead';
@@ -5650,6 +5653,15 @@ begin
   end;
   if Result then
     IInterface(Intf) := AsInterface;
+end;
+
+function TValueHelper.TryAsType(typeInfo: PTypeInfo; out target): Boolean;
+var
+  value: TValue;
+begin
+  Result := TryCast(typeInfo, value);
+  if Result then
+    value.ExtractRawData(@target);
 end;
 
 

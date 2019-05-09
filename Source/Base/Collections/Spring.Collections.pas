@@ -195,6 +195,16 @@ type
   end;
 
   /// <summary>
+  ///   Non generic interface for adding items to a collection - this can be
+  ///   used for serialization.
+  /// </summary>
+  ICollection = interface(IEnumerable)
+    ['{4E749779-0873-498E-9597-FCF2A42C3F7B}']
+
+    function Add(const item: TValue): Boolean;
+  end;
+
+  /// <summary>
   ///   Exposes the enumerator, which supports a simple iteration over a
   ///   collection of a specified type.
   /// </summary>

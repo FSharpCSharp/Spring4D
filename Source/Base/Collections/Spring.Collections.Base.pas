@@ -150,16 +150,17 @@ type
     function ToArray: TArray<T>;
   end;
 
-  TEnumerableWrapper = class sealed(TRefCountedObject, IEnumerable)
+  TEnumerableWrapper = class(TRefCountedObject, IInterface, IEnumerable)
   private type
-    TGetCurrentFunc = function(const enumerator: IEnumerator): Spring.TValue;
+    TGetCurrentFunc = function(const enumerator: IEnumerator; elementType: PTypeInfo): Spring.TValue;
     TEnumerator = class sealed(TRefCountedObject, IEnumerator)
     private
       fSource: IEnumerator;
+      fElementType: PTypeInfo;
       fGetCurrent: TGetCurrentFunc;
       function GetCurrent: TValue;
     public
-      constructor Create(const source: IEnumerator; getCurrent: TGetCurrentFunc);
+      constructor Create(const source: IEnumerator; elementType: PTypeInfo; getCurrent: TGetCurrentFunc);
       function MoveNext: Boolean;
     end;
   private
@@ -168,10 +169,23 @@ type
     function GetCount: Integer;
     function GetElementType: PTypeInfo;
     function GetIsEmpty: Boolean;
+  protected
+    function QueryInterface(const IID: TGUID; out obj): HResult; override;
   public
     constructor Create(const source: IEnumerable; getCurrent: TGetCurrentFunc);
     function AsObject: TObject;
     function GetEnumerator: IEnumerator;
+  end;
+
+  TCollectionWrapper = class(TEnumerableWrapper, ICollection)
+  private type
+    TAddFunc = function(const collection: IInterface; const value: TValue): Boolean;
+  private
+    fAdd: TAddFunc;
+  public
+    constructor Create(const source: IEnumerable;
+      getCurrent: TEnumerableWrapper.TGetCurrentFunc; add: TAddFunc);
+    function Add(const item: TValue): Boolean;
   end;
 
   TIteratorKind = (
@@ -230,7 +244,8 @@ type
     function TakeWhileIndex: Boolean;
     function Where: Boolean;
 
-    class function GetCurrent(const enumerator: IEnumerator): TValue; static;
+    class function GetCurrent(const enumerator: IEnumerator; elementType: PTypeInfo): TValue; static;
+    class function Add(const collection: IInterface; const value: TValue): Boolean; static;
   end;
 
   TIterator = class abstract(TRefCountedObject)
@@ -367,6 +382,7 @@ type
     function GetIsReadOnly: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
+    function QueryInterface(const IID: TGUID; out obj): HResult; override;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
     procedure Reset;
@@ -510,7 +526,7 @@ type
   {$REGION 'Implements IInterface'}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
-    function CreateList: IList<T>; virtual; //abstract;
+    function CreateList: IList<T>; virtual;
   public
     constructor Create; override;
 
@@ -760,7 +776,7 @@ begin
   if TType.Kind<T> = tkClass then
     fComparer := IComparer<T>(GetInstanceComparer)
   else
-    fComparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
+    fComparer := IComparer<T>(_LookupVtableInfo(giComparer, GetElementType, SizeOf(T)));
 end;
 
 constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);
@@ -1579,12 +1595,19 @@ end;
 
 function TEnumerableWrapper.GetEnumerator: IEnumerator;
 begin
-  Result := TEnumerator.Create(fSource.GetEnumerator, fGetCurrent);
+  Result := TEnumerator.Create(fSource.GetEnumerator, fSource.ElementType, fGetCurrent);
 end;
 
 function TEnumerableWrapper.GetIsEmpty: Boolean;
 begin
   Result := fSource.IsEmpty;
+end;
+
+function TEnumerableWrapper.QueryInterface(const IID: TGUID; out obj): HResult;
+begin
+  Result := inherited QueryInterface(IID, obj);
+  if Result <> S_OK then
+    Result := fSource.QueryInterface(IID, obj);
 end;
 
 {$ENDREGION}
@@ -1593,21 +1616,39 @@ end;
 {$REGION 'TEnumerableWrapper.TEnumerator'}
 
 constructor TEnumerableWrapper.TEnumerator.Create(const source: IEnumerator;
-  getCurrent: TGetCurrentFunc);
+  elementType: PTypeInfo; getCurrent: TGetCurrentFunc);
 begin
   inherited Create;
   fSource := source;
+  fElementType := elementType;
   fGetCurrent := getCurrent;
 end;
 
 function TEnumerableWrapper.TEnumerator.GetCurrent: TValue;
 begin
-  Result := fGetCurrent(fSource);
+  Result := fGetCurrent(fSource, fElementType);
 end;
 
 function TEnumerableWrapper.TEnumerator.MoveNext: Boolean;
 begin
   Result := fSource.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCollectionWrapper'}
+
+constructor TCollectionWrapper.Create(const source: IEnumerable;
+  getCurrent: TEnumerableWrapper.TGetCurrentFunc; add: TAddFunc);
+begin
+  inherited Create(source, getCurrent);
+  fAdd := add;
+end;
+
+function TCollectionWrapper.Add(const item: TValue): Boolean;
+begin
+  Result := fAdd(fSource, item);
 end;
 
 {$ENDREGION}
@@ -1833,6 +1874,16 @@ begin
       collection.Add(values[i]);
       Inc(Result);
     end;
+end;
+
+function TCollectionBase<T>.QueryInterface(const IID: TGUID; out obj): HResult;
+begin
+  if IID = ICollection then
+  begin
+    ICollection(obj) := TCollectionWrapper.Create(IEnumerable(this), TIteratorRec<T>.GetCurrent, TIteratorRec<T>.Add);
+    Result := S_OK;
+  end else
+    Result := inherited QueryInterface(IID, obj);
 end;
 
 procedure TCollectionBase<T>.UpdateNotify(Sender: TObject);
@@ -2753,12 +2804,26 @@ end;
 
 {$REGION 'TIteratorRec<T>'}
 
-class function TIteratorRec<T>.GetCurrent(const enumerator: IEnumerator): TValue;
+class function TIteratorRec<T>.GetCurrent(const enumerator: IEnumerator; 
+  elementType: PTypeInfo): TValue;
 var
   current: T;
 begin
   current := IEnumerator<T>(enumerator).Current;
-  TValue.Make(@current, System.TypeInfo(T), Result);
+  TValue.Make(@current, elementType, Result);
+end;
+
+class function TIteratorRec<T>.Add(const collection: IInterface;
+  const value: TValue): Boolean;
+var
+  elementType: PTypeInfo;
+  item: T;
+begin
+  elementType := IEnumerable(collection).ElementType;
+  if value.TryAsType(elementType, item) then
+    Result := ICollection<T>(collection).Add(item)
+  else
+    Guard.RaiseInvalidTypeCast(value.TypeInfo, elementType);
 end;
 
 function TIteratorRec<T>.Concat: Boolean;

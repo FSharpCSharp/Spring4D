@@ -10,8 +10,7 @@ implementation
 
 uses
   Spring,
-  Spring.Collections,
-  Spring.Collections.Lists;
+  Spring.Collections;
 
 procedure CheckIsLessThan10;
 var
@@ -39,7 +38,7 @@ var
   i: integer;
   list: IList<integer>;
 begin
-  list := TList<integer>.Create;
+  list := TCollections.CreateList<Integer>;
   list.Add(3);
   list.Add(6);
   list.Add(8);
@@ -63,7 +62,7 @@ const
 begin
   Randomize;
 
-  flipResults := TList<integer>.Create;
+  flipResults := TCollections.CreateList<Integer>;
   for i := 1 to TotalFlips do
     flipResults.Add(Random(2));
   testTrue :=

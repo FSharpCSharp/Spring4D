@@ -1277,8 +1277,8 @@ end;
 constructor TDictionary<TKey, TValue>.TKeyCollection.Create(
   const source: TDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
+  inherited Create;
 end;
 
 function TDictionary<TKey, TValue>.TKeyCollection.Contains(const value: TKey): Boolean;
@@ -1348,8 +1348,8 @@ end;
 constructor TDictionary<TKey, TValue>.TValueCollection.Create(
   const source: TDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
+  inherited Create;
 end;
 
 function TDictionary<TKey, TValue>.TValueCollection.Contains(const value: TValue): Boolean;

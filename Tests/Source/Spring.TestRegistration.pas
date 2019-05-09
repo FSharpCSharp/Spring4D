@@ -114,7 +114,6 @@ begin
     TTestInterfaceList.Suite,
     TTestCollectionList.Suite,
     TTestEnumerable.Suite,
-    TTestListAdapter.Suite,
     TTestListMultiMap.Suite,
     TTestHashMultiMap.Suite,
     TTestTreeMultiMap.Suite,
