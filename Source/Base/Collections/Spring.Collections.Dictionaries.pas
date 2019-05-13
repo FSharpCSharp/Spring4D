@@ -214,6 +214,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
+    procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
@@ -311,6 +312,7 @@ type
       {$ENDREGION}
 
       {$REGION 'Implements IDictionary<TValue, TKey>'}
+        procedure AddOrSetValue(const value: TValue; const key: TKey);
         function Extract(const value: TValue): TKey; overload;
         function GetValueOrDefault(const value: TValue): TKey; overload;
         function GetValueOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
@@ -484,6 +486,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
+    procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
@@ -623,6 +626,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IDictionary<TKey, TValue>'}
+    procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; overload;
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
@@ -1028,6 +1032,12 @@ end;
 function TDictionary<TKey, TValue>.GetIsEmpty: Boolean;
 begin
   Result := fCount = 0;
+end;
+
+procedure TDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
+  const value: TValue);
+begin
+  SetItem(key, value);
 end;
 
 function TDictionary<TKey, TValue>.AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
@@ -1963,6 +1973,12 @@ begin
   end;
 end;
 
+procedure TBidiDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
+  const value: TValue);
+begin
+  SetItem(key, value);
+end;
+
 function TBidiDictionary<TKey, TValue>.AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
@@ -2197,6 +2213,12 @@ procedure TBidiDictionary<TKey, TValue>.TInverse.Add(const value: TValue;
   const key: TKey);
 begin
   fSource.Add(key, value);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.TInverse.AddOrSetValue(
+  const value: TValue; const key: TKey);
+begin
+  SetItem(value, key);
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.Add(const item: TValueKeyPair): Boolean;
@@ -2701,6 +2723,12 @@ begin
   fKeys.Free;
   fValues.Free;
   inherited Destroy;
+end;
+
+procedure TSortedDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
+  const value: TValue);
+begin
+  SetItem(key, value);
 end;
 
 function TSortedDictionary<TKey, TValue>.AsReadOnly: IReadOnlyDictionary<TKey, TValue>;

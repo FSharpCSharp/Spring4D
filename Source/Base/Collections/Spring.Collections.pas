@@ -1751,6 +1751,8 @@ type
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
 
+    procedure AddOrSetValue(const key: TKey; const value: TValue); deprecated 'use dict[key] := value';
+
     /// <summary>
     ///   Removes the value for a specified key without triggering lifetime
     ///   management for objects.
