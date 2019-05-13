@@ -910,7 +910,7 @@ function TEnumerableBase<T>.Contains(const value: T): Boolean;
 var
   comparer: IEqualityComparer<T>;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
   Result := IEnumerable<T>(this).Contains(value, comparer);
 end;
 
@@ -1014,7 +1014,7 @@ begin
     Result := True
   else
   begin
-    comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+    comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
     Result := IEnumerable<T>(this).EqualsTo(values, comparer);
   end;
 end;
@@ -1996,10 +1996,10 @@ constructor TInnerCollection<T>.Create(const source: TRefCountedObject;
   hashTable: PHashTable; elementType: PTypeInfo;
   const comparer: IEqualityComparer<T>; offset: Integer);
 begin
-  fElementType := elementType;
-  inherited Create;
+  inherited Create(IComparer<T>(_LookupVtableInfo(giComparer, elementType, SizeOf(T))));
   fSource := source;
   fHashTable := hashTable;
+  fElementType := elementType;
   fComparer := comparer;
   fOffset := THashTable.KeyOffset + offset;
 end;
@@ -2872,9 +2872,14 @@ function TArrayIterator<T>.IndexOf(const item: T; index,
   count: Integer): Integer;
 var
   comparer: IEqualityComparer<T>;
+  i: Integer;
 begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  Result := TArray.IndexOf<T>(fIterator.Items, item, index, count, comparer);
+  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
+
+  for i := index to index + count - 1 do
+    if comparer.Equals(fIterator.Items[i], item) then
+      Exit(i);
+  Result := -1;
 end;
 
 function TArrayIterator<T>.ToArray: TArray<T>;

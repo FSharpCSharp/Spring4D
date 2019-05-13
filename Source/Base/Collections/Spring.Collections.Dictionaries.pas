@@ -103,19 +103,10 @@ type
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
     property Capacity: Integer read GetCapacity;
   public
-    constructor Create; overload; override;
-    constructor Create(ownerships: TDictionaryOwnerships); overload;
-    constructor Create(capacity: Integer; ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(const keyComparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(const keyComparer: IEqualityComparer<TKey>;
+    constructor Create(capacity: Integer;
+      const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>;
-      ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(capacity: Integer; const keyComparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(capacity: Integer; const keyComparer: IEqualityComparer<TKey>;
-      const valueComparer: IEqualityComparer<TValue>;
-      ownerships: TDictionaryOwnerships = []); overload;
+      ownerships: TDictionaryOwnerships);
 
     destructor Destroy; override;
 
@@ -584,44 +575,6 @@ uses
 
 {$REGION 'TDictionary<TKey, TValue>'}
 
-constructor TDictionary<TKey, TValue>.Create;
-begin
-  Create(0, nil, nil);
-end;
-
-constructor TDictionary<TKey, TValue>.Create(ownerships: TDictionaryOwnerships);
-begin
-  Create(0, nil, nil, ownerships);
-end;
-
-constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(capacity, nil, nil, ownerships);
-end;
-
-constructor TDictionary<TKey, TValue>.Create(
-  const keyComparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(0, keyComparer, nil, ownerships);
-end;
-
-constructor TDictionary<TKey, TValue>.Create(
-  const keyComparer: IEqualityComparer<TKey>;
-  const valueComparer: IEqualityComparer<TValue>;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(0, keyComparer, valueComparer, ownerships);
-end;
-
-constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
-  const keyComparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(capacity, keyComparer, nil, ownerships);
-end;
-
 constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
   const keyComparer: IEqualityComparer<TKey>;
   const valueComparer: IEqualityComparer<TValue>;
@@ -632,11 +585,11 @@ begin
 {$ENDIF}
 
   if doOwnsKeys in ownerships then
-    if TType.Kind<TKey> <> tkClass then
+    if KeyType.Kind <> tkClass then
       raise Error.NoClassType(KeyType);
 
   if doOwnsValues in ownerships then
-    if TType.Kind<TValue> <> tkClass then
+    if ValueType.Kind <> tkClass then
       raise Error.NoClassType(ValueType);
 
   inherited Create();
@@ -645,11 +598,11 @@ begin
   if Assigned(keyComparer) then
     fKeyComparer := keyComparer
   else
-    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, KeyType, SizeOf(TKey)));
   if Assigned(valueComparer) then
     fValueComparer := valueComparer
   else
-    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TValue), SizeOf(TValue)));
+    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, ValueType, SizeOf(TValue)));
 
   fKeys := TKeyCollection.Create(Self, @fHashTable, KeyType, fKeyComparer, 0);
   fValues := TValueCollection.Create(Self, @fHashTable, ValueType, fValueComparer, SizeOf(TKey));
@@ -672,9 +625,6 @@ procedure TDictionary<TKey, TValue>.KeyChanged(const item: TKey;
 begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
-{$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(TKey) = tkClass then
-{$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
     FreeObject(item);
 end;
@@ -684,9 +634,6 @@ procedure TDictionary<TKey, TValue>.ValueChanged(const item: TValue;
 begin
   if fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, item, action);
-{$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(TValue) = tkClass then
-{$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
     FreeObject(item);
 end;

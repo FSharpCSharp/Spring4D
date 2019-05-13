@@ -184,6 +184,17 @@ type
   {$ENDREGION}
   end;
 
+  TFoldedHashSet<T> = class(THashSet<T>)
+  private
+    fElementType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(elementType: PTypeInfo;
+      capacity: Integer;
+      const comparer: IEqualityComparer<T>);
+  end;
+
 implementation
 
 uses
@@ -714,6 +725,23 @@ end;
 procedure TSortedSet<T>.TrimExcess;
 begin
   fTree.TrimExcess;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedHashSet<T>'}
+
+constructor TFoldedHashSet<T>.Create(elementType: PTypeInfo; capacity: Integer;
+  const comparer: IEqualityComparer<T>);
+begin
+  fElementType := elementType;
+  inherited Create(capacity, comparer);
+end;
+
+function TFoldedHashSet<T>.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
 end;
 
 {$ENDREGION}

@@ -245,7 +245,7 @@ begin
   LockEnter;
   try
     i := Count;
-    if Length(fHandlers) < i + 1 then
+    if Length(fHandlers) <= i then
       if i = 0 then
         SetLength(fHandlers, 1)
       else

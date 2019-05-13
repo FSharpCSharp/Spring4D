@@ -76,6 +76,7 @@ type
     function GetOnChanged: ICollectionChangedEvent<T>;
     function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
+    procedure SetOwnsObjects(const value: Boolean);
   {$ENDREGION}
     procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
     procedure PopInternal(var item: T; notification: TCollectionChangedAction); inline;
@@ -121,15 +122,14 @@ type
     function Push(const item: T): Boolean;
   end;
 
-  TObjectStack<T: class> = class(TStack<T>)
+  TFoldedStack<T> = class(TStack<T>)
   private
-  {$REGION 'Property Accessors'}
-    procedure SetOwnsObjects(const value: Boolean);
-  {$ENDREGION}
+    fElementType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
   public
-    constructor Create; override;
-    constructor Create(ownsObjects: Boolean); overload;
-    constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
+    constructor Create(const elementType: PTypeInfo;
+      const comparer: IComparer<T>; ownsObjects: Boolean = False);
   end;
 
 implementation
@@ -138,6 +138,7 @@ uses
   Classes,
   RTLConsts,
   SysUtils,
+  TypInfo,
   Spring.Events.Base,
   Spring.ResourceStrings;
 
@@ -316,6 +317,12 @@ begin
   SetLength(fItems, value);
 end;
 
+procedure TAbstractStack<T>.SetOwnsObjects(const value: Boolean);
+begin
+  if GetElementType.Kind = tkClass then
+    fCount := (fCount and CountMask) or BitMask[value];
+end;
+
 procedure TAbstractStack<T>.TrimExcess;
 begin
   fCapacity := Count;
@@ -429,35 +436,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TObjectStack<T>'}
-
-constructor TObjectStack<T>.Create;
-begin
-  inherited Create;
-  SetOwnsObjects(True);
-end;
-
-constructor TObjectStack<T>.Create(ownsObjects: Boolean);
-begin
-  inherited Create;
-  SetOwnsObjects(ownsObjects);
-end;
-
-constructor TObjectStack<T>.Create(const comparer: IComparer<T>;
-  ownsObjects: Boolean);
-begin
-  inherited Create(comparer);
-  SetOwnsObjects(ownsObjects);
-end;
-
-procedure TObjectStack<T>.SetOwnsObjects(const value: Boolean);
-begin
-  fCount := (fCount and CountMask) or BitMask[value];
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TBoundedStack<T>'}
 
 constructor TBoundedStack<T>.Create(capacity: Integer);
@@ -472,6 +450,24 @@ begin
     Exit(False);
   PushInternal(item);
   Result := True;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedStack<T>'}
+
+constructor TFoldedStack<T>.Create(const elementType: PTypeInfo;
+  const comparer: IComparer<T>; ownsObjects: Boolean);
+begin
+  inherited Create(comparer);
+  fElementType := elementType;
+  SetOwnsObjects(ownsObjects);
+end;
+
+function TFoldedStack<T>.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
 end;
 
 {$ENDREGION}

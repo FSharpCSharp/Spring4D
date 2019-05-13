@@ -331,7 +331,7 @@ end;
 
 function Setup<T>.Returns<TResult>(const value: TResult): IWhen<T>;
 begin
-  Result := fSetup.Returns(TValue.From<TResult>(value));
+  Result := fSetup.Returns(TValue.From(@value, TypeInfo(TResult)));
 end;
 
 function Setup<T>.Returns<TResult>(const values: array of TResult): IWhen<T>;
@@ -341,7 +341,7 @@ var
 begin
   SetLength(tempValues, Length(values));
   for i := 0 to High(values) do
-    tempValues[i] := TValue.From<TResult>(values[i]);
+    tempValues[i] := TValue.From(@values[i], TypeInfo(TResult));
   Result := fSetup.Returns(tempValues);
 end;
 

@@ -3631,14 +3631,10 @@ var
   lookup: ILookup<Integer, string>;
 begin
   source := TList<string>.Create(['abc']);
-  lookup := TLookup<Integer, string>.Create<string>(source,
+  lookup := TEnumerable.ToLookup<string,Integer>(source,
     function(const x: string): Integer
     begin
       Result := Length(x);
-    end,
-    function(const x: string): string
-    begin
-      Result := x;
     end);
   CheckEquals(1, lookup.Count);
   source.Add('x');
@@ -3670,7 +3666,7 @@ var
   query: IEnumerable<string>;
 begin
   source := TCollections.CreateList<TPeople>(people);
-  lookup := TLookup<string, string>.Create<TPeople>(source,
+  lookup := TEnumerable.ToLookup<TPeople,string,string>(source,
     function(const p: TPeople): string
     begin
       Result := p.Last;
@@ -3698,11 +3694,7 @@ var
   lookup: ILookup<string,string>;
 begin
   source := TCollections.CreateList<string>(['abc', 'def', 'ABC']);
-  lookup := TLookup<string, string>.Create<string>(source,
-    function(const value: string): string
-    begin
-      Result := value;
-    end,
+  lookup := TEnumerable.ToLookup<string, string>(source,
     function(const value: string): string
     begin
       Result := value;
@@ -3718,7 +3710,7 @@ var
   lookup: ILookup<Integer, Char>;
 begin
   source := TCollections.CreateList<string>(['abc', 'def', 'x', 'y', 'ghi', 'z', '00']);
-  lookup := TLookup<Integer, Char>.Create<string>(source,
+  lookup := TEnumerable.ToLookup<string,Integer,Char>(source,
     function(const x: string): Integer
     begin
       Result := Length(x);
@@ -3738,11 +3730,7 @@ var
   lookup: ILookup<string,string>;
 begin
   source := TCollections.CreateList<string>(['abc', 'def', 'ABC']);
-    lookup := TLookup<string, string>.Create<string>(source,
-    function(const value: string): string
-    begin
-      Result := value;
-    end,
+  lookup := TEnumerable.ToLookup<string,string>(source,
     function(const value: string): string
     begin
       Result := value;
@@ -3758,14 +3746,10 @@ var
   lookup: ILookup<Integer, string>;
 begin
   source := TCollections.CreateList<string>(['abc', 'def', 'x', 'y', 'ghi', 'z', '00']);
-  lookup := TLookup<Integer, string>.Create<string>(source,
+  lookup := TEnumerable.ToLookup<string,Integer>(source,
     function(const x: string): Integer
     begin
       Result := Length(x);
-    end,
-    function(const value: string): string
-    begin
-      Result := value;
     end);
   CheckTrue(lookup[3].EqualsTo(['abc', 'def', 'ghi']));
   CheckTrue(lookup[1].EqualsTo(['x', 'y', 'z']));
@@ -3953,14 +3937,10 @@ var
   iterator: IEnumerator<IGrouping<Integer, string>>;
 begin
   source := TCollections.CreateList<string>(['a', 'b', 'c', 'def']);
-  groups := TGroupedEnumerable<string, Integer, string>.Create(source,
+  groups := TEnumerable.GroupBy<string,Integer>(source,
     function(const x: string): Integer
     begin
       Result := Length(x);
-    end,
-    function(const s: string): string
-    begin
-      Result := s;
     end);
   iterator := groups.GetEnumerator;
   CheckTrue(iterator.MoveNext);
@@ -3983,11 +3963,7 @@ var
   groups: IEnumerable<IGrouping<Integer, Integer>>;
 begin
   source := TThrowingEnumerable.Create;
-  groups := TGroupedEnumerable<Integer, Integer, Integer>.Create(source,
-    function(const x: Integer): Integer
-    begin
-      Result := x;
-    end,
+  groups := TEnumerable.GroupBy<Integer, Integer>(source,
     function(const x: Integer): Integer
     begin
       Result := x;
@@ -4040,7 +4016,7 @@ var
   list: IList<IGrouping<Integer, Char>>;
 begin
   source := TCollections.CreateList<string>(['abc', 'hello', 'def', 'there', 'four']);
-  groups := TGroupedEnumerable<string, Integer, Char>.Create(source,
+  groups := TEnumerable.GroupBy<string, Integer, Char>(source,
     function(const x: string): Integer
     begin
       Result := Length(x);
@@ -4096,14 +4072,10 @@ begin
     begin
       Result := 10 div x;
     end);
-  groups := TGroupedEnumerable<Integer, Integer, Integer>.Create(query,
+  groups := TEnumerable.GroupBy<Integer, Integer>(query,
     function(const x: Integer): Integer
     begin
       Result := x;
-    end,
-    function(const i: Integer): Integer
-    begin
-      Result := i;
     end);
   CheckException(EDivByZero,
     procedure
@@ -4123,14 +4095,10 @@ var
   list: IList<IGrouping<Integer, string>>;
 begin
   source := TCollections.CreateList<string>(['abc', 'hello', 'def', 'there', 'four']);
-  groups := TGroupedEnumerable<string, Integer, string>.Create(source,
+  groups := TEnumerable.GroupBy<string, Integer>(source,
     function(const x: string): Integer
     begin
       Result := Length(x);
-    end,
-    function(const s: string): string
-    begin
-      Result := s;
     end);
   list := TCollections.CreateInterfaceList<IGrouping<Integer, string>>(groups);
   CheckEquals(3, list.Count);

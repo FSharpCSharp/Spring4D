@@ -144,6 +144,16 @@ type
   {$ENDREGION}
   end;
 
+  TFoldedQueue<T> = class(TQueue<T>)
+  private
+    fElementType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
+  public
+    constructor Create(const elementType: PTypeInfo;
+      const comparer: IComparer<T>; ownsObjects: Boolean = False);
+  end;
+
 implementation
 
 uses
@@ -493,6 +503,24 @@ begin
     DeleteFromHead(caRemoved);
   AddToTail(item);
   Result := True;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedQueue<T>'}
+
+constructor TFoldedQueue<T>.Create(const elementType: PTypeInfo;
+  const comparer: IComparer<T>; ownsObjects: Boolean);
+begin
+  inherited Create(comparer);
+  fElementType := elementType;
+  SetOwnsObjects(ownsObjects);
+end;
+
+function TFoldedQueue<T>.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
 end;
 
 {$ENDREGION}

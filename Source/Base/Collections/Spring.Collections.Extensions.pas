@@ -353,20 +353,27 @@ type
       const selector: Func<TSource, Integer, TResult>);
   end;
 
+  // binary compatible interface to Spring.Collections.ILookup<TKey,TValue> but foldable
+  ILookupInternal<TKey, TElement> = interface(IEnumerable<IInterface>)
+    ['{B2380533-F2B1-465B-84B2-97FA79A6EE09}']
+    function GetItem(const key: TKey): IEnumerable<TElement>;
+    function Contains(const key: TKey): Boolean;
+  end;
+
   TGroupedEnumerable<TSource, TKey, TElement> = class(
-    TEnumerableBase<IGrouping<TKey, TElement>>,
-    IEnumerable<IGrouping<TKey, TElement>>)
+    TEnumerableBase<IInterface>,
+    IEnumerable<IInterface>)
   private
     type
-      TEnumerator = class(TRefCountedObject, IEnumerator<IGrouping<TKey, TElement>>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<IInterface>)
       private
         fSource: IEnumerable<TSource>;
         fKeySelector: Func<TSource, TKey>;
         fElementSelector: Func<TSource, TElement>;
         fComparer: IEqualityComparer<TKey>;
-        fLookup: ILookup<TKey, TElement>;
-        fEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
-        function GetCurrent: IGrouping<TKey, TElement>;
+        fLookup: ILookupInternal<TKey, TElement>;
+        fEnumerator: IEnumerator<IInterface>;
+        function GetCurrent: IInterface;
         procedure Start;
       public
         constructor Create(const source: IEnumerable<TSource>;
@@ -388,7 +395,7 @@ type
       const keySelector: Func<TSource, TKey>;
       const elementSelector: Func<TSource, TElement>;
       const comparer: IEqualityComparer<TKey>); overload;
-    function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
+    function GetEnumerator: IEnumerator<IInterface>;
   end;
 
   TGroupedEnumerable<TSource, TKey, TElement, TResult> = class(
@@ -397,11 +404,11 @@ type
     type
       TEnumerator = class(TRefCountedObject, IEnumerator<TResult>)
       private
-        fSource: IEnumerator<IGrouping<TKey, TElement>>;
+        fSource: IEnumerator<IInterface>;
         fResultSelector: Func<TKey, IEnumerable<TElement>, TResult>;
         function GetCurrent: TResult;
       public
-        constructor Create(const source: IEnumerator<IGrouping<TKey, TElement>>;
+        constructor Create(const source: IEnumerator<IInterface>;
           const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>);
         function MoveNext: Boolean;
       end;
@@ -424,8 +431,14 @@ type
     function GetEnumerator: IEnumerator<TResult>;
   end;
 
-  TLookup<TKey, TElement> = class(TEnumerableBase<IGrouping<TKey, TElement>>,
-    IEnumerable<IGrouping<TKey, TElement>>, ILookup<TKey, TElement>)
+  TGroupings = class(TList<TObject>)
+  protected
+    procedure Changed(const item: TObject;
+      action: TCollectionChangedAction); override;
+  end;
+
+  TLookup<TKey, TElement> = class(TEnumerableBase<IInterface>,
+    IEnumerable<IInterface>, ILookupInternal<TKey, TElement>)
   private
     type
       TGrouping = class(TEnumerableBase<TElement>,
@@ -445,20 +458,12 @@ type
         property Key: TKey read GetKey;
       end;
 
-      TGroupings = class(TObjectList<TGrouping>)
-      protected
-        procedure Changed(const item: TGrouping;
-          action: TCollectionChangedAction); override;
-      public
-        constructor Create; reintroduce;
-      end;
-
-      TEnumerator = class(TRefCountedObject, IEnumerator<IGrouping<TKey, TElement>>)
+      TEnumerator = class(TRefCountedObject, IEnumerator<IInterface>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TLookup<TKey, TElement>;
         fIndex: Integer;
-        function GetCurrent: IGrouping<TKey, TElement>;
+        function GetCurrent: IInterface;
       public
         constructor Create(const source: TLookup<TKey, TElement>);
         destructor Destroy; override;
@@ -466,7 +471,7 @@ type
       end;
   private
     fComparer: IEqualityComparer<TKey>;
-    fGroupings: IList<TGrouping>;
+    fGroupings: IList<TObject>;
     fGroupingKeys: IDictionary<TKey, TGrouping>;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
@@ -489,7 +494,7 @@ type
       const comparer: IEqualityComparer<TKey>): TLookup<TKey, TElement>; static;
 
     function Contains(const key: TKey): Boolean; overload;
-    function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
+    function GetEnumerator: IEnumerator<IInterface>;
     property Item[const key: TKey]: IEnumerable<TElement> read GetItem; default;
   end;
 
@@ -1856,7 +1861,7 @@ begin
     fComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
 end;
 
-function TGroupedEnumerable<TSource, TKey, TElement>.GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
+function TGroupedEnumerable<TSource, TKey, TElement>.GetEnumerator: IEnumerator<IInterface>;
 begin
   Result := TEnumerator.Create(fSource, fKeySelector, fElementSelector, fComparer);
 end;
@@ -1878,7 +1883,7 @@ begin
   fComparer := comparer;
 end;
 
-function TGroupedEnumerable<TSource, TKey, TElement>.TEnumerator.GetCurrent: IGrouping<TKey, TElement>;
+function TGroupedEnumerable<TSource, TKey, TElement>.TEnumerator.GetCurrent: IInterface;
 begin
   Result := fEnumerator.Current;
 end;
@@ -1892,9 +1897,14 @@ begin
 end;
 
 procedure TGroupedEnumerable<TSource, TKey, TElement>.TEnumerator.Start;
+var
+  lookup: TLookup<TKey, TElement>;
+  item: TSource;
 begin
-  fLookup := TLookup<TKey, TElement>.Create<TSource>(
-    fSource, fKeySelector, fElementSelector, fComparer);
+  lookup := TLookup<TKey, TElement>.Create(fComparer);
+  fLookup := lookup;
+  for item in fSource do
+    lookup.GetGrouping(fKeySelector(item), True).Add(fElementSelector(item));
   fEnumerator := fLookup.GetEnumerator;
 end;
 
@@ -1935,11 +1945,15 @@ begin
 end;
 
 function TGroupedEnumerable<TSource, TKey, TElement, TResult>.GetEnumerator: IEnumerator<TResult>;
+var
+  lookup: TLookup<TKey, TElement>;
+  item: TSource;
 begin
   // TODO: deferred execution ?
-  Result := TEnumerator.Create(TLookup<TKey, TElement>.Create<TSource>(
-    fSource, fKeySelector, fElementSelector, fComparer).GetEnumerator,
-    fResultSelector);
+  lookup := TLookup<TKey, TElement>.Create(fComparer);
+  for item in fSource do
+    lookup.GetGrouping(fKeySelector(item), True).Add(fElementSelector(item));
+  Result := TEnumerator.Create(lookup.GetEnumerator, fResultSelector);
 end;
 
 {$ENDREGION}
@@ -1948,7 +1962,7 @@ end;
 {$REGION 'TGroupedEnumerable<TSource, TKey, TElement, TResult>.TEnumerator'}
 
 constructor TGroupedEnumerable<TSource, TKey, TElement, TResult>.TEnumerator.Create(
-  const source: IEnumerator<IGrouping<TKey, TElement>>;
+  const source: IEnumerator<IInterface>;
   const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>);
 begin
   inherited Create;
@@ -1960,7 +1974,7 @@ function TGroupedEnumerable<TSource, TKey, TElement, TResult>.TEnumerator.GetCur
 var
   g: IGrouping<TKey, TElement>;
 begin
-  g := fSource.Current;
+  IInterface(g) := fSource.Current;
   Result := fResultSelector(g.Key, g);
 end;
 
@@ -2043,7 +2057,7 @@ begin
   Result := fGroupings.Count;
 end;
 
-function TLookup<TKey, TElement>.GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>;
+function TLookup<TKey, TElement>.GetEnumerator: IEnumerator<IInterface>;
 begin
   Result := TEnumerator.Create(Self);
 end;
@@ -2117,20 +2131,15 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TLookup<TKey, TElement>.TGroupings'}
+{$REGION 'TGroupings'}
 
-constructor TLookup<TKey, TElement>.TGroupings.Create;
-begin
-  inherited Create(False);
-end;
-
-procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TGrouping;
+procedure TGroupings.Changed(const item: TObject;
   action: TCollectionChangedAction);
 begin
   inherited Changed(item, action);
   case action of
-    caAdded: TGrouping(item)._AddRef;
-    caRemoved: TGrouping(item)._Release;
+    caAdded: TRefCountedObject(item)._AddRef;
+    caRemoved: TRefCountedObject(item)._Release;
   end;
 end;
 
@@ -2154,9 +2163,9 @@ begin
   inherited;
 end;
 
-function TLookup<TKey, TElement>.TEnumerator.GetCurrent: IGrouping<TKey, TElement>;
+function TLookup<TKey, TElement>.TEnumerator.GetCurrent: IInterface;
 begin
-  Result := fSource.fGroupings[fIndex];
+  IGrouping<TKey, TElement>(Result) := TGrouping(fSource.fGroupings[fIndex]);
 end;
 
 function TLookup<TKey, TElement>.TEnumerator.MoveNext: Boolean;

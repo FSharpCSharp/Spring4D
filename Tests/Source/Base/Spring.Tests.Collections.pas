@@ -3030,7 +3030,7 @@ end;
 
 procedure TTestObjectList.SetUp;
 begin
-  SUT := TObjectList<TPersistent>.Create;
+  SUT := TCollections.CreateObjectList<TPersistent>;
 end;
 
 procedure TTestObjectList.TearDown;
@@ -3090,7 +3090,7 @@ end;
 
 procedure TTestObjectList.TestObjectListCreate;
 begin
-  SUT := TObjectList<TPersistent>.Create(nil);
+  SUT := TCollections.CreateObjectList<TPersistent>(IComparer<TPersistent>(nil));
   CheckNotNull(SUT.Comparer);
 end;
 
@@ -3707,7 +3707,7 @@ end;
 procedure TTestObjectStack.SetUp;
 begin
   inherited;
-  SUT := TObjectStack<TObject>.Create;
+  SUT := TCollections.CreateStack<TObject>(True);
 end;
 
 procedure TTestObjectStack.TearDown;

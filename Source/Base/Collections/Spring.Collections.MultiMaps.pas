@@ -161,10 +161,8 @@ type
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
   public
-    constructor Create; override;
-    constructor Create(ownerships: TDictionaryOwnerships); overload;
     constructor Create(const keyComparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships = []); overload;
+      ownerships: TDictionaryOwnerships);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
@@ -217,7 +215,7 @@ type
   public
     constructor Create(const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>;
-      ownerships: TDictionaryOwnerships = []); overload;
+      ownerships: TDictionaryOwnerships);
   end;
 
   TTreeMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>, IInterface,
@@ -232,7 +230,7 @@ type
   public
     constructor Create(const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IComparer<TValue>;
-      ownerships: TDictionaryOwnerships = []); overload;
+      ownerships: TDictionaryOwnerships);
   end;
 
 implementation
@@ -245,35 +243,24 @@ uses
 
 {$REGION 'TMultiMapBase<TKey, TValue>'}
 
-constructor TMultiMapBase<TKey, TValue>.Create;
-begin
-  Create(nil, []);
-end;
-
-constructor TMultiMapBase<TKey, TValue>.Create(
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(nil, ownerships);
-end;
-
 constructor TMultiMapBase<TKey, TValue>.Create(
   const keyComparer: IEqualityComparer<TKey>;
   ownerships: TDictionaryOwnerships);
 begin
   if doOwnsKeys in ownerships then
-    if TType.Kind<TKey> <> tkClass then
-      raise Error.NoClassType(TypeInfo(TKey));
+    if KeyType.Kind <> tkClass then
+      raise Error.NoClassType(KeyType);
 
   if doOwnsValues in ownerships then
-    if TType.Kind<TValue> <> tkClass then
-      raise Error.NoClassType(TypeInfo(TValueType));
+    if ValueType.Kind <> tkClass then
+      raise Error.NoClassType(ValueType);
 
   inherited Create;
   fOwnerships := ownerships;
   if Assigned(keyComparer) then
     fKeyComparer := keyComparer
   else
-    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, KeyType, SizeOf(TKey)));
 
   fKeys := TKeyCollection.Create(Self, @fHashTable, KeyType, fKeyComparer, 0);
   fValues := TValueCollection.Create(Self);
@@ -304,9 +291,6 @@ procedure TMultiMapBase<TKey, TValue>.KeyChanged(const item: TKey;
 begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
-{$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(TKey) = tkClass then
-{$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
     FreeObject(item);
 end;
@@ -316,9 +300,6 @@ procedure TMultiMapBase<TKey, TValue>.ValueChanged(const item: TValue;
 begin
   if fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, item, action);
-{$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(TValue) = tkClass then
-{$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
     FreeObject(item);
 end;
@@ -859,7 +840,7 @@ end;
 
 function TListMultiMap<TKey, TValue>.CreateCollection: ICollection<TValue>;
 begin
-  Result := TCollections.CreateList<TValue>;
+  Result := TCollections.CreateList<TValue>(IComparer<TValue>(_LookupVtableInfo(giComparer, ValueType, SizeOf(TValue))));
 end;
 
 {$ENDREGION}

@@ -75,8 +75,8 @@ type
   public
     constructor Create;
 
-    procedure Add(handler: T); overload;
-    procedure Remove(handler: T); overload;
+    procedure Add(handler: T);
+    procedure Remove(handler: T);
   end;
 
   IMulticastNotifyEvent = IEvent<TNotifyEvent>;
@@ -133,6 +133,8 @@ type
   {$ENDREGION}
 
 
+procedure EnsureInitialized(var instance; typeInfo: PTypeInfo);
+
 implementation
 
 uses
@@ -140,6 +142,30 @@ uses
   Spring.VirtualInterface,
 {$ENDIF}
   Spring.ResourceStrings;
+
+
+type
+  TMethodEvent = class(TEvent, IEvent<TMethodPointer>)
+  private
+    procedure Add(handler: TMethodPointer);
+    procedure Remove(handler: TMethodPointer);
+  end;
+
+  TDelegateEvent = class(TEvent, IEvent<IInterface>)
+  private
+    function GetInvoke: IInterface;
+    procedure Add(handler: IInterface);
+    procedure Remove(handler: IInterface);
+  end;
+
+procedure EnsureInitialized(var instance; typeInfo: PTypeInfo);
+begin
+  if Pointer(instance) = nil then
+    if typeInfo.Kind = tkMethod then
+      IEvent<TMethodPointer>(instance) := TMethodEvent.Create(typeInfo)
+    else
+      IEvent<IInterface>(instance) := TDelegateEvent.Create(typeInfo);
+end;
 
 
 {$REGION 'Proxy generators'}
@@ -641,6 +667,7 @@ procedure TEvent.InternalInvokeDelegate(Method: TRttiMethod;
   const Args: TArray<TValue>; out Result: TValue);
 var
   handler: TMethodPointer;
+  reference: IInterface;
   argsWithoutSelf: TArray<TValue>;
   value: TValue;
 begin
@@ -649,7 +676,8 @@ begin
     argsWithoutSelf := Copy(Args, 1);
     for handler in Handlers do
     begin
-      value := TValue.From<IInterface>(MethodPointerToMethodReference(handler));
+      reference := MethodPointerToMethodReference(handler);
+      TValue.Make(@reference, TypeInfo(IInterface), value);
       method.Invoke(value, argsWithoutSelf);
     end;
   end;
@@ -830,6 +858,45 @@ end;
 procedure TPropertyChangedEventImpl.Remove(handler: TPropertyChangedEvent);
 begin
   inherited Remove(TMethodPointer(handler));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMethodEvent'}
+
+procedure TMethodEvent.Add(handler: TMethodPointer);
+begin
+  inherited Add(handler);
+end;
+
+procedure TMethodEvent.Remove(handler: TMethodPointer);
+begin
+  inherited Remove(handler);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDelegateEvent'}
+
+function TDelegateEvent.GetInvoke: IInterface;
+begin
+{$IFDEF PUREPASCAL}
+  PInterface(@Result)^ := IInterface(fProxy);
+{$ELSE}
+  TProc(PPointer(@Result)^) := Self;
+{$ENDIF}
+end;
+
+procedure TDelegateEvent.Add(handler: IInterface);
+begin
+  inherited Add(MethodReferenceToMethodPointer(handler));
+end;
+
+procedure TDelegateEvent.Remove(handler: IInterface);
+begin
+  inherited Remove(MethodReferenceToMethodPointer(handler));
 end;
 
 {$ENDREGION}

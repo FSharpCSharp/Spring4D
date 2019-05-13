@@ -870,6 +870,8 @@ type
 
   {$REGION 'Multicast Event'}
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
   TMethodPointer = procedure of object;
 
   IEvent = interface
@@ -975,7 +977,6 @@ type
     procedure SetOnChanged(value: TNotifyEvent);
     procedure SetThreadSafe(const value: Boolean);
     procedure SetUseFreeNotification(const value: Boolean);
-    procedure EnsureInitialized;
   public
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
@@ -1013,6 +1014,11 @@ type
 
   INotifyEvent<T> = interface(IEvent<TNotifyEvent<T>>)
   end;
+
+  {$RTTI INHERIT
+      METHODS(DefaultMethodRttiVisibility)
+      FIELDS(DefaultFieldRttiVisibility)
+      PROPERTIES(DefaultPropertyRttiVisibility)}
 
   {$ENDREGION}
 
@@ -1345,6 +1351,8 @@ type
 
   {$REGION 'Nullable Types'}
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(DefaultFieldRttiVisibility)}{$ENDIF}
+
   Nullable = record
   private
     const HasValue = 'True';
@@ -1513,10 +1521,17 @@ type
     property ValueType: PTypeInfo read fValueType;
   end;
 
+  {$RTTI INHERIT
+      METHODS(DefaultMethodRttiVisibility)
+      FIELDS(DefaultFieldRttiVisibility)
+      PROPERTIES(DefaultPropertyRttiVisibility)}
+
   {$ENDREGION}
 
 
   {$REGION 'Lazy Initialization'}
+
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(DefaultFieldRttiVisibility)}{$ENDIF}
 
   /// <summary>
   ///   Specifies the kind of a lazy type.
@@ -1815,10 +1830,17 @@ type
     class function EnsureInitialized<T>(var target: T; const valueFactory: Func<T>): T; overload; static;
   end;
 
+  {$RTTI INHERIT
+      METHODS(DefaultMethodRttiVisibility)
+      FIELDS(DefaultFieldRttiVisibility)
+      PROPERTIES(DefaultPropertyRttiVisibility)}
+
   {$ENDREGION}
 
 
   {$REGION 'Shared smart pointer'}
+
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(DefaultFieldRttiVisibility)}{$ENDIF}
 
   IShared<T> = reference to function: T;
 
@@ -1891,10 +1913,17 @@ type
     class function Make<T>(const value: T; const finalizer: Action<T>): IShared<T>; overload; static;
   end;
 
+  {$RTTI INHERIT
+      METHODS(DefaultMethodRttiVisibility)
+      FIELDS(DefaultFieldRttiVisibility)
+      PROPERTIES(DefaultPropertyRttiVisibility)}
+
   {$ENDREGION}
 
 
   {$REGION 'Weak smart pointer'}
+
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(DefaultFieldRttiVisibility)}{$ENDIF}
 
   TWeakReference = class abstract(TInterfacedObject)
   private
@@ -1937,6 +1966,11 @@ type
     property Target: T read GetTarget write SetTarget;
     property IsAlive: Boolean read GetIsAlive;
   end;
+
+  {$RTTI INHERIT
+      METHODS(DefaultMethodRttiVisibility)
+      FIELDS(DefaultFieldRttiVisibility)
+      PROPERTIES(DefaultPropertyRttiVisibility)}
 
   {$ENDREGION}
 
@@ -6604,7 +6638,7 @@ end;
 class function TNamedValue.From<T>(const value: T;
   const name: string): TNamedValue;
 begin
-  Result.fValue := TValue.From<T>(value);
+  Result.fValue := TValue.From(@value, System.TypeInfo(T));
   Result.fName := name;
 end;
 
@@ -6631,14 +6665,14 @@ end;
 
 class function TTypedValue.From<T>(const value: T): TTypedValue;
 begin
-  Result.fValue := TValue.From<T>(value);
+  Result.fValue := TValue.From(@value, System.TypeInfo(T));
   Result.fTypeInfo := System.TypeInfo(T);
 end;
 
 class function TTypedValue.From<T>(const value: T;
   const typeInfo: PTypeInfo): TTypedValue;
 begin
-  Result.fValue := TValue.From<T>(value);
+  Result.fValue := TValue.From(@value, System.TypeInfo(T));
   Result.fTypeInfo := typeInfo;
 end;
 
@@ -7249,8 +7283,8 @@ var
 begin
   if value.HasValue then
   begin
-    v := TValue.From<T>(value.fValue);
-    if v.IsType<Boolean> then
+    v := TValue.From(@value.fValue, TypeInfo(T));
+    if v.IsType(TypeInfo(Boolean)) then
       Result := v.AsBoolean
     else
       Result := v.AsVariant;
@@ -7343,7 +7377,7 @@ var
 begin
   if HasValue then
   begin
-    v := TValue.From<T>(fValue);
+    v := TValue.From(@fValue, TypeInfo(T));
     Result := v.ToString;
   end
   else
@@ -7356,8 +7390,8 @@ var
 begin
   if HasValue then
   begin
-    v := TValue.From<T>(fValue);
-    if v.IsType<Boolean> then
+    v := TValue.From(@fValue, TypeInfo(T));
+    if v.IsType(TypeInfo(Boolean)) then
       Result := v.AsBoolean
     else
       Result := v.AsVariant;
@@ -7513,7 +7547,9 @@ end;
 
 function TLazy<T>.GetValueNonGeneric: TValue;
 begin
-  Result := TValue.From<T>(Value);
+  if not fIsValueCreated then
+    InitializeValue;
+  Result := TValue.From(@fValue, TypeInfo(T));
 end;
 
 {$ENDREGION}
@@ -8024,7 +8060,7 @@ end;
 
 procedure Event<T>.Add(const handler: T);
 begin
-  EnsureInitialized;
+  EnsureInitialized(fInstance, TypeInfo(T));
   fInstance.Add(handler);
 end;
 
@@ -8032,12 +8068,6 @@ procedure Event<T>.Clear;
 begin
   if Assigned(fInstance) then
     fInstance.Clear;
-end;
-
-procedure Event<T>.EnsureInitialized;
-begin
-  if not Assigned(fInstance) then
-    fInstance := TEvent<T>.Create;
 end;
 
 function Event<T>.GetCanInvoke: Boolean;
@@ -8052,13 +8082,13 @@ end;
 
 function Event<T>.GetInvoke: T;
 begin
-  EnsureInitialized;
+  EnsureInitialized(fInstance, TypeInfo(T));
   Result := fInstance.Invoke;
 end;
 
 function Event<T>.GetOnChanged: TNotifyEvent;
 begin
-  EnsureInitialized;
+  EnsureInitialized(fInstance, TypeInfo(T));
   Result := fInstance.OnChanged;
 end;
 
@@ -8086,25 +8116,25 @@ end;
 
 procedure Event<T>.SetEnabled(const value: Boolean);
 begin
-  EnsureInitialized;
+  EnsureInitialized(fInstance, TypeInfo(T));
   fInstance.Enabled := value;
 end;
 
 procedure Event<T>.SetOnChanged(value: TNotifyEvent);
 begin
-  EnsureInitialized;
+  EnsureInitialized(fInstance, TypeInfo(T));
   fInstance.OnChanged := value;
 end;
 
 procedure Event<T>.SetThreadSafe(const value: Boolean);
 begin
-  EnsureInitialized;
+  EnsureInitialized(fInstance, TypeInfo(T));
   fInstance.ThreadSafe := value;
 end;
 
 procedure Event<T>.SetUseFreeNotification(const value: Boolean);
 begin
-  EnsureInitialized;
+  EnsureInitialized(fInstance, TypeInfo(T));
   fInstance.UseFreeNotification := value;
 end;
 
@@ -8115,7 +8145,7 @@ end;
 
 class operator Event<T>.Implicit(var value: Event<T>): IEvent<T>;
 begin
-  value.EnsureInitialized;
+  EnsureInitialized(value.fInstance, TypeInfo(T));
   Result := value.fInstance;
 end;
 

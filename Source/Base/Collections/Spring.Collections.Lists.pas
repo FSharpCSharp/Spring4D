@@ -173,13 +173,6 @@ type
     function AsReadOnly: IReadOnlyList<T>;
   end;
 
-  TObjectList<T: class> = class(TList<T>)
-  public
-    constructor Create; override;
-    constructor Create(ownsObjects: Boolean); overload;
-    constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
-  end;
-
   TSortedList<T> = class(TAbstractArrayList<T>, IInterface, IEnumerable<T>,
     IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
   private
@@ -211,13 +204,6 @@ type
     procedure Reverse(index, count: Integer); overload;
     procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
   {$ENDREGION}
-  end;
-
-  TSortedObjectList<T: class> = class(TSortedList<T>)
-  public
-    constructor Create; override;
-    constructor Create(ownsObjects: Boolean); overload;
-    constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
   end;
 
   TCollectionList<T: TCollectionItem> = class(TListBase<T>, IInterface,
@@ -331,53 +317,27 @@ type
   {$ENDREGION}
   end;
 
-  TFoldedObjectList<T{: class}> = class(TObjectList<TObject>)
-  protected
-    function CreateList: IList<TObject>; override;
-    function GetElementType: PTypeInfo; override;
-  end;
-
-  TFoldedInterfaceList<T{: IInterface}> = class(TList<IInterface>)
-  protected
-    function CreateList: IList<IInterface>; override;
-    function GetElementType: PTypeInfo; override;
-  end;
-
-  TFoldedSortedObjectList<T{: class}> = class(TSortedObjectList<TObject>)
-  protected
-    function CreateList: IList<TObject>; override;
-    function GetElementType: PTypeInfo; override;
-  end;
-
-  TFoldedSortedInterfaceList<T{: IInterface}> = class(TSortedList<IInterface>)
-  protected
-    function CreateList: IList<IInterface>; override;
-    function GetElementType: PTypeInfo; override;
-  end;
-
-  TFoldedObjectList = class(TObjectList<TObject>)
+  TFoldedList<T> = class(TList<T>)
   private
     fElementType: PTypeInfo;
   protected
-    function CreateList: IList<TObject>; override;
+    function CreateList: IList<T>; override;
     function GetElementType: PTypeInfo; override;
   public
-    constructor Create(const elementType: PTypeInfo;
-      const comparer: IComparer<TObject>; ownsObjects: Boolean = True);
+    constructor Create(elementType: PTypeInfo; const comparer: IComparer<T>;
+      ownsObjects: Boolean = False);
   end;
 
-  TFoldedInterfaceList = class(TList<IInterface>)
+  TFoldedSortedList<T> = class(TSortedList<T>)
   private
     fElementType: PTypeInfo;
   protected
-    function CreateList: IList<IInterface>; override;
     function GetElementType: PTypeInfo; override;
   public
-    constructor Create(const elementType: PTypeInfo;
-      const comparer: IComparer<IInterface>);
+    constructor Create(elementType: PTypeInfo; const comparer: IComparer<T>);
   end;
 
-  TObservableList<T: class> = class(TFoldedObjectList<T>, INotifyPropertyChanged)
+  TObservableList = class(TFoldedList<TObject>, INotifyPropertyChanged)
   private
     fOnPropertyChanged: IEvent<TPropertyChangedEvent>;
     function GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
@@ -387,8 +347,7 @@ type
     procedure DoPropertyChanged(const propertyName: string);
     procedure Changed(const value: TObject; action: TCollectionChangedAction); override;
   public
-    constructor Create; override;
-
+    constructor Create(elementType: PTypeInfo; ownsObjects: Boolean = True);
     property OnPropertyChanged: IEvent<TPropertyChangedEvent> read GetOnPropertyChanged;
   end;
 
@@ -1387,30 +1346,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TObjectList<T>'}
-
-constructor TObjectList<T>.Create;
-begin
-  inherited Create;
-  SetOwnsObjects(True);
-end;
-
-constructor TObjectList<T>.Create(ownsObjects: Boolean);
-begin
-  Create;
-  SetOwnsObjects(ownsObjects);
-end;
-
-constructor TObjectList<T>.Create(const comparer: IComparer<T>;
-  ownsObjects: Boolean);
-begin
-  inherited Create(comparer);
-  SetOwnsObjects(ownsObjects);
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TSortedList<T>'}
 
 function TSortedList<T>.Add(const item: T): Integer;
@@ -1525,29 +1460,6 @@ end;
 
 procedure TSortedList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSortedObjectList<T>'}
-
-constructor TSortedObjectList<T>.Create;
-begin
-  Create(True);
-end;
-
-constructor TSortedObjectList<T>.Create(ownsObjects: Boolean);
-begin
-  inherited Create;
-  SetOwnsObjects(ownsObjects);
-end;
-
-constructor TSortedObjectList<T>.Create(const comparer: IComparer<T>;
-  ownsObjects: Boolean);
-begin
-  inherited Create(comparer);
-  SetOwnsObjects(ownsObjects);
 end;
 
 {$ENDREGION}
@@ -2050,103 +1962,22 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFoldedObjectList<T>'}
+{$REGION 'TFoldedList<T>'}
 
-function TFoldedObjectList<T>.CreateList: IList<TObject>;
+constructor TFoldedList<T>.Create(elementType: PTypeInfo;
+  const comparer: IComparer<T>; ownsObjects: Boolean);
 begin
-  Result := TFoldedObjectList<T>.Create(False);
-end;
-
-function TFoldedObjectList<T>.GetElementType: PTypeInfo;
-begin
-  Result := TypeInfo(T);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFoldedInterfaceList<T>'}
-
-function TFoldedInterfaceList<T>.CreateList: IList<IInterface>;
-begin
-  Result := TFoldedInterfaceList<T>.Create;
-end;
-
-function TFoldedInterfaceList<T>.GetElementType: PTypeInfo;
-begin
-  Result := TypeInfo(T);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFoldedSortedObjectList<T>'}
-
-function TFoldedSortedObjectList<T>.CreateList: IList<TObject>;
-begin
-  Result := TFoldedObjectList<T>.Create(False);
-end;
-
-function TFoldedSortedObjectList<T>.GetElementType: PTypeInfo;
-begin
-  Result := TypeInfo(T);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFoldedSortedInterfaceList<T>'}
-
-function TFoldedSortedInterfaceList<T>.CreateList: IList<IInterface>;
-begin
-  Result := TFoldedInterfaceList<T>.Create;
-end;
-
-function TFoldedSortedInterfaceList<T>.GetElementType: PTypeInfo;
-begin
-  Result := TypeInfo(T);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFoldedObjectList'}
-
-constructor TFoldedObjectList.Create(const elementType: PTypeInfo;
-  const comparer: IComparer<TObject>; ownsObjects: Boolean);
-begin
-  inherited Create(comparer, ownsObjects);
   fElementType := elementType;
-end;
-
-function TFoldedObjectList.CreateList: IList<TObject>;
-begin
-  Result := TFoldedObjectList.Create(fElementType, Comparer, False);
-end;
-
-function TFoldedObjectList.GetElementType: PTypeInfo;
-begin
-  Result := fElementType;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFoldedInterfaceList'}
-
-constructor TFoldedInterfaceList.Create(const elementType: PTypeInfo;
-  const comparer: IComparer<IInterface>);
-begin
   inherited Create(comparer);
-  fElementType := elementType;
+  SetOwnsObjects(ownsObjects);
 end;
 
-function TFoldedInterfaceList.CreateList: IList<IInterface>;
+function TFoldedList<T>.CreateList: IList<T>;
 begin
-  Result := TFoldedInterfaceList.Create(fElementType, Comparer);
+  Result := TFoldedList<T>.Create(fElementType, Comparer);
 end;
 
-function TFoldedInterfaceList.GetElementType: PTypeInfo;
+function TFoldedList<T>.GetElementType: PTypeInfo;
 begin
   Result := fElementType;
 end;
@@ -2154,33 +1985,50 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TObservableList<T> }
+{$REGION 'TFoldedSortedList<T>'}
 
-constructor TObservableList<T>.Create;
+constructor TFoldedSortedList<T>.Create(elementType: PTypeInfo;
+  const comparer: IComparer<T>);
 begin
-  inherited Create;
+  fElementType := elementType;
+  inherited Create(comparer);
+end;
+
+function TFoldedSortedList<T>.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TObservableList'}
+
+constructor TObservableList.Create(elementType: PTypeInfo; ownsObjects: Boolean);
+begin
+  inherited Create(elementType, nil);
   fOnPropertyChanged := TPropertyChangedEventImpl.Create;
 end;
 
-procedure TObservableList<T>.DoItemPropertyChanged(sender: TObject;
+procedure TObservableList.DoItemPropertyChanged(sender: TObject;
   const eventArgs: IPropertyChangedEventArgs);
 begin
-  inherited Changed(T(sender), caChanged);
+  inherited Changed(sender, caChanged);
 end;
 
-procedure TObservableList<T>.DoPropertyChanged(const propertyName: string);
+procedure TObservableList.DoPropertyChanged(const propertyName: string);
 begin
   if Assigned(fOnPropertyChanged) and fOnPropertyChanged.CanInvoke then
     fOnPropertyChanged.Invoke(Self,
       TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
 end;
 
-function TObservableList<T>.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+function TObservableList.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
 begin
   Result := fOnPropertyChanged;
 end;
 
-procedure TObservableList<T>.Changed(const value: TObject;
+procedure TObservableList.Changed(const value: TObject;
   action: TCollectionChangedAction);
 var
   notifyPropertyChanged: INotifyPropertyChanged;
