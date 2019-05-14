@@ -142,6 +142,7 @@ type
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    function TryUpdateValue(const key: TKey; const newValue: TValue; out oldValue: TValue): Boolean;
     procedure TrimExcess;
     function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
   {$ENDREGION}
@@ -238,6 +239,7 @@ type
         function GetValueOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
         function TryExtract(const value: TValue; out key: TKey): Boolean;
         function TryGetValue(const value: TValue; out key: TKey): Boolean;
+        function TryUpdateValue(const value: TValue; const newKey: TKey; out oldKey: TKey): Boolean;
         procedure TrimExcess;
         function AsReadOnly: IReadOnlyDictionary<TValue, TKey>;
       {$ENDREGION}
@@ -412,6 +414,7 @@ type
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    function TryUpdateValue(const key: TKey; const newValue: TValue; out oldValue: TValue): Boolean;
     procedure TrimExcess;
     function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
@@ -551,6 +554,7 @@ type
     function Extract(const key: TKey): TValue; overload;
     function TryExtract(const key: TKey; out value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    function TryUpdateValue(const key: TKey; const newValue: TValue; out oldValue: TValue): Boolean;
     procedure TrimExcess;
     function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
@@ -888,6 +892,35 @@ begin
     value := TItems(fHashTable.Items)[entry.ItemIndex].Value
   else
     value := Default(TValue);
+end;
+
+function TDictionary<TKey, TValue>.TryUpdateValue(const key: TKey;
+  const newValue: TValue; out oldValue: TValue): Boolean;
+var
+  entry: THashTableEntry;
+  item: PItem;
+begin
+  entry.HashCode := fKeyComparer.GetHashCode(key);
+  Result := fHashTable.Find(key, entry);
+  if Result then
+  begin
+    item := @TItems(fHashTable.Items)[entry.ItemIndex];
+    oldValue := item.Value;
+
+    fHashTable.IncrementVersion;
+
+    if Assigned(Notify) then
+      DoNotify(key, oldValue, caRemoved);
+    ValueChanged(oldValue, caRemoved);
+
+    item.Value := newValue;
+
+    if Assigned(Notify) then
+      DoNotify(key, newValue, caAdded);
+    ValueChanged(newValue, caAdded);
+  end
+  else
+    oldValue := Default(TValue);
 end;
 
 function TDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
@@ -1702,6 +1735,13 @@ begin
     value := Default(TValue);
 end;
 
+function TBidiDictionary<TKey, TValue>.TryUpdateValue(const key: TKey; const newValue: TValue; out oldValue: TValue): Boolean;
+begin
+  Result := TryGetValue(key, oldValue);
+  if Result then
+    SetItem(key, newValue);
+end;
+
 function TBidiDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
 var
   keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
@@ -1773,7 +1813,8 @@ end;
 
 procedure TBidiDictionary<TKey, TValue>.SetItem(const key: TKey; const value: TValue);
 var
-  keyHashCode, keyBucketIndex, valueHashCode, valueBucketIndex, keyItemIndex, valueItemIndex: Integer;
+  keyHashCode, keyBucketIndex, keyItemIndex: Integer;
+  valueHashCode, valueBucketIndex, valueItemIndex: Integer;
   keyFound, valueFound: Boolean;
 begin
   keyHashCode := KeyHash(key);
@@ -2098,6 +2139,13 @@ begin
     key := fSource.fItems[itemIndex].Key
   else
     key := Default(TKey);
+end;
+
+function TBidiDictionary<TKey, TValue>.TInverse.TryUpdateValue(const value: TValue; const newKey: TKey; out oldKey: TKey): Boolean;
+begin
+  Result := TryGetValue(value, oldKey);
+  if Result then
+    SetItem(value, newKey);
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse._AddRef: Integer;
@@ -2611,6 +2659,39 @@ function TSortedDictionary<TKey, TValue>.TryGetValue(const key: TKey;
   out value: TValue): Boolean;
 begin
   Result := fTree.Find(key, value);
+end;
+
+function TSortedDictionary<TKey, TValue>.TryUpdateValue(const key: TKey;
+  const newValue: TValue; out oldValue: TValue): Boolean;
+var
+  node: PNode;
+begin
+  if fTree.fCount = 0 then
+  begin
+    oldValue := Default(TValue);
+    Exit(False);
+  end;
+
+  node := fTree.FindNode(key);
+  Result := Assigned(node);
+  if Result then
+  begin
+    oldValue := node.Value;
+
+    IncUnchecked(fVersion);
+
+    if Assigned(Notify) then
+      DoNotify(key, oldValue, caRemoved);
+    ValueChanged(oldValue, caRemoved);
+
+    node.Value := newValue;
+
+    if Assigned(Notify) then
+      DoNotify(key, newValue, caAdded);
+    ValueChanged(newValue, caAdded);
+  end
+  else
+    oldValue := Default(TValue);
 end;
 
 {$ENDREGION}

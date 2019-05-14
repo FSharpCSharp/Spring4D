@@ -66,6 +66,7 @@ type
     procedure Pack;
     function Find(const key; var entry: THashTableEntry): Boolean;
     procedure Rehash(newCapacity: NativeInt);
+    procedure IncrementVersion; inline;
 
     function Add(const key; hashCode: Integer): Pointer;
     function AddOrSet(const key; hashCode: Integer; out isExistingEntry: Boolean): Pointer;
@@ -227,6 +228,13 @@ begin
     // only grow if load factor is greater than 0.5
     newCapacity := newCapacity * 2;
   Rehash(newCapacity);
+end;
+
+procedure THashTable.IncrementVersion;
+begin
+  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
 end;
 
 procedure THashTable.Pack;

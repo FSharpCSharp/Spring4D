@@ -137,6 +137,7 @@ type
     procedure TestSetItemOrder;
     procedure TestTryAdd;
     procedure TestTryExtract;
+    procedure TestTryUpdateValue;
     procedure TestToArray;
     procedure TestValuesContains;
     procedure TestValuesElementAt;
@@ -219,6 +220,7 @@ type
     procedure TestSetItem;
     procedure TestTryAdd;
     procedure TestTryExtract;
+    procedure TestTryUpdateValue;
   end;
 
   TTestDictionaryChangedEvent = class(TTestDictionaryChangedEventBase)
@@ -1055,6 +1057,39 @@ begin
   CheckCount(2);
 end;
 
+procedure TTestDictionaryBase.TestTryUpdateValue;
+var
+  oldValue: string;
+  items: TArray<TPair<Integer, string>>;
+begin
+  FillTestData;
+
+  oldValue := 'foo';
+  CheckFalse(SUT.TryUpdateValue(5, '', oldValue));
+  CheckEquals(OldValue, Default(string));
+
+  oldValue := 'foo';
+  CheckTrue(SUT.TryUpdateValue(4, 'dd', oldValue));
+  CheckEquals(oldValue, 'd');
+  CheckEquals(SUT[4], 'dd');
+
+  oldValue := 'foo';
+  CheckTrue(SUT.TryUpdateValue(2, 'bb', oldValue));
+  CheckEquals(oldValue, 'b');
+  CheckEquals(SUT[2], 'bb');
+
+  items := SUT.ToArray;
+  CheckEquals(4, Length(items));
+  CheckEquals(1, items[0].Key);
+  CheckEquals(2, items[1].Key);
+  CheckEquals(3, items[2].Key);
+  CheckEquals(4, items[3].Key);
+  CheckEquals('a', items[0].Value);
+  CheckEquals('bb', items[1].Value);
+  CheckEquals('c', items[2].Value);
+  CheckEquals('dd', items[3].Value);
+end;
+
 procedure TTestDictionaryBase.TestToArray;
 var
   items: TArray<TPair<Integer, string>>;
@@ -1596,6 +1631,34 @@ begin
   CheckEquals(2, fValueChangedEvents.Count);
   CheckValueChanged(0, 'c', caExtracted);
   CheckValueChanged(1, 'a', caExtracted);
+end;
+
+procedure TTestDictionaryChangedEventBase.TestTryUpdateValue;
+var
+  oldValue: string;
+begin
+  SUT.Add(1, 'a');
+  SUT.Add(2, 'b');
+  SUT.Add(3, 'c');
+  SUT.Add(4, 'd');
+  AddEventHandlers;
+  Check(SUT.TryUpdateValue(3, 'e', oldValue));
+
+  CheckEquals(2, fChangedEvents.Count);
+  CheckChanged(0, 3, 'c', caRemoved);
+  CheckChanged(1, 3, 'e', caAdded);
+
+  CheckEquals(0, fKeyChangedEvents.Count);
+
+  CheckEquals(2, fValueChangedEvents.Count);
+  CheckValueChanged(0, 'c', caRemoved);
+  CheckValueChanged(1, 'e', caAdded);
+
+  Check(not SUT.TryUpdateValue(5, 'f', oldValue));
+  Check(oldValue=Default(string));
+  CheckEquals(2, fChangedEvents.Count);
+  CheckEquals(0, fKeyChangedEvents.Count);
+  CheckEquals(2, fValueChangedEvents.Count);
 end;
 
 {$ENDREGION}

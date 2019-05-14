@@ -1811,6 +1811,24 @@ type
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     /// <summary>
+    ///   Updates the value associated with the specified key.
+    /// </summary>
+    /// <param name="key">
+    ///   The key whose value to update.
+    /// </param>
+    /// <param name="newValue">
+    ///   The new value to be associated with the specified key, if the key is found.
+    /// </param>
+    /// <param name="oldValue">
+    ///   The original value associated with the specified key, if the key is found;
+    ///   otherwise, <b>Default(TValue)</b>.
+    /// </param>
+    /// <returns>
+    ///   <b>True</b> if the key is found and the value updated; <b>False</b> otherwise.
+    /// </returns>
+    function TryUpdateValue(const key: TKey; const newValue: TValue; out value: TValue): Boolean;
+
+    /// <summary>
     ///   Returns the dictionary as read-only dictionary.
     /// </summary>
     /// <remarks>
