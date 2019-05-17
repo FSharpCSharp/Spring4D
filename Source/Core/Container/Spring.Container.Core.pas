@@ -35,8 +35,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Logging,
-  Spring.Container.Common,
-  Spring.Patterns.Specification;
+  Spring.Patterns.Specification,
+  Spring.Container.Common;
 
 type
   { Forward Declarations }

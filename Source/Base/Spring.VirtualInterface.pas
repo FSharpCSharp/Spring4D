@@ -35,16 +35,9 @@ uses
   Spring.MethodIntercept;
 
 type
-{$IFDEF DELPHIXE2_UP}
-  TVirtualInterfaceInvokeEvent = Rtti.TVirtualInterfaceInvokeEvent;
-{$ELSE}
+{$IFDEF DELPHIXE}
   TVirtualInterfaceInvokeEvent = reference to procedure(Method: TRttiMethod;
     const Args: TArray<TValue>; out Result: TValue);
-{$ENDIF}
-
-{$IFDEF DELPHIXE2_UP}
-  TVirtualInterface = Rtti.TVirtualInterface;
-{$ELSE}
   TVirtualInterface = class(TInterfacedObject, IInterface)
   private
     fMethodTable: Pointer;
@@ -70,24 +63,27 @@ type
     function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
     property OnInvoke: TVirtualInterfaceInvokeEvent read fOnInvoke write fOnInvoke;
   end;
+{$ELSE}
+  TVirtualInterfaceInvokeEvent = Rtti.TVirtualInterfaceInvokeEvent;
+  TVirtualInterface = Rtti.TVirtualInterface;
 {$ENDIF}
 
 implementation
 
-uses
 {$IFDEF DELPHIXE}
+uses
   Spring,
   Spring.Patches.GetInvokeInfo,
   Spring.Patches.QC93646,
   Spring.Patches.QC98671,
   Spring.Patches.QC107219,
-{$ENDIF}
   RTLConsts;
+{$ENDIF}
 
 
 {$REGION 'TVirtualInterface'}
 
-{$IFNDEF DELPHIXE2_UP}
+{$IFDEF DELPHIXE}
 constructor TVirtualInterface.Create(typeInfo: PTypeInfo);
 var
   i: Integer;

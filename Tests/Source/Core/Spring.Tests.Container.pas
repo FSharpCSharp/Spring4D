@@ -34,7 +34,6 @@ uses
   SysUtils,
   TestFramework,
   Spring,
-  Spring.Services,
   Spring.Container,
   Spring.Container.Common,
   // DO NOT CHANGE ORDER OF FOLLOWING UNITS !!!

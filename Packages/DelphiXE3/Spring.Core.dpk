@@ -35,7 +35,6 @@ requires
   Spring.Base;
 
 contains
-  Spring.Services in '..\..\Source\Core\Services\Spring.Services.pas',
   Spring.Container in '..\..\Source\Core\Container\Spring.Container.pas',
   Spring.Container.ActivatorExtension in '..\..\Source\Core\Container\Spring.Container.ActivatorExtension.pas',
   Spring.Container.AutoMockExtension in '..\..\Source\Core\Container\Spring.Container.AutoMockExtension.pas',

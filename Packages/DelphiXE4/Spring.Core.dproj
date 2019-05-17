@@ -82,7 +82,6 @@
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="Spring.Base.dcp"/>
-        <DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.ActivatorExtension.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.AutoMockExtension.pas"/>

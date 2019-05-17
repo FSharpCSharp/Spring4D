@@ -29,15 +29,11 @@ unit Spring.Container;
 interface
 
 uses
-  Rtti,
-  SysUtils,
   Spring,
   Spring.Collections,
   Spring.Container.Common,
   Spring.Container.Core,
-  Spring.Container.Registration,
-  Spring.Logging,
-  Spring.Services;
+  Spring.Container.Registration;
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
 
@@ -134,29 +130,6 @@ type
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
   end;
 
-  /// <summary>
-  ///   Adapter to get access to a <see cref="TContainer" /> instance over the <see cref="Spring.Services|IServiceLocator" />
-  ///    interface.
-  /// </summary>
-  TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
-  private
-    fContainer: TContainer;
-    class var GlobalInstance: IServiceLocator;
-    class procedure Init; static;
-  public
-    constructor Create(const container: TContainer);
-
-    function GetService(serviceType: PTypeInfo): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const serviceName: string): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
-    function GetService(serviceType: PTypeInfo; const serviceName: string; const args: array of TValue): TValue; overload;
-
-    function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
-
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const serviceName: string): Boolean; overload;
-  end;
-
 
 {$REGION 'Exceptions'}
 
@@ -178,6 +151,7 @@ function GlobalContainer: TContainer; inline;
 implementation
 
 uses
+  SysUtils,
   TypInfo,
   Spring.Container.Builder,
   Spring.Container.Context,
@@ -584,7 +558,7 @@ end;
 
 function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
 var
-  targetType: TRttiType;
+  targetType: PTypeInfo;
   models: TArray<TComponentModel>;
   i: Integer;
   context: IContext;
@@ -592,7 +566,7 @@ var
   request: IRequest;
 begin
   CheckBuildRequired;
-  targetType := serviceType.RttiType;
+  targetType := serviceType;
   // TODO: remove dependency on lazy type
   if IsLazyType(serviceType) then
     serviceType := GetLazyType(serviceType);
@@ -602,7 +576,7 @@ begin
   begin
     context := TContext.Create(models[i], []);
     serviceName := models[i].GetServiceName(serviceType);
-    request := TRequest.Create(targetType.Handle, context, nil, serviceName);
+    request := TRequest.Create(targetType, context, nil, serviceName);
     Result[i] := Resolver.Resolve(request);
   end;
 end;
@@ -610,72 +584,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TServiceLocatorAdapter'}
-
-class procedure TServiceLocatorAdapter.Init;
-begin
-  GlobalInstance := TServiceLocatorAdapter.Create(GlobalContainer);
-  ServiceLocator.Initialize(
-    function: IServiceLocator
-    begin
-      Result := GlobalInstance;
-    end);
-end;
-
-constructor TServiceLocatorAdapter.Create(const container: TContainer);
-begin
-  inherited Create;
-  fContainer := container;
-end;
-
-function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo): TValue;
-begin
-  Result := fContainer.Resolve(serviceType);
-end;
-
-function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo; //FI:O804
-  const serviceName: string): TValue;
-begin
-  Result := fContainer.Resolve({serviceType, }serviceName);
-end;
-
-function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
-  const args: array of TValue): TValue;
-begin
-  Result := fContainer.Resolve(serviceType, args);
-end;
-
-function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo; //FI:O804
-  const serviceName: string; const args: array of TValue): TValue;
-begin
-  Result := fContainer.Resolve({serviceType, }serviceName, args);
-end;
-
-function TServiceLocatorAdapter.GetAllServices(serviceType: PTypeInfo): TArray<TValue>;
-begin
-  Result := fContainer.ResolveAll(serviceType);
-end;
-
-function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo): Boolean;
-begin
-  Result := fContainer.Registry.HasService(serviceType);
-end;
-
-function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo; const serviceName: string): Boolean;
-begin
-  Result := fContainer.Registry.HasService(serviceType, serviceName);
-end;
-
-{$ENDREGION}
-
-
 procedure CleanupGlobalContainer;
 begin
-  TServiceLocatorAdapter.GlobalInstance := nil;
   FreeAndNil(TContainer.GlobalInstance);
 end;
-
-initialization
-  TServiceLocatorAdapter.Init;
 
 end.

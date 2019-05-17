@@ -68,13 +68,6 @@ uses
   Math,
   StrUtils;
 
-{$IF not declared(ReturnAddress)}
-function ReturnAddress: Pointer; inline;
-begin
-  Result := CallerAddr;
-end;
-{$IFEND}
-
 
 {$REGION 'TAbstractTestHelper'}
 
