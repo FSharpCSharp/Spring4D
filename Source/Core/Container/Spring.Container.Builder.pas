@@ -400,7 +400,7 @@ procedure TProviderInspector.ProcessModel(
 begin
   if not Assigned(model.Provider) then
     if model.ComponentType.TypeKind = tkClass then
-      model.Provider := TReflectionProvider.Create(kernel, model)
+      model.Provider := TReflectionProvider.Create(model)
     else
       raise EBuilderException.CreateResFmt(@SRegistrationIncomplete, [model.ComponentType.Name]);
 end;

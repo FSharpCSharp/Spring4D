@@ -117,7 +117,7 @@ begin
     // only for interfaces
     mockModel := fKernel.Registry.RegisterComponent(TMock<IInterface>.ClassInfo);
     fKernel.Registry.RegisterService(mockModel, TypeInfo(IMock<IInterface>), mockName);
-    mockModel.Provider := TDelegateProvider.Create(fKernel, mockModel,
+    mockModel.Provider := TDelegateProvider.Create(mockModel,
       function: TValue
       var
         mock: TMock;

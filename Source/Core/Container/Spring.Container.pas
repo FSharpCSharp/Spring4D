@@ -53,13 +53,13 @@ type
     function RegisterInstanceInternal(serviceType: PTypeInfo; const instance;
       const serviceName: string): TRegistration;
 
-    function CreateProvider<T>(const delegate: TProviderDelegate<T>; const model: TComponentModel): IProvider; overload;
+    class function CreateProvider<T>(const delegate: TProviderDelegate<T>; const model: TComponentModel): IProvider; overload; static;
   {$IFDEF DELPHIXE7_UP}
-    function CreateProviderObj(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IProvider;
-    function CreateProviderIntf(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IProvider;
+    class function CreateProviderObj(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IProvider; static;
+    class function CreateProviderIntf(const delegate: IInterface; typeInfo: Pointer; const model: TComponentModel): IProvider; static;
   {$ENDIF}
-    function CreateProvider(const instance: TValue; const model: TComponentModel): IProvider; overload;
-    function CreateProvider(const instance; instanceType: PTypeInfo; const model: TComponentModel): IProvider; overload;
+    class function CreateProvider(const instance: TValue; const model: TComponentModel): IProvider; overload; static;
+    class function CreateProvider(const instance; instanceType: PTypeInfo; const model: TComponentModel): IProvider; overload; static;
 
     class var GlobalInstance: TContainer;
     type TValueArray = array of TValue;
@@ -242,37 +242,37 @@ begin
     Builder.AddInspector(inspector);
 end;
 
-function TContainer.CreateProvider(
+class function TContainer.CreateProvider(
   const instance: TValue; const model: TComponentModel): IProvider;
 var
   value: TValue;
 begin
   value := instance;
-  Result := TDelegateProvider.Create(Self, model,
+  Result := TDelegateProvider.Create(model,
     function: TValue
     begin
       Result := value;
     end);
 end;
 
-function TContainer.CreateProvider(const instance;
+class function TContainer.CreateProvider(const instance;
   instanceType: PTypeInfo; const model: TComponentModel): IProvider;
 var
   value: TValue;
 begin
   TValue.Make(@instance, instanceType, value);
-  Result := TDelegateProvider.Create(Self, model,
+  Result := TDelegateProvider.Create(model,
     function: TValue
     begin
       Result := value;
     end);
 end;
 
-function TContainer.CreateProvider<T>(
+class function TContainer.CreateProvider<T>(
   const delegate: TProviderDelegate<T>;
   const model: TComponentModel): IProvider;
 begin
-  Result := TDelegateProvider.Create(Self, model,
+  Result := TDelegateProvider.Create(model,
     function: TValue
     var
       instance: T;
@@ -283,10 +283,10 @@ begin
 end;
 
 {$IFDEF DELPHIXE7_UP}
-function TContainer.CreateProviderIntf(const delegate: IInterface;
+class function TContainer.CreateProviderIntf(const delegate: IInterface;
   typeInfo: Pointer; const model: TComponentModel): IProvider;
 begin
-  Result := TDelegateProvider.Create(Self, model,
+  Result := TDelegateProvider.Create(model,
     function: TValue
     var
       instance: IInterface;
@@ -296,10 +296,10 @@ begin
     end);
 end;
 
-function TContainer.CreateProviderObj(const delegate: IInterface;
+class function TContainer.CreateProviderObj(const delegate: IInterface;
   typeInfo: Pointer; const model: TComponentModel): IProvider;
 begin
-  Result := TDelegateProvider.Create(Self, model,
+  Result := TDelegateProvider.Create(model,
     function: TValue
     var
       instance: TObject;

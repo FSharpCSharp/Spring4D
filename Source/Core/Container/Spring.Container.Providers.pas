@@ -40,16 +40,14 @@ type
   /// </summary>
   TProviderBase = class abstract(TInterfacedObject, IProvider)
   private
-    fKernel: TKernel;
     fModel: TComponentModel;
   protected
     procedure ExecuteInjections(var instance: TValue; const context: IContext); overload;
     procedure ExecuteInjections(const instance: TValue;
       const injections: IList<IInjection>; const context: IContext); overload;
-    property Kernel: TKernel read fKernel;
     property Model: TComponentModel read fModel;
   public
-    constructor Create(const kernel: TKernel; const model: TComponentModel);
+    constructor Create(const model: TComponentModel);
     function CreateInstance(const context: IContext): TValue; overload; virtual; abstract;
   end;
 
@@ -80,7 +78,7 @@ type
   private
     fDelegate: TProviderDelegate;
   public
-    constructor Create(const kernel: TKernel; const model: TComponentModel;
+    constructor Create(const model: TComponentModel;
       const delegate: TProviderDelegate);
     function CreateInstance(const context: IContext): TValue; override;
   end;
@@ -97,13 +95,10 @@ uses
 
 {$REGION 'TProviderBase'}
 
-constructor TProviderBase.Create(const kernel: TKernel;
-  const model: TComponentModel);
+constructor TProviderBase.Create(const model: TComponentModel);
 begin
-  Guard.CheckNotNull(kernel, 'kernel');
   Guard.CheckNotNull(model, 'model');
   inherited Create;
-  fKernel := kernel;
   fModel := model;
 end;
 
@@ -142,7 +137,7 @@ var
 begin
   for injection in injections do
   begin
-    arguments := Kernel.Resolver.Resolve(
+    arguments := Model.Kernel.Resolver.Resolve(
       context, injection.Dependencies, injection.Arguments);
     injection.Inject(instance, arguments);
   end;
@@ -205,10 +200,10 @@ var
   injection: IInjection;
   arguments: TArray<TValue>;
 begin
-  injection := Kernel.ConstructorSelector.Find(context, Model);
+  injection := Model.Kernel.ConstructorSelector.Find(context, Model);
   if injection = nil then
     raise EActivatorException.CreateResFmt(@SUnsatisfiedConstructor, [Model.ComponentType.DefaultName]);
-  arguments := Kernel.Resolver.Resolve(
+  arguments := Model.Kernel.Resolver.Resolve(
     context, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(
     Model.ComponentType.AsInstance, injection.Target.AsMethod, arguments);
@@ -220,10 +215,10 @@ end;
 
 {$REGION 'TDelegateProvider'}
 
-constructor TDelegateProvider.Create(const kernel: TKernel;
-  const model: TComponentModel; const delegate: TProviderDelegate);
+constructor TDelegateProvider.Create(const model: TComponentModel;
+  const delegate: TProviderDelegate);
 begin
-  inherited Create(kernel, model);
+  inherited Create(model);
   fDelegate := delegate;
 end;
 
