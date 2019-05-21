@@ -408,8 +408,8 @@ var
   targetType: TRttiType;
   dependencyModel: TDependencyModel;
 begin
-  Result := inherited CanResolve(context, dependency, argument)
-    and IsLazyType(dependency.TypeInfo);
+  Result := IsLazyType(dependency.TypeInfo)
+    and inherited CanResolve(context, dependency, argument);
   if Result then
   begin
     targetType := GetLazyType(dependency.TargetType.Handle).RttiType;
@@ -510,6 +510,28 @@ end;
 
 {$REGION 'TDynamicArrayResolver'}
 
+function ResolveDynamicArray(const kernel: TKernel; const context: ICreationContext;
+  const dependency: TDependencyModel; const targetType: TRttiType): TArray<TValue>;
+var
+  serviceType: PTypeInfo;
+  models: TArray<TComponentModel>;
+  i: Integer;
+  serviceName: string;
+begin
+  // TODO: remove dependency on lazy type
+  serviceType := targetType.Handle;
+  if IsLazyType(serviceType) then
+    serviceType := GetLazyType(serviceType);
+  models := kernel.Registry.FindAll(serviceType).ToArray;
+
+  SetLength(Result, Length(models));
+  for i := Low(models) to High(models) do
+  begin
+    serviceName := models[i].GetServiceName(serviceType);
+    Result[i] := Kernel.Resolver.Resolve(context, dependency, serviceName);
+  end;
+end;
+
 function TDynamicArrayResolver.CanResolve(const context: ICreationContext;
   const dependency: TDependencyModel; const argument: TValue): Boolean;
 var
@@ -517,8 +539,8 @@ var
   dependencyModel: TDependencyModel;
 begin
   targetType := dependency.TargetType;
-  Result := inherited CanResolve(context, dependency, argument)
-    and targetType.IsDynamicArray;
+  Result := targetType.IsDynamicArray
+    and inherited CanResolve(context, dependency, argument);
   if Result then
   begin
     targetType := targetType.AsDynamicArray.ElementType;
@@ -532,11 +554,7 @@ function TDynamicArrayResolver.Resolve(const context: ICreationContext;
 var
   targetType: TRttiType;
   dependencyModel: TDependencyModel;
-  serviceType: PTypeInfo;
-  models: TArray<TComponentModel>;
   values: TArray<TValue>;
-  i: Integer;
-  serviceName: string;
 begin
   targetType := dependency.TargetType;
   if not targetType.IsDynamicArray then
@@ -544,19 +562,7 @@ begin
   targetType := targetType.AsDynamicArray.ElementType;
   dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
 
-  // TODO: remove dependency on lazy type
-  if IsLazyType(targetType.Handle) then
-    serviceType := GetLazyType(targetType.Handle)
-  else
-    serviceType := targetType.Handle;
-  models := Kernel.Registry.FindAll(serviceType).ToArray;
-
-  SetLength(values, Length(models));
-  for i := Low(models) to High(models) do
-  begin
-    serviceName := models[i].GetServiceName(serviceType);
-    values[i] := Kernel.Resolver.Resolve(context, dependencyModel, serviceName);
-  end;
+  values := ResolveDynamicArray(Kernel, context, dependencyModel, targetType);
   Result := TValue.FromArray(dependency.TypeInfo, values);
 end;
 
@@ -575,9 +581,9 @@ var
   dependencyModel: TDependencyModel;
 begin
   targetType := dependency.TargetType;
-  Result := inherited CanResolve(context, dependency, argument)
-    and targetType.IsGenericType
-    and MatchText(targetType.GetGenericTypeDefinition, SupportedTypes);
+  Result := targetType.IsGenericType
+    and MatchStr(targetType.GetGenericTypeDefinition, SupportedTypes)
+    and inherited CanResolve(context, dependency, argument);
   if Result then
   begin
     targetType := GetElementType(targetType.Handle).RttiType;
@@ -590,26 +596,30 @@ end;
 function TCollectionResolver.Resolve(const context: ICreationContext;
   const dependency: TDependencyModel; const argument: TValue): TValue;
 var
-  itemType, arrayType: TRttiType;
+  itemType: TRttiType;
   dependencyModel: TDependencyModel;
-  values: TValue;
+  values: TArray<TValue>;
+  objects: TArray<TObject>;
+  interfaces: TArray<IInterface>;
+  i: Integer;
 begin
   itemType := GetElementType(dependency.TargetType.Handle).RttiType;
-  arrayType := TType.FindType('System.TArray<' + itemType.DefaultName + '>');
-  dependencyModel := TDependencyModel.Create(arrayType, dependency.Target);
-  values := Kernel.Resolver.Resolve(context, dependencyModel, argument);
+  dependencyModel := TDependencyModel.Create(itemType, dependency.Target);
+  values := ResolveDynamicArray(Kernel, context, dependencyModel, itemType);
   case itemType.TypeKind of
     tkClass:
     begin
-      TValueData(values).FTypeInfo := TypeInfo(TArray<TObject>);
-      Result := TValue.From(TList<TObject>.Create(
-        values.AsType<TArray<TObject>>()));
+      SetLength(objects, Length(values));
+      for i := Low(values) to High(values) do
+        objects[i] := values[i].AsObject;
+      Result := TValue.From(TList<TObject>.Create(objects));
     end;
     tkInterface:
     begin
-      TValueData(values).FTypeInfo := TypeInfo(TArray<IInterface>);
-      Result := TValue.From(TList<IInterface>.Create(
-        values.AsType<TArray<IInterface>>()));
+      SetLength(interfaces, Length(values));
+      for i := Low(values) to High(values) do
+        interfaces[i] := values[i].AsInterface;
+      Result := TValue.From(TList<IInterface>.Create(interfaces));
     end;
   else
     raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
