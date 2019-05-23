@@ -1398,7 +1398,7 @@ begin
   end;
   FindKey(oldKey, oldKeyHashCode, oldKeyBucketIndex, oldKeyItemIndex);
   Assert(oldKeyItemIndex = itemIndex);
-  fValueBuckets[oldKeyBucketIndex] := UsedBucket;
+  fKeyBuckets[oldKeyBucketIndex] := UsedBucket;
   FindKey(key, keyHashCode, keyBucketIndex, itemIndex);
   Assert(itemIndex = fItemCount);
 
