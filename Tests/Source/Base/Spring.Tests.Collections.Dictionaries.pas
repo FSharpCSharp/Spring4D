@@ -135,6 +135,7 @@ type
     procedure TestRemove;
     procedure TestSetItem;
     procedure TestSetItemOrder;
+    procedure TestSetItem_Issue318;
     procedure TestTryAdd;
     procedure TestTryExtract;
     procedure TestTryUpdateValue;
@@ -1028,6 +1029,18 @@ begin
   SUT[2] := 'b';
   SUT[1] := 'c';
   Check(SUT.Keys.EqualsTo([1, 2]));
+end;
+
+procedure TTestDictionaryBase.TestSetItem_Issue318;
+var
+  i: Integer;
+begin
+  for i := 1 to 100 do
+    SUT.Add(i, IntToStr(i));
+  for i := 1 to 100 do
+    SUT[i] := 'foo' + IntToStr(i);
+  for i := 1 to 100 do
+    Check(SUT.ContainsKey(i));
 end;
 
 procedure TTestDictionaryBase.TestTryAdd;
