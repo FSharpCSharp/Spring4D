@@ -2792,6 +2792,8 @@ type
     class procedure CreateListObject(comparer: Pointer; ownsObjects: Boolean; var result; elementType: Pointer); overload; static;
     class procedure CreateListInterface(var result; elementType: Pointer); overload; static;
     class procedure CreateListInterface(comparer: Pointer; var result; elementType: Pointer); overload; static;
+    class procedure CreateObservableListObject(ownsObjects: Boolean; var result; elementType: Pointer); static;
+    class procedure CreateObservableListInterface(var result; elementType: Pointer); static;
   public
     class function CreateList<T>: IList<T>; overload; static;
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload; static;
@@ -2834,7 +2836,8 @@ type
     class function CreateSortedInterfaceList<T: IInterface>(const values: array of T): IList<T>; overload; static;
     class function CreateSortedInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static;
 
-    class function CreateObservableList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateObservableList<T: class>(ownsObjects: Boolean = True): IList<T>; static;
+    class function CreateObservableInterfaceList<T: IInterface>: IList<T>; static;
 
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>; overload; static;
@@ -3911,6 +3914,18 @@ begin
     elementType, IComparer<IInterface>(comparer));
 end;
 
+class procedure TCollections.CreateObservableListObject(ownsObjects: Boolean;
+  var result; elementType: Pointer);
+begin
+  IList<TObject>(result) := TObservableObjectList.Create(elementType, ownsObjects);
+end;
+
+class procedure TCollections.CreateObservableListInterface(var result;
+  elementType: Pointer);
+begin
+  IList<IInterface>(result) := TObservableInterfaceList.Create(elementType);
+end;
+
 class procedure TCollections.CreateQueueObject(capacity: Integer;
   comparer: Pointer; ownsObjects: Boolean; var result; elementType: Pointer);
 begin
@@ -4083,7 +4098,12 @@ end;
 class function TCollections.CreateObservableList<T>(
   ownsObjects: Boolean): IList<T>;
 begin
-  IList<TObject>(Result) := TObservableList.Create(TypeInfo(T), ownsObjects);
+  CreateObservableListObject(ownsObjects, Result, TypeInfo(T));
+end;
+
+class function TCollections.CreateObservableInterfaceList<T>: IList<T>;
+begin
+  CreateObservableListInterface(Result, TypeInfo(T));
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;

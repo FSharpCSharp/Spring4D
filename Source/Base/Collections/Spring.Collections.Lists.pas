@@ -337,7 +337,7 @@ type
     constructor Create(elementType: PTypeInfo; const comparer: IComparer<T>);
   end;
 
-  TObservableList = class(TFoldedList<TObject>, INotifyPropertyChanged)
+  TObservableObjectList = class(TFoldedList<TObject>, INotifyPropertyChanged)
   private
     fOnPropertyChanged: IEvent<TPropertyChangedEvent>;
     function GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
@@ -348,6 +348,20 @@ type
     procedure Changed(const value: TObject; action: TCollectionChangedAction); override;
   public
     constructor Create(elementType: PTypeInfo; ownsObjects: Boolean = True);
+    property OnPropertyChanged: IEvent<TPropertyChangedEvent> read GetOnPropertyChanged;
+  end;
+
+  TObservableInterfaceList = class(TFoldedList<IInterface>, INotifyPropertyChanged)
+  private
+    fOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+    function GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+  protected
+    procedure DoItemPropertyChanged(sender: TObject;
+      const eventArgs: IPropertyChangedEventArgs);
+    procedure DoPropertyChanged(const propertyName: string);
+    procedure Changed(const value: IInterface; action: TCollectionChangedAction); override;
+  public
+    constructor Create(elementType: PTypeInfo);
     property OnPropertyChanged: IEvent<TPropertyChangedEvent> read GetOnPropertyChanged;
   end;
 
@@ -2002,33 +2016,33 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TObservableList'}
+{$REGION 'TObservableObjectList'}
 
-constructor TObservableList.Create(elementType: PTypeInfo; ownsObjects: Boolean);
+constructor TObservableObjectList.Create(elementType: PTypeInfo; ownsObjects: Boolean);
 begin
   inherited Create(elementType, nil);
   fOnPropertyChanged := TPropertyChangedEventImpl.Create;
 end;
 
-procedure TObservableList.DoItemPropertyChanged(sender: TObject;
+procedure TObservableObjectList.DoItemPropertyChanged(sender: TObject;
   const eventArgs: IPropertyChangedEventArgs);
 begin
   inherited Changed(sender, caChanged);
 end;
 
-procedure TObservableList.DoPropertyChanged(const propertyName: string);
+procedure TObservableObjectList.DoPropertyChanged(const propertyName: string);
 begin
   if Assigned(fOnPropertyChanged) and fOnPropertyChanged.CanInvoke then
     fOnPropertyChanged.Invoke(Self,
       TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
 end;
 
-function TObservableList.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+function TObservableObjectList.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
 begin
   Result := fOnPropertyChanged;
 end;
 
-procedure TObservableList.Changed(const value: TObject;
+procedure TObservableObjectList.Changed(const value: TObject;
   action: TCollectionChangedAction);
 var
   notifyPropertyChanged: INotifyPropertyChanged;
@@ -2045,6 +2059,58 @@ begin
 
   inherited Changed(value, action);
   DoPropertyChanged('Count');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TObservableInterfaceList'}
+
+constructor TObservableInterfaceList.Create(elementType: PTypeInfo);
+begin
+  inherited Create(elementType, nil);
+  fOnPropertyChanged := TPropertyChangedEventImpl.Create;
+end;
+
+procedure TObservableInterfaceList.Changed(const value: IInterface;
+  action: TCollectionChangedAction);
+var
+  notifyPropertyChanged: INotifyPropertyChanged;
+  propertyChanged: IEvent<TPropertyChangedEvent>;
+begin
+  if Supports(value, INotifyPropertyChanged, notifyPropertyChanged) then
+  begin
+    propertyChanged := notifyPropertyChanged.OnPropertyChanged;
+    case Action of
+      caAdded: propertyChanged.Add(DoItemPropertyChanged);
+      caRemoved, caExtracted: propertyChanged.Remove(DoItemPropertyChanged);
+    end;
+  end;
+
+  inherited Changed(value, action);
+  DoPropertyChanged('Count');
+end;
+
+procedure TObservableInterfaceList.DoItemPropertyChanged(sender: TObject;
+  const eventArgs: IPropertyChangedEventArgs);
+var
+  item: IInterface;
+begin
+  Supports(sender, fElementType.TypeData.Guid, item);
+  inherited Changed(item, caChanged);
+end;
+
+procedure TObservableInterfaceList.DoPropertyChanged(
+  const propertyName: string);
+begin
+  if Assigned(fOnPropertyChanged) and fOnPropertyChanged.CanInvoke then
+    fOnPropertyChanged.Invoke(Self,
+      TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
+end;
+
+function TObservableInterfaceList.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+begin
+  Result := fOnPropertyChanged;
 end;
 
 {$ENDREGION}
