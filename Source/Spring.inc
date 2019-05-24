@@ -44,9 +44,9 @@
   {$DEFINE PUREPASCAL}
 {$ENDIF}
 
-{$IFDEF LINUX}
+{$IF Defined(LINUX64) OR Defined(OSX64)}
   {$DEFINE PUREPASCAL}
-{$ENDIF}
+{$IFEND}
 
 // JEDI will assert that at least CPU386 is defined
 {$IFDEF CPU386}
