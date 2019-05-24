@@ -2256,13 +2256,13 @@ type
     class procedure SortTwoItems<T>(const comparer: IComparer<T>; var left, right: T); static;
     class procedure SortThreeItems<T>(const comparer: IComparer<T>; var left, mid, right: T); static;
 
-    class procedure InsertionSort<T>(const values: array of T; const comparer: IComparer<T>; left, right: Integer); static;
+    class procedure InsertionSort<T>(var values: array of T; const comparer: IComparer<T>; left, right: Integer); static;
 
-    class procedure DownHeap<T>(const values: array of T; const comparer: IComparer<T>; left, count, i: Integer); static;
-    class procedure HeapSort<T>(const values: array of T; const comparer: IComparer<T>; left, right: Integer); static;
+    class procedure DownHeap<T>(var values: array of T; const comparer: IComparer<T>; left, count, i: Integer); static;
+    class procedure HeapSort<T>(var values: array of T; const comparer: IComparer<T>; left, right: Integer); static;
 
-    class function QuickSortPartition<T>(const values: array of T; const comparer: IComparer<T>; left, right: Integer): Integer; static;
-    class procedure IntroSort<T>(const values: array of T; const comparer: IComparer<T>; left, right, depthLimit: Integer); static;
+    class function QuickSortPartition<T>(var values: array of T; const comparer: IComparer<T>; left, right: Integer): Integer; static;
+    class procedure IntroSort<T>(var values: array of T; const comparer: IComparer<T>; left, right, depthLimit: Integer); static;
   public
 
     /// <summary>
@@ -2456,60 +2456,60 @@ type
     /// <summary>
     ///   Reverses the elements in the entire array.
     /// </summary>
-    class procedure Reverse<T>(const values: array of T); overload; static;
+    class procedure Reverse<T>(var values: array of T); overload; static;
 
     /// <summary>
     ///   Reverses the elements in the specified range in the array.
     /// </summary>
-    class procedure Reverse<T>(const values: array of T;
+    class procedure Reverse<T>(var values: array of T;
       index, count: Integer); overload; static;
 
     /// <summary>
     ///   Shuffles the elements in the array using the Fisher-Yates algorithm.
     /// </summary>
-    class procedure Shuffle<T>(const values: array of T); overload; static;
+    class procedure Shuffle<T>(var values: array of T); overload; static;
 
     /// <summary>
     ///   Shuffles the elements in the array starting at the specified index
     ///   using the Fisher-Yates algorithm.
     /// </summary>
-    class procedure Shuffle<T>(const values: array of T;
+    class procedure Shuffle<T>(var values: array of T;
       index: Integer); overload; static;
 
     /// <summary>
     ///   Shuffles the specified count of elements in the array starting at the
     ///   specified index using the Fisher-Yates algorithm.
     /// </summary>
-    class procedure Shuffle<T>(const values: array of T;
+    class procedure Shuffle<T>(var values: array of T;
       index, count: Integer); overload; static;
 
     /// <summary>
     ///   Sorts the elements in an array using the default comparer.
     /// </summary>
-    class procedure Sort<T>(const values: array of T); overload; static;
+    class procedure Sort<T>(var values: array of T); overload; static;
 
     /// <summary>
     ///   Sorts the elements in an array using the specified comparer.
     /// </summary>
-    class procedure Sort<T>(const values: array of T; const comparer: IComparer<T>); overload; static;
+    class procedure Sort<T>(var values: array of T; const comparer: IComparer<T>); overload; static;
 
     /// <summary>
     ///   Sorts the specified range of elements in an array using the specified
     ///   comparer.
     /// </summary>
-    class procedure Sort<T>(const values: array of T;
+    class procedure Sort<T>(var values: array of T;
       const comparer: IComparer<T>; index, count: Integer); overload; static;
 
     /// <summary>
     ///   Sorts the elements in an array using the specified comparison.
     /// </summary>
-    class procedure Sort<T>(const values: array of T; const comparison: TComparison<T>); overload; static;
+    class procedure Sort<T>(var values: array of T; const comparison: TComparison<T>); overload; static;
 
     /// <summary>
     ///   Sorts the specified range of elements in an array using the specified
     ///   comparison.
     /// </summary>
-    class procedure Sort<T>(const values: array of T;
+    class procedure Sort<T>(var values: array of T;
       const comparison: TComparison<T>; index, count: Integer); overload; static;
   end;
 
@@ -8789,40 +8789,6 @@ end;
 
 {$REGION 'TArray'}
 
-procedure SwapPtr(var left, right);
-var
-  temp: Pointer;
-begin
-  temp := Pointer(left);
-  Pointer(left) := Pointer(right);
-  Pointer(right) := temp;
-end;
-
-class procedure TArray.Swap<T>(var left, right: T);
-var
-  temp: T;
-begin
-{$IFDEF DELPHIXE7_UP}
-  case GetTypeKind(T) of
-{$IFDEF AUTOREFCOUNT}
-    tkClass,
-{$ENDIF AUTOREFCOUNT}
-    tkInterface,
-    tkDynArray,
-    tkUString:
-      SwapPtr(left, right);
-  else
-    temp := left;
-    left := right;
-    right := temp;
-  end;
-{$ELSE}
-  temp := left;
-  left := right;
-  right := temp;
-{$ENDIF}
-end;
-
 class function TArray.BinarySearch<T>(const values: array of T; const item: T;
   out foundIndex: Integer; const comparer: IComparer<T>; index,
   count: Integer): Boolean;
@@ -9125,15 +9091,13 @@ begin
   Result := -1;
 end;
 
-class procedure TArray.Reverse<T>(const values: array of T);
+class procedure TArray.Reverse<T>(var values: array of T);
 begin
   Reverse<T>(values, 0, Length(values));
 end;
 
-class procedure TArray.Reverse<T>(const values: array of T; index,
+class procedure TArray.Reverse<T>(var values: array of T; index,
   count: Integer);
-type
-  PT = ^T;
 var
   temp: T;
   index1, index2: Integer;
@@ -9147,28 +9111,29 @@ begin
   index2 := index + count - 1;
   while index1 < index2 do
   begin
-    Swap<T>(PT(@values[index1])^, PT(@values[index2])^);
+    temp := values[index1];
+    values[index1] := values[index2];
+    values[index2] := temp;
     Inc(index1);
     Dec(index2);
   end;
 end;
 
-class procedure TArray.Shuffle<T>(const values: array of T);
+class procedure TArray.Shuffle<T>(var values: array of T);
 begin
   Shuffle<T>(values, 0, Length(values));
 end;
 
-class procedure TArray.Shuffle<T>(const values: array of T; index: Integer);
+class procedure TArray.Shuffle<T>(var values: array of T; index: Integer);
 begin
   Shuffle<T>(values, index, Length(values) - index);
 end;
 
-class procedure TArray.Shuffle<T>(const values: array of T; index,
+class procedure TArray.Shuffle<T>(var values: array of T; index,
   count: Integer);
-type
-  PT = ^T;
 var
   i: Integer;
+  temp: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
@@ -9179,9 +9144,20 @@ begin
   begin
     i := Random(count) + index;
     Dec(count);
-    Swap<T>(PT(@values[index])^, PT(@values[i])^);
+    temp := values[index];
+    values[index] := values[i];
+    values[i] := temp;
     Inc(index);
   end;
+end;
+
+procedure SwapPtr(var left, right);
+var
+  temp: Pointer;
+begin
+  temp := Pointer(left);
+  Pointer(left) := Pointer(right);
+  Pointer(right) := temp;
 end;
 
 class function TArray.GetDepthLimit(count: Integer): Integer;
@@ -9193,6 +9169,31 @@ begin
     count := count div 2;
   end;
   Result := Result * 2;
+end;
+
+class procedure TArray.Swap<T>(var left, right: T);
+var
+  temp: T;
+begin
+{$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(T) of
+{$IFDEF AUTOREFCOUNT}
+    tkClass,
+{$ENDIF AUTOREFCOUNT}
+    tkInterface,
+    tkDynArray,
+    tkUString:
+      SwapPtr(left, right);
+  else
+    temp := left;
+    left := right;
+    right := temp;
+  end;
+{$ELSE}
+  temp := left;
+  left := right;
+  right := temp;
+{$ENDIF}
 end;
 
 class procedure TArray.SortTwoItems<T>(const comparer: IComparer<T>;
@@ -9213,10 +9214,8 @@ begin
     Swap<T>(mid, right);
 end;
 
-class procedure TArray.DownHeap<T>(const values: array of T;
+class procedure TArray.DownHeap<T>(var values: array of T;
   const comparer: IComparer<T>; left, count, i: Integer);
-type
-  PT = ^T;
 var
   temp: T;
   child, n, x: Integer;
@@ -9230,16 +9229,14 @@ begin
       Inc(child);
     if comparer.Compare(temp, values[left + child - 1]) >= 0 then
       Break;
-    PT(@values[left + i - 1])^ := values[left + child - 1];
+    values[left + i - 1] := values[left + child - 1];
     i := child;
   end;
-  PT(@values[left + i - 1])^ := temp;
+  values[left + i - 1] := temp;
 end;
 
-class procedure TArray.HeapSort<T>(const values: array of T;
+class procedure TArray.HeapSort<T>(var values: array of T;
   const comparer: IComparer<T>; left, right: Integer);
-type
-  PT = ^T;
 var
   count, i: Integer;
 begin
@@ -9248,15 +9245,13 @@ begin
     DownHeap<T>(values, comparer, left, count, i);
   for i := count downto 2 do
   begin
-    Swap<T>(PT(@values[left])^, PT(@values[left + i - 1])^);
+    Swap<T>(values[left], values[left + i - 1]);
     DownHeap<T>(values, comparer, left, i - 1, 1);
   end;
 end;
 
-class procedure TArray.InsertionSort<T>(const values: array of T;
+class procedure TArray.InsertionSort<T>(var values: array of T;
   const comparer: IComparer<T>; left, right: Integer);
-type
-  PT = ^T;
 var
   i, j: Integer;
   temp: T;
@@ -9267,30 +9262,28 @@ begin
     temp := values[i];
     while (j > left) and (comparer.Compare(values[j - 1], temp) > 0) do
     begin
-      PT(@values[j])^ := values[j - 1];
+      values[j] := values[j - 1];
       Dec(j);
     end;
-    PT(@values[j])^ := temp;
+    values[j] := temp;
   end;
 end;
 
-class function TArray.QuickSortPartition<T>(const values: array of T;
+class function TArray.QuickSortPartition<T>(var values: array of T;
   const comparer: IComparer<T>; left, right: Integer): Integer;
-type
-  PT = ^T;
 var
   mid, pivotIndex: Integer;
   pivot: T;
 begin
   mid := left + (right - left) div 2;
 
-  SortThreeItems<T>(comparer, PT(@values[left])^, PT(@values[mid])^, PT(@values[right])^);
+  SortThreeItems<T>(comparer, values[left], values[mid], values[right]);
 
   Dec(right);
   pivotIndex := right;
 
   pivot := values[mid];
-  Swap<T>(PT(@values[mid])^, PT(@values[right])^);
+  Swap<T>(values[mid], values[right]);
 
   while left < right do
   begin
@@ -9304,17 +9297,15 @@ begin
     if left >= right then
       Break;
 
-    Swap<T>(PT(@values[left])^, PT(@values[right])^);
+    Swap<T>(values[left], values[right]);
   end;
 
-  Swap<T>(PT(@values[left])^, PT(@values[pivotIndex])^);
+  Swap<T>(values[left], values[pivotIndex]);
   Result := left;
 end;
 
-class procedure TArray.IntroSort<T>(const values: array of T;
+class procedure TArray.IntroSort<T>(var values: array of T;
   const comparer: IComparer<T>; left, right, depthLimit: Integer);
-type
-  PT = ^T;
 var
   count, pivot: Integer;
 begin
@@ -9325,12 +9316,12 @@ begin
       Exit;
     if count = 2 then
     begin
-      SortTwoItems<T>(comparer, PT(@values[left])^, PT(@values[right])^);
+      SortTwoItems<T>(comparer, values[left], values[right]);
       Exit;
     end;
     if count = 3 then
     begin
-      SortThreeItems<T>(comparer, PT(@values[left])^, PT(@values[right - 1])^, PT(@values[right])^);
+      SortThreeItems<T>(comparer, values[left], values[right - 1], values[right]);
       Exit;
     end;
     if count <= IntrosortSizeThreshold then
@@ -9352,7 +9343,7 @@ begin
   end;
 end;
 
-class procedure TArray.Sort<T>(const values: array of T);
+class procedure TArray.Sort<T>(var values: array of T);
 var
   comparer: IComparer<T>;
 begin
@@ -9360,14 +9351,14 @@ begin
   IntroSort<T>(values, comparer, Low(values), High(values), GetDepthLimit(Length(values)));
 end;
 
-class procedure TArray.Sort<T>(const values: array of T;
+class procedure TArray.Sort<T>(var values: array of T;
   const comparer: IComparer<T>);
 begin
   IntroSort<T>(values, comparer,
     Low(values), High(values), GetDepthLimit(Length(values)));
 end;
 
-class procedure TArray.Sort<T>(const values: array of T;
+class procedure TArray.Sort<T>(var values: array of T;
   const comparer: IComparer<T>; index, count: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -9381,14 +9372,14 @@ begin
   IntroSort<T>(values, comparer, index, index + count - 1, GetDepthLimit(count));
 end;
 
-class procedure TArray.Sort<T>(const values: array of T;
+class procedure TArray.Sort<T>(var values: array of T;
   const comparison: TComparison<T>);
 begin
   IntroSort<T>(values, IComparer<T>(PPointer(@comparison)^),
     Low(values), High(values), GetDepthLimit(Length(values)));
 end;
 
-class procedure TArray.Sort<T>(const values: array of T;
+class procedure TArray.Sort<T>(var values: array of T;
   const comparison: TComparison<T>; index, count: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
