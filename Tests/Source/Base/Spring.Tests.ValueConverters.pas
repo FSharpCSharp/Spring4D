@@ -931,7 +931,7 @@ begin
     TypeInfo(TDateTime));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
-  CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outStamp));
+  CheckEqualsString(DateTimeToStr(stamp), FormatDateTime('ddddd tt', outStamp));
 end;
 
 procedure TTestFromString.TestStringToDateTimeF;
@@ -1178,7 +1178,7 @@ begin
     TypeInfo(Nullable<TDateTime>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TDateTime>>(outNullable));
-  CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outNullable.Value));
+  CheckEqualsString(DateTimeToStr(stamp), FormatDateTime('ddddd tt', outNullable.Value));
 end;
 
 
@@ -4271,7 +4271,7 @@ begin
     TypeInfo(TDateTime));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
-  CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outStamp));
+  CheckEqualsString(DateTimeToStr(stamp), FormatDateTime('ddddd tt', outStamp));
 end;
 
 procedure TTestFromWideString.TestWStringToDateTimeF;
@@ -4438,7 +4438,7 @@ begin
     TypeInfo(Nullable<TDateTime>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TDateTime>>(outNullable));
-  CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outNullable.Value));
+  CheckEqualsString(DateTimeToStr(stamp), FormatDateTime('ddddd tt', outNullable.Value));
 end;
 
 procedure TTestFromWideString.TestWStringToNullableFloat;
