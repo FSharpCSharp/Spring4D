@@ -2276,7 +2276,7 @@ type
     procedure Finalize;
     procedure Allocate(count: Integer);
     function at(items: Pointer; index: Integer): Pointer; inline;
-    class procedure CopyArray<T>(source, target: Pointer; sourceIndex, targetIndex, count: Integer); static;
+    class procedure CopyArray<T>(const src; var dst; count: Integer); static;
     function CompareImpl<T>(const left, right): Integer;
     procedure BinarySortImpl<T>(lo, hi, start: Integer);
     function CountRunAndMakeAscendingImpl<T>(lo, hi: Integer): Integer;
@@ -8977,23 +8977,37 @@ begin
   Result := IComparer<T>(fComparer).Compare(T(left), T(right));
 end;
 
-class procedure TTimSort.CopyArray<T>(source, target: Pointer; sourceIndex, targetIndex, count: Integer);
+class procedure TTimSort.CopyArray<T>(const src; var dst; count: Integer);
 type
-  {$POINTERMATH ON}
+{$POINTERMATH ON}
   P = ^T;
-  {$POINTERMATH OFF}
+{$POINTERMATH OFF}
 var
-  i: Integer;
+  srcP, dstP: P;
 begin
-  if TType.IsManaged<T> then
-    if (source = target) and (sourceIndex < targetIndex) then
-      for i := count - 1 downto 0 do
-        T(Pointer(PByte(target) + (targetIndex + i) * SizeOf(T))^) := T(Pointer(PByte(source) + (sourceIndex + i) * SizeOf(T))^)
-    else
-      for i := 0 to count - 1 do
-        T(Pointer(PByte(target) + (targetIndex + i) * SizeOf(T))^) := T(Pointer(PByte(source) + (sourceIndex + i) * SizeOf(T))^)
+  Assert(TType.IsManaged<T>); // unmanaged type case handled at call sites with call to System.Move
+  srcP := @src;
+  dstP := @dst;
+  if srcP < dstP then
+  begin
+    Inc(srcP, count);
+    Inc(dstP, count);
+    while count > 0 do
+    begin
+      Dec(dstP);
+      Dec(srcP);
+      Dec(count);
+      dstP^ := srcP^;
+    end;
+  end
   else
-    System.Move(P(source)[sourceIndex], P(target)[targetIndex], count * SizeOf(T));
+    while count > 0 do
+    begin
+      dstP^ := srcP^;
+      Inc(dstP);
+      Inc(srcP);
+      Dec(count);
+    end;
 end;
 
 procedure TTimSort.BinarySortImpl<T>(lo, hi, start: Integer);
@@ -9037,7 +9051,7 @@ begin
        equal to pivot, left points to the first slot after them -- that's why
        this sort is stable. Slide elements over to make room for pivot. *)
     if TType.IsManaged<T> then
-      CopyArray<T>(items, items, left, left + 1, start - left)
+      CopyArray<T>(items[left], items[left + 1], start - left)
     else
       System.Move(items[left], items[left + 1], (start - left) * SizeOf(T));
 
@@ -9351,7 +9365,7 @@ begin
   cursor2 := base2; // indexes into items
   dest := base1; // indexes into items
   if TType.IsManaged<T> then
-    CopyArray<T>(items, tmp, base1, cursor1, len1)
+    CopyArray<T>(items[base1], tmp[cursor1], len1)
   else
     System.Move(items[base1], tmp[cursor1], len1 * SizeOf(T));
 
@@ -9363,7 +9377,7 @@ begin
   if len2 = 0 then
   begin
     if TType.IsManaged<T> then
-      CopyArray<T>(tmp, items, cursor1, dest, len1)
+      CopyArray<T>(tmp[cursor1], items[dest], len1)
     else
       System.Move(tmp[cursor1], items[dest], len1 * SizeOf(T));
     Exit;
@@ -9371,7 +9385,7 @@ begin
   if len1 = 1 then
   begin
     if TType.IsManaged<T> then
-      CopyArray<T>(items, items, cursor2, dest, len2)
+      CopyArray<T>(items[cursor2], items[dest], len2)
     else
       System.Move(items[cursor2], items[dest], len2 * SizeOf(T));
     items[dest + len2] := tmp[cursor1]; // last element of run 1 to end of merge
@@ -9421,7 +9435,7 @@ begin
       if count1 <> 0 then
       begin
         if TType.IsManaged<T> then
-          CopyArray<T>(tmp, items, cursor1, dest, count1)
+          CopyArray<T>(tmp[cursor1], items[dest], count1)
         else
           System.Move(tmp[cursor1], items[dest], count1 * SizeOf(T));
         Inc(dest, count1);
@@ -9441,7 +9455,7 @@ begin
       if count2 <> 0 then
       begin
         if TType.IsManaged<T> then
-          CopyArray<T>(items, items, cursor2, dest, count2)
+          CopyArray<T>(items[cursor2], items[dest], count2)
         else
           System.Move(items[cursor2], items[dest], count2 * SizeOf(T));
         Inc(dest, count2);
@@ -9469,7 +9483,7 @@ endOfOuterLoop:
   begin
     Assert(len2 > 0);
     if TType.IsManaged<T> then
-      CopyArray<T>(items, items, cursor2, dest, len2)
+      CopyArray<T>(items[cursor2], items[dest], len2)
     else
       System.Move(items[cursor2], items[dest], len2 * SizeOf(T));
     items[dest + len2] := tmp[cursor1]; // last element of run 1 to end of merge
@@ -9481,7 +9495,7 @@ endOfOuterLoop:
     Assert(len2 = 0);
     Assert(len1 > 1);
     if TType.IsManaged<T> then
-      CopyArray<T>(tmp, items, cursor1, dest, len1)
+      CopyArray<T>(tmp[cursor1], items[dest], len1)
     else
       System.Move(tmp[cursor1], items[dest], len1 * SizeOf(T));
   end;
@@ -9506,7 +9520,7 @@ begin
   items := fItems;
   tmp := EnsureTmpCapacity(len2);
   if TType.IsManaged<T> then
-    CopyArray<T>(items, tmp, base2, 0, len2)
+    CopyArray<T>(items[base2], tmp[0], len2)
   else
     System.Move(items[base2], tmp[0], len2 * SizeOf(T));
   cursor1 := base1 + len1 - 1; // indexes into items
@@ -9521,7 +9535,7 @@ begin
   if len1 = 0 then
   begin
     if TType.IsManaged<T> then
-      CopyArray<T>(tmp, items, 0, dest - (len2 - 1), len2)
+      CopyArray<T>(tmp[0], items[dest - (len2 - 1)], len2)
     else
       System.Move(tmp[0], items[dest - (len2 - 1)], len2 * SizeOf(T));
     Exit;
@@ -9531,7 +9545,7 @@ begin
     Dec(dest, len1);
     Dec(cursor1, len1);
     if TType.IsManaged<T> then
-      CopyArray<T>(items, items, cursor1 + 1, dest + 1, len1)
+      CopyArray<T>(items[cursor1 + 1], items[dest + 1], len1)
     else
       System.Move(items[cursor1 + 1], items[dest + 1], len1 * SizeOf(T));
     items[dest] := tmp[cursor2];
@@ -9584,7 +9598,7 @@ begin
         Dec(cursor1, count1);
         Dec(len1, count1);
         if TType.IsManaged<T> then
-          CopyArray<T>(items, items, cursor1 + 1, dest + 1, count1)
+          CopyArray<T>(items[cursor1 + 1], items[dest + 1], count1)
         else
           System.Move(items[cursor1 + 1], items[dest + 1], count1 * SizeOf(T));
         if len1 = 0 then
@@ -9604,7 +9618,7 @@ begin
         Dec(cursor2, count2);
         Dec(len2, count2);
         if TType.IsManaged<T> then
-          CopyArray<T>(tmp, items, cursor2 + 1, dest + 1, count2)
+          CopyArray<T>(tmp[cursor2 + 1], items[dest + 1], count2)
         else
           System.Move(tmp[cursor2 + 1], items[dest + 1], count2 * SizeOf(T));
         if len2 <= 1 then // len2 == 1 || len2 == 0
@@ -9631,7 +9645,7 @@ endOfOuterLoop:
     Dec(dest, len1);
     Dec(cursor1, len1);
     if TType.IsManaged<T> then
-      CopyArray<T>(items, items, cursor1 + 1, dest + 1, len1)
+      CopyArray<T>(items[cursor1 + 1], items[dest + 1], len1)
     else
       System.Move(items[cursor1 + 1], items[dest + 1], len1 * SizeOf(T));
     items[dest] := tmp[cursor2]; // move first element of run2 to front of merge
@@ -9643,7 +9657,7 @@ endOfOuterLoop:
     Assert(len1 = 0);
     Assert(len2 > 0);
     if TType.IsManaged<T> then
-      CopyArray<T>(tmp, items, 0, dest - (len2 - 1), len2)
+      CopyArray<T>(tmp[0], items[dest - (len2 - 1)], len2)
     else
       System.Move(tmp[0], items[dest - (len2 - 1)], len2 * SizeOf(T));
   end;
