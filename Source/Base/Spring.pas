@@ -2252,6 +2252,7 @@ type
     type
       TCompareFunc = function(self: Pointer; const left, right): Integer;
       TMergeFunc = procedure(self: Pointer; base1, len1, base2, len2: Integer);
+      TCompareMethod<T> = function(const left, right: T): Integer of object;
   private
     const
       MIN_MERGE = 32;
@@ -2261,7 +2262,7 @@ type
     fItems: Pointer;
     fArrayTypeInfo: PTypeInfo;
     fItemSize: Integer;
-    fComparer: Pointer;
+    fComparison: TMethodPointer;
     fCompare: TCompareFunc;
     fMergeLo: TMergeFunc;
     fMergeHi: TMergeFunc;
@@ -2272,12 +2273,12 @@ type
     fRunBase: TArray<Integer>;
     fRunLen: TArray<Integer>;
   private
-    procedure Initialize(items, comparer: Pointer; const compare: TCompareFunc; 
+    procedure Initialize(items: Pointer; const comparison: TMethodPointer; const compare: TCompareFunc;
       mergeLo, mergeHi: TMergeFunc; arrayTypeInfo: PTypeInfo; itemSize: Integer);
     procedure Finalize;
     procedure Allocate(count: Integer);
     function at(items: Pointer; index: Integer): Pointer; inline;
-    class procedure CopyArray<T>(const src; var dst; count: Integer); static;
+    class procedure CopyArray<T>(const source; var target; count: Integer); static;
     function CompareImpl<T>(const left, right): Integer;
     procedure BinarySortImpl<T>(lo, hi, start: Integer);
     function CountRunAndMakeAscendingImpl<T>(lo, hi: Integer): Integer;
@@ -2286,8 +2287,8 @@ type
     procedure MergeCollapse;
     procedure MergeForceCollapse;
     procedure MergeAt(i: Integer);
-    function GallopLeft(key: Pointer; items: Pointer; base, len, hint: Integer): Integer;
-    function GallopRight(key: Pointer; items: Pointer; base, len, hint: Integer): Integer;
+    function GallopLeft(key: Pointer; items: Pointer; len, hint: Integer): Integer;
+    function GallopRight(key: Pointer; items: Pointer; len, hint: Integer): Integer;
     procedure MergeLoImpl<T>(base1, len1, base2, len2: Integer);
     procedure MergeHiImpl<T>(base1, len1, base2, len2: Integer);
     function EnsureTmpCapacity(minCapacity: Integer): Pointer;
@@ -8918,12 +8919,13 @@ end;
 {$REGION 'TTimSort'}
 
 {$IFDEF DELPHIXE7_UP}
-procedure TTimSort.Initialize(items, comparer: Pointer; const compare: TCompareFunc;
-  mergeLo, mergeHi: TMergeFunc; arrayTypeInfo: PTypeInfo; itemSize: Integer);
+procedure TTimSort.Initialize(items: Pointer; const comparison: TMethodPointer;
+  const compare: TCompareFunc; mergeLo, mergeHi: TMergeFunc;
+  arrayTypeInfo: PTypeInfo; itemSize: Integer);
 begin
   Self := Default(TTimSort);
   fItems := items;
-  fComparer := comparer;
+  fComparison := comparison;
   fCompare := compare;
   fMergeLo := mergeLo;
   fMergeHi := mergeHi;
@@ -8978,38 +8980,37 @@ end;
 
 function TTimSort.CompareImpl<T>(const left, right): Integer;
 begin
-  Result := IComparer<T>(fComparer).Compare(T(left), T(right));
+  Result := TCompareMethod<T>(fComparison)(T(left), T(right));
 end;
 
-class procedure TTimSort.CopyArray<T>(const src; var dst; count: Integer);
+class procedure TTimSort.CopyArray<T>(const source; var target; count: Integer);
 type
-{$POINTERMATH ON}
+  {$POINTERMATH ON}
   P = ^T;
-{$POINTERMATH OFF}
+  {$POINTERMATH OFF}
 var
-  srcP, dstP: P;
+  src, dest: P;
 begin
-  Assert(TType.IsManaged<T>); // unmanaged type case handled at call sites with call to System.Move
-  srcP := @src;
-  dstP := @dst;
-  if srcP < dstP then
+  src := @source;
+  dest := @target;
+  if src < dest then
   begin
-    Inc(srcP, count);
-    Inc(dstP, count);
+    Inc(src, count - 1);
+    Inc(dest, count - 1);
     while count > 0 do
     begin
-      Dec(dstP);
-      Dec(srcP);
+      dest^ := src^;
+      Dec(dest);
+      Dec(src);
       Dec(count);
-      dstP^ := srcP^;
     end;
   end
   else
     while count > 0 do
     begin
-      dstP^ := srcP^;
-      Inc(dstP);
-      Inc(srcP);
+      dest^ := src^;
+      Inc(dest);
+      Inc(src);
       Dec(count);
     end;
 end;
@@ -9023,12 +9024,14 @@ var
   items: P;
   pivot: T;
   left, right, mid: Integer;
+  compare: TCompareMethod<T>;
 begin
   Assert(lo <= start);
   Assert(start <= hi);
   items := fItems;
   if start = lo then
     Inc(start);
+  compare := TCompareMethod<T>(fComparison);
   while start < hi do
   begin
     pivot := items[start];
@@ -9043,7 +9046,7 @@ begin
     while left < right do
     begin
       mid := (left + right) shr 1;
-      if IComparer<T>(fComparer).Compare(pivot, items[mid]) < 0 then
+      if compare(pivot, items[mid]) < 0 then
         right := mid
       else
         left := mid + 1;
@@ -9074,20 +9077,22 @@ var
   items: P;
   runHi, tmpLo, tmpHi: Integer;
   compareResult: Integer;
+  compare: TCompareMethod<T>;
 begin
   Assert(lo < hi);
   runHi := lo + 1;
   if runHi = hi then
     Exit(1);
+  compare := TCompareMethod<T>(fComparison);
 
   // find end of run, and reverse range if descending
   items := fItems;
-  compareResult := IComparer<T>(fComparer).Compare(items[lo], items[runHi]);
+  compareResult := compare(items[lo], items[runHi]);
   Inc(RunHi);
   if compareResult > 0 then
   begin
     // descending
-    while (runHi < hi) and (IComparer<T>(fComparer).Compare(items[runHi], items[runHi - 1]) < 0) do
+    while (runHi < hi) and (compare(items[runHi], items[runHi - 1]) < 0) do
       Inc(runHi);
 
     // reverse the array
@@ -9102,7 +9107,7 @@ begin
   end
   else
     // ascending
-    while (runHi < hi) and (IComparer<T>(fComparer).Compare(items[runHi], items[runHi - 1]) >= 0) do
+    while (runHi < hi) and (compare(items[runHi], items[runHi - 1]) >= 0) do
       Inc(runHi);
 
   Result := runHi - lo;
@@ -9190,7 +9195,7 @@ begin
 
   (* Find where the first element of run2 goes in run1. Prior elements in run1 can be ignored
      because they're already in place. *)
-  k := GallopRight(at(fItems, base2), fItems, base1, len1, 0);
+  k := GallopRight(at(fItems, base2), at(fItems, base1), len1, 0);
   Assert(k >= 0);
   Inc(base1, k);
   Dec(len1, k);
@@ -9199,7 +9204,7 @@ begin
 
   (* Find where the last element of run1 goes in run2. Subsequent elements in run2 can be
      ignored because they're already in place. *)
-  len2 := GallopLeft(at(fItems, base1 + len1 - 1), fItems, base2, len2, len2 - 1);
+  len2 := GallopLeft(at(fItems, base1 + len1 - 1), at(fItems, base2), len2, len2 - 1);
   Assert(len2 >= 0);
   if len2 = 0 then
     Exit;
@@ -9211,7 +9216,7 @@ begin
     fMergeHi(@self, base1, len1, base2, len2);
 end;
 
-function TTimSort.GallopLeft(key: Pointer; items: Pointer; base, len, hint: Integer): Integer;
+function TTimSort.GallopLeft(key: Pointer; items: Pointer; len, hint: Integer): Integer;
 var
   lastOfs, ofs, maxOfs, tmp, m: Integer;
 begin
@@ -9221,11 +9226,11 @@ begin
 
   lastOfs := 0;
   ofs := 1;
-  if fCompare(@self, key^, at(items, base + hint)^) > 0 then
+  if fCompare(@self, key^, at(items, hint)^) > 0 then
   begin
     // gallop right until items[base+hint+lastOfs] < key <= items[base+hint+ofs]
     maxOfs := len - hint;
-    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, base + hint + ofs)^) > 0) do
+    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, hint + ofs)^) > 0) do
     begin
       lastOfs := ofs;
       ofs := (ofs shl 1) + 1;
@@ -9244,7 +9249,7 @@ begin
   begin
     // Gallop left until items[base+hint-ofs] < key <= items[base+hint-lastOfs]
     maxOfs := hint + 1;
-    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, base + hint - ofs)^) <= 0) do
+    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, hint - ofs)^) <= 0) do
     begin
       lastOfs := ofs;
       ofs := (ofs shl 1) + 1;
@@ -9270,7 +9275,7 @@ begin
   while lastOfs < ofs do
   begin
     m := lastOfs + ((ofs - lastOfs) shr 1);
-    if fCompare(@self, key^, at(items, base + m)^) > 0 then
+    if fCompare(@self, key^, at(items, m)^) > 0 then
       lastOfs := m + 1 // item[base + m] < key
     else
       ofs := m; // key <= items[base + m]
@@ -9279,7 +9284,7 @@ begin
   Result := ofs;
 end;
 
-function TTimSort.GallopRight(key: Pointer; items: Pointer; base, len, hint: Integer): Integer;
+function TTimSort.GallopRight(key: Pointer; items: Pointer; len, hint: Integer): Integer;
 var
   lastOfs, ofs, maxOfs, tmp, m: Integer;
 begin
@@ -9289,11 +9294,11 @@ begin
 
   ofs := 1;
   lastOfs := 0;
-  if fCompare(@self, key^, at(items, base + hint)^) < 0 then
+  if fCompare(@self, key^, at(items, hint)^) < 0 then
   begin
     // gallop left until items[b+hint - ofs] <= key < items[b+hint - lastOfs]
     maxOfs := hint + 1;
-    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, base + hint - ofs)^) < 0) do
+    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, hint - ofs)^) < 0) do
     begin
       lastOfs := ofs;
       ofs := (ofs shl 1) + 1;
@@ -9313,7 +9318,7 @@ begin
   begin
     // gallop right until items[b+hint + lastOfs] <= key < items[b+hint + ofs]
     maxOfs := len - hint;
-    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, base + hint + ofs)^) >= 0) do
+    while (ofs < maxOfs) and (fCompare(@self, key^, at(items, hint + ofs)^) >= 0) do
     begin
       lastOfs := ofs;
       ofs := (ofs shl 1) + 1;
@@ -9338,7 +9343,7 @@ begin
   while lastOfs < ofs do
   begin
     m := lastOfs + ((ofs - lastOfs) shr 1);
-    if fCompare(@self, key^, at(items, base + m)^) < 0 then
+    if fCompare(@self, key^, at(items, m)^) < 0 then
       ofs := m // key < items[b + m]
     else
       lastOfs := m + 1; // items[b + m] <= key
@@ -9355,47 +9360,48 @@ type
   P = ^T;
   {$POINTERMATH OFF}
 var
-  items, tmp: P;
-  cursor1, cursor2, dest, count1, count2: Integer;
+  tmp, cursor1, cursor2, dest: P;
+  count1, count2: Integer;
+  compare: TCompareMethod<T>;
 begin
   Assert(len1 > 0);
   Assert(len2 > 0);
   Assert(base1 + len1 = base2);
 
   // copy first run into temp array
-  items := fItems;
   tmp := EnsureTmpCapacity(len1);
-  cursor1 := 0; // indexes into tmp
-  cursor2 := base2; // indexes into items
-  dest := base1; // indexes into items
+  cursor1 := tmp; // indexes into tmp
+  cursor2 := @P(fItems)[base2];
+  dest := @P(fItems)[base1]; // indexes into items
   if TType.IsManaged<T> then
-    CopyArray<T>(items[base1], tmp[cursor1], len1)
+    CopyArray<T>(dest^, cursor1^, len1)
   else
-    System.Move(items[base1], tmp[cursor1], len1 * SizeOf(T));
+    System.Move(dest^, cursor1^, len1 * SizeOf(T));
 
   // move first element of second run and deal with degenerate cases
-  items[dest] := items[cursor2];
+  dest^ := cursor2^;
   Inc(dest);
   Inc(cursor2);
   Dec(len2);
   if len2 = 0 then
   begin
     if TType.IsManaged<T> then
-      CopyArray<T>(tmp[cursor1], items[dest], len1)
+      CopyArray<T>(cursor1^, dest^, len1)
     else
-      System.Move(tmp[cursor1], items[dest], len1 * SizeOf(T));
+      System.Move(cursor1^, dest^, len1 * SizeOf(T));
     Exit;
   end;
   if len1 = 1 then
   begin
     if TType.IsManaged<T> then
-      CopyArray<T>(items[cursor2], items[dest], len2)
+      CopyArray<T>(cursor2^, dest^, len2)
     else
-      System.Move(items[cursor2], items[dest], len2 * SizeOf(T));
-    items[dest + len2] := tmp[cursor1]; // last element of run 1 to end of merge
+      System.Move(cursor2^, dest^, len2 * SizeOf(T));
+    (dest + len2)^ := cursor1^; // last element of run 1 to end of merge
     Exit;
   end;
 
+  compare := TCompareMethod<T>(fComparison);
   while True do
   begin
     count1 := 0; // number of times in a row that first run won
@@ -9405,9 +9411,9 @@ begin
     repeat
       Assert(len1 > 1);
       Assert(len2 > 0);
-      if IComparer<T>(fComparer).Compare(items[cursor2], tmp[cursor1]) < 0 then
+      if compare(cursor2^, cursor1^) < 0 then
       begin
-        items[dest] := items[cursor2];
+        dest^ := cursor2^;
         Inc(dest);
         Inc(cursor2);
         Inc(count2);
@@ -9418,7 +9424,7 @@ begin
       end
       else
       begin
-        items[dest] := tmp[cursor1];
+        dest^ := cursor1^;
         Inc(dest);
         Inc(cursor1);
         Inc(count1);
@@ -9435,40 +9441,40 @@ begin
     repeat
       Assert(len1 > 1);
       Assert(len2 > 0);
-      count1 := GallopRight(@items[cursor2], tmp, cursor1, len1, 0);
+      count1 := GallopRight(cursor2, cursor1, len1, 0);
       if count1 <> 0 then
       begin
         if TType.IsManaged<T> then
-          CopyArray<T>(tmp[cursor1], items[dest], count1)
+          CopyArray<T>(cursor1^, dest^, count1)
         else
-          System.Move(tmp[cursor1], items[dest], count1 * SizeOf(T));
+          System.Move(cursor1^, dest^, count1 * SizeOf(T));
         Inc(dest, count1);
         Inc(cursor1, count1);
         Dec(len1, count1);
         if len1 <= 1 then // len1 == 1 || len1 == 0
           goto endOfOuterLoop;
       end;
-      items[dest] := items[cursor2];
+      dest^ := cursor2^;
       Inc(dest);
       Inc(cursor2);
       Dec(len2);
       if len2 = 0 then
         goto endOfOuterLoop;
 
-      count2 := gallopLeft(@tmp[cursor1], items, cursor2, len2, 0);
+      count2 := gallopLeft(cursor1, cursor2, len2, 0);
       if count2 <> 0 then
       begin
         if TType.IsManaged<T> then
-          CopyArray<T>(items[cursor2], items[dest], count2)
+          CopyArray<T>(cursor2^, dest^, count2)
         else
-          System.Move(items[cursor2], items[dest], count2 * SizeOf(T));
+          System.Move(cursor2^, dest^, count2 * SizeOf(T));
         Inc(dest, count2);
         Inc(cursor2, count2);
         Dec(len2, count2);
         if len2 = 0 then
           goto endOfOuterLoop;
       end;
-      items[dest] := tmp[cursor1];
+      dest^ := cursor1^;
       Inc(dest);
       Inc(cursor1);
       Dec(len1);
@@ -9488,10 +9494,10 @@ endOfOuterLoop:
   begin
     Assert(len2 > 0);
     if TType.IsManaged<T> then
-      CopyArray<T>(items[cursor2], items[dest], len2)
+      CopyArray<T>(cursor2^, dest^, len2)
     else
-      System.Move(items[cursor2], items[dest], len2 * SizeOf(T));
-    items[dest + len2] := tmp[cursor1]; // last element of run 1 to end of merge
+      System.Move(cursor2^, dest^, len2 * SizeOf(T));
+    (dest + len2)^ := cursor1^; // last element of run 1 to end of merge
   end
   else if len1 = 0 then
     Guard.RaiseArgumentException('Comparison function violates its general contract!')
@@ -9500,9 +9506,9 @@ endOfOuterLoop:
     Assert(len2 = 0);
     Assert(len1 > 1);
     if TType.IsManaged<T> then
-      CopyArray<T>(tmp[cursor1], items[dest], len1)
+      CopyArray<T>(cursor1^, dest^, len1)
     else
-      System.Move(tmp[cursor1], items[dest], len1 * SizeOf(T));
+      System.Move(cursor1^, dest^, len1 * SizeOf(T));
   end;
 end;
 
@@ -9514,35 +9520,35 @@ type
   P = ^T;
   {$POINTERMATH OFF}
 var
-  items, tmp: P;
-  cursor1, cursor2, dest, count1, count2: Integer;
+  tmp, cursor1, cursor2, dest: P;
+  count1, count2: Integer;
+  compare: TCompareMethod<T>;
 begin
   Assert(len1 > 0);
   Assert(len2 > 0);
   Assert(base1 + len1 = base2);
 
   // copy second run into temp array
-  items := fItems;
   tmp := EnsureTmpCapacity(len2);
-  cursor1 := base1 + len1 - 1; // indexes into items
-  cursor2 := len2 - 1; // indexes into tmp
-  dest := base2 + len2 - 1; // indexes into items
+  cursor1 := @P(fItems)[base1 + len1 - 1]; // indexes into items
+  cursor2 := @tmp[len2 - 1]; // indexes into tmp
+  dest := @P(fItems)[base2 + len2 - 1]; // indexes into items
   if TType.IsManaged<T> then
-    CopyArray<T>(items[base2], tmp[0], len2)
+    CopyArray<T>(P(fItems)[base2], tmp^, len2)
   else
-    System.Move(items[base2], tmp[0], len2 * SizeOf(T));
+    System.Move(P(fItems)[base2], tmp^, len2 * SizeOf(T));
 
   // move last element of first run and deal with degenerate cases
-  items[dest] := items[cursor1];
+  dest^ := cursor1^;
   Dec(dest);
   Dec(cursor1);
   Dec(len1);
   if len1 = 0 then
   begin
     if TType.IsManaged<T> then
-      CopyArray<T>(tmp[0], items[dest - (len2 - 1)], len2)
+      CopyArray<T>(tmp[0], (dest - (len2 - 1))^, len2)
     else
-      System.Move(tmp[0], items[dest - (len2 - 1)], len2 * SizeOf(T));
+      System.Move(tmp[0], (dest - (len2 - 1))^, len2 * SizeOf(T));
     Exit;
   end;
   if len2 = 1 then
@@ -9550,13 +9556,14 @@ begin
     Dec(dest, len1);
     Dec(cursor1, len1);
     if TType.IsManaged<T> then
-      CopyArray<T>(items[cursor1 + 1], items[dest + 1], len1)
+      CopyArray<T>((cursor1 + 1)^, (dest + 1)^, len1)
     else
-      System.Move(items[cursor1 + 1], items[dest + 1], len1 * SizeOf(T));
-    items[dest] := tmp[cursor2];
+      System.Move((cursor1 + 1)^, (dest + 1)^, len1 * SizeOf(T));
+    dest^ := cursor2^;
     Exit;
   end;
 
+  compare := TCompareMethod<T>(fComparison);
   while True do
   begin
     count1 := 0; // number of times in a row that first run won
@@ -9566,9 +9573,9 @@ begin
     repeat
       Assert(len1 > 0);
       Assert(len2 > 1);
-      if IComparer<T>(fComparer).Compare(tmp[cursor2], items[cursor1]) < 0 then
+      if compare(cursor2^, cursor1^) < 0 then
       begin
-        items[dest] := items[cursor1];
+        dest^ := cursor1^;
         Dec(dest);
         Dec(cursor1);
         Inc(count1);
@@ -9579,7 +9586,7 @@ begin
       end
       else
       begin
-        items[dest] := tmp[cursor2];
+        dest^ := cursor2^;
         Dec(dest);
         Dec(cursor2);
         Inc(count2);
@@ -9596,40 +9603,40 @@ begin
     repeat
       Assert(len1 > 0);
       Assert(len2 > 1);
-      count1 := len1 - GallopRight(@tmp[cursor2], items, base1, len1, len1 - 1);
+      count1 := len1 - GallopRight(cursor2, @P(fItems)[base1], len1, len1 - 1);
       if count1 <> 0 then
       begin
         Dec(dest, count1);
         Dec(cursor1, count1);
         Dec(len1, count1);
         if TType.IsManaged<T> then
-          CopyArray<T>(items[cursor1 + 1], items[dest + 1], count1)
+          CopyArray<T>((cursor1 + 1)^, (dest + 1)^, count1)
         else
-          System.Move(items[cursor1 + 1], items[dest + 1], count1 * SizeOf(T));
+          System.Move((cursor1 + 1)^, (dest + 1)^, count1 * SizeOf(T));
         if len1 = 0 then
           goto endOfOuterLoop;
       end;
-      items[dest] := tmp[cursor2];
+      dest^ := cursor2^;
       Dec(dest);
       Dec(cursor2);
       Dec(len2);
       if len2 = 1 then
         goto endOfOuterLoop;
 
-      count2 := len2 - GallopLeft(@items[cursor1], tmp, 0, len2, len2 - 1);
+      count2 := len2 - GallopLeft(cursor1, tmp, len2, len2 - 1);
       if count2 <> 0 then
       begin
         Dec(dest, count2);
         Dec(cursor2, count2);
         Dec(len2, count2);
         if TType.IsManaged<T> then
-          CopyArray<T>(tmp[cursor2 + 1], items[dest + 1], count2)
+          CopyArray<T>((cursor2 + 1)^, (dest + 1)^, count2)
         else
-          System.Move(tmp[cursor2 + 1], items[dest + 1], count2 * SizeOf(T));
+          System.Move((cursor2 + 1)^, (dest + 1)^, count2 * SizeOf(T));
         if len2 <= 1 then // len2 == 1 || len2 == 0
           goto endOfOuterLoop;
       end;
-      items[dest] := items[cursor1];
+      dest^ := cursor1^;
       Dec(dest);
       Dec(cursor1);
       Dec(len1);
@@ -9651,10 +9658,10 @@ endOfOuterLoop:
     Dec(dest, len1);
     Dec(cursor1, len1);
     if TType.IsManaged<T> then
-      CopyArray<T>(items[cursor1 + 1], items[dest + 1], len1)
+      CopyArray<T>((cursor1 + 1)^, (dest + 1)^, len1)
     else
-      System.Move(items[cursor1 + 1], items[dest + 1], len1 * SizeOf(T));
-    items[dest] := tmp[cursor2]; // move first element of run2 to front of merge
+      System.Move((cursor1 + 1)^, (dest + 1)^, len1 * SizeOf(T));
+    dest^ := cursor2^; // move first element of run2 to front of merge
   end
   else if len2 = 0 then
     Guard.RaiseArgumentException('Comparison function violates its general contract!')
@@ -9663,9 +9670,9 @@ endOfOuterLoop:
     Assert(len1 = 0);
     Assert(len2 > 0);
     if TType.IsManaged<T> then
-      CopyArray<T>(tmp[0], items[dest - (len2 - 1)], len2)
+      CopyArray<T>(tmp[0], (dest - (len2 - 1))^, len2)
     else
-      System.Move(tmp[0], items[dest - (len2 - 1)], len2 * SizeOf(T));
+      System.Move(tmp[0], (dest - (len2 - 1))^, len2 * SizeOf(T));
   end;
 end;
 
@@ -9703,7 +9710,7 @@ begin
   compare := ts.CompareImpl<T>;
   mergeLo := ts.MergeLoImpl<T>;
   mergeHi := ts.MergeHiImpl<T>;
-  ts.Initialize(@items[0], Pointer(comparer), TMethod(compare).Code,
+  ts.Initialize(@items[0], MethodReferenceToMethodPointer(comparer), TMethod(compare).Code,
     TMethod(mergeLo).Code, TMethod(mergeHi).Code, TypeInfo(TArray<T>), SizeOf(T));
   try
     // if array is small, do a "mini-TimSort" with no merges
