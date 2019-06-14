@@ -2253,6 +2253,13 @@ type
       TCompareFunc = function(self: Pointer; const left, right): Integer;
       TMergeFunc = procedure(self: Pointer; base1, len1, base2, len2: Integer);
       TCompareMethod<T> = function(const left, right: T): Integer of object;
+      {$POINTERMATH ON}
+      PSlice = ^TSlice;
+      {$POINTERMATH OFF}
+      TSlice = record
+        base, len: Integer;
+      end;
+      TSliceArray = array[0..48] of TSlice;
   private
     const
       MIN_MERGE = 32;
@@ -2261,29 +2268,26 @@ type
   private
     fItems: Pointer;
     fArrayTypeInfo: PTypeInfo;
-    fItemSize: Integer;
     fComparison: TMethodPointer;
     fCompare: TCompareFunc;
     fMergeLo: TMergeFunc;
     fMergeHi: TMergeFunc;
-    fMinGallop: Integer;
     fTmp: Pointer;                // TArray<T>
-    fMaxTmpLen: Integer;
+    fItemSize: Integer;
+    fMinGallop: Integer;
     fStackLen: Integer;
-    fRunBase: TArray<Integer>;
-    fRunLen: TArray<Integer>;
+    fRuns: TSliceArray;
   private
     procedure Initialize(items: Pointer; const comparison: TMethodPointer; const compare: TCompareFunc;
       mergeLo, mergeHi: TMergeFunc; arrayTypeInfo: PTypeInfo; itemSize: Integer);
     procedure Finalize;
-    procedure Allocate(count: Integer);
     function at(items: Pointer; index: Integer): Pointer; inline;
     class procedure CopyArray<T>(const source; var target; count: Integer); static;
     function CompareImpl<T>(const left, right): Integer;
     procedure BinarySortImpl<T>(lo, hi, start: Integer);
     function CountRunAndMakeAscendingImpl<T>(lo, hi: Integer): Integer;
     class function MinRunLength(n: Integer): Integer; static;
-    procedure PushRun(runBase, runLen: Integer);
+    procedure PushRun(runBase, runLen: Integer); inline;
     procedure MergeCollapse;
     procedure MergeForceCollapse;
     procedure MergeAt(i: Integer);
@@ -2291,7 +2295,7 @@ type
     function GallopRight(key: Pointer; items: Pointer; len, hint: Integer): Integer;
     procedure MergeLoImpl<T>(base1, len1, base2, len2: Integer);
     procedure MergeHiImpl<T>(base1, len1, base2, len2: Integer);
-    function EnsureTmpCapacity(minCapacity: Integer): Pointer;
+    function EnsureTmpCapacity(neededCapacity: NativeInt): Pointer;
   public
     class procedure Sort<T>(var items: array of T; const comparer: IComparer<T>; lo, hi, start: Integer); static;
   end;
@@ -8939,39 +8943,38 @@ begin
   DynArrayClear(fTmp, fArrayTypeInfo);
 end;
 
-procedure TTimSort.Allocate(count: Integer);
-var
-  tmpLen: NativeInt;
-  stackLen: Integer;
-begin
-  if count < 2 * INITIAL_TMP_STORAGE_LENGTH then
-    tmpLen := count shr 1
-  else
-    tmpLen := INITIAL_TMP_STORAGE_LENGTH;
-  DynArraySetLength(fTmp, fArrayTypeInfo, 1, @tmpLen);
-  fMaxTmpLen := count shr 1;
-
-  (* Allocate runs-to-be-merged stack (which cannot be expanded).  The stack length requirements
-     are described in listsorttxt.  The C version always uses the same stack length (85), but this
-     was measured to be too expensive when sorting "mid-sized" arrays (e.g. 100 elements) in Java.
-     Therefore, we use smaller (but sufficiently large) stack lengths for smaller arrays. The
-     "magic numbers" in the computation below must be changed if MIN_MERGE is decreased. See the
-     MIN_MERGE declaration above for more information. The maximum value of 49 allows for an array
-     up to length Integer.MAX_VALUE-4, if array is filled by the worst case stack size increasing
-     scenario. More explanations are given in section 4 of
-     http://envisage-project.eu/wp-content/uploads/2015/02/sorting.pdf *)
-
-  if count < 120 then
-    stackLen := 5
-  else if count < 1542 then
-    stackLen := 10
-  else if count < 119151 then
-    stackLen := 24
-  else
-    stackLen := 49;
-  SetLength(fRunBase, stackLen);
-  SetLength(fRunLen, stackLen);
-end;
+//procedure TTimSort.Allocate(count: Integer);
+//var
+//  tmpLen: NativeInt;
+//  stackLen: Integer;
+//begin
+//  if count < 2 * INITIAL_TMP_STORAGE_LENGTH then
+//    tmpLen := count shr 1
+//  else
+//    tmpLen := INITIAL_TMP_STORAGE_LENGTH;
+//  DynArraySetLength(fTmp, fArrayTypeInfo, 1, @tmpLen);
+//  fMaxTmpLen := count shr 1;
+//
+//  (* Allocate runs-to-be-merged stack (which cannot be expanded).  The stack length requirements
+//     are described in listsorttxt.  The C version always uses the same stack length (85), but this
+//     was measured to be too expensive when sorting "mid-sized" arrays (e.g. 100 elements) in Java.
+//     Therefore, we use smaller (but sufficiently large) stack lengths for smaller arrays. The
+//     "magic numbers" in the computation below must be changed if MIN_MERGE is decreased. See the
+//     MIN_MERGE declaration above for more information. The maximum value of 49 allows for an array
+//     up to length Integer.MAX_VALUE-4, if array is filled by the worst case stack size increasing
+//     scenario. More explanations are given in section 4 of
+//     http://envisage-project.eu/wp-content/uploads/2015/02/sorting.pdf *)
+//
+//  if count < 120 then
+//    stackLen := 5
+//  else if count < 1542 then
+//    stackLen := 10
+//  else if count < 119151 then
+//    stackLen := 24
+//  else
+//    stackLen := 49;
+////  SetLength(fRuns, stackLen);
+//end;
 
 function TTimSort.at(items: Pointer; index: Integer): Pointer;
 begin
@@ -9129,25 +9132,31 @@ end;
 
 procedure TTimSort.PushRun(runBase, runLen: Integer);
 begin
-  fRunBase[fStackLen] := runBase;
-  fRunLen[fStackLen] := runLen;
+  with fRuns[fStackLen] do
+  begin
+    base := runBase;
+    len := runLen;
+  end;
   Inc(fStackLen);
 end;
 
 procedure TTimSort.MergeCollapse;
 var
   n: Integer;
+  p: PSlice;
 begin
+  p := @fRuns[0];
+
   while fStackLen > 1 do
   begin
     n := fStackLen - 2;
-    if (n > 0) and (fRunLen[n - 1] <= fRunLen[n] + fRunLen[n + 1]) then
+    if (n > 0) and (p[n-1].len <= p[n].len + p[n+1].len) then
     begin
-      if fRunLen[n - 1] < fRunLen[n + 1] then
+      if p[n-1].len < p[n+1].len then
         Dec(n);
       MergeAt(n);
     end
-    else if (fRunLen[n] <= fRunLen[n + 1]) then
+    else if p[n].len <= p[n+1].len then
       MergeAt(n)
     else
       Break; // invariant is established
@@ -9157,11 +9166,14 @@ end;
 procedure TTimSort.MergeForceCollapse;
 var
   n: Integer;
+  p: PSlice;
 begin
+  p := @fRuns[0];
+
   while fStackLen > 1 do
   begin
     n := fStackLen - 2;
-    if (n > 0) and (fRunLen[n - 1] < fRunLen[n + 1]) then
+    if (n > 0) and (p[n-1].len < p[n+1].len) then
       Dec(n);
     MergeAt(n);
   end;
@@ -9175,22 +9187,24 @@ begin
   Assert(i >= 0);
   Assert((i = fStackLen - 2) or (i = fStackLen - 3));
 
-  base1 := fRunBase[i];
-  len1 := fRunLen[i];
-  base2 := fRunBase[i + 1];
-  len2 := fRunLen[i + 1];
-  Assert(len1 > 0);
-  Assert(len2 > 0);
+  with fRuns[i] do
+  begin
+    base1 := base;
+    len1 := len;
+  end;
+  with fRuns[i+1] do
+  begin
+    base2 := base;
+    len2 := len;
+  end;
+  Assert((len1 > 0) and (len2 > 0));
   Assert(base1 + len1 = base2);
 
   (* Record the length of the combined runs; if i is the 3rd-last run now, also slide over the
      last run (which isn't involved in this merge).  The current run (i+1) goes away in any case. *)
-  fRunLen[i] := len1 + len2;
+  fRuns[i].len := len1 + len2;
   if i = fStackLen - 3 then
-  begin
-    fRunBase[i + 1] := fRunBase[i + 2];
-    fRunLen[i + 1] := fRunLen[i + 2];
-  end;
+    fRuns[i+1] := fRuns[i+2];
   Dec(fStackLen);
 
   (* Find where the first element of run2 goes in run1. Prior elements in run1 can be ignored
@@ -9676,19 +9690,14 @@ endOfOuterLoop:
   end;
 end;
 
-function TTimSort.EnsureTmpCapacity(minCapacity: Integer): Pointer;
-var
-  newLen: NativeInt;
+function TTimSort.EnsureTmpCapacity(neededCapacity: NativeInt): Pointer;
 begin
-  if DynArrayLength(fTmp) < minCapacity then
+  if DynArrayLength(fTmp) < neededCapacity then
   begin
-    // compute smallest power of 2 > minCapacity
-    newLen := NextPowerOf2(minCapacity);
-    if fMaxTmpLen < newLen then
-      newLen := fMaxTmpLen;
-    DynArraySetLength(fTmp, fArrayTypeInfo, 1, @newLen);
+    neededCapacity := NextPowerOf2(neededCapacity);
+    DynArraySetLength(fTmp, fArrayTypeInfo, 1, @neededCapacity);
   end;
-  Result := Pointer(fTmp);
+  Result := fTmp;
 end;
 
 class procedure TTimSort.Sort<T>(var items: array of T; const comparer: IComparer<T>; lo, hi, start: Integer);
@@ -9722,19 +9731,19 @@ begin
     end;
 
     // if the array is ordered then we can bail out without instantiating the state object
-    runLen := ts.CountRunAndMakeAscendingImpl<T>(lo, hi);
-    if runLen = nRemaining then
-      Exit;
+//    runLen := ts.CountRunAndMakeAscendingImpl<T>(lo, hi);
+//    if runLen = nRemaining then
+//      Exit;
 
     (* March over the array once, left to right, finding natural runs, extending short
        natural runs to minRun elements, and merging runs to maintain stack invariant. *)
     minRun := MinRunLength(nRemaining);
     repeat
       // identify next run
-      if Assigned(ts.fTmp) then
-        runLen := ts.CountRunAndMakeAscendingImpl<T>(lo, hi)
-      else
-        ts.Allocate(hi - lo);
+//      if Assigned(ts.fTmp) then
+        runLen := ts.CountRunAndMakeAscendingImpl<T>(lo, hi);
+//      else
+//        ts.Allocate(hi - lo);
         // skip call to CountRunAndMakeAscending, we did it before the loop started
 
       // if run is short, extend to min(minRun, nRemaining)
