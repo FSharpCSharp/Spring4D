@@ -39,6 +39,7 @@ type
     procedure ArgsStackProperlyCleaned;
 
     procedure OutParameterCanBeSet;
+    procedure OutParameterManagedType;
     procedure VerifyChecksParameterValuesProperly;
     procedure TestVariant;
     procedure TestDynArray;
@@ -195,6 +196,7 @@ end;
 type
   IOutParamTest = interface(IInvokable)
     procedure Test(out value: Integer);
+    procedure TestIntf(out value: IInterface; i: Integer);
   end;
 
 procedure TParameterMatchingTests.ArgsStackProperlyCleaned;
@@ -225,6 +227,15 @@ begin
   i := 42;
   mock.Instance.Test(i);
   CheckEquals(43, i);
+end;
+
+procedure TParameterMatchingTests.OutParameterManagedType;
+var
+  mock: Mock<IOutParamTest>;
+  intf: IInterface;
+begin
+  mock.Setup.Executes.When.TestIntf(intf, Arg.IsAny<Integer>);
+  Pass;
 end;
 
 procedure TParameterMatchingTests.ReturnsMultipleValues;

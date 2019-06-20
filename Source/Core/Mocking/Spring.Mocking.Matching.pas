@@ -256,26 +256,24 @@ end;
 class function TMatcherFactory.CreateMatchers(const indizes: TArray<TValue>;
   const parameters: TArray<TRttiParameter>): Predicate<TArray<TValue>>;
 var
-  refParamCount, emptyParamCount, i: Integer;
+  argCount, indexCount, i: Integer;
   conditions: TArray<Predicate<TValue>>;
 begin
-  if Assigned(conditionStack) then
+  argCount := Length(conditionStack);
+  if argCount > 0 then
   begin
     try
-      refParamCount := 0;
-      for i := 0 to High(parameters) do
-        if parameters[i].Flags * [pfVar, pfOut] <> [] then
-          Inc(refParamCount);
-      emptyParamCount := 0;
-      for i := 0 to High(indizes) do
-        if indizes[i].IsEmpty then // nil can be passed without Arg, we handle it
-          Inc(emptyParamCount);
+      indexCount := Length(indizes);
+      for i := 0 to indexCount - 1 do
+        if (parameters[i].Flags * [pfVar, pfOut] <> []) // ignore var or out parameters
+          or indizes[i].IsEmpty then // nil can be passed without Arg, we handle it
+          Inc(argCount);
 
-      if Length(conditionStack) + refParamCount + emptyParamCount <> Length(indizes) then
+      if argCount <> indexCount then
         raise ENotSupportedException.Create('when using Arg all arguments must be passed using this way');
 
-      SetLength(conditions, Length(indizes));
-      for i := Low(indizes) to High(indizes) do
+      SetLength(conditions, indexCount);
+      for i := 0 to indexCount - 1 do
         if (parameters[i].Flags * [pfVar, pfOut] = []) and not indizes[i].IsEmpty then
           conditions[i] := conditionStack[GetIndex(indizes[i])];
     finally
