@@ -1475,10 +1475,10 @@ type
 {$IFDEF UNSAFE_NULLABLE}
     class operator Implicit(const value: Nullable<T>): Variant;
       {$IFNDEF DELPHIXE4}
-      {$IFDEF UNSAFE_NULLABLE_WARN}inline; deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
+      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
       {$ENDIF}
     class operator Implicit(const value: Variant): Nullable<T>;
-      {$IFDEF UNSAFE_NULLABLE_WARN}inline; deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
+      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
 {$ENDIF}
 
     class operator Explicit(const value: Variant): Nullable<T>;
@@ -5165,9 +5165,17 @@ begin
 end;
 
 class function TValueHelper.From(buffer: Pointer; typeInfo: PTypeInfo): TValue;
-begin
-  TValue.Make(buffer, typeInfo, Result);
+{$IFDEF CPUX86}
+asm
+  jmp TValue.Make
 end;
+{$ELSE}
+type
+  TValueMake = procedure(ABuffer: Pointer; ATypeInfo: PTypeInfo; var Result: TValue);
+begin
+  TValueMake(@TValue.Make)(buffer, typeInfo, Result);
+end;
+{$ENDIF}
 
 class function TValueHelper.From(instance: TObject; classType: TClass): TValue;
 begin
