@@ -9167,14 +9167,14 @@ begin
   if leftLen = 0 then
     Exit;
 
-  (* Find where the last element of run1 goes in run2. Subsequent elements in run2 can be
+  (* Find where the last element of left goes in right. Subsequent elements in right can be
      ignored because they're already in place. *)
   rightLen := GallopLeft(at(left, leftLen - 1), right, rightLen, rightLen - 1);
   Assert(rightLen >= 0);
   if rightLen = 0 then
     Exit;
 
-  // merge remaining runs, using tmp array with min(len1, len2) elements
+  // merge remaining runs, using tmp array with min(leftLen, rightLen) elements
   if leftLen <= rightLen then
     fMergeLo(left, leftLen, right, rightLen, @Self)
   else
@@ -9323,7 +9323,7 @@ end;
 
 class procedure TTimSort.MergeLo<T>(left: Pointer<T>.P; leftLen: Integer; right: Pointer<T>.P; rightLen: Integer; ts: PTimSort);
 label
-  copyLeft, copyRight;
+  copyLeft, copyRight, gallopLeft, gallopRight;
 var
   dest: Pointer<T>.P;
   leftCount, rightCount: Integer;
@@ -9371,7 +9371,7 @@ begin
         if rightLen = 0 then
           goto copyLeft;
         if rightCount >= ts.fMinGallop then
-          Break;
+          goto gallopLeft;
       end
       else
       begin
@@ -9384,7 +9384,7 @@ begin
         if leftLen = 1 then
           goto copyRight;
         if leftCount >= ts.fMinGallop then
-          Break;
+          goto gallopRight;
       end;
     end;
 
@@ -9397,6 +9397,7 @@ begin
       Assert(rightLen > 0);
       Dec(ts.fMinGallop, Integer(ts.fMinGallop > 1));
 
+    gallopRight:
       leftCount := ts.GallopRight(right, left, leftLen, 0);
       if leftCount <> 0 then
       begin
@@ -9419,6 +9420,7 @@ begin
       if rightLen = 0 then
         goto copyLeft;
 
+    gallopLeft:
       rightCount := ts.GallopLeft(left, right, rightLen, 0);
       if rightCount <> 0 then
       begin
@@ -9461,7 +9463,7 @@ end;
 
 class procedure TTimSort.MergeHi<T>(left: Pointer<T>.P; leftLen: Integer; right: Pointer<T>.P; rightLen: Integer; ts: PTimSort);
 label
-  copyLeft, copyRight;
+  copyLeft, copyRight, gallopLeft, gallopRight;
 var
   dest, leftBase, rightBase: Pointer<T>.P;
   leftCount, rightCount: Integer;
@@ -9512,7 +9514,7 @@ begin
         if leftLen = 0 then
           goto copyRight;
         if leftCount >= ts.fMinGallop then
-          Break;
+          goto gallopRight;
       end
       else
       begin
@@ -9525,7 +9527,7 @@ begin
         if rightLen = 1 then
           goto copyLeft;
         if rightCount >= ts.fMinGallop then
-          Break;
+          goto gallopLeft;
       end;
     end;
 
@@ -9537,6 +9539,8 @@ begin
       Assert(leftLen > 0);
       Assert(rightLen > 1);
       Dec(ts.fMinGallop, Integer(ts.fMinGallop > 1));
+
+    gallopRight:
       leftCount := leftLen - ts.GallopRight(right, leftBase, leftLen, leftLen - 1);
       if leftCount <> 0 then
       begin
@@ -9557,6 +9561,7 @@ begin
       if rightLen = 1 then
         goto copyLeft;
 
+    gallopLeft:
       rightCount := rightLen - ts.GallopLeft(left, rightBase, rightLen, rightLen - 1);
       if rightCount <> 0 then
       begin
@@ -9567,7 +9572,7 @@ begin
         else
           System.Move(right[1], dest[1], rightCount * SizeOf(T));
         Dec(rightLen, rightCount);
-        if rightLen = 1 then // len2 == 1 || len2 == 0
+        if rightLen = 1 then
           goto copyLeft;
         if rightLen = 0 then
           goto copyRight;
@@ -9646,7 +9651,7 @@ begin
       // identify next run
       runLen := CountRunAndMakeAscending<T>(lo, hi-1, TComparerMethod<T>(compare));
 
-      // if run is short, extend to min(minRun, nRemaining)
+      // if run is short, extend to min(minRun, count)
       if runLen < minRun then
       begin
         if count <= minRun then
