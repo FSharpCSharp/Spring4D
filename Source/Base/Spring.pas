@@ -2269,7 +2269,7 @@ type
       TSliceArray = array[0..48] of TSlice;
   private
     const
-      MIN_MERGE = 32;
+      MIN_MERGE = 64;
       MIN_GALLOP = 7;
       INITIAL_TMP_STORAGE_LENGTH = 256;
   private
@@ -9005,7 +9005,7 @@ begin
     // set left (and right) to the index where start (pivot) belongs
     left := lo;
     right := start;
-    pivot := start^;
+    pivot := right^;
     (* Invariants:
          pivot >= all in [lo, left)
          pivot <  all in [right, start) *)
@@ -9043,21 +9043,22 @@ begin
   Assert(lo <= hi);
   if lo < hi then
   begin
-    // find end of run, and reverse range if descending
-    run := lo;
-    if compare(run^, (run + 1)^) <= 0 then
-    begin // ascending
-      repeat
+    run := lo + 1;
+    // descending?
+    if compare(run^, lo^) < 0 then
+    begin
+      // find end of run, and reverse range if descending
+      while (run < hi) and (compare(run^, (run + 1)^) > 0) do
         Inc(run);
-      until (run = hi) or (compare(run^, (run + 1)^) > 0);
-    end
-    else
-    begin // descending
-      repeat
-        Inc(run);
-      until (run = hi) or (compare(run^, (run + 1)^) <= 0);
       TArray.ReverseInternal<T>(lo, run);
     end;
+    (* ascending
+       even if the run was initially descending, after reversing it the
+       following elements may form an ascending continuation of the 
+       now-reversed run.
+       unconditionally attempt to continue the ascending run *)
+    while (run < hi) and (compare(run^, (run + 1)^) <= 0) do
+      Inc(run);
     Result := run - lo + 1;
   end
   else
@@ -9369,7 +9370,7 @@ begin
         Dec(rightLen);
         if rightLen = 0 then
           goto copyLeft;
-        if leftCount >= ts.fMinGallop then
+        if rightCount >= ts.fMinGallop then
           Break;
       end
       else
@@ -9382,7 +9383,7 @@ begin
         Dec(leftLen);
         if leftLen = 1 then
           goto copyRight;
-        if rightCount >= ts.fMinGallop then
+        if leftCount >= ts.fMinGallop then
           Break;
       end;
     end;
@@ -9416,7 +9417,7 @@ begin
       Inc(right);
       Dec(rightLen);
       if rightLen = 0 then
-        goto copyRight;
+        goto copyLeft;
 
       rightCount := ts.GallopLeft(left, right, rightLen, 0);
       if rightCount <> 0 then
