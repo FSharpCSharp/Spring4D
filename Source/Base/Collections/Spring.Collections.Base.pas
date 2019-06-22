@@ -276,6 +276,7 @@ type
     constructor Create(const source: IEnumerable<T>;
       count: Integer; predicate: Pointer; kind: TIteratorKind); overload;
     function GetEnumerator: IEnumerator<T>;
+    function ToArray: TArray<T>;
   end;
 
   TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IInterface, IEnumerable<T>)
@@ -2786,6 +2787,29 @@ end;
 function TIteratorBase<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self, @fIterator);
+end;
+
+function TIteratorBase<T>.ToArray: TArray<T>;
+begin
+  case fIterator.Kind of
+    TIteratorKind.Ordered:
+    begin
+      Result := fIterator.Source.ToArray;
+      TArray.Sort<T>(Result, IComparer<T>(fIterator.Predicate));
+    end;
+    TIteratorKind.Reversed:
+    begin
+      Result := fIterator.Source.ToArray;
+      TArray.Reverse<T>(Result);
+    end;
+    TIteratorKind.Shuffled:
+    begin
+      Result := fIterator.Source.ToArray;
+      TArray.Shuffle<T>(Result);
+    end;
+  else
+    Result := inherited ToArray;
+  end;
 end;
 
 {$ENDREGION}
