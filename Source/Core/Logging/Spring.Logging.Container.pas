@@ -88,6 +88,7 @@ type
 implementation
 
 uses
+  Spring.Container.Registration,
   Spring.Logging.Controller;
 
 

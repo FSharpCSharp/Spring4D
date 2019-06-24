@@ -641,6 +641,7 @@ implementation
 
 uses
   Math,
+  Rtti,
 {$IFDEF MSWINDOWS}
   Windows,
 {$ENDIF}

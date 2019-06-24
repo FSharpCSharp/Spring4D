@@ -1474,11 +1474,9 @@ type
 
 {$IFDEF UNSAFE_NULLABLE}
     class operator Implicit(const value: Nullable<T>): Variant;
-      {$IFNDEF DELPHIXE4}
-      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
-      {$ENDIF}
+      {$IFDEF UNSAFE_NULLABLE_WARN}{$IFNDEF DELPHIXE4}inline;{$ENDIF} deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
     class operator Implicit(const value: Variant): Nullable<T>;
-      {$IFDEF UNSAFE_NULLABLE_WARN}deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
+      {$IFDEF UNSAFE_NULLABLE_WARN}{$IFNDEF DELPHIXE4}inline;{$ENDIF} deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
 {$ENDIF}
 
     class operator Explicit(const value: Variant): Nullable<T>;
@@ -2791,6 +2789,7 @@ function GetAbstractError: Pointer;
 {$IFNDEF DELPHIXE3_UP}
 function AtomicIncrement(var target: Integer): Integer;
 function AtomicDecrement(var target: Integer): Integer;
+function AtomicExchange(var target: Pointer; value: Pointer): Pointer;
 function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer; overload;
 function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): TObject; overload;
 {$ENDIF}
@@ -3496,11 +3495,23 @@ asm
 {$ENDIF}
 end;
 
+function AtomicExchange(var target: Pointer; value: Pointer): Pointer;
+asm
+{$IFDEF CPUX86}
+  lock xchg [eax],edx
+  mov eax,edx
+{$ENDIF}
+{$IFDEF CPUX64}
+  lock xchg [rcx],rdx
+  mov rax,rdx
+{$ENDIF}
+end;
+
 function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer;
 asm
 {$IFDEF CPUX86}
   xchg eax,ecx
-  lock cmpxchg [ecx],edx  
+  lock cmpxchg [ecx],edx
 {$ENDIF}
 {$IFDEF CPUX64}
   mov rax,r8

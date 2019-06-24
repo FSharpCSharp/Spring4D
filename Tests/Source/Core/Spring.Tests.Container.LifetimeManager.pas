@@ -24,6 +24,9 @@
 
 unit Spring.Tests.Container.LifetimeManager;
 
+{$I Spring.inc}
+{$I Spring.Tests.inc}
+
 interface
 
 uses
