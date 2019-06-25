@@ -29,11 +29,11 @@ unit Spring.Collections.HashTable;
 interface
 
 uses
+  Spring,
   TypInfo;
 
 type
-  TEqualsKey = function(Self: Pointer; const left, right): Boolean;
-  TGetHashCode = function(Self: Pointer; const item): Integer;
+  TEqualsMethod = function(const left, right): Boolean of object;
 
   THashTableEntry = record
     HashCode, BucketIndex, ItemIndex: Integer;
@@ -50,16 +50,16 @@ type
     fItemCount: Integer;
     fBucketIndexMask: Integer;
     fBucketHashCodeMask: Integer;
-    fEqualsKey: TEqualsKey;
+    fEquals: TEqualsMethod;
+    fEqualsMethod: TMethodPointer;
     fItemsInfo: PTypeInfo;     // TypeInfo(TArray<TItem>)
     fItemSize: Integer;        // SizeOf(TItem)
     fVersion: Integer;
 
-    function GetKey(index: Integer): Pointer;
     function GetCapacity: Integer;
     procedure SetCapacity(const Value: Integer);
   public
-    constructor Create(itemsInfo: PTypeInfo; equalsKey: TEqualsKey);
+    procedure Initialize(itemsInfo: PTypeInfo; const equals: Pointer; const comparer: IInterface);
 
     procedure EnsureCompact;
     procedure Grow;
@@ -86,8 +86,7 @@ type
 implementation
 
 uses
-  Math,
-  Spring;
+  Math;
 
 const
   // use the MSB of the HashCode to note removed items
@@ -99,21 +98,19 @@ const
 
 {$REGION 'THashTable'}
 
-constructor THashTable.Create(itemsInfo: PTypeInfo; equalsKey: TEqualsKey);
+procedure THashTable.Initialize(itemsInfo: PTypeInfo; const equals: Pointer;
+  const comparer: IInterface);
 begin
   fItemsInfo := itemsInfo;
   fItemSize := itemsInfo.TypeData.elSize;
-  fEqualsKey := equalsKey;
+  TMethod(fEquals).Code := equals;
+  TMethod(fEquals).Data := @TMethod(fEqualsMethod);
+  fEqualsMethod := InterfaceToMethodPointer(comparer, 0);
 end;
 
 function THashTable.GetCapacity: Integer;
 begin
   Result := DynArrayLength(fItems);
-end;
-
-function THashTable.GetKey(index: Integer): Pointer;
-begin
-  Result := @fItems[index * fItemSize + KeyOffset];
 end;
 
 function THashTable.Add(const key; hashCode: Integer): Pointer;
@@ -279,7 +276,7 @@ begin
         and (bucketValue and fBucketHashCodeMask = entry.HashCode and fBucketHashCodeMask) then
       begin
         entry.ItemIndex := bucketValue and fBucketIndexMask;
-        if fEqualsKey(@Self, GetKey(entry.ItemIndex)^, key) then
+        if fEquals(fItems[entry.ItemIndex * fItemSize + KeyOffset], key) then
           Exit(True);
       end;
 

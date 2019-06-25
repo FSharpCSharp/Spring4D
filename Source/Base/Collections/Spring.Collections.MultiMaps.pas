@@ -146,7 +146,7 @@ type
     fOnDestroy: TNotifyEventImpl;
     procedure DoValueChanged(sender: TObject; const item: TValue;
       action: TCollectionChangedAction);
-    class function CompareKey(Self: Pointer; const left, right): Boolean; static;
+    class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
@@ -265,7 +265,7 @@ begin
   fKeys := TKeyCollection.Create(Self, @fHashTable, KeyType, fKeyComparer, 0);
   fValues := TValueCollection.Create(Self);
 
-  fHashTable := THashTable.Create(TypeInfo(TItems), CompareKey);
+  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
 
   fOnDestroy := TNotifyEventImpl.Create;
 end;
@@ -280,10 +280,9 @@ begin
   inherited Destroy;
 end;
 
-class function TMultiMapBase<TKey, TValue>.CompareKey(Self: Pointer; const left,
-  right): Boolean;
+class function TMultiMapBase<TKey, TValue>.EqualsThunk(instance: Pointer; const left, right): Boolean;
 begin
-  Result := IEqualityComparer<TKey>(PPointer(PByte(Self) + SizeOf(THashTable))^).Equals(TKey(left), TKey(right));
+  Result := TEqualsMethod<TKey>(instance^)(TKey(left), TKey(right));
 end;
 
 procedure TMultiMapBase<TKey, TValue>.KeyChanged(const item: TKey;

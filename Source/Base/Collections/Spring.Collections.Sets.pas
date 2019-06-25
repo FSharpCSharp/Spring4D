@@ -98,7 +98,7 @@ type
     function GetIsEmpty: Boolean;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-    class function CompareKey(Self: Pointer; const left, right): Boolean; static;
+    class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
     procedure ClearInternal;
   protected
     class function CreateSet: ISet<T>; override;
@@ -356,7 +356,7 @@ begin
   else
     fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
 
-  fHashTable := THashTable.Create(TypeInfo(TItems), CompareKey);
+  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
 
   SetCapacity(capacity);
 end;
@@ -428,9 +428,9 @@ begin
       Changed(oldItems[oldItemIndex].Item, caRemoved);
 end;
 
-class function THashSet<T>.CompareKey(Self: Pointer; const left, right): Boolean;
+class function THashSet<T>.EqualsThunk(instance: Pointer; const left, right): Boolean;
 begin
-  Result := IEqualityComparer<T>(PPointer(PByte(Self) + SizeOf(THashTable))^).Equals(T(left), T(right));
+  Result := TEqualsMethod<T>(instance^)(T(left), T(right));
 end;
 
 function THashSet<T>.Contains(const item: T): Boolean;

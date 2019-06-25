@@ -2747,6 +2747,7 @@ function CompareValue(const left, right: TValue): Integer; overload;
 /// </summary>
 function TypesOf(const values: array of TValue): TArray<PTypeInfo>;
 
+function InterfaceToMethodPointer(const intf; index: Integer): TMethodPointer;
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
 
@@ -3270,6 +3271,22 @@ begin
   SetLength(Result, Length(values));
   for i := 0 to High(values) do
     Result[i] := values[i].TypeInfo;
+end;
+
+function InterfaceToMethodPointer(const intf; index: Integer): TMethodPointer;
+type
+  TVtable = array[0..0] of Pointer;
+  PVtable = ^TVtable;
+  PPVtable = ^PVtable;
+begin
+  if Pointer(intf) = nil then
+    Exit(nil);
+
+{$IFOPT R+}{$DEFINE RANGECHECKS_OFF}{$R-}{$ENDIF}
+  // 3 is offset of the first declared method in the interface, after QI, AddRef, Release
+  TMethod(Result).Code := PPVtable(intf)^^[index + 3];
+{$IFDEF RANGECHECKS_OFF}{$UNDEF RANGECHECKS_OFF}{$R+}{$ENDIF}
+  TMethod(Result).Data := Pointer(intf);
 end;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;

@@ -77,7 +77,7 @@ type
       TKeyCollection = TInnerCollection<TKey>;
       TValueCollection = TInnerCollection<TValue>;
 
-      TComparer = TPairByKeyComparer<TKey,TValue>;
+      TComparer = TPairByKeyComparer<TKey, TValue>;
   {$ENDREGION}
   private
     fHashTable: THashTable;
@@ -97,7 +97,7 @@ type
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
     procedure DoRemove(const entry: THashTableEntry; action: TCollectionChangedAction);
-    class function CompareKey(Self: Pointer; const left, right): Boolean; static;
+    class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
   protected
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
@@ -611,7 +611,7 @@ begin
   fKeys := TKeyCollection.Create(Self, @fHashTable, KeyType, fKeyComparer, 0);
   fValues := TValueCollection.Create(Self, @fHashTable, ValueType, fValueComparer, SizeOf(TKey));
 
-  fHashTable := THashTable.Create(TypeInfo(TItems), CompareKey);
+  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
 
   SetCapacity(capacity);
 end;
@@ -772,9 +772,9 @@ begin
   Result := fHashTable.Find(key, entry);
 end;
 
-class function TDictionary<TKey, TValue>.CompareKey(Self: Pointer; const left, right): Boolean;
+class function TDictionary<TKey, TValue>.EqualsThunk(instance: Pointer; const left, right): Boolean;
 begin
-  Result := IEqualityComparer<TKey>(PPointer(PByte(Self) + SizeOf(THashTable))^).Equals(TKey(left), TKey(right));
+  Result := TEqualsMethod<TKey>(instance^)(TKey(left), TKey(right));
 end;
 
 function TDictionary<TKey, TValue>.Contains(const key: TKey;
