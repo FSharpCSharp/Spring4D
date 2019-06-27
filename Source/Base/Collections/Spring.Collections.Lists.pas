@@ -77,9 +77,9 @@ type
     {$IFNDEF DELPHIXE8_UP}{$HINTS OFF}{$ENDIF}
     procedure Grow(capacity: Integer); overload;
     {$IFNDEF DELPHIXE8_UP}{$HINTS ON}{$ENDIF}
-    procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction); inline;
+    procedure DeleteInternal(index: Integer; action: TCollectionChangedAction); inline;
     function DeleteAllInternal(const match: Predicate<T>;
-      notification: TCollectionChangedAction; const items: TArray<T>): Integer;
+      action: TCollectionChangedAction; const items: TArray<T>): Integer;
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
     function InsertInternal(index: Integer; const item: T): Integer;
     procedure InsertRangeInternal(index, count: Integer; const values: array of T);
@@ -811,7 +811,7 @@ begin
 end;
 
 procedure TAbstractArrayList<T>.DeleteInternal(index: Integer;
-  notification: TCollectionChangedAction);
+  action: TCollectionChangedAction);
 var
   listCount: Integer;
   arrayItem: PT;
@@ -848,9 +848,9 @@ begin
     fItems[listCount] := Default(T);
 
   if Assigned(Notify) then
-    Notify(Self, oldItem, notification);
+    Notify(Self, oldItem, action);
   if OwnsObjects then
-    if notification = caRemoved then
+    if action = caRemoved then
       FreeObject(oldItem);
 end;
 
@@ -1109,7 +1109,7 @@ begin
 end;
 
 function TAbstractArrayList<T>.DeleteAllInternal(const match: Predicate<T>;
-  notification: TCollectionChangedAction; const items: TArray<T>): Integer;
+  action: TCollectionChangedAction; const items: TArray<T>): Integer;
 var
   listCount, freeIndex, current, i: Integer;
 begin
@@ -1132,8 +1132,8 @@ begin
         {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
 
       if Assigned(Notify) then
-        Notify(Self, fItems[current], notification);
-      if notification = caExtracted then
+        Notify(Self, fItems[current], action);
+      if action = caExtracted then
         TArray<T>(PPointer(@items)^)[i] := fItems[current]
       else if OwnsObjects then
         FreeObject(fItems[current]);

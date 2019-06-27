@@ -72,14 +72,14 @@ type
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
     function GetCount: Integer; inline;
-    function GetIsEmpty: Boolean;
+    function GetIsEmpty: Boolean; inline;
     function GetOnChanged: ICollectionChangedEvent<T>;
     function GetOwnsObjects: Boolean; inline;
     procedure SetCapacity(value: Integer);
     procedure SetOwnsObjects(const value: Boolean);
   {$ENDREGION}
     procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
-    procedure PopInternal(var item: T; notification: TCollectionChangedAction); inline;
+    procedure PopInternal(var item: T; action: TCollectionChangedAction); inline;
     procedure PushInternal(const item: T); inline;
     property Capacity: Integer read GetCapacity;
     property Count: Integer read GetCount;
@@ -245,7 +245,7 @@ begin
   end;
 end;
 
-procedure TAbstractStack<T>.PopInternal(var item: T; notification: TCollectionChangedAction);
+procedure TAbstractStack<T>.PopInternal(var item: T; action: TCollectionChangedAction);
 var
   stackCount: Integer;
   stackItem: ^T;
@@ -261,8 +261,8 @@ begin
     item := stackItem^;
     stackItem^ := Default(T);
 
-    DoNotify(item, notification);
-    if OwnsObjects and (notification = caRemoved) then
+    DoNotify(item, action);
+    if OwnsObjects and (action = caRemoved) then
     begin
       FreeObject(item);
       item := Default(T);
