@@ -120,6 +120,7 @@ begin
     TTestObjectStack.Suite,
     TTestObjectQueue.Suite,
     TTestObjectDeque.Suite,
+    TTestPriorityQueue.Suite,
     TTestRedBlackTreeInteger.Suite,
     TTestRedBlackTreeIntegerString.Suite,
     TTestSet.Suite,

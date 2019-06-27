@@ -622,6 +622,22 @@ type
     procedure ExtractLastDoesNotDestroysItemButReturnsIt;
   end;
 
+  TTestPriorityQueue = class(TTestCase)
+  private
+    SUT: IQueue<Integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure EnqueueDequeue;
+    procedure EnqueueDequeue_CorrectOrder;
+
+    procedure Dequeue_EmptyQueue_Exception;
+    procedure Peek_EmptyQueue_Exception;
+
+    procedure FuzzyTesting;
+  end;
+
   TTestSet = class(TTestCase)
   protected
     SUT: ISet<string>;
@@ -781,6 +797,20 @@ type
 const
   MaxItems = 1000;
   ListCountLimit = 1000;//0000;
+
+function ArrayToString(const values: TArray<Integer>): string;
+var
+  i: Integer;
+begin
+  Result := '[';
+  for i := 0 to Length(values) - 1 do
+  begin
+    if i > 0 then
+      Result := Result + ', ';
+    Result := Result + IntToStr(values[i]);
+  end;
+  Result := Result + ']';
+end;
 
 
 {$REGION 'TTestCollectionChangedEventBase'}
@@ -3943,6 +3973,94 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestPriorityQueue'}
+
+procedure TTestPriorityQueue.SetUp;
+begin
+  SUT := TPriorityQueue<Integer>.Create;
+end;
+
+procedure TTestPriorityQueue.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestPriorityQueue.Dequeue_EmptyQueue_Exception;
+begin
+  CheckException(EInvalidOpException, procedure begin SUT.Dequeue end);
+
+  SUT.Enqueue(1);
+  SUT.Enqueue(2);
+  SUT.Dequeue;
+  SUT.Dequeue;
+
+  CheckException(EInvalidOpException, procedure begin SUT.Dequeue end);
+end;
+
+procedure TTestPriorityQueue.EnqueueDequeue;
+begin
+  SUT.Enqueue(1);
+  SUT.Enqueue(2);
+  SUT.Enqueue(3);
+  CheckEquals(1, SUT.Dequeue);
+  CheckEquals(2, SUT.Dequeue);
+  CheckEquals(3, SUT.Dequeue);
+end;
+
+procedure TTestPriorityQueue.EnqueueDequeue_CorrectOrder;
+begin
+  SUT.Enqueue(3);
+  SUT.Enqueue(2);
+  SUT.Enqueue(1);
+  CheckEquals(1, SUT.Dequeue);
+  CheckEquals(2, SUT.Dequeue);
+  CheckEquals(3, SUT.Dequeue);
+end;
+
+procedure TTestPriorityQueue.FuzzyTesting;
+const
+  COUNT = 1000;
+  MAX_INPUT_LENGHT = 10000;
+  MAX_VALUE = 100000;
+var
+  input: TArray<Integer>;
+  inputLen: Integer;
+  i, n: Integer;
+  inputStr: string;
+begin
+  for n := 1 to COUNT do
+  begin
+    inputLen := Random(MAX_INPUT_LENGHT) + 1;
+    SetLength(input, inputLen);
+    for i := 0 to inputLen - 1 do
+      input[i] := Random(MAX_VALUE) + 1;
+    for i := 0 to inputLen - 1 do
+      SUT.Enqueue(input[i]);
+    inputStr := ArrayToString(input);
+    for i := 0 to inputLen - 1 do
+    begin
+      input[i] := SUT.Dequeue;
+      if i > 0 then
+        Check(input[i - 1] <= input[i], inputStr);
+    end;
+  end;
+end;
+
+procedure TTestPriorityQueue.Peek_EmptyQueue_Exception;
+begin
+  CheckException(EInvalidOpException, procedure begin SUT.Peek end);
+
+  SUT.Enqueue(1);
+  SUT.Enqueue(2);
+  SUT.Dequeue;
+  SUT.Dequeue;
+
+  CheckException(EInvalidOpException, procedure begin SUT.Peek end);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TTestRedBlackTreeInteger'}
 
 procedure TTestRedBlackTreeInteger.SetUp;
@@ -4051,20 +4169,6 @@ begin
 end;
 
 procedure TTestRedBlackTreeInteger.FuzzyTesting;
-
-  function ArrayToString(const values: TArray<Integer>): string;
-  var
-    i: Integer;
-  begin
-    Result := '[';
-    for i := 0 to Length(values) - 1 do
-    begin
-      if i > 0 then
-        Result := Result + ', ';
-      Result := Result + IntToStr(values[i]);
-    end;
-    Result := Result + ']';
-  end;
 
   procedure Test(const input: TArray<Integer>);
   var
