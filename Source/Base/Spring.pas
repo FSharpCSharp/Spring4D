@@ -2246,6 +2246,7 @@ type
 
   {$REGION 'TArray'}
 
+  TCompareMethod<T> = function(const left, right: T): Integer of object;
   TArray = class
   private
     const IntrosortSizeThreshold = 16;
@@ -2253,16 +2254,16 @@ type
 
     class procedure Swap<T>(var left, right: T); static; inline;
 
-    class procedure SortTwoItems<T>(const comparer: IComparer<T>; var left, right: T); static;
-    class procedure SortThreeItems<T>(const comparer: IComparer<T>; var left, mid, right: T); static;
+    class procedure SortTwoItems<T>(var left, right: T; const comparer: TCompareMethod<T>); static; //inline;
+    class procedure SortThreeItems<T>(var left, mid, right: T; const comparer: TCompareMethod<T>); static;
 
-    class procedure InsertionSort<T>(var values: array of T; const comparer: IComparer<T>; left, right: Integer); static;
+    class procedure InsertionSort<T>(var values: array of T; left, right: Integer; const comparer: TCompareMethod<T>); static;
 
-    class procedure DownHeap<T>(var values: array of T; const comparer: IComparer<T>; left, count, i: Integer); static;
-    class procedure HeapSort<T>(var values: array of T; const comparer: IComparer<T>; left, right: Integer); static;
+    class procedure DownHeap<T>(var values: array of T; left, count, i: Integer; const comparer: TCompareMethod<T>); static;
+    class procedure HeapSort<T>(var values: array of T; left, right: Integer; const comparer: TCompareMethod<T>); static;
 
-    class function QuickSortPartition<T>(var values: array of T; const comparer: IComparer<T>; left, right: Integer): Integer; static;
-    class procedure IntroSort<T>(var values: array of T; const comparer: IComparer<T>; left, right, depthLimit: Integer); static;
+    class function QuickSortPartition<T>(var values: array of T; left, right: Integer; const comparer: TCompareMethod<T>): Integer; static;
+    class procedure IntroSort<T>(var values: array of T; left, right, depthLimit: Integer; const comparer: TCompareMethod<T>); static;
   public
 
     /// <summary>
@@ -9231,38 +9232,38 @@ begin
 {$ENDIF}
 end;
 
-class procedure TArray.SortTwoItems<T>(const comparer: IComparer<T>;
-  var left, right: T);
+class procedure TArray.SortTwoItems<T>(var left, right: T;
+  const comparer: TCompareMethod<T>);
 begin
-  if comparer.Compare(left, right) > 0 then
+  if comparer(left, right) > 0 then
     Swap<T>(left, right);
 end;
 
-class procedure TArray.SortThreeItems<T>(const comparer: IComparer<T>;
-  var left, mid, right: T);
+class procedure TArray.SortThreeItems<T>(var left, mid, right: T;
+  const comparer: TCompareMethod<T>);
 begin
-  if comparer.Compare(left, mid) > 0 then
+  if comparer(left, mid) > 0 then
     Swap<T>(left, mid);
-  if comparer.Compare(left, right) > 0 then
+  if comparer(left, right) > 0 then
     Swap<T>(left, right);
-  if comparer.Compare(mid, right) > 0 then
+  if comparer(mid, right) > 0 then
     Swap<T>(mid, right);
 end;
 
 class procedure TArray.DownHeap<T>(var values: array of T;
-  const comparer: IComparer<T>; left, count, i: Integer);
+  left, count, i: Integer; const comparer: TCompareMethod<T>);
 var
   temp: T;
-  child, n, x: Integer;
+  child, n: Integer;
 begin
   temp := values[left + i - 1];
   n := count div 2;
   while i <= n do
   begin
     child := i * 2;
-    if (child < count) and (comparer.Compare(values[left + child - 1], values[left + child]) < 0) then
+    if (child < count) and (comparer(values[left + child - 1], values[left + child]) < 0) then
       Inc(child);
-    if comparer.Compare(temp, values[left + child - 1]) >= 0 then
+    if comparer(temp, values[left + child - 1]) >= 0 then
       Break;
     values[left + i - 1] := values[left + child - 1];
     i := child;
@@ -9271,22 +9272,22 @@ begin
 end;
 
 class procedure TArray.HeapSort<T>(var values: array of T;
-  const comparer: IComparer<T>; left, right: Integer);
+  left, right: Integer; const comparer: TCompareMethod<T>);
 var
   count, i: Integer;
 begin
   count := right - left + 1;
   for i := count div 2 downto 1 do
-    DownHeap<T>(values, comparer, left, count, i);
+    DownHeap<T>(values, left, count, i, comparer);
   for i := count downto 2 do
   begin
     Swap<T>(values[left], values[left + i - 1]);
-    DownHeap<T>(values, comparer, left, i - 1, 1);
+    DownHeap<T>(values, left, i - 1, 1, comparer);
   end;
 end;
 
 class procedure TArray.InsertionSort<T>(var values: array of T;
-  const comparer: IComparer<T>; left, right: Integer);
+  left, right: Integer; const comparer: TCompareMethod<T>);
 var
   i, j: Integer;
   temp: T;
@@ -9295,7 +9296,7 @@ begin
   begin
     j := i;
     temp := values[i];
-    while (j > left) and (comparer.Compare(values[j - 1], temp) > 0) do
+    while (j > left) and (comparer(values[j - 1], temp) > 0) do
     begin
       values[j] := values[j - 1];
       Dec(j);
@@ -9305,29 +9306,29 @@ begin
 end;
 
 class function TArray.QuickSortPartition<T>(var values: array of T;
-  const comparer: IComparer<T>; left, right: Integer): Integer;
+  left, right: Integer; const comparer: TCompareMethod<T>): Integer;
 var
-  mid, pivotIndex: Integer;
+  middle, pivotIndex: Integer;
   pivot: T;
 begin
-  mid := left + (right - left) div 2;
+  middle := left + (right - left) div 2;
 
-  SortThreeItems<T>(comparer, values[left], values[mid], values[right]);
+  SortThreeItems<T>(values[left], values[middle], values[right], comparer);
 
   Dec(right);
   pivotIndex := right;
 
-  pivot := values[mid];
-  Swap<T>(values[mid], values[right]);
+  pivot := values[middle];
+  Swap<T>(values[middle], values[right]);
 
   while left < right do
   begin
     repeat
       Inc(left);
-    until comparer.Compare(values[left], pivot) >= 0;
+    until comparer(values[left], pivot) >= 0;
     repeat
       Dec(right);
-    until comparer.Compare(pivot, values[right]) >= 0;
+    until comparer(pivot, values[right]) >= 0;
 
     if left >= right then
       Break;
@@ -9340,61 +9341,70 @@ begin
 end;
 
 class procedure TArray.IntroSort<T>(var values: array of T;
-  const comparer: IComparer<T>; left, right, depthLimit: Integer);
+  left, right, depthLimit: Integer; const comparer: TCompareMethod<T>);
 var
-  count, pivot: Integer;
+  partitionSize, pivot: Integer;
 begin
   while right > left do
   begin
-    count := right - left + 1;
-    if count = 1 then
-      Exit;
-    if count = 2 then
-    begin
-      SortTwoItems<T>(comparer, values[left], values[right]);
-      Exit;
-    end;
-    if count = 3 then
-    begin
-      SortThreeItems<T>(comparer, values[left], values[right - 1], values[right]);
-      Exit;
-    end;
-    if count <= IntrosortSizeThreshold then
-    begin
-      InsertionSort<T>(values, comparer, left, right);
-      Exit;
-    end;
+    partitionSize := right - left + 1; // will always be >= 2
 
-    if depthLimit = 0 then
-    begin
-      HeapSort<T>(values, comparer, left, right);
-      Exit;
+    case partitionSize of
+      2:
+      begin
+        SortTwoItems<T>(values[left], values[right], comparer);
+        Exit;
+      end;
+      3:
+      begin
+        SortThreeItems<T>(values[left], values[right - 1], values[right], comparer);
+        Exit;
+      end;
+      4..IntrosortSizeThreshold:
+      begin
+        InsertionSort<T>(values, left, right, comparer);
+        Exit;
+      end;
+    else
+      if depthLimit > 0 then
+      begin
+        Dec(depthLimit);
+        pivot := QuickSortPartition<T>(values, left, right, comparer);
+        IntroSort<T>(values, pivot + 1, right, depthLimit, comparer);
+        right := pivot - 1;
+      end
+      else
+      begin
+        HeapSort<T>(values, left, right, comparer);
+        Exit;
+      end;
     end;
-
-    Dec(depthLimit);
-    pivot := QuickSortPartition<T>(values, comparer, left, right);
-    IntroSort<T>(values, comparer, pivot + 1, right, depthLimit);
-    right := pivot - 1;
   end;
 end;
 
 class procedure TArray.Sort<T>(var values: array of T);
 var
   comparer: IComparer<T>;
+  compare: TCompareMethod<T>;
 begin
   comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-  IntroSort<T>(values, comparer, Low(values), High(values), GetDepthLimit(Length(values)));
+  TMethodPointer(compare) := InterfaceToMethodPointer(comparer, 0);
+  IntroSort<T>(values, Low(values), High(values), GetDepthLimit(Length(values)), compare);
 end;
 
 class procedure TArray.Sort<T>(var values: array of T;
   const comparer: IComparer<T>);
+var
+  compare: TCompareMethod<T>;
 begin
-  IntroSort<T>(values, comparer,
-    Low(values), High(values), GetDepthLimit(Length(values)));
+  TMethodPointer(compare) := InterfaceToMethodPointer(comparer, 0);
+  IntroSort<T>(values, Low(values), High(values), GetDepthLimit(Length(values)), compare);
 end;
 
 class procedure TArray.Sort<T>(var values: array of T;
   const comparer: IComparer<T>; index, count: Integer);
+var
+  compare: TCompareMethod<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
@@ -9404,18 +9414,23 @@ begin
 
   if count <= 1 then
     Exit;
-  IntroSort<T>(values, comparer, index, index + count - 1, GetDepthLimit(count));
+  TMethodPointer(compare) := InterfaceToMethodPointer(comparer, 0);
+  IntroSort<T>(values, index, index + count - 1, GetDepthLimit(count), compare);
 end;
 
 class procedure TArray.Sort<T>(var values: array of T;
   const comparison: TComparison<T>);
+var
+  compare: TCompareMethod<T>;
 begin
-  IntroSort<T>(values, IComparer<T>(PPointer(@comparison)^),
-    Low(values), High(values), GetDepthLimit(Length(values)));
+  TMethodPointer(compare) := InterfaceToMethodPointer(comparison, 0);
+  IntroSort<T>(values, Low(values), High(values), GetDepthLimit(Length(values)), compare);
 end;
 
 class procedure TArray.Sort<T>(var values: array of T;
   const comparison: TComparison<T>; index, count: Integer);
+var
+  compare: TCompareMethod<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparison), 'comparison');
@@ -9425,8 +9440,8 @@ begin
 
   if count <= 1 then
     Exit;
-  IntroSort<T>(values, IComparer<T>(PPointer(@comparison)^),
-    index, index + count - 1, GetDepthLimit(count));
+  TMethodPointer(compare) := InterfaceToMethodPointer(comparison, 0);
+  IntroSort<T>(values, index, index + count - 1, GetDepthLimit(count), compare);
 end;
 
 {$ENDREGION}
