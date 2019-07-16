@@ -2253,6 +2253,7 @@ type
     {$POINTERMATH OFF}
   end;
 
+  TSortMethod<T> = procedure(var items: array of T; const comparer: IComparer<T>; index, count: Integer);
   PTimSort = ^TTimSort;
   TTimSort = record
   private
@@ -2284,6 +2285,7 @@ type
     fRuns: TSliceArray;
     fArrayTypeInfo: PTypeInfo;
   private
+    class procedure Reverse<T>(left, right: Pointer); static; inline;
     procedure Initialize(const compare: TMethodPointer; const compareFunc: Pointer;
       mergeLo, mergeHi: TMergeFunc; arrayTypeInfo: PTypeInfo; itemSize: Integer);
     procedure Finalize;
@@ -2318,7 +2320,6 @@ type
     const IntrosortSizeThreshold = 16;
     class function GetDepthLimit(count: Integer): Integer; static;
 
-    class procedure ReverseInternal<T>(left, right: Pointer); static;
     class procedure SortTwoItems<T>(const comparer: IComparer<T>; var left, right: T); static;
     class procedure SortThreeItems<T>(const comparer: IComparer<T>; var left, mid, right: T); static;
 
@@ -2578,6 +2579,13 @@ type
       const comparison: TComparison<T>; index, count: Integer); overload; static;
 
 {$IFDEF DELPHIXE7_UP}
+    /// <summary>
+    ///   When <c>True</c> any managed reference type is treated as Pointer by
+    ///   StableSort results in faster sorting.
+    /// </summary>
+    class var UnsafeStableSort: Boolean;
+    const UnsafeStableSortTypeKinds = [{$IFDEF AUTOREFCOUNT}tkClass, {$ENDIF}tkInterface, tkDynArray, tkUString];
+
     /// <summary>
     ///   Sorts the elements in an array using the default comparer.
     /// </summary>
@@ -8990,6 +8998,24 @@ begin
     end;
 end;
 
+class procedure TTimSort.Reverse<T>(left, right: Pointer);
+type
+  {$POINTERMATH ON}
+  P = ^T;
+  {$POINTERMATH OFF}
+var
+  temp: T;
+begin
+  while P(left) < P(right) do
+  begin
+    temp := P(left)^;
+    P(left)^ := P(right)^;
+    P(right)^ := temp;
+    Inc(P(left));
+    Dec(P(right));
+  end;
+end;
+
 class procedure TTimSort.BinarySort<T>(lo, hi, start: Pointer<T>.P;
   const compare: TComparerMethod<T>);
 var
@@ -9045,16 +9071,16 @@ begin
   begin
     run := lo + 1;
     // descending?
-    if compare(run^, lo^) < 0 then
+    if compare(lo^, run^) > 0 then
     begin
       // find end of run, and reverse range if descending
       while (run < hi) and (compare(run^, (run + 1)^) > 0) do
         Inc(run);
-      TArray.ReverseInternal<T>(lo, run);
+      Reverse<T>(lo, run);
     end;
     (* ascending
        even if the run was initially descending, after reversing it the
-       following elements may form an ascending continuation of the 
+       following elements may form an ascending continuation of the
        now-reversed run.
        unconditionally attempt to continue the ascending run *)
     while (run < hi) and (compare(run^, (run + 1)^) <= 0) do
@@ -10023,24 +10049,6 @@ begin
   end;
 end;
 
-class procedure TArray.ReverseInternal<T>(left, right: Pointer);
-type
-  {$POINTERMATH ON}
-  P = ^T;
-  {$POINTERMATH OFF}
-var
-  temp: T;
-begin
-  while P(left) < P(right) do
-  begin
-    temp := P(left)^;
-    P(left)^ := P(right)^;
-    P(right)^ := temp;
-    Inc(P(left));
-    Dec(P(right));
-  end;
-end;
-
 class procedure TArray.Shuffle<T>(var values: array of T);
 begin
   Shuffle<T>(values, 0, Length(values));
@@ -10142,7 +10150,10 @@ var
   comparer: IComparer<T>;
 begin
   comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-  TTimSort.Sort<T>(values, comparer, 0, Length(values));
+  if (GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort then
+    TSortMethod<T>(@TTimSort.Sort<Pointer>)(values, comparer, 0, Length(values))
+  else
+    TTimSort.Sort<T>(values, comparer, 0, Length(values));
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T; index, count: Integer);
@@ -10155,12 +10166,18 @@ begin
 {$ENDIF}
 
   comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-  TTimSort.Sort<T>(values, comparer, index, count);
+  if (GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort then
+    TSortMethod<T>(@TTimSort.Sort<Pointer>)(values, comparer, index, count)
+  else
+    TTimSort.Sort<T>(values, comparer, index, count);
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T; const comparer: IComparer<T>);
 begin
-  TTimSort.Sort<T>(values, comparer, 0, Length(values));
+  if (GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort then
+    TSortMethod<T>(@TTimSort.Sort<Pointer>)(values, comparer, 0, Length(values))
+  else
+    TTimSort.Sort<T>(values, comparer, 0, Length(values));
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T;
@@ -10172,13 +10189,19 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
 {$ENDIF}
 
-  TTimSort.Sort<T>(values, comparer, index, count);
+  if (GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort then
+    TSortMethod<T>(@TTimSort.Sort<Pointer>)(values, comparer, index, count)
+  else
+    TTimSort.Sort<T>(values, comparer, index, count);
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T;
   const comparison: TComparison<T>);
 begin
-  TTimSort.Sort<T>(values, IComparer<T>(PPointer(@comparison)^), 0, Length(values));
+  if (GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort then
+    TSortMethod<T>(@TTimSort.Sort<Pointer>)(values, IComparer<T>(PPointer(@comparison)^), 0, Length(values))
+  else
+    TTimSort.Sort<T>(values, IComparer<T>(PPointer(@comparison)^), 0, Length(values));
 end;
 
 class procedure TArray.StableSort<T>(var values: array of T;
@@ -10190,7 +10213,10 @@ begin
   Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
 {$ENDIF}
 
-  TTimSort.Sort<T>(values, IComparer<T>(PPointer(@comparison)^), index, count);
+  if (GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort then
+    TSortMethod<T>(@TTimSort.Sort<Pointer>)(values, IComparer<T>(PPointer(@comparison)^), index, count)
+  else
+    TTimSort.Sort<T>(values, IComparer<T>(PPointer(@comparison)^), index, count);
 end;
 {$ENDIF}
 
