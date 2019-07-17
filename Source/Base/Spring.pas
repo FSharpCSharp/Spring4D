@@ -7733,6 +7733,9 @@ begin
   begin
     GetMem(Pointer(result), SizeOf(TObjectFinalizer));
     PObjectFinalizer(result).Vtable := @Shared.ObjectFinalizerVtable;
+  {$IFDEF AUTOREFCOUNT}
+    Pointer(PObjectFinalizer(result).Value) := nil;
+  {$ENDIF}
   end;
   PObjectFinalizer(result).RefCount := 1;
   PObjectFinalizer(result).Value := value;

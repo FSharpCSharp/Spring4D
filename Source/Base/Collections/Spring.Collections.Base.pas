@@ -431,6 +431,7 @@ type
     end;
   {$ENDREGION}
   private
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fSource: TRefCountedObject;
     fHashTable: PHashTable;
     fElementType: PTypeInfo;
