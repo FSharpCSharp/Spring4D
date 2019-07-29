@@ -187,6 +187,7 @@ type
     constructor Create(const source: IEnumerable;
       getCurrent: TEnumerableWrapper.TGetCurrentFunc; add: TAddFunc);
     function Add(const item: TValue): Boolean;
+    procedure Clear;
   end;
 
   TIteratorKind = (
@@ -1701,6 +1702,13 @@ end;
 function TCollectionWrapper.Add(const item: TValue): Boolean;
 begin
   Result := fAdd(fSource, item);
+end;
+
+procedure TCollectionWrapper.Clear;
+begin
+  // Clear does not have any generic parameter so we can hardcast fSource
+  // which is an ICollection<T> to access it
+  ICollection<Integer>(fSource).Clear;
 end;
 
 {$ENDREGION}

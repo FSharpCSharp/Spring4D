@@ -204,7 +204,21 @@ type
   ICollection = interface(IEnumerable)
     ['{4E749779-0873-498E-9597-FCF2A42C3F7B}']
 
+    /// <summary>
+    ///   Adds an item to the collection.
+    /// </summary>
+    /// <param name="item">
+    ///   The element to add to the collection
+    /// </param>
+    /// <returns>
+    ///   True if the collection was modified, False otherwise.
+    /// </returns>
     function Add(const item: TValue): Boolean;
+
+    /// <summary>
+    ///   Removes all items from the collection.
+    /// </summary>
+    procedure Clear;
   end;
 
   /// <summary>
@@ -829,7 +843,7 @@ type
     procedure AddRange(const values: IEnumerable<T>); overload;
 
     /// <summary>
-    ///   Removes all items from the ICollection&lt;T&gt;.
+    ///   Removes all items from the collection.
     /// </summary>
     procedure Clear;
 
