@@ -622,7 +622,6 @@ begin
   inherited Create;
   fSource := source;
   fSource._AddRef;
-  fItemIndex := -1;
   fRemainingCount := 0;
   fVersion := fSource.fHashTable.Version;
 end;
@@ -648,10 +647,10 @@ begin
     raise Error.EnumFailedVersion;
 
   if fRemainingCount = 0 then
-    while fItemIndex < hashTable.ItemCount - 1 do
+    while fItemIndex < hashTable.ItemCount do
     begin
-      Inc(fItemIndex);
       entry := @TItems(hashTable.Items)[fItemIndex];
+      Inc(fItemIndex);
       if entry.HashCode >= 0 then
       begin
         fCurrent := entry.Item;
@@ -769,10 +768,10 @@ begin
   if fVersion <> hashTable.Version then
     raise Error.EnumFailedVersion;
 
-  while fItemIndex < hashTable.ItemCount - 1 do
+  while fItemIndex < hashTable.ItemCount do
   begin
-    Inc(fItemIndex);
     entry := @TItems(hashTable.Items)[fItemIndex];
+    Inc(fItemIndex);
     if entry.HashCode >= 0 then
     begin
       fCurrent.Key := entry.Item;
