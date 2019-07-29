@@ -673,7 +673,7 @@ type
     procedure SetUp; override;
     function IsSorted: Boolean; override;
   published
-    procedure TestElements;
+    procedure TestItems;
     procedure TestEntries;
     procedure TestToArray;
   end;
@@ -4635,7 +4635,7 @@ begin
   SUT.AddRange(['a', 'c', 'b', 'b', 'a', 'b']);
   orderedByCount := SUT.OrderedByCount;
 
-  Check(orderedByCount.Elements.EqualsTo(['b', 'a', 'c']));
+  Check(orderedByCount.Items.EqualsTo(['b', 'a', 'c']));
 end;
 
 procedure TTestMultiSetBase.TestRemove;
@@ -4676,13 +4676,13 @@ end;
 
 procedure TTestHashMultiSet.TestElements;
 var
-  elements: IReadOnlyCollection<string>;
+  items: IReadOnlyCollection<string>;
 begin
   SUT.AddRange(['b', 'c', 'a', 'b']);
-  elements := SUT.Elements;
-  CheckTrue(elements.EqualsTo(['b', 'c', 'a']));
+  items := SUT.Items;
+  CheckTrue(items.EqualsTo(['b', 'c', 'a']));
   SUT.Add('d');
-  CheckTrue(elements.Contains('d'));
+  CheckTrue(items.Contains('d'));
 end;
 
 procedure TTestHashMultiSet.TestEntries;
@@ -4692,9 +4692,9 @@ begin
   SUT.AddRange(['b', 'c', 'a', 'b', 'a', 'b']);
   entries := SUT.Entries.ToArray;
   CheckEquals(3, Length(entries));
-  CheckEquals('b', entries[0].Key);
-  CheckEquals('c', entries[1].Key);
-  CheckEquals('a', entries[2].Key);
+  CheckEquals('b', entries[0].Item);
+  CheckEquals('c', entries[1].Item);
+  CheckEquals('a', entries[2].Item);
   CheckEquals(3, entries[0].Count);
   CheckEquals(1, entries[1].Count);
   CheckEquals(2, entries[2].Count);
@@ -4730,16 +4730,16 @@ begin
   SUT := TCollections.CreateSortedMultiSet<string>;
 end;
 
-procedure TTestTreeMultiSet.TestElements;
+procedure TTestTreeMultiSet.TestItems;
 var
-  elements: IReadOnlyCollection<string>;
+  items: IReadOnlyCollection<string>;
 begin
   SUT.AddRange(['b', 'c', 'a', 'b']);
-  elements := SUT.Elements;
-  CheckTrue(elements.EqualsTo(['a', 'b', 'c']));
+  items := SUT.Items;
+  CheckTrue(items.EqualsTo(['a', 'b', 'c']));
 
   SUT.Add('d');
-  CheckTrue(elements.Contains('d'));
+  CheckTrue(items.Contains('d'));
 end;
 
 procedure TTestTreeMultiSet.TestEntries;
@@ -4749,9 +4749,9 @@ begin
   SUT.AddRange(['b', 'c', 'a', 'b', 'a', 'b']);
   entries := SUT.Entries.ToArray;
   CheckEquals(3, Length(entries));
-  CheckEquals('a', entries[0].Key);
-  CheckEquals('b', entries[1].Key);
-  CheckEquals('c', entries[2].Key);
+  CheckEquals('a', entries[0].Item);
+  CheckEquals('b', entries[1].Item);
+  CheckEquals('c', entries[2].Item);
   CheckEquals(2, entries[0].Count);
   CheckEquals(3, entries[1].Count);
   CheckEquals(1, entries[2].Count);

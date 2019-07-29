@@ -2462,23 +2462,17 @@ type
   end;
 
   TMultiSetEntry<T> = record
-    Key: T;
+    Item: T;
     Count: Integer;
   end;
 
   IReadOnlyMultiSet<T> = interface(IReadOnlyCollection<T>)
     ['{7ECC0F3E-B73C-4821-82ED-FD84E0F81856}']
   {$REGION 'Property Accessors'}
-    function GetElements: IReadOnlyCollection<T>;
     function GetEntries: IReadOnlyCollection<TMultiSetEntry<T>>;
-    function GetItem(const item: T): Integer;
+    function GetItems: IReadOnlyCollection<T>;
+    function GetItemCount(const item: T): Integer;
   {$ENDREGION}
-
-    /// <summary>
-    ///   Returns the collection of distinct elements contained in this
-    ///   multiset.
-    /// </summary>
-    property Elements: IReadOnlyCollection<T> read GetElements;
 
     /// <summary>
     ///   Returns a view of the contents of this multiset, each providing an
@@ -2489,19 +2483,25 @@ type
     property Entries: IReadOnlyCollection<TMultiSetEntry<T>> read GetEntries;
 
     /// <summary>
+    ///   Returns the collection of distinct elements contained in this
+    ///   multiset.
+    /// </summary>
+    property Items: IReadOnlyCollection<T> read GetItems;
+
+    /// <summary>
     ///   Returns the number of occurrences of an element in this multiset (the
     ///   count of the element).
     /// </summary>
-    property Items[const item: T]: Integer read GetItem; default;
+    property ItemCount[const item: T]: Integer read GetItemCount; default;
   end;
 
   IMultiSet<T> = interface(ICollection<T>)
     ['{CC7C2115-EED6-4FDE-9AE6-44C253514B2F}']
   {$REGION 'Property Accessors'}
-    function GetElements: IReadOnlyCollection<T>;
     function GetEntries: IReadOnlyCollection<TMultiSetEntry<T>>;
-    function GetItem(const item: T): Integer;
-    procedure SetItem(const item: T; count: Integer);
+    function GetItems: IReadOnlyCollection<T>;
+    function GetItemCount(const item: T): Integer;
+    procedure SetItemCount(const item: T; count: Integer);
   {$ENDREGION}
 
     /// <summary>
@@ -2555,12 +2555,6 @@ type
     function OrderedByCount: IReadOnlyMultiSet<T>;
 
     /// <summary>
-    ///   Returns the collection of distinct elements contained in this
-    ///   multiset.
-    /// </summary>
-    property Elements: IReadOnlyCollection<T> read GetElements;
-
-    /// <summary>
     ///   Returns a view of the contents of this multiset, each providing an
     ///   element of the multiset and the count of that element. This
     ///   collection contains exactly one entry for each distinct element in
@@ -2569,10 +2563,16 @@ type
     property Entries: IReadOnlyCollection<TMultiSetEntry<T>> read GetEntries;
 
     /// <summary>
+    ///   Returns the collection of distinct elements contained in this
+    ///   multiset.
+    /// </summary>
+    property Items: IReadOnlyCollection<T> read GetItems;
+
+    /// <summary>
     ///   Returns or sets the number of occurrences of an element in this
     ///   multiset (the count of the element).
     /// </summary>
-    property Items[const item: T]: Integer read GetItem write SetItem; default;
+    property ItemCount[const item: T]: Integer read GetItemCount write SetItemCount; default;
   end;
 
   /// <summary>

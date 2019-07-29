@@ -89,7 +89,7 @@ type
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = TInnerCollection<T>;
+      TItemCollection = TInnerCollection<T>;
 
       TEntryCollection = class(TEnumerableBase<TEntry>,
         IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
@@ -108,7 +108,7 @@ type
         function _Release: Integer; override;
       {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TKey>'}
+      {$REGION 'Implements IEnumerable<TEntry>'}
         function GetEnumerator: IEnumerator<TEntry>;
         function Contains(const value: TEntry): Boolean; overload;
         function ToArray: TArray<TEntry>;
@@ -131,14 +131,14 @@ type
   {$ENDREGION}
   private
     fHashTable: THashTable;
-    fKeyComparer: IEqualityComparer<T>;
-    fKeys: TKeyCollection;
+    fComparer: IEqualityComparer<T>;
+    fItems: TItemCollection;
     fEntries: TEntryCollection;
   {$REGION 'Property Accessors'}
-    function GetElements: IReadOnlyCollection<T>;
     function GetEntries: IReadOnlyCollection<TEntry>;
-    function GetItem(const item: T): Integer;
-    procedure SetItem(const item: T; count: Integer);
+    function GetItems: IReadOnlyCollection<T>;
+    function GetItemCount(const item: T): Integer;
+    procedure SetItemCount(const item: T; count: Integer);
   {$ENDREGION}
     class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
     procedure ClearInternal;
@@ -191,7 +191,7 @@ type
         function MoveNext: Boolean;
       end;
 
-      TKeyCollection = class(TEnumerableBase<T>,
+      TItemCollection = class(TEnumerableBase<T>,
         IEnumerable<T>, IReadOnlyCollection<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
@@ -208,14 +208,14 @@ type
         function _Release: Integer; override;
       {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TKey>'}
+      {$REGION 'Implements IEnumerable<T>'}
         function GetEnumerator: IEnumerator<T>;
         function Contains(const value: T): Boolean; overload;
         function ToArray: TArray<T>;
       {$ENDREGION}
       end;
 
-      TKeyEnumerator = class(TRefCountedObject, IEnumerator<T>)
+      TItemEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TTreeMultiSet<T>;
@@ -246,7 +246,7 @@ type
         function _Release: Integer; override;
       {$ENDREGION}
 
-      {$REGION 'Implements IEnumerable<TKey>'}
+      {$REGION 'Implements IEnumerable<TEntry>'}
         function GetEnumerator: IEnumerator<TEntry>;
         function Contains(const value: TEntry): Boolean; overload;
         function ToArray: TArray<TEntry>;
@@ -270,13 +270,13 @@ type
   private
     fTree: TRedBlackTree<T, Integer>;
     fVersion: Integer;
-    fKeys: TKeyCollection;
+    fItems: TItemCollection;
     fEntries: TEntryCollection;
   {$REGION 'Property Accessors'}
-    function GetElements: IReadOnlyCollection<T>;
     function GetEntries: IReadOnlyCollection<TEntry>;
-    function GetItem(const item: T): Integer;
-    procedure SetItem(const item: T; count: Integer);
+    function GetItems: IReadOnlyCollection<T>;
+    function GetItemCount(const item: T): Integer;
+    procedure SetItemCount(const item: T; count: Integer);
   {$ENDREGION}
     function DoMoveNext(var currentNode: PNode; var finished: Boolean;
       iteratorVersion: Integer): Boolean;
@@ -353,7 +353,7 @@ begin
     end);
   localSet := THashMultiSet<T>.Create;
   for i := 0 to High(items) do
-    localSet.Add(items[i].Value.Key, items[i].Value.Count);
+    localSet.Add(items[i].Value.Item, items[i].Value.Count);
   Result := localSet as IReadOnlyMultiSet<T>;
 end;
 
@@ -372,7 +372,7 @@ begin
   if fCount <> localSet.Count then
     Exit(False);
   for entry in localSet.Entries do
-    if IMultiSet<T>(this)[entry.Key] <> entry.Count then
+    if IMultiSet<T>(this)[entry.Item] <> entry.Count then
       Exit(False);
   Result := True;
 end;
@@ -391,12 +391,12 @@ constructor THashMultiSet<T>.Create(const comparer: IEqualityComparer<T>);
 begin
   inherited Create;
   if Assigned(comparer) then
-    fKeyComparer := comparer
+    fComparer := comparer
   else
-    fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+    fComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
 
-  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
-  fKeys := TKeyCollection.Create(Self, @fHashTable, GetElementType, fKeyComparer, 0);
+  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fComparer);
+  fItems := TItemCollection.Create(Self, @fHashTable, GetElementType, fComparer, 0);
   fEntries := TEntryCollection.Create(Self);
 end;
 
@@ -404,13 +404,13 @@ destructor THashMultiSet<T>.Destroy;
 begin
   Clear;
   fEntries.Free;
-  fKeys.Free;
+  fItems.Free;
   inherited Destroy;
 end;
 
 function THashMultiSet<T>.CreateMultiSet: IMultiSet<T>;
 begin
-  Result := THashMultiSet<T>.Create(fKeyComparer);
+  Result := THashMultiSet<T>.Create(fComparer);
 end;
 
 function THashMultiSet<T>.Add(const item: T): Boolean;
@@ -427,7 +427,7 @@ var
 begin
   Guard.CheckRange(count >= 0, 'count');
 
-  entry := fHashTable.AddOrSet(item, fKeyComparer.GetHashCode(item), isExisting);
+  entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), isExisting);
 
   entry.Item := item;
   if isExisting then
@@ -480,7 +480,7 @@ function THashMultiSet<T>.Contains(const item: T): Boolean;
 var
   entry: THashTableEntry;
 begin
-  entry.HashCode := fKeyComparer.GetHashCode(item);
+  entry.HashCode := fComparer.GetHashCode(item);
   Result := fHashTable.Find(item, entry);
 end;
 
@@ -492,14 +492,14 @@ begin
     Result := Default(T);
 end;
 
-function THashMultiSet<T>.GetElements: IReadOnlyCollection<T>;
-begin
-  Result := fKeys;
-end;
-
 function THashMultiSet<T>.GetEntries: IReadOnlyCollection<TEntry>;
 begin
   Result := fEntries;
+end;
+
+function THashMultiSet<T>.GetItems: IReadOnlyCollection<T>;
+begin
+  Result := fItems;
 end;
 
 function THashMultiSet<T>.GetEnumerator: IEnumerator<T>;
@@ -507,11 +507,11 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
-function THashMultiSet<T>.GetItem(const item: T): Integer;
+function THashMultiSet<T>.GetItemCount(const item: T): Integer;
 var
   entry: THashTableEntry;
 begin
-  entry.HashCode := fKeyComparer.GetHashCode(item);
+  entry.HashCode := fComparer.GetHashCode(item);
   if fHashTable.Find(item, entry) then
     Result := TItems(fHashTable.Items)[entry.ItemIndex].Count
   else
@@ -531,7 +531,7 @@ var
 begin
   Guard.CheckRange(count >= 0, 'count');
 
-  entry.HashCode := fKeyComparer.GetHashCode(item);
+  entry.HashCode := fComparer.GetHashCode(item);
   if fHashTable.Find(item, entry) then
   begin
     tableItem := @TItems(fHashTable.Items)[entry.ItemIndex];
@@ -553,7 +553,7 @@ begin
     Result := 0;
 end;
 
-procedure THashMultiSet<T>.SetItem(const item: T; count: Integer);
+procedure THashMultiSet<T>.SetItemCount(const item: T; count: Integer);
 var
   entry: ^TItem;
   isExisting: Boolean;
@@ -563,7 +563,7 @@ begin
 
   if count = 0 then
   begin
-    entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
+    entry := fHashTable.Delete(item, fComparer.GetHashCode(item));
     if Assigned(entry) then
     begin
       Dec(fCount, entry.Count);
@@ -574,7 +574,7 @@ begin
   end
   else
   begin
-    entry := fHashTable.AddOrSet(item, fKeyComparer.GetHashCode(item), isExisting);
+    entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), isExisting);
     if not isExisting then
     begin
       entry.Item := item;
@@ -685,8 +685,8 @@ function THashMultiSet<T>.TEntryCollection.Contains(
 var
   entry: THashTableEntry;
 begin
-  entry.HashCode := fSource.fKeyComparer.GetHashCode(value.Key);
-  Result := fSource.fHashTable.Find(value.Key, entry)
+  entry.HashCode := fSource.fComparer.GetHashCode(value.Item);
+  Result := fSource.fHashTable.Find(value.Item, entry)
     and (value.Count = TItems(fSource.fHashTable.Items)[entry.ItemIndex].Count);
 end;
 
@@ -717,7 +717,7 @@ begin
     item := @TItems(fSource.fHashTable.Items)[sourceIndex];
     if item.HashCode >= 0 then
     begin
-      Result[targetIndex].Key := item.Item;
+      Result[targetIndex].Item := item.Item;
       Result[targetIndex].Count := item.Count;
       Inc(targetIndex);
     end;
@@ -774,7 +774,7 @@ begin
     Inc(fItemIndex);
     if entry.HashCode >= 0 then
     begin
-      fCurrent.Key := entry.Item;
+      fCurrent.Item := entry.Item;
       fCurrent.Count := entry.Count;
       Exit(True);
     end;
@@ -798,7 +798,7 @@ constructor TTreeMultiSet<T>.Create(const comparer: IComparer<T>);
 begin
   inherited Create;
   fTree := TRedBlackTree<T, Integer>.Create(comparer);
-  fKeys := TKeyCollection.Create(Self);
+  fItems := TItemCollection.Create(Self);
   fEntries := TEntryCollection.Create(Self);
 end;
 
@@ -806,7 +806,7 @@ destructor TTreeMultiSet<T>.Destroy;
 begin
   Clear;
   fEntries.Free;
-  fKeys.Free;
+  fItems.Free;
   fTree.Free;
   inherited;
 end;
@@ -907,14 +907,14 @@ begin
     Result := Default(T);
 end;
 
-function TTreeMultiSet<T>.GetElements: IReadOnlyCollection<T>;
-begin
-  Result := fKeys;
-end;
-
 function TTreeMultiSet<T>.GetEntries: IReadOnlyCollection<TEntry>;
 begin
   Result := fEntries;
+end;
+
+function TTreeMultiSet<T>.GetItems: IReadOnlyCollection<T>;
+begin
+  Result := fItems;
 end;
 
 function TTreeMultiSet<T>.GetEnumerator: IEnumerator<T>;
@@ -922,7 +922,7 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
-function TTreeMultiSet<T>.GetItem(const item: T): Integer;
+function TTreeMultiSet<T>.GetItemCount(const item: T): Integer;
 begin
   fTree.Find(item, Result);
 end;
@@ -962,7 +962,7 @@ begin
     Result := 0;
 end;
 
-procedure TTreeMultiSet<T>.SetItem(const item: T; count: Integer);
+procedure TTreeMultiSet<T>.SetItemCount(const item: T; count: Integer);
 begin
   if count < 0 then
     raise Error.ArgumentOutOfRange('count');
@@ -1052,36 +1052,36 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTreeMultiSet<T>.TKeyCollection'}
+{$REGION 'TTreeMultiSet<T>.TItemCollection'}
 
-constructor TTreeMultiSet<T>.TKeyCollection.Create(
+constructor TTreeMultiSet<T>.TItemCollection.Create(
   const source: TTreeMultiSet<T>);
 begin
   inherited Create;
   fSource := source;
 end;
 
-function TTreeMultiSet<T>.TKeyCollection.Contains(const value: T): Boolean;
+function TTreeMultiSet<T>.TItemCollection.Contains(const value: T): Boolean;
 begin
   Result := fSource.fTree.Exists(value);
 end;
 
-function TTreeMultiSet<T>.TKeyCollection.GetCount: Integer;
+function TTreeMultiSet<T>.TItemCollection.GetCount: Integer;
 begin
   Result := fSource.fTree.Count;
 end;
 
-function TTreeMultiSet<T>.TKeyCollection.GetEnumerator: IEnumerator<T>;
+function TTreeMultiSet<T>.TItemCollection.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TKeyEnumerator.Create(fSource);
+  Result := TItemEnumerator.Create(fSource);
 end;
 
-function TTreeMultiSet<T>.TKeyCollection.GetIsEmpty: Boolean;
+function TTreeMultiSet<T>.TItemCollection.GetIsEmpty: Boolean;
 begin
   Result := fSource.fTree.Count = 0;
 end;
 
-function TTreeMultiSet<T>.TKeyCollection.ToArray: TArray<T>;
+function TTreeMultiSet<T>.TItemCollection.ToArray: TArray<T>;
 var
   i: Integer;
   node: PNode;
@@ -1097,12 +1097,12 @@ begin
   end;
 end;
 
-function TTreeMultiSet<T>.TKeyCollection._AddRef: Integer;
+function TTreeMultiSet<T>.TItemCollection._AddRef: Integer;
 begin
   Result := fSource._AddRef;
 end;
 
-function TTreeMultiSet<T>.TKeyCollection._Release: Integer;
+function TTreeMultiSet<T>.TItemCollection._Release: Integer;
 begin
   Result := fSource._Release;
 end;
@@ -1110,9 +1110,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTreeMultiSet<T>.TKeyEnumerator'}
+{$REGION 'TTreeMultiSet<T>.TItemEnumerator'}
 
-constructor TTreeMultiSet<T>.TKeyEnumerator.Create(
+constructor TTreeMultiSet<T>.TItemEnumerator.Create(
   const source: TTreeMultiSet<T>);
 begin
   inherited Create;
@@ -1121,18 +1121,18 @@ begin
   fVersion := fSource.fVersion;
 end;
 
-destructor TTreeMultiSet<T>.TKeyEnumerator.Destroy;
+destructor TTreeMultiSet<T>.TItemEnumerator.Destroy;
 begin
   fSource._Release;
   inherited;
 end;
 
-function TTreeMultiSet<T>.TKeyEnumerator.GetCurrent: T;
+function TTreeMultiSet<T>.TItemEnumerator.GetCurrent: T;
 begin
   Result := fCurrentNode.Key;
 end;
 
-function TTreeMultiSet<T>.TKeyEnumerator.MoveNext: Boolean;
+function TTreeMultiSet<T>.TItemEnumerator.MoveNext: Boolean;
 begin
   Result := fSource.DoMoveNext(fCurrentNode, fFinished, fVersion);
 end;
@@ -1154,7 +1154,7 @@ function TTreeMultiSet<T>.TEntryCollection.Contains(
 var
   foundCount: Integer;
 begin
-  Result := fSource.fTree.Find(value.Key, foundCount)
+  Result := fSource.fTree.Find(value.Item, foundCount)
     and (value.Count = foundCount);
 end;
 
@@ -1210,7 +1210,7 @@ end;
 
 function TTreeMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;
 begin
-  Result.Key := fCurrentNode.Key;
+  Result.Item := fCurrentNode.Key;
   Result.Count := fCurrentNode.Value;
 end;
 
