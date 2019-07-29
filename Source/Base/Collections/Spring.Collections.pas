@@ -2447,11 +2447,16 @@ type
     property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
+  TMultiSetEntry<T> = record
+    Key: T;
+    Count: Integer;
+  end;
+
   IReadOnlyMultiSet<T> = interface(IReadOnlyCollection<T>)
     ['{7ECC0F3E-B73C-4821-82ED-FD84E0F81856}']
   {$REGION 'Property Accessors'}
     function GetElements: IReadOnlyCollection<T>;
-    function GetEntries: IReadOnlyCollection<TPair<T,Integer>>;
+    function GetEntries: IReadOnlyCollection<TMultiSetEntry<T>>;
     function GetItem(const item: T): Integer;
   {$ENDREGION}
 
@@ -2467,7 +2472,7 @@ type
     ///   collection contains exactly one entry for each distinct element in
     ///   the multiset (thus it always has the same size as Elements).
     /// </summary>
-    property Entries: IReadOnlyCollection<TPair<T,Integer>> read GetEntries;
+    property Entries: IReadOnlyCollection<TMultiSetEntry<T>> read GetEntries;
 
     /// <summary>
     ///   Returns the number of occurrences of an element in this multiset (the
@@ -2480,7 +2485,7 @@ type
     ['{CC7C2115-EED6-4FDE-9AE6-44C253514B2F}']
   {$REGION 'Property Accessors'}
     function GetElements: IReadOnlyCollection<T>;
-    function GetEntries: IReadOnlyCollection<TPair<T,Integer>>;
+    function GetEntries: IReadOnlyCollection<TMultiSetEntry<T>>;
     function GetItem(const item: T): Integer;
     procedure SetItem(const item: T; count: Integer);
   {$ENDREGION}
@@ -2547,7 +2552,7 @@ type
     ///   collection contains exactly one entry for each distinct element in
     ///   the multiset (thus it always has the same size as Elements).
     /// </summary>
-    property Entries: IReadOnlyCollection<TPair<T,Integer>> read GetEntries;
+    property Entries: IReadOnlyCollection<TMultiSetEntry<T>> read GetEntries;
 
     /// <summary>
     ///   Returns or sets the number of occurrences of an element in this

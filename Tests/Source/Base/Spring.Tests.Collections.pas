@@ -4687,7 +4687,7 @@ end;
 
 procedure TTestHashMultiSet.TestEntries;
 var
-  entries: TArray<TPair<string,Integer>>;
+  entries: TArray<TMultiSetEntry<string>>;
 begin
   SUT.AddRange(['b', 'c', 'a', 'b', 'a', 'b']);
   entries := SUT.Entries.ToArray;
@@ -4695,9 +4695,9 @@ begin
   CheckEquals('b', entries[0].Key);
   CheckEquals('c', entries[1].Key);
   CheckEquals('a', entries[2].Key);
-  CheckEquals(3, entries[0].Value);
-  CheckEquals(1, entries[1].Value);
-  CheckEquals(2, entries[2].Value);
+  CheckEquals(3, entries[0].Count);
+  CheckEquals(1, entries[1].Count);
+  CheckEquals(2, entries[2].Count);
 end;
 
 procedure TTestHashMultiSet.TestToArray;
@@ -4744,7 +4744,7 @@ end;
 
 procedure TTestTreeMultiSet.TestEntries;
 var
-  entries: TArray<TPair<string,Integer>>;
+  entries: TArray<TMultiSetEntry<string>>;
 begin
   SUT.AddRange(['b', 'c', 'a', 'b', 'a', 'b']);
   entries := SUT.Entries.ToArray;
@@ -4752,9 +4752,9 @@ begin
   CheckEquals('a', entries[0].Key);
   CheckEquals('b', entries[1].Key);
   CheckEquals('c', entries[2].Key);
-  CheckEquals(2, entries[0].Value);
-  CheckEquals(3, entries[1].Value);
-  CheckEquals(1, entries[2].Value);
+  CheckEquals(2, entries[0].Count);
+  CheckEquals(3, entries[1].Count);
+  CheckEquals(1, entries[2].Count);
 end;
 
 procedure TTestTreeMultiSet.TestToArray;

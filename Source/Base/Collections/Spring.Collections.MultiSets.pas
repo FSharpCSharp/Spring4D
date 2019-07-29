@@ -38,6 +38,10 @@ uses
 
 type
   TAbstractMultiSet<T> = class abstract(TCollectionBase<T>)
+  {$REGION 'Nested Types'}
+    type
+      TEntry = TMultiSetEntry<T>;
+  {$ENDREGION}
   private
     fCount: Integer;
   protected
@@ -66,6 +70,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
+      TEntry = TMultiSetEntry<T>;
       TItem = THashMultiSetItem<T>;
       TItems = TArray<TItem>;
 
@@ -86,8 +91,8 @@ type
 
       TKeyCollection = TInnerCollection<T>;
 
-      TEntryCollection = class(TEnumerableBase<TPair<T,Integer>>,
-        IEnumerable<TPair<T,Integer>>, IReadOnlyCollection<TPair<T,Integer>>)
+      TEntryCollection = class(TEnumerableBase<TEntry>,
+        IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: THashMultiSet<T>;
@@ -104,20 +109,20 @@ type
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TKey>'}
-        function GetEnumerator: IEnumerator<TPair<T,Integer>>;
-        function Contains(const value: TPair<T,Integer>): Boolean; overload;
-        function ToArray: TArray<TPair<T,Integer>>;
+        function GetEnumerator: IEnumerator<TEntry>;
+        function Contains(const value: TEntry): Boolean; overload;
+        function ToArray: TArray<TEntry>;
       {$ENDREGION}
       end;
 
-      TEntryEnumerator = class(TRefCountedObject, IEnumerator<TPair<T,Integer>>)
+      TEntryEnumerator = class(TRefCountedObject, IEnumerator<TEntry>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: THashMultiSet<T>;
         fItemIndex: Integer;
         fVersion: Integer;
-        fCurrent: TPair<T,Integer>;
-        function GetCurrent: TPair<T,Integer>;
+        fCurrent: TEntry;
+        function GetCurrent: TEntry;
       public
         constructor Create(const source: THashMultiSet<T>);
         destructor Destroy; override;
@@ -131,7 +136,7 @@ type
     fEntries: TEntryCollection;
   {$REGION 'Property Accessors'}
     function GetElements: IReadOnlyCollection<T>;
-    function GetEntries: IReadOnlyCollection<TPair<T,Integer>>;
+    function GetEntries: IReadOnlyCollection<TEntry>;
     function GetItem(const item: T): Integer;
     procedure SetItem(const item: T; count: Integer);
   {$ENDREGION}
@@ -169,6 +174,7 @@ type
   private
   {$REGION 'Nested Types'}
     type
+      TEntry = TMultiSetEntry<T>;
       PNode = TNodes<T, Integer>.PRedBlackTreeNode;
 
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
@@ -223,8 +229,8 @@ type
         function MoveNext: Boolean;
       end;
 
-      TEntryCollection = class(TEnumerableBase<TPair<T,Integer>>,
-        IEnumerable<TPair<T,Integer>>, IReadOnlyCollection<TPair<T,Integer>>)
+      TEntryCollection = class(TEnumerableBase<TEntry>,
+        IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TTreeMultiSet<T>;
@@ -241,20 +247,20 @@ type
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TKey>'}
-        function GetEnumerator: IEnumerator<TPair<T,Integer>>;
-        function Contains(const value: TPair<T,Integer>): Boolean; overload;
-        function ToArray: TArray<TPair<T,Integer>>;
+        function GetEnumerator: IEnumerator<TEntry>;
+        function Contains(const value: TEntry): Boolean; overload;
+        function ToArray: TArray<TEntry>;
       {$ENDREGION}
       end;
 
-      TEntryEnumerator = class(TRefCountedObject, IEnumerator<TPair<T,Integer>>)
+      TEntryEnumerator = class(TRefCountedObject, IEnumerator<TEntry>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TTreeMultiSet<T>;
         fCurrentNode: PNode;
         fFinished: Boolean;
         fVersion: Integer;
-        function GetCurrent: TPair<T,Integer>;
+        function GetCurrent: TEntry;
       public
         constructor Create(const source: TTreeMultiSet<T>);
         destructor Destroy; override;
@@ -268,7 +274,7 @@ type
     fEntries: TEntryCollection;
   {$REGION 'Property Accessors'}
     function GetElements: IReadOnlyCollection<T>;
-    function GetEntries: IReadOnlyCollection<TPair<T,Integer>>;
+    function GetEntries: IReadOnlyCollection<TEntry>;
     function GetItem(const item: T): Integer;
     procedure SetItem(const item: T; count: Integer);
   {$ENDREGION}
@@ -321,8 +327,8 @@ end;
 
 function TAbstractMultiSet<T>.OrderedByCount: IReadOnlyMultiSet<T>;
 var
-  entries: TArray<TPair<T,Integer>>;
-  items: TArray<TPair<Integer,TPair<T,Integer>>>;
+  entries: TArray<TEntry>;
+  items: TArray<TPair<Integer,TEntry>>;
   i: Integer;
   localSet: IMultiSet<T>;
 begin
@@ -333,12 +339,12 @@ begin
     items[i].Key := i;
     items[i].Value := entries[i];
   end;
-  TArray.Sort<TPair<Integer,TPair<T,Integer>>>(items,
-    function(const left, right: TPair<Integer,TPair<T,Integer>>): Integer
+  TArray.Sort<TPair<Integer,TEntry>>(items,
+    function(const left, right: TPair<Integer,TEntry>): Integer
     begin
-      if left.Value.Value > right.Value.Value then
+      if left.Value.Count > right.Value.Count then
         Result := -1
-      else if left.Value.Value < right.Value.Value then
+      else if left.Value.Count < right.Value.Count then
         Result := 1
       else if left.Key < right.Key then
         Result := -1
@@ -347,14 +353,14 @@ begin
     end);
   localSet := THashMultiSet<T>.Create;
   for i := 0 to High(items) do
-    localSet.Add(items[i].Value.Key, items[i].Value.Value);
+    localSet.Add(items[i].Value.Key, items[i].Value.Count);
   Result := localSet as IReadOnlyMultiSet<T>;
 end;
 
 function TAbstractMultiSet<T>.SetEquals(const other: IEnumerable<T>): Boolean;
 var
   localSet: IMultiSet<T>;
-  entry: TPair<T,Integer>;
+  entry: TEntry;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
@@ -366,7 +372,7 @@ begin
   if fCount <> localSet.Count then
     Exit(False);
   for entry in localSet.Entries do
-    if IMultiSet<T>(this)[entry.Key] <> entry.Value then
+    if IMultiSet<T>(this)[entry.Key] <> entry.Count then
       Exit(False);
   Result := True;
 end;
@@ -491,7 +497,7 @@ begin
   Result := fKeys;
 end;
 
-function THashMultiSet<T>.GetEntries: IReadOnlyCollection<TPair<T, Integer>>;
+function THashMultiSet<T>.GetEntries: IReadOnlyCollection<TEntry>;
 begin
   Result := fEntries;
 end;
@@ -676,13 +682,13 @@ begin
 end;
 
 function THashMultiSet<T>.TEntryCollection.Contains(
-  const value: TPair<T, Integer>): Boolean;
+  const value: TEntry): Boolean;
 var
   entry: THashTableEntry;
 begin
   entry.HashCode := fSource.fKeyComparer.GetHashCode(value.Key);
   Result := fSource.fHashTable.Find(value.Key, entry)
-    and (value.Value = TItems(fSource.fHashTable.Items)[entry.ItemIndex].Count);
+    and (value.Count = TItems(fSource.fHashTable.Items)[entry.ItemIndex].Count);
 end;
 
 function THashMultiSet<T>.TEntryCollection.GetCount: Integer;
@@ -690,7 +696,7 @@ begin
   Result := fSource.fCount;
 end;
 
-function THashMultiSet<T>.TEntryCollection.GetEnumerator: IEnumerator<TPair<T, Integer>>;
+function THashMultiSet<T>.TEntryCollection.GetEnumerator: IEnumerator<TEntry>;
 begin
   Result := TEntryEnumerator.Create(fSource);
 end;
@@ -700,7 +706,7 @@ begin
   Result := fSource.fCount = 0;
 end;
 
-function THashMultiSet<T>.TEntryCollection.ToArray: TArray<TPair<T, Integer>>;
+function THashMultiSet<T>.TEntryCollection.ToArray: TArray<TEntry>;
 var
   sourceIndex, targetIndex: Integer;
   item: ^TItem;
@@ -713,7 +719,7 @@ begin
     if item.HashCode >= 0 then
     begin
       Result[targetIndex].Key := item.Item;
-      Result[targetIndex].Value := item.Count;
+      Result[targetIndex].Count := item.Count;
       Inc(targetIndex);
     end;
   end;
@@ -749,7 +755,7 @@ begin
   inherited;
 end;
 
-function THashMultiSet<T>.TEntryEnumerator.GetCurrent: TPair<T, Integer>;
+function THashMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;
 begin
   Result := fCurrent;
 end;
@@ -770,12 +776,12 @@ begin
     if entry.HashCode >= 0 then
     begin
       fCurrent.Key := entry.Item;
-      fCurrent.Value := entry.Count;
+      fCurrent.Count := entry.Count;
       Exit(True);
     end;
   end;
 
-  fCurrent := Default(TPair<T, Integer>);
+  fCurrent := Default(TEntry);
   Result := False;
 end;
 
@@ -907,7 +913,7 @@ begin
   Result := fKeys;
 end;
 
-function TTreeMultiSet<T>.GetEntries: IReadOnlyCollection<TPair<T, Integer>>;
+function TTreeMultiSet<T>.GetEntries: IReadOnlyCollection<TEntry>;
 begin
   Result := fEntries;
 end;
@@ -1145,12 +1151,12 @@ begin
 end;
 
 function TTreeMultiSet<T>.TEntryCollection.Contains(
-  const value: TPair<T, Integer>): Boolean;
+  const value: TEntry): Boolean;
 var
-  foundValue: Integer;
+  foundCount: Integer;
 begin
-  Result := fSource.fTree.Find(value.Key, foundValue)
-    and (value.Value = foundValue);
+  Result := fSource.fTree.Find(value.Key, foundCount)
+    and (value.Count = foundCount);
 end;
 
 function TTreeMultiSet<T>.TEntryCollection.GetCount: Integer;
@@ -1158,7 +1164,7 @@ begin
   Result := fSource.fTree.Count;
 end;
 
-function TTreeMultiSet<T>.TEntryCollection.GetEnumerator: IEnumerator<TPair<T, Integer>>;
+function TTreeMultiSet<T>.TEntryCollection.GetEnumerator: IEnumerator<TEntry>;
 begin
   Result := TEntryEnumerator.Create(fSource);
 end;
@@ -1168,9 +1174,9 @@ begin
   Result := fSource.fTree.Count = 0;
 end;
 
-function TTreeMultiSet<T>.TEntryCollection.ToArray: TArray<TPair<T, Integer>>;
+function TTreeMultiSet<T>.TEntryCollection.ToArray: TArray<TEntry>;
 begin
-  Result := fSource.fTree.ToArray;
+  TArray<TPair<T,Integer>>(Result) := fSource.fTree.ToArray;
 end;
 
 function TTreeMultiSet<T>.TEntryCollection._AddRef: Integer;
@@ -1203,10 +1209,10 @@ begin
   inherited;
 end;
 
-function TTreeMultiSet<T>.TEntryEnumerator.GetCurrent: TPair<T, Integer>;
+function TTreeMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;
 begin
   Result.Key := fCurrentNode.Key;
-  Result.Value := fCurrentNode.Value;
+  Result.Count := fCurrentNode.Value;
 end;
 
 function TTreeMultiSet<T>.TEntryEnumerator.MoveNext: Boolean;
