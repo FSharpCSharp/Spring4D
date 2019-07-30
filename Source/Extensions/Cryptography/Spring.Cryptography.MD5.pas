@@ -28,8 +28,7 @@ unit Spring.Cryptography.MD5;
 
 interface
 
-{$OVERFLOWCHECKS OFF}
-{$RANGECHECKS OFF}
+{$R-,Q-}
 
 uses
   Spring,

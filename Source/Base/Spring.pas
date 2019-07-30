@@ -3283,10 +3283,10 @@ begin
   if Pointer(intf) = nil then
     Exit(nil);
 
-{$IFOPT R+}{$DEFINE RANGECHECKS_OFF}{$R-}{$ENDIF}
+{$R-}
   // 3 is offset of the first declared method in the interface, after QI, AddRef, Release
   TMethod(Result).Code := PPVtable(intf)^^[index + 3];
-{$IFDEF RANGECHECKS_OFF}{$UNDEF RANGECHECKS_OFF}{$R+}{$ENDIF}
+{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
   TMethod(Result).Data := Pointer(intf);
 end;
 
@@ -3431,7 +3431,7 @@ begin
     Exit(False);
   SetLength(indices, leftArr.DimCount);
   SetLength(bounds, leftArr.DimCount);
-{$RANGECHECKS OFF}
+{$R-}
   for i := leftArr.DimCount - 1 downto 0 do
   begin
     count := leftArr.Bounds[i].ElementCount;
@@ -3441,9 +3441,7 @@ begin
       Exit(False);
     bounds[leftArr.DimCount - 1 - i] := leftArr.Bounds[i];
   end;
-{$IFDEF RANGECHECKS_ON}
-{$RANGECHECKS ON}
-{$ENDIF}
+{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
   repeat
     if not SameValue(VarArrayGet(left, indices), VarArrayGet(right, indices)) then
       Exit(False);
@@ -3552,9 +3550,9 @@ end;
 
 procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(i, n);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 end;
 
 function IsPowerOf2(value: Integer): Boolean;
@@ -3583,8 +3581,8 @@ begin
 end;
 {$ENDIF}
 
-{$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
-{$IFOPT R+}{$DEFINE RANGECHECKS_ON}{$R-}{$ENDIF}
+{$Q-}
+{$R-}
 function DynArrayLength(const A: Pointer): NativeInt;
 begin
   Result := NativeInt(A);
@@ -3597,7 +3595,7 @@ begin
   Result := DynArrayLength(A) - 1;
 end;
 {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
-{$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+{$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
 procedure FreeObject(const item);
 begin
@@ -4314,7 +4312,7 @@ begin
 {$ENDIF}
 end;
 
-{$IFDEF RANGECHECKS_ON}{$RANGECHECKS OFF}{$ENDIF}
+{$R-}
 procedure TInitTable.InitInstance(instance: Pointer);
 var
   f: ^TInitializableField;
@@ -4348,7 +4346,7 @@ begin
   end;
 end;
 {$ENDIF}
-{$IFDEF RANGECHECKS_ON}{$RANGECHECKS ON}{$ENDIF}
+{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
 
 {$ENDREGION}
 

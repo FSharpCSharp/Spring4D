@@ -846,9 +846,9 @@ var
 begin
   Guard.CheckTrue(count >= 0, 'count');
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   node := fTree.FindNode(item);
   if Assigned(node) then
   begin
@@ -874,9 +874,9 @@ var
 begin
   if fCount > 0 then
   begin
-    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+    {$Q-}
     Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
     if Assigned(Notify) then
     begin
@@ -939,9 +939,9 @@ var
 begin
   Guard.CheckTrue(count >= 0, 'count');
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   node := fTree.FindNode(item);
   if Assigned(node) then
   begin
@@ -967,9 +967,9 @@ begin
   if count < 0 then
     raise Error.ArgumentOutOfRange('count');
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   if count = 0 then
     fTree.Delete(item)
   else

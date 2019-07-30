@@ -439,9 +439,9 @@ begin
   Result := Count;
   if (Result <> fCapacity) and not Assigned(Notify) then
   begin
-    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+    {$Q-}
     Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
     Inc(fCount);
     fItems[Result] := item;
   end
@@ -559,9 +559,9 @@ begin
 
   if not Assigned(Notify) then
   begin
-    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+    {$Q-}
     Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
     if OwnsObjects then
       FreeObject(fItems[index]);
@@ -577,9 +577,9 @@ var
 begin
   oldItem := fItems[index];
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fItems[index] := value;
 
   Notify(Self, oldItem, caRemoved);
@@ -636,9 +636,9 @@ begin
     listCount := Count;
   end;
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount);
   if index <> listCount then
   begin
@@ -697,9 +697,9 @@ begin
       if listCount + count > fCapacity then
         Grow(listCount + count);
 
-      {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+      {$Q-}
       Inc(fVersion);
-      {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
       if index < listCount then
       begin
@@ -754,9 +754,9 @@ begin
   if listCount + count > fCapacity then
     Grow(listCount + count);
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   if index <> listCount then
   begin
     if ItemType.HasWeakRef then
@@ -817,9 +817,9 @@ var
   arrayItem: PT;
   oldItem: T;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Dec(fCount);
   listCount := Count;
 
@@ -865,9 +865,9 @@ begin
       DeleteRangeInternal(0, listCount, True)
     else
     begin
-      {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+      {$Q-}
       Inc(fVersion);
-      {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
       Dec(fCount, listCount);
     end;
   end;
@@ -883,9 +883,9 @@ begin
   SetLength(oldItems, count);
   ItemType.Move(fItems, oldItems, index, 0, count);
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   tailCount := Self.Count - (index + count);
   if tailCount > 0 then
   begin
@@ -932,9 +932,9 @@ begin
     Exit;
   end;
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
   if ItemType.IsManaged then
     FinalizeArray(@fItems[index], TypeInfo(T), count);
@@ -958,9 +958,9 @@ end;
 
 procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   TArray.Sort<T>(fItems, comparer, index, count);
 
   Reset;
@@ -980,9 +980,9 @@ begin
 
   temp := fItems[currentIndex];
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
     ItemType.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
@@ -1042,9 +1042,9 @@ begin
 
   temp := fItems[index1];
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fItems[index1] := fItems[index2];
   fItems[index2] := temp;
 
@@ -1070,9 +1070,9 @@ begin
   if count = 0 then
     Exit;
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   TArray.Reverse<T>(fItems, index, count);
 
   Reset;
@@ -1127,9 +1127,9 @@ begin
     while (current < listCount) and match(fItems[current]) do
     begin
       if i = 0 then
-        {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+        {$Q-}
         Inc(fVersion);
-        {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+        {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
       if Assigned(Notify) then
         Notify(Self, fItems[current], action);
@@ -1205,9 +1205,9 @@ begin
   SetLength(Result, count);
   ItemType.Move(fItems, Result, index, 0, count);
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   tailCount := Self.Count - (index + count);
   if tailCount > 0 then
   begin
@@ -1494,9 +1494,9 @@ end;
 
 function TCollectionList<T>.Add(const item: T): Integer;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
   item.Collection := fCollection;
   Result := item.Index;
@@ -1525,9 +1525,9 @@ begin
 
   oldItem := T(fCollection.Items[index]);
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   oldItem.Collection := nil;
 
   DoNotify(oldItem, caRemoved);
@@ -1555,9 +1555,9 @@ begin
 
   SetLength(oldItems, count);
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   for i := count downto 1 do
   begin
     oldItems[count - i] := T(fCollection.Items[index]);
@@ -1589,9 +1589,9 @@ begin
 
   temp := T(fCollection.Items[index1]);
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fCollection.Items[index2].Index := index1;
   temp.Index := index2;
 
@@ -1621,9 +1621,9 @@ begin
 
   Result := T(fCollection.Items[index]);
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Result.Collection := nil;
 
   DoNotify(Result, caExtracted);
@@ -1738,9 +1738,9 @@ begin
   Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
 {$ENDIF}
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   item.Collection := fCollection;
   item.Index := index;
 
@@ -1803,9 +1803,9 @@ begin
   Guard.CheckRange((newIndex >= 0) and (newIndex < fCollection.Count), 'newIndex');
 {$ENDIF}
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fCollection.Items[currentIndex].Index := newIndex;
 
   DoNotify(T(fCollection.Items[newIndex]), caMoved);

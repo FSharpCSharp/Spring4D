@@ -28,7 +28,7 @@ unit Spring.VirtualClass;
 
 interface
 
-{$RANGECHECKS OFF}
+{$R-}
 
 uses
   Classes,

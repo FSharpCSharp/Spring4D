@@ -126,9 +126,9 @@ begin
       Find(key, entry);
     end;
 
-    {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+    {$Q-}
     Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
     fBuckets[entry.BucketIndex] := entry.ItemIndex or (entry.HashCode and fBucketHashCodeMask);
 
     Result := fItems + entry.ItemIndex * fItemSize;
@@ -155,9 +155,9 @@ begin
       Find(key, entry);
     end;
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
   fBuckets[entry.BucketIndex] := entry.ItemIndex or (entry.HashCode and fBucketHashCodeMask);
 
@@ -184,9 +184,9 @@ end;
 
 function THashTable.Delete(const entry: THashTableEntry): Pointer;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
   fBuckets[entry.BucketIndex] := UsedBucket;
 
@@ -198,9 +198,9 @@ end;
 
 procedure THashTable.Clear;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   fCount := 0;
   fItemCount := 0;
   fBuckets := nil;
@@ -229,9 +229,9 @@ end;
 
 procedure THashTable.IncrementVersion;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 end;
 
 procedure THashTable.Pack;
@@ -303,9 +303,9 @@ begin
 
   Assert(newCapacity >= fCount);
 
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
   newBucketCount := NextPowerOf2(newCapacity * 4 div 3 - 1); // 75% load factor
 

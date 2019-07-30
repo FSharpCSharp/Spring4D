@@ -2238,9 +2238,9 @@ procedure TCircularArrayBuffer<T>.AddToHead(const item: T);
 var
   index: Integer;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount);
 
   index := fHead;
@@ -2257,9 +2257,9 @@ procedure TCircularArrayBuffer<T>.AddToTail(const item: T);
 var
   index: Integer;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount);
 
   index := fTail;
@@ -2276,9 +2276,9 @@ var
   index: Integer;
   item: PT;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Dec(fCount);
 
   index := fHead;
@@ -2299,9 +2299,9 @@ var
   index: Integer;
   item: PT;
 begin
-  {$IFOPT Q+}{$DEFINE OVERFLOWCHECKS_OFF}{$Q-}{$ENDIF}
+  {$Q-}
   Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_OFF}{$UNDEF OVERFLOWCHECKS_OFF}{$Q+}{$ENDIF}
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Dec(fCount);
 
   index := fTail;
@@ -3041,7 +3041,7 @@ end;
 
 {$REGION 'TIteratorRec<T>'}
 
-class function TIteratorRec<T>.GetCurrent(const enumerator: IEnumerator; 
+class function TIteratorRec<T>.GetCurrent(const enumerator: IEnumerator;
   elementType: PTypeInfo): TValue;
 var
   current: T;
