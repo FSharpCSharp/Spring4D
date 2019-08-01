@@ -24,8 +24,6 @@
 
 program Spring.Tests;
 
-{$I Spring.Tests.inc}
-
 // Spring.TestBootstrap be the first unit in the uses clause since it specifies
 // some units that need to be set in given order for FMX
 uses
