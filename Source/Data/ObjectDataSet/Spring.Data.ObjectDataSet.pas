@@ -38,6 +38,12 @@ uses
   Spring.Data.VirtualDataSet;
 
 type
+  TRttiProperty = Rtti.TRttiProperty;
+  TObjectDataSet = class;
+
+  TAddFieldDefEvent = procedure(DataSet: TObjectDataSet;
+    prop: TRttiProperty; fieldDef: TFieldDef) of object;
+
   TObjectDataSet = class(TCustomVirtualDataSet)
   private type
     TIndexFieldInfo = record
@@ -64,6 +70,7 @@ type
     fAfterFilter: TDataSetNotifyEvent;
     fBeforeSort: TDataSetNotifyEvent;
     fAfterSort: TDataSetNotifyEvent;
+    fOnAddFieldDef: TAddFieldDefEvent;
 
     function GetSort: string;
     procedure SetSort(const value: string);
@@ -201,6 +208,7 @@ type
     property BeforePost;
     property BeforeRefresh;
     property BeforeScroll;
+    property OnAddFieldDef: TAddFieldDefEvent read fOnAddFieldDef write fOnAddFieldDef;
     property OnCalcFields;
     property OnDeleteError;
     property OnEditError;
@@ -848,6 +856,9 @@ begin
 
     if not prop.IsWritable then
       fieldDef.Attributes := fieldDef.Attributes + [DB.faReadOnly];
+
+    if Assigned(fOnAddFieldDef) then
+      fOnAddFieldDef(Self, prop, fieldDef);
   end;
 end;
 
