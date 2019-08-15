@@ -3048,7 +3048,7 @@ begin
   begin
     item := fEnumerator.Current;
     value := TValue.From(@item, TypeInfo(T));
-    current := value.AsType<TResult>;
+    value.AsType(TypeInfo(TResult), current);
   end;
 end;
 
@@ -3091,7 +3091,7 @@ begin
   begin
     item := fEnumerator.Current;
     value := TValue.From(@item, TypeInfo(T));
-    if value.TryAsType<TResult>(current) then
+    if value.TryAsType(TypeInfo(TResult), current) then
       Exit(True);
   end;
   Result := False;

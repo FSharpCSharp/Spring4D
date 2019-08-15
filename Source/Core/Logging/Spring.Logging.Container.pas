@@ -88,6 +88,7 @@ type
 implementation
 
 uses
+  Spring,
   Spring.Container.Registration,
   Spring.Logging.Controller;
 
@@ -161,8 +162,8 @@ end;
 procedure TLoggerResolver.EnsureConfiguration;
 begin
   if not Assigned(fConfiguration) then
-    fConfiguration := (Kernel as IKernelInternal).Resolve(
-      TypeInfo(TLoggingConfiguration)).AsType<TLoggingConfiguration>;
+    (Kernel as IKernelInternal).Resolve(TypeInfo(TLoggingConfiguration))
+      .AsType(TypeInfo(TLoggingConfiguration), fConfiguration);
 end;
 
 function TLoggerResolver.Resolve(const context: ICreationContext;

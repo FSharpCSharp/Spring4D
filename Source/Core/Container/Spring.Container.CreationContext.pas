@@ -108,7 +108,7 @@ var
   interfacedObject: TInterfacedObject;
 begin
   for instance in fPerResolveInstances.Values do
-    if instance.TryAsType<TInterfacedObject>(interfacedObject) and Assigned(interfacedObject) then
+    if instance.TryAsType(TypeInfo(TInterfacedObject), interfacedObject) and Assigned(interfacedObject) then
       AtomicDecrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
   inherited Destroy;
 end;
@@ -118,9 +118,9 @@ function TCreationContext.AddArgument(const argument: TValue): Integer;
 begin
   fLock.BeginWrite;
   try
-    if argument.IsType<TTypedValue> then
+    if argument.IsType(TypeInfo(TTypedValue)) then
       Result := fTypedArguments.Add(argument)
-    else if argument.IsType<TNamedValue> then
+    else if argument.IsType(TypeInfo(TNamedValue)) then
       Result := fNamedArguments.Add(argument)
     else
       Result := fArguments.Add(argument);
@@ -140,7 +140,7 @@ begin
   try
     fPerResolveInstances.Add(model, instance);
 {$IFNDEF AUTOREFCOUNT}
-    if instance.TryAsType<TInterfacedObject>(interfacedObject) and Assigned(interfacedObject) then
+    if instance.TryAsType(TypeInfo(TInterfacedObject), interfacedObject) and Assigned(interfacedObject) then
       AtomicIncrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
 {$ENDIF}
   finally

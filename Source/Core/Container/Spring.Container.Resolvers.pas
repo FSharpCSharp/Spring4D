@@ -271,7 +271,7 @@ begin
     Result := Kernel.Registry.HasDefault(dependency.TypeInfo)
   else if CanResolveFromArgument(context, dependency, argument) then
     Result := True
-  else if argument.TryAsType<TTypeKind>(Kind) and (kind = tkDynArray) then
+  else if argument.TryAsType(TypeInfo(TTypeKind), kind) and (kind = tkDynArray) then
     Result := Kernel.Registry.HasService(dependency.TypeInfo)
   else
   begin
@@ -428,7 +428,7 @@ begin
   factory :=
     function: T
     begin
-      Result := Kernel.Resolver.Resolve(context, dependencyModel, value).AsType<T>;
+      Kernel.Resolver.Resolve(context, dependencyModel, value).AsType(TypeInfo(T), Result);
     end;
 
   case lazyKind of

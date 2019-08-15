@@ -232,7 +232,7 @@ var
   value: TValue;
 begin
   value := GetServiceLocator.GetService(TypeInfo(T));
-  Result := value.AsType<T>;
+  value.AsType(TypeInfo(T), Result);
 end;
 
 function TServiceLocator.GetService<T>(const serviceName: string): T;
@@ -240,7 +240,7 @@ var
   value: TValue;
 begin
   value := GetServiceLocator.GetService(TypeInfo(T), serviceName);
-  Result := value.AsType<T>;
+  value.AsType(TypeInfo(T), Result);
 end;
 
 function TServiceLocator.GetService<T>(const args: array of TValue): T;
@@ -248,7 +248,7 @@ var
   value: TValue;
 begin
   value := GetServiceLocator.GetService(TypeInfo(T), args);
-  Result := value.AsType<T>;
+  value.AsType(TypeInfo(T), Result);
 end;
 
 function TServiceLocator.GetService<T>(const serviceName: string;
@@ -257,7 +257,7 @@ var
   value: TValue;
 begin
   value := GetServiceLocator.GetService(TypeInfo(T), serviceName, args);
-  Result := value.AsType<T>;
+  value.AsType(TypeInfo(T), Result);
 end;
 
 function TServiceLocator.GetAllServices(serviceType: PTypeInfo): TArray<TValue>;
@@ -273,7 +273,7 @@ begin
   services := GetServiceLocator.GetAllServices(TypeInfo(TServiceType));
   SetLength(Result, Length(services));
   for i := Low(Result) to High(Result) do
-    Result[i] := services[i].AsType<TServiceType>;
+    services[i].AsType(TypeInfo(TServiceType), Result[i]);
 end;
 
 function TServiceLocator.HasService(serviceType: PTypeInfo): Boolean;

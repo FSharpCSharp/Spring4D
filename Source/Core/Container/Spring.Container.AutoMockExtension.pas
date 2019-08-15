@@ -94,14 +94,14 @@ var
 begin
   if dependency.TargetType.IsGenericType
     and TryGetMockedType(dependency.TargetType, mockedType)
-    and mockedType.IsInterface and not mockedType.IsType<IInterface> then
+    and mockedType.IsInterface and not mockedType.IsType(TypeInfo(IInterface)) then
     Exit(True);
 
   if dependency.TargetType.IsInterface and not IsLazyType(dependency.TypeInfo) then
     if argument.IsEmpty then
       Exit(not fKernel.Registry.HasService(dependency.TypeInfo))
     else
-      if argument.IsType<string> then
+      if argument.IsString then
         Exit(not fKernel.Registry.HasService(dependency.TypeInfo, argument.AsString));
 
   Result := False;

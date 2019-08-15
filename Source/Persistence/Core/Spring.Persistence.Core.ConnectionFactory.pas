@@ -202,7 +202,7 @@ begin
       // do only simplest conversions
       case prop.PropertyType.TypeKind of
         tkEnumeration:
-          if prop.PropertyType.IsType<Boolean> then
+          if prop.PropertyType.IsType(TypeInfo(Boolean)) then
             value := StrToBool(jsonPair.JsonValue.Value);
         tkInteger: value := StrToInt(jsonPair.JsonValue.Value);
         tkInt64: value := StrToInt64(jsonPair.JsonValue.Value);

@@ -481,7 +481,9 @@ type
     ///   This method fixes the missing interface cast support of
     ///   TValue.AsType&lt;T&gt;.
     /// </remarks>
-    function AsType<T>: T;
+    function AsType<T>: T; overload;
+
+    procedure AsType(typeInfo: PTypeInfo; out target); overload;
 
     /// <summary>
     ///   Casts the currently stored value to another type.
@@ -546,6 +548,11 @@ type
     ///   Checks whether the stored value is an interface reference.
     /// </summary>
     function IsInterface: Boolean;
+
+    /// <summary>
+    ///   Checks whether the stored value is a boolean type.
+    /// </summary>
+    function IsBoolean: Boolean;
 
     /// <summary>
     ///   Checks whether the stored value is a float type.
@@ -3017,13 +3024,14 @@ function FormatValue(const value: TValue): string;
 
   function FormatRecord(const value: TValue): string;
   var
+    guid: TGUID;
     method: TRttiMethod;
     i: Integer;
     fields: TArray<TRttiField>;
   begin
     // handle TGUID explicitly
-    if value.TypeInfo = TypeInfo(TGUID) then
-      Exit(value.AsType<TGUID>.ToString);
+    if value.TryAsType(TypeInfo(TGUID), guid) then
+      Exit(guid.ToString);
 
     // use function ToString: string when available
     for method in value.TypeInfo.RttiType.GetMethods do
@@ -3061,11 +3069,11 @@ begin
   case value.Kind of
     tkFloat:
       if value.TypeInfo = TypeInfo(TDateTime) then
-        Result := DateTimeToStr(value.AsType<TDateTime>)
+        Result := DateTimeToStr(TValueData(value).FAsDouble)
       else if value.TypeInfo = TypeInfo(TDate) then
-        Result := DateToStr(value.AsType<TDate>)
+        Result := DateToStr(TValueData(value).FAsDouble)
       else if value.TypeInfo = TypeInfo(TTime) then
-        Result := TimeToStr(value.AsType<TTime>)
+        Result := TimeToStr(TValueData(value).FAsDouble)
       else
         Result := value.ToString;
     tkClass:
@@ -4487,7 +4495,7 @@ constructor TInitTable.TDefaultField<T>.Create(offset: Integer; const value: Var
 begin
   inherited Create;
   fOffset := offset;
-  fValue := TValue.FromVariant(value).AsType<T>; // TODO
+  TValue.FromVariant(value).AsType(TypeInfo(T), fValue); // TODO
 end;
 
 procedure TInitTable.TDefaultField<T>.InitializeValue(instance: Pointer);
@@ -4504,7 +4512,7 @@ constructor TInitTable.TDefaultProperty<T>.Create(propInfo: PPropInfo; const val
 begin
   inherited Create;
   fPropInfo := propInfo;
-  fValue := TValue.FromVariant(value).AsType<T>; // TODO
+  TValue.FromVariant(value).AsType(TypeInfo(T), fValue); // TODO
 end;
 
 class function TInitTable.GetCodePointer(instance: TObject; p: Pointer): Pointer;
@@ -4720,8 +4728,15 @@ end;
 function TValueHelper.AsType<T>: T;
 begin
   if not TryAsInterface(System.TypeInfo(T), Result) then
-  if not TryAsType<T>(Result) then
+  if not TryAsType(System.TypeInfo(T), Result) then
     Guard.RaiseInvalidTypeCast(TypeInfo, System.TypeInfo(T));
+end;
+
+procedure TValueHelper.AsType(typeInfo: PTypeInfo; out target);
+begin
+  if not TryAsInterface(typeInfo, target) then
+  if not TryAsType(typeInfo, target) then
+    Guard.RaiseInvalidTypeCast(Self.TypeInfo, typeInfo);
 end;
 
 function TValueHelper.Cast(typeInfo: PTypeInfo): TValue;
@@ -4796,11 +4811,14 @@ begin
 end;
 
 function EqualsInt2Float(const left, right: TValue): Boolean;
+var
+  valueSingle: Single;
+  valueDouble: Double;
 begin
-  if right.IsType<Single> then
-    Result := Math.SameValue(left.AsInteger, right.AsType<Single>)
-  else if right.IsType<Double> then
-    Result := Math.SameValue(left.AsInteger, right.AsType<Double>)
+  if right.TryAsType(TypeInfo(Single), valueSingle) then
+    Result := Math.SameValue(left.AsInteger, valueSingle)
+  else if right.TryAsType(TypeInfo(Double), valueDouble) then
+    Result := Math.SameValue(left.AsInteger, valueDouble)
   else
     Result := Math.SameValue(left.AsInteger, right.AsExtended);
 end;
@@ -4813,8 +4831,8 @@ end;
 function EqualsFloat2Int(const left, right: TValue): Boolean;
 begin
   case left.TypeData.FloatType of
-    ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsInteger);
-    ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsInteger);
+    ftSingle: Result := Math.SameValue(TValueData(left).FAsSingle, right.AsInteger);
+    ftDouble: Result := Math.SameValue(TValueData(left).FAsDouble, right.AsInteger);
   else
     Result := Math.SameValue(left.AsExtended, right.AsInteger);
   end;
@@ -4825,22 +4843,22 @@ begin
   case left.TypeData.FloatType of
     ftSingle:
       case right.TypeData.FloatType of
-        ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsType<Single>);
-        ftDouble: Result := Math.SameValue(left.AsType<Single>, right.AsType<Double>);
+        ftSingle: Result := Math.SameValue(TValueData(left).FAsSingle, TValueData(right).FAsSingle);
+        ftDouble: Result := Math.SameValue(TValueData(left).FAsSingle, TValueData(right).FAsDouble);
       else
-        Result := Math.SameValue(left.AsType<Single>, right.AsExtended);
+        Result := Math.SameValue(TValueData(left).FAsSingle, right.AsExtended);
       end;
     ftDouble:
       case right.TypeData.FloatType of
-        ftSingle: Result := Math.SameValue(left.AsType<Double>, right.AsType<Single>);
-        ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsType<Double>);
+        ftSingle: Result := Math.SameValue(TValueData(left).FAsDouble, TValueData(right).FAsSingle);
+        ftDouble: Result := Math.SameValue(TValueData(left).FAsDouble, TValueData(right).FAsDouble);
       else
-        Result := Math.SameValue(left.AsType<Double>, right.AsExtended);
+        Result := Math.SameValue(TValueData(left).FAsDouble, right.AsExtended);
       end;
   else
     case right.TypeData.FloatType of
-      ftSingle: Result := Math.SameValue(left.AsExtended, right.AsType<Single>);
-      ftDouble: Result := Math.SameValue(left.AsExtended, right.AsType<Double>);
+      ftSingle: Result := Math.SameValue(left.AsExtended, TValueData(right).FAsSingle);
+      ftDouble: Result := Math.SameValue(left.AsExtended, TValueData(right).FAsDouble);
     else
       Result := Math.SameValue(left.AsExtended, right.AsExtended);
     end;
@@ -4850,8 +4868,8 @@ end;
 function EqualsFloat2Int64(const left, right: TValue): Boolean;
 begin
   case left.TypeData.FloatType of
-    ftSingle: Result := Math.SameValue(left.AsType<Single>, right.AsInt64);
-    ftDouble: Result := Math.SameValue(left.AsType<Double>, right.AsInt64);
+    ftSingle: Result := Math.SameValue(TValueData(left).FAsSingle, right.AsInt64);
+    ftDouble: Result := Math.SameValue(TValueData(left).FAsDouble, right.AsInt64);
   else
     Result := Math.SameValue(left.AsExtended, right.AsInt64);
   end;
@@ -4863,11 +4881,14 @@ begin
 end;
 
 function EqualsInt64ToFloat(const left, right: TValue): Boolean;
+var
+  valueSingle: Single;
+  valueDouble: Double;
 begin
-  if right.IsType<Single> then
-    Result := Math.SameValue(left.AsInt64, right.AsType<Single>)
-  else if right.IsType<Double> then
-    Result := Math.SameValue(left.AsInt64, right.AsType<Double>)
+  if right.TryAsType(TypeInfo(Single), valueSingle) then
+    Result := Math.SameValue(left.AsInt64, valueSingle)
+  else if right.TryAsType(TypeInfo(Double), valueDouble) then
+    Result := Math.SameValue(left.AsInt64, valueDouble)
   else
     Result := Math.SameValue(left.AsInt64, right.AsExtended);
 end;
@@ -5343,11 +5364,11 @@ class function TValueHelper.FromFloat(typeInfo: PTypeInfo;
   value: Extended): TValue;
 begin
   case typeInfo.TypeData.FloatType of
-    ftSingle: Result := TValue.From<Single>(value);
-    ftDouble: Result := TValue.From<Double>(value);
-    ftExtended: Result := TValue.From<Extended>(value);
-    ftComp: Result := TValue.From<Comp>(value);
-    ftCurr: Result := TValue.From<Currency>(value);
+    ftSingle: Result := TValue.From(@value, System.TypeInfo(Single));
+    ftDouble: Result := TValue.From(@value, System.TypeInfo(Double));
+    ftExtended: Result := TValue.From(@value, System.TypeInfo(Extended));
+    ftComp: Result := TValue.From(@value, System.TypeInfo(Comp));
+    ftCurr: Result := TValue.From(@value, System.TypeInfo(Currency));
   end;
 end;
 
@@ -5409,15 +5430,15 @@ begin
     varDouble: Result := TVarData(value).VDouble;
     varCurrency: Result := TVarData(value).VCurrency;
 {$ELSE}
-    varSingle: Result := TValue.From<Single>(TVarData(value).VSingle);
-    varDouble: Result := TValue.From<Double>(TVarData(value).VDouble);
-    varCurrency: Result := TValue.From<Currency>(TVarData(value).VCurrency);
+    varSingle: Result := TValue.From(@TVarData(value).VSingle, System.TypeInfo(Single));
+    varDouble: Result := TValue.From(@TVarData(value).VDouble, System.TypeInfo(Double));
+    varCurrency: Result := TValue.From(@TVarData(value).VCurrency, System.TypeInfo(Currency));
 {$ENDIF}
-    varDate: Result := From<TDateTime>(TVarData(value).VDate);
+    varDate: Result := TValue.From(@TVarData(value).VDate, System.TypeInfo(TDateTime));
     varOleStr: Result := string(TVarData(value).VOleStr);
-    varDispatch: Result := From<IDispatch>(IDispatch(TVarData(value).VDispatch));
-    varError: Result := From<HRESULT>(TVarData(value).VError);
-    varUnknown: Result := From<IInterface>(IInterface(TVarData(value).VUnknown));
+    varDispatch: Result := From(@TVarData(value).VDispatch, System.TypeInfo(IDispatch));
+    varError: Result := From(@TVarData(value).VError, System.TypeInfo(HRESULT));
+    varUnknown: Result := From(@TVarData(value).VUnknown, System.TypeInfo(IInterface));
     varByte: Result := TVarData(value).VByte;
     varWord: Result := TVarData(value).VWord;
     varLongWord: Result := TVarData(value).VLongWord;
@@ -5425,7 +5446,7 @@ begin
 {$IFDEF DELPHIXE4_UP}
     varUInt64: Result := TVarData(value).VUInt64;
 {$ELSE}
-    varUInt64: Result := TValue.From<UInt64>(TVarData(value).VUInt64);
+    varUInt64: Result := TValue.From(@TVarData(value).VUInt64, System.TypeInfo(UInt64));
 {$ENDIF}
 {$IFNDEF NEXTGEN}
     varString: Result := string(AnsiString(TVarData(value).VString));
@@ -5491,7 +5512,7 @@ begin
 {$IFEND}
     vtCurrency: Result := value.VCurrency^;
     vtVariant: Result := TValue.FromVariant(value.VVariant^);
-    vtInterface: Result := TValue.From<IInterface>(IInterface(value.VInterface));
+    vtInterface: Result := TValue.From(@value.VInterface, System.TypeInfo(IInterface));
 {$IF Declared(WideString)}
     vtWideString: Result := WideString(value.VWideString);
 {$IFEND}
@@ -5542,6 +5563,11 @@ end;
 function TValueHelper.GetValueType: TRttiType;
 begin
   Result := TypeInfo.RttiType;
+end;
+
+function TValueHelper.IsBoolean: Boolean;
+begin
+  Result := IsType(System.TypeInfo(Boolean));
 end;
 
 function TValueHelper.IsFloat: Boolean;
@@ -5755,6 +5781,7 @@ function TValueHelper.ToVariant: Variant;
   function TryConvertRecordToVariant(var returnValue: Variant): Boolean;
   var
     value: TValue;
+    guid: TGUID;
   begin
     if IsNullable(TypeInfo) and TryGetNullableValue(value) then
     begin
@@ -5770,7 +5797,8 @@ function TValueHelper.ToVariant: Variant;
 
     if TypeInfo = System.TypeInfo(TGUID) then
     begin
-      returnValue := AsType<TGUID>.ToString;
+      AsType(System.TypeInfo(TGUID), guid);
+      returnValue := guid.ToString;
       Exit(True);
     end;
 
@@ -5783,7 +5811,7 @@ begin
   Result := Null;
   case Kind of
     tkEnumeration:
-      if IsType<Boolean> then
+      if IsBoolean then
         Exit(AsBoolean)
       else
         Exit(AsOrdinal);
@@ -5791,7 +5819,7 @@ begin
       if (TypeInfo = System.TypeInfo(TDateTime))
         or (TypeInfo = System.TypeInfo(TDate))
         or (TypeInfo = System.TypeInfo(TTime)) then
-        Exit(AsType<TDateTime>)
+        Exit(TValueData(Self).FAsDouble)
       else if TypeInfo = System.TypeInfo(Currency) then
         Exit(AsCurrency)
       else
@@ -5830,7 +5858,6 @@ begin
     Result := True
   else
   begin
-    typeData := typeInfo.TypeData;
     if Kind = tkClass then
     begin
 {$IFDEF AUTOREFCOUNT}
@@ -5838,6 +5865,7 @@ begin
 {$ELSE}
       obj := TObject(TValueData(Self).FAsObject);
 {$ENDIF}
+      typeData := typeInfo.TypeData;
       Exit(obj.GetInterface(typeData.Guid, Intf));
     end;
     Result := False;
@@ -5853,7 +5881,7 @@ begin
     end;
   end;
   if Result then
-    IInterface(Intf) := AsInterface;
+    TValueData(Self).FValueData.ExtractRawData(@Intf);
 end;
 
 function TValueHelper.TryAsType(typeInfo: PTypeInfo; out target): Boolean;
@@ -5996,19 +6024,19 @@ begin
   begin
     Result := TryStrToDateTime(s, d, formatSettings);
     if Result then
-      value := TValue.From<TDateTime>(d);
+      value := TValue.From(@d, TypeInfo(TDateTime));
   end else
   if target = TypeInfo(TDate) then
   begin
     Result := TryStrToDate(s, d, formatSettings);
     if Result then
-      value := TValue.From<TDate>(d);
+      value := TValue.From(@d, TypeInfo(TDate));
   end else
   if target = TypeInfo(TTime) then
   begin
     Result := TryStrToTime(s, d, formatSettings);
     if Result then
-      value := TValue.From<TTime>(d);
+      value := TValue.From(@d, TypeInfo(TTime));
   end else
   begin
     Result := TryStrToFloat(s, f, formatSettings);
@@ -6106,7 +6134,7 @@ begin
   if TVarData(v).VType <> varBoolean then
     Exit(False);
 
-  temp := TValue.From<Boolean>(TVarData(v).VBoolean);
+  temp := TValue.From(@TVarData(v).VBoolean, TypeInfo(Boolean));
   Result := temp.TryCast(target, value);
 end;
 
@@ -6440,7 +6468,10 @@ begin
     case Kind of
       tkRecord{$IF Declared(tkMRecord)}, tkMRecord{$IFEND}:
         if TypeInfo = System.TypeInfo(TValue) then
-          Exit(AsType<TValue>.TryConvert(targetType, targetValue));
+        begin
+          AsType(System.TypeInfo(TValue), value);
+          Exit(value.TryConvert(targetType, targetValue));
+        end;
     end;
 
 {$IFNDEF DELPHIXE2_UP}
@@ -6452,7 +6483,7 @@ begin
       Exit(True);
 
     Result := Assigned(fValueConverterCallback)
-      and fValueConverterCallback(Self, targetType, targetValue, TValue.From(formatSettings));
+      and fValueConverterCallback(Self, targetType, targetValue, TValue.From(@formatSettings, System.TypeInfo(TFormatSettings)));
   end;
 end;
 
@@ -6811,12 +6842,12 @@ end;
 
 class operator TNamedValue.Implicit(const value: TNamedValue): TValue;
 begin
-  Result := TValue.From(value);
+  Result := TValue.From(@value, TypeInfo(TNamedValue));
 end;
 
 class operator TNamedValue.Implicit(const value: TValue): TNamedValue;
 begin
-  Result := value.AsType<TNamedValue>;
+  value.AsType(TypeInfo(TNamedValue), Result);
 end;
 
 {$ENDREGION}
@@ -6850,7 +6881,7 @@ end;
 
 class operator TTypedValue.Implicit(const value: TValue): TTypedValue;
 begin
-  Result := value.AsType<TTypedValue>;
+  value.AsType(System.TypeInfo(TTypedValue), Result);
 end;
 
 {$ENDREGION}
@@ -7318,7 +7349,7 @@ begin
   if not VarIsNullOrEmpty(value) then
   begin
     v := TValue.FromVariant(value);
-    fValue := v.AsType<T>;
+    v.AsType(TypeInfo(T), fValue);
     fHasValue := Nullable.HasValue;
   end
   else
@@ -7467,7 +7498,7 @@ begin
   if not VarIsNullOrEmpty(value) then
   begin
     v := TValue.FromVariant(value);
-    Result.fValue := v.AsType<T>;
+    v.AsType(TypeInfo(T), Result.fValue);
     Result.fHasValue := Nullable.HasValue;
   end
   else
@@ -7482,7 +7513,7 @@ begin
   if not VarIsNullOrEmpty(value) then
   begin
     v := TValue.FromVariant(value);
-    Result.fValue := v.AsType<T>;
+    v.AsType(TypeInfo(T), Result.fValue);
     Result.fHasValue := Nullable.HasValue;
   end
   else
@@ -8682,15 +8713,15 @@ class operator Tuple<T1, T2>.Implicit(
   const values: Tuple<T1, T2>): TArray<TValue>;
 begin
   SetLength(Result, 2);
-  Result[0] := TValue.From<T1>(values.Value1);
-  Result[1] := TValue.From<T2>(values.Value2);
+  Result[0] := TValue.From(@values.Value1, TypeInfo(T1));
+  Result[1] := TValue.From(@values.Value2, TypeInfo(T2));
 end;
 
 class operator Tuple<T1, T2>.Implicit(
   const values: TArray<TValue>): Tuple<T1, T2>;
 begin
-  Result.fValue1 := values[0].AsType<T1>;
-  Result.fValue2 := values[1].AsType<T2>;
+  values[0].AsType(TypeInfo(T1), Result.fValue1);
+  values[1].AsType(TypeInfo(T2), Result.fValue2);
 end;
 
 class operator Tuple<T1, T2>.Implicit(
@@ -8699,9 +8730,9 @@ var
   value: TValue;
 begin
   value := TValue.FromVarRec(values[0]);
-  Result.fValue1 := value.AsType<T1>;
+  value.AsType(TypeInfo(T1), Result.fValue1);
   value := TValue.FromVarRec(values[1]);
-  Result.fValue2 := value.AsType<T2>;
+  value.AsType(TypeInfo(T2), Result.fValue2);
 end;
 
 class operator Tuple<T1, T2>.NotEqual(const left,
@@ -8753,9 +8784,9 @@ class operator Tuple<T1, T2, T3>.Implicit(
   const values: Tuple<T1, T2, T3>): TArray<TValue>;
 begin
   SetLength(Result, 3);
-  Result[0] := TValue.From<T1>(values.Value1);
-  Result[1] := TValue.From<T2>(values.Value2);
-  Result[2] := TValue.From<T3>(values.Value3);
+  Result[0] := TValue.From(@values.Value1, TypeInfo(T1));
+  Result[1] := TValue.From(@values.Value2, TypeInfo(T2));
+  Result[2] := TValue.From(@values.Value3, TypeInfo(T3));
 end;
 
 class operator Tuple<T1, T2, T3>.Implicit(
@@ -8768,9 +8799,9 @@ end;
 class operator Tuple<T1, T2, T3>.Implicit(
   const values: TArray<TValue>): Tuple<T1, T2, T3>;
 begin
-  Result.fValue1 := values[0].AsType<T1>;
-  Result.fValue2 := values[1].AsType<T2>;
-  Result.fValue3 := values[2].AsType<T3>;
+  values[0].AsType(TypeInfo(T1), Result.fValue1);
+  values[1].AsType(TypeInfo(T2), Result.fValue2);
+  values[2].AsType(TypeInfo(T3), Result.fValue3);
 end;
 
 class operator Tuple<T1, T2, T3>.Implicit(
@@ -8779,11 +8810,11 @@ var
   value: TValue;
 begin
   value := TValue.FromVarRec(values[0]);
-  Result.fValue1 := value.AsType<T1>;
+  value.AsType(TypeInfo(T1), Result.fValue1);
   value := TValue.FromVarRec(values[1]);
-  Result.fValue2 := value.AsType<T2>;
+  value.AsType(TypeInfo(T2), Result.fValue2);
   value := TValue.FromVarRec(values[2]);
-  Result.fValue3 := value.AsType<T3>;
+  value.AsType(TypeInfo(T3), Result.fValue3);
 end;
 
 class operator Tuple<T1, T2, T3>.NotEqual(const left,
@@ -8848,10 +8879,10 @@ class operator Tuple<T1, T2, T3, T4>.Implicit(
   const values: Tuple<T1, T2, T3, T4>): TArray<TValue>;
 begin
   SetLength(Result, 4);
-  Result[0] := TValue.From<T1>(values.Value1);
-  Result[1] := TValue.From<T2>(values.Value2);
-  Result[2] := TValue.From<T3>(values.Value3);
-  Result[3] := TValue.From<T4>(values.Value4);
+  Result[0] := TValue.From(@values.Value1, TypeInfo(T1));
+  Result[1] := TValue.From(@values.Value2, TypeInfo(T2));
+  Result[2] := TValue.From(@values.Value3, TypeInfo(T3));
+  Result[3] := TValue.From(@values.Value4, TypeInfo(T4));
 end;
 
 class operator Tuple<T1, T2, T3, T4>.Implicit(
@@ -8872,10 +8903,10 @@ end;
 class operator Tuple<T1, T2, T3, T4>.Implicit(
   const values: TArray<TValue>): Tuple<T1, T2, T3, T4>;
 begin
-  Result.fValue1 := values[0].AsType<T1>;
-  Result.fValue2 := values[1].AsType<T2>;
-  Result.fValue3 := values[2].AsType<T3>;
-  Result.fValue4 := values[3].AsType<T4>;
+  values[0].AsType(TypeInfo(T1), Result.fValue1);
+  values[1].AsType(TypeInfo(T2), Result.fValue2);
+  values[2].AsType(TypeInfo(T3), Result.fValue3);
+  values[3].AsType(TypeInfo(T4), Result.fValue4);
 end;
 
 class operator Tuple<T1, T2, T3, T4>.Implicit(
@@ -8884,13 +8915,13 @@ var
   value: TValue;
 begin
   value := TValue.FromVarRec(values[0]);
-  Result.fValue1 := value.AsType<T1>;
+  value.AsType(TypeInfo(T1), Result.fValue1);
   value := TValue.FromVarRec(values[1]);
-  Result.fValue2 := value.AsType<T2>;
+  value.AsType(TypeInfo(T2), Result.fValue2);
   value := TValue.FromVarRec(values[2]);
-  Result.fValue3 := value.AsType<T3>;
+  value.AsType(TypeInfo(T3), Result.fValue3);
   value := TValue.FromVarRec(values[3]);
-  Result.fValue4 := value.AsType<T4>;
+  value.AsType(TypeInfo(T4), Result.fValue4);
 end;
 
 class operator Tuple<T1, T2, T3, T4>.NotEqual(const left,

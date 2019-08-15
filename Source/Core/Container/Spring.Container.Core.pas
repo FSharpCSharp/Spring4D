@@ -627,14 +627,14 @@ var
 begin
   Guard.CheckNotNull(not value.IsEmpty, 'value');
 
-  if ((refCounting = TRefCounting.Unknown) and value.IsType<TInterfacedObject>)
+  if ((refCounting = TRefCounting.Unknown) and value.IsType(TypeInfo(TInterfacedObject)))
     or (refCounting = TRefCounting.True) then
     value.AsObject.GetInterface(IInterface, lifetimeWatcher)
   else
     if value.Kind = tkInterface then
       lifetimeWatcher := value.AsInterface
     else
-      if value.TryAsType<TComponent>(component) then
+      if value.TryAsType(TypeInfo(TComponent), component) then
       begin
         componentHolder := TComponentHolder.Create(@fValue);
         componentHolder.FreeNotification(component);

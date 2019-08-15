@@ -445,8 +445,11 @@ class function TArg.IsAny<T>(const condition: Predicate<T>): T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
+    var
+      argValue: T;
     begin
-      Result := condition(arg.AsType<T>);
+      arg.AsType(TypeInfo(T), argValue);
+      Result := condition(argValue);
     end);
 end;
 
@@ -457,8 +460,11 @@ begin
   comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
+    var
+      argValue: T;
     begin
-      Result := comparer.Equals(arg.AsType<T>, value);
+      arg.AsType(TypeInfo(T), argValue);
+      Result := comparer.Equals(argValue, value);
     end);
 end;
 
@@ -481,8 +487,11 @@ begin
   capturedValues := TArray.Copy<T>(values);
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
+    var
+      argValue: T;
     begin
-      Result := TArray.Contains<T>(capturedValues, arg.AsType<T>);
+      arg.AsType(TypeInfo(T), argValue);
+      Result := TArray.Contains<T>(capturedValues, argValue);
     end);
 end;
 
@@ -490,8 +499,11 @@ class function TArg.IsIn<T>(const values: IEnumerable<T>): T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
+    var
+      argValue: T;
     begin
-      Result := values.Contains(arg.AsType<T>);
+      arg.AsType(TypeInfo(T), argValue);
+      Result := values.Contains(argValue);
     end);
 end;
 
@@ -504,15 +516,15 @@ begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
     var
-      value: T;
+      argValue: T;
     begin
-      value := arg.AsType<T>;
+      arg.AsType(TypeInfo(T), argValue);
       if rangeKind = TRangeKind.Exclusive then
-        Result := (comparer.Compare(value, lowValue) > 0)
-          and (comparer.Compare(value, highValue) < 0)
+        Result := (comparer.Compare(argValue, lowValue) > 0)
+          and (comparer.Compare(argValue, highValue) < 0)
       else
-        Result := (comparer.Compare(value, lowValue) >= 0)
-          and (comparer.Compare(value, highValue) <= 0);
+        Result := (comparer.Compare(argValue, lowValue) >= 0)
+          and (comparer.Compare(argValue, highValue) <= 0);
     end);
 end;
 
@@ -532,8 +544,11 @@ begin
   capturedValues := TArray.Copy<T>(values);
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
+    var
+      argValue: T;
     begin
-      Result := not TArray.Contains<T>(capturedValues, arg.AsType<T>);
+      arg.AsType(TypeInfo(T), argValue);
+      Result := not TArray.Contains<T>(capturedValues, argValue);
     end);
 end;
 
@@ -553,8 +568,11 @@ class function TArg.IsNotIn<T>(const values: IEnumerable<T>): T;
 begin
   Result := TMatcherFactory.CreateMatcher<T>(
     function(const arg: TValue): Boolean
+    var
+      argValue: T;
     begin
-      Result := not values.Contains(arg.AsType<T>);
+      arg.AsType(TypeInfo(T), argValue);
+      Result := not values.Contains(argValue);
     end);
 end;
 

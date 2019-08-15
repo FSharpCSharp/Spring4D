@@ -1291,7 +1291,7 @@ function TFloatToStringConverter.DoConvertTo(const value: TValue;
 var
   format: string;
 begin
-  if not parameter.IsEmpty and parameter.TryAsType<string>(format) then
+  if not parameter.IsEmpty and parameter.TryAsType(TypeInfo(string), format) then
   begin
     case targetTypeInfo.Kind of
       tkString, tkUString:
@@ -1423,7 +1423,7 @@ function TCurrencyToStringConverter.DoConvertTo(const value: TValue;
 var
   format: string;
 begin
-  if not parameter.IsEmpty and parameter.TryAsType<string>(format) then
+  if not parameter.IsEmpty and parameter.TryAsType(TypeInfo(string), format) then
   begin
     case targetTypeInfo.Kind of
       tkString, tkUString:
@@ -1470,7 +1470,7 @@ function TDateTimeToStringConverter.DoConvertTo(const value: TValue;
 var
   format: string;
 begin
-  if not parameter.IsEmpty and parameter.TryAsType<string>(format) then
+  if not parameter.IsEmpty and parameter.TryAsType(TypeInfo(string), format) then
   begin
     case targetTypeInfo.Kind of
       tkString, tkUString:
@@ -1506,7 +1506,7 @@ function TStringToDateTimeConverter.DoConvertTo(const value: TValue;
 var
   format: string;
 begin
-  if not parameter.IsEmpty and parameter.TryAsType<string>(format) then
+  if not parameter.IsEmpty and parameter.TryAsType(TypeInfo(string), format) then
     Result := TValue.From<TDateTime>(StrToDateTimeFmt(value.AsString, format))
   else
     Result := TValue.From<TDateTime>(StrToDateTime(value.AsString));
@@ -1533,7 +1533,7 @@ function TDateToStringConverter.DoConvertTo(const value: TValue;
 var
   format: TFormatSettings;
 begin
-  if not parameter.IsEmpty and parameter.TryAsType<TFormatSettings>(format) then
+  if not parameter.IsEmpty and parameter.TryAsType(TypeInfo(TFormatSettings), format) then
   begin
     case targetTypeInfo.Kind of
       tkString, tkUString:
@@ -1569,7 +1569,7 @@ function TStringToDateConverter.DoConvertTo(const value: TValue;
 var
   format: TFormatSettings;
 begin
-  if not parameter.IsEmpty and parameter.TryAsType<TFormatSettings>(format) then
+  if not parameter.IsEmpty and parameter.TryAsType(TypeInfo(TFormatSettings), format) then
     Result := TValue.From<TDate>(StrToDate(value.AsString, format))
   else
     Result := TValue.From<TDate>(StrToDate(value.AsString));
@@ -1585,7 +1585,7 @@ function TTimeToStringConverter.DoConvertTo(const value: TValue;
 var
   format: TFormatSettings;
 begin
-  if not parameter.IsEmpty and parameter.TryAsType<TFormatSettings>(format) then
+  if not parameter.IsEmpty and parameter.TryAsType(TypeInfo(TFormatSettings), format) then
   begin
     case targetTypeInfo.Kind of
       tkString, tkUString:
@@ -1621,7 +1621,7 @@ function TStringToTimeConverter.DoConvertTo(const value: TValue;
 var
   format: TFormatSettings;
 begin
-  if not parameter.IsEmpty and parameter.TryAsType<TFormatSettings>(format) then
+  if not parameter.IsEmpty and parameter.TryAsType(TypeInfo(TFormatSettings), format) then
     Result := TValue.From<TTime>(StrToTime(value.AsString, format))
   else
     Result := TValue.From<TTime>(StrToTime(value.AsString));
@@ -1745,7 +1745,7 @@ function TInterfaceToInterfaceConverter.DoConvertTo(const value: TValue;
     if instance.IsEmpty then Exit(False);
     if instance.IsObject then
       Result := instance.AsObject.GetInterface(guid, intf)
-    else if instance.TryAsType<IInterface>(localInterface) then
+    else if instance.TryAsType(TypeInfo(IInterface), localInterface) then
       Result := localInterface.QueryInterface(guid, intf) = S_OK
     else
       Result := False;

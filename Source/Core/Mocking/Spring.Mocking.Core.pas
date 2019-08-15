@@ -359,7 +359,7 @@ end;
 
 function TMock<T>.GetInstance: T;
 begin
-  Result := fProxy.AsType<T>;
+  fProxy.AsType(System.TypeInfo(T), Result);
 end;
 
 function TMock<T>.Executes: IWhen<T>;

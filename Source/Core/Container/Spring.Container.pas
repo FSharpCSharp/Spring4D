@@ -495,7 +495,7 @@ var
   value: TValue;
 begin
   value := Resolve(TypeInfo(T), arguments);
-  Result := value.AsType<T>;
+  value.AsType(TypeInfo(T), Result);
 end;
 
 function TContainer.Resolve<T>(const serviceName: string): T;
@@ -503,7 +503,7 @@ var
   value: TValue;
 begin
   value := Resolve(serviceName, []);
-  Result := value.AsType<T>;
+  value.AsType(TypeInfo(T), Result);
 end;
 
 function TContainer.Resolve<T>(const serviceName: string;
@@ -512,7 +512,7 @@ var
   value: TValue;
 begin
   value := Resolve(serviceName, arguments);
-  Result := value.AsType<T>;
+  value.AsType(TypeInfo(T), Result);
 end;
 
 function TContainer.Resolve(serviceType: PTypeInfo): TValue;
@@ -567,7 +567,7 @@ begin
   values := ResolveAll(TypeInfo(TServiceType));
   SetLength(Result, Length(values));
   for i := Low(values) to High(values) do
-    Result[i] := TValueArray(values)[i].AsType<TServiceType>;
+    TValueArray(values)[i].AsType(TypeInfo(TServiceType), Result[i]);
 end;
 
 function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
