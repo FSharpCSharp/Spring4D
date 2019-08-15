@@ -503,7 +503,7 @@ begin
   Result := TMatcherFactory.CreateMatcher<string>(
     function(const arg: TValue): Boolean
     begin
-      Result := regex.IsMatch(pattern);
+      Result := regex.IsMatch(arg.AsString);
     end);
 end;
 

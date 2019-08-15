@@ -44,6 +44,7 @@ type
     procedure TestVariant;
     procedure TestDynArray;
     procedure TestRecord;
+    procedure TestRegex;
 
     procedure ReturnsMultipleValues;
   end;
@@ -278,6 +279,17 @@ begin
   mock.Setup.Returns(42).When.Method(Arg.IsAny<TRec>);
   CheckEquals(42, mock.Instance.Method(rec));
   mock.Received(1).Method(Arg.IsAny<TRec>);
+  Pass;
+end;
+
+procedure TParameterMatchingTests.TestRegex;
+var
+  mock: Mock<IMockTest>;
+begin
+  mock.Instance.Test1(0, 'foo');
+  mock.Instance.Test1(0, 'bar');
+  mock.Instance.Test1(0, 'baz');
+  mock.Received(2).Test1(Arg.IsAny<Integer>, Arg.IsRegex('(foo|bar)'));
   Pass;
 end;
 
