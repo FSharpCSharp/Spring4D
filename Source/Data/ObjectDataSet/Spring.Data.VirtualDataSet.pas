@@ -60,14 +60,14 @@ type
     BookmarkFlag: TBookmarkFlag;
   end;
 
-  TCustomVirtualDataSet = class;
+  TBaseVirtualDataSet = class;
 
-  TChangeRecordEvent = procedure(Sender: TCustomVirtualDataSet; Index: Integer) of object;
-  TGetFieldValueEvent = procedure(Sender: TCustomVirtualDataSet;
+  TChangeRecordEvent = procedure(Sender: TBaseVirtualDataSet; Index: Integer) of object;
+  TGetFieldValueEvent = procedure(Sender: TBaseVirtualDataSet;
     Field: TField; Index: Integer; var Value: Variant) of object;
-  TGetRecordCountEvent = procedure(Sender: TCustomVirtualDataSet; var Count: Integer) of object;
+  TGetRecordCountEvent = procedure(Sender: TBaseVirtualDataSet; var Count: Integer) of object;
 
-  TCustomVirtualDataSet = class(TDataSet)
+  TBaseVirtualDataSet = class(TDataSet)
   private
     fRowBufSize: Integer;
     fFilterBuffer: TRecordBuffer;
@@ -94,7 +94,7 @@ type
       TBlobStream = class(TMemoryStream)
       strict private
         fField: TBlobField;
-        fDataSet: TCustomVirtualDataSet;
+        fDataSet: TBaseVirtualDataSet;
         fFieldNo: Integer;
         fModified: Boolean;
         fData: Variant;
@@ -227,7 +227,7 @@ type
     property OnUpdateRecord: TChangeRecordEvent read fOnUpdateRecord write fOnUpdateRecord;
   end;
 
-  TVirtualDataSet = class(TCustomVirtualDataSet)
+  TVirtualDataSet = class(TBaseVirtualDataSet)
   published
     property Active;
     property Filtered;
@@ -439,9 +439,9 @@ end;
 {$IFEND}
 
 
-{$REGION 'TCustomVirtualDataSet'}
+{$REGION 'TBaseVirtualDataSet'}
 
-constructor TCustomVirtualDataSet.Create(AOwner: TComponent);
+constructor TBaseVirtualDataSet.Create(AOwner: TComponent);
 var
   comparer: IEqualityComparer<string>;
 begin
@@ -453,13 +453,13 @@ begin
   fFilterCache := TCollections.CreateDictionary<string,Variant>(50, comparer);
 end;
 
-destructor TCustomVirtualDataSet.Destroy;
+destructor TBaseVirtualDataSet.Destroy;
 begin
   inherited Destroy;
   fIndexList.Free;
 end;
 
-function TCustomVirtualDataSet.AllocRecordBuffer: TRecordBuffer;
+function TBaseVirtualDataSet.AllocRecordBuffer: TRecordBuffer;
 begin
   if not (csDestroying in ComponentState) then
   begin
@@ -471,19 +471,19 @@ begin
 end;
 
 {$IFDEF NEXTGEN}
-function TCustomVirtualDataSet.AllocRecBuf: TRecBuf;
+function TBaseVirtualDataSet.AllocRecBuf: TRecBuf;
 begin
   Result := AllocRecordBuffer;
 end;
 {$ENDIF}
 
-function TCustomVirtualDataSet.BookmarkValid(Bookmark: TBookmark): Boolean;
+function TBaseVirtualDataSet.BookmarkValid(Bookmark: TBookmark): Boolean;
 begin
   Result := Assigned(Bookmark) and Assigned(PObject(Bookmark)^)
     and fIndexList.Contains(PObject(Bookmark)^);
 end;
 
-function TCustomVirtualDataSet.CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer;
+function TBaseVirtualDataSet.CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer;
 const
   RetCodes: array[Boolean, Boolean] of ShortInt = ((2, -1), (1, 0));
 begin
@@ -497,12 +497,12 @@ begin
       Result := 0;
 end;
 
-function TCustomVirtualDataSet.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
+function TBaseVirtualDataSet.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
 begin
   Result := TBlobStream.Create(Field as TBlobField, Mode);
 end;
 
-procedure TCustomVirtualDataSet.DataEvent(Event: TDataEvent;
+procedure TBaseVirtualDataSet.DataEvent(Event: TDataEvent;
   Info: {$IFDEF DELPHIXE2_UP}NativeInt{$ELSE}LongInt{$ENDIF});
 begin
   case Event of
@@ -514,25 +514,25 @@ begin
   inherited DataEvent(Event, Info);
 end;
 
-procedure TCustomVirtualDataSet.DoDeleteRecord(Index: Integer);
+procedure TBaseVirtualDataSet.DoDeleteRecord(Index: Integer);
 begin
   if Assigned(fOnDeleteRecord) then
     fOnDeleteRecord(Self, Index);
 end;
 
-procedure TCustomVirtualDataSet.DoFilterRecord(var Accept: Boolean);
+procedure TBaseVirtualDataSet.DoFilterRecord(var Accept: Boolean);
 begin
   OnFilterRecord(Self, Accept);
 end;
 
-procedure TCustomVirtualDataSet.DoGetFieldValue(Field: TField; Index: Integer;
+procedure TBaseVirtualDataSet.DoGetFieldValue(Field: TField; Index: Integer;
   var Value: Variant);
 begin
   if Assigned(fOnGetFieldValue) then
     fOnGetFieldValue(Self, Field, Index, Value);
 end;
 
-procedure TCustomVirtualDataSet.DoOnNewRecord;
+procedure TBaseVirtualDataSet.DoOnNewRecord;
 begin
   fModifiedFields.Clear;
 
@@ -545,7 +545,7 @@ begin
   inherited DoOnNewRecord;
 end;
 
-procedure TCustomVirtualDataSet.DoPostRecord(Index: Integer;
+procedure TBaseVirtualDataSet.DoPostRecord(Index: Integer;
   Append: Boolean); //FI:O804
 begin
   case State of
@@ -558,20 +558,20 @@ begin
   end
 end;
 
-procedure TCustomVirtualDataSet.FreeRecordBuffer(var Buffer: TRecordBuffer);
+procedure TBaseVirtualDataSet.FreeRecordBuffer(var Buffer: TRecordBuffer);
 begin
   Finalize(PVariantList(Buffer + SizeOf(TArrayRecInfo))^, Fields.Count);
   FreeMem(Pointer(Buffer));
 end;
 
 {$IFDEF NEXTGEN}
-procedure TCustomVirtualDataSet.FreeRecBuf(var Buffer: TRecBuf);
+procedure TBaseVirtualDataSet.FreeRecBuf(var Buffer: TRecBuf);
 begin
   FreeRecordBuffer(Buffer);
 end;
 {$ENDIF}
 
-function TCustomVirtualDataSet.GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean;
+function TBaseVirtualDataSet.GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean;
 begin
   Pointer(RecBuf) := nil;
   case State of
@@ -590,19 +590,19 @@ begin
   Result := Pointer(RecBuf) <> nil;
 end;
 
-function TCustomVirtualDataSet.GetBlobFieldData(FieldNo: Integer;
+function TBaseVirtualDataSet.GetBlobFieldData(FieldNo: Integer;
   var Buffer: TBlobByteData): Integer;
 begin
   Result := inherited GetBlobFieldData(FieldNo, Buffer);
 end;
 
 {$IFDEF DELPHIXE4_UP}
-procedure TCustomVirtualDataSet.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
+procedure TBaseVirtualDataSet.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
   PObject(Data)^ := fIndexList[PArrayRecInfo(Buffer).Index];
 end;
 
-procedure TCustomVirtualDataSet.SetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
+procedure TBaseVirtualDataSet.SetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
   if PArrayRecInfo(Buffer).BookmarkFlag in [bfCurrent, bfInserted] then
     PArrayRecInfo(Buffer).Index := fIndexList.IndexOf(PObject(@Data[0])^)
@@ -613,12 +613,12 @@ end;
 
 {$IFNDEF NEXTGEN}
 {$IFDEF DELPHIXE3_UP}
-procedure TCustomVirtualDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
+procedure TBaseVirtualDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
 begin
   PObject(Data)^ := fIndexList[PArrayRecInfo(Buffer).Index];
 end;
 
-procedure TCustomVirtualDataSet.SetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
+procedure TBaseVirtualDataSet.SetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark);
 begin
   if PArrayRecInfo(Buffer).BookmarkFlag in [bfCurrent, bfInserted] then
     PArrayRecInfo(Buffer).Index := fIndexList.IndexOf(PObject(@Data[0])^)
@@ -627,12 +627,12 @@ begin
 end;
 {$ENDIF}
 
-procedure TCustomVirtualDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
+procedure TBaseVirtualDataSet.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   PObject(Data)^ := fIndexList[PArrayRecInfo(Buffer).Index];
 end;
 
-procedure TCustomVirtualDataSet.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
+procedure TBaseVirtualDataSet.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   if PArrayRecInfo(Buffer).BookmarkFlag in [bfCurrent, bfInserted] then
     PArrayRecInfo(Buffer).Index := fIndexList.IndexOf(PObject(Data)^)
@@ -641,17 +641,17 @@ begin
 end;
 {$ENDIF}
 
-function TCustomVirtualDataSet.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
+function TBaseVirtualDataSet.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
 begin
   Result := PArrayRecInfo(Buffer).BookmarkFlag;
 end;
 
-function TCustomVirtualDataSet.GetCanModify: Boolean;
+function TBaseVirtualDataSet.GetCanModify: Boolean;
 begin
   Result := not fReadOnly;
 end;
 
-function TCustomVirtualDataSet.GetFieldData(Field: TField;
+function TBaseVirtualDataSet.GetFieldData(Field: TField;
   {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
 var
@@ -928,13 +928,13 @@ begin
     VarToBuffer;
 end;
 
-function TCustomVirtualDataSet.GetFieldData(Field: TField;
+function TBaseVirtualDataSet.GetFieldData(Field: TField;
   {$IFDEF DELPHIXE4_UP}var{$ENDIF} Buffer: TValueBuffer): Boolean;
 begin
   Result := GetFieldData(Field, Buffer, True);
 end;
 
-function TCustomVirtualDataSet.GetIndex: Integer;
+function TBaseVirtualDataSet.GetIndex: Integer;
 var
   recBuf: TRecordBuffer;
 begin
@@ -944,7 +944,7 @@ begin
     Result := PArrayRecInfo(recBuf).Index;
 end;
 
-function TCustomVirtualDataSet.GetRecNo: Integer;
+function TBaseVirtualDataSet.GetRecNo: Integer;
 var
   recBuf: TRecordBuffer;
 begin
@@ -954,7 +954,7 @@ begin
     Result := PArrayRecInfo(recBuf).Index + 1;
 end;
 
-function TCustomVirtualDataSet.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
+function TBaseVirtualDataSet.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
   DoCheck: Boolean): TGetResult;
 var
   accept: Boolean;
@@ -983,25 +983,25 @@ begin
   RestoreState(tmp);
 end;
 
-function TCustomVirtualDataSet.GetRecordCount: Integer;
+function TBaseVirtualDataSet.GetRecordCount: Integer;
 begin
   Result := -1;
   if Assigned(fOnGetRecordCount) then
     fOnGetRecordCount(Self, Result);
 end;
 
-function TCustomVirtualDataSet.GetRecordSize: Word;
+function TBaseVirtualDataSet.GetRecordSize: Word;
 begin
   Result := SizeOf(TArrayRecInfo);
 end;
 
-procedure TCustomVirtualDataSet.InternalAddRecord(
+procedure TBaseVirtualDataSet.InternalAddRecord(
   Buffer: {$IFDEF DELPHIXE3_UP}TRecordBuffer{$ELSE}Pointer{$ENDIF}; Append: Boolean);
 begin
   DoPostRecord(Current, Append);
 end;
 
-procedure TCustomVirtualDataSet.InternalClose;
+procedure TBaseVirtualDataSet.InternalClose;
 begin
   fInternalOpen := False;
   BindFields(False);
@@ -1017,14 +1017,14 @@ begin
   end;
 end;
 
-procedure TCustomVirtualDataSet.InternalCreateFields;
+procedure TBaseVirtualDataSet.InternalCreateFields;
 begin
   if {$IF CompilerVersion >= 27}(FieldOptions.AutoCreateMode <> acExclusive)
     or not (lcPersistent in Fields.LifeCycles){$ELSE}DefaultFields{$IFEND} then
     raise EVirtualDataSetException.CreateRes(@SPersistentFieldsRequired);
 end;
 
-procedure TCustomVirtualDataSet.InternalDelete;
+procedure TBaseVirtualDataSet.InternalDelete;
 var
   recBuf: TRecordBuffer;
 begin
@@ -1032,7 +1032,7 @@ begin
     DoDeleteRecord(PArrayRecInfo(recBuf).Index);
 end;
 
-procedure TCustomVirtualDataSet.InternalEdit;
+procedure TBaseVirtualDataSet.InternalEdit;
 begin
   fModifiedFields.Clear;
 
@@ -1042,12 +1042,12 @@ begin
     Finalize(PVariantList(fOldValueBuffer + SizeOf(TArrayRecInfo))^, Fields.Count);
 end;
 
-procedure TCustomVirtualDataSet.InternalFirst;
+procedure TBaseVirtualDataSet.InternalFirst;
 begin
   fCurrent := -1;
 end;
 
-function TCustomVirtualDataSet.InternalGetRecord(Buffer: TRecordBuffer;
+function TBaseVirtualDataSet.InternalGetRecord(Buffer: TRecordBuffer;
   GetMode: TGetMode; DoCheck: Boolean): TGetResult;
 var
   recCount: Integer;
@@ -1100,19 +1100,19 @@ begin
   end;
 end;
 
-procedure TCustomVirtualDataSet.InternalGotoBookmark(
+procedure TBaseVirtualDataSet.InternalGotoBookmark(
   Bookmark: {$IFDEF DELPHIXE3_UP}TBookmark{$ELSE}Pointer{$ENDIF});
 begin
   fCurrent := fIndexList.IndexOf(PObject(Bookmark)^);
 end;
 
-procedure TCustomVirtualDataSet.InternalHandleException;
+procedure TBaseVirtualDataSet.InternalHandleException;
 begin
   if Assigned(Classes.ApplicationHandleException) then
     Classes.ApplicationHandleException(Self);
 end;
 
-procedure TCustomVirtualDataSet.InternalInitFieldDefs;
+procedure TBaseVirtualDataSet.InternalInitFieldDefs;
 
   procedure InitFieldDefsFromFields(const fields: TFields;
     const fieldDefs: TFieldDefs);
@@ -1147,7 +1147,7 @@ begin
   InitFieldDefsFromFields(Fields, FieldDefs);
 end;
 
-procedure TCustomVirtualDataSet.InternalInitRecord(Buffer: TRecordBuffer);
+procedure TBaseVirtualDataSet.InternalInitRecord(Buffer: TRecordBuffer);
 var
   i: Integer;
 begin
@@ -1155,12 +1155,12 @@ begin
     PVariantList(Buffer + SizeOf(TArrayRecInfo))[i] := Null;
 end;
 
-procedure TCustomVirtualDataSet.InternalLast;
+procedure TBaseVirtualDataSet.InternalLast;
 begin
   fCurrent := RecordCount;
 end;
 
-procedure TCustomVirtualDataSet.InternalOpen;
+procedure TBaseVirtualDataSet.InternalOpen;
 begin
   fInternalOpen := True;
   fCurrent := -1;
@@ -1176,7 +1176,7 @@ begin
   SetRecBufSize;
 end;
 
-procedure TCustomVirtualDataSet.InternalPost;
+procedure TBaseVirtualDataSet.InternalPost;
 var
   recBuf: TRecordBuffer;
 begin
@@ -1190,28 +1190,28 @@ begin
     DoPostRecord(PArrayRecInfo(recBuf).Index, False);
 end;
 
-procedure TCustomVirtualDataSet.InternalRefresh;
+procedure TBaseVirtualDataSet.InternalRefresh;
 begin
   fIndexList.Rebuild;
 end;
 
-procedure TCustomVirtualDataSet.InternalSetToRecord(Buffer: TRecordBuffer);
+procedure TBaseVirtualDataSet.InternalSetToRecord(Buffer: TRecordBuffer);
 begin
   if PArrayRecInfo(Buffer).BookmarkFlag in [bfCurrent, bfInserted] then
     fCurrent := PArrayRecInfo(Buffer).Index;
 end;
 
-function TCustomVirtualDataSet.IsCursorOpen: Boolean;
+function TBaseVirtualDataSet.IsCursorOpen: Boolean;
 begin
   Result := fInternalOpen;
 end;
 
-function TCustomVirtualDataSet.IsFiltered: Boolean;
+function TBaseVirtualDataSet.IsFiltered: Boolean;
 begin
   Result := Filtered and ((Trim(Filter) <> '') or Assigned(OnFilterRecord));
 end;
 
-function TCustomVirtualDataSet.Locate(const KeyFields: string; const KeyValues: Variant;
+function TBaseVirtualDataSet.Locate(const KeyFields: string; const KeyValues: Variant;
   Options: TLocateOptions): Boolean;
 begin
   DoBeforeScroll;
@@ -1223,7 +1223,7 @@ begin
   end;
 end;
 
-function TCustomVirtualDataSet.Lookup(const KeyFields: string; const KeyValues: Variant;
+function TBaseVirtualDataSet.Lookup(const KeyFields: string; const KeyValues: Variant;
   const ResultFields: string): Variant;
 begin
   Result := Null;
@@ -1231,22 +1231,22 @@ begin
     Result := FieldValues[ResultFields];
 end;
 
-procedure TCustomVirtualDataSet.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
+procedure TBaseVirtualDataSet.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
 begin
   PArrayRecInfo(Buffer).BookmarkFlag := Value;
 end;
 
-procedure TCustomVirtualDataSet.SetCurrent(value: Integer);
+procedure TBaseVirtualDataSet.SetCurrent(value: Integer);
 begin
   fCurrent := value;
 end;
 
-procedure TCustomVirtualDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer);
+procedure TBaseVirtualDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer);
 begin
   SetFieldData(Field, Buffer, True);
 end;
 
-procedure TCustomVirtualDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean);
+procedure TBaseVirtualDataSet.SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean);
 
   procedure BcdToOleVariant(const Bcd: TBcd; var Data: OleVariant);
   var
@@ -1423,7 +1423,7 @@ begin
     DataEvent(deFieldChange, NativeInt(Field));
 end;
 
-procedure TCustomVirtualDataSet.SetFieldData(const field: TField;
+procedure TBaseVirtualDataSet.SetFieldData(const field: TField;
   const buffer: Variant);
 var
   recBuf: TRecordBuffer;
@@ -1451,7 +1451,7 @@ begin
     DataEvent(deFieldChange, NativeInt(field));
 end;
 
-procedure TCustomVirtualDataSet.SetFiltered(Value: Boolean);
+procedure TBaseVirtualDataSet.SetFiltered(Value: Boolean);
 begin
   if Filtered <> Value then
     if Active then
@@ -1474,19 +1474,19 @@ begin
       inherited SetFiltered(Value);
 end;
 
-procedure TCustomVirtualDataSet.SetIndex(const value: Integer);
+procedure TBaseVirtualDataSet.SetIndex(const value: Integer);
 begin
   Guard.CheckIndex(RecordCount, Value);
 
   fCurrent := value;
 end;
 
-procedure TCustomVirtualDataSet.SetRecBufSize;
+procedure TBaseVirtualDataSet.SetRecBufSize;
 begin
   fRowBufSize := SizeOf(TArrayRecInfo) + (Fields.Count * SizeOf(Variant));
 end;
 
-procedure TCustomVirtualDataSet.SetRecNo(Value: Integer);
+procedure TBaseVirtualDataSet.SetRecNo(Value: Integer);
 begin
   CheckBrowseMode;
   Value := Min(max(Value, 1), RecordCount);
@@ -1505,13 +1505,13 @@ end;
 
 {$REGION 'TBlobStream'}
 
-constructor TCustomVirtualDataSet.TBlobStream.Create(Field: TBlobField;
+constructor TBaseVirtualDataSet.TBlobStream.Create(Field: TBlobField;
   Mode: TBlobStreamMode);
 begin
   inherited Create;
   fField := Field;
   fFieldNo := fField.FieldNo - 1;
-  fDataSet := fField.Dataset as TCustomVirtualDataSet;
+  fDataSet := fField.Dataset as TBaseVirtualDataSet;
   fFieldData := Null;
   fData := Null;
   if Mode <> bmRead then
@@ -1527,14 +1527,14 @@ begin
     ReadBlobData;
 end;
 
-destructor TCustomVirtualDataSet.TBlobStream.Destroy;
+destructor TBaseVirtualDataSet.TBlobStream.Destroy;
 begin
   if fModified then
     fDataSet.SetFieldData(fField, fData);
   inherited Destroy;
 end;
 
-procedure TCustomVirtualDataSet.TBlobStream.ReadBlobData;
+procedure TBaseVirtualDataSet.TBlobStream.ReadBlobData;
 var
   buffer: TBytes;
   recBuf: TRecordBuffer;
@@ -1568,7 +1568,7 @@ begin
   end;
 end;
 
-function TCustomVirtualDataSet.TBlobStream.Realloc(
+function TBaseVirtualDataSet.TBlobStream.Realloc(
   var NewCapacity: LongInt): Pointer;
 
   procedure VarAlloc(var V: Variant; Field: TFieldType);
@@ -1632,13 +1632,13 @@ begin
   end;
 end;
 
-procedure TCustomVirtualDataSet.TBlobStream.Truncate;
+procedure TBaseVirtualDataSet.TBlobStream.Truncate;
 begin
   Clear;
   fModified := True;
 end;
 
-function TCustomVirtualDataSet.TBlobStream.Write(const Buffer;
+function TBaseVirtualDataSet.TBlobStream.Write(const Buffer;
   Count: LongInt): LongInt;
 begin
   Result := inherited Write(Buffer, Count);
