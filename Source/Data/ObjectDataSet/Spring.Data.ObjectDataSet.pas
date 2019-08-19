@@ -44,7 +44,7 @@ type
   TAddFieldDefEvent = procedure(DataSet: TObjectDataSet;
     prop: TRttiProperty; fieldDef: TFieldDef) of object;
 
-  TObjectDataSet = class(TCustomVirtualDataSet)
+  TObjectDataSet = class(TBaseVirtualDataSet)
   private type
     TIndexFieldInfo = record
       Field: TField;
