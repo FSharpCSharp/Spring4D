@@ -2303,7 +2303,8 @@ type
     function GallopRight(key: Pointer; items: Pointer; len, hint: Integer): Integer;
     class procedure MergeLo<T>(left: Pointer<T>.P; leftLen: Integer; right: Pointer<T>.P; rightLen: Integer; ts: PTimSort); static;
     class procedure MergeHi<T>(left: Pointer<T>.P; leftLen: Integer; right: Pointer<T>.P; rightLen: Integer; ts: PTimSort); static;
-    function EnsureTmpCapacity(neededCapacity: NativeInt): Pointer;
+    function EnsureTmpCapacity(neededCapacity: Integer): Pointer; inline;
+    procedure Grow(neededCapacity: NativeInt);
   public
     class procedure Sort(items: Pointer; const comparer: IComparer<Pointer>; index, count: Integer); overload; static;
     class procedure Sort<T>(items: Pointer; const comparer: IComparer<T>; index, count: Integer); overload;static;
@@ -9351,6 +9352,19 @@ begin
   Result := ofs;
 end;
 
+function TTimSort.EnsureTmpCapacity(neededCapacity: Integer): Pointer;
+begin
+  if DynArrayLength(fTmp) < neededCapacity then
+    Grow(neededCapacity);
+  Result := fTmp;
+end;
+
+procedure TTimSort.Grow(neededCapacity: NativeInt);
+begin
+  neededCapacity := NextPowerOf2(neededCapacity);
+  DynArraySetLength(fTmp, fArrayTypeInfo, 1, @neededCapacity);
+end;
+
 class procedure TTimSort.MergeLo<T>(left: Pointer<T>.P; leftLen: Integer; right: Pointer<T>.P; rightLen: Integer; ts: PTimSort);
 label
   copyLeft, copyRight, gallopLeft, gallopRight;
@@ -9634,16 +9648,6 @@ copyLeft:
   else
     System.Move(left[1], dest[1], leftLen * SizeOf(T));
   dest^ := right^;
-end;
-
-function TTimSort.EnsureTmpCapacity(neededCapacity: NativeInt): Pointer;
-begin
-  if DynArrayLength(fTmp) < neededCapacity then
-  begin
-    neededCapacity := NextPowerOf2(neededCapacity);
-    DynArraySetLength(fTmp, fArrayTypeInfo, 1, @neededCapacity);
-  end;
-  Result := fTmp;
 end;
 
 class procedure TTimSort.Sort(items: Pointer; const comparer: IComparer<Pointer>; index, count: Integer);
