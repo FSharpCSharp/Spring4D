@@ -203,6 +203,7 @@ type
     iOSDevice32,
     iOSDevice64,
     Android,
+    Android64,
     Linux64
   );
 
@@ -464,6 +465,7 @@ const // luckily, the compiler file names have not changed over the Delphi versi
     'dcciosarm.exe',
     'dcciosarm64.exe',
     'dccaarm.exe',
+    'dccaarm64.exe',
     'dcclinux64.exe'
   );
 var
