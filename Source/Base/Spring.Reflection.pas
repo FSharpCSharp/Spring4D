@@ -799,31 +799,17 @@ begin
 end;
 
 class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
-const
-  DelegatePrefixStrings: array[0..5] of string = (
-    'TFunc<', 'TProc<', 'TPredicate<', 'Action<', 'Func<', 'Predicate<');
-  DelegatePrefixNonGenericStrings: array[0..1] of string = (
-    'TProc', 'Action');
+type
+  TIntfFlagEx = (ifHasGuid, ifDispInterface, ifDispatch, ifMethodInfo, ifUnused, ifUnused2, ifMethodReference);
+  TIntfFlagsEx = set of TIntfFlagEx;
 var
-  name: string;
-  prefix: string;
-  rttiType: TRttiType;
-  method: TRttiMethod;
   typeData: PTypeData;
 begin
   while Assigned(typeInfo) and (typeInfo.Kind = tkInterface) do
   begin
-    name := typeInfo.TypeName;
-    for prefix in DelegatePrefixNonGenericStrings do
-      if SameText(prefix, name) then
-        Exit(True);
-    for prefix in DelegatePrefixStrings do
-      if StartsText(prefix, name) then
-        Exit(True);
-    rttiType := TType.GetType(typeInfo);
-    if rttiType.Methods.TryGetSingle(method) and (method.Name = 'Invoke') then
-      Exit(True);
     typeData := GetTypeData(typeInfo);
+    if Assigned(typeData) and (ifMethodReference in TIntfFlagsEx(typeData.IntfFlags)) then
+      Exit(True);
     if Assigned(typeData) and Assigned(typeData.IntfParent) then
       typeInfo := typeData.IntfParent^
     else
