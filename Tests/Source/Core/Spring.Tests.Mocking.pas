@@ -45,6 +45,8 @@ type
     procedure TestDynArray;
     procedure TestRecord;
     procedure TestRegex;
+    procedure TestEnum;
+    procedure TestSet;
 
     procedure ReturnsMultipleValues;
   end;
@@ -84,6 +86,9 @@ uses
   Spring;
 
 type
+  TTestEnum = (One, Two, Three);
+  TTestSet = set of Byte;
+
   {$M+}
   IMockTest = interface
     procedure Test1(i: Integer; const s: string);
@@ -93,6 +98,8 @@ type
     procedure Test5(const s1: string; var x: Integer; o: ITest; const s2: string);
     procedure TestVariant(const v: Variant);
     procedure TestDynArray(const v: TArray<string>);
+    procedure TestEnum(const value: TTestEnum);
+    procedure TestSet(const n: Integer; const value: TTestSet; const i: Integer = 0);
     function GetNext: Integer;
   end;
 
@@ -269,6 +276,17 @@ begin
   Pass;
 end;
 
+procedure TParameterMatchingTests.TestEnum;
+var
+  mock: Mock<IMockTest>;
+begin
+  mock.Setup.Executes.When.TestEnum(Arg.IsAny<TTestEnum>);
+  mock.Instance.TestEnum(One);
+  mock.Received(1).TestEnum(One);
+  mock.Received(0).TestEnum(Two);
+  Pass;
+end;
+
 procedure TParameterMatchingTests.TestRecord;
 var
   mock: Mock<TFoo>;
@@ -290,6 +308,17 @@ begin
   mock.Instance.Test1(0, 'bar');
   mock.Instance.Test1(0, 'baz');
   mock.Received(2).Test1(Arg.IsAny<Integer>, Arg.IsRegex('(foo|bar)'));
+  Pass;
+end;
+
+procedure TParameterMatchingTests.TestSet;
+var
+  mock: Mock<IMockTest>;
+begin
+  mock.Setup.Executes.When.TestSet(Arg.IsAny<Integer>, Arg.IsAny<TTestSet>, Arg.IsAny<Integer>);
+  mock.Instance.TestSet(0, [1]);
+  mock.Received(1).TestSet(0, [1]);
+  mock.Received(0).TestSet(0, [2,3]);
   Pass;
 end;
 

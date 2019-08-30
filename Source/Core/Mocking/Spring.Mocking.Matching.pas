@@ -120,7 +120,7 @@ end;
 
 function GetIndexOrdinal(const v: TValue): Integer;
 begin
-  Result := v.AsOrdinal;
+  Result := PByte(v.GetReferenceToRawData)^;
 end;
 
 function GetIndexFloat(const v: TValue): Integer;
