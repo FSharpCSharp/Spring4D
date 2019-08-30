@@ -35,7 +35,7 @@ uses
   Spring.Reactive;
 
 type
-  TInfiniteIterator<T> = class(TIterator<T>)
+  TInfiniteIterator<T> = class(TIterator<T>, IEnumerable<T>)
   private
     fValue: T;
   protected

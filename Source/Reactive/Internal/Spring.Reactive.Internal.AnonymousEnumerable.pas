@@ -34,12 +34,12 @@ uses
   Spring.Collections.Base;
 
 type
-  TAnonymousEnumerable<T> = class(TEnumerableBase<T>)
+  TAnonymousEnumerable<T> = class(TEnumerableBase<T>, IEnumerable<T>)
   private
     fGetEnumerator: Func<IEnumerator<T>>;
   public
     constructor Create(const getEnumerator: Func<IEnumerator<T>>);
-    function GetEnumerator: IEnumerator<T>; override;
+    function GetEnumerator: IEnumerator<T>;
   end;
 
 implementation
