@@ -1002,16 +1002,23 @@ var
   e: IEnumerator<T>;
   i: Integer;
 begin
-  e := IEnumerable<T>(this).GetEnumerator;
-  i := 0;
-
-  while e.MoveNext do
+  if TType.Kind<T> = tkRecord then
   begin
-    if not ((i < Length(values)) and Equals(e.Current, values[i])) then
-      Exit(False);
-    Inc(i);
+    Result := EqualsTo(TEnumerable.From<T>(values));
+  end
+  else
+  begin
+    e := IEnumerable<T>(this).GetEnumerator;
+    i := 0;
+
+    while e.MoveNext do
+    begin
+      if not ((i < Length(values)) and Equals(e.Current, values[i])) then
+        Exit(False);
+      Inc(i);
+    end;
+    Result := i = Length(values);
   end;
-  Result := i = Length(values);
 end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;
@@ -1034,13 +1041,11 @@ begin
             fEquals := method.CodeAddress;
         end;
         if Assigned(fEquals) then
-        begin
           comparer := TEqualityComparer<T>.Construct(fEquals, nil);
-          Exit;
-        end;
       end;
     end;
-    comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
+    if not Assigned(comparer) then
+      comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
     Result := IEnumerable<T>(this).EqualsTo(values, comparer);
   end;
 end;
