@@ -87,7 +87,8 @@ uses
 
 type
   TTestEnum = (One, Two, Three);
-  TTestSet = set of Byte;
+  ShortEnum = 0..31;
+  TTestSet = set of {$IFNDEF DELPHIX_RIO_UP}ShortEnum{$ELSE}Byte{$ENDIF}; // see RSP-16153
 
   {$M+}
   IMockTest = interface
