@@ -5544,7 +5544,7 @@ end;
 class procedure TCollections.CreateSortedListObject(comparer: Pointer;
   ownsObjects: Boolean; var result; elementType: Pointer);
 begin
-  IList<TObject>(result) := TFoldedSortedList<TObject>.Create(elementType, IComparer<TObject>(comparer));
+  IList<TObject>(result) := TFoldedSortedList<TObject>.Create(elementType, IComparer<TObject>(comparer), ownsObjects);
 end;
 
 class function TCollections.CreateSortedObjectList<T>(

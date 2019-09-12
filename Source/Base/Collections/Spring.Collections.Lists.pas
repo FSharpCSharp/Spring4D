@@ -334,7 +334,8 @@ type
   protected
     function GetElementType: PTypeInfo; override;
   public
-    constructor Create(elementType: PTypeInfo; const comparer: IComparer<T>);
+    constructor Create(elementType: PTypeInfo; const comparer: IComparer<T>;
+      ownsObjects: Boolean = False);
   end;
 
   TObservableObjectList = class(TFoldedList<TObject>, INotifyPropertyChanged)
@@ -2007,10 +2008,11 @@ end;
 {$REGION 'TFoldedSortedList<T>'}
 
 constructor TFoldedSortedList<T>.Create(elementType: PTypeInfo;
-  const comparer: IComparer<T>);
+  const comparer: IComparer<T>; ownsObjects: Boolean);
 begin
   fElementType := elementType;
   inherited Create(comparer);
+  SetOwnsObjects(ownsObjects);
 end;
 
 function TFoldedSortedList<T>.GetElementType: PTypeInfo;
