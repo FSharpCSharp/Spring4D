@@ -594,7 +594,7 @@ begin
 
     HandleSourceAttribute(suite, method, parameters, arguments);
 
-    if Length(parameters) = 0 then
+    if parameters = nil then
       suite.AddTest(testClass.Create(method, nil) as ITest)
     else if IsTestMethod(method, parameters) then
       InternalInvoke(suite, method, parameters, arguments);

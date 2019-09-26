@@ -905,7 +905,7 @@ end;
 
 function TBuffer.GetIsEmpty: Boolean;
 begin
-  Result := Length(fBytes) = 0;
+  Result := fBytes = nil;
 end;
 
 function TBuffer.GetMemory: PByte;

@@ -336,7 +336,7 @@ begin
       if not CanResolve(context, dependencies[i], arguments[i]) then
         Exit(False);
   end
-  else if Length(arguments) = 0 then
+  else if arguments = nil then
   begin
     for i := Low(dependencies) to High(dependencies) do
       if not CanResolve(context, dependencies[i], nil) then

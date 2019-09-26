@@ -309,7 +309,7 @@ var
 begin
   methods := model.ComponentType.GetMethods;
 
-  if Length(methods) = 0 then
+  if methods = nil then
     raise ERegistrationException.CreateResFmt(@SUnsupportedFactoryType, [
       model.ComponentTypeName]);
 

@@ -3026,7 +3026,7 @@ function FormatValue(const value: TValue): string;
     for method in value.TypeInfo.RttiType.GetMethods do
       if SameText(method.Name, 'ToString')
         and (method.MethodKind = mkFunction)
-        and (Length(method.GetParameters) = 0)
+        and (method.GetParameters = nil)
         and (method.ReturnType.TypeKind = tkUString) then
         Exit(method.Invoke(value, []).AsString);
 
@@ -8588,7 +8588,7 @@ begin
     if not method.IsConstructor then
       Continue;
 
-    if Length(method.GetParameters) = 0 then
+    if method.GetParameters = nil then
     begin
       Result := method.CodeAddress;
       ConstructorCache.AddOrSetValue(classInfo, Result);

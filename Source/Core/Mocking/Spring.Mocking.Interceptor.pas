@@ -273,7 +273,7 @@ begin
     else
       if fBehavior = TMockBehavior.Strict then
       begin
-        if Length(invocation.Arguments) = 0 then
+        if invocation.Arguments = nil then
           raise EMockException.CreateResFmt(@SUnexpectedMethodCall, [invocation.Method.ToString])
         else
           raise EMockException.CreateResFmt(@SUnexpectedMethodCallArgs, [invocation.Method.ToString,

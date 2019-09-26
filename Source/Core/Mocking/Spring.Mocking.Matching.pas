@@ -154,7 +154,7 @@ var
   fields: TArray<TRttiField>;
 begin
   fields := TType.GetType(v.TypeInfo).GetFields;
-  if Length(fields) = 0 then
+  if fields = nil then
     raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [v.TypeInfo.TypeName]);
   Result := TMatcherFactory.GetIndex(fields[0].GetValue(v.GetReferenceToRawData));
 end;
@@ -232,7 +232,7 @@ var
   fields: TArray<TRttiField>;
 begin
   fields := typeInfo.RttiType.GetFields;
-  if Length(fields) = 0 then
+  if fields = nil then
     raise ENotSupportedException.CreateResFmt(@STypeNotSupported, [typeInfo.TypeName]);
   TMatcherFactory.SetIndex(fields[0].FieldType.Handle, index, Result);
 end;
