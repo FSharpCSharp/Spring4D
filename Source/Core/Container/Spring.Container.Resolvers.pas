@@ -89,10 +89,7 @@ type
 
   TLazyResolver = class(TSubDependencyResolverBase)
   private
-    function InternalResolveClass(const context: ICreationContext;
-      const dependency: TDependencyModel;
-      const argument: TValue; lazyKind: TLazyKind): TValue;
-    function InternalResolveInterface(const context: ICreationContext;
+    function InternalResolve<T>(const context: ICreationContext;
       const dependency: TDependencyModel;
       const argument: TValue; lazyKind: TLazyKind): TValue;
   public
@@ -418,49 +415,26 @@ begin
   end;
 end;
 
-function TLazyResolver.InternalResolveClass(const context: ICreationContext;
+function TLazyResolver.InternalResolve<T>(const context: ICreationContext;
   const dependency: TDependencyModel; const argument: TValue;
   lazyKind: TLazyKind): TValue;
 var
   dependencyModel: TDependencyModel;
   value: TValue;
-  factory: Func<TObject>;
+  factory: Func<T>;
 begin
   dependencyModel := dependency;
   value := argument;
   factory :=
-    function: TObject
+    function: T
     begin
-      Result := Kernel.Resolver.Resolve(context, dependencyModel, value).AsObject;
+      Result := Kernel.Resolver.Resolve(context, dependencyModel, value).AsType<T>;
     end;
 
   case lazyKind of
-    lkFunc: Result := TValue.From<Func<TObject>>(factory);
-    lkRecord: Result := TValue.From<Lazy<TObject>>(Lazy<TObject>.Create(factory));
-    lkInterface: Result := TValue.From<ILazy<TObject>>(TLazy<TObject>.Create(factory));
-  end;
-end;
-
-function TLazyResolver.InternalResolveInterface(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue;
-  lazyKind: TLazyKind): TValue;
-var
-  dependencyModel: TDependencyModel;
-  value: TValue;
-  factory: Func<IInterface>;
-begin
-  dependencyModel := dependency;
-  value := argument;
-  factory :=
-    function: IInterface
-    begin
-      Result := Kernel.Resolver.Resolve(context, dependencyModel, value).AsInterface;
-    end;
-
-  case lazyKind of
-    lkFunc: Result := TValue.From<Func<IInterface>>(factory);
-    lkRecord: Result := TValue.From<Lazy<IInterface>>(Lazy<IInterface>.Create(factory));
-    lkInterface: Result := TValue.From<ILazy<IInterface>>(TLazy<IInterface>.Create(factory));
+    lkFunc: Result := TValue.From<Func<T>>(factory);
+    lkRecord: Result := TValue.From<Lazy<T>>(Lazy<T>.Create(factory));
+    lkInterface: Result := TValue.From<ILazy<T>>(TLazy<T>.Create(factory));
   end;
 end;
 
@@ -491,9 +465,15 @@ begin
   end;
   try
     case targetType.TypeKind of
-      tkClass: Result := InternalResolveClass(
+      tkClass: Result := InternalResolve<TObject>(
         context, dependencyModel, argument, lazyKind);
-      tkInterface: Result := InternalResolveInterface(
+      tkInterface: Result := InternalResolve<IInterface>(
+        context, dependencyModel, argument, lazyKind);
+      tkUString: Result := InternalResolve<string>(
+        context, dependencyModel, argument, lazyKind);
+      tkInteger: Result := InternalResolve<Integer>(
+        context, dependencyModel, argument, lazyKind);
+      tkInt64: Result := InternalResolve<Int64>(
         context, dependencyModel, argument, lazyKind);
     else
       raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
