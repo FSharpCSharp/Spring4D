@@ -2906,7 +2906,6 @@ type
     class procedure CreateListWord(comparer: Pointer; var result; elementType: Pointer); static;
     class procedure CreateListCardinal(comparer: Pointer; var result; elementType: Pointer); static;
     class procedure CreateListUInt64(comparer: Pointer; var result; elementType: Pointer); static;
-    class procedure CreateListString(comparer: Pointer; var result; elementType: Pointer); overload; static;
     class procedure CreateListMethod(comparer: Pointer; var result; elementType: Pointer); static;
 
     class procedure CreateSortedListByte(comparer: Pointer; var result; elementType: Pointer); static;
@@ -2940,6 +2939,7 @@ type
     class procedure CreateListObject(comparer: Pointer; ownsObjects: Boolean; var result; elementType: Pointer); overload; static;
     class procedure CreateListInterface(var result; elementType: Pointer); overload; static;
     class procedure CreateListInterface(comparer: Pointer; var result; elementType: Pointer); overload; static;
+    class procedure CreateListString(comparer: Pointer; var result; elementType: Pointer); static;
     class procedure CreateObservableListObject(ownsObjects: Boolean; var result; elementType: Pointer); static;
     class procedure CreateObservableListInterface(var result; elementType: Pointer); static;
   public
@@ -2964,6 +2964,12 @@ type
     class function CreateInterfaceList<T: IInterface>(const comparer: TComparison<T>): IList<T>; overload; static;
     class function CreateInterfaceList<T: IInterface>(const values: array of T): IList<T>; overload; static;
     class function CreateInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static;
+
+    class function CreateStringList: IList<string>; overload; static;
+    class function CreateStringList(const comparer: IComparer<string>): IList<string>; overload; static;
+    class function CreateStringList(const comparer: TComparison<string>): IList<string>; overload; static;
+    class function CreateStringList(const values: array of string): IList<string>; overload; static;
+    class function CreateStringList(const values: IEnumerable<string>): IList<string>; overload; static;
 
     class function CreateSortedList<T>: IList<T>; overload; static;
     class function CreateSortedList<T>(const comparer: IComparer<T>): IList<T>; overload; static;
@@ -3962,12 +3968,6 @@ begin
   IList<Word>(result) := TFoldedList<Word>.Create(elementType, IComparer<Word>(comparer));
 end;
 
-class procedure TCollections.CreateListString(comparer: Pointer; var result;
-  elementType: Pointer);
-begin
-  IList<string>(Result) := TFoldedList<string>.Create(elementType, IComparer<string>(comparer));
-end;
-
 class procedure TCollections.CreateListMethod(comparer: Pointer; var result;
   elementType: Pointer);
 begin
@@ -4087,6 +4087,12 @@ class procedure TCollections.CreateListInterface(comparer: Pointer;
 begin
   IList<IInterface>(Result) := TFoldedList<IInterface>.Create(
     elementType, IComparer<IInterface>(comparer));
+end;
+
+class procedure TCollections.CreateListString(comparer: Pointer; var result;
+  elementType: Pointer);
+begin
+  IList<string>(Result) := TFoldedList<string>.Create(elementType, IComparer<string>(comparer));
 end;
 
 class procedure TCollections.CreateObservableListObject(ownsObjects: Boolean;
@@ -4267,6 +4273,37 @@ class function TCollections.CreateInterfaceList<T>(
   const values: IEnumerable<T>): IList<T>;
 begin
   CreateListInterface(Result, TypeInfo(T));
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateStringList: IList<string>;
+begin
+  CreateListString(nil, Result, TypeInfo(string));
+end;
+
+class function TCollections.CreateStringList(
+  const comparer: IComparer<string>): IList<string>;
+begin
+  CreateListString(PPointer(@comparer)^, Result, TypeInfo(string));
+end;
+
+class function TCollections.CreateStringList(
+  const comparer: TComparison<string>): IList<string>;
+begin
+  CreateListString(PPointer(@comparer)^, Result, TypeInfo(string));
+end;
+
+class function TCollections.CreateStringList(
+  const values: array of string): IList<string>;
+begin
+  CreateListString(nil, Result, TypeInfo(string));
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateStringList(
+  const values: IEnumerable<string>): IList<string>;
+begin
+  CreateListString(nil, Result, TypeInfo(string));
   Result.AddRange(values);
 end;
 
