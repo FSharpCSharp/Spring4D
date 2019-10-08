@@ -2941,6 +2941,9 @@ function NopAddref(inst: Pointer): Integer; stdcall;
 function NopRelease(inst: Pointer): Integer; stdcall;
 function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
 
+procedure RegisterWeakRef(address: Pointer; const instance: TObject);
+procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
+
   {$ENDREGION}
 
 
@@ -3799,6 +3802,16 @@ end;
 function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall; //FI:O804
 begin
   Result := E_NOINTERFACE;
+end;
+
+procedure RegisterWeakRef(address: Pointer; const instance: TObject);
+begin
+  TWeakReference.RegisterWeakRef(address, instance);
+end;
+
+procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
+begin
+  TWeakReference.UnregisterWeakRef(address, instance);
 end;
 
 {$ENDREGION}
