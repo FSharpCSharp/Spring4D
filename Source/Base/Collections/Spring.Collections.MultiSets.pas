@@ -104,8 +104,8 @@ type
         constructor Create(const source: THashMultiSet<T>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TEntry>'}
@@ -204,8 +204,8 @@ type
         constructor Create(const source: TTreeMultiSet<T>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<T>'}
@@ -242,8 +242,8 @@ type
         constructor Create(const source: TTreeMultiSet<T>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TEntry>'}

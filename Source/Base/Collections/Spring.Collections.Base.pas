@@ -60,7 +60,7 @@ type
     function GetElementType: PTypeInfo; virtual;
   {$ENDREGION}
     function Equals(const left, right: T): Boolean; reintroduce; inline;
-    function QueryInterface(const IID: TGUID; out obj): HResult; override;
+    function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     procedure CopyTo(var values: TArray<T>; index: Integer);
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload;
@@ -171,7 +171,7 @@ type
     function GetElementType: PTypeInfo;
     function GetIsEmpty: Boolean;
   protected
-    function QueryInterface(const IID: TGUID; out obj): HResult; override;
+    function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
   public
     constructor Create(const source: IEnumerable; getCurrent: TGetCurrentFunc);
     function AsObject: TObject;
@@ -385,7 +385,7 @@ type
     function GetIsReadOnly: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
-    function QueryInterface(const IID: TGUID; out obj): HResult; override;
+    function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
     procedure Reset;
@@ -449,8 +449,8 @@ type
       elementType: PTypeInfo; const comparer: IEqualityComparer<T>; offset: Integer);
 
   {$REGION 'Implements IInterface'}
-    function _AddRef: Integer; override;
-    function _Release: Integer; override;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
   {$ENDREGION}
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -576,7 +576,7 @@ type
   TListBase<T> = class abstract(TCollectionBase<T>)
   protected
   {$REGION 'Implements IInterface'}
-    function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
   {$ENDREGION}
     function CreateList: IList<T>; virtual;
   public
@@ -2586,12 +2586,12 @@ begin
   case TType.Kind<T> of
     tkClass:
       if IID = IObjectList then
-        Exit(inherited QueryInterface(IList<TObject>, Obj));
+        Exit(TRefCountedObject(Self).QueryInterface(IList<TObject>, Obj));
     tkInterface:
       if IID = IInterfaceList then
-        Exit(inherited QueryInterface(IList<IInterface>, Obj));
+        Exit(TRefCountedObject(Self).QueryInterface(IList<IInterface>, Obj));
   end;
-    Result := inherited QueryInterface(IID, Obj);
+  Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TListBase<T>.Add(const item: T): Boolean;

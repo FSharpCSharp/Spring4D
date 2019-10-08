@@ -1199,11 +1199,11 @@ type
     fRefCount: Integer;
     class procedure __MarkDestroying(const obj); static; inline;
 {$ENDIF}
-    function QueryInterface(const IID: TGUID; out obj): HResult; virtual; stdcall;
     function AsObject: TObject;
   public
-    function _AddRef: Integer; virtual; stdcall;
-    function _Release: Integer; virtual; stdcall;
+    function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
 {$IFNDEF AUTOREFCOUNT}
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;

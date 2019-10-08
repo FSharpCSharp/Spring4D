@@ -199,8 +199,8 @@ type
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
@@ -279,8 +279,8 @@ type
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TKey>'}
@@ -304,8 +304,8 @@ type
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TValue>'}
@@ -465,8 +465,8 @@ type
         constructor Create(const source: TSortedDictionary<TKey, TValue>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TKey>'}
@@ -489,8 +489,8 @@ type
         constructor Create(const source: TSortedDictionary<TKey, TValue>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TValue>'}

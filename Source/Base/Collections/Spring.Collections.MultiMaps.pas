@@ -89,8 +89,8 @@ type
         constructor Create(const source: TMultiMapBase<TKey, TValue>);
 
       {$REGION 'Implements IInterface'}
-        function _AddRef: Integer; override;
-        function _Release: Integer; override;
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       {$ENDREGION}
 
       {$REGION 'Implements IEnumerable<TValue>'}
