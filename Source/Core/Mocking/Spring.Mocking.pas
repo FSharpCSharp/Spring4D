@@ -50,6 +50,7 @@ type
 const
   Arg: TArg = ();
   Args: TArgs = ();
+  Any: TAny = ();
   DefaultMockBehavior = TMockBehavior.Dynamic;
 
 type

@@ -67,6 +67,13 @@ type
       const parameters: TArray<TRttiParameter>): Predicate<TArray<TValue>>; static;
   end;
 
+  TAny = record
+    class operator Implicit(const value: TAny): string; overload;
+    class operator Implicit(const value: TAny): Integer; overload;
+    class operator Implicit(const value: TAny): Boolean; overload;
+    class operator Implicit(const value: TAny): Pointer; overload;
+  end;
+
   TRangeKind = (Inclusive, Exclusive);
 
   TArg = record
@@ -87,6 +94,9 @@ type
     class function IsNotIn<T>(const values: IEnumerable<T>): T; overload; static;
     class function IsNotNil<T>: T; static;
     class function IsRegex(const pattern: string): string; static;
+
+    class function &&op_Equality<T>(const left: TArg; const right: T): T; static;
+    class function &&op_Inequality<T>(const left: TArg; const right: T): T; static;
   end;
 
   TArgs = record
@@ -147,6 +157,16 @@ function GetIndexInterface(const v: TValue): Integer;
 begin
   Result := (v.AsType<IInterface> as TIndexWrapper).fIndex;
   PValue(@v)^ := TValue.Empty;
+end;
+
+function GetIndexPointer(const v: TValue): Integer;
+begin
+  Result := v.AsType<TIndexWrapper>.fIndex;
+{$IFNDEF AUTOREFCOUNT}
+  v.AsType<TIndexWrapper>.Free;
+{$ELSE}
+  v.AsType<TIndexWrapper>.DisposeOf;
+{$ENDIF}
 end;
 
 function GetIndexRecord(const v: TValue): Integer;
@@ -225,6 +245,11 @@ end;
 procedure SetIndexInterface(typeInfo: PTypeInfo; index: Integer; var Result); //FI:O804
 begin
   IInterface(PPointer(@Result)^) := TIndexWrapper.Create(index);
+end;
+
+procedure SetIndexPointer(typeInfo: PTypeInfo; index: Integer; var Result); //FI:O804
+begin
+  Pointer(Result) := TIndexWrapper.Create(index);
 end;
 
 procedure SetIndexRecord(typeInfo: PTypeInfo; index: Integer; var Result);
@@ -319,9 +344,9 @@ const
     GetIndexFail, GetIndexOrdinal, GetIndexObject, GetIndexFail, GetIndexString,
     GetIndexString, GetIndexString, GetIndexVariant, GetIndexFail, GetIndexRecord,
     GetIndexInterface, GetIndexOrdinal, GetIndexArray, GetIndexString, GetIndexFail,
-    GetIndexFail, GetIndexFail {$IF Declared(tkMRecord)}, GetIndexFail{$IFEND});
+    GetIndexPointer, GetIndexFail {$IF Declared(tkMRecord)}, GetIndexFail{$IFEND});
 begin
-  Result := Handlers[TValueData(v).FTypeInfo.Kind](v);
+  Result := Handlers[TValueData(v).FTypeInfo.Kind](v) - 1;
 end;
 
 class procedure TMatcherFactory.SetIndex(typeInfo: PTypeInfo; index: Integer; var Result);
@@ -331,9 +356,9 @@ const
     SetIndexFail, SetIndexOrdinal, SetIndexObject, SetIndexFail, SetIndexString,
     SetIndexString, SetIndexString, SetIndexVariant, SetIndexFail, SetIndexRecord,
     SetIndexInterface, SetIndexOrdinal, SetIndexArray, SetIndexString, SetIndexFail,
-    SetIndexFail, SetIndexFail {$IF Declared(tkMRecord)}, SetIndexFail{$IFEND});
+    SetIndexPointer, SetIndexFail {$IF Declared(tkMRecord)}, SetIndexFail{$IFEND});
 begin
-  Handlers[typeInfo.Kind](typeInfo, index, Result);
+  Handlers[typeInfo.Kind](typeInfo, index + 1, Result);
 end;
 
 class function TMatcherFactory.WrapIndex<T>(index: Integer): T;
@@ -504,6 +529,89 @@ begin
     function(const arg: TValue): Boolean
     begin
       Result := regex.IsMatch(arg.AsString);
+    end);
+end;
+
+class function TArg.&&op_Equality<T>(const left: TArg; const right: T): T;
+var
+  comparer: IEqualityComparer<T>;
+begin
+  if (GetTypeKind(T) = tkPointer) and (PPointer(@right)^ = nil) then
+    Result := TMatcherFactory.CreateMatcher<T>(
+      function(const arg: TValue): Boolean
+      begin
+        Result := arg.IsEmpty;
+      end)
+  else
+  begin
+    comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+    Result := TMatcherFactory.CreateMatcher<T>(
+      function(const arg: TValue): Boolean
+      begin
+        Result := comparer.Equals(arg.AsType<T>, right);
+      end);
+  end;
+end;
+
+class function TArg.&&op_Inequality<T>(const left: TArg; const right: T): T;
+var
+  comparer: IEqualityComparer<T>;
+begin
+  if (GetTypeKind(T) = tkPointer) and (PPointer(@right)^ = nil) then
+    Result := TMatcherFactory.CreateMatcher<T>(
+      function(const arg: TValue): Boolean
+      begin
+        Result := not arg.IsEmpty;
+      end)
+  else
+  begin
+    comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+    Result := TMatcherFactory.CreateMatcher<T>(
+      function(const arg: TValue): Boolean
+      begin
+        Result := not comparer.Equals(arg.AsType<T>, right);
+      end);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAny'}
+
+class operator TAny.Implicit(const value: TAny): Integer;
+begin
+  Result := TMatcherFactory.CreateMatcher<Integer>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := True;
+    end);
+end;
+
+class operator TAny.Implicit(const value: TAny): string;
+begin
+  Result := TMatcherFactory.CreateMatcher<string>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := True;
+    end);
+end;
+
+class operator TAny.Implicit(const value: TAny): Boolean;
+begin
+  Result := TMatcherFactory.CreateMatcher<Boolean>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := True;
+    end);
+end;
+
+class operator TAny.Implicit(const value: TAny): Pointer;
+begin
+  Result := TMatcherFactory.CreateMatcher<Pointer>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := True;
     end);
 end;
 

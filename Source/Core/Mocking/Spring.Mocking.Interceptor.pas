@@ -127,7 +127,7 @@ begin
       Result := Result + ', ';
     if values[i].IsString then
       Result := Result + QuotedStr(values[i].ToString)
-    else if values[i].IsInstance then
+    else if values[i].IsInstance and values[i].IsEmpty then
       Result := Result + 'nil'
     else
       Result := Result + values[i].ToString;
