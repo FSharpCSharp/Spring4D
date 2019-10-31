@@ -45,6 +45,8 @@ type
     fMatch: TArgMatch;
     fSequence: IMockSequence;
     fPosition: Integer;
+    fRefArgs: TArray<TValue>;
+    procedure PutRefArgs(const invocation: IInvocation);
   public
     constructor Create(const action: TMockAction; const match: TArgMatch;
       const sequence: IMockSequence);
@@ -203,6 +205,10 @@ begin
         end, fMatch, fSequence);
     end;
   end;
+
+  for i := 0 to High(Result) do
+    Result[i].fRefArgs := RefArgs.values;
+  RefArgs.values := nil;
 end;
 
 class function TMockInterceptor.CreateMock(
@@ -410,6 +416,7 @@ begin
       Result := Result.Cast(invocation.Method.ReturnType.Handle)
     else
       Result := TValue.Empty;
+    PutRefArgs(invocation);
   finally
     if Assigned(fSequence) then
       fSequence.MoveNext;
@@ -421,6 +428,22 @@ begin
   if Assigned(fSequence) and (fPosition <> fSequence.Current) then
     Exit(False);
   Result := fMatch(args);
+end;
+
+procedure TMethodCall.PutRefArgs(const invocation: IInvocation);
+var
+  parameters: TArray<TRttiParameter>;
+  i, k: Integer;
+begin
+  if fRefArgs = nil then
+    Exit;
+
+  parameters := invocation.Method.GetParameters;
+  for i := 0 to High(parameters) do
+    if parameters[i].Flags * [pfVar, pfOut] <> [] then
+      for k := 0 to High(fRefArgs) do
+        if parameters[i].ParamType.Handle = fRefArgs[k].TypeInfo then
+          invocation.Arguments[i] := fRefArgs[k];
 end;
 
 {$ENDREGION}

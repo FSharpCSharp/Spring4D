@@ -67,16 +67,26 @@ type
       const parameters: TArray<TRttiParameter>): Predicate<TArray<TValue>>; static;
   end;
 
-  TAny = record
-    class operator Implicit(const value: TAny): string; overload;
-    class operator Implicit(const value: TAny): Integer; overload;
-    class operator Implicit(const value: TAny): Boolean; overload;
-    class operator Implicit(const value: TAny): Pointer; overload;
+  RefArgs = record
+  private
+    class threadvar fValues: TArray<TValue>;
+    class function GetValues: TArray<TValue>; static;
+    class procedure SetValues(const values: TArray<TValue>); static;
+  public
+    class procedure Add(const value; typeInfo: PTypeInfo); static;
+    class property Values: TArray<TValue> read GetValues write SetValues;
   end;
 
   TRangeKind = (Inclusive, Exclusive);
 
   TArg = record
+  private type
+    TArg<T> = record
+      class var IsAny: T;
+    end;
+    TRef<T> = record
+      class var Return: T;
+    end;
   private
     fIndex: Integer;
   public
@@ -95,6 +105,9 @@ type
     class function IsNotNil<T>: T; static;
     class function IsRegex(const pattern: string): string; static;
 
+    class function Ref<T>: TArg<T>; overload; static; inline;
+    class function Ref<T>(const value: T): TRef<T>; overload; static; inline;
+
     class function &&op_Equality<T>(const left: TArg; const right: T): T; static;
     class function &&op_Inequality<T>(const left: TArg; const right: T): T; static;
   end;
@@ -106,6 +119,13 @@ type
   public
     class property Any: Predicate<TArray<TValue>> read GetAny;
     class property Items[index: Integer]: TArg read GetItems; default;
+  end;
+
+  TAny = record
+    class operator Implicit(const value: TAny): Boolean; overload;
+    class operator Implicit(const value: TAny): Integer; overload;
+    class operator Implicit(const value: TAny): Pointer; overload;
+    class operator Implicit(const value: TAny): string; overload;
   end;
 
 implementation
@@ -383,6 +403,33 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'RefArgs'}
+
+class procedure RefArgs.Add(const value; typeInfo: PTypeInfo);
+var
+  i, count: Integer;
+begin
+  count := Length(fValues);
+  for i := 0 to count - 1 do
+    if fValues[i].TypeInfo = typeInfo then
+      raise ENotSupportedException.Create('multiple by reference parameters of the same type are not supported');
+  SetLength(fValues, count + 1);
+  TValue.Make(@value, typeInfo, fValues[count]);
+end;
+
+class function RefArgs.GetValues: TArray<TValue>;
+begin
+  Result := fValues;
+end;
+
+class procedure RefArgs.SetValues(const values: TArray<TValue>);
+begin
+  fValues := values;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TArg'}
 
 class function TArg.IsAny<T>: T;
@@ -536,7 +583,7 @@ class function TArg.&&op_Equality<T>(const left: TArg; const right: T): T;
 var
   comparer: IEqualityComparer<T>;
 begin
-  if (GetTypeKind(T) = tkPointer) and (PPointer(@right)^ = nil) then
+  if (TType.Kind<T> = tkPointer) and (PPointer(@right)^ = nil) then
     Result := TMatcherFactory.CreateMatcher<T>(
       function(const arg: TValue): Boolean
       begin
@@ -557,7 +604,7 @@ class function TArg.&&op_Inequality<T>(const left: TArg; const right: T): T;
 var
   comparer: IEqualityComparer<T>;
 begin
-  if (GetTypeKind(T) = tkPointer) and (PPointer(@right)^ = nil) then
+  if (TType.Kind<T> = tkPointer) and (PPointer(@right)^ = nil) then
     Result := TMatcherFactory.CreateMatcher<T>(
       function(const arg: TValue): Boolean
       begin
@@ -574,45 +621,13 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TAny'}
-
-class operator TAny.Implicit(const value: TAny): Integer;
+class function TArg.Ref<T>: TArg<T>;
 begin
-  Result := TMatcherFactory.CreateMatcher<Integer>(
-    function(const arg: TValue): Boolean
-    begin
-      Result := True;
-    end);
 end;
 
-class operator TAny.Implicit(const value: TAny): string;
+class function TArg.Ref<T>(const value: T): TRef<T>;
 begin
-  Result := TMatcherFactory.CreateMatcher<string>(
-    function(const arg: TValue): Boolean
-    begin
-      Result := True;
-    end);
-end;
-
-class operator TAny.Implicit(const value: TAny): Boolean;
-begin
-  Result := TMatcherFactory.CreateMatcher<Boolean>(
-    function(const arg: TValue): Boolean
-    begin
-      Result := True;
-    end);
-end;
-
-class operator TAny.Implicit(const value: TAny): Pointer;
-begin
-  Result := TMatcherFactory.CreateMatcher<Pointer>(
-    function(const arg: TValue): Boolean
-    begin
-      Result := True;
-    end);
+  RefArgs.Add(value, TypeInfo(T));
 end;
 
 {$ENDREGION}
@@ -632,6 +647,47 @@ end;
 class function TArgs.GetItems(index: Integer): TArg;
 begin
   Result.fIndex := index;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAny'}
+
+class operator TAny.Implicit(const value: TAny): Boolean;
+begin
+  Result := TMatcherFactory.CreateMatcher<Boolean>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := True;
+    end);
+end;
+
+class operator TAny.Implicit(const value: TAny): Integer;
+begin
+  Result := TMatcherFactory.CreateMatcher<Integer>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := True;
+    end);
+end;
+
+class operator TAny.Implicit(const value: TAny): Pointer;
+begin
+  Result := TMatcherFactory.CreateMatcher<Pointer>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := True;
+    end);
+end;
+
+class operator TAny.Implicit(const value: TAny): string;
+begin
+  Result := TMatcherFactory.CreateMatcher<string>(
+    function(const arg: TValue): Boolean
+    begin
+      Result := True;
+    end);
 end;
 
 {$ENDREGION}

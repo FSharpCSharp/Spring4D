@@ -39,6 +39,7 @@ type
     procedure ArgsStackProperlyCleaned;
 
     procedure OutParameterCanBeSet;
+    procedure OutParameterCanBePassed;
     procedure OutParameterManagedType;
     procedure VerifyChecksParameterValuesProperly;
     procedure TestVariant;
@@ -206,6 +207,7 @@ type
   IOutParamTest = interface(IInvokable)
     procedure Test(out value: Integer);
     procedure TestIntf(out value: IInterface; i: Integer);
+    function TestStr(out value: string): Integer;
   end;
 
 procedure TParameterMatchingTests.ArgsStackProperlyCleaned;
@@ -220,6 +222,35 @@ begin
   mock.Received(Times.Once).Test2(Arg.IsAny<string>, Arg.IsAny<Integer>, Arg.IsAny<Boolean>);
 
   Pass;
+end;
+
+procedure TParameterMatchingTests.OutParameterCanBePassed;
+{$IFDEF DELPHIXE8_UP}
+var
+  mock: Mock<IOutParamTest>;
+  i: Integer;
+  intfIn, intfOut: IInterface;
+  s: string;
+begin
+  mock.Setup.Executes.When.Test(Arg.Ref<Integer>(42).Return);
+  i := 0;
+  mock.Instance.Test(i);
+  CheckEquals(42, i);
+
+  intfIn := TInterfacedObject.Create;
+  mock.Setup.Executes.When.TestIntf(Arg.Ref(intfIn).Return, Arg = 0);
+  mock.Instance.TestIntf(intfOut, 0);
+  CheckSame(intfIn, intfOut);
+
+  mock.Setup.Returns([1, 2]).When.TestStr(Arg.Ref('12').Return);
+  CheckEquals(1, mock.Instance.TestStr(s));
+  CheckEqualsString('12', s);
+  CheckEquals(2, mock.Instance.TestStr(s));
+  CheckEqualsString('12', s);
+{$ELSE}
+begin
+  Pass;
+{$ENDIF}
 end;
 
 procedure TParameterMatchingTests.OutParameterCanBeSet;
