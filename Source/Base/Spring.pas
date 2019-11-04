@@ -2082,6 +2082,7 @@ type
     function TypeData: PTypeData; inline;
 {$ENDIF}
     function TypeName: string; inline;
+    function TypeSize: Integer; inline;
 
     property RttiType: TRttiType read GetRttiType;
   end;
@@ -8376,6 +8377,11 @@ begin
 {$ELSE}
   Result := NameFld.ToString;
 {$ENDIF}
+end;
+
+function TTypeInfoHelper.TypeSize: Integer;
+begin
+  Result := GetTypeSize(@Self);
 end;
 
 {$ENDREGION}
