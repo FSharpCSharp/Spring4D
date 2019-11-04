@@ -1517,7 +1517,8 @@ type
   TNullableHelper = record
   strict private
     fValueType: PTypeInfo;
-    fHasValueOffset: NativeInt;
+    fHasValueOffset: Byte;
+    fHasValueKind: TTypeKind;
   public
     constructor Create(typeInfo: PTypeInfo);
     function GetValue(instance: Pointer): TValue; inline;
@@ -7629,6 +7630,7 @@ begin
   // get TTypeData.RecFields[1]
   field := PRecordTypeField(PByte(SkipShortString(@field.Name)) + SizeOf(TAttrData));
   fHasValueOffset := field.Field.FldOffset;
+  fHasValueKind := field.Field.TypeRef^.Kind;
 end;
 
 function TNullableHelper.GetValue(instance: Pointer): TValue;
@@ -7638,16 +7640,26 @@ end;
 
 function TNullableHelper.HasValue(instance: Pointer): Boolean;
 begin
-  Result := PUnicodeString(PByte(instance) + fHasValueOffset)^ <> '';
+  case fHasValueKind of
+    tkUString: Result := PUnicodeString(PByte(instance) + fHasValueOffset)^ <> '';
+    tkEnumeration: Result := PBoolean(PByte(instance) + fHasValueOffset)^;
+  else
+    Result := False;
+  end;
 end;
 
 procedure TNullableHelper.SetValue(instance: Pointer; const value: TValue);
 begin
   value.Cast(fValueType).ExtractRawData(instance);
-  if value.IsEmpty then
-    PUnicodeString(PByte(instance) + fHasValueOffset)^ := ''
-  else
-    PUnicodeString(PByte(instance) + fHasValueOffset)^ := Nullable.HasValue;
+  case fHasValueKind of
+    tkUString:
+      if value.IsEmpty then
+        PUnicodeString(PByte(instance) + fHasValueOffset)^ := ''
+      else
+        PUnicodeString(PByte(instance) + fHasValueOffset)^ := Nullable.HasValue;
+    tkEnumeration:
+      PBoolean(PByte(instance) + fHasValueOffset)^ := not value.IsEmpty;
+  end;
 end;
 
 {$ENDREGION}
