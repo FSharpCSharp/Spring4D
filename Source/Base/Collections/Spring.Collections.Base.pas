@@ -62,7 +62,7 @@ type
     function Equals(const left, right: T): Boolean; reintroduce; inline;
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     procedure CopyTo(var values: TArray<T>; index: Integer);
-    function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
+    function TryGetElementAt(out value: T; index: Integer): Boolean;
     function TryGetFirst(out value: T): Boolean; overload;
     function TryGetFirst(out value: T; const predicate: Predicate<T>): Boolean; overload;
     function TryGetLast(out value: T): Boolean; overload;
@@ -457,7 +457,7 @@ type
     function Contains(const value: T): Boolean; overload;
     function GetEnumerator: IEnumerator<T>;
     function ToArray: TArray<T>;
-    function TryGetElementAt(out value: T; index: Integer): Boolean; override;
+    function TryGetElementAt(out value: T; index: Integer): Boolean;
   {$ENDREGION}
   end;
 
@@ -954,20 +954,20 @@ end;
 
 function TEnumerableBase<T>.ElementAt(index: Integer): T;
 begin
-  if not TryGetElementAt(Result, index) then
+  if not IEnumerable<T>(this).TryGetElementAt(Result, index) then
     raise Error.ArgumentOutOfRange('index');
 end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer): T;
 begin
-  if not TryGetElementAt(Result, index) then
+  if not IEnumerable<T>(this).TryGetElementAt(Result, index) then
     Result := Default(T);
 end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer;
   const defaultValue: T): T;
 begin
-  if not TryGetElementAt(Result, index) then
+  if not IEnumerable<T>(this).TryGetElementAt(Result, index) then
     Result := defaultValue;
 end;
 

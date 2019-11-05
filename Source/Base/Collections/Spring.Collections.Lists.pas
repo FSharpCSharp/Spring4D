@@ -97,7 +97,7 @@ type
     procedure SetOwnsObjects(value: Boolean);
   {$ENDREGION}
 
-    function TryGetElementAt(out value: T; index: Integer): Boolean; override;
+    function TryGetElementAt(out value: T; index: Integer): Boolean;
     function TryGetFirst(out value: T): Boolean; overload;
     function TryGetLast(out value: T): Boolean; overload;
     function TryGetSingle(out value: T): Boolean; overload;

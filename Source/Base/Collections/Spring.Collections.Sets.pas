@@ -102,7 +102,7 @@ type
     procedure ClearInternal;
   protected
     function CreateSet: ISet<T>; override;
-    function TryGetElementAt(out item: T; index: Integer): Boolean; override;
+    function TryGetElementAt(out item: T; index: Integer): Boolean;
     property Capacity: Integer read GetCapacity;
   public
     constructor Create; overload; override;

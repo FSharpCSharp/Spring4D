@@ -138,6 +138,7 @@ type
     procedure TestSetItem_Issue318;
     procedure TestTryAdd;
     procedure TestTryExtract;
+    procedure TestTryGetElementAt;
     procedure TestTryUpdateValue;
     procedure TestToArray;
     procedure TestValuesContains;
@@ -1068,6 +1069,27 @@ begin
   CheckTrue(SUT.TryExtract(3, value));
   CheckEquals('c', value);
   CheckCount(2);
+end;
+
+procedure TTestDictionaryBase.TestTryGetElementAt;
+var
+  item: TPair<Integer,string>;
+begin
+  FillTestData;
+
+  CheckTrue(SUT.TryGetElementAt(item, 0));
+  CheckEquals(item.Key, 1);
+  CheckEquals(item.Value, 'a');
+  CheckTrue(SUT.TryGetElementAt(item, 1));
+  CheckEquals(item.Key, 2);
+  CheckEquals(item.Value, 'b');
+  CheckTrue(SUT.TryGetElementAt(item, 2));
+  CheckEquals(item.Key, 3);
+  CheckEquals(item.Value, 'c');
+  CheckTrue(SUT.TryGetElementAt(item, 3));
+  CheckEquals(item.Key, 4);
+  CheckEquals(item.Value, 'd');
+  CheckFalse(SUT.TryGetElementAt(item, 4));
 end;
 
 procedure TTestDictionaryBase.TestTryUpdateValue;

@@ -115,7 +115,7 @@ type
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
     function ToArray: TArray<TKeyValuePair>;
-    function TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean; override;
+    function TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -209,7 +209,7 @@ type
         function Contains(const value: TValueKeyPair;
           const comparer: IEqualityComparer<TValueKeyPair>): Boolean; overload;
         function ToArray: TArray<TValueKeyPair>;
-        function TryGetElementAt(out item: TValueKeyPair; index: Integer): Boolean; override;
+        function TryGetElementAt(out item: TValueKeyPair; index: Integer): Boolean;
       {$ENDREGION}
 
       {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -287,7 +287,7 @@ type
         function GetEnumerator: IEnumerator<TKey>;
         function Contains(const value: TKey): Boolean; overload;
         function ToArray: TArray<TKey>;
-        function TryGetElementAt(out key: TKey; index: Integer): Boolean; override;
+        function TryGetElementAt(out key: TKey; index: Integer): Boolean;
       {$ENDREGION}
       end;
 
@@ -312,7 +312,7 @@ type
         function GetEnumerator: IEnumerator<TValue>;
         function Contains(const value: TValue): Boolean; overload;
         function ToArray: TArray<TValue>;
-        function TryGetElementAt(out value: TValue; index: Integer): Boolean; override;
+        function TryGetElementAt(out value: TValue; index: Integer): Boolean;
       {$ENDREGION}
       end;
   {$ENDREGION}
@@ -389,6 +389,7 @@ type
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
     function ToArray: TArray<TKeyValuePair>;
+    function TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -1721,6 +1722,18 @@ begin
   end
   else
     value := Default(TValue);
+end;
+
+function TBidiDictionary<TKey, TValue>.TryGetElementAt(out item: TKeyValuePair;
+  index: Integer): Boolean;
+begin
+  Result := InRange(index, 0, fCount - 1);
+  if Result then
+  begin
+    EnsureCompact;
+    item.Key := fItems[index].Key;
+    item.Value := fItems[index].Value;
+  end;
 end;
 
 function TBidiDictionary<TKey, TValue>.TryGetValue(const key: TKey;

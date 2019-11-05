@@ -725,6 +725,11 @@ type
     function ToArray: TArray<T>;
 
     /// <summary>
+    ///   Try getting the element at a specified index in a sequence.
+    /// </summary>
+    function TryGetElementAt(out value: T; index: Integer): Boolean;
+
+    /// <summary>
     ///   Try getting the first element in a sequence.
     /// </summary>
     function TryGetFirst(out value: T): Boolean; overload;
