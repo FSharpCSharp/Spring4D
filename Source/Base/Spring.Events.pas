@@ -387,10 +387,10 @@ end;
 
 constructor TMethodInvocations.TMethodInfo.Create(typeData: PTypeData);
 
-  function PassByRef(P: PByte; ParamInfos: PParameterInfos; I: Integer): Boolean;
+  function PassByRef(typeInfo: PTypeInfo; paramFlags: TParamFlags): Boolean;
   begin
-    Result := (TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] <> [])
-      and not (ParamInfos^[I]^.Kind in [tkFloat, tkMethod, tkInt64]);
+    Result := (paramFlags * [pfVar, pfAddress, pfReference, pfOut] <> [])
+      and not (typeInfo.Kind in [tkFloat, tkMethod, tkInt64]);
   end;
 
   function Align4(Value: Integer): Integer;
@@ -429,17 +429,20 @@ begin
     if not Assigned(ParamInfos^[I]) then
       raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
 {$IFNDEF CPUX64}
-    if PassByRef(P, ParamInfos, I) then
-      Size := 4
-    else
-      Size := GetTypeSize(ParamInfos^[I]^);
-    if (Size <= 4) and (curReg <= paECX) and (ParamInfos^[I]^.Kind <> tkFloat) then
-      Inc(curReg)
+    if PassByRef(ParamInfos^[I]^, TParamFlags(P[0])) then
+    begin
+      if curReg < paStack then
+        Inc(curReg)
+      else
+        Inc(StackSize, 4);
+    end
     else
     begin
-      if Size < 4 then
-        Size := 4;
-      Inc(StackSize, Align4(Size));
+      Size := GetTypeSize(ParamInfos^[I]^);
+      if (curReg < paStack) and (Size in [1, 2, 4]) and (ParamInfos^[I]^.Kind <> tkFloat) then
+        Inc(curReg)
+      else
+        Inc(StackSize, Align4(Size));
     end;
 {$ELSE}
     if I < 3 then
