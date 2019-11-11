@@ -198,7 +198,6 @@ type
 implementation
 
 uses
-  Math,
   TypInfo,
   Spring.Events.Base,
   Spring.ResourceStrings;
@@ -383,7 +382,7 @@ end;
 
 function THashSet<T>.TryGetElementAt(out item: T; index: Integer): Boolean;
 begin
-  Result := InRange(index, 0, fHashTable.Count - 1);
+  Result := Cardinal(index) < Cardinal(fHashTable.Count);
   if Result then
   begin
     fHashTable.EnsureCompact;

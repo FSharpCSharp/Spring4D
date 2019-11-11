@@ -1273,7 +1273,7 @@ end;
 
 function TAbstractArrayList<T>.TryGetElementAt(out value: T; index: Integer): Boolean;
 begin
-  Result := (index >= 0) and (index < Count);
+  Result := Cardinal(index) < Cardinal(Count);
   if Result then
     value := fItems[index];
 end;

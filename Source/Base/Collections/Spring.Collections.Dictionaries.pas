@@ -571,7 +571,6 @@ type
 implementation
 
 uses
-  Math,
   SysUtils,
   Types,
   TypInfo,
@@ -873,7 +872,7 @@ end;
 
 function TDictionary<TKey, TValue>.TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean;
 begin
-  Result := InRange(index, 0, fHashTable.Count - 1);
+  Result := Cardinal(index) < Cardinal(fHashTable.Count);
   if Result then
   begin
     fHashTable.EnsureCompact;
@@ -1206,7 +1205,11 @@ begin
   if value = 0 then
     newCapacity := 0
   else
-    newCapacity := Math.Max(MinCapacity, value);
+  begin
+    newCapacity := value;
+    if newCapacity < MinCapacity then
+      newCapacity := MinCapacity;
+  end;
   if newCapacity <> Capacity then
     Rehash(newCapacity);
 end;
@@ -1727,7 +1730,7 @@ end;
 function TBidiDictionary<TKey, TValue>.TryGetElementAt(out item: TKeyValuePair;
   index: Integer): Boolean;
 begin
-  Result := InRange(index, 0, fCount - 1);
+  Result := Cardinal(index) < Cardinal(fCount);
   if Result then
   begin
     EnsureCompact;
@@ -2268,7 +2271,7 @@ end;
 function TBidiDictionary<TKey, TValue>.TKeyCollection.TryGetElementAt(
   out key: TKey; index: Integer): Boolean;
 begin
-  Result := InRange(index, 0, fSource.fCount - 1);
+  Result := Cardinal(index) < Cardinal(fSource.fCount);
   if Result then
   begin
     fSource.EnsureCompact;
@@ -2335,7 +2338,7 @@ end;
 function TBidiDictionary<TKey, TValue>.TValueCollection.TryGetElementAt(
   out value: TValue; index: Integer): Boolean;
 begin
-  Result := InRange(index, 0, fSource.fCount - 1);
+  Result := Cardinal(index) < Cardinal(fSource.fCount);
   if Result then
   begin
     fSource.EnsureCompact;

@@ -2076,7 +2076,7 @@ end;
 function TInnerCollection<T>.TryGetElementAt(out value: T;
   index: Integer): Boolean;
 begin
-  Result := InRange(index, 0, fHashTable.Count - 1);
+  Result := Cardinal(index) < Cardinal(fHashTable.Count);
   if Result then
   begin
     fHashTable.EnsureCompact;
