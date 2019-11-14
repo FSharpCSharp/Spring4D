@@ -43,7 +43,7 @@ type
   TEmptyEnumerable<T> = class sealed(TEnumerableBase<T>, IEnumerator<T>,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
-    class var fInstance: TEmptyEnumerable<T>;
+    class var fInstance: IReadOnlyList<T>;
     constructor Create; reintroduce;
     function GetCurrent: T;
   {$REGION 'Property Accessors'}
@@ -54,11 +54,6 @@ type
   public
     class constructor Create;
     class destructor Destroy;
-
-  {$REGION 'Implements IInterface'}
-    function _AddRef: Integer; reintroduce; stdcall;
-    function _Release: Integer; reintroduce; stdcall;
-  {$ENDREGION}
 
   {$REGION 'Implements IEnumerator<T>'}
     function MoveNext: Boolean;
@@ -81,7 +76,7 @@ type
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
   {$ENDREGION}
 
-    class property Instance: TEmptyEnumerable<T> read fInstance;
+    class property Instance: IReadOnlyList<T> read fInstance;
   end;
 
   TWhereIterator<T> = class(TSourceIterator<T>)
@@ -855,7 +850,6 @@ end;
 
 class destructor TEmptyEnumerable<T>.Destroy;
 begin
-  fInstance.Free;
   fInstance := nil;
 end;
 
@@ -922,16 +916,6 @@ end;
 function TEmptyEnumerable<T>.ToArray: TArray<T>;
 begin
   Result := nil;
-end;
-
-function TEmptyEnumerable<T>._AddRef: Integer;
-begin
-  Result := -1;
-end;
-
-function TEmptyEnumerable<T>._Release: Integer;
-begin
-  Result := -1;
 end;
 
 {$ENDREGION}
