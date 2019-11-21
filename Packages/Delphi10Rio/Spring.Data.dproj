@@ -2,7 +2,7 @@
     <PropertyGroup>
         <ProjectGuid>{CE604316-E7DF-4F7D-8C54-B06FAAB0F76B}</ProjectGuid>
         <MainSource>Spring.Data.dpk</MainSource>
-        <ProjectVersion>18.7</ProjectVersion>
+        <ProjectVersion>18.8</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
