@@ -1523,7 +1523,7 @@ type
     constructor Create(typeInfo: PTypeInfo);
     function GetValue(instance: Pointer): TValue; inline;
     function HasValue(instance: Pointer): Boolean; inline;
-    procedure SetValue(instance: Pointer; const value: TValue); inline;
+    procedure SetValue(instance: Pointer; const value: TValue);
     property ValueType: PTypeInfo read fValueType;
   end;
 
@@ -7649,16 +7649,23 @@ begin
 end;
 
 procedure TNullableHelper.SetValue(instance: Pointer; const value: TValue);
+
+  function IsEmpty(const value: TValue): Boolean;
+  begin
+    // don't use TValue.IsEmpty here as that also considers reference types that are nil or [] as empty
+    Result := (TValueData(value).FTypeInfo = nil) or (TValueData(value).FValueData = nil);
+  end;
+
 begin
   value.Cast(fValueType).ExtractRawData(instance);
   case fHasValueKind of
     tkUString:
-      if value.IsEmpty then
+      if IsEmpty(value) then
         PUnicodeString(PByte(instance) + fHasValueOffset)^ := ''
       else
         PUnicodeString(PByte(instance) + fHasValueOffset)^ := Nullable.HasValue;
     tkEnumeration:
-      PBoolean(PByte(instance) + fHasValueOffset)^ := not value.IsEmpty;
+      PBoolean(PByte(instance) + fHasValueOffset)^ := not IsEmpty(value);
   end;
 end;
 
