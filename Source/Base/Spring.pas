@@ -150,6 +150,93 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TInterfacedCriticalSection'}
+
+  ICriticalSection = interface(IInvokable)
+    ['{16C21E9C-6450-4EA4-A3D3-1D59277C9BA6}']
+    procedure Enter;
+    procedure Leave;
+    function ScopedLock: IInterface;
+  end;
+
+  TInterfacedCriticalSection = class(TCriticalSection, IInterface, ICriticalSection)
+  private type
+    TScopedLock = class(TInterfacedObject)
+    private
+      fCriticalSection: ICriticalSection;
+    public
+      constructor Create(const criticalSection: ICriticalSection);
+      destructor Destroy; override;
+    end;
+  protected
+    fRefCount: Integer;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+    function ScopedLock: IInterface;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Lock'}
+
+  /// <summary>
+  ///   Provides an easy to use wrapper around TCriticalSection. It
+  ///   automatically initializes the TCriticalSection instance when required
+  ///   and destroys it when the Lock goes out of scope.
+  /// </summary>
+  Lock = record
+  private
+    fCriticalSection: ICriticalSection;
+    procedure EnsureInitialized;
+  public
+    /// <summary>
+    ///   Calls Enter on the underlying TCriticalSection. The first call also
+    ///   initializes the TCriticalSection instance.
+    /// </summary>
+    procedure Enter;
+
+    /// <summary>
+    ///   Calls Leave on the underlying TCriticalSection. If no call to Enter
+    ///   has been made before it will raise an exception.
+    /// </summary>
+    /// <exception cref="EInvalidOperationException">
+    ///   When Enter was not called before
+    /// </exception>
+    procedure Leave;
+
+    /// <summary>
+    ///   Calls Enter on the underlying TCriticalSection and returns an
+    ///   interface reference that will call Leave once it goes out of scope.
+    /// </summary>
+    /// <remarks>
+    ///   Use this to avoid the classic try/finally block but keep in mind that
+    ///   the scope will be the entire method this is used in unless you keep
+    ///   hold of the returned interface and explicitly set it to nil causing
+    ///   its destruction.
+    /// </remarks>
+    function ScopedLock: IInterface;
+  end;
+
+  // simple multiple read exclusive write lock using busy wait
+  // taken from OTL with permission of Primoz Gabrijelcic
+  ReadWriteLock = record
+  strict private
+    Lock: IInterface;
+    ThreadId: IInterface;
+  public
+    procedure EnterRead;
+    procedure LeaveRead;
+    procedure EnterWrite;
+    procedure LeaveWrite;
+    procedure EnterUpgradableRead;
+    procedure LeaveUpgradableRead;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TActivator'}
 
   IObjectActivator = interface
@@ -162,6 +249,7 @@ type
   TActivator = record
   private
     class var ConstructorCache: TDictionary<PTypeInfo,TConstructor>;
+    class var CacheLock: ReadWriteLock;
     class function FindConstructor(const classType: TRttiInstanceType;
       const arguments: array of TValue): TRttiMethod; overload; static;
     class procedure RaiseNoConstructorFound(classType: TClass); static;
@@ -2103,78 +2191,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TInterfacedCriticalSection'}
-
-  ICriticalSection = interface(IInvokable)
-    ['{16C21E9C-6450-4EA4-A3D3-1D59277C9BA6}']
-    procedure Enter;
-    procedure Leave;
-    function ScopedLock: IInterface;
-  end;
-
-  TInterfacedCriticalSection = class(TCriticalSection, IInterface, ICriticalSection)
-  private type
-    TScopedLock = class(TInterfacedObject)
-    private
-      fCriticalSection: ICriticalSection;
-    public
-      constructor Create(const criticalSection: ICriticalSection);
-      destructor Destroy; override;
-    end;
-  protected
-    fRefCount: Integer;
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-    function ScopedLock: IInterface;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Lock'}
-
-  /// <summary>
-  ///   Provides an easy to use wrapper around TCriticalSection. It
-  ///   automatically initializes the TCriticalSection instance when required
-  ///   and destroys it when the Lock goes out of scope.
-  /// </summary>
-  Lock = record
-  private
-    fCriticalSection: ICriticalSection;
-    procedure EnsureInitialized;
-  public
-    /// <summary>
-    ///   Calls Enter on the underlying TCriticalSection. The first call also
-    ///   initializes the TCriticalSection instance.
-    /// </summary>
-    procedure Enter;
-
-    /// <summary>
-    ///   Calls Leave on the underlying TCriticalSection. If no call to Enter
-    ///   has been made before it will raise an exception.
-    /// </summary>
-    /// <exception cref="EInvalidOperationException">
-    ///   When Enter was not called before
-    /// </exception>
-    procedure Leave;
-
-    /// <summary>
-    ///   Calls Enter on the underlying TCriticalSection and returns an
-    ///   interface reference that will call Leave once it goes out of scope.
-    /// </summary>
-    /// <remarks>
-    ///   Use this to avoid the classic try/finally block but keep in mind that
-    ///   the scope will be the entire method this is used in unless you keep
-    ///   hold of the returned interface and explicitly set it to nil causing
-    ///   its destruction.
-    /// </remarks>
-    function ScopedLock: IInterface;
-  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'Tuples'}
 
   Tuple<T1, T2> = record
@@ -2916,9 +2932,11 @@ function GetAbstractError: Pointer;
 
 {$IFNDEF DELPHIXE3_UP}
 function AtomicIncrement(var target: Integer): Integer;
-function AtomicDecrement(var target: Integer): Integer;
+function AtomicDecrement(var target: Integer): Integer; overload;
+function AtomicDecrement(var target: NativeInt; decrement: NativeInt): NativeInt; overload;
 function AtomicExchange(var target: Pointer; value: Pointer): Pointer;
 function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer; overload;
+function AtomicCmpExchange(var target: NativeInt; newValue, comparand: NativeInt): NativeInt; overload;
 function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): TObject; overload;
 {$ENDIF}
 
@@ -2970,6 +2988,9 @@ uses
   VarUtils,
 {$IFDEF MSWINDOWS}
   Windows,
+{$ENDIF}
+{$IFDEF POSIX}
+  Posix.Pthread,
 {$ENDIF}
   Spring.Events,
   Spring.ResourceStrings,
@@ -3641,6 +3662,23 @@ asm
 {$ENDIF}
 end;
 
+function AtomicDecrement(var target: NativeInt; decrement: NativeInt): NativeInt;
+asm
+{$IFDEF CPUX86}
+  neg edx
+  mov ecx,edx
+  lock xadd [eax],edx
+  add edx,ecx
+  mov eax,edx
+{$ENDIF}
+{$IFDEF CPUX64}
+  neg rdx
+  mov rax,rdx
+  lock xadd [rcx],rdx
+  add rax,rdx
+{$ENDIF}
+end;
+
 function AtomicExchange(var target: Pointer; value: Pointer): Pointer;
 asm
 {$IFDEF CPUX86}
@@ -3654,6 +3692,18 @@ asm
 end;
 
 function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer;
+asm
+{$IFDEF CPUX86}
+  xchg eax,ecx
+  lock cmpxchg [ecx],edx
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov rax,r8
+  lock cmpxchg [rcx],edx
+{$ENDIF}
+end;
+
+function AtomicCmpExchange(var target: NativeInt; newValue, comparand: NativeInt): NativeInt;
 asm
 {$IFDEF CPUX86}
   xchg eax,ecx
@@ -3822,6 +3872,81 @@ end;
 procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
 begin
   TWeakReference.UnregisterWeakRef(address, instance);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'ReadWriteLock'}
+
+procedure ReadWriteLock.EnterRead;
+var
+  current: NativeInt;
+begin
+  while True do
+  begin
+    current := NativeInt(Lock) and not 1;
+    if AtomicCmpExchange(NativeInt(Lock), current + 4, current) = current then
+      Break;
+
+    {$IFDEF CPUX86}asm pause end;{$ELSE}YieldProcessor;{$ENDIF}
+  end;
+end;
+
+procedure ReadWriteLock.LeaveRead;
+begin
+  AtomicDecrement(NativeInt(Lock), 4);
+end;
+
+procedure ReadWriteLock.EnterUpgradableRead;
+var
+  current: NativeInt;
+begin
+  while True do
+  begin
+    current := NativeInt(Lock) and not 3;
+    if AtomicCmpExchange(NativeInt(Lock), current + 2, current) = current then
+      Break;
+
+    {$IFDEF CPUX86}asm pause end;{$ELSE}YieldProcessor;{$ENDIF}
+  end;
+
+  NativeUInt(ThreadId) := GetCurrentThreadId;
+end;
+
+procedure ReadWriteLock.LeaveUpgradableRead;
+begin
+  NativeUInt(ThreadId) := 0;
+  AtomicDecrement(NativeInt(Lock), 2);
+end;
+
+procedure ReadWriteLock.EnterWrite;
+var
+  current: Integer;
+begin
+  while True do
+  begin
+    while True do
+    begin
+      current := NativeInt(Lock) and not 1;
+      if AtomicCmpExchange(NativeInt(Lock), current + 1, current) = current then
+        Break;
+
+      {$IFDEF CPUX86}asm pause end;{$ELSE}YieldProcessor;{$ENDIF}
+    end;
+
+    if (NativeInt(Lock) and 2 = 2) and (NativeUInt(ThreadId) <> GetCurrentThreadId) then
+      AtomicDecrement(NativeInt(Lock), 1)
+    else
+      Break;
+  end;
+
+  while NativeInt(Lock) > 3 do;
+end;
+
+procedure ReadWriteLock.LeaveWrite;
+begin
+  AtomicDecrement(NativeInt(Lock), 1);
 end;
 
 {$ENDREGION}
@@ -8565,7 +8690,12 @@ end;
 
 class procedure TActivator.ClearCache;
 begin
-  ConstructorCache.Clear;
+  CacheLock.EnterWrite;
+  try
+    ConstructorCache.Clear;
+  finally
+    CacheLock.LeaveWrite;
+  end;
 end;
 
 class function TActivator.CreateInstance(
@@ -8645,26 +8775,45 @@ end;
 class function TActivator.FindConstructor(classType: TClass): TConstructor;
 var
   classInfo: PTypeInfo;
+  ctorFound: Boolean;
   method: TRttiMethod;
 begin
   Assert(Assigned(classType));
   classInfo := classType.ClassInfo;
-  if ConstructorCache.TryGetValue(classInfo, Result) then
+
+  CacheLock.EnterRead;
+  try
+    ctorFound := ConstructorCache.TryGetValue(classInfo, Result);
+  finally
+    CacheLock.LeaveRead;
+  end;
+
+  if ctorFound then
     Exit;
 
-  for method in TType.GetType(classInfo).GetMethods do
-  begin
-    if not method.IsConstructor then
-      Continue;
-
-    if method.GetParameters = nil then
+  CacheLock.EnterUpgradableRead;
+  try
+    for method in TType.GetType(classInfo).GetMethods do
     begin
-      Result := method.CodeAddress;
-      ConstructorCache.AddOrSetValue(classInfo, Result);
-      Exit;
+      if not method.IsConstructor then
+        Continue;
+
+      if method.GetParameters = nil then
+      begin
+        Result := method.CodeAddress;
+        CacheLock.EnterWrite;
+        try
+          ConstructorCache.AddOrSetValue(classInfo, Result);
+        finally
+          CacheLock.LeaveWrite;
+        end;
+        Exit;
+      end;
     end;
+    Result := nil;
+  finally
+    CacheLock.LeaveUpgradableRead;
   end;
-  Result := nil;
 end;
 
 class function TActivator.FindConstructor(const classType: TRttiInstanceType;
@@ -8694,7 +8843,14 @@ begin
     if Assignable(method.GetParameters, arguments) then
     begin
       if Length(arguments) = 0 then
-        ConstructorCache.AddOrSetValue(classType.Handle, method.CodeAddress);
+      begin
+        CacheLock.EnterWrite;
+        try
+          ConstructorCache.AddOrSetValue(classType.Handle, method.CodeAddress);
+        finally
+          CacheLock.LeaveWrite;
+        end;
+      end;
       Exit(method);
     end;
   end;
@@ -11218,6 +11374,7 @@ begin
 
   TValue.UpdateFormatSettings;
 end;
+
 
 initialization
   Init;
