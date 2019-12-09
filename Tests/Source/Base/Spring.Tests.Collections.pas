@@ -554,11 +554,13 @@ type
     procedure TestAddStringPair;
 
     procedure TestContains;
+    procedure TestEnumerator;
 
     procedure TestInternalEventHandlersDetached;
     procedure TestValueChangedCalledProperly;
     procedure TestValues; virtual;
     procedure TestValuesOrdered;
+    procedure TestValuesToArray; virtual;
     procedure TestExtractValues;
 
     procedure WrappedCollection;
@@ -585,6 +587,7 @@ type
     procedure SetUp; override;
   published
     procedure TestValues; override;
+    procedure TestValuesToArray; override;
   end;
 
   TTestObjectStack = class(TTestCase)
@@ -3557,6 +3560,27 @@ begin
   CheckFalse(SUT.Contains(1, 3));
 end;
 
+procedure TTestMultiMapBase.TestEnumerator;
+var
+  enumerator: IEnumerator<TPair<Integer,Integer>>;
+begin
+  SUT.Add(1, 1);
+  SUT.Add(1, 2);
+  SUT.Add(2, 3);
+
+  enumerator := SUT.GetEnumerator;
+  CheckTrue(enumerator.MoveNext);
+  CheckEquals(1, enumerator.Current.Key);
+  CheckEquals(1, enumerator.Current.Value);
+  CheckTrue(enumerator.MoveNext);
+  CheckEquals(1, enumerator.Current.Key);
+  CheckEquals(2, enumerator.Current.Value);
+  CheckTrue(enumerator.MoveNext);
+  CheckEquals(2, enumerator.Current.Key);
+  CheckEquals(3, enumerator.Current.Value);
+  CheckFalse(enumerator.MoveNext);
+end;
+
 procedure TTestMultiMapBase.TestExtractValues;
 var
   map: IMultiMap<Integer, TObject>;
@@ -3635,6 +3659,30 @@ begin
   SUT.Add(4, 3);
 
   CheckTrue(SUT.Values.Ordered.EqualsTo([1, 2, 3, 4, 5, 6, 7, 8]));
+end;
+
+procedure TTestMultiMapBase.TestValuesToArray;
+var
+  values: TArray<Integer>;
+begin
+  SUT.Add(1, 2);
+  SUT.Add(1, 7);
+  SUT.Add(2, 8);
+  SUT.Add(2, 5);
+  SUT.Add(3, 4);
+  SUT.Add(3, 1);
+  SUT.Add(4, 6);
+  SUT.Add(4, 3);
+
+  values := SUT.Values.ToArray;
+  CheckEquals(2, values[0]);
+  CheckEquals(7, values[1]);
+  CheckEquals(8, values[2]);
+  CheckEquals(5, values[3]);
+  CheckEquals(4, values[4]);
+  CheckEquals(1, values[5]);
+  CheckEquals(6, values[6]);
+  CheckEquals(3, values[7]);
 end;
 
 procedure TTestMultiMapBase.ValueChanged(Sender: TObject; const Item: Integer;
@@ -3784,6 +3832,31 @@ begin
 
   // items in each value collection are sorted due to them being rbtrees
   CheckTrue(SUT.Values.EqualsTo([2, 7, 5, 8, 1, 4, 3, 6]));
+end;
+
+procedure TTestTreeMultiMap.TestValuesToArray;
+var
+  values: TArray<Integer>;
+begin
+  SUT.Add(1, 2);
+  SUT.Add(1, 7);
+  SUT.Add(2, 8);
+  SUT.Add(2, 5);
+  SUT.Add(3, 4);
+  SUT.Add(3, 1);
+  SUT.Add(4, 6);
+  SUT.Add(4, 3);
+
+  // items in each value collection are sorted due to them being rbtrees
+  values := SUT.Values.ToArray;
+  CheckEquals(2, values[0]);
+  CheckEquals(7, values[1]);
+  CheckEquals(5, values[2]);
+  CheckEquals(8, values[3]);
+  CheckEquals(1, values[4]);
+  CheckEquals(4, values[5]);
+  CheckEquals(3, values[6]);
+  CheckEquals(6, values[7]);
 end;
 
 {$ENDREGION}

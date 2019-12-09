@@ -1494,8 +1494,8 @@ begin
   Guard.CheckInheritsFrom(collection.ItemClass, TClass(T), 'collection.ItemClass');
 {$ENDIF}
 
-  inherited Create;
   fCollection := collection;
+  inherited Create;
 end;
 
 function TCollectionList<T>.Add(const item: T): Integer;
@@ -1733,7 +1733,7 @@ begin
 {$ENDIF}
 
   for i := index to index + count - 1 do
-    if Equals(T(fCollection.Items[i]), item) then
+    if fCollection.Items[i].Equals(item) then
       Exit(i);
   Result := -1;
 end;
@@ -1797,7 +1797,7 @@ begin
 {$ENDIF}
 
   for i := index downto index - count + 1 do
-    if Equals(T(fCollection.Items[i]), item) then
+    if fCollection.Items[i].Equals(item) then
       Exit(i);
   Result := -1;
 end;
@@ -1959,7 +1959,7 @@ end;
 
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T): Integer;
 begin
-  Result := IndexOf(item, 0, fCount)
+  Result := IndexOf(item, 0, fCount);
 end;
 
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T;

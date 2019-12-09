@@ -826,10 +826,7 @@ end;
 constructor TEnumerableBase<T>.Create;
 begin
   inherited Create;
-  if TType.Kind<T> = tkClass then
-    fComparer := IComparer<T>(GetInstanceComparer)
-  else
-    fComparer := IComparer<T>(_LookupVtableInfo(giComparer, GetElementType, SizeOf(T)));
+  fComparer := IComparer<T>(_LookupVtableInfo(giComparer, GetElementType, SizeOf(T)));
 end;
 
 constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);

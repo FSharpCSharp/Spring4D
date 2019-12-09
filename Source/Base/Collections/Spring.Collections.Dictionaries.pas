@@ -47,6 +47,19 @@ type
     Value: TValue;
   end;
 
+  TDictionaryEnumerator = class(TRefCountedObject)
+  private
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fSource: TRefCountedObject;
+    fHashTable: PHashTable;
+    fIndex: Integer;
+    fVersion: Integer;
+  public
+    constructor Create(const source: TRefCountedObject; hashTable: PHashTable);
+    destructor Destroy; override;
+    function MoveNext: Boolean;
+  end;
+
   TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IInterface,
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
@@ -60,17 +73,10 @@ type
       TItems = TArray<TItem>;
       PItem = ^TItem;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(TDictionaryEnumerator, IEnumerator<TKeyValuePair>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: TDictionary<TKey, TValue>;
-        fIndex: Integer;
-        fVersion: Integer;
         fCurrent: TKeyValuePair;
         function GetCurrent: TKeyValuePair;
-      public
-        constructor Create(const source: TDictionary<TKey, TValue>);
-        destructor Destroy; override;
         function MoveNext: Boolean;
       end;
 
@@ -369,19 +375,10 @@ type
     procedure ValueChanged(const item: TValue; action: TCollectionChangedAction);
     property Capacity: Integer read GetCapacity;
   public
-    constructor Create; overload; override;
-    constructor Create(ownerships: TDictionaryOwnerships); overload;
-    constructor Create(capacity: Integer; ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(const keyComparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(const keyComparer: IEqualityComparer<TKey>;
+    constructor Create(capacity: Integer;
+      const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>;
-      ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(capacity: Integer; const keyComparer: IEqualityComparer<TKey>;
-      ownerships: TDictionaryOwnerships = []); overload;
-    constructor Create(capacity: Integer; const keyComparer: IEqualityComparer<TKey>;
-      const valueComparer: IEqualityComparer<TValue>;
-      ownerships: TDictionaryOwnerships = []); overload;
+      ownerships: TDictionaryOwnerships);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
@@ -577,6 +574,49 @@ uses
   Spring.ResourceStrings;
 
 
+{$REGION 'TDictionaryEnumerator'}
+
+constructor TDictionaryEnumerator.Create(const source: TRefCountedObject;
+  hashTable: PHashTable);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fHashTable := hashTable;
+  fVersion := fHashTable.Version;
+end;
+
+destructor TDictionaryEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
+end;
+
+function TDictionaryEnumerator.MoveNext: Boolean;
+var
+  item: PByte;
+begin
+  if fVersion = fHashTable.Version then
+  begin
+    while True do
+    begin
+      if fIndex >= fHashTable.ItemCount then
+        Break;
+
+      item := fHashTable.Items + fIndex * fHashTable.ItemSize;
+      Inc(fIndex);
+      if PInteger(item)^ >= 0 then
+        Exit(True);
+    end;
+    Exit(False);
+  end
+  else
+    raise Error.EnumFailedVersion;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TDictionary<TKey, TValue>'}
 
 constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
@@ -670,7 +710,7 @@ end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
 begin
-  Result := TEnumerator.Create(Self);
+  Result := TEnumerator.Create(Self, @fHashTable);
 end;
 
 procedure TDictionary<TKey, TValue>.Clear;
@@ -1014,21 +1054,6 @@ end;
 
 {$REGION 'TDictionary<TKey, TValue>.TEnumerator'}
 
-constructor TDictionary<TKey, TValue>.TEnumerator.Create(
-  const source: TDictionary<TKey, TValue>);
-begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fHashTable.Version;
-end;
-
-destructor TDictionary<TKey, TValue>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-  inherited;
-end;
-
 function TDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
 begin
   Result := fCurrent;
@@ -1036,31 +1061,15 @@ end;
 
 function TDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
 var
-  hashTable: PHashTable;
   item: PItem;
 begin
-  hashTable := @fSource.fHashTable;
-
-  if fVersion = hashTable.Version then
+  Result := inherited MoveNext;
+  if Result then
   begin
-    while True do
-    begin
-      if fIndex >= hashTable.ItemCount then
-        Break;
-
-      item := @TItems(hashTable.Items)[fIndex];
-      Inc(fIndex);
-      if item.HashCode < 0 then
-        Continue;
-
-      fCurrent.Key := item.Key;
-      fCurrent.Value := item.Value;
-      Exit(True);
-    end;
-    Exit(False);
-  end
-  else
-    raise Error.EnumFailedVersion;
+    item := @TItems(fHashTable.Items)[fIndex - 1];
+    fCurrent.Key := item.Key;
+    fCurrent.Value := item.Value;
+  end;
 end;
 
 {$ENDREGION}
@@ -1078,44 +1087,6 @@ end;
 
 {$REGION 'TBidiDictionary<TKey, TValue>'}
 
-constructor TBidiDictionary<TKey, TValue>.Create;
-begin
-  Create(0, nil, nil);
-end;
-
-constructor TBidiDictionary<TKey, TValue>.Create(ownerships: TDictionaryOwnerships);
-begin
-  Create(0, nil, nil, ownerships);
-end;
-
-constructor TBidiDictionary<TKey, TValue>.Create(capacity: Integer;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(capacity, nil, nil, ownerships);
-end;
-
-constructor TBidiDictionary<TKey, TValue>.Create(
-  const keyComparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(0, keyComparer, nil, ownerships);
-end;
-
-constructor TBidiDictionary<TKey, TValue>.Create(
-  const keyComparer: IEqualityComparer<TKey>;
-  const valueComparer: IEqualityComparer<TValue>;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(0, keyComparer, valueComparer, ownerships);
-end;
-
-constructor TBidiDictionary<TKey, TValue>.Create(capacity: Integer;
-  const keyComparer: IEqualityComparer<TKey>;
-  ownerships: TDictionaryOwnerships);
-begin
-  Create(capacity, keyComparer, nil, ownerships);
-end;
-
 constructor TBidiDictionary<TKey, TValue>.Create(capacity: Integer;
   const keyComparer: IEqualityComparer<TKey>;
   const valueComparer: IEqualityComparer<TValue>;
@@ -1126,11 +1097,11 @@ begin
 {$ENDIF}
 
   if doOwnsKeys in ownerships then
-    if TType.Kind<TKey> <> tkClass then
+    if KeyType.Kind <> tkClass then
       raise Error.NoClassType(KeyType);
 
   if doOwnsValues in ownerships then
-    if TType.Kind<TValue> <> tkClass then
+    if ValueType.Kind <> tkClass then
       raise Error.NoClassType(ValueType);
 
   inherited Create;
@@ -1174,9 +1145,6 @@ procedure TBidiDictionary<TKey, TValue>.KeyChanged(const item: TKey;
 begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
-{$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(TKey) = tkClass then
-{$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
     FreeObject(item);
 end;
@@ -1186,9 +1154,6 @@ procedure TBidiDictionary<TKey, TValue>.ValueChanged(const item: TValue;
 begin
   if fOnValueChanged.CanInvoke then
     fOnValueChanged.Invoke(Self, item, action);
-{$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(TValue) = tkClass then
-{$ENDIF}
   if (action = caRemoved) and (doOwnsValues in fOwnerships) then
     FreeObject(item);
 end;
