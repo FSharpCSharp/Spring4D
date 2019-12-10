@@ -799,23 +799,8 @@ begin
 end;
 
 class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
-type
-  TIntfFlagEx = (ifHasGuid, ifDispInterface, ifDispatch, ifMethodInfo, ifUnused, ifUnused2, ifMethodReference);
-  TIntfFlagsEx = set of TIntfFlagEx;
-var
-  typeData: PTypeData;
 begin
-  while Assigned(typeInfo) and (typeInfo.Kind = tkInterface) do
-  begin
-    typeData := GetTypeData(typeInfo);
-    if Assigned(typeData) and (ifMethodReference in TIntfFlagsEx(typeData.IntfFlags)) then
-      Exit(True);
-    if Assigned(typeData) and Assigned(typeData.IntfParent) then
-      typeInfo := typeData.IntfParent^
-    else
-      typeInfo := nil;
-  end;
-  Result := False;
+  Result := IsMethodReference(typeInfo);
 end;
 
 class procedure TType.SetFieldValue(const instance: TObject;

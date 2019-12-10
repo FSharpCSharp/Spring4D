@@ -196,7 +196,7 @@ end;
 procedure TComponentRegistry.CheckIsNonGuidInterface(const serviceType: TRttiType);
 begin
   if serviceType.IsInterface and not serviceType.AsInterface.HasGuid
-    and not TType.IsDelegate(serviceType.Handle) then
+    and not IsMethodReference(serviceType.Handle) then
     raise ERegistrationException.CreateResFmt(@SMissingGuid, [serviceType.DefaultName]);
 end;
 
@@ -331,7 +331,7 @@ begin
       intf: IInterface;
     begin
       factory := TVirtualInterface.Create(model.ComponentTypeInfo, invokeEvent);
-      if TType.IsDelegate(model.ComponentTypeInfo) then
+      if IsMethodReference(model.ComponentTypeInfo) then
         if maxVirtualIndex > 3 then
           TVirtualInterfaceHack(factory).VTable[3] :=
             TVirtualInterfaceHack(factory).VTable[maxVirtualIndex];

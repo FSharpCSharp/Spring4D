@@ -524,7 +524,7 @@ begin
             service.DefaultName + '@' + model.ComponentTypeName);
           kernel.Registry.RegisterDefault(model, service.Handle);
         end;
-    if TType.IsDelegate(model.ComponentTypeInfo)
+    if IsMethodReference(model.ComponentTypeInfo)
       and not model.HasService(model.ComponentTypeInfo) then
       kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
 

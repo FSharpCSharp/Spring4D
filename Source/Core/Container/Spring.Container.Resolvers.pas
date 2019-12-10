@@ -233,7 +233,7 @@ begin
       instance.AsObject.GetInterface(dependency.TypeInfo.TypeData.Guid, intf)
     else
     begin
-      if TType.IsDelegate(dependency.TypeInfo) then
+      if IsMethodReference(dependency.TypeInfo) then
       begin
         intf := nil;
         IInterface(intf) := instance.AsInterface;

@@ -2893,6 +2893,8 @@ function TypesOf(const values: array of TValue): TArray<PTypeInfo>;
 function InterfaceToMethodPointer(const intf; index: Integer): TMethodPointer;
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
+function HasMethodInfo(typeInfo: PTypeInfo): Boolean;
+function IsMethodReference(typeInfo: PTypeInfo): Boolean;
 
 function SkipShortString(P: PByte): Pointer; inline;
 
@@ -3619,6 +3621,22 @@ end;
 function GetVirtualMethod(const classType: TClass; const index: Integer): Pointer;
 begin
   Result := PPointer(IntPtr(classType) + IntPtr(index * SizeOf(Pointer)))^;
+end;
+
+type
+  TIntfFlagEx = (ifHasGuid, ifDispInterface, ifDispatch, ifMethodInfo, ifUnused, ifUnused2, ifMethodReference);
+  TIntfFlagsEx = set of TIntfFlagEx;
+
+function HasMethodInfo(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkInterface)
+    and (ifMethodInfo in TIntfFlagsEx(typeInfo.TypeData.IntfFlags));
+end;
+
+function IsMethodReference(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkInterface)
+    and (ifMethodReference in TIntfFlagsEx(typeInfo.TypeData.IntfFlags));
 end;
 
 type
