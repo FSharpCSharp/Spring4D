@@ -160,10 +160,16 @@ begin
 end;
 
 procedure TLoggerResolver.EnsureConfiguration;
+var
+  value: TValue;
+  configuration: TLoggingConfiguration;
 begin
   if not Assigned(fConfiguration) then
-    (Kernel as IKernelInternal).Resolve(TypeInfo(TLoggingConfiguration))
-      .AsType(TypeInfo(TLoggingConfiguration), fConfiguration);
+  begin
+    value := (Kernel as IKernelInternal).Resolve(TypeInfo(TLoggingConfiguration));
+    value.AsType(TypeInfo(TLoggingConfiguration), configuration);
+    fConfiguration := configuration;
+  end;
 end;
 
 function TLoggerResolver.Resolve(const context: ICreationContext;
