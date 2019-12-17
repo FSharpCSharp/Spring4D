@@ -499,7 +499,7 @@ type
     /// <summary>
     ///   The content of the collection changed dramatically.
     /// </summary>
-    caReseted,
+    caReset,
 
     /// <summary>
     ///   An item in the collection was changed.
@@ -2978,6 +2978,7 @@ procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
 
 const
   EmptyValue: TValue = ();
+  caReseted = caReset deprecated 'Use caReset';
 
 implementation
 

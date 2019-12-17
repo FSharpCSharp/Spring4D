@@ -1991,7 +1991,7 @@ begin
   if Assigned(Notify) then
   begin
     defaultValue := Default(T);
-    Notify(Self, defaultValue, caReseted);
+    Notify(Self, defaultValue, caReset);
   end;
 end;
 

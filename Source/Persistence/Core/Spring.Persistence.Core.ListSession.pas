@@ -115,7 +115,7 @@ begin
     end;
     caReplaced: ;
     caMoved: ;
-    caReseted: ;
+    caReset: ;
   end;
 end;
 

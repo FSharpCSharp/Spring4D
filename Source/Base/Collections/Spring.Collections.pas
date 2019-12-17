@@ -45,8 +45,9 @@ const
   caExtracted = Spring.caExtracted;
   caReplaced = Spring.caReplaced;
   caMoved = Spring.caMoved;
-  caReseted = Spring.caReseted;
+  caReset = Spring.caReset;
   caChanged = Spring.caChanged;
+  caReseted = Spring.caReset deprecated 'Use caReset instead';
 
 type
   TDictionaryOwnerships = set of (doOwnsKeys, doOwnsValues);
@@ -1773,7 +1774,7 @@ type
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
 
-    procedure AddOrSetValue(const key: TKey; const value: TValue); deprecated 'use dict[key] := value';
+    procedure AddOrSetValue(const key: TKey; const value: TValue); deprecated 'Use dict[key] := value instead';
 
     /// <summary>
     ///   Removes the value for a specified key without triggering lifetime
