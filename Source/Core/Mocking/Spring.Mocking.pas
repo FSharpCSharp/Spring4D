@@ -395,6 +395,8 @@ end;
 
 procedure Mock<T>.Free;
 begin
+  if Assigned(fMock) then
+    fMock.Reset;
   fMock := nil;
 end;
 
