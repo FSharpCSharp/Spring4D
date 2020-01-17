@@ -5509,12 +5509,13 @@ end;
 class function TValueHelper.FromFloat(typeInfo: PTypeInfo;
   value: Extended): TValue;
 begin
+  Result.Init(typeInfo);
   case typeInfo.TypeData.FloatType of
-    ftSingle: Result := TValue.From(@value, System.TypeInfo(Single));
-    ftDouble: Result := TValue.From(@value, System.TypeInfo(Double));
-    ftExtended: Result := TValue.From(@value, System.TypeInfo(Extended));
-    ftComp: Result := TValue.From(@value, System.TypeInfo(Comp));
-    ftCurr: Result := TValue.From(@value, System.TypeInfo(Currency));
+    ftSingle: TValueData(Result).FAsSingle := value;
+    ftDouble: TValueData(Result).FAsDouble := value;
+    ftExtended: TValueData(Result).FAsExtended := value;
+    ftComp: TValueData(Result).FAsComp := value;
+    ftCurr: TValueData(Result).FAsCurr := value;
   end;
 end;
 
