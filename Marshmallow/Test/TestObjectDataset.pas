@@ -464,7 +464,7 @@ begin
     caRemoved: FRemovedItemAge := item.Age;
     caReplaced: ;
     caMoved: ;
-    caReseted: ;
+    caReset: ;
   end;
 end;
 
