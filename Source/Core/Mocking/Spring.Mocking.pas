@@ -342,7 +342,7 @@ var
 begin
   SetLength(tempValues, Length(values));
   for i := 0 to High(values) do
-    tempValues[i] := TValue.From(@values[i], TypeInfo(TResult));
+    TValue.Make(@values[i], TypeInfo(TResult), tempValues[i]);
   Result := fSetup.Returns(tempValues);
 end;
 

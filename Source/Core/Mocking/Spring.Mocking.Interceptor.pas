@@ -356,6 +356,8 @@ end;
 procedure TMockInterceptor.Reset;
 begin
   fState := TMockState.Act;
+  fCurrentAction := nil;
+  fCurrentValues := nil;
   fExpectedCalls.Clear;
   fReceivedCalls.Clear;
 end;
