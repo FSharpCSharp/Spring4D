@@ -308,6 +308,8 @@ var
   params: TArray<TRttiParameter>;
   args: TArray<TValue>;
   i: Integer;
+  cls: TClass;
+  codeAddress: Pointer;
 begin
   params := fMethod.GetParameters;
   SetLength(args, Length(fArguments) + 1);
@@ -318,7 +320,12 @@ begin
     PassArg(params[i], fArguments[i], args[i + 1], fMethod.CallingConvention);
 
   if not fTarget.IsEmpty then
-    fResult := Rtti.Invoke(fMethod.CodeAddress, args, fMethod.CallingConvention, fMethod.ReturnTypeHandle);
+  begin
+    // perform virtual dispatch to the proxified class
+    cls := fTarget.AsObject.ClassParent;
+    codeAddress := PVirtualMethodTable(cls)[fMethod.VirtualIndex];
+    fResult := Rtti.Invoke(codeAddress, args, fMethod.CallingConvention, fMethod.ReturnTypeHandle);
+  end;
 end;
 
 {$ENDREGION}
