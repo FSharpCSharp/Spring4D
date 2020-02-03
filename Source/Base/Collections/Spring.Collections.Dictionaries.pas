@@ -47,19 +47,6 @@ type
     Value: TValue;
   end;
 
-  TDictionaryEnumerator = class(TRefCountedObject)
-  private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-    fSource: TRefCountedObject;
-    fHashTable: PHashTable;
-    fIndex: Integer;
-    fVersion: Integer;
-  public
-    constructor Create(const source: TRefCountedObject; hashTable: PHashTable);
-    destructor Destroy; override;
-    function MoveNext: Boolean;
-  end;
-
   TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>, IInterface,
     IEnumerable<TPair<TKey, TValue>>, IReadOnlyCollection<TPair<TKey, TValue>>,
     IReadOnlyMap<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>,
@@ -73,7 +60,7 @@ type
       TItems = TArray<TItem>;
       PItem = ^TItem;
 
-      TEnumerator = class(TDictionaryEnumerator, IEnumerator<TKeyValuePair>)
+      TEnumerator = class(THashTableEnumerator, IEnumerator<TKeyValuePair>)
       private
         fCurrent: TKeyValuePair;
         function GetCurrent: TKeyValuePair;
@@ -565,6 +552,40 @@ type
   {$ENDREGION}
   end;
 
+  TFoldedDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
+  private
+    fElementType: PTypeInfo;
+    fKeyType: PTypeInfo;
+    fValueType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
+    function GetKeyType: PTypeInfo; override;
+    function GetValueType: PTypeInfo; override;
+  public
+    constructor Create(keyType, valueType, elementType: PTypeInfo;
+      capacity: Integer;
+      const keyComparer: IEqualityComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>;
+      ownerships: TDictionaryOwnerships);
+  end;
+
+  TFoldedBidiDictionary<TKey, TValue> = class(TBidiDictionary<TKey, TValue>)
+  private
+    fElementType: PTypeInfo;
+    fKeyType: PTypeInfo;
+    fValueType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
+    function GetKeyType: PTypeInfo; override;
+    function GetValueType: PTypeInfo; override;
+  public
+    constructor Create(keyType, valueType, elementType: PTypeInfo;
+      capacity: Integer;
+      const keyComparer: IEqualityComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>;
+      ownerships: TDictionaryOwnerships);
+  end;
+
 implementation
 
 uses
@@ -572,49 +593,6 @@ uses
   Types,
   TypInfo,
   Spring.ResourceStrings;
-
-
-{$REGION 'TDictionaryEnumerator'}
-
-constructor TDictionaryEnumerator.Create(const source: TRefCountedObject;
-  hashTable: PHashTable);
-begin
-  inherited Create;
-  fSource := source;
-  fSource._AddRef;
-  fHashTable := hashTable;
-  fVersion := fHashTable.Version;
-end;
-
-destructor TDictionaryEnumerator.Destroy;
-begin
-  fSource._Release;
-  inherited;
-end;
-
-function TDictionaryEnumerator.MoveNext: Boolean;
-var
-  item: PByte;
-begin
-  if fVersion = fHashTable.Version then
-  begin
-    while True do
-    begin
-      if fIndex >= fHashTable.ItemCount then
-        Break;
-
-      item := fHashTable.Items + fIndex * fHashTable.ItemSize;
-      Inc(fIndex);
-      if PInteger(item)^ >= 0 then
-        Exit(True);
-    end;
-    Exit(False);
-  end
-  else
-    raise Error.EnumFailedVersion;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TDictionary<TKey, TValue>'}
@@ -2832,6 +2810,70 @@ end;
 function TSortedDictionary<TKey, TValue>.TValueCollection._Release: Integer;
 begin
   Result := fSource._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedDictionary<TKey, TValue>'}
+
+constructor TFoldedDictionary<TKey, TValue>.Create(keyType,
+  valueType, elementType: PTypeInfo; capacity: Integer;
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fElementType := elementType;
+  fKeyType := keyType;
+  fValueType := valueType;
+  inherited Create(capacity, keyComparer, valueComparer, ownerships);
+end;
+
+function TFoldedDictionary<TKey, TValue>.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
+end;
+
+function TFoldedDictionary<TKey, TValue>.GetKeyType: PTypeInfo;
+begin
+  Result := fKeyType;
+end;
+
+function TFoldedDictionary<TKey, TValue>.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedBidiDictionary<TKey, TValue>'}
+
+constructor TFoldedBidiDictionary<TKey, TValue>.Create(keyType, valueType,
+  elementType: PTypeInfo; capacity: Integer;
+  const keyComparer: IEqualityComparer<TKey>;
+  const valueComparer: IEqualityComparer<TValue>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fElementType := elementType;
+  fKeyType := keyType;
+  fValueType := valueType;
+  inherited Create(capacity, keyComparer, valueComparer, ownerships);
+end;
+
+function TFoldedBidiDictionary<TKey, TValue>.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
+end;
+
+function TFoldedBidiDictionary<TKey, TValue>.GetKeyType: PTypeInfo;
+begin
+  Result := fKeyType;
+end;
+
+function TFoldedBidiDictionary<TKey, TValue>.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
 end;
 
 {$ENDREGION}

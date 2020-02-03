@@ -461,6 +461,19 @@ type
   {$ENDREGION}
   end;
 
+  THashTableEnumerator = class(TRefCountedObject)
+  protected
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fSource: TRefCountedObject;
+    fHashTable: PHashTable;
+    fIndex: Integer;
+    fVersion: Integer;
+  public
+    constructor Create(const source: TRefCountedObject; hashTable: PHashTable);
+    destructor Destroy; override;
+    function MoveNext: Boolean;
+  end;
+
   TCircularArrayBuffer<T> = class(TEnumerableBase<T>)
   private
   {$REGION 'Nested Types'}
@@ -2137,6 +2150,49 @@ begin
 
       fCurrent := PT(item + fSource.fOffset)^;
       Exit(True);
+    end;
+    Exit(False);
+  end
+  else
+    raise Error.EnumFailedVersion;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'THashTableEnumerator'}
+
+constructor THashTableEnumerator.Create(const source: TRefCountedObject;
+  hashTable: PHashTable);
+begin
+  inherited Create;
+  fSource := source;
+  fSource._AddRef;
+  fHashTable := hashTable;
+  fVersion := fHashTable.Version;
+end;
+
+destructor THashTableEnumerator.Destroy;
+begin
+  fSource._Release;
+  inherited;
+end;
+
+function THashTableEnumerator.MoveNext: Boolean;
+var
+  item: PByte;
+begin
+  if fVersion = fHashTable.Version then
+  begin
+    while True do
+    begin
+      if fIndex >= fHashTable.ItemCount then
+        Break;
+
+      item := fHashTable.Items + fIndex * fHashTable.ItemSize;
+      Inc(fIndex);
+      if PInteger(item)^ >= 0 then
+        Exit(True);
     end;
     Exit(False);
   end

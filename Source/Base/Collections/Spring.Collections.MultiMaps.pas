@@ -264,6 +264,21 @@ type
       ownerships: TDictionaryOwnerships);
   end;
 
+  TFoldedListMultiMap<TKey, TValue> = class(TListMultiMap<TKey, TValue>)
+  private
+    fElementType: PTypeInfo;
+    fKeyType: PTypeInfo;
+    fValueType: PTypeInfo;
+  protected
+    function GetElementType: PTypeInfo; override;
+    function GetKeyType: PTypeInfo; override;
+    function GetValueType: PTypeInfo; override;
+  public
+    constructor Create(keyType, valueType, elementType: PTypeInfo;
+      const keyComparer: IEqualityComparer<TKey>;
+      ownerships: TDictionaryOwnerships);
+  end;
+
 implementation
 
 uses
@@ -970,5 +985,36 @@ begin
 end;
 
 {$ENDREGION}
+
+
+{$REGION 'TFoldedListMultiMap<TKey, TValue>'}
+
+constructor TFoldedListMultiMap<TKey, TValue>.Create(keyType,
+  valueType, elementType: PTypeInfo; const keyComparer: IEqualityComparer<TKey>;
+  ownerships: TDictionaryOwnerships);
+begin
+  fElementType := elementType;
+  fKeyType := keyType;
+  fValueType := valueType;
+  inherited Create(keyComparer, ownerships);
+end;
+
+function TFoldedListMultiMap<TKey, TValue>.GetElementType: PTypeInfo;
+begin
+  Result := fElementType;
+end;
+
+function TFoldedListMultiMap<TKey, TValue>.GetKeyType: PTypeInfo;
+begin
+  Result := fKeyType;
+end;
+
+function TFoldedListMultiMap<TKey, TValue>.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
+end;
+
+{$ENDREGION}
+
 
 end.
