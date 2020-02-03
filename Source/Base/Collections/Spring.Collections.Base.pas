@@ -934,7 +934,6 @@ var
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull<T>(value, 'value');
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 

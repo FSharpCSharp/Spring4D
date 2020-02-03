@@ -533,6 +533,7 @@ type
   TTestEnumerable = class(TTestCase)
   published
     procedure TestAggregate;
+    procedure TestContains_Nil;
     procedure TestToArray;
 
     procedure TestTryMethodsReturnDefaultWhenFalse;
@@ -3480,6 +3481,14 @@ begin
       Result := next + ' ' + workingSentence;
     end);
   CheckEquals('dog lazy the over jumps fox brown quick the', reversed);
+end;
+
+procedure TTestEnumerable.TestContains_Nil;
+var
+  sut: IEnumerable<TObject>;
+begin
+  sut := TEnumerable.Repeated<TObject>(nil, 1);
+  CheckTrue(sut.Contains(nil));
 end;
 
 procedure TTestEnumerable.TestToArray;
