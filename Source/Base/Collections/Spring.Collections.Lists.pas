@@ -920,7 +920,7 @@ var
   tailCount: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange(index >= 0, 'index');
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
 

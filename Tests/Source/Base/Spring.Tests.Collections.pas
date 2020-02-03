@@ -182,6 +182,8 @@ type
     procedure TestExtractRange;
 
     procedure TestTryMethodsReturnDefaultWhenFalse;
+
+    procedure TestDeleteRangeEmptyList;
   end;
 
   TTestStringList = class(TTestCase)
@@ -1122,6 +1124,21 @@ begin
   CheckEquals(SUT.Last, values[MaxItems-1]);
   SUT[0] := MaxItems;
   CheckNotEquals(SUT.First, values[0]);
+end;
+
+procedure TTestIntegerList.TestDeleteRangeEmptyList;
+begin
+  SUT.DeleteRange(0, 0);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      SUT.DeleteRange(0, 1);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      SUT.DeleteRange(1, 0);
+    end);
 end;
 
 procedure TTestIntegerList.TestEnumeratorMoveNext_VersionMismatch;
