@@ -5489,17 +5489,9 @@ begin
 end;
 
 class function TValueHelper.From(buffer: Pointer; typeInfo: PTypeInfo): TValue;
-{$IFDEF CPUX86}
-asm
-  jmp TValue.Make
-end;
-{$ELSE}
-type
-  TValueMake = procedure(ABuffer: Pointer; ATypeInfo: PTypeInfo; var Result: TValue);
 begin
-  TValueMake(@TValue.Make)(buffer, typeInfo, Result);
+  TValue.Make(buffer, typeInfo, Result);
 end;
-{$ENDIF}
 
 class function TValueHelper.From(instance: TObject; classType: TClass): TValue;
 begin
@@ -10272,6 +10264,15 @@ begin
   Result := -1;
 end;
 
+procedure SwapPtr(var left, right);
+var
+  temp: Pointer;
+begin
+  temp := Pointer(left);
+  Pointer(left) := Pointer(right);
+  Pointer(right) := temp;
+end;
+
 class procedure TArray.Swap<T>(var left, right: T);
 var
   temp: T;
@@ -10355,15 +10356,6 @@ begin
     values[i] := temp;
     Inc(index);
   end;
-end;
-
-procedure SwapPtr(var left, right);
-var
-  temp: Pointer;
-begin
-  temp := Pointer(left);
-  Pointer(left) := Pointer(right);
-  Pointer(right) := temp;
 end;
 
 class function TArray.GetDepthLimit(count: Integer): Integer;
