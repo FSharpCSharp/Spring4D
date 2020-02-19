@@ -98,9 +98,9 @@ type
     function Extract: T;
     function Peek: T;
     function PeekOrDefault: T;
-    function TryPop(out item: T): Boolean;
-    function TryExtract(out item: T): Boolean;
-    function TryPeek(out item: T): Boolean;
+    function TryPop(var item: T): Boolean;
+    function TryExtract(var item: T): Boolean;
+    function TryPeek(var item: T): Boolean;
 
     procedure Clear;
     procedure TrimExcess;
@@ -329,7 +329,7 @@ begin
   SetLength(fItems, fCapacity);
 end;
 
-function TAbstractStack<T>.TryPop(out item: T): Boolean;
+function TAbstractStack<T>.TryPop(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -338,7 +338,7 @@ begin
     item := Default(T);
 end;
 
-function TAbstractStack<T>.TryExtract(out item: T): Boolean;
+function TAbstractStack<T>.TryExtract(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -347,7 +347,7 @@ begin
     item := Default(T);
 end;
 
-function TAbstractStack<T>.TryPeek(out item: T): Boolean;
+function TAbstractStack<T>.TryPeek(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then

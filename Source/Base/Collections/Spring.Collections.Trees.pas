@@ -366,7 +366,7 @@ type
     function Add(const key: T): Boolean;
     function Delete(const key: T): Boolean;
     function Exists(const key: T): Boolean;
-    function Find(const key: T; out value: T): Boolean;
+    function Find(const key: T; var value: T): Boolean;
     procedure Clear;
 
     function GetEnumerator: IEnumerator<T>;
@@ -385,7 +385,7 @@ type
     function AddOrSet(const key: TKey; const value: TValue): Boolean;
     function Delete(const key: TKey): Boolean;
     function Exists(const key: TKey): Boolean;
-    function Find(const key: TKey; out foundValue: TValue): Boolean;
+    function Find(const key: TKey; var foundValue: TValue): Boolean;
     procedure Clear;
 
     function GetEnumerator: IEnumerator<TPair<TKey, TValue>>;
@@ -443,7 +443,7 @@ type
     function Add(const key: T): Boolean;
     function Delete(const key: T): Boolean;
     function Exists(const key: T): Boolean;
-    function Find(const key: T; out value: T): Boolean;
+    function Find(const key: T; var value: T): Boolean;
   {$ENDREGION}
 
     procedure TrimExcess;
@@ -493,7 +493,7 @@ type
     function AddOrSet(const key: TKey; const value: TValue): Boolean;
     function Delete(const key: TKey): Boolean;
     function Exists(const key: TKey): Boolean;
-    function Find(const key: TKey; out foundValue: TValue): Boolean;
+    function Find(const key: TKey; var foundValue: TValue): Boolean;
   {$ENDREGION}
 
     procedure TrimExcess;
@@ -1498,7 +1498,7 @@ begin
   Result := (fCount > 0) and Assigned(FindNode(key));
 end;
 
-function TRedBlackTree<T>.Find(const key: T; out value: T): Boolean;
+function TRedBlackTree<T>.Find(const key: T; var value: T): Boolean;
 var
   node: PNode;
 begin
@@ -1715,7 +1715,7 @@ begin
 end;
 
 function TRedBlackTree<TKey, TValue>.Find(const key: TKey;
-  out foundValue: TValue): Boolean;
+  var foundValue: TValue): Boolean;
 var
   node: PNode;
 begin

@@ -102,7 +102,7 @@ type
     procedure ClearInternal;
   protected
     function CreateSet: ISet<T>; override;
-    function TryGetElementAt(out item: T; index: Integer): Boolean;
+    function TryGetElementAt(var item: T; index: Integer): Boolean;
     property Capacity: Integer read GetCapacity;
   public
     constructor Create; overload; override;
@@ -380,7 +380,7 @@ begin
   fHashTable.Capacity := fHashTable.Count;
 end;
 
-function THashSet<T>.TryGetElementAt(out item: T; index: Integer): Boolean;
+function THashSet<T>.TryGetElementAt(var item: T; index: Integer): Boolean;
 begin
   Result := Cardinal(index) < Cardinal(fHashTable.Count);
   if Result then

@@ -728,40 +728,40 @@ type
     /// <summary>
     ///   Try getting the element at a specified index in a sequence.
     /// </summary>
-    function TryGetElementAt(out value: T; index: Integer): Boolean;
+    function TryGetElementAt(var value: T; index: Integer): Boolean;
 
     /// <summary>
     ///   Try getting the first element in a sequence.
     /// </summary>
-    function TryGetFirst(out value: T): Boolean; overload;
+    function TryGetFirst(var value: T): Boolean; overload;
 
     /// <summary>
     ///   Try getting the first element in a sequence that satisfies a
     ///   specified condition.
     /// </summary>
-    function TryGetFirst(out value: T; const predicate: Predicate<T>): Boolean; overload;
+    function TryGetFirst(var value: T; const predicate: Predicate<T>): Boolean; overload;
 
     /// <summary>
     ///   Try getting the last element in a sequence.
     /// </summary>
-    function TryGetLast(out value: T): Boolean; overload;
+    function TryGetLast(var value: T): Boolean; overload;
 
     /// <summary>
     ///   Try getting the last element in a sequence that satisfies a specified
     ///   condition.
     /// </summary>
-    function TryGetLast(out value: T; const predicate: Predicate<T>): Boolean; overload;
+    function TryGetLast(var value: T; const predicate: Predicate<T>): Boolean; overload;
 
     /// <summary>
     ///   Try getting the only element in a sequence.
     /// </summary>
-    function TryGetSingle(out value: T): Boolean; overload;
+    function TryGetSingle(var value: T): Boolean; overload;
 
     /// <summary>
     ///   Try getting the only element in a sequence that satisfies a specified
     ///   condition.
     /// </summary>
-    function TryGetSingle(out value: T; const predicate: Predicate<T>): Boolean; overload;
+    function TryGetSingle(var value: T; const predicate: Predicate<T>): Boolean; overload;
 
     /// <summary>
     ///   Filters a sequence of values based on a predicate.
@@ -1605,7 +1605,7 @@ type
     ///   TValue&gt; contains an element with the specified key; otherwise, <b>
     ///   False</b>.
     /// </returns>
-    function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    function TryGetValue(const key: TKey; var value: TValue): Boolean;
 
     /// <summary>
     ///   Gets the element that has the specified key in the read-only
@@ -1815,7 +1815,7 @@ type
     /// <returns>
     ///   <b>True</b> if the key is found; <b>False</b> otherwise.
     /// </returns>
-    function TryExtract(const key: TKey; out value: TValue): Boolean;
+    function TryExtract(const key: TKey; var value: TValue): Boolean;
 
     /// <summary>
     ///   Gets the value associated with the specified key.
@@ -1830,7 +1830,7 @@ type
     /// <returns>
     ///   <b>True</b> if the key is found; <b>False</b> otherwise.
     /// </returns>
-    function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    function TryGetValue(const key: TKey; var value: TValue): Boolean;
 
     /// <summary>
     ///   Updates the value associated with the specified key.
@@ -1848,7 +1848,7 @@ type
     /// <returns>
     ///   <b>True</b> if the key is found and the value updated; <b>False</b> otherwise.
     /// </returns>
-    function TryUpdateValue(const key: TKey; const newValue: TValue; out value: TValue): Boolean;
+    function TryUpdateValue(const key: TKey; const newValue: TValue; var value: TValue): Boolean;
 
     /// <summary>
     ///   Returns the dictionary as read-only dictionary.
@@ -1907,7 +1907,7 @@ type
     function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
   {$ENDREGION}
 
-    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
+    function TryGetValues(const key: TKey; var values: IReadOnlyCollection<TValue>): Boolean;
     property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
@@ -1945,7 +1945,7 @@ type
     /// </remarks>
     function Extract(const key: TKey): ICollection<TValue>; overload;
 
-    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
+    function TryGetValues(const key: TKey; var values: IReadOnlyCollection<TValue>): Boolean;
 
     /// <summary>
     ///   Returns the multimap as read-only multimap.
@@ -2035,7 +2035,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
-    function TryPop(out item: T): Boolean;
+    function TryPop(var item: T): Boolean;
 
     /// <summary>
     ///   Attempts to remove and return the element at the top of the stack.
@@ -2049,7 +2049,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
-    function TryExtract(out item: T): Boolean;
+    function TryExtract(var item: T): Boolean;
 
     /// <summary>
     ///   Attempts to return an element from the top of the stack without
@@ -2062,7 +2062,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was returned; otherwise, <b>False</b>.
     /// </returns>
-    function TryPeek(out item: T): Boolean;
+    function TryPeek(var item: T): Boolean;
 
     /// <summary>
     ///   Resize the internal storage so that it is the same size as the
@@ -2151,7 +2151,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
-    function TryDequeue(out item: T): Boolean;
+    function TryDequeue(var item: T): Boolean;
 
     /// <summary>
     ///   Attempts to remove and return the element at the beginning of the
@@ -2165,7 +2165,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
-    function TryExtract(out item: T): Boolean;
+    function TryExtract(var item: T): Boolean;
 
     /// <summary>
     ///   Attempts to return an element from the beginning of the queue without
@@ -2178,7 +2178,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was returned; otherwise, <b>False</b>.
     /// </returns>
-    function TryPeek(out item: T): Boolean;
+    function TryPeek(var item: T): Boolean;
 
     /// <summary>
     ///   Resize the internal storage so that it is the same size as the
@@ -2289,7 +2289,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
-    function TryRemoveFirst(out item: T): Boolean;
+    function TryRemoveFirst(var item: T): Boolean;
 
     /// <summary>
     ///   Attempts to remove and return the element at the back of the
@@ -2303,7 +2303,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
-    function TryRemoveLast(out item: T): Boolean;
+    function TryRemoveLast(var item: T): Boolean;
 
     /// <summary>
     ///   Attempts to remove and return the element at the front of the
@@ -2317,7 +2317,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
-    function TryExtractFirst(out item: T): Boolean;
+    function TryExtractFirst(var item: T): Boolean;
 
     /// <summary>
     ///   Attempts to remove and return the element at the back of the
@@ -2331,7 +2331,7 @@ type
     /// <returns>
     ///   <b>True</b> if an element was removed; otherwise, <b>False</b>.
     /// </returns>
-    function TryExtractLast(out item: T): Boolean;
+    function TryExtractLast(var item: T): Boolean;
 
     /// <summary>
     ///   Resize the internal storage so that it is the same size as the

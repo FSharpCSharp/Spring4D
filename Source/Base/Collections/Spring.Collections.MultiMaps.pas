@@ -221,7 +221,7 @@ type
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
     procedure AddRange(const key: TKey; const values: IEnumerable<TValue>); overload;
     function Extract(const key: TKey): ICollection<TValue>; overload;
-    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
+    function TryGetValues(const key: TKey; var values: IReadOnlyCollection<TValue>): Boolean;
   {$ENDREGION}
   end;
 
@@ -875,7 +875,7 @@ begin
 end;
 
 function TMultiMapBase<TKey, TValue>.TryGetValues(const key: TKey;
-  out values: IReadOnlyCollection<TValue>): Boolean;
+  var values: IReadOnlyCollection<TValue>): Boolean;
 var
   entry: THashTableEntry;
 begin

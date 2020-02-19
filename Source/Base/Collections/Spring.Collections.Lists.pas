@@ -97,10 +97,10 @@ type
     procedure SetOwnsObjects(value: Boolean);
   {$ENDREGION}
 
-    function TryGetElementAt(out value: T; index: Integer): Boolean;
-    function TryGetFirst(out value: T): Boolean; overload;
-    function TryGetLast(out value: T): Boolean; overload;
-    function TryGetSingle(out value: T): Boolean; overload;
+    function TryGetElementAt(var value: T; index: Integer): Boolean;
+    function TryGetFirst(var value: T): Boolean; overload;
+    function TryGetLast(var value: T): Boolean; overload;
+    function TryGetSingle(var value: T): Boolean; overload;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount;
@@ -1271,14 +1271,14 @@ begin
   SetCapacity(Count);
 end;
 
-function TAbstractArrayList<T>.TryGetElementAt(out value: T; index: Integer): Boolean;
+function TAbstractArrayList<T>.TryGetElementAt(var value: T; index: Integer): Boolean;
 begin
   Result := Cardinal(index) < Cardinal(Count);
   if Result then
     value := fItems[index];
 end;
 
-function TAbstractArrayList<T>.TryGetFirst(out value: T): Boolean;
+function TAbstractArrayList<T>.TryGetFirst(var value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -1287,7 +1287,7 @@ begin
     value := Default(T);
 end;
 
-function TAbstractArrayList<T>.TryGetLast(out value: T): Boolean;
+function TAbstractArrayList<T>.TryGetLast(var value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -1296,7 +1296,7 @@ begin
     value := Default(T);
 end;
 
-function TAbstractArrayList<T>.TryGetSingle(out value: T): Boolean;
+function TAbstractArrayList<T>.TryGetSingle(var value: T): Boolean;
 begin
   Result := Count = 1;
   if Result then

@@ -62,13 +62,13 @@ type
     function Equals(const left, right: T): Boolean; reintroduce; inline;
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     procedure CopyTo(var values: TArray<T>; index: Integer);
-    function TryGetElementAt(out value: T; index: Integer): Boolean;
-    function TryGetFirst(out value: T): Boolean; overload;
-    function TryGetFirst(out value: T; const predicate: Predicate<T>): Boolean; overload;
-    function TryGetLast(out value: T): Boolean; overload;
-    function TryGetLast(out value: T; const predicate: Predicate<T>): Boolean; overload;
-    function TryGetSingle(out value: T): Boolean; overload;
-    function TryGetSingle(out value: T; const predicate: Predicate<T>): Boolean; overload;
+    function TryGetElementAt(var value: T; index: Integer): Boolean;
+    function TryGetFirst(var value: T): Boolean; overload;
+    function TryGetFirst(var value: T; const predicate: Predicate<T>): Boolean; overload;
+    function TryGetLast(var value: T): Boolean; overload;
+    function TryGetLast(var value: T; const predicate: Predicate<T>): Boolean; overload;
+    function TryGetSingle(var value: T): Boolean; overload;
+    function TryGetSingle(var value: T; const predicate: Predicate<T>): Boolean; overload;
     function UseComparer(typeKind: TTypeKind): Boolean; inline;
     property Comparer: IComparer<T> read fComparer;
   public
@@ -457,7 +457,7 @@ type
     function Contains(const value: T): Boolean; overload;
     function GetEnumerator: IEnumerator<T>;
     function ToArray: TArray<T>;
-    function TryGetElementAt(out value: T; index: Integer): Boolean;
+    function TryGetElementAt(var value: T; index: Integer): Boolean;
   {$ENDREGION}
   end;
 
@@ -539,8 +539,8 @@ type
     function FirstOrDefault: T; overload;
     function Single: T; overload;
     function SingleOrDefault(const defaultValue: T): T; overload;
-    function TryGetFirst(out value: T): Boolean; overload;
-    function TryGetLast(out value: T): Boolean; overload;
+    function TryGetFirst(var value: T): Boolean; overload;
+    function TryGetLast(var value: T): Boolean; overload;
   {$ENDREGION}
 
     procedure Clear;
@@ -969,8 +969,7 @@ end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer): T;
 begin
-  if not IEnumerable<T>(this).TryGetElementAt(Result, index) then
-    Result := Default(T);
+  IEnumerable<T>(this).TryGetElementAt(Result, index);
 end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer;
@@ -1064,11 +1063,8 @@ begin
 end;
 
 function TEnumerableBase<T>.FirstOrDefault: T;
-var
-  defaultItem: T;
 begin
-  if not IEnumerable<T>(this).TryGetFirst(Result) then
-    Result := Default(T);
+  IEnumerable<T>(this).TryGetFirst(Result);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const defaultValue: T): T;
@@ -1079,8 +1075,7 @@ end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: Predicate<T>): T;
 begin
-  if not IEnumerable<T>(this).TryGetFirst(Result, predicate) then
-    Result := Default(T);
+  IEnumerable<T>(this).TryGetFirst(Result, predicate);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: Predicate<T>;
@@ -1126,8 +1121,7 @@ end;
 
 function TEnumerableBase<T>.LastOrDefault: T;
 begin
-  if not IEnumerable<T>(this).TryGetLast(Result) then
-    Result := Default(T);
+  IEnumerable<T>(this).TryGetLast(Result);
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
@@ -1138,8 +1132,7 @@ end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>): T;
 begin
-  if not IEnumerable<T>(this).TryGetLast(Result, predicate) then
-    Result := Default(T);
+  IEnumerable<T>(this).TryGetLast(Result, predicate);
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>;
@@ -1486,8 +1479,7 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.TryGetElementAt(out value: T;
-  index: Integer): Boolean;
+function TEnumerableBase<T>.TryGetElementAt(var value: T; index: Integer): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
@@ -1506,7 +1498,7 @@ begin
   Result := False;
 end;
 
-function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
+function TEnumerableBase<T>.TryGetFirst(var value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
@@ -1520,7 +1512,7 @@ begin
   Result := False;
 end;
 
-function TEnumerableBase<T>.TryGetFirst(out value: T; const predicate: Predicate<T>): Boolean;
+function TEnumerableBase<T>.TryGetFirst(var value: T; const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
@@ -1538,7 +1530,7 @@ begin
   Result := False;
 end;
 
-function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
+function TEnumerableBase<T>.TryGetLast(var value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
@@ -1554,7 +1546,7 @@ begin
   Result := False;
 end;
 
-function TEnumerableBase<T>.TryGetLast(out value: T; const predicate: Predicate<T>): Boolean;
+function TEnumerableBase<T>.TryGetLast(var value: T; const predicate: Predicate<T>): Boolean;
 var
   item: T;
 begin
@@ -1575,7 +1567,7 @@ begin
     value := Default(T);
 end;
 
-function TEnumerableBase<T>.TryGetSingle(out value: T): Boolean;
+function TEnumerableBase<T>.TryGetSingle(var value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
   item: T;
@@ -1594,7 +1586,7 @@ begin
   Result := False;
 end;
 
-function TEnumerableBase<T>.TryGetSingle(out value: T;
+function TEnumerableBase<T>.TryGetSingle(var value: T;
   const predicate: Predicate<T>): Boolean;
 var
   item: T;
@@ -2082,8 +2074,7 @@ begin
   end;
 end;
 
-function TInnerCollection<T>.TryGetElementAt(out value: T;
-  index: Integer): Boolean;
+function TInnerCollection<T>.TryGetElementAt(var value: T; index: Integer): Boolean;
 begin
   Result := Cardinal(index) < Cardinal(fHashTable.Count);
   if Result then
@@ -2410,7 +2401,7 @@ begin
   SetCapacity(Count);
 end;
 
-function TCircularArrayBuffer<T>.TryGetFirst(out value: T): Boolean;
+function TCircularArrayBuffer<T>.TryGetFirst(var value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -2419,7 +2410,7 @@ begin
     value := Default(T);
 end;
 
-function TCircularArrayBuffer<T>.TryGetLast(out value: T): Boolean;
+function TCircularArrayBuffer<T>.TryGetLast(var value: T): Boolean;
 begin
   Result := Count > 0;
   if Result then

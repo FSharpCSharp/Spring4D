@@ -45,9 +45,9 @@ type
     function Extract: T;
     function Peek: T;
     function PeekOrDefault: T;
-    function TryDequeue(out item: T): Boolean;
-    function TryExtract(out item: T): Boolean;
-    function TryPeek(out item: T): Boolean;
+    function TryDequeue(var item: T): Boolean;
+    function TryExtract(var item: T): Boolean;
+    function TryPeek(var item: T): Boolean;
   {$ENDREGION}
   end;
 
@@ -97,10 +97,10 @@ type
     function ExtractFirst: T;
     function ExtractLast: T;
 
-    function TryRemoveFirst(out item: T): Boolean;
-    function TryRemoveLast(out item: T): Boolean;
-    function TryExtractFirst(out item: T): Boolean;
-    function TryExtractLast(out item: T): Boolean;
+    function TryRemoveFirst(var item: T): Boolean;
+    function TryRemoveLast(var item: T): Boolean;
+    function TryExtractFirst(var item: T): Boolean;
+    function TryExtractLast(var item: T): Boolean;
   {$ENDREGION}
   end;
 
@@ -207,7 +207,7 @@ begin
     Result := Default(T);
 end;
 
-function TAbstractQueue<T>.TryDequeue(out item: T): Boolean;
+function TAbstractQueue<T>.TryDequeue(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -222,7 +222,7 @@ begin
     item := Default(T);
 end;
 
-function TAbstractQueue<T>.TryExtract(out item: T): Boolean;
+function TAbstractQueue<T>.TryExtract(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -234,7 +234,7 @@ begin
     item := Default(T);
 end;
 
-function TAbstractQueue<T>.TryPeek(out item: T): Boolean;
+function TAbstractQueue<T>.TryPeek(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -364,7 +364,7 @@ begin
     raise Error.NoElements;
 end;
 
-function TAbstractDeque<T>.TryRemoveFirst(out item: T): Boolean;
+function TAbstractDeque<T>.TryRemoveFirst(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -379,7 +379,7 @@ begin
     item := Default(T);
 end;
 
-function TAbstractDeque<T>.TryRemoveLast(out item: T): Boolean;
+function TAbstractDeque<T>.TryRemoveLast(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -394,7 +394,7 @@ begin
     item := Default(T);
 end;
 
-function TAbstractDeque<T>.TryExtractFirst(out item: T): Boolean;
+function TAbstractDeque<T>.TryExtractFirst(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then
@@ -406,7 +406,7 @@ begin
     item := Default(T);
 end;
 
-function TAbstractDeque<T>.TryExtractLast(out item: T): Boolean;
+function TAbstractDeque<T>.TryExtractLast(var item: T): Boolean;
 begin
   Result := Count > 0;
   if Result then

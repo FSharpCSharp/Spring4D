@@ -108,7 +108,7 @@ type
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
     function ToArray: TArray<TKeyValuePair>;
-    function TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean;
+    function TryGetElementAt(var item: TKeyValuePair; index: Integer): Boolean;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -133,9 +133,9 @@ type
     function Extract(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
-    function TryExtract(const key: TKey; out value: TValue): Boolean;
-    function TryGetValue(const key: TKey; out value: TValue): Boolean;
-    function TryUpdateValue(const key: TKey; const newValue: TValue; out oldValue: TValue): Boolean;
+    function TryExtract(const key: TKey; var value: TValue): Boolean;
+    function TryGetValue(const key: TKey; var value: TValue): Boolean;
+    function TryUpdateValue(const key: TKey; const newValue: TValue; var oldValue: TValue): Boolean;
     procedure TrimExcess;
     function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
   {$ENDREGION}
@@ -202,7 +202,7 @@ type
         function Contains(const value: TValueKeyPair;
           const comparer: IEqualityComparer<TValueKeyPair>): Boolean; overload;
         function ToArray: TArray<TValueKeyPair>;
-        function TryGetElementAt(out item: TValueKeyPair; index: Integer): Boolean;
+        function TryGetElementAt(var item: TValueKeyPair; index: Integer): Boolean;
       {$ENDREGION}
 
       {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -230,9 +230,9 @@ type
         function Extract(const value: TValue): TKey; overload;
         function GetValueOrDefault(const value: TValue): TKey; overload;
         function GetValueOrDefault(const value: TValue; const defaultKey: TKey): TKey; overload;
-        function TryExtract(const value: TValue; out key: TKey): Boolean;
-        function TryGetValue(const value: TValue; out key: TKey): Boolean;
-        function TryUpdateValue(const value: TValue; const newKey: TKey; out oldKey: TKey): Boolean;
+        function TryExtract(const value: TValue; var key: TKey): Boolean;
+        function TryGetValue(const value: TValue; var key: TKey): Boolean;
+        function TryUpdateValue(const value: TValue; const newKey: TKey; var oldKey: TKey): Boolean;
         procedure TrimExcess;
         function AsReadOnly: IReadOnlyDictionary<TValue, TKey>;
       {$ENDREGION}
@@ -280,7 +280,7 @@ type
         function GetEnumerator: IEnumerator<TKey>;
         function Contains(const value: TKey): Boolean; overload;
         function ToArray: TArray<TKey>;
-        function TryGetElementAt(out key: TKey; index: Integer): Boolean;
+        function TryGetElementAt(var key: TKey; index: Integer): Boolean;
       {$ENDREGION}
       end;
 
@@ -305,7 +305,7 @@ type
         function GetEnumerator: IEnumerator<TValue>;
         function Contains(const value: TValue): Boolean; overload;
         function ToArray: TArray<TValue>;
-        function TryGetElementAt(out value: TValue; index: Integer): Boolean;
+        function TryGetElementAt(var value: TValue; index: Integer): Boolean;
       {$ENDREGION}
       end;
   {$ENDREGION}
@@ -373,7 +373,7 @@ type
     function Contains(const value: TKeyValuePair;
       const comparer: IEqualityComparer<TKeyValuePair>): Boolean; overload;
     function ToArray: TArray<TKeyValuePair>;
-    function TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean;
+    function TryGetElementAt(var item: TKeyValuePair; index: Integer): Boolean;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -397,9 +397,9 @@ type
     function Extract(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey): TValue; overload;
     function GetValueOrDefault(const key: TKey; const defaultValue: TValue): TValue; overload;
-    function TryExtract(const key: TKey; out value: TValue): Boolean;
-    function TryGetValue(const key: TKey; out value: TValue): Boolean;
-    function TryUpdateValue(const key: TKey; const newValue: TValue; out oldValue: TValue): Boolean;
+    function TryExtract(const key: TKey; var value: TValue): Boolean;
+    function TryGetValue(const key: TKey; var value: TValue): Boolean;
+    function TryUpdateValue(const key: TKey; const newValue: TValue; var oldValue: TValue): Boolean;
     procedure TrimExcess;
     function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
@@ -538,9 +538,9 @@ type
   {$REGION 'Implements IDictionary<TKey, TValue>'}
     procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Extract(const key: TKey): TValue; overload;
-    function TryExtract(const key: TKey; out value: TValue): Boolean;
-    function TryGetValue(const key: TKey; out value: TValue): Boolean;
-    function TryUpdateValue(const key: TKey; const newValue: TValue; out oldValue: TValue): Boolean;
+    function TryExtract(const key: TKey; var value: TValue): Boolean;
+    function TryGetValue(const key: TKey; var value: TValue): Boolean;
+    function TryUpdateValue(const key: TKey; const newValue: TValue; var oldValue: TValue): Boolean;
     procedure TrimExcess;
     function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
@@ -867,7 +867,7 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.TryExtract(const key: TKey;
-  out value: TValue): Boolean;
+  var value: TValue): Boolean;
 var
   item: PItem;
 begin
@@ -889,7 +889,7 @@ begin
     value := Default(TValue);
 end;
 
-function TDictionary<TKey, TValue>.TryGetElementAt(out item: TKeyValuePair; index: Integer): Boolean;
+function TDictionary<TKey, TValue>.TryGetElementAt(var item: TKeyValuePair; index: Integer): Boolean;
 begin
   Result := Cardinal(index) < Cardinal(fHashTable.Count);
   if Result then
@@ -901,7 +901,7 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.TryGetValue(const key: TKey;
-  out value: TValue): Boolean;
+  var value: TValue): Boolean;
 var
   entry: THashTableEntry;
 begin
@@ -914,7 +914,7 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.TryUpdateValue(const key: TKey;
-  const newValue: TValue; out oldValue: TValue): Boolean;
+  const newValue: TValue; var oldValue: TValue): Boolean;
 var
   entry: THashTableEntry;
   item: PItem;
@@ -1655,7 +1655,7 @@ begin
 end;
 
 function TBidiDictionary<TKey, TValue>.TryExtract(const key: TKey;
-  out value: TValue): Boolean;
+  var value: TValue): Boolean;
 var
   keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
@@ -1671,7 +1671,7 @@ begin
     value := Default(TValue);
 end;
 
-function TBidiDictionary<TKey, TValue>.TryGetElementAt(out item: TKeyValuePair;
+function TBidiDictionary<TKey, TValue>.TryGetElementAt(var item: TKeyValuePair;
   index: Integer): Boolean;
 begin
   Result := Cardinal(index) < Cardinal(fCount);
@@ -1684,7 +1684,7 @@ begin
 end;
 
 function TBidiDictionary<TKey, TValue>.TryGetValue(const key: TKey;
-  out value: TValue): Boolean;
+  var value: TValue): Boolean;
 var
   bucketIndex, itemIndex: Integer;
 begin
@@ -1695,7 +1695,8 @@ begin
     value := Default(TValue);
 end;
 
-function TBidiDictionary<TKey, TValue>.TryUpdateValue(const key: TKey; const newValue: TValue; out oldValue: TValue): Boolean;
+function TBidiDictionary<TKey, TValue>.TryUpdateValue(const key: TKey;
+  const newValue: TValue; var oldValue: TValue): Boolean;
 begin
   Result := TryGetValue(key, oldValue);
   if Result then
@@ -2060,7 +2061,7 @@ begin
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.TryExtract(const value: TValue;
-  out key: TKey): Boolean;
+  var key: TKey): Boolean;
 var
   keyBucketIndex, keyItemIndex, valueBucketIndex, valueItemIndex: Integer;
 begin
@@ -2077,7 +2078,7 @@ begin
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.TryGetElementAt(
-  out item: TValueKeyPair; index: Integer): Boolean;
+  var item: TValueKeyPair; index: Integer): Boolean;
 var
   pair: TKeyValuePair;
 begin
@@ -2090,7 +2091,7 @@ begin
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.TryGetValue(const value: TValue;
-  out key: TKey): Boolean;
+  var key: TKey): Boolean;
 var
   bucketIndex, itemIndex: Integer;
 begin
@@ -2101,7 +2102,8 @@ begin
     key := Default(TKey);
 end;
 
-function TBidiDictionary<TKey, TValue>.TInverse.TryUpdateValue(const value: TValue; const newKey: TKey; out oldKey: TKey): Boolean;
+function TBidiDictionary<TKey, TValue>.TInverse.TryUpdateValue(const value: TValue;
+  const newKey: TKey; var oldKey: TKey): Boolean;
 begin
   Result := TryGetValue(value, oldKey);
   if Result then
@@ -2213,7 +2215,7 @@ begin
 end;
 
 function TBidiDictionary<TKey, TValue>.TKeyCollection.TryGetElementAt(
-  out key: TKey; index: Integer): Boolean;
+  var key: TKey; index: Integer): Boolean;
 begin
   Result := Cardinal(index) < Cardinal(fSource.fCount);
   if Result then
@@ -2280,7 +2282,7 @@ begin
 end;
 
 function TBidiDictionary<TKey, TValue>.TValueCollection.TryGetElementAt(
-  out value: TValue; index: Integer): Boolean;
+  var value: TValue; index: Integer): Boolean;
 begin
   Result := Cardinal(index) < Cardinal(fSource.fCount);
   if Result then
@@ -2610,7 +2612,7 @@ begin
   Result := True;
 end;
 
-function TSortedDictionary<TKey, TValue>.TryExtract(const key: TKey; out value: TValue): Boolean;
+function TSortedDictionary<TKey, TValue>.TryExtract(const key: TKey; var value: TValue): Boolean;
 var
   node: PNode;
 begin
@@ -2631,13 +2633,13 @@ begin
 end;
 
 function TSortedDictionary<TKey, TValue>.TryGetValue(const key: TKey;
-  out value: TValue): Boolean;
+  var value: TValue): Boolean;
 begin
   Result := fTree.Find(key, value);
 end;
 
 function TSortedDictionary<TKey, TValue>.TryUpdateValue(const key: TKey;
-  const newValue: TValue; out oldValue: TValue): Boolean;
+  const newValue: TValue; var oldValue: TValue): Boolean;
 var
   node: PNode;
 begin

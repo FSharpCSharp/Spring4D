@@ -246,7 +246,7 @@ type
     function GetItem(index: Integer): Integer;
   {$ENDREGION}
   protected
-    function TryGetElementAt(out value: Integer; index: Integer): Boolean;
+    function TryGetElementAt(var value: Integer; index: Integer): Boolean;
   public
     constructor Create(start, count: Integer);
 
@@ -1513,7 +1513,7 @@ begin
     Result[i] := fStart + i;
 end;
 
-function TRangeIterator.TryGetElementAt(out value: Integer; index: Integer): Boolean;
+function TRangeIterator.TryGetElementAt(var value: Integer; index: Integer): Boolean;
 begin
   if Cardinal(index) < Cardinal(fCount) then
   begin

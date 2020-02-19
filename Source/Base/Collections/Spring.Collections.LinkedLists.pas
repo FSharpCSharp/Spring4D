@@ -89,8 +89,8 @@ type
     function GetFirst: TLinkedListNode<T>;
     function GetLast: TLinkedListNode<T>;
   {$ENDREGION}
-    function TryGetFirst(out value: T): Boolean; overload;
-    function TryGetLast(out value: T): Boolean; overload;
+    function TryGetFirst(var value: T): Boolean; overload;
+    function TryGetLast(var value: T): Boolean; overload;
   public
     destructor Destroy; override;
 
@@ -437,7 +437,7 @@ begin
     InternalRemoveNode(node);
 end;
 
-function TLinkedList<T>.TryGetFirst(out value: T): Boolean;
+function TLinkedList<T>.TryGetFirst(var value: T): Boolean;
 begin
   Result := Assigned(fHead);
   if Result then
@@ -446,7 +446,7 @@ begin
     value := Default(T);
 end;
 
-function TLinkedList<T>.TryGetLast(out value: T): Boolean;
+function TLinkedList<T>.TryGetLast(var value: T): Boolean;
 begin
   Result := Assigned(fHead);
   if Result then
