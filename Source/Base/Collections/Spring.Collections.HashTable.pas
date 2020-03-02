@@ -118,27 +118,26 @@ var
   entry: THashTableEntry;
 begin
   entry.HashCode := hashCode;
-  if not Find(key, entry) then
+
+  if Find(key, entry) then
+    Exit(nil);
+
+  if fItemCount = DynArrayLength(fItems) then
   begin
-    if fItemCount = DynArrayLength(fItems) then
-    begin
-      Grow;
-      Find(key, entry);
-    end;
+    Grow;
+    Find(key, entry);
+  end;
 
-    {$Q-}
-    Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-    fBuckets[entry.BucketIndex] := entry.ItemIndex or (entry.HashCode and fBucketHashCodeMask);
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fBuckets[entry.BucketIndex] := entry.ItemIndex or (entry.HashCode and fBucketHashCodeMask);
 
-    Result := fItems + entry.ItemIndex * fItemSize;
-    PInteger(Result)^ := entry.HashCode;
+  Inc(fCount);
+  Inc(fItemCount);
 
-    Inc(fCount);
-    Inc(fItemCount);
-  end
-  else
-    Result := nil;
+  Result := fItems + entry.ItemIndex * fItemSize;
+  PInteger(Result)^ := entry.HashCode;
 end;
 
 function THashTable.AddOrSet(const key; hashCode: Integer;

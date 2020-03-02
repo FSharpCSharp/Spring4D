@@ -523,6 +523,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IMap<TKey, TValue>'}
+    procedure Add(const key: TKey; const value: TValue); overload;
     function TryAdd(const key: TKey; const value: TValue): Boolean;
     function Remove(const key: TKey): Boolean; overload;
     function Remove(const key: TKey; const value: TValue): Boolean; overload;
@@ -2338,6 +2339,21 @@ begin
   fKeys.Free;
   fValues.Free;
   inherited Destroy;
+end;
+
+procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey;
+  const value: TValue);
+begin
+  if fTree.Add(key, value) then
+  begin
+    IncUnchecked(fVersion);
+    if Assigned(Notify) then
+      DoNotify(key, value, caAdded);
+    KeyChanged(key, caAdded);
+    ValueChanged(value, caAdded);
+  end
+  else
+    raise Error.DuplicateKey;
 end;
 
 procedure TSortedDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;

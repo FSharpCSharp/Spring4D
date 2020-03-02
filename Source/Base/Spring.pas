@@ -3621,7 +3621,9 @@ end;
 
 function GetVirtualMethod(const classType: TClass; const index: Integer): Pointer;
 begin
+  {$Q-}
   Result := PPointer(IntPtr(classType) + IntPtr(index * SizeOf(Pointer)))^;
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 end;
 
 type
