@@ -6205,6 +6205,45 @@ begin
   TValue.MakeWithoutCopy(@p, typeInfo, result);
 end;
 
+function SplitString(const s, delimiter: string): TStringDynArray;
+
+  function ScanChar(const s: string; var index: Integer): Boolean;
+  var
+    level: Integer;
+  begin
+    Result := False;
+    level := 0;
+    while index <= Length(s) do
+    begin
+      case s[index] of
+        '[': Inc(level);
+        ']': Dec(level);
+      else
+        if Copy(s, index, Length(delimiter)) = delimiter then
+          if level = 0 then
+            Exit(True);
+      end;
+      Inc(index);
+      Result := level = 0;
+    end;
+  end;
+
+var
+  startPos, index, len: Integer;
+begin
+  Result := nil;
+  startPos := 1;
+  index := 1;
+  while ScanChar(s, index) do
+  begin
+    len := Length(Result);
+    SetLength(Result, len + 1);
+    Result[len] := Copy(s, startPos, index - startPos);
+    Inc(index);
+    startPos := index;
+  end;
+end;
+
 function ConvStr2DynArray(const source: TValue; target: PTypeInfo;
   out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
@@ -6222,7 +6261,16 @@ begin
   elType := target.TypeData.DynArrElType^;
   for i := 0 to High(values) do
   begin
-    v1 := TValue.From(Trim(values[i]));
+    case elType.Kind of
+      tkString, tkLString, tkWString, tkUString: ;
+      tkChar, tkWChar:
+        if Length(values[i]) > 1 then
+          values[i] := Trim(values[i]);
+    else
+      values[i] := Trim(values[i]);
+    end;
+
+    v1 := TValue.From(values[i]);
     if not v1.TryConvert(elType, v2) then
       Exit(False);
     res.SetArrayElement(i, v2);
@@ -6255,7 +6303,16 @@ begin
   TValue.Make(nil, target, res);
   for i := 0 to arrData.ElCount - 1 do
   begin
-    v1 := TValue.From(Trim(values[i]));
+    case elType.Kind of
+      tkString, tkLString, tkWString, tkUString: ;
+      tkChar, tkWChar:
+        if Length(values[i]) > 1 then
+          values[i] := Trim(values[i]);
+    else
+      values[i] := Trim(values[i]);
+    end;
+
+    v1 := TValue.From(values[i]);
     if not v1.TryConvert(elType, v2) then
       Exit(False);
     res.SetArrayElement(i, v2);

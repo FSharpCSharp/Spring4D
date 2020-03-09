@@ -199,6 +199,8 @@ begin
       value := values[i]
     else
       value := TValue.Empty;
+    if value.IsString and not parameters[i].ParamType.IsString then
+      value := Trim(value.AsString);
     value.TryConvert(parameters[i].ParamType.Handle, arguments[i], ISO8601FormatSettings);
   end;
   retType := ReturnType;
@@ -234,8 +236,48 @@ end;
 {$REGION 'TTestingAttribute'}
 
 constructor TTestingAttribute.Create(const values: string; const delimiter: string);
+
+  function SplitString(const s, delimiter: string): TArray<string>;
+
+    function ScanChar(const s: string; var index: Integer): Boolean;
+    var
+      level: Integer;
+    begin
+      Result := False;
+      level := 0;
+      while index <= Length(s) do
+      begin
+        case s[index] of
+          '[': Inc(level);
+          ']': Dec(level);
+        else
+          if Copy(s, index, Length(delimiter)) = delimiter then
+            if level = 0 then
+              Exit(True);
+        end;
+        Inc(index);
+        Result := level = 0;
+      end;
+    end;
+
+  var
+    startPos, index, len: Integer;
+  begin
+    Result := nil;
+    startPos := 1;
+    index := 1;
+    while ScanChar(s, index) do
+    begin
+      len := Length(Result);
+      SetLength(Result, len + 1);
+      Result[len] := Copy(s, startPos, index - startPos);
+      Inc(index);
+      startPos := index;
+    end;
+  end;
+
 var
-  tempValues: TStringDynArray;
+  tempValues: TArray<string>;
   i: Integer;
 begin
   inherited Create;
