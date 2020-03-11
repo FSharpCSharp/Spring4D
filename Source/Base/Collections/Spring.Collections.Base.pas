@@ -499,7 +499,7 @@ type
 
 const
   CollectionNotificationMapping: array[TCollectionNotification] of TCollectionChangedAction = (
-{$IFDEF VER330}
+{$IF RTLVersion >= 33}
     caAdded,
     caAdded,
     caExtracted,
@@ -510,7 +510,7 @@ const
     caAdded,
     caRemoved,
     caExtracted
-{$ENDIF}
+{$IFEND}
   );
 
 implementation
