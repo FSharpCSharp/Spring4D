@@ -1,0 +1,124 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Condition="Exists('$(BDS)\bin\CodeGear.Deployment.targets')" Project="$(BDS)\bin\CodeGear.Deployment.targets"/>
+    <ProjectExtensions>
+        <ProjectFileVersion>12</ProjectFileVersion>
+    </ProjectExtensions>
+    <PropertyGroup/>
+    <ItemGroup Condition="'$(Platform)'=='Win64'">
+        <DeployFile Include="Bin\Delphi10Rio\Win64\Release\Spring.Tests.exe" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Rio.exe</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Rio\Win64\Debug\Spring.Tests.exe" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Rio.exe</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Win32'">
+        <DeployFile Include="Bin\Delphi10Rio\Win32\Debug\Spring.Tests.exe" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Rio.exe</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Rio\Win32\Release\Spring.Tests.exe" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Rio.exe</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Linux64'">
+        <DeployFile Include="Bin\Delphi10Rio\Linux64\Release\Spring.Tests" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Rio</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Rio\Linux64\Debug\TestInsightSettings.ini" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>TestInsightSettings.ini</RemoteName>
+            <DeployClass>File</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Rio\Linux64\Debug\Spring.Tests" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Rio</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Rio\Linux64\Release\TestInsightSettings.ini" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>TestInsightSettings.ini</RemoteName>
+            <DeployClass>File</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='OSX32'">
+        <DeployFile Include="$(BDS)\Redist\osx32\libcgsqlite3.dylib">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>libcgsqlite3.dylib</RemoteName>
+            <DeployClass>DependencyModule</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>libcgunwind.1.0.dylib</RemoteName>
+            <DeployClass>DependencyModule</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Android'"/>
+    <ItemGroup Condition="'$(Platform)'=='OSX64'">
+        <DeployFile Include="$(BDS)\Redist\osx64\libcgsqlite3.dylib">
+            <RemoteDir>Spring.Tests.Delphi10Rio\</RemoteDir>
+            <RemoteName>libcgsqlite3.dylib</RemoteName>
+            <DeployClass>DependencyModule</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Android64'"/>
+</Project>

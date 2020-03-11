@@ -1,0 +1,91 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Condition="Exists('$(BDS)\bin\CodeGear.Deployment.targets')" Project="$(BDS)\bin\CodeGear.Deployment.targets"/>
+    <ProjectExtensions>
+        <ProjectFileVersion>12</ProjectFileVersion>
+    </ProjectExtensions>
+    <PropertyGroup/>
+    <ItemGroup Condition="'$(Platform)'=='Win32'">
+        <DeployFile Include="Bin\Delphi10Sydney\Win32\Release\Spring.Tests.exe" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Spring.Tests.Delphi10Sydney\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Sydney.exe</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Sydney\Win32\Debug\Spring.Tests.exe" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Spring.Tests.Delphi10Sydney\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Sydney.exe</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Win64'">
+        <DeployFile Include="Bin\Delphi10Sydney\Win64\Release\Spring.Tests.exe" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Spring.Tests.Delphi10Sydney\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Sydney.exe</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Sydney\Win64\Debug\Spring.Tests.exe" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Spring.Tests.Delphi10Sydney\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Sydney.exe</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Linux64'">
+        <DeployFile Include="Bin\Delphi10Sydney\Linux64\Debug\TestInsightSettings.ini" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Spring.Tests.Delphi10Sydney\</RemoteDir>
+            <RemoteName>TestInsightSettings.ini</RemoteName>
+            <DeployClass>File</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Sydney\Linux64\Release\Spring.Tests" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Spring.Tests.Delphi10Sydney\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Sydney</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Sydney\Linux64\Debug\Spring.Tests" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Spring.Tests.Delphi10Sydney\</RemoteDir>
+            <RemoteName>Spring_Tests_Delphi10Sydney</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="Bin\Delphi10Sydney\Linux64\Release\TestInsightSettings.ini" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Spring.Tests.Delphi10Sydney\</RemoteDir>
+            <RemoteName>TestInsightSettings.ini</RemoteName>
+            <DeployClass>File</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+    </ItemGroup>
+</Project>

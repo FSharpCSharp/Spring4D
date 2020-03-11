@@ -1454,8 +1454,10 @@ type
 
   Nullable = record
   private
-    const HasValue = 'True';
+    class var HasValue: string;
     type Null = interface end;
+  public
+    class constructor Create;
   end;
 
   /// <summary>
@@ -4706,7 +4708,7 @@ end;
 
 procedure TInitTable.TManagedObjectField.FinalizeValue(instance: Pointer);
 begin
-  FreeAndNil(Pointer(PByte(instance) + fOffset)^);
+  FreeAndNil(PObject(PByte(instance) + fOffset)^);
 end;
 
 procedure TInitTable.TManagedObjectField.InitializeValue(instance: Pointer);
@@ -7571,6 +7573,12 @@ end;
 
 {$REGION 'Nullable<T>'}
 
+class constructor Nullable.Create;
+begin
+  HasValue := 'True';
+  UniqueString(HasValue);
+end;
+
 constructor Nullable<T>.Create(const value: T);
 begin
   fValue := value;
@@ -7957,7 +7965,7 @@ begin
 {$IFNDEF AUTOREFCOUNT}
   if TType.Kind<T> = tkClass then
     if fOwnsObject then
-      FreeAndNil(fValue);
+      FreeAndNil(PObject(@fValue)^);
 {$ENDIF}
 end;
 
