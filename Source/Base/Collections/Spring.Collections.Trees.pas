@@ -43,9 +43,12 @@ const
 type
   TNodeColor = (Black, Red);
 
-  TBlockAllocatedArray<T: record> = record
+  TBlockAllocatedArray<T> = record
   strict private type
     PT = ^T;
+  strict private const
+    BlockSizeBits = 6;
+    BlockSize = 1 shl BlockSizeBits;
   strict private
     fItems: TArray<TArray<T>>;
     function GetItem(index: Integer): PT; inline;
@@ -506,46 +509,38 @@ implementation
 uses
   Math;
 
-const
-  BucketSize = 64;
-
-
 {$REGION 'TBlockAllocatedArray<T>'}
 
 function TBlockAllocatedArray<T>.GetCapacity: Integer;
 begin
-  Result := Length(fItems) * BucketSize;
+  Result := Length(fItems) * BlockSize;
 end;
 
 function TBlockAllocatedArray<T>.GetItem(index: Integer): PT;
-var
-  row, col: Integer;
 begin
-  row := index div BucketSize;
-  col := index mod BucketSize;
-  Result := @fItems[row, col];
+  Result := @fItems[index shr BlockSizeBits, index and (BlockSize - 1)];
 end;
 
 procedure TBlockAllocatedArray<T>.Grow;
+var
+  n: Integer;
 begin
-  SetLength(fItems, Length(fItems) + 1);
-  SetLength(fItems[High(fItems)], BucketSize);
+  n := Length(fItems);
+  SetLength(fItems, n + 1);
+  SetLength(fItems[n], BlockSize);
 end;
 
 procedure TBlockAllocatedArray<T>.SetCapacity(const value: Integer);
 var
-  oldLength: Integer;
-  row, col: Integer;
-  i: Integer;
+  oldLength, newLength, i: Integer;
 begin
   oldLength := Length(fItems);
-  row := value div BucketSize;
-  col := value mod BucketSize;
-  if col > 0 then
-    Inc(row);
-  SetLength(fItems, row);
-  for i := oldLength to High(fItems) do
-    SetLength(fItems[i], BucketSize);
+  newLength := value shr BlockSizeBits;
+  if value and (BlockSize - 1) > 0 then
+    Inc(newLength);
+  SetLength(fItems, newLength);
+  for i := oldLength to newLength - 1 do
+    SetLength(fItems[i], BlockSize);
 end;
 
 {$ENDREGION}
