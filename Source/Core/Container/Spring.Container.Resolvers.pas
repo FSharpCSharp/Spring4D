@@ -267,10 +267,10 @@ begin
   if CanResolveFromSubResolvers(context, dependency, argument) then
     Exit(True);
 
-  if argument.IsEmpty then
-    Result := Kernel.Registry.HasDefault(dependency.TypeInfo)
-  else if CanResolveFromArgument(context, dependency, argument) then
+  if CanResolveFromArgument(context, dependency, argument) then
     Result := True
+  else if argument.IsEmpty then
+    Result := Kernel.Registry.HasDefault(dependency.TypeInfo)
   else if argument.TryAsType(TypeInfo(TTypeKind), kind) and (kind = tkDynArray) then
     Result := Kernel.Registry.HasService(dependency.TypeInfo)
   else

@@ -657,6 +657,8 @@ type
     /// </summary>
     function IsString: Boolean;
 
+    function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
+
     /// <summary>
     ///   Checks whether the stored value is a <c>Variant</c>.
     /// </summary>
@@ -668,6 +670,8 @@ type
     procedure SetNullableValue(const value: TValue);
 
     function TryAsType(typeInfo: PTypeInfo; out target): Boolean; overload;
+
+    function TryCast(ATypeInfo: PTypeInfo; out AResult: TValue): Boolean;
 
     /// <summary>
     ///   Tries to convert the stored value. Returns false when the conversion
@@ -5740,6 +5744,13 @@ begin
   Result := Kind in StringKinds;
 end;
 
+function TValueHelper.IsType(ATypeInfo: PTypeInfo): Boolean;
+var
+  unused: TValue;
+begin
+  Result := TryCast(ATypeInfo, unused);
+end;
+
 function TValueHelper.IsVariant: Boolean;
 begin
   Result := TypeInfo = System.TypeInfo(Variant);
@@ -6032,6 +6043,32 @@ begin
   Result := TryCast(typeInfo, value);
   if Result then
     value.ExtractRawData(@target);
+end;
+
+function TValueHelper.TryCast(ATypeInfo: PTypeInfo;
+  out AResult: TValue): Boolean;
+begin
+  // fix wrong logic in RTL:
+  // typecasting a TValue that contains a reference type that is nil succeeds
+  // in all cases which clearly is against the otherwise strict type cast rules
+
+  if not ((TValueData(Self).FTypeInfo = nil) or (TValueData(Self).FValueData = nil)) then
+    if IsEmpty and Assigned(ATypeInfo) and (Kind <> ATypeInfo.Kind) then
+      case Kind of
+        tkClass:
+          if not (ATypeInfo.Kind in [tkVariant, tkInterface, tkPointer]) then
+            Exit(False);
+        tkInterface:
+          if not (ATypeInfo.Kind in [tkVariant, tkPointer]) then
+            Exit(False);
+        tkDynArray:
+          if TValueData(Self).FTypeInfo <> ATypeInfo then
+            Exit(False);
+        tkPointer:;
+      else
+        Exit(False);
+      end;
+  Result := TValueHack(Self).TryCast(ATypeInfo, AResult);
 end;
 
 
