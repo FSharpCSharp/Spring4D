@@ -3611,7 +3611,7 @@ procedure TTestMultiMapBase.TestExtractValues;
 var
   map: IMultiMap<Integer, TObject>;
   values: IReadOnlyCollection<TObject>;
-  extractedValues: ICollection<TObject>;
+  extractedValues, emptyValues: ICollection<TObject>;
   obj: TObject;
 begin
   map := TCollections.CreateMultiMap<Integer, TObject>([doOwnsValues]);
@@ -3624,6 +3624,8 @@ begin
   CheckEquals(0, map.Count);
   CheckEquals(1, extractedValues.Count);
   CheckEquals(0, values.Count);
+  emptyValues := map.Extract(2);
+  CheckEquals(0, emptyValues.Count);
   map := nil;
   obj := extractedValues.First;
   extractedValues := nil;
@@ -4615,6 +4617,8 @@ begin
 end;
 
 procedure TTestMultiMapChangedEventBase.TestExtract;
+var
+  notExisting: ICollection<string>;
 begin
   SUT.Add(1, 'a');
   SUT.Add(2, 'b');
@@ -4623,7 +4627,8 @@ begin
   AddEventHandlers;
   CheckEquals('c', SUT.Extract(3).First);
   CheckEquals('a', SUT.Extract(1).First);
-  CheckNull(SUT.Extract(1));
+  notExisting := SUT.Extract(1);
+  CheckEquals(0, notExisting.Count);
 
   CheckEquals(2, fChangedEvents.Count);
   CheckChanged(0, 3, 'c', caExtracted);

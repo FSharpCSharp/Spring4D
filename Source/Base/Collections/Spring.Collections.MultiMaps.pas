@@ -758,11 +758,9 @@ var
   entry: THashTableEntry;
 begin
   entry.HashCode := fKeyComparer.GetHashCode(key);
+  Result := CreateCollection;
   if fHashTable.Find(key, entry) then
-  begin
-    Result := CreateCollection;
     DoRemove(entry, caExtracted, Result);
-  end;
 end;
 
 function TMultiMapBase<TKey, TValue>.GetCount: Integer;
