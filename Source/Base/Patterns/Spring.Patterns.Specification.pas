@@ -195,7 +195,6 @@ end;
 
 constructor TUnarySpecification<T>.Create(const value: ISpecification<T>);
 begin
-  inherited Create;
   fValue := value;
 end;
 
@@ -206,7 +205,6 @@ end;
 
 constructor TBinarySpecification<T>.Create(const left, right: ISpecification<T>);
 begin
-  inherited Create;
   fLeft := left;
   fRight := right;
 end;

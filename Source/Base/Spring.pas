@@ -4208,7 +4208,6 @@ end;
 
 constructor TBaseAttribute.Create;
 begin
-  inherited Create;
 end;
 
 {$ENDREGION}
@@ -4219,43 +4218,36 @@ end;
 {$IFNDEF DELPHIXE3_UP}
 constructor DefaultAttribute.Create(const defaultValue: Integer);
 begin
-  inherited Create;
   fValue := defaultValue;
 end;
 
 constructor DefaultAttribute.Create(const defaultValue: Boolean);
 begin
-  inherited Create;
   fValue := Ord(defaultValue);
 end;
 
 constructor DefaultAttribute.Create(const defaultValue: Cardinal);
 begin
-  inherited Create;
   fValue := defaultValue;
 end;
 
 constructor DefaultAttribute.Create(const defaultValue: string);
 begin
-  inherited Create;
   fValue := defaultValue;
 end;
 
 constructor DefaultAttribute.Create(const defaultValue: Extended);
 begin
-  inherited Create;
   fValue := defaultValue;
 end;
 
 constructor DefaultAttribute.Create(const defaultValue: Int64);
 begin
-  inherited Create;
   fValue := defaultValue;
 end;
 
 constructor DefaultAttribute.Create(const defaultValue: UInt64);
 begin
-  inherited Create;
   fValue := defaultValue;
 end;
 {$ENDIF}
@@ -4267,13 +4259,11 @@ end;
 
 constructor ManagedAttribute.Create(createInstance: Boolean);
 begin
-  inherited Create;
   fCreateInstance := createInstance;
 end;
 
 constructor ManagedAttribute.Create(instanceClass: TClass);
 begin
-  inherited Create;
   fCreateInstance := True;
   fInstanceClass := instanceClass;
 end;
@@ -4370,7 +4360,6 @@ begin
     FreeAndNil(DefaultFields[i]);
   for i := 0 to High(ManagedFields) do
     FreeAndNil(ManagedFields[i]);
-  inherited Destroy;
 end;
 
 procedure TInitTable.AddDefaultField(fieldType: PTypeInfo;
@@ -4647,7 +4636,6 @@ end;
 
 constructor TInitTable.TDefaultField<T>.Create(offset: Integer; const value: Variant);
 begin
-  inherited Create;
   fOffset := offset;
   TValue.FromVariant(value).AsType(TypeInfo(T), fValue); // TODO
 end;
@@ -4664,7 +4652,6 @@ end;
 
 constructor TInitTable.TDefaultProperty<T>.Create(propInfo: PPropInfo; const value: Variant);
 begin
-  inherited Create;
   fPropInfo := propInfo;
   TValue.FromVariant(value).AsType(TypeInfo(T), fValue); // TODO
 end;
@@ -4697,7 +4684,6 @@ end;
 constructor TInitTable.TManagedObjectField.Create(offset: Integer;
   fieldType: PTypeInfo; cls: TClass; const factory: TFunc<PTypeInfo,Pointer>);
 begin
-  inherited Create;
   fOffset := offset;
   fFieldType := fieldType;
   fCls := cls;
@@ -7014,7 +7000,6 @@ constructor TRttiInvokableMethod.Create(AType: TRttiInvokableType);
 var
   ctx: TRttiContext;
 begin
-  inherited Create;
   // GetInvokeInfo need the Parent property
   TRttiObjectHack(Self).FParent := ctx.GetType(TObject);
   FType := AType;
@@ -7162,7 +7147,7 @@ end;
 
 class procedure TRefCountedObject.__MarkDestroying(const obj);
 var
-  refCount: Integer;
+  refCount: Integer; //FI:W517
 begin
   repeat
     refCount := TRefCountedObject(obj).fRefCount;
@@ -7935,7 +7920,6 @@ begin
   classType := GetTypeData(TypeInfo(T)).ClassType;
   ctor := TActivator.FindConstructor(classType);
 
-  inherited Create;
   Func<T>(fValueFactory) :=
     function: T
     begin
@@ -7947,21 +7931,18 @@ constructor TLazy<T>.Create(const valueFactory: Func<T>; ownsObject: Boolean);
 begin
   Guard.CheckNotNull(Assigned(valueFactory), 'valueFactory');
 
-  inherited Create;
   fOwnsObject := ownsObject;
   Func<T>(fValueFactory) := valueFactory;
 end;
 
 constructor TLazy<T>.CreateFrom(const value: T; ownsObject: Boolean);
 begin
-  inherited Create;
   fValue := value;
   fOwnsObject := ownsObject;
 end;
 
 destructor TLazy<T>.Destroy;
 begin
-  inherited Destroy;
 {$IFNDEF AUTOREFCOUNT}
   if TType.Kind<T> = tkClass then
     if fOwnsObject then
@@ -8284,7 +8265,6 @@ end;
 constructor Shared.THandleFinalizer<T>.Create(const value: T;
   finalizer: Action<T>);
 begin
-  inherited Create;
   fValue := value;
   fFinalizer := finalizer;
 end;
@@ -8292,7 +8272,6 @@ end;
 destructor Shared.THandleFinalizer<T>.Destroy;
 begin
   fFinalizer(fValue);
-  inherited;
 end;
 
 function Shared.THandleFinalizer<T>.Invoke: T;
@@ -8486,7 +8465,6 @@ end;
 
 constructor Weak<T>.TWeakReference.Create(const target: T; var ref: PPointer);
 begin
-  inherited Create;
   SetTarget(target);
   ref := @fTarget;
 end;
@@ -8494,7 +8472,6 @@ end;
 destructor Weak<T>.TWeakReference.Destroy;
 begin
   SetTarget(Default(T));
-  inherited Destroy;
 end;
 
 procedure Weak<T>.TWeakReference.SetTarget(const value: T);
@@ -8663,7 +8640,6 @@ end;
 
 constructor TEventArgs.Create;
 begin
-  inherited Create;
 end;
 
 {$ENDREGION}
@@ -8673,7 +8649,6 @@ end;
 
 constructor TPropertyChangedEventArgs.Create(const propertyName: string);
 begin
-  inherited Create;
   fPropertyName := propertyName;
 end;
 
@@ -8730,7 +8705,7 @@ end;
 
 function TInterfacedCriticalSection.ScopedLock: IInterface;
 begin
-  Result := TScopedLock.Create(Self);
+  Result := TScopedLock.Create(Self); //FI:W534
 end;
 
 {$ENDREGION}
@@ -8741,7 +8716,6 @@ end;
 constructor TInterfacedCriticalSection.TScopedLock.Create(
   const criticalSection: ICriticalSection);
 begin
-  inherited Create;
   fCriticalSection := criticalSection;
   fCriticalSection.Enter;
 end;
@@ -8749,7 +8723,6 @@ end;
 destructor TInterfacedCriticalSection.TScopedLock.Destroy;
 begin
   fCriticalSection.Leave;
-  inherited Destroy;
 end;
 
 {$ENDREGION}
@@ -9837,7 +9810,7 @@ copyLeft:
       System.Move(left^, dest^, leftLen * SizeOf(T));
   Exit;
 copyRight:
-  Assert(leftLen = 1);
+  Assert(leftLen = 1); //FI:W509
   Assert(rightLen > 0);
   if TType.IsManaged<T> then
     CopyArray<T>(right^, dest^, rightLen)
@@ -9980,7 +9953,7 @@ copyRight:
       System.Move(rightBase^, dest[-(rightLen - 1)], rightLen * SizeOf(T));
   Exit;
 copyLeft:
-  Assert(rightLen = 1);
+  Assert(rightLen = 1); //FI:W509
   Assert(leftLen > 0);
   Dec(dest, leftLen);
   Dec(left, leftLen);

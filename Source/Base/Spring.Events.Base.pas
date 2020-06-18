@@ -142,7 +142,6 @@ end;
 
 constructor TEventBase.Create(const threadSafe: Boolean);
 begin
-  inherited Create;
   if threadSafe then
   begin
   {$IFDEF MSWINDOWS}
@@ -169,7 +168,6 @@ begin
 {$ELSE}
   fLock.Free;
 {$ENDIF}
-  inherited Destroy;
 end;
 
 procedure TEventBase.EnsureNotificationHandler;
@@ -310,7 +308,7 @@ var
 begin
   data := TMethod(item).Data;
   if UseFreeNotification and SafeIsClass(data, TComponent) then
-    case action of
+    case action of //FI:W535
       cnAdded:
       begin
         EnsureNotificationHandler;

@@ -465,7 +465,6 @@ end;
 constructor TMethodInvocations.Create(methodTypeData: PTypeData;
   methodInvokeEvent: TMethodInvokeEvent);
 begin
-  inherited Create;
   fMethodInfo := TMethodInfo.Create(methodTypeData);
   fMethodInvokeEvent := methodInvokeEvent;
 end;
@@ -713,7 +712,7 @@ procedure TEvent.Notify(Sender: TObject; const Item: TMethodPointer;
 begin
   inherited Notify(Sender, Item, Action);
   if fTypeInfo.Kind = tkInterface then
-    case Action of
+    case Action of //FI:W535
       cnAdded: IInterface(TMethod(Item).Data)._AddRef;
       cnRemoved: IInterface(TMethod(Item).Data)._Release;
     end;

@@ -493,7 +493,6 @@ end;
 
 constructor TLinkedList<T>.TEnumerator.Create(const list: TLinkedList<T>);
 begin
-  inherited Create;
   fList := list;
   fList._AddRef;
   fVersion := fList.fVersion;
@@ -503,7 +502,6 @@ end;
 destructor TLinkedList<T>.TEnumerator.Destroy;
 begin
   fList._Release;
-  inherited Destroy;
 end;
 
 function TLinkedList<T>.TEnumerator.GetCurrent: T;

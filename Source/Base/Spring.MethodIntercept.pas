@@ -62,7 +62,6 @@ end;
 destructor TMethodIntercept.Destroy;
 begin
   fImplementation.Free;
-  inherited Destroy;
 end;
 
 function TMethodIntercept.GetCodeAddress: Pointer;

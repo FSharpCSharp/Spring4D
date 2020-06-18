@@ -554,7 +554,7 @@ function TAbstractLogger.Track(level: TLogLevel; const classType: TClass;
   const methodName: string): IInterface;
 begin
   if IsEnabled(level, [TLogEventType.Entering, TLogEventType.Leaving]) then
-    Result := TLogTracking.Create(Self, level, classType, methodName)
+    Result := TLogTracking.Create(Self, level, classType, methodName) //FI:W534
   else
     Result := nil;
 end;

@@ -508,7 +508,6 @@ end;
 
 constructor THashSet<T>.TEnumerator.Create(const source: THashSet<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fItemIndex := -1;
@@ -518,7 +517,6 @@ end;
 destructor THashSet<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function THashSet<T>.TEnumerator.GetCurrent: T;
@@ -682,7 +680,6 @@ end;
 
 constructor TSortedSet<T>.TEnumerator.Create(const source: TSortedSet<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fVersion;
@@ -691,7 +688,6 @@ end;
 destructor TSortedSet<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function TSortedSet<T>.TEnumerator.GetCurrent: T;

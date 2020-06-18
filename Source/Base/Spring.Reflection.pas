@@ -1676,7 +1676,6 @@ end;
 constructor THasAttributeFilter<T>.Create(attributeClass: TAttributeClass;
   inherit: Boolean);
 begin
-  inherited Create;
   fAttributeClass := attributeClass;
   fInherit := inherit;
 end;
@@ -1690,7 +1689,6 @@ end;
 
 constructor TNameFilter<T>.Create(const name: string);
 begin
-  inherited Create;
   fName := name;
 end;
 
@@ -1703,7 +1701,6 @@ end;
 
 constructor TTypeFilter<T>.Create(const typeInfo: PTypeInfo);
 begin
-  inherited Create;
   fTypeInfo := typeInfo;
 end;
 
@@ -1723,7 +1720,6 @@ constructor THasParameterTypesFilter<T>.Create(const types: array of PTypeInfo);
 var
   i: Integer;
 begin
-  inherited Create;
   SetLength(fTypes, Length(types));
   for i := Low(types) to High(types) do
     fTypes[i] := types[i];
@@ -1750,7 +1746,6 @@ end;
 
 constructor TContainsParameterTypeFilter<T>.Create(const typeInfo: PTypeInfo);
 begin
-  inherited Create;
   fTypeInfo := typeInfo;
 end;
 
@@ -1770,7 +1765,6 @@ end;
 
 constructor THasParameterFlagsFilter<T>.Create(const flags: TParamFlags);
 begin
-  inherited Create;
   fFlags := flags;
 end;
 
@@ -1789,7 +1783,6 @@ end;
 
 constructor TMethodKindFilter<T>.Create(const flags: TMethodKinds);
 begin
-  inherited Create;
   fFlags := flags;
 end;
 
@@ -1814,7 +1807,6 @@ end;
 
 constructor TMemberTypeFilter<T>.Create(memberClass: TRttiMemberClass);
 begin
-  inherited Create;
   fMemberClass := memberClass;
 end;
 
@@ -1862,7 +1854,6 @@ end;
 
 constructor THasFlagsFilter.Create(flags: TParamFlags);
 begin
-  inherited Create;
   fFlags := flags;
 end;
 

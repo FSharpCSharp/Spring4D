@@ -379,7 +379,6 @@ end;
 constructor TMultiMapEnumerator.Create(const source: TRefCountedObject;
   hashTable: PHashTable);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fHashTable := hashTable;
@@ -389,7 +388,6 @@ end;
 destructor TMultiMapEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function TMultiMapEnumerator.MoveNext: Boolean;
@@ -507,7 +505,6 @@ end;
 constructor TWrappedCollection<T>.TEnumerator.Create(
   const source: TWrappedCollection<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fOriginal := fSource.fDelegate;
@@ -517,7 +514,6 @@ end;
 destructor TWrappedCollection<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function TWrappedCollection<T>.TEnumerator.GetCurrent: T;
@@ -719,7 +715,7 @@ end;
 procedure TMultiMapBase<TKey, TValue>.DoValueChanged(sender: TObject;
   const item: TValue; action: TCollectionChangedAction);
 begin
-  case action of
+  case action of //FI:W535
     caAdded: Inc(fCount);
     caRemoved, caExtracted: Dec(fCount);
   end;

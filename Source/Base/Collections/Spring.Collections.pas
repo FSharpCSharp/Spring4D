@@ -4468,7 +4468,7 @@ begin
   CreateList_Object(PPointer(@comparer)^, ownsObjects, Result, TypeInfo(T));
 end;
 
-class function TCollections.CreateObjectList(elementType: PTypeInfo;
+class function TCollections.CreateObjectList(elementType: PTypeInfo; //FI:W521
   ownsObjects: Boolean): IObjectList;
 begin
   CreateList_Object(ownsObjects, Result, elementType)
@@ -6933,7 +6933,6 @@ end;
 constructor TStringComparer.Create(localeOptions: TLocaleOptions;
   ignoreCase: Boolean);
 begin
-  inherited Create;
   fLocaleOptions := localeOptions;
   fIgnoreCase := ignoreCase;
 end;
@@ -7065,7 +7064,6 @@ end;
 
 constructor TLinkedListNode<T>.Create(const value: T);
 begin
-  inherited Create;
   fItem := value;
 end;
 

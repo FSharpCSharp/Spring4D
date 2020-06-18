@@ -619,7 +619,6 @@ end;
 
 constructor THashMultiSet<T>.TEnumerator.Create(const source: THashMultiSet<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fRemainingCount := 0;
@@ -629,7 +628,6 @@ end;
 destructor THashMultiSet<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited Destroy;
 end;
 
 function THashMultiSet<T>.TEnumerator.GetCurrent: T;
@@ -742,7 +740,6 @@ end;
 constructor THashMultiSet<T>.TEntryEnumerator.Create(
   const source: THashMultiSet<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fHashTable.Version;
@@ -751,7 +748,6 @@ end;
 destructor THashMultiSet<T>.TEntryEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function THashMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;
@@ -808,7 +804,7 @@ begin
   fEntries.Free;
   fItems.Free;
   fTree.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 function TTreeMultiSet<T>.CreateMultiSet: IMultiSet<T>;
@@ -1003,7 +999,6 @@ end;
 constructor TTreeMultiSet<T>.TEnumerator.Create(
   const source: TTreeMultiSet<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fRemainingCount := 0;
@@ -1013,7 +1008,6 @@ end;
 destructor TTreeMultiSet<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function TTreeMultiSet<T>.TEnumerator.GetCurrent: T;
@@ -1115,7 +1109,6 @@ end;
 constructor TTreeMultiSet<T>.TItemEnumerator.Create(
   const source: TTreeMultiSet<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fVersion;
@@ -1124,7 +1117,6 @@ end;
 destructor TTreeMultiSet<T>.TItemEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function TTreeMultiSet<T>.TItemEnumerator.GetCurrent: T;
@@ -1196,7 +1188,6 @@ end;
 constructor TTreeMultiSet<T>.TEntryEnumerator.Create(
   const source: TTreeMultiSet<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fVersion;
@@ -1205,7 +1196,6 @@ end;
 destructor TTreeMultiSet<T>.TEntryEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function TTreeMultiSet<T>.TEntryEnumerator.GetCurrent: TEntry;

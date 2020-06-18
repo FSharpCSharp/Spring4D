@@ -350,7 +350,7 @@ type
 
   // binary compatible interface to Spring.Collections.ILookup<TKey,TValue> but foldable
   ILookupInternal<TKey, TElement> = interface(IEnumerable<IInterface>)
-    ['{B2380533-F2B1-465B-84B2-97FA79A6EE09}']
+    ['{B2380533-F2B1-465B-84B2-97FA79A6EE09}'] //FI:W530
     function GetItem(const key: TKey): IEnumerable<TElement>;
     function Contains(const key: TKey): Boolean;
   end;
@@ -1860,7 +1860,6 @@ constructor TGroupedEnumerable<TSource, TKey, TElement>.TEnumerator.Create(
   const elementSelector: Func<TSource, TElement>;
   const comparer: IEqualityComparer<TKey>);
 begin
-  inherited Create;
   fSource := source;
   fKeySelector := keySelector;
   fElementSelector := elementSelector;
@@ -1949,7 +1948,6 @@ constructor TGroupedEnumerable<TSource, TKey, TElement, TResult>.TEnumerator.Cre
   const source: IEnumerator<IInterface>;
   const resultSelector: Func<TKey, IEnumerable<TElement>, TResult>);
 begin
-  inherited Create;
   fSource := source;
   fResultSelector := resultSelector;
 end;
@@ -2121,7 +2119,7 @@ procedure TGroupings.Changed(const item: TObject;
   action: TCollectionChangedAction);
 begin
   inherited Changed(item, action);
-  case action of
+  case action of //FI:W535
     caAdded: TRefCountedObject(item)._AddRef;
     caRemoved: TRefCountedObject(item)._Release;
   end;
@@ -2135,7 +2133,6 @@ end;
 constructor TLookup<TKey, TElement>.TEnumerator.Create(
   const source: TLookup<TKey, TElement>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fIndex := -1;
@@ -2144,7 +2141,6 @@ end;
 destructor TLookup<TKey, TElement>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function TLookup<TKey, TElement>.TEnumerator.GetCurrent: IInterface;
@@ -2722,7 +2718,6 @@ begin
   Guard.CheckNotNull(Assigned(sorter), 'sorter');
 {$ENDIF}
 
-  inherited Create;
   fBuffer := source.ToArray;
   fMap := sorter.Sort(fBuffer, Length(fBuffer));
   fIndex := -1;

@@ -648,7 +648,6 @@ end;
 constructor TValueHolder.Create(const value: TValue;
   const lifetimeWatcher: IInterface);
 begin
-  inherited Create();
   fValue := value;
   fLifetimeWatcher := lifetimeWatcher;
 end;
@@ -662,7 +661,6 @@ begin
   // explicitly set to nil to keep correct order
   fLifetimeWatcher := nil;
   fValue := nil;
-  inherited Destroy;
 end;
 
 function TValueHolder.Invoke: TValue;

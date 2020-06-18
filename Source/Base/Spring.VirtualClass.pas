@@ -259,14 +259,12 @@ end;
 
 constructor TVirtualClass.Create(classType: TClass);
 begin
-  inherited Create;
   fProxyClass := CreateVirtualClass(classType);
 end;
 
 destructor TVirtualClass.Destroy;
 begin
   DestroyVirtualClass(fProxyClass);
-  inherited Destroy;
 end;
 
 function TVirtualClass.GetClassProxyData: PClassData;
@@ -281,7 +279,6 @@ end;
 
 constructor TVirtualClasses.Create;
 begin
-  inherited Create;
   fClasses := TList.Create;
   fLock := TCriticalSection.Create;
 end;
@@ -294,7 +291,6 @@ begin
     DestroyVirtualClass(classType);
   fLock.Free;
   fClasses.Free;
-  inherited Destroy;
 end;
 
 class constructor TVirtualClasses.Create;

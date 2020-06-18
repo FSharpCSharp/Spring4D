@@ -2128,7 +2128,6 @@ end;
 constructor TBidiDictionary<TKey, TValue>.TEnumerator.Create(
   const source: TBidiDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fItemIndex := -1;
@@ -2138,7 +2137,6 @@ end;
 destructor TBidiDictionary<TKey, TValue>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited Destroy;
 end;
 
 function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;
@@ -2679,7 +2677,6 @@ end;
 constructor TSortedDictionary<TKey, TValue>.TEnumerator.Create(
   const source: TSortedDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fVersion;
@@ -2688,7 +2685,6 @@ end;
 destructor TSortedDictionary<TKey, TValue>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited Destroy;
 end;
 
 function TSortedDictionary<TKey, TValue>.TEnumerator.GetCurrent: TKeyValuePair;

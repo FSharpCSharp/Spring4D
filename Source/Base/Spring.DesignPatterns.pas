@@ -250,7 +250,6 @@ end;
 
 constructor TObservable<T>.Create;
 begin
-  inherited Create;
   fLock := TMREWSync.Create;
   fObservers := TCollections.CreateList<T>;
 end;
@@ -259,7 +258,6 @@ destructor TObservable<T>.Destroy;
 begin
   fObservers := nil;
   fLock.Free;
-  inherited Destroy;
 end;
 
 procedure TObservable<T>.Attach(const observer: T);
@@ -302,7 +300,6 @@ end;
 
 constructor TFactory<TKey, TBaseType>.Create;
 begin
-  inherited Create;
   fFactoryMethods := TCollections.CreateDictionary<TKey, TFactoryMethod<TBaseType>>;
 end;
 
@@ -348,7 +345,6 @@ end;
 
 constructor TClassTypeRegistry<TValue>.Create;
 begin
-  inherited Create;
   fLookup := TCollections.CreateDictionary<TClass, TValue>;
 end;
 

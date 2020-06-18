@@ -363,7 +363,6 @@ end;
 
 constructor TAbstractStack<T>.TEnumerator.Create(const source: TAbstractStack<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fVersion;
@@ -372,7 +371,6 @@ end;
 destructor TAbstractStack<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited Destroy;
 end;
 
 function TAbstractStack<T>.TEnumerator.GetCurrent: T;

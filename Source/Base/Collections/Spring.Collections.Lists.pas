@@ -1313,7 +1313,6 @@ end;
 constructor TAbstractArrayList<T>.TEnumerator.Create(
   const source: TAbstractArrayList<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fVersion;
@@ -1322,7 +1321,6 @@ end;
 destructor TAbstractArrayList<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited Destroy;
 end;
 
 function TAbstractArrayList<T>.TEnumerator.GetCurrent: T;
@@ -1871,7 +1869,6 @@ end;
 
 constructor TCollectionList<T>.TEnumerator.Create(const list: TCollectionList<T>);
 begin
-  inherited Create;
   fSource := list;
   fSource._AddRef;
   fVersion := fSource.fVersion;
@@ -1880,7 +1877,6 @@ end;
 destructor TCollectionList<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited Destroy;
 end;
 
 function TCollectionList<T>.TEnumerator.GetCurrent: T;

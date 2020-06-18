@@ -734,7 +734,6 @@ end;
 destructor TRedBlackTree.Destroy;
 begin
   Clear;
-  inherited Destroy;
 end;
 
 procedure TRedBlackTree.Clear;
@@ -1369,7 +1368,6 @@ end;
 
 constructor TRedBlackTree<T>.Create(const comparer: IComparer<T>);
 begin
-  inherited Create;
   fComparer := comparer;
   if not Assigned(fComparer) then
     fComparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
@@ -1580,7 +1578,6 @@ end;
 constructor TRedBlackTree<T>.TEnumerator.Create(
   const tree: TBinaryTree);
 begin
-  inherited Create;
   fEnumerator := TBinaryTree.TEnumerator.Create(tree.fRoot, tmInOrder);
 end;
 
@@ -1606,7 +1603,6 @@ end;
 
 constructor TRedBlackTree<TKey, TValue>.Create(const comparer: IComparer<TKey>);
 begin
-  inherited Create;
   fComparer := comparer;
   if not Assigned(fComparer) then
     fComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
@@ -1842,7 +1838,6 @@ end;
 constructor TRedBlackTree<TKey, TValue>.TEnumerator.Create(
   const tree: TBinaryTree);
 begin
-  inherited Create;
   fEnumerator := TBinaryTree.TEnumerator.Create(tree.fRoot, tmInOrder);
 end;
 

@@ -800,8 +800,6 @@ end;
 
 constructor TEnumerableBase.Create;
 begin
-  inherited Create;
-
   // child classes must implement IEnumerable<T>
   // can use any specialization as they all have the same GUID
   Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<Integer>).IOffset);
@@ -810,7 +808,6 @@ end;
 destructor TEnumerableBase.Destroy;
 begin
   Pointer(this) := nil;
-  inherited Destroy;
 end;
 
 function TEnumerableBase.GetCount: Integer;
@@ -1627,7 +1624,6 @@ end;
 constructor TEnumerableWrapper.Create(const source: IEnumerable;
   getCurrent: TGetCurrentFunc);
 begin
-  inherited Create;
   fSource := source;
   fGetCurrent := getCurrent;
 end;
@@ -1672,7 +1668,6 @@ end;
 constructor TEnumerableWrapper.TEnumerator.Create(const source: IEnumerator;
   elementType: PTypeInfo; getCurrent: TGetCurrentFunc);
 begin
-  inherited Create;
   fSource := source;
   fElementType := elementType;
   fGetCurrent := getCurrent;
@@ -2102,7 +2097,6 @@ end;
 constructor TInnerCollection<T>.TEnumerator.Create(
   const source: TInnerCollection<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fHashTable.Version;
@@ -2111,7 +2105,6 @@ end;
 destructor TInnerCollection<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function TInnerCollection<T>.TEnumerator.GetCurrent: T;
@@ -2155,7 +2148,6 @@ end;
 constructor THashTableEnumerator.Create(const source: TRefCountedObject;
   hashTable: PHashTable);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fHashTable := hashTable;
@@ -2165,7 +2157,6 @@ end;
 destructor THashTableEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited;
 end;
 
 function THashTableEnumerator.MoveNext: Boolean;
@@ -2484,7 +2475,6 @@ end;
 constructor TCircularArrayBuffer<T>.TEnumerator.Create(
   const source: TCircularArrayBuffer<T>);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fVersion := fSource.fVersion;
@@ -2493,7 +2483,6 @@ end;
 destructor TCircularArrayBuffer<T>.TEnumerator.Destroy;
 begin
   fSource._Release;
-  inherited Destroy;
 end;
 
 function TCircularArrayBuffer<T>.TEnumerator.GetCurrent: T;
@@ -2534,7 +2523,7 @@ destructor TMapBase<TKey, T>.Destroy;
 begin
   fOnValueChanged.Free;
   fOnKeyChanged.Free;
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TMapBase<TKey, T>.DoNotify(const key: TKey; const value: T;
@@ -2615,7 +2604,6 @@ end;
 constructor TListBase<T>.Create;
 begin
   inherited Create;
-
   Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IList<T>).IOffset);
 end;
 
@@ -2972,7 +2960,6 @@ end;
 
 constructor TIterator.Create(source: TRefCountedObject; iterator: PIteratorRec);
 begin
-  inherited Create;
   fSource := source;
   fSource._AddRef;
   fIterator := iterator.Clone;
@@ -2983,7 +2970,6 @@ begin
   fIterator.Finalize;
   FreeMem(fIterator);
   fSource._Release;
-  inherited;
 end;
 
 function TIterator.MoveNext: Boolean;
@@ -2996,13 +2982,13 @@ begin
       fState := Finished;
     end;
     if fState = Initial then
-    begin
-      fState := Started;
+      begin
+        fState := Started;
       Start;
-    end;
+      end;
   until fState = Finished;
 
-  fIterator.Finalize;
+      fIterator.Finalize;
   Result := False;
 end;
 
@@ -3057,7 +3043,7 @@ begin
       count := Math.Min(Self.Count, Source.Count);
   else
     Result := False;
-  end;
+      end;
 end;
 
 function TIteratorRec.GetEnumerator: Boolean;
@@ -3120,9 +3106,9 @@ begin
       Break;
 
     Count := 1;
-    PIteratorRec(@Self).GetSecondEnumerator;
+      PIteratorRec(@Self).GetSecondEnumerator;
   end;
-  Result := False;
+    Result := False;
 end;
 
 function TIteratorRec<T>.Ordered: Boolean;
@@ -3256,15 +3242,15 @@ end;
 constructor TObjectArrayIterator.Create(const source: TArray<TObject>;
   elementType: PTypeInfo);
 begin
-  inherited Create(source);
   fElementType := elementType;
+  inherited Create(source);
 end;
 
 constructor TObjectArrayIterator.CreateFromArray(source: PPointer;
   count: Integer; elementType: PTypeInfo);
 begin
-  inherited Create;
   fElementType := elementType;
+  inherited Create;
   fIterator.MoveNext := @TIteratorRec<TObject>.Ordered;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<TObject>);
   if count > 0 then
@@ -3291,15 +3277,15 @@ end;
 constructor TInterfaceArrayIterator.Create(const source: TArray<IInterface>;
   elementType: PTypeInfo);
 begin
-  inherited Create(source);
   fElementType := elementType;
+  inherited Create(source);
 end;
 
 constructor TInterfaceArrayIterator.CreateFromArray(source: PPointer;
   count: Integer; elementType: PTypeInfo);
 begin
-  inherited Create;
   fElementType := elementType;
+  inherited Create;
   fIterator.MoveNext := @TIteratorRec<IInterface>.Ordered;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<IInterface>);
   if count > 0 then
