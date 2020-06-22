@@ -593,8 +593,6 @@ type
   {$ENDREGION}
     function CreateList: IList<T>; virtual;
   public
-    constructor Create; override;
-
     function Add(const item: T): Boolean;
 
     function Remove(const item: T): Boolean;
@@ -836,7 +834,8 @@ end;
 constructor TEnumerableBase<T>.Create;
 begin
   inherited Create;
-  fComparer := IComparer<T>(_LookupVtableInfo(giComparer, GetElementType, SizeOf(T)));
+  if not Assigned(fComparer) then
+    fComparer := IComparer<T>(_LookupVtableInfo(giComparer, GetElementType, SizeOf(T)));
 end;
 
 constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);
@@ -1791,7 +1790,6 @@ end;
 constructor TCollectionBase<T>.Create;
 begin
   inherited Create;
-  Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(ICollection<T>).IOffset);
   UpdateNotify(Self);
 end;
 
@@ -2515,8 +2513,6 @@ begin
   inherited Create;
   fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
-
-  Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IMap<TKey, T>).IOffset);
 end;
 
 destructor TMapBase<TKey, T>.Destroy;
@@ -2600,12 +2596,6 @@ end;
 
 
 {$REGION 'TListBase<T>'}
-
-constructor TListBase<T>.Create;
-begin
-  inherited Create;
-  Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IList<T>).IOffset);
-end;
 
 function TListBase<T>.CreateList: IList<T>;
 begin

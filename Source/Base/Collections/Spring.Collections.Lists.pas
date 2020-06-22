@@ -1984,7 +1984,8 @@ constructor TFoldedList<T>.Create(elementType: PTypeInfo;
   const comparer: IComparer<T>; ownsObjects: Boolean);
 begin
   fElementType := elementType;
-  inherited Create(comparer);
+  fComparer := comparer;
+  inherited Create;
   SetOwnsObjects(ownsObjects);
 end;
 

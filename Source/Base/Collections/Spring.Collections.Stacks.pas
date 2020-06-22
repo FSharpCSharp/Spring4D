@@ -149,8 +149,6 @@ constructor TAbstractStack<T>.Create;
 begin
   inherited Create;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
-
-  Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IStack<T>).IOffset);
 end;
 
 constructor TAbstractStack<T>.Create(const values: array of T);
