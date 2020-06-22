@@ -94,7 +94,7 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetCount(value: Integer);
     procedure SetItem(index: Integer; const value: T);
-    procedure SetOwnsObjects(value: Boolean);
+    procedure SetOwnsObjects(value: Boolean); inline;
   {$ENDREGION}
 
     function TryGetElementAt(var value: T; index: Integer): Boolean;
@@ -496,7 +496,7 @@ begin
 
   Result := CreateList;
   list := TList<T>(Result.AsObject);
-  list.fCount := (list.fCount and not CountMask) or count;
+  list.fCount := (list.fCount and OwnsObjectsMask) or count;
 {$IFDEF DELPHIXE2_UP}
   list.fItems := Copy(fItems, index, count);
 {$ELSE}
@@ -592,7 +592,7 @@ end;
 procedure TAbstractArrayList<T>.SetOwnsObjects(value: Boolean);
 begin
   if TType.Kind<T> = tkClass then
-    fCount := (fCount and CountMask) or BitMask[value];
+    fCount := (fCount and CountMask) or (Ord(value) shl OwnsObjectsBitIndex);
 end;
 
 function TAbstractArrayList<T>.Single: T;
@@ -1102,7 +1102,7 @@ begin
     SetCapacity(value);
   if value < Count then
     DeleteRange(value, Count - value);
-  fCount := (fCount and not CountMask) or value;
+  fCount := (fCount and OwnsObjectsMask) or value;
 end;
 
 procedure TAbstractArrayList<T>.Delete(index: Integer);

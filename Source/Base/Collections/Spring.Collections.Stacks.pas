@@ -318,7 +318,7 @@ end;
 procedure TAbstractStack<T>.SetOwnsObjects(const value: Boolean);
 begin
   if GetElementType.Kind = tkClass then
-    fCount := (fCount and CountMask) or BitMask[value];
+    fCount := (fCount and CountMask) or (Ord(value) shl OwnsObjectsBitIndex);
 end;
 
 procedure TAbstractStack<T>.TrimExcess;

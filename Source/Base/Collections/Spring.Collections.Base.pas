@@ -640,8 +640,9 @@ type
   end;
 
 const
-  CountMask = Integer($7FFFFFFF);
-  BitMask: array[Boolean] of Integer = (0, not CountMask);
+  OwnsObjectsBitIndex = 31;
+  OwnsObjectsMask     = 1 shl OwnsObjectsBitIndex;
+  CountMask           = not OwnsObjectsMask;
 
   // use the MSB of the HashCode to note removed items
   RemovedFlag        = Integer($80000000);
@@ -2462,7 +2463,7 @@ end;
 
 procedure TCircularArrayBuffer<T>.SetOwnsObjects(value: Boolean);
 begin
-  fCount := (fCount and CountMask) or BitMask[value];
+  fCount := (fCount and CountMask) or (Ord(value) shl OwnsObjectsBitIndex);
 end;
 
 {$ENDREGION}
