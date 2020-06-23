@@ -8480,7 +8480,10 @@ end;
 
 class operator Weak<T>.Implicit(const value: Weak<T>): T;
 begin
-  Result := value.Target;
+  if Assigned(value.fReference) then
+    Result := PT(value.fTarget)^
+  else
+    Result := Default(T);
 end;
 
 class operator Weak<T>.Equal(const left: Weak<T>;
