@@ -397,18 +397,6 @@ type
       procedure FinalizeValue(instance: Pointer); override;
     end;
 
-  const
-  {$IF SizeOf(Pointer) = 4}
-    PROPSLOT_MASK    = $FF000000;
-    PROPSLOT_FIELD   = $FF000000;
-    PROPSLOT_VIRTUAL = $FE000000;
-  {$ELSEIF SizeOf(Pointer) = 8}
-    PROPSLOT_MASK    = $FF00000000000000;
-    PROPSLOT_FIELD   = $FF00000000000000;
-    PROPSLOT_VIRTUAL = $FE00000000000000;
-  {$ELSE OTHER_PTR_SIZE}
-  {$MESSAGE Fatal 'Unrecognized pointer size'}
-  {$IFEND OTHER_PTR_SIZE}
   strict private
     DefaultFields: TArray<TInitializableField>;
     ManagedFields: TArray<TFinalizableField>;
@@ -1303,6 +1291,7 @@ type
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
+    function GetInterface(const IID: TGUID; out Obj): Boolean;
 {$IFNDEF AUTOREFCOUNT}
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
@@ -2027,7 +2016,7 @@ type
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(DefaultFieldRttiVisibility)}{$ENDIF}
 
-  TWeakReference = class abstract(TInterfacedObject)
+  TWeakReference = class abstract(TRefCountedObject)
   private
     fTarget: Pointer;
     class procedure RegisterWeakRef(address: Pointer; instance: Pointer); static;
@@ -2985,6 +2974,22 @@ procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
 const
   EmptyValue: TValue = ();
   caReseted = caReset deprecated 'Use caReset';
+
+  ObjCastGUID: TGUID = '{CEDF24DE-80A4-447D-8C75-EB871DC121FD}';
+
+{$IFNDEF DELPHIXE3_UP}
+{$IF SizeOf(Pointer) = 4}
+  PROPSLOT_MASK    = $FF000000;
+  PROPSLOT_FIELD   = $FF000000;
+  PROPSLOT_VIRTUAL = $FE000000;
+{$ELSEIF SizeOf(Pointer) = 8}
+  PROPSLOT_MASK    = $FF00000000000000;
+  PROPSLOT_FIELD   = $FF00000000000000;
+  PROPSLOT_VIRTUAL = $FE00000000000000;
+{$ELSE OTHER_PTR_SIZE}
+{$MESSAGE Fatal 'Unrecognized pointer size'}
+{$IFEND OTHER_PTR_SIZE}
+{$ENDIF}
 
 implementation
 
@@ -4710,39 +4715,57 @@ end;
 
 {$REGION 'TInitTable.TManagedInterfaceField'}
 
-function InvokeImplGetter(const Self: TObject; implGetter: NativeUInt): IInterface;
+procedure InvokeImplGetter(const self: TObject; implGetter: NativeUInt; var result: IInterface);
+{$IFDEF PUREPASCAL}
+type
+{$IF defined(MSWINDOWS) or defined(OSX32)}
+  TGetProc = procedure (const self: TObject; var result: IInterface);
+{$ELSE}
+  TGetProc = procedure (var result: IInterface; const self: TObject);
+{$IFEND}
 var
-  method: function: IInterface of object;
+  getProc: TGetProc;
 begin
-  TMethod(method).Data := Self;
-  {$IF SizeOf(NativeUInt) = 4}
-  case implGetter of
-    $FF000000..$FFFFFFFF:
-      Result := IInterface(PPointer(PByte(Self) + (implGetter and $00FFFFFF))^);
-    $FE000000..$FEFFFFFF:
-    begin
-      TMethod(method).Code := PPointer(PNativeInt(Self)^ + SmallInt(implGetter))^;
-      Result := method;
-    end;
-  else
-    TMethod(method).Code := Pointer(implGetter);
-    Result := method;
-  end;
-  {$ELSE}
-  if (implGetter and $FF00000000000000) = $FF00000000000000 then
-    Result := IInterface(PPointer(PByte(Self) + (implGetter and $00FFFFFFFFFFFFFF))^)
-  else if (implGetter and $FF00000000000000) = $FE00000000000000 then
-  begin
-    TMethod(method).Code := PPointer(PNativeInt(Self)^ + SmallInt(implGetter))^;
-    Result := method;
-  end
+  if (implGetter and PROPSLOT_MASK) = PROPSLOT_FIELD then
+    Result := IInterface(PPointer(PByte(self) + (implGetter and not PROPSLOT_MASK))^)
   else
   begin
-    TMethod(method).Code := Pointer(implGetter);
-    Result := method;
+    if (implGetter and PROPSLOT_MASK) = PROPSLOT_VIRTUAL then
+      getProc := PPointer(PNativeInt(self)^ + SmallInt(implGetter))^
+    else
+      getProc := Pointer(implGetter);
+{$IF defined(MSWINDOWS) or defined(OSX32)}
+    GetProc(self, result);
+{$ELSE}
+    GetProc(result, self);
+{$IFEND}
   end;
-  {$IFEND}
 end;
+{$ELSE}
+{$IFDEF CPUX86}
+asm
+  xchg edx,ecx
+  cmp ecx,PROPSLOT_FIELD
+  jae @@isField
+  cmp ecx,PROPSLOT_VIRTUAL
+  jb @@isStaticMethod
+
+  movsx ecx,cx
+  add ecx,[eax]
+  jmp dword ptr [ecx]
+
+@@isStaticMethod:
+  jmp ecx
+
+@@isField:
+  and ecx,not PROPSLOT_MASK
+  add ecx,eax
+  mov eax,edx
+  mov edx,[ecx]
+  jmp System.@IntfCopy
+end;
+{$ENDIF}
+{$ENDIF}
 
 constructor TInitTable.TManagedInterfaceField.Create(offset: Integer;
   fieldType: PTypeInfo; cls: TClass; const factory: TFunc<PTypeInfo,Pointer>;
@@ -4766,7 +4789,7 @@ begin
   else
   begin
     Result := nil;
-    IInterface(Result) := InvokeImplGetter(obj, fEntry.ImplGetter);
+    InvokeImplGetter(obj, fEntry.ImplGetter, IInterface(Result));
   end;
 end;
 
@@ -7137,6 +7160,26 @@ end;
 function TRefCountedObject.AsObject: TObject;
 begin
   Result := Self;
+end;
+
+function TRefCountedObject.GetInterface(const IID: TGUID; out Obj): Boolean;
+var
+  interfaceEntry: PInterfaceEntry;
+begin
+  Pointer(Obj) := nil;
+  interfaceEntry := GetInterfaceEntry(IID);
+  if interfaceEntry <> nil then
+  begin
+    if interfaceEntry.IOffset <> 0 then
+    begin
+      Pointer(Obj) := Pointer(PByte(Self) + interfaceEntry.IOffset);
+      if Pointer(Obj) <> nil then IInterface(Obj)._AddRef;
+    end
+    else
+      InvokeImplGetter(Self, interfaceEntry.ImplGetter, IInterface(Obj));
+  end else if IID = ObjCastGUID then
+    Pointer(Obj) := Pointer(Self);
+  Result := Pointer(Obj) <> nil;
 end;
 
 {$IFNDEF AUTOREFCOUNT}

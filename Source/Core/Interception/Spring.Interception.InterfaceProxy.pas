@@ -188,8 +188,6 @@ begin
 end;
 
 function TInterfaceProxy.QueryInterface(const IID: TGUID; out Obj): HResult;
-const
-  ObjCastGUID: TGUID = '{CEDF24DE-80A4-447D-8C75-EB871DC121FD}';
 var
   i: Integer;
 begin
