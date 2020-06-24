@@ -6246,9 +6246,16 @@ end;
 function ConvStr2Ord(const source: TValue; target: PTypeInfo;
   out value: TValue; const formatSettings: TFormatSettings): Boolean;
 var
+  s: string;
   i: Int64;
 begin
-  Result := TryStrToInt64(source.AsString, i);
+  s := source.AsString;
+  Result := TryStrToInt64(s, i);
+  if not Result and SameText(Trim(s), 'maxint') then
+  begin
+    Result := True;
+    i := MaxInt;
+  end;
   if Result then
     value := TValue.FromOrdinal(target, i);
 end;
