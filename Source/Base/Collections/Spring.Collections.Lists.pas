@@ -79,12 +79,11 @@ type
     {$IFNDEF DELPHIXE8_UP}{$HINTS OFF}{$ENDIF}
     procedure Grow(capacity: Integer); overload;
     {$IFNDEF DELPHIXE8_UP}{$HINTS ON}{$ENDIF}
-    procedure DeleteInternal(index: Integer; action: TCollectionChangedAction); inline;
+    procedure DeleteInternal(index: Integer; action: TCollectionChangedAction);
     function DeleteAllInternal(const match: Predicate<T>;
       action: TCollectionChangedAction; const items: TArray<T>): Integer;
     procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
     function InsertInternal(index: Integer; const item: T): Integer;
-    procedure InsertRangeInternal(index, count: Integer; const values: array of T);
     procedure SetItemInternal(index: Integer; const value: T);
   protected
   {$REGION 'Property Accessors'}
@@ -401,7 +400,7 @@ end;
 function TAbstractArrayList<T>.CanFastCompare: Boolean;
 begin
   Result := (TType.Kind<T> in FastComparableTypes) and (SizeOf(T) in [1, 2, 4, 8])
-    and ((fComparer = nil) or (Pointer(fComparer) = _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T))));
+    and (Pointer(fComparer) = _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
 end;
 
 function TAbstractArrayList<T>.GetCapacity: Integer;
@@ -465,7 +464,7 @@ end;
 
 function TAbstractArrayList<T>.GetRange(index, count: Integer): IList<T>;
 var
-  list: TList<T>;
+  list: TAbstractArrayList<T>;
 {$IFNDEF DELPHIXE2_UP}
   i: Integer;
 {$ENDIF}
@@ -476,7 +475,7 @@ begin
 {$ENDIF}
 
   Result := CreateList;
-  list := TList<T>(Result.AsObject);
+  list := TAbstractArrayList<T>(Result.AsObject);
   list.fCount := (list.fCount and OwnsObjectsMask) or count;
 {$IFDEF DELPHIXE2_UP}
   list.fItems := Copy(fItems, index, count);
@@ -648,17 +647,46 @@ end;
 
 procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: array of T);
 var
-  itemCount: Integer;
+  listCount, count, i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
 {$ENDIF}
 
-  itemCount := Length(values);
-  if itemCount = 0 then
+  count := Length(values);
+  if count = 0 then
     Exit;
 
-  InsertRangeInternal(index, itemCount, values);
+  listCount := Self.Count;
+  if listCount + count > fCapacity then
+    Grow(listCount + count);
+
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  if index <> listCount then
+  begin
+    if ItemType.HasWeakRef then
+      ItemType.MoveSlow(fItems, index, index + count, listCount - index)
+    else
+    begin
+      System.Move(fItems[index], fItems[index + count], SizeOf(T) * (listCount - index));
+      if ItemType.IsManaged then
+        System.FillChar(fItems[index], SizeOf(T) * count, 0);
+    end;
+  end;
+
+  if ItemType.IsManaged then
+    for i := Low(values) to count - 1 do
+      fItems[index + i] := values[i]
+  else
+    System.Move(values[0], fItems[index], SizeOf(T) * count);
+
+  Inc(fCount, count);
+
+  if Assigned(Notify) then
+    for i := Low(values) to count - 1 do
+      Notify(Self, values[i], caAdded);
 end;
 
 procedure TAbstractArrayList<T>.InsertRange(index: Integer;
@@ -733,43 +761,6 @@ begin
   end;
 end;
 
-procedure TAbstractArrayList<T>.InsertRangeInternal(index, count: Integer;
-  const values: array of T);
-var
-  listCount, i: Integer;
-begin
-  listCount := Self.Count;
-  if listCount + count > fCapacity then
-    Grow(listCount + count);
-
-  {$Q-}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  if index <> listCount then
-  begin
-    if ItemType.HasWeakRef then
-      ItemType.MoveSlow(fItems, index, index + count, listCount - index)
-    else
-    begin
-      System.Move(fItems[index], fItems[index + count], SizeOf(T) * (listCount - index));
-      if ItemType.IsManaged then
-        System.FillChar(fItems[index], SizeOf(T) * count, 0);
-    end;
-  end;
-
-  if ItemType.IsManaged then
-    for i := Low(values) to count - 1 do
-      fItems[index + i] := values[i]
-  else
-    System.Move(values[0], fItems[index], SizeOf(T) * count);
-
-  Inc(fCount, count);
-
-  if Assigned(Notify) then
-    for i := Low(values) to count - 1 do
-      Notify(Self, values[i], caAdded);
-end;
-
 function TAbstractArrayList<T>.LastIndexOf(const item: T; index, count: Integer): Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -824,18 +815,14 @@ begin
       if ItemType.IsManaged then
         arrayItem^ := Default(T);
       System.Move((arrayItem + 1)^, arrayItem^, SizeOf(T) * (listCount - index));
-      arrayItem := @fItems[listCount];
       if ItemType.IsManaged then
         if SizeOf(T) = SizeOf(Pointer) then
-          PPointer(arrayItem)^ := nil
+          PPointer(@fItems[listCount])^ := nil
         else
-          System.FillChar(arrayItem^, SizeOf(T), 0)
-      else
-        arrayItem^ := Default(T);
+          System.FillChar(fItems[listCount], SizeOf(T), 0);
     end;
-  end
-  else
-    fItems[listCount] := Default(T);
+  end;
+  fItems[listCount] := Default(T);
 
   if Assigned(Notify) then
     Notify(Self, oldItem, action);
