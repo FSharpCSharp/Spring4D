@@ -59,7 +59,6 @@ type
     function GetComparer: IComparer<T>;
     function GetElementType: PTypeInfo; virtual;
   {$ENDREGION}
-    function Equals(const left, right: T): Boolean; reintroduce; inline;
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     procedure CopyTo(var values: TArray<T>; index: Integer);
     function TryGetElementAt(var value: T; index: Integer): Boolean;
@@ -69,7 +68,6 @@ type
     function TryGetLast(var value: T; const predicate: Predicate<T>): Boolean; overload;
     function TryGetSingle(var value: T): Boolean; overload;
     function TryGetSingle(var value: T; const predicate: Predicate<T>): Boolean; overload;
-    function UseComparer(typeKind: TTypeKind): Boolean; inline;
     property Comparer: IComparer<T> read fComparer;
   public
     constructor Create;
@@ -835,16 +833,6 @@ begin
     fComparer := IComparer<T>(_LookupVtableInfo(giComparer, GetElementType, SizeOf(T)));
 end;
 
-function TEnumerableBase<T>.UseComparer(typeKind: TTypeKind): Boolean;
-const
-  FastComparableTypes = [tkUnknown, tkInteger, tkChar, tkEnumeration, tkSet,
-                         tkClass, tkMethod, tkWChar, tkInterface, tkInt64,
-                         tkUString, tkClassRef, tkPointer, tkProcedure];
-begin
-  Result := not ((typeKind in FastComparableTypes) and (SizeOf(T) in [1, 2, 4, 8])
-    and ((fComparer = nil) or (Pointer(fComparer) = _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)))));
-end;
-
 function TEnumerableBase<T>.Aggregate(const func: Func<T, T, T>): T;
 var
   enumerator: IEnumerator<T>;
@@ -975,40 +963,19 @@ begin
     Result := defaultValue;
 end;
 
-function TEnumerableBase<T>.Equals(const left, right: T): Boolean;
-begin
-  if TType.Kind<T> = tkClass then
-    if PObject(@left)^ = nil then
-      Result := PObject(@right)^ = nil
-    else
-      Result := PObject(@left).Equals(PObject(@right)^)
-  else
-    if UseComparer(TType.Kind<T>) then
-      Result := fComparer.Compare(left, right) = 0
-    else
-      if TType.Kind<T> = tkUString then
-        Result := PString(@left)^ = PString(@right)^
-      else
-        case SizeOf(T) of
-          1: Result := PByte(@left)^ = PByte(@right)^;
-          2: Result := PWord(@left)^ = PWord(@right)^;
-          4: Result := PCardinal(@left)^ = PCardinal(@right)^;
-          8: Result := PUInt64(@left)^ = PUInt64(@right)^;
-        end;
-end;
-
 function TEnumerableBase<T>.EqualsTo(const values: array of T): Boolean;
 var
-  e: IEnumerator<T>;
+  enumerator: IEnumerator<T>;
+  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
-  e := IEnumerable<T>(this).GetEnumerator;
   i := 0;
-
-  while e.MoveNext do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
+  while enumerator.MoveNext and (i < Length(values)) do
   begin
-    if not ((i < Length(values)) and Equals(e.Current, values[i])) then
-      Exit(False);
+    if not comparer.Equals(enumerator.Current, values[i]) then
+      Break;
     Inc(i);
   end;
   Result := i = Length(values);

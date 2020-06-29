@@ -32,6 +32,7 @@ uses
   Classes,
   Generics.Defaults,
   SysUtils,
+  TypInfo,
   Spring,
   Spring.Collections,
   Spring.Collections.Base;
@@ -73,6 +74,7 @@ type
     fCapacity: Integer;
     fCount: Integer;
     fVersion: Integer;
+    function CanFastCompare: Boolean; inline;
     procedure Grow; overload;
     {$IFNDEF DELPHIXE8_UP}{$HINTS OFF}{$ENDIF}
     procedure Grow(capacity: Integer); overload;
@@ -365,13 +367,17 @@ type
     property OnPropertyChanged: IEvent<TPropertyChangedEvent> read GetOnPropertyChanged;
   end;
 
+const
+  FastComparableTypes = [tkUnknown, tkInteger, tkChar, tkEnumeration, tkSet,
+                         tkClass, tkMethod, tkWChar, tkInterface, tkInt64,
+                         tkUString, tkClassRef, tkPointer, tkProcedure];
+
 implementation
 
 uses
 {$IFDEF DELPHIXE4}
   Rtti, // suppress hint about inlining
 {$ENDIF}
-  TypInfo,
   Spring.Collections.Extensions,
   Spring.Events,
   Spring.Events.Base,
@@ -390,6 +396,12 @@ destructor TAbstractArrayList<T>.Destroy;
 begin
   Clear;
   inherited Destroy;
+end;
+
+function TAbstractArrayList<T>.CanFastCompare: Boolean;
+begin
+  Result := (TType.Kind<T> in FastComparableTypes) and (SizeOf(T) in [1, 2, 4, 8])
+    and ((fComparer = nil) or (Pointer(fComparer) = _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T))));
 end;
 
 function TAbstractArrayList<T>.GetCapacity: Integer;
@@ -502,14 +514,8 @@ begin
 
   if TType.Kind<T> = tkClass then
     Result := TArrayHelper.IndexOfObj(fItems, item, index, count)
-  else if UseComparer(TType.Kind<T>) then
+  else if CanFastCompare then
   begin
-    for Result := index to index + count - 1 do
-      if Comparer.Compare(fItems[Result], item) = 0 then
-        Exit;
-    Result := -1;
-  end
-  else
     if TType.Kind<T> = tkUString then
       Result := TArrayHelper.IndexOfStr(fItems, item, index, count)
     else
@@ -519,6 +525,14 @@ begin
         4: Result := TArrayHelper.IndexOf4(fItems, item, index, count);
         8: Result := TArrayHelper.IndexOf8(fItems, item, index, count);
       end;
+  end
+  else
+  begin
+    for Result := index to index + count - 1 do
+      if Comparer.Compare(fItems[Result], item) = 0 then
+        Exit;
+    Result := -1;
+  end;
 end;
 
 procedure TAbstractArrayList<T>.SetItem(index: Integer; const value: T);
@@ -765,14 +779,8 @@ begin
 
   if TType.Kind<T> = tkClass then
     Result := TArrayHelper.LastIndexOfStr(fItems, item, index, count)
-  else if UseComparer(TType.Kind<T>) then
+  else if CanFastCompare then
   begin
-    for Result := index downto index - count do
-      if Comparer.Compare(fItems[Result], item) = 0 then
-        Exit;
-    Result := -1;
-  end
-  else
     if TType.Kind<T> = tkUString then
       Result := TArrayHelper.LastIndexOfStr(fItems, item, index, count)
     else
@@ -782,6 +790,14 @@ begin
         4: Result := TArrayHelper.LastIndexOf4(fItems, item, index, count);
         8: Result := TArrayHelper.LastIndexOf8(fItems, item, index, count);
       end;
+  end
+  else
+  begin
+    for Result := index downto index - count do
+      if Comparer.Compare(fItems[Result], item) = 0 then
+        Exit;
+    Result := -1;
+  end;
 end;
 
 procedure TAbstractArrayList<T>.DeleteInternal(index: Integer;
@@ -1948,10 +1964,12 @@ end;
 function TAnonymousReadOnlyList<T>.IndexOf(const item: T; index,
   count: Integer): Integer;
 var
+  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
+  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
   for i := index to index + count - 1 do
-    if Equals(fItems(i), item) then
+    if Comparer.Equals(fItems(i), item) then
       Exit(i);
   Result := -1;
 end;
