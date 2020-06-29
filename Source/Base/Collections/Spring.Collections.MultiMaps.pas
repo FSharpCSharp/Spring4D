@@ -618,14 +618,19 @@ end;
 procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;
   const values: IEnumerable<TValue>);
 var
+  enumerator: IEnumerator<TValue>;
   item: TValue;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in values do
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     Add(key, item);
+  end;
 end;
 
 procedure TMultiMapBase<TKey, TValue>.Clear;

@@ -207,20 +207,26 @@ uses
 
 procedure TSetBase<T>.ExceptWith(const other: IEnumerable<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-  for item in other do
+  enumerator := other.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     ICollection<T>(this).Remove(item);
+  end;
 end;
 
 procedure TSetBase<T>.IntersectWith(const other: IEnumerable<T>);
 var
-  item: T;
+  enumerator: IEnumerator<T>;
   items: TArray<T>;
+  item: T;
   i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -231,13 +237,17 @@ begin
   begin
     SetLength(items, IEnumerable<T>(this).Count);
     i := 0;
-    for item in other do
+    enumerator := other.GetEnumerator;
+    while enumerator.MoveNext do
+    begin
+      item := enumerator.Current;
       if IEnumerable<T>(this).Contains(item) then
       begin
         items[i] := item;
         Inc(i);
         ICollection<T>(this).Remove(item);
       end;
+    end;
     SetLength(items, i);
   end;
   ICollection<T>(this).Clear;
@@ -246,53 +256,69 @@ end;
 
 function TSetBase<T>.IsSubsetOf(const other: IEnumerable<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if not other.Contains(item) then
       Exit(False);
+  end;
 
   Result := True;
 end;
 
 function TSetBase<T>.IsSupersetOf(const other: IEnumerable<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-  for item in other do
+  enumerator := other.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if not IEnumerable<T>(this).Contains(item) then
       Exit(False);
+  end;
 
   Result := True;
 end;
 
 function TSetBase<T>.Overlaps(const other: IEnumerable<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-  for item in other do
+  enumerator := other.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if IEnumerable<T>(this).Contains(item) then
       Exit(True);
+  end;
 
   Result := False;
 end;
 
 function TSetBase<T>.SetEquals(const other: IEnumerable<T>): Boolean;
 var
-  item: T;
   localSet: ISet<T>;
+  enumerator: IEnumerator<T>;
+  item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
@@ -300,30 +326,41 @@ begin
 
   localSet := CreateSet;
 
-  for item in other do
+  enumerator := other.GetEnumerator;
+  while enumerator.MoveNext do
   begin
+    item := enumerator.Current;
     localSet.Add(item);
     if not IEnumerable<T>(this).Contains(item) then
       Exit(False);
   end;
 
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if not localSet.Contains(item) then
       Exit(False);
+  end;
 
   Result := True;
 end;
 
 procedure TSetBase<T>.UnionWith(const other: IEnumerable<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
-  for item in other do
+  enumerator := other.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     ICollection<T>(this).Add(item);
+  end;
 end;
 
 {$ENDREGION}

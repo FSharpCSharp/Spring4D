@@ -681,7 +681,7 @@ end;
 procedure TAbstractArrayList<T>.InsertRange(index: Integer;
   const values: IEnumerable<T>);
 var
-  collection: IReadOnlyCollection<T>;
+  intf: IInterface;
   listCount, count, i: Integer;
   item: T;
 begin
@@ -689,9 +689,9 @@ begin
   Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
 {$ENDIF}
 
-  if Supports(values, IReadOnlyCollection<T>, collection) then
+  if Supports(values, ICollection<T>, intf) then
   begin
-    count := collection.Count;
+    count := ICollection<T>(intf).Count;
     listCount := Self.Count;
     if count > 0 then
     begin
@@ -705,7 +705,7 @@ begin
       if index < listCount then
       begin
         if ItemType.IsManaged then
-          if ItemType.HasWeakRef or (collection = this) then
+          if ItemType.HasWeakRef or (intf = this) then
             ItemType.MoveSlow(fItems, index, index + count, listCount - index)
           else
           begin
@@ -716,7 +716,7 @@ begin
           System.Move(fItems[index], fItems[index + count], SizeOf(T) * (listCount - index));
       end;
 
-      if collection = this then
+      if intf = this then
       begin
         if ItemType.IsManaged then
         begin
@@ -730,7 +730,7 @@ begin
         end;
       end
       else
-        collection.CopyTo(fItems, index);
+        ICollection<T>(intf).CopyTo(fItems, index);
       Inc(fCount, count);
 
       if Assigned(Notify) then
@@ -739,11 +739,15 @@ begin
     end;
   end
   else
-    for item in values do
+  begin
+    intf := values.GetEnumerator;
+    while IEnumerator<T>(intf).MoveNext do
     begin
+      item := IEnumerator<T>(intf).Current;
       Insert(index, item);
       Inc(index);
     end;
+  end;
 end;
 
 procedure TAbstractArrayList<T>.InsertRangeInternal(index, count: Integer;
@@ -1381,14 +1385,19 @@ end;
 
 procedure TSortedList<T>.AddRange(const values: IEnumerable<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in values do
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     Add(item);
+  end;
 end;
 
 procedure TSortedList<T>.AddRange(const values: array of T);
@@ -1770,6 +1779,7 @@ end;
 procedure TCollectionList<T>.InsertRange(index: Integer;
   const values: IEnumerable<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1777,8 +1787,10 @@ begin
   Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in values do
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
   begin
+    item := enumerator.Current;
     Insert(index, item);
     Inc(index);
   end;

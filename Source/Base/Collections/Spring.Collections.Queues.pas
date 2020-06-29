@@ -260,11 +260,16 @@ end;
 
 constructor TQueue<T>.Create(const values: IEnumerable<T>);
 var
-  value: T;
+  enumerator: IEnumerator<T>;
+  item: T;
 begin
   inherited Create;
-  for value in values do
-    Enqueue(value);
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
+    Enqueue(item);
+  end;
 end;
 
 function TQueue<T>.Enqueue(const item: T): Boolean;
@@ -435,11 +440,16 @@ end;
 
 constructor TDeque<T>.Create(const values: IEnumerable<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
   Create;
-  for item in values do
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     AddLast(item);
+  end;
 end;
 
 function TDeque<T>.AddFirst(const item: T): Boolean;

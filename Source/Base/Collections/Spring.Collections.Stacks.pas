@@ -401,11 +401,16 @@ end;
 
 constructor TStack<T>.Create(const values: IEnumerable<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
   Create;
-  for item in values do
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     Push(item);
+  end;
 end;
 
 procedure TStack<T>.Clear;

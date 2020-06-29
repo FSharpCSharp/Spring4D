@@ -880,29 +880,39 @@ end;
 
 function TEnumerableBase<T>.All(const predicate: Predicate<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if not predicate(item) then
       Exit(False);
+  end;
   Result := True;
 end;
 
 function TEnumerableBase<T>.Any(const predicate: Predicate<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if predicate(item) then
       Exit(True);
+  end;
   Result := False;
 end;
 
@@ -928,15 +938,20 @@ end;
 function TEnumerableBase<T>.Contains(const value: T;
   const comparer: IEqualityComparer<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if comparer.Equals(value, item) then
       Exit(True);
+  end;
   Result := False;
 end;
 
@@ -1084,14 +1099,19 @@ end;
 
 procedure TEnumerableBase<T>.ForEach(const action: Action<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(action), 'action');
 {$ENDIF}
 
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     action(item);
+  end;
 end;
 
 function TEnumerableBase<T>.GetComparer: IComparer<T>;
@@ -1401,10 +1421,14 @@ end;
 
 function TEnumerableBase<T>.Sum: T;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
   Result := Default(T);
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     case TType.Kind<T> of
       tkInteger: PInteger(@Result)^ := PInteger(@Result)^ + PInteger(@item)^;
       tkInt64: PInt64(@Result)^ := PInt64(@Result)^ + PInt64(@item)^;
@@ -1414,6 +1438,7 @@ begin
         ftDouble: PDouble(@Result)^ := PDouble(@Result)^ + PDouble(@item)^;
       end;
     end;
+  end;
 end;
 
 function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
@@ -1446,30 +1471,30 @@ end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
 var
-  collection: ICollection<T>;
+  intf: IInterface;
   count: Integer;
-  item: T;
 begin
   Result := nil;
-  if Supports(Self, ICollection<T>, collection) then
+  if Supports(Self, ICollection<T>, intf) then
   begin
-    count := collection.Count;
+    count := ICollection<T>(intf).Count;
     if count > 0 then
     begin
       SetLength(Result, count);
-      collection.CopyTo(Result, 0);
+      ICollection<T>(intf).CopyTo(Result, 0);
     end;
   end
   else
   begin
     count := 0;
-    for item in IEnumerable<T>(this) do
+    intf := IEnumerable<T>(this).GetEnumerator;
+    while IEnumerator<T>(intf).MoveNext do
     begin
       if Result = nil then
         SetLength(Result, 4)
       else if Length(Result) = count then
         SetLength(Result, count * 2);
-      Result[count] := item;
+      Result[count] := IEnumerator<T>(intf).Current;
       Inc(count);
     end;
     SetLength(Result, count);
@@ -1511,18 +1536,23 @@ end;
 
 function TEnumerableBase<T>.TryGetFirst(var value: T; const predicate: Predicate<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if predicate(item) then
     begin
       value := item;
       Exit(True);
     end;
+  end;
   value := Default(T);
   Result := False;
 end;
@@ -1545,6 +1575,7 @@ end;
 
 function TEnumerableBase<T>.TryGetLast(var value: T; const predicate: Predicate<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1552,8 +1583,10 @@ begin
 {$ENDIF}
 
   Result := False;
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
   begin
+    item := enumerator.Current;
     if predicate(item) then
     begin
       value := item;
@@ -1586,6 +1619,7 @@ end;
 function TEnumerableBase<T>.TryGetSingle(var value: T;
   const predicate: Predicate<T>): Boolean;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1593,7 +1627,11 @@ begin
 {$ENDIF}
 
   Result := False;
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
+
     if predicate(item) then
     begin
       if Result then
@@ -1604,6 +1642,7 @@ begin
       value := item;
       Result := True;
     end;
+  end;
 end;
 
 function TEnumerableBase<T>.Where(const predicate: Predicate<T>): IEnumerable<T>;
@@ -1837,14 +1876,19 @@ end;
 
 procedure TCollectionBase<T>.AddRange(const values: IEnumerable<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in values do
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     ICollection<T>(this).Add(item);
+  end;
 end;
 
 procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAction);
@@ -1855,15 +1899,16 @@ end;
 
 procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
 var
-  item: T;
+  enumerator: IEnumerator<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(Length(values), index, IEnumerable<T>(this).Count);
 {$ENDIF}
 
-  for item in IEnumerable<T>(this) do
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
   begin
-    values[index] := item;
+    values[index] := enumerator.Current;
     Inc(index);
   end;
 end;
@@ -1884,14 +1929,19 @@ end;
 
 procedure TCollectionBase<T>.ExtractRange(const values: IEnumerable<T>);
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(values), 'values');
 {$ENDIF}
 
-  for item in values do
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     ICollection<T>(this).Extract(item);
+  end;
 end;
 
 function TCollectionBase<T>.GetIsReadOnly: Boolean;
@@ -1970,6 +2020,7 @@ end;
 
 function TCollectionBase<T>.RemoveRange(const values: IEnumerable<T>): Integer;
 var
+  enumerator: IEnumerator<T>;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -1977,9 +2028,13 @@ begin
 {$ENDIF}
 
   Result := 0;
-  for item in values do
+  enumerator := values.GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    item := enumerator.Current;
     if ICollection<T>(this).Remove(item) then
       Inc(Result);
+  end;
 end;
 
 procedure TCollectionBase<T>.Reset;
@@ -2979,7 +3034,7 @@ begin
       end;
   until fState = Finished;
 
-      fIterator.Finalize;
+  fIterator.Finalize;
   Result := False;
 end;
 
