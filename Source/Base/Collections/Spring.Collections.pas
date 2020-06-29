@@ -1147,7 +1147,7 @@ type
     function GetNext: TLinkedListNode<T>;
     function GetPrevious: TLinkedListNode<T>;
   public
-    constructor Create(const value: T); overload;
+    constructor Create(const value: T);
 
     property List: ILinkedList<T> read GetList;
 
@@ -5485,7 +5485,7 @@ end;
 
 class function TCollections.CreateMultiSet<T>: IMultiSet<T>;
 begin
-  Result := THashMultiSet<T>.Create;
+  Result := THashMultiSet<T>.Create(nil);
 end;
 
 class function TCollections.CreateMultiSet<T>(
@@ -5496,13 +5496,13 @@ end;
 
 class function TCollections.CreateMultiSet<T>(const values: array of T): IMultiSet<T>;
 begin
-  Result := THashMultiSet<T>.Create;
+  Result := THashMultiSet<T>.Create(nil);
   Result.AddRange(values);
 end;
 
 class function TCollections.CreateMultiSet<T>(const values: IEnumerable<T>): IMultiSet<T>;
 begin
-  Result := THashMultiSet<T>.Create;
+  Result := THashMultiSet<T>.Create(nil);
   Result.AddRange(values);
 end;
 
@@ -6262,7 +6262,7 @@ end;
 
 class function TCollections.CreateDeque<T>(ownsObjects: Boolean): IDeque<T>;
 begin
-  Result := TDeque<T>.Create(ownsObjects);
+  Result := TDeque<T>.Create(0, ownsObjects);
 end;
 
 class function TCollections.CreateDeque<T>(const values: array of T): IDeque<T>;
@@ -6312,7 +6312,7 @@ begin
         8: CreateHashSet_UInt64(0, nil, Result, TypeInfo(T));
       end;
   else{$ELSE}begin{$ENDIF}
-    Result := THashSet<T>.Create;
+    Result := THashSet<T>.Create(0, nil);
   end;
 end;
 
@@ -6331,7 +6331,7 @@ begin
         8: CreateHashSet_UInt64(capacity, nil, Result, TypeInfo(T));
       end;
   else{$ELSE}begin{$ENDIF}
-    Result := THashSet<T>.Create(capacity);
+    Result := THashSet<T>.Create(capacity, nil);
   end;
 end;
 
@@ -6351,7 +6351,7 @@ begin
         8: CreateHashSet_UInt64(0, Pointer(comparer), Result, TypeInfo(T));
       end;
   else{$ELSE}begin{$ENDIF}
-    Result := THashSet<T>.Create(comparer);
+    Result := THashSet<T>.Create(0, comparer);
   end;
 end;
 
@@ -6543,7 +6543,7 @@ end;
 
 class function TCollections.CreateSortedSet<T>: ISet<T>;
 begin
-  Result := TSortedSet<T>.Create;
+  Result := TSortedSet<T>.Create(nil);
 end;
 
 class function TCollections.CreateSortedSet<T>(
@@ -6554,19 +6554,19 @@ end;
 
 class function TCollections.CreateSortedSet<T>(const values: array of T): ISet<T>;
 begin
-  Result := TSortedSet<T>.Create;
+  Result := TSortedSet<T>.Create(nil);
   Result.AddRange(values);
 end;
 
 class function TCollections.CreateSortedSet<T>(const values: IEnumerable<T>): ISet<T>;
 begin
-  Result := TSortedSet<T>.Create;
+  Result := TSortedSet<T>.Create(nil);
   Result.AddRange(values);
 end;
 
 class function TCollections.CreateSortedDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
 begin
-  Result := TSortedDictionary<TKey, TValue>.Create;
+  Result := TSortedDictionary<TKey, TValue>.Create(nil, nil);
 end;
 
 class function TCollections.CreateSortedDictionary<TKey, TValue>(
@@ -6590,7 +6590,7 @@ end;
 
 class function TCollections.CreateSortedMultiSet<T>: IMultiSet<T>;
 begin
-  Result := TTreeMultiSet<T>.Create;
+  Result := TTreeMultiSet<T>.Create(nil);
 end;
 
 class function TCollections.CreateSortedMultiSet<T>(
@@ -6602,14 +6602,14 @@ end;
 class function TCollections.CreateSortedMultiSet<T>(
   const values: IEnumerable<T>): IMultiSet<T>;
 begin
-  Result := TTreeMultiSet<T>.Create;
+  Result := TTreeMultiSet<T>.Create(nil);
   Result.AddRange(values);
 end;
 
 class function TCollections.CreateSortedMultiSet<T>(
   const values: array of T): IMultiSet<T>;
 begin
-  Result := TTreeMultiSet<T>.Create;
+  Result := TTreeMultiSet<T>.Create(nil);
   Result.AddRange(values);
 end;
 

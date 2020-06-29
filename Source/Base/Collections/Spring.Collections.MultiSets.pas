@@ -145,8 +145,7 @@ type
   protected
     function CreateMultiSet: IMultiSet<T>; override;
   public
-    constructor Create; override;
-    constructor Create(const comparer: IEqualityComparer<T>); overload;
+    constructor Create(const comparer: IEqualityComparer<T>);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -283,8 +282,7 @@ type
   protected
     function CreateMultiSet: IMultiSet<T>; override;
   public
-    constructor Create; override;
-    constructor Create(const comparer: IComparer<T>); overload;
+    constructor Create(const comparer: IComparer<T>);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -351,7 +349,7 @@ begin
       else
         Result := 1;
     end);
-  localSet := THashMultiSet<T>.Create;
+  localSet := THashMultiSet<T>.Create(nil);
   for i := 0 to High(items) do
     localSet.Add(items[i].Value.Item, items[i].Value.Count);
   Result := localSet as IReadOnlyMultiSet<T>;
@@ -381,11 +379,6 @@ end;
 
 
 {$REGION 'THashMultiSet<T>'}
-
-constructor THashMultiSet<T>.Create;
-begin
-  Create(nil);
-end;
 
 constructor THashMultiSet<T>.Create(const comparer: IEqualityComparer<T>);
 begin
@@ -784,11 +777,6 @@ end;
 
 
 {$REGION 'TTreeMultiSet<T>'}
-
-constructor TTreeMultiSet<T>.Create;
-begin
-  Create(nil);
-end;
 
 constructor TTreeMultiSet<T>.Create(const comparer: IComparer<T>);
 begin

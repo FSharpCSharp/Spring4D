@@ -105,11 +105,7 @@ type
     function TryGetElementAt(var item: T; index: Integer): Boolean;
     property Capacity: Integer read GetCapacity;
   public
-    constructor Create; overload; override;
-    constructor Create(capacity: Integer); overload;
-    constructor Create(const comparer: IEqualityComparer<T>); overload;
-    constructor Create(capacity: Integer;
-      const comparer: IEqualityComparer<T>); overload;
+    constructor Create(capacity: Integer; const comparer: IEqualityComparer<T>);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -162,8 +158,7 @@ type
   protected
     function CreateSet: ISet<T>; override;
   public
-    constructor Create; overload; override;
-    constructor Create(const comparer: IComparer<T>); overload;
+    constructor Create(const comparer: IComparer<T>);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -368,21 +363,6 @@ end;
 
 {$REGION 'THashSet<T>'}
 
-constructor THashSet<T>.Create;
-begin
-  Create(0, nil);
-end;
-
-constructor THashSet<T>.Create(capacity: Integer);
-begin
-  Create(capacity, nil);
-end;
-
-constructor THashSet<T>.Create(const comparer: IEqualityComparer<T>);
-begin
-  Create(0, comparer);
-end;
-
 constructor THashSet<T>.Create(capacity: Integer; const comparer: IEqualityComparer<T>);
 begin
   inherited Create;
@@ -392,8 +372,7 @@ begin
     fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
 
   fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
-
-  SetCapacity(capacity);
+  fHashTable.Capacity := capacity;
 end;
 
 destructor THashSet<T>.Destroy;
@@ -404,7 +383,7 @@ end;
 
 function THashSet<T>.CreateSet: ISet<T>;
 begin
-  Result := THashSet<T>.Create(fKeyComparer);
+  Result := THashSet<T>.Create(0, fKeyComparer);
 end;
 
 procedure THashSet<T>.SetCapacity(value: Integer);
@@ -587,18 +566,11 @@ end;
 
 {$REGION 'TSortedSet<T>'}
 
-constructor TSortedSet<T>.Create;
-var
-  // use variable to pass nil because of codegen bug in XE2 and XE3 in x64
-  comparer: IComparer<T>;
-begin
-  Create(comparer);
-end;
-
 constructor TSortedSet<T>.Create(const comparer: IComparer<T>);
 begin
+  fComparer := comparer;
   inherited Create;
-  fTree := TRedBlackTree<T>.Create(comparer);
+  fTree := TRedBlackTree<T>.Create(fComparer);
 end;
 
 function TSortedSet<T>.CreateSet: ISet<T>;

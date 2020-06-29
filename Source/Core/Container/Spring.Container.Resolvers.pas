@@ -579,8 +579,7 @@ var
   itemType: TRttiType;
   dependencyModel: TDependencyModel;
   values: TArray<TValue>;
-  objects: TArray<TObject>;
-  interfaces: TArray<IInterface>;
+  list: IInterface;
   i: Integer;
 begin
   itemType := GetElementType(dependency.TargetType.Handle).RttiType;
@@ -589,22 +588,21 @@ begin
   case itemType.TypeKind of
     tkClass:
     begin
-      SetLength(objects, Length(values));
+      list := TCollections.CreateObjectList(itemType.Handle, False);
       for i := Low(values) to High(values) do
-        objects[i] := values[i].AsObject;
-      Result := TValue.From(TList<TObject>.Create(objects));
+        IObjectList(list).Add(values[i].AsObject);
+      TValue.Make(@list, dependency.TypeInfo, Result);
     end;
     tkInterface:
     begin
-      SetLength(interfaces, Length(values));
+      list := TCollections.CreateInterfaceList(itemType.Handle);
       for i := Low(values) to High(values) do
-        interfaces[i] := values[i].AsInterface;
-      Result := TValue.From(TList<IInterface>.Create(interfaces));
+        Spring.Collections.IInterfaceList(list).Add(values[i].AsInterface);
+      TValue.Make(@list, dependency.TypeInfo, Result);
     end;
   else
     raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
   end;
-  Result := Result.Cast(dependency.TypeInfo);
 end;
 
 {$ENDREGION}

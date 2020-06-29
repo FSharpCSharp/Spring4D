@@ -252,10 +252,9 @@ constructor TQueue<T>.Create(const values: array of T);
 var
   i: Integer;
 begin
-  inherited Create;
-  SetCapacity(Length(values));
+  inherited Create(Length(values));
   for i := 0 to High(values) do
-    AddToTail(values[i]);
+    Enqueue(values[i]);
 end;
 
 constructor TQueue<T>.Create(const values: IEnumerable<T>);
@@ -432,10 +431,10 @@ constructor TDeque<T>.Create(const values: array of T);
 var
   i: Integer;
 begin
-  Create;
+  inherited Create;
   SetCapacity(Length(values));
-  for i := Low(values) to High(values) do
-    AddToTail(values[i]);
+  for i := 0 to High(values) do
+    AddLast(values[i]);
 end;
 
 constructor TDeque<T>.Create(const values: IEnumerable<T>);
@@ -443,7 +442,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-  Create;
+  inherited Create;
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
   begin
@@ -523,8 +522,9 @@ end;
 constructor TFoldedQueue<T>.Create(const elementType: PTypeInfo;
   const comparer: IComparer<T>; ownsObjects: Boolean);
 begin
-  inherited Create(comparer);
   fElementType := elementType;
+  fComparer := comparer;
+  inherited Create;
   SetOwnsObjects(ownsObjects);
 end;
 

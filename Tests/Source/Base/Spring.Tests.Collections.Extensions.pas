@@ -52,6 +52,7 @@ type
   protected
     function AsReadOnly: IReadOnlyList<T>;
   public
+    constructor Create(const values: array of T);
     function GetEnumerator: IEnumerator<T>;
   end;
 
@@ -726,6 +727,12 @@ begin
 end;
 
 { TNonEnumerableList<T> }
+
+constructor TNonEnumerableList<T>.Create(const values: array of T);
+begin
+  inherited Create;
+  AddRange(values);
+end;
 
 function TNonEnumerableList<T>.AsReadOnly: IReadOnlyList<T>;
 begin
@@ -3630,7 +3637,7 @@ var
   source: IList<string>;
   lookup: ILookup<Integer, string>;
 begin
-  source := TList<string>.Create(['abc']);
+  source := TCollections.CreateList<string>(['abc']);
   lookup := TEnumerable.ToLookup<string,Integer>(source,
     function(const x: string): Integer
     begin
@@ -5086,7 +5093,7 @@ var
   source: IEnumerable<Integer>;
   query: IEnumerable<Integer>;
 begin
-  source := TList<Integer>.Create([5, 6, 7, 8, 9]);
+  source := TCollections.CreateList<Integer>([5, 6, 7, 8, 9]);
   query := source.Reversed;
   CheckTrue(query.EqualsTo([9, 8, 7, 6, 5]));
 end;

@@ -107,8 +107,7 @@ type
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
-    constructor Create(const values: array of T); overload;
-    constructor Create(const values: IEnumerable<T>); overload;
+    constructor Create(const comparer: IComparer<T>); overload;
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -381,37 +380,10 @@ uses
 
 {$REGION 'TAbstractArrayList<T>'}
 
-constructor TAbstractArrayList<T>.Create(const values: array of T);
-var
-  count, i: Integer;
+constructor TAbstractArrayList<T>.Create(const comparer: IComparer<T>);
 begin
-  Create;
-  count := Length(values);
-  if count > 0 then
-  begin
-    SetCount(count);
-    for i := Low(values) to High(values) do
-      fItems[i] := values[i];
-  end;
-end;
-
-constructor TAbstractArrayList<T>.Create(const values: IEnumerable<T>);
-var
-  collection: IReadOnlyCollection<T>;
-  count: Integer;
-begin
-  Create;
-  if Supports(values, IReadOnlyCollection<T>, collection) then
-  begin
-    count := collection.Count;
-    if count > 0 then
-    begin
-      SetCount(count);
-      collection.CopyTo(fItems, 0);
-    end;
-  end
-  else
-    AddRange(values);
+  fComparer := comparer;
+  inherited Create;
 end;
 
 destructor TAbstractArrayList<T>.Destroy;
@@ -462,10 +434,7 @@ end;
 
 function TAbstractArrayList<T>.GetEnumerator: IEnumerator<T>;
 begin
-  if TType.Kind<T> = tkClass then
-    IEnumerator<TObject>(Result) := TList<TObject>.TEnumerator.Create(TList<TObject>(Self))
-  else
-    Result := TEnumerator.Create(Self);
+  Result := TEnumerator.Create(Self);
 end;
 
 function TAbstractArrayList<T>.GetIsEmpty: Boolean;
@@ -2020,7 +1989,8 @@ constructor TFoldedSortedList<T>.Create(elementType: PTypeInfo;
   const comparer: IComparer<T>; ownsObjects: Boolean);
 begin
   fElementType := elementType;
-  inherited Create(comparer);
+  fComparer := comparer;
+  inherited Create;
   SetOwnsObjects(ownsObjects);
 end;
 

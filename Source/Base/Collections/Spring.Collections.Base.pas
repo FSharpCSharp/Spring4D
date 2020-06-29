@@ -72,9 +72,7 @@ type
     function UseComparer(typeKind: TTypeKind): Boolean; inline;
     property Comparer: IComparer<T> read fComparer;
   public
-    constructor Create; overload; virtual;
-    constructor Create(const comparer: IComparer<T>); overload;
-    constructor Create(const comparer: TComparison<T>); overload;
+    constructor Create;
 
     function Aggregate(const func: Func<T, T, T>): T;
 
@@ -349,7 +347,7 @@ type
     procedure Start; virtual;
     function TryMoveNext(var current: T): Boolean; virtual; abstract;
   public
-    constructor Create; override;
+    constructor Create;
     function GetEnumerator: IEnumerator<T>;
     function MoveNext: Boolean;
   end;
@@ -392,7 +390,7 @@ type
     property OnChanged: TCollectionChangedEventImpl<T> read fOnChanged;
     property Notify: TNotify read fNotify;
   public
-    constructor Create; override;
+    constructor Create;
     destructor Destroy; override;
 
     procedure AddRange(const values: array of T); overload;
@@ -527,9 +525,7 @@ type
     property Tail: PT read GetTail;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
-    constructor Create; override;
-    constructor Create(capacity: Integer; ownsObjects: Boolean = False); overload;
-    constructor Create(ownsObjects: Boolean); overload;
+    constructor Create(capacity: Integer = 0; ownsObjects: Boolean = False);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -564,7 +560,7 @@ type
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: T; action: TCollectionChangedAction); inline;
   public
-    constructor Create; override;
+    constructor Create;
     destructor Destroy; override;
 
     function Add(const item: TKeyValuePair): Boolean; overload;
@@ -837,18 +833,6 @@ begin
   inherited Create;
   if not Assigned(fComparer) then
     fComparer := IComparer<T>(_LookupVtableInfo(giComparer, GetElementType, SizeOf(T)));
-end;
-
-constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);
-begin
-  Create;
-  if Assigned(comparer) then
-    fComparer := comparer;
-end;
-
-constructor TEnumerableBase<T>.Create(const comparer: TComparison<T>);
-begin
-  Create(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.UseComparer(typeKind: TTypeKind): Boolean;
@@ -1813,8 +1797,9 @@ end;
 
 constructor TSourceIterator<T>.Create(const source: IEnumerable<T>);
 begin
+  fComparer := source.Comparer;
   fSource := source;
-  inherited Create(fSource.Comparer);
+  inherited Create;
 end;
 
 function TSourceIterator<T>.GetElementType: PTypeInfo;
@@ -2057,10 +2042,10 @@ constructor TInnerCollection<T>.Create(const source: TRefCountedObject;
   hashTable: PHashTable; elementType: PTypeInfo;
   const comparer: IEqualityComparer<T>; offset: Integer);
 begin
-  inherited Create(IComparer<T>(_LookupVtableInfo(giComparer, elementType, SizeOf(T))));
+  fElementType := elementType;
+  inherited Create;
   fSource := source;
   fHashTable := hashTable;
-  fElementType := elementType;
   fComparer := comparer;
   fOffset := THashTable.KeyOffset + offset;
 end;
@@ -2240,22 +2225,11 @@ end;
 
 {$REGION 'TCircularArrayBuffer<T>'}
 
-constructor TCircularArrayBuffer<T>.Create;
+constructor TCircularArrayBuffer<T>.Create(capacity: Integer; ownsObjects: Boolean);
 begin
   inherited Create;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
-end;
-
-constructor TCircularArrayBuffer<T>.Create(capacity: Integer; ownsObjects: Boolean);
-begin
-  Create;
   SetCapacity(capacity);
-  SetOwnsObjects(ownsObjects);
-end;
-
-constructor TCircularArrayBuffer<T>.Create(ownsObjects: Boolean);
-begin
-  Create;
   SetOwnsObjects(ownsObjects);
 end;
 
@@ -2823,7 +2797,8 @@ var
   StartFuncs: array[TIteratorKind] of Pointer;
 begin
   fIterator.Source := source;
-  inherited Create(source.Comparer);
+  fComparer := source.Comparer;
+  inherited Create;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
   fIterator.Count := count;
   fIterator.Predicate := IInterface(predicate);

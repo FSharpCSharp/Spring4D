@@ -773,8 +773,6 @@ implementation
 uses
   Spring.Collections.MultiMaps,
   Spring.Collections.MultiSets,
-  Spring.Collections.Queues,
-  Spring.Collections.Stacks,
   StrUtils,
   SysUtils,
   TypInfo;
@@ -1835,9 +1833,9 @@ procedure TTestStackOfInteger.TestStackCreate;
 const
   values: array[0..9] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 begin
-  SUT := TStack<Integer>.Create(values);
+  SUT := TCollections.CreateStack<Integer>(values);
   CheckTrue(SUT.EqualsTo(values));
-  SUT := TStack<Integer>.Create(TEnumerable.Range(0, 10));
+  SUT := TCollections.CreateStack<Integer>(TEnumerable.Range(0, 10));
   CheckTrue(SUT.EqualsTo(values));
 end;
 
@@ -1919,7 +1917,7 @@ end;
 
 procedure TTestStackOfTBytes.SetUp;
 begin
-  SUT := TStack<TBytes>.Create;
+  SUT := TCollections.CreateStack<TBytes>;
 end;
 
 procedure TTestStackOfTBytes.TearDown;
@@ -2171,9 +2169,9 @@ procedure TTestQueueOfInteger.TestQueueCreate;
 const
   values: array[0..9] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 begin
-  SUT := TQueue<Integer>.Create(values);
+  SUT := TCollections.CreateQueue<Integer>(values);
   CheckTrue(SUT.EqualsTo(values));
-  SUT := TQueue<Integer>.Create(TEnumerable.Range(0, 10));
+  SUT := TCollections.CreateQueue<Integer>(TEnumerable.Range(0, 10));
   CheckTrue(SUT.EqualsTo(values));
 end;
 
@@ -2284,9 +2282,9 @@ procedure TTestDequeOfInteger.TestDequeCreate;
 const
   values: array[0..9] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 begin
-  SUT := TDeque<Integer>.Create(values);
+  SUT := TCollections.CreateDeque<Integer>(values);
   CheckTrue(SUT.EqualsTo(values));
-  SUT := TDeque<Integer>.Create(TEnumerable.Range(0, 10));
+  SUT := TCollections.CreateDeque<Integer>(TEnumerable.Range(0, 10));
   CheckTrue(SUT.EqualsTo(values));
 end;
 
@@ -2609,7 +2607,7 @@ end;
 
 procedure TTestQueueOfTBytes.SetUp;
 begin
-  SUT := TQueue<TBytes>.Create;
+  SUT := TCollections.CreateQueue<TBytes>;
 end;
 
 procedure TTestQueueOfTBytes.TearDown;
@@ -3967,7 +3965,7 @@ end;
 procedure TTestObjectQueue.SetUp;
 begin
   inherited;
-  SUT := TQueue<TObject>.Create(True);
+  SUT := TCollections.CreateQueue<TObject>(True);
 end;
 
 procedure TTestObjectQueue.TearDown;

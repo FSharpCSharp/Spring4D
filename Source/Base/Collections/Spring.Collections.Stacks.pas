@@ -85,8 +85,7 @@ type
     property Count: Integer read GetCount;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
-    constructor Create; override;
-    constructor Create(const values: array of T); overload;
+    constructor Create(capacity: Integer = 0);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -111,6 +110,7 @@ type
   private
     procedure Grow;
   public
+    constructor Create(const values: array of T); overload;
     constructor Create(const values: IEnumerable<T>); overload;
     procedure Clear;
     function Push(const item: T): Boolean;
@@ -118,7 +118,6 @@ type
 
   TBoundedStack<T> = class(TAbstractStack<T>, IInterface, IEnumerable<T>, IStack<T>)
   public
-    constructor Create(capacity: Integer);
     function Push(const item: T): Boolean;
   end;
 
@@ -145,25 +144,11 @@ uses
 
 {$REGION 'TAbstractStack<T>'}
 
-constructor TAbstractStack<T>.Create;
+constructor TAbstractStack<T>.Create(capacity: Integer);
 begin
   inherited Create;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
-end;
-
-constructor TAbstractStack<T>.Create(const values: array of T);
-var
-  count, i: Integer;
-begin
-  Create;
-  fCount := Length(values);
-  if fCount > 0 then
-  begin
-    fCapacity := fCount;
-    SetLength(fItems, fCount);
-    for i := Low(values) to High(values) do
-      fItems[i] := values[i];
-  end;
+  SetCapacity(capacity);
 end;
 
 destructor TAbstractStack<T>.Destroy;
@@ -399,12 +384,21 @@ end;
 
 {$REGION 'TStack<T>'}
 
+constructor TStack<T>.Create(const values: array of T);
+var
+  i: Integer;
+begin
+  inherited Create(Length(values));
+  for i := 0 to High(values) do
+    Push(values[i]);
+end;
+
 constructor TStack<T>.Create(const values: IEnumerable<T>);
 var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-  Create;
+  inherited Create;
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
   begin
@@ -439,12 +433,6 @@ end;
 
 {$REGION 'TBoundedStack<T>'}
 
-constructor TBoundedStack<T>.Create(capacity: Integer);
-begin
-  inherited Create;
-  SetCapacity(capacity);
-end;
-
 function TBoundedStack<T>.Push(const item: T): Boolean;
 begin
   if Count = Capacity then
@@ -461,8 +449,9 @@ end;
 constructor TFoldedStack<T>.Create(const elementType: PTypeInfo;
   const comparer: IComparer<T>; ownsObjects: Boolean);
 begin
-  inherited Create(comparer);
   fElementType := elementType;
+  fComparer := comparer;
+  inherited Create;
   SetOwnsObjects(ownsObjects);
 end;
 

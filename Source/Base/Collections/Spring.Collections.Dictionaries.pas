@@ -100,7 +100,6 @@ type
       const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>;
       ownerships: TDictionaryOwnerships);
-
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
@@ -507,8 +506,8 @@ type
     function DoMoveNext(var currentNode: PNode; var finished: Boolean;
       iteratorVersion: Integer): Boolean;
   public
-    constructor Create; override;
-    constructor Create(const keyComparer: IComparer<TKey>; const valueComparer: IEqualityComparer<TValue>); overload;
+    constructor Create(const keyComparer: IComparer<TKey>;
+      const valueComparer: IEqualityComparer<TValue>);
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
@@ -615,8 +614,8 @@ begin
     if ValueType.Kind <> tkClass then
       raise Error.NoClassType(ValueType);
 
-  inherited Create();
   fComparer := TComparer.Create(nil);
+  inherited Create;
   fOwnerships := ownerships;
   if Assigned(keyComparer) then
     fKeyComparer := keyComparer
@@ -2305,15 +2304,11 @@ end;
 
 {$REGION 'TSortedDictionary<TKey, TValue>'}
 
-constructor TSortedDictionary<TKey, TValue>.Create;
-begin
-  Create(nil, nil);
-end;
-
 constructor TSortedDictionary<TKey, TValue>.Create(
   const keyComparer: IComparer<TKey>;
   const valueComparer: IEqualityComparer<TValue>);
 begin
+  fComparer := TComparer.Create(nil);
   inherited Create;
 
   fKeys := TKeyCollection.Create(Self);
@@ -2324,7 +2319,6 @@ begin
     fKeyComparer := keyComparer
   else
     fKeyComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
-  fComparer := TComparer.Create(nil);
   if Assigned(valueComparer) then
     fValueComparer := valueComparer
   else
