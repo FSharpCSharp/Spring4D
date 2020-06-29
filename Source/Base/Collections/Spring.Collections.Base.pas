@@ -33,6 +33,7 @@ uses
   SysUtils,
   TypInfo,
   Spring,
+  Spring.Events.Base,
   Spring.Collections,
   Spring.Collections.Events,
   Spring.Collections.HashTable;
@@ -374,8 +375,7 @@ type
   private
     fOnChanged: TCollectionChangedEventImpl<T>;
     fNotify: TNotify;
-    procedure InitializeEvent;
-    procedure UpdateNotify(Sender: TObject);
+    procedure EventChanged(Sender: TObject);
   protected
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
@@ -645,6 +645,8 @@ const
   EmptyBucket        = -1; // must be negative, note choice of BucketSentinelFlag
   UsedBucket         = -2; // likewise
 
+procedure UpdateNotify(actualClass, baseClass: TClass; const event: TEventBase; var code);
+
 implementation
 
 uses
@@ -657,8 +659,23 @@ uses
   Posix.Pthread,
 {$ENDIF}
   Spring.Collections.Lists,
-  Spring.Events.Base,
   Spring.ResourceStrings;
+
+procedure UpdateNotify(actualClass, baseClass: TClass; const event: TEventBase; var code);
+const
+  ChangedVirtualIndex = 1;
+var
+  baseAddress, actualAddress: Pointer;
+begin
+{$POINTERMATH ON}
+  baseAddress := PPointer(baseClass)[ChangedVirtualIndex];
+  actualAddress := PPointer(actualClass)[ChangedVirtualIndex];
+{$POINTERMATH OFF}
+  if (Assigned(event) and event.CanInvoke) or (actualAddress <> baseAddress) then
+    Pointer(code) := actualAddress
+  else
+    Pointer(code) := nil;
+end;
 
 
 {$REGION 'TArrayHelper'}
@@ -1782,7 +1799,7 @@ end;
 constructor TCollectionBase<T>.Create;
 begin
   inherited Create;
-  UpdateNotify(Self);
+  UpdateNotify(ClassType, TCollectionBase<T>, fOnChanged, fNotify);
 end;
 
 destructor TCollectionBase<T>.Destroy;
@@ -1791,24 +1808,9 @@ begin
   inherited Destroy;
 end;
 
-procedure TCollectionBase<T>.InitializeEvent;
-var
-  onChanged: TCollectionChangedEventImpl<T>;
+procedure TCollectionBase<T>.EventChanged(Sender: TObject);
 begin
-  if not Assigned(fOnChanged) then
-  begin
-    onChanged := TCollectionChangedEventImpl<T>.Create;
-    onChanged.OnChanged := UpdateNotify;
-    if AtomicCmpExchange(Pointer(fOnChanged), Pointer(onChanged), nil) <> nil then
-      onChanged.Free
-    else
-    begin
-{$IFDEF AUTOREFCOUNT}
-      onChanged.__ObjAddRef;
-{$ENDIF AUTOREFCOUNT}
-      UpdateNotify(Self);
-    end;
-  end;
+  UpdateNotify(ClassType, TCollectionBase<T>, fOnChanged, fNotify);
 end;
 
 procedure TCollectionBase<T>.DoNotify(const item: T;
@@ -1902,8 +1904,24 @@ begin
 end;
 
 function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
+var
+  onChanged: TCollectionChangedEventImpl<T>;
 begin
-  InitializeEvent;
+  if not Assigned(fOnChanged) then
+  begin
+    onChanged := TCollectionChangedEventImpl<T>.Create;
+    if AtomicCmpExchange(Pointer(fOnChanged), Pointer(onChanged), nil) <> nil then
+      onChanged.Free
+    else
+    begin
+{$IFDEF AUTOREFCOUNT}
+      onChanged.__ObjAddRef;
+{$ENDIF AUTOREFCOUNT}
+      fOnChanged.OnChanged := EventChanged;
+      EventChanged(fOnChanged);
+    end;
+  end;
+
   Result := fOnChanged;
 end;
 
@@ -1941,18 +1959,6 @@ begin
     Result := S_OK;
   end else
     Result := inherited QueryInterface(IID, obj);
-end;
-
-procedure TCollectionBase<T>.UpdateNotify(Sender: TObject);
-var
-  event: procedure(const item: T; action: TCollectionChangedAction) of object;
-begin
-  event := Changed;
-  if (Assigned(fOnChanged) and fOnChanged.CanInvoke)
-    or (TMethod(event).Code <> @TCollectionBase<T>.Changed) then
-    fNotify := TMethod(event).Code
-  else
-    fNotify := nil;
 end;
 
 function TCollectionBase<T>.RemoveAll(const match: Predicate<T>): Integer;
@@ -2622,7 +2628,7 @@ function TListBase<T>.IndexOf(const item: T): Integer;
 var
   count: Integer;
 begin
-  count := IEnumerable<T>(this).Count;
+  count := IList<T>(this).Count;
   if count > 0 then
     Result := IList<T>(this).IndexOf(item, 0, count)
   else
@@ -2633,7 +2639,7 @@ function TListBase<T>.IndexOf(const item: T; index: Integer): Integer;
 var
   count: Integer;
 begin
-  count := IEnumerable<T>(this).Count;
+  count := IList<T>(this).Count;
   if count > 0 then
     Result := IList<T>(this).IndexOf(item, index, count - index)
   else
@@ -2644,7 +2650,7 @@ function TListBase<T>.LastIndexOf(const item: T): Integer;
 var
   count: Integer;
 begin
-  count := IEnumerable<T>(this).Count;
+  count := IList<T>(this).Count;
   if count > 0 then
     Result := IList<T>(this).LastIndexOf(item, count - 1, count)
   else
@@ -2655,7 +2661,7 @@ function TListBase<T>.LastIndexOf(const item: T; index: Integer): Integer;
 var
   count: Integer;
 begin
-  count := IEnumerable<T>(this).Count;
+  count := IList<T>(this).Count;
   if count > 0 then
     Result := IList<T>(this).LastIndexOf(item, index, index + 1)
   else
@@ -2679,17 +2685,17 @@ end;
 
 procedure TListBase<T>.Sort;
 begin
-  IList<T>(this).Sort(fComparer, 0, IEnumerable<T>(this).Count);
+  IList<T>(this).Sort(fComparer, 0, IList<T>(this).Count);
 end;
 
 procedure TListBase<T>.Sort(const comparer: IComparer<T>);
 begin
-  IList<T>(this).Sort(comparer, 0, IEnumerable<T>(this).Count);
+  IList<T>(this).Sort(comparer, 0, IList<T>(this).Count);
 end;
 
 procedure TListBase<T>.Sort(const comparer: TComparison<T>);
 begin
-  IList<T>(this).Sort(IComparer<T>(PPointer(@comparer)^), 0, IEnumerable<T>(this).Count);
+  IList<T>(this).Sort(IComparer<T>(PPointer(@comparer)^), 0, IList<T>(this).Count);
 end;
 
 procedure TListBase<T>.Sort(const comparer: TComparison<T>; index, count: Integer);
