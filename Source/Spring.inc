@@ -32,6 +32,12 @@
 
 {$T-,X+,H+,B-}
 
+{$IF Defined(CPUX86) and Defined(ASSEMBLER)}
+  {$DEFINE X86ASMRTL}
+{$ELSE}
+  {$DEFINE PUREPASCAL}
+{$IFEND}
+
 {$IFDEF SUPPORTS_LEGACYIFEND}
   {$LEGACYIFEND ON}
 {$ENDIF}
@@ -41,12 +47,7 @@
   {$UNDEF CPU386}
   {$UNDEF CPU32}
   {$UNDEF CPUASM}
-  {$DEFINE PUREPASCAL}
 {$ENDIF}
-
-{$IF Defined(LINUX64) OR Defined(OSX64)}
-  {$DEFINE PUREPASCAL}
-{$IFEND}
 
 // JEDI will assert that at least CPU386 is defined
 {$IFDEF CPU386}
