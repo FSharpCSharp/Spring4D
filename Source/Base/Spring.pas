@@ -1061,7 +1061,7 @@ type
     function GetThreadSafe: Boolean;
     function GetUseFreeNotification: Boolean;
     procedure SetEnabled(const value: Boolean);
-    procedure SetOnChanged(value: TNotifyEvent);
+    procedure SetOnChanged(const value: TNotifyEvent);
     procedure SetThreadSafe(const value: Boolean);
     procedure SetUseFreeNotification(const value: Boolean);
   public
@@ -8621,98 +8621,87 @@ end;
 
 procedure Event<T>.Add(const handler: T);
 begin
-  EnsureInitialized(fInstance, TypeInfo(T));
-  fInstance.Add(handler);
+  EventHelper(fInstance).Add(handler, TypeInfo(T));
 end;
 
 procedure Event<T>.Clear;
 begin
-  if Assigned(fInstance) then
-    fInstance.Clear;
+  EventHelper(fInstance).Clear;
 end;
 
 function Event<T>.GetCanInvoke: Boolean;
 begin
-  Result := Assigned(fInstance) and fInstance.CanInvoke;
+  Result := EventHelper(fInstance).GetCanInvoke;
 end;
 
 function Event<T>.GetEnabled: Boolean;
 begin
-  Result := not Assigned(fInstance) or fInstance.Enabled;
+  Result := EventHelper(fInstance).GetEnabled;
 end;
 
 function Event<T>.GetInvoke: T;
 begin
-  EnsureInitialized(fInstance, TypeInfo(T));
-  Result := fInstance.Invoke;
+  EventHelper(fInstance).GetInvoke(Result, TypeInfo(T));
 end;
 
 function Event<T>.GetOnChanged: TNotifyEvent;
 begin
-  EnsureInitialized(fInstance, TypeInfo(T));
-  Result := fInstance.OnChanged;
+  Result := EventHelper(fInstance).GetOnChanged();
 end;
 
 function Event<T>.GetThreadSafe: Boolean;
 begin
-  Result := not Assigned(fInstance) or fInstance.ThreadSafe;
+  Result := EventHelper(fInstance).GetThreadSafe;
 end;
 
 function Event<T>.GetUseFreeNotification: Boolean;
 begin
-  Result := not Assigned(fInstance) or fInstance.UseFreeNotification;
+  Result := EventHelper(fInstance).GetUseFreeNotification;
 end;
 
 procedure Event<T>.Remove(const handler: T);
 begin
-  if Assigned(fInstance) then
-    fInstance.Remove(handler);
+  EventHelper(fInstance).Remove(handler);
 end;
 
 procedure Event<T>.RemoveAll(instance: Pointer);
 begin
-  if Assigned(fInstance) then
-    fInstance.RemoveAll(instance);
+  EventHelper(fInstance).RemoveAll(instance);
 end;
 
 procedure Event<T>.SetEnabled(const value: Boolean);
 begin
-  EnsureInitialized(fInstance, TypeInfo(T));
-  fInstance.Enabled := value;
+  EventHelper(fInstance).SetEnabled(value, TypeInfo(T));
 end;
 
-procedure Event<T>.SetOnChanged(value: TNotifyEvent);
+procedure Event<T>.SetOnChanged(const value: TNotifyEvent);
 begin
-  EnsureInitialized(fInstance, TypeInfo(T));
-  fInstance.OnChanged := value;
+  EventHelper(fInstance).SetOnChanged(value, TypeInfo(T));
 end;
 
 procedure Event<T>.SetThreadSafe(const value: Boolean);
 begin
-  EnsureInitialized(fInstance, TypeInfo(T));
-  fInstance.ThreadSafe := value;
+  EventHelper(fInstance).SetThreadSafe(value, TypeInfo(T));
 end;
 
 procedure Event<T>.SetUseFreeNotification(const value: Boolean);
 begin
-  EnsureInitialized(fInstance, TypeInfo(T));
-  fInstance.UseFreeNotification := value;
+  EventHelper(fInstance).SetUseFreeNotification(value, TypeInfo(T));
 end;
 
 class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;
 begin
-  Result.fInstance := value;
+  EventHelper.Assign(value, IInterface(Result.fInstance));
 end;
 
 class operator Event<T>.Implicit(var value: Event<T>): IEvent<T>;
 begin
-  EnsureInitialized(value.fInstance, TypeInfo(T));
-  Result := value.fInstance;
+  EventHelper(value.fInstance).EnsureInstance(Result, TypeInfo(T));
 end;
 
 class operator Event<T>.Implicit(var value: Event<T>): T;
 begin
-  Result := value.Invoke;
+  EventHelper(value.fInstance).GetInvoke(Result, TypeInfo(T));
 end;
 
 {$ENDREGION}

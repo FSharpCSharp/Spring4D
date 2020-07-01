@@ -23,9 +23,12 @@
 {***************************************************************************}
 
 {$I Spring.inc}
-{.$DEFINE PUREPASCAL} // remove the dot to use the RTTI version on x86/x64
 
 unit Spring.Events;
+
+{$IFNDEF ASSEMBLER}
+  {$DEFINE USE_RTTI_FOR_PROXY}
+{$ENDIF}
 
 interface
 
@@ -37,14 +40,16 @@ uses
   Spring.Events.Base,
   TypInfo;
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
 type
 
   {$REGION 'TEvent'}
 
-  TEvent = class(TEventBase{$IFNDEF PUREPASCAL}, TProc{$ENDIF})
+  TEvent = class(TEventBase{$IFNDEF USE_RTTI_FOR_PROXY}, TProc{$ENDIF})
   private
     fTypeInfo: PTypeInfo;
-  {$IFDEF PUREPASCAL}
+  {$IFDEF USE_RTTI_FOR_PROXY}
     fProxy: Pointer;
   protected
     procedure InternalInvokeMethod(UserData: Pointer;
@@ -133,44 +138,80 @@ type
   {$ENDREGION}
 
 
-procedure EnsureInitialized(var instance; typeInfo: PTypeInfo);
+  {$REGION 'EventHelper'}
+
+  EventHelper = record
+  private type
+    IMethodEventInternal = interface(IEvent<TMethodPointer>)
+      procedure GetInvoke(var result);
+      procedure Add(const handler);
+      procedure Remove(const handler);
+    end;
+
+    IDelegateEventInternal = interface(IEvent<IInterface>)
+      procedure GetInvoke(var result);
+      procedure Add(const handler);
+      procedure Remove(const handler);
+    end;
+
+    TMethodEvent = class(TEvent, IMethodEventInternal)
+    private
+      procedure Add(handler: TMethodPointer); overload;
+      procedure Remove(handler: TMethodPointer); overload;
+
+      procedure GetInvoke(var result);
+      procedure Add(const handler); overload;
+      procedure Remove(const handler); overload;
+    end;
+
+    TDelegateEvent = class(TEvent, IDelegateEventInternal)
+    private
+      function GetInvoke: IInterface; overload;
+      procedure Add(handler: IInterface); overload;
+      procedure Remove(handler: IInterface); overload;
+
+      procedure GetInvoke(var result); overload;
+      procedure Add(const handler); overload;
+      procedure Remove(const handler); overload;
+    end;
+  private
+    fInstance: IMethodEventInternal;
+    procedure CreateEventHandler(typeInfo: PTypeInfo);
+  public
+    function GetCanInvoke: Boolean;
+    function GetEnabled: Boolean;
+    procedure GetInvoke(var result; typeInfo: PTypeInfo);
+    function GetOnChanged: TNotifyEvent;
+    function GetThreadSafe: Boolean;
+    function GetUseFreeNotification: Boolean;
+    procedure SetEnabled(const value: Boolean; typeInfo: PTypeInfo);
+    procedure SetOnChanged(const value: TNotifyEvent; typeInfo: PTypeInfo);
+    procedure SetThreadSafe(const value: Boolean; typeInfo: PTypeInfo);
+    procedure SetUseFreeNotification(const value: Boolean; typeInfo: PTypeInfo);
+
+    procedure Add(const handler; typeInfo: PTypeInfo);
+    procedure Remove(const handler);
+    procedure Clear;
+    procedure RemoveAll(instance: Pointer);
+    procedure EnsureInstance(var result; typeInfo: PTypeInfo);
+    class procedure Assign(const source: IInterface; var target: IInterface); static;
+  end;
+
+  {$ENDREGION}
+
 
 implementation
 
 uses
-{$IFDEF PUREPASCAL}
+{$IFDEF USE_RTTI_FOR_PROXY}
   Spring.VirtualInterface,
 {$ENDIF}
   Spring.ResourceStrings;
 
 
-type
-  TMethodEvent = class(TEvent, IEvent<TMethodPointer>)
-  private
-    procedure Add(handler: TMethodPointer);
-    procedure Remove(handler: TMethodPointer);
-  end;
-
-  TDelegateEvent = class(TEvent, IEvent<IInterface>)
-  private
-    function GetInvoke: IInterface;
-    procedure Add(handler: IInterface);
-    procedure Remove(handler: IInterface);
-  end;
-
-procedure EnsureInitialized(var instance; typeInfo: PTypeInfo);
-begin
-  if Pointer(instance) = nil then
-    if typeInfo.Kind = tkMethod then
-      IEvent<TMethodPointer>(instance) := TMethodEvent.Create(typeInfo)
-    else
-      IEvent<IInterface>(instance) := TDelegateEvent.Create(typeInfo);
-end;
-
-
 {$REGION 'Proxy generators'}
 
-{$IFNDEF PUREPASCAL}
+{$IFNDEF USE_RTTI_FOR_PROXY}
 type
   TMethodInvocations = class
   private
@@ -576,7 +617,7 @@ end;
 constructor TEvent.Create(typeInfo: PTypeInfo);
 var
   method: TRttiMethod;
-{$IFNDEF PUREPASCAL}
+{$IFNDEF USE_RTTI_FOR_PROXY}
   typeData: PTypeData;
 {$ENDIF}
 begin
@@ -589,7 +630,7 @@ begin
   case typeInfo.Kind of
     tkMethod:
     begin
-{$IFDEF PUREPASCAL}
+{$IFDEF USE_RTTI_FOR_PROXY}
       TMethodImplementation(fProxy) := TRttiInvokableType(typeInfo.RttiType)
         .CreateImplementation(nil, InternalInvokeMethod);
 {$IFDEF AUTOREFCOUNT}
@@ -608,7 +649,7 @@ begin
       method := typeInfo.RttiType.GetMethod('Invoke');
       if not Assigned(method) then
         raise EInvalidOperationException.CreateResFmt(@STypeParameterContainsNoRtti, [typeInfo.Name]);
-{$IFDEF PUREPASCAL}
+{$IFDEF USE_RTTI_FOR_PROXY}
       TVirtualInterface.Create(typeInfo, InternalInvokeDelegate)
         .QueryInterface(typeInfo.TypeData.Guid, fProxy);
 {$IFDEF AUTOREFCOUNT}
@@ -635,7 +676,7 @@ end;
 
 destructor TEvent.Destroy;
 begin
-{$IFDEF PUREPASCAL}
+{$IFDEF USE_RTTI_FOR_PROXY}
   case fTypeInfo.Kind of
     tkMethod: TMethodImplementation(fProxy).Free;
     tkInterface: IInterface(fProxy) := nil;
@@ -646,7 +687,7 @@ begin
   inherited Destroy;
 end;
 
-{$IFDEF PUREPASCAL}
+{$IFDEF USE_RTTI_FOR_PROXY}
 procedure TEvent.InternalInvokeMethod(UserData: Pointer;
   const Args: TArray<TValue>; out Result: TValue);
 var
@@ -747,7 +788,7 @@ end;
 function TEvent<T>.GetInvoke: T;
 begin
   if TType.Kind<T> = tkInterface then
-{$IFDEF PUREPASCAL}
+{$IFDEF USE_RTTI_FOR_PROXY}
     PInterface(@Result)^ := IInterface(fProxy)
 {$ELSE}
     TProc(PPointer(@Result)^) := Self
@@ -865,38 +906,197 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMethodEvent'}
+{$REGION 'EventHelper'}
 
-procedure TMethodEvent.Add(handler: TMethodPointer);
+procedure EventHelper.CreateEventHandler(typeInfo: PTypeInfo);
 begin
-  inherited Add(handler);
+  if typeInfo.Kind = tkMethod then
+    IMethodEventInternal(fInstance) := TMethodEvent.Create(typeInfo)
+  else
+    IDelegateEventInternal(fInstance) := TDelegateEvent.Create(typeInfo);
 end;
 
-procedure TMethodEvent.Remove(handler: TMethodPointer);
+procedure EventHelper.Add(const handler; typeInfo: PTypeInfo);
 begin
-  inherited Remove(handler);
+  if not Assigned(fInstance) then
+    CreateEventHandler(typeInfo);
+  fInstance.Add(handler);
+end;
+
+class procedure EventHelper.Assign(const source: IInterface; var target: IInterface);
+begin
+  target := source;
+end;
+
+procedure EventHelper.Clear;
+begin
+  if Assigned(fInstance) then
+    fInstance.Clear;
+end;
+
+procedure EventHelper.EnsureInstance(var result; typeInfo: PTypeInfo);
+begin
+  if not Assigned(fInstance) then
+    CreateEventHandler(typeInfo);
+  IInterface(result) := fInstance;
+end;
+
+function EventHelper.GetCanInvoke: Boolean;
+begin
+  if Assigned(fInstance) then
+    Result := fInstance.CanInvoke
+  else
+    Result := False;
+end;
+
+function EventHelper.GetEnabled: Boolean;
+begin
+  if Assigned(fInstance) then
+    Result := fInstance.Enabled
+  else
+    Result := True
+end;
+
+procedure EventHelper.GetInvoke(var result; typeInfo: PTypeInfo);
+begin
+  if not Assigned(fInstance) then
+    CreateEventHandler(typeInfo);
+  fInstance.GetInvoke(result);
+end;
+
+function EventHelper.GetOnChanged: TNotifyEvent;
+begin
+  if Assigned(fInstance) then
+    Result := fInstance.OnChanged
+  else
+    Result := nil;
+end;
+
+function EventHelper.GetThreadSafe: Boolean;
+begin
+  if Assigned(fInstance) then
+    Result := fInstance.ThreadSafe
+  else
+    Result := True;
+end;
+
+function EventHelper.GetUseFreeNotification: Boolean;
+begin
+  if Assigned(fInstance) then
+    Result := fInstance.UseFreeNotification
+  else
+    Result := True
+end;
+
+procedure EventHelper.Remove(const handler);
+begin
+  if Assigned(fInstance) then
+    fInstance.Remove(handler);
+end;
+
+procedure EventHelper.RemoveAll(instance: Pointer);
+begin
+  if Assigned(fInstance) then
+    fInstance.RemoveAll(instance);
+end;
+
+procedure EventHelper.SetEnabled(const value: Boolean; typeInfo: PTypeInfo);
+begin
+  if not Assigned(fInstance) then
+    CreateEventHandler(typeInfo);
+  fInstance.Enabled := value;
+end;
+
+procedure EventHelper.SetOnChanged(const value: TNotifyEvent; typeInfo: PTypeInfo);
+begin
+  if not Assigned(fInstance) then
+    CreateEventHandler(typeInfo);
+  fInstance.OnChanged := value;
+end;
+
+procedure EventHelper.SetThreadSafe(const value: Boolean; typeInfo: PTypeInfo);
+begin
+  if not Assigned(fInstance) then
+    CreateEventHandler(typeInfo);
+  fInstance.ThreadSafe := value;
+end;
+
+procedure EventHelper.SetUseFreeNotification(const value: Boolean; typeInfo: PTypeInfo);
+begin
+  if not Assigned(fInstance) then
+    CreateEventHandler(typeInfo);
+  fInstance.UseFreeNotification := value;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TDelegateEvent'}
+{$REGION 'EventHelper.TMethodEvent'}
 
-function TDelegateEvent.GetInvoke: IInterface;
+procedure EventHelper.TMethodEvent.Add(handler: TMethodPointer);
 begin
-{$IFDEF PUREPASCAL}
+  inherited Add(handler);
+end;
+
+procedure EventHelper.TMethodEvent.Remove(handler: TMethodPointer);
+begin
+  inherited Remove(handler);
+end;
+
+procedure EventHelper.TMethodEvent.GetInvoke(var result);
+begin
+  TMethodPointer(result) := fInvoke;
+end;
+
+procedure EventHelper.TMethodEvent.Add(const handler);
+begin
+  inherited Add(TMethodPointer(handler));
+end;
+
+procedure EventHelper.TMethodEvent.Remove(const handler);
+begin
+  inherited Remove(TMethodPointer(handler));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'EventHelper.TDelegateEvent'}
+
+function EventHelper.TDelegateEvent.GetInvoke: IInterface;
+begin
+{$IFDEF USE_RTTI_FOR_PROXY}
   PInterface(@Result)^ := IInterface(fProxy);
 {$ELSE}
   TProc(PPointer(@Result)^) := Self;
 {$ENDIF}
 end;
 
-procedure TDelegateEvent.Add(handler: IInterface);
+procedure EventHelper.TDelegateEvent.Add(handler: IInterface);
 begin
   inherited Add(MethodReferenceToMethodPointer(handler));
 end;
 
-procedure TDelegateEvent.Remove(handler: IInterface);
+procedure EventHelper.TDelegateEvent.Remove(handler: IInterface);
+begin
+  inherited Remove(MethodReferenceToMethodPointer(handler));
+end;
+
+procedure EventHelper.TDelegateEvent.GetInvoke(var result);
+begin
+{$IFDEF USE_RTTI_FOR_PROXY}
+  IInterface(result) := IInterface(fProxy);
+{$ELSE}
+  TProc(result) := Self;
+{$ENDIF}
+end;
+
+procedure EventHelper.TDelegateEvent.Add(const handler);
+begin
+  inherited Add(MethodReferenceToMethodPointer(handler));
+end;
+
+procedure EventHelper.TDelegateEvent.Remove(const handler);
 begin
   inherited Remove(MethodReferenceToMethodPointer(handler));
 end;
