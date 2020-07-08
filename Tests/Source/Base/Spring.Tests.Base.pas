@@ -1212,7 +1212,7 @@ begin
     begin
       Result := CExpectedBalance;
     end;
-  fBalance := TLazy<Integer>.Create(factory);
+  fBalance := Lazy<Integer>(factory);
 
   CheckFalse(fBalance.IsValueCreated);
 
@@ -1250,7 +1250,7 @@ end;
 
 procedure TTestLazy.TestByValue;
 begin
-  fBalance := TLazy<Integer>.CreateFrom(CExpectedBalance);
+  fBalance := Lazy<Integer>.CreateFrom(CExpectedBalance);
 
   CheckTrue(fBalance.IsValueCreated);
 

@@ -413,7 +413,7 @@ begin
           {$IFNDEF AUTOREFCOUNT}entity,{$ELSE}capturedEntity,{$ENDIF}
           column, entityClass);
     end;
-  Result := TValue.From<Lazy<IInterface>>(TLazy<IInterface>.Create(factory));
+  Result := TValue.From<Lazy<IInterface>>(Lazy<IInterface>.Create(factory));
 end;
 
 function TAbstractSession.ResolveLazyObject(const id: TValue;
@@ -444,7 +444,7 @@ begin
           {$IFNDEF AUTOREFCOUNT}entity,{$ELSE}capturedEntity,{$ENDIF}
           column, entityClass);
     end;
-  Result := TValue.From<Lazy<TObject>>(TLazy<TObject>.Create(factory, True));
+  Result := TValue.From<Lazy<TObject>>(Lazy<TObject>.Create(factory, True));
 end;
 
 function TAbstractSession.GetResultSet(const sql: string;

@@ -422,6 +422,7 @@ var
   dependencyModel: TDependencyModel;
   value: TValue;
   factory: Func<T>;
+  intf: IInterface;
 begin
   dependencyModel := dependency;
   value := argument;
@@ -434,7 +435,7 @@ begin
   case lazyKind of
     lkFunc: Result := TValue.From<Func<T>>(factory);
     lkRecord: Result := TValue.From<Lazy<T>>(Lazy<T>.Create(factory));
-    lkInterface: Result := TValue.From<ILazy<T>>(TLazy<T>.Create(factory));
+    lkInterface: Result := TValue.From<ILazy<T>>(Lazy<T>.Create(factory));
   end;
 end;
 

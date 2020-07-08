@@ -1663,7 +1663,7 @@ type
   /// <summary>
   ///   Provides support for lazy initialization.
   /// </summary>
-  ILazy = interface(IInvokable)
+  ILazy = interface
     ['{40223BA9-0C66-49E7-AA33-BDAEF9F506D6}']
   {$REGION 'Property Accessors'}
     function GetIsValueCreated: Boolean;
@@ -1694,6 +1694,7 @@ type
   /// <summary>
   ///   Provides support for lazy initialization.
   /// </summary>
+  {$M+}
   ILazy<T> = interface(ILazy)
   {$REGION 'Property Accessors'}
     function GetValue: T;
@@ -1709,96 +1710,7 @@ type
     /// </value>
     property Value: T read GetValue;
   end;
-
-  /// <summary>
-  ///   The base class of the lazy initialization type.
-  /// </summary>
-  TLazy = class(TRefCountedObject)
-  private
-    fValueFactory: IInterface;
-    fOwnsObject: Boolean;
-  protected
-  {$REGION 'Property Accessors'}
-    function GetIsValueCreated: Boolean;
-  {$ENDREGION}
-  public
-    /// <summary>
-    ///   Gets a value that indicates whether a value has been created for this
-    ///   <see cref="TLazy&lt;T&gt;" /> instance.
-    /// </summary>
-    /// <value>
-    ///   <b>True</b> if a value has been created for this <see cref="TLazy&lt;T&gt;" />
-    ///    instance; otherwise, <b>False</b>.
-    /// </value>
-    property IsValueCreated: Boolean read GetIsValueCreated;
-  end;
-
-  /// <summary>
-  ///   Provides support for lazy initialization.
-  /// </summary>
-  /// <typeparam name="T">
-  ///   The type of object that is being lazily initialized.
-  /// </typeparam>
-  TLazy<T> = class(TLazy, ILazy, ILazy<T>, Func<T>)
-  private
-    fValue: T;
-    procedure InitializeValue;
-  {$REGION 'Property Accessors'}
-    function GetValue: TValue;
-    function Invoke: T;
-    function ILazy<T>.GetValue = Invoke;
-  {$ENDREGION}
-  public
-    /// <summary>
-    ///   Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
-    ///   record. When lazy initialization occurs, the default constructor of
-    ///   the target type is used.
-    /// </summary>
-    constructor Create; overload;
-
-    /// <summary>
-    ///   Initializes a new instance of the <see cref="TLazy&lt;T&gt;" />
-    ///   class. When lazy initialization occurs, the specified initialization
-    ///   function is used.
-    /// </summary>
-    /// <param name="valueFactory">
-    ///   The delegate that is invoked to produce the lazily initialized value
-    ///   when it is needed.
-    /// </param>
-    /// <param name="ownsObject">
-    ///   If <b>true</b> the value - if any got created - will be destroyed
-    ///   when going out of scope. Only when T is a class type.
-    /// </param>
-    /// <exception cref="EArgumentNullException">
-    ///   <i>valueFactory</i> is <b>nil</b>.
-    /// </exception>
-    constructor Create(const valueFactory: Func<T>; ownsObject: Boolean = False); overload;
-
-    /// <summary>
-    ///   Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
-    ///   specified value.
-    /// </summary>
-    /// <param name="value">
-    ///   The initialized value.
-    /// </param>
-    /// <param name="ownsObject">
-    ///   If <b>true</b> the value - if any got created - will be destroyed
-    ///   when going out of scope. Only when T is a class type.
-    /// </param>
-    constructor CreateFrom(const value: T; ownsObject: Boolean = False);
-
-    destructor Destroy; override;
-
-    /// <summary>
-    ///   Gets the lazily initialized value of the current <see cref="TLazy&lt;T&gt;" />
-    ///    instance.
-    /// </summary>
-    /// <value>
-    ///   The lazily initialized value of the current <see cref="TLazy&lt;T&gt;" />
-    ///    instance.
-    /// </value>
-    property Value: T read Invoke;
-  end;
+  {$M-}
 
   /// <summary>
   ///   Provides support for lazy initialization.
@@ -1808,10 +1720,10 @@ type
   /// </typeparam>
   Lazy<T> = record
   private
-    fLazy: ILazy<T>; // DO NOT ADD ANY OTHER FIELDS !!!
-    function GetIsAssigned: Boolean;
-    function GetIsValueCreated: Boolean;
-    function GetValue: T; inline;
+    fInstance: ILazy<T>; // DO NOT ADD ANY OTHER FIELDS !!!
+    function GetIsAssigned: Boolean; inline;
+    function GetIsValueCreated: Boolean; inline;
+    function GetValue: T;
   public
     /// <summary>
     ///   Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
@@ -1851,11 +1763,12 @@ type
     /// </param>
     constructor CreateFrom(const value: T; ownsObject: Boolean = False);
 
-    class operator Implicit(const value: Lazy<T>): ILazy<T>;
-    class operator Implicit(const value: Lazy<T>): T;
+    class operator Implicit(const {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}value: Lazy<T>): ILazy<T>;
+    class operator Implicit(const {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}value: Lazy<T>): T;
     class operator Implicit(const value: T): Lazy<T>;
-    class operator Implicit(const value: Func<T>): Lazy<T>;
-    class operator Implicit(const value: TLazy<T>): Lazy<T>;
+    class operator Implicit(const valueFactory: Func<T>): Lazy<T>;
+    class operator Implicit(const value: ILazy<T>): Lazy<T>;
+    class operator Implicit(const value: Nullable.Null): Lazy<T>;
 
     /// <summary>
     ///   Returns true if the value is assigned and contains an ILazy&lt;T&gt;
@@ -1883,6 +1796,116 @@ type
     /// </value>
     /// <exception cref="Spring|EInvalidOperationException" />
     property Value: T read GetValue;
+  end;
+
+  Lazy = record
+  private type
+    ILazyInternal = interface(ILazy)
+      procedure GetValue;
+      procedure GetValueInternal(var result);
+    end;
+
+    ILazyInternal<T> = interface(ILazy)
+      function GetValue: T;
+      procedure GetValueInternal(var result);
+    end;
+
+    TLazy = class(TRefCountedObject)
+    protected
+      fValueFactory: IInterface;
+      function GetIsValueCreated: Boolean;
+      procedure CreateValue;
+      procedure InvokeFactory(const valueFactory: Pointer); virtual; abstract;
+    public
+      property IsValueCreated: Boolean read GetIsValueCreated;
+    end;
+
+    TLazy<T> = class(TLazy, ILazy, ILazyInternal<T>)
+    protected
+      fValue: T;
+      function GetValue: TValue;
+      function GetValueT: T;
+      function ILazyInternal<T>.GetValue = GetValueT;
+      procedure GetValueInternal(var result);
+      procedure InvokeFactory(const valueFactory: Pointer); override;
+    end;
+
+    TDefaultCtorFactory = class(TRefCountedObject, Func<TObject>)
+    private
+      classType: TClass;
+      ctor: TConstructor;
+      function Invoke: TObject;
+    end;
+
+    PObjectReference = ^TObjectReference;
+    TObjectReference = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      Factory: IInterface;
+
+      Value: TObject;
+      OwnsObject: Boolean;
+      function _Release: Integer; stdcall;
+      function GetIsValueCreated: Boolean;
+      function GetValue: TValue;
+      function GetObject: TObject;
+      procedure GetValueInternal(var result);
+      procedure CreateValue;
+    end;
+
+    PInterfaceReference = ^TInterfaceReference;
+    TInterfaceReference = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      Factory: IInterface;
+
+      Value: IInterface;
+      TypeInfo: PTypeInfo;
+      function _Release: Integer; stdcall;
+      function GetIsValueCreated: Boolean;
+      function GetValue: TValue;
+      function GetInterface: IInterface;
+      procedure GetValueInternal(var result);
+      procedure CreateValue;
+    end;
+
+  const
+    ObjectReferenceVtable: array[0..6] of Pointer =
+    (
+      @NopQueryInterface,
+      @RecAddRef,
+      @TObjectReference._Release,
+
+      @TObjectReference.GetIsValueCreated,
+      @TObjectReference.GetValue,
+      @TObjectReference.GetObject,
+      @TObjectReference.GetValueInternal
+    );
+
+    InterfaceReferenceVtable: array[0..6] of Pointer =
+    (
+      @NopQueryInterface,
+      @RecAddRef,
+      @TInterfaceReference._Release,
+
+      @TInterfaceReference.GetIsValueCreated,
+      @TInterfaceReference.GetValue,
+      @TInterfaceReference.GetInterface,
+      @TInterfaceReference.GetValueInternal
+    );
+  var
+    fInstance: ILazy;
+    procedure GetValue(var result);
+    function GetIsValueCreated: Boolean;
+  public
+    class procedure Make(const value: TObject; var result; ownsObject: Boolean); overload; static;
+    class procedure Make(const value: IInterface; var result; typeInfo: PTypeInfo); overload; static;
+    class procedure Make<T>(const value: T; var result); overload; static;
+
+    class procedure MakeFromDefaultCtor(var result; const typeInfo: PTypeInfo); static;
+    class procedure MakeFromFactory(factory: Pointer; var result; ownsObject: Boolean); overload; static;
+    class procedure MakeFromFactory(factory: Pointer; var result; typeInfo: PTypeInfo); overload; static;
+    class procedure MakeFromFactory<T>(factory: Pointer; var result); overload; static;
   end;
 
   /// <summary>
@@ -3912,6 +3935,22 @@ begin
   Result := E_NOINTERFACE;
 end;
 
+function RecAddRef(inst: Pointer): Integer; stdcall;
+type
+  PIntfRef = ^TIntfRef;
+  TIntfRef = record
+    VTable: Pointer;
+    RefCount: Integer
+  end;
+begin
+  Result := AtomicIncrement(PIntfRef(inst).RefCount);
+end;
+
+procedure IntfAssign(const source: IInterface; var target: IInterface);
+begin
+  target := source;
+end;
+
 {$ENDREGION}
 
 
@@ -3985,22 +4024,6 @@ end;
 procedure ReadWriteLock.LeaveWrite;
 begin
   AtomicDecrement(NativeInt(Lock), 1);
-end;
-
-function RecAddRef(inst: Pointer): Integer; stdcall;
-type
-  PIntfRef = ^TIntfRef;
-  TIntfRef = record
-    VTable: Pointer;
-    RefCount: Integer
-  end;
-begin
-  Result := AtomicIncrement(PIntfRef(inst).RefCount);
-end;
-
-procedure IntfAssign(const source: IInterface; var target: IInterface);
-begin
-  target := source;
 end;
 
 {$ENDREGION}
@@ -7972,81 +7995,63 @@ end;
 
 {$REGION 'TLazy'}
 
-function TLazy.GetIsValueCreated: Boolean;
+function Lazy.TLazy.GetIsValueCreated: Boolean;
 begin
   Result := fValueFactory = nil;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TLazy<T>'}
-
-constructor TLazy<T>.Create;
-var
-  classType: TClass;
-  ctor: TConstructor;
-begin
-  Guard.CheckTypeKind<T>([tkClass], 'T');
-
-  classType := GetTypeData(TypeInfo(T)).ClassType;
-  ctor := TActivator.FindConstructor(classType);
-
-  Func<T>(fValueFactory) :=
-    function: T
-    begin
-      PObject(@Result)^ := ctor(classType);
-    end;
-end;
-
-constructor TLazy<T>.Create(const valueFactory: Func<T>; ownsObject: Boolean);
-begin
-  Guard.CheckNotNull(Assigned(valueFactory), 'valueFactory');
-
-  fOwnsObject := ownsObject;
-  Func<T>(fValueFactory) := valueFactory;
-end;
-
-constructor TLazy<T>.CreateFrom(const value: T; ownsObject: Boolean);
-begin
-  fValue := value;
-  fOwnsObject := ownsObject;
-end;
-
-destructor TLazy<T>.Destroy;
-begin
-{$IFNDEF AUTOREFCOUNT}
-  if TType.Kind<T> = tkClass then
-    if fOwnsObject then
-      FreeAndNil(PObject(@fValue)^);
-{$ENDIF}
-end;
-
-procedure TLazy<T>.InitializeValue;
+procedure Lazy.TLazy.CreateValue;
 var
   valueFactory: Pointer;
 begin
   valueFactory := AtomicExchange(Pointer(fValueFactory), nil);
   if valueFactory <> nil then
   try
-    fValue := Func<T>(valueFactory)();
+    InvokeFactory(valueFactory);
   finally
     IInterface(valueFactory)._Release;
   end;
 end;
 
-function TLazy<T>.Invoke: T;
+{$ENDREGION}
+
+
+{$REGION 'Lazy.TLazy<T>'}
+
+function Lazy.TLazy<T>.GetValue: TValue;
 begin
   if fValueFactory <> nil then
-    InitializeValue;
+    CreateValue;
+  Result := TValue.From(@fValue, TypeInfo(T));
+end;
+
+function Lazy.TLazy<T>.GetValueT: T;
+begin
+  if fValueFactory <> nil then
+    CreateValue;
   Result := fValue;
 end;
 
-function TLazy<T>.GetValue: TValue;
+procedure Lazy.TLazy<T>.GetValueInternal(var result);
 begin
   if fValueFactory <> nil then
-    InitializeValue;
-  Result := TValue.From(@fValue, TypeInfo(T));
+    CreateValue;
+  T(result) := fValue;
+end;
+
+procedure Lazy.TLazy<T>.InvokeFactory(const valueFactory: Pointer);
+begin
+  fValue := Func<T>(valueFactory)();
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Lazy.TDefaultCtorFactory'}
+
+function Lazy.TDefaultCtorFactory.Invoke: TObject;
+begin
+  Result := ctor(classType);
 end;
 
 {$ENDREGION}
@@ -8056,59 +8061,327 @@ end;
 
 class function Lazy<T>.Create: Lazy<T>;
 begin
-  Result.fLazy := TLazy<T>.Create;
+  Lazy.MakeFromDefaultCtor(Result.fInstance, TypeInfo(T));
 end;
 
 constructor Lazy<T>.Create(const valueFactory: Func<T>; ownsObject: Boolean);
 begin
-  fLazy := TLazy<T>.Create(valueFactory, ownsObject);
+  case TType.Kind<T> of
+    tkClass: Lazy.MakeFromFactory(PPointer(@valueFactory)^, fInstance, ownsObject);
+    tkInterface: Lazy.MakeFromFactory(PPointer(@valueFactory)^, fInstance, TypeInfo(T));
+  else
+    Lazy.MakeFromFactory<T>(PPointer(@valueFactory)^, fInstance);
+  end;
 end;
 
 constructor Lazy<T>.CreateFrom(const value: T; ownsObject: Boolean);
 begin
-  fLazy := TLazy<T>.CreateFrom(value, ownsObject);
+  case TType.Kind<T> of
+    tkClass: Lazy.Make(PObject(@value)^, fInstance, ownsObject);
+    tkInterface: Lazy.Make(PInterface(@value)^, fInstance, TypeInfo(T));
+  else
+    Lazy.Make<T>(value, fInstance);
+  end;
 end;
 
 function Lazy<T>.GetValue: T;
 begin
-  if not Assigned(fLazy) then
-    Guard.RaiseNoDelegateAssigned;
-  Result := fLazy.Value;
+  Lazy(fInstance).GetValue(Result);
 end;
 
 function Lazy<T>.GetIsValueCreated: Boolean;
 begin
-  Result := Assigned(fLazy) and fLazy.IsValueCreated;
+  Result := Lazy(fInstance).GetIsValueCreated;
 end;
 
 function Lazy<T>.GetIsAssigned: Boolean;
 begin
-  Result := Assigned(fLazy);
+  Result := Assigned(fInstance);
 end;
 
-class operator Lazy<T>.Implicit(const value: Lazy<T>): ILazy<T>;
+class operator Lazy<T>.Implicit(const {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}value: Lazy<T>): ILazy<T>;
 begin
-  Result := value.fLazy;
+  IntfAssign(value.fInstance, IInterface(Result));
 end;
 
-class operator Lazy<T>.Implicit(const value: Lazy<T>): T;
+class operator Lazy<T>.Implicit(const {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}value: Lazy<T>): T;
 begin
-  Result := value.Value;
+  Lazy(value.fInstance).GetValue(Result);
 end;
 
 class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
 begin
-  Result.fLazy := TLazy<T>.CreateFrom(value);
+  case TType.Kind<T> of
+    tkClass: Lazy.Make(PObject(@value)^, Result.fInstance, False);
+    tkInterface: Lazy.Make(PInterface(@value)^, Result.fInstance, TypeInfo(T));
+  else
+    Lazy.Make<T>(value, Result.fInstance);
+  end;
 end;
 
-class operator Lazy<T>.Implicit(const value: Func<T>): Lazy<T>;
+class operator Lazy<T>.Implicit(const valueFactory: Func<T>): Lazy<T>;
 begin
-  Result.fLazy := TLazy<T>.Create(value);
+  case TType.Kind<T> of
+    tkClass: Lazy.MakeFromFactory(PPointer(@valueFactory)^, Result.fInstance, False);
+    tkInterface: Lazy.MakeFromFactory(PPointer(@valueFactory)^, Result.fInstance, TypeInfo(T));
+  else
+    Lazy.MakeFromFactory<T>(PPointer(@valueFactory)^, Result.fInstance);
+  end;
 end;
 
-class operator Lazy<T>.Implicit(const value: TLazy<T>): Lazy<T>;
+class operator Lazy<T>.Implicit(const value: ILazy<T>): Lazy<T>;
 begin
-  Result.fLazy := value;
+  Result.fInstance := value;
+end;
+
+class operator Lazy<T>.Implicit(const value: Nullable.Null): Lazy<T>;
+begin
+  Result.fInstance := nil;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Lazy'}
+
+function Lazy.GetIsValueCreated: Boolean;
+begin
+  if Assigned(fInstance) then
+    Result := fInstance.IsValueCreated
+  else
+    Result := False;
+end;
+
+procedure Lazy.GetValue(var result);
+begin
+  if Assigned(fInstance) then
+    ILazyInternal(fInstance).GetValueInternal(result)
+  else
+    Guard.RaiseNoDelegateAssigned;
+end;
+
+class procedure Lazy.Make(const value: TObject; var result; ownsObject: Boolean);
+var
+  rec: PObjectReference absolute result;
+begin
+  if Assigned(rec) and (AtomicDecrement(rec.RefCount) = 0) then
+  begin
+    if rec.OwnsObject then
+      rec.Value.Free;
+  end
+  else
+  begin
+    GetMem(rec, SizeOf(TObjectReference));
+    rec.Vtable := @Lazy.ObjectReferenceVtable;
+    Pointer(rec.Factory) := nil;
+    Pointer(rec.Value) := nil;
+  end;
+  rec.RefCount := 1;
+  rec.OwnsObject := False;
+  rec.Factory := nil;
+  rec.Value := value;
+end;
+
+class procedure Lazy.Make(const value: IInterface; var result; typeInfo: PTypeInfo);
+var
+  rec: PInterfaceReference absolute result;
+begin
+  if Assigned(rec) and (AtomicDecrement(rec.RefCount) = 0) then
+  else
+  begin
+    GetMem(rec, SizeOf(TInterfaceReference));
+    rec.Vtable := @Lazy.InterfaceReferenceVtable;
+    Pointer(rec.Factory) := nil;
+    Pointer(rec.Value) := nil;
+  end;
+  rec.RefCount := 1;
+  rec.Factory := nil;
+  rec.Value := value;
+end;
+
+class procedure Lazy.Make<T>(const value: T; var result);
+var
+  instance: TLazy<T>;
+begin
+  TObject(instance) := TLazy<T>.Create;
+  instance.fValue := value;
+  ILazyInternal<T>(result) := instance;
+end;
+
+class procedure Lazy.MakeFromDefaultCtor(var result; const typeInfo: PTypeInfo);
+var
+  defaultCtor: TDefaultCtorFactory;
+  factory: Pointer;
+begin
+  Guard.CheckTypeKind(typeInfo, tkClass, 'classInfo');
+
+  defaultCtor := TDefaultCtorFactory.Create;
+  defaultCtor.classType := typeInfo.TypeData.ClassType;
+  defaultCtor.ctor := TActivator.FindConstructor(defaultCtor.classType);
+
+  factory := nil;
+  Func<TObject>(factory) := defaultCtor;
+  MakeFromFactory(factory, result, False);
+end;
+
+class procedure Lazy.MakeFromFactory(factory: Pointer; var result; ownsObject: Boolean);
+var
+  rec: PObjectReference absolute result;
+begin
+  if Assigned(rec) and (AtomicDecrement(rec.RefCount) = 0) then
+  begin
+    if rec.OwnsObject then
+      rec.Value.Free;
+  end
+  else
+  begin
+    GetMem(rec, SizeOf(TObjectReference));
+    rec.Vtable := @Lazy.ObjectReferenceVtable;
+    Pointer(rec.Factory) := nil;
+    Pointer(rec.Value) := nil;
+  end;
+  rec.RefCount := 1;
+  rec.OwnsObject := ownsObject;
+  rec.Factory := IInterface(factory);
+  rec.Value := nil;
+end;
+
+class procedure Lazy.MakeFromFactory(factory: Pointer; var result; typeInfo: PTypeInfo);
+var
+  rec: PInterfaceReference absolute result;
+begin
+  if Assigned(rec) and (AtomicDecrement(rec.RefCount) = 0) then
+  else
+  begin
+    GetMem(rec, SizeOf(TInterfaceReference));
+    rec.Vtable := @Lazy.InterfaceReferenceVtable;
+    Pointer(rec.Factory) := nil;
+    Pointer(rec.Value) := nil;
+  end;
+  rec.RefCount := 1;
+  rec.Factory := IInterface(factory);
+  rec.TypeInfo := typeInfo;
+  rec.Value := nil;
+end;
+
+class procedure Lazy.MakeFromFactory<T>(factory: Pointer; var result);
+var
+  instance: TLazy<T>;
+begin
+  TObject(instance) := TLazy<T>.Create;
+  instance.fValueFactory := IInterface(factory);
+  ILazyInternal<T>(result) := instance;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Lazy.TObjectReference'}
+
+function Lazy.TObjectReference._Release: Integer;
+begin
+  Result := AtomicDecrement(RefCount);
+  if Result = 0 then
+  begin
+    Factory := nil;
+    if OwnsObject then
+      Value.Free;
+    FreeMem(@Self);
+  end;
+end;
+
+procedure Lazy.TObjectReference.CreateValue;
+var
+  valueFactory: Pointer;
+begin
+  valueFactory := AtomicExchange(Pointer(Factory), nil);
+  if valueFactory <> nil then
+  try
+    Value := Func<TObject>(valueFactory)();
+  finally
+    IInterface(valueFactory)._Release;
+  end;
+end;
+
+function Lazy.TObjectReference.GetIsValueCreated: Boolean;
+begin
+  Result := Factory = nil;
+end;
+
+function Lazy.TObjectReference.GetValue: TValue;
+begin
+  if Factory <> nil then
+    CreateValue;
+  Result := TValue.From(@Value, Value.ClassInfo);
+end;
+
+function Lazy.TObjectReference.GetObject: TObject;
+begin
+  if Factory <> nil then
+    CreateValue;
+  Result := Value;
+end;
+
+procedure Lazy.TObjectReference.GetValueInternal(var result);
+begin
+  if Factory <> nil then
+    CreateValue;
+  TObject(result) := Value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Lazy.TInterfaceReference'}
+
+function Lazy.TInterfaceReference._Release: Integer;
+begin
+  Result := AtomicDecrement(RefCount);
+  if Result = 0 then
+  begin
+    Factory := nil;
+    Value := nil;
+    FreeMem(@Self);
+  end;
+end;
+
+procedure Lazy.TInterfaceReference.CreateValue;
+var
+  valueFactory: Pointer;
+begin
+  valueFactory := AtomicExchange(Pointer(Factory), nil);
+  if valueFactory <> nil then
+  try
+    Value := Func<IInterface>(valueFactory)();
+  finally
+    IInterface(valueFactory)._Release;
+  end;
+end;
+
+function Lazy.TInterfaceReference.GetIsValueCreated: Boolean;
+begin
+  Result := Factory = nil;
+end;
+
+function Lazy.TInterfaceReference.GetValue: TValue;
+begin
+  if Factory <> nil then
+    CreateValue;
+  Result := TValue.From(@Value, TypeInfo);
+end;
+
+function Lazy.TInterfaceReference.GetInterface: IInterface;
+begin
+  if Factory <> nil then
+    CreateValue;
+  Result := Value;
+end;
+
+procedure Lazy.TInterfaceReference.GetValueInternal(var result);
+begin
+  if Factory <> nil then
+    CreateValue;
+  IInterface(result) := Value;
 end;
 
 {$ENDREGION}
