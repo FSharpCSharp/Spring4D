@@ -49,6 +49,18 @@ uses
   TypInfo,
   Variants;
 
+
+  {$REGION 'Interface helper routines'}
+
+function NopAddRef(inst: Pointer): Integer; stdcall;
+function NopRelease(inst: Pointer): Integer; stdcall;
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+function RecAddRef(inst: Pointer): Integer; stdcall;
+procedure IntfAssign(const source: IInterface; var target: IInterface);
+
+  {$ENDREGION}
+
+
 type
 
   {$REGION 'Type redefinitions'}
@@ -1950,8 +1962,6 @@ type
       Vtable: Pointer;
       RefCount: Integer;
       Value: TObject;
-      function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-      function _AddRef: Integer; stdcall;
       function _Release: Integer; stdcall;
       function Invoke: TObject;
     end;
@@ -1963,8 +1973,6 @@ type
       RefCount: Integer;
       Value: Pointer;
       TypeInfo: PTypeInfo;
-      function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-      function _AddRef: Integer; stdcall;
       function _Release: Integer; stdcall;
       function Invoke: Pointer;
     end;
@@ -1982,15 +1990,15 @@ type
   const
     ObjectFinalizerVtable: array[0..3] of Pointer =
     (
-      @TObjectFinalizer.QueryInterface,
-      @TObjectFinalizer._AddRef,
+      @NopQueryInterface,
+      @RecAddRef,
       @TObjectFinalizer._Release,
       @TObjectFinalizer.Invoke
     );
     RecordFinalizerVtable: array[0..3] of Pointer =
     (
-      @TRecordFinalizer.QueryInterface,
-      @TRecordFinalizer._AddRef,
+      @NopQueryInterface,
+      @RecAddRef,
       @TRecordFinalizer._Release,
       @TRecordFinalizer.Invoke
     );
@@ -2046,8 +2054,6 @@ type
       Vtable: Pointer;
       RefCount: Integer;
       Target: Pointer;
-      function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-      function _AddRef: Integer; stdcall;
       function _Release_Obj: Integer; stdcall;
       function _Release_Intf: Integer; stdcall;
     end;
@@ -2061,15 +2067,15 @@ type
   const
     ObjectReferenceVtable: array[0..2] of Pointer =
     (
-      @TReference.QueryInterface,
-      @TReference._AddRef,
+      @NopQueryInterface,
+      @RecAddRef,
       @TReference._Release_Obj
     );
 
     InterfaceReferenceVtable: array[0..2] of Pointer =
     (
-      @TReference.QueryInterface,
-      @TReference._AddRef,
+      @NopQueryInterface,
+      @RecAddRef,
       @TReference._Release_Intf
     );
   private
@@ -2979,10 +2985,6 @@ function GrowCapacity(oldCapacity, newCount: Integer): Integer; overload;
 procedure CopyRecord(Dest, Source, TypeInfo: Pointer);
 procedure FinalizeRecord(P: Pointer; TypeInfo: Pointer);
 {$ENDIF}
-
-function NopAddref(inst: Pointer): Integer; stdcall;
-function NopRelease(inst: Pointer): Integer; stdcall;
-function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
 
 procedure RegisterWeakRef(address: Pointer; const instance: TObject);
 procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
@@ -3900,7 +3902,7 @@ asm
 end;
 {$ENDIF}
 
-function NopAddref(inst: Pointer): Integer; stdcall; //FI:O804
+function NopAddRef(inst: Pointer): Integer; stdcall; //FI:O804
 begin
   Result := -1;
 end;
@@ -3988,6 +3990,22 @@ end;
 procedure ReadWriteLock.LeaveWrite;
 begin
   AtomicDecrement(NativeInt(Lock), 1);
+end;
+
+function RecAddRef(inst: Pointer): Integer; stdcall;
+type
+  PIntfRef = ^TIntfRef;
+  TIntfRef = record
+    VTable: Pointer;
+    RefCount: Integer
+  end;
+begin
+  Result := AtomicIncrement(PIntfRef(inst).RefCount);
+end;
+
+procedure IntfAssign(const source: IInterface; var target: IInterface);
+begin
+  target := source;
 end;
 
 {$ENDREGION}
@@ -8261,16 +8279,6 @@ end;
 
 {$REGION 'Shared.TObjectFinalizer'}
 
-function Shared.TObjectFinalizer.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  Result := E_NOINTERFACE;
-end;
-
-function Shared.TObjectFinalizer._AddRef: Integer;
-begin
-  Result := AtomicIncrement(RefCount);
-end;
-
 function Shared.TObjectFinalizer._Release: Integer;
 begin
   Result := AtomicDecrement(RefCount);
@@ -8290,16 +8298,6 @@ end;
 
 
 {$REGION 'Shared.TRecordFinalizer'}
-
-function Shared.TRecordFinalizer.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  Result := E_NOINTERFACE;
-end;
-
-function Shared.TRecordFinalizer._AddRef: Integer;
-begin
-  Result := AtomicIncrement(RefCount);
-end;
 
 function Shared.TRecordFinalizer._Release: Integer;
 begin
@@ -8579,17 +8577,6 @@ end;
 
 {$REGION 'Weak.TReference'}
 
-function Weak.TReference.QueryInterface(const IID: TGUID;
-  out Obj): HResult;
-begin
-  Result := E_NOINTERFACE;
-end;
-
-function Weak.TReference._AddRef: Integer;
-begin
-  Result := AtomicIncrement(RefCount);
-end;
-
 function Weak.TReference._Release_Obj: Integer;
 begin
   Result := AtomicDecrement(RefCount);
@@ -8691,7 +8678,7 @@ end;
 
 class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;
 begin
-  EventHelper.Assign(value, IInterface(Result.fInstance));
+  IntfAssign(value, IInterface(Result.fInstance));
 end;
 
 class operator Event<T>.Implicit(var value: Event<T>): IEvent<T>;

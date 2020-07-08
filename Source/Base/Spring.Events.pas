@@ -194,7 +194,6 @@ type
     procedure Clear;
     procedure RemoveAll(instance: Pointer);
     procedure EnsureInstance(var result; typeInfo: PTypeInfo);
-    class procedure Assign(const source: IInterface; var target: IInterface); static;
   end;
 
   {$ENDREGION}
@@ -921,11 +920,6 @@ begin
   if not Assigned(fInstance) then
     CreateEventHandler(typeInfo);
   fInstance.Add(handler);
-end;
-
-class procedure EventHelper.Assign(const source: IInterface; var target: IInterface);
-begin
-  target := source;
 end;
 
 procedure EventHelper.Clear;

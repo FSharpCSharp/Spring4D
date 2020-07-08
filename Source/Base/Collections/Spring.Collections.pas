@@ -3438,7 +3438,7 @@ const
   InstanceComparer_VTable: array[0..3] of Pointer =
   (
     @NopQueryInterface,
-    @NopAddref,
+    @NopAddRef,
     @NopRelease,
     @Compare_Instance
   );
