@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{D8F7A1EC-BC04-4B6F-B5B3-48D98791D3A5}</ProjectGuid>
-        <ProjectVersion>18.1</ProjectVersion>
+        <ProjectVersion>18.8</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <MainSource>UseContainer.dpr</MainSource>
         <Base>True</Base>
@@ -32,7 +32,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <SanitizedProjectName>UseContainer</SanitizedProjectName>
-        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\..\Source\Base\Logging;..\..\..\Source\Base\Patches;..\..\..\Source\Core\Container;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Base\Logging;..\..\..\Source\Base\Patches;..\..\..\Source\Base\Patterns;..\..\..\Source\Core\Container;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>

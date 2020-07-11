@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{64023EA8-DCC8-4EDD-92FD-D9C53137DBD9}</ProjectGuid>
-        <ProjectVersion>18.1</ProjectVersion>
+        <ProjectVersion>18.8</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <MainSource>CustomConstructor.dpr</MainSource>
         <Base>True</Base>
@@ -32,7 +32,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <SanitizedProjectName>CustomConstructor</SanitizedProjectName>
-        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\..\Source\Base\Logging;..\..\..\Source\Base\Patches;..\..\..\Source\Core\Container;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\..\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Base\Logging;..\..\..\Source\Base\Patches;..\..\..\Source\Base\Patterns;..\..\..\Source\Core\Container;..\..\..\Source\Core\Interception;..\..\..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>

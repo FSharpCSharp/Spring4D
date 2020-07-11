@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{878910A8-D4C1-4426-A0E7-E9CA63D02201}</ProjectGuid>
-        <ProjectVersion>18.1</ProjectVersion>
+        <ProjectVersion>18.8</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <MainSource>ConstructorInjection.dpr</MainSource>
         <Base>True</Base>
