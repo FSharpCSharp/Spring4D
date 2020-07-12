@@ -63,6 +63,10 @@
   {$ENDIF}
 {$ENDIF}
 
+{$IFDEF DELPHIXE4_UP}
+  {$DEFINE SUPPORTS_CONSTREF}
+{$ENDIF}
+
 {$IFDEF MSWINDOWS}
   // Use the unused vmtAutoTable slot in the class VMT to store the init table
   // otherwise a global dictionary will be used which is slightly slower

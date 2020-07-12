@@ -1933,6 +1933,71 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Weak smart pointer'}
+
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+
+  Weak<T> = record
+  private
+    fReference: IInterface;
+    function GetIsAlive: Boolean; inline;
+    function GetTarget: T;
+  public
+    class operator Implicit(const value: T): Weak<T>;
+    class operator Implicit({$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const value: Weak<T>): T;
+
+    class operator Equal({$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const left: Weak<T>; const right: T): Boolean;
+    class operator NotEqual({$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const left: Weak<T>; const right: T): Boolean;
+
+    function TryGetTarget(var target: T): Boolean;
+    property Target: T read GetTarget;
+    property IsAlive: Boolean read GetIsAlive;
+  end;
+
+  Weak = record
+  private type
+    PReference = ^TReference;
+    TReference = record
+    private
+      Vtable: Pointer;
+      RefCount: Integer;
+      Target: Pointer;
+      function _Release_Obj: Integer; stdcall;
+      function _Release_Intf: Integer; stdcall;
+    end;
+
+  const
+    ObjectReferenceVtable: array[0..2] of Pointer =
+    (
+      @NopQueryInterface,
+      @RecAddRef,
+      @TReference._Release_Obj
+    );
+
+    InterfaceReferenceVtable: array[0..2] of Pointer =
+    (
+      @NopQueryInterface,
+      @RecAddRef,
+      @TReference._Release_Intf
+    );
+  private
+    class function Equal(const left; const right): Boolean; static;
+    class function NotEqual(const left; const right): Boolean; static;
+    class function GetIsAlive(const reference): Boolean; static;
+    class procedure GetTarget(const reference; var result; kind: TTypeKind); static;
+    class function TryGetTarget(const reference; var target; kind: TTypeKind): Boolean; static;
+    class procedure MakeFromObject(const value; var result); overload; static;
+    class procedure MakeFromInterface(const value; var result); overload; static;
+  end;
+
+  {$RTTI INHERIT
+      METHODS(DefaultMethodRttiVisibility)
+      FIELDS(DefaultFieldRttiVisibility)
+      PROPERTIES(DefaultPropertyRttiVisibility)}
+
+  {$ENDREGION}
+
+
   {$REGION 'Shared smart pointer'}
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
@@ -1940,7 +2005,7 @@ type
   IShared<T> = reference to function: T;
 
   Shared<T> = record
-  strict private
+  private
     fValue: T;
     fFinalizer: IInterface;
     class function GetMake: IShared<T>; static;
@@ -1948,6 +2013,7 @@ type
     class operator Implicit(const value: IShared<T>): Shared<T>;
     class operator Implicit(const value: Shared<T>): IShared<T>;
     class operator Implicit(const value: Shared<T>): T; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
+    class operator Implicit(const value: Shared<T>): Weak<T>;
     class operator Implicit(const value: T): Shared<T>;
     property Value: T read fValue;
 
@@ -2010,77 +2076,6 @@ type
     class function Make<T: class, constructor>: IShared<T>; overload; static;
     class function Make<T>(const value: T): IShared<T>; overload; static;
     class function Make<T>(const value: T; const finalizer: Action<T>): IShared<T>; overload; static;
-  end;
-
-  {$RTTI INHERIT
-      METHODS(DefaultMethodRttiVisibility)
-      FIELDS(DefaultFieldRttiVisibility)
-      PROPERTIES(DefaultPropertyRttiVisibility)}
-
-  {$ENDREGION}
-
-
-  {$REGION 'Weak smart pointer'}
-
-{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
-
-  Weak<T> = record
-  strict private
-    fReference: IInterface;
-    fTarget: PPointer;
-    function GetIsAlive: Boolean; inline;
-    function GetTarget: T;
-    type PT = ^T;
-  public
-    constructor Create(const value: T);
-
-    class operator Implicit(const value: Shared<T>): Weak<T>;
-    class operator Implicit(const value: T): Weak<T>;
-    class operator Implicit(const value: Weak<T>): T;
-
-    class operator Equal(const left: Weak<T>; const right: T): Boolean; inline;
-    class operator NotEqual(const left: Weak<T>; const right: T): Boolean; inline;
-
-    function TryGetTarget(out target: T): Boolean;
-    property Target: T read GetTarget;
-    property IsAlive: Boolean read GetIsAlive;
-  end;
-
-  Weak = record
-  private type
-    PReference = ^TReference;
-    TReference = record
-    private
-      Vtable: Pointer;
-      RefCount: Integer;
-      Target: Pointer;
-      function _Release_Obj: Integer; stdcall;
-      function _Release_Intf: Integer; stdcall;
-    end;
-
-    PWeakRec = ^TWeakRec;
-    TWeakRec = record
-      Ref: PReference;
-      Target: PPointer;
-    end;
-
-  const
-    ObjectReferenceVtable: array[0..2] of Pointer =
-    (
-      @NopQueryInterface,
-      @RecAddRef,
-      @TReference._Release_Obj
-    );
-
-    InterfaceReferenceVtable: array[0..2] of Pointer =
-    (
-      @NopQueryInterface,
-      @RecAddRef,
-      @TReference._Release_Intf
-    );
-  private
-    class procedure MakeFromObject(const value; var result); overload; static;
-    class procedure MakeFromInterface(const value; var result); overload; static;
   end;
 
   {$RTTI INHERIT
@@ -8186,6 +8181,14 @@ begin
   Result := value.fValue;
 end;
 
+class operator Shared<T>.Implicit(const value: Shared<T>): Weak<T>;
+begin
+  case TType.Kind<T> of
+    tkClass: Weak.MakeFromObject(value.Value, Result.fReference);
+    tkInterface: Weak.MakeFromInterface(value.Value, Result.fReference);
+  end;
+end;
+
 class operator Shared<T>.Implicit(const value: T): Shared<T>;
 begin
   Result.fValue := value;
@@ -8444,41 +8447,19 @@ end;
 
 {$REGION 'Weak<T>'}
 
-constructor Weak<T>.Create(const value: T);
-begin
-  case TType.Kind<T> of
-    tkClass: Weak.MakeFromObject(value, fReference);
-    tkInterface: Weak.MakeFromInterface(value, fReference);
-  end;
-end;
-
 function Weak<T>.GetIsAlive: Boolean;
 begin
-  Result := Assigned(fReference) and Assigned(fTarget^);
+  Result := Weak.GetIsAlive(fReference);
 end;
 
 function Weak<T>.GetTarget: T;
 begin
-  Result := Default(T);
-  if Assigned(fReference) then
-    Result := PT(fTarget)^;
+  Weak.GetTarget(fReference, Result, TType.Kind<T>);
 end;
 
-function Weak<T>.TryGetTarget(out target: T): Boolean;
+function Weak<T>.TryGetTarget(var target: T): Boolean;
 begin
-  Result := Assigned(fReference) and Assigned(fTarget^);
-  if Result then
-    target := PT(fTarget)^
-  else
-    target := Default(T);
-end;
-
-class operator Weak<T>.Implicit(const value: Shared<T>): Weak<T>;
-begin
-  case TType.Kind<T> of
-    tkClass: Weak.MakeFromObject(value.Value, Result.fReference);
-    tkInterface: Weak.MakeFromInterface(value.Value, Result.fReference);
-  end;
+  Result := Weak.TryGetTarget(fReference, target, TType.Kind<T>);
 end;
 
 class operator Weak<T>.Implicit(const value: T): Weak<T>;
@@ -8489,29 +8470,25 @@ begin
   end;
 end;
 
-class operator Weak<T>.Implicit(const value: Weak<T>): T;
+class operator Weak<T>.Implicit(
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}
+  const value: Weak<T>): T;
 begin
-  Result := Default(T);
-  if Assigned(value.fReference) then
-    Result := PT(value.fTarget)^
+  Weak.GetTarget(value.fReference, Result, TType.Kind<T>);
 end;
 
-class operator Weak<T>.Equal(const left: Weak<T>;
-  const right: T): Boolean;
+class operator Weak<T>.Equal(
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}
+  const left: Weak<T>; const right: T): Boolean;
 begin
-  if Assigned(left.fReference) then
-    Result := PPointer(@right)^ = left.fTarget^
-  else
-    Result := PPointer(@right)^ = nil;
+  Result := Weak.Equal(left.fReference, right);
 end;
 
-class operator Weak<T>.NotEqual(const left: Weak<T>;
-  const right: T): Boolean;
+class operator Weak<T>.NotEqual(
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}
+  const left: Weak<T>; const right: T): Boolean;
 begin
-  if Assigned(left.fReference) then
-    Result := PPointer(@right)^ <> left.fTarget^
-  else
-    Result := PPointer(@right)^ <> nil;
+  Result := Weak.NotEqual(left.fReference, right);
 end;
 
 {$ENDREGION}
@@ -8520,57 +8497,148 @@ end;
 {$REGION 'Weak'}
 
 class procedure Weak.MakeFromObject(const value; var result);
+label
+  Assign;
 var
-  rec: PWeakRec;
+  ref: PReference absolute result;
 begin
-  rec := @result;
-  if Assigned(rec.Ref) and (AtomicDecrement(rec.Ref.RefCount) = 0) then
+  if Assigned(ref) then
   begin
-    rec.Ref.RefCount := 1;
-    if rec.Ref.Target = Pointer(value) then
+    if ref.Target = Pointer(value) then
       Exit;
-    if Assigned(rec.Ref.Target) then
-      UnregisterWeakRef(rec.Target, rec.Ref.Target);
-  end
-  else
-  begin
-    GetMem(rec.Ref, SizeOf(TReference));
-    rec.Ref.Vtable := @Weak.ObjectReferenceVtable;
-    rec.Ref.RefCount := 1;
-    rec.Target := @rec.Ref.Target;
+
+    if AtomicDecrement(ref.RefCount) = 0 then
+    begin
+      if Assigned(ref.Target) then
+        UnregisterWeakRef(@ref.Target, ref.Target);
+      if Assigned(Pointer(value)) then
+        goto Assign;
+
+      FreeMem(ref);
+      Exit;
+    end;
   end;
 
-  rec.Ref.Target := Pointer(value);
-  if Assigned(rec.Ref.Target) then
-    RegisterWeakRef(rec.Target, rec.Ref.Target);
+  if not Assigned(Pointer(value)) then
+    Exit;
+
+  GetMem(ref, SizeOf(TReference));
+  ref.Vtable := @Weak.ObjectReferenceVtable;
+Assign:
+  ref.RefCount := 1;
+  ref.Target := Pointer(value);
+  RegisterWeakRef(@ref.Target, ref.Target);
 end;
 
 class procedure Weak.MakeFromInterface(const value; var result);
+label
+  Assign;
 var
-  rec: PWeakRec;
+  ref: PReference absolute result;
 begin
-  rec := @result;
-  if Assigned(rec.Ref) and (AtomicDecrement(rec.Ref.RefCount) = 0) then
+  if Assigned(ref) then
   begin
-    rec.Ref.RefCount := 1;
-    if rec.Ref.Target = Pointer(value) then
+    if ref.Target = Pointer(value) then
       Exit;
-    if Assigned(rec.Ref.Target) then
-      UnregisterWeakRef(@rec.Ref.Target, IInterface(rec.Ref.Target) as TObject);
-  end
-  else
-  begin
-    GetMem(rec.Ref, SizeOf(TReference));
-    rec.Ref.Vtable := @Weak.InterfaceReferenceVtable;
-    rec.Ref.RefCount := 1;
-    rec.Target := @rec.Ref.Target;
+
+    if AtomicDecrement(ref.RefCount) = 0 then
+    begin
+      if Assigned(ref.Target) then
+        UnregisterWeakRef(@ref.Target, IInterface(ref.Target) as TObject);
+      if Assigned(Pointer(value)) then
+        goto Assign;
+
+      FreeMem(ref);
+      Exit;
+    end;
   end;
 
-  rec.Ref.Target := Pointer(value);
-  if Assigned(rec.Ref.Target) then
-    RegisterWeakRef(@rec.Ref.Target, IInterface(rec.Ref.Target) as TObject);
+  if not Assigned(Pointer(value)) then
+    Exit;
+
+  GetMem(ref, SizeOf(TReference));
+  ref.Vtable := @Weak.InterfaceReferenceVtable;
+Assign:
+  ref.RefCount := 1;
+  ref.Target := Pointer(value);
+  RegisterWeakRef(@ref.Target, IInterface(ref.Target) as TObject);
 end;
 
+class function Weak.Equal(const left; const right): Boolean;
+var
+  p: Pointer;
+begin
+  p := Pointer(left);
+  if Assigned(p) then
+    p := PReference(p).Target;
+  Result := p = Pointer(right);
+end;
+
+class function Weak.NotEqual(const left; const right): Boolean;
+var
+  p: Pointer;
+begin
+  p := Pointer(left);
+  if Assigned(p) then
+    p := PReference(p).Target;
+  Result := p <> Pointer(right);
+end;
+
+class function Weak.GetIsAlive(const reference): Boolean;
+var
+  p: Pointer;
+begin
+  p := Pointer(reference);
+  if Assigned(p) then
+    p := PReference(p).Target;
+  Result := Assigned(p);
+end;
+
+class procedure Weak.GetTarget(const reference; var result; kind: TTypeKind);
+{$IFDEF PUREPASCAL}
+var
+  p: Pointer;
+begin
+  p := Pointer(reference);
+  if Assigned(p) then
+    p := PReference(p).Target;
+  if kind = tkInterface then
+    IInterface(result) := IInterface(p)
+  else
+    TObject(result) := TObject(p);
+end;
+{$ELSE}
+asm
+  mov eax,[eax]
+  test eax,eax
+  jz @@niltarget
+  mov eax,dword ptr [eax].TReference.Target
+@@niltarget:
+  cmp cl,tkInterface
+  jne @@exit
+  mov ecx,eax
+  mov eax,edx
+  mov edx,ecx
+  call System.@IntfCopy
+  ret
+@@exit:
+  mov [edx],eax
+end;
+{$ENDIF}
+
+class function Weak.TryGetTarget(const reference; var target; kind: TTypeKind): Boolean;
+var
+  p: Pointer;
+begin
+  p := Pointer(reference);
+  if Assigned(p) then
+    p := PReference(p).Target;
+  if kind = tkInterface then
+    IInterface(target) := IInterface(p)
+  else
+    TObject(target) := TObject(p);
+  Result := Assigned(p);
+end;
 
 {$ENDREGION}
 

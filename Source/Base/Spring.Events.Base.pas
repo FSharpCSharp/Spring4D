@@ -138,6 +138,7 @@ begin
   Result := IsValidObj(p) and (TObject(p) is cls);
 end;
 
+
 {$REGION 'TEventBase'}
 
 constructor TEventBase.Create(const threadSafe: Boolean);
