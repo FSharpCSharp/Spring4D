@@ -4761,7 +4761,7 @@ end;
 {$REGION 'TInitTable.TManagedInterfaceField'}
 
 procedure InvokeImplGetter(const self: TObject; implGetter: NativeUInt; var result: IInterface);
-{$IFDEF PUREPASCAL}
+{$IFNDEF CPUX86}
 type
 {$IF defined(MSWINDOWS) or defined(OSX32)}
   TGetProc = procedure (const self: TObject; var result: IInterface);
@@ -4787,7 +4787,6 @@ begin
   end;
 end;
 {$ELSE}
-{$IFDEF CPUX86}
 asm
   xchg edx,ecx
   cmp ecx,PROPSLOT_FIELD
@@ -4809,7 +4808,6 @@ asm
   mov edx,[ecx]
   jmp System.@IntfCopy
 end;
-{$ENDIF}
 {$ENDIF}
 
 constructor TInitTable.TManagedInterfaceField.Create(offset: Integer;
@@ -8868,7 +8866,7 @@ begin
 end;
 
 class procedure Weak.GetTarget(const reference; var result; kind: TTypeKind);
-{$IFDEF PUREPASCAL}
+{$IFNDEF CPUX86}
 var
   p: Pointer;
 begin
