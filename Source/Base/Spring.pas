@@ -4579,7 +4579,7 @@ end;
 
 procedure TInitTable.TManagedObjectField.FinalizeValue(instance: Pointer);
 begin
-  FreeAndNil(Pointer(PByte(instance) + fOffset)^);
+  FreeAndNil(TObject(Pointer(PByte(instance) + fOffset)^));
 end;
 
 procedure TInitTable.TManagedObjectField.InitializeValue(instance: Pointer);
@@ -7706,7 +7706,7 @@ begin
 {$IFNDEF AUTOREFCOUNT}
   if TType.Kind<T> = tkClass then
     if fOwnsObject then
-      FreeAndNil(fValue);
+      FreeAndNil(PObject(@fValue)^);
 {$ENDIF}
 end;
 
