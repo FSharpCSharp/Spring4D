@@ -113,6 +113,7 @@
         <DCCReference Include="..\..\Source\Base\Spring.DesignPatterns.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Events.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.HazardEra.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.pas"/>
         <DCCReference Include="..\..\Source\Base\Logging\Spring.Logging.Appenders.pas"/>
