@@ -989,13 +989,13 @@ begin
   i := 0;
   enumerator := IEnumerable<T>(this).GetEnumerator;
   comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
-  while enumerator.MoveNext and (i < Length(values)) do
+  while enumerator.MoveNext do
   begin
-    if not comparer.Equals(enumerator.Current, values[i]) then
-      Break;
+    if (i > High(values)) or not comparer.Equals(enumerator.Current, values[i]) then
+      Exit(False);
     Inc(i);
   end;
-  Result := i = Length(values);
+  Result := i > High(values);
 end;
 
 function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;

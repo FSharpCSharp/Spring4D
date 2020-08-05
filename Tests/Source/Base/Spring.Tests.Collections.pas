@@ -184,6 +184,9 @@ type
     procedure TestTryMethodsReturnDefaultWhenFalse;
 
     procedure TestDeleteRangeEmptyList;
+
+    procedure EqualsToArray;
+    procedure EqualsToEnumerable;
   end;
 
   TTestStringList = class(TTestCase)
@@ -1067,6 +1070,22 @@ end;
 
 
 {$REGION 'TTestIntegerList'}
+
+procedure TTestIntegerList.EqualsToArray;
+begin
+  SimpleFillList;
+  CheckFalse(SUT.EqualsTo([1, 2]));
+  CheckTrue(SUT.EqualsTo([1, 2, 3]));
+  CheckFalse(SUT.EqualsTo([1, 2, 3, 4]));
+end;
+
+procedure TTestIntegerList.EqualsToEnumerable;
+begin
+  SimpleFillList;
+  CheckFalse(SUT.EqualsTo(TEnumerable.From<Integer>([1, 2])));
+  CheckTrue(SUT.EqualsTo(TEnumerable.From<Integer>([1, 2, 3])));
+  CheckFalse(SUT.EqualsTo(TEnumerable.From<Integer>([1, 2, 3, 4])));
+end;
 
 procedure TTestIntegerList.GetCapacity;
 begin
