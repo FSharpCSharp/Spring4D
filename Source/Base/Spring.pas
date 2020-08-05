@@ -10125,10 +10125,17 @@ label
 var
   dest: Pointer<T>.P;
   leftCount, rightCount: Integer;
+{$IF Defined(DELPHIX_TOKYO_UP) Defined(WIN64) and Defined(OPTIMIZATION_ON)}
+  // Win64 with O+ has a codegen glitch as it later moves value from an uninitialized register
+  temp_ts: PTimSort;
+{$IFEND}
 begin
   Assert(leftLen > 0);
   Assert(rightLen > 0);
   Assert(left + leftLen = right);
+{$IF Declared(temp_ts)}
+  temp_ts := ts;
+{$IFEND}
 
   // copy first run into temp array
   dest := left;
@@ -10219,6 +10226,9 @@ begin
         goto copyLeft;
 
     gallopLeft:
+{$IF Declared(temp_ts)}
+      ts := temp_ts;
+{$IFEND}
       rightCount := ts.GallopLeft(left, right, rightLen, 0);
       if rightCount <> 0 then
       begin
@@ -10265,10 +10275,17 @@ label
 var
   dest, leftBase, rightBase: Pointer<T>.P;
   leftCount, rightCount: Integer;
+{$IF Defined(DELPHIX_TOKYO_UP) Defined(WIN64) and Defined(OPTIMIZATION_ON)}
+  // Win64 with O+ has a codegen glitch as it later moves value from an uninitialized register
+  temp_ts: PTimSort;
+{$IFEND}
 begin
   Assert(leftLen > 0);
   Assert(rightLen > 0);
   Assert(left + leftLen = right);
+{$IF Declared(temp_ts)}
+  temp_ts := ts;
+{$IFEND}
 
   // copy second run into temp array
   rightBase := ts.EnsureTmpCapacity(rightLen);
@@ -10360,6 +10377,9 @@ begin
         goto copyLeft;
 
     gallopLeft:
+{$IF Declared(temp_ts)}
+      ts := temp_ts;
+{$IFEND}
       rightCount := rightLen - ts.GallopLeft(left, rightBase, rightLen, rightLen - 1);
       if rightCount <> 0 then
       begin
