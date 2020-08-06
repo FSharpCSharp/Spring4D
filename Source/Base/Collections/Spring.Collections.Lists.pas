@@ -463,9 +463,6 @@ end;
 function TAbstractArrayList<T>.GetRange(index, count: Integer): IList<T>;
 var
   list: TAbstractArrayList<T>;
-{$IFNDEF DELPHIXE2_UP}
-  i: Integer;
-{$ENDIF}
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
@@ -474,20 +471,9 @@ begin
 
   Result := CreateList;
   list := TAbstractArrayList<T>(Result.AsObject);
-  list.fCount := (list.fCount and OwnsObjectsMask) or count;
-{$IFDEF DELPHIXE2_UP}
-  list.fItems := Copy(fItems, index, count);
-{$ELSE}
-  // the compiler passes wrong typeinfo for the generated call
-  // to _DynArrayCopyRange up to XE
   list.fCapacity := count;
-  SetLength(list.fItems, count);
-  for i := 0 to count - 1 do
-  begin
-    list.fItems[i] := fItems[index];
-    Inc(index);
-  end;
-{$ENDIF}
+  list.fCount := (list.fCount and OwnsObjectsMask) or count;
+  DynArrayCopyRange(Pointer(list.fItems), fItems, TypeInfo(TArray<T>), index, count);
 end;
 
 procedure TAbstractArrayList<T>.Grow(capacity: Integer);

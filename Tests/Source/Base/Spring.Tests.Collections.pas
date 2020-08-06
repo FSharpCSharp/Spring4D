@@ -204,6 +204,7 @@ type
     procedure TestDelete;
     procedure TestExtractRange;
     procedure TestListInsertRangeIEnumerableSelf;
+    procedure TestGetRange_SomeItems;
   end;
 
   TTestSortedList = class(TTestCase)
@@ -1717,6 +1718,18 @@ begin
   CheckEquals('0', values[0]);
   CheckEquals('1', values[1]);
   CheckEquals('2', values[2]);
+end;
+
+procedure TTestStringList.TestGetRange_SomeItems;
+var
+  values: IList<string>;
+begin
+  FillList;
+  values := SUT.GetRange(0, 3);
+  CheckEquals(3, values.Count);
+  CheckEquals(SUT[0], values[0]);
+  CheckEquals(SUT[1], values[1]);
+  CheckEquals(SUT[2], values[2]);
 end;
 
 procedure TTestStringList.TestListInsertRangeIEnumerableSelf;

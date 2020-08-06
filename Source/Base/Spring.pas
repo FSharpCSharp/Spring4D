@@ -2838,6 +2838,7 @@ function Pos(const SubStr, Str: UnicodeString; Offset: Integer): Integer; overlo
 
 {$IFNDEF DELPHIXE7_UP}
 procedure DynArrayAssign(var Dest: Pointer; Source: Pointer; typeInfo: Pointer);
+procedure DynArrayCopyRange(var Result: Pointer; A: Pointer; TypeInfo: Pointer; Index, Count: NativeInt);
 {$ENDIF}
 
 procedure PlatformNotImplemented;
@@ -3068,6 +3069,25 @@ procedure DynArrayAssign(var Dest: Pointer; Source: Pointer; typeInfo: Pointer);
 asm
   jmp System.@DynArrayAsg;
 end;
+
+procedure DynArrayCopyRange(var Result: Pointer; A: Pointer; TypeInfo: Pointer; Index, Count: NativeInt);
+asm
+{$IFDEF CPUX64}
+  .noframe
+  jmp System.@DynArrayCopyRange
+{$ELSE}
+  push ebx
+  mov ebx,[ebp+$08]
+  push ebx
+  push eax
+  mov eax,edx
+  mov edx,ecx
+  mov ecx,[ebp+$0c]
+  call System.@DynArrayCopyRange
+  pop ebx
+{$ENDIF}
+end;
+
 {$ENDIF}
 
 procedure PlatformNotImplemented;
