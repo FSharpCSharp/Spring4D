@@ -99,6 +99,7 @@ type
     function TryGetFirst(var value: T): Boolean; overload;
     function TryGetLast(var value: T): Boolean; overload;
     function TryGetSingle(var value: T): Boolean; overload;
+    function TryGetSingle(var value: T; const predicate: Predicate<T>): Boolean; overload;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount;
@@ -959,7 +960,7 @@ begin
 
   temp := fItems[currentIndex];
   if ItemType.IsManaged then
-  fItems[currentIndex] := Default(T);
+    fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
   begin
     targetIndex := currentIndex;
@@ -1294,6 +1295,44 @@ begin
     value := fItems[0]
   else
     value := Default(T);
+end;
+
+function TAbstractArrayList<T>.TryGetSingle(var value: T;
+  const predicate: Predicate<T>): Boolean;
+var
+  item, foundItem: PT;
+  index: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
+
+  item := Pointer(fItems);
+  foundItem := nil;
+  for index := 1 to Count do
+  begin
+    if predicate(item^) then
+    begin
+      if Assigned(foundItem) then
+      begin
+        foundItem := nil;
+        Break;
+      end;
+      foundItem := item;
+    end;
+    Inc(item);
+  end;
+
+  if Assigned(foundItem) then
+  begin
+    value := foundItem^;
+    Result := True;
+  end
+  else
+  begin
+    value := Default(T);
+    Result := False;
+  end;
 end;
 
 {$ENDREGION}
