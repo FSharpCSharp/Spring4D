@@ -142,6 +142,7 @@ type
     procedure TestListInsertBeginning;
     procedure TestListInsertRangeArray;
     procedure TestListInsertRangeIEnumerable;
+    procedure TestListInsertRangeIEnumerableSelf;
     procedure TestListInsertRangeIEnumerableWithExtraCapacity;
     procedure TestListSimpleDelete;
     procedure TestListMultipleDelete;
@@ -167,6 +168,7 @@ type
     procedure TestGetRange_AllItems;
     procedure TestGetRange_FirstItems;
     procedure TestGetRange_LastItems;
+    procedure TestGetRange_NoItems;
 
     procedure TestExtract_ItemNotInList;
     procedure TestExtractAll_OneItemInList;
@@ -201,6 +203,7 @@ type
     procedure TestAdd;
     procedure TestDelete;
     procedure TestExtractRange;
+    procedure TestListInsertRangeIEnumerableSelf;
   end;
 
   TTestSortedList = class(TTestCase)
@@ -1275,6 +1278,15 @@ begin
   CheckEquals(SUT[2], values[1]);
 end;
 
+procedure TTestIntegerList.TestGetRange_NoItems;
+var
+  values: IList<Integer>;
+begin
+  SimpleFillList;
+  values := SUT.GetRange(2, 0);
+  CheckEquals(0, values.Count);
+end;
+
 type
   TIntegerList = class(TList<Integer>)
   public
@@ -1538,6 +1550,14 @@ begin
   CheckTrue(SUT.EqualsTo([0, 3, 4, 1]));
 end;
 
+procedure TTestIntegerList.TestListInsertRangeIEnumerableSelf;
+begin
+  SUT.Add(0);
+  SUT.Add(1);
+  SUT.InsertRange(1, SUT);
+  CheckTrue(SUT.EqualsTo([0, 0, 1, 1]));
+end;
+
 procedure TTestIntegerList.TestListInsertRangeIEnumerableWithExtraCapacity;
 var
   InsertedList: IList<Integer>;
@@ -1697,6 +1717,16 @@ begin
   CheckEquals('0', values[0]);
   CheckEquals('1', values[1]);
   CheckEquals('2', values[2]);
+end;
+
+procedure TTestStringList.TestListInsertRangeIEnumerableSelf;
+begin
+  SUT.Add('1');
+  SUT.Add('2');
+  SUT.InsertRange(1, SUT);
+  CheckTrue(SUT.EqualsTo(['1', '1', '2', '2']));;
+  SUT.Delete(1);
+  SUT.Delete(0);
 end;
 
 {$ENDREGION}

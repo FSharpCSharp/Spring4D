@@ -36,8 +36,6 @@ uses
   Spring;
 
 type
-  PMethodPointer = ^TMethodPointer;
-
   /// <summary>
   ///   Base class for multicast event implementation
   /// </summary>

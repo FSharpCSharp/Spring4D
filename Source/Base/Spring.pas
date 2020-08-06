@@ -91,6 +91,9 @@ type
 
   PObject = ^TObject;
 
+  PMethodPointer = ^TMethodPointer;
+  TMethodPointer = procedure of object;
+
   {$ENDREGION}
 
 
@@ -970,8 +973,6 @@ type
   {$REGION 'Multicast Event'}
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
-
-  TMethodPointer = procedure of object;
 
   IEvent = interface
     ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
@@ -2697,9 +2698,9 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TArrayManager<T>}
+  {$REGION 'TTypeInfo<T>}
 
-  TArrayManager<T> = class
+  TTypeInfo<T> = record
   private
   {$IFDEF DELPHIXE7_UP}
     {$IFDEF WEAKREF}
@@ -2714,16 +2715,6 @@ type
     class constructor Create;
   {$ENDIF}
   public
-    class procedure Move(var items: TArray<T>;
-      const fromIndex, toIndex, count: Integer); overload; static; inline;
-    class procedure Move(const fromItems: TArray<T>; var toItems: TArray<T>;
-      const fromIndex, toIndex, count: Integer); overload; static; inline;
-    class procedure Finalize(var items: TArray<T>;
-      const index, count: Integer); static; inline;
-
-    class procedure MoveSlow(var items: TArray<T>;
-      const fromIndex, toIndex, count: Integer); overload; static; inline;
-
     {$IFDEF WEAKREF}
     class property HasWeakRef: Boolean read {$IFDEF DELPHIXE7_UP}GetHasWeakRef{$ELSE}fHasWeakRef{$ENDIF};
     {$ELSE}
@@ -2843,6 +2834,10 @@ function ReturnAddress: Pointer;
 
 {$IFNDEF DELPHIXE3_UP}
 function Pos(const SubStr, Str: UnicodeString; Offset: Integer): Integer; overload;
+{$ENDIF}
+
+{$IFNDEF DELPHIXE7_UP}
+procedure DynArrayAssign(var Dest: Pointer; Source: Pointer; typeInfo: Pointer);
 {$ENDIF}
 
 procedure PlatformNotImplemented;
@@ -3007,6 +3002,8 @@ procedure FinalizeRecord(P: Pointer; TypeInfo: Pointer);
 procedure RegisterWeakRef(address: Pointer; const instance: TObject);
 procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
 
+procedure MoveManaged(source, target, typeInfo: Pointer; count: Integer);
+
   {$ENDREGION}
 
 
@@ -3063,6 +3060,13 @@ end;
 function Pos(const SubStr, Str: UnicodeString; Offset: Integer): Integer;
 asm
   jmp PosEx
+end;
+{$ENDIF}
+
+{$IFNDEF DELPHIXE7_UP}
+procedure DynArrayAssign(var Dest: Pointer; Source: Pointer; typeInfo: Pointer);
+asm
+  jmp System.@DynArrayAsg;
 end;
 {$ENDIF}
 
@@ -8713,6 +8717,253 @@ begin
   WeakRefInstances.UnregisterWeakRef(address, instance);
 end;
 
+procedure MoveManaged(source, target, typeInfo: Pointer; count: Integer);
+type
+  TFieldInfo = packed record
+    TypeInfo: PPTypeInfo;
+    Offset: NativeInt;
+  end;
+
+  PFieldTable = ^TFieldTable;
+  TFieldTable = packed record
+    Size: Integer;
+    Count: Integer;
+    case TTypeKind of
+    tkArray:  ( ElemType: PPTypeInfo );
+    tkRecord: ( Fields: array[0..0] of TFieldInfo );
+  end;
+
+  function GetFieldTable(typeInfo: Pointer): PFieldTable; inline;
+  begin
+    Result := PFieldTable(PByte(typeInfo) + PByte(typeInfo)[1] + 2);
+  end;
+
+var
+  fieldTable: PFieldTable;
+  elemType: PTypeInfo;
+  size, elemCount, n: Integer;
+begin
+  if count = 0 then Exit;
+  if PByte(target) < PByte(source) then
+    case PTypeInfo(typeInfo).Kind of
+{$IFDEF WEAKINSTREF}
+      tkMethod:
+        repeat
+          PMethodPointer(target)^ := PMethodPointer(source)^;
+          Inc(PByte(target), SizeOf(TMethod));
+          Inc(PByte(source), SizeOf(TMethod));
+          Dec(count);
+        until count = 0;
+{$ENDIF}
+{$IFDEF AUTOREFCOUNT}
+      tkClass:
+        repeat
+          PObject(target)^ := PObject(source)^;
+          Inc(PByte(target), SizeOf(Pointer));
+          Inc(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+{$ENDIF}
+      tkLString:
+        repeat
+          PAnsiString(target)^ := PAnsiString(source)^;
+          Inc(PByte(target), SizeOf(Pointer));
+          Inc(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      tkWString:
+        repeat
+          PWideString(target)^ := PWideString(source)^;
+          Inc(PByte(target), SizeOf(Pointer));
+          Inc(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      tkUString:
+        repeat
+          PUnicodeString(target)^ := PUnicodeString(source)^;
+          Inc(PByte(target), SizeOf(Pointer));
+          Inc(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      tkVariant:
+        repeat
+          PVariant(target)^ := PVariant(source)^;
+          Inc(PByte(target), SizeOf(TVarData));
+          Inc(PByte(source), SizeOf(TVarData));
+          Dec(count);
+        until count = 0;
+      tkArray:
+      begin
+        fieldTable := GetFieldTable(typeInfo);
+        size := fieldTable.Size;
+        elemCount := fieldTable.Count;
+        elemType := fieldTable.ElemType^;
+        repeat
+          CopyArray(target, source, elemType, elemCount);
+          Inc(PByte(target), size);
+          Inc(PByte(source), size);
+          Dec(count);
+        until count = 0;
+      end;
+      tkRecord{$IF Declared(tkMRecord)}, tkMRecord{$IFEND}:
+      begin
+        size := GetFieldTable(typeInfo).Size;
+        repeat
+          CopyRecord(target, source, typeInfo);
+          Inc(PByte(target), size);
+          Inc(PByte(source), size);
+          Dec(count);
+        until count = 0;
+      end;
+      tkInterface:
+        repeat
+          PInterface(target)^ := PInterface(source)^;
+          Inc(PByte(target), SizeOf(Pointer));
+          Inc(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      tkDynArray:
+        repeat
+          DynArrayAssign(target, source, typeInfo);
+          Inc(PByte(target), SizeOf(Pointer));
+          Inc(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+    end
+  else
+    case PTypeInfo(typeInfo).Kind of
+{$IFDEF WEAKINSTREF}
+      tkMethod:
+      begin
+        n := (count - 1) * SizeOf(TMethod);
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          PMethodPointer(target)^ := PMethodPointer(source)^;
+          Dec(PByte(target), SizeOf(TMethod));
+          Dec(PByte(source), SizeOf(TMethod));
+          Dec(count);
+        until count = 0;
+      end;
+{$ENDIF}
+{$IFDEF AUTOREFCOUNT}
+      tkClass:
+      begin
+        n := (count - 1) * SizeOf(Pointer);
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          PObject(target)^ := PObject(source)^;
+          Dec(PByte(target), SizeOf(Pointer));
+          Dec(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      end;
+{$ENDIF}
+      tkLString:
+      begin
+        n := (count - 1) * SizeOf(Pointer);
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          PAnsiString(target)^ := PAnsiString(source)^;
+          Dec(PByte(target), SizeOf(Pointer));
+          Dec(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      end;
+      tkWString:
+      begin
+        n := (count - 1) * SizeOf(Pointer);
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          PWideString(target)^ := PWideString(source)^;
+          Dec(PByte(target), SizeOf(Pointer));
+          Dec(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      end;
+      tkUString:
+      begin
+        n := (count - 1) * SizeOf(Pointer);
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          PUnicodeString(target)^ := PUnicodeString(source)^;
+          Dec(PByte(target), SizeOf(Pointer));
+          Dec(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      end;
+      tkVariant:
+      begin
+        n := (count - 1) * SizeOf(TVarData);
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          PVariant(target)^ := PVariant(source)^;
+          Dec(PByte(target), SizeOf(TVarData));
+          Dec(PByte(source), SizeOf(TVarData));
+          Dec(count);
+        until count = 0;
+      end;
+      tkArray:
+      begin
+        fieldTable := GetFieldTable(typeInfo);
+        size := fieldTable.Size;
+        elemCount := fieldTable.Count;
+        elemType := fieldTable.ElemType^;
+        n := (count - 1) * size;
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          CopyArray(target, source, elemType, elemCount);
+          Dec(PByte(target), size);
+          Dec(PByte(source), size);
+          Dec(count);
+        until count = 0;
+      end;
+      tkRecord{$IF Declared(tkMRecord)}, tkMRecord{$IFEND}:
+      begin
+        size := GetFieldTable(typeInfo).Size;
+        n := (count - 1) * size;
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          CopyRecord(target, source, typeInfo);
+          Dec(PByte(target), size);
+          Dec(PByte(source), size);
+          Dec(count);
+        until count = 0;
+      end;
+      tkInterface:
+      begin
+        n := (count - 1) * SizeOf(Pointer);
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          PInterface(target)^ := PInterface(source)^;
+          Dec(PByte(target), SizeOf(Pointer));
+          Dec(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      end;
+      tkDynArray:
+      begin
+        n := (count - 1) * SizeOf(Pointer);
+        Inc(PByte(target), n);
+        Inc(PByte(source), n);
+        repeat
+          DynArrayAssign(target, source, typeInfo);
+          Dec(PByte(target), SizeOf(Pointer));
+          Dec(PByte(source), SizeOf(Pointer));
+          Dec(count);
+        until count = 0;
+      end;
+    end
+end;
+
 {$ENDREGION}
 
 
@@ -11203,10 +11454,10 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TArrayManager<T>'}
+{$REGION 'TTypeInfo<T>'}
 
 {$IFNDEF DELPHIXE7_UP}
-class constructor TArrayManager<T>.Create;
+class constructor TTypeInfo<T>.Create;
 begin
 {$IFDEF WEAKREF}
   fHasWeakRef := TType.HasWeakRef<T>;
@@ -11215,87 +11466,17 @@ begin
 end;
 {$ELSE}
 {$IFDEF WEAKREF}
-class function TArrayManager<T>.GetHasWeakRef: Boolean;
+class function TTypeInfo<T>.GetHasWeakRef: Boolean;
 begin
   Result := System.HasWeakRef(T);
 end;
 {$ENDIF}
 
-class function TArrayManager<T>.GetIsManaged: Boolean;
+class function TTypeInfo<T>.GetIsManaged: Boolean;
 begin
   Result := System.IsManagedType(T);
 end;
 {$ENDIF}
-
-class procedure TArrayManager<T>.Finalize(var items: TArray<T>;
-  const index, count: Integer);
-begin
-{$IFDEF WEAKREF}
-  if HasWeakRef then
-    System.Finalize(items[index], count);
-{$ENDIF}
-  System.FillChar(items[index], count * SizeOf(T), 0)
-end;
-
-class procedure TArrayManager<T>.Move(var items: TArray<T>;
-  const fromIndex, toIndex, count: Integer);
-{$IFDEF WEAKREF}
-var
-  i: Integer;
-begin
-  if HasWeakRef then
-  begin
-    if count > 0 then
-      if fromIndex < toIndex then
-        for i := count - 1 downto 0 do
-          items[toIndex + i] := items[fromIndex + i]
-      else if fromIndex > toIndex then
-        for i := 0 to Count - 1 do
-          items[toIndex + i] := items[fromIndex + i];
-  end
-  else
-{$ELSE}
-begin
-{$ENDIF}
-    System.Move(items[fromIndex], items[toIndex], count * SizeOf(T));
-end;
-
-class procedure TArrayManager<T>.Move(const fromItems: TArray<T>;
-  var toItems: TArray<T>; const fromIndex, toIndex, count: Integer);
-{$IFDEF WEAKREF}
-var
-  i: Integer;
-begin
-  if HasWeakRef then
-  begin
-    if count > 0 then
-      if fromIndex < toIndex then
-        for i := count - 1 downto 0 do
-          toItems[toIndex + i] := fromItems[fromIndex + i]
-      else if fromIndex > toIndex then
-        for i := 0 to count - 1 do
-          toItems[toIndex + i] := fromItems[fromIndex + i];
-  end
-  else
-{$ELSE}
-begin
-{$ENDIF}
-    System.Move(fromItems[fromIndex], toItems[toIndex], count * SizeOf(T));
-end;
-
-class procedure TArrayManager<T>.MoveSlow(var items: TArray<T>;
-  const fromIndex, toIndex, count: Integer);
-var
-  i: Integer;
-begin
-  if count > 0 then
-    if fromIndex < toIndex then
-      for i := count - 1 downto 0 do
-        items[toIndex + i] := items[fromIndex + i]
-    else if fromIndex > toIndex then
-      for i := 0 to count - 1 do
-        items[toIndex + i] := items[fromIndex + i];
-end;
 
 {$ENDREGION}
 

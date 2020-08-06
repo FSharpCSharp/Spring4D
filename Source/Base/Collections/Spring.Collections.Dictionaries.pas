@@ -160,7 +160,9 @@ type
       TKeyValuePair = TPair<TKey, TValue>;
       TValueKeyPair = TPair<TValue, TKey>;
       TItem = TBidiDictionaryItem<TKey, TValue>;
+      {$POINTERMATH ON}
       PItem = ^TItem;
+      {$POINTERMATH OFF}
 
       TInverse = class(TCollectionBase<TValueKeyPair>,
         IEnumerable<TValueKeyPair>, IReadOnlyCollection<TValueKeyPair>,
@@ -1161,7 +1163,8 @@ procedure TBidiDictionary<TKey, TValue>.Rehash(newCapacity: Integer);
 var
   newBucketCount: Integer;
   bucketIndex, itemIndex: Integer;
-  sourceItemIndex, targetItemIndex: Integer;
+  sourceItem, targetItem: PItem;
+  i: Integer;
 begin
   if newCapacity = 0 then
   begin
@@ -1182,15 +1185,19 @@ begin
   // compact the items array, if necessary
   if fItemCount > fCount then
   begin
-    targetItemIndex := 0;
-    for sourceItemIndex := 0 to fItemCount - 1 do
-      if not fItems[sourceItemIndex].Removed then
+    sourceItem := PItem(fItems);
+    targetItem := PItem(fItems);
+    for i := 0 to fItemCount - 1 do
+    begin
+      if PInteger(sourceItem)^ >= 0 then // not removed
       begin
-        if targetItemIndex < sourceItemIndex then
-          TArrayManager<TItem>.Move(fItems, sourceItemIndex, targetItemIndex, 1);
-        Inc(targetItemIndex);
+        if targetItem < sourceItem then
+          targetItem^ := sourceItem^;
+        Inc(targetItem);
       end;
-    TArrayManager<TItem>.Finalize(fItems, targetItemIndex, fItemCount - fCount);
+      Inc(sourceItem);
+    end;
+    FinalizeArray(targetItem, TypeInfo(TItem), fItemCount - fCount);
   end;
 
   // resize the items array, safe now that we have compacted it

@@ -487,7 +487,7 @@ type
         destructor Destroy; override;
         function MoveNext: Boolean;
       end;
-      ItemType = TArrayManager<T>;
+      ItemType = TTypeInfo<T>;
       PT = ^T;
   {$ENDREGION}
   strict private
@@ -2439,19 +2439,36 @@ begin
   end;
   if fTail <= fHead then
   begin
-    ItemType.Move(fItems, fItems, fHead, fHead + offset, oldCapacity - fHead);
-    if offset > 0 then
-      ItemType.Finalize(fItems, fHead, offset)
+    if ItemType.HasWeakRef then
+      MoveManaged(@fItems[fHead], @fItems[fHead + offset], TypeInfo(T), oldCapacity - fHead)
     else
-      ItemType.Finalize(fItems, itemCount, -offset);
+      System.Move(fItems[fHead], fItems[fHead + offset], SizeOf(T) * (oldCapacity - fHead));
+    if offset > 0 then
+    begin
+      if ItemType.HasWeakRef then
+        System.Finalize(fItems[fHead], offset);
+      System.FillChar(fItems[fHead], SizeOf(T) * offset, 0);
+    end
+    else
+    begin
+      if ItemType.HasWeakRef then
+        System.Finalize(fItems[itemCount], -offset);
+      System.FillChar(fItems[itemCount], SizeOf(T) * -offset, 0)
+    end;
     Inc(fHead, offset);
   end
   else
   begin
     if fHead + itemCount > value then
     begin
-      ItemType.Move(fItems, fItems, fHead, 0, itemCount);
-      ItemType.Finalize(fItems, itemCount, fHead);
+      if ItemType.HasWeakRef then
+      begin
+        MoveManaged(@fItems[fHead], @fItems[0], TypeInfo(T), itemCount);
+        System.Finalize(fItems[itemCount], fHead);
+      end
+      else
+        System.Move(fItems[fHead], fItems[0], SizeOf(T) * itemCount);
+      System.FillChar(fItems[itemCount], SizeOf(T) * fHead, 0);
       fHead := 0;
     end;
     fTail := itemCount;

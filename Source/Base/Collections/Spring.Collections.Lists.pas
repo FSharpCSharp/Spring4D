@@ -64,7 +64,7 @@ type
         destructor Destroy; override;
         function MoveNext: Boolean;
       end;
-      ItemType = TArrayManager<T>;
+      ItemType = TTypeInfo<T>;
       {$POINTERMATH ON}
       PT = ^T;
       {$POINTERMATH OFF}
@@ -75,10 +75,7 @@ type
     fCount: Integer;
     fVersion: Integer;
     function CanFastCompare: Boolean; inline;
-    procedure Grow; overload;
-    {$IFNDEF DELPHIXE8_UP}{$HINTS OFF}{$ENDIF}
-    procedure Grow(capacity: Integer); overload;
-    {$IFNDEF DELPHIXE8_UP}{$HINTS ON}{$ENDIF}
+    procedure Grow(capacity: Integer);
     procedure DeleteInternal(index: Integer; action: TCollectionChangedAction);
     function DeleteAllInternal(const match: Predicate<T>;
       action: TCollectionChangedAction; const items: TArray<T>): Integer;
@@ -492,12 +489,6 @@ begin
 {$ENDIF}
 end;
 
-procedure TAbstractArrayList<T>.Grow;
-begin
-  fCapacity := GrowCapacity(fCapacity);
-  SetLength(fItems, fCapacity);
-end;
-
 procedure TAbstractArrayList<T>.Grow(capacity: Integer);
 begin
   fCapacity := GrowCapacity(fCapacity, capacity);
@@ -602,10 +593,9 @@ begin
   InsertInternal(index, item);
 end;
 
-function TAbstractArrayList<T>.InsertInternal(index: Integer;
-  const item: T): Integer;
+function TAbstractArrayList<T>.InsertInternal(index: Integer; const item: T): Integer;
 var
-  listCount: Integer;
+  listCount, tailCount: Integer;
   arrayItem: PT;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -615,7 +605,7 @@ begin
   listCount := Count;
   if listCount = fCapacity then
   begin
-    Grow;
+    Grow(listCount + 1);
     listCount := Count;
   end;
 
@@ -623,15 +613,15 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount);
-  if index <> listCount then
+  arrayItem := @fItems[index];
+  tailCount := listCount - index;
+  if tailCount > 0 then
   begin
     if ItemType.HasWeakRef then
-      ItemType.MoveSlow(fItems, index, index + 1, listCount - index)
+      MoveManaged(arrayItem, arrayItem + 1, TypeInfo(T), tailCount)
     else
     begin
-      listCount := (listCount - index) * SizeOf(T);
-      arrayItem := @fItems[index];
-      System.Move(arrayItem^, (arrayItem + 1)^, listCount);
+      System.Move(arrayItem^, (arrayItem + 1)^, SizeOf(T) * tailCount);
       if ItemType.IsManaged then
         if SizeOf(T) = SizeOf(Pointer) then
           PPointer(arrayItem)^ := nil
@@ -639,7 +629,7 @@ begin
           System.FillChar(arrayItem^, SizeOf(T), 0);
     end;
   end;
-  fItems[index] := item;
+  arrayItem^ := item;
 
   DoNotify(item, caAdded);
   Result := index;
@@ -647,45 +637,47 @@ end;
 
 procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: array of T);
 var
-  listCount, count, i: Integer;
+  listCount, valueCount, tailCount, i: Integer;
+  arrayItem: PT;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
 {$ENDIF}
 
-  count := Length(values);
-  if count = 0 then
+  valueCount := Length(values);
+  if valueCount = 0 then
     Exit;
 
-  listCount := Self.Count;
-  if listCount + count > fCapacity then
-    Grow(listCount + count);
+  listCount := Count;
+  if listCount + valueCount > fCapacity then
+    Grow(listCount + valueCount);
 
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  if index <> listCount then
+  arrayItem := @fItems[index];
+  tailCount := listCount - index;
+  if tailCount > 0 then
   begin
     if ItemType.HasWeakRef then
-      ItemType.MoveSlow(fItems, index, index + count, listCount - index)
+      MoveManaged(arrayItem, arrayItem + valueCount, TypeInfo(T), tailCount)
     else
     begin
-      System.Move(fItems[index], fItems[index + count], SizeOf(T) * (listCount - index));
+      System.Move(arrayItem^, (arrayItem + valueCount)^, SizeOf(T) * tailCount);
       if ItemType.IsManaged then
-        System.FillChar(fItems[index], SizeOf(T) * count, 0);
+        System.FillChar(arrayItem^, SizeOf(T) * valueCount, 0);
     end;
   end;
 
   if ItemType.IsManaged then
-    for i := Low(values) to count - 1 do
-      fItems[index + i] := values[i]
+    MoveManaged(@values[0], arrayItem, TypeInfo(T), valueCount)
   else
-    System.Move(values[0], fItems[index], SizeOf(T) * count);
+    System.Move(values[0], fItems[index], SizeOf(T) * valueCount);
 
-  Inc(fCount, count);
+  Inc(fCount, valueCount);
 
   if Assigned(Notify) then
-    for i := Low(values) to count - 1 do
+    for i := 0 to High(values) do
       Notify(Self, values[i], caAdded);
 end;
 
@@ -693,7 +685,7 @@ procedure TAbstractArrayList<T>.InsertRange(index: Integer;
   const values: IEnumerable<T>);
 var
   intf: IInterface;
-  listCount, count, i: Integer;
+  listCount, valueCount, i: Integer;
   item: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -702,12 +694,12 @@ begin
 
   if Supports(values, ICollection<T>, intf) then
   begin
-    count := ICollection<T>(intf).Count;
-    listCount := Self.Count;
-    if count > 0 then
+    valueCount := ICollection<T>(intf).Count;
+    listCount := Count;
+    if valueCount > 0 then
     begin
-      if listCount + count > fCapacity then
-        Grow(listCount + count);
+      if listCount + valueCount > fCapacity then
+        Grow(listCount + valueCount);
 
       {$Q-}
       Inc(fVersion);
@@ -716,36 +708,24 @@ begin
       if index < listCount then
       begin
         if ItemType.IsManaged then
-          if ItemType.HasWeakRef or (intf = this) then
-            ItemType.MoveSlow(fItems, index, index + count, listCount - index)
-          else
-          begin
-            System.Move(fItems[index], fItems[index + count], SizeOf(T) * (listCount - index));
-            System.FillChar(fItems[index], SizeOf(T) * count, 0);
-          end
+          MoveManaged(@fItems[index], @fItems[index + valueCount], TypeInfo(T), listCount - index)
         else
-          System.Move(fItems[index], fItems[index + count], SizeOf(T) * (listCount - index));
+          System.Move(fItems[index], fItems[index + valueCount], SizeOf(T) * (listCount - index));
       end;
 
       if intf = this then
       begin
         if ItemType.IsManaged then
-        begin
-          ItemType.MoveSlow(fItems, 0, index, index);
-          ItemType.MoveSlow(fItems, index + count, index * 2, listCount - index);
-        end
+          MoveManaged(@fItems[0], @fItems[index], TypeInfo(T), valueCount)
         else
-        begin
-          System.Move(fItems[0], fItems[index], SizeOf(T) * index);
-          System.Move(fItems[index + count], fItems[index * 2], SizeOf(T) * (listCount - index));
-        end;
+          System.Move(fItems[0], fItems[index], SizeOf(T) * valueCount);
       end
       else
         ICollection<T>(intf).CopyTo(fItems, index);
-      Inc(fCount, count);
+      Inc(fCount, valueCount);
 
       if Assigned(Notify) then
-        for i := index to index + count - 1 do
+        for i := index to index + valueCount - 1 do
           Notify(Self, fItems[i], caAdded);
     end;
   end
@@ -794,8 +774,8 @@ end;
 procedure TAbstractArrayList<T>.DeleteInternal(index: Integer;
   action: TCollectionChangedAction);
 var
-  listCount: Integer;
-  arrayItem: PT;
+  listCount, tailCount: Integer;
+  arrayItem, tailItem: PT;
   oldItem: T;
 begin
   {$Q-}
@@ -806,23 +786,25 @@ begin
 
   arrayItem := @fItems[index];
   oldItem := arrayItem^;
-  if index <> listCount then
+  tailItem := @fItems[listCount];
+  tailCount := listCount - index;
+  if tailCount > 0 then
   begin
     if ItemType.HasWeakRef then
-      ItemType.MoveSlow(fItems, index + 1, index, listCount - index)
+      MoveManaged(arrayItem + 1, arrayItem, TypeInfo(T), tailCount)
     else
     begin
       if ItemType.IsManaged then
         arrayItem^ := Default(T);
-      System.Move((arrayItem + 1)^, arrayItem^, SizeOf(T) * (listCount - index));
+      System.Move((arrayItem + 1)^, arrayItem^, SizeOf(T) * tailCount);
       if ItemType.IsManaged then
         if SizeOf(T) = SizeOf(Pointer) then
-          PPointer(@fItems[listCount])^ := nil
+          PPointer(tailItem)^ := nil
         else
-          System.FillChar(fItems[listCount], SizeOf(T), 0);
+          System.FillChar(tailItem^, SizeOf(T), 0);
     end;
   end;
-  fItems[listCount] := Default(T);
+  tailItem^ := Default(T);
 
   if Assigned(Notify) then
     Notify(Self, oldItem, action);
@@ -858,7 +840,10 @@ var
   tailCount, i: Integer;
 begin
   SetLength(oldItems, count);
-  ItemType.Move(fItems, oldItems, index, 0, count);
+  if ItemType.HasWeakRef then
+    MoveManaged(@fItems[index], @oldItems[0], TypeInfo(T), count)
+  else
+    System.Move(fItems[index], oldItems[0], SizeOf(T) * count);
 
   {$Q-}
   Inc(fVersion);
@@ -866,10 +851,15 @@ begin
   tailCount := Self.Count - (index + count);
   if tailCount > 0 then
   begin
-    ItemType.Move(fItems, index + count, index, tailCount);
+    if ItemType.HasWeakRef then
+      MoveManaged(@fItems[index + count], @fItems[index], TypeInfo(T), tailCount)
+    else
+      System.Move(fItems[index + count], fItems[index], SizeOf(T) * tailCount);
     Inc(index, tailCount);
   end;
-  ItemType.Finalize(fItems, index, count);
+  if ItemType.HasWeakRef then
+    System.Finalize(fItems[index], count);
+  System.FillChar(fItems[index], SizeOf(T) * count, 0);
   Dec(fCount, count);
 
   if doClear then
@@ -894,6 +884,7 @@ end;
 procedure TAbstractArrayList<T>.DeleteRange(index, count: Integer);
 var
   tailCount: Integer;
+  source, target: PT;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(index >= 0, 'index');
@@ -913,24 +904,25 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
-  if ItemType.IsManaged then
-    FinalizeArray(@fItems[index], TypeInfo(T), count);
-
   tailCount := Self.Count - (index + count);
+  Dec(fCount, count);
+  target := @fItems[index];
+  source := @fItems[index + count];
+
+  if ItemType.IsManaged then
+    FinalizeArray(target, TypeInfo(T), count);
   if tailCount > 0 then
   begin
     if ItemType.HasWeakRef then
     begin
-      ItemType.MoveSlow(fItems, index + count, index, tailCount);
-      FinalizeArray(@fItems[index + count], TypeInfo(T), tailCount);
+      MoveManaged(source, target, TypeInfo(T), tailCount);
+      FinalizeArray(source, TypeInfo(T), tailCount);
     end
     else
-      System.Move(fItems[index + count], fItems[index], SizeOf(T) * tailCount);
-    Inc(index, count);
+      System.Move(source^, target^, SizeOf(T) * tailCount);
+    Inc(target, count);
   end;
-  if not ItemType.HasWeakRef then
-    System.FillChar(fItems[index], SizeOf(T) * count, 0);
-  Dec(fCount, count);
+  System.FillChar(target^, SizeOf(T) * count, 0);
 end;
 
 procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
@@ -950,6 +942,7 @@ end;
 
 procedure TAbstractArrayList<T>.Move(currentIndex, newIndex: Integer);
 var
+  sourceIndex, targetIndex, itemCount: Integer;
   temp: T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -960,19 +953,33 @@ begin
   if currentIndex = newIndex then
     Exit;
 
-  temp := fItems[currentIndex];
-
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
+  temp := fItems[currentIndex];
+  if ItemType.IsManaged then
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
-    ItemType.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
+  begin
+    targetIndex := currentIndex;
+    sourceIndex := targetIndex + 1;
+    itemCount := newIndex - currentIndex;
+  end
   else
-    ItemType.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
-
+  begin
+    sourceIndex := newIndex;
+    targetIndex := sourceIndex + 1;
+    itemCount := currentIndex - newIndex;
+  end;
   if ItemType.HasWeakRef then
+  begin
+    MoveManaged(@fItems[sourceIndex], @fItems[targetIndex], TypeInfo(T), itemCount);
     FinalizeArray(@fItems[newIndex], TypeInfo(T), 1);
+  end
+  else
+    System.Move(fItems[sourceIndex], fItems[targetIndex], SizeOf(T) * itemCount);
+
   if ItemType.IsManaged then
     if SizeOf(T) = SizeOf(Pointer) then
       PPointer(@fItems[newIndex])^ := nil
@@ -1185,7 +1192,10 @@ begin
     Exit;
 
   SetLength(Result, count);
-  ItemType.Move(fItems, Result, index, 0, count);
+  if ItemType.HasWeakRef then
+    MoveManaged(@fItems[index], @Result[0], TypeInfo(T), count)
+  else
+    System.Move(fItems[index], Result[0], SizeOf(T) * count);
 
   {$Q-}
   Inc(fVersion);
@@ -1193,10 +1203,15 @@ begin
   tailCount := Self.Count - (index + count);
   if tailCount > 0 then
   begin
-    ItemType.Move(fItems, index + count, index, tailCount);
+    if ItemType.HasWeakRef then
+      MoveManaged(@fItems[index + count], @fItems[index], TypeInfo(T), tailCount)
+    else
+      System.Move(fItems[index + count], fItems[index], SizeOf(T) * tailCount);
     Inc(index, tailCount);
   end;
-  ItemType.Finalize(fItems, index, count);
+  if ItemType.HasWeakRef then
+    System.Finalize(fItems[index], count);
+  System.FillChar(fItems[index], SizeOf(T) * count, 0);
   Dec(fCount, count);
 
   if Assigned(Notify) then

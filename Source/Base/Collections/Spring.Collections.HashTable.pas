@@ -236,21 +236,23 @@ end;
 procedure THashTable.Pack;
 var
   sourceItem, targetItem: PByte;
+  itemType: PTypeInfo;
   i: Integer;
 begin
   sourceItem := fItems;
   targetItem := fItems;
+  itemType := fItemsInfo.TypeData.elType2^;
   for i := 0 to fItemCount - 1 do
   begin
     if PInteger(sourceItem)^ >= 0 then // not removed
     begin
       if targetItem < sourceItem then // need to fill a gap caused by previous items that were removed
-        CopyRecord(targetItem, sourceItem, fItemsInfo.TypeData.elType2^);
+        CopyRecord(targetItem, sourceItem, itemType);
       Inc(targetItem, fItemSize);
     end;
     Inc(sourceItem, fItemSize);
   end;
-  FinalizeArray(targetItem, fItemsInfo.TypeData.elType2^, fItemCount - fCount); // clear remaining items that were previously moved
+  FinalizeArray(targetItem, itemType, fItemCount - fCount); // clear remaining items that were previously moved
 end;
 
 function THashTable.Find(const key; var entry: THashTableEntry): Boolean;
