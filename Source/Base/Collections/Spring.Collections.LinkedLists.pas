@@ -256,7 +256,7 @@ begin
 {$ENDIF}
   end;
 
-  for i := Low(oldItems) to High(oldItems) do
+  for i := 0 to DynArrayHigh(oldItems) do
     Changed(oldItems[i], caRemoved);
 end;
 

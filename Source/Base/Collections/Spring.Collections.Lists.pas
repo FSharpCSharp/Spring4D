@@ -1227,7 +1227,7 @@ var
   itemCount: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(Length(values), index, Count);
+  Guard.CheckRange(DynArrayLength(values), index, Count);
 {$ENDIF}
 
   itemCount := Count;
@@ -1416,7 +1416,7 @@ procedure TSortedList<T>.AddRange(const values: array of T);
 var
   i: Integer;
 begin
-  for i := Low(values) to High(values) do
+  for i := 0 to High(values) do
     Add(values[i]);
 end;
 
@@ -1593,13 +1593,13 @@ begin
     Reset;
 
   if Assigned(Notify) then
-    for i := Low(oldItems) to DynArrayHigh(oldItems) do
+    for i := 0 to DynArrayHigh(oldItems) do
     begin
       Notify(Self, oldItems[i], caRemoved);
       oldItems[i].Free;
     end
   else
-    for i := Low(oldItems) to DynArrayHigh(oldItems) do
+    for i := 0 to DynArrayHigh(oldItems) do
       oldItems[i].Free;
 end;
 
@@ -1781,7 +1781,7 @@ begin
   Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
 {$ENDIF}
 
-  for i := Low(values) to High(values) do
+  for i := 0 to High(values) do
   begin
     Insert(index, values[i]);
     Inc(index);

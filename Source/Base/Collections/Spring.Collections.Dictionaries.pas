@@ -1236,7 +1236,7 @@ begin
   newCapacity := Capacity;
   if newCapacity = 0 then
     newCapacity := MinCapacity
-  else if 2 * fCount >= Length(fKeyBuckets) then
+  else if 2 * fCount >= DynArrayLength(fKeyBuckets) then
     // only grow if load factor is greater than 0.5
     newCapacity := newCapacity * 2;
   Rehash(newCapacity);

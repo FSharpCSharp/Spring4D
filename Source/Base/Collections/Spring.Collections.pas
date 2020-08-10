@@ -3223,8 +3223,8 @@ type
     /// </returns>
     class function Empty<T>: IReadOnlyList<T>; static;
 
-    class function From<T>(const source: array of T): IReadOnlyList<T>; overload; static;
-    class function From<T>(const source: TArray<T>): IReadOnlyList<T>; overload; static;
+    class function From<T>(const values: array of T): IReadOnlyList<T>; overload; static;
+    class function From<T>(const values: TArray<T>): IReadOnlyList<T>; overload; static;
 
     class function Min<T>(const source: IEnumerable<T>;
       const selector: Func<T, Integer>): Integer; overload; static;
@@ -3400,7 +3400,7 @@ var
   item: TRttiType;
 begin
   typeParams := GetGenericTypeParameters(typeInfo.TypeName);
-  if Length(typeParams) <> 1 then
+  if DynArrayLength(typeParams) <> 1 then
     Exit(nil);
 
   qualifiedName := typeParams[0];
@@ -6713,25 +6713,25 @@ begin
     TInterfaceArrayIterator.CreateFromArray(source, count, elementType);
 end;
 
-class function TEnumerable.From<T>(const source: array of T): IReadOnlyList<T>;
+class function TEnumerable.From<T>(const values: array of T): IReadOnlyList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
   case GetTypeKind(T) of
-    tkClass: InternalFrom_Object_OpenArray(@source, Length(source), Result, TypeInfo(T));
-    tkInterface: InternalFrom_Interface_OpenArray(@source, Length(source), Result, TypeInfo(T));
+    tkClass: InternalFrom_Object_OpenArray(@values, Length(values), Result, TypeInfo(T));
+    tkInterface: InternalFrom_Interface_OpenArray(@values, Length(values), Result, TypeInfo(T));
   else{$ELSE}begin{$ENDIF}
-    Result := TArrayIterator<T>.Create(source);
+    Result := TArrayIterator<T>.Create(values);
   end;
 end;
 
-class function TEnumerable.From<T>(const source: TArray<T>): IReadOnlyList<T>;
+class function TEnumerable.From<T>(const values: TArray<T>): IReadOnlyList<T>;
 begin
 {$IFDEF DELPHIXE7_UP}
   case GetTypeKind(T) of
-    tkClass: InternalFrom_Object_DynArray(source, Result, TypeInfo(T));
-    tkInterface: InternalFrom_Interface_DynArray(source, Result, TypeInfo(T));
+    tkClass: InternalFrom_Object_DynArray(values, Result, TypeInfo(T));
+    tkInterface: InternalFrom_Interface_DynArray(values, Result, TypeInfo(T));
   else{$ELSE}begin{$ENDIF}
-    Result := TArrayIterator<T>.Create(source);
+    Result := TArrayIterator<T>.Create(values);
   end;
 end;
 

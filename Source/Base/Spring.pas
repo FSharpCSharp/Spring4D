@@ -3864,7 +3864,9 @@ function DynArrayLength(const A: Pointer): NativeInt;
 begin
   Result := NativeInt(A);
   if Result <> 0 then
-    Result := PNativeInt(PByte(Result) - SizeOf(NativeInt))^;
+    {$POINTERMATH ON}
+    Result := PNativeInt(Result)[-1];
+    {$POINTERMATH OFF}
 end;
 
 function DynArrayHigh(const A: Pointer): NativeInt;

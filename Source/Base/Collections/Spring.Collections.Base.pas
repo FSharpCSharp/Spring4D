@@ -291,8 +291,8 @@ type
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
-    constructor Create(const source: TArray<T>); overload;
-    constructor Create(const source: array of T); overload;
+    constructor Create(const values: TArray<T>); overload;
+    constructor Create(const values: array of T); overload;
 
   {$REGION 'Implements IEnumerable<T>'}
     function ToArray: TArray<T>;
@@ -1460,7 +1460,7 @@ begin
     begin
       if Result = nil then
         SetLength(Result, 4)
-      else if Length(Result) = count then
+      else if DynArrayLength(Result) = count then
         SetLength(Result, count * 2);
       Result[count] := IEnumerator<T>(intf).Current;
       Inc(count);
@@ -1824,7 +1824,7 @@ procedure TCollectionBase<T>.AddRange(const values: array of T);
 var
   i: Integer;
 begin
-  for i := Low(values) to High(values) do
+  for i := 0 to High(values) do
     ICollection<T>(this).Add(values[i]);
 end;
 
@@ -1856,7 +1856,7 @@ var
   enumerator: IEnumerator<T>;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(Length(values), index, IEnumerable<T>(this).Count);
+  Guard.CheckRange(DynArrayLength(values), index, IEnumerable<T>(this).Count);
 {$ENDIF}
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
@@ -1877,7 +1877,7 @@ procedure TCollectionBase<T>.ExtractRange(const values: array of T);
 var
   i: Integer;
 begin
-  for i := Low(values) to High(values) do
+  for i := 0 to High(values) do
     ICollection<T>(this).Extract(values[i]);
 end;
 
@@ -1942,7 +1942,7 @@ begin
 
   Result := 0;
   values := ToArray;
-  for i := Low(values) to High(values) do
+  for i := 0 to DynArrayHigh(values) do
     if not Assigned(match) or match(values[i]) then
     begin
       ICollection<T>(this).Extract(values[i]);
@@ -1971,7 +1971,7 @@ var
   i: Integer;
 begin
   Result := 0;
-  for i := Low(values) to High(values) do
+  for i := 0 to High(values) do
     if ICollection<T>(this).Remove(values[i]) then
       Inc(Result);
 end;
@@ -2417,7 +2417,7 @@ var
 begin
   Guard.CheckRange(value >= Count, 'capacity');
 
-  offset := value - Length(fItems);
+  offset := value - DynArrayLength(fItems);
   if offset = 0 then
     Exit;
 
@@ -2431,7 +2431,7 @@ begin
     Exit;
   end;
 
-  oldCapacity := Length(fItems);
+  oldCapacity := DynArrayLength(fItems);
   if offset > 0 then
   begin
     fCapacity := value;
@@ -2880,34 +2880,34 @@ end;
 
 {$REGION 'TArrayIterator<T>'}
 
-constructor TArrayIterator<T>.Create(const source: TArray<T>);
+constructor TArrayIterator<T>.Create(const values: TArray<T>);
 begin
   inherited Create;
   fIterator.MoveNext := @TIteratorRec<T>.Ordered;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
-  fIterator.Items := source;
+  fIterator.Items := values;
 end;
 
-constructor TArrayIterator<T>.Create(const source: array of T);
+constructor TArrayIterator<T>.Create(const values: array of T);
 var
   count: Integer;
 begin
   inherited Create;
   fIterator.MoveNext := @TIteratorRec<T>.Ordered;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
-  count := Length(source);
+  count := Length(values);
   SetLength(fIterator.Items, count);
   if TType.IsManaged<T> then
-    System.CopyArray(@fIterator.Items[0], @source[0], TypeInfo(T), count)
+    System.CopyArray(@fIterator.Items[0], @values[0], TypeInfo(T), count)
   else
-    System.Move(source[0], fIterator.Items[0], count * SizeOf(T));
+    System.Move(values[0], fIterator.Items[0], count * SizeOf(T));
 end;
 
 procedure TArrayIterator<T>.CopyTo(var values: TArray<T>; index: Integer);
 var
   count: Integer;
 begin
-  count := Length(fIterator.Items);
+  count := DynArrayLength(fIterator.Items);
   if count > 0 then
     if TType.IsManaged<T> then
       System.CopyArray(@values[index], @fIterator.Items[0], TypeInfo(T), count)
@@ -2917,7 +2917,7 @@ end;
 
 function TArrayIterator<T>.GetCount: Integer;
 begin
-  Result := Length(fIterator.Items);
+  Result := DynArrayLength(fIterator.Items);
 end;
 
 function TArrayIterator<T>.GetIsEmpty: Boolean;
@@ -2928,7 +2928,7 @@ end;
 function TArrayIterator<T>.GetItem(index: Integer): T;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Length(fIterator.Items)), 'index');
+  Guard.CheckRange((index >= 0) and (index < DynArrayLength(fIterator.Items)), 'index');
 {$ENDIF}
 
   Result := fIterator.Items[index];
@@ -2936,12 +2936,12 @@ end;
 
 function TArrayIterator<T>.IndexOf(const item: T): Integer;
 begin
-  Result := IndexOf(item, 0, Length(fIterator.Items));
+  Result := IndexOf(item, 0, DynArrayLength(fIterator.Items));
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
 begin
-  Result := IndexOf(item, index, Length(fIterator.Items) - index);
+  Result := IndexOf(item, index, DynArrayLength(fIterator.Items) - index);
 end;
 
 function TArrayIterator<T>.IndexOf(const item: T; index,
@@ -2961,7 +2961,7 @@ end;
 function TArrayIterator<T>.ToArray: TArray<T>;
 begin
   Result := fIterator.Items;
-  SetLength(Result, Length(Result));
+  SetLength(Result, DynArrayLength(Result));
 end;
 
 {$ENDREGION}
@@ -3124,7 +3124,7 @@ end;
 
 function TIteratorRec<T>.Ordered: Boolean;
 begin
-  Result := Count < Length(Items);
+  Result := Count < DynArrayLength(Items);
   if Result then
   begin
     Current := Items[Count];
@@ -3227,7 +3227,7 @@ begin
     TIteratorKind.Ordered:
       TArray.Sort<T>(Items, IComparer<T>(Predicate));
     TIteratorKind.Reversed:
-      Count := Length(Items);
+      Count := DynArrayLength(Items);
     TIteratorKind.Shuffled:
       TArray.Shuffle<T>(Items);
   end;

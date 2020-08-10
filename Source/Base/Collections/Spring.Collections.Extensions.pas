@@ -1310,7 +1310,7 @@ end;
 procedure TReversedIterator<T>.Start;
 begin
   fBuffer := Source.ToArray;
-  fIndex := Length(fBuffer);
+  fIndex := DynArrayLength(fBuffer);
 end;
 
 {$ENDREGION}
@@ -2719,7 +2719,7 @@ begin
 {$ENDIF}
 
   fBuffer := source.ToArray;
-  fMap := sorter.Sort(fBuffer, Length(fBuffer));
+  fMap := sorter.Sort(fBuffer, DynArrayLength(fBuffer));
   fIndex := -1;
 end;
 
@@ -2730,7 +2730,7 @@ end;
 
 function TOrderedEnumerable<T>.TEnumerator.MoveNext: Boolean;
 begin
-  Result := fIndex < High(fBuffer);
+  Result := fIndex < DynArrayHigh(fBuffer);
   if Result then
     Inc(fIndex);
 end;
@@ -2813,7 +2813,7 @@ end;
 
 function TOrderedIterator<T>.TryMoveNext(var current: T): Boolean;
 begin
-  Result := fIndex < Length(fValues);
+  Result := fIndex < DynArrayLength(fValues);
   if Result then
   begin
     current := fValues[fIndex];

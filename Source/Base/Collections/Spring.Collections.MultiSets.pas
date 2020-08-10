@@ -333,8 +333,8 @@ var
   localSet: IMultiSet<T>;
 begin
   entries := IMultiSet<T>(this).Entries.ToArray;
-  SetLength(items, Length(entries));
-  for i := 0 to High(entries) do
+  SetLength(items, DynArrayLength(entries));
+  for i := 0 to DynArrayHigh(entries) do
   begin
     items[i].Key := i;
     items[i].Value := entries[i];
@@ -352,7 +352,7 @@ begin
         Result := 1;
     end);
   localSet := THashMultiSet<T>.Create(nil);
-  for i := 0 to High(items) do
+  for i := 0 to DynArrayHigh(items) do
     localSet.Add(items[i].Value.Item, items[i].Value.Count);
   Result := localSet as IReadOnlyMultiSet<T>;
 end;

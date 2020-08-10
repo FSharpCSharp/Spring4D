@@ -513,7 +513,7 @@ uses
 
 function TBlockAllocatedArray<T>.GetCapacity: Integer;
 begin
-  Result := Length(fItems) * BlockSize;
+  Result := DynArrayLength(fItems) * BlockSize;
 end;
 
 function TBlockAllocatedArray<T>.GetItem(index: Integer): PT;
@@ -525,7 +525,7 @@ procedure TBlockAllocatedArray<T>.Grow;
 var
   n: Integer;
 begin
-  n := Length(fItems);
+  n := DynArrayLength(fItems);
   SetLength(fItems, n + 1);
   SetLength(fItems[n], BlockSize);
 end;
@@ -534,7 +534,7 @@ procedure TBlockAllocatedArray<T>.SetCapacity(const value: Integer);
 var
   oldLength, newLength, i: Integer;
 begin
-  oldLength := Length(fItems);
+  oldLength := DynArrayLength(fItems);
   newLength := value shr BlockSizeBits;
   if value and (BlockSize - 1) > 0 then
     Inc(newLength);

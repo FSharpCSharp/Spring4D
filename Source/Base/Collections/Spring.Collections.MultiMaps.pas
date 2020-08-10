@@ -612,7 +612,7 @@ procedure TMultiMapBase<TKey, TValue>.AddRange(const key: TKey;
 var
   i: Integer;
 begin
-  for i := Low(values) to High(values) do
+  for i := 0 to High(values) do
     Add(key, values[i]);
 end;
 
