@@ -155,7 +155,6 @@ destructor TAbstractStack<T>.Destroy;
 begin
   IStack<T>(this).Clear;
   fOnChanged.Free;
-  inherited Destroy;
 end;
 
 procedure TAbstractStack<T>.DoNotify(const item: T; action: TCollectionChangedAction);

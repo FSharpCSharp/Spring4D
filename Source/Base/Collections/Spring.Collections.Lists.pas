@@ -700,7 +700,7 @@ begin
           System.Move(fItems[index], fItems[index + valueCount], SizeOf(T) * (listCount - index));
       end;
 
-      if intf = this then
+      if IInterface(this) = intf then
       begin
         if ItemType.IsManaged then
           MoveManaged(@fItems[0], @fItems[index], TypeInfo(T), valueCount)

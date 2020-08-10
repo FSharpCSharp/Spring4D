@@ -456,7 +456,6 @@ destructor TWrappedCollection<T>.Destroy;
 begin
   if Assigned(fOnDestroy) then
     fOnDestroy.Remove(HandleDestroy);
-  inherited Destroy;
 end;
 
 function TWrappedCollection<T>.Contains(

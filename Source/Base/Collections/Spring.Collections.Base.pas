@@ -43,12 +43,11 @@ uses
 type
   TEnumerableBase = class abstract(TRefCountedObject)
   protected
-    this: IInterface;
+    this: Pointer;
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
   public
     constructor Create;
-    destructor Destroy; override;
 
     function Any: Boolean; overload;
   end;
@@ -812,12 +811,7 @@ constructor TEnumerableBase.Create;
 begin
   // child classes must implement IEnumerable<T>
   // can use any specialization as they all have the same GUID
-  Pointer(this) := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<Integer>).IOffset);
-end;
-
-destructor TEnumerableBase.Destroy;
-begin
-  Pointer(this) := nil;
+  this := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<Integer>).IOffset);
 end;
 
 function TEnumerableBase.GetCount: Integer;
@@ -1002,7 +996,7 @@ function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>): Boolean;
 var
   comparer: IEqualityComparer<T>;
 begin
-  if this = values then
+  if IInterface(this) = values then
     Result := True
   else
   begin
@@ -1805,7 +1799,6 @@ end;
 destructor TCollectionBase<T>.Destroy;
 begin
   fOnChanged.Free;
-  inherited Destroy;
 end;
 
 procedure TCollectionBase<T>.EventChanged(Sender: TObject);
@@ -2210,7 +2203,6 @@ destructor TCircularArrayBuffer<T>.Destroy;
 begin
   Clear;
   fOnChanged.Free;
-  inherited Destroy;
 end;
 
 procedure TCircularArrayBuffer<T>.Clear;

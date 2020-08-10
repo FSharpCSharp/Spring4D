@@ -2196,7 +2196,6 @@ end;
 destructor TJoinIterator<TOuter, TInner, TKey, TResult>.Destroy;
 begin
   fLookup.Free;
-  inherited Destroy;
 end;
 
 function TJoinIterator<TOuter, TInner, TKey, TResult>.Clone: TIterator<TResult>;
@@ -2286,7 +2285,6 @@ end;
 destructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Destroy;
 begin
   fLookup.Free;
-  inherited Destroy;
 end;
 
 function TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Clone: TIterator<TResult>;
