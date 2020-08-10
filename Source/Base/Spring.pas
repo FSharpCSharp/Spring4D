@@ -3014,6 +3014,8 @@ const
 
   ObjCastGUID: TGUID = '{CEDF24DE-80A4-447D-8C75-EB871DC121FD}';
 
+  FieldVisibility = [{vcPrivate..vcProtected}];
+
 {$IFNDEF DELPHIXE3_UP}
 {$IF SizeOf(Pointer) = 4}
   PROPSLOT_MASK    = $FF000000;

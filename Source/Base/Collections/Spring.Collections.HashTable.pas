@@ -32,6 +32,8 @@ uses
   Spring,
   TypInfo;
 
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(FieldVisibility)}{$ENDIF}
+
 type
   TEqualsMethod = function(const left, right): Boolean of object;
 

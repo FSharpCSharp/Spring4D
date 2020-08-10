@@ -38,7 +38,7 @@ uses
   Spring.Collections.Events,
   Spring.Collections.HashTable;
 
-{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
+{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(FieldVisibility)}{$ENDIF}
 
 type
   TEnumerableBase = class abstract(TRefCountedObject)
