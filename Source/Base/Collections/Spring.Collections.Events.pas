@@ -36,18 +36,18 @@ uses
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(FieldVisibility)}{$ENDIF}
 
 type
-  TCollectionChangedEventImpl<T> = class(TEventBase, ICollectionChangedEvent<T>)
+  TCollectionChangedEventImpl<T> = class(TEventBase, IEvent, ICollectionChangedEvent<T>)
   private
-    function GetInvoke: TCollectionChangedEvent<T>;
+    function GetInvoke: TCollectionChangedEvent<T>; overload;
     procedure InvokeSafe(Sender: TObject; const Item: T;
       Action: TCollectionChangedAction);
   public
-    constructor Create;
+    procedure AfterConstruction; override;
 {$IFNDEF AUTOREFCOUNT}
     procedure Free;
 {$ENDIF}
-    procedure Add(handler: TCollectionChangedEvent<T>); inline;
-    procedure Remove(handler: TCollectionChangedEvent<T>); inline;
+    procedure Add(handler: TCollectionChangedEvent<T>); overload; inline;
+    procedure Remove(handler: TCollectionChangedEvent<T>); overload; inline;
     procedure Invoke(Sender: TObject; const Item: T; Action: TCollectionChangedAction);
   end;
 
@@ -56,9 +56,9 @@ implementation
 
 {$REGION 'TCollectionChangedEventImpl<T>'}
 
-constructor TCollectionChangedEventImpl<T>.Create;
+procedure TCollectionChangedEventImpl<T>.AfterConstruction;
 begin
-  inherited Create;
+  inherited AfterConstruction;
   TCollectionChangedEvent<T>(fInvoke) := Invoke;
 {$IFNDEF AUTOREFCOUNT}
   _AddRef;

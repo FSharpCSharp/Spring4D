@@ -148,7 +148,7 @@ type
     function CreateMultiSet: IMultiSet<T>; override;
   public
     constructor Create(const comparer: IEqualityComparer<T>);
-    destructor Destroy; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
@@ -285,7 +285,7 @@ type
     function CreateMultiSet: IMultiSet<T>; override;
   public
     constructor Create(const comparer: IComparer<T>);
-    destructor Destroy; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
@@ -384,7 +384,6 @@ end;
 
 constructor THashMultiSet<T>.Create(const comparer: IEqualityComparer<T>);
 begin
-  inherited Create;
   if Assigned(comparer) then
     fComparer := comparer
   else
@@ -395,12 +394,12 @@ begin
   fEntries := TEntryCollection.Create(Self);
 end;
 
-destructor THashMultiSet<T>.Destroy;
+procedure THashMultiSet<T>.BeforeDestruction;
 begin
   Clear;
   fEntries.Free;
   fItems.Free;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 function THashMultiSet<T>.CreateMultiSet: IMultiSet<T>;
@@ -669,7 +668,6 @@ end;
 constructor THashMultiSet<T>.TEntryCollection.Create(
   const source: THashMultiSet<T>);
 begin
-  inherited Create;
   fSource := source;
 end;
 
@@ -782,19 +780,18 @@ end;
 
 constructor TTreeMultiSet<T>.Create(const comparer: IComparer<T>);
 begin
-  inherited Create;
   fTree := TRedBlackTree<T, Integer>.Create(comparer);
   fItems := TItemCollection.Create(Self);
   fEntries := TEntryCollection.Create(Self);
 end;
 
-destructor TTreeMultiSet<T>.Destroy;
+procedure TTreeMultiSet<T>.BeforeDestruction;
 begin
   Clear;
   fEntries.Free;
   fItems.Free;
   fTree.Free;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 function TTreeMultiSet<T>.CreateMultiSet: IMultiSet<T>;
@@ -1041,7 +1038,6 @@ end;
 constructor TTreeMultiSet<T>.TItemCollection.Create(
   const source: TTreeMultiSet<T>);
 begin
-  inherited Create;
   fSource := source;
 end;
 
@@ -1127,7 +1123,6 @@ end;
 constructor TTreeMultiSet<T>.TEntryCollection.Create(
   const source: TTreeMultiSet<T>);
 begin
-  inherited Create;
   fSource := source;
 end;
 

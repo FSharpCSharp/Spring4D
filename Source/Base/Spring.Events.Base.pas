@@ -36,10 +36,12 @@ uses
   Spring;
 
 type
+  TEventBaseClass = class of TEventBase;
+
   /// <summary>
   ///   Base class for multicast event implementation
   /// </summary>
-  TEventBase = class(TInterfacedObject, IEvent)
+  TEventBase = class(TRefCountedObject)
   public type
     TCollectionNotification = (cnAdded, cnRemoved, cnExtracted);
   strict protected
@@ -78,12 +80,10 @@ type
     constructor Create(const threadSafe: Boolean = True);
     destructor Destroy; override;
 
-  {$REGION 'Implements IEvent'}
     procedure Add(const handler: TMethodPointer);
     procedure Remove(const handler: TMethodPointer);
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
-  {$ENDREGION}
 
     property CanInvoke: Boolean read GetCanInvoke;
     property Enabled: Boolean read GetEnabled write SetEnabled;
@@ -93,16 +93,11 @@ type
     property UseFreeNotification: Boolean read GetUseFreeNotification write SetUseFreeNotification;
   end;
 
-  TEventBase<T> = class(TEventBase, IEvent<T>)
+  TEventBase<T> = class(TEventBase, IEvent, IEvent<T>)
   protected
-  {$REGION 'Property Accessors'}
-    function GetInvoke: T;
-  {$ENDREGION}
-  public
-  {$REGION 'Implements IEvent<T>'}
-    procedure Add(handler: T);
-    procedure Remove(handler: T);
-  {$ENDREGION}
+    function GetInvoke: T; overload;
+    procedure Add(handler: T); overload;
+    procedure Remove(handler: T); overload;
   end;
 
 implementation

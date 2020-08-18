@@ -92,7 +92,7 @@ type
     function TryGetFirst(var value: T): Boolean; overload;
     function TryGetLast(var value: T): Boolean; overload;
   public
-    destructor Destroy; override;
+    procedure BeforeDestruction; override;
 
     function GetEnumerator: IEnumerator<T>;
 
@@ -128,10 +128,10 @@ uses
 
 {$REGION 'TLinkedList<T>'}
 
-destructor TLinkedList<T>.Destroy;
+procedure TLinkedList<T>.BeforeDestruction;
 begin
   Clear;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 function TLinkedList<T>.Add(const item: T): Boolean;

@@ -100,7 +100,8 @@ type
       const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>;
       ownerships: TDictionaryOwnerships);
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TKeyValuePair>;
@@ -367,7 +368,8 @@ type
       const keyComparer: IEqualityComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>;
       ownerships: TDictionaryOwnerships);
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TKeyValuePair>;
@@ -510,7 +512,8 @@ type
   public
     constructor Create(const keyComparer: IComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>);
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TKeyValuePair>;
@@ -608,40 +611,46 @@ begin
   Guard.CheckRange(capacity >= 0, 'capacity');
 {$ENDIF}
 
-  if doOwnsKeys in ownerships then
-    if KeyType.Kind <> tkClass then
-      raise Error.NoClassType(KeyType);
+  if TType.Kind<TKey> <> tkClass then
+    if doOwnsKeys in ownerships then
+      raise Error.NoClassType(TypeInfo(TKey));
 
-  if doOwnsValues in ownerships then
-    if ValueType.Kind <> tkClass then
-      raise Error.NoClassType(ValueType);
+  if TType.Kind<TValue> <> tkClass then
+    if doOwnsValues in ownerships then
+      raise Error.NoClassType(TypeInfo(TValue));
 
-  fComparer := TComparer.Create(nil);
-  inherited Create;
   fOwnerships := ownerships;
-  if Assigned(keyComparer) then
-    fKeyComparer := keyComparer
-  else
-    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, KeyType, SizeOf(TKey)));
-  if Assigned(valueComparer) then
-    fValueComparer := valueComparer
-  else
-    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, ValueType, SizeOf(TValue)));
-
-  fKeys := TKeyCollection.Create(Self, @fHashTable, KeyType, fKeyComparer, 0);
-  fValues := TValueCollection.Create(Self, @fHashTable, ValueType, fValueComparer, SizeOf(TKey));
-
-  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
+  fKeyComparer := keyComparer;
+  fValueComparer := valueComparer;
 
   SetCapacity(capacity);
 end;
 
-destructor TDictionary<TKey, TValue>.Destroy;
+procedure TDictionary<TKey, TValue>.AfterConstruction;
+var
+  keyType, valueType: PTypeInfo;
+begin
+  fComparer := TComparer.Create(nil);
+  inherited AfterConstruction;
+
+  keyType := GetKeyType;
+  valueType := GetValueType;
+  if not Assigned(fKeyComparer) then
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, keyType, SizeOf(TKey)));
+  if not Assigned(fValueComparer) then
+    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, valueType, SizeOf(TValue)));
+  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
+
+  fKeys := TKeyCollection.Create(Self, @fHashTable, keyType, fKeyComparer, 0);
+  fValues := TValueCollection.Create(Self, @fHashTable, valueType, fValueComparer, SizeOf(TKey));
+end;
+
+procedure TDictionary<TKey, TValue>.BeforeDestruction;
 begin
   Clear;
   fKeys.Free;
   fValues.Free;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 procedure TDictionary<TKey, TValue>.KeyChanged(const item: TKey;
@@ -1076,37 +1085,42 @@ begin
   Guard.CheckRange(capacity >= 0, 'capacity');
 {$ENDIF}
 
-  if doOwnsKeys in ownerships then
-    if KeyType.Kind <> tkClass then
-      raise Error.NoClassType(KeyType);
+  if TType.Kind<TKey> <> tkClass then
+    if doOwnsKeys in ownerships then
+      raise Error.NoClassType(TypeInfo(TKey));
 
-  if doOwnsValues in ownerships then
-    if ValueType.Kind <> tkClass then
-      raise Error.NoClassType(ValueType);
+  if TType.Kind<TValue> <> tkClass then
+    if doOwnsValues in ownerships then
+      raise Error.NoClassType(TypeInfo(TValue));
 
-  inherited Create;
   fOwnerships := ownerships;
-  fKeys := TKeyCollection.Create(Self);
-  fValues := TValueCollection.Create(Self);
-  if Assigned(keyComparer) then
-    fKeyComparer := keyComparer
-  else
-    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
-  if Assigned(valueComparer) then
-    fValueComparer := valueComparer
-  else
-    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TValue), SizeOf(TValue)));
-  fInverse := TInverse.Create(Self);
+  fKeyComparer := keyComparer;
+  fValueComparer := valueComparer;
+
   SetCapacity(capacity);
 end;
 
-destructor TBidiDictionary<TKey, TValue>.Destroy;
+procedure TBidiDictionary<TKey, TValue>.AfterConstruction;
+begin
+  inherited AfterConstruction;
+
+  if not Assigned(fKeyComparer) then
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, GetKeyType, SizeOf(TKey)));
+  if not Assigned(fValueComparer) then
+    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, GetValueType, SizeOf(TValue)));
+
+  fKeys := TKeyCollection.Create(Self);
+  fValues := TValueCollection.Create(Self);
+  fInverse := TInverse.Create(Self);
+end;
+
+procedure TBidiDictionary<TKey, TValue>.BeforeDestruction;
 begin
   Clear;
   fInverse.Free;
   fKeys.Free;
   fValues.Free;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 procedure TBidiDictionary<TKey, TValue>.Changed(const item: TPair<TKey, TValue>;
@@ -1821,7 +1835,6 @@ end;
 constructor TBidiDictionary<TKey, TValue>.TInverse.Create(
   const source: TBidiDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
 end;
 
@@ -1957,7 +1970,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetKeyType: PTypeInfo;
 begin
-  Result := fSource.ValueType;
+  Result := fSource.GetValueType;
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetOnKeyChanged: ICollectionChangedEvent<TValue>;
@@ -1990,7 +2003,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetValueType: PTypeInfo;
 begin
-  Result := fSource.KeyType;
+  Result := fSource.GetKeyType;
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.Remove(
@@ -2180,7 +2193,6 @@ end;
 constructor TBidiDictionary<TKey, TValue>.TKeyCollection.Create(
   const source: TBidiDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
 end;
 
@@ -2247,7 +2259,6 @@ end;
 constructor TBidiDictionary<TKey, TValue>.TValueCollection.Create(
   const source: TBidiDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
 end;
 
@@ -2315,31 +2326,32 @@ constructor TSortedDictionary<TKey, TValue>.Create(
   const keyComparer: IComparer<TKey>;
   const valueComparer: IEqualityComparer<TValue>);
 begin
-  fComparer := TComparer.Create(nil);
-  inherited Create;
+  fKeyComparer := keyComparer;
+  fValueComparer := valueComparer
+end;
+
+procedure TSortedDictionary<TKey, TValue>.AfterConstruction;
+begin
+  inherited AfterConstruction;
+
+  if not Assigned(fKeyComparer) then
+    fKeyComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
+  if not Assigned(fValueComparer) then
+    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TValue), SizeOf(TValue)));
+
+  fTree := TRedBlackTree<TKey,TValue>.Create(fKeyComparer);
 
   fKeys := TKeyCollection.Create(Self);
   fValues := TValueCollection.Create(Self);
-
-  fKeyComparer := keyComparer;
-  if Assigned(keyComparer) then
-    fKeyComparer := keyComparer
-  else
-    fKeyComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)));
-  if Assigned(valueComparer) then
-    fValueComparer := valueComparer
-  else
-    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TValue), SizeOf(TValue)));
-  fTree := TRedBlackTree<TKey,TValue>.Create(keyComparer);
 end;
 
-destructor TSortedDictionary<TKey, TValue>.Destroy;
+procedure TSortedDictionary<TKey, TValue>.BeforeDestruction;
 begin
   Clear;
   fTree.Free;
   fKeys.Free;
   fValues.Free;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey;
@@ -2717,7 +2729,6 @@ end;
 constructor TSortedDictionary<TKey, TValue>.TKeyCollection.Create(
   const source: TSortedDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
 end;
 
@@ -2776,7 +2787,6 @@ end;
 constructor TSortedDictionary<TKey, TValue>.TValueCollection.Create(
   const source: TSortedDictionary<TKey, TValue>);
 begin
-  inherited Create;
   fSource := source;
 end;
 
@@ -2838,10 +2848,10 @@ constructor TFoldedDictionary<TKey, TValue>.Create(keyType,
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships);
 begin
+  inherited Create(capacity, keyComparer, valueComparer, ownerships);
   fElementType := elementType;
   fKeyType := keyType;
   fValueType := valueType;
-  inherited Create(capacity, keyComparer, valueComparer, ownerships);
 end;
 
 function TFoldedDictionary<TKey, TValue>.GetElementType: PTypeInfo;
@@ -2870,10 +2880,10 @@ constructor TFoldedBidiDictionary<TKey, TValue>.Create(keyType, valueType,
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships);
 begin
+  inherited Create(capacity, keyComparer, valueComparer, ownerships);
   fElementType := elementType;
   fKeyType := keyType;
   fValueType := valueType;
-  inherited Create(capacity, keyComparer, valueComparer, ownerships);
 end;
 
 function TFoldedBidiDictionary<TKey, TValue>.GetElementType: PTypeInfo;

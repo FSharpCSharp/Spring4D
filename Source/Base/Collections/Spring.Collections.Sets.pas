@@ -106,7 +106,8 @@ type
     property Capacity: Integer read GetCapacity;
   public
     constructor Create(capacity: Integer; const comparer: IEqualityComparer<T>);
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
@@ -159,7 +160,8 @@ type
     function CreateSet: ISet<T>; override;
   public
     constructor Create(const comparer: IComparer<T>);
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
@@ -365,20 +367,23 @@ end;
 
 constructor THashSet<T>.Create(capacity: Integer; const comparer: IEqualityComparer<T>);
 begin
-  inherited Create;
-  if Assigned(comparer) then
-    fKeyComparer := comparer
-  else
-    fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-
-  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
-  fHashTable.Capacity := capacity;
+  fKeyComparer := comparer;
+  SetCapacity(capacity);
 end;
 
-destructor THashSet<T>.Destroy;
+procedure THashSet<T>.AfterConstruction;
+begin
+  inherited AfterConstruction;
+
+  if not Assigned(fKeyComparer) then
+    fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
+end;
+
+procedure THashSet<T>.BeforeDestruction;
 begin
   Clear;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 function THashSet<T>.CreateSet: ISet<T>;
@@ -569,20 +574,25 @@ end;
 constructor TSortedSet<T>.Create(const comparer: IComparer<T>);
 begin
   fComparer := comparer;
-  inherited Create;
+end;
+
+procedure TSortedSet<T>.AfterConstruction;
+begin
+  inherited AfterConstruction;
+
   fTree := TRedBlackTree<T>.Create(fComparer);
+end;
+
+procedure TSortedSet<T>.BeforeDestruction;
+begin
+  Clear;
+  fTree.Free;
+  inherited BeforeDestruction;
 end;
 
 function TSortedSet<T>.CreateSet: ISet<T>;
 begin
   Result := TSortedSet<T>.Create(Comparer);
-end;
-
-destructor TSortedSet<T>.Destroy;
-begin
-  Clear;
-  fTree.Free;
-  inherited Destroy;
 end;
 
 function TSortedSet<T>.Add(const item: T): Boolean;
@@ -738,8 +748,8 @@ end;
 constructor TFoldedHashSet<T>.Create(elementType: PTypeInfo; capacity: Integer;
   const comparer: IEqualityComparer<T>);
 begin
-  fElementType := elementType;
   inherited Create(capacity, comparer);
+  fElementType := elementType;
 end;
 
 function TFoldedHashSet<T>.GetElementType: PTypeInfo;

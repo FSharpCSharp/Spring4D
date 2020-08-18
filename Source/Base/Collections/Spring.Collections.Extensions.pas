@@ -44,7 +44,6 @@ type
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
     class var fInstance: IReadOnlyList<T>;
-    constructor Create; reintroduce;
     function GetCurrent: T;
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
@@ -838,11 +837,6 @@ uses
 
 {$REGION 'TEmptyEnumerable<T>'}
 
-constructor TEmptyEnumerable<T>.Create;
-begin
-  inherited Create;
-end;
-
 class constructor TEmptyEnumerable<T>.Create;
 begin
   fInstance := TEmptyEnumerable<T>.Create;
@@ -1414,7 +1408,6 @@ begin
   Guard.CheckRange(Int64(start) + Int64(count) - 1 <= Int64(MaxInt), 'count');
 {$ENDIF}
 
-  inherited Create;
   fStart := start;
   fCount := count;
 end;
@@ -1534,7 +1527,6 @@ end;
 
 constructor TRangeIterator.TEnumerator.Create(start, count: Integer);
 begin
-  inherited Create;
   fCurrent := start;
   fCount := count;
 end;
@@ -1739,7 +1731,6 @@ begin
   Guard.CheckNotNull(Assigned(selector), 'selector');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
   fSelector := selector;
 end;
@@ -1780,7 +1771,6 @@ begin
   Guard.CheckNotNull(Assigned(selector), 'selector');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
   fSelector := selector;
 end;
@@ -1836,7 +1826,6 @@ begin
   Guard.CheckNotNull(Assigned(elementSelector), 'elementSelector');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
   fKeySelector := keySelector;
   fElementSelector := elementSelector;
@@ -1917,7 +1906,6 @@ begin
   Guard.CheckNotNull(Assigned(resultSelector), 'resultSelector');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
   fKeySelector := keySelector;
   fElementSelector := elementSelector;
@@ -1977,7 +1965,6 @@ end;
 
 constructor TLookup<TKey, TElement>.Create(const comparer: IEqualityComparer<TKey>);
 begin
-  inherited Create;
   fComparer := comparer;
   if not Assigned(fComparer) then
     fComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, TypeInfo(TKey), SizeOf(TKey)));
@@ -2080,7 +2067,6 @@ end;
 
 constructor TLookup<TKey, TElement>.TGrouping.Create(const key: TKey);
 begin
-  inherited Create;
   fKey := key;
   fElements := TCollections.CreateList<TElement>;
 end;
@@ -2184,7 +2170,6 @@ begin
   Guard.CheckNotNull(Assigned(resultSelector), 'resultSelector');
 {$ENDIF}
 
-  inherited Create;
   fOuter := outer;
   fInner := inner;
   fOuterKeySelector := outerKeySelector;
@@ -2273,7 +2258,6 @@ begin
   Guard.CheckNotNull(Assigned(resultSelector), 'resultSelector');
 {$ENDIF}
 
-  inherited Create;
   fOuter := outer;
   fInner := inner;
   fOuterKeySelector := outerKeySelector;
@@ -2330,7 +2314,6 @@ begin
   Guard.CheckNotNull(Assigned(selector), 'selector');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
   fSelector := selector;
 end;
@@ -2396,7 +2379,6 @@ begin
   Guard.CheckNotNull(Assigned(selector), 'selector');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
   fSelector := selector;
 end;
@@ -2467,7 +2449,6 @@ begin
   Guard.CheckNotNull(Assigned(resultSelector), 'resultSelector');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
   fCollectionSelector := collectionSelector;
   fResultSelector := resultSelector;
@@ -2541,7 +2522,6 @@ begin
   Guard.CheckNotNull(Assigned(resultSelector), 'resultSelector');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
   fCollectionSelector := collectionSelector;
   fResultSelector := resultSelector;
@@ -2637,7 +2617,6 @@ begin
   Guard.CheckNotNull(Assigned(keySelector), 'keySelector');
 {$ENDIF}
 
-  inherited Create;
   fKeySelector := keySelector;
   fComparer := comparer;
   if not Assigned(fComparer) then
@@ -2764,7 +2743,6 @@ begin
   end
   else
     fSource := source;
-  inherited Create;
   fKeySelector := keySelector;
   fComparer := comparer;
   if not Assigned(fComparer) then
@@ -2840,7 +2818,6 @@ begin
   Guard.CheckNotNull(Assigned(resultSelector), 'resultSelector');
 {$ENDIF}
 
-  inherited Create;
   fFirst := first;
   fSecond := second;
   fResultSelector := resultSelector;
@@ -3001,7 +2978,6 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
 end;
 
@@ -3045,7 +3021,6 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
 {$ENDIF}
 
-  inherited Create;
   fSource := source;
 end;
 
@@ -3090,7 +3065,6 @@ begin
   Guard.CheckRange(count >= 0, 'count');
 {$ENDIF}
 
-  inherited Create;
   fElement := element;
   fCount := count;
 end;
@@ -3127,7 +3101,6 @@ end;
 constructor TAnonymousIterator<T>.Create(const count: Func<Integer>;
   const items: Func<Integer, T>);
 begin
-  inherited Create;
   fCount := count;
   fItems := items;
 end;

@@ -60,8 +60,7 @@ type
         fCurrent: T;
         function GetCurrent: T;
       public
-        constructor Create(const source: TAbstractArrayList<T>);
-        destructor Destroy; override;
+        procedure BeforeDestruction; override;
         function MoveNext: Boolean;
       end;
       ItemType = TTypeInfo<T>;
@@ -107,7 +106,7 @@ type
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
     constructor Create(const comparer: IComparer<T>); overload;
-    destructor Destroy; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
@@ -386,13 +385,12 @@ uses
 constructor TAbstractArrayList<T>.Create(const comparer: IComparer<T>);
 begin
   fComparer := comparer;
-  inherited Create;
 end;
 
-destructor TAbstractArrayList<T>.Destroy;
+procedure TAbstractArrayList<T>.BeforeDestruction;
 begin
   Clear;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 function TAbstractArrayList<T>.CanFastCompare: Boolean;
@@ -442,8 +440,14 @@ begin
 end;
 
 function TAbstractArrayList<T>.GetEnumerator: IEnumerator<T>;
+var
+  enumerator: TEnumerator;
 begin
-  Result := TEnumerator.Create(Self);
+  _AddRef;
+  enumerator := TEnumerator.Create;
+  enumerator.fSource := Self;
+  enumerator.fVersion := fVersion;
+  Result := enumerator;
 end;
 
 function TAbstractArrayList<T>.GetIsEmpty: Boolean;
@@ -1326,15 +1330,7 @@ end;
 
 {$REGION 'TAbstractArrayList<T>.TEnumerator'}
 
-constructor TAbstractArrayList<T>.TEnumerator.Create(
-  const source: TAbstractArrayList<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TAbstractArrayList<T>.TEnumerator.Destroy;
+procedure TAbstractArrayList<T>.TEnumerator.BeforeDestruction;
 begin
   fSource._Release;
 end;
@@ -1514,7 +1510,6 @@ begin
 {$ENDIF}
 
   fCollection := collection;
-  inherited Create;
 end;
 
 function TCollectionList<T>.Add(const item: T): Integer;
@@ -1931,7 +1926,6 @@ end;
 constructor TAnonymousReadOnlyList<T>.Create(const count: Func<Integer>;
   const items: Func<Integer, T>; const iterator: IEnumerable<T>);
 begin
-  inherited Create;
   fCount := count;
   fItems := items;
   fIterator := iterator;
@@ -2009,9 +2003,8 @@ end;
 constructor TFoldedList<T>.Create(elementType: PTypeInfo;
   const comparer: IComparer<T>; ownsObjects: Boolean);
 begin
-  fElementType := elementType;
   fComparer := comparer;
-  inherited Create;
+  fElementType := elementType;
   SetOwnsObjects(ownsObjects);
 end;
 
@@ -2033,9 +2026,8 @@ end;
 constructor TFoldedSortedList<T>.Create(elementType: PTypeInfo;
   const comparer: IComparer<T>; ownsObjects: Boolean);
 begin
-  fElementType := elementType;
   fComparer := comparer;
-  inherited Create;
+  fElementType := elementType;
   SetOwnsObjects(ownsObjects);
 end;
 

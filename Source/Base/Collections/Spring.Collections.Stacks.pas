@@ -86,7 +86,8 @@ type
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
     constructor Create(capacity: Integer = 0);
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
@@ -147,11 +148,16 @@ uses
 constructor TAbstractStack<T>.Create(capacity: Integer);
 begin
   inherited Create;
-  fOnChanged := TCollectionChangedEventImpl<T>.Create;
   SetCapacity(capacity);
 end;
 
-destructor TAbstractStack<T>.Destroy;
+procedure TAbstractStack<T>.AfterConstruction;
+begin
+  inherited AfterConstruction;
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+procedure TAbstractStack<T>.BeforeDestruction;
 begin
   IStack<T>(this).Clear;
   fOnChanged.Free;
@@ -159,7 +165,7 @@ end;
 
 procedure TAbstractStack<T>.DoNotify(const item: T; action: TCollectionChangedAction);
 begin
-  if fOnChanged.CanInvoke then
+  if Assigned(fOnChanged) and fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item, action);
 end;
 

@@ -29,6 +29,7 @@ unit Spring.Collections.Base;
 interface
 
 uses
+  Classes,
   Generics.Defaults,
   SysUtils,
   TypInfo,
@@ -47,7 +48,7 @@ type
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
   public
-    constructor Create;
+    class function NewInstance: TObject; override;
 
     function Any: Boolean; overload;
   end;
@@ -70,7 +71,7 @@ type
     function TryGetSingle(var value: T; const predicate: Predicate<T>): Boolean; overload;
     property Comparer: IComparer<T> read fComparer;
   public
-    constructor Create;
+    procedure AfterConstruction; override;
 
     function Aggregate(const func: Func<T, T, T>): T;
 
@@ -345,7 +346,7 @@ type
     procedure Start; virtual;
     function TryMoveNext(var current: T): Boolean; virtual; abstract;
   public
-    constructor Create;
+    procedure AfterConstruction; override;
     function GetEnumerator: IEnumerator<T>;
     function MoveNext: Boolean;
   end;
@@ -387,8 +388,8 @@ type
     property OnChanged: TCollectionChangedEventImpl<T> read fOnChanged;
     property Notify: TNotify read fNotify;
   public
-    constructor Create;
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
     procedure AddRange(const values: array of T); overload;
     procedure AddRange(const values: IEnumerable<T>); overload;
@@ -407,7 +408,7 @@ type
       const match: Predicate<T>): Integer; overload;
   end;
 
-  TInnerCollection<T> = class(TEnumerableBase<T>,
+  TInnerCollection<T> = class sealed(TEnumerableBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>)
   private type
   {$REGION 'Nested Types'}
@@ -440,8 +441,9 @@ type
   protected
     function GetElementType: PTypeInfo; override;
   public
-    constructor Create(const source: TRefCountedObject; hashTable: PHashTable;
-      elementType: PTypeInfo; const comparer: IEqualityComparer<T>; offset: Integer);
+    class function Create(const source: TRefCountedObject; hashTable: PHashTable;
+      elementType: PTypeInfo; const comparer: IEqualityComparer<T>;
+      offset: Integer): TInnerCollection<T>; overload; static;
 
   {$REGION 'Implements IInterface'}
     function _AddRef: Integer; stdcall;
@@ -523,7 +525,8 @@ type
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
     constructor Create(capacity: Integer = 0; ownsObjects: Boolean = False);
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
@@ -557,8 +560,8 @@ type
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: T; action: TCollectionChangedAction); inline;
   public
-    constructor Create;
-    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
 
     function Add(const item: TKeyValuePair): Boolean; overload;
     procedure Add(const key: TKey; const value: T); overload;
@@ -568,11 +571,6 @@ type
     function Extract(const item: TKeyValuePair): TKeyValuePair;
 
     function Contains(const item: TKeyValuePair): Boolean; overload;
-
-    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
-    property OnValueChanged: ICollectionChangedEvent<T> read GetOnValueChanged;
-    property KeyType: PTypeInfo read GetKeyType;
-    property ValueType: PTypeInfo read GetValueType;
   end;
 
   /// <summary>
@@ -644,7 +642,9 @@ const
   EmptyBucket        = -1; // must be negative, note choice of BucketSentinelFlag
   UsedBucket         = -2; // likewise
 
-procedure UpdateNotify(actualClass, baseClass: TClass; const event: TEventBase; var code);
+procedure EnsureEventInstance(var event: TEventBase; var result;
+  eventClass: TEventBaseClass; eventChanged: TNotifyEvent);
+procedure UpdateNotify(instance: TObject; baseClass: TClass; const event: TEventBase; var code);
 
 implementation
 
@@ -660,7 +660,39 @@ uses
   Spring.Collections.Lists,
   Spring.ResourceStrings;
 
-procedure UpdateNotify(actualClass, baseClass: TClass; const event: TEventBase; var code);
+type
+  TEventImpl = class(TEventBase, IEvent);
+
+procedure EnsureEventInstance(var event: TEventBase; var result;
+  eventClass: TEventBaseClass; eventChanged: TNotifyEvent);
+
+  procedure CreateEvent(var event: TEventBase; var result;
+    eventClass: TEventBaseClass; eventChanged: TNotifyEvent);
+  var
+    newEvent: TEventBase;
+  begin
+    newEvent := eventClass.Create;
+    if AtomicCmpExchange(Pointer(event), Pointer(newEvent), nil) <> nil then
+      newEvent.Free
+    else
+    begin
+{$IFDEF AUTOREFCOUNT}
+      newEvent.__ObjAddRef;
+{$ENDIF AUTOREFCOUNT}
+      event.OnChanged := eventChanged;
+      eventChanged(event);
+    end;
+    IEvent(result) := TEventImpl(event);
+  end;
+
+begin
+  if Assigned(event) then
+    IntfAssign(IEvent(TEventImpl(event)), IInterface(result))
+  else
+    CreateEvent(event, result, eventClass, eventChanged);
+end;
+
+procedure UpdateNotify(instance: TObject; baseClass: TClass; const event: TEventBase; var code);
 const
   ChangedVirtualIndex = 1;
 var
@@ -668,7 +700,7 @@ var
 begin
 {$POINTERMATH ON}
   baseAddress := PPointer(baseClass)[ChangedVirtualIndex];
-  actualAddress := PPointer(actualClass)[ChangedVirtualIndex];
+  actualAddress := PPointer(instance.ClassType)[ChangedVirtualIndex];
 {$POINTERMATH OFF}
   if (Assigned(event) and event.CanInvoke) or (actualAddress <> baseAddress) then
     Pointer(code) := actualAddress
@@ -802,16 +834,17 @@ end;
 
 {$REGION 'TEnumerableBase'}
 
+class function TEnumerableBase.NewInstance: TObject;
+begin
+  Result := inherited NewInstance;
+
+  // child classes must implement IEnumerable<T>
+  TEnumerableBase(Result).this := Pointer(PByte(Result) + GetInterfaceEntry(IEnumerable<Integer>).IOffset);
+end;
+
 function TEnumerableBase.Any: Boolean;
 begin
   Result := not IEnumerable(this).IsEmpty;
-end;
-
-constructor TEnumerableBase.Create;
-begin
-  // child classes must implement IEnumerable<T>
-  // can use any specialization as they all have the same GUID
-  this := Pointer(PByte(Self) + GetInterfaceEntry(IEnumerable<Integer>).IOffset);
 end;
 
 function TEnumerableBase.GetCount: Integer;
@@ -837,9 +870,9 @@ end;
 
 {$REGION 'TEnumerableBase<T>'}
 
-constructor TEnumerableBase<T>.Create;
+procedure TEnumerableBase<T>.AfterConstruction;
 begin
-  inherited Create;
+  inherited AfterConstruction;
   if not Assigned(fComparer) then
     fComparer := IComparer<T>(_LookupVtableInfo(giComparer, GetElementType, SizeOf(T)));
 end;
@@ -1713,9 +1746,9 @@ end;
 
 {$REGION 'TIterator<T>'}
 
-constructor TIterator<T>.Create;
+procedure TIterator<T>.AfterConstruction;
 begin
-  inherited Create;
+  inherited AfterConstruction;
   fState := STATE_INITIAL;
   fThreadId := GetCurrentThreadId;
 end;
@@ -1777,7 +1810,6 @@ constructor TSourceIterator<T>.Create(const source: IEnumerable<T>);
 begin
   fComparer := source.Comparer;
   fSource := source;
-  inherited Create;
 end;
 
 function TSourceIterator<T>.GetElementType: PTypeInfo;
@@ -1790,20 +1822,20 @@ end;
 
 {$REGION 'TCollectionBase<T>'}
 
-constructor TCollectionBase<T>.Create;
+procedure TCollectionBase<T>.AfterConstruction;
 begin
-  inherited Create;
-  UpdateNotify(ClassType, TCollectionBase<T>, fOnChanged, fNotify);
+  inherited AfterConstruction;
+  UpdateNotify(Self, TCollectionBase<T>, fOnChanged, fNotify);
 end;
 
-destructor TCollectionBase<T>.Destroy;
+procedure TCollectionBase<T>.BeforeDestruction;
 begin
   fOnChanged.Free;
 end;
 
 procedure TCollectionBase<T>.EventChanged(Sender: TObject);
 begin
-  UpdateNotify(ClassType, TCollectionBase<T>, fOnChanged, fNotify);
+  UpdateNotify(Self, TCollectionBase<T>, fOnChanged, fNotify);
 end;
 
 procedure TCollectionBase<T>.DoNotify(const item: T;
@@ -1897,25 +1929,8 @@ begin
 end;
 
 function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
-var
-  onChanged: TCollectionChangedEventImpl<T>;
 begin
-  if not Assigned(fOnChanged) then
-  begin
-    onChanged := TCollectionChangedEventImpl<T>.Create;
-    if AtomicCmpExchange(Pointer(fOnChanged), Pointer(onChanged), nil) <> nil then
-      onChanged.Free
-    else
-    begin
-{$IFDEF AUTOREFCOUNT}
-      onChanged.__ObjAddRef;
-{$ENDIF AUTOREFCOUNT}
-      fOnChanged.OnChanged := EventChanged;
-      EventChanged(fOnChanged);
-    end;
-  end;
-
-  Result := fOnChanged;
+  EnsureEventInstance(TEventBase(fOnChanged), Result, TCollectionChangedEventImpl<T>, EventChanged);
 end;
 
 function TCollectionBase<T>.MoveTo(const collection: ICollection<T>): Integer;
@@ -2004,16 +2019,17 @@ end;
 
 {$REGION 'TInnerCollection<T>'}
 
-constructor TInnerCollection<T>.Create(const source: TRefCountedObject;
+class function TInnerCollection<T>.Create(const source: TRefCountedObject;
   hashTable: PHashTable; elementType: PTypeInfo;
-  const comparer: IEqualityComparer<T>; offset: Integer);
+  const comparer: IEqualityComparer<T>; offset: Integer): TInnerCollection<T>;
 begin
-  fElementType := elementType;
-  inherited Create;
-  fSource := source;
-  fHashTable := hashTable;
-  fComparer := comparer;
-  fOffset := THashTable.KeyOffset + offset;
+  Result := TInnerCollection<T>(TInnerCollection<T>.NewInstance);
+  Result.fElementType := elementType;
+  Result.fSource := source;
+  Result.fHashTable := hashTable;
+  Result.fComparer := comparer;
+  Result.fOffset := THashTable.KeyOffset + offset;
+  Result.AfterConstruction;
 end;
 
 function TInnerCollection<T>.Contains(const value: T): Boolean;
@@ -2193,13 +2209,17 @@ end;
 
 constructor TCircularArrayBuffer<T>.Create(capacity: Integer; ownsObjects: Boolean);
 begin
-  inherited Create;
-  fOnChanged := TCollectionChangedEventImpl<T>.Create;
   SetCapacity(capacity);
   SetOwnsObjects(ownsObjects);
 end;
 
-destructor TCircularArrayBuffer<T>.Destroy;
+procedure TCircularArrayBuffer<T>.AfterConstruction;
+begin
+  inherited AfterConstruction;
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+procedure TCircularArrayBuffer<T>.BeforeDestruction;
 begin
   Clear;
   fOnChanged.Free;
@@ -2216,7 +2236,7 @@ end;
 procedure TCircularArrayBuffer<T>.DoNotify(const item: T;
   action: TCollectionChangedAction);
 begin
-  if fOnChanged.CanInvoke then
+  if Assigned(fOnChanged) and fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item, action);
 end;
 
@@ -2520,18 +2540,18 @@ end;
 
 {$REGION 'TMapBase<TKey, T>'}
 
-constructor TMapBase<TKey, T>.Create;
+procedure TMapBase<TKey, T>.AfterConstruction;
 begin
-  inherited Create;
+  inherited AfterConstruction;
   fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-destructor TMapBase<TKey, T>.Destroy;
+procedure TMapBase<TKey, T>.BeforeDestruction;
 begin
   fOnValueChanged.Free;
   fOnKeyChanged.Free;
-  inherited Destroy;
+  inherited BeforeDestruction;
 end;
 
 procedure TMapBase<TKey, T>.DoNotify(const key: TKey; const value: T;
@@ -2780,7 +2800,6 @@ var
 begin
   fIterator.Source := source;
   fComparer := source.Comparer;
-  inherited Create;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
   fIterator.Count := count;
   fIterator.Predicate := IInterface(predicate);
@@ -2874,7 +2893,6 @@ end;
 
 constructor TArrayIterator<T>.Create(const values: TArray<T>);
 begin
-  inherited Create;
   fIterator.MoveNext := @TIteratorRec<T>.Ordered;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
   fIterator.Items := values;
@@ -2884,7 +2902,6 @@ constructor TArrayIterator<T>.Create(const values: array of T);
 var
   count: Integer;
 begin
-  inherited Create;
   fIterator.MoveNext := @TIteratorRec<T>.Ordered;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
   count := Length(values);
@@ -3245,15 +3262,14 @@ end;
 constructor TObjectArrayIterator.Create(const source: TArray<TObject>;
   elementType: PTypeInfo);
 begin
-  fElementType := elementType;
   inherited Create(source);
+  fElementType := elementType;
 end;
 
 constructor TObjectArrayIterator.CreateFromArray(source: PPointer;
   count: Integer; elementType: PTypeInfo);
 begin
   fElementType := elementType;
-  inherited Create;
   fIterator.MoveNext := @TIteratorRec<TObject>.Ordered;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<TObject>);
   if count > 0 then
@@ -3280,15 +3296,14 @@ end;
 constructor TInterfaceArrayIterator.Create(const source: TArray<IInterface>;
   elementType: PTypeInfo);
 begin
-  fElementType := elementType;
   inherited Create(source);
+  fElementType := elementType;
 end;
 
 constructor TInterfaceArrayIterator.CreateFromArray(source: PPointer;
   count: Integer; elementType: PTypeInfo);
 begin
   fElementType := elementType;
-  inherited Create;
   fIterator.MoveNext := @TIteratorRec<IInterface>.Ordered;
   fIterator.TypeInfo := TypeInfo(TIteratorRec<IInterface>);
   if count > 0 then

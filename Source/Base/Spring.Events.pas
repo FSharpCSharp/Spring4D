@@ -74,14 +74,13 @@ type
 
   {$REGION 'TEvent<T>'}
 
-  TEvent<T> = class(TEvent, IEvent<T>)
+  TEvent<T> = class(TEvent, IEvent, IEvent<T>)
   private
-    function GetInvoke: T;
+    function GetInvoke: T; overload;
   public
     constructor Create;
-
-    procedure Add(handler: T);
-    procedure Remove(handler: T);
+    procedure Add(handler: T); overload;
+    procedure Remove(handler: T); overload;
   end;
 
   IMulticastNotifyEvent = IEvent<TNotifyEvent>;
@@ -93,14 +92,14 @@ type
 
   {$REGION 'TNotifyEventImpl'}
 
-  TNotifyEventImpl = class(TEventBase, INotifyEvent)
+  TNotifyEventImpl = class(TEventBase, IEvent, INotifyEvent)
   private
-    function GetInvoke: TNotifyEvent;
+    function GetInvoke: TNotifyEvent; overload;
     procedure InternalInvoke(sender: TObject);
   public
-    constructor Create;
-    procedure Add(handler: TNotifyEvent);
-    procedure Remove(handler: TNotifyEvent);
+    procedure AfterConstruction; override;
+    procedure Add(handler: TNotifyEvent); overload;
+    procedure Remove(handler: TNotifyEvent); overload;
     property Invoke: TNotifyEvent read GetInvoke;
   end;
 
@@ -109,14 +108,15 @@ type
 
   {$REGION 'TNotifyEventImpl<T>'}
 
-  TNotifyEventImpl<T> = class(TEventBase, INotifyEvent<T>)
+  TNotifyEventImpl<T> = class(TEventBase, IEvent, INotifyEvent<T>)
   private
-    function GetInvoke: TNotifyEvent<T>;
-    procedure Add(handler: TNotifyEvent<T>);
-    procedure Remove(handler: TNotifyEvent<T>);
+    function GetInvoke: TNotifyEvent<T>; overload;
     procedure InternalInvoke(sender: TObject; const item: T);
   public
-    constructor Create;
+    procedure AfterConstruction; override;
+    procedure Add(handler: TNotifyEvent<T>); overload;
+    procedure Remove(handler: TNotifyEvent<T>); overload;
+    property Invoke: TNotifyEvent<T> read GetInvoke;
   end;
 
   {$ENDREGION}
@@ -124,15 +124,16 @@ type
 
   {$REGION 'TPropertyChangedEventImpl'}
 
-  TPropertyChangedEventImpl = class(TEventBase, IPropertyChangedEvent)
+  TPropertyChangedEventImpl = class(TEventBase, IEvent, IPropertyChangedEvent)
   private
-    function GetInvoke: TPropertyChangedEvent;
-    procedure Add(handler: TPropertyChangedEvent);
-    procedure Remove(handler: TPropertyChangedEvent);
+    function GetInvoke: TPropertyChangedEvent; overload;
     procedure InternalInvoke(Sender: TObject;
       const EventArgs: IPropertyChangedEventArgs);
   public
-    constructor Create;
+    procedure AfterConstruction; override;
+    procedure Add(handler: TPropertyChangedEvent); overload;
+    procedure Remove(handler: TPropertyChangedEvent); overload;
+    property Invoke: TPropertyChangedEvent read GetInvoke;
   end;
 
   {$ENDREGION}
@@ -801,9 +802,9 @@ end;
 
 {$REGION 'TNotifyEventImpl'}
 
-constructor TNotifyEventImpl.Create;
+procedure TNotifyEventImpl.AfterConstruction;
 begin
-  inherited Create;
+  inherited AfterConstruction;
   TNotifyEvent(fInvoke) := InternalInvoke;
 end;
 
@@ -836,9 +837,9 @@ end;
 
 {$REGION 'TNotifyEventImpl<T>'}
 
-constructor TNotifyEventImpl<T>.Create;
+procedure TNotifyEventImpl<T>.AfterConstruction;
 begin
-  inherited Create;
+  inherited AfterConstruction;
   TNotifyEvent<T>(fInvoke) := InternalInvoke;
 end;
 
@@ -871,9 +872,9 @@ end;
 
 {$REGION 'TPropertyChangedEventImpl'}
 
-constructor TPropertyChangedEventImpl.Create;
+procedure TPropertyChangedEventImpl.AfterConstruction;
 begin
-  inherited Create;
+  inherited AfterConstruction;
   TPropertyChangedEvent(fInvoke) := InternalInvoke;
 end;
 
