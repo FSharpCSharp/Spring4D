@@ -4789,10 +4789,14 @@ end;
 procedure InvokeImplGetter(const self: TObject; implGetter: NativeUInt; var result: IInterface);
 {$IFNDEF CPUX86}
 type
-{$IF defined(MSWINDOWS) or defined(OSX32)}
-  TGetProc = procedure (const self: TObject; var result: IInterface);
+{$IF Defined(MSWINDOWS) or Defined(OSX32)}
+  TGetProc = procedure (const Self: TObject; var Result: IInterface);
+{$ELSEIF Defined(LINUX64) or Defined(OSX64) or Defined(CPUARM32)}
+  TGetProc = procedure (var Result: IInterface; const Self: TObject);
+{$ELSEIF Defined(CPUARM64)}
+  TGetProc = function (const Self: TObject): IInterface;
 {$ELSE}
-  TGetProc = procedure (var result: IInterface; const self: TObject);
+  {$MESSAGE Fatal 'InvokeImplGetter not implemented for platform'}
 {$IFEND}
 var
   getProc: TGetProc;
@@ -4805,10 +4809,14 @@ begin
       getProc := PPointer(PNativeInt(self)^ + SmallInt(implGetter))^
     else
       getProc := Pointer(implGetter);
-{$IF defined(MSWINDOWS) or defined(OSX32)}
-    GetProc(self, result);
+{$IF Defined(MSWINDOWS) or Defined(OSX32)}
+    GetProc(Self, Result);
+{$ELSEIF Defined(LINUX64) or Defined(OSX64) or Defined(CPUARM32)}
+    GetProc(Result, Self);
+{$ELSEIF Defined(CPUARM64)}
+    Result := GetProc(Self);
 {$ELSE}
-    GetProc(result, self);
+    {$MESSAGE Fatal 'InvokeImplGetter not implemented for platform'}
 {$IFEND}
   end;
 end;
