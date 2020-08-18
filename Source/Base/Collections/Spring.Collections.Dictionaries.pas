@@ -2460,7 +2460,7 @@ begin
     Result.Value := node.Value;
     IncUnchecked(fVersion);
     fTree.DeleteNode(node);
-    Changed(Result, caExtracted);
+    DoNotify(Result, caExtracted);
     KeyChanged(Result.Key, caExtracted);
     ValueChanged(Result.Value, caExtracted);
   end

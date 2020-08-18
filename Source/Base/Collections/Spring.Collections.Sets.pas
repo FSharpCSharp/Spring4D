@@ -99,7 +99,7 @@ type
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
     class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
-    procedure ClearInternal;
+    procedure ClearWithNotify;
   protected
     function CreateSet: ISet<T>; override;
     function TryGetElementAt(var item: T; index: Integer): Boolean;
@@ -420,7 +420,7 @@ begin
   if Result then
   begin
     entry.Item := item;
-    Changed(item, caAdded);
+    DoNotify(item, caAdded);
   end;
 end;
 
@@ -429,10 +429,10 @@ begin
   if not Assigned(Notify) then
     fHashTable.Clear
   else
-    ClearInternal;
+    ClearWithNotify;
 end;
 
-procedure THashSet<T>.ClearInternal;
+procedure THashSet<T>.ClearWithNotify;
 var
   oldItemIndex, oldItemCount: Integer;
   oldItems: TArray<TItem>;
@@ -444,7 +444,7 @@ begin
 
   for oldItemIndex := 0 to oldItemCount - 1 do
     if oldItems[oldItemIndex].HashCode >= 0 then
-      Changed(oldItems[oldItemIndex].Item, caRemoved);
+      Notify(Self, oldItems[oldItemIndex].Item, caRemoved);
 end;
 
 class function THashSet<T>.EqualsThunk(instance: Pointer; const left, right): Boolean;
@@ -467,7 +467,7 @@ begin
   entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
   if Assigned(entry) then
   begin
-    Changed(entry.Item, caExtracted);
+    DoNotify(entry.Item, caExtracted);
     Result := entry.Item;
     entry.Item := Default(T);
   end
@@ -500,12 +500,14 @@ var
   entry: ^TItem;
 begin
   entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
-  Result := Assigned(entry);
-  if Result then
+  if Assigned(entry) then
   begin
-    Changed(entry.Item, caRemoved);
+    DoNotify(entry.Item, caRemoved);
     entry.Item := Default(T);
-  end;
+    Result := True;
+  end
+  else
+    Result := False;
 end;
 
 function THashSet<T>.ToArray: TArray<T>;
@@ -602,7 +604,7 @@ begin
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Result := fTree.Add(item);
   if Result then
-    Changed(item, caAdded);
+    DoNotify(item, caAdded);
 end;
 
 procedure TSortedSet<T>.Clear;
@@ -615,9 +617,9 @@ begin
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  if Assigned(OnChanged) and OnChanged.CanInvoke then // optimization: if no notification needs to be send the entire tree traversal won't be done
+  if Assigned(Notify) then // optimization: if no notification needs to be send the entire tree traversal won't be done
     for node in fTree.Root^ do
-      Changed(PNode(node).Key, caRemoved);
+      Notify(Self, PNode(node).Key, caRemoved);
 
   fTree.Clear;
 end;
@@ -639,7 +641,7 @@ begin
     Inc(fVersion);
     {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
     fTree.DeleteNode(node);
-    Changed(Result, caExtracted);
+    DoNotify(Result, caExtracted);
   end
   else
     Result := Default(T);
@@ -672,7 +674,7 @@ begin
     Inc(fVersion);
     {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
     fTree.DeleteNode(node);
-    Changed(item, caRemoved);
+    DoNotify(item, caRemoved);
   end;
 end;
 

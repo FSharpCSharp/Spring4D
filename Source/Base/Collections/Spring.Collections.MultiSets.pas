@@ -143,7 +143,7 @@ type
     procedure SetItemCount(const item: T; count: Integer);
   {$ENDREGION}
     class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
-    procedure ClearInternal;
+    procedure ClearWithNotify;
   protected
     function CreateMultiSet: IMultiSet<T>; override;
   public
@@ -446,10 +446,10 @@ begin
   if not Assigned(Notify) then
     fHashTable.Clear
   else
-    ClearInternal;
+    ClearWithNotify;
 end;
 
-procedure THashMultiSet<T>.ClearInternal;
+procedure THashMultiSet<T>.ClearWithNotify;
 var
   oldItemIndex, oldItemCount, i: Integer;
   oldItems: TArray<TItem>;
@@ -462,7 +462,7 @@ begin
   for oldItemIndex := 0 to oldItemCount - 1 do
     if oldItems[oldItemIndex].HashCode >= 0 then
       for i := 1 to oldItems[oldItemIndex].Count do
-        Changed(oldItems[oldItemIndex].Item, caRemoved);
+        Notify(Self, oldItems[oldItemIndex].Item, caRemoved);
 end;
 
 class function THashMultiSet<T>.EqualsThunk(instance: Pointer; const left, right): Boolean;

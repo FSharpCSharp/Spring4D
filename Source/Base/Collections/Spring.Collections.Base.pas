@@ -556,7 +556,7 @@ type
     function GetKeyType: PTypeInfo; virtual;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    procedure DoNotify(const key: TKey; const value: T; action: TCollectionChangedAction);
+    procedure DoNotify(const key: TKey; const value: T; action: TCollectionChangedAction); overload;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
     procedure ValueChanged(const item: T; action: TCollectionChangedAction); inline;
   public
