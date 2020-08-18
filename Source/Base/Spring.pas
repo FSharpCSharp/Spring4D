@@ -2206,9 +2206,7 @@ type
   strict private
     function GetRttiType: TRttiType; inline;
   public
-{$IFNDEF DELPHIXE3_UP}
-    function TypeData: PTypeData; inline;
-{$ENDIF}
+    function TypeData: PTypeData;
     function TypeName: string; inline;
     function TypeSize: Integer; inline;
 
@@ -9315,12 +9313,13 @@ begin
   Result := TType.GetType(@Self);
 end;
 
-{$IFNDEF DELPHIXE3_UP}
 function TTypeInfoHelper.TypeData: PTypeData;
+var
+  p: PByte;
 begin
-  Result := GetTypeData(@Self);
+  p := @Self;
+  Result := @p[p[1]+2];
 end;
-{$ENDIF}
 
 function TTypeInfoHelper.TypeName: string;
 begin
