@@ -170,7 +170,8 @@ type
   protected
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
   public
-    constructor Create(const source: IEnumerable; getCurrent: TGetCurrentFunc);
+    class function Create(const source: IEnumerable; out obj;
+      getCurrent: TGetCurrentFunc): HResult; overload; static;
     function AsObject: TObject;
     function GetEnumerator: IEnumerator;
   end;
@@ -181,8 +182,9 @@ type
   private
     fAdd: TAddFunc;
   public
-    constructor Create(const source: IEnumerable;
-      getCurrent: TEnumerableWrapper.TGetCurrentFunc; add: TAddFunc);
+    class function Create(const source: IEnumerable; out obj;
+      getCurrent: TEnumerableWrapper.TGetCurrentFunc;
+      add: TAddFunc): HRESULT; overload; static;
     function Add(const item: TValue): Boolean;
     procedure Clear;
   end;
@@ -839,7 +841,7 @@ begin
   Result := inherited NewInstance;
 
   // child classes must implement IEnumerable<T>
-  TEnumerableBase(Result).this := Pointer(PByte(Result) + GetInterfaceEntry(IEnumerable<Integer>).IOffset);
+  TEnumerableBase(Result).this := Pointer(PByte(Result) + GetInterfaceEntry(IEnumerableOfTGuid).IOffset);
 end;
 
 function TEnumerableBase.Any: Boolean;
@@ -1279,11 +1281,9 @@ end;
 
 function TEnumerableBase<T>.QueryInterface(const IID: TGUID; out obj): HResult;
 begin
-  if IID = IEnumerable then
-  begin
-    IEnumerable(obj) := TEnumerableWrapper.Create(IEnumerable(this), TIteratorRec<T>.GetCurrent);
-    Result := S_OK;
-  end else
+  if IID = IEnumerableGuid then
+    Result := TEnumerableWrapper.Create(IEnumerable(this), obj, TIteratorRec<T>.GetCurrent)
+  else
     Result := inherited QueryInterface(IID, obj);
 end;
 
@@ -1470,13 +1470,13 @@ var
   count: Integer;
 begin
   Result := nil;
-  if Supports(Self, ICollection<T>, intf) then
+  if GetInterface(IReadOnlyCollectionOfTGuid, Pointer(intf)) then
   begin
-    count := ICollection<T>(intf).Count;
+    count := IReadOnlyCollection<T>(intf).Count;
     if count > 0 then
     begin
       SetLength(Result, count);
-      ICollection<T>(intf).CopyTo(Result, 0);
+      IReadOnlyCollection<T>(intf).CopyTo(Result, 0);
     end;
   end
   else
@@ -1655,11 +1655,16 @@ end;
 
 {$REGION 'TEnumerableWrapper'}
 
-constructor TEnumerableWrapper.Create(const source: IEnumerable;
-  getCurrent: TGetCurrentFunc);
+class function TEnumerableWrapper.Create(const source: IEnumerable; out obj;
+  getCurrent: TGetCurrentFunc): HResult;
+var
+  wrapper: TEnumerableWrapper;
 begin
-  fSource := source;
-  fGetCurrent := getCurrent;
+  wrapper := TEnumerableWrapper.Create;
+  wrapper.fSource := source;
+  wrapper.fGetCurrent := getCurrent;
+  IEnumerable(obj) := wrapper;
+  Result := S_OK;
 end;
 
 function TEnumerableWrapper.AsObject: TObject;
@@ -1722,11 +1727,17 @@ end;
 
 {$REGION 'TCollectionWrapper'}
 
-constructor TCollectionWrapper.Create(const source: IEnumerable;
-  getCurrent: TEnumerableWrapper.TGetCurrentFunc; add: TAddFunc);
+class function TCollectionWrapper.Create(const source: IEnumerable; out obj;
+  getCurrent: TEnumerableWrapper.TGetCurrentFunc; add: TAddFunc): HRESULT;
+var
+  wrapper: TCollectionWrapper;
 begin
-  inherited Create(source, getCurrent);
-  fAdd := add;
+  wrapper := TCollectionWrapper.Create;
+  wrapper.fSource := source;
+  wrapper.fGetCurrent := getCurrent;
+  wrapper.fAdd := add;
+  ICollection(obj) := wrapper;
+  Result := S_OK;
 end;
 
 function TCollectionWrapper.Add(const item: TValue): Boolean;
@@ -1961,11 +1972,9 @@ end;
 
 function TCollectionBase<T>.QueryInterface(const IID: TGUID; out obj): HResult;
 begin
-  if IID = ICollection then
-  begin
-    ICollection(obj) := TCollectionWrapper.Create(IEnumerable(this), TIteratorRec<T>.GetCurrent, TIteratorRec<T>.Add);
-    Result := S_OK;
-  end else
+  if IID = ICollectionGuid then
+    Result := TCollectionWrapper.Create(IEnumerable(this), obj, TIteratorRec<T>.GetCurrent, TIteratorRec<T>.Add)
+  else
     Result := inherited QueryInterface(IID, obj);
 end;
 
@@ -2638,11 +2647,11 @@ function TListBase<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
   case TType.Kind<T> of
     tkClass:
-      if IID = IObjectList then
-        Exit(TRefCountedObject(Self).QueryInterface(IList<TObject>, Obj));
+      if IID = IObjectListGuid then
+        Exit(TRefCountedObject(Self).QueryInterface(IListOfTGuid, Obj));
     tkInterface:
-      if IID = IInterfaceList then
-        Exit(TRefCountedObject(Self).QueryInterface(IList<IInterface>, Obj));
+      if IID = IInterfaceListGuid then
+        Exit(TRefCountedObject(Self).QueryInterface(IListOfTGuid, Obj));
   end;
   Result := inherited QueryInterface(IID, Obj);
 end;

@@ -3492,6 +3492,19 @@ type
 function GetElementType(typeInfo: PTypeInfo): PTypeInfo;
 function _LookupVtableInfo(intf: TDefaultGenericInterface; info: PTypeInfo; size: Integer): Pointer;
 
+const
+  IEnumerableGuid: TGUID = '{6BC97F33-C0A8-4770-8E1C-C2017527B7E7}';
+  ICollectionGuid: TGUID = '{4E749779-0873-498E-9597-FCF2A42C3F7B}';
+  IObjectListGuid: TGUID = '{78A32DC5-1A5B-4191-9CA5-006CD85CF1AA}';
+  IInterfaceListGuid: TGUID = '{B6BF9A6E-797C-4982-8D0D-B935E43D917E}';
+
+  IEnumerableOfTGuid: TGUID = '{A6B46D30-5B0F-495F-B7EC-46FBC5A75D24}';
+  ICollectionOfTGuid: TGUID = '{9BFD9B06-45CD-4C80-B145-01B09D432CF0}';
+  IListOfTGuid: TGUID = '{B6B4E1E1-0D29-40E1-854C-A93DEA8D1AA5}';
+
+  IReadOnlyCollectionOfTGuid: TGUID = '{E1368FD5-02AE-4481-A9DC-96329DFF606C}';
+  IReadOnlyListOfTGuid: TGUID = '{82A74ABB-509E-4AC0-9268-A993E7DC3AB3}';
+
 implementation
 
 uses

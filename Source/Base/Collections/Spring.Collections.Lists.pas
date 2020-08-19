@@ -683,7 +683,7 @@ begin
   Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
 {$ENDIF}
 
-  if Supports(values, ICollection<T>, intf) then
+  if values.QueryInterface(ICollectionOfTGuid, Pointer(intf)) = S_OK then
   begin
     valueCount := ICollection<T>(intf).Count;
     listCount := Count;
