@@ -1244,8 +1244,7 @@ end;
 
 function TAbstractArrayList<T>.ToArray: TArray<T>;
 begin
-  Result := fItems;
-  SetLength(Result, Count);
+  DynArrayCopyRange(Pointer(Result), fItems, TypeInfo(TArray<T>), 0, Count);
 end;
 
 procedure TAbstractArrayList<T>.TrimExcess;
