@@ -404,7 +404,6 @@ type
     procedure ExtractRange(const values: array of T); overload;
     procedure ExtractRange(const values: IEnumerable<T>); overload;
 
-    procedure CopyTo(var values: TArray<T>; index: Integer);
     function MoveTo(const collection: ICollection<T>): Integer; overload;
     function MoveTo(const collection: ICollection<T>;
       const match: Predicate<T>): Integer; overload;
@@ -602,19 +601,6 @@ type
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparer: TComparison<T>); overload;
     procedure Sort(const comparer: TComparison<T>; index, count: Integer); overload;
-  end;
-
-  Error = record
-    class function ArgumentOutOfRange(const s: string): Exception; static;
-    class function DuplicateKey: Exception; static;
-    class function EnumFailedVersion: Exception; static;
-    class function KeyNotFound: Exception; static;
-    class function MoreThanOneElement: Exception; static;
-    class function MoreThanOneMatch: Exception; static;
-    class function NoClassType(t: PTypeInfo): Exception; static;
-    class function NoElements: Exception; static;
-    class function NoMatch: Exception; static;
-    class function NotSupported: Exception; static;
   end;
 
   TArrayHelper = record
@@ -884,13 +870,11 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(func), 'func');
-{$ENDIF}
+  if not Assigned(func) then RaiseHelper.ArgumentNil(ExceptionArgument.func);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
   Result := enumerator.Current;
   while enumerator.MoveNext do
     Result := func(Result, enumerator.Current);
@@ -901,9 +885,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
@@ -920,9 +902,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
@@ -934,12 +914,9 @@ begin
   Result := False;
 end;
 
-function TEnumerableBase<T>.Concat(
-  const second: IEnumerable<T>): IEnumerable<T>;
+function TEnumerableBase<T>.Concat(const second: IEnumerable<T>): IEnumerable<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(second), 'second');
-{$ENDIF}
+  if not Assigned(second) then RaiseHelper.ArgumentNil(ExceptionArgument.second);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
     0, Pointer(second), TIteratorKind.Concat);
@@ -959,9 +936,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparer), 'comparer');
-{$ENDIF}
+  if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
@@ -994,7 +969,7 @@ end;
 function TEnumerableBase<T>.ElementAt(index: Integer): T;
 begin
   if not IEnumerable<T>(this).TryGetElementAt(Result, index) then
-    raise Error.ArgumentOutOfRange('index');
+    RaiseHelper.ArgumentOutOfRange_Index;
 end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer): T;
@@ -1045,10 +1020,8 @@ function TEnumerableBase<T>.EqualsTo(const values: IEnumerable<T>;
 var
   e1, e2: IEnumerator<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(values), 'values');
-  Guard.CheckNotNull(Assigned(comparer), 'comparer');
-{$ENDIF}
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
+  if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
 
   e1 := IEnumerable<T>(this).GetEnumerator;
   e2 := values.GetEnumerator;
@@ -1062,13 +1035,13 @@ end;
 function TEnumerableBase<T>.First: T;
 begin
   if not IEnumerable<T>(this).TryGetFirst(Result) then
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TEnumerableBase<T>.First(const predicate: Predicate<T>): T;
 begin
   if not IEnumerable<T>(this).TryGetFirst(Result, predicate) then
-    raise Error.NoMatch;
+    RaiseHelper.NoMatch;
 end;
 
 function TEnumerableBase<T>.FirstOrDefault: T;
@@ -1099,9 +1072,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(action), 'action');
-{$ENDIF}
+  if not Assigned(action) then RaiseHelper.ArgumentNil(ExceptionArgument.action);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
@@ -1124,13 +1095,13 @@ end;
 function TEnumerableBase<T>.Last: T;
 begin
   if not IEnumerable<T>(this).TryGetLast(Result) then
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TEnumerableBase<T>.Last(const predicate: Predicate<T>): T;
 begin
   if not IEnumerable<T>(this).TryGetLast(Result, predicate) then
-    raise Error.NoMatch;
+    RaiseHelper.NoMatch;
 end;
 
 function TEnumerableBase<T>.LastOrDefault: T;
@@ -1152,7 +1123,7 @@ end;
 function TEnumerableBase<T>.LastOrDefault(const predicate: Predicate<T>;
   const defaultValue: T): T;
 begin
-  if not IEnumerable<T>(this).TryGetLast(Result) then
+  if not IEnumerable<T>(this).TryGetLast(Result, predicate) then
     Result := defaultValue;
 end;
 
@@ -1166,9 +1137,11 @@ var
   enumerator: IEnumerator<T>;
   item: Integer;
 begin
+  if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
+
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
   Result := selector(enumerator.Current);
   while enumerator.MoveNext do
   begin
@@ -1183,13 +1156,11 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparer), 'comparer');
-{$ENDIF}
+  if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
   Result := enumerator.Current;
   while enumerator.MoveNext do
   begin
@@ -1214,9 +1185,11 @@ var
   enumerator: IEnumerator<T>;
   item: Integer;
 begin
+  if not Assigned(selector) then RaiseHelper.ArgumentNil(ExceptionArgument.selector);
+
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
   Result := selector(enumerator.Current);
   while enumerator.MoveNext do
   begin
@@ -1231,13 +1204,11 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparer), 'comparer');
-{$ENDIF}
+  if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
   Result := enumerator.Current;
   while enumerator.MoveNext do
   begin
@@ -1258,25 +1229,17 @@ begin
     0, Pointer(fComparer), TIteratorKind.Ordered);
 end;
 
-function TEnumerableBase<T>.Ordered(
-  const comparer: IComparer<T>): IEnumerable<T>;
+function TEnumerableBase<T>.Ordered(const comparer: IComparer<T>): IEnumerable<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparer), 'comparer');
-{$ENDIF}
+  if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
     0, Pointer(comparer), TIteratorKind.Ordered);
 end;
 
-function TEnumerableBase<T>.Ordered(
-  const comparer: TComparison<T>): IEnumerable<T>;
+function TEnumerableBase<T>.Ordered(const comparer: TComparison<T>): IEnumerable<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparer), 'comparer');
-{$ENDIF}
-
-  Result := Ordered(IComparer<T>(PPointer(@comparer)^));
+  Result := IEnumerable<T>(this).Ordered(IComparer<T>(PPointer(@comparer)^));
 end;
 
 function TEnumerableBase<T>.QueryInterface(const IID: TGUID; out obj): HResult;
@@ -1305,19 +1268,17 @@ var
 begin
   enumerator := IEnumerable<T>(this).GetEnumerator;
   if not enumerator.MoveNext then
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
   Result := enumerator.Current;
   if enumerator.MoveNext then
-    raise Error.MoreThanOneElement;
+    RaiseHelper.MoreThanOneElement;
 end;
 
 function TEnumerableBase<T>.Single(const predicate: Predicate<T>): T;
 var
   enumerator: IEnumerator<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
@@ -1327,11 +1288,11 @@ begin
     begin
       while enumerator.MoveNext do
         if predicate(enumerator.Current) then
-          raise Error.MoreThanOneMatch;
+          RaiseHelper.MoreThanOneMatch;
       Exit;
     end;
   end;
-  raise Error.NoMatch;
+  RaiseHelper.NoMatch;
 end;
 
 function TEnumerableBase<T>.SingleOrDefault: T;
@@ -1351,7 +1312,7 @@ begin
     Exit(defaultValue);
   Result := enumerator.Current;
   if enumerator.MoveNext then
-    raise Error.MoreThanOneElement;
+    RaiseHelper.MoreThanOneElement;
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>): T;
@@ -1367,9 +1328,7 @@ function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>;
 var
   enumerator: IEnumerator<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
@@ -1379,7 +1338,7 @@ begin
     begin
       while enumerator.MoveNext do
         if predicate(enumerator.Current) then
-          raise Error.MoreThanOneMatch;
+          RaiseHelper.MoreThanOneMatch;
       Exit;
     end;
   end;
@@ -1395,9 +1354,7 @@ end;
 function TEnumerableBase<T>.SkipWhile(
   const predicate: Predicate<T>): IEnumerable<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
     0, PPointer(@predicate)^, TIteratorKind.SkipWhile);
@@ -1406,9 +1363,7 @@ end;
 function TEnumerableBase<T>.SkipWhile(
   const predicate: Func<T, Integer, Boolean>): IEnumerable<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
     0, PPointer(@predicate)^, TIteratorKind.SkipWhileIndex);
@@ -1445,9 +1400,7 @@ end;
 function TEnumerableBase<T>.TakeWhile(
   const predicate: Predicate<T>): IEnumerable<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
     0, PPointer(@predicate)^, TIteratorKind.TakeWhile);
@@ -1456,9 +1409,7 @@ end;
 function TEnumerableBase<T>.TakeWhile(
   const predicate: Func<T, Integer, Boolean>): IEnumerable<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
     0, PPointer(@predicate)^, TIteratorKind.TakeWhileIndex);
@@ -1534,9 +1485,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
@@ -1573,9 +1522,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := False;
   enumerator := IEnumerable<T>(this).GetEnumerator;
@@ -1617,9 +1564,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := False;
   enumerator := IEnumerable<T>(this).GetEnumerator;
@@ -1642,9 +1587,7 @@ end;
 
 function TEnumerableBase<T>.Where(const predicate: Predicate<T>): IEnumerable<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
     0, PPointer(@predicate)^, TIteratorKind.Where);
@@ -1869,9 +1812,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(values), 'values');
-{$ENDIF}
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
@@ -1885,22 +1826,6 @@ procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAc
 begin
   if Assigned(fOnChanged) and fOnChanged.CanInvoke then
     fOnChanged.Invoke(Self, item, action);
-end;
-
-procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
-var
-  enumerator: IEnumerator<T>;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(DynArrayLength(values), index, IEnumerable<T>(this).Count);
-{$ENDIF}
-
-  enumerator := IEnumerable<T>(this).GetEnumerator;
-  while enumerator.MoveNext do
-  begin
-    values[index] := enumerator.Current;
-    Inc(index);
-  end;
 end;
 
 function TCollectionBase<T>.ExtractAll(const match: Predicate<T>): TArray<T>;
@@ -1922,9 +1847,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(values), 'values');
-{$ENDIF}
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
@@ -1955,9 +1878,7 @@ var
   values: TArray<T>;
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-{$ENDIF}
+  if not Assigned(collection) then RaiseHelper.ArgumentNil(ExceptionArgument.collection);
 
   Result := 0;
   values := ToArray;
@@ -1998,9 +1919,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(values), 'values');
-{$ENDIF}
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   Result := 0;
   enumerator := values.GetEnumerator;
@@ -2164,10 +2083,10 @@ begin
       fCurrent := PT(item + fSource.fOffset)^;
       Exit(True);
     end;
-    Exit(False);
+    Result := False;
   end
   else
-    raise Error.EnumFailedVersion;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -2205,10 +2124,10 @@ begin
       if PInteger(item)^ >= 0 then
         Exit(True);
     end;
-    Exit(False);
+    Result := False;
   end
   else
-    raise Error.EnumFailedVersion;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -2378,7 +2297,7 @@ begin
   if Count > 0 then
     Result := fItems[fHead]
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TCircularArrayBuffer<T>.FirstOrDefault: T;
@@ -2392,10 +2311,10 @@ end;
 function TCircularArrayBuffer<T>.Single: T;
 begin
   case Count of
-    0: raise Error.NoElements;
+    0: RaiseHelper.NoElements;
     1: Result := fItems[fHead];
   else
-    raise Error.MoreThanOneElement;
+    RaiseHelper.MoreThanOneElement;
   end;
 end;
 
@@ -2405,7 +2324,7 @@ begin
     0: Result := defaultValue;
     1: Result := fItems[fHead];
   else
-    raise Error.MoreThanOneElement;
+    RaiseHelper.MoreThanOneElement;
   end;
 end;
 
@@ -2434,15 +2353,11 @@ end;
 
 procedure TCircularArrayBuffer<T>.SetCapacity(value: Integer);
 var
-  offset, oldCapacity, itemCount: Integer;
+  itemCount, oldCapacity, offset: Integer;
 begin
-  Guard.CheckRange(value >= Count, 'capacity');
-
-  offset := value - DynArrayLength(fItems);
-  if offset = 0 then
-    Exit;
-
   itemCount := Count;
+  if value < itemCount then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.value, ExceptionResource.ArgumentOutOfRange_Capacity);
+
   if itemCount = 0 then
   begin
     fHead := 0;
@@ -2453,6 +2368,10 @@ begin
   end;
 
   oldCapacity := DynArrayLength(fItems);
+  offset := value - DynArrayLength(fItems);
+  if offset = 0 then
+    Exit;
+
   if offset > 0 then
   begin
     fCapacity := value;
@@ -2531,17 +2450,19 @@ end;
 
 function TCircularArrayBuffer<T>.TEnumerator.MoveNext: Boolean;
 begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  Result := fIndex < fSource.Count;
-  if Result then
+  if fVersion = fSource.fVersion then
   begin
-    fCurrent := fSource.fItems[(fSource.fHead + fIndex) mod fSource.fCapacity];
-    Inc(fIndex);
+    Result := fIndex < fSource.Count;
+    if Result then
+    begin
+      fCurrent := fSource.fItems[(fSource.fHead + fIndex) mod fSource.fCapacity];
+      Inc(fIndex);
+    end
+    else
+      fCurrent := Default(T);
   end
   else
-    fCurrent := Default(T);
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -2581,7 +2502,7 @@ end;
 procedure TMapBase<TKey, T>.Add(const key: TKey; const value: T);
 begin
   if not IMap<TKey, T>(this).TryAdd(key, value) then
-    raise Error.DuplicateKey;
+    RaiseHelper.DuplicateKey;
 end;
 
 function TMapBase<TKey, T>.Contains(const item: TKeyValuePair): Boolean;
@@ -2744,61 +2665,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Error'}
-
-class function Error.ArgumentOutOfRange(const s: string): Exception;
-begin
-  Result := EArgumentOutOfRangeException.CreateResFmt(@SArgument_ParamName, [s]);
-end;
-
-class function Error.DuplicateKey: Exception;
-begin
-  Result := EArgumentException.CreateRes(@SArgument_DuplicateKey);
-end;
-
-class function Error.EnumFailedVersion: Exception;
-begin
-  Result := EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-end;
-
-class function Error.KeyNotFound: Exception;
-begin
-  Result := EKeyNotFoundException.CreateRes(@SArgument_KeyNotFound);
-end;
-
-class function Error.MoreThanOneElement: Exception;
-begin
-  Result := EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
-end;
-
-class function Error.MoreThanOneMatch: Exception;
-begin
-  Result := EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
-end;
-
-class function Error.NoClassType(t: PTypeInfo): Exception;
-begin
-  Result := EInvalidCast.CreateResFmt(@SNotClassType, [t.TypeName]);
-end;
-
-class function Error.NoElements: Exception;
-begin
-  Result := EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
-end;
-
-class function Error.NoMatch: Exception;
-begin
-  Result := EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
-end;
-
-class function Error.NotSupported: Exception;
-begin
-  Result := ENotSupportedException.Create('');
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TIteratorBase<T>'}
 
 constructor TIteratorBase<T>.Create(const source: IEnumerable<T>;
@@ -2945,9 +2811,7 @@ end;
 
 function TArrayIterator<T>.GetItem(index: Integer): T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < DynArrayLength(fIterator.Items)), 'index');
-{$ENDIF}
+  CheckIndex(index, DynArrayLength(fIterator.Items));
 
   Result := fIterator.Items[index];
 end;

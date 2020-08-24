@@ -1057,7 +1057,7 @@ type
     function GetRange(index, count: Integer): IList<T>;
 
     procedure Exchange(index1, index2: Integer);
-    procedure Move(currentIndex, newIndex: Integer);
+    procedure Move(sourceIndex, targetIndex: Integer);
 
     procedure Reverse; overload;
     procedure Reverse(index, count: Integer); overload;
@@ -7468,9 +7468,10 @@ class function TEnumerable.ToDictionary<TSource, TKey, TElement>(
 var
   item: TSource;
 begin
-  Guard.CheckNotNull(Assigned(source), 'source');
-  Guard.CheckNotNull(Assigned(keySelector), 'keySelector');
-  Guard.CheckNotNull(Assigned(elementSelector), 'elementSelector');
+  if not Assigned(source) then RaiseHelper.ArgumentNil(ExceptionArgument.source);
+  if not Assigned(keySelector) then RaiseHelper.ArgumentNil(ExceptionArgument.keySelector);
+  if not Assigned(elementSelector) then RaiseHelper.ArgumentNil(ExceptionArgument.elementSelector);
+
   Result := TCollections.CreateDictionary<TKey, TElement>(comparer);
   for item in source do
     Result.Add(keySelector(item), elementSelector(item));

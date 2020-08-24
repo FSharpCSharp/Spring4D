@@ -412,10 +412,10 @@ begin
       if PInteger(item)^ >= 0 then
         fEnumerator := IEnumerable(PPointer(item + fHashTable.ItemSize - SizeOf(Pointer))^).GetEnumerator;
     end;
-    Exit(False);
+    Result := False;
   end
   else
-    raise Error.EnumFailedVersion;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -530,7 +530,7 @@ procedure TWrappedCollection<T>.TEnumerator.ValidateEnumerator;
 begin
   fSource.RefreshIfEmpty;
   if fSource.fDelegate <> fOriginal then
-    raise Error.EnumFailedVersion;
+    RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -544,11 +544,11 @@ constructor TMultiMapBase<TKey, TValue>.Create(
 begin
   if TType.Kind<TKey> <> tkClass then
     if doOwnsKeys in ownerships then
-      raise Error.NoClassType(TypeInfo(TKey));
+      RaiseHelper.NoClassType(TypeInfo(TKey));
 
   if TType.Kind<TValue> <> tkClass then
     if doOwnsValues in ownerships then
-      raise Error.NoClassType(TypeInfo(TValue));
+      RaiseHelper.NoClassType(TypeInfo(TValue));
 
   fOwnerships := ownerships;
   fKeyComparer := keyComparer
@@ -622,9 +622,7 @@ var
   enumerator: IEnumerator<TValue>;
   item: TValue;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(values), 'values');
-{$ENDIF}
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do

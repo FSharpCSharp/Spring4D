@@ -207,9 +207,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(other), 'other');
-{$ENDIF}
+  if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
   enumerator := other.GetEnumerator;
   while enumerator.MoveNext do
@@ -226,9 +224,7 @@ var
   item: T;
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(other), 'other');
-{$ENDIF}
+  if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
   if not other.IsEmpty then
   begin
@@ -256,9 +252,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(other), 'other');
-{$ENDIF}
+  if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
@@ -276,9 +270,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(other), 'other');
-{$ENDIF}
+  if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
   enumerator := other.GetEnumerator;
   while enumerator.MoveNext do
@@ -296,9 +288,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(other), 'other');
-{$ENDIF}
+  if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
   enumerator := other.GetEnumerator;
   while enumerator.MoveNext do
@@ -317,9 +307,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(other), 'other');
-{$ENDIF}
+  if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
   localSet := CreateSet;
 
@@ -348,9 +336,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(other), 'other');
-{$ENDIF}
+  if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
   enumerator := other.GetEnumerator;
   while enumerator.MoveNext do
@@ -552,20 +538,22 @@ var
   hashTable: ^THashTable;
 begin
   hashTable := @fSource.fHashTable;
-  if fVersion <> hashTable.Version then
-    raise Error.EnumFailedVersion;
-
-  while fItemIndex < hashTable.ItemCount - 1 do
+  if fVersion = hashTable.Version then
   begin
-    Inc(fItemIndex);
-    if TItems(hashTable.Items)[fItemIndex].HashCode >= 0 then
+    while fItemIndex < hashTable.ItemCount - 1 do
     begin
-      fCurrent := TItems(hashTable.Items)[fItemIndex].Item;
-      Exit(True);
+      Inc(fItemIndex);
+      if TItems(hashTable.Items)[fItemIndex].HashCode >= 0 then
+      begin
+        fCurrent := TItems(hashTable.Items)[fItemIndex].Item;
+        Exit(True);
+      end;
     end;
-  end;
-  fCurrent := Default(T);
-  Result := False;
+    fCurrent := Default(T);
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -718,18 +706,20 @@ end;
 
 function TSortedSet<T>.TEnumerator.MoveNext: Boolean;
 begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  if fFinished then
-    Exit(False);
-  if not Assigned(fCurrent) then
-    fCurrent := fSource.fTree.Root.LeftMost
+  if fVersion = fSource.fVersion then
+  begin
+    if fFinished then
+      Exit(False);
+    if not Assigned(fCurrent) then
+      fCurrent := fSource.fTree.Root.LeftMost
+    else
+      fCurrent := fCurrent.Next;
+    Result := Assigned(fCurrent);
+    if not Result then
+      fFinished := True;
+  end
   else
-    fCurrent := fCurrent.Next;
-  Result := Assigned(fCurrent);
-  if not Result then
-    fFinished := True;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 procedure TSortedSet<T>.SetCapacity(value: Integer);

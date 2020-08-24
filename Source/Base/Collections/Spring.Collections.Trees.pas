@@ -1545,7 +1545,7 @@ end;
 
 procedure TRedBlackTree<T>.SetCapacity(value: Integer);
 begin
-  Guard.CheckRange(value >= fCount, 'capacity');
+  if value < fCount then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.value, ExceptionResource.ArgumentOutOfRange_Capacity);
 
   fStorage.Capacity := value;
 end;
@@ -1804,7 +1804,7 @@ end;
 
 procedure TRedBlackTree<TKey, TValue>.SetCapacity(value: Integer);
 begin
-  Guard.CheckRange(value >= fCount, 'capacity');
+  if value < fCount then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.value, ExceptionResource.ArgumentOutOfRange_Capacity);
 
   fStorage.Capacity := value;
 end;

@@ -140,6 +140,7 @@ type
     procedure TestListCountWithInsert;
     procedure TestListInsertBetween;
     procedure TestListInsertBeginning;
+    procedure TestListInsertEnd;
     procedure TestListInsertRangeArray;
     procedure TestListInsertRangeIEnumerable;
     procedure TestListInsertRangeIEnumerableSelf;
@@ -185,6 +186,7 @@ type
 
     procedure TestTryMethodsReturnDefaultWhenFalse;
 
+    procedure TestDeleteRange;
     procedure TestDeleteRangeEmptyList;
 
     procedure EqualsToArray;
@@ -1148,6 +1150,22 @@ begin
   CheckNotEquals(SUT.First, values[0]);
 end;
 
+procedure TTestIntegerList.TestDeleteRange;
+begin
+  SUT.Add(1);
+  SUT.DeleteRange(1, 0);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      SUT.DeleteRange(1, 1);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      SUT.DeleteRange(2, 0);
+    end);
+end;
+
 procedure TTestIntegerList.TestDeleteRangeEmptyList;
 begin
   SUT.DeleteRange(0, 0);
@@ -1533,6 +1551,17 @@ begin
   CheckEquals(0, SUT[0]);
   CheckEquals(42, SUT[1]);
   CheckEquals(1, SUT[2]);
+end;
+
+procedure TTestIntegerList.TestListInsertEnd;
+begin
+  SUT.Add(0);
+  SUT.Add(1);
+  SUT.Insert(2, 42);
+  CheckEquals(3, SUT.Count);
+  CheckEquals(0, SUT[0]);
+  CheckEquals(1, SUT[1]);
+  CheckEquals(42, SUT[2]);
 end;
 
 procedure TTestIntegerList.TestListInsertRangeArray;

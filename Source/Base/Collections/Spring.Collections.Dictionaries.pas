@@ -607,17 +607,15 @@ constructor TDictionary<TKey, TValue>.Create(capacity: Integer;
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(capacity >= 0, 'capacity');
-{$ENDIF}
+  if capacity < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   if TType.Kind<TKey> <> tkClass then
     if doOwnsKeys in ownerships then
-      raise Error.NoClassType(TypeInfo(TKey));
+      RaiseHelper.NoClassType(TypeInfo(TKey));
 
   if TType.Kind<TValue> <> tkClass then
     if doOwnsValues in ownerships then
-      raise Error.NoClassType(TypeInfo(TValue));
+      RaiseHelper.NoClassType(TypeInfo(TValue));
 
   fOwnerships := ownerships;
   fKeyComparer := keyComparer;
@@ -779,7 +777,7 @@ begin
     ValueChanged(value, caAdded);
   end
   else
-    raise Error.DuplicateKey;
+    RaiseHelper.DuplicateKey;
 end;
 
 procedure TDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
@@ -1010,7 +1008,7 @@ var
 begin
   entry.HashCode := fKeyComparer.GetHashCode(key);
   if not fHashTable.Find(key, entry) then
-    raise Error.KeyNotFound;
+    RaiseHelper.KeyNotFound;
   Result := TItems(fHashTable.Items)[entry.ItemIndex].Value;
 end;
 
@@ -1081,17 +1079,15 @@ constructor TBidiDictionary<TKey, TValue>.Create(capacity: Integer;
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(capacity >= 0, 'capacity');
-{$ENDIF}
+  if capacity < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   if TType.Kind<TKey> <> tkClass then
     if doOwnsKeys in ownerships then
-      raise Error.NoClassType(TypeInfo(TKey));
+      RaiseHelper.NoClassType(TypeInfo(TKey));
 
   if TType.Kind<TValue> <> tkClass then
     if doOwnsValues in ownerships then
-      raise Error.NoClassType(TypeInfo(TValue));
+      RaiseHelper.NoClassType(TypeInfo(TValue));
 
   fOwnerships := ownerships;
   fKeyComparer := keyComparer;
@@ -1476,16 +1472,18 @@ end;
 function TBidiDictionary<TKey, TValue>.DoMoveNext(var itemIndex: Integer;
   iteratorVersion: Integer): Boolean;
 begin
-  if iteratorVersion <> fVersion then
-    raise Error.EnumFailedVersion;
-
-  while itemIndex < fItemCount - 1 do
+  if iteratorVersion = fVersion then
   begin
-    Inc(itemIndex);
-    if not fItems[itemIndex].Removed then
-      Exit(True);
-  end;
-  Result := False;
+    while itemIndex < fItemCount - 1 do
+    begin
+      Inc(itemIndex);
+      if not fItems[itemIndex].Removed then
+        Exit(True);
+    end;
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 function TBidiDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TKeyValuePair>;
@@ -1562,7 +1560,7 @@ begin
   begin
     if valueFound and (keyItemIndex = valueItemIndex) then
       Exit; // this key/value pair are already mapped to each other
-    raise Error.DuplicateKey;
+    RaiseHelper.DuplicateKey;
   end
   else if valueFound then
     // value found, but key not found, this is a replace value operation
@@ -1788,7 +1786,7 @@ var
   keyBucketIndex, keyItemIndex: Integer;
 begin
   if not FindKey(key, KeyHash(key), keyBucketIndex, keyItemIndex) then
-    raise Error.KeyNotFound;
+    RaiseHelper.KeyNotFound;
   Result := fItems[keyItemIndex].Value;
 end;
 
@@ -1807,7 +1805,7 @@ begin
   begin
     if keyFound and (keyItemIndex = valueItemIndex) then
       Exit; // this key/value pair are already mapped to each other
-    raise Error.DuplicateKey;
+    RaiseHelper.DuplicateKey;
   end
   else if keyFound then
     // key found, but value not found, this is a replace value operation
@@ -1959,7 +1957,7 @@ var
   valueBucketIndex, valueItemIndex: Integer;
 begin
   if not fSource.FindValue(value, fSource.ValueHash(value), valueBucketIndex, valueItemIndex) then
-    raise Error.KeyNotFound;
+    RaiseHelper.KeyNotFound;
   Result := fSource.fItems[valueItemIndex].Key;
 end;
 
@@ -2366,7 +2364,7 @@ begin
     ValueChanged(value, caAdded);
   end
   else
-    raise Error.DuplicateKey;
+    RaiseHelper.DuplicateKey;
 end;
 
 procedure TSortedDictionary<TKey, TValue>.AddOrSetValue(const key: TKey;
@@ -2434,18 +2432,20 @@ end;
 function TSortedDictionary<TKey, TValue>.DoMoveNext(var currentNode: PNode;
   var finished: Boolean; iteratorVersion: Integer): Boolean;
 begin
-  if iteratorVersion <> fVersion then
-    raise Error.EnumFailedVersion;
+  if iteratorVersion = fVersion then
+  begin
+    if (fTree.Count = 0) or finished then
+      Exit(False);
 
-  if (fTree.Count = 0) or finished then
-    Exit(False);
-
-  if not Assigned(currentNode) then
-    currentNode := fTree.Root.LeftMost
+    if not Assigned(currentNode) then
+      currentNode := fTree.Root.LeftMost
+    else
+      currentNode := currentNode.Next;
+    Result := Assigned(currentNode);
+    finished := not Result;
+  end
   else
-    currentNode := currentNode.Next;
-  Result := Assigned(currentNode);
-  finished := not Result;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 function TSortedDictionary<TKey, TValue>.Extract(const key: TKey;
@@ -2496,7 +2496,7 @@ end;
 function TSortedDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
 begin
   if not TryGetValue(key, Result) then
-    raise Error.KeyNotFound;
+    RaiseHelper.KeyNotFound;
 end;
 
 function TSortedDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;

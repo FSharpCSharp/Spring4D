@@ -257,7 +257,7 @@ begin
     end;
   end
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 procedure TAbstractStack<T>.PushInternal(const item: T);
@@ -286,7 +286,7 @@ begin
   if Count > 0 then
     Result := fItems[Count - 1]
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TAbstractStack<T>.PeekOrDefault: T;
@@ -299,7 +299,7 @@ end;
 
 procedure TAbstractStack<T>.SetCapacity(value: Integer);
 begin
-  Guard.CheckRange(value >= Count, 'capacity');
+  if value < Count then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.value, ExceptionResource.ArgumentOutOfRange_Capacity);
 
   fCapacity := value;
   SetLength(fItems, value);
@@ -368,20 +368,22 @@ end;
 
 function TAbstractStack<T>.TEnumerator.MoveNext: Boolean;
 begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  if fIndex < fSource.Count then
+  if fVersion = fSource.fVersion then
   begin
-    fCurrent := fSource.fItems[fIndex];
-    Inc(fIndex);
-    Result := True;
+    if fIndex < fSource.Count then
+    begin
+      fCurrent := fSource.fItems[fIndex];
+      Inc(fIndex);
+      Result := True;
+    end
+    else
+    begin
+      fCurrent := Default(T);
+      Result := False;
+    end;
   end
   else
-  begin
-    fCurrent := Default(T);
-    Result := False;
-  end;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}

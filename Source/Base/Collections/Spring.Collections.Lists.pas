@@ -196,7 +196,7 @@ type
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     procedure Exchange(index1, index2: Integer);
-    procedure Move(currentIndex, newIndex: Integer);
+    procedure Move(sourceIndex, targetIndex: Integer);
 
     procedure Reverse(index, count: Integer); overload;
     procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
@@ -271,7 +271,7 @@ type
     function GetRange(index, count: Integer): IList<T>;
 
     procedure Exchange(index1, index2: Integer);
-    procedure Move(currentIndex, newIndex: Integer);
+    procedure Move(sourceIndex, targetIndex: Integer);
 
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
@@ -457,9 +457,7 @@ end;
 
 function TAbstractArrayList<T>.GetItem(index: Integer): T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
-{$ENDIF}
+  CheckIndex(index, Count);
 
   Result := fItems[index];
 end;
@@ -468,10 +466,7 @@ function TAbstractArrayList<T>.GetRange(index, count: Integer): IList<T>;
 var
   list: TAbstractArrayList<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Self.Count);
 
   Result := CreateList;
   list := TAbstractArrayList<T>(Result.AsObject);
@@ -487,11 +482,10 @@ begin
 end;
 
 function TAbstractArrayList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+var
+  listCount: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Self.Count);
 
   if TType.Kind<T> = tkClass then
     Result := TArrayHelper.IndexOfObj(fItems, item, index, count)
@@ -518,9 +512,7 @@ end;
 
 procedure TAbstractArrayList<T>.SetItem(index: Integer; const value: T);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
-{$ENDIF}
+  CheckIndex(index, Count);
 
   if not Assigned(Notify) then
   begin
@@ -562,10 +554,10 @@ end;
 function TAbstractArrayList<T>.Single: T;
 begin
   case Count of
-    0: raise Error.NoElements;
+    0: RaiseHelper.NoElements;
     1: Result := fItems[0];
   else
-    raise Error.MoreThanOneElement;
+    RaiseHelper.MoreThanOneElement;
   end;
 end;
 
@@ -575,7 +567,7 @@ begin
     0: Result := defaultValue;
     1: Result := fItems[0];
   else
-    raise Error.MoreThanOneElement;
+    RaiseHelper.MoreThanOneElement;
   end;
 end;
 
@@ -589,16 +581,11 @@ var
   listCount, tailCount: Integer;
   arrayItem: PT;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
-{$ENDIF}
-
   listCount := Count;
+  if Cardinal(index) > Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange_Index;
+
   if listCount = fCapacity then
-  begin
     Grow(listCount + 1);
-    listCount := Count;
-  end;
 
   {$Q-}
   Inc(fVersion);
@@ -631,21 +618,20 @@ var
   listCount, valueCount, tailCount, i: Integer;
   arrayItem: PT;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
-{$ENDIF}
+  listCount := Count;
+  if Cardinal(index) > Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange_Index;
 
   valueCount := Length(values);
   if valueCount = 0 then
     Exit;
 
-  listCount := Count;
   if listCount + valueCount > fCapacity then
     Grow(listCount + valueCount);
 
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  Inc(fCount, valueCount);
   arrayItem := @fItems[index];
   tailCount := listCount - index;
   if tailCount > 0 then
@@ -663,30 +649,26 @@ begin
   if ItemType.IsManaged then
     MoveManaged(@values[0], arrayItem, TypeInfo(T), valueCount)
   else
-    System.Move(values[0], fItems[index], SizeOf(T) * valueCount);
-
-  Inc(fCount, valueCount);
+    System.Move(values[0], arrayItem^, SizeOf(T) * valueCount);
 
   if Assigned(Notify) then
     for i := 0 to High(values) do
       Notify(Self, values[i], caAdded);
 end;
 
-procedure TAbstractArrayList<T>.InsertRange(index: Integer;
-  const values: IEnumerable<T>);
+procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: IEnumerable<T>);
 var
-  intf: IInterface;
   listCount, valueCount, i: Integer;
+  intf: IInterface;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
-{$ENDIF}
+  listCount := Count;
+  if Cardinal(index) > Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange_Index;
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   if values.QueryInterface(ICollectionOfTGuid, Pointer(intf)) = S_OK then
   begin
     valueCount := ICollection<T>(intf).Count;
-    listCount := Count;
     if valueCount > 0 then
     begin
       if listCount + valueCount > fCapacity then
@@ -733,11 +715,15 @@ begin
 end;
 
 function TAbstractArrayList<T>.LastIndexOf(const item: T; index, count: Integer): Integer;
+var
+  listCount: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
-{$ENDIF}
+  listCount := Count;
+  CheckIndex(index, listCount);
+  if Cardinal(count) > Cardinal(index + 1) then RaiseHelper.ArgumentOutOfRange_Count;
+
+  if listCount = 0 then
+    Exit(-1);
 
   if TType.Kind<T> = tkClass then
     Result := TArrayHelper.LastIndexOfStr(fItems, item, index, count)
@@ -874,13 +860,11 @@ end;
 
 procedure TAbstractArrayList<T>.DeleteRange(index, count: Integer);
 var
-  tailCount: Integer;
+  listCount, tailCount: Integer;
   source, target: PT;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(index >= 0, 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
-{$ENDIF}
+  listCount := Self.Count;
+  CheckRange(index, count, listCount);
 
   if count = 0 then
     Exit;
@@ -895,7 +879,7 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
-  tailCount := Self.Count - (index + count);
+  tailCount := listCount - (index + count);
   Dec(fCount, count);
   target := @fItems[index];
   source := @fItems[index + count];
@@ -918,6 +902,11 @@ end;
 
 procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
+  CheckRange(index, count, Self.Count);
+
+  if count < 2 then
+    Exit;
+
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
@@ -933,13 +922,12 @@ end;
 
 procedure TAbstractArrayList<T>.Move(currentIndex, newIndex: Integer);
 var
-  sourceIndex, targetIndex, itemCount: Integer;
+  listCount, sourceIndex, targetIndex, itemCount: Integer;
   temp: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((currentIndex >= 0) and (currentIndex < Count), 'currentIndex');
-  Guard.CheckRange((newIndex >= 0) and (newIndex < Count), 'newIndex');
-{$ENDIF}
+  listCount := Count;
+  if Cardinal(currentIndex) >= Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.sourceIndex);
+  if Cardinal(newIndex) >= Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.targetIndex);
 
   if currentIndex = newIndex then
     Exit;
@@ -993,9 +981,7 @@ var
   i: Integer;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-{$ENDIF}
+  if not Assigned(collection) then RaiseHelper.ArgumentNil(ExceptionArgument.collection);
 
   Result := 0;
   i := 0;
@@ -1013,12 +999,12 @@ end;
 
 procedure TAbstractArrayList<T>.Exchange(index1, index2: Integer);
 var
+  listCount: Integer;
   temp: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
-  Guard.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
-{$ENDIF}
+  listCount := Count;
+  if Cardinal(index1) >= Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.index1);
+  if Cardinal(index2) >= Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.index2);
 
   temp := fItems[index1];
 
@@ -1042,10 +1028,7 @@ end;
 
 procedure TAbstractArrayList<T>.Reverse(index, count: Integer);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(index >= 0, 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Self.Count);
 
   if count = 0 then
     Exit;
@@ -1068,9 +1051,7 @@ end;
 
 procedure TAbstractArrayList<T>.SetCount(value: Integer);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(value >= 0, 'count');
-{$ENDIF}
+  if value < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   if value > fCapacity then
     SetCapacity(value);
@@ -1081,9 +1062,7 @@ end;
 
 procedure TAbstractArrayList<T>.Delete(index: Integer);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
-{$ENDIF}
+  CheckIndex(index, Self.Count);
 
   DeleteInternal(index, caRemoved);
 end;
@@ -1093,11 +1072,9 @@ function TAbstractArrayList<T>.DeleteAllInternal(const match: Predicate<T>;
 var
   listCount, freeIndex, current, i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(match), 'match');
-{$ENDIF}
+  if not Assigned(match) then RaiseHelper.ArgumentNil(ExceptionArgument.match);
 
-  listCount := Self.Count;
+  listCount := Count;
   freeIndex := 0;
   current := 0;
   i := 0;
@@ -1153,9 +1130,7 @@ end;
 
 function TAbstractArrayList<T>.ExtractAt(index: Integer): T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
-{$ENDIF}
+  CheckIndex(index, Self.Count);
 
   Result := fItems[index];
   DeleteInternal(index, caExtracted);
@@ -1172,12 +1147,10 @@ end;
 
 function TAbstractArrayList<T>.ExtractRange(index, count: Integer): TArray<T>;
 var
-  tailCount, i: Integer;
+  listCount, tailCount, i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
-{$ENDIF}
+  listCount := Self.Count;
+  CheckRange(index, count, listCount);
 
   if count = 0 then
     Exit;
@@ -1191,7 +1164,7 @@ begin
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  tailCount := Self.Count - (index + count);
+  tailCount := listCount - (index + count);
   if tailCount > 0 then
   begin
     if ItemType.HasWeakRef then
@@ -1230,9 +1203,7 @@ procedure TAbstractArrayList<T>.CopyTo(var values: TArray<T>; index: Integer);
 var
   itemCount: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange(DynArrayLength(values), index, Count);
-{$ENDIF}
+  CheckRange(index, Count, DynArrayLength(values));
 
   itemCount := Count;
   if itemCount > 0 then
@@ -1292,9 +1263,7 @@ var
   item, foundItem: PT;
   index: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(predicate), 'predicate');
-{$ENDIF}
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   item := Pointer(fItems);
   foundItem := nil;
@@ -1350,16 +1319,16 @@ begin
     begin
       fCurrent := source.fItems[fIndex];
       Inc(fIndex);
-      Exit(True);
+      Result := True;
     end
     else
     begin
       fCurrent := Default(T);
-      Exit(False);
+      Result := False;
     end;
   end
   else
-    raise Error.EnumFailedVersion;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -1395,9 +1364,7 @@ var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(values), 'values');
-{$ENDIF}
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
@@ -1429,7 +1396,7 @@ end;
 
 procedure TSortedList<T>.Exchange(index1, index2: Integer);
 begin
-  raise Error.NotSupported;
+  RaiseHelper.NotSupported;
 end;
 
 function TSortedList<T>.IndexOf(const item: T): Integer;
@@ -1439,21 +1406,22 @@ begin
 end;
 
 function TSortedList<T>.IndexOf(const item: T; index: Integer): Integer;
+var
+  listCount: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
-{$ENDIF}
+  listCount := Count;
+  CheckIndex(index, listCount);
 
-  if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, Count - index) then
+  if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, listCount - index) then
     Result := -1;
 end;
 
 function TSortedList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+var
+  listCount: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
-{$ENDIF}
+  listCount := Count;
+  CheckRange(index, count, listCount);
 
   if not TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count) then
     Result := -1;
@@ -1461,35 +1429,38 @@ end;
 
 procedure TSortedList<T>.Insert(index: Integer; const item: T);
 begin
-  raise Error.NotSupported;
+  RaiseHelper.NotSupported;
 end;
 
-function TSortedList<T>.LastIndexOf(const item: T; index,
-  count: Integer): Integer;
+function TSortedList<T>.LastIndexOf(const item: T; index, count: Integer): Integer;
+var
+  listCount: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
-{$ENDIF}
+  listCount := Count;
+  CheckIndex(index, listCount);
+  if Cardinal(count) > Cardinal(index + 1) then RaiseHelper.ArgumentOutOfRange_Count;
+
+  if listCount = 0 then
+    Exit(-1);
 
   if not TArray.BinarySearchUpperBound<T>(
     fItems, item, Result, Comparer, index, count) then
     Result := -1;
 end;
 
-procedure TSortedList<T>.Move(currentIndex, newIndex: Integer);
+procedure TSortedList<T>.Move(sourceIndex, targetIndex: Integer);
 begin
-  raise Error.NotSupported;
+  RaiseHelper.NotSupported;
 end;
 
 procedure TSortedList<T>.Reverse(index, count: Integer);
 begin
-  raise Error.NotSupported;
+  RaiseHelper.NotSupported;
 end;
 
 procedure TSortedList<T>.SetItem(index: Integer; const value: T);
 begin
-  raise Error.NotSupported;
+  RaiseHelper.NotSupported;
 end;
 
 procedure TSortedList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
@@ -1503,10 +1474,8 @@ end;
 
 constructor TCollectionList<T>.Create(const collection: TCollection);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(collection, 'collection');
+  if not Assigned(collection) then RaiseHelper.ArgumentNil(ExceptionArgument.collection);
   Guard.CheckInheritsFrom(collection.ItemClass, TClass(T), 'collection.ItemClass');
-{$ENDIF}
 
   fCollection := collection;
 end;
@@ -1538,9 +1507,7 @@ procedure TCollectionList<T>.Delete(index: Integer);
 var
   oldItem: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
-{$ENDIF}
+  CheckIndex(index, fCollection.Count);
 
   oldItem := T(fCollection.Items[index]);
 
@@ -1564,10 +1531,7 @@ var
   oldItems: array of T;
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= fCollection.Count - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, fCollection.Count);
 
   if count = 0 then
     Exit;
@@ -1601,10 +1565,8 @@ procedure TCollectionList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index1 >= 0) and (index1 < fCollection.Count), 'index1');
-  Guard.CheckRange((index2 >= 0) and (index2 < fCollection.Count), 'index2');
-{$ENDIF}
+  if Cardinal(index1) >= Cardinal(fCollection.Count) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.index1);
+  if Cardinal(index2) >= Cardinal(fCollection.Count) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.index2);
 
   temp := T(fCollection.Items[index1]);
 
@@ -1634,9 +1596,7 @@ end;
 
 function TCollectionList<T>.ExtractAt(index: Integer): T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
-{$ENDIF}
+  CheckIndex(index, fCollection.Count);
 
   Result := T(fCollection.Items[index]);
 
@@ -1652,10 +1612,7 @@ function TCollectionList<T>.ExtractRange(index, count: Integer): TArray<T>;
 var
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= fCollection.Count - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, fCollection.Count);
 
   SetLength(Result, count);
   i := 0;
@@ -1695,9 +1652,7 @@ end;
 
 function TCollectionList<T>.GetItem(index: Integer): T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
-{$ENDIF}
+  CheckIndex(index, fCollection.Count);
 
   Result := T(fCollection.Items[index]);
 end;
@@ -1711,10 +1666,7 @@ function TCollectionList<T>.GetRange(index, count: Integer): IList<T>;
 var
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= fCollection.Count - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, fCollection.Count);
 
   Result := CreateList;
   Result.Count := count;
@@ -1735,15 +1687,11 @@ begin
   Result := IndexOf(item, index, fCollection.Count - index);
 end;
 
-function TCollectionList<T>.IndexOf(const item: T; index,
-  count: Integer): Integer;
+function TCollectionList<T>.IndexOf(const item: T; index, count: Integer): Integer;
 var
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= fCollection.Count - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, fCollection.Count);
 
   for i := index to index + count - 1 do
     if fCollection.Items[i].Equals(item) then
@@ -1753,9 +1701,7 @@ end;
 
 procedure TCollectionList<T>.Insert(index: Integer; const item: T);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
-{$ENDIF}
+  CheckIndex(index, fCollection.Count + 1);
 
   {$Q-}
   Inc(fVersion);
@@ -1766,14 +1712,11 @@ begin
   DoNotify(item, caAdded);
 end;
 
-procedure TCollectionList<T>.InsertRange(index: Integer;
-  const values: array of T);
+procedure TCollectionList<T>.InsertRange(index: Integer; const values: array of T);
 var
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
-{$ENDIF}
+  if Cardinal(index) > Cardinal(fCollection.Count) then RaiseHelper.ArgumentOutOfRange_Index;
 
   for i := 0 to High(values) do
   begin
@@ -1782,16 +1725,13 @@ begin
   end;
 end;
 
-procedure TCollectionList<T>.InsertRange(index: Integer;
-  const values: IEnumerable<T>);
+procedure TCollectionList<T>.InsertRange(index: Integer; const values: IEnumerable<T>);
 var
   enumerator: IEnumerator<T>;
   item: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= fCollection.Count), 'index');
-  Guard.CheckNotNull(Assigned(values), 'values');
-{$ENDIF}
+  if Cardinal(index) > Cardinal(fCollection.Count) then RaiseHelper.ArgumentOutOfRange_Index;
+  if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
   enumerator := values.GetEnumerator;
   while enumerator.MoveNext do
@@ -1802,15 +1742,12 @@ begin
   end;
 end;
 
-function TCollectionList<T>.LastIndexOf(const item: T; index,
-  count: Integer): Integer;
+function TCollectionList<T>.LastIndexOf(const item: T; index, count: Integer): Integer;
 var
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
-  Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
-{$ENDIF}
+  CheckIndex(index, fCollection.Count);
+  if Cardinal(count) > Cardinal(index + 1) then RaiseHelper.ArgumentOutOfRange_Count;
 
   for i := index downto index - count + 1 do
     if fCollection.Items[i].Equals(item) then
@@ -1818,24 +1755,25 @@ begin
   Result := -1;
 end;
 
-procedure TCollectionList<T>.Move(currentIndex, newIndex: Integer);
+procedure TCollectionList<T>.Move(sourceIndex, targetIndex: Integer);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((currentIndex >= 0) and (currentIndex < fCollection.Count), 'currentIndex');
-  Guard.CheckRange((newIndex >= 0) and (newIndex < fCollection.Count), 'newIndex');
-{$ENDIF}
+  if Cardinal(sourceIndex) >= Cardinal(fCollection.Count) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.sourceIndex);
+  if Cardinal(targetIndex) >= Cardinal(fCollection.Count) then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.targetIndex);
+
+  if sourceIndex = targetIndex then
+    Exit;
 
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  fCollection.Items[currentIndex].Index := newIndex;
+  fCollection.Items[sourceIndex].Index := targetIndex;
 
-  DoNotify(T(fCollection.Items[newIndex]), caMoved);
+  DoNotify(T(fCollection.Items[targetIndex]), caMoved);
 end;
 
 procedure TCollectionList<T>.Reverse(index, count: Integer);
 begin
-  raise Error.NotSupported;
+  RaiseHelper.NotSupported;
 end;
 
 procedure TCollectionList<T>.SetCapacity(value: Integer);
@@ -1845,14 +1783,12 @@ end;
 
 procedure TCollectionList<T>.SetCount(value: Integer);
 begin
-  raise Error.NotSupported;
+  RaiseHelper.NotSupported;
 end;
 
 procedure TCollectionList<T>.SetItem(index: Integer; const value: T);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCollection.Count), 'index');
-{$ENDIF}
+  CheckIndex(index, fCollection.Count);
 
   fCollection.Items[index] := value;
 end;
@@ -1863,7 +1799,7 @@ end;
 
 procedure TCollectionList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
-  raise Error.NotSupported;
+  RaiseHelper.NotSupported;
 end;
 
 function TCollectionList<T>.ToArray: TArray<T>;
@@ -1904,17 +1840,22 @@ end;
 
 function TCollectionList<T>.TEnumerator.MoveNext: Boolean;
 begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  Result := fIndex < fSource.fCollection.Count;
-  if Result then
+  if fVersion = fSource.fVersion then
   begin
-    fCurrent := T(fSource.fCollection.Items[fIndex]);
-    Inc(fIndex);
+    if fIndex < fSource.fCollection.Count then
+    begin
+      fCurrent := T(fSource.fCollection.Items[fIndex]);
+      Inc(fIndex);
+      Result := True;
+    end
+    else
+    begin
+      fCurrent := Default(T);
+      Result := False;
+    end;
   end
   else
-    fCurrent := Default(T);
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -1956,10 +1897,7 @@ function TAnonymousReadOnlyList<T>.GetRange(index, count: Integer): IList<T>;
 var
   i: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
-  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, fCount);
 
   Result := TCollections.CreateList<T>;
   Result.Count := count;

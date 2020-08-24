@@ -88,7 +88,8 @@ type
 implementation
 
 uses
-  Math;
+  Math,
+  Spring.ResourceStrings;
 
 const
   // use the MSB of the HashCode to note removed items
@@ -344,7 +345,7 @@ procedure THashTable.SetCapacity(const value: Integer);
 var
   newCapacity: Integer;
 begin
-  Guard.CheckRange(value >= fCount, 'capacity');
+  if value < fCount then EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRange_Capacity);
 
   if value = 0 then
     newCapacity := 0

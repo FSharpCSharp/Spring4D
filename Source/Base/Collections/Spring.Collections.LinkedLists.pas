@@ -420,14 +420,14 @@ end;
 procedure TLinkedList<T>.RemoveFirst;
 begin
   if not Assigned(fHead) then
-    raise EInvalidOperationException.CreateRes(@SLinkedListEmpty);
+    RaiseHelper.NoElements;
   InternalRemoveNode(fHead);
 end;
 
 procedure TLinkedList<T>.RemoveLast;
 begin
   if not Assigned(fHead) then
-    raise EInvalidOperationException.CreateRes(@SLinkedListEmpty);
+    RaiseHelper.NoElements;
   InternalRemoveNode(fHead.fPrev);
 end;
 
@@ -515,17 +515,19 @@ end;
 
 function TLinkedList<T>.TEnumerator.MoveNext: Boolean;
 begin
-  Result := False;
-
-  if fVersion <> fList.fVersion then
-    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
-
-  if Assigned(fNode) then
+  if fVersion = fList.fVersion then
   begin
-    fCurrent := fNode.fItem;
-    fNode := fNode.Next;
-    Result := True;
-  end;
+    if Assigned(fNode) then
+    begin
+      fCurrent := fNode.fItem;
+      fNode := fNode.Next;
+      Result := True;
+    end
+    else
+      Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}

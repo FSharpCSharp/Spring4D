@@ -177,7 +177,7 @@ begin
     DeleteFromHead(caRemoved);
   end
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TAbstractQueue<T>.Extract: T;
@@ -188,7 +188,7 @@ begin
     DeleteFromHead(caExtracted);
   end
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TAbstractQueue<T>.Peek: T;
@@ -196,7 +196,7 @@ begin
   if Count > 0 then
     Result := Items[Head]
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TAbstractQueue<T>.PeekOrDefault: T;
@@ -328,7 +328,7 @@ begin
     DeleteFromHead(caRemoved);
   end
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TAbstractDeque<T>.RemoveLast: T;
@@ -342,7 +342,7 @@ begin
     DeleteFromTail(caRemoved);
   end
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TAbstractDeque<T>.ExtractFirst: T;
@@ -353,7 +353,7 @@ begin
     DeleteFromHead(caExtracted);
   end
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TAbstractDeque<T>.ExtractLast: T;
@@ -364,7 +364,7 @@ begin
     DeleteFromTail(caExtracted);
   end
   else
-    raise Error.NoElements;
+    RaiseHelper.NoElements;
 end;
 
 function TAbstractDeque<T>.TryRemoveFirst(var item: T): Boolean;

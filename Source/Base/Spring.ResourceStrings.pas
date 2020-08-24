@@ -50,9 +50,6 @@ resourcestring
   SInvalidOperationBufferSizeShouldBeSame = 'Buffer size should be the same.';
   SInvalidArgumentFormat = 'Invalid format for argument "%s".';
   SInvalidTypeCast             = 'Invalid cast: %s to %s.';
-  SArgument_ParamName          = 'Parameter name: %s';
-  SArgument_DuplicateKey       = 'An item with the same key has already been added.';
-  SArgument_KeyNotFound        = 'The given key was not present in the dictionary.';
 
   SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
 
@@ -99,25 +96,30 @@ resourcestring
 
   SArraysIdentical = 'Source and target array must not be identical';
 
+  SIncompatibleTypes = 'Incompatible types: "%s" and "%s"';
+
   {$ENDREGION}
 
 
   {$REGION 'Spring.Collections'}
-
-  SEnumNotStarted = 'Enum not started.';
-  SEnumEnded = 'Enum ended.';
-  SEnumEmpty = 'Invalid Operation. The enumeration is empty.';
-  SEnumFailedVersion = 'Collection was modified; enumeration operation may not execute.';
 
   SSequenceContainsNoElements = 'Sequence contains no elements.';
   SSequenceContainsNoMatchingElement = 'Sequence contains no matching element.';
   SSequenceContainsMoreThanOneMatchingElement = 'Sequence contains more than one matching element.';
   SSequenceContainsMoreThanOneElement = 'Sequence contains more than one element.';
 
-  SLinkedListEmpty = 'The LinkedList is empty.';
   SLinkedListNodeIsAttached = 'The LinkedList node already belongs to a LinkedList.';
 
-  SIncompatibleTypes = 'Incompatible types: "%s" and "%s"';
+  SArgument_DuplicateKey = 'An item with the same key has already been added.';
+  SArgument_KeyNotFound        = 'The given key was not present in the dictionary.';
+  SArgument_InvalidIndexCount = 'Index and count were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection.';
+
+  SArgumentOutOfRange_NeedNonNegNum = 'Non-negative number required. Parameter name: %s';
+  SArgumentOutOfRange_Index = 'Index must be non-negative and less than the size of the collection.';
+  SArgumentOutOfRange_Count = 'Count must be non-negative and refer to a location within the collection.';
+  SArgumentOutOfRange_Capacity = 'Capacity must be greater than the current size of the collection.';
+
+  SInvalidOperation_EnumFailedVersion = 'Collection was modified; enumeration operation may not execute.';
 
   {$ENDREGION}
 
@@ -230,6 +232,9 @@ resourcestring
   SIllegalArgumentQuantity = 'Invalid argument "quantity": %d.';
 
   SInvalidOperationCurrent = 'Invalid operation. The enumerable collection is empty.';
+
+  SEnumNotStarted = 'Enum not started.';
+  SEnumEnded = 'Enum ended.';
 
   {$ENDREGION}
 

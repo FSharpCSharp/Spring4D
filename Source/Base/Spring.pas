@@ -1450,6 +1450,82 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'RaiseHelper'}
+
+  {$SCOPEDENUMS ON}
+  ExceptionArgument = (
+    action,
+    capacity,
+    collection,
+    collectionSelector,
+    comparer,
+    count,
+    elementSelector,
+    first,
+    func,
+    index,
+    index1,
+    index2,
+    inner,
+    innerKeySelector,
+    items,
+    keySelector,
+    match,
+    other,
+    outer,
+    outerKeySelector,
+    predicate,
+    resultSelector,
+    second,
+    selector,
+    sorter,
+    source,
+    sourceIndex,
+    targetIndex,
+    value,
+    values
+  );
+
+  ExceptionResource = (
+    ArgumentOutOfRange_Capacity,
+    ArgumentOutOfRange_Count,
+    ArgumentOutOfRange_Index,
+    ArgumentOutOfRange_NeedNonNegNum,
+    Argument_InvalidIndexCount
+  );
+  {$SCOPEDENUMS OFF}
+
+  RaiseHelper = record
+  private
+    class function GetArgumentName(argument: ExceptionArgument): string; static;
+    class function GetResourceString(resource: ExceptionResource): string; static;
+
+    class function GetArgumentOutOfRangeException(argument: ExceptionArgument; resource: ExceptionResource): EArgumentException; overload; static;
+    class function GetArgumentOutOfRangeException(resource: ExceptionResource): EArgumentException; overload; static;
+  public
+    class procedure ArgumentNil(argument: ExceptionArgument); static;
+    class procedure ArgumentOutOfRange(argument: ExceptionArgument); overload; static;
+    class procedure ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource); overload; static;
+    class procedure ArgumentOutOfRange(resource: ExceptionResource); overload; static;
+
+    class procedure ArgumentOutOfRange_Count; static;
+    class procedure ArgumentOutOfRange_Index; static;
+
+    class procedure DuplicateKey; static;
+    class procedure KeyNotFound; static;
+    class procedure MoreThanOneElement; static;
+    class procedure MoreThanOneMatch; static;
+    class procedure NoClassType(t: PTypeInfo); static;
+    class procedure NoElements; static;
+    class procedure NoMatch; static;
+    class procedure NotSupported; static;
+
+    class function EnumFailedVersion: Boolean; static;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Nullable Types'}
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(DefaultFieldRttiVisibility)}{$ENDIF}
@@ -3003,6 +3079,9 @@ procedure UnregisterWeakRef(address: Pointer; const instance: TObject);
 
 procedure MoveManaged(source, target, typeInfo: Pointer; count: Integer);
 
+procedure CheckIndex(index, size: Integer); inline;
+procedure CheckRange(index, count, size: Integer); inline;
+
   {$ENDREGION}
 
 
@@ -3975,6 +4054,19 @@ end;
 procedure IntfAssign(const source: IInterface; var target: IInterface);
 begin
   target := source;
+end;
+
+procedure CheckIndex(index, size: Integer);
+begin
+  if Cardinal(index) >= Cardinal(size) then RaiseHelper.ArgumentOutOfRange_Index;
+end;
+
+procedure CheckRange(index, count, size: Integer);
+begin
+  if Cardinal(index) > Cardinal(size) then RaiseHelper.ArgumentOutOfRange_Index;
+  {$Q-}
+  if (count < 0) or (index > size - count) then RaiseHelper.ArgumentOutOfRange_Count;
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 end;
 
 {$ENDREGION}
@@ -7678,6 +7770,151 @@ begin
       Result := not Assigned(TMethod(value).Code) and not Assigned(TMethod(value).Data)
     else
       Result := not Assigned(PPointer(@value)^);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'RaiseHelper'}
+
+class procedure RaiseHelper.ArgumentNil(argument: ExceptionArgument);
+begin
+  raise EArgumentNilException.Create(GetArgumentName(argument)) at ReturnAddress;
+end;
+
+class procedure RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument);
+begin
+  raise EArgumentOutOfRangeException.Create(GetArgumentName(argument)) at ReturnAddress;
+end;
+
+class procedure RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource);
+begin
+  raise GetArgumentOutOfRangeException(argument, resource) at ReturnAddress;
+end;
+
+class procedure RaiseHelper.ArgumentOutOfRange(resource: ExceptionResource);
+begin
+  raise GetArgumentOutOfRangeException(resource) at ReturnAddress;
+end;
+
+class procedure RaiseHelper.ArgumentOutOfRange_Count;
+begin
+  raise GetArgumentOutOfRangeException(ExceptionArgument.count,
+    ExceptionResource.ArgumentOutOfRange_Count) at ReturnAddress;
+end;
+
+class procedure RaiseHelper.ArgumentOutOfRange_Index;
+begin
+  raise GetArgumentOutOfRangeException(ExceptionArgument.index,
+    ExceptionResource.ArgumentOutOfRange_Index) at ReturnAddress;
+end;
+
+class procedure RaiseHelper.DuplicateKey;
+begin
+  raise EArgumentException.CreateRes(@SArgument_DuplicateKey) at ReturnAddress;
+end;
+
+class procedure RaiseHelper.KeyNotFound;
+begin
+  raise EKeyNotFoundException.CreateRes(@SArgument_KeyNotFound) at ReturnAddress;
+end;
+
+class procedure RaiseHelper.MoreThanOneElement;
+begin
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement) at ReturnAddress;;
+end;
+
+class procedure RaiseHelper.MoreThanOneMatch;
+begin
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement) at ReturnAddress;;
+end;
+
+class procedure RaiseHelper.NoClassType(t: PTypeInfo);
+begin
+  raise EInvalidCast.CreateResFmt(@SNotClassType, [t.TypeName]) at ReturnAddress;;
+end;
+
+class procedure RaiseHelper.NoElements;
+begin
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements) at ReturnAddress;;
+end;
+
+class procedure RaiseHelper.NoMatch;
+begin
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement) at ReturnAddress;;
+end;
+
+class procedure RaiseHelper.NotSupported;
+begin
+  raise ENotSupportedException.Create('') at ReturnAddress;;
+end;
+
+class function RaiseHelper.EnumFailedVersion: Boolean;
+begin
+  raise EInvalidOperationException.CreateRes(@SInvalidOperation_EnumFailedVersion) at ReturnAddress;
+end;
+
+class function RaiseHelper.GetArgumentOutOfRangeException(
+  argument: ExceptionArgument; resource: ExceptionResource): EArgumentException;
+begin
+  Result := EArgumentOutOfRangeException.CreateFmt(GetResourceString(resource), [GetArgumentName(argument)]);
+end;
+
+class function RaiseHelper.GetArgumentOutOfRangeException(
+  resource: ExceptionResource): EArgumentException;
+begin
+  Result := EArgumentOutOfRangeException.Create(GetResourceString(resource));
+end;
+
+class function RaiseHelper.GetArgumentName(argument: ExceptionArgument): string;
+const
+  ArgumentNames: array[ExceptionArgument] of string = (
+    'action',
+    'capacity',
+    'collection',
+    'collectionSelector',
+    'comparer',
+    'count',
+    'elementSelector',
+    'first',
+    'func',
+    'index',
+    'index1',
+    'index2',
+    'inner',
+    'innerKeySelector',
+    'items',
+    'keySelector',
+    'match',
+    'other',
+    'outer',
+    'outerKeySelector',
+    'predicate',
+    'resultSelector',
+    'second',
+    'selector',
+    'sorter',
+    'source',
+    'sourceIndex',
+    'targetIndex',
+    'value',
+    'values'
+  );
+begin
+  Result := ArgumentNames[argument];
+end;
+
+class function RaiseHelper.GetResourceString(resource: ExceptionResource): string;
+const
+  ResourceStrings: array[ExceptionResource] of PResStringRec = (
+    @SArgumentOutOfRange_Capacity,
+    @SArgumentOutOfRange_Count,
+    @SArgumentOutOfRange_Index,
+    @SArgumentOutOfRange_NeedNonNegNum,
+    @SArgument_InvalidIndexCount
+  );
+begin
+  Result := LoadResString(ResourceStrings[resource]);
 end;
 
 {$ENDREGION}

@@ -362,9 +362,7 @@ var
   localSet: IMultiSet<T>;
   entry: TEntry;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(other), 'other');
-{$ENDIF}
+  if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
   localSet := CreateMultiSet;
   localSet.AddRange(other);
@@ -419,7 +417,7 @@ var
   isExisting: Boolean;
   i: Integer;
 begin
-  Guard.CheckRange(count >= 0, 'count');
+  if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), isExisting);
 
@@ -523,7 +521,7 @@ var
   tableItem: ^TItem;
   i: Integer;
 begin
-  Guard.CheckRange(count >= 0, 'count');
+  if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   entry.HashCode := fComparer.GetHashCode(item);
   if fHashTable.Find(item, entry) then
@@ -553,7 +551,7 @@ var
   isExisting: Boolean;
   i: Integer;
 begin
-  Guard.CheckRange(count >= 0, 'count');
+  if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   if count = 0 then
   begin
@@ -635,29 +633,31 @@ var
   entry: ^TItem;
 begin
   hashTable := @fSource.fHashTable;
-  if fVersion <> hashTable.Version then
-    raise Error.EnumFailedVersion;
-
-  if fRemainingCount = 0 then
-    while fItemIndex < hashTable.ItemCount do
-    begin
-      entry := @TItems(hashTable.Items)[fItemIndex];
-      Inc(fItemIndex);
-      if entry.HashCode >= 0 then
-      begin
-        fCurrent := entry.Item;
-        fRemainingCount := entry.Count - 1;
-        Exit(True);
-      end;
-    end
-  else
+  if fVersion = hashTable.Version then
   begin
-    Dec(fRemainingCount);
-    Exit(True);
-  end;
+    if fRemainingCount = 0 then
+      while fItemIndex < hashTable.ItemCount do
+      begin
+        entry := @TItems(hashTable.Items)[fItemIndex];
+        Inc(fItemIndex);
+        if entry.HashCode >= 0 then
+        begin
+          fCurrent := entry.Item;
+          fRemainingCount := entry.Count - 1;
+          Exit(True);
+        end;
+      end
+    else
+    begin
+      Dec(fRemainingCount);
+      Exit(True);
+    end;
 
-  fCurrent := Default(T);
-  Result := False;
+    fCurrent := Default(T);   // TODO: review
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -754,23 +754,25 @@ var
   entry: ^TItem;
 begin
   hashTable := @fSource.fHashTable;
-  if fVersion <> hashTable.Version then
-    raise Error.EnumFailedVersion;
-
-  while fItemIndex < hashTable.ItemCount do
+  if fVersion = hashTable.Version then
   begin
-    entry := @TItems(hashTable.Items)[fItemIndex];
-    Inc(fItemIndex);
-    if entry.HashCode >= 0 then
+    while fItemIndex < hashTable.ItemCount do
     begin
-      fCurrent.Item := entry.Item;
-      fCurrent.Count := entry.Count;
-      Exit(True);
+      entry := @TItems(hashTable.Items)[fItemIndex];
+      Inc(fItemIndex);
+      if entry.HashCode >= 0 then
+      begin
+        fCurrent.Item := entry.Item;
+        fCurrent.Count := entry.Count;
+        Exit(True);
+      end;
     end;
-  end;
 
-  fCurrent := Default(TEntry);
-  Result := False;
+    fCurrent := Default(TEntry);
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
@@ -802,18 +804,20 @@ end;
 function TTreeMultiSet<T>.DoMoveNext(var currentNode: PNode;
   var finished: Boolean; iteratorVersion: Integer): Boolean;
 begin
-  if iteratorVersion <> fVersion then
-    raise Error.EnumFailedVersion;
+  if iteratorVersion = fVersion then
+  begin
+    if (fTree.Count = 0) or finished then
+      Exit(False);
 
-  if (fTree.Count = 0) or finished then
-    Exit(False);
-
-  if not Assigned(currentNode) then
-    currentNode := fTree.Root.LeftMost
+    if not Assigned(currentNode) then
+      currentNode := fTree.Root.LeftMost
+    else
+      currentNode := currentNode.Next;
+    Result := Assigned(currentNode);
+    finished := not Result;
+  end
   else
-    currentNode := currentNode.Next;
-  Result := Assigned(currentNode);
-  finished := not Result;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 function TTreeMultiSet<T>.Add(const item: T): Boolean;
@@ -827,7 +831,7 @@ var
   node: PNode;
   i: Integer;
 begin
-  Guard.CheckTrue(count >= 0, 'count');
+  if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   {$Q-}
   Inc(fVersion);
@@ -920,7 +924,7 @@ var
   node: PNode;
   i: Integer;
 begin
-  Guard.CheckTrue(count >= 0, 'count');
+  if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   {$Q-}
   Inc(fVersion);
@@ -947,8 +951,7 @@ end;
 
 procedure TTreeMultiSet<T>.SetItemCount(const item: T; count: Integer);
 begin
-  if count < 0 then
-    raise Error.ArgumentOutOfRange('count');
+  if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   {$Q-}
   Inc(fVersion);
@@ -1006,28 +1009,30 @@ function TTreeMultiSet<T>.TEnumerator.MoveNext: Boolean;
 var
   node: PNode;
 begin
-  if fVersion <> fSource.fVersion then
-    raise Error.EnumFailedVersion;
-
-  if fRemainingCount = 0 then
+  if fVersion = fSource.fVersion then
   begin
-    if not Assigned(fNode) then
-      node := fSource.fTree.Root.LeftMost
-    else
-      node := fNode.Next;
-
-    Result := Assigned(node);
-    if Result then
+    if fRemainingCount = 0 then
     begin
-      fNode := node;
-      fRemainingCount := node.Value - 1;
+      if not Assigned(fNode) then
+        node := fSource.fTree.Root.LeftMost
+      else
+        node := fNode.Next;
+
+      Result := Assigned(node);
+      if Result then
+      begin
+        fNode := node;
+        fRemainingCount := node.Value - 1;
+      end;
+    end
+    else
+    begin
+      Dec(fRemainingCount);
+      Result := True;
     end;
   end
   else
-  begin
-    Dec(fRemainingCount);
-    Result := True;
-  end;
+    Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}
