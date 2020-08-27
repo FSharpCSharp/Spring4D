@@ -160,7 +160,7 @@ type
       procedure Add(handler: TMethodPointer); overload;
       procedure Remove(handler: TMethodPointer); overload;
 
-      procedure GetInvoke(var result);
+      procedure GetInvoke(var result); overload;
       procedure Add(const handler); overload;
       procedure Remove(const handler); overload;
     end;
