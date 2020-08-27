@@ -156,7 +156,7 @@ type
       fSource: IEnumerator;
       fElementType: PTypeInfo;
       fGetCurrent: TGetCurrentFunc;
-      function GetCurrent: TValue;
+      function GetCurrent: Spring.TValue;
     public
       constructor Create(const source: IEnumerator; elementType: PTypeInfo; getCurrent: TGetCurrentFunc);
       function MoveNext: Boolean;
@@ -178,14 +178,14 @@ type
 
   TCollectionWrapper = class(TEnumerableWrapper, ICollection)
   private type
-    TAddFunc = function(const collection: IInterface; const value: TValue): Boolean;
+    TAddFunc = function(const collection: IInterface; const value: Spring.TValue): Boolean;
   private
     fAdd: TAddFunc;
   public
     class function Create(const source: IEnumerable; out obj;
       getCurrent: TEnumerableWrapper.TGetCurrentFunc;
       add: TAddFunc): HRESULT; overload; static;
-    function Add(const item: TValue): Boolean;
+    function Add(const item: Spring.TValue): Boolean;
     procedure Clear;
   end;
 
@@ -245,8 +245,8 @@ type
     function TakeWhileIndex: Boolean;
     function Where: Boolean;
 
-    class function GetCurrent(const enumerator: IEnumerator; elementType: PTypeInfo): TValue; static;
-    class function Add(const collection: IInterface; const value: TValue): Boolean; static;
+    class function GetCurrent(const enumerator: IEnumerator; elementType: PTypeInfo): Spring.TValue; static;
+    class function Add(const collection: IInterface; const value: Spring.TValue): Boolean; static;
   end;
 
   TIterator = class abstract(TRefCountedObject)
@@ -544,28 +544,41 @@ type
     procedure TrimExcess;
   end;
 
-  TMapBase<TKey, T> = class abstract(TCollectionBase<TPair<TKey, T>>)
+  TPairComparer = class abstract(TRefCountedObject)
+  private
+    fKeyComparer, fValueComparer: IInterface;
+  public
+    constructor Create(keyType, valueType: PTypeInfo);
+  end;
+
+  TPairComparer<TKey, TValue> = class sealed(TPairComparer, IComparer<TPair<TKey, TValue>>)
+  private
+    function Compare(const left, right: TPair<TKey, TValue>): Integer;
+  end;
+
+  TMapBase<TKey, TValue> = class abstract(TCollectionBase<TPair<TKey, TValue>>)
   private
     type
-      TKeyValuePair = TPair<TKey, T>;
+      TKeyValuePair = TPair<TKey, TValue>;
+      TKeyValuePairComparer = TPairComparer<TKey, TValue>;
   protected
     fOnKeyChanged: TCollectionChangedEventImpl<TKey>;
-    fOnValueChanged: TCollectionChangedEventImpl<T>;
+    fOnValueChanged: TCollectionChangedEventImpl<TValue>;
   {$REGION 'Property Accessors'}
     function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
-    function GetOnValueChanged: ICollectionChangedEvent<T>;
+    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
     function GetKeyType: PTypeInfo; virtual;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    procedure DoNotify(const key: TKey; const value: T; action: TCollectionChangedAction); overload;
+    procedure DoNotify(const key: TKey; const value: TValue; action: TCollectionChangedAction); overload;
     procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
-    procedure ValueChanged(const item: T; action: TCollectionChangedAction); inline;
+    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
   public
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
 
     function Add(const item: TKeyValuePair): Boolean; overload;
-    procedure Add(const key: TKey; const value: T); overload;
+    procedure Add(const key: TKey; const value: TValue); overload;
 
     function Remove(const item: TKeyValuePair): Boolean;
 
@@ -1655,7 +1668,7 @@ begin
   fGetCurrent := getCurrent;
 end;
 
-function TEnumerableWrapper.TEnumerator.GetCurrent: TValue;
+function TEnumerableWrapper.TEnumerator.GetCurrent: Spring.TValue;
 begin
   Result := fGetCurrent(fSource, fElementType);
 end;
@@ -1683,7 +1696,7 @@ begin
   Result := S_OK;
 end;
 
-function TCollectionWrapper.Add(const item: TValue): Boolean;
+function TCollectionWrapper.Add(const item: Spring.TValue): Boolean;
 begin
   Result := fAdd(fSource, item);
 end;
@@ -2468,23 +2481,48 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMapBase<TKey, T>'}
+{$REGION 'TPairComparer'}
 
-procedure TMapBase<TKey, T>.AfterConstruction;
+constructor TPairComparer.Create(keyType, valueType: PTypeInfo);
 begin
-  inherited AfterConstruction;
-  fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
-  fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
+  fKeyComparer := IInterface(_LookupVtableInfo(giComparer, keyType, GetTypeSize(keyType)));
+  fValueComparer := IInterface(_LookupVtableInfo(giComparer, valueType, GetTypeSize(valueType)));
 end;
 
-procedure TMapBase<TKey, T>.BeforeDestruction;
+{$ENDREGION}
+
+
+{$REGION 'TPairComparer<TKey, TValue>'}
+
+function TPairComparer<TKey, TValue>.Compare(
+  const left, right: TPair<TKey, TValue>): Integer;
+begin
+  Result := IComparer<TKey>(fKeyComparer).Compare(left.Key, right.Key);
+  if Result = 0 then
+    Result := IComparer<TValue>(fValueComparer).Compare(left.Value, right.Value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMapBase<TKey, TValue>'}
+
+procedure TMapBase<TKey, TValue>.AfterConstruction;
+begin
+  fComparer := TKeyValuePairComparer.Create(GetKeyType, GetValueType);
+  inherited AfterConstruction;
+  fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
+  fOnValueChanged := TCollectionChangedEventImpl<TValue>.Create;
+end;
+
+procedure TMapBase<TKey, TValue>.BeforeDestruction;
 begin
   fOnValueChanged.Free;
   fOnKeyChanged.Free;
   inherited BeforeDestruction;
 end;
 
-procedure TMapBase<TKey, T>.DoNotify(const key: TKey; const value: T;
+procedure TMapBase<TKey, TValue>.DoNotify(const key: TKey; const value: TValue;
   action: TCollectionChangedAction);
 var
   pair: TKeyValuePair;
@@ -2494,60 +2532,60 @@ begin
   Notify(Self, pair, action);
 end;
 
-function TMapBase<TKey, T>.Add(const item: TKeyValuePair): Boolean;
+function TMapBase<TKey, TValue>.Add(const item: TKeyValuePair): Boolean;
 begin
-  Result := IMap<TKey, T>(this).TryAdd(item.Key, item.Value);
+  Result := IMap<TKey, TValue>(this).TryAdd(item.Key, item.Value);
 end;
 
-procedure TMapBase<TKey, T>.Add(const key: TKey; const value: T);
+procedure TMapBase<TKey, TValue>.Add(const key: TKey; const value: TValue);
 begin
-  if not IMap<TKey, T>(this).TryAdd(key, value) then
+  if not IMap<TKey, TValue>(this).TryAdd(key, value) then
     RaiseHelper.DuplicateKey;
 end;
 
-function TMapBase<TKey, T>.Contains(const item: TKeyValuePair): Boolean;
+function TMapBase<TKey, TValue>.Contains(const item: TKeyValuePair): Boolean;
 begin
-  Result := IMap<TKey, T>(this).Contains(item.Key, item.Value);
+  Result := IMap<TKey, TValue>(this).Contains(item.Key, item.Value);
 end;
 
-function TMapBase<TKey, T>.Extract(const item: TKeyValuePair): TKeyValuePair;
+function TMapBase<TKey, TValue>.Extract(const item: TKeyValuePair): TKeyValuePair;
 begin
-  Result := IMap<TKey, T>(this).Extract(item.Key, item.Value);
+  Result := IMap<TKey, TValue>(this).Extract(item.Key, item.Value);
 end;
 
-function TMapBase<TKey, T>.GetKeyType: PTypeInfo;
+function TMapBase<TKey, TValue>.GetKeyType: PTypeInfo;
 begin
   Result := TypeInfo(TKey);
 end;
 
-function TMapBase<TKey, T>.GetOnKeyChanged: ICollectionChangedEvent<TKey>;
+function TMapBase<TKey, TValue>.GetOnKeyChanged: ICollectionChangedEvent<TKey>;
 begin
   Result := fOnKeyChanged;
 end;
 
-function TMapBase<TKey, T>.GetOnValueChanged: ICollectionChangedEvent<T>;
+function TMapBase<TKey, TValue>.GetOnValueChanged: ICollectionChangedEvent<TValue>;
 begin
   Result := fOnValueChanged;
 end;
 
-function TMapBase<TKey, T>.GetValueType: PTypeInfo;
+function TMapBase<TKey, TValue>.GetValueType: PTypeInfo;
 begin
-  Result := TypeInfo(T);
+  Result := TypeInfo(TValue);
 end;
 
-procedure TMapBase<TKey, T>.KeyChanged(const item: TKey;
+procedure TMapBase<TKey, TValue>.KeyChanged(const item: TKey;
   action: TCollectionChangedAction);
 begin
   if fOnKeyChanged.CanInvoke then
     fOnKeyChanged.Invoke(Self, item, action);
 end;
 
-function TMapBase<TKey, T>.Remove(const item: TKeyValuePair): Boolean;
+function TMapBase<TKey, TValue>.Remove(const item: TKeyValuePair): Boolean;
 begin
-  Result := IMap<TKey, T>(this).Remove(item.Key, item.Value);
+  Result := IMap<TKey, TValue>(this).Remove(item.Key, item.Value);
 end;
 
-procedure TMapBase<TKey, T>.ValueChanged(const item: T;
+procedure TMapBase<TKey, TValue>.ValueChanged(const item: TValue;
   action: TCollectionChangedAction);
 begin
   if fOnValueChanged.CanInvoke then
@@ -2875,10 +2913,10 @@ begin
       fState := Finished;
     end;
     if fState = Initial then
-      begin
-        fState := Started;
+    begin
+      fState := Started;
       Start;
-      end;
+    end;
   until fState = Finished;
 
   fIterator.Finalize;
@@ -2964,16 +3002,16 @@ end;
 {$REGION 'TIteratorRec<T>'}
 
 class function TIteratorRec<T>.GetCurrent(const enumerator: IEnumerator;
-  elementType: PTypeInfo): TValue;
+  elementType: PTypeInfo): Spring.TValue;
 var
   current: T;
 begin
   current := IEnumerator<T>(enumerator).Current;
-  TValue.Make(@current, elementType, Result);
+  Spring.TValue.Make(@current, elementType, Result);
 end;
 
 class function TIteratorRec<T>.Add(const collection: IInterface;
-  const value: TValue): Boolean;
+  const value: Spring.TValue): Boolean;
 var
   elementType: PTypeInfo;
   item: T;

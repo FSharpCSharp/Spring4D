@@ -69,8 +69,6 @@ type
 
       TKeyCollection = TInnerCollection<TKey>;
       TValueCollection = TInnerCollection<TValue>;
-
-      TComparer = TPairByKeyComparer<TKey, TValue>;
   {$ENDREGION}
   private
     fHashTable: THashTable;
@@ -191,8 +189,6 @@ type
       protected
         procedure Changed(const item: TValueKeyPair; action: TCollectionChangedAction); override;
       public
-        constructor Create(const source: TBidiDictionary<TKey, TValue>);
-
       {$REGION 'Implements IInterface'}
         function _AddRef: Integer; stdcall;
         function _Release: Integer; stdcall;
@@ -487,8 +483,6 @@ type
         function ToArray: TArray<TValue>;
       {$ENDREGION}
       end;
-
-      TComparer = TPairByKeyComparer<TKey, TValue>;
   {$ENDREGION}
   private
     fTree: TRedBlackTree<TKey,TValue>;
@@ -628,7 +622,6 @@ procedure TDictionary<TKey, TValue>.AfterConstruction;
 var
   keyType, valueType: PTypeInfo;
 begin
-  fComparer := TComparer.Create(nil);
   inherited AfterConstruction;
 
   keyType := GetKeyType;
@@ -1097,17 +1090,23 @@ begin
 end;
 
 procedure TBidiDictionary<TKey, TValue>.AfterConstruction;
+var
+  keyType, valueType: PTypeInfo;
 begin
   inherited AfterConstruction;
 
+  keyType := GetKeyType;
+  valueType := GetValueType;
   if not Assigned(fKeyComparer) then
-    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, GetKeyType, SizeOf(TKey)));
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, keyType, SizeOf(TKey)));
   if not Assigned(fValueComparer) then
-    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, GetValueType, SizeOf(TValue)));
+    fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, valueType, SizeOf(TValue)));
 
   fKeys := TKeyCollection.Create(Self);
   fValues := TValueCollection.Create(Self);
-  fInverse := TInverse.Create(Self);
+  fInverse := TInverse.Create;
+  fInverse.fSource := Self;
+  fInverse.fComparer := TPairComparer<TValue, TKey>.Create(valueType, keyType);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.BeforeDestruction;
@@ -1829,12 +1828,6 @@ end;
 
 
 {$REGION 'TBidiDictionary<TKey, TValue>.TInverse'}
-
-constructor TBidiDictionary<TKey, TValue>.TInverse.Create(
-  const source: TBidiDictionary<TKey, TValue>);
-begin
-  fSource := source;
-end;
 
 procedure TBidiDictionary<TKey, TValue>.TInverse.Add(const value: TValue;
   const key: TKey);

@@ -1477,17 +1477,6 @@ type
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
-//  TKeyValuePair<TKey, TValue> = record
-//  private
-//    fKey: TKey;
-//    fValue: TValue;
-//  public
-//    constructor Create(const key: TKey; const value: TValue);
-//
-//    property Key: TKey read fKey;
-//    property Value: TValue read fValue;
-//  end;
-
   IReadOnlyMap<TKey, TValue> = interface(IReadOnlyCollection<TPair<TKey, TValue>>)
     ['{1FBECEB8-582E-4108-BB44-F21A06FE425B}']
   {$REGION 'Property Accessors'}
@@ -3451,23 +3440,6 @@ type
 
     class function Ordinal: TStringComparer;
     class function OrdinalIgnoreCase: TStringComparer;
-  end;
-
-  TInstanceComparer<T> = record
-  public
-    class function Default: IComparer<T>; static; inline;
-  end;
-
-  TKeyComparer<TKey> = class abstract(TRefCountedObject)
-  private
-    fKeyComparer: IComparer<TKey>;
-  public
-    constructor Create(const keyComparer: IComparer<TKey>);
-  end;
-
-  TPairByKeyComparer<TKey,TValue> = class(TKeyComparer<TKey>, IComparer<TPair<TKey,TValue>>)
-  private
-    function Compare(const left, right: TPair<TKey,TValue>): Integer;
   end;
 
   TIdentityFunction<T> = record
@@ -7625,40 +7597,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInstanceComparer<T>'}
-
-class function TInstanceComparer<T>.Default: IComparer<T>;
-begin
-  Result := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TKeyComparer<TKey>'}
-
-constructor TKeyComparer<TKey>.Create(const keyComparer: IComparer<TKey>);
-begin
-  if keyComparer = nil then
-    fKeyComparer := IComparer<TKey>(_LookupVtableInfo(giComparer, TypeInfo(TKey), SizeOf(TKey)))
-  else
-    fKeyComparer := keyComparer;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TPairByKeyComparer<TKey,TValue>'}
-
-function TPairByKeyComparer<TKey,TValue>.Compare(
-  const left, right: TPair<TKey, TValue>): Integer;
-begin
-  Result := fKeyComparer.Compare(left.Key, right.Key);
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TLinkedListNode<T>'}
 
 constructor TLinkedListNode<T>.Create(const value: T);
@@ -7686,18 +7624,6 @@ begin
   else
     Result := nil;
 end;
-
-{$ENDREGION}
-
-
-{$REGION 'TKeyValuePair<TKey, TValue>'}
-
-//constructor TKeyValuePair<TKey, TValue>.Create(const key: TKey;
-//  const value: TValue);
-//begin
-//  fKey := key;
-//  fValue := value;
-//end;
 
 {$ENDREGION}
 
