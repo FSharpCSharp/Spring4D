@@ -2428,7 +2428,6 @@ type
     procedure Finalize;
     function at(items: Pointer; index: Integer): Pointer; inline;
   public
-    class procedure CopyArray<T>(const source; var target; count: Integer); static;
     class function CompareThunk<T>(instance: Pointer; const left, right): Integer; static;
     class procedure BinarySort<T>(lo, hi, start: Pointer<T>.P; const compare: TComparerMethod<T>); static;
     class function CountRunAndMakeAscending<T>(lo, hi: Pointer<T>.P; const compare: TComparerMethod<T>): Integer; static;
@@ -10248,34 +10247,6 @@ begin
   Result := TComparerMethod<T>(instance^)(T(left), T(right));
 end;
 
-class procedure TTimSort.CopyArray<T>(const source; var target; count: Integer);
-var
-  src, dest: Pointer<T>.P;
-begin
-  src := @source;
-  dest := @target;
-  if src < dest then
-  begin
-    Inc(src, count - 1);
-    Inc(dest, count - 1);
-    while count > 0 do
-    begin
-      dest^ := src^;
-      Dec(dest);
-      Dec(src);
-      Dec(count);
-    end;
-  end
-  else
-    while count > 0 do
-    begin
-      dest^ := src^;
-      Inc(dest);
-      Inc(src);
-      Dec(count);
-    end;
-end;
-
 class procedure TTimSort.Reverse<T>(left, right: Pointer);
 type
   {$POINTERMATH ON}
@@ -10660,9 +10631,9 @@ begin
   dest := left;
   left := ts.EnsureTmpCapacity(leftLen);
   if TType.IsManaged<T> then
-    CopyArray<T>(dest^, left^, leftLen)
+    MoveManaged(dest, left, TypeInfo(T), leftLen)
   else
-    System.Move(dest^, left^, leftLen * SizeOf(T));
+    System.Move(dest^, left^, SizeOf(T) * leftLen);
 
   // move first element of second run and deal with degenerate cases
   dest^ := right^;
@@ -10726,9 +10697,9 @@ begin
       if leftCount <> 0 then
       begin
         if TType.IsManaged<T> then
-          CopyArray<T>(left^, dest^, leftCount)
+          MoveManaged(left, dest, TypeInfo(T), leftCount)
         else
-          System.Move(left^, dest^, leftCount * SizeOf(T));
+          System.Move(left^, dest^, SizeOf(T) * leftCount);
         Inc(dest, leftCount);
         Inc(left, leftCount);
         Dec(leftLen, leftCount);
@@ -10752,9 +10723,9 @@ begin
       if rightCount <> 0 then
       begin
         if TType.IsManaged<T> then
-          CopyArray<T>(right^, dest^, rightCount)
+          MoveManaged(right, dest, TypeInfo(T), rightCount)
         else
-          System.Move(right^, dest^, rightCount * SizeOf(T));
+          System.Move(right^, dest^, SizeOf(T) * rightCount);
         Inc(dest, rightCount);
         Inc(right, rightCount);
         Dec(rightLen, rightCount);
@@ -10774,17 +10745,17 @@ begin
 copyLeft:
   if leftLen > 0 then
     if TType.IsManaged<T> then
-      CopyArray<T>(left^, dest^, leftLen)
+      MoveManaged(left, dest, TypeInfo(T), leftLen)
     else
-      System.Move(left^, dest^, leftLen * SizeOf(T));
+      System.Move(left^, dest^, SizeOf(T) * leftLen);
   Exit;
 copyRight:
   Assert(leftLen = 1); //FI:W509
   Assert(rightLen > 0);
   if TType.IsManaged<T> then
-    CopyArray<T>(right^, dest^, rightLen)
+    MoveManaged(right, dest, TypeInfo(T), rightLen)
   else
-    System.Move(right^, dest^, rightLen * SizeOf(T));
+    System.Move(right^, dest^, SizeOf(T) * rightLen);
   dest[rightLen] := left^;
 end;
 
@@ -10810,9 +10781,9 @@ begin
   rightBase := ts.EnsureTmpCapacity(rightLen);
   dest := right + rightLen - 1;
   if TType.IsManaged<T> then
-    CopyArray<T>(right^, rightBase^, rightLen)
+    MoveManaged(right, rightBase, TypeInfo(T), rightLen)
   else
-    System.Move(right^, rightBase^, rightLen * SizeOf(T));
+    System.Move(right^, rightBase^, SizeOf(T) * rightLen);
   leftBase := left;
   right := rightBase + rightLen - 1;
   Inc(left, leftLen - 1);
@@ -10881,9 +10852,9 @@ begin
         Dec(dest, leftCount);
         Dec(left, leftCount);
         if TType.IsManaged<T> then
-          CopyArray<T>(left[1], dest[1], leftCount)
+          MoveManaged(@left[1], @dest[1], TypeInfo(T), leftCount)
         else
-          System.Move(left[1], dest[1], leftCount * SizeOf(T));
+          System.Move(left[1], dest[1], SizeOf(T) * leftCount);
         Dec(leftLen, leftCount);
         if leftLen = 0 then
           goto copyRight;
@@ -10905,9 +10876,9 @@ begin
         Dec(dest, rightCount);
         Dec(right, rightCount);
         if TType.IsManaged<T> then
-          CopyArray<T>(right[1], dest[1], rightCount)
+          MoveManaged(@right[1], @dest[1], TypeInfo(T), rightCount)
         else
-          System.Move(right[1], dest[1], rightCount * SizeOf(T));
+          System.Move(right[1], dest[1], SizeOf(T) * rightCount);
         Dec(rightLen, rightCount);
         if rightLen = 1 then
           goto copyLeft;
@@ -10927,9 +10898,9 @@ begin
 copyRight:
   if rightLen > 0 then
     if TType.IsManaged<T> then
-      CopyArray<T>(rightBase^, dest[-(rightLen - 1)], rightLen)
+      MoveManaged(rightBase, @dest[-(rightLen - 1)], TypeInfo(T), rightLen)
     else
-      System.Move(rightBase^, dest[-(rightLen - 1)], rightLen * SizeOf(T));
+      System.Move(rightBase^, dest[-(rightLen - 1)], SizeOf(T) * rightLen);
   Exit;
 copyLeft:
   Assert(rightLen = 1); //FI:W509
@@ -10937,9 +10908,9 @@ copyLeft:
   Dec(dest, leftLen);
   Dec(left, leftLen);
   if TType.IsManaged<T> then
-    CopyArray<T>(left[1], dest[1], leftLen)
+    MoveManaged(@left[1], @dest[1], TypeInfo(T), leftLen)
   else
-    System.Move(left[1], dest[1], leftLen * SizeOf(T));
+    System.Move(left[1], dest[1], SizeOf(T) * leftLen);
   dest^ := right^;
 end;
 
