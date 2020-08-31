@@ -78,7 +78,8 @@ type
     procedure DeleteInternal(index: Integer; action: TCollectionChangedAction);
     function DeleteAllInternal(const match: Predicate<T>;
       action: TCollectionChangedAction; const items: TArray<T>): Integer;
-    procedure DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+    procedure DeleteRangeInternal(index, count: Integer;
+      action: TCollectionChangedAction; doClear: Boolean; result: PPointer);
     function InsertInternal(index: Integer; const item: T): Integer;
     procedure SetItemInternal(index: Integer; const value: T);
   protected
@@ -788,7 +789,7 @@ begin
   if listCount > 0 then
   begin
     if OwnsObjects or Assigned(Notify) then
-      DeleteRangeInternal(0, listCount, True)
+      DeleteRangeInternal(0, listCount, caRemoved, True, nil)
     else
     begin
       {$Q-}
@@ -801,7 +802,8 @@ begin
   SetLength(fItems, 0);
 end;
 
-procedure TAbstractArrayList<T>.DeleteRangeInternal(index, count: Integer; doClear: Boolean);
+procedure TAbstractArrayList<T>.DeleteRangeInternal(index, count: Integer;
+  action: TCollectionChangedAction; doClear: Boolean; result: PPointer);
 var
   oldItems: TArray<T>;
   tailCount, i: Integer;
@@ -833,19 +835,22 @@ begin
     Reset;
 
   if Assigned(Notify) then
-    if OwnsObjects then
+    if OwnsObjects and (action = caRemoved) then
       for i := 0 to count - 1 do
       begin
-        Notify(Self, oldItems[i], caRemoved);
+        Notify(Self, oldItems[i], action);
         FreeObject(oldItems[i]);
       end
     else
       for i := 0 to count - 1 do
-        Notify(Self, oldItems[i], caRemoved)
+        Notify(Self, oldItems[i], action)
   else
-    if OwnsObjects then
+    if OwnsObjects and (action = caRemoved) then
       for i := 0 to count - 1 do
         FreeObject(oldItems[i]);
+
+  if Assigned(result) then
+    TArray<T>(result^) := oldItems;
 end;
 
 procedure TAbstractArrayList<T>.DeleteRange(index, count: Integer);
@@ -861,7 +866,7 @@ begin
 
   if OwnsObjects or Assigned(Notify) then
   begin
-    DeleteRangeInternal(index, count, False);
+    DeleteRangeInternal(index, count, caRemoved, False, nil);
     Exit;
   end;
 
@@ -1136,41 +1141,13 @@ begin
 end;
 
 function TAbstractArrayList<T>.ExtractRange(index, count: Integer): TArray<T>;
-var
-  listCount, tailCount, i: Integer;
 begin
-  listCount := Self.Count;
-  CheckRange(index, count, listCount);
+  CheckRange(index, count, Self.Count);
 
   if count = 0 then
-    Exit;
+    Exit(nil);
 
-  SetLength(Result, count);
-  if ItemType.HasWeakRef then
-    MoveManaged(@fItems[index], @Result[0], TypeInfo(T), count)
-  else
-    System.Move(fItems[index], Result[0], SizeOf(T) * count);
-
-  {$Q-}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  tailCount := listCount - (index + count);
-  if tailCount > 0 then
-  begin
-    if ItemType.HasWeakRef then
-      MoveManaged(@fItems[index + count], @fItems[index], TypeInfo(T), tailCount)
-    else
-      System.Move(fItems[index + count], fItems[index], SizeOf(T) * tailCount);
-    Inc(index, tailCount);
-  end;
-  if ItemType.HasWeakRef then
-    System.Finalize(fItems[index], count);
-  System.FillChar(fItems[index], SizeOf(T) * count, 0);
-  Dec(fCount, count);
-
-  if Assigned(Notify) then
-    for i := 0 to count - 1 do
-      Notify(Self, Result[i], caExtracted);
+  DeleteRangeInternal(index, count, caExtracted, False, @Result);
 end;
 
 function TAbstractArrayList<T>.Contains(const value: T): Boolean;
