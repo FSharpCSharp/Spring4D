@@ -658,57 +658,47 @@ end;
 
 procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: IEnumerable<T>);
 var
-  listCount, valueCount, i: Integer;
+  listCount, valueCount, tailCount, i: Integer;
+  arrayItem: PT;
   intf: IInterface;
-  item: T;
 begin
   listCount := Count;
   if Cardinal(index) > Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange_Index;
   if not Assigned(values) then RaiseHelper.ArgumentNil(ExceptionArgument.values);
 
-  if values.QueryInterface(ICollectionOfTGuid, Pointer(intf)) = S_OK then
+  if values.QueryInterface(IReadOnlyCollectionOfTGuid, Pointer(intf)) = S_OK then
   begin
-    valueCount := ICollection<T>(intf).Count;
-    if valueCount > 0 then
-    begin
-      if listCount + valueCount > fCapacity then
-        Grow(listCount + valueCount);
+    valueCount := IReadOnlyCollection<T>(intf).Count;
+    if valueCount = 0 then
+      Exit;
 
-      {$Q-}
-      Inc(fVersion);
-      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    if listCount + valueCount > fCapacity then
+      Grow(listCount + valueCount);
 
-      if index < listCount then
-      begin
-        if ItemType.IsManaged then
-          MoveManaged(@fItems[index], @fItems[index + valueCount], TypeInfo(T), listCount - index)
-        else
-          System.Move(fItems[index], fItems[index + valueCount], SizeOf(T) * (listCount - index));
-      end;
-
-      if IInterface(this) = intf then
-      begin
-        if ItemType.IsManaged then
-          MoveManaged(@fItems[0], @fItems[index], TypeInfo(T), valueCount)
-        else
-          System.Move(fItems[0], fItems[index], SizeOf(T) * valueCount);
-      end
+    {$Q-}
+    Inc(fVersion);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    arrayItem := @fItems[index];
+    tailCount := listCount - index;
+    if tailCount > 0 then
+      if ItemType.IsManaged then
+        MoveManaged(arrayItem, arrayItem + valueCount, TypeInfo(T), tailCount)
       else
-        ICollection<T>(intf).CopyTo(fItems, index);
-      Inc(fCount, valueCount);
+        System.Move(arrayItem^, (arrayItem + valueCount)^, SizeOf(T) * tailCount);
 
-      if Assigned(Notify) then
-        for i := index to index + valueCount - 1 do
-          Notify(Self, fItems[i], caAdded);
-    end;
+    IReadOnlyCollection<T>(intf).CopyTo(fItems, index);
+    Inc(fCount, valueCount);
+
+    if Assigned(Notify) then
+      for i := index to index + valueCount - 1 do
+        Notify(Self, fItems[i], caAdded);
   end
   else
   begin
     intf := values.GetEnumerator;
     while IEnumerator<T>(intf).MoveNext do
     begin
-      item := IEnumerator<T>(intf).Current;
-      Insert(index, item);
+      Insert(index, IEnumerator<T>(intf).Current);
       Inc(index);
     end;
   end;
@@ -1208,7 +1198,7 @@ begin
   itemCount := Count;
   if itemCount > 0 then
     if ItemType.IsManaged then
-      System.CopyArray(@values[index], @fItems[0], TypeInfo(T), itemCount)
+      MoveManaged(@fItems[0], @values[index], TypeInfo(T), itemCount)
     else
       System.Move(fItems[0], values[index], SizeOf(T) * itemCount);
 end;

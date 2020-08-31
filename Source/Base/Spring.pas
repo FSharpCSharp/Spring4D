@@ -11220,9 +11220,9 @@ begin
     raise EArgumentException.CreateRes(@SArraysIdentical);
 {$ENDIF}
   if TType.IsManaged<T> then
-    System.CopyArray(Pointer(@target[targetIndex]), Pointer(@source[sourceIndex]), TypeInfo(T), count)
+    MoveManaged(@source[sourceIndex], @target[targetIndex], TypeInfo(T), count)
   else
-    System.Move(Pointer(@source[sourceIndex])^, Pointer(@target[targetIndex])^, count * SizeOf(T));
+    System.Move(source[sourceIndex], target[targetIndex], count * SizeOf(T));
 end;
 
 class procedure TArray.ForEach<T>(const values: array of T;

@@ -2797,7 +2797,7 @@ begin
   count := Length(values);
   SetLength(fIterator.Items, count);
   if TType.IsManaged<T> then
-    System.CopyArray(@fIterator.Items[0], @values[0], TypeInfo(T), count)
+    MoveManaged(@values[0], @fIterator.Items[0], TypeInfo(T), count)
   else
     System.Move(values[0], fIterator.Items[0], count * SizeOf(T));
 end;
@@ -2809,7 +2809,7 @@ begin
   count := DynArrayLength(fIterator.Items);
   if count > 0 then
     if TType.IsManaged<T> then
-      System.CopyArray(@values[index], @fIterator.Items[0], TypeInfo(T), count)
+      MoveManaged(@fIterator.Items[0], @values[index], TypeInfo(T), count)
     else
       System.Move(fIterator.Items[0], values[index], SizeOf(T) * count);
 end;
@@ -3164,7 +3164,7 @@ begin
   begin
     SetLength(fIterator.Items, count);
 {$IFDEF AUTOREFCOUNT}
-    System.CopyArray(@fIterator.Items[0], source, TypeInfo(TObject), count)
+    MoveManaged(source, @fIterator.Items[0], TypeInfo(TObject), count)
 {$ELSE}
     System.Move(source^, fIterator.Items[0], count * SizeOf(TObject));
 {$ENDIF}
@@ -3197,7 +3197,7 @@ begin
   if count > 0 then
   begin
     SetLength(fIterator.Items, count);
-    System.CopyArray(@fIterator.Items[0], source, TypeInfo(IInterface), count)
+    MoveManaged(source, @fIterator.Items[0], TypeInfo(IInterface), count)
   end;
 end;
 
