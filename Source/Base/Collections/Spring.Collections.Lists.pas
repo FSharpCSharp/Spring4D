@@ -139,7 +139,6 @@ type
     procedure Clear;
 
     procedure CopyTo(var values: TArray<T>; index: Integer);
-    function MoveTo(const collection: ICollection<T>): Integer; overload;
     function MoveTo(const collection: ICollection<T>; const predicate: Predicate<T>): Integer; overload;
   {$ENDREGION}
 
@@ -1063,11 +1062,6 @@ begin
   fItems[newIndex] := temp;
 
   DoNotify(temp, caMoved);
-end;
-
-function TAbstractArrayList<T>.MoveTo(const collection: ICollection<T>): Integer;
-begin
-  Result := MoveTo(collection, nil);
 end;
 
 function TAbstractArrayList<T>.MoveTo(const collection: ICollection<T>;

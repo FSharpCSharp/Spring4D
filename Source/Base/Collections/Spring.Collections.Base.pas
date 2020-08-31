@@ -1851,7 +1851,7 @@ end;
 
 function TCollectionBase<T>.MoveTo(const collection: ICollection<T>): Integer;
 begin
-  Result := MoveTo(collection, nil);
+  Result := ICollection<T>(this).MoveTo(collection, nil);
 end;
 
 function TCollectionBase<T>.MoveTo(const collection: ICollection<T>;
