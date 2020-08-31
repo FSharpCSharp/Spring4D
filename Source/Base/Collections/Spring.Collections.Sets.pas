@@ -74,18 +74,12 @@ type
     type
       TItem = THashSetItem<T>;
       TItems = TArray<TItem>;
+      PItem = ^TItem;
 
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+      TEnumerator = class(THashTableEnumerator, IEnumerator<T>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-        fSource: THashSet<T>;
-        fItemIndex: Integer;
-        fVersion: Integer;
         fCurrent: T;
         function GetCurrent: T;
-      public
-        constructor Create(const source: THashSet<T>);
-        destructor Destroy; override;
         function MoveNext: Boolean;
       end;
   {$ENDREGION}
@@ -99,7 +93,6 @@ type
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
     class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
-    procedure ClearWithNotify;
   protected
     function CreateSet: ISet<T>; override;
     function TryGetElementAt(var item: T; index: Integer): Boolean;
@@ -234,11 +227,10 @@ begin
     while enumerator.MoveNext do
     begin
       item := enumerator.Current;
-      if IEnumerable<T>(this).Contains(item) then
+      if ICollection<T>(this).Remove(item) then
       begin
         items[i] := item;
         Inc(i);
-        ICollection<T>(this).Remove(item);
       end;
     end;
     SetLength(items, i);
@@ -399,7 +391,7 @@ end;
 
 function THashSet<T>.Add(const item: T): Boolean;
 var
-  entry: ^TItem;
+  entry: PItem;
 begin
   entry := fHashTable.Add(item, fKeyComparer.GetHashCode(item));
   Result := Assigned(entry);
@@ -411,26 +403,23 @@ begin
 end;
 
 procedure THashSet<T>.Clear;
-begin
-  if not Assigned(Notify) then
-    fHashTable.Clear
-  else
-    ClearWithNotify;
-end;
-
-procedure THashSet<T>.ClearWithNotify;
 var
-  oldItemIndex, oldItemCount: Integer;
-  oldItems: TArray<TItem>;
+  item: PItem;
+  i: Integer;
 begin
-  oldItemCount := fHashTable.ItemCount;
-  oldItems := TItems(fHashTable.Items);
+  if fHashTable.ItemCount = 0 then
+    Exit;
+
+  if Assigned(Notify) then
+  begin
+    fHashTable.ClearCount;
+    item := PItem(fHashTable.Items);
+    for i := 1 to fHashTable.ItemCount do
+      if item.HashCode >= 0 then
+        Notify(Self, item.Item, caRemoved);
+  end;
 
   fHashTable.Clear;
-
-  for oldItemIndex := 0 to oldItemCount - 1 do
-    if oldItems[oldItemIndex].HashCode >= 0 then
-      Notify(Self, oldItems[oldItemIndex].Item, caRemoved);
 end;
 
 class function THashSet<T>.EqualsThunk(instance: Pointer; const left, right): Boolean;
@@ -448,7 +437,7 @@ end;
 
 function THashSet<T>.Extract(const item: T): T;
 var
-  entry: ^TItem;
+  entry: PItem;
 begin
   entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
   if Assigned(entry) then
@@ -463,7 +452,7 @@ end;
 
 function THashSet<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumerator.Create(Self);
+  Result := TEnumerator.Create(Self, @fHashTable);
 end;
 
 function THashSet<T>.GetCapacity: Integer;
@@ -483,7 +472,7 @@ end;
 
 function THashSet<T>.Remove(const item: T): Boolean;
 var
-  entry: ^TItem;
+  entry: PItem;
 begin
   entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
   if Assigned(entry) then
@@ -515,45 +504,19 @@ end;
 
 {$REGION 'THashSet<T>.TEnumerator'}
 
-constructor THashSet<T>.TEnumerator.Create(const source: THashSet<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fItemIndex := -1;
-  fVersion := fSource.fHashTable.Version;
-end;
-
-destructor THashSet<T>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function THashSet<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
 end;
 
 function THashSet<T>.TEnumerator.MoveNext: Boolean;
-var
-  hashTable: ^THashTable;
 begin
-  hashTable := @fSource.fHashTable;
-  if fVersion = hashTable.Version then
+  if inherited MoveNext then
   begin
-    while fItemIndex < hashTable.ItemCount - 1 do
-    begin
-      Inc(fItemIndex);
-      if TItems(hashTable.Items)[fItemIndex].HashCode >= 0 then
-      begin
-        fCurrent := TItems(hashTable.Items)[fItemIndex].Item;
-        Exit(True);
-      end;
-    end;
-    fCurrent := Default(T);
-    Result := False;
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
+    fCurrent := PItem(fItem).Item;
+    Exit(True);
+  end;
+  Result := False;
 end;
 
 {$ENDREGION}

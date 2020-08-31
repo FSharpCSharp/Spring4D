@@ -409,22 +409,31 @@ type
       const match: Predicate<T>): Integer; overload;
   end;
 
+  THashTableEnumerator = class(TRefCountedObject)
+  protected
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    fSource: TRefCountedObject;
+    fHashTable: PHashTable;
+    fIndex: Integer;
+    fVersion: Integer;
+    fItem: PByte;
+  public
+    constructor Create(const source: TRefCountedObject; hashTable: PHashTable); overload;
+    procedure BeforeDestruction; override;
+    function MoveNext: Boolean;
+  end;
+
   TInnerCollection<T> = class sealed(TEnumerableBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>)
   private type
   {$REGION 'Nested Types'}
     PT = ^T;
-    TEnumerator = class(TRefCountedObject, IEnumerator<T>)
+    TEnumerator = class(THashTableEnumerator, IEnumerator<T>)
     private
-      {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-      fSource: TInnerCollection<T>;
-      fIndex: Integer;
-      fVersion: Integer;
       fCurrent: T;
       function GetCurrent: T;
     public
-      constructor Create(const source: TInnerCollection<T>);
-      destructor Destroy; override;
+      procedure BeforeDestruction; override;
       function MoveNext: Boolean;
     end;
   {$ENDREGION}
@@ -443,7 +452,7 @@ type
     function GetElementType: PTypeInfo; override;
   public
     class function Create(const source: TRefCountedObject; hashTable: PHashTable;
-      elementType: PTypeInfo; const comparer: IEqualityComparer<T>;
+      const comparer: IEqualityComparer<T>; elementType: PTypeInfo;
       offset: Integer): TInnerCollection<T>; overload; static;
 
   {$REGION 'Implements IInterface'}
@@ -457,19 +466,6 @@ type
     function ToArray: TArray<T>;
     function TryGetElementAt(var value: T; index: Integer): Boolean;
   {$ENDREGION}
-  end;
-
-  THashTableEnumerator = class(TRefCountedObject)
-  protected
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
-    fSource: TRefCountedObject;
-    fHashTable: PHashTable;
-    fIndex: Integer;
-    fVersion: Integer;
-  public
-    constructor Create(const source: TRefCountedObject; hashTable: PHashTable);
-    destructor Destroy; override;
-    function MoveNext: Boolean;
   end;
 
   TCircularArrayBuffer<T> = class(TEnumerableBase<T>)
@@ -1958,16 +1954,55 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'THashTableEnumerator'}
+
+constructor THashTableEnumerator.Create(const source: TRefCountedObject;
+  hashTable: PHashTable);
+begin
+  fSource := source;
+  fSource._AddRef;
+  fHashTable := hashTable;
+  fVersion := fHashTable.Version;
+end;
+
+procedure THashTableEnumerator.BeforeDestruction;
+begin
+  fSource._Release;
+end;
+
+function THashTableEnumerator.MoveNext: Boolean;
+begin
+  if fVersion = fHashTable.Version then
+  begin
+    while True do
+    begin
+      if fIndex >= fHashTable.ItemCount then
+        Break;
+
+      fItem := fHashTable.Items + fIndex * fHashTable.ItemSize;
+      Inc(fIndex);
+      if PInteger(fItem)^ >= 0 then
+        Exit(True);
+    end;
+    Result := False;
+  end
+  else
+    Result := RaiseHelper.EnumFailedVersion;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TInnerCollection<T>'}
 
 class function TInnerCollection<T>.Create(const source: TRefCountedObject;
-  hashTable: PHashTable; elementType: PTypeInfo;
-  const comparer: IEqualityComparer<T>; offset: Integer): TInnerCollection<T>;
+  hashTable: PHashTable; const comparer: IEqualityComparer<T>;
+  elementType: PTypeInfo; offset: Integer): TInnerCollection<T>;
 begin
   Result := TInnerCollection<T>(TInnerCollection<T>.NewInstance);
-  Result.fElementType := elementType;
   Result.fSource := source;
   Result.fHashTable := hashTable;
+  Result.fElementType := elementType;
   Result.fComparer := comparer;
   Result.fOffset := THashTable.KeyOffset + offset;
   Result.AfterConstruction;
@@ -1997,8 +2032,15 @@ begin
 end;
 
 function TInnerCollection<T>.GetEnumerator: IEnumerator<T>;
+var
+  enumerator: TEnumerator;
 begin
-  Result := TEnumerator.Create(Self);
+  _AddRef;
+  enumerator := TEnumerator.Create;
+  enumerator.fSource := Self;
+  enumerator.fHashTable := fHashTable;
+  enumerator.fVersion := enumerator.fHashTable.Version;
+  Result := enumerator;
 end;
 
 function TInnerCollection<T>.GetIsEmpty: Boolean;
@@ -2033,12 +2075,14 @@ end;
 
 function TInnerCollection<T>.TryGetElementAt(var value: T; index: Integer): Boolean;
 begin
-  Result := Cardinal(index) < Cardinal(fHashTable.Count);
-  if Result then
+  if Cardinal(index) < Cardinal(fHashTable.Count) then
   begin
     fHashTable.EnsureCompact;
     value := PT(PByte(fHashTable.Items) + fHashTable.ItemSize * index + fOffset)^;
-  end;
+    Result := True;
+  end
+  else
+    Result := False;
 end;
 
 function TInnerCollection<T>._AddRef: Integer;
@@ -2056,17 +2100,9 @@ end;
 
 {$REGION 'TInnerCollection<T>.TEnumerator'}
 
-constructor TInnerCollection<T>.TEnumerator.Create(
-  const source: TInnerCollection<T>);
+procedure TInnerCollection<T>.TEnumerator.BeforeDestruction;
 begin
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fHashTable.Version;
-end;
-
-destructor TInnerCollection<T>.TEnumerator.Destroy;
-begin
-  fSource._Release;
+  TInnerCollection<T>(fSource)._Release;
 end;
 
 function TInnerCollection<T>.TEnumerator.GetCurrent: T;
@@ -2075,72 +2111,13 @@ begin
 end;
 
 function TInnerCollection<T>.TEnumerator.MoveNext: Boolean;
-var
-  hashTable: PHashTable;
-  item: PByte;
 begin
-  hashTable := fSource.fHashTable;
-
-  if fVersion = hashTable.Version then
+  if inherited MoveNext then
   begin
-    while True do
-    begin
-      if fIndex >= hashTable.ItemCount then
-        Break;
-
-      item := PByte(hashTable.Items) + fIndex * hashTable.ItemSize;
-      Inc(fIndex);
-      if PInteger(item)^ < 0 then
-        Continue;
-
-      fCurrent := PT(item + fSource.fOffset)^;
-      Exit(True);
-    end;
-    Result := False;
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'THashTableEnumerator'}
-
-constructor THashTableEnumerator.Create(const source: TRefCountedObject;
-  hashTable: PHashTable);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fHashTable := hashTable;
-  fVersion := fHashTable.Version;
-end;
-
-destructor THashTableEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
-function THashTableEnumerator.MoveNext: Boolean;
-var
-  item: PByte;
-begin
-  if fVersion = fHashTable.Version then
-  begin
-    while True do
-    begin
-      if fIndex >= fHashTable.ItemCount then
-        Break;
-
-      item := fHashTable.Items + fIndex * fHashTable.ItemSize;
-      Inc(fIndex);
-      if PInteger(item)^ >= 0 then
-        Exit(True);
-    end;
-    Result := False;
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
+    fCurrent := PT(fItem + TInnerCollection<T>(fSource).fOffset)^;
+    Exit(True);
+  end;
+  Result := False;
 end;
 
 {$ENDREGION}
@@ -2576,8 +2553,8 @@ end;
 procedure TMapBase<TKey, TValue>.KeyChanged(const item: TKey;
   action: TCollectionChangedAction);
 begin
-  if fOnKeyChanged.CanInvoke then
-    fOnKeyChanged.Invoke(Self, item, action);
+  with fOnKeyChanged do if CanInvoke then
+    Invoke(Self, item, action);
 end;
 
 function TMapBase<TKey, TValue>.Remove(const item: TKeyValuePair): Boolean;
@@ -2588,8 +2565,8 @@ end;
 procedure TMapBase<TKey, TValue>.ValueChanged(const item: TValue;
   action: TCollectionChangedAction);
 begin
-  if fOnValueChanged.CanInvoke then
-    fOnValueChanged.Invoke(Self, item, action);
+  with fOnValueChanged do if CanInvoke then
+    Invoke(Self, item, action);
 end;
 
 {$ENDREGION}

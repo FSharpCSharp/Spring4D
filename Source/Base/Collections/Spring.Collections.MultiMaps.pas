@@ -555,14 +555,17 @@ begin
 end;
 
 procedure TMultiMapBase<TKey, TValue>.AfterConstruction;
+var
+  keyType: PTypeInfo;
 begin
   inherited AfterConstruction;
 
+  keyType := GetKeyType;
   if not Assigned(fKeyComparer) then
-    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, GetKeyType, SizeOf(TKey)));
+    fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, keyType, SizeOf(TKey)));
   fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
 
-  fKeys := TKeyCollection.Create(Self, @fHashTable, GetKeyType, fKeyComparer, 0);
+  fKeys := TKeyCollection.Create(Self, @fHashTable, fKeyComparer, keyType, 0);
   fValues := TValueCollection.Create(Self, @fHashTable, @fCount);
   fOnDestroy := TNotifyEventImpl.Create;
   fOnDestroy.UseFreeNotification := False;
@@ -840,15 +843,15 @@ begin
     Result := False;
 end;
 
-function TMultiMapBase<TKey, TValue>.TryAdd(const key: TKey;
-  const value: TValue): Boolean;
+function TMultiMapBase<TKey, TValue>.TryAdd(const key: TKey; const value: TValue): Boolean;
 var
   entry: PItem;
-  isExisting: Boolean;
+  overrideExisting: Boolean;
 begin
-  entry := fHashTable.AddOrSet(key, fKeyComparer.GetHashCode(key), isExisting);
+  overrideExisting := True;
+  entry := fHashTable.AddOrSet(key, fKeyComparer.GetHashCode(key), overrideExisting);
 
-  if not isExisting then
+  if not overrideExisting then
   begin
     entry.Key := key;
     entry.Values := CreateCollection;

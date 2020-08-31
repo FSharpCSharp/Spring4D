@@ -388,7 +388,7 @@ begin
     fComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
 
   fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fComparer);
-  fItems := TItemCollection.Create(Self, @fHashTable, GetElementType, fComparer, 0);
+  fItems := TItemCollection.Create(Self, @fHashTable, fComparer, GetElementType, 0);
   fEntries := TEntryCollection.Create(Self);
 end;
 
@@ -414,15 +414,16 @@ end;
 function THashMultiSet<T>.Add(const item: T; count: Integer): Integer;
 var
   entry: ^TItem;
-  isExisting: Boolean;
+  overrideExisting: Boolean;
   i: Integer;
 begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
-  entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), isExisting);
+  overrideExisting := True;
+  entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), overrideExisting);
 
   entry.Item := item;
-  if isExisting then
+  if overrideExisting then
   begin
     Result := entry.Count;
     Inc(entry.Count, count);
@@ -548,7 +549,7 @@ end;
 procedure THashMultiSet<T>.SetItemCount(const item: T; count: Integer);
 var
   entry: ^TItem;
-  isExisting: Boolean;
+  overrideExisting: Boolean;
   i: Integer;
 begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
@@ -566,8 +567,9 @@ begin
   end
   else
   begin
-    entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), isExisting);
-    if not isExisting then
+    overrideExisting := True;
+    entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), overrideExisting);
+    if not overrideExisting then
     begin
       entry.Item := item;
       entry.Count := 0;

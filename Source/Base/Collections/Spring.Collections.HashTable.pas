@@ -36,6 +36,7 @@ uses
 
 type
   TEqualsMethod = function(const left, right): Boolean of object;
+  TGetHashCodeMethod = function(const value): Integer of object;
 
   THashTableEntry = record
     HashCode, BucketIndex, ItemIndex: Integer;
@@ -66,15 +67,17 @@ type
     procedure EnsureCompact;
     procedure Grow;
     procedure Pack;
-    function Find(const key; var entry: THashTableEntry): Boolean;
+    function Find(const key; hashCode: Integer): Pointer; overload;
+    function Find(const key; var entry: THashTableEntry): Boolean; overload;
     procedure Rehash(newCapacity: NativeInt);
     procedure IncrementVersion; inline;
 
     function Add(const key; hashCode: Integer): Pointer;
-    function AddOrSet(const key; hashCode: Integer; out isExistingEntry: Boolean): Pointer;
+    function AddOrSet(const key; hashCode: Integer; var overwriteExisting: Boolean): Pointer;
     function Delete(const key; hashCode: Integer): Pointer; overload;
     function Delete(const entry: THashTableEntry): Pointer; overload;
     procedure Clear;
+    procedure ClearCount;
 
     property Buckets: TArray<Integer> read fBuckets;
     property Capacity: Integer read GetCapacity write SetCapacity;
@@ -144,18 +147,25 @@ begin
 end;
 
 function THashTable.AddOrSet(const key; hashCode: Integer;
-  out isExistingEntry: Boolean): Pointer;
+  var overwriteExisting: Boolean): Pointer;
 var
   entry: THashTableEntry;
 begin
   entry.HashCode := hashCode;
-  isExistingEntry := Find(key, entry);
-  if not isExistingEntry then
+  if Find(key, entry) then
+  begin
+    if not overwriteExisting then
+      Exit(nil);
+  end
+  else
+  begin
+    overwriteExisting := False;
     if fItemCount = DynArrayLength(fItems) then
     begin
       Grow;
       Find(key, entry);
     end;
+  end;
 
   {$Q-}
   Inc(fVersion);
@@ -166,7 +176,7 @@ begin
   Result := fItems + entry.ItemIndex * fItemSize;
   PInteger(Result)^ := entry.HashCode;
 
-  if not isExistingEntry then
+  if not overwriteExisting then
   begin
     Inc(fCount);
     Inc(fItemCount);
@@ -208,6 +218,14 @@ begin
   fBuckets := nil;
   DynArrayClear(Pointer(fItems), fItemsInfo);
   Capacity := 0;
+end;
+
+procedure THashTable.ClearCount;
+begin
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  fCount := 0;
 end;
 
 procedure THashTable.EnsureCompact;
@@ -256,6 +274,36 @@ begin
     Inc(sourceItem, fItemSize);
   end;
   FinalizeArray(targetItem, itemType, fItemCount - fCount); // clear remaining items that were previously moved
+end;
+
+function THashTable.Find(const key; hashCode: Integer): Pointer;
+var
+  bucketValue, bucketIndex: Integer;
+  item: PByte;
+begin
+  if fItems <> nil then
+  begin
+    hashCode := hashCode and not RemovedFlag;
+    bucketIndex := hashCode and fBucketIndexMask;
+    while True do
+    begin
+      bucketValue := fBuckets[bucketIndex];
+
+      if bucketValue = EmptyBucket then
+        Exit(nil);
+
+      if (bucketValue <> UsedBucket)
+        and (bucketValue and fBucketHashCodeMask = hashCode and fBucketHashCodeMask) then
+      begin
+        item := @fItems[bucketValue and fBucketIndexMask * fItemSize];
+        if fEquals((item + KeyOffset)^, key) then
+          Exit(item);
+      end;
+
+      bucketIndex := (bucketIndex + 1) and fBucketIndexMask;
+    end;
+  end;
+  Result := nil;
 end;
 
 function THashTable.Find(const key; var entry: THashTableEntry): Boolean;
