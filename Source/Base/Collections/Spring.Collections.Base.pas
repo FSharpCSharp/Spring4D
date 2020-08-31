@@ -393,6 +393,7 @@ type
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
 
+    function Add(const item: T): Boolean;
     procedure AddRange(const values: array of T); overload;
     procedure AddRange(const values: IEnumerable<T>); overload;
 
@@ -581,29 +582,6 @@ type
     function Extract(const item: TKeyValuePair): TKeyValuePair;
 
     function Contains(const item: TKeyValuePair): Boolean; overload;
-  end;
-
-  /// <summary>
-  ///   Provides an abstract implementation for the <see cref="Spring.Collections|IList&lt;T&gt;" />
-  ///    interface.
-  /// </summary>
-  TListBase<T> = class abstract(TCollectionBase<T>)
-  protected
-  {$REGION 'Implements IInterface'}
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-  {$ENDREGION}
-    function CreateList: IList<T>; virtual;
-  public
-    function Add(const item: T): Boolean;
-
-    function Remove(const item: T): Boolean;
-
-    procedure Reverse; overload;
-
-    procedure Sort; overload;
-    procedure Sort(const comparer: IComparer<T>); overload;
-    procedure Sort(const comparer: TComparison<T>); overload;
-    procedure Sort(const comparer: TComparison<T>; index, count: Integer); overload;
   end;
 
   TArrayHelper = record
@@ -1810,6 +1788,13 @@ begin
     ICollection<T>(this).Add(values[i]);
 end;
 
+function TCollectionBase<T>.Add(const item: T): Boolean;
+begin
+  // only for usage with implementing IList<T>
+  IList<T>(this).Add(item);
+  Result := True;
+end;
+
 procedure TCollectionBase<T>.AddRange(const values: IEnumerable<T>);
 var
   enumerator: IEnumerator<T>;
@@ -2561,70 +2546,6 @@ procedure TMapBase<TKey, TValue>.ValueChanged(const item: TValue;
 begin
   with fOnValueChanged do if CanInvoke then
     Invoke(Self, item, action);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TListBase<T>'}
-
-function TListBase<T>.CreateList: IList<T>;
-begin
-  Result := TList<T>.Create;
-end;
-
-function TListBase<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  case TType.Kind<T> of
-    tkClass:
-      if IID = IObjectListGuid then
-        Exit(TRefCountedObject(Self).QueryInterface(IListOfTGuid, Obj));
-    tkInterface:
-      if IID = IInterfaceListGuid then
-        Exit(TRefCountedObject(Self).QueryInterface(IListOfTGuid, Obj));
-  end;
-  Result := inherited QueryInterface(IID, Obj);
-end;
-
-function TListBase<T>.Add(const item: T): Boolean;
-begin
-  IList<T>(this).Add(item);
-  Result := True;
-end;
-
-function TListBase<T>.Remove(const item: T): Boolean;
-var
-  index: Integer;
-begin
-  index := IList<T>(this).IndexOf(item);
-  Result := index >= 0;
-  if Result then
-    IList<T>(this).Delete(index);
-end;
-
-procedure TListBase<T>.Reverse;
-begin
-  IList<T>(this).Reverse(0, IEnumerable<T>(this).Count);
-end;
-
-procedure TListBase<T>.Sort;
-begin
-  IList<T>(this).Sort(fComparer, 0, IList<T>(this).Count);
-end;
-
-procedure TListBase<T>.Sort(const comparer: IComparer<T>);
-begin
-  IList<T>(this).Sort(comparer, 0, IList<T>(this).Count);
-end;
-
-procedure TListBase<T>.Sort(const comparer: TComparison<T>);
-begin
-  IList<T>(this).Sort(IComparer<T>(PPointer(@comparer)^), 0, IList<T>(this).Count);
-end;
-
-procedure TListBase<T>.Sort(const comparer: TComparison<T>; index, count: Integer);
-begin
-  IList<T>(this).Sort(IComparer<T>(PPointer(@comparer)^), index, count);
 end;
 
 {$ENDREGION}

@@ -47,7 +47,7 @@ type
   /// <typeparam name="T">
   ///   The type of elements in the list.
   /// </typeparam>
-  TAbstractArrayList<T> = class(TListBase<T>)
+  TAbstractArrayList<T> = class(TCollectionBase<T>)
   private
   {$REGION 'Nested Types'}
     type
@@ -95,6 +95,7 @@ type
     procedure SetOwnsObjects(value: Boolean); inline;
   {$ENDREGION}
 
+    function CreateList: IList<T>; virtual;
     function TryGetElementAt(var value: T; index: Integer): Boolean;
     function TryGetFirst(var value: T): Boolean; overload;
     function TryGetLast(var value: T): Boolean; overload;
@@ -108,6 +109,10 @@ type
   public
     constructor Create(const comparer: IComparer<T>); overload;
     procedure BeforeDestruction; override;
+
+  {$REGION 'Implements IInterface'}
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+  {$ENDREGION}
 
   {$REGION 'Implements IEnumerable<T>'}
     function GetEnumerator: IEnumerator<T>;
@@ -125,6 +130,7 @@ type
     procedure AddRange(const values: array of T); overload;
     procedure AddRange(const values: IEnumerable<T>); overload;
 
+    function Remove(const item: T): Boolean;
     function RemoveAll(const match: Predicate<T>): Integer;
 
     function Extract(const item: T): T;
@@ -155,7 +161,13 @@ type
     procedure Exchange(index1, index2: Integer);
     procedure Move(currentIndex, newIndex: Integer);
 
+    procedure Reverse; overload;
     procedure Reverse(index, count: Integer); overload;
+
+    procedure Sort; overload;
+    procedure Sort(const comparer: IComparer<T>); overload;
+    procedure Sort(const comparer: TComparison<T>); overload;
+    procedure Sort(const comparer: TComparison<T>; index, count: Integer); overload;
     procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
 
     function IndexOf(const item: T): Integer; overload;
@@ -205,11 +217,16 @@ type
     procedure Move(sourceIndex, targetIndex: Integer);
 
     procedure Reverse(index, count: Integer); overload;
+
+    procedure Sort; overload;
+    procedure Sort(const comparer: IComparer<T>); overload;
+    procedure Sort(const comparer: TComparison<T>); overload;
+    procedure Sort(const comparer: TComparison<T>; index, count: Integer); overload;
     procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
   {$ENDREGION}
   end;
 
-  TCollectionList<T: TCollectionItem> = class(TListBase<T>, IInterface,
+  TCollectionList<T: TCollectionItem> = class(TCollectionBase<T>, IInterface,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList<T>)
   private
   {$REGION 'Nested Types'}
@@ -256,6 +273,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements ICollections<T>'}
+    function Remove(const item: T): Boolean;
     function Extract(const item: T): T;
 
     procedure Clear;
@@ -287,7 +305,13 @@ type
     function LastIndexOf(const item: T; index: Integer): Integer; overload;
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
+    procedure Reverse; overload;
     procedure Reverse(index, count: Integer); overload;
+
+    procedure Sort; overload;
+    procedure Sort(const comparer: IComparer<T>); overload;
+    procedure Sort(const comparer: TComparison<T>); overload;
+    procedure Sort(const comparer: TComparison<T>; index, count: Integer); overload;
     procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
 
     procedure TrimExcess;
@@ -337,6 +361,7 @@ type
   private
     fElementType: PTypeInfo;
   protected
+    function CreateList: IList<T>; override;
     function GetElementType: PTypeInfo; override;
   public
     constructor Create(elementType: PTypeInfo; const comparer: IComparer<T>;
@@ -393,6 +418,11 @@ uses
 constructor TAbstractArrayList<T>.Create(const comparer: IComparer<T>);
 begin
   fComparer := comparer;
+end;
+
+function TAbstractArrayList<T>.CreateList: IList<T>;
+begin
+  Result := TList<T>.Create(fComparer);
 end;
 
 procedure TAbstractArrayList<T>.BeforeDestruction;
@@ -935,6 +965,36 @@ begin
   System.FillChar(target^, SizeOf(T) * count, 0);
 end;
 
+procedure TAbstractArrayList<T>.Sort;
+begin
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  {$IFDEF DELPHIXE7_UP}
+  if GetTypeKind(T) = tkClass then
+    TTimSort.Sort(fItems, IComparer<Pointer>(fComparer), 0, Count)
+  else
+  {$ENDIF}
+  TArray.Sort<T>(fItems, fComparer, 0, Count);
+
+  Reset;
+end;
+
+procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>);
+begin
+  Sort(comparer, 0, Count);
+end;
+
+procedure TAbstractArrayList<T>.Sort(const comparer: TComparison<T>);
+begin
+  Sort(IComparer<T>(PPointer(@comparer)^), 0, Count);
+end;
+
+procedure TAbstractArrayList<T>.Sort(const comparer: TComparison<T>; index, count: Integer);
+begin
+  Sort(IComparer<T>(PPointer(@comparer)^), index, count);
+end;
+
 procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
   CheckRange(index, count, Self.Count);
@@ -1032,6 +1092,19 @@ begin
       Inc(i);
 end;
 
+function TAbstractArrayList<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  case TType.Kind<T> of
+    tkClass:
+      if IID = IObjectListGuid then
+        Exit(TRefCountedObject(Self).QueryInterface(IListOfTGuid, Obj));
+    tkInterface:
+      if IID = IInterfaceListGuid then
+        Exit(TRefCountedObject(Self).QueryInterface(IListOfTGuid, Obj));
+  end;
+  Result := inherited QueryInterface(IID, Obj);
+end;
+
 procedure TAbstractArrayList<T>.Exchange(index1, index2: Integer);
 var
   listCount: Integer;
@@ -1056,9 +1129,32 @@ begin
   end;
 end;
 
+function TAbstractArrayList<T>.Remove(const item: T): Boolean;
+var
+  index: Integer;
+begin
+  index := IndexOf(item, 0, Count);
+  if index >= 0 then
+  begin
+    DeleteInternal(index, caRemoved);
+    Exit(True);
+  end;
+  Result := False;
+end;
+
 function TAbstractArrayList<T>.RemoveAll(const match: Predicate<T>): Integer;
 begin
   Result := DeleteAllInternal(match, caRemoved, nil);
+end;
+
+procedure TAbstractArrayList<T>.Reverse;
+begin
+  {$Q-}
+  Inc(fVersion);
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+  TArray.Reverse<T>(fItems, 0, Count);
+
+  Reset;
 end;
 
 procedure TAbstractArrayList<T>.Reverse(index, count: Integer);
@@ -1473,6 +1569,22 @@ begin
   RaiseHelper.NotSupported;
 end;
 
+procedure TSortedList<T>.Sort;
+begin
+end;
+
+procedure TSortedList<T>.Sort(const comparer: IComparer<T>);
+begin
+end;
+
+procedure TSortedList<T>.Sort(const comparer: TComparison<T>);
+begin
+end;
+
+procedure TSortedList<T>.Sort(const comparer: TComparison<T>; index, count: Integer);
+begin
+end;
+
 procedure TSortedList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
 begin
 end;
@@ -1597,7 +1709,7 @@ function TCollectionList<T>.Extract(const item: T): T;
 var
   index: Integer;
 begin
-  index := IndexOf(item);
+  index := IndexOf(item, 0, fCollection.Count);
   if index < 0 then
     Result := Default(T)
   else
@@ -1678,7 +1790,7 @@ var
 begin
   CheckRange(index, count, fCollection.Count);
 
-  Result := CreateList;
+  Result := TCollections.CreateList<T>;
   Result.Count := count;
   for i := 0 to count - 1 do
   begin
@@ -1799,6 +1911,24 @@ begin
   DoNotify(T(fCollection.Items[targetIndex]), caMoved);
 end;
 
+function TCollectionList<T>.Remove(const item: T): Boolean;
+var
+  index: Integer;
+begin
+  index := IndexOf(item, 0, fCollection.Count);
+  if index >= 0 then
+  begin
+    Delete(index);
+    Exit(True);
+  end;
+  Result := False;
+end;
+
+procedure TCollectionList<T>.Reverse;
+begin
+  RaiseHelper.NotSupported;
+end;
+
 procedure TCollectionList<T>.Reverse(index, count: Integer);
 begin
   RaiseHelper.NotSupported;
@@ -1825,7 +1955,27 @@ procedure TCollectionList<T>.SetOwnsObjects(value: Boolean);
 begin
 end;
 
+procedure TCollectionList<T>.Sort;
+begin
+  RaiseHelper.NotSupported;
+end;
+
+procedure TCollectionList<T>.Sort(const comparer: IComparer<T>);
+begin
+  RaiseHelper.NotSupported;
+end;
+
+procedure TCollectionList<T>.Sort(const comparer: TComparison<T>);
+begin
+  RaiseHelper.NotSupported;
+end;
+
 procedure TCollectionList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
+begin
+  RaiseHelper.NotSupported;
+end;
+
+procedure TCollectionList<T>.Sort(const comparer: TComparison<T>; index, count: Integer);
 begin
   RaiseHelper.NotSupported;
 end;
@@ -1975,7 +2125,7 @@ end;
 
 function TFoldedList<T>.CreateList: IList<T>;
 begin
-  Result := TFoldedList<T>.Create(fElementType, Comparer);
+  Result := TFoldedList<T>.Create(fElementType, fComparer);
 end;
 
 function TFoldedList<T>.GetElementType: PTypeInfo;
@@ -1994,6 +2144,11 @@ begin
   fComparer := comparer;
   fElementType := elementType;
   SetOwnsObjects(ownsObjects);
+end;
+
+function TFoldedSortedList<T>.CreateList: IList<T>;
+begin
+  Result := TFoldedList<T>.Create(fElementType, fComparer);
 end;
 
 function TFoldedSortedList<T>.GetElementType: PTypeInfo;
