@@ -380,7 +380,6 @@ type
     procedure EventChanged(Sender: TObject);
   protected
   {$REGION 'Property Accessors'}
-    function GetIsReadOnly: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
@@ -1843,11 +1842,6 @@ begin
     item := enumerator.Current;
     ICollection<T>(this).Extract(item);
   end;
-end;
-
-function TCollectionBase<T>.GetIsReadOnly: Boolean;
-begin
-  Result := False;
 end;
 
 function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;

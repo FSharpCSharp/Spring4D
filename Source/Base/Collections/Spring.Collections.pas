@@ -831,7 +831,6 @@ type
   ICollection<T> = interface(IEnumerable<T>)
     ['{9BFD9B06-45CD-4C80-B145-01B09D432CF0}']
   {$REGION 'Property Accessors'}
-    function GetIsReadOnly: Boolean;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
 
@@ -928,19 +927,6 @@ type
     procedure ExtractRange(const values: array of T); overload;
     procedure ExtractRange(const values: IEnumerable<T>); overload;
 
-    /// <summary>
-    ///   Gets a value indicating whether the ICollection&lt;T&gt; is
-    ///   read-only.
-    /// </summary>
-    /// <value>
-    ///   <b>True</b> if the ICollection&lt;T&gt; is read-only; otherwise, <b>
-    ///   False</b>.
-    /// </value>
-    /// <remarks>
-    ///   A collection that is read-only does not allow the addition, removal,
-    ///   or modification of elements after the collection is created.
-    /// </remarks>
-    property IsReadOnly: Boolean read GetIsReadOnly;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
