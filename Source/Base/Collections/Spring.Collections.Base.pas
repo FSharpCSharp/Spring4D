@@ -1863,7 +1863,7 @@ begin
   if not Assigned(collection) then RaiseHelper.ArgumentNil(ExceptionArgument.collection);
 
   Result := 0;
-  values := ToArray;
+  values := IEnumerable<T>(this).ToArray;
   for i := 0 to DynArrayHigh(values) do
     if not Assigned(match) or match(values[i]) then
     begin
