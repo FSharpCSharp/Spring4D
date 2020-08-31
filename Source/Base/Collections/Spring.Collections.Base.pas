@@ -598,12 +598,6 @@ type
 
     function Remove(const item: T): Boolean;
 
-    function IndexOf(const item: T): Integer; overload;
-    function IndexOf(const item: T; index: Integer): Integer; overload;
-
-    function LastIndexOf(const item: T): Integer; overload;
-    function LastIndexOf(const item: T; index: Integer): Integer; overload;
-
     procedure Reverse; overload;
 
     procedure Sort; overload;
@@ -2596,50 +2590,6 @@ function TListBase<T>.Add(const item: T): Boolean;
 begin
   IList<T>(this).Add(item);
   Result := True;
-end;
-
-function TListBase<T>.IndexOf(const item: T): Integer;
-var
-  count: Integer;
-begin
-  count := IList<T>(this).Count;
-  if count > 0 then
-    Result := IList<T>(this).IndexOf(item, 0, count)
-  else
-    Result := -1;
-end;
-
-function TListBase<T>.IndexOf(const item: T; index: Integer): Integer;
-var
-  count: Integer;
-begin
-  count := IList<T>(this).Count;
-  if count > 0 then
-    Result := IList<T>(this).IndexOf(item, index, count - index)
-  else
-    Result := -1;
-end;
-
-function TListBase<T>.LastIndexOf(const item: T): Integer;
-var
-  count: Integer;
-begin
-  count := IList<T>(this).Count;
-  if count > 0 then
-    Result := IList<T>(this).LastIndexOf(item, count - 1, count)
-  else
-    Result := -1;
-end;
-
-function TListBase<T>.LastIndexOf(const item: T; index: Integer): Integer;
-var
-  count: Integer;
-begin
-  count := IList<T>(this).Count;
-  if count > 0 then
-    Result := IList<T>(this).LastIndexOf(item, index, index + 1)
-  else
-    Result := -1;
 end;
 
 function TListBase<T>.Remove(const item: T): Boolean;

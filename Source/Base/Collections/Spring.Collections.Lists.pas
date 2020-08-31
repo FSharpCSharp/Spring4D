@@ -158,7 +158,12 @@ type
     procedure Reverse(index, count: Integer); overload;
     procedure Sort(const comparer: IComparer<T>; index, count: Integer); overload;
 
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function LastIndexOf(const item: T): Integer; overload;
+    function LastIndexOf(const item: T; index: Integer): Integer; overload;
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     procedure TrimExcess;
@@ -278,6 +283,8 @@ type
     function IndexOf(const item: T; index: Integer): Integer; overload;
     function IndexOf(const item: T; index, count: Integer): Integer; overload;
 
+    function LastIndexOf(const item: T): Integer; overload;
+    function LastIndexOf(const item: T; index: Integer): Integer; overload;
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     procedure Reverse(index, count: Integer); overload;
@@ -480,6 +487,21 @@ procedure TAbstractArrayList<T>.Grow(capacity: Integer);
 begin
   fCapacity := GrowCapacity(fCapacity, capacity);
   SetLength(fItems, fCapacity);
+end;
+
+function TAbstractArrayList<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, Count);
+end;
+
+function TAbstractArrayList<T>.IndexOf(const item: T; index: Integer): Integer;
+var
+  listCount: Integer;
+begin
+  listCount := Count;
+  CheckIndex(index, listCount);
+
+  Result := IndexOf(item, index, listCount - index);
 end;
 
 function TAbstractArrayList<T>.IndexOf(const item: T; index, count: Integer): Integer;
@@ -705,6 +727,24 @@ begin
   end;
 end;
 
+function TAbstractArrayList<T>.LastIndexOf(const item: T): Integer;
+var
+  listCount: Integer;
+begin
+  listCount := Count;
+  if listCount > 0 then
+    Result := LastIndexOf(item, listCount - 1, listCount)
+  else
+    Result := -1;
+end;
+
+function TAbstractArrayList<T>.LastIndexOf(const item: T; index: Integer): Integer;
+begin
+  CheckIndex(index, Count);
+
+  Result := LastIndexOf(item, index, index + 1);
+end;
+
 function TAbstractArrayList<T>.LastIndexOf(const item: T; index, count: Integer): Integer;
 var
   listCount: Integer;
@@ -733,7 +773,7 @@ begin
   else
   begin
     for Result := index downto index - count do
-      if Comparer.Compare(fItems[Result], item) = 0 then
+      if fComparer.Compare(fItems[Result], item) = 0 then
         Exit;
     Result := -1;
   end;
@@ -1710,6 +1750,24 @@ begin
     Insert(index, item);
     Inc(index);
   end;
+end;
+
+function TCollectionList<T>.LastIndexOf(const item: T): Integer;
+var
+  listCount: Integer;
+begin
+  listCount := fCollection.Count;
+  if listCount > 0 then
+    Result := LastIndexOf(item, listCount - 1, listCount)
+  else
+    Result := -1;
+end;
+
+function TCollectionList<T>.LastIndexOf(const item: T; index: Integer): Integer;
+begin
+  CheckIndex(index, fCollection.Count);
+
+  Result := LastIndexOf(item, index, index + 1);
 end;
 
 function TCollectionList<T>.LastIndexOf(const item: T; index, count: Integer): Integer;
