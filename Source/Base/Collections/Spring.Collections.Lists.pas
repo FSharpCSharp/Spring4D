@@ -1045,13 +1045,16 @@ begin
 end;
 
 procedure TAbstractArrayList<T>.SetCount(value: Integer);
+var
+  deleteCount: Integer;
 begin
   if value < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   if value > fCapacity then
     SetCapacity(value);
-  if value < Count then
-    DeleteRange(value, Count - value);
+  deleteCount := Count - value;
+  if deleteCount > 0 then
+    DeleteRange(value, deleteCount);
   fCount := (fCount and OwnsObjectsMask) or value;
 end;
 

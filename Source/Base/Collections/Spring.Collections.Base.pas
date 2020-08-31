@@ -2358,7 +2358,7 @@ begin
   end;
 
   oldCapacity := DynArrayLength(fItems);
-  offset := value - DynArrayLength(fItems);
+  offset := value - oldCapacity;
   if offset = 0 then
     Exit;
 
