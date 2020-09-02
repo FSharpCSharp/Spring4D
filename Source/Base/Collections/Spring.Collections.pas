@@ -4734,12 +4734,12 @@ end;
 
 class procedure TCollections.CreateObservableList_Interface(var result; elementType: Pointer);
 begin
-  IList<IInterface>(result) := TObservableInterfaceList.Create(elementType);
+  IList<IInterface>(result) := TObservableInterfaceList.Create(elementType, nil);
 end;
 
 class procedure TCollections.CreateObservableList_Object(ownsObjects: Boolean; var result; elementType: Pointer);
 begin
-  IList<TObject>(result) := TObservableObjectList.Create(elementType, ownsObjects);
+  IList<TObject>(result) := TObservableObjectList.Create(elementType, nil, ownsObjects);
 end;
 
 class function TCollections.CreateList<T>: IList<T>;

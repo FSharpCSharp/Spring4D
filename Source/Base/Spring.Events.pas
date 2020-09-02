@@ -92,12 +92,11 @@ type
     IEvent<TNotifyEvent>, IEventInvokable<TNotifyEvent>)
   private
     function GetInvoke: TNotifyEvent; overload;
-    procedure InternalInvoke(sender: TObject);
   public
     procedure AfterConstruction; override;
     procedure Add(handler: TNotifyEvent); overload;
     procedure Remove(handler: TNotifyEvent); overload;
-    property Invoke: TNotifyEvent read GetInvoke;
+    procedure Invoke(sender: TObject);
   end;
 
   IMulticastNotifyEvent = IEventInvokable<TNotifyEvent>;
@@ -112,13 +111,12 @@ type
   TNotifyEventImpl<T> = class(TEventBase, IEvent,
     INotifyEvent<T>, INotifyEventInvokable<T>)
   private
-    function GetInvoke: TNotifyEvent<T>; overload;
-    procedure InternalInvoke(sender: TObject; const item: T);
+    function GetInvoke: TNotifyEvent<T>;
   public
     procedure AfterConstruction; override;
     procedure Add(handler: TNotifyEvent<T>); overload;
     procedure Remove(handler: TNotifyEvent<T>); overload;
-    property Invoke: TNotifyEvent<T> read GetInvoke;
+    procedure Invoke(sender: TObject; const item: T);
   end;
 
   {$ENDREGION}
@@ -129,14 +127,12 @@ type
   TPropertyChangedEventImpl = class(TEventBase, IEvent,
     IEvent<TPropertyChangedEvent>, IEventInvokable<TPropertyChangedEvent>)
   private
-    function GetInvoke: TPropertyChangedEvent; overload;
-    procedure InternalInvoke(Sender: TObject;
-      const EventArgs: IPropertyChangedEventArgs);
+    function GetInvoke: TPropertyChangedEvent;
   public
     procedure AfterConstruction; override;
     procedure Add(handler: TPropertyChangedEvent); overload;
     procedure Remove(handler: TPropertyChangedEvent); overload;
-    property Invoke: TPropertyChangedEvent read GetInvoke;
+    procedure Invoke(Sender: TObject; const EventArgs: IPropertyChangedEventArgs);
   end;
 
   {$ENDREGION}
@@ -809,7 +805,7 @@ end;
 procedure TNotifyEventImpl.AfterConstruction;
 begin
   inherited AfterConstruction;
-  TNotifyEvent(fInvoke) := InternalInvoke;
+  TNotifyEvent(fInvoke) := Invoke;
 end;
 
 procedure TNotifyEventImpl.Add(handler: TNotifyEvent);
@@ -822,7 +818,7 @@ begin
   Result := TNotifyEvent(inherited Invoke);
 end;
 
-procedure TNotifyEventImpl.InternalInvoke(sender: TObject);
+procedure TNotifyEventImpl.Invoke(sender: TObject);
 var
   handler: TMethodPointer;
 begin
@@ -844,7 +840,7 @@ end;
 procedure TNotifyEventImpl<T>.AfterConstruction;
 begin
   inherited AfterConstruction;
-  TNotifyEvent<T>(fInvoke) := InternalInvoke;
+  TNotifyEvent<T>(fInvoke) := Invoke;
 end;
 
 procedure TNotifyEventImpl<T>.Add(handler: TNotifyEvent<T>);
@@ -857,7 +853,7 @@ begin
   Result := TNotifyEvent<T>(inherited Invoke);
 end;
 
-procedure TNotifyEventImpl<T>.InternalInvoke(sender: TObject; const item: T);
+procedure TNotifyEventImpl<T>.Invoke(sender: TObject; const item: T);
 var
   handler: TMethodPointer;
 begin
@@ -879,7 +875,7 @@ end;
 procedure TPropertyChangedEventImpl.AfterConstruction;
 begin
   inherited AfterConstruction;
-  TPropertyChangedEvent(fInvoke) := InternalInvoke;
+  TPropertyChangedEvent(fInvoke) := Invoke;
 end;
 
 procedure TPropertyChangedEventImpl.Add(handler: TPropertyChangedEvent);
@@ -892,7 +888,7 @@ begin
   Result := TPropertyChangedEvent(inherited Invoke);
 end;
 
-procedure TPropertyChangedEventImpl.InternalInvoke(Sender: TObject;
+procedure TPropertyChangedEventImpl.Invoke(Sender: TObject;
   const EventArgs: IPropertyChangedEventArgs);
 var
   handler: TMethodPointer;
