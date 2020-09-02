@@ -56,7 +56,6 @@ type
     function GetCount: Integer; inline;
     function GetEnabled: Boolean; inline;
     function GetHandlers: TArray<TMethodPointer>;
-    function GetInvoke: TMethodPointer; inline;
     function GetOnChanged: TNotifyEvent;
     function GetThreadSafe: Boolean; inline;
     function GetUseFreeNotification: Boolean; inline;
@@ -87,13 +86,13 @@ type
 
     property CanInvoke: Boolean read GetCanInvoke;
     property Enabled: Boolean read GetEnabled write SetEnabled;
-    property Invoke: TMethodPointer read GetInvoke;
+    property Invoke: TMethodPointer read fInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
     property ThreadSafe: Boolean read GetThreadSafe write SetThreadSafe;
     property UseFreeNotification: Boolean read GetUseFreeNotification write SetUseFreeNotification;
   end;
 
-  TEventBase<T> = class(TEventBase, IEvent, IEvent<T>)
+  TEventBase<T> = class(TEventBase, IEvent, IEvent<T>, IEventInvokable<T>)
   protected
     function GetInvoke: T; overload;
     procedure Add(handler: T); overload;
@@ -218,11 +217,6 @@ end;
 function TEventBase.GetEnabled: Boolean;
 begin
   Result := fCount >= 0;
-end;
-
-function TEventBase.GetInvoke: TMethodPointer;
-begin
-  Result := fInvoke;
 end;
 
 function TEventBase.GetOnChanged: TNotifyEvent;

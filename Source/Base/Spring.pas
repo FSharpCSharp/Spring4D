@@ -978,7 +978,6 @@ type
     ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
   {$REGION 'Property Accessors'}
     function GetCanInvoke: Boolean;
-    function GetInvoke: TMethodPointer;
     function GetEnabled: Boolean;
     function GetOnChanged: TNotifyEvent;
     function GetThreadSafe: Boolean;
@@ -1015,7 +1014,6 @@ type
     /// </summary>
     property Enabled: Boolean read GetEnabled write SetEnabled;
 
-    property Invoke: TMethodPointer read GetInvoke;
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
 
     /// <summary>
@@ -1037,16 +1035,14 @@ type
   end;
 
   /// <summary>
-  ///   Represents a multicast event.
+  ///   Represents a multicast event that provides adding and removing event
+  ///   handlers.
   /// </summary>
   /// <typeparam name="T">
   ///   The event handler type must be an instance procedural type such as
   ///   TNotifyEvent.
   /// </typeparam>
   IEvent<T> = interface(IEvent)
-  {$REGION 'Property Accessors'}
-    function GetInvoke: T;
-  {$ENDREGION}
 
     /// <summary>
     ///   Adds an event handler to the list.
@@ -1057,6 +1053,15 @@ type
     ///   Removes an event handler if it was added to the event.
     /// </summary>
     procedure Remove(handler: T);
+  end;
+
+  /// <summary>
+  ///   Represents a multicast event that can be invoked.
+  /// </summary>
+  IEventInvokable<T> = interface(IEvent<T>)
+  {$REGION 'Property Accessors'}
+    function GetInvoke: T;
+  {$ENDREGION}
 
     /// <summary>
     ///   Invokes all event handlers.
@@ -1066,7 +1071,7 @@ type
 
   Event<T> = record
   private
-    fInstance: IEvent<T>;
+    fInstance: IEventInvokable<T>;
     function GetCanInvoke: Boolean;
     function GetEnabled: Boolean;
     function GetInvoke: T;
@@ -1105,14 +1110,19 @@ type
     /// </summary>
     property UseFreeNotification: Boolean read GetUseFreeNotification write SetUseFreeNotification;
 
-    class operator Implicit(const value: IEvent<T>): Event<T>;
-    class operator Implicit(var value: Event<T>): IEvent<T>;
+    class operator Implicit(const value: IEventInvokable<T>): Event<T>;
+    class operator Implicit(var value: Event<T>): IEventInvokable<T>;
     class operator Implicit(var value: Event<T>): T;
   end;
 
   INotifyEvent = IEvent<TNotifyEvent>;
 
   INotifyEvent<T> = interface(IEvent<TNotifyEvent<T>>)
+  end;
+
+  INotifyEventInvokable<T> = interface(INotifyEvent<T>)
+    function GetInvoke: TNotifyEvent<T>;
+    property Invoke: TNotifyEvent<T> read GetInvoke;
   end;
 
   {$RTTI INHERIT
@@ -9532,12 +9542,12 @@ begin
   EventHelper(fInstance).SetUseFreeNotification(value, TypeInfo(T));
 end;
 
-class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;
+class operator Event<T>.Implicit(const value: IEventInvokable<T>): Event<T>;
 begin
   IntfAssign(value, IInterface(Result.fInstance));
 end;
 
-class operator Event<T>.Implicit(var value: Event<T>): IEvent<T>;
+class operator Event<T>.Implicit(var value: Event<T>): IEventInvokable<T>;
 begin
   EventHelper(value.fInstance).EnsureInstance(Result, TypeInfo(T));
 end;

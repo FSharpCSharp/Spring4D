@@ -38,7 +38,6 @@ uses
 type
   TCollectionChangedEventImpl<T> = class(TEventBase, IEvent, ICollectionChangedEvent<T>)
   private
-    function GetInvoke: TCollectionChangedEvent<T>; overload;
     procedure InvokeSafe(Sender: TObject; const Item: T;
       Action: TCollectionChangedAction);
   public
@@ -77,11 +76,6 @@ procedure TCollectionChangedEventImpl<T>.Add(
   handler: TCollectionChangedEvent<T>);
 begin
   inherited Add(TMethodPointer(handler));
-end;
-
-function TCollectionChangedEventImpl<T>.GetInvoke: TCollectionChangedEvent<T>;
-begin
-  Result := TCollectionChangedEvent<T>(inherited Invoke);
 end;
 
 procedure TCollectionChangedEventImpl<T>.Invoke(Sender: TObject;

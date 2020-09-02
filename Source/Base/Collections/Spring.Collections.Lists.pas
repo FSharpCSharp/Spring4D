@@ -369,7 +369,7 @@ type
 
   TObservableObjectList = class(TFoldedList<TObject>, INotifyPropertyChanged)
   private
-    fOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+    fOnPropertyChanged: IEventInvokable<TPropertyChangedEvent>;
     function GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
   protected
     procedure DoItemPropertyChanged(sender: TObject;
@@ -383,7 +383,7 @@ type
 
   TObservableInterfaceList = class(TFoldedList<IInterface>, INotifyPropertyChanged)
   private
-    fOnPropertyChanged: IEvent<TPropertyChangedEvent>;
+    fOnPropertyChanged: IEventInvokable<TPropertyChangedEvent>;
     function GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
   protected
     procedure DoItemPropertyChanged(sender: TObject;

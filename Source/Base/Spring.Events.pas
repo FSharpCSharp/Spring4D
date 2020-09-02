@@ -74,7 +74,7 @@ type
 
   {$REGION 'TEvent<T>'}
 
-  TEvent<T> = class(TEvent, IEvent, IEvent<T>)
+  TEvent<T> = class(TEvent, IEvent, IEvent<T>, IEventInvokable<T>)
   private
     function GetInvoke: T; overload;
   public
@@ -83,16 +83,13 @@ type
     procedure Remove(handler: T); overload;
   end;
 
-  IMulticastNotifyEvent = IEvent<TNotifyEvent>;
-
-  TMulticastNotifyEvent = TEvent<TNotifyEvent>;
-
   {$ENDREGION}
 
 
   {$REGION 'TNotifyEventImpl'}
 
-  TNotifyEventImpl = class(TEventBase, IEvent, INotifyEvent)
+  TNotifyEventImpl = class(TEventBase, IEvent,
+    IEvent<TNotifyEvent>, IEventInvokable<TNotifyEvent>)
   private
     function GetInvoke: TNotifyEvent; overload;
     procedure InternalInvoke(sender: TObject);
@@ -103,12 +100,17 @@ type
     property Invoke: TNotifyEvent read GetInvoke;
   end;
 
+  IMulticastNotifyEvent = IEventInvokable<TNotifyEvent>;
+
+  TMulticastNotifyEvent = TNotifyEventImpl;
+
   {$ENDREGION}
 
 
   {$REGION 'TNotifyEventImpl<T>'}
 
-  TNotifyEventImpl<T> = class(TEventBase, IEvent, INotifyEvent<T>)
+  TNotifyEventImpl<T> = class(TEventBase, IEvent,
+    INotifyEvent<T>, INotifyEventInvokable<T>)
   private
     function GetInvoke: TNotifyEvent<T>; overload;
     procedure InternalInvoke(sender: TObject; const item: T);
@@ -124,7 +126,8 @@ type
 
   {$REGION 'TPropertyChangedEventImpl'}
 
-  TPropertyChangedEventImpl = class(TEventBase, IEvent, IPropertyChangedEvent)
+  TPropertyChangedEventImpl = class(TEventBase, IEvent,
+    IEvent<TPropertyChangedEvent>, IEventInvokable<TPropertyChangedEvent>)
   private
     function GetInvoke: TPropertyChangedEvent; overload;
     procedure InternalInvoke(Sender: TObject;
@@ -143,13 +146,13 @@ type
 
   EventHelper = record
   private type
-    IMethodEventInternal = interface(IEvent<TMethodPointer>)
+    IMethodEventInternal = interface(IEventInvokable<TMethodPointer>)
       procedure GetInvoke(var result);
       procedure Add(const handler);
       procedure Remove(const handler);
     end;
 
-    IDelegateEventInternal = interface(IEvent<IInterface>)
+    IDelegateEventInternal = interface(IEventInvokable<IInterface>)
       procedure GetInvoke(var result);
       procedure Add(const handler);
       procedure Remove(const handler);
@@ -157,6 +160,7 @@ type
 
     TMethodEvent = class(TEvent, IMethodEventInternal)
     private
+      function GetInvoke: TMethodPointer; overload;
       procedure Add(handler: TMethodPointer); overload;
       procedure Remove(handler: TMethodPointer); overload;
 
@@ -1027,6 +1031,11 @@ end;
 
 
 {$REGION 'EventHelper.TMethodEvent'}
+
+function EventHelper.TMethodEvent.GetInvoke: TMethodPointer;
+begin
+  Result := Invoke;
+end;
 
 procedure EventHelper.TMethodEvent.Add(handler: TMethodPointer);
 begin
