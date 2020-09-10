@@ -65,6 +65,8 @@ type
     /// </summary>
     class function CreateMatchers(const indizes: TArray<TValue>;
       const parameters: TArray<TRttiParameter>): Predicate<TArray<TValue>>; static;
+
+    class procedure ClearConditionStack; static;
   end;
 
   RefArgs = record
@@ -347,6 +349,11 @@ var
 begin
   index := AddMatcher(condition);
   Result := WrapIndex<T>(index);
+end;
+
+class procedure TMatcherFactory.ClearConditionStack;
+begin
+  conditionStack := nil;
 end;
 
 class function TMatcherFactory.AddMatcher(

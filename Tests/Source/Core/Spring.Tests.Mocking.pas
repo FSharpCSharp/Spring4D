@@ -221,6 +221,9 @@ begin
   mock.Instance.Test2('', 0, False);
   mock.Received(Times.Once).Test2(Arg.IsAny<string>, Arg.IsAny<Integer>, Arg.IsAny<Boolean>);
 
+  mock.Setup.Executes.When(Args.Any).Test1(Arg.IsAny<Integer>, Arg.IsAny<string>);
+  mock.Setup.Executes.When.Test1(Arg.IsAny<Integer>, Arg.IsAny<string>);
+
   Pass;
 end;
 

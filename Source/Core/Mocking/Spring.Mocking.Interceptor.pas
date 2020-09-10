@@ -305,7 +305,9 @@ procedure TMockInterceptor.InterceptArrange(const invocation: IInvocation);
 begin
   try
     if not Assigned(fMatch) then
-      fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters);
+      fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters)
+    else
+      TMatcherFactory.ClearConditionStack;
     if not Assigned(fMatch) then
       fMatch := CreateArgMatch(invocation.Arguments, invocation.Method.GetParameters);
     fExpectedCalls.AddRange(invocation.Method, CreateMethodCalls);
@@ -322,7 +324,9 @@ var
 begin
   try
     if not Assigned(fMatch) then
-      fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters);
+      fMatch := TMatcherFactory.CreateMatchers(invocation.Arguments, invocation.Method.GetParameters)
+    else
+      TMatcherFactory.ClearConditionStack;
     if fReceivedCalls.TryGetValues(invocation.Method, arguments) then
     begin
       if not Assigned(fMatch) then
