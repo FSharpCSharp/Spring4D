@@ -565,6 +565,7 @@ begin
   fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
 
   fOnDestroy := TNotifyEventImpl.Create;
+  fOnDestroy.UseFreeNotification := False;
 end;
 
 destructor TMultiMapBase<TKey, TValue>.Destroy;
