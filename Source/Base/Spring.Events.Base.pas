@@ -112,23 +112,55 @@ implementation
 uses
   TypInfo;
 
-function IsClassPtr(p: Pointer): Boolean;
-begin
-  try
-    Result := PPointer(NativeInt(p) + vmtSelfPtr)^ = p;
-  except
-    Result := False;
-  end;
-end;
+function IsValidObj(p: PPointer): Boolean;
+{$IFDEF MSWINDOWS}
+var
+  memInfo: TMemoryBasicInformation;
+{$ENDIF}
 
-function IsValidObj(p: Pointer): Boolean;
+  function IsValidPtr(address: Pointer): Boolean;
+  begin
+    // Must be above 64k and 4 byte aligned
+    if (UIntPtr(address) > $FFFF) and (UIntPtr(address) and 3 = 0) then
+    begin
+{$IFDEF MSWINDOWS}
+      // do we need to recheck the virtual memory?
+      if (UIntPtr(memInfo.BaseAddress) > UIntPtr(address))
+        or ((UIntPtr(memInfo.BaseAddress) + memInfo.RegionSize) < (UIntPtr(address) + SizeOf(Pointer))) then
+      begin
+        // retrieve the status for the pointer
+        memInfo.RegionSize := 0;
+        VirtualQuery(address, memInfo, SizeOf(memInfo));
+      end;
+      // check the readability of the memory address
+      Result := (memInfo.RegionSize >= SizeOf(Pointer))
+        and (memInfo.State = MEM_COMMIT)
+        and (memInfo.Protect and (PAGE_READONLY or PAGE_READWRITE
+          or PAGE_WRITECOPY or PAGE_EXECUTE or PAGE_EXECUTE_READ
+          or PAGE_EXECUTE_READWRITE or PAGE_EXECUTE_WRITECOPY) <> 0)
+        and (memInfo.Protect and PAGE_GUARD = 0);
+{$ELSE}
+      Result := True;
+{$ENDIF}
+    end
+    else
+      Result := False;
+  end;
+
 begin
   Result := False;
   if Assigned(p) then
   try
-    if not IsClassPtr(p) then
-      if PNativeInt(p)^ > $FFFF then
-        Result := PPointer(p)^ = PPointer(PNativeInt(p)^ + vmtSelfPtr)^;
+{$IFDEF MSWINDOWS}
+    memInfo.RegionSize := 0;
+{$ENDIF}
+    if IsValidPtr(PByte(p) + vmtSelfPtr)
+      // not a class pointer - they point to themselves in the vmtSelfPtr slot
+      and (p <> PPointer(PByte(p) + vmtSelfPtr)^) then
+      if IsValidPtr(p) and IsValidPtr(PByte(p^) + vmtSelfPtr)
+        // looks to be an object, it points to a valid class pointer
+        and (p^ = PPointer(PByte(p^) + vmtSelfPtr)^) then
+        Result := True;
   except
   end; //FI:W501
 end;
