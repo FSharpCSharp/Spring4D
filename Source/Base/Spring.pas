@@ -3171,10 +3171,12 @@ end;
 
 {$ENDIF}
 
+{$IFNDEF DELPHIXE2_UP}{$IFNDEF STACKFRAMES_ON}{$W+}{$ENDIF}{$ENDIF}
 procedure PlatformNotImplemented;
 begin
   raise ENotImplementedException.Create('Not implemented in present platform.') at ReturnAddress;
 end;
+{$IFNDEF DELPHIXE2_UP}{$IFNDEF STACKFRAMES_ON}{$W-}{$ENDIF}{$ENDIF}
 
 procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string);
 begin
@@ -6004,6 +6006,7 @@ begin
   Result := not left.Equals(right);
 end;
 
+{$IFNDEF DELPHIXE2_UP}{$IFNDEF STACKFRAMES_ON}{$W+}{$ENDIF}{$ENDIF}
 class procedure TValueHelper.RaiseConversionError(source, target: PTypeInfo);
 var
   sourceTypeName: string;
@@ -6015,6 +6018,7 @@ begin
   raise EConvertError.CreateResFmt(@STypeConversionError, [
     sourceTypeName, target.TypeName]) at ReturnAddress;
 end;
+{$IFNDEF DELPHIXE2_UP}{$IFNDEF STACKFRAMES_ON}{$W-}{$ENDIF}{$ENDIF}
 
 procedure TValueHelper.SetNullableValue(const value: TValue);
 var
@@ -7429,6 +7433,7 @@ end;
 
 {$REGION 'Guard'}
 
+{$IFNDEF DELPHIXE2_UP}{$IFNDEF STACKFRAMES_ON}{$W+}{$ENDIF}{$ENDIF}
 class procedure Guard.RaiseArgumentException(const msg: string);
 begin
   raise EArgumentException.Create(msg) at ReturnAddress;
@@ -7479,6 +7484,7 @@ class procedure Guard.RaiseNoDelegateAssigned;
 begin
   raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned) at ReturnAddress;
 end;
+{$IFNDEF DELPHIXE2_UP}{$IFNDEF STACKFRAMES_ON}{$W-}{$ENDIF}{$ENDIF}
 
 class procedure Guard.CheckIndex(length, index, indexBase: Integer);
 const
@@ -7779,6 +7785,7 @@ end;
 
 {$REGION 'RaiseHelper'}
 
+{$IFNDEF DELPHIXE2_UP}{$IFNDEF STACKFRAMES_ON}{$W+}{$ENDIF}{$ENDIF}
 class procedure RaiseHelper.ArgumentNil(argument: ExceptionArgument);
 begin
   raise EArgumentNilException.Create(GetArgumentName(argument)) at ReturnAddress;
@@ -7855,6 +7862,7 @@ class function RaiseHelper.EnumFailedVersion: Boolean;
 begin
   raise EInvalidOperationException.CreateRes(@SInvalidOperation_EnumFailedVersion) at ReturnAddress;
 end;
+{$IFNDEF DELPHIXE2_UP}{$IFNDEF STACKFRAMES_ON}{$W-}{$ENDIF}{$ENDIF}
 
 class function RaiseHelper.GetArgumentOutOfRangeException(
   argument: ExceptionArgument; resource: ExceptionResource): EArgumentException;
