@@ -137,6 +137,9 @@ implementation
 uses
   Classes,
   RTLConsts,
+{$IFDEF DELPHIXE4}
+  Rtti, // suppress hint about inlining
+{$ENDIF}
   SysUtils,
   TypInfo,
   Spring.Events.Base,
