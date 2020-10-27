@@ -265,6 +265,8 @@ type
 
   TIteratorBase<T> = class abstract(TEnumerableBase<T>)
   private type
+    TIteratorRecT = TIteratorRec<T>;
+    PIteratorRecT = ^TIteratorRecT;
     TEnumerator = class(TIterator, IEnumerator<T>)
     private
       function GetCurrent: T;
@@ -384,7 +386,9 @@ type
   {$ENDREGION}
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
-    procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
+    procedure DoNotify(const item: T; action: TCollectionChangedAction);
+      // there are errors in the XE4 Win64 compiler when this method is inline
+      {$IF not (Defined(DELPHIXE4) and Defined(WIN64))}inline;{$IFEND}
     procedure Reset;
     property OnChanged: TCollectionChangedEventImpl<T> read fOnChanged;
     property Notify: TNotify read fNotify;
@@ -2781,11 +2785,8 @@ end;
 {$REGION 'TIteratorBase<T>.TEnumerator'}
 
 function TIteratorBase<T>.TEnumerator.GetCurrent: T;
-type
-  TIteratorRec = TIteratorRec<T>;
-  PIteratorRec = ^TIteratorRec;
 begin
-  Result := PIteratorRec(fIterator).Current;
+  Result := PIteratorRecT(fIterator).Current;
 end;
 
 {$ENDREGION}
