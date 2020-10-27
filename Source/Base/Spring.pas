@@ -11307,10 +11307,7 @@ var
   temp: T;
   left, right: Integer;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Length(values));
 
   left := index;
   right := index + count - 1;
