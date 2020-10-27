@@ -1661,13 +1661,6 @@ type
       {$IFDEF IMPLICIT_NULLABLE_WARN}inline; deprecated 'Possible unsafe operation involving implicit operator - use Value property';{$ENDIF}
 {$ENDIF}
 
-{$IFDEF UNSAFE_NULLABLE}
-    class operator Implicit(const value: Nullable<T>): Variant;
-      {$IFDEF UNSAFE_NULLABLE_WARN}{$IFNDEF DELPHIXE4}inline;{$ENDIF} deprecated 'Possible unsafe operation involving implicit Variant conversion - use ToVariant';{$ENDIF}
-    class operator Implicit(const value: Variant): Nullable<T>;
-      {$IFDEF UNSAFE_NULLABLE_WARN}{$IFNDEF DELPHIXE4}inline;{$ENDIF} deprecated 'Possible unsafe operation involving implicit Variant conversion - use explicit cast';{$ENDIF}
-{$ENDIF}
-
     class operator Explicit(const value: Variant): Nullable<T>;
     class operator Explicit(const value: Nullable<T>): T; inline;
 
@@ -8072,38 +8065,6 @@ end;
 class operator Nullable<T>.Implicit(const value: Nullable<T>): T;
 begin
   Result := value.Value;
-end;
-{$ENDIF}
-
-{$IFDEF UNSAFE_NULLABLE}
-class operator Nullable<T>.Implicit(const value: Nullable<T>): Variant;
-var
-  v: TValue;
-begin
-  if value.HasValue then
-  begin
-    v := TValue.From(@value.fValue, TypeInfo(T));
-    if v.IsType(TypeInfo(Boolean)) then
-      Result := v.AsBoolean
-    else
-      Result := v.AsVariant;
-  end
-  else
-    Result := Null;
-end;
-
-class operator Nullable<T>.Implicit(const value: Variant): Nullable<T>;
-var
-  v: TValue;
-begin
-  if not VarIsNullOrEmpty(value) then
-  begin
-    v := TValue.FromVariant(value);
-    v.AsType(TypeInfo(T), Result.fValue);
-    Result.fHasValue := Nullable.HasValue;
-  end
-  else
-    Result := Default(Nullable<T>);
 end;
 {$ENDIF}
 

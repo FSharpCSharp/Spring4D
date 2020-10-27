@@ -25,9 +25,7 @@
 unit Spring.Tests.Base;
 
 {$I Spring.inc}
-{$IFDEF UNSAFE_NULLABLE}
-  {$WARN SYMBOL_DEPRECATED OFF}
-{$ENDIF}
+{$WARN SYMBOL_DEPRECATED OFF}
 
 {$IF Defined(MACOS) AND NOT Defined(IOS)}
   {$DEFINE LogConsole}
@@ -42,8 +40,7 @@ uses
   Spring.TestUtils,
   Spring,
   Spring.Collections,
-  Spring.Events,
-  Spring.Utils;
+  Spring.Events;
 
 type
   TTestNullableInteger = class(TTestCase)
@@ -677,11 +674,7 @@ end;
 procedure TTestNullableInteger.TestAssignFloat;
 begin
   ExpectedException := EInvalidCast;
-{$IFDEF UNSAFE_NULLABLE}
-  fInteger := 99.9;
-{$ELSE}
   fInteger := Nullable<Integer>(99.9);
-{$ENDIF}
 end;
 
 procedure TTestNullableInteger.TestAssignNull;
@@ -697,21 +690,13 @@ procedure TTestNullableInteger.TestAssignStringInt;
 begin
   // Nullable does NOT do a variant type conversion but is strict about the underlying type
   ExpectedException := EInvalidCast;
-{$IFDEF UNSAFE_NULLABLE}
-  fInteger := '5';
-{$ELSE}
   fInteger := Nullable<Integer>('5');
-{$ENDIF}
 end;
 
 procedure TTestNullableInteger.TestAssignStringNonInt;
 begin
   ExpectedException := EInvalidCast;
-{$IFDEF UNSAFE_NULLABLE}
-  fInteger := '5x';
-{$ELSE}
   fInteger := Nullable<Integer>('5x');
-{$ENDIF}
 end;
 
 procedure TTestNullableInteger.TestDefaultReturnsInitialValue;
@@ -769,11 +754,7 @@ begin
   fInteger := Nullable<Integer>.Create(value);
   CheckFalse(fInteger.HasValue);
 
-{$IFDEF UNSAFE_NULLABLE}
-  fInteger := value;
-{$ELSE}
   fInteger := Nullable<Integer>(value);
-{$ENDIF}
   CheckFalse(fInteger.HasValue);
 
   value := ExpectedInteger;
@@ -819,11 +800,7 @@ var
   v: Variant;
 begin
   fBoolean := True;
-{$IFDEF UNSAFE_NULLABLE}
-  v := fBoolean;
-{$ELSE}
   v := fBoolean.ToVariant;
-{$ENDIF}
   CheckTrue(v);
 end;
 
@@ -3337,11 +3314,7 @@ var
 begin
   dt := EncodeDateTime(2015, 1, 1, 12, 0, 0, 0);
   v := VarSQLTimeStampCreate(dt);
-{$IFDEF UNSAFE_NULLABLE}
-  fDateTime := v;
-{$ELSE}
   fDateTime := Nullable<TDateTime>(v);
-{$ENDIF}
   CheckEquals(dt, fDateTime.Value);
 end;
 
@@ -3358,11 +3331,7 @@ begin
   VarSQLTimeStampOffsetCreate(v, DateTimeToSQLTimeStampOffset(dt,
     TTimeZone.Local.GetUtcOffset(dt).Hours,
     TTimeZone.Local.GetUtcOffset(dt).Minutes));
-{$IFDEF UNSAFE_NULLABLE}
-  fDateTime := v;
-{$ELSE}
   fDateTime := Nullable<TDateTime>(v);
-{$ENDIF}
   CheckEquals(dt, fDateTime.Value);
 end;
 
@@ -3382,11 +3351,7 @@ var
   v: Variant;
 begin
   v := VarFMTBcdCreate('8123456789012345678', 19, 0);
-{$IFDEF UNSAFE_NULLABLE}
-  fInt64 := v;
-{$ELSE}
   fInt64 := Nullable<Int64>(v);
-{$ENDIF}
   CheckEquals(8123456789012345678, fInt64.Value);
 end;
 
