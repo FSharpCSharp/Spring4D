@@ -112,7 +112,6 @@ type
     function Add(const item: T): Boolean;
     function Remove(const item: T): Boolean;
     function Extract(const item: T): T;
-
     procedure Clear;
   {$ENDREGION}
 
@@ -346,6 +345,7 @@ end;
 constructor THashSet<T>.Create(capacity: Integer; const comparer: IEqualityComparer<T>);
 begin
   fKeyComparer := comparer;
+  fHashTable.ItemsInfo := TypeInfo(TItems);
   SetCapacity(capacity);
 end;
 
@@ -355,7 +355,7 @@ begin
 
   if not Assigned(fKeyComparer) then
     fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
+  fHashTable.Initialize(@EqualsThunk, fKeyComparer);
 end;
 
 procedure THashSet<T>.BeforeDestruction;
@@ -407,9 +407,6 @@ var
   item: PItem;
   i: Integer;
 begin
-  if fHashTable.ItemCount = 0 then
-    Exit;
-
   if Assigned(Notify) then
   begin
     fHashTable.ClearCount;

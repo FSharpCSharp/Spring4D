@@ -916,8 +916,8 @@ end;
 procedure TTestEmptyHashSet.SetUp;
 begin
   inherited;
-  fSet := TCollections.CreateSet<Integer>;
-  fEmpty := TCollections.CreateSet<Integer>;
+  fSet := TCollections.CreateSet<Integer>(10);
+  fEmpty := TCollections.CreateSet<Integer>(10);
 end;
 
 procedure TTestEmptyHashSet.TearDown;
@@ -982,8 +982,8 @@ end;
 procedure TTestNormalHashSet.SetUp;
 begin
   inherited;
-  fSet1 := TCollections.CreateSet<Integer>;
-  fSet2 := TCollections.CreateSet<Integer>;
+  fSet1 := TCollections.CreateSet<Integer>(10);
+  fSet2 := TCollections.CreateSet<Integer>(10);
   fSet1.AddRange([1, 2, 3]);
   fSet2.AddRange([3, 1, 4, 5]);
 end;

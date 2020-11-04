@@ -148,6 +148,7 @@ type
     function CreateMultiSet: IMultiSet<T>; override;
   public
     constructor Create(const comparer: IEqualityComparer<T>);
+    procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
 
   {$REGION 'Implements IEnumerable<T>'}
@@ -382,13 +383,22 @@ end;
 
 constructor THashMultiSet<T>.Create(const comparer: IEqualityComparer<T>);
 begin
-  if Assigned(comparer) then
-    fComparer := comparer
-  else
-    fComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
+  fComparer := comparer;
+end;
 
-  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fComparer);
-  fItems := TItemCollection.Create(Self, @fHashTable, fComparer, GetElementType, 0);
+procedure THashMultiSet<T>.AfterConstruction;
+var
+  elementType: PTypeInfo;
+begin
+  inherited AfterConstruction;
+
+  elementType := GetElementType;
+  if not Assigned(fComparer) then
+    fComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, elementType, SizeOf(T)));
+  fHashTable.ItemsInfo := TypeInfo(TItems);
+  fHashTable.Initialize(@EqualsThunk, fComparer);
+
+  fItems := TItemCollection.Create(Self, @fHashTable, fComparer, elementType, 0);
   fEntries := TEntryCollection.Create(Self);
 end;
 
@@ -450,7 +460,7 @@ end;
 
 procedure THashMultiSet<T>.ClearWithNotify;
 var
-  oldItemIndex, oldItemCount, i: Integer;
+  oldItemCount, i, n: Integer;
   oldItems: TArray<TItem>;
 begin
   oldItemCount := fHashTable.ItemCount;
@@ -458,10 +468,10 @@ begin
 
   fHashTable.Clear;
 
-  for oldItemIndex := 0 to oldItemCount - 1 do
-    if oldItems[oldItemIndex].HashCode >= 0 then
-      for i := 1 to oldItems[oldItemIndex].Count do
-        Notify(Self, oldItems[oldItemIndex].Item, caRemoved);
+  for i := 0 to oldItemCount - 1 do
+    if oldItems[i].HashCode >= 0 then
+      for n := 1 to oldItems[i].Count do
+        Notify(Self, oldItems[i].Item, caRemoved);
 end;
 
 class function THashMultiSet<T>.EqualsThunk(instance: Pointer; const left, right): Boolean;

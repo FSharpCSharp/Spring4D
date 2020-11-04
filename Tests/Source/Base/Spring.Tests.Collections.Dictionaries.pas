@@ -338,7 +338,7 @@ end;
 
 class function TTestDictionaryKeyComparer.CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>;
 begin
-  Result := TCollections.CreateDictionary<Integer, string>(keyComparer, nil);
+  Result := TCollections.CreateDictionary<Integer, string>(10, keyComparer, nil);
 end;
 
 {$ENDREGION}
@@ -348,7 +348,7 @@ end;
 
 class function TTestBidiDictionaryKeyComparer.CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>;
 begin
-  Result := TCollections.CreateBidiDictionary<Integer, string>(keyComparer, nil);
+  Result := TCollections.CreateBidiDictionary<Integer, string>(10, keyComparer, nil);
 end;
 
 {$ENDREGION}
@@ -358,7 +358,7 @@ end;
 
 class function TTestBidiDictionaryInverseKeyComparer.CreateSUT(const keyComparer: IEqualityComparer<Integer>): IDictionary<Integer, string>;
 begin
-  Result := TCollections.CreateBidiDictionary<string, Integer>(nil, keyComparer).Inverse;
+  Result := TCollections.CreateBidiDictionary<string, Integer>(10, nil, keyComparer).Inverse;
 end;
 
 {$ENDREGION}
@@ -444,7 +444,7 @@ end;
 
 class function TTestDictionaryValueComparer.CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>;
 begin
-  Result := TCollections.CreateDictionary<string, Integer>(nil, valueComparer);
+  Result := TCollections.CreateDictionary<string, Integer>(10, nil, valueComparer);
 end;
 
 {$ENDREGION}
@@ -454,7 +454,7 @@ end;
 
 class function TTestBidiDictionaryValueComparer.CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>;
 begin
-  Result := TCollections.CreateBidiDictionary<string, Integer>(nil, valueComparer);
+  Result := TCollections.CreateBidiDictionary<string, Integer>(10, nil, valueComparer);
 end;
 
 {$ENDREGION}
@@ -464,7 +464,7 @@ end;
 
 class function TTestBidiDictionaryInverseValueComparer.CreateSUT(const valueComparer: IEqualityComparer<Integer>): IDictionary<string, Integer>;
 begin
-  Result := TCollections.CreateBidiDictionary<Integer, string>(valueComparer, nil).Inverse;
+  Result := TCollections.CreateBidiDictionary<Integer, string>(10, valueComparer, nil).Inverse;
 end;
 
 {$ENDREGION}

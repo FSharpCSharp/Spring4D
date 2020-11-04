@@ -92,8 +92,6 @@ type
     function TryInsert(const key: TKey; const value: TValue; behavior: TInsertionBehavior): Boolean;
     procedure DoRemove(const entry: THashTableEntry; action: TCollectionChangedAction);
     class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
-  protected
-    property Capacity: Integer read GetCapacity;
   public
     constructor Create(capacity: Integer;
       const keyComparer: IEqualityComparer<TKey>;
@@ -616,6 +614,7 @@ begin
   fKeyComparer := keyComparer;
   fValueComparer := valueComparer;
 
+  fHashTable.ItemsInfo := TypeInfo(TItems);
   SetCapacity(capacity);
 end;
 
@@ -631,7 +630,7 @@ begin
     fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, keyType, SizeOf(TKey)));
   if not Assigned(fValueComparer) then
     fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, valueType, SizeOf(TValue)));
-  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
+  fHashTable.Initialize(@EqualsThunk, fKeyComparer);
 
   fKeys := TKeyCollection.Create(Self, @fHashTable, fKeyComparer, keyType, 0);
   fValues := TValueCollection.Create(Self, @fHashTable, fValueComparer, valueType, SizeOf(TKey));
@@ -691,9 +690,6 @@ var
   item: PItem;
   i: Integer;
 begin
-  if fHashTable.ItemCount = 0 then
-    Exit;
-
   fHashTable.ClearCount;
 
   item := PItem(fHashTable.Items);

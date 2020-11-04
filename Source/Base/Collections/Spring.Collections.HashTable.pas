@@ -61,8 +61,9 @@ type
 
     function GetCapacity: Integer;
     procedure SetCapacity(const Value: Integer);
+    procedure SetItemsInfo(const Value: PTypeInfo);
   public
-    procedure Initialize(itemsInfo: PTypeInfo; const equals: Pointer; const comparer: IInterface);
+    procedure Initialize(const equals: Pointer; const comparer: IInterface);
 
     procedure EnsureCompact;
     procedure Grow;
@@ -84,6 +85,7 @@ type
     property Count: Integer read fCount;
     property ItemCount: Integer read fItemCount;
     property Items: PByte read fItems;
+    property ItemsInfo: PTypeInfo read fItemsInfo write SetItemsInfo;
     property ItemSize: Integer read fItemSize;
     property Version: Integer read fVersion;
   end;
@@ -104,11 +106,8 @@ const
 
 {$REGION 'THashTable'}
 
-procedure THashTable.Initialize(itemsInfo: PTypeInfo; const equals: Pointer;
-  const comparer: IInterface);
+procedure THashTable.Initialize(const equals: Pointer; const comparer: IInterface);
 begin
-  fItemsInfo := itemsInfo;
-  fItemSize := itemsInfo.TypeData.elSize;
   TMethod(fEquals).Code := equals;
   TMethod(fEquals).Data := @TMethod(fEqualsMethod);
   fEqualsMethod := InterfaceToMethodPointer(comparer, 0);
@@ -393,7 +392,7 @@ procedure THashTable.SetCapacity(const value: Integer);
 var
   newCapacity: Integer;
 begin
-  if value < fCount then EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRange_Capacity);
+  if value < fCount then raise EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRange_Capacity);
 
   if value = 0 then
     newCapacity := 0
@@ -401,6 +400,12 @@ begin
     newCapacity := Math.Max(MinCapacity, value);
   if newCapacity <> Capacity then
     Rehash(newCapacity);
+end;
+
+procedure THashTable.SetItemsInfo(const value: PTypeInfo);
+begin
+  fItemsInfo := value;
+  fItemSize := value.TypeData.elSize;
 end;
 
 {$ENDREGION}

@@ -563,7 +563,8 @@ begin
   keyType := GetKeyType;
   if not Assigned(fKeyComparer) then
     fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, keyType, SizeOf(TKey)));
-  fHashTable.Initialize(TypeInfo(TItems), @EqualsThunk, fKeyComparer);
+  fHashTable.ItemsInfo := TypeInfo(TItems);
+  fHashTable.Initialize(@EqualsThunk, fKeyComparer);
 
   fKeys := TKeyCollection.Create(Self, @fHashTable, fKeyComparer, keyType, 0);
   fValues := TValueCollection.Create(Self, @fHashTable, @fCount);
