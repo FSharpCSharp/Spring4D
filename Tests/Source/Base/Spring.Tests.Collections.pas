@@ -3261,17 +3261,6 @@ end;
 
 {$REGION 'TTestObjectList'}
 
-type
-  TTestNotEqual = class(TPersistent)
-  public
-    function Equals(Obj: TObject): Boolean; override;
-  end;
-
-function TTestNotEqual.Equals(Obj: TObject): Boolean;
-begin
-  Result := False;
-end;
-
 procedure TTestObjectList.SetUp;
 begin
   SUT := TCollections.CreateObjectList<TPersistent>;
@@ -3292,12 +3281,16 @@ end;
 
 procedure TTestObjectList.TestIndexOf;
 var
-  obj: TPersistent;
+  obj1, obj2: TPersistent;
 begin
-  obj := TTestNotEqual.Create;
-  SUT.Add(obj);
-  CheckEquals(-1, SUT.IndexOf(obj));
-  CheckFalse(SUT.Contains(obj));
+  obj1 := TPersistent.Create;
+  obj2 := TPersistent.Create;
+  SUT.Add(obj1);
+  SUT.Add(obj2);
+  CheckEquals(0, SUT.IndexOf(obj1));
+  CheckTrue(SUT.Contains(obj1));
+  CheckEquals(1, SUT.IndexOf(obj2));
+  CheckTrue(SUT.Contains(obj2));
 end;
 
 procedure TTestObjectList.TestExtractAt;

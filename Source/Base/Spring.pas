@@ -98,6 +98,11 @@ type
   PMethodPointer = ^TMethodPointer;
   TMethodPointer = procedure of object;
 
+  PInt8 = ^Int8;
+  PInt16 = ^Int16;
+  PInt32 = ^Int32;
+  PInt64 = ^Int64;
+
   {$ENDREGION}
 
 
