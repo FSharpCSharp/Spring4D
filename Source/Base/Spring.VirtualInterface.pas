@@ -76,6 +76,7 @@ implementation
 
 uses
 {$IFDEF DELPHIXE}
+  Spring,
   Spring.Patches.GetInvokeInfo,
   Spring.Patches.QC93646,
   Spring.Patches.QC98671,
@@ -88,10 +89,6 @@ uses
 
 {$IFNDEF DELPHIXE2_UP}
 constructor TVirtualInterface.Create(typeInfo: PTypeInfo);
-type
-{$POINTERMATH ON}
-  PVTable = ^Pointer;
-{$POINTERMATH OFF}
 var
   i: Integer;
   maxVirtualIndex: SmallInt;

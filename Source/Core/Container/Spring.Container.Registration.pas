@@ -268,11 +268,7 @@ end;
 type
   TVirtualInterfaceHack = class(TInterfacedObject)
   private
-    type
-    {$POINTERMATH ON}
-      PVTable = ^Pointer;
-    {$POINTERMATH OFF}
-    var VTable: PVTable;
+    VTable: PVTable;
   end;
 
 function TComponentRegistry.InternalResolveParams(const method: TRttiMethod;

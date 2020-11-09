@@ -586,10 +586,6 @@ begin
 end;
 
 procedure TMethodInterceptor.Intercept(const invocation: IInvocation);
-type
-  PPVtable = ^PVtable;
-  PVtable = ^TVtable;
-  TVtable = array[0..3] of Pointer;
 var
   arguments: TArray<TValue>;
   method: TRttiMethod;
@@ -608,7 +604,7 @@ begin
   for i := Low(arguments) to High(arguments) do
     PassArg(params[i], arguments[i], args[i + 1], method.CallingConvention);
 
-  codeAddress := PPVtable(fDelegate)^^[3];
+  codeAddress := PPVtable(fDelegate)^[3];
 
   invocation.Result := Rtti.Invoke(codeAddress, args, method.CallingConvention, method.ReturnTypeHandle);
 end;

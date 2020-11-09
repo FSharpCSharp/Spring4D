@@ -90,6 +90,10 @@ type
 {$ENDIF}
 
   PObject = ^TObject;
+  {$POINTERMATH ON}
+  PVTable = ^Pointer;
+  {$POINTERMATH OFF}
+  PPVTable = ^PVTable;
 
   PMethodPointer = ^TMethodPointer;
   TMethodPointer = procedure of object;
@@ -3586,31 +3590,20 @@ begin
 end;
 
 function InterfaceToMethodPointer(const intf; index: Integer): TMethodPointer;
-type
-  TVtable = array[0..0] of Pointer;
-  PVtable = ^TVtable;
-  PPVtable = ^PVtable;
 begin
   if Pointer(intf) = nil then
     Exit(nil);
-
-{$R-}
   // 3 is offset of the first declared method in the interface, after QI, AddRef, Release
-  TMethod(Result).Code := PPVtable(intf)^^[index + 3];
-{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+  TMethod(Result).Code := PPVtable(intf)^[index + 3];
   TMethod(Result).Data := Pointer(intf);
 end;
 
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
-type
-  TVtable = array[0..3] of Pointer;
-  PVtable = ^TVtable;
-  PPVtable = ^PVtable;
 begin
   if Pointer(methodRef) = nil then
     Exit(nil);
   // 3 is offset of Invoke, after QI, AddRef, Release
-  TMethod(Result).Code := PPVtable(methodRef)^^[3];
+  TMethod(Result).Code := PPVtable(methodRef)^[3];
   TMethod(Result).Data := Pointer(methodRef);
 end;
 
