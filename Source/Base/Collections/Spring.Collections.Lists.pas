@@ -472,18 +472,23 @@ begin
 end;
 
 function TAbstractArrayList<T>.Add(const item: T): Integer;
+var
+  listCount: Integer;
+  items: Pointer;
 begin
-  Result := Count;
-  if (Result <> fCapacity) and not Assigned(Notify) then
+  listCount := Count;
+  if (listCount <> fCapacity) and not Assigned(Notify) then
   begin
     {$Q-}
     Inc(fVersion);
     {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
     Inc(fCount);
-    fItems[Result] := item;
+    items := fItems;
+    TArray<T>(items)[listCount] := item;
+    Result := listCount;
   end
   else
-    Result := InsertInternal(Result, item);
+    Result := InsertInternal(listCount, item);
 end;
 
 procedure TAbstractArrayList<T>.AddRange(const values: array of T);
@@ -1316,9 +1321,10 @@ end;
 
 procedure TAbstractArrayList<T>.Delete(index: Integer);
 begin
-  CheckIndex(index, Self.Count);
-
-  DeleteInternal(index, caRemoved);
+  if Cardinal(index) < Cardinal(Count) then
+    DeleteInternal(index, caRemoved)
+  else
+    RaiseHelper.ArgumentOutOfRange_Index;
 end;
 
 function TAbstractArrayList<T>.DeleteAllInternal(const match: Predicate<T>;
