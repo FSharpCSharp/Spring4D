@@ -513,10 +513,18 @@ begin
 end;
 
 function TAbstractArrayList<T>.GetItem(index: Integer): T;
+var
+  listCount: Integer;
 begin
-  CheckIndex(index, Count);
-
-  Result := fItems[index];
+  listCount := Count;
+  if Cardinal(index) < Cardinal(listCount) then
+    Exit(fItems[index]);
+  RaiseHelper.ArgumentOutOfRange_Index;
+  {$IFDEF DELPHIXE7_UP}{$IFDEF CPUX86}{$IFDEF OPTIMIZATION_ON}
+  // cause the compiler to omit push instruction for types that return in eax
+  if GetTypeKind(T) in [tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkClassRef, tkPointer, tkProcedure] then
+    Result := Default(T);
+  {$ENDIF}{$ENDIF}{$ENDIF}
 end;
 
 function TAbstractArrayList<T>.GetRange(index, count: Integer): IList<T>;
@@ -630,21 +638,27 @@ begin
 end;
 
 procedure TAbstractArrayList<T>.SetItem(index: Integer; const value: T);
+var
+  listCount: Integer;
 begin
-  CheckIndex(index, Count);
-
-  if not Assigned(Notify) then
+  listCount := Count;
+  if Cardinal(index) < Cardinal(listCount) then
   begin
-    {$Q-}
-    Inc(fVersion);
-    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    if not Assigned(Notify) then
+    begin
+      {$Q-}
+      Inc(fVersion);
+      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
-    if OwnsObjects then
-      FreeObject(fItems[index]);
-    fItems[index] := value;
+      if OwnsObjects then
+        FreeObject(fItems[index]);
+      fItems[index] := value;
+      Exit;
+    end;
+    SetItemInternal(index, value);
   end
   else
-    SetItemInternal(index, value);
+    RaiseHelper.ArgumentOutOfRange_Index;
 end;
 
 procedure TAbstractArrayList<T>.SetItemInternal(index: Integer; const value: T);
