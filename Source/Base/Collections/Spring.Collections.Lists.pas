@@ -413,6 +413,9 @@ uses
   Spring.Events.Base,
   Spring.ResourceStrings;
 
+type
+  TArray = class(Spring.TArray);
+
 
 {$REGION 'TAbstractArrayList<T>'}
 
@@ -1100,23 +1103,103 @@ begin
 end;
 
 procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>; index, count: Integer);
+var
+  listCount: Integer;
+  compare: TMethod;
 begin
-  CheckRange(index, count, Self.Count);
+  listCount := Self.Count;
+  if Cardinal(index) <= Cardinal(listCount) then
+    {$Q-}
+    if (count >= 0) and (index <= listCount - count) then
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    begin
+      if count < 2 then
+        Exit;
 
-  if count < 2 then
-    Exit;
+      {$Q-}
+      Inc(fVersion);
+      {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+      {$IFDEF DELPHIXE7_UP}
+      if GetTypeKind(T) = tkClass then
+        TTimSort.Sort(fItems, IComparer<Pointer>(comparer), index, count)
+      else
+      {$ENDIF}
+      begin
+        compare.Data := Pointer(comparer);
+        compare.Code := PPVTable(comparer)^[3];
+        {$R-}
+        {$IFDEF DELPHIXE7_UP}
+        case GetTypeKind(T) of
+          tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
+          tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
+            case SizeOf(T) of
+              1: TArray.IntroSort_Int8(@fItems[index], index + count - 1, @compare);
+              2: TArray.IntroSort_Int16(@fItems[index], index + count - 1, @compare);
+              4: TArray.IntroSort_Int32(@fItems[index], index + count - 1, @compare);
+              8: TArray.IntroSort_Int64(@fItems[index], index + count - 1, @compare);
+            end;
+          tkFloat:
+            case SizeOf(T) of
+              4: TArray.IntroSort_Single(@fItems[index], index + count - 1, @compare);
+              10: TArray.IntroSort_Extended(@fItems[index], index + count - 1, @compare);
+            else
+              if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
+                TArray.IntroSort_Double(@fItems[index], index + count - 1, @compare)
+              else
+                TArray.IntroSort_Int64(@fItems[index], index + count - 1, @compare);
+            end;
+          tkString:
+            TArray.IntroSort_Swap_Ref(@fItems[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+          tkSet:
+            case SizeOf(T) of
+              1: TArray.IntroSort_Int8(@fItems[index], index + count - 1, @compare);
+              2: TArray.IntroSort_Int16(@fItems[index], index + count - 1, @compare);
+              4: TArray.IntroSort_Int32(@fItems[index], index + count - 1, @compare);
+            else
+              TArray.IntroSort_Swap_Ref(@fItems[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+            end;
+          tkMethod:
+            TArray.IntroSort_Method(@fItems[index], index + count - 1, @compare);
+          tkVariant,
+          {$IF Declared(tkMRecord)}
+          tkMRecord,
+          {$IFEND}
+          tkRecord:
+            if not System.HasWeakRef(T) then
+              case SizeOf(T) of
+                1: TArray.IntroSort_Int8(@fItems[index], index + count - 1, @compare);
+                2: TArray.IntroSort_Int16(@fItems[index], index + count - 1, @compare);
+                3: TArray.IntroSort_Int24(@fItems[index], index + count - 1, @compare);
+                4: TArray.IntroSort_Int32(@fItems[index], index + count - 1, @compare);
+              else
+                TArray.IntroSort_Swap_Ref(@fItems[index], index + count - 1, TCompareMethod(compare), SizeOf(T))
+              end
+            else
+              TArray.IntroSort<T>(Slice(TSlice<T>((@fItems[index])^), count), TCompareMethod<T>(compare));
+          tkArray:
+            case SizeOf(T) of
+              1: TArray.IntroSort_Int8(@fItems[index], index + count - 1, @compare);
+              2: TArray.IntroSort_Int16(@fItems[index], index + count - 1, @compare);
+              3: TArray.IntroSort_Int24(@fItems[index], index + count - 1, @compare);
+              4: TArray.IntroSort_Int32(@fItems[index], index + count - 1, @compare);
+            else
+              TArray.IntroSort_Swap_Ref(@fItems[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+            end;
+        else
+        {$ELSE}
+        begin
+        {$ENDIF}
+          TArray.IntroSort<T>(Slice(TSlice<T>((@fItems[index])^), count), TCompareMethod<T>(compare));
+        end;
+        {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+      end;
 
-  {$Q-}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  {$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(T) = tkClass then
-    TTimSort.Sort(fItems, IComparer<Pointer>(comparer), index, count)
+      Reset;
+    end
+    else
+      RaiseHelper.ArgumentOutOfRange_Count
   else
-  {$ENDIF}
-  TArray.Sort<T>(fItems, comparer, index, count);
-
-  Reset;
+    RaiseHelper.ArgumentOutOfRange_Index;
 end;
 
 procedure TAbstractArrayList<T>.Move(currentIndex, newIndex: Integer);

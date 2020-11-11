@@ -61,6 +61,12 @@
   {$DEFINE SUPPORTS_CONSTREF}
 {$ENDIF}
 
+{$IFNDEF DELPHIX_RIO_UP}
+  {$IF Defined(CPUX64) and Defined(MSWINDOWS)}
+    {$DEFINE PASS_64BIT_VALUE_REGISTER}
+  {$IFEND}
+{$ENDIF}
+
 {$IFDEF MSWINDOWS}
   // Use the unused vmtAutoTable slot in the class VMT to store the init table
   // otherwise a global dictionary will be used which is slightly slower

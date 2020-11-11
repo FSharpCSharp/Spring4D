@@ -35,6 +35,8 @@ interface
 
 uses
   Classes,
+  Generics.Collections,
+  Generics.Defaults,
   TypInfo,
   TestFramework,
   Spring.TestUtils,
@@ -596,6 +598,83 @@ type
 {$ENDIF}
   end;
 
+  TSortTest = class(TTestCase)
+  private type
+    TString1 = string[1];
+    TString2 = string[2];
+    TString3 = string[3];
+    TString4 = string[4];
+    TString7 = string[7];
+    {$SCOPEDENUMS ON}
+    TEnum8 =  (x00, x01, x02, x03, x04, x05, x06, x07);
+    TEnum16 = (x00, x01, x02, x03, x04, x05, x06, x07,
+              x08, x09, x0a, x0b, x0c, x0d, x0e, x0f);
+    TEnum32 = (x00, x01, x02, x03, x04, x05, x06, x07,
+              x08, x09, x0a, x0b, x0c, x0d, x0e, x0f,
+              x10, x11, x12, x13, x14, x15, x16, x17,
+              x18, x19, x1a, x1b, x1c, x1d, x1e, x1f);
+    TEnum64 = (x00, x01, x02, x03, x04, x05, x06, x07,
+              x08, x09, x0a, x0b, x0c, x0d, x0e, x0f,
+              x10, x11, x12, x13, x14, x15, x16, x17,
+              x18, x19, x1a, x1b, x1c, x1d, x1e, x1f,
+              x20, x21, x22, x23, x24, x25, x26, x27,
+              x28, x29, x2a, x2b, x2c, x2d, x2e, x2f,
+              x30, x31, x32, x33, x34, x35, x36, x37,
+              x38, x39, x3a, x3b, x3c, x3d, x3e, x3f);
+    TSet8 = set of TEnum8;
+    TSet16 = set of TEnum16;
+    TSet32 = set of TEnum32;
+    TSet64 = set of TEnum64;
+    TSet256 = set of Byte;
+    {$SCOPEDENUMS OFF}
+    TArray1 = array[0..0] of Byte;
+    TArray2 = array[0..1] of Byte;
+    TArray3 = array[0..2] of Byte;
+    TArray4 = array[0..3] of Byte;
+    TArray5 = array[0..4] of Byte;
+    TArray8 = array[0..7] of Byte;
+    TRec1 = packed record
+      a: Byte;
+    end;
+    TRec2 = packed record
+      a, b: Byte;
+    end;
+    TRec3 = packed record
+      a, b, c: Byte;
+    end;
+    TRec4 = packed record
+      a, b, c, d: Byte;
+    end;
+    TRec5 = packed record
+      a, b, c, d, e: Byte;
+    end;
+    TRec8 = packed record
+      a, b: Integer;
+    end;
+    TRec12 = packed record
+      a, b, c: Integer;
+    end;
+  private const Count = 10000;
+    class procedure TestPassing<T>(const value: T); static;
+    procedure TestSort<T>(const genvalue: Func<T>);
+    class function RandomChar: AnsiChar; static;
+  published
+    procedure Test_Int8;
+    procedure Test_Int16;
+    procedure Test_Int32;
+    procedure Test_Int64;
+    procedure Test_Single;
+    procedure Test_Double;
+    procedure Test_Extended;
+    procedure Test_Comp;
+    procedure Test_Currency;
+    procedure Test_String;
+    procedure Test_Set;
+    procedure Test_Array;
+    procedure Test_Variant;
+    procedure Test_Record;
+  end;
+
   TWeakTest = class(TTestCase)
   published
     procedure TestIsAlive;
@@ -631,7 +710,6 @@ implementation
 uses
   DateUtils,
   FmtBcd,
-  Generics.Defaults,
   SqlTimSt,
   SysUtils,
   Variants,
@@ -3634,7 +3712,7 @@ begin
   for i := Low(values) to High(values) do
     values[i] := i;
   for i := 1 to 5 do
-    TArray.Swap<Integer>(values[Random(Length(values))], values[Random(Length(values))]);
+    TArray.Swap<Integer>(@values[Random(Length(values))], @values[Random(Length(values))]);
   TArray.StableSort<Integer>(values);
   for i := Low(values) + 1 to High(values) do
     CheckTrue(values[i - 1] < values[i]);
@@ -4152,5 +4230,226 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TSortTest'}
+
+class function TSortTest.RandomChar: AnsiChar;
+begin
+  Result := AnsiChar(Chr(65 + Random(26)));
+end;
+
+class procedure TSortTest.TestPassing<T>(const value: T);
+begin
+end;
+
+procedure TSortTest.TestSort<T>(const genvalue: Func<T>);
+var
+  data, data2: TArray<T>;
+  i: Integer;
+  comparer: IComparer<T>;
+begin
+  SetLength(data, Count);
+  SetLength(data2, Count);
+  for i := 0 to High(data) do
+  begin
+    data[i] := genValue;
+    data2[i] := data[i];
+  end;
+  TestPassing<T>(data[0]);
+  TArray.Sort<T>(data);
+  comparer := TComparer<T>.Default;
+  Generics.Collections.TArray.Sort<T>(data2, comparer);
+  for i := 1 to High(data) do
+  begin
+    Check(comparer.Compare(data[i-1], data[i-1]) <= 0);
+    Check(comparer.Compare(data[i], data2[i]) = 0);
+  end;
+end;
+
+procedure TSortTest.Test_Int8;
+begin
+  TestSort<Int8>(function: Int8 begin Result := Random(High(Int8)) end);
+end;
+
+procedure TSortTest.Test_Int16;
+begin
+  TestSort<Int16>(function: Int16 begin Result := Random(High(Int16)) end);
+end;
+
+procedure TSortTest.Test_Int32;
+begin
+  TestSort<Int32>(function: Int32 begin Result := Random(High(Int32)) end);
+end;
+
+procedure TSortTest.Test_Int64;
+begin
+  TestSort<Int64>(function: Int64 begin Result := Random(High(Int32)) end);
+end;
+
+procedure TSortTest.Test_Single;
+begin
+  TestSort<Single>(function: Single begin Result := Random() * 1000 end);
+end;
+
+procedure TSortTest.Test_Double;
+begin
+  TestSort<Double>(function: Double begin Result := Random() * 1000 end);
+end;
+
+procedure TSortTest.Test_Extended;
+begin
+  TestSort<Extended>(function: Extended begin Result := Random() * 1000 end);
+end;
+
+procedure TSortTest.Test_Comp;
+begin
+  TestSort<Comp>(function: Comp begin Result := Random() * 1000 end);
+end;
+
+procedure TSortTest.Test_Currency;
+begin
+  TestSort<Currency>(function: Currency begin Result := Random() * 1000 end);
+end;
+
+procedure TSortTest.Test_String;
+begin
+  TestSort<TString1>(function: TString1 begin
+    Result[1] := RandomChar;
+  end);
+  TestSort<TString2>(function: TString2 begin
+    Result[1] := RandomChar;
+    Result[2] := RandomChar;
+  end);
+  TestSort<TString3>(function: TString3 begin
+    Result[1] := RandomChar;
+    Result[2] := RandomChar;
+    Result[3] := RandomChar;
+  end);
+  TestSort<TString4>(function: TString4 begin
+    Result[1] := RandomChar;
+    Result[2] := RandomChar;
+    Result[3] := RandomChar;
+    Result[4] := RandomChar;
+  end);
+  TestSort<TString7>(function: TString7 var i: Integer; begin
+    for i := 1 to 7 do
+      Result[i] := RandomChar;
+  end);
+end;
+
+procedure TSortTest.Test_Set;
+begin
+  TestSort<TSet8>(function: TSet8 var i: TEnum8; begin
+    Result := [];
+    for i := Low(TEnum8) to High(TEnum8) do
+      if Random(2) = 0 then
+        Include(Result, i);
+  end);
+  TestSort<TSet16>(function: TSet16 var i: TEnum16; begin
+    Result := [];
+    for i := Low(TEnum16) to High(TEnum16) do
+      if Random(2) = 0 then
+        Include(Result, i);
+  end);
+  TestSort<TSet32>(function: TSet32 var i: TEnum32; begin
+    Result := [];
+    for i := Low(TEnum32) to High(TEnum32) do
+      if Random(2) = 0 then
+        Include(Result, i);
+  end);
+  TestSort<TSet64>(function: TSet64 var i: TEnum64; begin
+    Result := [];
+    for i := Low(TEnum64) to High(TEnum64) do
+      if Random(2) = 0 then
+        Include(Result, i);
+  end);
+  TestSort<TSet256>(function: TSet256 var i: Byte; begin
+    Result := [];
+    for i := Low(Byte) to High(Byte) do
+      if Random(2) = 0 then
+        Include(Result, i);
+  end);
+end;
+
+procedure TSortTest.Test_Array;
+begin
+  TestSort<TArray1>(function: TArray1 begin
+    Result[0] := Random(High(Byte));
+  end);
+  TestSort<TArray2>(function: TArray2 begin
+    Result[0] := Random(High(Byte));
+    Result[1] := Random(High(Byte));
+  end);
+  TestSort<TArray3>(function: TArray3 begin
+    Result[0] := Random(High(Byte));
+    Result[1] := Random(High(Byte));
+    Result[2] := Random(High(Byte));
+  end);
+  TestSort<TArray4>(function: TArray4 begin
+    Result[0] := Random(High(Byte));
+    Result[1] := Random(High(Byte));
+    Result[2] := Random(High(Byte));
+    Result[3] := Random(High(Byte));
+  end);
+  TestSort<TArray5>(function: TArray5 var i: Integer; begin
+    for i := 0 to 4 do
+      Result[i] := Random(High(Byte));
+  end);
+  TestSort<TArray8>(function: TArray8 var i: Integer; begin
+    for i := 0 to 7 do
+      Result[i] := Random(High(Byte));
+  end);
+end;
+
+procedure TSortTest.Test_Variant;
+begin
+  TestSort<Variant>(function: Variant begin
+    Result := Random(High(Integer));
+  end);
+end;
+
+procedure TSortTest.Test_Record;
+begin
+  TestSort<TRec1>(function: TRec1 begin
+    Result.a := Random(High(Byte));
+  end);
+  TestSort<TRec2>(function: TRec2 begin
+    Result.a := Random(High(Byte));
+    Result.b := Random(High(Byte));
+  end);
+  TestSort<TRec3>(function: TRec3 begin
+    Result.a := Random(High(Byte));
+    Result.b := Random(High(Byte));
+    Result.c := Random(High(Byte));
+  end);
+  TestSort<TRec4>(function: TRec4 begin
+    Result.a := Random(High(Byte));
+    Result.b := Random(High(Byte));
+    Result.c := Random(High(Byte));
+    Result.d := Random(High(Byte));
+  end);
+  TestSort<TRec5>(function: TRec5 begin
+    Result.a := Random(High(Byte));
+    Result.b := Random(High(Byte));
+    Result.c := Random(High(Byte));
+    Result.d := Random(High(Byte));
+    Result.e := Random(High(Byte));
+  end);
+  TestSort<TRec8>(function: TRec8 begin
+    Result.a := Random(High(Integer));
+    Result.b := Random(High(Integer));
+  end);
+  TestSort<TRec12>(function: TRec12 begin
+    Result.a := Random(High(Integer));
+    Result.b := Random(High(Integer));
+    Result.c := Random(High(Integer));
+  end);
+end;
+
+{$ENDREGION}
+
+
+initialization
+  RegisterTest(TSortTest.Suite);
 
 end.
