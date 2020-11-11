@@ -65,9 +65,6 @@ type
         function MoveNext: Boolean;
       end;
       ItemType = TTypeInfo<T>;
-      {$POINTERMATH ON}
-      PT = ^T;
-      {$POINTERMATH OFF}
   {$ENDREGION}
     {$IFDEF DELPHIXE7_UP}
     class var DefaultComparer: Pointer;
@@ -104,7 +101,6 @@ type
     function TryGetFirst(var value: T): Boolean; overload;
     function TryGetLast(var value: T): Boolean; overload;
     function TryGetSingle(var value: T): Boolean; overload;
-    function TryGetSingle(var value: T; const predicate: Predicate<T>): Boolean; overload;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read GetCount;
@@ -717,7 +713,6 @@ end;
 function TAbstractArrayList<T>.InsertInternal(index: Integer; const item: T): Integer;
 var
   listCount, tailCount: Integer;
-  arrayItem: PT;
 begin
   listCount := Count;
   if Cardinal(index) > Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange_Index;
@@ -729,23 +724,20 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount);
-  arrayItem := @fItems[index];
   tailCount := listCount - index;
   if tailCount > 0 then
-  begin
     if ItemType.HasWeakRef then
-      MoveManaged(arrayItem, arrayItem + 1, TypeInfo(T), tailCount)
+      MoveManaged(@fItems[index], @fItems[index + 1], TypeInfo(T), tailCount)
     else
     begin
-      System.Move(arrayItem^, (arrayItem + 1)^, SizeOf(T) * tailCount);
+      System.Move(fItems[index], fItems[index + 1], SizeOf(T) * tailCount);
       if ItemType.IsManaged then
         if SizeOf(T) = SizeOf(Pointer) then
-          PPointer(arrayItem)^ := nil
+          TArray<Pointer>(fItems)[index] := nil
         else
-          System.FillChar(arrayItem^, SizeOf(T), 0);
+          System.FillChar(fItems[index], SizeOf(T), 0);
     end;
-  end;
-  arrayItem^ := item;
+  fItems[index] := item;
 
   DoNotify(item, caAdded);
   Result := index;
@@ -754,7 +746,6 @@ end;
 procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: array of T);
 var
   listCount, valueCount, tailCount, i: Integer;
-  arrayItem: PT;
 begin
   listCount := Count;
   if Cardinal(index) > Cardinal(listCount) then RaiseHelper.ArgumentOutOfRange_Index;
@@ -770,24 +761,21 @@ begin
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
   Inc(fCount, valueCount);
-  arrayItem := @fItems[index];
   tailCount := listCount - index;
   if tailCount > 0 then
-  begin
     if ItemType.HasWeakRef then
-      MoveManaged(arrayItem, arrayItem + valueCount, TypeInfo(T), tailCount)
+      MoveManaged(@fItems[index], @fItems[index + valueCount], TypeInfo(T), tailCount)
     else
     begin
-      System.Move(arrayItem^, (arrayItem + valueCount)^, SizeOf(T) * tailCount);
+      System.Move(fItems[index], fItems[index + valueCount], SizeOf(T) * tailCount);
       if ItemType.IsManaged then
-        System.FillChar(arrayItem^, SizeOf(T) * valueCount, 0);
+        System.FillChar(fItems[index], SizeOf(T) * valueCount, 0);
     end;
-  end;
 
   if ItemType.IsManaged then
-    MoveManaged(@values[0], arrayItem, TypeInfo(T), valueCount)
+    MoveManaged(@values[0], @fItems[index], TypeInfo(T), valueCount)
   else
-    System.Move(values[0], arrayItem^, SizeOf(T) * valueCount);
+    System.Move(values[0], fItems[index], SizeOf(T) * valueCount);
 
   if Assigned(Notify) then
     for i := 0 to High(values) do
@@ -797,7 +785,6 @@ end;
 procedure TAbstractArrayList<T>.InsertRange(index: Integer; const values: IEnumerable<T>);
 var
   listCount, valueCount, tailCount, i: Integer;
-  arrayItem: PT;
   intf: IInterface;
 begin
   listCount := Count;
@@ -816,13 +803,12 @@ begin
     {$Q-}
     Inc(fVersion);
     {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-    arrayItem := @fItems[index];
     tailCount := listCount - index;
     if tailCount > 0 then
       if ItemType.IsManaged then
-        MoveManaged(arrayItem, arrayItem + valueCount, TypeInfo(T), tailCount)
+        MoveManaged(@fItems[index], @fItems[index + valueCount], TypeInfo(T), tailCount)
       else
-        System.Move(arrayItem^, (arrayItem + valueCount)^, SizeOf(T) * tailCount);
+        System.Move(fItems[index], fItems[index + valueCount], SizeOf(T) * tailCount);
 
     IReadOnlyCollection<T>(intf).CopyTo(fItems, index);
     Inc(fCount, valueCount);
@@ -943,7 +929,6 @@ procedure TAbstractArrayList<T>.DeleteInternal(index: Integer;
   action: TCollectionChangedAction);
 var
   listCount, tailCount: Integer;
-  arrayItem, tailItem: PT;
   oldItem: T;
 begin
   {$Q-}
@@ -952,27 +937,23 @@ begin
   Dec(fCount);
   listCount := Count;
 
-  arrayItem := @fItems[index];
-  oldItem := arrayItem^;
-  tailItem := @fItems[listCount];
+  oldItem := fItems[index];
   tailCount := listCount - index;
   if tailCount > 0 then
-  begin
     if ItemType.HasWeakRef then
-      MoveManaged(arrayItem + 1, arrayItem, TypeInfo(T), tailCount)
+      MoveManaged(@fItems[index + 1], @fItems[index], TypeInfo(T), tailCount)
     else
     begin
       if ItemType.IsManaged then
-        arrayItem^ := Default(T);
-      System.Move((arrayItem + 1)^, arrayItem^, SizeOf(T) * tailCount);
+        fItems[index] := Default(T);
+      System.Move(fItems[index + 1], fItems[index], SizeOf(T) * tailCount);
       if ItemType.IsManaged then
         if SizeOf(T) = SizeOf(Pointer) then
-          PPointer(tailItem)^ := nil
+          TArray<Pointer>(fItems)[index + tailCount] := nil
         else
-          System.FillChar(tailItem^, SizeOf(T), 0);
+          System.FillChar(fItems[index + tailCount], SizeOf(T), 0);
     end;
-  end;
-  tailItem^ := Default(T);
+  fItems[index + tailCount] := Default(T);
 
   if Assigned(Notify) then
     Notify(Self, oldItem, action);
@@ -1056,58 +1037,48 @@ end;
 procedure TAbstractArrayList<T>.DeleteRange(index, count: Integer);
 var
   listCount, tailCount: Integer;
-  source, target: PT;
 begin
   listCount := Self.Count;
-  CheckRange(index, count, listCount);
-
-  if count = 0 then
-    Exit;
-
-  if OwnsObjects or Assigned(Notify) then
+  if Cardinal(index) <= Cardinal(listCount) then
   begin
-    DeleteRangeInternal(index, count, caRemoved, False, nil);
-    Exit;
-  end;
+    if count = 0 then
+      Exit;
 
-  {$Q-}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-
-  tailCount := listCount - (index + count);
-  Dec(fCount, count);
-  target := @fItems[index];
-  source := @fItems[index + count];
-
-  if ItemType.IsManaged then
-    FinalizeArray(target, TypeInfo(T), count);
-  if tailCount > 0 then
-  begin
-    if ItemType.HasWeakRef then
+    tailCount := listCount - index - count;
+    if tailCount >= 0 then
     begin
-      MoveManaged(source, target, TypeInfo(T), tailCount);
-      FinalizeArray(source, TypeInfo(T), tailCount);
+      if not OwnsObjects and not Assigned(Notify) then
+      begin
+        {$Q-}
+        Inc(fVersion);
+        {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+        Dec(fCount, count);
+
+        if ItemType.IsManaged then
+          FinalizeArray(@fItems[index], TypeInfo(T), count);
+        if tailCount > 0 then
+          if ItemType.HasWeakRef then
+          begin
+            MoveManaged(@fItems[index + count], @fItems[index], TypeInfo(T), tailCount);
+            FinalizeArray(@fItems[index + count], TypeInfo(T), tailCount);
+          end
+          else
+            System.Move(fItems[index + count], fItems[index], SizeOf(T) * tailCount);
+        System.FillChar(fItems[index + tailCount], SizeOf(T) * count, 0);
+      end
+      else
+        DeleteRangeInternal(index, count, caRemoved, False, nil);
     end
     else
-      System.Move(source^, target^, SizeOf(T) * tailCount);
-    Inc(target, count);
-  end;
-  System.FillChar(target^, SizeOf(T) * count, 0);
+      RaiseHelper.ArgumentOutOfRange_Count;
+  end
+  else
+    RaiseHelper.ArgumentOutOfRange_Index;
 end;
 
 procedure TAbstractArrayList<T>.Sort;
 begin
-  {$Q-}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  {$IFDEF DELPHIXE7_UP}
-  if GetTypeKind(T) = tkClass then
-    TTimSort.Sort(fItems, IComparer<Pointer>(fComparer), 0, Count)
-  else
-  {$ENDIF}
-  TArray.Sort<T>(fItems, fComparer, 0, Count);
-
-  Reset;
+  Sort(fComparer, 0, Count);
 end;
 
 procedure TAbstractArrayList<T>.Sort(const comparer: IComparer<T>);
@@ -1490,42 +1461,6 @@ begin
     value := fItems[0]
   else
     value := Default(T);
-end;
-
-function TAbstractArrayList<T>.TryGetSingle(var value: T;
-  const predicate: Predicate<T>): Boolean;
-var
-  item, foundItem: PT;
-  index: Integer;
-begin
-  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
-
-  item := Pointer(fItems);
-  foundItem := nil;
-  for index := 1 to Count do
-  begin
-    if predicate(item^) then
-    begin
-      if Assigned(foundItem) then
-      begin
-        foundItem := nil;
-        Break;
-      end;
-      foundItem := item;
-    end;
-    Inc(item);
-  end;
-
-  if Assigned(foundItem) then
-  begin
-    value := foundItem^;
-    Result := True;
-  end
-  else
-  begin
-    value := Default(T);
-    Result := False;
-  end;
 end;
 
 {$ENDREGION}
