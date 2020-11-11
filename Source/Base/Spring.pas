@@ -37,6 +37,9 @@ unit Spring;
 interface
 
 uses
+{$IFDEF MSWINDOWS}
+  Windows,
+{$ENDIF}
   Classes,
   Diagnostics,
   Generics.Collections,
@@ -87,6 +90,8 @@ type
 {$IFNDEF DELPHIXE2_UP}
   IntPtr = NativeInt;
   UIntPtr = NativeUInt;
+
+  SIZE_T = ULONG_PTR;
 {$ENDIF}
 
   PObject = ^TObject;
@@ -95,6 +100,9 @@ type
   {$POINTERMATH OFF}
   PPVTable = ^PVTable;
 
+{$IFNDEF DELPHIXE3_UP}
+  PMethod = ^TMethod;
+{$ENDIF}
   PMethodPointer = ^TMethodPointer;
   TMethodPointer = procedure of object;
 
@@ -2475,21 +2483,41 @@ type
   {$REGION 'TArray'}
 
   TCompareMethod<T> = function(const left, right: T): Integer of object;
+  TCompareMethod = function(const left, right): Integer of object;
+  TSlice<T> = array[0..2] of T;
+  Int24 = packed record
+  case Integer of
+    0: (Low: Word; High: Byte);
+    1: (Bytes: array[0..2] of Byte);
+  end;
   TArray = class
-  private
+  protected
+    const FoldedTypeKinds = [tkInteger, tkChar, tkEnumeration, tkClass, tkMethod, tkWChar, tkInterface, tkInt64, tkUString, tkClassRef, tkPointer, tkProcedure];
+    const PointerTypeKinds = [tkClass, tkInterface, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure];
     const IntrosortSizeThreshold = 16;
     class function GetDepthLimit(count: Integer): Integer; static;
 
-    class procedure SortTwoItems<T>(var left, right: T; const comparer: TCompareMethod<T>); static; //inline;
-    class procedure SortThreeItems<T>(var left, mid, right: T; const comparer: TCompareMethod<T>); static;
+    class procedure DownHeap<T>(var values: array of T; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>; i: Integer); static;
+    class procedure HeapSort<T>(var values: array of T; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>); static;
+    class procedure InsertionSort<T>(var values: array of T; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>); static;
+    class function QuickSortPartition<T>(var values: array of T; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>): Integer; static;
+    class procedure IntroSort<T>(var values: array of T; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>; depthLimit: Integer = -1); static;
 
-    class procedure InsertionSort<T>(var values: array of T; left, right: Integer; const comparer: TCompareMethod<T>); static;
+    class procedure DownHeap_Ref(values: PByte; hi: Integer; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; i: Integer; size: Integer); static;
+    class procedure HeapSort_Ref(values: PByte; hi: Integer; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; size: Integer); static;
+    class procedure InsertionSort_Ref(values: PByte; hi: Integer; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; size: Integer); static;
+    class function QuickSortPartition_Ref(values: PByte; hi: Integer; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; size: Integer): Integer; static;
+    class procedure IntroSort_Ref(values: PByte; hi: Integer; {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; size: Integer; depthLimit: Integer = -1); static;
 
-    class procedure DownHeap<T>(var values: array of T; left, count, i: Integer; const comparer: TCompareMethod<T>); static;
-    class procedure HeapSort<T>(var values: array of T; left, right: Integer; const comparer: TCompareMethod<T>); static;
-
-    class function QuickSortPartition<T>(var values: array of T; left, right: Integer; const comparer: TCompareMethod<T>): Integer; static;
-    class procedure IntroSort<T>(var values: array of T; left, right, depthLimit: Integer; const comparer: TCompareMethod<T>); static;
+    class procedure IntroSort_Int8(const values: Pointer; hi: Integer; const compare: PMethod); static;
+    class procedure IntroSort_Int16(const values: Pointer; hi: Integer; const compare: PMethod); static;
+    class procedure IntroSort_Int24(const values: Pointer; hi: Integer; const compare: PMethod); static;
+    class procedure IntroSort_Int32(const values: Pointer; hi: Integer; const compare: PMethod); static;
+    class procedure IntroSort_Int64(const values: Pointer; hi: Integer; const compare: PMethod); static;
+    class procedure IntroSort_Single(const values: Pointer; hi: Integer; const compare: PMethod); static;
+    class procedure IntroSort_Double(const values: Pointer; hi: Integer; const compare: PMethod); static;
+    class procedure IntroSort_Extended(const values: Pointer; hi: Integer; const compare: PMethod); static;
+    class procedure IntroSort_Method(const values: Pointer; hi: Integer; const compare: PMethod); static;
   public
     /// <summary>
     ///   Searches a range of elements in a sorted array for the given value,
@@ -2682,7 +2710,7 @@ type
     /// <summary>
     ///   Swaps the values of the specified variables.
     /// </summary>
-    class procedure Swap<T>(var left, right: T); static; inline;
+    class procedure Swap<T>(left, right: Pointer); static; inline;
 
     /// <summary>
     ///   Reverses the elements in the entire array.
@@ -2749,8 +2777,8 @@ type
     ///   StableSort results in faster sorting.
     /// </summary>
     class var UnsafeStableSort: Boolean;
-    const UnsafeStableSortTypeKinds = [{$IFDEF AUTOREFCOUNT}tkClass, {$ENDIF}tkInterface, tkDynArray, tkUString];
-    const PointerTypeKinds = [{$IFNDEF AUTOREFCOUNT}tkClass, {$ENDIF}tkClassRef, tkPointer, tkProcedure];
+    const ManagedPointerTypeKinds = [{$IFDEF AUTOREFCOUNT}tkClass, {$ENDIF}tkInterface, tkDynArray, tkUString];
+    const UnmanagedPointerTypeKinds = [{$IFNDEF AUTOREFCOUNT}tkClass, {$ENDIF}tkClassRef, tkPointer, tkProcedure];
 
     /// <summary>
     ///   Sorts the elements in an array using the default comparer.
@@ -2787,6 +2815,10 @@ type
     class procedure StableSort<T>(var values: array of T;
       const comparison: TComparison<T>; index, count: Integer); overload; static;
 {$ENDIF}
+  end;
+
+  TComparer<T> = class(Generics.Defaults.TComparer<T>)
+    class function Default: IComparer<T>; static;
   end;
 
   {$ENDREGION}
@@ -3072,7 +3104,7 @@ function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): T
 
 procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
 
-procedure SwapPtr(var left, right); inline;
+procedure SwapPtr(arr: PPointer; left, right: Integer); inline;
 
 function IsPowerOf2(value: Integer): Boolean;
 
@@ -3101,6 +3133,10 @@ procedure MoveManaged(source, target, typeInfo: Pointer; count: Integer);
 
 procedure CheckIndex(index, size: Integer); inline;
 procedure CheckRange(index, count, size: Integer); inline;
+
+procedure BinarySwap(left, right: Pointer; size: Cardinal);
+
+function _LookupVtableInfo(intf: TDefaultGenericInterface; info: TypInfo.PTypeInfo; size: Integer): Pointer; {$IFDEF DELPHIX_SEATTLE_UP}inline;{$ENDIF}
 
   {$ENDREGION}
 
@@ -3131,14 +3167,14 @@ implementation
 
 uses
   DateUtils,
+{$IFDEF DELPHIXE8_UP}
+  System.Hash,
+{$ENDIF}
   Math,
   RTLConsts,
   StrUtils,
   SysConst,
   VarUtils,
-{$IFDEF MSWINDOWS}
-  Windows,
-{$ENDIF}
 {$IFDEF POSIX}
   Posix.Pthread,
 {$ENDIF}
@@ -4078,6 +4114,143 @@ begin
   {$Q-}
   if (count < 0) or (index > size - count) then RaiseHelper.ArgumentOutOfRange_Count;
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+end;
+
+{$IFNDEF DELPHIX_SEATTLE_UP}
+function Compare_I3(instance: Pointer; const left, right: Int24): Integer;
+begin
+  Result := left.Bytes[0] - right.Bytes[0];
+  if Result <> 0 then Exit;
+  Result := left.Bytes[1] - right.Bytes[1];
+  if Result <> 0 then Exit;
+  Result := left.Bytes[2] - right.Bytes[2];
+end;
+
+function Equals_I3(instance: Pointer; const left, right: Int24): Boolean;
+begin
+  Result := (left.Low = right.Low) and (left.High = right.High);
+end;
+
+function GetHashCode_I3(instance: Pointer; const value: Int24): Integer;
+begin
+{$IFDEF DELPHIXE8_UP}
+  Result := THashBobJenkins.GetHashValue(value, 3, 0);
+{$ELSE}
+  Result := BobJenkinsHash(value, 3, 0);
+{$ENDIF}
+end;
+
+const
+  Comparer_Vtable_I3: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_I3
+  );
+  Comparer_Instance_I3: Pointer = @Comparer_Vtable_I3;
+
+  EqualityComparer_Vtable_I3: array[0..4] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Equals_I3,
+    @GetHashCode_I3
+  );
+  EqualityComparer_Instance_I3: Pointer = @EqualityComparer_Vtable_I3;
+{$ENDIF}
+
+{$IFDEF ASSEMBLER}
+function Compare_I4(instance: Pointer; const left, right: Int32): Integer;
+asm
+  xor eax,eax
+  cmp left,right
+  mov edx,-1
+  setg al
+  cmovl eax,edx
+end;
+
+function Compare_U4(instance: Pointer; const left, right: UInt32): Integer;
+asm
+  xor eax,eax
+  cmp left,right
+  mov edx,-1
+  seta al
+  cmovb eax,edx
+end;
+
+{$IFDEF CPUX64}
+function Compare_I8(instance: Pointer; const left, right: Int64): Integer;
+asm
+  xor eax,eax
+  cmp left,right
+  mov edx,-1
+  setg al
+  cmovl eax,edx
+end;
+
+function Compare_U8(instance: Pointer; const left, right: UInt32): Integer;
+asm
+  xor eax,eax
+  cmp left,right
+  mov edx,-1
+  seta al
+  cmovb eax,edx
+end;
+{$ENDIF}
+
+const
+  Comparer_Vtable_I4: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_I4
+  );
+  Comparer_Vtable_U4: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_U4
+  );
+  Comparer_Instance_I4: Pointer = @Comparer_Vtable_I4;
+  Comparer_Instance_U4: Pointer = @Comparer_Vtable_U4;
+
+{$IFDEF CPUX64}
+  Comparer_Vtable_I8: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_I8
+  );
+  Comparer_Vtable_U8: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_U8
+  );
+  Comparer_Instance_I8: Pointer = @Comparer_Vtable_I8;
+  Comparer_Instance_U8: Pointer = @Comparer_Vtable_U8;
+{$ENDIF}
+{$ENDIF}
+
+function _LookupVtableInfo(intf: TDefaultGenericInterface; info: PTypeInfo; size: Integer): Pointer;
+begin
+{$IFNDEF DELPHIX_SEATTLE_UP}
+  if not ((info.Kind in [tkArray, tkRecord]) and (size = 3)) then
+    Result := Generics.Defaults._LookupVtableInfo(intf, info, size)
+  else
+    if intf = giComparer then
+      Result := @Comparer_Instance_I3
+    else
+      Result := @EqualityComparer_Instance_I3;
+{$ELSE}
+  Result := Generics.Defaults._LookupVtableInfo(intf, info, size);
+{$ENDIF}
 end;
 
 {$ENDREGION}
@@ -11298,38 +11471,192 @@ begin
   Result := -1;
 end;
 
-procedure SwapPtr(var left, right);
+procedure SwapPtr(arr: PPointer; left, right: Integer);
 var
   temp: Pointer;
 begin
-  temp := Pointer(left);
-  Pointer(left) := Pointer(right);
-  Pointer(right) := temp;
+{$POINTERMATH ON}
+  temp := arr[left];
+  arr[left] := arr[right];
+  arr[right] := temp;
+{$POINTERMATH OFF}
 end;
 
-class procedure TArray.Swap<T>(var left, right: T);
+procedure BinarySwap(left, right: Pointer; size: Cardinal);
+{$IFDEF ASSEMBLER}
+{$IFDEF CPUX64}
+asm
+  mov       rax, rcx
+  mov       ecx, r8d
+  mov       r8,  rsi
+  mov       r9,  rbx
+  mov       esi, ecx
+  and       esi, 15
+  shr       ecx, 4
+  jz        @@Swap8Byte
+
+@@Swap16Byte:
+  movdqu    xmm0, [rax]
+  movdqu    xmm1, [rdx]
+  movdqu    [rax], xmm1
+  movdqu    [rdx], xmm0
+  add       rax, 16
+  add       rdx, 16
+  dec       ecx
+  jnz       @@Swap16Byte
+
+@@Swap8Byte:
+  test      esi, esi
+  jz        @@End
+  test      esi, 8
+  jz        @@Swap4Byte
+  mov       rbx, [rax]
+  mov       rcx, [rdx]
+  mov       [rax], rcx
+  mov       [rdx], rbx
+  xor       esi, 8
+  jz        @@End
+  add       rax, 8
+  add       rdx, 8
+
+@@Swap4Byte:
+  test      esi, 4
+  jz        @@Swap2Byte
+  mov       ebx,  [rax]
+  mov       ecx, [rdx]
+  mov       [rax], ecx
+  mov       [rdx], ebx
+  xor       esi, 4
+  jz        @@End
+  add       rax, 4
+  add       rdx, 4
+
+@@Swap2Byte:
+  test      esi, 2
+  jz        @@Swap1Byte
+  mov       bx, [rax]
+  mov       cx, [rdx]
+  mov       [rax], cx
+  mov       [rdx], bx
+  xor       esi, 2
+  jz        @@End
+  add       rax, 2
+  add       rdx, 2
+
+@@Swap1Byte:
+  mov       bl, [rax]
+  mov       cl, [rdx]
+  mov       [rax], cl
+  mov       [rdx], bl
+
+@@End:
+  mov       rbx, r9
+  mov       rsi, r8
+end;
+{$ELSE}
+asm
+  push      esi
+  push      ebx
+  mov       esi, ecx
+  and       esi, 15
+  shr       ecx, 4
+  jz        @@Swap8Byte
+
+@@Swap16Byte:
+  movdqu    xmm0, [eax]
+  movdqu    xmm1, [edx]
+  movdqu    [eax], xmm1
+  movdqu    [edx], xmm0
+  add       eax, 16
+  add       edx, 16
+  dec       ecx
+  jnz       @@Swap16Byte
+
+@@Swap8Byte:
+  test      esi, esi
+  jz        @@End
+  test      esi, 8
+  jz        @@Swap4Byte
+  movq      xmm0, [eax]
+  movq      xmm1, [edx]
+  movq      [eax], xmm1
+  movq      [edx], xmm0
+  xor       esi, 8
+  jz        @@End
+  add       eax, 8
+  add       edx, 8
+
+@@Swap4Byte:
+  test      esi, 4
+  jz        @@Swap2Byte
+  mov       ebx, [eax]
+  mov       ecx, [edx]
+  mov       [eax], ecx
+  mov       [edx], ebx
+  xor       esi, 4
+  jz        @@End
+  add       eax, 4
+  add       edx, 4
+
+@@Swap2Byte:
+  test      esi, 2
+  jz        @@Swap1Byte
+  mov       bx, [eax]
+  mov       cx, [edx]
+  mov       [eax], cx
+  mov       [edx], bx
+  xor       esi, 2
+  jz        @@End
+  add       eax, 2
+  add       edx, 2
+
+@@Swap1Byte:
+  mov       bl, [eax]
+  mov       cl, [edx]
+  mov       [eax], cl
+  mov       [edx], bl
+
+@@End:
+  pop       ebx
+  pop       esi
+end;
+{$ENDIF}
+{$ELSE}
+type
+  PInt128 = ^Int128;
+  Int128 = array[0..3] of Int32;
 var
-  temp: T;
+  temp: Int128;
+  b: Byte;
+begin
+  if size >= 16 then
+  repeat
+    temp := PInt128(left)^;
+    PInt128(left)^ := PInt128(right)^;
+    PInt128(right)^ := temp;
+    Inc(PInt128(left));
+    Inc(PInt128(right));
+    Dec(size, 16);
+  until size < 16;
+
+  if size > 0 then
+  repeat
+    b := PByte(left)^;
+    PByte(left)^ := PByte(right)^;
+    PByte(right)^ := b;
+    Inc(PByte(left));
+    Inc(PByte(right));
+    Dec(size);
+  until size = 0;
+end;
+{$ENDIF}
+
+class procedure TArray.Swap<T>(left, right: Pointer);
 begin
 {$IFDEF DELPHIXE7_UP}
-  case GetTypeKind(T) of
-{$IFDEF AUTOREFCOUNT}
-    tkClass,
-{$ENDIF AUTOREFCOUNT}
-    tkInterface,
-    tkDynArray,
-    tkUString:
-      SwapPtr(left, right);
-  else
-    temp := left;
-    left := right;
-    right := temp;
-  end;
-{$ELSE}
-  temp := left;
-  left := right;
-  right := temp;
+  if not System.HasWeakRef(T) then
 {$ENDIF}
+    BinarySwap(left, right, SizeOf(T))
 end;
 
 class procedure TArray.Reverse<T>(var values: array of T);
@@ -11337,11 +11664,10 @@ begin
   Reverse<T>(values, 0, Length(values));
 end;
 
-class procedure TArray.Reverse<T>(var values: array of T; index,
-  count: Integer);
+class procedure TArray.Reverse<T>(var values: array of T; index, count: Integer);
 var
-  temp: T;
   left, right: Integer;
+  temp: T;
 begin
   CheckRange(index, count, Length(values));
 
@@ -11349,9 +11675,16 @@ begin
   right := index + count - 1;
   while left < right do
   begin
-    temp := values[left];
-    values[left] := values[right];
-    values[right] := temp;
+    {$IFDEF DELPHIXE7_UP}
+    if GetTypeKind(T) in PointerTypeKinds then
+      SwapPtr(@values[0], left, right)
+    else
+    {$ENDIF}
+    begin
+      temp := values[left];
+      values[left] := values[right];
+      values[right] := temp;
+    end;
     Inc(left);
     Dec(right);
   end;
@@ -11367,56 +11700,59 @@ begin
   Shuffle<T>(values, index, Length(values) - index);
 end;
 
-class procedure TArray.Shuffle<T>(var values: array of T; index,
-  count: Integer);
+class procedure TArray.Shuffle<T>(var values: array of T; index, count: Integer);
 var
   i: Integer;
   temp: T;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Length(values));
 
   while count > 1 do
   begin
     i := Random(count) + index;
-    Dec(count);
-    temp := values[index];
-    values[index] := values[i];
-    values[i] := temp;
+    {$IFDEF DELPHIXE7_UP}
+    if GetTypeKind(T) in PointerTypeKinds then
+      SwapPtr(@values[0], index, i)
+    else
+    {$ENDIF}
+    begin
+      temp := values[index];
+      values[index] := values[i];
+      values[i] := temp;
+    end;
     Inc(index);
+    Dec(count);
   end;
 end;
 
 class function TArray.GetDepthLimit(count: Integer): Integer;
-begin
-  Result := 0;
-  while count > 0 do
-  begin
-    Inc(Result);
-    count := count div 2;
-  end;
-  Result := Result * 2;
+{$IFDEF ASSEMBLER}
+asm
+  inc eax
+  or eax,1
+  bsr eax,eax
+  shl eax,1
 end;
-
-class procedure TArray.SortTwoItems<T>(var left, right: T;
-  const comparer: TCompareMethod<T>);
+{$ELSE}
+const
+  Log2DeBruijn: array[0..31] of Byte = (
+    00, 09, 01, 10, 13, 21, 02, 29,
+    11, 14, 16, 18, 22, 25, 03, 30,
+    08, 12, 20, 28, 15, 17, 24, 07,
+    19, 27, 23, 06, 26, 05, 04, 31
+  );
 begin
-  if comparer(left, right) > 0 then
-    Swap<T>(left, right);
+  Inc(count);
+  count := count or (count shr 1);
+  count := count or (count shr 2);
+  count := count or (count shr 4);
+  count := count or (count shr 8);
+  count := count or (count shr 16);
+  {$Q-}
+  Result := Log2DeBruijn[(count * $07C4ACDD) shr 27] * 2;
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 end;
-
-class procedure TArray.SortThreeItems<T>(var left, mid, right: T;
-  const comparer: TCompareMethod<T>);
-begin
-  if comparer(left, mid) > 0 then
-    Swap<T>(left, mid);
-  if comparer(left, right) > 0 then
-    Swap<T>(left, right);
-  if comparer(mid, right) > 0 then
-    Swap<T>(mid, right);
-end;
+{$ENDIF}
 
 {$IFDEF DELPHIXE7_UP}
 class procedure TArray.StableSort<T>(var values: array of T);
@@ -11424,8 +11760,8 @@ var
   comparer: IComparer<T>;
 begin
   comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-  if ((GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort)
-    or (GetTypeKind(T) in PointerTypeKinds) then
+  if ((GetTypeKind(T) in ManagedPointerTypeKinds) and UnsafeStableSort)
+    or (GetTypeKind(T) in UnmanagedPointerTypeKinds) then
     TTimSort.Sort(@values, IComparer<Pointer>(comparer), 0, Length(values))
   else
     TTimSort.Sort<T>(@values, comparer, 0, Length(values));
@@ -11435,14 +11771,11 @@ class procedure TArray.StableSort<T>(var values: array of T; index, count: Integ
 var
   comparer: IComparer<T>;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Length(values));
 
   comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-  if ((GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort)
-    or (GetTypeKind(T) in PointerTypeKinds) then
+  if ((GetTypeKind(T) in ManagedPointerTypeKinds) and UnsafeStableSort)
+    or (GetTypeKind(T) in UnmanagedPointerTypeKinds) then
     TTimSort.Sort(@values, IComparer<Pointer>(comparer), index, count)
   else
     TTimSort.Sort<T>(@values, comparer, index, count);
@@ -11450,8 +11783,8 @@ end;
 
 class procedure TArray.StableSort<T>(var values: array of T; const comparer: IComparer<T>);
 begin
-  if ((GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort)
-    or (GetTypeKind(T) in PointerTypeKinds) then
+  if ((GetTypeKind(T) in ManagedPointerTypeKinds) and UnsafeStableSort)
+    or (GetTypeKind(T) in UnmanagedPointerTypeKinds) then
     TTimSort.Sort(@values, IComparer<Pointer>(comparer), 0, Length(values))
   else
     TTimSort.Sort<T>(@values, comparer, 0, Length(values));
@@ -11460,14 +11793,10 @@ end;
 class procedure TArray.StableSort<T>(var values: array of T;
   const comparer: IComparer<T>; index, count: Integer);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparer), 'comparer');
-  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Length(values));
 
-  if ((GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort)
-    or (GetTypeKind(T) in PointerTypeKinds) then
+  if ((GetTypeKind(T) in ManagedPointerTypeKinds) and UnsafeStableSort)
+    or (GetTypeKind(T) in UnmanagedPointerTypeKinds) then
     TTimSort.Sort(@values, IComparer<Pointer>(comparer), index, count)
   else
     TTimSort.Sort<T>(@values, comparer, index, count);
@@ -11476,8 +11805,8 @@ end;
 class procedure TArray.StableSort<T>(var values: array of T;
   const comparison: TComparison<T>);
 begin
-  if ((GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort)
-    or (GetTypeKind(T) in PointerTypeKinds) then
+  if ((GetTypeKind(T) in ManagedPointerTypeKinds) and UnsafeStableSort)
+    or (GetTypeKind(T) in UnmanagedPointerTypeKinds) then
     TTimSort.Sort(@values, IComparer<Pointer>(PPointer(@comparison)^), 0, Length(values))
   else
     TTimSort.Sort<T>(@values, IComparer<T>(PPointer(@comparison)^), 0, Length(values));
@@ -11486,14 +11815,10 @@ end;
 class procedure TArray.StableSort<T>(var values: array of T;
   const comparison: TComparison<T>; index, count: Integer);
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparison), 'comparison');
-  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Length(values));
 
-  if ((GetTypeKind(T) in UnsafeStableSortTypeKinds) and UnsafeStableSort)
-    or (GetTypeKind(T) in PointerTypeKinds) then
+  if ((GetTypeKind(T) in ManagedPointerTypeKinds) and UnsafeStableSort)
+    or (GetTypeKind(T) in UnmanagedPointerTypeKinds) then
     TTimSort.Sort(@values, IComparer<Pointer>(PPointer(@comparison)^), index, count)
   else
     TTimSort.Sort<T>(@values, IComparer<T>(PPointer(@comparison)^), index, count);
@@ -11501,197 +11826,843 @@ end;
 {$ENDIF}
 
 class procedure TArray.DownHeap<T>(var values: array of T;
-  left, count, i: Integer; const comparer: TCompareMethod<T>);
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>; i: Integer);
 var
+  hi, child: Integer;
   temp: T;
-  child, n: Integer;
 begin
-  temp := values[left + i - 1];
-  n := count div 2;
-  while i <= n do
+  hi := High(values);
+  while True do
   begin
-    child := i * 2;
-    if (child < count) and (comparer(values[left + child - 1], values[left + child]) < 0) then
+    child := i * 2 + 1;
+    if child > hi then Break;
+    if (child < hi) and (compare(values[child], values[child + 1]) < 0) then
       Inc(child);
-    if comparer(temp, values[left + child - 1]) >= 0 then
+    if compare(values[i], values[child]) >= 0 then
       Break;
-    values[left + i - 1] := values[left + child - 1];
+    temp := values[i];
+    values[i] := values[child];
+    values[child] := temp;
     i := child;
   end;
-  values[left + i - 1] := temp;
 end;
 
 class procedure TArray.HeapSort<T>(var values: array of T;
-  left, right: Integer; const comparer: TCompareMethod<T>);
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>);
 var
-  count, i: Integer;
+  i: Integer;
+  temp: T;
 begin
-  count := right - left + 1;
-  for i := count div 2 downto 1 do
-    DownHeap<T>(values, left, count, i, comparer);
-  for i := count downto 2 do
+  for i := Length(values) shr 1 - 1 downto 0 do
+    DownHeap<T>(values, compare, i);
+  for i := High(values) downto 1 do
   begin
-    Swap<T>(values[left], values[left + i - 1]);
-    DownHeap<T>(values, left, i - 1, 1, comparer);
+    temp := values[0];
+    values[0] := values[i];
+    values[i] := temp;
+    DownHeap<T>(Slice(values, i), compare, 0);
   end;
 end;
 
 class procedure TArray.InsertionSort<T>(var values: array of T;
-  left, right: Integer; const comparer: TCompareMethod<T>);
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>);
 var
   i, j: Integer;
   temp: T;
 begin
-  for i := left + 1 to right do
+  for i := 1 to High(values) do
   begin
     j := i;
-    temp := values[i];
-    while (j > left) and (comparer(values[j - 1], temp) > 0) do
+    while True do
     begin
-      values[j] := values[j - 1];
       Dec(j);
+      if (j < 0) or (compare(values[j], values[j + 1]) <= 0) then Break;
+      temp := values[j + 1];
+      values[j + 1] := values[j];
+      values[j] := temp;
     end;
-    values[j] := temp;
   end;
 end;
 
 class function TArray.QuickSortPartition<T>(var values: array of T;
-  left, right: Integer; const comparer: TCompareMethod<T>): Integer;
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>): Integer;
 var
-  middle, pivotIndex: Integer;
-  pivot: T;
+  left, right, middle, pivotIndex: Integer;
+  pivot, temp: T;
 begin
-  middle := left + (right - left) div 2;
+  right := High(values);
+  middle := right shr 1;
 
-  SortThreeItems<T>(values[left], values[middle], values[right], comparer);
+  if compare(values[0], values[middle]) > 0 then
+  begin
+    temp := values[0];
+    values[0] := values[middle];
+    values[middle] := temp;
+  end;
+  if compare(values[0], values[right]) > 0 then
+  begin
+    temp := values[0];
+    values[0] := values[right];
+    values[right] := temp;
+  end;
+  if compare(values[middle], values[right]) > 0 then
+  begin
+    temp := values[middle];
+    values[middle] := values[right];
+    values[right] := temp;
+  end;
 
   Dec(right);
   pivotIndex := right;
-
   pivot := values[middle];
-  Swap<T>(values[middle], values[right]);
+  values[middle] := values[right];
+  values[right] := pivot;
+
+  left := 0;
+
+  if left < right then
+    while True do
+    begin
+      repeat
+        Inc(left);
+      until compare(values[left], pivot) >= 0;
+      repeat
+        Dec(right);
+      until compare(pivot, values[right]) >= 0;
+
+      if left >= right then
+        Break;
+
+      temp := values[left];
+      values[left] := values[right];
+      values[right] := temp;
+    end;
+
+  if left <> pivotIndex then
+  begin
+    temp := values[left];
+    values[left] := values[pivotIndex];
+    values[pivotIndex] := temp;
+  end;
+
+  Result := left;
+end;
+
+class procedure TArray.IntroSort<T>(var values: array of T;
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod<T>; depthLimit: Integer);
+var
+  partitionSize, pivot: Integer;
+  arr: Pointer;
+  temp: T;
+begin
+  partitionSize := Length(values);
+  while partitionSize > 1 do
+  begin
+    if partitionSize <= IntrosortSizeThreshold then
+    begin
+      if partitionSize <= 3 then
+      begin
+        arr := @values[0];
+        if compare(TSlice<T>(arr^)[0], TSlice<T>(arr^)[1]) > 0 then
+        begin
+          temp := TSlice<T>(arr^)[0];
+          TSlice<T>(arr^)[0] := TSlice<T>(arr^)[1];
+          TSlice<T>(arr^)[1] := temp;
+        end;
+
+        if partitionSize = 2 then Exit;
+
+        if compare(TSlice<T>(arr^)[0], TSlice<T>(arr^)[2]) > 0 then
+        begin
+          temp := TSlice<T>(arr^)[0];
+          TSlice<T>(arr^)[0] := TSlice<T>(arr^)[2];
+          TSlice<T>(arr^)[2] := temp;
+        end;
+
+        if compare(TSlice<T>(arr^)[1], TSlice<T>(arr^)[2]) > 0 then
+        begin
+          temp := TSlice<T>(arr^)[1];
+          TSlice<T>(arr^)[1] := TSlice<T>(arr^)[2];
+          TSlice<T>(arr^)[2] := temp;
+        end;
+
+        Exit;
+      end;
+
+      InsertionSort<T>(Slice(values, partitionSize), compare);
+      Exit;
+    end
+    else
+    begin
+      if depthLimit = 0 then
+      begin
+        HeapSort<T>(Slice(values, partitionSize), compare);
+        Exit;
+      end;
+
+      if depthLimit < 0 then
+        depthLimit := GetDepthLimit(partitionSize);
+      Dec(depthLimit);
+
+      pivot := QuickSortPartition<T>(Slice(values, partitionSize), compare);
+      {$R-}
+      IntroSort<T>(Slice(TSlice<T>((@values[pivot + 1])^), partitionSize - (pivot + 1)), compare, depthLimit);
+      {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+      partitionSize := pivot;
+    end;
+  end;
+end;
+
+class procedure TArray.DownHeap_Ref(values: PByte; hi: Integer;
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; i: Integer; size: Integer);
+var
+  child: Integer;
+begin
+  while True do
+  begin
+    child := i * 2 + 1;
+    if child > hi then
+      Break;
+
+    if (child < hi) and (compare(values[child*size], values[(child+1)*size]) < 0) then
+      inc(child);
+    if compare(values[i*size], values[child*size]) >= 0 then
+      Break;
+
+    BinarySwap(@values[i*size], @values[child*size], size);
+    i := child;
+  end;
+end;
+
+class procedure TArray.HeapSort_Ref(values: PByte; hi: Integer;
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; size: Integer);
+var
+  i: Integer;
+begin
+  for i := (hi+1) shr 1 - 1 downto 0 do
+    DownHeap_Ref(values, hi, compare, i, size);
+  for i := hi downto 1 do
+  begin
+    BinarySwap(@values[i*size], @values[0], size);
+    DownHeap_Ref(values, i-1, compare, 0, size);
+  end;
+end;
+
+class procedure TArray.InsertionSort_Ref(values: PByte; hi: Integer;
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; size: Integer);
+var
+  i, j: Integer;
+begin
+  for i := 1 to hi do
+  begin
+    j := i;
+    while True do
+    begin
+      Dec(j);
+      if (j < 0) or (compare(values[j*size], values[(j+1)*size]) <= 0) then Break;
+      BinarySwap(@values[j*size], @values[(j+1)*size], size);
+    end;
+  end;
+end;
+
+class function TArray.QuickSortPartition_Ref(values: PByte; hi: Integer;
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; size: Integer): Integer;
+var
+  left, right, middle, pivotIndex: Integer;
+begin
+  right := hi;
+  middle := right shr 1;
+
+  if compare(values[0], values[middle*size]) > 0 then
+    BinarySwap(@values[0], @values[middle*size], size);
+  if compare(values[0], values[right*size]) > 0 then
+    BinarySwap(@values[0], @values[right*size], size);
+  if compare(values[middle*size], values[right*size]) > 0 then
+    BinarySwap(@values[middle*size], @values[right*size], size);
+
+  Dec(right);
+  BinarySwap(@values[middle*size], @values[right*size], size);
+
+  pivotIndex := right;
+  left := 0;
 
   while left < right do
   begin
     repeat
       Inc(left);
-    until comparer(values[left], pivot) >= 0;
+    until compare(values[left*size], values[pivotIndex*size]) >= 0;
     repeat
       Dec(right);
-    until comparer(pivot, values[right]) >= 0;
+    until compare(values[pivotIndex*size], values[right*size]) >= 0;
 
     if left >= right then
       Break;
 
-    Swap<T>(values[left], values[right]);
+    BinarySwap(@values[left*size], @values[right*size], size);
   end;
 
-  Swap<T>(values[left], values[pivotIndex]);
+  if left <> pivotIndex then
+    BinarySwap(@values[left*size], @values[pivotIndex*size], size);
+
   Result := left;
 end;
 
-class procedure TArray.IntroSort<T>(var values: array of T;
-  left, right, depthLimit: Integer; const comparer: TCompareMethod<T>);
+class procedure TArray.IntroSort_Ref(values: PByte; hi: Integer;
+  {$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}const compare: TCompareMethod; size: Integer; depthLimit: Integer);
 var
   partitionSize, pivot: Integer;
 begin
-  while right > left do
+  partitionSize := hi + 1;
+  while partitionSize > 1 do
   begin
-    partitionSize := right - left + 1; // will always be >= 2
+    if partitionSize <= IntrosortSizeThreshold then
+    begin
+      if partitionSize <= 3 then
+      begin
+        if compare(values[0], values[size]) > 0 then
+          BinarySwap(@values[0], @values[size], size);
 
-    case partitionSize of
-      2:
-      begin
-        SortTwoItems<T>(values[left], values[right], comparer);
+        if partitionSize = 2 then Exit;
+
+        if compare(values[0], values[2*size]) > 0 then
+          BinarySwap(@values[0], @values[2*size], size);
+
+        if compare(values[size], values[2*size]) > 0 then
+          BinarySwap(@values[size], @values[2*size], size);
+
         Exit;
       end;
-      3:
-      begin
-        SortThreeItems<T>(values[left], values[right - 1], values[right], comparer);
-        Exit;
-      end;
-      4..IntrosortSizeThreshold:
-      begin
-        InsertionSort<T>(values, left, right, comparer);
-        Exit;
-      end;
+      InsertionSort_Ref(values, partitionSize - 1, compare, size);
+      Exit;
+    end
     else
-      if depthLimit > 0 then
+    begin
+      if depthLimit = 0 then
       begin
-        Dec(depthLimit);
-        pivot := QuickSortPartition<T>(values, left, right, comparer);
-        IntroSort<T>(values, pivot + 1, right, depthLimit, comparer);
-        right := pivot - 1;
-      end
-      else
-      begin
-        HeapSort<T>(values, left, right, comparer);
+        HeapSort_Ref(values, partitionSize - 1, compare, size);
         Exit;
       end;
+
+      if depthLimit < 0 then
+        depthLimit := GetDepthLimit(partitionSize);
+
+      Dec(depthLimit);
+      pivot := QuickSortPartition_Ref(values, partitionSize - 1, compare, size);
+      {$R-}
+      IntroSort_Ref(@values[(pivot + 1) * size], partitionSize - (pivot + 1) - 1, compare, size, depthLimit);
+      {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+      partitionSize := pivot;
     end;
   end;
 end;
 
+class procedure TArray.IntroSort_Int8(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<Int8>(Slice(TSlice<Int8>(values^), hi + 1), TCompareMethod<Int8>(compare^));
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.IntroSort_Int16(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<Int16>(Slice(TSlice<Int16>(values^), hi + 1), TCompareMethod<Int16>(compare^));
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.IntroSort_Int24(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<Int24>(Slice(TSlice<Int24>(values^), hi + 1), TCompareMethod<Int24>(compare^));
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.IntroSort_Int32(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<Int32>(Slice(TSlice<Int32>(values^), hi + 1), TCompareMethod<Int32>(compare^))
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.IntroSort_Int64(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<Int64>(Slice(TSlice<Int64>(values^), hi + 1), TCompareMethod<Int64>(compare^));
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.IntroSort_Single(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<Single>(Slice(TSlice<Single>(values^), hi + 1), TCompareMethod<Single>(compare^));
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.IntroSort_Double(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<Double>(Slice(TSlice<Double>(values^), hi + 1), TCompareMethod<Double>(compare^));
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.IntroSort_Extended(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<Extended>(Slice(TSlice<Extended>(values^), hi + 1), TCompareMethod<Extended>(compare^));
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.IntroSort_Method(const values: Pointer; hi: Integer; const compare: PMethod);
+begin
+  {$Q-}{$R-}
+  IntroSort<TMethodPointer>(Slice(TSlice<TMethodPointer>(values^), hi + 1), TCompareMethod<TMethodPointer>(compare^));
+  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}{$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
 class procedure TArray.Sort<T>(var values: array of T);
 var
-  comparer: IComparer<T>;
-  compare: TCompareMethod<T>;
+  compare: TMethod;
 begin
-  comparer := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
-  TMethodPointer(compare) := InterfaceToMethodPointer(comparer, 0);
-  IntroSort<T>(values, Low(values), High(values), GetDepthLimit(Length(values)), compare);
+  // only store local variable as IComparer<T> when it's one that needs
+  // reference counting because it was constructed - most comparers are singletons
+  {$IFDEF DELPHIXE7_UP}
+  if (GetTypeKind(T) in [tkInteger, tkChar, tkEnumeration, tkFloat, tkString, tkWChar,
+    tkLString, tkWString, tkInterface, tkInt64, tkUString, tkClassRef, tkPointer, tkProcedure])
+    or ((GetTypeKind(T) in [tkSet, tkArray, tkRecord]) and (SizeOf(T) <= 4)) then
+    compare.Data := _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T))
+  else
+  {$ENDIF}
+  begin
+    compare.Data := nil;
+    IComparer<T>(compare.Data) := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
+  end;
+  compare.Code := PPVTable(compare.Data)^[3];
+  try
+    {$R-}
+    {$IFDEF DELPHIXE7_UP}
+    case GetTypeKind(T) of
+      tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
+      tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[0], High(values), @compare);
+          2: IntroSort_Int16(@values[0], High(values), @compare);
+          4: IntroSort_Int32(@values[0], High(values), @compare);
+          8: IntroSort_Int64(@values[0], High(values), @compare);
+        end;
+      tkFloat:
+        case SizeOf(T) of
+          4: IntroSort_Single(@values[0], High(values), @compare);
+          10,16: IntroSort_Extended(@values[0], High(values), @compare);
+        else
+          if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
+            IntroSort_Double(@values[0], High(values), @compare)
+          else
+            IntroSort_Int64(@values[0], High(values), @compare);
+        end;
+      tkString:
+        IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+      tkSet:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[0], High(values), @compare);
+          2: IntroSort_Int16(@values[0], High(values), @compare);
+          4: IntroSort_Int32(@values[0], High(values), @compare);
+        {$IFDEF PASS_64BIT_VALUE_REGISTER}
+          8: IntroSort_Int64(@values[0], High(values), @compare);
+        {$ENDIF}
+        else
+          IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+        end;
+      tkMethod:
+        IntroSort_Method(@values[0], High(values), @compare);
+      tkVariant,
+      {$IF Declared(tkMRecord)}
+      tkMRecord,
+      {$IFEND}
+      tkRecord:
+        if not System.HasWeakRef(T) then
+          case SizeOf(T) of
+            1: IntroSort_Int8(@values[0], High(values), @compare);
+            2: IntroSort_Int16(@values[0], High(values), @compare);
+            3: IntroSort_Int24(@values[0], High(values), @compare);
+            4: IntroSort_Int32(@values[0], High(values), @compare);
+          {$IFDEF PASS_64BIT_VALUE_REGISTER}
+            8: IntroSort_Int64(@values[0], High(values), @compare);
+          {$ENDIF}
+          else
+            IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T))
+          end
+        else
+          IntroSort<T>(values, TCompareMethod<T>(compare));
+      tkArray:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[0], High(values), @compare);
+          2: IntroSort_Int16(@values[0], High(values), @compare);
+          3: IntroSort_Int24(@values[0], High(values), @compare);
+          4: IntroSort_Int32(@values[0], High(values), @compare);
+        {$IFDEF PASS_64BIT_VALUE_REGISTER}
+          8: IntroSort_Int64(@values[0], High(values), @compare);
+        {$ENDIF}
+        else
+          IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+        end;
+    else
+    {$ELSE}
+    begin
+    {$ENDIF}
+      IntroSort<T>(values, TCompareMethod<T>(compare));
+    end;
+    {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+  finally
+    {$IFDEF DELPHIXE7_UP}
+    if (GetTypeKind(T) in [tkInteger, tkChar, tkEnumeration, tkFloat, tkString, tkWChar,
+      tkLString, tkWString, tkInterface, tkInt64, tkUString, tkClassRef, tkPointer, tkProcedure])
+      or ((GetTypeKind(T) in [tkSet, tkArray, tkRecord]) and (SizeOf(T) <= 4)) then else
+    {$ENDIF}
+    IInterface(compare.Data) := nil;
+  end;
 end;
 
-class procedure TArray.Sort<T>(var values: array of T;
-  const comparer: IComparer<T>);
+class procedure TArray.Sort<T>(var values: array of T; const comparer: IComparer<T>);
 var
-  compare: TCompareMethod<T>;
+  compare: TMethod;
 begin
-  TMethodPointer(compare) := InterfaceToMethodPointer(comparer, 0);
-  IntroSort<T>(values, Low(values), High(values), GetDepthLimit(Length(values)), compare);
+  compare.Data := Pointer(comparer);
+  compare.Code := PPVTable(compare.Data)^[3];
+  {$R-}
+  {$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(T) of
+    tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
+    tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
+      case SizeOf(T) of
+        1: IntroSort_Int8(@values[0], High(values), @compare);
+        2: IntroSort_Int16(@values[0], High(values), @compare);
+        4: IntroSort_Int32(@values[0], High(values), @compare);
+        8: IntroSort_Int64(@values[0], High(values), @compare);
+      end;
+    tkFloat:
+      case SizeOf(T) of
+        4: IntroSort_Single(@values[0], High(values), @compare);
+        10,16: IntroSort_Extended(@values[0], High(values), @compare);
+      else
+        if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
+          IntroSort_Double(@values[0], High(values), @compare)
+        else
+          IntroSort_Int64(@values[0], High(values), @compare);
+      end;
+    tkString:
+      IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+    tkSet:
+      case SizeOf(T) of
+        1: IntroSort_Int8(@values[0], High(values), @compare);
+        2: IntroSort_Int16(@values[0], High(values), @compare);
+        4: IntroSort_Int32(@values[0], High(values), @compare);
+      {$IFDEF PASS_64BIT_VALUE_REGISTER}
+        8: IntroSort_Int64(@values[0], High(values), @compare);
+      {$ENDIF}
+      else
+        IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+      end;
+    tkMethod:
+      IntroSort_Method(@values[0], High(values), @compare);
+    tkVariant,
+    {$IF Declared(tkMRecord)}
+    tkMRecord,
+    {$IFEND}
+    tkRecord:
+      if not System.HasWeakRef(T) then
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[0], High(values), @compare);
+          2: IntroSort_Int16(@values[0], High(values), @compare);
+          3: IntroSort_Int24(@values[0], High(values), @compare);
+          4: IntroSort_Int32(@values[0], High(values), @compare);
+        {$IFDEF PASS_64BIT_VALUE_REGISTER}
+          8: IntroSort_Int64(@values[0], High(values), @compare);
+        {$ENDIF}
+        else
+          IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T))
+        end
+      else
+        IntroSort<T>(values, TCompareMethod<T>(compare));
+    tkArray:
+      case SizeOf(T) of
+        1: IntroSort_Int8(@values[0], High(values), @compare);
+        2: IntroSort_Int16(@values[0], High(values), @compare);
+        3: IntroSort_Int24(@values[0], High(values), @compare);
+        4: IntroSort_Int32(@values[0], High(values), @compare);
+      {$IFDEF PASS_64BIT_VALUE_REGISTER}
+        8: IntroSort_Int64(@values[0], High(values), @compare);
+      {$ENDIF}
+      else
+        IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+      end;
+  else
+  {$ELSE}
+  begin
+  {$ENDIF}
+    IntroSort<T>(values, TCompareMethod<T>(compare));
+  end;
+  {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
 end;
 
-class procedure TArray.Sort<T>(var values: array of T;
-  const comparer: IComparer<T>; index, count: Integer);
+class procedure TArray.Sort<T>(var values: array of T; const comparer: IComparer<T>; index, count: Integer);
 var
-  compare: TCompareMethod<T>;
+  compare: TMethod;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparer), 'comparer');
-  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Length(values));
 
-  if count <= 1 then
-    Exit;
-  TMethodPointer(compare) := InterfaceToMethodPointer(comparer, 0);
-  IntroSort<T>(values, index, index + count - 1, GetDepthLimit(count), compare);
+  if count > 1 then
+  begin
+    compare.Data := Pointer(comparer);
+    compare.Code := PPVTable(compare.Data)^[3];
+    {$R-}
+    {$IFDEF DELPHIXE7_UP}
+    case GetTypeKind(T) of
+      tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
+      tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[index], index + count - 1, @compare);
+          2: IntroSort_Int16(@values[index], index + count - 1, @compare);
+          4: IntroSort_Int32(@values[index], index + count - 1, @compare);
+          8: IntroSort_Int64(@values[index], index + count - 1, @compare);
+        end;
+      tkFloat:
+        case SizeOf(T) of
+          4: IntroSort_Single(@values[index], index + count - 1, @compare);
+          10,16: IntroSort_Extended(@values[index], index + count - 1, @compare);
+        else
+          if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
+            IntroSort_Double(@values[index], index + count - 1, @compare)
+          else
+            IntroSort_Int64(@values[index], index + count - 1, @compare);
+        end;
+      tkString:
+        IntroSort_Ref(@values[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+      tkSet:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[index], index + count - 1, @compare);
+          2: IntroSort_Int16(@values[index], index + count - 1, @compare);
+          4: IntroSort_Int32(@values[index], index + count - 1, @compare);
+        {$IFDEF PASS_64BIT_VALUE_REGISTER}
+          8: IntroSort_Int64(@values[index], index + count - 1, @compare);
+        {$ENDIF}
+        else
+          IntroSort_Ref(@values[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+        end;
+      tkMethod:
+        IntroSort_Method(@values[index], index + count - 1, @compare);
+      tkVariant,
+      {$IF Declared(tkMRecord)}
+      tkMRecord,
+      {$IFEND}
+      tkRecord:
+        if not System.HasWeakRef(T) then
+          case SizeOf(T) of
+            1: IntroSort_Int8(@values[index], index + count - 1, @compare);
+            2: IntroSort_Int16(@values[index], index + count - 1, @compare);
+            3: IntroSort_Int24(@values[index], index + count - 1, @compare);
+            4: IntroSort_Int32(@values[index], index + count - 1, @compare);
+          {$IFDEF PASS_64BIT_VALUE_REGISTER}
+            8: IntroSort_Int64(@values[index], index + count - 1, @compare);
+          {$ENDIF}
+          else
+            IntroSort_Ref(@values[index], index + count - 1, TCompareMethod(compare), SizeOf(T))
+          end
+        else
+          IntroSort<T>(Slice(TSlice<T>((@values[index])^), count), TCompareMethod<T>(compare));
+      tkArray:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[index], index + count - 1, @compare);
+          2: IntroSort_Int16(@values[index], index + count - 1, @compare);
+          3: IntroSort_Int24(@values[index], index + count - 1, @compare);
+          4: IntroSort_Int32(@values[index], index + count - 1, @compare);
+        {$IFDEF PASS_64BIT_VALUE_REGISTER}
+          8: IntroSort_Int64(@values[index], index + count - 1, @compare);
+        {$ENDIF}
+        else
+          IntroSort_Ref(@values[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+        end;
+    else
+    {$ELSE}
+    begin
+    {$ENDIF}
+      IntroSort<T>(Slice(TSlice<T>((@values[index])^), count), TCompareMethod<T>(compare));
+    end;
+    {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+  end;
 end;
 
-class procedure TArray.Sort<T>(var values: array of T;
-  const comparison: TComparison<T>);
+class procedure TArray.Sort<T>(var values: array of T; const comparison: TComparison<T>);
 var
-  compare: TCompareMethod<T>;
+  compare: TMethod;
 begin
-  TMethodPointer(compare) := InterfaceToMethodPointer(comparison, 0);
-  IntroSort<T>(values, Low(values), High(values), GetDepthLimit(Length(values)), compare);
+  compare.Data := PPointer(@comparison)^;
+  compare.Code := PPVTable(compare.Data)^[3];
+  {$R-}
+  {$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(T) of
+    tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
+    tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
+      case SizeOf(T) of
+        1: IntroSort_Int8(@values[0], High(values), @compare);
+        2: IntroSort_Int16(@values[0], High(values), @compare);
+        4: IntroSort_Int32(@values[0], High(values), @compare);
+        8: IntroSort_Int64(@values[0], High(values), @compare);
+      end;
+    tkFloat:
+      case SizeOf(T) of
+        4: IntroSort_Single(@values[0], High(values), @compare);
+        10,16: IntroSort_Extended(@values[0], High(values), @compare);
+      else
+        if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
+          IntroSort_Double(@values[0], High(values), @compare)
+        else
+          IntroSort_Int64(@values[0], High(values), @compare);
+      end;
+    tkString:
+      IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+    tkSet:
+      case SizeOf(T) of
+        1: IntroSort_Int8(@values[0], High(values), @compare);
+        2: IntroSort_Int16(@values[0], High(values), @compare);
+        4: IntroSort_Int32(@values[0], High(values), @compare);
+      {$IFDEF PASS_64BIT_VALUE_REGISTER}
+        8: IntroSort_Int64(@values[0], High(values), @compare);
+      {$ENDIF}
+      else
+        IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+      end;
+    tkMethod:
+      IntroSort_Method(@values[0], High(values), @compare);
+    tkVariant,
+    {$IF Declared(tkMRecord)}
+    tkMRecord,
+    {$IFEND}
+    tkRecord:
+      if not System.HasWeakRef(T) then
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[0], High(values), @compare);
+          2: IntroSort_Int16(@values[0], High(values), @compare);
+          3: IntroSort_Int24(@values[0], High(values), @compare);
+          4: IntroSort_Int32(@values[0], High(values), @compare);
+        {$IFDEF PASS_64BIT_VALUE_REGISTER}
+          8: IntroSort_Int64(@values[0], High(values), @compare);
+        {$ENDIF}
+        else
+          IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T))
+        end
+      else
+        IntroSort<T>(values, TCompareMethod<T>(compare));
+    tkArray:
+      case SizeOf(T) of
+        1: IntroSort_Int8(@values[0], High(values), @compare);
+        2: IntroSort_Int16(@values[0], High(values), @compare);
+        3: IntroSort_Int24(@values[0], High(values), @compare);
+        4: IntroSort_Int32(@values[0], High(values), @compare);
+       {$IFDEF PASS_64BIT_VALUE_REGISTER}
+        8: IntroSort_Int64(@values[0], High(values), @compare);
+      {$ENDIF}
+     else
+        IntroSort_Ref(@values[0], High(values), TCompareMethod(compare), SizeOf(T));
+      end;
+  else
+  {$ELSE}
+  begin
+  {$ENDIF}
+    IntroSort<T>(values, TCompareMethod<T>(compare));
+  end;
+  {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
 end;
 
-class procedure TArray.Sort<T>(var values: array of T;
-  const comparison: TComparison<T>; index, count: Integer);
+class procedure TArray.Sort<T>(var values: array of T; const comparison: TComparison<T>; index, count: Integer);
 var
-  compare: TCompareMethod<T>;
+  compare: TMethod;
 begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(Assigned(comparison), 'comparison');
-  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
-  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
-{$ENDIF}
+  CheckRange(index, count, Length(values));
 
-  if count <= 1 then
-    Exit;
-  TMethodPointer(compare) := InterfaceToMethodPointer(comparison, 0);
-  IntroSort<T>(values, index, index + count - 1, GetDepthLimit(count), compare);
+  if count > 1 then
+  begin
+    compare.Data := PPointer(@comparison)^;
+    compare.Code := PPVTable(compare.Data)^[3];
+    {$R-}
+    {$IFDEF DELPHIXE7_UP}
+    case GetTypeKind(T) of
+      tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
+      tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[index], index + count - 1, @compare);
+          2: IntroSort_Int16(@values[index], index + count - 1, @compare);
+          4: IntroSort_Int32(@values[index], index + count - 1, @compare);
+          8: IntroSort_Int64(@values[index], index + count - 1, @compare);
+        end;
+      tkFloat:
+        case SizeOf(T) of
+          4: IntroSort_Single(@values[index], index + count - 1, @compare);
+          10,16: IntroSort_Extended(@values[index], index + count - 1, @compare);
+        else
+          if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
+            IntroSort_Double(@values[index], index + count - 1, @compare)
+          else
+            IntroSort_Int64(@values[index], index + count - 1, @compare);
+        end;
+      tkString:
+        IntroSort_Ref(@values[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+      tkSet:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[index], index + count - 1, @compare);
+          2: IntroSort_Int16(@values[index], index + count - 1, @compare);
+          4: IntroSort_Int32(@values[index], index + count - 1, @compare);
+        {$IFDEF PASS_64BIT_VALUE_REGISTER}
+          8: IntroSort_Int64(@values[index], index + count - 1, @compare);
+        {$ENDIF}
+        else
+          IntroSort_Ref(@values[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+        end;
+      tkMethod:
+        IntroSort_Method(@values[index], index + count - 1, @compare);
+      tkVariant,
+      {$IF Declared(tkMRecord)}
+      tkMRecord,
+      {$IFEND}
+      tkRecord:
+        if not System.HasWeakRef(T) then
+          case SizeOf(T) of
+            1: IntroSort_Int8(@values[index], index + count - 1, @compare);
+            2: IntroSort_Int16(@values[index], index + count - 1, @compare);
+            3: IntroSort_Int24(@values[index], index + count - 1, @compare);
+            4: IntroSort_Int32(@values[index], index + count - 1, @compare);
+          {$IFDEF PASS_64BIT_VALUE_REGISTER}
+            8: IntroSort_Int64(@values[index], index + count - 1, @compare);
+          {$ENDIF}
+          else
+            IntroSort_Ref(@values[index], index + count - 1, TCompareMethod(compare), SizeOf(T))
+          end
+        else
+          IntroSort<T>(Slice(TSlice<T>((@values[index])^), count), TCompareMethod<T>(compare));
+      tkArray:
+        case SizeOf(T) of
+          1: IntroSort_Int8(@values[index], index + count - 1, @compare);
+          2: IntroSort_Int16(@values[index], index + count - 1, @compare);
+          3: IntroSort_Int24(@values[index], index + count - 1, @compare);
+          4: IntroSort_Int32(@values[index], index + count - 1, @compare);
+        {$IFDEF PASS_64BIT_VALUE_REGISTER}
+          8: IntroSort_Int64(@values[index], index + count - 1, @compare);
+        {$ENDIF}
+        else
+          IntroSort_Ref(@values[index], index + count - 1, TCompareMethod(compare), SizeOf(T));
+        end;
+    else
+    {$ELSE}
+    begin
+    {$ENDIF}
+      IntroSort<T>(Slice(TSlice<T>((@values[index])^), count), TCompareMethod<T>(compare));
+    end;
+    {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+  end;
+end;
+
+class function TComparer<T>.Default: IComparer<T>;
+begin
+  Result := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
 end;
 
 {$ENDREGION}
@@ -12342,10 +13313,32 @@ end;
 
 
 procedure Init;
+{$IFDEF MSWINDOWS}
+var
+  comparer, buffer: Pointer;
+  n: SIZE_T;
+{$ENDIF}
 begin
   Nop_Instance := Pointer(TValueData(TValue.Empty).FValueData);
 
   TValue.UpdateFormatSettings;
+
+{$IFDEF MSWINDOWS}
+  comparer := _LookupVtableInfo(giComparer, TypeInfo(Integer), 4);
+  buffer := @Comparer_Vtable_I4;
+  WriteProcessMemory(GetCurrentProcess, comparer, @buffer, SizeOf(Pointer), n);
+  comparer := _LookupVtableInfo(giComparer, TypeInfo(Cardinal), 4);
+  buffer := @Comparer_Vtable_U4;
+  WriteProcessMemory(GetCurrentProcess, comparer, @buffer, SizeOf(Pointer), n);
+{$IFDEF CPUX64}
+  comparer := _LookupVtableInfo(giComparer, TypeInfo(Int64), 8);
+  buffer := @Comparer_Vtable_I8;
+  WriteProcessMemory(GetCurrentProcess, comparer, @buffer, SizeOf(Pointer), n);
+  comparer := _LookupVtableInfo(giComparer, TypeInfo(UInt64), 8);
+  buffer := @Comparer_Vtable_U8;
+  WriteProcessMemory(GetCurrentProcess, comparer, @buffer, SizeOf(Pointer), n);
+{$ENDIF}
+{$ENDIF}
 end;
 
 
