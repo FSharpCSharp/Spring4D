@@ -703,7 +703,9 @@ end;
 constructor TFoldedHashSet<T>.Create(elementType: PTypeInfo; capacity: Integer;
   const comparer: IEqualityComparer<T>);
 begin
-  inherited Create(capacity, comparer);
+  fKeyComparer := comparer;
+  fHashTable.ItemsInfo := TypeInfo(TItems);
+  SetCapacity(capacity);
   fElementType := elementType;
 end;
 

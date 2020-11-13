@@ -2839,7 +2839,23 @@ constructor TFoldedDictionary<TKey, TValue>.Create(keyType,
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships);
 begin
-  inherited Create(capacity, keyComparer, valueComparer, ownerships);
+  if capacity < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+
+  if TType.Kind<TKey> <> tkClass then
+    if doOwnsKeys in ownerships then
+      RaiseHelper.NoClassType(keyType);
+
+  if TType.Kind<TValue> <> tkClass then
+    if doOwnsValues in ownerships then
+      RaiseHelper.NoClassType(valueType);
+
+  fOwnerships := ownerships;
+  fKeyComparer := keyComparer;
+  fValueComparer := valueComparer;
+
+  fHashTable.ItemsInfo := TypeInfo(TItems);
+  SetCapacity(capacity);
+
   fElementType := elementType;
   fKeyType := keyType;
   fValueType := valueType;
@@ -2871,7 +2887,22 @@ constructor TFoldedBidiDictionary<TKey, TValue>.Create(keyType, valueType,
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships);
 begin
-  inherited Create(capacity, keyComparer, valueComparer, ownerships);
+  if capacity < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+
+  if TType.Kind<TKey> <> tkClass then
+    if doOwnsKeys in ownerships then
+      RaiseHelper.NoClassType(keyType);
+
+  if TType.Kind<TValue> <> tkClass then
+    if doOwnsValues in ownerships then
+      RaiseHelper.NoClassType(valueType);
+
+  fOwnerships := ownerships;
+  fKeyComparer := keyComparer;
+  fValueComparer := valueComparer;
+
+  SetCapacity(capacity);
+
   fElementType := elementType;
   fKeyType := keyType;
   fValueType := valueType;

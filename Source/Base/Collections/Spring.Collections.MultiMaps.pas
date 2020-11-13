@@ -936,7 +936,16 @@ constructor THashMultiMap<TKey, TValue>.Create(
   const valueComparer: IEqualityComparer<TValue>;
   ownerships: TDictionaryOwnerships);
 begin
-  inherited Create(keyComparer, ownerships);
+  if TType.Kind<TKey> <> tkClass then
+    if doOwnsKeys in ownerships then
+      RaiseHelper.NoClassType(TypeInfo(TKey));
+
+  if TType.Kind<TValue> <> tkClass then
+    if doOwnsValues in ownerships then
+      RaiseHelper.NoClassType(TypeInfo(TValue));
+
+  fOwnerships := ownerships;
+  fKeyComparer := keyComparer;
   fValueComparer := valueComparer;
 end;
 
@@ -959,7 +968,16 @@ constructor TTreeMultiMap<TKey, TValue>.Create(
   const keyComparer: IEqualityComparer<TKey>;
   const valueComparer: IComparer<TValue>; ownerships: TDictionaryOwnerships);
 begin
-  inherited Create(keyComparer, ownerships);
+  if TType.Kind<TKey> <> tkClass then
+    if doOwnsKeys in ownerships then
+      RaiseHelper.NoClassType(TypeInfo(TKey));
+
+  if TType.Kind<TValue> <> tkClass then
+    if doOwnsValues in ownerships then
+      RaiseHelper.NoClassType(TypeInfo(TValue));
+
+  fOwnerships := ownerships;
+  fKeyComparer := keyComparer;
   fValueComparer := valueComparer;
 end;
 
@@ -995,7 +1013,17 @@ constructor TFoldedListMultiMap<TKey, TValue>.Create(keyType,
   valueType, elementType: PTypeInfo; const keyComparer: IEqualityComparer<TKey>;
   ownerships: TDictionaryOwnerships);
 begin
-  inherited Create(keyComparer, ownerships);
+  if TType.Kind<TKey> <> tkClass then
+    if doOwnsKeys in ownerships then
+      RaiseHelper.NoClassType(keyType);
+
+  if TType.Kind<TValue> <> tkClass then
+    if doOwnsValues in ownerships then
+      RaiseHelper.NoClassType(valueType);
+
+  fOwnerships := ownerships;
+  fKeyComparer := keyComparer;
+
   fElementType := elementType;
   fKeyType := keyType;
   fValueType := valueType;
