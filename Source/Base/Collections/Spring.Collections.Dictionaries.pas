@@ -157,6 +157,7 @@ type
     type
       TKeyValuePair = TPair<TKey, TValue>;
       TValueKeyPair = TPair<TValue, TKey>;
+      TValueKeyPairComparer = TPairComparer<TValue, TKey>;
       TItem = TBidiDictionaryItem<TKey, TValue>;
       {$POINTERMATH ON}
       PItem = ^TItem;
@@ -502,6 +503,8 @@ type
   {$ENDREGION}
     function DoMoveNext(var currentNode: PNode; var finished: Boolean;
       iteratorVersion: Integer): Boolean;
+    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
+    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
   public
     constructor Create(const keyComparer: IComparer<TKey>;
       const valueComparer: IEqualityComparer<TValue>);
@@ -662,14 +665,16 @@ begin
   item := fHashTable.Delete(entry);
 
   if Assigned(Notify) then
-    DoNotify(item.Key, item.Value, action);
-  KeyChanged(item.Key, action);
+    Notify(Self, PKeyValuePair(@item.Key)^, action);
+  with fOnKeyChanged do if CanInvoke then
+    Invoke(Self, item.Key, action);
 {$IFDEF DELPHIXE7_UP}
   if GetTypeKind(TKey) = tkClass then
 {$ENDIF}
   if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
     FreeObject(item.Key);
-  ValueChanged(item.Value, action);
+  with fOnValueChanged do if CanInvoke then
+    Invoke(Self, item.Value, action);
 {$IFDEF DELPHIXE7_UP}
   if GetTypeKind(TValue) = tkClass then
 {$ENDIF}
@@ -698,7 +703,7 @@ begin
     if item.HashCode >= 0 then
     begin
       if Assigned(Notify) then
-        DoNotify(item.Key, item.Value, caRemoved);
+        Notify(Self, PKeyValuePair(@item.Key)^, caRemoved);
       with fOnKeyChanged do if CanInvoke then
         Invoke(Self, item.Key, caRemoved);
     {$IFDEF DELPHIXE7_UP}
@@ -723,10 +728,12 @@ end;
 function TDictionary<TKey, TValue>.Contains(const value: TKeyValuePair;
   const comparer: IEqualityComparer<TKeyValuePair>): Boolean;
 var
-  pair: TKeyValuePair;
+  item: PItem;
 begin
-  pair.Key := value.Key;
-  Result := TryGetValue(value.Key, pair.Value) and comparer.Equals(pair, value);
+  item := fHashTable.Find(value.Key, fKeyComparer.GetHashCode(value.Key));
+  if Assigned(item) and comparer.Equals(PKeyValuePair(@item.Key)^, value) then
+    Exit(True);
+  Result := False;
 end;
 
 function TDictionary<TKey, TValue>.ToArray: TArray<TKeyValuePair>;
@@ -740,7 +747,7 @@ begin
   source := PItem(fHashTable.Items);
   for i := 1 to fHashTable.ItemCount do
   begin
-    if source.HashCode <> RemovedFlag then
+    if source.HashCode >= 0 then
     begin
       target.Key := source.Key;
       target.Value := source.Value;
@@ -778,7 +785,7 @@ begin
     if overwriteExisting then
     begin
       if Assigned(Notify) then
-        DoNotify(item.Key, item.Value, caRemoved);
+        Notify(Self, PKeyValuePair(@item.Key)^, caRemoved);
       with fOnValueChanged do if CanInvoke then
         Invoke(Self, item.Value, caRemoved);
     {$IFDEF DELPHIXE7_UP}
@@ -792,10 +799,12 @@ begin
     item.Value := value;
 
     if Assigned(Notify) then
-      DoNotify(key, value, caAdded);
+      Notify(Self, PKeyValuePair(@item.Key)^, caAdded);
     if not overwriteExisting then
-      KeyChanged(key, caAdded);
-    ValueChanged(value, caAdded);
+      with fOnKeyChanged do if CanInvoke then
+        Invoke(Self, item.Key, caAdded);
+    with fOnValueChanged do if CanInvoke then
+      Invoke(Self, item.Value, caAdded);
 
     Result := True;
   end
@@ -838,15 +847,18 @@ begin
   Result := False;
 end;
 
-function TDictionary<TKey, TValue>.ContainsValue(
-  const value: TValue): Boolean;
+function TDictionary<TKey, TValue>.ContainsValue(const value: TValue): Boolean;
 var
+  item: PItem;
   i: Integer;
 begin
-  for i := 0 to fHashTable.ItemCount - 1 do
-    if TItems(fHashTable.Items)[i].HashCode >= 0 then
-      if fValueComparer.Equals(TItems(fHashTable.Items)[i].Value, value) then
-        Exit(True);
+  item := PItem(fHashTable.Items);
+  for i := 1 to fHashTable.ItemCount do
+  begin
+    if (item.HashCode >= 0) and fValueComparer.Equals(item.Value, value) then
+      Exit(True);
+    Inc(item);
+  end;
   Result := False;
 end;
 
@@ -890,13 +902,11 @@ end;
 function TDictionary<TKey, TValue>.TryExtract(const key: TKey; var value: TValue): Boolean;
 var
   entry: THashTableEntry;
-  item: PItem;
 begin
   entry.HashCode := fKeyComparer.GetHashCode(key);
   if fHashTable.Find(key, entry) then
   begin
-    item := @TItems(fHashTable.Items)[entry.ItemIndex];
-    value := item.Value;
+    value := TItems(fHashTable.Items)[entry.ItemIndex].Value;
     DoRemove(entry, caExtracted);
     Exit(True);
   end;
@@ -906,13 +916,19 @@ end;
 
 function TDictionary<TKey, TValue>.TryGetElementAt(var item: TKeyValuePair; index: Integer): Boolean;
 begin
-  Result := Cardinal(index) < Cardinal(fHashTable.Count);
-  if Result then
+  if Cardinal(index) < Cardinal(fHashTable.Count) then
   begin
     fHashTable.EnsureCompact;
-    item.Key := TItems(fHashTable.Items)[index].Key;
-    item.Value := TItems(fHashTable.Items)[index].Value;
+    with TItems(fHashTable.Items)[index] do
+    begin
+      item.Key := Key;
+      item.Value := Value;
+    end;
+    Exit(True);
   end;
+  item.Key := Default(TKey);
+  item.Value := Default(TValue);
+  Result := False;
 end;
 
 function TDictionary<TKey, TValue>.TryGetValue(const key: TKey; var value: TValue): Boolean;
@@ -937,19 +953,22 @@ begin
   item := fHashTable.Find(key, fKeyComparer.GetHashCode(key));
   if Assigned(item) then
   begin
-    oldValue := item.Value;
-
-    fHashTable.IncrementVersion;
+    {$Q-}
+    Inc(PInteger(@fHashTable.Version)^);
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 
     if Assigned(Notify) then
-      DoNotify(key, oldValue, caRemoved);
-    ValueChanged(oldValue, caRemoved);
+      Notify(Self, PKeyValuePair(@item.Key)^, caRemoved);
+    with fOnValueChanged do if CanInvoke then
+      Invoke(Self, item.Value, caRemoved);
 
+    oldValue := item.Value;
     item.Value := newValue;
 
     if Assigned(Notify) then
-      DoNotify(key, newValue, caAdded);
-    ValueChanged(newValue, caAdded);
+      Notify(Self, PKeyValuePair(@item.Key)^, caAdded);
+    with fOnValueChanged do if CanInvoke then
+      Invoke(Self, item.Value, caAdded);
 
     Exit(True);
   end;
@@ -1097,7 +1116,11 @@ begin
   fValues := TValueCollection.Create(Self);
   fInverse := TInverse.Create;
   fInverse.fSource := Self;
-  fInverse.fComparer := TPairComparer<TValue, TKey>.Create(valueType, keyType);
+
+  TPairComparer.Create(@fInverse.fComparer,
+    @TValueKeyPairComparer.Comparer_Vtable,
+    @TValueKeyPairComparer.Compare,
+    valueType, keyType);
 end;
 
 procedure TBidiDictionary<TKey, TValue>.BeforeDestruction;
@@ -2335,6 +2358,20 @@ begin
   fKeys.Free;
   fValues.Free;
   inherited BeforeDestruction;
+end;
+
+procedure TSortedDictionary<TKey, TValue>.KeyChanged(const item: TKey;
+  action: TCollectionChangedAction);
+begin
+  with fOnKeyChanged do if CanInvoke then
+    Invoke(Self, item, action);
+end;
+
+procedure TSortedDictionary<TKey, TValue>.ValueChanged(const item: TValue;
+  action: TCollectionChangedAction);
+begin
+  with fOnValueChanged do if CanInvoke then
+    Invoke(Self, item, action);
 end;
 
 procedure TSortedDictionary<TKey, TValue>.Add(const key: TKey;

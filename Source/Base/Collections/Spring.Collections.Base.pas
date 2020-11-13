@@ -56,6 +56,28 @@ type
       typeInfo, getCurrent, moveNext: Pointer): Pointer; static;
   end;
 
+  PComparerVtable = ^TComparerVtable;
+  TComparerVtable = array[0..3] of Pointer;
+  PPairComparer = ^TPairComparer;
+  TPairComparer = record
+    Vtable: Pointer;
+    RefCount: Integer;
+    KeyComparer, ValueComparer: IInterface;
+    function _Release: Integer; stdcall;
+    class function Create(comparer: PPointer; vtable: PComparerVtable;
+      compare: Pointer; keyType, valueType: PTypeInfo): Pointer; static;
+  end;
+
+  TPairComparer<TKey, TValue> = record
+    Vtable: Pointer;
+    RefCount: Integer;
+    KeyComparer: IComparer<TKey>;
+    ValueComparer: IComparer<TValue>;
+    class var Comparer_Vtable: TComparerVtable;
+    function Compare(const left, right: TPair<TKey, TValue>): Integer;
+    class function Default: IComparer<TPair<TKey, TValue>>; static;
+  end;
+
   TEnumerableBase = class abstract(TRefCountedObject)
   protected
     this: Pointer;
@@ -558,18 +580,6 @@ type
     procedure TrimExcess;
   end;
 
-  TPairComparer = class abstract(TRefCountedObject)
-  private
-    fKeyComparer, fValueComparer: IInterface;
-  public
-    constructor Create(keyType, valueType: PTypeInfo);
-  end;
-
-  TPairComparer<TKey, TValue> = class sealed(TPairComparer, IComparer<TPair<TKey, TValue>>)
-  private
-    function Compare(const left, right: TPair<TKey, TValue>): Integer;
-  end;
-
   TMapBase<TKey, TValue> = class abstract(TCollectionBase<TPair<TKey, TValue>>)
   private
     type
@@ -585,8 +595,6 @@ type
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
     procedure DoNotify(const key: TKey; const value: TValue; action: TCollectionChangedAction); overload;
-    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); inline;
-    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); inline;
   public
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
@@ -720,6 +728,57 @@ begin
     FinalizeRecord(@Self, TypeInfo);
     FreeMem(@Self);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPairComparer'}
+
+class function TPairComparer.Create(comparer: PPointer; vtable: PComparerVtable;
+  compare: Pointer; keyType, valueType: PTypeInfo): Pointer;
+begin
+  vtable[0] := @NopQueryInterface;
+  vtable[1] := @RecAddRef;
+  vtable[2] := @TPairComparer._Release;
+  vtable[3] := compare;
+
+  IInterface(comparer^) := nil;
+  Result := AllocMem(SizeOf(TPairComparer));
+  PPairComparer(Result).Vtable := vtable;
+  PPairComparer(Result).RefCount := 1;
+  PPairComparer(Result).KeyComparer := IInterface(_LookupVtableInfo(giComparer, keyType, GetTypeSize(keyType)));
+  PPairComparer(Result).ValueComparer := IInterface(_LookupVtableInfo(giComparer, valueType, GetTypeSize(valueType)));
+  comparer^ := Result;
+end;
+
+function TPairComparer._Release: Integer;
+begin
+  Result := AtomicDecrement(RefCount);
+  if Result = 0 then
+  begin
+    KeyComparer := nil;
+    ValueComparer := nil;
+    FreeMem(@Self);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPairComparer<TKey, TValue>' }
+
+function TPairComparer<TKey, TValue>.Compare(const left, right: TPair<TKey, TValue>): Integer;
+begin
+  Result := KeyComparer.Compare(left.Key, right.Key);
+  if Result = 0 then
+    Result := ValueComparer.Compare(left.Value, right.Value);
+end;
+
+class function TPairComparer<TKey, TValue>.Default: IComparer<TPair<TKey, TValue>>;
+begin
+  TPairComparer.Create(@Result, @Comparer_Vtable,
+    @TPairComparer<TKey, TValue>.Compare, TypeInfo(TKey), TypeInfo(TValue));
 end;
 
 {$ENDREGION}
@@ -2356,35 +2415,14 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TPairComparer'}
-
-constructor TPairComparer.Create(keyType, valueType: PTypeInfo);
-begin
-  fKeyComparer := IInterface(_LookupVtableInfo(giComparer, keyType, GetTypeSize(keyType)));
-  fValueComparer := IInterface(_LookupVtableInfo(giComparer, valueType, GetTypeSize(valueType)));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TPairComparer<TKey, TValue>'}
-
-function TPairComparer<TKey, TValue>.Compare(
-  const left, right: TPair<TKey, TValue>): Integer;
-begin
-  Result := IComparer<TKey>(fKeyComparer).Compare(left.Key, right.Key);
-  if Result = 0 then
-    Result := IComparer<TValue>(fValueComparer).Compare(left.Value, right.Value);
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TMapBase<TKey, TValue>'}
 
 procedure TMapBase<TKey, TValue>.AfterConstruction;
 begin
-  fComparer := TKeyValuePairComparer.Create(GetKeyType, GetValueType);
+  TPairComparer.Create(@fComparer,
+    @TKeyValuePairComparer.Comparer_Vtable,
+    @TKeyValuePairComparer.Compare,
+    GetKeyType, GetValueType);
   inherited AfterConstruction;
   fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
   fOnValueChanged := TCollectionChangedEventImpl<TValue>.Create;
@@ -2448,23 +2486,9 @@ begin
   Result := TypeInfo(TValue);
 end;
 
-procedure TMapBase<TKey, TValue>.KeyChanged(const item: TKey;
-  action: TCollectionChangedAction);
-begin
-  with fOnKeyChanged do if CanInvoke then
-    Invoke(Self, item, action);
-end;
-
 function TMapBase<TKey, TValue>.Remove(const item: TKeyValuePair): Boolean;
 begin
   Result := IMap<TKey, TValue>(this).Remove(item.Key, item.Value);
-end;
-
-procedure TMapBase<TKey, TValue>.ValueChanged(const item: TValue;
-  action: TCollectionChangedAction);
-begin
-  with fOnValueChanged do if CanInvoke then
-    Invoke(Self, item, action);
 end;
 
 {$ENDREGION}

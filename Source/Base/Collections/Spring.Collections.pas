@@ -57,7 +57,7 @@ type
   TCollectionChangedEvent<T> = procedure(Sender: TObject; const Item: T;
     Action: TCollectionChangedAction) of object;
 
-  TPair<TKey, TValue> = record
+  TPair<TKey, TValue> = packed record
     Key: TKey;
     Value: TValue;
     constructor Create(const key: TKey; const value: TValue);
@@ -2442,7 +2442,7 @@ type
     property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
-  TMultiSetEntry<T> = record
+  TMultiSetEntry<T> = packed record
     Item: T;
     Count: Integer;
   end;
@@ -3526,7 +3526,7 @@ begin
 end;
 
 const
-  InstanceComparer_VTable: array[0..3] of Pointer =
+  InstanceComparer_VTable: TComparerVtable =
   (
     @NopQueryInterface,
     @NopAddRef,

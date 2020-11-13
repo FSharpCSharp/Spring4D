@@ -71,7 +71,6 @@ type
     function Find(const key; hashCode: Integer): Pointer; overload;
     function Find(const key; var entry: THashTableEntry): Boolean; overload;
     procedure Rehash(newCapacity: NativeInt);
-    procedure IncrementVersion; inline;
 
     function Add(const key; hashCode: Integer): Pointer;
     function AddOrSet(const key; hashCode: Integer; var overwriteExisting: Boolean): Pointer;
@@ -244,13 +243,6 @@ begin
     // only grow if load factor is greater than 0.5
     newCapacity := newCapacity * 2;
   Rehash(newCapacity);
-end;
-
-procedure THashTable.IncrementVersion;
-begin
-  {$Q-}
-  Inc(fVersion);
-  {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
 end;
 
 procedure THashTable.Pack;
