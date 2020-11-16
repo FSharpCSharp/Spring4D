@@ -1433,37 +1433,53 @@ begin
 end;
 
 function TAbstractArrayList<T>.TryGetElementAt(var value: T; index: Integer): Boolean;
+var
+  items: Pointer;
 begin
-  Result := Cardinal(index) < Cardinal(Count);
-  if Result then
-    value := fItems[index];
+  items := fItems;
+  if Cardinal(index) < Cardinal(Count) then
+  begin
+    value := TArray<T>(items)[index];
+    Exit(True);
+  end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TAbstractArrayList<T>.TryGetFirst(var value: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
-    value := fItems[0]
-  else
-    value := Default(T);
+  if Count > 0 then
+  begin
+    value := fItems[0];
+    Exit(True);
+  end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TAbstractArrayList<T>.TryGetLast(var value: T): Boolean;
+var
+  index: Integer;
 begin
-  Result := Count > 0;
-  if Result then
-    value := fItems[Count - 1]
-  else
-    value := Default(T);
+  index := Count - 1;
+  if index >= 0 then
+  begin
+    value := fItems[index];
+    Exit(True);
+  end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TAbstractArrayList<T>.TryGetSingle(var value: T): Boolean;
 begin
-  Result := Count = 1;
-  if Result then
-    value := fItems[0]
-  else
-    value := Default(T);
+  if Count = 1 then
+  begin
+    value := fItems[0];
+    Exit(True);
+  end;
+  value := Default(T);
+  Result := False;
 end;
 
 {$ENDREGION}
