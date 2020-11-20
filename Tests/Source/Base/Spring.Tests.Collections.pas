@@ -107,14 +107,17 @@ type
   private
     fSet1: ISet<Integer>;
     fSet2: ISet<Integer>;
+    fChangeCount: Integer;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
     procedure CheckSet(const collection: ISet<Integer>; const values: array of Integer);
+    procedure NotifyChange(Sender: TObject; const item: Integer; action: TCollectionChangedAction);
   published
     procedure TestExceptWith;
     procedure TestIntersectWith;
     procedure TestIntersectWithList;
+    procedure TestIntersectWithSameNoChange;
     procedure TestUnionWith;
     procedure TestSetEquals;
     procedure TestSetEqualsList;
@@ -979,6 +982,12 @@ begin
     CheckTrue(collection.Contains(value));
 end;
 
+procedure TTestNormalHashSet.NotifyChange(Sender: TObject; const item: Integer;
+  action: TCollectionChangedAction);
+begin
+  Inc(fChangeCount);
+end;
+
 procedure TTestNormalHashSet.SetUp;
 begin
   inherited;
@@ -1024,6 +1033,15 @@ begin
   list.AddRange([3, 1, 4, 5]);
   fSet1.IntersectWith(list);
   CheckSet(fSet1, [1, 3]);
+end;
+
+procedure TTestNormalHashSet.TestIntersectWithSameNoChange;
+begin
+  fSet1.OnChanged.Add(NotifyChange);
+  fSet2.Clear;
+  fSet2.AddRange(fSet1);
+  fSet1.IntersectWith(fSet2);
+  CheckEquals(0, fChangeCount);
 end;
 
 procedure TTestNormalHashSet.TestIsSubsetOf;

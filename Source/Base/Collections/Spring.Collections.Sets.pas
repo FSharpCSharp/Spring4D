@@ -211,31 +211,34 @@ end;
 
 procedure TSetBase<T>.IntersectWith(const other: IEnumerable<T>);
 var
+  count, i: Integer;
   enumerator: IEnumerator<T>;
   items: TArray<T>;
   item: T;
-  i: Integer;
 begin
   if not Assigned(other) then RaiseHelper.ArgumentNil(ExceptionArgument.other);
 
-  if not other.IsEmpty then
+  count := IEnumerable<T>(this).Count;
+  if count > 0 then
   begin
-    SetLength(items, IEnumerable<T>(this).Count);
+    SetLength(items, count);
     i := 0;
-    enumerator := other.GetEnumerator;
+    enumerator := IEnumerable<T>(this).GetEnumerator;
     while enumerator.MoveNext do
     begin
       item := enumerator.Current;
-      if ICollection<T>(this).Remove(item) then
+      if not other.Contains(item) then
       begin
         items[i] := item;
         Inc(i);
       end;
     end;
-    SetLength(items, i);
+    if i > 0 then
+    begin
+      SetLength(items, i);
+      ICollection<T>(this).RemoveRange(items);
+    end;
   end;
-  ICollection<T>(this).Clear;
-  ICollection<T>(this).AddRange(items);
 end;
 
 function TSetBase<T>.IsSubsetOf(const other: IEnumerable<T>): Boolean;
