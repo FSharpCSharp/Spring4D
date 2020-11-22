@@ -7645,15 +7645,14 @@ var
 begin
   elementType := nil;
   inherited Create(
-    function(fieldType: PTypeInfo): Pointer
+    procedure(fieldType: PTypeInfo; var value)
     begin
       if elementType = nil then
         elementType := InitElementType(fieldType);
 
-      Result := nil;
       case elementType.Kind of
-        tkClass:     IInterface(Result) := TCollections.CreateObjectList(elementType, ownsObjects);
-        tkInterface: IInterface(Result) := TCollections.CreateInterfaceList(elementType);
+        tkClass:     IInterface(value) := TCollections.CreateObjectList(elementType, ownsObjects);
+        tkInterface: IInterface(value) := TCollections.CreateInterfaceList(elementType);
       end;
     end);
 end;

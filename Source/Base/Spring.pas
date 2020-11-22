@@ -328,6 +328,8 @@ type
   end;
 {$ENDIF}
 
+  TFieldInitializer = reference to procedure(typeInfo: PTypeInfo; var value);
+
   /// <summary>
   ///   This attribute marks automatically initialized interface or object
   ///   fields inside of classes that inherit from TManagedObject or are using
@@ -337,16 +339,16 @@ type
   strict private
     fCreateInstance: Boolean;
     fInstanceClass: TClass;
-    fFactory: TFunc<PTypeInfo,Pointer>;
+    fInitializer: TFieldInitializer;
   strict protected
-    constructor Create(const factory: TFunc<PTypeInfo,Pointer>); overload;
+    constructor Create(const initializer: TFieldInitializer); overload;
   public
     constructor Create(createInstance: Boolean = True); overload;
     constructor Create(instanceClass: TClass) overload;
 
     property CreateInstance: Boolean read fCreateInstance;
     property InstanceClass: TClass read fInstanceClass;
-    property Factory: TFunc<PTypeInfo,Pointer> read fFactory;
+    property Initializer: TFieldInitializer read fInitializer;
   end;
 
   {$ENDREGION}
@@ -391,16 +393,25 @@ type
       procedure FinalizeValue(instance: Pointer); virtual; abstract;
     end;
 
-    TManagedObjectField = class(TFinalizableField)
+    TInitializerField = class(TFinalizableField)
     private
       fOffset: Integer;
       fFieldType: PTypeInfo;
+      fInitializer: TFieldInitializer;
+    public
+      constructor Create(offset: Integer; fieldType: PTypeInfo;
+        const initializer: TFieldInitializer);
+      procedure InitializeValue(instance: Pointer); override;
+      procedure FinalizeValue(instance: Pointer); override;
+    end;
+
+    TManagedObjectField = class(TInitializerField)
+    private
       fCls: TClass;
       fCtor: TConstructor;
-      fFactory: TFunc<PTypeInfo,Pointer>;
     public
-      constructor Create(offset: Integer; fieldType: PTypeInfo; cls: TClass;
-        const factory: TFunc<PTypeInfo,Pointer>);
+      constructor Create(offset: Integer; fieldType: PTypeInfo;
+        const initializer: TFieldInitializer; cls: TClass);
       procedure InitializeValue(instance: Pointer); override;
       procedure FinalizeValue(instance: Pointer); override;
     end;
@@ -410,8 +421,8 @@ type
       fEntry: PInterfaceEntry;
       function CreateInstance: Pointer;
     public
-      constructor Create(offset: Integer; fieldType: PTypeInfo; cls: TClass;
-        const factory: TFunc<PTypeInfo,Pointer>; entry: PInterfaceEntry);
+      constructor Create(offset: Integer; fieldType: PTypeInfo;
+        const initializer: TFieldInitializer; cls: TClass; entry: PInterfaceEntry);
       procedure InitializeValue(instance: Pointer); override;
       procedure FinalizeValue(instance: Pointer); override;
     end;
@@ -428,10 +439,8 @@ type
     InitTables: TDictionary<TClass,TInitTable>;
 {$ENDIF}
     FormatSettings: TFormatSettings;
-    procedure AddDefaultField(fieldType: PTypeInfo; const value: Variant;
-      offset: Integer);
-    procedure AddDefaultProperty(fieldType: PTypeInfo; const value: Variant;
-      propInfo: PPropInfo);
+    procedure AddDefaultField(fieldType: PTypeInfo; const value: Variant; offset: Integer);
+    procedure AddDefaultProperty(fieldType: PTypeInfo; const value: Variant; propInfo: PPropInfo);
     procedure AddManagedField(const field: TRttiField; const attribute: ManagedAttribute);
     class function GetCodePointer(instance: TObject; p: Pointer): Pointer; static; inline;
   public
@@ -4433,10 +4442,9 @@ begin
   fInstanceClass := instanceClass;
 end;
 
-constructor ManagedAttribute.Create(const factory: TFunc<PTypeInfo,Pointer>);
+constructor ManagedAttribute.Create(const initializer: TFieldInitializer);
 begin
-  Create(instanceClass);
-  fFactory := factory;
+  fInitializer := initializer;
 end;
 
 {$ENDREGION}
@@ -4486,12 +4494,19 @@ begin
     t := types[i];
 
     for f in t.GetDeclaredFields do
+    begin
+      for a in f.FieldType.GetAttributes do
+        if a is DefaultAttribute then
+          AddDefaultField(f.FieldType.Handle, DefaultAttribute(a).Value, f.Offset)
+        else if a is ManagedAttribute then
+          AddManagedField(f, ManagedAttribute(a));
+
       for a in f.GetAttributes do
         if a is DefaultAttribute then
           AddDefaultField(f.FieldType.Handle, DefaultAttribute(a).Value, f.Offset)
         else if a is ManagedAttribute then
-          if f.FieldType.TypeKind in [tkClass, tkInterface] then
-            AddManagedField(f, ManagedAttribute(a));
+          AddManagedField(f, ManagedAttribute(a));
+    end;
 
     for p in t.GetDeclaredProperties do
       for a in p.GetAttributes do
@@ -4685,7 +4700,7 @@ var
   offset: Integer;
   createInstance: Boolean;
   cls: TClass;
-  factory: TFunc<PTypeInfo,Pointer>;
+  initializer: TFieldInitializer;
   managedField: TFinalizableField;
   entry: PInterfaceEntry;
 begin
@@ -4693,14 +4708,13 @@ begin
   offset := field.Offset;
   createInstance := attribute.CreateInstance;
   cls := attribute.InstanceClass;
-  factory := attribute.Factory;
-  managedField := nil;
+  initializer := attribute.Initializer;
   case fieldType.Kind of
     tkClass:
     begin
-      if not Assigned(factory) and not Assigned(cls) and createInstance then
+      if not Assigned(initializer) and not Assigned(cls) and createInstance then
         cls := fieldType.TypeData.ClassType;
-      managedField := TManagedObjectField.Create(offset, fieldType, cls, factory);
+      managedField := TManagedObjectField.Create(offset, fieldType, initializer, cls);
     end;
     tkInterface:
     begin
@@ -4714,8 +4728,10 @@ begin
       end
       else
         entry := nil;
-      managedField := TManagedInterfaceField.Create(offset, fieldType, cls, factory, entry);
+      managedField := TManagedInterfaceField.Create(offset, fieldType, initializer, cls, entry);
     end;
+  else
+    managedField := TInitializerField.Create(offset, fieldType, initializer);
   end;
   if managedField <> nil then
   begin
@@ -4844,16 +4860,36 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInitTable.TManagedObjectField'}
+{$REGION 'TInitTable.TInitializerField'}
 
-constructor TInitTable.TManagedObjectField.Create(offset: Integer;
-  fieldType: PTypeInfo; cls: TClass; const factory: TFunc<PTypeInfo,Pointer>);
+constructor TInitTable.TInitializerField.Create(offset: Integer;
+  fieldType: PTypeInfo; const initializer: TFieldInitializer);
 begin
   fOffset := offset;
   fFieldType := fieldType;
+  fInitializer := initializer;
+end;
+
+procedure TInitTable.TInitializerField.FinalizeValue(instance: Pointer);
+begin
+end;
+
+procedure TInitTable.TInitializerField.InitializeValue(instance: Pointer);
+begin
+  fInitializer(fFieldType, Pointer(PByte(instance) + fOffset)^);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInitTable.TManagedObjectField'}
+
+constructor TInitTable.TManagedObjectField.Create(offset: Integer;
+  fieldType: PTypeInfo; const initializer: TFieldInitializer; cls: TClass);
+begin
+  inherited Create(offset, fieldType, initializer);
   fCls := cls;
-  fFactory := factory;
-  if Assigned(cls) and not Assigned(factory) then
+  if Assigned(cls) and not Assigned(initializer) then
     fCtor := TActivator.FindConstructor(cls);
 end;
 
@@ -4866,8 +4902,8 @@ procedure TInitTable.TManagedObjectField.InitializeValue(instance: Pointer);
 begin
   if Assigned(fCtor) then
     TObject(Pointer(PByte(instance) + fOffset)^) := TObject(fCtor(fCls))
-  else if Assigned(fFactory) then
-    TObject(Pointer(PByte(instance) + fOffset)^) := fFactory(fFieldType);
+  else if Assigned(fInitializer) then
+    fInitializer(fFieldType, Pointer(PByte(instance) + fOffset)^);
 end;
 
 {$ENDREGION}
@@ -4934,10 +4970,10 @@ end;
 {$ENDIF}
 
 constructor TInitTable.TManagedInterfaceField.Create(offset: Integer;
-  fieldType: PTypeInfo; cls: TClass; const factory: TFunc<PTypeInfo,Pointer>;
+  fieldType: PTypeInfo; const initializer: TFieldInitializer; cls: TClass;
   entry: PInterfaceEntry);
 begin
-  inherited Create(offset, fieldType, cls, factory);
+  inherited Create(offset, fieldType, initializer, cls);
   fEntry := entry;
 end;
 
@@ -4964,17 +5000,11 @@ begin
 end;
 
 procedure TInitTable.TManagedInterfaceField.InitializeValue(instance: Pointer);
-var
-  intf: Pointer;
 begin
   if Assigned(fCtor) then
-    intf := CreateInstance
-  else if Assigned(fFactory) then
-    intf := fFactory(fFieldType)
-  else
-    Exit;
-
-  PPointer(PByte(instance) + fOffset)^ := intf;
+    PPointer(PByte(instance) + fOffset)^ := CreateInstance
+  else if Assigned(fInitializer) then
+    fInitializer(fFieldType, PPointer(PByte(instance) + fOffset)^);
 end;
 
 {$ENDREGION}
