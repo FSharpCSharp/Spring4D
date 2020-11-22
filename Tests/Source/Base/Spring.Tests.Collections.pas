@@ -32,9 +32,11 @@ uses
   Classes,
   Generics.Defaults,
   TestFramework,
+  Spring.Testing,
   Spring.TestUtils,
   Spring,
   Spring.Collections,
+  Spring.Collections.Base,
   Spring.Collections.LinkedLists,
   Spring.Collections.Lists,
   Spring.Collections.Trees;
@@ -780,11 +782,187 @@ type
     procedure SetUp; override;
   end;
 
+  TEnumerableTestCase = class(TTestCase)
+  private type
+    TFastInfiniteEnumerator<T> = class(TIterator<T>, IEnumerable<T>)
+    protected
+      function Clone: TIterator<T>; override;
+      function TryMoveNext(var current: T): Boolean; override;
+    end;
+    TNumberRangeIterator = class(TIterator<Integer>, IEnumerable<Integer>)
+    private
+      fNum, fCount, fIndex: Integer;
+    protected
+      function Clone: TIterator<Integer>; override;
+      function TryMoveNext(var current: Integer): Boolean; override;
+    public
+      constructor Create(num, count: Integer);
+    end;
+    TRunOnceEnumerable<T> = class(TEnumerableBase<T>, IEnumerable<T>)
+    private
+      fSource: IEnumerable<T>;
+      fCalled: Boolean;
+    public
+      constructor Create(const source: IEnumerable<T>);
+      function GetEnumerator: IEnumerator<T>;
+    end;
+    TNotCollectionIterator<T> = class(TSourceIterator<T>, IEnumerable<T>)
+    private
+      fEnumerator: IEnumerator<T>;
+    protected
+      function Clone: TIterator<T>; override;
+      procedure Start; override;
+      function TryMoveNext(var current: T): Boolean; override;
+    end;
+  protected
+    class function FastInfiniteEnumerator<T>: IEnumerable<T>; static;
+    class function ForceNotCollection<T>(const source: array of T): IEnumerable<T>; overload; static;
+    class function ForceNotCollection<T>(const source: IEnumerable<T>): IEnumerable<T>; overload; static;
+    class function NumberRangeGuaranteedNotCollectionType(num, count: Integer): IEnumerable<Integer>; static;
+    class function GuaranteedRunOnce<T>(const source: IEnumerable<T>): IEnumerable<T>; static;
+    procedure CheckEmpty(const value: IInterface); overload;
+    procedure CheckEmpty(const values: array of Integer); overload;
+    procedure CheckEquals(const expected, actual: IInterface); overload;
+    procedure CheckEquals(const expected, actual: array of Integer); overload;
+    procedure CheckEquals(const expected: array of Integer; const actual: IEnumerable<Integer>); overload;
+  end;
+
+  TSkipTests = class(TEnumerableTestCase)
+  published
+    procedure SkipSome;
+    procedure SkipSomeIList;
+    procedure RunOnce;
+    procedure SkipNone;
+    procedure SkipNoneIList;
+    procedure SkipExcessive;
+    procedure SkipExcessiveIList;
+    procedure SkipAllExactly;
+    procedure SkipAllExactlyIList;
+    procedure SkipOnEmpty;
+    procedure SkipOnEmptyIList;
+    procedure SkipNegative;
+    procedure SkipNegativeIList;
+    procedure SameResultsRepeatCallsIntQuery;
+    procedure SameResultsRepeatCallsIntQueryIList;
+    procedure SkipOne;
+    procedure SkipOneNotIList;
+    procedure SkipAllButOne;
+    procedure SkipAllButOneNotIList;
+    procedure SkipOneMoreThanAll;
+    procedure SkipOneMoreThanAllNotIList;
+    procedure ForcedToEnumeratorDoesntEnumerate;
+    procedure ForcedToEnumeratorDoesntEnumerateIList;
+    procedure Count;
+    procedure FollowWithTake;
+    procedure FollowWithTakeNotIList;
+    procedure FollowWithTakeThenMassiveTake;
+    procedure FollowWithTakeThenMassiveTakeNotIList;
+    procedure FollowWithSkip;
+    procedure FollowWithSkipNotIList;
+    procedure ElementAt;
+    procedure ElementAtNotIList;
+    procedure ElementAtOrDefault;
+    procedure ElementAtOrDefaultNotIList;
+    procedure First;
+    procedure FirstNotIList;
+    procedure FirstOrDefault;
+    procedure FirstOrDefaultNotIList;
+    procedure Last;
+    procedure LastNotIList;
+    procedure LastOrDefault;
+    procedure LastOrDefaultNotIList;
+    procedure ToArray;
+    procedure ToArrayNotIList;
+    procedure RepeatEnumerating;
+    procedure RepeatEnumeratingNotIList;
+    procedure LazySkipMoreThan32Bits;
+  end;
+
+  TTakeTests = class(TEnumerableTestCase)
+  published
+    procedure SameResultsRepeatCallsIntQuery;
+    procedure SameResultsRepeatCallsIntQueryIList;
+    procedure SourceEmptyCountPositive;
+    procedure SourceEmptyCountPositiveNotIList;
+    procedure SourceNonEmptyCountNegative;
+    procedure SourceNonEmptyCountNegativeNotIList;
+    procedure SourceNonEmptyCountZero;
+    procedure SourceNonEmptyCountZeroNotIList;
+    procedure SourceNonEmptyCountOne;
+    procedure SourceNonEmptyCountOneNotIList;
+    procedure SourceNonEmptyTakeAllExactly;
+    procedure SourceNonEmptyTakeAllExactlyNotIList;
+    procedure SourceNonEmptyTakeAllButOne;
+    procedure RunOnce;
+    procedure SourceNonEmptyTakeAllButOneNotIList;
+    procedure SourceNonEmptyTakeExcessive;
+    procedure SourceNonEmptyTakeExcessiveNotIList;
+    procedure ForcedToEnumeratorDoesntEnumerate;
+    procedure ForcedToEnumeratorDoesntEnumerateIList;
+    procedure Count;
+    procedure FollowWithTake;
+    procedure FollowWithTakeNotIList;
+    procedure FollowWithSkip;
+    procedure FollowWithSkipNotIList;
+    procedure ElementAt;
+    procedure ElementAtNotIList;
+    procedure ElementAtOrDefault;
+    procedure ElementAtOrDefaultNotIList;
+    procedure First;
+    procedure FirstNotIList;
+    procedure FirstOrDefault;
+    procedure FirstOrDefaultNotIList;
+    procedure Last;
+    procedure LastNotIList;
+    procedure LastOrDefault;
+    procedure LastOrDefaultNotIList;
+    procedure ToArray;
+    procedure ToArrayNotIList;
+    procedure TakeCanOnlyBeOneList;
+    procedure TakeCanOnlyBeOneNotIList;
+    procedure RepeatEnumerating;
+    procedure RepeatEnumeratingNotIList;
+
+    [TestCase('1000')]
+    [TestCase('1000000')]
+    [TestCase('maxint')]
+    procedure LazySkipAllTakenForLargeNumbers(largeNumber: Integer);
+    procedure LazyOverflowRegression;
+
+    [TestCase('0, 0, 0')]
+    [TestCase('1, 1, 1')]
+    [TestCase('0, maxint, 100')]
+    [TestCase('maxint, 0, 0')]
+    [TestCase('0xffff, 1, 0')]
+    [TestCase('1, 0xffff, 99')]
+    [TestCase('maxint, maxint, 0')]
+    [TestCase('1, maxint, 99')]
+    [TestCase('0, 100, 100')]
+    [TestCase('10, 100, 90')]
+    procedure CountOfLazySkipTakeChain(skip, take, expected: Integer);
+
+    [TestCase('[1, 2, 3, 4], 1, 3, 2, 4')]
+    [TestCase('[1], 0, 1, 1, 1')]
+    [TestCase('[1, 2, 3, 5, 8, 13], 1, maxint, 2, 13')]
+    [TestCase('[1, 2, 3, 5, 8, 13], 2, maxint, 3, 13')]
+    [TestCase('[1, 2, 3, 5, 8, 13], 0, 2, 1, 2')]
+    [TestCase('[1, 2, 3, 5, 8, 13], 500, 2, 0, 0')]
+    [TestCase('[], 10, 8, 0, 0')]
+    procedure FirstAndLastOfLazySkipTakeChain(const source: TArray<Integer>; skip, take, first, last: Integer);
+
+    [TestCase('[1, 2, 3, 4, 5], 1, 3, [-1, 0, 1, 2], [0, 2, 3, 4]')]
+    [TestCase('[0xfefe, 7000, 123], 0, 3, [-1, 0, 1, 2], [0, $fefe, 7000, 123]')]
+    [TestCase('[0xfefe], 100, 100, [-1, 0, 1, 2], [0, 0, 0, 0]')]
+    [TestCase('[0xfefe, 123, 456, 7890, 5555, 55], 1, 10, [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [0, 123, 456, 7890, 5555, 55, 0, 0, 0, 0, 0, 0, 0]')]
+    procedure ElementAtOfLazySkipTakeChain(const source: TArray<Integer>; skip, take: Integer; indices, expectedValues: TArray<Integer>);
+  end;
+
 implementation
 
 uses
   Spring.Collections.MultiMaps,
   Spring.Collections.MultiSets,
+  Rtti, // H2443
   StrUtils,
   SysUtils,
   TypInfo;
@@ -3858,7 +4036,6 @@ begin
   SUT.Add(1, 1);
   Check(values.EqualsTo([1]));
 
-
   SUT := nil;
   CheckEquals(0, values.Count);
 end;
@@ -4633,7 +4810,7 @@ end;
 {$ENDREGION}
 
 
-{ TTestMultiMapChangedEventBase }
+{$REGION 'TTestMultiMapChangedEventBase'}
 
 procedure TTestMultiMapChangedEventBase.AddEventHandlers;
 begin
@@ -4773,7 +4950,10 @@ begin
   CheckValueChanged(2, 'a', caRemoved);
 end;
 
-{ TTestListMultiMapChangedEvent }
+{$ENDREGION}
+
+
+{$REGION 'TTestListMultiMapChangedEvent'}
 
 procedure TTestListMultiMapChangedEvent.SetUp;
 begin
@@ -4782,7 +4962,10 @@ begin
   Sender := SUT.AsObject;
 end;
 
-{ TTestHashMultiMapChangedEvent }
+{$ENDREGION}
+
+
+{$REGION 'TTestHashMultiMapChangedEvent'}
 
 procedure TTestHashMultiMapChangedEvent.SetUp;
 begin
@@ -4791,7 +4974,10 @@ begin
   Sender := SUT.AsObject;
 end;
 
-{ TTestTreeMultiMapChangedEvent }
+{$ENDREGION}
+
+
+{$REGION 'TTestTreeMultiMapChangedEvent'}
 
 procedure TTestTreeMultiMapChangedEvent.SetUp;
 begin
@@ -5076,6 +5262,1095 @@ begin
   inherited;
   SUT := TCollections.CreateSortedMultiSet<Integer>;
   Sender := SUT.AsObject;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableTestCase'}
+
+procedure TEnumerableTestCase.CheckEquals(const expected, actual: IInterface);
+var
+  e1, e2: IEnumerator;
+begin
+  e1 := (actual as IEnumerable).GetEnumerator;
+  e2 := (expected as IEnumerable).GetEnumerator;
+
+  while e1.MoveNext do
+  begin
+    Check(e2.MoveNext);
+    Check((e1.Current = e2.Current), 'collections not equal');
+  end;
+  Check(not e2.MoveNext, 'collections not equal');
+end;
+
+procedure TEnumerableTestCase.CheckEquals(const expected,
+  actual: array of Integer);
+var
+  i: Integer;
+begin
+  Check(Length(expected) = Length(actual), 'collections not equal');
+  for i := Low(expected) to High(expected) do
+    CheckEquals(expected[i], actual[i], 'collections not equal');
+end;
+
+procedure TEnumerableTestCase.CheckEquals(const expected: array of Integer;
+  const actual: IEnumerable<Integer>);
+begin
+  CheckEquals(TEnumerable.From<Integer>(expected), actual);
+end;
+
+class function TEnumerableTestCase.FastInfiniteEnumerator<T>: IEnumerable<T>;
+begin
+  Result := TFastInfiniteEnumerator<T>.Create;
+end;
+
+class function TEnumerableTestCase.ForceNotCollection<T>(
+  const source: array of T): IEnumerable<T>;
+begin
+  Result := TNotCollectionIterator<T>.Create(TEnumerable.From<T>(source));
+end;
+
+class function TEnumerableTestCase.ForceNotCollection<T>(
+  const source: IEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TNotCollectionIterator<T>.Create(source);
+end;
+
+class function TEnumerableTestCase.NumberRangeGuaranteedNotCollectionType(num,
+  count: Integer): IEnumerable<Integer>;
+begin
+  Result := TNumberRangeIterator.Create(num, count);
+end;
+
+class function TEnumerableTestCase.GuaranteedRunOnce<T>(
+  const source: IEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TRunOnceEnumerable<T>.Create(source);
+end;
+
+procedure TEnumerableTestCase.CheckEmpty(const value: IInterface);
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := (value as IEnumerable).GetEnumerator;
+  Check(not enumerator.MoveNext, 'collection not empty');
+end;
+
+procedure TEnumerableTestCase.CheckEmpty(const values: array of Integer);
+begin
+  Check(Length(values) = 0, 'array not empty');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableTestCase.TFastInfiniteEnumerator<T>'}
+
+function TEnumerableTestCase.TFastInfiniteEnumerator<T>.Clone: TIterator<T>;
+begin
+  Result := Self;
+end;
+
+function TEnumerableTestCase.TFastInfiniteEnumerator<T>.TryMoveNext(
+  var current: T): Boolean;
+begin
+  Result := True;
+  current := Default(T);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableTestCase.TNumberRangeIterator'}
+
+constructor TEnumerableTestCase.TNumberRangeIterator.Create(num, count: Integer);
+begin
+  inherited Create;
+  fNum := num;
+  fCount := count;
+end;
+
+function TEnumerableTestCase.TNumberRangeIterator.Clone: TIterator<Integer>;
+begin
+  Result := TNumberRangeIterator.Create(fNum, fCount);
+end;
+
+function TEnumerableTestCase.TNumberRangeIterator.TryMoveNext(
+  var current: Integer): Boolean;
+begin
+  if fIndex < fCount then
+  begin
+    current := fNum + fIndex;
+    Inc(fIndex);
+    Result := True;
+  end
+  else
+    Result := False;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableTestCase.TRunOnceEnumerable<T>'}
+
+constructor TEnumerableTestCase.TRunOnceEnumerable<T>.Create(
+  const source: IEnumerable<T>);
+begin
+  inherited Create;
+  fSource := source;
+end;
+
+function TEnumerableTestCase.TRunOnceEnumerable<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Assert(not fCalled);
+  fCalled := True;
+  Result := fSource.GetEnumerator;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableTestCase.TNotCollectionIterator<T>'}
+
+function TEnumerableTestCase.TNotCollectionIterator<T>.Clone: TIterator<T>;
+begin
+  Result := TNotCollectionIterator<T>.Create(Source);
+end;
+
+procedure TEnumerableTestCase.TNotCollectionIterator<T>.Start;
+begin
+  fEnumerator := Source.GetEnumerator;
+end;
+
+function TEnumerableTestCase.TNotCollectionIterator<T>.TryMoveNext(
+  var current: T): Boolean;
+begin
+  Result := fEnumerator.MoveNext;
+  if Result then
+    current := fEnumerator.Current;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSkipTests'}
+
+procedure TSkipTests.SkipSome;
+begin
+  CheckEquals(TEnumerable.Range(10, 10), NumberRangeGuaranteedNotCollectionType(0, 20).Skip(10));
+end;
+
+procedure TSkipTests.SkipSomeIList;
+begin
+  CheckEquals(TEnumerable.Range(10, 10), TCollections.CreateList<Integer>(NumberRangeGuaranteedNotCollectionType(0, 20)).Skip(10));
+end;
+
+procedure TSkipTests.RunOnce;
+begin
+  CheckEquals(TEnumerable.Range(10, 10), GuaranteedRunOnce<Integer>(TEnumerable.Range(0, 20)).Skip(10));
+  CheckEquals(TEnumerable.Range(10, 10), GuaranteedRunOnce<Integer>(TCollections.CreateList<Integer>(TEnumerable.Range(0, 20))).Skip(10));
+end;
+
+procedure TSkipTests.SkipNone;
+begin
+  CheckEquals(TEnumerable.Range(0, 20), NumberRangeGuaranteedNotCollectionType(0, 20).Skip(0));
+end;
+
+procedure TSkipTests.SkipNoneIList;
+begin
+  CheckEquals(TEnumerable.Range(0, 20), TCollections.CreateList<Integer>(NumberRangeGuaranteedNotCollectionType(0, 20)).Skip(0));
+end;
+
+procedure TSkipTests.SkipExcessive;
+begin
+  CheckEquals(TEnumerable.Empty<Integer>, NumberRangeGuaranteedNotCollectionType(0, 20).Skip(42));
+end;
+
+procedure TSkipTests.SkipExcessiveIList;
+begin
+  CheckEquals(TEnumerable.Empty<Integer>, TCollections.CreateList<Integer>(NumberRangeGuaranteedNotCollectionType(0, 20)).Skip(42));
+end;
+
+procedure TSkipTests.SkipAllExactly;
+begin
+  CheckFalse(NumberRangeGuaranteedNotCollectionType(0, 20).Skip(20).Any);
+end;
+
+procedure TSkipTests.SkipAllExactlyIList;
+begin
+  CheckFalse(TCollections.CreateList<Integer>(NumberRangeGuaranteedNotCollectionType(0, 20)).Skip(20).Any);
+end;
+
+procedure TSkipTests.SkipOnEmpty;
+begin
+  CheckEquals(TEnumerable.Empty<Integer>, ForceNotCollection<Integer>(TEnumerable.Empty<Integer>).Skip(0));
+  CheckEquals(TEnumerable.Empty<string>, ForceNotCollection<string>(TEnumerable.Empty<string>).Skip(-1));
+  CheckEquals(TEnumerable.Empty<Double>, ForceNotCollection<Double>(TEnumerable.Empty<Double>).Skip(1));
+end;
+
+procedure TSkipTests.SkipOnEmptyIList;
+begin
+  CheckEquals(TEnumerable.Empty<Integer>, TCollections.CreateList<Integer>(TEnumerable.Empty<Integer>()).Skip(0));
+  CheckEquals(TEnumerable.Empty<string>, TCollections.CreateList<string>(TEnumerable.Empty<string>()).Skip(-1));
+  CheckEquals(TEnumerable.Empty<Double>, TCollections.CreateList<Double>(TEnumerable.Empty<Double>()).Skip(1));
+end;
+
+procedure TSkipTests.SkipNegative;
+begin
+  CheckEquals(TEnumerable.Range(0, 20), NumberRangeGuaranteedNotCollectionType(0, 20).Skip(-42));
+end;
+
+procedure TSkipTests.SkipNegativeIList;
+begin
+  CheckEquals(TEnumerable.Range(0, 20), TCollections.CreateList<Integer>(NumberRangeGuaranteedNotCollectionType(0, 20)).Skip(-42));
+end;
+
+procedure TSkipTests.SameResultsRepeatCallsIntQuery;
+var
+  q: IEnumerable<Integer>;
+begin
+  q := ForceNotCollection<Integer>(TEnumerable.From<Integer>([9999, 0, 888, -1, 66, -777, 1, 2, -12345])
+    .Where(function(const x: Integer): Boolean begin Result := x > Low(Integer) end));
+  CheckEquals(q.Skip(0), q.Skip(0));
+end;
+
+procedure TSkipTests.SameResultsRepeatCallsIntQueryIList;
+var
+  q: IEnumerable<Integer>;
+begin
+  q := TCollections.CreateList<Integer>(TEnumerable.From<Integer>([9999, 0, 888, -1, 66, -777, 1, 2, -12345])
+    .Where(function(const x: Integer): Boolean begin Result := x > Low(Integer) end));
+  CheckEquals(q.Skip(0), q.Skip(0));
+end;
+
+procedure TSkipTests.SkipOne;
+var
+  source, expected: IEnumerable<Nullable<Integer>>;
+begin
+  source := TEnumerable.From<Nullable<Integer>>([3, 100, 4, nil, 10]);
+  expected := TEnumerable.From<Nullable<Integer>>([100, 4, nil, 10]);
+  CheckEquals(expected, source.Skip(1));
+end;
+
+procedure TSkipTests.SkipOneNotIList;
+var
+  source, expected: IEnumerable<Nullable<Integer>>;
+begin
+  source := TEnumerable.From<Nullable<Integer>>([3, 100, 4, nil, 10]);
+  expected := TEnumerable.From<Nullable<Integer>>([100, 4, nil, 10]);
+  CheckEquals(expected, ForceNotCollection<Nullable<Integer>>(source.Skip(1)));
+end;
+
+procedure TSkipTests.SkipAllButOne;
+var
+  source, expected: IEnumerable<Nullable<Integer>>;
+begin
+  source := TEnumerable.From<Nullable<Integer>>([3, 100, nil, 4, 10]);
+  expected := TEnumerable.From<Nullable<Integer>>([10]);
+  CheckEquals(expected, source.Skip(source.Count - 1));
+end;
+
+procedure TSkipTests.SkipAllButOneNotIList;
+var
+  source, expected: IEnumerable<Nullable<Integer>>;
+begin
+  source := TEnumerable.From<Nullable<Integer>>([3, 100, nil, 4, 10]);
+  expected := TEnumerable.From<Nullable<Integer>>([10]);
+  CheckEquals(expected, ForceNotCollection<Nullable<Integer>>(source).Skip(source.Count - 1));
+end;
+
+procedure TSkipTests.SkipOneMoreThanAll;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([3, 100, 4, 10]);
+  CheckEmpty(source.Skip(source.Count + 1));
+end;
+
+procedure TSkipTests.SkipOneMoreThanAllNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([3, 100, 4, 10]);
+  CheckEmpty(ForceNotCollection<Integer>(source).Skip(source.Count + 1));
+end;
+
+procedure TSkipTests.ForcedToEnumeratorDoesntEnumerate;
+var
+  iterator: IEnumerable<Integer>;
+  enumerator: IEnumerator<Integer>;
+begin
+  iterator := NumberRangeGuaranteedNotCollectionType(0, 3).Skip(2);
+  CheckFalse(Supports(iterator, IEnumerator<Integer>, enumerator) and enumerator.MoveNext)
+end;
+
+procedure TSkipTests.ForcedToEnumeratorDoesntEnumerateIList;
+var
+  iterator: IEnumerable<Integer>;
+  enumerator: IEnumerator<Integer>;
+begin
+  iterator := TEnumerable.From<Integer>([0, 1, 2]).Skip(2);
+  CheckFalse(Supports(iterator, IEnumerator<Integer>, enumerator) and enumerator.MoveNext)
+end;
+
+procedure TSkipTests.Count;
+begin
+  CheckEquals(2, NumberRangeGuaranteedNotCollectionType(0, 3).Skip(1).Count);
+  CheckEquals(2, TEnumerable.From<Integer>([1, 2, 3]).Skip(1).Count);
+end;
+
+procedure TSkipTests.FollowWithTake;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([5, 6, 7, 8]);
+  expected := TEnumerable.From<Integer>([6, 7]);
+  CheckEquals(expected, source.Skip(1).Take(2));
+end;
+
+procedure TSkipTests.FollowWithTakeNotIList;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := NumberRangeGuaranteedNotCollectionType(5, 4);
+  expected := TEnumerable.From<Integer>([6, 7]);
+  CheckEquals(expected, source.Skip(1).Take(2));
+end;
+
+procedure TSkipTests.FollowWithTakeThenMassiveTake;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([5, 6, 7, 8]);
+  expected := TEnumerable.From<Integer>([7]);
+  CheckEquals(expected, source.Skip(2).Take(1).Take(MaxInt));
+end;
+
+procedure TSkipTests.FollowWithTakeThenMassiveTakeNotIList;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := NumberRangeGuaranteedNotCollectionType(5, 4);
+  expected := TEnumerable.From<Integer>([7]);
+  CheckEquals(expected, source.Skip(2).Take(1).Take(MaxInt));
+end;
+
+procedure TSkipTests.FollowWithSkip;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5, 6]);
+  expected := TEnumerable.From<Integer>([4, 5, 6]);
+  CheckEquals(expected, source.Skip(1).Skip(2).Skip(-4));
+end;
+
+procedure TSkipTests.FollowWithSkipNotIList;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := NumberRangeGuaranteedNotCollectionType(1, 6);
+  expected := TEnumerable.From<Integer>([4, 5, 6]);
+  CheckEquals(expected, source.Skip(1).Skip(2).Skip(-4));
+end;
+
+procedure TSkipTests.ElementAt;
+var
+  source, remaining: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5, 6]);
+  remaining := source.Skip(2);
+  CheckEquals(3, remaining.ElementAt(0));
+  CheckEquals(4, remaining.ElementAt(1));
+  CheckEquals(6, remaining.ElementAt(3));
+  CheckException(EArgumentOutOfRangeException, procedure begin remaining.ElementAt(-1) end);
+  CheckException(EArgumentOutOfRangeException, procedure begin remaining.ElementAt(4) end);
+end;
+
+procedure TSkipTests.ElementAtNotIList;
+var
+  source, remaining: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5, 6]);
+  remaining := source.Skip(2);
+  CheckEquals(3, remaining.ElementAt(0));
+  CheckEquals(4, remaining.ElementAt(1));
+  CheckEquals(6, remaining.ElementAt(3));
+  CheckException(EArgumentOutOfRangeException, procedure begin remaining.ElementAt(-1) end);
+  CheckException(EArgumentOutOfRangeException, procedure begin remaining.ElementAt(4) end);
+end;
+
+procedure TSkipTests.ElementAtOrDefault;
+var
+  source, remaining: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5, 6]);
+  remaining := source.Skip(2);
+  CheckEquals(3, remaining.ElementAtOrDefault(0));
+  CheckEquals(4, remaining.ElementAtOrDefault(1));
+  CheckEquals(6, remaining.ElementAtOrDefault(3));
+  CheckEquals(0, remaining.ElementAtOrDefault(-1));
+  CheckEquals(0, remaining.ElementAtOrDefault(4));
+end;
+
+procedure TSkipTests.ElementAtOrDefaultNotIList;
+var
+  source, remaining: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5, 6]);
+  remaining := source.Skip(2);
+  CheckEquals(3, remaining.ElementAtOrDefault(0));
+  CheckEquals(4, remaining.ElementAtOrDefault(1));
+  CheckEquals(6, remaining.ElementAtOrDefault(3));
+  CheckEquals(0, remaining.ElementAtOrDefault(-1));
+  CheckEquals(0, remaining.ElementAtOrDefault(4));
+end;
+
+procedure TSkipTests.First;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals(1, source.Skip(0).First);
+  CheckEquals(3, source.Skip(2).First);
+  CheckEquals(5, source.Skip(4).First);
+  CheckException(EInvalidOperationException, procedure begin source.Skip(5).First end);
+end;
+
+procedure TSkipTests.FirstNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals(1, source.Skip(0).First);
+  CheckEquals(3, source.Skip(2).First);
+  CheckEquals(5, source.Skip(4).First);
+  CheckException(EInvalidOperationException, procedure begin source.Skip(5).First end);
+end;
+
+procedure TSkipTests.FirstOrDefault;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals(1, source.Skip(0).FirstOrDefault);
+  CheckEquals(3, source.Skip(2).FirstOrDefault);
+  CheckEquals(5, source.Skip(4).FirstOrDefault);
+  CheckEquals(0, source.Skip(5).FirstOrDefault);
+end;
+
+procedure TSkipTests.FirstOrDefaultNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals(1, source.Skip(0).FirstOrDefault);
+  CheckEquals(3, source.Skip(2).FirstOrDefault);
+  CheckEquals(5, source.Skip(4).FirstOrDefault);
+  CheckEquals(0, source.Skip(5).FirstOrDefault);
+end;
+
+procedure TSkipTests.Last;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals(5, source.Skip(0).Last);
+  CheckEquals(5, source.Skip(2).Last);
+  CheckEquals(5, source.Skip(4).Last);
+  CheckException(EInvalidOperationException, procedure begin source.Skip(5).Last end);
+end;
+
+procedure TSkipTests.LastNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals(5, source.Skip(0).Last);
+  CheckEquals(5, source.Skip(2).Last);
+  CheckEquals(5, source.Skip(4).Last);
+  CheckException(EInvalidOperationException, procedure begin source.Skip(5).Last end);
+end;
+
+procedure TSkipTests.LastOrDefault;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals(5, source.Skip(0).LastOrDefault);
+  CheckEquals(5, source.Skip(2).LastOrDefault);
+  CheckEquals(5, source.Skip(4).LastOrDefault);
+  CheckEquals(0, source.Skip(5).LastOrDefault);
+end;
+
+procedure TSkipTests.LastOrDefaultNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals(5, source.Skip(0).LastOrDefault);
+  CheckEquals(5, source.Skip(2).LastOrDefault);
+  CheckEquals(5, source.Skip(4).LastOrDefault);
+  CheckEquals(0, source.Skip(5).LastOrDefault);
+end;
+
+procedure TSkipTests.ToArray;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals([1, 2, 3, 4, 5], source.Skip(0).ToArray);
+  CheckEquals([2, 3, 4, 5], source.Skip(1).ToArray);
+  CheckEquals([5], source.Skip(4).ToArray);
+  CheckEmpty(source.Skip(5).ToArray);
+  CheckEmpty(source.Skip(40).ToArray);
+end;
+
+procedure TSkipTests.ToArrayNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals([1, 2, 3, 4, 5], source.Skip(0).ToArray);
+  CheckEquals([2, 3, 4, 5], source.Skip(1).ToArray);
+  CheckEquals([5], source.Skip(4).ToArray);
+  CheckEmpty(source.Skip(5).ToArray);
+  CheckEmpty(source.Skip(40).ToArray);
+end;
+
+procedure TSkipTests.RepeatEnumerating;
+var
+  source, remaining: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+  remaining := source.Skip(1);
+  CheckEquals(remaining, remaining);
+end;
+
+procedure TSkipTests.RepeatEnumeratingNotIList;
+var
+  source, remaining: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+  remaining := source.Skip(1);
+  CheckEquals(remaining, remaining);
+end;
+
+procedure TSkipTests.LazySkipMoreThan32Bits;
+var
+  range, skipped: IEnumerable<Integer>;
+begin
+  range := NumberRangeGuaranteedNotCollectionType(1, 100);
+  skipped := range.Skip(50).Skip(MaxInt); // Could cause an integer overflow
+  CheckEmpty(skipped);
+  CheckEquals(0, skipped.Count);
+  CheckEmpty(skipped.ToArray);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTakeTests'}
+
+procedure TTakeTests.SameResultsRepeatCallsIntQuery;
+var
+  q: IEnumerable<Integer>;
+begin
+  q := TEnumerable.From<Integer>([9999, 0, 888, -1, 66, -777, 1, 2, -12345])
+    .Where(function(const x: Integer): Boolean begin Result := x > Low(Integer) end);
+
+  CheckEquals(q.Take(9), q.Take(9));
+end;
+
+procedure TTakeTests.SameResultsRepeatCallsIntQueryIList;
+var
+  q: IEnumerable<Integer>;
+begin
+  q := TCollections.CreateList<Integer>(TEnumerable.From<Integer>([9999, 0, 888, -1, 66, -777, 1, 2, -12345])
+    .Where(function(const x: Integer): Boolean begin Result := x > Low(Integer) end));
+
+  CheckEquals(q.Take(9), q.Take(9));
+end;
+
+procedure TTakeTests.SourceEmptyCountPositive;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([]);
+
+  CheckEmpty(source.Take(5));
+end;
+
+procedure TTakeTests.SourceEmptyCountPositiveNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := NumberRangeGuaranteedNotCollectionType(0, 0);
+
+  CheckEmpty(source.Take(5));
+end;
+
+procedure TTakeTests.SourceNonEmptyCountNegative;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([2, 5, 9, 1]);
+
+  CheckEmpty(source.Take(-5));
+end;
+
+procedure TTakeTests.SourceNonEmptyCountNegativeNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([2, 5, 9, 1]);
+
+  CheckEmpty(source.Take(-5));
+end;
+
+procedure TTakeTests.SourceNonEmptyCountZero;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([2, 5, 9, 1]);
+
+  CheckEmpty(source.Take(0));
+end;
+
+procedure TTakeTests.SourceNonEmptyCountZeroNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([2, 5, 9, 1]);
+
+  CheckEmpty(source.Take(0));
+end;
+
+procedure TTakeTests.SourceNonEmptyCountOne;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([2, 5, 9, 1]);
+  expected := TEnumerable.From<Integer>([2]);
+
+  CheckEquals(expected, source.Take(1));
+end;
+
+procedure TTakeTests.SourceNonEmptyCountOneNotIList;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([2, 5, 9, 1]);
+  expected := TEnumerable.From<Integer>([2]);
+
+  CheckEquals(expected, source.Take(1));
+end;
+
+procedure TTakeTests.SourceNonEmptyTakeAllExactly;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([2, 5, 9, 1]);
+
+  CheckEquals(source, source.Take(source.Count));
+end;
+
+procedure TTakeTests.SourceNonEmptyTakeAllExactlyNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([2, 5, 9, 1]);
+
+  CheckEquals(source, source.Take(source.Count));
+end;
+
+procedure TTakeTests.SourceNonEmptyTakeAllButOne;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([2, 5, 9, 1]);
+  expected := TEnumerable.From<Integer>([2, 5, 9]);
+
+  CheckEquals(expected, source.Take(3));
+end;
+
+procedure TTakeTests.RunOnce;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([2, 5, 9, 1]);
+  expected := TEnumerable.From<Integer>([2, 5, 9]);
+
+  CheckEquals(expected, GuaranteedRunOnce<Integer>(source).Take(3));
+end;
+
+procedure TTakeTests.SourceNonEmptyTakeAllButOneNotIList;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([2, 5, 9, 1]);
+  expected := TEnumerable.From<Integer>([2, 5, 9]);
+
+  CheckEquals(expected, source.Take(3));
+end;
+
+procedure TTakeTests.SourceNonEmptyTakeExcessive;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([2, 5, 9, 1]);
+
+  CheckEquals(source, source.Take(source.Count + 1));
+end;
+
+procedure TTakeTests.SourceNonEmptyTakeExcessiveNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([2, 5, 9, 1]);
+
+  CheckEquals(source, source.Take(source.Count + 1));
+end;
+
+procedure TTakeTests.ForcedToEnumeratorDoesntEnumerate;
+var
+  iterator: IEnumerable<Integer>;
+  enumerator: IEnumerator<Integer>;
+begin
+  iterator := NumberRangeGuaranteedNotCollectionType(0, 3).Take(2);
+  CheckFalse(Supports(iterator, IEnumerator<Integer>, enumerator) and enumerator.MoveNext);
+end;
+
+procedure TTakeTests.ForcedToEnumeratorDoesntEnumerateIList;
+var
+  iterator: IEnumerable<Integer>;
+  enumerator: IEnumerator<Integer>;
+begin
+  iterator := TCollections.CreateList<Integer>(NumberRangeGuaranteedNotCollectionType(0, 3)).Take(2);
+  CheckFalse(Supports(iterator, IEnumerator<Integer>, enumerator) and enumerator.MoveNext);
+end;
+
+procedure TTakeTests.Count;
+begin
+  CheckEquals(2, NumberRangeGuaranteedNotCollectionType(0, 3).Take(2).Count);
+  CheckEquals(2, TEnumerable.From([1, 2, 3]).Take(2).Count);
+  CheckEquals(0, NumberRangeGuaranteedNotCollectionType(0, 3).Take(0).Count);
+end;
+
+procedure TTakeTests.FollowWithTake;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([5, 6, 7, 8]);
+  expected := TEnumerable.From<Integer>([5, 6]);
+
+  CheckEquals(expected, source.Take(5).Take(3).Take(2).Take(40));
+end;
+
+procedure TTakeTests.FollowWithTakeNotIList;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := NumberRangeGuaranteedNotCollectionType(5, 4);
+  expected := TEnumerable.From<Integer>([5, 6]);
+
+  CheckEquals(expected, source.Take(5).Take(3).Take(2));
+end;
+
+procedure TTakeTests.FollowWithSkip;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5, 6]);
+  expected := TEnumerable.From<Integer>([3, 4, 5]);
+
+  CheckEquals(expected, source.Take(5).Skip(2).Skip(-4));
+end;
+
+procedure TTakeTests.FollowWithSkipNotIList;
+var
+  source, expected: IEnumerable<Integer>;
+begin
+  source := NumberRangeGuaranteedNotCollectionType(1, 6);
+  expected := TEnumerable.From<Integer>([3, 4, 5]);
+
+  CheckEquals(expected, source.Take(5).Skip(2).Skip(-4));
+end;
+
+procedure TTakeTests.ElementAt;
+var
+  source, taken: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5, 6]);
+  taken := source.Take(3);
+
+  CheckEquals(1, taken.ElementAt(0));
+  CheckEquals(3, taken.ElementAt(2));
+  CheckException(EArgumentOutOfRangeException, procedure begin taken.ElementAt(-1) end);
+  CheckException(EArgumentOutOfRangeException, procedure begin taken.ElementAt(3) end);
+end;
+
+procedure TTakeTests.ElementAtNotIList;
+var
+  source, taken: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5, 6]);
+  taken := source.Take(3);
+
+  CheckEquals(1, taken.ElementAt(0));
+  CheckEquals(3, taken.ElementAt(2));
+  CheckException(EArgumentOutOfRangeException, procedure begin taken.ElementAt(-1) end);
+  CheckException(EArgumentOutOfRangeException, procedure begin taken.ElementAt(3) end);
+end;
+
+procedure TTakeTests.ElementAtOrDefault;
+var
+  source, taken: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5, 6]);
+  taken := source.Take(3);
+
+  CheckEquals(1, taken.ElementAtOrDefault(0));
+  CheckEquals(3, taken.ElementAtOrDefault(2));
+  CheckEquals(0, taken.ElementAtOrDefault(-1));
+  CheckEquals(0, taken.ElementAtOrDefault(3));
+end;
+
+procedure TTakeTests.ElementAtOrDefaultNotIList;
+var
+  source, taken: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5, 6]);
+  taken := source.Take(3);
+
+  CheckEquals(1, taken.ElementAtOrDefault(0));
+  CheckEquals(3, taken.ElementAtOrDefault(2));
+  CheckEquals(0, taken.ElementAtOrDefault(-1));
+  CheckEquals(0, taken.ElementAtOrDefault(3));
+end;
+
+procedure TTakeTests.First;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+
+  CheckEquals(1, source.Take(1).First);
+  CheckEquals(1, source.Take(4).First);
+  CheckEquals(1, source.Take(40).First);
+  CheckException(EInvalidOperationException, procedure begin source.Take(0).First end);
+  CheckException(EInvalidOperationException, procedure begin source.Skip(5).Take(10).First end);
+end;
+
+procedure TTakeTests.FirstNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+
+  CheckEquals(1, source.Take(1).First);
+  CheckEquals(1, source.Take(4).First);
+  CheckEquals(1, source.Take(40).First);
+  CheckException(EInvalidOperationException, procedure begin source.Take(0).First end);
+  CheckException(EInvalidOperationException, procedure begin source.Skip(5).Take(10).First end);
+end;
+
+procedure TTakeTests.FirstOrDefault;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+
+  CheckEquals(1, source.Take(1).FirstOrDefault);
+  CheckEquals(1, source.Take(4).FirstOrDefault);
+  CheckEquals(1, source.Take(40).FirstOrDefault);
+  CheckEquals(0, source.Take(0).FirstOrDefault);
+  CheckEquals(0, source.Skip(5).Take(10).FirstOrDefault);
+end;
+
+procedure TTakeTests.FirstOrDefaultNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+
+  CheckEquals(1, source.Take(1).FirstOrDefault);
+  CheckEquals(1, source.Take(4).FirstOrDefault);
+  CheckEquals(1, source.Take(40).FirstOrDefault);
+  CheckEquals(0, source.Take(0).FirstOrDefault);
+  CheckEquals(0, source.Skip(5).Take(10).FirstOrDefault);
+end;
+
+procedure TTakeTests.Last;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+
+  CheckEquals(1, source.Take(1).Last);
+  CheckEquals(5, source.Take(5).Last);
+  CheckEquals(5, source.Take(40).Last);
+  CheckException(EInvalidOperationException, procedure begin source.Take(0).Last end);
+  CheckException(EInvalidOperationException, procedure begin TEnumerable.Empty<Integer>.Take(40).Last end);
+end;
+
+procedure TTakeTests.LastNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+
+  CheckEquals(1, source.Take(1).Last);
+  CheckEquals(5, source.Take(5).Last);
+  CheckEquals(5, source.Take(40).Last);
+  CheckException(EInvalidOperationException, procedure begin source.Take(0).Last end);
+  CheckException(EInvalidOperationException, procedure begin ForceNotCollection<Integer>([]).Take(40).Last end);
+end;
+
+procedure TTakeTests.LastOrDefault;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+
+  CheckEquals(1, source.Take(1).LastOrDefault);
+  CheckEquals(5, source.Take(5).LastOrDefault);
+  CheckEquals(5, source.Take(40).LastOrDefault);
+  CheckEquals(0, source.Take(0).LastOrDefault);
+  CheckEquals(0, TEnumerable.Empty<Integer>.Take(40).LastOrDefault);
+end;
+
+procedure TTakeTests.LastOrDefaultNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+
+  CheckEquals(1, source.Take(1).LastOrDefault);
+  CheckEquals(5, source.Take(5).LastOrDefault);
+  CheckEquals(5, source.Take(40).LastOrDefault);
+  CheckEquals(0, source.Take(0).LastOrDefault);
+  CheckEquals(0, TEnumerable.Empty<Integer>.Take(40).LastOrDefault);
+end;
+
+procedure TTakeTests.ToArray;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals([1, 2, 3, 4, 5], source.Take(5).ToArray);
+  CheckEquals([1, 2, 3, 4, 5], source.Take(6).ToArray);
+  CheckEquals([1, 2, 3, 4, 5], source.Take(40).ToArray);
+  CheckEquals([1, 2, 3, 4], source.Take(4).ToArray);
+  CheckEquals([1], source.Take(1).ToArray);
+  CheckEmpty(source.Take(0).ToArray);
+  CheckEmpty(source.Take(-10).ToArray);
+end;
+
+procedure TTakeTests.ToArrayNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+  CheckEquals([1, 2, 3, 4, 5], source.Take(5).ToArray);
+  CheckEquals([1, 2, 3, 4, 5], source.Take(6).ToArray);
+  CheckEquals([1, 2, 3, 4, 5], source.Take(40).ToArray);
+  CheckEquals([1, 2, 3, 4], source.Take(4).ToArray);
+  CheckEquals([1], source.Take(1).ToArray);
+  CheckEmpty(source.Take(0).ToArray);
+  CheckEmpty(source.Take(-10).ToArray);
+end;
+
+procedure TTakeTests.TakeCanOnlyBeOneList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([2, 4, 6, 8, 10]);
+  CheckEquals([2], source.Take(1));
+  CheckEquals([4], source.Skip(1).Take(1));
+  CheckEquals([6], source.Take(3).Skip(2));
+  CheckEquals([2], source.Take(3).Take(1));
+end;
+
+procedure TTakeTests.TakeCanOnlyBeOneNotIList;
+var
+  source: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([2, 4, 6, 8, 10]);
+  CheckEquals([2], source.Take(1));
+  CheckEquals([4], source.Skip(1).Take(1));
+  CheckEquals([6], source.Take(3).Skip(2));
+  CheckEquals([2], source.Take(3).Take(1));
+end;
+
+procedure TTakeTests.RepeatEnumerating;
+var
+  source, taken: IEnumerable<Integer>;
+begin
+  source := TEnumerable.From<Integer>([1, 2, 3, 4, 5]);
+  taken := source.Take(3);
+  CheckEquals(taken, taken);
+end;
+
+procedure TTakeTests.RepeatEnumeratingNotIList;
+var
+  source, taken: IEnumerable<Integer>;
+begin
+  source := ForceNotCollection<Integer>([1, 2, 3, 4, 5]);
+  taken := source.Take(3);
+  CheckEquals(taken, taken);
+end;
+
+procedure TTakeTests.LazySkipAllTakenForLargeNumbers(largeNumber: Integer);
+begin
+  CheckEmpty(FastInfiniteEnumerator<Integer>.Take(largeNumber).Skip(largeNumber));
+end;
+
+procedure TTakeTests.LazyOverflowRegression;
+var
+  range, skipped, taken: IEnumerable<Integer>;
+begin
+  range := NumberRangeGuaranteedNotCollectionType(1, 100);
+  skipped := range.Skip(42);
+  taken := skipped.Take(MaxInt);
+  CheckEquals(TEnumerable.Range(43, 100 - 42), taken);
+  CheckEquals(100 - 42, taken.Count);
+end;
+
+procedure TTakeTests.CountOfLazySkipTakeChain(skip, take, expected: Integer);
+var
+  partition: IEnumerable<Integer>;
+begin
+  partition := NumberRangeGuaranteedNotCollectionType(1, 100).Skip(skip).Take(take);
+  CheckEquals(expected, partition.Count);
+  CheckEquals(expected, TEnumerable.Select<Integer,Integer>(partition, function(const i: Integer): Integer begin Result := i end).Count);
+  CheckEquals(expected, Length(TEnumerable.Select<Integer,Integer>(partition, function(const i: Integer): Integer begin Result := i end).ToArray));
+end;
+
+procedure TTakeTests.FirstAndLastOfLazySkipTakeChain(
+  const source: TArray<Integer>; skip, take, first, last: Integer);
+var
+  partition: IEnumerable<Integer>;
+begin
+  partition := ForceNotCollection<Integer>(source).Skip(skip).Take(take);
+
+  CheckEquals(first, partition.FirstOrDefault);
+  CheckEquals(first, partition.ElementAtOrDefault(0));
+  CheckEquals(last, partition.LastOrDefault);
+  CheckEquals(last, partition.ElementAtOrDefault(partition.Count - 1));
+end;
+
+procedure TTakeTests.ElementAtOfLazySkipTakeChain(const source: TArray<Integer>;
+  skip, take: Integer; indices, expectedValues: TArray<Integer>);
+var
+  partition: IEnumerable<Integer>;
+  i: Integer;
+begin
+  partition := ForceNotCollection<Integer>(source).Skip(skip).Take(take);
+
+  CheckEquals(Length(expectedValues), Length(indices));
+  for i := 0 to High(indices) do
+    CheckEquals(expectedValues[i], partition.ElementAtOrDefault(indices[i]));
 end;
 
 {$ENDREGION}

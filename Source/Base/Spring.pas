@@ -1486,6 +1486,8 @@ type
     items,
     keySelector,
     match,
+    max,
+    min,
     other,
     outer,
     outerKeySelector,
@@ -1519,12 +1521,12 @@ type
     class function GetArgumentOutOfRangeException(resource: ExceptionResource): EArgumentException; overload; static;
   public
     class procedure ArgumentNil(argument: ExceptionArgument); static;
-    class procedure ArgumentOutOfRange(argument: ExceptionArgument); overload; static;
-    class procedure ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource); overload; static;
-    class procedure ArgumentOutOfRange(resource: ExceptionResource); overload; static;
+    class function ArgumentOutOfRange(argument: ExceptionArgument): Boolean; overload; static;
+    class function ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource): Boolean; overload; static;
+    class function ArgumentOutOfRange(resource: ExceptionResource): Boolean; overload; static;
 
-    class procedure ArgumentOutOfRange_Count; static;
-    class procedure ArgumentOutOfRange_Index; static;
+    class function ArgumentOutOfRange_Count: Boolean; static;
+    class function ArgumentOutOfRange_Index: Boolean; static;
 
     class procedure DuplicateKey; static;
     class procedure KeyNotFound; static;
@@ -8186,28 +8188,28 @@ begin
   raise EArgumentNilException.Create(GetArgumentName(argument)) at ReturnAddress;
 end;
 
-class procedure RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument);
+class function RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument): Boolean;
 begin
   raise EArgumentOutOfRangeException.Create(GetArgumentName(argument)) at ReturnAddress;
 end;
 
-class procedure RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource);
+class function RaiseHelper.ArgumentOutOfRange(argument: ExceptionArgument; resource: ExceptionResource): Boolean;
 begin
   raise GetArgumentOutOfRangeException(argument, resource) at ReturnAddress;
 end;
 
-class procedure RaiseHelper.ArgumentOutOfRange(resource: ExceptionResource);
+class function RaiseHelper.ArgumentOutOfRange(resource: ExceptionResource): Boolean;
 begin
   raise GetArgumentOutOfRangeException(resource) at ReturnAddress;
 end;
 
-class procedure RaiseHelper.ArgumentOutOfRange_Count;
+class function RaiseHelper.ArgumentOutOfRange_Count: Boolean;
 begin
   raise GetArgumentOutOfRangeException(ExceptionArgument.count,
     ExceptionResource.ArgumentOutOfRange_Count) at ReturnAddress;
 end;
 
-class procedure RaiseHelper.ArgumentOutOfRange_Index;
+class function RaiseHelper.ArgumentOutOfRange_Index: Boolean;
 begin
   raise GetArgumentOutOfRangeException(ExceptionArgument.index,
     ExceptionResource.ArgumentOutOfRange_Index) at ReturnAddress;
@@ -8291,6 +8293,8 @@ const
     'items',
     'keySelector',
     'match',
+    'max',
+    'min',
     'other',
     'outer',
     'outerKeySelector',

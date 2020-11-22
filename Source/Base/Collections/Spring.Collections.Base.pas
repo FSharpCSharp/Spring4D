@@ -88,12 +88,21 @@ type
   TEnumerableBase = class abstract(TRefCountedObject)
   protected
     this: Pointer;
+  {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
+  {$ENDREGION}
+    function IsCountInRange(min, max, limit: Integer): Boolean;
   public
     class function NewInstance: TObject; override;
 
     function Any: Boolean; overload;
+
+    function AtLeast(count: Integer): Boolean;
+    function AtMost(count: Integer): Boolean;
+    function Between(min, max: Integer): Boolean;
+    function Exactly(count: Integer): Boolean;
   end;
 
   TEnumerableBase<T> = class abstract(TEnumerableBase)
@@ -186,7 +195,8 @@ type
     function TakeWhile(const predicate: Predicate<T>): IEnumerable<T>; overload;
     function TakeWhile(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
 
-    function Where(const predicate: Predicate<T>): IEnumerable<T>;
+    function Where(const predicate: Predicate<T>): IEnumerable<T>; overload;
+    function Where(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
 
     function ToArray: TArray<T>;
   end;
@@ -194,7 +204,7 @@ type
   TEnumerableWrapper = class(TRefCountedObject, IInterface, IEnumerable)
   private type
     TGetCurrentFunc = function(const enumerator: IEnumerator; elementType: PTypeInfo): Spring.TValue;
-    TEnumerator = class sealed(TRefCountedObject, IEnumerator)
+    TEnumerator = class(TRefCountedObject, IEnumerator)
     private
       fSource: IEnumerator;
       fElementType: PTypeInfo;
@@ -210,6 +220,7 @@ type
     function GetCount: Integer;
     function GetElementType: PTypeInfo;
     function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
   protected
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
   public
@@ -232,116 +243,139 @@ type
     procedure Clear;
   end;
 
+  TEnumeratorState = (Initial, Started, Finished);
   TIteratorKind = (
+    Partition, &Array,
     Concat, Ordered, Reversed, Shuffled,
-    Skip, SkipWhile, SkipWhileIndex,
-    Take, TakeWhile, TakeWhileIndex,
-    Where);
+    SkipWhile, SkipWhileIndex,
+    TakeWhile, TakeWhileIndex,
+    Where, WhereIndex, Select);
   TMoveNextFunc = function(self: Pointer): Boolean;
   TStartFunc = function(self: Pointer): Boolean;
-  PIteratorRec = ^TIteratorRec;
-  TIteratorRec = record
-    MoveNext: TMoveNextFunc;
-    Source: IEnumerable;
-    Enumerator: IEnumerator;
-    TypeInfo: PTypeInfo;
-    Start: TStartFunc;
+  TFinalizeProc = procedure(self: Pointer);
+  PIteratorBlock = ^TIteratorBlock;
+  TIteratorBlock = record
+    // field layout has to match with TIteratorBlock<T> record below
+    Vtable: Pointer;
+    RefCount: Integer;
 
+    Parent: TRefCountedObject;
+
+    DoMoveNext: TMoveNextFunc;
+    DoStart: TStartFunc;
+    DoFinalize: TFinalizeProc;
+    Enumerator: IEnumerator;
+
+    Source: IEnumerable;
     Predicate: IInterface;
     Items: Pointer;
-    Count: Integer;
+    Index, Count: Integer;
     Kind: TIteratorKind;
+    State: TEnumeratorState;
 
-    function Clone: PIteratorRec;
-    procedure Finalize;
+    function MoveNextEmpty: Boolean;
 
-    function TryGetCount(out count: Integer): Boolean;
-
+    function EmptyStart: Boolean;
     function GetEnumerator: Boolean;
     function GetEnumeratorAndSkip: Boolean;
     procedure GetSecondEnumerator;
-  end;
 
-  TIteratorRec<T> = record
-    MoveNext: TMoveNextFunc;
-    Source: IEnumerable<T>;
-    Enumerator: IEnumerator<T>;
-    TypeInfo: PTypeInfo;
-    Start: TStartFunc;
-
-    Predicate: IInterface;
-    Items: TArray<T>;
-    Count: Integer;
-    Kind: TIteratorKind;
-    Current: T;
-
-    function ToArray: Boolean;
-
-    function Concat: Boolean;
-    function Ordered: Boolean;
-    function Reversed: Boolean;
-    function Skip: Boolean;
-    function SkipWhile: Boolean;
-    function SkipWhileIndex: Boolean;
-    function Take: Boolean;
-    function TakeWhile: Boolean;
-    function TakeWhileIndex: Boolean;
-    function Where: Boolean;
-
-    class function GetCurrent(const enumerator: IEnumerator; elementType: PTypeInfo): Spring.TValue; static;
-    class function Add(const collection: IInterface; const value: Spring.TValue): Boolean; static;
-  end;
-
-  PIterator = ^TIterator;
-  TIterator = record
-  private type
-    TEnumeratorState = (Initial, Started, Finished);
-  private
-    Vtable: Pointer;
-    RefCount: Integer;
-    Parent: TRefCountedObject;
-    Iterator: PIteratorRec;
-    State: TEnumeratorState;
-    procedure Start;
-  public
-    class function Create(enumerator: PPointer; vtable: PEnumeratorVtable;
-      parent: TRefCountedObject; iterator: PIteratorRec; getCurrent: Pointer): Pointer; static;
     function _Release: Integer; stdcall;
     function MoveNext: Boolean;
   end;
 
+  PIteratorBase = ^TIteratorBase;
+  TIteratorBase = record
+    // field layout has to match with TIteratorBase<T> class
+    fSource: IEnumerable;
+    fPredicate: IInterface;
+    fItems: Pointer;
+    fIndex, fCount: Integer;
+    fKind: TIteratorKind;
+
+    function GetCountFast: Integer;
+  end;
+
   TIteratorBase<T> = class abstract(TEnumerableBase<T>)
-  private type
-    TIteratorRecT = TIteratorRec<T>;
-    PIteratorRecT = ^TIteratorRecT;
-
-    TEnumerator = record
-      Vtable: Pointer;
-      RefCount: Integer;
-
-      fSource: TRefCountedObject;
-      fIterator: PIteratorRecT;
-      fState: TIterator.TEnumeratorState;
-      function GetCurrent: T;
-
-      class var Enumerator_Vtable: TEnumeratorVtable;
-    end;
+  private
+    function HasLimit: Boolean; inline;
   protected
-    fIterator: TIteratorRec<T>;
+    // field layout has to match with TIteratorBase record
+    fSource: IEnumerable<T>;
+    fPredicate: IInterface;
+    fItems: TArray<T>;
+    fIndex, fCount: Integer;
+    fKind: TIteratorKind;
+
     function GetElementType: PTypeInfo; override;
   public
-    constructor Create(const source: IEnumerable<T>;
-      count: Integer; predicate: Pointer; kind: TIteratorKind); overload;
     function GetEnumerator: IEnumerator<T>;
+    function Skip(count: Integer): IEnumerable<T>;
+    function Take(count: Integer): IEnumerable<T>;
     function ToArray: TArray<T>;
+    function TryGetElementAt(var value: T; index: Integer): Boolean;
+    function TryGetFirst(var value: T): Boolean; overload;
+    function TryGetLast(var value: T): Boolean; overload;
+  end;
+
+  TIteratorBlock<T> = record
+    // field layout has to match with TIteratorBlock record above
+    Vtable: Pointer;
+    RefCount: Integer;
+
+    Parent: TRefCountedObject;
+
+    DoMoveNext: TMoveNextFunc;
+    DoStart: TStartFunc;
+    DoFinalize: TFinalizeProc;
+    Enumerator: IEnumerator<T>;
+
+    Source: IEnumerable<T>;
+    Predicate: IInterface;
+    Items: TArray<T>;
+    Index, Count: Integer;
+    Kind: TIteratorKind;
+    State: TEnumeratorState;
+    Current: T;
+
+    class var Enumerator_Vtable: array[0..4] of Pointer;
+    procedure InitMethods;
+    procedure InitVtable;
+
+    class function Create(const iterator: TIteratorBase<T>): IEnumerator<T>; static;
+    procedure Finalize;
+
+    function GetCurrent: T;
+
+    function MoveNextConcat: Boolean;
+    function MoveNextOrdered: Boolean;
+    function MoveNextReversed: Boolean;
+    function MoveNextSkipWhile: Boolean;
+    function MoveNextSkipWhileIndex: Boolean;
+    function MoveNextTakeWhile: Boolean;
+    function MoveNextTakeWhileIndex: Boolean;
+    function MoveNextWhere: Boolean;
+    function MoveNextWhereIndex: Boolean;
+
+    function MoveNextEnumerator: Boolean;
+    function MoveNextEnumeratorCounted: Boolean;
+    function MoveNextIndexed: Boolean;
+
+    function ToArray: Boolean;
+
+    class function DoGetCurrent(const enumerator: IEnumerator; elementType: PTypeInfo): Spring.TValue; static;
+    class function DoAdd(const collection: IInterface; const value: Spring.TValue): Boolean; static;
   end;
 
   TEnumerableIterator<T> = class sealed(TIteratorBase<T>, IInterface, IEnumerable<T>)
   private
-    function GetCount: Integer;
+    function GetCountFast: Integer;
+  public
+    class function Create(const source: IEnumerable<T>; index, count: Integer;
+      predicate: Pointer; kind: TIteratorKind): IEnumerable<T>; overload; static;
   end;
 
-  TArrayIterator<T> = class(TIteratorBase<T>,
+  TArrayIterator<T> = class(TIteratorBase<T>, IInterface,
     IEnumerable<T>, IReadOnlyCollection<T>, IReadOnlyList<T>)
   private
   {$REGION 'Property Accessors'}
@@ -350,12 +384,8 @@ type
     function GetItem(index: Integer): T;
   {$ENDREGION}
   public
-    constructor Create(const values: TArray<T>); overload;
-    constructor Create(const values: array of T); overload;
-
-  {$REGION 'Implements IEnumerable<T>'}
-    function ToArray: TArray<T>;
-  {$ENDREGION}
+    class function Create(const values: TArray<T>): IReadOnlyList<T>; overload; static;
+    class function Create(const values: array of T): IReadOnlyList<T>; overload; static;
 
   {$REGION 'Implements IReadOnlyCollection<T>'}
     procedure CopyTo(var values: TArray<T>; index: Integer);
@@ -368,31 +398,22 @@ type
   {$ENDREGION}
   end;
 
-  TObjectArrayIterator = class(TArrayIterator<TObject>)
+  TFoldedArrayIterator<T> = class(TArrayIterator<T>)
   private
     fElementType: PTypeInfo;
   protected
     function GetElementType: PTypeInfo; override;
   public
-    constructor Create(const source: TArray<TObject>; elementType: PTypeInfo);
-    constructor CreateFromArray(source: PPointer; count: Integer; elementType: PTypeInfo);
+    class function Create(const values: TArray<T>; elementType: PTypeInfo): IReadOnlyList<T>; overload; static;
+    class function Create(values: PPointer; count: Integer; elementType: PTypeInfo): IReadOnlyList<T>; overload; static;
   end;
 
-  TInterfaceArrayIterator = class(TArrayIterator<IInterface>)
-  private
-    fElementType: PTypeInfo;
-  protected
-    function GetElementType: PTypeInfo; override;
-  public
-    constructor Create(const source: TArray<IInterface>; elementType: PTypeInfo);
-    constructor CreateFromArray(source: PPointer; count: Integer; elementType: PTypeInfo);
-  end;
-
-  TIterator<T> = class abstract(TEnumerableBase<T>, IEnumerator<T>)
+  TIterator<T> = class abstract(TEnumerableBase<T>, IInterface, IEnumerator<T>)
   private
     fCurrent: T;
     fThreadId: TThreadID;
     fState: Integer;
+    fTryMoveNext: function (self: TObject; var current: T): Boolean;
     const
       STATE_INITIAL    = -2; // initial state, before GetEnumerator
       STATE_FINISHED   = -1; // end of enumerator
@@ -640,14 +661,16 @@ const
   EmptyBucket        = -1; // must be negative, note choice of BucketSentinelFlag
   UsedBucket         = -2; // likewise
 
+procedure AssignComparer(var comparer; const source: IInterface);
 procedure EnsureEventInstance(var event: TEventBase; var result;
   eventClass: TEventBaseClass; eventChanged: TNotifyEvent);
+function SkipAndCount(const enumerator: IEnumerator; limit: Integer): Integer;
+function SupportsIndexedAccess(const source: IInterface): Boolean;
 procedure UpdateNotify(instance: TObject; baseClass: TClass; const event: TEventBase; var code);
 
 implementation
 
 uses
-  Math,
   Rtti,
 {$IFDEF MSWINDOWS}
   Windows,
@@ -657,6 +680,11 @@ uses
 {$ENDIF}
   Spring.Collections.Lists,
   Spring.ResourceStrings;
+
+procedure AssignComparer(var comparer; const source: IInterface);
+begin
+  IComparer<Integer>(comparer) := IEnumerable<Integer>(source).Comparer;
+end;
 
 type
   TEventImpl = class(TEventBase, IEvent);
@@ -688,6 +716,27 @@ begin
     IntfAssign(IEvent(TEventImpl(event)), IInterface(result))
   else
     CreateEvent(event, result, eventClass, eventChanged);
+end;
+
+function SkipAndCount(const enumerator: IEnumerator; limit: Integer): Integer;
+begin
+  Result := 0;
+  while (Result < limit) and enumerator.MoveNext do
+    Inc(Result);
+end;
+
+function SupportsIndexedAccess(const source: IInterface): Boolean;
+var
+  obj: TObject;
+  entry: PInterfaceEntry;
+begin
+  obj := IEnumerable(source).AsObject;
+  Result := obj.GetInterfaceEntry(IReadOnlyListOfTGuid) <> nil;
+  if not Result then
+  begin
+    entry := obj.GetInterfaceEntry(IPartitionOfTGuid);
+    Result := Assigned(entry) and (IPartition<Integer>(PByte(obj) + entry.IOffset).GetCountFast >= 0);
+  end;
 end;
 
 procedure UpdateNotify(instance: TObject; baseClass: TClass; const event: TEventBase; var code);
@@ -833,14 +882,57 @@ begin
   Result := not IEnumerable(this).IsEmpty;
 end;
 
-function TEnumerableBase.GetCount: Integer;
-var
-  enumerator: IEnumerator;
+function TEnumerableBase.AtLeast(count: Integer): Boolean;
 begin
-  Result := 0;
-  enumerator := IEnumerable(this).GetEnumerator;
-  while enumerator.MoveNext do
-    Inc(Result);
+  if count >= 0 then
+    Result := IsCountInRange(count, MaxInt, count)
+  else
+    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+end;
+
+function TEnumerableBase.AtMost(count: Integer): Boolean;
+begin
+  if count >= 0 then
+    Result := IsCountInRange(0, count, count + 1)
+  else
+    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+end;
+
+function TEnumerableBase.Between(min, max: Integer): Boolean;
+begin
+  if min >= 0 then
+    if max >= min then
+      Result := IsCountInRange(min, max, max + 1)
+    else
+      Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.max)
+  else
+    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.min, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+end;
+
+function TEnumerableBase.Exactly(count: Integer): Boolean;
+begin
+  if count >= 0 then
+    Result := IsCountInRange(count, count, count + 1)
+  else
+    Result := RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+end;
+
+function TEnumerableBase.GetCount: Integer;
+
+  function GetCountSlow(const this: IEnumerable): Integer;
+  var
+    enumerator: IEnumerator;
+  begin
+    Result := 0;
+    enumerator := this.GetEnumerator;
+    while enumerator.MoveNext do
+      Inc(Result);
+  end;
+
+begin
+  Result := IEnumerable(this).GetCountFast;
+  if Result < 0 then
+    Result := GetCountSlow(IEnumerable(this));
 end;
 
 function TEnumerableBase.GetIsEmpty: Boolean;
@@ -849,6 +941,36 @@ var
 begin
   enumerator := IEnumerable(this).GetEnumerator;
   Result := not enumerator.MoveNext;
+end;
+
+function TEnumerableBase.IsCountInRange(min, max, limit: Integer): Boolean;
+
+  function SkipAndCountSlow(const this: IEnumerable; limit: Integer): Integer;
+  var
+    enumerator: IEnumerator;
+  begin
+    Result := 0;
+    enumerator := this.GetEnumerator;
+    while (Result < limit) and enumerator.MoveNext do
+      Inc(Result);
+  end;
+
+var
+  count: Integer;
+begin
+  count := IEnumerable(this).GetCountFast;
+  if count < 0 then
+    count := SkipAndCountSlow(IEnumerable(this), limit);
+  Result := {$B+}(count >= min) and (count <= max);{$B-}
+end;
+
+function TEnumerableBase.GetCountFast: Integer;
+begin
+  // implementing IReadOnlyCollection is an indicator for having its own count
+  if GetInterfaceEntry(IReadOnlyCollection<Integer>) <> nil then
+    Result := IEnumerable(this).Count
+  else
+    Result := -1;
 end;
 
 {$ENDREGION}
@@ -917,7 +1039,7 @@ begin
   if not Assigned(second) then RaiseHelper.ArgumentNil(ExceptionArgument.second);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, Pointer(second), TIteratorKind.Concat);
+    0, 0, Pointer(second), TIteratorKind.Concat);
 end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
@@ -1224,7 +1346,7 @@ end;
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, Pointer(fComparer), TIteratorKind.Ordered);
+    0, 0, Pointer(fComparer), TIteratorKind.Ordered);
 end;
 
 function TEnumerableBase<T>.Ordered(const comparer: IComparer<T>): IEnumerable<T>;
@@ -1232,7 +1354,7 @@ begin
   if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, Pointer(comparer), TIteratorKind.Ordered);
+    0, 0, Pointer(comparer), TIteratorKind.Ordered);
 end;
 
 function TEnumerableBase<T>.Ordered(const comparer: TComparison<T>): IEnumerable<T>;
@@ -1243,7 +1365,7 @@ end;
 function TEnumerableBase<T>.QueryInterface(const IID: TGUID; out obj): HResult;
 begin
   if IID = IEnumerableGuid then
-    Result := TEnumerableWrapper.Create(IEnumerable(this), obj, TIteratorRec<T>.GetCurrent)
+    Result := TEnumerableWrapper.Create(IEnumerable(this), obj, TIteratorBlock<T>.DoGetCurrent)
   else
     Result := inherited QueryInterface(IID, obj);
 end;
@@ -1251,13 +1373,13 @@ end;
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, nil, TIteratorKind.Reversed);
+    0, 0, nil, TIteratorKind.Reversed);
 end;
 
 function TEnumerableBase<T>.Shuffled: IEnumerable<T>;
 begin
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, nil, TIteratorKind.Shuffled);
+    0, 0, nil, TIteratorKind.Shuffled);
 end;
 
 function TEnumerableBase<T>.Single: T;
@@ -1355,9 +1477,19 @@ begin
 end;
 
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
+var
+  maxCount: Integer;
 begin
-  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    count, nil, TIteratorKind.Skip);
+  if count <= 0 then
+    Result := IEnumerable<T>(this)
+  else
+  begin
+    maxCount := IEnumerable<T>(this).GetCountFast;
+    if maxCount >= 0 then
+      maxCount := MaxInt - count;
+    Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+      count, maxCount, nil, TIteratorKind.Partition);
+  end;
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -1366,7 +1498,7 @@ begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, TIteratorKind.SkipWhile);
+    0, 0, PPointer(@predicate)^, TIteratorKind.SkipWhile);
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -1375,7 +1507,7 @@ begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, TIteratorKind.SkipWhileIndex);
+    0, 0, PPointer(@predicate)^, TIteratorKind.SkipWhileIndex);
 end;
 
 function TEnumerableBase<T>.Sum: T;
@@ -1402,8 +1534,10 @@ end;
 
 function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
 begin
+  if count < 0 then
+    count := 0;
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    count, nil, TIteratorKind.Take);
+    0, count, nil, TIteratorKind.Partition);
 end;
 
 function TEnumerableBase<T>.TakeWhile(
@@ -1412,7 +1546,7 @@ begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, TIteratorKind.TakeWhile);
+    0, 0, PPointer(@predicate)^, TIteratorKind.TakeWhile);
 end;
 
 function TEnumerableBase<T>.TakeWhile(
@@ -1421,7 +1555,7 @@ begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, TIteratorKind.TakeWhileIndex);
+    0, 0, PPointer(@predicate)^, TIteratorKind.TakeWhileIndex);
 end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
@@ -1593,7 +1727,16 @@ begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
-    0, PPointer(@predicate)^, TIteratorKind.Where);
+    0, 0, PPointer(@predicate)^, TIteratorKind.Where);
+end;
+
+function TEnumerableBase<T>.Where(
+  const predicate: Func<T, Integer, Boolean>): IEnumerable<T>;
+begin
+  if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
+
+  Result := TEnumerableIterator<T>.Create(IEnumerable<T>(this),
+    -1, 0, PPointer(@predicate)^, TIteratorKind.WhereIndex);
 end;
 
 {$ENDREGION}
@@ -1643,6 +1786,11 @@ begin
   Result := inherited QueryInterface(IID, obj);
   if Result <> S_OK then
     Result := fSource.QueryInterface(IID, obj);
+end;
+
+function TEnumerableWrapper.GetCountFast: Integer;
+begin
+  Result := fSource.GetCountFast;
 end;
 
 {$ENDREGION}
@@ -1704,10 +1852,14 @@ end;
 {$REGION 'TIterator<T>'}
 
 procedure TIterator<T>.AfterConstruction;
+var
+  method: function (var current: T): Boolean of object;
 begin
   inherited AfterConstruction;
   fState := STATE_INITIAL;
   fThreadId := GetCurrentThreadId;
+  method := TryMoveNext;
+  fTryMoveNext := TMethod(method).Code;
 end;
 
 procedure TIterator<T>.Dispose;
@@ -1732,23 +1884,25 @@ begin
 end;
 
 function TIterator<T>.MoveNext: Boolean;
+label
+  _STATE_RUNNING;
 begin
   case fState of
-    STATE_ENUMERATOR,
     STATE_RUNNING:
+    _STATE_RUNNING:
     begin
-      if fState = STATE_ENUMERATOR then
-      begin
-        Start;
-        fState := STATE_RUNNING;
-      end;
-
-      if TryMoveNext(fCurrent) then
+      if fTryMoveNext(Self, fCurrent) then
         Exit(True);
 
       Dispose;
       fCurrent := Default(T);
       fState := STATE_FINISHED;
+    end;
+    STATE_ENUMERATOR:
+    begin
+      Start;
+      fState := STATE_RUNNING;
+      goto _STATE_RUNNING;
     end;
   end;
   Result := False;
@@ -1765,7 +1919,7 @@ end;
 
 constructor TSourceIterator<T>.Create(const source: IEnumerable<T>);
 begin
-  fComparer := source.Comparer;
+  AssignComparer(fComparer, source);
   fSource := source;
 end;
 
@@ -1899,7 +2053,7 @@ end;
 function TCollectionBase<T>.QueryInterface(const IID: TGUID; out obj): HResult;
 begin
   if IID = ICollectionGuid then
-    Result := TCollectionWrapper.Create(IEnumerable(this), obj, TIteratorRec<T>.GetCurrent, TIteratorRec<T>.Add)
+    Result := TCollectionWrapper.Create(IEnumerable(this), obj, TIteratorBlock<T>.DoGetCurrent, TIteratorBlock<T>.DoAdd)
   else
     Result := inherited QueryInterface(IID, obj);
 end;
@@ -2530,322 +2684,229 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TIteratorBase<T>'}
+{$REGION 'TIteratorBlock'}
 
-constructor TIteratorBase<T>.Create(const source: IEnumerable<T>;
-  count: Integer; predicate: Pointer; kind: TIteratorKind);
-var
-  MoveNextFuncs: array[TIteratorKind] of Pointer;
-  StartFuncs: array[TIteratorKind] of Pointer;
-begin
-  fIterator.Source := source;
-  fComparer := source.Comparer;
-  fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
-  fIterator.Count := count;
-  fIterator.Predicate := IInterface(predicate);
-  fIterator.Kind := kind;
-
-  MoveNextFuncs[TIteratorKind.Concat] := @TIteratorRec<T>.Concat;
-  MoveNextFuncs[TIteratorKind.Ordered] := @TIteratorRec<T>.Ordered;
-  MoveNextFuncs[TIteratorKind.Reversed] := @TIteratorRec<T>.Reversed;
-  MoveNextFuncs[TIteratorKind.Shuffled] := @TIteratorRec<T>.Ordered;
-
-  MoveNextFuncs[TIteratorKind.Skip] := @TIteratorRec<T>.Skip;
-  MoveNextFuncs[TIteratorKind.SkipWhile] := @TIteratorRec<T>.SkipWhile;
-  MoveNextFuncs[TIteratorKind.SkipWhileIndex] := @TIteratorRec<T>.SkipWhileIndex;
-
-  MoveNextFuncs[TIteratorKind.Take] := @TIteratorRec<T>.Take;
-  MoveNextFuncs[TIteratorKind.TakeWhile] := @TIteratorRec<T>.TakeWhile;
-  MoveNextFuncs[TIteratorKind.TakeWhileIndex] := @TIteratorRec<T>.TakeWhileIndex;
-
-  MoveNextFuncs[TIteratorKind.Where] := @TIteratorRec<T>.Where;
-
-  StartFuncs[TIteratorKind.Concat] := @TIteratorRec.GetEnumerator;
-  StartFuncs[TIteratorKind.Ordered] := @TIteratorRec<T>.ToArray;
-  StartFuncs[TIteratorKind.Reversed] := @TIteratorRec<T>.ToArray;
-  StartFuncs[TIteratorKind.Shuffled] := @TIteratorRec<T>.ToArray;
-
-  StartFuncs[TIteratorKind.Skip] := @TIteratorRec.GetEnumeratorAndSkip;
-  StartFuncs[TIteratorKind.SkipWhile] := @TIteratorRec.GetEnumerator;
-  StartFuncs[TIteratorKind.SkipWhileIndex] := @TIteratorRec.GetEnumerator;
-
-  StartFuncs[TIteratorKind.Take] := @TIteratorRec.GetEnumerator;
-  StartFuncs[TIteratorKind.TakeWhile] := @TIteratorRec.GetEnumerator;
-  StartFuncs[TIteratorKind.TakeWhileIndex] := @TIteratorRec.GetEnumerator;
-
-  StartFuncs[TIteratorKind.Where] := @TIteratorRec.GetEnumerator;
-
-  fIterator.MoveNext := MoveNextFuncs[kind];
-  fIterator.Start := StartFuncs[kind];
-end;
-
-function TIteratorBase<T>.GetElementType: PTypeInfo;
-begin
-  if Assigned(fIterator.Source) then
-    Result := fIterator.Source.ElementType
-  else
-    Result := inherited GetElementType;
-end;
-
-function TIteratorBase<T>.GetEnumerator: IEnumerator<T>;
-begin
-  TIterator.Create(@Result, @TEnumerator.Enumerator_Vtable, Self, @fIterator, @TEnumerator.GetCurrent);
-end;
-
-function TIteratorBase<T>.ToArray: TArray<T>;
-begin
-  case fIterator.Kind of
-    TIteratorKind.Ordered:
-    begin
-      Result := fIterator.Source.ToArray;
-      TArray.Sort<T>(Result, IComparer<T>(fIterator.Predicate));
-    end;
-    TIteratorKind.Reversed:
-    begin
-      Result := fIterator.Source.ToArray;
-      TArray.Reverse<T>(Result, DynArrayHigh(Result));
-    end;
-    TIteratorKind.Shuffled:
-    begin
-      Result := fIterator.Source.ToArray;
-      TArray.Shuffle<T>(Result, DynArrayHigh(Result));
-    end;
-  else
-    Result := inherited ToArray;
+type
+  IEnumerableInternal = interface(IInvokable)
+    function GetCount: Integer;
+    function GetElementType: PTypeInfo;
+    function GetIsEmpty: Boolean;
+    function GetCountFast: Integer;
+    function AsObject: TObject;
+    procedure GetEnumerator(var result: IEnumerator);
   end;
-end;
 
-{$ENDREGION}
-
-
-{$REGION 'TEnumerableIterator<T>'}
-
-function TEnumerableIterator<T>.GetCount: Integer;
+function TIteratorBlock.MoveNext: Boolean;
+label
+  _Started, _Finished;
 begin
-  if not PIteratorRec(@fIterator).TryGetCount(Result) then
-    Result := inherited GetCount;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TArrayIterator<T>'}
-
-constructor TArrayIterator<T>.Create(const values: TArray<T>);
-begin
-  fIterator.MoveNext := @TIteratorRec<T>.Ordered;
-  fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
-  fIterator.Items := values;
-end;
-
-constructor TArrayIterator<T>.Create(const values: array of T);
-var
-  count: Integer;
-begin
-  fIterator.MoveNext := @TIteratorRec<T>.Ordered;
-  fIterator.TypeInfo := TypeInfo(TIteratorRec<T>);
-  count := Length(values);
-  SetLength(fIterator.Items, count);
-  if TType.IsManaged<T> then
-    MoveManaged(@values[0], @fIterator.Items[0], TypeInfo(T), count)
-  else
-    System.Move(values[0], fIterator.Items[0], count * SizeOf(T));
-end;
-
-procedure TArrayIterator<T>.CopyTo(var values: TArray<T>; index: Integer);
-var
-  count: Integer;
-begin
-  count := DynArrayLength(fIterator.Items);
-  if count > 0 then
-    if TType.IsManaged<T> then
-      MoveManaged(@fIterator.Items[0], @values[index], TypeInfo(T), count)
-    else
-      System.Move(fIterator.Items[0], values[index], SizeOf(T) * count);
-end;
-
-function TArrayIterator<T>.GetCount: Integer;
-begin
-  Result := DynArrayLength(fIterator.Items);
-end;
-
-function TArrayIterator<T>.GetIsEmpty: Boolean;
-begin
-  Result := fIterator.Items = nil;
-end;
-
-function TArrayIterator<T>.GetItem(index: Integer): T;
-begin
-  CheckIndex(index, DynArrayLength(fIterator.Items));
-
-  Result := fIterator.Items[index];
-end;
-
-function TArrayIterator<T>.IndexOf(const item: T): Integer;
-begin
-  Result := IndexOf(item, 0, DynArrayLength(fIterator.Items));
-end;
-
-function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
-begin
-  Result := IndexOf(item, index, DynArrayLength(fIterator.Items) - index);
-end;
-
-function TArrayIterator<T>.IndexOf(const item: T; index,
-  count: Integer): Integer;
-var
-  comparer: IEqualityComparer<T>;
-  i: Integer;
-begin
-  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
-
-  for i := index to index + count - 1 do
-    if comparer.Equals(fIterator.Items[i], item) then
-      Exit(i);
-  Result := -1;
-end;
-
-function TArrayIterator<T>.ToArray: TArray<T>;
-begin
-  Result := fIterator.Items;
-  SetLength(Result, DynArrayLength(Result));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TIterator'}
-
-class function TIterator.Create(enumerator: PPointer; vtable: PEnumeratorVtable;
-  parent: TRefCountedObject; iterator: PIteratorRec; getCurrent: Pointer): Pointer;
-begin
-  IInterface(enumerator^) := nil;
-  parent._AddRef;
-  Result := AllocMem(SizeOf(TIterator));
-  PIterator(Result).Vtable := vtable;
-  PIterator(Result).RefCount := 1;
-  PIterator(Result).Parent := parent;
-  PIterator(Result).Iterator := iterator.Clone;
-  enumerator^ := Result;
-
-  if not Assigned(vtable[0]) then
-  begin
-    vtable[0] := @NopQueryInterface;
-    vtable[1] := @RecAddRef;
-    vtable[2] := @TIterator._Release;
-    vtable[3] := getCurrent;
-    vtable[4] := @TIterator.MoveNext;
+  case State of
+    Started:
+    _Started:
+    begin
+      Result := DoMoveNext(@Self);
+      if not Result then
+        goto _Finished;
+      Exit;
+    end;
+    Initial:
+    begin
+      if DoStart(@Self) then
+      begin
+        State := Started;
+        goto _Started;
+      end;
+    _Finished:
+      State := Finished;
+      DoFinalize(@Self);
+    end;
   end;
+  Result := False;
 end;
 
-function TIterator._Release: Integer;
+function TIteratorBlock._Release: Integer;
 begin
   Result := AtomicDecrement(RefCount);
   if Result = 0 then
   begin
-    Iterator.Finalize;
-    FreeMem(Iterator);
     Parent._Release;
+    DoFinalize(@Self);
     FreeMem(@Self);
   end;
 end;
 
-function TIterator.MoveNext: Boolean;
+function TIteratorBlock.EmptyStart: Boolean;
 begin
-  repeat
-    if State = Started then
-    begin
-      if Iterator.MoveNext(Iterator) then
-        Exit(True);
-      State := Finished;
-    end;
-    if State = Initial then
-    begin
-      State := Started;
-      Start;
-    end;
-  until State = Finished;
+  Result := True;
+end;
 
-  Iterator.Finalize;
+function TIteratorBlock.GetEnumerator: Boolean;
+begin
+{$IFDEF MSWINDOWS}
+  IEnumerableInternal(Source).GetEnumerator(Enumerator);
+{$ELSE}
+  Enumerator := Source.GetEnumerator;
+{$ENDIF}
+  Result := True;
+end;
+
+function TIteratorBlock.GetEnumeratorAndSkip: Boolean;
+begin
+{$IFDEF MSWINDOWS}
+  IEnumerableInternal(Source).GetEnumerator(Enumerator);
+{$ELSE}
+  Enumerator := Source.GetEnumerator;
+{$ENDIF}
+  while (Index > 0) and Enumerator.MoveNext do
+    Dec(Index);
+  Result := Index >= 0;
+end;
+
+procedure TIteratorBlock.GetSecondEnumerator;
+begin
+{$IFDEF MSWINDOWS}
+  IEnumerableInternal(Predicate).GetEnumerator(Enumerator);
+{$ELSE}
+  Enumerator := IEnumerable(Predicate).GetEnumerator;
+{$ENDIF}
+end;
+
+function TIteratorBlock.MoveNextEmpty: Boolean;
+begin
   Result := False;
 end;
 
-procedure TIterator.Start;
+{$ENDREGION}
+
+
+{$REGION 'TIteratorBlock<T>'}
+
+class function TIteratorBlock<T>.Create(const iterator: TIteratorBase<T>): IEnumerator<T>;
+type
+  TIteratorBlockT = TIteratorBlock<T>;
+  PIteratorBlock = ^TIteratorBlockT;
 var
-  startProc: TStartFunc;
+  rec: PIteratorBlock;
 begin
-  startProc := Iterator.Start;
-  if Assigned(startProc) then
-    if not startProc(Iterator) then
-      State := Finished;
+  Result := nil;
+  rec := AllocMem(SizeOf(TIteratorBlockT));
+  Pointer(Result) := rec;
+
+  with rec^ do
+  begin
+    RefCount := 1;
+    Parent := iterator;
+    Source := iterator.fSource;
+    Predicate := iterator.fPredicate;
+    Items := iterator.fItems;
+    Index := iterator.fIndex;
+    Count := iterator.fCount;
+    Kind := iterator.fKind;
+    DoFinalize := @TIteratorBlock<T>.Finalize;
+  end;
+  rec.InitMethods;
+  rec.InitVtable;
+  iterator._AddRef;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TIteratorBase<T>.TEnumerator'}
-
-function TIteratorBase<T>.TEnumerator.GetCurrent: T;
+procedure TIteratorBlock<T>.InitVtable;
 begin
-  Result := PIteratorRecT(fIterator).Current;
+  if Assigned(Enumerator_Vtable[0]) then
+  begin
+    Vtable := @Enumerator_Vtable;
+    Exit;
+  end;
+
+  Enumerator_Vtable[0] := @NopQueryInterface;
+  Enumerator_Vtable[1] := @RecAddRef;
+  Enumerator_Vtable[2] := @TIteratorBlock._Release;
+  Enumerator_Vtable[3] := @TIteratorBlock<T>.GetCurrent;
+  Enumerator_Vtable[4] := @TIteratorBlock.MoveNext;
+  Vtable := @Enumerator_Vtable;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TIteratorRec'}
-
-function TIteratorRec.Clone: PIteratorRec;
+procedure TIteratorBlock<T>.InitMethods;
 begin
-  Result := AllocMem(TypeInfo.TypeData.RecSize);
-  CopyRecord(Result, @Self, TypeInfo);
-end;
-
-procedure TIteratorRec.Finalize;
-begin
-  FinalizeRecord(@Self, TypeInfo);
-end;
-
-function TIteratorRec.TryGetCount(out count: Integer): Boolean;
-begin
-  Result := True;
   case Kind of
-    TIteratorKind.Concat:
-      count := Source.Count + IEnumerable(Predicate).Count;
-    TIteratorKind.Skip:
-      count := Math.Max(0, Source.Count - Self.Count);
-    TIteratorKind.Take:
-      count := Math.Min(Self.Count, Source.Count);
-  else
-    Result := False;
+    TIteratorKind.Partition:
+      if Assigned(Source) then
+        if SupportsIndexedAccess(Source) then
+        begin
+          DoMoveNext := @TIteratorBlock<T>.MoveNextIndexed;
+          DoStart := @TIteratorBlock.EmptyStart;
+        end
+        else
+        begin
+          if Count >= 0 then
+            DoMoveNext := @TIteratorBlock<T>.MoveNextEnumeratorCounted
+          else
+            DoMoveNext := @TIteratorBlock<T>.MoveNextEnumerator;
+          DoStart := @TIteratorBlock.GetEnumeratorAndSkip;
+        end
+      else
+      begin
+        DoMoveNext := @TIteratorBlock.MoveNextEmpty;
+        DoStart := @TIteratorBlock.EmptyStart;
       end;
+    TIteratorKind.Array:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextOrdered;
+      DoStart := @TIteratorBlock.EmptyStart;
+    end;
+    TIteratorKind.Concat:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextConcat;
+      DoStart := @TIteratorBlock.GetEnumerator;
+    end;
+    TIteratorKind.Ordered:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextOrdered;
+      DoStart := @TIteratorBlock<T>.ToArray;
+    end;
+    TIteratorKind.Reversed:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextReversed;
+      DoStart := @TIteratorBlock<T>.ToArray;
+    end;
+    TIteratorKind.Shuffled:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextOrdered;
+      DoStart := @TIteratorBlock<T>.ToArray;
+    end;
+    TIteratorKind.SkipWhile:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextSkipWhile;
+      DoStart := @TIteratorBlock.GetEnumerator;
+    end;
+    TIteratorKind.SkipWhileIndex:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextSkipWhileIndex;
+      DoStart := @TIteratorBlock.GetEnumerator;
+    end;
+    TIteratorKind.TakeWhile:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextTakeWhile;
+      DoStart := @TIteratorBlock.GetEnumerator;
+    end;
+    TIteratorKind.TakeWhileIndex:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextTakeWhileIndex;
+      DoStart := @TIteratorBlock.GetEnumerator;
+    end;
+    TIteratorKind.Where:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextWhere;
+      DoStart := @TIteratorBlock.GetEnumerator;
+    end;
+    TIteratorKind.WhereIndex:
+    begin
+      DoMoveNext := @TIteratorBlock<T>.MoveNextWhereIndex;
+      DoStart := @TIteratorBlock.GetEnumerator;
+    end;
+  end;
 end;
 
-function TIteratorRec.GetEnumerator: Boolean;
-begin
-  Enumerator := Source.GetEnumerator;
-  Result := True;
-end;
-
-function TIteratorRec.GetEnumeratorAndSkip: Boolean;
-begin
-  Enumerator := Source.GetEnumerator;
-  while (Count > 0) and Enumerator.MoveNext do
-    Dec(Count);
-  Result := Count <= 0;
-end;
-
-procedure TIteratorRec.GetSecondEnumerator;
-begin
-  Enumerator := IEnumerable(Predicate).GetEnumerator;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TIteratorRec<T>'}
-
-class function TIteratorRec<T>.GetCurrent(const enumerator: IEnumerator;
+class function TIteratorBlock<T>.DoGetCurrent(const enumerator: IEnumerator;
   elementType: PTypeInfo): Spring.TValue;
 var
   current: T;
@@ -2854,7 +2915,19 @@ begin
   Spring.TValue.Make(@current, elementType, Result);
 end;
 
-class function TIteratorRec<T>.Add(const collection: IInterface;
+procedure TIteratorBlock<T>.Finalize;
+begin
+  Enumerator := nil;
+  Source := nil;
+  Predicate := nil;
+  Items := nil;
+{$IFDEF DELPHIXE7_UP}
+  if IsManagedType(T) then
+{$ENDIF}
+    Current := Default(T);
+end;
+
+class function TIteratorBlock<T>.DoAdd(const collection: IInterface;
   const value: Spring.TValue): Boolean;
 var
   elementType: PTypeInfo;
@@ -2867,9 +2940,14 @@ begin
     Guard.RaiseInvalidTypeCast(value.TypeInfo, elementType);
 end;
 
-function TIteratorRec<T>.Concat: Boolean;
+function TIteratorBlock<T>.GetCurrent: T;
 begin
-  while Assigned(Enumerator) do
+  Result := Current;
+end;
+
+function TIteratorBlock<T>.MoveNextConcat: Boolean;
+begin
+  while True do
   begin
     if Enumerator.MoveNext then
     begin
@@ -2877,36 +2955,18 @@ begin
       Exit(True);
     end;
 
-    if Count = 1 then // 1 means already done with the second
-      Break;
+    if Index = 0 then
+    begin
+      Inc(Index);
+      PIteratorBlock(@Self).GetSecondEnumerator;
+      Continue;
+    end;
 
-    Count := 1;
-      PIteratorRec(@Self).GetSecondEnumerator;
-  end;
-    Result := False;
-end;
-
-function TIteratorRec<T>.Ordered: Boolean;
-begin
-  Result := Count < DynArrayLength(Items);
-  if Result then
-  begin
-    Current := Items[Count];
-    Inc(Count);
+    Exit(False);
   end;
 end;
 
-function TIteratorRec<T>.Reversed: Boolean;
-begin
-  Result := Count > 0;
-  if Result then
-  begin
-    Dec(Count);
-    Current := Items[Count];
-  end;
-end;
-
-function TIteratorRec<T>.Skip: Boolean;
+function TIteratorBlock<T>.MoveNextEnumerator: Boolean;
 begin
   if Enumerator.MoveNext then
   begin
@@ -2917,7 +2977,51 @@ begin
     Result := False;
 end;
 
-function TIteratorRec<T>.SkipWhile: Boolean;
+function TIteratorBlock<T>.MoveNextEnumeratorCounted: Boolean;
+begin
+  if (Count > 0) and Enumerator.MoveNext then
+  begin
+    Current := Enumerator.Current;
+    Dec(Count);
+    Result := True;
+  end
+  else
+    Result := False;
+end;
+
+function TIteratorBlock<T>.MoveNextIndexed: Boolean;
+begin
+  if (Count > 0) and Source.TryGetElementAt(Current, Index) then
+  begin
+    Inc(Index);
+    Dec(Count);
+    Result := True;
+  end
+  else
+    Result := False;
+end;
+
+function TIteratorBlock<T>.MoveNextOrdered: Boolean;
+begin
+  Result := Index < Count;
+  if Result then
+  begin
+    Current := Items[Index];
+    Inc(Index);
+  end;
+end;
+
+function TIteratorBlock<T>.MoveNextReversed: Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+  begin
+    Dec(Count);
+    Current := Items[Count];
+  end;
+end;
+
+function TIteratorBlock<T>.MoveNextSkipWhile: Boolean;
 begin
   while Enumerator.MoveNext do
   begin
@@ -2933,7 +3037,7 @@ begin
   Result := False;
 end;
 
-function TIteratorRec<T>.SkipWhileIndex: Boolean;
+function TIteratorBlock<T>.MoveNextSkipWhileIndex: Boolean;
 begin
   while Enumerator.MoveNext do
   begin
@@ -2951,19 +3055,7 @@ begin
   Result := False;
 end;
 
-function TIteratorRec<T>.Take: Boolean;
-begin
-  if Count > 0 then
-    if Enumerator.MoveNext then
-    begin
-      Current := Enumerator.Current;
-      Dec(Count);
-      Exit(True);
-    end;
-  Result := False;
-end;
-
-function TIteratorRec<T>.TakeWhile: Boolean;
+function TIteratorBlock<T>.MoveNextTakeWhile: Boolean;
 begin
   Result := Enumerator.MoveNext;
   if Result then
@@ -2973,7 +3065,7 @@ begin
   end;
 end;
 
-function TIteratorRec<T>.TakeWhileIndex: Boolean;
+function TIteratorBlock<T>.MoveNextTakeWhileIndex: Boolean;
 begin
   Result := Enumerator.MoveNext;
   if Result then
@@ -2984,91 +3076,495 @@ begin
   end;
 end;
 
-function TIteratorRec<T>.ToArray: Boolean;
+function TIteratorBlock<T>.MoveNextWhere: Boolean;
+var
+  item: T;
+begin
+  repeat
+    if not Enumerator.MoveNext then
+      Break;
+    item := Enumerator.Current;
+    if Predicate<T>(Predicate)(item) then
+    begin
+      Current := item;
+      Exit(True);
+    end;
+  until False;
+  Result := False;
+end;
+
+function TIteratorBlock<T>.MoveNextWhereIndex: Boolean;
+var
+  item: T;
+  i: Integer;
+begin
+  repeat
+    if not Enumerator.MoveNext then
+      Break;
+    item := Enumerator.Current;
+    Inc(Index);
+    if Func<T,Integer,Boolean>(Predicate)(item, Index) then
+    begin
+      Current := item;
+      Exit(True);
+    end;
+  until False;
+  Result := False;
+end;
+
+function TIteratorBlock<T>.ToArray: Boolean;
 begin
   Items := Source.ToArray;
+  Count := Length(Items);
   case Kind of
     TIteratorKind.Ordered:
       TArray.Sort<T>(Items, IComparer<T>(Predicate));
     TIteratorKind.Reversed:
-      Count := DynArrayLength(Items);
+      Count := Length(Items);
     TIteratorKind.Shuffled:
       TArray.Shuffle<T>(Items, DynArrayHigh(Items));
   end;
   Result := True;
 end;
 
-function TIteratorRec<T>.Where: Boolean;
+{$ENDREGION}
+
+
+{$REGION 'TIteratorFields'}
+
+function TIteratorBase.GetCountFast: Integer;
+var
+  count: Integer;
 begin
-  while Enumerator.MoveNext do
+  case fKind of
+    TIteratorKind.Concat:
+    begin
+      Result := fSource.GetCountFast;
+      if Result >= 0 then
+      begin
+        count := IEnumerable(fPredicate).GetCountFast;
+        if count >= 0 then
+          {$Q+}
+          Inc(Result, count);
+          {$IFNDEF OVERFLOWCHECKS_ON}{$Q-}{$ENDIF}
+      end;
+    end;
+    TIteratorKind.Ordered, TIteratorKind.Reversed:
+      Result := fSource.GetCountFast;
+    TIteratorKind.Partition:
+    begin
+      Result := fCount;
+      if Result > 0 then
+      begin
+        Result := fSource.GetCountFast;
+        if Result >= 0 then
+        begin
+          Dec(Result, fIndex);
+          if Result < 0 then
+            Result := 0;
+          if Cardinal(Result) > Cardinal(fCount) then
+            Result := fCount;
+        end;
+      end;
+    end;
+  else
+    Result := -1;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIteratorBase<T>'}
+
+function TIteratorBase<T>.GetElementType: PTypeInfo;
+begin
+  if Assigned(fSource) then
+    Result := fSource.ElementType
+  else
+    Result := inherited GetElementType;
+end;
+
+function TIteratorBase<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TIteratorBlock<T>.Create(Self);
+end;
+
+function TIteratorBase<T>.HasLimit: Boolean;
+begin
+  Result := fCount <> -1;
+end;
+
+function TIteratorBase<T>.Skip(count: Integer): IEnumerable<T>;
+var
+  minIndex: Integer;
+  source: Pointer;
+begin
+  if fKind = TIteratorKind.Partition then
   begin
-    Current := Enumerator.Current;
-    if Predicate<T>(Predicate)(Current) then
+    if count < 0 then
+      count := 0;
+    {$Q-}
+    minIndex := fIndex + count;
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    if not HasLimit then
+    begin
+      if minIndex < 0 then
+      begin
+        // If we don't know our max count and minIndex can no longer fit in a positive int,
+        // then we will need to wrap ourselves in another iterator.
+        // This can happen, for example, during e.Skip(MaxInt).Skip(MaxInt).
+        source := Pointer(this);
+        minIndex := count;
+        count := -1;
+      end
+      else
+      begin
+        source := Pointer(fSource);
+        count := -1;
+      end;
+    end
+    else if count >= fCount then
+    begin
+      source := nil;
+      minIndex := 0;
+      count := 0;
+    end
+    else
+    begin
+      source := Pointer(fSource);
+      count := fCount - count;
+    end;
+
+    Result := TEnumerableIterator<T>.Create(IEnumerable<T>(source),
+      minIndex, count, nil, TIteratorKind.Partition);
+  end
+  else
+    Result := inherited Skip(count);
+end;
+
+function TIteratorBase<T>.Take(count: Integer): IEnumerable<T>;
+var
+  maxIndex: Integer;
+  source: Pointer;
+begin
+  if fKind = TIteratorKind.Partition then
+  begin
+    {$Q-}
+    maxIndex := fIndex + count - 1;
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    if not HasLimit then
+    begin
+      if maxIndex < 0 then
+      begin
+        // If we don't know our max count and maxIndex can no longer fit in a positive int,
+        // then we will need to wrap ourselves in another iterator.
+        // Note that although maxIndex may be too large, the difference between it and
+        // fIterator.Index (which is count - 1) must fit in an int.
+        // Example: e.Skip(50).Take(MaxInt).
+        source := Pointer(this);
+        maxIndex := 0;
+      end
+      else
+      begin
+        source := Pointer(fSource);
+        maxIndex := fIndex;
+      end;
+    end
+    else if count >= fCount then
+    begin
+      Result := IEnumerable<T>(this);
+      Exit;
+    end
+    else
+    begin
+      source := Pointer(fSource);
+      maxIndex := fIndex;
+    end;
+
+    Result := TEnumerableIterator<T>.Create(IEnumerable<T>(source),
+      maxIndex, count, nil, TIteratorKind.Partition);
+  end
+  else
+    Result := inherited Take(count);
+end;
+
+function TIteratorBase<T>.ToArray: TArray<T>;
+begin
+  case fKind of
+    TIteratorKind.Array:
+    begin
+      Result := fItems;
+      SetLength(Result, Length(Result));
+    end;
+    TIteratorKind.Ordered:
+    begin
+      Result := fSource.ToArray;
+      TArray.Sort<T>(Result, IComparer<T>(fPredicate));
+    end;
+    TIteratorKind.Reversed:
+    begin
+      Result := fSource.ToArray;
+      TArray.Reverse<T>(Result);
+    end;
+    TIteratorKind.Shuffled:
+    begin
+      Result := fSource.ToArray;
+      TArray.Shuffle<T>(Result);
+    end;
+  else
+    Result := inherited ToArray;
+  end;
+end;
+
+function TIteratorBase<T>.TryGetElementAt(var value: T; index: Integer): Boolean;
+begin
+  if fKind = TIteratorKind.Partition then
+    if Cardinal(index) >= Cardinal(fCount) then
+    begin
+      value := Default(T);
+      Result := False;
+    end
+    else
+      Result := fSource.TryGetElementAt(value, fIndex + index)
+  else
+    Result := inherited TryGetElementAt(value, index);
+end;
+
+function TIteratorBase<T>.TryGetFirst(var value: T): Boolean;
+begin
+  if fKind = TIteratorKind.Partition then
+    if fCount = 0 then
+    begin
+      value := Default(T);
+      Result := False;
+    end
+    else
+      Result := fSource.TryGetElementAt(value, fIndex)
+  else if fKind = TIteratorKind.Array then
+  begin
+    if Assigned(fItems) then
+    begin
+      value := fItems[0];
       Exit(True);
-  end;
-  Result := False;
+    end;
+
+    value := Default(T);
+    Result := False;
+  end
+  else
+    Result := inherited TryGetFirst(value);
+end;
+
+function TIteratorBase<T>.TryGetLast(var value: T): Boolean;
+var
+  intf: IInterface;
+  count, lastIndex: Integer;
+begin
+  if fKind = TIteratorKind.Partition then
+  begin
+    if fCount <> 0 then
+    begin
+      if SupportsIndexedAccess(fSource) then
+      begin
+        count := fSource.Count;
+        if fIndex < count then
+        begin
+          {$Q-}
+          lastIndex := fIndex + fCount - 1;
+          {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+          if lastIndex > count - 1 then
+            lastIndex := count - 1;
+          Exit(fSource.TryGetElementAt(value, lastIndex));
+        end;
+      end
+      else
+      begin
+        intf := fSource.GetEnumerator;
+        if (SkipAndCount(IEnumerator(intf), fIndex) = fIndex)
+          and IEnumerator(intf).MoveNext then
+        begin
+          count := fCount;
+          repeat
+            value := IEnumerator<T>(intf).Current;
+            Dec(count);
+          until (count = 0) or not IEnumerator(intf).MoveNext;
+          Exit(True);
+        end;
+      end;
+    end;
+
+    value := Default(T);
+    Result := False;
+  end
+  else if fKind = TIteratorKind.Array then
+  begin
+    if Assigned(fItems) then
+    begin
+      value := fItems[fCount - 1];
+      Exit(True);
+    end;
+
+    value := Default(T);
+    Result := False;
+  end
+  else
+    Result := inherited TryGetLast(value);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TObjectArrayIterator'}
+{$REGION 'TEnumerableIterator<T>'}
 
-constructor TObjectArrayIterator.Create(const source: TArray<TObject>;
-  elementType: PTypeInfo);
+class function TEnumerableIterator<T>.Create(const source: IEnumerable<T>;
+  index, count: Integer; predicate: Pointer; kind: TIteratorKind): IEnumerable<T>;
+var
+  iterator: TEnumerableIterator<T>;
 begin
-  inherited Create(source);
-  fElementType := elementType;
+  iterator := TEnumerableIterator<T>.Create;
+  iterator.fSource := source;
+  if Assigned(source) then
+    AssignComparer(iterator.fComparer, source);
+  iterator.fPredicate := IInterface(predicate);
+  iterator.fIndex := index;
+  iterator.fCount := count;
+  iterator.fKind := kind;
+  Result := iterator;
 end;
 
-constructor TObjectArrayIterator.CreateFromArray(source: PPointer;
-  count: Integer; elementType: PTypeInfo);
+function TEnumerableIterator<T>.GetCountFast: Integer;
 begin
-  fElementType := elementType;
-  fIterator.MoveNext := @TIteratorRec<TObject>.Ordered;
-  fIterator.TypeInfo := TypeInfo(TIteratorRec<TObject>);
-  if count > 0 then
-  begin
-    SetLength(fIterator.Items, count);
-{$IFDEF AUTOREFCOUNT}
-    MoveManaged(source, @fIterator.Items[0], TypeInfo(TObject), count)
-{$ELSE}
-    System.Move(source^, fIterator.Items[0], count * SizeOf(TObject));
-{$ENDIF}
-  end;
-end;
-
-function TObjectArrayIterator.GetElementType: PTypeInfo;
-begin
-  Result := fElementType;
+  Result := PIteratorBase(@fSource).GetCountFast;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TInterfaceArrayIterator'}
+{$REGION 'TArrayIterator<T>'}
 
-constructor TInterfaceArrayIterator.Create(const source: TArray<IInterface>;
-  elementType: PTypeInfo);
+class function TArrayIterator<T>.Create(const values: TArray<T>): IReadOnlyList<T>;
+var
+  iterator: TArrayIterator<T>;
 begin
-  inherited Create(source);
-  fElementType := elementType;
+  iterator := TArrayIterator<T>.Create;
+  iterator.fKind := TIteratorKind.Array;
+  iterator.fCount := DynArrayLength(values);
+  iterator.fItems := values;
+  Result := iterator;
 end;
 
-constructor TInterfaceArrayIterator.CreateFromArray(source: PPointer;
-  count: Integer; elementType: PTypeInfo);
+class function TArrayIterator<T>.Create(const values: array of T): IReadOnlyList<T>;
+var
+  iterator: TArrayIterator<T>;
+  count: Integer;
 begin
-  fElementType := elementType;
-  fIterator.MoveNext := @TIteratorRec<IInterface>.Ordered;
-  fIterator.TypeInfo := TypeInfo(TIteratorRec<IInterface>);
+  iterator := TArrayIterator<T>.Create;
+  iterator.fKind := TIteratorKind.Array;
+  count := Length(values);
   if count > 0 then
   begin
-    SetLength(fIterator.Items, count);
-    MoveManaged(source, @fIterator.Items[0], TypeInfo(IInterface), count)
+    iterator.fCount := count;
+    SetLength(iterator.fItems, count);
+    if TType.IsManaged<T> then
+      MoveManaged(@values[0], @iterator.fItems[0], TypeInfo(T), count)
+    else
+      System.Move(values[0], iterator.fItems[0], SizeOf(T) * count);
   end;
+  Result := iterator;
 end;
 
-function TInterfaceArrayIterator.GetElementType: PTypeInfo;
+procedure TArrayIterator<T>.CopyTo(var values: TArray<T>; index: Integer);
+var
+  count: Integer;
+begin
+  count := Length(fItems);
+  if count > 0 then
+    if TType.IsManaged<T> then
+      MoveManaged(@fItems[0], @values[index], TypeInfo(T), count)
+    else
+      System.Move(fItems[0], values[index], SizeOf(T) * count);
+end;
+
+function TArrayIterator<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TArrayIterator<T>.GetIsEmpty: Boolean;
+begin
+  Result := fItems = nil;
+end;
+
+function TArrayIterator<T>.GetItem(index: Integer): T;
+begin
+  CheckIndex(index, fCount);
+
+  Result := fItems[index];
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, fCount);
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, fCount - index);
+end;
+
+function TArrayIterator<T>.IndexOf(const item: T; index, count: Integer): Integer;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  CheckRange(index, count, fCount);
+
+  comparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, GetElementType, SizeOf(T)));
+  for i := index to index + count - 1 do
+    if comparer.Equals(fItems[i], item) then
+      Exit(i);
+  Result := -1;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFoldedArrayIterator<T>'}
+
+class function TFoldedArrayIterator<T>.Create(const values: TArray<T>;
+  elementType: PTypeInfo): IReadOnlyList<T>;
+var
+  iterator: TFoldedArrayIterator<T>;
+begin
+  iterator := TFoldedArrayIterator<T>.Create;
+  iterator.fKind := TIteratorKind.Array;
+  iterator.fCount := DynArrayLength(values);
+  iterator.fItems := values;
+  iterator.fElementType := elementType;
+  Result := iterator;
+end;
+
+class function TFoldedArrayIterator<T>.Create(values: PPointer; count: Integer;
+  elementType: PTypeInfo): IReadOnlyList<T>;
+var
+  iterator: TFoldedArrayIterator<T>;
+begin
+  iterator := TFoldedArrayIterator<T>.Create;
+  iterator.fKind := TIteratorKind.Array;
+  if count > 0 then
+  begin
+    iterator.fCount := count;
+    SetLength(iterator.fItems, count);
+    if TType.IsManaged<T> then
+      MoveManaged(values, @iterator.fItems[0], TypeInfo(T), count)
+    else
+      System.Move(values^, iterator.fItems[0], SizeOf(T) * count);
+  end;
+  Result := iterator;
+end;
+
+function TFoldedArrayIterator<T>.GetElementType: PTypeInfo;
 begin
   Result := fElementType;
 end;

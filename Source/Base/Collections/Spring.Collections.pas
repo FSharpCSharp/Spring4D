@@ -150,6 +150,16 @@ type
     function GetCount: Integer;
     function GetElementType: PTypeInfo;
     function GetIsEmpty: Boolean;
+
+    /// <summary>
+    ///   Attempts to retrieve the count without calling the enumerator; returns
+    ///   -1 otherwise.
+    /// </summary>
+    /// <remarks>
+    ///   This method is primarily for internal use to provide count based
+    ///   results as efficient as possible.
+    /// </remarks>
+    function GetCountFast: Integer;
   {$ENDREGION}
 
     /// <summary>
@@ -236,6 +246,16 @@ type
     function GetCount: Integer;
     function GetElementType: PTypeInfo;
     function GetIsEmpty: Boolean;
+
+    /// <summary>
+    ///   Attempts to retrieve the count without calling the enumerator; returns
+    ///   -1 otherwise.
+    /// </summary>
+    /// <remarks>
+    ///   This method is primarily for internal use to provide count based
+    ///   results as efficient as possible.
+    /// </remarks>
+    function GetCountFast: Integer;
   {$ENDREGION}
 
     /// <summary>
@@ -302,6 +322,24 @@ type
     ///   the specified predicate; otherwise, <b>False</b>.
     /// </returns>
     function Any(const predicate: Predicate<T>): Boolean; overload;
+
+    /// <summary>
+    ///   Determines whether or not the number of elements in the sequence is
+    ///   greater than or equal to the given integer.
+    /// </summary>
+    function AtLeast(count: Integer): Boolean;
+
+    /// <summary>
+    ///   Determines whether or not the number of elements in the sequence is
+    ///   lesser than or equal to the given integer.
+    /// </summary>
+    function AtMost(count: Integer): Boolean;
+
+    /// <summary>
+    ///   Determines whether or not the number of elements in the sequence is
+    ///   between an inclusive range of minimum and maximum integers.
+    /// </summary>
+    function Between(min, max: Integer): Boolean;
 
     /// <summary>
     ///   Concatenates two sequences.
@@ -405,6 +443,12 @@ type
     ///   elements by using a specified <c>IEqualityComparer&lt;T&gt;.</c>
     /// </summary>
     function EqualsTo(const values: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
+
+    /// <summary>
+    ///   Determines whether or not the number of elements in the sequence is
+    ///   equals to the given integer.
+    /// </summary>
+    function Exactly(count: Integer): Boolean;
 
     /// <summary>
     ///   Returns the first element of a sequence.
@@ -767,6 +811,12 @@ type
     function Where(const predicate: Predicate<T>): IEnumerable<T>; overload;
 
     /// <summary>
+    ///   Filters a sequence of values based on a predicate. The element's
+    ///   index is used in the logic of the predicate function.
+    /// </summary>
+    function Where(const predicate: Func<T, Integer, Boolean>): IEnumerable<T>; overload;
+
+    /// <summary>
     ///   Gets the assigned comparer. If not comparer was assigned it returns
     ///   the default comparer.
     /// </summary>
@@ -796,6 +846,13 @@ type
     ///   False</b>.
     /// </value>
     property IsEmpty: Boolean read GetIsEmpty;
+  end;
+
+  /// <summary>
+  ///   Represents a sub range of a collection.
+  /// </summary>
+  IPartition<T> = interface(IEnumerable<T>)
+    ['{ACFB79AB-F593-4F2B-9720-E6CE984F6844}']
   end;
 
   /// <summary>
@@ -1617,7 +1674,7 @@ type
     /// <param name="value">
     ///   The value to use as the value of the element to add.
     /// </param>
-    procedure Add(const key: TKey; const value: TValue);
+    procedure Add(const key: TKey; const value: TValue); overload;
 
     /// <summary>
     ///   Attempts to add the specified key and value to the map.
@@ -1903,7 +1960,7 @@ type
     /// <returns>
     ///   True if the map was modified, False otherwise.
     /// </returns>
-    function Add(const key: TKey; const value: TValue): Boolean;
+    function Add(const key: TKey; const value: TValue): Boolean; overload;
 
     procedure AddRange(const key: TKey; const values: array of TValue); overload;
     procedure AddRange(const key: TKey; const values: IEnumerable<TValue>); overload;
@@ -2563,7 +2620,7 @@ type
   /// <typeparam name="TElement">
   ///   The type of the values in the IGrouping&lt;TKey, TElement&gt;.
   /// </typeparam>
-  IGrouping<TKey, TElement> = interface(IEnumerable<TElement>)
+  IGrouping<TKey, TElement> = interface(IReadOnlyCollection<TElement>)
     ['{CFC3071C-663A-400A-B21B-1F5E28BA4892}']
   {$REGION 'Property Accessors'}
     function GetKey: TKey;
@@ -2590,10 +2647,10 @@ type
   ///   The type of the elements in the <see cref="IEnumerable&lt;T&gt;" />
   ///   sequences that make up the values in the ILookup&lt;TKey, TElement&gt;.
   /// </typeparam>
-  ILookup<TKey, TElement> = interface(IEnumerable<IGrouping<TKey, TElement>>)
+  ILookup<TKey, TElement> = interface(IReadOnlyCollection<IGrouping<TKey, TElement>>)
     ['{B2380533-F2B1-465B-84B2-97FA79A6EE09}']
   {$REGION 'Property Accessors'}
-    function GetItem(const key: TKey): IEnumerable<TElement>;
+    function GetItem(const key: TKey): IReadOnlyCollection<TElement>;
   {$ENDREGION}
 
     /// <summary>
@@ -2620,7 +2677,7 @@ type
     ///   The <see cref="IEnumerable&lt;T&gt;" /> sequence of values indexed by
     ///   the specified key.
     /// </value>
-    property Item[const key: TKey]: IEnumerable<TElement> read GetItem; default;
+    property Item[const key: TKey]: IReadOnlyCollection<TElement> read GetItem; default;
   end;
 
   /// <summary>
@@ -3460,6 +3517,8 @@ const
 
   IReadOnlyCollectionOfTGuid: TGUID = '{E1368FD5-02AE-4481-A9DC-96329DFF606C}';
   IReadOnlyListOfTGuid: TGUID = '{82A74ABB-509E-4AC0-9268-A993E7DC3AB3}';
+
+  IPartitionOfTGuid: TGUID = '{ACFB79AB-F593-4F2B-9720-E6CE984F6844}';
 
 implementation
 
@@ -7243,28 +7302,28 @@ class procedure TEnumerable.InternalFrom_Object_DynArray(source: Pointer;
   var result; elementType: PTypeInfo);
 begin
   IReadOnlyList<TObject>(Result) :=
-    TObjectArrayIterator.Create(TArray<TObject>(source), elementType);
+    TFoldedArrayIterator<TObject>.Create(TArray<TObject>(source), elementType);
 end;
 
 class procedure TEnumerable.InternalFrom_Object_OpenArray(source: Pointer;
   count: Integer; var result; elementType: PTypeInfo);
 begin
   IReadOnlyList<TObject>(Result) :=
-    TObjectArrayIterator.CreateFromArray(source, count, elementType);
+    TFoldedArrayIterator<TObject>.Create(source, count, elementType);
 end;
 
 class procedure TEnumerable.InternalFrom_Interface_DynArray(source: Pointer;
   var result; elementType: PTypeInfo);
 begin
   IReadOnlyList<IInterface>(Result) :=
-    TInterfaceArrayIterator.Create(TArray<IInterface>(source), elementType);
+    TFoldedArrayIterator<IInterface>.Create(TArray<IInterface>(source), elementType);
 end;
 
 class procedure TEnumerable.InternalFrom_Interface_OpenArray(source: Pointer;
   count: Integer; var result; elementType: PTypeInfo);
 begin
   IReadOnlyList<IInterface>(Result) :=
-    TInterfaceArrayIterator.CreateFromArray(source, count, elementType);
+    TFoldedArrayIterator<IInterface>.Create(source, count, elementType);
 end;
 
 class function TEnumerable.From<T>(const values: array of T): IReadOnlyList<T>;
@@ -7372,7 +7431,13 @@ end;
 
 class function TEnumerable.Range(start, count: Integer): IReadOnlyList<Integer>;
 begin
-  Result := TRangeIterator.Create(start, count);
+  if (count >= 0) and (Int64(start) + count <= Cardinal(MaxInt) + 1) then
+    if count = 0 then
+      Result := TEnumerable.Empty<Integer>
+    else
+      Result := TRangeIterator.Create(start, count)
+  else
+    RaiseHelper.ArgumentOutOfRange_Count;
 end;
 
 class function TEnumerable.Repeated<T>(const element: T;

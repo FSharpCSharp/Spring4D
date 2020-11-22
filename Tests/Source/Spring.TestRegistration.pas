@@ -141,7 +141,10 @@ begin
       TTestRedBlackTreeInteger.Suite,
       TTestRedBlackTreeIntegerString.Suite,
       TTestSet.Suite,
-      TTestSortedSet.Suite
+      TTestSortedSet.Suite,
+
+      TSkipTests.Suite,
+      TTakeTests.Suite
     ]);
 
     RegisterTests('Spring.Base.Collections.Dictionaries', [

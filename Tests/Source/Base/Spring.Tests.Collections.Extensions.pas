@@ -63,7 +63,6 @@ type
 
   TTestWhere = class(TTestCase)
   published
-    procedure NilSourceThrowsNilArgumentException;
     procedure NilPredicateThrowsNilArgumentException;
 
     procedure WithIndexNilSourceThrowsNilArgumentException;
@@ -128,7 +127,6 @@ type
   published
     procedure SimpleConcatenation;
 
-    procedure NullFirstThrowsNullArgumentException;
     procedure NullSecondThrowsNullArgumentException;
 
     procedure FirstSequenceIsntAccessedBeforeFirstUse;
@@ -829,23 +827,6 @@ begin
     end);
 end;
 
-procedure TTestWhere.NilSourceThrowsNilArgumentException;
-var
-  source: IEnumerable<Integer>;
-begin
-  source := nil;
-
-  CheckException(EArgumentNilException,
-    procedure
-    begin
-      source := TWhereIterator<Integer>.Create(source,
-        function(const x: Integer): Boolean
-        begin
-          Result := x > 5;
-        end);
-    end);
-end;
-
 procedure TTestWhere.SimpleFiltering;
 var
   source: IEnumerable<Integer>;
@@ -1253,21 +1234,6 @@ begin
     procedure
     begin
       iterator.MoveNext;
-    end);
-end;
-
-procedure TTestConcat.NullFirstThrowsNullArgumentException;
-var
-  first: IEnumerable<string>;
-  second: IEnumerable<string>;
-begin
-  first := nil;
-  second := TCollections.CreateList<string>(['hello']);
-
-  CheckException(EArgumentNilException,
-    procedure
-    begin
-      TConcatIterator<string>.Create(first, second);
     end);
 end;
 
