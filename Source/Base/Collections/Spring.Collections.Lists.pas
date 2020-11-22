@@ -2252,15 +2252,14 @@ end;
 procedure TObservableObjectList.Changed(const value: TObject;
   action: TCollectionChangedAction);
 var
-  notifyPropertyChanged: INotifyPropertyChanged;
-  propertyChanged: IEvent<TPropertyChangedEvent>;
+  intf: IInterface;
 begin
-  if Supports(value, INotifyPropertyChanged, notifyPropertyChanged) then
+  if value.GetInterface(INotifyPropertyChanged, Pointer(intf)) then
   begin
-    propertyChanged := notifyPropertyChanged.OnPropertyChanged;
+    intf := INotifyPropertyChanged(intf).OnPropertyChanged;
     case Action of
-      caAdded: propertyChanged.Add(DoItemPropertyChanged);
-      caRemoved, caExtracted: propertyChanged.Remove(DoItemPropertyChanged);
+      caAdded: IEvent<TPropertyChangedEvent>(intf).Add(DoItemPropertyChanged);
+      caRemoved, caExtracted: IEvent<TPropertyChangedEvent>(intf).Remove(DoItemPropertyChanged);
     end;
   end;
 
@@ -2276,9 +2275,8 @@ end;
 
 procedure TObservableObjectList.DoPropertyChanged(const propertyName: string);
 begin
-  if fOnPropertyChanged.CanInvoke then
-    fOnPropertyChanged.Invoke(Self,
-      TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
+  with fOnPropertyChanged do if CanInvoke then
+    Invoke(Self, TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
 end;
 
 function TObservableObjectList.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
@@ -2308,15 +2306,14 @@ end;
 procedure TObservableInterfaceList.Changed(const value: IInterface;
   action: TCollectionChangedAction);
 var
-  notifyPropertyChanged: INotifyPropertyChanged;
-  propertyChanged: IEvent<TPropertyChangedEvent>;
+  intf: IInterface;
 begin
-  if Supports(value, INotifyPropertyChanged, notifyPropertyChanged) then
+  if value.QueryInterface(INotifyPropertyChanged, Pointer(intf)) = S_OK then
   begin
-    propertyChanged := notifyPropertyChanged.OnPropertyChanged;
+    intf := INotifyPropertyChanged(intf).OnPropertyChanged;
     case Action of
-      caAdded: propertyChanged.Add(DoItemPropertyChanged);
-      caRemoved, caExtracted: propertyChanged.Remove(DoItemPropertyChanged);
+      caAdded: IEvent<TPropertyChangedEvent>(intf).Add(DoItemPropertyChanged);
+      caRemoved, caExtracted: IEvent<TPropertyChangedEvent>(intf).Remove(DoItemPropertyChanged);
     end;
   end;
 
@@ -2329,16 +2326,14 @@ procedure TObservableInterfaceList.DoItemPropertyChanged(sender: TObject;
 var
   item: IInterface;
 begin
-  Supports(sender, fElementType.TypeData.Guid, item);
+  sender.GetInterface(fElementType.TypeData.Guid, Pointer(item));
   inherited Changed(item, caChanged);
 end;
 
-procedure TObservableInterfaceList.DoPropertyChanged(
-  const propertyName: string);
+procedure TObservableInterfaceList.DoPropertyChanged(const propertyName: string);
 begin
-  if fOnPropertyChanged.CanInvoke then
-    fOnPropertyChanged.Invoke(Self,
-      TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
+  with fOnPropertyChanged do if CanInvoke then
+    Invoke(Self, TPropertyChangedEventArgs.Create(propertyName) as IPropertyChangedEventArgs);
 end;
 
 function TObservableInterfaceList.GetOnPropertyChanged: IEvent<TPropertyChangedEvent>;
