@@ -384,12 +384,14 @@ end;
 
 function THashSet<T>.TryGetElementAt(var item: T; index: Integer): Boolean;
 begin
-  Result := Cardinal(index) < Cardinal(fHashTable.Count);
-  if Result then
+  if Cardinal(index) < Cardinal(fHashTable.Count) then
   begin
     fHashTable.EnsureCompact;
     item := TItems(fHashTable.Items)[index].Item;
+    Exit(True);
   end;
+  item := Default(T);
+  Result := False;
 end;
 
 function THashSet<T>.Add(const item: T): Boolean;
@@ -397,12 +399,13 @@ var
   entry: PItem;
 begin
   entry := fHashTable.Add(item, fKeyComparer.GetHashCode(item));
-  Result := Assigned(entry);
-  if Result then
+  if Assigned(entry) then
   begin
     entry.Item := item;
     DoNotify(item, caAdded);
+    Exit(True);
   end;
+  Result := False;
 end;
 
 procedure THashSet<T>.Clear;

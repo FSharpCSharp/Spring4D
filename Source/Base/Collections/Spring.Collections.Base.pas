@@ -512,18 +512,19 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
-      private
+      PEnumerator = ^TEnumerator;
+      TEnumerator = record
+        Vtable: Pointer;
+        RefCount: Integer;
+        TypeInfo: PTypeInfo;
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TCircularArrayBuffer<T>;
-        fIndex: Integer;
+        fIndex, fCount: Integer;
         fVersion: Integer;
         fCurrent: T;
         function GetCurrent: T;
-      public
-        constructor Create(const source: TCircularArrayBuffer<T>);
-        destructor Destroy; override;
         function MoveNext: Boolean;
+        class var Enumerator_Vtable: TEnumeratorVtable;
       end;
       ItemType = TTypeInfo<T>;
       PT = ^T;
@@ -536,7 +537,7 @@ type
     fVersion: Integer;
     fHead: Integer;
     fTail: Integer;
-    function GetTail: PT; inline;
+    function GetTail: Integer; inline;
   protected
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer; inline;
@@ -553,12 +554,11 @@ type
     procedure DeleteFromHead(action: TCollectionChangedAction); inline;
     procedure DeleteFromTail(action: TCollectionChangedAction); inline;
 
-    procedure DoNotify(const item: T; action: TCollectionChangedAction); inline;
     property Capacity: Integer read GetCapacity;
     property Count: Integer read GetCount;
     property Items: TArray<T> read fItems;
     property Head: Integer read fHead;
-    property Tail: PT read GetTail;
+    property Tail: Integer read GetTail;
     property OwnsObjects: Boolean read GetOwnsObjects;
   public
     constructor Create(capacity: Integer = 0; ownsObjects: Boolean = False);
@@ -2108,13 +2108,6 @@ begin
     DeleteFromHead(caRemoved);
 end;
 
-procedure TCircularArrayBuffer<T>.DoNotify(const item: T;
-  action: TCollectionChangedAction);
-begin
-  if Assigned(fOnChanged) and fOnChanged.CanInvoke then
-    fOnChanged.Invoke(Self, item, action);
-end;
-
 function TCircularArrayBuffer<T>.GetCapacity: Integer;
 begin
   Result := fCapacity;
@@ -2127,7 +2120,14 @@ end;
 
 function TCircularArrayBuffer<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumerator.Create(Self);
+  _AddRef;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fCount := Self.Count;
+    fVersion := Self.fVersion;
+  end;
 end;
 
 function TCircularArrayBuffer<T>.GetIsEmpty: Boolean;
@@ -2145,15 +2145,14 @@ begin
   Result := {$IFDEF DELPHIXE7_UP}(GetTypeKind(T) = tkClass) and {$ENDIF}(fCount < 0);
 end;
 
-function TCircularArrayBuffer<T>.GetTail: PT;
+function TCircularArrayBuffer<T>.GetTail: Integer;
 var
   index: Integer;
 begin
   index := fTail;
-  if index > 0 then
-    Result := @fItems[index - 1]
-  else
-    Result := @fItems[fCapacity - 1];
+  if index = 0 then
+    index := fCapacity;
+  Result := index - 1;
 end;
 
 procedure TCircularArrayBuffer<T>.AddToHead(const item: T);
@@ -2172,7 +2171,8 @@ begin
   fItems[index] := item;
   fHead := index;
 
-  DoNotify(item, caAdded);
+  if Assigned(fOnChanged) and fOnChanged.CanInvoke then
+    fOnChanged.Invoke(Self, item, caAdded);
 end;
 
 procedure TCircularArrayBuffer<T>.AddToTail(const item: T);
@@ -2190,7 +2190,9 @@ begin
   if index = fCapacity then
     index := 0;
   fTail := index;
-  DoNotify(item, caAdded);
+
+  if Assigned(fOnChanged) and fOnChanged.CanInvoke then
+    fOnChanged.Invoke(Self, item, caAdded);
 end;
 
 procedure TCircularArrayBuffer<T>.DeleteFromHead(action: TCollectionChangedAction);
@@ -2210,7 +2212,8 @@ begin
     index := 0;
   fHead := index;
 
-  DoNotify(item^, action);
+  if Assigned(fOnChanged) and fOnChanged.CanInvoke then
+    fOnChanged.Invoke(Self, item^, action);
   if OwnsObjects and (action = caRemoved) then
     FreeObject(item^);
   item^ := Default(T);
@@ -2233,7 +2236,8 @@ begin
   item := @fItems[index];
   fTail := index;
 
-  DoNotify(item^, action);
+  if Assigned(fOnChanged) and fOnChanged.CanInvoke then
+    fOnChanged.Invoke(Self, item^, action);
   if OwnsObjects and (action = caRemoved) then
     FreeObject(item^);
   item^ := Default(T);
@@ -2282,20 +2286,24 @@ end;
 
 function TCircularArrayBuffer<T>.TryGetFirst(var value: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
-    value := fItems[fHead]
-  else
-    value := Default(T);
+  if Count > 0 then
+  begin
+    value := fItems[fHead];
+    Exit(True);
+  end;
+  value := Default(T);
+  Result := False;
 end;
 
 function TCircularArrayBuffer<T>.TryGetLast(var value: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
-    value := Tail^
-  else
-    value := Default(T);
+  if Count > 0 then
+  begin
+    value := fItems[Tail];
+    Exit(True);
+  end;
+  value := Default(T);
+  Result := False;
 end;
 
 procedure TCircularArrayBuffer<T>.SetCapacity(value: Integer);
@@ -2377,39 +2385,33 @@ end;
 
 {$REGION 'TCircularArrayBuffer<T>.TEnumerator'}
 
-constructor TCircularArrayBuffer<T>.TEnumerator.Create(
-  const source: TCircularArrayBuffer<T>);
-begin
-  fSource := source;
-  fSource._AddRef;
-  fVersion := fSource.fVersion;
-end;
-
-destructor TCircularArrayBuffer<T>.TEnumerator.Destroy;
-begin
-  fSource._Release;
-end;
-
 function TCircularArrayBuffer<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
 end;
 
 function TCircularArrayBuffer<T>.TEnumerator.MoveNext: Boolean;
+var
+  source: TCircularArrayBuffer<T>;
+  index: Integer;
 begin
-  if fVersion = fSource.fVersion then
+  source := fSource;
+  if fVersion = source.fVersion then
   begin
-    Result := fIndex < fSource.Count;
-    if Result then
+    index := fIndex;
+    if index < fCount then
     begin
-      fCurrent := fSource.fItems[(fSource.fHead + fIndex) mod fSource.fCapacity];
+      Inc(index, source.fHead);
+      if index >= source.fCapacity then
+        Dec(index, source.fCapacity);
+      fCurrent := source.fItems[index];
       Inc(fIndex);
-    end
-    else
-      fCurrent := Default(T);
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
+      Exit(True);
+    end;
+    fCurrent := Default(T);
+    Exit(False);
+  end;
+  Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}

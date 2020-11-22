@@ -209,38 +209,40 @@ end;
 
 function TAbstractQueue<T>.TryDequeue(var item: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
+  if Count > 0 then
   begin
     if OwnsObjects then
       item := Default(T)
     else
       item := Items[Head];
     DeleteFromHead(caRemoved);
-  end
-  else
-    item := Default(T);
+    Exit(True);
+  end;
+  item := Default(T);
+  Result := False;
 end;
 
 function TAbstractQueue<T>.TryExtract(var item: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
+  if Count > 0 then
   begin
     item := Items[Head];
     DeleteFromHead(caExtracted);
-  end
-  else
-    item := Default(T);
+    Exit(True);
+  end;
+  item := Default(T);
+  Result := False;
 end;
 
 function TAbstractQueue<T>.TryPeek(var item: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
-    item := Items[Head]
-  else
-    item := Default(T);
+  if Count > 0 then
+  begin
+    item := Items[Head];
+    Exit(True);
+  end;
+  item := Default(T);
+  Result := False;
 end;
 
 {$ENDREGION}
@@ -293,10 +295,9 @@ begin
   if Count <> Capacity then
   begin
     AddToTail(item);
-    Result := True;
-  end
-  else
-    Result := False;
+    Exit(True);
+  end;
+  Result := False;
 end;
 
 {$ENDREGION}
@@ -338,7 +339,7 @@ begin
     if OwnsObjects then
       Result := Default(T)
     else
-      Result := Tail^;
+      Result := Items[Tail];
     DeleteFromTail(caRemoved);
   end
   else
@@ -360,7 +361,7 @@ function TAbstractDeque<T>.ExtractLast: T;
 begin
   if Count > 0 then
   begin
-    Result := Tail^;
+    Result := Items[Tail];
     DeleteFromTail(caExtracted);
   end
   else
@@ -369,56 +370,56 @@ end;
 
 function TAbstractDeque<T>.TryRemoveFirst(var item: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
+  if Count > 0 then
   begin
     if OwnsObjects then
       item := Default(T)
     else
       item := Items[Head];
     DeleteFromHead(caRemoved);
-  end
-  else
-    item := Default(T);
+    Exit(True);
+  end;
+  item := Default(T);
+  Result := False;
 end;
 
 function TAbstractDeque<T>.TryRemoveLast(var item: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
+  if Count > 0 then
   begin
     if OwnsObjects then
       item := Default(T)
     else
-      item := Tail^;
+      item := Items[Tail];
     DeleteFromTail(caRemoved);
-  end
-  else
-    item := Default(T);
+    Exit(True);
+  end;
+  item := Default(T);
+  Result := False;
 end;
 
 function TAbstractDeque<T>.TryExtractFirst(var item: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
+  if Count > 0 then
   begin
     item := Items[Head];
     DeleteFromHead(caExtracted);
-  end
-  else
-    item := Default(T);
+    Exit(True);
+  end;
+  item := Default(T);
+  Result := False;
 end;
 
 function TAbstractDeque<T>.TryExtractLast(var item: T): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
+  if Count > 0 then
   begin
-    item := Tail^;
+    item := Items[Tail];
     DeleteFromTail(caExtracted);
-  end
-  else
-    item := Default(T);
+    Exit(True);
+  end;
+  item := Default(T);
+  Result := False;
 end;
 
 {$ENDREGION}
