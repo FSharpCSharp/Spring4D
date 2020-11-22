@@ -52,17 +52,19 @@ type
   private
   {$REGION 'Nested Types'}
     type
-      TEnumerator = class(TRefCountedObject, IEnumerator<T>)
-      private
+      PEnumerator = ^TEnumerator;
+      TEnumerator = record
+        Vtable: Pointer;
+        RefCount: Integer;
+        TypeInfo: PTypeInfo;
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TAbstractArrayList<T>;
-        fIndex: Integer;
+        fIndex, fCount: Integer;
         fVersion: Integer;
         fCurrent: T;
         function GetCurrent: T;
-      public
-        procedure BeforeDestruction; override;
         function MoveNext: Boolean;
+        class var Enumerator_Vtable: TEnumeratorVtable;
       end;
       ItemType = TTypeInfo<T>;
   {$ENDREGION}
@@ -498,14 +500,15 @@ begin
 end;
 
 function TAbstractArrayList<T>.GetEnumerator: IEnumerator<T>;
-var
-  enumerator: TEnumerator;
 begin
   _AddRef;
-  enumerator := TEnumerator.Create;
-  enumerator.fSource := Self;
-  enumerator.fVersion := fVersion;
-  Result := enumerator;
+  with PEnumerator(TEnumeratorBlock.Create(@Result, @TEnumerator.Enumerator_Vtable,
+    TypeInfo(TEnumerator), @TEnumerator.GetCurrent, @TEnumerator.MoveNext))^ do
+  begin
+    fSource := Self;
+    fCount := Self.Count;
+    fVersion := Self.fVersion;
+  end;
 end;
 
 function TAbstractArrayList<T>.GetIsEmpty: Boolean;
@@ -1468,11 +1471,6 @@ end;
 
 {$REGION 'TAbstractArrayList<T>.TEnumerator'}
 
-procedure TAbstractArrayList<T>.TEnumerator.BeforeDestruction;
-begin
-  fSource._Release;
-end;
-
 function TAbstractArrayList<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fCurrent;
@@ -1485,20 +1483,16 @@ begin
   source := fSource;
   if fVersion = source.fVersion then
   begin
-    if fIndex < source.Count then
+    if fIndex < fCount then
     begin
       fCurrent := source.fItems[fIndex];
       Inc(fIndex);
-      Result := True;
-    end
-    else
-    begin
-      fCurrent := Default(T);
-      Result := False;
+      Exit(True);
     end;
-  end
-  else
-    Result := RaiseHelper.EnumFailedVersion;
+    fCurrent := Default(T);
+    Exit(False);
+  end;
+  Result := RaiseHelper.EnumFailedVersion;
 end;
 
 {$ENDREGION}

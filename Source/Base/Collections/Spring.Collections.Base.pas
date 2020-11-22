@@ -34,14 +34,28 @@ uses
   SysUtils,
   TypInfo,
   Spring,
-  Spring.Events.Base,
   Spring.Collections,
   Spring.Collections.Events,
-  Spring.Collections.HashTable;
+  Spring.Collections.HashTable,
+  Spring.Events.Base;
 
 {$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS(FieldVisibility)}{$ENDIF}
 
 type
+  PEnumeratorVtable = ^TEnumeratorVtable;
+  TEnumeratorVtable = array[0..4] of Pointer;
+  PEnumeratorBlock = ^TEnumeratorBlock;
+  TEnumeratorBlock = record
+    Vtable: Pointer;
+    RefCount: Integer;
+    TypeInfo: PTypeInfo;
+    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
+    Parent: TRefCountedObject;
+    function _Release: Integer; stdcall;
+    class function Create(enumerator: PPointer; vtable: PEnumeratorVtable;
+      typeInfo, getCurrent, moveNext: Pointer): Pointer; static;
+  end;
+
   TEnumerableBase = class abstract(TRefCountedObject)
   protected
     this: Pointer;
@@ -664,6 +678,51 @@ begin
   else
     Pointer(code) := nil;
 end;
+
+
+{$REGION 'TEnumeratorBlock'}
+
+class function TEnumeratorBlock.Create(enumerator: PPointer; vtable: PEnumeratorVtable;
+  typeInfo, getCurrent, moveNext: Pointer): Pointer;
+
+  function GetEnumeratorBlockSize(typeInfo: Pointer): Integer; inline;
+  var
+    p: PByte;
+  begin
+    p := typeInfo;
+    Result := PTypeData(@p[p[1]+2]).RecSize;
+  end;
+
+begin
+  IInterface(enumerator^) := nil;
+  Result := AllocMem(GetEnumeratorBlockSize(typeInfo));
+  PEnumeratorBlock(Result).Vtable := vtable;
+  PEnumeratorBlock(Result).RefCount := 1;
+  PEnumeratorBlock(Result).TypeInfo := typeInfo;
+  enumerator^ := Result;
+
+  if not Assigned(vtable[0]) then
+  begin
+    vtable[0] := @NopQueryInterface;
+    vtable[1] := @RecAddRef;
+    vtable[2] := @TEnumeratorBlock._Release;
+    vtable[3] := getCurrent;
+    vtable[4] := moveNext;
+  end;
+end;
+
+function TEnumeratorBlock._Release: Integer;
+begin
+  Result := AtomicDecrement(RefCount);
+  if Result = 0 then
+  begin
+    Parent._Release;
+    FinalizeRecord(@Self, TypeInfo);
+    FreeMem(@Self);
+  end;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TEnumerableBase'}
