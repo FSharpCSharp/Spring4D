@@ -228,15 +228,24 @@ type
   TRangeIterator = class(TEnumerableBase<Integer>,
     IEnumerable<Integer>, IReadOnlyCollection<Integer>, IReadOnlyList<Integer>)
   private type
-    TEnumerator = class(TRefCountedObject, IEnumerator<Integer>)
-    private
-      fCurrent, fCount: Integer;
-      fStarted: Boolean;
+    PEnumerator = ^TEnumerator;
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+      fCurrent, fMax: Integer;
       function GetCurrent: Integer;
-    public
-      constructor Create(start, count: Integer);
       function MoveNext: Boolean;
+      function _Release: Integer; stdcall;
+      class function Create(start, count: Integer): IEnumerator<Integer>; static;
     end;
+  const
+    Enumerator_Vtable: TEnumeratorVtable = (
+      @NopQueryInterface,
+      @RecAddRef,
+      @TEnumerator._Release,
+      @TEnumerator.GetCurrent,
+      @TEnumerator.MoveNext
+    );
   private
     fStart, fCount: Integer;
   {$REGION 'Property Accessors'}
@@ -1493,10 +1502,19 @@ end;
 
 {$REGION 'TRangeIterator.TEnumerator'}
 
-constructor TRangeIterator.TEnumerator.Create(start, count: Integer);
+class function TRangeIterator.TEnumerator.Create(start, count: Integer): IEnumerator<Integer>;
 begin
-  fCurrent := start;
-  fCount := count;
+  Result := nil;
+  GetMem(Pointer(Result), SizeOf(TEnumerator));
+  with PEnumerator(Result)^ do
+  begin
+    Vtable := @Enumerator_Vtable;
+    RefCount := 1;
+    {$Q-}
+    fCurrent := start - 1;
+    {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+    fMax := fCurrent + count;
+  end;
 end;
 
 function TRangeIterator.TEnumerator.GetCurrent: Integer;
@@ -1506,15 +1524,15 @@ end;
 
 function TRangeIterator.TEnumerator.MoveNext: Boolean;
 begin
-  Result := fCount > 0;
-  if Result then
-  begin
-    Dec(fCount);
-    if fStarted then
-      Inc(fCurrent)
-    else
-      fStarted := True;
-  end;
+  Result := fCurrent < fMax;
+  Inc(fCurrent, Byte(Result));
+end;
+
+function TRangeIterator.TEnumerator._Release: Integer;
+begin
+  Result := AtomicDecrement(RefCount);
+  if Result = 0 then
+    FreeMem(@Self);
 end;
 
 {$ENDREGION}
