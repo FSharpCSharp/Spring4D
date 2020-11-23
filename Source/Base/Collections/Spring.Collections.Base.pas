@@ -1253,22 +1253,28 @@ end;
 function TEnumerableBase<T>.Single(const predicate: Predicate<T>): T;
 var
   enumerator: IEnumerator<T>;
+  item: T;
+  found: Boolean;
 begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
+  found := False;
   enumerator := IEnumerable<T>(this).GetEnumerator;
-  while enumerator.MoveNext do
+  while True do
   begin
-    Result := enumerator.Current;
-    if predicate(Result) then
+    if not enumerator.MoveNext then Break;
+    item := enumerator.Current;
+    if predicate(item) then
     begin
-      while enumerator.MoveNext do
-        if predicate(enumerator.Current) then
-          RaiseHelper.MoreThanOneMatch;
-      Exit;
+      found := not found;
+      if found then
+        Result := item
+      else
+        RaiseHelper.MoreThanOneMatch;
     end;
   end;
-  RaiseHelper.NoMatch;
+  if not found then
+    RaiseHelper.NoMatch;
 end;
 
 function TEnumerableBase<T>.SingleOrDefault: T;
@@ -1299,26 +1305,31 @@ begin
   Result := IEnumerable<T>(this).SingleOrDefault(predicate, defaultValue);
 end;
 
-function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>;
-  const defaultValue: T): T;
+function TEnumerableBase<T>.SingleOrDefault(const predicate: Predicate<T>; const defaultValue: T): T;
 var
   enumerator: IEnumerator<T>;
+  item: T;
+  found: Boolean;
 begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
+  found := False;
   enumerator := IEnumerable<T>(this).GetEnumerator;
-  while enumerator.MoveNext do
+  while True do
   begin
-    Result := enumerator.Current;
-    if predicate(Result) then
+    if not enumerator.MoveNext then Break;
+    item := enumerator.Current;
+    if predicate(item) then
     begin
-      while enumerator.MoveNext do
-        if predicate(enumerator.Current) then
-          RaiseHelper.MoreThanOneMatch;
-      Exit;
+      found := not found;
+      if found then
+        Result := item
+      else
+        RaiseHelper.MoreThanOneMatch;
     end;
   end;
-  Result := defaultValue;
+  if not found then
+    Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
@@ -1393,52 +1404,46 @@ end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
 var
-  intf: IInterface;
-  count: Integer;
+  enumerator: IEnumerator<T>;
+  count, capacity: Integer;
 begin
   Result := nil;
-  if GetInterface(IReadOnlyCollectionOfTGuid, Pointer(intf)) then
+  count := 0;
+  capacity := 0;
+  enumerator := IEnumerable<T>(this).GetEnumerator;
+  while enumerator.MoveNext do
   begin
-    count := IReadOnlyCollection<T>(intf).Count;
-    if count > 0 then
+    if count >= capacity then
     begin
-      SetLength(Result, count);
-      IReadOnlyCollection<T>(intf).CopyTo(Result, 0);
+      capacity := GrowCapacity(capacity);
+      SetLength(Result, capacity);
     end;
-  end
-  else
-  begin
-    count := 0;
-    intf := IEnumerable<T>(this).GetEnumerator;
-    while IEnumerator<T>(intf).MoveNext do
-    begin
-      if Result = nil then
-        SetLength(Result, 4)
-      else if DynArrayLength(Result) = count then
-        SetLength(Result, count * 2);
-      Result[count] := IEnumerator<T>(intf).Current;
-      Inc(count);
-    end;
-    SetLength(Result, count);
+    Result[count] := enumerator.Current;
+    Inc(count);
   end;
+  SetLength(Result, count);
 end;
 
 function TEnumerableBase<T>.TryGetElementAt(var value: T; index: Integer): Boolean;
 var
   enumerator: IEnumerator<T>;
 begin
-  if index < 0 then
-    Exit(False);
-  enumerator := IEnumerable<T>(this).GetEnumerator;
-  while enumerator.MoveNext do
+  if index >= 0 then
   begin
-    if index = 0 then
+    enumerator := IEnumerable<T>(this).GetEnumerator;
+    while True do
     begin
+      if not enumerator.MoveNext then
+        Break;
+      Dec(index);
+      if index >= 0 then
+        Continue;
+
       value := enumerator.Current;
       Exit(True);
     end;
-    Dec(index);
   end;
+  value := Default(T);
   Result := False;
 end;
 
