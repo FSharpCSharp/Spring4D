@@ -285,17 +285,21 @@ type
     class function Add(const collection: IInterface; const value: Spring.TValue): Boolean; static;
   end;
 
-  TIterator = class abstract(TRefCountedObject)
+  PIterator = ^TIterator;
+  TIterator = record
   private type
     TEnumeratorState = (Initial, Started, Finished);
   private
-    fSource: TRefCountedObject;
-    fIterator: PIteratorRec;
-    fState: TEnumeratorState;
+    Vtable: Pointer;
+    RefCount: Integer;
+    Parent: TRefCountedObject;
+    Iterator: PIteratorRec;
+    State: TEnumeratorState;
     procedure Start;
   public
-    constructor Create(source: TRefCountedObject; iterator: PIteratorRec);
-    destructor Destroy; override;
+    class function Create(enumerator: PPointer; vtable: PEnumeratorVtable;
+      parent: TRefCountedObject; iterator: PIteratorRec; getCurrent: Pointer): Pointer; static;
+    function _Release: Integer; stdcall;
     function MoveNext: Boolean;
   end;
 
@@ -303,9 +307,17 @@ type
   private type
     TIteratorRecT = TIteratorRec<T>;
     PIteratorRecT = ^TIteratorRecT;
-    TEnumerator = class(TIterator, IEnumerator<T>)
-    private
+
+    TEnumerator = record
+      Vtable: Pointer;
+      RefCount: Integer;
+
+      fSource: TRefCountedObject;
+      fIterator: PIteratorRecT;
+      fState: TIterator.TEnumeratorState;
       function GetCurrent: T;
+
+      class var Enumerator_Vtable: TEnumeratorVtable;
     end;
   protected
     fIterator: TIteratorRec<T>;
@@ -2555,7 +2567,7 @@ end;
 
 function TIteratorBase<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumerator.Create(Self, @fIterator);
+  TIterator.Create(@Result, @TEnumerator.Enumerator_Vtable, Self, @fIterator, @TEnumerator.GetCurrent);
 end;
 
 function TIteratorBase<T>.ToArray: TArray<T>;
@@ -2682,37 +2694,57 @@ end;
 
 {$REGION 'TIterator'}
 
-constructor TIterator.Create(source: TRefCountedObject; iterator: PIteratorRec);
+class function TIterator.Create(enumerator: PPointer; vtable: PEnumeratorVtable;
+  parent: TRefCountedObject; iterator: PIteratorRec; getCurrent: Pointer): Pointer;
 begin
-  fSource := source;
-  fSource._AddRef;
-  fIterator := iterator.Clone;
+  IInterface(enumerator^) := nil;
+  parent._AddRef;
+  Result := AllocMem(SizeOf(TIterator));
+  PIterator(Result).Vtable := vtable;
+  PIterator(Result).RefCount := 1;
+  PIterator(Result).Parent := parent;
+  PIterator(Result).Iterator := iterator.Clone;
+  enumerator^ := Result;
+
+  if not Assigned(vtable[0]) then
+  begin
+    vtable[0] := @NopQueryInterface;
+    vtable[1] := @RecAddRef;
+    vtable[2] := @TIterator._Release;
+    vtable[3] := getCurrent;
+    vtable[4] := @TIterator.MoveNext;
+  end;
 end;
 
-destructor TIterator.Destroy;
+function TIterator._Release: Integer;
 begin
-  fIterator.Finalize;
-  FreeMem(fIterator);
-  fSource._Release;
+  Result := AtomicDecrement(RefCount);
+  if Result = 0 then
+  begin
+    Iterator.Finalize;
+    FreeMem(Iterator);
+    Parent._Release;
+    FreeMem(@Self);
+  end;
 end;
 
 function TIterator.MoveNext: Boolean;
 begin
   repeat
-    if fState = Started then
+    if State = Started then
     begin
-      if fIterator.MoveNext(fIterator) then
+      if Iterator.MoveNext(Iterator) then
         Exit(True);
-      fState := Finished;
+      State := Finished;
     end;
-    if fState = Initial then
+    if State = Initial then
     begin
-      fState := Started;
+      State := Started;
       Start;
     end;
-  until fState = Finished;
+  until State = Finished;
 
-  fIterator.Finalize;
+  Iterator.Finalize;
   Result := False;
 end;
 
@@ -2720,10 +2752,10 @@ procedure TIterator.Start;
 var
   startProc: TStartFunc;
 begin
-  startProc := fIterator.Start;
+  startProc := Iterator.Start;
   if Assigned(startProc) then
-    if not startProc(fIterator) then
-      fState := Finished;
+    if not startProc(Iterator) then
+      State := Finished;
 end;
 
 {$ENDREGION}
