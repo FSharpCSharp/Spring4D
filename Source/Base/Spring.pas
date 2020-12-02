@@ -2490,6 +2490,7 @@ type
     0: (Low: Word; High: Byte);
     1: (Bytes: array[0..2] of Byte);
   end;
+  PInt24 = ^Int24;
   TArray = class
   protected
     const FoldedTypeKinds = [tkInteger, tkChar, tkEnumeration, tkClass, tkMethod, tkWChar, tkInterface, tkInt64, tkUString, tkClassRef, tkPointer, tkProcedure];
@@ -2518,6 +2519,30 @@ type
     class procedure IntroSort_Double(const values: Pointer; hi: Integer; const compare: PMethod); static;
     class procedure IntroSort_Extended(const values: Pointer; hi: Integer; const compare: PMethod); static;
     class procedure IntroSort_Method(const values: Pointer; hi: Integer; const compare: PMethod); static;
+
+    class procedure Reverse_Int8(const values: PInt8; right: Integer); static;
+    class procedure Reverse_Int16(const values: PInt16; right: Integer); static;
+    class procedure Reverse_Int24(const values: PInt24; right: Integer); static;
+    class procedure Reverse_Int32(const values: PInt32; right: Integer); static;
+    class procedure Reverse_Int64(const values: PInt64; right: Integer); static;
+    class procedure Reverse_Single(const values: PSingle; right: Integer); static;
+    class procedure Reverse_Double(const values: PDouble; right: Integer); static;
+    class procedure Reverse_Extended(const values: PExtended; right: Integer); static;
+    class procedure Reverse_Method(const values: PMethodPointer; right: Integer); static;
+    class procedure Reverse_Ref(const values: PByte; right: Integer; size: Integer); static;
+    class procedure Reverse_Generic<T>(var values: array of T); static;
+
+    class procedure Shuffle_Int8(const values: PInt8; right: Integer); static;
+    class procedure Shuffle_Int16(const values: PInt16; right: Integer); static;
+    class procedure Shuffle_Int24(const values: PInt24; right: Integer); static;
+    class procedure Shuffle_Int32(const values: PInt32; right: Integer); static;
+    class procedure Shuffle_Int64(const values: PInt64; right: Integer); static;
+    class procedure Shuffle_Single(const values: PSingle; right: Integer); static;
+    class procedure Shuffle_Double(const values: PDouble; right: Integer); static;
+    class procedure Shuffle_Extended(const values: PExtended; right: Integer); static;
+    class procedure Shuffle_Method(const values: PMethodPointer; right: Integer); static;
+    class procedure Shuffle_Ref(const values: PByte; hi: Integer; size: Integer); static;
+    class procedure Shuffle_Generic<T>(var values: array of T); static;
   public
     /// <summary>
     ///   Searches a range of elements in a sorted array for the given value,
@@ -2724,16 +2749,14 @@ type
       index, count: Integer); overload; static;
 
     /// <summary>
+    ///   Reverses the elements in the specified range in the array.
+    /// </summary>
+    class procedure Reverse<T>(const values: Pointer; hi: Integer); overload; static; inline;
+
+    /// <summary>
     ///   Shuffles the elements in the array using the Fisher-Yates algorithm.
     /// </summary>
     class procedure Shuffle<T>(var values: array of T); overload; static;
-
-    /// <summary>
-    ///   Shuffles the elements in the array starting at the specified index
-    ///   using the Fisher-Yates algorithm.
-    /// </summary>
-    class procedure Shuffle<T>(var values: array of T;
-      index: Integer); overload; static;
 
     /// <summary>
     ///   Shuffles the specified count of elements in the array starting at the
@@ -2741,6 +2764,12 @@ type
     /// </summary>
     class procedure Shuffle<T>(var values: array of T;
       index, count: Integer); overload; static;
+
+    /// <summary>
+    ///   Shuffles the elements in the specified range in the array using the
+    ///   Fisher-Yates algorithm.
+    /// </summary>
+    class procedure Shuffle<T>(const values: Pointer; hi: Integer); overload; static; inline;
 
     /// <summary>
     ///   Sorts the elements in an array using the default comparer.
@@ -11659,70 +11688,531 @@ begin
     BinarySwap(left, right, SizeOf(T))
 end;
 
-class procedure TArray.Reverse<T>(var values: array of T);
-begin
-  Reverse<T>(values, 0, Length(values));
-end;
-
-class procedure TArray.Reverse<T>(var values: array of T; index, count: Integer);
+class procedure TArray.Reverse_Int8(const values: PInt8; right: Integer);
 var
-  left, right: Integer;
-  temp: T;
+  left: Integer;
+  temp: Int8;
 begin
-  CheckRange(index, count, Length(values));
-
-  left := index;
-  right := index + count - 1;
-  while left < right do
+  for left := 0 to ((right + 1) shr 1) - 1 do
   begin
-    {$IFDEF DELPHIXE7_UP}
-    if GetTypeKind(T) in PointerTypeKinds then
-      SwapPtr(@values[0], left, right)
-    else
-    {$ENDIF}
-    begin
-      temp := values[left];
-      values[left] := values[right];
-      values[right] := temp;
-    end;
-    Inc(left);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
     Dec(right);
   end;
 end;
 
-class procedure TArray.Shuffle<T>(var values: array of T);
-begin
-  Shuffle<T>(values, 0, Length(values));
-end;
-
-class procedure TArray.Shuffle<T>(var values: array of T; index: Integer);
-begin
-  Shuffle<T>(values, index, Length(values) - index);
-end;
-
-class procedure TArray.Shuffle<T>(var values: array of T; index, count: Integer);
+class procedure TArray.Reverse_Int16(const values: PInt16; right: Integer);
 var
-  i: Integer;
+  left: Integer;
+  temp: Int16;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Int24(const values: PInt24; right: Integer);
+var
+  left: Integer;
+  temp: Int24;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Int32(const values: PInt32; right: Integer);
+var
+  left: Integer;
+  temp: Int32;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Int64(const values: PInt64; right: Integer);
+var
+  left: Integer;
+  temp: Int64;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Single(const values: PSingle; right: Integer);
+var
+  left: Integer;
+  temp: Single;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Double(const values: PDouble; right: Integer);
+var
+  left: Integer;
+  temp: Double;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Extended(const values: PExtended; right: Integer);
+var
+  left: Integer;
+  temp: Extended;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Method(const values: PMethodPointer; right: Integer);
+var
+  left: Integer;
+  temp: TMethodPointer;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    {$POINTERMATH OFF}
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Ref(const values: PByte; right: Integer; size: Integer);
+var
+  left: Integer;
+begin
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    BinarySwap(@values[left*size], @values[right*size], size);
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse_Generic<T>(var values: array of T);
+var
+  left, right: Integer;
   temp: T;
+begin
+  right := High(values);
+  for left := 0 to ((right + 1) shr 1) - 1 do
+  begin
+    temp := values[left];
+    values[left] := values[right];
+    values[right] := temp;
+    Dec(right);
+  end;
+end;
+
+class procedure TArray.Reverse<T>(const values: Pointer; hi: Integer);
+begin
+  {$R-}
+  {$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(T) of
+    tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
+    tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
+      case SizeOf(T) of
+        1: Reverse_Int8(values, hi);
+        2: Reverse_Int16(values, hi);
+        4: Reverse_Int32(values, hi);
+        8: Reverse_Int64(values, hi);
+      end;
+    tkFloat:
+      case SizeOf(T) of
+        4: Reverse_Single(values, hi);
+        10: Reverse_Extended(values, hi);
+      else
+        if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
+          Reverse_Double(values, hi)
+        else
+          Reverse_Int64(values, hi);
+      end;
+    tkString:
+      Reverse_Ref(values, hi, SizeOf(T));
+    tkSet:
+      case SizeOf(T) of
+        1: Reverse_Int8(values, hi);
+        2: Reverse_Int16(values, hi);
+        4: Reverse_Int32(values, hi);
+        8: Reverse_Int64(values, hi);
+      else
+        Reverse_Ref(values, hi, SizeOf(T));
+      end;
+    tkMethod:
+      Reverse_Method(values, hi);
+    tkVariant,
+    {$IF Declared(tkMRecord)}
+    tkMRecord,
+    {$IFEND}
+    tkRecord:
+      if not System.HasWeakRef(T) then
+        case SizeOf(T) of
+          1: Reverse_Int8(values, hi);
+          2: Reverse_Int16(values, hi);
+          3: Reverse_Int24(values, hi);
+          4: Reverse_Int32(values, hi);
+          8: Reverse_Int64(values, hi);
+        else
+          Reverse_Ref(values, hi, SizeOf(T))
+        end
+      else
+        Reverse_Generic<T>(Slice(TSlice<T>(values^), hi+1));
+    tkArray:
+      case SizeOf(T) of
+        1: Reverse_Int8(values, hi);
+        2: Reverse_Int16(values, hi);
+        3: Reverse_Int24(values, hi);
+        4: Reverse_Int32(values, hi);
+        8: Reverse_Int64(values, hi);
+      else
+        Reverse_Ref(values, hi, SizeOf(T));
+      end;
+  else
+  {$ELSE}
+  begin
+  {$ENDIF}
+    Reverse_Generic<T>(Slice(TSlice<T>(values^), hi+1));
+  end;
+  {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.Reverse<T>(var values: array of T);
+begin
+  {$R-}
+  Reverse<T>(@values[0], High(values));
+  {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.Reverse<T>(var values: array of T; index, count: Integer);
 begin
   CheckRange(index, count, Length(values));
 
+  Reverse<T>(@values[index], count - 1);
+end;
+
+class procedure TArray.Shuffle_Int8(const values: PInt8; right: Integer);
+var
+  left, i: Integer;
+  temp: Int8;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Int16(const values: PInt16; right: Integer);
+var
+  left, i: Integer;
+  temp: Int16;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Int24(const values: PInt24; right: Integer);
+var
+  left, i: Integer;
+  temp: Int24;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Int32(const values: PInt32; right: Integer);
+var
+  left, i: Integer;
+  temp: Int32;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Int64(const values: PInt64; right: Integer);
+var
+  left, i: Integer;
+  temp: Int64;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Single(const values: PSingle; right: Integer);
+var
+  left, i: Integer;
+  temp: Single;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Double(const values: PDouble; right: Integer);
+var
+  left, i: Integer;
+  temp: Double;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Extended(const values: PExtended; right: Integer);
+var
+  left, i: Integer;
+  temp: Extended;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Method(const values: PMethodPointer; right: Integer);
+var
+  left, i: Integer;
+  temp: TMethodPointer;
+begin
+  for left := 0 to right - 2 do
+  begin
+    i := Random(right) + left;
+    Dec(right);
+    {$POINTERMATH ON}
+    temp := values[left];
+    values[left] := values[i];
+    values[i] := temp;
+    {$POINTERMATH OFF}
+  end;
+end;
+
+class procedure TArray.Shuffle_Ref(const values: PByte; hi, size: Integer);
+var
+  left, i: Integer;
+begin
+  for left := 0 to hi - 2 do
+  begin
+    i := Random(hi) + left;
+    Dec(hi);
+    BinarySwap(@values[left*size], @values[i*size], size);
+  end;
+end;
+
+class procedure TArray.Shuffle_Generic<T>(var values: array of T);
+var
+  count, index, i: Integer;
+  temp: T;
+begin
+  count := Length(values);
+  index := 0;
   while count > 1 do
   begin
     i := Random(count) + index;
-    {$IFDEF DELPHIXE7_UP}
-    if GetTypeKind(T) in PointerTypeKinds then
-      SwapPtr(@values[0], index, i)
-    else
-    {$ENDIF}
-    begin
-      temp := values[index];
-      values[index] := values[i];
-      values[i] := temp;
-    end;
+    temp := values[index];
+    values[index] := values[i];
+    values[i] := temp;
     Inc(index);
     Dec(count);
   end;
+end;
+
+class procedure TArray.Shuffle<T>(const values: Pointer; hi: Integer);
+begin
+  {$R-}
+  {$IFDEF DELPHIXE7_UP}
+  case GetTypeKind(T) of
+    tkInteger, tkChar, tkEnumeration, tkClass, tkWChar, tkLString, tkWString,
+    tkInterface, tkInt64, tkDynArray, tkUString, tkClassRef, tkPointer, tkProcedure:
+      case SizeOf(T) of
+        1: Shuffle_Int8(values, hi);
+        2: Shuffle_Int16(values, hi);
+        4: Shuffle_Int32(values, hi);
+        8: Shuffle_Int64(values, hi);
+      end;
+    tkFloat:
+      case SizeOf(T) of
+        4: Shuffle_Single(values, hi);
+        10: Shuffle_Extended(values, hi);
+      else
+        if GetTypeData(TypeInfo(T)).FloatType = ftDouble then
+          Shuffle_Double(values, hi)
+        else
+          Shuffle_Int64(values, hi);
+      end;
+    tkString:
+      Shuffle_Ref(values, hi, SizeOf(T));
+    tkSet:
+      case SizeOf(T) of
+        1: Shuffle_Int8(values, hi);
+        2: Shuffle_Int16(values, hi);
+        4: Shuffle_Int32(values, hi);
+        8: Shuffle_Int64(values, hi);
+      else
+        Shuffle_Ref(values, hi, SizeOf(T));
+      end;
+    tkMethod:
+      Shuffle_Method(values, hi);
+    tkVariant,
+    {$IF Declared(tkMRecord)}
+    tkMRecord,
+    {$IFEND}
+    tkRecord:
+      if not System.HasWeakRef(T) then
+        case SizeOf(T) of
+          1: Shuffle_Int8(values, hi);
+          2: Shuffle_Int16(values, hi);
+          3: Shuffle_Int24(values, hi);
+          4: Shuffle_Int32(values, hi);
+          8: Shuffle_Int64(values, hi);
+        else
+          Shuffle_Ref(values, hi, SizeOf(T))
+        end
+      else
+        Shuffle_Generic<T>(Slice(TSlice<T>(values^), hi+1));
+    tkArray:
+      case SizeOf(T) of
+        1: Shuffle_Int8(values, hi);
+        2: Shuffle_Int16(values, hi);
+        3: Shuffle_Int24(values, hi);
+        4: Shuffle_Int32(values, hi);
+        8: Shuffle_Int64(values, hi);
+      else
+        Shuffle_Ref(values, hi, SizeOf(T));
+      end;
+  else
+  {$ELSE}
+  begin
+  {$ENDIF}
+    Shuffle_Generic<T>(Slice(TSlice<T>(values^), hi+1));
+  end;
+  {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.Shuffle<T>(var values: array of T);
+begin
+  {$R-}
+  Shuffle<T>(@values[0], High(values));
+  {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
+end;
+
+class procedure TArray.Shuffle<T>(var values: array of T; index, count: Integer);
+begin
+  CheckRange(index, count, Length(values));
+
+  {$R+}
+  Shuffle<T>(@values[index], count - 1);
+  {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
 end;
 
 class function TArray.GetDepthLimit(count: Integer): Integer;

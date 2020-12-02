@@ -2586,12 +2586,12 @@ begin
     TIteratorKind.Reversed:
     begin
       Result := fIterator.Source.ToArray;
-      TArray.Reverse<T>(Result);
+      TArray.Reverse<T>(Result, DynArrayHigh(Result));
     end;
     TIteratorKind.Shuffled:
     begin
       Result := fIterator.Source.ToArray;
-      TArray.Shuffle<T>(Result);
+      TArray.Shuffle<T>(Result, DynArrayHigh(Result));
     end;
   else
     Result := inherited ToArray;
@@ -2976,7 +2976,7 @@ begin
     TIteratorKind.Reversed:
       Count := DynArrayLength(Items);
     TIteratorKind.Shuffled:
-      TArray.Shuffle<T>(Items);
+      TArray.Shuffle<T>(Items, DynArrayHigh(Items));
   end;
   Result := True;
 end;

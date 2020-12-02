@@ -1334,7 +1334,7 @@ begin
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  TArray.Reverse<T>(fItems, 0, Count);
+  TArray.Reverse<T>(fItems, Count - 1);
 
   Reset;
 end;
@@ -1349,7 +1349,7 @@ begin
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
-  TArray.Reverse<T>(fItems, index, count);
+  TArray.Reverse<T>(@fItems[index], count - 1);
 
   Reset;
 end;
