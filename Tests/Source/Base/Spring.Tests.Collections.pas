@@ -2143,7 +2143,7 @@ begin
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  event.Add(TMethodPointer(method));
+  event.Add(method);
 
   SUT.Push(0);
 
@@ -2833,7 +2833,7 @@ begin
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  event.Add(TMethodPointer(method));
+  event.Add(method);
 
   SUT.Enqueue(0);
 
@@ -2974,7 +2974,7 @@ begin
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  event.Add(TMethodPointer(method));
+  event.Add(method);
 
   SUT.AddFirst(0);
 

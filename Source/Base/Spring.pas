@@ -111,6 +111,10 @@ type
   PInt32 = ^Int32;
   PInt64 = ^Int64;
 
+{$POINTERMATH ON}
+  PMethodArray = ^TMethod;
+{$POINTERMATH OFF}
+
   {$ENDREGION}
 
 
@@ -1006,16 +1010,14 @@ type
     function GetCanInvoke: Boolean;
     function GetEnabled: Boolean;
     function GetOnChanged: TNotifyEvent;
-    function GetThreadSafe: Boolean;
     function GetUseFreeNotification: Boolean;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
-    procedure SetThreadSafe(const value: Boolean);
     procedure SetUseFreeNotification(const value: Boolean);
   {$ENDREGION}
 
-    procedure Add(const handler: TMethodPointer);
-    procedure Remove(const handler: TMethodPointer);
+    procedure Add(const handler: TMethod);
+    procedure Remove(const handler: TMethod);
 
     /// <summary>
     ///   Removes all event handlers which were registered by an instance.
@@ -1041,16 +1043,6 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
 
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
-
-    /// <summary>
-    ///   Specifies if the event internally uses a critical section to
-    ///   protected add/remove and invoke calls when executed from different
-    ///   threads. The default is True and can be specified when creating new
-    ///   events or by setting this property. Turning this off can boost
-    ///   performance when it is ensured that operations are not happening from
-    ///   multiple threads.
-    /// </summary>
-    property ThreadSafe: Boolean read GetThreadSafe write SetThreadSafe;
 
     /// <summary>
     ///   Specifies if the event internally tracks if the event handlers are
@@ -1084,7 +1076,7 @@ type
   /// <summary>
   ///   Represents a multicast event that can be invoked.
   /// </summary>
-  IEventInvokable<T> = interface(IEvent<T>)
+  IInvokableEvent<T> = interface(IEvent<T>)
   {$REGION 'Property Accessors'}
     function GetInvoke: T;
   {$ENDREGION}
@@ -1097,16 +1089,14 @@ type
 
   Event<T> = record
   private
-    fInstance: IEventInvokable<T>;
+    fInstance: IInvokableEvent<T>;
     function GetCanInvoke: Boolean;
     function GetEnabled: Boolean;
     function GetInvoke: T;
     function GetOnChanged: TNotifyEvent;
-    function GetThreadSafe: Boolean;
     function GetUseFreeNotification: Boolean;
     procedure SetEnabled(const value: Boolean);
     procedure SetOnChanged(const value: TNotifyEvent);
-    procedure SetThreadSafe(const value: Boolean);
     procedure SetUseFreeNotification(const value: Boolean);
   public
     procedure Add(const handler: T);
@@ -1120,24 +1110,14 @@ type
     property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
 
     /// <summary>
-    ///   Specifies if the event internally uses a critical section to
-    ///   protected add/remove and invoke calls when executed from different
-    ///   threads. The default is True and can be specified when creating new
-    ///   events or by setting this property. Turning this off can boost
-    ///   performance when it is ensured that operations are not happening from
-    ///   multiple threads.
-    /// </summary>
-    property ThreadSafe: Boolean read GetThreadSafe write SetThreadSafe;
-
-    /// <summary>
     ///   Specifies if the event internally tracks if the event handlers are
     ///   implemented by a TComponent descendant and automatically unsubscribes
     ///   those when the implementing component is being destroyed.
     /// </summary>
     property UseFreeNotification: Boolean read GetUseFreeNotification write SetUseFreeNotification;
 
-    class operator Implicit(const value: IEventInvokable<T>): Event<T>;
-    class operator Implicit(var value: Event<T>): IEventInvokable<T>;
+    class operator Implicit(const value: IInvokableEvent<T>): Event<T>;
+    class operator Implicit(var value: Event<T>): IInvokableEvent<T>;
     class operator Implicit(var value: Event<T>): T;
   end;
 
@@ -1146,7 +1126,7 @@ type
   INotifyEvent<T> = interface(IEvent<TNotifyEvent<T>>)
   end;
 
-  INotifyEventInvokable<T> = interface(INotifyEvent<T>)
+  IInvokableNotifyEvent<T> = interface(INotifyEvent<T>)
     function GetInvoke: TNotifyEvent<T>;
     property Invoke: TNotifyEvent<T> read GetInvoke;
   end;
@@ -3080,7 +3060,9 @@ function CompareValue(const left, right: TValue): Integer; overload;
 function TypesOf(const values: array of TValue): TArray<PTypeInfo>;
 
 function InterfaceToMethodPointer(const intf; index: Integer): TMethodPointer;
+function MethodReferenceToMethod(const methodRef): TMethod;
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
+function MethodToMethodReference(const method: TMethod): IInterface;
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
 function HasMethodInfo(typeInfo: PTypeInfo): Boolean;
 function IsMethodReference(typeInfo: PTypeInfo): Boolean;
@@ -3122,14 +3104,20 @@ function GetVirtualMethod(const classType: TClass; const index: Integer): Pointe
 function GetAbstractError: Pointer;
 
 {$IFNDEF DELPHIXE3_UP}
-function AtomicIncrement(var target: Integer): Integer;
+function AtomicIncrement(var target: Integer): Integer; overload;
+function AtomicIncrement(var target: Integer; increment: Integer): Integer; overload;
+function AtomicIncrement(var target: Int64; increment: Int64 = 1): Int64; overload;
 function AtomicDecrement(var target: Integer): Integer; overload;
 function AtomicDecrement(var target: NativeInt; decrement: NativeInt): NativeInt; overload;
-function AtomicExchange(var target: Pointer; value: Pointer): Pointer;
+function AtomicExchange(var target: Integer; value: Integer): Integer; overload;
+function AtomicExchange(var target: Pointer; value: Pointer): Pointer; overload;
 function AtomicCmpExchange(var target: Integer; newValue, comparand: Integer): Integer; overload;
 function AtomicCmpExchange(var target: NativeInt; newValue, comparand: NativeInt): NativeInt; overload;
-function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): TObject; overload;
+function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): Pointer; overload;
 {$ENDIF}
+procedure AtomicStore(var target: Int64; const {$IFDEF CPUX86}{$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}{$ENDIF}value: Int64); {$IFNDEF CPUX86}inline;{$ENDIF}
+function AtomicLoad(var source: Int64): Int64; {$IFNDEF CPUX86}inline;{$ENDIF}
+function AtomicExchangeAdd(var target: Int64; const value: Int64): Int64;
 
 procedure IncUnchecked(var i: Integer; const n: Integer = 1); inline;
 
@@ -3677,6 +3665,19 @@ begin
   TMethod(Result).Data := Pointer(intf);
 end;
 
+function MethodReferenceToMethod(const methodRef): TMethod;
+type
+  TVtable = array[0..3] of Pointer;
+  PVtable = ^TVtable;
+  PPVtable = ^PVtable;
+begin
+  if Pointer(methodRef) = nil then
+    Exit(Default(TMethod));
+  // 3 is offset of Invoke, after QI, AddRef, Release
+  Result.Code := PPVtable(methodRef)^^[3];
+  Result.Data := Pointer(methodRef);
+end;
+
 function MethodReferenceToMethodPointer(const methodRef): TMethodPointer;
 begin
   if Pointer(methodRef) = nil then
@@ -3684,6 +3685,11 @@ begin
   // 3 is offset of Invoke, after QI, AddRef, Release
   TMethod(Result).Code := PPVtable(methodRef)^[3];
   TMethod(Result).Data := Pointer(methodRef);
+end;
+
+function MethodToMethodReference(const method: TMethod): IInterface;
+begin
+  Result := IInterface(TMethod(method).Data);
 end;
 
 function MethodPointerToMethodReference(const method: TMethodPointer): IInterface;
@@ -3897,6 +3903,48 @@ asm
 {$ENDIF}
 end;
 
+function AtomicIncrement(var target: Integer; increment: Integer): Integer;
+asm
+{$IFDEF CPUX86}
+  mov ecx,edx
+  lock xadd [eax],edx
+  add edx,ecx
+  mov eax,edx
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov rax,rdx
+  lock xadd [rcx],rdx
+  add rax,rdx
+{$ENDIF}
+end;
+
+function AtomicIncrement(var target: Int64; increment: Int64): Int64;
+asm
+{$IFDEF CPUX86}
+  push ebx
+  push esi
+  mov esi,target
+  mov eax,[esi]
+  mov edx,[esi+4]
+@@1:
+  mov ebx,eax
+  mov ecx,edx
+  add ebx,low increment
+  adc ecx,high increment
+  lock cmpxchg8b [esi]
+  jnz @@1
+  add eax,low increment
+  adc edx,high increment
+  pop esi
+  pop ebx
+{$ENDIF}
+{$IFDEF CPUX64}
+  mov rax,rdx
+  lock xadd [rcx],rdx
+  add rax,rdx
+{$ENDIF}
+end;
+
 function AtomicDecrement(var target: Integer): Integer;
 asm
 {$IFDEF CPUX86}
@@ -3926,6 +3974,18 @@ asm
   mov rax,rdx
   lock xadd [rcx],rdx
   add rax,rdx
+{$ENDIF}
+end;
+
+function AtomicExchange(var target: Integer; value: Integer): Integer;
+asm
+{$IFDEF CPUX86}
+  lock xchg [eax],edx
+  mov eax,edx
+{$ENDIF}
+{$IFDEF CPUX64}
+  lock xchg [rcx],rdx
+  mov rax,rdx
 {$ENDIF}
 end;
 
@@ -3965,7 +4025,7 @@ asm
 {$ENDIF}
 end;
 
-function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): TObject;
+function AtomicCmpExchange(var target: Pointer; newValue, comparand: Pointer): Pointer;
 asm
 {$IFDEF CPUX86}
   xchg eax,ecx
@@ -3975,6 +4035,66 @@ asm
   mov rax,r8
   lock cmpxchg [rcx],edx
 {$ENDIF}
+end;
+{$ENDIF}
+
+procedure AtomicStore(var target: Int64;
+  const {$IFDEF CPUX86}{$IFDEF SUPPORTS_CONSTREF}[ref]{$ENDIF}{$ENDIF}value: Int64); {$IFNDEF CPUX86}inline;{$ENDIF}
+{$IFDEF CPUX86}
+asm
+{$IFDEF SUPPORTS_CONSTREF}
+  movq xmm0,[edx]
+{$ELSE}
+  movq xmm0,[ebp+8]
+{$ENDIF}
+  movq [eax],xmm0
+end;
+{$ELSE}
+begin
+  target := value;
+end;
+{$ENDIF}
+
+function AtomicLoad(var source: Int64): Int64; {$IFNDEF CPUX86}inline;{$ENDIF}
+{$IFDEF CPUX86}
+asm
+  movq xmm0,[source]
+  movd eax,xmm0
+  psrldq xmm0,4
+  movd edx,xmm0
+end;
+{$ELSE}
+begin
+  Result := source;
+end;
+{$ENDIF}
+
+function AtomicExchangeAdd(var target: Int64; const value: Int64): Int64;
+{$IFDEF ASSEMBLER}
+asm
+{$IFDEF CPUX86}
+  push    ebx
+  push    esi
+  mov     esi,eax
+  mov     eax,[esi]
+  mov     edx,[esi+4]
+@1:
+  mov     ebx,eax
+  mov     ecx,edx
+  add     ebx,[ebp+8]
+  adc     ecx,[ebp+12]
+  lock cmpxchg8b [esi]
+  jnz @1
+  pop     esi
+  pop     ebx
+{$ELSE}
+  mov rax,rdx
+  lock xadd [rcx],rax
+{$ENDIF}
+end;
+{$ELSE}
+begin
+  Result := AtomicIncrement(target, value) - value;
 end;
 {$ENDIF}
 
@@ -9701,11 +9821,6 @@ begin
   Result := EventHelper(fInstance).GetOnChanged();
 end;
 
-function Event<T>.GetThreadSafe: Boolean;
-begin
-  Result := EventHelper(fInstance).GetThreadSafe;
-end;
-
 function Event<T>.GetUseFreeNotification: Boolean;
 begin
   Result := EventHelper(fInstance).GetUseFreeNotification;
@@ -9731,22 +9846,17 @@ begin
   EventHelper(fInstance).SetOnChanged(value, TypeInfo(T));
 end;
 
-procedure Event<T>.SetThreadSafe(const value: Boolean);
-begin
-  EventHelper(fInstance).SetThreadSafe(value, TypeInfo(T));
-end;
-
 procedure Event<T>.SetUseFreeNotification(const value: Boolean);
 begin
   EventHelper(fInstance).SetUseFreeNotification(value, TypeInfo(T));
 end;
 
-class operator Event<T>.Implicit(const value: IEventInvokable<T>): Event<T>;
+class operator Event<T>.Implicit(const value: IInvokableEvent<T>): Event<T>;
 begin
   IntfAssign(value, IInterface(Result.fInstance));
 end;
 
-class operator Event<T>.Implicit(var value: Event<T>): IEventInvokable<T>;
+class operator Event<T>.Implicit(var value: Event<T>): IInvokableEvent<T>;
 begin
   EventHelper(value.fInstance).EnsureInstance(Result, TypeInfo(T));
 end;

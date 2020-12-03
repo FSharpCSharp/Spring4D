@@ -71,6 +71,7 @@ resourcestring
   SServiceLocatorNotInitialized = 'The global ServiceLocator has not been initialized.';
 
   SNoTypeInfo          = 'No type information found.';
+  SUnsupportedCallingConvention = 'Unsupported calling convention, only standard calling convention is supported';
   STypeParameterShouldBeMethod = 'The type parameter "%s" should be an event or anonymous method type.';
   STypeParameterContainsNoRtti = 'The type parameter "%s" contains no RTTI. Please check for {$M+}.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';

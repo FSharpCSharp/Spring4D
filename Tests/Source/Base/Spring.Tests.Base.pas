@@ -143,7 +143,7 @@ type
       CNumber = 5;
       CText = 'test';
   strict private
-    fEvent: IMulticastNotifyEvent;
+    fEvent: IInvokableNotifyEvent;
     fASender: TObject;
     fAInvoked: Boolean;
     fBSender: TObject;
@@ -923,7 +923,7 @@ end;
 procedure TTestMulticastEvent.SetUp;
 begin
   inherited;
-  fEvent := TMulticastNotifyEvent.Create();
+  fEvent := TNotifyEventImpl.Create();
   fProc :=
     procedure(const i: Integer; const s: string)
     begin

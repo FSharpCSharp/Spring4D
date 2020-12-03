@@ -40,13 +40,11 @@ uses
   Spring.Events.Base,
   TypInfo;
 
-{$IFDEF DELPHIXE6_UP}{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}{$ENDIF}
-
 type
 
   {$REGION 'TEvent'}
 
-  TEvent = class(TEventBase{$IFNDEF USE_RTTI_FOR_PROXY}, TProc{$ENDIF})
+  TEvent = class(TEventBase)
   private
     fTypeInfo: PTypeInfo;
   {$IFDEF USE_RTTI_FOR_PROXY}
@@ -57,163 +55,6 @@ type
     procedure InternalInvokeDelegate(Method: TRttiMethod;
       const Args: TArray<TValue>; out Result: TValue); virtual;
   {$ELSE}
-    fInvocations: TObject;
-    procedure Invoke;
-  protected
-    procedure InternalInvoke(Params: Pointer; StackSize: Integer); virtual;
-  {$ENDIF}
-    procedure Notify(Sender: TObject; const Item: TMethodPointer;
-      Action: TEventBase.TCollectionNotification); override;
-  public
-    constructor Create(typeInfo: PTypeInfo);
-    destructor Destroy; override;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TEvent<T>'}
-
-  TEvent<T> = class(TEvent, IEvent, IEvent<T>, IEventInvokable<T>)
-  private
-    function GetInvoke: T; overload;
-  public
-    constructor Create;
-    procedure Add(handler: T); overload;
-    procedure Remove(handler: T); overload;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TNotifyEventImpl'}
-
-  TNotifyEventImpl = class(TEventBase, IEvent,
-    IEvent<TNotifyEvent>, IEventInvokable<TNotifyEvent>)
-  private
-    function GetInvoke: TNotifyEvent; overload;
-  public
-    procedure AfterConstruction; override;
-    procedure Add(handler: TNotifyEvent); overload;
-    procedure Remove(handler: TNotifyEvent); overload;
-    procedure Invoke(sender: TObject);
-  end;
-
-  IMulticastNotifyEvent = IEventInvokable<TNotifyEvent>;
-
-  TMulticastNotifyEvent = TNotifyEventImpl;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TNotifyEventImpl<T>'}
-
-  TNotifyEventImpl<T> = class(TEventBase, IEvent,
-    INotifyEvent<T>, INotifyEventInvokable<T>)
-  private
-    function GetInvoke: TNotifyEvent<T>;
-  public
-    procedure AfterConstruction; override;
-    procedure Add(handler: TNotifyEvent<T>); overload;
-    procedure Remove(handler: TNotifyEvent<T>); overload;
-    procedure Invoke(sender: TObject; const item: T);
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TPropertyChangedEventImpl'}
-
-  TPropertyChangedEventImpl = class(TEventBase, IEvent,
-    IEvent<TPropertyChangedEvent>, IEventInvokable<TPropertyChangedEvent>)
-  private
-    function GetInvoke: TPropertyChangedEvent;
-  public
-    procedure AfterConstruction; override;
-    procedure Add(handler: TPropertyChangedEvent); overload;
-    procedure Remove(handler: TPropertyChangedEvent); overload;
-    procedure Invoke(Sender: TObject; const EventArgs: IPropertyChangedEventArgs);
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'EventHelper'}
-
-  EventHelper = record
-  private type
-    IMethodEventInternal = interface(IEventInvokable<TMethodPointer>)
-      procedure GetInvoke(var result);
-      procedure Add(const handler);
-      procedure Remove(const handler);
-    end;
-
-    IDelegateEventInternal = interface(IEventInvokable<IInterface>)
-      procedure GetInvoke(var result);
-      procedure Add(const handler);
-      procedure Remove(const handler);
-    end;
-
-    TMethodEvent = class(TEvent, IMethodEventInternal)
-    private
-      function GetInvoke: TMethodPointer; overload;
-      procedure Add(handler: TMethodPointer); overload;
-      procedure Remove(handler: TMethodPointer); overload;
-
-      procedure GetInvoke(var result); overload;
-      procedure Add(const handler); overload;
-      procedure Remove(const handler); overload;
-    end;
-
-    TDelegateEvent = class(TEvent, IDelegateEventInternal)
-    private
-      function GetInvoke: IInterface; overload;
-      procedure Add(handler: IInterface); overload;
-      procedure Remove(handler: IInterface); overload;
-
-      procedure GetInvoke(var result); overload;
-      procedure Add(const handler); overload;
-      procedure Remove(const handler); overload;
-    end;
-  private
-    fInstance: IMethodEventInternal;
-    procedure CreateEventHandler(typeInfo: PTypeInfo);
-  public
-    function GetCanInvoke: Boolean;
-    function GetEnabled: Boolean;
-    procedure GetInvoke(var result; typeInfo: PTypeInfo);
-    function GetOnChanged: TNotifyEvent;
-    function GetThreadSafe: Boolean;
-    function GetUseFreeNotification: Boolean;
-    procedure SetEnabled(const value: Boolean; typeInfo: PTypeInfo);
-    procedure SetOnChanged(const value: TNotifyEvent; typeInfo: PTypeInfo);
-    procedure SetThreadSafe(const value: Boolean; typeInfo: PTypeInfo);
-    procedure SetUseFreeNotification(const value: Boolean; typeInfo: PTypeInfo);
-
-    procedure Add(const handler; typeInfo: PTypeInfo);
-    procedure Remove(const handler);
-    procedure Clear;
-    procedure RemoveAll(instance: Pointer);
-    procedure EnsureInstance(var result; typeInfo: PTypeInfo);
-  end;
-
-  {$ENDREGION}
-
-
-implementation
-
-uses
-{$IFDEF USE_RTTI_FOR_PROXY}
-  Spring.VirtualInterface,
-{$ENDIF}
-  Spring.ResourceStrings;
-
-
-{$REGION 'Proxy generators'}
-
-{$IFNDEF USE_RTTI_FOR_PROXY}
-type
-  TMethodInvocations = class
   private
     const
       paEAX = Word(0);
@@ -240,41 +81,161 @@ type
       TMethodInfo = record
         ParamInfos: PParameterInfos;
         StackSize: Integer;
-        CallConvention: TCallConv;
 {$IFDEF CPUX64}
-        RegisterFlag: Word;
+        RegisterFlag: Integer;
 {$ENDIF}
         constructor Create(typeData: PTypeData);
       end;
 
-      TMethodInvokeEvent = procedure(Params: Pointer; StackSize: Integer) of object;
   private
     fMethodInfo: TMethodInfo;
-    fMethodInvokeEvent: TMethodInvokeEvent;
-  protected
-    procedure InternalInvokeHandlers(Params: PParameters);
+    fMethodInvoke: Pointer;
     procedure InvokeEventHandlerStub;
+    class procedure InvokeMethod(const Method: TMethod; Parameters: PParameters; StackSize: Integer); static;
+  protected
+    procedure Invoke;
+    procedure InternalInvoke(Params: Pointer; StackSize: Integer); virtual;
+  {$ENDIF}
+    procedure Notify(Sender: TObject; const Item: TMethod;
+      Action: TEventBase.TCollectionNotification); override;
   public
-    constructor Create(methodTypeData: PTypeData; methodInvokeEvent: TMethodInvokeEvent);
+    constructor Create(typeInfo: PTypeInfo);
+    destructor Destroy; override;
   end;
 
-function AdditionalInfoOf(TypeData: PTypeData): Pointer;
-var
-  P: PByte;
-  I: Integer;
-begin
-  P := @TypeData^.ParamList;
-  // Skip parameter names and types
-  for I := 1 to TypeData^.ParamCount do //FI:W528
-  begin
-    Inc(P, 1 + P[1] + 1);
-    Inc(P, P[0] + 1 );
+  {$ENDREGION}
+
+
+  {$REGION 'TNotifyEventImpl'}
+
+  TNotifyEventImpl = class(TEventBase, IEvent,
+    IEvent<TNotifyEvent>, IInvokableEvent<TNotifyEvent>)
+  private
+    function GetInvoke: TNotifyEvent; overload;
+  public
+    procedure AfterConstruction; override;
+    procedure Add(handler: TNotifyEvent); overload;
+    procedure Remove(handler: TNotifyEvent); overload;
+    procedure Invoke(sender: TObject);
   end;
-  if TypeData^.MethodKind = mkFunction then
-    // Skip return type name and info
-    Inc(P, P[0] + 1 + 4);
-  Result := P;
-end;
+
+  IInvokableNotifyEvent = IInvokableEvent<TNotifyEvent>;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TNotifyEventImpl<T>'}
+
+  TNotifyEventImpl<T> = class(TEventBase, IEvent,
+    INotifyEvent<T>, IInvokableNotifyEvent<T>)
+  private
+    function GetInvoke: TNotifyEvent<T>; overload;
+  public
+    procedure AfterConstruction; override;
+    procedure Add(handler: TNotifyEvent<T>); overload;
+    procedure Remove(handler: TNotifyEvent<T>); overload;
+    procedure Invoke(sender: TObject; const item: T);
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TPropertyChangedEventImpl'}
+
+  TPropertyChangedEventImpl = class(TEventBase, IEvent,
+    IEvent<TPropertyChangedEvent>, IInvokableEvent<TPropertyChangedEvent>)
+  private
+    function GetInvoke: TPropertyChangedEvent; overload;
+  public
+    procedure AfterConstruction; override;
+    procedure Add(handler: TPropertyChangedEvent); overload;
+    procedure Remove(handler: TPropertyChangedEvent); overload;
+    procedure Invoke(Sender: TObject;
+      const EventArgs: IPropertyChangedEventArgs);
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'EventHelper'}
+
+  EventHelper = record
+  private type
+    IMethodEventInternal = interface(IInvokableEvent<TMethodPointer>)
+      procedure GetInvoke(var result);
+      procedure Add(const handler);
+      procedure Remove(const handler);
+    end;
+
+    IDelegateEventInternal = interface(IInvokableEvent<IInterface>)
+      procedure GetInvoke(var result);
+      procedure Add(const handler);
+      procedure Remove(const handler);
+    end;
+
+    TMethodEvent = class(TEvent, IMethodEventInternal, IEvent)
+    private
+      function GetInvoke: TMethodPointer; overload;
+      procedure Add(handler: TMethodPointer); overload;
+      procedure Remove(handler: TMethodPointer); overload;
+
+      procedure GetInvoke(var result); overload;
+      procedure Add(const handler); overload;
+      procedure Remove(const handler); overload;
+    end;
+
+    TDelegateEvent = class(TEvent, {$IFNDEF USE_RTTI_FOR_PROXY}TProc,{$ENDIF} IDelegateEventInternal, IEvent)
+    private
+      function GetInvoke: IInterface; overload;
+      procedure Add(handler: IInterface); overload;
+      procedure Remove(handler: IInterface); overload;
+
+      procedure GetInvoke(var result); overload;
+      procedure Add(const handler); overload;
+      procedure Remove(const handler); overload;
+    end;
+  private
+    fInstance: IMethodEventInternal;
+    procedure CreateEventHandler(typeInfo: PTypeInfo);
+  public
+    function GetCanInvoke: Boolean;
+    function GetEnabled: Boolean;
+    procedure GetInvoke(var result; typeInfo: PTypeInfo);
+    function GetOnChanged: TNotifyEvent;
+    function GetUseFreeNotification: Boolean;
+    procedure SetEnabled(const value: Boolean; typeInfo: PTypeInfo);
+    procedure SetOnChanged(const value: TNotifyEvent; typeInfo: PTypeInfo);
+    procedure SetUseFreeNotification(const value: Boolean; typeInfo: PTypeInfo);
+
+    procedure Add(const handler; typeInfo: PTypeInfo);
+    procedure Remove(const handler);
+    procedure Clear;
+    procedure RemoveAll(instance: Pointer);
+    procedure EnsureInstance(var result; typeInfo: PTypeInfo);
+  end;
+
+  {$ENDREGION}
+
+
+implementation
+
+uses
+{$IFDEF MSWINDOWS}
+  Windows,
+{$ENDIF}
+  Spring.HazardEra,
+{$IFDEF USE_RTTI_FOR_PROXY}
+  Spring.VirtualInterface,
+{$ENDIF}
+  Spring.ResourceStrings;
+
+const
+  PointerSize = SizeOf(Pointer);
+
+
+{$REGION 'Proxy generators'}
+
+{$IFNDEF USE_RTTI_FOR_PROXY}
 
 procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
 
@@ -306,7 +267,7 @@ procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
   procedure WritePointer(var Dest: PByte; p: Pointer);
   begin
     PPointer(Dest)^ := p;
-    Inc(Dest, SizeOf(Pointer));
+    Inc(Dest, PointerSize);
   end;
 
 var
@@ -331,102 +292,101 @@ begin
   end;
   WriteByte(p, Byte(method.CallingConvention));
   for i := Low(params) to High(params) do
-  begin
-    WritePointer(p, Pointer(NativeInt(params[i].ParamType.Handle) - SizeOf(Pointer)));
-  end;
+    WritePointer(p, Pointer(NativeInt(params[i].ParamType.Handle) - PointerSize));
 end;
 
-procedure InvokeMethod(const Method: TMethod;
-  Parameters: Pointer; StackSize: Integer);
-const
-  PointerSize = SizeOf(Pointer);
-  paEDX = Word(1);
-  paECX = Word(2);
-type
-  PParameters = ^TParameters;
-  TParameters = packed record
-  public
-{$IFNDEF CPUX64}
-    Registers: array[paEDX..paECX] of Cardinal;
-    EAXRegister: Cardinal;
-    ReturnAddress: Pointer;
-{$ENDIF}
-    Stack: array[0..1023] of Byte;
-  end;
+class procedure TEvent.InvokeMethod(const Method: TMethod;
+  Parameters: PParameters; StackSize: Integer);
 {$IFNDEF CPUX64}
 asm
-  push ebp
-  mov ebp,esp
-  push eax // ebp-4 = Method
-  push ebx
-  mov ebx, edx // ebx = Parameters
+  test ecx,ecx                    // if StackSize > 0
+  jnz @@with_stack                // jump if StackSize <> 0
 
-  // if StackSize > 0
-  test ecx,ecx
-  jz @@no_stack
-
-  // stack address alignment
-  {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
-  // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
-  add ecx,PointerSize-1
-  and ecx,not(PointerSize-1)
-  and ecx,$ffff
-  sub esp,ecx
-
-  // put stack address as second parameter
-  mov edx,esp
-
-  // put params on stack as first parameter
-  lea eax,[ebx].TParameters.Stack
-
-  call Move
-
-@@no_stack:
-  mov edx,[ebx].TParameters.Registers.dword[0]
-  mov ecx,[ebx].TParameters.Registers.dword[4]
-  mov ebx,[ebp-$04]
-  mov eax,[ebx].TMethod.Data
-  call [ebx].TMethod.Code
-
-  pop ebx
+  mov ecx,[edx].TParameters.Registers.dword[4]  // ecx = Parameters.Registers[paECX]
+  mov edx,[edx].TParameters.Registers.dword[0]  // edx = Parameters.Registers[paEDX]
+  push [eax].TMethod.Code                       // push Method.Code
+  mov eax,[eax].TMethod.Data                    // eax = Method.Data
+  call [esp]                                    // call Method.Code
   pop eax
-  mov esp,ebp
-  pop ebp
+  ret
+
+@@with_stack:
+  push ebx                        // preserve ebx
+  push esi                        // preserve esi
+  mov ebx,edx                     // ebx = Parameters
+  mov esi,eax                     // esi = Method
+
+  sub esp,ecx                     // allocate stack space
+  lea eax,[ebx].TParameters.Stack // put stack buffer as first parameter
+  mov edx,esp                     // put stack address as second parameter
+  call Move                       // third parameter StackSize was already in place
+
+  mov edx,[ebx].TParameters.Registers.dword[0]  // ecx = Parameters.Registers[paECX]
+  mov ecx,[ebx].TParameters.Registers.dword[4]  // edx = Parameters.Registers[paEDX]
+  mov eax,[esi].TMethod.Data                    // eax = Method.Data
+  call [esi].TMethod.Code                       // call Method.Data
+
+  pop esi                         // restore esi
+  pop ebx                         // restore ebx
 end;
 {$ELSE}
 asm
-  .params 60
-  mov [rbp+$200],Method
-  mov [rbp+$208],Parameters
+  push rbp                        // preserve rbp
+  mov rbp,rsp                     // set rbp to current stack pointer for fixed offset
+  sub rsp,r8                      // allocate stack space
+  mov [rbp+$10],Method            // preserve Method
+  mov [rbp+$18],Parameters        // preserve Parameters
 
-  // put params on stack as first parameter
-  mov rcx,Parameters
+  sub r8,32
+  jnz @@move                      // if StackSize > 32
 
-  // put stack address as second parameter
-  mov rdx,rbp
+@@call:
+  mov rax,[rbp+$18]
+  mov rcx,[rax].TParameters.Stack.qword[0]      // rcx = Parameters.Stack[0]
+  mov rdx,[rax].TParameters.Stack.qword[8]      // rdx = Parameters.Stack[8]
+  mov r8,[rax].TParameters.Stack.qword[16]      // r8 = Parameters.Stack[16]
+  mov r9,[rax].TParameters.Stack.qword[24]      // r9 = Parameters.Stack[24]
 
+  movsd xmm0,[rax].TParameters.Stack.qword[0]   // xmm0 = Parameters.Stack[0]
+  movsd xmm1,[rax].TParameters.Stack.qword[8]   // xmm1 = Parameters.Stack[8]
+  movsd xmm2,[rax].TParameters.Stack.qword[16]  // xmm2 = Parameters.Stack[16]
+  movsd xmm3,[rax].TParameters.Stack.qword[24]  // xmm3 = Parameters.Stack[24]
+
+  mov rax,[rbp+$10]
+  mov rcx,[rax].TMethod.Data      // rcx = Method.Data
+  call [rax].TMethod.Code         // call Method.Data
+
+  lea rsp,[rbp]                   // restore rsp - deallocate stack space
+  pop rbp                         // restore
+  ret
+
+@@move:
+  lea rcx,[rdx+32]
+  lea rdx,[rsp+32]
   call Move
-
-  mov rax,[rbp+$208]
-
-  mov rcx,[rax].TParameters.Stack.qword[0]
-  mov rdx,[rax].TParameters.Stack.qword[8]
-  mov r8,[rax].TParameters.Stack.qword[16]
-  mov r9,[rax].TParameters.Stack.qword[24]
-
-  movsd xmm0,[rax].TParameters.Stack.qword[0]
-  movsd xmm1,[rax].TParameters.Stack.qword[8]
-  movsd xmm2,[rax].TParameters.Stack.qword[16]
-  movsd xmm3,[rax].TParameters.Stack.qword[24]
-
-  mov rax,[rbp+$200]
-  lea rax,[rax]
-  mov rcx,[rax].TMethod.Data
-  call [rax].TMethod.Code
+  jmp @@call
 end;
 {$ENDIF}
 
-constructor TMethodInvocations.TMethodInfo.Create(typeData: PTypeData);
+constructor TEvent.TMethodInfo.Create(typeData: PTypeData);
+
+  function AdditionalInfoOf(TypeData: PTypeData): Pointer;
+  var
+    P: PByte;
+    I: Integer;
+  begin
+    P := @TypeData^.ParamList;
+    // Skip parameter names and types
+    for I := 1 to TypeData^.ParamCount do //FI:W528
+    begin
+      Inc(P, 1 + P[1] + 1);
+      Inc(P, P[0] + 1 );
+    end;
+    if TypeData^.MethodKind = mkFunction then
+      // Skip return type name and info
+      Inc(P, P[0] + 1 + 4);
+    Result := P;
+  end;
 
   function PassByRef(typeInfo: PTypeInfo; paramFlags: TParamFlags): Boolean;
   begin
@@ -443,55 +403,51 @@ constructor TMethodInvocations.TMethodInfo.Create(typeData: PTypeData);
 
 var
   P: PByte;
-  I: Integer;
+  i: Integer;
 {$IFNDEF CPUX64}
   curReg: Integer;
   Size: Integer;
 {$ENDIF}
 begin
   P := AdditionalInfoOf(typeData);
-  CallConvention := TCallConv(PByte(p)^);
-  ParamInfos := PParameterInfos(UIntPtr(P) + 1);
+  if TCallConv(PByte(p)^) <> ccReg then
+    raise EInvalidOperationException.CreateRes(@SUnsupportedCallingConvention);
+  ParamInfos := PParameterInfos(P + 1);
 
-  StackSize := SizeOf(Pointer); // Self in stack
 {$IFNDEF CPUX64}
-  curReg := paStack;
-  if CallConvention = ccReg then
-  begin
-    curReg := paEDX;
-    StackSize := 0;
-  end;
+  curReg := paEDX;
+  StackSize := 0;
+{$ELSE}
+  StackSize := PointerSize; // Self in stack
 {$ENDIF}
 
-  P := @typeData^.ParamList;
+  P := @typeData.ParamList;
 
-  for I := 0 to typeData^.ParamCount - 1 do
+  for i := 0 to typeData.ParamCount - 1 do
   begin
-    if not Assigned(ParamInfos^[I]) then
+    if not Assigned(ParamInfos[i]) then
       raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
 {$IFNDEF CPUX64}
-    if PassByRef(ParamInfos^[I]^, TParamFlags(P[0])) then
+    if PassByRef(ParamInfos[i]^, TParamFlags(P[0])) then
     begin
       if curReg < paStack then
         Inc(curReg)
       else
-        Inc(StackSize, 4);
+        Inc(StackSize, PointerSize);
     end
     else
     begin
-      Size := GetTypeSize(ParamInfos^[I]^);
-      if (curReg < paStack) and (Size in [1, 2, 4]) and (ParamInfos^[I]^.Kind <> tkFloat) then
+      Size := GetTypeSize(ParamInfos[i]^);
+      if (curReg < paStack) and (Size in [1, 2, 4]) and (ParamInfos[i]^.Kind <> tkFloat) then
         Inc(curReg)
       else
         Inc(StackSize, Align4(Size));
     end;
 {$ELSE}
-    if I < 3 then
-    begin
-      if ParamInfos^[I]^.Kind = tkFloat then
-        RegisterFlag := RegisterFlag or (1 shl (I + 1));
-    end;
-    Inc(StackSize, 8);
+    // pass first 3 parameters in XMM1-XMM3 if floating point (Self was already passed before them in RCX)
+    if (i < 3) and (ParamInfos[i]^.Kind = tkFloat) then
+      RegisterFlag := RegisterFlag or (1 shl (i + 1));
+    Inc(StackSize, PointerSize);
 {$ENDIF}
     Inc(P, 1 + P[1] + 1);
     Inc(P, P[0] + 1);
@@ -503,108 +459,86 @@ begin
 {$ENDIF}
 end;
 
-constructor TMethodInvocations.Create(methodTypeData: PTypeData;
-  methodInvokeEvent: TMethodInvokeEvent);
-begin
-  fMethodInfo := TMethodInfo.Create(methodTypeData);
-  fMethodInvokeEvent := methodInvokeEvent;
-end;
-
-procedure TMethodInvocations.InternalInvokeHandlers(Params: PParameters);
-begin
-  if Assigned(fMethodInvokeEvent) then
-    fMethodInvokeEvent(Params, fMethodInfo.StackSize);
-end;
-
-procedure TMethodInvocations.InvokeEventHandlerStub;
+procedure TEvent.InvokeEventHandlerStub;
 {$IFNDEF CPUX64}
-const
-  PtrSize = SizeOf(Pointer);
 asm
-        // is register conversion call ?
-        CMP     BYTE PTR Self.fMethodInfo.CallConvention, ccReg
-        JZ      @Begin
-        Mov     EAX, [esp + 4]
-@Begin:
-        PUSH    EAX
-        PUSH    ECX
-        PUSH    EDX
-        MOV     EDX,ESP
-        CALL    InternalInvokeHandlers
-        // Pop EDX and ECX off the stack while preserving all registers.
-        MOV     [ESP+4],EAX
-        POP     EAX
-        POP     EAX
-        POP     ECX		// Self
-        Mov     EAX, ECX
-        MOV     ECX,[ECX].fMethodInfo.StackSize
-        TEST    ECX,ECX
-        JZ      @@SimpleRet
-        // Jump to the actual return instruction since it is most likely not just a RET
-        //JMP     ECX    // Data Exec. Prevention: Jumping into a GetMem allocated memory block
+  // check DisabledFlag
+  bt [eax].fRefCount,30
+  jc @@return
 
-        // stack address alignment
-        {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
-        // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
-        // In cdecl call conversion, the caller will clear the stack
-        CMP     DWORD PTR [EAX].fMethodInfo.CallConvention, ccCdecl
-        JZ      @@SimpleRet
-        ADD     ECX, PtrSize - 1
-        AND     ECX, NOT (PtrSize - 1)
-        AND     ECX, $FFFF
+  // push registers - order is important, they are part of the TParameters record
+  push eax
+  push ecx
+  push edx
 
-        // clean up the stack
-        PUSH    EAX                         // we need this register, so save it
-        MOV     EAX,[ESP + 4]               // Load the return address
-        MOV     [ESP + ECX + 4], EAX        // Just blast it over the first param on the stack
-        POP     EAX
-        ADD     ESP,ECX                     // This will move the stack back to where the moved
-                                            // return address is now located. The next RET
-                                            // instruction will do the final stack cleanup
-@@SimpleRet:
+  // put parameters
+  mov edx,esp                           // put address to stack into Params
+  mov ecx,[eax].fMethodInfo.StackSize   // put StackSize
+
+  call [eax].fMethodInvoke
+
+  // pop registers - don't care for preserving EAX as we don't support result
+  pop eax
+  pop eax
+  pop eax
+
+  mov ecx,[eax].fMethodInfo.StackSize
+  test ecx,ecx        // if StackSize > 0
+  jnz @@cleanup_stack
+  ret
+
+@@cleanup_stack:
+  // clean up the stack - like the "ret n" instruction does
+  mov eax,[esp]       // load the return address
+  add esp,ecx         // pop from the stack
+  mov [esp],eax       // write return address for ret
+@@return:
 end;
 {$ELSE}
 asm
-        .PARAMS 2
-        MOV     AX, WORD PTR [RCX].TMethodInvocations.fMethodInfo.RegisterFlag
-@@FIRST:
-        TEST    AX, $01
-        JZ      @@SAVE_RCX
-@@SAVE_XMM0:
-        MOVSD   QWORD PTR [RSP+$30], XMM0
-        JMP     @@SECOND
-@@SAVE_RCX:
-        MOV     QWORD PTR [RSP+$30], RCX
+  // check DisabledFlag
+  bt [Self].fRefCount,30
+  jc @@return
 
-@@SECOND:
-        TEST    AX, $02
-        JZ      @@SAVE_RDX
-@@SAVE_XMM1:
-        MOVSD   QWORD PTR [RSP+$38], XMM1
-        JMP     @@THIRD
-@@SAVE_RDX:
-        MOV     QWORD PTR [RSP+$38], RDX
+  sub rsp,32
+  mov eax,[Self].fMethodInfo.RegisterFlag
 
-@@THIRD:
-        TEST    AX, $04
-        JZ      @@SAVE_R8
-@@SAVE_XMM2:
-        MOVSD   QWORD PTR [RSP+$40], XMM2
-        JMP     @@FORTH
-@@SAVE_R8:
-        MOV     QWORD PTR [RSP+$40], R8
+  // first parameter is always pointer
+  mov [rsp+$28],rcx
 
-@@FORTH:
-        TEST    AX, $08
-        JZ      @@SAVE_R9
-@@SAVE_XMM3:
-        MOVSD   QWORD PTR [RSP+$48], XMM3
-        JMP     @@1
-@@SAVE_R9:
-        MOV     QWORD PTR [RSP+$48], R9
+  // second parameter: save rdx or xmm1
+  test al,2
+  jnz @@save_xmm1
+  mov [rsp+$30],rdx
+  jmp @@third
+@@save_xmm1:
+  movsd [rsp+$30],xmm1
 
-@@1:    LEA     RDX, QWORD PTR [RSP+$30]
-        CALL    InternalInvokeHandlers
+  // third parameter: save r8 or xmm2
+@@third:
+  test al,4
+  jnz @@save_xmm2
+  mov [rsp+$38],r8
+  jmp @@fourth
+@@save_xmm2:
+  movsd [rsp+$38],xmm2
+
+  // fourth parameter: save r9 or xmm3
+@@fourth:
+  test al,8
+  jnz @@save_xmm3
+  mov [rsp+$40],r9
+  jmp @@call
+@@save_xmm3:
+  movsd [rsp+$40],xmm3
+
+@@call:
+  lea rdx,[rsp+$28]                     // put stack address into Params
+  mov r8d,[rcx].fMethodInfo.StackSize   // pass StackSize
+  call [rcx].fMethodInvoke
+
+  add rsp,32
+@@return:
 end;
 {$ENDIF}
 {$ENDIF}
@@ -619,6 +553,7 @@ var
   method: TRttiMethod;
 {$IFNDEF USE_RTTI_FOR_PROXY}
   typeData: PTypeData;
+  invokeEvent: procedure(Params: Pointer; StackSize: Integer) of object;
 {$ENDIF}
 begin
   fTypeInfo := typeInfo;
@@ -640,8 +575,10 @@ begin
       TMethod(fInvoke) := TMethodImplementation(fProxy).AsMethod;
 {$ELSE}
       typeData := typeInfo.TypeData;
-      fInvocations := TMethodInvocations.Create(typeData, InternalInvoke);
-      fInvoke := TMethodInvocations(fInvocations).InvokeEventHandlerStub;
+      fMethodInfo := TMethodInfo.Create(typeData);
+      invokeEvent := InternalInvoke;
+      fMethodInvoke := TMethod(invokeEvent).Code;
+      fInvoke := InvokeEventHandlerStub;
 {$ENDIF}
     end;
     tkInterface:
@@ -662,8 +599,10 @@ begin
       New(typeData);
       try
         GetMethodTypeData(method, typeData);
-        fInvocations := TMethodInvocations.Create(typeData, InternalInvoke);
-        fInvoke := TMethodInvocations(fInvocations).InvokeEventHandlerStub;
+        fMethodInfo := TMethodInfo.Create(typeData);
+        invokeEvent := InternalInvoke;
+        fMethodInvoke := TMethod(invokeEvent).Code;
+        fInvoke := InvokeEventHandlerStub;
       finally
         Dispose(typeData);
       end;
@@ -681,8 +620,6 @@ begin
     tkMethod: TMethodImplementation(fProxy).Free;
     tkInterface: IInterface(fProxy) := nil;
   end;
-{$ELSE}
-  fInvocations.Free;
 {$ENDIF}
   inherited Destroy;
 end;
@@ -691,17 +628,23 @@ end;
 procedure TEvent.InternalInvokeMethod(UserData: Pointer;
   const Args: TArray<TValue>; out Result: TValue);
 var
-  handler: TMethodPointer;
   argsWithoutSelf: TArray<TValue>;
+  handlers: PMethodArray;
+  i: Integer;
   value: TValue;
 begin
   if CanInvoke then
   begin
     argsWithoutSelf := Copy(Args, 1);
-    for handler in Handlers do
-    begin
-      TValue.Make(@TMethod(handler), TRttiInvokableType(UserData).Handle, value);
-      TRttiInvokableType(UserData).Invoke(value, argsWithoutSelf);
+    handlers := AcquireGuard(fHandlers);
+    try
+      for i := 0 to DynArrayHigh(handlers) do
+      begin
+        TValue.Make(@TMethod(handlers[i]), TRttiInvokableType(UserData).Handle, value);
+        TRttiInvokableType(UserData).Invoke(value, argsWithoutSelf);
+      end;
+    finally
+      ReleaseGuard;
     end;
   end;
 end;
@@ -709,31 +652,113 @@ end;
 procedure TEvent.InternalInvokeDelegate(Method: TRttiMethod;
   const Args: TArray<TValue>; out Result: TValue);
 var
-  handler: TMethodPointer;
-  reference: IInterface;
   argsWithoutSelf: TArray<TValue>;
+  handlers: PMethodArray;
+  i: Integer;
+  reference: IInterface;
   value: TValue;
 begin
   if CanInvoke then
   begin
     argsWithoutSelf := Copy(Args, 1);
-    for handler in Handlers do
-    begin
-      reference := MethodPointerToMethodReference(handler);
-      TValue.Make(@reference, TypeInfo(IInterface), value);
-      method.Invoke(value, argsWithoutSelf);
+    handlers := AcquireGuard(fHandlers);
+    try
+      for i := 0 to DynArrayHigh(handlers) do
+      begin
+        reference := MethodToMethodReference(handlers[i]);
+        TValue.Make(@reference, TypeInfo(IInterface), value);
+        method.Invoke(value, argsWithoutSelf);
+      end;
+    finally
+      ReleaseGuard;
     end;
   end;
 end;
 {$ELSE}
-procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
-var
-  handler: TMethodPointer;
+
+function DynArrayHigh(const A: Pointer): NativeInt; inline;
 begin
-  if CanInvoke then
-    for handler in Handlers do
-      InvokeMethod(TMethod(handler), Params, StackSize);
+  Result := NativeInt(A);
+  if Result <> 0 then
+{$POINTERMATH ON}
+    Result := PNativeInt(Result)[-1];
+{$POINTERMATH OFF}
+  Dec(Result);
 end;
+
+procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
+{$IFDEF CPUX86}
+asm
+  push ebp
+  mov ebp,esp
+  push edx
+  push ecx
+  push ebx
+  push esi
+
+  add eax,offset fHandlers
+  call AcquireGuard
+  test eax,eax
+  mov ebx,eax
+  jz @@return
+  mov esi,[eax-$04]
+  test esi,esi
+  jle @@return
+
+  // try
+  xor edx,edx
+  push ebp
+  push offset @@finally
+  push dword ptr fs:[edx]
+  mov fs:[edx],esp
+
+@@loop:
+  mov eax,ebx
+  mov edx,[ebp-$04]
+  mov ecx,[ebp-$08]
+  call TEvent.InvokeMethod
+  add ebx,8
+  dec esi
+  jnz @@loop
+
+  // finally
+  xor eax,eax
+  pop edx
+  pop ecx
+  pop ecx
+  mov fs:[eax],edx
+
+@@return:
+  call ReleaseGuard
+  pop esi
+  pop ebx
+  pop ecx
+  pop edx
+  pop ebp
+  ret
+
+@@finally:
+  jmp System.@HandleFinally
+  call ReleaseGuard
+end;
+{$ELSE}
+{$POINTERMATH ON}
+var
+  handlers: PMethod;
+  i: Integer;
+begin
+  handlers := AcquireGuard(fHandlers);
+  try
+    for i := 0 to DynArrayHigh(handlers) do
+    begin
+      InvokeMethod(handlers^, Params, StackSize);
+      Inc(handlers);
+    end;
+  finally
+    ReleaseGuard;
+  end;
+end;
+{$ENDIF}
 
 procedure TEvent.Invoke;
 asm
@@ -748,53 +773,15 @@ asm
 end;
 {$ENDIF}
 
-procedure TEvent.Notify(Sender: TObject; const Item: TMethodPointer;
+procedure TEvent.Notify(Sender: TObject; const Item: TMethod;
   Action: TEventBase.TCollectionNotification);
 begin
   inherited Notify(Sender, Item, Action);
   if fTypeInfo.Kind = tkInterface then
     case Action of //FI:W535
-      cnAdded: IInterface(TMethod(Item).Data)._AddRef;
-      cnRemoved: IInterface(TMethod(Item).Data)._Release;
+      cnAdded: IInterface(Item.Data)._AddRef;
+      cnRemoved: IInterface(Item.Data)._Release;
     end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEvent<T>'}
-
-constructor TEvent<T>.Create;
-begin
-  inherited Create(TypeInfo(T));
-end;
-
-procedure TEvent<T>.Add(handler: T);
-begin
-  if TType.Kind<T> = tkInterface then
-    inherited Add(MethodReferenceToMethodPointer(handler))
-  else
-    inherited Add(PMethodPointer(@handler)^);
-end;
-
-procedure TEvent<T>.Remove(handler: T);
-begin
-  if TType.Kind<T> = tkInterface then
-    inherited Remove(MethodReferenceToMethodPointer(handler))
-  else
-    inherited Remove(PMethodPointer(@handler)^);
-end;
-
-function TEvent<T>.GetInvoke: T;
-begin
-  if TType.Kind<T> = tkInterface then
-{$IFDEF USE_RTTI_FOR_PROXY}
-    PInterface(@Result)^ := IInterface(fProxy)
-{$ELSE}
-    TProc(PPointer(@Result)^) := Self
-{$ENDIF}
-  else
-    PMethodPointer(@Result)^ := fInvoke;
 end;
 
 {$ENDREGION}
@@ -810,7 +797,7 @@ end;
 
 procedure TNotifyEventImpl.Add(handler: TNotifyEvent);
 begin
-  inherited Add(TMethodPointer(handler));
+  inherited Add(TMethod(handler));
 end;
 
 function TNotifyEventImpl.GetInvoke: TNotifyEvent;
@@ -820,16 +807,24 @@ end;
 
 procedure TNotifyEventImpl.Invoke(sender: TObject);
 var
-  handler: TMethodPointer;
+  handlers: PMethodArray;
+  i: Integer;
 begin
   if Enabled then
-    for handler in Handlers do
-      TNotifyEvent(handler)(sender);
+  begin
+    handlers := GetHandlers;
+    try
+      for i := 0 to DynArrayHigh(handlers) do
+        TNotifyEvent(handlers[i])(sender);
+    finally
+      ReleaseGuard;
+    end;
+  end;
 end;
 
 procedure TNotifyEventImpl.Remove(handler: TNotifyEvent);
 begin
-  inherited Remove(TMethodPointer(handler));
+  inherited Remove(TMethod(handler));
 end;
 
 {$ENDREGION}
@@ -845,7 +840,7 @@ end;
 
 procedure TNotifyEventImpl<T>.Add(handler: TNotifyEvent<T>);
 begin
-  inherited Add(TMethodPointer(handler));
+  inherited Add(TMethod(handler));
 end;
 
 function TNotifyEventImpl<T>.GetInvoke: TNotifyEvent<T>;
@@ -855,16 +850,24 @@ end;
 
 procedure TNotifyEventImpl<T>.Invoke(sender: TObject; const item: T);
 var
-  handler: TMethodPointer;
+  handlers: PMethodArray;
+  i: Integer;
 begin
   if Enabled then
-    for handler in Handlers do
-      TNotifyEvent<T>(handler)(sender, item);
+  begin
+    handlers := GetHandlers;
+    try
+      for i := 0 to DynArrayHigh(handlers) do
+        TNotifyEvent<T>(handlers[i])(sender, item);
+    finally
+      ReleaseGuard;
+    end;
+  end;
 end;
 
 procedure TNotifyEventImpl<T>.Remove(handler: TNotifyEvent<T>);
 begin
-  inherited Remove(TMethodPointer(handler));
+  inherited Remove(TMethod(handler));
 end;
 
 {$ENDREGION}
@@ -880,7 +883,7 @@ end;
 
 procedure TPropertyChangedEventImpl.Add(handler: TPropertyChangedEvent);
 begin
-  inherited Add(TMethodPointer(handler));
+  inherited Add(TMethod(handler));
 end;
 
 function TPropertyChangedEventImpl.GetInvoke: TPropertyChangedEvent;
@@ -891,16 +894,24 @@ end;
 procedure TPropertyChangedEventImpl.Invoke(Sender: TObject;
   const EventArgs: IPropertyChangedEventArgs);
 var
-  handler: TMethodPointer;
+  handlers: PMethodArray;
+  i: Integer;
 begin
   if Enabled then
-    for handler in Handlers do
-      TPropertyChangedEvent(handler)(Sender, EventArgs);
+  begin
+    handlers := GetHandlers;
+    try
+      for i := 0 to DynArrayHigh(handlers) do
+        TPropertyChangedEvent(handlers[i])(Sender, EventArgs);
+    finally
+      ReleaseGuard;
+    end;
+  end;
 end;
 
 procedure TPropertyChangedEventImpl.Remove(handler: TPropertyChangedEvent);
 begin
-  inherited Remove(TMethodPointer(handler));
+  inherited Remove(TMethod(handler));
 end;
 
 {$ENDREGION}
@@ -967,14 +978,6 @@ begin
     Result := nil;
 end;
 
-function EventHelper.GetThreadSafe: Boolean;
-begin
-  if Assigned(fInstance) then
-    Result := fInstance.ThreadSafe
-  else
-    Result := True;
-end;
-
 function EventHelper.GetUseFreeNotification: Boolean;
 begin
   if Assigned(fInstance) then
@@ -1009,13 +1012,6 @@ begin
   fInstance.OnChanged := value;
 end;
 
-procedure EventHelper.SetThreadSafe(const value: Boolean; typeInfo: PTypeInfo);
-begin
-  if not Assigned(fInstance) then
-    CreateEventHandler(typeInfo);
-  fInstance.ThreadSafe := value;
-end;
-
 procedure EventHelper.SetUseFreeNotification(const value: Boolean; typeInfo: PTypeInfo);
 begin
   if not Assigned(fInstance) then
@@ -1035,12 +1031,12 @@ end;
 
 procedure EventHelper.TMethodEvent.Add(handler: TMethodPointer);
 begin
-  inherited Add(handler);
+  inherited Add(TMethod(handler));
 end;
 
 procedure EventHelper.TMethodEvent.Remove(handler: TMethodPointer);
 begin
-  inherited Remove(handler);
+  inherited Remove(TMethod(handler));
 end;
 
 procedure EventHelper.TMethodEvent.GetInvoke(var result);
@@ -1050,12 +1046,12 @@ end;
 
 procedure EventHelper.TMethodEvent.Add(const handler);
 begin
-  inherited Add(TMethodPointer(handler));
+  inherited Add(TMethod(handler));
 end;
 
 procedure EventHelper.TMethodEvent.Remove(const handler);
 begin
-  inherited Remove(TMethodPointer(handler));
+  inherited Remove(TMethod(handler));
 end;
 
 {$ENDREGION}
@@ -1074,12 +1070,12 @@ end;
 
 procedure EventHelper.TDelegateEvent.Add(handler: IInterface);
 begin
-  inherited Add(MethodReferenceToMethodPointer(handler));
+  inherited Add(MethodReferenceToMethod(handler));
 end;
 
 procedure EventHelper.TDelegateEvent.Remove(handler: IInterface);
 begin
-  inherited Remove(MethodReferenceToMethodPointer(handler));
+  inherited Remove(MethodReferenceToMethod(handler));
 end;
 
 procedure EventHelper.TDelegateEvent.GetInvoke(var result);
@@ -1093,12 +1089,12 @@ end;
 
 procedure EventHelper.TDelegateEvent.Add(const handler);
 begin
-  inherited Add(MethodReferenceToMethodPointer(handler));
+  inherited Add(MethodReferenceToMethod(handler));
 end;
 
 procedure EventHelper.TDelegateEvent.Remove(const handler);
 begin
-  inherited Remove(MethodReferenceToMethodPointer(handler));
+  inherited Remove(MethodReferenceToMethod(handler));
 end;
 
 {$ENDREGION}

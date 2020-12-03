@@ -37,9 +37,6 @@ uses
 
 type
   TCollectionChangedEventImpl<T> = class(TEventBase, IEvent, ICollectionChangedEvent<T>)
-  private
-    procedure InvokeSafe(Sender: TObject; const Item: T;
-      Action: TCollectionChangedAction);
   public
     procedure AfterConstruction; override;
 {$IFNDEF AUTOREFCOUNT}
@@ -51,6 +48,9 @@ type
   end;
 
 implementation
+
+uses
+  Spring.HazardEra;
 
 
 {$REGION 'TCollectionChangedEventImpl<T>'}
@@ -75,12 +75,13 @@ end;
 procedure TCollectionChangedEventImpl<T>.Add(
   handler: TCollectionChangedEvent<T>);
 begin
-  inherited Add(TMethodPointer(handler));
+  inherited Add(TMethod(handler));
 end;
 
 procedure TCollectionChangedEventImpl<T>.Invoke(Sender: TObject;
   const Item: T; Action: TCollectionChangedAction);
 var
+  handlers: PMethodArray;
   i: Integer;
 begin
   // If you get exception at this location on NextGen and the handler is nil
@@ -88,28 +89,21 @@ begin
   // its weak references. To fix this, free the collection prior to freeing
   // the object owning it (even if you're using interfaces).
   if CanInvoke then
-    if ThreadSafe then
-      InvokeSafe(Sender, Item, Action)
-    else
-      for i := 0 to Count - 1 do
-        TCollectionChangedEvent<T>(fHandlers[i])(Sender, Item, Action);
-end;
-
-procedure TCollectionChangedEventImpl<T>.InvokeSafe(Sender: TObject;
-  const Item: T; Action: TCollectionChangedAction);
-var
-  handlers: TArray<TMethodPointer>;
-  i: Integer;
-begin
-  handlers := Self.Handlers;
-  for i := 0 to Count - 1 do
-    TCollectionChangedEvent<T>(handlers[i])(Sender, Item, Action);
+  begin
+    handlers := GetHandlers;
+    try
+      for i := 0 to DynArrayHigh(handlers) do
+        TCollectionChangedEvent<T>(handlers[i])(Sender, Item, Action);
+    finally
+      ReleaseGuard;
+    end;
+  end;
 end;
 
 procedure TCollectionChangedEventImpl<T>.Remove(
   handler: TCollectionChangedEvent<T>);
 begin
-  inherited Remove(TMethodPointer(handler));
+  inherited Remove(TMethod(handler));
 end;
 
 {$ENDREGION}
