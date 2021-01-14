@@ -497,47 +497,54 @@ end;
 {$ELSE}
 asm
   // check DisabledFlag
-  bt [Self].fRefCount,30
+  bt [rcx].fRefCount,30
   jc @@return
 
-  sub rsp,32
-  mov eax,[Self].fMethodInfo.RegisterFlag
+  // allocate stackframe
+  push rbp
+  sub rsp,$20
+  mov rbp,rsp
+
+  mov eax,[rcx].fMethodInfo.RegisterFlag
 
   // first parameter is always pointer
-  mov [rsp+$28],rcx
+  mov [rsp+$30],rcx
 
   // second parameter: save rdx or xmm1
   test al,2
   jnz @@save_xmm1
-  mov [rsp+$30],rdx
+  mov [rsp+$38],rdx
   jmp @@third
 @@save_xmm1:
-  movsd [rsp+$30],xmm1
+  movsd [rsp+$38],xmm1
 
   // third parameter: save r8 or xmm2
 @@third:
   test al,4
   jnz @@save_xmm2
-  mov [rsp+$38],r8
+  mov [rsp+$40],r8
   jmp @@fourth
 @@save_xmm2:
-  movsd [rsp+$38],xmm2
+  movsd [rsp+$40],xmm2
 
   // fourth parameter: save r9 or xmm3
 @@fourth:
   test al,8
   jnz @@save_xmm3
-  mov [rsp+$40],r9
+  mov [rsp+$48],r9
   jmp @@call
 @@save_xmm3:
-  movsd [rsp+$40],xmm3
+  movsd [rsp+$48],xmm3
 
 @@call:
-  lea rdx,[rsp+$28]                     // put stack address into Params
+  lea rdx,[rsp+$30]                     // put stack address into Params
   mov r8d,[rcx].fMethodInfo.StackSize   // pass StackSize
   call [rcx].fMethodInvoke
 
-  add rsp,32
+  // restore stack pointer
+  lea rsp,[rbp+$20]
+  pop rbp
+
 @@return:
 end;
 {$ENDIF}
