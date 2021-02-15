@@ -4261,7 +4261,7 @@ begin
   Generics.Collections.TArray.Sort<T>(data2, comparer);
   for i := 1 to High(data) do
   begin
-    Check(comparer.Compare(data[i-1], data[i-1]) <= 0);
+    Check(comparer.Compare(data[i-1], data[i]) <= 0);
     Check(comparer.Compare(data[i], data2[i]) = 0);
   end;
 end;
