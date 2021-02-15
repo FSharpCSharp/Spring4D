@@ -237,24 +237,26 @@ type
       end;
 
       TEnumerator = class(TRefCountedObject,
-        IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>,
-        IEnumerator<TValueKeyPair>)
+        IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
       private
         {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
         fItemIndex: Integer;
         fVersion: Integer;
         function GetCurrent: TKeyValuePair;
-        function GetCurrentInverse: TValueKeyPair;
         function GetCurrentKey: TKey;
         function GetCurrentValue: TValue;
-        function IEnumerator<TValueKeyPair>.GetCurrent = GetCurrentInverse;
         function IEnumerator<TKey>.GetCurrent = GetCurrentKey;
         function IEnumerator<TValue>.GetCurrent = GetCurrentValue;
       public
         constructor Create(const source: TBidiDictionary<TKey, TValue>);
         destructor Destroy; override;
         function MoveNext: Boolean;
+      end;
+
+      TInverseEnumerator = class(TEnumerator, IEnumerator<TValueKeyPair>)
+      private
+        function GetCurrent: TValueKeyPair;
       end;
 
       TKeyCollection = class(TEnumerableBase<TKey>,
@@ -1946,7 +1948,7 @@ end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetEnumerator: IEnumerator<TValueKeyPair>;
 begin
-  Result := TEnumerator.Create(fSource);
+  Result := TInverseEnumerator.Create(fSource);
 end;
 
 function TBidiDictionary<TKey, TValue>.TInverse.GetInverse: IBidiDictionary<TKey, TValue>;
@@ -2170,12 +2172,6 @@ begin
   Result.Value := fSource.fItems[fItemIndex].Value;
 end;
 
-function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrentInverse: TValueKeyPair;
-begin
-  Result.Key := fSource.fItems[fItemIndex].Value;
-  Result.Value := fSource.fItems[fItemIndex].Key;
-end;
-
 function TBidiDictionary<TKey, TValue>.TEnumerator.GetCurrentKey: TKey;
 begin
   Result := fSource.fItems[fItemIndex].Key;
@@ -2189,6 +2185,17 @@ end;
 function TBidiDictionary<TKey, TValue>.TEnumerator.MoveNext: Boolean;
 begin
   Result := fSource.DoMoveNext(fItemIndex, fVersion);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBidiDictionary<TKey, TValue>.TInverseEnumerator' }
+
+function TBidiDictionary<TKey, TValue>.TInverseEnumerator.GetCurrent: TValueKeyPair;
+begin
+  Result.Key := fSource.fItems[fItemIndex].Value;
+  Result.Value := fSource.fItems[fItemIndex].Key;
 end;
 
 {$ENDREGION}

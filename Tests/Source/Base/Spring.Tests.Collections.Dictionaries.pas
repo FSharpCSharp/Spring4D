@@ -173,6 +173,8 @@ type
   TTestBidiDictionary = class(TTestBidiDictionaryBase)
   protected
     procedure SetUp; override;
+  published
+    procedure TestEnumerators;
   end;
 
   TTestBidiDictionaryInverse = class(TTestBidiDictionaryBase)
@@ -1358,6 +1360,33 @@ begin
   dict := TCollections.CreateBidiDictionary<Integer, string>;
   SUT := dict;
   SUTinverse := dict.Inverse;
+end;
+
+procedure TTestBidiDictionary.TestEnumerators;
+var
+  SUT: IBidiDictionary<string,string>;
+  i: Integer;
+  p: TPair<string,string>;
+begin
+  SUT := TCollections.CreateBidiDictionary<string,string>;
+  SUT['Key1'] := 'Val1';
+  SUT['Key2'] := 'Val2';
+  SUT['Key3'] := 'Val3';
+
+  i := 0;
+  for p in SUT do
+  begin
+    Inc(i);
+    CheckEquals('Key' + IntToStr(i), p.Key);
+    CheckEquals('Val' + IntToStr(i), p.Value);
+  end;
+  i := 0;
+  for p in SUT.Inverse do
+  begin
+    Inc(i);
+    CheckEquals('Val' + IntToStr(i), p.Key);
+    CheckEquals('Key' + IntToStr(i), p.Value);
+  end;
 end;
 
 {$ENDREGION}
