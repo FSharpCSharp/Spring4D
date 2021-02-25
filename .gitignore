@@ -9,6 +9,7 @@
 *.tvsconfig
 __history/
 __recovery/
+.vscode/
 
 # Delphi Compiler output files
 *.dcu
