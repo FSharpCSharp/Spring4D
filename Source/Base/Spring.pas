@@ -6092,9 +6092,11 @@ class function TValueHelper.FromVariant(const value: Variant): TValue;
       (Name: 'FMTBcdVariantType'; VType: varInt64)
     );
   var
-    typeName: string;
+    typeName, tmpStr: string;
     i: Integer;
-    tmp: Int64;
+    tmpInt64: Int64;
+    tmpDouble: Double;
+    tmpCurrency: Currency;
     info: PCustomVariantTypeInfo;
   begin
     typeName := VarTypeAsText(TVarData(value).VType);
@@ -6106,10 +6108,21 @@ class function TValueHelper.FromVariant(const value: Variant): TValue;
         case info.VType of
           varDouble: result := Double(value);
           varInt64:
-            if TryStrToInt64(VarToStr(value), tmp) then
-              Result := tmp
+          begin
+            tmpStr := VarToStr(value);
+            if TryStrToInt64(tmpStr, tmpInt64) then
+              Result := tmpInt64
             else
-              Result := Double(value);
+            begin
+              tmpDouble := Double(value);
+              if FloatToStr(tmpDouble) = tmpStr then
+                Result := tmpDouble
+              else if TryStrToCurr(tmpStr, tmpCurrency) and (CurrToStr(tmpCurrency) = tmpStr) then
+                Result := tmpCurrency
+              else
+                Result := tmpStr;
+            end;
+          end;
         else
           raise EVariantTypeCastError.CreateRes(@SInvalidVarCast);
         end;

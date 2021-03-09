@@ -133,7 +133,7 @@ begin
       else if typeInfo = System.TypeInfo(TTime) then
         Result := ftTime
       else if typeInfo = System.TypeInfo(Currency) then
-        Result := ftCurrency
+        Result := ftFMTBcd
       else if typeInfo = System.TypeInfo(Extended) then
         Result := TFieldType.ftExtended
       else

@@ -3122,6 +3122,7 @@ end;
 procedure TTestValueHelper.FromCustomVariantFmtBcd;
 var
   v: Variant;
+  fmt: TFormatSettings;
 begin
   v := VarFMTBcdCreate('999999999999999999', 19, 0);
   fSUT := TValue.FromVariant(v);
@@ -3132,6 +3133,19 @@ begin
   fSUT := TValue.FromVariant(v);
   Check(fSUT.Kind = tkFloat);
   CheckEquals(12.5, fSUT.AsType<Double>);
+
+  fmt.DecimalSeparator := '.';
+  v := VarFMTBcdCreate(StrToBcd('12.3456789', fmt));
+  fSUT := TValue.FromVariant(v);
+  CheckEquals(string(v), fSUT.ToString);
+
+  v := VarFMTBcdCreate(StrToBcd('12345678901234.56', fmt));
+  fSUT := TValue.FromVariant(v);
+  CheckEquals(string(v), fSUT.ToString);
+
+  v := VarFMTBcdCreate(StrToBcd('12345678901234.12345', fmt));
+  fSUT := TValue.FromVariant(v);
+  CheckEquals(string(v), fSUT.ToString);
 end;
 
 procedure TTestValueHelper.FromVariantProperlyHandlesVariantArrays;
