@@ -436,6 +436,9 @@ type
     procedure Test_AsPointer_Interface;
     procedure Test_AsPointer_OtherWillRaise;
 
+    procedure Test_CurrencyToCurrency_Compare;
+    procedure Test_CurrencyToCurrency_Equals;
+
     procedure Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;
     procedure Test_Equals_ShortIntToInt_ValuesAreEqual_ReturnsTrue;
     procedure Test_Equals_IntToInt_ValuesAreEqual_ReturnsTrue;
@@ -3236,6 +3239,28 @@ begin
   fSUT := '42';
   fValue := '42';
   DoCheckCompare;
+end;
+
+procedure TTestValueHelper.Test_CurrencyToCurrency_Equals;
+var
+  value: Currency;
+begin
+  value := 12345678901234.56;
+  fSUT := value;
+  value := 12345678901234.5606;
+  fValue := value;
+  DoCheckEquals(False);
+end;
+
+procedure TTestValueHelper.Test_CurrencyToCurrency_Compare;
+var
+  value: Currency;
+begin
+  value := 12345678901234.56;
+  fSUT := value;
+  value := 12345678901234.5606;
+  fValue := value;
+  DoCheckCompare(-1);
 end;
 
 procedure TTestValueHelper.Test_Equals_ByteToInt_ValuesAreNotEqual_ReturnsFalse;

@@ -3536,6 +3536,17 @@ end;
 
 // TODO: use typekind matrix for comparer functions
 function CompareValue(const left, right: TValue): Integer;
+
+  function CompareValueCurr(const A, B: Currency): TValueRelationship;
+  begin
+    if A = B then
+      Result := EqualsValue
+    else if A < B then
+      Result := LessThanValue
+    else
+      Result := GreaterThanValue;
+  end;
+
 const
   EmptyResults: array[Boolean, Boolean] of Integer = ((0, -1), (1, 0));
 var
@@ -3549,7 +3560,10 @@ begin
   else if left.IsOrdinal and right.IsOrdinal then
     Result := Math.CompareValue(left.AsOrdinal, right.AsOrdinal)
   else if left.IsFloat and right.IsFloat then
-    Result := Math.CompareValue(left.AsExtended, right.AsExtended)
+    if (left.TypeData.FloatType = ftCurr) and (right.TypeData.FloatType = ftCurr) then
+      Result := CompareValueCurr(left.AsCurrency, right.AsCurrency)
+    else
+      Result := Math.CompareValue(left.AsExtended, right.AsExtended)
   else if left.IsString and right.IsString then
     Result := SysUtils.AnsiCompareStr(left.AsString, right.AsString)
   else if left.IsObject and right.IsObject then
@@ -5531,6 +5545,7 @@ begin
       case right.TypeData.FloatType of
         ftSingle: Result := Math.SameValue(TValueData(left).FAsSingle, TValueData(right).FAsSingle);
         ftDouble: Result := Math.SameValue(TValueData(left).FAsSingle, TValueData(right).FAsDouble);
+        ftCurr: Result := Math.SameValue(TValueData(left).FAsSingle, TValueData(right).FAsCurr);
       else
         Result := Math.SameValue(TValueData(left).FAsSingle, right.AsExtended);
       end;
@@ -5538,13 +5553,23 @@ begin
       case right.TypeData.FloatType of
         ftSingle: Result := Math.SameValue(TValueData(left).FAsDouble, TValueData(right).FAsSingle);
         ftDouble: Result := Math.SameValue(TValueData(left).FAsDouble, TValueData(right).FAsDouble);
+        ftCurr: Result := Math.SameValue(TValueData(left).FAsDouble, TValueData(right).FAsCurr);
       else
         Result := Math.SameValue(TValueData(left).FAsDouble, right.AsExtended);
+      end;
+    ftCurr:
+      case right.TypeData.FloatType of
+        ftSingle: Result := Math.SameValue(TValueData(left).FAsCurr, TValueData(right).FAsSingle);
+        ftDouble: Result := Math.SameValue(TValueData(left).FAsCurr, TValueData(right).FAsDouble);
+        ftCurr: Result := TValueData(left).FAsCurr = TValueData(right).FAsCurr;
+      else
+        Result := Math.SameValue(TValueData(left).FAsCurr, right.AsExtended);
       end;
   else
     case right.TypeData.FloatType of
       ftSingle: Result := Math.SameValue(left.AsExtended, TValueData(right).FAsSingle);
       ftDouble: Result := Math.SameValue(left.AsExtended, TValueData(right).FAsDouble);
+      ftCurr: Result := Math.SameValue(left.AsExtended, TValueData(right).FAsCurr);
     else
       Result := Math.SameValue(left.AsExtended, right.AsExtended);
     end;
