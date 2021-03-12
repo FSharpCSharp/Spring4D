@@ -42,6 +42,7 @@ procedure EraArrayDelete(var target; index: NativeInt; count: NativeInt = 1);
 implementation
 
 uses
+  Classes,
 {$IFDEF POSIX}
   Posix.Pthread,
 {$ENDIF}
@@ -254,7 +255,7 @@ end;
 var
   lock: TCriticalSection;
   eraClock: TEra;
-  retiredList: Vector<PEraEntity>;
+  retiredList: TList;
 
 function AcquireGuard(var p): Pointer;
 var
@@ -426,9 +427,11 @@ end;
 initialization
   lock := TCriticalSection.Create;
   eraClock := 1;
+  retiredList := TList.Create;
 
 finalization
   Retire(nil);
+  retiredList.Free;
   lock.Free;
 
 end.

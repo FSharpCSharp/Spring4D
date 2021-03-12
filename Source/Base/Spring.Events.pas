@@ -299,35 +299,27 @@ class procedure TEvent.InvokeMethod(const Method: TMethod;
   Parameters: PParameters; StackSize: Integer);
 {$IFNDEF CPUX64}
 asm
-  test ecx,ecx                    // if StackSize > 0
-  jnz @@with_stack                // jump if StackSize <> 0
-
-  mov ecx,[edx].TParameters.Registers.dword[4]  // ecx = Parameters.Registers[paECX]
-  mov edx,[edx].TParameters.Registers.dword[0]  // edx = Parameters.Registers[paEDX]
-  push [eax].TMethod.Code                       // push Method.Code
-  mov eax,[eax].TMethod.Data                    // eax = Method.Data
-  call [esp]                                    // call Method.Code
-  pop eax
-  ret
-
-@@with_stack:
   push ebx                        // preserve ebx
   push esi                        // preserve esi
   mov ebx,edx                     // ebx = Parameters
   mov esi,eax                     // esi = Method
+
+  test ecx,ecx                    // if StackSize > 0
+  jz @@call_method
 
   sub esp,ecx                     // allocate stack space
   lea eax,[ebx].TParameters.Stack // put stack buffer as first parameter
   mov edx,esp                     // put stack address as second parameter
   call Move                       // third parameter StackSize was already in place
 
-  mov edx,[ebx].TParameters.Registers.dword[0]  // ecx = Parameters.Registers[paECX]
-  mov ecx,[ebx].TParameters.Registers.dword[4]  // edx = Parameters.Registers[paEDX]
+@@call_method:
+  mov ecx,[ebx].TParameters.Registers.dword[4]  // ecx = Parameters.Registers[paECX]
+  mov edx,[ebx].TParameters.Registers.dword[0]  // edx = Parameters.Registers[paEDX]
   mov eax,[esi].TMethod.Data                    // eax = Method.Data
-  call [esi].TMethod.Code                       // call Method.Data
+  call [esi].TMethod.Code                       // call Method.Code
 
-  pop esi                         // restore esi
-  pop ebx                         // restore ebx
+  pop esi
+  pop ebx
 end;
 {$ELSE}
 asm
@@ -337,10 +329,14 @@ asm
   mov [rbp+$10],Method            // preserve Method
   mov [rbp+$18],Parameters        // preserve Parameters
 
-  sub r8,32
-  jnz @@move                      // if StackSize > 32
+  sub r8,32                       // if StackSize > 32
+  jz @@call_method
 
-@@call:
+  lea rcx,[rdx+32]                // put stack buffer after first 4 parameters as first parameter
+  lea rdx,[rsp+32]                // put stack address after first 4 parameters as second parameter
+  call Move
+
+@@call_method:
   mov rax,[rbp+$18]
   mov rcx,[rax].TParameters.Stack.qword[0]      // rcx = Parameters.Stack[0]
   mov rdx,[rax].TParameters.Stack.qword[8]      // rdx = Parameters.Stack[8]
@@ -358,13 +354,6 @@ asm
 
   lea rsp,[rbp]                   // restore rsp - deallocate stack space
   pop rbp                         // restore
-  ret
-
-@@move:
-  lea rcx,[rdx+32]
-  lea rdx,[rsp+32]
-  call Move
-  jmp @@call
 end;
 {$ENDIF}
 
@@ -462,25 +451,21 @@ end;
 procedure TEvent.InvokeEventHandlerStub;
 {$IFNDEF CPUX64}
 asm
-  // check DisabledFlag
-  bt [eax].fRefCount,30
-  jc @@return
-
   // push registers - order is important, they are part of the TParameters record
   push eax
   push ecx
   push edx
 
-  // put parameters
+  bt [eax].fRefCount,30                 // if Enabled then
+  jc @@return
+
   mov edx,esp                           // put address to stack into Params
   mov ecx,[eax].fMethodInfo.StackSize   // put StackSize
-
   call [eax].fMethodInvoke
 
-  // pop registers - don't care for preserving EAX as we don't support result
-  pop eax
-  pop eax
-  pop eax
+  pop edx                               // pop registers
+  pop ecx                               // don't care for preserving EAX
+  pop eax                               // as we don't support result
 
   mov ecx,[eax].fMethodInfo.StackSize
   test ecx,ecx        // if StackSize > 0
@@ -492,7 +477,9 @@ asm
   mov eax,[esp]       // load the return address
   add esp,ecx         // pop from the stack
   mov [esp],eax       // write return address for ret
+  ret
 @@return:
+  add esp,12
 end;
 {$ELSE}
 asm
@@ -694,78 +681,26 @@ begin
 end;
 
 procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
-{$IFDEF CPUX86}
-asm
-  push ebp
-  mov ebp,esp
-  push edx
-  push ecx
-  push ebx
-  push esi
-
-  add eax,offset fHandlers
-  call AcquireGuard
-  test eax,eax
-  mov ebx,eax
-  jz @@return
-  mov esi,[eax-$04]
-  test esi,esi
-  jle @@return
-
-  // try
-  xor edx,edx
-  push ebp
-  push offset @@finally
-  push dword ptr fs:[edx]
-  mov fs:[edx],esp
-
-@@loop:
-  mov eax,ebx
-  mov edx,[ebp-$04]
-  mov ecx,[ebp-$08]
-  call TEvent.InvokeMethod
-  add ebx,8
-  dec esi
-  jnz @@loop
-
-  // finally
-  xor eax,eax
-  pop edx
-  pop ecx
-  pop ecx
-  mov fs:[eax],edx
-
-@@return:
-  call ReleaseGuard
-  pop esi
-  pop ebx
-  pop ecx
-  pop edx
-  pop ebp
-  ret
-
-@@finally:
-  jmp System.@HandleFinally
-  call ReleaseGuard
-end;
-{$ELSE}
-{$POINTERMATH ON}
 var
   handlers: PMethod;
   i: Integer;
 begin
   handlers := AcquireGuard(fHandlers);
+  if handlers <> nil then
   try
-    for i := 0 to DynArrayHigh(handlers) do
+    {$POINTERMATH ON}
+    for i := 1 to PNativeInt(handlers)[-1] do
+    {$POINTERMATH OFF}
     begin
       InvokeMethod(handlers^, Params, StackSize);
       Inc(handlers);
     end;
-  finally
+  except
     ReleaseGuard;
+    raise;
   end;
+  ReleaseGuard;
 end;
-{$ENDIF}
 
 procedure TEvent.Invoke;
 asm
