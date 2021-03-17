@@ -75,8 +75,6 @@ type
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
-  TEqualsMethod<T> = function(const left, right: T): Boolean of object;
-
   /// <summary>
   ///   Supports a simple iteration over a non-generic collection.
   /// </summary>

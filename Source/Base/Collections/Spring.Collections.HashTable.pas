@@ -55,6 +55,8 @@ type
     fBucketHashCodeMask: Integer;
     fEquals: TEqualsMethod;
     fEqualsMethod: TMethodPointer;
+    fGetHashCode: TGetHashCodeMethod;
+    fGetHashCodeMethod: TMethodPointer;
     fItemsInfo: PTypeInfo;     // TypeInfo(TArray<TItem>)
     fItemSize: Integer;        // SizeOf(TItem)
     fVersion: Integer;
@@ -63,18 +65,21 @@ type
     procedure SetCapacity(const Value: Integer);
     procedure SetItemsInfo(const Value: PTypeInfo);
   public
-    procedure Initialize(const equals: Pointer; const comparer: IInterface);
+  {$IFDEF DEBUG}
+    class var CollisionCount: Integer;
+  {$ENDIF}
+    procedure Initialize(const equals, getHashCode: Pointer; const comparer: IInterface);
 
     procedure EnsureCompact;
     procedure Grow;
     procedure Pack;
-    function Find(const key; hashCode: Integer): Pointer; overload;
+    function Find(const key): Pointer; overload;
     function Find(const key; var entry: THashTableEntry): Boolean; overload;
     procedure Rehash(newCapacity: NativeInt);
 
-    function Add(const key; hashCode: Integer): Pointer;
-    function AddOrSet(const key; hashCode: Integer; var overwriteExisting: Boolean): Pointer;
-    function Delete(const key; hashCode: Integer): Pointer; overload;
+    function Add(const key): Pointer;
+    function AddOrSet(const key; var overwriteExisting: Boolean): Pointer;
+    function Delete(const key): Pointer; overload;
     function Delete(const entry: THashTableEntry): Pointer; overload;
     procedure Clear;
     procedure ClearCount;
@@ -105,11 +110,14 @@ const
 
 {$REGION 'THashTable'}
 
-procedure THashTable.Initialize(const equals: Pointer; const comparer: IInterface);
+procedure THashTable.Initialize(const equals, getHashCode: Pointer; const comparer: IInterface);
 begin
   TMethod(fEquals).Code := equals;
   TMethod(fEquals).Data := @TMethod(fEqualsMethod);
   fEqualsMethod := InterfaceToMethodPointer(comparer, 0);
+  TMethod(fGetHashCode).Code := getHashCode;
+  TMethod(fGetHashCode).Data := @TMethod(fGetHashCodeMethod);
+  fGetHashCodeMethod := InterfaceToMethodPointer(comparer, 1);
 end;
 
 function THashTable.GetCapacity: Integer;
@@ -117,12 +125,11 @@ begin
   Result := DynArrayLength(fItems);
 end;
 
-function THashTable.Add(const key; hashCode: Integer): Pointer;
+function THashTable.Add(const key): Pointer;
 var
   entry: THashTableEntry;
 begin
-  entry.HashCode := hashCode;
-
+  entry.HashCode := fGetHashCode(key);
   if Find(key, entry) then
     Exit(nil);
 
@@ -135,21 +142,21 @@ begin
   {$Q-}
   Inc(fVersion);
   {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
+
   fBuckets[entry.BucketIndex] := entry.ItemIndex or (entry.HashCode and fBucketHashCodeMask);
 
   Inc(fCount);
   Inc(fItemCount);
 
-  Result := fItems + entry.ItemIndex * fItemSize;
+  Result := @fItems[entry.ItemIndex * fItemSize];
   PInteger(Result)^ := entry.HashCode;
 end;
 
-function THashTable.AddOrSet(const key; hashCode: Integer;
-  var overwriteExisting: Boolean): Pointer;
+function THashTable.AddOrSet(const key; var overwriteExisting: Boolean): Pointer;
 var
   entry: THashTableEntry;
 begin
-  entry.HashCode := hashCode;
+  entry.HashCode := fGetHashCode(key);
   if Find(key, entry) then
   begin
     if not overwriteExisting then
@@ -171,21 +178,21 @@ begin
 
   fBuckets[entry.BucketIndex] := entry.ItemIndex or (entry.HashCode and fBucketHashCodeMask);
 
-  Result := fItems + entry.ItemIndex * fItemSize;
-  PInteger(Result)^ := entry.HashCode;
-
   if not overwriteExisting then
   begin
     Inc(fCount);
     Inc(fItemCount);
   end;
+
+  Result := @fItems[entry.ItemIndex * fItemSize];
+  PInteger(Result)^ := entry.HashCode;
 end;
 
-function THashTable.Delete(const key; hashCode: Integer): Pointer;
+function THashTable.Delete(const key): Pointer;
 var
   entry: THashTableEntry;
 begin
-  entry.HashCode := hashCode;
+  entry.HashCode := fGetHashCode(key);
   if Find(key, entry) then
     Result := Delete(entry)
   else
@@ -200,7 +207,7 @@ begin
 
   fBuckets[entry.BucketIndex] := UsedBucket;
 
-  Result := fItems + entry.ItemIndex * fItemSize;
+  Result := @fItems[entry.ItemIndex * fItemSize];
   PInteger(Result)^ := RemovedFlag;
 
   Dec(fCount);
@@ -267,14 +274,14 @@ begin
   FinalizeArray(targetItem, itemType, fItemCount - fCount); // clear remaining items that were previously moved
 end;
 
-function THashTable.Find(const key; hashCode: Integer): Pointer;
+function THashTable.Find(const key): Pointer;
 var
-  bucketValue, bucketIndex: Integer;
+  hashCode, bucketValue, bucketIndex: Integer;
   item: PByte;
 begin
   if fItems <> nil then
   begin
-    hashCode := hashCode and not RemovedFlag;
+    hashCode := fGetHashCode(key) and not RemovedFlag;
     bucketIndex := hashCode and fBucketIndexMask;
     while True do
     begin
@@ -287,11 +294,14 @@ begin
         and (bucketValue and fBucketHashCodeMask = hashCode and fBucketHashCodeMask) then
       begin
         item := @fItems[bucketValue and fBucketIndexMask * fItemSize];
-        if fEquals((item + KeyOffset)^, key) then
+        if fEquals(item[KeyOffset], key) then
           Exit(item);
       end;
 
       bucketIndex := (bucketIndex + 1) and fBucketIndexMask;
+    {$IFDEF DEBUG}
+      Inc(CollisionCount);
+    {$ENDIF}
     end;
   end;
   Result := nil;
@@ -321,6 +331,9 @@ begin
       end;
 
       entry.BucketIndex := (entry.BucketIndex + 1) and fBucketIndexMask;
+    {$IFDEF DEBUG}
+      Inc(CollisionCount);
+    {$ENDIF}
     end;
   end;
   entry.ItemIndex := fItemCount;

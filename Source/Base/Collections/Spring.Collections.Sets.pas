@@ -92,7 +92,6 @@ type
     function GetIsEmpty: Boolean;
     procedure SetCapacity(value: Integer);
   {$ENDREGION}
-    class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
   protected
     function CreateSet: ISet<T>; override;
     function TryGetElementAt(var item: T; index: Integer): Boolean;
@@ -358,7 +357,7 @@ begin
 
   if not Assigned(fKeyComparer) then
     fKeyComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, TypeInfo(T), SizeOf(T)));
-  fHashTable.Initialize(@EqualsThunk, fKeyComparer);
+  fHashTable.Initialize(@TComparerThunks<T>.Equals, @TComparerThunks<T>.GetHashCode, fKeyComparer);
 end;
 
 procedure THashSet<T>.BeforeDestruction;
@@ -398,7 +397,7 @@ function THashSet<T>.Add(const item: T): Boolean;
 var
   entry: PItem;
 begin
-  entry := fHashTable.Add(item, fKeyComparer.GetHashCode(item));
+  entry := fHashTable.Add(item);
   if Assigned(entry) then
   begin
     entry.Item := item;
@@ -425,24 +424,16 @@ begin
   fHashTable.Clear;
 end;
 
-class function THashSet<T>.EqualsThunk(instance: Pointer; const left, right): Boolean;
-begin
-  Result := TEqualsMethod<T>(instance^)(T(left), T(right));
-end;
-
 function THashSet<T>.Contains(const item: T): Boolean;
-var
-  entry: THashTableEntry;
 begin
-  entry.HashCode := fKeyComparer.GetHashCode(item);
-  Result := fHashTable.Find(item, entry);
+  Result := fHashTable.Find(item) <> nil;
 end;
 
 function THashSet<T>.Extract(const item: T): T;
 var
   entry: PItem;
 begin
-  entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
+  entry := fHashTable.Delete(item);
   if Assigned(entry) then
   begin
     DoNotify(entry.Item, caExtracted);
@@ -477,7 +468,7 @@ function THashSet<T>.Remove(const item: T): Boolean;
 var
   entry: PItem;
 begin
-  entry := fHashTable.Delete(item, fKeyComparer.GetHashCode(item));
+  entry := fHashTable.Delete(item);
   if Assigned(entry) then
   begin
     DoNotify(entry.Item, caRemoved);

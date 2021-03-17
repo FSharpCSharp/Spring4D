@@ -91,7 +91,6 @@ type
   {$ENDREGION}
     function TryInsert(const key: TKey; const value: TValue; behavior: TInsertionBehavior): Boolean;
     procedure DoRemove(const entry: THashTableEntry; action: TCollectionChangedAction);
-    class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
   public
     constructor Create(capacity: Integer;
       const keyComparer: IEqualityComparer<TKey>;
@@ -635,7 +634,7 @@ begin
     fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, keyType, SizeOf(TKey)));
   if not Assigned(fValueComparer) then
     fValueComparer := IEqualityComparer<TValue>(_LookupVtableInfo(giEqualityComparer, valueType, SizeOf(TValue)));
-  fHashTable.Initialize(@EqualsThunk, fKeyComparer);
+  fHashTable.Initialize(@TComparerThunks<TKey>.Equals, @TComparerThunks<TKey>.GetHashCode, fKeyComparer);
 
   fKeys := TKeyCollection.Create(Self, @fHashTable, fKeyComparer, keyType, 0);
   fValues := TValueCollection.Create(Self, @fHashTable, fValueComparer, valueType, SizeOf(TKey));
@@ -732,7 +731,7 @@ function TDictionary<TKey, TValue>.Contains(const value: TKeyValuePair;
 var
   item: PItem;
 begin
-  item := fHashTable.Find(value.Key, fKeyComparer.GetHashCode(value.Key));
+  item := fHashTable.Find(value.Key);
   if Assigned(item) and comparer.Equals(PKeyValuePair(@item.Key)^, value) then
     Exit(True);
   Result := False;
@@ -781,7 +780,7 @@ var
   item: PItem;
 begin
   overwriteExisting := behavior = TInsertionBehavior.OverwriteExisting;
-  item := fHashTable.AddOrSet(key, fKeyComparer.GetHashCode(key), overwriteExisting);
+  item := fHashTable.AddOrSet(key, overwriteExisting);
   if Assigned(item) then
   begin
     if overwriteExisting then
@@ -830,12 +829,7 @@ end;
 
 function TDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
 begin
-  Result := fHashTable.Find(key, fKeyComparer.GetHashCode(key)) <> nil;
-end;
-
-class function TDictionary<TKey, TValue>.EqualsThunk(instance: Pointer; const left, right): Boolean;
-begin
-  Result := TEqualsMethod<TKey>(instance^)(TKey(left), TKey(right));
+  Result := fHashTable.Find(key) <> nil;
 end;
 
 function TDictionary<TKey, TValue>.Contains(const key: TKey;
@@ -843,7 +837,7 @@ function TDictionary<TKey, TValue>.Contains(const key: TKey;
 var
   item: PItem;
 begin
-  item := fHashTable.Find(key, fKeyComparer.GetHashCode(key));
+  item := fHashTable.Find(key);
   if Assigned(item) and fValueComparer.Equals(item.Value, value) then
     Exit(True);
   Result := False;
@@ -937,7 +931,7 @@ function TDictionary<TKey, TValue>.TryGetValue(const key: TKey; var value: TValu
 var
   item: PItem;
 begin
-  item := fHashTable.Find(key, fKeyComparer.GetHashCode(key));
+  item := fHashTable.Find(key);
   if Assigned(item) then
   begin
     value := item.Value;
@@ -952,7 +946,7 @@ function TDictionary<TKey, TValue>.TryUpdateValue(const key: TKey;
 var
   item: PItem;
 begin
-  item := fHashTable.Find(key, fKeyComparer.GetHashCode(key));
+  item := fHashTable.Find(key);
   if Assigned(item) then
   begin
     {$Q-}
@@ -1011,14 +1005,25 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey): TValue;
+var
+  item: PItem;
 begin
-  TryGetValue(key, Result);
+  item := fHashTable.Find(key);
+  if Assigned(item) then
+    Result := item.Value
+  else
+    Result := Default(TValue);
 end;
 
 function TDictionary<TKey, TValue>.GetValueOrDefault(const key: TKey;
   const defaultValue: TValue): TValue;
+var
+  item: PItem;
 begin
-  if not TryGetValue(key, Result) then
+  item := fHashTable.Find(key);
+  if Assigned(item) then
+    Result := item.Value
+  else
     Result := defaultValue;
 end;
 
@@ -1031,7 +1036,7 @@ function TDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
 var
   item: PItem;
 begin
-  item := fHashTable.Find(key, fKeyComparer.GetHashCode(key));
+  item := fHashTable.Find(key);
   if Assigned(item) then
     Result := item.Value
   else

@@ -75,6 +75,7 @@ type
       TEntry = TMultiSetEntry<T>;
       TItem = THashMultiSetItem<T>;
       TItems = TArray<TItem>;
+      PItem = ^TItem;
 
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
@@ -142,7 +143,6 @@ type
     function GetItemCount(const item: T): Integer;
     procedure SetItemCount(const item: T; count: Integer);
   {$ENDREGION}
-    class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
     procedure ClearWithNotify;
   protected
     function CreateMultiSet: IMultiSet<T>; override;
@@ -396,7 +396,7 @@ begin
   if not Assigned(fComparer) then
     fComparer := IEqualityComparer<T>(_LookupVtableInfo(giEqualityComparer, elementType, SizeOf(T)));
   fHashTable.ItemsInfo := TypeInfo(TItems);
-  fHashTable.Initialize(@EqualsThunk, fComparer);
+  fHashTable.Initialize(@TComparerThunks<T>.Equals, @TComparerThunks<T>.GetHashCode, fComparer);
 
   fItems := TItemCollection.Create(Self, @fHashTable, fComparer, elementType, 0);
   fEntries := TEntryCollection.Create(Self);
@@ -430,7 +430,7 @@ begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
 
   overrideExisting := True;
-  entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), overrideExisting);
+  entry := fHashTable.AddOrSet(item, overrideExisting);
 
   entry.Item := item;
   if overrideExisting then
@@ -474,17 +474,9 @@ begin
         Notify(Self, oldItems[i].Item, caRemoved);
 end;
 
-class function THashMultiSet<T>.EqualsThunk(instance: Pointer; const left, right): Boolean;
-begin
-  Result := TEqualsMethod<T>(instance^)(T(left), T(right));
-end;
-
 function THashMultiSet<T>.Contains(const item: T): Boolean;
-var
-  entry: THashTableEntry;
 begin
-  entry.HashCode := fComparer.GetHashCode(item);
-  Result := fHashTable.Find(item, entry);
+  Result := fHashTable.Find(item) <> nil;
 end;
 
 function THashMultiSet<T>.Extract(const item: T): T;
@@ -512,11 +504,11 @@ end;
 
 function THashMultiSet<T>.GetItemCount(const item: T): Integer;
 var
-  entry: THashTableEntry;
+  entry: PItem;
 begin
-  entry.HashCode := fComparer.GetHashCode(item);
-  if fHashTable.Find(item, entry) then
-    Result := TItems(fHashTable.Items)[entry.ItemIndex].Count
+  entry := fHashTable.Find(item);
+  if Assigned(entry) then
+    Result := entry.Count
   else
     Result := 0;
 end;
@@ -529,7 +521,7 @@ end;
 function THashMultiSet<T>.Remove(const item: T; count: Integer): Integer;
 var
   entry: THashTableEntry;
-  tableItem: ^TItem;
+  tableItem: PItem;
   i: Integer;
 begin
   if count < 0 then RaiseHelper.ArgumentOutOfRange(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
@@ -558,7 +550,7 @@ end;
 
 procedure THashMultiSet<T>.SetItemCount(const item: T; count: Integer);
 var
-  entry: ^TItem;
+  entry: PItem;
   overrideExisting: Boolean;
   i: Integer;
 begin
@@ -566,7 +558,7 @@ begin
 
   if count = 0 then
   begin
-    entry := fHashTable.Delete(item, fComparer.GetHashCode(item));
+    entry := fHashTable.Delete(item);
     if Assigned(entry) then
     begin
       Dec(fCount, entry.Count);
@@ -578,7 +570,7 @@ begin
   else
   begin
     overrideExisting := True;
-    entry := fHashTable.AddOrSet(item, fComparer.GetHashCode(item), overrideExisting);
+    entry := fHashTable.AddOrSet(item, overrideExisting);
     if not overrideExisting then
     begin
       entry.Item := item;
@@ -686,11 +678,10 @@ end;
 function THashMultiSet<T>.TEntryCollection.Contains(
   const value: TEntry): Boolean;
 var
-  entry: THashTableEntry;
+  item: PItem;
 begin
-  entry.HashCode := fSource.fComparer.GetHashCode(value.Item);
-  Result := fSource.fHashTable.Find(value.Item, entry)
-    and (value.Count = TItems(fSource.fHashTable.Items)[entry.ItemIndex].Count);
+  item := fSource.fHashTable.Find(value.Item);
+  Result := Assigned(item) and (value.Count = item.Count);
 end;
 
 function THashMultiSet<T>.TEntryCollection.GetCount: Integer;

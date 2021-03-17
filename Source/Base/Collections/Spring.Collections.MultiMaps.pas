@@ -176,7 +176,6 @@ type
     fOnDestroy: TNotifyEventImpl;
     procedure DoValueChanged(sender: TObject; const item: TValue;
       action: TCollectionChangedAction);
-    class function EqualsThunk(instance: Pointer; const left, right): Boolean; static;
     procedure UpdateValues(const key; var values: IInterface);
   protected
   {$REGION 'Property Accessors'}
@@ -564,7 +563,7 @@ begin
   if not Assigned(fKeyComparer) then
     fKeyComparer := IEqualityComparer<TKey>(_LookupVtableInfo(giEqualityComparer, keyType, SizeOf(TKey)));
   fHashTable.ItemsInfo := TypeInfo(TItems);
-  fHashTable.Initialize(@EqualsThunk, fKeyComparer);
+  fHashTable.Initialize(@TComparerThunks<TKey>.Equals, @TComparerThunks<TKey>.GetHashCode, fKeyComparer);
 
   fKeys := TKeyCollection.Create(Self, @fHashTable, fKeyComparer, keyType, 0);
   fValues := TValueCollection.Create(Self, @fHashTable, @fCount);
@@ -580,11 +579,6 @@ begin
   fKeys.Free;
   fValues.Free;
   inherited BeforeDestruction;
-end;
-
-class function TMultiMapBase<TKey, TValue>.EqualsThunk(instance: Pointer; const left, right): Boolean;
-begin
-  Result := TEqualsMethod<TKey>(instance^)(TKey(left), TKey(right));
 end;
 
 procedure TMultiMapBase<TKey, TValue>.KeyChanged(const item: TKey;
@@ -667,21 +661,15 @@ end;
 function TMultiMapBase<TKey, TValue>.Contains(const key: TKey;
   const value: TValue): Boolean;
 var
-  entry: THashTableEntry;
+  item: PItem;
 begin
-  entry.HashCode := fKeyComparer.GetHashCode(key);
-  if fHashTable.Find(key, entry) then
-    Result := TItems(fHashTable.Items)[entry.ItemIndex].Values.Contains(value)
-  else
-    Result := False;
+  item := fHashTable.Find(key);
+  Result := Assigned(item) and item.Values.Contains(value);
 end;
 
 function TMultiMapBase<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
-var
-  entry: THashTableEntry;
 begin
-  entry.HashCode := fKeyComparer.GetHashCode(key);
-  Result := fHashTable.Find(key, entry);
+  Result := fHashTable.Find(key) <> nil;
 end;
 
 function TMultiMapBase<TKey, TValue>.ContainsValue(const value: TValue): Boolean;
@@ -739,15 +727,13 @@ end;
 function TMultiMapBase<TKey, TValue>.Extract(const key: TKey;
   const value: TValue): TKeyValuePair;
 var
-  entry: THashTableEntry;
   item: PItem;
   count: Integer;
 begin
   Result.Key := key;
-  entry.HashCode := fKeyComparer.GetHashCode(key);
-  if fHashTable.Find(key, entry) then
+  item := fHashTable.Find(key);
+  if Assigned(item) then
   begin
-    item := @TItems(fHashTable.Items)[entry.ItemIndex];
     count := item.Values.Count;
     Result.Value := item.Values.Extract(value);
     if item.Values.Count < count then
@@ -789,11 +775,11 @@ end;
 function TMultiMapBase<TKey, TValue>.GetItems(
   const key: TKey): IReadOnlyCollection<TValue>;
 var
-  entry: THashTableEntry;
+  item: PItem;
 begin
-  entry.HashCode := fKeyComparer.GetHashCode(key);
-  if fHashTable.Find(key, entry) then
-    Result := TItems(fHashTable.Items)[entry.ItemIndex].Values as IReadOnlyCollection<TValue>
+  item := fHashTable.Find(key);
+  if Assigned(item) then
+    Result := item.Values as IReadOnlyCollection<TValue>
   else
     Result := TWrappedCollection.Create(key, fOnDestroy, UpdateValues, CreateCollection);
 end;
@@ -846,21 +832,21 @@ end;
 
 function TMultiMapBase<TKey, TValue>.TryAdd(const key: TKey; const value: TValue): Boolean;
 var
-  entry: PItem;
+  item: PItem;
   overrideExisting: Boolean;
 begin
   overrideExisting := True;
-  entry := fHashTable.AddOrSet(key, fKeyComparer.GetHashCode(key), overrideExisting);
+  item := fHashTable.AddOrSet(key, overrideExisting);
 
   if not overrideExisting then
   begin
-    entry.Key := key;
-    entry.Values := CreateCollection;
-    entry.Values.OnChanged.Add(DoValueChanged);
+    item.Key := key;
+    item.Values := CreateCollection;
+    item.Values.OnChanged.Add(DoValueChanged);
     KeyChanged(key, caAdded);
   end;
 
-  Result := entry.Values.Add(value);
+  Result := item.Values.Add(value);
   if Result then
     if Assigned(Notify) then
       DoNotify(key, value, caAdded);
@@ -869,22 +855,22 @@ end;
 procedure TMultiMapBase<TKey, TValue>.UpdateValues(const key;
   var values: IInterface);
 var
-  entry: THashTableEntry;
+  item: PItem;
 begin
-  entry.HashCode := fKeyComparer.GetHashCode(TKey(key));
-  if fHashTable.Find(key, entry) then
-    values := TItems(fHashTable.Items)[entry.ItemIndex].Values;
+  item := fHashTable.Find(key);
+  if Assigned(item) then
+    values := item.Values;
 end;
 
 function TMultiMapBase<TKey, TValue>.TryGetValues(const key: TKey;
   var values: IReadOnlyCollection<TValue>): Boolean;
 var
-  entry: THashTableEntry;
+  item: PItem;
 begin
-  entry.HashCode := fKeyComparer.GetHashCode(key);
-  if fHashTable.Find(key, entry) then
+  item := fHashTable.Find(key);
+  if Assigned(item) then
   begin
-    values := TItems(fHashTable.Items)[entry.ItemIndex].Values as IReadOnlyCollection<TValue>;
+    values := item.Values as IReadOnlyCollection<TValue>;
     Result := True;
   end
   else

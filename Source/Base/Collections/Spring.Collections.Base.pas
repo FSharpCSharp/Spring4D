@@ -78,6 +78,13 @@ type
     class function Default: IComparer<TPair<TKey, TValue>>; static;
   end;
 
+  TEqualsMethod<T> = function(const left, right: T): Boolean of object;
+  TGetHashCodeMethod<T> = function(const value: T): Integer of object;
+  TComparerThunks<T> = record
+    class function Equals(instance: Pointer; const left, right): Boolean; static;
+    class function GetHashCode(instance: Pointer; const value): Integer; static;
+  end;
+
   TEnumerableBase = class abstract(TRefCountedObject)
   protected
     this: Pointer;
@@ -791,6 +798,21 @@ class function TPairComparer<TKey, TValue>.Default: IComparer<TPair<TKey, TValue
 begin
   TPairComparer.Create(@Result, @Comparer_Vtable,
     @TPairComparer<TKey, TValue>.Compare, TypeInfo(TKey), TypeInfo(TValue));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TComparerThunks<T>'}
+
+class function TComparerThunks<T>.Equals(instance: Pointer; const left, right): Boolean;
+begin
+  Result := TEqualsMethod<T>(instance^)(T(left), T(right));
+end;
+
+class function TComparerThunks<T>.GetHashCode(instance: Pointer; const value): Integer;
+begin
+  Result := TGetHashCodeMethod<T>(instance^)(T(value));
 end;
 
 {$ENDREGION}
@@ -1983,14 +2005,9 @@ begin
 end;
 
 function TInnerCollection<T>.Contains(const value: T): Boolean;
-var
-  entry: THashTableEntry;
 begin
   if fOffset = THashTable.KeyOffset then // means this is for the key
-  begin
-    entry.HashCode := fComparer.GetHashCode(value);
-    Result := fHashTable.Find(value, entry);
-  end
+    Result := fHashTable.Find(value) <> nil
   else
     Result := inherited Contains(value, fComparer);
 end;
