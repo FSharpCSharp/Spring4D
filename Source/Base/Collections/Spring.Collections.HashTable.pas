@@ -281,7 +281,7 @@ begin
       bucketValue := fBuckets[bucketIndex];
 
       if bucketValue = EmptyBucket then
-        Exit(nil);
+        Break;
 
       if (bucketValue <> UsedBucket)
         and (bucketValue and fBucketHashCodeMask = hashCode and fBucketHashCodeMask) then
@@ -310,10 +310,7 @@ begin
       bucketValue := fBuckets[entry.BucketIndex];
 
       if bucketValue = EmptyBucket then
-      begin
-        entry.ItemIndex := fItemCount;
-        Exit(False);
-      end;
+        Break;
 
       if (bucketValue <> UsedBucket)
         and (bucketValue and fBucketHashCodeMask = entry.HashCode and fBucketHashCodeMask) then
@@ -326,6 +323,7 @@ begin
       entry.BucketIndex := (entry.BucketIndex + 1) and fBucketIndexMask;
     end;
   end;
+  entry.ItemIndex := fItemCount;
   Result := False;
 end;
 
