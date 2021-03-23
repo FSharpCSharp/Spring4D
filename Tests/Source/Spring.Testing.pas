@@ -173,9 +173,6 @@ uses
   TypInfo,
   Spring.Reflection;
 
-var
-  ISO8601FormatSettings: TFormatSettings;
-
 type
   TRttiMethodHelper = class helper for TRttiMethod
     procedure ConvertValues(const values: TArray<TValue>;
@@ -680,15 +677,5 @@ end;
 
 {$ENDREGION}
 
-
-initialization
-  ISO8601FormatSettings := TFormatSettings.Create;
-  ISO8601FormatSettings.DateSeparator := '-';
-  ISO8601FormatSettings.TimeSeparator := ':';
-  ISO8601FormatSettings.ShortDateFormat := 'YYYY-MM-DD';
-  ISO8601FormatSettings.ShortTimeFormat := 'hh:mm:ss';
-  ISO8601FormatSettings.DecimalSeparator := '.';
-  ISO8601FormatSettings.TimeAMString := '';
-  ISO8601FormatSettings.TimePMString := '';
 
 end.

@@ -36,10 +36,8 @@ type
   TGetValueFunc = reference to function(const args: Variant): Variant;
 
   TFilterFunctions = record
-  private
-    class var
-      fFunctions: IDictionary<string,TGetValueFunc>;
-      fIsoFormatSettings: TFormatSettings;
+  private class var
+    fFunctions: IDictionary<string,TGetValueFunc>;
   private
     class procedure Initialize; static;
     class constructor Create;
@@ -57,7 +55,8 @@ uses
   DateUtils,
   Math,
   StrUtils,
-  Variants;
+  Variants,
+  Spring;
 
 function VarArrayLength(AValue: Variant): Integer;
 begin
@@ -73,11 +72,6 @@ end;
 
 class constructor TFilterFunctions.Create;
 begin
-  fIsoFormatSettings := TFormatSettings.Create;
-  fIsoFormatSettings.ShortDateFormat := 'YYYY-MM-DD';
-  fIsoFormatSettings.DateSeparator := '-';
-  fIsoFormatSettings.DecimalSeparator := '.';
-
   fFunctions := TCollections.CreateDictionary<string, TGetValueFunc>(
     50, TStringComparer.OrdinalIgnoreCase);
 end;
@@ -224,7 +218,7 @@ begin
     function(const args: Variant): Variant
     begin
       Assert(VarArrayLength(Args) = 1, 'Date requires 1 argument');
-      Result := StrToDate(Args[0], fIsoFormatSettings);
+      Result := StrToDate(Args[0], ISO8601FormatSettings);
     end);
 end;
 

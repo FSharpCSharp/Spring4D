@@ -455,7 +455,6 @@ type
 {$ELSE}
     InitTables: TDictionary<TClass,TInitTable>;
 {$ENDIF}
-    FormatSettings: TFormatSettings;
     procedure AddDefaultField(fieldType: PTypeInfo; const value: Variant; offset: Integer);
     procedure AddDefaultProperty(fieldType: PTypeInfo; const value: Variant; propInfo: PPropInfo);
     procedure AddManagedField(const field: TRttiField; const attribute: ManagedAttribute);
@@ -3180,6 +3179,19 @@ const
 {$IFEND OTHER_PTR_SIZE}
 {$ENDIF}
 
+const
+  ISO8601FormatSettings: TFormatSettings = (
+    DateSeparator: '-';
+    TimeSeparator: ':';
+    ShortDateFormat: 'YYYY-MM-DD';
+    LongDateFormat: 'YYYY-MM-DD';
+    TimeAMString: '';
+    TimePMString: '';
+    ShortTimeFormat: 'hh:nn:ss';
+    LongTimeFormat: 'hh:nn:ss';
+    DecimalSeparator: '.';
+  );
+
 implementation
 
 uses
@@ -4800,11 +4812,6 @@ begin
 {$ELSE}
   InitTables := TObjectDictionary<TClass,TInitTable>.Create([doOwnsValues]);
 {$ENDIF}
-  FormatSettings := TFormatSettings.Create;
-  FormatSettings.DateSeparator := '-';
-  FormatSettings.TimeSeparator := ':';
-  FormatSettings.ShortDateFormat := 'YYYY-MM-DD';
-  FormatSettings.ShortTimeFormat := 'hh:mm:ss';
 end;
 
 class destructor TInitTable.Destroy;
@@ -4905,11 +4912,11 @@ begin
     {$ENDIF}
     tkFloat:
       if (fieldType = TypeInfo(TDateTime)) and (VarType(value) = varUString) then
-        defaultField := TDefaultField<TDateTime>.Create(offset, StrToDateTime(value, FormatSettings))
+        defaultField := TDefaultField<TDateTime>.Create(offset, StrToDateTime(value, ISO8601FormatSettings))
       else if (fieldType = TypeInfo(TDate)) and (VarType(value) = varUString) then
-        defaultField := TDefaultField<TDate>.Create(offset, StrToDate(value, FormatSettings))
+        defaultField := TDefaultField<TDate>.Create(offset, StrToDate(value, ISO8601FormatSettings))
       else if (fieldType = TypeInfo(TTime)) and (VarType(value) = varUString) then
-        defaultField := TDefaultField<TTime>.Create(offset, StrToTime(value, FormatSettings))
+        defaultField := TDefaultField<TTime>.Create(offset, StrToTime(value, ISO8601FormatSettings))
       else
         case FieldType.TypeData.FloatType of
           ftSingle: defaultField := TDefaultField<Single>.Create(offset, value);
@@ -4966,11 +4973,11 @@ begin
     {$ENDIF}
     tkFloat:
       if (fieldType = TypeInfo(TDateTime)) and (VarType(value) = varUString) then
-        defaultField := TDefaultProperty<TDateTime>.Create(propInfo, StrToDateTime(value, FormatSettings))
+        defaultField := TDefaultProperty<TDateTime>.Create(propInfo, StrToDateTime(value, ISO8601FormatSettings))
       else if (fieldType = TypeInfo(TDate)) and (VarType(value) = varUString) then
-        defaultField := TDefaultProperty<TDate>.Create(propInfo, StrToDate(value, FormatSettings))
+        defaultField := TDefaultProperty<TDate>.Create(propInfo, StrToDate(value, ISO8601FormatSettings))
       else if (fieldType = TypeInfo(TTime)) and (VarType(value) = varUString) then
-        defaultField := TDefaultProperty<TTime>.Create(propInfo, StrToTime(value, FormatSettings))
+        defaultField := TDefaultProperty<TTime>.Create(propInfo, StrToTime(value, ISO8601FormatSettings))
       else
         case fieldType.TypeData.FloatType of
           ftSingle: defaultField := TDefaultProperty<Single>.Create(propInfo, value);

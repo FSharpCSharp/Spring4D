@@ -82,7 +82,7 @@ var
 implementation
 
 uses
-  Variants, Masks, StrUtils, Math, Classes;
+  Variants, Masks, StrUtils, Math, Classes, Spring;
 
   (*
 {$IFDEF COMPILER12_UP}
@@ -716,7 +716,7 @@ var
       varDate:
       begin
         case VarType(RightValue) of
-          varString, varUString: RightValue := StrToDateTime(RightValue);
+          varString, varUString: RightValue := StrToDateTime(RightValue, ISO8601FormatSettings);
         end;
       end;
       varBoolean:
@@ -734,7 +734,7 @@ var
       varDate:
       begin
         case VarType(LeftValue) of
-          varString, varUString: LeftValue := StrToDateTime(LeftValue);
+          varString, varUString: LeftValue := StrToDateTime(LeftValue, ISO8601FormatSettings);
         end;
       end;
       varBoolean:
@@ -946,7 +946,7 @@ function TNodeCValue.Eval: Variant;
 begin
   case FCValue.Token of
     tkNumber:
-      Result := StrToFloat(FCValue.Str);
+      Result := StrToFloat(FCValue.Str, ISO8601FormatSettings);
     tkInteger:
       Result := StrToInt(FCValue.Str);
     tkString:
