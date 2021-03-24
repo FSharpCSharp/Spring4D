@@ -670,16 +670,6 @@ begin
 end;
 {$ELSE}
 
-function DynArrayHigh(const A: Pointer): NativeInt; inline;
-begin
-  Result := NativeInt(A);
-  if Result <> 0 then
-{$POINTERMATH ON}
-    Result := PNativeInt(Result)[-1];
-{$POINTERMATH OFF}
-  Dec(Result);
-end;
-
 procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
 var
   handlers: PMethod;

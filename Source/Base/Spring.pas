@@ -4172,7 +4172,12 @@ end;
 
 function DynArrayHigh(const A: Pointer): NativeInt;
 begin
-  Result := DynArrayLength(A) - 1;
+  Result := NativeInt(A);
+  if Result <> 0 then
+    {$POINTERMATH ON}
+    Result := PNativeInt(Result)[-1];
+    {$POINTERMATH OFF}
+  Dec(Result);
 end;
 {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
 {$IFDEF OVERFLOWCHECKS_ON}{$Q+}{$ENDIF}
