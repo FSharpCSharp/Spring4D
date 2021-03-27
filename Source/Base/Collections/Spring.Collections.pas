@@ -146,6 +146,16 @@ type
   /// </summary>
   IEnumerable = interface(IInvokable)
     ['{6BC97F33-C0A8-4770-8E1C-C2017527B7E7}']
+
+    /// <summary>
+    ///   Returns an enumerator that iterates through a collection.
+    /// </summary>
+    /// <returns>
+    ///   An <see cref="IEnumerator" /> object that can be used to iterate
+    ///   through the collection.
+    /// </returns>
+    function GetEnumerator: IEnumerator;
+
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetElementType: PTypeInfo;
@@ -170,15 +180,6 @@ type
     ///   reference.
     /// </returns>
     function AsObject: TObject;
-
-    /// <summary>
-    ///   Returns an enumerator that iterates through a collection.
-    /// </summary>
-    /// <returns>
-    ///   An <see cref="IEnumerator" /> object that can be used to iterate
-    ///   through the collection.
-    /// </returns>
-    function GetEnumerator: IEnumerator;
 
     /// <summary>
     ///   Returns the number of elements in a sequence.
@@ -242,6 +243,16 @@ type
   /// </seealso>
   IEnumerable<T> = interface
     ['{A6B46D30-5B0F-495F-B7EC-46FBC5A75D24}']
+
+    /// <summary>
+    ///   Returns an enumerator that iterates through the collection.
+    /// </summary>
+    /// <returns>
+    ///   An <see cref="IEnumerator&lt;T&gt;" /> that can be used to iterate
+    ///   through the collection.
+    /// </returns>
+    function GetEnumerator: IEnumerator<T>;
+
   {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetElementType: PTypeInfo;
@@ -266,15 +277,6 @@ type
     ///   reference.
     /// </returns>
     function AsObject: TObject;
-
-    /// <summary>
-    ///   Returns an enumerator that iterates through the collection.
-    /// </summary>
-    /// <returns>
-    ///   An <see cref="IEnumerator&lt;T&gt;" /> that can be used to iterate
-    ///   through the collection.
-    /// </returns>
-    function GetEnumerator: IEnumerator<T>;
 
     /// <summary>
     ///   Returns the specified comparer for this instance.

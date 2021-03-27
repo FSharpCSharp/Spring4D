@@ -2680,12 +2680,7 @@ end;
 {$REGION 'TIteratorBlock'}
 
 type
-  IEnumerableInternal = interface(IInvokable)
-    function GetCount: Integer;
-    function GetElementType: PTypeInfo;
-    function GetIsEmpty: Boolean;
-    function GetCountFast: Integer;
-    function AsObject: TObject;
+  IEnumerableInternal = interface
     procedure GetEnumerator(var result: IEnumerator);
   end;
 
