@@ -45,7 +45,6 @@ type
   /// </summary>
   TComponentRegistry = class(TInterfacedObject, IComponentRegistry)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
     fModels: IList<TComponentModel>;
     fDefaultRegistrations: IDictionary<PTypeInfo, TComponentModel>;

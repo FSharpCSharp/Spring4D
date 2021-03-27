@@ -37,7 +37,6 @@ uses
 type
   TProxyFactory = class(TInterfacedObject, IProxyFactory)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
     fSelectors: IList<IModelInterceptorsSelector>;
   protected

@@ -346,10 +346,6 @@ begin
   parent := TReflectionTypeSerializer.Create([mvPublic], True);
   o := TSampleObject.Create;
   try
-{$IFDEF AUTOREFCOUNT}
-    //We're also testing how WeakRefs work
-    CheckEquals(1, TSampleObject.Instances);
-{$ENDIF}
     o.fString := 'test';
     o.fObject := o;
     value := o;
@@ -362,40 +358,20 @@ begin
       '    fString = test'#$A +
       '    PObject = ' + s + #$A +
       '    PString = test'#$A +
-      '    RefCount = ' +
-{$IFDEF AUTOREFCOUNT}
-      '5'#$A +
-      '    Disposed = False' +
-{$ELSE}
-      '0' +
-{$ENDIF}
-      ')';
-    s :=
-      s+'('#$A +
+      '    RefCount = 0)';
+    s := s + '('#$A +
       '  fObject = ' + c + #$A +
       '  fString = test'#$A +
       '  PObject = ' + c + #$A +
       '  PString = test'#$A +
-      '  RefCount = ' +
-{$IFDEF AUTOREFCOUNT}
-      '3'#$A +
-      '  Disposed = False' +
-{$ELSE}
-      '0' +
-{$ENDIF}
-      ')';
+      '  RefCount = 0)';
 
-      value := nil; //Release the RefCount on ARC
+    value := nil;
   finally
     o.Free;
   end;
 
   CheckEquals(s, result);
-{$IFDEF AUTOREFCOUNT}
-  //Lets make sure we're not leaking (ie. the instance was freed and all
-  //references removed)
-  CheckEquals(0, TSampleObject.Instances, 'Leak detected!');
-{$ENDIF}
 end;
 
 procedure TTestReflectionTypeSerializer.TestNestingClass;
@@ -501,20 +477,9 @@ begin
     '  fString = test'#$A +
     '  PObject = (empty)'#$A +
     '  PString = test'#$A +
-    '  RefCount = ' +
-{$IFDEF NEXTGEN}
-      '6'#$A +
-      '  Disposed = False' +
-{$ELSE}
-      '3' +
-{$ENDIF}
-      ')';
+    '  RefCount = 3)';
 
-{$IFDEF AUTOREFCOUNT}
-  o := nil;
-  i := nil;
-{$ENDIF}
-  value := nil; //Release the RefCount on ARC
+  value := nil;
 
   CheckEquals(s, result);
 end;

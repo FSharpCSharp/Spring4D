@@ -50,16 +50,6 @@ type
     procedure TearDown; override;
   end;
 
-{$IFDEF AUTOREFCOUNT}
-  TTestGlobalContainer = class(TTestCase)
-  published
-    procedure TestGlobalContainerDirectUse;
-    procedure TestGlobalContainerAssignToVariable;
-    procedure TestServiceLocatorDirectUse;
-    procedure TestServiceLocatorAssignToVariable;
-  end;
-{$ENDIF}
-
   TTestEmptyContainer = class(TContainerTestCase)
   published
     procedure TestResolveUnknownInterfaceService;
@@ -373,37 +363,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestGlobalContainer'}
-{$IFDEF AUTOREFCOUNT}
-
-procedure TTestGlobalContainer.TestGlobalContainerAssignToVariable;
-var AContainer: TContainer;
-begin
-  AContainer := GlobalContainer;
-  CheckEquals(2, TObjectAccess(AContainer).FRefCount);
-end;
-
-procedure TTestGlobalContainer.TestGlobalContainerDirectUse;
-begin
-  CheckEquals(1, TObjectAccess(GlobalContainer).FRefCount);
-end;
-
-procedure TTestGlobalContainer.TestServiceLocatorAssignToVariable;
-var ALocator: TServiceLocator;
-begin
-  ALocator := ServiceLocator;
-  CheckEquals(2, TObjectAccess(ALocator).FRefCount);
-end;
-
-procedure TTestGlobalContainer.TestServiceLocatorDirectUse;
-begin
-  CheckEquals(1, TObjectAccess(ServiceLocator).FRefCount);
-end;
-
-{$ENDIF}
-{$ENDREGION}
-
-
 {$REGION 'TTestEmptyContainer'}
 
 procedure TTestEmptyContainer.TestResolveUnknownInterfaceService;
@@ -516,9 +475,7 @@ begin
     CheckTrue(service is TNameService, 'service should be a TNameService instance.');
     CheckEquals(TNameService.NameString, service.Name);
   finally
-{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(service);
-{$ENDIF}
     service := nil;
   end;
 end;
@@ -541,11 +498,7 @@ begin
     CheckIs(service, TAgeServiceImpl, 'service should be a TNameService instance.');
     CheckEquals(TAgeServiceImpl.DefaultAge, service.Age);
   finally
-{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(service);
-{$ELSE}
-    service := nil;
-{$ENDIF}
   end;
 end;
 
@@ -560,11 +513,7 @@ begin
     CheckNotNull(service, 'service should not be null.');
     CheckEquals(TAgeServiceImpl.DefaultAge, service.Age);
   finally
-{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(service);
-{$ELSE}
-    service := nil;
-{$ENDIF}
   end;
 end;
 
@@ -584,11 +533,7 @@ begin
     CheckNotNull(component.AgeService, 'AgeService');
     CheckEquals(TAgeServiceImpl.DefaultAge, component.AgeService.Age);
   finally
-{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(component);
-{$ELSE}
-    component := nil;
-{$ENDIF}
   end;
 end;
 
@@ -627,17 +572,12 @@ begin
     CheckNotNull(obj2, 'obj2 should not be nil');
     CheckSame(obj1, obj2, 'obj1 should be the same as obj2.');
   finally
-{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(obj1);
     try
       // might raise an exception because ClassType is nil with FastMM4 full debug
       fContainer.Release(obj2);
     except
     end;
-{$ELSE}
-    obj1 := nil;
-    obj2 := nil;
-{$ENDIF}
   end;
 end;
 
@@ -655,13 +595,8 @@ begin
     CheckNotNull(obj2, 'obj2 should not be nil');
     CheckTrue(obj1 <> obj2, 'obj1 should not be the same as obj2.');
   finally
-{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(obj1);
     fContainer.Release(obj2);
-{$ELSE}
-    obj1 := nil;
-    obj2 := nil;
-{$ENDIF}
   end;
 end;
 
@@ -833,9 +768,6 @@ begin
       disposed := True;
     end;
   service := nil;
-{$IFDEF AUTOREFCOUNT}
-  component := nil;
-{$ENDIF}
   disposed := False;
   FreeAndNil(fContainer);
   CheckTrue(disposed);
@@ -1063,14 +995,10 @@ end;
 
 procedure TTestDifferentServiceImplementations.TearDown;
 begin
-{$IFNDEF AUTOREFCOUNT}
   fContainer.Release(fAnotherNameService);
-{$ENDIF}
   fAnotherNameService := nil;
 
-{$IFNDEF AUTOREFCOUNT}
   fContainer.Release(fNameService);
-{$ENDIF}
   fNameService := nil;
 
   fServices := Default(TArray<INameService>);
@@ -1183,10 +1111,8 @@ end;
 
 procedure TTypedInjectionTestCase.TearDown;
 begin
-{$IFNDEF AUTOREFCOUNT}
   fContainer.Release(fInjectionExplorer);
   fContainer.Release(fNameService);
-{$ENDIF}
   fInjectionExplorer := nil;
   fNameService := nil;
   inherited TearDown;
@@ -1437,10 +1363,8 @@ end;
 
 procedure TTestImplementsDifferentServices.TearDown;
 begin
-{$IFNDEF AUTOREFCOUNT}
   fContainer.Release(fAgeService);
   fContainer.Release(fNameService);
-{$ENDIF}
   fAgeService := nil;
   fNameService := nil;
   inherited TearDown;

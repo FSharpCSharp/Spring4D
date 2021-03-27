@@ -163,9 +163,6 @@ function TMockInterceptor.CreateMethodCalls: TArray<TMethodCall>;
   end;
 
 var
-{$IFDEF AUTOREFCOUNT}
-  capturedSelf: Pointer;
-{$ENDIF}
   i: Integer;
   values: TArray<TValue>;
 begin
@@ -183,22 +180,12 @@ begin
     end
     else
     begin
-    {$IFDEF AUTOREFCOUNT}
-      // Break reference cycle held by the anonymous function closure (RSP-10176)
-      // (Do not use __ObjRelease like in other places that suffers from this issue,
-      // since the interceptor action can be reassigned and it could free Self when
-      // undesired to, use "unsafe" pointer.)
-      capturedSelf := Self;
-    {$ENDIF}
       Result[0] := TMethodCall.Create(
         function(const callInfo: TCallInfo): TValue
         begin
           if callInfo.CallCount <= Length(values) then
             Result := values[callInfo.CallCount - 1]
           else
-          {$IFDEF AUTOREFCOUNT}
-            with TMockInterceptor(capturedSelf) do
-          {$ENDIF}
             if Behavior = TMockBehavior.Strict then
               raise EMockException.CreateResFmt(@SCallCountExceeded, [
                 Times.AtMost(Length(values)).ToString(callInfo.CallCount)]);

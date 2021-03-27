@@ -37,7 +37,6 @@ type
   /// </summary>
   TContainerExtension = class(TInterfacedObject, IContainerExtension)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
   protected
     /// <summary>

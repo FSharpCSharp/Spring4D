@@ -129,14 +129,9 @@ type
     function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
 
-{$IFNDEF AUTOREFCOUNT}
     { Experimental Release Methods }
     procedure Release(instance: TObject); overload;
     procedure Release(instance: IInterface); overload;
-{$ELSE}
-    // Dangerous since the instance should be cleared by this function but
-    // passing as var is not possible here
-{$ENDIF}
   end;
 
   /// <summary>
@@ -145,7 +140,6 @@ type
   /// </summary>
   TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fContainer: TContainer;
     class var GlobalInstance: IServiceLocator;
     class procedure Init; static;
@@ -179,8 +173,7 @@ procedure CleanupGlobalContainer;
 /// <summary>
 ///   Returns global instance of the container.
 /// </summary>
-{$IFDEF AUTOREFCOUNT}[Result: Unsafe]{$ENDIF}
-function GlobalContainer: TContainer; {$IFNDEF AUTOREFCOUNT}inline;{$ENDIF}
+function GlobalContainer: TContainer; inline;
 
 implementation
 
@@ -594,7 +587,6 @@ begin
   end;
 end;
 
-{$IFNDEF AUTOREFCOUNT}
 procedure TContainer.Release(instance: TObject);
 var
   model: TComponentModel;
@@ -612,7 +604,6 @@ begin
   Guard.CheckNotNull(instance, 'instance');
   {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
-{$ENDIF}
 
 {$ENDREGION}
 

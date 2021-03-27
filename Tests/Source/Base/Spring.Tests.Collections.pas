@@ -46,14 +46,12 @@ type
   protected
     type
       TEvent<T> = record
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         sender: TObject;
         item: T;
         action: TCollectionChangedAction;
       end;
   protected
     fChangedEvents: IList<TEvent<Integer>>;
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     Sender: TObject;
     procedure Changed(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
     procedure CheckChanged(index: Integer; item: Integer; action: TCollectionChangedAction);
@@ -66,7 +64,6 @@ type
   protected
     type
       TEvent<T> = record
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         sender: TObject;
         item: T;
         action: TCollectionChangedAction;
@@ -76,7 +73,6 @@ type
     fChangedEvents: IList<TEvent<TKeyValuePair>>;
     fKeyChangedEvents: IList<TEvent<Integer>>;
     fValueChangedEvents: IList<TEvent<string>>;
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     Sender: TObject;
     procedure Changed(Sender: TObject; const Item: TKeyValuePair; Action: TCollectionChangedAction);
     procedure KeyChanged(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
@@ -3336,10 +3332,6 @@ begin
   CheckCount(1);
   CheckEvent(1, caAdded);
   CheckNode(node, 1, nil, nil);
-{$IFDEF AUTOREFCOUNT}
-  CheckTrue(node.fOwned);
-  CheckEquals(2, node.RefCount);
-{$ENDIF}
 end;
 
 procedure TTestLinkedList.TestAddFirstNode_ListContainsTwoItems;

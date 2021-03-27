@@ -79,7 +79,6 @@ type
 
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: THashMultiSet<T>;
         fItemIndex: Integer;
         fRemainingCount: Integer;
@@ -97,7 +96,6 @@ type
       TEntryCollection = class(TEnumerableBase<TEntry>,
         IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: THashMultiSet<T>;
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
@@ -120,7 +118,6 @@ type
 
       TEntryEnumerator = class(TRefCountedObject, IEnumerator<TEntry>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: THashMultiSet<T>;
         fItemIndex: Integer;
         fVersion: Integer;
@@ -181,7 +178,6 @@ type
 
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TTreeMultiSet<T>;
         fNode: PNode;
         fRemainingCount: Integer;
@@ -196,7 +192,6 @@ type
       TItemCollection = class(TEnumerableBase<T>,
         IEnumerable<T>, IReadOnlyCollection<T>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TTreeMultiSet<T>;
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
@@ -219,7 +214,6 @@ type
 
       TItemEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TTreeMultiSet<T>;
         fCurrentNode: PNode;
         fFinished: Boolean;
@@ -234,7 +228,6 @@ type
       TEntryCollection = class(TEnumerableBase<TEntry>,
         IEnumerable<TEntry>, IReadOnlyCollection<TEntry>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TTreeMultiSet<T>;
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
@@ -257,7 +250,6 @@ type
 
       TEntryEnumerator = class(TRefCountedObject, IEnumerator<TEntry>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TTreeMultiSet<T>;
         fCurrentNode: PNode;
         fFinished: Boolean;

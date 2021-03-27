@@ -38,7 +38,6 @@ uses
 type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
     fOnBuild: IInvokableNotifyEvent<TComponentModel>;
     fInspectors: IList<IBuilderInspector>;

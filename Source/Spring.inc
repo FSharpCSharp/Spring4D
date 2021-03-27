@@ -119,7 +119,11 @@
 {$DEFINITIONINFO ON}
 
 {$IFNDEF DELPHIXE_UP}
-  {$MESSAGE ERROR 'This framework requires Delphi XE or higher.'}
+  {$MESSAGE ERROR 'This library requires Delphi XE or higher.'}
+{$ENDIF}
+
+{$IFDEF AUTOREFCOUNT}
+  {$MESSAGE ERROR 'ARC is not supported'}
 {$ENDIF}
 
 {$IFNDEF NEXTGEN}

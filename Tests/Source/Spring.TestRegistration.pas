@@ -283,9 +283,6 @@ begin
   if CoreContainer in TestKinds then
   begin
     RegisterTests('Spring.Core.Container', [
-  {$IFDEF AUTOREFCOUNT}
-      TTestGlobalContainer.Suite,
-  {$ENDIF}
       TTestEmptyContainer.Suite,
       TTestSimpleContainer.Suite,
       TTestDifferentServiceImplementations.Suite,

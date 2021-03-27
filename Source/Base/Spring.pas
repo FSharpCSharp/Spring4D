@@ -467,9 +467,7 @@ type
     destructor Destroy; override;
 
     procedure InitInstance(instance: Pointer);
-  {$IFNDEF AUTOREFCOUNT}
     procedure CleanupInstance(instance: Pointer);
-  {$ENDIF}
   end;
 
   {$ENDREGION}
@@ -479,18 +477,14 @@ type
 
   TManagedObject = class(TObject)
   public
-    class function NewInstance: TObject {$IFDEF AUTOREFCOUNT} unsafe {$ENDIF}; override;
-  {$IFNDEF AUTOREFCOUNT}
+    class function NewInstance: TObject; override;
     procedure FreeInstance; override;
-  {$ENDIF}
   end;
 
   TManagedInterfacedObject = class(TInterfacedObject)
   public
-    class function NewInstance: TObject {$IFDEF AUTOREFCOUNT} unsafe {$ENDIF}; override;
-  {$IFNDEF AUTOREFCOUNT}
+    class function NewInstance: TObject; override;
     procedure FreeInstance; override;
-  {$ENDIF}
   end;
 
   {$ENDREGION}
@@ -1301,31 +1295,25 @@ type
   ///   this space.
   /// </summary>
   TRefCountedObject = class abstract
-{$IFNDEF AUTOREFCOUNT}
   private const
     objDestroyingFlag = Integer($80000000);
     function GetRefCount: Integer; inline;
-{$ENDIF}
   protected
-{$IFNDEF AUTOREFCOUNT}
 {$IF Declared(VolatileAttribute)}
     [Volatile]
 {$IFEND}
     fRefCount: Integer;
     class procedure __MarkDestroying(const obj); static; inline;
-{$ENDIF}
     function AsObject: TObject;
   public
     function QueryInterface(const IID: TGUID; out obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
     function GetInterface(const IID: TGUID; out Obj): Boolean;
-{$IFNDEF AUTOREFCOUNT}
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
     class function NewInstance: TObject; override;
     property RefCount: Integer read GetRefCount;
-{$ENDIF}
   end;
 
   {$ENDREGION}
@@ -2787,8 +2775,8 @@ type
     ///   StableSort results in faster sorting.
     /// </summary>
     class var UnsafeStableSort: Boolean;
-    const ManagedPointerTypeKinds = [{$IFDEF AUTOREFCOUNT}tkClass, {$ENDIF}tkInterface, tkDynArray, tkUString];
-    const UnmanagedPointerTypeKinds = [{$IFNDEF AUTOREFCOUNT}tkClass, {$ENDIF}tkClassRef, tkPointer, tkProcedure];
+    const ManagedPointerTypeKinds = [tkInterface, tkDynArray, tkUString];
+    const UnmanagedPointerTypeKinds = [tkClass, tkClassRef, tkPointer, tkProcedure];
 
     /// <summary>
     ///   Sorts the elements in an array using the default comparer.
@@ -4184,7 +4172,7 @@ end;
 
 procedure FreeObject(const item);
 begin
-  TObject(item).{$IFNDEF AUTOREFCOUNT}Free{$ELSE}DisposeOf{$ENDIF};
+  TObject(item).Free;
 end;
 
 function GetEqualsOperator(const typeInfo: PTypeInfo): TRttiMethod;
@@ -5149,7 +5137,6 @@ begin
   end;
 end;
 
-{$IFNDEF AUTOREFCOUNT}
 procedure TInitTable.CleanupInstance(instance: Pointer);
 var
   f: ^TFinalizableField;
@@ -5162,7 +5149,6 @@ begin
     Inc(f);
   end;
 end;
-{$ENDIF}
 {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
 
 {$ENDREGION}
@@ -5367,13 +5353,11 @@ end;
 
 {$REGION 'TManagedObject'}
 
-{$IFNDEF AUTOREFCOUNT}
 procedure TManagedObject.FreeInstance;
 begin
   GetInitTable(ClassType).CleanupInstance(Self);
   inherited FreeInstance;
 end;
-{$ENDIF}
 
 class function TManagedObject.NewInstance: TObject;
 begin
@@ -5386,13 +5370,11 @@ end;
 
 {$REGION 'TManagedInterfacedObject'}
 
-{$IFNDEF AUTOREFCOUNT}
 procedure TManagedInterfacedObject.FreeInstance;
 begin
   GetInitTable(ClassType).CleanupInstance(Self);
   inherited FreeInstance;
 end;
-{$ENDIF}
 
 class function TManagedInterfacedObject.NewInstance: TObject;
 begin
@@ -6060,11 +6042,7 @@ end;
 procedure TValueHelper.Free;
 begin
   if IsObject then
-{$IFNDEF AUTOREFCOUNT}
     AsObject.Free;
-{$ELSE}
-    AsObject.DisposeOf;
-{$ENDIF}
 end;
 
 class function TValueHelper.From(buffer: Pointer; typeInfo: PTypeInfo): TValue;
@@ -6600,11 +6578,7 @@ begin
   begin
     if Kind = tkClass then
     begin
-{$IFDEF AUTOREFCOUNT}
-      TValueData(Self).FValueData.ExtractRawData(@obj);
-{$ELSE}
       obj := TObject(TValueData(Self).FAsObject);
-{$ENDIF}
       typeData := typeInfo.TypeData;
       Exit(obj.GetInterface(typeData.Guid, Intf));
     end;
@@ -7766,7 +7740,6 @@ begin
   Result := Pointer(Obj) <> nil;
 end;
 
-{$IFNDEF AUTOREFCOUNT}
 function TRefCountedObject.GetRefCount: Integer;
 begin
   Result := fRefCount and not objDestroyingFlag;
@@ -7797,7 +7770,6 @@ begin
   Result := inherited NewInstance;
   TRefCountedObject(Result).fRefCount := 1;
 end;
-{$ENDIF AUTOREFCOUNT}
 
 function TRefCountedObject.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
@@ -7809,25 +7781,17 @@ end;
 
 function TRefCountedObject._AddRef: Integer;
 begin
-{$IFNDEF AUTOREFCOUNT}
   Result := AtomicIncrement(fRefCount);
-{$ELSE}
-  Result := __ObjAddRef;
-{$ENDIF}
 end;
 
 function TRefCountedObject._Release: Integer;
 begin
-{$IFNDEF AUTOREFCOUNT}
   Result := AtomicDecrement(fRefCount);
   if Result = 0 then
   begin
     __MarkDestroying(Self);
     Destroy;
   end;
-{$ELSE}
-  Result := __ObjRelease;
-{$ENDIF}
 end;
 
 {$ENDREGION}
@@ -8129,7 +8093,6 @@ begin
   if (value <= min) or (value >= max) then
     Guard.RaiseArgumentOutOfRangeException(ValueArgName);
 end;
-
 
 {$IFNDEF NEXTGEN}
 class procedure Guard.CheckRange(const s: WideString; index: Integer);
@@ -9117,9 +9080,7 @@ class operator Shared<T>.Implicit(const value: T): Shared<T>;
 begin
   Result.fValue := value;
   case TType.Kind<T> of
-{$IFNDEF AUTOREFCOUNT}
     tkClass: Shared.Make(PObject(@Result.fValue)^, Result.fFinalizer);
-{$ENDIF}
     tkPointer: Shared.Make(PPointer(@Result.fValue)^, TypeInfo(T), Result.fFinalizer);
   end;
 end;
@@ -9139,9 +9100,6 @@ begin
   begin
     GetMem(finalizer, SizeOf(TObjectFinalizer));
     finalizer.Vtable := @Shared.ObjectFinalizerVtable;
-  {$IFDEF AUTOREFCOUNT}
-    Pointer(finalizer.Value) := nil;
-  {$ENDIF}
   end;
   finalizer.RefCount := 1;
   finalizer.Value := value;
@@ -9404,15 +9362,6 @@ begin
           Dec(count);
         until count = 0;
 {$ENDIF}
-{$IFDEF AUTOREFCOUNT}
-      tkClass:
-        repeat
-          PObject(target)^ := PObject(source)^;
-          Inc(PByte(target), SizeOf(Pointer));
-          Inc(PByte(source), SizeOf(Pointer));
-          Dec(count);
-        until count = 0;
-{$ENDIF}
       tkLString:
         repeat
           PAnsiString(target)^ := PAnsiString(source)^;
@@ -9491,20 +9440,6 @@ begin
           PMethodPointer(target)^ := PMethodPointer(source)^;
           Dec(PByte(target), SizeOf(TMethod));
           Dec(PByte(source), SizeOf(TMethod));
-          Dec(count);
-        until count = 0;
-      end;
-{$ENDIF}
-{$IFDEF AUTOREFCOUNT}
-      tkClass:
-      begin
-        n := (count - 1) * SizeOf(Pointer);
-        Inc(PByte(target), n);
-        Inc(PByte(source), n);
-        repeat
-          PObject(target)^ := PObject(source)^;
-          Dec(PByte(target), SizeOf(Pointer));
-          Dec(PByte(source), SizeOf(Pointer));
           Dec(count);
         until count = 0;
       end;
@@ -10016,22 +9951,14 @@ end;
 
 function TInterfacedCriticalSection._AddRef: Integer;
 begin
-{$IFNDEF AUTOREFCOUNT}
   Result := AtomicIncrement(fRefCount);
-{$ELSE}
-  Result := __ObjAddRef;
-{$ENDIF}
 end;
 
 function TInterfacedCriticalSection._Release: Integer;
 begin
-{$IFNDEF AUTOREFCOUNT}
   Result := AtomicDecrement(fRefCount);
   if Result = 0 then
     Destroy;
-{$ELSE}
-  Result := __ObjRelease;
-{$ENDIF}
 end;
 
 function TInterfacedCriticalSection.ScopedLock: IInterface;

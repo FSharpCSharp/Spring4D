@@ -168,11 +168,7 @@ end;
 function GetIndexObject(const v: TValue): Integer;
 begin
   Result := v.AsType<TIndexWrapper>.fIndex;
-{$IFNDEF AUTOREFCOUNT}
   v.AsType<TIndexWrapper>.Free;
-{$ELSE}
-  v.AsType<TIndexWrapper>.DisposeOf;
-{$ENDIF}
 end;
 
 function GetIndexInterface(const v: TValue): Integer;
@@ -184,11 +180,7 @@ end;
 function GetIndexPointer(const v: TValue): Integer;
 begin
   Result := v.AsType<TIndexWrapper>.fIndex;
-{$IFNDEF AUTOREFCOUNT}
   v.AsType<TIndexWrapper>.Free;
-{$ELSE}
-  v.AsType<TIndexWrapper>.DisposeOf;
-{$ENDIF}
 end;
 
 function GetIndexRecord(const v: TValue): Integer;

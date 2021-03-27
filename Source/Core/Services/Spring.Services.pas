@@ -160,8 +160,7 @@ type
 ///   Since Delphi doesn't support generic methods for interfaces, the result
 ///   type is TServiceLocator instead of IServiceLocator.
 /// </remarks>
-{$IFDEF AUTOREFCOUNT}[Result: Unsafe]{$ENDIF}
-function ServiceLocator: TServiceLocator; {$IFNDEF AUTOREFCOUNT}inline;{$ENDIF}
+function ServiceLocator: TServiceLocator; inline;
 
 implementation
 

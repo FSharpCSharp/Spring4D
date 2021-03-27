@@ -44,7 +44,6 @@ type
   private
     fCriterions: IList<ICriterion>;
     fOrderBy: IList<IOrderBy>;
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fSession: TSession;
     function GetCriterions: IReadOnlyList<ICriterion>;
   protected

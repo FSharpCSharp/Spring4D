@@ -53,7 +53,6 @@ uses
 type
   TAutoMockResolver = class(TInterfacedObject, ISubDependencyResolver)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
     procedure EnsureMockRegistered(const mockedType: TRttiType);
     class function TryGetMockedType(const targetType: TRttiType;

@@ -345,7 +345,6 @@ type
   /// </summary>
   TComponentModel = class
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
     fComponentType: TRttiType;
     fLifetimeType: TLifetimeType;
@@ -432,7 +431,6 @@ type
 
   TInjectableMethodFilter = class(TSpecification<TRttiMethod>)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
     fModel: TComponentModel;
     fArguments: TArray<TValue>;
@@ -654,10 +652,8 @@ end;
 
 destructor TValueHolder.Destroy;
 begin
-{$IFNDEF AUTOREFCOUNT}
   if not Assigned(fLifetimeWatcher) and fValue.IsObject then
     fValue.AsObject.Free;
-{$ENDIF}
   // explicitly set to nil to keep correct order
   fLifetimeWatcher := nil;
   fValue := nil;
@@ -681,11 +677,7 @@ end;
 
 destructor TValueHolder.TComponentHolder.Destroy;
 begin
-{$IFNDEF AUTOREFCOUNT}
   fValue^.AsObject.Free;
-{$ELSE}
-  fValue^.AsObject.DisposeOf;
-{$ENDIF}
   inherited Destroy;
 end;
 

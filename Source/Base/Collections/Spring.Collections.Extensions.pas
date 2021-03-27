@@ -473,7 +473,6 @@ type
 
       TEnumerator = class(TRefCountedObject, IEnumerator<IInterface>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TLookup<TKey, TElement>;
         fIndex: Integer;
         function GetCurrent: IInterface;

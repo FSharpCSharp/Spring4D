@@ -48,9 +48,7 @@ type
   public
     constructor Create(const model: TComponentModel;
       const arguments: array of TValue);
-{$IFNDEF AUTOREFCOUNT}
     destructor Destroy; override;
-{$ENDIF}
 
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel; const argument: TValue): Boolean;
@@ -77,10 +75,8 @@ uses
   Spring.Container.ResourceStrings,
   Spring.Reflection;
 
-{$IFNDEF AUTOREFCOUNT}
 type
   TInterfacedObjectAccess = class(TInterfacedObject);
-{$ENDIF}
 
 {$REGION 'TCreationContext'}
 
@@ -101,7 +97,6 @@ begin
   fPerResolveInstances := TCollections.CreateDictionary<TComponentModel, TValue>;
 end;
 
-{$IFNDEF AUTOREFCOUNT}
 destructor TCreationContext.Destroy;
 var
   instance: TValue;
@@ -112,7 +107,6 @@ begin
       AtomicDecrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
   inherited Destroy;
 end;
-{$ENDIF}
 
 function TCreationContext.AddArgument(const argument: TValue): Integer;
 begin
@@ -131,18 +125,14 @@ end;
 
 procedure TCreationContext.AddPerResolve(const model: TComponentModel;
   const instance: TValue);
-{$IFNDEF AUTOREFCOUNT}
 var
   interfacedObject: TInterfacedObject;
-{$ENDIF}
 begin
   fLock.BeginWrite;
   try
     fPerResolveInstances.Add(model, instance);
-{$IFNDEF AUTOREFCOUNT}
     if instance.TryAsType(TypeInfo(TInterfacedObject), interfacedObject) and Assigned(interfacedObject) then
       AtomicIncrement(TInterfacedObjectAccess(interfacedObject).fRefCount);
-{$ENDIF}
   finally
     fLock.EndWrite;
   end;

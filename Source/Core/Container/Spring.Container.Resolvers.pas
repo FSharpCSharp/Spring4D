@@ -38,7 +38,6 @@ uses
 type
   TSubDependencyResolverBase = class abstract(TInterfacedObject, ISubDependencyResolver)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
   protected
     property Kernel: TKernel read fKernel;

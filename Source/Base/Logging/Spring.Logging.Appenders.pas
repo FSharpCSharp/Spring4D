@@ -91,9 +91,7 @@ type
   TStreamLogAppender = class(TLogAppenderWithTimeStampFormat)
   strict private
     fStream: TStream;
-{$IFNDEF AUTOREFCOUNT}
     fOwnsStream: Boolean;
-{$ENDIF}
     fEncoding: TEncoding;
     fLock: TCriticalSection;
   strict protected
@@ -282,9 +280,7 @@ constructor TStreamLogAppender.CreateInternal(ownsStream: Boolean;
   const encoding: TEncoding);
 begin
   inherited Create;
-{$IFNDEF AUTOREFCOUNT}
   fOwnsStream := ownsStream;
-{$ENDIF}
   if Assigned(encoding) then
     fEncoding := encoding
   else
@@ -294,10 +290,8 @@ end;
 
 destructor TStreamLogAppender.Destroy;
 begin
-{$IFNDEF AUTOREFCOUNT}
   if fOwnsStream then
     fStream.Free;
-{$ENDIF}
   fLock.Free;
   inherited Destroy;
 end;
@@ -326,10 +320,8 @@ begin
   Guard.CheckNotNull(stream, 'stream');
   fLock.Enter;
   try
-{$IFNDEF AUTOREFCOUNT}
     if fOwnsStream then
       fStream.Free;
-{$ENDIF}
     fStream := stream;
   finally
     fLock.Leave;

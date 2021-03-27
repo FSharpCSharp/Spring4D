@@ -39,9 +39,7 @@ type
   TCollectionChangedEventImpl<T> = class(TEventBase, IEvent, ICollectionChangedEvent<T>)
   public
     procedure AfterConstruction; override;
-{$IFNDEF AUTOREFCOUNT}
     procedure Free;
-{$ENDIF}
     procedure Add(handler: TCollectionChangedEvent<T>); overload; inline;
     procedure Remove(handler: TCollectionChangedEvent<T>); overload; inline;
     procedure Invoke(Sender: TObject; const Item: T; Action: TCollectionChangedAction);
@@ -59,18 +57,14 @@ procedure TCollectionChangedEventImpl<T>.AfterConstruction;
 begin
   inherited AfterConstruction;
   TCollectionChangedEvent<T>(fInvoke) := Invoke;
-{$IFNDEF AUTOREFCOUNT}
   _AddRef;
-{$ENDIF}
 end;
 
-{$IFNDEF AUTOREFCOUNT}
 procedure TCollectionChangedEventImpl<T>.Free;
 begin
   if Assigned(Self) then
     _Release;
 end;
-{$ENDIF}
 
 procedure TCollectionChangedEventImpl<T>.Add(
   handler: TCollectionChangedEvent<T>);
@@ -84,10 +78,6 @@ var
   handlers: PMethodArray;
   i: Integer;
 begin
-  // If you get exception at this location on NextGen and the handler is nil
-  // it is highly possible that the owner of the collection already released
-  // its weak references. To fix this, free the collection prior to freeing
-  // the object owning it (even if you're using interfaces).
   if CanInvoke then
   begin
     handlers := GetHandlers;

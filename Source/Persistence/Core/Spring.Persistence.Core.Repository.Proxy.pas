@@ -51,7 +51,6 @@ type
   TProxyRepository<T: class, constructor; TID> = class(TProxyRepository)
   private
     fRepository: IPagedRepository<T,TID>;
-    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fSession: TSession;
     fDefaultMethods: IDictionary<string, TMethodReference>;
     fTypeName: string;
@@ -134,14 +133,6 @@ begin
     begin
       Result := DoOnInvoke(Method, Copy(Args, 1));
     end;
-{$IFDEF AUTOREFCOUNT}
-  // Release reference held by ancestor RawCallBack (bypass RSP-10177)
-  __ObjRelease;
-  // Release reference held by OnInvoke (RSP-10176)
-  __ObjRelease;
-  // Release reference held by RegisterDefaultMethods (RSP-10176)
-  __ObjRelease;
-{$ENDIF}
 end;
 
 function TProxyRepository<T, TID>.DoOnInvoke(const Method: TRttiMethod;

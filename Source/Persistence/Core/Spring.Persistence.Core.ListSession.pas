@@ -37,7 +37,6 @@ uses
 type
   TListSession<T: class, constructor> = class(TInterfacedObject, IListSession<T>)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fSession: TSession;
     fList: IList<T>;
     fPrimaryKeys: ISet<TValue>;

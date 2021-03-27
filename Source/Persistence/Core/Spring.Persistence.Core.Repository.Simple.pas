@@ -38,7 +38,6 @@ uses
 type
   TSimpleRepository<T: class, constructor; TID> = class(TInterfacedObject, IPagedRepository<T, TID>)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fSession: TSession;
     fNamespace: string;
   protected

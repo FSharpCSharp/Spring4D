@@ -178,19 +178,15 @@ procedure TTestCase<T>.SetUp;
 begin
   inherited SetUp;
   fSUT := T.Create;
-{$IFNDEF AUTOREFCOUNT}
   if fSUT.InheritsFrom(TInterfacedObject) then
     TInterfacedObjectAccess(fSUT)._AddRef;
-{$ENDIF}
 end;
 
 procedure TTestCase<T>.TearDown;
 begin
-{$IFNDEF AUTOREFCOUNT}
   if fSUT.InheritsFrom(TInterfacedObject) then
     TInterfacedObjectAccess(fSUT)._Release
   else
-{$ENDIF}
     fSUT.Free;
   inherited TearDown;
 end;

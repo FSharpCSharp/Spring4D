@@ -57,7 +57,6 @@ type
         Vtable: Pointer;
         RefCount: Integer;
         TypeInfo: PTypeInfo;
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TAbstractArrayList<T>;
         fIndex, fCount: Integer;
         fVersion: Integer;
@@ -235,7 +234,6 @@ type
     type
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TCollectionList<T>;
         fIndex: Integer;
         fVersion: Integer;

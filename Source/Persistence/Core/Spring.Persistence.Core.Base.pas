@@ -260,11 +260,7 @@ end;
 
 destructor TDriverResultSetAdapter<T>.Destroy;
 begin
-{$IFNDEF AUTOREFCOUNT}
   fDataSet.Free;
-{$ELSE}
-  fDataset.DisposeOf;
-{$ENDIF}
   inherited Destroy;
 end;
 

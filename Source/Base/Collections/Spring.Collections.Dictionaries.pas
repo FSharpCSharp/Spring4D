@@ -168,7 +168,6 @@ type
         ICollection<TValueKeyPair>, IMap<TValue, TKey>,
         IDictionary<TValue, TKey>, IBidiDictionary<TValue, TKey>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
       {$REGION 'Property Accessors'}
         function GetCapacity: Integer;
@@ -238,7 +237,6 @@ type
       TEnumerator = class(TRefCountedObject,
         IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
         fItemIndex: Integer;
         fVersion: Integer;
@@ -261,7 +259,6 @@ type
       TKeyCollection = class(TEnumerableBase<TKey>,
         IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
@@ -286,7 +283,6 @@ type
       TValueCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TBidiDictionary<TKey, TValue>;
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
@@ -421,7 +417,6 @@ type
       TEnumerator = class(TRefCountedObject,
         IEnumerator<TKeyValuePair>, IEnumerator<TKey>, IEnumerator<TValue>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
         fCurrentNode: PNode;
         fFinished: Boolean;
@@ -440,7 +435,6 @@ type
       TKeyCollection = class(TEnumerableBase<TKey>,
         IEnumerable<TKey>, IReadOnlyCollection<TKey>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
       {$REGION 'Property Accessors'}
         function GetCount: Integer;
@@ -464,7 +458,6 @@ type
       TValueCollection = class(TEnumerableBase<TValue>,
         IEnumerable<TValue>, IReadOnlyCollection<TValue>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedDictionary<TKey, TValue>;
       {$REGION 'Property Accessors'}
         function GetCount: Integer;

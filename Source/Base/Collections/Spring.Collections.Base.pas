@@ -49,7 +49,6 @@ type
     Vtable: Pointer;
     RefCount: Integer;
     TypeInfo: PTypeInfo;
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     Parent: TRefCountedObject;
     function _Release: Integer; stdcall;
     class function Create(enumerator: PPointer; vtable: PEnumeratorVtable;
@@ -491,7 +490,6 @@ type
 
   THashTableEnumerator = class(TRefCountedObject)
   protected
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fSource: TRefCountedObject;
     fHashTable: PHashTable;
     fIndex: Integer;
@@ -518,7 +516,6 @@ type
     end;
   {$ENDREGION}
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fSource: TRefCountedObject;
     fHashTable: PHashTable;
     fElementType: PTypeInfo;
@@ -557,7 +554,6 @@ type
         Vtable: Pointer;
         RefCount: Integer;
         TypeInfo: PTypeInfo;
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TCircularArrayBuffer<T>;
         fIndex, fCount: Integer;
         fVersion: Integer;
@@ -702,9 +698,6 @@ procedure EnsureEventInstance(var event: TEventBase; var result;
       newEvent.Free
     else
     begin
-{$IFDEF AUTOREFCOUNT}
-      newEvent.__ObjAddRef;
-{$ENDIF AUTOREFCOUNT}
       event.OnChanged := eventChanged;
       eventChanged(event);
     end;

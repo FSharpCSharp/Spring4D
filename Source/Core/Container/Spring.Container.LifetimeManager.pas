@@ -223,10 +223,8 @@ procedure TTransientLifetimeManager.Release(const instance: TValue);
 begin
   Guard.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);
-{$IFNDEF AUTOREFCOUNT}
   if instance.IsObject then
     instance.AsObject.Free;
-{$ENDIF}
 end;
 
 {$ENDREGION}
@@ -249,7 +247,6 @@ end;
 
 destructor TSingletonPerThreadLifetimeManager.Destroy;
 begin
-  // Needs to be freed prior our weakrefs get cleared
   fInstances := nil;
   inherited Destroy;
 end;

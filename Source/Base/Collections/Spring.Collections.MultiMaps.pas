@@ -50,7 +50,6 @@ type
   TValueCollection<T> = class(TEnumerableBase<T>,
     IEnumerable<T>, IReadOnlyCollection<T>)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fSource: TRefCountedObject;
     fHashTable: PHashTable;
     fCount: PInteger;
@@ -77,7 +76,6 @@ type
 
   TMultiMapEnumerator = class(TRefCountedObject)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fSource: TRefCountedObject;
     fHashTable: PHashTable;
     fIndex: Integer;
@@ -105,7 +103,6 @@ type
     type
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TWrappedCollection<T>;
         fDelegate: IEnumerator<T>;
         fOriginal: ICollection<T>;

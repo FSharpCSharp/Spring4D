@@ -2569,9 +2569,6 @@ begin
   p := Shared<TTestClass>.Make;
   t := p;
   t.DestroyCalled := @destroyCalled;
-{$IFDEF AUTOREFCOUNT}
-  t := nil;
-{$ENDIF}
   destroyCalled := False;
   p := nil;
   CheckTrue(destroyCalled);
@@ -2586,9 +2583,6 @@ begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
   p := Shared.Make<TTestClass>(t);
-{$IFDEF AUTOREFCOUNT}
-  t := nil;
-{$ENDIF}
   destroyCalled := False;
   p := nil;
   CheckTrue(destroyCalled);
@@ -2624,9 +2618,6 @@ begin
   t := TTestClass.Create;
   t.DestroyCalled := @destroyCalled;
   p := t;
-{$IFDEF AUTOREFCOUNT}
-  t := nil;
-{$ENDIF}
   destroyCalled := False;
   p := Default(Shared<TTestClass>);
   CheckTrue(destroyCalled);

@@ -127,7 +127,6 @@ type
       PNode = TNodes<T>.PRedBlackTreeNode;
       TEnumerator = class(TRefCountedObject, IEnumerator<T>)
       private
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TSortedSet<T>;
         fVersion: Integer;
         fCurrent: PNode;

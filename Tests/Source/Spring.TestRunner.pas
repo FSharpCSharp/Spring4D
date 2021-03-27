@@ -193,9 +193,9 @@ begin
   {$IFDEF MSWINDOWS}
   if ParamCount > 0 then
     OutputFile := ParamStr(1);
-  VSoft.DUnit.XMLTestRunner.RunRegisteredTests(OutputFile){$IFNDEF AUTOREFCOUNT}.Free{$ENDIF};
+  VSoft.DUnit.XMLTestRunner.RunRegisteredTests(OutputFile).Free;
   {$ELSE}
-  TextTestRunner.RunRegisteredTests{$IFNDEF AUTOREFCOUNT}.Free{$ENDIF};
+  TextTestRunner.RunRegisteredTests.Free;
   {$ENDIF}
 {$ENDIF}
 end;

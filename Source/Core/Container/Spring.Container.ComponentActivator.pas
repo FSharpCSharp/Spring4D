@@ -39,9 +39,7 @@ type
   /// </summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator)
   private
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fKernel: TKernel;
-    {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
     fModel: TComponentModel;
   protected
     procedure ExecuteInjections(var instance: TValue; const context: ICreationContext); overload;
@@ -113,9 +111,7 @@ begin
     begin
       if not instance.IsEmpty and instance.IsObject then
       begin
-{$IFNDEF AUTOREFCOUNT}
         instance.AsObject.Free;
-{$ENDIF}
         instance := nil;
       end;
       if E is EContainerException then

@@ -96,9 +96,7 @@ type
 
   TRefCounted = class(TObject, IRefCounted)
   private
-{$IFNDEF AUTOREFCOUNT}
     fRefCount: Integer;
-{$ENDIF}
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
@@ -946,24 +944,16 @@ end;
 
 function TRefCounted._AddRef: Integer;
 begin
-{$IFNDEF AUTOREFCOUNT}
   Inc(fRefCount);
   Result := fRefCount;
-{$ELSE}
-  Result := __ObjAddRef;
-{$ENDIF}
 end;
 
 function TRefCounted._Release: Integer;
 begin
-{$IFNDEF AUTOREFCOUNT}
   Dec(fRefCount);
   Result := fRefCount;
   if Result = 0 then
     Destroy;
-{$ELSE}
-  Result := __ObjRelease;
-{$ENDIF}
 end;
 
 { TCustomNameService }

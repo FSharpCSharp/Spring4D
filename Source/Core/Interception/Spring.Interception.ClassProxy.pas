@@ -201,11 +201,6 @@ begin
     fIntercepts[method.VirtualIndex] := intercept;
     PVirtualMethodTable(ProxyClass)[method.VirtualIndex] := intercept.CodeAddress;
   end;
-{$IFDEF AUTOREFCOUNT}
-  // Release reference created by passing closure to HandleInvoke (RSP-10176)
-  if Assigned(intercept) then
-    __ObjRelease;
-{$ENDIF}
 end;
 
 procedure TClassProxy.GenerateInterfaces(

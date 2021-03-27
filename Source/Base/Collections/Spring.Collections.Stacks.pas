@@ -53,7 +53,6 @@ type
         Vtable: Pointer;
         RefCount: Integer;
         TypeInfo: PTypeInfo;
-        {$IFDEF AUTOREFCOUNT}[Unsafe]{$ENDIF}
         fSource: TAbstractStack<T>;
         fIndex, fCount: Integer;
         fVersion: Integer;
