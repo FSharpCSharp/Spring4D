@@ -12814,8 +12814,8 @@ begin
   else
   {$ENDIF}
   begin
-    compare.Data := nil;
-    IComparer<T>(compare.Data) := IComparer<T>(_LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T)));
+    compare.Data := _LookupVtableInfo(giComparer, TypeInfo(T), SizeOf(T));
+    IInterface(compare.Data)._AddRef;
   end;
   compare.Code := PPVTable(compare.Data)^[3];
   try
