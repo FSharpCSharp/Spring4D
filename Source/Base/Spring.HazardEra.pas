@@ -90,6 +90,13 @@ begin
   UIntPtr(Result) := UIntPtr(Result) + Alignment;
   UIntPtr(Result) := UIntPtr(Result) and -Alignment;
   PPointer(UIntPtr(Result) - SizeOf(Pointer))^ := p;
+
+  // memory allocated via this function for instances of THazardEraThreadControlBlock
+  // must live until the end of the application because the hazard era mechanism
+  // needs to be working until the end as well as there might be objects using it
+  // outliving this unit - meaning the finalization of this unit might run earlier
+  // than the deallocation of those objects
+  RegisterExpectedMemoryLeak(p);
 end;
 
 procedure FreeMem_Aligned64(p: Pointer);
@@ -127,8 +134,6 @@ type
   class threadvar
     activeBlock: PHazardEraThreadControlBlock;
   public
-    class destructor Destroy;
-
     class function Acquire: PHazardEraThreadControlBlock; static;
     class procedure Release; static;
   end;
@@ -164,24 +169,6 @@ begin
   Era := value;
 end;
 {$ENDIF}
-
-class destructor TThreadBlockList.Destroy;
-var
-  p, q: PHazardEraThreadControlBlock;
-  i: Integer;
-begin
-  for i := 0 to High(blocks) do
-  begin
-    p := blocks[i];
-    blocks[i] := nil;
-    while Assigned(p) do
-    begin
-      q := p;
-      p := p.Next;
-      FreeMem_Aligned64(q);
-    end;
-  end;
-end;
 
 class function TThreadBlockList.Acquire: PHazardEraThreadControlBlock;
 
@@ -312,28 +299,33 @@ var
   i: Integer;
   info: PHazardEraThreadControlBlock;
 begin
-  currEra := AtomicLoad(eraClock);
+  if Assigned(lock) then
+  begin
+    currEra := AtomicLoad(eraClock);
+    
+	lock.Acquire;
+    try
+      if Assigned(p) then
+      begin
+        p.delEra := currEra;
+        retiredList.Add(p);
+      end;
 
-  lock.Acquire;
-  try
-    if Assigned(p) then
-    begin
-      p.delEra := currEra;
-      retiredList.Add(p);
+      if AtomicLoad(eraClock) = currEra then
+        AtomicIncrement(eraClock);
+
+      i := 0;
+      while i < retiredList.Count do
+        if Delete_Ptr(retiredList[i]) then
+          retiredList.Delete(i)
+        else
+          Inc(i);
+    finally
+      lock.Release;
     end;
-
-    if AtomicLoad(eraClock) = currEra then
-      AtomicIncrement(eraClock);
-
-    i := 0;
-    while i < retiredList.Count do
-      if Delete_Ptr(retiredList[i]) then
-        retiredList.Delete(i)
-      else
-        Inc(i);
-  finally
-    lock.Release;
-  end;
+  end
+  else
+    FreeMem(p);
 end;
 
 {$ENDREGION}
@@ -433,5 +425,6 @@ finalization
   Retire(nil);
   retiredList.Free;
   lock.Free;
+  lock := nil;
 
 end.
