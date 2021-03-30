@@ -276,7 +276,17 @@ var
   classType: Pointer;
 begin
   for classType in fClasses do
-    DestroyVirtualClass(classType);
+    
+	// when this code runs after finalization of this unit
+	// there might still be object instances being proxified
+	// with these classes - any deallocation here would cause
+	// issues such as access violations and alike during the 
+	// finalization/destruction of these objects
+	// to avoid such issues the deallocation is left to the
+	// operation system when the process ends and they are
+	// exluced from memory leak reporting
+    RegisterExpectedMemoryLeak(PByte(classType) + vmtSelfPtr);
+
   fLock.Free;
   fClasses.Free;
 end;

@@ -9249,8 +9249,8 @@ end;
 
 procedure TWeakReferences.Finalize;
 begin
-  fWeakReferences.Free;
-  fLock.Free;
+  FreeAndNil(fWeakReferences);
+  FreeAndNil(fLock);
 end;
 
 procedure TWeakReferences.RegisterWeakRef(address, instance: Pointer);
@@ -9274,6 +9274,8 @@ procedure TWeakReferences.UnregisterWeakRef(address, instance: Pointer);
 var
   addresses: TList;
 begin
+  if fLock = nil then Exit;
+
   fLock.Enter;
   try
     if fWeakReferences.TryGetValue(instance, addresses) then

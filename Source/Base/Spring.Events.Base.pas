@@ -307,9 +307,12 @@ begin
       ReleaseGuard;
       Exit;
     end;
-    EraArraySetLength(new, count, TypeInfo(TMethod));
-    EraArrayCopy(new, handlers);
-    EraArrayDelete(new, index);
+    if count > 1 then
+    begin
+      EraArraySetLength(new, count, TypeInfo(TMethod));
+      EraArrayCopy(new, handlers);
+      EraArrayDelete(new, index);
+    end;
   until AtomicCmpExchange(Pointer(fHandlers), new, handlers) = handlers;
 
   ReleaseGuard;
