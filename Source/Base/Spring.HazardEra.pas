@@ -199,7 +199,11 @@ begin
       Result.RefCount := 1;
       Exit;
     end;
-    if Result.ThreadID = currentThreadId then Exit;
+    if Result.ThreadID = currentThreadId then
+    begin
+      Inc(Result.RefCount);
+      Exit;
+    end;
   end;
 
   index := (currentThreadId xor (currentThreadId shr 8)) and High(blocks);
@@ -303,7 +307,7 @@ begin
   begin
     currEra := AtomicLoad(eraClock);
     
-	lock.Acquire;
+   	lock.Acquire;
     try
       if Assigned(p) then
       begin
