@@ -12301,7 +12301,7 @@ class procedure TArray.Shuffle<T>(var values: array of T; index, count: Integer)
 begin
   CheckRange(index, count, Length(values));
 
-  {$R+}
+  {$R-}
   Shuffle<T>(@values[index], count - 1);
   {$IFDEF RANGECHECKS_ON}{$R+}{$ENDIF}
 end;
