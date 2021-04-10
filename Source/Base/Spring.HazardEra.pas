@@ -31,7 +31,7 @@ interface
 // implementation based on the paper by Pedro Ramalhete and Andreia Correia
 // https://github.com/pramalhe/ConcurrencyFreaks/blob/master/papers/hazarderas-2017.pdf
 
-function AcquireGuard(var p): Pointer;
+function AcquireGuard(var p; isFirstAttempt: Boolean = True): Pointer;
 procedure ReleaseGuard;
 
 procedure EraArraySetLength(var a; count: NativeInt; elemInfo: Pointer);
@@ -134,7 +134,7 @@ type
   class threadvar
     activeBlock: PHazardEraThreadControlBlock;
   public
-    class function Acquire: PHazardEraThreadControlBlock; static;
+    class function Acquire(isFirstAttempt: Boolean): PHazardEraThreadControlBlock; static;
     class procedure Release; static;
   end;
 
@@ -170,7 +170,7 @@ begin
 end;
 {$ENDIF}
 
-class function TThreadBlockList.Acquire: PHazardEraThreadControlBlock;
+class function TThreadBlockList.Acquire(isFirstAttempt: Boolean): PHazardEraThreadControlBlock;
 
   function New(var era: PHazardEraThreadControlBlock; currentThreadId: TThreadID): PHazardEraThreadControlBlock;
   begin
@@ -201,7 +201,7 @@ begin
     end;
     if Result.ThreadID = currentThreadId then
     begin
-      Inc(Result.RefCount);
+      Inc(Result.RefCount, Integer(isFirstAttempt));
       Exit;
     end;
   end;
@@ -248,12 +248,12 @@ var
   eraClock: TEra;
   retiredList: TList;
 
-function AcquireGuard(var p): Pointer;
+function AcquireGuard(var p; isFirstAttempt: Boolean): Pointer;
 var
   current: PHazardEraThreadControlBlock;
   prevEra, era: TEra;
 begin
-  current := TThreadBlockList.Acquire;
+  current := TThreadBlockList.Acquire(isFirstAttempt);
   prevEra := current.Load;
   repeat
     Result := Pointer(p);
@@ -366,10 +366,7 @@ begin
   end;
 
   newSize := SizeOf(TEraArray) + count * PTypeInfo(elemInfo).TypeSize;
-  if Assigned(p) then
-    ReallocMem(p, newSize)
-  else
-    GetMem(p, newSize);
+  ReallocMem(p, newSize);
   if newSize > oldSize then
     FillChar((PByte(p) + oldSize)^, newSize - oldSize, 0);
   p.newEra := AtomicLoad(eraClock);
