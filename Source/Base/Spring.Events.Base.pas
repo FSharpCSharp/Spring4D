@@ -212,7 +212,7 @@ begin
 
   new := nil;
   repeat
-    handlers := AcquireGuard(fHandlers);
+    handlers := AcquireGuard(fHandlers, new = nil);
     count := DynArrayLength(handlers);
     EraArraySetLength(new, count + 1, TypeInfo(TMethod));
     EraArrayCopy(new, handlers);
@@ -237,8 +237,9 @@ var
 begin
   if fHandlers = nil then Exit;
 
+  handlers := nil;
   repeat
-    handlers := AcquireGuard(fHandlers);
+    handlers := AcquireGuard(fHandlers, handlers = nil);
   until AtomicCmpExchange(Pointer(fHandlers), nil, handlers) = handlers;
 
   try
@@ -294,7 +295,7 @@ begin
 
   new := nil;
   repeat
-    handlers := AcquireGuard(fHandlers);
+    handlers := AcquireGuard(fHandlers, new = nil);
     count := DynArrayLength(handlers);
     index := -1;
     for i := 0 to count - 1 do
@@ -329,7 +330,7 @@ var
 begin
   new := nil;
   repeat
-    handlers := AcquireGuard(fHandlers);
+    handlers := AcquireGuard(fHandlers, new = nil);
     count := DynArrayLength(handlers);
 
     EraArraySetLength(new, count, TypeInfo(TMethod));
