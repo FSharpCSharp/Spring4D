@@ -77,17 +77,19 @@ end;
 procedure TCollectionChangedEventImpl<T>.Invoke(Sender: TObject;
   const Item: T; Action: TCollectionChangedAction);
 var
+  guard: GuardedPointer;
   handlers: PMethodArray;
   i: Integer;
 begin
   if CanInvoke then
   begin
-    handlers := GetHandlers;
+    guard := GetHandlers;
+    handlers := guard;
     try
       for i := 0 to DynArrayHigh(handlers) do
         TCollectionChangedEvent<T>(handlers[i])(Sender, Item, Action);
     finally
-      ReleaseGuard;
+      guard.Release;
     end;
   end;
 end;

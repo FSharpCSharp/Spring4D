@@ -662,10 +662,12 @@ end;
 
 procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
 var
+  guard: GuardedPointer;
   handlers: PMethod;
   i: Integer;
 begin
-  handlers := AcquireGuard(fHandlers);
+  guard := AcquireGuard(fHandlers);
+  handlers := guard;
   if handlers <> nil then
   try
     {$POINTERMATH ON}
@@ -676,10 +678,10 @@ begin
       Inc(handlers);
     end;
   except
-    ReleaseGuard;
+    guard.Release;
     raise;
   end;
-  ReleaseGuard;
+  guard.Release;
 end;
 
 procedure TEvent.Invoke;
@@ -729,17 +731,19 @@ end;
 
 procedure TNotifyEventImpl.Invoke(sender: TObject);
 var
+  guard: GuardedPointer;
   handlers: PMethodArray;
   i: Integer;
 begin
   if Enabled then
   begin
-    handlers := GetHandlers;
+    guard := GetHandlers;
+    handlers := guard;
     try
       for i := 0 to DynArrayHigh(handlers) do
         TNotifyEvent(handlers[i])(sender);
     finally
-      ReleaseGuard;
+      guard.Release;
     end;
   end;
 end;
@@ -772,17 +776,19 @@ end;
 
 procedure TNotifyEventImpl<T>.Invoke(sender: TObject; const item: T);
 var
+  guard: GuardedPointer;
   handlers: PMethodArray;
   i: Integer;
 begin
   if Enabled then
   begin
-    handlers := GetHandlers;
+    guard := GetHandlers;
+    handlers := guard;
     try
       for i := 0 to DynArrayHigh(handlers) do
         TNotifyEvent<T>(handlers[i])(sender, item);
     finally
-      ReleaseGuard;
+      guard.Release;
     end;
   end;
 end;
@@ -816,17 +822,19 @@ end;
 procedure TPropertyChangedEventImpl.Invoke(Sender: TObject;
   const EventArgs: IPropertyChangedEventArgs);
 var
+  guard: GuardedPointer;
   handlers: PMethodArray;
   i: Integer;
 begin
   if Enabled then
   begin
-    handlers := GetHandlers;
+    guard := GetHandlers;
+    handlers := guard;
     try
       for i := 0 to DynArrayHigh(handlers) do
         TPropertyChangedEvent(handlers[i])(Sender, EventArgs);
     finally
-      ReleaseGuard;
+      guard.Release;
     end;
   end;
 end;

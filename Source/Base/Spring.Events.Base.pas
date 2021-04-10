@@ -30,7 +30,8 @@ interface
 
 uses
   Classes,
-  Spring;
+  Spring,
+  Spring.HazardEra;
 
 type
   TEventBaseClass = class of TEventBase;
@@ -53,7 +54,7 @@ type
   {$REGION 'Property Accessors'}
     function GetCanInvoke: Boolean; inline;
     function GetEnabled: Boolean; inline;
-    function GetHandlers: Pointer;
+    function GetHandlers: GuardedPointer;
     function GetOnChanged: TNotifyEvent;
     function GetUseFreeNotification: Boolean; inline;
     procedure SetEnabled(const value: Boolean);
@@ -89,11 +90,10 @@ type
 implementation
 
 uses
-  TypInfo,
 {$IFDEF MSWINDOWS}
   Windows,
 {$ENDIF}
-  Spring.HazardEra;
+  TypInfo;
 
 function IsValidObj(p: PPointer): Boolean;
 {$IFDEF MSWINDOWS}
@@ -203,6 +203,7 @@ end;
 
 procedure TEventBase.Add(const handler: TMethod);
 var
+  guard: GuardedPointer;
   handlers, new: PMethodArray;
   count: Integer;
 begin
@@ -211,14 +212,15 @@ begin
 
   new := nil;
   repeat
-    handlers := AcquireGuard(fHandlers, new = nil);
+    guard := AcquireGuard(fHandlers, new = nil);
+    handlers := guard;
     count := DynArrayLength(handlers);
     EraArraySetLength(new, count + 1, TypeInfo(TMethod));
     EraArrayCopy(new, handlers);
     new[count] := handler;
   until AtomicCmpExchange(Pointer(fHandlers), new, handlers) = handlers;
 
-  ReleaseGuard;
+  guard.Release;
   EraArrayClear(handlers);
   Notify(Self, handler, cnAdded);
 end;
@@ -231,6 +233,7 @@ end;
 
 procedure TEventBase.Clear;
 var
+  guard: GuardedPointer;
   handlers: PMethodArray;
   i: Integer;
 begin
@@ -238,19 +241,20 @@ begin
 
   handlers := nil;
   repeat
-    handlers := AcquireGuard(fHandlers, handlers = nil);
+    guard := AcquireGuard(fHandlers, handlers = nil);
+    handlers := guard;
   until AtomicCmpExchange(Pointer(fHandlers), nil, handlers) = handlers;
 
   try
     for i := 0 to DynArrayHigh(handlers) do
       Notify(Self, handlers[i], cnRemoved);
   finally
-    ReleaseGuard;
+    guard.Release;
     EraArrayClear(handlers);
   end;
 end;
 
-function TEventBase.GetHandlers: Pointer;
+function TEventBase.GetHandlers: GuardedPointer;
 begin
   Result := AcquireGuard(fHandlers);
 end;
@@ -286,6 +290,7 @@ end;
 
 procedure TEventBase.Remove(const handler: TMethod);
 var
+  guard: GuardedPointer;
   handlers, new: PMethodArray;
   count, index, i: Integer;
 begin
@@ -294,7 +299,8 @@ begin
 
   new := nil;
   repeat
-    handlers := AcquireGuard(fHandlers, new = nil);
+    guard := AcquireGuard(fHandlers, new = nil);
+    handlers := guard;
     count := DynArrayLength(handlers);
     index := -1;
     for i := 0 to count - 1 do
@@ -305,7 +311,7 @@ begin
       end;
     if index = -1 then
     begin
-      ReleaseGuard;
+      guard.Release;
       Exit;
     end;
     if count > 1 then
@@ -316,20 +322,22 @@ begin
     end;
   until AtomicCmpExchange(Pointer(fHandlers), new, handlers) = handlers;
 
-  ReleaseGuard;
+  guard.Release;
   EraArrayClear(handlers);
   Notify(Self, handler, cnRemoved);
 end;
 
 procedure TEventBase.RemoveAll(instance: Pointer);
 var
+  guard: GuardedPointer;
   handlers, new: PMethodArray;
   oldItems: TArray<TMethod>;
   count, i, index: Integer;
 begin
   new := nil;
   repeat
-    handlers := AcquireGuard(fHandlers, new = nil);
+    guard := AcquireGuard(fHandlers, new = nil);
+    handlers := guard;
     count := DynArrayLength(handlers);
 
     EraArraySetLength(new, count, TypeInfo(TMethod));
@@ -347,12 +355,12 @@ begin
 
     if index = 0 then
     begin
-      ReleaseGuard;
+      guard.Release;
       EraArrayClear(new);
       Exit;
     end;
   until AtomicCmpExchange(Pointer(fHandlers), new, handlers) = handlers;
-  ReleaseGuard;
+  guard.Release;
   EraArrayClear(handlers);
   for i := index - 1 downto 0 do
     Notify(Self, oldItems[i], cnRemoved);
@@ -379,6 +387,7 @@ end;
 
 procedure TEventBase.SetUseFreeNotification(const value: Boolean);
 var
+  guard: GuardedPointer;
   data: Pointer;
   handler: PMethodArray;
 begin
@@ -392,7 +401,8 @@ begin
         if value then // ... it can only be turned True
         begin
           NativeInt(fNotificationHandler) := 0;
-          handler := AcquireGuard(fHandlers);
+          guard := AcquireGuard(fHandlers);
+          handler := guard;
           try
             if Assigned(handler) and Assigned(handler.Code) then
             repeat
@@ -405,7 +415,7 @@ begin
               Inc(handler);
             until not Assigned(handler.Code);
           finally
-            ReleaseGuard;
+            guard.Release;
           end;
         end;
     else // UseFreeNotification is True and handler is already assigned ...
