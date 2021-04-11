@@ -181,10 +181,9 @@ end;
 
 function TEventBase.GetCanInvoke: Boolean;
 begin
-  if Enabled and Assigned(fHandlers) and Assigned(fHandlers^.Code) then
-    Result := True
-  else
-    Result := False;
+  {$B+}
+  Result := Enabled and Assigned(fHandlers);
+  {$B-}
 end;
 
 function TEventBase.GetOnChanged: TNotifyEvent;

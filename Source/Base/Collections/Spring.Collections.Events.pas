@@ -29,6 +29,7 @@ unit Spring.Collections.Events;
 interface
 
 uses
+  Classes,
   Spring,
   Spring.Collections,
   Spring.Events.Base;
@@ -43,6 +44,7 @@ type
     procedure Add(handler: TCollectionChangedEvent<T>); overload; inline;
     procedure Remove(handler: TCollectionChangedEvent<T>); overload; inline;
     procedure Invoke(Sender: TObject; const Item: T; Action: TCollectionChangedAction);
+    property OnChanged: TNotifyEvent write fOnChanged;
   end;
 
 implementation

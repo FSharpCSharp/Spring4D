@@ -662,7 +662,7 @@ procedure EnsureEventInstance(var event: TEventBase; var result;
   eventClass: TEventBaseClass; eventChanged: TNotifyEvent);
 function SkipAndCount(const enumerator: IEnumerator; limit: Integer): Integer;
 function SupportsIndexedAccess(const source: IInterface): Boolean;
-procedure UpdateNotify(instance: TObject; baseClass: TClass; const event: TEventBase; var code);
+procedure UpdateNotify(instance: TObject; baseClass: TClass; var notify);
 
 implementation
 
@@ -732,20 +732,24 @@ begin
   end;
 end;
 
-procedure UpdateNotify(instance: TObject; baseClass: TClass; const event: TEventBase; var code);
+procedure UpdateNotify(instance: TObject; baseClass: TClass; var notify);
+type
+  TNotifyRec = record
+    event: TEventBase;
+    code: Pointer;
+  end;
 const
   ChangedVirtualIndex = 1;
 var
   baseAddress, actualAddress: Pointer;
 begin
-{$POINTERMATH ON}
-  baseAddress := PPointer(baseClass)[ChangedVirtualIndex];
-  actualAddress := PPointer(instance.ClassType)[ChangedVirtualIndex];
-{$POINTERMATH OFF}
-  if (Assigned(event) and event.CanInvoke) or (actualAddress <> baseAddress) then
-    Pointer(code) := actualAddress
-  else
-    Pointer(code) := nil;
+  baseAddress := PVTable(baseClass)[ChangedVirtualIndex];
+  actualAddress := PPVTable(instance)^[ChangedVirtualIndex];
+  with TNotifyRec(notify) do
+    if (Assigned(event) and event.CanInvoke) or (actualAddress <> baseAddress) then
+      code := actualAddress
+    else
+      code := nil;
 end;
 
 
@@ -981,7 +985,6 @@ end;
 function TEnumerableBase<T>.Aggregate(const func: Func<T, T, T>): T;
 var
   enumerator: IEnumerator<T>;
-  item: T;
 begin
   if not Assigned(func) then RaiseHelper.ArgumentNil(ExceptionArgument.func);
 
@@ -996,34 +999,26 @@ end;
 function TEnumerableBase<T>.All(const predicate: Predicate<T>): Boolean;
 var
   enumerator: IEnumerator<T>;
-  item: T;
 begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
-  begin
-    item := enumerator.Current;
-    if not predicate(item) then
+    if not predicate(enumerator.Current) then
       Exit(False);
-  end;
   Result := True;
 end;
 
 function TEnumerableBase<T>.Any(const predicate: Predicate<T>): Boolean;
 var
   enumerator: IEnumerator<T>;
-  item: T;
 begin
   if not Assigned(predicate) then RaiseHelper.ArgumentNil(ExceptionArgument.predicate);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
-  begin
-    item := enumerator.Current;
-    if predicate(item) then
+    if predicate(enumerator.Current) then
       Exit(True);
-  end;
   Result := False;
 end;
 
@@ -1047,17 +1042,13 @@ function TEnumerableBase<T>.Contains(const value: T;
   const comparer: IEqualityComparer<T>): Boolean;
 var
   enumerator: IEnumerator<T>;
-  item: T;
 begin
   if not Assigned(comparer) then RaiseHelper.ArgumentNil(ExceptionArgument.comparer);
 
   enumerator := IEnumerable<T>(this).GetEnumerator;
   while enumerator.MoveNext do
-  begin
-    item := enumerator.Current;
-    if comparer.Equals(value, item) then
+    if comparer.Equals(enumerator.Current, value) then
       Exit(True);
-  end;
   Result := False;
 end;
 
@@ -1929,17 +1920,20 @@ end;
 procedure TCollectionBase<T>.AfterConstruction;
 begin
   inherited AfterConstruction;
-  UpdateNotify(Self, TCollectionBase<T>, fOnChanged, fNotify);
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
+  fOnChanged.OnChanged := EventChanged;
+  UpdateNotify(Self, TCollectionBase<T>, fOnChanged);
 end;
 
 procedure TCollectionBase<T>.BeforeDestruction;
 begin
   fOnChanged.Free;
+  inherited BeforeDestruction;
 end;
 
 procedure TCollectionBase<T>.EventChanged(Sender: TObject);
 begin
-  UpdateNotify(Self, TCollectionBase<T>, fOnChanged, fNotify);
+  UpdateNotify(Self, TCollectionBase<T>, fOnChanged);
 end;
 
 procedure TCollectionBase<T>.DoNotify(const item: T;
@@ -2016,7 +2010,7 @@ end;
 
 function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
-  EnsureEventInstance(TEventBase(fOnChanged), Result, TCollectionChangedEventImpl<T>, EventChanged);
+  Result := fOnChanged;
 end;
 
 function TCollectionBase<T>.MoveTo(const collection: ICollection<T>): Integer;
